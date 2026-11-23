@@ -101,7 +101,7 @@
             4,
             1
           ],
-          "explanation": "Primero se abre main, luego se define boletos, después se lee su valor y finalmente se termina la función."
+          "explanation": "Dentro de main, la declaración de boletos guarda el entero 10. La instrucción con std::cout debe aparecer después de la declaración para que pueda consultar boletos y escribir 10 en la consola. Al final, return 0; termina la función."
         }
       ]
     },
@@ -126,20 +126,20 @@
           "options": [
             "Dejar el valor para que el compilador elija.",
             "Crear texto que contiene 0.",
-            "Crear un entero preparado con valor cero."
+            "Crear la variable entera asientos y guardar cero en ella al crearla."
           ],
           "correctIndex": 2,
           "explanation": "En int asientos{0};, {0} es el inicializador. El literal 0 proporciona el entero que guarda asientos al comenzar."
         },
         {
           "type": "inline_fill_code",
-          "question": "Escribe sólo los números que van dentro de las llaves. pisos debe comenzar con tres y ventanas, con doce.",
+          "question": "Escribe los valores iniciales dentro de las llaves de cada declaración. pisos debe guardar tres y ventanas debe guardar doce.",
           "template": "#include <iostream>\n\nint main() {\n    int pisos{[]};\n    int ventanas{[]};\n\n    std::cout << pisos << \" \" << ventanas;\n\n    return 0;\n}\n",
           "answers": [
             "3",
             "12"
           ],
-          "reviewFeedback": "Relaciona cada cantidad del enunciado con el nombre de la variable que debe recibirla. Cada par de llaves contiene el valor inicial de su propio objeto; distingue esa preparación de las instrucciones que consultan los valores para mostrarlos.",
+          "reviewFeedback": "Mira el nombre anterior a cada par de llaves. ¿Qué cantidad pide el enunciado para pisos y cuál pide para ventanas?",
           "explanation": "{3} inicializa pisos y {12} inicializa ventanas. La instrucción con std::cout consulta primero pisos, escribe el espacio de \" \" y consulta ventanas. La consola muestra 3 12."
         }
       ]
@@ -152,7 +152,7 @@
         },
         {
           "type": "paragraph",
-          "text": "En el puzle anterior, pisos guarda 3 y ventanas guarda 12. Sigue la línea con std::cout para saber en qué orden se muestran.\n\n1. Lee pisos y escribe 3.\n2. Escribe el espacio del literal \" \".\n3. Lee ventanas y escribe 12.\n\nEn la consola aparece 3 12. Si quieres mostrar primero las ventanas, el cambio va en el orden de los nombres de esa línea."
+          "text": "Puedes declarar las variables en un orden y mostrar sus valores en otro. Supón que pisos guarda 3 y ventanas guarda 12. En std::cout << pisos << \" \" << ventanas;, el programa lee pisos y escribe tres, añade el espacio del literal \" \" y luego lee ventanas y escribe doce. En la consola aparece 3 12. Si intercambias los nombres sólo en la instrucción con std::cout, la consola muestra 12 3."
         },
         {
           "type": "inline_fill_code",
@@ -162,20 +162,20 @@
             "duelas"
           ],
           "id": "p1u2l2_orden_de_consulta",
-          "question": "Completa sólo los dos nombres de la línea con std::cout. Muestra primero la cantidad de marcos y después la de duelas, separadas por un espacio.",
-          "reviewFeedback": "Busca en las declaraciones qué nombre identifica cada cantidad. El primer hueco debe mostrar la cantidad que pide el enunciado primero. El literal con el espacio ya separa ambos resultados.",
+          "question": "En los dos huecos de la instrucción con std::cout, escribe los nombres de las variables que debe consultar. La consola debe mostrar la cantidad de marcos, un espacio y la cantidad de duelas, en ese orden.",
+          "reviewFeedback": "Busca la declaración que guarda el número de marcos y la que guarda el número de duelas. En la instrucción con std::cout, ¿qué nombre debe ir antes del espacio para que se muestre la cantidad de marcos primero?",
           "explanation": "El primer hueco consulta marcos, que guarda 8. Tras el espacio, la instrucción consulta duelas, que guarda 2. La consola muestra 8 2. Las declaraciones siguen en su orden original."
         },
         {
           "type": "multiple_choice",
-          "question": "La consigna dice que un depósito comienza vacío. ¿Qué razón justifica inicializar cantidad con cero?",
+          "question": "Una variable entera llamada cantidad guarda cuántas piezas hay en un depósito. El depósito está vacío cuando empieza el programa. ¿Por qué corresponde inicializar cantidad con cero?",
           "options": [
-            "Porque el valor inicial debe representar la situación que especifica la consigna.",
+            "El depósito empieza vacío, así que cantidad debe guardar cero piezas cuando empieza el programa.",
             "Porque cualquier variable entera empieza automáticamente en cero.",
             "Porque cero siempre es la cantidad final."
           ],
           "correctIndex": 0,
-          "explanation": "La inicialización debe describir el estado de partida. No garantiza el estado final de un programa que luego modifique la variable."
+          "explanation": "Al abrir el depósito hay cero piezas, así que cantidad debe guardar 0 al empezar. Si después llegan piezas y el programa las suma a cantidad, la variable pasará a guardar el nuevo recuento."
         },
         {
           "type": "fill_code",
@@ -295,12 +295,12 @@
         },
         {
           "type": "paragraph",
-          "text": "La primera declaración usa {4} para que cajas comience con 4. La segunda usa = 9 para que sobres comience con 9. Los dos valores están listos cuando el programa llega a las líneas con std::cout.\n\nEl editor comprueba los caracteres que salen en la consola. Para comprobar de dónde salen los números, sigue el nombre que utiliza cada instrucción y busca el valor inicial en su declaración. Por ejemplo, int cajas{3}; declara e inicializa correctamente la variable. Su primera línea diría Cajas: 3, que incumple la cantidad pedida."
+          "text": "int cajas{4}; hace que cajas empiece con cuatro. En la declaración de sobres, el inicializador = 9 guarda nueve. Cuando se ejecutan las instrucciones con std::cout, la consola muestra Cajas: 4 en el primer renglón y Sobres: 9 en el segundo.\n\nEl editor compara los caracteres de la salida con el mensaje pedido. Si escribieras int cajas{3};, la declaración seguiría siendo válida, pero la primera instrucción con std::cout leería tres de cajas. El primer renglón de la salida sería Cajas: 3 y el ejercicio pide Cajas: 4."
         },
         {
           "type": "output_prediction",
           "language": "cpp",
-          "question": "Recupera tipo, valor y formato: escribe ambas líneas de salida.",
+          "question": "Lee las dos instrucciones con std::cout. ¿Qué texto aparece en cada uno de los dos renglones de la salida?",
           "code": "#include <iostream>\n\nint main() {\n    int nivel{2};\n\n    std::cout << \"nivel=\" << nivel << \"\\n\";\n    std::cout << \"Listo\";\n\n    return 0;\n}\n",
           "answers": [
             "nivel=2\nListo"
@@ -309,14 +309,14 @@
         },
         {
           "type": "multiple_choice",
-          "question": "El programa compiló, pero olvidaste dar valor a una variable local que luego lees. ¿Qué conclusión corresponde?",
+          "question": "Dentro de main declaras int abrigos;. El programa compila. Su siguiente instrucción intenta mostrar abrigos con std::cout. ¿Qué debes corregir para mostrar la cantidad de abrigos que había al empezar?",
           "options": [
-            "Hay que establecer su valor antes de leerla; compilar no basta.",
+            "Dar a abrigos su valor inicial antes de que std::cout lea la variable para mostrar cuántos abrigos hay.",
             "Basta asignar el valor después de la primera lectura y salida.",
             "La compilación correcta garantiza el valor inicial que pide la tarea."
           ],
           "correctIndex": 0,
-          "explanation": "Revisa la primera instrucción que consulta la variable. Si falta darle un valor, corrige su declaración antes de ejecutar. Un cambio después de esa instrucción llegaría tarde para la lectura que ya ocurrió (Stroustrup, 2024)."
+          "explanation": "El compilador acepta int abrigos;, pero esa declaración local deja el entero sin inicializar. Si había tres abrigos, escribe int abrigos = 3;. Así, cuando se ejecute std::cout << abrigos;, la variable ya guardará la cantidad que debe mostrarse (Stroustrup, 2024)."
         }
       ]
     },
@@ -1450,6 +1450,67 @@
         "id": "block_0006_0003",
         "beforeSha256": "9b2130531bc11a179e32b46edb1867e57398ac5160b66e3f008af6fa3a78cd68",
         "afterSha256": "77306abea3cc02a92a8611f3c253520683b8b867a86fe32e854fb4b22d855e02"
+      },
+      {
+        "id": "block_0003_0001",
+        "beforeSha256": "8cb96ec3dc43e377bd3e50530d5e1ee07a439140b085bbf2bed256ed2c97e7c3",
+        "afterSha256": "4ef86273aaeb0af038af1eac8ae2662b528d6c5ef82e8d50e3e4be84468252ea"
+      },
+      {
+        "id": "block_0005_0002",
+        "beforeSha256": "9d817979ecaf69dc81923ce7f0949eeff164d31f4d926533a429fad2e143e7ff",
+        "afterSha256": "aa7f12ac0c77398d4b427b4254ef5a7b91efbd4653e2b94b61e440dcc5a2a51d"
+      },
+      {
+        "id": "block_0001_0004",
+        "beforeSha256": "e7e3296a6fb73f75287db9404853da3b6fbcf023d85ac4ab0c0e8755026b5ec1",
+        "afterSha256": "9c0ef1e1cb09b1460b5d9c9461e8ec64f5e9c4918fbf2ce4dc80de1c7d72b385"
+      },
+      {
+        "id": "block_0003_0002",
+        "beforeSha256": "c5bffdfca92e39fef93b9c88c6ff5a9f9532f6af73ee273303b69fbae300fdf5",
+        "afterSha256": "7ed438284d947df9592887b58606b1c34e724d6a682dfa450334ca72a94a2bb8"
+      },
+      {
+        "id": "block_0003_0002",
+        "beforeSha256": "7ed438284d947df9592887b58606b1c34e724d6a682dfa450334ca72a94a2bb8",
+        "afterSha256": "8bbe9dda2c5aa9bc7d084ea477b12963b2bb7aff12b06289412a760129b5f1ed"
+      },
+      {
+        "id": "block_0005_0003",
+        "beforeSha256": "34830141f77bcd70cb29af4f296cdcc38c8139049b4a3ae23bdbf506514d246b",
+        "afterSha256": "a4acb981feec4149b7be588363b8087e84f2f8e51f194dd9d96e87051e01a4c8"
+      },
+      {
+        "id": "block_0005_0004",
+        "beforeSha256": "7dcae359f1178fbf1f9907ba7dad48260f75c277a4cfc9d76737a892c803b448",
+        "afterSha256": "28b1d9403b59ccd9ad5fdeab1a6555d9a9c41090e53e5143c8be9b44954faedb"
+      },
+      {
+        "id": "block_0005_0004",
+        "beforeSha256": "28b1d9403b59ccd9ad5fdeab1a6555d9a9c41090e53e5143c8be9b44954faedb",
+        "afterSha256": "4f15e07ddf4dc82bedbec0f3a88025dc3aef8c17d3a14bf236825717bfb34fc3"
+      },
+      {
+        "id": "p1u2l2_orden_de_consulta",
+        "beforeSha256": "19fc39b688bc6df63083335f888dc6bc708850b5a2c68ce96157a157a9bdbcf2",
+        "afterSha256": "09157191d3a83116337c4138f4d4ea059f93ba132ef0db33c16d1100df9d2bb3",
+        "reviewPaths": [
+          "/reviewFeedback"
+        ]
+      },
+      {
+        "id": "block_0002_0004",
+        "beforeSha256": "c319a98d875de7821924faf53fc875b17e8cfaaa5a4916da638792cbef0aaa65",
+        "afterSha256": "1279602edd9e904acc358c738ccaa0a7ab59c03a78c88dc23b275fadb9e6cb97",
+        "reviewPaths": [
+          "/reviewFeedback"
+        ]
+      },
+      {
+        "id": "block_0002_0003",
+        "beforeSha256": "7f41522d1194363234c2c8c6a1263e074968d7e59f3a62753d3675bdcb98d48a",
+        "afterSha256": "308456f0caa225aed278d6db5bde9bbbe90503c439e01a8df9fbc2b14661c07e"
       }
     ],
     "orderRefinements": [
@@ -1614,6 +1675,134 @@
           "language": "cpp",
           "code": "#include <iostream>\n\nint main() {\n    int cajas{4};\n    int sobres{9};\n    std::cout << \"Cajas: \" << cajas << '\\n';\n    std::cout << \"Sobres: \" << sobres;\n    return 0;\n}\n"
         }
+      }
+    ],
+    "choiceRevisions": [
+      {
+        "id": "block_0003_0002",
+        "block": {
+          "type": "multiple_choice",
+          "question": "La consigna dice que un depósito comienza vacío. ¿Qué razón justifica inicializar cantidad con cero?",
+          "options": [
+            "Porque el valor inicial debe representar la situación que especifica la consigna.",
+            "Porque cualquier variable entera empieza automáticamente en cero.",
+            "Porque cero siempre es la cantidad final."
+          ],
+          "correctIndex": 0,
+          "explanation": "La inicialización debe describir el estado de partida. No garantiza el estado final de un programa que luego modifique la variable."
+        },
+        "optionIndex": 0,
+        "replacement": "El depósito empieza vacío, así que cantidad debe guardar cero piezas cuando empieza el programa.",
+        "semanticBefore": {
+          "block": "block_0003_0002",
+          "path": "/options/0",
+          "sourceSha256": "fc4671248f49a560e1372c6ef623e688b8bd9c94aaf2dcb14b7cfbfb95d8be1d",
+          "spans": []
+        },
+        "semanticAfter": {
+          "block": "block_0003_0002",
+          "path": "/options/0",
+          "sourceSha256": "f060cbd2a26b182dc24b121cf436cd19948cf55d27ac0e8fe9c58d1a89161ebc",
+          "spans": [
+            {
+              "start": 35,
+              "end": 43,
+              "text": "cantidad",
+              "role": "cpp",
+              "reading": "technical"
+            }
+          ]
+        },
+        "semanticRootBefore": true
+      },
+      {
+        "id": "block_0005_0004",
+        "block": {
+          "type": "multiple_choice",
+          "question": "El programa compiló, pero olvidaste dar valor a una variable local que luego lees. ¿Qué conclusión corresponde?",
+          "options": [
+            "Hay que establecer su valor antes de leerla; compilar no basta.",
+            "Basta asignar el valor después de la primera lectura y salida.",
+            "La compilación correcta garantiza el valor inicial que pide la tarea."
+          ],
+          "correctIndex": 0,
+          "explanation": "Revisa la primera instrucción que consulta la variable. Si falta darle un valor, corrige su declaración antes de ejecutar. Un cambio después de esa instrucción llegaría tarde para la lectura que ya ocurrió (Stroustrup, 2024)."
+        },
+        "optionIndex": 0,
+        "replacement": "Dar a abrigos su valor inicial antes de que std::cout lea la variable para mostrar cuántos abrigos hay.",
+        "semanticBefore": {
+          "block": "block_0005_0004",
+          "path": "/options/0",
+          "sourceSha256": "492d810f59a0c4fe08d4380296814d3be4696ae8972c0a128a8278471f0ebe7f",
+          "spans": []
+        },
+        "semanticAfter": {
+          "block": "block_0005_0004",
+          "path": "/options/0",
+          "sourceSha256": "a2a14976fe65189072697218801f3e9b0c75a555c83b755b756a7479381c910a",
+          "spans": [
+            {
+              "start": 6,
+              "end": 13,
+              "text": "abrigos",
+              "role": "cpp",
+              "reading": "technical"
+            },
+            {
+              "start": 44,
+              "end": 53,
+              "text": "std::cout",
+              "role": "cpp",
+              "reading": "technical"
+            }
+          ]
+        },
+        "semanticRootBefore": true
+      },
+      {
+        "id": "block_0002_0003",
+        "block": {
+          "type": "multiple_choice",
+          "question": "¿Qué intención expresa int asientos{0};?",
+          "options": [
+            "Dejar el valor para que el compilador elija.",
+            "Crear texto que contiene 0.",
+            "Crear un entero preparado con valor cero."
+          ],
+          "correctIndex": 2,
+          "explanation": "En int asientos{0};, {0} es el inicializador. El literal 0 proporciona el entero que guarda asientos al comenzar."
+        },
+        "optionIndex": 2,
+        "replacement": "Crear la variable entera asientos y guardar cero en ella al crearla.",
+        "semanticBefore": {
+          "block": "block_0002_0003",
+          "path": "/options/2",
+          "sourceSha256": "23a52bc1dd183c9e9fe159e60c13a904a3a17eb26c11c132e42739bc456c689f",
+          "spans": [
+            {
+              "start": 36,
+              "end": 40,
+              "text": "cero",
+              "role": "data",
+              "reading": "natural"
+            }
+          ]
+        },
+        "semanticAfter": {
+          "block": "block_0002_0003",
+          "path": "/options/2",
+          "sourceSha256": "3f4db112c916f2e0585436cc61841e5062af6079396f9b242bdff0393a59bfa3",
+          "spans": [
+            {
+              "start": 25,
+              "end": 33,
+              "text": "asientos",
+              "role": "cpp",
+              "reading": "technical"
+            }
+          ]
+        },
+        "semanticRootBefore": true
       }
     ]
   },
@@ -1923,19 +2112,54 @@
       {
         "block": "block_0001_0004",
         "path": "/explanation",
-        "sourceSha256": "c2f8d22999c5e8b5e3985fc888ffcf16ea0611fad7b59f5543456877de665dc5",
+        "sourceSha256": "e80191e6690a51d2016da3406b7e333c84bc8df19c604a775aba8c2aa5d45af7",
         "spans": [
           {
-            "start": 16,
-            "end": 20,
+            "start": 10,
+            "end": 14,
             "text": "main",
             "role": "cpp",
             "reading": "technical"
           },
           {
-            "start": 38,
-            "end": 45,
+            "start": 34,
+            "end": 41,
             "text": "boletos",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 59,
+            "end": 61,
+            "text": "10",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 82,
+            "end": 91,
+            "text": "std::cout",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 157,
+            "end": 164,
+            "text": "boletos",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 176,
+            "end": 178,
+            "text": "10",
+            "role": "output",
+            "reading": "natural"
+          },
+          {
+            "start": 204,
+            "end": 213,
+            "text": "return 0;",
             "role": "cpp",
             "reading": "technical"
           }
@@ -2089,32 +2313,32 @@
       {
         "block": "block_0002_0003",
         "path": "/options/2",
-        "sourceSha256": "23a52bc1dd183c9e9fe159e60c13a904a3a17eb26c11c132e42739bc456c689f",
+        "sourceSha256": "3f4db112c916f2e0585436cc61841e5062af6079396f9b242bdff0393a59bfa3",
         "spans": [
           {
-            "start": 36,
-            "end": 40,
-            "text": "cero",
-            "role": "data",
-            "reading": "natural"
+            "start": 25,
+            "end": 33,
+            "text": "asientos",
+            "role": "cpp",
+            "reading": "technical"
           }
         ]
       },
       {
         "block": "block_0002_0004",
         "path": "/question",
-        "sourceSha256": "f62f5abdc8690402247ceec2da4979d39e9b7c35d13ca9ad61afd7528c9e5ab6",
+        "sourceSha256": "7ab11f17b44420f63f9bd76601a0df74d89f3b7f82b523912226358c9c629836",
         "spans": [
           {
-            "start": 55,
-            "end": 60,
+            "start": 72,
+            "end": 77,
             "text": "pisos",
             "role": "cpp",
             "reading": "technical"
           },
           {
-            "start": 86,
-            "end": 94,
+            "start": 98,
+            "end": 106,
             "text": "ventanas",
             "role": "cpp",
             "reading": "technical"
@@ -2194,8 +2418,23 @@
       {
         "block": "block_0002_0004",
         "path": "/reviewFeedback",
-        "sourceSha256": "8399051f25dd5fe492e4f76c38a11deca44ce3d073601308f6066bebf1ce96d2",
-        "spans": []
+        "sourceSha256": "0eaa03926eeec6952c29b730eff7e15fd18d5689e2f11e818f4c20e13c1900e5",
+        "spans": [
+          {
+            "start": 83,
+            "end": 88,
+            "text": "pisos",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 106,
+            "end": 114,
+            "text": "ventanas",
+            "role": "cpp",
+            "reading": "technical"
+          }
+        ]
       },
       {
         "block": "block_0003_0000",
@@ -2206,82 +2445,82 @@
       {
         "block": "block_0003_0001",
         "path": "/text",
-        "sourceSha256": "ec473f43b72690228b552c5007b2617243435f705dbee27572ec0b7586ffa27c",
+        "sourceSha256": "002d24d66e8eea120c3e9922c8949368d0ba04505557b056bfa204ca5d3038d3",
         "spans": [
           {
-            "start": 22,
-            "end": 27,
+            "start": 83,
+            "end": 88,
             "text": "pisos",
             "role": "cpp",
             "reading": "technical"
           },
           {
-            "start": 35,
-            "end": 36,
+            "start": 96,
+            "end": 97,
             "text": "3",
             "role": "data",
             "reading": "natural"
           },
           {
-            "start": 39,
-            "end": 47,
+            "start": 100,
+            "end": 108,
             "text": "ventanas",
             "role": "cpp",
             "reading": "technical"
           },
           {
-            "start": 55,
-            "end": 57,
+            "start": 116,
+            "end": 118,
             "text": "12",
             "role": "data",
             "reading": "natural"
           },
           {
-            "start": 78,
-            "end": 87,
+            "start": 123,
+            "end": 161,
+            "text": "std::cout << pisos << \" \" << ventanas;",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 179,
+            "end": 184,
+            "text": "pisos",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 230,
+            "end": 233,
+            "text": "\" \"",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 246,
+            "end": 254,
+            "text": "ventanas",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 293,
+            "end": 297,
+            "text": "3 12",
+            "role": "output",
+            "reading": "natural"
+          },
+          {
+            "start": 354,
+            "end": 363,
             "text": "std::cout",
             "role": "cpp",
             "reading": "technical"
           },
           {
-            "start": 133,
-            "end": 138,
-            "text": "pisos",
-            "role": "cpp",
-            "reading": "technical"
-          },
-          {
-            "start": 149,
-            "end": 150,
-            "text": "3",
-            "role": "output",
-            "reading": "natural"
-          },
-          {
-            "start": 186,
-            "end": 189,
-            "text": "\" \"",
-            "role": "string",
-            "reading": "natural"
-          },
-          {
-            "start": 198,
-            "end": 206,
-            "text": "ventanas",
-            "role": "cpp",
-            "reading": "technical"
-          },
-          {
-            "start": 217,
-            "end": 219,
-            "text": "12",
-            "role": "output",
-            "reading": "natural"
-          },
-          {
-            "start": 244,
-            "end": 248,
-            "text": "3 12",
+            "start": 384,
+            "end": 388,
+            "text": "12 3",
             "role": "output",
             "reading": "natural"
           }
@@ -2290,35 +2529,65 @@
       {
         "block": "block_0003_0002",
         "path": "/question",
-        "sourceSha256": "84a922b3530d5ddf009bf1d767ddcba84e26ef80fad54cd57294a90bcd245407",
+        "sourceSha256": "996f387dde2850f98b8bd57631de9063fb75fa053cbb31f093b905c4e2a91de6",
         "spans": [
           {
-            "start": 82,
-            "end": 90,
+            "start": 28,
+            "end": 36,
             "text": "cantidad",
             "role": "cpp",
             "reading": "technical"
           },
           {
-            "start": 95,
-            "end": 99,
-            "text": "cero",
-            "role": "data",
-            "reading": "natural"
+            "start": 163,
+            "end": 171,
+            "text": "cantidad",
+            "role": "cpp",
+            "reading": "technical"
           }
         ]
       },
       {
         "block": "block_0003_0002",
         "path": "/explanation",
-        "sourceSha256": "ee13d32927e8f682a3861090d32d1f8d956c4f0bde5e6ed4d87b26803fa64f83",
-        "spans": []
+        "sourceSha256": "6316b968e2b86e1ab42947036e5176519db04cca8f37bc0d2093be63f1c6a1fe",
+        "spans": [
+          {
+            "start": 46,
+            "end": 54,
+            "text": "cantidad",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 68,
+            "end": 69,
+            "text": "0",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 132,
+            "end": 140,
+            "text": "cantidad",
+            "role": "cpp",
+            "reading": "technical"
+          }
+        ]
       },
       {
         "block": "block_0003_0002",
         "path": "/options/0",
-        "sourceSha256": "fc4671248f49a560e1372c6ef623e688b8bd9c94aaf2dcb14b7cfbfb95d8be1d",
-        "spans": []
+        "sourceSha256": "f060cbd2a26b182dc24b121cf436cd19948cf55d27ac0e8fe9c58d1a89161ebc",
+        "spans": [
+          {
+            "start": 35,
+            "end": 43,
+            "text": "cantidad",
+            "role": "cpp",
+            "reading": "technical"
+          }
+        ]
       },
       {
         "block": "block_0003_0002",
@@ -2536,68 +2805,89 @@
       {
         "block": "block_0005_0002",
         "path": "/text",
-        "sourceSha256": "b72b728aee5cb0057347f52bd057774775aa5a4b1d0fc4f8050793a78b1f5cd7",
+        "sourceSha256": "cce85875075ef5a01dbf2d3832f0d9cc3e5bffc509e7d632f97614edf4655252",
         "spans": [
           {
-            "start": 27,
-            "end": 30,
-            "text": "{4}",
+            "start": 0,
+            "end": 13,
+            "text": "int cajas{4};",
             "role": "cpp",
             "reading": "technical"
           },
           {
-            "start": 40,
-            "end": 45,
+            "start": 23,
+            "end": 28,
             "text": "cajas",
             "role": "cpp",
             "reading": "technical"
           },
           {
-            "start": 59,
-            "end": 60,
-            "text": "4",
-            "role": "data",
-            "reading": "natural"
-          },
-          {
-            "start": 77,
-            "end": 80,
-            "text": "= 9",
-            "role": "cpp",
-            "reading": "technical"
-          },
-          {
-            "start": 90,
-            "end": 96,
+            "start": 70,
+            "end": 76,
             "text": "sobres",
             "role": "cpp",
             "reading": "technical"
           },
           {
-            "start": 110,
-            "end": 111,
-            "text": "9",
-            "role": "data",
-            "reading": "natural"
+            "start": 95,
+            "end": 98,
+            "text": "= 9",
+            "role": "cpp",
+            "reading": "technical"
           },
           {
-            "start": 184,
-            "end": 193,
+            "start": 154,
+            "end": 163,
             "text": "std::cout",
             "role": "cpp",
             "reading": "technical"
           },
           {
-            "start": 401,
-            "end": 414,
+            "start": 184,
+            "end": 192,
+            "text": "Cajas: 4",
+            "role": "output",
+            "reading": "natural"
+          },
+          {
+            "start": 216,
+            "end": 225,
+            "text": "Sobres: 9",
+            "role": "output",
+            "reading": "natural"
+          },
+          {
+            "start": 326,
+            "end": 339,
             "text": "int cajas{3};",
             "role": "cpp",
             "reading": "technical"
           },
           {
-            "start": 486,
-            "end": 494,
+            "start": 412,
+            "end": 421,
+            "text": "std::cout",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 437,
+            "end": 442,
+            "text": "cajas",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 481,
+            "end": 489,
             "text": "Cajas: 3",
+            "role": "output",
+            "reading": "natural"
+          },
+          {
+            "start": 510,
+            "end": 518,
+            "text": "Cajas: 4",
             "role": "output",
             "reading": "natural"
           }
@@ -2606,8 +2896,16 @@
       {
         "block": "block_0005_0003",
         "path": "/question",
-        "sourceSha256": "7a3876268ef7fcaa29a778098c419a9419a55e3a6fa570d59830c9b9e84710ad",
-        "spans": []
+        "sourceSha256": "4ea8e3fdbef5b5d11c47cc91d3b99e2b15c0e866e473a3f59efb5ac689870989",
+        "spans": [
+          {
+            "start": 30,
+            "end": 39,
+            "text": "std::cout",
+            "role": "cpp",
+            "reading": "technical"
+          }
+        ]
       },
       {
         "block": "block_0005_0003",
@@ -2654,17 +2952,67 @@
       {
         "block": "block_0005_0004",
         "path": "/question",
-        "sourceSha256": "cd1e043c14bab6ec0cb99e9578bb3a1b5c5e2da88cf3eb6657b7fa7cc39f74b4",
-        "spans": []
+        "sourceSha256": "ad32a5a512762a3f69b667ccebeb9c1105320c272994950f967be78c44dfe3c7",
+        "spans": [
+          {
+            "start": 10,
+            "end": 14,
+            "text": "main",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 24,
+            "end": 36,
+            "text": "int abrigos;",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 100,
+            "end": 107,
+            "text": "abrigos",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 112,
+            "end": 121,
+            "text": "std::cout",
+            "role": "cpp",
+            "reading": "technical"
+          }
+        ]
       },
       {
         "block": "block_0005_0004",
         "path": "/explanation",
-        "sourceSha256": "7f048e5888202ed8352e8fcbc9a581454dea59a2521d58f7d542e9dba8834719",
+        "sourceSha256": "76d64c593c819203bf48e4d0c984401439eff56bf3551c666068d85cef0b635f",
         "spans": [
           {
-            "start": 206,
-            "end": 224,
+            "start": 21,
+            "end": 33,
+            "text": "int abrigos;",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 125,
+            "end": 141,
+            "text": "int abrigos = 3;",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 166,
+            "end": 187,
+            "text": "std::cout << abrigos;",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 244,
+            "end": 262,
             "text": "(Stroustrup, 2024)",
             "role": "citation",
             "reading": "natural"
@@ -2674,8 +3022,23 @@
       {
         "block": "block_0005_0004",
         "path": "/options/0",
-        "sourceSha256": "492d810f59a0c4fe08d4380296814d3be4696ae8972c0a128a8278471f0ebe7f",
-        "spans": []
+        "sourceSha256": "a2a14976fe65189072697218801f3e9b0c75a555c83b755b756a7479381c910a",
+        "spans": [
+          {
+            "start": 6,
+            "end": 13,
+            "text": "abrigos",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 44,
+            "end": 53,
+            "text": "std::cout",
+            "role": "cpp",
+            "reading": "technical"
+          }
+        ]
       },
       {
         "block": "block_0005_0004",
@@ -2961,11 +3324,11 @@
       {
         "block": "p1u2l2_orden_de_consulta",
         "path": "/question",
-        "sourceSha256": "1bff36c8e9af887a7c5d46695060345d7b331be859ee7c6011cc18856f0da597",
+        "sourceSha256": "bfcfe3d672634b79a5021f77a1c71ff04b3dd7aa31a19a40d5bf80055e807338",
         "spans": [
           {
-            "start": 46,
-            "end": 55,
+            "start": 40,
+            "end": 49,
             "text": "std::cout",
             "role": "cpp",
             "reading": "technical"
@@ -3017,8 +3380,16 @@
       {
         "block": "p1u2l2_orden_de_consulta",
         "path": "/reviewFeedback",
-        "sourceSha256": "f82c2796442b25170f0ed13f84d8e43bdd503637fce034f50b4884a0149d2583",
-        "spans": []
+        "sourceSha256": "f30a350627efbf8cc0072e69b366766c559f52bdf9136045112996f1f6c24013",
+        "spans": [
+          {
+            "start": 111,
+            "end": 120,
+            "text": "std::cout",
+            "role": "cpp",
+            "reading": "technical"
+          }
+        ]
       },
       {
         "block": "p1u2l2_valor_entero_en_llaves",

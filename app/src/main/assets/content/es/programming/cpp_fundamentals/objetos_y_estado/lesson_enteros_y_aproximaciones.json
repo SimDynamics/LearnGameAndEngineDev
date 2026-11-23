@@ -43,7 +43,7 @@
         },
         {
           "type": "paragraph",
-          "text": "Un literal escribe un valor directamente en el código. En estos ejemplos, 7 tiene tipo int y 7.0 tiene tipo double. Los dos representan siete unidades (Köppe et al., 2023).\n\nAhora mira la declaración double longitud_metros = 7;. La palabra double indica el tipo de la variable. El literal 7 es de tipo int y su valor pasa a double al guardarse. A ese paso de un tipo a otro lo llamamos conversión (Stroustrup, 2024).\n\nCon el formato que usamos, std::cout puede mostrar 7 en los dos casos. Para conocer el tipo de la variable, mira su declaración. La consola muestra su valor con el formato de salida."
+          "text": "Un literal escribe un valor directamente en el código. 7 tiene tipo int y 7.0 tiene tipo double. Los dos representan siete unidades (Köppe et al., 2023).\n\nEn double longitud_metros = 7;, la palabra double indica el tipo de la variable. El literal 7 tiene tipo int. Cuando se crea longitud_metros, el programa convierte el siete a double para guardarlo en ella. Obtener un valor de otro tipo a partir del primero se llama conversión (Stroustrup, 2024).\n\nCon el formato de salida que usamos aquí, std::cout muestra 7 tanto al escribir el entero siete como al escribir el siete guardado en longitud_metros. Para saber el tipo de una variable, mira su declaración en el código."
         },
         {
           "type": "output_prediction",
@@ -53,7 +53,7 @@
           "answers": [
             "6 6"
           ],
-          "explanation": "El primer seis se lee de entero y el segundo, de decimal. Con el formato de std::cout, la consola muestra 6 6."
+          "explanation": "La primera consulta de std::cout lee el valor de entero, declarado como int con el literal 6. La segunda consulta lee el valor de decimal, declarado como double con el literal 6.0. Los dos valores representan seis unidades. Con el formato inicial de std::cout, el renglón de la salida es 6 6."
         },
         {
           "type": "multiple_choice",
@@ -99,7 +99,7 @@
         },
         {
           "type": "paragraph",
-          "text": "La primera línea de std::cout muestra 3 y escribe el salto de línea. La segunda muestra 3.5. Mira los valores a cada lado de / para explicar por qué cambia el resultado."
+          "text": "La instrucción std::cout << 7 / 2 << \"\\n\"; divide dos números enteros. La consola muestra 3 y el salto de línea deja preparado el segundo renglón. La instrucción std::cout << 7.0 / 2; usa un double en la división. Por eso aparece 3.5 en el segundo renglón de la salida."
         },
         {
           "type": "output_prediction",
@@ -146,7 +146,7 @@
         },
         {
           "type": "inline_fill_code",
-          "question": "Completa los tipos: ocho cajas son una cantidad entera; 1.5 metros admite una parte fraccionaria.",
+          "question": "Escribe el tipo de cada variable en su declaración. La variable cajas debe contar ocho cajas completas. La variable metros debe guardar una longitud de un metro y medio.",
           "template": "#include <iostream>\n\nint main() {\n    [] cajas = 8;\n    [] metros = 1.5;\n    std::cout << cajas << \" \" << metros;\n\n    return 0;\n}\n",
           "answers": [
             "int",
@@ -163,7 +163,7 @@
               "double"
             ]
           ],
-          "reviewFeedback": "Relaciona cada hueco con el dato que conservará esa variable. Distingue un recuento en unidades completas de una medida que necesita parte fraccionaria; revisa qué tipo de los practicados expresa cada representación. Mantén los valores iniciales del programa.",
+          "reviewFeedback": "Mira los nombres cajas y metros en las dos declaraciones. Una variable cuenta objetos completos. ¿Cuál debe guardar además el medio metro de la longitud?",
           "explanation": "Escribimos int en la línea de cajas porque contamos ocho cajas enteras. Escribimos double en la línea de metros porque queremos guardar un metro y medio. La consola muestra 8 1.5. El espacio sale del texto entre comillas en la línea de std::cout (Stroustrup, 2024).\n\nSi escribiste signed int, int signed o signed en el primer hueco, las tres formas nombran el mismo tipo que int. En el resto de la lección usaremos int (Köppe et al., 2023)."
         },
         {
@@ -177,7 +177,7 @@
           "id": "p1u2l5_reparar_divisor_literal",
           "question": "Quieres repartir once metros de cinta en dos partes iguales. En el hueco después de /, escribe el número dos como double. Escribe el dos con punto decimal. Puedes poner un cero después del punto. Cada parte debe medir 5.5 metros.",
           "reviewFeedback": "Mira el tipo de cinta_metros a la izquierda de la división. El hueco debe aportar un dos de tipo double.",
-          "explanation": "2.0 escribe el divisor como double. El once se convierte para hacer la división en ese mismo tipo. La mitad de once es 5.5 y la consola muestra 5.5. También puedes escribir el literal 2.."
+          "explanation": "Al escribir 2.0 después de /, el divisor tiene tipo double. Para dividir, el programa convierte a double el once que lee de cinta_metros. Once entre dos da cinco y medio, y la consola muestra 5.5. También puedes escribir 2. como divisor. En esa forma el punto pertenece al literal y puedes omitir el cero que iría después."
         }
       ]
     },
@@ -189,11 +189,11 @@
         },
         {
           "type": "paragraph",
-          "text": "En el relleno anterior, cajas guarda el recuento de ocho como int. metros guarda la medida de uno y medio como double. std::cout muestra 8 1.5."
+          "text": "Cuando un programa hace un cálculo, puedes necesitar tanto el resultado como las cantidades que usaste para obtenerlo. Por ejemplo, si ancho y largo guardan las medidas de una mesa, puedes guardar su área en otra variable llamada area. Así podrás mostrar cuánto mide el área y consultar después el ancho que usaste para calcularla."
         },
         {
           "type": "paragraph",
-          "text": "En el programa de abajo, un rectángulo mide uno y medio de ancho y dos de largo. La expresión ancho * largo lee las dos medidas y produce 3. La declaración guarda ese valor en area. ancho sigue guardando 1.5. Después de revisar el código, escribe lo que verás en la consola (Stroustrup, 2024)."
+          "text": "En el siguiente programa, el rectángulo mide un metro y medio de ancho y dos metros de largo. La expresión ancho * largo multiplica esas longitudes. Su resultado es un área de tres metros cuadrados. La declaración de area guarda ese resultado. Como la multiplicación sólo lee ancho, esa variable conserva el metro y medio inicial (Stroustrup, 2024)."
         },
         {
           "type": "output_prediction",
@@ -213,7 +213,7 @@
           "answers": [
             "9"
           ],
-          "explanation": "Con el dígito 9 antes del punto, el literal completo es 9.0. Ese operando de tipo double permite conservar el medio metro. La consola muestra 4.5."
+          "explanation": "Con el dígito 9 antes del punto, el literal completo es 9.0 y tiene tipo double. La división de nueve entre dos da cuatro y medio. La variable cociente guarda ese resultado y std::cout muestra 4.5."
         },
         {
           "type": "heading",
@@ -221,7 +221,7 @@
         },
         {
           "type": "paragraph",
-          "text": "Hay cinco metros de cinta. Añades un metro y luego repartes toda la cinta en dos partes. Escribe dentro de los paréntesis la cantidad que vas a repartir. En este ejemplo, la suma dentro de los paréntesis corresponde a toda la cinta (Stroustrup, 2024)."
+          "text": "Hay cinco metros de cinta. Añades un metro y luego repartes toda la cinta en dos partes iguales. Para saber cuánto mide cada parte, primero necesitas sumar las dos longitudes. En el programa de abajo, los paréntesis de (longitud_metros + 1.0) / 2 indican que se calcula la suma antes de dividirla entre dos. Observa también qué parte de la cinta se divide en la expresión escrita sin paréntesis (Stroustrup, 2024)."
         },
         {
           "type": "code",
@@ -270,7 +270,7 @@
           "question": "La consola dice Longitud: 2.5 m. ¿Qué te aclara la letra m que aparece después del número?",
           "options": [
             "Que cualquier cálculo con ese número será exacto.",
-            "La unidad con la que debe interpretarse.",
+            "Que la longitud que muestra la consola es de 2.5 metros.",
             "Que el valor dejó de ser double."
           ],
           "correctIndex": 1,
@@ -278,10 +278,10 @@
         },
         {
           "type": "multiple_choice",
-          "question": "¿Qué afirmación sobre double es adecuada?",
+          "question": "Quieres guardar una medida de dos metros y medio y otra de una décima de metro. ¿Qué afirmación describe con qué precisión puede representarlas una variable double en este equipo?",
           "options": [
             "Representa exactamente todo decimal que podamos escribir.",
-            "Permite aproximaciones numéricas con una precisión y un rango finitos.",
+            "double guarda exactamente dos metros y medio. Para una décima de metro guarda un número muy cercano al valor de la medida.",
             "Admite fracciones y puede guardar magnitudes sin ningún límite."
           ],
           "correctIndex": 1,
@@ -361,11 +361,11 @@
         },
         {
           "type": "multiple_choice",
-          "question": "¿Cuál es la primera revisión si se esperaba 4.5 y el programa muestra 4 a partir de 9 / 2?",
+          "question": "Al evaluar 9 / 2, el programa obtiene cuatro. Necesitas que calcule cuatro y medio. ¿Qué debes revisar en la división para saber por qué se perdió el medio?",
           "options": [
             "Si basta añadir .0 al mensaje impreso sin cambiar el cálculo.",
             "Si el destino double garantiza conservar la fracción ya descartada.",
-            "Si ambos operandos eran enteros al calcular."
+            "Revisar los tipos de los números a la izquierda y a la derecha de /. Si ambos son enteros, la división descarta la parte fraccionaria."
           ],
           "correctIndex": 2,
           "explanation": "Mira primero 9 / 2. La expresión usa dos enteros y da 4. Ese es el valor que recibe la variable donde guardas la división, incluso si es de tipo double."
@@ -385,7 +385,7 @@
         },
         {
           "type": "inline_fill_code",
-          "question": "Completa el programa para obtener Parte: 4.5 m. En el primer hueco escribe el tipo adecuado entre int y double, conservando partes como int. En los otros dos escribe únicamente los nombres de las variables: primero la longitud que se reparte y después el número de partes. El literal inicial 9 permanece sin punto: decide el tipo que tendrá la variable al participar en la división. Para revisar el reparto, distingue el tipo de cada operando del tipo que recibe el resultado; después comprueba qué cantidad debe dividirse y cuál indica el número de partes.",
+          "question": "El programa debe repartir nueve metros en dos partes iguales y mostrar Parte: 4.5 m. En el hueco de la declaración de longitud_metros, escribe int o double. El valor inicial está escrito como 9 y la variable partes ya es de tipo int. Elige el tipo de longitud_metros que permita conservar el medio metro al dividir.\n\nEn los dos huecos de la división escribe los nombres de las variables. A la izquierda de / va la longitud que se reparte. A la derecha va el número de partes.",
           "language": "cpp",
           "template": "#include <iostream>\n\nint main() {\n    [] longitud_metros = 9;\n    int partes = 2;\n\n    double longitud_por_parte = [] / [];\n\n    std::cout << \"Parte: \" << longitud_por_parte << \" m\";\n\n    return 0;\n}\n",
           "answers": [
@@ -394,7 +394,7 @@
             "partes"
           ],
           "id": "cpp_fundamentals__objetos_y_estado__enteros_y_aproximaciones__tipo_y_operandos_reparto",
-          "reviewFeedback": "Antes de elegir el destino del cociente, revisa el tipo de cada dato que participa en la división. Relaciona también el orden de los operandos con repartir una longitud en partes iguales. Un destino capaz de guardar fracciones no cambia una división que ya se calculó.",
+          "reviewFeedback": "Mira la expresión a la derecha del signo igual cuando el programa calcula la longitud de una parte. ¿Qué variable guarda la longitud total y cuál guarda el número de partes? Para saber si la división descarta el medio metro, revisa el tipo de longitud_metros y el de partes.",
           "explanation": "Los huecos se completan con double, longitud_metros y partes, en ese orden. La primera definición hace que longitud_metros sea double, aunque su inicializador se escriba como el literal entero 9. El valor se convierte al tipo de la variable al inicializarla; esa variable ya aporta un operando de coma flotante cuando se realiza la división (Stroustrup, 2024).\n\nSe divide la longitud disponible entre el número de partes. Para nueve metros y dos partes iguales, el resultado es 4.5 metros. Si ambos operandos fueran enteros, 9 / 2 produciría 4; guardarlo después en un double no recuperaría la media unidad descartada. Dos partes de cuatro metros sumarían ocho, de modo que ese cálculo no cumpliría el reparto solicitado (Stroustrup, 2024).\n\nLa salida Parte: 4.5 m combina el resultado calculado con el rótulo, los espacios y la unidad que ya están escritos. Así se comprueban dos aspectos distintos: el cálculo conserva la fracción necesaria y el mensaje comunica qué longitud representa. Cambiar sólo el tipo que recibe el cociente, sin revisar los operandos, no garantiza esas dos condiciones."
         },
         {
@@ -2178,6 +2178,87 @@
         "id": "p1u2l5_referencia_agrupacion",
         "beforeSha256": "eb5e48b86fa3138d544c85af64b0d04573cefe757d54062e7db405e123b44289",
         "afterSha256": "cb66b8e14275e82c7216e5e3f21fad041a2648dcf1ced2755bbab0347aa1b476"
+      },
+      {
+        "id": "block_0001_0001",
+        "beforeSha256": "9a089d7e54609d2f0c5215fac2f349c70c5493ac3efe2c87f81969feeeffbdc7",
+        "afterSha256": "03cf5b5fcd533ed6765c08a366b34a8564fa265f9ed9e3f6c51f795a291b3206"
+      },
+      {
+        "id": "p1u2l5_leer_renglones",
+        "beforeSha256": "c730abae82f81b3b00c22d03f553ea347890594a31246b291c03f70f29cfee7e",
+        "afterSha256": "c29ed8846009945a25096c82f56567f4c2ee8cd4acbf30b381219ca044208794"
+      },
+      {
+        "id": "block_0004_0001",
+        "beforeSha256": "d92f37451225a2519d04900fdcb87488ae8f8ae2fc9a7ea9cc8101446a3dd4d7",
+        "afterSha256": "985606c35b6f192c0b8dcdcb11d0918d177290f4c7f9e005c452a5163e6aa180"
+      },
+      {
+        "id": "block_0004_0002",
+        "beforeSha256": "3cfd032514cf3ad076de0f59bb59e9ec1285a853e287ea325909dad1c642e914",
+        "afterSha256": "08a956d07c737e6daba7703a7ae1202750f8e521dfadef4394ac7158424fb7d8"
+      },
+      {
+        "id": "p1u2l5_agrupar_datos",
+        "beforeSha256": "7f5fcd49cf30646c14d937a30851b2c7384f3fa69623b06951c0c416e85043a0",
+        "afterSha256": "d16183892bf4a406c16f07f862e54a0a5f5ba68e3bb1347b8190966ab38a8213"
+      },
+      {
+        "id": "block_0001_0002",
+        "beforeSha256": "26f573a97f6fda038fab0361d634b427ccc1066ffb6f3f1072574e2d375ca3c7",
+        "afterSha256": "db1017ec6527e54566d834bbd07896a60e2ce7bf0716915ea5c8f290711838ae"
+      },
+      {
+        "id": "block_0003_0003",
+        "beforeSha256": "72b065273d5a3e1a1a606bed4437883c54f9888dbd8f783df34d12d7256a6904",
+        "afterSha256": "7765fe43f4b5d5d4c69fb27eb67c366193fb125fb6c942b6938d56ab68970c9d",
+        "reviewPaths": [
+          "/reviewFeedback"
+        ]
+      },
+      {
+        "id": "p1u2l5_reparar_divisor_literal",
+        "beforeSha256": "af20b99ecc60597846208ec3b3eaa8d4d3e482ccd12e663a78451177da6f8298",
+        "afterSha256": "9667428faa9341723ab1d7114c8cab7f10716989565415458fc3851218e64a8c"
+      },
+      {
+        "id": "block_0004_0004",
+        "beforeSha256": "c393f695322bd042dcadc02acabefb70d81b2106ba6d9fc5fc7343f58a740de9",
+        "afterSha256": "a6bae634a65973c35d92820ac7a0062af6493e040a02d537a3acb5973d9eaf45"
+      },
+      {
+        "id": "block_0005_0003",
+        "beforeSha256": "f989f5600ee921bd8a653e2b03dda965beed93c9408a684296b10085550a6337",
+        "afterSha256": "a0e75416174492d757c5bd985f28a5665b697c06bbf0064bddcecdbacc3af802"
+      },
+      {
+        "id": "block_0005_0003",
+        "beforeSha256": "a0e75416174492d757c5bd985f28a5665b697c06bbf0064bddcecdbacc3af802",
+        "afterSha256": "6bd292d94d8cd1cab346c714b0f6d5d599dfa7c799f746b8140a15ef0cfa7b97"
+      },
+      {
+        "id": "block_0007_0004",
+        "beforeSha256": "0b9e0d792bb3747906b2b6a3f33e430af48814a1be995f3b17abeee92bcfe944",
+        "afterSha256": "d7abdb3a61e23ccbab51e21bbfa3a675565c351ce5efeb4abc03c11e3f00f9a5"
+      },
+      {
+        "id": "block_0007_0004",
+        "beforeSha256": "d7abdb3a61e23ccbab51e21bbfa3a675565c351ce5efeb4abc03c11e3f00f9a5",
+        "afterSha256": "d87498bad8ebc5ff47dfab504d98761d48e12afae1a7df73aed54f63aebdcc35"
+      },
+      {
+        "id": "block_0007_0006",
+        "beforeSha256": "17e9a75a13101ba80e3434d5621bd0345f110bb7714ca7b999185ad70700f881",
+        "afterSha256": "5602242f47140f05fe6b624ea31022ec963eaca32d0b07e649b4d727950a8400",
+        "reviewPaths": [
+          "/reviewFeedback"
+        ]
+      },
+      {
+        "id": "block_0005_0002",
+        "beforeSha256": "41a861ec00521284ec5145fac7f34e3c43fc3ea397597a4796c897c79cda8b54",
+        "afterSha256": "f9d0e02833cbbd210152a24875091b42a19650b6bba0252a302b4195ebb8731b"
       }
     ],
     "retired": [
@@ -5656,6 +5737,119 @@
           "code": "#include <iostream>\n\nint main() {\n    double longitud_metros = 4.5;\n    int tramo_adicional_metros = 1;\n    int partes = 2;\n    double longitud_por_parte = (longitud_metros + tramo_adicional_metros) / partes;\n    std::cout << \"Parte: \" << longitud_por_parte << \" m\";\n    return 0;\n}\n"
         }
       }
+    ],
+    "choiceRevisions": [
+      {
+        "id": "block_0005_0003",
+        "block": {
+          "type": "multiple_choice",
+          "question": "¿Qué afirmación sobre double es adecuada?",
+          "options": [
+            "Representa exactamente todo decimal que podamos escribir.",
+            "Permite aproximaciones numéricas con una precisión y un rango finitos.",
+            "Admite fracciones y puede guardar magnitudes sin ningún límite."
+          ],
+          "correctIndex": 1,
+          "explanation": "double guarda ciertos valores exactamente, como 2.5 en este equipo. Otros, como una décima, se representan con un valor cercano. Además hay límites para la magnitud que se puede guardar."
+        },
+        "optionIndex": 1,
+        "replacement": "double guarda exactamente dos metros y medio. Para una décima de metro guarda un número muy cercano al valor de la medida.",
+        "semanticBefore": {
+          "block": "block_0005_0003",
+          "path": "/options/1",
+          "sourceSha256": "02427e8e464ec1d9e9f6f4dded70815b11d171e463883b671acdc76ad67f93b7",
+          "spans": []
+        },
+        "semanticAfter": {
+          "block": "block_0005_0003",
+          "path": "/options/1",
+          "sourceSha256": "9b8e16a544802f1bc01e77aa20d04e539934e6c288b6ded0a960c8e75d62558d",
+          "spans": [
+            {
+              "start": 0,
+              "end": 6,
+              "text": "double",
+              "role": "cpp",
+              "reading": "technical"
+            }
+          ]
+        },
+        "semanticRootBefore": true
+      },
+      {
+        "id": "block_0007_0004",
+        "block": {
+          "type": "multiple_choice",
+          "question": "¿Cuál es la primera revisión si se esperaba 4.5 y el programa muestra 4 a partir de 9 / 2?",
+          "options": [
+            "Si basta añadir .0 al mensaje impreso sin cambiar el cálculo.",
+            "Si el destino double garantiza conservar la fracción ya descartada.",
+            "Si ambos operandos eran enteros al calcular."
+          ],
+          "correctIndex": 2,
+          "explanation": "Mira primero 9 / 2. La expresión usa dos enteros y da 4. Ese es el valor que recibe la variable donde guardas la división, incluso si es de tipo double."
+        },
+        "optionIndex": 2,
+        "replacement": "Revisar los tipos de los números a la izquierda y a la derecha de /. Si ambos son enteros, la división descarta la parte fraccionaria.",
+        "semanticBefore": {
+          "block": "block_0007_0004",
+          "path": "/options/2",
+          "sourceSha256": "d9d13fe6c77120f50cf39ae1bce897259a5f3f050d5e55367c1c78c0734f911a",
+          "spans": []
+        },
+        "semanticAfter": {
+          "block": "block_0007_0004",
+          "path": "/options/2",
+          "sourceSha256": "b8f7dbc7df42402c25352495b7c187c54d232479e97305779a1a3440be769108",
+          "spans": [
+            {
+              "start": 66,
+              "end": 67,
+              "text": "/",
+              "role": "cpp",
+              "reading": "technical"
+            }
+          ]
+        },
+        "semanticRootBefore": true
+      },
+      {
+        "id": "block_0005_0002",
+        "block": {
+          "type": "multiple_choice",
+          "question": "La consola dice Longitud: 2.5 m. ¿Qué te aclara la letra m que aparece después del número?",
+          "options": [
+            "Que cualquier cálculo con ese número será exacto.",
+            "La unidad con la que debe interpretarse.",
+            "Que el valor dejó de ser double."
+          ],
+          "correctIndex": 1,
+          "explanation": "La letra m indica que 2.5 es una medida en metros."
+        },
+        "optionIndex": 1,
+        "replacement": "Que la longitud que muestra la consola es de 2.5 metros.",
+        "semanticBefore": {
+          "block": "block_0005_0002",
+          "path": "/options/1",
+          "sourceSha256": "f7daf9466182c8971b35d558b5b157da03e87088ef260bb62b5cce21652fd468",
+          "spans": []
+        },
+        "semanticAfter": {
+          "block": "block_0005_0002",
+          "path": "/options/1",
+          "sourceSha256": "4013d6322ea88d5de5d5e10eaf0b664ec1f0090d1c71606913bd3f165314d2c7",
+          "spans": [
+            {
+              "start": 45,
+              "end": 48,
+              "text": "2.5",
+              "role": "data",
+              "reading": "natural"
+            }
+          ]
+        },
+        "semanticRootBefore": true
+      }
     ]
   },
   "activityAfter": [
@@ -6016,98 +6210,112 @@
       {
         "block": "block_0001_0001",
         "path": "/text",
-        "sourceSha256": "022651808391a604f4c7fe6b304d884b901ea59c5f5d129d28aeb3be30688710",
+        "sourceSha256": "e76bb045df612ed6a303b4410fa24e61c498ae807fdc88472f6f4021e2dc6bf0",
         "spans": [
           {
-            "start": 74,
-            "end": 75,
+            "start": 55,
+            "end": 56,
             "text": "7",
             "role": "cpp",
             "reading": "technical"
           },
           {
-            "start": 87,
-            "end": 90,
+            "start": 68,
+            "end": 71,
             "text": "int",
             "role": "cpp",
             "reading": "technical"
           },
           {
-            "start": 93,
-            "end": 96,
+            "start": 74,
+            "end": 77,
             "text": "7.0",
             "role": "cpp",
             "reading": "technical"
           },
           {
-            "start": 108,
-            "end": 114,
+            "start": 89,
+            "end": 95,
             "text": "double",
             "role": "cpp",
             "reading": "technical"
           },
           {
-            "start": 151,
-            "end": 171,
+            "start": 132,
+            "end": 152,
             "text": "(Köppe et al., 2023)",
             "role": "citation",
             "reading": "natural"
           },
           {
-            "start": 200,
-            "end": 227,
+            "start": 158,
+            "end": 185,
             "text": "double longitud_metros = 7;",
             "role": "cpp",
             "reading": "technical"
           },
           {
-            "start": 240,
-            "end": 246,
+            "start": 198,
+            "end": 204,
             "text": "double",
             "role": "cpp",
             "reading": "technical"
           },
           {
-            "start": 289,
-            "end": 290,
+            "start": 247,
+            "end": 248,
             "text": "7",
             "role": "cpp",
             "reading": "technical"
           },
           {
-            "start": 302,
-            "end": 305,
+            "start": 260,
+            "end": 263,
             "text": "int",
             "role": "cpp",
             "reading": "technical"
           },
           {
-            "start": 324,
-            "end": 330,
+            "start": 280,
+            "end": 295,
+            "text": "longitud_metros",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 330,
+            "end": 336,
             "text": "double",
             "role": "cpp",
             "reading": "technical"
           },
           {
-            "start": 397,
-            "end": 415,
+            "start": 432,
+            "end": 450,
             "text": "(Stroustrup, 2024)",
             "role": "citation",
             "reading": "natural"
           },
           {
-            "start": 445,
-            "end": 454,
+            "start": 495,
+            "end": 504,
             "text": "std::cout",
             "role": "cpp",
             "reading": "technical"
           },
           {
-            "start": 469,
-            "end": 470,
+            "start": 513,
+            "end": 514,
             "text": "7",
             "role": "output",
             "reading": "natural"
+          },
+          {
+            "start": 587,
+            "end": 602,
+            "text": "longitud_metros",
+            "role": "cpp",
+            "reading": "technical"
           }
         ]
       },
@@ -6120,32 +6328,67 @@
       {
         "block": "block_0001_0002",
         "path": "/explanation",
-        "sourceSha256": "a3ca9e155cb275d8c00f1f4867635177f42108db517f10ddf1742f4ed558aba1",
+        "sourceSha256": "f1ae3af47bb95d59d37cb999e51a6db2e0b85155c7a7f2e7797678c5d6560c6f",
         "spans": [
           {
-            "start": 25,
-            "end": 31,
-            "text": "entero",
-            "role": "cpp",
-            "reading": "technical"
-          },
-          {
-            "start": 49,
-            "end": 56,
-            "text": "decimal",
-            "role": "cpp",
-            "reading": "technical"
-          },
-          {
-            "start": 76,
-            "end": 85,
+            "start": 23,
+            "end": 32,
             "text": "std::cout",
             "role": "cpp",
             "reading": "technical"
           },
           {
-            "start": 106,
-            "end": 109,
+            "start": 49,
+            "end": 55,
+            "text": "entero",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 72,
+            "end": 75,
+            "text": "int",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 91,
+            "end": 92,
+            "text": "6",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 130,
+            "end": 137,
+            "text": "decimal",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 154,
+            "end": 160,
+            "text": "double",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 176,
+            "end": 179,
+            "text": "6.0",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 250,
+            "end": 259,
+            "text": "std::cout",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 288,
+            "end": 291,
             "text": "6 6",
             "role": "output",
             "reading": "natural"
@@ -6683,29 +6926,44 @@
       {
         "block": "block_0003_0003",
         "path": "/question",
-        "sourceSha256": "8f4b6a46667072e0b02e49e4406982541941b2f832168b815c340c33d641df35",
+        "sourceSha256": "a7367a75336f8b0f627188c8e182e434b2183909a424c49ba97538c25e263c84",
         "spans": [
           {
-            "start": 20,
-            "end": 24,
-            "text": "ocho",
-            "role": "data",
-            "reading": "natural"
+            "start": 64,
+            "end": 69,
+            "text": "cajas",
+            "role": "cpp",
+            "reading": "technical"
           },
           {
-            "start": 56,
-            "end": 59,
-            "text": "1.5",
-            "role": "data",
-            "reading": "natural"
+            "start": 116,
+            "end": 122,
+            "text": "metros",
+            "role": "cpp",
+            "reading": "technical"
           }
         ]
       },
       {
         "block": "block_0003_0003",
         "path": "/reviewFeedback",
-        "sourceSha256": "056c6c1364fac088ed480247b0cebb46fc12e867372914d8e4fce6ec6f37402a",
-        "spans": []
+        "sourceSha256": "81fbcdf8d5d88a33a100fc1441e4bc79cd561e5be347a2ebd99ec9a9c57887e9",
+        "spans": [
+          {
+            "start": 17,
+            "end": 22,
+            "text": "cajas",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 25,
+            "end": 31,
+            "text": "metros",
+            "role": "cpp",
+            "reading": "technical"
+          }
+        ]
       },
       {
         "block": "block_0004_0000",
@@ -6716,95 +6974,60 @@
       {
         "block": "block_0004_0001",
         "path": "/text",
-        "sourceSha256": "544ccf441338b1f3b1b0f6a4503891e05c7941c62f3481e333e7d350583e1feb",
+        "sourceSha256": "f74e1c909b78e6ecf780f9336cc882fdfaad6198027d2a98eb6800bf530695cf",
         "spans": [
           {
-            "start": 24,
-            "end": 29,
-            "text": "cajas",
+            "start": 135,
+            "end": 140,
+            "text": "ancho",
             "role": "cpp",
             "reading": "technical"
           },
           {
-            "start": 62,
-            "end": 65,
-            "text": "int",
+            "start": 143,
+            "end": 148,
+            "text": "largo",
             "role": "cpp",
             "reading": "technical"
           },
           {
-            "start": 67,
-            "end": 73,
-            "text": "metros",
+            "start": 230,
+            "end": 234,
+            "text": "area",
             "role": "cpp",
             "reading": "technical"
-          },
-          {
-            "start": 111,
-            "end": 117,
-            "text": "double",
-            "role": "cpp",
-            "reading": "technical"
-          },
-          {
-            "start": 119,
-            "end": 128,
-            "text": "std::cout",
-            "role": "cpp",
-            "reading": "technical"
-          },
-          {
-            "start": 137,
-            "end": 142,
-            "text": "8 1.5",
-            "role": "output",
-            "reading": "natural"
           }
         ]
       },
       {
         "block": "block_0004_0002",
         "path": "/text",
-        "sourceSha256": "829457ab126c074a6b91c94a090088aee98d790002c59aeb4693c0ecb799f6dd",
+        "sourceSha256": "ffb24a812d2a3519e4f8b6c40511d44e64b0a6991982c5373f5278559708f0dc",
         "spans": [
           {
-            "start": 94,
-            "end": 107,
+            "start": 107,
+            "end": 120,
             "text": "ancho * largo",
             "role": "cpp",
             "reading": "technical"
           },
           {
-            "start": 138,
-            "end": 139,
-            "text": "3",
-            "role": "data",
-            "reading": "natural"
-          },
-          {
-            "start": 176,
-            "end": 180,
+            "start": 217,
+            "end": 221,
             "text": "area",
             "role": "cpp",
             "reading": "technical"
           },
           {
-            "start": 182,
-            "end": 187,
+            "start": 276,
+            "end": 281,
             "text": "ancho",
             "role": "cpp",
             "reading": "technical"
           },
           {
-            "start": 204,
-            "end": 207,
-            "text": "1.5",
-            "role": "data",
-            "reading": "natural"
-          },
-          {
-            "start": 274,
-            "end": 292,
+            "start": 330,
+            "end": 348,
             "text": "(Stroustrup, 2024)",
             "role": "citation",
             "reading": "natural"
@@ -6897,7 +7120,7 @@
       {
         "block": "block_0004_0004",
         "path": "/explanation",
-        "sourceSha256": "b3d4f3335e25afcbe8d580e6ef4fbf254a284a6afb504638fee07a700161dea2",
+        "sourceSha256": "993671d9a86bc38a6d2e7e588d30d6d2e0081890ce4d2e5d070633e6af74cd2b",
         "spans": [
           {
             "start": 14,
@@ -6914,15 +7137,29 @@
             "reading": "technical"
           },
           {
-            "start": 82,
-            "end": 88,
+            "start": 73,
+            "end": 79,
             "text": "double",
             "role": "cpp",
             "reading": "technical"
           },
           {
-            "start": 142,
-            "end": 145,
+            "start": 143,
+            "end": 151,
+            "text": "cociente",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 175,
+            "end": 184,
+            "text": "std::cout",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 193,
+            "end": 196,
             "text": "4.5",
             "role": "output",
             "reading": "natural"
@@ -6986,8 +7223,16 @@
       {
         "block": "block_0005_0002",
         "path": "/options/1",
-        "sourceSha256": "f7daf9466182c8971b35d558b5b157da03e87088ef260bb62b5cce21652fd468",
-        "spans": []
+        "sourceSha256": "4013d6322ea88d5de5d5e10eaf0b664ec1f0090d1c71606913bd3f165314d2c7",
+        "spans": [
+          {
+            "start": 45,
+            "end": 48,
+            "text": "2.5",
+            "role": "data",
+            "reading": "natural"
+          }
+        ]
       },
       {
         "block": "block_0005_0002",
@@ -7006,11 +7251,11 @@
       {
         "block": "block_0005_0003",
         "path": "/question",
-        "sourceSha256": "6d3f57b80699349ea2cd4c72d8166f0b1097bf871e7bf9851cb0afbf901f692c",
+        "sourceSha256": "7e268199cf03067751a98bd51000ab8bb3836b2b4e07ed5b4f97550d52b04181",
         "spans": [
           {
-            "start": 22,
-            "end": 28,
+            "start": 157,
+            "end": 163,
             "text": "double",
             "role": "cpp",
             "reading": "technical"
@@ -7047,8 +7292,16 @@
       {
         "block": "block_0005_0003",
         "path": "/options/1",
-        "sourceSha256": "02427e8e464ec1d9e9f6f4dded70815b11d171e463883b671acdc76ad67f93b7",
-        "spans": []
+        "sourceSha256": "9b8e16a544802f1bc01e77aa20d04e539934e6c288b6ded0a960c8e75d62558d",
+        "spans": [
+          {
+            "start": 0,
+            "end": 6,
+            "text": "double",
+            "role": "cpp",
+            "reading": "technical"
+          }
+        ]
       },
       {
         "block": "block_0005_0003",
@@ -7301,25 +7554,11 @@
       {
         "block": "block_0007_0004",
         "path": "/question",
-        "sourceSha256": "e0865396b1ab909b68300179de920586bef5e318506702a82fc87eac98d9409a",
+        "sourceSha256": "d906bb28cc9c4d81ed4e28f1b3e8624ac46bd795c8c7c3189e8ea6637923e1a5",
         "spans": [
           {
-            "start": 44,
-            "end": 47,
-            "text": "4.5",
-            "role": "output",
-            "reading": "natural"
-          },
-          {
-            "start": 70,
-            "end": 71,
-            "text": "4",
-            "role": "output",
-            "reading": "natural"
-          },
-          {
-            "start": 84,
-            "end": 89,
+            "start": 11,
+            "end": 16,
             "text": "9 / 2",
             "role": "cpp",
             "reading": "technical"
@@ -7385,8 +7624,16 @@
       {
         "block": "block_0007_0004",
         "path": "/options/2",
-        "sourceSha256": "d9d13fe6c77120f50cf39ae1bce897259a5f3f050d5e55367c1c78c0734f911a",
-        "spans": []
+        "sourceSha256": "b8f7dbc7df42402c25352495b7c187c54d232479e97305779a1a3440be769108",
+        "spans": [
+          {
+            "start": 66,
+            "end": 67,
+            "text": "/",
+            "role": "cpp",
+            "reading": "technical"
+          }
+        ]
       },
       {
         "block": "block_0007_0005",
@@ -7475,54 +7722,68 @@
       {
         "block": "block_0007_0006",
         "path": "/question",
-        "sourceSha256": "cb1385ed5edcb5a0b1b8860ff637e78c75eb55e2870d0796225977f9804d6210",
+        "sourceSha256": "41634e8621ba966604bbfb327cc9f8672c29ea28c6b6ee6f81ce0b37f801a459",
         "spans": [
           {
-            "start": 34,
-            "end": 46,
+            "start": 71,
+            "end": 83,
             "text": "Parte: 4.5 m",
             "role": "output",
             "reading": "natural"
           },
           {
-            "start": 98,
-            "end": 101,
+            "start": 118,
+            "end": 133,
+            "text": "longitud_metros",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 143,
+            "end": 146,
             "text": "int",
             "role": "cpp",
             "reading": "technical"
           },
           {
-            "start": 104,
-            "end": 110,
+            "start": 149,
+            "end": 155,
             "text": "double",
             "role": "cpp",
             "reading": "technical"
           },
           {
-            "start": 124,
-            "end": 130,
+            "start": 192,
+            "end": 193,
+            "text": "9",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 208,
+            "end": 214,
             "text": "partes",
             "role": "cpp",
             "reading": "technical"
           },
           {
-            "start": 136,
-            "end": 139,
+            "start": 229,
+            "end": 232,
             "text": "int",
             "role": "cpp",
             "reading": "technical"
           },
           {
-            "start": 154,
-            "end": 157,
-            "text": "dos",
-            "role": "data",
-            "reading": "natural"
+            "start": 251,
+            "end": 266,
+            "text": "longitud_metros",
+            "role": "cpp",
+            "reading": "technical"
           },
           {
-            "start": 292,
-            "end": 293,
-            "text": "9",
+            "start": 406,
+            "end": 407,
+            "text": "/",
             "role": "cpp",
             "reading": "technical"
           }
@@ -7685,8 +7946,23 @@
       {
         "block": "block_0007_0006",
         "path": "/reviewFeedback",
-        "sourceSha256": "08838ce9e98b1f692d9e9023436663f36c48ebf24dedb54abdafa297ba7c9a15",
-        "spans": []
+        "sourceSha256": "2669f4a4d6ece6d2fa5e226021f2de4fb5155033e2419dc04dbac4417ba5a196",
+        "spans": [
+          {
+            "start": 243,
+            "end": 258,
+            "text": "longitud_metros",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 267,
+            "end": 273,
+            "text": "partes",
+            "role": "cpp",
+            "reading": "technical"
+          }
+        ]
       },
       {
         "block": "block_0008_0000",
@@ -7865,35 +8141,42 @@
       {
         "block": "p1u2l5_leer_renglones",
         "path": "/text",
-        "sourceSha256": "cc5daccb44c23dd73b97af687908c368c69dfa8b5d6840b9fbfbf36d9a02f221",
+        "sourceSha256": "a7730f6eb6e2275121220336ae91502a8b371945a90752ff4e2ba0d18f4c3084",
         "spans": [
           {
-            "start": 20,
-            "end": 29,
-            "text": "std::cout",
+            "start": 15,
+            "end": 42,
+            "text": "std::cout << 7 / 2 << \"\\n\";",
             "role": "cpp",
             "reading": "technical"
           },
           {
-            "start": 38,
-            "end": 39,
+            "start": 90,
+            "end": 91,
             "text": "3",
             "role": "output",
             "reading": "natural"
           },
           {
-            "start": 88,
-            "end": 91,
+            "start": 162,
+            "end": 183,
+            "text": "std::cout << 7.0 / 2;",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 191,
+            "end": 197,
+            "text": "double",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 230,
+            "end": 233,
             "text": "3.5",
             "role": "output",
             "reading": "natural"
-          },
-          {
-            "start": 125,
-            "end": 126,
-            "text": "/",
-            "role": "cpp",
-            "reading": "technical"
           }
         ]
       },
@@ -7928,39 +8211,53 @@
       {
         "block": "p1u2l5_reparar_divisor_literal",
         "path": "/explanation",
-        "sourceSha256": "1e5fc557557d2d77d48a128df0052cb8dc05f0ae251ec43d872445850704ccdb",
+        "sourceSha256": "f01776f047bffc84d1bb4d46e689cee7f940d665cbf99d3e1170c22ee07a4966",
         "spans": [
           {
-            "start": 0,
-            "end": 3,
+            "start": 12,
+            "end": 15,
             "text": "2.0",
             "role": "cpp",
             "reading": "technical"
           },
           {
-            "start": 28,
-            "end": 34,
+            "start": 27,
+            "end": 28,
+            "text": "/",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 52,
+            "end": 58,
             "text": "double",
             "role": "cpp",
             "reading": "technical"
           },
           {
-            "start": 119,
-            "end": 122,
-            "text": "5.5",
-            "role": "data",
-            "reading": "natural"
+            "start": 98,
+            "end": 104,
+            "text": "double",
+            "role": "cpp",
+            "reading": "technical"
           },
           {
-            "start": 144,
-            "end": 147,
+            "start": 124,
+            "end": 136,
+            "text": "cinta_metros",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 192,
+            "end": 195,
             "text": "5.5",
             "role": "output",
             "reading": "natural"
           },
           {
-            "start": 184,
-            "end": 186,
+            "start": 221,
+            "end": 223,
             "text": "2.",
             "role": "cpp",
             "reading": "technical"
@@ -7997,11 +8294,18 @@
       {
         "block": "p1u2l5_agrupar_datos",
         "path": "/text",
-        "sourceSha256": "47ae44038877a37e44c61a9be5e7d8d0d4560338047463f68034d9f63f0c7f43",
+        "sourceSha256": "e7975b97fc90241cf46ffe6eeea5dfcc8660646cff845a1c830ae47fc358be82",
         "spans": [
           {
-            "start": 232,
-            "end": 250,
+            "start": 219,
+            "end": 246,
+            "text": "(longitud_metros + 1.0) / 2",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 395,
+            "end": 413,
             "text": "(Stroustrup, 2024)",
             "role": "citation",
             "reading": "natural"

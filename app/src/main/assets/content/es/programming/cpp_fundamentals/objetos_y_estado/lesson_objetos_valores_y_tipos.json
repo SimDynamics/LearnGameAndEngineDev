@@ -43,7 +43,7 @@
           "type": "multiple_choice",
           "correctIndex": 1,
           "id": "p1u2l1_distinguir_cascos",
-          "question": "¿Qué escribiría la instrucción del último fragmento si la usamos después de la declaración de cascos?",
+          "question": "¿Qué texto muestra en la consola la instrucción std::cout << \"cascos\"; cuando la variable cascos vale 6?",
           "options": [
             "6",
             "cascos",
@@ -81,7 +81,7 @@
           "question": "En int visitantes = 14;, ¿qué representa visitantes?",
           "options": [
             "El valor numérico inicial.",
-            "El nombre que permite referirse al objeto.",
+            "visitantes es el nombre de la variable donde se guarda el número de visitantes.",
             "El tipo del objeto."
           ],
           "correctIndex": 1,
@@ -130,7 +130,7 @@
           "answers": [
             "cajas: 12"
           ],
-          "explanation": "La parte entre comillas es texto fijo; cajas fuera de comillas proporciona el número conservado."
+          "explanation": "El literal \"cajas: \" hace que aparezcan la palabra cajas, los dos puntos y un espacio. Después, std::cout escribe el valor de la variable cajas, que es 12. El renglón completo de la salida es cajas: 12."
         }
       ]
     },
@@ -157,7 +157,7 @@
           "answers": [
             "4 / 4"
           ],
-          "explanation": "Ambas lecturas observan el mismo valor. La salida no modifica la variable."
+          "explanation": "botellas empieza con 4. La instrucción con std::cout consulta esa variable y escribe 4. Luego escribe el separador \" / \" y vuelve a consultar botellas. Como el programa ha guardado el mismo cuatro durante las dos consultas, la salida es 4 / 4."
         },
         {
           "type": "output_prediction",
@@ -171,11 +171,11 @@
         },
         {
           "type": "multiple_choice",
-          "question": "¿Qué explica que las dos lecturas de una variable den el mismo valor si nada la modifica?",
+          "question": "vales guarda cuatro. Dos instrucciones con std::cout consultan vales y entre ellas el programa no asigna otro valor a la variable. ¿Por qué aparece el mismo número las dos veces?",
           "options": [
             "Cada salida crea una variable diferente.",
             "La segunda salida recupera texto del primer mensaje.",
-            "El valor se conserva entre las instrucciones."
+            "Después de mostrar cuatro por primera vez, vales sigue guardando cuatro. La segunda instrucción con std::cout lee de nuevo esa misma variable."
           ],
           "correctIndex": 2,
           "explanation": "Cada vez que se usa el nombre de la variable con std::cout, se obtiene el dato guardado. Entre una consulta y la otra el programa conserva ese dato, así que ambas obtienen el mismo valor."
@@ -201,7 +201,7 @@
             "Un entero que cuenta las mesas."
           ],
           "correctIndex": 2,
-          "explanation": "Contar objetos completos requiere una cantidad entera; el texto puede describirla, pero no cumple la misma función."
+          "explanation": "La variable de cada sala debe guardar cuántas mesas hay, por ejemplo, tres en una sala y cuatro en otra. Al sumar los dos enteros se obtiene el total de siete mesas. La palabra mesas describe qué estás contando y por sí sola no indica cuántas hay."
         },
         {
           "type": "multiple_choice",
@@ -307,12 +307,12 @@
         {
           "type": "output_prediction",
           "language": "cpp",
-          "question": "Recupera lo aprendido sobre líneas: ¿cuáles son las dos líneas exactas de salida?",
+          "question": "¿Qué escribe std::cout en cada uno de los dos renglones de la salida?",
           "code": "#include <iostream>\n\nint main() {\n    int estantes = 3;\n\n    std::cout << \"Zona A\\n\";\n    std::cout << estantes << \" estantes\";\n\n    return 0;\n}\n",
           "answers": [
             "Zona A\n3 estantes"
           ],
-          "explanation": "La primera instrucción produce texto y un salto. La segunda combina un valor con un texto explicativo."
+          "explanation": "La primera instrucción con std::cout escribe Zona A y un salto de línea. En el segundo renglón, std::cout escribe el 3 guardado en estantes y luego el espacio y la palabra del literal \" estantes\". Ese renglón de la salida dice 3 estantes."
         },
         {
           "type": "fill_code",
@@ -1567,6 +1567,46 @@
         "id": "block_0006_0003",
         "beforeSha256": "d89721f907125b7dc41bdc4ecb2e8f0c750af2fe8536f9d83019e0abca013022",
         "afterSha256": "1870c3eb53daff46415ff5b42062af7a526f86a56b4b6bfc949581305457c336"
+      },
+      {
+        "id": "p1u2l1_distinguir_cascos",
+        "beforeSha256": "509a4298026391a44305091263bcd74f3ae33740fa5ed1fce0a85e4aa8773787",
+        "afterSha256": "46ba707c4710c830f1b80e6c493167702f7793798ee35be582056c00be7bfb43"
+      },
+      {
+        "id": "block_0001_0004",
+        "beforeSha256": "8afa23cdbed559bfd92f0cd93020f1bb3f8da38510c6551cea04e37f10e7e410",
+        "afterSha256": "238bfa8f3d22056b18508d821590465a88af527258f38361e0eebf137d2122fb"
+      },
+      {
+        "id": "block_0002_0002",
+        "beforeSha256": "ebfc54bbeaa727822d0e8b50d1a7020851eb84cf0f15a22fd781da146cd7cd74",
+        "afterSha256": "0740576c9133f81489e0625ea6406098afbbbf5043a9470f53552fbeb73a8c8b"
+      },
+      {
+        "id": "block_0003_0002",
+        "beforeSha256": "f9995553458c194ab7c07511b93fc8b5a1b20c1c87fade7ad745677f71e37e58",
+        "afterSha256": "b4e40634c6a8badae64efb1d738cca8449189e2705a67889cea85b45222d46de"
+      },
+      {
+        "id": "block_0005_0003",
+        "beforeSha256": "ebfa50cd31f7801868682e79896fa3bdf16766adcdd12c282bd1b41f4d14a9c2",
+        "afterSha256": "4c8233f70351f8c857a7d599615b17c2404ab96836e5919eb8a99c3e845efef6"
+      },
+      {
+        "id": "block_0002_0004",
+        "beforeSha256": "2c20289f94855893bd6c25a3637e40ddb32ba1e63b99b2cc1cdf1b2648117add",
+        "afterSha256": "effefba90c92fa20d02a47ae30d4f3b5b4f947c1da0c6b304a47666575344aa1"
+      },
+      {
+        "id": "block_0002_0004",
+        "beforeSha256": "effefba90c92fa20d02a47ae30d4f3b5b4f947c1da0c6b304a47666575344aa1",
+        "afterSha256": "40641f3ef48b5c46607cc9b7e294ca4709b714ebff2d6f8c7456e55421b5a3ae"
+      },
+      {
+        "id": "block_0001_0002",
+        "beforeSha256": "115231cb3252caf45234af22fc2f86208f7a3edea7b3639e1f0408c37e5103e3",
+        "afterSha256": "390ea12e031def0abee74cb025334636e213bbd5523a017be236834fe2828f6d"
       }
     ],
     "sourceFormatRevisions": [
@@ -1779,6 +1819,89 @@
           "language": "cpp",
           "code": "#include <iostream>\n\nint main() {\n    int llaves{7};\n    std::cout << \"Llaves: \" << llaves;\n    return 0;\n}\n"
         }
+      }
+    ],
+    "choiceRevisions": [
+      {
+        "id": "block_0002_0004",
+        "block": {
+          "type": "multiple_choice",
+          "question": "¿Qué explica que las dos lecturas de una variable den el mismo valor si nada la modifica?",
+          "options": [
+            "Cada salida crea una variable diferente.",
+            "La segunda salida recupera texto del primer mensaje.",
+            "El valor se conserva entre las instrucciones."
+          ],
+          "correctIndex": 2,
+          "explanation": "Cada vez que se usa el nombre de la variable con std::cout, se obtiene el dato guardado. Entre una consulta y la otra el programa conserva ese dato, así que ambas obtienen el mismo valor."
+        },
+        "optionIndex": 2,
+        "replacement": "Después de mostrar cuatro por primera vez, vales sigue guardando cuatro. La segunda instrucción con std::cout lee de nuevo esa misma variable.",
+        "semanticBefore": {
+          "block": "block_0002_0004",
+          "path": "/options/2",
+          "sourceSha256": "12c8d080594e072d874c9d65c2270c317434eab7d78c6eb733311abd60dd2d04",
+          "spans": []
+        },
+        "semanticAfter": {
+          "block": "block_0002_0004",
+          "path": "/options/2",
+          "sourceSha256": "a3e7d79df11f995d4caf0cabadbf421347cef9addfba1b3bfcccc52fa981f099",
+          "spans": [
+            {
+              "start": 43,
+              "end": 48,
+              "text": "vales",
+              "role": "cpp",
+              "reading": "technical"
+            },
+            {
+              "start": 100,
+              "end": 109,
+              "text": "std::cout",
+              "role": "cpp",
+              "reading": "technical"
+            }
+          ]
+        },
+        "semanticRootBefore": true
+      },
+      {
+        "id": "block_0001_0002",
+        "block": {
+          "type": "multiple_choice",
+          "question": "En int visitantes = 14;, ¿qué representa visitantes?",
+          "options": [
+            "El valor numérico inicial.",
+            "El nombre que permite referirse al objeto.",
+            "El tipo del objeto."
+          ],
+          "correctIndex": 1,
+          "explanation": "int es el tipo, visitantes es el nombre y 14 es el valor inicial."
+        },
+        "optionIndex": 1,
+        "replacement": "visitantes es el nombre de la variable donde se guarda el número de visitantes.",
+        "semanticBefore": {
+          "block": "block_0001_0002",
+          "path": "/options/1",
+          "sourceSha256": "99ff42265aaec2b532b6cbefd63d9babba222bec260240d89472f5979112c907",
+          "spans": []
+        },
+        "semanticAfter": {
+          "block": "block_0001_0002",
+          "path": "/options/1",
+          "sourceSha256": "99eafd7f636fca54961c8bba96b496d1157f9f5047379d08ca2676b960eb5a39",
+          "spans": [
+            {
+              "start": 0,
+              "end": 10,
+              "text": "visitantes",
+              "role": "cpp",
+              "reading": "technical"
+            }
+          ]
+        },
+        "semanticRootBefore": true
       }
     ]
   },
@@ -2072,8 +2195,16 @@
       {
         "block": "block_0001_0002",
         "path": "/options/1",
-        "sourceSha256": "99ff42265aaec2b532b6cbefd63d9babba222bec260240d89472f5979112c907",
-        "spans": []
+        "sourceSha256": "99eafd7f636fca54961c8bba96b496d1157f9f5047379d08ca2676b960eb5a39",
+        "spans": [
+          {
+            "start": 0,
+            "end": 10,
+            "text": "visitantes",
+            "role": "cpp",
+            "reading": "technical"
+          }
+        ]
       },
       {
         "block": "block_0001_0002",
@@ -2139,14 +2270,49 @@
       {
         "block": "block_0001_0004",
         "path": "/explanation",
-        "sourceSha256": "1433968670ec070318e65de75a382354b912a2018feb7d74a1e196887e93d9fa",
+        "sourceSha256": "c97a6d2348e3493395561cdc9814ceabbc704ac96b1007b6924eee1609e039d3",
         "spans": [
           {
-            "start": 39,
-            "end": 44,
+            "start": 11,
+            "end": 20,
+            "text": "\"cajas: \"",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 51,
+            "end": 56,
+            "text": "cajas",
+            "role": "output",
+            "reading": "natural"
+          },
+          {
+            "start": 96,
+            "end": 105,
+            "text": "std::cout",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 138,
+            "end": 143,
             "text": "cajas",
             "role": "cpp",
             "reading": "technical"
+          },
+          {
+            "start": 152,
+            "end": 154,
+            "text": "12",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 192,
+            "end": 201,
+            "text": "cajas: 12",
+            "role": "output",
+            "reading": "natural"
           }
         ]
       },
@@ -2221,8 +2387,58 @@
       {
         "block": "block_0002_0002",
         "path": "/explanation",
-        "sourceSha256": "3d6387b9d08b0eca129d93b7a2ceb933b882e4604b58126459ff9d3eb9c44e2e",
-        "spans": []
+        "sourceSha256": "df851bc69dc8c2ca04eb2c46bacb8ab1dc4fc5f1726e9f84a3c7384e5ddacff7",
+        "spans": [
+          {
+            "start": 0,
+            "end": 8,
+            "text": "botellas",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 21,
+            "end": 22,
+            "text": "4",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 43,
+            "end": 52,
+            "text": "std::cout",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 85,
+            "end": 86,
+            "text": "4",
+            "role": "output",
+            "reading": "natural"
+          },
+          {
+            "start": 115,
+            "end": 120,
+            "text": "\" / \"",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 142,
+            "end": 150,
+            "text": "botellas",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 237,
+            "end": 242,
+            "text": "4 / 4",
+            "role": "output",
+            "reading": "natural"
+          }
+        ]
       },
       {
         "block": "block_0002_0003",
@@ -2276,14 +2492,28 @@
       {
         "block": "block_0002_0004",
         "path": "/question",
-        "sourceSha256": "9548059331d8c5f2c4e86d3ce5718102bacf52d06946fafeb9b718287a4b00b0",
+        "sourceSha256": "1214cfd9b58ba704e35cafe9d3befcf52381c6b8a973bcbe4c676233eb223aca",
         "spans": [
           {
-            "start": 21,
-            "end": 24,
-            "text": "dos",
-            "role": "data",
-            "reading": "natural"
+            "start": 0,
+            "end": 5,
+            "text": "vales",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 43,
+            "end": 52,
+            "text": "std::cout",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 63,
+            "end": 68,
+            "text": "vales",
+            "role": "cpp",
+            "reading": "technical"
           }
         ]
       },
@@ -2316,8 +2546,23 @@
       {
         "block": "block_0002_0004",
         "path": "/options/2",
-        "sourceSha256": "12c8d080594e072d874c9d65c2270c317434eab7d78c6eb733311abd60dd2d04",
-        "spans": []
+        "sourceSha256": "a3e7d79df11f995d4caf0cabadbf421347cef9addfba1b3bfcccc52fa981f099",
+        "spans": [
+          {
+            "start": 43,
+            "end": 48,
+            "text": "vales",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 100,
+            "end": 109,
+            "text": "std::cout",
+            "role": "cpp",
+            "reading": "technical"
+          }
+        ]
       },
       {
         "block": "block_0003_0000",
@@ -2370,8 +2615,16 @@
       {
         "block": "block_0003_0002",
         "path": "/explanation",
-        "sourceSha256": "11338111b0150b59281b9950aef079fc608ad87ac186234f68865bbabdc99f1d",
-        "spans": []
+        "sourceSha256": "77ce8395a9b93187a49e86cb52ab605652fa151ab7b3a2963c5a94d5bcf9d1aa",
+        "spans": [
+          {
+            "start": 177,
+            "end": 182,
+            "text": "mesas",
+            "role": "data",
+            "reading": "natural"
+          }
+        ]
       },
       {
         "block": "block_0003_0002",
@@ -2688,22 +2941,72 @@
       {
         "block": "block_0005_0003",
         "path": "/question",
-        "sourceSha256": "dfa2549bdd9f7d005c031aacd23864df9527952f4d1cd392a94d78f56cd0cbc6",
+        "sourceSha256": "e7fb09ad904394716b4b306b105d694ba781c7cdcbd309b99a18204d014eda58",
         "spans": [
           {
-            "start": 52,
-            "end": 55,
-            "text": "dos",
-            "role": "data",
-            "reading": "natural"
+            "start": 13,
+            "end": 22,
+            "text": "std::cout",
+            "role": "cpp",
+            "reading": "technical"
           }
         ]
       },
       {
         "block": "block_0005_0003",
         "path": "/explanation",
-        "sourceSha256": "8bcbb100eb3e4a794996065c97b15eb5e2c02c7f68269ecd4e18cc871e96b45e",
-        "spans": []
+        "sourceSha256": "0798b2dcd0570357e30ec8ba3f315756eb3e105c7aa91510da106812240e51e3",
+        "spans": [
+          {
+            "start": 27,
+            "end": 36,
+            "text": "std::cout",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 45,
+            "end": 51,
+            "text": "Zona A",
+            "role": "output",
+            "reading": "natural"
+          },
+          {
+            "start": 96,
+            "end": 105,
+            "text": "std::cout",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 117,
+            "end": 118,
+            "text": "3",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 131,
+            "end": 139,
+            "text": "estantes",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 184,
+            "end": 195,
+            "text": "\" estantes\"",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 227,
+            "end": 237,
+            "text": "3 estantes",
+            "role": "output",
+            "reading": "natural"
+          }
+        ]
       },
       {
         "block": "block_0005_0004",
@@ -3033,14 +3336,28 @@
       {
         "block": "p1u2l1_distinguir_cascos",
         "path": "/question",
-        "sourceSha256": "750de6ef5e552c0ccda2b67ec95e5a91c5e8ba4c15c4b971b7a646504fdd5213",
+        "sourceSha256": "6e31b3e816a11829891a49a254e82311c3fae504dc5a7fb4853b4d889c22d308",
         "spans": [
           {
-            "start": 94,
-            "end": 100,
+            "start": 48,
+            "end": 70,
+            "text": "std::cout << \"cascos\";",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 90,
+            "end": 96,
             "text": "cascos",
             "role": "cpp",
             "reading": "technical"
+          },
+          {
+            "start": 102,
+            "end": 103,
+            "text": "6",
+            "role": "data",
+            "reading": "natural"
           }
         ]
       },

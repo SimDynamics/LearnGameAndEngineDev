@@ -27,7 +27,7 @@
         },
         {
           "type": "paragraph",
-          "text": "Nuestra instrucción usa la salida de texto de la biblioteca estándar. La línea #include <iostream> incorpora información de la cabecera iostream para que el compilador reconozca ese uso. La biblioteca también aporta componentes que realizan operaciones necesarias para el programa. El enlazador reúne la parte que hemos compilado con los componentes necesarios para formar el resultado completo (Stroustrup, 2024)."
+          "text": "Al compilar la instrucción de salida, el compilador necesita reconocer el nombre std::cout. La línea #include <iostream> le proporciona la declaración de ese nombre. El código que produce el compilador también necesita operaciones de la biblioteca estándar para escribir el mensaje. Otra herramienta, el enlazador, une el código que se acaba de compilar con los componentes que necesita de la biblioteca. Así se obtiene el programa que luego podremos ejecutar (Stroustrup, 2024)."
         },
         {
           "type": "paragraph",
@@ -47,7 +47,7 @@
         },
         {
           "type": "paragraph",
-          "text": "El botón del editor coordina varias de estas acciones. Un solo botón no las convierte en una sola etapa: primero se intenta construir, después se ejecuta la versión construida y se comprueba su resultado. Si un error impide construir esa versión, hay que revisar el diagnóstico de error antes de buscar una salida nueva."
+          "text": "Cuando pulsas «Compilar, ejecutar y comprobar», la app intenta construir el programa con el código que está en el editor. Si la construcción termina correctamente, la app ejecuta el programa y compara su salida con la que pide el ejercicio. Si un error impide construir el programa, la app muestra el diagnóstico y esa versión del código no llega a ejecutarse."
         },
         {
           "type": "math_puzzle",
@@ -144,9 +144,9 @@
         {
           "type": "multiple_choice",
           "id": "editor_compilador",
-          "question": "Has escrito un archivo en un editor y aún no has construido el programa. ¿Qué tienes en este punto?",
+          "question": "Has escrito una instrucción de C++ en un archivo del editor. Todavía no has compilado el archivo ni ejecutado el programa. ¿Qué contiene el archivo en ese momento?",
           "options": [
-            "El código fuente que debe analizarse y construirse.",
+            "El código fuente que escribiste en el editor.",
             "La salida final del programa.",
             "Una prueba de que todos los resultados son correctos."
           ],
@@ -189,7 +189,7 @@
         },
         {
           "type": "paragraph",
-          "text": "Aquí la forma de la instrucción se parece a la conocida, pero el nombre está escrito de otra manera. La biblioteca proporciona std::cout con c minúscula. std::Cout nombra algo diferente y no es el recurso que queremos utilizar. El compilador también puede rechazar nombres que no reconoce; no todos sus errores se deben a un signo de puntuación (Stroustrup, 2024)."
+          "text": "La instrucción intenta escribir en std::Cout, con la C mayúscula. C++ distingue mayúsculas y minúsculas. La biblioteca estándar proporciona std::cout, con la c minúscula. Al buscar el nombre escrito con mayúscula, el compilador no encuentra la declaración de la salida que queremos usar y señala un error (Stroustrup, 2024)."
         },
         {
           "type": "fill_code",
@@ -205,18 +205,18 @@
         {
           "type": "multiple_choice",
           "id": "mayuscula_nombre",
-          "question": "Usamos std::cout, pero por error escribimos std::Cout. ¿Cuál es la corrección justificada?",
+          "question": "La instrucción de salida contiene std::Cout. El compilador informa que no reconoce ese nombre. ¿Qué debes cambiar en el código para que reconozca el nombre de la biblioteca estándar?",
           "options": [
             "Mantener el cambio: la computadora interpreta ambos nombres igual.",
             "Cambiar las palabras del mensaje.",
             "Recuperar la escritura exacta std::cout."
           ],
           "correctIndex": 2,
-          "explanation": "La biblioteca proporciona std::cout con esa escritura. std::Cout es un nombre distinto. Recuperar el nombre correcto permite usar el recurso esperado; cambiar las palabras del mensaje no corrige la referencia al recurso."
+          "explanation": "El compilador distingue la letra mayúscula de la minúscula. Al cambiar la C mayúscula de std::Cout por la c minúscula de std::cout, la instrucción vuelve a usar el nombre que declara la cabecera iostream. Las palabras del mensaje están dentro del literal y no intervienen en la búsqueda de ese nombre."
         },
         {
           "type": "paragraph",
-          "text": "Para revisar la instrucción, separa el contenido del literal de los signos que lo delimitan y terminan. Primero debe cerrarse el literal con una comilla doble. Después viene el punto y coma que termina la instrucción. El punto y coma no sustituye a esa comilla."
+          "text": "En la instrucción que muestra un mensaje, localiza primero la comilla doble que abre el literal y después la comilla doble que lo cierra. El texto que hay entre ambas comillas es el mensaje. Después de la comilla de cierre va el punto y coma que termina la instrucción de salida."
         },
         {
           "type": "fill_code",
@@ -324,7 +324,7 @@
           "id": "falta_terminador",
           "question": "En el ejemplo mostrado, el diagnóstico señala return. Antes de borrar o cambiar esa instrucción, ¿qué conviene revisar primero?",
           "options": [
-            "La terminación de la instrucción anterior y el contexto cercano.",
+            "Revisar si la instrucción de salida que está justo antes de return termina con un punto y coma.",
             "Cambiar el mensaje del literal porque precede al diagnóstico.",
             "Eliminar return porque el diagnóstico señala esa línea."
           ],
@@ -333,7 +333,7 @@
         },
         {
           "type": "paragraph",
-          "text": "No hace falta memorizar C2143 ni la frase completa. Otro compilador o versión puede describir el mismo problema con otras palabras. Lo que necesitamos es localizar el código, entender qué no encaja y volver a comprobarlo tras corregirlo (Stroustrup, 2024)."
+          "text": "En este ejemplo, el diagnóstico C2143 de MSVC señala return. Otro compilador puede describir con otras palabras el mismo error. Busca la línea que menciona el mensaje y lee también la instrucción inmediatamente anterior. En este código, la instrucción de salida justo antes de return necesita un punto y coma al final. Después de añadirlo, vuelve a compilar para comprobar si se corrigió el error (Stroustrup, 2024)."
         },
         {
           "type": "paragraph",
@@ -381,10 +381,10 @@
         },
         {
           "type": "paragraph",
-          "text": "Esta vez el mensaje señala la línea de la llave que abre main. En este diagnóstico, token coincidente se refiere al signo que debía cerrar ese cuerpo. La palabra fatal indica que la herramienta no pudo continuar la traducción: no está describiendo una ejecución del programa. Revisa la pareja de llaves que aparece en el código.",
+          "text": "En este diagnóstico, el compilador señala la línea que contiene la llave de apertura de main. Las palabras token coincidente se refieren aquí a la llave de cierre que el compilador esperaba encontrar antes del final del archivo. La palabra fatal indica que el compilador interrumpió la traducción. Localiza la llave de apertura y comprueba dónde debe terminar el cuerpo de main.",
           "emphasis": [
             {
-              "text": "Revisa la pareja de llaves"
+              "text": "la llave de cierre que el compilador esperaba encontrar"
             }
           ]
         },
@@ -447,7 +447,7 @@
         },
         {
           "type": "paragraph",
-          "text": "El nombre std::cout coincide ahora con el de la biblioteca. El literal mantiene el texto solicitado y el punto y coma termina la instrucción. Una construcción correcta permite ejecutar esta versión; después se comprueba su salida. El acierto no demuestra por sí solo que antes se hubiera ejecutado el código defectuoso."
+          "text": "El programa ahora usa std::cout, el nombre de la biblioteca estándar para la salida de texto. Una vez compilado y enlazado, el programa puede ejecutar la instrucción que muestra el literal. En la consola aparece Zona habilitada. El espacio entre las palabras procede del literal."
         }
       ]
     },
@@ -577,14 +577,14 @@
         {
           "type": "multiple_choice",
           "id": "mensaje_equivocado",
-          "question": "El requisito es mostrar Pedido recibido. El programa compila y muestra Pedido cancelado. ¿Qué queda por corregir?",
+          "question": "El programa debe mostrar Pedido recibido. Compila correctamente, pero al ejecutarlo aparece Pedido cancelado en la consola. ¿Qué cambio en el código hará que muestre el mensaje solicitado?",
           "options": [
             "Cambiar sólo el comentario que describe el mensaje esperado.",
-            "Cambiar el literal ejecutado para cumplir el mensaje requerido.",
+            "Cambiar las palabras dentro del literal que la instrucción de salida envía a la consola.",
             "Aceptar el resultado porque la compilación tuvo éxito."
           ],
           "correctIndex": 1,
-          "explanation": "El compilador aceptó el programa, pero el resultado observado no es el requerido. Hay que corregir el código que aporta ese mensaje y volver a ejecutarlo. Cambiar sólo una nota no modifica el literal que se envía a la consola."
+          "explanation": "La instrucción se ejecuta y escribe el contenido de su literal. Si el literal contiene Pedido cancelado, esas son las palabras que se muestran. Sustituye el texto entre comillas por Pedido recibido, vuelve a compilar y ejecuta el programa. Compara el mensaje de esta ejecución con el que pide el ejercicio."
         }
       ]
     },
@@ -621,14 +621,14 @@
         {
           "type": "multiple_choice",
           "id": "prueba_controlada",
-          "question": "Si cambias a la vez el nombre main, las comillas y el texto, ¿por qué cuesta más interpretar el primer fallo?",
+          "question": "Un programa que mostraba Registro cerrado compilaba correctamente. Cambias el nombre main, quitas una comilla del literal y cambias las palabras del mensaje. Al intentar construir el programa otra vez aparece un error. ¿Por qué hace falta revisar el código para saber cuál de los cambios causó ese error?",
           "options": [
             "Porque el nuevo texto del mensaje explica cualquier diagnóstico.",
-            "Porque hay que distinguir los efectos de varias modificaciones.",
+            "Porque tanto quitar la comilla como cambiar el nombre de main pueden impedir que se construya el programa. Hay que leer el diagnóstico para distinguir las causas.",
             "Porque basta atribuir el fallo al último cambio que recuerdas."
           ],
           "correctIndex": 1,
-          "explanation": "Si se modifican a la vez el nombre, las comillas y el texto, un rechazo puede proceder de distintas partes. Separar cambios relacionados ayuda a comprobar una hipótesis concreta. No basta atribuir el fallo al último cambio que recordamos."
+          "explanation": "Si quitas la comilla de cierre, el compilador puede señalar un error al leer el literal. Si cambias el nombre de main, el enlazador puede informar que falta la función donde debe empezar la ejecución. El diagnóstico ayuda a identificar qué cambio impidió construir el programa. Tras corregir esa causa, vuelve a construirlo para averiguar si queda otro error."
         },
         {
           "type": "paragraph",
@@ -683,8 +683,8 @@
             "Revision inicial"
           ],
           "outputComparison": "exact",
-          "explanation": "El programa válido envía Revision inicial a la consola. El literal proporciona los caracteres y return 0; no añade un cero. Esta predicción corresponde al código mostrado; no describe una ejecución de una revisión posterior que no haya podido construirse.",
-          "reviewFeedback": "Identifica el contenido que la instrucción envía a std::cout. No incluyas las marcas que delimitan o terminan la instrucción."
+          "explanation": "La instrucción con std::cout escribe Revision inicial en la consola. Ambas palabras y el espacio entre ellas están dentro de las comillas del literal. La instrucción return 0; termina el programa y no añade ningún carácter al mensaje.",
+          "reviewFeedback": "Lee el texto que aparece entre las comillas del literal que se envía a std::cout. ¿Qué palabras contiene? ¿Hay un espacio entre ellas? Las comillas y el punto y coma forman parte del código."
         }
       ]
     },
@@ -2338,6 +2338,89 @@
         "id": "p1u1l4_referencia_logica",
         "beforeSha256": "8867d2645d0da5209e1de25808d64f70a32213b9e87c29d1d622bdbf724f2b96",
         "afterSha256": "4ed82caa7691dae163220b4b511f5c58f3814c52c1bf0bb67e4a614e3f4c5d2e"
+      },
+      {
+        "id": "p1u1l4_p0_enlazador_y_biblioteca",
+        "beforeSha256": "ee3cb881c273b47bb56e3f318d46ec9743351f205e55e73dec211425b9704c3b",
+        "afterSha256": "e86f1f947f0b0857eb535d01f584ea6a8aa1e908d3a695d715ff8afb02580666"
+      },
+      {
+        "id": "p1u1l4_p0_boton",
+        "beforeSha256": "3adf0f32a34213e1d1992ad803168a0a3d1233e387e3ccb523b19c0e90c4115b",
+        "afterSha256": "3e750f0f5c69c73fef259be8959bcd52df137cf235a296f013ae3c0673ddee3a"
+      },
+      {
+        "id": "p1u1l4_nombre_explicacion",
+        "beforeSha256": "ce25da2ddf7d8d74703833cd8ef628f7ca3e825e2c06378d3482af3a174aa795",
+        "afterSha256": "d3e77719b079f42830616f1cb1c0ec6e325f75caac8807fd9dead360827540a5"
+      },
+      {
+        "id": "p1u1l4_comillas_y_punto",
+        "beforeSha256": "c5ea9808e10e8c05c9c6d2f5a16025c71257b9a9e2caf3bf088e99e9e4dc18c9",
+        "afterSha256": "79c97d051c3e18fa4a4bda1ab0d27fd45303adc2a62c6aefa0a1da04c8d6748b"
+      },
+      {
+        "id": "p1u1l4_otra_redaccion",
+        "beforeSha256": "8f25bb3b9f34b2a612b78c782922b5882ff332797a001739a07fb805864b7901",
+        "afterSha256": "a0cc75727828ed063ad761ddab57aeb97e3041f28a7d4fab8aca92ea5f9d30a7"
+      },
+      {
+        "id": "p1u1l4_interpretar_cierre",
+        "beforeSha256": "7d4792329aa07cabb0ebc7dab0bf447cf5858cae0ec81449d54438fb90187536",
+        "afterSha256": "70a61266b15f82fdd2800775e85be128a6e6714fe4bf93d3c4c5eac2cdfcee94"
+      },
+      {
+        "id": "p1u1l4_razonar_nombre",
+        "beforeSha256": "6d7b1884bb0073f15bfa25460836fc9f540f24bcbb24e46d7add90bf1c01e1ed",
+        "afterSha256": "e113e3ba712e84d3393aa0708df367eff77697116d9377592f70ea931befdb36"
+      },
+      {
+        "id": "block_0000_0003",
+        "beforeSha256": "1a673ceb69a3618e55d505864c510ba25f31c436b8d9a1af86e46a4348ed3862",
+        "afterSha256": "9181afbbef36ae221db3369459626e6c8ffa5dff72273113c69018ae32cf4f37"
+      },
+      {
+        "id": "block_0002_0003",
+        "beforeSha256": "1c216e147fd86e74f64f33209e9e529f481290a9e75dd15a589b5e8289918878",
+        "afterSha256": "d5fcce9a31425332dcaad314ac0e297832714e0d1c4e8ad031f4859ab71ec444"
+      },
+      {
+        "id": "block_0000_0003",
+        "beforeSha256": "9181afbbef36ae221db3369459626e6c8ffa5dff72273113c69018ae32cf4f37",
+        "afterSha256": "386e714eece12ee266a9139b2d451f3e6285c92ecbd99e9786da062abaeef59a"
+      },
+      {
+        "id": "block_0002_0004",
+        "beforeSha256": "aa8edd89be1b2bd8dcec677bfea9aebefd00928e56d5cf4e263e17ab5bb1e96a",
+        "afterSha256": "43639d2606afc8532a3571a8f5695cf96e174d306bf4f20088df03bcc6d3ea39"
+      },
+      {
+        "id": "block_0002_0003",
+        "beforeSha256": "d5fcce9a31425332dcaad314ac0e297832714e0d1c4e8ad031f4859ab71ec444",
+        "afterSha256": "6a2d99f91587b3a380ab7a42266675619e92052612d682fde8b7a64f862a524b"
+      },
+      {
+        "id": "block_0003_0004",
+        "beforeSha256": "900e38725311f16176e93f9377c18f59c7243ad215696134e4f576f96645e84c",
+        "afterSha256": "57bfb47e77b8a1ddce6227c5200bcec87a6b18464abe5d7eb77a59ca89c09cc7"
+      },
+      {
+        "id": "block_0003_0005",
+        "beforeSha256": "55ab59fc6dbb35a54f534a71f6a72689089198617f23dd68cdf3acc7f68c4dd2",
+        "afterSha256": "753abd3b23fa946a21c1617f01d6ad1b115dc116c06caa95ef8e3d779711158e",
+        "reviewPaths": [
+          "/reviewFeedback"
+        ]
+      },
+      {
+        "id": "block_0001_0003",
+        "beforeSha256": "3985fdf6b449766ea8f499cb02af9f96ce998633303c221998ba936f9c54077d",
+        "afterSha256": "bd140f9a7eb192ff7e11f7d623d388dc8feb6ad818bba6bc6d7a79417515ed2a"
+      },
+      {
+        "id": "block_0003_0004",
+        "beforeSha256": "57bfb47e77b8a1ddce6227c5200bcec87a6b18464abe5d7eb77a59ca89c09cc7",
+        "afterSha256": "9dafc7d2aa4d763f3aaadec635491785687849bef35feacda8cfd75a2c254658"
       }
     ],
     "retired": [
@@ -4566,6 +4649,144 @@
           "code": "#include <iostream>\n\nint main() {\n    // Mostrar primero Entrada y después Salida.\n    std::cout << \"Entrada\\n\";\n    std::cout << \"Salida\";\n    return 0;\n}\n"
         }
       }
+    ],
+    "choiceRevisions": [
+      {
+        "id": "block_0000_0003",
+        "block": {
+          "type": "multiple_choice",
+          "id": "editor_compilador",
+          "question": "Has escrito un archivo en un editor y aún no has construido el programa. ¿Qué tienes en este punto?",
+          "options": [
+            "El código fuente que debe analizarse y construirse.",
+            "La salida final del programa.",
+            "Una prueba de que todos los resultados son correctos."
+          ],
+          "correctIndex": 0,
+          "explanation": "El archivo contiene el texto C++ que escribimos. Todavía no hemos construido esa versión ni la hemos ejecutado. Conocer el texto permite analizarlo, pero no equivale a observar su resultado."
+        },
+        "optionIndex": 0,
+        "replacement": "El código fuente que escribiste en el editor.",
+        "semanticBefore": {
+          "block": "block_0000_0003",
+          "path": "/options/0",
+          "sourceSha256": "21bb73555360d957eb4643e0bba34f1f759bbcd606c0f2c097379444645365b2",
+          "spans": []
+        },
+        "semanticAfter": {
+          "block": "block_0000_0003",
+          "path": "/options/0",
+          "sourceSha256": "775078400cb6f0ba5a37a4023fe503218e92030ad0a999318d82c41d498b7b1f",
+          "spans": []
+        },
+        "semanticRootBefore": true
+      },
+      {
+        "id": "block_0002_0003",
+        "block": {
+          "type": "multiple_choice",
+          "id": "mensaje_equivocado",
+          "question": "El requisito es mostrar Pedido recibido. El programa compila y muestra Pedido cancelado. ¿Qué queda por corregir?",
+          "options": [
+            "Cambiar sólo el comentario que describe el mensaje esperado.",
+            "Cambiar el literal ejecutado para cumplir el mensaje requerido.",
+            "Aceptar el resultado porque la compilación tuvo éxito."
+          ],
+          "correctIndex": 1,
+          "explanation": "El compilador aceptó el programa, pero el resultado observado no es el requerido. Hay que corregir el código que aporta ese mensaje y volver a ejecutarlo. Cambiar sólo una nota no modifica el literal que se envía a la consola."
+        },
+        "optionIndex": 1,
+        "replacement": "Cambiar las palabras dentro del literal que la instrucción de salida envía a la consola.",
+        "semanticBefore": {
+          "block": "block_0002_0003",
+          "path": "/options/1",
+          "sourceSha256": "d1d8fb8bef018df0df801a288ca06c8a14c9d3de4cb14c00562594d985f25fb3",
+          "spans": []
+        },
+        "semanticAfter": {
+          "block": "block_0002_0003",
+          "path": "/options/1",
+          "sourceSha256": "302efea7ae4552b07263a97a4d8f29d01540e9965f51e0fda33c2f600a0bd3e3",
+          "spans": []
+        },
+        "semanticRootBefore": true
+      },
+      {
+        "id": "block_0001_0003",
+        "block": {
+          "type": "multiple_choice",
+          "id": "falta_terminador",
+          "question": "En el ejemplo mostrado, el diagnóstico señala return. Antes de borrar o cambiar esa instrucción, ¿qué conviene revisar primero?",
+          "options": [
+            "La terminación de la instrucción anterior y el contexto cercano.",
+            "Cambiar el mensaje del literal porque precede al diagnóstico.",
+            "Eliminar return porque el diagnóstico señala esa línea."
+          ],
+          "correctIndex": 0,
+          "explanation": "La instrucción anterior no terminó: falta su punto y coma. La herramienta detectó el problema al leer return. El lugar señalado orienta la búsqueda, pero también hay que revisar lo que venía antes. Después de corregir el terminador, se reconstruye esa versión."
+        },
+        "optionIndex": 0,
+        "replacement": "Revisar si la instrucción de salida que está justo antes de return termina con un punto y coma.",
+        "semanticBefore": {
+          "block": "block_0001_0003",
+          "path": "/options/0",
+          "sourceSha256": "89b7fe2bc7322d7d861283c3e8bcf97ffe4501280135e631f7e5662c943034be",
+          "spans": []
+        },
+        "semanticAfter": {
+          "block": "block_0001_0003",
+          "path": "/options/0",
+          "sourceSha256": "506adb19e06d846a08958339d29f99cd4dc8b4e5c360a9c559e25712cb7f1910",
+          "spans": [
+            {
+              "start": 60,
+              "end": 66,
+              "text": "return",
+              "role": "cpp",
+              "reading": "technical"
+            }
+          ]
+        },
+        "semanticRootBefore": true
+      },
+      {
+        "id": "block_0003_0004",
+        "block": {
+          "type": "multiple_choice",
+          "id": "prueba_controlada",
+          "question": "Un programa que mostraba Registro cerrado compilaba correctamente. Cambias el nombre main, quitas una comilla del literal y cambias las palabras del mensaje. Al intentar construir el programa otra vez aparece un error. ¿Por qué hace falta revisar el código para saber cuál de los cambios causó ese error?",
+          "options": [
+            "Porque el nuevo texto del mensaje explica cualquier diagnóstico.",
+            "Porque hay que distinguir los efectos de varias modificaciones.",
+            "Porque basta atribuir el fallo al último cambio que recuerdas."
+          ],
+          "correctIndex": 1,
+          "explanation": "Si quitas la comilla de cierre, el compilador puede señalar un error al leer el literal. Si cambias el nombre de main, el enlazador puede informar que falta la función donde debe empezar la ejecución. El diagnóstico ayuda a identificar qué cambio impidió construir el programa. Tras corregir esa causa, vuelve a construirlo para averiguar si queda otro error."
+        },
+        "optionIndex": 1,
+        "replacement": "Porque tanto quitar la comilla como cambiar el nombre de main pueden impedir que se construya el programa. Hay que leer el diagnóstico para distinguir las causas.",
+        "semanticBefore": {
+          "block": "block_0003_0004",
+          "path": "/options/1",
+          "sourceSha256": "01c3ee659c5cbeb154b9f9c7d90a3229b0ca53e8eb6e911e865947768af64631",
+          "spans": []
+        },
+        "semanticAfter": {
+          "block": "block_0003_0004",
+          "path": "/options/1",
+          "sourceSha256": "606bcfa9e3800b42716494eb4513eda5a6bfbf4d25462e3e0c0e83702980529a",
+          "spans": [
+            {
+              "start": 57,
+              "end": 61,
+              "text": "main",
+              "role": "cpp",
+              "reading": "technical"
+            }
+          ]
+        },
+        "semanticRootBefore": true
+      }
     ]
   },
   "activityAfter": [
@@ -4607,7 +4828,7 @@
       {
         "block": "block_0000_0003",
         "path": "/question",
-        "sourceSha256": "edbc402c40c3feb7e52fdc6cffa621c6e33880e4c6f7850fe128aed45423b98d",
+        "sourceSha256": "4b57427f5cb1d57aa3a51fc8e56ff1cf1dc386e269fc13d8eed5105f99708fbd",
         "spans": []
       },
       {
@@ -4627,7 +4848,7 @@
       {
         "block": "block_0000_0003",
         "path": "/options/0",
-        "sourceSha256": "21bb73555360d957eb4643e0bba34f1f759bbcd606c0f2c097379444645365b2",
+        "sourceSha256": "775078400cb6f0ba5a37a4023fe503218e92030ad0a999318d82c41d498b7b1f",
         "spans": []
       },
       {
@@ -4709,8 +4930,16 @@
       {
         "block": "block_0001_0003",
         "path": "/options/0",
-        "sourceSha256": "89b7fe2bc7322d7d861283c3e8bcf97ffe4501280135e631f7e5662c943034be",
-        "spans": []
+        "sourceSha256": "506adb19e06d846a08958339d29f99cd4dc8b4e5c360a9c559e25712cb7f1910",
+        "spans": [
+          {
+            "start": 60,
+            "end": 66,
+            "text": "return",
+            "role": "cpp",
+            "reading": "technical"
+          }
+        ]
       },
       {
         "block": "block_0001_0003",
@@ -4776,18 +5005,18 @@
       {
         "block": "block_0002_0003",
         "path": "/question",
-        "sourceSha256": "a65222ecd978f5d6244029e9664167ffe7c4c8023c27605a2b7a99a64ffd04b5",
+        "sourceSha256": "ae864ef15ead981c108bbd7c6e758f346afe97935763017d9d3cebe6b5d1f176",
         "spans": [
           {
-            "start": 24,
-            "end": 39,
+            "start": 25,
+            "end": 40,
             "text": "Pedido recibido",
             "role": "output",
             "reading": "natural"
           },
           {
-            "start": 71,
-            "end": 87,
+            "start": 92,
+            "end": 108,
             "text": "Pedido cancelado",
             "role": "output",
             "reading": "natural"
@@ -4797,8 +5026,23 @@
       {
         "block": "block_0002_0003",
         "path": "/explanation",
-        "sourceSha256": "e89dfd047f63bd0f0d4d16d4fa06f1208001582767108f0360eae99938dade32",
-        "spans": []
+        "sourceSha256": "3c7da012f3e568feea9d1914e13aaad4c76a017b29e103871044a0493ce82127",
+        "spans": [
+          {
+            "start": 87,
+            "end": 103,
+            "text": "Pedido cancelado",
+            "role": "output",
+            "reading": "natural"
+          },
+          {
+            "start": 182,
+            "end": 197,
+            "text": "Pedido recibido",
+            "role": "output",
+            "reading": "natural"
+          }
+        ]
       },
       {
         "block": "block_0002_0003",
@@ -4809,7 +5053,7 @@
       {
         "block": "block_0002_0003",
         "path": "/options/1",
-        "sourceSha256": "d1d8fb8bef018df0df801a288ca06c8a14c9d3de4cb14c00562594d985f25fb3",
+        "sourceSha256": "302efea7ae4552b07263a97a4d8f29d01540e9965f51e0fda33c2f600a0bd3e3",
         "spans": []
       },
       {
@@ -4821,18 +5065,11 @@
       {
         "block": "block_0002_0004",
         "path": "/question",
-        "sourceSha256": "702bb984b89c6fd07ec8932c725e40f20f5ed5d2efff5a5463665eb85f240ed4",
+        "sourceSha256": "938a770447b028946aa6e74a9d1c06b51265ea8580eca6e3768e52ee2dc94d6b",
         "spans": [
           {
-            "start": 7,
-            "end": 16,
-            "text": "std::cout",
-            "role": "cpp",
-            "reading": "technical"
-          },
-          {
-            "start": 44,
-            "end": 53,
+            "start": 34,
+            "end": 43,
             "text": "std::Cout",
             "role": "cpp",
             "reading": "technical"
@@ -4842,19 +5079,26 @@
       {
         "block": "block_0002_0004",
         "path": "/explanation",
-        "sourceSha256": "10210aff3c5fd39ab5ec0924d63d60d7957301f68e6abbc9559a5f556fab8ee1",
+        "sourceSha256": "b9a495bacd0f47c4681c4ef4fcbd15431a9bdffa39674d9ad3408e7f6d5f892a",
         "spans": [
           {
-            "start": 26,
-            "end": 35,
+            "start": 89,
+            "end": 98,
+            "text": "std::Cout",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 121,
+            "end": 130,
             "text": "std::cout",
             "role": "cpp",
             "reading": "technical"
           },
           {
-            "start": 55,
-            "end": 64,
-            "text": "std::Cout",
+            "start": 195,
+            "end": 203,
+            "text": "iostream",
             "role": "cpp",
             "reading": "technical"
           }
@@ -4901,18 +5145,25 @@
       {
         "block": "block_0003_0005",
         "path": "/explanation",
-        "sourceSha256": "bc0b2998e8eb280c72744a740671d10394d0625ab94b6c9cdc7ca57c7627290f",
+        "sourceSha256": "6d9b933d3ac4c2cab8a6fde4ab208649ef446866961dd7209ee2b3872d610d05",
         "spans": [
           {
-            "start": 25,
-            "end": 41,
+            "start": 19,
+            "end": 28,
+            "text": "std::cout",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 37,
+            "end": 53,
             "text": "Revision inicial",
             "role": "output",
             "reading": "natural"
           },
           {
-            "start": 96,
-            "end": 105,
+            "start": 166,
+            "end": 175,
             "text": "return 0;",
             "role": "cpp",
             "reading": "technical"
@@ -4922,11 +5173,11 @@
       {
         "block": "block_0003_0005",
         "path": "/reviewFeedback",
-        "sourceSha256": "7cdc5290f3c87d8ad976724ffca6a37a6f1000314214cf2e29ac0dc3bb09b525",
+        "sourceSha256": "765ea1d71287ab9ed7d94ee419bb3308f7b274aaf7cbfbd7326be11c3446dc1d",
         "spans": [
           {
-            "start": 51,
-            "end": 60,
+            "start": 71,
+            "end": 80,
             "text": "std::cout",
             "role": "cpp",
             "reading": "technical"
@@ -4936,11 +5187,18 @@
       {
         "block": "block_0003_0004",
         "path": "/question",
-        "sourceSha256": "7acc41af77cd2350587f2537e7825b356f3256bafda71777398806fd049b76ed",
+        "sourceSha256": "fc1a57827a6d54e10758a7e9bc10570430ec9ee166cece39e5d0c6ca64de06f4",
         "spans": [
           {
-            "start": 30,
-            "end": 34,
+            "start": 25,
+            "end": 41,
+            "text": "Registro cerrado",
+            "role": "output",
+            "reading": "natural"
+          },
+          {
+            "start": 85,
+            "end": 89,
             "text": "main",
             "role": "cpp",
             "reading": "technical"
@@ -4950,8 +5208,16 @@
       {
         "block": "block_0003_0004",
         "path": "/explanation",
-        "sourceSha256": "810640957fa160aa58fde90c5a59a4072d97e3d53eb750d8aba677da8d941a8f",
-        "spans": []
+        "sourceSha256": "2a140d62d3240f921b2eeabd7a62e7e3549f865eaee19954305f0c5e4fcf890c",
+        "spans": [
+          {
+            "start": 113,
+            "end": 117,
+            "text": "main",
+            "role": "cpp",
+            "reading": "technical"
+          }
+        ]
       },
       {
         "block": "block_0003_0004",
@@ -4962,8 +5228,16 @@
       {
         "block": "block_0003_0004",
         "path": "/options/1",
-        "sourceSha256": "01c3ee659c5cbeb154b9f9c7d90a3229b0ca53e8eb6e911e865947768af64631",
-        "spans": []
+        "sourceSha256": "606bcfa9e3800b42716494eb4513eda5a6bfbf4d25462e3e0c0e83702980529a",
+        "spans": [
+          {
+            "start": 57,
+            "end": 61,
+            "text": "main",
+            "role": "cpp",
+            "reading": "technical"
+          }
+        ]
       },
       {
         "block": "block_0003_0004",
@@ -5076,25 +5350,25 @@
       {
         "block": "p1u1l4_p0_enlazador_y_biblioteca",
         "path": "/text",
-        "sourceSha256": "10ffdcfcd76766b47e58e66a3f61740729d3e943f36575e44b476897692e7c11",
+        "sourceSha256": "d045b5d57b8f33f7c0ed4cb114662839c1ece347baca158a110038a7c80bb6b5",
         "spans": [
           {
-            "start": 79,
-            "end": 98,
+            "start": 81,
+            "end": 90,
+            "text": "std::cout",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 101,
+            "end": 120,
             "text": "#include <iostream>",
             "role": "cpp",
             "reading": "technical"
           },
           {
-            "start": 136,
-            "end": 144,
-            "text": "iostream",
-            "role": "cpp",
-            "reading": "technical"
-          },
-          {
-            "start": 395,
-            "end": 413,
+            "start": 460,
+            "end": 478,
             "text": "(Stroustrup, 2024)",
             "role": "citation",
             "reading": "natural"
@@ -5166,7 +5440,7 @@
       {
         "block": "p1u1l4_p0_boton",
         "path": "/text",
-        "sourceSha256": "ba6b8d1fca320b1138ad9bffb340ab93418d15e6addf248e342a287722c6ac11",
+        "sourceSha256": "7edac4c6fbf62a933d11df47469dff0551c6c63086a19e401b8d1e20ee1e88ee",
         "spans": []
       },
       {
@@ -5273,32 +5547,25 @@
       {
         "block": "p1u1l4_nombre_explicacion",
         "path": "/text",
-        "sourceSha256": "6934382890c1671f0b03dcb0eaf42482748384a899b77850a63a87fab0283981",
+        "sourceSha256": "d82135dd0f91636f69423ff1af56ae42903ad40c769275d610e3af6fdf663309",
         "spans": [
           {
-            "start": 127,
-            "end": 136,
-            "text": "std::cout",
-            "role": "cpp",
-            "reading": "technical"
-          },
-          {
-            "start": 141,
-            "end": 142,
-            "text": "c",
-            "role": "cpp",
-            "reading": "technical"
-          },
-          {
-            "start": 154,
-            "end": 163,
+            "start": 35,
+            "end": 44,
             "text": "std::Cout",
             "role": "cpp",
             "reading": "technical"
           },
           {
-            "start": 345,
-            "end": 363,
+            "start": 140,
+            "end": 149,
+            "text": "std::cout",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 305,
+            "end": 323,
             "text": "(Stroustrup, 2024)",
             "role": "citation",
             "reading": "natural"
@@ -5343,7 +5610,7 @@
       {
         "block": "p1u1l4_comillas_y_punto",
         "path": "/text",
-        "sourceSha256": "c4b2635b876ce2e5e8763045e4e7871ed7b0dac26266434249903e1f52c1a243",
+        "sourceSha256": "e91840262fda910fbd2301270d121849ddf3cf5f71064134a7362aaadb1f077f",
         "spans": []
       },
       {
@@ -5556,18 +5823,32 @@
       {
         "block": "p1u1l4_otra_redaccion",
         "path": "/text",
-        "sourceSha256": "4d6e616b0fa98d892925ab51ecf3796dde28e0ffe6466e4aebb3121096eb7436",
+        "sourceSha256": "e6ddf3115c7a76767aabdce9ff524553cbd92300ad79aa8df9c984ef89f132f1",
         "spans": [
           {
-            "start": 24,
-            "end": 29,
+            "start": 32,
+            "end": 37,
             "text": "C2143",
             "role": "data",
             "reading": "natural"
           },
           {
-            "start": 237,
-            "end": 255,
+            "start": 53,
+            "end": 59,
+            "text": "return",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 277,
+            "end": 283,
+            "text": "return",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 397,
+            "end": 415,
             "text": "(Stroustrup, 2024)",
             "role": "citation",
             "reading": "natural"
@@ -5664,11 +5945,32 @@
       {
         "block": "p1u1l4_interpretar_cierre",
         "path": "/text",
-        "sourceSha256": "7763eb7de507b3c81aa047dd277b2bb09bca73142d1345dabd71d87ed7aece25",
+        "sourceSha256": "eb518450539934d68cb279faddaabb0c7094d7815e511d0b8b41f3d856ab28ec",
         "spans": [
           {
-            "start": 57,
-            "end": 61,
+            "start": 88,
+            "end": 92,
+            "text": "main",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 107,
+            "end": 124,
+            "text": "token coincidente",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 240,
+            "end": 245,
+            "text": "fatal",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 373,
+            "end": 377,
             "text": "main",
             "role": "cpp",
             "reading": "technical"
@@ -5786,14 +6088,21 @@
       {
         "block": "p1u1l4_razonar_nombre",
         "path": "/text",
-        "sourceSha256": "77915bd73689385540dce7989e55a9763adea887a385d94a01d3d2d21798874d",
+        "sourceSha256": "7cd28997c39ae85e2aec2206630ba8cac621daf064430bd1b0f29f63a6f6b456",
         "spans": [
           {
-            "start": 10,
-            "end": 19,
+            "start": 22,
+            "end": 31,
             "text": "std::cout",
             "role": "cpp",
             "reading": "technical"
+          },
+          {
+            "start": 212,
+            "end": 227,
+            "text": "Zona habilitada",
+            "role": "output",
+            "reading": "natural"
           }
         ]
       },

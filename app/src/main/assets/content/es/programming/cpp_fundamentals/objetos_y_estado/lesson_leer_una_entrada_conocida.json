@@ -106,8 +106,8 @@
           "answers": [
             "Metros: 2.5"
           ],
-          "explanation": "metros es de tipo double y guarda 2.5. El texto que lo precede y el valor de la variable forman el renglón Metros: 2.5.",
-          "reviewFeedback": "Escribe primero el texto del aviso, incluido su espacio final. Después se muestra la medida guardada en metros."
+          "explanation": "std::cin lee 2.5 y guarda ese número en metros, que es de tipo double. Después, std::cout escribe el rótulo y el espacio de \"Metros: \", seguidos de esa medida. El renglón de la salida dice Metros: 2.5.",
+          "reviewFeedback": "El literal \"Metros: \" contiene el rótulo y el espacio que aparece después de los dos puntos. ¿Qué valor lee std::cout de metros para escribirlo después de ese espacio?"
         },
         {
           "type": "multiple_choice",
@@ -166,7 +166,7 @@
         {
           "type": "output_prediction",
           "language": "cpp",
-          "question": "La entrada contiene Ana Maria. Escribe el renglón completo. Fíjate en qué separador aparece entre las dos palabras.",
+          "question": "El campo «Entrada» contiene Ana Maria. El programa lee las dos palabras. Escribe el renglón completo de la salida, incluido el signo que std::cout coloca entre ellas.",
           "code": "#include <iostream>\n#include <string>\n\nint main() {\n    std::string primera;\n    std::string segunda;\n\n    std::cin >> primera >> segunda;\n\n    std::cout << primera << \":\" << segunda;\n\n    return 0;\n}\n",
           "answers": [
             "Ana:Maria"
@@ -275,7 +275,7 @@
         },
         {
           "type": "paragraph",
-          "text": "Con la entrada 8.5, la misma instrucción sí lee un entero. Guarda 8 en cajas y deja .5 pendiente en la entrada. Aquí solo se han leído las cifras que forman el entero. Si el encargo exige que la entrada completa sea un entero, también hay que revisar qué quedó después del ocho (Köppe et al., 2023).",
+          "text": "Supón que cajas es de tipo int y que en el campo «Entrada» escribes 8.5. Al ejecutar std::cin >> cajas;, el programa lee la cifra ocho y se detiene delante del punto. Guarda 8 en cajas y deja .5 pendiente en la entrada. La lectura del entero ha tenido éxito. Si el ejercicio exige un entero como único dato, todavía hay que comprobar si quedan caracteres que incumplan el formato. En esta entrada, el punto y el cinco muestran que también se escribió una parte decimal (Köppe et al., 2023).",
           "emphasis": [
             {
               "text": "deja .5 pendiente en la entrada"
@@ -286,7 +286,7 @@
           "type": "multiple_choice",
           "question": "La entrada completa debía ser un entero. Al leer 8.5 con std::cin >> cajas, se obtiene 8. ¿Qué falta comprobar para aceptar la entrada completa?",
           "options": [
-            "Que toda la entrada haya sido consumida y aceptada con el formato que necesitábamos.",
+            "Que después de las cifras del entero no queden otros caracteres, como el punto y el cinco de 8.5.",
             "Que el prefijo 8 se haya podido interpretar como un entero.",
             "Que el punto y la cifra posterior queden fuera de ese prefijo entero."
           ],
@@ -325,7 +325,7 @@
         },
         {
           "type": "paragraph",
-          "text": "Al programa del editor le falta la lectura. Ya crea nombre y cajas, suma tres cajas y muestra el resultado. Escribe la instrucción que lee del campo «Entrada» el nombre y luego el número de cajas. Colócala antes de la suma. El nombre es una palabra y la cantidad inicial va de cero a veinte cajas.\n\nEntrada\nRita 4\n\nSalida esperada\nRita: 7\n\nPulsa «Compilar, ejecutar y comprobar». Este primer caso permite avanzar. Puedes añadir un salto de línea al final de la salida."
+          "text": "En el programa del editor ya existen las variables nombre y cajas. También están escritas la suma de tres cajas y la instrucción que muestra el resultado. Falta leer el nombre y la cantidad inicial. En el espacio del editor antes de la suma, escribe la instrucción con std::cin que lee primero una palabra en nombre y después un entero en cajas.\n\nEl programa debe servir para cantidades iniciales de cero a veinte cajas. Para completar el ejercicio, usa la entrega concreta que el editor pone inicialmente en el campo «Entrada».\n\nEntrada para completar el ejercicio\nRita 4\n\nSalida esperada\nRita: 7\n\nPulsa «Compilar, ejecutar y comprobar». La app acepta un salto de línea al final de la salida."
         },
         {
           "type": "cpp_compiler",
@@ -375,10 +375,10 @@
       "blocks": [
         {
           "type": "multiple_choice",
-          "question": "Un programa empieza siempre con nombre igual a Rita y cajas igual a 4. Suma tres cajas y muestra el resultado. ¿Qué puedes comprobar al ejecutarlo si el código carece de instrucciones de lectura?",
+          "question": "El código asigna Rita a nombre y 4 a cajas. Luego suma tres a cajas y muestra el nombre y el resultado. ¿Qué puedes comprobar al ejecutar este programa si carece de una instrucción que lea del campo «Entrada»?",
           "options": [
             "Que una persona pudo introducir datos en cin dentro de la app.",
-            "El procesamiento y la salida para esos datos.",
+            "Que al sumar tres a las cuatro cajas del código se obtiene siete y que la consola muestra Rita: 7.",
             "Que cualquier entrada inválida está bien manejada."
           ],
           "correctIndex": 1,
@@ -494,10 +494,10 @@
         },
         {
           "type": "paragraph",
-          "text": "Escribe el programa dentro de main. Lee los tres datos desde std::cin. Calcula el total y muestra la etiqueta seguida de dos puntos, un espacio y el total. Las cabeceras ya están en el editor.\n\nEntrada\nIris 4 2\n\nSalida esperada\nIris: 22\n\nPulsa «Compilar, ejecutar y comprobar». Con este primer caso puedes avanzar. El salto de línea final es opcional.",
+          "text": "Dentro de main, usa std::cin para leer, en este orden, la etiqueta, el número de paquetes y la cantidad de piezas sueltas. Calcula el total de piezas con los datos que acabas de leer. Con std::cout, muestra la etiqueta, dos puntos, un espacio y el total. Las cabeceras ya están en el editor.\n\nPara completar el ejercicio usa la entrega que el editor pone inicialmente en el campo «Entrada».\n\nEntrada para completar el ejercicio\nIris 4 2\n\nSalida esperada\nIris: 22\n\nPulsa «Compilar, ejecutar y comprobar». El salto de línea al final de la salida es opcional.",
           "emphasis": [
             {
-              "text": "Lee los tres datos desde std::cin."
+              "text": "usa std::cin para leer, en este orden, la etiqueta, el número de paquetes y la cantidad de piezas sueltas"
             }
           ]
         },
@@ -582,11 +582,11 @@
         {
           "type": "multiple_choice",
           "id": "cpp_fundamentals__objetos_y_estado__leer_una_entrada_conocida__regla_y_datos_de_entrada",
-          "question": "Cambias la entrada de Iris 4 2 a Vera 3 1. ¿Qué debe conservar el programa para calcular y mostrar el total de la nueva entrega?",
+          "question": "En cada paquete hay cinco piezas. std::cin lee la etiqueta, el número de paquetes y el número de piezas sueltas. La entrega cambia de Iris 4 2 a Vera 3 1. ¿Qué debe hacer el programa con los datos nuevos para calcular el total de piezas y mostrarlo junto a la etiqueta?",
           "options": [
             "La etiqueta Iris y el resultado 22, porque estaban en el primer caso.",
             "El valor cuatro en la variable paquetes, independientemente de cin.",
-            "La regla de cinco piezas por paquete y el formato, usando ahora los tres datos nuevos."
+            "Multiplicar por cinco la cantidad de paquetes de la nueva entrega y sumar las piezas sueltas. Mostrar la etiqueta nueva, dos puntos, un espacio y ese total. Con los datos de la pregunta, la salida será Vera: 16."
           ],
           "correctIndex": 2,
           "explanation": "Cada paquete sigue conteniendo cinco piezas. Los tres paquetes de Vera aportan quince piezas y la suelta completa dieciséis. El programa escribe Vera: 16.",
@@ -621,12 +621,12 @@
           "type": "output_prediction",
           "id": "cpp_fundamentals__objetos_y_estado__leer_una_entrada_conocida__copia_despues_de_lectura",
           "language": "cpp",
-          "question": "El programa recibe Kiro 3 en el primer renglón y 1 en el segundo. ¿Qué escribe después de guardar la cantidad original de paquetes y añadir un paquete?",
+          "question": "En el campo «Entrada» hay Kiro 3 en el primer renglón y 1 en el segundo. Cada paquete contiene cinco piezas. El programa calcula el total de piezas recibidas, copia el número de paquetes y después suma un paquete. ¿Qué renglón escribe std::cout al mostrar el nombre, el total de piezas recibidas, la copia y la cantidad de paquetes tras la suma?",
           "code": "#include <iostream>\n#include <string>\n\nint main() {\n    std::string nombre;\n    int paquetes{0};\n    int sueltas{0};\n\n    std::cin >> nombre >> paquetes >> sueltas;\n\n    int total{(5 * paquetes) + sueltas};\n\n    int originales{paquetes};\n\n    paquetes += 1;\n\n    std::cout << nombre << ' ' << total << ' ' << originales << ' ' << paquetes;\n\n    return 0;\n}\n",
           "answers": [
             "Kiro 16 3 4"
           ],
-          "explanation": "Con tres paquetes y una pieza suelta, total queda en 16 y originales guarda 3. La suma cambia solo paquetes a 4. El renglón es Kiro 16 3 4.",
+          "explanation": "nombre recibe Kiro, paquetes recibe tres y sueltas recibe uno. La variable total guarda dieciséis piezas porque tres paquetes de cinco piezas más una pieza suelta dan dieciséis. La variable originales copia el tres de paquetes. Después, paquetes += 1; cambia paquetes a cuatro. std::cout muestra nombre, total, originales y paquetes, con un espacio entre los valores. El renglón de la salida dice Kiro 16 3 4.",
           "reviewFeedback": "El total y la copia se calculan antes de sumar uno a paquetes. Sigue el orden de las cuatro variables en std::cout."
         },
         {
@@ -680,7 +680,7 @@
         },
         {
           "type": "paragraph",
-          "text": "Cada programa usa cuatro piezas por paquete. Ten en cuenta qué aporta cada entrada. Con algún paquete en la entrega puedes detectar una regla equivocada. Con cero paquetes puedes revisar si el total incluye las piezas sueltas. En el último caso se usa la entrega más grande que admite el ejercicio, veinte paquetes y tres piezas sueltas."
+          "text": "Cada paquete de esta actividad contiene cuatro piezas. Se admiten de cero a veinte paquetes y de cero a tres piezas sueltas. Si llega al menos un paquete, usar cinco piezas por paquete en la fórmula dará un total demasiado grande. Si llegan cero paquetes, el producto es cero tanto al multiplicar por cuatro como al multiplicar por cinco. En ese caso puedes comprobar si el programa suma las piezas sueltas. La última entrega usa los máximos admitidos en esta actividad, veinte paquetes y tres piezas sueltas."
         },
         {
           "type": "output_prediction",
@@ -2832,6 +2832,69 @@
         "id": "block_0005_0003",
         "beforeSha256": "9d586a4426fc73ba1f5a31329972fbdf51c1d514793d6a4b9ae3239e2e2d5495",
         "afterSha256": "e582cb189546300318200b0fb457f59d03378909fd640d5858bd7947a508b162"
+      },
+      {
+        "id": "block_0005_0002",
+        "beforeSha256": "8225d748c79ca17c0194933a75d96faa961324d8022b09eff78fc7aa24d4b335",
+        "afterSha256": "47bf2845c394e949098c0cff09d1d802e11f3ebb21de2f0709d9722833b11922"
+      },
+      {
+        "id": "block_0006_0001",
+        "beforeSha256": "80871dc2ee92e1117d40788b72e0056656dbef1d0e3175a258e0305e7f1757aa",
+        "afterSha256": "fccd53a4bb555f68e70d59912b039709c5ecdb8958cf6b879ee2e223c85a2e43"
+      },
+      {
+        "id": "block_0009_0002",
+        "beforeSha256": "9d55fc57dfc76dec0e6d47fb9e986116af31f98f326e78d61e9a03f9ff6dea56",
+        "afterSha256": "54b9a51995cf2180b06e20705c6241d7fb9ab74754f14dcf0b6bfc21371ccc95"
+      },
+      {
+        "id": "block_0012_0001",
+        "beforeSha256": "d15cc2e0c741daa4de92f566dd1ea864b602f9744afedf75df8ad8d93e6b5d7d",
+        "afterSha256": "a30d7fd6b125bd5398e3640579a3ce3ccf9dd98c2be8e3b63e6960472d659994"
+      },
+      {
+        "id": "block_0003_0002",
+        "beforeSha256": "251589693fce03b996b84c7f9e92ef21ae8d97eafc3d7733d97391ef7a151afe",
+        "afterSha256": "12bbfe15eb409a32a8630c7fc912ca7462cf14114429c24bc816c713d48503de"
+      },
+      {
+        "id": "block_0005_0004",
+        "beforeSha256": "397cbf71932d10e43184f9f43f88127417f4a968c001cca92721cfd528d61487",
+        "afterSha256": "16ca389dc9613a3c1442ff46f962047152563cae17f6c41aae2bccfd599850af"
+      },
+      {
+        "id": "block_0007_0003",
+        "beforeSha256": "c197a160d48784c731eb5bfc72308da445abef6eabb359a8d92505b1f15e6a2f",
+        "afterSha256": "5afd1c0d68802a79dbc4ba132d79f8541e52ced0df3563a9ed7ddaec69569771"
+      },
+      {
+        "id": "block_0007_0003",
+        "beforeSha256": "5afd1c0d68802a79dbc4ba132d79f8541e52ced0df3563a9ed7ddaec69569771",
+        "afterSha256": "7ae5aa2e98e16bf5e462147fc2c25590079623474d22f16f3a96167ddbb3880a"
+      },
+      {
+        "id": "block_0011_0001",
+        "beforeSha256": "b61768831433d5dce6c3a35c285dca927c940ff828f44751106ee36f19dc66b2",
+        "afterSha256": "a995d1086a028196f47b895d5d87cd460514b5a29b2b950a816ab2cfb952164c"
+      },
+      {
+        "id": "block_0010_0004",
+        "beforeSha256": "cbd827ed584c10f933d1ef4c2d1696b94d544929924b4a98653d793dd206d4f9",
+        "afterSha256": "3a61262023af83a1872059f3673d166d6f4c44e1a95024a798ebd163b7da46ba"
+      },
+      {
+        "id": "block_0010_0004",
+        "beforeSha256": "3a61262023af83a1872059f3673d166d6f4c44e1a95024a798ebd163b7da46ba",
+        "afterSha256": "fc96927e0eb6d9fbfb807b2ed4db904eb773c0dc34a6cb894cb163e1332567c6"
+      },
+      {
+        "id": "block_0002_0002",
+        "beforeSha256": "e5d5029f4120576e3e5d8384ca00ee7926255d87d35c79c1bd4405a49b3d3cbe",
+        "afterSha256": "cc0ec03fb4ac0834d5dde7c67879c3ae29bc40f2f2ff06498217de96f82fd75a",
+        "reviewPaths": [
+          "/reviewFeedback"
+        ]
       }
     ],
     "retired": [
@@ -7298,6 +7361,148 @@
           ]
         },
         "semanticRootBefore": true
+      },
+      {
+        "id": "block_0005_0004",
+        "block": {
+          "type": "multiple_choice",
+          "question": "La entrada completa debía ser un entero. Al leer 8.5 con std::cin >> cajas, se obtiene 8. ¿Qué falta comprobar para aceptar la entrada completa?",
+          "options": [
+            "Que toda la entrada haya sido consumida y aceptada con el formato que necesitábamos.",
+            "Que el prefijo 8 se haya podido interpretar como un entero.",
+            "Que el punto y la cifra posterior queden fuera de ese prefijo entero."
+          ],
+          "correctIndex": 0,
+          "explanation": "Se pudo leer 8. Queda .5 en la entrada. Si se exige un único entero sin caracteres después, esa entrada incumple el formato (Köppe et al., 2023).",
+          "reviewFeedback": [
+            "Busca qué caracteres de 8.5 siguen en la entrada después de leer el entero.",
+            "La pregunta ya indica que cajas recibió 8. Ahora revisa el resto de la entrada.",
+            "El punto y el cinco quedaron sin leer. ¿Basta con haber leído el ocho para aceptar todo el texto 8.5 como entero?"
+          ]
+        },
+        "optionIndex": 0,
+        "replacement": "Que después de las cifras del entero no queden otros caracteres, como el punto y el cinco de 8.5.",
+        "semanticBefore": {
+          "block": "block_0005_0004",
+          "path": "/options/0",
+          "sourceSha256": "01fd812ebcb7538886f342f4b1a005bdbf504b028ef7d2306cba6dd820b5bf99",
+          "spans": []
+        },
+        "semanticAfter": {
+          "block": "block_0005_0004",
+          "path": "/options/0",
+          "sourceSha256": "130036231155ddd3c99862390e588e189e780bbc1ccfbe3c1b304b22534bc26e",
+          "spans": [
+            {
+              "start": 93,
+              "end": 96,
+              "text": "8.5",
+              "role": "data",
+              "reading": "natural"
+            }
+          ]
+        },
+        "semanticRootBefore": true
+      },
+      {
+        "id": "block_0007_0003",
+        "block": {
+          "type": "multiple_choice",
+          "question": "Un programa empieza siempre con nombre igual a Rita y cajas igual a 4. Suma tres cajas y muestra el resultado. ¿Qué puedes comprobar al ejecutarlo si el código carece de instrucciones de lectura?",
+          "options": [
+            "Que una persona pudo introducir datos en cin dentro de la app.",
+            "El procesamiento y la salida para esos datos.",
+            "Que cualquier entrada inválida está bien manejada."
+          ],
+          "correctIndex": 1,
+          "explanation": "Puedes comprobar que el cálculo con cuatro cajas da siete y que la salida muestra Rita: 7. Las dos variables reciben sus valores iniciales del código.",
+          "reviewFeedback": [
+            "Busca de dónde vienen el nombre y las cuatro cajas si el programa nunca lee de std::cin.",
+            "Empieza con 4 cajas, suma tres y observa qué cantidad se imprime junto al nombre.",
+            "Si el programa nunca lee std::cin, ¿cómo podría detectar una entrada incorrecta?"
+          ]
+        },
+        "optionIndex": 1,
+        "replacement": "Que al sumar tres a las cuatro cajas del código se obtiene siete y que la consola muestra Rita: 7.",
+        "semanticBefore": {
+          "block": "block_0007_0003",
+          "path": "/options/1",
+          "sourceSha256": "ec1349726b0bbc511b697a2c52a6435765e62ba96b8966035f5629750e574c74",
+          "spans": []
+        },
+        "semanticAfter": {
+          "block": "block_0007_0003",
+          "path": "/options/1",
+          "sourceSha256": "0c52c0f27a8e6b30d8158d43585b2c87114901ecaf8cec1fefbfe98a48d102d8",
+          "spans": [
+            {
+              "start": 90,
+              "end": 97,
+              "text": "Rita: 7",
+              "role": "output",
+              "reading": "natural"
+            }
+          ]
+        },
+        "semanticRootBefore": true
+      },
+      {
+        "id": "block_0010_0004",
+        "block": {
+          "type": "multiple_choice",
+          "id": "cpp_fundamentals__objetos_y_estado__leer_una_entrada_conocida__regla_y_datos_de_entrada",
+          "question": "Cambias la entrada de Iris 4 2 a Vera 3 1. ¿Qué debe conservar el programa para calcular y mostrar el total de la nueva entrega?",
+          "options": [
+            "La etiqueta Iris y el resultado 22, porque estaban en el primer caso.",
+            "El valor cuatro en la variable paquetes, independientemente de cin.",
+            "La regla de cinco piezas por paquete y el formato, usando ahora los tres datos nuevos."
+          ],
+          "correctIndex": 2,
+          "explanation": "Cada paquete sigue conteniendo cinco piezas. Los tres paquetes de Vera aportan quince piezas y la suelta completa dieciséis. El programa escribe Vera: 16.",
+          "reviewFeedback": [
+            "Revisa qué nombre y qué cantidades acaba de recibir std::cin.",
+            "Busca en Vera 3 1 el dato que indica cuántos paquetes hay.",
+            "Revisa cuántas piezas caben en cada paquete y qué caracteres separan la etiqueta del resultado."
+          ]
+        },
+        "optionIndex": 2,
+        "replacement": "Multiplicar por cinco la cantidad de paquetes de la nueva entrega y sumar las piezas sueltas. Mostrar la etiqueta nueva, dos puntos, un espacio y ese total. Con los datos de la pregunta, la salida será Vera: 16.",
+        "semanticBefore": {
+          "block": "block_0010_0004",
+          "path": "/options/2",
+          "sourceSha256": "5e650b4712eea30619d336071c61e81efdca7be9957957e64059f1b03c8eaab4",
+          "spans": [
+            {
+              "start": 12,
+              "end": 17,
+              "text": "cinco",
+              "role": "data",
+              "reading": "natural"
+            },
+            {
+              "start": 68,
+              "end": 72,
+              "text": "tres",
+              "role": "data",
+              "reading": "natural"
+            }
+          ]
+        },
+        "semanticAfter": {
+          "block": "block_0010_0004",
+          "path": "/options/2",
+          "sourceSha256": "3e178b2c24bf4f81052f114db5f128f0cc49ae2c254db9bd40103156476279e3",
+          "spans": [
+            {
+              "start": 202,
+              "end": 210,
+              "text": "Vera: 16",
+              "role": "output",
+              "reading": "natural"
+            }
+          ]
+        },
+        "semanticRootBefore": true
       }
     ]
   },
@@ -7842,32 +8047,53 @@
       {
         "block": "block_0002_0002",
         "path": "/explanation",
-        "sourceSha256": "655cfaf06da11532e3fe4cfc4e7875ce9cbe076eae4f9fa3a1ad1a928c6b810e",
+        "sourceSha256": "ab8dc96217acbf94476cf37d2d9dcdd9c4f80065148b74e8b514789c4111c8c2",
         "spans": [
           {
             "start": 0,
-            "end": 6,
-            "text": "metros",
+            "end": 8,
+            "text": "std::cin",
             "role": "cpp",
             "reading": "technical"
           },
           {
-            "start": 18,
-            "end": 24,
-            "text": "double",
-            "role": "cpp",
-            "reading": "technical"
-          },
-          {
-            "start": 34,
-            "end": 37,
+            "start": 13,
+            "end": 16,
             "text": "2.5",
             "role": "data",
             "reading": "natural"
           },
           {
-            "start": 107,
-            "end": 118,
+            "start": 40,
+            "end": 46,
+            "text": "metros",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 63,
+            "end": 69,
+            "text": "double",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 80,
+            "end": 89,
+            "text": "std::cout",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 124,
+            "end": 134,
+            "text": "\"Metros: \"",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 189,
+            "end": 200,
             "text": "Metros: 2.5",
             "role": "output",
             "reading": "natural"
@@ -7877,11 +8103,25 @@
       {
         "block": "block_0002_0002",
         "path": "/reviewFeedback",
-        "sourceSha256": "dc3b7c11b5b363bc4808e95b3fcf4bde84ee58833f6e2c56f92cb73db5d2cb24",
+        "sourceSha256": "365ecced6a046e443d774672a400e40f2db78ac032a669104111099fa5143ec4",
         "spans": [
           {
-            "start": 104,
-            "end": 110,
+            "start": 11,
+            "end": 21,
+            "text": "\"Metros: \"",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 108,
+            "end": 117,
+            "text": "std::cout",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 121,
+            "end": 127,
             "text": "metros",
             "role": "cpp",
             "reading": "technical"
@@ -8121,14 +8361,21 @@
       {
         "block": "block_0003_0002",
         "path": "/question",
-        "sourceSha256": "e715846b1347074373e2568d62c4075952d3f8f00f724e80a5c13b80e895080b",
+        "sourceSha256": "b1b09f9b20226836270e0f040ef8283ca47c1a4f755a5b95bc2cb241e8764ab5",
         "spans": [
           {
-            "start": 20,
-            "end": 29,
+            "start": 28,
+            "end": 37,
             "text": "Ana Maria",
             "role": "data",
             "reading": "natural"
+          },
+          {
+            "start": 137,
+            "end": 146,
+            "text": "std::cout",
+            "role": "cpp",
+            "reading": "technical"
           }
         ]
       },
@@ -8818,39 +9065,60 @@
       {
         "block": "block_0005_0002",
         "path": "/text",
-        "sourceSha256": "859a1ecd41fbb5e49922fa3f81cf098c044bd1ac324e621826d59e1de313e3d3",
+        "sourceSha256": "1b8aeb88b4534fe6fadbe12507abd3eb0b89ff26b3cb2709d2807ab198e4a01f",
         "spans": [
           {
-            "start": 15,
-            "end": 18,
-            "text": "8.5",
-            "role": "data",
-            "reading": "natural"
-          },
-          {
-            "start": 66,
-            "end": 67,
-            "text": "8",
-            "role": "data",
-            "reading": "natural"
-          },
-          {
-            "start": 71,
-            "end": 76,
+            "start": 10,
+            "end": 15,
             "text": "cajas",
             "role": "cpp",
             "reading": "technical"
           },
           {
-            "start": 84,
-            "end": 86,
+            "start": 27,
+            "end": 30,
+            "text": "int",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 68,
+            "end": 71,
+            "text": "8.5",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 85,
+            "end": 103,
+            "text": "std::cin >> cajas;",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 174,
+            "end": 175,
+            "text": "8",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 179,
+            "end": 184,
+            "text": "cajas",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 192,
+            "end": 194,
             "text": ".5",
             "role": "data",
             "reading": "natural"
           },
           {
-            "start": 278,
-            "end": 298,
+            "start": 469,
+            "end": 489,
             "text": "(Köppe et al., 2023)",
             "role": "citation",
             "reading": "natural"
@@ -9091,8 +9359,16 @@
       {
         "block": "block_0005_0004",
         "path": "/options/0",
-        "sourceSha256": "01fd812ebcb7538886f342f4b1a005bdbf504b028ef7d2306cba6dd820b5bf99",
-        "spans": []
+        "sourceSha256": "130036231155ddd3c99862390e588e189e780bbc1ccfbe3c1b304b22534bc26e",
+        "spans": [
+          {
+            "start": 93,
+            "end": 96,
+            "text": "8.5",
+            "role": "data",
+            "reading": "natural"
+          }
+        ]
       },
       {
         "block": "block_0005_0004",
@@ -9249,32 +9525,53 @@
       {
         "block": "block_0006_0001",
         "path": "/text",
-        "sourceSha256": "1f0d73defa80d1075704425e34c0ba185fc3b020d38203c9b9805f4cdeb2ffab",
+        "sourceSha256": "05b0d1d3ac2e6fb7099efecb12b5019664314acab55e05a047e5e25ea4bdf8e2",
         "spans": [
           {
-            "start": 52,
-            "end": 58,
+            "start": 51,
+            "end": 57,
             "text": "nombre",
             "role": "cpp",
             "reading": "technical"
           },
           {
-            "start": 61,
-            "end": 66,
+            "start": 60,
+            "end": 65,
             "text": "cajas",
             "role": "cpp",
             "reading": "technical"
           },
           {
-            "start": 307,
-            "end": 313,
+            "start": 269,
+            "end": 277,
+            "text": "std::cin",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 309,
+            "end": 315,
+            "text": "nombre",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 339,
+            "end": 344,
+            "text": "cajas",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 566,
+            "end": 572,
             "text": "Rita 4",
             "role": "data",
             "reading": "natural"
           },
           {
-            "start": 331,
-            "end": 338,
+            "start": 590,
+            "end": 597,
             "text": "Rita: 7",
             "role": "output",
             "reading": "natural"
@@ -9388,35 +9685,42 @@
       {
         "block": "block_0007_0003",
         "path": "/question",
-        "sourceSha256": "31c4c2a29f8a8cd810330f9e3be2b57b8e5c193e741ef975c6b0fd9b0284c77b",
+        "sourceSha256": "a0c7eb6b691ad08be6c4aeb4b411d6c2211a00caaa081ea3036ea4182721f865",
         "spans": [
           {
-            "start": 32,
-            "end": 38,
-            "text": "nombre",
-            "role": "cpp",
-            "reading": "technical"
-          },
-          {
-            "start": 47,
-            "end": 51,
+            "start": 17,
+            "end": 21,
             "text": "Rita",
             "role": "data",
             "reading": "natural"
           },
           {
-            "start": 54,
-            "end": 59,
+            "start": 24,
+            "end": 30,
+            "text": "nombre",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 33,
+            "end": 34,
+            "text": "4",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 37,
+            "end": 42,
             "text": "cajas",
             "role": "cpp",
             "reading": "technical"
           },
           {
-            "start": 68,
-            "end": 69,
-            "text": "4",
-            "role": "data",
-            "reading": "natural"
+            "start": 62,
+            "end": 67,
+            "text": "cajas",
+            "role": "cpp",
+            "reading": "technical"
           }
         ]
       },
@@ -9451,8 +9755,16 @@
       {
         "block": "block_0007_0003",
         "path": "/options/1",
-        "sourceSha256": "ec1349726b0bbc511b697a2c52a6435765e62ba96b8966035f5629750e574c74",
-        "spans": []
+        "sourceSha256": "0c52c0f27a8e6b30d8158d43585b2c87114901ecaf8cec1fefbfe98a48d102d8",
+        "spans": [
+          {
+            "start": 90,
+            "end": 97,
+            "text": "Rita: 7",
+            "role": "output",
+            "reading": "natural"
+          }
+        ]
       },
       {
         "block": "block_0007_0003",
@@ -9757,32 +10069,39 @@
       {
         "block": "block_0009_0002",
         "path": "/text",
-        "sourceSha256": "a44d3bd5fa9fef55ffb0dbe0154bb204db41b20fcd74735d0b7234bfce1d4029",
+        "sourceSha256": "bce5f2f3bd577977b462fcdf6f15fd8dfe00baeaee893f87f5a49cbbd620e974",
         "spans": [
           {
-            "start": 30,
-            "end": 34,
+            "start": 10,
+            "end": 14,
             "text": "main",
             "role": "cpp",
             "reading": "technical"
           },
           {
-            "start": 61,
-            "end": 69,
+            "start": 20,
+            "end": 28,
             "text": "std::cin",
             "role": "cpp",
             "reading": "technical"
           },
           {
-            "start": 202,
-            "end": 210,
+            "start": 188,
+            "end": 197,
+            "text": "std::cout",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 428,
+            "end": 436,
             "text": "Iris 4 2",
             "role": "data",
             "reading": "natural"
           },
           {
-            "start": 228,
-            "end": 236,
+            "start": 454,
+            "end": 462,
             "text": "Iris: 22",
             "role": "output",
             "reading": "natural"
@@ -9923,18 +10242,25 @@
       {
         "block": "block_0010_0004",
         "path": "/question",
-        "sourceSha256": "2ada8a2f5cc0205bdd49766fcdc2bb6e44d2676f8f3af0c8582f60da3bd23a7e",
+        "sourceSha256": "46d8f83a4f9f5344ae024e6ad3317fdf7251081bc67a406b78ec668b63d73dc0",
         "spans": [
           {
-            "start": 22,
-            "end": 30,
+            "start": 34,
+            "end": 42,
+            "text": "std::cin",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 134,
+            "end": 142,
             "text": "Iris 4 2",
             "role": "data",
             "reading": "natural"
           },
           {
-            "start": 33,
-            "end": 41,
+            "start": 145,
+            "end": 153,
             "text": "Vera 3 1",
             "role": "data",
             "reading": "natural"
@@ -10014,20 +10340,13 @@
       {
         "block": "block_0010_0004",
         "path": "/options/2",
-        "sourceSha256": "5e650b4712eea30619d336071c61e81efdca7be9957957e64059f1b03c8eaab4",
+        "sourceSha256": "3e178b2c24bf4f81052f114db5f128f0cc49ae2c254db9bd40103156476279e3",
         "spans": [
           {
-            "start": 12,
-            "end": 17,
-            "text": "cinco",
-            "role": "data",
-            "reading": "natural"
-          },
-          {
-            "start": 68,
-            "end": 72,
-            "text": "tres",
-            "role": "data",
+            "start": 202,
+            "end": 210,
+            "text": "Vera: 16",
+            "role": "output",
             "reading": "natural"
           }
         ]
@@ -10159,74 +10478,137 @@
       {
         "block": "block_0011_0001",
         "path": "/question",
-        "sourceSha256": "4e0bcfd3d6910427fe10d99f1e75041040d41bc8ee5ed18b3c2cfd2b4edf614f",
+        "sourceSha256": "050d325a51315dbff04464028eb601f1434c3057657b68d5646bca9b99da465d",
         "spans": [
           {
-            "start": 19,
-            "end": 25,
+            "start": 26,
+            "end": 32,
             "text": "Kiro 3",
             "role": "data",
             "reading": "natural"
           },
           {
-            "start": 49,
-            "end": 50,
+            "start": 56,
+            "end": 57,
             "text": "1",
             "role": "data",
             "reading": "natural"
+          },
+          {
+            "start": 235,
+            "end": 244,
+            "text": "std::cout",
+            "role": "cpp",
+            "reading": "technical"
           }
         ]
       },
       {
         "block": "block_0011_0001",
         "path": "/explanation",
-        "sourceSha256": "aaf8b5ef45ba69fe5c7ce74d3b17a912b74d4b5b6543201aa740c6b7ebe2a337",
+        "sourceSha256": "0259454bb14bc8dd87b8688afe4d17ddb8894f62405b35961e3aadd786bef748",
         "spans": [
           {
-            "start": 38,
-            "end": 43,
-            "text": "total",
+            "start": 0,
+            "end": 6,
+            "text": "nombre",
             "role": "cpp",
             "reading": "technical"
           },
           {
-            "start": 53,
-            "end": 55,
-            "text": "16",
+            "start": 14,
+            "end": 18,
+            "text": "Kiro",
             "role": "data",
             "reading": "natural"
           },
           {
-            "start": 58,
-            "end": 68,
-            "text": "originales",
-            "role": "cpp",
-            "reading": "technical"
-          },
-          {
-            "start": 76,
-            "end": 77,
-            "text": "3",
-            "role": "data",
-            "reading": "natural"
-          },
-          {
-            "start": 99,
-            "end": 107,
+            "start": 20,
+            "end": 28,
             "text": "paquetes",
             "role": "cpp",
             "reading": "technical"
           },
           {
-            "start": 110,
-            "end": 111,
-            "text": "4",
-            "role": "data",
-            "reading": "natural"
+            "start": 43,
+            "end": 50,
+            "text": "sueltas",
+            "role": "cpp",
+            "reading": "technical"
           },
           {
-            "start": 127,
-            "end": 138,
+            "start": 75,
+            "end": 80,
+            "text": "total",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 190,
+            "end": 200,
+            "text": "originales",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 218,
+            "end": 226,
+            "text": "paquetes",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 237,
+            "end": 251,
+            "text": "paquetes += 1;",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 259,
+            "end": 267,
+            "text": "paquetes",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 278,
+            "end": 287,
+            "text": "std::cout",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 296,
+            "end": 302,
+            "text": "nombre",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 304,
+            "end": 309,
+            "text": "total",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 311,
+            "end": 321,
+            "text": "originales",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 324,
+            "end": 332,
+            "text": "paquetes",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 397,
+            "end": 408,
             "text": "Kiro 16 3 4",
             "role": "output",
             "reading": "natural"
@@ -10361,7 +10743,7 @@
       {
         "block": "block_0012_0001",
         "path": "/text",
-        "sourceSha256": "15cb9c334706c463969df81f94910c5da5f0979b44b9e446feba6e5877eb788a",
+        "sourceSha256": "22880d6f43bd22f400d8a25fba51cf62c8022088e9392c80a268e422ca7c58af",
         "spans": []
       },
       {

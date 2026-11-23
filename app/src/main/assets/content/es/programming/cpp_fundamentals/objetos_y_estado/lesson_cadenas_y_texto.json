@@ -51,17 +51,17 @@
         {
           "type": "output_prediction",
           "language": "cpp",
-          "question": "Predice la salida exacta, sin escribir las comillas del código.",
+          "question": "etiqueta es una cadena que acaba de crearse. ¿Qué texto muestra std::cout cuando escribe el corchete de apertura, luego etiqueta y por último el corchete de cierre? Escribe los caracteres de la salida.",
           "code": "#include <iostream>\n#include <string>\n\nint main() {\n    std::string etiqueta;\n\n    std::cout << \"[\" << etiqueta << \"]\";\n\n    return 0;\n}\n",
           "answers": [
             "[]"
           ],
           "explanation": "La consola muestra []. Se escribe cada corchete y la cadena vacía deja los dos signos juntos.",
-          "reviewFeedback": "Distingue los literales que aportan marcas visibles de la variable situada entre ellos. Sigue qué texto tiene esa variable desde su definición, sin añadir letras que no estén guardadas."
+          "reviewFeedback": "Busca la declaración de etiqueta. ¿Cuántos caracteres guarda esa cadena antes de que std::cout consulte su valor entre los dos corchetes?"
         },
         {
           "type": "multiple_choice",
-          "question": "Si escribes std::string mensaje = \"\";, ¿qué texto guarda mensaje al empezar?",
+          "question": "En la declaración std::string mensaje = \"\";, ¿qué caracteres quedan guardados en mensaje?",
           "options": [
             "Existe una variable de texto cuyo valor tiene cero caracteres.",
             "El nombre mensaje no se ha definido.",
@@ -70,8 +70,8 @@
           "correctIndex": 0,
           "explanation": "mensaje existe. Empieza con un texto de cero caracteres.",
           "reviewFeedback": [
-            "Distingue la existencia de un objeto del contenido de su valor. Revisa qué prepara la definición de la cadena.",
-            "Localiza el tipo y el nombre en la definición. La ausencia de caracteres del mensaje se refiere al contenido del valor; comprueba si eso elimina también el objeto definido.",
+            "Mira los caracteres que hay entre las comillas del literal \"\". ¿Cuántos recibe mensaje?",
+            "std::string mensaje declara la variable. Las comillas indican qué texto recibe al crearse. ¿Cuántos caracteres hay entre ellas?",
             "Separa las comillas que delimitan un literal de los caracteres escritos entre ellas. Revisa qué parte del código aporta realmente el contenido del texto."
           ]
         },
@@ -94,13 +94,13 @@
         {
           "type": "output_prediction",
           "language": "cpp",
-          "question": "Predice la salida exacta, sin escribir las comillas del código.",
+          "question": "Al crear registro, el programa copia la palabra que guarda zona. Después asigna otra palabra a zona. Escribe el renglón de la salida con las dos palabras y el separador que escribe std::cout.",
           "code": "#include <iostream>\n#include <string>\n\nint main() {\n    std::string zona = \"Norte\";\n\n    std::string registro = zona;\n\n    zona = \"Sur\";\n\n    std::cout << registro << \" / \" << zona;\n\n    return 0;\n}\n",
           "answers": [
             "Norte / Sur"
           ],
           "explanation": "Cuando se crea registro, recibe el texto Norte. La asignación cambia zona a Sur. Al mostrar las dos variables, la consola escribe Norte / Sur.",
-          "reviewFeedback": "Sigue por separado el valor de cada cadena. Una definición consulta el dato disponible en ese momento; después localiza qué variable aparece a la izquierda de cada asignación."
+          "reviewFeedback": "Lee qué palabra guarda zona cuando se crea registro. Después mira qué nombre aparece a la izquierda de = en la instrucción que guarda \"Sur\". ¿Cuál de las dos variables cambia?"
         },
         {
           "type": "fill_code",
@@ -115,14 +115,14 @@
         },
         {
           "type": "multiple_choice",
-          "question": "¿Qué cambia al asignar \"Sur\" a una variable std::string?",
+          "question": "La cadena zona guarda la palabra Norte. Al ejecutar zona = \"Sur\";, ¿qué cambia en la variable zona?",
           "options": [
             "Se añade Sur al final del texto que ya tenía.",
             "Se conserva el texto anterior porque el tipo sigue siendo std::string.",
-            "El valor de texto conservado."
+            "Cambia el texto guardado en la variable. Antes contenía Norte y ahora contiene Sur."
           ],
           "correctIndex": 2,
-          "explanation": "La variable pasa a guardar Sur. La asignación reemplaza el texto anterior.",
+          "explanation": "zona = \"Sur\"; reemplaza las cinco letras de Norte por las tres de Sur en la misma variable. zona sigue siendo de tipo std::string.",
           "reviewFeedback": [
             "Revisa qué hace el operador = con el valor anterior. Distingue reemplazar un texto de añadir caracteres al final del que ya existe.",
             "Distingue el tipo de un objeto del valor que conserva. Tener un tipo fijo no significa que ninguna instrucción pueda asignarle otro valor de ese mismo tipo.",
@@ -158,8 +158,8 @@
           "answers": [
             "PuertaB\nPuerta B"
           ],
-          "explanation": "La primera expresión junta las dos partes y muestra PuertaB. La segunda incluye un espacio y muestra Puerta B en el siguiente renglón.",
-          "reviewFeedback": "Reúne los caracteres de cada operando en el orden escrito. Distingue el espacio que aporta un literal del salto que aporta la salida entre los dos resultados."
+          "explanation": "a + b une las letras de Puerta con la B y forma PuertaB. A continuación, std::cout escribe un salto de línea. En a + \" \" + b, el literal \" \" añade un espacio entre las dos cadenas y el segundo renglón de la salida dice Puerta B.",
+          "reviewFeedback": "a guarda Puerta y b guarda B. Mira qué caracteres se añaden entre esas dos cadenas en cada expresión y dónde envía std::cout el salto de línea."
         },
         {
           "type": "inline_fill_code",
@@ -216,11 +216,11 @@
             "\"6\""
           ],
           "correctIndex": 0,
-          "explanation": "La concatenación conserva los caracteres, incluido el cero inicial; no suma números.",
+          "explanation": "La primera etiqueta aporta los caracteres 0 y 4, en ese orden. La segunda aporta 2. Al concatenarlas, la cadena resultante contiene los tres caracteres 042, incluido el cero inicial.",
           "reviewFeedback": [
-            "Sigue el orden de los textos y distingue el contenido de una cadena de una cantidad entera.",
-            "La tarea combina etiquetas de texto. Revisa si la operación solicitada incluye alguna conversión a un dato numérico o si conserva los caracteres de sus textos.",
-            "El significado de una operación depende de los tipos de sus datos. Comprueba si las etiquetas proporcionadas son cantidades sobre las que se haya pedido una suma."
+            "Lee primero los dos caracteres de \"04\" y después el carácter de \"2\". ¿En qué posición queda el cero?",
+            "Las etiquetas contienen texto. ¿Qué caracteres quedan juntos al colocar la segunda etiqueta después de la primera?",
+            "Mira las comillas de \"04\" y \"2\". Aquí se pide unir esos textos. ¿Qué tres caracteres forman el resultado?"
           ]
         },
         {
@@ -344,18 +344,18 @@
         },
         {
           "type": "paragraph",
-          "text": "En edificio + \"-\" + codigo, la primera variable aporta Aula. El literal de en medio aporta el guion. La última variable aporta 04. etiqueta guarda Aula-04 y std::cout muestra ese texto.\n\n¿Qué pasa si cambias el código después de construir la etiqueta? En las siguientes predicciones, sigue qué variable recibe la asignación y qué variable lee la consola."
+          "text": "En edificio + \"-\" + codigo, la variable edificio aporta Aula, el literal \"-\" aporta el guion y la variable codigo aporta 04. La variable etiqueta guarda el texto completo. Al ejecutar std::cout << etiqueta;, la consola muestra Aula-04.\n\nEn los siguientes ejercicios cambiará el código del aula. Mira cuándo se forma el texto de la etiqueta, en qué variable se guarda el nuevo código y qué variable consulta std::cout al escribir cada texto."
         },
         {
           "type": "output_prediction",
           "language": "cpp",
-          "question": "Predice la salida exacta, sin escribir las comillas del código.",
+          "question": "etiqueta se forma con el nombre y el código de un área. Después de codigo = \"2\";, ¿qué renglón muestra std::cout al leer etiqueta y luego codigo?",
           "code": "#include <iostream>\n#include <string>\n\nint main() {\n    std::string nombre = \"Area\";\n    std::string codigo = \"1\";\n\n    std::string etiqueta = nombre + codigo;\n\n    codigo = \"2\";\n\n    std::cout << etiqueta << \" \" << codigo;\n\n    return 0;\n}\n",
           "answers": [
             "Area1 2"
           ],
           "explanation": "etiqueta ya guarda Area1 cuando codigo cambia a 2. La consola lee ambas variables y muestra Area1 2.",
-          "reviewFeedback": "Localiza cuándo se obtiene cada texto y qué objeto recibe las asignaciones posteriores. Mantén separados los valores que las dos variables tienen al llegar a la salida."
+          "reviewFeedback": "Cuando el programa une nombre y codigo para guardar la etiqueta, ¿qué dígito contiene codigo? Después de la asignación, ¿cuál de las dos variables contiene el dígito nuevo?"
         },
         {
           "type": "multiple_choice",
@@ -392,10 +392,10 @@
           "options": [
             "Cambiar sólo el literal de una salida modifica también el texto que etiqueta tiene guardado.",
             "Mostrar otra vez etiqueta hace que recupere automáticamente el valor más reciente de codigo.",
-            "Hay que calcular de nuevo la combinación con el codigo actual y asignar ese resultado a etiqueta."
+            "Volver a unir el nombre del edificio, el guion y el nuevo código \"07\". Guardar el texto resultante en etiqueta."
           ],
           "correctIndex": 2,
-          "explanation": "Vuelve a unir el edificio, el guion y el número de aula que está guardado ahora. Asigna ese texto nuevo a etiqueta.",
+          "explanation": "Después de codigo = \"07\";, la variable etiqueta todavía guarda Aula-04. La expresión edificio + \"-\" + codigo usa el nuevo código y forma Aula-07. Al asignar esa cadena a etiqueta, el programa reemplaza el texto anterior por la nueva etiqueta.",
           "reviewFeedback": [
             "Distingue los caracteres enviados a la consola del valor guardado en una variable. Revisa si modificar una instrucción de salida escribe en etiqueta.",
             "Una salida consulta el valor de la variable que lee. Busca qué instrucciones cambian los objetos y cuáles sólo los muestran.",
@@ -2020,6 +2020,82 @@
         "id": "p1u2l7_referencia_actualizada",
         "beforeSha256": "5535e89502db1c69cbb8b1d31d3b4037c0f779efe709e44b0d67abf6b051a26e",
         "afterSha256": "367449a00a0145b23762503658ed489009022a97b9e2f9affeb78f211fcd6c3a"
+      },
+      {
+        "id": "block_0007_0002",
+        "beforeSha256": "572663387f0cb28748f238c096cd0d748d795eee86a77800c6a9a87d99eeba65",
+        "afterSha256": "b4ae535d3a1ec561ce2d2e9abe05c12f5bdb18b278359c57ac47a2d531b9a753"
+      },
+      {
+        "id": "block_0001_0003",
+        "beforeSha256": "d031979314743ac8871fa459cddb14b79ca8257bc517ca3c85a5a1cd7061ebb3",
+        "afterSha256": "e745c1ed32bfbb19890a7975e0d07a845db03b6046278fc2f4734e61a1589c5f",
+        "reviewPaths": [
+          "/reviewFeedback/0",
+          "/reviewFeedback/1"
+        ]
+      },
+      {
+        "id": "block_0002_0004",
+        "beforeSha256": "331f62933b4e87ae278228f8833c04fe5a4de3a5b8e7e65500747191f4d728c7",
+        "afterSha256": "43c0fcbc2f03f6f8ff55ffda2da9373aeabb2d99fa228629245f0f3664ff45a7"
+      },
+      {
+        "id": "block_0002_0004",
+        "beforeSha256": "43c0fcbc2f03f6f8ff55ffda2da9373aeabb2d99fa228629245f0f3664ff45a7",
+        "afterSha256": "b19b9aa26c004c9383490f04bb5a430baa0a8751dbd05281c6fa567d5cd00f3d"
+      },
+      {
+        "id": "block_0003_0003",
+        "beforeSha256": "2c94b32d2570f3d1a7d162027653359733a1f4b590922f7c78f0c86839de331f",
+        "afterSha256": "f63446cbbce862831d5a47942b144592e068ae0a2251ba3aade15c1fcb4f6e50",
+        "reviewPaths": [
+          "/reviewFeedback"
+        ]
+      },
+      {
+        "id": "block_0004_0003",
+        "beforeSha256": "97fe129c60e1190c57c4c866b9025b1a426812b58baaa7873f41a4888d10ff57",
+        "afterSha256": "7d561b596e380492ce4acc5db6efce8c78cfbbd90c594d452e08fd4780cd78d1",
+        "reviewPaths": [
+          "/reviewFeedback/0",
+          "/reviewFeedback/1",
+          "/reviewFeedback/2"
+        ]
+      },
+      {
+        "id": "block_0007_0006",
+        "beforeSha256": "ebc0417595cdcb00f821a6b052a0fabd63bce763f2a5a818c7ced861a7f1c856",
+        "afterSha256": "cc55c13045311fa6ff5f3840e3510eca60dfc5686dc06e64521929b714eec04e"
+      },
+      {
+        "id": "block_0007_0006",
+        "beforeSha256": "cc55c13045311fa6ff5f3840e3510eca60dfc5686dc06e64521929b714eec04e",
+        "afterSha256": "c7773070db0f98802d4b53c1e6766fbec9c5ed2bdb04a388b95acdc0b89aec7a"
+      },
+      {
+        "id": "block_0001_0002",
+        "beforeSha256": "8c323638ae7fe9dbd36d41e7d183cb256b433ac4bbce136d9723dc7584d2aabd",
+        "afterSha256": "93be4fc264271970e5912aeec94b9aabada87f9ab38d99311320715c51960095",
+        "reviewPaths": [
+          "/reviewFeedback"
+        ]
+      },
+      {
+        "id": "block_0002_0002",
+        "beforeSha256": "4a905c5d0406fe6e0bfe41da3de3c4af29de68af7484e32ad8b0d8cabc499f23",
+        "afterSha256": "605bdd89e4c78d924b60c6c15ef9f1cfab541e4055e1ce13008055be9fea8433",
+        "reviewPaths": [
+          "/reviewFeedback"
+        ]
+      },
+      {
+        "id": "block_0007_0003",
+        "beforeSha256": "8b5cf627f10ffb800cf1deadf7c2db5e96a1455d6280ed25481b4a0614af73b5",
+        "afterSha256": "b0bb5c32dde402e4a614777f3572109d7ce2fdb60c98c14b60ac0045a00f290a",
+        "reviewPaths": [
+          "/reviewFeedback"
+        ]
       }
     ],
     "retired": [
@@ -5473,6 +5549,122 @@
           "code": "#include <iostream>\n#include <string>\n\nint main() {\n    std::string edificio = \"Aula\";\n    std::string codigo = \"04\";\n    std::string etiqueta = edificio + \"-\" + codigo;\n    codigo = \"07\";\n    etiqueta = edificio + \"-\" + codigo;\n\n    std::cout << etiqueta;\n    return 0;\n}\n"
         }
       }
+    ],
+    "choiceRevisions": [
+      {
+        "id": "block_0002_0004",
+        "block": {
+          "type": "multiple_choice",
+          "question": "¿Qué cambia al asignar \"Sur\" a una variable std::string?",
+          "options": [
+            "Se añade Sur al final del texto que ya tenía.",
+            "Se conserva el texto anterior porque el tipo sigue siendo std::string.",
+            "El valor de texto conservado."
+          ],
+          "correctIndex": 2,
+          "explanation": "La variable pasa a guardar Sur. La asignación reemplaza el texto anterior.",
+          "reviewFeedback": [
+            "Revisa qué hace el operador = con el valor anterior. Distingue reemplazar un texto de añadir caracteres al final del que ya existe.",
+            "Distingue el tipo de un objeto del valor que conserva. Tener un tipo fijo no significa que ninguna instrucción pueda asignarle otro valor de ese mismo tipo.",
+            "Localiza la variable que recibe la asignación y sigue qué dato conserva después."
+          ]
+        },
+        "optionIndex": 2,
+        "replacement": "Cambia el texto guardado en la variable. Antes contenía Norte y ahora contiene Sur.",
+        "semanticBefore": {
+          "block": "block_0002_0004",
+          "path": "/options/2",
+          "sourceSha256": "b052f119027c5912cc54b9c918defa48898d49910b3cd8dec996c73ab4a2c43b",
+          "spans": []
+        },
+        "semanticAfter": {
+          "block": "block_0002_0004",
+          "path": "/options/2",
+          "sourceSha256": "f11b410653ea472712dc17260591b8bd72b7a06f6f60b182aeda4408cbb4578c",
+          "spans": [
+            {
+              "start": 56,
+              "end": 61,
+              "text": "Norte",
+              "role": "data",
+              "reading": "natural"
+            },
+            {
+              "start": 79,
+              "end": 82,
+              "text": "Sur",
+              "role": "data",
+              "reading": "natural"
+            }
+          ]
+        },
+        "semanticRootBefore": true
+      },
+      {
+        "id": "block_0007_0006",
+        "block": {
+          "type": "multiple_choice",
+          "id": "u2_texto_justificacion_actualizar_etiqueta",
+          "question": "codigo ya cambió a 07. ¿Qué tiene que hacer el programa para que etiqueta guarde Aula-07?",
+          "options": [
+            "Cambiar sólo el literal de una salida modifica también el texto que etiqueta tiene guardado.",
+            "Mostrar otra vez etiqueta hace que recupere automáticamente el valor más reciente de codigo.",
+            "Hay que calcular de nuevo la combinación con el codigo actual y asignar ese resultado a etiqueta."
+          ],
+          "correctIndex": 2,
+          "explanation": "Vuelve a unir el edificio, el guion y el número de aula que está guardado ahora. Asigna ese texto nuevo a etiqueta.",
+          "reviewFeedback": [
+            "Distingue los caracteres enviados a la consola del valor guardado en una variable. Revisa si modificar una instrucción de salida escribe en etiqueta.",
+            "Una salida consulta el valor de la variable que lee. Busca qué instrucciones cambian los objetos y cuáles sólo los muestran.",
+            "Sigue el momento en que se obtiene cada resultado y el objeto que lo recibe. Compara calcular una combinación con conservarla en una variable."
+          ]
+        },
+        "optionIndex": 2,
+        "replacement": "Volver a unir el nombre del edificio, el guion y el nuevo código \"07\". Guardar el texto resultante en etiqueta.",
+        "semanticBefore": {
+          "block": "block_0007_0006",
+          "path": "/options/2",
+          "sourceSha256": "cd9f7c5d923fe6d237e78ab882be994a2f905955e2fab8b80ea549a104012839",
+          "spans": [
+            {
+              "start": 48,
+              "end": 54,
+              "text": "codigo",
+              "role": "cpp",
+              "reading": "technical"
+            },
+            {
+              "start": 88,
+              "end": 96,
+              "text": "etiqueta",
+              "role": "cpp",
+              "reading": "technical"
+            }
+          ]
+        },
+        "semanticAfter": {
+          "block": "block_0007_0006",
+          "path": "/options/2",
+          "sourceSha256": "6aa1c67aa6995bc07bfa0a15b8a5fc5ab1365563ef7f36aabae621be353616b8",
+          "spans": [
+            {
+              "start": 65,
+              "end": 69,
+              "text": "\"07\"",
+              "role": "cpp",
+              "reading": "technical"
+            },
+            {
+              "start": 102,
+              "end": 110,
+              "text": "etiqueta",
+              "role": "cpp",
+              "reading": "technical"
+            }
+          ]
+        },
+        "semanticRootBefore": true
+      }
     ]
   },
   "activityAfter": [
@@ -5740,8 +5932,30 @@
       {
         "block": "block_0001_0002",
         "path": "/question",
-        "sourceSha256": "d0f4d249fc7c7c003e9cd6b940b13325752db34a99ec5132a834a79ef1ed2e7b",
-        "spans": []
+        "sourceSha256": "52c22238cb5a3dd90238fa48c6a9cb3328267361cb706ad74b104b8b52b93baf",
+        "spans": [
+          {
+            "start": 0,
+            "end": 8,
+            "text": "etiqueta",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 64,
+            "end": 73,
+            "text": "std::cout",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 120,
+            "end": 128,
+            "text": "etiqueta",
+            "role": "cpp",
+            "reading": "technical"
+          }
+        ]
       },
       {
         "block": "block_0001_0002",
@@ -5760,24 +5974,39 @@
       {
         "block": "block_0001_0002",
         "path": "/reviewFeedback",
-        "sourceSha256": "11e45469e83c612ff55870cfae12f035963a193b5a6ad8c3db1f7d42262e7d97",
-        "spans": []
+        "sourceSha256": "5972f6ac30f649fa38e4bf527ab8059a60630c6bd38094a89acdebcc2535bbeb",
+        "spans": [
+          {
+            "start": 24,
+            "end": 32,
+            "text": "etiqueta",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 85,
+            "end": 94,
+            "text": "std::cout",
+            "role": "cpp",
+            "reading": "technical"
+          }
+        ]
       },
       {
         "block": "block_0001_0003",
         "path": "/question",
-        "sourceSha256": "9c7ddf7e81f558f8436cb940dafdc4e8ef2b9456cf875259a777d7b46920459a",
+        "sourceSha256": "deec7bb359679f5d8fa6596635028bd65dd3884f1b1b4082719298ec79eec2c5",
         "spans": [
           {
-            "start": 12,
-            "end": 37,
+            "start": 18,
+            "end": 43,
             "text": "std::string mensaje = \"\";",
             "role": "cpp",
             "reading": "technical"
           },
           {
-            "start": 57,
-            "end": 64,
+            "start": 81,
+            "end": 88,
             "text": "mensaje",
             "role": "cpp",
             "reading": "technical"
@@ -5843,14 +6072,37 @@
       {
         "block": "block_0001_0003",
         "path": "/reviewFeedback/0",
-        "sourceSha256": "49db83208331aa9715de47a0d55e10601cab70ebd4f8c059004c20d7987002b8",
-        "spans": []
+        "sourceSha256": "a2e7a675cc0214c481bb8dbd7e1cf8c853c9861a7d597e98353b36b880e7dfb5",
+        "spans": [
+          {
+            "start": 59,
+            "end": 61,
+            "text": "\"\"",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 79,
+            "end": 86,
+            "text": "mensaje",
+            "role": "cpp",
+            "reading": "technical"
+          }
+        ]
       },
       {
         "block": "block_0001_0003",
         "path": "/reviewFeedback/1",
-        "sourceSha256": "9c9a845d713919293dee16e97dc0d258f8b3a4050e85d79b8b7b48fac8237a34",
-        "spans": []
+        "sourceSha256": "058ada1d675e038b65daa1cc5065a54fc5763ede9a3e144d57fe4ff0bb0b9a16",
+        "spans": [
+          {
+            "start": 0,
+            "end": 19,
+            "text": "std::string mensaje",
+            "role": "cpp",
+            "reading": "technical"
+          }
+        ]
       },
       {
         "block": "block_0001_0003",
@@ -5979,8 +6231,37 @@
       {
         "block": "block_0002_0002",
         "path": "/question",
-        "sourceSha256": "d0f4d249fc7c7c003e9cd6b940b13325752db34a99ec5132a834a79ef1ed2e7b",
-        "spans": []
+        "sourceSha256": "b461f93aa34becf75a4a268cf601eda5af95371b8d33801bdcc89f111d294c3d",
+        "spans": [
+          {
+            "start": 9,
+            "end": 17,
+            "text": "registro",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 59,
+            "end": 63,
+            "text": "zona",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 95,
+            "end": 99,
+            "text": "zona",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 181,
+            "end": 190,
+            "text": "std::cout",
+            "role": "cpp",
+            "reading": "technical"
+          }
+        ]
       },
       {
         "block": "block_0002_0002",
@@ -6027,8 +6308,37 @@
       {
         "block": "block_0002_0002",
         "path": "/reviewFeedback",
-        "sourceSha256": "5d37337fdd542706ffee39bf1970fad9f8f878e26658fd696ce4b0c74bac3403",
-        "spans": []
+        "sourceSha256": "7eac4426078b561a033cf4c234b7841a0c75e43a3bfe0016c1a915c5d3342c54",
+        "spans": [
+          {
+            "start": 23,
+            "end": 27,
+            "text": "zona",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 43,
+            "end": 51,
+            "text": "registro",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 103,
+            "end": 104,
+            "text": "=",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 134,
+            "end": 139,
+            "text": "\"Sur\"",
+            "role": "cpp",
+            "reading": "technical"
+          }
+        ]
       },
       {
         "block": "block_0002_0003",
@@ -6088,19 +6398,33 @@
       {
         "block": "block_0002_0004",
         "path": "/question",
-        "sourceSha256": "e097325463f0e9cf7d924e667fcc4e2c12e9cb530327a25d548cb718034ca095",
+        "sourceSha256": "017d0b457095da12f6cecb5f1892813867c403c71738160dd3777c9b23716688",
         "spans": [
           {
-            "start": 23,
-            "end": 28,
-            "text": "\"Sur\"",
+            "start": 10,
+            "end": 14,
+            "text": "zona",
             "role": "cpp",
             "reading": "technical"
           },
           {
-            "start": 44,
-            "end": 55,
-            "text": "std::string",
+            "start": 33,
+            "end": 38,
+            "text": "Norte",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 52,
+            "end": 65,
+            "text": "zona = \"Sur\";",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 94,
+            "end": 98,
+            "text": "zona",
             "role": "cpp",
             "reading": "technical"
           }
@@ -6109,14 +6433,42 @@
       {
         "block": "block_0002_0004",
         "path": "/explanation",
-        "sourceSha256": "e735db11d5547a4a437c033d88bdafcfa3f2c347749d97133106e20bf25c015b",
+        "sourceSha256": "73522c2cb0dfa141af45cfbe7a220b9ae8c0cf000c55bbd2145db541546de457",
         "spans": [
           {
-            "start": 27,
-            "end": 30,
+            "start": 0,
+            "end": 13,
+            "text": "zona = \"Sur\";",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 44,
+            "end": 49,
+            "text": "Norte",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 66,
+            "end": 69,
             "text": "Sur",
             "role": "data",
             "reading": "natural"
+          },
+          {
+            "start": 92,
+            "end": 96,
+            "text": "zona",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 118,
+            "end": 129,
+            "text": "std::string",
+            "role": "cpp",
+            "reading": "technical"
           }
         ]
       },
@@ -6151,8 +6503,23 @@
       {
         "block": "block_0002_0004",
         "path": "/options/2",
-        "sourceSha256": "b052f119027c5912cc54b9c918defa48898d49910b3cd8dec996c73ab4a2c43b",
-        "spans": []
+        "sourceSha256": "f11b410653ea472712dc17260591b8bd72b7a06f6f60b182aeda4408cbb4578c",
+        "spans": [
+          {
+            "start": 56,
+            "end": 61,
+            "text": "Norte",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 79,
+            "end": 82,
+            "text": "Sur",
+            "role": "data",
+            "reading": "natural"
+          }
+        ]
       },
       {
         "block": "block_0002_0004",
@@ -6265,18 +6632,60 @@
       {
         "block": "block_0003_0003",
         "path": "/explanation",
-        "sourceSha256": "571ec5cc02a2457298d6708eb42a9d83dfebfac0a02c0f0a57219bd10dc4957d",
+        "sourceSha256": "44e3766b836eec4eb39f2df34ca459607f9a9557435bf8b0e0054c7765f14187",
         "spans": [
           {
-            "start": 52,
-            "end": 59,
+            "start": 0,
+            "end": 5,
+            "text": "a + b",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 24,
+            "end": 30,
+            "text": "Puerta",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 38,
+            "end": 39,
+            "text": "B",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 48,
+            "end": 55,
             "text": "PuertaB",
             "role": "output",
             "reading": "natural"
           },
           {
-            "start": 101,
-            "end": 109,
+            "start": 73,
+            "end": 82,
+            "text": "std::cout",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 113,
+            "end": 124,
+            "text": "a + \" \" + b",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 137,
+            "end": 140,
+            "text": "\" \"",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 219,
+            "end": 227,
             "text": "Puerta B",
             "role": "output",
             "reading": "natural"
@@ -6286,14 +6695,42 @@
       {
         "block": "block_0003_0003",
         "path": "/reviewFeedback",
-        "sourceSha256": "7ef84d5f105c8abbac1a82a5e30965128a623f40d4c4011986f01d30be9763db",
+        "sourceSha256": "f2b49e1c8b57f0a63b2cb7a863d08f14fbd132f6c73dc1a1e24aa1120e464fcf",
         "spans": [
           {
-            "start": 143,
-            "end": 146,
-            "text": "dos",
+            "start": 0,
+            "end": 1,
+            "text": "a",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 9,
+            "end": 15,
+            "text": "Puerta",
             "role": "data",
             "reading": "natural"
+          },
+          {
+            "start": 18,
+            "end": 19,
+            "text": "b",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 27,
+            "end": 28,
+            "text": "B",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 115,
+            "end": 124,
+            "text": "std::cout",
+            "role": "cpp",
+            "reading": "technical"
           }
         ]
       },
@@ -6550,13 +6987,34 @@
       {
         "block": "block_0004_0003",
         "path": "/explanation",
-        "sourceSha256": "5aaa4ee00e44e314ada91b64ecfb225bc5758687ee7c023a52a08f4ba8c550bd",
+        "sourceSha256": "48148b0f0f85a8d005db4407f180dd0323bd3545f6179d6005fc42ec58d413da",
         "spans": [
           {
-            "start": 54,
-            "end": 58,
-            "text": "cero",
-            "role": "output",
+            "start": 42,
+            "end": 43,
+            "text": "0",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 46,
+            "end": 47,
+            "text": "4",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 81,
+            "end": 82,
+            "text": "2",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 152,
+            "end": 155,
+            "text": "042",
+            "role": "data",
             "reading": "natural"
           }
         ]
@@ -6606,20 +7064,50 @@
       {
         "block": "block_0004_0003",
         "path": "/reviewFeedback/0",
-        "sourceSha256": "72c4fdc960035c17403e440e519bd63b41681f8a4e98b0dddbf84650ddaf020c",
-        "spans": []
+        "sourceSha256": "6b6739dae02c560bcc3b5d16b2bc2ddc4171df78f02bc6f5b4a0aab61124c4e2",
+        "spans": [
+          {
+            "start": 34,
+            "end": 38,
+            "text": "\"04\"",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 64,
+            "end": 67,
+            "text": "\"2\"",
+            "role": "cpp",
+            "reading": "technical"
+          }
+        ]
       },
       {
         "block": "block_0004_0003",
         "path": "/reviewFeedback/1",
-        "sourceSha256": "e2267268ca9304fdfa2e7ccaa73b7e04cb9ab555c48c4d8552590055f50acc02",
+        "sourceSha256": "34bee92a02163eb19a75f7008782dfb10d6cfc30be57a969a27a997259fbac79",
         "spans": []
       },
       {
         "block": "block_0004_0003",
         "path": "/reviewFeedback/2",
-        "sourceSha256": "da58eb2de2c6b020fdd55f7715e0f5995b4a75eba09760ab3f8f593280f57a95",
-        "spans": []
+        "sourceSha256": "8155df6b538547f2929f21e8b9ab695413ce98a1ff4c0051352177b44a132065",
+        "spans": [
+          {
+            "start": 21,
+            "end": 25,
+            "text": "\"04\"",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 28,
+            "end": 31,
+            "text": "\"2\"",
+            "role": "cpp",
+            "reading": "technical"
+          }
+        ]
       },
       {
         "block": "block_0004_0004",
@@ -7158,7 +7646,7 @@
       {
         "block": "block_0007_0002",
         "path": "/text",
-        "sourceSha256": "fd8f7453d66bef3ff9ef67678c019886b7241671f49916d3efa80490b050cd67",
+        "sourceSha256": "b11db8877f3b6c2c56196cb0c8f33180ed4f8725dec9efe2c737224c538f164e",
         "spans": [
           {
             "start": 3,
@@ -7168,36 +7656,64 @@
             "reading": "technical"
           },
           {
-            "start": 55,
-            "end": 59,
+            "start": 40,
+            "end": 48,
+            "text": "edificio",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 56,
+            "end": 60,
             "text": "Aula",
             "role": "data",
             "reading": "natural"
           },
           {
-            "start": 127,
-            "end": 129,
+            "start": 73,
+            "end": 76,
+            "text": "\"-\"",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 107,
+            "end": 113,
+            "text": "codigo",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 121,
+            "end": 123,
             "text": "04",
             "role": "data",
             "reading": "natural"
           },
           {
-            "start": 131,
-            "end": 139,
+            "start": 137,
+            "end": 145,
             "text": "etiqueta",
             "role": "cpp",
             "reading": "technical"
           },
           {
-            "start": 147,
-            "end": 154,
+            "start": 184,
+            "end": 206,
+            "text": "std::cout << etiqueta;",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 227,
+            "end": 234,
             "text": "Aula-04",
-            "role": "data",
+            "role": "output",
             "reading": "natural"
           },
           {
-            "start": 157,
-            "end": 166,
+            "start": 407,
+            "end": 416,
             "text": "std::cout",
             "role": "cpp",
             "reading": "technical"
@@ -7207,8 +7723,44 @@
       {
         "block": "block_0007_0003",
         "path": "/question",
-        "sourceSha256": "d0f4d249fc7c7c003e9cd6b940b13325752db34a99ec5132a834a79ef1ed2e7b",
-        "spans": []
+        "sourceSha256": "4803dbd096b5bf1e1bb68af107d71c7b1f6b20fbb289c5b23e617bf0e0fc324a",
+        "spans": [
+          {
+            "start": 0,
+            "end": 8,
+            "text": "etiqueta",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 67,
+            "end": 80,
+            "text": "codigo = \"2\";",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 103,
+            "end": 112,
+            "text": "std::cout",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 121,
+            "end": 129,
+            "text": "etiqueta",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 138,
+            "end": 144,
+            "text": "codigo",
+            "role": "cpp",
+            "reading": "technical"
+          }
+        ]
       },
       {
         "block": "block_0007_0003",
@@ -7255,14 +7807,28 @@
       {
         "block": "block_0007_0003",
         "path": "/reviewFeedback",
-        "sourceSha256": "42d46c16a99da8a69316b7f946006f9c6fdf0bfb8c6e1c1f16bf730f6c2c4c02",
+        "sourceSha256": "5adc87a5461ef57f1f8985f7ca3a8315f718a4d498240b03922c9ec902082e8e",
         "spans": [
           {
-            "start": 125,
-            "end": 128,
-            "text": "dos",
-            "role": "data",
-            "reading": "natural"
+            "start": 23,
+            "end": 29,
+            "text": "nombre",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 32,
+            "end": 38,
+            "text": "codigo",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 86,
+            "end": 92,
+            "text": "codigo",
+            "role": "cpp",
+            "reading": "technical"
           }
         ]
       },
@@ -7514,11 +8080,46 @@
       {
         "block": "block_0007_0006",
         "path": "/explanation",
-        "sourceSha256": "f2850f99eae9f890bef0fd9e3ed51282404c3c400453951584fee8d31013ad3a",
+        "sourceSha256": "5b0e8b93293879210365e658388397f08f3ffd06a81ea55d917f780576fee563",
         "spans": [
           {
-            "start": 106,
-            "end": 114,
+            "start": 11,
+            "end": 25,
+            "text": "codigo = \"07\";",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 39,
+            "end": 47,
+            "text": "etiqueta",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 63,
+            "end": 70,
+            "text": "Aula-04",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 85,
+            "end": 108,
+            "text": "edificio + \"-\" + codigo",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 137,
+            "end": 144,
+            "text": "Aula-07",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 170,
+            "end": 178,
             "text": "etiqueta",
             "role": "cpp",
             "reading": "technical"
@@ -7563,18 +8164,18 @@
       {
         "block": "block_0007_0006",
         "path": "/options/2",
-        "sourceSha256": "cd9f7c5d923fe6d237e78ab882be994a2f905955e2fab8b80ea549a104012839",
+        "sourceSha256": "6aa1c67aa6995bc07bfa0a15b8a5fc5ab1365563ef7f36aabae621be353616b8",
         "spans": [
           {
-            "start": 48,
-            "end": 54,
-            "text": "codigo",
+            "start": 65,
+            "end": 69,
+            "text": "\"07\"",
             "role": "cpp",
             "reading": "technical"
           },
           {
-            "start": 88,
-            "end": 96,
+            "start": 102,
+            "end": 110,
             "text": "etiqueta",
             "role": "cpp",
             "reading": "technical"

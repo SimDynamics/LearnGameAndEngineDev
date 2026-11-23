@@ -252,7 +252,7 @@
         },
         {
           "type": "paragraph",
-          "text": "Pedir Prepara correctamente el informe indica un objetivo, pero todavía no explica las acciones que deben realizarse. Podemos dividirlo en pasos: recibir los datos, obtener los resultados y presentar el informe. Después habrá que concretar cómo se hace cada paso (Stroustrup, 2024)."
+          "text": "Imagina que alguien pide un informe sobre los libros de una biblioteca. Decir «prepara correctamente el informe» no permite saber qué debe calcular el programa. Si el informe debe indicar cuántos libros hay entre dos estantes, ya podemos describir las acciones. El programa recibe la cantidad de libros de cada estante, suma esas dos cantidades y muestra el total (Stroustrup, 2024)."
         },
         {
           "type": "paragraph",
@@ -293,10 +293,6 @@
           ]
         },
         {
-          "type": "paragraph",
-          "text": "Un paso puede necesitar que otro ya haya terminado. Para imprimir una tarjeta con el nombre corregido, primero debe corregirse el nombre guardado. Para entregar esa copia, primero debe imprimirse. Estas relaciones explican por qué no sirve cualquier orden de acciones."
-        },
-        {
           "type": "multiple_choice",
           "id": "orden_revision",
           "question": "Debes imprimir una tarjeta con el nombre corregido. ¿Qué secuencia cumple ese requisito?",
@@ -307,6 +303,10 @@
           ],
           "correctIndex": 0,
           "explanation": "Primero se corrige el nombre guardado. Después se imprime la tarjeta, por lo que esa copia ya contiene el nombre corregido. Finalmente se entrega esa copia. Si se imprime antes de corregir el archivo, la copia impresa conserva el nombre anterior. La corrección posterior del archivo no cambia esa copia."
+        },
+        {
+          "type": "paragraph",
+          "text": "Para entregar una etiqueta con el nombre correcto, hay que comprobar qué nombre quedó en el papel. En el ejercicio siguiente, el archivo contiene Rosa y en la etiqueta debe aparecer Rosa Luna. La impresora usa el nombre guardado en el archivo en el momento de imprimir. Para comprobar el resultado, lee el nombre en la etiqueta que salió de la impresora y compáralo con Rosa Luna. Una vez que el nombre impreso sea el solicitado, ya puedes entregar esa etiqueta."
         },
         {
           "type": "math_puzzle",
@@ -427,11 +427,11 @@
         },
         {
           "type": "paragraph",
-          "text": "Si el plan intenta identificar cajas usando un color que se repite, el dato elegido sigue siendo insuficiente aunque las instrucciones estén bien escritas. Si el plan exige corregir antes de imprimir, pero el programa realiza esas acciones al revés, el resultado tampoco será el solicitado. Necesitamos un procedimiento adecuado y una expresión correcta de ese procedimiento."
+          "text": "Supón que el plan es identificar cada caja por su color. Si hay dos cajas rojas, seguir ese plan al pie de la letra daría la misma etiqueta a las dos. Habría que cambiar el plan y elegir un dato distinto para cada caja. En el ejemplo de la tarjeta, el plan sí permite imprimir el nombre correcto. Si el programa imprime antes de corregir el nombre, la tarjeta muestra el nombre anterior. En ese caso hay que cambiar el orden de las instrucciones del programa para que haga lo que indica el plan."
         },
         {
           "type": "paragraph",
-          "text": "Probar un programa consiste en ejecutarlo en una situación concreta y comparar lo que produce con lo que debería producir. Para poder hacer esa comparación, hay que fijar de antemano el resultado esperado. Observar que ocurrió algo no es la misma comprobación (Stroustrup, 2024).",
+          "text": "Probar un programa consiste en ejecutarlo en una situación concreta y comparar lo que produce con lo que debería producir. Antes de ejecutar, precisa qué resultado esperas con los datos de esa prueba. Después de ejecutar, observa el resultado y compáralo con el que esperabas. Si se pedía un mensaje exacto, comprueba qué palabras aparecieron y cómo están separadas (Stroustrup, 2024).",
           "emphasis": [
             {
               "text": "comparar lo que produce con lo que debería producir"
@@ -525,7 +525,7 @@
         {
           "type": "multiple_choice",
           "id": "prueba_mensaje",
-          "question": "El requisito es mostrar «Caja preparada». ¿Qué comprobación responde directamente a él?",
+          "question": "El programa debe mostrar exactamente Caja preparada al ejecutarse. ¿Qué observarías para comprobar que muestra el mensaje solicitado?",
           "options": [
             "Se muestra alguna palabra, sin comprobar cuál es.",
             "Aparece exactamente el mensaje requerido al ejecutar.",
@@ -536,24 +536,24 @@
         },
         {
           "type": "paragraph",
-          "text": "Que un caso produzca el resultado esperado aporta evidencia sobre ese caso. No demuestra que todos los demás vayan a funcionar. Elegiremos otras situaciones relevantes a medida que los programas admitan datos y decisiones; repetir una ejecución que ya conocemos no sustituye examinar esos otros casos (Stroustrup, 2024).",
+          "text": "Imagina que pruebas el programa que convierte metros en centímetros. Escribes dos metros y el programa muestra doscientos centímetros. Conoces ahora el resultado que produjo con dos metros. Para saber qué hace con tres metros, calcula primero que debería mostrar trescientos centímetros. Después ejecuta el programa con tres metros y compara la salida con esa cantidad (Stroustrup, 2024).",
           "emphasis": [
             {
-              "text": "No demuestra que todos los demás vayan a funcionar."
+              "text": "ejecuta el programa con tres metros"
             }
           ]
         },
         {
           "type": "multiple_choice",
           "id": "caso_no_generaliza",
-          "question": "Un programa da el resultado esperado para un caso. ¿Qué conclusión permite esa observación?",
+          "question": "Hasta ahora sólo has probado el programa con dos metros. Al ejecutarlo con esa distancia, muestra los doscientos centímetros que esperabas. ¿Qué sabes sobre su funcionamiento con dos metros y qué queda por comprobar si recibe otra distancia?",
           "options": [
             "Todos los casos con otros datos deben dar el mismo resultado.",
             "Repetir ese mismo caso basta para validar los demás casos.",
-            "Ese caso pasó; quedan por examinar otros casos relevantes."
+            "Cuando el programa recibió dos metros, mostró doscientos centímetros. Queda por comprobar qué muestra con otras distancias."
           ],
           "correctIndex": 2,
-          "explanation": "Sólo hemos observado el resultado de ese caso. Si el programa recibe otros datos, todavía no sabemos qué hará con ellos. Repetir el caso anterior vuelve a comprobarlo, pero no comprueba las situaciones que aún no hemos ejecutado. Por eso el acierto de un caso no permite dar por correctos todos los demás."
+          "explanation": "Has comprobado que el programa muestra doscientos centímetros cuando recibe dos metros. Para saber qué muestra con tres metros, necesitas ejecutarlo con tres metros y comparar su salida con los trescientos centímetros esperados. Si vuelves a introducir dos metros, vuelves a probar la misma distancia."
         }
       ]
     }
@@ -709,8 +709,8 @@
           "block_0002_0004",
           "block_0002_0002",
           "p1u1l1_0002_0002_explicacion_2",
-          "p1u1l1_0002_0002_explicacion_3",
           "block_0002_0003",
+          "p1u1l1_0002_0002_explicacion_3",
           "p1u1l1_practica_ordenar_acciones"
         ]
       },
@@ -1399,6 +1399,78 @@
         "id": "block_0001_0002",
         "beforeSha256": "3cbed1620a30993f541143a16c2a5a2f84914d37ff73675c6c13d5fc82a6fd1f",
         "afterSha256": "7840f5f2b2463318875d7fb5e1c79d4e1a6e050ee495e5ff2ddeeaaa2930e374"
+      },
+      {
+        "id": "p1u1l1_0002_0001_explicacion_2",
+        "beforeSha256": "74039730bed49920c335c30b19f8c2bb3286c126ba23f2960c9686d75b08f877",
+        "afterSha256": "d3bbbf3ba2f356d79561be3ebec7e7d9ee71fb0aa04690fc235040af5597f18c"
+      },
+      {
+        "id": "p1u1l1_0002_0002_explicacion_3",
+        "beforeSha256": "15dea9a8bfda4ab5d1207fec3acfd010376cc19deaa3e9e479b3a6f8fbe4c0c4",
+        "afterSha256": "b271e69d876ca5402b574eb124e9871e8e024285c9d032b21c4ee7ab2b93142a"
+      },
+      {
+        "id": "p1u1l1_0003_0001_explicacion_4",
+        "beforeSha256": "a38bb2a33c1414128498d4e111ce433ae17e207e31a7b09294f7a545e1d30b18",
+        "afterSha256": "fff21a539df349b69af7fb6ef197777a8eca64dae072063804c298e76b190e7c"
+      },
+      {
+        "id": "block_0003_0002",
+        "beforeSha256": "7230282a5d9b82c3ca826040fc43a1fa3bdfac53f12fadcf91eeee52788a6ed7",
+        "afterSha256": "9cd564a7824e5ab39f1bb0fb7ee97d574ac1faaa000e3dceef5fe735b31ef8e3"
+      },
+      {
+        "id": "p1u1l1_0003_0002_explicacion_4",
+        "beforeSha256": "8e50326c9dd6ee26717c4c9e550ab68df10e52b569fdebe119b13fac25aca951",
+        "afterSha256": "11c014e46e91444904c65948b185b48557b085c247733c35b2e60dfd9b45e9b1"
+      },
+      {
+        "id": "block_0003_0004",
+        "beforeSha256": "562ce71148769ae365697083afee3e284eac3799a245a5d3f9976e7e38dfc6da",
+        "afterSha256": "8b206f0722abab46fdbaa9a486365d267089d037d7be6c5b6b3e7634f53820c8"
+      },
+      {
+        "id": "block_0003_0003",
+        "beforeSha256": "9e5f33dc8f993f8f0d704495a3891cf65109de49a2140c9b782aa9678d90232d",
+        "afterSha256": "ede31b224144f808a747dbb9717f3845d73d3b6010104112d05d8cd3b482b4ba"
+      },
+      {
+        "id": "block_0003_0004",
+        "beforeSha256": "8b206f0722abab46fdbaa9a486365d267089d037d7be6c5b6b3e7634f53820c8",
+        "afterSha256": "606debc89ca4790279c4585ffd38f852e0161d352c56e19321f6e2bd763e8946"
+      }
+    ],
+    "choiceRevisions": [
+      {
+        "id": "block_0003_0004",
+        "block": {
+          "type": "multiple_choice",
+          "id": "caso_no_generaliza",
+          "question": "Un programa da el resultado esperado para un caso. ¿Qué conclusión permite esa observación?",
+          "options": [
+            "Todos los casos con otros datos deben dar el mismo resultado.",
+            "Repetir ese mismo caso basta para validar los demás casos.",
+            "Ese caso pasó; quedan por examinar otros casos relevantes."
+          ],
+          "correctIndex": 2,
+          "explanation": "Sólo hemos observado el resultado de ese caso. Si el programa recibe otros datos, todavía no sabemos qué hará con ellos. Repetir el caso anterior vuelve a comprobarlo, pero no comprueba las situaciones que aún no hemos ejecutado. Por eso el acierto de un caso no permite dar por correctos todos los demás."
+        },
+        "optionIndex": 2,
+        "replacement": "Cuando el programa recibió dos metros, mostró doscientos centímetros. Queda por comprobar qué muestra con otras distancias.",
+        "semanticBefore": {
+          "block": "block_0003_0004",
+          "path": "/options/2",
+          "sourceSha256": "fc3c5aa73dd473530d8e596b810320304b18b3521e3140725b7ff495efeb5c2e",
+          "spans": []
+        },
+        "semanticAfter": {
+          "block": "block_0003_0004",
+          "path": "/options/2",
+          "sourceSha256": "03311e4be508b293f0d6fafe7524ae5a2eecda25ce543f4ea0f85db737da6dbe",
+          "spans": []
+        },
+        "semanticRootBefore": true
       }
     ]
   },
@@ -1841,11 +1913,11 @@
       {
         "block": "block_0003_0002",
         "path": "/text",
-        "sourceSha256": "0fd2709374075801d79fa2aa7c21539b256297ed4b2039d1c4d2839f9ae54b49",
+        "sourceSha256": "b8269be4f05fd691a45cd3ac32d0735b7d5f613961bf0e55a1f70247deea4d6e",
         "spans": [
           {
-            "start": 260,
-            "end": 278,
+            "start": 366,
+            "end": 384,
             "text": "(Stroustrup, 2024)",
             "role": "citation",
             "reading": "natural"
@@ -1855,11 +1927,11 @@
       {
         "block": "block_0003_0003",
         "path": "/question",
-        "sourceSha256": "601baea57f42db32c01c52a3693330865ff32b74d3e745eaf05cd195878c8794",
+        "sourceSha256": "94711554e381f16731c1d2bfa6a0faf7b53d034b78934ccd3a031d74132fdad1",
         "spans": [
           {
-            "start": 25,
-            "end": 39,
+            "start": 37,
+            "end": 51,
             "text": "Caja preparada",
             "role": "output",
             "reading": "natural"
@@ -1901,13 +1973,13 @@
       {
         "block": "block_0003_0004",
         "path": "/question",
-        "sourceSha256": "3a2c55bbd482e6ad3a8ea07dd54df75dfbd6a7b0360961662744266d90a369a9",
+        "sourceSha256": "a233e5846b5286719cf52f7bcddf68cbd459a8440f3676e470b8312e2819d7c6",
         "spans": []
       },
       {
         "block": "block_0003_0004",
         "path": "/explanation",
-        "sourceSha256": "480095cca2e237a6287cecb23d7906da894548aeea0e859d1fd02d92ed3d3049",
+        "sourceSha256": "39c97900431417e428a677aca3296e741152375f8c786194a9d91b042adbe2b2",
         "spans": []
       },
       {
@@ -1925,7 +1997,7 @@
       {
         "block": "block_0003_0004",
         "path": "/options/2",
-        "sourceSha256": "fc3c5aa73dd473530d8e596b810320304b18b3521e3140725b7ff495efeb5c2e",
+        "sourceSha256": "03311e4be508b293f0d6fafe7524ae5a2eecda25ce543f4ea0f85db737da6dbe",
         "spans": []
       },
       {
@@ -2121,11 +2193,11 @@
       {
         "block": "p1u1l1_0002_0001_explicacion_2",
         "path": "/text",
-        "sourceSha256": "1d569f6c54c470f173672a34345e924d90bb6022d38f42d9e61b498469e4816f",
+        "sourceSha256": "d83a0b6bfd2baee6ca4d97006ab3b135de8a5d91fdf4cde59eef997fcdd84e39",
         "spans": [
           {
-            "start": 263,
-            "end": 281,
+            "start": 364,
+            "end": 382,
             "text": "(Stroustrup, 2024)",
             "role": "citation",
             "reading": "natural"
@@ -2198,8 +2270,30 @@
       {
         "block": "p1u1l1_0002_0002_explicacion_3",
         "path": "/text",
-        "sourceSha256": "8fd1ac0f6e3014519c26c6e6c3fcd5dacde320afe89e711670dd3818fa6d2334",
-        "spans": []
+        "sourceSha256": "c95a2f28d5a4ee77102ca528a60db586ae6328aa3ba41984fbe582a3fc7691a0",
+        "spans": [
+          {
+            "start": 146,
+            "end": 150,
+            "text": "Rosa",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 182,
+            "end": 191,
+            "text": "Rosa Luna",
+            "role": "output",
+            "reading": "natural"
+          },
+          {
+            "start": 370,
+            "end": 379,
+            "text": "Rosa Luna",
+            "role": "output",
+            "reading": "natural"
+          }
+        ]
       },
       {
         "block": "p1u1l1_0003_0001_explicacion_2",
@@ -2239,7 +2333,7 @@
       {
         "block": "p1u1l1_0003_0001_explicacion_4",
         "path": "/text",
-        "sourceSha256": "84dee634628a8ee17c6a71497dff2be22519aa866118c2ab2a6a9e196b27e33b",
+        "sourceSha256": "f72c099df9e7b723dba5a806a8799edd4bedf3140f6d478294deafa80bb4d3fe",
         "spans": []
       },
       {
@@ -2294,11 +2388,11 @@
       {
         "block": "p1u1l1_0003_0002_explicacion_4",
         "path": "/text",
-        "sourceSha256": "f31e506b25021ed5c508c8031dc8feb6546e73f62ce690e5d9fcc87cb4306345",
+        "sourceSha256": "495ce4c8918c00a2c6550e958f1a2aa87266ad1eab047810d05aaa5b760fa342",
         "spans": [
           {
-            "start": 301,
-            "end": 319,
+            "start": 369,
+            "end": 387,
             "text": "(Stroustrup, 2024)",
             "role": "citation",
             "reading": "natural"

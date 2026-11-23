@@ -38,7 +38,7 @@
       "blocks": [
         {
           "type": "heading",
-          "text": "Comprobar una condición antes del resto"
+          "text": "Comprobar la capacidad del grupo antes de calcular el resto de la división"
         },
         {
           "type": "paragraph",
@@ -86,7 +86,7 @@
       "blocks": [
         {
           "type": "heading",
-          "text": "Omitir el cálculo cuando ya hace falta revisar"
+          "text": "Omitir el cálculo del resto cuando la capacidad es inválida"
         },
         {
           "type": "paragraph",
@@ -115,7 +115,7 @@
         },
         {
           "type": "paragraph",
-          "text": "Con veinticinco fichas y una capacidad de cinco, la capacidad es válida y el resto vale cero. Los dos lados de || dan false, así que el reparto no requiere revisión. Con la misma cantidad y capacidad cuatro, queda una ficha suelta. En ese caso el segundo lado da true.\n\nCuando el resultado es true, puede indicar una capacidad inválida o un reparto válido con fichas sobrantes. Si necesitas dar un aviso diferente para cada caso, conserva ambas preguntas en el programa."
+          "text": "Con veinticinco fichas y una capacidad de cinco, la capacidad es válida y el resto vale cero. Los dos lados de || dan false, así que el reparto no requiere revisión. Con la misma cantidad y capacidad cuatro, queda una ficha suelta. En ese caso el segundo lado da true.\n\nCuando el resultado es true, puede indicar una capacidad inválida o un reparto válido con fichas sobrantes. Si necesitas dos avisos distintos, comprueba primero la capacidad. Si es cero o negativa, muestra el aviso de capacidad inválida. Solo cuando sea positiva, calcula el resto y muestra el aviso de fichas sobrantes si el resto es distinto de cero."
         }
       ]
     },
@@ -145,8 +145,25 @@
           }
         },
         {
+          "type": "heading",
+          "text": "Revisar qué cálculos se ejecutan"
+        },
+        {
+          "type": "paragraph",
+          "text": "Con veintiocho fichas y capacidad seis, total % capacidad da cuatro. Como cuatro no es cero, valido_y_exacto guarda false. La capacidad positiva permite ejecutar la división y mostrar los cuatro grupos completos."
+        },
+        {
+          "type": "code",
+          "language": "cpp",
+          "code": "#include <iostream>\n\nint main() {\n    int total = 28;\n    int capacidad = 6;\n\n    const bool valido_y_exacto = (capacidad > 0) && (total % capacidad == 0);\n\n    std::cout << valido_y_exacto << \"\\n\";\n\n    if (capacidad > 0) {\n        std::cout << \"Grupos: \" << total / capacidad;\n    } else {\n        std::cout << \"Capacidad invalida\";\n    }\n\n    return 0;\n}\n"
+        },
+        {
+          "type": "paragraph",
+          "text": "Con capacidad positiva, comprueba que tanto un reparto exacto como uno con sobrantes muestran grupos. Una salida correcta para una capacidad positiva tampoco te dice qué haría el programa con cero. Revisa que el cálculo del resto siga a la derecha de la comprobación de capacidad y que la división permanezca dentro del bloque que exige una capacidad positiva."
+        },
+        {
           "type": "multiple_choice",
-          "question": "Imagina el programa reparado con capacidad igual a 0. ¿Qué dos renglones debe mostrar?",
+          "question": "El programa reparado tiene 28 fichas y una capacidad de 0 fichas por grupo. En el primer renglón de la salida muestra si el reparto es válido y exacto. En el segundo indica cuántos grupos completos se forman o muestra el aviso de capacidad inválida. ¿Qué dos renglones aparecen en la consola?",
           "options": [
             "0\nCapacidad invalida",
             "0\nGrupos: 0",
@@ -190,7 +207,7 @@
         },
         {
           "type": "note",
-          "text": "En el editor de construcción de la página siguiente, usa veintiocho fichas y cambia solo la capacidad al comparar los resultados. Prueba cero y un valor negativo para comprobar el rechazo. Usa dos capacidades positivas que den restos distintos para comprobar la exactitud y el número de grupos."
+          "text": "Para comparar los efectos de la capacidad, mantén fijas las veintiocho fichas. Con una capacidad de cuatro, siete grupos reúnen todas las fichas. Con una capacidad de seis, los cuatro grupos completos reúnen veinticuatro fichas y quedan cuatro sueltas. Si la capacidad vale cero o es negativa, el programa debe rechazarla antes de calcular el cociente o el resto."
         }
       ]
     },
@@ -204,28 +221,32 @@
           "type": "multiple_choice",
           "question": "La expresión (capacidad > 0) && (total % capacidad == 0) dio false. ¿Qué se puede concluir solo con ese resultado?",
           "options": [
-            "No se cumplen juntos validez y exactitud; falta distinguir el motivo.",
+            "La capacidad puede ser cero o negativa. También es posible que sea positiva y queden fichas sueltas.",
             "El reparto es necesariamente válido y tiene sobrantes.",
             "La capacidad es necesariamente cero."
           ],
           "correctIndex": 0,
-          "explanation": "Si capacidad > 0 dio false, se omitió el resto. Si dio true, el resto fue distinto de cero. El resultado false por sí solo no indica cuál ocurrió."
+          "explanation": "El resultado false tiene dos explicaciones posibles. Si la capacidad es cero o negativa, capacidad > 0 da false y && omite el cálculo del resto. Si la capacidad es positiva, el programa sí calcula total % capacidad. En ese caso, el resultado de toda la expresión solo puede ser false si sobran fichas. Para saber cuál de estas dos situaciones ocurrió hay que consultar la capacidad."
         },
         {
           "type": "paragraph",
-          "text": "La primera línea resume dos comprobaciones en un valor lógico. Con 28 6, la capacidad es positiva y quedan cuatro fichas, por eso la primera línea es 0. Con 28 0, la primera línea también es 0, esta vez porque la capacidad fue rechazada. El segundo renglón indica si se pudo hacer el reparto."
+          "text": "En el informe de reparto, el primer renglón de la salida indica con 1 que la capacidad es positiva y todas las fichas caben en grupos completos. Con 28 fichas y capacidad de 6, quedan cuatro fichas sueltas. El programa muestra 0 en el primer renglón y Grupos: 4 en el segundo. Con 28 fichas y capacidad de 0, el primer renglón también muestra 0. Esta vez el segundo renglón muestra Capacidad invalida porque no se puede hacer el reparto."
         },
         {
           "type": "note",
           "text": "En la siguiente lección organizarás decisiones para mostrar distintos mensajes cuando se incumplan requisitos distintos."
-        },
+        }
+      ]
+    },
+    {
+      "blocks": [
         {
           "type": "heading",
           "text": "Construir un programa que decide antes de calcular"
         },
         {
           "type": "paragraph",
-          "text": "Lee dos enteros del campo «Entrada», en este orden.\n\nTotal de fichas. Recibirás un entero entre cero y ciento veinte.\nCapacidad por grupo. Recibirás un entero entre menos doce y doce.\n\nLos dos números ya están escritos como enteros válidos. El programa decide si la capacidad permite hacer el reparto. Con capacidad positiva, el programa calcula cuántos grupos completos puede llenar, aunque sean cero. Con cero o con una capacidad negativa, se omiten la división y el resto.\n\nMuestra dos renglones. En el primero, escribe 1 si la capacidad es positiva y el resto vale cero. En los demás casos, escribe 0. Usa && para que el resto se calcule solo con capacidad positiva.\n\nEn el segundo renglón, escribe Grupos: seguido de un espacio y el número de grupos completos si la capacidad es positiva. En caso contrario, escribe Capacidad invalida. Usa if para decidir si se calcula el cociente.\n\nEntrada\n28 0\n\nSalida esperada\n0\nCapacidad invalida\n\nAntes de ejecutar, revisa que con capacidad cero el programa omita los dos cálculos. Pulsa «Compilar, ejecutar y comprobar». Esta es la comprobación obligatoria. Puedes terminar con un salto de línea."
+          "text": "Lee dos enteros del campo «Entrada», en este orden.\n\nTotal de fichas. Recibirás un entero entre cero y ciento veinte.\nCapacidad por grupo. Recibirás un entero entre menos doce y doce.\n\nLos dos números ya están escritos como enteros válidos. El programa decide si la capacidad permite hacer el reparto. Con capacidad positiva, el programa calcula cuántos grupos completos puede llenar, aunque sean cero. Con cero o con una capacidad negativa, se omiten la división y el resto.\n\nMuestra dos renglones. En el primero, escribe 1 si la capacidad es positiva y el resto vale cero. En los demás casos, escribe 0. Usa && para que el resto se calcule solo con capacidad positiva.\n\nEn el segundo renglón, escribe Grupos: seguido de un espacio y el número de grupos completos si la capacidad es positiva. En caso contrario, escribe Capacidad invalida. Usa if para decidir si se calcula el cociente.\n\nEntrada\n28 0\n\nSalida esperada\n0\nCapacidad invalida\n\nAntes de ejecutar, revisa que con capacidad cero el programa omita los dos cálculos. Para completar el ejercicio, deja 28 0 en el campo «Entrada» y pulsa «Compilar, ejecutar y comprobar». El programa debe producir la salida esperada para esos datos. Puedes terminar con un salto de línea."
         },
         {
           "type": "cpp_compiler",
@@ -285,27 +306,6 @@
               }
             ]
           }
-        }
-      ]
-    },
-    {
-      "blocks": [
-        {
-          "type": "heading",
-          "text": "Revisar qué cálculos se ejecutan"
-        },
-        {
-          "type": "paragraph",
-          "text": "Con veintiocho fichas y capacidad seis, total % capacidad da cuatro. Como cuatro no es cero, valido_y_exacto guarda false. La capacidad positiva permite ejecutar la división y mostrar los cuatro grupos completos."
-        },
-        {
-          "type": "code",
-          "language": "cpp",
-          "code": "#include <iostream>\n\nint main() {\n    int total = 28;\n    int capacidad = 6;\n\n    const bool valido_y_exacto = (capacidad > 0) && (total % capacidad == 0);\n\n    std::cout << valido_y_exacto << \"\\n\";\n\n    if (capacidad > 0) {\n        std::cout << \"Grupos: \" << total / capacidad;\n    } else {\n        std::cout << \"Capacidad invalida\";\n    }\n\n    return 0;\n}\n"
-        },
-        {
-          "type": "paragraph",
-          "text": "Con capacidad positiva, comprueba que tanto un reparto exacto como uno con sobrantes muestran grupos. Una salida correcta para una capacidad positiva tampoco te dice qué haría el programa con cero. Revisa que el cálculo del resto siga a la derecha de la comprobación de capacidad y que la división permanezca dentro del bloque que exige una capacidad positiva."
         },
         {
           "type": "heading",
@@ -313,7 +313,7 @@
         },
         {
           "type": "paragraph",
-          "text": "Con 0 4 y con 1 4 se forman cero grupos. En el primer caso no quedan fichas sueltas y el resto vale cero. En el segundo sobra una ficha. Por eso las primeras líneas de salida son distintas."
+          "text": "En las entradas 0 4 y 1 4, el primer número indica cuántas fichas hay y el segundo cuántas caben en un grupo. Con cero fichas se forman cero grupos y sobran cero fichas. El primer renglón de la salida muestra 1 porque el resto es cero. Con una ficha también se forman cero grupos, pero sobra esa ficha. El primer renglón muestra 0 porque el resto es uno. En los dos casos el segundo renglón muestra Grupos: 0."
         },
         {
           "type": "code",
@@ -322,7 +322,7 @@
         },
         {
           "type": "paragraph",
-          "text": "Puedes probar estas entradas en el mismo editor.\n\nEntrada\n28 -1\n\nSalida esperada\n0\nCapacidad invalida\n\nEntrada\n28 4\n\nSalida esperada\n1\nGrupos: 7\n\nEntrada\n28 6\n\nSalida esperada\n0\nGrupos: 4\n\nEntrada\n0 4\n\nSalida esperada\n1\nGrupos: 0\n\nEntrada\n1 4\n\nSalida esperada\n0\nGrupos: 0\n\nEntrada\n120 12\n\nSalida esperada\n1\nGrupos: 10"
+          "text": "Pruebas opcionales en este editor\nPara cada prueba, escribe los datos indicados en el campo «Entrada», pulsa «Compilar, ejecutar y comprobar» y compara los renglones que muestra la consola con la salida esperada para esa entrada.\n\nEntrada\n28 -1\n\nSalida esperada\n0\nCapacidad invalida\n\nEntrada\n28 4\n\nSalida esperada\n1\nGrupos: 7\n\nEntrada\n28 6\n\nSalida esperada\n0\nGrupos: 4\n\nEntrada\n0 4\n\nSalida esperada\n1\nGrupos: 0\n\nEntrada\n1 4\n\nSalida esperada\n0\nGrupos: 0\n\nEntrada\n120 12\n\nSalida esperada\n1\nGrupos: 10"
         },
         {
           "type": "note",
@@ -553,6 +553,10 @@
           "block_0003_0000",
           "block_0003_0001",
           "p1u3l6_reparar_resto",
+          "block_0006_0000",
+          "block_0006_0001",
+          "p1u3l6_ejemplo_resto",
+          "block_0006_0003",
           "block_0003_0003",
           "block_0003_0004"
         ]
@@ -572,19 +576,15 @@
           "block_0005_0000",
           "block_0005_0001",
           "block_0005_0002",
-          "block_0005_0003",
-          "block_0003_0005",
-          "block_0003_0006",
-          "p1u3l6_construir_reparto"
+          "block_0005_0003"
         ]
       },
       {
         "id": "page_0006",
         "blocks": [
-          "block_0006_0000",
-          "block_0006_0001",
-          "p1u3l6_ejemplo_resto",
-          "block_0006_0003",
+          "block_0003_0005",
+          "block_0003_0006",
+          "p1u3l6_construir_reparto",
           "cero_y_totales_validos_titulo",
           "cero_y_totales_validos_consigna",
           "p1u3l6_ejemplo_reparto",
@@ -1466,6 +1466,61 @@
         "id": "p1u3l6_ejemplo_reparto",
         "beforeSha256": "13dafac112ca19d6549351f765eabb90c405de71f81082ef1888a8526dd69675",
         "afterSha256": "3d422ee0a57c580cdcb4951252769d19e89192b063203439a261d3ef8af76219"
+      },
+      {
+        "id": "block_0001_0000",
+        "beforeSha256": "bb7c19d960967bd55d01f6a1ce2f8b5193b989eabaf39ee1bb5baeef1379d264",
+        "afterSha256": "dfdb198671a68800d20cbf2b051185490177598438b4bd922a4170b70d411f44"
+      },
+      {
+        "id": "block_0002_0000",
+        "beforeSha256": "3a9186a9b44db813994c152220a6d88de257412110089f38a2ce762a8f2d892e",
+        "afterSha256": "699d5102b69ebd32695b68b09f3135430ab2a0e68cd5b567e09bcfda5ce8e81b"
+      },
+      {
+        "id": "block_0002_0004",
+        "beforeSha256": "b36d03144b00ec3666aa489d302e64086e113d1b39e48bb57b40ce1783d5863f",
+        "afterSha256": "c802c1c4f3092cde94d5c157726f84a6fd52ac33d62c15d8b2cece9c0f50d848"
+      },
+      {
+        "id": "block_0004_0003",
+        "beforeSha256": "d43b00ed648f2db991a0d9ee89f82bb4e9bbd0b4b5e32bc46d7b574cbdefc5c1",
+        "afterSha256": "97b4cf7c4f90623f72a3060a995af345c5bc1e3860d858c2465b0db98fa7ee6e"
+      },
+      {
+        "id": "block_0005_0002",
+        "beforeSha256": "1aa43e99fcf9818aa3bf4e1d4ce3d1e1495aa53f4a84d5aaaf3201c9003f9002",
+        "afterSha256": "0b549a202915997f4922bac107f5ca2031e2354d8ad666e542c3740c08959d71"
+      },
+      {
+        "id": "block_0003_0006",
+        "beforeSha256": "fad3637ecdbed1b929182e63dcc83050ca8a088f9f15cec1491c0b79dad913c5",
+        "afterSha256": "99d14a4b9b41ebfd92d98bd7915cf30af439f9f21e3a453a774ffed9a3719572"
+      },
+      {
+        "id": "cero_y_totales_validos_consigna",
+        "beforeSha256": "a5294a47f200dbfad79732353b3118a696efa07361d871e78981172bbc9a54ba",
+        "afterSha256": "57e643a25e84e887f50ff54bdba73a74adbc84eec0eb199325ee254e98159a64"
+      },
+      {
+        "id": "p1u3l6_probar_repartos",
+        "beforeSha256": "b3f1e6eabcaaf7b0f3a1f634378a725578bd779b9c60bbb76f0574971b1d10e8",
+        "afterSha256": "c27c68e7b306e37da06796674ad83dc8820423f1158878570c50b929fd21501a"
+      },
+      {
+        "id": "block_0005_0001",
+        "beforeSha256": "7deda8a4d78ffa8ab5e8d7d81616efcc5e520750f72f496d476296356fcd0081",
+        "afterSha256": "4ba16cce7609b76662414608acd98fb01475e20a24053ec161d325a3bbc153bc"
+      },
+      {
+        "id": "block_0003_0003",
+        "beforeSha256": "d68a4cbf547c3e2039673847321dee6c59736d12499499df8b8d71db998d3856",
+        "afterSha256": "7a8e46a17caa8588caf25caf7a96fcfb896adf90919e424ac76b74b846eeda64"
+      },
+      {
+        "id": "block_0005_0001",
+        "beforeSha256": "4ba16cce7609b76662414608acd98fb01475e20a24053ec161d325a3bbc153bc",
+        "afterSha256": "d5bd03fd32b7fff917f351f98e9bcdd89721a5487baaabb66eadce141e3fa891"
       }
     ],
     "sourceFormatRevisions": [
@@ -3958,6 +4013,37 @@
           "sha256": "40535b2a2bbba2955cab7acf5cfd81ab08d0f710c30e04975bb4156654cac6cb"
         }
       }
+    ],
+    "choiceRevisions": [
+      {
+        "id": "block_0005_0001",
+        "block": {
+          "type": "multiple_choice",
+          "question": "La expresión (capacidad > 0) && (total % capacidad == 0) dio false. ¿Qué se puede concluir solo con ese resultado?",
+          "options": [
+            "No se cumplen juntos validez y exactitud; falta distinguir el motivo.",
+            "El reparto es necesariamente válido y tiene sobrantes.",
+            "La capacidad es necesariamente cero."
+          ],
+          "correctIndex": 0,
+          "explanation": "Si capacidad > 0 dio false, se omitió el resto. Si dio true, el resto fue distinto de cero. El resultado false por sí solo no indica cuál ocurrió."
+        },
+        "optionIndex": 0,
+        "replacement": "La capacidad puede ser cero o negativa. También es posible que sea positiva y queden fichas sueltas.",
+        "semanticBefore": {
+          "block": "block_0005_0001",
+          "path": "/options/0",
+          "sourceSha256": "1e30b1b0ac458f9c16cd8720caa935c1ca52a2d0850463275196bd3038845b44",
+          "spans": []
+        },
+        "semanticAfter": {
+          "block": "block_0005_0001",
+          "path": "/options/0",
+          "sourceSha256": "194f46fd6df9b436fcf40900339c19c6d11ddadfbf22b99aca7f3dc4636309a3",
+          "spans": []
+        },
+        "semanticRootBefore": true
+      }
     ]
   },
   "compilerPuzzlesRequired": true,
@@ -4210,7 +4296,7 @@
       {
         "block": "block_0001_0000",
         "path": "/text",
-        "sourceSha256": "93bb0f50d6140960439f2c97aeaad8c85becf2e1e8e0c74c4f9ddf1b66787dba",
+        "sourceSha256": "6ca9aa9141ad1eb7e9d1d184fd0db93152d504079c9c68b7151cd399c962397c",
         "spans": []
       },
       {
@@ -4445,7 +4531,7 @@
       {
         "block": "block_0002_0000",
         "path": "/text",
-        "sourceSha256": "eb370c3e66ac702a1959a91d04cf35ac0c9c979a94af776373bce5fb84f4ec84",
+        "sourceSha256": "b570ccdf8e3e8f56c75b5f912410abb6d47c46d78a34267f857ee7864122f908",
         "spans": []
       },
       {
@@ -4681,7 +4767,7 @@
       {
         "block": "block_0002_0004",
         "path": "/text",
-        "sourceSha256": "e5cd960474eeddae1e607433fb5f1bbc1f06ae4823f441a0bf90809d927208a2",
+        "sourceSha256": "cf2fe9eacf73caa97180a1064f1f2ec960dc8b1bf2a9912f0156a24fa3e3d90e",
         "spans": [
           {
             "start": 111,
@@ -4806,18 +4892,18 @@
       {
         "block": "block_0003_0003",
         "path": "/question",
-        "sourceSha256": "6a895c6acf963e930165d32a239f980c0c2cbf60aba24a1af1c2dc6094305e6c",
+        "sourceSha256": "b157a1e1df3b0fafe077298eafaaf822473476ff0cd9dc9a069e7e1bd4c2378f",
         "spans": [
           {
-            "start": 33,
-            "end": 42,
-            "text": "capacidad",
-            "role": "cpp",
-            "reading": "technical"
+            "start": 27,
+            "end": 29,
+            "text": "28",
+            "role": "data",
+            "reading": "natural"
           },
           {
-            "start": 51,
-            "end": 52,
+            "start": 56,
+            "end": 57,
             "text": "0",
             "role": "data",
             "reading": "natural"
@@ -4966,7 +5052,7 @@
       {
         "block": "block_0003_0006",
         "path": "/text",
-        "sourceSha256": "ea4e8fafd7e58a34dda655462e68b90dbdd3e984bc1375558996bb0b0f52360e",
+        "sourceSha256": "4cb4be607390939ec8a1fd6b65650dcf52044839daa00bb9c9300ef3f07f2a4c",
         "spans": [
           {
             "start": 523,
@@ -5029,6 +5115,13 @@
             "end": 939,
             "text": "Capacidad invalida",
             "role": "output",
+            "reading": "natural"
+          },
+          {
+            "start": 1060,
+            "end": 1064,
+            "text": "28 0",
+            "role": "data",
             "reading": "natural"
           }
         ]
@@ -5231,7 +5324,7 @@
       {
         "block": "block_0004_0003",
         "path": "/text",
-        "sourceSha256": "58854e22e58c6fc600377da0a900d5429fcc882ae9196b628d8afec90bea5080",
+        "sourceSha256": "cef652e73a1aa7f6161231b9b7a1486b243a52537c8371b8a46ab37cc7f86c64",
         "spans": []
       },
       {
@@ -5264,32 +5357,46 @@
       {
         "block": "block_0005_0001",
         "path": "/explanation",
-        "sourceSha256": "65f21331ad1391dcf4a524599639a6721bae35ba7ade7afe11c075844009a202",
+        "sourceSha256": "fe890e5c5f0e544c36c1fb9c8f22a5c7bc780bed9cb0106fa2d76489aeeb6bd0",
         "spans": [
           {
-            "start": 3,
-            "end": 16,
-            "text": "capacidad > 0",
-            "role": "cpp",
-            "reading": "technical"
-          },
-          {
-            "start": 21,
-            "end": 26,
+            "start": 13,
+            "end": 18,
             "text": "false",
             "role": "cpp",
             "reading": "technical"
           },
           {
-            "start": 55,
-            "end": 59,
-            "text": "true",
+            "start": 89,
+            "end": 102,
+            "text": "capacidad > 0",
             "role": "cpp",
             "reading": "technical"
           },
           {
-            "start": 105,
-            "end": 110,
+            "start": 106,
+            "end": 111,
+            "text": "false",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 114,
+            "end": 116,
+            "text": "&&",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 197,
+            "end": 214,
+            "text": "total % capacidad",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 278,
+            "end": 283,
             "text": "false",
             "role": "cpp",
             "reading": "technical"
@@ -5299,7 +5406,7 @@
       {
         "block": "block_0005_0001",
         "path": "/options/0",
-        "sourceSha256": "1e30b1b0ac458f9c16cd8720caa935c1ca52a2d0850463275196bd3038845b44",
+        "sourceSha256": "194f46fd6df9b436fcf40900339c19c6d11ddadfbf22b99aca7f3dc4636309a3",
         "spans": []
       },
       {
@@ -5325,33 +5432,68 @@
       {
         "block": "block_0005_0002",
         "path": "/text",
-        "sourceSha256": "0eea207608db659d5837462ef5b5340b60be1f354ae35dbc5aa1905cbfd381e8",
+        "sourceSha256": "5cb6b7202d719d2653362404c8c62328f97f0a2ac907e009789400c130e50c83",
         "spans": [
           {
-            "start": 67,
-            "end": 71,
-            "text": "28 6",
+            "start": 68,
+            "end": 69,
+            "text": "1",
+            "role": "output",
+            "reading": "natural"
+          },
+          {
+            "start": 149,
+            "end": 151,
+            "text": "28",
             "role": "data",
             "reading": "natural"
           },
           {
-            "start": 150,
-            "end": 151,
+            "start": 174,
+            "end": 175,
+            "text": "6",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 227,
+            "end": 228,
             "text": "0",
             "role": "output",
             "reading": "natural"
           },
           {
-            "start": 157,
-            "end": 161,
-            "text": "28 0",
+            "start": 252,
+            "end": 261,
+            "text": "Grupos: 4",
+            "role": "output",
+            "reading": "natural"
+          },
+          {
+            "start": 281,
+            "end": 283,
+            "text": "28",
             "role": "data",
             "reading": "natural"
           },
           {
-            "start": 191,
-            "end": 192,
+            "start": 306,
+            "end": 307,
             "text": "0",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 343,
+            "end": 344,
+            "text": "0",
+            "role": "output",
+            "reading": "natural"
+          },
+          {
+            "start": 382,
+            "end": 400,
+            "text": "Capacidad invalida",
             "role": "output",
             "reading": "natural"
           }
@@ -5412,20 +5554,41 @@
       {
         "block": "cero_y_totales_validos_consigna",
         "path": "/text",
-        "sourceSha256": "f83e325d6f611e171bacc707ff6a63a3f1fb5d617590737ce3ddd792f1965f70",
+        "sourceSha256": "3b093e473a79e664120953efff676b8ba762fcc861d4c222a7784c63d87eb298",
         "spans": [
           {
-            "start": 4,
-            "end": 7,
+            "start": 16,
+            "end": 19,
             "text": "0 4",
             "role": "data",
             "reading": "natural"
           },
           {
-            "start": 14,
-            "end": 17,
+            "start": 22,
+            "end": 25,
             "text": "1 4",
             "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 209,
+            "end": 210,
+            "text": "1",
+            "role": "output",
+            "reading": "natural"
+          },
+          {
+            "start": 329,
+            "end": 330,
+            "text": "0",
+            "role": "output",
+            "reading": "natural"
+          },
+          {
+            "start": 399,
+            "end": 408,
+            "text": "Grupos: 0",
+            "role": "output",
             "reading": "natural"
           }
         ]
@@ -5536,130 +5699,130 @@
       {
         "block": "p1u3l6_probar_repartos",
         "path": "/text",
-        "sourceSha256": "70f9a7c0bf8d5d1354cedc4029cc0fb2b448f1692516f249615376ea3ea7cab0",
+        "sourceSha256": "06d3ec3bb8892607e658358e4d2663b07a0671bfe05ca5fa5ec1b53e6443faec",
         "spans": [
           {
-            "start": 58,
-            "end": 63,
+            "start": 239,
+            "end": 244,
             "text": "28 -1",
             "role": "data",
             "reading": "natural"
           },
           {
-            "start": 81,
-            "end": 82,
+            "start": 262,
+            "end": 263,
             "text": "0",
             "role": "output",
             "reading": "natural"
           },
           {
-            "start": 83,
-            "end": 101,
+            "start": 264,
+            "end": 282,
             "text": "Capacidad invalida",
             "role": "output",
             "reading": "natural"
           },
           {
-            "start": 111,
-            "end": 115,
+            "start": 292,
+            "end": 296,
             "text": "28 4",
             "role": "data",
             "reading": "natural"
           },
           {
-            "start": 133,
-            "end": 134,
+            "start": 314,
+            "end": 315,
             "text": "1",
             "role": "output",
             "reading": "natural"
           },
           {
-            "start": 135,
-            "end": 144,
+            "start": 316,
+            "end": 325,
             "text": "Grupos: 7",
             "role": "output",
             "reading": "natural"
           },
           {
-            "start": 154,
-            "end": 158,
+            "start": 335,
+            "end": 339,
             "text": "28 6",
             "role": "data",
             "reading": "natural"
           },
           {
-            "start": 176,
-            "end": 177,
+            "start": 357,
+            "end": 358,
             "text": "0",
             "role": "output",
             "reading": "natural"
           },
           {
-            "start": 178,
-            "end": 187,
+            "start": 359,
+            "end": 368,
             "text": "Grupos: 4",
             "role": "output",
             "reading": "natural"
           },
           {
-            "start": 197,
-            "end": 200,
+            "start": 378,
+            "end": 381,
             "text": "0 4",
             "role": "data",
             "reading": "natural"
           },
           {
-            "start": 218,
-            "end": 219,
+            "start": 399,
+            "end": 400,
             "text": "1",
             "role": "output",
             "reading": "natural"
           },
           {
-            "start": 220,
-            "end": 229,
+            "start": 401,
+            "end": 410,
             "text": "Grupos: 0",
             "role": "output",
             "reading": "natural"
           },
           {
-            "start": 239,
-            "end": 242,
+            "start": 420,
+            "end": 423,
             "text": "1 4",
             "role": "data",
             "reading": "natural"
           },
           {
-            "start": 260,
-            "end": 261,
+            "start": 441,
+            "end": 442,
             "text": "0",
             "role": "output",
             "reading": "natural"
           },
           {
-            "start": 262,
-            "end": 271,
+            "start": 443,
+            "end": 452,
             "text": "Grupos: 0",
             "role": "output",
             "reading": "natural"
           },
           {
-            "start": 281,
-            "end": 287,
+            "start": 462,
+            "end": 468,
             "text": "120 12",
             "role": "data",
             "reading": "natural"
           },
           {
-            "start": 305,
-            "end": 306,
+            "start": 486,
+            "end": 487,
             "text": "1",
             "role": "output",
             "reading": "natural"
           },
           {
-            "start": 307,
-            "end": 317,
+            "start": 488,
+            "end": 498,
             "text": "Grupos: 10",
             "role": "output",
             "reading": "natural"

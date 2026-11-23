@@ -87,7 +87,7 @@
             "12 3"
           ],
           "id": "p1u3l1_comparar_agrupaciones",
-          "question": "En la segunda cuenta aparecen paréntesis. ¿Qué número muestra cada cuenta? Escribe ambos números en el orden en que aparecen, con un espacio entre ellos.",
+          "question": "¿Qué número escribe std::cout al evaluar 24 / 4 * 2 y qué número escribe al evaluar 24 / (4 * 2)? Escribe los dos números en ese orden, con un espacio entre ellos.",
           "reviewFeedback": "En la primera cuenta, busca el resultado de dividir 24 entre cuatro. En la segunda, busca el valor que queda dentro de los paréntesis.",
           "explanation": "La primera cuenta divide veinticuatro entre cuatro y multiplica seis por dos. La segunda divide veinticuatro entre ocho. La consola muestra 12 3."
         },
@@ -117,6 +117,10 @@
             0
           ],
           "explanation": "grandes + pequenos cuenta seis paquetes. Al multiplicar esos seis por piezas_por_paquete, el programa obtiene 18 piezas."
+        },
+        {
+          "type": "note",
+          "text": "En el recuento de paquetes que acabas de completar, los cuatro grandes y los dos pequeños contienen tres piezas cada uno. La suma cuenta seis paquetes. Al multiplicar seis por tres se obtienen dieciocho piezas. Si escribes grandes + pequenos * piezas_por_paquete, el programa multiplica solo los dos paquetes pequeños por tres y les suma cuatro. El resultado es diez."
         }
       ]
     },
@@ -125,10 +129,6 @@
         {
           "type": "heading",
           "text": "Calcular con el valor actual de una variable"
-        },
-        {
-          "type": "note",
-          "text": "En el recuento de paquetes de la página anterior, los cuatro grandes y los dos pequeños contienen tres piezas cada uno. La suma cuenta seis paquetes. Al multiplicar seis por tres se obtienen dieciocho piezas. Si escribes grandes + pequenos * piezas_por_paquete, el programa multiplica solo los dos paquetes pequeños por tres y les suma cuatro. El resultado es diez."
         },
         {
           "type": "paragraph",
@@ -167,7 +167,7 @@
             2,
             3
           ],
-          "explanation": "base empieza con tres. Para calcular extra, se lee base y se multiplica por dos. Con ambos valores ya puedes calcular total. La consola muestra 9."
+          "explanation": "La declaración de base guarda tres. La de extra multiplica ese tres por dos y guarda seis. Cuando se ejecuta base + extra, ambas variables ya tienen valor. Su suma da nueve, que se guarda en total. Al mostrar total, la consola escribe 9."
         }
       ]
     },
@@ -199,6 +199,27 @@
         {
           "type": "paragraph",
           "text": "Para revisar la reparación, comprueba qué cuenta cada número. Hay cuatro sobres de tres fichas, así que la multiplicación cuenta doce fichas. Después puedes sumar las dos fichas sueltas. El programa inicial daba dieciocho porque contaba cada ficha suelta como si fuera un sobre de tres fichas."
+        },
+        {
+          "type": "heading",
+          "text": "Revisar qué cuenta cada término de la fórmula"
+        },
+        {
+          "type": "paragraph",
+          "text": "En el editor de las fichas, la salida esperada es Fichas: 14. La referencia usa las variables sobres, fichas_por_sobre y sueltas. Aquí sueltas corresponde a fichas_sueltas en el editor. Compara el cálculo de total con el que escribiste en el editor."
+        },
+        {
+          "type": "code",
+          "language": "cpp",
+          "code": "#include <iostream>\n\nint main() {\n    const int sobres = 4;\n    const int fichas_por_sobre = 3;\n    const int sueltas = 2;\n\n    const int total = sobres * fichas_por_sobre + sueltas;\n\n    std::cout << \"Fichas: \" << total;\n\n    return 0;\n}\n"
+        },
+        {
+          "type": "paragraph",
+          "text": "Si se abren los cuatro sobres, aparecen doce fichas. Al reunirlas con las dos que ya estaban fuera se obtienen catorce. Con cero sobres y dos fichas sueltas, el resultado es dos. Con cuatro sobres y ninguna ficha suelta, el resultado es doce."
+        },
+        {
+          "type": "note",
+          "text": "Si usas la fórmula equivocada (sobres + sueltas) * fichas_por_sobre, el caso con cero sobres y dos fichas sueltas da seis. En cambio, con cuatro sobres y cero fichas sueltas, tanto esa fórmula como la correcta dan doce. Esa última prueba por sí sola no permite detectar el error."
         },
         {
           "type": "multiple_choice",
@@ -267,7 +288,7 @@
         },
         {
           "type": "note",
-          "text": "Para revisar una fórmula, cambia un dato cuyo efecto puedas calcular a mano. Si cada sobre trae tres fichas, añadir un sobre debe aumentar el total en tres. Añadir una ficha suelta debe aumentarlo en uno. Estas dos pruebas distinguen las cantidades aunque el primer resultado coincida por casualidad."
+          "text": "En la fórmula de las fichas, cada sobre contiene tres. Para comprobar qué efecto tiene un sobre adicional, conserva la cantidad de fichas sueltas y aumenta en uno la cantidad de sobres. El total debe aumentar en tres fichas. Para comprobar qué efecto tiene una ficha suelta adicional, conserva la cantidad de sobres y aumenta en uno las fichas sueltas. El total debe aumentar en una ficha. Un programa que trate la ficha suelta como otro sobre sumará tres en esta segunda prueba."
         },
         {
           "type": "multiple_choice",
@@ -292,32 +313,11 @@
       "blocks": [
         {
           "type": "heading",
-          "text": "Revisar qué cuenta cada término de la fórmula"
-        },
-        {
-          "type": "paragraph",
-          "text": "En el primer editor, el mensaje correcto era Fichas: 14. La referencia usa las variables sobres, fichas_por_sobre y sueltas. Aquí sueltas corresponde a fichas_sueltas en el editor. Compara el cálculo de total con el que escribiste en el editor."
-        },
-        {
-          "type": "code",
-          "language": "cpp",
-          "code": "#include <iostream>\n\nint main() {\n    const int sobres = 4;\n    const int fichas_por_sobre = 3;\n    const int sueltas = 2;\n\n    const int total = sobres * fichas_por_sobre + sueltas;\n\n    std::cout << \"Fichas: \" << total;\n\n    return 0;\n}\n"
-        },
-        {
-          "type": "paragraph",
-          "text": "Si se abren los cuatro sobres, aparecen doce fichas. Al reunirlas con las dos que ya estaban fuera se obtienen catorce. Con cero sobres y dos fichas sueltas, el resultado es dos. Con cuatro sobres y ninguna ficha suelta, el resultado es doce."
-        },
-        {
-          "type": "note",
-          "text": "Si usas la fórmula equivocada (sobres + sueltas) * fichas_por_sobre, el caso con cero sobres y dos fichas sueltas da seis. En cambio, con cuatro sobres y cero fichas sueltas, tanto esa fórmula como la correcta dan doce. Esa última prueba por sí sola no permite detectar el error."
-        },
-        {
-          "type": "heading",
           "text": "Calcular la puntuación de una ronda"
         },
         {
           "type": "paragraph",
-          "text": "Escribe un programa que lea tres enteros del campo «Entrada», en este orden.\n\n1. Los puntos con los que un jugador empieza la ronda.\n2. Los puntos que gasta durante la ronda.\n3. Los puntos que recibe como bono.\n\nAl terminar la ronda, el jugador conserva los puntos que le quedan después del gasto. El juego duplica esa cantidad y después añade el bono una sola vez. Los tres datos van de cero a veinte y el gasto nunca supera la puntuación inicial.\n\nLee las tres cantidades, calcula la puntuación final y muestra un solo renglón. Usa los datos leídos cada vez que se ejecute el programa.\n\nEntrada\n10 3 4\n\nSalida esperada\nPuntos: 18\n\nPulsa «Compilar, ejecutar y comprobar». Este primer caso permite avanzar. El salto de línea final es opcional."
+          "text": "Escribe un programa que lea tres enteros del campo «Entrada», en este orden.\n\n1. Los puntos con los que un jugador empieza la ronda.\n2. Los puntos que gasta durante la ronda.\n3. Los puntos que recibe como bono.\n\nAl terminar la ronda, el jugador conserva los puntos que le quedan después del gasto. El juego duplica esa cantidad y después añade el bono una sola vez. Los tres datos van de cero a veinte y el gasto nunca supera la puntuación inicial.\n\nLee las tres cantidades, calcula la puntuación final y muestra un solo renglón en la consola. Escribe el rótulo Puntos:, un espacio y la puntuación que calculaste. Usa los datos leídos cada vez que se ejecute el programa.\n\nEntrada\n10 3 4\n\nSalida esperada\nPuntos: 18\n\nPara completar el ejercicio, deja 10 3 4 en el campo «Entrada» y pulsa «Compilar, ejecutar y comprobar». El programa debe producir la salida esperada para esos datos. El salto de línea final es opcional."
         },
         {
           "type": "cpp_compiler",
@@ -361,7 +361,7 @@
         },
         {
           "type": "paragraph",
-          "text": "En la primera prueba, el jugador empieza con diez puntos y gasta tres. Le quedan siete. El juego duplica esos siete y suma los cuatro del bono. La puntuación final es dieciocho.\n\nPuedes probar otros dos casos en el campo «Entrada».\n\nSi el jugador conserva sus siete puntos iniciales, el juego los duplica y luego suma los dos del bono.\n\nEntrada\n7 0 2\n\nSalida esperada\nPuntos: 16\n\nSi el jugador gasta los cinco puntos con los que empieza, solo le quedan los tres del bono.\n\nEntrada\n5 5 3\n\nSalida esperada\nPuntos: 3"
+          "text": "En la primera prueba, el jugador empieza con diez puntos y gasta tres. Le quedan siete. El juego duplica esos siete y suma los cuatro del bono. La puntuación final es dieciocho.\n\nPruebas opcionales en este editor\nPara cada prueba, escribe los datos indicados en el campo «Entrada», pulsa «Compilar, ejecutar y comprobar» y compara los renglones que muestra la consola con la salida esperada para esa entrada.\n\nSi el jugador conserva sus siete puntos iniciales, el juego los duplica y luego suma los dos del bono.\n\nEntrada\n7 0 2\n\nSalida esperada\nPuntos: 16\n\nSi el jugador gasta los cinco puntos con los que empieza, solo le quedan los tres del bono.\n\nEntrada\n5 5 3\n\nSalida esperada\nPuntos: 3"
         }
       ]
     }
@@ -571,14 +571,14 @@
           "block_0001_0002",
           "p1u3l1_comparar_agrupaciones",
           "block_0001_0003",
-          "block_0001_0004"
+          "block_0001_0004",
+          "block_0002_0001"
         ]
       },
       {
         "id": "page_0002",
         "blocks": [
           "block_0002_0000",
-          "block_0002_0001",
           "block_0002_0002",
           "block_0002_0003",
           "block_0002_0004"
@@ -591,6 +591,11 @@
           "block_0003_0001",
           "p1u3l1_reparar_fichas",
           "block_0003_0003",
+          "block_0005_0000",
+          "block_0005_0001",
+          "block_0005_0002",
+          "block_0005_0003",
+          "block_0005_0004",
           "block_0003_0004",
           "block_0003_0005",
           "block_0003_0006",
@@ -610,11 +615,6 @@
       {
         "id": "page_0005",
         "blocks": [
-          "block_0005_0000",
-          "block_0005_0001",
-          "block_0005_0002",
-          "block_0005_0003",
-          "block_0005_0004",
           "block_0005_0005",
           "block_0005_0006",
           "p1u3l1_construir_puntuacion",
@@ -1455,6 +1455,41 @@
         "id": "p1u3l1_ejemplo_puntuacion",
         "beforeSha256": "c87226f2647e4af1313910f6a33f7b2801590a3cf9e9f03f5dedb218c3fca890",
         "afterSha256": "3568068042e1864d181613dcc8ca18d93c999234c4c1ae0964b5f46baee6d947"
+      },
+      {
+        "id": "block_0002_0001",
+        "beforeSha256": "4ce54d6923dd3caf3a0da3be5e916a5dc29b9e2d2d26c362df664a99cff26a35",
+        "afterSha256": "435ee2c531b826e2a031fa59bcc216802f888b3a331d60a39d18974d83e316ff"
+      },
+      {
+        "id": "block_0004_0003",
+        "beforeSha256": "271f6f40b088b76be76ba95f2230f7eb07bb2c3ccc9fcf0aa4141d1a39147eff",
+        "afterSha256": "73cacb6f9a23f5159658975564fc5de5897cdf4e085eb707844b7a664ff877eb"
+      },
+      {
+        "id": "block_0005_0001",
+        "beforeSha256": "acdacad300cbca5fa31a854e2575658fa45fda97ecdd8522ed8d0a839e98e2a8",
+        "afterSha256": "93b5db3a2ce05d9d47f7939cb868c52c068487c35fe3cf8a5a97b55c5685f1b8"
+      },
+      {
+        "id": "block_0005_0006",
+        "beforeSha256": "828c413e4b1c7fee44df6fd01d813bc71e96459b0fc449e9cb76e7f7b12142b8",
+        "afterSha256": "c8bf423281a135589fdb6e21bc4aa5036efae24aa30b30f9fb9829c3cdddbba2"
+      },
+      {
+        "id": "p1u3l1_comprobar_bono",
+        "beforeSha256": "9208940f8a6e01f110c9915ac8e3a0cd6cf7a72c4118ece24e1fba5474be08d4",
+        "afterSha256": "ebba4dca4b2ac232b6c808d9e1d77a1bf9422e8ac26bd37b7be68ba3bec9a9ab"
+      },
+      {
+        "id": "p1u3l1_comparar_agrupaciones",
+        "beforeSha256": "32d07f6e39cbc720f81b750e9d7070d4e6f91072efd713625e8ce269a1e095b5",
+        "afterSha256": "5f3e345e157b6c234d59c416ed9488677d32536375e1ef87de64e5ff14536d7e"
+      },
+      {
+        "id": "block_0002_0004",
+        "beforeSha256": "a8ab11948ab3b2b79b4f37c2b49850f4510029a959c1aa49c92b1f87c48a35dc",
+        "afterSha256": "abbad1af2c914ce3618ae02232e0b56f3067ae057f2ba2f14e05d970a8325aec"
       }
     ],
     "orderRefinements": [
@@ -3827,11 +3862,11 @@
       {
         "block": "block_0002_0001",
         "path": "/text",
-        "sourceSha256": "07f23a86d9eaf9f85165f0206c6c71a4e86aa9f4a90054f64f75d94a3207194b",
+        "sourceSha256": "23e203e7825f5bb5d57e3837d8d707a7256bdbc4548513100395d76a82660aba",
         "spans": [
           {
-            "start": 221,
-            "end": 260,
+            "start": 223,
+            "end": 262,
             "text": "grandes + pequenos * piezas_por_paquete",
             "role": "cpp",
             "reading": "technical"
@@ -3967,39 +4002,46 @@
       {
         "block": "block_0002_0004",
         "path": "/explanation",
-        "sourceSha256": "66ba7eafcfd1c4c5b003d6f2e893f837b8b6195401021a833492220478566602",
+        "sourceSha256": "067e4c14d157fa2b400173e763dae318135f0664613a0c0fa51d0ad18e364175",
         "spans": [
           {
-            "start": 0,
-            "end": 4,
+            "start": 18,
+            "end": 22,
             "text": "base",
             "role": "cpp",
             "reading": "technical"
           },
           {
-            "start": 37,
-            "end": 42,
+            "start": 42,
+            "end": 47,
             "text": "extra",
             "role": "cpp",
             "reading": "technical"
           },
           {
-            "start": 51,
-            "end": 55,
-            "text": "base",
+            "start": 109,
+            "end": 121,
+            "text": "base + extra",
             "role": "cpp",
             "reading": "technical"
           },
           {
-            "start": 118,
-            "end": 123,
+            "start": 191,
+            "end": 196,
             "text": "total",
             "role": "cpp",
             "reading": "technical"
           },
           {
-            "start": 144,
-            "end": 145,
+            "start": 209,
+            "end": 214,
+            "text": "total",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 235,
+            "end": 236,
             "text": "9",
             "role": "output",
             "reading": "natural"
@@ -4298,7 +4340,7 @@
       {
         "block": "block_0004_0003",
         "path": "/text",
-        "sourceSha256": "be2807ff750ce15f4136943850b5eb713bede33027a4ab655a9b5bfed0390d02",
+        "sourceSha256": "925eecf3356a2c757d2550522d4248ad08a91b610aff3283297b445ecaf6785c",
         "spans": []
       },
       {
@@ -4310,53 +4352,53 @@
       {
         "block": "block_0005_0001",
         "path": "/text",
-        "sourceSha256": "6393f77a5e7d4d6c0e69d0ca9b6a7bffb994d17e7a1c7eb5e50451908dc7a13b",
+        "sourceSha256": "ae1fd39864b1b269f75c9078427751c525814ca5926ef0e7d00f9e0b5a6a34d0",
         "spans": [
           {
-            "start": 45,
-            "end": 55,
+            "start": 50,
+            "end": 60,
             "text": "Fichas: 14",
             "role": "output",
             "reading": "natural"
           },
           {
-            "start": 89,
-            "end": 95,
+            "start": 94,
+            "end": 100,
             "text": "sobres",
             "role": "cpp",
             "reading": "technical"
           },
           {
-            "start": 97,
-            "end": 113,
+            "start": 102,
+            "end": 118,
             "text": "fichas_por_sobre",
             "role": "cpp",
             "reading": "technical"
           },
           {
-            "start": 116,
-            "end": 123,
+            "start": 121,
+            "end": 128,
             "text": "sueltas",
             "role": "cpp",
             "reading": "technical"
           },
           {
-            "start": 130,
-            "end": 137,
+            "start": 135,
+            "end": 142,
             "text": "sueltas",
             "role": "cpp",
             "reading": "technical"
           },
           {
-            "start": 152,
-            "end": 166,
+            "start": 157,
+            "end": 171,
             "text": "fichas_sueltas",
             "role": "cpp",
             "reading": "technical"
           },
           {
-            "start": 203,
-            "end": 208,
+            "start": 208,
+            "end": 213,
             "text": "total",
             "role": "cpp",
             "reading": "technical"
@@ -4392,20 +4434,34 @@
       {
         "block": "block_0005_0006",
         "path": "/text",
-        "sourceSha256": "1fb1354b4a8064692c0dab54de7edec5cbf92cc380a967a71ba6368d7e730c4d",
+        "sourceSha256": "4f6fbc47d4362f9cd7ddad92fb71bc04d86db51a1f3d6555bb44e4fbd02dc98e",
         "spans": [
           {
-            "start": 597,
-            "end": 603,
+            "start": 562,
+            "end": 569,
+            "text": "Puntos:",
+            "role": "output",
+            "reading": "natural"
+          },
+          {
+            "start": 681,
+            "end": 687,
             "text": "10 3 4",
             "role": "data",
             "reading": "natural"
           },
           {
-            "start": 621,
-            "end": 631,
+            "start": 705,
+            "end": 715,
             "text": "Puntos: 18",
             "role": "output",
+            "reading": "natural"
+          },
+          {
+            "start": 751,
+            "end": 757,
+            "text": "10 3 4",
+            "role": "data",
             "reading": "natural"
           }
         ]
@@ -4504,8 +4560,30 @@
       {
         "block": "p1u3l1_comparar_agrupaciones",
         "path": "/question",
-        "sourceSha256": "087db426a77f981755f1723f37d982e82c59858b689db014f5a99053025c2636",
-        "spans": []
+        "sourceSha256": "dc3481c6f9a6c58b56449388f8f3ca4bf760a9b7ef45771fc38fc6f6369b6713",
+        "spans": [
+          {
+            "start": 20,
+            "end": 29,
+            "text": "std::cout",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 41,
+            "end": 51,
+            "text": "24 / 4 * 2",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 84,
+            "end": 96,
+            "text": "24 / (4 * 2)",
+            "role": "cpp",
+            "reading": "technical"
+          }
+        ]
       },
       {
         "block": "p1u3l1_comparar_agrupaciones",
@@ -4679,32 +4757,32 @@
       {
         "block": "p1u3l1_comprobar_bono",
         "path": "/text",
-        "sourceSha256": "4a80ccfa542df78412abc35ed75687f70cba3c577f673f85ac1d09e6d132b48d",
+        "sourceSha256": "3d9cf777762d196cb14deae971fce04757abcf7e51a17528cb9a438d20afe746",
         "spans": [
           {
-            "start": 345,
-            "end": 350,
+            "start": 522,
+            "end": 527,
             "text": "7 0 2",
             "role": "data",
             "reading": "natural"
           },
           {
-            "start": 368,
-            "end": 378,
+            "start": 545,
+            "end": 555,
             "text": "Puntos: 16",
             "role": "output",
             "reading": "natural"
           },
           {
-            "start": 481,
-            "end": 486,
+            "start": 658,
+            "end": 663,
             "text": "5 5 3",
             "role": "data",
             "reading": "natural"
           },
           {
-            "start": 504,
-            "end": 513,
+            "start": 681,
+            "end": 690,
             "text": "Puntos: 3",
             "role": "output",
             "reading": "natural"

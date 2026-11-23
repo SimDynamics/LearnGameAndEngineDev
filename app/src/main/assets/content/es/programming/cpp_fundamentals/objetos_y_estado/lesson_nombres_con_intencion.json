@@ -67,7 +67,7 @@
         {
           "type": "fill_code",
           "language": "cpp",
-          "question": "La línea con std::cout ya lee una variable. Completa su declaración para que ese mismo nombre guarde el ocho.",
+          "question": "En el hueco después de int, escribe el nombre de la variable que std::cout consulta más abajo. La declaración debe guardar el entero 8 en esa variable.",
           "code": "#include <iostream>\n\nint main() {\n    int ___ = 8;\n\n    std::cout << cajas_recibidas;\n\n    return 0;\n}\n",
           "answers": [
             "cajas_recibidas"
@@ -95,7 +95,7 @@
           "type": "multiple_choice",
           "question": "¿Qué cambio permite que std::cout lea el entero que ya guarda este programa?",
           "options": [
-            "Cambiar Cajas por cajas en la salida.",
+            "Cambiar Cajas por cajas en la instrucción con std::cout.",
             "Borrar la cabecera iostream.",
             "Añadir comillas a Cajas para imprimir el valor cinco."
           ],
@@ -141,9 +141,9 @@
         },
         {
           "type": "multiple_choice",
-          "question": "x1 es un nombre válido, pero en un inventario sin más contexto resulta poco claro. ¿Qué clase de problema tiene?",
+          "question": "Una persona lee el nombre x1 en una suma del inventario. Ese nombre se puede usar en C++, pero por sí solo no indica si cuenta cajas, piezas o paquetes. ¿Qué dificultad causa ese nombre?",
           "options": [
-            "Una falta de claridad para el lector.",
+            "Al leer x1, la persona tiene que buscar en otra parte del programa qué cuenta esa variable.",
             "Un valor numérico fuera de rango.",
             "Una violación obligatoria de la gramática."
           ],
@@ -152,13 +152,13 @@
         },
         {
           "type": "inline_fill_code",
-          "question": "Escribe sobres_recibidos en los dos huecos. En el primero se guardan los seis sobres que llegaron. En el segundo vas a leer esa cantidad para mostrarla.",
+          "question": "En los dos huecos escribe sobres_recibidos. El primer hueco da nombre a la variable que empieza con seis. En el segundo hueco, std::cout usa el nombre para consultar y mostrar esa cantidad.",
           "template": "#include <iostream>\n\nint main() {\n    int [] = 6;\n\n    std::cout << [];\n\n    return 0;\n}\n",
           "answers": [
             "sobres_recibidos",
             "sobres_recibidos"
           ],
-          "reviewFeedback": "Distingue el lugar donde se introduce el nombre del objeto del lugar donde se consulta su valor. Ambos usos deben corresponder a la misma variable; revisa su escritura completa, incluidas las mayúsculas y los guiones bajos indicados en la consigna.",
+          "reviewFeedback": "Mira el nombre de la variable en su declaración y en la instrucción con std::cout. ¿Escribiste sobres_recibidos exactamente igual en los dos huecos, incluido el guion bajo?",
           "explanation": "La primera línea guarda 6 en sobres_recibidos. La segunda consulta sobres_recibidos. Por eso la consola muestra 6."
         },
         {
@@ -183,7 +183,7 @@
           "id": "p1u2l4_reparar_lectura_paquetes",
           "question": "Había seis paquetes preparados y ya se entregaron dos. Alguien escribió paquetes_preparados a los dos lados del signo menos. El programa compiló y mostró 0. Se ha borrado el segundo nombre. Escribe el que hace falta para calcular cuántos quedan por entregar.",
           "reviewFeedback": "Lee qué cuenta cada variable. La cantidad que quitas debe corresponder a los paquetes que ya salieron.",
-          "explanation": "Al restar una cantidad de sí misma, hacías 6 − 6. Ahora el segundo nombre lee las dos entregas. El programa calcula 6 − 2 y muestra 4."
+          "explanation": "En la fórmula original, paquetes_preparados - paquetes_preparados restaba seis de seis y daba cero. En la fórmula corregida, paquetes_preparados aporta los seis paquetes preparados y paquetes_entregados aporta los dos que ya salieron. La resta da cuatro paquetes pendientes y la consola muestra 4."
         }
       ]
     },
@@ -270,9 +270,9 @@
         },
         {
           "type": "multiple_choice",
-          "question": "¿Qué debe verificarse después de renombrar una variable?",
+          "question": "Cambiaste el nombre de una variable en su declaración. El programa usa esa variable en una suma y muestra el resultado con std::cout. ¿Qué debes revisar para comprobar que el cambio de nombre conserva el cálculo y su salida?",
           "options": [
-            "Referencias coherentes y comportamiento que siga cumpliendo la consigna.",
+            "Comprobar que la declaración y las instrucciones que usan esa variable llevan el nombre nuevo. Después, ejecutar el programa con las mismas cantidades y verificar que muestra el total esperado.",
             "Sólo la declaración: el cambio de nombre no afecta sus otros usos.",
             "Sólo la salida: los diagnósticos por usos del nombre viejo no importan."
           ],
@@ -287,7 +287,7 @@
           "type": "drag_fill_code",
           "id": "u2_asociar_nombres_y_funciones_en_comentarios",
           "language": "cpp",
-          "question": "Coloca una ficha después de cada //. Describe qué cantidad guarda la variable de la línea siguiente. Usa cada ficha una vez.",
+          "question": "Coloca una ficha después de cada //. Cada comentario debe indicar qué cuenta la variable declarada en la línea que tiene justo debajo. Usa cada ficha una vez.",
           "template": "#include <iostream>\n\nint main() {\n    // []\n    int cajas_iniciales = 4;\n    // []\n    int cajas_agregadas = 3;\n    // []\n    int cajas_finales = cajas_iniciales + cajas_agregadas;\n\n    std::cout << cajas_finales;\n\n    return 0;\n}\n",
           "choices": [
             "cantidad incorporada",
@@ -300,7 +300,7 @@
             2
           ],
           "explanation": "cajas_iniciales guarda las cuatro cajas que había. cajas_agregadas guarda las tres que llegaron. cajas_finales guarda el resultado de 4 + 3. Al leer esa última variable, la consola muestra 7.",
-          "reviewFeedback": "Revisa qué información comunica cada nombre y qué instrucción utiliza su valor. Relaciona la descripción con la función del dato, independientemente de los números elegidos para comprobar el programa."
+          "reviewFeedback": "Mira qué variable recibe las cuatro cajas que ya había y cuál recibe las tres que llegaron. Después busca la variable que guarda la suma. ¿Qué comentario describe cada una?"
         }
       ]
     },
@@ -1447,6 +1447,57 @@
         "id": "p1u2l4_referencia_retirada",
         "beforeSha256": "cb603a36603ae9ab60afd7ea3491df0d5725433698dd8128971b0ac3645a77d3",
         "afterSha256": "823da02c23105bdca6d74ae75fff8f7cd46eabd6ac2c6a97b99dd1c7d409fcd7"
+      },
+      {
+        "id": "block_0001_0004",
+        "beforeSha256": "6a05bf4fdb076203042a05cf3327c7778efdca78e35d67606f3ebe5f27c795c1",
+        "afterSha256": "5c8bb93b04c6edcdd9ea2fb5b784d44409a91fb2573c84271745ba8a7be9e773"
+      },
+      {
+        "id": "p1u2l4_reparar_lectura_paquetes",
+        "beforeSha256": "b3dba9c25a4e1de2225767fcfa01f48c52cf13e8b7a1bc4f63d122ea1f4bfd9e",
+        "afterSha256": "b6b8fb2284f57dbe8041ef9e1c6c077080bdc454c6f062eda206a7bed7cc1797"
+      },
+      {
+        "id": "block_0005_0004",
+        "beforeSha256": "0830a43feef5594e0cb8cd87af094cd44c6f5d51b7991add3634e9d529d28d2f",
+        "afterSha256": "1c8c2993d2b86ffe0e6fb0a6d077eb4f08a54e7b23d677fbcba4674fd5da3742"
+      },
+      {
+        "id": "block_0005_0004",
+        "beforeSha256": "1c8c2993d2b86ffe0e6fb0a6d077eb4f08a54e7b23d677fbcba4674fd5da3742",
+        "afterSha256": "9b64e5f6bfa8aea109d1d899b21e11c686aee442e9a5b885b61a9111bd52ef3e"
+      },
+      {
+        "id": "block_0002_0003",
+        "beforeSha256": "b5a338580ff024dced2f8f6f92e024ac8a7eeb31a389fa6c78637539b41860b5",
+        "afterSha256": "c4f38399478ef2f82ed8ebf2b5464037defa85becc0d42f932b4860b232908b5"
+      },
+      {
+        "id": "block_0005_0005",
+        "beforeSha256": "46292faefe8101ee16c8c1061df1c17071bbd7177ea123571add4377894f7154",
+        "afterSha256": "254f43cb9e2f13975ca6e040bdf79a2fb4b1a43c4d8a5c643045f665a194a297",
+        "reviewPaths": [
+          "/reviewFeedback"
+        ]
+      },
+      {
+        "id": "block_0003_0003",
+        "beforeSha256": "fdaaf15ae4ebf379013817fc436471887ffd15b786d46bbb5e95b7d93b922289",
+        "afterSha256": "0cd95f0aa623bab643a09ce2b773e7094bea05acfddd5613a69199e740530f58"
+      },
+      {
+        "id": "block_0003_0003",
+        "beforeSha256": "0cd95f0aa623bab643a09ce2b773e7094bea05acfddd5613a69199e740530f58",
+        "afterSha256": "5ed8c387aa9cc208e891c56efe1b3beadac6d05a56243ced9fb2134c799c1307"
+      },
+      {
+        "id": "block_0003_0004",
+        "beforeSha256": "78acc0bf3bad274c152c3b8f486b7f66e68c650c51f5e74e15e3b3118b9da02e",
+        "afterSha256": "71de915b861dfb962773d56d1cc3d070d8d39beb4be6101114d720986cd5f844",
+        "reviewPaths": [
+          "/reviewFeedback"
+        ]
       }
     ],
     "sourceFormatRevisions": [
@@ -1632,6 +1683,140 @@
           "language": "cpp",
           "code": "#include <iostream>\n\nint main() {\n    int cajas_iniciales{10};\n    int cajas_retiradas{2};\n    int cajas_restantes{cajas_iniciales - cajas_retiradas};\n    std::cout << cajas_restantes;\n    return 0;\n}\n"
         }
+      }
+    ],
+    "choiceRevisions": [
+      {
+        "id": "block_0005_0004",
+        "block": {
+          "type": "multiple_choice",
+          "question": "¿Qué debe verificarse después de renombrar una variable?",
+          "options": [
+            "Referencias coherentes y comportamiento que siga cumpliendo la consigna.",
+            "Sólo la declaración: el cambio de nombre no afecta sus otros usos.",
+            "Sólo la salida: los diagnósticos por usos del nombre viejo no importan."
+          ],
+          "correctIndex": 0,
+          "explanation": "Después de cambiar un nombre, sigue sus apariciones desde la declaración hasta el cálculo y la línea que imprime el resultado. Así compruebas que el programa sigue usando la cantidad que querías."
+        },
+        "optionIndex": 0,
+        "replacement": "Comprobar que la declaración y las instrucciones que usan esa variable llevan el nombre nuevo. Después, ejecutar el programa con las mismas cantidades y verificar que muestra el total esperado.",
+        "semanticBefore": {
+          "block": "block_0005_0004",
+          "path": "/options/0",
+          "sourceSha256": "081c50685e5d35bcfb7c158cbc6e17ffcd983883f05ca4add82a0a664d711c8b",
+          "spans": []
+        },
+        "semanticAfter": {
+          "block": "block_0005_0004",
+          "path": "/options/0",
+          "sourceSha256": "e9868ae43f1ccbee1919bd3bafb8c9d323c27940d964172b3ea9086bc8bd9895",
+          "spans": []
+        },
+        "semanticRootBefore": true
+      },
+      {
+        "id": "block_0002_0003",
+        "block": {
+          "type": "multiple_choice",
+          "question": "¿Qué cambio permite que std::cout lea el entero que ya guarda este programa?",
+          "options": [
+            "Cambiar Cajas por cajas en la salida.",
+            "Borrar la cabecera iostream.",
+            "Añadir comillas a Cajas para imprimir el valor cinco."
+          ],
+          "correctIndex": 0,
+          "explanation": "La declaración guardó cinco en cajas, con minúscula. Escribe ese mismo nombre después de << para leer el cinco. Si escribieras \"Cajas\", la consola mostraría la palabra Cajas."
+        },
+        "optionIndex": 0,
+        "replacement": "Cambiar Cajas por cajas en la instrucción con std::cout.",
+        "semanticBefore": {
+          "block": "block_0002_0003",
+          "path": "/options/0",
+          "sourceSha256": "f92a9810277a1d3aea69c07717dd9c71907e9edc68ccd964c3830e0b047a9c9e",
+          "spans": [
+            {
+              "start": 8,
+              "end": 13,
+              "text": "Cajas",
+              "role": "cpp",
+              "reading": "technical"
+            },
+            {
+              "start": 18,
+              "end": 23,
+              "text": "cajas",
+              "role": "cpp",
+              "reading": "technical"
+            }
+          ]
+        },
+        "semanticAfter": {
+          "block": "block_0002_0003",
+          "path": "/options/0",
+          "sourceSha256": "d017e8bc6c480359002a043b21e15e20d6bd631649510bf90e5bebb6cb8f59ce",
+          "spans": [
+            {
+              "start": 8,
+              "end": 13,
+              "text": "Cajas",
+              "role": "cpp",
+              "reading": "technical"
+            },
+            {
+              "start": 18,
+              "end": 23,
+              "text": "cajas",
+              "role": "cpp",
+              "reading": "technical"
+            },
+            {
+              "start": 46,
+              "end": 55,
+              "text": "std::cout",
+              "role": "cpp",
+              "reading": "technical"
+            }
+          ]
+        },
+        "semanticRootBefore": true
+      },
+      {
+        "id": "block_0003_0003",
+        "block": {
+          "type": "multiple_choice",
+          "question": "x1 es un nombre válido, pero en un inventario sin más contexto resulta poco claro. ¿Qué clase de problema tiene?",
+          "options": [
+            "Una falta de claridad para el lector.",
+            "Un valor numérico fuera de rango.",
+            "Una violación obligatoria de la gramática."
+          ],
+          "correctIndex": 0,
+          "explanation": "Puedes declarar x1. Si sólo ves ese nombre en una suma, tienes que buscar en otra parte del programa para saber qué cantidad estás sumando."
+        },
+        "optionIndex": 0,
+        "replacement": "Al leer x1, la persona tiene que buscar en otra parte del programa qué cuenta esa variable.",
+        "semanticBefore": {
+          "block": "block_0003_0003",
+          "path": "/options/0",
+          "sourceSha256": "b7e122aa4d5c189f06d713031e43323565dab51e48708420dad348f085ab7349",
+          "spans": []
+        },
+        "semanticAfter": {
+          "block": "block_0003_0003",
+          "path": "/options/0",
+          "sourceSha256": "0c0adb97959a972a6f54840e251b82750a8c9d04dd5d0f1036fd9bb3648e15f7",
+          "spans": [
+            {
+              "start": 8,
+              "end": 10,
+              "text": "x1",
+              "role": "cpp",
+              "reading": "technical"
+            }
+          ]
+        },
+        "semanticRootBefore": true
       }
     ]
   },
@@ -1939,14 +2124,28 @@
       {
         "block": "block_0001_0004",
         "path": "/question",
-        "sourceSha256": "2e7f3326b717de05d5bd6dc89f9e6c18bac8fa90291ebb021c41c31ca26e3fc6",
+        "sourceSha256": "791684769f5973b0fe18282905501fff6989bd0c2cc76ce814b76c18d7e87d13",
         "spans": [
           {
-            "start": 13,
-            "end": 22,
+            "start": 23,
+            "end": 26,
+            "text": "int",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 65,
+            "end": 74,
             "text": "std::cout",
             "role": "cpp",
             "reading": "technical"
+          },
+          {
+            "start": 133,
+            "end": 134,
+            "text": "8",
+            "role": "data",
+            "reading": "natural"
           }
         ]
       },
@@ -2071,7 +2270,7 @@
       {
         "block": "block_0002_0003",
         "path": "/options/0",
-        "sourceSha256": "f92a9810277a1d3aea69c07717dd9c71907e9edc68ccd964c3830e0b047a9c9e",
+        "sourceSha256": "d017e8bc6c480359002a043b21e15e20d6bd631649510bf90e5bebb6cb8f59ce",
         "spans": [
           {
             "start": 8,
@@ -2084,6 +2283,13 @@
             "start": 18,
             "end": 23,
             "text": "cajas",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 46,
+            "end": 55,
+            "text": "std::cout",
             "role": "cpp",
             "reading": "technical"
           }
@@ -2307,11 +2513,11 @@
       {
         "block": "block_0003_0003",
         "path": "/question",
-        "sourceSha256": "104a686410191d45ed7e8ffcf7c5f022132d811227ad0f0e15730ce3d34622af",
+        "sourceSha256": "b42cbff5b3bcbb0a46e4df151ca272bf12a83a5158339cd62aa06af18baa3cd8",
         "spans": [
           {
-            "start": 0,
-            "end": 2,
+            "start": 26,
+            "end": 28,
             "text": "x1",
             "role": "cpp",
             "reading": "technical"
@@ -2335,8 +2541,16 @@
       {
         "block": "block_0003_0003",
         "path": "/options/0",
-        "sourceSha256": "b7e122aa4d5c189f06d713031e43323565dab51e48708420dad348f085ab7349",
-        "spans": []
+        "sourceSha256": "0c0adb97959a972a6f54840e251b82750a8c9d04dd5d0f1036fd9bb3648e15f7",
+        "spans": [
+          {
+            "start": 8,
+            "end": 10,
+            "text": "x1",
+            "role": "cpp",
+            "reading": "technical"
+          }
+        ]
       },
       {
         "block": "block_0003_0003",
@@ -2353,21 +2567,21 @@
       {
         "block": "block_0003_0004",
         "path": "/question",
-        "sourceSha256": "8a828e81b986b4c2abcc109b25f92cde09c5f0ecc541325bb582d9733c48b8b5",
+        "sourceSha256": "2b7828ab0c49dd8cd4801bd67616e48c9b693470019849ec31b7c31f7881167f",
         "spans": [
           {
-            "start": 8,
-            "end": 24,
+            "start": 26,
+            "end": 42,
             "text": "sobres_recibidos",
             "role": "cpp",
             "reading": "technical"
           },
           {
-            "start": 73,
-            "end": 77,
-            "text": "seis",
-            "role": "data",
-            "reading": "natural"
+            "start": 127,
+            "end": 136,
+            "text": "std::cout",
+            "role": "cpp",
+            "reading": "technical"
           }
         ]
       },
@@ -2409,8 +2623,23 @@
       {
         "block": "block_0003_0004",
         "path": "/reviewFeedback",
-        "sourceSha256": "bcde0b20ab2f91e87f71c9b9976ef56c31f1d5aa88f600d2cf8b8147d325cdd6",
-        "spans": []
+        "sourceSha256": "1cb263307c0ab8d1f5f773461861b862cd7b6b6c691b9b853859340d3ed6d2c1",
+        "spans": [
+          {
+            "start": 72,
+            "end": 81,
+            "text": "std::cout",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 95,
+            "end": 111,
+            "text": "sobres_recibidos",
+            "role": "cpp",
+            "reading": "technical"
+          }
+        ]
       },
       {
         "block": "block_0004_0000",
@@ -2712,8 +2941,16 @@
       {
         "block": "block_0005_0004",
         "path": "/question",
-        "sourceSha256": "c6490e30a0814308819b4d4b9a7d3e3a4b75eba93435471b695d0083906dc015",
-        "spans": []
+        "sourceSha256": "e5007e7c53db53f4338531fffa246f514125a97a8567b2b7fb1d00212280e858",
+        "spans": [
+          {
+            "start": 123,
+            "end": 132,
+            "text": "std::cout",
+            "role": "cpp",
+            "reading": "technical"
+          }
+        ]
       },
       {
         "block": "block_0005_0004",
@@ -2724,7 +2961,7 @@
       {
         "block": "block_0005_0004",
         "path": "/options/0",
-        "sourceSha256": "081c50685e5d35bcfb7c158cbc6e17ffcd983883f05ca4add82a0a664d711c8b",
+        "sourceSha256": "e9868ae43f1ccbee1919bd3bafb8c9d323c27940d964172b3ea9086bc8bd9895",
         "spans": []
       },
       {
@@ -2742,7 +2979,7 @@
       {
         "block": "block_0005_0005",
         "path": "/question",
-        "sourceSha256": "4e9bbff46c72aa32581c7905e97161a76e7cb5d1f91648deb4780afd7b8e8dbd",
+        "sourceSha256": "b2d194489e5dcbb10c29783c2fa26eb59ee318a57213fc226fffd345268d5505",
         "spans": [
           {
             "start": 33,
@@ -2750,13 +2987,6 @@
             "text": "//",
             "role": "cpp",
             "reading": "technical"
-          },
-          {
-            "start": 116,
-            "end": 119,
-            "text": "una",
-            "role": "data",
-            "reading": "natural"
           }
         ]
       },
@@ -2805,7 +3035,7 @@
       {
         "block": "block_0005_0005",
         "path": "/reviewFeedback",
-        "sourceSha256": "7b517018b7857f2d7862a921081bbe7d82d8614a803f1633fc07b48c33ba130c",
+        "sourceSha256": "30e46c09dac79358d092e738b3023fe40d224beb194ed1ac2e6dc919147d4237",
         "spans": []
       },
       {
@@ -3011,25 +3241,32 @@
       {
         "block": "p1u2l4_reparar_lectura_paquetes",
         "path": "/explanation",
-        "sourceSha256": "bfdcf4e311df32462731226638df6c6fbc0c0128f4fdc71bc6f689b079b576e3",
+        "sourceSha256": "2d45e4b692f5fe6aca7dc5ceed061323cbd4db79566abf43d42a3cdeef63f10b",
         "spans": [
           {
-            "start": 43,
-            "end": 48,
-            "text": "6 − 6",
-            "role": "math",
-            "reading": "natural"
+            "start": 24,
+            "end": 65,
+            "text": "paquetes_preparados - paquetes_preparados",
+            "role": "cpp",
+            "reading": "technical"
           },
           {
-            "start": 116,
-            "end": 121,
-            "text": "6 − 2",
-            "role": "math",
-            "reading": "natural"
+            "start": 125,
+            "end": 144,
+            "text": "paquetes_preparados",
+            "role": "cpp",
+            "reading": "technical"
           },
           {
-            "start": 132,
-            "end": 133,
+            "start": 183,
+            "end": 202,
+            "text": "paquetes_entregados",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 295,
+            "end": 296,
             "text": "4",
             "role": "output",
             "reading": "natural"

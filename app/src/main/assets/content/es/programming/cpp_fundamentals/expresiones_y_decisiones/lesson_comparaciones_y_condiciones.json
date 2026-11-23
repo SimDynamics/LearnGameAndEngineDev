@@ -29,7 +29,7 @@
           "answers": [
             "1 0 1"
           ],
-          "explanation": "Nueve es mayor que seis, por eso > da true. La igualdad da false y la diferencia da true. En la consola aparecen 1 0 1."
+          "explanation": "Nueve es mayor que seis. Por eso disponibles > necesarios da true y el primer número de la salida es 1. Como nueve y seis son distintos, disponibles == necesarios da false y disponibles != necesarios da true. La salida completa es 1 0 1."
         }
       ]
     },
@@ -102,7 +102,7 @@
         },
         {
           "type": "output_prediction",
-          "question": "El programa compara nivel con tres antes y después de cambiar su valor. Escribe los tres números que muestra la consola, en el orden en que aparecen y separados por un espacio.",
+          "question": "El programa compara nivel con tres y guarda el resultado en antes. Luego asigna tres a nivel, repite la comparación y guarda el nuevo resultado en despues. ¿Qué números muestra la consola al escribir antes, despues y nivel, en ese orden? Separa los números con un espacio.",
           "language": "cpp",
           "code": "#include <iostream>\n\nint main() {\n    int nivel = 2;\n\n    const bool antes = nivel == 3;\n\n    nivel = 3;\n\n    const bool despues = nivel == 3;\n\n    std::cout << antes << \" \" << despues << \" \" << nivel;\n\n    return 0;\n}\n",
           "answers": [
@@ -128,6 +128,10 @@
             ]
           ],
           "explanation": "observado == esperado da false, porque siete y cinco son diferentes. observado != esperado da true. La consola muestra 0 1."
+        },
+        {
+          "type": "note",
+          "text": "Con observado igual a siete y esperado igual a cinco, observado == esperado da false y observado != esperado da true. C++ también permite escribir not_eq en lugar de != para comprobar que dos valores son distintos (Köppe et al., 2023)."
         }
       ]
     },
@@ -136,10 +140,6 @@
         {
           "type": "heading",
           "text": "Reparar una comparación en el límite"
-        },
-        {
-          "type": "note",
-          "text": "En el ejercicio anterior, el valor observado es siete y el esperado es cinco. La igualdad da false y la comparación de diferencia da true. C++ también permite escribir not_eq para la misma operación que != (Köppe et al., 2023)."
         },
         {
           "type": "paragraph",
@@ -161,8 +161,25 @@
           }
         },
         {
+          "type": "heading",
+          "text": "Revisar las respuestas del sensor"
+        },
+        {
+          "type": "paragraph",
+          "text": "La reparación usa una comparación que solo da true cuando la humedad es menor que el mínimo. La segunda respuesta comprueba la igualdad."
+        },
+        {
+          "type": "code",
+          "language": "cpp",
+          "code": "#include <iostream>\n\nint main() {\n    int humedad = 40;\n    int minimo = 40;\n\n    const bool por_debajo = humedad < minimo;\n    const bool justo_en_minimo = humedad == minimo;\n\n    std::cout << por_debajo << \" \" << justo_en_minimo;\n\n    return 0;\n}\n"
+        },
+        {
+          "type": "paragraph",
+          "text": "Con un mínimo de 40, tanto 40 como 41 dan false en la primera respuesta. La segunda pregunta permite distinguirlos. Estos son los resultados de la referencia al variar solo la humedad y conservar el mínimo en cuarenta.\n\nHumedad 39 por ciento\nSalida esperada 1 0\n\nHumedad 40 por ciento\nSalida esperada 0 1\n\nHumedad 41 por ciento\nSalida esperada 0 0"
+        },
+        {
           "type": "multiple_choice",
-          "question": "Otro sensor mide una humedad de setenta por ciento y su mínimo también es setenta. Con las dos preguntas del editor reparado, ¿qué línea debe aparecer?",
+          "question": "Otro sensor mide una humedad del setenta por ciento y su mínimo también es del setenta por ciento. El programa muestra primero si la humedad está por debajo del mínimo y después si es igual al mínimo. Usa 1 para una respuesta verdadera y 0 para una falsa. ¿Qué renglón muestra en la consola?",
           "options": [
             "0 0",
             "1 1",
@@ -214,14 +231,18 @@
         {
           "type": "note",
           "text": "Los ejercicios de esta página comprueban qué valores recibe una comparación. Para elegir qué acciones ejecutará el programa con cada respuesta, usarás esas comparaciones en la próxima lección."
-        },
+        }
+      ]
+    },
+    {
+      "blocks": [
         {
           "type": "heading",
           "text": "Comprobar el peso de un paquete"
         },
         {
           "type": "paragraph",
-          "text": "Escribe un programa que lea dos enteros del campo «Entrada». Los dos datos están en kilogramos, de uno a cien.\n\nPrimero, el peso del paquete.\nLuego, el peso máximo que admite el transporte.\n\nUsa esos dos valores para mostrar dos resultados de tipo bool. En el primer renglón, Admitido indica si el peso del paquete está permitido, incluida la igualdad con el máximo. En el segundo, En el máximo indica si los dos pesos coinciden. Muestra cada respuesta como 1 si es verdadera o 0 si es falsa.\n\nEntrada\n20 20\n\nSalida esperada\nAdmitido: 1\nEn el máximo: 1\n\nPulsa «Compilar, ejecutar y comprobar». Este primer caso permite avanzar. Puedes añadir un salto de línea después del segundo renglón."
+          "text": "Escribe un programa que lea dos enteros del campo «Entrada». Los dos datos están en kilogramos, de uno a cien.\n\nPrimero, el peso del paquete.\nLuego, el peso máximo que admite el transporte.\n\nUsa esos dos valores para mostrar dos resultados de tipo bool. En el primer renglón de la salida, Admitido indica si el peso del paquete está permitido, incluida la igualdad con el máximo. En el segundo, En el máximo indica si los dos pesos coinciden. Muestra cada respuesta como 1 si es verdadera o 0 si es falsa.\n\nEntrada\n20 20\n\nSalida esperada\nAdmitido: 1\nEn el máximo: 1\n\nPara completar el ejercicio, deja 20 20 en el campo «Entrada» y pulsa «Compilar, ejecutar y comprobar». El programa debe producir la salida esperada para esos datos. Puedes añadir un salto de línea después del segundo renglón de la salida."
         },
         {
           "type": "cpp_compiler",
@@ -260,27 +281,6 @@
               }
             ]
           }
-        }
-      ]
-    },
-    {
-      "blocks": [
-        {
-          "type": "heading",
-          "text": "Revisar las respuestas del sensor"
-        },
-        {
-          "type": "paragraph",
-          "text": "La reparación usa una comparación que solo da true cuando la humedad es menor que el mínimo. La segunda respuesta comprueba la igualdad."
-        },
-        {
-          "type": "code",
-          "language": "cpp",
-          "code": "#include <iostream>\n\nint main() {\n    int humedad = 40;\n    int minimo = 40;\n\n    const bool por_debajo = humedad < minimo;\n    const bool justo_en_minimo = humedad == minimo;\n\n    std::cout << por_debajo << \" \" << justo_en_minimo;\n\n    return 0;\n}\n"
-        },
-        {
-          "type": "paragraph",
-          "text": "Con un mínimo de 40, tanto 40 como 41 dan false en la primera respuesta. La segunda pregunta permite distinguirlos. Estos son los resultados de la referencia al variar solo la humedad y conservar el mínimo en cuarenta.\n\nHumedad 39 por ciento\nSalida esperada 1 0\n\nHumedad 40 por ciento\nSalida esperada 0 1\n\nHumedad 41 por ciento\nSalida esperada 0 0"
         },
         {
           "type": "heading",
@@ -293,7 +293,7 @@
         },
         {
           "type": "paragraph",
-          "text": "Puedes probar otras entradas en el campo «Entrada» del editor.\n\nDiecinueve kilos quedan por debajo de un máximo de veinte. El paquete está admitido.\n\nEntrada\n19 20\n\nSalida esperada\nAdmitido: 1\nEn el máximo: 0\n\nVeintiún kilos superan el máximo de veinte.\n\nEntrada\n21 20\n\nSalida esperada\nAdmitido: 0\nEn el máximo: 0\n\nVeinte kilos también superan un máximo de dieciocho.\n\nEntrada\n20 18\n\nSalida esperada\nAdmitido: 0\nEn el máximo: 0"
+          "text": "Pruebas opcionales en este editor\nPara cada prueba, escribe los datos indicados en el campo «Entrada», pulsa «Compilar, ejecutar y comprobar» y compara los renglones que muestra la consola con la salida esperada para esa entrada.\n\nDiecinueve kilos quedan por debajo de un máximo de veinte. El paquete está admitido.\n\nEntrada\n19 20\n\nSalida esperada\nAdmitido: 1\nEn el máximo: 0\n\nVeintiún kilos superan el máximo de veinte.\n\nEntrada\n21 20\n\nSalida esperada\nAdmitido: 0\nEn el máximo: 0\n\nVeinte kilos también superan un máximo de dieciocho.\n\nEntrada\n20 18\n\nSalida esperada\nAdmitido: 0\nEn el máximo: 0"
         },
         {
           "type": "note",
@@ -508,16 +508,20 @@
           "block_0002_0002",
           "block_0002_0003",
           "block_0002_0004",
-          "block_0002_0005"
+          "block_0002_0005",
+          "block_0003_0001"
         ]
       },
       {
         "id": "page_0003",
         "blocks": [
           "block_0003_0000",
-          "block_0003_0001",
           "block_0003_0002",
           "p1u3l3_reparar_humedad",
+          "block_0005_0000",
+          "block_0005_0001",
+          "p1u3l3_ejemplo_humedad",
+          "block_0005_0003",
           "block_0003_0004",
           "block_0003_0005"
         ]
@@ -528,19 +532,15 @@
           "block_0004_0000",
           "block_0004_0001",
           "block_0004_0002",
-          "block_0004_0003",
-          "block_0003_0006",
-          "block_0003_0007",
-          "p1u3l3_construir_limite_peso"
+          "block_0004_0003"
         ]
       },
       {
         "id": "page_0005",
         "blocks": [
-          "block_0005_0000",
-          "block_0005_0001",
-          "p1u3l3_ejemplo_humedad",
-          "block_0005_0003",
+          "block_0003_0006",
+          "block_0003_0007",
+          "p1u3l3_construir_limite_peso",
           "p1u3l3_revisar_limite_peso",
           "p1u3l3_ejemplo_limite_peso",
           "p1u3l3_probar_otros_pesos",
@@ -1352,6 +1352,36 @@
         "id": "p1u3l3_ejemplo_limite_peso",
         "beforeSha256": "8835568f58130d95802f99bde84ba7e2f0bcbe809b94fb14775d6e7afc7685bf",
         "afterSha256": "e95f6ad109ee4cee084165ed76f27d5fd825308aa645e82661f5ec27fded8236"
+      },
+      {
+        "id": "block_0003_0001",
+        "beforeSha256": "9a6129d09f176d2aca9c127cd211bc1db98b53ae824ba4cc8269d12c1c720a4b",
+        "afterSha256": "54760c53ffe41dad7fac5085f4da509d0ac6a03c2b67a565a37c4e477fad93e9"
+      },
+      {
+        "id": "block_0003_0007",
+        "beforeSha256": "177953e22b9f3c2ce2669f7949d255d58b998a100c2e570389e8a950d7db0165",
+        "afterSha256": "879fef7f4405d76a46ea7e06feb8161609f16027e48a8a1f1b74cf53f68c8b6d"
+      },
+      {
+        "id": "p1u3l3_probar_otros_pesos",
+        "beforeSha256": "4d93a6d5cae97c2203fd30427d3bbda56a4e4ef72505a977bf571831e61a9857",
+        "afterSha256": "286731a5feed760656aa9456507c04cf214f0e41a36dc6c89bfdd8c879705443"
+      },
+      {
+        "id": "block_0000_0004",
+        "beforeSha256": "784bfeaf49783c11be58a5ba95275780c2c8e6e2b9ea1b7dd2893e60ea7fa44a",
+        "afterSha256": "3eb1e5554799298acaf978469908cec0fb57a322f4102da7809878d6731cc3d8"
+      },
+      {
+        "id": "block_0003_0004",
+        "beforeSha256": "f7ac54b5d33ad99564dfe61a4932f9907ac174c01f03052f71fd87786a7edbe1",
+        "afterSha256": "48fd66420adcd7b8c3de394c8240232930a4561dbc640d6148208ba1fa16c3e2"
+      },
+      {
+        "id": "block_0002_0004",
+        "beforeSha256": "c900f606c4ca0d32215be61cb772b2b69d361dffa32fd5892eff31ca9390a98f",
+        "afterSha256": "d16f8eca5b5f5e203c16c800051b6ce0e957a797f1c5f91909b4e5f38d6e800d"
       }
     ],
     "sourceFormatRevisions": [
@@ -3710,39 +3740,60 @@
       {
         "block": "block_0000_0004",
         "path": "/explanation",
-        "sourceSha256": "76565ca22977e67b19fe2f25720fcff1e2e357b1bb9d6b485f09963b5c8e815c",
+        "sourceSha256": "8acbccbb0e13af30441b5fa5e9facd37229db4e6f7be11326ef5b987ac84bf2d",
         "spans": [
           {
             "start": 33,
-            "end": 34,
-            "text": ">",
+            "end": 57,
+            "text": "disponibles > necesarios",
             "role": "cpp",
             "reading": "technical"
           },
           {
-            "start": 38,
-            "end": 42,
+            "start": 61,
+            "end": 65,
             "text": "true",
             "role": "cpp",
             "reading": "technical"
           },
           {
-            "start": 59,
-            "end": 64,
+            "start": 101,
+            "end": 102,
+            "text": "1",
+            "role": "output",
+            "reading": "natural"
+          },
+          {
+            "start": 137,
+            "end": 162,
+            "text": "disponibles == necesarios",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 166,
+            "end": 171,
             "text": "false",
             "role": "cpp",
             "reading": "technical"
           },
           {
-            "start": 84,
-            "end": 88,
+            "start": 174,
+            "end": 199,
+            "text": "disponibles != necesarios",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 203,
+            "end": 207,
             "text": "true",
             "role": "cpp",
             "reading": "technical"
           },
           {
-            "start": 113,
-            "end": 118,
+            "start": 231,
+            "end": 236,
             "text": "1 0 1",
             "role": "output",
             "reading": "natural"
@@ -4282,11 +4333,53 @@
       {
         "block": "block_0002_0004",
         "path": "/question",
-        "sourceSha256": "10ed940391a5db29efabc5ffbc31a75e52a2454def58c4616ce3f0ca84ed62e6",
+        "sourceSha256": "09f7586b7697e0700aff429f08506ca36bc4294cc8a7bab3b37a194510050b19",
         "spans": [
           {
             "start": 20,
             "end": 25,
+            "text": "nivel",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 60,
+            "end": 65,
+            "text": "antes",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 87,
+            "end": 92,
+            "text": "nivel",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 147,
+            "end": 154,
+            "text": "despues",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 200,
+            "end": 205,
+            "text": "antes",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 207,
+            "end": 214,
+            "text": "despues",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 217,
+            "end": 222,
             "text": "nivel",
             "role": "cpp",
             "reading": "technical"
@@ -4393,39 +4486,67 @@
       {
         "block": "block_0003_0001",
         "path": "/text",
-        "sourceSha256": "0fca95eed47098374d337c5f2d6b778890a6429f9a7f0cd9d2d1a8545bccd263",
+        "sourceSha256": "870e72ac8d6032f17b6d8537f3b7a38bd324723b7104d712d6375aa34f213010",
         "spans": [
           {
-            "start": 93,
-            "end": 98,
+            "start": 4,
+            "end": 13,
+            "text": "observado",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 30,
+            "end": 38,
+            "text": "esperado",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 54,
+            "end": 75,
+            "text": "observado == esperado",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 79,
+            "end": 84,
             "text": "false",
             "role": "cpp",
             "reading": "technical"
           },
           {
-            "start": 133,
-            "end": 137,
+            "start": 87,
+            "end": 108,
+            "text": "observado != esperado",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 112,
+            "end": 116,
             "text": "true",
             "role": "cpp",
             "reading": "technical"
           },
           {
-            "start": 168,
-            "end": 174,
+            "start": 147,
+            "end": 153,
             "text": "not_eq",
             "role": "cpp",
             "reading": "technical"
           },
           {
-            "start": 203,
-            "end": 205,
+            "start": 166,
+            "end": 168,
             "text": "!=",
             "role": "cpp",
             "reading": "technical"
           },
           {
-            "start": 206,
-            "end": 226,
+            "start": 214,
+            "end": 234,
             "text": "(Köppe et al., 2023)",
             "role": "citation",
             "reading": "natural"
@@ -4491,20 +4612,20 @@
       {
         "block": "block_0003_0004",
         "path": "/question",
-        "sourceSha256": "3d0e53c996ea1c9f9104ddb8dc1048de8a99915e512c7f092bef34ee5011e8c1",
+        "sourceSha256": "72f6ae37b14585ddbb2c6f7aeca6e0dbadf6d31d73068e5d8267d39f668f1711",
         "spans": [
           {
-            "start": 32,
-            "end": 39,
-            "text": "setenta",
-            "role": "data",
+            "start": 205,
+            "end": 206,
+            "text": "1",
+            "role": "output",
             "reading": "natural"
           },
           {
-            "start": 74,
-            "end": 81,
-            "text": "setenta",
-            "role": "data",
+            "start": 238,
+            "end": 239,
+            "text": "0",
+            "role": "output",
             "reading": "natural"
           }
         ]
@@ -4714,7 +4835,7 @@
       {
         "block": "block_0003_0007",
         "path": "/text",
-        "sourceSha256": "df76a5cc3348b752ee2cd66b6af6cd2739633854c2785c5b3b5b7029dd40c8d9",
+        "sourceSha256": "21ab4d660336ab9ae45111c714620eb74890d4bbb3f1f9855d8ae2d89e25b882",
         "spans": [
           {
             "start": 248,
@@ -4724,52 +4845,59 @@
             "reading": "technical"
           },
           {
-            "start": 276,
-            "end": 284,
+            "start": 289,
+            "end": 297,
             "text": "Admitido",
             "role": "string",
             "reading": "natural"
           },
           {
-            "start": 382,
-            "end": 394,
+            "start": 395,
+            "end": 407,
             "text": "En el máximo",
             "role": "string",
             "reading": "natural"
           },
           {
-            "start": 458,
-            "end": 459,
+            "start": 471,
+            "end": 472,
             "text": "1",
             "role": "output",
             "reading": "natural"
           },
           {
-            "start": 478,
-            "end": 479,
+            "start": 491,
+            "end": 492,
             "text": "0",
             "role": "output",
             "reading": "natural"
           },
           {
-            "start": 502,
-            "end": 507,
+            "start": 515,
+            "end": 520,
             "text": "20 20",
             "role": "data",
             "reading": "natural"
           },
           {
-            "start": 525,
-            "end": 536,
+            "start": 538,
+            "end": 549,
             "text": "Admitido: 1",
             "role": "output",
             "reading": "natural"
           },
           {
-            "start": 537,
-            "end": 552,
+            "start": 550,
+            "end": 565,
             "text": "En el máximo: 1",
             "role": "output",
+            "reading": "natural"
+          },
+          {
+            "start": 601,
+            "end": 606,
+            "text": "20 20",
+            "role": "data",
             "reading": "natural"
           }
         ]
@@ -5130,67 +5258,67 @@
       {
         "block": "p1u3l3_probar_otros_pesos",
         "path": "/text",
-        "sourceSha256": "363f9833b2de548f78520de3f80727a1aa78d06c5f319bfdd237df2c673db0b2",
+        "sourceSha256": "25f005e512c6488266aef5571c0d77270b8b752d0c35ea3bdbd7a01cd8b59484",
         "spans": [
           {
-            "start": 158,
-            "end": 163,
+            "start": 325,
+            "end": 330,
             "text": "19 20",
             "role": "data",
             "reading": "natural"
           },
           {
-            "start": 181,
-            "end": 192,
+            "start": 348,
+            "end": 359,
             "text": "Admitido: 1",
             "role": "output",
             "reading": "natural"
           },
           {
-            "start": 193,
-            "end": 208,
+            "start": 360,
+            "end": 375,
             "text": "En el máximo: 0",
             "role": "output",
             "reading": "natural"
           },
           {
-            "start": 263,
-            "end": 268,
+            "start": 430,
+            "end": 435,
             "text": "21 20",
             "role": "data",
             "reading": "natural"
           },
           {
-            "start": 286,
-            "end": 297,
+            "start": 453,
+            "end": 464,
             "text": "Admitido: 0",
             "role": "output",
             "reading": "natural"
           },
           {
-            "start": 298,
-            "end": 313,
+            "start": 465,
+            "end": 480,
             "text": "En el máximo: 0",
             "role": "output",
             "reading": "natural"
           },
           {
-            "start": 377,
-            "end": 382,
+            "start": 544,
+            "end": 549,
             "text": "20 18",
             "role": "data",
             "reading": "natural"
           },
           {
-            "start": 400,
-            "end": 411,
+            "start": 567,
+            "end": 578,
             "text": "Admitido: 0",
             "role": "output",
             "reading": "natural"
           },
           {
-            "start": 412,
-            "end": 427,
+            "start": 579,
+            "end": 594,
             "text": "En el máximo: 0",
             "role": "output",
             "reading": "natural"

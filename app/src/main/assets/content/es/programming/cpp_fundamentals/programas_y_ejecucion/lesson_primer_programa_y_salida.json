@@ -49,11 +49,11 @@
         },
         {
           "type": "paragraph",
-          "text": "En esta instrucción, std::cout es el nombre que usamos en C++ para escribir en la salida estándar del programa. En esta app ves el texto que escribimos allí en el recuadro «Salida del programa (stdout)». Un operador es un signo o un conjunto de signos que indica una operación. Aquí, el operador << escribe en std::cout el texto del literal que está a su derecha. El punto y coma termina la instrucción (Stroustrup, 2024)."
+          "text": "En esta instrucción, std::cout es el nombre que usamos en C++ para escribir en la salida estándar del programa. En esta app puedes leer el texto de esa salida en el recuadro «Salida del programa (stdout)». Un operador es un signo o un conjunto de signos que indica una operación. Aquí el operador << envía el contenido del literal que está a su derecha a std::cout. Por eso aparece Ruta disponible en la salida. El punto y coma termina la instrucción (Stroustrup, 2024)."
         },
         {
           "type": "paragraph",
-          "text": "Ahora sólo estamos estudiando una instrucción. Todavía faltan las líneas que la colocan dentro de un programa y permiten utilizar la salida de texto. Las construiremos después de practicar estas piezas."
+          "text": "El ejemplo muestra una sola instrucción, la que escribe el mensaje. Cuando la coloquemos en un programa completo, veremos dónde empiezan las instrucciones del programa y qué línea permite usar el nombre std::cout. Primero practicarás cómo escribir la instrucción de salida."
         },
         {
           "type": "output_prediction",
@@ -65,7 +65,7 @@
             "Ruta disponible"
           ],
           "outputComparison": "exact",
-          "explanation": "El contenido del literal llega a la consola: Ruta disponible. Las comillas y el punto y coma estructuran el código; no se escriben como parte del mensaje. Esta instrucción tampoco pide añadir un salto de línea."
+          "explanation": "Al ejecutarse la instrucción, std::cout escribe Ruta disponible en la consola. Las comillas delimitan el texto en el código y el punto y coma termina la instrucción. El último carácter que se muestra es la letra final de disponible."
         }
       ]
     },
@@ -86,7 +86,7 @@
         },
         {
           "type": "paragraph",
-          "text": "Para esta operación se escriben dos signos menores juntos, sin espacio entre ellos. Un solo signo no realiza este envío de texto a la salida. Los espacios que separan las distintas piezas hacen el código legible; no sustituyen ningún signo necesario."
+          "text": "Entre std::cout y el literal hay dos signos de menor que, uno junto al otro. Juntos forman el operador << que envía el texto a la salida. Puedes poner un espacio antes del operador y otro después para leer mejor el código. Si separas los dos signos o escribes uno solo, el compilador ya no los lee como el operador <<."
         },
         {
           "type": "fill_code",
@@ -206,7 +206,7 @@
         {
           "type": "multiple_choice",
           "id": "accion_visible",
-          "question": "¿Qué parte del ejemplo produce el mensaje visible?",
+          "question": "¿Qué instrucción del programa escribe Inicio confirmado en la consola cuando se ejecuta main?",
           "options": [
             "#include <iostream>",
             "std::cout << \"Inicio confirmado\";",
@@ -242,7 +242,7 @@
         {
           "type": "order_code",
           "id": "armar_programa",
-          "question": "Ordena las piezas para construir un programa que muestre Acceso autorizado.",
+          "question": "Ordena las líneas de código para que el programa escriba Acceso autorizado en la consola y después termine.",
           "fragments": [
             "    std::cout << \"Acceso autorizado\";",
             "#include <iostream>",
@@ -258,7 +258,7 @@
             3
           ],
           "explanation": "La cabecera va antes de main. La llave de apertura comienza su cuerpo; dentro se escribe primero el mensaje y después return 0; termina la función. La última tarjeta cierra ese cuerpo. Así la salida es Acceso autorizado y no incluye el cero.",
-          "reviewFeedback": "Distingue las líneas que preparan la biblioteca de las instrucciones que pertenecen al cuerpo de main. Revisa también qué llave cierra ese cuerpo: una instrucción no puede quedar fuera del lugar donde debe ejecutarse."
+          "reviewFeedback": "Localiza la línea que incluye la cabecera y la que abre el cuerpo de main. Dentro de las llaves, ¿qué debe ejecutarse primero para que el programa escriba el mensaje antes de terminar?"
         },
         {
           "type": "paragraph",
@@ -372,7 +372,7 @@
         },
         {
           "type": "paragraph",
-          "text": "Si aparece un diagnóstico de compilación, el código todavía no ha podido convertirse en un programa que se pueda ejecutar. Revisa los signos y el lugar donde escribiste la instrucción. Si el programa se ejecuta pero muestra otro texto, compara las palabras y el espacio interior con la salida requerida. Corrige lo necesario y vuelve a comprobarlo."
+          "text": "Si la app informa que la compilación falló, lee el mensaje del compilador. Revisa los signos de la instrucción que añadiste y comprueba que esté dentro de las llaves de main, antes de return 0;. Si el programa se ejecuta, compara el texto que ves en la salida con Acceso preparado, incluido el espacio entre las palabras. Si encuentras una diferencia, corrige el código y vuelve a pulsar «Compilar, ejecutar y comprobar»."
         },
         {
           "type": "cpp_compiler",
@@ -401,7 +401,7 @@
         },
         {
           "type": "paragraph",
-          "text": "La instrucción std::cout << \"Acceso preparado\"; proporciona el mensaje y termina antes de return 0;. Las comillas delimitan el texto y no se muestran. La cabecera y las llaves mantienen la estructura del programa."
+          "text": "Dentro de main, la instrucción std::cout << \"Acceso preparado\"; escribe Acceso preparado en la consola. Las comillas delimitan el mensaje en el código. El punto y coma termina la instrucción de salida. A continuación se ejecuta return 0;, que termina el programa."
         }
       ]
     },
@@ -1916,6 +1916,49 @@
         "id": "p1u1l2_reparar_referencia_codigo",
         "beforeSha256": "e83cef09f648e7ec26e60893dbc755118d3d101e21f1a3312baa475497cc55c1",
         "afterSha256": "eacbde3e1212174db4c2e1f474b922504ed4a616167d3eb441bdd2e9c0ec06d4"
+      },
+      {
+        "id": "p1u1l2_salida_primera_lectura",
+        "beforeSha256": "40c3ac10ce0704468c3994b1c72cf3783953bc0c645b6ee472b343bd9c1ae2c9",
+        "afterSha256": "0ec7b02f39761221a3ebccbdfa6b2642e323939582ad7f4e21ef02803cd0577e"
+      },
+      {
+        "id": "p1u1l2_fragmento_contexto",
+        "beforeSha256": "76064b5e4d33c4cb7de959fbeeee423fbe54d8510e82f45c0c81e0013779e2fb",
+        "afterSha256": "6edd1dd599d7c9a43873e812527f3929083862aefd34aab9d9e68a7c1f48173b"
+      },
+      {
+        "id": "p1u1l2_dos_signos",
+        "beforeSha256": "d91bd0c4d7dc05f72249dd8c41c9b95740813909b040a9a7afac666104016a75",
+        "afterSha256": "4fffd8c57cd7dd66aa7c7cfb3ca30b71ef57bb517f2a75e295c91b31bc51cae9"
+      },
+      {
+        "id": "p1u1l2_construccion_comprobar",
+        "beforeSha256": "62e1a3ab69b516f995fd81fe725bd0012f6d8568d925a8b127344064100f8ab1",
+        "afterSha256": "b58133a98f8a869f3497148e90541ff67769894df68789aac77f9976d58bf96e"
+      },
+      {
+        "id": "p1u1l2_construir_referencia_razon",
+        "beforeSha256": "d041e72b11d9da031049cfaf6f2c77c900ded46d30de5226e39ceec0d8c89076",
+        "afterSha256": "603bef6ee91abf5e1b3709b575089da735b0f2210f2be5b5f683f70b32a25995"
+      },
+      {
+        "id": "p1u1l2_predecir_fragmento",
+        "beforeSha256": "bd780080226fe5dad5010ede3d7320c6361d2e4e4a4ea0d4508c8bb140e42f12",
+        "afterSha256": "16bdcedadae0de7919cc6ceb23d6e2f71cae6111710d46709efa74d2c1d40a1a"
+      },
+      {
+        "id": "block_0000_0004",
+        "beforeSha256": "579b9f2d3fee13dce2cd6a00d9f38e842c5bff382fce105a0b6d670cb8407f69",
+        "afterSha256": "853880f0bdc1d96ad516fe071ff91b4b89924ef6cf7f475551a4195b99d9894d"
+      },
+      {
+        "id": "block_0003_0002",
+        "beforeSha256": "0731c9d3e2b701d2321c746e0ce48caaab709fbe03cd89e2638b9f24c682a336",
+        "afterSha256": "afc15e73c79f9c93ffdbb904e09cbaac1d83f1bf60ede2fa8f5f0d64c637ab7a",
+        "reviewPaths": [
+          "/reviewFeedback"
+        ]
       }
     ],
     "retired": [
@@ -5122,8 +5165,23 @@
       {
         "block": "block_0000_0004",
         "path": "/question",
-        "sourceSha256": "bf8a836c86fb69ad66114770a0fbde6ba74a2c92647da56768f239e317e89900",
-        "spans": []
+        "sourceSha256": "33c66ffb0b140b64140a3f7e78960df83bb65d4ae2b99cbada001807c867c596",
+        "spans": [
+          {
+            "start": 38,
+            "end": 55,
+            "text": "Inicio confirmado",
+            "role": "output",
+            "reading": "natural"
+          },
+          {
+            "start": 88,
+            "end": 92,
+            "text": "main",
+            "role": "cpp",
+            "reading": "technical"
+          }
+        ]
       },
       {
         "block": "block_0000_0004",
@@ -5387,7 +5445,7 @@
       {
         "block": "block_0003_0002",
         "path": "/question",
-        "sourceSha256": "9d40ff7ea4304c182fb898333822af78aaba383e63ee598da3e317e41d1523bf",
+        "sourceSha256": "4aaa9412a7c6d430303fbbb2de96b621d1f9015ff3f7b6ba68db05ba7c977379",
         "spans": [
           {
             "start": 57,
@@ -5429,11 +5487,11 @@
       {
         "block": "block_0003_0002",
         "path": "/reviewFeedback",
-        "sourceSha256": "7b6559878de91207497998781c09a5ba0642d33d03c0f6c4fb0891d00ca8cbbd",
+        "sourceSha256": "6b2262e0cf8401f54c17db24c74af688c66d760069df670f65ec6b7f7661a534",
         "spans": [
           {
-            "start": 97,
-            "end": 101,
+            "start": 69,
+            "end": 73,
             "text": "main",
             "role": "cpp",
             "reading": "technical"
@@ -5759,7 +5817,7 @@
       {
         "block": "p1u1l2_salida_primera_lectura",
         "path": "/text",
-        "sourceSha256": "37065c8d569d78ed375e0be9fcfed795e2888f914ec2500e404a082692251100",
+        "sourceSha256": "b7f8fc02b7908d0ccbacc12c2e8f80e28c073356b79409f97156870ff67a6552",
         "spans": [
           {
             "start": 21,
@@ -5769,29 +5827,29 @@
             "reading": "technical"
           },
           {
-            "start": 58,
-            "end": 61,
-            "text": "C++",
-            "role": "cpp",
-            "reading": "technical"
-          },
-          {
-            "start": 296,
-            "end": 298,
+            "start": 297,
+            "end": 299,
             "text": "<<",
             "role": "cpp",
             "reading": "technical"
           },
           {
-            "start": 310,
-            "end": 319,
+            "start": 355,
+            "end": 364,
             "text": "std::cout",
             "role": "cpp",
             "reading": "technical"
           },
           {
-            "start": 403,
-            "end": 421,
+            "start": 382,
+            "end": 397,
+            "text": "Ruta disponible",
+            "role": "output",
+            "reading": "natural"
+          },
+          {
+            "start": 451,
+            "end": 469,
             "text": "(Stroustrup, 2024)",
             "role": "citation",
             "reading": "natural"
@@ -5801,8 +5859,16 @@
       {
         "block": "p1u1l2_fragmento_contexto",
         "path": "/text",
-        "sourceSha256": "9c86b6cc28ddd1091db27c83b34a7647dfa0cd7134dc2b7c1957fdf82d372827",
-        "spans": []
+        "sourceSha256": "589df8250aae8eb89891d7e766c256ec816ae13e033c5a58c112324995004469",
+        "spans": [
+          {
+            "start": 203,
+            "end": 212,
+            "text": "std::cout",
+            "role": "cpp",
+            "reading": "technical"
+          }
+        ]
       },
       {
         "block": "p1u1l2_predecir_fragmento",
@@ -5821,12 +5887,26 @@
       {
         "block": "p1u1l2_predecir_fragmento",
         "path": "/explanation",
-        "sourceSha256": "121e8a259d2d3d320f60ec2f87118e85b3a55067ede94240ed2a56386ab0344c",
+        "sourceSha256": "cb8895f983756c8b652c467f0276546a1e16ab0ca508b8a670940b842597d2cd",
         "spans": [
           {
-            "start": 45,
-            "end": 60,
+            "start": 30,
+            "end": 39,
+            "text": "std::cout",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 48,
+            "end": 63,
             "text": "Ruta disponible",
+            "role": "output",
+            "reading": "natural"
+          },
+          {
+            "start": 221,
+            "end": 231,
+            "text": "disponible",
             "role": "output",
             "reading": "natural"
           }
@@ -5877,8 +5957,30 @@
       {
         "block": "p1u1l2_dos_signos",
         "path": "/text",
-        "sourceSha256": "497e05a9c0f66351d766fea2fd9801601059e7f7409018db9f35f5074067b93c",
-        "spans": []
+        "sourceSha256": "55dae7fe895afe24b189706e60ac5eb8e3d56e11bc2ffd2d996f11286f4e5c4c",
+        "spans": [
+          {
+            "start": 6,
+            "end": 15,
+            "text": "std::cout",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 103,
+            "end": 105,
+            "text": "<<",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 315,
+            "end": 317,
+            "text": "<<",
+            "role": "cpp",
+            "reading": "technical"
+          }
+        ]
       },
       {
         "block": "p1u1l2_construir_operador_fragmento",
@@ -6359,8 +6461,30 @@
       {
         "block": "p1u1l2_construccion_comprobar",
         "path": "/text",
-        "sourceSha256": "50cbe461ca0dc60363f09a5d965cfd8d8e2a46e19a4e8efa454afdf4aa1d1c01",
-        "spans": []
+        "sourceSha256": "8f6399d61fd4cb0565634c347552f334b93ae88e1c78b37dc7bb8b3d0c9981c1",
+        "spans": [
+          {
+            "start": 169,
+            "end": 173,
+            "text": "main",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 184,
+            "end": 193,
+            "text": "return 0;",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 264,
+            "end": 280,
+            "text": "Acceso preparado",
+            "role": "output",
+            "reading": "natural"
+          }
+        ]
       },
       {
         "block": "p1u1l2_construir_salida",
@@ -6392,18 +6516,32 @@
       {
         "block": "p1u1l2_construir_referencia_razon",
         "path": "/text",
-        "sourceSha256": "35e183a65dfdaf3f4b2ac45785b145d75710fdb13bb875426e6ca42de138b4ec",
+        "sourceSha256": "cc94dce25a7121aa8262eac779235b7f21020fff4b44c5a4abecbd4a469fc83c",
         "spans": [
           {
-            "start": 15,
-            "end": 47,
+            "start": 10,
+            "end": 14,
+            "text": "main",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 31,
+            "end": 63,
             "text": "std::cout << \"Acceso preparado\";",
             "role": "cpp",
             "reading": "technical"
           },
           {
-            "start": 90,
-            "end": 99,
+            "start": 72,
+            "end": 88,
+            "text": "Acceso preparado",
+            "role": "output",
+            "reading": "natural"
+          },
+          {
+            "start": 228,
+            "end": 237,
             "text": "return 0;",
             "role": "cpp",
             "reading": "technical"

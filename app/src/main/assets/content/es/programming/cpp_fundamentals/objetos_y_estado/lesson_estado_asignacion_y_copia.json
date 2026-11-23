@@ -84,18 +84,18 @@
           "answers": [
             "9 6"
           ],
-          "explanation": "La primera instrucción con std::cout escribe 9 y un espacio. La resta usa el nueve que guarda agua, le quita tres y guarda 6. La segunda instrucción con std::cout añade 6. Por eso aparece 9 6."
+          "explanation": "agua empieza con nueve. La primera instrucción con std::cout escribe nueve y un espacio en la consola. La instrucción agua = agua - 3; resta tres al nueve y guarda seis en agua. La última instrucción con std::cout escribe ese seis después del espacio. El renglón de la salida dice 9 6."
         },
         {
           "type": "multiple_choice",
-          "question": "En cajas = cajas + 5;, cajas valía 2. ¿Cuál es el orden de acciones?",
+          "question": "La variable cajas vale 2 al comenzar la instrucción cajas = cajas + 5;. ¿Qué valor lee el programa, qué suma hace y dónde guarda el resultado?",
           "options": [
             "Crear una segunda variable llamada cajas.",
             "Guardar 5 y después sumar 2.",
             "Leer 2, calcular 2 + 5 y almacenar 7 en cajas."
           ],
           "correctIndex": 2,
-          "explanation": "Una asignación usa el valor anterior para calcular su derecha y luego modifica el objeto indicado a la izquierda."
+          "explanation": "En la expresión cajas + 5, el programa lee el 2 que todavía guarda cajas y suma cinco. El resultado es 7. El nombre cajas a la izquierda de = indica que ese siete reemplaza al dos en la misma variable."
         }
       ]
     },
@@ -116,7 +116,7 @@
         },
         {
           "type": "paragraph",
-          "text": "El inicializador = original consulta el valor actual de original. Ese 6 queda guardado en la nueva variable copia. A partir de ahí son dos enteros distintos. Podemos cambiar uno y más adelante leer el otro (Stroustrup, 2024)."
+          "text": "Al ejecutarse int copia = original;, el inicializador = original lee el seis guardado en original y lo guarda en la nueva variable copia. En ese momento, las dos variables guardan el mismo número. Cada una tiene su propio espacio para guardarlo. Si después asignas otro número a original, podrás seguir leyendo el seis en copia (Stroustrup, 2024)."
         },
         {
           "type": "code",
@@ -139,14 +139,14 @@
         },
         {
           "type": "multiple_choice",
-          "question": "Tras copiar cantidad a anterior, modificas cantidad. ¿Qué dato conserva anterior si no lo vuelves a asignar?",
+          "question": "La variable entera cantidad guarda 6. Ejecutas int anterior = cantidad; y luego cantidad = 10;. ¿Qué valor guarda anterior después de esas dos instrucciones?",
           "options": [
-            "El valor que recibió al copiar.",
+            "anterior guarda seis, el valor que tenía cantidad cuando se hizo la copia.",
             "El nombre de cantidad como texto.",
             "Siempre el valor más reciente de cantidad."
           ],
           "correctIndex": 0,
-          "explanation": "La copia guarda un valor, no una instrucción para mantener ambas variables sincronizadas."
+          "explanation": "Al crear anterior, el programa lee el 6 de cantidad y guarda una copia de ese seis en la nueva variable. Después, cantidad = 10; guarda diez en cantidad. La variable anterior conserva el seis que recibió al crearse."
         }
       ]
     },
@@ -158,11 +158,11 @@
         },
         {
           "type": "paragraph",
-          "text": "Un puesto tiene dos boletos disponibles. Guardaremos esa cantidad en su registro y después llegarán tres más. Estas son las instrucciones y los valores que deja cada una.\n\n1. int boletos_disponibles = 2; crea la variable con 2. El registro aún no existe.\n2. int boletos_registrados = boletos_disponibles; crea el registro con 2. En este momento ambas variables guardan 2.\n3. boletos_disponibles = boletos_disponibles + 3; guarda 5 en boletos_disponibles. El registro conserva 2.\n4. boletos_registrados = boletos_disponibles; vuelve a consultar la cantidad disponible. Ahora guarda 5 también en el registro (Stroustrup, 2024).\n\nEn el último puzle de esta página, la consola muestra tres pares de números. El primero aparece después de copiar, el segundo después de sumar y el tercero después de copiar otra vez."
+          "text": "Un puesto tiene dos boletos disponibles. El programa guarda una copia de esa cantidad. Después llegan tres boletos y el programa actualiza el registro.\n\n1. int boletos_disponibles = 2; crea la variable que guarda cuántos boletos hay. Todavía no se ha creado la variable del registro.\n2. int boletos_registrados = boletos_disponibles; copia el dos en boletos_registrados. Ahora las dos variables valen dos.\n3. boletos_disponibles = boletos_disponibles + 3; suma los tres boletos que llegaron y guarda cinco en boletos_disponibles. La variable boletos_registrados conserva dos.\n4. boletos_registrados = boletos_disponibles; lee el cinco de boletos_disponibles y guarda ese cinco en boletos_registrados. Ahora las dos variables valen cinco (Stroustrup, 2024)."
         },
         {
           "type": "order_code",
-          "question": "Ordena las acciones para conservar primero el valor 3 en anterior y luego imprimir 8 3.",
+          "question": "Ordena las instrucciones para que anterior reciba una copia de actual cuando actual todavía vale tres. Al final, std::cout debe mostrar 8 3.",
           "fragments": [
             "    actual = actual + 5;",
             "    std::cout << actual << \" \" << anterior;",
@@ -183,7 +183,7 @@
             6,
             7
           ],
-          "explanation": "anterior se inicializa antes de modificar actual. Ese orden conserva 3 y permite imprimir 8 3."
+          "explanation": "Primero actual guarda tres. En ese momento, anterior recibe una copia de ese tres. La instrucción que asigna ocho a actual cambia sólo esa variable. Por eso, al mostrar actual y después anterior, la consola escribe 8 3."
         },
         {
           "type": "fill_code",
@@ -209,7 +209,7 @@
           "type": "output_prediction",
           "id": "u2_seguir_tres_etapas_de_copia",
           "language": "cpp",
-          "question": "Registra el seguimiento en este puzzle: escribe las tres líneas que produce el programa. Cada línea muestra disponibles y registro, en ese orden, separados por un espacio. Conserva los saltos entre las tres etapas.",
+          "question": "Escribe los tres renglones de la salida. En cada renglón, std::cout muestra primero el valor de disponibles, luego un espacio y después el valor de registro. Sigue ambas variables después de la primera copia, después de la suma y después de la segunda copia.",
           "code": "#include <iostream>\n\nint main() {\n    int disponibles = 3;\n\n    int registro = disponibles;\n\n    std::cout << disponibles << \" \" << registro << \"\\n\";\n\n    disponibles = disponibles + 4;\n\n    std::cout << disponibles << \" \" << registro << \"\\n\";\n\n    registro = disponibles;\n\n    std::cout << disponibles << \" \" << registro;\n\n    return 0;\n}\n",
           "answers": [
             "3 3\n7 3\n7 7"
@@ -240,7 +240,7 @@
         },
         {
           "type": "drag_fill_code",
-          "question": "Completa para empezar con 10, restar tres y mostrar el resultado.",
+          "question": "Completa el código para que saldo empiece con diez, el programa le reste tres y std::cout muestre el saldo que queda.",
           "template": "#include <iostream>\n\nint main() {\n    int saldo = [];\n    saldo [] 3;\n    std::cout << saldo;\n\n    return 0;\n}\n",
           "choices": [
             "-=",
@@ -250,7 +250,8 @@
           "correctOrder": [
             1,
             0
-          ]
+          ],
+          "explanation": "La declaración guarda diez en saldo. La instrucción saldo -= 3; resta tres a ese diez y guarda siete en la misma variable. Cuando std::cout consulta saldo, en la consola aparece 7."
         }
       ]
     },
@@ -262,7 +263,7 @@
         },
         {
           "type": "paragraph",
-          "text": "El puzle anterior usa = 10 como inicializador y -= para restar tres. La declaración deja saldo con 10. La instrucción de resta lo deja con 7. Cuando se ejecuta el programa, lee ese valor y lo muestra sin pedirle datos al usuario.\n\nEl signo * indica multiplicación. 3 * 5 produce 15. Una asignación como total = total * 3; lee total, multiplica por tres y guarda el resultado en total. En el puzle de esta página, la segunda instrucción usa el valor que dejó la primera (Stroustrup, 2024)."
+          "text": "El signo * indica multiplicación. Por ejemplo, 3 * 5 multiplica tres por cinco y da quince. Para multiplicar el valor guardado en una variable, puedes usar su nombre en el cálculo. Si total guarda cinco, total = total * 3; lee ese cinco, lo multiplica por tres y guarda quince en total. Una instrucción que después consulte total leerá el quince (Stroustrup, 2024)."
         },
         {
           "type": "output_prediction",
@@ -272,7 +273,7 @@
           "answers": [
             "5"
           ],
-          "explanation": "Los valores sucesivos son 1, 2, 6 y 5."
+          "explanation": "La declaración guarda 1 en puntos. La instrucción ++puntos; cambia ese uno a dos. Luego puntos += 4; suma cuatro al dos y guarda seis. Por último, --puntos; resta uno al seis y guarda cinco. Al consultar puntos, std::cout escribe 5."
         },
         {
           "type": "multiple_choice",
@@ -287,13 +288,13 @@
         },
         {
           "type": "inline_fill_code",
-          "question": "Completa las partes derechas para duplicar 4 y luego reducir el resultado en dos.",
+          "question": "cantidad empieza con cuatro. En el hueco de la primera asignación escribe el operador que multiplica ese cuatro por dos. En el hueco de la segunda asignación escribe el operador que resta dos al resultado que ya guarda cantidad.",
           "template": "#include <iostream>\n\nint main() {\n    int cantidad = 4;\n\n    cantidad = cantidad [] 2;\n    cantidad = cantidad [] 2;\n\n    std::cout << cantidad;\n\n    return 0;\n}\n",
           "answers": [
             "*",
             "-"
           ],
-          "reviewFeedback": "Sigue las actualizaciones en el orden en que se ejecutan. Relaciona la primera operación con duplicar el valor y la segunda con reducir el resultado ya obtenido; cada asignación utiliza el estado que dejó la anterior.",
+          "reviewFeedback": "Sigue el nombre cantidad en las dos asignaciones. ¿Qué número queda en cantidad al duplicar cuatro? Usa ese nuevo número para la resta que pide la segunda asignación.",
           "explanation": "El primer hueco usa `*`: la expresión `cantidad * 2` duplica el valor inicial de cuatro y la asignación guarda ocho. El segundo usa `-`: ahora lee ese ocho, resta dos y guarda seis. En C++, esos signos representan multiplicación y resta (Stroustrup, 2024).\n\nLa parte derecha se calcula con el valor actual antes de guardar el resultado en la variable de la izquierda. Por eso el segundo cambio utiliza ocho y no vuelve a partir de cuatro (Stroustrup, 2024). La consola muestra `6`."
         },
         {
@@ -392,18 +393,18 @@
           "answers": [
             "A: 2\nB: 6"
           ],
-          "explanation": "La salida permite observar estados distintos en orden. Multiplicar y asignar produce 6."
+          "explanation": "cajas empieza con 2. La primera instrucción con std::cout escribe A: 2 y un salto de línea. Después, cajas *= 3; multiplica dos por tres y guarda seis en cajas. La segunda instrucción con std::cout consulta ese nuevo valor y escribe B: 6 en el segundo renglón de la salida."
         },
         {
           "type": "multiple_choice",
-          "question": "Un comentario dice que el valor anterior es 4, pero el código copia después de asignar 9. ¿Qué determina la salida?",
+          "question": "actual empieza con 4. Primero se ejecuta actual = 9; y después int anterior = actual;. Un comentario dice que anterior guardará cuatro. ¿Qué valor se copia realmente en anterior y por qué?",
           "options": [
             "La copia recibe 4 porque el comentario fija ese valor esperado.",
-            "La copia recibe 9; el momento debe concordar con la intención.",
+            "La copia guarda nueve porque la asignación a actual se ejecuta antes de copiar su valor en anterior.",
             "La copia recibe 4 porque el nombre anterior conserva la historia."
           ],
           "correctIndex": 1,
-          "explanation": "Los comentarios no se ejecutan; un nombre o comentario no puede sustituir una actualización correcta."
+          "explanation": "Cuando se ejecuta int anterior = actual;, la asignación ya dejó 9 en actual. El programa copia ese nueve en anterior. El comentario describe la intención de guardar el cuatro, pero para hacerlo la copia tendría que ejecutarse antes de la asignación."
         },
         {
           "type": "output_prediction",
@@ -435,7 +436,7 @@
           "question": "Compara los dos programas de seguimiento anteriores. ¿Qué razonamiento explica el valor que conserva anterior en cada versión?",
           "options": [
             "La etiqueta Antes determina qué valor debe recuperar anterior, aunque la copia aparezca en otro punto.",
-            "La copia recibe el valor disponible al ejecutarse; cambiar después aforo no actualiza por sí solo anterior.",
+            "Cuando la copia se hace antes de sumar tres, anterior recibe el cinco de aforo. Cuando se hace después de sumar, anterior recibe el ocho que ya guarda aforo.",
             "Las dos variables quedan sincronizadas al copiarse, y el nombre anterior conserva además los valores pasados."
           ],
           "correctIndex": 1,
@@ -2029,6 +2030,89 @@
         "id": "p1u2l3_copia_tardia_referencia",
         "beforeSha256": "0b6a4b7804b12ab5dc959c85f47462df6fdc4f8d9803735f949acb03822caea0",
         "afterSha256": "a6b51990cf65f1d15930d3943364f7ba29089ba556f7cbc9214f3dafd896b038"
+      },
+      {
+        "id": "p1u2l3_cuando_se_copia",
+        "beforeSha256": "e78faa82aa83ac7c99b6fbb510f9cbb9a96835062fc066430340bf3db6d97f64",
+        "afterSha256": "9eedac4fd40832b9ea6edeba96fe955428ed8065f96aa6c62e4a050dec0fa9c2"
+      },
+      {
+        "id": "block_0003_0001",
+        "beforeSha256": "152bfa6d15053c9b97dfea50ab7dfe54cc4551a5bae0658fc5f91e03977aabce",
+        "afterSha256": "ce9e5127468e282e9cba3a5977bdffa60a20cf56fe8152f926cbe69a1556003e"
+      },
+      {
+        "id": "block_0005_0001",
+        "beforeSha256": "deb858215513dfefe8201eb034783325c6fd04fee8a46050f62f2f1218181660",
+        "afterSha256": "1f203f8ac4609da220725b562618da006da7527a0144f70c348f858d278143bb"
+      },
+      {
+        "id": "block_0001_0004",
+        "beforeSha256": "89faede663577d237a5eb9cbc919a6a0ad71c09799135674d10afd07078def7b",
+        "afterSha256": "e2c994dbbdbd3549567f724da6dcc703869182113a8338c869cec9a00f18773d"
+      },
+      {
+        "id": "block_0002_0005",
+        "beforeSha256": "1f522d37d21c7c98db76f26e5498cf59a3bafb88855067fa9496c05df9e344e8",
+        "afterSha256": "aa9d60729f5b03a2a71eb3492863589afb9e96c9fd777991525514c3af6cde47"
+      },
+      {
+        "id": "block_0002_0005",
+        "beforeSha256": "aa9d60729f5b03a2a71eb3492863589afb9e96c9fd777991525514c3af6cde47",
+        "afterSha256": "88e16937d2377cf821b73cfe4502fbaf8147fee10c3b4451ee0bdf211ea9c897"
+      },
+      {
+        "id": "block_0003_0005",
+        "beforeSha256": "b1c946df31024e67507c371aeb6a5a5bab0b96f7ba4348e7c232fd882ea2b5f0",
+        "afterSha256": "5098118ac7cfaacfda692a280b0dec509987bae34dbe061a88850fefb3d1bc34"
+      },
+      {
+        "id": "block_0004_0004",
+        "beforeSha256": "ac3397fc81329404fc126daba8db44283d5fe199639233198d2bbc44d512cd9c",
+        "afterSha256": "61456068da5e55144e38c217c35493be4f0b0610beeb58ca866f938534ddfcd7"
+      },
+      {
+        "id": "block_0005_0002",
+        "beforeSha256": "05513c295f4065b42be05f815fbc4501ddffb8f06deb81503e7b3b3914ebe446",
+        "afterSha256": "e3ea90dfab06515dea8aae0c72723f3fbb44dd50d262d792e2177688980e92ba"
+      },
+      {
+        "id": "block_0007_0003",
+        "beforeSha256": "6d43ec3a35280f7a08b0406ec7b79a2782c0e88613b336fb2138829950673ea7",
+        "afterSha256": "2556901b547c1d835270081663e54d23299ec55b09afab9d128d69b7e87a82c8"
+      },
+      {
+        "id": "block_0007_0004",
+        "beforeSha256": "5721055f38481f0a86a80f9f2b04c58cd6b1e92d6906318de71228aaab220f76",
+        "afterSha256": "0203397d969d810b653b7c271a0f3085339ff3e400362c4a702bd62e9362e6da"
+      },
+      {
+        "id": "block_0007_0004",
+        "beforeSha256": "0203397d969d810b653b7c271a0f3085339ff3e400362c4a702bd62e9362e6da",
+        "afterSha256": "3816e5451b9a7a23ff0bfa8030c231396a2f47a523c9cdc1430348ec45a9c26b"
+      },
+      {
+        "id": "block_0005_0004",
+        "beforeSha256": "767a0c8244da5daa5fd0a306d752b01c31e318f7c4640ed521ff31ff94905d72",
+        "afterSha256": "e8b016ee8a3183647a2f2b7474bf40f913f6610fd71e36b5df3766834b91e481",
+        "reviewPaths": [
+          "/reviewFeedback"
+        ]
+      },
+      {
+        "id": "block_0003_0002",
+        "beforeSha256": "e4f7fdcc78058a6b604cb26af0485dd0f1c9980785f57390b577726692aa7fe2",
+        "afterSha256": "197ea25ad0a1f7cf712d09d1019d6ba2766cee75b9f12f6b06262f1552bac483"
+      },
+      {
+        "id": "block_0001_0003",
+        "beforeSha256": "5371fdfb42199575639d8078a3a983a26333cdedf4f2d162b5bef6a31df5cce2",
+        "afterSha256": "86e00b896b00aea41ca72f9f558d9f0dfe7937965d507e88c8b79183267df8f4"
+      },
+      {
+        "id": "block_0007_0007",
+        "beforeSha256": "79524dd8bced29a0a140465db45c39f31d5bc82ef03d16bb84ccc3887c144a56",
+        "afterSha256": "06ec72dd259cf76c96fd97c3fbf71e6aba22f2b3e7204a9e36454061ee72cb18"
       }
     ],
     "orderRefinements": [
@@ -2329,6 +2413,183 @@
           "code": "#include <iostream>\n\nint main() {\n    int aforo{5};\n    aforo = aforo + 3;\n    int anterior{aforo};\n    std::cout << \"Antes: \" << anterior << '\\n';\n    std::cout << \"Ahora: \" << aforo;\n    return 0;\n}\n"
         }
       }
+    ],
+    "choiceRevisions": [
+      {
+        "id": "block_0002_0005",
+        "block": {
+          "type": "multiple_choice",
+          "question": "Tras copiar cantidad a anterior, modificas cantidad. ¿Qué dato conserva anterior si no lo vuelves a asignar?",
+          "options": [
+            "El valor que recibió al copiar.",
+            "El nombre de cantidad como texto.",
+            "Siempre el valor más reciente de cantidad."
+          ],
+          "correctIndex": 0,
+          "explanation": "La copia guarda un valor, no una instrucción para mantener ambas variables sincronizadas."
+        },
+        "optionIndex": 0,
+        "replacement": "anterior guarda seis, el valor que tenía cantidad cuando se hizo la copia.",
+        "semanticBefore": {
+          "block": "block_0002_0005",
+          "path": "/options/0",
+          "sourceSha256": "2fc0b23e3428aee2f3bccba39654b2169da8c168940a439ff21577210f6d9f5c",
+          "spans": []
+        },
+        "semanticAfter": {
+          "block": "block_0002_0005",
+          "path": "/options/0",
+          "sourceSha256": "f47ba873b8a3e67eef33f94c7c83dee987c23f6e8ce021302b0a47723cdd71ab",
+          "spans": [
+            {
+              "start": 0,
+              "end": 8,
+              "text": "anterior",
+              "role": "cpp",
+              "reading": "technical"
+            },
+            {
+              "start": 41,
+              "end": 49,
+              "text": "cantidad",
+              "role": "cpp",
+              "reading": "technical"
+            }
+          ]
+        },
+        "semanticRootBefore": true
+      },
+      {
+        "id": "block_0007_0004",
+        "block": {
+          "type": "multiple_choice",
+          "question": "Un comentario dice que el valor anterior es 4, pero el código copia después de asignar 9. ¿Qué determina la salida?",
+          "options": [
+            "La copia recibe 4 porque el comentario fija ese valor esperado.",
+            "La copia recibe 9; el momento debe concordar con la intención.",
+            "La copia recibe 4 porque el nombre anterior conserva la historia."
+          ],
+          "correctIndex": 1,
+          "explanation": "Los comentarios no se ejecutan; un nombre o comentario no puede sustituir una actualización correcta."
+        },
+        "optionIndex": 1,
+        "replacement": "La copia guarda nueve porque la asignación a actual se ejecuta antes de copiar su valor en anterior.",
+        "semanticBefore": {
+          "block": "block_0007_0004",
+          "path": "/options/1",
+          "sourceSha256": "9ce58065c43f83696beefe1db255066e21bff711d53c16098c9883f3ae8fe447",
+          "spans": [
+            {
+              "start": 16,
+              "end": 17,
+              "text": "9",
+              "role": "output",
+              "reading": "natural"
+            }
+          ]
+        },
+        "semanticAfter": {
+          "block": "block_0007_0004",
+          "path": "/options/1",
+          "sourceSha256": "c0926f1ea5f0944ec9f8a3e7c8ecd8fac3907404bc384c9b30294dcf3ec3fc30",
+          "spans": [
+            {
+              "start": 45,
+              "end": 51,
+              "text": "actual",
+              "role": "cpp",
+              "reading": "technical"
+            },
+            {
+              "start": 91,
+              "end": 99,
+              "text": "anterior",
+              "role": "cpp",
+              "reading": "technical"
+            }
+          ]
+        },
+        "semanticRootBefore": true
+      },
+      {
+        "id": "block_0007_0007",
+        "block": {
+          "type": "multiple_choice",
+          "id": "u2_justificacion_momento_de_copia",
+          "question": "Compara los dos programas de seguimiento anteriores. ¿Qué razonamiento explica el valor que conserva anterior en cada versión?",
+          "options": [
+            "La etiqueta Antes determina qué valor debe recuperar anterior, aunque la copia aparezca en otro punto.",
+            "La copia recibe el valor disponible al ejecutarse; cambiar después aforo no actualiza por sí solo anterior.",
+            "Las dos variables quedan sincronizadas al copiarse, y el nombre anterior conserva además los valores pasados."
+          ],
+          "correctIndex": 1,
+          "explanation": "Cada definición de anterior consulta el valor que aforo tiene en ese momento. Copiar antes del aumento conserva el valor inicial; copiar después recibe el valor actualizado. El nombre y el texto de una salida no modifican esas operaciones.",
+          "reviewFeedback": [
+            "Un literal de salida aporta caracteres al mensaje. Revisa qué instrucción obtiene el dato numérico y si la etiqueta puede cambiar el valor guardado.",
+            "Localiza el momento de la copia y sigue por separado las instrucciones que modifican cada variable.",
+            "Compara lo que hace la definición con lo que hacen las instrucciones posteriores. El nombre elegido para una variable no realiza operaciones ni crea un registro de valores pasados."
+          ]
+        },
+        "optionIndex": 1,
+        "replacement": "Cuando la copia se hace antes de sumar tres, anterior recibe el cinco de aforo. Cuando se hace después de sumar, anterior recibe el ocho que ya guarda aforo.",
+        "semanticBefore": {
+          "block": "block_0007_0007",
+          "path": "/options/1",
+          "sourceSha256": "8e8b125fc5e3c7257360202565b5342cc1832a3bb0614f9705db6f3da6e69b2a",
+          "spans": [
+            {
+              "start": 67,
+              "end": 72,
+              "text": "aforo",
+              "role": "cpp",
+              "reading": "technical"
+            },
+            {
+              "start": 98,
+              "end": 106,
+              "text": "anterior",
+              "role": "cpp",
+              "reading": "technical"
+            }
+          ]
+        },
+        "semanticAfter": {
+          "block": "block_0007_0007",
+          "path": "/options/1",
+          "sourceSha256": "d83b257aff2d6261ac8c9ef872bc4bc68395b87782b7d4f806d155d1c1d344ad",
+          "spans": [
+            {
+              "start": 45,
+              "end": 53,
+              "text": "anterior",
+              "role": "cpp",
+              "reading": "technical"
+            },
+            {
+              "start": 73,
+              "end": 78,
+              "text": "aforo",
+              "role": "cpp",
+              "reading": "technical"
+            },
+            {
+              "start": 113,
+              "end": 121,
+              "text": "anterior",
+              "role": "cpp",
+              "reading": "technical"
+            },
+            {
+              "start": 151,
+              "end": 156,
+              "text": "aforo",
+              "role": "cpp",
+              "reading": "technical"
+            }
+          ]
+        },
+        "semanticRootBefore": true
+      }
     ]
   },
   "activityAfter": [
@@ -2571,53 +2832,46 @@
       {
         "block": "block_0001_0003",
         "path": "/explanation",
-        "sourceSha256": "369744b764ae83f1e0ce6008d9fe9f38484285c251231ef0d71903b2d265b786",
+        "sourceSha256": "d2cfa94e44355807bbc72144ce912bdaa044d1984fd80b8e09f30a67a4df9f90",
         "spans": [
           {
-            "start": 27,
-            "end": 36,
-            "text": "std::cout",
-            "role": "cpp",
-            "reading": "technical"
-          },
-          {
-            "start": 45,
-            "end": 46,
-            "text": "9",
-            "role": "output",
-            "reading": "natural"
-          },
-          {
-            "start": 94,
-            "end": 98,
+            "start": 0,
+            "end": 4,
             "text": "agua",
             "role": "cpp",
             "reading": "technical"
           },
           {
-            "start": 123,
-            "end": 124,
-            "text": "6",
-            "role": "data",
-            "reading": "natural"
-          },
-          {
-            "start": 153,
-            "end": 162,
+            "start": 51,
+            "end": 60,
             "text": "std::cout",
             "role": "cpp",
             "reading": "technical"
           },
           {
-            "start": 169,
-            "end": 170,
-            "text": "6",
-            "role": "output",
-            "reading": "natural"
+            "start": 118,
+            "end": 134,
+            "text": "agua = agua - 3;",
+            "role": "cpp",
+            "reading": "technical"
           },
           {
-            "start": 188,
-            "end": 191,
+            "start": 172,
+            "end": 176,
+            "text": "agua",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 204,
+            "end": 213,
+            "text": "std::cout",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 281,
+            "end": 284,
             "text": "9 6",
             "role": "output",
             "reading": "natural"
@@ -2627,36 +2881,79 @@
       {
         "block": "block_0001_0004",
         "path": "/question",
-        "sourceSha256": "38b290c0fe80bceac9df9d95ff8ffaa76d8b38ab035fe99f373dac077e75ce82",
+        "sourceSha256": "db35a5deec47d53f96406aed9e23e0702edcf90bcd3362f8227696d5a838575a",
         "spans": [
           {
-            "start": 3,
-            "end": 21,
-            "text": "cajas = cajas + 5;",
-            "role": "cpp",
-            "reading": "technical"
-          },
-          {
-            "start": 23,
-            "end": 28,
+            "start": 12,
+            "end": 17,
             "text": "cajas",
             "role": "cpp",
             "reading": "technical"
           },
           {
-            "start": 35,
-            "end": 36,
+            "start": 23,
+            "end": 24,
             "text": "2",
             "role": "data",
             "reading": "natural"
+          },
+          {
+            "start": 52,
+            "end": 70,
+            "text": "cajas = cajas + 5;",
+            "role": "cpp",
+            "reading": "technical"
           }
         ]
       },
       {
         "block": "block_0001_0004",
         "path": "/explanation",
-        "sourceSha256": "c167cb665f371b7989c3287a4e9e00f81a28bf14e633e7479ab42ebf3eb5fd4c",
-        "spans": []
+        "sourceSha256": "076a6ca9cbe943877362823f6227a89853f8b028947bf3d54cdc0b6e4a91e956",
+        "spans": [
+          {
+            "start": 16,
+            "end": 25,
+            "text": "cajas + 5",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 46,
+            "end": 47,
+            "text": "2",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 67,
+            "end": 72,
+            "text": "cajas",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 103,
+            "end": 104,
+            "text": "7",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 116,
+            "end": 121,
+            "text": "cajas",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 140,
+            "end": 141,
+            "text": "=",
+            "role": "cpp",
+            "reading": "technical"
+          }
+        ]
       },
       {
         "block": "block_0001_0004",
@@ -2988,32 +3285,39 @@
       {
         "block": "block_0002_0005",
         "path": "/question",
-        "sourceSha256": "d8e8da2bf8ecee7a70e912798cda99499698ec0258fb50d70264122dba698420",
+        "sourceSha256": "195661b40b707d315a7768d7e3a08294ca7629b73677f5bb4534bb80165ae4d9",
         "spans": [
           {
-            "start": 12,
-            "end": 20,
+            "start": 19,
+            "end": 27,
             "text": "cantidad",
             "role": "cpp",
             "reading": "technical"
           },
           {
-            "start": 23,
-            "end": 31,
-            "text": "anterior",
+            "start": 35,
+            "end": 36,
+            "text": "6",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 47,
+            "end": 71,
+            "text": "int anterior = cantidad;",
             "role": "cpp",
             "reading": "technical"
           },
           {
-            "start": 43,
-            "end": 51,
-            "text": "cantidad",
+            "start": 80,
+            "end": 94,
+            "text": "cantidad = 10;",
             "role": "cpp",
             "reading": "technical"
           },
           {
-            "start": 72,
-            "end": 80,
+            "start": 114,
+            "end": 122,
             "text": "anterior",
             "role": "cpp",
             "reading": "technical"
@@ -3023,14 +3327,72 @@
       {
         "block": "block_0002_0005",
         "path": "/explanation",
-        "sourceSha256": "40f94fb89fc488988e04dfb6636794567a2950e84ea13c7dc39773377f73fffa",
-        "spans": []
+        "sourceSha256": "8b21de4da15a050ff71198c81bfd84cfc13f98c9ffd0db0ce625b8547096493c",
+        "spans": [
+          {
+            "start": 9,
+            "end": 17,
+            "text": "anterior",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 38,
+            "end": 39,
+            "text": "6",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 43,
+            "end": 51,
+            "text": "cantidad",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 114,
+            "end": 128,
+            "text": "cantidad = 10;",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 144,
+            "end": 152,
+            "text": "cantidad",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 166,
+            "end": 174,
+            "text": "anterior",
+            "role": "cpp",
+            "reading": "technical"
+          }
+        ]
       },
       {
         "block": "block_0002_0005",
         "path": "/options/0",
-        "sourceSha256": "2fc0b23e3428aee2f3bccba39654b2169da8c168940a439ff21577210f6d9f5c",
-        "spans": []
+        "sourceSha256": "f47ba873b8a3e67eef33f94c7c83dee987c23f6e8ce021302b0a47723cdd71ab",
+        "spans": [
+          {
+            "start": 0,
+            "end": 8,
+            "text": "anterior",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 41,
+            "end": 49,
+            "text": "cantidad",
+            "role": "cpp",
+            "reading": "technical"
+          }
+        ]
       },
       {
         "block": "block_0002_0005",
@@ -3069,88 +3431,74 @@
       {
         "block": "block_0003_0001",
         "path": "/text",
-        "sourceSha256": "f6efcc4ad6c5b360daa2444e1b7873dfd8284a90e3dcaa04a8652b83afdd865b",
+        "sourceSha256": "5366c1efa8686f2b7db1f3717bac785a09bab9d03dce5ad995aea74dfb54371e",
         "spans": [
           {
-            "start": 175,
-            "end": 203,
+            "start": 156,
+            "end": 184,
             "text": "int boletos_disponibles = 2;",
             "role": "cpp",
             "reading": "technical"
           },
           {
-            "start": 225,
-            "end": 226,
-            "text": "2",
-            "role": "data",
-            "reading": "natural"
-          },
-          {
-            "start": 258,
-            "end": 304,
+            "start": 287,
+            "end": 333,
             "text": "int boletos_registrados = boletos_disponibles;",
             "role": "cpp",
             "reading": "technical"
           },
           {
-            "start": 326,
-            "end": 327,
-            "text": "2",
-            "role": "data",
-            "reading": "natural"
+            "start": 350,
+            "end": 369,
+            "text": "boletos_registrados",
+            "role": "cpp",
+            "reading": "technical"
           },
           {
-            "start": 369,
-            "end": 370,
-            "text": "2",
-            "role": "data",
-            "reading": "natural"
-          },
-          {
-            "start": 375,
-            "end": 421,
+            "start": 409,
+            "end": 455,
             "text": "boletos_disponibles = boletos_disponibles + 3;",
             "role": "cpp",
             "reading": "technical"
           },
           {
-            "start": 429,
-            "end": 430,
-            "text": "5",
-            "role": "data",
-            "reading": "natural"
-          },
-          {
-            "start": 434,
-            "end": 453,
+            "start": 509,
+            "end": 528,
             "text": "boletos_disponibles",
             "role": "cpp",
             "reading": "technical"
           },
           {
-            "start": 476,
-            "end": 477,
-            "text": "2",
-            "role": "data",
-            "reading": "natural"
+            "start": 542,
+            "end": 561,
+            "text": "boletos_registrados",
+            "role": "cpp",
+            "reading": "technical"
           },
           {
-            "start": 482,
-            "end": 524,
+            "start": 579,
+            "end": 621,
             "text": "boletos_registrados = boletos_disponibles;",
             "role": "cpp",
             "reading": "technical"
           },
           {
-            "start": 581,
-            "end": 582,
-            "text": "5",
-            "role": "data",
-            "reading": "natural"
+            "start": 638,
+            "end": 657,
+            "text": "boletos_disponibles",
+            "role": "cpp",
+            "reading": "technical"
           },
           {
-            "start": 606,
-            "end": 624,
+            "start": 680,
+            "end": 699,
+            "text": "boletos_registrados",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 737,
+            "end": 755,
             "text": "(Stroustrup, 2024)",
             "role": "citation",
             "reading": "natural"
@@ -3160,25 +3508,39 @@
       {
         "block": "block_0003_0002",
         "path": "/question",
-        "sourceSha256": "2be969b3c6dc57a346505ced60e61d515d32b9e7d4731d8650bf24aa2343acc6",
+        "sourceSha256": "41e7ade3ad35ccff7453baa38a3346f7cd7dfc1f6e1e7dc3517725d37b4955e4",
         "spans": [
           {
-            "start": 52,
-            "end": 53,
-            "text": "3",
-            "role": "data",
-            "reading": "natural"
-          },
-          {
-            "start": 57,
-            "end": 65,
+            "start": 34,
+            "end": 42,
             "text": "anterior",
             "role": "cpp",
             "reading": "technical"
           },
           {
-            "start": 83,
-            "end": 86,
+            "start": 63,
+            "end": 69,
+            "text": "actual",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 77,
+            "end": 83,
+            "text": "actual",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 113,
+            "end": 122,
+            "text": "std::cout",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 136,
+            "end": 139,
             "text": "8 3",
             "role": "output",
             "reading": "natural"
@@ -3188,32 +3550,46 @@
       {
         "block": "block_0003_0002",
         "path": "/explanation",
-        "sourceSha256": "b1bc7a1d50d63cbd3e14d1660c5cbac73bf9b46e84ee1da0f7b6a8e586ce3c3b",
+        "sourceSha256": "444a8db3d4249b168d82a2530f6f247aaf14cee2ac4d12a9a7b1a53a613ce17c",
         "spans": [
           {
-            "start": 0,
-            "end": 8,
-            "text": "anterior",
-            "role": "cpp",
-            "reading": "technical"
-          },
-          {
-            "start": 42,
-            "end": 48,
+            "start": 8,
+            "end": 14,
             "text": "actual",
             "role": "cpp",
             "reading": "technical"
           },
           {
-            "start": 69,
-            "end": 70,
-            "text": "3",
-            "role": "data",
-            "reading": "natural"
+            "start": 44,
+            "end": 52,
+            "text": "anterior",
+            "role": "cpp",
+            "reading": "technical"
           },
           {
-            "start": 90,
-            "end": 93,
+            "start": 116,
+            "end": 122,
+            "text": "actual",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 169,
+            "end": 175,
+            "text": "actual",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 186,
+            "end": 194,
+            "text": "anterior",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 215,
+            "end": 218,
             "text": "8 3",
             "role": "output",
             "reading": "natural"
@@ -3355,35 +3731,28 @@
       {
         "block": "block_0003_0005",
         "path": "/question",
-        "sourceSha256": "114046a6f561f58c33b11376fe13abe427918a085febfc1ff825c177ca542ede",
+        "sourceSha256": "974f7a457aac4f30ae89a28847c02a3daabc6cb8b6bbddf7b9101c95d670c80b",
         "spans": [
           {
-            "start": 52,
-            "end": 56,
-            "text": "tres",
-            "role": "data",
-            "reading": "natural"
+            "start": 58,
+            "end": 67,
+            "text": "std::cout",
+            "role": "cpp",
+            "reading": "technical"
           },
           {
-            "start": 108,
-            "end": 119,
+            "start": 96,
+            "end": 107,
             "text": "disponibles",
             "role": "cpp",
             "reading": "technical"
           },
           {
-            "start": 122,
-            "end": 130,
+            "start": 148,
+            "end": 156,
             "text": "registro",
             "role": "cpp",
             "reading": "technical"
-          },
-          {
-            "start": 202,
-            "end": 206,
-            "text": "tres",
-            "role": "data",
-            "reading": "natural"
           }
         ]
       },
@@ -3620,21 +3989,21 @@
       {
         "block": "block_0004_0004",
         "path": "/question",
-        "sourceSha256": "b422bfdf9f106cfc517d6ac8a7ccd225993b8f40ea0b6a1f399e608b490bf1c2",
+        "sourceSha256": "88ed9703a982ffa2b118fae501526c3377a020e1d97e0cb98bfb788a7d988a40",
         "spans": [
           {
-            "start": 26,
-            "end": 28,
-            "text": "10",
+            "start": 28,
+            "end": 33,
+            "text": "saldo",
             "role": "cpp",
             "reading": "technical"
           },
           {
-            "start": 37,
-            "end": 41,
-            "text": "tres",
-            "role": "data",
-            "reading": "natural"
+            "start": 80,
+            "end": 89,
+            "text": "std::cout",
+            "role": "cpp",
+            "reading": "technical"
           }
         ]
       },
@@ -3647,88 +4016,53 @@
       {
         "block": "block_0005_0001",
         "path": "/text",
-        "sourceSha256": "1d93d492cddce1f01331980699b7e38b9bc4cacaa071c09c28d035c20095c901",
+        "sourceSha256": "2aa71c27049ccbcfa4d2aa2337d704ea34cb49dc4cb4e4038af744cf2caf469a",
         "spans": [
           {
-            "start": 22,
-            "end": 26,
-            "text": "= 10",
-            "role": "cpp",
-            "reading": "technical"
-          },
-          {
-            "start": 48,
-            "end": 50,
-            "text": "-=",
-            "role": "cpp",
-            "reading": "technical"
-          },
-          {
-            "start": 89,
-            "end": 94,
-            "text": "saldo",
-            "role": "cpp",
-            "reading": "technical"
-          },
-          {
-            "start": 99,
-            "end": 101,
-            "text": "10",
-            "role": "data",
-            "reading": "natural"
-          },
-          {
-            "start": 139,
-            "end": 140,
-            "text": "7",
-            "role": "data",
-            "reading": "natural"
-          },
-          {
-            "start": 240,
-            "end": 241,
+            "start": 9,
+            "end": 10,
             "text": "*",
             "role": "cpp",
             "reading": "technical"
           },
           {
-            "start": 265,
-            "end": 270,
+            "start": 47,
+            "end": 52,
             "text": "3 * 5",
             "role": "cpp",
             "reading": "technical"
           },
           {
-            "start": 279,
-            "end": 281,
-            "text": "15",
-            "role": "data",
-            "reading": "natural"
+            "start": 184,
+            "end": 189,
+            "text": "total",
+            "role": "cpp",
+            "reading": "technical"
           },
           {
-            "start": 303,
-            "end": 321,
+            "start": 204,
+            "end": 222,
             "text": "total = total * 3;",
             "role": "cpp",
             "reading": "technical"
           },
           {
-            "start": 326,
-            "end": 331,
+            "start": 280,
+            "end": 285,
             "text": "total",
             "role": "cpp",
             "reading": "technical"
           },
           {
-            "start": 378,
-            "end": 383,
+            "start": 324,
+            "end": 329,
             "text": "total",
             "role": "cpp",
             "reading": "technical"
           },
           {
-            "start": 469,
-            "end": 487,
+            "start": 346,
+            "end": 364,
             "text": "(Stroustrup, 2024)",
             "role": "citation",
             "reading": "natural"
@@ -3744,32 +4078,60 @@
       {
         "block": "block_0005_0002",
         "path": "/explanation",
-        "sourceSha256": "8990233829f7a99350171ff9a998bb778aa5758a0882cdea90625cab391d0a71",
+        "sourceSha256": "a82ca7de2390f5dbe336fd96159587b19d6d4f4665c4c3ff948713376bdf5040",
         "spans": [
           {
-            "start": 26,
-            "end": 27,
+            "start": 22,
+            "end": 23,
             "text": "1",
             "role": "data",
             "reading": "natural"
           },
           {
-            "start": 29,
-            "end": 30,
-            "text": "2",
-            "role": "data",
-            "reading": "natural"
-          },
-          {
-            "start": 32,
+            "start": 27,
             "end": 33,
-            "text": "6",
-            "role": "data",
-            "reading": "natural"
+            "text": "puntos",
+            "role": "cpp",
+            "reading": "technical"
           },
           {
-            "start": 36,
-            "end": 37,
+            "start": 50,
+            "end": 59,
+            "text": "++puntos;",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 88,
+            "end": 100,
+            "text": "puntos += 4;",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 147,
+            "end": 156,
+            "text": "--puntos;",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 204,
+            "end": 210,
+            "text": "puntos",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 212,
+            "end": 221,
+            "text": "std::cout",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 230,
+            "end": 231,
             "text": "5",
             "role": "output",
             "reading": "natural"
@@ -3884,21 +4246,21 @@
       {
         "block": "block_0005_0004",
         "path": "/question",
-        "sourceSha256": "499b03798d78be94d5f25f003249520c62cd0584df04d26cc36dfe63ab85c260",
+        "sourceSha256": "d1f26a60fef5dc0d02e9a84d6e6cf99038569741cbb73ecedbde1c7ddb0d2185",
         "spans": [
           {
-            "start": 43,
-            "end": 44,
-            "text": "4",
+            "start": 0,
+            "end": 8,
+            "text": "cantidad",
             "role": "cpp",
             "reading": "technical"
           },
           {
-            "start": 77,
-            "end": 80,
-            "text": "dos",
-            "role": "data",
-            "reading": "natural"
+            "start": 219,
+            "end": 227,
+            "text": "cantidad",
+            "role": "cpp",
+            "reading": "technical"
           }
         ]
       },
@@ -4003,8 +4365,23 @@
       {
         "block": "block_0005_0004",
         "path": "/reviewFeedback",
-        "sourceSha256": "9c90f4b7bb6425d89a6e19e59e57879edb922bf7e1f4a61f5518850030b5b3e4",
-        "spans": []
+        "sourceSha256": "d06a4c14c836cd4f02dcdcdb5d7b6e2c896eb54d1b8b24d452494b971b45ef39",
+        "spans": [
+          {
+            "start": 16,
+            "end": 24,
+            "text": "cantidad",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 71,
+            "end": 79,
+            "text": "cantidad",
+            "role": "cpp",
+            "reading": "technical"
+          }
+        ]
       },
       {
         "block": "block_0006_0000",
@@ -4256,12 +4633,61 @@
       {
         "block": "block_0007_0003",
         "path": "/explanation",
-        "sourceSha256": "1fac5567f2122c16f8a55ce148fc5a27aedd608e590d9961a9fecd76d8b5cf9f",
+        "sourceSha256": "75728c9cc2968c51da11a27a0f8a20cf7fb86cdee090b76944f967abca8a14e1",
         "spans": [
           {
-            "start": 85,
-            "end": 86,
-            "text": "6",
+            "start": 0,
+            "end": 5,
+            "text": "cajas",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 18,
+            "end": 19,
+            "text": "2",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 48,
+            "end": 57,
+            "text": "std::cout",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 66,
+            "end": 70,
+            "text": "A: 2",
+            "role": "output",
+            "reading": "natural"
+          },
+          {
+            "start": 101,
+            "end": 112,
+            "text": "cajas *= 3;",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 154,
+            "end": 159,
+            "text": "cajas",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 188,
+            "end": 197,
+            "text": "std::cout",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 233,
+            "end": 237,
+            "text": "B: 6",
             "role": "output",
             "reading": "natural"
           }
@@ -4270,19 +4696,47 @@
       {
         "block": "block_0007_0004",
         "path": "/question",
-        "sourceSha256": "1a3fd40515cc2f40183ba1451e0366a3c0ee1e214573b3fba0c039decdbbba92",
+        "sourceSha256": "facf9b03e1bd2d66b82999084073b9dc1fab3e0d73f2594d6c75af9563aea871",
         "spans": [
           {
-            "start": 44,
-            "end": 45,
+            "start": 0,
+            "end": 6,
+            "text": "actual",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 19,
+            "end": 20,
             "text": "4",
             "role": "data",
             "reading": "natural"
           },
           {
-            "start": 87,
-            "end": 88,
-            "text": "9",
+            "start": 41,
+            "end": 52,
+            "text": "actual = 9;",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 63,
+            "end": 85,
+            "text": "int anterior = actual;",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 110,
+            "end": 118,
+            "text": "anterior",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 169,
+            "end": 177,
+            "text": "anterior",
             "role": "cpp",
             "reading": "technical"
           }
@@ -4291,8 +4745,37 @@
       {
         "block": "block_0007_0004",
         "path": "/explanation",
-        "sourceSha256": "1b27fe92e2aa7f8bf54c09bc11888e576b2ac6a809353b78eceb73d331ab2a94",
-        "spans": []
+        "sourceSha256": "2bc330d996fb0d819e726654e1d3c8a80ce5a8ae29609d204733bb6d68c06ec1",
+        "spans": [
+          {
+            "start": 18,
+            "end": 40,
+            "text": "int anterior = actual;",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 64,
+            "end": 65,
+            "text": "9",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 69,
+            "end": 75,
+            "text": "actual",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 108,
+            "end": 116,
+            "text": "anterior",
+            "role": "cpp",
+            "reading": "technical"
+          }
+        ]
       },
       {
         "block": "block_0007_0004",
@@ -4311,14 +4794,21 @@
       {
         "block": "block_0007_0004",
         "path": "/options/1",
-        "sourceSha256": "9ce58065c43f83696beefe1db255066e21bff711d53c16098c9883f3ae8fe447",
+        "sourceSha256": "c0926f1ea5f0944ec9f8a3e7c8ecd8fac3907404bc384c9b30294dcf3ec3fc30",
         "spans": [
           {
-            "start": 16,
-            "end": 17,
-            "text": "9",
-            "role": "output",
-            "reading": "natural"
+            "start": 45,
+            "end": 51,
+            "text": "actual",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 91,
+            "end": 99,
+            "text": "anterior",
+            "role": "cpp",
+            "reading": "technical"
           }
         ]
       },
@@ -4696,19 +5186,33 @@
       {
         "block": "block_0007_0007",
         "path": "/options/1",
-        "sourceSha256": "8e8b125fc5e3c7257360202565b5342cc1832a3bb0614f9705db6f3da6e69b2a",
+        "sourceSha256": "d83b257aff2d6261ac8c9ef872bc4bc68395b87782b7d4f806d155d1c1d344ad",
         "spans": [
           {
-            "start": 67,
-            "end": 72,
+            "start": 45,
+            "end": 53,
+            "text": "anterior",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 73,
+            "end": 78,
             "text": "aforo",
             "role": "cpp",
             "reading": "technical"
           },
           {
-            "start": 98,
-            "end": 106,
+            "start": 113,
+            "end": 121,
             "text": "anterior",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 151,
+            "end": 156,
+            "text": "aforo",
             "role": "cpp",
             "reading": "technical"
           }
@@ -5006,39 +5510,53 @@
       {
         "block": "p1u2l3_cuando_se_copia",
         "path": "/text",
-        "sourceSha256": "46fa1836c0b26cd65aa910fc0a423286b401cb330fcd16077d4a522e362f1e03",
+        "sourceSha256": "e5b7743791007185c025dd73b6192ad29ccbf3ec523bc56c6f6d8bac0627582a",
         "spans": [
           {
-            "start": 17,
-            "end": 27,
+            "start": 14,
+            "end": 35,
+            "text": "int copia = original;",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 54,
+            "end": 64,
             "text": "= original",
             "role": "cpp",
             "reading": "technical"
           },
           {
-            "start": 56,
-            "end": 64,
+            "start": 89,
+            "end": 97,
             "text": "original",
             "role": "cpp",
             "reading": "technical"
           },
           {
-            "start": 70,
-            "end": 71,
-            "text": "6",
-            "role": "data",
-            "reading": "natural"
-          },
-          {
-            "start": 108,
-            "end": 113,
+            "start": 131,
+            "end": 136,
             "text": "copia",
             "role": "cpp",
             "reading": "technical"
           },
           {
-            "start": 206,
-            "end": 224,
+            "start": 279,
+            "end": 287,
+            "text": "original",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 322,
+            "end": 327,
+            "text": "copia",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 328,
+            "end": 346,
             "text": "(Stroustrup, 2024)",
             "role": "citation",
             "reading": "natural"
@@ -5271,6 +5789,48 @@
             "start": 53,
             "end": 54,
             "text": "8",
+            "role": "output",
+            "reading": "natural"
+          }
+        ]
+      },
+      {
+        "block": "block_0004_0004",
+        "path": "/explanation",
+        "sourceSha256": "4cb0afca7e04b324d410296aa165f5cc13222e5283cd985377c987d1fe266103",
+        "spans": [
+          {
+            "start": 30,
+            "end": 35,
+            "text": "saldo",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 52,
+            "end": 63,
+            "text": "saldo -= 3;",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 130,
+            "end": 139,
+            "text": "std::cout",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 149,
+            "end": 154,
+            "text": "saldo",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 178,
+            "end": 179,
+            "text": "7",
             "role": "output",
             "reading": "natural"
           }

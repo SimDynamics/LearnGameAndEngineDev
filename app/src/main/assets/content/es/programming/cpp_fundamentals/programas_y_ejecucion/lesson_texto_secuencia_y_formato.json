@@ -29,7 +29,7 @@
         },
         {
           "type": "paragraph",
-          "text": "Antes de las instrucciones: no se ha escrito nada.\nDespués de la primera: Lado\nDespués de la segunda: LadoNorte"
+          "text": "Así cambia el texto de la consola al ejecutar las dos instrucciones.\n\nAntes de ejecutar la primera instrucción, la consola está vacía.\nDespués de ejecutar la instrucción que escribe Lado, se lee Lado.\nDespués de ejecutar la instrucción que añade Norte, se lee LadoNorte."
         },
         {
           "type": "paragraph",
@@ -171,12 +171,12 @@
             "<<",
             "\"Carga lista\""
           ],
-          "reviewFeedback": "Distingue la operación que envía datos al flujo de salida del dato que debe enviarse. Comprueba qué caracteres forman parte del mensaje y cuáles delimitan el literal en el código; los dos huecos tienen funciones distintas.",
-          "explanation": "El primer hueco contiene `<<`, el operador que inserta el dato en `std::cout`. El segundo contiene el literal `\"Carga lista\"`, que aporta los caracteres del mensaje. Sus comillas delimitan el texto y no aparecen en la consola (Stroustrup, 2024).\n\nLa salida es `Carga lista`, con un espacio entre las palabras. Estas instrucciones no añaden un salto de línea al mensaje."
+          "reviewFeedback": "En la instrucción de salida, localiza dónde va el operador que envía el mensaje a std::cout y dónde van las palabras del mensaje. ¿Qué signos necesitas en el código para indicar dónde empieza y termina el texto del literal?",
+          "explanation": "En el primer hueco va el operador <<, que envía el contenido del literal a std::cout. En el segundo hueco va el literal \"Carga lista\". Las comillas marcan el principio y el final del literal en el código. La consola muestra Carga lista, con el espacio entre las palabras y sin salto de línea al final (Stroustrup, 2024)."
         },
         {
           "type": "paragraph",
-          "text": "Las instrucciones separadas y la instrucción encadenada pueden escribir el mismo mensaje. Para compararlas, sigue las partes en su orden y conserva los espacios de los literales. Un cambio en la organización del código puede conservar el texto producido."
+          "text": "Si una instrucción escribe Sala, otra escribe un espacio y otra escribe Central, en la consola aparece Sala Central. Una sola instrucción con varios operadores << puede escribir esos mismos tres textos en el mismo orden. Para comprobar si la salida coincide, compara los caracteres que se escriben en la consola, incluido el espacio."
         }
       ]
     },
@@ -253,9 +253,9 @@
         {
           "type": "multiple_choice",
           "id": "fuente_vs_salida",
-          "question": "Dos instrucciones aparecen en líneas distintas del código, sin \\n en sus textos. ¿Qué asegura eso sobre la salida?",
+          "question": "Las dos instrucciones de salida están en renglones distintos del código. Ninguno de sus literales contiene \\n. ¿El cambio de renglón entre las instrucciones hace que el segundo mensaje empiece en una línea nueva de la consola?",
           "options": [
-            "No asegura un salto: la salida depende de los caracteres insertados.",
+            "El segundo mensaje sigue en el mismo renglón de la consola. Para empezar otro renglón, el programa tendría que escribir un salto de línea.",
             "Que cada texto aparecerá en una línea diferente.",
             "Que el programa no puede compilar."
           ],
@@ -436,7 +436,7 @@
           "answers": [
             "Zona B"
           ],
-          "explanation": "La primera línea empieza con // y es un comentario. No muestra nada. La instrucción de la línea siguiente escribe Zona B, incluido el espacio dentro del literal. El texto del comentario no se añade a ese mensaje."
+          "explanation": "Dentro de main, el renglón que empieza con // contiene un comentario. El programa empieza a escribir en la consola cuando ejecuta la instrucción con std::cout en el renglón siguiente. Esa instrucción muestra Zona B con el espacio que contiene el literal."
         },
         {
           "type": "paragraph",
@@ -571,7 +571,7 @@
         {
           "type": "output_prediction",
           "id": "prediccion_informe_inicial",
-          "question": "Predice la salida del programa mostrado. Escribe sus dos líneas, con el espacio dentro del segundo renglón. No añadas un salto al final.",
+          "question": "Escribe las dos líneas de la salida del programa en el campo de respuesta. Conserva el espacio entre las dos palabras de la segunda línea de la salida. Termina la respuesta después de la última palabra.",
           "language": "cpp",
           "code": "#include <iostream>\n\nint main() {\n    std::cout << \"Resumen\\nZona Oeste\";\n\n    return 0;\n}\n",
           "answers": [
@@ -579,7 +579,7 @@
           ],
           "outputComparison": "exact",
           "explanation": "La instrucción escribe Resumen, envía el salto indicado por \\n y escribe Zona Oeste en la segunda línea. Un solo literal puede contener varias líneas de salida. El espacio entre Zona y Oeste también pertenece a ese literal.",
-          "reviewFeedback": "Distingue el salto indicado dentro del literal de los cambios de línea del archivo. Revisa también cuáles de sus espacios pertenecen al mensaje."
+          "reviewFeedback": "Observa dónde aparece \\n dentro del literal. Al llegar a ese punto del mensaje, pulsa Enter en el campo de respuesta. Revisa qué palabras del literal tienen un espacio entre ellas."
         }
       ]
     },
@@ -674,7 +674,7 @@
         },
         {
           "type": "heading",
-          "text": "Qué corrige el orden y qué recupera el comentario"
+          "text": "Cómo se corrigió el orden de los mensajes y se volvió a mostrar la carpeta"
         },
         {
           "type": "code",
@@ -683,7 +683,7 @@
         },
         {
           "type": "paragraph",
-          "text": "La instrucción que muestra Ficha ahora va primero. Su salto deja preparada la línea del nombre. La instrucción de la carpeta ya no tiene // delante y vuelve a ejecutarse. Los escapes dentro de sus literales siguen produciendo las comillas y la barra visibles; no era necesario cambiarlos."
+          "text": "Al ejecutar la primera instrucción con std::cout, aparece Ficha en la consola. El \\n que sigue a esa palabra hace que el nombre aparezca en la línea siguiente. En la instrucción del nombre, cada \\\" representa una comilla visible. Después del nombre, otro \\n inicia la línea de la carpeta. Al quitar // del comienzo de la instrucción que muestra la carpeta, esa instrucción vuelve a ejecutarse. Dentro de su literal, \\\\ representa la barra visible de Zona\\A."
         },
         {
           "type": "paragraph",
@@ -2573,6 +2573,57 @@
         "id": "p1u1l3_referencia_reparacion",
         "beforeSha256": "a23f2a2322c68a17a4674b7af6539785380011a49ef7c7585564953200b3c27e",
         "afterSha256": "6aab0e0f1bec892372983d74c01322ca1bfaf6d76d19db5782b8b939e12a5e5c"
+      },
+      {
+        "id": "p1u1l3_estados_dos",
+        "beforeSha256": "b2af064d6309e31f31472a62c1bf87f2935dfe90375a99495a5fb6b6f11fbbf7",
+        "afterSha256": "fcae9a0893e15f9e6425b4f0ea5da7676a3ff7fa856d1d8e085cd3cd91b56b9a"
+      },
+      {
+        "id": "p1u1l3_mismo_resultado",
+        "beforeSha256": "68ec583d198bd3fd69ab4b5f20c0b1d2d5f13b8bf17b1c5788a93c22c3559298",
+        "afterSha256": "d0dff4da97c8295d0e7b6d74f3cde94e185a29a51decb02bbafd7d894c439cf4"
+      },
+      {
+        "id": "p1u1l3_comparar_reparacion",
+        "beforeSha256": "c045200837f24e0520903282abbad034b777afb931208fcb44f38a5525ebe2a7",
+        "afterSha256": "db39527af846ed9560e51346c0bea1bfb17de1fe985b2e32492613fe100981df"
+      },
+      {
+        "id": "p1u1l3_razonar_reparacion",
+        "beforeSha256": "5bef7f9de79e2771ba826061cb973b2cc72914620a9ae85a34b4c1f4792c09e6",
+        "afterSha256": "19e2a23c1f92c447d0b26dd7f19d528fa3b06f94b6b8aa9eebc3b55eb757f308"
+      },
+      {
+        "id": "block_0001_0006",
+        "beforeSha256": "7365cf50e92cf2bf0185356f36638fd69fe8a734cbc6d5e78dad036f9ad4f248",
+        "afterSha256": "fee94af5dd472ee9cc134a159e1b1636a282522e4879125e3516215b94bc628b"
+      },
+      {
+        "id": "block_0003_0003",
+        "beforeSha256": "8d42c6614a60e35db5eb5eb7dfa6061d877f65ccf77fb12c9fae909e38e00d2c",
+        "afterSha256": "ef75473c366dcc702c266429d63c16c8b5cdbfa7e3533f4e42d73be5bc583d8e"
+      },
+      {
+        "id": "block_0006_0003",
+        "beforeSha256": "5a2bff61ab8430d85fe3d7d2414ac2256f4a06d874a9c664115be8a256be9977",
+        "afterSha256": "56827ae57422bd8463080309681c206655fcc98e26ddde5a9773e6349b553eab",
+        "reviewPaths": [
+          "/reviewFeedback"
+        ]
+      },
+      {
+        "id": "block_0004_0001",
+        "beforeSha256": "56fad12f0ba83610d223d0ecd872aed0cd855c9ef0e0a0f7caf0f8874a4e04cf",
+        "afterSha256": "31666229bce66e86d857daf7b45812736bde3cd8496bdb5c3dee922d02c9791f",
+        "reviewPaths": [
+          "/reviewFeedback"
+        ]
+      },
+      {
+        "id": "block_0001_0006",
+        "beforeSha256": "fee94af5dd472ee9cc134a159e1b1636a282522e4879125e3516215b94bc628b",
+        "afterSha256": "e91eb6720807730b6223b6da90bf8b673b60f87fdc0153271a68e5a37db45203"
       }
     ],
     "retired": [
@@ -6067,6 +6118,38 @@
           "code": "#include <iostream>\n\nint main() {\n    // La primera línea debe ser Ficha.\n    std::cout << \"Ficha\\n\";\n    std::cout << \"Nombre: \\\"Mara\\\"\\n\";\n    std::cout << \"Carpeta: Zona\\\\A\";\n    return 0;\n}\n"
         }
       }
+    ],
+    "choiceRevisions": [
+      {
+        "id": "block_0001_0006",
+        "block": {
+          "type": "multiple_choice",
+          "id": "fuente_vs_salida",
+          "question": "Las dos instrucciones de salida están en renglones distintos del código. Ninguno de sus literales contiene \\n. ¿El cambio de renglón entre las instrucciones hace que el segundo mensaje empiece en una línea nueva de la consola?",
+          "options": [
+            "No asegura un salto: la salida depende de los caracteres insertados.",
+            "Que cada texto aparecerá en una línea diferente.",
+            "Que el programa no puede compilar."
+          ],
+          "correctIndex": 0,
+          "explanation": "Poner las instrucciones en renglones distintos sólo organiza el archivo. Las instrucciones de salida envían los caracteres de sus literales. Para obtener líneas diferentes en la consola, alguna de ellas debe enviar el salto correspondiente."
+        },
+        "optionIndex": 0,
+        "replacement": "El segundo mensaje sigue en el mismo renglón de la consola. Para empezar otro renglón, el programa tendría que escribir un salto de línea.",
+        "semanticBefore": {
+          "block": "block_0001_0006",
+          "path": "/options/0",
+          "sourceSha256": "d713ac0236197a436b8f8103a5c7d5d6ce2ee156aa328a6d27358e8af370f95f",
+          "spans": []
+        },
+        "semanticAfter": {
+          "block": "block_0001_0006",
+          "path": "/options/0",
+          "sourceSha256": "b146785a0998031d1e765acc186107dbea676ae081fbc20f2c6e4b36f9b26d00",
+          "spans": []
+        },
+        "semanticRootBefore": true
+      }
     ]
   },
   "activityAfter": [
@@ -6263,18 +6346,11 @@
       {
         "block": "block_0001_0006",
         "path": "/question",
-        "sourceSha256": "c28abc9b5234cfad0678f112e863d3675dc02e388520c37ee0047c81bdb86d14",
+        "sourceSha256": "ae9127702d8e713c1eab646ee7074de4274b38b9f7b4941824175257e2a8e2ee",
         "spans": [
           {
-            "start": 0,
-            "end": 3,
-            "text": "Dos",
-            "role": "data",
-            "reading": "natural"
-          },
-          {
-            "start": 63,
-            "end": 65,
+            "start": 107,
+            "end": 109,
             "text": "\\n",
             "role": "cpp",
             "reading": "technical"
@@ -6290,7 +6366,7 @@
       {
         "block": "block_0001_0006",
         "path": "/options/0",
-        "sourceSha256": "d713ac0236197a436b8f8103a5c7d5d6ce2ee156aa328a6d27358e8af370f95f",
+        "sourceSha256": "b146785a0998031d1e765acc186107dbea676ae081fbc20f2c6e4b36f9b26d00",
         "spans": []
       },
       {
@@ -6456,18 +6532,32 @@
       {
         "block": "block_0003_0003",
         "path": "/explanation",
-        "sourceSha256": "41babc752eadc55b557f9493af4d483cb403db69969af3c766ce2546745fffb6",
+        "sourceSha256": "512d070ebad4932bc82db53c5bf36943c93fb3591cff76ca651119bfe269dd15",
         "spans": [
           {
-            "start": 29,
-            "end": 31,
+            "start": 10,
+            "end": 14,
+            "text": "main",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 43,
+            "end": 45,
             "text": "//",
             "role": "cpp",
             "reading": "technical"
           },
           {
-            "start": 114,
-            "end": 120,
+            "start": 149,
+            "end": 158,
+            "text": "std::cout",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 208,
+            "end": 214,
             "text": "Zona B",
             "role": "output",
             "reading": "natural"
@@ -6636,55 +6726,41 @@
       {
         "block": "block_0004_0001",
         "path": "/explanation",
-        "sourceSha256": "745e7f84b90234c0926cf061d43da90b04c70acc0b911e30ed8eb249e9b80ee5",
+        "sourceSha256": "4f537ad0049813c8c5e1ccf07534b2e6b350ec3a3b8cc1bd096bbc0ae3182b2b",
         "spans": [
           {
-            "start": 26,
-            "end": 28,
+            "start": 34,
+            "end": 36,
             "text": "<<",
             "role": "cpp",
             "reading": "technical"
           },
           {
-            "start": 67,
-            "end": 76,
+            "start": 75,
+            "end": 84,
             "text": "std::cout",
             "role": "cpp",
             "reading": "technical"
           },
           {
-            "start": 111,
-            "end": 124,
+            "start": 120,
+            "end": 133,
             "text": "\"Carga lista\"",
-            "role": "string",
-            "reading": "natural"
+            "role": "cpp",
+            "reading": "technical"
           },
           {
-            "start": 226,
-            "end": 244,
-            "text": "(Stroustrup, 2024)",
-            "role": "citation",
-            "reading": "natural"
-          },
-          {
-            "start": 261,
-            "end": 272,
+            "start": 224,
+            "end": 235,
             "text": "Carga lista",
             "role": "output",
             "reading": "natural"
           },
           {
-            "start": 279,
-            "end": 281,
-            "text": "un",
-            "role": "data",
-            "reading": "natural"
-          },
-          {
-            "start": 340,
-            "end": 342,
-            "text": "un",
-            "role": "data",
+            "start": 301,
+            "end": 319,
+            "text": "(Stroustrup, 2024)",
+            "role": "citation",
             "reading": "natural"
           }
         ]
@@ -6692,14 +6768,14 @@
       {
         "block": "block_0004_0001",
         "path": "/reviewFeedback",
-        "sourceSha256": "1569e4ba0b819627414782482fe80a0ce7c25ff98f2d9aaff8ef2c7dbc5099a1",
+        "sourceSha256": "0b05cc1b0ed6b57157e0d32ea37daf4ec212bb4bbf1ba40d6c1a5d9742ee68a2",
         "spans": [
           {
-            "start": 184,
-            "end": 187,
-            "text": "dos",
-            "role": "data",
-            "reading": "natural"
+            "start": 82,
+            "end": 91,
+            "text": "std::cout",
+            "role": "cpp",
+            "reading": "technical"
           }
         ]
       },
@@ -6781,11 +6857,11 @@
       {
         "block": "block_0006_0003",
         "path": "/question",
-        "sourceSha256": "aac3dd2c9535276b6513a0adc2736bf5a5c84bc956dfa180fda9543813c524cd",
+        "sourceSha256": "8f4efdc2ce966980b92b958123ba11759097d418066447a77361ffc928082ab2",
         "spans": [
           {
-            "start": 53,
-            "end": 56,
+            "start": 12,
+            "end": 15,
             "text": "dos",
             "role": "data",
             "reading": "natural"
@@ -6837,8 +6913,16 @@
       {
         "block": "block_0006_0003",
         "path": "/reviewFeedback",
-        "sourceSha256": "6bb3219d91b9fa57463d2249af70c8de3defd7571089b7697da57471f22b2a3a",
-        "spans": []
+        "sourceSha256": "4475a4ebbcf24843f0b499b1731d8b9e5062be06a723b458f7992cdb8a2df753",
+        "spans": [
+          {
+            "start": 22,
+            "end": 24,
+            "text": "\\n",
+            "role": "cpp",
+            "reading": "technical"
+          }
+        ]
       },
       {
         "block": "block_0007_0000",
@@ -6883,18 +6967,32 @@
       {
         "block": "p1u1l3_estados_dos",
         "path": "/text",
-        "sourceSha256": "3b0e8f74b47954805753d739c06bf363790eee2411edf487226f0852c7e48879",
+        "sourceSha256": "8b60b4b7b96930aec09dcbb03162594f9abb2af832bf44f271b0cb7a41d3aabe",
         "spans": [
           {
-            "start": 74,
-            "end": 78,
+            "start": 182,
+            "end": 186,
             "text": "Lado",
             "role": "output",
             "reading": "natural"
           },
           {
-            "start": 102,
-            "end": 111,
+            "start": 195,
+            "end": 199,
+            "text": "Lado",
+            "role": "output",
+            "reading": "natural"
+          },
+          {
+            "start": 246,
+            "end": 251,
+            "text": "Norte",
+            "role": "output",
+            "reading": "natural"
+          },
+          {
+            "start": 260,
+            "end": 269,
             "text": "LadoNorte",
             "role": "output",
             "reading": "natural"
@@ -7337,8 +7435,37 @@
       {
         "block": "p1u1l3_mismo_resultado",
         "path": "/text",
-        "sourceSha256": "85682f5d9f935889e5043395ad29dbc3a1ec7e7e143fb7d0799d16e7fac2fff0",
-        "spans": []
+        "sourceSha256": "8a666eb234d90edb5be1e6057725d09427db22c3afbe004e7c7dd764a50c1747",
+        "spans": [
+          {
+            "start": 27,
+            "end": 31,
+            "text": "Sala",
+            "role": "output",
+            "reading": "natural"
+          },
+          {
+            "start": 72,
+            "end": 79,
+            "text": "Central",
+            "role": "output",
+            "reading": "natural"
+          },
+          {
+            "start": 103,
+            "end": 115,
+            "text": "Sala Central",
+            "role": "output",
+            "reading": "natural"
+          },
+          {
+            "start": 160,
+            "end": 162,
+            "text": "<<",
+            "role": "cpp",
+            "reading": "technical"
+          }
+        ]
       },
       {
         "block": "p1u1l3_explicar_salto",
@@ -8396,27 +8523,69 @@
       {
         "block": "p1u1l3_comparar_reparacion",
         "path": "/text",
-        "sourceSha256": "2bb57ac61bc2b9ea5f19c334b7848005b3b04dbbb193e7989d50ffdcb882392e",
+        "sourceSha256": "328f9bedef4f661fc46cb7842606eeb90f82d8d899d34cd9f4f10db79da8bc45",
         "spans": []
       },
       {
         "block": "p1u1l3_razonar_reparacion",
         "path": "/text",
-        "sourceSha256": "e31be25e2c36e75a4ccc6fb91d38d034a6d7f5c8dfbd7127495bcc726feb68df",
+        "sourceSha256": "bade081f1a991f6dd6b963cea2e58ffe2d9b74357e4ef6f57b28f6c0d58b65d0",
         "spans": [
           {
-            "start": 27,
-            "end": 32,
+            "start": 39,
+            "end": 48,
+            "text": "std::cout",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 58,
+            "end": 63,
             "text": "Ficha",
             "role": "output",
             "reading": "natural"
           },
           {
-            "start": 137,
-            "end": 139,
+            "start": 82,
+            "end": 84,
+            "text": "\\n",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 195,
+            "end": 197,
+            "text": "\\\"",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 255,
+            "end": 257,
+            "text": "\\n",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 299,
+            "end": 301,
             "text": "//",
             "role": "cpp",
             "reading": "technical"
+          },
+          {
+            "start": 416,
+            "end": 418,
+            "text": "\\\\",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 450,
+            "end": 456,
+            "text": "Zona\\A",
+            "role": "output",
+            "reading": "natural"
           }
         ]
       },

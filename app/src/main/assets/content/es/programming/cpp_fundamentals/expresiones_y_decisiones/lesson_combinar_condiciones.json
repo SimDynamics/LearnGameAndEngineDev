@@ -81,6 +81,10 @@
           "explanation": "&& exige los dos requisitos y || admite al menos uno. Como la persona conoce la clave pero no lleva tarjeta, la consola muestra 0 1. and y or son formas equivalentes de escribir esos operadores."
         },
         {
+          "type": "note",
+          "text": "En el ejercicio de la clave y la tarjeta, ambos guarda false. Conocer la clave cumple uno de los requisitos, pero falta la tarjeta. En cambio, alguno guarda true porque basta con cumplir uno de los dos requisitos y la persona conoce la clave."
+        },
+        {
           "type": "multiple_choice",
           "question": "En A || B, tanto A como B valen true. ¿Cuál es el resultado?",
           "options": [
@@ -98,10 +102,6 @@
         {
           "type": "heading",
           "text": "Negar una condición y agrupar una regla"
-        },
-        {
-          "type": "note",
-          "text": "En el ejercicio anterior, la persona conoce la clave y no lleva la tarjeta. ambos guarda false porque falta un requisito. alguno guarda true porque basta con la clave."
         },
         {
           "type": "paragraph",
@@ -142,7 +142,7 @@
         },
         {
           "type": "paragraph",
-          "text": "Para entrar a la sala, la persona debe presentar un pase, una invitación o ambos. El pase y la invitación son las dos credenciales que acepta el programa. En cualquier caso, la sala tiene que estar abierta.\n\nEl programa guarda tres enteros que valen 0 o 1. En pase e invitacion, 1 indica que la persona tiene esa credencial y 0 indica que no la tiene. En apertura, 1 indica que la sala está abierta y 0 indica que está cerrada. La comparación pase != 0 obtiene el valor lógico que se guarda en tiene_pase. El programa hace lo mismo para la invitación y la apertura.\n\nCon un pase y la sala cerrada, el programa inicial muestra Entrada permitida. Revisa cómo se agrupan la «o» y la «y» al calcular permitido. Corrige esa expresión para exigir que la sala esté abierta tanto con pase como con invitación. Conserva los tres datos y el formato de salida. La segunda línea muestra pase, invitación y apertura en ese orden.\n\nSalida esperada\nEntrada denegada\nDatos: 1 0 0\n\nPulsa «Compilar, ejecutar y comprobar». Puedes añadir un salto de línea después del segundo renglón."
+          "text": "Para entrar a la sala, la persona debe presentar un pase, una invitación o ambos. El pase y la invitación son las dos credenciales que acepta el programa. En cualquier caso, la sala tiene que estar abierta.\n\nEl programa guarda tres enteros que valen 0 o 1. En pase e invitacion, 1 indica que la persona tiene esa credencial y 0 indica que no la tiene. En apertura, 1 indica que la sala está abierta y 0 indica que está cerrada. La declaración de tiene_pase guarda el resultado de pase != 0, que indica si la persona tiene pase. La declaración de tiene_invitacion guarda el resultado de invitacion != 0, que indica si la persona tiene invitación. La declaración de sala_abierta guarda el resultado de apertura != 0, que indica si la sala está abierta.\n\nCon un pase y la sala cerrada, el programa inicial muestra Entrada permitida. Revisa cómo se agrupan la «o» y la «y» al calcular permitido. Corrige esa expresión para exigir que la sala esté abierta tanto con pase como con invitación. Conserva los tres datos y el formato de salida. El segundo renglón de la salida muestra los valores de pase, invitacion y apertura, en ese orden.\n\nSalida esperada\nEntrada denegada\nDatos: 1 0 0\n\nPulsa «Compilar, ejecutar y comprobar». Puedes añadir un salto de línea después del segundo renglón de la salida."
         },
         {
           "type": "cpp_compiler",
@@ -160,15 +160,37 @@
           }
         },
         {
+          "type": "heading",
+          "text": "Comparar la reparación con la regla"
+        },
+        {
+          "type": "paragraph",
+          "text": "Con los datos 1 0 0, la persona tiene pase y no tiene invitación. Por eso tiene_pase || tiene_invitacion da true. La sala está cerrada, así que sala_abierta vale false. Al combinar ambas respuestas con &&, permitido guarda false y el programa muestra Entrada denegada."
+        },
+        {
+          "type": "code",
+          "language": "cpp",
+          "code": "#include <iostream>\n\nint main() {\n    int pase = 1;\n    int invitacion = 0;\n    int apertura = 0;\n\n    const bool tiene_pase = pase != 0;\n    const bool tiene_invitacion = invitacion != 0;\n    const bool sala_abierta = apertura != 0;\n\n    const bool permitido = (tiene_pase || tiene_invitacion) && sala_abierta;\n\n    if (permitido) {\n        std::cout << \"Entrada permitida\";\n    } else {\n        std::cout << \"Entrada denegada\";\n    }\n\n    std::cout << \"\\nDatos: \" << pase << ' ' << invitacion << ' ' << apertura;\n\n    return 0;\n}\n"
+        },
+        {
+          "type": "paragraph",
+          "text": "Al quitar los paréntesis que agrupan las dos credenciales, && une solo tiene_invitacion con sala_abierta. La condición del pase queda como una alternativa que puede cumplirse con la sala cerrada. La reparación aplica el requisito de apertura a las dos credenciales.",
+          "emphasis": [
+            {
+              "text": "requisito de apertura"
+            }
+          ]
+        },
+        {
           "type": "multiple_choice",
           "question": "La persona tiene pase e invitación. La sala está cerrada, así que sala_abierta vale false. ¿Qué decisión exige la regla?",
           "options": [
             "Ejecutar las dos ramas.",
-            "Denegar, porque la apertura es un requisito común.",
+            "Denegar la entrada. La sala debe estar abierta incluso si la persona tiene las dos credenciales.",
             "Permitir, porque ya hay dos credenciales."
           ],
           "correctIndex": 1,
-          "explanation": "Las dos credenciales cumplen la alternativa. Como la sala está cerrada, la condición de apertura vale false. La regla deniega la entrada."
+          "explanation": "Tener pase e invitación cumple el requisito de presentar al menos una credencial. La sala también tiene que estar abierta. Como sala_abierta vale false, la condición que combina los dos requisitos con && da false y el programa muestra Entrada denegada."
         },
         {
           "type": "paragraph",
@@ -209,15 +231,19 @@
         },
         {
           "type": "note",
-          "text": "Para distinguir dos reglas, busca una entrada con la que den respuestas distintas. Así puedes detectar un error aunque otros casos pasen."
-        },
+          "text": "Para averiguar si un programa exige por error las dos credenciales, elige una persona que tenga solo invitación y una sala abierta. Según la regla del ejercicio, debe aparecer Entrada permitida. El programa que exige las dos credenciales mostrará Entrada denegada. Una prueba con las dos credenciales y la sala abierta daría el mismo mensaje de permiso en ambas versiones."
+        }
+      ]
+    },
+    {
+      "blocks": [
         {
           "type": "heading",
           "text": "Programar la decisión con datos de entrada"
         },
         {
           "type": "paragraph",
-          "text": "Escribe un programa que lea tres enteros del campo «Entrada» en este orden.\n\nPase. 1 si la persona tiene pase y 0 si no lo tiene.\nInvitación. 1 si tiene invitación y 0 si no la tiene.\nApertura. 1 si la sala está abierta y 0 si está cerrada.\n\nMuestra Entrada permitida si la sala está abierta y la persona tiene al menos una de las dos credenciales. En cualquier otro caso, muestra Entrada denegada. Escribe solo ese mensaje.\n\nEntrada\n1 0 0\n\nSalida esperada\nEntrada denegada\n\nPulsa «Compilar, ejecutar y comprobar». Esta primera comprobación correcta permite avanzar. Puedes añadir un salto de línea después del mensaje."
+          "text": "Escribe un programa que lea tres enteros del campo «Entrada» en este orden.\n\nPase. 1 si la persona tiene pase y 0 si no lo tiene.\nInvitación. 1 si tiene invitación y 0 si no la tiene.\nApertura. 1 si la sala está abierta y 0 si está cerrada.\n\nMuestra Entrada permitida si la sala está abierta y la persona tiene al menos una de las dos credenciales. En cualquier otro caso, muestra Entrada denegada. Escribe solo ese mensaje.\n\nEntrada\n1 0 0\n\nSalida esperada\nEntrada denegada\n\nPara completar el ejercicio, deja 1 0 0 en el campo «Entrada» y pulsa «Compilar, ejecutar y comprobar». El programa debe producir la salida esperada para esos datos. Puedes añadir un salto de línea después del mensaje."
         },
         {
           "type": "cpp_compiler",
@@ -286,43 +312,6 @@
           }
         },
         {
-          "type": "multiple_choice",
-          "question": "Sospechas que un programa exige siempre un pase, incluso si la sala está abierta. ¿Qué entrada permite comprobar ese error? Lee los datos en el orden pase, invitación y apertura.",
-          "options": [
-            "1 0 1",
-            "0 1 1",
-            "1 1 1"
-          ],
-          "correctIndex": 1,
-          "explanation": "Con 0 1 1, la sala está abierta y la persona tiene invitación, pero no pase. La regla correcta muestra Entrada permitida. Un programa que exige pase muestra Entrada denegada."
-        }
-      ]
-    },
-    {
-      "blocks": [
-        {
-          "type": "heading",
-          "text": "Comparar la reparación con la regla"
-        },
-        {
-          "type": "paragraph",
-          "text": "Con los datos 1 0 0, la alternativa de las credenciales da true porque hay pase. La apertura vale false. Al combinar ambas respuestas con &&, permitido guarda false y el programa muestra Entrada denegada."
-        },
-        {
-          "type": "code",
-          "language": "cpp",
-          "code": "#include <iostream>\n\nint main() {\n    int pase = 1;\n    int invitacion = 0;\n    int apertura = 0;\n\n    const bool tiene_pase = pase != 0;\n    const bool tiene_invitacion = invitacion != 0;\n    const bool sala_abierta = apertura != 0;\n\n    const bool permitido = (tiene_pase || tiene_invitacion) && sala_abierta;\n\n    if (permitido) {\n        std::cout << \"Entrada permitida\";\n    } else {\n        std::cout << \"Entrada denegada\";\n    }\n\n    std::cout << \"\\nDatos: \" << pase << ' ' << invitacion << ' ' << apertura;\n\n    return 0;\n}\n"
-        },
-        {
-          "type": "paragraph",
-          "text": "Al quitar los paréntesis que agrupan las dos credenciales, && une solo tiene_invitacion con sala_abierta. La condición del pase queda como una alternativa que puede cumplirse con la sala cerrada. La reparación aplica el requisito de apertura a las dos credenciales.",
-          "emphasis": [
-            {
-              "text": "requisito de apertura"
-            }
-          ]
-        },
-        {
           "type": "heading",
           "text": "Revisar el programa que lee las tres condiciones"
         },
@@ -345,7 +334,18 @@
         },
         {
           "type": "paragraph",
-          "text": "Puedes probar las otras siete combinaciones en el campo «Entrada» del editor de construcción.\n\nEntrada\n0 0 0\nSalida esperada\nEntrada denegada\n\nEntrada\n0 0 1\nSalida esperada\nEntrada denegada\n\nEntrada\n0 1 0\nSalida esperada\nEntrada denegada\n\nEntrada\n0 1 1\nSalida esperada\nEntrada permitida\n\nEntrada\n1 0 1\nSalida esperada\nEntrada permitida\n\nEntrada\n1 1 0\nSalida esperada\nEntrada denegada\n\nEntrada\n1 1 1\nSalida esperada\nEntrada permitida"
+          "text": "Pruebas opcionales en este editor\nPara cada prueba, escribe los datos indicados en el campo «Entrada», pulsa «Compilar, ejecutar y comprobar» y compara los renglones que muestra la consola con la salida esperada para esa entrada.\n\nEntrada\n0 0 0\nSalida esperada\nEntrada denegada\n\nEntrada\n0 0 1\nSalida esperada\nEntrada denegada\n\nEntrada\n0 1 0\nSalida esperada\nEntrada denegada\n\nEntrada\n0 1 1\nSalida esperada\nEntrada permitida\n\nEntrada\n1 0 1\nSalida esperada\nEntrada permitida\n\nEntrada\n1 1 0\nSalida esperada\nEntrada denegada\n\nEntrada\n1 1 1\nSalida esperada\nEntrada permitida"
+        },
+        {
+          "type": "multiple_choice",
+          "question": "Con la sala abierta, la regla permite entrar con un pase, con una invitación o con ambos. Sospechas que el programa deniega la entrada a quien solo presenta una invitación. Cada opción da tres números en el orden pase, invitación y apertura. En cada posición, 1 significa que la condición se cumple y 0 que no se cumple. ¿Qué entrada permite detectar ese error?",
+          "options": [
+            "1 0 1",
+            "0 1 1",
+            "1 1 1"
+          ],
+          "correctIndex": 1,
+          "explanation": "Con 0 1 1, la sala está abierta y la persona tiene invitación, pero no pase. La regla correcta muestra Entrada permitida. Un programa que exige pase muestra Entrada denegada."
         },
         {
           "type": "note",
@@ -548,6 +548,7 @@
           "block_0001_0001",
           "block_0001_0002",
           "block_0001_0003",
+          "block_0002_0001",
           "block_0001_0004"
         ]
       },
@@ -555,7 +556,6 @@
         "id": "page_0002",
         "blocks": [
           "block_0002_0000",
-          "block_0002_0001",
           "block_0002_0002",
           "block_0002_0003",
           "block_0002_0004",
@@ -568,6 +568,10 @@
           "block_0003_0000",
           "block_0003_0001",
           "p1u3l5_reparar_parentesis",
+          "block_0005_0000",
+          "block_0005_0001",
+          "p1u3l5_ejemplo_reparacion",
+          "block_0005_0003",
           "block_0003_0003",
           "block_0003_0004"
         ]
@@ -579,24 +583,20 @@
           "block_0004_0001",
           "block_0004_0002",
           "block_0004_0003",
-          "block_0004_0004",
-          "block_0003_0005",
-          "block_0003_0006",
-          "p1u3l5_construir_acceso",
-          "p1u3l5_distinguir_invitacion"
+          "block_0004_0004"
         ]
       },
       {
         "id": "page_0005",
         "blocks": [
-          "block_0005_0000",
-          "block_0005_0001",
-          "p1u3l5_ejemplo_reparacion",
-          "block_0005_0003",
+          "block_0003_0005",
+          "block_0003_0006",
+          "p1u3l5_construir_acceso",
           "combinaciones_faltantes_titulo",
           "combinaciones_faltantes_consigna",
           "p1u3l5_ejemplo_acceso",
           "p1u3l5_probar_combinaciones",
+          "p1u3l5_distinguir_invitacion",
           "block_0005_0004"
         ]
       }
@@ -1477,6 +1477,51 @@
         "id": "p1u3l5_ejemplo_acceso",
         "beforeSha256": "8d9d22359278876fd1f0f00bbd0616415dfbf92aa88c197c9a1efd85e5866a92",
         "afterSha256": "bab44e4ff3bf941d5f78f25b608df1137aed69b6fed8e0d14e54afaf5c028a15"
+      },
+      {
+        "id": "block_0002_0001",
+        "beforeSha256": "2eedfa95e2c78156b12748ce890bb9be46a73171fdf3ab92d74dbfa317b32c6c",
+        "afterSha256": "c1502d5e634dcf83ca8ce9fe741242c64ad82cd6619f8d4fbdb9c066a40a3a18"
+      },
+      {
+        "id": "block_0003_0001",
+        "beforeSha256": "9538b2790d88ad5504da8025cdb068602cd7e03585e362e476454c049617616f",
+        "afterSha256": "b32872c119b9e39f5bace6101df9f6a5da2bdd4007747a6bf92ae96bf6c48de1"
+      },
+      {
+        "id": "block_0004_0004",
+        "beforeSha256": "65022cc9311472755704638e8890aafa024c37835c14708ca3e437ad273a215b",
+        "afterSha256": "44307cc02ab2892647a44955e31a1fad66783b580afbc39e6832cc4cf06e3bb7"
+      },
+      {
+        "id": "block_0003_0006",
+        "beforeSha256": "e76f683aba72530d8256d8ac6d01cf12b6f93eb7bc4b91ca60014c82eeca7118",
+        "afterSha256": "60998d279f8123fc5e7a25e3596cf35c221d01c4b6e1c5b3bd33757280415bcb"
+      },
+      {
+        "id": "block_0005_0001",
+        "beforeSha256": "6913f3322c0bf6b93cba045409a0ba93334399c828a11717e8af13f91d827354",
+        "afterSha256": "57f0b271d233e0988079cedf9ea19b1d4f3a0f23f4104367e2805bf8fa9c3c29"
+      },
+      {
+        "id": "p1u3l5_probar_combinaciones",
+        "beforeSha256": "a3ca518a27f1158a21f9042e60797d3e1ab039ce744b4db92e9e00f245b6d788",
+        "afterSha256": "374d03303e4d04d207e9318c43a77eb5cdeeb8960cfd87d2a222d0d5442ec6be"
+      },
+      {
+        "id": "block_0003_0003",
+        "beforeSha256": "ab044b8c401007dcbfbaeeb0bdf39ebc9b94e24df713baaf4f027ae5a65067c9",
+        "afterSha256": "935ffcc12211b542c9925339380cae10d8801fb2b9722effb68567746693f9f5"
+      },
+      {
+        "id": "block_0003_0003",
+        "beforeSha256": "935ffcc12211b542c9925339380cae10d8801fb2b9722effb68567746693f9f5",
+        "afterSha256": "f132aa7b602e0150ac39f7a73c908c9112f5dbebe086253db7b0291f231dfe47"
+      },
+      {
+        "id": "p1u3l5_distinguir_invitacion",
+        "beforeSha256": "2fd708ff344cf120777ed8c88b804107b85b52c7d5463de4da0c05d172e15e8b",
+        "afterSha256": "51844a606fe09b66e7359ab2adb1e0e47fa3b7af01dda5399423f92f7300626f"
       }
     ],
     "sourceFormatRevisions": [
@@ -3863,6 +3908,37 @@
           "sha256": "a0e910f4bd98ff0f83de027113ede297cd4ea7b0cfaa60bd05d4cf60c619d0f9"
         }
       }
+    ],
+    "choiceRevisions": [
+      {
+        "id": "block_0003_0003",
+        "block": {
+          "type": "multiple_choice",
+          "question": "La persona tiene pase e invitación. La sala está cerrada, así que sala_abierta vale false. ¿Qué decisión exige la regla?",
+          "options": [
+            "Ejecutar las dos ramas.",
+            "Denegar, porque la apertura es un requisito común.",
+            "Permitir, porque ya hay dos credenciales."
+          ],
+          "correctIndex": 1,
+          "explanation": "Las dos credenciales cumplen la alternativa. Como la sala está cerrada, la condición de apertura vale false. La regla deniega la entrada."
+        },
+        "optionIndex": 1,
+        "replacement": "Denegar la entrada. La sala debe estar abierta incluso si la persona tiene las dos credenciales.",
+        "semanticBefore": {
+          "block": "block_0003_0003",
+          "path": "/options/1",
+          "sourceSha256": "61fd99ce82c7982d29fa907a4ff747fde04329e57ea9ada26d8a32ed16866992",
+          "spans": []
+        },
+        "semanticAfter": {
+          "block": "block_0003_0003",
+          "path": "/options/1",
+          "sourceSha256": "aa54838843c850ef59f5785821c8bef2d4f0a262e69a9aa64178529d8078e503",
+          "spans": []
+        },
+        "semanticRootBefore": true
+      }
     ]
   },
   "compilerPuzzlesRequired": true,
@@ -4471,32 +4547,32 @@
       {
         "block": "block_0002_0001",
         "path": "/text",
-        "sourceSha256": "7b6c3498d242d7d9c1d8db62c48d5aefc29ddecd61e957c5e1eaa62d43dc73aa",
+        "sourceSha256": "083d3f7dc17ddba060de74baf45d55abaed6a620004093f0638ba373d81c9762",
         "spans": [
           {
-            "start": 76,
-            "end": 81,
+            "start": 42,
+            "end": 47,
             "text": "ambos",
             "role": "cpp",
             "reading": "technical"
           },
           {
-            "start": 89,
-            "end": 94,
+            "start": 55,
+            "end": 60,
             "text": "false",
             "role": "cpp",
             "reading": "technical"
           },
           {
-            "start": 122,
-            "end": 128,
+            "start": 143,
+            "end": 149,
             "text": "alguno",
             "role": "cpp",
             "reading": "technical"
           },
           {
-            "start": 136,
-            "end": 140,
+            "start": 157,
+            "end": 161,
             "text": "true",
             "role": "cpp",
             "reading": "technical"
@@ -4841,7 +4917,7 @@
       {
         "block": "block_0003_0001",
         "path": "/text",
-        "sourceSha256": "4ae1c9236cdd18c1adc719ac76d0e6dbeed5f4c3cd9741f72243bc178b08f7ec",
+        "sourceSha256": "e15293933f0d3263fb8d3b86ce37a0ffbfae5943cb0e8b63b6ed46d7ddc33aff",
         "spans": [
           {
             "start": 250,
@@ -4907,43 +4983,92 @@
             "reading": "natural"
           },
           {
-            "start": 443,
-            "end": 452,
-            "text": "pase != 0",
-            "role": "cpp",
-            "reading": "technical"
-          },
-          {
-            "start": 494,
-            "end": 504,
+            "start": 446,
+            "end": 456,
             "text": "tiene_pase",
             "role": "cpp",
             "reading": "technical"
           },
           {
-            "start": 626,
-            "end": 643,
+            "start": 480,
+            "end": 489,
+            "text": "pase != 0",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 546,
+            "end": 562,
+            "text": "tiene_invitacion",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 586,
+            "end": 601,
+            "text": "invitacion != 0",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 664,
+            "end": 676,
+            "text": "sala_abierta",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 700,
+            "end": 713,
+            "text": "apertura != 0",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 811,
+            "end": 828,
             "text": "Entrada permitida",
             "role": "output",
             "reading": "natural"
           },
           {
-            "start": 696,
-            "end": 705,
+            "start": 881,
+            "end": 890,
             "text": "permitido",
             "role": "cpp",
             "reading": "technical"
           },
           {
-            "start": 934,
-            "end": 950,
+            "start": 1090,
+            "end": 1094,
+            "text": "pase",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 1096,
+            "end": 1106,
+            "text": "invitacion",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 1109,
+            "end": 1117,
+            "text": "apertura",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 1150,
+            "end": 1166,
             "text": "Entrada denegada",
             "role": "output",
             "reading": "natural"
           },
           {
-            "start": 951,
-            "end": 963,
+            "start": 1167,
+            "end": 1179,
             "text": "Datos: 1 0 0",
             "role": "output",
             "reading": "natural"
@@ -4974,14 +5099,42 @@
       {
         "block": "block_0003_0003",
         "path": "/explanation",
-        "sourceSha256": "c754d9828eb7bbf117acf5a2ebf5c629486aabb91bb7a6d47bc52589ecc742a5",
+        "sourceSha256": "29bf4f6a7e5bc0bf6c78f9569814d8d8494f1ac9c9a29a095669ff16c2a30e6b",
         "spans": [
           {
-            "start": 102,
-            "end": 107,
+            "start": 128,
+            "end": 140,
+            "text": "sala_abierta",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 146,
+            "end": 151,
             "text": "false",
             "role": "cpp",
             "reading": "technical"
+          },
+          {
+            "start": 201,
+            "end": 203,
+            "text": "&&",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 207,
+            "end": 212,
+            "text": "false",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 235,
+            "end": 251,
+            "text": "Entrada denegada",
+            "role": "output",
+            "reading": "natural"
           }
         ]
       },
@@ -5002,7 +5155,7 @@
       {
         "block": "block_0003_0003",
         "path": "/options/1",
-        "sourceSha256": "61fd99ce82c7982d29fa907a4ff747fde04329e57ea9ada26d8a32ed16866992",
+        "sourceSha256": "aa54838843c850ef59f5785821c8bef2d4f0a262e69a9aa64178529d8078e503",
         "spans": []
       },
       {
@@ -5034,7 +5187,7 @@
       {
         "block": "block_0003_0006",
         "path": "/text",
-        "sourceSha256": "0b949133b10b0189115700bf702b4d9fe6e7b9c048284a80c01b22e2db67599b",
+        "sourceSha256": "12ee0431816aaf7d3daf5e5438bb82b4b3772e7a52c14aa6577df4d6c2aa7e4d",
         "spans": [
           {
             "start": 83,
@@ -5104,6 +5257,13 @@
             "end": 473,
             "text": "Entrada denegada",
             "role": "output",
+            "reading": "natural"
+          },
+          {
+            "start": 509,
+            "end": 514,
+            "text": "1 0 0",
+            "role": "data",
             "reading": "natural"
           }
         ]
@@ -5326,8 +5486,23 @@
       {
         "block": "block_0004_0004",
         "path": "/text",
-        "sourceSha256": "43b05d442c673173eb517ba890c5af1d3488c1d479413f15d68ea94b5a9ba1b9",
-        "spans": []
+        "sourceSha256": "f4b31fc033bed09c1d1dccbf57ba5c9d554e1238ae4a9d5d6a54cf43f181a3c0",
+        "spans": [
+          {
+            "start": 176,
+            "end": 193,
+            "text": "Entrada permitida",
+            "role": "output",
+            "reading": "natural"
+          },
+          {
+            "start": 247,
+            "end": 263,
+            "text": "Entrada denegada",
+            "role": "output",
+            "reading": "natural"
+          }
+        ]
       },
       {
         "block": "block_0005_0000",
@@ -5338,7 +5513,7 @@
       {
         "block": "block_0005_0001",
         "path": "/text",
-        "sourceSha256": "8696c26da703137ff2aff395abb5e75360bf3f91ab2b2ad5099e25bb55c6d80e",
+        "sourceSha256": "9036ac9f7d74ae887fd8517b7d385cd92704e0542ca6596ad9ca2b1c4a1fd486",
         "spans": [
           {
             "start": 14,
@@ -5348,43 +5523,57 @@
             "reading": "natural"
           },
           {
-            "start": 59,
-            "end": 63,
+            "start": 74,
+            "end": 104,
+            "text": "tiene_pase || tiene_invitacion",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 108,
+            "end": 112,
             "text": "true",
             "role": "cpp",
             "reading": "technical"
           },
           {
-            "start": 98,
-            "end": 103,
+            "start": 144,
+            "end": 156,
+            "text": "sala_abierta",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 162,
+            "end": 167,
             "text": "false",
             "role": "cpp",
             "reading": "technical"
           },
           {
-            "start": 138,
-            "end": 140,
+            "start": 202,
+            "end": 204,
             "text": "&&",
             "role": "cpp",
             "reading": "technical"
           },
           {
-            "start": 142,
-            "end": 151,
+            "start": 206,
+            "end": 215,
             "text": "permitido",
             "role": "cpp",
             "reading": "technical"
           },
           {
-            "start": 159,
-            "end": 164,
+            "start": 223,
+            "end": 228,
             "text": "false",
             "role": "cpp",
             "reading": "technical"
           },
           {
-            "start": 187,
-            "end": 203,
+            "start": 251,
+            "end": 267,
             "text": "Entrada denegada",
             "role": "output",
             "reading": "natural"
@@ -5497,8 +5686,23 @@
       {
         "block": "p1u3l5_distinguir_invitacion",
         "path": "/question",
-        "sourceSha256": "f566233e4e8aa16338242dafd5702e1b4084192387438d39c00cde8cf0408054",
-        "spans": []
+        "sourceSha256": "1c250faba43617dcfec17ded4b259d5c346757d85e088c0320119fef3a68b600",
+        "spans": [
+          {
+            "start": 260,
+            "end": 261,
+            "text": "1",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 301,
+            "end": 302,
+            "text": "0",
+            "role": "data",
+            "reading": "natural"
+          }
+        ]
       },
       {
         "block": "p1u3l5_distinguir_invitacion",
@@ -5573,102 +5777,102 @@
       {
         "block": "p1u3l5_probar_combinaciones",
         "path": "/text",
-        "sourceSha256": "dffc6085ae6f860a1a7896f1f313cae877d6b05a35f422d534af26dda5feaa38",
+        "sourceSha256": "4a7c9041904d0ca51d7f4a8524e51216d83284d4c7e660b97197ccb8564f092c",
         "spans": [
           {
-            "start": 103,
-            "end": 108,
+            "start": 239,
+            "end": 244,
             "text": "0 0 0",
             "role": "data",
             "reading": "natural"
           },
           {
-            "start": 125,
-            "end": 141,
+            "start": 261,
+            "end": 277,
             "text": "Entrada denegada",
             "role": "output",
             "reading": "natural"
           },
           {
-            "start": 151,
-            "end": 156,
+            "start": 287,
+            "end": 292,
             "text": "0 0 1",
             "role": "data",
             "reading": "natural"
           },
           {
-            "start": 173,
-            "end": 189,
+            "start": 309,
+            "end": 325,
             "text": "Entrada denegada",
             "role": "output",
             "reading": "natural"
           },
           {
-            "start": 199,
-            "end": 204,
+            "start": 335,
+            "end": 340,
             "text": "0 1 0",
             "role": "data",
             "reading": "natural"
           },
           {
-            "start": 221,
-            "end": 237,
+            "start": 357,
+            "end": 373,
             "text": "Entrada denegada",
             "role": "output",
             "reading": "natural"
           },
           {
-            "start": 247,
-            "end": 252,
+            "start": 383,
+            "end": 388,
             "text": "0 1 1",
             "role": "data",
             "reading": "natural"
           },
           {
-            "start": 269,
-            "end": 286,
+            "start": 405,
+            "end": 422,
             "text": "Entrada permitida",
             "role": "output",
             "reading": "natural"
           },
           {
-            "start": 296,
-            "end": 301,
+            "start": 432,
+            "end": 437,
             "text": "1 0 1",
             "role": "data",
             "reading": "natural"
           },
           {
-            "start": 318,
-            "end": 335,
+            "start": 454,
+            "end": 471,
             "text": "Entrada permitida",
             "role": "output",
             "reading": "natural"
           },
           {
-            "start": 345,
-            "end": 350,
+            "start": 481,
+            "end": 486,
             "text": "1 1 0",
             "role": "data",
             "reading": "natural"
           },
           {
-            "start": 367,
-            "end": 383,
+            "start": 503,
+            "end": 519,
             "text": "Entrada denegada",
             "role": "output",
             "reading": "natural"
           },
           {
-            "start": 393,
-            "end": 398,
+            "start": 529,
+            "end": 534,
             "text": "1 1 1",
             "role": "data",
             "reading": "natural"
           },
           {
-            "start": 415,
-            "end": 432,
+            "start": 551,
+            "end": 568,
             "text": "Entrada permitida",
             "role": "output",
             "reading": "natural"

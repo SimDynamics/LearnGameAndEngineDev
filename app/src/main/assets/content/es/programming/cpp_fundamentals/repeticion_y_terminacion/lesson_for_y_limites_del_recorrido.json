@@ -33,7 +33,7 @@
         },
         {
           "type": "paragraph",
-          "text": "La primera comprobación usa el 0. Sigue lo que pasa con cada valor.\n\nCon 0, el cuerpo muestra 0: y luego ++i cambia el valor a 1.\nCon 1, el cuerpo muestra 1: y luego ++i cambia el valor a 2.\nCon 2, el cuerpo muestra 2: y luego ++i cambia el valor a 3.\nCon 3, el cuerpo muestra 3: y luego ++i cambia el valor a 4.\nCon 4, la condición es falsa y se ejecuta la instrucción de después, que muestra Fin.\n\nSalida\n0:1:2:3:Fin\n\nEn el encabezado, el primer ; separa el inicio de la condición y el segundo separa la condición del avance."
+          "text": "La condición i < 4 usa el valor que i tiene antes de cada vuelta.\n\nCon 0, el cuerpo muestra 0:. Después, ++i guarda 1 en i.\nCon 1, el cuerpo muestra 1:. Después, ++i guarda 2 en i.\nCon 2, el cuerpo muestra 2:. Después, ++i guarda 3 en i.\nCon 3, el cuerpo muestra 3:. Después, ++i guarda 4 en i.\nCon 4, la condición es falsa. El programa sale del bucle y ejecuta la instrucción que muestra Fin.\n\nSalida\n0:1:2:3:Fin\n\nEn el encabezado for (int i{0}; i < 4; ++i), el primer punto y coma separa la declaración int i{0} de la condición i < 4. El segundo punto y coma separa la condición del incremento ++i."
         },
         {
           "type": "output_prediction",
@@ -56,7 +56,7 @@
         },
         {
           "type": "paragraph",
-          "text": "Supón que i empieza en 1 y aumenta de uno en uno. Mientras valga 1 o 2, tanto i < 3 como i <= 3 dan verdadero. Cuando llegue a 3, la igualdad marca la diferencia.\n\ni < 3. Con 3 la condición es falsa. El último valor que usa el cuerpo es 2.\n\ni <= 3. Con 3 la condición es verdadera y el cuerpo usa ese valor. Después, el avance deja 4 y la comparación da falso (Stroustrup, 2024).",
+          "text": "Supón que i empieza en 1 y aumenta de uno en uno. Tanto i < 3 como i <= 3 permiten entrar al cuerpo con 1 y con 2. Cuando i llega a 3, la igualdad marca la diferencia.\n\nCon i < 3, el programa pregunta si tres es menor que tres. La respuesta es falsa. La última vuelta fue la que se ejecutó con i igual a 2.\n\nCon i <= 3, el programa pregunta si tres es menor o igual que tres. La respuesta es verdadera porque son iguales. El cuerpo se ejecuta con i igual a 3. Después, el incremento guarda 4 en i. Cuatro es mayor que tres, así que la siguiente comprobación da falso y termina el bucle (Stroustrup, 2024).",
           "emphasis": [
             {
               "text": "la igualdad marca la diferencia"
@@ -65,7 +65,7 @@
         },
         {
           "type": "paragraph",
-          "text": "Antes de escribir un for, anota el primer valor que debe usar el cuerpo, el último y el valor que quedará después del último avance. Por ejemplo, si el recorrido muestra 0, 1, 2 y 3, la primera vuelta usa 0 y la última usa 3. Después de sumar uno, la condición debe ser falsa con 4."
+          "text": "Para elegir la condición de un for, identifica el primer valor que debe llegar al cuerpo, el último que debe llegar y el valor con el que el bucle debe terminar. Por ejemplo, si el cuerpo debe mostrar 0, 1, 2 y 3, la variable i empieza en 0. Después de mostrar 3, ++i guarda 4 en i. En ese momento i < 4 es falsa y termina el bucle."
         },
         {
           "type": "output_prediction",
@@ -76,18 +76,18 @@
           "answers": [
             "123:Fin"
           ],
-          "explanation": "La condición permite la vuelta con 3 y deja de cumplirse con 4. El bucle muestra 123 y la instrucción de después añade :Fin."
+          "explanation": "Con i <= 3, la condición es verdadera cuando i vale 1, 2 y 3. En cada vuelta, std::cout escribe el valor de i sin separarlo del anterior. Después de mostrar 3, ++i guarda 4 en i y la condición es falsa. La instrucción situada después del bucle escribe :Fin. La salida completa es 123:Fin."
         },
         {
           "type": "output_prediction",
           "id": "extremo_excluido",
-          "question": "Ahora la condición es i < 3. Escribe el texto completo que aparece, incluido el final que muestra el programa.",
+          "question": "La variable i empieza en 1 y la condición del bucle es i < 3. ¿Qué texto escribe el programa en la consola? Incluye lo que escribe std::cout después de que termina el bucle.",
           "language": "cpp",
           "code": "#include <iostream>\n\nint main() {\n    for (int i{1}; i < 3; ++i) {\n        std::cout << i;\n    }\n\n    std::cout << \":Fin\";\n\n    return 0;\n}\n",
           "answers": [
             "12:Fin"
           ],
-          "explanation": "El cuerpo muestra 12. Cuando i vale 3, la condición es falsa y la instrucción de después añade :Fin."
+          "explanation": "El cuerpo muestra 1 en la primera vuelta y 2 en la segunda. Los dos números aparecen juntos porque std::cout no escribe un separador. Cuando i vale 3, i < 3 es falsa. El programa sale del bucle y escribe :Fin. La salida completa es 12:Fin."
         },
         {
           "type": "fill_code",
@@ -115,24 +115,24 @@
         {
           "type": "output_prediction",
           "id": "for_cero",
-          "question": "La primera comprobación usa 5. Escribe la salida completa. Revisa si el cuerpo llega a mostrar X.",
+          "question": "Antes de la primera vuelta, i vale 5. ¿Qué texto escribe el programa en la consola? Ten en cuenta que una instrucción de salida está dentro del bucle y otra está después.",
           "language": "cpp",
           "code": "#include <iostream>\n\nint main() {\n    for (int i{5}; i < 2; ++i) {\n        std::cout << \"X\";\n    }\n\n    std::cout << \"Fin\";\n\n    return 0;\n}\n",
           "answers": [
             "Fin"
           ],
-          "explanation": "La condición i < 2 es falsa con 5. El cuerpo se salta y la salida es Fin."
+          "explanation": "Antes de entrar al cuerpo, el programa comprueba si 5 es menor que 2. Como la condición es falsa, se salta la instrucción que mostraría X. La instrucción que está después del bucle muestra Fin."
         },
         {
           "type": "output_prediction",
           "id": "for_una",
-          "question": "La primera comprobación usa 4. Escribe el texto completo, sin agregar espacios.",
+          "question": "La variable i empieza en 4 y el bucle comprueba i <= 4. Escribe la salida completa del programa sin añadir espacios.",
           "language": "cpp",
           "code": "#include <iostream>\n\nint main() {\n    for (int i{4}; i <= 4; ++i) {\n        std::cout << \"X\";\n    }\n\n    std::cout << \"Fin\";\n\n    return 0;\n}\n",
           "answers": [
             "XFin"
           ],
-          "explanation": "La condición i <= 4 permite mostrar X una vez. El avance deja 5, la condición da falso y el programa añade Fin."
+          "explanation": "Con i igual a 4, i <= 4 es verdadera porque los dos valores son iguales. El cuerpo muestra X. Después, ++i guarda 5 en i. La siguiente comprobación da falso y el programa sale del bucle. La instrucción posterior escribe Fin en el mismo renglón. La salida es XFin."
         },
         {
           "type": "multiple_choice",
@@ -156,7 +156,7 @@
         },
         {
           "type": "paragraph",
-          "text": "Si el recorrido empieza en 1 y quieres pasar al 3 en una sola vuelta, usa i += 2 en el lugar del avance. En este ejemplo, suma 2 al valor de i y guarda el resultado en la misma variable, igual que i = i + 2.\n\nCon i < 8, el cuerpo usa 1, 3, 5 y 7. Después de usar 7, el avance guarda 9. La siguiente comparación pregunta si 9 es menor que 8. Es falsa y el bucle termina (Stroustrup, 2024).",
+          "text": "Si i guarda el número de un puesto y quieres visitar un puesto de cada dos, puedes escribir i += 2 en la última parte del encabezado del for. Al terminar cada vuelta, el programa suma dos a i y guarda el resultado en i. En este ejemplo, escribir i = i + 2 produciría el mismo cambio.\n\nSi i empieza en 1 y la condición es i < 8, el cuerpo se ejecuta con 1, 3, 5 y 7. Al terminar la vuelta en la que i vale 7, i += 2 guarda 9 en i. La siguiente comparación pregunta si nueve es menor que ocho. La respuesta es falsa y el bucle termina (Stroustrup, 2024).",
           "emphasis": [
             {
               "text": "La siguiente comparación"
@@ -165,7 +165,7 @@
         },
         {
           "type": "paragraph",
-          "text": "Para recorrer 5, 4, 3 y 2, empieza en 5 y resta uno después de cada vuelta con --i. La condición i >= 2 permite la vuelta con 2. Al terminar esa vuelta, la resta deja 1 y la condición es falsa."
+          "text": "Para visitar los puestos del 5 al 2 en orden descendente, da a i el valor inicial 5. Con --i en el encabezado, el programa resta uno a i al terminar cada vuelta. Cuando i vale 2, i >= 2 todavía es verdadera y el cuerpo se ejecuta con ese puesto. Después, --i guarda 1 en i. Como uno es menor que dos, la condición es falsa y termina el bucle."
         },
         {
           "type": "output_prediction",
@@ -176,7 +176,7 @@
           "answers": [
             "1;3;5;7;Fin"
           ],
-          "explanation": "Después de mostrar 7;, i += 2 deja 9. La condición i < 8 es falsa en ese momento y el programa añade Fin."
+          "explanation": "El cuerpo muestra i seguido de un punto y coma. El avance i += 2 cambia i de 1 a 3, luego a 5 y después a 7. Esos cuatro valores cumplen i < 8. Después de mostrar 7;, el avance guarda 9 en i. Como nueve es mayor que ocho, el programa sale del bucle y escribe Fin. La salida es 1;3;5;7;Fin."
         },
         {
           "type": "output_prediction",
@@ -187,15 +187,15 @@
           "answers": [
             "5;4;3;2;Fin"
           ],
-          "explanation": "Después de mostrar 2;, --i deja 1. La condición i >= 2 es falsa con 1 y el programa añade Fin."
+          "explanation": "La condición i >= 2 permite entrar al cuerpo con 5, 4, 3 y 2. El cuerpo muestra cada valor seguido de un punto y coma. Después de mostrar 2;, --i guarda 1 en i. Entonces la condición es falsa y el programa sale del bucle. La instrucción posterior escribe Fin. La salida es 5;4;3;2;Fin."
         },
         {
           "type": "multiple_choice",
           "id": "salto_extremo",
-          "question": "Sin ejecutar el bucle, sigue las primeras vueltas. i empieza en 0, aumenta de dos en dos y la condición es i != 5. ¿Qué problema tiene la condición al pasar de 4 a 6?",
+          "question": "Quieres que el bucle se detenga antes de ejecutar el cuerpo con un valor mayor o igual que 5. La variable i empieza en 0 y aumenta de dos en dos. ¿Qué ocurre cuando i pasa de 4 a 6 si la condición que permite entrar al cuerpo es i != 5?",
           "options": [
             "Se sale en 4 porque ese es el último valor del cuerpo antes de 5.",
-            "El avance no alcanza 5; la igualdad no expresa el final del recorrido.",
+            "Cuando i pasa de 4 a 6, i != 5 sigue siendo verdadera y el cuerpo se ejecuta con 6.",
             "Se sale en 6 porque != equivale aquí a estar por debajo del límite."
           ],
           "correctIndex": 1,
@@ -242,7 +242,7 @@
           "answers": [
             "0:2:4:Fin"
           ],
-          "explanation": "Cada vuelta muestra el valor actual y suma uno dos veces. Así se muestran 0:2:4:. Cuando i llega a 6, la condición es falsa y el programa añade Fin."
+          "explanation": "En la primera vuelta, el cuerpo muestra 0:. El ++i; del cuerpo cambia i de 0 a 1. Después, el ++i del encabezado la cambia de 1 a 2 antes de comprobar i < 6. Por eso la segunda vuelta muestra 2: y la tercera muestra 4:. Al terminar esa tercera vuelta, los dos incrementos dejan 6 en i. La condición es falsa y se ejecuta la instrucción que muestra Fin. La salida es 0:2:4:Fin."
         },
         {
           "type": "multiple_choice",
@@ -267,17 +267,18 @@
         {
           "type": "inline_fill_code",
           "id": "encabezado_por_objetivo",
-          "question": "Completa el encabezado para que el cuerpo muestre 234. En los dos primeros huecos escribe un número en cada uno. En el tercero, escribe el operador que aumenta i en uno.",
+          "question": "El bucle debe mostrar los números 2, 3 y 4 en ese orden, en un solo renglón de la salida y sin separadores. En el encabezado del for, completa el valor inicial de i, el límite de la comparación i < y el operador que aumenta i en uno al terminar cada vuelta.",
           "template": "#include <iostream>\n\nint main() {\n    for (int i{[]}; i < []; []i) {\n        std::cout << i;\n    }\n\n    return 0;\n}\n",
           "answers": [
             "2",
             "5",
             "++"
-          ]
+          ],
+          "explanation": "Para que la primera vuelta muestre 2, i debe empezar en 2. Con ++i, cada vuelta aumenta i en uno. La condición i < 5 todavía da verdadero con 4 y da falso con 5. Por eso se muestran 2, 3 y 4, que forman el texto 234 en la consola."
         },
         {
           "type": "paragraph",
-          "text": "El programa empieza en 2 y debe mostrar un renglón por puesto hasta el 4, incluido. Ahora la salida termina antes de mostrar el puesto 4. Corrige la comparación del for. Conserva las declaraciones de primer_puesto y ultimo_puesto para que el comprobador pueda probar otros valores.\n\nEl programa usa los valores del código. Deja «Entrada» vacía y pulsa «Compilar, ejecutar y comprobar». Puedes dejar un salto de línea después de Fin.\n\nSalida esperada\nPuesto 2\nPuesto 3\nPuesto 4\nFin"
+          "text": "El programa debe mostrar un renglón de la salida por cada puesto, desde el 2 hasta el 4, ambos incluidos. Con la comparación que aparece en el editor, el bucle muestra los puestos 2 y 3. Cuando puesto llega a 4, el programa sale del bucle y escribe Fin. Corrige la comparación del for para que también se muestre el último puesto.\n\nConserva las declaraciones de primer_puesto y ultimo_puesto. El comprobador usa esas variables para probar el recorrido con otros números de puesto. Deja vacío el campo «Entrada». Este programa toma sus valores iniciales del código.\n\nSalida esperada con los valores iniciales del editor\nPuesto 2\nPuesto 3\nPuesto 4\nFin\n\nPulsa «Compilar, ejecutar y comprobar». Puedes añadir un salto de línea después de Fin en la salida."
         },
         {
           "type": "cpp_compiler",
@@ -302,7 +303,7 @@
         },
         {
           "type": "note",
-          "text": "Con puesto < ultimo_puesto, la comprobación del puesto 4 da falso. Con puesto <= ultimo_puesto, ambos valores son 4 y la condición da verdadero. El cuerpo muestra Puesto 4, el avance deja 5 y la siguiente comprobación da falso. Entonces se muestra Fin."
+          "text": "Cuando puesto y ultimo_puesto valen 4, puesto < ultimo_puesto pregunta si cuatro es menor que cuatro. La comparación es falsa y el bucle termina antes de escribir Puesto 4.\n\nCon puesto <= ultimo_puesto, la igualdad también permite entrar al cuerpo. El programa escribe Puesto 4 y un salto de línea. Después, ++puesto guarda 5 en puesto. Cinco es mayor que el límite de cuatro, así que el bucle termina. La instrucción siguiente escribe Fin."
         },
         {
           "type": "heading",
@@ -310,12 +311,12 @@
         },
         {
           "type": "paragraph",
-          "text": "En for (int i{2}; i < 5; ++i), cada vuelta muestra el puesto en el cuerpo y después aumenta el contador. Al pasar a while, decide dónde dar el valor inicial, dónde comprobar la condición y dónde sumar uno."
+          "text": "En el siguiente ejercicio, el programa debe escribir un renglón de salida por cada puesto, desde el 2 hasta el 4. En la versión con for, el encabezado for (int i{2}; i < 5; ++i) da a i el valor inicial, comprueba la condición y aumenta i al terminar cada vuelta. El cuerpo escribe el puesto. Para construir la versión con while, coloca esas acciones de modo que se ejecuten en el mismo orden."
         },
         {
           "type": "order_code",
           "id": "orden_while_puestos_2_3_4",
-          "question": "Ordena las piezas para construir la versión con while que conserva las líneas Puesto 2, Puesto 3 y Puesto 4. El avance debe ocurrir después de mostrar cada puesto.",
+          "question": "Ordena las líneas de código para que el while muestre los renglones Puesto 2, Puesto 3 y Puesto 4, en ese orden. En cada vuelta, el programa debe mostrar el puesto antes de aumentar i. Después del tercer puesto termina el programa.",
           "language": "cpp",
           "fragments": [
             "        ++i;",
@@ -339,8 +340,8 @@
             3,
             4
           ],
-          "explanation": "La definición int i{2}; aparece antes del bucle. La comparación i < 5 se realiza antes de cada vuelta: la salida muestra el valor actual y ++i; lo prepara para la siguiente comprobación. Cuando i llega a 5, la condición es falsa; se termina el bucle y se ejecuta return 0; dentro de main.",
-          "reviewFeedback": "Localiza la definición de i y comprueba desde qué punto puede usarse. Distingue el cuerpo que repite while del cierre de main. Contrasta el momento de mostrar el puesto con el de actualizarlo."
+          "explanation": "int i{2}; crea el contador antes de la primera comprobación. Si i < 5 es verdadera, std::cout escribe el puesto y un salto de línea. A continuación, ++i; suma uno a i antes de la siguiente comprobación. Después de mostrar Puesto 4, i pasa a 5 y la condición es falsa. El programa sale del while y ejecuta return 0; en main.",
+          "reviewFeedback": "Localiza dónde se declara i y qué instrucción comprueba su valor al empezar cada vuelta. Dentro de las llaves del while, identifica la instrucción que escribe en la consola y la que aumenta i. ¿Cuál debe ejecutarse antes para que la salida comience con Puesto 2?"
         }
       ]
     },
@@ -357,7 +358,7 @@
         },
         {
           "type": "note",
-          "text": "La declaración int i{2}; se ejecuta antes de la primera comprobación. Dentro del cuerpo, el programa muestra el puesto y después ejecuta ++i;. Tras mostrar Puesto 4, el incremento deja 5 y i < 5 es falso. El while conserva los mismos tres renglones del for.\n\nSi el incremento se ejecutara antes de mostrar, la primera vuelta mostraría Puesto 3. Por eso el lugar de la actualización importa al cambiar de un bucle al otro (Stroustrup, 2024)."
+          "text": "La declaración int i{2}; se ejecuta antes de la primera comprobación de i < 5. En cada vuelta, std::cout muestra el número del puesto y después ++i; aumenta i en uno. Tras mostrar Puesto 4, el incremento guarda 5 en i. La condición es falsa y el programa termina. En la consola quedan tres renglones, uno por cada puesto.\n\nSi se colocara ++i; antes de std::cout dentro del cuerpo, el programa comprobaría la condición con i igual a 2, pero aumentaría i a 3 antes de imprimir. El primer renglón de la salida sería Puesto 3 (Stroustrup, 2024)."
         },
         {
           "type": "heading",
@@ -365,7 +366,7 @@
         },
         {
           "type": "paragraph",
-          "text": "Escribe en «Entrada» un entero del 1 al 5, ambos incluidos. Al ejecutarse, el código del editor usa std::cin para leer ese número y guardarlo en primer_puesto.\n\nCompleta el programa después de la lectura. Usa un for que empiece en el puesto leído y baje de uno en uno. El último puesto que debes mostrar es el 2. En cada vuelta, muestra la palabra Puesto, un espacio y el número actual. Escribe cada puesto en su propio renglón. Si el número inicial es menor que 2, se salta el cuerpo. Al salir del bucle, muestra Fin una sola vez.\n\nEntrada\n4\nSalida esperada\nPuesto 4\nPuesto 3\nPuesto 2\nFin\n\nPulsa «Compilar, ejecutar y comprobar». Puedes dejar un salto de línea después de Fin."
+          "text": "Tu programa debe aceptar como puesto inicial cualquier entero del 1 al 5, ambos incluidos. Para la primera comprobación, usa el 4 que aparece en el campo «Entrada». Al ejecutarse el programa, std::cin lee ese número y lo guarda en primer_puesto.\n\nEn el editor, después de la lectura, escribe un for que empiece en el puesto leído. En cada vuelta, escribe en un renglón de la salida la palabra Puesto, un espacio y el número del puesto. Después, resta uno al número del puesto. Incluye el puesto 2 en el recorrido. Si el puesto inicial es 1, el cuerpo del bucle debe ejecutarse cero veces. Al salir del bucle, escribe Fin en su propio renglón.\n\nEntrada\n4\nSalida esperada\nPuesto 4\nPuesto 3\nPuesto 2\nFin\n\nPulsa «Compilar, ejecutar y comprobar». Puedes añadir un salto de línea después de Fin en la salida."
         },
         {
           "type": "cpp_compiler",
@@ -423,7 +424,7 @@
         },
         {
           "type": "paragraph",
-          "text": "Con entrada 4, primer_puesto guarda 4 y el encabezado usa ese número para dar a puesto su valor inicial. El cuerpo muestra cada puesto. El avance --puesto resta uno después de cada renglón, así que los valores que llegan al cuerpo son 4, 3 y 2."
+          "text": "Cuando escribes 4 en «Entrada», std::cin lee ese número y lo guarda en primer_puesto. Antes de la primera vuelta, int puesto = primer_puesto copia el cuatro en puesto. El cuerpo escribe Puesto 4 y un salto de línea. Después, --puesto resta uno a puesto y guarda 3 en esa variable. El for vuelve a comprobar si puesto >= 2. Así se ejecuta una vuelta con el puesto 3 y otra con el puesto 2."
         },
         {
           "type": "code",
@@ -432,7 +433,7 @@
         },
         {
           "type": "paragraph",
-          "text": "Cuando puesto vale 2, la comparación puesto >= 2 aún da verdadero. Después de mostrar Puesto 2, el avance deja 1. La comparación da falso y se muestra Fin.\n\nCon entrada 1, la primera comparación ya es falsa. En ese caso se muestra Fin sin ejecutar el cuerpo ni el avance."
+          "text": "Cuando puesto vale 2, puesto >= 2 todavía es verdadera. El cuerpo escribe Puesto 2 y un salto de línea. Después, --puesto guarda 1 en puesto. Como uno es menor que dos, el programa sale del bucle y escribe Fin en el siguiente renglón de la salida.\n\nSi escribes 1 en «Entrada», puesto vale 1 desde la primera comprobación. El programa se salta tanto el cuerpo como --puesto. En la consola aparece un solo renglón, Fin."
         }
       ]
     }
@@ -1741,6 +1742,124 @@
         "id": "p1u4l2_ejemplo_descendente",
         "beforeSha256": "6fff65f43816759d065f0602f6ae4517c4b844b8171e0de42f4ae135c71126dc",
         "afterSha256": "53290f8302dd9c67ac66fe83b2f15c4b0c298cfdbe2daa5731c2542820c7efad"
+      },
+      {
+        "id": "block_0000_0003",
+        "beforeSha256": "a5c941d2701c1aa24faf33f8890e12639575b53e100ebebfdbda2bdd07b23666",
+        "afterSha256": "dab30a91c659518b6d53c9b79014970e220c0890a5df91049cf239bf17159781"
+      },
+      {
+        "id": "block_0001_0001",
+        "beforeSha256": "24585df4b3896f9d773939bb670b6e01c12bfa5ef1911e21235dafd8a5b1048a",
+        "afterSha256": "71dae3aa6276eda4da22545080b714b6f4d3352b0384eae7142700c9fbb045c6"
+      },
+      {
+        "id": "block_0001_0002",
+        "beforeSha256": "5dd506d19b410a7b5bb94af6b3ef68ce5612aa6e5314b38737effce3f51b1777",
+        "afterSha256": "c4bb05ffc6f4706141e17df2308f782e8f71f057535b2832009bd42ac16b32ad"
+      },
+      {
+        "id": "block_0003_0001",
+        "beforeSha256": "8434c3b0f7c96cb51c99c05a45e01f681bc29b0e6c5a924d05ed5404ea83871c",
+        "afterSha256": "e1837943a4a1aab474020a751e18ef9a92363ac3b58e5236fb3e2a9187d08f7b"
+      },
+      {
+        "id": "block_0003_0002",
+        "beforeSha256": "8a7be88e1057c174e2503806642c30d0159d1817c7f145f1ab0927ce1b612ced",
+        "afterSha256": "ff7952a3d6b417a92d47083eb6f6f540d23569064e5cabd5c893d2f49c42335a"
+      },
+      {
+        "id": "block_0005_0002",
+        "beforeSha256": "5e8d639d1c3cedb9ebc35fe2873540121b356b005ff1a8905447e618cefbee55",
+        "afterSha256": "4c8459359d41b4f2fe714203840b7dd3ab2c9ae719f3ca1daf6257eb204bd51a"
+      },
+      {
+        "id": "p1u4l2_comparacion_inclusion",
+        "beforeSha256": "9a16b360dfe161db97243e0ab0855a5cf09d9e718f1d9e450845289ddf32eb06",
+        "afterSha256": "fc3f8cfa1f30bf7f60ae6f0d5056d94837b1f2354e86c4d67ed8895ec62a6f8c"
+      },
+      {
+        "id": "block_0005_0005",
+        "beforeSha256": "607589be7800762cd1bc0111d6de45e8c0cf5d37f8ea017f794e8d90f9273f36",
+        "afterSha256": "288edbe6a22c29a55a8a7633a7f9d6f8ebc49504a9ea851c612a11300eaa56a2"
+      },
+      {
+        "id": "block_0006_0001",
+        "beforeSha256": "0cd9f64cdad835cdb36b573f9e833abb89cd93ff4fc73f959a24661872cab331",
+        "afterSha256": "4969ace6128a66537388def5818a0a50966e905f40c6d9a921c38ecc723b5129"
+      },
+      {
+        "id": "p1u4l2_consigna_descendente",
+        "beforeSha256": "b0baba1e7d17fe83981b1fe739427e1e4d212a0152a55a829154328b7f0bdc70",
+        "afterSha256": "ccec362383910eadd54f9823fc809cbddd2fbc4daba4635e1edbe1d2059325eb"
+      },
+      {
+        "id": "block_0007_0001",
+        "beforeSha256": "776b444b0bcaf360a2f91c05b458566ff8da84f8dbe77c159f6a048b70fcd6fd",
+        "afterSha256": "d866d4a06e6785e681382e0281835e79c51ce1158fabb21a0977ffcb69b4f697"
+      },
+      {
+        "id": "block_0007_0003",
+        "beforeSha256": "f985059c8cf61aebd14e78c0b86895ab4700bd6780fff2cd0ce1ad3b5e9ac284",
+        "afterSha256": "3d1b24d845caea39014577e15d0834b194e5fa60cd0b838c9db8afba07c8ce08"
+      },
+      {
+        "id": "block_0001_0003",
+        "beforeSha256": "db8e76788303dfdd3eb46bb8239fb425363a1f4f0ebe9343104dc2c19069c1c6",
+        "afterSha256": "8ec05276a54bb84c7bbc8992c1b8b4b6521c12d067acce46f88a0820f02242fd"
+      },
+      {
+        "id": "block_0001_0004",
+        "beforeSha256": "4647de2d6a826803ca9438ec9a6c8a2361aeea2b90b1d508f25c15b5f240ecd5",
+        "afterSha256": "15828ff188d014514abde2a5b32d752907b4b69be61ca22abb7ada99dbf9dcf8"
+      },
+      {
+        "id": "block_0002_0001",
+        "beforeSha256": "8e916ff02cf2235a2c348bf4bd079941d1546f67a503c4b585e020705612b144",
+        "afterSha256": "b54a42f5573bc0d817eb3235bb5c98ca822b84ebd2472186a3faf34d8bfad01b"
+      },
+      {
+        "id": "block_0002_0002",
+        "beforeSha256": "5fa30a8609243c40df1c8fda46c8e69a3f295cb906a03fc6386993e7bceb8057",
+        "afterSha256": "b37a38d0d350d40c220717b17039c4f515912f73f09e5d12d4b7a35f0b50d64e"
+      },
+      {
+        "id": "block_0003_0003",
+        "beforeSha256": "01e0d4246888ba613e65db8caf152dc372b2ca7f2ca5e9a6bdf253c8f62ec543",
+        "afterSha256": "bca7785baeeea686b8ef3c122ebeed1fc6b17d4f797097a7be3c38445cd83da1"
+      },
+      {
+        "id": "block_0003_0004",
+        "beforeSha256": "0e2910bdd360bf1493df64621f983c31097962547f776075245e4c7efbc5e680",
+        "afterSha256": "67acfb22b03816eb0e316862e72cdfacc9a240781bffcc158e827c8feda15712"
+      },
+      {
+        "id": "block_0003_0005",
+        "beforeSha256": "97afdcbc7f2b716fd20d87b38c5b4c6e87bd4164aa70d307b0e5163b58f26d53",
+        "afterSha256": "6e928b72f3957304310bd8552dc64efcdfb0cd8a0c09ab4875b034eab9ef6974"
+      },
+      {
+        "id": "block_0003_0005",
+        "beforeSha256": "6e928b72f3957304310bd8552dc64efcdfb0cd8a0c09ab4875b034eab9ef6974",
+        "afterSha256": "e65ea9817329edd076248f67d152d48f7474615a66e9ca960c908ed35add4f44"
+      },
+      {
+        "id": "block_0004_0004",
+        "beforeSha256": "b735d1047942002b6e92ab58159d41d0f33e53713bfd98900fa214efb95d0446",
+        "afterSha256": "5063cc0719abc252e1e49b5d726f09fc56355a03e55e649d0f73c4c2f40fcd3e"
+      },
+      {
+        "id": "block_0005_0001",
+        "beforeSha256": "5eccfb8b4555cd688d8d62616b152ba36cff8d764ebe0d58e9596cf717b381d0",
+        "afterSha256": "7eefe94dffc1bc498bd93a3e87fca1e6827265f616049474d5a8b8497d82eb7a"
+      },
+      {
+        "id": "orden_while_puestos_2_3_4",
+        "beforeSha256": "901d3d863f07a67794fbdabed44dfea6d64064583b24932f4a9cd9465ef978a5",
+        "afterSha256": "f47b49348487539f7a8efb6e10cd3c5f070b3723e587ce1b5f1dacee86c2b267",
+        "reviewPaths": [
+          "/reviewFeedback"
+        ]
       }
     ],
     "orderRefinements": [
@@ -4018,6 +4137,82 @@
           "sha256": "8d1039d16a58ff32e603e4ffb9384b1ec77fb5c502fe555ca3cc2a484c1f637b"
         }
       }
+    ],
+    "choiceRevisions": [
+      {
+        "id": "block_0003_0005",
+        "block": {
+          "type": "multiple_choice",
+          "id": "salto_extremo",
+          "question": "Sin ejecutar el bucle, sigue las primeras vueltas. i empieza en 0, aumenta de dos en dos y la condición es i != 5. ¿Qué problema tiene la condición al pasar de 4 a 6?",
+          "options": [
+            "Se sale en 4 porque ese es el último valor del cuerpo antes de 5.",
+            "El avance no alcanza 5; la igualdad no expresa el final del recorrido.",
+            "Se sale en 6 porque != equivale aquí a estar por debajo del límite."
+          ],
+          "correctIndex": 1,
+          "explanation": "Con 6 la condición i != 5 sigue siendo verdadera. Ese avance salta el 5, así que el cuerpo se ejecuta también con 6. Con i < 5, la comprobación con 6 sería falsa."
+        },
+        "optionIndex": 1,
+        "replacement": "Cuando i pasa de 4 a 6, i != 5 sigue siendo verdadera y el cuerpo se ejecuta con 6.",
+        "semanticBefore": {
+          "block": "block_0003_0005",
+          "path": "/options/1",
+          "sourceSha256": "1e72f769a61fdce3ed2a4603dd6083ca88d2250709efef4c255a8ab7cb8db3e8",
+          "spans": [
+            {
+              "start": 21,
+              "end": 22,
+              "text": "5",
+              "role": "data",
+              "reading": "natural"
+            }
+          ]
+        },
+        "semanticAfter": {
+          "block": "block_0003_0005",
+          "path": "/options/1",
+          "sourceSha256": "498029ee0665d2214c1ee564d988f5e1adb5eb98fff7c323eab420b069f924c2",
+          "spans": [
+            {
+              "start": 7,
+              "end": 8,
+              "text": "i",
+              "role": "cpp",
+              "reading": "technical"
+            },
+            {
+              "start": 17,
+              "end": 18,
+              "text": "4",
+              "role": "data",
+              "reading": "natural"
+            },
+            {
+              "start": 21,
+              "end": 22,
+              "text": "6",
+              "role": "data",
+              "reading": "natural"
+            },
+            {
+              "start": 24,
+              "end": 30,
+              "text": "i != 5",
+              "role": "cpp",
+              "reading": "technical"
+            },
+            {
+              "start": 81,
+              "end": 82,
+              "text": "6",
+              "role": "data",
+              "reading": "natural"
+            }
+          ]
+        },
+        "semanticRootBefore": true
+      }
     ]
   },
   "activityAfter": [
@@ -4174,25 +4369,32 @@
       {
         "block": "block_0000_0003",
         "path": "/text",
-        "sourceSha256": "1add57099e46454b1026b3fa09a345f0c22b54ce55f1314e7c3bf009b72e02ee",
+        "sourceSha256": "8575aa96b8dad851be65c099c48d72f5dd1579e003ec555b73fb98d2b40d5e03",
         "spans": [
           {
-            "start": 31,
-            "end": 32,
+            "start": 13,
+            "end": 18,
+            "text": "i < 4",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 36,
+            "end": 37,
+            "text": "i",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 71,
+            "end": 72,
             "text": "0",
             "role": "data",
             "reading": "natural"
           },
           {
-            "start": 73,
-            "end": 74,
-            "text": "0",
-            "role": "data",
-            "reading": "natural"
-          },
-          {
-            "start": 94,
-            "end": 96,
+            "start": 92,
+            "end": 94,
             "text": "0:",
             "role": "output",
             "reading": "natural"
@@ -4205,121 +4407,170 @@
             "reading": "technical"
           },
           {
-            "start": 127,
-            "end": 128,
+            "start": 116,
+            "end": 117,
             "text": "1",
             "role": "data",
             "reading": "natural"
           },
           {
-            "start": 134,
-            "end": 135,
+            "start": 121,
+            "end": 122,
+            "text": "i",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 128,
+            "end": 129,
             "text": "1",
             "role": "data",
             "reading": "natural"
           },
           {
-            "start": 155,
-            "end": 157,
+            "start": 149,
+            "end": 151,
             "text": "1:",
             "role": "output",
             "reading": "natural"
           },
           {
-            "start": 166,
-            "end": 169,
+            "start": 162,
+            "end": 165,
             "text": "++i",
             "role": "cpp",
             "reading": "technical"
           },
           {
-            "start": 188,
-            "end": 189,
+            "start": 173,
+            "end": 174,
             "text": "2",
             "role": "data",
             "reading": "natural"
           },
           {
-            "start": 195,
-            "end": 196,
+            "start": 178,
+            "end": 179,
+            "text": "i",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 185,
+            "end": 186,
             "text": "2",
             "role": "data",
             "reading": "natural"
           },
           {
-            "start": 216,
-            "end": 218,
+            "start": 206,
+            "end": 208,
             "text": "2:",
             "role": "output",
             "reading": "natural"
           },
           {
-            "start": 227,
-            "end": 230,
+            "start": 219,
+            "end": 222,
             "text": "++i",
             "role": "cpp",
             "reading": "technical"
           },
           {
-            "start": 249,
-            "end": 250,
+            "start": 230,
+            "end": 231,
             "text": "3",
             "role": "data",
             "reading": "natural"
           },
           {
-            "start": 256,
-            "end": 257,
+            "start": 235,
+            "end": 236,
+            "text": "i",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 242,
+            "end": 243,
             "text": "3",
             "role": "data",
             "reading": "natural"
           },
           {
-            "start": 277,
-            "end": 279,
+            "start": 263,
+            "end": 265,
             "text": "3:",
             "role": "output",
             "reading": "natural"
           },
           {
-            "start": 288,
-            "end": 291,
+            "start": 276,
+            "end": 279,
             "text": "++i",
             "role": "cpp",
             "reading": "technical"
           },
           {
-            "start": 310,
-            "end": 311,
+            "start": 287,
+            "end": 288,
             "text": "4",
             "role": "data",
             "reading": "natural"
           },
           {
-            "start": 317,
-            "end": 318,
+            "start": 292,
+            "end": 293,
+            "text": "i",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 299,
+            "end": 300,
             "text": "4",
             "role": "data",
             "reading": "natural"
           },
           {
-            "start": 394,
-            "end": 397,
+            "start": 389,
+            "end": 392,
             "text": "Fin",
             "role": "output",
             "reading": "natural"
           },
           {
-            "start": 407,
-            "end": 418,
+            "start": 402,
+            "end": 413,
             "text": "0:1:2:3:Fin",
             "role": "output",
             "reading": "natural"
           },
           {
-            "start": 448,
-            "end": 449,
-            "text": ";",
+            "start": 432,
+            "end": 458,
+            "text": "for (int i{0}; i < 4; ++i)",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 505,
+            "end": 513,
+            "text": "int i{0}",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 530,
+            "end": 535,
+            "text": "i < 4",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 596,
+            "end": 599,
+            "text": "++i",
             "role": "cpp",
             "reading": "technical"
           }
@@ -4418,7 +4669,7 @@
       {
         "block": "block_0001_0001",
         "path": "/text",
-        "sourceSha256": "3762d11c4af060f50f7a141fe232fa32fe72a2b466ad2716a52ac84719bb7e3c",
+        "sourceSha256": "ca62b7fb555766a55aac1325ac4e49c20007f07242cfd57ef8517b2b7f8eeca0",
         "spans": [
           {
             "start": 10,
@@ -4435,85 +4686,106 @@
             "reading": "natural"
           },
           {
-            "start": 65,
-            "end": 66,
+            "start": 56,
+            "end": 61,
+            "text": "i < 3",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 67,
+            "end": 73,
+            "text": "i <= 3",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 104,
+            "end": 105,
             "text": "1",
             "role": "data",
             "reading": "natural"
           },
           {
-            "start": 69,
-            "end": 70,
+            "start": 112,
+            "end": 113,
             "text": "2",
             "role": "data",
             "reading": "natural"
           },
           {
-            "start": 78,
-            "end": 83,
-            "text": "i < 3",
+            "start": 122,
+            "end": 123,
+            "text": "i",
             "role": "cpp",
             "reading": "technical"
           },
           {
-            "start": 89,
-            "end": 95,
-            "text": "i <= 3",
-            "role": "cpp",
-            "reading": "technical"
-          },
-          {
-            "start": 127,
-            "end": 128,
+            "start": 132,
+            "end": 133,
             "text": "3",
             "role": "data",
             "reading": "natural"
           },
           {
-            "start": 164,
-            "end": 169,
+            "start": 173,
+            "end": 178,
             "text": "i < 3",
             "role": "cpp",
             "reading": "technical"
           },
           {
-            "start": 175,
-            "end": 176,
-            "text": "3",
-            "role": "data",
-            "reading": "natural"
+            "start": 294,
+            "end": 295,
+            "text": "i",
+            "role": "cpp",
+            "reading": "technical"
           },
           {
-            "start": 237,
-            "end": 238,
+            "start": 304,
+            "end": 305,
             "text": "2",
             "role": "data",
             "reading": "natural"
           },
           {
-            "start": 241,
-            "end": 247,
+            "start": 312,
+            "end": 318,
             "text": "i <= 3",
             "role": "cpp",
             "reading": "technical"
           },
           {
-            "start": 253,
-            "end": 254,
+            "start": 447,
+            "end": 448,
+            "text": "i",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 457,
+            "end": 458,
             "text": "3",
             "role": "data",
             "reading": "natural"
           },
           {
-            "start": 332,
-            "end": 333,
+            "start": 490,
+            "end": 491,
             "text": "4",
             "role": "data",
             "reading": "natural"
           },
           {
-            "start": 360,
-            "end": 378,
+            "start": 495,
+            "end": 496,
+            "text": "i",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 586,
+            "end": 604,
             "text": "(Stroustrup, 2024)",
             "role": "citation",
             "reading": "natural"
@@ -4523,42 +4795,70 @@
       {
         "block": "block_0001_0002",
         "path": "/text",
-        "sourceSha256": "f8e14f3358e11ef523f01340f88f80899a55f3b324ad338317caf1856fda2e74",
+        "sourceSha256": "f49a95bc6eb0975e7c1a891ecb3fe5171b7c43790883fec8ca82a0793c13df55",
         "spans": [
           {
-            "start": 21,
-            "end": 24,
+            "start": 31,
+            "end": 34,
             "text": "for",
             "role": "cpp",
             "reading": "technical"
           },
           {
-            "start": 170,
-            "end": 181,
+            "start": 201,
+            "end": 212,
             "text": "0, 1, 2 y 3",
             "role": "data",
             "reading": "natural"
           },
           {
-            "start": 205,
-            "end": 206,
+            "start": 226,
+            "end": 227,
+            "text": "i",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 239,
+            "end": 240,
             "text": "0",
             "role": "data",
             "reading": "natural"
           },
           {
-            "start": 223,
-            "end": 224,
+            "start": 261,
+            "end": 262,
             "text": "3",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 264,
+            "end": 267,
+            "text": "++i",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 275,
+            "end": 276,
+            "text": "4",
             "role": "data",
             "reading": "natural"
           },
           {
             "start": 280,
             "end": 281,
-            "text": "4",
-            "role": "data",
-            "reading": "natural"
+            "text": "i",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 298,
+            "end": 303,
+            "text": "i < 4",
+            "role": "cpp",
+            "reading": "technical"
           }
         ]
       },
@@ -4579,33 +4879,96 @@
       {
         "block": "block_0001_0003",
         "path": "/explanation",
-        "sourceSha256": "d7e452ad545bef6caeb4102efa50ace56de2a1ef9f37104e3a461f0a3d5211a6",
+        "sourceSha256": "5d67c7eb681534251e44c2145ae2d348ce83bc26a64ee1fd068b2fc2ff25564c",
         "spans": [
           {
-            "start": 35,
-            "end": 36,
+            "start": 4,
+            "end": 10,
+            "text": "i <= 3",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 45,
+            "end": 46,
+            "text": "i",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 52,
+            "end": 53,
+            "text": "1",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 55,
+            "end": 56,
+            "text": "2",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 59,
+            "end": 60,
             "text": "3",
             "role": "data",
             "reading": "natural"
           },
           {
-            "start": 61,
-            "end": 62,
+            "start": 78,
+            "end": 87,
+            "text": "std::cout",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 108,
+            "end": 109,
+            "text": "i",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 157,
+            "end": 158,
+            "text": "3",
+            "role": "output",
+            "reading": "natural"
+          },
+          {
+            "start": 160,
+            "end": 163,
+            "text": "++i",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 171,
+            "end": 172,
             "text": "4",
             "role": "data",
             "reading": "natural"
           },
           {
-            "start": 81,
-            "end": 84,
-            "text": "123",
+            "start": 176,
+            "end": 177,
+            "text": "i",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 252,
+            "end": 256,
+            "text": ":Fin",
             "role": "output",
             "reading": "natural"
           },
           {
-            "start": 119,
-            "end": 123,
-            "text": ":Fin",
+            "start": 280,
+            "end": 287,
+            "text": "123:Fin",
             "role": "output",
             "reading": "natural"
           }
@@ -4614,12 +4977,33 @@
       {
         "block": "block_0001_0004",
         "path": "/question",
-        "sourceSha256": "e4584ce4c98dee654a371f21f92e97fe5ab3c4a8d02fc9067dcd295a7ba8ff6e",
+        "sourceSha256": "8aeaea327199867ee8f49e6c09aa1ca4c38802514a403e8ebb4503ea304b18d1",
         "spans": [
           {
-            "start": 22,
-            "end": 27,
+            "start": 12,
+            "end": 13,
+            "text": "i",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 25,
+            "end": 26,
+            "text": "1",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 55,
+            "end": 60,
             "text": "i < 3",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 131,
+            "end": 140,
+            "text": "std::cout",
             "role": "cpp",
             "reading": "technical"
           }
@@ -4628,33 +5012,61 @@
       {
         "block": "block_0001_0004",
         "path": "/explanation",
-        "sourceSha256": "fb03076017895b75fab0add2a1a0452f40442696e7c0cb33c05b9f08277f82bd",
+        "sourceSha256": "02165736dd43065b6b22fbfa5b78f5ac61ee328b00ccb9cd0d0c3ba4a2895831",
         "spans": [
           {
             "start": 18,
-            "end": 20,
-            "text": "12",
+            "end": 19,
+            "text": "1",
             "role": "output",
             "reading": "natural"
           },
           {
-            "start": 29,
-            "end": 30,
+            "start": 43,
+            "end": 44,
+            "text": "2",
+            "role": "output",
+            "reading": "natural"
+          },
+          {
+            "start": 99,
+            "end": 108,
+            "text": "std::cout",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 141,
+            "end": 142,
             "text": "i",
             "role": "cpp",
             "reading": "technical"
           },
           {
-            "start": 36,
-            "end": 37,
+            "start": 148,
+            "end": 149,
             "text": "3",
             "role": "data",
             "reading": "natural"
           },
           {
-            "start": 95,
-            "end": 99,
+            "start": 151,
+            "end": 156,
+            "text": "i < 3",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 204,
+            "end": 208,
             "text": ":Fin",
+            "role": "output",
+            "reading": "natural"
+          },
+          {
+            "start": 232,
+            "end": 238,
+            "text": "12:Fin",
             "role": "output",
             "reading": "natural"
           }
@@ -4725,20 +5137,20 @@
       {
         "block": "block_0002_0001",
         "path": "/question",
-        "sourceSha256": "604b0e091d9fb54abc2855a49322d7368e51fe693334abdab683b8cef71e5e41",
+        "sourceSha256": "0a6a5b726bd01f273d581f218918413cca4684ac87db624c031cf82d0a27b1aa",
         "spans": [
           {
             "start": 28,
             "end": 29,
-            "text": "5",
-            "role": "data",
-            "reading": "natural"
+            "text": "i",
+            "role": "cpp",
+            "reading": "technical"
           },
           {
-            "start": 95,
-            "end": 96,
-            "text": "X",
-            "role": "output",
+            "start": 35,
+            "end": 36,
+            "text": "5",
+            "role": "data",
             "reading": "natural"
           }
         ]
@@ -4746,25 +5158,32 @@
       {
         "block": "block_0002_0001",
         "path": "/explanation",
-        "sourceSha256": "3d098cd3ed5deed42c7f64506e32810457df8d42eb3030869b533a7dcbc1e963",
+        "sourceSha256": "e14db2e025b16653353ae730589593bdaba4d1b1fa1ecb080423232e700815b3",
         "spans": [
           {
-            "start": 13,
-            "end": 18,
-            "text": "i < 2",
-            "role": "cpp",
-            "reading": "technical"
-          },
-          {
-            "start": 32,
-            "end": 33,
+            "start": 52,
+            "end": 53,
             "text": "5",
             "role": "data",
             "reading": "natural"
           },
           {
-            "start": 69,
-            "end": 72,
+            "start": 67,
+            "end": 68,
+            "text": "2",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 136,
+            "end": 137,
+            "text": "X",
+            "role": "output",
+            "reading": "natural"
+          },
+          {
+            "start": 189,
+            "end": 192,
             "text": "Fin",
             "role": "output",
             "reading": "natural"
@@ -4774,47 +5193,96 @@
       {
         "block": "block_0002_0002",
         "path": "/question",
-        "sourceSha256": "f96af3e2eb5f283e6d5775e5750d2089a28762e1fb7319db9fd3e750f78f0a27",
+        "sourceSha256": "315a79fdc6238f74c3ec31538c4ca1257d4f7fd03c481c0d5b788bb9e08e9b23",
         "spans": [
           {
-            "start": 28,
-            "end": 29,
+            "start": 12,
+            "end": 13,
+            "text": "i",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 25,
+            "end": 26,
             "text": "4",
             "role": "data",
             "reading": "natural"
+          },
+          {
+            "start": 48,
+            "end": 54,
+            "text": "i <= 4",
+            "role": "cpp",
+            "reading": "technical"
           }
         ]
       },
       {
         "block": "block_0002_0002",
         "path": "/explanation",
-        "sourceSha256": "226e465f3b88c7e8225768198a58435dc505956f90bf91bd3516eb6daf8b2537",
+        "sourceSha256": "5bc186da36c2af814f0eb1c486450daf6693b3226941cd2e68ff41754abd52dc",
         "spans": [
           {
-            "start": 13,
-            "end": 19,
+            "start": 4,
+            "end": 5,
+            "text": "i",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 14,
+            "end": 15,
+            "text": "4",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 17,
+            "end": 23,
             "text": "i <= 4",
             "role": "cpp",
             "reading": "technical"
           },
           {
-            "start": 36,
-            "end": 37,
+            "start": 91,
+            "end": 92,
             "text": "X",
             "role": "output",
             "reading": "natural"
           },
           {
-            "start": 62,
-            "end": 63,
+            "start": 103,
+            "end": 106,
+            "text": "++i",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 114,
+            "end": 115,
             "text": "5",
             "role": "data",
             "reading": "natural"
           },
           {
-            "start": 107,
-            "end": 110,
+            "start": 119,
+            "end": 120,
+            "text": "i",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 220,
+            "end": 223,
             "text": "Fin",
+            "role": "output",
+            "reading": "natural"
+          },
+          {
+            "start": 258,
+            "end": 262,
+            "text": "XFin",
             "role": "output",
             "reading": "natural"
           }
@@ -4948,95 +5416,137 @@
       {
         "block": "block_0003_0001",
         "path": "/text",
-        "sourceSha256": "924439ae4505ea462a5fbb152bfc7f7b0d2d22e95bf3ca1ded3110dc48347dec",
+        "sourceSha256": "f79cc1dab912b0558f0e1031740371eea18896cc552dc804f59f53a74a93ce30",
         "spans": [
           {
-            "start": 27,
-            "end": 28,
-            "text": "1",
-            "role": "data",
-            "reading": "natural"
-          },
-          {
-            "start": 48,
-            "end": 49,
-            "text": "3",
-            "role": "data",
-            "reading": "natural"
-          },
-          {
-            "start": 74,
-            "end": 80,
-            "text": "i += 2",
-            "role": "cpp",
-            "reading": "technical"
-          },
-          {
-            "start": 127,
-            "end": 128,
-            "text": "2",
-            "role": "data",
-            "reading": "natural"
-          },
-          {
-            "start": 141,
-            "end": 142,
+            "start": 3,
+            "end": 4,
             "text": "i",
             "role": "cpp",
             "reading": "technical"
           },
           {
-            "start": 197,
-            "end": 206,
+            "start": 92,
+            "end": 98,
+            "text": "i += 2",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 137,
+            "end": 140,
+            "text": "for",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 190,
+            "end": 191,
+            "text": "i",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 217,
+            "end": 218,
+            "text": "i",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 246,
+            "end": 255,
             "text": "i = i + 2",
             "role": "cpp",
             "reading": "technical"
           },
           {
-            "start": 213,
-            "end": 218,
+            "start": 288,
+            "end": 289,
+            "text": "i",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 301,
+            "end": 302,
+            "text": "1",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 321,
+            "end": 326,
             "text": "i < 8",
             "role": "cpp",
             "reading": "technical"
           },
           {
-            "start": 234,
-            "end": 245,
-            "text": "1, 3, 5 y 7",
+            "start": 353,
+            "end": 354,
+            "text": "1",
             "role": "data",
             "reading": "natural"
           },
           {
-            "start": 263,
-            "end": 264,
+            "start": 356,
+            "end": 357,
+            "text": "3",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 359,
+            "end": 360,
+            "text": "5",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 363,
+            "end": 364,
             "text": "7",
             "role": "data",
             "reading": "natural"
           },
           {
-            "start": 283,
-            "end": 284,
+            "start": 398,
+            "end": 399,
+            "text": "i",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 405,
+            "end": 406,
+            "text": "7",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 408,
+            "end": 414,
+            "text": "i += 2",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 422,
+            "end": 423,
             "text": "9",
             "role": "data",
             "reading": "natural"
           },
           {
-            "start": 323,
-            "end": 324,
-            "text": "9",
-            "role": "data",
-            "reading": "natural"
+            "start": 427,
+            "end": 428,
+            "text": "i",
+            "role": "cpp",
+            "reading": "technical"
           },
           {
-            "start": 338,
-            "end": 339,
-            "text": "8",
-            "role": "data",
-            "reading": "natural"
-          },
-          {
-            "start": 369,
-            "end": 387,
+            "start": 533,
+            "end": 551,
             "text": "(Stroustrup, 2024)",
             "role": "citation",
             "reading": "natural"
@@ -5046,49 +5556,91 @@
       {
         "block": "block_0003_0002",
         "path": "/text",
-        "sourceSha256": "7626e520cc9cac7b1b15967c24096b800522579177f3825b08ea88648dd05d28",
+        "sourceSha256": "9764652c02baaeb10545b849bddd412f36363793ec811a4b0aa6c77fce257d2d",
         "spans": [
           {
-            "start": 14,
-            "end": 25,
-            "text": "5, 4, 3 y 2",
-            "role": "data",
-            "reading": "natural"
-          },
-          {
-            "start": 38,
-            "end": 39,
+            "start": 29,
+            "end": 30,
             "text": "5",
             "role": "data",
             "reading": "natural"
           },
           {
-            "start": 79,
-            "end": 82,
-            "text": "--i",
-            "role": "cpp",
-            "reading": "technical"
-          },
-          {
-            "start": 97,
-            "end": 103,
-            "text": "i >= 2",
-            "role": "cpp",
-            "reading": "technical"
-          },
-          {
-            "start": 126,
-            "end": 127,
+            "start": 34,
+            "end": 35,
             "text": "2",
             "role": "data",
             "reading": "natural"
           },
           {
-            "start": 167,
-            "end": 168,
+            "start": 63,
+            "end": 64,
+            "text": "i",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 82,
+            "end": 83,
+            "text": "5",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 89,
+            "end": 92,
+            "text": "--i",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 135,
+            "end": 136,
+            "text": "i",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 169,
+            "end": 170,
+            "text": "i",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 176,
+            "end": 177,
+            "text": "2",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 179,
+            "end": 185,
+            "text": "i >= 2",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 255,
+            "end": 258,
+            "text": "--i",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 266,
+            "end": 267,
             "text": "1",
             "role": "data",
             "reading": "natural"
+          },
+          {
+            "start": 271,
+            "end": 272,
+            "text": "i",
+            "role": "cpp",
+            "reading": "technical"
           }
         ]
       },
@@ -5109,40 +5661,96 @@
       {
         "block": "block_0003_0003",
         "path": "/explanation",
-        "sourceSha256": "d5a5bfff0db48b159bc849465705168a2da60f690bfa59d05b2a2cd10f1b4816",
+        "sourceSha256": "79738fd597ac8f7cd1f071753e1869ebb661b4fb84fcd73564f0aa49356494ee",
         "spans": [
           {
-            "start": 19,
-            "end": 21,
-            "text": "7;",
-            "role": "output",
-            "reading": "natural"
+            "start": 18,
+            "end": 19,
+            "text": "i",
+            "role": "cpp",
+            "reading": "technical"
           },
           {
-            "start": 23,
-            "end": 29,
+            "start": 58,
+            "end": 64,
             "text": "i += 2",
             "role": "cpp",
             "reading": "technical"
           },
           {
-            "start": 35,
-            "end": 36,
-            "text": "9",
+            "start": 72,
+            "end": 73,
+            "text": "i",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 77,
+            "end": 78,
+            "text": "1",
             "role": "data",
             "reading": "natural"
           },
           {
-            "start": 51,
-            "end": 56,
+            "start": 81,
+            "end": 82,
+            "text": "3",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 92,
+            "end": 93,
+            "text": "5",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 106,
+            "end": 107,
+            "text": "7",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 137,
+            "end": 142,
             "text": "i < 8",
             "role": "cpp",
             "reading": "technical"
           },
           {
-            "start": 101,
-            "end": 104,
+            "start": 163,
+            "end": 165,
+            "text": "7;",
+            "role": "output",
+            "reading": "natural"
+          },
+          {
+            "start": 184,
+            "end": 185,
+            "text": "9",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 189,
+            "end": 190,
+            "text": "i",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 259,
+            "end": 262,
             "text": "Fin",
+            "role": "output",
+            "reading": "natural"
+          },
+          {
+            "start": 277,
+            "end": 288,
+            "text": "1;3;5;7;Fin",
             "role": "output",
             "reading": "natural"
           }
@@ -5172,47 +5780,82 @@
       {
         "block": "block_0003_0004",
         "path": "/explanation",
-        "sourceSha256": "26b09cb0dcb580ca980d5cae3b68a4427d4fd1d5ba439c0340030e407f42a03e",
+        "sourceSha256": "2b78da67fbd18213db45ada68fa31178bb83bf725a1b853ed2ffb0e57fd067cc",
         "spans": [
           {
-            "start": 19,
-            "end": 21,
-            "text": "2;",
-            "role": "output",
-            "reading": "natural"
-          },
-          {
-            "start": 23,
-            "end": 26,
-            "text": "--i",
-            "role": "cpp",
-            "reading": "technical"
-          },
-          {
-            "start": 32,
-            "end": 33,
-            "text": "1",
-            "role": "data",
-            "reading": "natural"
-          },
-          {
-            "start": 48,
-            "end": 54,
+            "start": 13,
+            "end": 19,
             "text": "i >= 2",
             "role": "cpp",
             "reading": "technical"
           },
           {
-            "start": 68,
-            "end": 69,
+            "start": 49,
+            "end": 50,
+            "text": "5",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 52,
+            "end": 53,
+            "text": "4",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 55,
+            "end": 56,
+            "text": "3",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 59,
+            "end": 60,
+            "text": "2",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 138,
+            "end": 140,
+            "text": "2;",
+            "role": "output",
+            "reading": "natural"
+          },
+          {
+            "start": 142,
+            "end": 145,
+            "text": "--i",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 153,
+            "end": 154,
             "text": "1",
             "role": "data",
             "reading": "natural"
           },
           {
-            "start": 90,
-            "end": 93,
+            "start": 158,
+            "end": 159,
+            "text": "i",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 255,
+            "end": 258,
             "text": "Fin",
+            "role": "output",
+            "reading": "natural"
+          },
+          {
+            "start": 273,
+            "end": 284,
+            "text": "5;4;3;2;Fin",
             "role": "output",
             "reading": "natural"
           }
@@ -5221,42 +5864,56 @@
       {
         "block": "block_0003_0005",
         "path": "/question",
-        "sourceSha256": "84f3924715a4922d933c4c16db18787afc7e87c1fd8afa91f45574ceb227ba24",
+        "sourceSha256": "8d924a34adbbf02b7810d89036e57a06cf8d1685a40b46fb6a664765ede12f63",
         "spans": [
           {
-            "start": 51,
-            "end": 52,
+            "start": 91,
+            "end": 92,
+            "text": "5",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 106,
+            "end": 107,
             "text": "i",
             "role": "cpp",
             "reading": "technical"
           },
           {
-            "start": 64,
-            "end": 65,
+            "start": 119,
+            "end": 120,
             "text": "0",
             "role": "data",
             "reading": "natural"
           },
           {
-            "start": 107,
-            "end": 113,
-            "text": "i != 5",
+            "start": 165,
+            "end": 166,
+            "text": "i",
             "role": "cpp",
             "reading": "technical"
           },
           {
-            "start": 160,
-            "end": 161,
+            "start": 175,
+            "end": 176,
             "text": "4",
             "role": "data",
             "reading": "natural"
           },
           {
-            "start": 164,
-            "end": 165,
+            "start": 179,
+            "end": 180,
             "text": "6",
             "role": "data",
             "reading": "natural"
+          },
+          {
+            "start": 229,
+            "end": 235,
+            "text": "i != 5",
+            "role": "cpp",
+            "reading": "technical"
           }
         ]
       },
@@ -5333,12 +5990,40 @@
       {
         "block": "block_0003_0005",
         "path": "/options/1",
-        "sourceSha256": "1e72f769a61fdce3ed2a4603dd6083ca88d2250709efef4c255a8ab7cb8db3e8",
+        "sourceSha256": "498029ee0665d2214c1ee564d988f5e1adb5eb98fff7c323eab420b069f924c2",
         "spans": [
+          {
+            "start": 7,
+            "end": 8,
+            "text": "i",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 17,
+            "end": 18,
+            "text": "4",
+            "role": "data",
+            "reading": "natural"
+          },
           {
             "start": 21,
             "end": 22,
-            "text": "5",
+            "text": "6",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 24,
+            "end": 30,
+            "text": "i != 5",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 81,
+            "end": 82,
+            "text": "6",
             "role": "data",
             "reading": "natural"
           }
@@ -5555,33 +6240,110 @@
       {
         "block": "block_0004_0004",
         "path": "/explanation",
-        "sourceSha256": "e88311cb64b2ab1f7ad40b461bc4df17e55b92376c2890dda73fe94ad84c17d1",
+        "sourceSha256": "48a17997731cc06f8562da7f31beacfc7cb8c26f9b9d218eeb04287d108a7c40",
         "spans": [
           {
-            "start": 74,
-            "end": 80,
-            "text": "0:2:4:",
+            "start": 40,
+            "end": 42,
+            "text": "0:",
             "role": "output",
             "reading": "natural"
           },
           {
-            "start": 89,
-            "end": 90,
+            "start": 47,
+            "end": 51,
+            "text": "++i;",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 70,
+            "end": 71,
             "text": "i",
             "role": "cpp",
             "reading": "technical"
           },
           {
-            "start": 99,
-            "end": 100,
+            "start": 75,
+            "end": 76,
+            "text": "0",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 79,
+            "end": 80,
+            "text": "1",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 94,
+            "end": 97,
+            "text": "++i",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 126,
+            "end": 127,
+            "text": "1",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 130,
+            "end": 131,
+            "text": "2",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 151,
+            "end": 156,
+            "text": "i < 6",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 192,
+            "end": 194,
+            "text": "2:",
+            "role": "output",
+            "reading": "natural"
+          },
+          {
+            "start": 216,
+            "end": 218,
+            "text": "4:",
+            "role": "output",
+            "reading": "natural"
+          },
+          {
+            "start": 278,
+            "end": 279,
             "text": "6",
             "role": "data",
             "reading": "natural"
           },
           {
-            "start": 144,
-            "end": 147,
+            "start": 283,
+            "end": 284,
+            "text": "i",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 348,
+            "end": 351,
             "text": "Fin",
+            "role": "output",
+            "reading": "natural"
+          },
+          {
+            "start": 366,
+            "end": 375,
+            "text": "0:2:4:Fin",
             "role": "output",
             "reading": "natural"
           }
@@ -5701,18 +6463,53 @@
       {
         "block": "block_0005_0001",
         "path": "/question",
-        "sourceSha256": "fd5ad2364dca954dcaf7232e1668f35a305f45e12d44326b1360c7028625aebb",
+        "sourceSha256": "fad49d8bfcf7b80db1d689bf0c40b30ebe7370ac0d157cc836b1abf84727a48f",
         "spans": [
           {
-            "start": 50,
-            "end": 53,
-            "text": "234",
+            "start": 34,
+            "end": 35,
+            "text": "2",
             "role": "output",
             "reading": "natural"
           },
           {
-            "start": 160,
-            "end": 161,
+            "start": 37,
+            "end": 38,
+            "text": "3",
+            "role": "output",
+            "reading": "natural"
+          },
+          {
+            "start": 41,
+            "end": 42,
+            "text": "4",
+            "role": "output",
+            "reading": "natural"
+          },
+          {
+            "start": 129,
+            "end": 132,
+            "text": "for",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 163,
+            "end": 164,
+            "text": "i",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 194,
+            "end": 197,
+            "text": "i <",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 224,
+            "end": 225,
             "text": "i",
             "role": "cpp",
             "reading": "technical"
@@ -5722,61 +6519,89 @@
       {
         "block": "block_0005_0002",
         "path": "/text",
-        "sourceSha256": "dfd2abe85ed73da6528c963a14a42798d09a2c91e439d746c3f099c6a800b03f",
+        "sourceSha256": "15a8da43545f199a873715e7eb4400111a97dbabdcaae8fbc76be25e719be19b",
         "spans": [
           {
-            "start": 23,
-            "end": 24,
+            "start": 75,
+            "end": 76,
             "text": "2",
             "role": "data",
             "reading": "natural"
           },
           {
-            "start": 71,
-            "end": 72,
+            "start": 86,
+            "end": 87,
             "text": "4",
             "role": "data",
             "reading": "natural"
           },
           {
-            "start": 135,
-            "end": 136,
+            "start": 180,
+            "end": 181,
+            "text": "2",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 184,
+            "end": 185,
+            "text": "3",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 194,
+            "end": 200,
+            "text": "puesto",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 209,
+            "end": 210,
             "text": "4",
             "role": "data",
             "reading": "natural"
           },
           {
-            "start": 165,
-            "end": 168,
-            "text": "for",
-            "role": "cpp",
-            "reading": "technical"
-          },
-          {
-            "start": 200,
-            "end": 213,
-            "text": "primer_puesto",
-            "role": "cpp",
-            "reading": "technical"
-          },
-          {
-            "start": 216,
-            "end": 229,
-            "text": "ultimo_puesto",
-            "role": "cpp",
-            "reading": "technical"
-          },
-          {
-            "start": 428,
-            "end": 431,
+            "start": 249,
+            "end": 252,
             "text": "Fin",
             "role": "output",
             "reading": "natural"
           },
           {
-            "start": 450,
-            "end": 480,
+            "start": 281,
+            "end": 284,
+            "text": "for",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 362,
+            "end": 375,
+            "text": "primer_puesto",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 378,
+            "end": 391,
+            "text": "ultimo_puesto",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 619,
+            "end": 649,
             "text": "Puesto 2\nPuesto 3\nPuesto 4\nFin",
+            "role": "output",
+            "reading": "natural"
+          },
+          {
+            "start": 734,
+            "end": 737,
+            "text": "Fin",
             "role": "output",
             "reading": "natural"
           }
@@ -5799,18 +6624,53 @@
       {
         "block": "block_0005_0005",
         "path": "/text",
-        "sourceSha256": "b186abf32a840423fcaaeba9998fc49ba18fb86d731d74305f43cdb957947a97",
+        "sourceSha256": "fb1d9af9f7c285959cb9af7e77528da40931b6b408a8c7c4bc1c5e011b2b3783",
         "spans": [
           {
-            "start": 3,
-            "end": 29,
+            "start": 100,
+            "end": 101,
+            "text": "2",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 111,
+            "end": 112,
+            "text": "4",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 132,
+            "end": 135,
+            "text": "for",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 151,
+            "end": 177,
             "text": "for (int i{2}; i < 5; ++i)",
             "role": "cpp",
             "reading": "technical"
           },
           {
-            "start": 116,
-            "end": 121,
+            "start": 183,
+            "end": 184,
+            "text": "i",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 236,
+            "end": 237,
+            "text": "i",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 322,
+            "end": 327,
             "text": "while",
             "role": "cpp",
             "reading": "technical"
@@ -5826,7 +6686,7 @@
       {
         "block": "block_0006_0001",
         "path": "/text",
-        "sourceSha256": "1391902440e1a16f299e4ca14d78c4779dbd2c396a7d22058142a0b4d5b6e630",
+        "sourceSha256": "25e9c04783ae4dca1b202504cb1579755f912f64e3a3970b5611e968abc0b584",
         "spans": [
           {
             "start": 15,
@@ -5836,57 +6696,106 @@
             "reading": "technical"
           },
           {
-            "start": 137,
-            "end": 141,
-            "text": "++i;",
-            "role": "cpp",
-            "reading": "technical"
-          },
-          {
-            "start": 156,
-            "end": 164,
-            "text": "Puesto 4",
-            "role": "output",
-            "reading": "natural"
-          },
-          {
-            "start": 185,
-            "end": 186,
-            "text": "5",
-            "role": "data",
-            "reading": "natural"
-          },
-          {
-            "start": 189,
-            "end": 194,
+            "start": 72,
+            "end": 77,
             "text": "i < 5",
             "role": "cpp",
             "reading": "technical"
           },
           {
-            "start": 208,
-            "end": 213,
-            "text": "while",
+            "start": 95,
+            "end": 104,
+            "text": "std::cout",
             "role": "cpp",
             "reading": "technical"
           },
           {
-            "start": 253,
-            "end": 256,
-            "text": "for",
+            "start": 144,
+            "end": 148,
+            "text": "++i;",
             "role": "cpp",
             "reading": "technical"
           },
           {
-            "start": 335,
-            "end": 343,
+            "start": 157,
+            "end": 158,
+            "text": "i",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 180,
+            "end": 188,
+            "text": "Puesto 4",
+            "role": "output",
+            "reading": "natural"
+          },
+          {
+            "start": 211,
+            "end": 212,
+            "text": "5",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 216,
+            "end": 217,
+            "text": "i",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 338,
+            "end": 342,
+            "text": "++i;",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 352,
+            "end": 361,
+            "text": "std::cout",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 422,
+            "end": 423,
+            "text": "i",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 432,
+            "end": 433,
+            "text": "2",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 451,
+            "end": 452,
+            "text": "i",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 455,
+            "end": 456,
+            "text": "3",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 513,
+            "end": 521,
             "text": "Puesto 3",
             "role": "output",
             "reading": "natural"
           },
           {
-            "start": 421,
-            "end": 439,
+            "start": 522,
+            "end": 540,
             "text": "(Stroustrup, 2024)",
             "role": "citation",
             "reading": "natural"
@@ -5902,47 +6811,96 @@
       {
         "block": "block_0007_0001",
         "path": "/text",
-        "sourceSha256": "a63aa8237509f962e1a25294ded37f2b8616132828738b207222c512664414ce",
+        "sourceSha256": "0532c0619dceabed7c0bea5aadf6be350c91d047186c9600c7787af5d36750da",
         "spans": [
           {
-            "start": 12,
-            "end": 13,
+            "start": 16,
+            "end": 17,
             "text": "4",
             "role": "data",
             "reading": "natural"
           },
           {
-            "start": 15,
-            "end": 28,
+            "start": 32,
+            "end": 40,
+            "text": "std::cin",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 71,
+            "end": 84,
             "text": "primer_puesto",
             "role": "cpp",
             "reading": "technical"
           },
           {
-            "start": 36,
-            "end": 37,
-            "text": "4",
-            "role": "data",
-            "reading": "natural"
+            "start": 114,
+            "end": 140,
+            "text": "int puesto = primer_puesto",
+            "role": "cpp",
+            "reading": "technical"
           },
           {
-            "start": 80,
-            "end": 86,
+            "start": 160,
+            "end": 166,
             "text": "puesto",
             "role": "cpp",
             "reading": "technical"
           },
           {
-            "start": 146,
-            "end": 154,
+            "start": 186,
+            "end": 194,
+            "text": "Puesto 4",
+            "role": "output",
+            "reading": "natural"
+          },
+          {
+            "start": 225,
+            "end": 233,
             "text": "--puesto",
             "role": "cpp",
             "reading": "technical"
           },
           {
-            "start": 235,
-            "end": 243,
-            "text": "4, 3 y 2",
+            "start": 246,
+            "end": 252,
+            "text": "puesto",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 262,
+            "end": 263,
+            "text": "3",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 284,
+            "end": 287,
+            "text": "for",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 310,
+            "end": 321,
+            "text": "puesto >= 2",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 363,
+            "end": 364,
+            "text": "3",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 386,
+            "end": 387,
+            "text": "2",
             "role": "data",
             "reading": "natural"
           }
@@ -5951,7 +6909,7 @@
       {
         "block": "block_0007_0003",
         "path": "/text",
-        "sourceSha256": "2cd25062c5ac537c6dff1879db98739bc9a4fa66a94eaac295d38265247360e2",
+        "sourceSha256": "2519bf8f422a48d0b3fa7028eaeea7b8c8461f3a71bcc788720a67dfaf9b92e2",
         "spans": [
           {
             "start": 7,
@@ -5968,43 +6926,78 @@
             "reading": "natural"
           },
           {
-            "start": 37,
-            "end": 48,
+            "start": 22,
+            "end": 33,
             "text": "puesto >= 2",
             "role": "cpp",
             "reading": "technical"
           },
           {
-            "start": 86,
-            "end": 94,
+            "start": 74,
+            "end": 82,
             "text": "Puesto 2",
             "role": "output",
             "reading": "natural"
           },
           {
-            "start": 111,
-            "end": 112,
+            "start": 113,
+            "end": 121,
+            "text": "--puesto",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 129,
+            "end": 130,
             "text": "1",
             "role": "data",
             "reading": "natural"
           },
           {
-            "start": 151,
-            "end": 154,
+            "start": 134,
+            "end": 140,
+            "text": "puesto",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 206,
+            "end": 209,
             "text": "Fin",
             "role": "output",
             "reading": "natural"
           },
           {
-            "start": 169,
-            "end": 170,
+            "start": 261,
+            "end": 262,
             "text": "1",
             "role": "data",
             "reading": "natural"
           },
           {
-            "start": 231,
-            "end": 234,
+            "start": 277,
+            "end": 283,
+            "text": "puesto",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 289,
+            "end": 290,
+            "text": "1",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 364,
+            "end": 372,
+            "text": "--puesto",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 413,
+            "end": 416,
             "text": "Fin",
             "role": "output",
             "reading": "natural"
@@ -6014,46 +7007,53 @@
       {
         "block": "orden_while_puestos_2_3_4",
         "path": "/question",
-        "sourceSha256": "79b436cad29a7f5a9912c2d162e63c3dcca1efd07b38a15259609b4d8f0fc546",
+        "sourceSha256": "81a98f8e2dfa0a1f384451bc42624595d3c13b0984d6692a52216974ebe617e9",
         "spans": [
           {
-            "start": 48,
-            "end": 53,
+            "start": 40,
+            "end": 45,
             "text": "while",
             "role": "cpp",
             "reading": "technical"
           },
           {
-            "start": 78,
-            "end": 86,
+            "start": 68,
+            "end": 76,
             "text": "Puesto 2",
             "role": "output",
             "reading": "natural"
           },
           {
-            "start": 88,
-            "end": 96,
+            "start": 78,
+            "end": 86,
             "text": "Puesto 3",
             "role": "output",
             "reading": "natural"
           },
           {
-            "start": 99,
-            "end": 107,
+            "start": 89,
+            "end": 97,
             "text": "Puesto 4",
             "role": "output",
             "reading": "natural"
+          },
+          {
+            "start": 182,
+            "end": 183,
+            "text": "i",
+            "role": "cpp",
+            "reading": "technical"
           }
         ]
       },
       {
         "block": "orden_while_puestos_2_3_4",
         "path": "/explanation",
-        "sourceSha256": "8139f5a71cfe52071583452c43b3fcbd74be3d30ca37aead363d688dbf1fe31b",
+        "sourceSha256": "c01b443d15a537d924f24995c60ff52942623e41405323f28789feed836f3b2a",
         "spans": [
           {
-            "start": 14,
-            "end": 23,
+            "start": 0,
+            "end": 9,
             "text": "int i{2};",
             "role": "cpp",
             "reading": "technical"
@@ -6066,36 +7066,64 @@
             "reading": "technical"
           },
           {
-            "start": 139,
-            "end": 143,
+            "start": 84,
+            "end": 93,
+            "text": "std::cout",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 149,
+            "end": 153,
             "text": "++i;",
             "role": "cpp",
             "reading": "technical"
           },
           {
-            "start": 194,
-            "end": 195,
+            "start": 165,
+            "end": 166,
             "text": "i",
             "role": "cpp",
             "reading": "technical"
           },
           {
-            "start": 204,
-            "end": 205,
-            "text": "5",
+            "start": 222,
+            "end": 230,
+            "text": "Puesto 4",
             "role": "output",
             "reading": "natural"
           },
           {
-            "start": 263,
-            "end": 272,
+            "start": 232,
+            "end": 233,
+            "text": "i",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 241,
+            "end": 242,
+            "text": "5",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 289,
+            "end": 294,
+            "text": "while",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 305,
+            "end": 314,
             "text": "return 0;",
             "role": "cpp",
             "reading": "technical"
           },
           {
-            "start": 283,
-            "end": 287,
+            "start": 318,
+            "end": 322,
             "text": "main",
             "role": "cpp",
             "reading": "technical"
@@ -6105,7 +7133,7 @@
       {
         "block": "orden_while_puestos_2_3_4",
         "path": "/reviewFeedback",
-        "sourceSha256": "d0d9a2f8b6b23530d951790a39a161c3dd10003faa3012f9fbc30838846a2d0f",
+        "sourceSha256": "3b034c45068d3b5b7b8f0f053a5c704478ca448220d76e138fb2e892108679f5",
         "spans": [
           {
             "start": 26,
@@ -6115,18 +7143,25 @@
             "reading": "technical"
           },
           {
-            "start": 101,
-            "end": 106,
+            "start": 114,
+            "end": 119,
             "text": "while",
             "role": "cpp",
             "reading": "technical"
           },
           {
-            "start": 121,
-            "end": 125,
-            "text": "main",
+            "start": 190,
+            "end": 191,
+            "text": "i",
             "role": "cpp",
             "reading": "technical"
+          },
+          {
+            "start": 253,
+            "end": 261,
+            "text": "Puesto 2",
+            "role": "output",
+            "reading": "natural"
           }
         ]
       },
@@ -6154,35 +7189,35 @@
       {
         "block": "p1u4l2_comparacion_inclusion",
         "path": "/text",
-        "sourceSha256": "14ac9426bbb4732443b4cfbf88b61b00a71779685fd94237c4ca2ee6db74f8b9",
+        "sourceSha256": "4453a172ba9f3d1e597ebd3dcb1715d99d76e778a2edf556d4680ae76de4e663",
         "spans": [
           {
-            "start": 4,
-            "end": 26,
+            "start": 7,
+            "end": 13,
+            "text": "puesto",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 16,
+            "end": 29,
+            "text": "ultimo_puesto",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 36,
+            "end": 37,
+            "text": "4",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 39,
+            "end": 61,
             "text": "puesto < ultimo_puesto",
             "role": "cpp",
             "reading": "technical"
-          },
-          {
-            "start": 55,
-            "end": 56,
-            "text": "4",
-            "role": "data",
-            "reading": "natural"
-          },
-          {
-            "start": 71,
-            "end": 94,
-            "text": "puesto <= ultimo_puesto",
-            "role": "cpp",
-            "reading": "technical"
-          },
-          {
-            "start": 114,
-            "end": 115,
-            "text": "4",
-            "role": "data",
-            "reading": "natural"
           },
           {
             "start": 163,
@@ -6192,15 +7227,43 @@
             "reading": "natural"
           },
           {
-            "start": 188,
-            "end": 189,
+            "start": 178,
+            "end": 201,
+            "text": "puesto <= ultimo_puesto",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 269,
+            "end": 277,
+            "text": "Puesto 4",
+            "role": "output",
+            "reading": "natural"
+          },
+          {
+            "start": 308,
+            "end": 316,
+            "text": "++puesto",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 324,
+            "end": 325,
             "text": "5",
             "role": "data",
             "reading": "natural"
           },
           {
-            "start": 248,
-            "end": 251,
+            "start": 329,
+            "end": 335,
+            "text": "puesto",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 436,
+            "end": 439,
             "text": "Fin",
             "role": "output",
             "reading": "natural"
@@ -6224,88 +7287,95 @@
       {
         "block": "p1u4l2_consigna_descendente",
         "path": "/text",
-        "sourceSha256": "5fd758fdb1e5dc3a7640e94c71dc7e9c5f8e07ac100d16e669b3e1c925459440",
+        "sourceSha256": "202368b6885b56d7c19450380150fbc6a974a2609e39b28d54398ecc9b3b967d",
         "spans": [
           {
-            "start": 35,
-            "end": 36,
+            "start": 66,
+            "end": 67,
             "text": "1",
             "role": "data",
             "reading": "natural"
           },
           {
-            "start": 40,
-            "end": 41,
+            "start": 71,
+            "end": 72,
             "text": "5",
             "role": "data",
             "reading": "natural"
           },
           {
-            "start": 100,
-            "end": 108,
-            "text": "std::cin",
-            "role": "cpp",
-            "reading": "technical"
-          },
-          {
-            "start": 145,
-            "end": 158,
-            "text": "primer_puesto",
-            "role": "cpp",
-            "reading": "technical"
-          },
-          {
-            "start": 212,
-            "end": 215,
-            "text": "for",
-            "role": "cpp",
-            "reading": "technical"
-          },
-          {
-            "start": 310,
-            "end": 311,
-            "text": "2",
-            "role": "data",
-            "reading": "natural"
-          },
-          {
-            "start": 348,
-            "end": 354,
-            "text": "Puesto",
-            "role": "output",
-            "reading": "natural"
-          },
-          {
-            "start": 463,
-            "end": 464,
-            "text": "2",
-            "role": "data",
-            "reading": "natural"
-          },
-          {
-            "start": 514,
-            "end": 517,
-            "text": "Fin",
-            "role": "output",
-            "reading": "natural"
-          },
-          {
-            "start": 541,
-            "end": 542,
+            "start": 128,
+            "end": 129,
             "text": "4",
             "role": "data",
             "reading": "natural"
           },
           {
-            "start": 559,
-            "end": 589,
+            "start": 192,
+            "end": 200,
+            "text": "std::cin",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 231,
+            "end": 244,
+            "text": "primer_puesto",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 295,
+            "end": 298,
+            "text": "for",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 393,
+            "end": 399,
+            "text": "Puesto",
+            "role": "output",
+            "reading": "natural"
+          },
+          {
+            "start": 495,
+            "end": 496,
+            "text": "2",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 538,
+            "end": 539,
+            "text": "1",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 617,
+            "end": 620,
+            "text": "Fin",
+            "role": "output",
+            "reading": "natural"
+          },
+          {
+            "start": 652,
+            "end": 653,
+            "text": "4",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 670,
+            "end": 700,
             "text": "Puesto 4\nPuesto 3\nPuesto 2\nFin",
             "role": "output",
             "reading": "natural"
           },
           {
-            "start": 673,
-            "end": 676,
+            "start": 785,
+            "end": 788,
             "text": "Fin",
             "role": "output",
             "reading": "natural"
@@ -6362,6 +7432,97 @@
             "start": 290,
             "end": 293,
             "text": "Fin",
+            "role": "output",
+            "reading": "natural"
+          }
+        ]
+      },
+      {
+        "block": "block_0005_0001",
+        "path": "/explanation",
+        "sourceSha256": "9e81ea613833fc1e55c10da1d1b1e18f0b71c21922a50f2fbe7ecad456d8c7c0",
+        "spans": [
+          {
+            "start": 35,
+            "end": 36,
+            "text": "2",
+            "role": "output",
+            "reading": "natural"
+          },
+          {
+            "start": 38,
+            "end": 39,
+            "text": "i",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 56,
+            "end": 57,
+            "text": "2",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 63,
+            "end": 66,
+            "text": "++i",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 88,
+            "end": 89,
+            "text": "i",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 111,
+            "end": 116,
+            "text": "i < 5",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 142,
+            "end": 143,
+            "text": "4",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 159,
+            "end": 160,
+            "text": "5",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 182,
+            "end": 183,
+            "text": "2",
+            "role": "output",
+            "reading": "natural"
+          },
+          {
+            "start": 185,
+            "end": 186,
+            "text": "3",
+            "role": "output",
+            "reading": "natural"
+          },
+          {
+            "start": 189,
+            "end": 190,
+            "text": "4",
+            "role": "output",
+            "reading": "natural"
+          },
+          {
+            "start": 212,
+            "end": 215,
+            "text": "234",
             "role": "output",
             "reading": "natural"
           }

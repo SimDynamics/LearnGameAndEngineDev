@@ -29,9 +29,9 @@
         },
         {
           "type": "multiple_choice",
-          "question": "En el programa de las plazas, la condición da false. Después de comprobarla, ¿qué instrucciones ejecuta el programa?",
+          "question": "Supón que la sala tiene cero plazas libres. En el programa de las plazas, plazas_libres > 0 da false. ¿Qué rama ejecuta el programa y qué ocurre con la instrucción que muestra Revision terminada después de las llaves?",
           "options": [
-            "Ejecutar la rama else y después continuar.",
+            "Ejecuta la rama de else, que muestra Completo. Después muestra Revision terminada.",
             "Ejecutar ambas ramas y después continuar.",
             "Omitir todo lo que queda del programa."
           ],
@@ -105,7 +105,7 @@
         },
         {
           "type": "paragraph",
-          "text": "Ambas condiciones dan false con 5 piezas y true con 8. Probar esas dos cantidades permite ver las dos ramas, pero las dos versiones dan las mismas respuestas. Con 6, en cambio, solo >= lleva a la rama que muestra Listo.\n\nAl elegir pruebas para un límite entero, escribe el resultado esperado justo por debajo, en el límite y justo por encima. En este lote son cinco, seis y siete piezas. El requisito permite decidir qué mensaje esperas para cada cantidad antes de ejecutar el programa."
+          "text": "Las comparaciones piezas >= 6 y piezas > 6 dan false con 5 piezas y true con 8. Probar esas dos cantidades permite ver las dos ramas, pero las dos versiones dan las mismas respuestas. Con 6, en cambio, solo >= lleva a la rama que muestra Listo.\n\nAl elegir pruebas para un límite entero, escribe el resultado esperado justo por debajo, en el límite y justo por encima. Para cinco piezas se espera Pendiente. Para seis y para siete se espera Listo. El requisito permite decidir qué mensaje esperas para cada cantidad antes de ejecutar el programa."
         }
       ]
     },
@@ -121,7 +121,7 @@
         },
         {
           "type": "multiple_choice",
-          "question": "El nivel medido y el límite valen cuatro. Según la regla, ¿qué debe mostrar el programa en los dos primeros renglones, el aviso y la marca?",
+          "question": "El nivel del agua y el límite valen 4. ¿Qué aviso debe aparecer en el primer renglón de la salida y qué marca debe aparecer en el segundo?",
           "options": [
             "Normal\nMarca: 0",
             "Alerta\nNormal\nMarca: 1",
@@ -140,7 +140,7 @@
         },
         {
           "type": "paragraph",
-          "text": "El editor tiene nivel y limite iguales a cuatro. Su condición usa >. El último renglón muestra el nivel usado en la decisión. Con estos datos, la consola muestra lo siguiente.\n\nNormal\nMarca: 0\nNivel: 4\n\nCorrige únicamente la comparación para que el programa emita la alerta cuando el nivel sea igual o mayor que el límite. Conserva las declaraciones, las asignaciones y los mensajes.\n\nSalida esperada\nAlerta\nMarca: 1\nNivel: 4\n\nPulsa «Compilar, ejecutar y comprobar». Puedes añadir un salto de línea después del tercer renglón."
+          "text": "El editor tiene nivel y limite iguales a cuatro. Su condición usa >. El último renglón de la salida muestra el nivel usado en la decisión. Con estos datos, la consola muestra lo siguiente.\n\nNormal\nMarca: 0\nNivel: 4\n\nCorrige únicamente la comparación para que el programa emita la alerta cuando el nivel sea igual o mayor que el límite. Conserva las declaraciones, las asignaciones y los mensajes.\n\nSalida esperada\nAlerta\nMarca: 1\nNivel: 4\n\nPulsa «Compilar, ejecutar y comprobar». Puedes añadir un salto de línea después del tercer renglón de la salida."
         },
         {
           "type": "cpp_compiler",
@@ -156,6 +156,23 @@
               }
             ]
           }
+        },
+        {
+          "type": "heading",
+          "text": "Revisar la reparación de la alerta"
+        },
+        {
+          "type": "paragraph",
+          "text": "Con nivel y límite iguales a cuatro, la condición de la referencia vale true. La rama de alerta guarda uno en marca_alerta y muestra el aviso. Una vez fuera de las llaves de la decisión, el programa muestra la marca guardada y el nivel que comparó."
+        },
+        {
+          "type": "code",
+          "language": "cpp",
+          "code": "#include <iostream>\n\nint main() {\n    int nivel = 4;\n    int limite = 4;\n\n    int marca_alerta = 0;\n\n    if (nivel >= limite) {\n        marca_alerta = 1;\n\n        std::cout << \"Alerta\\n\";\n    } else {\n        std::cout << \"Normal\\n\";\n    }\n\n    std::cout << \"Marca: \" << marca_alerta;\n    std::cout << \"\\nNivel: \" << nivel;\n\n    return 0;\n}\n"
+        },
+        {
+          "type": "paragraph",
+          "text": "Supón que el nivel de agua es tres y el límite de alerta es cuatro. Como tres es menor que cuatro, nivel >= limite da false. El bloque de else muestra Normal. La variable marca_alerta conserva su valor inicial, cero. El segundo renglón de la salida muestra Marca: 0 y el tercero muestra Nivel: 3.\n\nSi el nivel sube a cinco y el límite sigue en cuatro, se supera el límite y debe aparecer Alerta. Si la condición solo comprobara si el nivel es igual al límite, la alerta aparecería con cuatro, pero se perdería con cinco."
         }
       ]
     },
@@ -207,15 +224,19 @@
         },
         {
           "type": "note",
-          "text": "Si el programa muestra el mensaje equivocado, comprueba qué valor produce la condición y a qué rama conduce. Si el mensaje es correcto y la marca es incorrecta, revisa qué rama asignó un valor a la variable y qué valor había antes. Si solo cambia la presentación, compara el texto, los espacios y los saltos de línea."
-        },
+          "text": "En el programa del sensor de agua, el límite es cuatro. Si el nivel también vale cuatro, el aviso esperado es Alerta. Si aparece Normal, revisa si la comparación incluye la igualdad. Si aparece Alerta seguido de Marca: 0, el programa eligió la rama correcta. Revisa si esa rama cambia marca_alerta de cero a uno antes de que std::cout muestre la marca. Si el aviso y la marca son correctos, compara también los espacios y los saltos de línea con la salida esperada."
+        }
+      ]
+    },
+    {
+      "blocks": [
         {
           "type": "heading",
           "text": "Programar el aviso con los datos de entrada"
         },
         {
           "type": "paragraph",
-          "text": "Escribe un programa que lea dos enteros del campo «Entrada». Los dos valores pertenecen a la escala de cero a ocho.\n\nPrimero, el nivel de agua que mide el sensor.\nDespués, el límite a partir del cual debe emitir una alerta.\n\nInicializa en cero una variable para la marca de alerta. Usa if y else para mostrar el mensaje que corresponde al nivel. Si alcanza o supera el límite, cambia la marca a uno dentro de la rama que muestra Alerta. Si queda por debajo, muestra Normal y conserva la marca en cero. Escribe el renglón de la marca después de las dos ramas.\n\nEntrada\n3 4\n\nSalida esperada\nNormal\nMarca: 0\n\nPulsa «Compilar, ejecutar y comprobar». Este primer caso permite avanzar. Puedes añadir un salto de línea después del segundo renglón."
+          "text": "Escribe un programa que lea dos enteros del campo «Entrada». Los dos valores pertenecen a la escala de cero a ocho.\n\nPrimero, el nivel de agua que mide el sensor.\nDespués, el límite a partir del cual debe emitir una alerta.\n\nInicializa en cero una variable para la marca de alerta. Usa if y else para mostrar el mensaje que corresponde al nivel. Si alcanza o supera el límite, cambia la marca a uno dentro de la rama que muestra Alerta. Si queda por debajo, muestra Normal y conserva la marca en cero. Coloca después de la llave que cierra el bloque de else la instrucción con std::cout que muestra la marca. Así el segundo renglón de la salida aparecerá tanto si el aviso fue Alerta como si fue Normal.\n\nEntrada\n3 4\n\nSalida esperada\nNormal\nMarca: 0\n\nPara completar el ejercicio, deja 3 4 en el campo «Entrada» y pulsa «Compilar, ejecutar y comprobar». El programa debe producir la salida esperada para esos datos. Puedes añadir un salto de línea después del segundo renglón de la salida."
         },
         {
           "type": "cpp_compiler",
@@ -254,6 +275,23 @@
               }
             ]
           }
+        },
+        {
+          "type": "heading",
+          "text": "Revisar el programa que lee el nivel y el límite"
+        },
+        {
+          "type": "code",
+          "language": "cpp",
+          "code": "#include <iostream>\n\nint main() {\n    int nivel = 0;\n    int limite = 0;\n\n    std::cin >> nivel >> limite;\n\n    int marca_alerta = 0;\n\n    if (nivel >= limite) {\n        marca_alerta = 1;\n\n        std::cout << \"Alerta\\n\";\n    } else {\n        std::cout << \"Normal\\n\";\n    }\n\n    std::cout << \"Marca: \" << marca_alerta;\n\n    return 0;\n}\n"
+        },
+        {
+          "type": "paragraph",
+          "text": "Pruebas opcionales en este editor\nPara cada prueba, escribe los datos indicados en el campo «Entrada», pulsa «Compilar, ejecutar y comprobar» y compara los renglones que muestra la consola con la salida esperada para esa entrada.\n\nLa igualdad cumple la regla de alerta.\n\nEntrada\n4 4\n\nSalida esperada\nAlerta\nMarca: 1\n\nEl nivel supera el límite y el programa sigue emitiendo la alerta.\n\nEntrada\n5 4\n\nSalida esperada\nAlerta\nMarca: 1\n\nSi el límite baja a tres, el mismo nivel ahora lo alcanza.\n\nEntrada\n3 3\n\nSalida esperada\nAlerta\nMarca: 1"
+        },
+        {
+          "type": "note",
+          "text": "Probar 3 3 tras 3 4 mantiene el mismo nivel y cambia el límite. Cuando el límite baja a tres, la salida debe cambiar de Normal a Alerta y de Marca: 0 a Marca: 1. Si la salida sigue siendo la misma, comprueba que el programa usa el límite que leyó."
         }
       ]
     },
@@ -291,44 +329,6 @@
         {
           "type": "note",
           "text": "Con tres grupos, grupos > 0 da true. Se ejecuta la división de dieciocho entre tres y la consola muestra 6, la cantidad de fichas por grupo. Con cero grupos, de las dos ramas se ejecuta la que muestra el aviso."
-        }
-      ]
-    },
-    {
-      "blocks": [
-        {
-          "type": "heading",
-          "text": "Revisar la reparación de la alerta"
-        },
-        {
-          "type": "paragraph",
-          "text": "Con nivel y límite iguales a cuatro, la condición de la referencia vale true. La rama de alerta guarda uno en marca_alerta y muestra el aviso. Una vez fuera de las llaves de la decisión, el programa muestra la marca guardada y el nivel que comparó."
-        },
-        {
-          "type": "code",
-          "language": "cpp",
-          "code": "#include <iostream>\n\nint main() {\n    int nivel = 4;\n    int limite = 4;\n\n    int marca_alerta = 0;\n\n    if (nivel >= limite) {\n        marca_alerta = 1;\n\n        std::cout << \"Alerta\\n\";\n    } else {\n        std::cout << \"Normal\\n\";\n    }\n\n    std::cout << \"Marca: \" << marca_alerta;\n    std::cout << \"\\nNivel: \" << nivel;\n\n    return 0;\n}\n"
-        },
-        {
-          "type": "paragraph",
-          "text": "Con nivel tres y límite cuatro, la condición vale false. La otra rama muestra Normal y conserva el cero inicial de la marca. La referencia muestra Marca: 0 y Nivel: 3 en los dos renglones siguientes. Si el nivel sube a cinco, la condición vuelve a dar true. Una comparación de igualdad solo funcionaría en cuatro y omitiría la alerta en cinco."
-        },
-        {
-          "type": "heading",
-          "text": "Revisar el programa que lee el nivel y el límite"
-        },
-        {
-          "type": "code",
-          "language": "cpp",
-          "code": "#include <iostream>\n\nint main() {\n    int nivel = 0;\n    int limite = 0;\n\n    std::cin >> nivel >> limite;\n\n    int marca_alerta = 0;\n\n    if (nivel >= limite) {\n        marca_alerta = 1;\n\n        std::cout << \"Alerta\\n\";\n    } else {\n        std::cout << \"Normal\\n\";\n    }\n\n    std::cout << \"Marca: \" << marca_alerta;\n\n    return 0;\n}\n"
-        },
-        {
-          "type": "paragraph",
-          "text": "Puedes probar otras entradas en el campo «Entrada» del editor de construcción.\n\nLa igualdad cumple la regla de alerta.\n\nEntrada\n4 4\n\nSalida esperada\nAlerta\nMarca: 1\n\nEl nivel supera el límite y el programa sigue emitiendo la alerta.\n\nEntrada\n5 4\n\nSalida esperada\nAlerta\nMarca: 1\n\nSi el límite baja a tres, el mismo nivel ahora lo alcanza.\n\nEntrada\n3 3\n\nSalida esperada\nAlerta\nMarca: 1"
-        },
-        {
-          "type": "note",
-          "text": "Probar 3 3 tras 3 4 mantiene el mismo nivel y cambia el límite. Cuando el límite baja a tres, la salida debe cambiar de Normal a Alerta y de Marca: 0 a Marca: 1. Si la salida sigue siendo la misma, comprueba que el programa usa el límite que leyó."
         }
       ]
     }
@@ -568,7 +568,11 @@
           "block_0003_0004",
           "block_0003_0008",
           "block_0003_0009",
-          "p1u3l4_reparar_alerta"
+          "p1u3l4_reparar_alerta",
+          "block_0006_0000",
+          "block_0006_0001",
+          "p1u3l4_ejemplo_reparacion",
+          "block_0006_0003"
         ]
       },
       {
@@ -577,33 +581,29 @@
           "block_0004_0000",
           "block_0004_0001",
           "block_0004_0002",
-          "block_0004_0003",
-          "block_0003_0005",
-          "block_0003_0006",
-          "p1u3l4_construir_alerta"
+          "block_0004_0003"
         ]
       },
       {
         "id": "page_0005",
+        "blocks": [
+          "block_0003_0005",
+          "block_0003_0006",
+          "p1u3l4_construir_alerta",
+          "p1u3l4_revisar_alerta",
+          "p1u3l4_ejemplo_lectura",
+          "p1u3l4_probar_otros_niveles",
+          "block_0006_0004"
+        ]
+      },
+      {
+        "id": "page_0006",
         "blocks": [
           "block_0005_0000",
           "block_0005_0001",
           "block_0005_0002",
           "block_0005_0003",
           "block_0005_0004"
-        ]
-      },
-      {
-        "id": "page_0006",
-        "blocks": [
-          "block_0006_0000",
-          "block_0006_0001",
-          "p1u3l4_ejemplo_reparacion",
-          "block_0006_0003",
-          "p1u3l4_revisar_alerta",
-          "p1u3l4_ejemplo_lectura",
-          "p1u3l4_probar_otros_niveles",
-          "block_0006_0004"
         ]
       }
     ],
@@ -1445,6 +1445,51 @@
         "id": "p1u3l4_ejemplo_lectura",
         "beforeSha256": "8954a7f65efd0480678b887863f097064bb1a5fef19a7a1dcb372bfa4b9a59e9",
         "afterSha256": "a78de1492e49852a62599c1ef5502317e764d72d149303dc4138409e276f7c53"
+      },
+      {
+        "id": "block_0002_0004",
+        "beforeSha256": "58c7c7e11401eabd441b2f3b450c9ac260afa04212109db08c294ff2dd1bff54",
+        "afterSha256": "8dc2d68939ae5b314b7556e5b23af0905a0609266d5e39fbcf27d5c9d8a7e7dd"
+      },
+      {
+        "id": "block_0003_0009",
+        "beforeSha256": "616b951e43c8f9601ce4c1855dadee98cd126fb08ef40b21ace38ef77500e80f",
+        "afterSha256": "591b2173f707db67111a38b7dddcdb3aae89d0dcc80ac0cf734fde10291d86bf"
+      },
+      {
+        "id": "block_0004_0003",
+        "beforeSha256": "eb13cc3411141d6615be9e9927d1f0888fc055fc8f2cdd10c762e4c5e83c2312",
+        "afterSha256": "ac58a218e0cd17e38b1cc3a62eba57eb761cd797af0aeed6d435d47ea2e3bd3e"
+      },
+      {
+        "id": "block_0003_0006",
+        "beforeSha256": "782e6457bea5268bf020865b8486423147b6b726ffffb802c08685a58794c276",
+        "afterSha256": "fae67e19183096f93da68da7c1df043d709e7c3c13721c3cf367efe9a1759de7"
+      },
+      {
+        "id": "block_0006_0003",
+        "beforeSha256": "e02bde2d73cc613bacc61ff57856cd46c4c97392618841120d31615d49b1ebed",
+        "afterSha256": "2abc9882a93c9512f842ea59bf0327ccb094a89322de378de26c969069f9b6aa"
+      },
+      {
+        "id": "p1u3l4_probar_otros_niveles",
+        "beforeSha256": "41205f5d0d3c9049c9f4ce74a92a728d0fe397ee2de99f6a5eb56a127a9fc52a",
+        "afterSha256": "972a856604bb1e333cb66324ad495fb00831dc5c95f09735155e2780bd12cc88"
+      },
+      {
+        "id": "block_0000_0004",
+        "beforeSha256": "55c0501b68d9b4e6e89067a733ef95004150e2de0f7c4beb44bb67c71bf7fcb4",
+        "afterSha256": "011930d622c2109fcb29e9887c5a78c3dda67082918e46561e4ab103636511c1"
+      },
+      {
+        "id": "block_0000_0004",
+        "beforeSha256": "011930d622c2109fcb29e9887c5a78c3dda67082918e46561e4ab103636511c1",
+        "afterSha256": "b0a9e0df4163894117d0ac3a3c52a5721ba25cae628aba452e02efa35ce1cba8"
+      },
+      {
+        "id": "block_0003_0003",
+        "beforeSha256": "64e0e0ba4eb3997f0a5cb3ad5f3e796b9a439f60914557b75d052854fb9224cf",
+        "afterSha256": "8c680c678be5bb66e36bdc8b277ead30692dbd2601eeb4b31365f5e6fada2e39"
       }
     ],
     "orderRefinements": [
@@ -3539,6 +3584,67 @@
           "sha256": "eaa296ee8e8f8c3276f70ad6205e400f8be3fae37e31dbb3f0a92494f9a2f105"
         }
       }
+    ],
+    "choiceRevisions": [
+      {
+        "id": "block_0000_0004",
+        "block": {
+          "type": "multiple_choice",
+          "question": "En el programa de las plazas, la condición da false. Después de comprobarla, ¿qué instrucciones ejecuta el programa?",
+          "options": [
+            "Ejecutar la rama else y después continuar.",
+            "Ejecutar ambas ramas y después continuar.",
+            "Omitir todo lo que queda del programa."
+          ],
+          "correctIndex": 0,
+          "explanation": "Con cero plazas libres, plazas_libres > 0 da false. La rama de else muestra Completo. Después, el programa llega a la instrucción de fuera de las ramas y muestra Revision terminada."
+        },
+        "optionIndex": 0,
+        "replacement": "Ejecuta la rama de else, que muestra Completo. Después muestra Revision terminada.",
+        "semanticBefore": {
+          "block": "block_0000_0004",
+          "path": "/options/0",
+          "sourceSha256": "6a0778992dc72d0520bfb1e008e2d7726327e869e51674afdf2ec0120c70b57d",
+          "spans": [
+            {
+              "start": 17,
+              "end": 21,
+              "text": "else",
+              "role": "cpp",
+              "reading": "technical"
+            }
+          ]
+        },
+        "semanticAfter": {
+          "block": "block_0000_0004",
+          "path": "/options/0",
+          "sourceSha256": "2c7f3327e6e97cfa7d7d5f783a95b0a40c4748e27fa106974c383da7a8158ab0",
+          "spans": [
+            {
+              "start": 19,
+              "end": 23,
+              "text": "else",
+              "role": "cpp",
+              "reading": "technical"
+            },
+            {
+              "start": 37,
+              "end": 45,
+              "text": "Completo",
+              "role": "output",
+              "reading": "natural"
+            },
+            {
+              "start": 63,
+              "end": 81,
+              "text": "Revision terminada",
+              "role": "output",
+              "reading": "natural"
+            }
+          ]
+        },
+        "semanticRootBefore": true
+      }
     ]
   },
   "compilerPuzzlesRequired": true,
@@ -3694,14 +3800,28 @@
       {
         "block": "block_0000_0004",
         "path": "/question",
-        "sourceSha256": "5d7d6618d7deb2163b92096922fa6f966851e7ef08737b02b4717c8c15a40c6c",
+        "sourceSha256": "edbee15c325b55e1780b13dfce59807d5844998742ea6c2882617b719b15699f",
         "spans": [
           {
-            "start": 46,
-            "end": 51,
+            "start": 74,
+            "end": 91,
+            "text": "plazas_libres > 0",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 95,
+            "end": 100,
             "text": "false",
             "role": "cpp",
             "reading": "technical"
+          },
+          {
+            "start": 176,
+            "end": 194,
+            "text": "Revision terminada",
+            "role": "output",
+            "reading": "natural"
           }
         ]
       },
@@ -3750,14 +3870,28 @@
       {
         "block": "block_0000_0004",
         "path": "/options/0",
-        "sourceSha256": "6a0778992dc72d0520bfb1e008e2d7726327e869e51674afdf2ec0120c70b57d",
+        "sourceSha256": "2c7f3327e6e97cfa7d7d5f783a95b0a40c4748e27fa106974c383da7a8158ab0",
         "spans": [
           {
-            "start": 17,
-            "end": 21,
+            "start": 19,
+            "end": 23,
             "text": "else",
             "role": "cpp",
             "reading": "technical"
+          },
+          {
+            "start": 37,
+            "end": 45,
+            "text": "Completo",
+            "role": "output",
+            "reading": "natural"
+          },
+          {
+            "start": 63,
+            "end": 81,
+            "text": "Revision terminada",
+            "role": "output",
+            "reading": "natural"
           }
         ]
       },
@@ -4180,53 +4314,81 @@
       {
         "block": "block_0002_0004",
         "path": "/text",
-        "sourceSha256": "4cf6f57c46bc955437defc1979c5fde73e4f15cab9330f7dbfcedb9e6b2a8c57",
+        "sourceSha256": "4d7aa7be928f2e6f764ed6744b1d089e463784958ea715115fa24dbea6f42670",
         "spans": [
           {
-            "start": 22,
-            "end": 27,
-            "text": "false",
+            "start": 18,
+            "end": 29,
+            "text": "piezas >= 6",
             "role": "cpp",
             "reading": "technical"
           },
           {
             "start": 32,
-            "end": 33,
+            "end": 42,
+            "text": "piezas > 6",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 47,
+            "end": 52,
+            "text": "false",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 57,
+            "end": 58,
             "text": "5",
             "role": "data",
             "reading": "natural"
           },
           {
-            "start": 43,
-            "end": 47,
+            "start": 68,
+            "end": 72,
             "text": "true",
             "role": "cpp",
             "reading": "technical"
           },
           {
-            "start": 52,
-            "end": 53,
+            "start": 77,
+            "end": 78,
             "text": "8",
             "role": "data",
             "reading": "natural"
           },
           {
-            "start": 163,
-            "end": 164,
+            "start": 188,
+            "end": 189,
             "text": "6",
             "role": "data",
             "reading": "natural"
           },
           {
-            "start": 182,
-            "end": 184,
+            "start": 207,
+            "end": 209,
             "text": ">=",
             "role": "cpp",
             "reading": "technical"
           },
           {
-            "start": 213,
-            "end": 218,
+            "start": 238,
+            "end": 243,
+            "text": "Listo",
+            "role": "output",
+            "reading": "natural"
+          },
+          {
+            "start": 396,
+            "end": 405,
+            "text": "Pendiente",
+            "role": "output",
+            "reading": "natural"
+          },
+          {
+            "start": 440,
+            "end": 445,
             "text": "Listo",
             "role": "output",
             "reading": "natural"
@@ -4277,12 +4439,12 @@
       {
         "block": "block_0003_0003",
         "path": "/question",
-        "sourceSha256": "d57e4fe9216adaffd59c523ebc56321671bc64d6e1eae580003237e0f9a7a560",
+        "sourceSha256": "a51480367ae61408d86f4e6b799cdc8c27531787629979a4719d62825d647bf5",
         "spans": [
           {
-            "start": 34,
-            "end": 40,
-            "text": "cuatro",
+            "start": 36,
+            "end": 37,
+            "text": "4",
             "role": "data",
             "reading": "natural"
           }
@@ -4373,7 +4535,7 @@
       {
         "block": "block_0003_0006",
         "path": "/text",
-        "sourceSha256": "32f52d304c3db7251c7b5c20c2152af57b07945ee8c99cff09f3a1784d8f5f4b",
+        "sourceSha256": "7e31e71ac998a4ee1dfa1644b193180cd340b56fb08160687dcc36e94e64adc7",
         "spans": [
           {
             "start": 286,
@@ -4404,24 +4566,59 @@
             "reading": "natural"
           },
           {
-            "start": 568,
-            "end": 571,
-            "text": "3 4",
-            "role": "data",
+            "start": 553,
+            "end": 557,
+            "text": "else",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 577,
+            "end": 586,
+            "text": "std::cout",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 677,
+            "end": 683,
+            "text": "Alerta",
+            "role": "output",
             "reading": "natural"
           },
           {
-            "start": 589,
-            "end": 595,
+            "start": 696,
+            "end": 702,
             "text": "Normal",
             "role": "output",
             "reading": "natural"
           },
           {
-            "start": 596,
-            "end": 604,
+            "start": 713,
+            "end": 716,
+            "text": "3 4",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 734,
+            "end": 740,
+            "text": "Normal",
+            "role": "output",
+            "reading": "natural"
+          },
+          {
+            "start": 741,
+            "end": 749,
             "text": "Marca: 0",
             "role": "output",
+            "reading": "natural"
+          },
+          {
+            "start": 785,
+            "end": 788,
+            "text": "3 4",
+            "role": "data",
             "reading": "natural"
           }
         ]
@@ -4435,7 +4632,7 @@
       {
         "block": "block_0003_0009",
         "path": "/text",
-        "sourceSha256": "941ad362a5969846092a6be0ac1732fc745751fc3da5122f5bb82200fe6a6079",
+        "sourceSha256": "5d1e23ff5e900c64371f51c03c4e4646f9e545a74da7f4e7318ea2467ff044ca",
         "spans": [
           {
             "start": 16,
@@ -4459,43 +4656,43 @@
             "reading": "technical"
           },
           {
-            "start": 177,
-            "end": 183,
+            "start": 190,
+            "end": 196,
             "text": "Normal",
             "role": "output",
             "reading": "natural"
           },
           {
-            "start": 184,
-            "end": 192,
+            "start": 197,
+            "end": 205,
             "text": "Marca: 0",
             "role": "output",
             "reading": "natural"
           },
           {
-            "start": 193,
-            "end": 201,
+            "start": 206,
+            "end": 214,
             "text": "Nivel: 4",
             "role": "output",
             "reading": "natural"
           },
           {
-            "start": 401,
-            "end": 407,
+            "start": 414,
+            "end": 420,
             "text": "Alerta",
             "role": "output",
             "reading": "natural"
           },
           {
-            "start": 408,
-            "end": 416,
+            "start": 421,
+            "end": 429,
             "text": "Marca: 1",
             "role": "output",
             "reading": "natural"
           },
           {
-            "start": 417,
-            "end": 425,
+            "start": 430,
+            "end": 438,
             "text": "Nivel: 4",
             "role": "output",
             "reading": "natural"
@@ -4700,8 +4897,51 @@
       {
         "block": "block_0004_0003",
         "path": "/text",
-        "sourceSha256": "d47a531f00b3b23b9b8e1d0aa738bb8e0225fe75d98c123004191bafe40b9bce",
-        "spans": []
+        "sourceSha256": "1f7c2b18bd5d7a9bc7f13e43699837c4ce463151129c43e094d2e82e453889b3",
+        "spans": [
+          {
+            "start": 110,
+            "end": 116,
+            "text": "Alerta",
+            "role": "output",
+            "reading": "natural"
+          },
+          {
+            "start": 129,
+            "end": 135,
+            "text": "Normal",
+            "role": "output",
+            "reading": "natural"
+          },
+          {
+            "start": 194,
+            "end": 200,
+            "text": "Alerta",
+            "role": "output",
+            "reading": "natural"
+          },
+          {
+            "start": 212,
+            "end": 220,
+            "text": "Marca: 0",
+            "role": "output",
+            "reading": "natural"
+          },
+          {
+            "start": 285,
+            "end": 297,
+            "text": "marca_alerta",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 325,
+            "end": 334,
+            "text": "std::cout",
+            "role": "cpp",
+            "reading": "technical"
+          }
+        ]
       },
       {
         "block": "block_0005_0000",
@@ -4983,42 +5223,63 @@
       {
         "block": "block_0006_0003",
         "path": "/text",
-        "sourceSha256": "6d316649ed98cb0f86099d516d44a9b7bf56abcfc797a3148a4d7af278ec5898",
+        "sourceSha256": "23e753d19343b2cbf571556b4b5224c8ba92b8f9b246a85e7b07c3076c5ab006",
         "spans": [
           {
-            "start": 50,
-            "end": 55,
+            "start": 99,
+            "end": 114,
+            "text": "nivel >= limite",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 118,
+            "end": 123,
             "text": "false",
             "role": "cpp",
             "reading": "technical"
           },
           {
-            "start": 78,
-            "end": 84,
+            "start": 138,
+            "end": 142,
+            "text": "else",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 151,
+            "end": 157,
             "text": "Normal",
             "role": "output",
             "reading": "natural"
           },
           {
-            "start": 147,
-            "end": 155,
+            "start": 171,
+            "end": 183,
+            "text": "marca_alerta",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 257,
+            "end": 265,
             "text": "Marca: 0",
             "role": "output",
             "reading": "natural"
           },
           {
-            "start": 158,
-            "end": 166,
+            "start": 287,
+            "end": 295,
             "text": "Nivel: 3",
             "role": "output",
             "reading": "natural"
           },
           {
-            "start": 252,
-            "end": 256,
-            "text": "true",
-            "role": "cpp",
-            "reading": "technical"
+            "start": 388,
+            "end": 394,
+            "text": "Alerta",
+            "role": "output",
+            "reading": "natural"
           }
         ]
       },
@@ -5080,67 +5341,67 @@
       {
         "block": "p1u3l4_probar_otros_niveles",
         "path": "/text",
-        "sourceSha256": "7bc5589ee50e8e9b0a888e33a901427aff09022bba0c1e3bba6042100ecdb761",
+        "sourceSha256": "902f54403c37230eb07c27bb7e5895a2efa2e77f8e4ecfa64e04d7e40bed2715",
         "spans": [
           {
-            "start": 128,
-            "end": 131,
+            "start": 279,
+            "end": 282,
             "text": "4 4",
             "role": "data",
             "reading": "natural"
           },
           {
-            "start": 149,
-            "end": 155,
+            "start": 300,
+            "end": 306,
             "text": "Alerta",
             "role": "output",
             "reading": "natural"
           },
           {
-            "start": 156,
-            "end": 164,
+            "start": 307,
+            "end": 315,
             "text": "Marca: 1",
             "role": "output",
             "reading": "natural"
           },
           {
-            "start": 242,
-            "end": 245,
+            "start": 393,
+            "end": 396,
             "text": "5 4",
             "role": "data",
             "reading": "natural"
           },
           {
-            "start": 263,
-            "end": 269,
+            "start": 414,
+            "end": 420,
             "text": "Alerta",
             "role": "output",
             "reading": "natural"
           },
           {
-            "start": 270,
-            "end": 278,
+            "start": 421,
+            "end": 429,
             "text": "Marca: 1",
             "role": "output",
             "reading": "natural"
           },
           {
-            "start": 348,
-            "end": 351,
+            "start": 499,
+            "end": 502,
             "text": "3 3",
             "role": "data",
             "reading": "natural"
           },
           {
-            "start": 369,
-            "end": 375,
+            "start": 520,
+            "end": 526,
             "text": "Alerta",
             "role": "output",
             "reading": "natural"
           },
           {
-            "start": 376,
-            "end": 384,
+            "start": 527,
+            "end": 535,
             "text": "Marca: 1",
             "role": "output",
             "reading": "natural"

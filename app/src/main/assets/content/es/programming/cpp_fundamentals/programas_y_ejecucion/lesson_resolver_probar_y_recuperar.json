@@ -45,7 +45,7 @@
         {
           "type": "multiple_choice",
           "id": "evidencia_aviso",
-          "question": "¿Qué debe compararse para comprobar ese aviso?",
+          "question": "Al ejecutar el programa del aviso de la estación, ¿qué compararías para comprobar que los viajeros ven el mensaje solicitado?",
           "options": [
             "La salida observada con las dos líneas requeridas y su orden.",
             "Sólo la presencia de un comentario con el objetivo.",
@@ -105,14 +105,14 @@
         {
           "type": "multiple_choice",
           "id": "dos_soluciones",
-          "question": "Un programa escribe el aviso con un solo literal. Otro lo reparte entre varios. ¿Cómo compruebas si las dos versiones sirven para mostrar el aviso de la estación?",
+          "question": "Un programa escribe el aviso con un solo literal. Otro usa varios literales. ¿Cómo compruebas que cada programa muestra las dos líneas del aviso solicitado?",
           "options": [
             "Aceptar sólo el que reproduce el código de la solución modelo.",
-            "Aceptar ambos porque cumplen la misma salida requerida.",
+            "Comparar la salida de cada programa con el aviso solicitado y aceptar cada versión que reproduzca las dos líneas.",
             "Aceptar ambos aunque falten los espacios que pide el requisito."
           ],
           "correctIndex": 1,
-          "explanation": "Las dos versiones sirven si al ejecutarlas se leen las mismas dos líneas, con las mismas palabras, los mismos espacios y el mismo salto de línea."
+          "explanation": "Ejecuta cada versión y compara su salida con el aviso de la estación. La primera línea debe decir Estacion abierta. La segunda debe decir Acceso por el norte. Comprueba los espacios entre palabras y el salto entre las dos líneas. Si ambas versiones reproducen el aviso, ambas cumplen el requisito."
         },
         {
           "type": "paragraph",
@@ -153,13 +153,13 @@
         {
           "type": "output_prediction",
           "id": "recuperar_comillas",
-          "question": "Escribe el mensaje que verías en la consola. Incluye las comillas que rodean el código de la tarjeta y empieza una línea nueva donde lo indica el programa.",
+          "question": "¿Qué texto muestra este programa en la consola? Escribe el rótulo y el identificador de la tarjeta en el primer renglón de la salida. Conserva las comillas visibles que rodean el identificador. Escribe el resto del mensaje en el segundo renglón.",
           "language": "cpp",
           "code": "#include <iostream>\n\nint main() {\n    std::cout << \"Codigo: \\\"A7\\\"\\nFin\";\n\n    return 0;\n}\n",
           "answers": [
             "Codigo: \"A7\"\nFin"
           ],
-          "explanation": "Cada \\\" dentro del literal muestra una comilla. Por eso se ve \"A7\" en la primera línea. El \\n siguiente lleva la palabra Fin al inicio de la segunda línea."
+          "explanation": "La instrucción escribe primero el rótulo Codigo: . Cada \\\" dentro del literal representa una comilla visible. Por eso, después del rótulo se ve \"A7\". El \\n inicia el segundo renglón de la salida, donde aparece Fin."
         },
         {
           "type": "fill_code",
@@ -178,7 +178,7 @@
         },
         {
           "type": "paragraph",
-          "text": "En el editor, la primera instrucción escribe Puesto y da un salto de línea. La última instrucción con std::cout escribe Fin. Entre esas dos instrucciones encontrarás un comentario. En su lugar escribe una instrucción que muestre Mesa B y dé un salto de línea. Así, Fin quedará debajo de Mesa B."
+          "text": "En el editor, la primera instrucción con std::cout escribe Puesto y un salto de línea en la consola. La última escribe Fin. Entre ambas encontrarás un comentario y, justo debajo, una línea en blanco con sangría. Escribe en esa línea una instrucción que muestre Mesa B y añada un salto de línea. Así, Fin aparecerá debajo de Mesa B."
         },
         {
           "type": "paragraph",
@@ -223,7 +223,7 @@
         },
         {
           "type": "paragraph",
-          "text": "1. Busca el comentario dentro de main. Ahí puedes escribir las instrucciones que muestran la tarjeta.\n2. Después de Taller escribe un salto de línea. Después de Turno B escribe otro. Puedes terminar justo después de Material preparado o añadir un salto de línea al final.\n3. Pulsa «Compilar, ejecutar y comprobar». Compara cada línea de la consola con la tarjeta."
+          "text": "1. Busca el comentario dentro de main. Escribe las instrucciones de salida en la línea en blanco con sangría que hay debajo del comentario.\n2. Haz que el programa muestre Taller y un salto de línea. Luego debe mostrar Turno B y otro salto de línea. Puede terminar justo después de mostrar Material preparado o escribir un último salto de línea.\n3. Pulsa «Compilar, ejecutar y comprobar». Compara los tres renglones de la salida con la tarjeta solicitada."
         },
         {
           "type": "cpp_compiler",
@@ -285,10 +285,10 @@
         {
           "type": "multiple_choice",
           "id": "recuperar_compilacion",
-          "question": "La herramienta rechaza el programa antes de ejecutarlo. ¿Qué primera acción corresponde?",
+          "question": "El compilador detecta un error en el código y el programa no llega a ejecutarse. ¿Qué harías primero para localizar la causa?",
           "options": [
             "Suponer que compilar y ejecutar son exactamente lo mismo.",
-            "Leer el diagnóstico y revisar la sintaxis y los nombres del contexto indicado.",
+            "Leer el mensaje del compilador y revisar los signos y los nombres en la línea señalada y en la anterior.",
             "Comparar únicamente mensajes de salida que no se han producido."
           ],
           "correctIndex": 1,
@@ -306,7 +306,7 @@
           "options": [
             "La separación entre instrucciones en el archivo fuente.",
             "La ubicación de cada instrucción en una línea distinta del fuente.",
-            "Los caracteres que se insertan como separador en la salida."
+            "Revisar los caracteres entre comillas y añadir un espacio entre las dos palabras del mensaje."
           ],
           "correctIndex": 2,
           "explanation": "Puedes añadir un espacio al principio del segundo literal. Al escribir \" azul\", el primer carácter que ese literal aporta al mensaje es un espacio. Ahora aparece Fila azul."
@@ -318,7 +318,7 @@
         {
           "type": "multiple_choice",
           "id": "recuperar_inicio_de_ejecucion",
-          "question": "En un programa como los que has escrito, ¿dónde empieza a ejecutar la computadora tus instrucciones y cómo se muestra un mensaje con std::cout?",
+          "question": "Cuando ejecutas uno de los programas de esta unidad, ¿en qué función empieza la computadora a ejecutar tus instrucciones y cómo llega el texto del literal a la consola mediante std::cout?",
           "options": [
             "main inicia la ejecución de las instrucciones de su cuerpo; std::cout recibe los datos de salida.",
             "std::cout inicia la ejecución de todo el programa; main sólo agrupa el texto que se mostrará.",
@@ -327,15 +327,15 @@
           "correctIndex": 0,
           "explanation": "El programa entra en main y ejecuta las instrucciones de su cuerpo en orden. Aquí el operador << envía el texto a std::cout. Más adelante, return 0; indica que el programa terminó correctamente (Stroustrup, 2024).",
           "reviewFeedback": [
-            "Sigue por separado el punto donde comienza la ejecución y la acción que envía los caracteres a la salida.",
-            "Revisa qué significa entrar en el cuerpo de una función y qué operación realiza la instrucción que utiliza el flujo de salida.",
-            "Distingue la preparación del código de las acciones que se ejecutan dentro de las llaves. Revisa a qué etapa estás atribuyendo el inicio de la salida."
+            "Localiza la función que contiene la instrucción de salida. Dentro de esa instrucción, ¿qué operador envía el texto del literal a std::cout?",
+            "¿Cuál de los dos nombres, main o std::cout, aparece antes de las llaves que encierran las instrucciones del programa? ¿Cuál recibe el texto del literal?",
+            "La cabecera se incluye al preparar el código para el compilador. ¿Qué instrucción se ejecuta dentro de main para que aparezca el mensaje en la consola?"
           ]
         },
         {
           "type": "multiple_choice",
           "id": "recuperar_cabecera_de_salida",
-          "question": "En los programas de esta unidad que usan std::cout, ¿qué función cumple #include <iostream>?",
+          "question": "En un programa que escribe un mensaje con std::cout, ¿para qué se incluye la cabecera iostream antes de definir main?",
           "options": [
             "Envía el contenido de los literales a la consola antes de entrar en main.",
             "Transforma los saltos de línea del archivo fuente en saltos de la consola.",
@@ -344,9 +344,9 @@
           "correctIndex": 2,
           "explanation": "La cabecera iostream contiene la declaración de std::cout. Al escribir #include <iostream>, esa declaración queda disponible en el archivo. El texto aparece en la consola cuando se ejecuta la instrucción que lo envía a std::cout (Stroustrup, 2024).",
           "reviewFeedback": [
-            "Localiza si estás atribuyendo una acción de ejecución a una línea que prepara el código. La posición anterior a main no basta para convertirla en una instrucción de impresión.",
-            "Distingue los caracteres que organizan el archivo fuente de los que una instrucción entrega a la consola. Revisa qué operación tendría que producir un salto visible.",
-            "Separa el uso de una cabecera de la ejecución de una instrucción de salida y vuelve a relacionar cada uno con su función."
+            "¿Qué información necesita el compilador para reconocer std::cout? ¿En qué momento se ejecuta la instrucción que escribe el mensaje?",
+            "Observa la diferencia entre pasar a otro renglón en el archivo de código y escribir \\n en un literal que se envía a std::cout. ¿Cuál de esas acciones produce un salto en la consola?",
+            "¿Qué permite reconocer la cabecera iostream al compilar? ¿Qué hace después la instrucción que contiene std::cout al ejecutarse el programa?"
           ]
         },
         {
@@ -357,7 +357,7 @@
         {
           "type": "multiple_choice",
           "id": "recuperar_flujo_operador_y_literal",
-          "question": "En la instrucción de arriba, ¿qué parte contiene el mensaje Plan listo y cómo llega ese mensaje a la consola?",
+          "question": "En la instrucción de arriba, ¿dónde está escrito el mensaje Plan listo y qué hace el operador << para que el mensaje aparezca en la consola?",
           "options": [
             "El literal contiene el texto de salida; el punto y coma añade un salto al mensaje.",
             "std::cout es el flujo de salida; << inserta en él el contenido del literal.",
@@ -367,25 +367,25 @@
           "explanation": "El literal \"Plan listo\" contiene el mensaje. El operador << envía sus caracteres a std::cout, el flujo de salida estándar. En la consola aparece Plan listo (Stroustrup, 2024).",
           "reviewFeedback": [
             "Revisa el papel que has atribuido al punto y coma. Distingue el final de una instrucción del carácter que haría comenzar una línea nueva en la consola.",
-            "Sigue el dato desde su escritura en el literal hasta la operación que lo entrega al flujo. Conserva separados esos tres papeles.",
+            "Localiza el literal que contiene Plan listo, el operador << y el nombre std::cout. ¿Qué texto envía ese operador y adónde lo envía?",
             "Examina por separado las comillas que delimitan un literal y los caracteres que contiene. Revisa también si el operador realiza una acción o sólo cambia el aspecto del archivo."
           ]
         },
         {
           "type": "multiple_choice",
           "id": "recuperar_comprobacion_de_la_revision",
-          "question": "Ejecutaste una versión que mostraba Turno B. Luego cambiaste la letra en el código para que diga Turno C. La consola todavía muestra el resultado anterior. ¿Cómo compruebas el cambio?",
+          "question": "Ejecutas una versión que muestra Turno B. Después cambias el literal del código para que diga Turno C. ¿Qué harías para comprobar qué tarjeta muestra ahora el programa?",
           "options": [
-            "Compilar y ejecutar la revisión actual; comparar la nueva consola con Turno C y las otras líneas requeridas.",
+            "Compilar y ejecutar el código modificado. Comprobar que la segunda línea de la nueva salida diga Turno C y que las otras dos coincidan con la tarjeta solicitada.",
             "Comparar la consola anterior con un comentario nuevo que diga Turno C; conservar esa ejecución.",
             "Comprobar que el editor contiene Turno C; aceptar la consola anterior como resultado de esa modificación."
           ],
           "correctIndex": 0,
           "explanation": "Pulsa «Compilar, ejecutar y comprobar» después de editar. Así se construye y se ejecuta la versión que contiene el cambio. En su nueva salida, busca Turno C y comprueba las otras líneas de la tarjeta (Stroustrup, 2024).",
           "reviewFeedback": [
-            "Relaciona la revisión del código con la ejecución que produjo la consola observada. Después comprueba qué partes del requisito deben conservarse.",
-            "Revisa qué versión produjo la consola y qué efecto tiene editar sólo un comentario. Un texto que describe una intención necesita contrastarse con las instrucciones ejecutadas.",
-            "Distingue haber cambiado el texto del editor de haber observado esa revisión en ejecución. Revisa a qué versión pertenece la evidencia que estás usando."
+            "¿Qué versión del programa produjo el texto que ves en la consola? Al probar la tarjeta modificada, comprueba las tres líneas de esa nueva salida.",
+            "Un comentario describe lo que quieres que haga el programa. ¿Qué texto contiene el literal que realmente se envía a std::cout al ejecutar la nueva versión?",
+            "Si sólo has cambiado el literal en el editor, ¿en qué ejecución se escribió el mensaje que todavía ves en la consola?"
           ]
         }
       ]
@@ -398,7 +398,7 @@
         },
         {
           "type": "paragraph",
-          "text": "El editor contiene una tarjeta que ya muestra Turno B. Te han pedido que anuncies el turno C. Busca en el código el literal que escribe la segunda línea y cambia la letra del turno. Comprueba que la tarjeta muestre estas tres líneas.\n\nTaller\nTurno C\nMaterial preparado\n\nPulsa «Compilar, ejecutar y comprobar». Se acepta la tarjeta con o sin un salto de línea después de la última palabra."
+          "text": "El código del editor contiene el programa de la tarjeta del taller. Al ejecutarlo, muestra Turno B en el segundo renglón de la salida. Para anunciar el turno C, localiza el literal que contiene Turno B y cambia la letra del turno dentro de las comillas. El programa debe mostrar estas tres líneas.\n\nTaller\nTurno C\nMaterial preparado\n\nPulsa «Compilar, ejecutar y comprobar». Se acepta la tarjeta con o sin un salto de línea después de la última palabra."
         },
         {
           "type": "cpp_compiler",
@@ -1558,6 +1558,99 @@
         "id": "p1u1l5_referencia_tarjeta_c",
         "beforeSha256": "9b32f48740a19a4388929962ad6f0c3f4df9e01aed46bb7a6181107534136b83",
         "afterSha256": "dab6c0040321a5c1e498db11d60df27d1027cc8d2005d19f40ff86976c35542c"
+      },
+      {
+        "id": "p1u1l5_linea_central_enunciado",
+        "beforeSha256": "8845d041c087f51fa724f4add8791ec66a807ee21413bed106df5da4ad289c33",
+        "afterSha256": "586ac1437369f120abdf4c87f571edb631007b8af7aebcb84b47731ea2b78d6b"
+      },
+      {
+        "id": "p1u1l5_tarjeta_como_construir",
+        "beforeSha256": "cb71b9db490a11341577770d735829c394b4088da159e74b0c3930327daf0239",
+        "afterSha256": "d43c3e378c173860a3edccf573f9921bb5927b7e9298f11f6d321f1e89cf579f"
+      },
+      {
+        "id": "block_0005_0005",
+        "beforeSha256": "ee5705ccc6c7ba5b264640cb8f2004e379f463f166b0f13f903ec8b56fb3e4e5",
+        "afterSha256": "3dfc73b2b4939a1edc5f703faf9cd93d8564a060dc0252900cb079fb0629a386"
+      },
+      {
+        "id": "block_0001_0003",
+        "beforeSha256": "c30d95f6ff136f9c4d870539ee5c8a2246ed5ac30d2fa51a1609a4e318462b49",
+        "afterSha256": "c8e3f26fc2485b79c6f8a0923080594e53baa4c70e76d7f3dbb25fe7683cc940"
+      },
+      {
+        "id": "block_0004_0001",
+        "beforeSha256": "9eb8ff50e95a47e6172a09137d0b28c8b6640ae9a82bfc79bbda2ffde4006489",
+        "afterSha256": "f39d8041582b6cc31e602f745b999b0df6cfe5233a222b223d8b82732123bc1f"
+      },
+      {
+        "id": "block_0004_0002",
+        "beforeSha256": "d1b672d9145439943f3498a0252f81a95c0822dd2bfa3ae3f0b1f520e73b0df9",
+        "afterSha256": "4e7758be817ed3c37297a1b9fca80464e9d1d69bcf797c5e7931aabe5ff719a9"
+      },
+      {
+        "id": "block_0000_0004",
+        "beforeSha256": "610767cae8a33cf5515209d2c3e7ba67c31b2163caa3904dd1ff0d54b5709a6c",
+        "afterSha256": "740760970064d663ff49681a3998422677e79c15bac6825910ba44e90b6f7515"
+      },
+      {
+        "id": "block_0001_0003",
+        "beforeSha256": "c8e3f26fc2485b79c6f8a0923080594e53baa4c70e76d7f3dbb25fe7683cc940",
+        "afterSha256": "d3e4094b3028bf52ca7a505914e507444d5cec5f1e93827caeb754dcbac1e5b1"
+      },
+      {
+        "id": "block_0004_0001",
+        "beforeSha256": "f39d8041582b6cc31e602f745b999b0df6cfe5233a222b223d8b82732123bc1f",
+        "afterSha256": "62b15fa3a0ad7ce950a15f49e99e8239b16774ace02c4953d24c0b5af06114bb"
+      },
+      {
+        "id": "block_0004_0003",
+        "beforeSha256": "3c99b2941e237b0e46a20a39120798c264d345a8892f5929b157ae2c27464e0c",
+        "afterSha256": "ab3995fa7300554d1732c7654300cdd12a87400e21afa41db0a97d8ad110474e",
+        "reviewPaths": [
+          "/reviewFeedback/0",
+          "/reviewFeedback/1",
+          "/reviewFeedback/2"
+        ]
+      },
+      {
+        "id": "block_0004_0004",
+        "beforeSha256": "94492b5d9ef8ad0ca3155a15966d94338d0fa55df261b96f1d303cfc07ef5f86",
+        "afterSha256": "dae3585a241ca93107d9ea9f6d1ae6ee9f608a04bc502bbd42bb01ba7c80db2f",
+        "reviewPaths": [
+          "/reviewFeedback/0",
+          "/reviewFeedback/1",
+          "/reviewFeedback/2"
+        ]
+      },
+      {
+        "id": "block_0004_0005",
+        "beforeSha256": "ffeb6961d79a61fd2b898c1c4a97d9c93b0c2caae757b46fd0a3de96fcf54a6e",
+        "afterSha256": "caf7277a14ee6be30390bfd4a9c0eb3d6a36b474af5c2160b62fca32f99e6f26",
+        "reviewPaths": [
+          "/reviewFeedback/1"
+        ]
+      },
+      {
+        "id": "block_0004_0006",
+        "beforeSha256": "f734845fdfdfd37c35c1c642ae8a4b6223e3f1f9684d5c30f2583efa27868b85",
+        "afterSha256": "23866012a723b7fd0b6a188a193ff8032ab5f71329d623928b0ffe9d8e23a4cd",
+        "reviewPaths": [
+          "/reviewFeedback/0",
+          "/reviewFeedback/1",
+          "/reviewFeedback/2"
+        ]
+      },
+      {
+        "id": "block_0002_0002",
+        "beforeSha256": "9bb03d98f13193cdc71fa4d70253d964880d57907c65d2edbb91603e5385eb7b",
+        "afterSha256": "d3203aa8d6287dc801d2ad24c8dde45e4c426afecfba5b8b22c198d3f47fdc15"
+      },
+      {
+        "id": "block_0004_0006",
+        "beforeSha256": "23866012a723b7fd0b6a188a193ff8032ab5f71329d623928b0ffe9d8e23a4cd",
+        "afterSha256": "e6e1c66ebe1ac052817e724417b99a214ab79cc88df2ab0aeda8e3535d40a2f0"
       }
     ],
     "retired": [
@@ -2234,6 +2327,149 @@
           "code": "#include <iostream>\n\nint main() {\n    std::cout << \"Taller\\n\";\n    std::cout << \"Turno C\\n\";\n    std::cout << \"Material preparado\";\n    return 0;\n}\n"
         }
       }
+    ],
+    "choiceRevisions": [
+      {
+        "id": "block_0001_0003",
+        "block": {
+          "type": "multiple_choice",
+          "id": "dos_soluciones",
+          "question": "Un programa escribe el aviso con un solo literal. Otro lo reparte entre varios. ¿Cómo compruebas si las dos versiones sirven para mostrar el aviso de la estación?",
+          "options": [
+            "Aceptar sólo el que reproduce el código de la solución modelo.",
+            "Aceptar ambos porque cumplen la misma salida requerida.",
+            "Aceptar ambos aunque falten los espacios que pide el requisito."
+          ],
+          "correctIndex": 1,
+          "explanation": "Las dos versiones sirven si al ejecutarlas se leen las mismas dos líneas, con las mismas palabras, los mismos espacios y el mismo salto de línea."
+        },
+        "optionIndex": 1,
+        "replacement": "Comparar la salida de cada programa con el aviso solicitado y aceptar cada versión que reproduzca las dos líneas.",
+        "semanticBefore": {
+          "block": "block_0001_0003",
+          "path": "/options/1",
+          "sourceSha256": "11db986e7ecb6121a90fb49fbf4281c572c3c084c7afdf33ccaf1f8d7153d53a",
+          "spans": []
+        },
+        "semanticAfter": {
+          "block": "block_0001_0003",
+          "path": "/options/1",
+          "sourceSha256": "9b1a0149aea532286786473d99fded90fda5e0e93631ecc1beb6af40d42945dd",
+          "spans": []
+        },
+        "semanticRootBefore": true
+      },
+      {
+        "id": "block_0004_0001",
+        "block": {
+          "type": "multiple_choice",
+          "id": "recuperar_compilacion",
+          "question": "La herramienta rechaza el programa antes de ejecutarlo. ¿Qué primera acción corresponde?",
+          "options": [
+            "Suponer que compilar y ejecutar son exactamente lo mismo.",
+            "Leer el diagnóstico y revisar la sintaxis y los nombres del contexto indicado.",
+            "Comparar únicamente mensajes de salida que no se han producido."
+          ],
+          "correctIndex": 1,
+          "explanation": "Lee el diagnóstico del compilador. Mira qué archivo y qué línea señala. Revisa esa línea y la anterior. Después de corregir el código, vuelve a pulsar «Compilar, ejecutar y comprobar»."
+        },
+        "optionIndex": 1,
+        "replacement": "Leer el mensaje del compilador y revisar los signos y los nombres en la línea señalada y en la anterior.",
+        "semanticBefore": {
+          "block": "block_0004_0001",
+          "path": "/options/1",
+          "sourceSha256": "86ec79e8f667b5f44b11c1129dd02c9910c80bbee17ceb1ab47ab19dd871d986",
+          "spans": []
+        },
+        "semanticAfter": {
+          "block": "block_0004_0001",
+          "path": "/options/1",
+          "sourceSha256": "b7a08c1c573a053e2ff7a845185b13c77cb75c880dbbb9cb05a2fb66a685c79b",
+          "spans": []
+        },
+        "semanticRootBefore": true
+      },
+      {
+        "id": "block_0004_0002",
+        "block": {
+          "type": "multiple_choice",
+          "id": "recuperar_logica",
+          "question": "La instrucción de arriba muestra Filaazul. El cartel debe decir Fila azul. ¿Qué parte del código revisarías para que el espacio aparezca en la consola?",
+          "options": [
+            "La separación entre instrucciones en el archivo fuente.",
+            "La ubicación de cada instrucción en una línea distinta del fuente.",
+            "Los caracteres que se insertan como separador en la salida."
+          ],
+          "correctIndex": 2,
+          "explanation": "Puedes añadir un espacio al principio del segundo literal. Al escribir \" azul\", el primer carácter que ese literal aporta al mensaje es un espacio. Ahora aparece Fila azul."
+        },
+        "optionIndex": 2,
+        "replacement": "Revisar los caracteres entre comillas y añadir un espacio entre las dos palabras del mensaje.",
+        "semanticBefore": {
+          "block": "block_0004_0002",
+          "path": "/options/2",
+          "sourceSha256": "5ce87c3929eb6a40365bddc0686ba56d77c93bad06c19771ae4d5ec8bb7b4517",
+          "spans": []
+        },
+        "semanticAfter": {
+          "block": "block_0004_0002",
+          "path": "/options/2",
+          "sourceSha256": "5c78aa14825768ef5d7af5c21bdacb5be4e7ca36ab7eeba309368092e5fc230b",
+          "spans": []
+        },
+        "semanticRootBefore": true
+      },
+      {
+        "id": "block_0004_0006",
+        "block": {
+          "type": "multiple_choice",
+          "id": "recuperar_comprobacion_de_la_revision",
+          "question": "Ejecutas una versión que muestra Turno B. Después cambias el literal del código para que diga Turno C. ¿Qué harías para comprobar qué tarjeta muestra ahora el programa?",
+          "options": [
+            "Compilar y ejecutar la revisión actual; comparar la nueva consola con Turno C y las otras líneas requeridas.",
+            "Comparar la consola anterior con un comentario nuevo que diga Turno C; conservar esa ejecución.",
+            "Comprobar que el editor contiene Turno C; aceptar la consola anterior como resultado de esa modificación."
+          ],
+          "correctIndex": 0,
+          "explanation": "Pulsa «Compilar, ejecutar y comprobar» después de editar. Así se construye y se ejecuta la versión que contiene el cambio. En su nueva salida, busca Turno C y comprueba las otras líneas de la tarjeta (Stroustrup, 2024).",
+          "reviewFeedback": [
+            "¿Qué versión del programa produjo el texto que ves en la consola? Al probar la tarjeta modificada, comprueba las tres líneas de esa nueva salida.",
+            "Un comentario describe lo que quieres que haga el programa. ¿Qué texto contiene el literal que realmente se envía a std::cout al ejecutar la nueva versión?",
+            "Si sólo has cambiado el literal en el editor, ¿en qué ejecución se escribió el mensaje que todavía ves en la consola?"
+          ]
+        },
+        "optionIndex": 0,
+        "replacement": "Compilar y ejecutar el código modificado. Comprobar que la segunda línea de la nueva salida diga Turno C y que las otras dos coincidan con la tarjeta solicitada.",
+        "semanticBefore": {
+          "block": "block_0004_0006",
+          "path": "/options/0",
+          "sourceSha256": "d5e017920b32a8a0425a30fff488a5593e5305ddd63b2f275db360804d96c425",
+          "spans": [
+            {
+              "start": 70,
+              "end": 77,
+              "text": "Turno C",
+              "role": "output",
+              "reading": "natural"
+            }
+          ]
+        },
+        "semanticAfter": {
+          "block": "block_0004_0006",
+          "path": "/options/0",
+          "sourceSha256": "e9667499d3bd52079a5ef2a9d94dddd5c89dfbf39165601348a97d0e89309a76",
+          "spans": [
+            {
+              "start": 97,
+              "end": 104,
+              "text": "Turno C",
+              "role": "output",
+              "reading": "natural"
+            }
+          ]
+        },
+        "semanticRootBefore": true
+      }
     ]
   },
   "activityAfter": [
@@ -2372,7 +2608,7 @@
       {
         "block": "block_0000_0004",
         "path": "/question",
-        "sourceSha256": "7bbc78d2850b57ad606e738e6a1f5afee89676d421d6a10680f24727add389cb",
+        "sourceSha256": "f0b4c039ac6867a21a9d7ed74064e84099a72f058310d6a6890d0420a4b62b30",
         "spans": []
       },
       {
@@ -2479,11 +2715,11 @@
       {
         "block": "block_0001_0003",
         "path": "/question",
-        "sourceSha256": "2360983595f8f57f0b91578a5508c50f43afaf5deb0e71c0d6d9c3da72341869",
+        "sourceSha256": "8e5c2768d8ae4fce16d0a02195e2bb6537002fc1c70556293694ae0947a5e011",
         "spans": [
           {
-            "start": 104,
-            "end": 107,
+            "start": 124,
+            "end": 127,
             "text": "dos",
             "role": "data",
             "reading": "natural"
@@ -2493,8 +2729,23 @@
       {
         "block": "block_0001_0003",
         "path": "/explanation",
-        "sourceSha256": "fe613f324d04da475316a1fc9e2e5d5efa7a3e7e95c515ef6b8040230007310b",
-        "spans": []
+        "sourceSha256": "7d95522d9df4f96bd08610fd91d7fb92d9a955fe01f62791db628ac237c150a3",
+        "spans": [
+          {
+            "start": 98,
+            "end": 114,
+            "text": "Estacion abierta",
+            "role": "output",
+            "reading": "natural"
+          },
+          {
+            "start": 138,
+            "end": 157,
+            "text": "Acceso por el norte",
+            "role": "output",
+            "reading": "natural"
+          }
+        ]
       },
       {
         "block": "block_0001_0003",
@@ -2505,7 +2756,7 @@
       {
         "block": "block_0001_0003",
         "path": "/options/1",
-        "sourceSha256": "11db986e7ecb6121a90fb49fbf4281c572c3c084c7afdf33ccaf1f8d7153d53a",
+        "sourceSha256": "9b1a0149aea532286786473d99fded90fda5e0e93631ecc1beb6af40d42945dd",
         "spans": []
       },
       {
@@ -2585,38 +2836,45 @@
       {
         "block": "block_0002_0002",
         "path": "/question",
-        "sourceSha256": "1a8f783c4672454c6a62410c8c77c39143f7e688b15d910e7451f43737267c9e",
+        "sourceSha256": "7f60dff182bf95b216a5de9a02a5cb7ef34497ac710a360f40efcee27e834d91",
         "spans": []
       },
       {
         "block": "block_0002_0002",
         "path": "/explanation",
-        "sourceSha256": "9b06840b7fd5be507dd871b38ed95d0f8059122c05cd12dcc54ed5d1a25ff61a",
+        "sourceSha256": "f2c586977707c684f55a4ee3deecad24f89e3e07e14a83b7310411ac1b0a88bc",
         "spans": [
           {
-            "start": 5,
-            "end": 7,
+            "start": 41,
+            "end": 49,
+            "text": "Codigo: ",
+            "role": "output",
+            "reading": "natural"
+          },
+          {
+            "start": 56,
+            "end": 58,
             "text": "\\\"",
             "role": "cpp",
             "reading": "technical"
           },
           {
-            "start": 62,
-            "end": 66,
+            "start": 144,
+            "end": 148,
             "text": "\"A7\"",
             "role": "output",
             "reading": "natural"
           },
           {
-            "start": 91,
-            "end": 93,
+            "start": 153,
+            "end": 155,
             "text": "\\n",
             "role": "cpp",
             "reading": "technical"
           },
           {
-            "start": 121,
-            "end": 124,
+            "start": 210,
+            "end": 213,
             "text": "Fin",
             "role": "output",
             "reading": "natural"
@@ -2790,7 +3048,7 @@
       {
         "block": "block_0004_0001",
         "path": "/question",
-        "sourceSha256": "63bfdce86909d742bc7188fc4046cbf01306cc2103bdf2677f97f7d2796d98d7",
+        "sourceSha256": "3b608e109569ab254204f29ad485f7fde218c3985b4785afbbe6fa8d35bd4e48",
         "spans": []
       },
       {
@@ -2808,7 +3066,7 @@
       {
         "block": "block_0004_0001",
         "path": "/options/1",
-        "sourceSha256": "86ec79e8f667b5f44b11c1129dd02c9910c80bbee17ceb1ab47ab19dd871d986",
+        "sourceSha256": "b7a08c1c573a053e2ff7a845185b13c77cb75c880dbbb9cb05a2fb66a685c79b",
         "spans": []
       },
       {
@@ -2874,17 +3132,17 @@
       {
         "block": "block_0004_0002",
         "path": "/options/2",
-        "sourceSha256": "5ce87c3929eb6a40365bddc0686ba56d77c93bad06c19771ae4d5ec8bb7b4517",
+        "sourceSha256": "5c78aa14825768ef5d7af5c21bdacb5be4e7ca36ab7eeba309368092e5fc230b",
         "spans": []
       },
       {
         "block": "block_0004_0003",
         "path": "/question",
-        "sourceSha256": "f7502a1c4bdd74ff5756e3f094a3d29f90059a9776b710a30fa734260a5e4c27",
+        "sourceSha256": "e9815a329330237f289bc5be0c1608eb3ce1c00c7a1a030971b811fcf5609a4e",
         "spans": [
           {
-            "start": 133,
-            "end": 142,
+            "start": 177,
+            "end": 186,
             "text": "std::cout",
             "role": "cpp",
             "reading": "technical"
@@ -2999,37 +3257,75 @@
       {
         "block": "block_0004_0003",
         "path": "/reviewFeedback/0",
-        "sourceSha256": "f24ae0036e88f5751fef91b0a9e92533215396e37155afefa6a639cca0cb0163",
-        "spans": []
+        "sourceSha256": "fc98af3e67b21d52b1dd093d046c993c4cdd4844b118e64c58ba64353f8a949e",
+        "spans": [
+          {
+            "start": 129,
+            "end": 138,
+            "text": "std::cout",
+            "role": "cpp",
+            "reading": "technical"
+          }
+        ]
       },
       {
         "block": "block_0004_0003",
         "path": "/reviewFeedback/1",
-        "sourceSha256": "45c1ab4c5b15f3a20eaf4470c5f8259aa77f60b177a1b4c647e404ff3375982c",
-        "spans": []
+        "sourceSha256": "577f99bda19c8948f42cd0a36fb81ef53d4a1799ba317483a5778cb1393fdf69",
+        "spans": [
+          {
+            "start": 26,
+            "end": 30,
+            "text": "main",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 33,
+            "end": 42,
+            "text": "std::cout",
+            "role": "cpp",
+            "reading": "technical"
+          }
+        ]
       },
       {
         "block": "block_0004_0003",
         "path": "/reviewFeedback/2",
-        "sourceSha256": "b37e65aa2e55da752bfa35e74d8e6180320665efdf1a8beaf88b73fee605e7f2",
-        "spans": []
+        "sourceSha256": "7e30e1df51db14c6ec1b63613a693f1b520f611412325aec7bd5f1a7ecd835a0",
+        "spans": [
+          {
+            "start": 103,
+            "end": 107,
+            "text": "main",
+            "role": "cpp",
+            "reading": "technical"
+          }
+        ]
       },
       {
         "block": "block_0004_0004",
         "path": "/question",
-        "sourceSha256": "6e0f6ed2d1e557321a743258d27772244dc9aed4588bf7b71f15e9d08fa2658a",
+        "sourceSha256": "badbb9ebfd7b5f8a761c957469dbcc11a63a755e19c5655b9ccc0db1e3e37cd9",
         "spans": [
           {
-            "start": 41,
-            "end": 50,
+            "start": 42,
+            "end": 51,
             "text": "std::cout",
             "role": "cpp",
             "reading": "technical"
           },
           {
-            "start": 72,
-            "end": 91,
-            "text": "#include <iostream>",
+            "start": 86,
+            "end": 94,
+            "text": "iostream",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 112,
+            "end": 116,
+            "text": "main",
             "role": "cpp",
             "reading": "technical"
           }
@@ -3114,12 +3410,12 @@
       {
         "block": "block_0004_0004",
         "path": "/reviewFeedback/0",
-        "sourceSha256": "e5405ac09e85303099578ac23634a3655addac95fa5204c8430adb64bae17eae",
+        "sourceSha256": "5bfcf8adb65181b8bf36a6e264cc697d4afdf1970dd00cc3f4309b829d7de343",
         "spans": [
           {
-            "start": 112,
-            "end": 116,
-            "text": "main",
+            "start": 55,
+            "end": 64,
+            "text": "std::cout",
             "role": "cpp",
             "reading": "technical"
           }
@@ -3128,19 +3424,49 @@
       {
         "block": "block_0004_0004",
         "path": "/reviewFeedback/1",
-        "sourceSha256": "ce8f03a8396eb3f0cc45154898c900ece72ac52ae950ba467ea5f4b42b006b54",
-        "spans": []
+        "sourceSha256": "7b816d3daf46973727fff9f918c01680e310b9856bf962a203f42ffe411025e8",
+        "spans": [
+          {
+            "start": 84,
+            "end": 86,
+            "text": "\\n",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 116,
+            "end": 125,
+            "text": "std::cout",
+            "role": "cpp",
+            "reading": "technical"
+          }
+        ]
       },
       {
         "block": "block_0004_0004",
         "path": "/reviewFeedback/2",
-        "sourceSha256": "a2ce7a157468e48256dd006ba50b18a5dc362b1fc326823b3878f77757cf32d6",
-        "spans": []
+        "sourceSha256": "402ecf9f530199ec8b2a81e9866c6155422c1e404731f28cb01074bc1c2fed2d",
+        "spans": [
+          {
+            "start": 35,
+            "end": 43,
+            "text": "iostream",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 103,
+            "end": 112,
+            "text": "std::cout",
+            "role": "cpp",
+            "reading": "technical"
+          }
+        ]
       },
       {
         "block": "block_0004_0005",
         "path": "/question",
-        "sourceSha256": "b865e6abecc4aabef824ce645782444bb5cb0d283b26f351dbe28eed8861353a",
+        "sourceSha256": "a2e135c76195927036001d7c6bde63e12d63fe85a1dc27158a0c0230e3a1646a",
         "spans": [
           {
             "start": 60,
@@ -3148,6 +3474,13 @@
             "text": "Plan listo",
             "role": "output",
             "reading": "natural"
+          },
+          {
+            "start": 94,
+            "end": 96,
+            "text": "<<",
+            "role": "cpp",
+            "reading": "technical"
           }
         ]
       },
@@ -3243,14 +3576,28 @@
       {
         "block": "block_0004_0005",
         "path": "/reviewFeedback/1",
-        "sourceSha256": "f3d2ef57e55cd2df530173222e5ca1021d1119f7af0757673e9a1954e4004fe7",
+        "sourceSha256": "9d5fdf302b0e672feeabdad2a847eb385a674e5c19f7f5982b98489fc3e5f112",
         "spans": [
           {
-            "start": 115,
-            "end": 119,
-            "text": "tres",
-            "role": "data",
+            "start": 33,
+            "end": 43,
+            "text": "Plan listo",
+            "role": "output",
             "reading": "natural"
+          },
+          {
+            "start": 57,
+            "end": 59,
+            "text": "<<",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 72,
+            "end": 81,
+            "text": "std::cout",
+            "role": "cpp",
+            "reading": "technical"
           }
         ]
       },
@@ -3263,18 +3610,18 @@
       {
         "block": "block_0004_0006",
         "path": "/question",
-        "sourceSha256": "1166c3fb34d1c5d32129a693c40cb5ed3014dfd69c3f8f27527ec37ecef7063d",
+        "sourceSha256": "611f9f731354483f30583c7c543bd9fb2c2a4bf6f5acb4895e78d99bf49975d0",
         "spans": [
           {
-            "start": 36,
-            "end": 43,
+            "start": 33,
+            "end": 40,
             "text": "Turno B",
             "role": "output",
             "reading": "natural"
           },
           {
-            "start": 97,
-            "end": 104,
+            "start": 94,
+            "end": 101,
             "text": "Turno C",
             "role": "output",
             "reading": "natural"
@@ -3305,11 +3652,11 @@
       {
         "block": "block_0004_0006",
         "path": "/options/0",
-        "sourceSha256": "d5e017920b32a8a0425a30fff488a5593e5305ddd63b2f275db360804d96c425",
+        "sourceSha256": "e9667499d3bd52079a5ef2a9d94dddd5c89dfbf39165601348a97d0e89309a76",
         "spans": [
           {
-            "start": 70,
-            "end": 77,
+            "start": 97,
+            "end": 104,
             "text": "Turno C",
             "role": "output",
             "reading": "natural"
@@ -3347,19 +3694,27 @@
       {
         "block": "block_0004_0006",
         "path": "/reviewFeedback/0",
-        "sourceSha256": "cc82a64180c782d6ebdf8f88cecf686d915f5d04e52afc52c5e88edee4421db5",
+        "sourceSha256": "3c0c02bd93d41cc7461f8e567af44554381cdd6d8f772fdadee457c7d1f258a1",
         "spans": []
       },
       {
         "block": "block_0004_0006",
         "path": "/reviewFeedback/1",
-        "sourceSha256": "0817d4af9621ccccd8e80056029c27c8d66b840a4f4af7031db670708fb1c7ed",
-        "spans": []
+        "sourceSha256": "2452c7c01ae58fa50f5cd01f669d1d870598194feff373cae96f69cf13f34a2a",
+        "spans": [
+          {
+            "start": 116,
+            "end": 125,
+            "text": "std::cout",
+            "role": "cpp",
+            "reading": "technical"
+          }
+        ]
       },
       {
         "block": "block_0004_0006",
         "path": "/reviewFeedback/2",
-        "sourceSha256": "d06c2dfcf21b680a9b6b3e41d13db5d5a3bc579048c5d1a088439fe7e9a8314b",
+        "sourceSha256": "25582bb82c8ef5f6a72f71bbc8a8b897925d82029dbebaa74a39d96b950b48ea",
         "spans": []
       },
       {
@@ -3371,25 +3726,32 @@
       {
         "block": "block_0005_0005",
         "path": "/text",
-        "sourceSha256": "51eb732be3d28a39ebb892674ffdae161b1316c3bb6949eb9d27e354e994dad3",
+        "sourceSha256": "587f46f8faaa3908471d7fec1b4d4f872322ddf95fe5c06c379722c36bc7f3a1",
         "spans": [
           {
-            "start": 46,
-            "end": 53,
+            "start": 91,
+            "end": 98,
             "text": "Turno B",
             "role": "output",
             "reading": "natural"
           },
           {
-            "start": 91,
-            "end": 92,
+            "start": 158,
+            "end": 159,
             "text": "C",
             "role": "data",
             "reading": "natural"
           },
           {
-            "start": 235,
-            "end": 268,
+            "start": 194,
+            "end": 201,
+            "text": "Turno B",
+            "role": "output",
+            "reading": "natural"
+          },
+          {
+            "start": 299,
+            "end": 332,
             "text": "Taller\nTurno C\nMaterial preparado",
             "role": "output",
             "reading": "natural"
@@ -3664,46 +4026,46 @@
       {
         "block": "p1u1l5_linea_central_enunciado",
         "path": "/text",
-        "sourceSha256": "aab3b847d99fcda0ad2f7acc7eb9a88d233776f8739f5031abf9bf6f0a12d779",
+        "sourceSha256": "5656262b4aa46dac8c3a2f473501eec3016cbefab047aa09cd480aebf410515d",
         "spans": [
           {
-            "start": 45,
-            "end": 51,
-            "text": "Puesto",
-            "role": "output",
-            "reading": "natural"
-          },
-          {
-            "start": 102,
-            "end": 111,
+            "start": 41,
+            "end": 50,
             "text": "std::cout",
             "role": "cpp",
             "reading": "technical"
           },
           {
-            "start": 120,
-            "end": 123,
+            "start": 59,
+            "end": 65,
+            "text": "Puesto",
+            "role": "output",
+            "reading": "natural"
+          },
+          {
+            "start": 119,
+            "end": 122,
             "text": "Fin",
             "role": "output",
             "reading": "natural"
           },
           {
-            "start": 229,
-            "end": 235,
+            "start": 261,
+            "end": 267,
             "text": "Mesa B",
             "role": "output",
             "reading": "natural"
           },
           {
-            "start": 265,
-            "end": 268,
+            "start": 300,
+            "end": 303,
             "text": "Fin",
             "role": "output",
             "reading": "natural"
           },
           {
-            "start": 287,
-            "end": 293,
+            "start": 324,
+            "end": 330,
             "text": "Mesa B",
             "role": "output",
             "reading": "natural"
@@ -3782,7 +4144,7 @@
       {
         "block": "p1u1l5_tarjeta_como_construir",
         "path": "/text",
-        "sourceSha256": "edd043a06cd178131ee917d777d7063ac3b1a7e665a7fcbba5d7f8ec336d0cef",
+        "sourceSha256": "d0d5d5525e2ea607c8c2a9cd5f34360c73c9514ffb8370d3ea2f0cfcea4ff9a2",
         "spans": [
           {
             "start": 33,
@@ -3792,22 +4154,22 @@
             "reading": "technical"
           },
           {
-            "start": 116,
-            "end": 122,
+            "start": 171,
+            "end": 177,
             "text": "Taller",
             "role": "output",
             "reading": "natural"
           },
           {
-            "start": 161,
-            "end": 168,
+            "start": 218,
+            "end": 225,
             "text": "Turno B",
             "role": "output",
             "reading": "natural"
           },
           {
-            "start": 216,
-            "end": 234,
+            "start": 289,
+            "end": 307,
             "text": "Material preparado",
             "role": "output",
             "reading": "natural"

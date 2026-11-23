@@ -43,7 +43,7 @@
           "options": [
             "Un bool que sólo indique true.",
             "Una cadena formada concatenando \"1.5\" y \"2.25\".",
-            "Una representación numérica que conserve esas fracciones, como double."
+            "double permite guardar los dos tramos de 1.5 y 2.25 metros y el total de 3.75 metros."
           ],
           "correctIndex": 2,
           "explanation": "El tipo double puede guardar ambas longitudes y su suma, 3.75 metros. El operador + suma dos valores de ese tipo (Stroustrup, 2024)."
@@ -72,9 +72,9 @@
         },
         {
           "type": "multiple_choice",
-          "question": "Quieres que al_inicio conserve la cantidad de herramientas que había antes de retirar tres. En el programa actual se copió la cantidad después de la retirada. ¿Qué cambio lo corrige?",
+          "question": "En otra versión del programa, disponibles empieza con ocho herramientas. Primero restas tres de disponibles. Sólo después copias el valor de disponibles en al_inicio. Quieres guardar en al_inicio cuántas herramientas había al abrir. ¿Dónde debe ejecutarse la copia?",
           "options": [
-            "Situar la copia antes de modificar la cantidad.",
+            "Copiar el valor de disponibles en al_inicio antes de restar las tres herramientas que se retiran.",
             "Renombrar el informe sin cambiar el momento de la copia.",
             "Conservar la copia tardía y cambiar sólo su mensaje de salida."
           ],
@@ -173,7 +173,7 @@
           "options": [
             "Una salida fija 2.5, sin usar otra longitud para el cálculo.",
             "Otra ejecución de cinco metros sin cambiar nada más.",
-            "Otro caso, ocho metros, cuyo resultado calculado es cuatro."
+            "Probar con una cinta de 8 metros y comprobar si la consola muestra 4 metros por mitad."
           ],
           "correctIndex": 2,
           "explanation": "Con una cinta de ocho metros, la mitad debe medir cuatro metros. Una salida fija de 2.5 falla ese caso. Con una cinta de siete metros, la mitad debe medir tres metros y medio. La división entera daría tres y fallaría ese caso (Stroustrup, 2024)."
@@ -222,7 +222,7 @@
           "options": [
             "El nuevo cero de mesas se copia automáticamente dentro del nombre y reemplaza el texto 03.",
             "El nombre se vuelve a calcular a partir del número de mesas cada vez que se muestra.",
-            "El nombre conserva su propio texto; modificar esas cantidades no asigna otro texto a ese objeto."
+            "El nombre Puesto 03 está guardado en su propia variable de texto. Cambiar el número de mesas y las medidas de cable sólo modifica las variables que guardan esas cantidades."
           ],
           "correctIndex": 2,
           "reviewFeedback": [
@@ -281,14 +281,14 @@
       "blocks": [
         {
           "type": "multiple_choice",
-          "question": "Un informe muestra Cable: 3.75 m con tramos de 1.5 y 2.25 metros. ¿Qué resultado aporta evidencia de que el programa suma las dos medidas?",
+          "question": "Con tramos de 1.5 y 2.25 metros, la consola muestra Cable: 3.75 m. ¿Qué resultado esperarías al cambiar la medida de un solo tramo si el programa vuelve a sumar las dos longitudes para el informe?",
           "options": [
-            "Que al cambiar un tramo conocido también cambia la suma de acuerdo con lo esperado.",
+            "Si el primer tramo mide un metro más y el segundo conserva su longitud, el total que muestra la consola también aumenta un metro.",
             "Que siempre se imprime el literal \"3.75\".",
             "Que existe un comentario que dice sumar."
           ],
           "correctIndex": 0,
-          "explanation": "Si un solo tramo mide un metro más, el total debe aumentar un metro. Una prueba cambia el primer tramo y conserva el segundo. Otra cambia el segundo y conserva el primero. Así puedes comprobar que ambas medidas afectan a la suma."
+          "explanation": "Si el primer tramo pasa de 1.5 a 2.5 metros y el segundo sigue midiendo 2.25, la suma pasa de 3.75 a 4.75 metros. En otra prueba puedes conservar el primer tramo de 1.5 metros y cambiar el segundo de 2.25 a 3.25. El total también pasa a 4.75 metros. Al cambiar un tramo por vez, puedes comprobar el efecto de cada medida en la suma."
         },
         {
           "type": "heading",
@@ -320,12 +320,12 @@
         {
           "type": "output_prediction",
           "language": "cpp",
-          "question": "El programa guarda un texto en informe cuando codigo contiene 03. Después asigna 04 a codigo y suma dos a mesas. ¿Qué texto muestra en el primer renglón de la salida y qué cantidades muestra en el segundo?",
+          "question": "Cuando codigo guarda el texto 03, el programa forma el nombre que guarda en informe. También copia en registradas la cantidad inicial de mesas. Después suma dos a mesas y asigna el texto 04 a codigo. ¿Qué texto escribe std::cout en el primer renglón de la salida y qué dos cantidades escribe en el segundo?",
           "code": "#include <iostream>\n#include <string>\n\nint main() {\n    std::string nombre = \"Puesto\";\n    std::string codigo = \"03\";\n\n    std::string informe = nombre + \" \" + codigo;\n\n    int mesas = 4;\n    int registradas = mesas;\n\n    mesas += 2;\n    codigo = \"04\";\n\n    std::cout << informe << \"\\n\";\n    std::cout << registradas << \" \" << mesas;\n\n    return 0;\n}\n",
           "answers": [
             "Puesto 03\n4 6"
           ],
-          "explanation": "informe guarda Puesto 03 antes de que codigo cambie a 04. Ese texto aparece en el primer renglón de la salida. El segundo muestra 4 6. registradas guarda cuatro antes de que la suma deje seis en mesas (Stroustrup, 2024)."
+          "explanation": "El programa forma Puesto 03 y lo guarda en informe mientras codigo contiene 03. Asignar después 04 a codigo sólo cambia el texto de esa variable. Cuando std::cout consulta informe, escribe Puesto 03 en el primer renglón de la salida.\n\nLa variable registradas recibió una copia del cuatro inicial de mesas. Al sumar dos, mesas pasa a seis y registradas conserva cuatro. La última instrucción con std::cout muestra primero registradas y luego mesas, con un espacio entre las dos cantidades. El segundo renglón de la salida dice 4 6 (Stroustrup, 2024)."
         },
         {
           "type": "multiple_choice",
@@ -443,7 +443,7 @@
             "-="
           ],
           "id": "p1u2l10_devolver_y_prestar",
-          "question": "Escribe el operador que añade los libros devueltos y el que descuenta los prestados. Al final el programa debe mostrar primero los libros que había al abrir y luego los disponibles: 0 1.",
+          "question": "En el primer hueco escribe el operador que suma la devolución a libros. En el segundo escribe el operador que resta el préstamo de libros. El programa debe mostrar 0 1 en un renglón de la salida. El cero indica cuántos libros había al abrir y el uno cuántos quedan disponibles después de la devolución y el préstamo.",
           "reviewFeedback": "El primer cambio aumenta el recuento en dos. El segundo disminuye ese mismo recuento en uno.",
           "explanation": "Después de libros += libros_devueltos; hay dos libros. Después de libros -= libros_prestados; queda uno. La copia tomada al abrir sigue valiendo cero."
         }
@@ -2257,6 +2257,51 @@
           "/reviewFeedback/1",
           "/reviewFeedback/2"
         ]
+      },
+      {
+        "id": "block_0001_0002",
+        "beforeSha256": "2250a013eb94e74ead2da3dbf93bf2140a3a5ba8ebf6993cb70316d947fef92e",
+        "afterSha256": "3425aa541de0a0175cf6d33fd76405181ef982d84ab04b0aab904e9cf01faa19"
+      },
+      {
+        "id": "block_0001_0002",
+        "beforeSha256": "3425aa541de0a0175cf6d33fd76405181ef982d84ab04b0aab904e9cf01faa19",
+        "afterSha256": "8f022424a0c94c656b63e10460f86f50057c23aa1168b3bb1883c32c40e2b4d8"
+      },
+      {
+        "id": "block_0005_0003",
+        "beforeSha256": "12d16bf53384835d59683804eee77e46a45f7234fa099e880d0a06a115780557",
+        "afterSha256": "e4f7a9bdb172795874a381eb087ef1557794d5bbe62b5c5fa552b02168b88db3"
+      },
+      {
+        "id": "block_0005_0003",
+        "beforeSha256": "e4f7a9bdb172795874a381eb087ef1557794d5bbe62b5c5fa552b02168b88db3",
+        "afterSha256": "0a7b5ccdd9d5e151e19e2969be0eef89f99a67d1712b560dc908d86acd986229"
+      },
+      {
+        "id": "p1u2l10_devolver_y_prestar",
+        "beforeSha256": "8f5b832983c27662bcc22a56909abe0d5926d45dc3834a4084909a99b26cb170",
+        "afterSha256": "549b9a98e92f3f7ae5dce224197034d3929f5ea4fc9bd669776151a3a2dd32f0"
+      },
+      {
+        "id": "block_0006_0001",
+        "beforeSha256": "dcbcb962d81abec256ee3fabcb31d057f39247f53b97ca2a739d29691d5d5f08",
+        "afterSha256": "fa7aa2143548ff6df63cf2eaaf03f7852963ac45a3b366f0333471044d65ee14"
+      },
+      {
+        "id": "block_0003_0004",
+        "beforeSha256": "2dadc8f7be8b5467815ca97848a6270216775fcdb2a56f1317ca009df62c865b",
+        "afterSha256": "b695e78a7f27540581956f97b1f3fa7c2f5a6c2e85a4512bbf3328aa280f387c"
+      },
+      {
+        "id": "block_0004_0005",
+        "beforeSha256": "1b6ffddd7a7b43ab28340c78bf9d9043c183edc6a9fe84aea3cf8e9c90a61a82",
+        "afterSha256": "d887e619984c258d2f24da1ed08bd3346a139a106019a6b72b036664ad0f256c"
+      },
+      {
+        "id": "block_0000_0003",
+        "beforeSha256": "b094825ded61946617c8191a21726a5f4a62344d72076ba6250ac9137c3923eb",
+        "afterSha256": "5cd16c67f1d52f4e18a3e3d5ad0052e6d75e2d70c2f995c9b452988236dc6855"
       }
     ],
     "orderRefinements": [
@@ -5268,6 +5313,247 @@
           "spans": []
         },
         "semanticRootBefore": true
+      },
+      {
+        "id": "block_0001_0002",
+        "block": {
+          "type": "multiple_choice",
+          "question": "Quieres que al_inicio conserve la cantidad de herramientas que había antes de retirar tres. En el programa actual se copió la cantidad después de la retirada. ¿Qué cambio lo corrige?",
+          "options": [
+            "Situar la copia antes de modificar la cantidad.",
+            "Renombrar el informe sin cambiar el momento de la copia.",
+            "Conservar la copia tardía y cambiar sólo su mensaje de salida."
+          ],
+          "correctIndex": 0,
+          "explanation": "La copia guarda la cantidad que hay al ejecutarse esa línea. Si debes conservar ocho, haz la copia mientras haya ocho y después resta las tres herramientas que se retiran (Stroustrup, 2024)."
+        },
+        "optionIndex": 0,
+        "replacement": "Copiar el valor de disponibles en al_inicio antes de restar las tres herramientas que se retiran.",
+        "semanticBefore": {
+          "block": "block_0001_0002",
+          "path": "/options/0",
+          "sourceSha256": "226414edac4df0fb125c0800b7eacf67fca0f57b462ffa47e68ca6e8bc6dd116",
+          "spans": []
+        },
+        "semanticAfter": {
+          "block": "block_0001_0002",
+          "path": "/options/0",
+          "sourceSha256": "2296f9ed0e603e76ff28a07395b75371a9e133a7e60443fa0d85d5da97c42abb",
+          "spans": [
+            {
+              "start": 19,
+              "end": 30,
+              "text": "disponibles",
+              "role": "cpp",
+              "reading": "technical"
+            },
+            {
+              "start": 34,
+              "end": 43,
+              "text": "al_inicio",
+              "role": "cpp",
+              "reading": "technical"
+            }
+          ]
+        },
+        "semanticRootBefore": true
+      },
+      {
+        "id": "block_0005_0003",
+        "block": {
+          "type": "multiple_choice",
+          "question": "Un informe muestra Cable: 3.75 m con tramos de 1.5 y 2.25 metros. ¿Qué resultado aporta evidencia de que el programa suma las dos medidas?",
+          "options": [
+            "Que al cambiar un tramo conocido también cambia la suma de acuerdo con lo esperado.",
+            "Que siempre se imprime el literal \"3.75\".",
+            "Que existe un comentario que dice sumar."
+          ],
+          "correctIndex": 0,
+          "explanation": "Si un solo tramo mide un metro más, el total debe aumentar un metro. Una prueba cambia el primer tramo y conserva el segundo. Otra cambia el segundo y conserva el primero. Así puedes comprobar que ambas medidas afectan a la suma."
+        },
+        "optionIndex": 0,
+        "replacement": "Si el primer tramo mide un metro más y el segundo conserva su longitud, el total que muestra la consola también aumenta un metro.",
+        "semanticBefore": {
+          "block": "block_0005_0003",
+          "path": "/options/0",
+          "sourceSha256": "426eb0b920a402936077a229555b5c398607ef0092f7295078f776f01a15c51f",
+          "spans": []
+        },
+        "semanticAfter": {
+          "block": "block_0005_0003",
+          "path": "/options/0",
+          "sourceSha256": "0ffaabfa3a811f5ea5965ae0c39ca4066e0c265bd98c84aaf453a4ac0314802c",
+          "spans": []
+        },
+        "semanticRootBefore": true
+      },
+      {
+        "id": "block_0003_0004",
+        "block": {
+          "type": "multiple_choice",
+          "question": "La consola muestra 2.5 con una cinta de cinco metros. ¿Qué prueba permite detectar un programa que siempre imprime ese número, aunque cambies la longitud?",
+          "options": [
+            "Una salida fija 2.5, sin usar otra longitud para el cálculo.",
+            "Otra ejecución de cinco metros sin cambiar nada más.",
+            "Otro caso, ocho metros, cuyo resultado calculado es cuatro."
+          ],
+          "correctIndex": 2,
+          "explanation": "Con una cinta de ocho metros, la mitad debe medir cuatro metros. Una salida fija de 2.5 falla ese caso. Con una cinta de siete metros, la mitad debe medir tres metros y medio. La división entera daría tres y fallaría ese caso (Stroustrup, 2024)."
+        },
+        "optionIndex": 2,
+        "replacement": "Probar con una cinta de 8 metros y comprobar si la consola muestra 4 metros por mitad.",
+        "semanticBefore": {
+          "block": "block_0003_0004",
+          "path": "/options/2",
+          "sourceSha256": "0f77601199fc870e810528db2d0901ab1a7bdc120f627358be68a784e6b703e6",
+          "spans": [
+            {
+              "start": 11,
+              "end": 15,
+              "text": "ocho",
+              "role": "data",
+              "reading": "natural"
+            },
+            {
+              "start": 52,
+              "end": 58,
+              "text": "cuatro",
+              "role": "output",
+              "reading": "natural"
+            }
+          ]
+        },
+        "semanticAfter": {
+          "block": "block_0003_0004",
+          "path": "/options/2",
+          "sourceSha256": "e5faedcb24dacfcd4b832b093fcf78ed78fed2475e6f0289c96dded6a5c2056a",
+          "spans": [
+            {
+              "start": 24,
+              "end": 25,
+              "text": "8",
+              "role": "data",
+              "reading": "natural"
+            },
+            {
+              "start": 67,
+              "end": 68,
+              "text": "4",
+              "role": "data",
+              "reading": "natural"
+            }
+          ]
+        },
+        "semanticRootBefore": true
+      },
+      {
+        "id": "block_0004_0005",
+        "block": {
+          "type": "multiple_choice",
+          "id": "cpp_fundamentals__objetos_y_estado__representar_procesar_y_recuperar__conservar_cero_del_nombre_al_variar_cantidades",
+          "question": "La estación pasa a tener cero mesas y sus tramos miden ahora 2.0 y 3.5 metros. ¿Por qué el informe sigue mostrando el nombre Puesto 03?",
+          "options": [
+            "El nuevo cero de mesas se copia automáticamente dentro del nombre y reemplaza el texto 03.",
+            "El nombre se vuelve a calcular a partir del número de mesas cada vez que se muestra.",
+            "El nombre conserva su propio texto; modificar esas cantidades no asigna otro texto a ese objeto."
+          ],
+          "correctIndex": 2,
+          "reviewFeedback": [
+            "El cero de 03 forma parte del nombre. ¿En qué variable cambias la cantidad de mesas?",
+            "Revisa si el programa usa las mesas para formar el nombre.",
+            "Identifica los datos que cambian y la variable que guarda Puesto 03."
+          ],
+          "explanation": "La estación se sigue llamando Puesto 03. Al actualizar las mesas y los tramos, la variable que guarda el nombre conserva el mismo texto."
+        },
+        "optionIndex": 2,
+        "replacement": "El nombre Puesto 03 está guardado en su propia variable de texto. Cambiar el número de mesas y las medidas de cable sólo modifica las variables que guardan esas cantidades.",
+        "semanticBefore": {
+          "block": "block_0004_0005",
+          "path": "/options/2",
+          "sourceSha256": "ec6f2eebe8420bf6d35a0eeae231b7211a2ae968ca789667b6e48647b63d2148",
+          "spans": []
+        },
+        "semanticAfter": {
+          "block": "block_0004_0005",
+          "path": "/options/2",
+          "sourceSha256": "c09c50895e4692a0ac133500e6de83a5b83b22f79fa2054a5c03b026765fec96",
+          "spans": [
+            {
+              "start": 10,
+              "end": 19,
+              "text": "Puesto 03",
+              "role": "data",
+              "reading": "natural"
+            }
+          ]
+        },
+        "semanticRootBefore": true
+      },
+      {
+        "id": "block_0000_0003",
+        "block": {
+          "type": "multiple_choice",
+          "question": "Los dos tramos miden 1.5 y 2.25 metros. ¿Qué tipo de dato te permite sumarlos y guardar los 3.75 metros de cable?",
+          "options": [
+            "Un bool que sólo indique true.",
+            "Una cadena formada concatenando \"1.5\" y \"2.25\".",
+            "Una representación numérica que conserve esas fracciones, como double."
+          ],
+          "correctIndex": 2,
+          "explanation": "El tipo double puede guardar ambas longitudes y su suma, 3.75 metros. El operador + suma dos valores de ese tipo (Stroustrup, 2024)."
+        },
+        "optionIndex": 2,
+        "replacement": "double permite guardar los dos tramos de 1.5 y 2.25 metros y el total de 3.75 metros.",
+        "semanticBefore": {
+          "block": "block_0000_0003",
+          "path": "/options/2",
+          "sourceSha256": "b530927ec899ef6e5d302417b9f8b7f07da7ff8170a6137d4825f94421ff7b69",
+          "spans": [
+            {
+              "start": 63,
+              "end": 69,
+              "text": "double",
+              "role": "cpp",
+              "reading": "technical"
+            }
+          ]
+        },
+        "semanticAfter": {
+          "block": "block_0000_0003",
+          "path": "/options/2",
+          "sourceSha256": "0a910e43c519301c2df85a0f02cb6aa3f5f00392e57417dc0ca090fa1d784772",
+          "spans": [
+            {
+              "start": 0,
+              "end": 6,
+              "text": "double",
+              "role": "cpp",
+              "reading": "technical"
+            },
+            {
+              "start": 41,
+              "end": 44,
+              "text": "1.5",
+              "role": "data",
+              "reading": "natural"
+            },
+            {
+              "start": 47,
+              "end": 51,
+              "text": "2.25",
+              "role": "data",
+              "reading": "natural"
+            },
+            {
+              "start": 73,
+              "end": 77,
+              "text": "3.75",
+              "role": "data",
+              "reading": "natural"
+            }
+          ]
+        },
+        "semanticRootBefore": true
       }
     ],
     "sourceFormatRevisions": [
@@ -5835,14 +6121,35 @@
       {
         "block": "block_0000_0003",
         "path": "/options/2",
-        "sourceSha256": "b530927ec899ef6e5d302417b9f8b7f07da7ff8170a6137d4825f94421ff7b69",
+        "sourceSha256": "0a910e43c519301c2df85a0f02cb6aa3f5f00392e57417dc0ca090fa1d784772",
         "spans": [
           {
-            "start": 63,
-            "end": 69,
+            "start": 0,
+            "end": 6,
             "text": "double",
             "role": "cpp",
             "reading": "technical"
+          },
+          {
+            "start": 41,
+            "end": 44,
+            "text": "1.5",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 47,
+            "end": 51,
+            "text": "2.25",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 73,
+            "end": 77,
+            "text": "3.75",
+            "role": "data",
+            "reading": "natural"
           }
         ]
       },
@@ -5903,11 +6210,39 @@
       {
         "block": "block_0001_0002",
         "path": "/question",
-        "sourceSha256": "0be85de8817527b06963abb70b4a79ff5620ffaf555cddbdadc77296e6b58740",
+        "sourceSha256": "dab9fd8b8f199a44e879cef697bb32c28127b2d12cdc21968aa2e6f2731ad525",
         "spans": [
           {
-            "start": 12,
-            "end": 21,
+            "start": 30,
+            "end": 41,
+            "text": "disponibles",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 96,
+            "end": 107,
+            "text": "disponibles",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 141,
+            "end": 152,
+            "text": "disponibles",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 156,
+            "end": 165,
+            "text": "al_inicio",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 186,
+            "end": 195,
             "text": "al_inicio",
             "role": "cpp",
             "reading": "technical"
@@ -5931,8 +6266,23 @@
       {
         "block": "block_0001_0002",
         "path": "/options/0",
-        "sourceSha256": "226414edac4df0fb125c0800b7eacf67fca0f57b462ffa47e68ca6e8bc6dd116",
-        "spans": []
+        "sourceSha256": "2296f9ed0e603e76ff28a07395b75371a9e133a7e60443fa0d85d5da97c42abb",
+        "spans": [
+          {
+            "start": 19,
+            "end": 30,
+            "text": "disponibles",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 34,
+            "end": 43,
+            "text": "al_inicio",
+            "role": "cpp",
+            "reading": "technical"
+          }
+        ]
       },
       {
         "block": "block_0001_0002",
@@ -6381,20 +6731,20 @@
       {
         "block": "block_0003_0004",
         "path": "/options/2",
-        "sourceSha256": "0f77601199fc870e810528db2d0901ab1a7bdc120f627358be68a784e6b703e6",
+        "sourceSha256": "e5faedcb24dacfcd4b832b093fcf78ed78fed2475e6f0289c96dded6a5c2056a",
         "spans": [
           {
-            "start": 11,
-            "end": 15,
-            "text": "ocho",
+            "start": 24,
+            "end": 25,
+            "text": "8",
             "role": "data",
             "reading": "natural"
           },
           {
-            "start": 52,
-            "end": 58,
-            "text": "cuatro",
-            "role": "output",
+            "start": 67,
+            "end": 68,
+            "text": "4",
+            "role": "data",
             "reading": "natural"
           }
         ]
@@ -6715,8 +7065,16 @@
       {
         "block": "block_0004_0005",
         "path": "/options/2",
-        "sourceSha256": "ec6f2eebe8420bf6d35a0eeae231b7211a2ae968ca789667b6e48647b63d2148",
-        "spans": []
+        "sourceSha256": "c09c50895e4692a0ac133500e6de83a5b83b22f79fa2054a5c03b026765fec96",
+        "spans": [
+          {
+            "start": 10,
+            "end": 19,
+            "text": "Puesto 03",
+            "role": "data",
+            "reading": "natural"
+          }
+        ]
       },
       {
         "block": "block_0004_0005",
@@ -6928,27 +7286,27 @@
       {
         "block": "block_0005_0003",
         "path": "/question",
-        "sourceSha256": "4f3de028554c181ca852f82d32a3d94b06d8d513fe6068489f2f7e785111f8a6",
+        "sourceSha256": "e6b8cbf0f60c40507e331ec699c1cec1bf9edcecd0a702f28077826f1fe765d8",
         "spans": [
           {
-            "start": 19,
-            "end": 32,
-            "text": "Cable: 3.75 m",
-            "role": "output",
-            "reading": "natural"
-          },
-          {
-            "start": 47,
-            "end": 50,
+            "start": 14,
+            "end": 17,
             "text": "1.5",
             "role": "data",
             "reading": "natural"
           },
           {
-            "start": 53,
-            "end": 57,
+            "start": 20,
+            "end": 24,
             "text": "2.25",
             "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 52,
+            "end": 65,
+            "text": "Cable: 3.75 m",
+            "role": "output",
             "reading": "natural"
           }
         ]
@@ -6956,13 +7314,77 @@
       {
         "block": "block_0005_0003",
         "path": "/explanation",
-        "sourceSha256": "d144db69471ae4ad8c1283af72c8c7815f6127ff56627f3be783ac76966e7455",
-        "spans": []
+        "sourceSha256": "c8de17b43ef6af02ed0cb6ff6308ad3e9cb4b10b4dd0d70330aa8ffc6275e137",
+        "spans": [
+          {
+            "start": 27,
+            "end": 30,
+            "text": "1.5",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 33,
+            "end": 36,
+            "text": "2.5",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 72,
+            "end": 76,
+            "text": "2.25",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 94,
+            "end": 98,
+            "text": "3.75",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 101,
+            "end": 105,
+            "text": "4.75",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 165,
+            "end": 168,
+            "text": "1.5",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 200,
+            "end": 204,
+            "text": "2.25",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 207,
+            "end": 211,
+            "text": "3.25",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 237,
+            "end": 241,
+            "text": "4.75",
+            "role": "data",
+            "reading": "natural"
+          }
+        ]
       },
       {
         "block": "block_0005_0003",
         "path": "/options/0",
-        "sourceSha256": "426eb0b920a402936077a229555b5c398607ef0092f7295078f776f01a15c51f",
+        "sourceSha256": "0ffaabfa3a811f5ea5965ae0c39ca4066e0c265bd98c84aaf453a4ac0314802c",
         "spans": []
       },
       {
@@ -6994,47 +7416,68 @@
       {
         "block": "block_0006_0001",
         "path": "/question",
-        "sourceSha256": "017539cc7ed74607686fb23db0d56db5839a4448c41de7946ce1cc67a03cf57b",
+        "sourceSha256": "4dc425d683907bd03c06fe62897895cb30bb6b99e8996287617aaa797583de39",
         "spans": [
           {
-            "start": 31,
-            "end": 38,
-            "text": "informe",
-            "role": "cpp",
-            "reading": "technical"
-          },
-          {
-            "start": 46,
-            "end": 52,
+            "start": 7,
+            "end": 13,
             "text": "codigo",
             "role": "cpp",
             "reading": "technical"
           },
           {
-            "start": 62,
-            "end": 64,
+            "start": 30,
+            "end": 32,
             "text": "03",
             "role": "data",
             "reading": "natural"
           },
           {
-            "start": 81,
+            "start": 76,
             "end": 83,
+            "text": "informe",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 102,
+            "end": 113,
+            "text": "registradas",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 137,
+            "end": 142,
+            "text": "mesas",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 163,
+            "end": 168,
+            "text": "mesas",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 187,
+            "end": 189,
             "text": "04",
             "role": "data",
             "reading": "natural"
           },
           {
-            "start": 86,
-            "end": 92,
+            "start": 192,
+            "end": 198,
             "text": "codigo",
             "role": "cpp",
             "reading": "technical"
           },
           {
-            "start": 106,
-            "end": 111,
-            "text": "mesas",
+            "start": 219,
+            "end": 228,
+            "text": "std::cout",
             "role": "cpp",
             "reading": "technical"
           }
@@ -7043,60 +7486,130 @@
       {
         "block": "block_0006_0001",
         "path": "/explanation",
-        "sourceSha256": "09ccf732d020c585d60436b7882757b1ea5e43fe5159d565bd82d6143ef6921e",
+        "sourceSha256": "5900d847594c782d98878f832c702b48045b648465f2f7c823f708aa6fb6777e",
         "spans": [
           {
-            "start": 0,
-            "end": 7,
+            "start": 18,
+            "end": 27,
+            "text": "Puesto 03",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 43,
+            "end": 50,
             "text": "informe",
             "role": "cpp",
             "reading": "technical"
           },
           {
-            "start": 15,
-            "end": 24,
-            "text": "Puesto 03",
-            "role": "output",
-            "reading": "natural"
-          },
-          {
-            "start": 38,
-            "end": 44,
+            "start": 60,
+            "end": 66,
             "text": "codigo",
             "role": "cpp",
             "reading": "technical"
           },
           {
-            "start": 54,
-            "end": 56,
+            "start": 76,
+            "end": 78,
+            "text": "03",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 96,
+            "end": 98,
             "text": "04",
             "role": "data",
             "reading": "natural"
           },
           {
-            "start": 130,
-            "end": 133,
-            "text": "4 6",
+            "start": 101,
+            "end": 107,
+            "text": "codigo",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 153,
+            "end": 162,
+            "text": "std::cout",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 172,
+            "end": 179,
+            "text": "informe",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 189,
+            "end": 198,
+            "text": "Puesto 03",
             "role": "output",
             "reading": "natural"
           },
           {
-            "start": 135,
-            "end": 146,
+            "start": 247,
+            "end": 258,
             "text": "registradas",
             "role": "cpp",
             "reading": "technical"
           },
           {
-            "start": 195,
-            "end": 200,
+            "start": 299,
+            "end": 304,
             "text": "mesas",
             "role": "cpp",
             "reading": "technical"
           },
           {
-            "start": 201,
-            "end": 219,
+            "start": 320,
+            "end": 325,
+            "text": "mesas",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 340,
+            "end": 351,
+            "text": "registradas",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 395,
+            "end": 404,
+            "text": "std::cout",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 421,
+            "end": 432,
+            "text": "registradas",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 441,
+            "end": 446,
+            "text": "mesas",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 526,
+            "end": 529,
+            "text": "4 6",
+            "role": "output",
+            "reading": "natural"
+          },
+          {
+            "start": 530,
+            "end": 548,
             "text": "(Stroustrup, 2024)",
             "role": "citation",
             "reading": "natural"
@@ -8235,11 +8748,25 @@
       {
         "block": "p1u2l10_devolver_y_prestar",
         "path": "/question",
-        "sourceSha256": "4463b954a64d023c4e0fd6651c7ae993e8227658a330717cc695ee1c599bbf0c",
+        "sourceSha256": "044a5861d6d7c540b57f09728caafd102b51a2ac604a9827ce5b8c60cb3084a7",
         "spans": [
           {
-            "start": 182,
-            "end": 185,
+            "start": 64,
+            "end": 70,
+            "text": "libros",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 131,
+            "end": 137,
+            "text": "libros",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 164,
+            "end": 167,
             "text": "0 1",
             "role": "output",
             "reading": "natural"
