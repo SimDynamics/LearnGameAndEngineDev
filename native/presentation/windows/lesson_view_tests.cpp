@@ -5768,10 +5768,31 @@ void puzzle_hover_wheel_reaches_lesson_without_click(){
                 <<": background, both fixed source pieces and both inline holes; two directions without clicking/focusing the puzzle, retained response/draft/selection/narration\n";
         };
         phase("unsubmitted draft",false);
+        // BM_CLICK needs the real button on an available native surface.
+        // Only this setup action shows the isolated QA host, without activation;
+        // every no-click hover regression above/below uses the hidden host.
+        ShowWindow(f.host,SW_SHOWNOACTIVATE);pump(f.host);
+        const auto check=f.control(0,3),pane=descendant_class(f.view,L"LearnGameAndEngineDev.LessonPane");
+        RECT check_bounds{},viewport{};GetWindowRect(check,&check_bounds);GetWindowRect(pane,&viewport);
+        for(int move=0;move<200&&(check_bounds.top<viewport.top||check_bounds.bottom>viewport.bottom);++move){
+            const auto before=check_bounds;
+            SendMessageW(f.view,WM_VSCROLL,check_bounds.top<viewport.top?SB_LINEUP:SB_LINEDOWN,0);pump(f.host);
+            GetWindowRect(check,&check_bounds);GetWindowRect(pane,&viewport);
+            if(EqualRect(&before,&check_bounds))break;
+        }
+        require(IsWindowVisible(check)&&check_bounds.top>=viewport.top&&check_bounds.bottom<=viewport.bottom,
+            "Puzzle wheel cannot reach the actual Check button while preparing its completed state");
         f.click(0,3);
-        const auto accepted=state::get_response(f.saved(),f.lesson,f.lesson.pages[0].blocks[0]);
-        require(accepted&&accepted->correct&&f.text(0,4).starts_with("✓ Correcto"),
-            "Puzzle wheel did not accept its operator answers through the actual Check button");
+        const auto checked_data=f.saved();const auto accepted=state::get_response(checked_data,f.lesson,f.lesson.pages[0].blocks[0]);
+        const auto feedback=f.text(0,4);
+        ShowWindow(f.host,SW_HIDE);pump(f.host);
+        require(accepted&&accepted->correct&&feedback.starts_with("✓ Correcto"),
+            "Puzzle wheel did not accept its operator answers through the actual Check button; response exists="+
+                std::to_string(static_cast<bool>(accepted))+", correct="+std::to_string(accepted&&accepted->correct)+
+                ", feedback=["+feedback+"], division=["+edit_text(GetDlgItem(f.control(0,5),100))+
+                "], remainder=["+edit_text(GetDlgItem(f.control(0,5),101))+"], stored response=["+
+                state::string_value(checked_data,"learning_progress",answer_key)+"], raw answers=["+
+                (accepted?accepted->raw_json:std::string{})+"]");
         phase("completed",true);
         f.reopen();phase("completed after reopen",true);
     }
