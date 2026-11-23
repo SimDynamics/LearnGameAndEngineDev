@@ -1,4 +1,5 @@
 #include "core/lesson.hpp"
+#include "core/code_format_compat.hpp"
 #include "core/attempts.hpp"
 #include "core/profile.hpp"
 #include "platform/windows/compiler_completion.hpp"
@@ -1355,21 +1356,14 @@ void current_u3_combinations() {
         "historical drafts and saved reserve preserved under the current Premium policy; no desktop/listening acceptance\n";
 }
 
-void named_rule_feedback_laboratory() {
+std::filesystem::path named_rule_feedback_laboratory(const std::filesystem::path& path,
+        std::string_view published_sha) {
     using namespace winrt::Windows::Data::Json;
     phase = "authenticate the complete published named-rule lesson";
-    const auto path = std::filesystem::path(build::source_root) /
-        "app/src/main/assets/content/es/programming/programming_practice_tools/comprobaciones_repetibles/lesson_nombrar_reglas_y_separar_acuerdos.json";
-    // The complete Git blob at 5ec6d37a657ec31128e899b4b834fedf518fa84c,
-    // authenticated independently through GitHub, not a reconstructed lesson.
-    constexpr std::string_view published_sha = "09fbf7be9c9e236f706a943c694e6644688888b4d7d58e0717c1411dcda4ffc3";
     const auto published_bytes = bytes(path);
-    auto git_bytes = published_bytes;
-    // Git for Windows may expand LF on checkout. Accept only that transport
-    // conversion; every other byte must still match the complete publication.
-    for (std::size_t at = 0; (at = git_bytes.find("\r\n", at)) != std::string::npos; ++at)
-        git_bytes.erase(at, 1);
-    check(state::sha256(git_bytes) == published_sha,
+    // The exporter preserves the exact Git or working-tree bytes, including
+    // checkout line endings. Never normalize a complete-publication digest.
+    check(state::sha256(published_bytes) == published_sha,
         "The named-rule fixture differs from its authenticated complete publication");
     const auto published = windows::load_lesson(path, "es");
     check(published.id == "programming_practice_tools__comprobaciones_repetibles__nombrar_reglas_y_separar_acuerdos",
@@ -1586,6 +1580,147 @@ void named_rule_feedback_laboratory() {
         "false exit zero rejected without a false stdout claim, "
         "real correction/private proofs, later rejection with first-case receipt retained, "
         "exact drafts/input/reopen and unchanged authenticated publication\n";
+    return fixture.environment.paths.root;
+}
+
+void named_rule_feedback_publications(const std::filesystem::path& fixtures) {
+    using namespace winrt::Windows::Data::Json;
+    phase = "authenticate original and current named-rule publication contracts";
+    constexpr std::string_view original_sha = "09fbf7be9c9e236f706a943c694e6644688888b4d7d58e0717c1411dcda4ffc3";
+    constexpr std::string_view reproduction_sha = "13b529b6e65afc634b485792661b6d7d7df1c48bbe8b2099d943e9ae3b5fec18";
+    constexpr std::string_view lesson_id =
+        "programming_practice_tools__comprobaciones_repetibles__nombrar_reglas_y_separar_acuerdos";
+    constexpr std::array<std::string_view,5> compilers{{
+        "block_0008_0007","block_0002_0004","block_0005_0006","block_0006_0009","block_0007_0004"}};
+    constexpr std::array<std::string_view,4> references{{
+        "block_0003_0002","block_0006_0001","block_0006_0003","block_0008_0001"}};
+    const auto manifest = JsonObject::Parse(winrt::to_hstring(bytes(fixtures / "manifest.json")));
+    check(manifest.GetNamedNumber(L"version") == 1
+        && winrt::to_string(manifest.GetNamedString(L"lessonId")) == lesson_id
+        && winrt::to_string(manifest.GetNamedString(L"owner")) == compilers.front(),
+        "The named-rule fixture manifest names another contract");
+    const auto scenarios = manifest.GetNamedArray(L"scenarios");
+    check(scenarios.Size() == 2, "Both original and current complete publications are required");
+    std::array<std::string,2> digests;
+    std::array<std::filesystem::path,2> paths;
+    const std::array<std::string_view,2> names{{"original","current"}};
+    for(std::size_t index = 0; index < names.size(); ++index) {
+        const auto scenario = scenarios.GetAt(static_cast<std::uint32_t>(index)).GetObject();
+        const auto name = names[index];
+        check(winrt::to_string(scenario.GetNamedString(L"name")) == name
+            && winrt::to_string(scenario.GetNamedString(L"file")) == std::string(name) + ".json",
+            "The named-rule manifest reassigned a complete publication");
+        paths[index] = fixtures / (std::string(name) + ".json");
+        digests[index] = winrt::to_string(scenario.GetNamedString(L"sha256"));
+        check(digests[index].size() == 64
+            && std::ranges::all_of(digests[index], [](char item) {
+                return (item >= '0' && item <= '9') || (item >= 'a' && item <= 'f'); })
+            && state::sha256(bytes(paths[index])) == digests[index],
+            "The exported named-rule publication lost its exact complete bytes");
+    }
+    // This independent historical constant cannot be replaced by a digest
+    // supplied by the manifest or by the current working-tree publication.
+    check(digests.front() == original_sha
+        && winrt::to_string(scenarios.GetAt(0).GetObject().GetNamedString(L"commit")) ==
+            "5ec6d37a657ec31128e899b4b834fedf518fa84c",
+        "The original named-rule scenario lost its independently pinned publication");
+    const auto baseline_record = manifest.GetNamedObject(L"baseline");
+    const auto baseline_path = fixtures / "baseline.json";
+    check(winrt::to_string(baseline_record.GetNamedString(L"file")) == "baseline.json"
+        && winrt::to_string(baseline_record.GetNamedString(L"commit")) ==
+            "50b479912dd0e598ad0b717332a15bf7d8606e69"
+        && winrt::to_string(baseline_record.GetNamedString(L"sha256")) == reproduction_sha
+        && state::sha256(bytes(baseline_path)) == reproduction_sha,
+        "The current named-rule history lost its independently pinned complete baseline");
+    const auto selector = winrt::to_string(manifest.GetNamedString(L"publication"));
+    if(selector == "working-tree") {
+        const auto asset = std::filesystem::path(build::source_root) /
+            "app/src/main/assets/content/es/programming/programming_practice_tools/comprobaciones_repetibles/lesson_nombrar_reglas_y_separar_acuerdos.json";
+        check(bytes(paths.back()) == bytes(asset),
+            "The current named-rule fixture is not the complete working-tree publication");
+    } else {
+        check(selector == "50b4799" && digests.back() == reproduction_sha
+            && winrt::to_string(scenarios.GetAt(1).GetObject().GetNamedString(L"commit")) ==
+                "50b479912dd0e598ad0b717332a15bf7d8606e69",
+            "The named-rule reproduction lost its independent complete publication pin");
+    }
+    const auto original = windows::load_lesson(paths.front(), "es");
+    const auto baseline = windows::load_lesson(baseline_path, "es");
+    const auto current = windows::load_lesson(paths.back(), "es");
+    check(original.id == lesson_id && baseline.id == original.id && current.id == original.id
+        && baseline.state_layout.lineage == original.state_layout.lineage
+        && baseline.state_layout.legacy_lineage == original.state_layout.legacy_lineage
+        && current.state_layout.lineage == original.state_layout.lineage
+        && current.state_layout.legacy_lineage == original.state_layout.legacy_lineage,
+        "The current named-rule publication changed its authenticated lesson lineage");
+    const auto preserve_history = [&](const curriculum::Lesson& previous,const curriculum::Lesson& revised) {
+        const auto old_layout = JsonObject::Parse(winrt::to_hstring(previous.state_layout.raw_json));
+        const auto new_layout = JsonObject::Parse(winrt::to_hstring(revised.state_layout.raw_json));
+        for(const auto field : {L"origin", L"family"})
+            check(old_layout.GetNamedValue(field).Stringify() == new_layout.GetNamedValue(field).Stringify(),
+                "The current named-rule publication changed its complete historical origin or family");
+        const auto old_edges = old_layout.GetNamedArray(L"editorial");
+        const auto new_edges = new_layout.GetNamedArray(L"editorial");
+        check(new_edges.Size() >= old_edges.Size(), "The current named-rule publication removed editorial history");
+        for(std::uint32_t index = 0; index < old_edges.Size(); ++index)
+            check(old_edges.GetAt(index).Stringify() == new_edges.GetAt(index).Stringify(),
+                "The current named-rule publication rewrote its authenticated editorial prefix");
+        const auto& old_archives = previous.state_layout.source_format_revisions;
+        const auto& new_archives = revised.state_layout.source_format_revisions;
+        check(new_archives.size() >= old_archives.size(),
+            "The current named-rule publication removed an already published source archive");
+        for(std::size_t index = 0; index < old_archives.size(); ++index)
+            check(new_archives[index].id == old_archives[index].id
+                && new_archives[index].raw_json == old_archives[index].raw_json
+                && new_archives[index].sha256 == old_archives[index].sha256,
+                "The current named-rule publication replaced, reordered or reassigned its published source archives");
+    };
+    preserve_history(original,baseline);
+    preserve_history(baseline,current);
+    const auto canonical = [&](std::string_view id) {
+        const auto& old = active_block(original,id);
+        const auto& now = active_block(current,id);
+        check(old.type == now.type && old.stable_id == now.stable_id
+            && curriculum::exercise_key(original,old) == curriculum::exercise_key(current,now)
+            && curriculum::draft_key("programming",original,old) == curriculum::draft_key("programming",current,now),
+            "A named-rule owner changed its type, identity or historical state keys");
+        const auto& archives = current.state_layout.source_format_revisions;
+        const auto archive = std::ranges::find(archives,id,&curriculum::SourceFormatRevision::id);
+        if(archive != archives.end())
+            check(JsonObject::Parse(winrt::to_hstring(archive->raw_json)).Stringify() ==
+                    JsonObject::Parse(winrt::to_hstring(old.raw_json)).Stringify(),
+                "The current named-rule publication replaced a complete canonical source snapshot");
+    };
+    for(const auto id : compilers) {
+        canonical(id);
+        const auto& old = active_block(original,id);
+        const auto& now = active_block(current,id);
+        check(old.type == curriculum::BlockType::cpp_compiler && old.output_check && now.output_check
+            && old.initial_code == now.source_format_original_initial_code.value_or(now.initial_code)
+            && old.project_files == now.source_format_original_project_files.value_or(now.project_files)
+            && old.source_files == now.source_files && old.cmake == now.cmake && old.standard_input == now.standard_input
+            && curriculum::same_output_check_runtime_requirements(*old.output_check,*now.output_check)
+            && curriculum::reference_objective_frame(original,old) == curriculum::reference_objective_frame(current,now),
+            "The focal editor or a real prerequisite changed its canonical source or compiler objective");
+    }
+    for(const auto id : references) {
+        canonical(id);
+        const auto& old = active_block(original,id);
+        const auto& now = active_block(current,id);
+        check(old.type == curriculum::BlockType::code && old.language == "cpp" && now.language == old.language
+            && curriculum::code_format::equivalent(old.code,now.code,curriculum::code_format::Language::cpp),
+            "A real named-rule prerequisite lost its own published C++ reference");
+    }
+    std::array<std::filesystem::path,2> profiles;
+    for(std::size_t index = 0; index < names.size(); ++index) {
+        profiles[index] = named_rule_feedback_laboratory(paths[index],digests[index]);
+        std::cout << "PASS named-rule complete publication: " << names[index]
+            << "; six actual UI runs and four genuine prerequisites in a fresh physical profile\n";
+    }
+    check(profiles.front() != profiles.back(),
+        "The original and current named-rule publications shared a profile or old receipts");
+    std::cout << "PASS named-rule publication history: two complete UI inputs, independent original and baseline pins, "
+        "current canonical owners/frames and complete history, distinct physical profiles and twenty real MSVC requests\n";
 }
 }
 
@@ -1593,7 +1728,7 @@ int main(int argc, char** argv) {
     std::cout << std::unitbuf; std::cerr << std::unitbuf;
     const bool u3_stdout = argc == 2 && std::string_view(argv[1]) == "--u3-stdout";
     const bool u3_combinations = argc == 2 && std::string_view(argv[1]) == "--u3-combinations";
-    const bool named_rule_feedback = argc == 2 && std::string_view(argv[1]) == "--named-rule-feedback";
+    const bool named_rule_feedback = argc == 3 && std::string_view(argv[1]) == "--named-rule-feedback";
     const bool u2l9_history = argc == 3 && std::string_view(argv[1]) == "--u2l9-history";
     const bool u2l9_same_page = argc == 3 && std::string_view(argv[1]) == "--u2l9-same-page";
     if (argc != 1 && !u3_stdout && !u3_combinations && !named_rule_feedback && !u2l9_history && !u2l9_same_page) {
@@ -1604,7 +1739,7 @@ int main(int argc, char** argv) {
         const auto raw = shape ? std::string_view(argv[2]) : std::string_view{};
         const std::wstring token(raw.begin(), raw.end());
         if (!shape || !is_valid_qa_instance(token)) {
-            std::cerr << "Usage: curricular_input_lab_tests [--u3-stdout | --u3-combinations | --named-rule-feedback | --u2l9-history <authentic-json> | --u2l9-same-page <authentic-json> | --prepare-visual <safe-new-QA-token> | --prepare-u3-visual <safe-new-QA-token> | --prepare-u3-combinations-visual <safe-new-QA-token> | --inspect-u3-combinations-visual <safe-QA-token>]\n";
+            std::cerr << "Usage: curricular_input_lab_tests [--u3-stdout | --u3-combinations | --named-rule-feedback <fixture-dir> | --u2l9-history <authentic-json> | --u2l9-same-page <authentic-json> | --prepare-visual <safe-new-QA-token> | --prepare-u3-visual <safe-new-QA-token> | --prepare-u3-combinations-visual <safe-new-QA-token> | --inspect-u3-combinations-visual <safe-QA-token>]\n";
             return 2;
         }
         // U2L9 preparation executes its preceding boxes program and prepares
@@ -1627,7 +1762,7 @@ int main(int argc, char** argv) {
     try {
         check(rich != nullptr, "Cannot load RichEdit for the current input laboratory");
         reader_theme::prepare_fonts();
-        if (named_rule_feedback) named_rule_feedback_laboratory();
+        if (named_rule_feedback) named_rule_feedback_publications(std::filesystem::path(argv[2]));
         else if (u3_combinations) current_u3_combinations();
         else if (u3_stdout) current_u3_stdout_transport();
         else current_three_input_laboratory(u2l9_history || u2l9_same_page

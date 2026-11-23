@@ -9,6 +9,7 @@ from copy import deepcopy
 import io
 import json
 from pathlib import Path
+from types import SimpleNamespace
 import unittest
 from unittest.mock import patch
 import validar_json_programacion as contract
@@ -73,10 +74,14 @@ class ReviewedDiagnosticStructuralFormatTest(unittest.TestCase):
         for path, original in self.original_bytes.items():
             self.assertEqual(path.read_bytes(), original)
 
-    def validate_owner(self, document, identity, block=None, at=None):
+    def validate_owner(self, document, identity, block=None, at=None, *, structure_only=None):
         at = position(document, identity) if at is None else at
         visible = document['pages'][at[0]]['blocks'][at[1]] if block is None else block
-        contract.validate_cpp_compiler(visible, identity, document=document, position=at)
+        if structure_only is None:
+            contract.validate_cpp_compiler(visible, identity, document=document, position=at)
+        else:
+            shared_course._block(SimpleNamespace(**vars(contract)), visible, identity,
+                root=ROOT, document=document, position=at, structure_only=structure_only)
 
     def test_all_seventeen_closed_goals_pass_with_authenticated_format(self):
         total = 0
@@ -94,6 +99,21 @@ class ReviewedDiagnosticStructuralFormatTest(unittest.TestCase):
                     self.assertEqual(old.get('sourceFiles'), new.get('sourceFiles'))
                     self.assertNotEqual(old['initialCode'], new['initialCode'])
                     total += 1
+        self.assertEqual(total, 17)
+
+    def test_both_audit_modes_accept_published_and_followup_diagnostic_formats(self):
+        total = 0
+        for _, before, after, owners in self.documents:
+            for identity, _ in owners:
+                for name, document in (('published', before), ('followup', after)):
+                    for structure_only in (False, True):
+                        with self.subTest(lesson=before['id'], owner=identity,
+                                          epoch=name, structure_only=structure_only):
+                            contract.ERRORS.clear()
+                            self.validate_owner(document, identity,
+                                                structure_only=structure_only)
+                            self.assertEqual(contract.ERRORS, [])
+                total += 1
         self.assertEqual(total, 17)
 
     def test_standalone_blocks_and_unarchived_spacing_stay_strict(self):
@@ -136,9 +156,12 @@ class ReviewedDiagnosticStructuralFormatTest(unittest.TestCase):
                         editorial.pop(last)
                     else:
                         forged['id'] = 'cpp_fundamentals__other__unrelated_owner'
-                    contract.ERRORS.clear()
-                    self.validate_owner(forged, identity)
-                    self.assertTrue(contract.ERRORS)
+                    for structure_only in (None, False, True):
+                        with self.subTest(structure_only=structure_only):
+                            contract.ERRORS.clear()
+                            self.validate_owner(forged, identity,
+                                                structure_only=structure_only)
+                            self.assertTrue(contract.ERRORS)
 
     def test_valid_document_never_authorizes_a_detached_or_mislocated_block(self):
         _, _, after, owners = self.documents[0]
@@ -165,10 +188,9 @@ class ReviewedDiagnosticStructuralFormatTest(unittest.TestCase):
             contract.main(['--course', 'cpp_fundamentals', '--base-ref', 'HEAD'])
         self.assertEqual(contract.ERRORS, [])
 
-    def test_shared_course_validator_passes_context_but_structure_audit_does_not(self):
-        # Both routes reuse this same block validator; the bounded audit
-        # must not quietly turn itself into historical authentication.
-        from types import SimpleNamespace
+    def test_shared_course_validator_passes_context_without_promoting_structure_audit(self):
+        # Both routes authenticate the specific closed diagnostic before
+        # projecting its source. The audit still grants no global approval.
         real_load = contract.load
         overlays = {path: after for path, _, after, _ in self.documents}
         def reviewed_load(path):
@@ -181,7 +203,10 @@ class ReviewedDiagnosticStructuralFormatTest(unittest.TestCase):
         summary = shared_course.validate(namespace, ROOT, None,
             course_id='cpp_fundamentals', structure_only=True)
         self.assertEqual(summary['scope'], 'STRUCTURE_ONLY_NOT_APPROVED')
-        self.assertTrue(any('exact complete initial block' in error for error in contract.ERRORS))
+        self.assertFalse(summary['stateLayoutValidated'])
+        self.assertFalse(summary['historicalProtectionChecked'])
+        self.assertEqual(summary['historical'], 0)
+        self.assertEqual(contract.ERRORS, [])
 
 if __name__ == '__main__':
     unittest.main()

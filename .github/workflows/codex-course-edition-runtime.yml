@@ -11,7 +11,13 @@ on:
       - cmake/ReaderRevisionTests.cmake
       - cmake/NestedCmakeFormatTests.cmake
       - cmake/FormatFixtureHistoryTests.cmake
+      - cmake/NamedRuleFeedbackTests.cmake
       - cmake/StateImportTests.cmake
+      - scripts/curriculum/named_rule_feedback_fixture_source.py
+      - scripts/curriculum/test_named_rule_feedback_history.py
+      - scripts/curriculum/validate_programming_practice_tools.py
+      - scripts/curriculum/auditar_estructura_multicurso.py
+      - scripts/curriculum/validar_json_programacion.py
       - scripts/curriculum/code_format_fixture_source.py
       - scripts/curriculum/compile_check_source_format_fixture.py
       - scripts/curriculum/test_compile_check_source_format.py
@@ -253,7 +259,7 @@ jobs:
         shell: pwsh
         run: |
           $build = Join-Path $env:RUNNER_TEMP 'lgaed-course-edition-qa'
-          ctest --test-dir $build -R '^native[.](named_rule_feedback_view|named_rule_runtime)$' --verbose --output-on-failure --no-tests=error --output-junit (Join-Path $build 'u3-named-rules-win32.xml')
+          ctest --test-dir $build -R '^native[.](named_rule_feedback_(view|authoring)|named_rule_runtime)$' --verbose --output-on-failure --no-tests=error --output-junit (Join-Path $build 'u3-named-rules-win32.xml')
           if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
       - name: Preserve composed U2L9 semantics and same-page first-case access
         shell: pwsh
@@ -400,6 +406,7 @@ jobs:
             ${{ runner.temp }}/lgaed-course-edition-qa/reader-revision-runtime-*/transport.jsonl
             ${{ runner.temp }}/lgaed-course-edition-qa/reader-revision-order.xml
             ${{ runner.temp }}/lgaed-course-edition-qa/nested-cmake-format.xml
+            ${{ runner.temp }}/lgaed-course-edition-qa/test-fixtures/named-rule-feedback/**
             ${{ runner.temp }}/lgaed-course-edition-qa/u2l9-semantic-composition-and-reference.xml
             ${{ runner.temp }}/lgaed-course-edition-qa/u3-current-controls-and-history.xml
             ${{ runner.temp }}/lgaed-course-edition-qa/choice-prose-and-prediction.xml

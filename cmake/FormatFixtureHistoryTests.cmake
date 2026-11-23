@@ -95,7 +95,7 @@ function(lgaed_add_format_fixture_history_tests root)
     add_test(NAME native.format_fixture_authoring
         COMMAND "${Python3_EXECUTABLE}" -B -m unittest -v
             test_compile_check_source_format test_real_code_format_pilot
-            test_code_format_compat.SourceFormatTest.test_real_u7_combined_format_fixtures_keep_authentic_history)
+            test_code_format_compat test_reviewed_diagnostic_structural_format)
     set_tests_properties(native.format_fixture_authoring PROPERTIES
         TIMEOUT 300 RUN_SERIAL TRUE WORKING_DIRECTORY "${_scripts}")
 endfunction()

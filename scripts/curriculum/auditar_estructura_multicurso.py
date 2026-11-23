@@ -1,8 +1,10 @@
 """Auditoría de SOLO ESTRUCTURA para los cursos españoles de Programación.
 
 Utiliza los contratos de la validación habitual, incluidos los bloques,
-los casos de compilación y los índices. No autentica stateLayout ni las
-transiciones históricas. No sustituye validar_json_programacion.py.
+los casos de compilación y los índices. No certifica globalmente stateLayout
+ni las transiciones históricas. Los diagnósticos cerrados verifican su propia
+procedencia para admitir formato histórico. No sustituye
+validar_json_programacion.py.
 No modifica el árbol de contenido.
 """
 from __future__ import annotations
