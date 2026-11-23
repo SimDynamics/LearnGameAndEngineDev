@@ -380,6 +380,9 @@ add_dependencies(lgaed_inline_feedback_view_tests lgaed_lesson_header_shell_comp
 add_test(NAME native.lesson_header
     COMMAND lgaed_inline_feedback_view_tests --lesson-header)
 set_tests_properties(native.lesson_header PROPERTIES TIMEOUT 90 RUN_SERIAL TRUE)
+add_test(NAME native.puzzle_wheel
+    COMMAND lgaed_inline_feedback_view_tests --puzzle-wheel)
+set_tests_properties(native.puzzle_wheel PROPERTIES TIMEOUT 180 RUN_SERIAL TRUE)
 
 # Native Windows case revision StateStore and preserved aggregate QA.
 set(_u6l19_dir "${CMAKE_CURRENT_BINARY_DIR}/test-fixtures/u6l19-case-split")

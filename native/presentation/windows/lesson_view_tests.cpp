@@ -5662,6 +5662,120 @@ void compiler_pointer_scroll_ownership(){
     f.reopen();require(f.text(0,10)=="int main() {}\n"&&!IsWindowVisible(f.host),"Reopening lost the source draft or exposed a personal window");
     std::cout<<"PASS actual compiler pointer routing: internal wheel while usable, top/bottom handoff, selected blank-space pan, native text hit, fitted editor, unchanged source/Undo/Redo and isolated reopen\n";
 }
+void puzzle_hover_wheel_reaches_lesson_without_click(){
+    std::array<BYTE,256> previous_keys{};
+    require(GetKeyboardState(previous_keys.data()),"Puzzle wheel cannot preserve the isolated keyboard state");
+    struct RestoreKeys{std::array<BYTE,256>& value;~RestoreKeys(){SetKeyboardState(value.data());}} restore_keys{previous_keys};
+    auto keys=previous_keys;
+    for(const auto key:{VK_CONTROL,VK_LCONTROL,VK_RCONTROL,VK_SHIFT,VK_LSHIFT,VK_RSHIFT,VK_MENU,VK_LMENU,VK_RMENU})keys[key]=0;
+    require(SetKeyboardState(keys.data()),"Puzzle wheel cannot clear isolated test-thread modifiers");
+    for(const bool full:{false,true}){
+        Fixture f([](state::StateData& data,const curriculum::Lesson&){
+            data.preferences["puzzle_wheel_qa"]["unrelated"]=std::string(" \t conservar\r\n");
+        },[&](const curriculum::Lesson&){
+            auto lesson=windows::parse_lesson_json(R"json({"id":"qa_puzzle_hover_wheel","title":"Rueda sobre código y huecos","pages":[{"blocks":[
+                {"type":"inline_fill_code","question":"Completa la división y el resto.","template":"int main() {\n    int cociente = 9 [] 4;\n    int resto = 9 [] 4;\n}\n","answers":["/","%"],"explanation":"Se conserva la respuesta comprobada."},
+                {"type":"paragraph","text":"Contenido posterior que permite desplazar la página."}
+            ]},{"blocks":[{"type":"heading","text":"Página posterior."}]}]})json");
+            auto& code=lesson.pages[0].blocks[0].code_template;
+            // Keep both operator rows visible before and after one wheel notch.
+            // Fullscreen uses the same component with genuine vertical overflow.
+            std::string prefix;for(int row=0;row<8;++row)prefix+="// Línea previa de la fixture.\n";
+            code=prefix+code;
+            if(full)for(int row=0;row<36;++row)code+="// Línea posterior de la fixture.\n";
+            for(int row=0;row<35;++row)lesson.pages[0].blocks[1].text+="\nContenido posterior conservado durante la rueda.";
+            return lesson;
+        },true);
+        const auto original_json=f.lesson.raw_json,original_template=f.lesson.pages[0].blocks[0].code_template;
+        const auto answer_key=state::response_storage_key(f.lesson,f.lesson.pages[0].blocks[0]);
+        for(const auto& [number,text]:std::array<std::pair<int,const wchar_t*>,2>{{{100,L"/"},{101,L"%"}}}){
+            const auto field=GetDlgItem(f.control(0,5),number);
+            require(field&&IsWindowEnabled(field),"Puzzle wheel cannot prepare its unsubmitted inline draft");
+            SendMessageW(field,EM_SETSEL,0,-1);SendMessageW(field,EM_REPLACESEL,TRUE,reinterpret_cast<LPARAM>(text));pump(f.host);
+        }
+        const auto phase=[&](std::string_view stage,bool completed){
+            if(full){f.click(0,13);require(f.fullscreen(),"Puzzle wheel cannot enter the existing fullscreen mode");}
+            const auto composition=f.control(0,5),pane=descendant_class(f.view,L"LearnGameAndEngineDev.LessonPane");
+            require(composition&&pane,"Puzzle wheel cannot locate its native composition and viewport");
+            const auto piece=[&](std::string_view fragment){
+                for(auto item=GetWindow(composition,GW_CHILD);item;item=GetWindow(item,GW_HWNDNEXT))
+                    if(GetDlgCtrlID(item)>=1000&&GetDlgCtrlID(item)<2000&&edit_text(item).find(fragment)!=std::string::npos)return item;
+                throw std::runtime_error("Puzzle wheel cannot locate its actual fixed source piece");
+            };
+            const auto division=GetDlgItem(composition,100),remainder=GetDlgItem(composition,101);
+            const auto fixed_division=piece("cociente = 9"),fixed_remainder=piece("resto = 9");
+            require(division&&remainder&&edit_text(division)=="/"&&edit_text(remainder)=="%"&&
+                (IsWindowEnabled(division)!=FALSE)==!completed&&(IsWindowEnabled(remainder)!=FALSE)==!completed,
+                "Puzzle wheel lost an inline draft or its actual completion lock");
+            const std::array<std::pair<HWND,const char*>,5> targets{{
+                {composition,"background"},{fixed_division,"fixed division code"},{division,"division hole"},
+                {fixed_remainder,"fixed remainder code"},{remainder,"remainder hole"}}};
+            struct Field{HWND item;std::string text;CHARRANGE selection;POINT scroll;int zoom;};
+            std::vector<Field> fields;
+            for(const auto item:{fixed_division,division,fixed_remainder,remainder}){
+                CHARRANGE selected{0,std::min<LONG>(3,GetWindowTextLengthW(item))};
+                SendMessageW(item,EM_EXSETSEL,0,reinterpret_cast<LPARAM>(&selected));
+                Field snapshot{item,edit_text(item),{}, {},rich_edit_scale(item)};
+                SendMessageW(item,EM_EXGETSEL,0,reinterpret_cast<LPARAM>(&snapshot.selection));
+                SendMessageW(item,EM_GETSCROLLPOS,0,reinterpret_cast<LPARAM>(&snapshot.scroll));fields.push_back(snapshot);
+            }
+            SendMessageW(f.view,WM_VSCROLL,SB_TOP,0);pump(f.host);SetFocus(f.view);pump(f.host);
+            require(GetFocus()==f.view,"Puzzle wheel cannot keep focus outside the hovered puzzle");
+            const auto baseline=f.saved();const auto script=reading_script(f.view);const auto captured=GetCapture();
+            const auto position=[&]{SCROLLINFO value{sizeof(value),SIF_ALL};
+                require(GetScrollInfo(pane,SB_VERT,&value),"Puzzle wheel has no real lesson scrollbar");return value;};
+            require(position().nMax-static_cast<int>(position().nPage)>200,
+                "Puzzle wheel fixture has no real vertical movement in its selected mode");
+            const auto unchanged=[&]{
+                for(const auto& field:fields){CHARRANGE selected{};POINT offset{};
+                    SendMessageW(field.item,EM_EXGETSEL,0,reinterpret_cast<LPARAM>(&selected));
+                    SendMessageW(field.item,EM_GETSCROLLPOS,0,reinterpret_cast<LPARAM>(&offset));
+                    require(IsWindow(field.item)&&edit_text(field.item)==field.text&&rich_edit_scale(field.item)==field.zoom&&
+                        selected.cpMin==field.selection.cpMin&&selected.cpMax==field.selection.cpMax&&
+                        offset.x==field.scroll.x&&offset.y==field.scroll.y,
+                        "Puzzle wheel changed source, answers, selection, zoom or a child viewport");
+                }
+                const auto data=read_lesson_state(f.view);
+                require(GetFocus()==f.view&&GetCapture()==captured&&f.control(0,5)==composition&&f.page()==0&&f.fullscreen()==full&&
+                    reading_script(f.view)==script&&f.lesson.raw_json==original_json&&f.lesson.pages[0].blocks[0].code_template==original_template&&
+                    state::string_value(data,"learning_progress",answer_key)==state::string_value(baseline,"learning_progress",answer_key)&&
+                    data.preferences.at("puzzle_wheel_qa")==baseline.preferences.at("puzzle_wheel_qa"),
+                    "Puzzle wheel changed focus, completion, stored draft, narration, curriculum or unrelated state");
+            };
+            const auto wheel=[&](HWND target,int delta){
+                RECT bounds{},visible{},viewport{};GetWindowRect(target,&bounds);GetClientRect(pane,&viewport);
+                MapWindowPoints(pane,nullptr,reinterpret_cast<POINT*>(&viewport),2);
+                require(IntersectRect(&visible,&bounds,&viewport)&&visible.right>visible.left&&visible.bottom>visible.top,
+                    "Puzzle wheel target is outside the actual selected viewport");
+                POINT screen{target==composition?visible.left+2:(visible.left+visible.right)/2,(visible.top+visible.bottom)/2};
+                auto client=screen;ScreenToClient(target,&client);
+                // Deliver hover/wheel to the real child without any click,
+                // desktop cursor movement, SendInput or focus transfer.
+                SendMessageW(target,WM_MOUSEMOVE,0,MAKELPARAM(client.x,client.y));
+                SendMessageW(target,WM_MOUSEWHEEL,MAKEWPARAM(0,static_cast<WORD>(delta)),MAKELPARAM(screen.x,screen.y));pump(f.host);
+            };
+            for(const auto& [target,name]:targets){
+                SendMessageW(f.view,WM_VSCROLL,SB_TOP,0);pump(f.host);const auto before=position().nPos;
+                const auto context=std::string(name)+" / "+std::string(stage)+(full?" / fullscreen":" / normal");
+                wheel(target,-WHEEL_DELTA);const auto after=position().nPos;
+                require(after>before,"Puzzle wheel "+context+" did not scroll the lesson downward");unchanged();
+                wheel(target,WHEEL_DELTA);
+                require(position().nPos==before,"Puzzle wheel "+context+" did not scroll the lesson back upward");unchanged();
+            }
+            require(!IsWindowVisible(f.host),"Puzzle wheel exposed its isolated host on the user's desktop");
+            if(full){f.escape();require(!f.fullscreen(),"Puzzle wheel required more than one Escape to leave fullscreen");}
+            std::cout<<"PASS puzzle hover wheel "<<stage<<(full?" fullscreen":" normal")
+                <<": background, both fixed source pieces and both inline holes; two directions without clicking/focusing the puzzle, retained response/draft/selection/narration\n";
+        };
+        phase("unsubmitted draft",false);
+        f.click(0,3);
+        const auto accepted=state::get_response(f.saved(),f.lesson,f.lesson.pages[0].blocks[0]);
+        require(accepted&&accepted->correct&&f.text(0,4).starts_with("✓ Correcto"),
+            "Puzzle wheel did not accept its operator answers through the actual Check button");
+        phase("completed",true);
+        f.reopen();phase("completed after reopen",true);
+    }
+}
 #include "presentation/windows/u12_file_roundtrip_view_test.hpp"
 #include "presentation/windows/u12_file_append_view_test.hpp"
 #include "presentation/windows/u12_file_repairs_view_test.hpp"
@@ -5953,7 +6067,8 @@ void current_inline_feedback_uses_authored_controls_and_restores_each_attempt() 
 #ifdef LGAED_INLINE_FEEDBACK_ONLY
 int main(int argc,char* argv[]) {
     const bool lesson_header_only=argc==2&&std::string_view(argv[1])=="--lesson-header";
-    if(argc!=2||(!lesson_header_only&&std::string_view(argv[1])!="--inline-feedback"))return 2;
+    const bool puzzle_wheel_only=argc==2&&std::string_view(argv[1])=="--puzzle-wheel";
+    if(argc!=2||(!lesson_header_only&&!puzzle_wheel_only&&std::string_view(argv[1])!="--inline-feedback"))return 2;
     std::cout<<std::unitbuf;std::cerr<<std::unitbuf;
     const auto ole=OleInitialize(nullptr);
     if(FAILED(ole))return 2;
@@ -5965,11 +6080,12 @@ int main(int argc,char* argv[]) {
     host.lpszClassName=L"LgaedLessonViewTests";
     if(!RegisterClassW(&host))return 2;
     try {
-        if(lesson_header_only)lesson_header_context_is_complete_and_wraps();
+        if(puzzle_wheel_only){puzzle_hover_wheel_reaches_lesson_without_click();compiler_pointer_scroll_ownership();console_fullscreen_zoom_escape();}
+        else if(lesson_header_only)lesson_header_context_is_complete_and_wraps();
         else current_inline_feedback_uses_authored_controls_and_restores_each_attempt();
         return 0;
     }catch(const std::exception& error){
-        std::cerr<<(lesson_header_only?"FAIL real native lesson-header QA: ":"FAIL real active inline-feedback QA: ")<<error.what()<<'\n';
+        std::cerr<<(puzzle_wheel_only?"FAIL real native puzzle-wheel QA: ":lesson_header_only?"FAIL real native lesson-header QA: ":"FAIL real active inline-feedback QA: ")<<error.what()<<'\n';
         return 1;
     }
 }
@@ -6013,12 +6129,13 @@ int main(int argc,char* argv[]) {
     const bool navigation_geometry_only=argc==2&&std::string_view(argv[1])=="--navigation-geometry";
     const bool inline_feedback_only=argc==2&&std::string_view(argv[1])=="--inline-feedback";
     const bool lesson_header_only=argc==2&&std::string_view(argv[1])=="--lesson-header";
+    const bool puzzle_wheel_only=argc==2&&std::string_view(argv[1])=="--puzzle-wheel";
     const bool lesson_menu_only=argc==2&&std::string_view(argv[1])=="--lesson-menu";
     const bool order_help_only=argc==2&&std::string_view(argv[1])=="--order-help";
     const bool feedback_font_only=argc==2&&std::string_view(argv[1])=="--feedback-font";
     const bool u1_editor_only=argc==2&&std::string_view(argv[1])=="--u1-compiler-edition";
     const bool main_u1_editor_only=argc==2&&std::string_view(argv[1])=="--u1-main-compiler-edition";
-    if(argc>1&&!scroll_repaint_only&&!scroll_motion_only&&!compiler_scroll_only&&!u12_file_roundtrip_only&&!u12_file_append_only&&!u12_file_repairs_only&&!u12_composed_feedback_only&&!caret_only&&!text_sequence_only&&!restoration_only&&!compiler_puzzles_only&&!u11_editorial_only&&!stderr_objective_only&&!dependent_puzzles_only&&!current_dependent_puzzles_only&&!editor_overflow_only&&!answer_overflow_only&&!narration_repaint_only&&!compiler_height_only&&!navigation_geometry_only&&!inline_feedback_only&&!lesson_header_only&&!lesson_menu_only&&!order_help_only&&!feedback_font_only&&!u1_editor_only&&!main_u1_editor_only)return 2;
+    if(argc>1&&!scroll_repaint_only&&!scroll_motion_only&&!compiler_scroll_only&&!u12_file_roundtrip_only&&!u12_file_append_only&&!u12_file_repairs_only&&!u12_composed_feedback_only&&!caret_only&&!text_sequence_only&&!restoration_only&&!compiler_puzzles_only&&!u11_editorial_only&&!stderr_objective_only&&!dependent_puzzles_only&&!current_dependent_puzzles_only&&!editor_overflow_only&&!answer_overflow_only&&!narration_repaint_only&&!compiler_height_only&&!navigation_geometry_only&&!inline_feedback_only&&!lesson_header_only&&!puzzle_wheel_only&&!lesson_menu_only&&!order_help_only&&!feedback_font_only&&!u1_editor_only&&!main_u1_editor_only)return 2;
     std::cout << std::unitbuf; std::cerr << std::unitbuf;
     const auto ole=OleInitialize(nullptr);if(FAILED(ole))return 2;
     struct OleScope{~OleScope(){OleUninitialize();}} apartment;
@@ -6026,6 +6143,7 @@ int main(int argc,char* argv[]) {
     WNDCLASSW host{}; host.lpfnWndProc = host_proc; host.hInstance = GetModuleHandleW(nullptr); host.lpszClassName = L"LgaedLessonViewTests";
     if (!RegisterClassW(&host)) return 2;
     try {
+        if(puzzle_wheel_only){puzzle_hover_wheel_reaches_lesson_without_click();compiler_pointer_scroll_ownership();console_fullscreen_zoom_escape();return 0;}
         if(lesson_header_only){lesson_header_context_is_complete_and_wraps();return 0;}
         if(lesson_menu_only){lesson_menu_retains_import_pages_and_settings_with_hooks();return 0;}
         if(order_help_only){optional_separator_help_matches_screen_reader_and_grading();desktop_drag_instructions_match_visible_and_spoken_text_in_all_languages();return 0;}

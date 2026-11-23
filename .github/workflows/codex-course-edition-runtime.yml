@@ -111,6 +111,7 @@ on:
       - native/presentation/windows/lesson_view.hpp
       - native/presentation/windows/main.cpp
       - native/presentation/windows/lesson_view_tests.cpp
+      - native/presentation/windows/cpp_fill_view.cpp
       - native/presentation/windows/lesson_editor_mount_tests.cpp
       - native/presentation/windows/rich_text.cpp
       - native/presentation/windows/rich_text.hpp
@@ -135,6 +136,66 @@ permissions:
   contents: read
 
 jobs:
+  run-puzzle-wheel:
+    name: Verify hover wheel routing with the original and repaired puzzle
+    if: ${{ github.event_name == 'push' && startsWith(github.event.head_commit.message, 'qa-puzzle-wheel:') }}
+    runs-on: windows-2025-vs2026
+    timeout-minutes: 20
+    steps:
+      - name: Read exact Codex revision and original wheel implementation
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+          persist-credentials: false
+      - name: Select Python for existing hosted configuration
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - name: Activate hosted MSVC without modifying the product pin
+        uses: ilammy/msvc-dev-cmd@v1
+      - name: Reproduce the missing puzzle wheel handoff on the original source
+        shell: pwsh
+        run: |
+          $ErrorActionPreference = 'Stop'
+          $qaWheelBuild = Join-Path $env:RUNNER_TEMP 'lgaed-puzzle-wheel-qa'
+          cmake -S cmake/HostedCourseEditionQA -B $qaWheelBuild -G Ninja -DCMAKE_BUILD_TYPE=Debug
+          if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
+          try {
+            git restore --source=d09a465e380375eefaae690a2d1d088a70e2dddf --worktree -- native/presentation/windows/cpp_fill_view.cpp
+            if ($LASTEXITCODE -ne 0) { throw 'Cannot select the authenticated original wheel source.' }
+            cmake --build $qaWheelBuild --target lgaed_inline_feedback_view_tests --parallel 3
+            if ($LASTEXITCODE -ne 0) { throw 'Original source failed to compile; this does not reproduce the wheel defect.' }
+            ctest --test-dir $qaWheelBuild -R '^native[.]puzzle_wheel$' --verbose --output-on-failure --no-tests=error --output-junit (Join-Path $qaWheelBuild 'puzzle-wheel-original.xml')
+            $qaOriginalExit = $LASTEXITCODE
+            $qaOriginalLog = Join-Path $qaWheelBuild 'Testing/Temporary/LastTest.log'
+            Copy-Item $qaOriginalLog (Join-Path $qaWheelBuild 'puzzle-wheel-original.log')
+            if ($qaOriginalExit -eq 0 -or (Get-Content $qaOriginalLog -Raw) -notmatch 'Puzzle wheel .*did not scroll the lesson') {
+              throw 'The original source did not reproduce the exact missing vertical wheel handoff.'
+            }
+          } finally {
+            git restore --source=HEAD --worktree -- native/presentation/windows/cpp_fill_view.cpp
+            if ($LASTEXITCODE -ne 0) { throw 'Cannot restore the published wheel repair.' }
+          }
+      - name: Verify repaired hover scrolling, compiler handoff, zoom and header
+        shell: pwsh
+        run: |
+          $qaWheelBuild = Join-Path $env:RUNNER_TEMP 'lgaed-puzzle-wheel-qa'
+          cmake --build $qaWheelBuild --target lgaed_inline_feedback_view_tests --parallel 3
+          if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
+          ctest --test-dir $qaWheelBuild -R '^native[.](puzzle_wheel|lesson_header)$' --verbose --output-on-failure --no-tests=error --output-junit (Join-Path $qaWheelBuild 'puzzle-wheel-fixed.xml')
+          if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
+      - name: Preserve original failure and repaired native behavior
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: hosted-win32-puzzle-wheel-${{ github.sha }}
+          retention-days: 7
+          if-no-files-found: warn
+          path: |
+            ${{ runner.temp }}/lgaed-puzzle-wheel-qa/puzzle-wheel-*.xml
+            ${{ runner.temp }}/lgaed-puzzle-wheel-qa/puzzle-wheel-original.log
+            ${{ runner.temp }}/lgaed-puzzle-wheel-qa/Testing/Temporary/*.log
+            ${{ runner.temp }}/lgaed-puzzle-wheel-qa/CMakeFiles/CMakeConfigureLog.yaml
   # Explicitly selected pushes validate only the changed header/input contracts.
   # Ordinary pushes and workflow_dispatch retain the complete default jobs below.
   run-input-decisions:
@@ -186,7 +247,7 @@ jobs:
             ${{ runner.temp }}/lgaed-input-decisions-qa/test-fixtures/u2l9-input/**
   run-format-fixture-history:
     name: Build authenticated format fixtures and verify original MSVC diagnostics
-    if: ${{ github.event_name != 'push' || !startsWith(github.event.head_commit.message, 'qa-input-decisions:') }}
+    if: ${{ github.event_name != 'push' || (!startsWith(github.event.head_commit.message, 'qa-input-decisions:') && !startsWith(github.event.head_commit.message, 'qa-puzzle-wheel:')) }}
     runs-on: windows-2025-vs2026
     timeout-minutes: 25
     steps:
@@ -232,7 +293,7 @@ jobs:
             ${{ runner.temp }}/lgaed-format-fixture-history/test-fixtures/format-history/**
   run-real-course-edition:
     name: Run Win32 edition, simulation and first required C++ case
-    if: ${{ github.event_name != 'push' || !startsWith(github.event.head_commit.message, 'qa-input-decisions:') }}
+    if: ${{ github.event_name != 'push' || (!startsWith(github.event.head_commit.message, 'qa-input-decisions:') && !startsWith(github.event.head_commit.message, 'qa-puzzle-wheel:')) }}
     runs-on: windows-2025-vs2026
     timeout-minutes: 45
     steps:

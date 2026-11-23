@@ -132,8 +132,12 @@ struct CppFillView::Impl {
             reinterpret_cast<HMENU>(static_cast<INT_PTR>(id)),GetModuleHandleW(nullptr),nullptr);
         if(!item)throw std::runtime_error("Cannot create a code hole control");
         reader_theme::apply(item,reader_theme::Surface::card);SendMessageW(item,WM_SETFONT,reinterpret_cast<WPARAM>(font),FALSE);
-        if(_wcsicmp(type,MSFTEDIT_CLASS)==0&&!set_rich_text_zoom(item,text_scale))
-            throw std::runtime_error("RichEdit rechazó la escala del ejercicio de código.");
+        if(_wcsicmp(type,MSFTEDIT_CLASS)==0){
+            if(!set_rich_text_zoom(item,text_scale))
+                throw std::runtime_error("RichEdit rechazó la escala del ejercicio de código.");
+            if(!SetWindowSubclass(item,wheel_proc,5,0))
+                throw std::runtime_error("Cannot route code puzzle scrolling");
+        }
         return item;
     }
     void set_token_text(HWND item,std::string_view text,COLORREF ink=RGB(216,216,216)){
@@ -400,6 +404,15 @@ struct CppFillView::Impl {
         if(nearest!=empty_slot&&distance<=static_cast<long long>(px(52))*px(52)){assign(nearest,choice);return;}
         RECT bank{};GetWindowRect(palette,&bank);if(PtInRect(&bank,point)){
             const auto previous=std::ranges::find(values,choice);if(previous!=values.end())assign(static_cast<std::size_t>(previous-values.begin()),empty_slot);}
+    }
+    static LRESULT CALLBACK wheel_proc(HWND item,UINT message,WPARAM wp,LPARAM lp,UINT_PTR,DWORD_PTR){
+        if(message==WM_NCDESTROY)RemoveWindowSubclass(item,wheel_proc,5);
+        // Code pieces and holes are fitted by the puzzle; they own no vertical
+        // viewport. Preserve native modifier gestures and hand ordinary wheel
+        // input to the parent without requiring focus or changing selection.
+        if(message==WM_MOUSEWHEEL&&!(GET_KEYSTATE_WPARAM(wp)&(MK_CONTROL|MK_SHIFT)))
+            return SendMessageW(GetParent(item),message,wp,lp);
+        return DefSubclassProc(item,message,wp,lp);
     }
     static LRESULT CALLBACK label_proc(HWND item,UINT message,WPARAM wp,LPARAM lp,UINT_PTR,DWORD_PTR){
         if(message==WM_NCDESTROY){RemoveWindowSubclass(item,label_proc,4);return DefSubclassProc(item,message,wp,lp);}
