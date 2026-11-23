@@ -10,6 +10,10 @@ import unittest
 import validar_json_programacion as contract
 import stable_state_layout as state_layout
 import retirement_fixture_source as retirement_fixtures
+from format_batch_history import (
+    Publication, active_owners, assert_retirement_snapshot,
+    assert_stable_storage, load_publication,
+)
 
 
 BASELINE = 'dd6787d190fcb707a8e935abeadda64584d773d9'
@@ -20,6 +24,22 @@ BEFORE_REFERENCE_RETIREMENT_SHA256 = {
     'lesson_texto_secuencia_y_formato.json': '9b5bce191c5100cacfb7b2c32d213c1c3a71a9362b6af84454c57cd118fd9786',
     'lesson_fuente_compilacion_y_diagnostico.json': '6509a4ab4b7e00d48b10387e45f6a232ffbf6c7e4edf7dd087918de3f7f24904',
 }
+ALTERNATIVES_LESSON = 'expresiones_y_decisiones/lesson_alternativas_y_fronteras.json'
+ALTERNATIVES_RETIREMENT_PARENT = Publication(
+    '2ca32b2337178d1effa3a2c81759e2493cd746d0',
+    '8fb1dcd0f381205dc20a1a8138edf1ea11fd5091b0d9a7a9349cac1cf48095b6')
+ALTERNATIVES_RETIREMENT = Publication(
+    '286a2c7d9e383d4a377ba5c379dc8d6e9f95e766',
+    '3766c8922c794668d8f6090235ffad9e17d73fcdde613c8038da24fae3d63f59')
+ALTERNATIVES_RETIRED = {
+    'block_0003_0002', 'block_0003_0007', 'block_0003_0010', 'block_0006_0002',
+}
+
+
+def alternatives_retirement_publications():
+    relative = (contract.CONTENT / ALTERNATIVES_LESSON).relative_to(contract.ROOT).as_posix()
+    return tuple(load_publication(contract.ROOT, relative, publication) for publication in (
+        ALTERNATIVES_RETIREMENT_PARENT, ALTERNATIVES_RETIREMENT))
 
 
 def old_lesson(lesson):
@@ -316,7 +336,14 @@ class SequencePreservationTest(unittest.TestCase):
             with self.subTest(lesson=lesson, prediction=prediction_identity):
                 document = contract.load(contract.CONTENT / lesson)
                 previous = published_lesson(lesson)
-                if old_editor_identity in useful_editors:
+                if lesson == ALTERNATIVES_LESSON:
+                    parent, retired = alternatives_retirement_publications()
+                    state_layout.validate_transition(previous, parent)
+                    state_layout.validate_transition(parent, retired)
+                    state_layout.validate_transition(retired, document)
+                    assert_retirement_snapshot(self, parent, retired, ALTERNATIVES_RETIRED)
+                    assert_retirement_snapshot(self, parent, document, ALTERNATIVES_RETIRED)
+                elif old_editor_identity in useful_editors:
                     # Each archive must name its real immediate predecessor;
                     # validate both published transitions instead of inventing
                     # one transition from before either retirement to today.
@@ -327,7 +354,8 @@ class SequencePreservationTest(unittest.TestCase):
                     state_layout.validate_transition(previous, document)
                 blocks = self.visible_state_blocks(document)
                 old_blocks = self.visible_state_blocks(previous)
-                editor_identity = useful_editors.get(old_editor_identity, old_editor_identity)
+                editor_identity = ('p1u3l4_reparar_alerta' if lesson == ALTERNATIVES_LESSON
+                                   else useful_editors.get(old_editor_identity, old_editor_identity))
                 prediction_page, prediction_position, prediction = blocks[prediction_identity]
                 editor_page, editor_position, editor = blocks[editor_identity]
                 self.assertEqual(prediction_id, prediction.get('id'))
@@ -336,12 +364,27 @@ class SequencePreservationTest(unittest.TestCase):
                 self.assertLess(prediction_position, editor_position)
                 self.assertEqual(editor_position, next(index for index, block in
                     enumerate(document['pages'][editor_page]['blocks']) if block['type'] == 'cpp_compiler'))
-                for identity in (prediction_identity, editor_identity):
+                preserved = ((prediction_identity,) if lesson == ALTERNATIVES_LESSON
+                             else (prediction_identity, editor_identity))
+                for identity in preserved:
                     self.assertEqual(state_layout.state_payload(old_blocks[identity][2]),
                                      state_layout.state_payload(blocks[identity][2]))
+                assert_stable_storage(self, previous, document, preserved)
                 self.assertEqual(previous['stateLayout']['origin'], document['stateLayout']['origin'])
                 self.assertEqual(previous['stateLayout']['family'], document['stateLayout']['family'])
-                if old_editor_identity in useful_editors:
+                if lesson == ALTERNATIVES_LESSON:
+                    self.assertTrue(document['compilerPuzzlesRequired'])
+                    self.assertNotIn(old_editor_identity, blocks)
+                    archived = next(item for item in document['stateLayout']['retired']
+                                    if item['id'] == old_editor_identity)
+                    self.assertEqual(active_owners(parent)[0][old_editor_identity], archived['block'])
+                    self.assertIn(editor_identity,
+                                  {item['id'] for item in document['stateLayout']['additions']})
+                    old_slot = state_layout.validate(previous)[old_blocks[old_editor_identity][:2]]
+                    new_slot = state_layout.validate(document)[(editor_page, editor_position)]
+                    self.assertNotEqual(old_slot, new_slot,
+                        'The new repair must not overwrite the retired editor answer or draft.')
+                elif old_editor_identity in useful_editors:
                     self.assertTrue(document['compilerPuzzlesRequired'])
                     self.assertNotIn(old_editor_identity, blocks)
                     archived = next(item for item in document['stateLayout']['retired']
@@ -352,6 +395,15 @@ class SequencePreservationTest(unittest.TestCase):
                                      document['stateLayout']['retirementHistory'][0]['current'])
                     self.assertTrue(set(prediction['answers']).isdisjoint(editor['outputCheck']['cases'][0]['outputs']),
                                     'The useful editor must retain its distinct construction goal.')
+
+    def test_alternatives_retirement_rejects_skipping_its_actual_parent(self):
+        previous = published_lesson(ALTERNATIVES_LESSON)
+        parent, retired = alternatives_retirement_publications()
+        state_layout.validate_transition(previous, parent)
+        state_layout.validate_transition(parent, retired)
+        with self.assertRaisesRegex(state_layout.LayoutError,
+                                    'Retirement reading snapshot does not match the complete previous published presentation'):
+            state_layout.validate_transition(previous, retired)
 
     def test_second_retirement_preserves_its_actual_reading_snapshot_and_rejects_skipping_it(self):
         for lesson, *_ in self.reviewed_routes()[:2]:
@@ -378,3 +430,4 @@ class SequencePreservationTest(unittest.TestCase):
 
 if __name__ == '__main__':
     unittest.main()
+

@@ -1,119 +1,73 @@
-"""Regresión de for y límites: separar fases sin alterar resultados ni retos."""
-from copy import deepcopy
-import json
+"""U4L2 sources keep authentic format and one-line order publications."""
 from pathlib import Path
-import subprocess
-from windows_cpp_ci import msvc_cpp23_command, windows_executable
-import tempfile
 import unittest
 
 import stable_state_layout as state
-from code_format_compat import require_source_format
+from format_batch_history import (
+    FormatBatch, Publication, active_owners, assert_stable_storage, load_publication,
+)
+from test_one_line_order_cards import (
+    IDENTITY as ORDER_IDENTITY, ORDER_BEFORE, ORDER_REFINED,
+    assert_order_publication,
+)
+
 
 ROOT = Path(__file__).resolve().parents[2]
-LESSON = ROOT / "app/src/main/assets/content/es/programming/cpp_fundamentals/repeticion_y_terminacion/lesson_for_y_limites_del_recorrido.json"
-POSITIONS = ((0, 2), (0, 4), (1, 3), (1, 4), (1, 5),
-             (2, 1), (2, 2), (3, 3), (3, 4), (4, 3),
-             (4, 4), (5, 1), (5, 3), (5, 6), (7, 2))
-
-
-def source_field(block):
-    if block["type"] == "cpp_compiler":
-        return "initialCode"
-    if block["type"] == "inline_fill_code":
-        return "template"
-    return "code"
-
-
-def compilable_source(block):
-    source = block[source_field(block)]
-    if block["type"] == "fill_code":
-        assert source.count("___") == 1
-        source = source.replace("___", block["answers"][0], 1)
-    if block["type"] == "inline_fill_code":
-        for answer in block["answers"]:
-            assert "[]" in source
-            source = source.replace("[]", answer, 1)
-        assert "[]" not in source
-    return source
+RELATIVE = (
+    "app/src/main/assets/content/es/programming/cpp_fundamentals/"
+    "repeticion_y_terminacion/lesson_for_y_limites_del_recorrido.json"
+)
+PUBLICATIONS = {
+    "before": Publication(
+        "f843a46e7c8d3b43dfb190e814cc5ca59ea944bc",
+        "712b646b1dea58f7549ea417f95f4f6c4f3976e1263616a07cacf8f10d78b3c4"),
+    "formatted": Publication(
+        "3efc5aec9122102e30ad1e3e1f607d4d604b2353",
+        "8c45ce7f05fa77e0aace8df46534255567f8ff34f48597bf6ecb20ebcfd6b044"),
+    "retirement_parent": Publication(
+        "2ca32b2337178d1effa3a2c81759e2493cd746d0",
+        "e7d437b1eedf69f4c7c6c3474ba6005f38f13dfc5051de1c023f9e1e90117cbd"),
+    "retirement": Publication(
+        "286a2c7d9e383d4a377ba5c379dc8d6e9f95e766",
+        "cd728c11a4bf41c287c4759125fc8e2e7ce6ff50c1af03211c93a9c2a52dd660"),
+}
+OWNERS = (
+    "block_0000_0002", "block_0000_0004", "block_0001_0003",
+    "block_0001_0004", "block_0001_0005", "block_0002_0001",
+    "block_0002_0002", "block_0003_0003", "block_0003_0004",
+    "block_0004_0003", "block_0004_0004", "block_0005_0001",
+    "block_0005_0003", "block_0005_0006", "block_0007_0002",
+)
+RETIRED_OWNERS = {"block_0005_0003", "block_0005_0006", "block_0007_0002"}
 
 
 class ForLimitsFormatBatch(unittest.TestCase):
-    def setUp(self):
-        self.after = json.loads(LESSON.read_text(encoding="utf-8"))
-        self.meta = self.after["stateLayout"]
-        self.archives = {row["id"]: row["block"]
-                         for row in self.meta["sourceFormatRevisions"]}
+    @classmethod
+    def setUpClass(cls):
+        cls.batch = FormatBatch(ROOT, RELATIVE, PUBLICATIONS, OWNERS, RETIRED_OWNERS)
+        cls.order_before = load_publication(ROOT, RELATIVE, ORDER_BEFORE)
+        cls.order_refined = load_publication(ROOT, RELATIVE, ORDER_REFINED)
 
     def test_originals_and_order_separators_preserve_historical_state(self):
-        state.validate(self.after)
-        self.assertEqual(len(POSITIONS), len(self.archives))
-        ids = [self.meta["current"][p]["blocks"][b] for p,b in POSITIONS]
-        self.assertEqual("orden_while_puestos_2_3_4", self.meta["editorial"][-1]["id"])
-        self.assertEqual(ids, [e["id"] for e in self.meta["editorial"][-len(POSITIONS)-1:-1]])
-        old = deepcopy(self.after)
-        old["stateLayout"].pop("sourceFormatRevisions")
-        # Reconstruct the published prefix before both append-only revisions.
-        # Order-card and physical-source archives are authenticated independently.
-        order_record = self.meta["orderRefinements"][0]
-        self.assertEqual("orden_while_puestos_2_3_4", order_record["id"])
-        original_order = deepcopy(order_record["block"])
-        old["pages"][5]["blocks"][7] = deepcopy(original_order)
-        old["stateLayout"].pop("orderRefinements")
-        old["stateLayout"]["editorial"] = (
-            old["stateLayout"]["editorial"][:-(len(POSITIONS) + 1)])
-        for p,b in POSITIONS:
-            ident = self.meta["current"][p]["blocks"][b]
-            before, after = self.archives[ident], self.after["pages"][p]["blocks"][b]
-            self.assertTrue(require_source_format(before, after), ident)
-            source = source_field(before)
-            self.assertEqual(
-                [line for line in before[source].splitlines() if line.strip()],
-                [line for line in after[source].splitlines() if line.strip()], ident)
-            old["pages"][p]["blocks"][b] = deepcopy(before)
-        self.assertEqual(old["orderVisualSeparators"], self.after["orderVisualSeparators"])
-        self.assertEqual(old["pages"][5]["blocks"][7], original_order)
-        state.validate(old)
-        state.validate_transition(old, self.after)
-        self.assertEqual(state.validate(old), state.validate(self.after))
-        for field in ("origin", "family", "current", "additions"):
-            self.assertEqual(old["stateLayout"][field], self.meta[field])
+        self.batch.assert_history(self)
+        state.validate_transition(self.batch.formatted, self.order_before)
+        state.validate_transition(self.order_before, self.order_refined)
+        state.validate_transition(self.order_refined, self.batch.retirement_parent)
+        for document in (self.order_refined, self.batch.retirement, self.batch.current):
+            assert_order_publication(self, self.order_before, self.order_refined, document)
+            assert_stable_storage(self, self.order_before, document, (ORDER_IDENTITY,))
+        original = active_owners(self.order_before)[0][ORDER_IDENTITY]
+        self.assertEqual(5, len(original["fragments"]))
+
+    def test_modified_sources_oracles_owners_and_history_are_rejected(self):
+        self.batch.assert_negative_controls(self)
 
     def test_cpp23_sources_and_student_challenges_behave_identically(self):
-        with tempfile.TemporaryDirectory(prefix="for-limits-format-") as directory:
-            for idx,(p,b) in enumerate(POSITIONS):
-                identity = self.meta["current"][p]["blocks"][b]
-                old, new = self.archives[identity], self.after["pages"][p]["blocks"][b]
-                cases = new.get("outputCheck", {}).get("cases", [])
-                inputs = [case["standardInput"] for case in cases] or [
-                    new.get("initialStandardInput", "")]
-                histories = []
-                for label, block in (("antes", old), ("actual", new)):
-                    src = Path(directory) / f"{idx}-{label}.cpp"
-                    binary = Path(directory) / f"{idx}-{label}"
-                    src.write_text(compilable_source(block), encoding="utf-8")
-                    compilation = subprocess.run(
-                        msvc_cpp23_command(binary, src),
-                        capture_output=True,text=True,timeout=90)
-                    self.assertEqual(0, compilation.returncode, identity + compilation.stderr)
-                    results = []
-                    for standard_input in inputs:
-                        run = subprocess.run([str(windows_executable(binary))], input=standard_input,
-                                             capture_output=True,text=True,timeout=15)
-                        self.assertEqual(0, run.returncode, identity)
-                        self.assertEqual("", run.stderr, identity)
-                        results.append((run.returncode,run.stdout,run.stderr))
-                    histories.append(results)
-                self.assertEqual(histories[0], histories[1], identity)
-                if new["type"] == "output_prediction":
-                    self.assertIn(histories[1][0][1],new["answers"],identity)
-                # El primer editor deja un reto deliberado (i = 1 en lugar de i = 2).
-                if (p,b) == (5,3):
-                    self.assertNotIn(histories[1][0][1],cases[0]["outputs"])
-                elif cases:
-                    for result,case in zip(histories[1],cases):
-                        self.assertIn(result[1],case["outputs"],identity)
+        # The archived first challenge starts at 1; its required answer starts
+        # at 2. Formatting must preserve that deliberate incorrect program.
+        self.batch.assert_msvc_outputs(self, incorrect_initial={"block_0005_0003"})
 
 
 if __name__ == "__main__":
     unittest.main()
+

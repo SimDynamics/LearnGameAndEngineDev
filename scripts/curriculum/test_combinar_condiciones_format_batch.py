@@ -1,106 +1,68 @@
-"""Regresion U4L5: formato fisico y contratos historicos de combinaciones logicas."""
-from copy import deepcopy
-import json
+"""U3L5: formato de combinaciones con contratos históricos auténticos."""
 from pathlib import Path
-import subprocess
-from windows_cpp_ci import msvc_cpp23_command, windows_executable
-import tempfile
 import unittest
 
-import stable_state_layout as state
-from code_format_compat import require_source_format
+from format_batch_history import FormatBatch, Publication
+
 
 ROOT = Path(__file__).resolve().parents[2]
-PATH = ROOT / "app/src/main/assets/content/es/programming/cpp_fundamentals/expresiones_y_decisiones/lesson_combinar_condiciones.json"
-POSITIONS = ((0, 2), (0, 4), (1, 2), (1, 3), (2, 4),
-             (3, 2), (3, 7), (4, 1), (5, 2), (5, 6))
-
-
-def source_slot(block):
-    if block["type"] == "cpp_compiler":
-        return "initialCode"
-    if block["type"] == "inline_fill_code":
-        return "template"
-    return "code"
-
-
-def runnable(source, kind):
-    # Solo para compilar las consignas incompletas; no cambia su JSON.
-    if kind == "fill_code":
-        assert source.count("___") == 1
-        return source.replace("___", "&&")
-    if kind == "inline_fill_code":
-        assert source.count("[]") == 2
-        return source.replace("[]", "&&", 1).replace("[]", "||", 1)
-    return source
+RELATIVE = (
+    "app/src/main/assets/content/es/programming/cpp_fundamentals/"
+    "expresiones_y_decisiones/lesson_combinar_condiciones.json"
+)
+PUBLICATIONS = {
+    "before": Publication(
+        "fc7d0adb0487905a60a3f3f78419b1983058b20e",
+        "92be987ccfeff11c7ffa28c86125ca042913144d020def7603141ff78e3eda91",
+    ),
+    "formatted": Publication(
+        "eed3ded9c5283fefe51e583c1c3bf2cebc25aed0",
+        "99281ac5d718e07bbfca1ce4631ad86c8e55ca15e3ec6cefc463f3df48fc1447",
+    ),
+    "retirement_parent": Publication(
+        "2ca32b2337178d1effa3a2c81759e2493cd746d0",
+        "99281ac5d718e07bbfca1ce4631ad86c8e55ca15e3ec6cefc463f3df48fc1447",
+    ),
+    "retirement": Publication(
+        "286a2c7d9e383d4a377ba5c379dc8d6e9f95e766",
+        "61e9dd673e6ba5cdc639ba68da42e32255dc0c42bd599e5651f803de833fdc05",
+    ),
+}
+OWNERS = (
+    "block_0000_0002",
+    "block_0000_0004",
+    "block_0001_0002",
+    "block_0001_0003",
+    "block_0002_0004",
+    "block_0003_0002",
+    "block_0003_0007",
+    "block_0004_0001",
+    "block_0005_0002",
+    "combinaciones_faltantes_editor",
+)
+RETIRED_OWNERS = {
+    "block_0003_0002",
+    "block_0003_0007",
+    "block_0005_0002",
+    "combinaciones_faltantes_editor",
+}
 
 
 class CombinarCondicionesFormatoReal(unittest.TestCase):
-    def setUp(self):
-        self.current = json.loads(PATH.read_text(encoding="utf-8"))
-        self.state = self.current["stateLayout"]
-        self.archives = {item["id"]: item["block"] for item in
-                         self.state["sourceFormatRevisions"]}
+    @classmethod
+    def setUpClass(cls):
+        cls.batch = FormatBatch(ROOT, RELATIVE, PUBLICATIONS, OWNERS, RETIRED_OWNERS)
 
-    def test_transicion_real_preserva_historia_respuestas_y_fuentes(self):
-        state.validate(self.current)
-        self.assertEqual(len(POSITIONS), len(self.archives))
-        current_ids = [self.state["current"][p]["blocks"][b] for p, b in POSITIONS]
-        self.assertEqual(current_ids, [e["id"] for e in self.state["editorial"][-len(POSITIONS):]])
-        original = deepcopy(self.current)
-        original["stateLayout"].pop("sourceFormatRevisions")
-        original["stateLayout"]["editorial"] = original["stateLayout"]["editorial"][:-len(POSITIONS)]
-        for p, b in POSITIONS:
-            identity = self.state["current"][p]["blocks"][b]
-            before = self.archives[identity]
-            after = self.current["pages"][p]["blocks"][b]
-            self.assertTrue(require_source_format(before, after))
-            field = source_slot(before)
-            self.assertEqual(
-                [line for line in before[field].splitlines() if line.strip()],
-                [line for line in after[field].splitlines() if line.strip()])
-            self.assertIn("\n\n", after[field])
-            original["pages"][p]["blocks"][b] = deepcopy(before)
-        state.validate(original)
-        state.validate_transition(original, self.current)
-        self.assertEqual(state.validate(original), state.validate(self.current))
-        for key in ("origin", "family", "current", "additions"):
-            self.assertEqual(original["stateLayout"][key], self.state[key])
+    def test_publicaciones_completas_formato_y_retiradas_autenticas(self):
+        self.batch.assert_history(self)
 
-    def test_cxx23_compila_y_ejecuta_variantes_originales_y_legibles(self):
-        with tempfile.TemporaryDirectory(prefix="lgaed-u4l5-format-") as directory:
-            for index, (p, b) in enumerate(POSITIONS):
-                identity = self.state["current"][p]["blocks"][b]
-                before = self.archives[identity]
-                after = self.current["pages"][p]["blocks"][b]
-                field, kind = source_slot(before), before["type"]
-                inputs = [case["standardInput"] for case in
-                          after.get("outputCheck", {}).get("cases", [])]
-                if not inputs:
-                    inputs = [after.get("initialStandardInput", "")]
-                programs = []
-                for label, block in (("antes", before), ("despues", after)):
-                    source = Path(directory) / f"{index}-{label}.cpp"
-                    executable = Path(directory) / f"{index}-{label}"
-                    source.write_text(runnable(block[field], kind), encoding="utf-8")
-                    compile_result = subprocess.run(
-                        msvc_cpp23_command(executable, source),
-                        capture_output=True, text=True, timeout=90)
-                    self.assertEqual(0, compile_result.returncode,
-                                     f"{identity}: {compile_result.stderr}")
-                    runs = []
-                    for stdin in inputs:
-                        run = subprocess.run([str(windows_executable(executable))], input=stdin,
-                                             capture_output=True, text=True, timeout=15)
-                        self.assertEqual(0, run.returncode, identity)
-                        self.assertEqual("", run.stderr, identity)
-                        runs.append((run.returncode, run.stdout, run.stderr))
-                    programs.append(runs)
-                self.assertEqual(programs[0], programs[1], identity)
-                cases = after.get("outputCheck", {}).get("cases", [])
-                for run, case in zip(programs[1], cases):
-                    self.assertIn(run[1], case["outputs"], identity)
+    def test_rechaza_cambios_de_logica_oraculos_identidad_y_procedencia(self):
+        self.batch.assert_negative_controls(self)
+
+    def test_cpp23_fuentes_y_casos_publicados_conservan_resultados(self):
+        self.batch.assert_msvc_outputs(self)
 
 
 if __name__ == "__main__":
     unittest.main()
+

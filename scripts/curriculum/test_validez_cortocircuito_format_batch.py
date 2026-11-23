@@ -1,92 +1,66 @@
-"""Regresion U4L6: cortocircuito y division conservan logica, salida e identidad."""
-from copy import deepcopy
-import json
+"""U3L6: cortocircuito conserva código, salidas y contratos archivados."""
 from pathlib import Path
-import subprocess
-from windows_cpp_ci import msvc_cpp23_command, windows_executable
-import tempfile
 import unittest
 
-import stable_state_layout as state
-from code_format_compat import require_source_format
+from format_batch_history import FormatBatch, Publication
+
 
 ROOT = Path(__file__).resolve().parents[2]
-PATH = ROOT / "app/src/main/assets/content/es/programming/cpp_fundamentals/expresiones_y_decisiones/lesson_validez_y_cortocircuito.json"
-POSITIONS = ((0, 2), (1, 2), (2, 2), (3, 2),
-             (3, 7), (4, 2), (6, 2), (6, 6))
-
-
-def source_field(block):
-    return "initialCode" if block["type"] == "cpp_compiler" else "code"
+RELATIVE = (
+    "app/src/main/assets/content/es/programming/cpp_fundamentals/"
+    "expresiones_y_decisiones/lesson_validez_y_cortocircuito.json"
+)
+PUBLICATIONS = {
+    "before": Publication(
+        "eed3ded9c5283fefe51e583c1c3bf2cebc25aed0",
+        "93186ec0b048997670ab7fae5a40c89102970c3808efba254b7e8fd35965b33e",
+    ),
+    "formatted": Publication(
+        "436156b25b1f13f0669d8f6b1567e6a3fcb7d551",
+        "7f34c23510c0815a8e6bd3e5ef3c9fabb9245061b6fcbe9d089cef18869de661",
+    ),
+    "retirement_parent": Publication(
+        "2ca32b2337178d1effa3a2c81759e2493cd746d0",
+        "7f34c23510c0815a8e6bd3e5ef3c9fabb9245061b6fcbe9d089cef18869de661",
+    ),
+    "retirement": Publication(
+        "286a2c7d9e383d4a377ba5c379dc8d6e9f95e766",
+        "3c61e0450cac07edd6ed284a6003e535e571716fea28bb06f1601f47a9adaea5",
+    ),
+}
+OWNERS = (
+    "block_0000_0002",
+    "block_0001_0002",
+    "block_0002_0002",
+    "block_0003_0002",
+    "block_0003_0007",
+    "block_0004_0002",
+    "block_0006_0002",
+    "cero_y_totales_validos_editor",
+)
+RETIRED_OWNERS = {
+    "block_0003_0002",
+    "block_0003_0007",
+    "block_0006_0002",
+    "cero_y_totales_validos_editor",
+}
 
 
 class ValidezCortocircuitoFormatoReal(unittest.TestCase):
-    def setUp(self):
-        self.current = json.loads(PATH.read_text(encoding="utf-8"))
-        self.meta = self.current["stateLayout"]
-        self.archives = {item["id"]: item["block"] for item in
-                         self.meta["sourceFormatRevisions"]}
+    @classmethod
+    def setUpClass(cls):
+        cls.batch = FormatBatch(ROOT, RELATIVE, PUBLICATIONS, OWNERS, RETIRED_OWNERS)
 
-    def test_archivos_procedencia_y_transicion_v2(self):
-        state.validate(self.current)
-        self.assertEqual(len(POSITIONS), len(self.archives))
-        ids = [self.meta["current"][p]["blocks"][b] for p, b in POSITIONS]
-        self.assertEqual(ids, [edge["id"] for edge in self.meta["editorial"][-len(POSITIONS):]])
-        historical = deepcopy(self.current)
-        historical["stateLayout"].pop("sourceFormatRevisions")
-        historical["stateLayout"]["editorial"] = (
-            historical["stateLayout"]["editorial"][:-len(POSITIONS)])
-        for p, b in POSITIONS:
-            identity = self.meta["current"][p]["blocks"][b]
-            before, after = self.archives[identity], self.current["pages"][p]["blocks"][b]
-            self.assertTrue(require_source_format(before, after), identity)
-            field = source_field(before)
-            self.assertEqual(
-                [line for line in before[field].splitlines() if line.strip()],
-                [line for line in after[field].splitlines() if line.strip()], identity)
-            historical["pages"][p]["blocks"][b] = deepcopy(before)
-        state.validate(historical)
-        state.validate_transition(historical, self.current)
-        self.assertEqual(state.validate(historical), state.validate(self.current))
-        for field in ("origin", "family", "current", "additions"):
-            self.assertEqual(historical["stateLayout"][field], self.meta[field])
+    def test_publicaciones_completas_formato_y_retiradas_autenticas(self):
+        self.batch.assert_history(self)
 
-    def test_cxx23_guardas_originales_y_fuentes_espaciadas_son_equivalentes(self):
-        with tempfile.TemporaryDirectory(prefix="lgaed-u4l6-formato-") as directory:
-            for index, (p, b) in enumerate(POSITIONS):
-                identity = self.meta["current"][p]["blocks"][b]
-                before, after = self.archives[identity], self.current["pages"][p]["blocks"][b]
-                field = source_field(before)
-                inputs = [case["standardInput"] for case in
-                          after.get("outputCheck", {}).get("cases", [])]
-                if not inputs:
-                    inputs = [after.get("initialStandardInput", "")]
-                histories = []
-                for label, block in (("anterior", before), ("actual", after)):
-                    code = block[field]
-                    if block["type"] == "fill_code":
-                        self.assertEqual(1, code.count("___"))
-                        code = code.replace("___", ">")
-                    source = Path(directory) / f"{index}-{label}.cpp"
-                    binary = Path(directory) / f"{index}-{label}"
-                    source.write_text(code, encoding="utf-8")
-                    built = subprocess.run(
-                        msvc_cpp23_command(binary, source),
-                        capture_output=True, text=True, timeout=90)
-                    self.assertEqual(0, built.returncode, f"{identity}: {built.stderr}")
-                    runs = []
-                    for stdin in inputs:
-                        result = subprocess.run([str(windows_executable(binary))], input=stdin,
-                            capture_output=True, text=True, timeout=15)
-                        self.assertEqual(0, result.returncode, identity)
-                        self.assertEqual("", result.stderr, identity)
-                        runs.append((result.returncode, result.stdout, result.stderr))
-                    histories.append(runs)
-                self.assertEqual(histories[0], histories[1], identity)
-                for run, case in zip(histories[1],
-                                     after.get("outputCheck", {}).get("cases", [])):
-                    self.assertIn(run[1], case["outputs"], identity)
+    def test_rechaza_cambios_de_logica_oraculos_identidad_y_procedencia(self):
+        self.batch.assert_negative_controls(self)
+
+    def test_cpp23_fuentes_y_casos_publicados_conservan_resultados(self):
+        self.batch.assert_msvc_outputs(self)
 
 
 if __name__ == "__main__":
     unittest.main()
+

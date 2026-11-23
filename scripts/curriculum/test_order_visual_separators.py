@@ -4,6 +4,11 @@ import unittest
 
 import stable_state_layout as layout
 import test_order_line_refinement as published
+from format_batch_history import active_owners, load_publication
+from test_one_line_order_cards import (
+    ORDER_BEFORE, ORDER_REFINED, RELATIVE as U4L2_RELATIVE,
+    assert_order_publication,
+)
 
 
 class OptionalOrderSeparatorsTest(unittest.TestCase):
@@ -131,18 +136,23 @@ class OptionalOrderSeparatorsTest(unittest.TestCase):
                 actual = layout.load(root / name)
                 self.assertEqual(actual.get("orderVisualSeparators"),
                                  [{"activity": identity, "count": 1}])
-                self.assertEqual(
-                    actual["stateLayout"]["current"][page]["blocks"][index],
-                    identity)
-                order = actual["pages"][page]["blocks"][index]
+                # These coordinates describe the old publication. Resolve
+                # today's activity by its stable owner after inserted prose.
+                order = active_owners(actual)[0][identity]
                 self.assertEqual(order["type"], "order_code")
                 self.assertEqual(len(order["fragments"]), fragment_count)
                 self.assertEqual(sorted(order["correctOrder"]),
                                  list(range(fragment_count)))
                 if identity == "orden_while_puestos_2_3_4":
+                    repository = Path(__file__).resolve().parents[2]
+                    before = load_publication(repository, U4L2_RELATIVE, ORDER_BEFORE)
+                    refined = load_publication(repository, U4L2_RELATIVE, ORDER_REFINED)
+                    layout.validate_transition(before, refined)
+                    assert_order_publication(self, before, refined, actual)
                     self.assertTrue(all("\n" not in part and "\r" not in part
                                         for part in order["fragments"]))
-                    history = actual["stateLayout"]["orderRefinements"]
+                    history = [entry for entry in actual["stateLayout"]["orderRefinements"]
+                               if entry["id"] == identity]
                     self.assertEqual(1, len(history))
                     self.assertEqual(identity, history[0]["id"])
                     self.assertEqual(5, len(history[0]["block"]["fragments"]))
@@ -153,7 +163,7 @@ class OptionalOrderSeparatorsTest(unittest.TestCase):
                 self.assertEqual(original["pages"], actual["pages"])
                 self.assertEqual(original["stateLayout"], actual["stateLayout"])
                 self.assertEqual(layout.state_fingerprint(
-                    original["pages"][page]["blocks"][index]),
+                    active_owners(original)[0][identity]),
                     layout.state_fingerprint(order))
 
     def test_original_drag_fill_template_and_holes_are_not_new_separators(self):
@@ -190,3 +200,4 @@ class OptionalOrderSeparatorsTest(unittest.TestCase):
 
 if __name__ == "__main__":
     unittest.main()
+

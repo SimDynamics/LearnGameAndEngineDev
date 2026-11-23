@@ -296,6 +296,46 @@ add_executable(lgaed_curricular_input_lab_tests
 target_link_libraries(lgaed_curricular_input_lab_tests PRIVATE lgaed_curricular_windows)
 add_test(NAME native.curricular_input_lab COMMAND lgaed_curricular_input_lab_tests)
 set_tests_properties(native.curricular_input_lab PROPERTIES TIMEOUT 240 RUN_SERIAL TRUE)
+add_test(NAME native.curricular_stdout_transport
+    COMMAND lgaed_curricular_input_lab_tests --u3-stdout)
+set_tests_properties(native.curricular_stdout_transport
+    PROPERTIES TIMEOUT 180 RUN_SERIAL TRUE)
+add_test(NAME native.curricular_u3_combinations
+    COMMAND lgaed_curricular_input_lab_tests --u3-combinations)
+set_tests_properties(native.curricular_u3_combinations
+    PROPERTIES TIMEOUT 240 RUN_SERIAL TRUE)
+
+# Reuse the production loader's real-pilot assertions after the published
+# U3L8 editor was retired. These fixtures retain the entire current history;
+# archived contracts are resolved by stable identity inside the native test.
+set(_current_format_dir "${CMAKE_CURRENT_BINARY_DIR}/test-fixtures/current-code-format")
+set(_current_format_outputs)
+foreach(_fixture real.before.json real.after.json
+        after-editorial/real.before.json after-editorial/real.after.json)
+    list(APPEND _current_format_outputs "${_current_format_dir}/${_fixture}")
+endforeach()
+add_custom_command(OUTPUT ${_current_format_outputs}
+    COMMAND "${Python3_EXECUTABLE}" -B
+        "${_lgaed_root}/scripts/curriculum/test_real_code_format_pilot.py"
+        --output-dir "${_current_format_dir}"
+    DEPENDS "${_lgaed_root}/scripts/curriculum/test_real_code_format_pilot.py"
+        "${_lgaed_root}/scripts/curriculum/code_format_compat.py"
+        "${_lgaed_root}/scripts/curriculum/stable_state_layout.py"
+        "${_lgaed_root}/app/src/main/assets/content/es/programming/cpp_fundamentals/expresiones_y_decisiones/lesson_construir_decisiones_desde_un_problema.json"
+        "${_lgaed_root}/app/src/main/assets/content/en/programming/cpp_fundamentals/expresiones_y_decisiones/lesson_construir_decisiones_desde_un_problema.json"
+        "${_lgaed_root}/app/src/main/assets/content/fr/programming/cpp_fundamentals/expresiones_y_decisiones/lesson_construir_decisiones_desde_un_problema.json"
+    WORKING_DIRECTORY "${_lgaed_root}"
+    VERBATIM)
+add_custom_target(lgaed_current_code_format_fixtures DEPENDS ${_current_format_outputs})
+add_executable(lgaed_code_format_loader_tests
+    "${_lgaed_root}/native/platform/windows/code_format_loader_tests.cpp")
+target_link_libraries(lgaed_code_format_loader_tests PRIVATE lgaed_platform_windows)
+add_dependencies(lgaed_code_format_loader_tests lgaed_current_code_format_fixtures)
+add_test(NAME native.code_format_current_pilot
+    COMMAND lgaed_code_format_loader_tests --real-pilot "${_current_format_dir}")
+set_tests_properties(native.code_format_current_pilot
+    PROPERTIES TIMEOUT 90 RUN_SERIAL TRUE)
+
 add_executable(lgaed_exact_prediction_view_tests
     "${_lgaed_root}/native/presentation/windows/exact_prediction_view_tests.cpp")
 target_link_libraries(lgaed_exact_prediction_view_tests PRIVATE lgaed_curricular_windows)

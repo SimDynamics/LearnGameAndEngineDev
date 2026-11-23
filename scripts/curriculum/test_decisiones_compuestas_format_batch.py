@@ -1,120 +1,83 @@
-"""Regresion U4L7: if independientes, cadenas else-if y anidacion en C++23."""
-from copy import deepcopy
-import hashlib
-import json
+"""U3L7: formato conserva if independientes y asociación de cada else."""
 from pathlib import Path
-import subprocess
-from windows_cpp_ci import msvc_cpp23_command, windows_executable
-import tempfile
 import unittest
 
-import stable_state_layout as state
-from code_format_compat import require_source_format
+from format_batch_history import FormatBatch, Publication, all_owners, source_field
+import code_format_compat as source_format
+
 
 ROOT = Path(__file__).resolve().parents[2]
-PATH = ROOT / "app/src/main/assets/content/es/programming/cpp_fundamentals/expresiones_y_decisiones/lesson_decisiones_compuestas_y_pruebas.json"
-POSITIONS = ((0, 2), (0, 4), (1, 2), (2, 2), (3, 3),
-             (3, 8), (4, 3), (5, 1), (6, 3), (7, 2))
-
-# Authentic post-source-spacing text from 99e5402960; later prose edits are
-# separate, append-only editorial proofs that must also be preserved.
-ORIGINAL_LAST_PARAGRAPH = "Comprueba que se presenta un único resultado y que la prioridad rechaza primero la cantidad, después la falta de permiso y después decide sobre las piezas. El cálculo faltante sólo se ejecuta con cantidades válidas y solicitadas mayor que disponibles. Mantén disponibles entre 0 y 12; no hace falta ni bucle ni función para estas pruebas."
-
-
-def source_field(block):
-    return "initialCode" if block["type"] == "cpp_compiler" else "code"
+RELATIVE = (
+    "app/src/main/assets/content/es/programming/cpp_fundamentals/"
+    "expresiones_y_decisiones/lesson_decisiones_compuestas_y_pruebas.json"
+)
+PUBLICATIONS = {
+    "before": Publication(
+        "436156b25b1f13f0669d8f6b1567e6a3fcb7d551",
+        "08035235647f3d4ad3e30d367a0322742f9bb6bfdcdba0e5eb605dee0943c72e",
+    ),
+    "formatted": Publication(
+        "99e54029606bd0481481210cd43813314287e561",
+        "f8887db7fd56152111dec477c527a3a277a5fef0bdbf17816202fdb97c8db6c8",
+    ),
+    "retirement_parent": Publication(
+        "2ca32b2337178d1effa3a2c81759e2493cd746d0",
+        "ef1e93c88c23fcd57b23bc9aa1405506e447cd662648225d1ecaa178e5b6eb6f",
+    ),
+    "retirement": Publication(
+        "286a2c7d9e383d4a377ba5c379dc8d6e9f95e766",
+        "760a26bcc9678ef868e4df718686a49914a66c3748df39613cf05d5ec5ab980b",
+    ),
+}
+OWNERS = (
+    "block_0000_0002",
+    "block_0000_0004",
+    "block_0001_0002",
+    "block_0002_0002",
+    "block_0003_0003",
+    "block_0003_0008",
+    "block_0004_0003",
+    "block_0005_0001",
+    "block_0006_0003",
+    "block_0007_0002",
+)
+RETIRED_OWNERS = {
+    "block_0003_0003",
+    "block_0003_0008",
+    "block_0007_0002",
+}
 
 
 class DecisionesCompuestasFormatoReal(unittest.TestCase):
-    def setUp(self):
-        self.current = json.loads(PATH.read_text(encoding="utf-8"))
-        self.meta = self.current["stateLayout"]
-        self.archives = {item["id"]: item["block"] for item in
-                         self.meta["sourceFormatRevisions"]}
+    @classmethod
+    def setUpClass(cls):
+        cls.batch = FormatBatch(ROOT, RELATIVE, PUBLICATIONS, OWNERS, RETIRED_OWNERS)
 
-    def test_transicion_y_conservacion_de_cadenas_independientes(self):
-        state.validate(self.current)
-        self.assertEqual(len(POSITIONS), len(self.archives))
-        ids = [self.meta["current"][p]["blocks"][b] for p, b in POSITIONS]
-        # The ten format proofs follow four earlier prose revisions; a later
-        # correction to block_0007_0003 must not be mistaken for a source
-        # revision or silently removed from the published history.
-        editorial = self.meta["editorial"]
-        starts = [index for index in range(len(editorial) - len(ids) + 1)
-                  if [proof["id"] for proof in editorial[index:index + len(ids)]] == ids]
-        self.assertEqual(1, len(starts))
-        start = starts[0]
-        self.assertEqual(["block_0007_0003"],
-                         [proof["id"] for proof in editorial[start + len(ids):]])
-        historical = deepcopy(self.current)
-        historical["stateLayout"].pop("sourceFormatRevisions")
-        historical["stateLayout"]["editorial"] = editorial[:start]
-        historical["pages"][7]["blocks"][3]["text"] = ORIGINAL_LAST_PARAGRAPH
-        descriptor = next(field for field in historical["textSemantics"]["fields"]
-                          if field["block"] == "block_0007_0003" and field["path"] == "/text")
-        descriptor["sourceSha256"] = hashlib.sha256(
-            ORIGINAL_LAST_PARAGRAPH.encode("utf-8")).hexdigest()
-        self.assertTrue(all(ORIGINAL_LAST_PARAGRAPH[span["start"]:span["end"]]
-                            == span["text"] for span in descriptor["spans"]))
-        for p, b in POSITIONS:
-            identity = self.meta["current"][p]["blocks"][b]
-            before, after = self.archives[identity], self.current["pages"][p]["blocks"][b]
-            self.assertTrue(require_source_format(before, after), identity)
-            slot = source_field(before)
-            self.assertEqual(
-                [line for line in before[slot].splitlines() if line.strip()],
-                [line for line in after[slot].splitlines() if line.strip()], identity)
-            self.assertEqual(before[slot].count("} else if ("),
-                             after[slot].count("} else if ("), identity)
-            self.assertEqual(before[slot].count("} else {"),
-                             after[slot].count("} else {"), identity)
-            historical["pages"][p]["blocks"][b] = deepcopy(before)
-        # Dos if independientes, que no forman una unica cadena.
-        p, b = 1, 2
-        self.assertIn("    }\n\n    if (aciertos >= 8)",
-                      self.current["pages"][p]["blocks"][b]["code"])
-        state.validate(historical)
-        state.validate_transition(historical, self.current)
-        self.assertEqual(state.validate(historical), state.validate(self.current))
-        for key in ("origin", "family", "current", "additions"):
-            self.assertEqual(historical["stateLayout"][key], self.meta[key])
+    def test_publicaciones_completas_formato_y_retiradas_autenticas(self):
+        self.batch.assert_history(self)
 
-    def test_cxx23_programas_y_casos_no_cambian(self):
-        with tempfile.TemporaryDirectory(prefix="lgaed-u4l7-formato-") as directory:
-            for index, (p, b) in enumerate(POSITIONS):
-                identity = self.meta["current"][p]["blocks"][b]
-                before, after = self.archives[identity], self.current["pages"][p]["blocks"][b]
-                slot = source_field(before)
-                inputs = [case["standardInput"] for case in
-                          after.get("outputCheck", {}).get("cases", [])]
-                if not inputs:
-                    inputs = [after.get("initialStandardInput", "")]
-                programs = []
-                for label, block in (("anterior", before), ("actual", after)):
-                    code = block[slot]
-                    if block["type"] == "fill_code":
-                        self.assertEqual(1, code.count("___"))
-                        code = code.replace("___", "&&")
-                    source = Path(directory) / f"{index}-{label}.cpp"
-                    binary = Path(directory) / f"{index}-{label}"
-                    source.write_text(code, encoding="utf-8")
-                    built = subprocess.run(
-                        msvc_cpp23_command(binary, source),
-                        capture_output=True, text=True, timeout=90)
-                    self.assertEqual(0, built.returncode, f"{identity}: {built.stderr}")
-                    cases = []
-                    for stdin in inputs:
-                        result = subprocess.run([str(windows_executable(binary))], input=stdin,
-                                                capture_output=True, text=True, timeout=15)
-                        self.assertEqual(0, result.returncode, identity)
-                        self.assertEqual("", result.stderr, identity)
-                        cases.append((result.returncode, result.stdout, result.stderr))
-                    programs.append(cases)
-                self.assertEqual(programs[0], programs[1], identity)
-                for result, case in zip(programs[1],
-                                        after.get("outputCheck", {}).get("cases", [])):
-                    self.assertIn(result[1], case["outputs"], identity)
+    def test_rechaza_cambios_de_logica_oraculos_identidad_y_procedencia(self):
+        self.batch.assert_negative_controls(self)
+
+    def test_cpp23_fuentes_y_casos_publicados_conservan_resultados(self):
+        self.batch.assert_msvc_outputs(self)
+
+    def test_if_independientes_y_cada_else_conservan_su_asociacion(self):
+        previous = all_owners(self.batch.before)
+        for document in (self.batch.formatted, self.batch.retirement, self.batch.current):
+            resolved = all_owners(document)
+            independent = source_format._cpp_tokens(resolved["block_0001_0002"]["code"])
+            self.assertEqual(2, independent.count("id:if"))
+            self.assertNotIn("id:else", independent)
+            self.assertIn(("op:}", "id:if"), tuple(zip(independent, independent[1:])))
+            for owner in OWNERS:
+                old, new = previous[owner], resolved[owner]
+                # Full lexical equality includes braces, every condition and
+                # the exact else/if association; spacing may continue to evolve.
+                self.assertEqual(source_format._cpp_tokens(old[source_field(old)]),
+                                 source_format._cpp_tokens(new[source_field(new)]), owner)
 
 
 if __name__ == "__main__":
     unittest.main()
+

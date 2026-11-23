@@ -1,69 +1,63 @@
-"""Regresion real de alternativas: fuente C++ sin cambiar respuestas ni historial."""
-from copy import deepcopy
-import json
+"""U3L4: alternativas conservan fuentes históricas tras reordenar y retirar."""
 from pathlib import Path
-import subprocess
-from windows_cpp_ci import msvc_cpp23_command, windows_executable
-import tempfile
 import unittest
 
-import stable_state_layout as state
-from code_format_compat import require_source_format
+from format_batch_history import FormatBatch, Publication
+
 
 ROOT = Path(__file__).resolve().parents[2]
-PATH = ROOT / "app/src/main/assets/content/es/programming/cpp_fundamentals/expresiones_y_decisiones/lesson_alternativas_y_fronteras.json"
-POSITIONS = ((0,2), (1,2), (2,2), (5,2), (6,2))
+RELATIVE = (
+    "app/src/main/assets/content/es/programming/cpp_fundamentals/"
+    "expresiones_y_decisiones/lesson_alternativas_y_fronteras.json"
+)
+PUBLICATIONS = {
+    "before": Publication(
+        "b0702ad2d1e2a4c421de9ad57ecb398f509ea91b",
+        "8d7f619f9dac3b6dfb39e63123cbe587244e42264310da185630d0aee6cab3b6",
+    ),
+    "formatted": Publication(
+        "3decb5af436bcd0a63525273246d1b9afbb23ed3",
+        "8fb1dcd0f381205dc20a1a8138edf1ea11fd5091b0d9a7a9349cac1cf48095b6",
+    ),
+    "retirement_parent": Publication(
+        "2ca32b2337178d1effa3a2c81759e2493cd746d0",
+        "8fb1dcd0f381205dc20a1a8138edf1ea11fd5091b0d9a7a9349cac1cf48095b6",
+    ),
+    "retirement": Publication(
+        "286a2c7d9e383d4a377ba5c379dc8d6e9f95e766",
+        "3766c8922c794668d8f6090235ffad9e17d73fcdde613c8038da24fae3d63f59",
+    ),
+}
+OWNERS = (
+    "block_0000_0002",
+    "block_0001_0002",
+    "block_0002_0002",
+    "block_0005_0002",
+    "block_0006_0002",
+)
+RETIRED_OWNERS = {
+    "block_0003_0002",
+    "block_0003_0007",
+    "block_0003_0010",
+    "block_0006_0002",
+}
 
 
 class RealAlternativeFormatBatch(unittest.TestCase):
-    def setUp(self):
-        self.current = json.loads(PATH.read_text(encoding="utf-8"))
-        self.archives = {item["id"]: item["block"] for item in
-                         self.current["stateLayout"]["sourceFormatRevisions"]}
+    @classmethod
+    def setUpClass(cls):
+        cls.batch = FormatBatch(ROOT, RELATIVE, PUBLICATIONS, OWNERS, RETIRED_OWNERS)
 
-    def test_five_original_owners_remain_protected(self):
-        current = self.current
-        state.validate(current)
-        self.assertEqual(5, len(self.archives))
-        historical = deepcopy(current)
-        historical["stateLayout"].pop("sourceFormatRevisions")
-        suffix = historical["stateLayout"]["editorial"][-len(POSITIONS):]
-        self.assertEqual([current["stateLayout"]["current"][p]["blocks"][b] for p,b in POSITIONS],
-                         [item["id"] for item in suffix])
-        historical["stateLayout"]["editorial"] = historical["stateLayout"]["editorial"][:-len(POSITIONS)]
-        for p, b in POSITIONS:
-            identity = current["stateLayout"]["current"][p]["blocks"][b]
-            before, after = self.archives[identity], current["pages"][p]["blocks"][b]
-            historical["pages"][p]["blocks"][b] = deepcopy(before)
-            self.assertTrue(require_source_format(before, after))
-            self.assertEqual([line for line in before["code"].splitlines() if line.strip()],
-                             [line for line in after["code"].splitlines() if line.strip()])
-        state.validate(historical)
-        state.validate_transition(historical, current)
-        self.assertEqual(state.validate(historical), state.validate(current))
-        self.assertEqual(historical["stateLayout"]["family"], current["stateLayout"]["family"])
-        self.assertEqual(historical["stateLayout"]["origin"], current["stateLayout"]["origin"])
+    def test_publicaciones_completas_formato_y_retiradas_autenticas(self):
+        self.batch.assert_history(self)
 
-    def test_original_and_formatted_cxx23_sources_have_equal_outputs(self):
-        with tempfile.TemporaryDirectory(prefix="lgaed-alternative-format-") as directory:
-            for index, (p,b) in enumerate(POSITIONS):
-                identity = self.current["stateLayout"]["current"][p]["blocks"][b]
-                before = self.archives[identity]["code"]
-                after = self.current["pages"][p]["blocks"][b]["code"]
-                outputs = []
-                for label, code in (("original", before), ("formatted", after)):
-                    source = Path(directory)/f"{index}-{label}.cpp"
-                    exe = Path(directory)/f"{index}-{label}"
-                    source.write_text(code, encoding="utf-8")
-                    built = subprocess.run(msvc_cpp23_command(exe, source),
-                                           capture_output=True, text=True, timeout=90)
-                    self.assertEqual(0, built.returncode, built.stderr)
-                    result = subprocess.run([str(windows_executable(exe))], capture_output=True, text=True, timeout=15)
-                    self.assertEqual(0, result.returncode)
-                    self.assertEqual("", result.stderr)
-                    outputs.append(result.stdout)
-                self.assertEqual(outputs[0], outputs[1])
+    def test_rechaza_cambios_de_logica_oraculos_identidad_y_procedencia(self):
+        self.batch.assert_negative_controls(self)
+
+    def test_cpp23_fuentes_y_casos_publicados_conservan_resultados(self):
+        self.batch.assert_msvc_outputs(self)
 
 
 if __name__ == "__main__":
     unittest.main()
+

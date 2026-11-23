@@ -111,13 +111,13 @@ void verify_locale(const std::filesystem::path& path,std::string_view locale) {
 }
 
 void verify_real_curricular_pilot(const std::filesystem::path& fixtures) {
-    // Genuine authored U4 lesson, copied only to CI's temporary fixture area.
+    // Genuine authored U3L8 lesson, copied only to CI's temporary fixture area.
     // Work owns the production lesson, and its source bytes remain untouched.
     const auto before=windows::load_lesson(fixtures/"real.before.json","es");
     const auto after=windows::load_lesson(fixtures/"real.after.json","es");
     check(before.id=="cpp_fundamentals__expresiones_y_decisiones__construir_decisiones_desde_un_problema"&&
-        before.id==after.id&&before.pages.size()==6&&after.pages.size()==6,
-        "The real U4 pilot did not load its published original lesson");
+        before.id==after.id&&before.pages.size()==after.pages.size(),
+        "The real U3L8 pilot did not load its published original lesson");
     check(before.state_layout.signatures==after.state_layout.signatures&&
         before.state_layout.lineage==after.state_layout.lineage&&
         before.state_layout.legacy_lineage==after.state_layout.legacy_lineage&&
@@ -131,16 +131,25 @@ void verify_real_curricular_pilot(const std::filesystem::path& fixtures) {
     const bool archived_before=before.state_layout.source_format_revisions.size()==2;
     check(archived_before||before.state_layout.source_format_revisions.empty(),
         "The pilot's prior document has an unexpected format history");
-    const std::array<std::pair<std::size_t,std::size_t>,2> samples{{{3,2},{5,2}}};
-    for(const auto [page,index]:samples) {
-        const auto& old=before.pages[page].blocks[index];
-        const auto& changed=after.pages[page].blocks[index];
+    const auto owner=[](const curriculum::Lesson& model,std::string_view id)
+            ->const curriculum::Block& {
+        if(const auto at=curriculum::stable_block_position(model,id))
+            return model.pages.at(at->page).blocks.at(at->block);
+        const auto archived=std::ranges::find(model.retired_blocks,id,&curriculum::Block::stable_id);
+        check(curriculum::retired_block(model,id)&&archived!=model.retired_blocks.end(),
+            "The U3L8 publication lost an active or authenticated retired owner");
+        return *archived;
+    };
+    constexpr std::array<std::string_view,2> samples{{"block_0003_0002","block_0005_0002"}};
+    for(const auto id:samples) {
+        const auto& old=owner(before,id);
+        const auto& changed=owner(after,id);
         std::string original_code=old.code;
         if(archived_before) {
             const auto& revisions=after.state_layout.source_format_revisions;
             const auto found=std::find_if(revisions.begin(),revisions.end(),
                 [&](const auto& revision){return revision.id==changed.stable_id;});
-            check(found!=revisions.end(),"The U4 code archive lost its original owner");
+            check(found!=revisions.end(),"The U3L8 code archive lost its original owner");
             const auto archived=winrt::Windows::Data::Json::JsonObject::Parse(
                 winrt::to_hstring(found->raw_json));
             original_code=winrt::to_string(archived.GetNamedString(L"code"));
@@ -153,7 +162,7 @@ void verify_real_curricular_pilot(const std::filesystem::path& fixtures) {
             changed.code.find("\n\n    return 0;")!=std::string::npos&&
             old.stable_id==changed.stable_id&&
             curriculum::exercise_key(before,old)==curriculum::exercise_key(after,changed),
-            "Actual protected U4 code block did not gain safe physical line breaks");
+            "Actual protected U3L8 code block did not gain safe physical line breaks");
     }
     for(std::size_t page=0;page<before.pages.size();++page) {
         const auto& old_page=before.pages[page],new_page=after.pages[page];
@@ -173,8 +182,12 @@ void verify_real_curricular_pilot(const std::filesystem::path& fixtures) {
             }
         }
     }
-    const auto& prediction_before=before.pages[3].blocks[3];
-    const auto& prediction_after=after.pages[3].blocks[3];
+    const auto& prediction_before=owner(before,"block_0003_0003");
+    const auto& prediction_after=owner(after,"block_0003_0003");
+    const auto prediction_position=curriculum::stable_block_position(before,prediction_before.stable_id);
+    check(prediction_position.has_value()&&
+        prediction_position==curriculum::stable_block_position(after,prediction_after.stable_id),
+        "A source-only pilot moved the current prediction");
     check(prediction_before.type==curriculum::BlockType::output_prediction&&
         prediction_before.answers==prediction_after.answers&&
         prediction_before.code==prediction_after.code,
@@ -184,16 +197,43 @@ void verify_real_curricular_pilot(const std::filesystem::path& fixtures) {
     state::prepare_lesson_state(saved,before);
     state::Response response;response.correct=true;response.answer=prediction_before.answers.front();
     state::put_response(saved,before,prediction_before,response);
-    const auto& editor_before=before.pages[3].blocks[6];
-    const auto& editor_after=after.pages[3].blocks[6];
+    const auto& editor_before=owner(before,"block_0003_0006");
+    const auto& editor_after=owner(after,"block_0003_0006");
     check(editor_before.type==curriculum::BlockType::cpp_compiler&&
-        editor_after.type==editor_before.type,
-        "The authentic U4 compiler editor moved during formatting");
+        editor_after.type==editor_before.type&&
+        editor_before.initial_code==editor_after.initial_code&&
+        editor_before.standard_input==editor_after.standard_input&&
+        curriculum::exercise_key(before,editor_before)==curriculum::exercise_key(after,editor_after)&&
+        curriculum::draft_key("programming",before,editor_before)==
+            curriculum::draft_key("programming",after,editor_after)&&
+        curriculum::reference_objective_frame(before,editor_before)==
+            curriculum::reference_objective_frame(after,editor_after),
+        "The authentic U3L8 compiler lost its archived source, input, objective or state key");
+    check(curriculum::retired_block(before,editor_before.stable_id)==
+            curriculum::retired_block(after,editor_after.stable_id),
+        "A source-only pilot restored or retired an unrelated compiler");
+    if(curriculum::retired_block(after,editor_after.stable_id)) {
+        check(!curriculum::stable_block_position(after,editor_after.stable_id),
+            "The retired U3L8 compiler reappeared in the active lesson");
+        bool witnessed=false;
+        for(const auto& history:after.state_layout.retirement_history)
+            if(std::ranges::find(history.retired,editor_after.stable_id)!=history.retired.end())
+                for(const auto& page:history.pages)for(const auto& previous:page.blocks)
+                    if(previous.stable_id==editor_after.stable_id) {
+                        check(previous.initial_code==editor_after.initial_code&&
+                            previous.standard_input==editor_after.standard_input&&
+                            curriculum::draft_key("programming",after,previous)==
+                                curriculum::draft_key("programming",after,editor_after),
+                            "The retired U3L8 compiler does not match its authenticated publication");
+                        witnessed=true;
+                    }
+        check(witnessed,"The retired U3L8 compiler lacks its authenticated retirement snapshot");
+    }
     state::Draft draft;
     draft.source="int main() {\n // estudiante: original intacto\n return 0;\n}\n";
     draft.input="18 5 1\n";draft.selection_start=15;draft.selection_end=15;draft.has_saved=true;
     state::put_draft(saved,curriculum::draft_key("programming",before,editor_before),draft);
-    state::save_current_page(saved,before,3);
+    state::save_current_page(saved,before,prediction_position->page);
     const auto archived=state::decode(state::encode(saved));
     check(saved==archived,"Actual pilot rewrote the student's historical preferences");
     state::validate_lesson_state(archived,after);
@@ -207,12 +247,16 @@ void verify_real_curricular_pilot(const std::filesystem::path& fixtures) {
         retrieved.input==draft.input&&
         retrieved.selection_start==draft.selection_start&&
         retrieved.selection_end==draft.selection_end&&
-        state::current_page(archived,after)==3,
-        "The real U4 lesson reopened with a different draft, cursor or page");
+        state::current_page(archived,after)==prediction_position->page,
+        "The real U3L8 lesson reopened with a different draft, cursor or page");
     const auto catalog=windows::load_lesson_progress_metadata(fixtures/"real.after.json","es");
     check(catalog.state_layout.lineage==after.state_layout.lineage&&
-        catalog.pages.size()==after.pages.size(),
-        "The real U4 read-only curriculum catalog lost its historical identity");
+        catalog.pages.size()==after.pages.size()&&
+        curriculum::draft_key("programming",catalog,owner(catalog,editor_after.stable_id))==
+            curriculum::draft_key("programming",after,editor_after)&&
+        curriculum::retired_block(catalog,editor_after.stable_id)==
+            curriculum::retired_block(after,editor_after.stable_id),
+        "The real U3L8 read-only curriculum catalog lost its historical identity");
 }
 
 void verify_real_u6_compiler_diagnostics(const std::filesystem::path& fixtures) {
@@ -1327,6 +1371,13 @@ void verify_semantic_retirement(const std::filesystem::path& fixtures,
 
 int main(int argc,char** argv) {
     try{
+        if(argc==3&&std::string_view(argv[1])=="--real-pilot") {
+            const std::filesystem::path fixtures(argv[2]);
+            verify_real_curricular_pilot(fixtures);
+            verify_real_curricular_pilot(fixtures/"after-editorial");
+            std::cout<<"PASS native U3L8 format pilot: stable source/prediction owners, authenticated retired compiler, exact draft/input/cursor/keys and full/progress loaders\n";
+            return 0;
+        }
         if(argc!=7)throw std::invalid_argument("Expected source-format fixture directories and an isolated QA root");
         const std::filesystem::path dir(argv[1]);
         for(const auto locale:{"es","en","fr"})verify_locale(dir,locale);
@@ -1351,3 +1402,4 @@ int main(int argc,char** argv) {
         return 1;
     }
 }
+

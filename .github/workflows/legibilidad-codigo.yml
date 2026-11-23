@@ -32,6 +32,13 @@ on:
       - '.github/workflows/legibilidad-codigo.yml'
       - 'scripts/curriculum/windows_cpp_ci.py'
       - 'scripts/curriculum/test_windows_cpp_ci.py'
+      - 'scripts/curriculum/format_batch_history.py'
+      - 'scripts/curriculum/test_comparaciones_condiciones_format_batch.py'
+      - 'scripts/curriculum/test_decision_format_batch.py'
+      - 'scripts/curriculum/test_combinar_condiciones_format_batch.py'
+      - 'scripts/curriculum/test_validez_cortocircuito_format_batch.py'
+      - 'scripts/curriculum/test_condicion_cuerpo_progreso_format_batch.py'
+      - 'scripts/curriculum/test_secuencia_preservacion.py'
   workflow_dispatch:
 
 permissions:
@@ -62,6 +69,47 @@ jobs:
       - name: Verify nine U3L2 owners, archived editors and real C++23 output
         run: python -B -m unittest discover -s scripts/curriculum -p test_division_resto_format_batch.py -v
 
+  source-history:
+    name: Published U3 and U4 sources, order and retired contracts
+    runs-on: windows-2022
+    timeout-minutes: 20
+    env:
+      GIT_CONFIG_COUNT: '1'
+      GIT_CONFIG_KEY_0: core.longpaths
+      GIT_CONFIG_VALUE_0: 'true'
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+          persist-credentials: false
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - name: Use MSVC x64 for the authentic historical programs
+        uses: ilammy/msvc-dev-cmd@v1
+      - name: Identify the actual Windows QA compiler and SDK
+        shell: pwsh
+        run: |
+          Write-Host "VCToolsVersion=$env:VCToolsVersion"
+          Write-Host "WindowsSDKVersion=$env:WindowsSDKVersion"
+          $compiler = (Get-Command cl.exe -ErrorAction Stop).Source
+          Write-Host "Compiler=$compiler"
+          Write-Host "CompilerFileVersion=$((Get-Item -LiteralPath $compiler).VersionInfo.FileVersion)"
+      - name: Verify stable owners, pinned publications, real outputs and rejected mutations
+        working-directory: scripts/curriculum
+        run: >-
+          python -B -m unittest -v
+          test_comparaciones_condiciones_format_batch
+          test_decision_format_batch
+          test_combinar_condiciones_format_batch
+          test_validez_cortocircuito_format_batch
+          test_decisiones_compuestas_format_batch
+          test_condicion_cuerpo_progreso_format_batch
+          test_for_limites_format_batch
+          test_one_line_order_cards
+          test_order_visual_separators
+          test_secuencia_preservacion
+
   auditar:
     runs-on: windows-2022
     timeout-minutes: 45
@@ -81,20 +129,6 @@ jobs:
         run: python -m unittest discover -s scripts/curriculum -p test_auditar_legibilidad_codigo.py -v
       - name: Verificar formato físico con archivo original y progreso histórico
         run: python -m unittest discover -s scripts/curriculum -p test_real_code_format_pilot.py -v
-      - name: Validar alternativas originales y reformateadas C++23
-        run: python -m unittest discover -s scripts/curriculum -p test_decision_format_batch.py -v
-      - name: Acreditar combinaciones logicas U4L5 y sus fuentes historicas C++23
-        run: python -m unittest discover -s scripts/curriculum -p test_combinar_condiciones_format_batch.py -v
-      - name: Acreditar U4L6 cortocircuito, divisores y fuentes historicas C++23
-        run: python -m unittest discover -s scripts/curriculum -p test_validez_cortocircuito_format_batch.py -v
-      - name: Acreditar U4L7 decisiones independientes, anidadas y else-if C++23
-        run: python -m unittest discover -s scripts/curriculum -p test_decisiones_compuestas_format_batch.py -v
-      - name: Revisar U4L3 comparaciones y condiciones C++23 preservadas
-        run: python -m unittest discover -s scripts/curriculum -p test_comparaciones_condiciones_format_batch.py -v
-      - name: Comprobar primer recorrido while y formato historico con C++23
-        run: python -m unittest discover -s scripts/curriculum -p test_condicion_cuerpo_progreso_format_batch.py -v
-      - name: Probar for y limites sin cambiar el reto del editor C++23
-        run: python -m unittest discover -s scripts/curriculum -p test_for_limites_format_batch.py -v
       - name: Validar U4L4 seleccion y resumen con preservacion C++23
         run: python -m unittest discover -s scripts/curriculum -p test_seleccionar_recorrido_format_batch.py -v
       - name: Acreditar U4L5 break continue y retos sin resolver
@@ -111,8 +145,6 @@ jobs:
         run: python -m unittest discover -s scripts/curriculum -p test_acumuladores_trazas_format_batch.py -v
       - name: Revisar recarga U4L10 y sus proyectos iniciales C++23
         run: python -m unittest discover -s scripts/curriculum -p test_proceso_recarga_format_batch.py -v
-      - name: Verificar tarjetas de una linea con origen y respuesta historicos
-        run: python -m unittest discover -s scripts/curriculum -p test_one_line_order_cards.py -v
       - name: Inventariar todas las tarjetas order_code sin cambiar su contenido
         run: python scripts/curriculum/auditar_tarjetas_orden_codigo.py --output-json tarjetas-orden.json
       - name: Garantizar una linea por tarjeta de orden en todo el curriculo espanol
