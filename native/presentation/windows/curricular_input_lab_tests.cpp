@@ -821,24 +821,24 @@ struct View {
     }
 };
 
-void verify_u2l9_reference(View& fixture, curriculum::StatePosition target,
+void verify_compiler_reference_gate(View& fixture, curriculum::StatePosition target,
         curriculum::StatePosition reference, bool unlocked) {
     const auto& lesson = fixture.lesson;
     const auto& authored = lesson.pages.at(reference.page).blocks.at(reference.block);
     check(curriculum::reference_activity(lesson, authored) == target,
-        "The U2L9 reference lost its own declared compiler requirement");
+        "The reference lost its own declared compiler requirement");
     check(lesson_page_state(fixture.view).index == target.page,
-        "Reference QA left the actual U2L9 editor before inspecting its gate");
+        "Reference QA left the actual compiler editor before inspecting its gate");
     const bool same_page = target.page == reference.page;
     if (!unlocked && !same_page) {
         check(!navigate_lesson_view(fixture.view, reference.page),
-            "An uncredited U2L9 first case opened its later reference page");
+            "An uncredited first case opened its later reference page");
         pump();
         check(lesson_page_state(fixture.view).index == target.page,
-            "A rejected reference navigation moved the unfinished U2L9 editor");
+            "A rejected reference navigation moved the unfinished compiler editor");
     } else if (unlocked && !same_page) {
         check(navigate_lesson_view(fixture.view, reference.page),
-            "The first Iris observation did not unlock its reference page");
+            "The first mandatory observation did not unlock its reference page");
         pump();
     }
     const auto regions = lesson_reading_regions(fixture.view);
@@ -853,7 +853,7 @@ void verify_u2l9_reference(View& fixture, curriculum::StatePosition target,
                 return region.key.find(identity) != std::string::npos;
             });
             if (!unlocked) {
-                check(!readable, "An unfinished U2L9 compiler exposed a reference to the reader");
+                check(!readable, "An unfinished compiler exposed a reference to the reader");
                 if (page == lesson_page_state(fixture.view).index) {
                     // A hidden host intentionally makes IsWindowVisible false
                     // for every descendant. Check actual HWND existence, not
@@ -866,36 +866,36 @@ void verify_u2l9_reference(View& fixture, curriculum::StatePosition target,
                         search.found = item; return FALSE;
                     }, reinterpret_cast<LPARAM>(&search));
                     check(search.found == nullptr,
-                        "An unfinished U2L9 compiler created a source, label or text control for its reference");
+                        "An unfinished compiler created a source, label or text control for its reference");
                 }
             } else if (page == reference.page) {
-                check(readable, "An earned U2L9 reference did not enter the actual reader script");
+                check(readable, "An earned reference did not enter the actual reader script");
             }
         }
-    check(references == 4, "The U2L9 reference group lost an authored source or explanation");
+    check(references == 4, "The reference group lost an authored source or explanation");
     if (!unlocked) return;
 
     const auto source = fixture.control(reference.block, 1);
     check((GetWindowLongPtrW(source, GWL_STYLE) & WS_VISIBLE) != 0 && IsWindowEnabled(source)
         && edit_text(source) == authored.code,
-        "The earned U2L9 reference is hidden, disabled or differs from its authored source");
+        "The earned reference is hidden, disabled or differs from its authored source");
     if (same_page) {
         bool earned_compiler = false, reference_seen = false;
         for (const auto& region : regions) {
             if (region.block_index == target.block) {
-                check(!reference_seen, "A same-page U2L9 reference was narrated before its compiler");
+                check(!reference_seen, "A same-page reference was narrated before its compiler");
                 earned_compiler = earned_compiler || (region.required_compiler && region.correct);
             }
             if (region.block_index == reference.block) {
-                check(earned_compiler, "The same-page U2L9 reference has no preceding completed compiler reading gate");
+                check(earned_compiler, "The same-page reference has no preceding completed compiler reading gate");
                 reference_seen = true;
             }
         }
         check(earned_compiler && reference_seen,
-            "The same-page U2L9 reference or its earned compiler disappeared from the reader");
+            "The same-page reference or its earned compiler disappeared from the reader");
     } else {
         check(navigate_lesson_view(fixture.view, target.page),
-            "Cannot return from the earned U2L9 reference to its editor");
+            "Cannot return from the earned reference to its editor");
         pump();
     }
 }
@@ -953,7 +953,7 @@ void current_three_input_laboratory(const std::filesystem::path& historical = {}
         && !windows::compiler_puzzle_completed(initial, lesson, compiler),
         "The isolated actual input laboratory began on another page or with invented credit");
     phase = "enter the authored reference through the real source editor";
-    verify_u2l9_reference(fixture, target, reference, false);
+    verify_compiler_reference_gate(fixture, target, reference, false);
     fixture.replace(10, authored_reference.code);
     const auto retained = [&](std::size_t count, bool completed = true) {
         const auto saved = fixture.saved();
@@ -976,7 +976,7 @@ void current_three_input_laboratory(const std::filesystem::path& historical = {}
     fixture.replace(15, cases[1].input);
     fixture.run(authored_reference.code, cases[1].input, cases[1].output);
     retained(1, false);
-    verify_u2l9_reference(fixture, target, reference, false);
+    verify_compiler_reference_gate(fixture, target, reference, false);
     fixture.reopen();
     retained(1, false);
     const auto partial_draft = state::get_draft(fixture.saved(), draft_key, "");
@@ -984,12 +984,12 @@ void current_three_input_laboratory(const std::filesystem::path& historical = {}
         && partial_draft.has_saved && partial_draft.source == authored_reference.code
         && partial_draft.input == cases[1].input,
         "Reopening an optional-only U2L9 attempt lost its exact source/input draft");
-    verify_u2l9_reference(fixture, target, reference, false);
+    verify_compiler_reference_gate(fixture, target, reference, false);
     // An edit invalidates an unfinished proof. Restoring the program must
     // not resurrect that optional result or invent a mandatory Iris receipt.
     fixture.replace(10, compiler.initial_code); retained(0, false);
     fixture.replace(10, authored_reference.code); retained(0, false);
-    verify_u2l9_reference(fixture, target, reference, false);
+    verify_compiler_reference_gate(fixture, target, reference, false);
     for (std::size_t index = 0; index < cases.size(); ++index) {
         phase = "case " + std::to_string(index + 1) + ": " + std::string(cases[index].canonical);
         fixture.replace(15, cases[index].input);
@@ -1002,7 +1002,7 @@ void current_three_input_laboratory(const std::filesystem::path& historical = {}
                 && fixture.text(34).find("Pruebas opcionales comprobadas: 0 de 3.") != std::string::npos,
                 "The first Iris result did not distinguish its three optional trials");
             phase = "open the actual reference after only Iris";
-            verify_u2l9_reference(fixture, target, reference, true);
+            verify_compiler_reference_gate(fixture, target, reference, true);
             const auto first_receipts = compiler_receipts(fixture.saved(), lesson, compiler);
             fixture.reopen();
             check(fixture.text(10) == authored_reference.code && fixture.text(15) == cases[0].input
@@ -1010,7 +1010,7 @@ void current_three_input_laboratory(const std::filesystem::path& historical = {}
                 && compiler_receipts(fixture.saved(), lesson, compiler) == first_receipts,
                 "Reopening after Iris lost the one-case achievement, source or input");
             retained(1);
-            verify_u2l9_reference(fixture, target, reference, true);
+            verify_compiler_reference_gate(fixture, target, reference, true);
         }
     }
     phase = "repeat the actual Sol execution without editing";
@@ -1039,7 +1039,7 @@ void current_three_input_laboratory(const std::filesystem::path& historical = {}
     fixture.run(authored_reference.code, mixed_input, cases.front().output);
     retained(cases.size());
     phase = "verify actual same-page or later reference after optional runs and reopening";
-    verify_u2l9_reference(fixture, target, reference, true);
+    verify_compiler_reference_gate(fixture, target, reference, true);
     phase = "verify retained editor state and asset after reference inspection";
     check(fixture.text(10) == authored_reference.code && fixture.text(15) == mixed_input,
         "Reference navigation changed the laboratory's independent source/input draft");
@@ -1127,11 +1127,7 @@ void verify_first_case_reference(View& fixture, curriculum::StatePosition target
         && fixture.text(34).find("Pruebas opcionales comprobadas: 0 de " + std::to_string(optional_count) + ".") != std::string::npos,
         "The first genuine U3 case was withheld pending optional trials");
     const auto at = position(fixture.lesson, reference.stable_id);
-    check(navigate_lesson_view(fixture.view, at.page), "The first U3 case did not immediately unlock its actual reference page");
-    pump();
-    check(edit_text(fixture.control(at.block, 1)) == reference.code, "The unlocked U3 reference lost its authored source");
-    check(navigate_lesson_view(fixture.view, target.page), "Cannot return from the U3 reference to its actual editor");
-    pump();
+    verify_compiler_reference_gate(fixture, target, at, true);
 }
 
 void current_u3_stdout_transport() {
@@ -1166,8 +1162,9 @@ void current_u3_stdout_transport() {
     phase = "U3L6 unfinished source is a real incorrect first-case attempt";
     fixture.run(compiler.initial_code, *compiler.standard_input, "");
     retained(0, false, compiler.initial_code, *compiler.standard_input);
-    check(fixture.text(4).starts_with("✗ Incorrecto") && !navigate_lesson_view(fixture.view, reference_at.page),
-        "The unfinished U3L6 draft opened its reference or earned a case");
+    check(fixture.text(4).starts_with("✗ Incorrecto"),
+        "The unfinished U3L6 draft did not retain its genuine rejection");
+    verify_compiler_reference_gate(fixture, target, reference_at, false);
 
     const auto observe = [&](std::size_t index) {
         const auto& item = repartition_cases[index];
@@ -1198,8 +1195,9 @@ void current_u3_stdout_transport() {
     phase = "U3L6 optional case before mandatory case cannot unlock";
     fixture.replace(10, source); observe(1);
     retained(1, false, source, repartition_cases[1].input);
-    check(!navigate_lesson_view(fixture.view, reference_at.page), "U3L6 optional input unlocked the mandatory first case");
+    verify_compiler_reference_gate(fixture, target, reference_at, false);
     fixture.reopen(); retained(1, false, source, repartition_cases[1].input);
+    verify_compiler_reference_gate(fixture, target, reference_at, false);
     // Changing an unfinished program invalidates its partial proof. Restoring
     // the source does not resurrect that proof or invent a first-case receipt.
     fixture.replace(10, compiler.initial_code);
@@ -1213,6 +1211,7 @@ void current_u3_stdout_transport() {
     fixture.reopen(); retained(1, true, source, repartition_cases[0].input);
     check(fixture.text(4) == "✓ Correcto" && compiler_receipts(fixture.saved(), lesson, compiler) == first_receipts,
         "Reopening U3L6 lost its first-case achievement or replaced its evidence");
+    verify_compiler_reference_gate(fixture, target, reference_at, true);
 
     for (std::size_t index = 1; index < repartition_cases.size(); ++index) {
         phase = "U3L6 optional native output observation " + std::to_string(index);
@@ -1285,15 +1284,17 @@ void current_u3_combinations() {
     phase = "U3L5 unfinished draft cannot earn the mandatory case";
     fixture.run(compiler.initial_code, *compiler.standard_input, "");
     retained(0, false, compiler.initial_code, *compiler.standard_input);
-    check(fixture.text(4).starts_with("✗ Incorrecto") && !navigate_lesson_view(fixture.view, reference_at.page),
-        "The unfinished U3L5 draft earned a receipt or opened its reference");
+    check(fixture.text(4).starts_with("✗ Incorrecto"),
+        "The unfinished U3L5 draft did not retain its genuine rejection");
+    verify_compiler_reference_gate(fixture, target, reference_at, false);
 
     phase = "U3L5 optional 000 before mandatory 100 stays blocked";
     fixture.replace(10, source); fixture.replace(15, combinations_cases[1].input);
     fixture.run(source, combinations_cases[1].input, combinations_cases[1].output);
     retained(1, false, source, combinations_cases[1].input);
-    check(!navigate_lesson_view(fixture.view, reference_at.page), "An optional U3L5 input opened the mandatory first-case gate");
+    verify_compiler_reference_gate(fixture, target, reference_at, false);
     fixture.reopen(); retained(1, false, source, combinations_cases[1].input);
+    verify_compiler_reference_gate(fixture, target, reference_at, false);
 
     phase = "U3L5 wrong grouping invalidates an unfinished program and fails the first input";
     fixture.replace(10, wrong); retained(0, false, wrong, combinations_cases[1].input);
@@ -1312,6 +1313,7 @@ void current_u3_combinations() {
     fixture.reopen(); retained(1, true, source, combinations_cases[0].input);
     check(fixture.text(4) == "✓ Correcto" && compiler_receipts(fixture.saved(), lesson, compiler) == first_receipts,
         "Reopening U3L5 changed its first genuine achievement");
+    verify_compiler_reference_gate(fixture, target, reference_at, true);
 
     for (std::size_t index = 1; index < combinations_cases.size(); ++index) {
         phase = "U3L5 optional Boolean combination " + std::to_string(index);
@@ -1345,7 +1347,9 @@ void current_u3_combinations() {
     retained(0, false, compiler.initial_code, combinations_cases[0].input);
     check(fixture.text(4).empty() && fixture.text(14).empty()
         && compiler_receipts(fixture.saved(), lesson, compiler).empty(), "Explicit U3L5 reset retained old output or receipts");
+    verify_compiler_reference_gate(fixture, target, reference_at, false);
     fixture.reopen(); retained(0, false, compiler.initial_code, combinations_cases[0].input);
+    verify_compiler_reference_gate(fixture, target, reference_at, false);
     check(fixture.text(4).empty() && fixture.executions == 13 && !IsWindowVisible(fixture.host)
         && state::sha256(state::read_bytes(path)) == asset_hash,
         "U3L5 reset/reopening resurrected achievement, lost an actual run or changed authored bytes");

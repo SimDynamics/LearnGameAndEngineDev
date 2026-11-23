@@ -45,6 +45,8 @@ on:
       - scripts/curriculum/test_local_string_probe_authoring.py
       - app/src/main/assets/content/es/programming/cpp_fundamentals/objetos_y_estado/lesson_cadenas_y_texto.json
       - scripts/curriculum/test_local_int_live_compilation.py
+      - scripts/curriculum/test_local_int_live_history.py
+      - scripts/curriculum/format_batch_history.py
       - app/src/main/assets/content/es/programming/cpp_fundamentals/objetos_y_estado/lesson_objetos_valores_y_tipos.json
       - app/src/main/assets/content/es/programming/cpp_fundamentals/objetos_y_estado/lesson_declarar_e_inicializar.json
       - app/src/main/assets/content/es/programming/cpp_fundamentals/objetos_y_estado/lesson_estado_asignacion_y_copia.json
@@ -83,6 +85,8 @@ jobs:
         run: python -B -m unittest discover -s scripts/curriculum -p test_local_scalar_probe_authoring.py -v
       - name: Verify append-only probes and original stable-state identities
         run: python -B -m unittest discover -s scripts/curriculum -p test_local_int_probe_authoring.py -v
+      - name: Authenticate complete U2L5 publications and preserve later source history
+        run: python -B -m unittest discover -s scripts/curriculum -p test_local_int_live_history.py -v
       - name: Validate two authentic U2L7 text owners and original answer contracts
         run: python -B -m unittest discover -s scripts/curriculum -p test_local_string_probe_authoring.py -v
 
@@ -97,6 +101,7 @@ jobs:
       - name: Read the exact revision
         uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262
         with:
+          fetch-depth: 0
           persist-credentials: false
       - name: Parse both local Windows QA entry points without running them
         run: |
@@ -158,7 +163,7 @@ jobs:
           if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
           python -B scripts/curriculum/test_local_string_live_compilation.py --emitter "$emitter" --compiler MSVC
           if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
-      - name: Compile and execute 57 original/mutated C++ programs on hosted MSVC
+      - name: Compile and execute 63 original and current C++ programs on hosted MSVC
         run: |
           $emitter = Join-Path $env:RUNNER_TEMP 'lgaed_local_int_fixtures.exe'
           $obj = Join-Path $env:RUNNER_TEMP 'lgaed_local_int_fixtures.obj'

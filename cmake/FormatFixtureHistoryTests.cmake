@@ -92,10 +92,28 @@ function(lgaed_add_format_fixture_history_tests root)
         "${root}/native/platform/windows/u6_compilecheck_format_runner_tests.cpp")
     target_link_libraries(lgaed_format_fixture_diagnostics_msvc_tests PRIVATE lgaed_platform_windows)
     add_dependencies(lgaed_format_fixture_diagnostics_msvc_tests lgaed_format_fixture_history_fixtures)
+    set(_structural_test test_reviewed_diagnostic_structural_format.ReviewedDiagnosticStructuralFormatTest)
     add_test(NAME native.format_fixture_authoring
         COMMAND "${Python3_EXECUTABLE}" -B -m unittest -v
             test_compile_check_source_format test_real_code_format_pilot
-            test_code_format_compat test_reviewed_diagnostic_structural_format)
+            test_code_format_compat
+            ${_structural_test}.test_all_seventeen_closed_goals_pass_with_authenticated_format
+            ${_structural_test}.test_both_audit_modes_accept_published_and_followup_diagnostic_formats
+            ${_structural_test}.test_forged_source_archive_diagnostic_and_proof_fail_closed
+            ${_structural_test}.test_standalone_blocks_and_unarchived_spacing_stay_strict
+            ${_structural_test}.test_valid_document_never_authorizes_a_detached_or_mislocated_block)
     set_tests_properties(native.format_fixture_authoring PROPERTIES
+        TIMEOUT 300 RUN_SERIAL TRUE WORKING_DIRECTORY "${_scripts}")
+    # The real ordinary tree walk took 112 seconds on hosted Windows. Keep
+    # both full-tree validations in separate processes so their diagnostics
+    # and budgets cannot be consumed by the other 59 authoring tests.
+    add_test(NAME native.format_fixture_full_ordinary_validator
+        COMMAND "${Python3_EXECUTABLE}" -B -m unittest -v
+            ${_structural_test}.test_full_ordinary_validator_consumes_the_authored_reviews)
+    add_test(NAME native.format_fixture_shared_course_validator
+        COMMAND "${Python3_EXECUTABLE}" -B -m unittest -v
+            ${_structural_test}.test_shared_course_validator_passes_context_without_promoting_structure_audit)
+    set_tests_properties(native.format_fixture_full_ordinary_validator
+        native.format_fixture_shared_course_validator PROPERTIES
         TIMEOUT 300 RUN_SERIAL TRUE WORKING_DIRECTORY "${_scripts}")
 endfunction()

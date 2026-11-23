@@ -7,8 +7,12 @@ from __future__ import annotations
 from contextlib import redirect_stdout
 from copy import deepcopy
 import io
+import hashlib
 import json
 from pathlib import Path
+import sys
+import time
+import traceback
 from types import SimpleNamespace
 import unittest
 from unittest.mock import patch
@@ -83,10 +87,47 @@ class ReviewedDiagnosticStructuralFormatTest(unittest.TestCase):
             shared_course._block(SimpleNamespace(**vars(contract)), visible, identity,
                 root=ROOT, document=document, position=at, structure_only=structure_only)
 
+    def format_guard(self, before, after, identity, *, block=None, old=None,
+                     at=None, relative=None):
+        p, b = position(before, identity)
+        original = before['pages'][p]['blocks'][b] if old is None else old
+        if block is None:
+            q, c = position(after, identity)
+            block = after['pages'][q]['blocks'][c]
+        storage = layout.validate(before)[p, b] if at is None else at
+        course, unit, title = before['id'].split('__')
+        path = (f'app/src/main/assets/content/es/programming/{course}/'
+                f'{unit}/lesson_{title}.json') if relative is None else relative
+        return contract.preserves_source_format_revision(
+            path, *storage, original, block,
+            previous_document=before, current_document=after)
+
+    def run_full_validator(self, label, operation):
+        """Publish diagnostics before unittest can defer them past a CTest timeout."""
+        captured = io.StringIO()
+        started = time.perf_counter()
+        try:
+            with redirect_stdout(captured):
+                result = operation()
+                self.assertEqual(contract.ERRORS, [])
+        except BaseException:
+            print(f'FAIL {label} after {time.perf_counter() - started:.3f}s',
+                  file=sys.stderr, flush=True)
+            print('Captured validator stdout:\n' + captured.getvalue(),
+                  file=sys.stderr, flush=True)
+            print('Validator ERRORS:\n' + '\n'.join(map(str, contract.ERRORS)),
+                  file=sys.stderr, flush=True)
+            traceback.print_exc(file=sys.stderr)
+            sys.stderr.flush()
+            raise
+        print(f'PASS {label} in {time.perf_counter() - started:.3f}s', flush=True)
+        return result
+
     def test_all_seventeen_closed_goals_pass_with_authenticated_format(self):
         total = 0
         for _, before, after, owners in self.documents:
             self.assertEqual(layout.validate(before), layout.validate(after))
+            aligned = layout.align_for_previous_validation(before, after)
             for identity, _ in owners:
                 with self.subTest(owner=identity, lesson=before['id']):
                     self.validate_owner(after, identity)
@@ -98,6 +139,13 @@ class ReviewedDiagnosticStructuralFormatTest(unittest.TestCase):
                     self.assertEqual(old['compileCheck'], new['compileCheck'])
                     self.assertEqual(old.get('sourceFiles'), new.get('sourceFiles'))
                     self.assertNotEqual(old['initialCode'], new['initialCode'])
+                    # The ordinary historical loop passes this aligned block.
+                    # It must still be the actual visible owner, even when the
+                    # canonical diagnostic archive predates both sources.
+                    self.assertEqual(aligned['pages'][p]['blocks'][b], new)
+                    self.assertTrue(self.format_guard(before, after, identity,
+                                                     block=aligned['pages'][p]['blocks'][b]))
+                    self.assertFalse(self.format_guard(before, before, identity))
                     total += 1
         self.assertEqual(total, 17)
 
@@ -117,7 +165,7 @@ class ReviewedDiagnosticStructuralFormatTest(unittest.TestCase):
         self.assertEqual(total, 17)
 
     def test_standalone_blocks_and_unarchived_spacing_stay_strict(self):
-        for _, before, after, owners in self.documents:
+        for path, before, after, owners in self.documents:
             identity = owners[0][0]
             p, b = position(after, identity)
             block = after['pages'][p]['blocks'][b]
@@ -133,11 +181,44 @@ class ReviewedDiagnosticStructuralFormatTest(unittest.TestCase):
             contract.ERRORS.clear()
             self.validate_owner(unproved, identity)
             self.assertTrue(contract.ERRORS)
+            self.assertFalse(self.format_guard(before, unproved, identity))
+
+            relative = path.relative_to(ASSETS / 'es')
+            family = {locale: json.loads((ASSETS / locale / relative).read_text(encoding='utf-8'))
+                      for locale in ('es', 'en', 'fr')}
+            canonical = next(entry['block'] for entry in
+                             before['stateLayout']['sourceFormatRevisions']
+                             if entry['id'] == identity)
+            prose = deepcopy(before)
+            p, b = position(prose, identity)
+            explanation = prose['pages'][p]['blocks'][b]['compileCheck']
+            explanation['explanation'] += ' Esta revisión sólo aclara la explicación.'
+            marker = next(field for field in prose['textSemantics']['fields']
+                          if field['block'] == identity and
+                          field['path'] == '/compileCheck/explanation')
+            marker['sourceSha256'] = hashlib.sha256(
+                explanation['explanation'].encode('utf-8')).hexdigest()
+            prose = layout.prepare_v2(prose, 'es', family, before)
+            layout.validate_transition(before, prose)
+            self.assertEqual(before['pages'][p]['blocks'][b]['initialCode'],
+                             prose['pages'][p]['blocks'][b]['initialCode'])
+            self.assertFalse(self.format_guard(before, prose, identity))
+
+            restored = deepcopy(prose)
+            restored['pages'][p]['blocks'][b] = layout.code_format.source_projection(
+                restored['pages'][p]['blocks'][b], canonical)
+            restored = layout.prepare_v2(restored, 'es', {**family, 'es': prose}, prose)
+            # Canonical whitespace plus the separately authored new guide is
+            # a new complete payload, not an undeclared editorial cycle.
+            # The physical change stays true when projected sources coincide.
+            self.assertNotEqual(prose['pages'][p]['blocks'][b]['initialCode'],
+                                restored['pages'][p]['blocks'][b]['initialCode'])
+            self.assertTrue(self.format_guard(prose, restored, identity))
 
     def test_forged_source_archive_diagnostic_and_proof_fail_closed(self):
-        for _, _, after, owners in self.documents:
+        for _, before, after, owners in self.documents:
             identity = owners[0][0]
-            for kind in ('token', 'diagnostic', 'archive', 'proof', 'lesson'):
+            for kind in ('token', 'diagnostic', 'archive', 'proof', 'lesson', 'owner'):
                 with self.subTest(owner=identity, kind=kind):
                     forged = deepcopy(after)
                     p, b = position(forged, identity)
@@ -154,28 +235,42 @@ class ReviewedDiagnosticStructuralFormatTest(unittest.TestCase):
                         editorial = forged['stateLayout']['editorial']
                         last = max(i for i, entry in enumerate(editorial) if entry['id'] == identity)
                         editorial.pop(last)
-                    else:
+                    elif kind == 'lesson':
                         forged['id'] = 'cpp_fundamentals__other__unrelated_owner'
+                    else:
+                        forged['stateLayout']['current'][p]['blocks'][b] = 'qa_unrelated_diagnostic_owner'
+                    self.assertFalse(self.format_guard(before, forged, identity, block=candidate))
                     for structure_only in (None, False, True):
                         with self.subTest(structure_only=structure_only):
                             contract.ERRORS.clear()
-                            self.validate_owner(forged, identity,
+                            self.validate_owner(forged, identity, at=(p, b),
                                                 structure_only=structure_only)
                             self.assertTrue(contract.ERRORS)
 
     def test_valid_document_never_authorizes_a_detached_or_mislocated_block(self):
-        _, _, after, owners = self.documents[0]
+        _, before, after, owners = self.documents[0]
         identity = owners[0][0]
         p, b = position(after, identity)
         block = deepcopy(after['pages'][p]['blocks'][b])
         block['initialCode'] += '\nint not_in_document = 1;\n'
         self.validate_owner(after, identity, block=block)
         self.assertTrue(contract.ERRORS)
+        self.assertFalse(self.format_guard(before, after, identity, block=block))
         for invalid in ((-1, b), (True, b), (100000, b), None):
             contract.ERRORS.clear()
             contract.validate_cpp_compiler(after['pages'][p]['blocks'][b], identity,
                                            document=after, position=invalid)
             self.assertTrue(contract.ERRORS)
+        canonical = next(entry['block'] for entry in after['stateLayout']['sourceFormatRevisions']
+                         if entry['id'] == identity)
+        self.assertNotEqual(canonical, after['pages'][p]['blocks'][b])
+        self.assertFalse(self.format_guard(before, after, identity, block=canonical))
+        self.assertFalse(self.format_guard(before, after, identity, old=canonical))
+        for invalid in ((-1, b), (True, b), (100000, b), (None, b), (p, b + 1)):
+            with self.subTest(storage=invalid):
+                self.assertFalse(self.format_guard(before, after, identity, at=invalid))
+        self.assertFalse(self.format_guard(before, after, identity,
+            relative='app/src/main/assets/content/es/programming/cpp_fundamentals/other/lesson_other.json'))
 
     def test_full_ordinary_validator_consumes_the_authored_reviews(self):
         # Supply exactly the reviewed in-memory documents to the real
@@ -184,8 +279,9 @@ class ReviewedDiagnosticStructuralFormatTest(unittest.TestCase):
         real_load = contract.load
         def reviewed_load(path):
             return deepcopy(overlays[Path(path)]) if Path(path) in overlays else real_load(path)
-        with patch.object(contract, 'load', side_effect=reviewed_load), redirect_stdout(io.StringIO()):
-            contract.main(['--course', 'cpp_fundamentals', '--base-ref', 'HEAD'])
+        with patch.object(contract, 'load', side_effect=reviewed_load):
+            self.run_full_validator('ordinary full course validator',
+                lambda: contract.main(['--course', 'cpp_fundamentals', '--base-ref', 'HEAD']))
         self.assertEqual(contract.ERRORS, [])
 
     def test_shared_course_validator_passes_context_without_promoting_structure_audit(self):
@@ -197,11 +293,13 @@ class ReviewedDiagnosticStructuralFormatTest(unittest.TestCase):
             return deepcopy(overlays[Path(path)]) if Path(path) in overlays else real_load(path)
         namespace = SimpleNamespace(**vars(contract))
         namespace.load = reviewed_load
-        shared_course.validate(namespace, ROOT, 'HEAD', course_id='cpp_fundamentals')
+        self.run_full_validator('shared full course validator',
+            lambda: shared_course.validate(namespace, ROOT, 'HEAD', course_id='cpp_fundamentals'))
         self.assertEqual(contract.ERRORS, [])
         contract.ERRORS.clear()
-        summary = shared_course.validate(namespace, ROOT, None,
-            course_id='cpp_fundamentals', structure_only=True)
+        summary = self.run_full_validator('shared structural audit',
+            lambda: shared_course.validate(namespace, ROOT, None,
+                course_id='cpp_fundamentals', structure_only=True))
         self.assertEqual(summary['scope'], 'STRUCTURE_ONLY_NOT_APPROVED')
         self.assertFalse(summary['stateLayoutValidated'])
         self.assertFalse(summary['historicalProtectionChecked'])
