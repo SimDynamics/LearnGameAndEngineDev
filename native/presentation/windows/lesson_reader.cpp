@@ -76,7 +76,7 @@ public:
 struct LessonReader::Impl {
     struct AudioReadLease{HANDLE file=INVALID_HANDLE_VALUE;std::shared_ptr<void> cache_guard;~AudioReadLease(){if(file!=INVALID_HANDLE_VALUE)CloseHandle(file);}};
     struct Part{LessonReadingRegion region;windows::NarrationSegment sentence;std::optional<windows::NarrationAudio> audio;std::size_t occurrence=0;std::string audio_fingerprint;std::shared_ptr<AudioReadLease> playback_lease;};
-    struct LegacyPlan{std::string key;std::vector<Part> parts;bool editorial_formatting=false,previous_context_policy=false;std::vector<std::string> revised_regions;bool positional_page_identity=false,bibliography_only=false;};
+    struct LegacyPlan{std::string key;std::vector<Part> parts;bool editorial_formatting=false,previous_context_policy=false;std::vector<std::string> revised_regions;bool positional_page_identity=false,bibliography_only=false,general_revision=false;std::vector<Part> revision_proof;};
     struct Result{std::uint64_t epoch=0;std::vector<Part> parts;std::vector<LegacyPlan> legacy;std::string key,error,audio_fingerprint;std::size_t index=0;std::optional<windows::NarrationAudio> audio;bool planned=false;
         bool playback_validation=false,recording_changed=false;std::uint64_t validation_serial=0;std::shared_ptr<AudioReadLease> playback_lease;};
     // Android's answered-block priority is playback permission, not listening
@@ -344,6 +344,76 @@ struct LessonReader::Impl {
         ++epoch;prioritize(at);start_audio_preparation();update_buttons();
     }
     static std::string part_id(const Part& part){return (part.region.anchor.empty()?part.region.key:part.region.anchor)+'\0'+part.sentence.prepared+'\0'+std::to_string(part.occurrence);}
+    static bool same_revision_page(const narration::Bookmark& entry,std::string_view page,std::string_view owner){
+        if(!entry.semantic_plan||entry.semantic_plan->regions.empty())return false;
+        // A layout hash identifies one publication, while the complete prefix
+        // owns its route, lesson, language family and course edition. Positional
+        // pages still require their existing, explicitly authored archives.
+        const auto separator=page.rfind('/');
+        const auto hash=[](std::string_view value){return value.size()==64&&std::ranges::all_of(value,
+            [](char c){return (c>='0'&&c<='9')||(c>='a'&&c<='f');});};
+        if(separator==std::string_view::npos||page.find("/state-layout-v1/")==std::string_view::npos||
+            !hash(page.substr(separator+1))||entry.page.size()!=page.size()||
+            std::string_view(entry.page).substr(0,separator+1)!=page.substr(0,separator+1)||
+            !hash(std::string_view(entry.page).substr(separator+1)))return false;
+        const auto prefix=std::string(owner)+'/';
+        // All pages share the lineage prefix. Every saved source owner must
+        // also belong to this exact stable page, including its locale.
+        return std::ranges::all_of(entry.semantic_plan->regions,[&](const auto& proof){return proof.owner.starts_with(prefix);});
+    }
+    static bool same_revision_part(const Part& before,const Part& after){
+        // Equal pronunciation alone cannot transfer a source position or
+        // listening credit to a changed field, mode, annotation or owner.
+        return part_id(before)==part_id(after)&&before.region.source_text==after.region.source_text&&
+            before.region.reading_context==after.region.reading_context&&before.region.math_mode==after.region.math_mode&&
+            before.region.text_semantics==after.region.text_semantics&&before.sentence.text==after.sentence.text&&
+            before.sentence.spoken==after.sentence.spoken&&before.sentence.start==after.sentence.start&&
+            before.sentence.end==after.sentence.end;
+    }
+    narration::Position revision_prefix_position(const std::vector<Part>& previous,const narration::Position& saved,
+            narration::Position mapped,std::optional<std::size_t> passive_completion_from={})const{
+        const auto old_at=static_cast<std::size_t>(saved.segment);
+        // Read newly inserted/revised prose before its new puzzle, rather than
+        // mapping to a later old anchor and rewinding only as far as the gate.
+        // A passage moved from beyond the old pause is still unread. Compatible
+        // pauses preceding all changes retain their exact source and offset.
+        const auto end=saved.finished?parts.size()-1:static_cast<std::size_t>(mapped.segment);
+        for(std::size_t index=0;index<=end;++index){
+            const auto old=std::ranges::find_if(previous,[&](const auto& part){return same_revision_part(part,parts[index]);});
+            if(old!=previous.end()&&static_cast<std::size_t>(old-previous.begin())<=old_at)continue;
+            // Specific archives already admit completion when the only new
+            // suffix is a passive UI heading. Preserve that narrow exception.
+            if(passive_completion_from&&mapped.finished&&index>=*passive_completion_from&&parts[index].region.passive_label)continue;
+            mapped.segment=static_cast<std::int64_t>(index);mapped.milliseconds=0;mapped.finished=false;
+            mapped.heard_through=std::min(mapped.heard_through,mapped.segment);mapped.heard_prefix.reset();break;
+        }
+        return mapped;
+    }
+    narration::Position revision_position(const std::vector<Part>& previous,const narration::Position& saved)const{
+        const auto old_at=static_cast<std::size_t>(saved.segment);
+        auto mapped=saved;bool found=false;
+        for(auto prior=old_at+1;prior>0;--prior){
+            const auto current=std::ranges::find_if(parts,[&](const auto& part){return same_revision_part(previous[prior-1],part);});
+            if(current==parts.end())continue;
+            const auto index=static_cast<std::size_t>(current-parts.begin());found=true;
+            if(prior-1==old_at){mapped.segment=static_cast<std::int64_t>(index);
+                if(index+1!=parts.size())mapped.finished=false;
+            }else{mapped.segment=static_cast<std::int64_t>(std::min(index+1,parts.size()-1));
+                mapped.milliseconds=0;mapped.finished=false;mapped.heard_prefix.reset();}
+            break;
+        }
+        if(!found){mapped.segment=0;mapped.milliseconds=0;mapped.finished=false;mapped.heard_prefix.reset();}
+        mapped.heard_through=0;
+        for(std::size_t index=0;index<parts.size();++index)if(parts[index].region.feedback&&parts[index].region.correct){
+            const auto old=std::ranges::find_if(previous,[&](const auto& part){return same_revision_part(part,parts[index]);});
+            if(old==previous.end()||old-previous.begin()>=saved.heard_through)break;
+            mapped.heard_through=static_cast<std::int64_t>(index+1);
+        }
+        // An unchanged partial certificate remains bound to its old plan key.
+        // restore_current_prefix verifies the actual recording; never relabel
+        // that certificate or fabricate discontiguous heard ranges here.
+        return revision_prefix_position(previous,saved,mapped);
+    }
     static std::string semantic_signature(const std::optional<curriculum::TextSemantics>& value){
         if(!value)return std::string(1,'\0')+"unmarked";
         curriculum::validate_text_semantics(*value);std::string result=std::string(1,'\0')+"semantic-v1";
@@ -435,7 +505,7 @@ struct LessonReader::Impl {
         const auto legacy_title=page.index>0&&(has_bookmark||!retired_archives.empty()||!editorial_archives.empty())?page.lesson_title:std::string{};
         const auto legacy_snapshot=has_bookmark?legacy_lesson_reading_regions(view):std::vector<LessonReadingRegion>{};
         const auto pre_caption_snapshot=has_bookmark?pre_caption_lesson_reading_regions(view):std::vector<LessonReadingRegion>{};
-        generation=std::jthread([this,current_epoch,snapshot,lang,selected_voice,current_page,selected_engine,legacy_title,legacy_snapshot,pre_caption_snapshot,retired_archives,editorial_archives,history](std::stop_token stop){
+        generation=std::jthread([this,current_epoch,snapshot,lang,selected_voice,current_page,next_page,selected_engine,legacy_title,legacy_snapshot,pre_caption_snapshot,retired_archives,editorial_archives,history](std::stop_token stop){
             try{auto page_priority=backend->current_page_lease(stop);
                 std::vector<Part> planned;std::vector<windows::NarrationSegment> sentences;
                 for(const auto& region:snapshot){std::map<std::string,std::size_t> occurrences;for(auto sentence:backend->plan(region.source_text,lang,stop,region.reading_context,region.math_mode,windows::NarrationOutputDataPolicy::current,region.text_semantics)){
@@ -562,6 +632,56 @@ struct LessonReader::Impl {
                         add_legacy(old,prior.page_identity,prior_index>=first_editorial,prior.revised_regions,prior.positional_page_identity,false,false,prior.bibliography_only);if(!prefix.empty()){auto with_title=prefix;with_title.insert(with_title.end(),old.begin(),old.end());add_legacy(std::move(with_title),prior.page_identity,prior_index>=first_editorial,prior.revised_regions,prior.positional_page_identity,false,false,prior.bibliography_only);}
                     }
                     }
+                    // Closed authored archives keep their existing priority.
+                    // Ordinary insertions/reordering and prose revisions also
+                    // have an exact, bounded source proof in a saved bookmark.
+                    // Reconstruct that private script in its former order only
+                    // to authenticate its old key; the live plan stays current.
+                    for(const auto& entry:history.entries){
+                        if(!same_revision_page(entry,current_page,next_page))continue;
+                        const auto specific=std::ranges::find(plan.legacy,entry.key,&LegacyPlan::key);
+                        if(specific!=plan.legacy.end()&&entry.page==current_page)continue;
+                        for(const bool previous_prose:{false,true}){
+                            if(previous_prose&&std::ranges::all_of(entry.semantic_plan->regions,[](const auto& proof){return proof.semantics.has_value();}))continue;
+                            const auto semantic_policy=entry.semantic_plan->policy=="windows-semantic-v1"
+                                ?windows::NarrationSemanticPolicy::original:windows::NarrationSemanticPolicy::current;
+                            std::vector<Part> previous;std::vector<windows::NarrationSegment> script;
+                            for(const auto& proof:entry.semantic_plan->regions){
+                                const auto current=std::ranges::find_if(snapshot,[&](const auto& region){
+                                    return (region.anchor.empty()?region.key:region.anchor)==proof.owner;});
+                                LessonReadingRegion origin;if(current!=snapshot.end())origin=*current;
+                                origin.key=proof.owner;origin.anchor=proof.owner;origin.source_text=proof.source;
+                                origin.reading_context=proof.context;origin.math_mode=proof.math_mode;origin.text_semantics=proof.semantics;
+                                std::map<std::string,std::size_t> occurrences;
+                                const auto append=[&](windows::NarrationSegment sentence){
+                                    const auto occurrence=occurrences[sentence.prepared]++;
+                                    script.push_back(sentence);previous.push_back({origin,std::move(sentence),{},occurrence});};
+                                const bool unchanged=current!=snapshot.end()&&current->source_text==proof.source&&
+                                    current->reading_context==proof.context&&current->math_mode==proof.math_mode&&
+                                    current->text_semantics==proof.semantics;
+                                if(unchanged&&!previous_prose&&semantic_policy==windows::NarrationSemanticPolicy::current){
+                                    for(const auto& part:planned)if((part.region.anchor.empty()?part.region.key:part.region.anchor)==proof.owner)append(part.sentence);
+                                }else for(auto sentence:backend->plan(proof.source,lang,stop,proof.context,proof.math_mode,
+                                    windows::NarrationOutputDataPolicy::current,proof.semantics,semantic_policy,previous_prose&&!proof.semantics))append(std::move(sentence));
+                            }
+                            if(script.empty())continue;
+                            const auto authenticated=backend->identity(entry.page,lang,selected_voice,script,stop,
+                                selected_engine=="WINDOWS"||selected_engine=="ANDROID"?"ANDROID":"KOKORO");
+                            if(authenticated!=entry.key)continue;
+                            // A retirement can compose with an insertion. Keep
+                            // its authored successor/alias mapping, then guard
+                            // the resulting prefix with this authenticated proof.
+                            if(specific!=plan.legacy.end())specific->revision_proof=std::move(previous);
+                            else plan.legacy.push_back({entry.key,std::move(previous),false,false,{},false,false,true});
+                            break;
+                        }
+                    }
+                    // The bounded slots are newest first. A specific archive
+                    // wins for its own key, never over a newer authenticated
+                    // revision of this page merely by registration order.
+                    std::stable_sort(plan.legacy.begin(),plan.legacy.end(),[&](const auto& first,const auto& second){
+                        return std::ranges::find(history.entries,first.key,&narration::Bookmark::key)<
+                            std::ranges::find(history.entries,second.key,&narration::Bookmark::key);});
                 }
                 push(std::move(plan));
                 prepare_audio(std::move(planned),current_epoch,lang,selected_voice,selected_engine,resume_key,stop,std::move(page_priority));
@@ -595,6 +715,10 @@ struct LessonReader::Impl {
                 position=*saved;restored_bookmark=!position.finished;}
             else for(const auto& legacy:result.legacy)if(const auto legacy_saved=narration::restore(history,legacy.key,legacy.parts.size())){
                 position=*legacy_saved;restored_bookmark=!position.finished;
+                std::optional<std::size_t> passive_completion_from;
+                if(legacy.general_revision){
+                    position=revision_position(legacy.parts,*legacy_saved);restored_bookmark=!position.finished;
+                }else{
                 const auto old_at=static_cast<std::size_t>(legacy_saved->segment);bool found_position=false,preserve_recording=false;
                 if(!legacy.parts[old_at].region.retired_successor.empty()){
                     const auto& successor=legacy.parts[old_at].region.retired_successor;
@@ -618,6 +742,7 @@ struct LessonReader::Impl {
                 if(legacy.previous_context_policy)position=narration_legacy::changed_speech_position(position,preserve_recording);
                 if(position.finished&&static_cast<std::size_t>(position.segment)+1<parts.size()&&
                     std::ranges::all_of(parts.begin()+position.segment+1,parts.end(),[](const auto& part){return part.region.passive_label;})){
+                    passive_completion_from=static_cast<std::size_t>(position.segment)+1;
                     // A previously completed page stays completed when only a
                     // missing spoken UI heading was appended. Keep the stored
                     // terminal position valid on a second restore; do not
@@ -674,6 +799,11 @@ struct LessonReader::Impl {
                     }
                 }
                 if(legacy.previous_context_policy)restored_bookmark=!position.finished;
+                }
+                if(!legacy.revision_proof.empty()){
+                    position=revision_prefix_position(legacy.revision_proof,*legacy_saved,position,passive_completion_from);
+                    restored_bookmark=!position.finished;
+                }
                 // Relabel the verified old entry in place. Its recency and the
                 // other two page slots are unchanged; no parallel history is kept.
                 mutate([&](state::StateData& preferences){auto old=narration::read_history(preferences);

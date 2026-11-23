@@ -119,6 +119,32 @@ jobs:
           cmake --version
           ninja --version
           if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
+      # Real playback needs an active render endpoint. Reuse the project's
+      # signed-device evaluation only for an explicitly selected automatic push.
+      - name: Prepare the signed endpoint for this reader evaluation
+        if: startsWith(github.event.head_commit.message, 'qa-reader-order:')
+        shell: pwsh
+        run: |
+          $ErrorActionPreference = 'Stop'
+          foreach ($qaServiceName in @('AudioEndpointBuilder', 'Audiosrv')) {
+            $qaService = Get-Service -Name $qaServiceName -ErrorAction Stop
+            $qaService | Select-Object Name, Status, StartType | Format-Table | Out-Host
+            if ($qaService.StartType -eq 'Disabled') { throw "Audio service is disabled: $qaServiceName" }
+            if ($qaService.Status -eq 'Stopped') {
+              $qaService.Start()
+              $qaService.WaitForStatus('Running', [TimeSpan]::FromSeconds(15))
+              $qaService.Refresh()
+            }
+            if ($qaService.Status -ne 'Running') { throw "Audio service is not running: $qaServiceName" }
+          }
+          $qaSdkVersion = $env:WindowsSDKVersion.TrimEnd([char[]]'\/')
+          if ($qaSdkVersion -notmatch '^\d+\.\d+\.\d+\.\d+$') { throw 'The activated SDK version is invalid.' }
+          $qaSignTool = Join-Path $env:WindowsSdkDir "bin\$qaSdkVersion\x64\signtool.exe"
+          if (-not (Test-Path -LiteralPath $qaSignTool -PathType Leaf)) { throw 'The activated SDK SignTool is absent.' }
+          Get-Item -LiteralPath $qaSignTool | Select-Object FullName, @{Name='Version';Expression={$_.VersionInfo.FileVersion}} | Format-Table | Out-Host
+          $qaPython = (Get-Command python.exe -CommandType Application | Select-Object -First 1).Source
+          $qaAudioLog = Join-Path $env:GITHUB_WORKSPACE ('out\qa\reader-revision-audio-{0}-{1}' -f $env:GITHUB_RUN_ID, $env:GITHUB_RUN_ATTEMPT)
+          & .\scripts\windows\Prepare-VirtualAudioCI.ps1 -PythonPath $qaPython -SignToolPath $qaSignTool -LogDirectory $qaAudioLog
       - name: Configure and link original Windows curricular reader
         shell: pwsh
         run: |
@@ -129,6 +155,7 @@ jobs:
           cmake --build $build --target lgaed_lesson_reader_edit_order_tests --parallel 3
           if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
       - name: Preserve current reading order after edits and ordinary reopen
+        if: startsWith(github.event.head_commit.message, 'qa-reader-order:')
         shell: pwsh
         run: |
           $build = Join-Path $env:RUNNER_TEMP 'lgaed-course-edition-qa'
@@ -270,6 +297,9 @@ jobs:
           retention-days: 7
           if-no-files-found: warn
           path: |
+            ${{ github.workspace }}/out/qa/reader-revision-audio-${{ github.run_id }}-${{ github.run_attempt }}/*.json
+            ${{ github.workspace }}/out/qa/reader-revision-audio-${{ github.run_id }}-${{ github.run_attempt }}/*.log
+            ${{ runner.temp }}/lgaed-course-edition-qa/reader-revision-runtime-*/transport.jsonl
             ${{ runner.temp }}/lgaed-course-edition-qa/reader-revision-order.xml
             ${{ runner.temp }}/lgaed-course-edition-qa/choice-prose-and-prediction.xml
             ${{ runner.temp }}/lgaed-course-edition-qa/local-dependency-receipts.xml

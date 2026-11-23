@@ -202,6 +202,9 @@ struct Fixture {
         initialize_profile_directories(environment.paths);
         state::StateStore store(environment.paths.root);auto data=store.load();
         state::prepare_lesson_state(data,before.lesson);
+        // Captions and verdicts follow the application's UI preference, not
+        // the lesson/voice language or the hosted runner's system locale.
+        data.preferences["native_windows"]["ui_language"]=std::string("es");
         auto& prefs=data.preferences["lesson_narration_settings"];
         prefs["engine"]=std::string("KOKORO");prefs["language"]=std::string("es");
         prefs["kokoro_voice:es"]=std::string("ef_dora");prefs["rate"]=1.;prefs["kokoro_advance_generation"]=true;
