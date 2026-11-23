@@ -12,6 +12,8 @@ import subprocess
 import sys
 import tempfile
 
+import stable_state_layout as layout
+
 ROOT=Path(__file__).resolve().parents[2]
 LESSON=ROOT/("app/src/main/assets/content/es/programming/"
              "cpp_language_memory_oop/composicion_y_herencia_publica/"
@@ -146,6 +148,7 @@ BAD={
 
 def original_editor()->str:
     document=json.loads(LESSON.read_text(encoding="utf-8"))
+    layout.validate(document)
     locations=[(page,block) for page,entry in enumerate(
         document["stateLayout"]["current"])
         for block,name in enumerate(entry["blocks"]) if name==OWNER]
@@ -163,18 +166,17 @@ def original_editor()->str:
 def spans(source:str)->list[tuple[int,int]]:
     method="std::unique_ptr<Muestra> clonar() const override {"
     positions=[]
-    next_pos=0
-    for _ in range(2):
-        opening=source.index(method,next_pos)
-        begin=opening+len(method)
-        closing=source.index("\n    }\nprivate:",begin)+5
-        assert source[closing]=="}"
+    for class_signature in ("class MuestraSimple : public Muestra",
+                            "class MuestraIdentificada : public Muestra"):
+        class_begin,class_end=layout._named_rule_body_span(source,class_signature)
+        begin,closing=layout._named_rule_body_span(
+            source[class_begin:class_end],method[:-1].rstrip())
+        begin,closing=class_begin+begin,class_begin+closing
+        assert source[begin-1]=="{" and source[closing]=="}"
         positions.append((begin,closing))
-        next_pos=closing+1
     duplicate="Muestras duplicar(const Muestras& origen) {"
-    begin=source.index(duplicate)+len(duplicate)
-    end=source.index("\n}\nvoid informar",begin)+1
-    assert source[end]=="}"
+    begin,end=layout._named_rule_body_span(source,duplicate[:-1].rstrip())
+    assert source[begin-1]=="{" and source[end]=="}"
     positions.append((begin,end))
     assert all(positions[i][1]<positions[i+1][0] for i in range(2))
     return positions

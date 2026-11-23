@@ -13,6 +13,8 @@ import subprocess
 import sys
 import tempfile
 
+import stable_state_layout as layout
+
 ROOT=Path(__file__).resolve().parents[2]
 LESSON=ROOT/("app/src/main/assets/content/es/programming/"
              "cpp_language_memory_oop/composicion_y_herencia_publica/"
@@ -119,6 +121,7 @@ BAD={
 
 def original_editor()->str:
     document=json.loads(LESSON.read_text(encoding="utf-8"))
+    layout.validate(document)
     locations=[(page,block) for page,entry in enumerate(
         document["stateLayout"]["current"])
         for block,name in enumerate(entry["blocks"]) if name==OWNER]
@@ -137,11 +140,10 @@ def original_editor()->str:
 def spans(source:str)->list[tuple[int,int]]:
     first="bool agregar(Muestras& destino, std::unique_ptr<Muestra>& fuente) {"
     second="void informar(const Muestras& datos, std::ostream& salida) {"
-    first_begin=source.index(first)+len(first)
-    first_end=source.index("\n}\nvoid informar",first_begin)+1
-    second_begin=source.index(second)+len(second)
-    second_end=source.index("\n}\nint main",second_begin)+1
-    assert source[first_end]=="}" and source[second_end]=="}"
+    first_begin,first_end=layout._named_rule_body_span(source,first[:-1].rstrip())
+    second_begin,second_end=layout._named_rule_body_span(source,second[:-1].rstrip())
+    assert source[first_begin-1]=="{" and source[first_end]=="}"
+    assert source[second_begin-1]=="{" and source[second_end]=="}"
     assert first_begin<first_end<second_begin<second_end
     return [(first_begin,first_end),(second_begin,second_end)]
 
