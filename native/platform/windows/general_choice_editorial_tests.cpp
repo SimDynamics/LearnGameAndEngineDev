@@ -16,11 +16,13 @@
 #include <functional>
 #include <iostream>
 #include <iterator>
+#include <map>
 #include <optional>
 #include <set>
 #include <stdexcept>
 #include <string>
 #include <string_view>
+#include <utility>
 #include <vector>
 
 namespace {
@@ -435,10 +437,317 @@ void verify_prose_history(const std::filesystem::path& directory) {
     std::cout<<"PASS U2L10 choice prose: "<<rejected.Size()
         <<" answer/history/projection/semantic counterexamples rejected by both native loaders\n";
 }
+
+constexpr std::string_view composition_owner="block_0005_0003";
+constexpr std::array<std::string_view,8> composition_paragraphs{
+    "block_0000_0004","block_0002_0004","block_0005_0001","block_0006_0001",
+    "block_0007_0002","block_0008_0002","block_0009_0004","block_0010_0002"};
+const Block& composition_block(const Lesson& lesson,std::string_view owner) {
+    const auto position=stable_block_position(lesson,owner);
+    require(position.has_value(),"The semantic composition lost an original stable owner");
+    return lesson.pages.at(position->page).blocks.at(position->block);
+}
+using SemanticFields=std::map<std::pair<std::string,std::string>,TextSemantics>;
+SemanticFields composition_fields(const Lesson& lesson) {
+    SemanticFields result;
+    for(const auto& page:lesson.pages)for(const auto& block:page.blocks)
+        for(const auto& [path,descriptor]:block.text_semantics)
+            require(result.emplace(std::make_pair(block.stable_id,path),descriptor).second,
+                "The semantic composition duplicated an authored owner/path");
+    return result;
+}
+narration::SemanticPlanProof composition_reading_proof(const Lesson& lesson) {
+    // Persisted source provenance only. This test does not execute speech or
+    // claim that a changed source acquired actual listening credit.
+    narration::SemanticPlanProof result;
+    const auto append=[&](std::string_view owner,std::string_view path) {
+        const auto& semantics=composition_block(lesson,owner).text_semantics.at(std::string(path));
+        result.regions.push_back({std::string(owner)+std::string(path),
+            semantics.source,"auto","text",semantics});
+    };
+    // The stored bookmark is one actual page: the option's preceding prose
+    // and its own public fields. Other pages are checked by the semantic map.
+    append("block_0005_0001","/text");
+    for(const auto path:{"/question","/explanation","/options/1"})
+        append(composition_owner,path);
+    return result;
+}
+void verify_composition_saved_state(const std::vector<Lesson>& lessons,
+        const std::vector<Lesson>& metadata,std::size_t origin,std::int64_t selected) {
+    const auto& original=lessons.at(origin);
+    const auto& before=composition_block(original,composition_owner);
+    const auto environment=resolve_windows_environment({ProfileId::Codex,
+        L"choice-composition-"+std::to_wstring(origin)+L"-"+std::to_wstring(selected)+L"-"+
+        std::to_wstring(GetCurrentProcessId())+L"-"+std::to_wstring(GetTickCount64()),false});
+    require(environment.options.qa_instance&&!environment.options.qa_instance->empty()&&
+            !std::filesystem::exists(environment.paths.root),
+        "Choice composition QA would open an existing or personal profile");
+    initialize_profile_directories(environment.paths);
+    state::StateData saved;
+    {
+        state::StateStore initial(environment.paths.root);
+        saved=initial.load();
+        require(saved.preferences.empty(),"The isolated composition profile is not empty");
+    }
+    state::prepare_lesson_state(saved,original);
+    state::Response response;response.selected=selected;
+    response.correct=evaluate_choice(before,static_cast<std::size_t>(selected)).correct;
+    require(response.correct==(selected==1),"The authentic U2L9 answer contract changed");
+    response.raw_json=R"({"incorrectAttempts":4,"opaque":{"caret":13,"draft":"keep"}})";
+    if(!response.correct)state::mark_response_reviewed(response,before);
+    state::put_response(saved,original,before,response);
+    const auto receipt_key=state::response_storage_key(original,before);
+    const auto receipt=state::string_value(saved,"learning_progress",receipt_key);
+    saved.preferences["native_windows"]["qa_other_reader_preference"]=std::string("keep");
+    saved.preferences["learning_progress"]["qa_other_course_progress"]=std::int64_t{41};
+    const auto& compiler=composition_block(original,"block_0009_0003");
+    require(compiler.type==BlockType::cpp_compiler,"The preserved U2L9 draft owner is not an editor");
+    const auto compiler_key=draft_key("programming",original,compiler);
+    state::Draft draft;draft.source=compiler.initial_code+"\n// Borrador QA conservado\n";
+    draft.input="Iris 4 2";draft.selection_start=3;draft.selection_end=8;draft.has_saved=true;
+    state::put_draft(saved,compiler_key,draft);
+    narration::Position position;position.segment=0;position.milliseconds=275;position.heard_through=0;
+    auto history=narration::begin({},"choice-composition-old-qa","qa-composition-reader",position,
+        original.id+"/es/page_0005",original.id+"/es/page_0005");
+    history.entries.front().semantic_plan=composition_reading_proof(original);
+    narration::write_history(saved,history);
+    const auto original_history=narration::read_history(saved);
+    const auto encoded=state::encode(saved);
+    // Introducing the first option revision records its authenticated
+    // provenance. This is the only allowed write: every pre-existing value,
+    // including unrelated state and the historical receipt, stays exact.
+    const auto provenance_key="lesson_"+original.id+"_state_choice_revisions_v1_"+original.locale;
+    require(!saved.preferences.at("learning_progress").contains(provenance_key),
+        "The original composition state already contains an option revision");
+    const auto expected_state=[&](const Lesson& lesson) {
+        auto expected=saved;
+        if(!lesson.state_layout.choice_revisions.empty()) {
+            require(lesson.state_layout.choice_revisions.size()==1,
+                "The composition introduced an unrelated option revision");
+            const auto& revision=lesson.state_layout.choice_revisions.front();
+            require(revision.id==composition_owner&&revision.general_option_index==1,
+                "The saved provenance belongs to another authored option");
+            JsonArray row,provenance;
+            for(const auto* value:{&revision.id,&revision.sha256,&revision.representation_signature})
+                row.Append(JsonValue::CreateStringValue(winrt::to_hstring(*value)));
+            provenance.Append(row);
+            expected.preferences["learning_progress"][provenance_key]=winrt::to_string(provenance.Stringify());
+        }
+        return state::encode(expected);
+    };
+    auto disk_state=encoded;
+    {
+        state::StateStore writer(environment.paths.root);
+        (void)writer.load();writer.save(saved);
+    }
+    for(std::size_t stage=origin+1;stage<lessons.size();++stage) {
+        state::StateStore reopened(environment.paths.root);auto current=reopened.load();
+        require(state::encode(current)==disk_state,"Reopening changed the saved composition profile");
+        const auto expected=expected_state(lessons[stage]);
+        for(const auto* lesson:{&lessons[stage],&metadata[stage]}) {
+            const bool full=lesson==&lessons[stage];
+            const auto context="U2L9 composition origin "+std::to_string(origin)+" stage "+
+                std::to_string(stage)+(full?" full":" metadata")+" selection "+std::to_string(selected)+": ";
+            const auto check=[&](bool valid,std::string_view field){require(valid,context+std::string(field));};
+            const auto& after=composition_block(*lesson,composition_owner);
+            state::validate_lesson_state(current,*lesson);state::prepare_lesson_state(current,*lesson);
+            const auto retained=state::get_response(current,*lesson,after);
+            check(retained.has_value(),"response missing");
+            check(retained->selected==selected&&retained->correct==(selected==1),"selection or credit changed");
+            check(!retained->historical_choice,"compatible selection became historical-only");
+            check(state::response_storage_key(*lesson,after)==receipt_key,"storage owner changed");
+            check(state::string_value(current,"learning_progress",receipt_key)==receipt,"receipt or attempts changed");
+            check(state::selected_choice_text(*retained,after)==after.options.at(static_cast<std::size_t>(selected)),
+                "the saved selection did not display its current authored option");
+            if(!retained->correct)check(state::response_reviewed(*retained,after),"incorrect-attempt review lost");
+            if(full) {
+                if(retained->correct)check(state::choice_correct_feedback(*retained,after)==after.explanation,
+                    "success explanation belongs to another publication");
+                else check(state::choice_incorrect_feedback(*retained,after)==
+                    incorrect_feedback(before,static_cast<std::size_t>(selected)),"incorrect guide changed");
+            }else check(after.explanation.empty()&&after.review_feedback.empty()&&
+                after.review_feedback_options.empty()&&
+                after.raw_json==composition_block(lessons[stage],composition_owner).raw_json,
+                "metadata lost its exact source or materialized presentation-only feedback");
+            const auto retained_draft=state::get_draft(current,compiler_key,compiler.initial_code);
+            check(retained_draft.source==draft.source&&retained_draft.input==draft.input&&
+                retained_draft.selection_start==draft.selection_start&&
+                retained_draft.selection_end==draft.selection_end&&retained_draft.has_saved,
+                "editor draft, input or cursor changed");
+            check(narration::read_history(current)==original_history,"old reading provenance was rewritten");
+            check(original_history.entries.front().semantic_plan!=composition_reading_proof(*lesson),
+                "new wording inherited the old semantic reading proof");
+            check(state::encode(current)==expected,
+                "state changed beyond the authenticated option provenance");
+        }
+        reopened.save(current);
+        disk_state=expected;
+    }
+    {
+        state::StateStore final_reopen(environment.paths.root);
+        auto current=final_reopen.load();
+        require(state::encode(current)==disk_state,
+            "Reopening the composed edition changed its saved provenance or previous state");
+        state::prepare_lesson_state(current,metadata.back());
+        require(state::encode(current)==disk_state,
+            "Reopening metadata repeated adoption or rewrote preserved state");
+    }
+    // Also import the original saved bytes directly into the final composed
+    // edition, without passing through the intervening prose publication.
+    auto imported=state::decode(encoded);
+    state::prepare_lesson_state(imported,lessons.back());
+    state::validate_lesson_state(imported,metadata.back());
+    require(state::encode(imported)==expected_state(lessons.back()),
+        "Direct composed import changed state beyond authenticated option provenance");
+    std::cout<<"PASS U2L9 semantic composition state origin "<<origin<<" selection "<<selected
+        <<": physical reopen, unchanged receipt/draft/preferences, prior reading proof and direct import\n";
+}
+void verify_semantic_composition(const std::filesystem::path& directory) {
+    winrt::init_apartment();
+    const auto manifest=JsonObject::Parse(winrt::to_hstring(read_file(directory/"manifest.json")));
+    require(manifest.GetNamedString(L"identity")==winrt::to_hstring(composition_owner)&&
+            manifest.GetNamedNumber(L"optionIndex")==1,
+        "The composition fixture belongs to a different option");
+    const auto stages=manifest.GetNamedArray(L"stages");
+    const std::array<std::string,3> names{"before.json","published.json","reviewed.json"};
+    require(stages.Size()==names.size(),"The composition fixture lost a complete publication");
+    for(std::size_t i=0;i<names.size();++i)
+        require(winrt::to_string(stages.GetStringAt(static_cast<unsigned>(i)))==names[i],
+            "The composition fixture changed publication order");
+    for(const auto& entry:manifest.GetNamedObject(L"sha256"))
+        require(state::sha256(read_file(directory/winrt::to_string(entry.Key())))==
+            winrt::to_string(entry.Value().GetString()),"Composition fixture bytes differ from their manifest");
+    require(state::sha256(read_file(directory/names[0]))==
+            "37b473d7e9b66ab8232812e4e2c9a25e0aaa207bcfc92059fcd6fc675401d94f"&&
+            state::sha256(read_file(directory/names[1]))==
+            "7a5eaa190463976dc686e288abe5f61eed0574849ca51e33a0bc5a762c569208",
+        "Composition QA must use both complete authentic U2L9 publications");
+    std::vector<Lesson> lessons,metadata;std::vector<JsonObject> documents;
+    for(const auto& name:names) {
+        const auto bytes=read_file(directory/name);
+        lessons.push_back(parse_lesson_json(bytes,"es"));
+        metadata.push_back(parse_lesson_progress_metadata(bytes,"es"));
+        documents.push_back(JsonObject::Parse(winrt::to_hstring(bytes)));
+    }
+    const auto& before=composition_block(lessons[0],composition_owner);
+    const auto& published=composition_block(lessons[1],composition_owner);
+    const auto& reviewed=composition_block(lessons[2],composition_owner);
+    require(!before.choice_revision&&!published.choice_revision&&reviewed.choice_revision&&
+            before.correct_index==1&&published.correct_index==1&&reviewed.correct_index==1&&
+            before.options.size()==3&&published.options==before.options&&
+            reviewed.options.size()==3&&reviewed.options[0]==before.options[0]&&
+            reviewed.options[2]==before.options[2]&&reviewed.options[1]!=before.options[1]&&
+            reviewed.question==published.question&&reviewed.explanation==published.explanation&&
+            published.question!=before.question&&published.explanation!=before.explanation,
+        "The composed choice lost the independent prose and single-option contracts");
+    require(reviewed.choice_revision->general_option_index==1&&
+            reviewed.choice_revision->original_options==published.options&&
+            reviewed.choice_revision->original_correct_index==published.correct_index&&
+            reviewed.choice_revision->original_question==published.question&&
+            reviewed.choice_revision->original_explanation==published.explanation&&
+            JsonObject::Parse(winrt::to_hstring(reviewed.choice_revision->raw_json)).Stringify()==
+                JsonObject::Parse(winrt::to_hstring(published.raw_json)).Stringify()&&
+            reviewed.choice_revision->original_option_text_semantics==published.text_semantics.at("/options/1"),
+        "The option archive borrowed an earlier or later prose/semantic representation");
+    const auto original_fields=composition_fields(lessons[0]);
+    std::set<std::pair<std::string,std::string>> expected_changes;
+    for(const auto owner:composition_paragraphs)expected_changes.emplace(owner,"/text");
+    expected_changes.emplace(composition_owner,"/question");
+    expected_changes.emplace(composition_owner,"/explanation");
+    for(std::size_t stage=0;stage<lessons.size();++stage) {
+        const auto& active=lessons[stage];const auto fields=composition_fields(active);
+        require(fields==composition_fields(metadata[stage])&&fields.size()==original_fields.size(),
+            "Full/progress loaders changed the authored semantic surface set");
+        std::set<std::pair<std::string,std::string>> changed;
+        for(const auto& [owner,descriptor]:fields) {
+            require(original_fields.contains(owner),"An unrelated semantic surface was introduced");
+            if(descriptor!=original_fields.at(owner))changed.insert(owner);
+        }
+        auto expected=stage==0?std::set<std::pair<std::string,std::string>>{}:expected_changes;
+        if(stage==2)expected.emplace(composition_owner,"/options/1");
+        require(changed==expected,"Composition changed unexpected semantic owners or lost an independent revision");
+        const auto& choice=composition_block(active,composition_owner);
+        const auto& compact=composition_block(metadata[stage],composition_owner);
+        require(choice.options==compact.options&&choice.correct_index==compact.correct_index&&
+                choice.raw_json==compact.raw_json&&choice.review_feedback_options==before.review_feedback_options,
+            "Composition full/progress contracts or original guides differ");
+        for(std::size_t selected=0;selected<3;++selected)
+            require(evaluate_choice(choice,selected).correct==(selected==1)&&
+                    evaluate_choice(compact,selected).correct==(selected==1),
+                "Composition changed a full/progress choice evaluation");
+        for(const auto field:{L"origin",L"family",L"additions",L"retired",L"retirementHistory"})
+            require(documents[stage].GetNamedObject(L"stateLayout").GetNamedValue(field).Stringify()==
+                documents[0].GetNamedObject(L"stateLayout").GetNamedValue(field).Stringify(),
+                "Composition rewrote original storage, ownership or archived reading snapshots");
+        if(stage==2)for(const auto field:{L"current",L"sourceFormatRevisions"})
+            require(documents[stage].GetNamedObject(L"stateLayout").GetNamedValue(field).Stringify()==
+                documents[1].GetNamedObject(L"stateLayout").GetNamedValue(field).Stringify(),
+                "The option correction rewrote published ordering or source-format provenance");
+        // The authentic prose publication also moves visible blocks. Resolve
+        // their identities and compare storage addresses, never display slots.
+        for(const auto& page:active.pages)for(const auto& block:page.blocks) {
+            const auto& old=composition_block(lessons[0],block.stable_id);
+            const auto& meta=composition_block(metadata[stage],block.stable_id);
+            const auto same_address=[&](const StateAddress& other) {
+                return other.page==old.address.page&&other.block==old.address.block&&
+                    other.addition_namespace==old.address.addition_namespace&&
+                    other.progress_page==old.address.progress_page;
+            };
+            require(same_address(block.address)&&same_address(meta.address)&&block.raw_json==meta.raw_json,
+                "A reordered owner changed its persistent address or exact full/progress source");
+        }
+        for(const auto owner:composition_paragraphs) {
+            const auto& block=composition_block(active,owner);
+            require(block.type==BlockType::paragraph&&block.text_semantics.at("/text").source==block.text,
+                "A paragraph marker belongs to different prose");
+            if(stage==2)require(block.text_semantics==composition_block(lessons[1],owner).text_semantics,
+                "The option correction rewrote another paragraph's own semantic revision");
+        }
+    }
+    const auto& marked=reviewed.text_semantics.at("/options/1");
+    require(marked.source==reviewed.options[1]&&marked.spans.size()==2&&
+            marked.spans[0].text=="std::cin >> cajas;"&&marked.spans[1].text=="cajas += 3;",
+        "The corrected QA option lost its two exact technical selections");
+    for(const auto& span:marked.spans)
+        require(span.role==SemanticRole::cpp&&span.reading==SemanticReading::technical,
+            "A corrected option's authored C++ selection changed meaning");
+    for(const auto origin:{std::size_t{0},std::size_t{1}})
+        for(const auto selected:{std::int64_t{0},std::int64_t{1},std::int64_t{2}})
+            verify_composition_saved_state(lessons,metadata,origin,selected);
+    const auto rejected=manifest.GetNamedArray(L"rejected");
+    const std::set<std::string> expected_rejections{
+        "answer-index","another-option","unarchived-replacement","wrong-archive-owner",
+        "old-option-source","new-option-source","option-range","paragraph-source",
+        "missing-option-edge","paragraph-chain"};
+    require(rejected.Size()==expected_rejections.size(),
+        "The composition fixture lost native protected-contract counterexamples");
+    std::set<std::string> seen_rejections;
+    for(const auto& entry:rejected) {
+        const auto row=entry.GetObject();const auto bytes=read_file(directory/winrt::to_string(row.GetNamedString(L"file")));
+        const auto reason=winrt::to_string(row.GetNamedString(L"reason"));
+        require(expected_rejections.contains(reason)&&seen_rejections.insert(reason).second,
+            "The composition fixture replaced or duplicated a native protected-contract counterexample");
+        const auto expected=row.HasKey(L"diagnostic")?winrt::to_string(row.GetNamedString(L"diagnostic")):std::string{};
+        for(const bool progress:{false,true}) {
+            std::string diagnostic;
+            try {if(progress)(void)parse_lesson_progress_metadata(bytes,"es");else (void)parse_lesson_json(bytes,"es");}
+            catch(const std::exception& error){diagnostic=error.what();}
+            require(!diagnostic.empty(),"A forged composition was accepted: "+reason);
+            if(!expected.empty())require(diagnostic.find(expected)!=std::string::npos,
+                "Another failure masked the intended composition rejection: "+reason+" / "+diagnostic);
+        }
+    }
+    std::cout<<"PASS U2L9 semantic composition: three publications, ten independent prose fields, one option, both loaders and "
+        <<rejected.Size()<<" rejected forgeries\n";
+}
 }
 
 int main(int argc,char** argv) {
     try {
+        if(argc==3&&std::string_view(argv[1])=="--semantic-composition") {
+            verify_semantic_composition(std::filesystem::path(argv[2]));
+            return 0;
+        }
         if(argc==3&&std::string_view(argv[1])=="--prose-history") {
             verify_prose_history(std::filesystem::path(argv[2]));
             return 0;

@@ -32,6 +32,8 @@ on:
       - scripts/curriculum/test_choice_retirement_history.py
       - scripts/curriculum/general_choice_prose_fixture_source.py
       - scripts/curriculum/test_general_choice_prose_history.py
+      - scripts/curriculum/general_choice_semantic_composition_fixture_source.py
+      - scripts/curriculum/test_general_choice_semantic_composition.py
       - scripts/curriculum/local_scalar_fixture_source.py
       - scripts/curriculum/input_dependency_fixture_source.py
       - scripts/curriculum/test_input_dependency_authoring.py
@@ -171,11 +173,17 @@ jobs:
           if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
           ctest --test-dir $build -R '^native[.]reader_revision_' --verbose --output-on-failure --no-tests=error --output-junit (Join-Path $build 'reader-revision-order.xml')
           if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
-      - name: Build the original U3 controls and source history loader
+      - name: Build original input controls and editorial history loaders
         shell: pwsh
         run: |
           $build = Join-Path $env:RUNNER_TEMP 'lgaed-course-edition-qa'
-          cmake --build $build --target lgaed_curricular_input_lab_tests lgaed_code_format_loader_tests --parallel 3
+          cmake --build $build --target lgaed_curricular_input_lab_tests lgaed_code_format_loader_tests lgaed_general_choice_editorial_tests --parallel 3
+          if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
+      - name: Preserve composed U2L9 semantics and same-page first-case access
+        shell: pwsh
+        run: |
+          $build = Join-Path $env:RUNNER_TEMP 'lgaed-course-edition-qa'
+          ctest --test-dir $build -R '^native[.](general_choice_semantic_composition|curricular_input_lab_same_page)$' --verbose --output-on-failure --no-tests=error --output-junit (Join-Path $build 'u2l9-semantic-composition-and-reference.xml')
           if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
       - name: Verify active U3 laboratories and the retired source contract
         shell: pwsh
@@ -321,6 +329,7 @@ jobs:
             ${{ github.workspace }}/out/qa/reader-revision-audio-${{ github.run_id }}-${{ github.run_attempt }}/*.log
             ${{ runner.temp }}/lgaed-course-edition-qa/reader-revision-runtime-*/transport.jsonl
             ${{ runner.temp }}/lgaed-course-edition-qa/reader-revision-order.xml
+            ${{ runner.temp }}/lgaed-course-edition-qa/u2l9-semantic-composition-and-reference.xml
             ${{ runner.temp }}/lgaed-course-edition-qa/u3-current-controls-and-history.xml
             ${{ runner.temp }}/lgaed-course-edition-qa/choice-prose-and-prediction.xml
             ${{ runner.temp }}/lgaed-course-edition-qa/local-dependency-receipts.xml
