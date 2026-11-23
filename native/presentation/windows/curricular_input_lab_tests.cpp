@@ -1476,6 +1476,11 @@ void named_rule_feedback_laboratory() {
     const auto unused = replace_once(repaired, "return articulos >= minimo_articulos;", "return articulos >= 5;");
     const auto absent = replace_once(unused, "    const int minimo_articulos{5};\n", "");
     const auto numeric = replace_once(repaired, "const int minimo_articulos{5};", "const int minimo_articulos{6};");
+    // A wrong program can falsely return 0. Exercise that evaluable domain
+    // by changing only its failure return, never the published oracle or engine.
+    const auto numeric_exit0 = replace_once(numeric,
+        R"cpp(if (!correcto) { std::cout << "Bateria: FALLO\n"; return 1; })cpp",
+        R"cpp(if (!correcto) { std::cout << "Bateria: FALLO\n"; return 0; })cpp");
     constexpr std::string_view absent_reason =
         "No se pudo identificar una unica constante local de proposito en alcanza_minimo.";
     constexpr std::string_view unused_reason =
@@ -1545,12 +1550,19 @@ void named_rule_feedback_laboratory() {
     run(unused, expected); reason_visible(unused_reason); retained(unused, 0, false);
     check(fixture.text(4).find(absent_reason) == std::string::npos, "The new rejection reused the earlier missing-constant reason");
     reopen_preserving(unused, 0, false);
-    phase = "wrong numerical output must not be described as matching";
-    run(numeric, numeric_output, 1); reason_visible(numeric_reason); retained(numeric, 0, false);
+    phase = "wrong numerical output with exit one stays unavailable";
+    const auto before_unavailable = compiler_receipts(fixture.saved(), lesson, compiler);
+    run(numeric, numeric_output, 1); retained(numeric, 0, false);
+    check(fixture.text(4).empty()
+        && compiler_receipts(fixture.saved(), lesson, compiler) == before_unavailable,
+        "An unavailable nonzero execution acquired an invented named-rule verdict or receipt");
+    reopen_preserving(numeric, 0, false);
+    phase = "wrong numerical output with false exit zero must not be described as matching";
+    run(numeric_exit0, numeric_output); reason_visible(numeric_reason); retained(numeric_exit0, 0, false);
     check(fixture.text(4).find("La salida coincide") == std::string::npos
         && fixture.text(4).find("La salida estándar es correcta") == std::string::npos,
         "A wrong numerical report was described as correct stdout");
-    reopen_preserving(numeric, 0, false);
+    reopen_preserving(numeric_exit0, 0, false);
     phase = "the repaired program earns its first public case and private proofs";
     run(repaired, expected); retained(repaired, 1, true);
     check(fixture.text(4).starts_with("✓ Correcto") && fixture.text(4).find(unused_reason) == std::string::npos,
@@ -1566,11 +1578,12 @@ void named_rule_feedback_laboratory() {
     run(unused, expected); reason_visible(unused_reason); retained(unused, 1, true);
     check(achievements(fixture.saved()) == earned, "A later named-rule rejection changed the earned first-case seal");
     reopen_preserving(unused, 1, true);
-    check(achievements(fixture.saved()) == earned && fixture.executions == 5
+    check(achievements(fixture.saved()) == earned && fixture.executions == 6
         && bytes(path) == published_bytes && !IsWindowVisible(fixture.host),
         "The named-rule laboratory lost an execution, receipt, original publication or hidden host");
-    std::cout << "PASS named-rule feedback block_0008_0007: five actual Win32/MSVC runs, "
-        "missing and unused local constants with matching stdout, a numerical failure without a false stdout claim, "
+    std::cout << "PASS named-rule feedback block_0008_0007: six actual Win32/MSVC runs, "
+        "missing and unused local constants with matching stdout, numerical exit one unavailable, "
+        "false exit zero rejected without a false stdout claim, "
         "real correction/private proofs, later rejection with first-case receipt retained, "
         "exact drafts/input/reopen and unchanged authenticated publication\n";
 }
