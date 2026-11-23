@@ -283,6 +283,14 @@
           }
         },
         {
+          "type": "paragraph",
+          "text": "Pruebas opcionales en este editor\nEscribe primero el peso del paquete y después el peso máximo permitido, ambos en kilogramos. La primera respuesta indica si el paquete está admitido y la segunda si pesa exactamente el máximo. En ambos renglones, uno significa sí y cero significa no. Para cada prueba que quieras hacer, sustituye los datos del campo «Entrada» por los de esa prueba. Pulsa «Compilar, ejecutar y comprobar» y compara lo que muestra la consola con la salida esperada.\n\nEl paquete pesa diecinueve kilos y el límite es veinte. El paquete está admitido y pesa un kilo menos que el máximo.\n\nEntrada\n19 20\n\nSalida esperada\nAdmitido: 1\nEn el máximo: 0\n\nEl paquete pesa veintiún kilos y el límite es veinte. Se rechaza porque supera el máximo por un kilo. Su peso tampoco es igual al máximo.\n\nEntrada\n21 20\n\nSalida esperada\nAdmitido: 0\nEn el máximo: 0\n\nEl paquete pesa veinte kilos y el límite es dieciocho. Se rechaza porque supera el máximo por dos kilos. Su peso tampoco es igual al máximo.\n\nEntrada\n20 18\n\nSalida esperada\nAdmitido: 0\nEn el máximo: 0"
+        },
+        {
+          "type": "note",
+          "text": "Cuando el paquete pesa 20 kilogramos, reducir el máximo de 20 a 18 kilogramos cambia las dos respuestas. Aunque el paquete pesa lo mismo, deja de cumplir la regla y su peso ya no coincide con el máximo. Esta prueba ayuda a comprobar que el programa usa el máximo leído."
+        },
+        {
           "type": "heading",
           "text": "Revisar el límite de peso"
         },
@@ -290,14 +298,6 @@
           "type": "code",
           "language": "cpp",
           "code": "#include <iostream>\n\nint main() {\n    int peso_kg = 0;\n    int maximo_kg = 0;\n\n    std::cin >> peso_kg >> maximo_kg;\n\n    const bool admitido = peso_kg <= maximo_kg;\n    const bool en_maximo = peso_kg == maximo_kg;\n\n    std::cout << \"Admitido: \" << admitido << '\\n';\n    std::cout << \"En el máximo: \" << en_maximo;\n\n    return 0;\n}\n"
-        },
-        {
-          "type": "paragraph",
-          "text": "Pruebas opcionales en este editor\nPara cada prueba, escribe los datos indicados en el campo «Entrada», pulsa «Compilar, ejecutar y comprobar» y compara los renglones que muestra la consola con la salida esperada para esa entrada.\n\nDiecinueve kilos quedan por debajo de un máximo de veinte. El paquete está admitido.\n\nEntrada\n19 20\n\nSalida esperada\nAdmitido: 1\nEn el máximo: 0\n\nVeintiún kilos superan el máximo de veinte.\n\nEntrada\n21 20\n\nSalida esperada\nAdmitido: 0\nEn el máximo: 0\n\nVeinte kilos también superan un máximo de dieciocho.\n\nEntrada\n20 18\n\nSalida esperada\nAdmitido: 0\nEn el máximo: 0"
-        },
-        {
-          "type": "note",
-          "text": "Cuando el paquete pesa 20 kilogramos, reducir el máximo de 20 a 18 kilogramos cambia las dos respuestas. Aunque el paquete pesa lo mismo, deja de cumplir la regla y su peso ya no coincide con el máximo. Esta prueba ayuda a comprobar que el programa usa el máximo leído."
         }
       ]
     }
@@ -541,10 +541,10 @@
           "block_0003_0006",
           "block_0003_0007",
           "p1u3l3_construir_limite_peso",
-          "p1u3l3_revisar_limite_peso",
-          "p1u3l3_ejemplo_limite_peso",
           "p1u3l3_probar_otros_pesos",
-          "block_0005_0004"
+          "block_0005_0004",
+          "p1u3l3_revisar_limite_peso",
+          "p1u3l3_ejemplo_limite_peso"
         ]
       }
     ],
@@ -1382,6 +1382,11 @@
         "id": "block_0002_0004",
         "beforeSha256": "c900f606c4ca0d32215be61cb772b2b69d361dffa32fd5892eff31ca9390a98f",
         "afterSha256": "d16f8eca5b5f5e203c16c800051b6ce0e957a797f1c5f91909b4e5f38d6e800d"
+      },
+      {
+        "id": "p1u3l3_probar_otros_pesos",
+        "beforeSha256": "286731a5feed760656aa9456507c04cf214f0e41a36dc6c89bfdd8c879705443",
+        "afterSha256": "e170c2197ae87b0427c573338325592bcdaa05ac82790600365f4ce5afb7f5b6"
       }
     ],
     "sourceFormatRevisions": [
@@ -5258,67 +5263,67 @@
       {
         "block": "p1u3l3_probar_otros_pesos",
         "path": "/text",
-        "sourceSha256": "25f005e512c6488266aef5571c0d77270b8b752d0c35ea3bdbd7a01cd8b59484",
+        "sourceSha256": "2cdcafb92575451778636598a657e9e538888e0c3f55185cdc663d388fffa5ae",
         "spans": [
           {
-            "start": 325,
-            "end": 330,
+            "start": 610,
+            "end": 615,
             "text": "19 20",
             "role": "data",
             "reading": "natural"
           },
           {
-            "start": 348,
-            "end": 359,
+            "start": 633,
+            "end": 644,
             "text": "Admitido: 1",
             "role": "output",
             "reading": "natural"
           },
           {
-            "start": 360,
-            "end": 375,
+            "start": 645,
+            "end": 660,
             "text": "En el máximo: 0",
             "role": "output",
             "reading": "natural"
           },
           {
-            "start": 430,
-            "end": 435,
+            "start": 809,
+            "end": 814,
             "text": "21 20",
             "role": "data",
             "reading": "natural"
           },
           {
-            "start": 453,
-            "end": 464,
+            "start": 832,
+            "end": 843,
             "text": "Admitido: 0",
             "role": "output",
             "reading": "natural"
           },
           {
-            "start": 465,
-            "end": 480,
+            "start": 844,
+            "end": 859,
             "text": "En el máximo: 0",
             "role": "output",
             "reading": "natural"
           },
           {
-            "start": 544,
-            "end": 549,
+            "start": 1011,
+            "end": 1016,
             "text": "20 18",
             "role": "data",
             "reading": "natural"
           },
           {
-            "start": 567,
-            "end": 578,
+            "start": 1034,
+            "end": 1045,
             "text": "Admitido: 0",
             "role": "output",
             "reading": "natural"
           },
           {
-            "start": 579,
-            "end": 594,
+            "start": 1046,
+            "end": 1061,
             "text": "En el máximo: 0",
             "role": "output",
             "reading": "natural"

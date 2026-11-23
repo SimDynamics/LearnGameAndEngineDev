@@ -184,7 +184,7 @@
         },
         {
           "type": "paragraph",
-          "text": "Con el permiso concedido y cuatro piezas disponibles, prueba pedidos de 0 y 1 piezas en ejecuciones distintas. Después prueba pedidos de 12 y 13 piezas. Así compruebas si el programa admite los dos extremos y rechaza los enteros inmediatamente fuera del intervalo.\n\nCon permiso y 4 piezas disponibles, pedir 4 permite completar el pedido. Pedir 5 deja una pieza pendiente. Esos dos casos detectan si la comparación de disponibilidad excluye por error la igualdad.\n\nCon una cantidad válida, quitar el permiso debe cambiar el mensaje a Sin permiso. Usa también una cantidad inválida sin permiso. Si el programa muestra Sin permiso en ese último caso, está comprobando el permiso demasiado pronto."
+          "text": "El taller acepta pedidos de una a doce piezas. Hay cuatro piezas disponibles y el cliente tiene permiso. ¿Qué pedidos ayudan a comprobar los límites de la cantidad? Un pedido de 0 piezas queda fuera del intervalo. Un pedido de 1 pieza queda justo dentro. En el otro extremo, el taller admite un pedido de 12 piezas y rechaza uno de 13. Que el taller admita la cantidad significa que puede revisar si tiene piezas suficientes para entregarla.\n\nPara comprobar cuándo alcanzan las piezas, compara dos pedidos que tengan permiso. Con 4 piezas disponibles, un pedido de 4 se entrega completo. En un pedido de 5 queda una pieza pendiente. El pedido de cuatro permite detectar una comparación que exige tener más piezas de las solicitadas. Ese programa rechazaría la entrega completa aunque el taller tenga justo las cuatro piezas que necesita.\n\nEl permiso también influye en el mensaje. Si alguien pide cuatro piezas sin permiso, la cantidad es válida y el mensaje esperado es Sin permiso. Si alguien pide cero piezas sin permiso, el mensaje esperado es Cantidad invalida. Un programa que responde Sin permiso en este último caso está revisando el permiso antes que la cantidad."
         },
         {
           "type": "multiple_choice",
@@ -368,6 +368,10 @@
           }
         },
         {
+          "type": "paragraph",
+          "text": "Pruebas opcionales en este editor\nEscribe primero cuántas piezas pide el cliente y después su código de permiso. Uno significa que tiene permiso y cero que no lo tiene. El taller dispone de cuatro piezas y acepta pedidos de una a doce piezas. Para cada prueba que quieras hacer, sustituye los datos del campo «Entrada» por los de esa prueba. Pulsa «Compilar, ejecutar y comprobar» y compara lo que muestra la consola con la salida esperada.\n\nEl cliente tiene permiso para pedir seis piezas. El taller tiene cuatro, por lo que quedan dos piezas pendientes.\n\nEntrada\n6 1\n\nSalida esperada\nPendiente: 2\n\nEl cliente tiene permiso, pero pide cero piezas. Un pedido debe incluir al menos una pieza.\n\nEntrada\n0 1\n\nSalida esperada\nCantidad invalida\n\nEl cliente tiene permiso y pide trece piezas. La cantidad supera el máximo de doce.\n\nEntrada\n13 1\n\nSalida esperada\nCantidad invalida\n\nEl cliente tiene permiso y pide una pieza. La cantidad cumple el mínimo y el taller tiene la pieza.\n\nEntrada\n1 1\n\nSalida esperada\nCompleto\n\nEl cliente tiene permiso y pide cuatro piezas. Las cuatro piezas disponibles permiten completar el pedido.\n\nEntrada\n4 1\n\nSalida esperada\nCompleto\n\nEl cliente tiene permiso y pide cinco piezas. Con cuatro disponibles queda una pendiente.\n\nEntrada\n5 1\n\nSalida esperada\nPendiente: 1\n\nEl cliente tiene permiso y pide doce piezas, la cantidad máxima admitida. Hay cuatro disponibles, así que quedan ocho pendientes.\n\nEntrada\n12 1\n\nSalida esperada\nPendiente: 8\n\nEl pedido de seis piezas cumple la regla de cantidad. El cliente carece de permiso, por lo que el programa muestra el aviso de permiso antes de comprobar cuántas piezas hay disponibles.\n\nEntrada\n6 0\n\nSalida esperada\nSin permiso"
+        },
+        {
           "type": "note",
           "text": "En el programa que lee el pedido, cada ejecución usa una cantidad y un código de permiso nuevos. El primer caso combinaba una cantidad inválida con falta de permiso. Usa las entradas de ensayo para comprobar qué sucede cuando cambia solo uno de esos datos y cuando la cantidad cruza uno de los límites."
         },
@@ -375,10 +379,6 @@
           "type": "code",
           "language": "cpp",
           "code": "#include <iostream>\n\nint main() {\n    int solicitadas = 0;\n    int codigo_permiso = 0;\n\n    std::cin >> solicitadas >> codigo_permiso;\n\n    const int disponibles = 4;\n\n    const bool permiso = codigo_permiso != 0;\n\n    if ((solicitadas < 1) || (solicitadas > 12)) {\n        std::cout << \"Cantidad invalida\";\n    } else if (!permiso) {\n        std::cout << \"Sin permiso\";\n    } else if (solicitadas <= disponibles) {\n        std::cout << \"Completo\";\n    } else {\n        const int faltantes = solicitadas - disponibles;\n\n        std::cout << \"Pendiente: \" << faltantes;\n    }\n\n    return 0;\n}\n"
-        },
-        {
-          "type": "paragraph",
-          "text": "Pruebas opcionales en este editor\nPara cada prueba, escribe la cantidad de piezas solicitadas y el código de permiso en el campo «Entrada». Pulsa «Compilar, ejecutar y comprobar» y compara el mensaje de la consola con la salida esperada para esa entrada.\n\nEntrada\n6 1\nSalida esperada\nPendiente: 2\n\nEntrada\n0 1\nSalida esperada\nCantidad invalida\n\nEntrada\n13 1\nSalida esperada\nCantidad invalida\n\nEntrada\n1 1\nSalida esperada\nCompleto\n\nEntrada\n4 1\nSalida esperada\nCompleto\n\nEntrada\n5 1\nSalida esperada\nPendiente: 1\n\nEntrada\n12 1\nSalida esperada\nPendiente: 8\n\nEntrada\n6 0\nSalida esperada\nSin permiso"
         }
       ]
     }
@@ -687,9 +687,9 @@
           "block_0003_0006",
           "block_0003_0007",
           "p1u3l7_construir_despacho",
+          "p1u3l7_probar_despacho",
           "block_0007_0004",
-          "p1u3l7_ejemplo_despacho",
-          "p1u3l7_probar_despacho"
+          "p1u3l7_ejemplo_despacho"
         ]
       }
     ],
@@ -1721,6 +1721,16 @@
         "id": "block_0002_0004",
         "beforeSha256": "c8fccbab9b55794742ef196bef57949bf8fa198f0ac57dd54e52d35de4300862",
         "afterSha256": "3a6b9cc2cc64a78f7136662e3d26c4a013aa06b49ad4cce79907ce0c6737fa26"
+      },
+      {
+        "id": "block_0004_0001",
+        "beforeSha256": "78e4e2c827ffbe14ecda0b4eaae27591facf459860bd014d15824de546ad973d",
+        "afterSha256": "1783cde788f625ed65b6432cccd13bd3f1e699a971b3050857a211a2c3e988a1"
+      },
+      {
+        "id": "p1u3l7_probar_despacho",
+        "beforeSha256": "3b4979dab64dfca386a8729397da6bf6f38cb33f2f8f9af4ef694d726d063897",
+        "afterSha256": "436ef86972cdf3ef113d23d310ea187b0d807c9ae77e1b19ec6f7de97ea1f351"
       }
     ],
     "sourceFormatRevisions": [
@@ -6042,67 +6052,74 @@
       {
         "block": "block_0004_0001",
         "path": "/text",
-        "sourceSha256": "d67d944037e493a98a42dc559d3266e0741d478446b3d16a2c11267cbc7adc67",
+        "sourceSha256": "991b298370f4ced19e6b7a526d1a408ae6791552cbed2563db14192d7c60d946",
         "spans": [
           {
-            "start": 72,
-            "end": 73,
+            "start": 178,
+            "end": 179,
             "text": "0",
             "role": "data",
             "reading": "natural"
           },
           {
-            "start": 76,
-            "end": 77,
+            "start": 227,
+            "end": 228,
             "text": "1",
             "role": "data",
             "reading": "natural"
           },
           {
-            "start": 137,
-            "end": 139,
+            "start": 305,
+            "end": 307,
             "text": "12",
             "role": "data",
             "reading": "natural"
           },
           {
-            "start": 142,
-            "end": 144,
+            "start": 332,
+            "end": 334,
             "text": "13",
             "role": "data",
             "reading": "natural"
           },
           {
-            "start": 280,
-            "end": 281,
+            "start": 530,
+            "end": 531,
             "text": "4",
             "role": "data",
             "reading": "natural"
           },
           {
-            "start": 308,
-            "end": 309,
+            "start": 565,
+            "end": 566,
             "text": "4",
             "role": "data",
             "reading": "natural"
           },
           {
-            "start": 345,
-            "end": 346,
+            "start": 604,
+            "end": 605,
             "text": "5",
             "role": "data",
             "reading": "natural"
           },
           {
-            "start": 534,
-            "end": 545,
+            "start": 971,
+            "end": 982,
             "text": "Sin permiso",
             "role": "output",
             "reading": "natural"
           },
           {
-            "start": 617,
-            "end": 628,
+            "start": 1048,
+            "end": 1065,
+            "text": "Cantidad invalida",
+            "role": "output",
+            "reading": "natural"
+          },
+          {
+            "start": 1092,
+            "end": 1103,
             "text": "Sin permiso",
             "role": "output",
             "reading": "natural"
@@ -7038,116 +7055,116 @@
       {
         "block": "p1u3l7_probar_despacho",
         "path": "/text",
-        "sourceSha256": "98d8c169513ec1f381b723a6254c6885b8f2f7887daeccae7d376a454dd3a546",
+        "sourceSha256": "c7b31ef00166405d841528e498449ea45da64053f04c8e9353161edc81c218d2",
         "spans": [
           {
-            "start": 264,
-            "end": 267,
+            "start": 565,
+            "end": 568,
             "text": "6 1",
             "role": "data",
             "reading": "natural"
           },
           {
-            "start": 284,
-            "end": 296,
+            "start": 586,
+            "end": 598,
             "text": "Pendiente: 2",
             "role": "output",
             "reading": "natural"
           },
           {
-            "start": 306,
-            "end": 309,
+            "start": 701,
+            "end": 704,
             "text": "0 1",
             "role": "data",
             "reading": "natural"
           },
           {
-            "start": 326,
-            "end": 343,
+            "start": 722,
+            "end": 739,
             "text": "Cantidad invalida",
             "role": "output",
             "reading": "natural"
           },
           {
-            "start": 353,
-            "end": 357,
+            "start": 834,
+            "end": 838,
             "text": "13 1",
             "role": "data",
             "reading": "natural"
           },
           {
-            "start": 374,
-            "end": 391,
+            "start": 856,
+            "end": 873,
             "text": "Cantidad invalida",
             "role": "output",
             "reading": "natural"
           },
           {
-            "start": 401,
-            "end": 404,
+            "start": 984,
+            "end": 987,
             "text": "1 1",
             "role": "data",
             "reading": "natural"
           },
           {
-            "start": 421,
-            "end": 429,
+            "start": 1005,
+            "end": 1013,
             "text": "Completo",
             "role": "output",
             "reading": "natural"
           },
           {
-            "start": 439,
-            "end": 442,
+            "start": 1131,
+            "end": 1134,
             "text": "4 1",
             "role": "data",
             "reading": "natural"
           },
           {
-            "start": 459,
-            "end": 467,
+            "start": 1152,
+            "end": 1160,
             "text": "Completo",
             "role": "output",
             "reading": "natural"
           },
           {
-            "start": 477,
-            "end": 480,
+            "start": 1261,
+            "end": 1264,
             "text": "5 1",
             "role": "data",
             "reading": "natural"
           },
           {
-            "start": 497,
-            "end": 509,
+            "start": 1282,
+            "end": 1294,
             "text": "Pendiente: 1",
             "role": "output",
             "reading": "natural"
           },
           {
-            "start": 519,
-            "end": 523,
+            "start": 1435,
+            "end": 1439,
             "text": "12 1",
             "role": "data",
             "reading": "natural"
           },
           {
-            "start": 540,
-            "end": 552,
+            "start": 1457,
+            "end": 1469,
             "text": "Pendiente: 8",
             "role": "output",
             "reading": "natural"
           },
           {
-            "start": 562,
-            "end": 565,
+            "start": 1666,
+            "end": 1669,
             "text": "6 0",
             "role": "data",
             "reading": "natural"
           },
           {
-            "start": 582,
-            "end": 593,
+            "start": 1687,
+            "end": 1698,
             "text": "Sin permiso",
             "role": "output",
             "reading": "natural"

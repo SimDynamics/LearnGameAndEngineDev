@@ -158,6 +158,10 @@
           }
         },
         {
+          "type": "note",
+          "text": "En el programa del sensor de agua, el límite es cuatro. Si el nivel también vale cuatro, el aviso esperado es Alerta. Si aparece Normal, revisa si la comparación incluye la igualdad. Si aparece Alerta seguido de Marca: 0, el programa eligió la rama correcta. Revisa si esa rama cambia marca_alerta de cero a uno antes de que std::cout muestre la marca. Si el aviso y la marca son correctos, compara también los espacios y los saltos de línea con la salida esperada."
+        },
+        {
           "type": "heading",
           "text": "Revisar la reparación de la alerta"
         },
@@ -221,10 +225,6 @@
           ],
           "correctIndex": 1,
           "explanation": "Con cuatro, <= da true y < da false. Con tres ambas dan true. Con cinco ambas dan false."
-        },
-        {
-          "type": "note",
-          "text": "En el programa del sensor de agua, el límite es cuatro. Si el nivel también vale cuatro, el aviso esperado es Alerta. Si aparece Normal, revisa si la comparación incluye la igualdad. Si aparece Alerta seguido de Marca: 0, el programa eligió la rama correcta. Revisa si esa rama cambia marca_alerta de cero a uno antes de que std::cout muestre la marca. Si el aviso y la marca son correctos, compara también los espacios y los saltos de línea con la salida esperada."
         }
       ]
     },
@@ -277,6 +277,14 @@
           }
         },
         {
+          "type": "paragraph",
+          "text": "Pruebas opcionales en este editor\nEscribe primero el nivel de agua que mide el sensor y después el nivel a partir del cual debe avisar. Para cada prueba que quieras hacer, sustituye los datos del campo «Entrada» por los de esa prueba. Pulsa «Compilar, ejecutar y comprobar» y compara lo que muestra la consola con la salida esperada.\n\nEl sensor mide un nivel de cuatro y el límite es cuatro. El agua acaba de alcanzar el límite. El programa debe mostrar la alerta y poner la marca en uno.\n\nEntrada\n4 4\n\nSalida esperada\nAlerta\nMarca: 1\n\nEl sensor mide un nivel de cinco y el límite es cuatro. El agua supera el límite. El programa debe mostrar la alerta y poner la marca en uno.\n\nEntrada\n5 4\n\nSalida esperada\nAlerta\nMarca: 1\n\nEl sensor mide un nivel de tres. En la prueba inicial, 3 4, el límite era cuatro. El agua estaba por debajo del límite y la marca valía cero. En esta prueba, 3 3, el nivel de agua sigue en tres y el límite baja a tres. Ahora el agua alcanza el límite. El programa debe mostrar la alerta y poner la marca en uno.\n\nEntrada\n3 3\n\nSalida esperada\nAlerta\nMarca: 1"
+        },
+        {
+          "type": "note",
+          "text": "Si con las entradas 3 4 y 3 3 obtienes el mismo aviso, revisa la comparación del programa. El sensor mide un nivel de tres en las dos pruebas. Con un límite de cuatro debe aparecer Normal y con un límite de tres debe aparecer Alerta. Si el programa compara el nivel con un cuatro escrito en el código, el aviso seguirá siendo el mismo aunque cambies el límite en el campo «Entrada»."
+        },
+        {
           "type": "heading",
           "text": "Revisar el programa que lee el nivel y el límite"
         },
@@ -284,14 +292,6 @@
           "type": "code",
           "language": "cpp",
           "code": "#include <iostream>\n\nint main() {\n    int nivel = 0;\n    int limite = 0;\n\n    std::cin >> nivel >> limite;\n\n    int marca_alerta = 0;\n\n    if (nivel >= limite) {\n        marca_alerta = 1;\n\n        std::cout << \"Alerta\\n\";\n    } else {\n        std::cout << \"Normal\\n\";\n    }\n\n    std::cout << \"Marca: \" << marca_alerta;\n\n    return 0;\n}\n"
-        },
-        {
-          "type": "paragraph",
-          "text": "Pruebas opcionales en este editor\nPara cada prueba, escribe los datos indicados en el campo «Entrada», pulsa «Compilar, ejecutar y comprobar» y compara los renglones que muestra la consola con la salida esperada para esa entrada.\n\nLa igualdad cumple la regla de alerta.\n\nEntrada\n4 4\n\nSalida esperada\nAlerta\nMarca: 1\n\nEl nivel supera el límite y el programa sigue emitiendo la alerta.\n\nEntrada\n5 4\n\nSalida esperada\nAlerta\nMarca: 1\n\nSi el límite baja a tres, el mismo nivel ahora lo alcanza.\n\nEntrada\n3 3\n\nSalida esperada\nAlerta\nMarca: 1"
-        },
-        {
-          "type": "note",
-          "text": "Probar 3 3 tras 3 4 mantiene el mismo nivel y cambia el límite. Cuando el límite baja a tres, la salida debe cambiar de Normal a Alerta y de Marca: 0 a Marca: 1. Si la salida sigue siendo la misma, comprueba que el programa usa el límite que leyó."
         }
       ]
     },
@@ -569,6 +569,7 @@
           "block_0003_0008",
           "block_0003_0009",
           "p1u3l4_reparar_alerta",
+          "block_0004_0003",
           "block_0006_0000",
           "block_0006_0001",
           "p1u3l4_ejemplo_reparacion",
@@ -580,8 +581,7 @@
         "blocks": [
           "block_0004_0000",
           "block_0004_0001",
-          "block_0004_0002",
-          "block_0004_0003"
+          "block_0004_0002"
         ]
       },
       {
@@ -590,10 +590,10 @@
           "block_0003_0005",
           "block_0003_0006",
           "p1u3l4_construir_alerta",
-          "p1u3l4_revisar_alerta",
-          "p1u3l4_ejemplo_lectura",
           "p1u3l4_probar_otros_niveles",
-          "block_0006_0004"
+          "block_0006_0004",
+          "p1u3l4_revisar_alerta",
+          "p1u3l4_ejemplo_lectura"
         ]
       },
       {
@@ -1490,6 +1490,16 @@
         "id": "block_0003_0003",
         "beforeSha256": "64e0e0ba4eb3997f0a5cb3ad5f3e796b9a439f60914557b75d052854fb9224cf",
         "afterSha256": "8c680c678be5bb66e36bdc8b277ead30692dbd2601eeb4b31365f5e6fada2e39"
+      },
+      {
+        "id": "p1u3l4_probar_otros_niveles",
+        "beforeSha256": "972a856604bb1e333cb66324ad495fb00831dc5c95f09735155e2780bd12cc88",
+        "afterSha256": "9f5a41ebe938d099a34eec92109a7f7885f7b5542f6c8632fb3c28086729eae3"
+      },
+      {
+        "id": "block_0006_0004",
+        "beforeSha256": "7bfa5e82b1aeb025473c2eb3bc09e031994c95848b2e19d6204d1a91f65b74b0",
+        "afterSha256": "117ac644286e17d87155777726d4de8f705b2a4394062da22197c2dac349abc2"
       }
     ],
     "orderRefinements": [
@@ -5286,47 +5296,33 @@
       {
         "block": "block_0006_0004",
         "path": "/text",
-        "sourceSha256": "470e370295f718e4fcbc601bc438ef6381e8a1b9b88bfc6e275124a6a8b4203b",
+        "sourceSha256": "b05563584c25717b406b8e0db734b2de9624c09fe3a05332208d80e546d239e4",
         "spans": [
           {
-            "start": 7,
-            "end": 10,
-            "text": "3 3",
-            "role": "data",
-            "reading": "natural"
-          },
-          {
-            "start": 16,
-            "end": 19,
+            "start": 20,
+            "end": 23,
             "text": "3 4",
             "role": "data",
             "reading": "natural"
           },
           {
-            "start": 120,
-            "end": 126,
+            "start": 26,
+            "end": 29,
+            "text": "3 3",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 181,
+            "end": 187,
             "text": "Normal",
             "role": "output",
             "reading": "natural"
           },
           {
-            "start": 129,
-            "end": 135,
+            "start": 226,
+            "end": 232,
             "text": "Alerta",
-            "role": "output",
-            "reading": "natural"
-          },
-          {
-            "start": 141,
-            "end": 149,
-            "text": "Marca: 0",
-            "role": "output",
-            "reading": "natural"
-          },
-          {
-            "start": 152,
-            "end": 160,
-            "text": "Marca: 1",
             "role": "output",
             "reading": "natural"
           }
@@ -5341,67 +5337,81 @@
       {
         "block": "p1u3l4_probar_otros_niveles",
         "path": "/text",
-        "sourceSha256": "902f54403c37230eb07c27bb7e5895a2efa2e77f8e4ecfa64e04d7e40bed2715",
+        "sourceSha256": "ba5641bddb2e0d55f22789a82cbba281cd675a2903b4bd832ee96a8add4c9173",
         "spans": [
           {
-            "start": 279,
-            "end": 282,
+            "start": 498,
+            "end": 501,
             "text": "4 4",
             "role": "data",
             "reading": "natural"
           },
           {
-            "start": 300,
-            "end": 306,
+            "start": 519,
+            "end": 525,
             "text": "Alerta",
             "role": "output",
             "reading": "natural"
           },
           {
-            "start": 307,
-            "end": 315,
+            "start": 526,
+            "end": 534,
             "text": "Marca: 1",
             "role": "output",
             "reading": "natural"
           },
           {
-            "start": 393,
-            "end": 396,
+            "start": 687,
+            "end": 690,
             "text": "5 4",
             "role": "data",
             "reading": "natural"
           },
           {
-            "start": 414,
-            "end": 420,
+            "start": 708,
+            "end": 714,
             "text": "Alerta",
             "role": "output",
             "reading": "natural"
           },
           {
-            "start": 421,
-            "end": 429,
+            "start": 715,
+            "end": 723,
             "text": "Marca: 1",
             "role": "output",
             "reading": "natural"
           },
           {
-            "start": 499,
-            "end": 502,
+            "start": 780,
+            "end": 783,
+            "text": "3 4",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 883,
+            "end": 886,
             "text": "3 3",
             "role": "data",
             "reading": "natural"
           },
           {
-            "start": 520,
-            "end": 526,
+            "start": 1046,
+            "end": 1049,
+            "text": "3 3",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 1067,
+            "end": 1073,
             "text": "Alerta",
             "role": "output",
             "reading": "natural"
           },
           {
-            "start": 527,
-            "end": 535,
+            "start": 1074,
+            "end": 1082,
             "text": "Marca: 1",
             "role": "output",
             "reading": "natural"

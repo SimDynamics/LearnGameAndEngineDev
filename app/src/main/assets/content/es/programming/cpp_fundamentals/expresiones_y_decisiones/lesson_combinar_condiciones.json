@@ -312,6 +312,10 @@
           }
         },
         {
+          "type": "paragraph",
+          "text": "Pruebas opcionales en este editor\nEscribe los tres números en este orden. El primero indica si la persona tiene pase. El segundo indica si tiene invitación. El tercero indica si la sala está abierta. Para cada dato, uno significa sí y cero significa no. Para cada prueba que quieras hacer, sustituye los datos del campo «Entrada» por los de esa prueba. Pulsa «Compilar, ejecutar y comprobar» y compara lo que muestra la consola con la salida esperada.\n\nLa sala está cerrada y la persona carece de pase y de invitación. La entrada está denegada.\n\nEntrada\n0 0 0\n\nSalida esperada\nEntrada denegada\n\nLa sala está abierta. La persona no tiene ninguna de las dos credenciales, así que se le deniega la entrada.\n\nEntrada\n0 0 1\n\nSalida esperada\nEntrada denegada\n\nLa persona presenta una invitación. La sala está cerrada, así que se le deniega la entrada.\n\nEntrada\n0 1 0\n\nSalida esperada\nEntrada denegada\n\nLa persona presenta una invitación y la sala está abierta. Puede entrar aunque no tenga pase.\n\nEntrada\n0 1 1\n\nSalida esperada\nEntrada permitida\n\nLa persona presenta un pase y la sala está abierta. Puede entrar aunque no tenga invitación.\n\nEntrada\n1 0 1\n\nSalida esperada\nEntrada permitida\n\nLa persona presenta las dos credenciales. La sala está cerrada, así que se le deniega la entrada.\n\nEntrada\n1 1 0\n\nSalida esperada\nEntrada denegada\n\nLa sala está abierta y la persona presenta las dos credenciales. Puede entrar.\n\nEntrada\n1 1 1\n\nSalida esperada\nEntrada permitida"
+        },
+        {
           "type": "heading",
           "text": "Revisar el programa que lee las tres condiciones"
         },
@@ -331,10 +335,6 @@
           "type": "code",
           "language": "cpp",
           "code": "#include <iostream>\n\nint main() {\n    int pase = 0;\n    int invitacion = 0;\n    int apertura = 0;\n\n    std::cin >> pase >> invitacion >> apertura;\n\n    const bool tiene_pase = pase != 0;\n    const bool tiene_invitacion = invitacion != 0;\n    const bool sala_abierta = apertura != 0;\n\n    const bool permitido = (tiene_pase || tiene_invitacion) && sala_abierta;\n\n    if (permitido) {\n        std::cout << \"Entrada permitida\";\n    } else {\n        std::cout << \"Entrada denegada\";\n    }\n\n    return 0;\n}\n"
-        },
-        {
-          "type": "paragraph",
-          "text": "Pruebas opcionales en este editor\nPara cada prueba, escribe los datos indicados en el campo «Entrada», pulsa «Compilar, ejecutar y comprobar» y compara los renglones que muestra la consola con la salida esperada para esa entrada.\n\nEntrada\n0 0 0\nSalida esperada\nEntrada denegada\n\nEntrada\n0 0 1\nSalida esperada\nEntrada denegada\n\nEntrada\n0 1 0\nSalida esperada\nEntrada denegada\n\nEntrada\n0 1 1\nSalida esperada\nEntrada permitida\n\nEntrada\n1 0 1\nSalida esperada\nEntrada permitida\n\nEntrada\n1 1 0\nSalida esperada\nEntrada denegada\n\nEntrada\n1 1 1\nSalida esperada\nEntrada permitida"
         },
         {
           "type": "multiple_choice",
@@ -592,10 +592,10 @@
           "block_0003_0005",
           "block_0003_0006",
           "p1u3l5_construir_acceso",
+          "p1u3l5_probar_combinaciones",
           "combinaciones_faltantes_titulo",
           "combinaciones_faltantes_consigna",
           "p1u3l5_ejemplo_acceso",
-          "p1u3l5_probar_combinaciones",
           "p1u3l5_distinguir_invitacion",
           "block_0005_0004"
         ]
@@ -1522,6 +1522,11 @@
         "id": "p1u3l5_distinguir_invitacion",
         "beforeSha256": "2fd708ff344cf120777ed8c88b804107b85b52c7d5463de4da0c05d172e15e8b",
         "afterSha256": "51844a606fe09b66e7359ab2adb1e0e47fa3b7af01dda5399423f92f7300626f"
+      },
+      {
+        "id": "p1u3l5_probar_combinaciones",
+        "beforeSha256": "374d03303e4d04d207e9318c43a77eb5cdeeb8960cfd87d2a222d0d5442ec6be",
+        "afterSha256": "abe347816b8121b3bffbf9012dcf8809643127a6d35cb63cdbcafc4ea1b3fd39"
       }
     ],
     "sourceFormatRevisions": [
@@ -5777,102 +5782,102 @@
       {
         "block": "p1u3l5_probar_combinaciones",
         "path": "/text",
-        "sourceSha256": "4a7c9041904d0ca51d7f4a8524e51216d83284d4c7e660b97197ccb8564f092c",
+        "sourceSha256": "d1b53ea2c351761377969f108dc0daa487e5a9e64338036cd5a0020360929f9b",
         "spans": [
           {
-            "start": 239,
-            "end": 244,
+            "start": 554,
+            "end": 559,
             "text": "0 0 0",
             "role": "data",
             "reading": "natural"
           },
           {
-            "start": 261,
-            "end": 277,
+            "start": 577,
+            "end": 593,
             "text": "Entrada denegada",
             "role": "output",
             "reading": "natural"
           },
           {
-            "start": 287,
-            "end": 292,
+            "start": 713,
+            "end": 718,
             "text": "0 0 1",
             "role": "data",
             "reading": "natural"
           },
           {
-            "start": 309,
-            "end": 325,
+            "start": 736,
+            "end": 752,
             "text": "Entrada denegada",
             "role": "output",
             "reading": "natural"
           },
           {
-            "start": 335,
-            "end": 340,
+            "start": 855,
+            "end": 860,
             "text": "0 1 0",
             "role": "data",
             "reading": "natural"
           },
           {
-            "start": 357,
-            "end": 373,
+            "start": 878,
+            "end": 894,
             "text": "Entrada denegada",
             "role": "output",
             "reading": "natural"
           },
           {
-            "start": 383,
-            "end": 388,
+            "start": 999,
+            "end": 1004,
             "text": "0 1 1",
             "role": "data",
             "reading": "natural"
           },
           {
-            "start": 405,
-            "end": 422,
+            "start": 1022,
+            "end": 1039,
             "text": "Entrada permitida",
             "role": "output",
             "reading": "natural"
           },
           {
-            "start": 432,
-            "end": 437,
+            "start": 1143,
+            "end": 1148,
             "text": "1 0 1",
             "role": "data",
             "reading": "natural"
           },
           {
-            "start": 454,
-            "end": 471,
+            "start": 1166,
+            "end": 1183,
             "text": "Entrada permitida",
             "role": "output",
             "reading": "natural"
           },
           {
-            "start": 481,
-            "end": 486,
+            "start": 1292,
+            "end": 1297,
             "text": "1 1 0",
             "role": "data",
             "reading": "natural"
           },
           {
-            "start": 503,
-            "end": 519,
+            "start": 1315,
+            "end": 1331,
             "text": "Entrada denegada",
             "role": "output",
             "reading": "natural"
           },
           {
-            "start": 529,
-            "end": 534,
+            "start": 1421,
+            "end": 1426,
             "text": "1 1 1",
             "role": "data",
             "reading": "natural"
           },
           {
-            "start": 551,
-            "end": 568,
+            "start": 1444,
+            "end": 1461,
             "text": "Entrada permitida",
             "role": "output",
             "reading": "natural"

@@ -162,7 +162,7 @@
         },
         {
           "type": "note",
-          "text": "Con capacidad para cuatro fichas por grupo, prueba el nuevo mínimo con una ficha y el máximo con treinta. El programa debe aceptar ambas cantidades. Una condición que exigiera más de una ficha rechazaría por error el primer pedido. Una condición que exigiera menos de treinta rechazaría el segundo."
+          "text": "Supón que en cada grupo caben cuatro fichas. Según la nueva regla, un pedido de una ficha está justo en el mínimo y uno de treinta está justo en el máximo. Los dos pedidos cumplen la regla de cantidad. Si el programa exigiera más de una ficha, rechazaría el pedido de una. Si exigiera menos de treinta, rechazaría el pedido de treinta."
         }
       ]
     },
@@ -278,6 +278,10 @@
           }
         },
         {
+          "type": "paragraph",
+          "text": "Pruebas opcionales en este editor\nEscribe primero la cantidad de fichas, después la capacidad de cada grupo y por último el código que indica si se aceptan fichas sobrantes. Usa uno si se aceptan y cero si se rechazan. La nueva regla admite de una a treinta fichas y una capacidad de una a seis fichas por grupo. Para cada prueba que quieras hacer, sustituye los datos del campo «Entrada» por los de esa prueba. Pulsa «Compilar, ejecutar y comprobar» y compara lo que muestra la consola con la salida esperada.\n\nCon catorce fichas se llenan tres grupos de cuatro y quedan dos fichas sueltas. Como se aceptan sobrantes, se muestran las dos cantidades.\n\nEntrada\n14 4 1\n\nSalida esperada\nGrupos: 3\nSobrantes: 2\n\nSe llenan tres grupos de cuatro y sobran dos de las catorce fichas. Como se rechazan los sobrantes, el reparto queda pendiente.\n\nEntrada\n14 4 0\n\nSalida esperada\nReparto pendiente\n\nDoce fichas llenan tres grupos de cuatro. Se aceptan sobrantes, pero no hay ninguno. Solo aparece el renglón con la cantidad de grupos.\n\nEntrada\n12 4 1\n\nSalida esperada\nGrupos: 3\n\nDoce fichas llenan tres grupos de cuatro. Aunque se rechacen los sobrantes, el reparto se puede hacer porque no sobra ninguna ficha.\n\nEntrada\n12 4 0\n\nSalida esperada\nGrupos: 3\n\nTreinta fichas es la mayor cantidad admitida y seis es la mayor capacidad admitida. Se llenan cinco grupos de seis sin dejar fichas sueltas.\n\nEntrada\n30 6 1\n\nSalida esperada\nGrupos: 5\n\nLa cantidad indicada es menos una ficha y el mínimo es una. El programa debe rechazar esos datos antes de repartir.\n\nEntrada\n-1 4 1\n\nSalida esperada\nDatos invalidos\n\nLa cantidad indicada es treinta y una fichas. Supera el máximo de treinta, así que el programa debe rechazar los datos.\n\nEntrada\n31 4 1\n\nSalida esperada\nDatos invalidos\n\nHay doce fichas, pero la capacidad indicada es cero. Como cada grupo debe tener espacio para al menos una ficha, se rechazan los datos.\n\nEntrada\n12 0 1\n\nSalida esperada\nDatos invalidos\n\nHay doce fichas y la capacidad indicada es siete. Supera la capacidad máxima de seis, así que se rechazan los datos.\n\nEntrada\n12 7 1\n\nSalida esperada\nDatos invalidos\n\nHay cero fichas y la capacidad también es cero. Ambos datos quedan por debajo de sus mínimos y se rechazan.\n\nEntrada\n0 0 1\n\nSalida esperada\nDatos invalidos\n\nUna ficha cumple el mínimo, pero no llena un grupo de cuatro. Como se aceptan sobrantes, se muestran cero grupos y una ficha suelta.\n\nEntrada\n1 4 1\n\nSalida esperada\nGrupos: 0\nSobrantes: 1\n\nHay una ficha suelta y hacen falta cuatro para llenar un grupo. Como se rechazan los sobrantes, el reparto queda pendiente.\n\nEntrada\n1 4 0\n\nSalida esperada\nReparto pendiente"
+        },
+        {
           "type": "heading",
           "text": "Comparar el programa tras cambiar el mínimo"
         },
@@ -306,10 +310,6 @@
           "type": "code",
           "language": "cpp",
           "code": "#include <iostream>\n\nint main() {\n    int fichas{0};\n    int capacidad{0};\n    int codigo_sobrantes{0};\n\n    std::cin >> fichas >> capacidad >> codigo_sobrantes;\n\n    const bool acepta_sobrantes = codigo_sobrantes != 0;\n\n    if ((fichas < 1) || (fichas > 30) || (capacidad < 1) || (capacidad > 6)) {\n        std::cout << \"Datos invalidos\";\n    } else {\n        const int grupos = fichas / capacidad;\n        const int sobrantes = fichas % capacidad;\n\n        if (sobrantes == 0) {\n            std::cout << \"Grupos: \" << grupos;\n        } else if (acepta_sobrantes) {\n            std::cout << \"Grupos: \" << grupos << \"\\n\";\n            std::cout << \"Sobrantes: \" << sobrantes;\n        } else {\n            std::cout << \"Reparto pendiente\";\n        }\n    }\n\n    return 0;\n}\n"
-        },
-        {
-          "type": "paragraph",
-          "text": "Pruebas opcionales en este editor\nPara cada prueba, escribe los datos indicados en el campo «Entrada», pulsa «Compilar, ejecutar y comprobar» y compara los renglones que muestra la consola con la salida esperada para esa entrada.\n\nEntrada\n14 4 1\nSalida esperada\nGrupos: 3\nSobrantes: 2\n\nEntrada\n14 4 0\nSalida esperada\nReparto pendiente\n\nEntrada\n12 4 1\nSalida esperada\nGrupos: 3\n\nEntrada\n12 4 0\nSalida esperada\nGrupos: 3\n\nEntrada\n30 6 1\nSalida esperada\nGrupos: 5\n\nEntrada\n-1 4 1\nSalida esperada\nDatos invalidos\n\nEntrada\n31 4 1\nSalida esperada\nDatos invalidos\n\nEntrada\n12 0 1\nSalida esperada\nDatos invalidos\n\nEntrada\n12 7 1\nSalida esperada\nDatos invalidos\n\nEntrada\n0 0 1\nSalida esperada\nDatos invalidos\n\nEntrada\n1 4 1\nSalida esperada\nGrupos: 0\nSobrantes: 1\n\nEntrada\n1 4 0\nSalida esperada\nReparto pendiente"
         }
       ]
     }
@@ -551,14 +551,14 @@
           "block_0004_0005",
           "block_0004_0006",
           "p1u3l8_cambiar_minimo",
+          "p1u3l8_ensayos_minimo",
           "block_0005_0000",
           "block_0005_0001",
           "block_0005_0002",
           "block_0005_0003",
           "block_0005_0004",
           "block_0005_0005",
-          "p1u3l8_ejemplo_minimo",
-          "p1u3l8_ensayos_minimo"
+          "p1u3l8_ejemplo_minimo"
         ]
       }
     ],
@@ -1322,6 +1322,16 @@
         "id": "block_0004_0003",
         "beforeSha256": "19224851832f7c69bea2fd8c11d8e9d02b733094ac71a4dd5f6410ac4b7bb504",
         "afterSha256": "94eaad3b191eab825974efbe291e45fd8ad33602a5fad7c3b8dad357a8ddb1f6"
+      },
+      {
+        "id": "block_0004_0004",
+        "beforeSha256": "8a2eba3b938624251f507f63ee333bae104e01669997038dbf9161a54f941147",
+        "afterSha256": "479d0f70e12eb9474bd0d4dd5be57f4cd50c0b63e7f109718f01d4f5b66fb5aa"
+      },
+      {
+        "id": "p1u3l8_ensayos_minimo",
+        "beforeSha256": "7a7a2bcb2f762df9c6f64f6472a938a64bbe2197190d2e596e3934d3bc9f477c",
+        "afterSha256": "d4869c40e5b4f706a2eab927a6c24c6e0110c6ca3fea3d220d9eca5ce92136c9"
       }
     ],
     "sourceFormatRevisions": [
@@ -4602,7 +4612,7 @@
       {
         "block": "block_0004_0004",
         "path": "/text",
-        "sourceSha256": "846289a5c18dddea5b2c793a55cbe4461067aa43c97877c95bb06139d1d33ead",
+        "sourceSha256": "e7cc4acd0dc43de58a18fd5e4d3dfebffba0bfdb56384524c7f4867126b1a241",
         "spans": []
       },
       {
@@ -4759,186 +4769,186 @@
       {
         "block": "p1u3l8_ensayos_minimo",
         "path": "/text",
-        "sourceSha256": "e71e6b6f2f871cbe29a5e55d4ff6a3536583111147e75fee8432ed2881271b03",
+        "sourceSha256": "f0b815ccc352108da4e170bd5cf643438fcd7295f666aa03554ef2585d57fd64",
         "spans": [
           {
-            "start": 239,
-            "end": 245,
+            "start": 660,
+            "end": 666,
             "text": "14 4 1",
             "role": "data",
             "reading": "natural"
           },
           {
-            "start": 262,
-            "end": 271,
+            "start": 684,
+            "end": 693,
             "text": "Grupos: 3",
             "role": "output",
             "reading": "natural"
           },
           {
-            "start": 272,
-            "end": 284,
+            "start": 694,
+            "end": 706,
             "text": "Sobrantes: 2",
             "role": "output",
             "reading": "natural"
           },
           {
-            "start": 294,
-            "end": 300,
+            "start": 845,
+            "end": 851,
             "text": "14 4 0",
             "role": "data",
             "reading": "natural"
           },
           {
-            "start": 317,
-            "end": 334,
+            "start": 869,
+            "end": 886,
             "text": "Reparto pendiente",
             "role": "output",
             "reading": "natural"
           },
           {
-            "start": 344,
-            "end": 350,
+            "start": 1033,
+            "end": 1039,
             "text": "12 4 1",
             "role": "data",
             "reading": "natural"
           },
           {
-            "start": 367,
-            "end": 376,
+            "start": 1057,
+            "end": 1066,
             "text": "Grupos: 3",
             "role": "output",
             "reading": "natural"
           },
           {
-            "start": 386,
-            "end": 392,
+            "start": 1210,
+            "end": 1216,
             "text": "12 4 0",
             "role": "data",
             "reading": "natural"
           },
           {
-            "start": 409,
-            "end": 418,
+            "start": 1234,
+            "end": 1243,
             "text": "Grupos: 3",
             "role": "output",
             "reading": "natural"
           },
           {
-            "start": 428,
-            "end": 434,
+            "start": 1395,
+            "end": 1401,
             "text": "30 6 1",
             "role": "data",
             "reading": "natural"
           },
           {
-            "start": 451,
-            "end": 460,
+            "start": 1419,
+            "end": 1428,
             "text": "Grupos: 5",
             "role": "output",
             "reading": "natural"
           },
           {
-            "start": 470,
-            "end": 476,
+            "start": 1555,
+            "end": 1561,
             "text": "-1 4 1",
             "role": "data",
             "reading": "natural"
           },
           {
-            "start": 493,
-            "end": 508,
+            "start": 1579,
+            "end": 1594,
             "text": "Datos invalidos",
             "role": "output",
             "reading": "natural"
           },
           {
-            "start": 518,
-            "end": 524,
+            "start": 1725,
+            "end": 1731,
             "text": "31 4 1",
             "role": "data",
             "reading": "natural"
           },
           {
-            "start": 541,
-            "end": 556,
+            "start": 1749,
+            "end": 1764,
             "text": "Datos invalidos",
             "role": "output",
             "reading": "natural"
           },
           {
-            "start": 566,
-            "end": 572,
+            "start": 1911,
+            "end": 1917,
             "text": "12 0 1",
             "role": "data",
             "reading": "natural"
           },
           {
-            "start": 589,
-            "end": 604,
+            "start": 1935,
+            "end": 1950,
             "text": "Datos invalidos",
             "role": "output",
             "reading": "natural"
           },
           {
-            "start": 614,
-            "end": 620,
+            "start": 2078,
+            "end": 2084,
             "text": "12 7 1",
             "role": "data",
             "reading": "natural"
           },
           {
-            "start": 637,
-            "end": 652,
+            "start": 2102,
+            "end": 2117,
             "text": "Datos invalidos",
             "role": "output",
             "reading": "natural"
           },
           {
-            "start": 662,
-            "end": 667,
+            "start": 2236,
+            "end": 2241,
             "text": "0 0 1",
             "role": "data",
             "reading": "natural"
           },
           {
-            "start": 684,
-            "end": 699,
+            "start": 2259,
+            "end": 2274,
             "text": "Datos invalidos",
             "role": "output",
             "reading": "natural"
           },
           {
-            "start": 709,
-            "end": 714,
+            "start": 2418,
+            "end": 2423,
             "text": "1 4 1",
             "role": "data",
             "reading": "natural"
           },
           {
-            "start": 731,
-            "end": 740,
+            "start": 2441,
+            "end": 2450,
             "text": "Grupos: 0",
             "role": "output",
             "reading": "natural"
           },
           {
-            "start": 741,
-            "end": 753,
+            "start": 2451,
+            "end": 2463,
             "text": "Sobrantes: 1",
             "role": "output",
             "reading": "natural"
           },
           {
-            "start": 763,
-            "end": 768,
+            "start": 2598,
+            "end": 2603,
             "text": "1 4 0",
             "role": "data",
             "reading": "natural"
           },
           {
-            "start": 785,
-            "end": 802,
+            "start": 2621,
+            "end": 2638,
             "text": "Reparto pendiente",
             "role": "output",
             "reading": "natural"
