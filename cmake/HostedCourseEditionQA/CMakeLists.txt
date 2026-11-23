@@ -340,6 +340,9 @@ add_test(NAME native.code_format_current_pilot
 set_tests_properties(native.code_format_current_pilot
     PROPERTIES TIMEOUT 90 RUN_SERIAL TRUE)
 
+include("${_lgaed_root}/cmake/NestedCmakeFormatTests.cmake")
+lgaed_add_nested_cmake_format_tests("${_lgaed_root}")
+
 add_executable(lgaed_exact_prediction_view_tests
     "${_lgaed_root}/native/presentation/windows/exact_prediction_view_tests.cpp")
 target_link_libraries(lgaed_exact_prediction_view_tests PRIVATE lgaed_curricular_windows)

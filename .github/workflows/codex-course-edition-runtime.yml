@@ -9,6 +9,10 @@ on:
       - cmake/InputDependencyTests.cmake
       - cmake/GeneralChoiceProseTests.cmake
       - cmake/ReaderRevisionTests.cmake
+      - cmake/NestedCmakeFormatTests.cmake
+      - native/platform/windows/nested_cmake_format_tests.cpp
+      - scripts/curriculum/nested_cmake_format_fixture_source.py
+      - scripts/curriculum/test_nested_cmake_format.py
       - scripts/curriculum/reader_revision_fixture_source.py
       - scripts/curriculum/stable_state_layout.py
       - app/src/main/java/com/learngraphicsprogramming/app/narration/KokoroVoiceCatalog.kt
@@ -180,7 +184,13 @@ jobs:
         shell: pwsh
         run: |
           $build = Join-Path $env:RUNNER_TEMP 'lgaed-course-edition-qa'
-          cmake --build $build --target lgaed_curricular_input_lab_tests lgaed_u3_named_rule_runtime_tests lgaed_code_format_loader_tests lgaed_general_choice_editorial_tests --parallel 3
+          cmake --build $build --target lgaed_curricular_input_lab_tests lgaed_u3_named_rule_runtime_tests lgaed_code_format_loader_tests lgaed_general_choice_editorial_tests lgaed_nested_cmake_format_tests --parallel 3
+          if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
+      - name: Verify ten nested CMake recipes and preserved native state
+        shell: pwsh
+        run: |
+          $build = Join-Path $env:RUNNER_TEMP 'lgaed-course-edition-qa'
+          ctest --test-dir $build -R '^native[.]nested_cmake_format(_authoring)?$' --verbose --output-on-failure --no-tests=error --output-junit (Join-Path $build 'nested-cmake-format.xml')
           if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
       - name: Verify full named-rule CMake contracts and Win32 feedback
         shell: pwsh
@@ -332,6 +342,7 @@ jobs:
             ${{ github.workspace }}/out/qa/reader-revision-audio-${{ github.run_id }}-${{ github.run_attempt }}/*.log
             ${{ runner.temp }}/lgaed-course-edition-qa/reader-revision-runtime-*/transport.jsonl
             ${{ runner.temp }}/lgaed-course-edition-qa/reader-revision-order.xml
+            ${{ runner.temp }}/lgaed-course-edition-qa/nested-cmake-format.xml
             ${{ runner.temp }}/lgaed-course-edition-qa/u2l9-semantic-composition-and-reference.xml
             ${{ runner.temp }}/lgaed-course-edition-qa/u3-current-controls-and-history.xml
             ${{ runner.temp }}/lgaed-course-edition-qa/choice-prose-and-prediction.xml

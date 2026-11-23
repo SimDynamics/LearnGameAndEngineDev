@@ -885,6 +885,8 @@ if(LGAED_READER_BUILD_QA_ONLY)
     lgaed_add_course_edition_tests()
     lgaed_add_general_choice_editorial_tests()
     lgaed_add_optional_prose_format_tests()
+    include("${CMAKE_SOURCE_DIR}/cmake/NestedCmakeFormatTests.cmake")
+    lgaed_add_nested_cmake_format_tests("${CMAKE_SOURCE_DIR}")
     # Local Windows authoring QA compiles only two focused native readers.
     # Their fixture-producing dependencies are retained by the executables.
     add_custom_target(lgaed_curriculum_edition_qa
@@ -1975,6 +1977,8 @@ if(BUILD_TESTING)
     set_tests_properties(native.u11_consult_choice_revision_view PROPERTIES TIMEOUT 90 RUN_SERIAL TRUE)
     lgaed_add_general_choice_editorial_tests()
     lgaed_add_optional_prose_format_tests()
+    include("${CMAKE_SOURCE_DIR}/cmake/NestedCmakeFormatTests.cmake")
+    lgaed_add_nested_cmake_format_tests("${CMAKE_SOURCE_DIR}")
     lgaed_add_boolean_battery_tests()
     lgaed_add_reduction_tests()
     lgaed_add_integer_battery_tests()

@@ -14,6 +14,22 @@ de los ejemplos, predicciones, `fill_code`, `order_code`, `drag_fill_code`,
 No se inventan campos de respuestas, casos, identificadores ni ejercicios.
 Los archivos de proyecto de tipo desconocido son inmutables bajo este contrato.
 
+En `projectFiles`, Windows y el validador de autoría reconocen CMake por el
+nombre exacto `CMakeLists.txt` del último segmento de la ruta, o por el sufijo
+`.cmake`. Esto incluye `CMakeLists.txt`, `componente/CMakeLists.txt` y
+`codigo/lotes/CMakeLists.txt`. Se aplica la misma comparación léxica en la raíz
+y en subcarpetas; los argumentos, comentarios y límites entre comandos
+conservan su significado. Las rutas, el orden de archivos y sus propietarios
+siguen siendo los publicados. Este reconocimiento no normaliza mayúsculas ni
+convierte nombres como `notCMakeLists.txt` o `CMakeLists.txt.bak` en recetas.
+
+La comprobación `native.nested_cmake_format` usa las tres publicaciones completas
+de Programación 2 fijadas en el generador
+`scripts/curriculum/nested_cmake_format_fixture_source.py`. Las revisiones de
+espaciado se preparan sólo en sus fixtures de QA para los diez editores
+afectados. El contenido curricular se integra mediante el flujo de autoría
+descrito a continuación.
+
 ## Autoría de Work: conservar el origen publicado
 
 Para cada lección con `stateLayout` v2, Work edita únicamente los campos

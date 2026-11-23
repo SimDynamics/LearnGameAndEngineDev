@@ -341,6 +341,10 @@ std::optional<std::string> reviewed_crt_output_original(const JsonObject& block)
         "The reviewed CRT spelling must expand LF only and retain every original control");
     return original;
 }
+bool is_cmake_recipe_path(std::string_view path) {
+    const auto leaf=path.substr(path.find_last_of('/')+1);
+    return leaf=="CMakeLists.txt"||path.ends_with(".cmake");
+}
 // A format archive is a complete published block. Never normalize every
 // stored hash: project only the explicitly verified source fields back onto
 // the original bytes before checking their old signatures.
@@ -376,7 +380,7 @@ JsonObject source_format_projection(const JsonObject& active,const JsonObject& s
                 const auto before=originals.GetObjectAt(i),after=current.GetObjectAt(i);
                 const auto path=text(before,"path");
                 require(path==text(after,"path"),"Source formatting renamed a project file");
-                const auto cmake=path=="CMakeLists.txt"||std::string_view(path).ends_with(".cmake");
+                const auto cmake=is_cmake_recipe_path(path);
                 const auto dot=path.rfind('.');
                 constexpr std::array<std::string_view,10> source_extensions{
                     ".cpp",".cc",".cxx",".c",".h",".hpp",".hh",".hxx",".inl",".ixx"};
@@ -2325,10 +2329,6 @@ void copy_compiler_client(const JsonObject& target,const JsonObject& source,std:
     // alias. Its own authenticated formatting must survive this projection.
     if(!source.HasKey(L"cmake")&&source.HasKey(L"initialCode"))
         target.Insert(L"initialCode",source.GetNamedValue(L"initialCode"));
-}
-bool is_cmake_recipe_path(std::string_view path) {
-    const auto leaf=path.substr(path.find_last_of('/')+1);
-    return leaf=="CMakeLists.txt"||path.ends_with(".cmake");
 }
 bool compiler_client_matches(const JsonObject& source,const JsonObject& expected,
         std::string_view path,bool allow_format) {
