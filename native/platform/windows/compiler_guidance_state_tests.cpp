@@ -52,8 +52,10 @@ void rejects_both(const JsonObject& root,std::string_view expected){
     const auto raw=winrt::to_string(root.Stringify());
     for(const bool metadata:{false,true}){bool rejected=false;
         try{if(metadata)(void)parse_lesson_progress_metadata(raw,"es");else(void)parse_lesson_json(raw,"es");}
-        catch(const std::exception& error){rejected=true;require(std::string_view(error.what()).find(expected)!=std::string_view::npos,
-            "A malformed snapshot failed for an unrelated reason");}
+        catch(const std::exception& error){rejected=true;
+            if(std::string_view(error.what()).find(expected)==std::string_view::npos)
+                throw std::runtime_error("Malformed snapshot parser="+std::string(metadata?"metadata":"full")+
+                    " expected ["+std::string(expected)+"] but received ["+error.what()+"]");}
         require(rejected,"An unpublished or changed diagnostic snapshot was admitted");}
 }
 Block& editor(Lesson& lesson,std::string_view id){const auto at=stable_block_position(lesson,id);
@@ -278,7 +280,15 @@ void diagnostic_sequence(const std::filesystem::path& content,const std::filesys
     rejects_both(forged,"exact occurrence");
     const auto wrong_diagnostic=JsonObject::Parse(winrt::to_hstring(archived.raw_json));
     snapshot_editor(wrong_diagnostic).Insert(L"diagnostic",JsonValue::CreateStringValue(L"unknown-qa-diagnostic"));
-    rejects_both(wrong_diagnostic,"Unknown reviewed compilation diagnostic");
+    // A formatted historical block must first be an exact published node.
+    // A source without that archive reaches the diagnostic selector directly.
+    rejects_both(wrong_diagnostic,old.source_format_original_initial_code?
+        "A historical formatted source needs an exact occurrence in its owner's editorial chain":
+        "Unknown reviewed compilation diagnostic");
+    const auto wrong_active_diagnostic=JsonObject::Parse(winrt::to_hstring(archived.raw_json));
+    editor(wrong_active_diagnostic,archived,id).GetNamedObject(L"compileCheck").Insert(
+        L"diagnostic",JsonValue::CreateStringValue(L"unknown-qa-diagnostic"));
+    rejects_both(wrong_active_diagnostic,"Unknown reviewed compilation diagnostic");
     state::StateStore store(qa/"diagnostic");auto data=store.load();seed(data,original,id);const auto capture=diagnostic_request(old);
     require(record_compiler_diagnostic_case(data,original,old,capture,diagnostic_capture(capture),"Correcto\nQA original diagnostic guide"),
         "Could not seed explicit accepted diagnostic model");
