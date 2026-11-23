@@ -144,8 +144,8 @@ std::map<std::string,Variant> load_manifest(const std::filesystem::path& path) {
         }
         check(variants.emplace(value.name,std::move(value)).second,"Repeated fixture name");
     }
-    check(variants.size()==5,"The reader regression requires all five source variants");
-    for(const std::string name:{"baseline","insert","reorder","prose","other-page"})
+    check(variants.size()==6,"The reader regression requires all six source variants");
+    for(const std::string name:{"baseline","insert","reorder","prose","other-page","retire-insert"})
         check(variants.contains(name),"Missing variant "+name);
     return variants;
 }
@@ -171,7 +171,7 @@ std::vector<ExpectedRegion> expected_regions(const Variant& variant,std::size_t 
             // This is the documented visible code-card caption, deliberately
             // repeated for different owners to catch index-based aliasing.
             result.push_back({block.owner,"Ejercicio de código C más más.",index,16,false});
-            if(solved.contains(block.role))result.push_back({block.owner,"Correcto\n"+block.feedback,index,4,true});
+            if(solved.contains(block.role))result.push_back({block.owner,"✓ Correcto\n\n"+block.feedback,index,4,true});
         }
     }
     return result;
@@ -367,9 +367,10 @@ void compare_trace(const std::vector<std::size_t>& actual,const std::vector<std:
 void run_revision(const std::shared_ptr<windows::NarrationWorker>& backend,const Variant& baseline,
         const Variant& revised,bool unheard_negative=false,bool insert_forward=false) {
     const auto scenario=unheard_negative?std::string("unheard-negative"):insert_forward?std::string("insert-forward"):revised.name;
+    const bool insertion=revised.name=="insert"||revised.name=="retire-insert";
     phase=scenario+" / baseline";Fixture fixture(backend,baseline);
     verify_plan(fixture,{});fixture.edit("b","unfinished QA draft");fixture.answer("a");
-    auto old_rows=verify_plan(fixture,{"a"});const auto a_feedback=source_index(old_rows,"Correcto\nA_FEEDBACK");
+    auto old_rows=verify_plan(fixture,{"a"});const auto a_feedback=source_index(old_rows,"✓ Correcto\n\nA_FEEDBACK");
     if(!unheard_negative) {
         fixture.reader->toggle();
         wait([&] {
@@ -396,7 +397,7 @@ void run_revision(const std::shared_ptr<windows::NarrationWorker>& backend,const
     auto rows=verify_plan(fixture,{"a"});verify_existing_state(fixture,original,true);verify_cache(cached);
     const auto check_resume=[&] {
         const auto value=fixture.snapshot();
-        const std::string expected_source=unheard_negative?"Correcto\nA_FEEDBACK":revised.name=="insert"?"P_NEW":
+        const std::string expected_source=unheard_negative?"✓ Correcto\n\nA_FEEDBACK":insertion?"P_NEW":
             revised.name=="reorder"?"B_QUESTION":revised.name=="prose"?"P_BETWEEN_REVISED":"P_BETWEEN";
         const auto expected_at=source_index(rows,expected_source);
         expect(value.index==expected_at,"Reopening selected the wrong current owner/source: expected "+expected_source);
@@ -404,17 +405,17 @@ void run_revision(const std::shared_ptr<windows::NarrationWorker>& backend,const
         if(revised.name=="other-page")expect(value.offset==old.offset,"Editing another page lost the exact compatible paused offset");
         else expect(value.offset==0,"A new/changed/earlier pending region inherited an unrelated old offset");
         if(!unheard_negative&&revised.name!="reorder")expect(
-            value.heard_through>static_cast<std::int64_t>(source_index(rows,"Correcto\nA_FEEDBACK")),
+            value.heard_through>static_cast<std::int64_t>(source_index(rows,"✓ Correcto\n\nA_FEEDBACK")),
             "A structural/editorial revision lost already-heard compatible A feedback credit");
-        if(unheard_negative)expect(value.heard_through<=static_cast<std::int64_t>(source_index(rows,"Correcto\nA_FEEDBACK")),
+        if(unheard_negative)expect(value.heard_through<=static_cast<std::int64_t>(source_index(rows,"✓ Correcto\n\nA_FEEDBACK")),
             "A merely correct answer acquired invented listening credit");
     };
     check_resume();fixture.close();
     phase=scenario+" / second reopen";fixture.open(revised);rows=verify_plan(fixture,{"a"});
     check_resume();verify_existing_state(fixture,original,true);
 
-    if(revised.name=="insert") {
-        if(insert_forward) {
+    if(insertion) {
+        if(insert_forward||revised.name=="retire-insert") {
             phase=scenario+" / new prose before X";
             const auto first=source_index(rows,"P_NEW"),question=source_index(rows,"X_QUESTION");
             const auto played=trace_playback(fixture,rows,[](const auto& value){return value.waiting_gate;});
@@ -426,10 +427,10 @@ void run_revision(const std::shared_ptr<windows::NarrationWorker>& backend,const
         // reopening. Replaying from a wrongly reset zero would hear A again
         // and mask the lost-credit X -> old A -> X regression we must expose.
         phase=scenario+" / new X feedback";fixture.answer("x");rows=verify_plan(fixture,{"a","x"});
-        const auto x=source_index(rows,"Correcto\nX_FEEDBACK");
+        const auto x=source_index(rows,"✓ Correcto\n\nX_FEEDBACK");
         check(fixture.snapshot().index==x,"Fresh X answer did not select its actual feedback");
         if(unheard_negative) {
-            const auto a=source_index(rows,"Correcto\nA_FEEDBACK");
+            const auto a=source_index(rows,"✓ Correcto\n\nA_FEEDBACK");
             const auto played=trace_playback(fixture,rows,[&](const auto& value){return value.playing&&value.index==a;});
             fixture.reader->pause();compare_trace(played,{x,a},rows);
             verify_existing_state(fixture,original,true);verify_cache(cached);
@@ -442,7 +443,7 @@ void run_revision(const std::shared_ptr<windows::NarrationWorker>& backend,const
     } else if(revised.name=="reorder") {
         phase=scenario+" / moved B feedback";fixture.answer("b");rows=verify_plan(fixture,{"a","b"});
         const auto played=trace_playback(fixture,rows,[](const auto& value){return value.finished;});
-        compare_trace(played,interval(source_index(rows,"Correcto\nB_FEEDBACK"),rows.size()-1),rows);
+        compare_trace(played,interval(source_index(rows,"✓ Correcto\n\nB_FEEDBACK"),rows.size()-1),rows);
     } else {
         phase=scenario+" / resume current prose";
         const auto played=trace_playback(fixture,rows,[](const auto& value){return value.waiting_gate;});
@@ -450,11 +451,11 @@ void run_revision(const std::shared_ptr<windows::NarrationWorker>& backend,const
         const auto b=source_index(rows,"B_QUESTION");compare_trace(played,interval(first,b+1),rows);
         expect(fixture.snapshot().index==b+1&&!fixture.snapshot().finished,"Prose resume escaped pending B");
     }
-    std::set<std::string> solved{"a","b"};if(revised.name=="insert")solved.insert("x");
+    std::set<std::string> solved{"a","b"};if(insertion)solved.insert("x");
     if(revised.name!="reorder") {
         phase=scenario+" / finish B";fixture.answer("b");rows=verify_plan(fixture,solved);
         const auto played=trace_playback(fixture,rows,[](const auto& value){return value.finished;});
-        compare_trace(played,interval(source_index(rows,"Correcto\nB_FEEDBACK"),rows.size()-1),rows);
+        compare_trace(played,interval(source_index(rows,"✓ Correcto\n\nB_FEEDBACK"),rows.size()-1),rows);
     }
     phase=scenario+" / restart whole current page";rows=verify_plan(fixture,solved);
     fixture.reader->restart();const auto restarted=trace_playback(fixture,rows,[](const auto& value){return value.finished;},false);
@@ -508,7 +509,7 @@ int main(int argc,char** argv) {
         const auto variants=load_manifest(manifest_path);const auto backend=controlled_worker(argv[2],argv[3]);
         struct Shutdown { std::shared_ptr<windows::NarrationWorker> worker;~Shutdown(){worker->shutdown();} } shutdown{backend};
         const std::string filter=argc==5?argv[4]:"";std::size_t executed=0;
-        for(const std::string scenario:{"insert","insert-forward","reorder","prose","other-page","unheard-negative"}) {
+        for(const std::string scenario:{"insert","insert-forward","reorder","prose","other-page","unheard-negative","retire-insert"}) {
             if(!filter.empty()&&filter!=scenario)continue;++executed;
             try {run_revision(backend,variants.at("baseline"),variants.at(scenario=="unheard-negative"||scenario=="insert-forward"?"insert":scenario),
                 scenario=="unheard-negative",scenario=="insert-forward");}

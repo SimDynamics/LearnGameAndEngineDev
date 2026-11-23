@@ -40,6 +40,7 @@ EXPECTED_ORDER = {
     # Deliberately opposite to the new owners' storage order. Old A feedback
     # has already been heard; the persisted bookmark is at P_BETWEEN.
     "insert": (("intro", "a", "new", "x", "between", "b", "tail"), ("other",)),
+    "retire-insert": (("a", "new", "x", "between", "b", "tail"), ("other",)),
     "reorder": (("intro", "b", "between", "a", "tail"), ("other",)),
     "prose": (("intro", "a", "between", "b", "tail"), ("other",)),
     "other-page": (("intro", "a", "between", "b", "tail"), ("other", "y")),
@@ -87,13 +88,16 @@ def revisions() -> dict[str, dict]:
     baseline = state.prepare_v2(source, "es", {"es": source})
     inserted = state.reorder(baseline, plan("insert"),
                              [addition("x", PAGE_ZERO), addition("new", PAGE_ZERO)])
+    retired = state.retire(baseline, [OWNERS["intro"]])
+    retired_inserted = state.reorder(retired, plan("retire-insert"),
+                                     [addition("x", PAGE_ZERO), addition("new", PAGE_ZERO)])
     reordered = state.reorder(baseline, plan("reorder"))
     prose_source = deepcopy(baseline)
     prose_source["pages"][0]["blocks"][2]["text"] = "P_BETWEEN_REVISED"
     prose = state.prepare_v2(prose_source, "es", {"es": baseline}, baseline)
     other_page = state.reorder(baseline, plan("other-page"), [addition("y", PAGE_ONE)])
-    documents = {"baseline": baseline, "insert": inserted, "reorder": reordered,
-                 "prose": prose, "other-page": other_page}
+    documents = {"baseline": baseline, "insert": inserted, "retire-insert": retired_inserted,
+                 "reorder": reordered, "prose": prose, "other-page": other_page}
     verify_revisions(documents)
     return documents
 
@@ -125,6 +129,7 @@ def verify_revisions(documents: dict[str, dict]) -> None:
                     raise ValueError(f"The {variant} fixture changed the storage of {role}")
     original_order = [order_sha256(record) for record in baseline["stateLayout"]["current"]]
     expected_changes = {"baseline": (False, False), "insert": (True, False),
+                        "retire-insert": (True, False),
                         "reorder": (True, False), "prose": (False, False),
                         "other-page": (False, True)}
     for variant, document in documents.items():
@@ -135,6 +140,10 @@ def verify_revisions(documents: dict[str, dict]) -> None:
     prose_proofs = documents["prose"]["stateLayout"]["editorial"]
     if len(prose_proofs) != 1 or prose_proofs[0]["id"] != OWNERS["between"]:
         raise ValueError("The prose fixture requires one authenticated editorial revision")
+    snapshots = documents["retire-insert"]["stateLayout"].get("retirementHistory", [])
+    if (len(snapshots) != 1 or snapshots[0]["pages"] != baseline["pages"]
+            or snapshots[0]["current"] != baseline["stateLayout"]["current"]):
+        raise ValueError("The retirement fixture must preserve the exact baseline reading archive")
 
 
 def json_bytes(value: object) -> bytes:

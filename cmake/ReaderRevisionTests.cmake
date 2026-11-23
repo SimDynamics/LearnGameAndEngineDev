@@ -10,7 +10,7 @@ function(lgaed_add_reader_revision_tests source_root)
     find_package(Python3 REQUIRED COMPONENTS Interpreter)
     set(_reader_revision_dir "${CMAKE_CURRENT_BINARY_DIR}/test-fixtures/reader-revision")
     set(_reader_revision_outputs)
-    foreach(_fixture manifest.json baseline.json insert.json reorder.json prose.json other-page.json)
+    foreach(_fixture manifest.json baseline.json insert.json retire-insert.json reorder.json prose.json other-page.json)
         list(APPEND _reader_revision_outputs "${_reader_revision_dir}/${_fixture}")
     endforeach()
     add_custom_command(OUTPUT ${_reader_revision_outputs}
@@ -29,7 +29,7 @@ function(lgaed_add_reader_revision_tests source_root)
         "${source_root}/native/presentation/windows/lesson_reader_edit_order_tests.cpp")
     target_link_libraries(lgaed_lesson_reader_edit_order_tests PRIVATE lgaed_curricular_windows)
     add_dependencies(lgaed_lesson_reader_edit_order_tests lgaed_reader_revision_fixtures)
-    foreach(_scenario insert insert-forward reorder prose other-page unheard-negative)
+    foreach(_scenario insert insert-forward retire-insert reorder prose other-page unheard-negative)
         string(REPLACE "-" "_" _test_suffix "${_scenario}")
         add_test(NAME "native.reader_revision_${_test_suffix}"
             COMMAND lgaed_lesson_reader_edit_order_tests
