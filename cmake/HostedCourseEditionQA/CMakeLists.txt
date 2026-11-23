@@ -323,6 +323,8 @@ add_custom_command(OUTPUT ${_current_format_outputs}
         "${_lgaed_root}/scripts/curriculum/test_real_code_format_pilot.py"
         --output-dir "${_current_format_dir}"
     DEPENDS "${_lgaed_root}/scripts/curriculum/test_real_code_format_pilot.py"
+        "${_lgaed_root}/scripts/curriculum/format_batch_history.py"
+        "${_lgaed_root}/scripts/curriculum/windows_cpp_ci.py"
         "${_lgaed_root}/scripts/curriculum/code_format_compat.py"
         "${_lgaed_root}/scripts/curriculum/stable_state_layout.py"
         "${_lgaed_root}/app/src/main/assets/content/es/programming/cpp_fundamentals/expresiones_y_decisiones/lesson_construir_decisiones_desde_un_problema.json"
@@ -339,6 +341,9 @@ add_test(NAME native.code_format_current_pilot
     COMMAND lgaed_code_format_loader_tests --real-pilot "${_current_format_dir}")
 set_tests_properties(native.code_format_current_pilot
     PROPERTIES TIMEOUT 90 RUN_SERIAL TRUE)
+
+include("${_lgaed_root}/cmake/FormatFixtureHistoryTests.cmake")
+lgaed_add_format_fixture_history_tests("${_lgaed_root}")
 
 include("${_lgaed_root}/cmake/NestedCmakeFormatTests.cmake")
 lgaed_add_nested_cmake_format_tests("${_lgaed_root}")

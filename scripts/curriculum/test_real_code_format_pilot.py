@@ -18,6 +18,7 @@ from unittest import mock
 
 import stable_state_layout as state
 from code_format_compat import require_source_format, source_projection, SourceFormatError
+from format_batch_history import Publication, active_owners, all_owners, publication_bytes, verify_publication_bytes
 
 ROOT = Path(__file__).resolve().parents[2]
 RELATIVE = Path("programming/cpp_fundamentals/expresiones_y_decisiones/"
@@ -27,15 +28,35 @@ POSITIONS = {
     (5, 2): "block_0005_0002",  # page 6 / block 3
 }
 EXPECTED_STDOUT = "Grupos: 3\nSobrantes: 3"
+OWNERS = tuple(POSITIONS.values())
+PUBLICATIONS = {
+    "921e1df": {
+        "es": Publication("921e1df9171992ab7a9f1b3803b963b02fd45bbc", "6b387aa196ecd5ee8f739e82f57f3275bd86817e4ddc3dfc4a6df1a960879094"),
+        "en": Publication("921e1df9171992ab7a9f1b3803b963b02fd45bbc", "3911b9f5e0a64c46c1b636d4234315c4e31a52593ea6eb2b0f86ce9bc0017793"),
+        "fr": Publication("921e1df9171992ab7a9f1b3803b963b02fd45bbc", "842f47d9660793d49ead0aace70721d096d73f1f1676a7981cce06ef16fefcb4"),
+    },
+    "83e2d4e6": {
+        "es": Publication("83e2d4e6d21027c6ca072dd2e85d4700a21d611d", "12a18382e05a4552d67b561d5490beb455d44b421ee4f8dbb1b71d3f5f15149d"),
+        "en": Publication("83e2d4e6d21027c6ca072dd2e85d4700a21d611d", "3911b9f5e0a64c46c1b636d4234315c4e31a52593ea6eb2b0f86ce9bc0017793"),
+        "fr": Publication("83e2d4e6d21027c6ca072dd2e85d4700a21d611d", "842f47d9660793d49ead0aace70721d096d73f1f1676a7981cce06ef16fefcb4"),
+    },
+}
 
 
 def source_path(locale: str) -> Path:
     return ROOT / "app/src/main/assets/content" / locale / RELATIVE
 
 
-def documents() -> dict[str, dict]:
-    return {locale: json.loads(source_path(locale).read_text(encoding="utf-8"))
-            for locale in ("es", "en", "fr")}
+def documents(publication: str = "working-tree") -> dict[str, dict]:
+    if publication == "working-tree":
+        return {locale: json.loads(source_path(locale).read_bytes())
+                for locale in ("es", "en", "fr")}
+    result = {}
+    for locale, expected in PUBLICATIONS[publication].items():
+        relative = (Path("app/src/main/assets/content") / locale / RELATIVE).as_posix()
+        payload = publication_bytes(ROOT, relative, expected)
+        result[locale] = json.loads(verify_publication_bytes(payload, expected))
+    return result
 
 
 def format_real_code(source: str) -> str:
@@ -54,71 +75,64 @@ def format_real_code(source: str) -> str:
     return output
 
 
-def pilot() -> tuple[dict, dict]:
-    family = documents()
+def pilot(publication: str = "working-tree") -> tuple[dict, dict]:
+    family = documents(publication)
     original = family["es"]
     assert original["stateLayout"]["version"] == 2
     assert original["stateLayout"]["locale"] == "es"
     assert set(original["stateLayout"]["family"]) == {"es", "en", "fr"}
     state.validate(original)
-    # Once the real lesson has been published, restore only its authenticated
-    # source snapshots in memory so the same pilot still tests old versus new.
-    # Never reset the authored origin, student progress, or other editorial work.
     archived = original["stateLayout"].get("sourceFormatRevisions", [])
-    if archived:
-        assert len(archived) == len(POSITIONS)
-        assert [item["id"] for item in archived] == list(POSITIONS.values())
-        historical = deepcopy(original)
-        editorial = historical["stateLayout"]["editorial"]
-        # An editorial update can be published after a safe source-format
-        # revision. Only a terminal format suffix can be removed to rebuild a
-        # genuine previous publication. Otherwise the archived blocks are an
-        # in-memory comparison view, NOT a forged valid historical state.
-        terminal = [entry["id"] for entry in editorial[-len(POSITIONS):]] == list(POSITIONS.values())
-        if terminal:
-            historical["stateLayout"]["editorial"] = editorial[:-len(POSITIONS)]
-            historical["stateLayout"].pop("sourceFormatRevisions")
-        for (page, block), identity in POSITIONS.items():
-            saved = next(item for item in archived if item["id"] == identity)
-            current = original["pages"][page]["blocks"][block]
-            historical["pages"][page]["blocks"][block] = deepcopy(saved["block"])
-            assert current["code"] == format_real_code(saved["block"]["code"])
-            assert require_source_format(saved["block"], current)
-            assert source_projection(current, saved["block"]) == saved["block"]
-        if terminal:
-            state.validate(historical)
-            state.validate_transition(historical, original)
-            assert state.prepare_v2(original, "es", family, historical) == original
-        else:
-            # state.validate(original) above authenticates every editorial
-            # edge and its source snapshot, including later unrelated edits.
-            # Never discard an append-only post-format editorial proof.
-            assert historical["stateLayout"] == original["stateLayout"]
-        return historical, original
+    by_id = {entry["id"]: entry["block"] for entry in archived}
+    original_blocks, _ = active_owners(original)
     changed = deepcopy(original)
-    for (page, block), identity in POSITIONS.items():
-        assert original["stateLayout"]["current"][page]["blocks"][block] == identity
-        before = original["pages"][page]["blocks"][block]
+    changed_blocks, _ = active_owners(changed)
+    additions = []
+    for identity in OWNERS:
+        before = original_blocks[identity]
         assert before["type"] == "code"
-        after = changed["pages"][page]["blocks"][block]
-        after["code"] = format_real_code(before["code"])
-        assert require_source_format(before, after)
-        assert source_projection(after, before) == before
-    formatted = state.prepare_v2(changed, "es", family, original)
+        if identity not in by_id:
+            after = changed_blocks[identity]
+            after["code"] = format_real_code(before["code"])
+            assert require_source_format(before, after)
+            assert source_projection(after, before) == before
+            additions.append(identity)
+    formatted = (state.prepare_v2(changed, "es", family, original)
+                 if additions else original)
     state.validate_transition(original, formatted)
     assert state.validate(original) == state.validate(formatted)
     assert original["stateLayout"]["origin"] == formatted["stateLayout"]["origin"]
     assert original["stateLayout"]["family"] == formatted["stateLayout"]["family"]
     assert original["stateLayout"]["additions"] == formatted["stateLayout"]["additions"]
-    assert len(formatted["stateLayout"]["sourceFormatRevisions"]) == 2
-    assert set(entry["id"] for entry in formatted["stateLayout"]["sourceFormatRevisions"]) == set(POSITIONS.values())
+    records = formatted["stateLayout"]["sourceFormatRevisions"]
+    assert records[:len(archived)] == archived
+    appended = records[len(archived):]
+    assert len(appended) == len(additions)
+    assert {entry["id"] for entry in appended} == set(additions)
     assert (formatted["stateLayout"]["editorial"][:len(original["stateLayout"]["editorial"])]
             == original["stateLayout"]["editorial"])
-    assert len(formatted["stateLayout"]["editorial"]) == len(original["stateLayout"]["editorial"]) + 2
-    for entry in formatted["stateLayout"]["sourceFormatRevisions"]:
-        pos = next(pos for pos, identity in POSITIONS.items() if identity == entry["id"])
-        assert entry["block"] == original["pages"][pos[0]]["blocks"][pos[1]]
-    return original, formatted
+    assert len(formatted["stateLayout"]["editorial"]) == len(original["stateLayout"]["editorial"]) + len(additions)
+    snapshots = {entry["id"]: entry["block"] for entry in records}
+    current_blocks, positions = active_owners(formatted)
+    comparison = deepcopy(formatted)
+    for identity in OWNERS:
+        saved, current = snapshots[identity], current_blocks[identity]
+        # Keep the original pilot's exact three-spacing revision as evidence,
+        # while permitting later authenticated formatting of the same owner.
+        first_format = deepcopy(saved)
+        first_format["code"] = format_real_code(saved["code"])
+        edge = {"id": identity, "beforeSha256": state.fingerprint(saved),
+                "afterSha256": state.fingerprint(first_format)}
+        assert edge in formatted["stateLayout"]["editorial"]
+        assert require_source_format(saved, current)
+        assert source_projection(current, saved) == saved
+        page, block = positions[identity]
+        comparison["pages"][page]["blocks"][block] = deepcopy(saved)
+        if identity in additions:
+            assert saved == original_blocks[identity]
+    # This view compares canonical source bytes only. Never strip editorial
+    # edges or other owners' archives to fabricate a historical publication.
+    return (original if len(additions) == len(OWNERS) else comparison), formatted
 
 
 def run_cpp(source: str, directory: Path, name: str) -> str:
@@ -145,12 +159,13 @@ def append_independent_editorial(published: dict, family: dict[str, dict]) -> di
     # Simulate another real editorial publication after formatting, including
     # the explicit semantic fingerprint required by the Windows reader.
     changed = deepcopy(published)
-    changed["pages"][0]["blocks"][3]["text"] += " Comprueba los datos antes de calcular."
+    paragraph = active_owners(changed)[0]["block_0000_0003"]
+    paragraph["text"] += " Comprueba los datos antes de calcular."
     descriptor = next(field for field in changed["textSemantics"]["fields"]
                       if field["block"] == "block_0000_0003" and field["path"] == "/text")
     assert descriptor["spans"] == []
     descriptor["sourceSha256"] = hashlib.sha256(
-        changed["pages"][0]["blocks"][3]["text"].encode("utf-8")).hexdigest()
+        paragraph["text"].encode("utf-8")).hexdigest()
     return state.prepare_v2(changed, "es", family, published)
 
 
@@ -159,23 +174,20 @@ class RealPublishedFormatPilot(unittest.TestCase):
         before_bytes = source_path("es").read_bytes()
         old, revised = pilot()
         self.assertEqual(before_bytes, source_path("es").read_bytes())
-        self.assertEqual(old["pages"][3]["blocks"][3]["answers"],
-                         revised["pages"][3]["blocks"][3]["answers"])
-        self.assertEqual(old["pages"][3]["blocks"][6],
-                         revised["pages"][3]["blocks"][6])
-        self.assertEqual(old["pages"][5]["blocks"][6],
-                         revised["pages"][5]["blocks"][6])
-        self.assertNotEqual(old["pages"][3]["blocks"][2]["code"],
-                            revised["pages"][3]["blocks"][2]["code"])
+        old_blocks, new_blocks = all_owners(old), all_owners(revised)
+        for identity in old_blocks.keys() - set(OWNERS):
+            self.assertEqual(old_blocks[identity], new_blocks[identity], identity)
+        for identity in OWNERS:
+            self.assertNotEqual(old_blocks[identity]["code"], new_blocks[identity]["code"])
 
     def test_real_code_compiles_and_outputs_identically(self):
         original, formatted = pilot()
         with tempfile.TemporaryDirectory(prefix="lgaed-real-format-") as path:
             directory = Path(path)
-            for index, (page, block) in enumerate(POSITIONS):
-                old = original["pages"][page]["blocks"][block]["code"]
-                new = formatted["pages"][page]["blocks"][block]["code"]
-                with self.subTest(page=page+1):
+            old_blocks, new_blocks = all_owners(original), all_owners(formatted)
+            for index, identity in enumerate(OWNERS):
+                old, new = old_blocks[identity]["code"], new_blocks[identity]["code"]
+                with self.subTest(owner=identity):
                     actual_before = run_cpp(old, directory, f"baseline_{index}")
                     actual_after = run_cpp(new, directory, f"formatted_{index}")
                     self.assertEqual(actual_before, EXPECTED_STDOUT)
@@ -184,19 +196,21 @@ class RealPublishedFormatPilot(unittest.TestCase):
     def test_real_answer_and_archived_source_forgeries_rejected(self):
         original, formatted = pilot()
         changed_answer = deepcopy(formatted)
-        changed_answer["pages"][3]["blocks"][3]["answers"] = ["forged"]
+        all_owners(changed_answer)["block_0003_0003"]["answers"] = ["forged"]
         with self.assertRaises(state.LayoutError):
             state.validate(changed_answer)
         changed_code = deepcopy(formatted)
-        changed_code["pages"][3]["blocks"][2]["code"] = changed_code["pages"][3]["blocks"][2]["code"].replace(
+        code = all_owners(changed_code)[OWNERS[0]]
+        code["code"] = code["code"].replace(
             "const int fichas = 18;", "const int fichas = 19;", 1)
         with self.assertRaises((state.LayoutError, SourceFormatError)):
             state.validate(changed_code)
         forged_archive = deepcopy(formatted)
-        forged_archive["stateLayout"]["sourceFormatRevisions"][0]["block"]["code"] += " // forged"
+        next(entry["block"] for entry in forged_archive["stateLayout"]["sourceFormatRevisions"]
+             if entry["id"] == OWNERS[0])["code"] += " // forged"
         with self.assertRaises(state.LayoutError):
             state.validate(forged_archive)
-        if "sourceFormatRevisions" not in original["stateLayout"]:
+        if original["stateLayout"] != formatted["stateLayout"]:
             self.assertEqual(state.validate(original), state.validate(formatted))
         else:
             # A comparison view after later editorial changes is intentionally
@@ -209,7 +223,7 @@ class RealPublishedFormatPilot(unittest.TestCase):
         revised = append_independent_editorial(family["es"], family)
         with tempfile.TemporaryDirectory(prefix="lgaed-real-later-fixtures-") as path:
             with mock.patch.dict(pilot.__globals__,
-                                 {"documents": lambda: {**family, "es": revised}}):
+                                 {"documents": lambda publication="working-tree": {**family, "es": revised}}):
                 write_fixtures(Path(path))
             previous = json.loads((Path(path) / "real.before.json").read_text(encoding="utf-8"))
             current = json.loads((Path(path) / "real.after.json").read_text(encoding="utf-8"))
@@ -220,11 +234,11 @@ class RealPublishedFormatPilot(unittest.TestCase):
         state.validate(later)
         self.assertEqual(previous, current)
         self.assertEqual(current, revised)
-        for page, index in POSITIONS:
-            identity = POSITIONS[(page, index)]
+        current_blocks = all_owners(current)
+        for identity in OWNERS:
             archived = next(entry["block"] for entry in current["stateLayout"]["sourceFormatRevisions"]
                             if entry["id"] == identity)
-            self.assertNotEqual(archived["code"], current["pages"][page]["blocks"][index]["code"])
+            self.assertNotEqual(archived["code"], current_blocks[identity]["code"])
 
     def test_later_editorial_update_preserves_format_proofs(self):
         # Reproduce a later, independent paragraph correction (as in main)
@@ -235,21 +249,67 @@ class RealPublishedFormatPilot(unittest.TestCase):
         self.assertEqual(revised["stateLayout"]["editorial"][-1]["id"], "block_0000_0003")
         self.assertEqual(revised["stateLayout"]["sourceFormatRevisions"],
                          published["stateLayout"]["sourceFormatRevisions"])
-        with mock.patch.dict(pilot.__globals__, {"documents": lambda: {**family, "es": revised}}):
+        with mock.patch.dict(pilot.__globals__,
+                             {"documents": lambda publication="working-tree": {**family, "es": revised}}):
             before, after = pilot()
         self.assertEqual(after, revised)
         self.assertEqual(before["stateLayout"], revised["stateLayout"])
-        for page, block in POSITIONS:
-            self.assertNotEqual(before["pages"][page]["blocks"][block]["code"],
-                                after["pages"][page]["blocks"][block]["code"])
+        before_blocks, after_blocks = all_owners(before), all_owners(after)
+        for identity in OWNERS:
+            self.assertNotEqual(before_blocks[identity]["code"], after_blocks[identity]["code"])
         forged = deepcopy(after)
         forged["stateLayout"]["editorial"][-1]["afterSha256"] = "0" * 64
         with self.assertRaises(state.LayoutError):
             state.validate(forged)
 
+    def test_complete_publications_keep_coexisting_archives_and_later_format(self):
+        for publication in PUBLICATIONS:
+            with self.subTest(publication=publication):
+                family = documents(publication)
+                published = family["es"]
+                untouched = deepcopy(published)
+                comparison, current = pilot(publication)
+                self.assertEqual(published, untouched)
+                self.assertEqual(current, published)
+                self.assertEqual(comparison["stateLayout"], published["stateLayout"])
+                # These are intentionally complete publications: 83 contains
+                # four additional real archives and retired compiler owners.
+                expected = 2 if publication == "921e1df" else 6
+                self.assertEqual(len(current["stateLayout"]["sourceFormatRevisions"]), expected)
+                changed = deepcopy(current)
+                all_owners(changed)[OWNERS[0]]["code"] = "\n" + all_owners(changed)[OWNERS[0]]["code"]
+                later = state.prepare_v2(changed, "es", family, current)
+                with mock.patch.dict(pilot.__globals__,
+                                     {"documents": lambda publication="working-tree": {**family, "es": later}}):
+                    earlier_source, resolved = pilot()
+                    with tempfile.TemporaryDirectory(prefix="lgaed-format-coexisting-") as folder:
+                        write_fixtures(Path(folder))
+                        exported = json.loads((Path(folder) / "real.before.json").read_bytes())
+                self.assertEqual(resolved, later)
+                self.assertEqual(exported, later)
+                self.assertEqual(earlier_source["stateLayout"], later["stateLayout"])
+                self.assertEqual(later["stateLayout"]["sourceFormatRevisions"],
+                                 current["stateLayout"]["sourceFormatRevisions"])
+                self.assertEqual(later["stateLayout"]["editorial"][:-1],
+                                 current["stateLayout"]["editorial"])
 
-def write_fixtures(directory: Path) -> None:
-    original, formatted = pilot()
+    def test_pinned_publications_reject_changed_bytes_and_missing_history(self):
+        for name, locales in PUBLICATIONS.items():
+            for locale, publication in locales.items():
+                relative = (Path("app/src/main/assets/content") / locale / RELATIVE).as_posix()
+                payload = publication_bytes(ROOT, relative, publication)
+                with self.subTest(publication=name, locale=locale):
+                    self.assertEqual(verify_publication_bytes(payload, publication), payload)
+                    with self.assertRaisesRegex(ValueError, "pinned complete publication"):
+                        verify_publication_bytes(payload + b"\n", publication)
+            with mock.patch.dict(pilot.__globals__,
+                                 {"publication_bytes": mock.Mock(side_effect=FileNotFoundError("history"))}):
+                with self.assertRaises(FileNotFoundError):
+                    documents(name)
+
+
+def write_fixtures(directory: Path, publication: str = "working-tree") -> None:
+    original, formatted = pilot(publication)
     # A source-only comparison view after a later editorial revision is not a
     # valid loadable lesson: its block bytes precede its current editorial SHA.
     # Use the authentic current document for both physical fixtures then.
@@ -257,7 +317,7 @@ def write_fixtures(directory: Path) -> None:
     # sourceFormatRevisions, rather than loading a forged historical lesson.
     before = (formatted if original["stateLayout"] == formatted["stateLayout"]
               else original)
-    later = append_independent_editorial(formatted, documents())
+    later = append_independent_editorial(formatted, documents(publication))
     directory.mkdir(parents=True, exist_ok=True)
     pairs = (
         ("real.before.json", before), ("real.after.json", formatted),
@@ -276,8 +336,9 @@ def write_fixtures(directory: Path) -> None:
 def main() -> None:
     parser = argparse.ArgumentParser()
     parser.add_argument("--output-dir", type=Path, required=True)
+    parser.add_argument("--publication", choices=("working-tree", *PUBLICATIONS), default="working-tree")
     args = parser.parse_args()
-    write_fixtures(args.output_dir)
+    write_fixtures(args.output_dir, args.publication)
 
 
 if __name__ == "__main__":

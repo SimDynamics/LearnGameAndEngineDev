@@ -3,6 +3,7 @@
 #include "platform/windows/android_import.hpp"
 #include "core/narration_state.hpp"
 #include "core/lesson.hpp"
+#include "core/code_format_compat.hpp"
 
 #include <algorithm>
 #include <array>
@@ -14,6 +15,7 @@
 #include <winrt/Windows.Foundation.Collections.h>
 #include <winrt/Windows.Data.Json.h>
 #include <stdexcept>
+#include <span>
 #include <string>
 #include <string_view>
 #include <type_traits>
@@ -24,6 +26,53 @@ using namespace lgaed;
 
 void check(bool allowed,std::string_view description) {
     if(!allowed)throw std::runtime_error(std::string(description));
+}
+
+const curriculum::Block& format_owner(const curriculum::Lesson& lesson,std::string_view id) {
+    if(const auto at=curriculum::stable_block_position(lesson,id))
+        return lesson.pages.at(at->page).blocks.at(at->block);
+    const auto archived=std::ranges::find(lesson.retired_blocks,id,&curriculum::Block::stable_id);
+    check(curriculum::retired_block(lesson,id)&&archived!=lesson.retired_blocks.end(),
+        "A format publication lost an active or authenticated retired owner");
+    return *archived;
+}
+
+const curriculum::SourceFormatRevision* format_archive(const curriculum::Lesson& lesson,std::string_view id) {
+    const auto& entries=lesson.state_layout.source_format_revisions;
+    const auto found=std::ranges::find(entries,id,&curriculum::SourceFormatRevision::id);
+    return found==entries.end()?nullptr:&*found;
+}
+
+void verify_format_archives(const curriculum::Lesson& before,const curriculum::Lesson& after,
+        std::span<const std::string_view> owners) {
+    using namespace winrt::Windows::Data::Json;
+    const auto& previous=before.state_layout.source_format_revisions;
+    const auto& current=after.state_layout.source_format_revisions;
+    check(current.size()>=previous.size(),"Formatting removed a canonical source archive");
+    for(std::size_t index=0;index<previous.size();++index)
+        check(current[index].id==previous[index].id&&
+            current[index].raw_json==previous[index].raw_json&&
+            current[index].sha256==previous[index].sha256,
+            "Formatting rewrote, moved or reassigned a complete canonical source archive");
+    auto expected=previous.size();
+    for(const auto id:owners) {
+        const auto prior=format_archive(before,id),revised=format_archive(after,id);
+        check(revised!=nullptr,"Formatting omitted a reviewed owner's complete source archive");
+        if(!prior)++expected;
+        const auto& original=prior?prior->raw_json:format_owner(before,id).raw_json;
+        check(JsonObject::Parse(winrt::to_hstring(original)).Stringify()==
+                JsonObject::Parse(winrt::to_hstring(revised->raw_json)).Stringify(),
+            "Formatting replaced the complete canonical block with a current presentation");
+    }
+    check(current.size()==expected,"Formatting added another owner's source archive");
+    const auto old_layout=JsonObject::Parse(winrt::to_hstring(before.state_layout.raw_json));
+    const auto new_layout=JsonObject::Parse(winrt::to_hstring(after.state_layout.raw_json));
+    const auto old_edges=old_layout.GetNamedArray(L"editorial");
+    const auto new_edges=new_layout.GetNamedArray(L"editorial");
+    check(new_edges.Size()>=old_edges.Size(),"Formatting removed a published editorial edge");
+    for(std::uint32_t index=0;index<old_edges.Size();++index)
+        check(old_edges.GetAt(index).Stringify()==new_edges.GetAt(index).Stringify(),
+            "Formatting changed the complete published editorial prefix");
 }
 
 void verify_locale(const std::filesystem::path& path,std::string_view locale) {
@@ -120,46 +169,25 @@ void verify_real_curricular_pilot(const std::filesystem::path& fixtures) {
         "The real U3L8 pilot did not load its published original lesson");
     check(before.state_layout.signatures==after.state_layout.signatures&&
         before.state_layout.lineage==after.state_layout.lineage&&
-        before.state_layout.legacy_lineage==after.state_layout.legacy_lineage&&
-        after.state_layout.source_format_revisions.size()==2,
+        before.state_layout.legacy_lineage==after.state_layout.legacy_lineage,
         "Real lesson formatting changed stable historical ownership");
 
-    // A later unrelated editorial change makes it impossible to create an
-    // authentic complete pre-format lesson from the current publication.
-    // Both fixture files must remain loadable; the previous source comes
-    // from the same authenticated format archive that protects progress.
-    const bool archived_before=before.state_layout.source_format_revisions.size()==2;
-    check(archived_before||before.state_layout.source_format_revisions.empty(),
-        "The pilot's prior document has an unexpected format history");
-    const auto owner=[](const curriculum::Lesson& model,std::string_view id)
-            ->const curriculum::Block& {
-        if(const auto at=curriculum::stable_block_position(model,id))
-            return model.pages.at(at->page).blocks.at(at->block);
-        const auto archived=std::ranges::find(model.retired_blocks,id,&curriculum::Block::stable_id);
-        check(curriculum::retired_block(model,id)&&archived!=model.retired_blocks.end(),
-            "The U3L8 publication lost an active or authenticated retired owner");
-        return *archived;
-    };
     constexpr std::array<std::string_view,2> samples{{"block_0003_0002","block_0005_0002"}};
+    verify_format_archives(before,after,samples);
     for(const auto id:samples) {
-        const auto& old=owner(before,id);
-        const auto& changed=owner(after,id);
-        std::string original_code=old.code;
-        if(archived_before) {
-            const auto& revisions=after.state_layout.source_format_revisions;
-            const auto found=std::find_if(revisions.begin(),revisions.end(),
-                [&](const auto& revision){return revision.id==changed.stable_id;});
-            check(found!=revisions.end(),"The U3L8 code archive lost its original owner");
-            const auto archived=winrt::Windows::Data::Json::JsonObject::Parse(
-                winrt::to_hstring(found->raw_json));
-            original_code=winrt::to_string(archived.GetNamedString(L"code"));
-            check(old.code==changed.code,
-                "A comparison-only historic reading was passed off as loadable JSON");
-        }
+        const auto& old=format_owner(before,id);
+        const auto& changed=format_owner(after,id);
+        const auto archive=format_archive(after,id);
+        check(archive!=nullptr,"The U3L8 code archive lost its original owner");
+        const auto original=winrt::Windows::Data::Json::JsonObject::Parse(
+            winrt::to_hstring(archive->raw_json));
+        const auto original_code=winrt::to_string(original.GetNamedString(L"code"));
+        // A later authenticated format may change indentation again. The
+        // canonical source and complete editorial prefix remain immutable.
         check(old.type==curriculum::BlockType::code&&changed.type==old.type&&
             original_code!=changed.code&&
-            changed.code.find("\n\n    if (")!=std::string::npos&&
-            changed.code.find("\n\n    return 0;")!=std::string::npos&&
+            curriculum::code_format::equivalent(original_code,changed.code,curriculum::code_format::Language::cpp)&&
+            curriculum::code_format::equivalent(old.code,changed.code,curriculum::code_format::Language::cpp)&&
             old.stable_id==changed.stable_id&&
             curriculum::exercise_key(before,old)==curriculum::exercise_key(after,changed),
             "Actual protected U3L8 code block did not gain safe physical line breaks");
@@ -174,6 +202,9 @@ void verify_real_curricular_pilot(const std::filesystem::path& fixtures) {
                 curriculum::draft_key("programming",before,old)==
                     curriculum::draft_key("programming",after,changed),
                 "Real formatting changed the student's exercise or draft key");
+            if(std::ranges::find(samples,old.stable_id)==samples.end())
+                check(old.raw_json==changed.raw_json,
+                    "The real format pilot changed another complete curricular block");
             if(curriculum::has_compiler_objective(old)) {
                 check(curriculum::has_compiler_objective(changed)&&
                     curriculum::reference_objective_frame(before,old)==
@@ -182,8 +213,8 @@ void verify_real_curricular_pilot(const std::filesystem::path& fixtures) {
             }
         }
     }
-    const auto& prediction_before=owner(before,"block_0003_0003");
-    const auto& prediction_after=owner(after,"block_0003_0003");
+    const auto& prediction_before=format_owner(before,"block_0003_0003");
+    const auto& prediction_after=format_owner(after,"block_0003_0003");
     const auto prediction_position=curriculum::stable_block_position(before,prediction_before.stable_id);
     check(prediction_position.has_value()&&
         prediction_position==curriculum::stable_block_position(after,prediction_after.stable_id),
@@ -197,8 +228,8 @@ void verify_real_curricular_pilot(const std::filesystem::path& fixtures) {
     state::prepare_lesson_state(saved,before);
     state::Response response;response.correct=true;response.answer=prediction_before.answers.front();
     state::put_response(saved,before,prediction_before,response);
-    const auto& editor_before=owner(before,"block_0003_0006");
-    const auto& editor_after=owner(after,"block_0003_0006");
+    const auto& editor_before=format_owner(before,"block_0003_0006");
+    const auto& editor_after=format_owner(after,"block_0003_0006");
     check(editor_before.type==curriculum::BlockType::cpp_compiler&&
         editor_after.type==editor_before.type&&
         editor_before.initial_code==editor_after.initial_code&&
@@ -252,11 +283,17 @@ void verify_real_curricular_pilot(const std::filesystem::path& fixtures) {
     const auto catalog=windows::load_lesson_progress_metadata(fixtures/"real.after.json","es");
     check(catalog.state_layout.lineage==after.state_layout.lineage&&
         catalog.pages.size()==after.pages.size()&&
-        curriculum::draft_key("programming",catalog,owner(catalog,editor_after.stable_id))==
+        curriculum::draft_key("programming",catalog,format_owner(catalog,editor_after.stable_id))==
             curriculum::draft_key("programming",after,editor_after)&&
         curriculum::retired_block(catalog,editor_after.stable_id)==
             curriculum::retired_block(after,editor_after.stable_id),
         "The real U3L8 read-only curriculum catalog lost its historical identity");
+    verify_format_archives(after,catalog,samples);
+}
+
+void verify_real_curricular_pilots(const std::filesystem::path& fixtures) {
+    verify_real_curricular_pilot(fixtures);
+    verify_real_curricular_pilot(fixtures/"after-editorial");
 }
 
 void verify_real_u6_compiler_diagnostics(const std::filesystem::path& fixtures) {
@@ -268,22 +305,21 @@ void verify_real_u6_compiler_diagnostics(const std::filesystem::path& fixtures) 
     check(before.id=="cpp_fundamentals__funciones_y_contratos__declaraciones_y_firmas"&&
         after.id==before.id && after.state_layout.signatures==before.state_layout.signatures &&
         after.state_layout.lineage==before.state_layout.lineage &&
-        after.state_layout.legacy_lineage==before.state_layout.legacy_lineage &&
-        after.state_layout.source_format_revisions.size()==
-            before.state_layout.source_format_revisions.size()+3,
+        after.state_layout.legacy_lineage==before.state_layout.legacy_lineage,
         "U6L2 diagnostic formatting changed published lesson lineage or omitted source archives");
 
-    const std::array<std::pair<std::size_t,std::size_t>,3> editors{{{14,2},{15,2},{17,2}}};
+    constexpr std::array<std::string_view,3> editors{{
+        "block_0014_0002","block_0015_0002","block_0017_0002"}};
     const std::array<std::string_view,3> diagnostic_names{{
         "u6-difference-unselected-definition",
         "u6-difference-conflicting-return",
         "u6-difference-missing-header"}};
+    verify_format_archives(before,after,editors);
     state::StateData saved;
     state::prepare_lesson_state(saved,before);
     for(std::size_t n=0;n<editors.size();++n) {
-        const auto [page,index]=editors[n];
-        const auto& historical=before.pages[page].blocks[index];
-        const auto& current=after.pages[page].blocks[index];
+        const auto& historical=format_owner(before,editors[n]);
+        const auto& current=format_owner(after,editors[n]);
         check(historical.type==curriculum::BlockType::cpp_compiler &&
             current.type==historical.type && historical.compile_check &&
             current.compile_check &&
@@ -296,12 +332,16 @@ void verify_real_u6_compiler_diagnostics(const std::filesystem::path& fixtures) 
             "A U6L2 compiler diagnostic changed its source selection or historical owner");
         check(historical.initial_code!=current.initial_code &&
             historical.project_files!=current.project_files &&
-            current.source_format_original_initial_code==historical.initial_code &&
-            current.source_format_original_project_files==historical.project_files &&
+            current.source_format_original_initial_code==
+                historical.source_format_original_initial_code.value_or(historical.initial_code) &&
+            current.source_format_original_project_files==
+                historical.source_format_original_project_files.value_or(historical.project_files) &&
             curriculum::exercise_key(before,historical)==
                 curriculum::exercise_key(after,current) &&
             curriculum::draft_key("programming",before,historical)==
-                curriculum::draft_key("programming",after,current),
+                curriculum::draft_key("programming",after,current) &&
+            curriculum::reference_objective_frame(before,historical)==
+                curriculum::reference_objective_frame(after,current),
             "The U6L2 format archive did not retain the exact old initial project and draft keys");
         state::Draft draft;
         draft.source="int main() {\n    // saved student draft\n    return 0;\n}\n";
@@ -312,8 +352,8 @@ void verify_real_u6_compiler_diagnostics(const std::filesystem::path& fixtures) 
     const auto reopened=state::decode(state::encode(saved));
     check(reopened==saved,"U6L2 formatting mutated the saved state codec");
     state::validate_lesson_state(reopened,after);
-    for(const auto [page,index]:editors) {
-        const auto& current=after.pages[page].blocks[index];
+    for(const auto id:editors) {
+        const auto& current=format_owner(after,id);
         const auto restored=state::get_draft(reopened,
             curriculum::draft_key("programming",after,current),
             current.initial_code,current.standard_input.value_or(""));
@@ -327,6 +367,7 @@ void verify_real_u6_compiler_diagnostics(const std::filesystem::path& fixtures) 
         index.state_layout.lineage==after.state_layout.lineage &&
         index.pages.size()==after.pages.size(),
         "The Windows read-only curriculum inventory rejected a legitimate formatted U6L2 diagnostic");
+    verify_format_archives(after,index,editors);
 }
 
 void verify_visual_separators_keep_order_and_history(const std::filesystem::path& fixtures) {
@@ -448,14 +489,14 @@ void must_reject(const std::filesystem::path& file) {
 }
 
 void verify_additional_real_compile_diagnostics(const std::filesystem::path& fixtures) {
-    struct Sample {std::string_view label,lesson,diagnostic;std::size_t page,index;bool project;};
+    struct Sample {std::string_view label,lesson,diagnostic,id;bool project;};
     const std::array<Sample,2> samples{{
         {"u6more",
          "cpp_fundamentals__funciones_y_contratos__interfaces_cabeceras_y_programas_con_varios_archivos",
-         "u6-envelopes-missing-header",16,2,true},
+         "u6-envelopes-missing-header","block_0016_0002",true},
         {"u9",
          "cpp_fundamentals__datos_propios_y_estado_valido__consultas_const_y_objetos_constantes",
-         "const-member-call",6,6,false}
+         "const-member-call","block_0006_0006",false}
     }};
     for(const auto& sample:samples) {
         const auto before_file=fixtures/(std::string(sample.label)+".before.json");
@@ -465,12 +506,12 @@ void verify_additional_real_compile_diagnostics(const std::filesystem::path& fix
         check(before.id==sample.lesson&&after.id==before.id&&
             before.state_layout.signatures==after.state_layout.signatures&&
             before.state_layout.lineage==after.state_layout.lineage&&
-            before.state_layout.legacy_lineage==after.state_layout.legacy_lineage&&
-            after.state_layout.source_format_revisions.size()==
-                before.state_layout.source_format_revisions.size()+1,
+            before.state_layout.legacy_lineage==after.state_layout.legacy_lineage,
             "A U6/U9 compiler format changed historical state or the original lesson");
-        const auto& original=before.pages.at(sample.page).blocks.at(sample.index);
-        const auto& formatted=after.pages.at(sample.page).blocks.at(sample.index);
+        const std::array owners{sample.id};
+        verify_format_archives(before,after,owners);
+        const auto& original=format_owner(before,sample.id);
+        const auto& formatted=format_owner(after,sample.id);
         check(original.type==curriculum::BlockType::cpp_compiler&&
             formatted.type==original.type&&original.compile_check&&formatted.compile_check&&
             original.compile_check->diagnostic==sample.diagnostic&&
@@ -480,10 +521,12 @@ void verify_additional_real_compile_diagnostics(const std::filesystem::path& fix
             original.address.block==formatted.address.block&&
             original.source_files==formatted.source_files&&
             original.initial_code!=formatted.initial_code&&
-            formatted.source_format_original_initial_code==original.initial_code&&
+            formatted.source_format_original_initial_code==
+                original.source_format_original_initial_code.value_or(original.initial_code)&&
             (sample.project?
                 (original.project_files!=formatted.project_files&&
-                 formatted.source_format_original_project_files==original.project_files):
+                 formatted.source_format_original_project_files==
+                     original.source_format_original_project_files.value_or(original.project_files)):
                 (original.project_files.empty()&&formatted.project_files.empty()))&&
             curriculum::exercise_key(before,original)==curriculum::exercise_key(after,formatted)&&
             curriculum::draft_key("programming",before,original)==
@@ -512,27 +555,37 @@ void verify_additional_real_compile_diagnostics(const std::filesystem::path& fix
         const auto catalog=windows::load_lesson_progress_metadata(after_file,"es");
         check(catalog.state_layout.lineage==after.state_layout.lineage&&
             catalog.pages.size()==after.pages.size()&&
-            catalog.pages.at(sample.page).blocks.size()==after.pages.at(sample.page).blocks.size(),
+            format_owner(catalog,sample.id).stable_id==formatted.stable_id&&
+            curriculum::draft_key("programming",catalog,format_owner(catalog,sample.id))==
+                curriculum::draft_key("programming",after,formatted),
             "The progress-only loader rejected an authentic compiled diagnostic");
+        verify_format_archives(after,catalog,owners);
         for(const auto variant:{"forged-source","forged-goal","forged-archive"})
             must_reject(fixtures/(std::string(sample.label)+"."+variant+".json"));
     }
 }
-void verify_real_u7_question_and_spacing(const std::filesystem::path& fixtures) {
+void verify_real_u7_question_and_spacing(const std::filesystem::path& fixtures,std::string_view prefix) {
     // Authenticated U7L3 source/prompt copies, never edits to actual lessons.
-    const auto before_file=fixtures/"u7-question.before.json";
-    const auto after_file=fixtures/"u7-question.after.json";
+    check(prefix=="u7-question"||prefix=="u7-question-history","Unknown U7L3 format publication");
+    const auto before_file=fixtures/(std::string(prefix)+".before.json");
+    const auto after_file=fixtures/(std::string(prefix)+".after.json");
     const auto before=windows::load_lesson(before_file,"es");
     const auto after=windows::load_lesson(after_file,"es");
     check(before.id=="cpp_fundamentals__errores_y_construccion_gradual__validar_antes_y_elegir_reporte"&&
           after.id==before.id&&before.state_layout.lineage==after.state_layout.lineage&&
           before.state_layout.signatures==after.state_layout.signatures&&
-          before.state_layout.legacy_lineage==after.state_layout.legacy_lineage&&
-          after.state_layout.source_format_revisions.size()==
-              before.state_layout.source_format_revisions.size()+1,
+          before.state_layout.legacy_lineage==after.state_layout.legacy_lineage,
           "Combined U7L3 source/question edit changed the published history");
-    const auto& old=before.pages.at(0).blocks.at(3);
-    const auto& revised=after.pages.at(0).blocks.at(3);
+    constexpr std::array<std::string_view,1> owners{{"block_0000_0003"}};
+    const auto prior=format_archive(before,owners.front());
+    check((prior!=nullptr)==(prefix=="u7-question-history"),
+          "The U7L3 regression lost its distinct first-format or coexisting-history publication");
+    verify_format_archives(before,after,owners);
+    const auto& old=format_owner(before,owners.front());
+    const auto& revised=format_owner(after,owners.front());
+    const auto position=curriculum::stable_block_position(before,old.stable_id);
+    check(position.has_value()&&position==curriculum::stable_block_position(after,revised.stable_id),
+          "The combined U7L3 edit moved its active stable owner");
     check(old.type==curriculum::BlockType::output_prediction&&
           revised.type==old.type&&old.stable_id=="block_0000_0003"&&
           old.stable_id==revised.stable_id&&old.address.page==revised.address.page&&
@@ -543,16 +596,18 @@ void verify_real_u7_question_and_spacing(const std::filesystem::path& fixtures) 
           curriculum::draft_key("programming",before,old)==
               curriculum::draft_key("programming",after,revised),
           "Question/source spacing changed U7L3 answer, identity or archived student state");
-    const auto archive=std::find_if(after.state_layout.source_format_revisions.begin(),
-                                   after.state_layout.source_format_revisions.end(),
-        [&](const auto& item){return item.id==revised.stable_id;});
-    check(archive!=after.state_layout.source_format_revisions.end(),
+    const auto archive=format_archive(after,revised.stable_id);
+    check(archive!=nullptr,
           "The real U7L3 text/source change has no complete source archive");
     const auto original=winrt::Windows::Data::Json::JsonObject::Parse(
         winrt::to_hstring(archive->raw_json));
-    check(winrt::to_string(original.GetNamedString(L"code"))==old.code&&
-          winrt::to_string(original.GetNamedString(L"question"))==old.question,
-          "Real U7L3 archive replaced its original question or code");
+    if(prior)
+        check(winrt::to_string(original.GetNamedString(L"code"))!=old.code,
+              "The coexisting U7L3 archive was replaced with the already formatted presentation");
+    else
+        check(winrt::to_string(original.GetNamedString(L"code"))==old.code&&
+              winrt::to_string(original.GetNamedString(L"question"))==old.question,
+              "Real U7L3 archive replaced its original question or code");
 
     state::StateData saved;
     state::prepare_lesson_state(saved,before);
@@ -560,20 +615,21 @@ void verify_real_u7_question_and_spacing(const std::filesystem::path& fixtures) 
     response.correct=true;
     response.answer=old.answers.front();
     state::put_response(saved,before,old,response);
-    state::save_current_page(saved,before,0);
+    state::save_current_page(saved,before,position->page);
     const auto reopened=state::decode(state::encode(saved));
     state::validate_lesson_state(reopened,after);
     const auto retained=state::get_response(reopened,after,revised);
     check(retained&&retained->correct&&retained->answer==response.answer&&
-          state::current_page(reopened,after)==0,
+          state::current_page(reopened,after)==position->page,
           "Win32 import lost the previously correct U7L3 prediction");
     const auto catalog=windows::load_lesson_progress_metadata(after_file,"es");
     check(catalog.state_layout.signatures==after.state_layout.signatures&&
           catalog.state_layout.lineage==after.state_layout.lineage&&
-          catalog.pages.at(0).blocks.at(3).stable_id==revised.stable_id,
+          format_owner(catalog,revised.stable_id).stable_id==revised.stable_id,
           "The progress-only Windows loader lost the reviewed U7L3 owner");
+    verify_format_archives(after,catalog,owners);
     for(const auto forged:{"changed-answer","stale-question","unmarked-question","forged-source"})
-        must_reject(fixtures/(std::string("u7-question.")+forged+".json"));
+        must_reject(fixtures/(std::string(prefix)+"."+forged+".json"));
 }
 
 void verify_real_u12_editorials(const std::filesystem::path& fixtures) {
@@ -1367,15 +1423,35 @@ void verify_semantic_retirement(const std::filesystem::path& fixtures,
         <<invalid.Size()<<" negative fixtures, exact full/progress meanings and native/imported state\n";
 }
 
+void verify_build_format_fixtures(const std::filesystem::path& general,
+        const std::filesystem::path& pilot,const std::filesystem::path& diagnostics) {
+    for(const auto prefix:{"u7-question","u7-question-history"}) {
+        verify_real_u7_question_and_spacing(general,prefix);
+        std::cout<<"PASS native U7 source/question publication: "<<prefix<<'\n';
+    }
+    verify_real_u12_editorials(general);
+    verify_real_curricular_pilots(pilot);
+    verify_real_u6_compiler_diagnostics(diagnostics);
+    verify_additional_real_compile_diagnostics(diagnostics);
+    for(const auto name:{"u6.forged-goal.json","u6.forged-archive.json","u6.forged-source.json"})
+        must_reject(diagnostics/name);
+}
+
 }
 
 int main(int argc,char** argv) {
     try{
         if(argc==3&&std::string_view(argv[1])=="--real-pilot") {
             const std::filesystem::path fixtures(argv[2]);
-            verify_real_curricular_pilot(fixtures);
-            verify_real_curricular_pilot(fixtures/"after-editorial");
+            verify_real_curricular_pilots(fixtures);
             std::cout<<"PASS native U3L8 format pilot: stable source/prediction owners, authenticated retired compiler, exact draft/input/cursor/keys and full/progress loaders\n";
+            return 0;
+        }
+        if(argc==5&&std::string_view(argv[1])=="--build-format-fixtures") {
+            verify_build_format_fixtures(std::filesystem::path(argv[2]),
+                std::filesystem::path(argv[3]),std::filesystem::path(argv[4]));
+            std::cout<<"PASS native build-format fixtures: first and repeated U7 source/question edits, U12 editorials, "
+                "U3L8 base/editorial publications, U6/U9 diagnostics, canonical archives, state and both loaders\n";
             return 0;
         }
         if(argc!=7)throw std::invalid_argument("Expected source-format fixture directories and an isolated QA root");
@@ -1384,15 +1460,7 @@ int main(int argc,char** argv) {
         verify_source_format_retirement(std::filesystem::path(argv[4]),std::filesystem::path(argv[5]));
         verify_semantic_retirement(std::filesystem::path(argv[6]),std::filesystem::path(argv[5]));
         verify_visual_separators_keep_order_and_history(dir);
-        verify_real_u7_question_and_spacing(dir);
-        verify_real_u12_editorials(dir);
-        verify_real_curricular_pilot(std::filesystem::path(argv[2]));
-        verify_real_curricular_pilot(std::filesystem::path(argv[2])/"after-editorial");
-        verify_real_u6_compiler_diagnostics(std::filesystem::path(argv[3]));
-        verify_additional_real_compile_diagnostics(std::filesystem::path(argv[3]));
-        for(const auto name:{"u6.forged-goal.json","u6.forged-archive.json",
-                             "u6.forged-source.json"})
-            must_reject(std::filesystem::path(argv[3])/name);
+        verify_build_format_fixtures(dir,std::filesystem::path(argv[2]),std::filesystem::path(argv[3]));
         must_reject(dir/"es.changed-answer.json");
         must_reject(dir/"es.forged-archive.json");
         std::cout<<"PASS native format loader: es/en/fr, real U4 and U7 questions, U6/U9 compileCheck, protected archives, drafts and forged-source rejection\n";

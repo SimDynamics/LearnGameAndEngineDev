@@ -100,9 +100,11 @@ list(APPEND LGAED_CODE_FORMAT_FIXTURES
     "${LGAED_CODE_FORMAT_FIXTURE_DIR}/es.changed-answer.json"
     "${LGAED_CODE_FORMAT_FIXTURE_DIR}/es.forged-archive.json")
 # Real U7L3 question+explanation and physical spacing; originals stay in assets.
-foreach(u7_name IN ITEMS before after changed-answer stale-question unmarked-question forged-source)
-    list(APPEND LGAED_CODE_FORMAT_FIXTURES
-        "${LGAED_CODE_FORMAT_FIXTURE_DIR}/u7-question.${u7_name}.json")
+foreach(u7_prefix IN ITEMS u7-question u7-question-history)
+    foreach(u7_name IN ITEMS before after changed-answer stale-question unmarked-question forged-source)
+        list(APPEND LGAED_CODE_FORMAT_FIXTURES
+            "${LGAED_CODE_FORMAT_FIXTURE_DIR}/${u7_prefix}.${u7_name}.json")
+    endforeach()
 endforeach()
 # Exact U12 public wording, restored historical U12L6 return, and U12L22.
 # These ten JSON files are created under the CI output directory only.
@@ -116,6 +118,8 @@ add_custom_command(OUTPUT ${LGAED_CODE_FORMAT_FIXTURES}
     COMMAND ${_lgaed_state_fixture_python} "${CMAKE_SOURCE_DIR}/scripts/curriculum/code_format_fixture_source.py"
         --output-dir "${LGAED_CODE_FORMAT_FIXTURE_DIR}"
     DEPENDS "${CMAKE_SOURCE_DIR}/scripts/curriculum/code_format_fixture_source.py"
+        "${CMAKE_SOURCE_DIR}/scripts/curriculum/format_batch_history.py"
+        "${CMAKE_SOURCE_DIR}/scripts/curriculum/windows_cpp_ci.py"
         "${CMAKE_SOURCE_DIR}/scripts/curriculum/test_code_format_compat.py"
         "${CMAKE_SOURCE_DIR}/scripts/curriculum/test_published_u12_question_editorials.py"
         "${CMAKE_SOURCE_DIR}/scripts/curriculum/editorial_fixture_history.py"
@@ -171,6 +175,8 @@ add_custom_command(OUTPUT ${LGAED_U6_COMPILE_CHECK_FORMAT_FILES}
         --output-dir "${LGAED_U6_COMPILE_CHECK_FORMAT_DIR}"
     DEPENDS
         "${CMAKE_SOURCE_DIR}/scripts/curriculum/compile_check_source_format_fixture.py"
+        "${CMAKE_SOURCE_DIR}/scripts/curriculum/format_batch_history.py"
+        "${CMAKE_SOURCE_DIR}/scripts/curriculum/windows_cpp_ci.py"
         "${CMAKE_SOURCE_DIR}/scripts/curriculum/test_compile_check_source_format.py"
         "${CMAKE_SOURCE_DIR}/scripts/curriculum/test_reviewed_diagnostic_structural_format.py"
         "${CMAKE_SOURCE_DIR}/scripts/curriculum/validar_json_programacion.py"
@@ -202,6 +208,8 @@ add_custom_command(OUTPUT ${LGAED_REAL_CODE_FORMAT_PILOT_FILES}
         --output-dir "${LGAED_REAL_CODE_FORMAT_PILOT_DIR}"
     DEPENDS
         "${CMAKE_SOURCE_DIR}/scripts/curriculum/test_real_code_format_pilot.py"
+        "${CMAKE_SOURCE_DIR}/scripts/curriculum/format_batch_history.py"
+        "${CMAKE_SOURCE_DIR}/scripts/curriculum/windows_cpp_ci.py"
         "${CMAKE_SOURCE_DIR}/scripts/curriculum/code_format_compat.py"
         "${CMAKE_SOURCE_DIR}/scripts/curriculum/stable_state_layout.py"
         "${CMAKE_SOURCE_DIR}/app/src/main/assets/content/es/programming/cpp_fundamentals/expresiones_y_decisiones/lesson_construir_decisiones_desde_un_problema.json"
