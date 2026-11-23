@@ -129,7 +129,7 @@
         },
         {
           "type": "cpp_compiler",
-          "initialCode": "#include <iostream>\n\nint main() {\n    int solicitadas = 4;\n    const int disponibles = 4;\n    int codigo_permiso = 0;\n    const bool permiso = codigo_permiso != 0;\n\n    if ((solicitadas < 1) || (solicitadas > 12)) {\n        std::cout << \"Cantidad invalida\";\n    } else if (solicitadas <= disponibles) {\n        std::cout << \"Completo\";\n    } else if (!permiso) {\n        std::cout << \"Sin permiso\";\n    } else {\n        const int faltantes = solicitadas - disponibles;\n        std::cout << \"Pendiente: \" << faltantes;\n    }\n    return 0;\n}\n",
+          "initialCode": "#include <iostream>\n\nint main() {\n    int solicitadas = 4;\n    const int disponibles = 4;\n    int codigo_permiso = 0;\n\n    const bool permiso = codigo_permiso != 0;\n\n    if ((solicitadas < 1) || (solicitadas > 12)) {\n        std::cout << \"Cantidad invalida\";\n    } else if (solicitadas <= disponibles) {\n        std::cout << \"Completo\";\n    } else if (!permiso) {\n        std::cout << \"Sin permiso\";\n    } else {\n        const int faltantes = solicitadas - disponibles;\n\n        std::cout << \"Pendiente: \" << faltantes;\n    }\n\n    return 0;\n}\n",
           "outputCheck": {
             "cases": [
               {
@@ -206,7 +206,7 @@
           "type": "output_prediction",
           "question": "El programa guarda una copia de usados antes de cambiarlo. Sigue los valores hasta la decisión y escribe los dos renglones de salida.",
           "language": "cpp",
-          "code": "#include <iostream>\n\nint main() {\n    const int disponibles = 11;\n    int usados = 3;\n    const int antes = usados;\n\n    usados = usados + 4;\n\n    const int libres = disponibles - usados;\n    const bool queda_espacio = libres > 0;\n\n    if (queda_espacio) {\n        std::cout << \"Libres: \" << libres << \"\\n\";\n    } else {\n        std::cout << \"Completo\\n\";\n    }\n\n    std::cout << \"Antes: \" << antes;\n\n    return 0;\n}\n",
+          "code": "#include <iostream>\n\nint main() {\n    const int disponibles = 11;\n    int usados = 3;\n\n    const int antes = usados;\n\n    usados = usados + 4;\n\n    const int libres = disponibles - usados;\n    const bool queda_espacio = libres > 0;\n\n    if (queda_espacio) {\n        std::cout << \"Libres: \" << libres << \"\\n\";\n    } else {\n        std::cout << \"Completo\\n\";\n    }\n\n    std::cout << \"Antes: \" << antes;\n\n    return 0;\n}\n",
           "answers": [
             "Libres: 4\nAntes: 3"
           ],
@@ -254,7 +254,7 @@
           "type": "fill_code",
           "question": "Ahora comprueba si la cantidad está dentro del intervalo de 1 a 12. Escribe el operador lógico que exige cumplir las dos comparaciones.",
           "language": "cpp",
-          "code": "#include <iostream>\n\nint main() {\n    const int cantidad = 13;\n    const bool aceptada = (cantidad >= 1) ___ (cantidad <= 12);\n\n    if (aceptada) {\n        std::cout << \"Aceptada\";\n    } else {\n        std::cout << \"Rechazada\";\n    }\n\n    return 0;\n}\n",
+          "code": "#include <iostream>\n\nint main() {\n    const int cantidad = 13;\n\n    const bool aceptada = (cantidad >= 1) ___ (cantidad <= 12);\n\n    if (aceptada) {\n        std::cout << \"Aceptada\";\n    } else {\n        std::cout << \"Rechazada\";\n    }\n\n    return 0;\n}\n",
           "answers": [
             "&&",
             "and"
@@ -361,7 +361,7 @@
         {
           "type": "code",
           "language": "cpp",
-          "code": "#include <iostream>\n\nint main() {\n    int solicitadas = 4;\n    const int disponibles = 4;\n    int codigo_permiso = 0;\n    const bool permiso = codigo_permiso != 0;\n\n    if ((solicitadas < 1) || (solicitadas > 12)) {\n        std::cout << \"Cantidad invalida\";\n    } else if (!permiso) {\n        std::cout << \"Sin permiso\";\n    } else if (solicitadas <= disponibles) {\n        std::cout << \"Completo\";\n    } else {\n        const int faltantes = solicitadas - disponibles;\n        std::cout << \"Pendiente: \" << faltantes;\n    }\n    return 0;\n}\n"
+          "code": "#include <iostream>\n\nint main() {\n    int solicitadas = 4;\n    const int disponibles = 4;\n    int codigo_permiso = 0;\n\n    const bool permiso = codigo_permiso != 0;\n\n    if ((solicitadas < 1) || (solicitadas > 12)) {\n        std::cout << \"Cantidad invalida\";\n    } else if (!permiso) {\n        std::cout << \"Sin permiso\";\n    } else if (solicitadas <= disponibles) {\n        std::cout << \"Completo\";\n    } else {\n        const int faltantes = solicitadas - disponibles;\n\n        std::cout << \"Pendiente: \" << faltantes;\n    }\n\n    return 0;\n}\n"
         },
         {
           "type": "paragraph",
@@ -374,7 +374,7 @@
         {
           "type": "code",
           "language": "cpp",
-          "code": "#include <iostream>\n\nint main() {\n    int solicitadas = 0;\n    int codigo_permiso = 0;\n    std::cin >> solicitadas >> codigo_permiso;\n\n    const int disponibles = 4;\n    const bool permiso = codigo_permiso != 0;\n\n    if ((solicitadas < 1) || (solicitadas > 12)) {\n        std::cout << \"Cantidad invalida\";\n    } else if (!permiso) {\n        std::cout << \"Sin permiso\";\n    } else if (solicitadas <= disponibles) {\n        std::cout << \"Completo\";\n    } else {\n        const int faltantes = solicitadas - disponibles;\n        std::cout << \"Pendiente: \" << faltantes;\n    }\n    return 0;\n}\n"
+          "code": "#include <iostream>\n\nint main() {\n    int solicitadas = 0;\n    int codigo_permiso = 0;\n\n    std::cin >> solicitadas >> codigo_permiso;\n\n    const int disponibles = 4;\n\n    const bool permiso = codigo_permiso != 0;\n\n    if ((solicitadas < 1) || (solicitadas > 12)) {\n        std::cout << \"Cantidad invalida\";\n    } else if (!permiso) {\n        std::cout << \"Sin permiso\";\n    } else if (solicitadas <= disponibles) {\n        std::cout << \"Completo\";\n    } else {\n        const int faltantes = solicitadas - disponibles;\n\n        std::cout << \"Pendiente: \" << faltantes;\n    }\n\n    return 0;\n}\n"
         },
         {
           "type": "paragraph",
@@ -1651,6 +1651,31 @@
         "id": "block_0006_0003",
         "beforeSha256": "01d549526ac835fceb96da4ebded65c508bb11a1cbc43f918bbf71d15762dba1",
         "afterSha256": "ea368f5b0ba614e6b9a4cef225d83470f4889b812c630615deb1719efd76fe48"
+      },
+      {
+        "id": "p1u3l7_reparar_prioridad",
+        "beforeSha256": "b99a13d67655a856fbcec597913868ad40230ee328e19155e48548338c214f14",
+        "afterSha256": "fc717e9cf731f4adf4c552be1db419218cd46f4981bada04838cb2ed061d3d4c"
+      },
+      {
+        "id": "block_0005_0001",
+        "beforeSha256": "d4a91d2adc23d02745e112a41eca2408306b428946011fa10c66fec020a019c8",
+        "afterSha256": "0c7b838e9bb2e76fbb34d18a9a62d7b5b0fbd4100a001674cf46771994cf0e42"
+      },
+      {
+        "id": "block_0006_0003",
+        "beforeSha256": "ea368f5b0ba614e6b9a4cef225d83470f4889b812c630615deb1719efd76fe48",
+        "afterSha256": "43c2069ee71717bca13babb4ef61ed7762ff1316ceefdcd5adf16dee806c3d9f"
+      },
+      {
+        "id": "p1u3l7_ejemplo_prioridad",
+        "beforeSha256": "be17f98e6e631b8b6a35275d0f932a72f55eca76549dae5993506e9e348f3008",
+        "afterSha256": "b6841caa5f27634bf8416881036235c289024deae098b5d95fa3e1e741e6b1de"
+      },
+      {
+        "id": "p1u3l7_ejemplo_despacho",
+        "beforeSha256": "91925d822f551b4896ca46dc5f39e58b13f3499faeba7f4505f5c067a085a0b3",
+        "afterSha256": "14fde984e37bf3165f51bee81328e756614f8f6379dcf092ade7bdf5c18d7bd8"
       }
     ],
     "sourceFormatRevisions": [
@@ -1836,6 +1861,40 @@
           "type": "code",
           "language": "cpp",
           "code": "#include <iostream>\n\nint main() {\n    const int solicitadas = 6;\n    const int disponibles = 4;\n    const bool permiso = true;\n    if ((solicitadas < 1) || (solicitadas > 12)) {\n        std::cout << \"Cantidad invalida\";\n    } else if (!permiso) {\n        std::cout << \"Sin permiso\";\n    } else if (solicitadas <= disponibles) {\n        std::cout << \"Completo\";\n    } else {\n        const int faltantes = solicitadas - disponibles;\n        std::cout << \"Pendiente: \" << faltantes;\n    }\n    return 0;\n}\n"
+        }
+      },
+      {
+        "id": "p1u3l7_reparar_prioridad",
+        "block": {
+          "type": "cpp_compiler",
+          "initialCode": "#include <iostream>\n\nint main() {\n    int solicitadas = 4;\n    const int disponibles = 4;\n    int codigo_permiso = 0;\n    const bool permiso = codigo_permiso != 0;\n\n    if ((solicitadas < 1) || (solicitadas > 12)) {\n        std::cout << \"Cantidad invalida\";\n    } else if (solicitadas <= disponibles) {\n        std::cout << \"Completo\";\n    } else if (!permiso) {\n        std::cout << \"Sin permiso\";\n    } else {\n        const int faltantes = solicitadas - disponibles;\n        std::cout << \"Pendiente: \" << faltantes;\n    }\n    return 0;\n}\n",
+          "outputCheck": {
+            "cases": [
+              {
+                "standardInput": "",
+                "outputs": [
+                  "Sin permiso",
+                  "Sin permiso\n"
+                ]
+              }
+            ]
+          }
+        }
+      },
+      {
+        "id": "p1u3l7_ejemplo_prioridad",
+        "block": {
+          "type": "code",
+          "language": "cpp",
+          "code": "#include <iostream>\n\nint main() {\n    int solicitadas = 4;\n    const int disponibles = 4;\n    int codigo_permiso = 0;\n    const bool permiso = codigo_permiso != 0;\n\n    if ((solicitadas < 1) || (solicitadas > 12)) {\n        std::cout << \"Cantidad invalida\";\n    } else if (!permiso) {\n        std::cout << \"Sin permiso\";\n    } else if (solicitadas <= disponibles) {\n        std::cout << \"Completo\";\n    } else {\n        const int faltantes = solicitadas - disponibles;\n        std::cout << \"Pendiente: \" << faltantes;\n    }\n    return 0;\n}\n"
+        }
+      },
+      {
+        "id": "p1u3l7_ejemplo_despacho",
+        "block": {
+          "type": "code",
+          "language": "cpp",
+          "code": "#include <iostream>\n\nint main() {\n    int solicitadas = 0;\n    int codigo_permiso = 0;\n    std::cin >> solicitadas >> codigo_permiso;\n\n    const int disponibles = 4;\n    const bool permiso = codigo_permiso != 0;\n\n    if ((solicitadas < 1) || (solicitadas > 12)) {\n        std::cout << \"Cantidad invalida\";\n    } else if (!permiso) {\n        std::cout << \"Sin permiso\";\n    } else if (solicitadas <= disponibles) {\n        std::cout << \"Completo\";\n    } else {\n        const int faltantes = solicitadas - disponibles;\n        std::cout << \"Pendiente: \" << faltantes;\n    }\n    return 0;\n}\n"
         }
       }
     ],

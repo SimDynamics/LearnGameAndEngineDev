@@ -70,7 +70,7 @@
         {
           "type": "code",
           "language": "cpp",
-          "code": "#include <iostream>\n#include <sstream>\n#include <string>\n\nbool leer_id_completo(const std::string& texto, int& destino) {\n    std::istringstream origen{texto};\n    int candidato{0};\n    if (!(origen >> candidato) || candidato < 0 || candidato > 9) {\n        return false;\n    }\n    origen >> std::ws;\n    if (!origen.eof() || origen.bad()) {\n        return false;\n    }\n    destino = candidato;\n    return true;\n}\n\nint main() {\n    int id{8};\n    bool valido = leer_id_completo(\"03  \", id);\n    std::cout << valido << \":\" << id;\n    return 0;\n}\n"
+          "code": "#include <iostream>\n#include <sstream>\n#include <string>\n\nbool leer_id_completo(const std::string& texto, int& destino) {\n    std::istringstream origen{texto};\n    int candidato{0};\n    if (!(origen >> candidato) || candidato < 0 || candidato > 9) {\n        return false;\n    }\n    origen >> std::ws;\n    if (!origen.eof() || origen.bad()) {\n        return false;\n    }\n    destino = candidato;\n    return true;\n}\n\nint main() {\n    int id{8};\n    bool valido = leer_id_completo(\"03  \", id);\n\n    std::cout << valido << \":\" << id;\n\n    return 0;\n}\n"
         },
         {
           "type": "paragraph",
@@ -242,7 +242,7 @@
           "id": "id_con_texto_sobrante",
           "question": "Predice la salida. El lector exige consumir toda la representación, salvo blancos finales.",
           "language": "cpp",
-          "code": "#include <iostream>\n#include <sstream>\n#include <string>\n\nbool leer_id_completo(const std::string& texto, int& destino) {\n    std::istringstream origen{texto};\n    int candidato{0};\n    if (!(origen >> candidato) || candidato < 0 || candidato > 9) {\n        return false;\n    }\n    origen >> std::ws;\n    if (!origen.eof() || origen.bad()) {\n        return false;\n    }\n    destino = candidato;\n    return true;\n}\n\nint main() {\n    int id{8};\n    bool valido = leer_id_completo(\"4 extra\", id);\n    std::cout << valido << \":\" << id;\n    return 0;\n}\n",
+          "code": "#include <iostream>\n#include <sstream>\n#include <string>\n\nbool leer_id_completo(const std::string& texto, int& destino) {\n    std::istringstream origen{texto};\n    int candidato{0};\n    if (!(origen >> candidato) || candidato < 0 || candidato > 9) {\n        return false;\n    }\n    origen >> std::ws;\n    if (!origen.eof() || origen.bad()) {\n        return false;\n    }\n    destino = candidato;\n    return true;\n}\n\nint main() {\n    int id{8};\n    bool valido = leer_id_completo(\"4 extra\", id);\n\n    std::cout << valido << \":\" << id;\n\n    return 0;\n}\n",
           "answers": [
             "0:8"
           ],
@@ -335,7 +335,7 @@
         },
         {
           "type": "cpp_compiler",
-          "initialCode": "#include <iostream>\n#include <sstream>\n#include <string>\n#include <vector>\n\nstruct Recuento {\n    int aceptados;\n    int rechazados;\n};\n\nbool recuento_valido(const Recuento& valor) {\n    return valor.aceptados >= 0 && valor.aceptados <= 10\n        && valor.rechazados >= 0 && valor.rechazados <= 10;\n}\n\nstd::istream& operator>>(std::istream& origen, Recuento& destino) {\n    char apertura{0};\n    char separador{0};\n    char cierre{0};\n    Recuento candidato{0, 0};\n    if (!(origen >> apertura >> candidato.aceptados >> separador\n          >> candidato.rechazados >> cierre)) {\n        return origen;\n    }\n    if (apertura != '[' || separador != ';' || cierre != ']'\n        || !recuento_valido(candidato)) {\n        origen.setstate(std::ios::failbit);\n        return origen;\n    }\n    destino = candidato;\n    return origen;\n}\n\nstruct Registro {\n    int id;\n    Recuento recuento;\n};\n\n// Define leer_linea antes de main.\nint main() {\n    // Construye tus pruebas y comprueba el destino tras cada llamada.\n    return 0;\n}\n",
+          "initialCode": "#include <iostream>\n#include <sstream>\n#include <string>\n#include <vector>\n\nstruct Recuento {\n    int aceptados;\n    int rechazados;\n};\n\nbool recuento_valido(const Recuento& valor) {\n    return valor.aceptados >= 0 && valor.aceptados <= 10\n        && valor.rechazados >= 0 && valor.rechazados <= 10;\n}\n\nstd::istream& operator>>(std::istream& origen, Recuento& destino) {\n    char apertura{0};\n    char separador{0};\n    char cierre{0};\n    Recuento candidato{0, 0};\n\n    if (!(origen >> apertura >> candidato.aceptados >> separador\n          >> candidato.rechazados >> cierre)) {\n        return origen;\n    }\n    if (apertura != '[' || separador != ';' || cierre != ']'\n        || !recuento_valido(candidato)) {\n        origen.setstate(std::ios::failbit);\n        return origen;\n    }\n    destino = candidato;\n    return origen;\n}\n\nstruct Registro {\n    int id;\n    Recuento recuento;\n};\n\n// Define leer_linea antes de main.\n\nint main() {\n    // Construye tus pruebas y comprueba el destino tras cada llamada.\n    \n    return 0;\n}\n",
           "outputCheck": {
             "cases": [
               {
@@ -365,7 +365,7 @@
         },
         {
           "type": "cpp_compiler",
-          "initialCode": "#include <iostream>\n#include <sstream>\n#include <string>\n#include <vector>\n\nstruct Recuento {\n    int aceptados;\n    int rechazados;\n};\n\nbool recuento_valido(const Recuento& valor) {\n    return valor.aceptados >= 0 && valor.aceptados <= 10\n        && valor.rechazados >= 0 && valor.rechazados <= 10;\n}\n\nstd::istream& operator>>(std::istream& origen, Recuento& destino) {\n    char apertura{0};\n    char separador{0};\n    char cierre{0};\n    Recuento candidato{0, 0};\n    if (!(origen >> apertura >> candidato.aceptados >> separador\n          >> candidato.rechazados >> cierre)) {\n        return origen;\n    }\n    if (apertura != '[' || separador != ';' || cierre != ']'\n        || !recuento_valido(candidato)) {\n        origen.setstate(std::ios::failbit);\n        return origen;\n    }\n    destino = candidato;\n    return origen;\n}\n\nstruct Registro {\n    int id;\n    Recuento recuento;\n};\n\nbool leer_linea(const std::string& linea, Registro& destino) {\n    // Completa la lectura y la aceptacion de toda la linea.\n    return false;\n}\n\nint main() {\n    int caso{0};\n    if (!(std::cin >> caso) || caso < 1 || caso > 3) return 1;\n    const std::vector<std::string> muestras{\n        \"4 [2;6]\\n3 [1;2] sobra\\n3[10;0]\\n+0009 [00000;+0010] \\t\\n2 [4;11]\\n\",\n        \"\\n \\t\\n2 [1;]\\n0 [0;0]\\n5 [7;3\",\n        \"10 [1;2]\\n9 [10;10]\\n7 [1;2][3;4]\\n0006 [00002;00004]\\n\"\n    };\n    std::istringstream fuente{muestras.at(caso - 1)};\n    Registro destino{8, {9, 7}};\n    std::string linea;\n    while (std::getline(fuente, linea)) {\n        const bool valido = leer_linea(linea, destino);\n        std::cout << valido << ':' << destino.id << ':'\n                  << destino.recuento.aceptados << ':'\n                  << destino.recuento.rechazados << '\\n';\n    }\n    return 0;\n}\n",
+          "initialCode": "#include <iostream>\n#include <sstream>\n#include <string>\n#include <vector>\n\nstruct Recuento {\n    int aceptados;\n    int rechazados;\n};\n\nbool recuento_valido(const Recuento& valor) {\n    return valor.aceptados >= 0 && valor.aceptados <= 10\n        && valor.rechazados >= 0 && valor.rechazados <= 10;\n}\n\nstd::istream& operator>>(std::istream& origen, Recuento& destino) {\n    char apertura{0};\n    char separador{0};\n    char cierre{0};\n    Recuento candidato{0, 0};\n\n    if (!(origen >> apertura >> candidato.aceptados >> separador\n          >> candidato.rechazados >> cierre)) {\n        return origen;\n    }\n    if (apertura != '[' || separador != ';' || cierre != ']'\n        || !recuento_valido(candidato)) {\n        origen.setstate(std::ios::failbit);\n        return origen;\n    }\n    destino = candidato;\n    return origen;\n}\n\nstruct Registro {\n    int id;\n    Recuento recuento;\n};\n\nbool leer_linea(const std::string& linea, Registro& destino) {\n    // Completa la lectura y la aceptacion de toda la linea.\n    \n    return false;\n}\n\nint main() {\n    int caso{0};\n    if (!(std::cin >> caso) || caso < 1 || caso > 3) return 1;\n    const std::vector<std::string> muestras{\n        \"4 [2;6]\\n3 [1;2] sobra\\n3[10;0]\\n+0009 [00000;+0010] \\t\\n2 [4;11]\\n\",\n        \"\\n \\t\\n2 [1;]\\n0 [0;0]\\n5 [7;3\",\n        \"10 [1;2]\\n9 [10;10]\\n7 [1;2][3;4]\\n0006 [00002;00004]\\n\"\n    };\n    std::istringstream fuente{muestras.at(caso - 1)};\n    Registro destino{8, {9, 7}};\n    std::string linea;\n\n    while (std::getline(fuente, linea)) {\n        const bool valido = leer_linea(linea, destino);\n        std::cout << valido << ':' << destino.id << ':'\n                  << destino.recuento.aceptados << ':'\n                  << destino.recuento.rechazados << '\\n';\n    }\n\n    return 0;\n}\n",
           "outputCheck": {
             "inputComparison": "tokens",
             "cases": [
@@ -412,7 +412,7 @@
         {
           "type": "code",
           "language": "cpp",
-          "code": "#include <iostream>\n#include <sstream>\n#include <string>\n#include <vector>\n\nstruct Recuento {\n    int aceptados;\n    int rechazados;\n};\n\nbool recuento_valido(const Recuento& valor) {\n    return valor.aceptados >= 0 && valor.aceptados <= 10\n        && valor.rechazados >= 0 && valor.rechazados <= 10;\n}\n\nstd::istream& operator>>(std::istream& origen, Recuento& destino) {\n    char apertura{0};\n    char separador{0};\n    char cierre{0};\n    Recuento candidato{0, 0};\n    if (!(origen >> apertura >> candidato.aceptados >> separador\n          >> candidato.rechazados >> cierre)) {\n        return origen;\n    }\n    if (apertura != '[' || separador != ';' || cierre != ']'\n        || !recuento_valido(candidato)) {\n        origen.setstate(std::ios::failbit);\n        return origen;\n    }\n    destino = candidato;\n    return origen;\n}\n\nstruct Registro {\n    int id;\n    Recuento recuento;\n};\n\nbool leer_linea(const std::string& linea, Registro& destino) {\n    std::istringstream origen{linea};\n    Registro candidato{0, {0, 0}};\n    if (!(origen >> candidato.id >> candidato.recuento)\n        || candidato.id < 0 || candidato.id > 9) {\n        return false;\n    }\n    origen >> std::ws;\n    if (!origen.eof() || origen.bad()) {\n        return false;\n    }\n    destino = candidato;\n    return true;\n}\n\nint main() {\n    const std::vector<std::string> pruebas{\n        \"3 [2;1]\", \"3 [2;1] sobra\", \"10 [2;1]\", \"3 [2;11]\"\n    };\n    for (const std::string& linea : pruebas) {\n        Registro destino{8, {9, 9}};\n        bool valido = leer_linea(linea, destino);\n        std::cout << valido << ':' << destino.id << ':'\n                  << destino.recuento.aceptados << ':'\n                  << destino.recuento.rechazados << '\\n';\n    }\n    return 0;\n}\n"
+          "code": "#include <iostream>\n#include <sstream>\n#include <string>\n#include <vector>\n\nstruct Recuento {\n    int aceptados;\n    int rechazados;\n};\n\nbool recuento_valido(const Recuento& valor) {\n    return valor.aceptados >= 0 && valor.aceptados <= 10\n        && valor.rechazados >= 0 && valor.rechazados <= 10;\n}\n\nstd::istream& operator>>(std::istream& origen, Recuento& destino) {\n    char apertura{0};\n    char separador{0};\n    char cierre{0};\n    Recuento candidato{0, 0};\n\n    if (!(origen >> apertura >> candidato.aceptados >> separador\n          >> candidato.rechazados >> cierre)) {\n        return origen;\n    }\n    if (apertura != '[' || separador != ';' || cierre != ']'\n        || !recuento_valido(candidato)) {\n        origen.setstate(std::ios::failbit);\n        return origen;\n    }\n    destino = candidato;\n    return origen;\n}\n\nstruct Registro {\n    int id;\n    Recuento recuento;\n};\n\nbool leer_linea(const std::string& linea, Registro& destino) {\n    std::istringstream origen{linea};\n    Registro candidato{0, {0, 0}};\n    if (!(origen >> candidato.id >> candidato.recuento)\n        || candidato.id < 0 || candidato.id > 9) {\n        return false;\n    }\n    origen >> std::ws;\n    if (!origen.eof() || origen.bad()) {\n        return false;\n    }\n    destino = candidato;\n    return true;\n}\n\nint main() {\n    const std::vector<std::string> pruebas{\n        \"3 [2;1]\", \"3 [2;1] sobra\", \"10 [2;1]\", \"3 [2;11]\"\n    };\n    for (const std::string& linea : pruebas) {\n        Registro destino{8, {9, 9}};\n        bool valido = leer_linea(linea, destino);\n\n        std::cout << valido << ':' << destino.id << ':'\n                  << destino.recuento.aceptados << ':'\n                  << destino.recuento.rechazados << '\\n';\n    }\n\n    return 0;\n}\n"
         },
         {
           "type": "paragraph",
@@ -530,7 +530,7 @@
         {
           "type": "code",
           "language": "cpp",
-          "code": "#include <iostream>\n#include <sstream>\n#include <string>\n#include <vector>\n\nstruct Recuento {\n    int aceptados;\n    int rechazados;\n};\n\nbool recuento_valido(const Recuento& valor) {\n    return valor.aceptados >= 0 && valor.aceptados <= 10\n        && valor.rechazados >= 0 && valor.rechazados <= 10;\n}\n\nstd::istream& operator>>(std::istream& origen, Recuento& destino) {\n    char apertura{0};\n    char separador{0};\n    char cierre{0};\n    Recuento candidato{0, 0};\n    if (!(origen >> apertura >> candidato.aceptados >> separador\n          >> candidato.rechazados >> cierre)) {\n        return origen;\n    }\n    if (apertura != '[' || separador != ';' || cierre != ']'\n        || !recuento_valido(candidato)) {\n        origen.setstate(std::ios::failbit);\n        return origen;\n    }\n    destino = candidato;\n    return origen;\n}\n\nstruct Registro {\n    int id;\n    Recuento recuento;\n};\n\nbool leer_linea(const std::string& linea, Registro& destino) {\n    std::istringstream origen{linea};\n    Registro candidato{0, {0, 0}};\n    if (!(origen >> candidato.id >> candidato.recuento)\n        || candidato.id < 0 || candidato.id > 9) {\n        return false;\n    }\n    origen >> std::ws;\n    if (!origen.eof() || origen.bad()) {\n        return false;\n    }\n    destino = candidato;\n    return true;\n}\n\nint main() {\n    const std::vector<std::string> pruebas{\"3 [2;1]\", \"3 [2;1] sobra\", \"10 [2;1]\", \"3 [2;11]\", \"03 [02;+1]\", \"3 [2;1]  \", \"\", \"3 [2;1\", \"-1 [2;1]\", \"3 [2,1]\", \"3 [2;1][0;0]\", \"0 [0;0]\", \"9 [10;10]\"};\n    for (const std::string& linea : pruebas) {\n        Registro destino{8, {9, 9}};\n        bool valido = leer_linea(linea, destino);\n        std::cout << valido << ':' << destino.id << ':'\n                  << destino.recuento.aceptados << ':'\n                  << destino.recuento.rechazados << '\\n';\n    }\n    return 0;\n}\n"
+          "code": "#include <iostream>\n#include <sstream>\n#include <string>\n#include <vector>\n\nstruct Recuento {\n    int aceptados;\n    int rechazados;\n};\n\nbool recuento_valido(const Recuento& valor) {\n    return valor.aceptados >= 0 && valor.aceptados <= 10\n        && valor.rechazados >= 0 && valor.rechazados <= 10;\n}\n\nstd::istream& operator>>(std::istream& origen, Recuento& destino) {\n    char apertura{0};\n    char separador{0};\n    char cierre{0};\n    Recuento candidato{0, 0};\n\n    if (!(origen >> apertura >> candidato.aceptados >> separador\n          >> candidato.rechazados >> cierre)) {\n        return origen;\n    }\n    if (apertura != '[' || separador != ';' || cierre != ']'\n        || !recuento_valido(candidato)) {\n        origen.setstate(std::ios::failbit);\n        return origen;\n    }\n    destino = candidato;\n    return origen;\n}\n\nstruct Registro {\n    int id;\n    Recuento recuento;\n};\n\nbool leer_linea(const std::string& linea, Registro& destino) {\n    std::istringstream origen{linea};\n    Registro candidato{0, {0, 0}};\n    if (!(origen >> candidato.id >> candidato.recuento)\n        || candidato.id < 0 || candidato.id > 9) {\n        return false;\n    }\n    origen >> std::ws;\n    if (!origen.eof() || origen.bad()) {\n        return false;\n    }\n    destino = candidato;\n    return true;\n}\n\nint main() {\n    const std::vector<std::string> pruebas{\"3 [2;1]\", \"3 [2;1] sobra\", \"10 [2;1]\", \"3 [2;11]\", \"03 [02;+1]\", \"3 [2;1]  \", \"\", \"3 [2;1\", \"-1 [2;1]\", \"3 [2,1]\", \"3 [2;1][0;0]\", \"0 [0;0]\", \"9 [10;10]\"};\n    for (const std::string& linea : pruebas) {\n        Registro destino{8, {9, 9}};\n        bool valido = leer_linea(linea, destino);\n\n        std::cout << valido << ':' << destino.id << ':'\n                  << destino.recuento.aceptados << ':'\n                  << destino.recuento.rechazados << '\\n';\n    }\n\n    return 0;\n}\n"
         },
         {
           "type": "heading",
@@ -539,7 +539,7 @@
         {
           "type": "code",
           "language": "cpp",
-          "code": "#include <iostream>\n#include <sstream>\n#include <string>\n#include <vector>\n\nstruct Recuento {\n    int aceptados;\n    int rechazados;\n};\n\nbool recuento_valido(const Recuento& valor) {\n    return valor.aceptados >= 0 && valor.aceptados <= 10\n        && valor.rechazados >= 0 && valor.rechazados <= 10;\n}\n\nstd::istream& operator>>(std::istream& origen, Recuento& destino) {\n    char apertura{0};\n    char separador{0};\n    char cierre{0};\n    Recuento candidato{0, 0};\n    if (!(origen >> apertura >> candidato.aceptados >> separador\n          >> candidato.rechazados >> cierre)) {\n        return origen;\n    }\n    if (apertura != '[' || separador != ';' || cierre != ']'\n        || !recuento_valido(candidato)) {\n        origen.setstate(std::ios::failbit);\n        return origen;\n    }\n    destino = candidato;\n    return origen;\n}\n\nstruct Registro {\n    int id;\n    Recuento recuento;\n};\n\nbool leer_linea(const std::string& linea, Registro& destino) {\n    std::istringstream origen{linea};\n    Registro candidato{0, {0, 0}};\n    if (!(origen >> candidato.id >> candidato.recuento)\n        || candidato.id < 0 || candidato.id > 9) {\n        return false;\n    }\n    origen >> std::ws;\n    if (!origen.eof() || origen.bad()) {\n        return false;\n    }\n    destino = candidato;\n    return true;\n}\n\nint main() {\n    int caso{0};\n    if (!(std::cin >> caso) || caso < 1 || caso > 3) return 1;\n    const std::vector<std::string> muestras{\n        \"4 [2;6]\\n3 [1;2] sobra\\n3[10;0]\\n+0009 [00000;+0010] \\t\\n2 [4;11]\\n\",\n        \"\\n \\t\\n2 [1;]\\n0 [0;0]\\n5 [7;3\",\n        \"10 [1;2]\\n9 [10;10]\\n7 [1;2][3;4]\\n0006 [00002;00004]\\n\"\n    };\n    std::istringstream fuente{muestras.at(caso - 1)};\n    Registro destino{8, {9, 7}};\n    std::string linea;\n    while (std::getline(fuente, linea)) {\n        const bool valido = leer_linea(linea, destino);\n        std::cout << valido << ':' << destino.id << ':'\n                  << destino.recuento.aceptados << ':'\n                  << destino.recuento.rechazados << '\\n';\n    }\n    return 0;\n}\n"
+          "code": "#include <iostream>\n#include <sstream>\n#include <string>\n#include <vector>\n\nstruct Recuento {\n    int aceptados;\n    int rechazados;\n};\n\nbool recuento_valido(const Recuento& valor) {\n    return valor.aceptados >= 0 && valor.aceptados <= 10\n        && valor.rechazados >= 0 && valor.rechazados <= 10;\n}\n\nstd::istream& operator>>(std::istream& origen, Recuento& destino) {\n    char apertura{0};\n    char separador{0};\n    char cierre{0};\n    Recuento candidato{0, 0};\n\n    if (!(origen >> apertura >> candidato.aceptados >> separador\n          >> candidato.rechazados >> cierre)) {\n        return origen;\n    }\n    if (apertura != '[' || separador != ';' || cierre != ']'\n        || !recuento_valido(candidato)) {\n        origen.setstate(std::ios::failbit);\n        return origen;\n    }\n    destino = candidato;\n    return origen;\n}\n\nstruct Registro {\n    int id;\n    Recuento recuento;\n};\n\nbool leer_linea(const std::string& linea, Registro& destino) {\n    std::istringstream origen{linea};\n    Registro candidato{0, {0, 0}};\n    if (!(origen >> candidato.id >> candidato.recuento)\n        || candidato.id < 0 || candidato.id > 9) {\n        return false;\n    }\n    origen >> std::ws;\n    if (!origen.eof() || origen.bad()) {\n        return false;\n    }\n    destino = candidato;\n    return true;\n}\n\nint main() {\n    int caso{0};\n    if (!(std::cin >> caso) || caso < 1 || caso > 3) return 1;\n    const std::vector<std::string> muestras{\n        \"4 [2;6]\\n3 [1;2] sobra\\n3[10;0]\\n+0009 [00000;+0010] \\t\\n2 [4;11]\\n\",\n        \"\\n \\t\\n2 [1;]\\n0 [0;0]\\n5 [7;3\",\n        \"10 [1;2]\\n9 [10;10]\\n7 [1;2][3;4]\\n0006 [00002;00004]\\n\"\n    };\n    std::istringstream fuente{muestras.at(caso - 1)};\n    Registro destino{8, {9, 7}};\n    std::string linea;\n\n    while (std::getline(fuente, linea)) {\n        const bool valido = leer_linea(linea, destino);\n        std::cout << valido << ':' << destino.id << ':'\n                  << destino.recuento.aceptados << ':'\n                  << destino.recuento.rechazados << '\\n';\n    }\n\n    return 0;\n}\n"
         },
         {
           "type": "paragraph",
@@ -1394,6 +1394,144 @@
         "id": "u12_linea_estado_actual_casos",
         "beforeSha256": "1e235be16b2e664701f4b73608309e37202ea884ee544ece7e92638f88a4d0c0",
         "afterSha256": "eb87b3a0fd110f992107945fc715a35b06d5abf8396e3c34e024f4f3c90bf217"
+      },
+      {
+        "id": "block_0001_0002",
+        "beforeSha256": "7815459423966470d4c64dd60f69e45ff8b8623dd067b743688b39f853171ef6",
+        "afterSha256": "6d24699b69fde20d5980c43d4e635b13faf3b8f2e11b13dad8a044d4c94f4c30"
+      },
+      {
+        "id": "block_0002_0001",
+        "beforeSha256": "1514c5b3bd10e440f7d1850ce1f8f6eafc4f0e11bc50fb25816e46a5d0c686b9",
+        "afterSha256": "268f4673628a774a058ea9aa5cd58331a79457fb4be37417cbadd8b73bfccabb"
+      },
+      {
+        "id": "block_0003_0003",
+        "beforeSha256": "dfce13aa19f6f717604ca7dbf910a668c7bbf93b0b21b7a85c534ab6ccf9bb05",
+        "afterSha256": "d1a1e5a38162b730cdcc8cf626c90721996595dfc6dcfc4a0bb74a0171c4967e"
+      },
+      {
+        "id": "u12_linea_estado_actual_construccion",
+        "beforeSha256": "e9e209d7f8621987a20c99db47b05b1b2255ddb36072b380ed2143b4a7df04a9",
+        "afterSha256": "eec6b1feb29a9bd6ad3eb0da4d3d29b0240c530ff89ab23dee5abbf8a8a8679b"
+      },
+      {
+        "id": "block_0004_0001",
+        "beforeSha256": "451940c622007afb97c4193009858558a3b118191f0c9f2da79f66f75813e4ee",
+        "afterSha256": "76dcc14551447fa95d916edba9e34918727964c11f38d08de9d5597ac8484dca"
+      },
+      {
+        "id": "block_0005_0001",
+        "beforeSha256": "2f3e6bd5da06740efc6cfad4d5f5f38814f2869a3f6e0f05cceca80bc50bef29",
+        "afterSha256": "2b8c8d97965998d6f58edc189ea518652f9397b03a8777bf53000b87f4ff484c"
+      },
+      {
+        "id": "u12_linea_estado_actual_referencia_codigo",
+        "beforeSha256": "e0aedbf1b038b537d28eae7194ff4639f2cf1df686a5c7aad071ddc8280a9c06",
+        "afterSha256": "c5174afd77c31e6285fa41a006e3e4f50b5da4eb70e447472cc5d4ca39b9edcb"
+      }
+    ],
+    "sourceFormatRevisions": [
+      {
+        "id": "block_0001_0002",
+        "block": {
+          "type": "code",
+          "language": "cpp",
+          "code": "#include <iostream>\n#include <sstream>\n#include <string>\n\nbool leer_id_completo(const std::string& texto, int& destino) {\n    std::istringstream origen{texto};\n    int candidato{0};\n    if (!(origen >> candidato) || candidato < 0 || candidato > 9) {\n        return false;\n    }\n    origen >> std::ws;\n    if (!origen.eof() || origen.bad()) {\n        return false;\n    }\n    destino = candidato;\n    return true;\n}\n\nint main() {\n    int id{8};\n    bool valido = leer_id_completo(\"03  \", id);\n    std::cout << valido << \":\" << id;\n    return 0;\n}\n"
+        }
+      },
+      {
+        "id": "block_0002_0001",
+        "block": {
+          "type": "output_prediction",
+          "id": "id_con_texto_sobrante",
+          "question": "Predice la salida. El lector exige consumir toda la representación, salvo blancos finales.",
+          "language": "cpp",
+          "code": "#include <iostream>\n#include <sstream>\n#include <string>\n\nbool leer_id_completo(const std::string& texto, int& destino) {\n    std::istringstream origen{texto};\n    int candidato{0};\n    if (!(origen >> candidato) || candidato < 0 || candidato > 9) {\n        return false;\n    }\n    origen >> std::ws;\n    if (!origen.eof() || origen.bad()) {\n        return false;\n    }\n    destino = candidato;\n    return true;\n}\n\nint main() {\n    int id{8};\n    bool valido = leer_id_completo(\"4 extra\", id);\n    std::cout << valido << \":\" << id;\n    return 0;\n}\n",
+          "answers": [
+            "0:8"
+          ],
+          "explanation": "La extracción guarda 4 en candidato, que es una variable local distinta de id. Después std::ws consume el espacio y se detiene delante de extra: todavía queda texto, por lo que origen.eof() es false.\n\nSe ejecuta el retorno de rechazo antes de llegar a destino = candidato;. El id del llamador conserva 8 y el resultado booleano se presenta como cero. Por eso la salida es 0:8. Leer un valor provisional no implica haberlo aceptado.",
+          "reviewFeedback": "Sigue por separado el candidato local y el destino del llamador. Después de ws, comprueba si todavía queda un carácter distinto de blanco y si se alcanza la asignación final."
+        }
+      },
+      {
+        "id": "block_0003_0003",
+        "block": {
+          "type": "cpp_compiler",
+          "initialCode": "#include <iostream>\n#include <sstream>\n#include <string>\n#include <vector>\n\nstruct Recuento {\n    int aceptados;\n    int rechazados;\n};\n\nbool recuento_valido(const Recuento& valor) {\n    return valor.aceptados >= 0 && valor.aceptados <= 10\n        && valor.rechazados >= 0 && valor.rechazados <= 10;\n}\n\nstd::istream& operator>>(std::istream& origen, Recuento& destino) {\n    char apertura{0};\n    char separador{0};\n    char cierre{0};\n    Recuento candidato{0, 0};\n    if (!(origen >> apertura >> candidato.aceptados >> separador\n          >> candidato.rechazados >> cierre)) {\n        return origen;\n    }\n    if (apertura != '[' || separador != ';' || cierre != ']'\n        || !recuento_valido(candidato)) {\n        origen.setstate(std::ios::failbit);\n        return origen;\n    }\n    destino = candidato;\n    return origen;\n}\n\nstruct Registro {\n    int id;\n    Recuento recuento;\n};\n\n// Define leer_linea antes de main.\nint main() {\n    // Construye tus pruebas y comprueba el destino tras cada llamada.\n    return 0;\n}\n",
+          "outputCheck": {
+            "cases": [
+              {
+                "standardInput": "",
+                "outputs": [
+                  "1:3:2:1\n0:8:9:9\n0:8:9:9\n0:8:9:9\n1:3:2:1\n1:3:2:1\n0:8:9:9\n0:8:9:9\n0:8:9:9\n0:8:9:9\n0:8:9:9\n1:0:0:0\n1:9:10:10\n"
+                ]
+              }
+            ]
+          }
+        }
+      },
+      {
+        "id": "u12_linea_estado_actual_construccion",
+        "block": {
+          "type": "cpp_compiler",
+          "initialCode": "#include <iostream>\n#include <sstream>\n#include <string>\n#include <vector>\n\nstruct Recuento {\n    int aceptados;\n    int rechazados;\n};\n\nbool recuento_valido(const Recuento& valor) {\n    return valor.aceptados >= 0 && valor.aceptados <= 10\n        && valor.rechazados >= 0 && valor.rechazados <= 10;\n}\n\nstd::istream& operator>>(std::istream& origen, Recuento& destino) {\n    char apertura{0};\n    char separador{0};\n    char cierre{0};\n    Recuento candidato{0, 0};\n    if (!(origen >> apertura >> candidato.aceptados >> separador\n          >> candidato.rechazados >> cierre)) {\n        return origen;\n    }\n    if (apertura != '[' || separador != ';' || cierre != ']'\n        || !recuento_valido(candidato)) {\n        origen.setstate(std::ios::failbit);\n        return origen;\n    }\n    destino = candidato;\n    return origen;\n}\n\nstruct Registro {\n    int id;\n    Recuento recuento;\n};\n\nbool leer_linea(const std::string& linea, Registro& destino) {\n    // Completa la lectura y la aceptacion de toda la linea.\n    return false;\n}\n\nint main() {\n    int caso{0};\n    if (!(std::cin >> caso) || caso < 1 || caso > 3) return 1;\n    const std::vector<std::string> muestras{\n        \"4 [2;6]\\n3 [1;2] sobra\\n3[10;0]\\n+0009 [00000;+0010] \\t\\n2 [4;11]\\n\",\n        \"\\n \\t\\n2 [1;]\\n0 [0;0]\\n5 [7;3\",\n        \"10 [1;2]\\n9 [10;10]\\n7 [1;2][3;4]\\n0006 [00002;00004]\\n\"\n    };\n    std::istringstream fuente{muestras.at(caso - 1)};\n    Registro destino{8, {9, 7}};\n    std::string linea;\n    while (std::getline(fuente, linea)) {\n        const bool valido = leer_linea(linea, destino);\n        std::cout << valido << ':' << destino.id << ':'\n                  << destino.recuento.aceptados << ':'\n                  << destino.recuento.rechazados << '\\n';\n    }\n    return 0;\n}\n",
+          "outputCheck": {
+            "inputComparison": "tokens",
+            "cases": [
+              {
+                "standardInput": "1\n",
+                "outputs": [
+                  "1:4:2:6\n0:4:2:6\n1:3:10:0\n1:9:0:10\n0:9:0:10\n"
+                ],
+                "exitCode": 0,
+                "explanation": "La primera línea deja 1:4:2:6. La siguiente contiene sobra y debe mostrar 0:4:2:6, conservando ese último éxito. La forma 3[10;0] es válida sin un espacio obligatorio; las escrituras con signo y ceros también representan valores permitidos. Tras aceptar el identificador nueve con cantidades cero y diez, la cantidad once del último caso provoca 0:9:0:10."
+              },
+              {
+                "standardInput": "2\n",
+                "outputs": [
+                  "0:8:9:7\n0:8:9:7\n0:8:9:7\n1:0:0:0\n0:0:0:0\n"
+                ],
+                "exitCode": 0,
+                "explanation": "Las tres primeras líneas no contienen una representación completa y conservan Registro{8, {9, 7}}. La cuarta acepta un registro cuyos tres valores son cero. La última línea sí se obtiene aunque falte su salto final, pero carece del cierre del recuento: se rechaza conservando el registro de ceros y muestra 0:0:0:0."
+              },
+              {
+                "standardInput": "3\n",
+                "outputs": [
+                  "0:8:9:7\n1:9:10:10\n0:9:10:10\n1:6:2:4\n"
+                ],
+                "exitCode": 0,
+                "explanation": "El identificador diez está fuera del intervalo y conserva el destino inicial. La línea con el identificador nueve y ambas cantidades diez sí se acepta. Un segundo recuento detrás del primero cuenta como texto sobrante, aunque también tenga forma de recuento, y debe conservar 0:9:10:10. La última línea representa el registro numérico 6 [2;4], que se acepta."
+              }
+            ]
+          },
+          "initialStandardInput": "1\n"
+        }
+      },
+      {
+        "id": "block_0004_0001",
+        "block": {
+          "type": "code",
+          "language": "cpp",
+          "code": "#include <iostream>\n#include <sstream>\n#include <string>\n#include <vector>\n\nstruct Recuento {\n    int aceptados;\n    int rechazados;\n};\n\nbool recuento_valido(const Recuento& valor) {\n    return valor.aceptados >= 0 && valor.aceptados <= 10\n        && valor.rechazados >= 0 && valor.rechazados <= 10;\n}\n\nstd::istream& operator>>(std::istream& origen, Recuento& destino) {\n    char apertura{0};\n    char separador{0};\n    char cierre{0};\n    Recuento candidato{0, 0};\n    if (!(origen >> apertura >> candidato.aceptados >> separador\n          >> candidato.rechazados >> cierre)) {\n        return origen;\n    }\n    if (apertura != '[' || separador != ';' || cierre != ']'\n        || !recuento_valido(candidato)) {\n        origen.setstate(std::ios::failbit);\n        return origen;\n    }\n    destino = candidato;\n    return origen;\n}\n\nstruct Registro {\n    int id;\n    Recuento recuento;\n};\n\nbool leer_linea(const std::string& linea, Registro& destino) {\n    std::istringstream origen{linea};\n    Registro candidato{0, {0, 0}};\n    if (!(origen >> candidato.id >> candidato.recuento)\n        || candidato.id < 0 || candidato.id > 9) {\n        return false;\n    }\n    origen >> std::ws;\n    if (!origen.eof() || origen.bad()) {\n        return false;\n    }\n    destino = candidato;\n    return true;\n}\n\nint main() {\n    const std::vector<std::string> pruebas{\n        \"3 [2;1]\", \"3 [2;1] sobra\", \"10 [2;1]\", \"3 [2;11]\"\n    };\n    for (const std::string& linea : pruebas) {\n        Registro destino{8, {9, 9}};\n        bool valido = leer_linea(linea, destino);\n        std::cout << valido << ':' << destino.id << ':'\n                  << destino.recuento.aceptados << ':'\n                  << destino.recuento.rechazados << '\\n';\n    }\n    return 0;\n}\n"
+        }
+      },
+      {
+        "id": "block_0005_0001",
+        "block": {
+          "type": "code",
+          "language": "cpp",
+          "code": "#include <iostream>\n#include <sstream>\n#include <string>\n#include <vector>\n\nstruct Recuento {\n    int aceptados;\n    int rechazados;\n};\n\nbool recuento_valido(const Recuento& valor) {\n    return valor.aceptados >= 0 && valor.aceptados <= 10\n        && valor.rechazados >= 0 && valor.rechazados <= 10;\n}\n\nstd::istream& operator>>(std::istream& origen, Recuento& destino) {\n    char apertura{0};\n    char separador{0};\n    char cierre{0};\n    Recuento candidato{0, 0};\n    if (!(origen >> apertura >> candidato.aceptados >> separador\n          >> candidato.rechazados >> cierre)) {\n        return origen;\n    }\n    if (apertura != '[' || separador != ';' || cierre != ']'\n        || !recuento_valido(candidato)) {\n        origen.setstate(std::ios::failbit);\n        return origen;\n    }\n    destino = candidato;\n    return origen;\n}\n\nstruct Registro {\n    int id;\n    Recuento recuento;\n};\n\nbool leer_linea(const std::string& linea, Registro& destino) {\n    std::istringstream origen{linea};\n    Registro candidato{0, {0, 0}};\n    if (!(origen >> candidato.id >> candidato.recuento)\n        || candidato.id < 0 || candidato.id > 9) {\n        return false;\n    }\n    origen >> std::ws;\n    if (!origen.eof() || origen.bad()) {\n        return false;\n    }\n    destino = candidato;\n    return true;\n}\n\nint main() {\n    const std::vector<std::string> pruebas{\"3 [2;1]\", \"3 [2;1] sobra\", \"10 [2;1]\", \"3 [2;11]\", \"03 [02;+1]\", \"3 [2;1]  \", \"\", \"3 [2;1\", \"-1 [2;1]\", \"3 [2,1]\", \"3 [2;1][0;0]\", \"0 [0;0]\", \"9 [10;10]\"};\n    for (const std::string& linea : pruebas) {\n        Registro destino{8, {9, 9}};\n        bool valido = leer_linea(linea, destino);\n        std::cout << valido << ':' << destino.id << ':'\n                  << destino.recuento.aceptados << ':'\n                  << destino.recuento.rechazados << '\\n';\n    }\n    return 0;\n}\n"
+        }
+      },
+      {
+        "id": "u12_linea_estado_actual_referencia_codigo",
+        "block": {
+          "type": "code",
+          "language": "cpp",
+          "code": "#include <iostream>\n#include <sstream>\n#include <string>\n#include <vector>\n\nstruct Recuento {\n    int aceptados;\n    int rechazados;\n};\n\nbool recuento_valido(const Recuento& valor) {\n    return valor.aceptados >= 0 && valor.aceptados <= 10\n        && valor.rechazados >= 0 && valor.rechazados <= 10;\n}\n\nstd::istream& operator>>(std::istream& origen, Recuento& destino) {\n    char apertura{0};\n    char separador{0};\n    char cierre{0};\n    Recuento candidato{0, 0};\n    if (!(origen >> apertura >> candidato.aceptados >> separador\n          >> candidato.rechazados >> cierre)) {\n        return origen;\n    }\n    if (apertura != '[' || separador != ';' || cierre != ']'\n        || !recuento_valido(candidato)) {\n        origen.setstate(std::ios::failbit);\n        return origen;\n    }\n    destino = candidato;\n    return origen;\n}\n\nstruct Registro {\n    int id;\n    Recuento recuento;\n};\n\nbool leer_linea(const std::string& linea, Registro& destino) {\n    std::istringstream origen{linea};\n    Registro candidato{0, {0, 0}};\n    if (!(origen >> candidato.id >> candidato.recuento)\n        || candidato.id < 0 || candidato.id > 9) {\n        return false;\n    }\n    origen >> std::ws;\n    if (!origen.eof() || origen.bad()) {\n        return false;\n    }\n    destino = candidato;\n    return true;\n}\n\nint main() {\n    int caso{0};\n    if (!(std::cin >> caso) || caso < 1 || caso > 3) return 1;\n    const std::vector<std::string> muestras{\n        \"4 [2;6]\\n3 [1;2] sobra\\n3[10;0]\\n+0009 [00000;+0010] \\t\\n2 [4;11]\\n\",\n        \"\\n \\t\\n2 [1;]\\n0 [0;0]\\n5 [7;3\",\n        \"10 [1;2]\\n9 [10;10]\\n7 [1;2][3;4]\\n0006 [00002;00004]\\n\"\n    };\n    std::istringstream fuente{muestras.at(caso - 1)};\n    Registro destino{8, {9, 7}};\n    std::string linea;\n    while (std::getline(fuente, linea)) {\n        const bool valido = leer_linea(linea, destino);\n        std::cout << valido << ':' << destino.id << ':'\n                  << destino.recuento.aceptados << ':'\n                  << destino.recuento.rechazados << '\\n';\n    }\n    return 0;\n}\n"
+        }
       }
     ]
   },

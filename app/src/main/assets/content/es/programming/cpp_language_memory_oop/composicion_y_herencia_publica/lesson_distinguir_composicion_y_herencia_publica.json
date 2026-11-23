@@ -167,7 +167,7 @@
         {
           "type": "code",
           "language": "cpp",
-          "code": "#include <iostream>\n\nclass Lectura {\npublic:\n    explicit Lectura(int valor) : valor_{valor} {}\n    int valor() const noexcept { return valor_; }\n    void sustituir(int nuevo) noexcept { valor_ = nuevo; }\nprivate:\n    int valor_;\n};\nclass AccesoDirecto : public Lectura {\npublic:\n    explicit AccesoDirecto(int valor) : Lectura{valor} {}\n    int consultar_privado() const noexcept { return valor_; }\n};\nint main() { const AccesoDirecto dato{4}; return dato.consultar_privado(); }\n"
+          "code": "#include <iostream>\n\nclass Lectura {\npublic:\n    explicit Lectura(int valor) : valor_{valor} {}\n    int valor() const noexcept { return valor_; }\n    void sustituir(int nuevo) noexcept { valor_ = nuevo; }\nprivate:\n    int valor_;\n};\n\nclass AccesoDirecto : public Lectura {\npublic:\n    explicit AccesoDirecto(int valor) : Lectura{valor} {}\n    int consultar_privado() const noexcept { return valor_; }\n};\nint main() { const AccesoDirecto dato{4}; return dato.consultar_privado(); }\n"
         },
         {
           "type": "multiple_choice",
@@ -196,7 +196,7 @@
         {
           "type": "code",
           "language": "cpp",
-          "code": "#include <iostream>\n\nclass Lectura {\npublic:\n    explicit Lectura(int valor) : valor_{valor} {}\n    int valor() const noexcept { return valor_; }\n    void sustituir(int nuevo) noexcept { valor_ = nuevo; }\nprivate:\n    int valor_;\n};\nclass LecturaIdentificada : public Lectura {\npublic:\n    LecturaIdentificada(int valor, int codigo);\n    int codigo() const noexcept { return codigo_; }\nprivate:\n    int codigo_;\n};\n\nLecturaIdentificada::LecturaIdentificada(int valor, int codigo) : codigo_{codigo} {\n    sustituir(valor);\n}\nint main() { const LecturaIdentificada dato{5, 9}; return dato.valor(); }\n"
+          "code": "#include <iostream>\n\nclass Lectura {\npublic:\n    explicit Lectura(int valor) : valor_{valor} {}\n    int valor() const noexcept { return valor_; }\n    void sustituir(int nuevo) noexcept { valor_ = nuevo; }\nprivate:\n    int valor_;\n};\n\nclass LecturaIdentificada : public Lectura {\npublic:\n    LecturaIdentificada(int valor, int codigo);\n    int codigo() const noexcept { return codigo_; }\nprivate:\n    int codigo_;\n};\n\nLecturaIdentificada::LecturaIdentificada(int valor, int codigo) : codigo_{codigo} {\n    sustituir(valor);\n}\n\nint main() { const LecturaIdentificada dato{5, 9}; return dato.valor(); }\n"
         },
         {
           "type": "multiple_choice",
@@ -227,7 +227,7 @@
           "id": "p3_u8l1_composicion_y_copia_del_miembro",
           "language": "cpp",
           "question": "Escribe el número del registro, el de copia y el código conservado por el registro.",
-          "code": "#include <iostream>\n\nclass Lectura {\npublic:\n    explicit Lectura(int valor) : valor_{valor} {}\n    int valor() const noexcept { return valor_; }\n    void sustituir(int nuevo) noexcept { valor_ = nuevo; }\nprivate:\n    int valor_;\n};\nclass Registro {\npublic:\n    Registro(int valor, int codigo) : lectura_{valor}, codigo_{codigo} {}\n    int valor() const noexcept { return lectura_.valor(); }\n    int codigo() const noexcept { return codigo_; }\n    Lectura obtener_lectura() const { return lectura_; }\n    void sustituir(int nuevo) noexcept { lectura_.sustituir(nuevo); }\nprivate:\n    Lectura lectura_;\n    int codigo_;\n};\nint main() {\n    Registro registro{8, 12};\n    Lectura copia = registro.obtener_lectura();\n    copia.sustituir(-5);\n    std::cout << registro.valor() << ':' << copia.valor() << ':' << registro.codigo();\n    return 0;\n}\n",
+          "code": "#include <iostream>\n\nclass Lectura {\npublic:\n    explicit Lectura(int valor) : valor_{valor} {}\n    int valor() const noexcept { return valor_; }\n    void sustituir(int nuevo) noexcept { valor_ = nuevo; }\nprivate:\n    int valor_;\n};\n\nclass Registro {\npublic:\n    Registro(int valor, int codigo) : lectura_{valor}, codigo_{codigo} {}\n    int valor() const noexcept { return lectura_.valor(); }\n    int codigo() const noexcept { return codigo_; }\n    Lectura obtener_lectura() const { return lectura_; }\n    void sustituir(int nuevo) noexcept { lectura_.sustituir(nuevo); }\nprivate:\n    Lectura lectura_;\n    int codigo_;\n};\n\nint main() {\n    Registro registro{8, 12};\n    Lectura copia = registro.obtener_lectura();\n    copia.sustituir(-5);\n    std::cout << registro.valor() << ':' << copia.valor() << ':' << registro.codigo();\n\n    return 0;\n}\n",
           "answers": [
             "8:-5:12"
           ],
@@ -259,7 +259,7 @@
           "id": "p3_u8l1_referencia_base_y_modificacion_del_derivado",
           "language": "cpp",
           "question": "Escribe la lectura inicial y las tres consultas posteriores al cambio mediante fijar.",
-          "code": "#include <iostream>\n\nclass Lectura {\npublic:\n    explicit Lectura(int valor) : valor_{valor} {}\n    int valor() const noexcept { return valor_; }\n    void sustituir(int nuevo) noexcept { valor_ = nuevo; }\nprivate:\n    int valor_;\n};\nclass LecturaIdentificada : public Lectura {\npublic:\n    LecturaIdentificada(int valor, int codigo);\n    int codigo() const noexcept { return codigo_; }\nprivate:\n    int codigo_;\n};\nLecturaIdentificada::LecturaIdentificada(int valor, int codigo)\n    : Lectura{valor}, codigo_{codigo} {}\nint leer(const Lectura& dato) noexcept { return dato.valor(); }\nvoid fijar(Lectura& dato, int nuevo) noexcept { dato.sustituir(nuevo); }\nint main() {\n    LecturaIdentificada dato{7, 31};\n    const Lectura& vista = dato;\n    std::cout << leer(vista) << ':';\n    fijar(dato, -6);\n    std::cout << vista.valor() << ':' << dato.valor() << ':' << dato.codigo();\n    return 0;\n}\n",
+          "code": "#include <iostream>\n\nclass Lectura {\npublic:\n    explicit Lectura(int valor) : valor_{valor} {}\n    int valor() const noexcept { return valor_; }\n    void sustituir(int nuevo) noexcept { valor_ = nuevo; }\nprivate:\n    int valor_;\n};\n\nclass LecturaIdentificada : public Lectura {\npublic:\n    LecturaIdentificada(int valor, int codigo);\n    int codigo() const noexcept { return codigo_; }\nprivate:\n    int codigo_;\n};\nLecturaIdentificada::LecturaIdentificada(int valor, int codigo)\n    : Lectura{valor}, codigo_{codigo} {}\nint leer(const Lectura& dato) noexcept { return dato.valor(); }\nvoid fijar(Lectura& dato, int nuevo) noexcept { dato.sustituir(nuevo); }\nint main() {\n    LecturaIdentificada dato{7, 31};\n    const Lectura& vista = dato;\n\n    std::cout << leer(vista) << ':';\n    fijar(dato, -6);\n    std::cout << vista.valor() << ':' << dato.valor() << ':' << dato.codigo();\n\n    return 0;\n}\n",
           "answers": [
             "7:-6:-6:31"
           ],
@@ -287,7 +287,7 @@
           "id": "p3_u8l1_puntero_y_referencia_a_la_misma_base",
           "language": "cpp",
           "question": "Escribe el número observado, el código y el resultado de comparar el puntero con la dirección de vista.",
-          "code": "#include <iostream>\n\nclass Lectura {\npublic:\n    explicit Lectura(int valor) : valor_{valor} {}\n    int valor() const noexcept { return valor_; }\n    void sustituir(int nuevo) noexcept { valor_ = nuevo; }\nprivate:\n    int valor_;\n};\nclass LecturaIdentificada : public Lectura {\npublic:\n    LecturaIdentificada(int valor, int codigo);\n    int codigo() const noexcept { return codigo_; }\nprivate:\n    int codigo_;\n};\nLecturaIdentificada::LecturaIdentificada(int valor, int codigo)\n    : Lectura{valor}, codigo_{codigo} {}\nint main() {\n    LecturaIdentificada dato{2, 17};\n    Lectura* acceso = &dato;\n    const Lectura& vista = dato;\n    acceso->sustituir(9);\n    std::cout << vista.valor() << ':' << dato.codigo() << ':' << (acceso == &vista);\n    return 0;\n}\n",
+          "code": "#include <iostream>\n\nclass Lectura {\npublic:\n    explicit Lectura(int valor) : valor_{valor} {}\n    int valor() const noexcept { return valor_; }\n    void sustituir(int nuevo) noexcept { valor_ = nuevo; }\nprivate:\n    int valor_;\n};\n\nclass LecturaIdentificada : public Lectura {\npublic:\n    LecturaIdentificada(int valor, int codigo);\n    int codigo() const noexcept { return codigo_; }\nprivate:\n    int codigo_;\n};\nLecturaIdentificada::LecturaIdentificada(int valor, int codigo)\n    : Lectura{valor}, codigo_{codigo} {}\nint main() {\n    LecturaIdentificada dato{2, 17};\n    Lectura* acceso = &dato;\n    const Lectura& vista = dato;\n    acceso->sustituir(9);\n    std::cout << vista.valor() << ':' << dato.codigo() << ':' << (acceso == &vista);\n\n    return 0;\n}\n",
           "answers": [
             "9:17:1"
           ],
@@ -315,7 +315,7 @@
           "id": "p3_u8l1_consulta_constante_de_objeto_y_base",
           "language": "cpp",
           "question": "Escribe las cuatro consultas del programa, en su orden.",
-          "code": "#include <iostream>\n\nclass Lectura {\npublic:\n    explicit Lectura(int valor) : valor_{valor} {}\n    int valor() const noexcept { return valor_; }\n    void sustituir(int nuevo) noexcept { valor_ = nuevo; }\nprivate:\n    int valor_;\n};\nclass LecturaIdentificada : public Lectura {\npublic:\n    LecturaIdentificada(int valor, int codigo);\n    int codigo() const noexcept { return codigo_; }\nprivate:\n    int codigo_;\n};\nLecturaIdentificada::LecturaIdentificada(int valor, int codigo)\n    : Lectura{valor}, codigo_{codigo} {}\nint leer(const Lectura& dato) noexcept { return dato.valor(); }\nvoid fijar(Lectura& dato, int nuevo) noexcept { dato.sustituir(nuevo); }\nint main() {\n    const LecturaIdentificada dato{4, 23};\n    const Lectura& vista = dato;\n    const Lectura* acceso = &dato;\n    std::cout << leer(dato) << ':' << vista.valor() << ':' << acceso->valor() << ':' << dato.codigo();\n    return 0;\n}\n",
+          "code": "#include <iostream>\n\nclass Lectura {\npublic:\n    explicit Lectura(int valor) : valor_{valor} {}\n    int valor() const noexcept { return valor_; }\n    void sustituir(int nuevo) noexcept { valor_ = nuevo; }\nprivate:\n    int valor_;\n};\n\nclass LecturaIdentificada : public Lectura {\npublic:\n    LecturaIdentificada(int valor, int codigo);\n    int codigo() const noexcept { return codigo_; }\nprivate:\n    int codigo_;\n};\nLecturaIdentificada::LecturaIdentificada(int valor, int codigo)\n    : Lectura{valor}, codigo_{codigo} {}\nint leer(const Lectura& dato) noexcept { return dato.valor(); }\nvoid fijar(Lectura& dato, int nuevo) noexcept { dato.sustituir(nuevo); }\nint main() {\n    const LecturaIdentificada dato{4, 23};\n    const Lectura& vista = dato;\n    const Lectura* acceso = &dato;\n\n    std::cout << leer(dato) << ':' << vista.valor() << ':' << acceso->valor() << ':' << dato.codigo();\n\n    return 0;\n}\n",
           "answers": [
             "4:4:4:23"
           ],
@@ -341,7 +341,7 @@
         {
           "type": "code",
           "language": "cpp",
-          "code": "#include <iostream>\n\nclass Lectura {\npublic:\n    explicit Lectura(int valor) : valor_{valor} {}\n    int valor() const noexcept { return valor_; }\n    void sustituir(int nuevo) noexcept { valor_ = nuevo; }\nprivate:\n    int valor_;\n};\nclass LecturaIdentificada : public Lectura {\npublic:\n    LecturaIdentificada(int valor, int codigo);\n    int codigo() const noexcept { return codigo_; }\nprivate:\n    int codigo_;\n};\nLecturaIdentificada::LecturaIdentificada(int valor, int codigo)\n    : Lectura{valor}, codigo_{codigo} {}\nint leer(const Lectura& dato) noexcept { return dato.valor(); }\nvoid fijar(Lectura& dato, int nuevo) noexcept { dato.sustituir(nuevo); }\nint main() {\n    const LecturaIdentificada dato{5, 9};\n    fijar(dato, 8);\n    return 0;\n}\n"
+          "code": "#include <iostream>\n\nclass Lectura {\npublic:\n    explicit Lectura(int valor) : valor_{valor} {}\n    int valor() const noexcept { return valor_; }\n    void sustituir(int nuevo) noexcept { valor_ = nuevo; }\nprivate:\n    int valor_;\n};\n\nclass LecturaIdentificada : public Lectura {\npublic:\n    LecturaIdentificada(int valor, int codigo);\n    int codigo() const noexcept { return codigo_; }\nprivate:\n    int codigo_;\n};\nLecturaIdentificada::LecturaIdentificada(int valor, int codigo)\n    : Lectura{valor}, codigo_{codigo} {}\nint leer(const Lectura& dato) noexcept { return dato.valor(); }\nvoid fijar(Lectura& dato, int nuevo) noexcept { dato.sustituir(nuevo); }\nint main() {\n    const LecturaIdentificada dato{5, 9};\n    fijar(dato, 8);\n    return 0;\n}\n"
         },
         {
           "type": "multiple_choice",
@@ -370,7 +370,7 @@
         {
           "type": "code",
           "language": "cpp",
-          "code": "#include <iostream>\n\nclass Lectura {\npublic:\n    explicit Lectura(int valor) : valor_{valor} {}\n    int valor() const noexcept { return valor_; }\n    void sustituir(int nuevo) noexcept { valor_ = nuevo; }\nprivate:\n    int valor_;\n};\nclass LecturaIdentificada : public Lectura {\npublic:\n    LecturaIdentificada(int valor, int codigo);\n    int codigo() const noexcept { return codigo_; }\nprivate:\n    int codigo_;\n};\nLecturaIdentificada::LecturaIdentificada(int valor, int codigo)\n    : Lectura{valor}, codigo_{codigo} {}\nint main() {\n    Lectura dato{5};\n    LecturaIdentificada& especial = dato;\n    std::cout << especial.codigo();\n    return 0;\n}\n"
+          "code": "#include <iostream>\n\nclass Lectura {\npublic:\n    explicit Lectura(int valor) : valor_{valor} {}\n    int valor() const noexcept { return valor_; }\n    void sustituir(int nuevo) noexcept { valor_ = nuevo; }\nprivate:\n    int valor_;\n};\n\nclass LecturaIdentificada : public Lectura {\npublic:\n    LecturaIdentificada(int valor, int codigo);\n    int codigo() const noexcept { return codigo_; }\nprivate:\n    int codigo_;\n};\nLecturaIdentificada::LecturaIdentificada(int valor, int codigo)\n    : Lectura{valor}, codigo_{codigo} {}\nint main() {\n    Lectura dato{5};\n    LecturaIdentificada& especial = dato;\n    std::cout << especial.codigo();\n\n    return 0;\n}\n"
         },
         {
           "type": "multiple_choice",
@@ -399,7 +399,7 @@
         {
           "type": "code",
           "language": "cpp",
-          "code": "#include <iostream>\n\nclass Lectura {\npublic:\n    explicit Lectura(int valor) : valor_{valor} {}\n    int valor() const noexcept { return valor_; }\n    void sustituir(int nuevo) noexcept { valor_ = nuevo; }\nprivate:\n    int valor_;\n};\nclass Registro {\npublic:\n    Registro(int valor, int codigo) : lectura_{valor}, codigo_{codigo} {}\n    int valor() const noexcept { return lectura_.valor(); }\n    int codigo() const noexcept { return codigo_; }\n    Lectura obtener_lectura() const { return lectura_; }\n    void sustituir(int nuevo) noexcept { lectura_.sustituir(nuevo); }\nprivate:\n    Lectura lectura_;\n    int codigo_;\n};\nint leer(const Lectura& dato) noexcept { return dato.valor(); }\nvoid fijar(Lectura& dato, int nuevo) noexcept { dato.sustituir(nuevo); }\nint main() {\n    const Registro registro{5, 9};\n    std::cout << leer(registro);\n    return 0;\n}\n"
+          "code": "#include <iostream>\n\nclass Lectura {\npublic:\n    explicit Lectura(int valor) : valor_{valor} {}\n    int valor() const noexcept { return valor_; }\n    void sustituir(int nuevo) noexcept { valor_ = nuevo; }\nprivate:\n    int valor_;\n};\n\nclass Registro {\npublic:\n    Registro(int valor, int codigo) : lectura_{valor}, codigo_{codigo} {}\n    int valor() const noexcept { return lectura_.valor(); }\n    int codigo() const noexcept { return codigo_; }\n    Lectura obtener_lectura() const { return lectura_; }\n    void sustituir(int nuevo) noexcept { lectura_.sustituir(nuevo); }\nprivate:\n    Lectura lectura_;\n    int codigo_;\n};\nint leer(const Lectura& dato) noexcept { return dato.valor(); }\nvoid fijar(Lectura& dato, int nuevo) noexcept { dato.sustituir(nuevo); }\nint main() {\n    const Registro registro{5, 9};\n\n    std::cout << leer(registro);\n\n    return 0;\n}\n"
         },
         {
           "type": "multiple_choice",
@@ -430,7 +430,7 @@
           "id": "p3_u8l1_copia_guardada_y_nueva_lectura_del_compuesto",
           "language": "cpp",
           "question": "Escribe la nueva consulta del registro, el número de copia y el código del registro.",
-          "code": "#include <iostream>\n\nclass Lectura {\npublic:\n    explicit Lectura(int valor) : valor_{valor} {}\n    int valor() const noexcept { return valor_; }\n    void sustituir(int nuevo) noexcept { valor_ = nuevo; }\nprivate:\n    int valor_;\n};\nclass Registro {\npublic:\n    Registro(int valor, int codigo) : lectura_{valor}, codigo_{codigo} {}\n    int valor() const noexcept { return lectura_.valor(); }\n    int codigo() const noexcept { return codigo_; }\n    Lectura obtener_lectura() const { return lectura_; }\n    void sustituir(int nuevo) noexcept { lectura_.sustituir(nuevo); }\nprivate:\n    Lectura lectura_;\n    int codigo_;\n};\nint leer(const Lectura& dato) noexcept { return dato.valor(); }\nvoid fijar(Lectura& dato, int nuevo) noexcept { dato.sustituir(nuevo); }\nint main() {\n    Registro registro{10, 7};\n    Lectura copia = registro.obtener_lectura();\n    registro.sustituir(20);\n    fijar(copia, -3);\n    std::cout << leer(registro.obtener_lectura()) << ':' << copia.valor() << ':' << registro.codigo();\n    return 0;\n}\n",
+          "code": "#include <iostream>\n\nclass Lectura {\npublic:\n    explicit Lectura(int valor) : valor_{valor} {}\n    int valor() const noexcept { return valor_; }\n    void sustituir(int nuevo) noexcept { valor_ = nuevo; }\nprivate:\n    int valor_;\n};\n\nclass Registro {\npublic:\n    Registro(int valor, int codigo) : lectura_{valor}, codigo_{codigo} {}\n    int valor() const noexcept { return lectura_.valor(); }\n    int codigo() const noexcept { return codigo_; }\n    Lectura obtener_lectura() const { return lectura_; }\n    void sustituir(int nuevo) noexcept { lectura_.sustituir(nuevo); }\nprivate:\n    Lectura lectura_;\n    int codigo_;\n};\nint leer(const Lectura& dato) noexcept { return dato.valor(); }\nvoid fijar(Lectura& dato, int nuevo) noexcept { dato.sustituir(nuevo); }\nint main() {\n    Registro registro{10, 7};\n    Lectura copia = registro.obtener_lectura();\n    registro.sustituir(20);\n    fijar(copia, -3);\n    std::cout << leer(registro.obtener_lectura()) << ':' << copia.valor() << ':' << registro.codigo();\n\n    return 0;\n}\n",
           "answers": [
             "20:-3:7"
           ],
@@ -458,7 +458,7 @@
           "id": "p3_u8l1_orden_de_base_miembro_y_cuerpos",
           "language": "cpp",
           "question": "Escribe todas las líneas de la salida, incluido el texto posterior al bloque interior.",
-          "code": "#include <iostream>\n\nclass BaseVisible {\npublic:\n    BaseVisible() { std::cout << \"Base\\n\"; }\n    ~BaseVisible() { std::cout << \"FinBase\\n\"; }\n};\nclass MiembroVisible {\npublic:\n    MiembroVisible() { std::cout << \"Miembro\\n\"; }\n    ~MiembroVisible() { std::cout << \"FinMiembro\\n\"; }\n};\nclass Completa : public BaseVisible {\npublic:\n    Completa() : BaseVisible{}, miembro_{} { std::cout << \"Derivada\\n\"; }\n    ~Completa() { std::cout << \"FinDerivada\\n\"; }\nprivate:\n    MiembroVisible miembro_;\n};\nint main() {\n    {\n        Completa objeto;\n        std::cout << \"Uso\\n\";\n    }\n    std::cout << \"Despues\";\n    return 0;\n}\n",
+          "code": "#include <iostream>\n\nclass BaseVisible {\npublic:\n    BaseVisible() { std::cout << \"Base\\n\"; }\n    ~BaseVisible() { std::cout << \"FinBase\\n\"; }\n};\n\nclass MiembroVisible {\npublic:\n    MiembroVisible() { std::cout << \"Miembro\\n\"; }\n    ~MiembroVisible() { std::cout << \"FinMiembro\\n\"; }\n};\n\nclass Completa : public BaseVisible {\npublic:\n    Completa() : BaseVisible{}, miembro_{} { std::cout << \"Derivada\\n\"; }\n    ~Completa() { std::cout << \"FinDerivada\\n\"; }\nprivate:\n    MiembroVisible miembro_;\n};\n\nint main() {\n    {\n        Completa objeto;\n        std::cout << \"Uso\\n\";\n    }\n    std::cout << \"Despues\";\n\n    return 0;\n}\n",
           "answers": [
             "Base\nMiembro\nDerivada\nUso\nFinDerivada\nFinMiembro\nFinBase\nDespues"
           ],
@@ -572,7 +572,7 @@
         {
           "type": "cpp_compiler",
           "language": "cpp",
-          "initialCode": "#include <iostream>\n\nclass Medida {\npublic:\n    explicit Medida(int numero) : numero_{numero} {}\n    int numero() const noexcept { return numero_; }\n    void sustituir(int nuevo) noexcept { numero_ = nuevo; }\nprivate:\n    int numero_;\n};\nclass MedidaIdentificada : public Medida {\npublic:\n    MedidaIdentificada(int numero, int codigo);\n    int codigo() const noexcept { return codigo_; }\nprivate:\n    int codigo_;\n};\nMedidaIdentificada::MedidaIdentificada(int numero, int codigo)\n    : Medida{0}, codigo_{0} {\n    // Inicializa la base y el codigo con los argumentos recibidos.\n    (void)numero;\n    (void)codigo;\n}\nvoid fijar(Medida& destino, int nuevo) noexcept {\n    // Utiliza la interfaz publica de Medida para cambiar su numero.\n    (void)destino;\n    (void)nuevo;\n}\nclass Ficha {\npublic:\n    Ficha(int numero, int codigo) : medida_{numero}, codigo_{codigo} {}\n    int numero() const noexcept { return medida_.numero(); }\n    int codigo() const noexcept { return codigo_; }\n    Medida obtener_medida() const { return medida_; }\nprivate:\n    Medida medida_;\n    int codigo_;\n};\nint main() {\n    int inicial = 0, codigo = 0, nuevo = 0;\n    if (!(std::cin >> inicial >> codigo >> nuevo)) { return 1; }\n    MedidaIdentificada dato{inicial, codigo};\n    const Ficha ficha{inicial, codigo};\n    const Medida& vista = dato;\n    Medida& editable = dato;\n    Medida* acceso = &dato;\n    Medida copia = ficha.obtener_medida();\n    std::cout << \"Antes:\" << vista.numero() << \";CodigoAntes:\" << dato.codigo();\n    fijar(editable, nuevo);\n    fijar(copia, nuevo);\n    std::cout << \";Vista:\" << vista.numero() << \";Derivada:\" << dato.numero()\n              << \";Puntero:\" << acceso->numero() << \";Codigo:\" << dato.codigo()\n              << \";MismaParte:\" << (&vista == acceso) << \";Ficha:\" << ficha.numero()\n              << \";CodigoFicha:\" << ficha.codigo() << \";Copia:\" << copia.numero();\n    return 0;\n}\n",
+          "initialCode": "#include <iostream>\n\nclass Medida {\npublic:\n    explicit Medida(int numero) : numero_{numero} {}\n    int numero() const noexcept { return numero_; }\n    void sustituir(int nuevo) noexcept { numero_ = nuevo; }\nprivate:\n    int numero_;\n};\n\nclass MedidaIdentificada : public Medida {\npublic:\n    MedidaIdentificada(int numero, int codigo);\n    int codigo() const noexcept { return codigo_; }\nprivate:\n    int codigo_;\n};\nMedidaIdentificada::MedidaIdentificada(int numero, int codigo)\n    : Medida{0}, codigo_{0} {\n    // Inicializa la base y el codigo con los argumentos recibidos.\n    (void)numero;\n    (void)codigo;\n}\n\nvoid fijar(Medida& destino, int nuevo) noexcept {\n    // Utiliza la interfaz publica de Medida para cambiar su numero.\n    (void)destino;\n    (void)nuevo;\n}\n\nclass Ficha {\npublic:\n    Ficha(int numero, int codigo) : medida_{numero}, codigo_{codigo} {}\n    int numero() const noexcept { return medida_.numero(); }\n    int codigo() const noexcept { return codigo_; }\n    Medida obtener_medida() const { return medida_; }\nprivate:\n    Medida medida_;\n    int codigo_;\n};\n\nint main() {\n    int inicial = 0, codigo = 0, nuevo = 0;\n    if (!(std::cin >> inicial >> codigo >> nuevo)) { return 1; }\n    MedidaIdentificada dato{inicial, codigo};\n    const Ficha ficha{inicial, codigo};\n    const Medida& vista = dato;\n    Medida& editable = dato;\n    Medida* acceso = &dato;\n    Medida copia = ficha.obtener_medida();\n    std::cout << \"Antes:\" << vista.numero() << \";CodigoAntes:\" << dato.codigo();\n    fijar(editable, nuevo);\n    fijar(copia, nuevo);\n    std::cout << \";Vista:\" << vista.numero() << \";Derivada:\" << dato.numero()\n              << \";Puntero:\" << acceso->numero() << \";Codigo:\" << dato.codigo()\n              << \";MismaParte:\" << (&vista == acceso) << \";Ficha:\" << ficha.numero()\n              << \";CodigoFicha:\" << ficha.codigo() << \";Copia:\" << copia.numero();\n    return 0;\n}\n",
           "initialStandardInput": "6 41 -8",
           "outputCheck": {
             "inputComparison": "tokens",
@@ -764,7 +764,7 @@
         {
           "type": "code",
           "language": "cpp",
-          "code": "#include <iostream>\n\nclass Medida {\npublic:\n    explicit Medida(int numero) : numero_{numero} {}\n    int numero() const noexcept { return numero_; }\n    void sustituir(int nuevo) noexcept { numero_ = nuevo; }\nprivate:\n    int numero_;\n};\nclass MedidaIdentificada : public Medida {\npublic:\n    MedidaIdentificada(int numero, int codigo);\n    int codigo() const noexcept { return codigo_; }\nprivate:\n    int codigo_;\n};\nMedidaIdentificada::MedidaIdentificada(int numero, int codigo)\n    : Medida{numero}, codigo_{codigo} {}\nvoid fijar(Medida& destino, int nuevo) noexcept {\n    destino.sustituir(nuevo);\n}\nclass Ficha {\npublic:\n    Ficha(int numero, int codigo) : medida_{numero}, codigo_{codigo} {}\n    int numero() const noexcept { return medida_.numero(); }\n    int codigo() const noexcept { return codigo_; }\n    Medida obtener_medida() const { return medida_; }\nprivate:\n    Medida medida_;\n    int codigo_;\n};\nint main() {\n    int inicial = 0, codigo = 0, nuevo = 0;\n    if (!(std::cin >> inicial >> codigo >> nuevo)) { return 1; }\n    MedidaIdentificada dato{inicial, codigo};\n    const Ficha ficha{inicial, codigo};\n    const Medida& vista = dato;\n    Medida& editable = dato;\n    Medida* acceso = &dato;\n    Medida copia = ficha.obtener_medida();\n    std::cout << \"Antes:\" << vista.numero() << \";CodigoAntes:\" << dato.codigo();\n    fijar(editable, nuevo);\n    fijar(copia, nuevo);\n    std::cout << \";Vista:\" << vista.numero() << \";Derivada:\" << dato.numero()\n              << \";Puntero:\" << acceso->numero() << \";Codigo:\" << dato.codigo()\n              << \";MismaParte:\" << (&vista == acceso) << \";Ficha:\" << ficha.numero()\n              << \";CodigoFicha:\" << ficha.codigo() << \";Copia:\" << copia.numero();\n    return 0;\n}\n"
+          "code": "#include <iostream>\n\nclass Medida {\npublic:\n    explicit Medida(int numero) : numero_{numero} {}\n    int numero() const noexcept { return numero_; }\n    void sustituir(int nuevo) noexcept { numero_ = nuevo; }\nprivate:\n    int numero_;\n};\n\nclass MedidaIdentificada : public Medida {\npublic:\n    MedidaIdentificada(int numero, int codigo);\n    int codigo() const noexcept { return codigo_; }\nprivate:\n    int codigo_;\n};\nMedidaIdentificada::MedidaIdentificada(int numero, int codigo)\n    : Medida{numero}, codigo_{codigo} {}\nvoid fijar(Medida& destino, int nuevo) noexcept {\n    destino.sustituir(nuevo);\n}\n\nclass Ficha {\npublic:\n    Ficha(int numero, int codigo) : medida_{numero}, codigo_{codigo} {}\n    int numero() const noexcept { return medida_.numero(); }\n    int codigo() const noexcept { return codigo_; }\n    Medida obtener_medida() const { return medida_; }\nprivate:\n    Medida medida_;\n    int codigo_;\n};\n\nint main() {\n    int inicial = 0, codigo = 0, nuevo = 0;\n    if (!(std::cin >> inicial >> codigo >> nuevo)) { return 1; }\n    MedidaIdentificada dato{inicial, codigo};\n    const Ficha ficha{inicial, codigo};\n    const Medida& vista = dato;\n    Medida& editable = dato;\n    Medida* acceso = &dato;\n    Medida copia = ficha.obtener_medida();\n    std::cout << \"Antes:\" << vista.numero() << \";CodigoAntes:\" << dato.codigo();\n    fijar(editable, nuevo);\n    fijar(copia, nuevo);\n    std::cout << \";Vista:\" << vista.numero() << \";Derivada:\" << dato.numero()\n              << \";Puntero:\" << acceso->numero() << \";Codigo:\" << dato.codigo()\n              << \";MismaParte:\" << (&vista == acceso) << \";Ficha:\" << ficha.numero()\n              << \";CodigoFicha:\" << ficha.codigo() << \";Copia:\" << copia.numero();\n    return 0;\n}\n"
         },
         {
           "type": "paragraph",
@@ -2449,6 +2449,261 @@
       }
     },
     "additions": [],
-    "editorial": []
+    "editorial": [
+      {
+        "id": "block_0006_0002",
+        "beforeSha256": "ff818a836002184701c7b0d20cd94feb8ca9707a3993c7d9692cd4809aa772dd",
+        "afterSha256": "80cbdceb03588fb4bdb1f71731576da88545db092373238ac6bf3443dc16865f"
+      },
+      {
+        "id": "block_0007_0002",
+        "beforeSha256": "8d788df913977c7b7243f29590cccd10502eb858b0179268137b84527b0e1a00",
+        "afterSha256": "7796c94b97fe9ab0dcf5001a9320ab0c4192ab313658164df73a6ce88c7862c3"
+      },
+      {
+        "id": "block_0008_0002",
+        "beforeSha256": "57fba4f24fbdefc3d83b9b7bf32de63cd0e03de8a2d34cb1c945e78a26e3a2c2",
+        "afterSha256": "f17e8a6b2585f08d1f85eeb43dc7b21b69dd4a6768e59378e27869f6eba33f15"
+      },
+      {
+        "id": "block_0009_0003",
+        "beforeSha256": "d7735f2caea849f2103d9130410316f948e50bbe16d0f1d12f174b797cbf0361",
+        "afterSha256": "38f0ac715f1948204ee59bd8954803b314aa4a999dac3c84d548f57d9cdfcac4"
+      },
+      {
+        "id": "block_0010_0002",
+        "beforeSha256": "51e3cf3e47c8c7e6260d0fb8dc123e02744b9a498ba33280d59c395c7ba3a6f8",
+        "afterSha256": "d7d5c2b7af9d0ff1d48ba78eeebdb9ae09009e0fea5a6cb9b1fb58cea5941302"
+      },
+      {
+        "id": "block_0011_0002",
+        "beforeSha256": "1b49d2de6a5b21e8a5a1baaf6f4b67b8f9082605e2c61ce7ae9fdc95f186cc89",
+        "afterSha256": "53ddded30fde647ba05d74071e5b6cdf3520e37de5335839f118608c582f2322"
+      },
+      {
+        "id": "block_0012_0002",
+        "beforeSha256": "266151a9929942e4f37632963050b1746947b780e1f7421fe0959b6efbfe5215",
+        "afterSha256": "aa824acb86ff677dc84b512dca7c63edb839fbee7b3b92569a50c8a18cb970ef"
+      },
+      {
+        "id": "block_0013_0002",
+        "beforeSha256": "0d82e72bd71e74abdd485c336c0d617e2d107f790f9dcc60c6c9407f62b4ec0e",
+        "afterSha256": "6c1e54f86ecb86ded8aa42ee97693694d4ce48cbd4f6e50a3943c2a266016bea"
+      },
+      {
+        "id": "block_0014_0002",
+        "beforeSha256": "d3e7d7f9d6b0c12c27f61b66b59a520f9761f54db1f1495aca122e8129fa4702",
+        "afterSha256": "54ad06399da85477be96db688ad2750909f494bf3494de79f45e406ff09b6c85"
+      },
+      {
+        "id": "block_0015_0002",
+        "beforeSha256": "3374b87ca2422aa2f3a42f40d265cbed5457ff283aed47bab36cf11d46dcd5e8",
+        "afterSha256": "7fd63b519819f209f591f0c169c744922a978de69fcf18c0738998774ab1a510"
+      },
+      {
+        "id": "block_0016_0002",
+        "beforeSha256": "59421c7b6539bc4457750224d27d56bbbb132ee112585eb8f09e6b1cc57f4c41",
+        "afterSha256": "34874c4896ead4b561dc5d2442e56b90563208b158f7918bebc426ccf4e9a5c2"
+      },
+      {
+        "id": "block_0021_0002",
+        "beforeSha256": "e7f24405796b975efef26dc93209a74fbb8161e5acc0bfb51efb7ad6a4a968ff",
+        "afterSha256": "a2823cd5be933437f6628fc3e48db7c1d636304338f84b81c8f52e36800002ec"
+      },
+      {
+        "id": "block_0023_0001",
+        "beforeSha256": "4f5664881b7fe467a2b66100c2f0dc694df234cdf626898e91cf340e07d98521",
+        "afterSha256": "f56ba9b3c9b196bbc518b7ad25f9a39c6c42e8d06186a1a71237923bb261222e"
+      }
+    ],
+    "sourceFormatRevisions": [
+      {
+        "id": "block_0006_0002",
+        "block": {
+          "type": "code",
+          "language": "cpp",
+          "code": "#include <iostream>\n\nclass Lectura {\npublic:\n    explicit Lectura(int valor) : valor_{valor} {}\n    int valor() const noexcept { return valor_; }\n    void sustituir(int nuevo) noexcept { valor_ = nuevo; }\nprivate:\n    int valor_;\n};\nclass AccesoDirecto : public Lectura {\npublic:\n    explicit AccesoDirecto(int valor) : Lectura{valor} {}\n    int consultar_privado() const noexcept { return valor_; }\n};\nint main() { const AccesoDirecto dato{4}; return dato.consultar_privado(); }\n"
+        }
+      },
+      {
+        "id": "block_0007_0002",
+        "block": {
+          "type": "code",
+          "language": "cpp",
+          "code": "#include <iostream>\n\nclass Lectura {\npublic:\n    explicit Lectura(int valor) : valor_{valor} {}\n    int valor() const noexcept { return valor_; }\n    void sustituir(int nuevo) noexcept { valor_ = nuevo; }\nprivate:\n    int valor_;\n};\nclass LecturaIdentificada : public Lectura {\npublic:\n    LecturaIdentificada(int valor, int codigo);\n    int codigo() const noexcept { return codigo_; }\nprivate:\n    int codigo_;\n};\n\nLecturaIdentificada::LecturaIdentificada(int valor, int codigo) : codigo_{codigo} {\n    sustituir(valor);\n}\nint main() { const LecturaIdentificada dato{5, 9}; return dato.valor(); }\n"
+        }
+      },
+      {
+        "id": "block_0008_0002",
+        "block": {
+          "type": "output_prediction",
+          "id": "p3_u8l1_composicion_y_copia_del_miembro",
+          "language": "cpp",
+          "question": "Escribe el número del registro, el de copia y el código conservado por el registro.",
+          "code": "#include <iostream>\n\nclass Lectura {\npublic:\n    explicit Lectura(int valor) : valor_{valor} {}\n    int valor() const noexcept { return valor_; }\n    void sustituir(int nuevo) noexcept { valor_ = nuevo; }\nprivate:\n    int valor_;\n};\nclass Registro {\npublic:\n    Registro(int valor, int codigo) : lectura_{valor}, codigo_{codigo} {}\n    int valor() const noexcept { return lectura_.valor(); }\n    int codigo() const noexcept { return codigo_; }\n    Lectura obtener_lectura() const { return lectura_; }\n    void sustituir(int nuevo) noexcept { lectura_.sustituir(nuevo); }\nprivate:\n    Lectura lectura_;\n    int codigo_;\n};\nint main() {\n    Registro registro{8, 12};\n    Lectura copia = registro.obtener_lectura();\n    copia.sustituir(-5);\n    std::cout << registro.valor() << ':' << copia.valor() << ':' << registro.codigo();\n    return 0;\n}\n",
+          "answers": [
+            "8:-5:12"
+          ],
+          "outputComparison": "exact",
+          "explanation": "obtener_lectura construye otra Lectura copiando el int del miembro. copia.sustituir cambia sólo ese objeto independiente a menos cinco. El miembro del Registro conserva ocho y su código conserva doce. La función no había devuelto una referencia al objeto interior."
+        }
+      },
+      {
+        "id": "block_0009_0003",
+        "block": {
+          "type": "output_prediction",
+          "id": "p3_u8l1_referencia_base_y_modificacion_del_derivado",
+          "language": "cpp",
+          "question": "Escribe la lectura inicial y las tres consultas posteriores al cambio mediante fijar.",
+          "code": "#include <iostream>\n\nclass Lectura {\npublic:\n    explicit Lectura(int valor) : valor_{valor} {}\n    int valor() const noexcept { return valor_; }\n    void sustituir(int nuevo) noexcept { valor_ = nuevo; }\nprivate:\n    int valor_;\n};\nclass LecturaIdentificada : public Lectura {\npublic:\n    LecturaIdentificada(int valor, int codigo);\n    int codigo() const noexcept { return codigo_; }\nprivate:\n    int codigo_;\n};\nLecturaIdentificada::LecturaIdentificada(int valor, int codigo)\n    : Lectura{valor}, codigo_{codigo} {}\nint leer(const Lectura& dato) noexcept { return dato.valor(); }\nvoid fijar(Lectura& dato, int nuevo) noexcept { dato.sustituir(nuevo); }\nint main() {\n    LecturaIdentificada dato{7, 31};\n    const Lectura& vista = dato;\n    std::cout << leer(vista) << ':';\n    fijar(dato, -6);\n    std::cout << vista.valor() << ':' << dato.valor() << ':' << dato.codigo();\n    return 0;\n}\n",
+          "answers": [
+            "7:-6:-6:31"
+          ],
+          "outputComparison": "exact",
+          "explanation": "La lectura inicial obtiene siete. fijar recibe la parte Lectura del mismo dato y cambia su número a menos seis. vista no guardaba una copia: observa menos seis, igual que dato.valor(). El objeto completo conserva su código treinta y uno. La referencia base no ha creado ni destruido otra lectura."
+        }
+      },
+      {
+        "id": "block_0010_0002",
+        "block": {
+          "type": "output_prediction",
+          "id": "p3_u8l1_puntero_y_referencia_a_la_misma_base",
+          "language": "cpp",
+          "question": "Escribe el número observado, el código y el resultado de comparar el puntero con la dirección de vista.",
+          "code": "#include <iostream>\n\nclass Lectura {\npublic:\n    explicit Lectura(int valor) : valor_{valor} {}\n    int valor() const noexcept { return valor_; }\n    void sustituir(int nuevo) noexcept { valor_ = nuevo; }\nprivate:\n    int valor_;\n};\nclass LecturaIdentificada : public Lectura {\npublic:\n    LecturaIdentificada(int valor, int codigo);\n    int codigo() const noexcept { return codigo_; }\nprivate:\n    int codigo_;\n};\nLecturaIdentificada::LecturaIdentificada(int valor, int codigo)\n    : Lectura{valor}, codigo_{codigo} {}\nint main() {\n    LecturaIdentificada dato{2, 17};\n    Lectura* acceso = &dato;\n    const Lectura& vista = dato;\n    acceso->sustituir(9);\n    std::cout << vista.valor() << ':' << dato.codigo() << ':' << (acceso == &vista);\n    return 0;\n}\n",
+          "answers": [
+            "9:17:1"
+          ],
+          "outputComparison": "exact",
+          "explanation": "acceso señala la parte Lectura de dato y cambia su número a nueve. vista se refiere a esa misma parte y observa nueve; el código adicional sigue siendo diecisiete. La comparación de punteros resulta verdadera. &vista tiene tipo const Lectura* y acceso puede compararse con ella conservando esa const, sin cambiar la parte señalada."
+        }
+      },
+      {
+        "id": "block_0011_0002",
+        "block": {
+          "type": "output_prediction",
+          "id": "p3_u8l1_consulta_constante_de_objeto_y_base",
+          "language": "cpp",
+          "question": "Escribe las cuatro consultas del programa, en su orden.",
+          "code": "#include <iostream>\n\nclass Lectura {\npublic:\n    explicit Lectura(int valor) : valor_{valor} {}\n    int valor() const noexcept { return valor_; }\n    void sustituir(int nuevo) noexcept { valor_ = nuevo; }\nprivate:\n    int valor_;\n};\nclass LecturaIdentificada : public Lectura {\npublic:\n    LecturaIdentificada(int valor, int codigo);\n    int codigo() const noexcept { return codigo_; }\nprivate:\n    int codigo_;\n};\nLecturaIdentificada::LecturaIdentificada(int valor, int codigo)\n    : Lectura{valor}, codigo_{codigo} {}\nint leer(const Lectura& dato) noexcept { return dato.valor(); }\nvoid fijar(Lectura& dato, int nuevo) noexcept { dato.sustituir(nuevo); }\nint main() {\n    const LecturaIdentificada dato{4, 23};\n    const Lectura& vista = dato;\n    const Lectura* acceso = &dato;\n    std::cout << leer(dato) << ':' << vista.valor() << ':' << acceso->valor() << ':' << dato.codigo();\n    return 0;\n}\n",
+          "answers": [
+            "4:4:4:23"
+          ],
+          "outputComparison": "exact",
+          "explanation": "leer recibe un acceso constante a la parte Lectura de dato y obtiene cuatro. vista y acceso consultan esa misma parte y también leen cuatro. dato sigue siendo la LecturaIdentificada completa y su propio codigo() devuelve veintitrés. No se necesita crear una copia para realizar esas consultas."
+        }
+      },
+      {
+        "id": "block_0012_0002",
+        "block": {
+          "type": "code",
+          "language": "cpp",
+          "code": "#include <iostream>\n\nclass Lectura {\npublic:\n    explicit Lectura(int valor) : valor_{valor} {}\n    int valor() const noexcept { return valor_; }\n    void sustituir(int nuevo) noexcept { valor_ = nuevo; }\nprivate:\n    int valor_;\n};\nclass LecturaIdentificada : public Lectura {\npublic:\n    LecturaIdentificada(int valor, int codigo);\n    int codigo() const noexcept { return codigo_; }\nprivate:\n    int codigo_;\n};\nLecturaIdentificada::LecturaIdentificada(int valor, int codigo)\n    : Lectura{valor}, codigo_{codigo} {}\nint leer(const Lectura& dato) noexcept { return dato.valor(); }\nvoid fijar(Lectura& dato, int nuevo) noexcept { dato.sustituir(nuevo); }\nint main() {\n    const LecturaIdentificada dato{5, 9};\n    fijar(dato, 8);\n    return 0;\n}\n"
+        }
+      },
+      {
+        "id": "block_0013_0002",
+        "block": {
+          "type": "code",
+          "language": "cpp",
+          "code": "#include <iostream>\n\nclass Lectura {\npublic:\n    explicit Lectura(int valor) : valor_{valor} {}\n    int valor() const noexcept { return valor_; }\n    void sustituir(int nuevo) noexcept { valor_ = nuevo; }\nprivate:\n    int valor_;\n};\nclass LecturaIdentificada : public Lectura {\npublic:\n    LecturaIdentificada(int valor, int codigo);\n    int codigo() const noexcept { return codigo_; }\nprivate:\n    int codigo_;\n};\nLecturaIdentificada::LecturaIdentificada(int valor, int codigo)\n    : Lectura{valor}, codigo_{codigo} {}\nint main() {\n    Lectura dato{5};\n    LecturaIdentificada& especial = dato;\n    std::cout << especial.codigo();\n    return 0;\n}\n"
+        }
+      },
+      {
+        "id": "block_0014_0002",
+        "block": {
+          "type": "code",
+          "language": "cpp",
+          "code": "#include <iostream>\n\nclass Lectura {\npublic:\n    explicit Lectura(int valor) : valor_{valor} {}\n    int valor() const noexcept { return valor_; }\n    void sustituir(int nuevo) noexcept { valor_ = nuevo; }\nprivate:\n    int valor_;\n};\nclass Registro {\npublic:\n    Registro(int valor, int codigo) : lectura_{valor}, codigo_{codigo} {}\n    int valor() const noexcept { return lectura_.valor(); }\n    int codigo() const noexcept { return codigo_; }\n    Lectura obtener_lectura() const { return lectura_; }\n    void sustituir(int nuevo) noexcept { lectura_.sustituir(nuevo); }\nprivate:\n    Lectura lectura_;\n    int codigo_;\n};\nint leer(const Lectura& dato) noexcept { return dato.valor(); }\nvoid fijar(Lectura& dato, int nuevo) noexcept { dato.sustituir(nuevo); }\nint main() {\n    const Registro registro{5, 9};\n    std::cout << leer(registro);\n    return 0;\n}\n"
+        }
+      },
+      {
+        "id": "block_0015_0002",
+        "block": {
+          "type": "output_prediction",
+          "id": "p3_u8l1_copia_guardada_y_nueva_lectura_del_compuesto",
+          "language": "cpp",
+          "question": "Escribe la nueva consulta del registro, el número de copia y el código del registro.",
+          "code": "#include <iostream>\n\nclass Lectura {\npublic:\n    explicit Lectura(int valor) : valor_{valor} {}\n    int valor() const noexcept { return valor_; }\n    void sustituir(int nuevo) noexcept { valor_ = nuevo; }\nprivate:\n    int valor_;\n};\nclass Registro {\npublic:\n    Registro(int valor, int codigo) : lectura_{valor}, codigo_{codigo} {}\n    int valor() const noexcept { return lectura_.valor(); }\n    int codigo() const noexcept { return codigo_; }\n    Lectura obtener_lectura() const { return lectura_; }\n    void sustituir(int nuevo) noexcept { lectura_.sustituir(nuevo); }\nprivate:\n    Lectura lectura_;\n    int codigo_;\n};\nint leer(const Lectura& dato) noexcept { return dato.valor(); }\nvoid fijar(Lectura& dato, int nuevo) noexcept { dato.sustituir(nuevo); }\nint main() {\n    Registro registro{10, 7};\n    Lectura copia = registro.obtener_lectura();\n    registro.sustituir(20);\n    fijar(copia, -3);\n    std::cout << leer(registro.obtener_lectura()) << ':' << copia.valor() << ':' << registro.codigo();\n    return 0;\n}\n",
+          "answers": [
+            "20:-3:7"
+          ],
+          "outputComparison": "exact",
+          "explanation": "registro sustituye el número de su miembro por veinte. La variable copia es independiente y fijar la cambia a menos tres. La nueva llamada a obtener_lectura devuelve otra Lectura que contiene veinte; leer recibe su acceso constante y puede consultarla durante esa llamada. El código del Registro conserva siete. No se conserva una referencia al resultado temporal después de terminar la instrucción."
+        }
+      },
+      {
+        "id": "block_0016_0002",
+        "block": {
+          "type": "output_prediction",
+          "id": "p3_u8l1_orden_de_base_miembro_y_cuerpos",
+          "language": "cpp",
+          "question": "Escribe todas las líneas de la salida, incluido el texto posterior al bloque interior.",
+          "code": "#include <iostream>\n\nclass BaseVisible {\npublic:\n    BaseVisible() { std::cout << \"Base\\n\"; }\n    ~BaseVisible() { std::cout << \"FinBase\\n\"; }\n};\nclass MiembroVisible {\npublic:\n    MiembroVisible() { std::cout << \"Miembro\\n\"; }\n    ~MiembroVisible() { std::cout << \"FinMiembro\\n\"; }\n};\nclass Completa : public BaseVisible {\npublic:\n    Completa() : BaseVisible{}, miembro_{} { std::cout << \"Derivada\\n\"; }\n    ~Completa() { std::cout << \"FinDerivada\\n\"; }\nprivate:\n    MiembroVisible miembro_;\n};\nint main() {\n    {\n        Completa objeto;\n        std::cout << \"Uso\\n\";\n    }\n    std::cout << \"Despues\";\n    return 0;\n}\n",
+          "answers": [
+            "Base\nMiembro\nDerivada\nUso\nFinDerivada\nFinMiembro\nFinBase\nDespues"
+          ],
+          "outputComparison": "exact",
+          "explanation": "La construcción imprime Base, Miembro y Derivada, en ese orden. main imprime Uso. Al salir del bloque se ejecuta el cuerpo del destructor de Completa, que imprime FinDerivada; después se destruye su miembro y aparece FinMiembro; por último se destruye la base y aparece FinBase. main continúa después del bloque y escribe Despues. No se escriben llamadas manuales a esos destructores."
+        }
+      },
+      {
+        "id": "block_0021_0002",
+        "block": {
+          "type": "cpp_compiler",
+          "language": "cpp",
+          "initialCode": "#include <iostream>\n\nclass Medida {\npublic:\n    explicit Medida(int numero) : numero_{numero} {}\n    int numero() const noexcept { return numero_; }\n    void sustituir(int nuevo) noexcept { numero_ = nuevo; }\nprivate:\n    int numero_;\n};\nclass MedidaIdentificada : public Medida {\npublic:\n    MedidaIdentificada(int numero, int codigo);\n    int codigo() const noexcept { return codigo_; }\nprivate:\n    int codigo_;\n};\nMedidaIdentificada::MedidaIdentificada(int numero, int codigo)\n    : Medida{0}, codigo_{0} {\n    // Inicializa la base y el codigo con los argumentos recibidos.\n    (void)numero;\n    (void)codigo;\n}\nvoid fijar(Medida& destino, int nuevo) noexcept {\n    // Utiliza la interfaz publica de Medida para cambiar su numero.\n    (void)destino;\n    (void)nuevo;\n}\nclass Ficha {\npublic:\n    Ficha(int numero, int codigo) : medida_{numero}, codigo_{codigo} {}\n    int numero() const noexcept { return medida_.numero(); }\n    int codigo() const noexcept { return codigo_; }\n    Medida obtener_medida() const { return medida_; }\nprivate:\n    Medida medida_;\n    int codigo_;\n};\nint main() {\n    int inicial = 0, codigo = 0, nuevo = 0;\n    if (!(std::cin >> inicial >> codigo >> nuevo)) { return 1; }\n    MedidaIdentificada dato{inicial, codigo};\n    const Ficha ficha{inicial, codigo};\n    const Medida& vista = dato;\n    Medida& editable = dato;\n    Medida* acceso = &dato;\n    Medida copia = ficha.obtener_medida();\n    std::cout << \"Antes:\" << vista.numero() << \";CodigoAntes:\" << dato.codigo();\n    fijar(editable, nuevo);\n    fijar(copia, nuevo);\n    std::cout << \";Vista:\" << vista.numero() << \";Derivada:\" << dato.numero()\n              << \";Puntero:\" << acceso->numero() << \";Codigo:\" << dato.codigo()\n              << \";MismaParte:\" << (&vista == acceso) << \";Ficha:\" << ficha.numero()\n              << \";CodigoFicha:\" << ficha.codigo() << \";Copia:\" << copia.numero();\n    return 0;\n}\n",
+          "initialStandardInput": "6 41 -8",
+          "outputCheck": {
+            "inputComparison": "tokens",
+            "cases": [
+              {
+                "standardInput": "6 41 -8",
+                "outputs": [
+                  "Antes:6;CodigoAntes:41;Vista:-8;Derivada:-8;Puntero:-8;Codigo:41;MismaParte:1;Ficha:6;CodigoFicha:41;Copia:-8"
+                ],
+                "explanation": "Inicializa Medida con numero y codigo_ con codigo en la lista del constructor. En fijar, llama a destino.sustituir(nuevo). La referencia base observa el mismo objeto derivado; la copia obtenida de Ficha sigue siendo independiente."
+              },
+              {
+                "standardInput": "0 -3 12",
+                "outputs": [
+                  "Antes:0;CodigoAntes:-3;Vista:12;Derivada:12;Puntero:12;Codigo:-3;MismaParte:1;Ficha:0;CodigoFicha:-3;Copia:12"
+                ],
+                "explanation": "Inicializa Medida con numero y codigo_ con codigo en la lista del constructor. En fijar, llama a destino.sustituir(nuevo). La referencia base observa el mismo objeto derivado; la copia obtenida de Ficha sigue siendo independiente."
+              },
+              {
+                "standardInput": "-7 0 0",
+                "outputs": [
+                  "Antes:-7;CodigoAntes:0;Vista:0;Derivada:0;Puntero:0;Codigo:0;MismaParte:1;Ficha:-7;CodigoFicha:0;Copia:0"
+                ],
+                "explanation": "Inicializa Medida con numero y codigo_ con codigo en la lista del constructor. En fijar, llama a destino.sustituir(nuevo). La referencia base observa el mismo objeto derivado; la copia obtenida de Ficha sigue siendo independiente."
+              },
+              {
+                "standardInput": "19 4 19",
+                "outputs": [
+                  "Antes:19;CodigoAntes:4;Vista:19;Derivada:19;Puntero:19;Codigo:4;MismaParte:1;Ficha:19;CodigoFicha:4;Copia:19"
+                ],
+                "explanation": "Inicializa Medida con numero y codigo_ con codigo en la lista del constructor. En fijar, llama a destino.sustituir(nuevo). La referencia base observa el mismo objeto derivado; la copia obtenida de Ficha sigue siendo independiente."
+              },
+              {
+                "standardInput": "-11 23 -2",
+                "outputs": [
+                  "Antes:-11;CodigoAntes:23;Vista:-2;Derivada:-2;Puntero:-2;Codigo:23;MismaParte:1;Ficha:-11;CodigoFicha:23;Copia:-2"
+                ],
+                "explanation": "Inicializa Medida con numero y codigo_ con codigo en la lista del constructor. En fijar, llama a destino.sustituir(nuevo). La referencia base observa el mismo objeto derivado; la copia obtenida de Ficha sigue siendo independiente."
+              }
+            ]
+          }
+        }
+      },
+      {
+        "id": "block_0023_0001",
+        "block": {
+          "type": "code",
+          "language": "cpp",
+          "code": "#include <iostream>\n\nclass Medida {\npublic:\n    explicit Medida(int numero) : numero_{numero} {}\n    int numero() const noexcept { return numero_; }\n    void sustituir(int nuevo) noexcept { numero_ = nuevo; }\nprivate:\n    int numero_;\n};\nclass MedidaIdentificada : public Medida {\npublic:\n    MedidaIdentificada(int numero, int codigo);\n    int codigo() const noexcept { return codigo_; }\nprivate:\n    int codigo_;\n};\nMedidaIdentificada::MedidaIdentificada(int numero, int codigo)\n    : Medida{numero}, codigo_{codigo} {}\nvoid fijar(Medida& destino, int nuevo) noexcept {\n    destino.sustituir(nuevo);\n}\nclass Ficha {\npublic:\n    Ficha(int numero, int codigo) : medida_{numero}, codigo_{codigo} {}\n    int numero() const noexcept { return medida_.numero(); }\n    int codigo() const noexcept { return codigo_; }\n    Medida obtener_medida() const { return medida_; }\nprivate:\n    Medida medida_;\n    int codigo_;\n};\nint main() {\n    int inicial = 0, codigo = 0, nuevo = 0;\n    if (!(std::cin >> inicial >> codigo >> nuevo)) { return 1; }\n    MedidaIdentificada dato{inicial, codigo};\n    const Ficha ficha{inicial, codigo};\n    const Medida& vista = dato;\n    Medida& editable = dato;\n    Medida* acceso = &dato;\n    Medida copia = ficha.obtener_medida();\n    std::cout << \"Antes:\" << vista.numero() << \";CodigoAntes:\" << dato.codigo();\n    fijar(editable, nuevo);\n    fijar(copia, nuevo);\n    std::cout << \";Vista:\" << vista.numero() << \";Derivada:\" << dato.numero()\n              << \";Puntero:\" << acceso->numero() << \";Codigo:\" << dato.codigo()\n              << \";MismaParte:\" << (&vista == acceso) << \";Ficha:\" << ficha.numero()\n              << \";CodigoFicha:\" << ficha.codigo() << \";Copia:\" << copia.numero();\n    return 0;\n}\n"
+        }
+      }
+    ]
   }
 }

@@ -64,7 +64,7 @@
           "id": "p3_u9l3_dos_formas_de_reutilizar_con_misma_interfaz",
           "language": "cpp",
           "question": "Escribe la salida completa antes y después de cargar los nuevos enteros.",
-          "code": "#include <iostream>\n\nclass Dato {\npublic:\n    explicit Dato(int numero) : numero_{numero} {}\n    int numero() const { return numero_; }\n    void poner(int numero) { numero_ = numero; }\nprivate:\n    int numero_;\n};\nclass LecturaConMiembro {\npublic:\n    explicit LecturaConMiembro(int numero) : dato_{numero} {}\n    int valor() const { return dato_.numero(); }\n    void cargar(int numero) { dato_.poner(numero); }\nprivate:\n    Dato dato_;\n};\nclass LecturaPrivada : private Dato {\npublic:\n    explicit LecturaPrivada(int numero) : Dato{numero} {}\n    int valor() const { return Dato::numero(); }\n    void cargar(int numero) { Dato::poner(numero); }\n};\nint main() {\n    LecturaConMiembro a{4};\n    LecturaPrivada b{6};\n    std::cout << a.valor() << ':' << b.valor() << '|';\n    a.cargar(9);\n    b.cargar(-2);\n    std::cout << a.valor() << ':' << b.valor();\n    return 0;\n}\n",
+          "code": "#include <iostream>\n\nclass Dato {\npublic:\n    explicit Dato(int numero) : numero_{numero} {}\n    int numero() const { return numero_; }\n    void poner(int numero) { numero_ = numero; }\nprivate:\n    int numero_;\n};\n\nclass LecturaConMiembro {\npublic:\n    explicit LecturaConMiembro(int numero) : dato_{numero} {}\n    int valor() const { return dato_.numero(); }\n    void cargar(int numero) { dato_.poner(numero); }\nprivate:\n    Dato dato_;\n};\n\nclass LecturaPrivada : private Dato {\npublic:\n    explicit LecturaPrivada(int numero) : Dato{numero} {}\n    int valor() const { return Dato::numero(); }\n    void cargar(int numero) { Dato::poner(numero); }\n};\n\nint main() {\n    LecturaConMiembro a{4};\n    LecturaPrivada b{6};\n\n    std::cout << a.valor() << ':' << b.valor() << '|';\n    a.cargar(9);\n    b.cargar(-2);\n    std::cout << a.valor() << ':' << b.valor();\n\n    return 0;\n}\n",
           "answers": [
             "4:6|9:-2"
           ],
@@ -130,7 +130,7 @@
           "id": "p3_u9l3_conversion_interna_a_base_para_funciones",
           "language": "cpp",
           "question": "Escribe los datos consultados antes y después del cambio realizado por cambiar_dato.",
-          "code": "#include <iostream>\n\nclass Dato {\npublic:\n    explicit Dato(int numero) : numero_{numero} {}\n    int numero() const { return numero_; }\n    void poner(int numero) { numero_ = numero; }\nprivate:\n    int numero_;\n};\nint numero_de(const Dato& dato) {\n    return dato.numero();\n}\nvoid cambiar_dato(Dato& dato, int nuevo) {\n    dato.poner(nuevo);\n}\nclass LecturaConAyuda : private Dato {\npublic:\n    explicit LecturaConAyuda(int numero) : Dato{numero} {}\n    int valor() const { return numero_de(*this); }\n    void cargar(int numero) { cambiar_dato(*this, numero); }\n    int desde_puntero() const {\n        const Dato* vista = this;\n        return vista->numero();\n    }\n};\nint main() {\n    LecturaConAyuda dato{8};\n    std::cout << dato.valor() << ':' << dato.desde_puntero() << '|';\n    dato.cargar(3);\n    std::cout << dato.valor();\n    return 0;\n}\n",
+          "code": "#include <iostream>\n\nclass Dato {\npublic:\n    explicit Dato(int numero) : numero_{numero} {}\n    int numero() const { return numero_; }\n    void poner(int numero) { numero_ = numero; }\nprivate:\n    int numero_;\n};\n\nint numero_de(const Dato& dato) {\n    return dato.numero();\n}\n\nvoid cambiar_dato(Dato& dato, int nuevo) {\n    dato.poner(nuevo);\n}\n\nclass LecturaConAyuda : private Dato {\npublic:\n    explicit LecturaConAyuda(int numero) : Dato{numero} {}\n    int valor() const { return numero_de(*this); }\n    void cargar(int numero) { cambiar_dato(*this, numero); }\n    int desde_puntero() const {\n        const Dato* vista = this;\n        return vista->numero();\n    }\n};\n\nint main() {\n    LecturaConAyuda dato{8};\n\n    std::cout << dato.valor() << ':' << dato.desde_puntero() << '|';\n    dato.cargar(3);\n    std::cout << dato.valor();\n\n    return 0;\n}\n",
           "answers": [
             "8:8|3"
           ],
@@ -156,7 +156,7 @@
         {
           "type": "code",
           "language": "cpp",
-          "code": "#include <iostream>\n\nclass Dato {\npublic:\n    explicit Dato(int numero) : numero_{numero} {}\n    int numero() const { return numero_; }\n    void poner(int numero) { numero_ = numero; }\nprivate:\n    int numero_;\n};\nclass AccesoIncorrecto : private Dato {\npublic:\n    explicit AccesoIncorrecto(int numero) : Dato{numero} {}\n    int valor() const { return numero_; }\n};\nint main() {\n    AccesoIncorrecto dato{4};\n    std::cout << dato.valor();\n    return 0;\n}\n"
+          "code": "#include <iostream>\n\nclass Dato {\npublic:\n    explicit Dato(int numero) : numero_{numero} {}\n    int numero() const { return numero_; }\n    void poner(int numero) { numero_ = numero; }\nprivate:\n    int numero_;\n};\n\nclass AccesoIncorrecto : private Dato {\npublic:\n    explicit AccesoIncorrecto(int numero) : Dato{numero} {}\n    int valor() const { return numero_; }\n};\n\nint main() {\n    AccesoIncorrecto dato{4};\n\n    std::cout << dato.valor();\n\n    return 0;\n}\n"
         },
         {
           "type": "multiple_choice",
@@ -191,7 +191,7 @@
           "id": "p3_u9l3_using_publico_de_funcion_en_base_privada",
           "language": "cpp",
           "question": "Escribe la salida de este programa con una operación base ofrecida públicamente.",
-          "code": "#include <iostream>\n\nclass Dato {\npublic:\n    explicit Dato(int numero) : numero_{numero} {}\n    int numero() const { return numero_; }\n    void poner(int numero) { numero_ = numero; }\nprivate:\n    int numero_;\n};\nclass Consulta : private Dato {\npublic:\n    explicit Consulta(int numero) : Dato{numero} {}\n    using Dato::numero;\n};\nint main() {\n    Consulta dato{-3};\n    std::cout << dato.numero();\n    return 0;\n}\n",
+          "code": "#include <iostream>\n\nclass Dato {\npublic:\n    explicit Dato(int numero) : numero_{numero} {}\n    int numero() const { return numero_; }\n    void poner(int numero) { numero_ = numero; }\nprivate:\n    int numero_;\n};\n\nclass Consulta : private Dato {\npublic:\n    explicit Consulta(int numero) : Dato{numero} {}\n    using Dato::numero;\n};\n\nint main() {\n    Consulta dato{-3};\n\n    std::cout << dato.numero();\n\n    return 0;\n}\n",
           "answers": [
             "-3"
           ],
@@ -227,7 +227,7 @@
           "id": "p3_u9l3_operacion_protegida_utilizada_por_derivada_privada",
           "language": "cpp",
           "question": "Escribe las lecturas de panel antes y después de reiniciar.",
-          "code": "#include <iostream>\n\nclass EstadoBase {\npublic:\n    explicit EstadoBase(int valor) : valor_{valor} {}\n    int valor() const { return valor_; }\nprotected:\n    void volver_a_cero() { valor_ = 0; }\nprivate:\n    int valor_;\n};\nclass PanelPrivado : private EstadoBase {\npublic:\n    explicit PanelPrivado(int valor) : EstadoBase{valor} {}\n    int lectura() const { return EstadoBase::valor(); }\n    void reiniciar() { EstadoBase::volver_a_cero(); }\n};\nint main() {\n    PanelPrivado panel{7};\n    std::cout << panel.lectura() << '|';\n    panel.reiniciar();\n    std::cout << panel.lectura();\n    return 0;\n}\n",
+          "code": "#include <iostream>\n\nclass EstadoBase {\npublic:\n    explicit EstadoBase(int valor) : valor_{valor} {}\n    int valor() const { return valor_; }\nprotected:\n    void volver_a_cero() { valor_ = 0; }\nprivate:\n    int valor_;\n};\n\nclass PanelPrivado : private EstadoBase {\npublic:\n    explicit PanelPrivado(int valor) : EstadoBase{valor} {}\n    int lectura() const { return EstadoBase::valor(); }\n    void reiniciar() { EstadoBase::volver_a_cero(); }\n};\n\nint main() {\n    PanelPrivado panel{7};\n\n    std::cout << panel.lectura() << '|';\n    panel.reiniciar();\n    std::cout << panel.lectura();\n\n    return 0;\n}\n",
           "answers": [
             "7|0"
           ],
@@ -356,7 +356,7 @@
         {
           "type": "code",
           "language": "cpp",
-          "code": "#include <iostream>\n\nclass Valor {\npublic:\n    explicit Valor(int inicial) : numero_{inicial} {}\n    int leer() const noexcept { return numero_; }\n    void fijar(int nuevo) noexcept { numero_ = nuevo; }\nprivate:\n    int numero_;\n};\n\nclass MaximoConMiembro {\npublic:\n    explicit MaximoConMiembro(int inicial) : dato_{inicial} {}\n\n    void observar(int valor) noexcept {\n        if (valor > dato_.leer()) {\n            dato_.fijar(valor);\n        }\n    }\n\n    int maximo() const noexcept { return dato_.leer(); }\n\nprivate:\n    Valor dato_;\n};\n\nclass MaximoConBase : private Valor {\npublic:\n    explicit MaximoConBase(int inicial) : Valor{inicial} {}\n\n    void observar(int valor) noexcept {\n        if (valor > Valor::leer()) {\n            Valor::fijar(valor);\n        }\n    }\n\n    int maximo() const noexcept { return Valor::leer(); }\n};\nint main() {\n    MaximoConMiembro a{2};\n    MaximoConBase b{2};\n    a.observar(1);\n    b.observar(1);\n    a.observar(7);\n    b.observar(7);\n    std::cout << a.maximo() << '|' << b.maximo();\n    return 0;\n}\n"
+          "code": "#include <iostream>\n\nclass Valor {\npublic:\n    explicit Valor(int inicial) : numero_{inicial} {}\n    int leer() const noexcept { return numero_; }\n    void fijar(int nuevo) noexcept { numero_ = nuevo; }\nprivate:\n    int numero_;\n};\n\nclass MaximoConMiembro {\npublic:\n    explicit MaximoConMiembro(int inicial) : dato_{inicial} {}\n\n    void observar(int valor) noexcept {\n        if (valor > dato_.leer()) {\n            dato_.fijar(valor);\n        }\n    }\n\n    int maximo() const noexcept { return dato_.leer(); }\n\nprivate:\n    Valor dato_;\n};\n\nclass MaximoConBase : private Valor {\npublic:\n    explicit MaximoConBase(int inicial) : Valor{inicial} {}\n\n    void observar(int valor) noexcept {\n        if (valor > Valor::leer()) {\n            Valor::fijar(valor);\n        }\n    }\n\n    int maximo() const noexcept { return Valor::leer(); }\n};\n\nint main() {\n    MaximoConMiembro a{2};\n    MaximoConBase b{2};\n    a.observar(1);\n    b.observar(1);\n    a.observar(7);\n    b.observar(7);\n    std::cout << a.maximo() << '|' << b.maximo();\n\n    return 0;\n}\n"
         },
         {
           "type": "paragraph",
@@ -392,7 +392,7 @@
           "id": "p3_u9l3_maximos_con_negativos_y_repeticiones",
           "language": "cpp",
           "question": "Escribe la salida completa. Cada pareja compara el máximo del objeto con miembro y el del objeto con base privada.",
-          "code": "#include <iostream>\n\nclass Valor {\npublic:\n    explicit Valor(int inicial) : numero_{inicial} {}\n    int leer() const noexcept { return numero_; }\n    void fijar(int nuevo) noexcept { numero_ = nuevo; }\nprivate:\n    int numero_;\n};\n\nclass MaximoConMiembro {\npublic:\n    explicit MaximoConMiembro(int inicial) : dato_{inicial} {}\n\n    void observar(int valor) noexcept {\n        if (valor > dato_.leer()) {\n            dato_.fijar(valor);\n        }\n    }\n\n    int maximo() const noexcept { return dato_.leer(); }\n\nprivate:\n    Valor dato_;\n};\n\nclass MaximoConBase : private Valor {\npublic:\n    explicit MaximoConBase(int inicial) : Valor{inicial} {}\n\n    void observar(int valor) noexcept {\n        if (valor > Valor::leer()) {\n            Valor::fijar(valor);\n        }\n    }\n\n    int maximo() const noexcept { return Valor::leer(); }\n};\nint main() {\n    MaximoConMiembro a{-5};\n    MaximoConBase b{-5};\n    a.observar(-9);\n    b.observar(-9);\n    std::cout << a.maximo() << ':' << b.maximo() << '|';\n    a.observar(3);\n    b.observar(3);\n    std::cout << a.maximo() << ':' << b.maximo() << '|';\n    a.observar(3);\n    b.observar(3);\n    std::cout << a.maximo() << ':' << b.maximo();\n    return 0;\n}\n",
+          "code": "#include <iostream>\n\nclass Valor {\npublic:\n    explicit Valor(int inicial) : numero_{inicial} {}\n    int leer() const noexcept { return numero_; }\n    void fijar(int nuevo) noexcept { numero_ = nuevo; }\nprivate:\n    int numero_;\n};\n\nclass MaximoConMiembro {\npublic:\n    explicit MaximoConMiembro(int inicial) : dato_{inicial} {}\n\n    void observar(int valor) noexcept {\n        if (valor > dato_.leer()) {\n            dato_.fijar(valor);\n        }\n    }\n\n    int maximo() const noexcept { return dato_.leer(); }\n\nprivate:\n    Valor dato_;\n};\n\nclass MaximoConBase : private Valor {\npublic:\n    explicit MaximoConBase(int inicial) : Valor{inicial} {}\n\n    void observar(int valor) noexcept {\n        if (valor > Valor::leer()) {\n            Valor::fijar(valor);\n        }\n    }\n\n    int maximo() const noexcept { return Valor::leer(); }\n};\n\nint main() {\n    MaximoConMiembro a{-5};\n    MaximoConBase b{-5};\n    a.observar(-9);\n    b.observar(-9);\n    std::cout << a.maximo() << ':' << b.maximo() << '|';\n    a.observar(3);\n    b.observar(3);\n    std::cout << a.maximo() << ':' << b.maximo() << '|';\n    a.observar(3);\n    b.observar(3);\n    std::cout << a.maximo() << ':' << b.maximo();\n\n    return 0;\n}\n",
           "answers": [
             "-5:-5|3:3|3:3"
           ],
@@ -420,7 +420,7 @@
           "id": "p3_u9l3_copiar_maximo_con_base_privada",
           "language": "cpp",
           "question": "Escribe los máximos finales de original y copia, separados por |.",
-          "code": "#include <iostream>\n\nclass Valor {\npublic:\n    explicit Valor(int inicial) : numero_{inicial} {}\n    int leer() const noexcept { return numero_; }\n    void fijar(int nuevo) noexcept { numero_ = nuevo; }\nprivate:\n    int numero_;\n};\n\nclass MaximoConMiembro {\npublic:\n    explicit MaximoConMiembro(int inicial) : dato_{inicial} {}\n\n    void observar(int valor) noexcept {\n        if (valor > dato_.leer()) {\n            dato_.fijar(valor);\n        }\n    }\n\n    int maximo() const noexcept { return dato_.leer(); }\n\nprivate:\n    Valor dato_;\n};\n\nclass MaximoConBase : private Valor {\npublic:\n    explicit MaximoConBase(int inicial) : Valor{inicial} {}\n\n    void observar(int valor) noexcept {\n        if (valor > Valor::leer()) {\n            Valor::fijar(valor);\n        }\n    }\n\n    int maximo() const noexcept { return Valor::leer(); }\n};\nint main() {\n    MaximoConBase original{4};\n    MaximoConBase copia{original};\n    original.observar(8);\n    copia.observar(6);\n    std::cout << original.maximo() << '|' << copia.maximo();\n    return 0;\n}\n",
+          "code": "#include <iostream>\n\nclass Valor {\npublic:\n    explicit Valor(int inicial) : numero_{inicial} {}\n    int leer() const noexcept { return numero_; }\n    void fijar(int nuevo) noexcept { numero_ = nuevo; }\nprivate:\n    int numero_;\n};\n\nclass MaximoConMiembro {\npublic:\n    explicit MaximoConMiembro(int inicial) : dato_{inicial} {}\n\n    void observar(int valor) noexcept {\n        if (valor > dato_.leer()) {\n            dato_.fijar(valor);\n        }\n    }\n\n    int maximo() const noexcept { return dato_.leer(); }\n\nprivate:\n    Valor dato_;\n};\n\nclass MaximoConBase : private Valor {\npublic:\n    explicit MaximoConBase(int inicial) : Valor{inicial} {}\n\n    void observar(int valor) noexcept {\n        if (valor > Valor::leer()) {\n            Valor::fijar(valor);\n        }\n    }\n\n    int maximo() const noexcept { return Valor::leer(); }\n};\n\nint main() {\n    MaximoConBase original{4};\n    MaximoConBase copia{original};\n    original.observar(8);\n    copia.observar(6);\n    std::cout << original.maximo() << '|' << copia.maximo();\n\n    return 0;\n}\n",
           "answers": [
             "8|6"
           ],
@@ -1365,6 +1365,155 @@
       }
     },
     "additions": [],
-    "editorial": []
+    "editorial": [
+      {
+        "id": "block_0001_0005",
+        "beforeSha256": "9beb788e451ad64c0c7b93c3d1323598ce6c17a0ea9f7298e4d4b517983e349e",
+        "afterSha256": "2b2d2d759e8addafa66a278a214bc21975d276460cb3bb4f8a858d5db2ab3f3d"
+      },
+      {
+        "id": "block_0003_0003",
+        "beforeSha256": "3de70de2b44f4f92fe6ca42d7d57837e72e2dc76af33c4bd809f963582418a24",
+        "afterSha256": "cf6e58d88579a71e749e7d09529476c20bbf0177eec27aedf74ae0a347656048"
+      },
+      {
+        "id": "block_0004_0002",
+        "beforeSha256": "db524348e8d3f729bcddcd329920ecc0774d75d6355c022a4a90e50515c98d97",
+        "afterSha256": "2f19130c51b002028b81c29b59ffe90aaf4854c9da3e38edbcbafd6156c7babc"
+      },
+      {
+        "id": "block_0005_0002",
+        "beforeSha256": "6ec347932f23b4b267e7a3391dea158a3a952e15a632e5da8066a34ae75af3b3",
+        "afterSha256": "4d9aacfe53613df8205bd99f178b3c9800347fe4c5ed31b86157307209d9e2e2"
+      },
+      {
+        "id": "block_0006_0003",
+        "beforeSha256": "20655341641aa673fa31693eb5adb87b3853e19ecf195dbda7e28dd3c79c8a27",
+        "afterSha256": "e7e8366a2c029b8a114880d9d408b6d8b6dd426b661495b7706e5202f3e35599"
+      },
+      {
+        "id": "block_0009_0001",
+        "beforeSha256": "d516730220161094be056eeba2da3af552b6f9a5c67b00d85d6200a5972f98ba",
+        "afterSha256": "babe908c47a8a980218ff587df6690d31f9c999039459d7a3ee38501e857760d"
+      },
+      {
+        "id": "block_0010_0002",
+        "beforeSha256": "9e773fbda2f8fe4a352c1158b3e379dab6a840008ec9a401bd6cb0419ccbc283",
+        "afterSha256": "d01991384028f4a4841387af261bbf01619082bbc7e4f01c08f3d8c38b6f1156"
+      },
+      {
+        "id": "block_0011_0003",
+        "beforeSha256": "0f08590c651c9b4fdf43443e422242abe1bcf2041bec194d670ced8f0b22040f",
+        "afterSha256": "24e8c5889a437c872a81f79cf42b3e75a13c9a6ebee96fe52f6e81d5000b91f4"
+      }
+    ],
+    "sourceFormatRevisions": [
+      {
+        "id": "block_0001_0005",
+        "block": {
+          "type": "output_prediction",
+          "id": "p3_u9l3_dos_formas_de_reutilizar_con_misma_interfaz",
+          "language": "cpp",
+          "question": "Escribe la salida completa antes y después de cargar los nuevos enteros.",
+          "code": "#include <iostream>\n\nclass Dato {\npublic:\n    explicit Dato(int numero) : numero_{numero} {}\n    int numero() const { return numero_; }\n    void poner(int numero) { numero_ = numero; }\nprivate:\n    int numero_;\n};\nclass LecturaConMiembro {\npublic:\n    explicit LecturaConMiembro(int numero) : dato_{numero} {}\n    int valor() const { return dato_.numero(); }\n    void cargar(int numero) { dato_.poner(numero); }\nprivate:\n    Dato dato_;\n};\nclass LecturaPrivada : private Dato {\npublic:\n    explicit LecturaPrivada(int numero) : Dato{numero} {}\n    int valor() const { return Dato::numero(); }\n    void cargar(int numero) { Dato::poner(numero); }\n};\nint main() {\n    LecturaConMiembro a{4};\n    LecturaPrivada b{6};\n    std::cout << a.valor() << ':' << b.valor() << '|';\n    a.cargar(9);\n    b.cargar(-2);\n    std::cout << a.valor() << ':' << b.valor();\n    return 0;\n}\n",
+          "answers": [
+            "4:6|9:-2"
+          ],
+          "outputComparison": "exact",
+          "explanation": "a contiene un Dato inicializado con cuatro; b contiene como parte base un Dato inicializado con seis. Las primeras consultas obtienen esos valores. cargar guarda nueve en el miembro de a y menos dos en la base de b. Las consultas finales observan esos cambios. Las dos representaciones cumplen aquí la misma interfaz pública."
+        }
+      },
+      {
+        "id": "block_0003_0003",
+        "block": {
+          "type": "output_prediction",
+          "id": "p3_u9l3_conversion_interna_a_base_para_funciones",
+          "language": "cpp",
+          "question": "Escribe los datos consultados antes y después del cambio realizado por cambiar_dato.",
+          "code": "#include <iostream>\n\nclass Dato {\npublic:\n    explicit Dato(int numero) : numero_{numero} {}\n    int numero() const { return numero_; }\n    void poner(int numero) { numero_ = numero; }\nprivate:\n    int numero_;\n};\nint numero_de(const Dato& dato) {\n    return dato.numero();\n}\nvoid cambiar_dato(Dato& dato, int nuevo) {\n    dato.poner(nuevo);\n}\nclass LecturaConAyuda : private Dato {\npublic:\n    explicit LecturaConAyuda(int numero) : Dato{numero} {}\n    int valor() const { return numero_de(*this); }\n    void cargar(int numero) { cambiar_dato(*this, numero); }\n    int desde_puntero() const {\n        const Dato* vista = this;\n        return vista->numero();\n    }\n};\nint main() {\n    LecturaConAyuda dato{8};\n    std::cout << dato.valor() << ':' << dato.desde_puntero() << '|';\n    dato.cargar(3);\n    std::cout << dato.valor();\n    return 0;\n}\n",
+          "answers": [
+            "8:8|3"
+          ],
+          "outputComparison": "exact",
+          "explanation": "valor pasa una referencia constante a la base del mismo objeto y obtiene ocho. desde_puntero obtiene también ocho mediante un puntero a esa base. cargar presta la base por referencia modificable a cambiar_dato, que guarda tres. La última consulta observa tres. Estas conversiones se solicitaron dentro de miembros de la derivada, donde la base es accesible."
+        }
+      },
+      {
+        "id": "block_0004_0002",
+        "block": {
+          "type": "code",
+          "language": "cpp",
+          "code": "#include <iostream>\n\nclass Dato {\npublic:\n    explicit Dato(int numero) : numero_{numero} {}\n    int numero() const { return numero_; }\n    void poner(int numero) { numero_ = numero; }\nprivate:\n    int numero_;\n};\nclass AccesoIncorrecto : private Dato {\npublic:\n    explicit AccesoIncorrecto(int numero) : Dato{numero} {}\n    int valor() const { return numero_; }\n};\nint main() {\n    AccesoIncorrecto dato{4};\n    std::cout << dato.valor();\n    return 0;\n}\n"
+        }
+      },
+      {
+        "id": "block_0005_0002",
+        "block": {
+          "type": "output_prediction",
+          "id": "p3_u9l3_using_publico_de_funcion_en_base_privada",
+          "language": "cpp",
+          "question": "Escribe la salida de este programa con una operación base ofrecida públicamente.",
+          "code": "#include <iostream>\n\nclass Dato {\npublic:\n    explicit Dato(int numero) : numero_{numero} {}\n    int numero() const { return numero_; }\n    void poner(int numero) { numero_ = numero; }\nprivate:\n    int numero_;\n};\nclass Consulta : private Dato {\npublic:\n    explicit Consulta(int numero) : Dato{numero} {}\n    using Dato::numero;\n};\nint main() {\n    Consulta dato{-3};\n    std::cout << dato.numero();\n    return 0;\n}\n",
+          "answers": [
+            "-3"
+          ],
+          "outputComparison": "exact",
+          "explanation": "El constructor de Consulta prepara su Dato con menos tres. El using público permite que main invoque dato.numero(), que consulta ese entero. Sólo se ha ofrecido esa operación; no se ha convertido la relación privada en una relación pública."
+        }
+      },
+      {
+        "id": "block_0006_0003",
+        "block": {
+          "type": "output_prediction",
+          "id": "p3_u9l3_operacion_protegida_utilizada_por_derivada_privada",
+          "language": "cpp",
+          "question": "Escribe las lecturas de panel antes y después de reiniciar.",
+          "code": "#include <iostream>\n\nclass EstadoBase {\npublic:\n    explicit EstadoBase(int valor) : valor_{valor} {}\n    int valor() const { return valor_; }\nprotected:\n    void volver_a_cero() { valor_ = 0; }\nprivate:\n    int valor_;\n};\nclass PanelPrivado : private EstadoBase {\npublic:\n    explicit PanelPrivado(int valor) : EstadoBase{valor} {}\n    int lectura() const { return EstadoBase::valor(); }\n    void reiniciar() { EstadoBase::volver_a_cero(); }\n};\nint main() {\n    PanelPrivado panel{7};\n    std::cout << panel.lectura() << '|';\n    panel.reiniciar();\n    std::cout << panel.lectura();\n    return 0;\n}\n",
+          "answers": [
+            "7|0"
+          ],
+          "outputComparison": "exact",
+          "explanation": "La parte EstadoBase comienza con siete. lectura lo consulta a través de la función pública de la base. reiniciar llama desde un miembro derivado a la operación protegida volver_a_cero, que guarda cero en valor_. La última lectura observa ese cero. main no necesitó acceso a esa operación protegida."
+        }
+      },
+      {
+        "id": "block_0009_0001",
+        "block": {
+          "type": "code",
+          "language": "cpp",
+          "code": "#include <iostream>\n\nclass Valor {\npublic:\n    explicit Valor(int inicial) : numero_{inicial} {}\n    int leer() const noexcept { return numero_; }\n    void fijar(int nuevo) noexcept { numero_ = nuevo; }\nprivate:\n    int numero_;\n};\n\nclass MaximoConMiembro {\npublic:\n    explicit MaximoConMiembro(int inicial) : dato_{inicial} {}\n\n    void observar(int valor) noexcept {\n        if (valor > dato_.leer()) {\n            dato_.fijar(valor);\n        }\n    }\n\n    int maximo() const noexcept { return dato_.leer(); }\n\nprivate:\n    Valor dato_;\n};\n\nclass MaximoConBase : private Valor {\npublic:\n    explicit MaximoConBase(int inicial) : Valor{inicial} {}\n\n    void observar(int valor) noexcept {\n        if (valor > Valor::leer()) {\n            Valor::fijar(valor);\n        }\n    }\n\n    int maximo() const noexcept { return Valor::leer(); }\n};\nint main() {\n    MaximoConMiembro a{2};\n    MaximoConBase b{2};\n    a.observar(1);\n    b.observar(1);\n    a.observar(7);\n    b.observar(7);\n    std::cout << a.maximo() << '|' << b.maximo();\n    return 0;\n}\n"
+        }
+      },
+      {
+        "id": "block_0010_0002",
+        "block": {
+          "type": "output_prediction",
+          "id": "p3_u9l3_maximos_con_negativos_y_repeticiones",
+          "language": "cpp",
+          "question": "Escribe la salida completa. Cada pareja compara el máximo del objeto con miembro y el del objeto con base privada.",
+          "code": "#include <iostream>\n\nclass Valor {\npublic:\n    explicit Valor(int inicial) : numero_{inicial} {}\n    int leer() const noexcept { return numero_; }\n    void fijar(int nuevo) noexcept { numero_ = nuevo; }\nprivate:\n    int numero_;\n};\n\nclass MaximoConMiembro {\npublic:\n    explicit MaximoConMiembro(int inicial) : dato_{inicial} {}\n\n    void observar(int valor) noexcept {\n        if (valor > dato_.leer()) {\n            dato_.fijar(valor);\n        }\n    }\n\n    int maximo() const noexcept { return dato_.leer(); }\n\nprivate:\n    Valor dato_;\n};\n\nclass MaximoConBase : private Valor {\npublic:\n    explicit MaximoConBase(int inicial) : Valor{inicial} {}\n\n    void observar(int valor) noexcept {\n        if (valor > Valor::leer()) {\n            Valor::fijar(valor);\n        }\n    }\n\n    int maximo() const noexcept { return Valor::leer(); }\n};\nint main() {\n    MaximoConMiembro a{-5};\n    MaximoConBase b{-5};\n    a.observar(-9);\n    b.observar(-9);\n    std::cout << a.maximo() << ':' << b.maximo() << '|';\n    a.observar(3);\n    b.observar(3);\n    std::cout << a.maximo() << ':' << b.maximo() << '|';\n    a.observar(3);\n    b.observar(3);\n    std::cout << a.maximo() << ':' << b.maximo();\n    return 0;\n}\n",
+          "answers": [
+            "-5:-5|3:3|3:3"
+          ],
+          "outputComparison": "exact",
+          "explanation": "Ambos comienzan con -5. Observar -9 no entra en el if, por eso la primera pareja conserva -5. Observar 3 sí sustituye -5 y produce la segunda pareja 3:3. Volver a observar 3 no cumple la comparación estricta de mayor y conserva el dato. Los objetos aceptan negativos y no necesitan hacer ninguna suma para mantener el máximo."
+        }
+      },
+      {
+        "id": "block_0011_0003",
+        "block": {
+          "type": "output_prediction",
+          "id": "p3_u9l3_copiar_maximo_con_base_privada",
+          "language": "cpp",
+          "question": "Escribe los máximos finales de original y copia, separados por |.",
+          "code": "#include <iostream>\n\nclass Valor {\npublic:\n    explicit Valor(int inicial) : numero_{inicial} {}\n    int leer() const noexcept { return numero_; }\n    void fijar(int nuevo) noexcept { numero_ = nuevo; }\nprivate:\n    int numero_;\n};\n\nclass MaximoConMiembro {\npublic:\n    explicit MaximoConMiembro(int inicial) : dato_{inicial} {}\n\n    void observar(int valor) noexcept {\n        if (valor > dato_.leer()) {\n            dato_.fijar(valor);\n        }\n    }\n\n    int maximo() const noexcept { return dato_.leer(); }\n\nprivate:\n    Valor dato_;\n};\n\nclass MaximoConBase : private Valor {\npublic:\n    explicit MaximoConBase(int inicial) : Valor{inicial} {}\n\n    void observar(int valor) noexcept {\n        if (valor > Valor::leer()) {\n            Valor::fijar(valor);\n        }\n    }\n\n    int maximo() const noexcept { return Valor::leer(); }\n};\nint main() {\n    MaximoConBase original{4};\n    MaximoConBase copia{original};\n    original.observar(8);\n    copia.observar(6);\n    std::cout << original.maximo() << '|' << copia.maximo();\n    return 0;\n}\n",
+          "answers": [
+            "8|6"
+          ],
+          "outputComparison": "exact",
+          "explanation": "copia comienza con el cuatro que tenía original cuando se construyó la copia. Después original observa ocho y copia observa seis. Cada uno guarda su propio int en su propia parte Valor, así que las dos actualizaciones son independientes y el resultado es 8|6. Esto no requiere convertir desde main el objeto completo en una referencia a Valor."
+        }
+      }
+    ]
   }
 }

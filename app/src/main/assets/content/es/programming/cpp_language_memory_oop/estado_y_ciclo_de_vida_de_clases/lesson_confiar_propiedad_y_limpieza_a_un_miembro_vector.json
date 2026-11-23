@@ -86,7 +86,7 @@
           "id": "p3_u6l3_cantidad_o_lista",
           "language": "cpp",
           "question": "¿Qué muestra cada vector? Escribe las dos líneas completas.",
-          "code": "#include <iostream>\n#include <vector>\n\nint main() {\n    std::vector<int> repetidos(3, 7);\n    std::vector<int> lista{3, 7};\n    std::cout << repetidos.size() << ':' << repetidos[0] << ':' << repetidos[2] << '\\n';\n    std::cout << lista.size() << ':' << lista[0] << ':' << lista[1];\n    return 0;\n}\n",
+          "code": "#include <iostream>\n#include <vector>\n\nint main() {\n    std::vector<int> repetidos(3, 7);\n    std::vector<int> lista{3, 7};\n\n    std::cout << repetidos.size() << ':' << repetidos[0] << ':' << repetidos[2] << '\\n';\n    std::cout << lista.size() << ':' << lista[0] << ':' << lista[1];\n\n    return 0;\n}\n",
           "answers": [
             "3:7:7\n2:3:7"
           ],
@@ -118,7 +118,7 @@
           "id": "p3_u6l3_copia_y_observacion",
           "language": "cpp",
           "question": "¿Qué se consulta desde original, copia y vista después del cambio?",
-          "code": "#include <iostream>\n#include <vector>\n\nclass Medidas {\npublic:\n    int primero() const { return datos_[0]; }\n    void cambiar_primero(int valor) { datos_[0] = valor; }\nprivate:\n    std::vector<int> datos_{2, 4};\n};\n\nint main() {\n    Medidas original;\n    Medidas copia = original;\n    const Medidas& vista = original;\n    original.cambiar_primero(9);\n    std::cout << original.primero() << ':' << copia.primero() << ':' << vista.primero();\n    return 0;\n}\n",
+          "code": "#include <iostream>\n#include <vector>\n\nclass Medidas {\npublic:\n    int primero() const { return datos_[0]; }\n    void cambiar_primero(int valor) { datos_[0] = valor; }\nprivate:\n    std::vector<int> datos_{2, 4};\n};\n\nint main() {\n    Medidas original;\n    Medidas copia = original;\n    const Medidas& vista = original;\n    original.cambiar_primero(9);\n    std::cout << original.primero() << ':' << copia.primero() << ':' << vista.primero();\n\n    return 0;\n}\n",
           "answers": [
             "9:2:9"
           ],
@@ -146,7 +146,7 @@
           "id": "p3_u6l3_limpieza_sin_reversion",
           "language": "cpp",
           "question": "¿Qué valor muestra el catch?",
-          "code": "#include <iostream>\n#include <vector>\n\nstruct Fallo {};\n\nint main() {\n    int suma = 0;\n    try {\n        std::vector<int> datos{2, 4};\n        suma = datos[0] + datos[1];\n        throw Fallo{};\n    } catch (const Fallo&) {\n        std::cout << suma;\n    }\n    return 0;\n}\n",
+          "code": "#include <iostream>\n#include <vector>\n\nstruct Fallo {};\n\nint main() {\n    int suma = 0;\n    try {\n        std::vector<int> datos{2, 4};\n        suma = datos[0] + datos[1];\n        throw Fallo{};\n    } catch (const Fallo&) {\n        std::cout << suma;\n    }\n\n    return 0;\n}\n",
           "answers": [
             "6"
           ],
@@ -174,7 +174,7 @@
           "id": "p3_u6l3_intercambio_de_vectores",
           "language": "cpp",
           "question": "¿Qué contiene cada vector después de swap?",
-          "code": "#include <iostream>\n#include <vector>\n\nint main() {\n    std::vector<int> a{1, 3};\n    std::vector<int> b{8};\n    a.swap(b);\n    std::cout << a.size() << ':' << a[0] << '\\n';\n    std::cout << b.size() << ':' << b[0] << ':' << b[1];\n    return 0;\n}\n",
+          "code": "#include <iostream>\n#include <vector>\n\nint main() {\n    std::vector<int> a{1, 3};\n    std::vector<int> b{8};\n    a.swap(b);\n    std::cout << a.size() << ':' << a[0] << '\\n';\n    std::cout << b.size() << ':' << b[0] << ':' << b[1];\n\n    return 0;\n}\n",
           "answers": [
             "1:8\n2:1:3"
           ],
@@ -202,7 +202,7 @@
           "id": "p3_u6l3_responsabilidad_despues_de_swap",
           "language": "cpp",
           "question": "¿Qué muestran candidato dentro del bloque y datos después?",
-          "code": "#include <iostream>\n#include <vector>\n\nint main() {\n    std::vector<int> datos{2, 4};\n    {\n        std::vector<int> candidato(3, 7);\n        datos.swap(candidato);\n        std::cout << \"Anterior:\" << candidato[0] << ':' << candidato[1] << '\\n';\n    }\n    std::cout << \"Nuevo:\" << datos.size() << ':' << datos[0] << ':' << datos[2];\n    return 0;\n}\n",
+          "code": "#include <iostream>\n#include <vector>\n\nint main() {\n    std::vector<int> datos{2, 4};\n    {\n        std::vector<int> candidato(3, 7);\n        datos.swap(candidato);\n        std::cout << \"Anterior:\" << candidato[0] << ':' << candidato[1] << '\\n';\n    }\n    std::cout << \"Nuevo:\" << datos.size() << ':' << datos[0] << ':' << datos[2];\n\n    return 0;\n}\n",
           "answers": [
             "Anterior:2:4\nNuevo:3:7:7"
           ],
@@ -230,7 +230,7 @@
           "id": "p3_u6l3_modificacion_antes_del_fallo",
           "language": "cpp",
           "question": "¿Qué valores conserva datos en esta organización?",
-          "code": "#include <iostream>\n#include <vector>\n\nstruct Fallo {};\n\nint main() {\n    std::vector<int> datos{3, 6};\n    try {\n        datos[0] = 9;\n        std::vector<int> candidato(3, 7);\n        throw Fallo{};\n    } catch (const Fallo&) {\n        std::cout << datos[0] << ':' << datos[1];\n    }\n    return 0;\n}\n",
+          "code": "#include <iostream>\n#include <vector>\n\nstruct Fallo {};\n\nint main() {\n    std::vector<int> datos{3, 6};\n    try {\n        datos[0] = 9;\n        std::vector<int> candidato(3, 7);\n        throw Fallo{};\n    } catch (const Fallo&) {\n        std::cout << datos[0] << ':' << datos[1];\n    }\n\n    return 0;\n}\n",
           "answers": [
             "9:6"
           ],
@@ -266,7 +266,7 @@
           "id": "p3_u6l3_fallo_antes_del_intercambio",
           "language": "cpp",
           "question": "¿Qué valores muestra el vector que se quería reemplazar?",
-          "code": "#include <iostream>\n#include <vector>\n\nstruct Fallo {};\n\nint main() {\n    std::vector<int> datos{3, 6};\n    try {\n        std::vector<int> candidato(3, 7);\n        throw Fallo{};\n    } catch (const Fallo&) {\n        std::cout << datos[0] << ':' << datos[1];\n    }\n    return 0;\n}\n",
+          "code": "#include <iostream>\n#include <vector>\n\nstruct Fallo {};\n\nint main() {\n    std::vector<int> datos{3, 6};\n    try {\n        std::vector<int> candidato(3, 7);\n        throw Fallo{};\n    } catch (const Fallo&) {\n        std::cout << datos[0] << ':' << datos[1];\n    }\n\n    return 0;\n}\n",
           "answers": [
             "3:6"
           ],
@@ -294,7 +294,7 @@
           "id": "p3_u6l3_fallo_del_constructor_con_vector",
           "language": "cpp",
           "question": "¿Qué mensajes aparecen en la ejecución?",
-          "code": "#include <iostream>\n#include <vector>\n\nstruct Fallo {};\n\nclass Preparado {\npublic:\n    Preparado(bool fallar) : datos_(3, 7) {\n        std::cout << \"Cuerpo:\" << datos_.size() << '\\n';\n        if (fallar) {\n            throw Fallo{};\n        }\n    }\n    ~Preparado() { std::cout << \"Cierre\\n\"; }\nprivate:\n    std::vector<int> datos_;\n};\n\nint main() {\n    try {\n        Preparado objeto{true};\n    } catch (const Fallo&) {\n        std::cout << \"Captura\\n\";\n    }\n    std::cout << \"Despues\";\n    return 0;\n}\n",
+          "code": "#include <iostream>\n#include <vector>\n\nstruct Fallo {};\n\nclass Preparado {\npublic:\n    Preparado(bool fallar) : datos_(3, 7) {\n        std::cout << \"Cuerpo:\" << datos_.size() << '\\n';\n        if (fallar) {\n            throw Fallo{};\n        }\n    }\n    ~Preparado() { std::cout << \"Cierre\\n\"; }\nprivate:\n    std::vector<int> datos_;\n};\n\nint main() {\n    try {\n        Preparado objeto{true};\n    } catch (const Fallo&) {\n        std::cout << \"Captura\\n\";\n    }\n    std::cout << \"Despues\";\n\n    return 0;\n}\n",
           "answers": [
             "Cuerpo:3\nCaptura\nDespues"
           ],
@@ -549,7 +549,7 @@
         {
           "type": "cpp_compiler",
           "language": "cpp",
-          "initialCode": "#include <cstddef>\n#include <iostream>\n#include <new>\n#include <vector>\n\nstruct PreparacionFallida {};\n\nclass Serie {\npublic:\n    std::size_t cantidad() const { return datos_.size(); }\n    int valor(std::size_t posicion) const { return datos_[posicion]; }\n    bool cambiar(int posicion, int valor);\n    bool reemplazar(int cantidad, int valor, bool provocarFallo);\nprivate:\n    std::vector<int> datos_{3, 6};\n};\nbool Serie::cambiar(int posicion, int valor) {\n    if (posicion < 0 || static_cast<std::size_t>(posicion) >= datos_.size()\n        || valor < 0 || valor > 9) {\n        return false;\n    }\n    datos_[static_cast<std::size_t>(posicion)] = valor;\n    return true;\n}\nbool Serie::reemplazar(int cantidad, int valor, bool provocarFallo) {\n    if (cantidad < 0 || cantidad > 4 || valor < 0 || valor > 9) {\n        return false;\n    }\n    // Completa la preparación local, el fallo de prueba, el intercambio y las capturas.\n    (void)provocarFallo;\n    return false;\n}\nvoid mostrar(const Serie& serie) {\n    std::cout << serie.cantidad() << ':';\n    if (serie.cantidad() == 0) {\n        std::cout << 'X';\n    } else {\n        for (std::size_t i = 0; i < serie.cantidad(); ++i) {\n            if (i != 0) {\n                std::cout << ',';\n            }\n            std::cout << serie.valor(i);\n        }\n    }\n}\nint main() {\n    int cantidadOrdenes = 0;\n    if (!(std::cin >> cantidadOrdenes) || cantidadOrdenes < 1 || cantidadOrdenes > 12) {\n        return 1;\n    }\n    Serie serie;\n    const Serie foto = serie;\n    std::cout << \"Inicio:\";\n    mostrar(serie);\n    std::cout << '\\n';\n    for (int i = 0; i < cantidadOrdenes; ++i) {\n        int operacion = 0;\n        int a = 0;\n        int b = 0;\n        if (!(std::cin >> operacion >> a >> b)) {\n            return 1;\n        }\n        bool aceptado = false;\n        if (operacion == 1) {\n            aceptado = serie.cambiar(a, b);\n        } else if (operacion == 2 || operacion == 3) {\n            aceptado = serie.reemplazar(a, b, operacion == 3);\n        }\n        std::cout << \"Resultado:\" << aceptado << \";Datos:\";\n        mostrar(serie);\n        std::cout << '\\n';\n    }\n    std::cout << \"Foto:\";\n    mostrar(foto);\n    return 0;\n}\n",
+          "initialCode": "#include <cstddef>\n#include <iostream>\n#include <new>\n#include <vector>\n\nstruct PreparacionFallida {};\n\nclass Serie {\npublic:\n    std::size_t cantidad() const { return datos_.size(); }\n    int valor(std::size_t posicion) const { return datos_[posicion]; }\n    bool cambiar(int posicion, int valor);\n    bool reemplazar(int cantidad, int valor, bool provocarFallo);\nprivate:\n    std::vector<int> datos_{3, 6};\n};\n\nbool Serie::cambiar(int posicion, int valor) {\n    if (posicion < 0 || static_cast<std::size_t>(posicion) >= datos_.size()\n        || valor < 0 || valor > 9) {\n        return false;\n    }\n    datos_[static_cast<std::size_t>(posicion)] = valor;\n    return true;\n}\n\nbool Serie::reemplazar(int cantidad, int valor, bool provocarFallo) {\n    if (cantidad < 0 || cantidad > 4 || valor < 0 || valor > 9) {\n        return false;\n    }\n    // Completa la preparación local, el fallo de prueba, el intercambio y las capturas.\n    (void)provocarFallo;\n    return false;\n}\n\nvoid mostrar(const Serie& serie) {\n    std::cout << serie.cantidad() << ':';\n    if (serie.cantidad() == 0) {\n        std::cout << 'X';\n    } else {\n        for (std::size_t i = 0; i < serie.cantidad(); ++i) {\n            if (i != 0) {\n                std::cout << ',';\n            }\n            std::cout << serie.valor(i);\n        }\n    }\n}\n\nint main() {\n    int cantidadOrdenes = 0;\n    if (!(std::cin >> cantidadOrdenes) || cantidadOrdenes < 1 || cantidadOrdenes > 12) {\n        return 1;\n    }\n    Serie serie;\n    const Serie foto = serie;\n\n    std::cout << \"Inicio:\";\n    mostrar(serie);\n    std::cout << '\\n';\n    for (int i = 0; i < cantidadOrdenes; ++i) {\n        int operacion = 0;\n        int a = 0;\n        int b = 0;\n\n        if (!(std::cin >> operacion >> a >> b)) {\n            return 1;\n        }\n        bool aceptado = false;\n        if (operacion == 1) {\n            aceptado = serie.cambiar(a, b);\n        } else if (operacion == 2 || operacion == 3) {\n            aceptado = serie.reemplazar(a, b, operacion == 3);\n        }\n        std::cout << \"Resultado:\" << aceptado << \";Datos:\";\n        mostrar(serie);\n        std::cout << '\\n';\n    }\n    std::cout << \"Foto:\";\n    mostrar(foto);\n    return 0;\n}\n",
           "initialStandardInput": "12\n1 0 9\n3 3 7\n2 2 8\n3 0 4\n2 0 4\n1 0 5\n2 3 2\n1 2 9\n2 5 1\n2 3 10\n3 4 6\n2 1 7\n",
           "outputCheck": {
             "inputComparison": "tokens",
@@ -675,7 +675,7 @@
         {
           "type": "code",
           "language": "cpp",
-          "code": "#include <cstddef>\n#include <iostream>\n#include <new>\n#include <vector>\n\nstruct PreparacionFallida {};\n\nclass Serie {\npublic:\n    std::size_t cantidad() const { return datos_.size(); }\n    int valor(std::size_t posicion) const { return datos_[posicion]; }\n    bool cambiar(int posicion, int valor);\n    bool reemplazar(int cantidad, int valor, bool provocarFallo);\nprivate:\n    std::vector<int> datos_{3, 6};\n};\nbool Serie::cambiar(int posicion, int valor) {\n    if (posicion < 0 || static_cast<std::size_t>(posicion) >= datos_.size()\n        || valor < 0 || valor > 9) {\n        return false;\n    }\n    datos_[static_cast<std::size_t>(posicion)] = valor;\n    return true;\n}\nbool Serie::reemplazar(int cantidad, int valor, bool provocarFallo) {\n    if (cantidad < 0 || cantidad > 4 || valor < 0 || valor > 9) {\n        return false;\n    }\n    try {\n        std::vector<int> candidato(static_cast<std::size_t>(cantidad), valor);\n        if (provocarFallo) {\n            throw PreparacionFallida{};\n        }\n        datos_.swap(candidato);\n        return true;\n    } catch (const PreparacionFallida&) {\n        return false;\n    } catch (const std::bad_alloc&) {\n        return false;\n    }\n}\nvoid mostrar(const Serie& serie) {\n    std::cout << serie.cantidad() << ':';\n    if (serie.cantidad() == 0) {\n        std::cout << 'X';\n    } else {\n        for (std::size_t i = 0; i < serie.cantidad(); ++i) {\n            if (i != 0) {\n                std::cout << ',';\n            }\n            std::cout << serie.valor(i);\n        }\n    }\n}\nint main() {\n    int cantidadOrdenes = 0;\n    if (!(std::cin >> cantidadOrdenes) || cantidadOrdenes < 1 || cantidadOrdenes > 12) {\n        return 1;\n    }\n    Serie serie;\n    const Serie foto = serie;\n    std::cout << \"Inicio:\";\n    mostrar(serie);\n    std::cout << '\\n';\n    for (int i = 0; i < cantidadOrdenes; ++i) {\n        int operacion = 0;\n        int a = 0;\n        int b = 0;\n        if (!(std::cin >> operacion >> a >> b)) {\n            return 1;\n        }\n        bool aceptado = false;\n        if (operacion == 1) {\n            aceptado = serie.cambiar(a, b);\n        } else if (operacion == 2 || operacion == 3) {\n            aceptado = serie.reemplazar(a, b, operacion == 3);\n        }\n        std::cout << \"Resultado:\" << aceptado << \";Datos:\";\n        mostrar(serie);\n        std::cout << '\\n';\n    }\n    std::cout << \"Foto:\";\n    mostrar(foto);\n    return 0;\n}\n"
+          "code": "#include <cstddef>\n#include <iostream>\n#include <new>\n#include <vector>\n\nstruct PreparacionFallida {};\n\nclass Serie {\npublic:\n    std::size_t cantidad() const { return datos_.size(); }\n    int valor(std::size_t posicion) const { return datos_[posicion]; }\n    bool cambiar(int posicion, int valor);\n    bool reemplazar(int cantidad, int valor, bool provocarFallo);\nprivate:\n    std::vector<int> datos_{3, 6};\n};\n\nbool Serie::cambiar(int posicion, int valor) {\n    if (posicion < 0 || static_cast<std::size_t>(posicion) >= datos_.size()\n        || valor < 0 || valor > 9) {\n        return false;\n    }\n    datos_[static_cast<std::size_t>(posicion)] = valor;\n    return true;\n}\n\nbool Serie::reemplazar(int cantidad, int valor, bool provocarFallo) {\n    if (cantidad < 0 || cantidad > 4 || valor < 0 || valor > 9) {\n        return false;\n    }\n    try {\n        std::vector<int> candidato(static_cast<std::size_t>(cantidad), valor);\n        if (provocarFallo) {\n            throw PreparacionFallida{};\n        }\n        datos_.swap(candidato);\n        return true;\n    } catch (const PreparacionFallida&) {\n        return false;\n    } catch (const std::bad_alloc&) {\n        return false;\n    }\n}\n\nvoid mostrar(const Serie& serie) {\n    std::cout << serie.cantidad() << ':';\n    if (serie.cantidad() == 0) {\n        std::cout << 'X';\n    } else {\n        for (std::size_t i = 0; i < serie.cantidad(); ++i) {\n            if (i != 0) {\n                std::cout << ',';\n            }\n            std::cout << serie.valor(i);\n        }\n    }\n}\n\nint main() {\n    int cantidadOrdenes = 0;\n    if (!(std::cin >> cantidadOrdenes) || cantidadOrdenes < 1 || cantidadOrdenes > 12) {\n        return 1;\n    }\n    Serie serie;\n    const Serie foto = serie;\n\n    std::cout << \"Inicio:\";\n    mostrar(serie);\n    std::cout << '\\n';\n    for (int i = 0; i < cantidadOrdenes; ++i) {\n        int operacion = 0;\n        int a = 0;\n        int b = 0;\n\n        if (!(std::cin >> operacion >> a >> b)) {\n            return 1;\n        }\n        bool aceptado = false;\n        if (operacion == 1) {\n            aceptado = serie.cambiar(a, b);\n        } else if (operacion == 2 || operacion == 3) {\n            aceptado = serie.reemplazar(a, b, operacion == 3);\n        }\n        std::cout << \"Resultado:\" << aceptado << \";Datos:\";\n        mostrar(serie);\n        std::cout << '\\n';\n    }\n    std::cout << \"Foto:\";\n    mostrar(foto);\n    return 0;\n}\n"
         },
         {
           "type": "paragraph",
@@ -1824,6 +1824,222 @@
       }
     },
     "additions": [],
-    "editorial": []
+    "editorial": [
+      {
+        "id": "block_0003_0002",
+        "beforeSha256": "1211e13f52838281d5902a7d0467921a945ce787db676a0e78ccdcb29097f3f4",
+        "afterSha256": "10ae53423b454f61cc84936331c9f775f31aab60156cfed25e3d6a3cda600638"
+      },
+      {
+        "id": "block_0004_0003",
+        "beforeSha256": "827059dc896cd086a9b6c1cbf823b647f42f024b44a6b32c992894b0be719928",
+        "afterSha256": "fbc7bb9bacbaf7bd13b21fbbb5efaf0ce1c8935598bd99bbfc64181e7c2a8e11"
+      },
+      {
+        "id": "block_0005_0002",
+        "beforeSha256": "6f66554c4d526078791d31be025b38d23e2d9263a213c428dd50e2fcbb6b432a",
+        "afterSha256": "b5aa6871a1a0a95f9816273f587b0a2a14a8d74dbc121e39beb5d72bc6e12c8b"
+      },
+      {
+        "id": "block_0006_0002",
+        "beforeSha256": "35762c0ef9d0d53fe95b11cf57f1056cd211f8bdf7a387ddc0046a2ebfbb8fc8",
+        "afterSha256": "fd3d6a3beea7fb5cbb1b4ffd1801c7967508135db5d38699630fe47ea1bf2dee"
+      },
+      {
+        "id": "block_0007_0002",
+        "beforeSha256": "1cb553623cf2cbbd586e37cf0ad2cffd56383920ffa4d200dbf87338d2c13d30",
+        "afterSha256": "f08b76171f58649ad8b7cee8b7c789dc3c440fa90bc638711f6996e26be080df"
+      },
+      {
+        "id": "block_0008_0002",
+        "beforeSha256": "a2f3644ee37b78ee859ba3a343beaafc8202ea4709ccc5a0a5f11ca9c165f3f2",
+        "afterSha256": "01baf67efdf375dede2f3838e426b8f64a29c1f453f7bc525b1050ac918bc890"
+      },
+      {
+        "id": "block_0009_0002",
+        "beforeSha256": "9f19ed361ced36469b3d530aa9ea9d33f4677b92d9090823cbd82e443365e85f",
+        "afterSha256": "e455bfb19b8b76803dfbf878327c70cd644e31889caf1fafee9c586d423d656f"
+      },
+      {
+        "id": "block_0010_0002",
+        "beforeSha256": "4e79046d9eb0a466a82ac9b1c00dceac6d0522ed87624c354a3662b5ade88a69",
+        "afterSha256": "6996368eb06e28bfadb63473ef17b88c62f85e87bc94594a9caa42bb002498f7"
+      },
+      {
+        "id": "block_0016_0002",
+        "beforeSha256": "aab93468b9a1eab3047d632d264ef9ab7aa3222f8a8183ea181d1e70f80c24fb",
+        "afterSha256": "941c202b8d58ff569a6d9cd336603ef1964685bcbb1ac9957d778bb3e5bc57a2"
+      },
+      {
+        "id": "block_0018_0001",
+        "beforeSha256": "1721d82f0a5dea94ebd7c2b76e5d56f38553371f12280f782ff7098c54382883",
+        "afterSha256": "418aa9effd0a213087280dc286dcc2d09ef478e2a046b67cb6191add7f33877f"
+      }
+    ],
+    "sourceFormatRevisions": [
+      {
+        "id": "block_0003_0002",
+        "block": {
+          "type": "output_prediction",
+          "id": "p3_u6l3_cantidad_o_lista",
+          "language": "cpp",
+          "question": "¿Qué muestra cada vector? Escribe las dos líneas completas.",
+          "code": "#include <iostream>\n#include <vector>\n\nint main() {\n    std::vector<int> repetidos(3, 7);\n    std::vector<int> lista{3, 7};\n    std::cout << repetidos.size() << ':' << repetidos[0] << ':' << repetidos[2] << '\\n';\n    std::cout << lista.size() << ':' << lista[0] << ':' << lista[1];\n    return 0;\n}\n",
+          "answers": [
+            "3:7:7\n2:3:7"
+          ],
+          "outputComparison": "exact",
+          "explanation": "repetidos tiene tres elementos iguales a siete. lista tiene dos elementos, con tres y siete. Las lecturas del programa se mantienen dentro de la cantidad de cada vector."
+        }
+      },
+      {
+        "id": "block_0004_0003",
+        "block": {
+          "type": "output_prediction",
+          "id": "p3_u6l3_copia_y_observacion",
+          "language": "cpp",
+          "question": "¿Qué se consulta desde original, copia y vista después del cambio?",
+          "code": "#include <iostream>\n#include <vector>\n\nclass Medidas {\npublic:\n    int primero() const { return datos_[0]; }\n    void cambiar_primero(int valor) { datos_[0] = valor; }\nprivate:\n    std::vector<int> datos_{2, 4};\n};\n\nint main() {\n    Medidas original;\n    Medidas copia = original;\n    const Medidas& vista = original;\n    original.cambiar_primero(9);\n    std::cout << original.primero() << ':' << copia.primero() << ':' << vista.primero();\n    return 0;\n}\n",
+          "answers": [
+            "9:2:9"
+          ],
+          "outputComparison": "exact",
+          "explanation": "original cambia a nueve. copia conserva su primer elemento con dos. vista se refiere a original y observa nueve. Cada vector propietario se limpiará cuando termine el objeto que lo contiene."
+        }
+      },
+      {
+        "id": "block_0005_0002",
+        "block": {
+          "type": "output_prediction",
+          "id": "p3_u6l3_limpieza_sin_reversion",
+          "language": "cpp",
+          "question": "¿Qué valor muestra el catch?",
+          "code": "#include <iostream>\n#include <vector>\n\nstruct Fallo {};\n\nint main() {\n    int suma = 0;\n    try {\n        std::vector<int> datos{2, 4};\n        suma = datos[0] + datos[1];\n        throw Fallo{};\n    } catch (const Fallo&) {\n        std::cout << suma;\n    }\n    return 0;\n}\n",
+          "answers": [
+            "6"
+          ],
+          "outputComparison": "exact",
+          "explanation": "La suma se calculó antes de lanzar. La limpieza del vector no restaura el valor anterior de la variable exterior. El catch puede consultar suma, que sigue existiendo."
+        }
+      },
+      {
+        "id": "block_0006_0002",
+        "block": {
+          "type": "output_prediction",
+          "id": "p3_u6l3_intercambio_de_vectores",
+          "language": "cpp",
+          "question": "¿Qué contiene cada vector después de swap?",
+          "code": "#include <iostream>\n#include <vector>\n\nint main() {\n    std::vector<int> a{1, 3};\n    std::vector<int> b{8};\n    a.swap(b);\n    std::cout << a.size() << ':' << a[0] << '\\n';\n    std::cout << b.size() << ':' << b[0] << ':' << b[1];\n    return 0;\n}\n",
+          "answers": [
+            "1:8\n2:1:3"
+          ],
+          "outputComparison": "exact",
+          "explanation": "a pasa a tener un elemento con ocho. b pasa a tener los dos elementos uno y tres. Cada vector queda encargado del contenido que recibió."
+        }
+      },
+      {
+        "id": "block_0007_0002",
+        "block": {
+          "type": "output_prediction",
+          "id": "p3_u6l3_responsabilidad_despues_de_swap",
+          "language": "cpp",
+          "question": "¿Qué muestran candidato dentro del bloque y datos después?",
+          "code": "#include <iostream>\n#include <vector>\n\nint main() {\n    std::vector<int> datos{2, 4};\n    {\n        std::vector<int> candidato(3, 7);\n        datos.swap(candidato);\n        std::cout << \"Anterior:\" << candidato[0] << ':' << candidato[1] << '\\n';\n    }\n    std::cout << \"Nuevo:\" << datos.size() << ':' << datos[0] << ':' << datos[2];\n    return 0;\n}\n",
+          "answers": [
+            "Anterior:2:4\nNuevo:3:7:7"
+          ],
+          "outputComparison": "exact",
+          "explanation": "candidato consulta dos y cuatro después del intercambio. Al salir de su bloque se destruye ese vector. datos sigue vivo con tres elementos de valor siete; no perdió el contenido recibido."
+        }
+      },
+      {
+        "id": "block_0008_0002",
+        "block": {
+          "type": "output_prediction",
+          "id": "p3_u6l3_modificacion_antes_del_fallo",
+          "language": "cpp",
+          "question": "¿Qué valores conserva datos en esta organización?",
+          "code": "#include <iostream>\n#include <vector>\n\nstruct Fallo {};\n\nint main() {\n    std::vector<int> datos{3, 6};\n    try {\n        datos[0] = 9;\n        std::vector<int> candidato(3, 7);\n        throw Fallo{};\n    } catch (const Fallo&) {\n        std::cout << datos[0] << ':' << datos[1];\n    }\n    return 0;\n}\n",
+          "answers": [
+            "9:6"
+          ],
+          "outputComparison": "exact",
+          "explanation": "La primera posición ya recibió nueve antes del fallo. Destruir candidato no modifica por sí solo el otro vector. No hay fuga por olvidar una liberación, pero tampoco se conservaron los valores anteriores tres y seis."
+        }
+      },
+      {
+        "id": "block_0009_0002",
+        "block": {
+          "type": "output_prediction",
+          "id": "p3_u6l3_fallo_antes_del_intercambio",
+          "language": "cpp",
+          "question": "¿Qué valores muestra el vector que se quería reemplazar?",
+          "code": "#include <iostream>\n#include <vector>\n\nstruct Fallo {};\n\nint main() {\n    std::vector<int> datos{3, 6};\n    try {\n        std::vector<int> candidato(3, 7);\n        throw Fallo{};\n    } catch (const Fallo&) {\n        std::cout << datos[0] << ':' << datos[1];\n    }\n    return 0;\n}\n",
+          "answers": [
+            "3:6"
+          ],
+          "outputComparison": "exact",
+          "explanation": "datos conserva tres y seis porque no se modificó. candidato se destruye al abandonar el try por la excepción. El catch no necesita liberar sus elementos manualmente."
+        }
+      },
+      {
+        "id": "block_0010_0002",
+        "block": {
+          "type": "output_prediction",
+          "id": "p3_u6l3_fallo_del_constructor_con_vector",
+          "language": "cpp",
+          "question": "¿Qué mensajes aparecen en la ejecución?",
+          "code": "#include <iostream>\n#include <vector>\n\nstruct Fallo {};\n\nclass Preparado {\npublic:\n    Preparado(bool fallar) : datos_(3, 7) {\n        std::cout << \"Cuerpo:\" << datos_.size() << '\\n';\n        if (fallar) {\n            throw Fallo{};\n        }\n    }\n    ~Preparado() { std::cout << \"Cierre\\n\"; }\nprivate:\n    std::vector<int> datos_;\n};\n\nint main() {\n    try {\n        Preparado objeto{true};\n    } catch (const Fallo&) {\n        std::cout << \"Captura\\n\";\n    }\n    std::cout << \"Despues\";\n    return 0;\n}\n",
+          "answers": [
+            "Cuerpo:3\nCaptura\nDespues"
+          ],
+          "outputComparison": "exact",
+          "explanation": "Se imprime Cuerpo y sale una excepción. No se imprime Cierre del objeto completo, pero el vector miembro ya construido se destruye. Los mensajes muestran el camino de ejecución; no son por sí solos una medición de memoria liberada."
+        }
+      },
+      {
+        "id": "block_0016_0002",
+        "block": {
+          "type": "cpp_compiler",
+          "language": "cpp",
+          "initialCode": "#include <cstddef>\n#include <iostream>\n#include <new>\n#include <vector>\n\nstruct PreparacionFallida {};\n\nclass Serie {\npublic:\n    std::size_t cantidad() const { return datos_.size(); }\n    int valor(std::size_t posicion) const { return datos_[posicion]; }\n    bool cambiar(int posicion, int valor);\n    bool reemplazar(int cantidad, int valor, bool provocarFallo);\nprivate:\n    std::vector<int> datos_{3, 6};\n};\nbool Serie::cambiar(int posicion, int valor) {\n    if (posicion < 0 || static_cast<std::size_t>(posicion) >= datos_.size()\n        || valor < 0 || valor > 9) {\n        return false;\n    }\n    datos_[static_cast<std::size_t>(posicion)] = valor;\n    return true;\n}\nbool Serie::reemplazar(int cantidad, int valor, bool provocarFallo) {\n    if (cantidad < 0 || cantidad > 4 || valor < 0 || valor > 9) {\n        return false;\n    }\n    // Completa la preparación local, el fallo de prueba, el intercambio y las capturas.\n    (void)provocarFallo;\n    return false;\n}\nvoid mostrar(const Serie& serie) {\n    std::cout << serie.cantidad() << ':';\n    if (serie.cantidad() == 0) {\n        std::cout << 'X';\n    } else {\n        for (std::size_t i = 0; i < serie.cantidad(); ++i) {\n            if (i != 0) {\n                std::cout << ',';\n            }\n            std::cout << serie.valor(i);\n        }\n    }\n}\nint main() {\n    int cantidadOrdenes = 0;\n    if (!(std::cin >> cantidadOrdenes) || cantidadOrdenes < 1 || cantidadOrdenes > 12) {\n        return 1;\n    }\n    Serie serie;\n    const Serie foto = serie;\n    std::cout << \"Inicio:\";\n    mostrar(serie);\n    std::cout << '\\n';\n    for (int i = 0; i < cantidadOrdenes; ++i) {\n        int operacion = 0;\n        int a = 0;\n        int b = 0;\n        if (!(std::cin >> operacion >> a >> b)) {\n            return 1;\n        }\n        bool aceptado = false;\n        if (operacion == 1) {\n            aceptado = serie.cambiar(a, b);\n        } else if (operacion == 2 || operacion == 3) {\n            aceptado = serie.reemplazar(a, b, operacion == 3);\n        }\n        std::cout << \"Resultado:\" << aceptado << \";Datos:\";\n        mostrar(serie);\n        std::cout << '\\n';\n    }\n    std::cout << \"Foto:\";\n    mostrar(foto);\n    return 0;\n}\n",
+          "initialStandardInput": "12\n1 0 9\n3 3 7\n2 2 8\n3 0 4\n2 0 4\n1 0 5\n2 3 2\n1 2 9\n2 5 1\n2 3 10\n3 4 6\n2 1 7\n",
+          "outputCheck": {
+            "inputComparison": "tokens",
+            "cases": [
+              {
+                "standardInput": "12\n1 0 9\n3 3 7\n2 2 8\n3 0 4\n2 0 4\n1 0 5\n2 3 2\n1 2 9\n2 5 1\n2 3 10\n3 4 6\n2 1 7\n",
+                "outputs": [
+                  "Inicio:2:3,6\nResultado:1;Datos:2:9,6\nResultado:0;Datos:2:9,6\nResultado:1;Datos:2:8,8\nResultado:0;Datos:2:8,8\nResultado:1;Datos:0:X\nResultado:0;Datos:0:X\nResultado:1;Datos:3:2,2,2\nResultado:1;Datos:3:2,2,9\nResultado:0;Datos:3:2,2,9\nResultado:0;Datos:3:2,2,9\nResultado:0;Datos:3:2,2,9\nResultado:1;Datos:1:7\nFoto:2:3,6"
+                ],
+                "explanation": "Valida antes de preparar, conserva el miembro hasta swap y deja que el candidato se limpie al terminar. La foto inicial permanece independiente."
+              },
+              {
+                "standardInput": "7\n2 0 10\n3 0 9\n2 0 9\n3 0 9\n2 4 1\n2 4 1\n3 2 2\n",
+                "outputs": [
+                  "Inicio:2:3,6\nResultado:0;Datos:2:3,6\nResultado:0;Datos:2:3,6\nResultado:1;Datos:0:X\nResultado:0;Datos:0:X\nResultado:1;Datos:4:1,1,1,1\nResultado:1;Datos:4:1,1,1,1\nResultado:0;Datos:4:1,1,1,1\nFoto:2:3,6"
+                ],
+                "explanation": "Valida antes de preparar, conserva el miembro hasta swap y deja que el candidato se limpie al terminar. La foto inicial permanece independiente."
+              },
+              {
+                "standardInput": "7\n2 -2147483648 1\n2 2147483647 1\n2 1 -2147483648\n1 -2147483648 2\n1 2147483647 2\n2 1 9\n1 0 0\n",
+                "outputs": [
+                  "Inicio:2:3,6\nResultado:0;Datos:2:3,6\nResultado:0;Datos:2:3,6\nResultado:0;Datos:2:3,6\nResultado:0;Datos:2:3,6\nResultado:0;Datos:2:3,6\nResultado:1;Datos:1:9\nResultado:1;Datos:1:0\nFoto:2:3,6"
+                ],
+                "explanation": "Valida antes de preparar, conserva el miembro hasta swap y deja que el candidato se limpie al terminar. La foto inicial permanece independiente."
+              }
+            ]
+          }
+        }
+      },
+      {
+        "id": "block_0018_0001",
+        "block": {
+          "type": "code",
+          "language": "cpp",
+          "code": "#include <cstddef>\n#include <iostream>\n#include <new>\n#include <vector>\n\nstruct PreparacionFallida {};\n\nclass Serie {\npublic:\n    std::size_t cantidad() const { return datos_.size(); }\n    int valor(std::size_t posicion) const { return datos_[posicion]; }\n    bool cambiar(int posicion, int valor);\n    bool reemplazar(int cantidad, int valor, bool provocarFallo);\nprivate:\n    std::vector<int> datos_{3, 6};\n};\nbool Serie::cambiar(int posicion, int valor) {\n    if (posicion < 0 || static_cast<std::size_t>(posicion) >= datos_.size()\n        || valor < 0 || valor > 9) {\n        return false;\n    }\n    datos_[static_cast<std::size_t>(posicion)] = valor;\n    return true;\n}\nbool Serie::reemplazar(int cantidad, int valor, bool provocarFallo) {\n    if (cantidad < 0 || cantidad > 4 || valor < 0 || valor > 9) {\n        return false;\n    }\n    try {\n        std::vector<int> candidato(static_cast<std::size_t>(cantidad), valor);\n        if (provocarFallo) {\n            throw PreparacionFallida{};\n        }\n        datos_.swap(candidato);\n        return true;\n    } catch (const PreparacionFallida&) {\n        return false;\n    } catch (const std::bad_alloc&) {\n        return false;\n    }\n}\nvoid mostrar(const Serie& serie) {\n    std::cout << serie.cantidad() << ':';\n    if (serie.cantidad() == 0) {\n        std::cout << 'X';\n    } else {\n        for (std::size_t i = 0; i < serie.cantidad(); ++i) {\n            if (i != 0) {\n                std::cout << ',';\n            }\n            std::cout << serie.valor(i);\n        }\n    }\n}\nint main() {\n    int cantidadOrdenes = 0;\n    if (!(std::cin >> cantidadOrdenes) || cantidadOrdenes < 1 || cantidadOrdenes > 12) {\n        return 1;\n    }\n    Serie serie;\n    const Serie foto = serie;\n    std::cout << \"Inicio:\";\n    mostrar(serie);\n    std::cout << '\\n';\n    for (int i = 0; i < cantidadOrdenes; ++i) {\n        int operacion = 0;\n        int a = 0;\n        int b = 0;\n        if (!(std::cin >> operacion >> a >> b)) {\n            return 1;\n        }\n        bool aceptado = false;\n        if (operacion == 1) {\n            aceptado = serie.cambiar(a, b);\n        } else if (operacion == 2 || operacion == 3) {\n            aceptado = serie.reemplazar(a, b, operacion == 3);\n        }\n        std::cout << \"Resultado:\" << aceptado << \";Datos:\";\n        mostrar(serie);\n        std::cout << '\\n';\n    }\n    std::cout << \"Foto:\";\n    mostrar(foto);\n    return 0;\n}\n"
+        }
+      }
+    ]
   }
 }

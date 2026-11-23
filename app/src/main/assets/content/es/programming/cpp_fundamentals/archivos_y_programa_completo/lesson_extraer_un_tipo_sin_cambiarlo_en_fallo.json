@@ -80,7 +80,7 @@
         {
           "type": "code",
           "language": "cpp",
-          "code": "#include <iostream>\n#include <sstream>\n#include <string>\n\nstruct Cantidad { int unidades; };\n\nstd::istream& operator>>(std::istream& origen, Cantidad& destino) {\n    char abre{0};\n    char cierra{0};\n    int unidades{0};\n    if (!(origen >> abre >> unidades >> cierra)) { return origen; }\n    if (abre != '(' || cierra != ')' || unidades < 0 || unidades > 5) {\n        origen.setstate(std::ios::failbit);\n        return origen;\n    }\n    destino = Cantidad{unidades};\n    return origen;\n}\n\nint main() {\n    std::istringstream entrada{\"(3)\"};\n    Cantidad cantidad{4};\n    if (entrada >> cantidad) { std::cout << cantidad.unidades; }\n    else { std::cout << \"Fallo\"; }\n    return 0;\n}\n"
+          "code": "#include <iostream>\n#include <sstream>\n#include <string>\n\nstruct Cantidad { int unidades; };\n\nstd::istream& operator>>(std::istream& origen, Cantidad& destino) {\n    char abre{0};\n    char cierra{0};\n    int unidades{0};\n\n    if (!(origen >> abre >> unidades >> cierra)) { return origen; }\n    if (abre != '(' || cierra != ')' || unidades < 0 || unidades > 5) {\n        origen.setstate(std::ios::failbit);\n        return origen;\n    }\n    destino = Cantidad{unidades};\n    return origen;\n}\n\nint main() {\n    std::istringstream entrada{\"(3)\"};\n    Cantidad cantidad{4};\n    if (entrada >> cantidad) { std::cout << cantidad.unidades; }\n    else { std::cout << \"Fallo\"; }\n    return 0;\n}\n"
         },
         {
           "type": "paragraph",
@@ -126,7 +126,7 @@
           "id": "cierre_incorrecto_conserva_destino",
           "question": "Predice la salida. Se obtuvo el entero, pero el carácter de cierre no cumple el acuerdo.",
           "language": "cpp",
-          "code": "#include <iostream>\n#include <sstream>\n#include <string>\n\nstruct Cantidad { int unidades; };\n\nstd::istream& operator>>(std::istream& origen, Cantidad& destino) {\n    char abre{0};\n    char cierra{0};\n    int unidades{0};\n    if (!(origen >> abre >> unidades >> cierra)) { return origen; }\n    if (abre != '(' || cierra != ')' || unidades < 0 || unidades > 5) {\n        origen.setstate(std::ios::failbit);\n        return origen;\n    }\n    destino = Cantidad{unidades};\n    return origen;\n}\n\nint main() {\n    std::istringstream entrada{\"(2]\"};\n    Cantidad cantidad{4};\n    entrada >> cantidad;\n    std::cout << entrada.fail() << \"|\" << cantidad.unidades;\n    return 0;\n}\n",
+          "code": "#include <iostream>\n#include <sstream>\n#include <string>\n\nstruct Cantidad { int unidades; };\n\nstd::istream& operator>>(std::istream& origen, Cantidad& destino) {\n    char abre{0};\n    char cierra{0};\n    int unidades{0};\n\n    if (!(origen >> abre >> unidades >> cierra)) { return origen; }\n    if (abre != '(' || cierra != ')' || unidades < 0 || unidades > 5) {\n        origen.setstate(std::ios::failbit);\n        return origen;\n    }\n    destino = Cantidad{unidades};\n    return origen;\n}\n\nint main() {\n    std::istringstream entrada{\"(2]\"};\n    Cantidad cantidad{4};\n    entrada >> cantidad;\n    std::cout << entrada.fail() << \"|\" << cantidad.unidades;\n\n    return 0;\n}\n",
           "answers": [
             "1|4"
           ],
@@ -138,7 +138,7 @@
           "id": "setstate_conserva_eof",
           "question": "Predice la salida. La extracción decimal puede encontrar el final al terminar el entero.",
           "language": "cpp",
-          "code": "#include <iostream>\n#include <sstream>\n\nint main() {\n    std::istringstream entrada{\"4\"};\n    int numero{0};\n    if (entrada >> numero) { std::cout << \"Leido:\" << numero << \"|\"; }\n    entrada.setstate(std::ios::failbit);\n    std::cout << \"EOF=\" << entrada.eof() << \";Fallo=\" << entrada.fail();\n    return 0;\n}\n",
+          "code": "#include <iostream>\n#include <sstream>\n\nint main() {\n    std::istringstream entrada{\"4\"};\n    int numero{0};\n    if (entrada >> numero) { std::cout << \"Leido:\" << numero << \"|\"; }\n    entrada.setstate(std::ios::failbit);\n    std::cout << \"EOF=\" << entrada.eof() << \";Fallo=\" << entrada.fail();\n\n    return 0;\n}\n",
           "answers": [
             "Leido:4|EOF=1;Fallo=1"
           ],
@@ -172,7 +172,7 @@
           "id": "registro_truncado_al_final",
           "question": "Predice la salida. Falta el carácter de cierre requerido por Cantidad.",
           "language": "cpp",
-          "code": "#include <iostream>\n#include <sstream>\n#include <string>\n\nstruct Cantidad { int unidades; };\n\nstd::istream& operator>>(std::istream& origen, Cantidad& destino) {\n    char abre{0};\n    char cierra{0};\n    int unidades{0};\n    if (!(origen >> abre >> unidades >> cierra)) { return origen; }\n    if (abre != '(' || cierra != ')' || unidades < 0 || unidades > 5) {\n        origen.setstate(std::ios::failbit);\n        return origen;\n    }\n    destino = Cantidad{unidades};\n    return origen;\n}\n\nint main() {\n    std::istringstream entrada{\"(2\"};\n    Cantidad cantidad{4};\n    entrada >> cantidad;\n    std::cout << entrada.eof() << \":\" << entrada.fail() << \"|\" << cantidad.unidades;\n    return 0;\n}\n",
+          "code": "#include <iostream>\n#include <sstream>\n#include <string>\n\nstruct Cantidad { int unidades; };\n\nstd::istream& operator>>(std::istream& origen, Cantidad& destino) {\n    char abre{0};\n    char cierra{0};\n    int unidades{0};\n\n    if (!(origen >> abre >> unidades >> cierra)) { return origen; }\n    if (abre != '(' || cierra != ')' || unidades < 0 || unidades > 5) {\n        origen.setstate(std::ios::failbit);\n        return origen;\n    }\n    destino = Cantidad{unidades};\n    return origen;\n}\n\nint main() {\n    std::istringstream entrada{\"(2\"};\n    Cantidad cantidad{4};\n    entrada >> cantidad;\n    std::cout << entrada.eof() << \":\" << entrada.fail() << \"|\" << cantidad.unidades;\n\n    return 0;\n}\n",
           "answers": [
             "1:1|4"
           ],
@@ -219,7 +219,7 @@
           "id": "caracteres_consumidos_no_reaparecen",
           "question": "Predice la salida. clear se usa aquí sólo para observar el texto restante de una cadena controlada, después del fallo.",
           "language": "cpp",
-          "code": "#include <iostream>\n#include <sstream>\n#include <string>\n\nstruct Cantidad { int unidades; };\n\nstd::istream& operator>>(std::istream& origen, Cantidad& destino) {\n    char abre{0};\n    char cierra{0};\n    int unidades{0};\n    if (!(origen >> abre >> unidades >> cierra)) { return origen; }\n    if (abre != '(' || cierra != ')' || unidades < 0 || unidades > 5) {\n        origen.setstate(std::ios::failbit);\n        return origen;\n    }\n    destino = Cantidad{unidades};\n    return origen;\n}\n\nint main() {\n    std::istringstream entrada{\"(3]RESTO\"};\n    Cantidad cantidad{4};\n    entrada >> cantidad;\n    if (entrada.fail()) {\n        entrada.clear();\n        std::string resto;\n        std::getline(entrada, resto);\n        std::cout << cantidad.unidades << \"|\" << resto;\n    }\n    return 0;\n}\n",
+          "code": "#include <iostream>\n#include <sstream>\n#include <string>\n\nstruct Cantidad { int unidades; };\n\nstd::istream& operator>>(std::istream& origen, Cantidad& destino) {\n    char abre{0};\n    char cierra{0};\n    int unidades{0};\n\n    if (!(origen >> abre >> unidades >> cierra)) { return origen; }\n    if (abre != '(' || cierra != ')' || unidades < 0 || unidades > 5) {\n        origen.setstate(std::ios::failbit);\n        return origen;\n    }\n    destino = Cantidad{unidades};\n    return origen;\n}\n\nint main() {\n    std::istringstream entrada{\"(3]RESTO\"};\n    Cantidad cantidad{4};\n    entrada >> cantidad;\n    if (entrada.fail()) {\n        entrada.clear();\n        std::string resto;\n\n        std::getline(entrada, resto);\n\n        std::cout << cantidad.unidades << \"|\" << resto;\n    }\n\n    return 0;\n}\n",
           "answers": [
             "4|RESTO"
           ],
@@ -350,7 +350,7 @@
         },
         {
           "type": "cpp_compiler",
-          "initialCode": "#include <iostream>\n#include <sstream>\n#include <string>\n#include <vector>\n\nstruct Recuento {\n    int aceptados;\n    int rechazados;\n};\n\nstd::ostream& operator<<(std::ostream& destino, const Recuento& valor) {\n    return destino << '[' << valor.aceptados << ';' << valor.rechazados << ']';\n}\n\nint main() {\n    // Define recuento_valido y operator>> antes de main; prueba aqui.\n    return 0;\n}\n",
+          "initialCode": "#include <iostream>\n#include <sstream>\n#include <string>\n#include <vector>\n\nstruct Recuento {\n    int aceptados;\n    int rechazados;\n};\n\nstd::ostream& operator<<(std::ostream& destino, const Recuento& valor) {\n    return destino << '[' << valor.aceptados << ';' << valor.rechazados << ']';\n}\n\nint main() {\n    // Define recuento_valido y operator>> antes de main; prueba aqui.\n    \n    return 0;\n}\n",
           "outputCheck": {
             "cases": [
               {
@@ -377,7 +377,7 @@
         {
           "type": "code",
           "language": "cpp",
-          "code": "#include <iostream>\n#include <sstream>\n#include <string>\n#include <vector>\n\nstruct Recuento {\n    int aceptados;\n    int rechazados;\n};\n\nbool recuento_valido(const Recuento& valor) {\n    return valor.aceptados >= 0 && valor.aceptados <= 10\n        && valor.rechazados >= 0 && valor.rechazados <= 10;\n}\n\nstd::ostream& operator<<(std::ostream& destino, const Recuento& valor) {\n    return destino << '[' << valor.aceptados << ';' << valor.rechazados << ']';\n}\n\nstd::istream& operator>>(std::istream& origen, Recuento& destino) {\n    char abre{0};\n    char separador{0};\n    char cierra{0};\n    int aceptados{0};\n    int rechazados{0};\n    if (!(origen >> abre >> aceptados >> separador >> rechazados >> cierra)) {\n        return origen;\n    }\n    Recuento candidato{aceptados, rechazados};\n    if (abre != '[' || separador != ';' || cierra != ']' || !recuento_valido(candidato)) {\n        origen.setstate(std::ios::failbit);\n        return origen;\n    }\n    destino = candidato;\n    return origen;\n}\n\nvoid probar(const std::string& datos) {\n    std::istringstream entrada{datos};\n    Recuento destino{6, 2};\n    if (entrada >> destino) { std::cout << \"OK \" << destino << \"\\n\"; }\n    else { std::cout << \"Fallo \" << destino << \"\\n\"; }\n}\n\nint main() {\n    const std::vector<std::string> casos{\n        \"[2;1]\", \"[0;0]\", \"[10;10]\", \"[-1;2]\", \"[11;0]\",\n        \"[0;-1]\", \"[0;11]\", \"[2:1]\", \"[2;1\", \"[ 1 ; 3 ]\", \"[2;1]resto\"\n    };\n    for (const std::string& datos : casos) { probar(datos); }\n    return 0;\n}\n"
+          "code": "#include <iostream>\n#include <sstream>\n#include <string>\n#include <vector>\n\nstruct Recuento {\n    int aceptados;\n    int rechazados;\n};\n\nbool recuento_valido(const Recuento& valor) {\n    return valor.aceptados >= 0 && valor.aceptados <= 10\n        && valor.rechazados >= 0 && valor.rechazados <= 10;\n}\n\nstd::ostream& operator<<(std::ostream& destino, const Recuento& valor) {\n    return destino << '[' << valor.aceptados << ';' << valor.rechazados << ']';\n}\n\nstd::istream& operator>>(std::istream& origen, Recuento& destino) {\n    char abre{0};\n    char separador{0};\n    char cierra{0};\n    int aceptados{0};\n    int rechazados{0};\n\n    if (!(origen >> abre >> aceptados >> separador >> rechazados >> cierra)) {\n        return origen;\n    }\n    Recuento candidato{aceptados, rechazados};\n    if (abre != '[' || separador != ';' || cierra != ']' || !recuento_valido(candidato)) {\n        origen.setstate(std::ios::failbit);\n        return origen;\n    }\n    destino = candidato;\n    return origen;\n}\n\nvoid probar(const std::string& datos) {\n    std::istringstream entrada{datos};\n    Recuento destino{6, 2};\n    if (entrada >> destino) { std::cout << \"OK \" << destino << \"\\n\"; }\n    else { std::cout << \"Fallo \" << destino << \"\\n\"; }\n}\n\nint main() {\n    const std::vector<std::string> casos{\n        \"[2;1]\", \"[0;0]\", \"[10;10]\", \"[-1;2]\", \"[11;0]\",\n        \"[0;-1]\", \"[0;11]\", \"[2:1]\", \"[2;1\", \"[ 1 ; 3 ]\", \"[2;1]resto\"\n    };\n    for (const std::string& datos : casos) { probar(datos); }\n    return 0;\n}\n"
         },
         {
           "type": "paragraph",
@@ -520,7 +520,7 @@
         {
           "type": "code",
           "language": "cpp",
-          "code": "#include <iostream>\n#include <sstream>\n#include <string>\n#include <vector>\n\nstruct Recuento {\n    int aceptados;\n    int rechazados;\n};\n\nbool recuento_valido(const Recuento& valor) {\n    return valor.aceptados >= 0 && valor.aceptados <= 10\n        && valor.rechazados >= 0 && valor.rechazados <= 10;\n}\n\nstd::ostream& operator<<(std::ostream& destino, const Recuento& valor) {\n    return destino << '[' << valor.aceptados << ';' << valor.rechazados << ']';\n}\n\nstd::istream& operator>>(std::istream& origen, Recuento& destino) {\n    char abre{0};\n    char separador{0};\n    char cierra{0};\n    int aceptados{0};\n    int rechazados{0};\n    if (!(origen >> abre >> aceptados >> separador >> rechazados >> cierra)) {\n        return origen;\n    }\n    Recuento candidato{aceptados, rechazados};\n    if (abre != '[' || separador != ';' || cierra != ']' || !recuento_valido(candidato)) {\n        origen.setstate(std::ios::failbit);\n        return origen;\n    }\n    destino = candidato;\n    return origen;\n}\n\nvoid probar(const std::string& datos) {\n    std::istringstream entrada{datos};\n    Recuento destino{6, 2};\n    if (entrada >> destino) { std::cout << \"OK \" << destino << \"\\n\"; }\n    else { std::cout << \"Fallo \" << destino << \"\\n\"; }\n}\n\nint main() {\n    const std::vector<std::string> casos{\n        \"[2;1]\", \"[0;0]\", \"[10;10]\", \"[-1;2]\", \"[11;0]\",\n        \"[0;-1]\", \"[0;11]\", \"[2:1]\", \"[2;1\", \"[ 1 ; 3 ]\", \"[2;1]resto\", \"\", \"[3;4}\"\n    };\n    for (const std::string& datos : casos) { probar(datos); }\n    return 0;\n}\n"
+          "code": "#include <iostream>\n#include <sstream>\n#include <string>\n#include <vector>\n\nstruct Recuento {\n    int aceptados;\n    int rechazados;\n};\n\nbool recuento_valido(const Recuento& valor) {\n    return valor.aceptados >= 0 && valor.aceptados <= 10\n        && valor.rechazados >= 0 && valor.rechazados <= 10;\n}\n\nstd::ostream& operator<<(std::ostream& destino, const Recuento& valor) {\n    return destino << '[' << valor.aceptados << ';' << valor.rechazados << ']';\n}\n\nstd::istream& operator>>(std::istream& origen, Recuento& destino) {\n    char abre{0};\n    char separador{0};\n    char cierra{0};\n    int aceptados{0};\n    int rechazados{0};\n\n    if (!(origen >> abre >> aceptados >> separador >> rechazados >> cierra)) {\n        return origen;\n    }\n    Recuento candidato{aceptados, rechazados};\n    if (abre != '[' || separador != ';' || cierra != ']' || !recuento_valido(candidato)) {\n        origen.setstate(std::ios::failbit);\n        return origen;\n    }\n    destino = candidato;\n    return origen;\n}\n\nvoid probar(const std::string& datos) {\n    std::istringstream entrada{datos};\n    Recuento destino{6, 2};\n    if (entrada >> destino) { std::cout << \"OK \" << destino << \"\\n\"; }\n    else { std::cout << \"Fallo \" << destino << \"\\n\"; }\n}\n\nint main() {\n    const std::vector<std::string> casos{\n        \"[2;1]\", \"[0;0]\", \"[10;10]\", \"[-1;2]\", \"[11;0]\",\n        \"[0;-1]\", \"[0;11]\", \"[2:1]\", \"[2;1\", \"[ 1 ; 3 ]\", \"[2;1]resto\", \"\", \"[3;4}\"\n    };\n    for (const std::string& datos : casos) { probar(datos); }\n    return 0;\n}\n"
         },
         {
           "type": "heading",
@@ -564,7 +564,7 @@
         },
         {
           "type": "cpp_compiler",
-          "initialCode": "#include <iostream>\n#include <sstream>\n#include <string>\n\nstruct Recuento {\n    int aceptados;\n    int rechazados;\n};\n\nstd::ostream& operator<<(std::ostream& destino, const Recuento& valor) {\n    return destino << '[' << valor.aceptados << ';' << valor.rechazados << ']';\n}\n\n// Completa el validador y el lector. Conserva el escritor y main.\nbool recuento_valido(const Recuento& valor) {\n    return false;\n}\n\nstd::istream& operator>>(std::istream& origen, Recuento& destino) {\n    origen.setstate(std::ios::failbit);\n    return origen;\n}\n\nint main() {\n    Recuento actual{6, 2};\n    std::string texto;\n    while (std::getline(std::cin, texto)) {\n        std::istringstream origen{texto};\n        std::istream& devuelto = (origen >> actual);\n        if (devuelto) {\n            std::string resto;\n            std::getline(devuelto, resto);\n            std::cout << \"OK \" << actual << \"|Resto=\" << resto << '\\n';\n        } else {\n            std::cout << \"Fallo \" << actual << \"|EOF=\" << origen.eof() << '\\n';\n        }\n    }\n    return 0;\n}\n",
+          "initialCode": "#include <iostream>\n#include <sstream>\n#include <string>\n\nstruct Recuento {\n    int aceptados;\n    int rechazados;\n};\n\nstd::ostream& operator<<(std::ostream& destino, const Recuento& valor) {\n    return destino << '[' << valor.aceptados << ';' << valor.rechazados << ']';\n}\n\n// Completa el validador y el lector. Conserva el escritor y main.\nbool recuento_valido(const Recuento& valor) {\n    return false;\n}\n\nstd::istream& operator>>(std::istream& origen, Recuento& destino) {\n    origen.setstate(std::ios::failbit);\n    return origen;\n}\n\nint main() {\n    Recuento actual{6, 2};\n    std::string texto;\n\n    while (std::getline(std::cin, texto)) {\n        std::istringstream origen{texto};\n        std::istream& devuelto = (origen >> actual);\n        if (devuelto) {\n            std::string resto;\n\n            std::getline(devuelto, resto);\n\n            std::cout << \"OK \" << actual << \"|Resto=\" << resto << '\\n';\n        } else {\n            std::cout << \"Fallo \" << actual << \"|EOF=\" << origen.eof() << '\\n';\n        }\n    }\n\n    return 0;\n}\n",
           "initialStandardInput": "[2;1]uno\n{3;4]dos\n[0;10]fin\n",
           "outputCheck": {
             "inputComparison": "exact",
@@ -711,7 +711,7 @@
         {
           "type": "code",
           "language": "cpp",
-          "code": "#include <iostream>\n#include <sstream>\n#include <string>\n\nstruct Recuento {\n    int aceptados;\n    int rechazados;\n};\n\nstd::ostream& operator<<(std::ostream& destino, const Recuento& valor) {\n    return destino << '[' << valor.aceptados << ';' << valor.rechazados << ']';\n}\n\nbool recuento_valido(const Recuento& valor) {\n    return valor.aceptados >= 0 && valor.aceptados <= 10\n        && valor.rechazados >= 0 && valor.rechazados <= 10;\n}\n\nstd::istream& operator>>(std::istream& origen, Recuento& destino) {\n    char abre{0};\n    char separador{0};\n    char cierra{0};\n    int aceptados{0};\n    int rechazados{0};\n    if (!(origen >> abre >> aceptados >> separador >> rechazados >> cierra)) {\n        return origen;\n    }\n    Recuento candidato{aceptados, rechazados};\n    if (abre != '[' || separador != ';' || cierra != ']' || !recuento_valido(candidato)) {\n        origen.setstate(std::ios::failbit);\n        return origen;\n    }\n    destino = candidato;\n    return origen;\n}\n\nint main() {\n    Recuento actual{6, 2};\n    std::string texto;\n    while (std::getline(std::cin, texto)) {\n        std::istringstream origen{texto};\n        std::istream& devuelto = (origen >> actual);\n        if (devuelto) {\n            std::string resto;\n            std::getline(devuelto, resto);\n            std::cout << \"OK \" << actual << \"|Resto=\" << resto << '\\n';\n        } else {\n            std::cout << \"Fallo \" << actual << \"|EOF=\" << origen.eof() << '\\n';\n        }\n    }\n    return 0;\n}\n"
+          "code": "#include <iostream>\n#include <sstream>\n#include <string>\n\nstruct Recuento {\n    int aceptados;\n    int rechazados;\n};\n\nstd::ostream& operator<<(std::ostream& destino, const Recuento& valor) {\n    return destino << '[' << valor.aceptados << ';' << valor.rechazados << ']';\n}\n\nbool recuento_valido(const Recuento& valor) {\n    return valor.aceptados >= 0 && valor.aceptados <= 10\n        && valor.rechazados >= 0 && valor.rechazados <= 10;\n}\n\nstd::istream& operator>>(std::istream& origen, Recuento& destino) {\n    char abre{0};\n    char separador{0};\n    char cierra{0};\n    int aceptados{0};\n    int rechazados{0};\n\n    if (!(origen >> abre >> aceptados >> separador >> rechazados >> cierra)) {\n        return origen;\n    }\n    Recuento candidato{aceptados, rechazados};\n    if (abre != '[' || separador != ';' || cierra != ']' || !recuento_valido(candidato)) {\n        origen.setstate(std::ios::failbit);\n        return origen;\n    }\n    destino = candidato;\n    return origen;\n}\n\nint main() {\n    Recuento actual{6, 2};\n    std::string texto;\n\n    while (std::getline(std::cin, texto)) {\n        std::istringstream origen{texto};\n        std::istream& devuelto = (origen >> actual);\n        if (devuelto) {\n            std::string resto;\n\n            std::getline(devuelto, resto);\n\n            std::cout << \"OK \" << actual << \"|Resto=\" << resto << '\\n';\n        } else {\n            std::cout << \"Fallo \" << actual << \"|EOF=\" << origen.eof() << '\\n';\n        }\n    }\n\n    return 0;\n}\n"
         },
         {
           "type": "paragraph",
@@ -1921,6 +1921,56 @@
         "id": "u12_extraccion_ultimo_valido_referencia_razonamiento",
         "beforeSha256": "18253b365256a9b606b1cab382e207ad183e7ad3aed90deefd41d0de50efa4c8",
         "afterSha256": "2b081b3a91a423a44f4cb9d77c2e1faed57d9e5ba8a169821e40a85099995425"
+      },
+      {
+        "id": "block_0001_0002",
+        "beforeSha256": "fa6c49a2626c8176b0bb0f9f644ed17072b77ff26093a4141b47d87b986d660b",
+        "afterSha256": "3e43c584fbdc082d11af08bc5f49de7725d03e5b0dcf247fe4dcade22b9bb072"
+      },
+      {
+        "id": "block_0002_0001",
+        "beforeSha256": "b043969b02c39eb18473d3e754ad4a2151a3b66757ecd35bb8b6b44f16eb44fd",
+        "afterSha256": "daa64b78d5f0d439795c60cf132973c67e176e301cc2e647f73bdbcf209747ab"
+      },
+      {
+        "id": "block_0002_0002",
+        "beforeSha256": "c66723a58adfbd7776f5f8dfaa50dfd85390a8123c56e19ef41f7fc4662d931b",
+        "afterSha256": "5d2d5a299b70ad369e4cc30295cf9923412db9b9eb1dfeaa15cc925316abefc5"
+      },
+      {
+        "id": "block_0003_0001",
+        "beforeSha256": "0c63a3eb5e9b8018d91380c73477f060632317a0425629705f056768c35967ce",
+        "afterSha256": "606407eedbc69d55e9037f76066c2b7430491ad36ccac73add8d12d6d4fc62bf"
+      },
+      {
+        "id": "block_0004_0001",
+        "beforeSha256": "13cc55cc1718131ca9dc7ccc6e749d5123efef4e264554f6b691331850ac2708",
+        "afterSha256": "19c9a68f2c95e93de63f93bdcf7fda2f396a82ce229c63834a7f1053c63df9f9"
+      },
+      {
+        "id": "block_0005_0005",
+        "beforeSha256": "3499d0ece05500d454d683e769e77a8a43bb4eb149abbffbe0a1433be3a3e246",
+        "afterSha256": "1c1110adb263543e275666258051a37969fd5c97c581102f1ef6e363c49e9c7a"
+      },
+      {
+        "id": "block_0006_0001",
+        "beforeSha256": "27b18f578af21f4438f96fe11986dbd0017c36e214473495e3f8f6668515cce6",
+        "afterSha256": "231e1f313e63fb9d3633f0f1ec18e2bfff2503b4fecdb3b7ff8d86b49dc6ece4"
+      },
+      {
+        "id": "block_0007_0001",
+        "beforeSha256": "bc46ccfaba155f884069dfd7c067dec7da5a51fea9d28775e54c9239a23f6424",
+        "afterSha256": "7898609820eacbaa3e3ddc70c428b81b39f506dc668183086c0a18f1f941bc1c"
+      },
+      {
+        "id": "u12_extraccion_ultimo_valido_construccion",
+        "beforeSha256": "62755012e33a95e5b836ce249b854e39e3ff25b132df6e9a24d96e09b04c28e7",
+        "afterSha256": "e9f20e8d31e92ccd01f41086daee5c49b51a8b6e8ebd4f43a416865f89899b72"
+      },
+      {
+        "id": "u12_extraccion_ultimo_valido_referencia_codigo",
+        "beforeSha256": "3fa585e3c6e8802982715c295e68c701894a5e4fcd2ec362421817cec2c064bb",
+        "afterSha256": "887e2d81f10346f1bfdaa40e6272309325de16a6fc5d7b578f86a78966eeb8ac"
       }
     ],
     "orderRefinements": [
@@ -1945,6 +1995,262 @@
             1
           ],
           "explanation": "Las dos comprobaciones preceden a la única asignación al destino. Sus ramas de fallo retornan el mismo origen."
+        }
+      }
+    ],
+    "sourceFormatRevisions": [
+      {
+        "id": "block_0001_0002",
+        "block": {
+          "type": "code",
+          "language": "cpp",
+          "code": "#include <iostream>\n#include <sstream>\n#include <string>\n\nstruct Cantidad { int unidades; };\n\nstd::istream& operator>>(std::istream& origen, Cantidad& destino) {\n    char abre{0};\n    char cierra{0};\n    int unidades{0};\n    if (!(origen >> abre >> unidades >> cierra)) { return origen; }\n    if (abre != '(' || cierra != ')' || unidades < 0 || unidades > 5) {\n        origen.setstate(std::ios::failbit);\n        return origen;\n    }\n    destino = Cantidad{unidades};\n    return origen;\n}\n\nint main() {\n    std::istringstream entrada{\"(3)\"};\n    Cantidad cantidad{4};\n    if (entrada >> cantidad) { std::cout << cantidad.unidades; }\n    else { std::cout << \"Fallo\"; }\n    return 0;\n}\n"
+        }
+      },
+      {
+        "id": "block_0002_0001",
+        "block": {
+          "type": "output_prediction",
+          "id": "cierre_incorrecto_conserva_destino",
+          "question": "Predice la salida. Se obtuvo el entero, pero el carácter de cierre no cumple el acuerdo.",
+          "language": "cpp",
+          "code": "#include <iostream>\n#include <sstream>\n#include <string>\n\nstruct Cantidad { int unidades; };\n\nstd::istream& operator>>(std::istream& origen, Cantidad& destino) {\n    char abre{0};\n    char cierra{0};\n    int unidades{0};\n    if (!(origen >> abre >> unidades >> cierra)) { return origen; }\n    if (abre != '(' || cierra != ')' || unidades < 0 || unidades > 5) {\n        origen.setstate(std::ios::failbit);\n        return origen;\n    }\n    destino = Cantidad{unidades};\n    return origen;\n}\n\nint main() {\n    std::istringstream entrada{\"(2]\"};\n    Cantidad cantidad{4};\n    entrada >> cantidad;\n    std::cout << entrada.fail() << \"|\" << cantidad.unidades;\n    return 0;\n}\n",
+          "answers": [
+            "1|4"
+          ],
+          "explanation": "Las extracciones consiguen (, el entero 2 y ]. El fallo aparece al comprobar el acuerdo: ese cierre no es el paréntesis requerido. El operador añade failbit y retorna antes de asignar.\n\nPor eso entrada.fail() se presenta como 1 y cantidad.unidades sigue en 4, produciendo 1|4. Haber obtenido un entero válido no basta cuando el formato del registro es incorrecto.",
+          "reviewFeedback": "Separa las variables locales del campo del objeto. Sigue primero qué extracciones obtienen datos y después qué condición rechaza el cierre. Comprueba si se alcanza la asignación al destino y qué indicador se añade."
+        }
+      },
+      {
+        "id": "block_0002_0002",
+        "block": {
+          "type": "output_prediction",
+          "id": "setstate_conserva_eof",
+          "question": "Predice la salida. La extracción decimal puede encontrar el final al terminar el entero.",
+          "language": "cpp",
+          "code": "#include <iostream>\n#include <sstream>\n\nint main() {\n    std::istringstream entrada{\"4\"};\n    int numero{0};\n    if (entrada >> numero) { std::cout << \"Leido:\" << numero << \"|\"; }\n    entrada.setstate(std::ios::failbit);\n    std::cout << \"EOF=\" << entrada.eof() << \";Fallo=\" << entrada.fail();\n    return 0;\n}\n",
+          "answers": [
+            "Leido:4|EOF=1;Fallo=1"
+          ],
+          "explanation": "La extracción reconoce el entero completo 4 y encuentra el final de la cadena mientras termina de leerlo. Activa eofbit, pero no failbit; la condición todavía acepta la lectura y muestra Leido:4|.\n\nDespués, setstate(std::ios::failbit) añade el indicador de fallo al estado existente. Se conservan ambos indicadores y el final de la salida es EOF=1;Fallo=1. Sustituir el estado sólo por failbit perdería la información del final encontrado.",
+          "reviewFeedback": "Examina por separado la lectura del entero y la operación de estado posterior. Una extracción que obtuvo el entero puede haber encontrado el final sin activar failbit. Después aplica el efecto acumulativo de setstate."
+        }
+      },
+      {
+        "id": "block_0003_0001",
+        "block": {
+          "type": "output_prediction",
+          "id": "registro_truncado_al_final",
+          "question": "Predice la salida. Falta el carácter de cierre requerido por Cantidad.",
+          "language": "cpp",
+          "code": "#include <iostream>\n#include <sstream>\n#include <string>\n\nstruct Cantidad { int unidades; };\n\nstd::istream& operator>>(std::istream& origen, Cantidad& destino) {\n    char abre{0};\n    char cierra{0};\n    int unidades{0};\n    if (!(origen >> abre >> unidades >> cierra)) { return origen; }\n    if (abre != '(' || cierra != ')' || unidades < 0 || unidades > 5) {\n        origen.setstate(std::ios::failbit);\n        return origen;\n    }\n    destino = Cantidad{unidades};\n    return origen;\n}\n\nint main() {\n    std::istringstream entrada{\"(2\"};\n    Cantidad cantidad{4};\n    entrada >> cantidad;\n    std::cout << entrada.eof() << \":\" << entrada.fail() << \"|\" << cantidad.unidades;\n    return 0;\n}\n",
+          "answers": [
+            "1:1|4"
+          ],
+          "explanation": "El origen contiene (2. La apertura y el entero se obtienen, pero el contrato también exige un cierre. Al intentar extraerlo ya no hay caracteres disponibles: el flujo termina con eofbit y failbit.\n\nLa primera comprobación del operador retorna antes de asignar, de modo que el destino conserva 4. Los indicadores y el campo forman 1:1|4. El entero estaba completo; el registro, que además necesitaba un delimitador, no lo estaba.",
+          "reviewFeedback": "El registro necesita apertura, entero y cierre. Localiza la primera extracción que ya no encuentra el carácter requerido y sigue los indicadores del origen. Comprueba si el flujo de control alcanza la asignación al objeto."
+        }
+      },
+      {
+        "id": "block_0004_0001",
+        "block": {
+          "type": "output_prediction",
+          "id": "caracteres_consumidos_no_reaparecen",
+          "question": "Predice la salida. clear se usa aquí sólo para observar el texto restante de una cadena controlada, después del fallo.",
+          "language": "cpp",
+          "code": "#include <iostream>\n#include <sstream>\n#include <string>\n\nstruct Cantidad { int unidades; };\n\nstd::istream& operator>>(std::istream& origen, Cantidad& destino) {\n    char abre{0};\n    char cierra{0};\n    int unidades{0};\n    if (!(origen >> abre >> unidades >> cierra)) { return origen; }\n    if (abre != '(' || cierra != ')' || unidades < 0 || unidades > 5) {\n        origen.setstate(std::ios::failbit);\n        return origen;\n    }\n    destino = Cantidad{unidades};\n    return origen;\n}\n\nint main() {\n    std::istringstream entrada{\"(3]RESTO\"};\n    Cantidad cantidad{4};\n    entrada >> cantidad;\n    if (entrada.fail()) {\n        entrada.clear();\n        std::string resto;\n        std::getline(entrada, resto);\n        std::cout << cantidad.unidades << \"|\" << resto;\n    }\n    return 0;\n}\n",
+          "answers": [
+            "4|RESTO"
+          ],
+          "explanation": "El lector ya consumió (, 3 y ] cuando comprueba que el cierre es incorrecto. Retorna sin asignar al objeto, que conserva 4. El texto que queda después de ese cierre es RESTO.\n\nclear() permite intentar otra lectura al restablecer los indicadores; no retrocede la posición. getline obtiene entonces ese sufijo y la salida resulta 4|RESTO. Confundir borrar el fallo con devolver los caracteres llevaría a esperar otra cadena.",
+          "reviewFeedback": "Localiza qué caracteres se extrajeron antes de rechazar el cierre. La asignación al objeto no se alcanzó. clear modifica los indicadores; después getline empieza en la posición de entrada que quedó, no en el principio."
+        }
+      },
+      {
+        "id": "block_0005_0005",
+        "block": {
+          "type": "cpp_compiler",
+          "initialCode": "#include <iostream>\n#include <sstream>\n#include <string>\n#include <vector>\n\nstruct Recuento {\n    int aceptados;\n    int rechazados;\n};\n\nstd::ostream& operator<<(std::ostream& destino, const Recuento& valor) {\n    return destino << '[' << valor.aceptados << ';' << valor.rechazados << ']';\n}\n\nint main() {\n    // Define recuento_valido y operator>> antes de main; prueba aqui.\n    return 0;\n}\n",
+          "outputCheck": {
+            "cases": [
+              {
+                "standardInput": "",
+                "outputs": [
+                  "OK [2;1]\nOK [0;0]\nOK [10;10]\nFallo [6;2]\nFallo [6;2]\nFallo [6;2]\nFallo [6;2]\nFallo [6;2]\nFallo [6;2]\nOK [1;3]\nOK [2;1]\nFallo [6;2]\nFallo [6;2]\n"
+                ]
+              }
+            ]
+          }
+        }
+      },
+      {
+        "id": "block_0006_0001",
+        "block": {
+          "type": "code",
+          "language": "cpp",
+          "code": "#include <iostream>\n#include <sstream>\n#include <string>\n#include <vector>\n\nstruct Recuento {\n    int aceptados;\n    int rechazados;\n};\n\nbool recuento_valido(const Recuento& valor) {\n    return valor.aceptados >= 0 && valor.aceptados <= 10\n        && valor.rechazados >= 0 && valor.rechazados <= 10;\n}\n\nstd::ostream& operator<<(std::ostream& destino, const Recuento& valor) {\n    return destino << '[' << valor.aceptados << ';' << valor.rechazados << ']';\n}\n\nstd::istream& operator>>(std::istream& origen, Recuento& destino) {\n    char abre{0};\n    char separador{0};\n    char cierra{0};\n    int aceptados{0};\n    int rechazados{0};\n    if (!(origen >> abre >> aceptados >> separador >> rechazados >> cierra)) {\n        return origen;\n    }\n    Recuento candidato{aceptados, rechazados};\n    if (abre != '[' || separador != ';' || cierra != ']' || !recuento_valido(candidato)) {\n        origen.setstate(std::ios::failbit);\n        return origen;\n    }\n    destino = candidato;\n    return origen;\n}\n\nvoid probar(const std::string& datos) {\n    std::istringstream entrada{datos};\n    Recuento destino{6, 2};\n    if (entrada >> destino) { std::cout << \"OK \" << destino << \"\\n\"; }\n    else { std::cout << \"Fallo \" << destino << \"\\n\"; }\n}\n\nint main() {\n    const std::vector<std::string> casos{\n        \"[2;1]\", \"[0;0]\", \"[10;10]\", \"[-1;2]\", \"[11;0]\",\n        \"[0;-1]\", \"[0;11]\", \"[2:1]\", \"[2;1\", \"[ 1 ; 3 ]\", \"[2;1]resto\"\n    };\n    for (const std::string& datos : casos) { probar(datos); }\n    return 0;\n}\n"
+        }
+      },
+      {
+        "id": "block_0007_0001",
+        "block": {
+          "type": "code",
+          "language": "cpp",
+          "code": "#include <iostream>\n#include <sstream>\n#include <string>\n#include <vector>\n\nstruct Recuento {\n    int aceptados;\n    int rechazados;\n};\n\nbool recuento_valido(const Recuento& valor) {\n    return valor.aceptados >= 0 && valor.aceptados <= 10\n        && valor.rechazados >= 0 && valor.rechazados <= 10;\n}\n\nstd::ostream& operator<<(std::ostream& destino, const Recuento& valor) {\n    return destino << '[' << valor.aceptados << ';' << valor.rechazados << ']';\n}\n\nstd::istream& operator>>(std::istream& origen, Recuento& destino) {\n    char abre{0};\n    char separador{0};\n    char cierra{0};\n    int aceptados{0};\n    int rechazados{0};\n    if (!(origen >> abre >> aceptados >> separador >> rechazados >> cierra)) {\n        return origen;\n    }\n    Recuento candidato{aceptados, rechazados};\n    if (abre != '[' || separador != ';' || cierra != ']' || !recuento_valido(candidato)) {\n        origen.setstate(std::ios::failbit);\n        return origen;\n    }\n    destino = candidato;\n    return origen;\n}\n\nvoid probar(const std::string& datos) {\n    std::istringstream entrada{datos};\n    Recuento destino{6, 2};\n    if (entrada >> destino) { std::cout << \"OK \" << destino << \"\\n\"; }\n    else { std::cout << \"Fallo \" << destino << \"\\n\"; }\n}\n\nint main() {\n    const std::vector<std::string> casos{\n        \"[2;1]\", \"[0;0]\", \"[10;10]\", \"[-1;2]\", \"[11;0]\",\n        \"[0;-1]\", \"[0;11]\", \"[2:1]\", \"[2;1\", \"[ 1 ; 3 ]\", \"[2;1]resto\", \"\", \"[3;4}\"\n    };\n    for (const std::string& datos : casos) { probar(datos); }\n    return 0;\n}\n"
+        }
+      },
+      {
+        "id": "u12_extraccion_ultimo_valido_construccion",
+        "block": {
+          "type": "cpp_compiler",
+          "initialCode": "#include <iostream>\n#include <sstream>\n#include <string>\n\nstruct Recuento {\n    int aceptados;\n    int rechazados;\n};\n\nstd::ostream& operator<<(std::ostream& destino, const Recuento& valor) {\n    return destino << '[' << valor.aceptados << ';' << valor.rechazados << ']';\n}\n\n// Completa el validador y el lector. Conserva el escritor y main.\nbool recuento_valido(const Recuento& valor) {\n    return false;\n}\n\nstd::istream& operator>>(std::istream& origen, Recuento& destino) {\n    origen.setstate(std::ios::failbit);\n    return origen;\n}\n\nint main() {\n    Recuento actual{6, 2};\n    std::string texto;\n    while (std::getline(std::cin, texto)) {\n        std::istringstream origen{texto};\n        std::istream& devuelto = (origen >> actual);\n        if (devuelto) {\n            std::string resto;\n            std::getline(devuelto, resto);\n            std::cout << \"OK \" << actual << \"|Resto=\" << resto << '\\n';\n        } else {\n            std::cout << \"Fallo \" << actual << \"|EOF=\" << origen.eof() << '\\n';\n        }\n    }\n    return 0;\n}\n",
+          "initialStandardInput": "[2;1]uno\n{3;4]dos\n[0;10]fin\n",
+          "outputCheck": {
+            "inputComparison": "exact",
+            "cases": [
+              {
+                "standardInput": "[2;1]uno\n{3;4]dos\n[0;10]fin\n",
+                "outputs": [
+                  "OK [2;1]|Resto=uno\nFallo [2;1]|EOF=0\nOK [0;10]|Resto=fin\n"
+                ],
+                "exitCode": 0,
+                "explanation": "El primer registro aceptado cambia el destino a [2;1]. La siguiente entrada empieza con {, por lo que se rechaza sin sustituir ese valor. El tercer origen es nuevo y aporta el registro válido [0;10]. Los sufijos de las lecturas aceptadas siguen disponibles por la referencia devuelta.",
+                "reviewFeedback": [
+                  {
+                    "outputs": [
+                      "OK [2;1]|Resto=uno\nFallo [6;2]|EOF=0\nOK [0;10]|Resto=fin\n"
+                    ],
+                    "text": "Tras un rechazo, la salida vuelve al registro inicial en lugar de conservar el último aceptado. Comprueba si la rama de fallo asigna un valor fijo al destino. Conservar significa no cambiar el objeto que recibió esa llamada, aunque sus campos sean diferentes de los usados al iniciar el programa."
+                  },
+                  {
+                    "outputs": [
+                      "OK [2;1]|Resto=uno\nOK [3;4]|Resto=dos\nOK [0;10]|Resto=fin\n"
+                    ],
+                    "text": "Se acepta el registro cuya apertura no es el corchete acordado. Obtener enteros dentro del intervalo y un cierre válido no sustituye la comprobación de todos los delimitadores. Revisa también el primer carácter antes de asignar el candidato."
+                  },
+                  {
+                    "outputs": [
+                      "OK [2;1]|Resto=\nFallo [2;1]|EOF=0\nOK [0;10]|Resto=\n"
+                    ],
+                    "text": "Los registros aceptados conservan sus campos, pero desaparece el texto que debía quedar después del cierre. Comprueba si el lector consume caracteres adicionales. Su contrato termina al obtener un registro; la lectura del sufijo corresponde al cliente mediante el mismo origen devuelto."
+                  }
+                ]
+              },
+              {
+                "standardInput": "[9;0]A\n[3;x]B\n[5;5]C\n",
+                "outputs": [
+                  "OK [9;0]|Resto=A\nFallo [9;0]|EOF=0\nOK [5;5]|Resto=C\n"
+                ],
+                "exitCode": 0,
+                "explanation": "La primera lectura publica [9;0]. En la segunda, x no permite obtener el campo rechazados; el destino permanece en [9;0], no vuelve a su inicialización. La tercera lectura utiliza otro origen y acepta [5;5].",
+                "reviewFeedback": [
+                  {
+                    "outputs": [
+                      "OK [9;0]|Resto=A\nFallo [6;2]|EOF=0\nOK [5;5]|Resto=C\n"
+                    ],
+                    "text": "Tras un rechazo, la salida vuelve al registro inicial en lugar de conservar el último aceptado. Comprueba si la rama de fallo asigna un valor fijo al destino. Conservar significa no cambiar el objeto que recibió esa llamada, aunque sus campos sean diferentes de los usados al iniciar el programa."
+                  },
+                  {
+                    "outputs": [
+                      "OK [9;0]|Resto=\nFallo [9;0]|EOF=0\nOK [5;5]|Resto=\n"
+                    ],
+                    "text": "Los registros aceptados conservan sus campos, pero desaparece el texto que debía quedar después del cierre. Comprueba si el lector consume caracteres adicionales. Su contrato termina al obtener un registro; la lectura del sufijo corresponde al cliente mediante el mismo origen devuelto."
+                  }
+                ]
+              },
+              {
+                "standardInput": "[10;10]X\n[2;1\n[1;0]Y\n",
+                "outputs": [
+                  "OK [10;10]|Resto=X\nFallo [10;10]|EOF=1\nOK [1;0]|Resto=Y\n"
+                ],
+                "exitCode": 0,
+                "explanation": "Después de aceptar [10;10], el siguiente origen termina sin el cierre requerido. El fallo conserva ese registro y se observa EOF=1. La tercera línea se lee con un origen nuevo y puede aceptar [1;0]; no necesita reparar el flujo anterior.",
+                "reviewFeedback": [
+                  {
+                    "outputs": [
+                      "OK [10;10]|Resto=X\nFallo [6;2]|EOF=1\nOK [1;0]|Resto=Y\n"
+                    ],
+                    "text": "Tras un rechazo, la salida vuelve al registro inicial en lugar de conservar el último aceptado. Comprueba si la rama de fallo asigna un valor fijo al destino. Conservar significa no cambiar el objeto que recibió esa llamada, aunque sus campos sean diferentes de los usados al iniciar el programa."
+                  },
+                  {
+                    "outputs": [
+                      "OK [10;10]|Resto=\nFallo [10;10]|EOF=1\nOK [1;0]|Resto=\n"
+                    ],
+                    "text": "Los registros aceptados conservan sus campos, pero desaparece el texto que debía quedar después del cierre. Comprueba si el lector consume caracteres adicionales. Su contrato termina al obtener un registro; la lectura del sufijo corresponde al cliente mediante el mismo origen devuelto."
+                  }
+                ]
+              },
+              {
+                "standardInput": "[4;7]A\n[11;2]B\n[2;-1]C\n",
+                "outputs": [
+                  "OK [4;7]|Resto=A\nFallo [4;7]|EOF=0\nFallo [4;7]|EOF=0\n"
+                ],
+                "exitCode": 0,
+                "explanation": "El destino alcanza [4;7]. Las entradas siguientes contienen, respectivamente, 11 en aceptados y -1 en rechazados. Ambas quedan fuera del dominio. Ninguno de esos rechazos cambia el último registro válido ni necesita alcanzar el final de su cadena para ser detectado.",
+                "reviewFeedback": [
+                  {
+                    "outputs": [
+                      "OK [4;7]|Resto=A\nFallo [6;2]|EOF=0\nFallo [6;2]|EOF=0\n"
+                    ],
+                    "text": "Tras un rechazo, la salida vuelve al registro inicial en lugar de conservar el último aceptado. Comprueba si la rama de fallo asigna un valor fijo al destino. Conservar significa no cambiar el objeto que recibió esa llamada, aunque sus campos sean diferentes de los usados al iniciar el programa."
+                  },
+                  {
+                    "outputs": [
+                      "OK [4;7]|Resto=\nFallo [4;7]|EOF=0\nFallo [4;7]|EOF=0\n"
+                    ],
+                    "text": "Los registros aceptados conservan sus campos, pero desaparece el texto que debía quedar después del cierre. Comprueba si el lector consume caracteres adicionales. Su contrato termina al obtener un registro; la lectura del sufijo corresponde al cliente mediante el mismo origen devuelto."
+                  }
+                ]
+              },
+              {
+                "standardInput": "\n[ 0 ; +10 ]espacios\n[0;0]cero\n",
+                "outputs": [
+                  "Fallo [6;2]|EOF=1\nOK [0;10]|Resto=espacios\nOK [0;0]|Resto=cero\n"
+                ],
+                "exitCode": 0,
+                "explanation": "La primera línea está vacía y no permite obtener ni la apertura: conserva [6;2] y señala el final de ese origen. La extracción formateada del segundo acepta los espacios y +10, obteniendo [0;10]. El último caso acepta dos ceros; ese registro también es válido.",
+                "reviewFeedback": [
+                  {
+                    "outputs": [
+                      "Fallo [6;2]|EOF=1\nOK [0;10]|Resto=\nOK [0;0]|Resto=\n"
+                    ],
+                    "text": "Los registros aceptados conservan sus campos, pero desaparece el texto que debía quedar después del cierre. Comprueba si el lector consume caracteres adicionales. Su contrato termina al obtener un registro; la lectura del sufijo corresponde al cliente mediante el mismo origen devuelto."
+                  }
+                ]
+              },
+              {
+                "standardInput": "[3;9]A\n[1;999999999999999999999999999999]B\n[2:8]C\n",
+                "outputs": [
+                  "OK [3;9]|Resto=A\nFallo [3;9]|EOF=0\nFallo [3;9]|EOF=0\n"
+                ],
+                "exitCode": 0,
+                "explanation": "El primer registro publica [3;9]. El entero muy largo del segundo no se puede extraer como int, y el tercero usa dos puntos en lugar del punto y coma requerido. Son fallos de causas distintas que conservan el mismo último valor válido.",
+                "reviewFeedback": [
+                  {
+                    "outputs": [
+                      "OK [3;9]|Resto=A\nFallo [6;2]|EOF=0\nFallo [6;2]|EOF=0\n"
+                    ],
+                    "text": "Tras un rechazo, la salida vuelve al registro inicial en lugar de conservar el último aceptado. Comprueba si la rama de fallo asigna un valor fijo al destino. Conservar significa no cambiar el objeto que recibió esa llamada, aunque sus campos sean diferentes de los usados al iniciar el programa."
+                  },
+                  {
+                    "outputs": [
+                      "OK [3;9]|Resto=\nFallo [3;9]|EOF=0\nFallo [3;9]|EOF=0\n"
+                    ],
+                    "text": "Los registros aceptados conservan sus campos, pero desaparece el texto que debía quedar después del cierre. Comprueba si el lector consume caracteres adicionales. Su contrato termina al obtener un registro; la lectura del sufijo corresponde al cliente mediante el mismo origen devuelto."
+                  }
+                ]
+              }
+            ]
+          }
+        }
+      },
+      {
+        "id": "u12_extraccion_ultimo_valido_referencia_codigo",
+        "block": {
+          "type": "code",
+          "language": "cpp",
+          "code": "#include <iostream>\n#include <sstream>\n#include <string>\n\nstruct Recuento {\n    int aceptados;\n    int rechazados;\n};\n\nstd::ostream& operator<<(std::ostream& destino, const Recuento& valor) {\n    return destino << '[' << valor.aceptados << ';' << valor.rechazados << ']';\n}\n\nbool recuento_valido(const Recuento& valor) {\n    return valor.aceptados >= 0 && valor.aceptados <= 10\n        && valor.rechazados >= 0 && valor.rechazados <= 10;\n}\n\nstd::istream& operator>>(std::istream& origen, Recuento& destino) {\n    char abre{0};\n    char separador{0};\n    char cierra{0};\n    int aceptados{0};\n    int rechazados{0};\n    if (!(origen >> abre >> aceptados >> separador >> rechazados >> cierra)) {\n        return origen;\n    }\n    Recuento candidato{aceptados, rechazados};\n    if (abre != '[' || separador != ';' || cierra != ']' || !recuento_valido(candidato)) {\n        origen.setstate(std::ios::failbit);\n        return origen;\n    }\n    destino = candidato;\n    return origen;\n}\n\nint main() {\n    Recuento actual{6, 2};\n    std::string texto;\n    while (std::getline(std::cin, texto)) {\n        std::istringstream origen{texto};\n        std::istream& devuelto = (origen >> actual);\n        if (devuelto) {\n            std::string resto;\n            std::getline(devuelto, resto);\n            std::cout << \"OK \" << actual << \"|Resto=\" << resto << '\\n';\n        } else {\n            std::cout << \"Fallo \" << actual << \"|EOF=\" << origen.eof() << '\\n';\n        }\n    }\n    return 0;\n}\n"
         }
       }
     ]

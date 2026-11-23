@@ -54,7 +54,7 @@
         {
           "type": "code",
           "language": "cpp",
-          "code": "#include <iostream>\n#include <sstream>\n\nint total(int aceptados, int rechazados) {\n    return aceptados + rechazados;\n}\n\nvoid escribir_total(std::ostream& destino, int cantidad) {\n    destino << \"Total=\" << cantidad;\n}\n\nint main() {\n    int cantidad = total(6, 2);\n    std::ostringstream memoria;\n    escribir_total(memoria, cantidad);\n    std::cout << memoria.str();\n    return 0;\n}\n"
+          "code": "#include <iostream>\n#include <sstream>\n\nint total(int aceptados, int rechazados) {\n    return aceptados + rechazados;\n}\n\nvoid escribir_total(std::ostream& destino, int cantidad) {\n    destino << \"Total=\" << cantidad;\n}\n\nint main() {\n    int cantidad = total(6, 2);\n    std::ostringstream memoria;\n    escribir_total(memoria, cantidad);\n    std::cout << memoria.str();\n\n    return 0;\n}\n"
         },
         {
           "type": "output_prediction",
@@ -191,7 +191,7 @@
           "id": "lectura_prestada_con_fallo",
           "question": "Predice la salida. La función promete conservar destino si no obtiene un entero.",
           "language": "cpp",
-          "code": "#include <iostream>\n#include <sstream>\n\nbool leer_entero(std::istream& origen, int& destino) {\n    int candidato{0};\n    if (!(origen >> candidato)) { return false; }\n    destino = candidato;\n    return true;\n}\n\nint main() {\n    std::istringstream memoria{\"x\"};\n    int cantidad{4};\n    bool leido = leer_entero(memoria, cantidad);\n    std::cout << leido << \":\" << cantidad;\n    return 0;\n}\n",
+          "code": "#include <iostream>\n#include <sstream>\n\nbool leer_entero(std::istream& origen, int& destino) {\n    int candidato{0};\n    if (!(origen >> candidato)) { return false; }\n    destino = candidato;\n    return true;\n}\n\nint main() {\n    std::istringstream memoria{\"x\"};\n    int cantidad{4};\n    bool leido = leer_entero(memoria, cantidad);\n\n    std::cout << leido << \":\" << cantidad;\n\n    return 0;\n}\n",
           "answers": [
             "0:4"
           ],
@@ -256,7 +256,7 @@
         },
         {
           "type": "cpp_compiler",
-          "initialCode": "#include <iostream>\n#include <sstream>\n\nint main() {\n    // Define las funciones antes de main y construye las pruebas.\n    return 0;\n}\n",
+          "initialCode": "#include <iostream>\n#include <sstream>\n\nint main() {\n    // Define las funciones antes de main y construye las pruebas.\n    \n    return 0;\n}\n",
           "outputCheck": {
             "cases": [
               {
@@ -283,7 +283,7 @@
         {
           "type": "code",
           "language": "cpp",
-          "code": "#include <iostream>\n#include <sstream>\n\nbool leer_par(std::istream& origen, int& aceptados, int& rechazados) {\n    int nuevo_aceptados{0};\n    int nuevo_rechazados{0};\n    if (!(origen >> nuevo_aceptados >> nuevo_rechazados)) {\n        return false;\n    }\n    aceptados = nuevo_aceptados;\n    rechazados = nuevo_rechazados;\n    return true;\n}\n\nint balance(int aceptados, int rechazados) {\n    return aceptados - rechazados;\n}\n\nvoid escribir_balance(std::ostream& destino, int valor) {\n    destino << \"Balance=\" << valor;\n}\n\nint main() {\n    std::istringstream entrada{\"7 2\"};\n    int aceptados{9};\n    int rechazados{4};\n    if (!leer_par(entrada, aceptados, rechazados)) {\n        std::cout << \"Entrada invalida|\" << aceptados << \":\" << rechazados;\n        return 1;\n    }\n    std::ostringstream captura;\n    escribir_balance(captura, balance(aceptados, rechazados));\n    std::cout << captura.str();\n    return 0;\n}\n"
+          "code": "#include <iostream>\n#include <sstream>\n\nbool leer_par(std::istream& origen, int& aceptados, int& rechazados) {\n    int nuevo_aceptados{0};\n    int nuevo_rechazados{0};\n\n    if (!(origen >> nuevo_aceptados >> nuevo_rechazados)) {\n        return false;\n    }\n    aceptados = nuevo_aceptados;\n    rechazados = nuevo_rechazados;\n    return true;\n}\n\nint balance(int aceptados, int rechazados) {\n    return aceptados - rechazados;\n}\n\nvoid escribir_balance(std::ostream& destino, int valor) {\n    destino << \"Balance=\" << valor;\n}\n\nint main() {\n    std::istringstream entrada{\"7 2\"};\n    int aceptados{9};\n    int rechazados{4};\n\n    if (!leer_par(entrada, aceptados, rechazados)) {\n        std::cout << \"Entrada invalida|\" << aceptados << \":\" << rechazados;\n        return 1;\n    }\n    std::ostringstream captura;\n    escribir_balance(captura, balance(aceptados, rechazados));\n    std::cout << captura.str();\n\n    return 0;\n}\n"
         },
         {
           "type": "paragraph",
@@ -310,7 +310,7 @@
         {
           "type": "code",
           "language": "cpp",
-          "code": "#include <iostream>\n#include <sstream>\n\nbool leer_par(std::istream& origen, int& aceptados, int& rechazados) {\n    int nuevo_aceptados{0};\n    int nuevo_rechazados{0};\n    if (!(origen >> nuevo_aceptados >> nuevo_rechazados)) {\n        return false;\n    }\n    aceptados = nuevo_aceptados;\n    rechazados = nuevo_rechazados;\n    return true;\n}\n\nint balance(int aceptados, int rechazados) {\n    return aceptados - rechazados;\n}\n\nvoid escribir_balance(std::ostream& destino, int valor) {\n    destino << \"Balance=\" << valor;\n}\n\nvoid probar(const std::string& texto) {\n    std::istringstream entrada{texto};\n    int aceptados{9};\n    int rechazados{4};\n    if (!leer_par(entrada, aceptados, rechazados)) {\n        std::cout << \"Entrada invalida|\" << aceptados << ':' << rechazados << \"\\n\";\n        return;\n    }\n    std::ostringstream captura;\n    escribir_balance(captura, balance(aceptados, rechazados));\n    std::cout << captura.str() << \"\\n\";\n}\n\nint main() {\n    probar(\"7 2\");\n    probar(\"0 0\");\n    probar(\"2 7\");\n    return 0;\n}\n"
+          "code": "#include <iostream>\n#include <sstream>\n\nbool leer_par(std::istream& origen, int& aceptados, int& rechazados) {\n    int nuevo_aceptados{0};\n    int nuevo_rechazados{0};\n\n    if (!(origen >> nuevo_aceptados >> nuevo_rechazados)) {\n        return false;\n    }\n    aceptados = nuevo_aceptados;\n    rechazados = nuevo_rechazados;\n    return true;\n}\n\nint balance(int aceptados, int rechazados) {\n    return aceptados - rechazados;\n}\n\nvoid escribir_balance(std::ostream& destino, int valor) {\n    destino << \"Balance=\" << valor;\n}\n\nvoid probar(const std::string& texto) {\n    std::istringstream entrada{texto};\n    int aceptados{9};\n    int rechazados{4};\n\n    if (!leer_par(entrada, aceptados, rechazados)) {\n        std::cout << \"Entrada invalida|\" << aceptados << ':' << rechazados << \"\\n\";\n        return;\n    }\n    std::ostringstream captura;\n    escribir_balance(captura, balance(aceptados, rechazados));\n    std::cout << captura.str() << \"\\n\";\n}\n\nint main() {\n    probar(\"7 2\");\n    probar(\"0 0\");\n    probar(\"2 7\");\n    return 0;\n}\n"
         }
       ]
     },
@@ -377,7 +377,7 @@
         },
         {
           "type": "cpp_compiler",
-          "initialCode": "#include <iostream>\n#include <fstream>\n#include <sstream>\n#include <string>\n\nint main() {\n    // Construye las funciones y la prueba con la muestra relativa.\n    return 0;\n}\n",
+          "initialCode": "#include <iostream>\n#include <fstream>\n#include <sstream>\n#include <string>\n\nint main() {\n    // Construye las funciones y la prueba con la muestra relativa.\n    \n    return 0;\n}\n",
           "outputCheck": {
             "cases": [
               {
@@ -400,7 +400,7 @@
         {
           "type": "code",
           "language": "cpp",
-          "code": "#include <iostream>\n#include <fstream>\n#include <string>\n#include <sstream>\n\nbool leer_par(std::istream& origen, int& aceptados, int& rechazados) {\n    int nuevo_aceptados{0};\n    int nuevo_rechazados{0};\n    if (!(origen >> nuevo_aceptados >> nuevo_rechazados)) {\n        return false;\n    }\n    aceptados = nuevo_aceptados;\n    rechazados = nuevo_rechazados;\n    return true;\n}\n\nint balance(int aceptados, int rechazados) {\n    return aceptados - rechazados;\n}\n\nvoid escribir_balance(std::ostream& destino, int valor) {\n    destino << \"Balance=\" << valor;\n}\n\nint main() {\n    const int valor = balance(7, 2);\n    std::ofstream salida{\"balance_compartido_lgp.txt\"};\n    if (!salida) { std::cout << \"Fallo al abrir salida\"; return 1; }\n    escribir_balance(salida, valor);\n    salida.close();\n    if (!salida) { std::cout << \"Fallo al escribir\"; return 1; }\n    std::ifstream entrada{\"balance_compartido_lgp.txt\"};\n    if (!entrada) { std::cout << \"Fallo al abrir entrada\"; return 1; }\n    std::string texto;\n    if (!std::getline(entrada, texto) || entrada.bad()) {\n        std::cout << \"Lectura incompleta\"; return 1;\n    }\n    std::cout << texto << \"\\n\";\n    return 0;\n}\n"
+          "code": "#include <iostream>\n#include <fstream>\n#include <string>\n#include <sstream>\n\nbool leer_par(std::istream& origen, int& aceptados, int& rechazados) {\n    int nuevo_aceptados{0};\n    int nuevo_rechazados{0};\n\n    if (!(origen >> nuevo_aceptados >> nuevo_rechazados)) {\n        return false;\n    }\n    aceptados = nuevo_aceptados;\n    rechazados = nuevo_rechazados;\n    return true;\n}\n\nint balance(int aceptados, int rechazados) {\n    return aceptados - rechazados;\n}\n\nvoid escribir_balance(std::ostream& destino, int valor) {\n    destino << \"Balance=\" << valor;\n}\n\nint main() {\n    const int valor = balance(7, 2);\n    std::ofstream salida{\"balance_compartido_lgp.txt\"};\n    if (!salida) { std::cout << \"Fallo al abrir salida\"; return 1; }\n    escribir_balance(salida, valor);\n    salida.close();\n    if (!salida) { std::cout << \"Fallo al escribir\"; return 1; }\n    std::ifstream entrada{\"balance_compartido_lgp.txt\"};\n    if (!entrada) { std::cout << \"Fallo al abrir entrada\"; return 1; }\n    std::string texto;\n    if (!std::getline(entrada, texto) || entrada.bad()) {\n        std::cout << \"Lectura incompleta\"; return 1;\n    }\n    std::cout << texto << \"\\n\";\n\n    return 0;\n}\n"
         },
         {
           "type": "heading",
@@ -444,7 +444,7 @@
         },
         {
           "type": "cpp_compiler",
-          "initialCode": "#include <iostream>\n#include <sstream>\n#include <string>\n\n// Completa estas tres funciones. Conserva el cliente de main.\nbool leer_par(std::istream& origen, int& aceptados, int& rechazados) {\n    return false;\n}\n\nint balance(int aceptados, int rechazados) {\n    return 0;\n}\n\nvoid escribir_balance(std::ostream& destino, int valor) {\n}\n\nint main() {\n    std::string texto;\n    std::getline(std::cin, texto);\n    std::istringstream origen{texto};\n    int aceptados{9};\n    int rechazados{4};\n    for (int intento{0}; intento < 2; ++intento) {\n        const bool leido = leer_par(origen, aceptados, rechazados);\n        std::ostringstream captura;\n        if (leido) {\n            escribir_balance(captura, balance(aceptados, rechazados));\n        }\n        std::cout << \"Lectura=\" << leido << \"|Datos=\" << aceptados << ':' << rechazados\n                  << \"|Fallo=\" << origen.fail() << '|';\n        if (leido) { std::cout << captura.str(); }\n        else { std::cout << \"Sin calculo\"; }\n        std::cout << '\\n';\n    }\n    return 0;\n}\n",
+          "initialCode": "#include <iostream>\n#include <sstream>\n#include <string>\n\n// Completa estas tres funciones. Conserva el cliente de main.\nbool leer_par(std::istream& origen, int& aceptados, int& rechazados) {\n    return false;\n}\n\nint balance(int aceptados, int rechazados) {\n    return 0;\n}\n\nvoid escribir_balance(std::ostream& destino, int valor) {\n}\n\nint main() {\n    std::string texto;\n\n    std::getline(std::cin, texto);\n    std::istringstream origen{texto};\n    int aceptados{9};\n    int rechazados{4};\n\n    for (int intento{0}; intento < 2; ++intento) {\n        const bool leido = leer_par(origen, aceptados, rechazados);\n        std::ostringstream captura;\n        if (leido) {\n            escribir_balance(captura, balance(aceptados, rechazados));\n        }\n        std::cout << \"Lectura=\" << leido << \"|Datos=\" << aceptados << ':' << rechazados\n                  << \"|Fallo=\" << origen.fail() << '|';\n        if (leido) { std::cout << captura.str(); }\n        else { std::cout << \"Sin calculo\"; }\n        std::cout << '\\n';\n    }\n\n    return 0;\n}\n",
           "initialStandardInput": "7 2 4 3\n",
           "outputCheck": {
             "inputComparison": "exact",
@@ -561,7 +561,7 @@
         {
           "type": "code",
           "language": "cpp",
-          "code": "#include <iostream>\n#include <sstream>\n#include <string>\n\nbool leer_par(std::istream& origen, int& aceptados, int& rechazados) {\n    int nuevo_aceptados{0};\n    int nuevo_rechazados{0};\n    if (!(origen >> nuevo_aceptados >> nuevo_rechazados)) {\n        return false;\n    }\n    aceptados = nuevo_aceptados;\n    rechazados = nuevo_rechazados;\n    return true;\n}\n\nint balance(int aceptados, int rechazados) {\n    return aceptados - rechazados;\n}\n\nvoid escribir_balance(std::ostream& destino, int valor) {\n    destino << \"Balance=\" << valor;\n}\n\nint main() {\n    std::string texto;\n    std::getline(std::cin, texto);\n    std::istringstream origen{texto};\n    int aceptados{9};\n    int rechazados{4};\n    for (int intento{0}; intento < 2; ++intento) {\n        const bool leido = leer_par(origen, aceptados, rechazados);\n        std::ostringstream captura;\n        if (leido) {\n            escribir_balance(captura, balance(aceptados, rechazados));\n        }\n        std::cout << \"Lectura=\" << leido << \"|Datos=\" << aceptados << ':' << rechazados\n                  << \"|Fallo=\" << origen.fail() << '|';\n        if (leido) { std::cout << captura.str(); }\n        else { std::cout << \"Sin calculo\"; }\n        std::cout << '\\n';\n    }\n    return 0;\n}\n"
+          "code": "#include <iostream>\n#include <sstream>\n#include <string>\n\nbool leer_par(std::istream& origen, int& aceptados, int& rechazados) {\n    int nuevo_aceptados{0};\n    int nuevo_rechazados{0};\n\n    if (!(origen >> nuevo_aceptados >> nuevo_rechazados)) {\n        return false;\n    }\n    aceptados = nuevo_aceptados;\n    rechazados = nuevo_rechazados;\n    return true;\n}\n\nint balance(int aceptados, int rechazados) {\n    return aceptados - rechazados;\n}\n\nvoid escribir_balance(std::ostream& destino, int valor) {\n    destino << \"Balance=\" << valor;\n}\n\nint main() {\n    std::string texto;\n\n    std::getline(std::cin, texto);\n    std::istringstream origen{texto};\n    int aceptados{9};\n    int rechazados{4};\n\n    for (int intento{0}; intento < 2; ++intento) {\n        const bool leido = leer_par(origen, aceptados, rechazados);\n        std::ostringstream captura;\n        if (leido) {\n            escribir_balance(captura, balance(aceptados, rechazados));\n        }\n        std::cout << \"Lectura=\" << leido << \"|Datos=\" << aceptados << ':' << rechazados\n                  << \"|Fallo=\" << origen.fail() << '|';\n        if (leido) { std::cout << captura.str(); }\n        else { std::cout << \"Sin calculo\"; }\n        std::cout << '\\n';\n    }\n\n    return 0;\n}\n"
         },
         {
           "type": "paragraph",
@@ -1675,6 +1675,257 @@
         "id": "u12_flujos_dos_lecturas_referencia_razonamiento",
         "beforeSha256": "c115b73e3de4d1a491d3e5f51894d844698caaf7aee873c283981a4de1e9db26",
         "afterSha256": "e1aea44c917525a031b6b9bf82543afedcd800200660f8240d8ce7dfb46f177a"
+      },
+      {
+        "id": "block_0001_0002",
+        "beforeSha256": "4eee2e500d91303815a5cceb9e3ba7a0a520bd28c5c6089499d66021e1c2ab03",
+        "afterSha256": "ca7b64ea311b2520285b914f63a87b4310c56138d765ae6365fc9e984ad69dbc"
+      },
+      {
+        "id": "block_0002_0003",
+        "beforeSha256": "d9a4507a7d4d539f592b62a5dfa638f9e9aaaca874f4026756e8b68ccdb82762",
+        "afterSha256": "74edcac7c7b0bc6a4a6312a60583d6b22d4c2749ecfc54a1699b4b4c278663c8"
+      },
+      {
+        "id": "block_0003_0004",
+        "beforeSha256": "b7bc068fcccac99aec1e003f41d2cc7567fba2f5eab3f0041fdeaaab6a6f984b",
+        "afterSha256": "e7ff664e07718fe81239054e670c2862b2f916ae18e011b6f1abb4527a643957"
+      },
+      {
+        "id": "block_0004_0001",
+        "beforeSha256": "e9655e2dfe617d8a0910f9c7a76a8b4f29006ec8343b949bf5fcd20659c30657",
+        "afterSha256": "7e34ed48a605762308f41aa485d58d8a2453d04e4d4551ee1092ca062f27f4db"
+      },
+      {
+        "id": "block_0004_0006",
+        "beforeSha256": "c5c1a8caf4219bcaf9f9cf95b6627c904413fd440387cffe9180b885c6c8a431",
+        "afterSha256": "07004efa4fddb68f7af060018fb9f8d45817736515b90f9e575e110cd323f921"
+      },
+      {
+        "id": "block_0006_0002",
+        "beforeSha256": "bd21ef63d0ecb3b2adcdc63eeef38da497aee71c52366f03cc84e00915447e70",
+        "afterSha256": "88ff09731289a5a6f66eed54d9315600412ce04251719973b19d6e58ad31474d"
+      },
+      {
+        "id": "block_0007_0001",
+        "beforeSha256": "ff7e64466afd0946c6ded523e293dd89d06bce26a39ca960faec73517ddec551",
+        "afterSha256": "3f3b34707fc3d9a12176e59e9c008c5592fb7bf3472ff63d39a965ff244a14cf"
+      },
+      {
+        "id": "u12_flujos_dos_lecturas_construccion",
+        "beforeSha256": "737fc35ee95c3bce143e33a16951e1766072f26c3256b92214029879feef28fb",
+        "afterSha256": "16910c3e5e7a1d4e09fce536cbde8e76d621f312df815be2d0db07e580bdf2c7"
+      },
+      {
+        "id": "u12_flujos_dos_lecturas_referencia_codigo",
+        "beforeSha256": "f3ea724c0d6b462cf04591259665b849a5266cb635339dd6012ce87412f9b74e",
+        "afterSha256": "0b42df03fe8e142fc6a9ba4f150259d5dd3c2b872668f6227350555bfda85fb9"
+      }
+    ],
+    "sourceFormatRevisions": [
+      {
+        "id": "block_0001_0002",
+        "block": {
+          "type": "code",
+          "language": "cpp",
+          "code": "#include <iostream>\n#include <sstream>\n\nint total(int aceptados, int rechazados) {\n    return aceptados + rechazados;\n}\n\nvoid escribir_total(std::ostream& destino, int cantidad) {\n    destino << \"Total=\" << cantidad;\n}\n\nint main() {\n    int cantidad = total(6, 2);\n    std::ostringstream memoria;\n    escribir_total(memoria, cantidad);\n    std::cout << memoria.str();\n    return 0;\n}\n"
+        }
+      },
+      {
+        "id": "block_0002_0003",
+        "block": {
+          "type": "output_prediction",
+          "id": "lectura_prestada_con_fallo",
+          "question": "Predice la salida. La función promete conservar destino si no obtiene un entero.",
+          "language": "cpp",
+          "code": "#include <iostream>\n#include <sstream>\n\nbool leer_entero(std::istream& origen, int& destino) {\n    int candidato{0};\n    if (!(origen >> candidato)) { return false; }\n    destino = candidato;\n    return true;\n}\n\nint main() {\n    std::istringstream memoria{\"x\"};\n    int cantidad{4};\n    bool leido = leer_entero(memoria, cantidad);\n    std::cout << leido << \":\" << cantidad;\n    return 0;\n}\n",
+          "answers": [
+            "0:4"
+          ],
+          "explanation": "El origen contiene x, que no permite obtener el entero solicitado. La extracción se intenta sobre candidato, una variable local distinta de cantidad. La condición detecta el fallo y ejecuta return false; antes de la asignación al destino.\n\nEl llamador recibe false, que la consola presenta como 0 con su configuración inicial. cantidad conserva 4; el separador completa 0:4. Esa conservación la produce el uso del candidato y el retorno temprano.",
+          "reviewFeedback": "Localiza dónde se extrae y qué asignación se realiza sólo tras el éxito. La variable candidata es distinta del destino del llamador."
+        }
+      },
+      {
+        "id": "block_0003_0004",
+        "block": {
+          "type": "cpp_compiler",
+          "initialCode": "#include <iostream>\n#include <sstream>\n\nint main() {\n    // Define las funciones antes de main y construye las pruebas.\n    return 0;\n}\n",
+          "outputCheck": {
+            "cases": [
+              {
+                "standardInput": "",
+                "outputs": [
+                  "Balance=5\nBalance=0\nBalance=-5\n"
+                ]
+              }
+            ]
+          }
+        }
+      },
+      {
+        "id": "block_0004_0001",
+        "block": {
+          "type": "code",
+          "language": "cpp",
+          "code": "#include <iostream>\n#include <sstream>\n\nbool leer_par(std::istream& origen, int& aceptados, int& rechazados) {\n    int nuevo_aceptados{0};\n    int nuevo_rechazados{0};\n    if (!(origen >> nuevo_aceptados >> nuevo_rechazados)) {\n        return false;\n    }\n    aceptados = nuevo_aceptados;\n    rechazados = nuevo_rechazados;\n    return true;\n}\n\nint balance(int aceptados, int rechazados) {\n    return aceptados - rechazados;\n}\n\nvoid escribir_balance(std::ostream& destino, int valor) {\n    destino << \"Balance=\" << valor;\n}\n\nint main() {\n    std::istringstream entrada{\"7 2\"};\n    int aceptados{9};\n    int rechazados{4};\n    if (!leer_par(entrada, aceptados, rechazados)) {\n        std::cout << \"Entrada invalida|\" << aceptados << \":\" << rechazados;\n        return 1;\n    }\n    std::ostringstream captura;\n    escribir_balance(captura, balance(aceptados, rechazados));\n    std::cout << captura.str();\n    return 0;\n}\n"
+        }
+      },
+      {
+        "id": "block_0004_0006",
+        "block": {
+          "type": "code",
+          "language": "cpp",
+          "code": "#include <iostream>\n#include <sstream>\n\nbool leer_par(std::istream& origen, int& aceptados, int& rechazados) {\n    int nuevo_aceptados{0};\n    int nuevo_rechazados{0};\n    if (!(origen >> nuevo_aceptados >> nuevo_rechazados)) {\n        return false;\n    }\n    aceptados = nuevo_aceptados;\n    rechazados = nuevo_rechazados;\n    return true;\n}\n\nint balance(int aceptados, int rechazados) {\n    return aceptados - rechazados;\n}\n\nvoid escribir_balance(std::ostream& destino, int valor) {\n    destino << \"Balance=\" << valor;\n}\n\nvoid probar(const std::string& texto) {\n    std::istringstream entrada{texto};\n    int aceptados{9};\n    int rechazados{4};\n    if (!leer_par(entrada, aceptados, rechazados)) {\n        std::cout << \"Entrada invalida|\" << aceptados << ':' << rechazados << \"\\n\";\n        return;\n    }\n    std::ostringstream captura;\n    escribir_balance(captura, balance(aceptados, rechazados));\n    std::cout << captura.str() << \"\\n\";\n}\n\nint main() {\n    probar(\"7 2\");\n    probar(\"0 0\");\n    probar(\"2 7\");\n    return 0;\n}\n"
+        }
+      },
+      {
+        "id": "block_0006_0002",
+        "block": {
+          "type": "cpp_compiler",
+          "initialCode": "#include <iostream>\n#include <fstream>\n#include <sstream>\n#include <string>\n\nint main() {\n    // Construye las funciones y la prueba con la muestra relativa.\n    return 0;\n}\n",
+          "outputCheck": {
+            "cases": [
+              {
+                "standardInput": "",
+                "outputs": [
+                  "Balance=5\n"
+                ]
+              }
+            ]
+          }
+        }
+      },
+      {
+        "id": "block_0007_0001",
+        "block": {
+          "type": "code",
+          "language": "cpp",
+          "code": "#include <iostream>\n#include <fstream>\n#include <string>\n#include <sstream>\n\nbool leer_par(std::istream& origen, int& aceptados, int& rechazados) {\n    int nuevo_aceptados{0};\n    int nuevo_rechazados{0};\n    if (!(origen >> nuevo_aceptados >> nuevo_rechazados)) {\n        return false;\n    }\n    aceptados = nuevo_aceptados;\n    rechazados = nuevo_rechazados;\n    return true;\n}\n\nint balance(int aceptados, int rechazados) {\n    return aceptados - rechazados;\n}\n\nvoid escribir_balance(std::ostream& destino, int valor) {\n    destino << \"Balance=\" << valor;\n}\n\nint main() {\n    const int valor = balance(7, 2);\n    std::ofstream salida{\"balance_compartido_lgp.txt\"};\n    if (!salida) { std::cout << \"Fallo al abrir salida\"; return 1; }\n    escribir_balance(salida, valor);\n    salida.close();\n    if (!salida) { std::cout << \"Fallo al escribir\"; return 1; }\n    std::ifstream entrada{\"balance_compartido_lgp.txt\"};\n    if (!entrada) { std::cout << \"Fallo al abrir entrada\"; return 1; }\n    std::string texto;\n    if (!std::getline(entrada, texto) || entrada.bad()) {\n        std::cout << \"Lectura incompleta\"; return 1;\n    }\n    std::cout << texto << \"\\n\";\n    return 0;\n}\n"
+        }
+      },
+      {
+        "id": "u12_flujos_dos_lecturas_construccion",
+        "block": {
+          "type": "cpp_compiler",
+          "initialCode": "#include <iostream>\n#include <sstream>\n#include <string>\n\n// Completa estas tres funciones. Conserva el cliente de main.\nbool leer_par(std::istream& origen, int& aceptados, int& rechazados) {\n    return false;\n}\n\nint balance(int aceptados, int rechazados) {\n    return 0;\n}\n\nvoid escribir_balance(std::ostream& destino, int valor) {\n}\n\nint main() {\n    std::string texto;\n    std::getline(std::cin, texto);\n    std::istringstream origen{texto};\n    int aceptados{9};\n    int rechazados{4};\n    for (int intento{0}; intento < 2; ++intento) {\n        const bool leido = leer_par(origen, aceptados, rechazados);\n        std::ostringstream captura;\n        if (leido) {\n            escribir_balance(captura, balance(aceptados, rechazados));\n        }\n        std::cout << \"Lectura=\" << leido << \"|Datos=\" << aceptados << ':' << rechazados\n                  << \"|Fallo=\" << origen.fail() << '|';\n        if (leido) { std::cout << captura.str(); }\n        else { std::cout << \"Sin calculo\"; }\n        std::cout << '\\n';\n    }\n    return 0;\n}\n",
+          "initialStandardInput": "7 2 4 3\n",
+          "outputCheck": {
+            "inputComparison": "exact",
+            "cases": [
+              {
+                "standardInput": "7 2 4 3\n",
+                "outputs": [
+                  "Lectura=1|Datos=7:2|Fallo=0|Balance=5\nLectura=1|Datos=4:3|Fallo=0|Balance=1\n"
+                ],
+                "exitCode": 0,
+                "explanation": "La primera llamada obtiene 7 y 2, devuelve éxito y compone Balance=5. La segunda continúa en el mismo origen y obtiene 4 y 3, por lo que compone Balance=1. Los resultados cambian con los datos; la captura permanece separada de los rótulos que muestra el cliente.",
+                "reviewFeedback": [
+                  {
+                    "outputs": [
+                      "Balance=5Lectura=1|Datos=7:2|Fallo=0|\nBalance=1Lectura=1|Datos=4:3|Fallo=0|\n"
+                    ],
+                    "text": "El texto del balance aparece fuera de la captura y antes de los rótulos del cliente. Comprueba qué flujo usa el escritor: debe insertar mediante el parámetro recibido. En la batería anterior, escribir directamente en la consola podía producir las mismas líneas porque no había un rótulo intercalado; este cliente permite observar esa separación."
+                  }
+                ]
+              },
+              {
+                "standardInput": "2 7 0 0\n",
+                "outputs": [
+                  "Lectura=1|Datos=2:7|Fallo=0|Balance=-5\nLectura=1|Datos=0:0|Fallo=0|Balance=0\n"
+                ],
+                "exitCode": 0,
+                "explanation": "La primera diferencia es 2 - 7 = -5. La segunda lectura obtiene dos ceros y los publica, produciendo Balance=0. Un valor cero es un dato válido y no debe confundirse con una lectura fallida.",
+                "reviewFeedback": [
+                  {
+                    "outputs": [
+                      "Balance=-5Lectura=1|Datos=2:7|Fallo=0|\nBalance=0Lectura=1|Datos=0:0|Fallo=0|\n"
+                    ],
+                    "text": "El texto del balance aparece fuera de la captura y antes de los rótulos del cliente. Comprueba qué flujo usa el escritor: debe insertar mediante el parámetro recibido. En la batería anterior, escribir directamente en la consola podía producir las mismas líneas porque no había un rótulo intercalado; este cliente permite observar esa separación."
+                  }
+                ]
+              },
+              {
+                "standardInput": "7 2 4 x\n",
+                "outputs": [
+                  "Lectura=1|Datos=7:2|Fallo=0|Balance=5\nLectura=0|Datos=7:2|Fallo=1|Sin calculo\n"
+                ],
+                "exitCode": 0,
+                "explanation": "La primera lectura acepta 7 y 2. En la segunda se obtiene 4 como candidato, pero x impide obtener el otro entero. Los dos destinos conservan 7:2 y no se calcula otro balance; ningún dato parcial se publica.",
+                "reviewFeedback": [
+                  {
+                    "outputs": [
+                      "Lectura=1|Datos=7:2|Fallo=0|Balance=5\nLectura=0|Datos=4:0|Fallo=1|Sin calculo\n"
+                    ],
+                    "text": "La salida cambia uno o ambos destinos aunque la lectura del par se rechaza. Es compatible con extraer directamente hacia los objetos del llamador o asignar un candidato demasiado pronto. Comprueba que ambas extracciones se realicen en variables locales y que ninguna asignación a los destinos preceda al éxito completo."
+                  },
+                  {
+                    "outputs": [
+                      "Balance=5Lectura=1|Datos=7:2|Fallo=0|\nLectura=0|Datos=7:2|Fallo=1|Sin calculo\n"
+                    ],
+                    "text": "El texto del balance aparece fuera de la captura y antes de los rótulos del cliente. Comprueba qué flujo usa el escritor: debe insertar mediante el parámetro recibido. En la batería anterior, escribir directamente en la consola podía producir las mismas líneas porque no había un rótulo intercalado; este cliente permite observar esa separación."
+                  }
+                ]
+              },
+              {
+                "standardInput": "x 2 4 3\n",
+                "outputs": [
+                  "Lectura=0|Datos=9:4|Fallo=1|Sin calculo\nLectura=0|Datos=9:4|Fallo=1|Sin calculo\n"
+                ],
+                "exitCode": 0,
+                "explanation": "El primer carácter x impide obtener el par. Los destinos permanecen en 9:4 y el origen queda en fallo. El cliente no lo recupera antes de la segunda llamada, que tampoco obtiene datos ni modifica los destinos.",
+                "reviewFeedback": [
+                  {
+                    "outputs": [
+                      "Lectura=0|Datos=0:4|Fallo=1|Sin calculo\nLectura=0|Datos=0:4|Fallo=1|Sin calculo\n"
+                    ],
+                    "text": "La salida cambia uno o ambos destinos aunque la lectura del par se rechaza. Es compatible con extraer directamente hacia los objetos del llamador o asignar un candidato demasiado pronto. Comprueba que ambas extracciones se realicen en variables locales y que ninguna asignación a los destinos preceda al éxito completo."
+                  }
+                ]
+              },
+              {
+                "standardInput": "7\n",
+                "outputs": [
+                  "Lectura=0|Datos=9:4|Fallo=1|Sin calculo\nLectura=0|Datos=9:4|Fallo=1|Sin calculo\n"
+                ],
+                "exitCode": 0,
+                "explanation": "Se obtiene 7 como primer candidato, pero falta el segundo entero. Ambos destinos se conservan en 9:4. La segunda llamada utiliza el mismo origen todavía en fallo; llegar al final de la cadena no permite aceptar un par incompleto.",
+                "reviewFeedback": [
+                  {
+                    "outputs": [
+                      "Lectura=0|Datos=7:4|Fallo=1|Sin calculo\nLectura=0|Datos=7:4|Fallo=1|Sin calculo\n"
+                    ],
+                    "text": "La salida cambia uno o ambos destinos aunque la lectura del par se rechaza. Es compatible con extraer directamente hacia los objetos del llamador o asignar un candidato demasiado pronto. Comprueba que ambas extracciones se realicen en variables locales y que ninguna asignación a los destinos preceda al éxito completo."
+                  }
+                ]
+              },
+              {
+                "standardInput": "10 0 0 10\n",
+                "outputs": [
+                  "Lectura=1|Datos=10:0|Fallo=0|Balance=10\nLectura=1|Datos=0:10|Fallo=0|Balance=-10\n"
+                ],
+                "exitCode": 0,
+                "explanation": "Las dos lecturas alcanzan los extremos del dominio. Primero se calcula 10 - 0 = 10 y después 0 - 10 = -10. La resta conserva el orden de sus argumentos y no elimina el signo del resultado negativo.",
+                "reviewFeedback": [
+                  {
+                    "outputs": [
+                      "Balance=10Lectura=1|Datos=10:0|Fallo=0|\nBalance=-10Lectura=1|Datos=0:10|Fallo=0|\n"
+                    ],
+                    "text": "El texto del balance aparece fuera de la captura y antes de los rótulos del cliente. Comprueba qué flujo usa el escritor: debe insertar mediante el parámetro recibido. En la batería anterior, escribir directamente en la consola podía producir las mismas líneas porque no había un rótulo intercalado; este cliente permite observar esa separación."
+                  }
+                ]
+              }
+            ]
+          }
+        }
+      },
+      {
+        "id": "u12_flujos_dos_lecturas_referencia_codigo",
+        "block": {
+          "type": "code",
+          "language": "cpp",
+          "code": "#include <iostream>\n#include <sstream>\n#include <string>\n\nbool leer_par(std::istream& origen, int& aceptados, int& rechazados) {\n    int nuevo_aceptados{0};\n    int nuevo_rechazados{0};\n    if (!(origen >> nuevo_aceptados >> nuevo_rechazados)) {\n        return false;\n    }\n    aceptados = nuevo_aceptados;\n    rechazados = nuevo_rechazados;\n    return true;\n}\n\nint balance(int aceptados, int rechazados) {\n    return aceptados - rechazados;\n}\n\nvoid escribir_balance(std::ostream& destino, int valor) {\n    destino << \"Balance=\" << valor;\n}\n\nint main() {\n    std::string texto;\n    std::getline(std::cin, texto);\n    std::istringstream origen{texto};\n    int aceptados{9};\n    int rechazados{4};\n    for (int intento{0}; intento < 2; ++intento) {\n        const bool leido = leer_par(origen, aceptados, rechazados);\n        std::ostringstream captura;\n        if (leido) {\n            escribir_balance(captura, balance(aceptados, rechazados));\n        }\n        std::cout << \"Lectura=\" << leido << \"|Datos=\" << aceptados << ':' << rechazados\n                  << \"|Fallo=\" << origen.fail() << '|';\n        if (leido) { std::cout << captura.str(); }\n        else { std::cout << \"Sin calculo\"; }\n        std::cout << '\\n';\n    }\n    return 0;\n}\n"
+        }
       }
     ]
   },

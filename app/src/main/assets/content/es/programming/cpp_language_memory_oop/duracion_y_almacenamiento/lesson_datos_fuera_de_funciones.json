@@ -16,7 +16,7 @@
         {
           "type": "code",
           "language": "cpp",
-          "code": "#include <iostream>\n\nint total = 2;\n\nint agregar(int cantidad) {\n    total += cantidad;\n    return total;\n}\n\nint consultar() {\n    return total;\n}\n\nint main() {\n    const int primero = agregar(3);\n    const int segundo = agregar(1);\n    std::cout << primero << ':' << segundo << ':' << consultar();\n    return 0;\n}\n"
+          "code": "#include <iostream>\n\nint total = 2;\n\nint agregar(int cantidad) {\n    total += cantidad;\n    return total;\n}\n\nint consultar() {\n    return total;\n}\n\nint main() {\n    const int primero = agregar(3);\n    const int segundo = agregar(1);\n\n    std::cout << primero << ':' << segundo << ':' << consultar();\n\n    return 0;\n}\n"
         },
         {
           "type": "paragraph",
@@ -47,7 +47,7 @@
           "id": "p3_u3l3_cero_y_constante",
           "language": "cpp",
           "question": "Predice los tres valores. pendientes está definido fuera de main; no es un int automático sin inicializar.",
-          "code": "#include <iostream>\n\nint pendientes;\nconstexpr int limite = 6;\n\nint main() {\n    std::cout << pendientes << ':' << limite << ':';\n    pendientes = limite - 2;\n    std::cout << pendientes;\n    return 0;\n}\n",
+          "code": "#include <iostream>\n\nint pendientes;\nconstexpr int limite = 6;\n\nint main() {\n    std::cout << pendientes << ':' << limite << ':';\n    pendientes = limite - 2;\n\n    std::cout << pendientes;\n\n    return 0;\n}\n",
           "answers": [
             "0:6:4"
           ],
@@ -99,7 +99,7 @@
           "id": "p3_u3l3_global_y_local",
           "language": "cpp",
           "question": "Predice los tres valores. En main, total identifica al local; ::total identifica al global. consultar está definida fuera de main.",
-          "code": "#include <iostream>\n\nint total = 9;\n\nint consultar() {\n    return total;\n}\n\nint main() {\n    int total = 2;\n    ::total -= total;\n    const int observado = consultar();\n    std::cout << total << ':' << ::total << ':' << observado;\n    return 0;\n}\n",
+          "code": "#include <iostream>\n\nint total = 9;\n\nint consultar() {\n    return total;\n}\n\nint main() {\n    int total = 2;\n    ::total -= total;\n    const int observado = consultar();\n    std::cout << total << ':' << ::total << ':' << observado;\n\n    return 0;\n}\n",
           "answers": [
             "2:7:7"
           ],
@@ -139,7 +139,7 @@
           "id": "p3_u3l3_tres_objetos",
           "language": "cpp",
           "question": "Predice el total local y después los dos totales de los espacios de nombres.",
-          "code": "#include <iostream>\n\nnamespace origen {\n    int total = 4;\n}\n\nnamespace destino {\n    int total = 9;\n}\n\nint main() {\n    int total = 30;\n    origen::total += 1;\n    destino::total -= 2;\n    std::cout << total << ':' << origen::total << ':' << destino::total;\n    return 0;\n}\n",
+          "code": "#include <iostream>\n\nnamespace origen {\n    int total = 4;\n}\n\nnamespace destino {\n    int total = 9;\n}\n\nint main() {\n    int total = 30;\n    origen::total += 1;\n    destino::total -= 2;\n    std::cout << total << ':' << origen::total << ':' << destino::total;\n\n    return 0;\n}\n",
           "answers": [
             "30:5:7"
           ],
@@ -167,7 +167,7 @@
           "id": "p3_u3l3_funcion_en_namespace",
           "language": "cpp",
           "question": "En este programa completo sólo se retiran dos unidades. Predice el local de main, el resultado y las existencias del taller.",
-          "code": "#include <iostream>\n\nnamespace taller {\n    int existencias = 6;\n\n    int retirar(int cantidad) {\n        existencias -= cantidad;\n        return existencias;\n    }\n}\n\nint main() {\n    int existencias = 20;\n    const int resultado = taller::retirar(2);\n    std::cout << existencias << ':' << resultado << ':' << taller::existencias;\n    return 0;\n}\n",
+          "code": "#include <iostream>\n\nnamespace taller {\n    int existencias = 6;\n\n    int retirar(int cantidad) {\n        existencias -= cantidad;\n        return existencias;\n    }\n}\n\nint main() {\n    int existencias = 20;\n    const int resultado = taller::retirar(2);\n\n    std::cout << existencias << ':' << resultado << ':' << taller::existencias;\n\n    return 0;\n}\n",
           "answers": [
             "20:4:4"
           ],
@@ -195,7 +195,7 @@
           "id": "p3_u3l3_reabrir_mismo_objeto",
           "language": "cpp",
           "question": "Predice la cantidad anterior, la posterior y la consulta directa al terminar.",
-          "code": "#include <iostream>\n\nnamespace deposito {\n    int cantidad = 4;\n}\n\nnamespace deposito {\n    int consultar() {\n        return cantidad;\n    }\n\n    void agregarTres() {\n        cantidad += 3;\n    }\n}\n\nint main() {\n    const int antes = deposito::consultar();\n    deposito::agregarTres();\n    const int despues = deposito::consultar();\n    std::cout << antes << ':' << despues << ':' << deposito::cantidad;\n    return 0;\n}\n",
+          "code": "#include <iostream>\n\nnamespace deposito {\n    int cantidad = 4;\n}\n\nnamespace deposito {\n    int consultar() {\n        return cantidad;\n    }\n\n    void agregarTres() {\n        cantidad += 3;\n    }\n}\n\nint main() {\n    const int antes = deposito::consultar();\n    deposito::agregarTres();\n    const int despues = deposito::consultar();\n    std::cout << antes << ':' << despues << ':' << deposito::cantidad;\n\n    return 0;\n}\n",
           "answers": [
             "4:7:7"
           ],
@@ -231,7 +231,7 @@
           "id": "p3_u3l3_using_y_copia",
           "language": "cpp",
           "question": "Predice los tres valores: el nombre corto, el nombre calificado y la variable copia.",
-          "code": "#include <iostream>\n\nnamespace inventario {\n    int piezas = 4;\n}\n\nint main() {\n    int copia = inventario::piezas;\n    using inventario::piezas;\n    piezas += 2;\n    copia += 1;\n    std::cout << piezas << ':' << inventario::piezas << ':' << copia;\n    return 0;\n}\n",
+          "code": "#include <iostream>\n\nnamespace inventario {\n    int piezas = 4;\n}\n\nint main() {\n    int copia = inventario::piezas;\n    using inventario::piezas;\n    piezas += 2;\n    copia += 1;\n\n    std::cout << piezas << ':' << inventario::piezas << ':' << copia;\n\n    return 0;\n}\n",
           "answers": [
             "6:6:5"
           ],
@@ -273,7 +273,7 @@
         {
           "type": "code",
           "language": "cpp",
-          "code": "#include <iostream>\n\nint total = 1;\n\nvoid avanzar() {\n    static int conservado = 4;\n    int actual = 0;\n    total += 2;\n    conservado += 1;\n    actual += 3;\n    std::cout << total << ':' << conservado << ':' << actual << ';';\n}\n\nint main() {\n    avanzar();\n    avanzar();\n    return 0;\n}\n"
+          "code": "#include <iostream>\n\nint total = 1;\n\nvoid avanzar() {\n    static int conservado = 4;\n    int actual = 0;\n\n    total += 2;\n    conservado += 1;\n    actual += 3;\n\n    std::cout << total << ':' << conservado << ':' << actual << ';';\n}\n\nint main() {\n    avanzar();\n    avanzar();\n    return 0;\n}\n"
         },
         {
           "type": "math_puzzle",
@@ -403,7 +403,7 @@
           "id": "p3_u3l3_asignacion_directa",
           "language": "cpp",
           "question": "poner rechaza el valor 12 porque la capacidad es 10. Después main asigna 12 directamente. Predice los dos pares que imprime.",
-          "code": "#include <iostream>\n\nnamespace deposito {\n    constexpr int capacidad = 10;\n    int nivel = 4;\n\n    bool poner(int nuevo) {\n        if (nuevo < 0 || nuevo > capacidad) {\n            return false;\n        }\n        nivel = nuevo;\n        return true;\n    }\n}\n\nint main() {\n    const bool aceptado = deposito::poner(12);\n    std::cout << aceptado << ':' << deposito::nivel << ';';\n    deposito::nivel = 12;\n    std::cout << deposito::nivel << ':' << deposito::capacidad;\n    return 0;\n}\n",
+          "code": "#include <iostream>\n\nnamespace deposito {\n    constexpr int capacidad = 10;\n    int nivel = 4;\n\n    bool poner(int nuevo) {\n        if (nuevo < 0 || nuevo > capacidad) {\n            return false;\n        }\n        nivel = nuevo;\n        return true;\n    }\n}\n\nint main() {\n    const bool aceptado = deposito::poner(12);\n\n    std::cout << aceptado << ':' << deposito::nivel << ';';\n    deposito::nivel = 12;\n    std::cout << deposito::nivel << ':' << deposito::capacidad;\n\n    return 0;\n}\n",
           "answers": [
             "0:4;12:10"
           ],
@@ -511,7 +511,7 @@
         {
           "type": "cpp_compiler",
           "language": "cpp",
-          "initialCode": "#include <iostream>\n\nnamespace sala_a {\n    constexpr int capacidad = 8;\n    int ocupadas = 3;\n}\n\nnamespace sala_b {\n    constexpr int capacidad = 12;\n    int ocupadas = 7;\n}\n\nbool trasladar(int origen, int cantidad) {\n    // Comprueba la orden antes de modificar las dos salas.\n    // Usa los datos de sala_a y sala_b; conserva ambos al rechazar.\n    return origen == 0 && cantidad == 0;\n}\n\nint main() {\n    int numeroDeOrdenes = 0;\n    if (!(std::cin >> numeroDeOrdenes) ||\n        numeroDeOrdenes < 1 || numeroDeOrdenes > 12) {\n        std::cout << \"Datos invalidos\\n\";\n        return 0;\n    }\n    for (int i = 0; i < numeroDeOrdenes; ++i) {\n        int origen = 0;\n        int cantidad = 0;\n        if (!(std::cin >> origen >> cantidad)) {\n            std::cout << \"Datos invalidos\\n\";\n            return 0;\n        }\n        const bool aceptado = trasladar(origen, cantidad);\n        std::cout << (aceptado ? \"Aceptado\" : \"Rechazo\");\n        std::cout << \";A:\" << sala_a::ocupadas\n                  << \";B:\" << sala_b::ocupadas << '\\n';\n    }\n    std::cout << \"Total:\" << sala_a::ocupadas + sala_b::ocupadas << '\\n';\n    return 0;\n}\n",
+          "initialCode": "#include <iostream>\n\nnamespace sala_a {\n    constexpr int capacidad = 8;\n    int ocupadas = 3;\n}\n\nnamespace sala_b {\n    constexpr int capacidad = 12;\n    int ocupadas = 7;\n}\n\nbool trasladar(int origen, int cantidad) {\n    // Comprueba la orden antes de modificar las dos salas.\n    // Usa los datos de sala_a y sala_b; conserva ambos al rechazar.\n    \n    return origen == 0 && cantidad == 0;\n}\n\nint main() {\n    int numeroDeOrdenes = 0;\n    if (!(std::cin >> numeroDeOrdenes) ||\n        numeroDeOrdenes < 1 || numeroDeOrdenes > 12) {\n        std::cout << \"Datos invalidos\\n\";\n        return 0;\n    }\n    for (int i = 0; i < numeroDeOrdenes; ++i) {\n        int origen = 0;\n        int cantidad = 0;\n\n        if (!(std::cin >> origen >> cantidad)) {\n            std::cout << \"Datos invalidos\\n\";\n            return 0;\n        }\n        const bool aceptado = trasladar(origen, cantidad);\n        std::cout << (aceptado ? \"Aceptado\" : \"Rechazo\");\n        std::cout << \";A:\" << sala_a::ocupadas\n                  << \";B:\" << sala_b::ocupadas << '\\n';\n    }\n    std::cout << \"Total:\" << sala_a::ocupadas + sala_b::ocupadas << '\\n';\n\n    return 0;\n}\n",
           "initialStandardInput": "8\n1 2\n0 4\n0 2\n1 4\n1 4\n1 3\n0 1\n2 1\n",
           "outputCheck": {
             "inputComparison": "tokens",
@@ -664,7 +664,7 @@
         {
           "type": "code",
           "language": "cpp",
-          "code": "#include <iostream>\n\nnamespace sala_a {\n    constexpr int capacidad = 8;\n    int ocupadas = 3;\n}\n\nnamespace sala_b {\n    constexpr int capacidad = 12;\n    int ocupadas = 7;\n}\n\nbool trasladar(int origen, int cantidad) {\n    if ((origen != 0 && origen != 1) || cantidad < 1 || cantidad > 4) {\n        return false;\n    }\n    if (origen == 0) {\n        if (cantidad > sala_a::ocupadas ||\n            cantidad > sala_b::capacidad - sala_b::ocupadas) {\n            return false;\n        }\n        sala_a::ocupadas -= cantidad;\n        sala_b::ocupadas += cantidad;\n    } else {\n        if (cantidad > sala_b::ocupadas ||\n            cantidad > sala_a::capacidad - sala_a::ocupadas) {\n            return false;\n        }\n        sala_b::ocupadas -= cantidad;\n        sala_a::ocupadas += cantidad;\n    }\n    return true;\n}\n\nint main() {\n    int numeroDeOrdenes = 0;\n    if (!(std::cin >> numeroDeOrdenes) ||\n        numeroDeOrdenes < 1 || numeroDeOrdenes > 12) {\n        std::cout << \"Datos invalidos\\n\";\n        return 0;\n    }\n    for (int i = 0; i < numeroDeOrdenes; ++i) {\n        int origen = 0;\n        int cantidad = 0;\n        if (!(std::cin >> origen >> cantidad)) {\n            std::cout << \"Datos invalidos\\n\";\n            return 0;\n        }\n        const bool aceptado = trasladar(origen, cantidad);\n        std::cout << (aceptado ? \"Aceptado\" : \"Rechazo\");\n        std::cout << \";A:\" << sala_a::ocupadas\n                  << \";B:\" << sala_b::ocupadas << '\\n';\n    }\n    std::cout << \"Total:\" << sala_a::ocupadas + sala_b::ocupadas << '\\n';\n    return 0;\n}\n"
+          "code": "#include <iostream>\n\nnamespace sala_a {\n    constexpr int capacidad = 8;\n    int ocupadas = 3;\n}\n\nnamespace sala_b {\n    constexpr int capacidad = 12;\n    int ocupadas = 7;\n}\n\nbool trasladar(int origen, int cantidad) {\n    if ((origen != 0 && origen != 1) || cantidad < 1 || cantidad > 4) {\n        return false;\n    }\n    if (origen == 0) {\n        if (cantidad > sala_a::ocupadas ||\n            cantidad > sala_b::capacidad - sala_b::ocupadas) {\n            return false;\n        }\n        sala_a::ocupadas -= cantidad;\n        sala_b::ocupadas += cantidad;\n    } else {\n        if (cantidad > sala_b::ocupadas ||\n            cantidad > sala_a::capacidad - sala_a::ocupadas) {\n            return false;\n        }\n        sala_b::ocupadas -= cantidad;\n        sala_a::ocupadas += cantidad;\n    }\n\n    return true;\n}\n\nint main() {\n    int numeroDeOrdenes = 0;\n    if (!(std::cin >> numeroDeOrdenes) ||\n        numeroDeOrdenes < 1 || numeroDeOrdenes > 12) {\n        std::cout << \"Datos invalidos\\n\";\n        return 0;\n    }\n    for (int i = 0; i < numeroDeOrdenes; ++i) {\n        int origen = 0;\n        int cantidad = 0;\n\n        if (!(std::cin >> origen >> cantidad)) {\n            std::cout << \"Datos invalidos\\n\";\n            return 0;\n        }\n        const bool aceptado = trasladar(origen, cantidad);\n        std::cout << (aceptado ? \"Aceptado\" : \"Rechazo\");\n        std::cout << \";A:\" << sala_a::ocupadas\n                  << \";B:\" << sala_b::ocupadas << '\\n';\n    }\n    std::cout << \"Total:\" << sala_a::ocupadas + sala_b::ocupadas << '\\n';\n\n    return 0;\n}\n"
         },
         {
           "type": "paragraph",
@@ -1835,6 +1835,235 @@
       }
     },
     "additions": [],
-    "editorial": []
+    "editorial": [
+      {
+        "id": "block_0000_0002",
+        "beforeSha256": "859a00c6e4c227abcd78cf9d53ded8e404de79b84808d017f8ccf112c86b1c66",
+        "afterSha256": "3782d076c245b795f257c345955a6af9297c3301ae540b62418c940cb2269d01"
+      },
+      {
+        "id": "block_0001_0003",
+        "beforeSha256": "ff3e4e5d0db9ed7e3e9b71ed5344a55a244c49adea4c36f254af49d4f17431f2",
+        "afterSha256": "b40f40a69b1b6ba0c303df8b3ad595e227401429636702fd06cc9aa37d6b6201"
+      },
+      {
+        "id": "block_0003_0002",
+        "beforeSha256": "55fc675c51cea85a2438e897a8a2333d9f4ba2f262c6816e025bd4de29bdc8c3",
+        "afterSha256": "42ff53f395c8e7567780c088866c1c0ecfed81d027d18068a969b072cd5d8332"
+      },
+      {
+        "id": "block_0004_0002",
+        "beforeSha256": "b43337049bcb82278402bd14a0cb7e2209b64c8175ea493086ffc73d04e3c7f3",
+        "afterSha256": "00d9db6cad18b3da74bb6fd414ec1798817f9b7684853d90abc491687f3fb004"
+      },
+      {
+        "id": "block_0005_0002",
+        "beforeSha256": "2de7f59ae13a1fe512cbf33842158d7d0654711662784cf581657fdd9ef87d4a",
+        "afterSha256": "d435257aa177ef58c8c366873756798548137922621a16b07ac1a4778fe14692"
+      },
+      {
+        "id": "block_0006_0002",
+        "beforeSha256": "93709a3ccd3e8a0d944c186b98035b213f8e7a37e94afac3ea89a7be5e95a415",
+        "afterSha256": "0b790b61fad46b7b500e3c660d2642ab59923fc0a68c7c590112a3a5e538c43b"
+      },
+      {
+        "id": "block_0007_0002",
+        "beforeSha256": "94b536aa44dc1830e19814bcd56eb0aacc045af84e9799ccac9fef50577c4ba7",
+        "afterSha256": "83290314c2b911da19de74bf7faf3a97fc77222ea91b2681d933531a0d2c909b"
+      },
+      {
+        "id": "block_0008_0002",
+        "beforeSha256": "678e66d529c0fc1e8bf32fb7c3e9064a2566f8566b4736dcd75f0fb8a43a1c5c",
+        "afterSha256": "2db641c25abe161d5d61a62a96840f21fc860a1c9ff52e2778fa26729eace197"
+      },
+      {
+        "id": "block_0009_0002",
+        "beforeSha256": "c2914251b02ea6257b290141c1a44ebd74bc5591167a91a7f7ab466f80120b9b",
+        "afterSha256": "4190fc4d3869a17744b6d9e8c5673c1cd0be002b98f0ace4342840e717755cff"
+      },
+      {
+        "id": "block_0011_0012",
+        "beforeSha256": "58d179dbdc0569a9b16bf37c3a264f71333b1cb451be7fb2cdc9e56480f4f5d4",
+        "afterSha256": "89bf618da9584236c6edc27ad095cf022bd47d00d2ac4a8593c6ecb1dc44dc83"
+      },
+      {
+        "id": "block_0014_0001",
+        "beforeSha256": "2f26245e1bdd312bfd5b34d02a27a5a68397c68623c430fe2d441dcc69a4e145",
+        "afterSha256": "2f1cf411814d5515fc86edd17dd7404bd6fbb8cc199c96272d8d6333bc5215f8"
+      }
+    ],
+    "sourceFormatRevisions": [
+      {
+        "id": "block_0000_0002",
+        "block": {
+          "type": "code",
+          "language": "cpp",
+          "code": "#include <iostream>\n\nint total = 2;\n\nint agregar(int cantidad) {\n    total += cantidad;\n    return total;\n}\n\nint consultar() {\n    return total;\n}\n\nint main() {\n    const int primero = agregar(3);\n    const int segundo = agregar(1);\n    std::cout << primero << ':' << segundo << ':' << consultar();\n    return 0;\n}\n"
+        }
+      },
+      {
+        "id": "block_0001_0003",
+        "block": {
+          "type": "output_prediction",
+          "id": "p3_u3l3_cero_y_constante",
+          "language": "cpp",
+          "question": "Predice los tres valores. pendientes está definido fuera de main; no es un int automático sin inicializar.",
+          "code": "#include <iostream>\n\nint pendientes;\nconstexpr int limite = 6;\n\nint main() {\n    std::cout << pendientes << ':' << limite << ':';\n    pendientes = limite - 2;\n    std::cout << pendientes;\n    return 0;\n}\n",
+          "answers": [
+            "0:6:4"
+          ],
+          "outputComparison": "exact",
+          "explanation": "pendientes comienza en cero y limite contiene 6. La asignación de main calcula 6 menos 2 y guarda 4 en pendientes. La definición de limite con constexpr no convierte pendientes en una constante."
+        }
+      },
+      {
+        "id": "block_0003_0002",
+        "block": {
+          "type": "output_prediction",
+          "id": "p3_u3l3_global_y_local",
+          "language": "cpp",
+          "question": "Predice los tres valores. En main, total identifica al local; ::total identifica al global. consultar está definida fuera de main.",
+          "code": "#include <iostream>\n\nint total = 9;\n\nint consultar() {\n    return total;\n}\n\nint main() {\n    int total = 2;\n    ::total -= total;\n    const int observado = consultar();\n    std::cout << total << ':' << ::total << ':' << observado;\n    return 0;\n}\n",
+          "answers": [
+            "2:7:7"
+          ],
+          "outputComparison": "exact",
+          "explanation": "El local de main contiene 2. ::total -= total resta ese 2 al global de valor 9, que queda en 7. consultar encuentra el global de su propio contexto, no el local de quien la llama, y devuelve 7."
+        }
+      },
+      {
+        "id": "block_0004_0002",
+        "block": {
+          "type": "output_prediction",
+          "id": "p3_u3l3_tres_objetos",
+          "language": "cpp",
+          "question": "Predice el total local y después los dos totales de los espacios de nombres.",
+          "code": "#include <iostream>\n\nnamespace origen {\n    int total = 4;\n}\n\nnamespace destino {\n    int total = 9;\n}\n\nint main() {\n    int total = 30;\n    origen::total += 1;\n    destino::total -= 2;\n    std::cout << total << ':' << origen::total << ':' << destino::total;\n    return 0;\n}\n",
+          "answers": [
+            "30:5:7"
+          ],
+          "outputComparison": "exact",
+          "explanation": "El local conserva 30. origen::total pasa de 4 a 5. destino::total pasa de 9 a 7. Repetir el nombre corto total no hace que los tres objetos compartan su valor."
+        }
+      },
+      {
+        "id": "block_0005_0002",
+        "block": {
+          "type": "output_prediction",
+          "id": "p3_u3l3_funcion_en_namespace",
+          "language": "cpp",
+          "question": "En este programa completo sólo se retiran dos unidades. Predice el local de main, el resultado y las existencias del taller.",
+          "code": "#include <iostream>\n\nnamespace taller {\n    int existencias = 6;\n\n    int retirar(int cantidad) {\n        existencias -= cantidad;\n        return existencias;\n    }\n}\n\nint main() {\n    int existencias = 20;\n    const int resultado = taller::retirar(2);\n    std::cout << existencias << ':' << resultado << ':' << taller::existencias;\n    return 0;\n}\n",
+          "answers": [
+            "20:4:4"
+          ],
+          "outputComparison": "exact",
+          "explanation": "retirar recibe 2 y resta esa cantidad al 6 de taller::existencias. Devuelve 4. El local de main continúa en 20 porque no fue el objeto que modificó retirar."
+        }
+      },
+      {
+        "id": "block_0006_0002",
+        "block": {
+          "type": "output_prediction",
+          "id": "p3_u3l3_reabrir_mismo_objeto",
+          "language": "cpp",
+          "question": "Predice la cantidad anterior, la posterior y la consulta directa al terminar.",
+          "code": "#include <iostream>\n\nnamespace deposito {\n    int cantidad = 4;\n}\n\nnamespace deposito {\n    int consultar() {\n        return cantidad;\n    }\n\n    void agregarTres() {\n        cantidad += 3;\n    }\n}\n\nint main() {\n    const int antes = deposito::consultar();\n    deposito::agregarTres();\n    const int despues = deposito::consultar();\n    std::cout << antes << ':' << despues << ':' << deposito::cantidad;\n    return 0;\n}\n",
+          "answers": [
+            "4:7:7"
+          ],
+          "outputComparison": "exact",
+          "explanation": "consultar devuelve primero 4. agregarTres cambia el único deposito::cantidad a 7. La segunda consulta y la consulta directa encuentran ese mismo 7. Los dos cuerpos namespace no son dos instancias separadas."
+        }
+      },
+      {
+        "id": "block_0007_0002",
+        "block": {
+          "type": "output_prediction",
+          "id": "p3_u3l3_using_y_copia",
+          "language": "cpp",
+          "question": "Predice los tres valores: el nombre corto, el nombre calificado y la variable copia.",
+          "code": "#include <iostream>\n\nnamespace inventario {\n    int piezas = 4;\n}\n\nint main() {\n    int copia = inventario::piezas;\n    using inventario::piezas;\n    piezas += 2;\n    copia += 1;\n    std::cout << piezas << ':' << inventario::piezas << ':' << copia;\n    return 0;\n}\n",
+          "answers": [
+            "6:6:5"
+          ],
+          "outputComparison": "exact",
+          "explanation": "copia comienza con 4. piezas += 2; modifica inventario::piezas y lo deja en 6; ambos modos de nombrarlo muestran 6. copia += 1; modifica el int separado y lo deja en 5."
+        }
+      },
+      {
+        "id": "block_0008_0002",
+        "block": {
+          "type": "code",
+          "language": "cpp",
+          "code": "#include <iostream>\n\nint total = 1;\n\nvoid avanzar() {\n    static int conservado = 4;\n    int actual = 0;\n    total += 2;\n    conservado += 1;\n    actual += 3;\n    std::cout << total << ':' << conservado << ':' << actual << ';';\n}\n\nint main() {\n    avanzar();\n    avanzar();\n    return 0;\n}\n"
+        }
+      },
+      {
+        "id": "block_0009_0002",
+        "block": {
+          "type": "output_prediction",
+          "id": "p3_u3l3_asignacion_directa",
+          "language": "cpp",
+          "question": "poner rechaza el valor 12 porque la capacidad es 10. Después main asigna 12 directamente. Predice los dos pares que imprime.",
+          "code": "#include <iostream>\n\nnamespace deposito {\n    constexpr int capacidad = 10;\n    int nivel = 4;\n\n    bool poner(int nuevo) {\n        if (nuevo < 0 || nuevo > capacidad) {\n            return false;\n        }\n        nivel = nuevo;\n        return true;\n    }\n}\n\nint main() {\n    const bool aceptado = deposito::poner(12);\n    std::cout << aceptado << ':' << deposito::nivel << ';';\n    deposito::nivel = 12;\n    std::cout << deposito::nivel << ':' << deposito::capacidad;\n    return 0;\n}\n",
+          "answers": [
+            "0:4;12:10"
+          ],
+          "outputComparison": "exact",
+          "explanation": "poner devuelve false, que se imprime como 0, y conserva el nivel 4. La asignación directa de main sí escribe 12. El compilador permite ese int, aunque incumpla la capacidad de nuestro depósito. El namespace no bloquea esa asignación."
+        }
+      },
+      {
+        "id": "block_0011_0012",
+        "block": {
+          "type": "cpp_compiler",
+          "language": "cpp",
+          "initialCode": "#include <iostream>\n\nnamespace sala_a {\n    constexpr int capacidad = 8;\n    int ocupadas = 3;\n}\n\nnamespace sala_b {\n    constexpr int capacidad = 12;\n    int ocupadas = 7;\n}\n\nbool trasladar(int origen, int cantidad) {\n    // Comprueba la orden antes de modificar las dos salas.\n    // Usa los datos de sala_a y sala_b; conserva ambos al rechazar.\n    return origen == 0 && cantidad == 0;\n}\n\nint main() {\n    int numeroDeOrdenes = 0;\n    if (!(std::cin >> numeroDeOrdenes) ||\n        numeroDeOrdenes < 1 || numeroDeOrdenes > 12) {\n        std::cout << \"Datos invalidos\\n\";\n        return 0;\n    }\n    for (int i = 0; i < numeroDeOrdenes; ++i) {\n        int origen = 0;\n        int cantidad = 0;\n        if (!(std::cin >> origen >> cantidad)) {\n            std::cout << \"Datos invalidos\\n\";\n            return 0;\n        }\n        const bool aceptado = trasladar(origen, cantidad);\n        std::cout << (aceptado ? \"Aceptado\" : \"Rechazo\");\n        std::cout << \";A:\" << sala_a::ocupadas\n                  << \";B:\" << sala_b::ocupadas << '\\n';\n    }\n    std::cout << \"Total:\" << sala_a::ocupadas + sala_b::ocupadas << '\\n';\n    return 0;\n}\n",
+          "initialStandardInput": "8\n1 2\n0 4\n0 2\n1 4\n1 4\n1 3\n0 1\n2 1\n",
+          "outputCheck": {
+            "inputComparison": "tokens",
+            "cases": [
+              {
+                "standardInput": "8\n1 2\n0 4\n0 2\n1 4\n1 4\n1 3\n0 1\n2 1\n",
+                "outputs": [
+                  "Aceptado;A:5;B:5\nAceptado;A:1;B:9\nRechazo;A:1;B:9\nAceptado;A:5;B:5\nRechazo;A:5;B:5\nAceptado;A:8;B:2\nAceptado;A:7;B:3\nRechazo;A:7;B:3\nTotal:10\n"
+                ],
+                "explanation": "Aplicar los traslados válidos a los datos de ambas salas, rechazar sin modificar y conservar diez personas en total."
+              },
+              {
+                "standardInput": "6\n0 3\n0 1\n1 4\n1 4\n1 1\n0 4\n",
+                "outputs": [
+                  "Aceptado;A:0;B:10\nRechazo;A:0;B:10\nAceptado;A:4;B:6\nAceptado;A:8;B:2\nRechazo;A:8;B:2\nAceptado;A:4;B:6\nTotal:10\n"
+                ],
+                "explanation": "Aplicar los traslados válidos a los datos de ambas salas, rechazar sin modificar y conservar diez personas en total."
+              },
+              {
+                "standardInput": "6\n0 0\n1 -1\n0 5\n2 1\n-1 2\n1 1\n",
+                "outputs": [
+                  "Rechazo;A:3;B:7\nRechazo;A:3;B:7\nRechazo;A:3;B:7\nRechazo;A:3;B:7\nRechazo;A:3;B:7\nAceptado;A:4;B:6\nTotal:10\n"
+                ],
+                "explanation": "Aplicar los traslados válidos a los datos de ambas salas, rechazar sin modificar y conservar diez personas en total."
+              },
+              {
+                "standardInput": "5\n1 2\n0 2\n1 2\n0 2\n1 2\n",
+                "outputs": [
+                  "Aceptado;A:5;B:5\nAceptado;A:3;B:7\nAceptado;A:5;B:5\nAceptado;A:3;B:7\nAceptado;A:5;B:5\nTotal:10\n"
+                ],
+                "explanation": "Aplicar los traslados válidos a los datos de ambas salas, rechazar sin modificar y conservar diez personas en total."
+              }
+            ]
+          }
+        }
+      },
+      {
+        "id": "block_0014_0001",
+        "block": {
+          "type": "code",
+          "language": "cpp",
+          "code": "#include <iostream>\n\nnamespace sala_a {\n    constexpr int capacidad = 8;\n    int ocupadas = 3;\n}\n\nnamespace sala_b {\n    constexpr int capacidad = 12;\n    int ocupadas = 7;\n}\n\nbool trasladar(int origen, int cantidad) {\n    if ((origen != 0 && origen != 1) || cantidad < 1 || cantidad > 4) {\n        return false;\n    }\n    if (origen == 0) {\n        if (cantidad > sala_a::ocupadas ||\n            cantidad > sala_b::capacidad - sala_b::ocupadas) {\n            return false;\n        }\n        sala_a::ocupadas -= cantidad;\n        sala_b::ocupadas += cantidad;\n    } else {\n        if (cantidad > sala_b::ocupadas ||\n            cantidad > sala_a::capacidad - sala_a::ocupadas) {\n            return false;\n        }\n        sala_b::ocupadas -= cantidad;\n        sala_a::ocupadas += cantidad;\n    }\n    return true;\n}\n\nint main() {\n    int numeroDeOrdenes = 0;\n    if (!(std::cin >> numeroDeOrdenes) ||\n        numeroDeOrdenes < 1 || numeroDeOrdenes > 12) {\n        std::cout << \"Datos invalidos\\n\";\n        return 0;\n    }\n    for (int i = 0; i < numeroDeOrdenes; ++i) {\n        int origen = 0;\n        int cantidad = 0;\n        if (!(std::cin >> origen >> cantidad)) {\n            std::cout << \"Datos invalidos\\n\";\n            return 0;\n        }\n        const bool aceptado = trasladar(origen, cantidad);\n        std::cout << (aceptado ? \"Aceptado\" : \"Rechazo\");\n        std::cout << \";A:\" << sala_a::ocupadas\n                  << \";B:\" << sala_b::ocupadas << '\\n';\n    }\n    std::cout << \"Total:\" << sala_a::ocupadas + sala_b::ocupadas << '\\n';\n    return 0;\n}\n"
+        }
+      }
+    ]
   }
 }

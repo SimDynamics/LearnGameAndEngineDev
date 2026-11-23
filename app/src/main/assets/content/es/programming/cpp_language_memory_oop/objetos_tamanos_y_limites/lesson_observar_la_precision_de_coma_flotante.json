@@ -108,7 +108,7 @@
         {
           "type": "code",
           "language": "cpp",
-          "code": "#include <iostream>\n#include <limits>\n\nint main() {\n    std::cout << std::numeric_limits<float>::radix << ':'\n              << std::numeric_limits<float>::digits << '\\n';\n    std::cout << std::numeric_limits<double>::radix << ':'\n              << std::numeric_limits<double>::digits << '\\n';\n    std::cout << std::numeric_limits<long double>::digits << '\\n';\n    return 0;\n}\n"
+          "code": "#include <iostream>\n#include <limits>\n\nint main() {\n    std::cout << std::numeric_limits<float>::radix << ':'\n              << std::numeric_limits<float>::digits << '\\n';\n    std::cout << std::numeric_limits<double>::radix << ':'\n              << std::numeric_limits<double>::digits << '\\n';\n    std::cout << std::numeric_limits<long double>::digits << '\\n';\n\n    return 0;\n}\n"
         },
         {
           "type": "paragraph",
@@ -201,7 +201,7 @@
           "id": "p3_u1l9_antes_y_despues",
           "question": "Predice las tres líneas en el entorno y redondeo indicados. Se imprimen base, despues y antes, en ese orden. fixed y setprecision(0) muestran estos valores enteros sin parte decimal.",
           "language": "cpp",
-          "code": "#include <iomanip>\n#include <iostream>\n\nint main() {\n    float base = 16777216.0f;\n    float suma = base + 1.0f;\n    double despues = suma;\n    double antes = static_cast<double>(base) + 1.0;\n\n    std::cout << std::fixed << std::setprecision(0);\n    std::cout << base << '\\n' << despues << '\\n' << antes;\n    return 0;\n}\n",
+          "code": "#include <iomanip>\n#include <iostream>\n\nint main() {\n    float base = 16777216.0f;\n    float suma = base + 1.0f;\n    double despues = suma;\n    double antes = static_cast<double>(base) + 1.0;\n\n    std::cout << std::fixed << std::setprecision(0);\n    std::cout << base << '\\n' << despues << '\\n' << antes;\n\n    return 0;\n}\n",
           "answers": [
             "16777216\n16777216\n16777217"
           ],
@@ -268,7 +268,7 @@
         {
           "type": "cpp_compiler",
           "language": "cpp",
-          "initialCode": "#include <iomanip>\n#include <iostream>\n\ndouble siguiente_consecutivo(float base) {\n    // La suma actual se calcula como float.\n    float resultado = base + 1.0f;\n    return resultado;\n}\n\nint main() {\n    int caso = 0;\n    if (!(std::cin >> caso)) {\n        return 1;\n    }\n\n    float base = 0.0f;\n    switch (caso) {\n    case 1:\n        base = 16777216.0f;\n        break;\n    case 2:\n        base = 33554432.0f;\n        break;\n    case 3:\n        base = -33554432.0f;\n        break;\n    case 4:\n        base = 0.0f;\n        break;\n    case 5:\n        base = 16777215.0f;\n        break;\n    default:\n        return 1;\n    }\n\n    const double nuevo = siguiente_consecutivo(base);\n    const double cambio = nuevo - static_cast<double>(base);\n    std::cout << std::fixed << std::setprecision(0);\n    std::cout << \"Anterior=\" << base << '\\n';\n    std::cout << \"Nuevo=\" << nuevo << '\\n';\n    std::cout << \"Cambio=\" << cambio << '\\n';\n    return 0;\n}\n",
+          "initialCode": "#include <iomanip>\n#include <iostream>\n\ndouble siguiente_consecutivo(float base) {\n    // La suma actual se calcula como float.\n    float resultado = base + 1.0f;\n    return resultado;\n}\n\nint main() {\n    int caso = 0;\n    if (!(std::cin >> caso)) {\n        return 1;\n    }\n\n    float base = 0.0f;\n    switch (caso) {\n    case 1:\n        base = 16777216.0f;\n        break;\n    case 2:\n        base = 33554432.0f;\n        break;\n    case 3:\n        base = -33554432.0f;\n        break;\n    case 4:\n        base = 0.0f;\n        break;\n    case 5:\n        base = 16777215.0f;\n        break;\n    default:\n        return 1;\n    }\n\n    const double nuevo = siguiente_consecutivo(base);\n    const double cambio = nuevo - static_cast<double>(base);\n\n    std::cout << std::fixed << std::setprecision(0);\n    std::cout << \"Anterior=\" << base << '\\n';\n    std::cout << \"Nuevo=\" << nuevo << '\\n';\n    std::cout << \"Cambio=\" << cambio << '\\n';\n\n    return 0;\n}\n",
           "initialStandardInput": "1\n",
           "outputCheck": {
             "inputComparison": "tokens",
@@ -374,7 +374,7 @@
         {
           "type": "code",
           "language": "cpp",
-          "code": "#include <iomanip>\n#include <iostream>\n\ndouble siguiente_consecutivo(float base) {\n    return static_cast<double>(base) + 1.0;\n}\n\nint main() {\n    int caso = 0;\n    if (!(std::cin >> caso)) {\n        return 1;\n    }\n\n    float base = 0.0f;\n    switch (caso) {\n    case 1:\n        base = 16777216.0f;\n        break;\n    case 2:\n        base = 33554432.0f;\n        break;\n    case 3:\n        base = -33554432.0f;\n        break;\n    case 4:\n        base = 0.0f;\n        break;\n    case 5:\n        base = 16777215.0f;\n        break;\n    default:\n        return 1;\n    }\n\n    const double nuevo = siguiente_consecutivo(base);\n    const double cambio = nuevo - static_cast<double>(base);\n    std::cout << std::fixed << std::setprecision(0);\n    std::cout << \"Anterior=\" << base << '\\n';\n    std::cout << \"Nuevo=\" << nuevo << '\\n';\n    std::cout << \"Cambio=\" << cambio << '\\n';\n    return 0;\n}\n"
+          "code": "#include <iomanip>\n#include <iostream>\n\ndouble siguiente_consecutivo(float base) {\n    return static_cast<double>(base) + 1.0;\n}\n\nint main() {\n    int caso = 0;\n    if (!(std::cin >> caso)) {\n        return 1;\n    }\n\n    float base = 0.0f;\n    switch (caso) {\n    case 1:\n        base = 16777216.0f;\n        break;\n    case 2:\n        base = 33554432.0f;\n        break;\n    case 3:\n        base = -33554432.0f;\n        break;\n    case 4:\n        base = 0.0f;\n        break;\n    case 5:\n        base = 16777215.0f;\n        break;\n    default:\n        return 1;\n    }\n\n    const double nuevo = siguiente_consecutivo(base);\n    const double cambio = nuevo - static_cast<double>(base);\n\n    std::cout << std::fixed << std::setprecision(0);\n    std::cout << \"Anterior=\" << base << '\\n';\n    std::cout << \"Nuevo=\" << nuevo << '\\n';\n    std::cout << \"Cambio=\" << cambio << '\\n';\n\n    return 0;\n}\n"
         },
         {
           "type": "paragraph",
@@ -515,7 +515,7 @@
           "id": "p3_u1l9_ida_y_vuelta",
           "question": "Predice original, reducida y vuelta, separados por dos puntos, con el entorno y redondeo de la lección.",
           "language": "cpp",
-          "code": "#include <iomanip>\n#include <iostream>\n\nint main() {\n    double original = 16777217.0;\n    float reducida = static_cast<float>(original);\n    double vuelta = reducida;\n\n    std::cout << std::fixed << std::setprecision(0);\n    std::cout << original << ':' << reducida << ':' << vuelta;\n    return 0;\n}\n",
+          "code": "#include <iomanip>\n#include <iostream>\n\nint main() {\n    double original = 16777217.0;\n    float reducida = static_cast<float>(original);\n    double vuelta = reducida;\n\n    std::cout << std::fixed << std::setprecision(0);\n    std::cout << original << ':' << reducida << ':' << vuelta;\n\n    return 0;\n}\n",
           "answers": [
             "16777217:16777216:16777216"
           ],
@@ -1576,6 +1576,129 @@
       }
     },
     "additions": [],
-    "editorial": []
+    "editorial": [
+      {
+        "id": "block_0003_0002",
+        "beforeSha256": "8d27ff797dc9251fdc042299707c7e0878d22af164008bdac00f5ba95534a648",
+        "afterSha256": "f570411b4a2c814659c20b7e19814d7e37c360271493b8672d43afec8c475c94"
+      },
+      {
+        "id": "block_0005_0004",
+        "beforeSha256": "6d9c69b0b9800f26459038ec0c19eb0a9ee5e4f77e0cf87e14ca7b97ba96694f",
+        "afterSha256": "e774a720c323f305123a21778386e29f2db85f7bd3d7c17e27c10400383be044"
+      },
+      {
+        "id": "block_0007_0006",
+        "beforeSha256": "33fbdf0bc01fca3d83acc26556ef910ec9e7f9571b74762f2a929db83e4e34c9",
+        "afterSha256": "fee2c55e71adb3a5624b16a784635107d27d1a74a92bba7433a057c3f2e698da"
+      },
+      {
+        "id": "block_0009_0001",
+        "beforeSha256": "d51e87d2e0aafba749b8152f178039595ecdc13bdbed99ad111f6bcec937323b",
+        "afterSha256": "16e676c498a493abb007816506d699ef07d0f6564d06b8dfabf18ef97c59ade2"
+      },
+      {
+        "id": "block_0013_0002",
+        "beforeSha256": "292d694b5bcb9a2a9122297c8497b559570bd95fcd9749d3122b3b929cb2afbb",
+        "afterSha256": "721ff66972ceec1c34337d455d5074234f559ba001976edd13ed533685e8942a"
+      }
+    ],
+    "sourceFormatRevisions": [
+      {
+        "id": "block_0003_0002",
+        "block": {
+          "type": "code",
+          "language": "cpp",
+          "code": "#include <iostream>\n#include <limits>\n\nint main() {\n    std::cout << std::numeric_limits<float>::radix << ':'\n              << std::numeric_limits<float>::digits << '\\n';\n    std::cout << std::numeric_limits<double>::radix << ':'\n              << std::numeric_limits<double>::digits << '\\n';\n    std::cout << std::numeric_limits<long double>::digits << '\\n';\n    return 0;\n}\n"
+        }
+      },
+      {
+        "id": "block_0005_0004",
+        "block": {
+          "type": "output_prediction",
+          "id": "p3_u1l9_antes_y_despues",
+          "question": "Predice las tres líneas en el entorno y redondeo indicados. Se imprimen base, despues y antes, en ese orden. fixed y setprecision(0) muestran estos valores enteros sin parte decimal.",
+          "language": "cpp",
+          "code": "#include <iomanip>\n#include <iostream>\n\nint main() {\n    float base = 16777216.0f;\n    float suma = base + 1.0f;\n    double despues = suma;\n    double antes = static_cast<double>(base) + 1.0;\n\n    std::cout << std::fixed << std::setprecision(0);\n    std::cout << base << '\\n' << despues << '\\n' << antes;\n    return 0;\n}\n",
+          "answers": [
+            "16777216\n16777216\n16777217"
+          ],
+          "outputComparison": "exact",
+          "explanation": "base conserva 16777216. La suma float no puede guardar 16777217 y queda en 16777216; copiarla después a double mantiene ese resultado. Convertir el operando antes permite hacer la suma double y guardar exactamente 16777217."
+        }
+      },
+      {
+        "id": "block_0007_0006",
+        "block": {
+          "type": "cpp_compiler",
+          "language": "cpp",
+          "initialCode": "#include <iomanip>\n#include <iostream>\n\ndouble siguiente_consecutivo(float base) {\n    // La suma actual se calcula como float.\n    float resultado = base + 1.0f;\n    return resultado;\n}\n\nint main() {\n    int caso = 0;\n    if (!(std::cin >> caso)) {\n        return 1;\n    }\n\n    float base = 0.0f;\n    switch (caso) {\n    case 1:\n        base = 16777216.0f;\n        break;\n    case 2:\n        base = 33554432.0f;\n        break;\n    case 3:\n        base = -33554432.0f;\n        break;\n    case 4:\n        base = 0.0f;\n        break;\n    case 5:\n        base = 16777215.0f;\n        break;\n    default:\n        return 1;\n    }\n\n    const double nuevo = siguiente_consecutivo(base);\n    const double cambio = nuevo - static_cast<double>(base);\n    std::cout << std::fixed << std::setprecision(0);\n    std::cout << \"Anterior=\" << base << '\\n';\n    std::cout << \"Nuevo=\" << nuevo << '\\n';\n    std::cout << \"Cambio=\" << cambio << '\\n';\n    return 0;\n}\n",
+          "initialStandardInput": "1\n",
+          "outputCheck": {
+            "inputComparison": "tokens",
+            "cases": [
+              {
+                "standardInput": "1\n",
+                "outputs": [
+                  "Anterior=16777216\nNuevo=16777217\nCambio=1\n"
+                ],
+                "explanation": "El float almacenado vale 16777216; el siguiente entero es 16777217 y el cambio debe ser 1."
+              },
+              {
+                "standardInput": "2\n",
+                "outputs": [
+                  "Anterior=33554432\nNuevo=33554433\nCambio=1\n"
+                ],
+                "explanation": "El float almacenado vale 33554432; el siguiente entero es 33554433 y el cambio debe ser 1."
+              },
+              {
+                "standardInput": "3\n",
+                "outputs": [
+                  "Anterior=-33554432\nNuevo=-33554431\nCambio=1\n"
+                ],
+                "explanation": "El float almacenado vale -33554432; el siguiente entero es -33554431 y el cambio debe ser 1."
+              },
+              {
+                "standardInput": "4\n",
+                "outputs": [
+                  "Anterior=0\nNuevo=1\nCambio=1\n"
+                ],
+                "explanation": "El float almacenado vale 0; el siguiente entero es 1 y el cambio debe ser 1."
+              },
+              {
+                "standardInput": "5\n",
+                "outputs": [
+                  "Anterior=16777215\nNuevo=16777216\nCambio=1\n"
+                ],
+                "explanation": "El float almacenado vale 16777215; el siguiente entero es 16777216 y el cambio debe ser 1."
+              }
+            ]
+          }
+        }
+      },
+      {
+        "id": "block_0009_0001",
+        "block": {
+          "type": "code",
+          "language": "cpp",
+          "code": "#include <iomanip>\n#include <iostream>\n\ndouble siguiente_consecutivo(float base) {\n    return static_cast<double>(base) + 1.0;\n}\n\nint main() {\n    int caso = 0;\n    if (!(std::cin >> caso)) {\n        return 1;\n    }\n\n    float base = 0.0f;\n    switch (caso) {\n    case 1:\n        base = 16777216.0f;\n        break;\n    case 2:\n        base = 33554432.0f;\n        break;\n    case 3:\n        base = -33554432.0f;\n        break;\n    case 4:\n        base = 0.0f;\n        break;\n    case 5:\n        base = 16777215.0f;\n        break;\n    default:\n        return 1;\n    }\n\n    const double nuevo = siguiente_consecutivo(base);\n    const double cambio = nuevo - static_cast<double>(base);\n    std::cout << std::fixed << std::setprecision(0);\n    std::cout << \"Anterior=\" << base << '\\n';\n    std::cout << \"Nuevo=\" << nuevo << '\\n';\n    std::cout << \"Cambio=\" << cambio << '\\n';\n    return 0;\n}\n"
+        }
+      },
+      {
+        "id": "block_0013_0002",
+        "block": {
+          "type": "output_prediction",
+          "id": "p3_u1l9_ida_y_vuelta",
+          "question": "Predice original, reducida y vuelta, separados por dos puntos, con el entorno y redondeo de la lección.",
+          "language": "cpp",
+          "code": "#include <iomanip>\n#include <iostream>\n\nint main() {\n    double original = 16777217.0;\n    float reducida = static_cast<float>(original);\n    double vuelta = reducida;\n\n    std::cout << std::fixed << std::setprecision(0);\n    std::cout << original << ':' << reducida << ':' << vuelta;\n    return 0;\n}\n",
+          "answers": [
+            "16777217:16777216:16777216"
+          ],
+          "outputComparison": "exact",
+          "explanation": "El double original conserva 16777217. El cast a float aproxima ese valor con 16777216. La ampliación posterior mantiene el float obtenido. Original no se reasigna en ningún momento."
+        }
+      }
+    ]
   }
 }

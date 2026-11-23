@@ -22,7 +22,7 @@
           "id": "p3_u5l2_array_inicializado",
           "language": "cpp",
           "question": "¿Qué muestra cantidad:base[0]:base[1]:base[2]?",
-          "code": "#include <iostream>\n\nint main() {\n    int cantidad = 3;\n    int* base = new int[cantidad]{};\n    base[1] = 7;\n    std::cout << cantidad << ':' << base[0] << ':' << base[1] << ':' << base[2];\n    delete[] base;\n    base = nullptr;\n    return 0;\n}\n",
+          "code": "#include <iostream>\n\nint main() {\n    int cantidad = 3;\n    int* base = new int[cantidad]{};\n\n    base[1] = 7;\n\n    std::cout << cantidad << ':' << base[0] << ':' << base[1] << ':' << base[2];\n    delete[] base;\n    base = nullptr;\n    return 0;\n}\n",
           "answers": [
             "3:0:7:0"
           ],
@@ -76,7 +76,7 @@
           "id": "p3_u5l2_inicializacion_parcial",
           "language": "cpp",
           "question": "¿Qué muestra el programa?",
-          "code": "#include <iostream>\n\nint main() {\n    int cantidad = 4;\n    int* base = new int[cantidad]{3, 6};\n    for (int i = 0; i < cantidad; ++i) {\n        if (i != 0) {\n            std::cout << ':';\n        }\n        std::cout << base[i];\n    }\n    delete[] base;\n    base = nullptr;\n    return 0;\n}\n",
+          "code": "#include <iostream>\n\nint main() {\n    int cantidad = 4;\n    int* base = new int[cantidad]{3, 6};\n\n    for (int i = 0; i < cantidad; ++i) {\n        if (i != 0) {\n            std::cout << ':';\n        }\n        std::cout << base[i];\n    }\n    delete[] base;\n    base = nullptr;\n    return 0;\n}\n",
           "answers": [
             "3:6:0:0"
           ],
@@ -99,7 +99,7 @@
         {
           "type": "code",
           "language": "cpp",
-          "code": "#include <iostream>\n\nint main() {\n    int* base = new int[2];\n    std::cout << base[1];\n    delete[] base;\n    return 0;\n}\n"
+          "code": "#include <iostream>\n\nint main() {\n    int* base = new int[2];\n\n    std::cout << base[1];\n    delete[] base;\n    return 0;\n}\n"
         }
       ]
     },
@@ -118,7 +118,7 @@
           "id": "p3_u5l2_array_de_un_elemento",
           "language": "cpp",
           "question": "¿Qué muestra este array de un solo elemento?",
-          "code": "#include <iostream>\n\nint main() {\n    int* base = new int[1]{7};\n    std::cout << base[0];\n    delete[] base;\n    base = nullptr;\n    return 0;\n}\n",
+          "code": "#include <iostream>\n\nint main() {\n    int* base = new int[1]{7};\n\n    std::cout << base[0];\n    delete[] base;\n    base = nullptr;\n    return 0;\n}\n",
           "answers": [
             "7"
           ],
@@ -163,7 +163,7 @@
           "id": "p3_u5l2_array_sin_elementos",
           "language": "cpp",
           "question": "¿Qué muestra la comparación con nullptr seguida de cantidad?",
-          "code": "#include <iostream>\n\nint main() {\n    int cantidad = 0;\n    int* base = new int[cantidad]{};\n    std::cout << (base != nullptr) << ':' << cantidad;\n    delete[] base;\n    base = nullptr;\n    return 0;\n}\n",
+          "code": "#include <iostream>\n\nint main() {\n    int cantidad = 0;\n    int* base = new int[cantidad]{};\n\n    std::cout << (base != nullptr) << ':' << cantidad;\n    delete[] base;\n    base = nullptr;\n    return 0;\n}\n",
           "answers": [
             "1:0"
           ],
@@ -219,7 +219,7 @@
           "id": "p3_u5l2_cantidad_no_redimensiona",
           "language": "cpp",
           "question": "¿Qué muestra cantidad:total.size():base[3]?",
-          "code": "#include <cstddef>\n#include <iostream>\n#include <span>\n\nint main() {\n    int cantidad = 4;\n    int* base = new int[cantidad]{};\n    std::span<int> total{base, static_cast<std::size_t>(cantidad)};\n    cantidad = 2;\n    std::cout << cantidad << ':' << total.size() << ':' << base[3];\n    total = std::span<int>{};\n    delete[] base;\n    base = nullptr;\n    return 0;\n}\n",
+          "code": "#include <cstddef>\n#include <iostream>\n#include <span>\n\nint main() {\n    int cantidad = 4;\n    int* base = new int[cantidad]{};\n    std::span<int> total{base, static_cast<std::size_t>(cantidad)};\n    cantidad = 2;\n\n    std::cout << cantidad << ':' << total.size() << ':' << base[3];\n    total = std::span<int>{};\n    delete[] base;\n    base = nullptr;\n    return 0;\n}\n",
           "answers": [
             "2:4:0"
           ],
@@ -261,7 +261,7 @@
         {
           "type": "code",
           "language": "cpp",
-          "code": "int main() {\n    int* base = new int[3]{};\n    base = base + 1;\n    delete[] base;\n    return 0;\n}\n"
+          "code": "int main() {\n    int* base = new int[3]{};\n\n    base = base + 1;\n    delete[] base;\n    return 0;\n}\n"
         }
       ]
     },
@@ -280,7 +280,7 @@
           "id": "p3_u5l2_vista_del_array_dinamico",
           "language": "cpp",
           "question": "¿Qué muestra el programa después de modificar centro?",
-          "code": "#include <iostream>\n#include <span>\n\nint main() {\n    int* base = new int[4]{1, 3, 5, 7};\n    std::span<int> total{base, 4};\n    std::span<int> centro = total.subspan(1, 2);\n    centro[0] = 9;\n    std::cout << total.size() << ':' << centro.size() << ':' << base[1] << ':' << base[3];\n    centro = std::span<int>{};\n    total = std::span<int>{};\n    delete[] base;\n    base = nullptr;\n    return 0;\n}\n",
+          "code": "#include <iostream>\n#include <span>\n\nint main() {\n    int* base = new int[4]{1, 3, 5, 7};\n    std::span<int> total{base, 4};\n    std::span<int> centro = total.subspan(1, 2);\n    centro[0] = 9;\n\n    std::cout << total.size() << ':' << centro.size() << ':' << base[1] << ':' << base[3];\n    centro = std::span<int>{};\n    total = std::span<int>{};\n    delete[] base;\n    base = nullptr;\n    return 0;\n}\n",
           "answers": [
             "4:2:9:7"
           ],
@@ -304,7 +304,7 @@
           "id": "p3_u5l2_vista_vacia_array_vivo",
           "language": "cpp",
           "question": "¿Qué muestra vista.size():cantidad:base[0]?",
-          "code": "#include <iostream>\n#include <span>\n\nint main() {\n    int cantidad = 3;\n    int* base = new int[cantidad]{};\n    std::span<int> vista{base, 3};\n    vista = std::span<int>{};\n    std::cout << vista.size() << ':' << cantidad << ':' << base[0];\n    delete[] base;\n    base = nullptr;\n    return 0;\n}\n",
+          "code": "#include <iostream>\n#include <span>\n\nint main() {\n    int cantidad = 3;\n    int* base = new int[cantidad]{};\n    std::span<int> vista{base, 3};\n    vista = std::span<int>{};\n\n    std::cout << vista.size() << ':' << cantidad << ':' << base[0];\n    delete[] base;\n    base = nullptr;\n    return 0;\n}\n",
           "answers": [
             "0:3:0"
           ],
@@ -330,7 +330,7 @@
         {
           "type": "code",
           "language": "cpp",
-          "code": "#include <iostream>\n#include <span>\n\nint main() {\n    int* base = new int[2]{3, 5};\n    std::span<int> vista{base, 2};\n    delete[] base;\n    base = nullptr;\n    std::cout << vista[0];\n    return 0;\n}\n"
+          "code": "#include <iostream>\n#include <span>\n\nint main() {\n    int* base = new int[2]{3, 5};\n    std::span<int> vista{base, 2};\n    delete[] base;\n    base = nullptr;\n\n    std::cout << vista[0];\n\n    return 0;\n}\n"
         }
       ]
     },
@@ -349,7 +349,7 @@
           "id": "p3_u5l2_devolver_un_array",
           "language": "cpp",
           "question": "¿Qué muestra el primer y último elemento del array solicitado?",
-          "code": "#include <iostream>\n\nint* fabricar(int cantidad) {\n    if (cantidad < 1 || cantidad > 4) {\n        return nullptr;\n    }\n    int* base = new int[cantidad]{};\n    for (int i = 0; i < cantidad; ++i) {\n        base[i] = i + 2;\n    }\n    return base;\n}\n\nint main() {\n    const int cantidad = 3;\n    int* base = fabricar(cantidad);\n    std::cout << base[0] << ':' << base[cantidad - 1];\n    delete[] base;\n    base = nullptr;\n    return 0;\n}\n",
+          "code": "#include <iostream>\n\nint* fabricar(int cantidad) {\n    if (cantidad < 1 || cantidad > 4) {\n        return nullptr;\n    }\n    int* base = new int[cantidad]{};\n    for (int i = 0; i < cantidad; ++i) {\n        base[i] = i + 2;\n    }\n\n    return base;\n}\n\nint main() {\n    const int cantidad = 3;\n    int* base = fabricar(cantidad);\n\n    std::cout << base[0] << ':' << base[cantidad - 1];\n    delete[] base;\n    base = nullptr;\n    return 0;\n}\n",
           "answers": [
             "2:4"
           ],
@@ -377,7 +377,7 @@
           "id": "p3_u5l2_vista_de_lectura",
           "language": "cpp",
           "question": "¿Qué muestra lectura.size():lectura[1]?",
-          "code": "#include <iostream>\n#include <span>\n\nint main() {\n    int* base = new int[3]{2, 4, 6};\n    std::span<const int> lectura{base, 3};\n    base[1] = 8;\n    std::cout << lectura.size() << ':' << lectura[1];\n    lectura = std::span<const int>{};\n    delete[] base;\n    base = nullptr;\n    return 0;\n}\n",
+          "code": "#include <iostream>\n#include <span>\n\nint main() {\n    int* base = new int[3]{2, 4, 6};\n    std::span<const int> lectura{base, 3};\n    base[1] = 8;\n\n    std::cout << lectura.size() << ':' << lectura[1];\n    lectura = std::span<const int>{};\n    delete[] base;\n    base = nullptr;\n    return 0;\n}\n",
           "answers": [
             "3:8"
           ],
@@ -400,7 +400,7 @@
         {
           "type": "code",
           "language": "cpp",
-          "code": "#include <iostream>\n\nint main() {\n    int* base = new int[2]{};\n    std::cout << base[2];\n    delete[] base;\n    return 0;\n}\n"
+          "code": "#include <iostream>\n\nint main() {\n    int* base = new int[2]{};\n\n    std::cout << base[2];\n    delete[] base;\n    return 0;\n}\n"
         },
         {
           "type": "code",
@@ -422,7 +422,7 @@
         {
           "type": "code",
           "language": "cpp",
-          "code": "#include <iostream>\n#include <span>\n\nint main() {\n    int* base = new int[3]{1, 2, 3};\n    std::span<int> vista{base, 3};\n    std::cout << \"A:\" << vista[0] << '\\n';\n    vista = std::span<int>{};\n    std::cout << \"B:\" << base[0] << '\\n';\n    delete[] base;\n    base = nullptr;\n    std::cout << \"C\\n\";\n    return 0;\n}\n"
+          "code": "#include <iostream>\n#include <span>\n\nint main() {\n    int* base = new int[3]{1, 2, 3};\n    std::span<int> vista{base, 3};\n    std::cout << \"A:\" << vista[0] << '\\n';\n    vista = std::span<int>{};\n\n    std::cout << \"B:\" << base[0] << '\\n';\n    delete[] base;\n    base = nullptr;\n\n    std::cout << \"C\\n\";\n\n    return 0;\n}\n"
         },
         {
           "type": "math_puzzle",
@@ -543,7 +543,7 @@
           "type": "inline_fill_code",
           "id": "p3_u5l2_creacion_y_liberacion",
           "question": "En el primer hueco escribe el dígito que crea exactamente los tres int de la vista. En el segundo escribe la expresión de liberación correspondiente, sin el nombre base ni el punto y coma.",
-          "template": "#include <iostream>\n#include <span>\n\nint main() {\n    int* base = new int[[]]{};\n    std::span<int> vista{base, 3};\n    vista[2] = 8;\n    std::cout << vista.size() << ':' << vista[0] << ':' << vista[2];\n    vista = std::span<int>{};\n    [] base;\n    base = nullptr;\n    return 0;\n}\n",
+          "template": "#include <iostream>\n#include <span>\n\nint main() {\n    int* base = new int[[]]{};\n    std::span<int> vista{base, 3};\n    vista[2] = 8;\n\n    std::cout << vista.size() << ':' << vista[0] << ':' << vista[2];\n    vista = std::span<int>{};\n    [] base;\n    base = nullptr;\n    return 0;\n}\n",
           "answers": [
             "3",
             "delete[]"
@@ -681,7 +681,7 @@
         {
           "type": "cpp_compiler",
           "language": "cpp",
-          "initialCode": "#include <cstddef>\n#include <iostream>\n#include <span>\n\nbool crear(int*& base, int& cantidad, int solicitados, int primero) {\n    if (base != nullptr || cantidad != 0 || solicitados < 1 || solicitados > 4\n        || primero < 0 || primero > 9) {\n        return false;\n    }\n    if (solicitados - 1 > 9 - primero) {\n        return false;\n    }\n    // Crea e inicializa el array y conserva su inicio y cantidad.\n    return false;\n}\n\nbool retirar(int*& base, int& cantidad) {\n    if (base == nullptr) {\n        cantidad = 0;\n        return false;\n    }\n    // Libera el array completo y deja su estado vacío.\n    return false;\n}\n\nbool seleccionar(std::span<int> total, std::span<int>& vista, int inicio, int cantidad) {\n    if (inicio < 0 || cantidad < 0) {\n        return false;\n    }\n    const auto posicion = static_cast<std::size_t>(inicio);\n    const auto longitud = static_cast<std::size_t>(cantidad);\n    if (posicion > total.size() || longitud > total.size() - posicion) {\n        return false;\n    }\n    vista = total.subspan(posicion, longitud);\n    return true;\n}\n\nint main() {\n    int ordenes = 0;\n    if (!(std::cin >> ordenes) || ordenes < 1 || ordenes > 12) {\n        return 1;\n    }\n    int* base = nullptr;\n    int cantidad = 0;\n    std::span<int> vista;\n    for (int i = 0; i < ordenes; ++i) {\n        int operacion = 0;\n        int a = 0;\n        int b = 0;\n        if (!(std::cin >> operacion >> a >> b)) {\n            vista = std::span<int>{};\n            retirar(base, cantidad);\n            return 1;\n        }\n        const char* estado = \"Orden\";\n        if (operacion == 1) {\n            if (crear(base, cantidad, a, b)) {\n                vista = std::span<int>{base, static_cast<std::size_t>(cantidad)};\n                estado = \"Creado\";\n            } else {\n                estado = \"Rechazo\";\n            }\n        } else if (operacion == 2) {\n            std::span<int> total;\n            if (base != nullptr) {\n                total = std::span<int>{base, static_cast<std::size_t>(cantidad)};\n            }\n            estado = seleccionar(total, vista, a, b) ? \"Seleccion\" : \"Rechazo\";\n        } else if (operacion == 3) {\n            if (a < 0 || a > 9) {\n                estado = \"Rechazo\";\n            } else {\n                for (int& dato : vista) {\n                    dato = a;\n                }\n                estado = vista.empty() ? \"Vacio\" : \"Cambio\";\n            }\n        } else if (operacion == 4) {\n            vista = std::span<int>{};\n            estado = retirar(base, cantidad) ? \"Liberado\" : \"Vacio\";\n        }\n        std::cout << \"Estado:\" << estado << \";Cantidad:\" << cantidad\n                  << \";Vista:\" << vista.size() << \";Datos:\";\n        if (base == nullptr) {\n            std::cout << 'X';\n        } else {\n            for (int j = 0; j < cantidad; ++j) {\n                if (j != 0) {\n                    std::cout << ',';\n                }\n                std::cout << base[j];\n            }\n        }\n        std::cout << '\\n';\n    }\n    vista = std::span<int>{};\n    const bool cierre = retirar(base, cantidad);\n    std::cout << \"Cierre:\" << cierre << \";Cantidad:\" << cantidad << \";Vista:\" << vista.size() << '\\n';\n    return 0;\n}\n",
+          "initialCode": "#include <cstddef>\n#include <iostream>\n#include <span>\n\nbool crear(int*& base, int& cantidad, int solicitados, int primero) {\n    if (base != nullptr || cantidad != 0 || solicitados < 1 || solicitados > 4\n        || primero < 0 || primero > 9) {\n        return false;\n    }\n    if (solicitados - 1 > 9 - primero) {\n        return false;\n    }\n    // Crea e inicializa el array y conserva su inicio y cantidad.\n    return false;\n}\n\nbool retirar(int*& base, int& cantidad) {\n    if (base == nullptr) {\n        cantidad = 0;\n        return false;\n    }\n    // Libera el array completo y deja su estado vacío.\n    return false;\n}\n\nbool seleccionar(std::span<int> total, std::span<int>& vista, int inicio, int cantidad) {\n    if (inicio < 0 || cantidad < 0) {\n        return false;\n    }\n    const auto posicion = static_cast<std::size_t>(inicio);\n    const auto longitud = static_cast<std::size_t>(cantidad);\n\n    if (posicion > total.size() || longitud > total.size() - posicion) {\n        return false;\n    }\n    vista = total.subspan(posicion, longitud);\n    return true;\n}\n\nint main() {\n    int ordenes = 0;\n    if (!(std::cin >> ordenes) || ordenes < 1 || ordenes > 12) {\n        return 1;\n    }\n    int* base = nullptr;\n    int cantidad = 0;\n    std::span<int> vista;\n    for (int i = 0; i < ordenes; ++i) {\n        int operacion = 0;\n        int a = 0;\n        int b = 0;\n\n        if (!(std::cin >> operacion >> a >> b)) {\n            vista = std::span<int>{};\n            retirar(base, cantidad);\n            return 1;\n        }\n        const char* estado = \"Orden\";\n        if (operacion == 1) {\n            if (crear(base, cantidad, a, b)) {\n                vista = std::span<int>{base, static_cast<std::size_t>(cantidad)};\n                estado = \"Creado\";\n            } else {\n                estado = \"Rechazo\";\n            }\n        } else if (operacion == 2) {\n            std::span<int> total;\n            if (base != nullptr) {\n                total = std::span<int>{base, static_cast<std::size_t>(cantidad)};\n            }\n            estado = seleccionar(total, vista, a, b) ? \"Seleccion\" : \"Rechazo\";\n        } else if (operacion == 3) {\n            if (a < 0 || a > 9) {\n                estado = \"Rechazo\";\n            } else {\n                for (int& dato : vista) {\n                    dato = a;\n                }\n                estado = vista.empty() ? \"Vacio\" : \"Cambio\";\n            }\n        } else if (operacion == 4) {\n            vista = std::span<int>{};\n            estado = retirar(base, cantidad) ? \"Liberado\" : \"Vacio\";\n        }\n        std::cout << \"Estado:\" << estado << \";Cantidad:\" << cantidad\n                  << \";Vista:\" << vista.size() << \";Datos:\";\n        if (base == nullptr) {\n            std::cout << 'X';\n        } else {\n            for (int j = 0; j < cantidad; ++j) {\n                if (j != 0) {\n                    std::cout << ',';\n                }\n                std::cout << base[j];\n            }\n        }\n        std::cout << '\\n';\n    }\n    vista = std::span<int>{};\n    const bool cierre = retirar(base, cantidad);\n\n    std::cout << \"Cierre:\" << cierre << \";Cantidad:\" << cantidad << \";Vista:\" << vista.size() << '\\n';\n\n    return 0;\n}\n",
           "initialStandardInput": "12\n1 4 0\n2 1 2\n3 9 0\n1 3 7\n2 4 0\n3 8 0\n2 3 2\n4 0 0\n4 0 0\n1 3 7\n2 2 1\n3 0 0\n",
           "outputCheck": {
             "inputComparison": "tokens",
@@ -807,7 +807,7 @@
         {
           "type": "code",
           "language": "cpp",
-          "code": "#include <cstddef>\n#include <iostream>\n#include <span>\n\nbool crear(int*& base, int& cantidad, int solicitados, int primero) {\n    if (base != nullptr || cantidad != 0 || solicitados < 1 || solicitados > 4\n        || primero < 0 || primero > 9) {\n        return false;\n    }\n    if (solicitados - 1 > 9 - primero) {\n        return false;\n    }\n    int* nuevo = new int[solicitados]{};\n    for (int i = 0; i < solicitados; ++i) {\n        nuevo[i] = primero + i;\n    }\n    base = nuevo;\n    cantidad = solicitados;\n    return true;\n}\n\nbool retirar(int*& base, int& cantidad) {\n    if (base == nullptr) {\n        return false;\n    }\n    delete[] base;\n    base = nullptr;\n    cantidad = 0;\n    return true;\n}\n\nbool seleccionar(std::span<int> total, std::span<int>& vista, int inicio, int cantidad) {\n    if (inicio < 0 || cantidad < 0) {\n        return false;\n    }\n    const auto posicion = static_cast<std::size_t>(inicio);\n    const auto longitud = static_cast<std::size_t>(cantidad);\n    if (posicion > total.size() || longitud > total.size() - posicion) {\n        return false;\n    }\n    vista = total.subspan(posicion, longitud);\n    return true;\n}\n\nint main() {\n    int ordenes = 0;\n    if (!(std::cin >> ordenes) || ordenes < 1 || ordenes > 12) {\n        return 1;\n    }\n    int* base = nullptr;\n    int cantidad = 0;\n    std::span<int> vista;\n    for (int i = 0; i < ordenes; ++i) {\n        int operacion = 0;\n        int a = 0;\n        int b = 0;\n        if (!(std::cin >> operacion >> a >> b)) {\n            vista = std::span<int>{};\n            retirar(base, cantidad);\n            return 1;\n        }\n        const char* estado = \"Orden\";\n        if (operacion == 1) {\n            if (crear(base, cantidad, a, b)) {\n                vista = std::span<int>{base, static_cast<std::size_t>(cantidad)};\n                estado = \"Creado\";\n            } else {\n                estado = \"Rechazo\";\n            }\n        } else if (operacion == 2) {\n            std::span<int> total;\n            if (base != nullptr) {\n                total = std::span<int>{base, static_cast<std::size_t>(cantidad)};\n            }\n            estado = seleccionar(total, vista, a, b) ? \"Seleccion\" : \"Rechazo\";\n        } else if (operacion == 3) {\n            if (a < 0 || a > 9) {\n                estado = \"Rechazo\";\n            } else {\n                for (int& dato : vista) {\n                    dato = a;\n                }\n                estado = vista.empty() ? \"Vacio\" : \"Cambio\";\n            }\n        } else if (operacion == 4) {\n            vista = std::span<int>{};\n            estado = retirar(base, cantidad) ? \"Liberado\" : \"Vacio\";\n        }\n        std::cout << \"Estado:\" << estado << \";Cantidad:\" << cantidad\n                  << \";Vista:\" << vista.size() << \";Datos:\";\n        if (base == nullptr) {\n            std::cout << 'X';\n        } else {\n            for (int j = 0; j < cantidad; ++j) {\n                if (j != 0) {\n                    std::cout << ',';\n                }\n                std::cout << base[j];\n            }\n        }\n        std::cout << '\\n';\n    }\n    vista = std::span<int>{};\n    const bool cierre = retirar(base, cantidad);\n    std::cout << \"Cierre:\" << cierre << \";Cantidad:\" << cantidad << \";Vista:\" << vista.size() << '\\n';\n    return 0;\n}\n"
+          "code": "#include <cstddef>\n#include <iostream>\n#include <span>\n\nbool crear(int*& base, int& cantidad, int solicitados, int primero) {\n    if (base != nullptr || cantidad != 0 || solicitados < 1 || solicitados > 4\n        || primero < 0 || primero > 9) {\n        return false;\n    }\n    if (solicitados - 1 > 9 - primero) {\n        return false;\n    }\n    int* nuevo = new int[solicitados]{};\n    for (int i = 0; i < solicitados; ++i) {\n        nuevo[i] = primero + i;\n    }\n    base = nuevo;\n    cantidad = solicitados;\n    return true;\n}\n\nbool retirar(int*& base, int& cantidad) {\n    if (base == nullptr) {\n        return false;\n    }\n    delete[] base;\n    base = nullptr;\n    cantidad = 0;\n    return true;\n}\n\nbool seleccionar(std::span<int> total, std::span<int>& vista, int inicio, int cantidad) {\n    if (inicio < 0 || cantidad < 0) {\n        return false;\n    }\n    const auto posicion = static_cast<std::size_t>(inicio);\n    const auto longitud = static_cast<std::size_t>(cantidad);\n\n    if (posicion > total.size() || longitud > total.size() - posicion) {\n        return false;\n    }\n    vista = total.subspan(posicion, longitud);\n    return true;\n}\n\nint main() {\n    int ordenes = 0;\n    if (!(std::cin >> ordenes) || ordenes < 1 || ordenes > 12) {\n        return 1;\n    }\n    int* base = nullptr;\n    int cantidad = 0;\n    std::span<int> vista;\n    for (int i = 0; i < ordenes; ++i) {\n        int operacion = 0;\n        int a = 0;\n        int b = 0;\n\n        if (!(std::cin >> operacion >> a >> b)) {\n            vista = std::span<int>{};\n            retirar(base, cantidad);\n            return 1;\n        }\n        const char* estado = \"Orden\";\n        if (operacion == 1) {\n            if (crear(base, cantidad, a, b)) {\n                vista = std::span<int>{base, static_cast<std::size_t>(cantidad)};\n                estado = \"Creado\";\n            } else {\n                estado = \"Rechazo\";\n            }\n        } else if (operacion == 2) {\n            std::span<int> total;\n            if (base != nullptr) {\n                total = std::span<int>{base, static_cast<std::size_t>(cantidad)};\n            }\n            estado = seleccionar(total, vista, a, b) ? \"Seleccion\" : \"Rechazo\";\n        } else if (operacion == 3) {\n            if (a < 0 || a > 9) {\n                estado = \"Rechazo\";\n            } else {\n                for (int& dato : vista) {\n                    dato = a;\n                }\n                estado = vista.empty() ? \"Vacio\" : \"Cambio\";\n            }\n        } else if (operacion == 4) {\n            vista = std::span<int>{};\n            estado = retirar(base, cantidad) ? \"Liberado\" : \"Vacio\";\n        }\n        std::cout << \"Estado:\" << estado << \";Cantidad:\" << cantidad\n                  << \";Vista:\" << vista.size() << \";Datos:\";\n        if (base == nullptr) {\n            std::cout << 'X';\n        } else {\n            for (int j = 0; j < cantidad; ++j) {\n                if (j != 0) {\n                    std::cout << ',';\n                }\n                std::cout << base[j];\n            }\n        }\n        std::cout << '\\n';\n    }\n    vista = std::span<int>{};\n    const bool cierre = retirar(base, cantidad);\n\n    std::cout << \"Cierre:\" << cierre << \";Cantidad:\" << cantidad << \";Vista:\" << vista.size() << '\\n';\n\n    return 0;\n}\n"
         },
         {
           "type": "paragraph",
@@ -2187,6 +2187,335 @@
       }
     },
     "additions": [],
-    "editorial": []
+    "editorial": [
+      {
+        "id": "block_0000_0003",
+        "beforeSha256": "6ab233d4ecac205b85054a3453fbbb9d2602474793b994d86a0dc9808db0f159",
+        "afterSha256": "ee9ac3fc4f554e673aac956f11138fb1e28373b5c91d409dda5a1b642830885e"
+      },
+      {
+        "id": "block_0002_0002",
+        "beforeSha256": "ad4b43235c43ba9b7808f0eaf0ce9e1b5ad4be07a82fb0cf2aa4f00502282298",
+        "afterSha256": "cf0795e6cb67a322600ad2a0c9038bf89b2b1bd537a895bccd7834e7027c2a9b"
+      },
+      {
+        "id": "block_0002_0006",
+        "beforeSha256": "aff07d68d5b1bf45f3ada729e9b2271d16aa00caf3a3eb1adf4d5cac29262118",
+        "afterSha256": "0236d48560a32ec9a28bd973c5d9ead2ea3c58434a23aa86130406f3082a79b1"
+      },
+      {
+        "id": "block_0003_0002",
+        "beforeSha256": "121049969f10718ec00d09599d06bccdc03810677be7b5c87620a2d0e2bc8ecd",
+        "afterSha256": "ed25d5cf905571649fd89a72f49c437792022264a0f10bdc6e2e44105e79c669"
+      },
+      {
+        "id": "block_0004_0002",
+        "beforeSha256": "22a41318a8fa9691a3b4b795790b297ab90b70adbc6694cdf489a2f8fe7aa9e3",
+        "afterSha256": "32578c265b0cd09a5eeebfacb88f2b2e06d84d55fbc59e31c3b5579af68db356"
+      },
+      {
+        "id": "block_0006_0002",
+        "beforeSha256": "dadb451ab89e18c75b915cf3bc1f9371fbf4d7dbd15f2a92b040e5266541feff",
+        "afterSha256": "f33da940ff8035cdccf42e7633af85cc65ddac6acefd1629c8a5dfd0df06b1da"
+      },
+      {
+        "id": "block_0007_0004",
+        "beforeSha256": "a2d284758813b62bf06ea6138406708f3d4fe81c8ece4460490ca60f5cd87c1c",
+        "afterSha256": "721f82d705bfaa02b4033b175c66ad4e4eed73ddf3c5eff845ac25cbf3cf4176"
+      },
+      {
+        "id": "block_0008_0002",
+        "beforeSha256": "2c3441871dd78bb27ea0fe4ec52d30c5c0e7e9e1426c5e680040d3996e211945",
+        "afterSha256": "a6d7a69fe5d2aaba09f836b240b3227d182a79393fd549321eecd37ac916cf8a"
+      },
+      {
+        "id": "block_0009_0001",
+        "beforeSha256": "c7a825bcd544a95581617674c712df57506e86e39474109ecb1bcf55b22b97cb",
+        "afterSha256": "c34769e99d943e5d5923c98820e2063c24f4ce34c47b0474c4629d416148cbf2"
+      },
+      {
+        "id": "block_0009_0004",
+        "beforeSha256": "4c2666d345a9a53811b5deba0cbdbb6767cc4c6c2c0b0d19ca64fee8b29f6828",
+        "afterSha256": "f33aeef6e94a078ca8ecdcfdb3e5b2dfebb94735c92ef7c542170db2714d5249"
+      },
+      {
+        "id": "block_0010_0002",
+        "beforeSha256": "1500ccdce7f9519c688b602ddc1b2a09eee340eecff21162d3434ff262400dce",
+        "afterSha256": "6f7bb8804e7ed2ce8de9c43f5563337e9d4775cb9dd0412b521d08ac05e3da33"
+      },
+      {
+        "id": "block_0011_0001",
+        "beforeSha256": "88f227714ff4bb55fad04bab97d922078cbcf5bd9fea52860d61fea6565c4834",
+        "afterSha256": "507d201073306f6702caba0f6ffaa5656388a46f1ab11ce3aece28c89cf9a864"
+      },
+      {
+        "id": "block_0011_0005",
+        "beforeSha256": "4353d0a844f0a6d16b8a4439e15c2c7d47bf9ae24691457403a05899c09b3f05",
+        "afterSha256": "83e07d8b9daf112315929be28e0bd7df0a3845f8acfb09475560746c1bccb9ec"
+      },
+      {
+        "id": "block_0012_0002",
+        "beforeSha256": "c0f1e684bd9ff013367054f68d8e627fdccd019234d6e8a56d5bc2a0da20057e",
+        "afterSha256": "bf0fb3dadd46d37244483dc71136d5665820390b4bde59de288f49507728de6b"
+      },
+      {
+        "id": "block_0013_0001",
+        "beforeSha256": "34db2b7c4a68d676dffac834bcafb6859a28ea68b4b71126855b1d8f71cc3cf6",
+        "afterSha256": "32f0a911e9a107ac3179c9f68433580fa102af67533a794a0fdec9dd77fa4a0e"
+      },
+      {
+        "id": "block_0018_0002",
+        "beforeSha256": "5e9841fc3516413368bbe449b8b50e28eab0742b66ee84d992c51dd016586344",
+        "afterSha256": "2c5b35bcc6bfa4d8daa8d4ad84e0d9a4157ace71b88dfcc44a94a50638cae18b"
+      },
+      {
+        "id": "block_0020_0001",
+        "beforeSha256": "988819eb46e0fb4daca0be34bdf662e3d89daea52881759886cff5dd7d486e58",
+        "afterSha256": "3bb8b4067476cc6304f602c3570e028f1b186645bd70e08930a729d9308050d2"
+      }
+    ],
+    "sourceFormatRevisions": [
+      {
+        "id": "block_0000_0003",
+        "block": {
+          "type": "output_prediction",
+          "id": "p3_u5l2_array_inicializado",
+          "language": "cpp",
+          "question": "¿Qué muestra cantidad:base[0]:base[1]:base[2]?",
+          "code": "#include <iostream>\n\nint main() {\n    int cantidad = 3;\n    int* base = new int[cantidad]{};\n    base[1] = 7;\n    std::cout << cantidad << ':' << base[0] << ':' << base[1] << ':' << base[2];\n    delete[] base;\n    base = nullptr;\n    return 0;\n}\n",
+          "answers": [
+            "3:0:7:0"
+          ],
+          "outputComparison": "exact",
+          "explanation": "Se crean tres int inicializados con cero. La escritura posterior cambia el segundo a 7. delete[] termina el array completo; no hace falta liberar cada elemento por separado."
+        }
+      },
+      {
+        "id": "block_0002_0002",
+        "block": {
+          "type": "output_prediction",
+          "id": "p3_u5l2_inicializacion_parcial",
+          "language": "cpp",
+          "question": "¿Qué muestra el programa?",
+          "code": "#include <iostream>\n\nint main() {\n    int cantidad = 4;\n    int* base = new int[cantidad]{3, 6};\n    for (int i = 0; i < cantidad; ++i) {\n        if (i != 0) {\n            std::cout << ':';\n        }\n        std::cout << base[i];\n    }\n    delete[] base;\n    base = nullptr;\n    return 0;\n}\n",
+          "answers": [
+            "3:6:0:0"
+          ],
+          "outputComparison": "exact",
+          "explanation": "La cantidad es cuatro. Los dos valores proporcionados inicializan los dos primeros int; los otros dos quedan inicializados con cero."
+        }
+      },
+      {
+        "id": "block_0002_0006",
+        "block": {
+          "type": "code",
+          "language": "cpp",
+          "code": "#include <iostream>\n\nint main() {\n    int* base = new int[2];\n    std::cout << base[1];\n    delete[] base;\n    return 0;\n}\n"
+        }
+      },
+      {
+        "id": "block_0003_0002",
+        "block": {
+          "type": "output_prediction",
+          "id": "p3_u5l2_array_de_un_elemento",
+          "language": "cpp",
+          "question": "¿Qué muestra este array de un solo elemento?",
+          "code": "#include <iostream>\n\nint main() {\n    int* base = new int[1]{7};\n    std::cout << base[0];\n    delete[] base;\n    base = nullptr;\n    return 0;\n}\n",
+          "answers": [
+            "7"
+          ],
+          "outputComparison": "exact",
+          "explanation": "Aunque tenga un solo elemento, se creó un array con new int[1]. Por eso se libera con delete[]."
+        }
+      },
+      {
+        "id": "block_0004_0002",
+        "block": {
+          "type": "output_prediction",
+          "id": "p3_u5l2_array_sin_elementos",
+          "language": "cpp",
+          "question": "¿Qué muestra la comparación con nullptr seguida de cantidad?",
+          "code": "#include <iostream>\n\nint main() {\n    int cantidad = 0;\n    int* base = new int[cantidad]{};\n    std::cout << (base != nullptr) << ':' << cantidad;\n    delete[] base;\n    base = nullptr;\n    return 0;\n}\n",
+          "answers": [
+            "1:0"
+          ],
+          "outputComparison": "exact",
+          "explanation": "La reserva ordinaria tiene éxito y el resultado no es nulo, pero la cantidad sigue siendo cero. El programa no intenta leer ningún elemento."
+        }
+      },
+      {
+        "id": "block_0006_0002",
+        "block": {
+          "type": "output_prediction",
+          "id": "p3_u5l2_cantidad_no_redimensiona",
+          "language": "cpp",
+          "question": "¿Qué muestra cantidad:total.size():base[3]?",
+          "code": "#include <cstddef>\n#include <iostream>\n#include <span>\n\nint main() {\n    int cantidad = 4;\n    int* base = new int[cantidad]{};\n    std::span<int> total{base, static_cast<std::size_t>(cantidad)};\n    cantidad = 2;\n    std::cout << cantidad << ':' << total.size() << ':' << base[3];\n    total = std::span<int>{};\n    delete[] base;\n    base = nullptr;\n    return 0;\n}\n",
+          "answers": [
+            "2:4:0"
+          ],
+          "outputComparison": "exact",
+          "explanation": "Se crearon cuatro int y total describe esos cuatro. La variable cantidad cambia a dos, pero el array sigue teniendo cuatro y su cuarto int conserva cero."
+        }
+      },
+      {
+        "id": "block_0007_0004",
+        "block": {
+          "type": "code",
+          "language": "cpp",
+          "code": "int main() {\n    int* base = new int[3]{};\n    base = base + 1;\n    delete[] base;\n    return 0;\n}\n"
+        }
+      },
+      {
+        "id": "block_0008_0002",
+        "block": {
+          "type": "output_prediction",
+          "id": "p3_u5l2_vista_del_array_dinamico",
+          "language": "cpp",
+          "question": "¿Qué muestra el programa después de modificar centro?",
+          "code": "#include <iostream>\n#include <span>\n\nint main() {\n    int* base = new int[4]{1, 3, 5, 7};\n    std::span<int> total{base, 4};\n    std::span<int> centro = total.subspan(1, 2);\n    centro[0] = 9;\n    std::cout << total.size() << ':' << centro.size() << ':' << base[1] << ':' << base[3];\n    centro = std::span<int>{};\n    total = std::span<int>{};\n    delete[] base;\n    base = nullptr;\n    return 0;\n}\n",
+          "answers": [
+            "4:2:9:7"
+          ],
+          "outputComparison": "exact",
+          "explanation": "total conserva cuatro elementos; centro utiliza dos desde el índice uno. centro[0] cambia base[1] a 9. El último int sigue siendo 7."
+        }
+      },
+      {
+        "id": "block_0009_0001",
+        "block": {
+          "type": "output_prediction",
+          "id": "p3_u5l2_vista_vacia_array_vivo",
+          "language": "cpp",
+          "question": "¿Qué muestra vista.size():cantidad:base[0]?",
+          "code": "#include <iostream>\n#include <span>\n\nint main() {\n    int cantidad = 3;\n    int* base = new int[cantidad]{};\n    std::span<int> vista{base, 3};\n    vista = std::span<int>{};\n    std::cout << vista.size() << ':' << cantidad << ':' << base[0];\n    delete[] base;\n    base = nullptr;\n    return 0;\n}\n",
+          "answers": [
+            "0:3:0"
+          ],
+          "outputComparison": "exact",
+          "explanation": "Se vacía sólo la selección conservada en vista. Los tres int del array siguen vivos; base[0] sigue siendo cero. La liberación ocurre después mediante base."
+        }
+      },
+      {
+        "id": "block_0009_0004",
+        "block": {
+          "type": "code",
+          "language": "cpp",
+          "code": "#include <iostream>\n#include <span>\n\nint main() {\n    int* base = new int[2]{3, 5};\n    std::span<int> vista{base, 2};\n    delete[] base;\n    base = nullptr;\n    std::cout << vista[0];\n    return 0;\n}\n"
+        }
+      },
+      {
+        "id": "block_0010_0002",
+        "block": {
+          "type": "output_prediction",
+          "id": "p3_u5l2_devolver_un_array",
+          "language": "cpp",
+          "question": "¿Qué muestra el primer y último elemento del array solicitado?",
+          "code": "#include <iostream>\n\nint* fabricar(int cantidad) {\n    if (cantidad < 1 || cantidad > 4) {\n        return nullptr;\n    }\n    int* base = new int[cantidad]{};\n    for (int i = 0; i < cantidad; ++i) {\n        base[i] = i + 2;\n    }\n    return base;\n}\n\nint main() {\n    const int cantidad = 3;\n    int* base = fabricar(cantidad);\n    std::cout << base[0] << ':' << base[cantidad - 1];\n    delete[] base;\n    base = nullptr;\n    return 0;\n}\n",
+          "answers": [
+            "2:4"
+          ],
+          "outputComparison": "exact",
+          "explanation": "Se solicitan tres elementos. La función escribe 2, 3 y 4. El array sigue vivo al volver y main lo libera con delete[]."
+        }
+      },
+      {
+        "id": "block_0011_0001",
+        "block": {
+          "type": "output_prediction",
+          "id": "p3_u5l2_vista_de_lectura",
+          "language": "cpp",
+          "question": "¿Qué muestra lectura.size():lectura[1]?",
+          "code": "#include <iostream>\n#include <span>\n\nint main() {\n    int* base = new int[3]{2, 4, 6};\n    std::span<const int> lectura{base, 3};\n    base[1] = 8;\n    std::cout << lectura.size() << ':' << lectura[1];\n    lectura = std::span<const int>{};\n    delete[] base;\n    base = nullptr;\n    return 0;\n}\n",
+          "answers": [
+            "3:8"
+          ],
+          "outputComparison": "exact",
+          "explanation": "La vista de lectura utiliza los tres int originales y observa la modificación del segundo a 8. No prepara una copia."
+        }
+      },
+      {
+        "id": "block_0011_0005",
+        "block": {
+          "type": "code",
+          "language": "cpp",
+          "code": "#include <iostream>\n\nint main() {\n    int* base = new int[2]{};\n    std::cout << base[2];\n    delete[] base;\n    return 0;\n}\n"
+        }
+      },
+      {
+        "id": "block_0012_0002",
+        "block": {
+          "type": "code",
+          "language": "cpp",
+          "code": "#include <iostream>\n#include <span>\n\nint main() {\n    int* base = new int[3]{1, 2, 3};\n    std::span<int> vista{base, 3};\n    std::cout << \"A:\" << vista[0] << '\\n';\n    vista = std::span<int>{};\n    std::cout << \"B:\" << base[0] << '\\n';\n    delete[] base;\n    base = nullptr;\n    std::cout << \"C\\n\";\n    return 0;\n}\n"
+        }
+      },
+      {
+        "id": "block_0013_0001",
+        "block": {
+          "type": "inline_fill_code",
+          "id": "p3_u5l2_creacion_y_liberacion",
+          "question": "En el primer hueco escribe el dígito que crea exactamente los tres int de la vista. En el segundo escribe la expresión de liberación correspondiente, sin el nombre base ni el punto y coma.",
+          "template": "#include <iostream>\n#include <span>\n\nint main() {\n    int* base = new int[[]]{};\n    std::span<int> vista{base, 3};\n    vista[2] = 8;\n    std::cout << vista.size() << ':' << vista[0] << ':' << vista[2];\n    vista = std::span<int>{};\n    [] base;\n    base = nullptr;\n    return 0;\n}\n",
+          "answers": [
+            "3",
+            "delete[]"
+          ],
+          "answerAlternatives": [
+            [
+              "3"
+            ],
+            [
+              "delete[]",
+              "delete []"
+            ]
+          ],
+          "explanation": "La vista describe tres elementos reales. Las llaves vacías inicializan los tres con cero; después cambia el tercero a 8. Se vacía la vista y se libera el array una sola vez mediante delete[]."
+        }
+      },
+      {
+        "id": "block_0018_0002",
+        "block": {
+          "type": "cpp_compiler",
+          "language": "cpp",
+          "initialCode": "#include <cstddef>\n#include <iostream>\n#include <span>\n\nbool crear(int*& base, int& cantidad, int solicitados, int primero) {\n    if (base != nullptr || cantidad != 0 || solicitados < 1 || solicitados > 4\n        || primero < 0 || primero > 9) {\n        return false;\n    }\n    if (solicitados - 1 > 9 - primero) {\n        return false;\n    }\n    // Crea e inicializa el array y conserva su inicio y cantidad.\n    return false;\n}\n\nbool retirar(int*& base, int& cantidad) {\n    if (base == nullptr) {\n        cantidad = 0;\n        return false;\n    }\n    // Libera el array completo y deja su estado vacío.\n    return false;\n}\n\nbool seleccionar(std::span<int> total, std::span<int>& vista, int inicio, int cantidad) {\n    if (inicio < 0 || cantidad < 0) {\n        return false;\n    }\n    const auto posicion = static_cast<std::size_t>(inicio);\n    const auto longitud = static_cast<std::size_t>(cantidad);\n    if (posicion > total.size() || longitud > total.size() - posicion) {\n        return false;\n    }\n    vista = total.subspan(posicion, longitud);\n    return true;\n}\n\nint main() {\n    int ordenes = 0;\n    if (!(std::cin >> ordenes) || ordenes < 1 || ordenes > 12) {\n        return 1;\n    }\n    int* base = nullptr;\n    int cantidad = 0;\n    std::span<int> vista;\n    for (int i = 0; i < ordenes; ++i) {\n        int operacion = 0;\n        int a = 0;\n        int b = 0;\n        if (!(std::cin >> operacion >> a >> b)) {\n            vista = std::span<int>{};\n            retirar(base, cantidad);\n            return 1;\n        }\n        const char* estado = \"Orden\";\n        if (operacion == 1) {\n            if (crear(base, cantidad, a, b)) {\n                vista = std::span<int>{base, static_cast<std::size_t>(cantidad)};\n                estado = \"Creado\";\n            } else {\n                estado = \"Rechazo\";\n            }\n        } else if (operacion == 2) {\n            std::span<int> total;\n            if (base != nullptr) {\n                total = std::span<int>{base, static_cast<std::size_t>(cantidad)};\n            }\n            estado = seleccionar(total, vista, a, b) ? \"Seleccion\" : \"Rechazo\";\n        } else if (operacion == 3) {\n            if (a < 0 || a > 9) {\n                estado = \"Rechazo\";\n            } else {\n                for (int& dato : vista) {\n                    dato = a;\n                }\n                estado = vista.empty() ? \"Vacio\" : \"Cambio\";\n            }\n        } else if (operacion == 4) {\n            vista = std::span<int>{};\n            estado = retirar(base, cantidad) ? \"Liberado\" : \"Vacio\";\n        }\n        std::cout << \"Estado:\" << estado << \";Cantidad:\" << cantidad\n                  << \";Vista:\" << vista.size() << \";Datos:\";\n        if (base == nullptr) {\n            std::cout << 'X';\n        } else {\n            for (int j = 0; j < cantidad; ++j) {\n                if (j != 0) {\n                    std::cout << ',';\n                }\n                std::cout << base[j];\n            }\n        }\n        std::cout << '\\n';\n    }\n    vista = std::span<int>{};\n    const bool cierre = retirar(base, cantidad);\n    std::cout << \"Cierre:\" << cierre << \";Cantidad:\" << cantidad << \";Vista:\" << vista.size() << '\\n';\n    return 0;\n}\n",
+          "initialStandardInput": "12\n1 4 0\n2 1 2\n3 9 0\n1 3 7\n2 4 0\n3 8 0\n2 3 2\n4 0 0\n4 0 0\n1 3 7\n2 2 1\n3 0 0\n",
+          "outputCheck": {
+            "inputComparison": "tokens",
+            "cases": [
+              {
+                "standardInput": "12\n1 4 0\n2 1 2\n3 9 0\n1 3 7\n2 4 0\n3 8 0\n2 3 2\n4 0 0\n4 0 0\n1 3 7\n2 2 1\n3 0 0\n",
+                "outputs": [
+                  "Estado:Creado;Cantidad:4;Vista:4;Datos:0,1,2,3\nEstado:Seleccion;Cantidad:4;Vista:2;Datos:0,1,2,3\nEstado:Cambio;Cantidad:4;Vista:2;Datos:0,9,9,3\nEstado:Rechazo;Cantidad:4;Vista:2;Datos:0,9,9,3\nEstado:Seleccion;Cantidad:4;Vista:0;Datos:0,9,9,3\nEstado:Vacio;Cantidad:4;Vista:0;Datos:0,9,9,3\nEstado:Rechazo;Cantidad:4;Vista:0;Datos:0,9,9,3\nEstado:Liberado;Cantidad:0;Vista:0;Datos:X\nEstado:Vacio;Cantidad:0;Vista:0;Datos:X\nEstado:Creado;Cantidad:3;Vista:3;Datos:7,8,9\nEstado:Seleccion;Cantidad:3;Vista:1;Datos:7,8,9\nEstado:Cambio;Cantidad:3;Vista:1;Datos:7,8,0\nCierre:1;Cantidad:0;Vista:0\n"
+                ],
+                "explanation": "Conserva el inicio del array y su cantidad reales; una vista vacía no indica que el array se haya liberado. Valida todos los datos antes de reservar y usa la forma de liberación del array."
+              },
+              {
+                "standardInput": "8\n1 0 0\n1 2147483647 0\n1 -1 0\n1 4 7\n1 1 9\n2 0 1\n3 -2147483648 0\n4 0 0\n",
+                "outputs": [
+                  "Estado:Rechazo;Cantidad:0;Vista:0;Datos:X\nEstado:Rechazo;Cantidad:0;Vista:0;Datos:X\nEstado:Rechazo;Cantidad:0;Vista:0;Datos:X\nEstado:Rechazo;Cantidad:0;Vista:0;Datos:X\nEstado:Creado;Cantidad:1;Vista:1;Datos:9\nEstado:Seleccion;Cantidad:1;Vista:1;Datos:9\nEstado:Rechazo;Cantidad:1;Vista:1;Datos:9\nEstado:Liberado;Cantidad:0;Vista:0;Datos:X\nCierre:0;Cantidad:0;Vista:0\n"
+                ],
+                "explanation": "Conserva el inicio del array y su cantidad reales; una vista vacía no indica que el array se haya liberado. Valida todos los datos antes de reservar y usa la forma de liberación del array."
+              },
+              {
+                "standardInput": "8\n2 0 0\n3 5 0\n1 2 8\n2 1 1\n2 -1 0\n2 0 2147483647\n3 4 0\n4 0 0\n",
+                "outputs": [
+                  "Estado:Seleccion;Cantidad:0;Vista:0;Datos:X\nEstado:Vacio;Cantidad:0;Vista:0;Datos:X\nEstado:Creado;Cantidad:2;Vista:2;Datos:8,9\nEstado:Seleccion;Cantidad:2;Vista:1;Datos:8,9\nEstado:Rechazo;Cantidad:2;Vista:1;Datos:8,9\nEstado:Rechazo;Cantidad:2;Vista:1;Datos:8,9\nEstado:Cambio;Cantidad:2;Vista:1;Datos:8,4\nEstado:Liberado;Cantidad:0;Vista:0;Datos:X\nCierre:0;Cantidad:0;Vista:0\n"
+                ],
+                "explanation": "Conserva el inicio del array y su cantidad reales; una vista vacía no indica que el array se haya liberado. Valida todos los datos antes de reservar y usa la forma de liberación del array."
+              }
+            ]
+          }
+        }
+      },
+      {
+        "id": "block_0020_0001",
+        "block": {
+          "type": "code",
+          "language": "cpp",
+          "code": "#include <cstddef>\n#include <iostream>\n#include <span>\n\nbool crear(int*& base, int& cantidad, int solicitados, int primero) {\n    if (base != nullptr || cantidad != 0 || solicitados < 1 || solicitados > 4\n        || primero < 0 || primero > 9) {\n        return false;\n    }\n    if (solicitados - 1 > 9 - primero) {\n        return false;\n    }\n    int* nuevo = new int[solicitados]{};\n    for (int i = 0; i < solicitados; ++i) {\n        nuevo[i] = primero + i;\n    }\n    base = nuevo;\n    cantidad = solicitados;\n    return true;\n}\n\nbool retirar(int*& base, int& cantidad) {\n    if (base == nullptr) {\n        return false;\n    }\n    delete[] base;\n    base = nullptr;\n    cantidad = 0;\n    return true;\n}\n\nbool seleccionar(std::span<int> total, std::span<int>& vista, int inicio, int cantidad) {\n    if (inicio < 0 || cantidad < 0) {\n        return false;\n    }\n    const auto posicion = static_cast<std::size_t>(inicio);\n    const auto longitud = static_cast<std::size_t>(cantidad);\n    if (posicion > total.size() || longitud > total.size() - posicion) {\n        return false;\n    }\n    vista = total.subspan(posicion, longitud);\n    return true;\n}\n\nint main() {\n    int ordenes = 0;\n    if (!(std::cin >> ordenes) || ordenes < 1 || ordenes > 12) {\n        return 1;\n    }\n    int* base = nullptr;\n    int cantidad = 0;\n    std::span<int> vista;\n    for (int i = 0; i < ordenes; ++i) {\n        int operacion = 0;\n        int a = 0;\n        int b = 0;\n        if (!(std::cin >> operacion >> a >> b)) {\n            vista = std::span<int>{};\n            retirar(base, cantidad);\n            return 1;\n        }\n        const char* estado = \"Orden\";\n        if (operacion == 1) {\n            if (crear(base, cantidad, a, b)) {\n                vista = std::span<int>{base, static_cast<std::size_t>(cantidad)};\n                estado = \"Creado\";\n            } else {\n                estado = \"Rechazo\";\n            }\n        } else if (operacion == 2) {\n            std::span<int> total;\n            if (base != nullptr) {\n                total = std::span<int>{base, static_cast<std::size_t>(cantidad)};\n            }\n            estado = seleccionar(total, vista, a, b) ? \"Seleccion\" : \"Rechazo\";\n        } else if (operacion == 3) {\n            if (a < 0 || a > 9) {\n                estado = \"Rechazo\";\n            } else {\n                for (int& dato : vista) {\n                    dato = a;\n                }\n                estado = vista.empty() ? \"Vacio\" : \"Cambio\";\n            }\n        } else if (operacion == 4) {\n            vista = std::span<int>{};\n            estado = retirar(base, cantidad) ? \"Liberado\" : \"Vacio\";\n        }\n        std::cout << \"Estado:\" << estado << \";Cantidad:\" << cantidad\n                  << \";Vista:\" << vista.size() << \";Datos:\";\n        if (base == nullptr) {\n            std::cout << 'X';\n        } else {\n            for (int j = 0; j < cantidad; ++j) {\n                if (j != 0) {\n                    std::cout << ',';\n                }\n                std::cout << base[j];\n            }\n        }\n        std::cout << '\\n';\n    }\n    vista = std::span<int>{};\n    const bool cierre = retirar(base, cantidad);\n    std::cout << \"Cierre:\" << cierre << \";Cantidad:\" << cantidad << \";Vista:\" << vista.size() << '\\n';\n    return 0;\n}\n"
+        }
+      }
+    ]
   }
 }

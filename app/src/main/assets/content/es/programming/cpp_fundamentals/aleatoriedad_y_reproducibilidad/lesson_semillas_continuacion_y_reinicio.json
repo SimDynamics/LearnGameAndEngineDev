@@ -310,7 +310,7 @@
         },
         {
           "type": "cpp_compiler",
-          "initialCode": "#include <iostream>\n#include <random>\n#include <vector>\n\nint main() {\n    // Construye las funciones y las pruebas de la consigna.\n    return 0;\n}\n",
+          "initialCode": "#include <iostream>\n#include <random>\n#include <vector>\n\nint main() {\n    // Construye las funciones y las pruebas de la consigna.\n    \n    return 0;\n}\n",
           "outputCheck": {
             "cases": [
               {
@@ -456,7 +456,7 @@
         },
         {
           "type": "cpp_compiler",
-          "initialCode": "#include <iostream>\n#include <random>\n#include <vector>\n\nint main() {\n    // Construye las funciones y las pruebas de la consigna.\n    return 0;\n}\n",
+          "initialCode": "#include <iostream>\n#include <random>\n#include <vector>\n\nint main() {\n    // Construye las funciones y las pruebas de la consigna.\n    \n    return 0;\n}\n",
           "outputCheck": {
             "cases": [
               {
@@ -1534,6 +1534,16 @@
         "id": "block_0007_0002",
         "beforeSha256": "9b5aab5a2d36a7bb92795413a0fbf72885ca1c172f27b008e22c3a69f35239b9",
         "afterSha256": "631d3562ab04b2ca8869ab9ddb5cca695a6c3a81ff0c3a02505177579e9795b1"
+      },
+      {
+        "id": "block_0004_0003",
+        "beforeSha256": "8ec18db6c22bf079e92e1268139d607cdcf0d91ebe68ab1f56c465c38658d293",
+        "afterSha256": "7e5666019300b79fd34c50b6a94a1fc27bdbdd194307a022090a8adf1ba7e891"
+      },
+      {
+        "id": "block_0006_0004",
+        "beforeSha256": "9ce39109dc12b7a34915147a3484e4647962b885203ba8af78ae2fd22a43712b",
+        "afterSha256": "0c92a971a1b2b467d49c396a318887f39c0ed05bf60e6f16cbaa648132b16455"
       }
     ],
     "sourceFormatRevisions": [
@@ -1611,6 +1621,42 @@
           "type": "code",
           "language": "cpp",
           "code": "#include <iostream>\n#include <random>\n#include <vector>\n\nint suma(const std::vector<int>& datos) {\n    int total=0;\n    for (int dato:datos) { total+=dato; }\n    return total;\n}\n\nint main() {\n    std::mt19937 motor{67};\n    std::uniform_int_distribution<int> elegir{2,2};\n    std::vector<int> primera;\n    std::vector<int> continuacion;\n    for (int i=0;i<3;++i) { primera.push_back(elegir(motor)); }\n    for (int i=0;i<2;++i) { continuacion.push_back(elegir(motor)); }\n    motor.seed(67);\n    elegir.reset();\n    std::vector<int> repetida;\n    for (int i=0;i<3;++i) { repetida.push_back(elegir(motor)); }\n    std::cout<<\"Primero:\"<<suma(primera)<<\"\\nContinuacion:\"<<suma(continuacion)\n             <<\"\\nRepeticion:\"<<(primera==repetida)<<\"\\n\";\n    return 0;\n}\n"
+        }
+      },
+      {
+        "id": "block_0004_0003",
+        "block": {
+          "type": "cpp_compiler",
+          "initialCode": "#include <iostream>\n#include <random>\n#include <vector>\n\nint main() {\n    // Construye las funciones y las pruebas de la consigna.\n    return 0;\n}\n",
+          "outputCheck": {
+            "cases": [
+              {
+                "standardInput": "",
+                "outputs": [
+                  "Por lotes:1\nReinicio:1\nPor lotes:1\nReinicio:1\nPor lotes:1\nReinicio:1\nPor lotes:1\nReinicio:1\n"
+                ],
+                "explanation": "En probar(6,2), el segundo par de objetos obtiene dos datos y continúa con otros cuatro desde el estado alcanzado. Su vector debe coincidir con el que obtuvo seis datos seguidos. Después, seed y reset restablecen el primer experimento para repetir su muestra original en el mismo entorno: las comparaciones muestran Por lotes:1 y Reinicio:1.\n\nprobar(0,0) compara vectores vacíos: la igualdad es verdadera, pero no acredita ninguna obtención. probar(1,0) y probar(1,1) comprueban respectivamente que el primer lote y el segundo pueden estar vacíos. En cada llamada deben compararse las colecciones reales, sin sustituir el resultado por una constante."
+              }
+            ]
+          }
+        }
+      },
+      {
+        "id": "block_0006_0004",
+        "block": {
+          "type": "cpp_compiler",
+          "initialCode": "#include <iostream>\n#include <random>\n#include <vector>\n\nint main() {\n    // Construye las funciones y las pruebas de la consigna.\n    return 0;\n}\n",
+          "outputCheck": {
+            "cases": [
+              {
+                "standardInput": "",
+                "outputs": [
+                  "Primero:6\nContinuacion:4\nRepeticion:1\n"
+                ],
+                "explanation": "El primer vector contiene tres valores iguales a dos, cuya suma es seis. El segundo contiene dos valores iguales a dos, cuya suma es cuatro. La colección repetida vuelve a contener tres doses y se compara con la primera: por eso se muestra Repeticion:1.\n\nEstas salidas comprueban los datos, sus sumas y la igualdad de las colecciones. El intervalo 2..2 da esos mismos valores aunque el motor se restablezca indebidamente antes de cada obtención. Para distinguir continuación y reinicio hay que seguir también los objetos y sus llamadas; las sumas no indican cuántas veces se avanzó el motor."
+              }
+            ]
+          }
         }
       }
     ]

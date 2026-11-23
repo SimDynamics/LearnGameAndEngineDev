@@ -88,7 +88,7 @@
           "type": "output_prediction",
           "language": "cpp",
           "question": "Predice la salida exacta.",
-          "code": "#include <iostream>\n#include <string>\n#include <vector>\n\nstruct Capacidad { int unidades; };\nstruct Ocupacion { int unidades; };\nstruct ReservaInvalida {};\n\nclass Reserva {\npublic:\n    Reserva(Capacidad capacidad, Ocupacion ocupacion)\n        : capacidad_{capacidad.unidades}, ocupacion_{ocupacion.unidades} {\n        if (capacidad_ < 1 || capacidad_ > 20 || ocupacion_ < 0 || ocupacion_ > capacidad_) {\n            throw ReservaInvalida{};\n        }\n    }\n    int capacidad() const { return capacidad_; }\n    int ocupacion() const { return ocupacion_; }\n    int disponibles() const { return capacidad_ - ocupacion_; }\nprivate:\n    int capacidad_;\n    int ocupacion_;\n};\n\nint main() {\n    Reserva sala{Capacidad{12}, Ocupacion{7}};\n    std::cout << sala.disponibles();\n    return 0;\n}\n",
+          "code": "#include <iostream>\n#include <string>\n#include <vector>\n\nstruct Capacidad { int unidades; };\nstruct Ocupacion { int unidades; };\nstruct ReservaInvalida {};\n\nclass Reserva {\npublic:\n    Reserva(Capacidad capacidad, Ocupacion ocupacion)\n        : capacidad_{capacidad.unidades}, ocupacion_{ocupacion.unidades} {\n        if (capacidad_ < 1 || capacidad_ > 20 || ocupacion_ < 0 || ocupacion_ > capacidad_) {\n            throw ReservaInvalida{};\n        }\n    }\n\n    int capacidad() const { return capacidad_; }\n    int ocupacion() const { return ocupacion_; }\n    int disponibles() const { return capacidad_ - ocupacion_; }\nprivate:\n    int capacidad_;\n    int ocupacion_;\n};\n\nint main() {\n    Reserva sala{Capacidad{12}, Ocupacion{7}};\n\n    std::cout << sala.disponibles();\n\n    return 0;\n}\n",
           "answers": [
             "5"
           ],
@@ -99,7 +99,7 @@
           "type": "fill_code",
           "language": "cpp",
           "question": "Completa sólo el nombre del tipo que representa las plazas ya ocupadas.",
-          "code": "#include <iostream>\n#include <string>\n#include <vector>\n\nstruct Capacidad { int unidades; };\nstruct Ocupacion { int unidades; };\nstruct ReservaInvalida {};\n\nclass Reserva {\npublic:\n    Reserva(Capacidad capacidad, Ocupacion ocupacion)\n        : capacidad_{capacidad.unidades}, ocupacion_{ocupacion.unidades} {\n        if (capacidad_ < 1 || capacidad_ > 20 || ocupacion_ < 0 || ocupacion_ > capacidad_) {\n            throw ReservaInvalida{};\n        }\n    }\n    int capacidad() const { return capacidad_; }\n    int ocupacion() const { return ocupacion_; }\n    int disponibles() const { return capacidad_ - ocupacion_; }\nprivate:\n    int capacidad_;\n    int ocupacion_;\n};\n\nint main() {\n    Reserva sala{Capacidad{6}, ___{2}};\n    std::cout << sala.disponibles();\n    return 0;\n}\n",
+          "code": "#include <iostream>\n#include <string>\n#include <vector>\n\nstruct Capacidad { int unidades; };\nstruct Ocupacion { int unidades; };\nstruct ReservaInvalida {};\n\nclass Reserva {\npublic:\n    Reserva(Capacidad capacidad, Ocupacion ocupacion)\n        : capacidad_{capacidad.unidades}, ocupacion_{ocupacion.unidades} {\n        if (capacidad_ < 1 || capacidad_ > 20 || ocupacion_ < 0 || ocupacion_ > capacidad_) {\n            throw ReservaInvalida{};\n        }\n    }\n\n    int capacidad() const { return capacidad_; }\n    int ocupacion() const { return ocupacion_; }\n    int disponibles() const { return capacidad_ - ocupacion_; }\nprivate:\n    int capacidad_;\n    int ocupacion_;\n};\n\nint main() {\n    Reserva sala{Capacidad{6}, ___{2}};\n\n    std::cout << sala.disponibles();\n\n    return 0;\n}\n",
           "answers": [
             "Ocupacion"
           ],
@@ -159,7 +159,7 @@
           "type": "output_prediction",
           "language": "cpp",
           "question": "Predice la salida exacta.",
-          "code": "#include <iostream>\n#include <string>\n#include <vector>\n\nstruct Capacidad { int unidades; };\nstruct Ocupacion { int unidades; };\nstruct ReservaInvalida {};\n\nclass Reserva {\npublic:\n    Reserva(Capacidad capacidad, Ocupacion ocupacion)\n        : capacidad_{capacidad.unidades}, ocupacion_{ocupacion.unidades} {\n        if (capacidad_ < 1 || capacidad_ > 20 || ocupacion_ < 0 || ocupacion_ > capacidad_) {\n            throw ReservaInvalida{};\n        }\n    }\n    int capacidad() const { return capacidad_; }\n    int ocupacion() const { return ocupacion_; }\n    int disponibles() const { return capacidad_ - ocupacion_; }\nprivate:\n    int capacidad_;\n    int ocupacion_;\n};\n\nint main() {\n    try {\n        Reserva sala{Capacidad{6}, Ocupacion{7}};\n        std::cout << sala.disponibles();\n    } catch (const ReservaInvalida&) { std::cout << \"Rechazada\"; }\n    return 0;\n}\n",
+          "code": "#include <iostream>\n#include <string>\n#include <vector>\n\nstruct Capacidad { int unidades; };\nstruct Ocupacion { int unidades; };\nstruct ReservaInvalida {};\n\nclass Reserva {\npublic:\n    Reserva(Capacidad capacidad, Ocupacion ocupacion)\n        : capacidad_{capacidad.unidades}, ocupacion_{ocupacion.unidades} {\n        if (capacidad_ < 1 || capacidad_ > 20 || ocupacion_ < 0 || ocupacion_ > capacidad_) {\n            throw ReservaInvalida{};\n        }\n    }\n\n    int capacidad() const { return capacidad_; }\n    int ocupacion() const { return ocupacion_; }\n    int disponibles() const { return capacidad_ - ocupacion_; }\nprivate:\n    int capacidad_;\n    int ocupacion_;\n};\n\nint main() {\n    try {\n        Reserva sala{Capacidad{6}, Ocupacion{7}};\n        std::cout << sala.disponibles();\n    } catch (const ReservaInvalida&) { std::cout << \"Rechazada\"; }\n    return 0;\n}\n",
           "answers": [
             "Rechazada"
           ],
@@ -170,7 +170,7 @@
           "type": "output_prediction",
           "language": "cpp",
           "question": "Predice la salida exacta.",
-          "code": "#include <iostream>\n#include <string>\n#include <vector>\n\nstruct Capacidad { int unidades; };\nstruct Ocupacion { int unidades; };\nstruct ReservaInvalida {};\n\nclass Reserva {\npublic:\n    Reserva(Capacidad capacidad, Ocupacion ocupacion)\n        : capacidad_{capacidad.unidades}, ocupacion_{ocupacion.unidades} {\n        if (capacidad_ < 1 || capacidad_ > 20 || ocupacion_ < 0 || ocupacion_ > capacidad_) {\n            throw ReservaInvalida{};\n        }\n    }\n    int capacidad() const { return capacidad_; }\n    int ocupacion() const { return ocupacion_; }\n    int disponibles() const { return capacidad_ - ocupacion_; }\nprivate:\n    int capacidad_;\n    int ocupacion_;\n};\n\nint main() {\n    try {\n        Reserva sala{Capacidad{0}, Ocupacion{0}};\n        std::cout << sala.disponibles();\n    } catch (const ReservaInvalida&) { std::cout << \"Rechazada\"; }\n    return 0;\n}\n",
+          "code": "#include <iostream>\n#include <string>\n#include <vector>\n\nstruct Capacidad { int unidades; };\nstruct Ocupacion { int unidades; };\nstruct ReservaInvalida {};\n\nclass Reserva {\npublic:\n    Reserva(Capacidad capacidad, Ocupacion ocupacion)\n        : capacidad_{capacidad.unidades}, ocupacion_{ocupacion.unidades} {\n        if (capacidad_ < 1 || capacidad_ > 20 || ocupacion_ < 0 || ocupacion_ > capacidad_) {\n            throw ReservaInvalida{};\n        }\n    }\n\n    int capacidad() const { return capacidad_; }\n    int ocupacion() const { return ocupacion_; }\n    int disponibles() const { return capacidad_ - ocupacion_; }\nprivate:\n    int capacidad_;\n    int ocupacion_;\n};\n\nint main() {\n    try {\n        Reserva sala{Capacidad{0}, Ocupacion{0}};\n        std::cout << sala.disponibles();\n    } catch (const ReservaInvalida&) { std::cout << \"Rechazada\"; }\n    return 0;\n}\n",
           "answers": [
             "Rechazada"
           ],
@@ -205,7 +205,7 @@
           "type": "output_prediction",
           "language": "cpp",
           "question": "Predice la salida exacta.",
-          "code": "#include <iostream>\n#include <string>\n#include <vector>\n\nstruct Capacidad { int unidades; };\nstruct Ocupacion { int unidades; };\nstruct ReservaInvalida {};\n\nclass Reserva {\npublic:\n    Reserva(Capacidad capacidad, Ocupacion ocupacion)\n        : capacidad_{capacidad.unidades}, ocupacion_{ocupacion.unidades} {\n        if (capacidad_ < 1 || capacidad_ > 20 || ocupacion_ < 0 || ocupacion_ > capacidad_) {\n            throw ReservaInvalida{};\n        }\n    }\n    int capacidad() const { return capacidad_; }\n    int ocupacion() const { return ocupacion_; }\n    int disponibles() const { return capacidad_ - ocupacion_; }\nprivate:\n    int capacidad_;\n    int ocupacion_;\n};\n\nint main() {\n    Reserva vacia{Capacidad{4}, Ocupacion{0}};\n    Reserva llena{Capacidad{4}, Ocupacion{4}};\n    std::cout << vacia.disponibles() << \" \" << llena.disponibles();\n    return 0;\n}\n",
+          "code": "#include <iostream>\n#include <string>\n#include <vector>\n\nstruct Capacidad { int unidades; };\nstruct Ocupacion { int unidades; };\nstruct ReservaInvalida {};\n\nclass Reserva {\npublic:\n    Reserva(Capacidad capacidad, Ocupacion ocupacion)\n        : capacidad_{capacidad.unidades}, ocupacion_{ocupacion.unidades} {\n        if (capacidad_ < 1 || capacidad_ > 20 || ocupacion_ < 0 || ocupacion_ > capacidad_) {\n            throw ReservaInvalida{};\n        }\n    }\n\n    int capacidad() const { return capacidad_; }\n    int ocupacion() const { return ocupacion_; }\n    int disponibles() const { return capacidad_ - ocupacion_; }\nprivate:\n    int capacidad_;\n    int ocupacion_;\n};\n\nint main() {\n    Reserva vacia{Capacidad{4}, Ocupacion{0}};\n    Reserva llena{Capacidad{4}, Ocupacion{4}};\n\n    std::cout << vacia.disponibles() << \" \" << llena.disponibles();\n\n    return 0;\n}\n",
           "answers": [
             "4 0"
           ],
@@ -304,7 +304,7 @@
         },
         {
           "type": "cpp_compiler",
-          "initialCode": "#include <iostream>\n#include <string>\n#include <vector>\n\nint main() {\n    // Construye aqui el programa de la consigna.\n\n    return 0;\n}\n",
+          "initialCode": "#include <iostream>\n#include <string>\n#include <vector>\n\nint main() {\n    // Construye aqui el programa de la consigna.\n    \n    return 0;\n}\n",
           "outputCheck": {
             "cases": [
               {
@@ -347,7 +347,7 @@
         },
         {
           "type": "cpp_compiler",
-          "initialCode": "#include <iostream>\n#include <string>\n#include <vector>\n\nstruct Ancho { int unidades; };\nstruct Alto { int unidades; };\nstruct CajaInvalida {};\nclass Caja {\npublic:\n    Caja(Ancho ancho, Alto alto) : ancho_{ancho.unidades}, alto_{alto.unidades} {\n        if (ancho_ < 1 || ancho_ > 10 || alto_ < 1 || alto_ > 10) { throw CajaInvalida{}; }\n    }\n    int ancho() const { return ancho_; }\n    int alto() const { return alto_; }\n    int area() const { return ancho_ * alto_; }\nprivate:\n    int ancho_;\n    int alto_;\n};\n\nint main() {\n    // Añade aquí la llamada indicada.\n    return 0;\n}\n",
+          "initialCode": "#include <iostream>\n#include <string>\n#include <vector>\n\nstruct Ancho { int unidades; };\nstruct Alto { int unidades; };\nstruct CajaInvalida {};\nclass Caja {\npublic:\n    Caja(Ancho ancho, Alto alto) : ancho_{ancho.unidades}, alto_{alto.unidades} {\n        if (ancho_ < 1 || ancho_ > 10 || alto_ < 1 || alto_ > 10) { throw CajaInvalida{}; }\n    }\n\n    int ancho() const { return ancho_; }\n    int alto() const { return alto_; }\n    int area() const { return ancho_ * alto_; }\nprivate:\n    int ancho_;\n    int alto_;\n};\n\nint main() {\n    // Añade aquí la llamada indicada.\n    \n    return 0;\n}\n",
           "compileCheck": {
             "diagnostic": "swapped-named-arguments",
             "explanation": "El constructor de Caja recibe primero un Ancho y después un Alto. En Caja mal{Alto{4}, Ancho{3}}, esos tipos están intercambiados: los valores numéricos no sustituyen el tipo requerido en cada posición. El rechazo ocurre durante la compilación; el programa no llegó a ejecutarse."
@@ -384,7 +384,7 @@
           "type": "output_prediction",
           "language": "cpp",
           "question": "Predice la salida exacta.",
-          "code": "#include <iostream>\n#include <string>\n#include <vector>\n\nstruct Capacidad { int unidades; };\nstruct Ocupacion { int unidades; };\nstruct ReservaInvalida {};\n\nclass Reserva {\npublic:\n    Reserva(Capacidad capacidad, Ocupacion ocupacion)\n        : capacidad_{capacidad.unidades}, ocupacion_{ocupacion.unidades} {\n        if (capacidad_ < 1 || capacidad_ > 20 || ocupacion_ < 0 || ocupacion_ > capacidad_) {\n            throw ReservaInvalida{};\n        }\n    }\n    int capacidad() const { return capacidad_; }\n    int ocupacion() const { return ocupacion_; }\n    int disponibles() const { return capacidad_ - ocupacion_; }\nprivate:\n    int capacidad_;\n    int ocupacion_;\n};\n\nint main() {\n    Reserva original{Capacidad{5}, Ocupacion{2}};\n    Reserva copia = original;\n    std::cout << copia.capacidad() << \" \" << copia.ocupacion();\n    return 0;\n}\n",
+          "code": "#include <iostream>\n#include <string>\n#include <vector>\n\nstruct Capacidad { int unidades; };\nstruct Ocupacion { int unidades; };\nstruct ReservaInvalida {};\n\nclass Reserva {\npublic:\n    Reserva(Capacidad capacidad, Ocupacion ocupacion)\n        : capacidad_{capacidad.unidades}, ocupacion_{ocupacion.unidades} {\n        if (capacidad_ < 1 || capacidad_ > 20 || ocupacion_ < 0 || ocupacion_ > capacidad_) {\n            throw ReservaInvalida{};\n        }\n    }\n\n    int capacidad() const { return capacidad_; }\n    int ocupacion() const { return ocupacion_; }\n    int disponibles() const { return capacidad_ - ocupacion_; }\nprivate:\n    int capacidad_;\n    int ocupacion_;\n};\n\nint main() {\n    Reserva original{Capacidad{5}, Ocupacion{2}};\n    Reserva copia = original;\n\n    std::cout << copia.capacidad() << \" \" << copia.ocupacion();\n\n    return 0;\n}\n",
           "answers": [
             "5 2"
           ],
@@ -1432,6 +1432,46 @@
         "id": "block_0007_0005",
         "beforeSha256": "ec4e5023cea2aafd5fafec86b15e819f8bff253478a9830b5c386a8031a919a2",
         "afterSha256": "9e9f9a83e634c58e026cfe53a27f38b019b482e2d13b2426d94adef98e35b030"
+      },
+      {
+        "id": "block_0001_0003",
+        "beforeSha256": "af6d7a7d4922770aed6d311c94e694f7d19418224a7cfd36d298e2ac8d161448",
+        "afterSha256": "2ead5dc096ab58569573b8afc49f568d1a46032c866eab8fee846ef973f1d5c1"
+      },
+      {
+        "id": "block_0001_0004",
+        "beforeSha256": "e448e1d0ef3362191939ed9420381c1518bc2b40777f6b3a1a5bd882b2f1ed24",
+        "afterSha256": "b7981a980ed6ce4056519390c28b481a1ce8f190ff68641ac5a1bfdae90373dc"
+      },
+      {
+        "id": "block_0003_0001",
+        "beforeSha256": "0378f1f4bc294144109ab4a97ba40ea1b148c8f5c86594f08cf4ed50e9ce8020",
+        "afterSha256": "41c175c53ca93657bde758229e79d53d85d7c18ed68ed36053c3ef214fb94dc7"
+      },
+      {
+        "id": "block_0003_0002",
+        "beforeSha256": "145091bb0d4e7b74a1bbc87faea541d0fe04eda48c52e4045f855a65b1e63eec",
+        "afterSha256": "26d6b4534c0639833ff21405f2467728d75a58f14dba06335186d30db47777c3"
+      },
+      {
+        "id": "block_0004_0001",
+        "beforeSha256": "8c7cc28536cd27e389f72dda0e41f29b6eddea4941fc49183780364911307900",
+        "afterSha256": "00a0696ca7053563256d728d98999fe95ba87b3a65a112b82a0139e6761a930e"
+      },
+      {
+        "id": "block_0006_0002",
+        "beforeSha256": "d460ce5e741ee9f2b95a610d406d79146bb376b3d7d757e4ff7c611692fdc55a",
+        "afterSha256": "6c3910ce318960c51d47590679e28601ca348e80abc259433acad1cbbad6ced8"
+      },
+      {
+        "id": "block_0006_0006",
+        "beforeSha256": "c9d09bede8fbaa241170b18a732a5a80efff5c788d03a38394ab5807071ca281",
+        "afterSha256": "bd4685256eb10091a9feed6671325abb8efe9df5e02bf24c231b943cbc76e81b"
+      },
+      {
+        "id": "block_0007_0003",
+        "beforeSha256": "1eaffbc31303aeb71cdb96563e3d0deb1e4e3d574ea86e14c25fd8ab91490f54",
+        "afterSha256": "c52fa1c63ebebc076c4c6af38e2c86df29472cfe81b2e78cb3d940da1948f9ee"
       }
     ],
     "sourceFormatRevisions": [
@@ -1491,6 +1531,101 @@
           "type": "code",
           "language": "cpp",
           "code": "#include <iostream>\n#include <string>\n#include <vector>\n\nstruct Ancho { int unidades; };\nstruct Alto { int unidades; };\nstruct CajaInvalida {};\nclass Caja {\npublic:\n    Caja(Ancho ancho, Alto alto) : ancho_{ancho.unidades}, alto_{alto.unidades} {\n        if (ancho_ < 1 || ancho_ > 10 || alto_ < 1 || alto_ > 10) { throw CajaInvalida{}; }\n    }\n    int ancho() const { return ancho_; }\n    int alto() const { return alto_; }\n    int area() const { return ancho_ * alto_; }\nprivate:\n    int ancho_;\n    int alto_;\n};\n\nvoid probar(int ancho, int alto) {\n    try {\n        const Caja caja{Ancho{ancho}, Alto{alto}};\n        std::cout << caja.ancho() << \":\" << caja.alto() << \":\" << caja.area();\n    } catch (const CajaInvalida&) {\n        std::cout << \"Rechazado\";\n    }\n    std::cout << \"\\n\";\n}\n\nint main() {\n    probar(3, 4);\n    probar(1, 4);\n    probar(10, 4);\n    probar(3, 1);\n    probar(3, 10);\n    probar(0, 4);\n    probar(11, 4);\n    probar(3, 0);\n    probar(3, 11);\n    return 0;\n}\n"
+        }
+      },
+      {
+        "id": "block_0001_0003",
+        "block": {
+          "type": "output_prediction",
+          "language": "cpp",
+          "question": "Predice la salida exacta.",
+          "code": "#include <iostream>\n#include <string>\n#include <vector>\n\nstruct Capacidad { int unidades; };\nstruct Ocupacion { int unidades; };\nstruct ReservaInvalida {};\n\nclass Reserva {\npublic:\n    Reserva(Capacidad capacidad, Ocupacion ocupacion)\n        : capacidad_{capacidad.unidades}, ocupacion_{ocupacion.unidades} {\n        if (capacidad_ < 1 || capacidad_ > 20 || ocupacion_ < 0 || ocupacion_ > capacidad_) {\n            throw ReservaInvalida{};\n        }\n    }\n    int capacidad() const { return capacidad_; }\n    int ocupacion() const { return ocupacion_; }\n    int disponibles() const { return capacidad_ - ocupacion_; }\nprivate:\n    int capacidad_;\n    int ocupacion_;\n};\n\nint main() {\n    Reserva sala{Capacidad{12}, Ocupacion{7}};\n    std::cout << sala.disponibles();\n    return 0;\n}\n",
+          "answers": [
+            "5"
+          ],
+          "explanation": "Capacidad{12} aporta una capacidad de doce plazas y Ocupacion{7} aporta siete plazas ocupadas. Ambas cantidades cumplen la regla del constructor. disponibles() devuelve la diferencia entre capacidad_ y ocupacion_: doce menos siete son cinco. std::cout muestra 5.",
+          "reviewFeedback": "Lee las cantidades del objeto y aplica la consulta disponibles(). Distingue las plazas ocupadas de las que todavía pueden ocuparse."
+        }
+      },
+      {
+        "id": "block_0001_0004",
+        "block": {
+          "type": "fill_code",
+          "language": "cpp",
+          "question": "Completa sólo el nombre del tipo que representa las plazas ya ocupadas.",
+          "code": "#include <iostream>\n#include <string>\n#include <vector>\n\nstruct Capacidad { int unidades; };\nstruct Ocupacion { int unidades; };\nstruct ReservaInvalida {};\n\nclass Reserva {\npublic:\n    Reserva(Capacidad capacidad, Ocupacion ocupacion)\n        : capacidad_{capacidad.unidades}, ocupacion_{ocupacion.unidades} {\n        if (capacidad_ < 1 || capacidad_ > 20 || ocupacion_ < 0 || ocupacion_ > capacidad_) {\n            throw ReservaInvalida{};\n        }\n    }\n    int capacidad() const { return capacidad_; }\n    int ocupacion() const { return ocupacion_; }\n    int disponibles() const { return capacidad_ - ocupacion_; }\nprivate:\n    int capacidad_;\n    int ocupacion_;\n};\n\nint main() {\n    Reserva sala{Capacidad{6}, ___{2}};\n    std::cout << sala.disponibles();\n    return 0;\n}\n",
+          "answers": [
+            "Ocupacion"
+          ],
+          "explanation": "El segundo parámetro del constructor tiene tipo Ocupacion. Al escribir Ocupacion{2}, su miembro unidades recibe dos y expresa que esas plazas ya están ocupadas. Capacidad{6} proporciona las seis plazas totales. La consulta disponibles() devuelve cuatro, que se muestra como 4.",
+          "reviewFeedback": "El hueco corresponde al tipo del segundo argumento, no al nombre de un miembro ni al valor numérico que se pone entre llaves."
+        }
+      },
+      {
+        "id": "block_0003_0001",
+        "block": {
+          "type": "output_prediction",
+          "language": "cpp",
+          "question": "Predice la salida exacta.",
+          "code": "#include <iostream>\n#include <string>\n#include <vector>\n\nstruct Capacidad { int unidades; };\nstruct Ocupacion { int unidades; };\nstruct ReservaInvalida {};\n\nclass Reserva {\npublic:\n    Reserva(Capacidad capacidad, Ocupacion ocupacion)\n        : capacidad_{capacidad.unidades}, ocupacion_{ocupacion.unidades} {\n        if (capacidad_ < 1 || capacidad_ > 20 || ocupacion_ < 0 || ocupacion_ > capacidad_) {\n            throw ReservaInvalida{};\n        }\n    }\n    int capacidad() const { return capacidad_; }\n    int ocupacion() const { return ocupacion_; }\n    int disponibles() const { return capacidad_ - ocupacion_; }\nprivate:\n    int capacidad_;\n    int ocupacion_;\n};\n\nint main() {\n    try {\n        Reserva sala{Capacidad{6}, Ocupacion{7}};\n        std::cout << sala.disponibles();\n    } catch (const ReservaInvalida&) { std::cout << \"Rechazada\"; }\n    return 0;\n}\n",
+          "answers": [
+            "Rechazada"
+          ],
+          "explanation": "Capacidad{6} y Ocupacion{7} coinciden con los tipos de los parámetros. Después de inicializar los miembros, el constructor evalúa ocupacion_ > capacidad_: siete supera seis. Lanza ReservaInvalida{} antes de completar la construcción, por lo que no se llama a disponibles(). El catch muestra Rechazada.",
+          "reviewFeedback": "Sigue la construcción antes de llegar a la consulta. Comprueba todas sus condiciones y qué camino continúa si se lanza la señal de rechazo."
+        }
+      },
+      {
+        "id": "block_0003_0002",
+        "block": {
+          "type": "output_prediction",
+          "language": "cpp",
+          "question": "Predice la salida exacta.",
+          "code": "#include <iostream>\n#include <string>\n#include <vector>\n\nstruct Capacidad { int unidades; };\nstruct Ocupacion { int unidades; };\nstruct ReservaInvalida {};\n\nclass Reserva {\npublic:\n    Reserva(Capacidad capacidad, Ocupacion ocupacion)\n        : capacidad_{capacidad.unidades}, ocupacion_{ocupacion.unidades} {\n        if (capacidad_ < 1 || capacidad_ > 20 || ocupacion_ < 0 || ocupacion_ > capacidad_) {\n            throw ReservaInvalida{};\n        }\n    }\n    int capacidad() const { return capacidad_; }\n    int ocupacion() const { return ocupacion_; }\n    int disponibles() const { return capacidad_ - ocupacion_; }\nprivate:\n    int capacidad_;\n    int ocupacion_;\n};\n\nint main() {\n    try {\n        Reserva sala{Capacidad{0}, Ocupacion{0}};\n        std::cout << sala.disponibles();\n    } catch (const ReservaInvalida&) { std::cout << \"Rechazada\"; }\n    return 0;\n}\n",
+          "answers": [
+            "Rechazada"
+          ],
+          "explanation": "Capacidad{0} y Ocupacion{0} tienen los tipos pedidos, pero la capacidad recibida satisface capacidad_ < 1. El constructor lanza ReservaInvalida{} y no termina normalmente. El catch muestra Rechazada. Tener cero plazas ocupadas no basta para aceptar el objeto: también se exige una capacidad positiva.",
+          "reviewFeedback": "Revisa por separado el dominio de la capacidad y el de la ocupación. Que una de las cantidades sea admisible no sustituye la comprobación de la otra."
+        }
+      },
+      {
+        "id": "block_0004_0001",
+        "block": {
+          "type": "output_prediction",
+          "language": "cpp",
+          "question": "Predice la salida exacta.",
+          "code": "#include <iostream>\n#include <string>\n#include <vector>\n\nstruct Capacidad { int unidades; };\nstruct Ocupacion { int unidades; };\nstruct ReservaInvalida {};\n\nclass Reserva {\npublic:\n    Reserva(Capacidad capacidad, Ocupacion ocupacion)\n        : capacidad_{capacidad.unidades}, ocupacion_{ocupacion.unidades} {\n        if (capacidad_ < 1 || capacidad_ > 20 || ocupacion_ < 0 || ocupacion_ > capacidad_) {\n            throw ReservaInvalida{};\n        }\n    }\n    int capacidad() const { return capacidad_; }\n    int ocupacion() const { return ocupacion_; }\n    int disponibles() const { return capacidad_ - ocupacion_; }\nprivate:\n    int capacidad_;\n    int ocupacion_;\n};\n\nint main() {\n    Reserva vacia{Capacidad{4}, Ocupacion{0}};\n    Reserva llena{Capacidad{4}, Ocupacion{4}};\n    std::cout << vacia.disponibles() << \" \" << llena.disponibles();\n    return 0;\n}\n",
+          "answers": [
+            "4 0"
+          ],
+          "explanation": "Ambas reservas tienen capacidad cuatro. En vacia, la ocupación es cero y disponibles() devuelve cuatro menos cero: cuatro. En llena, la ocupación es cuatro y devuelve cuatro menos cuatro: cero. Ambas cumplen la regla de validez. Las consultas se muestran en ese orden, separadas por un espacio: 4 0.",
+          "reviewFeedback": "Calcula las plazas disponibles de cada objeto a partir de su capacidad y ocupación. Conserva el orden de las dos consultas y el espacio entre sus resultados."
+        }
+      },
+      {
+        "id": "block_0006_0006",
+        "block": {
+          "type": "cpp_compiler",
+          "initialCode": "#include <iostream>\n#include <string>\n#include <vector>\n\nstruct Ancho { int unidades; };\nstruct Alto { int unidades; };\nstruct CajaInvalida {};\nclass Caja {\npublic:\n    Caja(Ancho ancho, Alto alto) : ancho_{ancho.unidades}, alto_{alto.unidades} {\n        if (ancho_ < 1 || ancho_ > 10 || alto_ < 1 || alto_ > 10) { throw CajaInvalida{}; }\n    }\n    int ancho() const { return ancho_; }\n    int alto() const { return alto_; }\n    int area() const { return ancho_ * alto_; }\nprivate:\n    int ancho_;\n    int alto_;\n};\n\nint main() {\n    // Añade aquí la llamada indicada.\n    return 0;\n}\n",
+          "compileCheck": {
+            "diagnostic": "swapped-named-arguments",
+            "explanation": "El constructor de Caja recibe primero un Ancho y después un Alto. En Caja mal{Alto{4}, Ancho{3}}, esos tipos están intercambiados: los valores numéricos no sustituyen el tipo requerido en cada posición. El rechazo ocurre durante la compilación; el programa no llegó a ejecutarse."
+          }
+        }
+      },
+      {
+        "id": "block_0007_0003",
+        "block": {
+          "type": "output_prediction",
+          "language": "cpp",
+          "question": "Predice la salida exacta.",
+          "code": "#include <iostream>\n#include <string>\n#include <vector>\n\nstruct Capacidad { int unidades; };\nstruct Ocupacion { int unidades; };\nstruct ReservaInvalida {};\n\nclass Reserva {\npublic:\n    Reserva(Capacidad capacidad, Ocupacion ocupacion)\n        : capacidad_{capacidad.unidades}, ocupacion_{ocupacion.unidades} {\n        if (capacidad_ < 1 || capacidad_ > 20 || ocupacion_ < 0 || ocupacion_ > capacidad_) {\n            throw ReservaInvalida{};\n        }\n    }\n    int capacidad() const { return capacidad_; }\n    int ocupacion() const { return ocupacion_; }\n    int disponibles() const { return capacidad_ - ocupacion_; }\nprivate:\n    int capacidad_;\n    int ocupacion_;\n};\n\nint main() {\n    Reserva original{Capacidad{5}, Ocupacion{2}};\n    Reserva copia = original;\n    std::cout << copia.capacidad() << \" \" << copia.ocupacion();\n    return 0;\n}\n",
+          "answers": [
+            "5 2"
+          ],
+          "explanation": "Reserva copia = original; crea otro objeto copiando capacidad_ y ocupacion_. Como original tenía capacidad cinco y ocupación dos, esos mismos valores quedan en copia. La primera consulta lee copia.capacidad() y muestra 5; la segunda lee copia.ocupacion() y muestra 2. La salida es 5 2.",
+          "reviewFeedback": "La copia recibe juntos los miembros del original. Sigue qué cantidades se consultan y en qué orden se envían a la salida."
         }
       }
     ]

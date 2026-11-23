@@ -62,7 +62,7 @@
           "type": "inline_fill_code",
           "id": "p3_u6l10_completar_tipo_array",
           "question": "Completa el hueco con el tipo que permite crear un array de int cuya cantidad se entrega como argumento. Conserva la cantidad y los accesos preparados. Se deben crear tres elementos inicializados a cero, no un único int con valor tres.",
-          "template": "#include <iostream>\n#include <memory>\n#include <utility>\n#include <new>\n\nint main() {\n    auto datos = std::make_unique<[]>(3);\n    datos[2] = 6;\n    std::cout << datos[0] << ':' << datos[1] << ':' << datos[2];\n    return 0;\n}\n",
+          "template": "#include <iostream>\n#include <memory>\n#include <utility>\n#include <new>\n\nint main() {\n    auto datos = std::make_unique<[]>(3);\n\n    datos[2] = 6;\n\n    std::cout << datos[0] << ':' << datos[1] << ':' << datos[2];\n\n    return 0;\n}\n",
           "answers": [
             "int[]"
           ],
@@ -92,7 +92,7 @@
           "id": "p3_u6l10_array_inicializado_y_escritura",
           "language": "cpp",
           "question": "Escribe la primera línea y la línea posterior al cambio del elemento.",
-          "code": "#include <iostream>\n#include <memory>\n#include <utility>\n#include <new>\n\nint main() {\n    const int cantidad = 3;\n    auto datos = std::make_unique<int[]>(cantidad);\n    std::cout << datos[0] << ':' << datos[1] << ':' << datos[2] << '\\n';\n    datos[1] = 7;\n    std::cout << datos[0] << ':' << datos[1] << ':' << datos[2];\n    return 0;\n}\n",
+          "code": "#include <iostream>\n#include <memory>\n#include <utility>\n#include <new>\n\nint main() {\n    const int cantidad = 3;\n    auto datos = std::make_unique<int[]>(cantidad);\n\n    std::cout << datos[0] << ':' << datos[1] << ':' << datos[2] << '\\n';\n    datos[1] = 7;\n\n    std::cout << datos[0] << ':' << datos[1] << ':' << datos[2];\n\n    return 0;\n}\n",
           "answers": [
             "0:0:0\n0:7:0"
           ],
@@ -124,7 +124,7 @@
           "id": "p3_u6l10_prestamo_de_array",
           "language": "cpp",
           "question": "¿Qué valores muestra el propietario después de escribir mediante prestado?",
-          "code": "#include <iostream>\n#include <memory>\n#include <utility>\n#include <new>\n\nint main() {\n    auto datos = std::make_unique<int[]>(2);\n    datos[0] = 3;\n    datos[1] = 5;\n    int* prestado = datos.get();\n    prestado[1] = 8;\n    std::cout << datos[0] << ':' << datos[1];\n    prestado = nullptr;\n    return 0;\n}\n",
+          "code": "#include <iostream>\n#include <memory>\n#include <utility>\n#include <new>\n\nint main() {\n    auto datos = std::make_unique<int[]>(2);\n\n    datos[0] = 3;\n    datos[1] = 5;\n    int* prestado = datos.get();\n    prestado[1] = 8;\n\n    std::cout << datos[0] << ':' << datos[1];\n    prestado = nullptr;\n    return 0;\n}\n",
           "answers": [
             "3:8"
           ],
@@ -152,7 +152,7 @@
           "id": "p3_u6l10_propietario_array_constante",
           "language": "cpp",
           "question": "¿Qué muestra el programa tras las dos escrituras permitidas en el array?",
-          "code": "#include <iostream>\n#include <memory>\n#include <utility>\n#include <new>\n\nint main() {\n    const auto datos = std::make_unique<int[]>(2);\n    datos[0] = 4;\n    datos[1] = 6;\n    std::cout << datos[0] << ':' << datos[1];\n    return 0;\n}\n",
+          "code": "#include <iostream>\n#include <memory>\n#include <utility>\n#include <new>\n\nint main() {\n    const auto datos = std::make_unique<int[]>(2);\n\n    datos[0] = 4;\n    datos[1] = 6;\n\n    std::cout << datos[0] << ':' << datos[1];\n\n    return 0;\n}\n",
           "answers": [
             "4:6"
           ],
@@ -180,7 +180,7 @@
           "id": "p3_u6l10_movimiento_de_propietario_array",
           "language": "cpp",
           "question": "¿Qué muestran la comprobación del propietario original y los dos elementos consultados desde el destino?",
-          "code": "#include <iostream>\n#include <memory>\n#include <utility>\n#include <new>\n\nint main() {\n    auto origen = std::make_unique<int[]>(2);\n    origen[0] = 3;\n    origen[1] = 8;\n    auto destino = std::move(origen);\n    std::cout << (origen == nullptr) << ':' << destino[0] << ':' << destino[1];\n    return 0;\n}\n",
+          "code": "#include <iostream>\n#include <memory>\n#include <utility>\n#include <new>\n\nint main() {\n    auto origen = std::make_unique<int[]>(2);\n\n    origen[0] = 3;\n    origen[1] = 8;\n    auto destino = std::move(origen);\n\n    std::cout << (origen == nullptr) << ':' << destino[0] << ':' << destino[1];\n\n    return 0;\n}\n",
           "answers": [
             "1:3:8"
           ],
@@ -212,7 +212,7 @@
           "id": "p3_u6l10_limpieza_de_elementos_array",
           "language": "cpp",
           "question": "Escribe el contador antes de reset, después de reset y después de salir del bloque.",
-          "code": "#include <iostream>\n#include <memory>\n#include <utility>\n#include <new>\n\nint terminados = 0;\n\nstruct Marca {\n    ~Marca() { ++terminados; }\n};\n\nint main() {\n    {\n        auto marcas = std::make_unique<Marca[]>(3);\n        std::cout << terminados << ':';\n        marcas.reset();\n        std::cout << terminados << ':';\n    }\n    std::cout << terminados;\n    return 0;\n}\n",
+          "code": "#include <iostream>\n#include <memory>\n#include <utility>\n#include <new>\n\nint terminados = 0;\n\nstruct Marca {\n    ~Marca() { ++terminados; }\n};\n\nint main() {\n    {\n        auto marcas = std::make_unique<Marca[]>(3);\n        std::cout << terminados << ':';\n        marcas.reset();\n        std::cout << terminados << ':';\n    }\n    std::cout << terminados;\n\n    return 0;\n}\n",
           "answers": [
             "0:3:3"
           ],
@@ -600,7 +600,7 @@
         {
           "type": "cpp_compiler",
           "language": "cpp",
-          "initialCode": "#include <iostream>\n#include <memory>\n#include <utility>\n#include <new>\n\nclass Lote {\npublic:\n    Lote() = default;\n    Lote(const Lote&) = delete;\n    Lote& operator=(const Lote&) = delete;\n    Lote(Lote&&) = delete;\n    Lote& operator=(Lote&&) = delete;\n    ~Lote() = default;\n    int cantidad() const noexcept { return cantidad_; }\n    const int* acceso() const noexcept { return datos_.get(); }\n    bool configurar(int cantidad) noexcept;\n    bool leer(int indice, int& resultado) const noexcept;\n    bool escribir(int indice, int valor) noexcept;\n    bool vaciar() noexcept;\n    int sumar() const noexcept;\nprivate:\n    std::unique_ptr<int[]> datos_{};\n    int cantidad_ = 0;\n};\nbool Lote::configurar(int cantidad) noexcept {\n    // Completa las condiciones y la preparación del array candidato.\n    (void)cantidad;\n    return false;\n}\nbool Lote::leer(int indice, int& resultado) const noexcept {\n    // Comprueba el índice antes de leer; conserva resultado al rechazar.\n    (void)indice;\n    (void)resultado;\n    return false;\n}\nbool Lote::escribir(int indice, int valor) noexcept {\n    if (indice < 0 || indice >= cantidad_ || valor < 0 || valor > 9) {\n        return false;\n    }\n    datos_[indice] = valor;\n    return true;\n}\n\nbool Lote::vaciar() noexcept {\n    datos_.reset();\n    cantidad_ = 0;\n    return true;\n}\n\nint Lote::sumar() const noexcept {\n    int suma = 0;\n    for (int i = 0; i < cantidad_; ++i) {\n        suma += datos_[i];\n    }\n    return suma;\n}\nvoid mostrar(const Lote& lote) {\n    std::cout << lote.cantidad() << '[';\n    for (int i = 0; i < lote.cantidad(); ++i) {\n        int valor = -1;\n        lote.leer(i, valor);\n        if (i != 0) {\n            std::cout << ',';\n        }\n        std::cout << valor;\n    }\n    std::cout << ']';\n}\nint main() {\n    int cantidad_ordenes = 0;\n    if (!(std::cin >> cantidad_ordenes) || cantidad_ordenes < 1 || cantidad_ordenes > 12) {\n        return 1;\n    }\n    Lote lote;\n    if (!lote.configurar(2)) {\n        return 1;\n    }\n    std::cout << \"Inicio:\";\n    mostrar(lote);\n    std::cout << '\\n';\n    for (int i = 0; i < cantidad_ordenes; ++i) {\n        int operacion = 0;\n        int a = 0;\n        int b = 0;\n        if (!(std::cin >> operacion >> a >> b)) {\n            return 1;\n        }\n        std::cout << \"Antes:\";\n        mostrar(lote);\n        int leido = -1;\n        bool aceptado = false;\n        if (operacion == 1) {\n            aceptado = lote.configurar(a);\n        } else if (operacion == 2) {\n            aceptado = lote.escribir(a, b);\n        } else if (operacion == 3) {\n            aceptado = lote.leer(a, leido);\n        } else if (operacion == 4) {\n            aceptado = lote.vaciar();\n        }\n        std::cout << \";Resultado:\" << aceptado << \";Actual:\";\n        mostrar(lote);\n        std::cout << \";Leido:\" << leido << '\\n';\n    }\n    std::cout << \"Final:\";\n    mostrar(lote);\n    std::cout << \";Suma:\" << lote.sumar();\n    return 0;\n}\n",
+          "initialCode": "#include <iostream>\n#include <memory>\n#include <utility>\n#include <new>\n\nclass Lote {\npublic:\n    Lote() = default;\n    Lote(const Lote&) = delete;\n    Lote& operator=(const Lote&) = delete;\n    Lote(Lote&&) = delete;\n    Lote& operator=(Lote&&) = delete;\n    ~Lote() = default;\n    int cantidad() const noexcept { return cantidad_; }\n    const int* acceso() const noexcept { return datos_.get(); }\n    bool configurar(int cantidad) noexcept;\n    bool leer(int indice, int& resultado) const noexcept;\n    bool escribir(int indice, int valor) noexcept;\n    bool vaciar() noexcept;\n    int sumar() const noexcept;\nprivate:\n    std::unique_ptr<int[]> datos_{};\n    int cantidad_ = 0;\n};\n\nbool Lote::configurar(int cantidad) noexcept {\n    // Completa las condiciones y la preparación del array candidato.\n    (void)cantidad;\n    return false;\n}\n\nbool Lote::leer(int indice, int& resultado) const noexcept {\n    // Comprueba el índice antes de leer; conserva resultado al rechazar.\n    (void)indice;\n    (void)resultado;\n    return false;\n}\n\nbool Lote::escribir(int indice, int valor) noexcept {\n    if (indice < 0 || indice >= cantidad_ || valor < 0 || valor > 9) {\n        return false;\n    }\n    datos_[indice] = valor;\n    return true;\n}\n\nbool Lote::vaciar() noexcept {\n    datos_.reset();\n    cantidad_ = 0;\n    return true;\n}\n\nint Lote::sumar() const noexcept {\n    int suma = 0;\n    for (int i = 0; i < cantidad_; ++i) {\n        suma += datos_[i];\n    }\n\n    return suma;\n}\n\nvoid mostrar(const Lote& lote) {\n    std::cout << lote.cantidad() << '[';\n    for (int i = 0; i < lote.cantidad(); ++i) {\n        int valor = -1;\n        lote.leer(i, valor);\n        if (i != 0) {\n            std::cout << ',';\n        }\n        std::cout << valor;\n    }\n    std::cout << ']';\n}\n\nint main() {\n    int cantidad_ordenes = 0;\n    if (!(std::cin >> cantidad_ordenes) || cantidad_ordenes < 1 || cantidad_ordenes > 12) {\n        return 1;\n    }\n    Lote lote;\n    if (!lote.configurar(2)) {\n        return 1;\n    }\n    std::cout << \"Inicio:\";\n    mostrar(lote);\n    std::cout << '\\n';\n    for (int i = 0; i < cantidad_ordenes; ++i) {\n        int operacion = 0;\n        int a = 0;\n        int b = 0;\n\n        if (!(std::cin >> operacion >> a >> b)) {\n            return 1;\n        }\n        std::cout << \"Antes:\";\n        mostrar(lote);\n        int leido = -1;\n        bool aceptado = false;\n\n        if (operacion == 1) {\n            aceptado = lote.configurar(a);\n        } else if (operacion == 2) {\n            aceptado = lote.escribir(a, b);\n        } else if (operacion == 3) {\n            aceptado = lote.leer(a, leido);\n        } else if (operacion == 4) {\n            aceptado = lote.vaciar();\n        }\n        std::cout << \";Resultado:\" << aceptado << \";Actual:\";\n        mostrar(lote);\n        std::cout << \";Leido:\" << leido << '\\n';\n    }\n    std::cout << \"Final:\";\n    mostrar(lote);\n    std::cout << \";Suma:\" << lote.sumar();\n\n    return 0;\n}\n",
           "initialStandardInput": "12\n2 1 7\n3 1 0\n1 4 0\n2 3 9\n3 4 0\n1 -1 0\n1 4 0\n2 0 0\n1 0 0\n3 0 0\n1 1 0\n3 0 0\n",
           "outputCheck": {
             "inputComparison": "tokens",
@@ -726,7 +726,7 @@
         {
           "type": "code",
           "language": "cpp",
-          "code": "#include <iostream>\n#include <memory>\n#include <utility>\n#include <new>\n\nclass Lote {\npublic:\n    Lote() = default;\n    Lote(const Lote&) = delete;\n    Lote& operator=(const Lote&) = delete;\n    Lote(Lote&&) = delete;\n    Lote& operator=(Lote&&) = delete;\n    ~Lote() = default;\n    int cantidad() const noexcept { return cantidad_; }\n    const int* acceso() const noexcept { return datos_.get(); }\n    bool configurar(int cantidad) noexcept;\n    bool leer(int indice, int& resultado) const noexcept;\n    bool escribir(int indice, int valor) noexcept;\n    bool vaciar() noexcept;\n    int sumar() const noexcept;\nprivate:\n    std::unique_ptr<int[]> datos_{};\n    int cantidad_ = 0;\n};\nbool Lote::configurar(int cantidad) noexcept {\n    if (cantidad < 0 || cantidad > 4) {\n        return false;\n    }\n    if (cantidad == 0) {\n        return vaciar();\n    }\n    try {\n        auto candidata = std::make_unique<int[]>(cantidad);\n        datos_.swap(candidata);\n        cantidad_ = cantidad;\n        return true;\n    } catch (const std::bad_alloc&) {\n        return false;\n    }\n}\nbool Lote::leer(int indice, int& resultado) const noexcept {\n    if (indice < 0 || indice >= cantidad_) {\n        return false;\n    }\n    resultado = datos_[indice];\n    return true;\n}\nbool Lote::escribir(int indice, int valor) noexcept {\n    if (indice < 0 || indice >= cantidad_ || valor < 0 || valor > 9) {\n        return false;\n    }\n    datos_[indice] = valor;\n    return true;\n}\n\nbool Lote::vaciar() noexcept {\n    datos_.reset();\n    cantidad_ = 0;\n    return true;\n}\n\nint Lote::sumar() const noexcept {\n    int suma = 0;\n    for (int i = 0; i < cantidad_; ++i) {\n        suma += datos_[i];\n    }\n    return suma;\n}\nvoid mostrar(const Lote& lote) {\n    std::cout << lote.cantidad() << '[';\n    for (int i = 0; i < lote.cantidad(); ++i) {\n        int valor = -1;\n        lote.leer(i, valor);\n        if (i != 0) {\n            std::cout << ',';\n        }\n        std::cout << valor;\n    }\n    std::cout << ']';\n}\nint main() {\n    int cantidad_ordenes = 0;\n    if (!(std::cin >> cantidad_ordenes) || cantidad_ordenes < 1 || cantidad_ordenes > 12) {\n        return 1;\n    }\n    Lote lote;\n    if (!lote.configurar(2)) {\n        return 1;\n    }\n    std::cout << \"Inicio:\";\n    mostrar(lote);\n    std::cout << '\\n';\n    for (int i = 0; i < cantidad_ordenes; ++i) {\n        int operacion = 0;\n        int a = 0;\n        int b = 0;\n        if (!(std::cin >> operacion >> a >> b)) {\n            return 1;\n        }\n        std::cout << \"Antes:\";\n        mostrar(lote);\n        int leido = -1;\n        bool aceptado = false;\n        if (operacion == 1) {\n            aceptado = lote.configurar(a);\n        } else if (operacion == 2) {\n            aceptado = lote.escribir(a, b);\n        } else if (operacion == 3) {\n            aceptado = lote.leer(a, leido);\n        } else if (operacion == 4) {\n            aceptado = lote.vaciar();\n        }\n        std::cout << \";Resultado:\" << aceptado << \";Actual:\";\n        mostrar(lote);\n        std::cout << \";Leido:\" << leido << '\\n';\n    }\n    std::cout << \"Final:\";\n    mostrar(lote);\n    std::cout << \";Suma:\" << lote.sumar();\n    return 0;\n}\n"
+          "code": "#include <iostream>\n#include <memory>\n#include <utility>\n#include <new>\n\nclass Lote {\npublic:\n    Lote() = default;\n    Lote(const Lote&) = delete;\n    Lote& operator=(const Lote&) = delete;\n    Lote(Lote&&) = delete;\n    Lote& operator=(Lote&&) = delete;\n    ~Lote() = default;\n    int cantidad() const noexcept { return cantidad_; }\n    const int* acceso() const noexcept { return datos_.get(); }\n    bool configurar(int cantidad) noexcept;\n    bool leer(int indice, int& resultado) const noexcept;\n    bool escribir(int indice, int valor) noexcept;\n    bool vaciar() noexcept;\n    int sumar() const noexcept;\nprivate:\n    std::unique_ptr<int[]> datos_{};\n    int cantidad_ = 0;\n};\n\nbool Lote::configurar(int cantidad) noexcept {\n    if (cantidad < 0 || cantidad > 4) {\n        return false;\n    }\n    if (cantidad == 0) {\n        return vaciar();\n    }\n    try {\n        auto candidata = std::make_unique<int[]>(cantidad);\n        datos_.swap(candidata);\n        cantidad_ = cantidad;\n        return true;\n    } catch (const std::bad_alloc&) {\n        return false;\n    }\n}\n\nbool Lote::leer(int indice, int& resultado) const noexcept {\n    if (indice < 0 || indice >= cantidad_) {\n        return false;\n    }\n    resultado = datos_[indice];\n    return true;\n}\n\nbool Lote::escribir(int indice, int valor) noexcept {\n    if (indice < 0 || indice >= cantidad_ || valor < 0 || valor > 9) {\n        return false;\n    }\n    datos_[indice] = valor;\n    return true;\n}\n\nbool Lote::vaciar() noexcept {\n    datos_.reset();\n    cantidad_ = 0;\n    return true;\n}\n\nint Lote::sumar() const noexcept {\n    int suma = 0;\n    for (int i = 0; i < cantidad_; ++i) {\n        suma += datos_[i];\n    }\n\n    return suma;\n}\n\nvoid mostrar(const Lote& lote) {\n    std::cout << lote.cantidad() << '[';\n    for (int i = 0; i < lote.cantidad(); ++i) {\n        int valor = -1;\n        lote.leer(i, valor);\n        if (i != 0) {\n            std::cout << ',';\n        }\n        std::cout << valor;\n    }\n    std::cout << ']';\n}\n\nint main() {\n    int cantidad_ordenes = 0;\n    if (!(std::cin >> cantidad_ordenes) || cantidad_ordenes < 1 || cantidad_ordenes > 12) {\n        return 1;\n    }\n    Lote lote;\n    if (!lote.configurar(2)) {\n        return 1;\n    }\n    std::cout << \"Inicio:\";\n    mostrar(lote);\n    std::cout << '\\n';\n    for (int i = 0; i < cantidad_ordenes; ++i) {\n        int operacion = 0;\n        int a = 0;\n        int b = 0;\n\n        if (!(std::cin >> operacion >> a >> b)) {\n            return 1;\n        }\n        std::cout << \"Antes:\";\n        mostrar(lote);\n        int leido = -1;\n        bool aceptado = false;\n\n        if (operacion == 1) {\n            aceptado = lote.configurar(a);\n        } else if (operacion == 2) {\n            aceptado = lote.escribir(a, b);\n        } else if (operacion == 3) {\n            aceptado = lote.leer(a, leido);\n        } else if (operacion == 4) {\n            aceptado = lote.vaciar();\n        }\n        std::cout << \";Resultado:\" << aceptado << \";Actual:\";\n        mostrar(lote);\n        std::cout << \";Leido:\" << leido << '\\n';\n    }\n    std::cout << \"Final:\";\n    mostrar(lote);\n    std::cout << \";Suma:\" << lote.sumar();\n\n    return 0;\n}\n"
         },
         {
           "type": "paragraph",
@@ -761,7 +761,7 @@
           "id": "p3_u6l10_lectura_rechazada_conservar_salida",
           "language": "cpp",
           "question": "¿Qué muestran las dos aceptaciones y el valor de leido después de cada llamada?",
-          "code": "#include <iostream>\n#include <memory>\n#include <utility>\n#include <new>\n\nclass Lote {\npublic:\n    Lote() = default;\n    Lote(const Lote&) = delete;\n    Lote& operator=(const Lote&) = delete;\n    Lote(Lote&&) = delete;\n    Lote& operator=(Lote&&) = delete;\n    ~Lote() = default;\n    int cantidad() const noexcept { return cantidad_; }\n    const int* acceso() const noexcept { return datos_.get(); }\n    bool configurar(int cantidad) noexcept;\n    bool leer(int indice, int& resultado) const noexcept;\n    bool escribir(int indice, int valor) noexcept;\n    bool vaciar() noexcept;\n    int sumar() const noexcept;\nprivate:\n    std::unique_ptr<int[]> datos_{};\n    int cantidad_ = 0;\n};\nbool Lote::configurar(int cantidad) noexcept {\n    if (cantidad < 0 || cantidad > 4) {\n        return false;\n    }\n    if (cantidad == 0) {\n        return vaciar();\n    }\n    try {\n        auto candidata = std::make_unique<int[]>(cantidad);\n        datos_.swap(candidata);\n        cantidad_ = cantidad;\n        return true;\n    } catch (const std::bad_alloc&) {\n        return false;\n    }\n}\nbool Lote::leer(int indice, int& resultado) const noexcept {\n    if (indice < 0 || indice >= cantidad_) {\n        return false;\n    }\n    resultado = datos_[indice];\n    return true;\n}\nbool Lote::escribir(int indice, int valor) noexcept {\n    if (indice < 0 || indice >= cantidad_ || valor < 0 || valor > 9) {\n        return false;\n    }\n    datos_[indice] = valor;\n    return true;\n}\n\nbool Lote::vaciar() noexcept {\n    datos_.reset();\n    cantidad_ = 0;\n    return true;\n}\n\nint Lote::sumar() const noexcept {\n    int suma = 0;\n    for (int i = 0; i < cantidad_; ++i) {\n        suma += datos_[i];\n    }\n    return suma;\n}\n\nint main() {\n    Lote lote;\n    if (!lote.configurar(2)) { return 1; }\n    lote.escribir(0, 7);\n    int leido = -8;\n    const bool primera = lote.leer(-1, leido);\n    std::cout << primera << ':' << leido << ':';\n    const bool segunda = lote.leer(1, leido);\n    std::cout << segunda << ':' << leido;\n    return 0;\n}\n",
+          "code": "#include <iostream>\n#include <memory>\n#include <utility>\n#include <new>\n\nclass Lote {\npublic:\n    Lote() = default;\n    Lote(const Lote&) = delete;\n    Lote& operator=(const Lote&) = delete;\n    Lote(Lote&&) = delete;\n    Lote& operator=(Lote&&) = delete;\n    ~Lote() = default;\n    int cantidad() const noexcept { return cantidad_; }\n    const int* acceso() const noexcept { return datos_.get(); }\n    bool configurar(int cantidad) noexcept;\n    bool leer(int indice, int& resultado) const noexcept;\n    bool escribir(int indice, int valor) noexcept;\n    bool vaciar() noexcept;\n    int sumar() const noexcept;\nprivate:\n    std::unique_ptr<int[]> datos_{};\n    int cantidad_ = 0;\n};\n\nbool Lote::configurar(int cantidad) noexcept {\n    if (cantidad < 0 || cantidad > 4) {\n        return false;\n    }\n    if (cantidad == 0) {\n        return vaciar();\n    }\n    try {\n        auto candidata = std::make_unique<int[]>(cantidad);\n        datos_.swap(candidata);\n        cantidad_ = cantidad;\n        return true;\n    } catch (const std::bad_alloc&) {\n        return false;\n    }\n}\n\nbool Lote::leer(int indice, int& resultado) const noexcept {\n    if (indice < 0 || indice >= cantidad_) {\n        return false;\n    }\n    resultado = datos_[indice];\n    return true;\n}\n\nbool Lote::escribir(int indice, int valor) noexcept {\n    if (indice < 0 || indice >= cantidad_ || valor < 0 || valor > 9) {\n        return false;\n    }\n    datos_[indice] = valor;\n    return true;\n}\n\nbool Lote::vaciar() noexcept {\n    datos_.reset();\n    cantidad_ = 0;\n    return true;\n}\n\nint Lote::sumar() const noexcept {\n    int suma = 0;\n    for (int i = 0; i < cantidad_; ++i) {\n        suma += datos_[i];\n    }\n\n    return suma;\n}\n\nint main() {\n    Lote lote;\n    if (!lote.configurar(2)) { return 1; }\n    lote.escribir(0, 7);\n    int leido = -8;\n    const bool primera = lote.leer(-1, leido);\n\n    std::cout << primera << ':' << leido << ':';\n    const bool segunda = lote.leer(1, leido);\n    std::cout << segunda << ':' << leido;\n\n    return 0;\n}\n",
           "answers": [
             "0:-8:1:0"
           ],
@@ -785,7 +785,7 @@
           "id": "p3_u6l10_repetir_cantidad_crear_array_nuevo",
           "language": "cpp",
           "question": "¿Qué muestra el estado completo y su suma después de repetir la configuración?",
-          "code": "#include <iostream>\n#include <memory>\n#include <utility>\n#include <new>\n\nclass Lote {\npublic:\n    Lote() = default;\n    Lote(const Lote&) = delete;\n    Lote& operator=(const Lote&) = delete;\n    Lote(Lote&&) = delete;\n    Lote& operator=(Lote&&) = delete;\n    ~Lote() = default;\n    int cantidad() const noexcept { return cantidad_; }\n    const int* acceso() const noexcept { return datos_.get(); }\n    bool configurar(int cantidad) noexcept;\n    bool leer(int indice, int& resultado) const noexcept;\n    bool escribir(int indice, int valor) noexcept;\n    bool vaciar() noexcept;\n    int sumar() const noexcept;\nprivate:\n    std::unique_ptr<int[]> datos_{};\n    int cantidad_ = 0;\n};\nbool Lote::configurar(int cantidad) noexcept {\n    if (cantidad < 0 || cantidad > 4) {\n        return false;\n    }\n    if (cantidad == 0) {\n        return vaciar();\n    }\n    try {\n        auto candidata = std::make_unique<int[]>(cantidad);\n        datos_.swap(candidata);\n        cantidad_ = cantidad;\n        return true;\n    } catch (const std::bad_alloc&) {\n        return false;\n    }\n}\nbool Lote::leer(int indice, int& resultado) const noexcept {\n    if (indice < 0 || indice >= cantidad_) {\n        return false;\n    }\n    resultado = datos_[indice];\n    return true;\n}\nbool Lote::escribir(int indice, int valor) noexcept {\n    if (indice < 0 || indice >= cantidad_ || valor < 0 || valor > 9) {\n        return false;\n    }\n    datos_[indice] = valor;\n    return true;\n}\n\nbool Lote::vaciar() noexcept {\n    datos_.reset();\n    cantidad_ = 0;\n    return true;\n}\n\nint Lote::sumar() const noexcept {\n    int suma = 0;\n    for (int i = 0; i < cantidad_; ++i) {\n        suma += datos_[i];\n    }\n    return suma;\n}\nvoid mostrar(const Lote& lote) {\n    std::cout << lote.cantidad() << '[';\n    for (int i = 0; i < lote.cantidad(); ++i) {\n        int valor = -1;\n        lote.leer(i, valor);\n        if (i != 0) {\n            std::cout << ',';\n        }\n        std::cout << valor;\n    }\n    std::cout << ']';\n}\n\nint main() {\n    Lote lote;\n    if (!lote.configurar(3)) { return 1; }\n    lote.escribir(0, 4);\n    lote.escribir(2, 7);\n    if (!lote.configurar(3)) { return 1; }\n    mostrar(lote);\n    std::cout << \";Suma:\" << lote.sumar();\n    return 0;\n}\n",
+          "code": "#include <iostream>\n#include <memory>\n#include <utility>\n#include <new>\n\nclass Lote {\npublic:\n    Lote() = default;\n    Lote(const Lote&) = delete;\n    Lote& operator=(const Lote&) = delete;\n    Lote(Lote&&) = delete;\n    Lote& operator=(Lote&&) = delete;\n    ~Lote() = default;\n    int cantidad() const noexcept { return cantidad_; }\n    const int* acceso() const noexcept { return datos_.get(); }\n    bool configurar(int cantidad) noexcept;\n    bool leer(int indice, int& resultado) const noexcept;\n    bool escribir(int indice, int valor) noexcept;\n    bool vaciar() noexcept;\n    int sumar() const noexcept;\nprivate:\n    std::unique_ptr<int[]> datos_{};\n    int cantidad_ = 0;\n};\n\nbool Lote::configurar(int cantidad) noexcept {\n    if (cantidad < 0 || cantidad > 4) {\n        return false;\n    }\n    if (cantidad == 0) {\n        return vaciar();\n    }\n    try {\n        auto candidata = std::make_unique<int[]>(cantidad);\n        datos_.swap(candidata);\n        cantidad_ = cantidad;\n        return true;\n    } catch (const std::bad_alloc&) {\n        return false;\n    }\n}\n\nbool Lote::leer(int indice, int& resultado) const noexcept {\n    if (indice < 0 || indice >= cantidad_) {\n        return false;\n    }\n    resultado = datos_[indice];\n    return true;\n}\n\nbool Lote::escribir(int indice, int valor) noexcept {\n    if (indice < 0 || indice >= cantidad_ || valor < 0 || valor > 9) {\n        return false;\n    }\n    datos_[indice] = valor;\n    return true;\n}\n\nbool Lote::vaciar() noexcept {\n    datos_.reset();\n    cantidad_ = 0;\n    return true;\n}\n\nint Lote::sumar() const noexcept {\n    int suma = 0;\n    for (int i = 0; i < cantidad_; ++i) {\n        suma += datos_[i];\n    }\n\n    return suma;\n}\n\nvoid mostrar(const Lote& lote) {\n    std::cout << lote.cantidad() << '[';\n    for (int i = 0; i < lote.cantidad(); ++i) {\n        int valor = -1;\n        lote.leer(i, valor);\n        if (i != 0) {\n            std::cout << ',';\n        }\n        std::cout << valor;\n    }\n    std::cout << ']';\n}\n\nint main() {\n    Lote lote;\n    if (!lote.configurar(3)) { return 1; }\n    lote.escribir(0, 4);\n    lote.escribir(2, 7);\n    if (!lote.configurar(3)) { return 1; }\n    mostrar(lote);\n    std::cout << \";Suma:\" << lote.sumar();\n\n    return 0;\n}\n",
           "answers": [
             "3[0,0,0];Suma:0"
           ],
@@ -809,7 +809,7 @@
           "id": "p3_u6l10_configurar_cero_sin_array",
           "language": "cpp",
           "question": "¿Qué imprimen la aceptación, la cantidad y la comparación del acceso con nullptr?",
-          "code": "#include <iostream>\n#include <memory>\n#include <utility>\n#include <new>\n\nclass Lote {\npublic:\n    Lote() = default;\n    Lote(const Lote&) = delete;\n    Lote& operator=(const Lote&) = delete;\n    Lote(Lote&&) = delete;\n    Lote& operator=(Lote&&) = delete;\n    ~Lote() = default;\n    int cantidad() const noexcept { return cantidad_; }\n    const int* acceso() const noexcept { return datos_.get(); }\n    bool configurar(int cantidad) noexcept;\n    bool leer(int indice, int& resultado) const noexcept;\n    bool escribir(int indice, int valor) noexcept;\n    bool vaciar() noexcept;\n    int sumar() const noexcept;\nprivate:\n    std::unique_ptr<int[]> datos_{};\n    int cantidad_ = 0;\n};\nbool Lote::configurar(int cantidad) noexcept {\n    if (cantidad < 0 || cantidad > 4) {\n        return false;\n    }\n    if (cantidad == 0) {\n        return vaciar();\n    }\n    try {\n        auto candidata = std::make_unique<int[]>(cantidad);\n        datos_.swap(candidata);\n        cantidad_ = cantidad;\n        return true;\n    } catch (const std::bad_alloc&) {\n        return false;\n    }\n}\nbool Lote::leer(int indice, int& resultado) const noexcept {\n    if (indice < 0 || indice >= cantidad_) {\n        return false;\n    }\n    resultado = datos_[indice];\n    return true;\n}\nbool Lote::escribir(int indice, int valor) noexcept {\n    if (indice < 0 || indice >= cantidad_ || valor < 0 || valor > 9) {\n        return false;\n    }\n    datos_[indice] = valor;\n    return true;\n}\n\nbool Lote::vaciar() noexcept {\n    datos_.reset();\n    cantidad_ = 0;\n    return true;\n}\n\nint Lote::sumar() const noexcept {\n    int suma = 0;\n    for (int i = 0; i < cantidad_; ++i) {\n        suma += datos_[i];\n    }\n    return suma;\n}\n\nint main() {\n    Lote lote;\n    if (!lote.configurar(2)) { return 1; }\n    const bool listo = lote.configurar(0);\n    std::cout << listo << ':' << lote.cantidad() << ':'\n              << (lote.acceso() == nullptr);\n    return 0;\n}\n",
+          "code": "#include <iostream>\n#include <memory>\n#include <utility>\n#include <new>\n\nclass Lote {\npublic:\n    Lote() = default;\n    Lote(const Lote&) = delete;\n    Lote& operator=(const Lote&) = delete;\n    Lote(Lote&&) = delete;\n    Lote& operator=(Lote&&) = delete;\n    ~Lote() = default;\n    int cantidad() const noexcept { return cantidad_; }\n    const int* acceso() const noexcept { return datos_.get(); }\n    bool configurar(int cantidad) noexcept;\n    bool leer(int indice, int& resultado) const noexcept;\n    bool escribir(int indice, int valor) noexcept;\n    bool vaciar() noexcept;\n    int sumar() const noexcept;\nprivate:\n    std::unique_ptr<int[]> datos_{};\n    int cantidad_ = 0;\n};\n\nbool Lote::configurar(int cantidad) noexcept {\n    if (cantidad < 0 || cantidad > 4) {\n        return false;\n    }\n    if (cantidad == 0) {\n        return vaciar();\n    }\n    try {\n        auto candidata = std::make_unique<int[]>(cantidad);\n        datos_.swap(candidata);\n        cantidad_ = cantidad;\n        return true;\n    } catch (const std::bad_alloc&) {\n        return false;\n    }\n}\n\nbool Lote::leer(int indice, int& resultado) const noexcept {\n    if (indice < 0 || indice >= cantidad_) {\n        return false;\n    }\n    resultado = datos_[indice];\n    return true;\n}\n\nbool Lote::escribir(int indice, int valor) noexcept {\n    if (indice < 0 || indice >= cantidad_ || valor < 0 || valor > 9) {\n        return false;\n    }\n    datos_[indice] = valor;\n    return true;\n}\n\nbool Lote::vaciar() noexcept {\n    datos_.reset();\n    cantidad_ = 0;\n    return true;\n}\n\nint Lote::sumar() const noexcept {\n    int suma = 0;\n    for (int i = 0; i < cantidad_; ++i) {\n        suma += datos_[i];\n    }\n\n    return suma;\n}\n\nint main() {\n    Lote lote;\n    if (!lote.configurar(2)) { return 1; }\n    const bool listo = lote.configurar(0);\n    std::cout << listo << ':' << lote.cantidad() << ':'\n              << (lote.acceso() == nullptr);\n    return 0;\n}\n",
           "answers": [
             "1:0:1"
           ],
@@ -2227,6 +2227,247 @@
       }
     },
     "additions": [],
-    "editorial": []
+    "editorial": [
+      {
+        "id": "block_0002_0001",
+        "beforeSha256": "6b83cfd2fb3eec94fc709b563a837111b07a8754cd559bb0b0704b3ee7e52dcb",
+        "afterSha256": "6eff20b35d86c0f1a613efca74c4bc00d4709449ec296dc5b905d216e6a64d14"
+      },
+      {
+        "id": "block_0003_0002",
+        "beforeSha256": "d1718d9d9ffea52754f01c4eaac94cee95a51277bc12f077f33491a5957efa4c",
+        "afterSha256": "649d58660cfd165b98270d877f69fd81a1bd86491d29f8a713aa61cf8fb0383f"
+      },
+      {
+        "id": "block_0004_0003",
+        "beforeSha256": "81c56f94256ad0dd37da887b33bf24d0c5f6e2e357eb6a50a8bcd0ba0533269d",
+        "afterSha256": "a4998fd9c0121b15a49b482ca336a046e78f3b1d26d0abc0d9592c95dcb073a6"
+      },
+      {
+        "id": "block_0005_0002",
+        "beforeSha256": "bc68b87b87a09f8dc96c724f2d1a23c913be77e4d525326fc699a01a9dc9b61d",
+        "afterSha256": "95a797c2a734e93865cbe275a4f0de8facb11b9899e17262194d7605d285337c"
+      },
+      {
+        "id": "block_0006_0002",
+        "beforeSha256": "69a633d4280273e90bac5961e7ecd8f1c09abc1858e9b61fce673a75786e1d48",
+        "afterSha256": "6d8254cc50abf8104cf3a3cb4c3e0b27f2089babf5b4d6fd25c90b3d2705584b"
+      },
+      {
+        "id": "block_0007_0003",
+        "beforeSha256": "7f9a44ed360ec6b56fdddbfae372ae16957ca4c4106164ba558a000401218627",
+        "afterSha256": "894b995f0121837378e865ce0fe0f4e5e78094341e825b54b57fa1b2a61d5960"
+      },
+      {
+        "id": "block_0017_0002",
+        "beforeSha256": "303bab8addf3ca1284733b0ade81a76c4b4c0c5ca579c8d7a3e0b202140d1e2f",
+        "afterSha256": "2ca8019865a7c1b0373e01cf21c1e7ca972f76c9101ce9910961a7fc5e7990ab"
+      },
+      {
+        "id": "block_0019_0001",
+        "beforeSha256": "ff92a07ff3766daa0962e52323c3bf7e424166090134d679dc01839ee4697776",
+        "afterSha256": "d835150184b379c09aee35a8438311c97b36d24eba6dfb159292bfbdbe9539c2"
+      },
+      {
+        "id": "block_0020_0002",
+        "beforeSha256": "3cb3ab648d44fb0258512327699f2d0751bbbcf5cfc8ec31c9c4dfbc254648e7",
+        "afterSha256": "63d28fdd20df11d1b7b12ee76355c13338adeb053951e6ef30049cf9f65aab43"
+      },
+      {
+        "id": "block_0021_0002",
+        "beforeSha256": "9a14f9c4028390e55ef4135f881c93c6d5e7c5787e6a62fe4c48409d613b17be",
+        "afterSha256": "bf25986ac40f5787799104335196485c0f14227c8a1f24820860cda3b9005867"
+      },
+      {
+        "id": "block_0022_0002",
+        "beforeSha256": "d9c66e62de8d2693a946d4c27383e443305cc851a4d01333930e31507b97173a",
+        "afterSha256": "264247c23a7ab7f538d56abd42da99a42c9ad37989f6f20968cff7841d9925b8"
+      }
+    ],
+    "sourceFormatRevisions": [
+      {
+        "id": "block_0002_0001",
+        "block": {
+          "type": "inline_fill_code",
+          "id": "p3_u6l10_completar_tipo_array",
+          "question": "Completa el hueco con el tipo que permite crear un array de int cuya cantidad se entrega como argumento. Conserva la cantidad y los accesos preparados. Se deben crear tres elementos inicializados a cero, no un único int con valor tres.",
+          "template": "#include <iostream>\n#include <memory>\n#include <utility>\n#include <new>\n\nint main() {\n    auto datos = std::make_unique<[]>(3);\n    datos[2] = 6;\n    std::cout << datos[0] << ':' << datos[1] << ':' << datos[2];\n    return 0;\n}\n",
+          "answers": [
+            "int[]"
+          ],
+          "answerAlternatives": [
+            [
+              "int[]",
+              "int []",
+              "signed int[]"
+            ]
+          ],
+          "explanation": "int[] selecciona la creación de un array de int, y el argumento tres determina su cantidad. Los elementos comienzan en cero. Después sólo se escribe en el elemento de índice dos. Usar int sin los corchetes solicitaría un objeto individual, no este array."
+        }
+      },
+      {
+        "id": "block_0003_0002",
+        "block": {
+          "type": "output_prediction",
+          "id": "p3_u6l10_array_inicializado_y_escritura",
+          "language": "cpp",
+          "question": "Escribe la primera línea y la línea posterior al cambio del elemento.",
+          "code": "#include <iostream>\n#include <memory>\n#include <utility>\n#include <new>\n\nint main() {\n    const int cantidad = 3;\n    auto datos = std::make_unique<int[]>(cantidad);\n    std::cout << datos[0] << ':' << datos[1] << ':' << datos[2] << '\\n';\n    datos[1] = 7;\n    std::cout << datos[0] << ':' << datos[1] << ':' << datos[2];\n    return 0;\n}\n",
+          "answers": [
+            "0:0:0\n0:7:0"
+          ],
+          "outputComparison": "exact",
+          "explanation": "La fábrica inicializa los tres int a cero. La asignación posterior sustituye únicamente el valor del elemento de índice uno. El propietario sigue gestionando el mismo array de tres elementos."
+        }
+      },
+      {
+        "id": "block_0004_0003",
+        "block": {
+          "type": "output_prediction",
+          "id": "p3_u6l10_prestamo_de_array",
+          "language": "cpp",
+          "question": "¿Qué valores muestra el propietario después de escribir mediante prestado?",
+          "code": "#include <iostream>\n#include <memory>\n#include <utility>\n#include <new>\n\nint main() {\n    auto datos = std::make_unique<int[]>(2);\n    datos[0] = 3;\n    datos[1] = 5;\n    int* prestado = datos.get();\n    prestado[1] = 8;\n    std::cout << datos[0] << ':' << datos[1];\n    prestado = nullptr;\n    return 0;\n}\n",
+          "answers": [
+            "3:8"
+          ],
+          "outputComparison": "exact",
+          "explanation": "prestado identifica el mismo array que datos. Escribir en su elemento de índice uno cambia ese elemento compartido por ambos accesos, sin crear una copia independiente del array. datos conserva la responsabilidad de limpieza."
+        }
+      },
+      {
+        "id": "block_0005_0002",
+        "block": {
+          "type": "output_prediction",
+          "id": "p3_u6l10_propietario_array_constante",
+          "language": "cpp",
+          "question": "¿Qué muestra el programa tras las dos escrituras permitidas en el array?",
+          "code": "#include <iostream>\n#include <memory>\n#include <utility>\n#include <new>\n\nint main() {\n    const auto datos = std::make_unique<int[]>(2);\n    datos[0] = 4;\n    datos[1] = 6;\n    std::cout << datos[0] << ':' << datos[1];\n    return 0;\n}\n",
+          "answers": [
+            "4:6"
+          ],
+          "outputComparison": "exact",
+          "explanation": "El propietario es constante, pero los elementos creados tienen tipo int. Las dos escrituras cambian esos elementos sin reasignar el propietario. La posición de const determina qué objeto queda protegido."
+        }
+      },
+      {
+        "id": "block_0006_0002",
+        "block": {
+          "type": "output_prediction",
+          "id": "p3_u6l10_movimiento_de_propietario_array",
+          "language": "cpp",
+          "question": "¿Qué muestran la comprobación del propietario original y los dos elementos consultados desde el destino?",
+          "code": "#include <iostream>\n#include <memory>\n#include <utility>\n#include <new>\n\nint main() {\n    auto origen = std::make_unique<int[]>(2);\n    origen[0] = 3;\n    origen[1] = 8;\n    auto destino = std::move(origen);\n    std::cout << (origen == nullptr) << ':' << destino[0] << ':' << destino[1];\n    return 0;\n}\n",
+          "answers": [
+            "1:3:8"
+          ],
+          "outputComparison": "exact",
+          "explanation": "El destino recibe el array existente con sus dos valores. El propietario original queda vacío y no se utiliza para acceder a los elementos. La transferencia afecta al objeto propietario, sin duplicar el array."
+        }
+      },
+      {
+        "id": "block_0007_0003",
+        "block": {
+          "type": "output_prediction",
+          "id": "p3_u6l10_limpieza_de_elementos_array",
+          "language": "cpp",
+          "question": "Escribe el contador antes de reset, después de reset y después de salir del bloque.",
+          "code": "#include <iostream>\n#include <memory>\n#include <utility>\n#include <new>\n\nint terminados = 0;\n\nstruct Marca {\n    ~Marca() { ++terminados; }\n};\n\nint main() {\n    {\n        auto marcas = std::make_unique<Marca[]>(3);\n        std::cout << terminados << ':';\n        marcas.reset();\n        std::cout << terminados << ':';\n    }\n    std::cout << terminados;\n    return 0;\n}\n",
+          "answers": [
+            "0:3:3"
+          ],
+          "outputComparison": "exact",
+          "explanation": "reset termina las tres Marcas y deja vacío al propietario. Al salir del bloque se destruye ese propietario ya vacío; no se vuelven a destruir los elementos. Cada destructor de Marca aumenta una sola vez el contador."
+        }
+      },
+      {
+        "id": "block_0017_0002",
+        "block": {
+          "type": "cpp_compiler",
+          "language": "cpp",
+          "initialCode": "#include <iostream>\n#include <memory>\n#include <utility>\n#include <new>\n\nclass Lote {\npublic:\n    Lote() = default;\n    Lote(const Lote&) = delete;\n    Lote& operator=(const Lote&) = delete;\n    Lote(Lote&&) = delete;\n    Lote& operator=(Lote&&) = delete;\n    ~Lote() = default;\n    int cantidad() const noexcept { return cantidad_; }\n    const int* acceso() const noexcept { return datos_.get(); }\n    bool configurar(int cantidad) noexcept;\n    bool leer(int indice, int& resultado) const noexcept;\n    bool escribir(int indice, int valor) noexcept;\n    bool vaciar() noexcept;\n    int sumar() const noexcept;\nprivate:\n    std::unique_ptr<int[]> datos_{};\n    int cantidad_ = 0;\n};\nbool Lote::configurar(int cantidad) noexcept {\n    // Completa las condiciones y la preparación del array candidato.\n    (void)cantidad;\n    return false;\n}\nbool Lote::leer(int indice, int& resultado) const noexcept {\n    // Comprueba el índice antes de leer; conserva resultado al rechazar.\n    (void)indice;\n    (void)resultado;\n    return false;\n}\nbool Lote::escribir(int indice, int valor) noexcept {\n    if (indice < 0 || indice >= cantidad_ || valor < 0 || valor > 9) {\n        return false;\n    }\n    datos_[indice] = valor;\n    return true;\n}\n\nbool Lote::vaciar() noexcept {\n    datos_.reset();\n    cantidad_ = 0;\n    return true;\n}\n\nint Lote::sumar() const noexcept {\n    int suma = 0;\n    for (int i = 0; i < cantidad_; ++i) {\n        suma += datos_[i];\n    }\n    return suma;\n}\nvoid mostrar(const Lote& lote) {\n    std::cout << lote.cantidad() << '[';\n    for (int i = 0; i < lote.cantidad(); ++i) {\n        int valor = -1;\n        lote.leer(i, valor);\n        if (i != 0) {\n            std::cout << ',';\n        }\n        std::cout << valor;\n    }\n    std::cout << ']';\n}\nint main() {\n    int cantidad_ordenes = 0;\n    if (!(std::cin >> cantidad_ordenes) || cantidad_ordenes < 1 || cantidad_ordenes > 12) {\n        return 1;\n    }\n    Lote lote;\n    if (!lote.configurar(2)) {\n        return 1;\n    }\n    std::cout << \"Inicio:\";\n    mostrar(lote);\n    std::cout << '\\n';\n    for (int i = 0; i < cantidad_ordenes; ++i) {\n        int operacion = 0;\n        int a = 0;\n        int b = 0;\n        if (!(std::cin >> operacion >> a >> b)) {\n            return 1;\n        }\n        std::cout << \"Antes:\";\n        mostrar(lote);\n        int leido = -1;\n        bool aceptado = false;\n        if (operacion == 1) {\n            aceptado = lote.configurar(a);\n        } else if (operacion == 2) {\n            aceptado = lote.escribir(a, b);\n        } else if (operacion == 3) {\n            aceptado = lote.leer(a, leido);\n        } else if (operacion == 4) {\n            aceptado = lote.vaciar();\n        }\n        std::cout << \";Resultado:\" << aceptado << \";Actual:\";\n        mostrar(lote);\n        std::cout << \";Leido:\" << leido << '\\n';\n    }\n    std::cout << \"Final:\";\n    mostrar(lote);\n    std::cout << \";Suma:\" << lote.sumar();\n    return 0;\n}\n",
+          "initialStandardInput": "12\n2 1 7\n3 1 0\n1 4 0\n2 3 9\n3 4 0\n1 -1 0\n1 4 0\n2 0 0\n1 0 0\n3 0 0\n1 1 0\n3 0 0\n",
+          "outputCheck": {
+            "inputComparison": "tokens",
+            "cases": [
+              {
+                "standardInput": "12\n2 1 7\n3 1 0\n1 4 0\n2 3 9\n3 4 0\n1 -1 0\n1 4 0\n2 0 0\n1 0 0\n3 0 0\n1 1 0\n3 0 0\n",
+                "outputs": [
+                  "Inicio:2[0,0]\nAntes:2[0,0];Resultado:1;Actual:2[0,7];Leido:-1\nAntes:2[0,7];Resultado:1;Actual:2[0,7];Leido:7\nAntes:2[0,7];Resultado:1;Actual:4[0,0,0,0];Leido:-1\nAntes:4[0,0,0,0];Resultado:1;Actual:4[0,0,0,9];Leido:-1\nAntes:4[0,0,0,9];Resultado:0;Actual:4[0,0,0,9];Leido:-1\nAntes:4[0,0,0,9];Resultado:0;Actual:4[0,0,0,9];Leido:-1\nAntes:4[0,0,0,9];Resultado:1;Actual:4[0,0,0,0];Leido:-1\nAntes:4[0,0,0,0];Resultado:1;Actual:4[0,0,0,0];Leido:-1\nAntes:4[0,0,0,0];Resultado:1;Actual:0[];Leido:-1\nAntes:0[];Resultado:0;Actual:0[];Leido:-1\nAntes:0[];Resultado:1;Actual:1[0];Leido:-1\nAntes:1[0];Resultado:1;Actual:1[0];Leido:0\nFinal:1[0];Suma:0"
+                ],
+                "explanation": "Comprueba la cantidad antes de reservar. Prepara la candidata antes de sustituir el array anterior y actualiza la cantidad al aceptar. En leer, comprueba ambos límites antes de acceder; al rechazar conserva la variable de salida."
+              },
+              {
+                "standardInput": "8\n1 3 0\n2 0 4\n2 2 5\n3 -1 0\n1 5 0\n2 1 10\n4 0 0\n4 0 0\n",
+                "outputs": [
+                  "Inicio:2[0,0]\nAntes:2[0,0];Resultado:1;Actual:3[0,0,0];Leido:-1\nAntes:3[0,0,0];Resultado:1;Actual:3[4,0,0];Leido:-1\nAntes:3[4,0,0];Resultado:1;Actual:3[4,0,5];Leido:-1\nAntes:3[4,0,5];Resultado:0;Actual:3[4,0,5];Leido:-1\nAntes:3[4,0,5];Resultado:0;Actual:3[4,0,5];Leido:-1\nAntes:3[4,0,5];Resultado:0;Actual:3[4,0,5];Leido:-1\nAntes:3[4,0,5];Resultado:1;Actual:0[];Leido:-1\nAntes:0[];Resultado:1;Actual:0[];Leido:-1\nFinal:0[];Suma:0"
+                ],
+                "explanation": "Comprueba la cantidad antes de reservar. Prepara la candidata antes de sustituir el array anterior y actualiza la cantidad al aceptar. En leer, comprueba ambos límites antes de acceder; al rechazar conserva la variable de salida."
+              },
+              {
+                "standardInput": "6\n2 0 6\n2 1 8\n3 1 0\n1 2147483647 0\n2 -2147483648 9\n3 -2147483648 0\n",
+                "outputs": [
+                  "Inicio:2[0,0]\nAntes:2[0,0];Resultado:1;Actual:2[6,0];Leido:-1\nAntes:2[6,0];Resultado:1;Actual:2[6,8];Leido:-1\nAntes:2[6,8];Resultado:1;Actual:2[6,8];Leido:8\nAntes:2[6,8];Resultado:0;Actual:2[6,8];Leido:-1\nAntes:2[6,8];Resultado:0;Actual:2[6,8];Leido:-1\nAntes:2[6,8];Resultado:0;Actual:2[6,8];Leido:-1\nFinal:2[6,8];Suma:14"
+                ],
+                "explanation": "Comprueba la cantidad antes de reservar. Prepara la candidata antes de sustituir el array anterior y actualiza la cantidad al aceptar. En leer, comprueba ambos límites antes de acceder; al rechazar conserva la variable de salida."
+              }
+            ]
+          }
+        }
+      },
+      {
+        "id": "block_0019_0001",
+        "block": {
+          "type": "code",
+          "language": "cpp",
+          "code": "#include <iostream>\n#include <memory>\n#include <utility>\n#include <new>\n\nclass Lote {\npublic:\n    Lote() = default;\n    Lote(const Lote&) = delete;\n    Lote& operator=(const Lote&) = delete;\n    Lote(Lote&&) = delete;\n    Lote& operator=(Lote&&) = delete;\n    ~Lote() = default;\n    int cantidad() const noexcept { return cantidad_; }\n    const int* acceso() const noexcept { return datos_.get(); }\n    bool configurar(int cantidad) noexcept;\n    bool leer(int indice, int& resultado) const noexcept;\n    bool escribir(int indice, int valor) noexcept;\n    bool vaciar() noexcept;\n    int sumar() const noexcept;\nprivate:\n    std::unique_ptr<int[]> datos_{};\n    int cantidad_ = 0;\n};\nbool Lote::configurar(int cantidad) noexcept {\n    if (cantidad < 0 || cantidad > 4) {\n        return false;\n    }\n    if (cantidad == 0) {\n        return vaciar();\n    }\n    try {\n        auto candidata = std::make_unique<int[]>(cantidad);\n        datos_.swap(candidata);\n        cantidad_ = cantidad;\n        return true;\n    } catch (const std::bad_alloc&) {\n        return false;\n    }\n}\nbool Lote::leer(int indice, int& resultado) const noexcept {\n    if (indice < 0 || indice >= cantidad_) {\n        return false;\n    }\n    resultado = datos_[indice];\n    return true;\n}\nbool Lote::escribir(int indice, int valor) noexcept {\n    if (indice < 0 || indice >= cantidad_ || valor < 0 || valor > 9) {\n        return false;\n    }\n    datos_[indice] = valor;\n    return true;\n}\n\nbool Lote::vaciar() noexcept {\n    datos_.reset();\n    cantidad_ = 0;\n    return true;\n}\n\nint Lote::sumar() const noexcept {\n    int suma = 0;\n    for (int i = 0; i < cantidad_; ++i) {\n        suma += datos_[i];\n    }\n    return suma;\n}\nvoid mostrar(const Lote& lote) {\n    std::cout << lote.cantidad() << '[';\n    for (int i = 0; i < lote.cantidad(); ++i) {\n        int valor = -1;\n        lote.leer(i, valor);\n        if (i != 0) {\n            std::cout << ',';\n        }\n        std::cout << valor;\n    }\n    std::cout << ']';\n}\nint main() {\n    int cantidad_ordenes = 0;\n    if (!(std::cin >> cantidad_ordenes) || cantidad_ordenes < 1 || cantidad_ordenes > 12) {\n        return 1;\n    }\n    Lote lote;\n    if (!lote.configurar(2)) {\n        return 1;\n    }\n    std::cout << \"Inicio:\";\n    mostrar(lote);\n    std::cout << '\\n';\n    for (int i = 0; i < cantidad_ordenes; ++i) {\n        int operacion = 0;\n        int a = 0;\n        int b = 0;\n        if (!(std::cin >> operacion >> a >> b)) {\n            return 1;\n        }\n        std::cout << \"Antes:\";\n        mostrar(lote);\n        int leido = -1;\n        bool aceptado = false;\n        if (operacion == 1) {\n            aceptado = lote.configurar(a);\n        } else if (operacion == 2) {\n            aceptado = lote.escribir(a, b);\n        } else if (operacion == 3) {\n            aceptado = lote.leer(a, leido);\n        } else if (operacion == 4) {\n            aceptado = lote.vaciar();\n        }\n        std::cout << \";Resultado:\" << aceptado << \";Actual:\";\n        mostrar(lote);\n        std::cout << \";Leido:\" << leido << '\\n';\n    }\n    std::cout << \"Final:\";\n    mostrar(lote);\n    std::cout << \";Suma:\" << lote.sumar();\n    return 0;\n}\n"
+        }
+      },
+      {
+        "id": "block_0020_0002",
+        "block": {
+          "type": "output_prediction",
+          "id": "p3_u6l10_lectura_rechazada_conservar_salida",
+          "language": "cpp",
+          "question": "¿Qué muestran las dos aceptaciones y el valor de leido después de cada llamada?",
+          "code": "#include <iostream>\n#include <memory>\n#include <utility>\n#include <new>\n\nclass Lote {\npublic:\n    Lote() = default;\n    Lote(const Lote&) = delete;\n    Lote& operator=(const Lote&) = delete;\n    Lote(Lote&&) = delete;\n    Lote& operator=(Lote&&) = delete;\n    ~Lote() = default;\n    int cantidad() const noexcept { return cantidad_; }\n    const int* acceso() const noexcept { return datos_.get(); }\n    bool configurar(int cantidad) noexcept;\n    bool leer(int indice, int& resultado) const noexcept;\n    bool escribir(int indice, int valor) noexcept;\n    bool vaciar() noexcept;\n    int sumar() const noexcept;\nprivate:\n    std::unique_ptr<int[]> datos_{};\n    int cantidad_ = 0;\n};\nbool Lote::configurar(int cantidad) noexcept {\n    if (cantidad < 0 || cantidad > 4) {\n        return false;\n    }\n    if (cantidad == 0) {\n        return vaciar();\n    }\n    try {\n        auto candidata = std::make_unique<int[]>(cantidad);\n        datos_.swap(candidata);\n        cantidad_ = cantidad;\n        return true;\n    } catch (const std::bad_alloc&) {\n        return false;\n    }\n}\nbool Lote::leer(int indice, int& resultado) const noexcept {\n    if (indice < 0 || indice >= cantidad_) {\n        return false;\n    }\n    resultado = datos_[indice];\n    return true;\n}\nbool Lote::escribir(int indice, int valor) noexcept {\n    if (indice < 0 || indice >= cantidad_ || valor < 0 || valor > 9) {\n        return false;\n    }\n    datos_[indice] = valor;\n    return true;\n}\n\nbool Lote::vaciar() noexcept {\n    datos_.reset();\n    cantidad_ = 0;\n    return true;\n}\n\nint Lote::sumar() const noexcept {\n    int suma = 0;\n    for (int i = 0; i < cantidad_; ++i) {\n        suma += datos_[i];\n    }\n    return suma;\n}\n\nint main() {\n    Lote lote;\n    if (!lote.configurar(2)) { return 1; }\n    lote.escribir(0, 7);\n    int leido = -8;\n    const bool primera = lote.leer(-1, leido);\n    std::cout << primera << ':' << leido << ':';\n    const bool segunda = lote.leer(1, leido);\n    std::cout << segunda << ':' << leido;\n    return 0;\n}\n",
+          "answers": [
+            "0:-8:1:0"
+          ],
+          "outputComparison": "exact",
+          "explanation": "El índice negativo se rechaza antes de acceder y conserva el menos ocho. El índice uno sí existe y su elemento sigue siendo cero; la lectura devuelve true y escribe ese cero."
+        }
+      },
+      {
+        "id": "block_0021_0002",
+        "block": {
+          "type": "output_prediction",
+          "id": "p3_u6l10_repetir_cantidad_crear_array_nuevo",
+          "language": "cpp",
+          "question": "¿Qué muestra el estado completo y su suma después de repetir la configuración?",
+          "code": "#include <iostream>\n#include <memory>\n#include <utility>\n#include <new>\n\nclass Lote {\npublic:\n    Lote() = default;\n    Lote(const Lote&) = delete;\n    Lote& operator=(const Lote&) = delete;\n    Lote(Lote&&) = delete;\n    Lote& operator=(Lote&&) = delete;\n    ~Lote() = default;\n    int cantidad() const noexcept { return cantidad_; }\n    const int* acceso() const noexcept { return datos_.get(); }\n    bool configurar(int cantidad) noexcept;\n    bool leer(int indice, int& resultado) const noexcept;\n    bool escribir(int indice, int valor) noexcept;\n    bool vaciar() noexcept;\n    int sumar() const noexcept;\nprivate:\n    std::unique_ptr<int[]> datos_{};\n    int cantidad_ = 0;\n};\nbool Lote::configurar(int cantidad) noexcept {\n    if (cantidad < 0 || cantidad > 4) {\n        return false;\n    }\n    if (cantidad == 0) {\n        return vaciar();\n    }\n    try {\n        auto candidata = std::make_unique<int[]>(cantidad);\n        datos_.swap(candidata);\n        cantidad_ = cantidad;\n        return true;\n    } catch (const std::bad_alloc&) {\n        return false;\n    }\n}\nbool Lote::leer(int indice, int& resultado) const noexcept {\n    if (indice < 0 || indice >= cantidad_) {\n        return false;\n    }\n    resultado = datos_[indice];\n    return true;\n}\nbool Lote::escribir(int indice, int valor) noexcept {\n    if (indice < 0 || indice >= cantidad_ || valor < 0 || valor > 9) {\n        return false;\n    }\n    datos_[indice] = valor;\n    return true;\n}\n\nbool Lote::vaciar() noexcept {\n    datos_.reset();\n    cantidad_ = 0;\n    return true;\n}\n\nint Lote::sumar() const noexcept {\n    int suma = 0;\n    for (int i = 0; i < cantidad_; ++i) {\n        suma += datos_[i];\n    }\n    return suma;\n}\nvoid mostrar(const Lote& lote) {\n    std::cout << lote.cantidad() << '[';\n    for (int i = 0; i < lote.cantidad(); ++i) {\n        int valor = -1;\n        lote.leer(i, valor);\n        if (i != 0) {\n            std::cout << ',';\n        }\n        std::cout << valor;\n    }\n    std::cout << ']';\n}\n\nint main() {\n    Lote lote;\n    if (!lote.configurar(3)) { return 1; }\n    lote.escribir(0, 4);\n    lote.escribir(2, 7);\n    if (!lote.configurar(3)) { return 1; }\n    mostrar(lote);\n    std::cout << \";Suma:\" << lote.sumar();\n    return 0;\n}\n",
+          "answers": [
+            "3[0,0,0];Suma:0"
+          ],
+          "outputComparison": "exact",
+          "explanation": "Repetir la cantidad tres prepara otro array con sus tres int a cero. La sustitución termina el array que contenía cuatro y siete. La cantidad se conserva numéricamente, pero la operación ha creado otro array y su suma es cero."
+        }
+      },
+      {
+        "id": "block_0022_0002",
+        "block": {
+          "type": "output_prediction",
+          "id": "p3_u6l10_configurar_cero_sin_array",
+          "language": "cpp",
+          "question": "¿Qué imprimen la aceptación, la cantidad y la comparación del acceso con nullptr?",
+          "code": "#include <iostream>\n#include <memory>\n#include <utility>\n#include <new>\n\nclass Lote {\npublic:\n    Lote() = default;\n    Lote(const Lote&) = delete;\n    Lote& operator=(const Lote&) = delete;\n    Lote(Lote&&) = delete;\n    Lote& operator=(Lote&&) = delete;\n    ~Lote() = default;\n    int cantidad() const noexcept { return cantidad_; }\n    const int* acceso() const noexcept { return datos_.get(); }\n    bool configurar(int cantidad) noexcept;\n    bool leer(int indice, int& resultado) const noexcept;\n    bool escribir(int indice, int valor) noexcept;\n    bool vaciar() noexcept;\n    int sumar() const noexcept;\nprivate:\n    std::unique_ptr<int[]> datos_{};\n    int cantidad_ = 0;\n};\nbool Lote::configurar(int cantidad) noexcept {\n    if (cantidad < 0 || cantidad > 4) {\n        return false;\n    }\n    if (cantidad == 0) {\n        return vaciar();\n    }\n    try {\n        auto candidata = std::make_unique<int[]>(cantidad);\n        datos_.swap(candidata);\n        cantidad_ = cantidad;\n        return true;\n    } catch (const std::bad_alloc&) {\n        return false;\n    }\n}\nbool Lote::leer(int indice, int& resultado) const noexcept {\n    if (indice < 0 || indice >= cantidad_) {\n        return false;\n    }\n    resultado = datos_[indice];\n    return true;\n}\nbool Lote::escribir(int indice, int valor) noexcept {\n    if (indice < 0 || indice >= cantidad_ || valor < 0 || valor > 9) {\n        return false;\n    }\n    datos_[indice] = valor;\n    return true;\n}\n\nbool Lote::vaciar() noexcept {\n    datos_.reset();\n    cantidad_ = 0;\n    return true;\n}\n\nint Lote::sumar() const noexcept {\n    int suma = 0;\n    for (int i = 0; i < cantidad_; ++i) {\n        suma += datos_[i];\n    }\n    return suma;\n}\n\nint main() {\n    Lote lote;\n    if (!lote.configurar(2)) { return 1; }\n    const bool listo = lote.configurar(0);\n    std::cout << listo << ':' << lote.cantidad() << ':'\n              << (lote.acceso() == nullptr);\n    return 0;\n}\n",
+          "answers": [
+            "1:0:1"
+          ],
+          "outputComparison": "exact",
+          "explanation": "configurar acepta cero y llama a vaciar. Termina el array anterior, deja el miembro propietario vacío y coloca la cantidad en cero. La consulta de acceso se realiza sobre el estado actual y no utiliza un préstamo al array que ya terminó."
+        }
+      }
+    ]
   }
 }

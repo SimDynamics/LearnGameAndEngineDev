@@ -50,7 +50,7 @@
           "type": "output_prediction",
           "language": "cpp",
           "question": "Predice la salida exacta.",
-          "code": "#include <iostream>\n#include <string>\n#include <vector>\n\nenum class Estado {\n    preparado, enviado, cancelado\n};\n\nstruct PedidoInvalido {};\n\nclass Pedido {\npublic:\n    Pedido(std::string codigo, int unidades) : codigo_{codigo}, unidades_{unidades} {\n        if (codigo_.empty() || unidades_ < 1 || unidades_ > 20) {\n            throw PedidoInvalido{};\n        }\n    }\n    std::string codigo() const { return codigo_; }\n    int unidades() const { return unidades_; }\n    Estado estado() const { return estado_; }\n    bool cambiar_unidades(int nuevas) {\n        if (estado_ != Estado::preparado || nuevas < 1 || nuevas > 20) { return false; }\n        unidades_ = nuevas;\n        return true;\n    }\n    bool enviar() {\n        if (estado_ != Estado::preparado) { return false; }\n        estado_ = Estado::enviado;\n        return true;\n    }\n    bool cancelar() {\n        if (estado_ != Estado::preparado) { return false; }\n        estado_ = Estado::cancelado;\n        return true;\n    }\nprivate:\n    std::string codigo_;\n    int unidades_;\n    Estado estado_ = Estado::preparado;\n};bool mismo_valor(const Pedido& a, const Pedido& b) {\n    return a.codigo() == b.codigo() && a.unidades() == b.unidades() && a.estado() == b.estado();\n}\n\n\nint main() {\n    Pedido a{\"K\", 2};\n    Pedido b{\"K\", 8};\n    std::cout << (a.codigo() == b.codigo()) << \" \" << mismo_valor(a, b);\n    return 0;\n}\n",
+          "code": "#include <iostream>\n#include <string>\n#include <vector>\n\nenum class Estado {\n    preparado, enviado, cancelado\n};\n\nstruct PedidoInvalido {};\n\nclass Pedido {\npublic:\n    Pedido(std::string codigo, int unidades) : codigo_{codigo}, unidades_{unidades} {\n        if (codigo_.empty() || unidades_ < 1 || unidades_ > 20) {\n            throw PedidoInvalido{};\n        }\n    }\n\n    std::string codigo() const { return codigo_; }\n    int unidades() const { return unidades_; }\n    Estado estado() const { return estado_; }\n    bool cambiar_unidades(int nuevas) {\n        if (estado_ != Estado::preparado || nuevas < 1 || nuevas > 20) { return false; }\n        unidades_ = nuevas;\n        return true;\n    }\n\n    bool enviar() {\n        if (estado_ != Estado::preparado) { return false; }\n        estado_ = Estado::enviado;\n        return true;\n    }\n\n    bool cancelar() {\n        if (estado_ != Estado::preparado) { return false; }\n        estado_ = Estado::cancelado;\n        return true;\n    }\nprivate:\n    std::string codigo_;\n    int unidades_;\n    Estado estado_ = Estado::preparado;\n};bool mismo_valor(const Pedido& a, const Pedido& b) {\n    return a.codigo() == b.codigo() && a.unidades() == b.unidades() && a.estado() == b.estado();\n}\n\n\nint main() {\n    Pedido a{\"K\", 2};\n    Pedido b{\"K\", 8};\n\n    std::cout << (a.codigo() == b.codigo()) << \" \" << mismo_valor(a, b);\n\n    return 0;\n}\n",
           "answers": [
             "1 0"
           ],
@@ -108,7 +108,7 @@
           "type": "output_prediction",
           "language": "cpp",
           "question": "Predice la salida exacta.",
-          "code": "#include <iostream>\n#include <string>\n#include <vector>\n\nenum class Estado {\n    preparado, enviado, cancelado\n};\n\nstruct PedidoInvalido {};\n\nclass Pedido {\npublic:\n    Pedido(std::string codigo, int unidades) : codigo_{codigo}, unidades_{unidades} {\n        if (codigo_.empty() || unidades_ < 1 || unidades_ > 20) {\n            throw PedidoInvalido{};\n        }\n    }\n    std::string codigo() const { return codigo_; }\n    int unidades() const { return unidades_; }\n    Estado estado() const { return estado_; }\n    bool cambiar_unidades(int nuevas) {\n        if (estado_ != Estado::preparado || nuevas < 1 || nuevas > 20) { return false; }\n        unidades_ = nuevas;\n        return true;\n    }\n    bool enviar() {\n        if (estado_ != Estado::preparado) { return false; }\n        estado_ = Estado::enviado;\n        return true;\n    }\n    bool cancelar() {\n        if (estado_ != Estado::preparado) { return false; }\n        estado_ = Estado::cancelado;\n        return true;\n    }\nprivate:\n    std::string codigo_;\n    int unidades_;\n    Estado estado_ = Estado::preparado;\n};bool mismo_valor(const Pedido& a, const Pedido& b) {\n    return a.codigo() == b.codigo() && a.unidades() == b.unidades() && a.estado() == b.estado();\n}\n\nbool operator==(const Pedido& a, const Pedido& b) { return mismo_valor(a, b); }\nbool operator!=(const Pedido& a, const Pedido& b) { return !(a == b); }\n\nint main() {\n    Pedido a{\"M\", 4};\n    Pedido b = a;\n    std::cout << (a == b) << \" \";\n    b.enviar();\n    std::cout << (a == b) << \" \" << (a != b);\n    return 0;\n}\n",
+          "code": "#include <iostream>\n#include <string>\n#include <vector>\n\nenum class Estado {\n    preparado, enviado, cancelado\n};\n\nstruct PedidoInvalido {};\n\nclass Pedido {\npublic:\n    Pedido(std::string codigo, int unidades) : codigo_{codigo}, unidades_{unidades} {\n        if (codigo_.empty() || unidades_ < 1 || unidades_ > 20) {\n            throw PedidoInvalido{};\n        }\n    }\n\n    std::string codigo() const { return codigo_; }\n    int unidades() const { return unidades_; }\n    Estado estado() const { return estado_; }\n    bool cambiar_unidades(int nuevas) {\n        if (estado_ != Estado::preparado || nuevas < 1 || nuevas > 20) { return false; }\n        unidades_ = nuevas;\n        return true;\n    }\n\n    bool enviar() {\n        if (estado_ != Estado::preparado) { return false; }\n        estado_ = Estado::enviado;\n        return true;\n    }\n\n    bool cancelar() {\n        if (estado_ != Estado::preparado) { return false; }\n        estado_ = Estado::cancelado;\n        return true;\n    }\nprivate:\n    std::string codigo_;\n    int unidades_;\n    Estado estado_ = Estado::preparado;\n};bool mismo_valor(const Pedido& a, const Pedido& b) {\n    return a.codigo() == b.codigo() && a.unidades() == b.unidades() && a.estado() == b.estado();\n}\n\nbool operator==(const Pedido& a, const Pedido& b) { return mismo_valor(a, b); }\nbool operator!=(const Pedido& a, const Pedido& b) { return !(a == b); }\n\nint main() {\n    Pedido a{\"M\", 4};\n    Pedido b = a;\n\n    std::cout << (a == b) << \" \";\n    b.enviar();\n    std::cout << (a == b) << \" \" << (a != b);\n\n    return 0;\n}\n",
           "answers": [
             "1 0 1"
           ],
@@ -208,7 +208,7 @@
           "type": "output_prediction",
           "language": "cpp",
           "question": "Predice la salida exacta.",
-          "code": "#include <iostream>\n#include <string>\n#include <vector>\n#include <cstddef>\n\nenum class Estado {\n    preparado, enviado, cancelado\n};\n\nstruct PedidoInvalido {};\n\nclass Pedido {\npublic:\n    Pedido(std::string codigo, int unidades) : codigo_{codigo}, unidades_{unidades} {\n        if (codigo_.empty() || unidades_ < 1 || unidades_ > 20) {\n            throw PedidoInvalido{};\n        }\n    }\n    std::string codigo() const { return codigo_; }\n    int unidades() const { return unidades_; }\n    Estado estado() const { return estado_; }\n    bool cambiar_unidades(int nuevas) {\n        if (estado_ != Estado::preparado || nuevas < 1 || nuevas > 20) { return false; }\n        unidades_ = nuevas;\n        return true;\n    }\n    bool enviar() {\n        if (estado_ != Estado::preparado) { return false; }\n        estado_ = Estado::enviado;\n        return true;\n    }\n    bool cancelar() {\n        if (estado_ != Estado::preparado) { return false; }\n        estado_ = Estado::cancelado;\n        return true;\n    }\nprivate:\n    std::string codigo_;\n    int unidades_;\n    Estado estado_ = Estado::preparado;\n};bool mismo_valor(const Pedido& a, const Pedido& b) {\n    return a.codigo() == b.codigo() && a.unidades() == b.unidades() && a.estado() == b.estado();\n}\n\nbool operator==(const Pedido& a, const Pedido& b) { return mismo_valor(a, b); }\nbool operator!=(const Pedido& a, const Pedido& b) { return !(a == b); }\n\nint main() {\n    const std::vector<Pedido> pedidos{{\"A\", 2}, {\"B\", 5}, {\"A\", 2}};\n    const Pedido buscado{\"A\", 2};\n    std::size_t cantidad = 0;\n    for (const auto& pedido : pedidos) {\n        if (pedido == buscado) { ++cantidad; }\n    }\n    std::cout << cantidad;\n    return 0;\n}\n",
+          "code": "#include <iostream>\n#include <string>\n#include <vector>\n#include <cstddef>\n\nenum class Estado {\n    preparado, enviado, cancelado\n};\n\nstruct PedidoInvalido {};\n\nclass Pedido {\npublic:\n    Pedido(std::string codigo, int unidades) : codigo_{codigo}, unidades_{unidades} {\n        if (codigo_.empty() || unidades_ < 1 || unidades_ > 20) {\n            throw PedidoInvalido{};\n        }\n    }\n\n    std::string codigo() const { return codigo_; }\n    int unidades() const { return unidades_; }\n    Estado estado() const { return estado_; }\n    bool cambiar_unidades(int nuevas) {\n        if (estado_ != Estado::preparado || nuevas < 1 || nuevas > 20) { return false; }\n        unidades_ = nuevas;\n        return true;\n    }\n\n    bool enviar() {\n        if (estado_ != Estado::preparado) { return false; }\n        estado_ = Estado::enviado;\n        return true;\n    }\n\n    bool cancelar() {\n        if (estado_ != Estado::preparado) { return false; }\n        estado_ = Estado::cancelado;\n        return true;\n    }\nprivate:\n    std::string codigo_;\n    int unidades_;\n    Estado estado_ = Estado::preparado;\n};bool mismo_valor(const Pedido& a, const Pedido& b) {\n    return a.codigo() == b.codigo() && a.unidades() == b.unidades() && a.estado() == b.estado();\n}\n\nbool operator==(const Pedido& a, const Pedido& b) { return mismo_valor(a, b); }\nbool operator!=(const Pedido& a, const Pedido& b) { return !(a == b); }\n\nint main() {\n    const std::vector<Pedido> pedidos{{\"A\", 2}, {\"B\", 5}, {\"A\", 2}};\n    const Pedido buscado{\"A\", 2};\n    std::size_t cantidad = 0;\n\n    for (const auto& pedido : pedidos) {\n        if (pedido == buscado) { ++cantidad; }\n    }\n    std::cout << cantidad;\n\n    return 0;\n}\n",
           "answers": [
             "2"
           ],
@@ -251,7 +251,7 @@
         },
         {
           "type": "cpp_compiler",
-          "initialCode": "#include <iostream>\n#include <string>\n#include <vector>\n\nint main() {\n    // Construye aqui el programa de la consigna.\n    return 0;\n}\n",
+          "initialCode": "#include <iostream>\n#include <string>\n#include <vector>\n\nint main() {\n    // Construye aqui el programa de la consigna.\n    \n    return 0;\n}\n",
           "outputCheck": {
             "cases": [
               {
@@ -398,7 +398,7 @@
           "type": "output_prediction",
           "language": "cpp",
           "question": "Predice la salida exacta.",
-          "code": "#include <iostream>\n#include <string>\n#include <vector>\n\nenum class Estado {\n    preparado, enviado, cancelado\n};\n\nstruct PedidoInvalido {};\n\nclass Pedido {\npublic:\n    Pedido(std::string codigo, int unidades) : codigo_{codigo}, unidades_{unidades} {\n        if (codigo_.empty() || unidades_ < 1 || unidades_ > 20) {\n            throw PedidoInvalido{};\n        }\n    }\n    std::string codigo() const { return codigo_; }\n    int unidades() const { return unidades_; }\n    Estado estado() const { return estado_; }\n    bool cambiar_unidades(int nuevas) {\n        if (estado_ != Estado::preparado || nuevas < 1 || nuevas > 20) { return false; }\n        unidades_ = nuevas;\n        return true;\n    }\n    bool enviar() {\n        if (estado_ != Estado::preparado) { return false; }\n        estado_ = Estado::enviado;\n        return true;\n    }\n    bool cancelar() {\n        if (estado_ != Estado::preparado) { return false; }\n        estado_ = Estado::cancelado;\n        return true;\n    }\nprivate:\n    std::string codigo_;\n    int unidades_;\n    Estado estado_ = Estado::preparado;\n};bool mismo_valor(const Pedido& a, const Pedido& b) {\n    return a.codigo() == b.codigo() && a.unidades() == b.unidades() && a.estado() == b.estado();\n}\n\nbool operator==(const Pedido& a, const Pedido& b) { return mismo_valor(a, b); }\nbool operator!=(const Pedido& a, const Pedido& b) { return !(a == b); }\n\nint main() {\n    Pedido a{\"Z\", 3};\n    Pedido b = a;\n    b.cambiar_unidades(0);\n    std::cout << (a == b);\n    return 0;\n}\n",
+          "code": "#include <iostream>\n#include <string>\n#include <vector>\n\nenum class Estado {\n    preparado, enviado, cancelado\n};\n\nstruct PedidoInvalido {};\n\nclass Pedido {\npublic:\n    Pedido(std::string codigo, int unidades) : codigo_{codigo}, unidades_{unidades} {\n        if (codigo_.empty() || unidades_ < 1 || unidades_ > 20) {\n            throw PedidoInvalido{};\n        }\n    }\n\n    std::string codigo() const { return codigo_; }\n    int unidades() const { return unidades_; }\n    Estado estado() const { return estado_; }\n    bool cambiar_unidades(int nuevas) {\n        if (estado_ != Estado::preparado || nuevas < 1 || nuevas > 20) { return false; }\n        unidades_ = nuevas;\n        return true;\n    }\n\n    bool enviar() {\n        if (estado_ != Estado::preparado) { return false; }\n        estado_ = Estado::enviado;\n        return true;\n    }\n\n    bool cancelar() {\n        if (estado_ != Estado::preparado) { return false; }\n        estado_ = Estado::cancelado;\n        return true;\n    }\nprivate:\n    std::string codigo_;\n    int unidades_;\n    Estado estado_ = Estado::preparado;\n};bool mismo_valor(const Pedido& a, const Pedido& b) {\n    return a.codigo() == b.codigo() && a.unidades() == b.unidades() && a.estado() == b.estado();\n}\n\nbool operator==(const Pedido& a, const Pedido& b) { return mismo_valor(a, b); }\nbool operator!=(const Pedido& a, const Pedido& b) { return !(a == b); }\n\nint main() {\n    Pedido a{\"Z\", 3};\n    Pedido b = a;\n    b.cambiar_unidades(0);\n    std::cout << (a == b);\n\n    return 0;\n}\n",
           "answers": [
             "1"
           ],
@@ -1282,6 +1282,31 @@
         "id": "block_0006_0005",
         "beforeSha256": "bbfc0fd4c1469a69fcd8062c1ac7ce1e2dd99208f4fa19fdc872ae8b8e9cb777",
         "afterSha256": "128dd6a35f6c352afee5a9bcf30df771c8da124875d48a440e63bd783ce3bcf3"
+      },
+      {
+        "id": "block_0001_0001",
+        "beforeSha256": "091c577cbbfbc44e6dec71cdb16cd8b5cf919c99c0f0232ff16c0634f0b355b9",
+        "afterSha256": "5877408d92cf86d95cfa22ec327f2bfb3d78a1f18dda7f847cbeeb7c3b5c4f6c"
+      },
+      {
+        "id": "block_0002_0002",
+        "beforeSha256": "adbf072178b0bb82a6584e1a10aa18446a155c30d82de02fd56d621d36c5315c",
+        "afterSha256": "0e9638bc06e3a19fdf52368dee7a9272b98ac5275cc342b82f4b8994e0e30c3c"
+      },
+      {
+        "id": "block_0004_0001",
+        "beforeSha256": "e2478fbbdf782ae283f8b8bc6d30caca0eb06d397a744adf7b3966e89f2a994e",
+        "afterSha256": "e5e9956d1c47af47f2c2f31b340cfe487ec8026803de15313de7cb5d3d653ddb"
+      },
+      {
+        "id": "block_0005_0002",
+        "beforeSha256": "bfe56cdcd92a2a263a43d85e6820903deaa4f6a98a7cd99bd29d2a0aeae705d0",
+        "afterSha256": "9d95063e122c0090592e0dc50ceb7b3eb8a3c380718863f6bb0f5d2c164a41e5"
+      },
+      {
+        "id": "block_0006_0003",
+        "beforeSha256": "9101c48583ed957aec13edef04dfd6f49d625835479ea7e95a48b6ab15363fff",
+        "afterSha256": "798c524abfa4ae2b8d5b3f8b8bc2e744e8b4ed4265c46385889d41cf5a49936e"
       }
     ],
     "sourceFormatRevisions": [
@@ -1322,6 +1347,76 @@
           "type": "code",
           "language": "cpp",
           "code": "#include <iostream>\n#include <string>\n#include <vector>\n#include <cstddef>\n\nstruct Medida { std::string etiqueta; int cantidad; };\nbool mismo_valor(const Medida& a, const Medida& b) {\n    return a.etiqueta == b.etiqueta && a.cantidad == b.cantidad;\n}\nbool operator==(const Medida& a, const Medida& b) { return mismo_valor(a, b); }\nbool operator!=(const Medida& a, const Medida& b) { return !(a == b); }\n\nint main() {\n    const Medida buscada{\"A\", 2};\n    const std::vector<Medida> pares{{\"A\", 2}, {\"A\", 3}, {\"B\", 2}};\n    for (const auto& otra : pares) {\n        std::cout << (buscada == otra) << \":\" << (buscada != otra) << \"\\n\";\n    }\n    const std::vector<Medida> medidas{{\"A\", 2}, {\"A\", 3}, {\"A\", 2}, {\"B\", 2}};\n    std::size_t cantidad = 0;\n    for (const auto& medida : medidas) {\n        if (medida == buscada) { ++cantidad; }\n    }\n    std::cout << \"Coincidencias:\" << cantidad;\n    return 0;\n}\n"
+        }
+      },
+      {
+        "id": "block_0001_0001",
+        "block": {
+          "type": "output_prediction",
+          "language": "cpp",
+          "question": "Predice la salida exacta.",
+          "code": "#include <iostream>\n#include <string>\n#include <vector>\n\nenum class Estado {\n    preparado, enviado, cancelado\n};\n\nstruct PedidoInvalido {};\n\nclass Pedido {\npublic:\n    Pedido(std::string codigo, int unidades) : codigo_{codigo}, unidades_{unidades} {\n        if (codigo_.empty() || unidades_ < 1 || unidades_ > 20) {\n            throw PedidoInvalido{};\n        }\n    }\n    std::string codigo() const { return codigo_; }\n    int unidades() const { return unidades_; }\n    Estado estado() const { return estado_; }\n    bool cambiar_unidades(int nuevas) {\n        if (estado_ != Estado::preparado || nuevas < 1 || nuevas > 20) { return false; }\n        unidades_ = nuevas;\n        return true;\n    }\n    bool enviar() {\n        if (estado_ != Estado::preparado) { return false; }\n        estado_ = Estado::enviado;\n        return true;\n    }\n    bool cancelar() {\n        if (estado_ != Estado::preparado) { return false; }\n        estado_ = Estado::cancelado;\n        return true;\n    }\nprivate:\n    std::string codigo_;\n    int unidades_;\n    Estado estado_ = Estado::preparado;\n};bool mismo_valor(const Pedido& a, const Pedido& b) {\n    return a.codigo() == b.codigo() && a.unidades() == b.unidades() && a.estado() == b.estado();\n}\n\n\nint main() {\n    Pedido a{\"K\", 2};\n    Pedido b{\"K\", 8};\n    std::cout << (a.codigo() == b.codigo()) << \" \" << mismo_valor(a, b);\n    return 0;\n}\n",
+          "answers": [
+            "1 0"
+          ],
+          "explanation": "Los códigos de ambos pedidos son K, por lo que a.codigo() == b.codigo() devuelve true y se muestra 1. Las cantidades, dos y ocho, son distintas: mismo_valor(a, b) devuelve false y se muestra 0. Aunque ambos estén preparados, no coinciden todos los datos. La salida completa es 1 0."
+        }
+      },
+      {
+        "id": "block_0002_0002",
+        "block": {
+          "type": "output_prediction",
+          "language": "cpp",
+          "question": "Predice la salida exacta.",
+          "code": "#include <iostream>\n#include <string>\n#include <vector>\n\nenum class Estado {\n    preparado, enviado, cancelado\n};\n\nstruct PedidoInvalido {};\n\nclass Pedido {\npublic:\n    Pedido(std::string codigo, int unidades) : codigo_{codigo}, unidades_{unidades} {\n        if (codigo_.empty() || unidades_ < 1 || unidades_ > 20) {\n            throw PedidoInvalido{};\n        }\n    }\n    std::string codigo() const { return codigo_; }\n    int unidades() const { return unidades_; }\n    Estado estado() const { return estado_; }\n    bool cambiar_unidades(int nuevas) {\n        if (estado_ != Estado::preparado || nuevas < 1 || nuevas > 20) { return false; }\n        unidades_ = nuevas;\n        return true;\n    }\n    bool enviar() {\n        if (estado_ != Estado::preparado) { return false; }\n        estado_ = Estado::enviado;\n        return true;\n    }\n    bool cancelar() {\n        if (estado_ != Estado::preparado) { return false; }\n        estado_ = Estado::cancelado;\n        return true;\n    }\nprivate:\n    std::string codigo_;\n    int unidades_;\n    Estado estado_ = Estado::preparado;\n};bool mismo_valor(const Pedido& a, const Pedido& b) {\n    return a.codigo() == b.codigo() && a.unidades() == b.unidades() && a.estado() == b.estado();\n}\n\nbool operator==(const Pedido& a, const Pedido& b) { return mismo_valor(a, b); }\nbool operator!=(const Pedido& a, const Pedido& b) { return !(a == b); }\n\nint main() {\n    Pedido a{\"M\", 4};\n    Pedido b = a;\n    std::cout << (a == b) << \" \";\n    b.enviar();\n    std::cout << (a == b) << \" \" << (a != b);\n    return 0;\n}\n",
+          "answers": [
+            "1 0 1"
+          ],
+          "explanation": "Pedido b = a; crea una copia con el mismo código M, cuatro unidades y estado preparado. Por eso la primera igualdad se muestra como 1. Después, b.enviar() cambia sólo el estado de b a enviado; a sigue preparado. La igualdad completa pasa a false y la desigualdad devuelve true. Se muestra 1 0 1."
+        }
+      },
+      {
+        "id": "block_0004_0001",
+        "block": {
+          "type": "output_prediction",
+          "language": "cpp",
+          "question": "Predice la salida exacta.",
+          "code": "#include <iostream>\n#include <string>\n#include <vector>\n#include <cstddef>\n\nenum class Estado {\n    preparado, enviado, cancelado\n};\n\nstruct PedidoInvalido {};\n\nclass Pedido {\npublic:\n    Pedido(std::string codigo, int unidades) : codigo_{codigo}, unidades_{unidades} {\n        if (codigo_.empty() || unidades_ < 1 || unidades_ > 20) {\n            throw PedidoInvalido{};\n        }\n    }\n    std::string codigo() const { return codigo_; }\n    int unidades() const { return unidades_; }\n    Estado estado() const { return estado_; }\n    bool cambiar_unidades(int nuevas) {\n        if (estado_ != Estado::preparado || nuevas < 1 || nuevas > 20) { return false; }\n        unidades_ = nuevas;\n        return true;\n    }\n    bool enviar() {\n        if (estado_ != Estado::preparado) { return false; }\n        estado_ = Estado::enviado;\n        return true;\n    }\n    bool cancelar() {\n        if (estado_ != Estado::preparado) { return false; }\n        estado_ = Estado::cancelado;\n        return true;\n    }\nprivate:\n    std::string codigo_;\n    int unidades_;\n    Estado estado_ = Estado::preparado;\n};bool mismo_valor(const Pedido& a, const Pedido& b) {\n    return a.codigo() == b.codigo() && a.unidades() == b.unidades() && a.estado() == b.estado();\n}\n\nbool operator==(const Pedido& a, const Pedido& b) { return mismo_valor(a, b); }\nbool operator!=(const Pedido& a, const Pedido& b) { return !(a == b); }\n\nint main() {\n    const std::vector<Pedido> pedidos{{\"A\", 2}, {\"B\", 5}, {\"A\", 2}};\n    const Pedido buscado{\"A\", 2};\n    std::size_t cantidad = 0;\n    for (const auto& pedido : pedidos) {\n        if (pedido == buscado) { ++cantidad; }\n    }\n    std::cout << cantidad;\n    return 0;\n}\n",
+          "answers": [
+            "2"
+          ],
+          "explanation": "El primer elemento A con 2 coincide con el pedido buscado; el segundo, B con 5, no coincide. El tercer elemento vuelve a ser A con 2 y también se cuenta. Así, cantidad llega a dos y se muestra 2. La repetición sigue siendo otro elemento del vector: el recorrido no la elimina ni modifica los pedidos."
+        }
+      },
+      {
+        "id": "block_0005_0002",
+        "block": {
+          "type": "cpp_compiler",
+          "initialCode": "#include <iostream>\n#include <string>\n#include <vector>\n\nint main() {\n    // Construye aqui el programa de la consigna.\n    return 0;\n}\n",
+          "outputCheck": {
+            "cases": [
+              {
+                "standardInput": "",
+                "outputs": [
+                  "1:0\n0:1\n0:1\nCoincidencias:2"
+                ],
+                "explanation": "Igualdad completa requiere la misma etiqueta y cantidad. Desigualdad niega esa misma comparación; los registros repetidos siguen contando por separado."
+              }
+            ]
+          }
+        }
+      },
+      {
+        "id": "block_0006_0003",
+        "block": {
+          "type": "output_prediction",
+          "language": "cpp",
+          "question": "Predice la salida exacta.",
+          "code": "#include <iostream>\n#include <string>\n#include <vector>\n\nenum class Estado {\n    preparado, enviado, cancelado\n};\n\nstruct PedidoInvalido {};\n\nclass Pedido {\npublic:\n    Pedido(std::string codigo, int unidades) : codigo_{codigo}, unidades_{unidades} {\n        if (codigo_.empty() || unidades_ < 1 || unidades_ > 20) {\n            throw PedidoInvalido{};\n        }\n    }\n    std::string codigo() const { return codigo_; }\n    int unidades() const { return unidades_; }\n    Estado estado() const { return estado_; }\n    bool cambiar_unidades(int nuevas) {\n        if (estado_ != Estado::preparado || nuevas < 1 || nuevas > 20) { return false; }\n        unidades_ = nuevas;\n        return true;\n    }\n    bool enviar() {\n        if (estado_ != Estado::preparado) { return false; }\n        estado_ = Estado::enviado;\n        return true;\n    }\n    bool cancelar() {\n        if (estado_ != Estado::preparado) { return false; }\n        estado_ = Estado::cancelado;\n        return true;\n    }\nprivate:\n    std::string codigo_;\n    int unidades_;\n    Estado estado_ = Estado::preparado;\n};bool mismo_valor(const Pedido& a, const Pedido& b) {\n    return a.codigo() == b.codigo() && a.unidades() == b.unidades() && a.estado() == b.estado();\n}\n\nbool operator==(const Pedido& a, const Pedido& b) { return mismo_valor(a, b); }\nbool operator!=(const Pedido& a, const Pedido& b) { return !(a == b); }\n\nint main() {\n    Pedido a{\"Z\", 3};\n    Pedido b = a;\n    b.cambiar_unidades(0);\n    std::cout << (a == b);\n    return 0;\n}\n",
+          "answers": [
+            "1"
+          ],
+          "explanation": "Al copiar a en b, ambos quedan con código Z, tres unidades y estado preparado. b.cambiar_unidades(0) rechaza cero porque la cantidad mínima es una unidad. La llamada termina sin asignar, de modo que b conserva sus tres miembros. Los valores completos siguen iguales y la comparación se muestra como 1."
         }
       }
     ]

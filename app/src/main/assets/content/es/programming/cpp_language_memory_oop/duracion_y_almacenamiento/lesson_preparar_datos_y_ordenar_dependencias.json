@@ -26,7 +26,7 @@
           "id": "p3_u3l6_ceros_y_constantes",
           "language": "cpp",
           "question": "¿Qué secuencia completa muestra el programa, sin espacios ni salto final?",
-          "code": "#include <iostream>\n\nint pendientes;\nint limite = 2 * 3;\n\nint main() {\n    std::cout << pendientes << ':' << limite;\n    limite = 9;\n    std::cout << ':' << limite;\n    return 0;\n}\n",
+          "code": "#include <iostream>\n\nint pendientes;\nint limite = 2 * 3;\n\nint main() {\n    std::cout << pendientes << ':' << limite;\n    limite = 9;\n\n    std::cout << ':' << limite;\n\n    return 0;\n}\n",
           "answers": [
             "0:6:9"
           ],
@@ -54,7 +54,7 @@
           "id": "p3_u3l6_const_dinamico",
           "language": "cpp",
           "question": "En la salida de main, ¿qué valores tienen dato y llamadas?",
-          "code": "#include <iostream>\n\nint llamadas = 0;\n\nint obtener() {\n    ++llamadas;\n    return 9;\n}\n\nconst int dato = obtener();\n\nint main() {\n    std::cout << dato << ':' << llamadas;\n    return 0;\n}\n",
+          "code": "#include <iostream>\n\nint llamadas = 0;\n\nint obtener() {\n    ++llamadas;\n    return 9;\n}\n\nconst int dato = obtener();\n\nint main() {\n    std::cout << dato << ':' << llamadas;\n\n    return 0;\n}\n",
           "answers": [
             "9:1"
           ],
@@ -80,7 +80,7 @@
         {
           "type": "code",
           "language": "cpp",
-          "code": "#include <iostream>\n\nint llamadas = 0;\n\nint siguiente() {\n    ++llamadas;\n    return llamadas;\n}\n\nint primero = siguiente();\nint segundo = primero + siguiente();\n\nint main() {\n    std::cout << primero << ':' << segundo << ':' << llamadas;\n    return 0;\n}\n"
+          "code": "#include <iostream>\n\nint llamadas = 0;\n\nint siguiente() {\n    ++llamadas;\n    return llamadas;\n}\n\nint primero = siguiente();\nint segundo = primero + siguiente();\n\nint main() {\n    std::cout << primero << ':' << segundo << ':' << llamadas;\n\n    return 0;\n}\n"
         },
         {
           "type": "math_puzzle",
@@ -180,7 +180,7 @@
           "id": "p3_u3l6_constante_posterior",
           "language": "cpp",
           "question": "¿Qué valores muestra main?",
-          "code": "#include <iostream>\n\nextern int base;\nint copia = base;\nint base = 7;\n\nint main() {\n    std::cout << copia << ':' << base;\n    return 0;\n}\n",
+          "code": "#include <iostream>\n\nextern int base;\nint copia = base;\nint base = 7;\n\nint main() {\n    std::cout << copia << ':' << base;\n\n    return 0;\n}\n",
           "answers": [
             "7:7"
           ],
@@ -237,7 +237,7 @@
         {
           "type": "code",
           "language": "cpp",
-          "code": "#include \"datos.hpp\"\n#include <iostream>\n\nint main() {\n    std::cout << copia << ':' << base;\n    return 0;\n}\n"
+          "code": "#include \"datos.hpp\"\n#include <iostream>\n\nint main() {\n    std::cout << copia << ':' << base;\n\n    return 0;\n}\n"
         },
         {
           "type": "paragraph",
@@ -304,7 +304,7 @@
           "id": "p3_u3l6_constinit_modificable",
           "language": "cpp",
           "question": "¿Qué muestra este programa después de sumar tres a contador?",
-          "code": "#include <iostream>\n\nconstinit int contador = 6;\nconstinit int pendientes;\n\nint main() {\n    std::cout << contador << ':' << pendientes;\n    contador += 3;\n    std::cout << ':' << contador;\n    return 0;\n}\n",
+          "code": "#include <iostream>\n\nconstinit int contador = 6;\nconstinit int pendientes;\n\nint main() {\n    std::cout << contador << ':' << pendientes;\n    contador += 3;\n\n    std::cout << ':' << contador;\n\n    return 0;\n}\n",
           "answers": [
             "6:0:9"
           ],
@@ -400,7 +400,7 @@
         {
           "type": "cpp_compiler",
           "language": "cpp",
-          "initialCode": "#include \"datos.hpp\"\n#include <iostream>\n\nint main() {\n    std::cout << copia << ':' << base;\n    return 0;\n}\n",
+          "initialCode": "#include \"datos.hpp\"\n#include <iostream>\n\nint main() {\n    std::cout << copia << ':' << base;\n\n    return 0;\n}\n",
           "projectFiles": [
             {
               "path": "datos.hpp",
@@ -416,7 +416,7 @@
             },
             {
               "path": "main.cpp",
-              "initialCode": "#include \"datos.hpp\"\n#include <iostream>\n\nint main() {\n    std::cout << copia << ':' << base;\n    return 0;\n}\n"
+              "initialCode": "#include \"datos.hpp\"\n#include <iostream>\n\nint main() {\n    std::cout << copia << ':' << base;\n\n    return 0;\n}\n"
             }
           ],
           "sourceFiles": [
@@ -484,7 +484,7 @@
         {
           "type": "code",
           "language": "cpp",
-          "code": "#include \"datos.hpp\"\n#include <iostream>\n\nint main() {\n    std::cout << copia << ':' << base;\n    return 0;\n}\n"
+          "code": "#include \"datos.hpp\"\n#include <iostream>\n\nint main() {\n    std::cout << copia << ':' << base;\n\n    return 0;\n}\n"
         },
         {
           "type": "multiple_choice",
@@ -547,7 +547,7 @@
           "id": "p3_u3l6_primer_argumento_static",
           "language": "cpp",
           "question": "¿Qué valores devuelven estas dos llamadas?",
-          "code": "#include <iostream>\n\nint conservarPrimero(int propuesta) {\n    static int guardado = propuesta;\n    return guardado;\n}\n\nint main() {\n    const int primero = conservarPrimero(4);\n    const int segundo = conservarPrimero(8);\n    std::cout << primero << ':' << segundo;\n    return 0;\n}\n",
+          "code": "#include <iostream>\n\nint conservarPrimero(int propuesta) {\n    static int guardado = propuesta;\n    return guardado;\n}\n\nint main() {\n    const int primero = conservarPrimero(4);\n    const int segundo = conservarPrimero(8);\n\n    std::cout << primero << ':' << segundo;\n\n    return 0;\n}\n",
           "answers": [
             "4:4"
           ],
@@ -623,7 +623,7 @@
         {
           "type": "cpp_compiler",
           "language": "cpp",
-          "initialCode": "#include \"configuracion.hpp\"\n#include <iostream>\n\nint main() {\n    int cantidad = 0;\n    if (!(std::cin >> cantidad) || cantidad < 1 || cantidad > 12) {\n        return 1;\n    }\n    for (int i = 0; i < cantidad; ++i) {\n        int tipo = 0;\n        if (!(std::cin >> tipo)) {\n            return 1;\n        }\n        if (tipo == 1) {\n            int base = 0;\n            int paso = 0;\n            if (!(std::cin >> base >> paso)) {\n                return 1;\n            }\n            const bool aceptada = configuracion::preparar(base, paso);\n            std::cout << (aceptada ? \"Aceptada\" : \"Rechazo\");\n        } else if (tipo == 0) {\n            int indice = 0;\n            if (!(std::cin >> indice)) {\n                return 1;\n            }\n            const int valor = configuracion::consultar(indice);\n            std::cout << \"Valor:\" << valor;\n        } else {\n            return 1;\n        }\n        std::cout << \";Base:\" << configuracion::base\n                  << \";Paso:\" << configuracion::paso\n                  << \";Lista:\" << configuracion::lista << '\\n';\n    }\n    return 0;\n}\n",
+          "initialCode": "#include \"configuracion.hpp\"\n#include <iostream>\n\nint main() {\n    int cantidad = 0;\n    if (!(std::cin >> cantidad) || cantidad < 1 || cantidad > 12) {\n        return 1;\n    }\n    for (int i = 0; i < cantidad; ++i) {\n        int tipo = 0;\n        if (!(std::cin >> tipo)) {\n            return 1;\n        }\n        if (tipo == 1) {\n            int base = 0;\n            int paso = 0;\n\n            if (!(std::cin >> base >> paso)) {\n                return 1;\n            }\n            const bool aceptada = configuracion::preparar(base, paso);\n            std::cout << (aceptada ? \"Aceptada\" : \"Rechazo\");\n        } else if (tipo == 0) {\n            int indice = 0;\n            if (!(std::cin >> indice)) {\n                return 1;\n            }\n            const int valor = configuracion::consultar(indice);\n            std::cout << \"Valor:\" << valor;\n        } else {\n            return 1;\n        }\n        std::cout << \";Base:\" << configuracion::base\n                  << \";Paso:\" << configuracion::paso\n                  << \";Lista:\" << configuracion::lista << '\\n';\n    }\n\n    return 0;\n}\n",
           "projectFiles": [
             {
               "path": "configuracion.hpp",
@@ -631,15 +631,15 @@
             },
             {
               "path": "configuracion.cpp",
-              "initialCode": "#include \"configuracion.hpp\"\n\nnamespace configuracion {\n    // Define aquí base, paso y lista con inicialización estática exigida.\n\n    bool preparar(int nuevaBase, int nuevoPaso) {\n        // Valida primero. Publica los dos valores sólo si son aceptables.\n        return nuevaBase == -100 && nuevoPaso == -100;\n    }\n}\n"
+              "initialCode": "#include \"configuracion.hpp\"\n\nnamespace configuracion {\n    // Define aquí base, paso y lista con inicialización estática exigida.\n    \n    bool preparar(int nuevaBase, int nuevoPaso) {\n        // Valida primero. Publica los dos valores sólo si son aceptables.\n        \n        return nuevaBase == -100 && nuevoPaso == -100;\n    }\n}\n"
             },
             {
               "path": "consulta.cpp",
-              "initialCode": "#include \"configuracion.hpp\"\n\nnamespace configuracion {\n    int consultar(int indice) {\n        // Comprueba la preparación y el índice antes de calcular.\n        return indice - indice;\n    }\n}\n"
+              "initialCode": "#include \"configuracion.hpp\"\n\nnamespace configuracion {\n    int consultar(int indice) {\n        // Comprueba la preparación y el índice antes de calcular.\n        \n        return indice - indice;\n    }\n}\n"
             },
             {
               "path": "main.cpp",
-              "initialCode": "#include \"configuracion.hpp\"\n#include <iostream>\n\nint main() {\n    int cantidad = 0;\n    if (!(std::cin >> cantidad) || cantidad < 1 || cantidad > 12) {\n        return 1;\n    }\n    for (int i = 0; i < cantidad; ++i) {\n        int tipo = 0;\n        if (!(std::cin >> tipo)) {\n            return 1;\n        }\n        if (tipo == 1) {\n            int base = 0;\n            int paso = 0;\n            if (!(std::cin >> base >> paso)) {\n                return 1;\n            }\n            const bool aceptada = configuracion::preparar(base, paso);\n            std::cout << (aceptada ? \"Aceptada\" : \"Rechazo\");\n        } else if (tipo == 0) {\n            int indice = 0;\n            if (!(std::cin >> indice)) {\n                return 1;\n            }\n            const int valor = configuracion::consultar(indice);\n            std::cout << \"Valor:\" << valor;\n        } else {\n            return 1;\n        }\n        std::cout << \";Base:\" << configuracion::base\n                  << \";Paso:\" << configuracion::paso\n                  << \";Lista:\" << configuracion::lista << '\\n';\n    }\n    return 0;\n}\n"
+              "initialCode": "#include \"configuracion.hpp\"\n#include <iostream>\n\nint main() {\n    int cantidad = 0;\n    if (!(std::cin >> cantidad) || cantidad < 1 || cantidad > 12) {\n        return 1;\n    }\n    for (int i = 0; i < cantidad; ++i) {\n        int tipo = 0;\n        if (!(std::cin >> tipo)) {\n            return 1;\n        }\n        if (tipo == 1) {\n            int base = 0;\n            int paso = 0;\n\n            if (!(std::cin >> base >> paso)) {\n                return 1;\n            }\n            const bool aceptada = configuracion::preparar(base, paso);\n            std::cout << (aceptada ? \"Aceptada\" : \"Rechazo\");\n        } else if (tipo == 0) {\n            int indice = 0;\n            if (!(std::cin >> indice)) {\n                return 1;\n            }\n            const int valor = configuracion::consultar(indice);\n            std::cout << \"Valor:\" << valor;\n        } else {\n            return 1;\n        }\n        std::cout << \";Base:\" << configuracion::base\n                  << \";Paso:\" << configuracion::paso\n                  << \";Lista:\" << configuracion::lista << '\\n';\n    }\n\n    return 0;\n}\n"
             }
           ],
           "sourceFiles": [
@@ -837,7 +837,7 @@
         {
           "type": "code",
           "language": "cpp",
-          "code": "#include \"configuracion.hpp\"\n\nnamespace configuracion {\n    int consultar(int indice) {\n        if (!lista || indice < 0 || indice > 3) {\n            return -1;\n        }\n        return base + indice * paso;\n    }\n}\n"
+          "code": "#include \"configuracion.hpp\"\n\nnamespace configuracion {\n    int consultar(int indice) {\n        if (!lista || indice < 0 || indice > 3) {\n            return -1;\n        }\n\n        return base + indice * paso;\n    }\n}\n"
         },
         {
           "type": "heading",
@@ -846,7 +846,7 @@
         {
           "type": "code",
           "language": "cpp",
-          "code": "#include \"configuracion.hpp\"\n#include <iostream>\n\nint main() {\n    int cantidad = 0;\n    if (!(std::cin >> cantidad) || cantidad < 1 || cantidad > 12) {\n        return 1;\n    }\n    for (int i = 0; i < cantidad; ++i) {\n        int tipo = 0;\n        if (!(std::cin >> tipo)) {\n            return 1;\n        }\n        if (tipo == 1) {\n            int base = 0;\n            int paso = 0;\n            if (!(std::cin >> base >> paso)) {\n                return 1;\n            }\n            const bool aceptada = configuracion::preparar(base, paso);\n            std::cout << (aceptada ? \"Aceptada\" : \"Rechazo\");\n        } else if (tipo == 0) {\n            int indice = 0;\n            if (!(std::cin >> indice)) {\n                return 1;\n            }\n            const int valor = configuracion::consultar(indice);\n            std::cout << \"Valor:\" << valor;\n        } else {\n            return 1;\n        }\n        std::cout << \";Base:\" << configuracion::base\n                  << \";Paso:\" << configuracion::paso\n                  << \";Lista:\" << configuracion::lista << '\\n';\n    }\n    return 0;\n}\n"
+          "code": "#include \"configuracion.hpp\"\n#include <iostream>\n\nint main() {\n    int cantidad = 0;\n    if (!(std::cin >> cantidad) || cantidad < 1 || cantidad > 12) {\n        return 1;\n    }\n    for (int i = 0; i < cantidad; ++i) {\n        int tipo = 0;\n        if (!(std::cin >> tipo)) {\n            return 1;\n        }\n        if (tipo == 1) {\n            int base = 0;\n            int paso = 0;\n\n            if (!(std::cin >> base >> paso)) {\n                return 1;\n            }\n            const bool aceptada = configuracion::preparar(base, paso);\n            std::cout << (aceptada ? \"Aceptada\" : \"Rechazo\");\n        } else if (tipo == 0) {\n            int indice = 0;\n            if (!(std::cin >> indice)) {\n                return 1;\n            }\n            const int valor = configuracion::consultar(indice);\n            std::cout << \"Valor:\" << valor;\n        } else {\n            return 1;\n        }\n        std::cout << \";Base:\" << configuracion::base\n                  << \";Paso:\" << configuracion::paso\n                  << \";Lista:\" << configuracion::lista << '\\n';\n    }\n\n    return 0;\n}\n"
         },
         {
           "type": "paragraph",
@@ -2333,6 +2333,293 @@
       }
     },
     "additions": [],
-    "editorial": []
+    "editorial": [
+      {
+        "id": "block_0000_0004",
+        "beforeSha256": "db71bc15339dc6661ff263e50b3b7d6cc2658f69f9755db3d800e05a91701d6d",
+        "afterSha256": "db2507cc67e1e4054b47168dbfa3871c8970efb6ba28abccb6c88c7b03e18e46"
+      },
+      {
+        "id": "block_0001_0003",
+        "beforeSha256": "0c5f5d201da2c8764e399e91978414afba0b15384bb153697c9c695fa4b81aaf",
+        "afterSha256": "61ff93838103bcfa3550690ed6aa63707056e4c932adf650909f989de4dc2f20"
+      },
+      {
+        "id": "block_0002_0002",
+        "beforeSha256": "fb6c79d79725132dcdc78cbccefac60be7b95c1f9f05227e2e39e5917cd3f13a",
+        "afterSha256": "f159f5004b556815ecfe544169fccc5fe1e3a8ffbc7daddef7154985c3ea8e4f"
+      },
+      {
+        "id": "block_0003_0002",
+        "beforeSha256": "dc7d2c44d7ee08b4c754dcb56ef5fee1f80a940118b7e75c0bbe64fa9286ac9f",
+        "afterSha256": "4bdcf4da2958c815cae6186236d880e2233643289bc2d6b40dd46773b2844bab"
+      },
+      {
+        "id": "block_0004_0009",
+        "beforeSha256": "196c0cbf17b2eca504ee3ee75208cfa1d4a8a9fe721e462fe213d6351c7db120",
+        "afterSha256": "339d788d4c59ceb8daf4d4977a6182c03c01398124455087cec5e5f4d1398ffd"
+      },
+      {
+        "id": "block_0006_0003",
+        "beforeSha256": "4dc65e639498f0cc66c2146cb0e0f438b55e3062271524acbc6a1dce89a1d557",
+        "afterSha256": "2b9fd93f44ec6385ec3c3913fe20340630479c14cef119cdb6fcbe6e623beafc"
+      },
+      {
+        "id": "block_0009_0004",
+        "beforeSha256": "04878934e73e2ee3c9f602042528751d0f81fe96822bb925d2f9c75e5f8df7b9",
+        "afterSha256": "733bf70cf9a6dba9f9a66c6ad9ac4dca5821e2af60f5e67b5ddcac4eb032e325"
+      },
+      {
+        "id": "block_0010_0009",
+        "beforeSha256": "196c0cbf17b2eca504ee3ee75208cfa1d4a8a9fe721e462fe213d6351c7db120",
+        "afterSha256": "339d788d4c59ceb8daf4d4977a6182c03c01398124455087cec5e5f4d1398ffd"
+      },
+      {
+        "id": "block_0012_0002",
+        "beforeSha256": "3d3e1200c8bec5d84f0f8ef4924ad8ed7babd047a82b67f7ba5c848b5b209894",
+        "afterSha256": "90e4072237781808dd212330363590d27e2a72d0a900fa1f9d8ee8c1653e89fa"
+      },
+      {
+        "id": "block_0013_0014",
+        "beforeSha256": "81c74972becf34d36103037e821b30af5eb7dada183b456f990aa455a1ca2094",
+        "afterSha256": "d7d4011490bbec5e42c4d5ebc26cb5a36b9f810e217dd39e3daf1003147f5f84"
+      },
+      {
+        "id": "block_0016_0007",
+        "beforeSha256": "5f009ba5b71dd08929e0586867bee50f6ad0ffa006ccaa999ad91b6fc3b630db",
+        "afterSha256": "bb580a3fa7aeb546d2fdf58fb5c8729a7dc0e2ec81be003531a272a9d25260ec"
+      },
+      {
+        "id": "block_0016_0009",
+        "beforeSha256": "c65c868f17f3af90c9617a95710d9922a2ec9ea301e2d2a747ac625b871d0648",
+        "afterSha256": "3b8abf6cbba6769c85431c98ab200376c165ae0025ec195eab9daff57ba29646"
+      }
+    ],
+    "sourceFormatRevisions": [
+      {
+        "id": "block_0000_0004",
+        "block": {
+          "type": "output_prediction",
+          "id": "p3_u3l6_ceros_y_constantes",
+          "language": "cpp",
+          "question": "¿Qué secuencia completa muestra el programa, sin espacios ni salto final?",
+          "code": "#include <iostream>\n\nint pendientes;\nint limite = 2 * 3;\n\nint main() {\n    std::cout << pendientes << ':' << limite;\n    limite = 9;\n    std::cout << ':' << limite;\n    return 0;\n}\n",
+          "answers": [
+            "0:6:9"
+          ],
+          "outputComparison": "exact",
+          "explanation": "pendientes comienza en cero y limite en 6. La primera salida muestra 0:6. La asignación posterior guarda 9 en limite; la segunda salida añade :9. Inicialización estática no significa objeto const."
+        }
+      },
+      {
+        "id": "block_0001_0003",
+        "block": {
+          "type": "output_prediction",
+          "id": "p3_u3l6_const_dinamico",
+          "language": "cpp",
+          "question": "En la salida de main, ¿qué valores tienen dato y llamadas?",
+          "code": "#include <iostream>\n\nint llamadas = 0;\n\nint obtener() {\n    ++llamadas;\n    return 9;\n}\n\nconst int dato = obtener();\n\nint main() {\n    std::cout << dato << ':' << llamadas;\n    return 0;\n}\n",
+          "answers": [
+            "9:1"
+          ],
+          "outputComparison": "exact",
+          "explanation": "La llamada inicial aumenta llamadas de cero a uno y devuelve 9 para dato. El uso de estos datos en main ya encuentra realizada esa preparación. const impide asignar otro valor a dato; no evita ejecutar obtener."
+        }
+      },
+      {
+        "id": "block_0002_0002",
+        "block": {
+          "type": "code",
+          "language": "cpp",
+          "code": "#include <iostream>\n\nint llamadas = 0;\n\nint siguiente() {\n    ++llamadas;\n    return llamadas;\n}\n\nint primero = siguiente();\nint segundo = primero + siguiente();\n\nint main() {\n    std::cout << primero << ':' << segundo << ':' << llamadas;\n    return 0;\n}\n"
+        }
+      },
+      {
+        "id": "block_0003_0002",
+        "block": {
+          "type": "output_prediction",
+          "id": "p3_u3l6_constante_posterior",
+          "language": "cpp",
+          "question": "¿Qué valores muestra main?",
+          "code": "#include <iostream>\n\nextern int base;\nint copia = base;\nint base = 7;\n\nint main() {\n    std::cout << copia << ':' << base;\n    return 0;\n}\n",
+          "answers": [
+            "7:7"
+          ],
+          "outputComparison": "exact",
+          "explanation": "base tiene inicialización constante a 7. copia lee ese valor preparado. La posición posterior de int base = 7; no obliga a leer cero: el orden de las fases también forma parte del razonamiento."
+        }
+      },
+      {
+        "id": "block_0004_0009",
+        "block": {
+          "type": "code",
+          "language": "cpp",
+          "code": "#include \"datos.hpp\"\n#include <iostream>\n\nint main() {\n    std::cout << copia << ':' << base;\n    return 0;\n}\n"
+        }
+      },
+      {
+        "id": "block_0006_0003",
+        "block": {
+          "type": "output_prediction",
+          "id": "p3_u3l6_constinit_modificable",
+          "language": "cpp",
+          "question": "¿Qué muestra este programa después de sumar tres a contador?",
+          "code": "#include <iostream>\n\nconstinit int contador = 6;\nconstinit int pendientes;\n\nint main() {\n    std::cout << contador << ':' << pendientes;\n    contador += 3;\n    std::cout << ':' << contador;\n    return 0;\n}\n",
+          "answers": [
+            "6:0:9"
+          ],
+          "outputComparison": "exact",
+          "explanation": "La preparación inicial deja contador en 6 y pendientes en cero. constinit no impide contador += 3; por eso el último valor es 9."
+        }
+      },
+      {
+        "id": "block_0009_0004",
+        "block": {
+          "type": "cpp_compiler",
+          "language": "cpp",
+          "initialCode": "#include \"datos.hpp\"\n#include <iostream>\n\nint main() {\n    std::cout << copia << ':' << base;\n    return 0;\n}\n",
+          "projectFiles": [
+            {
+              "path": "datos.hpp",
+              "initialCode": "#ifndef P3_DATOS_INICIO_HPP\n#define P3_DATOS_INICIO_HPP\n\nextern int base;\nextern int copia;\n\n#endif\n"
+            },
+            {
+              "path": "base.cpp",
+              "initialCode": "#include \"datos.hpp\"\n\nconstexpr int calcularBase() {\n    return 3 + 4;\n}\n\nint leerBase() {\n    return calcularBase();\n}\n\nconstinit int base = leerBase();\n"
+            },
+            {
+              "path": "copia.cpp",
+              "initialCode": "#include \"datos.hpp\"\n\nint copia = base;\n"
+            },
+            {
+              "path": "main.cpp",
+              "initialCode": "#include \"datos.hpp\"\n#include <iostream>\n\nint main() {\n    std::cout << copia << ':' << base;\n    return 0;\n}\n"
+            }
+          ],
+          "sourceFiles": [
+            "base.cpp",
+            "copia.cpp",
+            "main.cpp"
+          ],
+          "initialStandardInput": "",
+          "outputCheck": {
+            "inputComparison": "tokens",
+            "cases": [
+              {
+                "standardInput": "",
+                "outputs": [
+                  "7:7"
+                ],
+                "explanation": "La llamada directa a calcularBase cumple constinit. base queda preparada estáticamente con 7 y copia lee ese valor: main muestra 7:7."
+              }
+            ]
+          }
+        }
+      },
+      {
+        "id": "block_0010_0009",
+        "block": {
+          "type": "code",
+          "language": "cpp",
+          "code": "#include \"datos.hpp\"\n#include <iostream>\n\nint main() {\n    std::cout << copia << ':' << base;\n    return 0;\n}\n"
+        }
+      },
+      {
+        "id": "block_0012_0002",
+        "block": {
+          "type": "output_prediction",
+          "id": "p3_u3l6_primer_argumento_static",
+          "language": "cpp",
+          "question": "¿Qué valores devuelven estas dos llamadas?",
+          "code": "#include <iostream>\n\nint conservarPrimero(int propuesta) {\n    static int guardado = propuesta;\n    return guardado;\n}\n\nint main() {\n    const int primero = conservarPrimero(4);\n    const int segundo = conservarPrimero(8);\n    std::cout << primero << ':' << segundo;\n    return 0;\n}\n",
+          "answers": [
+            "4:4"
+          ],
+          "outputComparison": "exact",
+          "explanation": "La primera llamada inicializa guardado con 4. La segunda recibe 8 como parámetro, pero no vuelve a inicializar guardado. Sigue devolviendo 4."
+        }
+      },
+      {
+        "id": "block_0013_0014",
+        "block": {
+          "type": "cpp_compiler",
+          "language": "cpp",
+          "initialCode": "#include \"configuracion.hpp\"\n#include <iostream>\n\nint main() {\n    int cantidad = 0;\n    if (!(std::cin >> cantidad) || cantidad < 1 || cantidad > 12) {\n        return 1;\n    }\n    for (int i = 0; i < cantidad; ++i) {\n        int tipo = 0;\n        if (!(std::cin >> tipo)) {\n            return 1;\n        }\n        if (tipo == 1) {\n            int base = 0;\n            int paso = 0;\n            if (!(std::cin >> base >> paso)) {\n                return 1;\n            }\n            const bool aceptada = configuracion::preparar(base, paso);\n            std::cout << (aceptada ? \"Aceptada\" : \"Rechazo\");\n        } else if (tipo == 0) {\n            int indice = 0;\n            if (!(std::cin >> indice)) {\n                return 1;\n            }\n            const int valor = configuracion::consultar(indice);\n            std::cout << \"Valor:\" << valor;\n        } else {\n            return 1;\n        }\n        std::cout << \";Base:\" << configuracion::base\n                  << \";Paso:\" << configuracion::paso\n                  << \";Lista:\" << configuracion::lista << '\\n';\n    }\n    return 0;\n}\n",
+          "projectFiles": [
+            {
+              "path": "configuracion.hpp",
+              "initialCode": "#ifndef P3_CONFIGURACION_HPP\n#define P3_CONFIGURACION_HPP\n\nnamespace configuracion {\n    extern int base;\n    extern int paso;\n    extern bool lista;\n\n    bool preparar(int nuevaBase, int nuevoPaso);\n    int consultar(int indice);\n}\n\n#endif\n"
+            },
+            {
+              "path": "configuracion.cpp",
+              "initialCode": "#include \"configuracion.hpp\"\n\nnamespace configuracion {\n    // Define aquí base, paso y lista con inicialización estática exigida.\n\n    bool preparar(int nuevaBase, int nuevoPaso) {\n        // Valida primero. Publica los dos valores sólo si son aceptables.\n        return nuevaBase == -100 && nuevoPaso == -100;\n    }\n}\n"
+            },
+            {
+              "path": "consulta.cpp",
+              "initialCode": "#include \"configuracion.hpp\"\n\nnamespace configuracion {\n    int consultar(int indice) {\n        // Comprueba la preparación y el índice antes de calcular.\n        return indice - indice;\n    }\n}\n"
+            },
+            {
+              "path": "main.cpp",
+              "initialCode": "#include \"configuracion.hpp\"\n#include <iostream>\n\nint main() {\n    int cantidad = 0;\n    if (!(std::cin >> cantidad) || cantidad < 1 || cantidad > 12) {\n        return 1;\n    }\n    for (int i = 0; i < cantidad; ++i) {\n        int tipo = 0;\n        if (!(std::cin >> tipo)) {\n            return 1;\n        }\n        if (tipo == 1) {\n            int base = 0;\n            int paso = 0;\n            if (!(std::cin >> base >> paso)) {\n                return 1;\n            }\n            const bool aceptada = configuracion::preparar(base, paso);\n            std::cout << (aceptada ? \"Aceptada\" : \"Rechazo\");\n        } else if (tipo == 0) {\n            int indice = 0;\n            if (!(std::cin >> indice)) {\n                return 1;\n            }\n            const int valor = configuracion::consultar(indice);\n            std::cout << \"Valor:\" << valor;\n        } else {\n            return 1;\n        }\n        std::cout << \";Base:\" << configuracion::base\n                  << \";Paso:\" << configuracion::paso\n                  << \";Lista:\" << configuracion::lista << '\\n';\n    }\n    return 0;\n}\n"
+            }
+          ],
+          "sourceFiles": [
+            "configuracion.cpp",
+            "consulta.cpp",
+            "main.cpp"
+          ],
+          "initialStandardInput": "8\n0 0\n1 3 2\n0 3\n1 8 3\n0 2\n1 6 3\n0 3\n1 5 0\n",
+          "outputCheck": {
+            "inputComparison": "tokens",
+            "cases": [
+              {
+                "standardInput": "8\n0 0\n1 3 2\n0 3\n1 8 3\n0 2\n1 6 3\n0 3\n1 5 0\n",
+                "outputs": [
+                  "Valor:-1;Base:0;Paso:0;Lista:0\nAceptada;Base:3;Paso:2;Lista:1\nValor:9;Base:3;Paso:2;Lista:1\nRechazo;Base:3;Paso:2;Lista:1\nValor:7;Base:3;Paso:2;Lista:1\nAceptada;Base:6;Paso:3;Lista:1\nValor:15;Base:6;Paso:3;Lista:1\nRechazo;Base:6;Paso:3;Lista:1\n"
+                ],
+                "explanation": "Comprobar el estado compartido, el orden explícito de preparación y la conservación de la configuración tras un rechazo."
+              },
+              {
+                "standardInput": "6\n1 -1 2\n0 1\n1 0 1\n0 0\n0 3\n0 -1\n",
+                "outputs": [
+                  "Rechazo;Base:0;Paso:0;Lista:0\nValor:-1;Base:0;Paso:0;Lista:0\nAceptada;Base:0;Paso:1;Lista:1\nValor:0;Base:0;Paso:1;Lista:1\nValor:3;Base:0;Paso:1;Lista:1\nValor:-1;Base:0;Paso:1;Lista:1\n"
+                ],
+                "explanation": "Comprobar el estado compartido, el orden explícito de preparación y la conservación de la configuración tras un rechazo."
+              },
+              {
+                "standardInput": "6\n1 9 2\n0 3\n1 10 1\n1 9 3\n0 3\n0 4\n",
+                "outputs": [
+                  "Aceptada;Base:9;Paso:2;Lista:1\nValor:15;Base:9;Paso:2;Lista:1\nRechazo;Base:9;Paso:2;Lista:1\nRechazo;Base:9;Paso:2;Lista:1\nValor:15;Base:9;Paso:2;Lista:1\nValor:-1;Base:9;Paso:2;Lista:1\n"
+                ],
+                "explanation": "Comprobar el estado compartido, el orden explícito de preparación y la conservación de la configuración tras un rechazo."
+              },
+              {
+                "standardInput": "5\n1 4 2\n1 4 2\n1 1 3\n0 0\n0 3\n",
+                "outputs": [
+                  "Aceptada;Base:4;Paso:2;Lista:1\nAceptada;Base:4;Paso:2;Lista:1\nAceptada;Base:1;Paso:3;Lista:1\nValor:1;Base:1;Paso:3;Lista:1\nValor:10;Base:1;Paso:3;Lista:1\n"
+                ],
+                "explanation": "Comprobar el estado compartido, el orden explícito de preparación y la conservación de la configuración tras un rechazo."
+              }
+            ]
+          }
+        }
+      },
+      {
+        "id": "block_0016_0007",
+        "block": {
+          "type": "code",
+          "language": "cpp",
+          "code": "#include \"configuracion.hpp\"\n\nnamespace configuracion {\n    int consultar(int indice) {\n        if (!lista || indice < 0 || indice > 3) {\n            return -1;\n        }\n        return base + indice * paso;\n    }\n}\n"
+        }
+      },
+      {
+        "id": "block_0016_0009",
+        "block": {
+          "type": "code",
+          "language": "cpp",
+          "code": "#include \"configuracion.hpp\"\n#include <iostream>\n\nint main() {\n    int cantidad = 0;\n    if (!(std::cin >> cantidad) || cantidad < 1 || cantidad > 12) {\n        return 1;\n    }\n    for (int i = 0; i < cantidad; ++i) {\n        int tipo = 0;\n        if (!(std::cin >> tipo)) {\n            return 1;\n        }\n        if (tipo == 1) {\n            int base = 0;\n            int paso = 0;\n            if (!(std::cin >> base >> paso)) {\n                return 1;\n            }\n            const bool aceptada = configuracion::preparar(base, paso);\n            std::cout << (aceptada ? \"Aceptada\" : \"Rechazo\");\n        } else if (tipo == 0) {\n            int indice = 0;\n            if (!(std::cin >> indice)) {\n                return 1;\n            }\n            const int valor = configuracion::consultar(indice);\n            std::cout << \"Valor:\" << valor;\n        } else {\n            return 1;\n        }\n        std::cout << \";Base:\" << configuracion::base\n                  << \";Paso:\" << configuracion::paso\n                  << \";Lista:\" << configuracion::lista << '\\n';\n    }\n    return 0;\n}\n"
+        }
+      }
+    ]
   }
 }

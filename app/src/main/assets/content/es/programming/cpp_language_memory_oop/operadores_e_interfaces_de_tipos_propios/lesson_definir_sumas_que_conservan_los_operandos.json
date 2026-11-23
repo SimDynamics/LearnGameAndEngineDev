@@ -47,7 +47,7 @@
           "id": "p3_u7l1_sumar_recuentos_con_nombre",
           "language": "cpp",
           "question": "Escribe los campos del total y las dos consultas a los operandos originales, en el orden de la impresión.",
-          "code": "#include <iostream>\n\nstruct Recuento {\n    int correctos;\n    int errores;\n};\nRecuento sumar(const Recuento& a, const Recuento& b) {\n    return Recuento{a.correctos + b.correctos, a.errores + b.errores};\n}\nint main() {\n    const Recuento a{3, 1}, b{2, 4};\n    Recuento total = sumar(a, b);\n    std::cout << total.correctos << ':' << total.errores << ':' << a.correctos << ':' << b.errores;\n    return 0;\n}\n",
+          "code": "#include <iostream>\n\nstruct Recuento {\n    int correctos;\n    int errores;\n};\n\nRecuento sumar(const Recuento& a, const Recuento& b) {\n    return Recuento{a.correctos + b.correctos, a.errores + b.errores};\n}\n\nint main() {\n    const Recuento a{3, 1}, b{2, 4};\n    Recuento total = sumar(a, b);\n\n    std::cout << total.correctos << ':' << total.errores << ':' << a.correctos << ':' << b.errores;\n\n    return 0;\n}\n",
           "answers": [
             "5:5:3:4"
           ],
@@ -79,7 +79,7 @@
           "id": "p3_u7l1_suma_libre_y_llamada_explicita",
           "language": "cpp",
           "question": "Escribe la línea obtenida con a + b y la línea obtenida con operator+(a, b).",
-          "code": "#include <iostream>\n\nstruct Recuento {\n    int correctos;\n    int errores;\n};\nRecuento operator+(const Recuento& a, const Recuento& b) {\n    return Recuento{a.correctos + b.correctos, a.errores + b.errores};\n}\nint main() {\n    const Recuento a{3, 1}, b{2, 4};\n    Recuento x = a + b;\n    Recuento y = operator+(a, b);\n    std::cout << x.correctos << ':' << x.errores << '\\n' << y.correctos << ':' << y.errores;\n    return 0;\n}\n",
+          "code": "#include <iostream>\n\nstruct Recuento {\n    int correctos;\n    int errores;\n};\n\nRecuento operator+(const Recuento& a, const Recuento& b) {\n    return Recuento{a.correctos + b.correctos, a.errores + b.errores};\n}\n\nint main() {\n    const Recuento a{3, 1}, b{2, 4};\n    Recuento x = a + b;\n    Recuento y = operator+(a, b);\n\n    std::cout << x.correctos << ':' << x.errores << '\\n' << y.correctos << ':' << y.errores;\n\n    return 0;\n}\n",
           "answers": [
             "5:5\n5:5"
           ],
@@ -111,7 +111,7 @@
           "id": "p3_u7l1_suma_miembro_y_llamada_explicita",
           "language": "cpp",
           "question": "Escribe la línea obtenida con a + b y la línea obtenida con a.operator+(b).",
-          "code": "#include <iostream>\n\nstruct Recuento {\n    int correctos;\n    int errores;\n    Recuento operator+(const Recuento& otra) const {\n        return Recuento{correctos + otra.correctos, errores + otra.errores};\n    }\n};\nint main() {\n    const Recuento a{4, 2}, b{1, 3};\n    Recuento x = a + b;\n    Recuento y = a.operator+(b);\n    std::cout << x.correctos << ':' << x.errores << '\\n' << y.correctos << ':' << y.errores;\n    return 0;\n}\n",
+          "code": "#include <iostream>\n\nstruct Recuento {\n    int correctos;\n    int errores;\n    Recuento operator+(const Recuento& otra) const {\n        return Recuento{correctos + otra.correctos, errores + otra.errores};\n    }\n};\n\nint main() {\n    const Recuento a{4, 2}, b{1, 3};\n    Recuento x = a + b;\n    Recuento y = a.operator+(b);\n\n    std::cout << x.correctos << ':' << x.errores << '\\n' << y.correctos << ':' << y.errores;\n\n    return 0;\n}\n",
           "answers": [
             "5:5\n5:5"
           ],
@@ -199,7 +199,7 @@
           "id": "p3_u7l1_resultado_nuevo_y_asignacion",
           "language": "cpp",
           "question": "Escribe la línea posterior al cambio de total y la línea posterior a asignar a = a + b.",
-          "code": "#include <iostream>\n\nstruct Recuento {\n    int correctos;\n    int errores;\n    Recuento operator+(const Recuento& otra) const {\n        return Recuento{correctos + otra.correctos, errores + otra.errores};\n    }\n};\nint main() {\n    Recuento a{2, 1}, b{3, 4};\n    Recuento total = a + b;\n    total.correctos = 9;\n    std::cout << a.correctos << ':' << b.correctos << ':' << total.correctos << '\\n';\n    a = a + b;\n    std::cout << a.correctos << ':' << a.errores << ':' << b.correctos << ':' << b.errores;\n    return 0;\n}\n",
+          "code": "#include <iostream>\n\nstruct Recuento {\n    int correctos;\n    int errores;\n    Recuento operator+(const Recuento& otra) const {\n        return Recuento{correctos + otra.correctos, errores + otra.errores};\n    }\n};\n\nint main() {\n    Recuento a{2, 1}, b{3, 4};\n    Recuento total = a + b;\n\n    total.correctos = 9;\n\n    std::cout << a.correctos << ':' << b.correctos << ':' << total.correctos << '\\n';\n    a = a + b;\n\n    std::cout << a.correctos << ':' << a.errores << ':' << b.correctos << ':' << b.errores;\n\n    return 0;\n}\n",
           "answers": [
             "2:3:9\n5:5:3:4"
           ],
@@ -231,7 +231,7 @@
           "id": "p3_u7l1_sumas_encadenadas_y_mismo_operando",
           "language": "cpp",
           "question": "Escribe la combinación de tres recuentos y después el recuento doble seguido de los campos originales de a.",
-          "code": "#include <iostream>\n\nstruct Recuento {\n    int correctos;\n    int errores;\n    Recuento operator+(const Recuento& otra) const {\n        return Recuento{correctos + otra.correctos, errores + otra.errores};\n    }\n};\nint main() {\n    const Recuento a{1, 2}, b{3, 0}, c{2, 1};\n    Recuento total = a + b + c;\n    Recuento doble = a + a;\n    std::cout << total.correctos << ':' << total.errores << '\\n'\n              << doble.correctos << ':' << doble.errores << ':' << a.correctos << ':' << a.errores;\n    return 0;\n}\n",
+          "code": "#include <iostream>\n\nstruct Recuento {\n    int correctos;\n    int errores;\n    Recuento operator+(const Recuento& otra) const {\n        return Recuento{correctos + otra.correctos, errores + otra.errores};\n    }\n};\n\nint main() {\n    const Recuento a{1, 2}, b{3, 0}, c{2, 1};\n    Recuento total = a + b + c;\n    Recuento doble = a + a;\n\n    std::cout << total.correctos << ':' << total.errores << '\\n'\n              << doble.correctos << ':' << doble.errores << ':' << a.correctos << ':' << a.errores;\n    return 0;\n}\n",
           "answers": [
             "6:3\n2:4:1:2"
           ],
@@ -259,7 +259,7 @@
           "id": "p3_u7l1_agrupacion_de_resta_sobrecargada",
           "language": "cpp",
           "question": "Escribe el resultado de a - b - c y el de a - (b - c), separados por dos puntos.",
-          "code": "#include <iostream>\n\nstruct Valor { int dato; };\nValor operator-(const Valor& a, const Valor& b) { return Valor{a.dato - b.dato}; }\nint main() {\n    const Valor a{9}, b{4}, c{2};\n    std::cout << (a - b - c).dato << ':' << (a - (b - c)).dato;\n    return 0;\n}\n",
+          "code": "#include <iostream>\n\nstruct Valor { int dato; };\nValor operator-(const Valor& a, const Valor& b) { return Valor{a.dato - b.dato}; }\nint main() {\n    const Valor a{9}, b{4}, c{2};\n\n    std::cout << (a - b - c).dato << ':' << (a - (b - c)).dato;\n\n    return 0;\n}\n",
           "answers": [
             "3:7"
           ],
@@ -565,7 +565,7 @@
         {
           "type": "cpp_compiler",
           "language": "cpp",
-          "initialCode": "#include <iostream>\n\nstruct CantidadInvalida {};\nstruct SumaExcesiva {};\n\nclass Cantidad {\npublic:\n    Cantidad() = default;\n    explicit Cantidad(int valor) : unidades_{valor} {\n        if (valor < 0 || valor > 1000) { throw CantidadInvalida{}; }\n    }\n    int valor() const noexcept { return unidades_; }\n    Cantidad operator+(const Cantidad& otra) const;\nprivate:\n    int unidades_ = 0;\n};\nCantidad Cantidad::operator+(const Cantidad& otra) const {\n    // Calcula el resultado sin cambiar los operandos y comprueba su límite.\n    (void)otra;\n    return Cantidad{};\n}\nint main() {\n    int ordenes = 0;\n    if (!(std::cin >> ordenes) || ordenes < 1 || ordenes > 12) { return 1; }\n    Cantidad a{200}, b{350}, total;\n    for (int i = 0; i < ordenes; ++i) {\n        int op = 0, x = 0, y = 0;\n        if (!(std::cin >> op >> x >> y)) { return 1; }\n        std::cout << \"Antes:A=\" << a.valor() << \";B=\" << b.valor() << \";Total=\" << total.valor();\n        const char* estado = \"Operacion\";\n        try {\n            if (op == 1) {\n                Cantidad nueva_a{x}, nueva_b{y};\n                a = nueva_a;\n                b = nueva_b;\n                estado = \"Aceptada\";\n            } else if (op == 2) {\n                total = a + b;\n                estado = \"Aceptada\";\n            } else if (op == 3) {\n                total = total + a;\n                estado = \"Aceptada\";\n            } else if (op == 4) {\n                total = b + a;\n                estado = \"Aceptada\";\n            } else if (op == 5) {\n                total = a + a;\n                estado = \"Aceptada\";\n            }\n        } catch (const CantidadInvalida&) {\n            estado = \"Rango\";\n        } catch (const SumaExcesiva&) {\n            estado = \"Suma\";\n        }\n        std::cout << \";Estado:\" << estado << \";Ahora:A=\" << a.valor()\n                  << \";B=\" << b.valor() << \";Total=\" << total.valor() << '\\n';\n    }\n    std::cout << \"Final:\" << a.valor() << ':' << b.valor() << ':' << total.valor();\n    return 0;\n}\n",
+          "initialCode": "#include <iostream>\n\nstruct CantidadInvalida {};\nstruct SumaExcesiva {};\n\nclass Cantidad {\npublic:\n    Cantidad() = default;\n    explicit Cantidad(int valor) : unidades_{valor} {\n        if (valor < 0 || valor > 1000) { throw CantidadInvalida{}; }\n    }\n\n    int valor() const noexcept { return unidades_; }\n    Cantidad operator+(const Cantidad& otra) const;\nprivate:\n    int unidades_ = 0;\n};\n\nCantidad Cantidad::operator+(const Cantidad& otra) const {\n    // Calcula el resultado sin cambiar los operandos y comprueba su límite.\n    (void)otra;\n    return Cantidad{};\n}\n\nint main() {\n    int ordenes = 0;\n    if (!(std::cin >> ordenes) || ordenes < 1 || ordenes > 12) { return 1; }\n    Cantidad a{200}, b{350}, total;\n    for (int i = 0; i < ordenes; ++i) {\n        int op = 0, x = 0, y = 0;\n        if (!(std::cin >> op >> x >> y)) { return 1; }\n        std::cout << \"Antes:A=\" << a.valor() << \";B=\" << b.valor() << \";Total=\" << total.valor();\n        const char* estado = \"Operacion\";\n        try {\n            if (op == 1) {\n                Cantidad nueva_a{x}, nueva_b{y};\n                a = nueva_a;\n                b = nueva_b;\n                estado = \"Aceptada\";\n            } else if (op == 2) {\n                total = a + b;\n                estado = \"Aceptada\";\n            } else if (op == 3) {\n                total = total + a;\n                estado = \"Aceptada\";\n            } else if (op == 4) {\n                total = b + a;\n                estado = \"Aceptada\";\n            } else if (op == 5) {\n                total = a + a;\n                estado = \"Aceptada\";\n            }\n        } catch (const CantidadInvalida&) {\n            estado = \"Rango\";\n        } catch (const SumaExcesiva&) {\n            estado = \"Suma\";\n        }\n        std::cout << \";Estado:\" << estado << \";Ahora:A=\" << a.valor()\n                  << \";B=\" << b.valor() << \";Total=\" << total.valor() << '\\n';\n    }\n    std::cout << \"Final:\" << a.valor() << ':' << b.valor() << ':' << total.valor();\n\n    return 0;\n}\n",
           "initialStandardInput": "9\n2 0 0\n3 0 0\n3 0 0\n3 0 0\n1 400 600\n2 0 0\n1 -1 7\n4 0 0\n5 0 0\n",
           "outputCheck": {
             "inputComparison": "tokens",
@@ -691,7 +691,7 @@
         {
           "type": "code",
           "language": "cpp",
-          "code": "#include <iostream>\n\nstruct CantidadInvalida {};\nstruct SumaExcesiva {};\n\nclass Cantidad {\npublic:\n    Cantidad() = default;\n    explicit Cantidad(int valor) : unidades_{valor} {\n        if (valor < 0 || valor > 1000) { throw CantidadInvalida{}; }\n    }\n    int valor() const noexcept { return unidades_; }\n    Cantidad operator+(const Cantidad& otra) const;\nprivate:\n    int unidades_ = 0;\n};\nCantidad Cantidad::operator+(const Cantidad& otra) const {\n    const int suma = unidades_ + otra.unidades_;\n    if (suma > 1000) { throw SumaExcesiva{}; }\n    return Cantidad{suma};\n}\nint main() {\n    int ordenes = 0;\n    if (!(std::cin >> ordenes) || ordenes < 1 || ordenes > 12) { return 1; }\n    Cantidad a{200}, b{350}, total;\n    for (int i = 0; i < ordenes; ++i) {\n        int op = 0, x = 0, y = 0;\n        if (!(std::cin >> op >> x >> y)) { return 1; }\n        std::cout << \"Antes:A=\" << a.valor() << \";B=\" << b.valor() << \";Total=\" << total.valor();\n        const char* estado = \"Operacion\";\n        try {\n            if (op == 1) {\n                Cantidad nueva_a{x}, nueva_b{y};\n                a = nueva_a;\n                b = nueva_b;\n                estado = \"Aceptada\";\n            } else if (op == 2) {\n                total = a + b;\n                estado = \"Aceptada\";\n            } else if (op == 3) {\n                total = total + a;\n                estado = \"Aceptada\";\n            } else if (op == 4) {\n                total = b + a;\n                estado = \"Aceptada\";\n            } else if (op == 5) {\n                total = a + a;\n                estado = \"Aceptada\";\n            }\n        } catch (const CantidadInvalida&) {\n            estado = \"Rango\";\n        } catch (const SumaExcesiva&) {\n            estado = \"Suma\";\n        }\n        std::cout << \";Estado:\" << estado << \";Ahora:A=\" << a.valor()\n                  << \";B=\" << b.valor() << \";Total=\" << total.valor() << '\\n';\n    }\n    std::cout << \"Final:\" << a.valor() << ':' << b.valor() << ':' << total.valor();\n    return 0;\n}\n"
+          "code": "#include <iostream>\n\nstruct CantidadInvalida {};\nstruct SumaExcesiva {};\n\nclass Cantidad {\npublic:\n    Cantidad() = default;\n    explicit Cantidad(int valor) : unidades_{valor} {\n        if (valor < 0 || valor > 1000) { throw CantidadInvalida{}; }\n    }\n\n    int valor() const noexcept { return unidades_; }\n    Cantidad operator+(const Cantidad& otra) const;\nprivate:\n    int unidades_ = 0;\n};\n\nCantidad Cantidad::operator+(const Cantidad& otra) const {\n    const int suma = unidades_ + otra.unidades_;\n    if (suma > 1000) { throw SumaExcesiva{}; }\n    return Cantidad{suma};\n}\n\nint main() {\n    int ordenes = 0;\n    if (!(std::cin >> ordenes) || ordenes < 1 || ordenes > 12) { return 1; }\n    Cantidad a{200}, b{350}, total;\n    for (int i = 0; i < ordenes; ++i) {\n        int op = 0, x = 0, y = 0;\n        if (!(std::cin >> op >> x >> y)) { return 1; }\n        std::cout << \"Antes:A=\" << a.valor() << \";B=\" << b.valor() << \";Total=\" << total.valor();\n        const char* estado = \"Operacion\";\n        try {\n            if (op == 1) {\n                Cantidad nueva_a{x}, nueva_b{y};\n                a = nueva_a;\n                b = nueva_b;\n                estado = \"Aceptada\";\n            } else if (op == 2) {\n                total = a + b;\n                estado = \"Aceptada\";\n            } else if (op == 3) {\n                total = total + a;\n                estado = \"Aceptada\";\n            } else if (op == 4) {\n                total = b + a;\n                estado = \"Aceptada\";\n            } else if (op == 5) {\n                total = a + a;\n                estado = \"Aceptada\";\n            }\n        } catch (const CantidadInvalida&) {\n            estado = \"Rango\";\n        } catch (const SumaExcesiva&) {\n            estado = \"Suma\";\n        }\n        std::cout << \";Estado:\" << estado << \";Ahora:A=\" << a.valor()\n                  << \";B=\" << b.valor() << \";Total=\" << total.valor() << '\\n';\n    }\n    std::cout << \"Final:\" << a.valor() << ':' << b.valor() << ':' << total.valor();\n\n    return 0;\n}\n"
         },
         {
           "type": "paragraph",
@@ -726,7 +726,7 @@
           "id": "p3_u7l1_suma_exacta_en_el_limite",
           "language": "cpp",
           "question": "¿Qué muestran total, a y b después de sumar?",
-          "code": "#include <iostream>\n\nstruct CantidadInvalida {};\nstruct SumaExcesiva {};\n\nclass Cantidad {\npublic:\n    Cantidad() = default;\n    explicit Cantidad(int valor) : unidades_{valor} {\n        if (valor < 0 || valor > 1000) { throw CantidadInvalida{}; }\n    }\n    int valor() const noexcept { return unidades_; }\n    Cantidad operator+(const Cantidad& otra) const;\nprivate:\n    int unidades_ = 0;\n};\nCantidad Cantidad::operator+(const Cantidad& otra) const {\n    const int suma = unidades_ + otra.unidades_;\n    if (suma > 1000) { throw SumaExcesiva{}; }\n    return Cantidad{suma};\n}\nint main() {\n    const Cantidad a{400}, b{600};\n    Cantidad total = a + b;\n    std::cout << total.valor() << ':' << a.valor() << ':' << b.valor();\n    return 0;\n}\n",
+          "code": "#include <iostream>\n\nstruct CantidadInvalida {};\nstruct SumaExcesiva {};\n\nclass Cantidad {\npublic:\n    Cantidad() = default;\n    explicit Cantidad(int valor) : unidades_{valor} {\n        if (valor < 0 || valor > 1000) { throw CantidadInvalida{}; }\n    }\n\n    int valor() const noexcept { return unidades_; }\n    Cantidad operator+(const Cantidad& otra) const;\nprivate:\n    int unidades_ = 0;\n};\n\nCantidad Cantidad::operator+(const Cantidad& otra) const {\n    const int suma = unidades_ + otra.unidades_;\n    if (suma > 1000) { throw SumaExcesiva{}; }\n    return Cantidad{suma};\n}\n\nint main() {\n    const Cantidad a{400}, b{600};\n    Cantidad total = a + b;\n\n    std::cout << total.valor() << ':' << a.valor() << ':' << b.valor();\n\n    return 0;\n}\n",
           "answers": [
             "1000:400:600"
           ],
@@ -738,7 +738,7 @@
           "id": "p3_u7l1_rechazo_sin_asignar_resultado",
           "language": "cpp",
           "question": "¿Qué se imprime al rechazar la suma y consultar los tres objetos?",
-          "code": "#include <iostream>\n\nstruct CantidadInvalida {};\nstruct SumaExcesiva {};\n\nclass Cantidad {\npublic:\n    Cantidad() = default;\n    explicit Cantidad(int valor) : unidades_{valor} {\n        if (valor < 0 || valor > 1000) { throw CantidadInvalida{}; }\n    }\n    int valor() const noexcept { return unidades_; }\n    Cantidad operator+(const Cantidad& otra) const;\nprivate:\n    int unidades_ = 0;\n};\nCantidad Cantidad::operator+(const Cantidad& otra) const {\n    const int suma = unidades_ + otra.unidades_;\n    if (suma > 1000) { throw SumaExcesiva{}; }\n    return Cantidad{suma};\n}\nint main() {\n    const Cantidad a{700}, b{400};\n    Cantidad total{9};\n    try { total = a + b; }\n    catch (const SumaExcesiva&) { std::cout << \"Rechazada:\"; }\n    std::cout << total.valor() << ':' << a.valor() << ':' << b.valor();\n    return 0;\n}\n",
+          "code": "#include <iostream>\n\nstruct CantidadInvalida {};\nstruct SumaExcesiva {};\n\nclass Cantidad {\npublic:\n    Cantidad() = default;\n    explicit Cantidad(int valor) : unidades_{valor} {\n        if (valor < 0 || valor > 1000) { throw CantidadInvalida{}; }\n    }\n\n    int valor() const noexcept { return unidades_; }\n    Cantidad operator+(const Cantidad& otra) const;\nprivate:\n    int unidades_ = 0;\n};\n\nCantidad Cantidad::operator+(const Cantidad& otra) const {\n    const int suma = unidades_ + otra.unidades_;\n    if (suma > 1000) { throw SumaExcesiva{}; }\n    return Cantidad{suma};\n}\n\nint main() {\n    const Cantidad a{700}, b{400};\n    Cantidad total{9};\n    try { total = a + b; }\n    catch (const SumaExcesiva&) { std::cout << \"Rechazada:\"; }\n    std::cout << total.valor() << ':' << a.valor() << ':' << b.valor();\n\n    return 0;\n}\n",
           "answers": [
             "Rechazada:9:700:400"
           ],
@@ -2045,6 +2045,222 @@
       }
     },
     "additions": [],
-    "editorial": []
+    "editorial": [
+      {
+        "id": "block_0001_0002",
+        "beforeSha256": "0ab5340e6dc7a193f8057e50bdd1eb7465588e3611b85142f99c57795a801dd4",
+        "afterSha256": "e7320f9d9a6adc3367fac4c70d8c05768278e9e95293e8aa3e556f8aa99791b5"
+      },
+      {
+        "id": "block_0002_0003",
+        "beforeSha256": "100f6bf91c092cae3442f0c6b7af13e3b112315337b5303aa1dcf56f607bb9b5",
+        "afterSha256": "90f8ee09860429866a351fee0b30ed7ab8df15067d46f8bf0387dc4728be9203"
+      },
+      {
+        "id": "block_0003_0003",
+        "beforeSha256": "9e4336d28c0987dbd590b971553f16eb314891524186a6234388f0c635b3a564",
+        "afterSha256": "2f085e8c0187853ba7750ec3cd81ca5136b03f50d59529007a5a885aa9283af6"
+      },
+      {
+        "id": "block_0006_0003",
+        "beforeSha256": "909f7ce0c4382c45d4510798702b66068b9e0d22cf24f9f5339a92f7a1265f41",
+        "afterSha256": "bae1fbb020d09e25aa123b6a122523604e9bcb253cde1b75e9f26db4c5f1945a"
+      },
+      {
+        "id": "block_0007_0003",
+        "beforeSha256": "5e861d7a7d4a0dea94f7fd47323948fa85e86f39f98b86228a3facd09e4fb962",
+        "afterSha256": "12ec2314e5bc1cd05d9da79a50d0c545ea47225409c51c9d8898ae42ca833174"
+      },
+      {
+        "id": "block_0008_0003",
+        "beforeSha256": "cc0c9177c106bf6c78056c91f3346f3094b7e46911d365accb93a804021cd876",
+        "afterSha256": "162c4065b043c07eb6d4d44d4332d80a14bf3aa7077eadd9f7ac1dccf4c6dcdf"
+      },
+      {
+        "id": "block_0015_0002",
+        "beforeSha256": "7f4c7d5daaccc3a75af73cd4cec57ad4864c1102c0567d060de1952ffdafbc0c",
+        "afterSha256": "8b637b658b2776b8254489c9d4baa315834e1954c9c2e5e0cb16ad1a2bef7de7"
+      },
+      {
+        "id": "block_0017_0001",
+        "beforeSha256": "a2bbcad595923c756a538e17fd93b5f7b0d5990b491fc44e5815e5d78ea5461a",
+        "afterSha256": "b73f5007da9a072fa2e64212c7eab22d01ef64a48704328bb4a6d76bb9c7d556"
+      },
+      {
+        "id": "block_0018_0002",
+        "beforeSha256": "05263cad1f1508c20bb32b79ba3a022936ee84df27746b107fee2bcc41ad839b",
+        "afterSha256": "6572cea9ba002837492d9e186dd4cd31da0b1cbe1051d4aa02e4506de2c4cdee"
+      },
+      {
+        "id": "block_0018_0003",
+        "beforeSha256": "95e1f708cf380db65e23c768649911042aab1f6dea2fa34a70c63d808f43168c",
+        "afterSha256": "9135fdcfdb1454eb5cb1eeb79d176d8de827188536fbe2ebb8e9e33257efbf62"
+      }
+    ],
+    "sourceFormatRevisions": [
+      {
+        "id": "block_0001_0002",
+        "block": {
+          "type": "output_prediction",
+          "id": "p3_u7l1_sumar_recuentos_con_nombre",
+          "language": "cpp",
+          "question": "Escribe los campos del total y las dos consultas a los operandos originales, en el orden de la impresión.",
+          "code": "#include <iostream>\n\nstruct Recuento {\n    int correctos;\n    int errores;\n};\nRecuento sumar(const Recuento& a, const Recuento& b) {\n    return Recuento{a.correctos + b.correctos, a.errores + b.errores};\n}\nint main() {\n    const Recuento a{3, 1}, b{2, 4};\n    Recuento total = sumar(a, b);\n    std::cout << total.correctos << ':' << total.errores << ':' << a.correctos << ':' << b.errores;\n    return 0;\n}\n",
+          "answers": [
+            "5:5:3:4"
+          ],
+          "outputComparison": "exact",
+          "explanation": "La función suma los dos correctos para el primer campo y los dos errores para el segundo. El resultado tiene sus propios int. Las consultas posteriores a a.correctos y b.errores conservan los valores de entrada porque sumar sólo los leyó."
+        }
+      },
+      {
+        "id": "block_0002_0003",
+        "block": {
+          "type": "output_prediction",
+          "id": "p3_u7l1_suma_libre_y_llamada_explicita",
+          "language": "cpp",
+          "question": "Escribe la línea obtenida con a + b y la línea obtenida con operator+(a, b).",
+          "code": "#include <iostream>\n\nstruct Recuento {\n    int correctos;\n    int errores;\n};\nRecuento operator+(const Recuento& a, const Recuento& b) {\n    return Recuento{a.correctos + b.correctos, a.errores + b.errores};\n}\nint main() {\n    const Recuento a{3, 1}, b{2, 4};\n    Recuento x = a + b;\n    Recuento y = operator+(a, b);\n    std::cout << x.correctos << ':' << x.errores << '\\n' << y.correctos << ':' << y.errores;\n    return 0;\n}\n",
+          "answers": [
+            "5:5\n5:5"
+          ],
+          "outputComparison": "exact",
+          "explanation": "Las dos escrituras utilizan el mismo operator+ libre con los mismos operandos. Su cuerpo conserva la suma por campos de sumar. x e y son resultados nuevos; la notación con el símbolo no añade otra regla de cálculo."
+        }
+      },
+      {
+        "id": "block_0003_0003",
+        "block": {
+          "type": "output_prediction",
+          "id": "p3_u7l1_suma_miembro_y_llamada_explicita",
+          "language": "cpp",
+          "question": "Escribe la línea obtenida con a + b y la línea obtenida con a.operator+(b).",
+          "code": "#include <iostream>\n\nstruct Recuento {\n    int correctos;\n    int errores;\n    Recuento operator+(const Recuento& otra) const {\n        return Recuento{correctos + otra.correctos, errores + otra.errores};\n    }\n};\nint main() {\n    const Recuento a{4, 2}, b{1, 3};\n    Recuento x = a + b;\n    Recuento y = a.operator+(b);\n    std::cout << x.correctos << ':' << x.errores << '\\n' << y.correctos << ':' << y.errores;\n    return 0;\n}\n",
+          "answers": [
+            "5:5\n5:5"
+          ],
+          "outputComparison": "exact",
+          "explanation": "Las dos escrituras llaman al operador miembro del objeto a y entregan b como otra. El cuerpo vuelve a sumar los campos correspondientes y devuelve un Recuento nuevo. La const final permite ambas llamadas sobre el objeto a, que está declarado const."
+        }
+      },
+      {
+        "id": "block_0006_0003",
+        "block": {
+          "type": "output_prediction",
+          "id": "p3_u7l1_resultado_nuevo_y_asignacion",
+          "language": "cpp",
+          "question": "Escribe la línea posterior al cambio de total y la línea posterior a asignar a = a + b.",
+          "code": "#include <iostream>\n\nstruct Recuento {\n    int correctos;\n    int errores;\n    Recuento operator+(const Recuento& otra) const {\n        return Recuento{correctos + otra.correctos, errores + otra.errores};\n    }\n};\nint main() {\n    Recuento a{2, 1}, b{3, 4};\n    Recuento total = a + b;\n    total.correctos = 9;\n    std::cout << a.correctos << ':' << b.correctos << ':' << total.correctos << '\\n';\n    a = a + b;\n    std::cout << a.correctos << ':' << a.errores << ':' << b.correctos << ':' << b.errores;\n    return 0;\n}\n",
+          "answers": [
+            "2:3:9\n5:5:3:4"
+          ],
+          "outputComparison": "exact",
+          "explanation": "Cambiar total.correctos sólo cambia ese resultado independiente. Después a + b calcula otra combinación a partir de los valores que conservaban a y b. La asignación guarda esa combinación en a. b permanece intacto porque ni la suma ni la asignación a a escriben en sus campos."
+        }
+      },
+      {
+        "id": "block_0007_0003",
+        "block": {
+          "type": "output_prediction",
+          "id": "p3_u7l1_sumas_encadenadas_y_mismo_operando",
+          "language": "cpp",
+          "question": "Escribe la combinación de tres recuentos y después el recuento doble seguido de los campos originales de a.",
+          "code": "#include <iostream>\n\nstruct Recuento {\n    int correctos;\n    int errores;\n    Recuento operator+(const Recuento& otra) const {\n        return Recuento{correctos + otra.correctos, errores + otra.errores};\n    }\n};\nint main() {\n    const Recuento a{1, 2}, b{3, 0}, c{2, 1};\n    Recuento total = a + b + c;\n    Recuento doble = a + a;\n    std::cout << total.correctos << ':' << total.errores << '\\n'\n              << doble.correctos << ':' << doble.errores << ':' << a.correctos << ':' << a.errores;\n    return 0;\n}\n",
+          "answers": [
+            "6:3\n2:4:1:2"
+          ],
+          "outputComparison": "exact",
+          "explanation": "La primera suma combina a y b; la siguiente añade los campos de c a ese resultado. En a + a se suman los dos usos del mismo campo sin modificarlo. Por eso doble tiene sus propios valores y las consultas finales a a conservan sus datos de entrada."
+        }
+      },
+      {
+        "id": "block_0008_0003",
+        "block": {
+          "type": "output_prediction",
+          "id": "p3_u7l1_agrupacion_de_resta_sobrecargada",
+          "language": "cpp",
+          "question": "Escribe el resultado de a - b - c y el de a - (b - c), separados por dos puntos.",
+          "code": "#include <iostream>\n\nstruct Valor { int dato; };\nValor operator-(const Valor& a, const Valor& b) { return Valor{a.dato - b.dato}; }\nint main() {\n    const Valor a{9}, b{4}, c{2};\n    std::cout << (a - b - c).dato << ':' << (a - (b - c)).dato;\n    return 0;\n}\n",
+          "answers": [
+            "3:7"
+          ],
+          "outputComparison": "exact",
+          "explanation": "Sin los paréntesis interiores, se calcula (9 - 4) - 2: el resultado es tres. Con ellos, se calcula 9 - (4 - 2): el resultado es siete. Cada operator- devuelve un Valor nuevo. Esta diferencia comprueba la agrupación que el operador conserva."
+        }
+      },
+      {
+        "id": "block_0015_0002",
+        "block": {
+          "type": "cpp_compiler",
+          "language": "cpp",
+          "initialCode": "#include <iostream>\n\nstruct CantidadInvalida {};\nstruct SumaExcesiva {};\n\nclass Cantidad {\npublic:\n    Cantidad() = default;\n    explicit Cantidad(int valor) : unidades_{valor} {\n        if (valor < 0 || valor > 1000) { throw CantidadInvalida{}; }\n    }\n    int valor() const noexcept { return unidades_; }\n    Cantidad operator+(const Cantidad& otra) const;\nprivate:\n    int unidades_ = 0;\n};\nCantidad Cantidad::operator+(const Cantidad& otra) const {\n    // Calcula el resultado sin cambiar los operandos y comprueba su límite.\n    (void)otra;\n    return Cantidad{};\n}\nint main() {\n    int ordenes = 0;\n    if (!(std::cin >> ordenes) || ordenes < 1 || ordenes > 12) { return 1; }\n    Cantidad a{200}, b{350}, total;\n    for (int i = 0; i < ordenes; ++i) {\n        int op = 0, x = 0, y = 0;\n        if (!(std::cin >> op >> x >> y)) { return 1; }\n        std::cout << \"Antes:A=\" << a.valor() << \";B=\" << b.valor() << \";Total=\" << total.valor();\n        const char* estado = \"Operacion\";\n        try {\n            if (op == 1) {\n                Cantidad nueva_a{x}, nueva_b{y};\n                a = nueva_a;\n                b = nueva_b;\n                estado = \"Aceptada\";\n            } else if (op == 2) {\n                total = a + b;\n                estado = \"Aceptada\";\n            } else if (op == 3) {\n                total = total + a;\n                estado = \"Aceptada\";\n            } else if (op == 4) {\n                total = b + a;\n                estado = \"Aceptada\";\n            } else if (op == 5) {\n                total = a + a;\n                estado = \"Aceptada\";\n            }\n        } catch (const CantidadInvalida&) {\n            estado = \"Rango\";\n        } catch (const SumaExcesiva&) {\n            estado = \"Suma\";\n        }\n        std::cout << \";Estado:\" << estado << \";Ahora:A=\" << a.valor()\n                  << \";B=\" << b.valor() << \";Total=\" << total.valor() << '\\n';\n    }\n    std::cout << \"Final:\" << a.valor() << ':' << b.valor() << ':' << total.valor();\n    return 0;\n}\n",
+          "initialStandardInput": "9\n2 0 0\n3 0 0\n3 0 0\n3 0 0\n1 400 600\n2 0 0\n1 -1 7\n4 0 0\n5 0 0\n",
+          "outputCheck": {
+            "inputComparison": "tokens",
+            "cases": [
+              {
+                "standardInput": "9\n2 0 0\n3 0 0\n3 0 0\n3 0 0\n1 400 600\n2 0 0\n1 -1 7\n4 0 0\n5 0 0\n",
+                "outputs": [
+                  "Antes:A=200;B=350;Total=0;Estado:Aceptada;Ahora:A=200;B=350;Total=550\nAntes:A=200;B=350;Total=550;Estado:Aceptada;Ahora:A=200;B=350;Total=750\nAntes:A=200;B=350;Total=750;Estado:Aceptada;Ahora:A=200;B=350;Total=950\nAntes:A=200;B=350;Total=950;Estado:Suma;Ahora:A=200;B=350;Total=950\nAntes:A=200;B=350;Total=950;Estado:Aceptada;Ahora:A=400;B=600;Total=950\nAntes:A=400;B=600;Total=950;Estado:Aceptada;Ahora:A=400;B=600;Total=1000\nAntes:A=400;B=600;Total=1000;Estado:Rango;Ahora:A=400;B=600;Total=1000\nAntes:A=400;B=600;Total=1000;Estado:Aceptada;Ahora:A=400;B=600;Total=1000\nAntes:A=400;B=600;Total=1000;Estado:Aceptada;Ahora:A=400;B=600;Total=800\nFinal:400:600:800"
+                ],
+                "explanation": "Suma los dos valores sin modificar los operandos. Si el resultado supera mil, lanza SumaExcesiva antes de devolver. Si está en el intervalo, construye y devuelve la Cantidad que lo representa."
+              },
+              {
+                "standardInput": "9\n1 0 0\n2 0 0\n1 1000 1\n2 0 0\n5 0 0\n1 700 300\n4 0 0\n1 2147483647 0\n2 0 0\n",
+                "outputs": [
+                  "Antes:A=200;B=350;Total=0;Estado:Aceptada;Ahora:A=0;B=0;Total=0\nAntes:A=0;B=0;Total=0;Estado:Aceptada;Ahora:A=0;B=0;Total=0\nAntes:A=0;B=0;Total=0;Estado:Aceptada;Ahora:A=1000;B=1;Total=0\nAntes:A=1000;B=1;Total=0;Estado:Suma;Ahora:A=1000;B=1;Total=0\nAntes:A=1000;B=1;Total=0;Estado:Suma;Ahora:A=1000;B=1;Total=0\nAntes:A=1000;B=1;Total=0;Estado:Aceptada;Ahora:A=700;B=300;Total=0\nAntes:A=700;B=300;Total=0;Estado:Aceptada;Ahora:A=700;B=300;Total=1000\nAntes:A=700;B=300;Total=1000;Estado:Rango;Ahora:A=700;B=300;Total=1000\nAntes:A=700;B=300;Total=1000;Estado:Aceptada;Ahora:A=700;B=300;Total=1000\nFinal:700:300:1000"
+                ],
+                "explanation": "Suma los dos valores sin modificar los operandos. Si el resultado supera mil, lanza SumaExcesiva antes de devolver. Si está en el intervalo, construye y devuelve la Cantidad que lo representa."
+              },
+              {
+                "standardInput": "10\n1 1 999\n4 0 0\n3 0 0\n1 999 2\n2 0 0\n5 0 0\n1 500 500\n2 0 0\n1 5 1001\n2 0 0\n",
+                "outputs": [
+                  "Antes:A=200;B=350;Total=0;Estado:Aceptada;Ahora:A=1;B=999;Total=0\nAntes:A=1;B=999;Total=0;Estado:Aceptada;Ahora:A=1;B=999;Total=1000\nAntes:A=1;B=999;Total=1000;Estado:Suma;Ahora:A=1;B=999;Total=1000\nAntes:A=1;B=999;Total=1000;Estado:Aceptada;Ahora:A=999;B=2;Total=1000\nAntes:A=999;B=2;Total=1000;Estado:Suma;Ahora:A=999;B=2;Total=1000\nAntes:A=999;B=2;Total=1000;Estado:Suma;Ahora:A=999;B=2;Total=1000\nAntes:A=999;B=2;Total=1000;Estado:Aceptada;Ahora:A=500;B=500;Total=1000\nAntes:A=500;B=500;Total=1000;Estado:Aceptada;Ahora:A=500;B=500;Total=1000\nAntes:A=500;B=500;Total=1000;Estado:Rango;Ahora:A=500;B=500;Total=1000\nAntes:A=500;B=500;Total=1000;Estado:Aceptada;Ahora:A=500;B=500;Total=1000\nFinal:500:500:1000"
+                ],
+                "explanation": "Suma los dos valores sin modificar los operandos. Si el resultado supera mil, lanza SumaExcesiva antes de devolver. Si está en el intervalo, construye y devuelve la Cantidad que lo representa."
+              }
+            ]
+          }
+        }
+      },
+      {
+        "id": "block_0017_0001",
+        "block": {
+          "type": "code",
+          "language": "cpp",
+          "code": "#include <iostream>\n\nstruct CantidadInvalida {};\nstruct SumaExcesiva {};\n\nclass Cantidad {\npublic:\n    Cantidad() = default;\n    explicit Cantidad(int valor) : unidades_{valor} {\n        if (valor < 0 || valor > 1000) { throw CantidadInvalida{}; }\n    }\n    int valor() const noexcept { return unidades_; }\n    Cantidad operator+(const Cantidad& otra) const;\nprivate:\n    int unidades_ = 0;\n};\nCantidad Cantidad::operator+(const Cantidad& otra) const {\n    const int suma = unidades_ + otra.unidades_;\n    if (suma > 1000) { throw SumaExcesiva{}; }\n    return Cantidad{suma};\n}\nint main() {\n    int ordenes = 0;\n    if (!(std::cin >> ordenes) || ordenes < 1 || ordenes > 12) { return 1; }\n    Cantidad a{200}, b{350}, total;\n    for (int i = 0; i < ordenes; ++i) {\n        int op = 0, x = 0, y = 0;\n        if (!(std::cin >> op >> x >> y)) { return 1; }\n        std::cout << \"Antes:A=\" << a.valor() << \";B=\" << b.valor() << \";Total=\" << total.valor();\n        const char* estado = \"Operacion\";\n        try {\n            if (op == 1) {\n                Cantidad nueva_a{x}, nueva_b{y};\n                a = nueva_a;\n                b = nueva_b;\n                estado = \"Aceptada\";\n            } else if (op == 2) {\n                total = a + b;\n                estado = \"Aceptada\";\n            } else if (op == 3) {\n                total = total + a;\n                estado = \"Aceptada\";\n            } else if (op == 4) {\n                total = b + a;\n                estado = \"Aceptada\";\n            } else if (op == 5) {\n                total = a + a;\n                estado = \"Aceptada\";\n            }\n        } catch (const CantidadInvalida&) {\n            estado = \"Rango\";\n        } catch (const SumaExcesiva&) {\n            estado = \"Suma\";\n        }\n        std::cout << \";Estado:\" << estado << \";Ahora:A=\" << a.valor()\n                  << \";B=\" << b.valor() << \";Total=\" << total.valor() << '\\n';\n    }\n    std::cout << \"Final:\" << a.valor() << ':' << b.valor() << ':' << total.valor();\n    return 0;\n}\n"
+        }
+      },
+      {
+        "id": "block_0018_0002",
+        "block": {
+          "type": "output_prediction",
+          "id": "p3_u7l1_suma_exacta_en_el_limite",
+          "language": "cpp",
+          "question": "¿Qué muestran total, a y b después de sumar?",
+          "code": "#include <iostream>\n\nstruct CantidadInvalida {};\nstruct SumaExcesiva {};\n\nclass Cantidad {\npublic:\n    Cantidad() = default;\n    explicit Cantidad(int valor) : unidades_{valor} {\n        if (valor < 0 || valor > 1000) { throw CantidadInvalida{}; }\n    }\n    int valor() const noexcept { return unidades_; }\n    Cantidad operator+(const Cantidad& otra) const;\nprivate:\n    int unidades_ = 0;\n};\nCantidad Cantidad::operator+(const Cantidad& otra) const {\n    const int suma = unidades_ + otra.unidades_;\n    if (suma > 1000) { throw SumaExcesiva{}; }\n    return Cantidad{suma};\n}\nint main() {\n    const Cantidad a{400}, b{600};\n    Cantidad total = a + b;\n    std::cout << total.valor() << ':' << a.valor() << ':' << b.valor();\n    return 0;\n}\n",
+          "answers": [
+            "1000:400:600"
+          ],
+          "outputComparison": "exact",
+          "explanation": "La suma da mil, que pertenece al intervalo permitido. Se construye la Cantidad resultado sin modificar los operandos constantes y total recibe ese valor."
+        }
+      },
+      {
+        "id": "block_0018_0003",
+        "block": {
+          "type": "output_prediction",
+          "id": "p3_u7l1_rechazo_sin_asignar_resultado",
+          "language": "cpp",
+          "question": "¿Qué se imprime al rechazar la suma y consultar los tres objetos?",
+          "code": "#include <iostream>\n\nstruct CantidadInvalida {};\nstruct SumaExcesiva {};\n\nclass Cantidad {\npublic:\n    Cantidad() = default;\n    explicit Cantidad(int valor) : unidades_{valor} {\n        if (valor < 0 || valor > 1000) { throw CantidadInvalida{}; }\n    }\n    int valor() const noexcept { return unidades_; }\n    Cantidad operator+(const Cantidad& otra) const;\nprivate:\n    int unidades_ = 0;\n};\nCantidad Cantidad::operator+(const Cantidad& otra) const {\n    const int suma = unidades_ + otra.unidades_;\n    if (suma > 1000) { throw SumaExcesiva{}; }\n    return Cantidad{suma};\n}\nint main() {\n    const Cantidad a{700}, b{400};\n    Cantidad total{9};\n    try { total = a + b; }\n    catch (const SumaExcesiva&) { std::cout << \"Rechazada:\"; }\n    std::cout << total.valor() << ':' << a.valor() << ':' << b.valor();\n    return 0;\n}\n",
+          "answers": [
+            "Rechazada:9:700:400"
+          ],
+          "outputComparison": "exact",
+          "explanation": "Setecientos más cuatrocientos da mil cien. El operador lanza SumaExcesiva y la asignación a total no llega a ejecutarse. El tratamiento imprime el rótulo; total conserva nueve y los operandos conservan setecientos y cuatrocientos."
+        }
+      }
+    ]
   }
 }

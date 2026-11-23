@@ -18,7 +18,7 @@
           "id": "p3_u8l4_recuperar_seleccion_ordinaria",
           "language": "cpp",
           "question": "Escribe la salida completa de este programa con funciones ordinarias, incluidos los dos separadores |.",
-          "code": "#include <iostream>\n#include <sstream>\n#include <string>\n\nclass Lectura {\npublic:\n    explicit Lectura(int valor) : valor_{valor} {}\n    int valor() const noexcept { return valor_; }\n    void sustituir(int nuevo) noexcept { valor_ = nuevo; }\n    void escribir(std::ostream& salida) const { salida << \"Numero:\" << valor_; }\n    void informar(std::ostream& salida) const { escribir(salida); }\nprivate:\n    int valor_;\n};\nclass LecturaIdentificada : public Lectura {\npublic:\n    LecturaIdentificada(int valor, int codigo) : Lectura{valor}, codigo_{codigo} {}\n    int codigo() const noexcept { return codigo_; }\n    void escribir(std::ostream& salida) const;\nprivate:\n    int codigo_;\n};\nvoid LecturaIdentificada::escribir(std::ostream& salida) const {\n    Lectura::escribir(salida);\n    salida << \";Codigo:\" << codigo_;\n}\nint main() {\n    const LecturaIdentificada dato{7, 21};\n    dato.escribir(std::cout);\n    std::cout << '|';\n    const Lectura& vista = dato;\n    vista.escribir(std::cout);\n    std::cout << '|' << dato.codigo();\n    return 0;\n}\n",
+          "code": "#include <iostream>\n#include <sstream>\n#include <string>\n\nclass Lectura {\npublic:\n    explicit Lectura(int valor) : valor_{valor} {}\n    int valor() const noexcept { return valor_; }\n    void sustituir(int nuevo) noexcept { valor_ = nuevo; }\n    void escribir(std::ostream& salida) const { salida << \"Numero:\" << valor_; }\n    void informar(std::ostream& salida) const { escribir(salida); }\nprivate:\n    int valor_;\n};\n\nclass LecturaIdentificada : public Lectura {\npublic:\n    LecturaIdentificada(int valor, int codigo) : Lectura{valor}, codigo_{codigo} {}\n    int codigo() const noexcept { return codigo_; }\n    void escribir(std::ostream& salida) const;\nprivate:\n    int codigo_;\n};\n\nvoid LecturaIdentificada::escribir(std::ostream& salida) const {\n    Lectura::escribir(salida);\n    salida << \";Codigo:\" << codigo_;\n}\n\nint main() {\n    const LecturaIdentificada dato{7, 21};\n    dato.escribir(std::cout);\n    std::cout << '|';\n    const Lectura& vista = dato;\n    vista.escribir(std::cout);\n    std::cout << '|' << dato.codigo();\n\n    return 0;\n}\n",
           "answers": [
             "Numero:7;Codigo:21|Numero:7|21"
           ],
@@ -105,7 +105,7 @@
           "id": "p3_u8l4_referencia_base_con_llamada_virtual",
           "language": "cpp",
           "question": "Escribe los dos informes y la consulta final del código, conservando los separadores |.",
-          "code": "#include <iostream>\n#include <sstream>\n#include <string>\n\nclass Lectura {\npublic:\n    explicit Lectura(int valor) : valor_{valor} {}\n    int valor() const noexcept { return valor_; }\n    void sustituir(int nuevo) noexcept { valor_ = nuevo; }\n    virtual void escribir(std::ostream& salida) const { salida << \"Numero:\" << valor_; }\n    void informar(std::ostream& salida) const { escribir(salida); }\nprivate:\n    int valor_;\n};\nclass LecturaIdentificada : public Lectura {\npublic:\n    LecturaIdentificada(int valor, int codigo) : Lectura{valor}, codigo_{codigo} {}\n    int codigo() const noexcept { return codigo_; }\n    void escribir(std::ostream& salida) const override;\nprivate:\n    int codigo_;\n};\nvoid LecturaIdentificada::escribir(std::ostream& salida) const {\n    Lectura::escribir(salida);\n    salida << \";Codigo:\" << codigo_;\n}\nint main() {\n    const LecturaIdentificada dato{7, 21};\n    dato.escribir(std::cout);\n    std::cout << '|';\n    const Lectura& vista = dato;\n    vista.escribir(std::cout);\n    std::cout << '|' << dato.codigo();\n    return 0;\n}\n",
+          "code": "#include <iostream>\n#include <sstream>\n#include <string>\n\nclass Lectura {\npublic:\n    explicit Lectura(int valor) : valor_{valor} {}\n    int valor() const noexcept { return valor_; }\n    void sustituir(int nuevo) noexcept { valor_ = nuevo; }\n    virtual void escribir(std::ostream& salida) const { salida << \"Numero:\" << valor_; }\n    void informar(std::ostream& salida) const { escribir(salida); }\nprivate:\n    int valor_;\n};\n\nclass LecturaIdentificada : public Lectura {\npublic:\n    LecturaIdentificada(int valor, int codigo) : Lectura{valor}, codigo_{codigo} {}\n    int codigo() const noexcept { return codigo_; }\n    void escribir(std::ostream& salida) const override;\nprivate:\n    int codigo_;\n};\n\nvoid LecturaIdentificada::escribir(std::ostream& salida) const {\n    Lectura::escribir(salida);\n    salida << \";Codigo:\" << codigo_;\n}\n\nint main() {\n    const LecturaIdentificada dato{7, 21};\n    dato.escribir(std::cout);\n    std::cout << '|';\n    const Lectura& vista = dato;\n    vista.escribir(std::cout);\n    std::cout << '|' << dato.codigo();\n\n    return 0;\n}\n",
           "answers": [
             "Numero:7;Codigo:21|Numero:7;Codigo:21|21"
           ],
@@ -145,7 +145,7 @@
           "id": "p3_u8l4_puntero_base_y_estado_compartido",
           "language": "cpp",
           "question": "Escribe el informe obtenido mediante acceso y el obtenido mediante dato, separados por |.",
-          "code": "#include <iostream>\n#include <sstream>\n#include <string>\n\nclass Lectura {\npublic:\n    explicit Lectura(int valor) : valor_{valor} {}\n    int valor() const noexcept { return valor_; }\n    void sustituir(int nuevo) noexcept { valor_ = nuevo; }\n    virtual void escribir(std::ostream& salida) const { salida << \"Numero:\" << valor_; }\n    void informar(std::ostream& salida) const { escribir(salida); }\nprivate:\n    int valor_;\n};\nclass LecturaIdentificada : public Lectura {\npublic:\n    LecturaIdentificada(int valor, int codigo) : Lectura{valor}, codigo_{codigo} {}\n    int codigo() const noexcept { return codigo_; }\n    void escribir(std::ostream& salida) const override;\nprivate:\n    int codigo_;\n};\nvoid LecturaIdentificada::escribir(std::ostream& salida) const {\n    Lectura::escribir(salida);\n    salida << \";Codigo:\" << codigo_;\n}\nint main() {\n    LecturaIdentificada dato{-3, 5};\n    Lectura* acceso = &dato;\n    acceso->sustituir(8);\n    acceso->escribir(std::cout);\n    std::cout << '|';\n    dato.escribir(std::cout);\n    return 0;\n}\n",
+          "code": "#include <iostream>\n#include <sstream>\n#include <string>\n\nclass Lectura {\npublic:\n    explicit Lectura(int valor) : valor_{valor} {}\n    int valor() const noexcept { return valor_; }\n    void sustituir(int nuevo) noexcept { valor_ = nuevo; }\n    virtual void escribir(std::ostream& salida) const { salida << \"Numero:\" << valor_; }\n    void informar(std::ostream& salida) const { escribir(salida); }\nprivate:\n    int valor_;\n};\n\nclass LecturaIdentificada : public Lectura {\npublic:\n    LecturaIdentificada(int valor, int codigo) : Lectura{valor}, codigo_{codigo} {}\n    int codigo() const noexcept { return codigo_; }\n    void escribir(std::ostream& salida) const override;\nprivate:\n    int codigo_;\n};\n\nvoid LecturaIdentificada::escribir(std::ostream& salida) const {\n    Lectura::escribir(salida);\n    salida << \";Codigo:\" << codigo_;\n}\n\nint main() {\n    LecturaIdentificada dato{-3, 5};\n    Lectura* acceso = &dato;\n    acceso->sustituir(8);\n    acceso->escribir(std::cout);\n    std::cout << '|';\n    dato.escribir(std::cout);\n    return 0;\n}\n",
           "answers": [
             "Numero:8;Codigo:5|Numero:8;Codigo:5"
           ],
@@ -173,7 +173,7 @@
           "id": "p3_u8l4_funcion_heredada_con_llamada_virtual_interna",
           "language": "cpp",
           "question": "Escribe la salida de dato.informar y la de dato.escribir, con | entre ambas.",
-          "code": "#include <iostream>\n#include <sstream>\n#include <string>\n\nclass Lectura {\npublic:\n    explicit Lectura(int valor) : valor_{valor} {}\n    int valor() const noexcept { return valor_; }\n    void sustituir(int nuevo) noexcept { valor_ = nuevo; }\n    virtual void escribir(std::ostream& salida) const { salida << \"Numero:\" << valor_; }\n    void informar(std::ostream& salida) const { escribir(salida); }\nprivate:\n    int valor_;\n};\nclass LecturaIdentificada : public Lectura {\npublic:\n    LecturaIdentificada(int valor, int codigo) : Lectura{valor}, codigo_{codigo} {}\n    int codigo() const noexcept { return codigo_; }\n    void escribir(std::ostream& salida) const override;\nprivate:\n    int codigo_;\n};\nvoid LecturaIdentificada::escribir(std::ostream& salida) const {\n    Lectura::escribir(salida);\n    salida << \";Codigo:\" << codigo_;\n}\nint main() {\n    const LecturaIdentificada dato{4, 9};\n    dato.informar(std::cout);\n    std::cout << '|';\n    dato.escribir(std::cout);\n    return 0;\n}\n",
+          "code": "#include <iostream>\n#include <sstream>\n#include <string>\n\nclass Lectura {\npublic:\n    explicit Lectura(int valor) : valor_{valor} {}\n    int valor() const noexcept { return valor_; }\n    void sustituir(int nuevo) noexcept { valor_ = nuevo; }\n    virtual void escribir(std::ostream& salida) const { salida << \"Numero:\" << valor_; }\n    void informar(std::ostream& salida) const { escribir(salida); }\nprivate:\n    int valor_;\n};\n\nclass LecturaIdentificada : public Lectura {\npublic:\n    LecturaIdentificada(int valor, int codigo) : Lectura{valor}, codigo_{codigo} {}\n    int codigo() const noexcept { return codigo_; }\n    void escribir(std::ostream& salida) const override;\nprivate:\n    int codigo_;\n};\n\nvoid LecturaIdentificada::escribir(std::ostream& salida) const {\n    Lectura::escribir(salida);\n    salida << \";Codigo:\" << codigo_;\n}\n\nint main() {\n    const LecturaIdentificada dato{4, 9};\n    dato.informar(std::cout);\n    std::cout << '|';\n    dato.escribir(std::cout);\n    return 0;\n}\n",
           "answers": [
             "Numero:4;Codigo:9|Numero:4;Codigo:9"
           ],
@@ -201,7 +201,7 @@
           "id": "p3_u8l4_calificacion_explicita_y_seleccion_virtual",
           "language": "cpp",
           "question": "Escribe el resultado de la llamada calificada y el de la llamada directa, conservando |.",
-          "code": "#include <iostream>\n#include <sstream>\n#include <string>\n\nclass Lectura {\npublic:\n    explicit Lectura(int valor) : valor_{valor} {}\n    int valor() const noexcept { return valor_; }\n    void sustituir(int nuevo) noexcept { valor_ = nuevo; }\n    virtual void escribir(std::ostream& salida) const { salida << \"Numero:\" << valor_; }\n    void informar(std::ostream& salida) const { escribir(salida); }\nprivate:\n    int valor_;\n};\nclass LecturaIdentificada : public Lectura {\npublic:\n    LecturaIdentificada(int valor, int codigo) : Lectura{valor}, codigo_{codigo} {}\n    int codigo() const noexcept { return codigo_; }\n    void escribir(std::ostream& salida) const override;\nprivate:\n    int codigo_;\n};\nvoid LecturaIdentificada::escribir(std::ostream& salida) const {\n    Lectura::escribir(salida);\n    salida << \";Codigo:\" << codigo_;\n}\nint main() {\n    const LecturaIdentificada dato{6, 30};\n    dato.Lectura::escribir(std::cout);\n    std::cout << '|';\n    dato.escribir(std::cout);\n    return 0;\n}\n",
+          "code": "#include <iostream>\n#include <sstream>\n#include <string>\n\nclass Lectura {\npublic:\n    explicit Lectura(int valor) : valor_{valor} {}\n    int valor() const noexcept { return valor_; }\n    void sustituir(int nuevo) noexcept { valor_ = nuevo; }\n    virtual void escribir(std::ostream& salida) const { salida << \"Numero:\" << valor_; }\n    void informar(std::ostream& salida) const { escribir(salida); }\nprivate:\n    int valor_;\n};\n\nclass LecturaIdentificada : public Lectura {\npublic:\n    LecturaIdentificada(int valor, int codigo) : Lectura{valor}, codigo_{codigo} {}\n    int codigo() const noexcept { return codigo_; }\n    void escribir(std::ostream& salida) const override;\nprivate:\n    int codigo_;\n};\n\nvoid LecturaIdentificada::escribir(std::ostream& salida) const {\n    Lectura::escribir(salida);\n    salida << \";Codigo:\" << codigo_;\n}\n\nint main() {\n    const LecturaIdentificada dato{6, 30};\n    dato.Lectura::escribir(std::cout);\n    std::cout << '|';\n    dato.escribir(std::cout);\n    return 0;\n}\n",
           "answers": [
             "Numero:6|Numero:6;Codigo:30"
           ],
@@ -233,7 +233,7 @@
           "id": "p3_u8l4_copia_base_y_vista_virtual_del_original",
           "language": "cpp",
           "question": "Escribe el informe de copia, el de vista y el código final del original, con los dos separadores |.",
-          "code": "#include <iostream>\n#include <sstream>\n#include <string>\n\nclass Lectura {\npublic:\n    explicit Lectura(int valor) : valor_{valor} {}\n    int valor() const noexcept { return valor_; }\n    void sustituir(int nuevo) noexcept { valor_ = nuevo; }\n    virtual void escribir(std::ostream& salida) const { salida << \"Numero:\" << valor_; }\n    void informar(std::ostream& salida) const { escribir(salida); }\nprivate:\n    int valor_;\n};\nclass LecturaIdentificada : public Lectura {\npublic:\n    LecturaIdentificada(int valor, int codigo) : Lectura{valor}, codigo_{codigo} {}\n    int codigo() const noexcept { return codigo_; }\n    void escribir(std::ostream& salida) const override;\nprivate:\n    int codigo_;\n};\nvoid LecturaIdentificada::escribir(std::ostream& salida) const {\n    Lectura::escribir(salida);\n    salida << \";Codigo:\" << codigo_;\n}\nint main() {\n    LecturaIdentificada dato{9, 13};\n    Lectura copia = dato;\n    const Lectura& vista = dato;\n    dato.sustituir(-4);\n    copia.escribir(std::cout);\n    std::cout << '|';\n    vista.escribir(std::cout);\n    std::cout << '|' << dato.codigo();\n    return 0;\n}\n",
+          "code": "#include <iostream>\n#include <sstream>\n#include <string>\n\nclass Lectura {\npublic:\n    explicit Lectura(int valor) : valor_{valor} {}\n    int valor() const noexcept { return valor_; }\n    void sustituir(int nuevo) noexcept { valor_ = nuevo; }\n    virtual void escribir(std::ostream& salida) const { salida << \"Numero:\" << valor_; }\n    void informar(std::ostream& salida) const { escribir(salida); }\nprivate:\n    int valor_;\n};\n\nclass LecturaIdentificada : public Lectura {\npublic:\n    LecturaIdentificada(int valor, int codigo) : Lectura{valor}, codigo_{codigo} {}\n    int codigo() const noexcept { return codigo_; }\n    void escribir(std::ostream& salida) const override;\nprivate:\n    int codigo_;\n};\n\nvoid LecturaIdentificada::escribir(std::ostream& salida) const {\n    Lectura::escribir(salida);\n    salida << \";Codigo:\" << codigo_;\n}\n\nint main() {\n    LecturaIdentificada dato{9, 13};\n    Lectura copia = dato;\n    const Lectura& vista = dato;\n    dato.sustituir(-4);\n    copia.escribir(std::cout);\n    std::cout << '|';\n    vista.escribir(std::cout);\n    std::cout << '|' << dato.codigo();\n\n    return 0;\n}\n",
           "answers": [
             "Numero:9|Numero:-4;Codigo:13|13"
           ],
@@ -260,7 +260,7 @@
           "type": "inline_fill_code",
           "id": "p3_u8l4_declarar_virtual_comprobar_override_y_reutilizar_base",
           "question": "Escribe la palabra que hace virtual la operación de la base, la que comprueba que la función derivada la sobrescribe y la llamada calificada a mostrar de Medidor sobre el objeto actual con el argumento salida. El punto y coma de esa llamada ya está escrito.",
-          "template": "class Medidor {\npublic:\n    [] void mostrar(std::ostream& salida) const { salida << \"Base\"; }\n};\nclass MedidorConMarca : public Medidor {\npublic:\n    explicit MedidorConMarca(int marca) : marca_{marca} {}\n    void mostrar(std::ostream& salida) const [] {\n        [];\n        salida << \";Marca:\" << marca_;\n    }\nprivate:\n    int marca_;\n};\n",
+          "template": "class Medidor {\npublic:\n    [] void mostrar(std::ostream& salida) const { salida << \"Base\"; }\n};\n\nclass MedidorConMarca : public Medidor {\npublic:\n    explicit MedidorConMarca(int marca) : marca_{marca} {}\n    void mostrar(std::ostream& salida) const [] {\n        [];\n        salida << \";Marca:\" << marca_;\n    }\nprivate:\n    int marca_;\n};\n",
           "answers": [
             "virtual",
             "override",
@@ -292,7 +292,7 @@
         {
           "type": "code",
           "language": "cpp",
-          "code": "class Medidor {\npublic:\n    virtual void mostrar(std::ostream& salida) const { salida << \"Base\"; }\n};\nclass MedidorConMarca : public Medidor {\npublic:\n    explicit MedidorConMarca(int marca) : marca_{marca} {}\n    void mostrar(std::ostream& salida) const override {\n        Medidor::mostrar(salida);\n        salida << \";Marca:\" << marca_;\n    }\nprivate:\n    int marca_;\n};\n"
+          "code": "class Medidor {\npublic:\n    virtual void mostrar(std::ostream& salida) const { salida << \"Base\"; }\n};\n\nclass MedidorConMarca : public Medidor {\npublic:\n    explicit MedidorConMarca(int marca) : marca_{marca} {}\n    void mostrar(std::ostream& salida) const override {\n        Medidor::mostrar(salida);\n        salida << \";Marca:\" << marca_;\n    }\nprivate:\n    int marca_;\n};\n"
         },
         {
           "type": "paragraph",
@@ -322,7 +322,7 @@
         {
           "type": "code",
           "language": "cpp",
-          "code": "#include <iostream>\n#include <sstream>\n#include <string>\n\nclass Lectura {\npublic:\n    explicit Lectura(int valor) : valor_{valor} {}\n    int valor() const noexcept { return valor_; }\n    void sustituir(int nuevo) noexcept { valor_ = nuevo; }\n    virtual void escribir(std::ostream& salida) const { salida << \"Numero:\" << valor_; }\n    void informar(std::ostream& salida) const { escribir(salida); }\nprivate:\n    int valor_;\n};\nclass Intento : public Lectura {\npublic:\n    Intento() : Lectura{3} {}\n    void escribir(std::ostream& salida) override {\n        Lectura::escribir(salida);\n    }\n};\nint main() { Intento dato; dato.escribir(std::cout); return 0; }\n"
+          "code": "#include <iostream>\n#include <sstream>\n#include <string>\n\nclass Lectura {\npublic:\n    explicit Lectura(int valor) : valor_{valor} {}\n    int valor() const noexcept { return valor_; }\n    void sustituir(int nuevo) noexcept { valor_ = nuevo; }\n    virtual void escribir(std::ostream& salida) const { salida << \"Numero:\" << valor_; }\n    void informar(std::ostream& salida) const { escribir(salida); }\nprivate:\n    int valor_;\n};\n\nclass Intento : public Lectura {\npublic:\n    Intento() : Lectura{3} {}\n    void escribir(std::ostream& salida) override {\n        Lectura::escribir(salida);\n    }\n};\nint main() { Intento dato; dato.escribir(std::cout); return 0; }\n"
         },
         {
           "type": "multiple_choice",
@@ -351,7 +351,7 @@
         {
           "type": "code",
           "language": "cpp",
-          "code": "#include <iostream>\n#include <sstream>\n#include <string>\n\nclass Lectura {\npublic:\n    explicit Lectura(int valor) : valor_{valor} {}\n    int valor() const noexcept { return valor_; }\n    void sustituir(int nuevo) noexcept { valor_ = nuevo; }\n    virtual void escribir(std::ostream& salida) const { salida << \"Numero:\" << valor_; }\n    void informar(std::ostream& salida) const { escribir(salida); }\nprivate:\n    int valor_;\n};\nclass Intento : public Lectura {\npublic:\n    Intento() : Lectura{3} {}\n    void escribri(std::ostream& salida) const override {\n        Lectura::escribir(salida);\n    }\n};\nint main() { Intento dato; dato.escribir(std::cout); return 0; }\n"
+          "code": "#include <iostream>\n#include <sstream>\n#include <string>\n\nclass Lectura {\npublic:\n    explicit Lectura(int valor) : valor_{valor} {}\n    int valor() const noexcept { return valor_; }\n    void sustituir(int nuevo) noexcept { valor_ = nuevo; }\n    virtual void escribir(std::ostream& salida) const { salida << \"Numero:\" << valor_; }\n    void informar(std::ostream& salida) const { escribir(salida); }\nprivate:\n    int valor_;\n};\n\nclass Intento : public Lectura {\npublic:\n    Intento() : Lectura{3} {}\n    void escribri(std::ostream& salida) const override {\n        Lectura::escribir(salida);\n    }\n};\nint main() { Intento dato; dato.escribir(std::cout); return 0; }\n"
         },
         {
           "type": "multiple_choice",
@@ -380,7 +380,7 @@
         {
           "type": "code",
           "language": "cpp",
-          "code": "#include <iostream>\n#include <sstream>\n#include <string>\n\nclass Lectura {\npublic:\n    explicit Lectura(int valor) : valor_{valor} {}\n    int valor() const noexcept { return valor_; }\n    void sustituir(int nuevo) noexcept { valor_ = nuevo; }\n    virtual void escribir(std::ostream& salida) const { salida << \"Numero:\" << valor_; }\n    void informar(std::ostream& salida) const { escribir(salida); }\nprivate:\n    int valor_;\n};\nclass Intento : public Lectura {\npublic:\n    Intento() : Lectura{3} {}\n    void escribir(std::ostream& salida, int prefijo) const override {\n        (void)prefijo;\n        Lectura::escribir(salida);\n    }\n};\nint main() { Intento dato; dato.escribir(std::cout, 1); return 0; }\n"
+          "code": "#include <iostream>\n#include <sstream>\n#include <string>\n\nclass Lectura {\npublic:\n    explicit Lectura(int valor) : valor_{valor} {}\n    int valor() const noexcept { return valor_; }\n    void sustituir(int nuevo) noexcept { valor_ = nuevo; }\n    virtual void escribir(std::ostream& salida) const { salida << \"Numero:\" << valor_; }\n    void informar(std::ostream& salida) const { escribir(salida); }\nprivate:\n    int valor_;\n};\n\nclass Intento : public Lectura {\npublic:\n    Intento() : Lectura{3} {}\n    void escribir(std::ostream& salida, int prefijo) const override {\n        (void)prefijo;\n        Lectura::escribir(salida);\n    }\n};\nint main() { Intento dato; dato.escribir(std::cout, 1); return 0; }\n"
         },
         {
           "type": "multiple_choice",
@@ -409,7 +409,7 @@
         {
           "type": "code",
           "language": "cpp",
-          "code": "#include <iostream>\n#include <sstream>\n#include <string>\n\nclass Lectura {\npublic:\n    explicit Lectura(int valor) : valor_{valor} {}\n    int valor() const noexcept { return valor_; }\n    void sustituir(int nuevo) noexcept { valor_ = nuevo; }\n    void escribir(std::ostream& salida) const { salida << \"Numero:\" << valor_; }\n    void informar(std::ostream& salida) const { escribir(salida); }\nprivate:\n    int valor_;\n};\nclass LecturaIdentificada : public Lectura {\npublic:\n    LecturaIdentificada(int valor, int codigo) : Lectura{valor}, codigo_{codigo} {}\n    int codigo() const noexcept { return codigo_; }\n    void escribir(std::ostream& salida) const override;\nprivate:\n    int codigo_;\n};\nvoid LecturaIdentificada::escribir(std::ostream& salida) const {\n    Lectura::escribir(salida);\n    salida << \";Codigo:\" << codigo_;\n}\nint main() { const LecturaIdentificada dato{3, 9}; dato.escribir(std::cout); return 0; }\n"
+          "code": "#include <iostream>\n#include <sstream>\n#include <string>\n\nclass Lectura {\npublic:\n    explicit Lectura(int valor) : valor_{valor} {}\n    int valor() const noexcept { return valor_; }\n    void sustituir(int nuevo) noexcept { valor_ = nuevo; }\n    void escribir(std::ostream& salida) const { salida << \"Numero:\" << valor_; }\n    void informar(std::ostream& salida) const { escribir(salida); }\nprivate:\n    int valor_;\n};\n\nclass LecturaIdentificada : public Lectura {\npublic:\n    LecturaIdentificada(int valor, int codigo) : Lectura{valor}, codigo_{codigo} {}\n    int codigo() const noexcept { return codigo_; }\n    void escribir(std::ostream& salida) const override;\nprivate:\n    int codigo_;\n};\n\nvoid LecturaIdentificada::escribir(std::ostream& salida) const {\n    Lectura::escribir(salida);\n    salida << \";Codigo:\" << codigo_;\n}\n\nint main() { const LecturaIdentificada dato{3, 9}; dato.escribir(std::cout); return 0; }\n"
         },
         {
           "type": "multiple_choice",
@@ -444,7 +444,7 @@
           "id": "p3_u8l4_virtual_heredada_sin_repetir_palabras",
           "language": "cpp",
           "question": "Escribe los tres informes, separados por |, siguiendo la llamada mediante vista, la llamada a informar y la llamada calificada final.",
-          "code": "#include <iostream>\n#include <sstream>\n#include <string>\n\nclass Lectura {\npublic:\n    explicit Lectura(int valor) : valor_{valor} {}\n    int valor() const noexcept { return valor_; }\n    void sustituir(int nuevo) noexcept { valor_ = nuevo; }\n    virtual void escribir(std::ostream& salida) const { salida << \"Numero:\" << valor_; }\n    void informar(std::ostream& salida) const { escribir(salida); }\nprivate:\n    int valor_;\n};\nclass LecturaIdentificada : public Lectura {\npublic:\n    LecturaIdentificada(int valor, int codigo) : Lectura{valor}, codigo_{codigo} {}\n    int codigo() const noexcept { return codigo_; }\n    void escribir(std::ostream& salida) const override;\nprivate:\n    int codigo_;\n};\nvoid LecturaIdentificada::escribir(std::ostream& salida) const {\n    Lectura::escribir(salida);\n    salida << \";Codigo:\" << codigo_;\n}\nclass LecturaConTurno : public LecturaIdentificada {\npublic:\n    LecturaConTurno(int valor, int codigo, int turno)\n        : LecturaIdentificada{valor, codigo}, turno_{turno} {}\n    void escribir(std::ostream& salida) const {\n        LecturaIdentificada::escribir(salida);\n        salida << \";Turno:\" << turno_;\n    }\nprivate:\n    int turno_;\n};\nint main() {\n    const LecturaConTurno dato{2, 8, 4};\n    const Lectura& vista = dato;\n    vista.escribir(std::cout);\n    std::cout << '|';\n    vista.informar(std::cout);\n    std::cout << '|';\n    dato.LecturaIdentificada::escribir(std::cout);\n    return 0;\n}\n",
+          "code": "#include <iostream>\n#include <sstream>\n#include <string>\n\nclass Lectura {\npublic:\n    explicit Lectura(int valor) : valor_{valor} {}\n    int valor() const noexcept { return valor_; }\n    void sustituir(int nuevo) noexcept { valor_ = nuevo; }\n    virtual void escribir(std::ostream& salida) const { salida << \"Numero:\" << valor_; }\n    void informar(std::ostream& salida) const { escribir(salida); }\nprivate:\n    int valor_;\n};\n\nclass LecturaIdentificada : public Lectura {\npublic:\n    LecturaIdentificada(int valor, int codigo) : Lectura{valor}, codigo_{codigo} {}\n    int codigo() const noexcept { return codigo_; }\n    void escribir(std::ostream& salida) const override;\nprivate:\n    int codigo_;\n};\n\nvoid LecturaIdentificada::escribir(std::ostream& salida) const {\n    Lectura::escribir(salida);\n    salida << \";Codigo:\" << codigo_;\n}\n\nclass LecturaConTurno : public LecturaIdentificada {\npublic:\n    LecturaConTurno(int valor, int codigo, int turno)\n        : LecturaIdentificada{valor, codigo}, turno_{turno} {}\n    void escribir(std::ostream& salida) const {\n        LecturaIdentificada::escribir(salida);\n        salida << \";Turno:\" << turno_;\n    }\nprivate:\n    int turno_;\n};\n\nint main() {\n    const LecturaConTurno dato{2, 8, 4};\n    const Lectura& vista = dato;\n    vista.escribir(std::cout);\n    std::cout << '|';\n    vista.informar(std::cout);\n    std::cout << '|';\n    dato.LecturaIdentificada::escribir(std::cout);\n    return 0;\n}\n",
           "answers": [
             "Numero:2;Codigo:8;Turno:4|Numero:2;Codigo:8;Turno:4|Numero:2;Codigo:8"
           ],
@@ -472,7 +472,7 @@
           "id": "p3_u8l4_using_y_sobrecarga_sin_sobrescritura",
           "language": "cpp",
           "question": "Escribe la salida de las llamadas de uno y dos argumentos, con el separador |.",
-          "code": "#include <iostream>\n#include <sstream>\n#include <string>\n\nclass Lectura {\npublic:\n    explicit Lectura(int valor) : valor_{valor} {}\n    int valor() const noexcept { return valor_; }\n    void sustituir(int nuevo) noexcept { valor_ = nuevo; }\n    virtual void escribir(std::ostream& salida) const { salida << \"Numero:\" << valor_; }\n    void informar(std::ostream& salida) const { escribir(salida); }\nprivate:\n    int valor_;\n};\nclass ConPrefijo : public Lectura {\npublic:\n    using Lectura::escribir;\n    explicit ConPrefijo(int valor) : Lectura{valor} {}\n    void escribir(std::ostream& salida, const std::string& prefijo) const {\n        salida << prefijo;\n        Lectura::escribir(salida);\n    }\n};\nint main() {\n    const ConPrefijo dato{5};\n    dato.escribir(std::cout);\n    std::cout << '|';\n    dato.escribir(std::cout, \"Dato \");\n    return 0;\n}\n",
+          "code": "#include <iostream>\n#include <sstream>\n#include <string>\n\nclass Lectura {\npublic:\n    explicit Lectura(int valor) : valor_{valor} {}\n    int valor() const noexcept { return valor_; }\n    void sustituir(int nuevo) noexcept { valor_ = nuevo; }\n    virtual void escribir(std::ostream& salida) const { salida << \"Numero:\" << valor_; }\n    void informar(std::ostream& salida) const { escribir(salida); }\nprivate:\n    int valor_;\n};\n\nclass ConPrefijo : public Lectura {\npublic:\n    using Lectura::escribir;\n    explicit ConPrefijo(int valor) : Lectura{valor} {}\n    void escribir(std::ostream& salida, const std::string& prefijo) const {\n        salida << prefijo;\n        Lectura::escribir(salida);\n    }\n};\n\nint main() {\n    const ConPrefijo dato{5};\n    dato.escribir(std::cout);\n    std::cout << '|';\n    dato.escribir(std::cout, \"Dato \");\n    return 0;\n}\n",
           "answers": [
             "Numero:5|Dato Numero:5"
           ],
@@ -566,7 +566,7 @@
         {
           "type": "cpp_compiler",
           "language": "cpp",
-          "initialCode": "#include <iostream>\n#include <sstream>\n#include <string>\n\nclass Medida {\npublic:\n    explicit Medida(int numero) : numero_{numero} {}\n    int numero() const noexcept { return numero_; }\n    void sustituir(int nuevo) noexcept { numero_ = nuevo; }\n    void escribir(std::ostream& salida) const { salida << \"Numero:\" << numero_; }\n    void informar(std::ostream& salida) const { escribir(salida); }\nprivate:\n    int numero_;\n};\nclass MedidaIdentificada : public Medida {\npublic:\n    MedidaIdentificada(int numero, int codigo) : Medida{numero}, codigo_{codigo} {}\n    int codigo() const noexcept { return codigo_; }\n    void escribir(std::ostream& salida) const;\nprivate:\n    int codigo_;\n};\nvoid MedidaIdentificada::escribir(std::ostream& salida) const {\n    // Reutiliza el informe base y agrega el codigo propio en el flujo recibido.\n    Medida::escribir(salida);\n}\nvoid mostrar_generico(const Medida& dato, std::ostream& salida) {\n    dato.escribir(salida);\n}\nint main() {\n    int inicial = 0, codigo = 0, nuevo = 0;\n    if (!(std::cin >> inicial >> codigo >> nuevo)) { return 1; }\n    MedidaIdentificada dato{inicial, codigo};\n    Medida copia = dato;\n    std::ostringstream directa, generica, heredada, calificada, copiada, despues, copia_despues;\n    dato.escribir(directa);\n    mostrar_generico(dato, generica);\n    dato.informar(heredada);\n    dato.Medida::escribir(calificada);\n    copia.escribir(copiada);\n    Medida* acceso = &dato;\n    acceso->sustituir(nuevo);\n    acceso->escribir(despues);\n    copia.escribir(copia_despues);\n    std::cout << \"Directa:\" << directa.str() << '\\n'\n              << \"Generica:\" << generica.str() << '\\n'\n              << \"Heredada:\" << heredada.str() << '\\n'\n              << \"Calificada:\" << calificada.str() << '\\n'\n              << \"Copia:\" << copiada.str() << '\\n'\n              << \"TrasCambio:\" << despues.str() << '\\n'\n              << \"CopiaTrasCambio:\" << copia_despues.str() << '\\n'\n              << \"Estado:(\" << dato.numero() << ',' << dato.codigo() << ')';\n    return 0;\n}\n",
+          "initialCode": "#include <iostream>\n#include <sstream>\n#include <string>\n\nclass Medida {\npublic:\n    explicit Medida(int numero) : numero_{numero} {}\n    int numero() const noexcept { return numero_; }\n    void sustituir(int nuevo) noexcept { numero_ = nuevo; }\n    void escribir(std::ostream& salida) const { salida << \"Numero:\" << numero_; }\n    void informar(std::ostream& salida) const { escribir(salida); }\nprivate:\n    int numero_;\n};\n\nclass MedidaIdentificada : public Medida {\npublic:\n    MedidaIdentificada(int numero, int codigo) : Medida{numero}, codigo_{codigo} {}\n    int codigo() const noexcept { return codigo_; }\n    void escribir(std::ostream& salida) const;\nprivate:\n    int codigo_;\n};\n\nvoid MedidaIdentificada::escribir(std::ostream& salida) const {\n    // Reutiliza el informe base y agrega el codigo propio en el flujo recibido.\n    Medida::escribir(salida);\n}\n\nvoid mostrar_generico(const Medida& dato, std::ostream& salida) {\n    dato.escribir(salida);\n}\n\nint main() {\n    int inicial = 0, codigo = 0, nuevo = 0;\n    if (!(std::cin >> inicial >> codigo >> nuevo)) { return 1; }\n    MedidaIdentificada dato{inicial, codigo};\n    Medida copia = dato;\n    std::ostringstream directa, generica, heredada, calificada, copiada, despues, copia_despues;\n    dato.escribir(directa);\n    mostrar_generico(dato, generica);\n    dato.informar(heredada);\n    dato.Medida::escribir(calificada);\n    copia.escribir(copiada);\n    Medida* acceso = &dato;\n    acceso->sustituir(nuevo);\n    acceso->escribir(despues);\n    copia.escribir(copia_despues);\n    std::cout << \"Directa:\" << directa.str() << '\\n'\n              << \"Generica:\" << generica.str() << '\\n'\n              << \"Heredada:\" << heredada.str() << '\\n'\n              << \"Calificada:\" << calificada.str() << '\\n'\n              << \"Copia:\" << copiada.str() << '\\n'\n              << \"TrasCambio:\" << despues.str() << '\\n'\n              << \"CopiaTrasCambio:\" << copia_despues.str() << '\\n'\n              << \"Estado:(\" << dato.numero() << ',' << dato.codigo() << ')';\n    return 0;\n}\n",
           "initialStandardInput": "6 41 -8",
           "outputCheck": {
             "inputComparison": "tokens",
@@ -758,7 +758,7 @@
         {
           "type": "code",
           "language": "cpp",
-          "code": "#include <iostream>\n#include <sstream>\n#include <string>\n\nclass Medida {\npublic:\n    explicit Medida(int numero) : numero_{numero} {}\n    int numero() const noexcept { return numero_; }\n    void sustituir(int nuevo) noexcept { numero_ = nuevo; }\n    virtual void escribir(std::ostream& salida) const { salida << \"Numero:\" << numero_; }\n    void informar(std::ostream& salida) const { escribir(salida); }\nprivate:\n    int numero_;\n};\nclass MedidaIdentificada : public Medida {\npublic:\n    MedidaIdentificada(int numero, int codigo) : Medida{numero}, codigo_{codigo} {}\n    int codigo() const noexcept { return codigo_; }\n    void escribir(std::ostream& salida) const override;\nprivate:\n    int codigo_;\n};\nvoid MedidaIdentificada::escribir(std::ostream& salida) const {\n    Medida::escribir(salida);\n    salida << \";Codigo:\" << codigo_;\n}\nvoid mostrar_generico(const Medida& dato, std::ostream& salida) {\n    dato.escribir(salida);\n}\nint main() {\n    int inicial = 0, codigo = 0, nuevo = 0;\n    if (!(std::cin >> inicial >> codigo >> nuevo)) { return 1; }\n    MedidaIdentificada dato{inicial, codigo};\n    Medida copia = dato;\n    std::ostringstream directa, generica, heredada, calificada, copiada, despues, copia_despues;\n    dato.escribir(directa);\n    mostrar_generico(dato, generica);\n    dato.informar(heredada);\n    dato.Medida::escribir(calificada);\n    copia.escribir(copiada);\n    Medida* acceso = &dato;\n    acceso->sustituir(nuevo);\n    acceso->escribir(despues);\n    copia.escribir(copia_despues);\n    std::cout << \"Directa:\" << directa.str() << '\\n'\n              << \"Generica:\" << generica.str() << '\\n'\n              << \"Heredada:\" << heredada.str() << '\\n'\n              << \"Calificada:\" << calificada.str() << '\\n'\n              << \"Copia:\" << copiada.str() << '\\n'\n              << \"TrasCambio:\" << despues.str() << '\\n'\n              << \"CopiaTrasCambio:\" << copia_despues.str() << '\\n'\n              << \"Estado:(\" << dato.numero() << ',' << dato.codigo() << ')';\n    return 0;\n}\n"
+          "code": "#include <iostream>\n#include <sstream>\n#include <string>\n\nclass Medida {\npublic:\n    explicit Medida(int numero) : numero_{numero} {}\n    int numero() const noexcept { return numero_; }\n    void sustituir(int nuevo) noexcept { numero_ = nuevo; }\n    virtual void escribir(std::ostream& salida) const { salida << \"Numero:\" << numero_; }\n    void informar(std::ostream& salida) const { escribir(salida); }\nprivate:\n    int numero_;\n};\n\nclass MedidaIdentificada : public Medida {\npublic:\n    MedidaIdentificada(int numero, int codigo) : Medida{numero}, codigo_{codigo} {}\n    int codigo() const noexcept { return codigo_; }\n    void escribir(std::ostream& salida) const override;\nprivate:\n    int codigo_;\n};\n\nvoid MedidaIdentificada::escribir(std::ostream& salida) const {\n    Medida::escribir(salida);\n    salida << \";Codigo:\" << codigo_;\n}\n\nvoid mostrar_generico(const Medida& dato, std::ostream& salida) {\n    dato.escribir(salida);\n}\n\nint main() {\n    int inicial = 0, codigo = 0, nuevo = 0;\n    if (!(std::cin >> inicial >> codigo >> nuevo)) { return 1; }\n    MedidaIdentificada dato{inicial, codigo};\n    Medida copia = dato;\n    std::ostringstream directa, generica, heredada, calificada, copiada, despues, copia_despues;\n    dato.escribir(directa);\n    mostrar_generico(dato, generica);\n    dato.informar(heredada);\n    dato.Medida::escribir(calificada);\n    copia.escribir(copiada);\n    Medida* acceso = &dato;\n    acceso->sustituir(nuevo);\n    acceso->escribir(despues);\n    copia.escribir(copia_despues);\n    std::cout << \"Directa:\" << directa.str() << '\\n'\n              << \"Generica:\" << generica.str() << '\\n'\n              << \"Heredada:\" << heredada.str() << '\\n'\n              << \"Calificada:\" << calificada.str() << '\\n'\n              << \"Copia:\" << copiada.str() << '\\n'\n              << \"TrasCambio:\" << despues.str() << '\\n'\n              << \"CopiaTrasCambio:\" << copia_despues.str() << '\\n'\n              << \"Estado:(\" << dato.numero() << ',' << dato.codigo() << ')';\n    return 0;\n}\n"
         },
         {
           "type": "paragraph",
@@ -2342,6 +2342,334 @@
       }
     },
     "additions": [],
-    "editorial": []
+    "editorial": [
+      {
+        "id": "block_0000_0002",
+        "beforeSha256": "ad09c560a932cad09786e9ac33e282e2b06e85f9b34870d67d51713ec0c37bbc",
+        "afterSha256": "510486ce2f2d53f84506fe23faaf1e79ee2912c35ad1ba242278c88f61490c8e"
+      },
+      {
+        "id": "block_0003_0002",
+        "beforeSha256": "2344db4342c00152a0ebe6b40fd76082fd4b8b679c136a4487780b34752f2b7a",
+        "afterSha256": "42d38a627ce4c5e07e25e67065c92319530177cedd5b71d0713da1d6c77fe80d"
+      },
+      {
+        "id": "block_0004_0002",
+        "beforeSha256": "90732fc2af60c334a3805d7b47e942654506dc1683f35f0ef7d91136b192a222",
+        "afterSha256": "c09f2ef6379d330502d1b92333a88970893c409b246cf6b69a1a9de3f2cecff8"
+      },
+      {
+        "id": "block_0005_0002",
+        "beforeSha256": "c1e5dbabd7c5bb7d244904af731168d90f3ab9012135ab9ab2ff4bef61ff03cb",
+        "afterSha256": "6a5bcd03d947289c15540ce994d507a5928c3d418ac9c25cc7e9db8159436928"
+      },
+      {
+        "id": "block_0006_0002",
+        "beforeSha256": "e89f20005fe62010d2e6d59f60c6f34f5db1586d4793bba835b6e45476aa63bf",
+        "afterSha256": "48de008494c628a8431b456d0ef51c4712b041935d373a2fd31560f3cfa82a6a"
+      },
+      {
+        "id": "block_0007_0002",
+        "beforeSha256": "53cd500b408772706301226602f68a6b17f270b41e616373d66a4c0a3e1613f1",
+        "afterSha256": "200dcefd1c49d44b5a3c509180fdf3469391d5883fee87db2113c3bfd1c6dba7"
+      },
+      {
+        "id": "block_0008_0002",
+        "beforeSha256": "8cf395cdbadea79407532889ed5aedc8e460f64b7019998885d226f48ce46d5e",
+        "afterSha256": "c5d586a9530fe2c88634ad13a25144187562611aa77a8ee9f57e89303ada0c5f"
+      },
+      {
+        "id": "block_0009_0001",
+        "beforeSha256": "e811d69b4fc3c491d1a009848e33dd11add68a1f5c7bc6a35cd01391223d33ba",
+        "afterSha256": "6e2488a7d222601eed98653bd0a899b0c8716369f66ade319eebbe0d5bc4b156"
+      },
+      {
+        "id": "block_0010_0002",
+        "beforeSha256": "d5ae0901cfff209df571a09b5abf02b184d68aac04f637adee4f4a72b93d9009",
+        "afterSha256": "88ea6df3d9183292e6f618f7309327e1051f5698be24e9bab69be6e21f1a3ecc"
+      },
+      {
+        "id": "block_0011_0002",
+        "beforeSha256": "8096b717a0e93594b43b9d615465fc14ae3abf2869cee53e8bb9ef52342ddcaa",
+        "afterSha256": "26fdfe7d30c2ef7a04759fec7c4ea8b8d1d7ca438f30adff9af0616e6fc94a57"
+      },
+      {
+        "id": "block_0012_0002",
+        "beforeSha256": "c8d08f7f9781bc35401c21abd59cc062ef7f600be1b9ee54c554ec86e9104ebf",
+        "afterSha256": "19d8f3e52accfc24aa1374645d3b9dbc2a1d6ab8c7d4309f2d50812c0fea7d4a"
+      },
+      {
+        "id": "block_0013_0002",
+        "beforeSha256": "14c0d64850fa69c4917b16e2979d9df7b4636a2bf5f0f58c70c7eb8b6726f883",
+        "afterSha256": "85d9f4a60e59aaba5b4a9b0685184a6f6ae61c2588562880c1ee2168a09a8f18"
+      },
+      {
+        "id": "block_0014_0003",
+        "beforeSha256": "dbd05c123be51989e3ddd8de1fcc86447c4e757328630346726b952c4a73c17e",
+        "afterSha256": "57ca298dfeb0ca1f5bfe6281dc5bf113df94f91e7ddd871ad18d019392bf058e"
+      },
+      {
+        "id": "block_0015_0002",
+        "beforeSha256": "c59003e3285e467e2f25b1b607bc87c01a2198a415c69b0946423e7d432ba4e3",
+        "afterSha256": "ee0bddea2b504198b85ea7c17eee3cf43f4d290aab4c4c59750422df84a092f6"
+      },
+      {
+        "id": "block_0019_0002",
+        "beforeSha256": "92f3100e39ad98802c9a7fafb59f3139787f13a1f5a83abc91321ccdebc101d5",
+        "afterSha256": "03f9615c81cb0a270a99b5ecc9f6a2b0c13688d186527b560c8bae0e774ad88b"
+      },
+      {
+        "id": "block_0021_0001",
+        "beforeSha256": "97d7352ecc9202f265c2a38f0983da59b2b04068ec67b8d60f779bea46bf8dab",
+        "afterSha256": "a0d7aa8a9108d0141029014e5c8a4eb6c3e707ac3ef5d0e2edea4ec13e429426"
+      }
+    ],
+    "sourceFormatRevisions": [
+      {
+        "id": "block_0000_0002",
+        "block": {
+          "type": "output_prediction",
+          "id": "p3_u8l4_recuperar_seleccion_ordinaria",
+          "language": "cpp",
+          "question": "Escribe la salida completa de este programa con funciones ordinarias, incluidos los dos separadores |.",
+          "code": "#include <iostream>\n#include <sstream>\n#include <string>\n\nclass Lectura {\npublic:\n    explicit Lectura(int valor) : valor_{valor} {}\n    int valor() const noexcept { return valor_; }\n    void sustituir(int nuevo) noexcept { valor_ = nuevo; }\n    void escribir(std::ostream& salida) const { salida << \"Numero:\" << valor_; }\n    void informar(std::ostream& salida) const { escribir(salida); }\nprivate:\n    int valor_;\n};\nclass LecturaIdentificada : public Lectura {\npublic:\n    LecturaIdentificada(int valor, int codigo) : Lectura{valor}, codigo_{codigo} {}\n    int codigo() const noexcept { return codigo_; }\n    void escribir(std::ostream& salida) const;\nprivate:\n    int codigo_;\n};\nvoid LecturaIdentificada::escribir(std::ostream& salida) const {\n    Lectura::escribir(salida);\n    salida << \";Codigo:\" << codigo_;\n}\nint main() {\n    const LecturaIdentificada dato{7, 21};\n    dato.escribir(std::cout);\n    std::cout << '|';\n    const Lectura& vista = dato;\n    vista.escribir(std::cout);\n    std::cout << '|' << dato.codigo();\n    return 0;\n}\n",
+          "answers": [
+            "Numero:7;Codigo:21|Numero:7|21"
+          ],
+          "outputComparison": "exact",
+          "explanation": "La llamada directa dato.escribir utiliza la función de LecturaIdentificada y muestra número siete y código veintiuno. vista es un acceso constante a Lectura, por lo que la llamada ordinaria utiliza Lectura::escribir y muestra sólo el número. La última consulta confirma que dato conserva su código. La referencia no había copiado ni recortado el objeto."
+        }
+      },
+      {
+        "id": "block_0003_0002",
+        "block": {
+          "type": "output_prediction",
+          "id": "p3_u8l4_referencia_base_con_llamada_virtual",
+          "language": "cpp",
+          "question": "Escribe los dos informes y la consulta final del código, conservando los separadores |.",
+          "code": "#include <iostream>\n#include <sstream>\n#include <string>\n\nclass Lectura {\npublic:\n    explicit Lectura(int valor) : valor_{valor} {}\n    int valor() const noexcept { return valor_; }\n    void sustituir(int nuevo) noexcept { valor_ = nuevo; }\n    virtual void escribir(std::ostream& salida) const { salida << \"Numero:\" << valor_; }\n    void informar(std::ostream& salida) const { escribir(salida); }\nprivate:\n    int valor_;\n};\nclass LecturaIdentificada : public Lectura {\npublic:\n    LecturaIdentificada(int valor, int codigo) : Lectura{valor}, codigo_{codigo} {}\n    int codigo() const noexcept { return codigo_; }\n    void escribir(std::ostream& salida) const override;\nprivate:\n    int codigo_;\n};\nvoid LecturaIdentificada::escribir(std::ostream& salida) const {\n    Lectura::escribir(salida);\n    salida << \";Codigo:\" << codigo_;\n}\nint main() {\n    const LecturaIdentificada dato{7, 21};\n    dato.escribir(std::cout);\n    std::cout << '|';\n    const Lectura& vista = dato;\n    vista.escribir(std::cout);\n    std::cout << '|' << dato.codigo();\n    return 0;\n}\n",
+          "answers": [
+            "Numero:7;Codigo:21|Numero:7;Codigo:21|21"
+          ],
+          "outputComparison": "exact",
+          "explanation": "La llamada directa utiliza LecturaIdentificada::escribir. La llamada mediante vista encuentra la operación virtual de Lectura y utiliza también la implementación de LecturaIdentificada para ese objeto. Las dos muestran Numero:7;Codigo:21. El código consultado al final sigue siendo veintiuno. No se ha copiado el objeto ni se ha añadido un segundo código."
+        }
+      },
+      {
+        "id": "block_0004_0002",
+        "block": {
+          "type": "output_prediction",
+          "id": "p3_u8l4_puntero_base_y_estado_compartido",
+          "language": "cpp",
+          "question": "Escribe el informe obtenido mediante acceso y el obtenido mediante dato, separados por |.",
+          "code": "#include <iostream>\n#include <sstream>\n#include <string>\n\nclass Lectura {\npublic:\n    explicit Lectura(int valor) : valor_{valor} {}\n    int valor() const noexcept { return valor_; }\n    void sustituir(int nuevo) noexcept { valor_ = nuevo; }\n    virtual void escribir(std::ostream& salida) const { salida << \"Numero:\" << valor_; }\n    void informar(std::ostream& salida) const { escribir(salida); }\nprivate:\n    int valor_;\n};\nclass LecturaIdentificada : public Lectura {\npublic:\n    LecturaIdentificada(int valor, int codigo) : Lectura{valor}, codigo_{codigo} {}\n    int codigo() const noexcept { return codigo_; }\n    void escribir(std::ostream& salida) const override;\nprivate:\n    int codigo_;\n};\nvoid LecturaIdentificada::escribir(std::ostream& salida) const {\n    Lectura::escribir(salida);\n    salida << \";Codigo:\" << codigo_;\n}\nint main() {\n    LecturaIdentificada dato{-3, 5};\n    Lectura* acceso = &dato;\n    acceso->sustituir(8);\n    acceso->escribir(std::cout);\n    std::cout << '|';\n    dato.escribir(std::cout);\n    return 0;\n}\n",
+          "answers": [
+            "Numero:8;Codigo:5|Numero:8;Codigo:5"
+          ],
+          "outputComparison": "exact",
+          "explanation": "acceso->sustituir cambia a ocho el número del original. acceso->escribir llama a la operación virtual y utiliza la implementación de LecturaIdentificada, que muestra también el código cinco. La llamada directa produce el mismo informe completo. El puntero no había modificado una copia ni perdido el acceso al objeto original."
+        }
+      },
+      {
+        "id": "block_0005_0002",
+        "block": {
+          "type": "output_prediction",
+          "id": "p3_u8l4_funcion_heredada_con_llamada_virtual_interna",
+          "language": "cpp",
+          "question": "Escribe la salida de dato.informar y la de dato.escribir, con | entre ambas.",
+          "code": "#include <iostream>\n#include <sstream>\n#include <string>\n\nclass Lectura {\npublic:\n    explicit Lectura(int valor) : valor_{valor} {}\n    int valor() const noexcept { return valor_; }\n    void sustituir(int nuevo) noexcept { valor_ = nuevo; }\n    virtual void escribir(std::ostream& salida) const { salida << \"Numero:\" << valor_; }\n    void informar(std::ostream& salida) const { escribir(salida); }\nprivate:\n    int valor_;\n};\nclass LecturaIdentificada : public Lectura {\npublic:\n    LecturaIdentificada(int valor, int codigo) : Lectura{valor}, codigo_{codigo} {}\n    int codigo() const noexcept { return codigo_; }\n    void escribir(std::ostream& salida) const override;\nprivate:\n    int codigo_;\n};\nvoid LecturaIdentificada::escribir(std::ostream& salida) const {\n    Lectura::escribir(salida);\n    salida << \";Codigo:\" << codigo_;\n}\nint main() {\n    const LecturaIdentificada dato{4, 9};\n    dato.informar(std::cout);\n    std::cout << '|';\n    dato.escribir(std::cout);\n    return 0;\n}\n",
+          "answers": [
+            "Numero:4;Codigo:9|Numero:4;Codigo:9"
+          ],
+          "outputComparison": "exact",
+          "explanation": "dato.informar entra en el cuerpo ordinario de Lectura::informar. Allí escribir(salida) realiza una llamada virtual sobre el mismo objeto, que es una LecturaIdentificada; por eso muestra Numero:4;Codigo:9. La llamada directa siguiente utiliza también esa implementación. No ha sido necesario volver virtual informar para que la llamada de su interior lo sea."
+        }
+      },
+      {
+        "id": "block_0006_0002",
+        "block": {
+          "type": "output_prediction",
+          "id": "p3_u8l4_calificacion_explicita_y_seleccion_virtual",
+          "language": "cpp",
+          "question": "Escribe el resultado de la llamada calificada y el de la llamada directa, conservando |.",
+          "code": "#include <iostream>\n#include <sstream>\n#include <string>\n\nclass Lectura {\npublic:\n    explicit Lectura(int valor) : valor_{valor} {}\n    int valor() const noexcept { return valor_; }\n    void sustituir(int nuevo) noexcept { valor_ = nuevo; }\n    virtual void escribir(std::ostream& salida) const { salida << \"Numero:\" << valor_; }\n    void informar(std::ostream& salida) const { escribir(salida); }\nprivate:\n    int valor_;\n};\nclass LecturaIdentificada : public Lectura {\npublic:\n    LecturaIdentificada(int valor, int codigo) : Lectura{valor}, codigo_{codigo} {}\n    int codigo() const noexcept { return codigo_; }\n    void escribir(std::ostream& salida) const override;\nprivate:\n    int codigo_;\n};\nvoid LecturaIdentificada::escribir(std::ostream& salida) const {\n    Lectura::escribir(salida);\n    salida << \";Codigo:\" << codigo_;\n}\nint main() {\n    const LecturaIdentificada dato{6, 30};\n    dato.Lectura::escribir(std::cout);\n    std::cout << '|';\n    dato.escribir(std::cout);\n    return 0;\n}\n",
+          "answers": [
+            "Numero:6|Numero:6;Codigo:30"
+          ],
+          "outputComparison": "exact",
+          "explanation": "dato.Lectura::escribir utiliza el cuerpo base y muestra sólo Numero:6. dato.escribir utiliza la implementación de LecturaIdentificada y añade ;Codigo:30. La calificación ha elegido un cuerpo para esa llamada, sin borrar el código ni cambiar el objeto."
+        }
+      },
+      {
+        "id": "block_0007_0002",
+        "block": {
+          "type": "output_prediction",
+          "id": "p3_u8l4_copia_base_y_vista_virtual_del_original",
+          "language": "cpp",
+          "question": "Escribe el informe de copia, el de vista y el código final del original, con los dos separadores |.",
+          "code": "#include <iostream>\n#include <sstream>\n#include <string>\n\nclass Lectura {\npublic:\n    explicit Lectura(int valor) : valor_{valor} {}\n    int valor() const noexcept { return valor_; }\n    void sustituir(int nuevo) noexcept { valor_ = nuevo; }\n    virtual void escribir(std::ostream& salida) const { salida << \"Numero:\" << valor_; }\n    void informar(std::ostream& salida) const { escribir(salida); }\nprivate:\n    int valor_;\n};\nclass LecturaIdentificada : public Lectura {\npublic:\n    LecturaIdentificada(int valor, int codigo) : Lectura{valor}, codigo_{codigo} {}\n    int codigo() const noexcept { return codigo_; }\n    void escribir(std::ostream& salida) const override;\nprivate:\n    int codigo_;\n};\nvoid LecturaIdentificada::escribir(std::ostream& salida) const {\n    Lectura::escribir(salida);\n    salida << \";Codigo:\" << codigo_;\n}\nint main() {\n    LecturaIdentificada dato{9, 13};\n    Lectura copia = dato;\n    const Lectura& vista = dato;\n    dato.sustituir(-4);\n    copia.escribir(std::cout);\n    std::cout << '|';\n    vista.escribir(std::cout);\n    std::cout << '|' << dato.codigo();\n    return 0;\n}\n",
+          "answers": [
+            "Numero:9|Numero:-4;Codigo:13|13"
+          ],
+          "outputComparison": "exact",
+          "explanation": "copia se construye como Lectura y conserva el número nueve. Su escribir virtual utiliza la implementación de Lectura para ese objeto y no puede mostrar un código que no contiene. vista observa la LecturaIdentificada original después de cambiar su número a menos cuatro; su llamada utiliza el informe derivado con el código trece. El código del original permanece trece."
+        }
+      },
+      {
+        "id": "block_0008_0002",
+        "block": {
+          "type": "inline_fill_code",
+          "id": "p3_u8l4_declarar_virtual_comprobar_override_y_reutilizar_base",
+          "question": "Escribe la palabra que hace virtual la operación de la base, la que comprueba que la función derivada la sobrescribe y la llamada calificada a mostrar de Medidor sobre el objeto actual con el argumento salida. El punto y coma de esa llamada ya está escrito.",
+          "template": "class Medidor {\npublic:\n    [] void mostrar(std::ostream& salida) const { salida << \"Base\"; }\n};\nclass MedidorConMarca : public Medidor {\npublic:\n    explicit MedidorConMarca(int marca) : marca_{marca} {}\n    void mostrar(std::ostream& salida) const [] {\n        [];\n        salida << \";Marca:\" << marca_;\n    }\nprivate:\n    int marca_;\n};\n",
+          "answers": [
+            "virtual",
+            "override",
+            "Medidor::mostrar(salida)"
+          ],
+          "answerAlternatives": [
+            [
+              "virtual"
+            ],
+            [
+              "override"
+            ],
+            [
+              "Medidor::mostrar(salida)",
+              "this->Medidor::mostrar(salida)",
+              "(*this).Medidor::mostrar(salida)"
+            ]
+          ],
+          "explanation": "virtual declara la operación de Medidor. override comprueba que la declaración de MedidorConMarca corresponde a esa virtual, incluido const. Medidor::mostrar(salida) pide el cuerpo base para esa llamada; también puede nombrarse el objeto mediante this o *this. Después el cuerpo añade la marca al mismo flujo, sin llamarse de nuevo a sí mismo."
+        }
+      },
+      {
+        "id": "block_0009_0001",
+        "block": {
+          "type": "code",
+          "language": "cpp",
+          "code": "class Medidor {\npublic:\n    virtual void mostrar(std::ostream& salida) const { salida << \"Base\"; }\n};\nclass MedidorConMarca : public Medidor {\npublic:\n    explicit MedidorConMarca(int marca) : marca_{marca} {}\n    void mostrar(std::ostream& salida) const override {\n        Medidor::mostrar(salida);\n        salida << \";Marca:\" << marca_;\n    }\nprivate:\n    int marca_;\n};\n"
+        }
+      },
+      {
+        "id": "block_0010_0002",
+        "block": {
+          "type": "code",
+          "language": "cpp",
+          "code": "#include <iostream>\n#include <sstream>\n#include <string>\n\nclass Lectura {\npublic:\n    explicit Lectura(int valor) : valor_{valor} {}\n    int valor() const noexcept { return valor_; }\n    void sustituir(int nuevo) noexcept { valor_ = nuevo; }\n    virtual void escribir(std::ostream& salida) const { salida << \"Numero:\" << valor_; }\n    void informar(std::ostream& salida) const { escribir(salida); }\nprivate:\n    int valor_;\n};\nclass Intento : public Lectura {\npublic:\n    Intento() : Lectura{3} {}\n    void escribir(std::ostream& salida) override {\n        Lectura::escribir(salida);\n    }\n};\nint main() { Intento dato; dato.escribir(std::cout); return 0; }\n"
+        }
+      },
+      {
+        "id": "block_0011_0002",
+        "block": {
+          "type": "code",
+          "language": "cpp",
+          "code": "#include <iostream>\n#include <sstream>\n#include <string>\n\nclass Lectura {\npublic:\n    explicit Lectura(int valor) : valor_{valor} {}\n    int valor() const noexcept { return valor_; }\n    void sustituir(int nuevo) noexcept { valor_ = nuevo; }\n    virtual void escribir(std::ostream& salida) const { salida << \"Numero:\" << valor_; }\n    void informar(std::ostream& salida) const { escribir(salida); }\nprivate:\n    int valor_;\n};\nclass Intento : public Lectura {\npublic:\n    Intento() : Lectura{3} {}\n    void escribri(std::ostream& salida) const override {\n        Lectura::escribir(salida);\n    }\n};\nint main() { Intento dato; dato.escribir(std::cout); return 0; }\n"
+        }
+      },
+      {
+        "id": "block_0012_0002",
+        "block": {
+          "type": "code",
+          "language": "cpp",
+          "code": "#include <iostream>\n#include <sstream>\n#include <string>\n\nclass Lectura {\npublic:\n    explicit Lectura(int valor) : valor_{valor} {}\n    int valor() const noexcept { return valor_; }\n    void sustituir(int nuevo) noexcept { valor_ = nuevo; }\n    virtual void escribir(std::ostream& salida) const { salida << \"Numero:\" << valor_; }\n    void informar(std::ostream& salida) const { escribir(salida); }\nprivate:\n    int valor_;\n};\nclass Intento : public Lectura {\npublic:\n    Intento() : Lectura{3} {}\n    void escribir(std::ostream& salida, int prefijo) const override {\n        (void)prefijo;\n        Lectura::escribir(salida);\n    }\n};\nint main() { Intento dato; dato.escribir(std::cout, 1); return 0; }\n"
+        }
+      },
+      {
+        "id": "block_0013_0002",
+        "block": {
+          "type": "code",
+          "language": "cpp",
+          "code": "#include <iostream>\n#include <sstream>\n#include <string>\n\nclass Lectura {\npublic:\n    explicit Lectura(int valor) : valor_{valor} {}\n    int valor() const noexcept { return valor_; }\n    void sustituir(int nuevo) noexcept { valor_ = nuevo; }\n    void escribir(std::ostream& salida) const { salida << \"Numero:\" << valor_; }\n    void informar(std::ostream& salida) const { escribir(salida); }\nprivate:\n    int valor_;\n};\nclass LecturaIdentificada : public Lectura {\npublic:\n    LecturaIdentificada(int valor, int codigo) : Lectura{valor}, codigo_{codigo} {}\n    int codigo() const noexcept { return codigo_; }\n    void escribir(std::ostream& salida) const override;\nprivate:\n    int codigo_;\n};\nvoid LecturaIdentificada::escribir(std::ostream& salida) const {\n    Lectura::escribir(salida);\n    salida << \";Codigo:\" << codigo_;\n}\nint main() { const LecturaIdentificada dato{3, 9}; dato.escribir(std::cout); return 0; }\n"
+        }
+      },
+      {
+        "id": "block_0014_0003",
+        "block": {
+          "type": "output_prediction",
+          "id": "p3_u8l4_virtual_heredada_sin_repetir_palabras",
+          "language": "cpp",
+          "question": "Escribe los tres informes, separados por |, siguiendo la llamada mediante vista, la llamada a informar y la llamada calificada final.",
+          "code": "#include <iostream>\n#include <sstream>\n#include <string>\n\nclass Lectura {\npublic:\n    explicit Lectura(int valor) : valor_{valor} {}\n    int valor() const noexcept { return valor_; }\n    void sustituir(int nuevo) noexcept { valor_ = nuevo; }\n    virtual void escribir(std::ostream& salida) const { salida << \"Numero:\" << valor_; }\n    void informar(std::ostream& salida) const { escribir(salida); }\nprivate:\n    int valor_;\n};\nclass LecturaIdentificada : public Lectura {\npublic:\n    LecturaIdentificada(int valor, int codigo) : Lectura{valor}, codigo_{codigo} {}\n    int codigo() const noexcept { return codigo_; }\n    void escribir(std::ostream& salida) const override;\nprivate:\n    int codigo_;\n};\nvoid LecturaIdentificada::escribir(std::ostream& salida) const {\n    Lectura::escribir(salida);\n    salida << \";Codigo:\" << codigo_;\n}\nclass LecturaConTurno : public LecturaIdentificada {\npublic:\n    LecturaConTurno(int valor, int codigo, int turno)\n        : LecturaIdentificada{valor, codigo}, turno_{turno} {}\n    void escribir(std::ostream& salida) const {\n        LecturaIdentificada::escribir(salida);\n        salida << \";Turno:\" << turno_;\n    }\nprivate:\n    int turno_;\n};\nint main() {\n    const LecturaConTurno dato{2, 8, 4};\n    const Lectura& vista = dato;\n    vista.escribir(std::cout);\n    std::cout << '|';\n    vista.informar(std::cout);\n    std::cout << '|';\n    dato.LecturaIdentificada::escribir(std::cout);\n    return 0;\n}\n",
+          "answers": [
+            "Numero:2;Codigo:8;Turno:4|Numero:2;Codigo:8;Turno:4|Numero:2;Codigo:8"
+          ],
+          "outputComparison": "exact",
+          "explanation": "El objeto completo es LecturaConTurno. vista.escribir utiliza su implementación, que reúne número dos, código ocho y turno cuatro. vista.informar entra en la función ordinaria de Lectura y su llamada virtual interna utiliza de nuevo esa implementación completa. La última llamada está calificada con LecturaIdentificada y utiliza sólo su informe de número y código, sin añadir el turno."
+        }
+      },
+      {
+        "id": "block_0015_0002",
+        "block": {
+          "type": "output_prediction",
+          "id": "p3_u8l4_using_y_sobrecarga_sin_sobrescritura",
+          "language": "cpp",
+          "question": "Escribe la salida de las llamadas de uno y dos argumentos, con el separador |.",
+          "code": "#include <iostream>\n#include <sstream>\n#include <string>\n\nclass Lectura {\npublic:\n    explicit Lectura(int valor) : valor_{valor} {}\n    int valor() const noexcept { return valor_; }\n    void sustituir(int nuevo) noexcept { valor_ = nuevo; }\n    virtual void escribir(std::ostream& salida) const { salida << \"Numero:\" << valor_; }\n    void informar(std::ostream& salida) const { escribir(salida); }\nprivate:\n    int valor_;\n};\nclass ConPrefijo : public Lectura {\npublic:\n    using Lectura::escribir;\n    explicit ConPrefijo(int valor) : Lectura{valor} {}\n    void escribir(std::ostream& salida, const std::string& prefijo) const {\n        salida << prefijo;\n        Lectura::escribir(salida);\n    }\n};\nint main() {\n    const ConPrefijo dato{5};\n    dato.escribir(std::cout);\n    std::cout << '|';\n    dato.escribir(std::cout, \"Dato \");\n    return 0;\n}\n",
+          "answers": [
+            "Numero:5|Dato Numero:5"
+          ],
+          "outputComparison": "exact",
+          "explanation": "using permite encontrar escribir de Lectura para la llamada de un argumento. ConPrefijo no ha proporcionado una sobrescritura de esa operación, así que se utiliza el cuerpo de Lectura y se muestra Numero:5. La llamada de dos argumentos utiliza la función de ConPrefijo, que añade Dato y un espacio antes de reutilizar expresamente la base. Las listas de parámetros siguen distinguiendo ambas operaciones."
+        }
+      },
+      {
+        "id": "block_0019_0002",
+        "block": {
+          "type": "cpp_compiler",
+          "language": "cpp",
+          "initialCode": "#include <iostream>\n#include <sstream>\n#include <string>\n\nclass Medida {\npublic:\n    explicit Medida(int numero) : numero_{numero} {}\n    int numero() const noexcept { return numero_; }\n    void sustituir(int nuevo) noexcept { numero_ = nuevo; }\n    void escribir(std::ostream& salida) const { salida << \"Numero:\" << numero_; }\n    void informar(std::ostream& salida) const { escribir(salida); }\nprivate:\n    int numero_;\n};\nclass MedidaIdentificada : public Medida {\npublic:\n    MedidaIdentificada(int numero, int codigo) : Medida{numero}, codigo_{codigo} {}\n    int codigo() const noexcept { return codigo_; }\n    void escribir(std::ostream& salida) const;\nprivate:\n    int codigo_;\n};\nvoid MedidaIdentificada::escribir(std::ostream& salida) const {\n    // Reutiliza el informe base y agrega el codigo propio en el flujo recibido.\n    Medida::escribir(salida);\n}\nvoid mostrar_generico(const Medida& dato, std::ostream& salida) {\n    dato.escribir(salida);\n}\nint main() {\n    int inicial = 0, codigo = 0, nuevo = 0;\n    if (!(std::cin >> inicial >> codigo >> nuevo)) { return 1; }\n    MedidaIdentificada dato{inicial, codigo};\n    Medida copia = dato;\n    std::ostringstream directa, generica, heredada, calificada, copiada, despues, copia_despues;\n    dato.escribir(directa);\n    mostrar_generico(dato, generica);\n    dato.informar(heredada);\n    dato.Medida::escribir(calificada);\n    copia.escribir(copiada);\n    Medida* acceso = &dato;\n    acceso->sustituir(nuevo);\n    acceso->escribir(despues);\n    copia.escribir(copia_despues);\n    std::cout << \"Directa:\" << directa.str() << '\\n'\n              << \"Generica:\" << generica.str() << '\\n'\n              << \"Heredada:\" << heredada.str() << '\\n'\n              << \"Calificada:\" << calificada.str() << '\\n'\n              << \"Copia:\" << copiada.str() << '\\n'\n              << \"TrasCambio:\" << despues.str() << '\\n'\n              << \"CopiaTrasCambio:\" << copia_despues.str() << '\\n'\n              << \"Estado:(\" << dato.numero() << ',' << dato.codigo() << ')';\n    return 0;\n}\n",
+          "initialStandardInput": "6 41 -8",
+          "outputCheck": {
+            "inputComparison": "tokens",
+            "cases": [
+              {
+                "standardInput": "6 41 -8",
+                "outputs": [
+                  "Directa:Numero:6;Codigo:41\nGenerica:Numero:6;Codigo:41\nHeredada:Numero:6;Codigo:41\nCalificada:Numero:6\nCopia:Numero:6\nTrasCambio:Numero:-8;Codigo:41\nCopiaTrasCambio:Numero:6\nEstado:(-8,41)"
+                ],
+                "explanation": "Hacer virtual escribir en Medida permite que mostrar_generico e informar llamen a la implementación de MedidaIdentificada. override comprueba la correspondencia de la función const. Su cuerpo solicita Medida::escribir(salida) y agrega el código en ese flujo. La llamada calificada y la copia independiente siguen usando el informe de Medida."
+              },
+              {
+                "standardInput": "0 -3 12",
+                "outputs": [
+                  "Directa:Numero:0;Codigo:-3\nGenerica:Numero:0;Codigo:-3\nHeredada:Numero:0;Codigo:-3\nCalificada:Numero:0\nCopia:Numero:0\nTrasCambio:Numero:12;Codigo:-3\nCopiaTrasCambio:Numero:0\nEstado:(12,-3)"
+                ],
+                "explanation": "Hacer virtual escribir en Medida permite que mostrar_generico e informar llamen a la implementación de MedidaIdentificada. override comprueba la correspondencia de la función const. Su cuerpo solicita Medida::escribir(salida) y agrega el código en ese flujo. La llamada calificada y la copia independiente siguen usando el informe de Medida."
+              },
+              {
+                "standardInput": "-7 0 0",
+                "outputs": [
+                  "Directa:Numero:-7;Codigo:0\nGenerica:Numero:-7;Codigo:0\nHeredada:Numero:-7;Codigo:0\nCalificada:Numero:-7\nCopia:Numero:-7\nTrasCambio:Numero:0;Codigo:0\nCopiaTrasCambio:Numero:-7\nEstado:(0,0)"
+                ],
+                "explanation": "Hacer virtual escribir en Medida permite que mostrar_generico e informar llamen a la implementación de MedidaIdentificada. override comprueba la correspondencia de la función const. Su cuerpo solicita Medida::escribir(salida) y agrega el código en ese flujo. La llamada calificada y la copia independiente siguen usando el informe de Medida."
+              },
+              {
+                "standardInput": "19 4 19",
+                "outputs": [
+                  "Directa:Numero:19;Codigo:4\nGenerica:Numero:19;Codigo:4\nHeredada:Numero:19;Codigo:4\nCalificada:Numero:19\nCopia:Numero:19\nTrasCambio:Numero:19;Codigo:4\nCopiaTrasCambio:Numero:19\nEstado:(19,4)"
+                ],
+                "explanation": "Hacer virtual escribir en Medida permite que mostrar_generico e informar llamen a la implementación de MedidaIdentificada. override comprueba la correspondencia de la función const. Su cuerpo solicita Medida::escribir(salida) y agrega el código en ese flujo. La llamada calificada y la copia independiente siguen usando el informe de Medida."
+              },
+              {
+                "standardInput": "-11 23 -2",
+                "outputs": [
+                  "Directa:Numero:-11;Codigo:23\nGenerica:Numero:-11;Codigo:23\nHeredada:Numero:-11;Codigo:23\nCalificada:Numero:-11\nCopia:Numero:-11\nTrasCambio:Numero:-2;Codigo:23\nCopiaTrasCambio:Numero:-11\nEstado:(-2,23)"
+                ],
+                "explanation": "Hacer virtual escribir en Medida permite que mostrar_generico e informar llamen a la implementación de MedidaIdentificada. override comprueba la correspondencia de la función const. Su cuerpo solicita Medida::escribir(salida) y agrega el código en ese flujo. La llamada calificada y la copia independiente siguen usando el informe de Medida."
+              }
+            ]
+          }
+        }
+      },
+      {
+        "id": "block_0021_0001",
+        "block": {
+          "type": "code",
+          "language": "cpp",
+          "code": "#include <iostream>\n#include <sstream>\n#include <string>\n\nclass Medida {\npublic:\n    explicit Medida(int numero) : numero_{numero} {}\n    int numero() const noexcept { return numero_; }\n    void sustituir(int nuevo) noexcept { numero_ = nuevo; }\n    virtual void escribir(std::ostream& salida) const { salida << \"Numero:\" << numero_; }\n    void informar(std::ostream& salida) const { escribir(salida); }\nprivate:\n    int numero_;\n};\nclass MedidaIdentificada : public Medida {\npublic:\n    MedidaIdentificada(int numero, int codigo) : Medida{numero}, codigo_{codigo} {}\n    int codigo() const noexcept { return codigo_; }\n    void escribir(std::ostream& salida) const override;\nprivate:\n    int codigo_;\n};\nvoid MedidaIdentificada::escribir(std::ostream& salida) const {\n    Medida::escribir(salida);\n    salida << \";Codigo:\" << codigo_;\n}\nvoid mostrar_generico(const Medida& dato, std::ostream& salida) {\n    dato.escribir(salida);\n}\nint main() {\n    int inicial = 0, codigo = 0, nuevo = 0;\n    if (!(std::cin >> inicial >> codigo >> nuevo)) { return 1; }\n    MedidaIdentificada dato{inicial, codigo};\n    Medida copia = dato;\n    std::ostringstream directa, generica, heredada, calificada, copiada, despues, copia_despues;\n    dato.escribir(directa);\n    mostrar_generico(dato, generica);\n    dato.informar(heredada);\n    dato.Medida::escribir(calificada);\n    copia.escribir(copiada);\n    Medida* acceso = &dato;\n    acceso->sustituir(nuevo);\n    acceso->escribir(despues);\n    copia.escribir(copia_despues);\n    std::cout << \"Directa:\" << directa.str() << '\\n'\n              << \"Generica:\" << generica.str() << '\\n'\n              << \"Heredada:\" << heredada.str() << '\\n'\n              << \"Calificada:\" << calificada.str() << '\\n'\n              << \"Copia:\" << copiada.str() << '\\n'\n              << \"TrasCambio:\" << despues.str() << '\\n'\n              << \"CopiaTrasCambio:\" << copia_despues.str() << '\\n'\n              << \"Estado:(\" << dato.numero() << ',' << dato.codigo() << ')';\n    return 0;\n}\n"
+        }
+      }
+    ]
   }
 }

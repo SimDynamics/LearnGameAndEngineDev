@@ -18,7 +18,7 @@
           "id": "p3_u3l4_extern_mismo_archivo",
           "language": "cpp",
           "question": "Predice la salida. Hay dos declaraciones sin inicializador y una definición; las tres corresponden a saldo en el espacio global.",
-          "code": "#include <iostream>\n\nextern int saldo;\nextern int saldo;\n\nint consultar() {\n    return saldo;\n}\n\nint saldo = 7;\n\nint main() {\n    std::cout << consultar();\n    return 0;\n}\n",
+          "code": "#include <iostream>\n\nextern int saldo;\nextern int saldo;\n\nint consultar() {\n    return saldo;\n}\n\nint saldo = 7;\n\nint main() {\n    std::cout << consultar();\n\n    return 0;\n}\n",
           "answers": [
             "7"
           ],
@@ -46,7 +46,7 @@
           "id": "p3_u3l4_extern_con_inicializador",
           "language": "cpp",
           "question": "Predice el valor. La presencia de extern no elimina el inicializador de esta definición.",
-          "code": "#include <iostream>\n\nextern int saldo = 6;\n\nint main() {\n    std::cout << saldo;\n    return 0;\n}\n",
+          "code": "#include <iostream>\n\nextern int saldo = 6;\n\nint main() {\n    std::cout << saldo;\n\n    return 0;\n}\n",
           "answers": [
             "6"
           ],
@@ -145,7 +145,7 @@
         {
           "type": "code",
           "language": "cpp",
-          "code": "#include \"estado.hpp\"\n#include <iostream>\n\nint main() {\n    const int antes = lote::consultar();\n    lote::subirDos();\n    const int despues = lote::consultar();\n    std::cout << antes << ':' << despues << ':' << lote::nivel;\n    return 0;\n}\n"
+          "code": "#include \"estado.hpp\"\n#include <iostream>\n\nint main() {\n    const int antes = lote::consultar();\n    lote::subirDos();\n    const int despues = lote::consultar();\n    std::cout << antes << ':' << despues << ':' << lote::nivel;\n\n    return 0;\n}\n"
         },
         {
           "type": "math_puzzle",
@@ -307,7 +307,7 @@
         {
           "type": "cpp_compiler",
           "language": "cpp",
-          "initialCode": "#include \"aviso.hpp\"\n#include <iostream>\n\nint main() {\n    aviso::sumarTres();\n    std::cout << aviso::pendientes;\n    return 0;\n}\n",
+          "initialCode": "#include \"aviso.hpp\"\n#include <iostream>\n\nint main() {\n    aviso::sumarTres();\n    std::cout << aviso::pendientes;\n\n    return 0;\n}\n",
           "projectFiles": [
             {
               "path": "aviso.hpp",
@@ -319,7 +319,7 @@
             },
             {
               "path": "main.cpp",
-              "initialCode": "#include \"aviso.hpp\"\n#include <iostream>\n\nint main() {\n    aviso::sumarTres();\n    std::cout << aviso::pendientes;\n    return 0;\n}\n"
+              "initialCode": "#include \"aviso.hpp\"\n#include <iostream>\n\nint main() {\n    aviso::sumarTres();\n    std::cout << aviso::pendientes;\n\n    return 0;\n}\n"
             }
           ],
           "sourceFiles": [
@@ -377,7 +377,7 @@
         {
           "type": "code",
           "language": "cpp",
-          "code": "#include \"aviso.hpp\"\n#include <iostream>\n\nint main() {\n    aviso::sumarTres();\n    std::cout << aviso::pendientes;\n    return 0;\n}\n"
+          "code": "#include \"aviso.hpp\"\n#include <iostream>\n\nint main() {\n    aviso::sumarTres();\n    std::cout << aviso::pendientes;\n\n    return 0;\n}\n"
         },
         {
           "type": "multiple_choice",
@@ -441,7 +441,7 @@
         {
           "type": "code",
           "language": "cpp",
-          "code": "#include \"visitas.hpp\"\n#include <iostream>\n\nint main() {\n    const int a = contarA();\n    const int b = contarB();\n    const int otraA = contarA();\n    std::cout << a << ':' << b << ':' << otraA;\n    return 0;\n}\n"
+          "code": "#include \"visitas.hpp\"\n#include <iostream>\n\nint main() {\n    const int a = contarA();\n    const int b = contarB();\n    const int otraA = contarA();\n\n    std::cout << a << ':' << b << ':' << otraA;\n\n    return 0;\n}\n"
         },
         {
           "type": "math_puzzle",
@@ -579,7 +579,7 @@
           "id": "p3_u3l4_redeclarante_interno",
           "language": "cpp",
           "question": "Predice los dos valores. La declaración posterior no define otro propio ni borra el 4 inicial.",
-          "code": "#include <iostream>\n\nstatic int propio = 4;\nextern int propio;\n\nint aumentar() {\n    propio += 3;\n    return propio;\n}\n\nint main() {\n    const int resultado = aumentar();\n    std::cout << resultado << ':' << propio;\n    return 0;\n}\n",
+          "code": "#include <iostream>\n\nstatic int propio = 4;\nextern int propio;\n\nint aumentar() {\n    propio += 3;\n    return propio;\n}\n\nint main() {\n    const int resultado = aumentar();\n\n    std::cout << resultado << ':' << propio;\n\n    return 0;\n}\n",
           "answers": [
             "7:7"
           ],
@@ -623,7 +623,7 @@
         {
           "type": "code",
           "language": "cpp",
-          "code": "#include \"nivel.hpp\"\n#include <iostream>\n\nint main() {\n    const int devuelto = lote::subir();\n    std::cout << devuelto << ':' << lote::nivel;\n    return 0;\n}\n"
+          "code": "#include \"nivel.hpp\"\n#include <iostream>\n\nint main() {\n    const int devuelto = lote::subir();\n\n    std::cout << devuelto << ':' << lote::nivel;\n\n    return 0;\n}\n"
         },
         {
           "type": "multiple_choice",
@@ -714,15 +714,15 @@
         {
           "type": "cpp_compiler",
           "language": "cpp",
-          "initialCode": "#include \"registro.hpp\"\n#include <iostream>\n\nint main() {\n    int numeroDeValores = 0;\n    if (!(std::cin >> numeroDeValores) || numeroDeValores < 1 || numeroDeValores > 8) {\n        std::cout << \"Datos invalidos\\n\";\n        return 0;\n    }\n    for (int i = 0; i < numeroDeValores; ++i) {\n        int valor = 0;\n        if (!(std::cin >> valor)) {\n            std::cout << \"Datos invalidos\\n\";\n            return 0;\n        }\n        const bool aceptado = registro::agregar(valor);\n        const int cantidadLeida = registro::cantidadActual();\n        const int sumaLeida = registro::sumaActual();\n        std::cout << (aceptado ? \"Aceptado\" : \"Rechazo\")\n                  << \";Cantidad:\" << cantidadLeida << \";Suma:\" << sumaLeida\n                  << \";Directo:\" << registro::cantidad << ':' << registro::suma << '\\n';\n    }\n    return 0;\n}\n",
+          "initialCode": "#include \"registro.hpp\"\n#include <iostream>\n\nint main() {\n    int numeroDeValores = 0;\n    if (!(std::cin >> numeroDeValores) || numeroDeValores < 1 || numeroDeValores > 8) {\n        std::cout << \"Datos invalidos\\n\";\n        return 0;\n    }\n    for (int i = 0; i < numeroDeValores; ++i) {\n        int valor = 0;\n        if (!(std::cin >> valor)) {\n            std::cout << \"Datos invalidos\\n\";\n            return 0;\n        }\n        const bool aceptado = registro::agregar(valor);\n        const int cantidadLeida = registro::cantidadActual();\n        const int sumaLeida = registro::sumaActual();\n\n        std::cout << (aceptado ? \"Aceptado\" : \"Rechazo\")\n                  << \";Cantidad:\" << cantidadLeida << \";Suma:\" << sumaLeida\n                  << \";Directo:\" << registro::cantidad << ':' << registro::suma << '\\n';\n    }\n\n    return 0;\n}\n",
           "projectFiles": [
             {
               "path": "registro.hpp",
-              "initialCode": "#ifndef P3_REGISTRO_HPP\n#define P3_REGISTRO_HPP\n\nnamespace registro {\n    // Declara aqui cantidad y suma sin definirlas.\n    bool agregar(int valor);\n    int cantidadActual();\n    int sumaActual();\n}\n\n#endif\n"
+              "initialCode": "#ifndef P3_REGISTRO_HPP\n#define P3_REGISTRO_HPP\n\nnamespace registro {\n    // Declara aqui cantidad y suma sin definirlas.\n    \n    bool agregar(int valor);\n    int cantidadActual();\n    int sumaActual();\n}\n\n#endif\n"
             },
             {
               "path": "registro.cpp",
-              "initialCode": "#include \"registro.hpp\"\n\nnamespace registro {\n    // Define aqui cantidad y suma con valor inicial cero.\n\n    bool agregar(int valor) {\n        // Construye la validacion y actualiza los dos datos compartidos.\n        return valor == 0;\n    }\n}\n"
+              "initialCode": "#include \"registro.hpp\"\n\nnamespace registro {\n    // Define aqui cantidad y suma con valor inicial cero.\n    \n    bool agregar(int valor) {\n        // Construye la validacion y actualiza los dos datos compartidos.\n        \n        return valor == 0;\n    }\n}\n"
             },
             {
               "path": "consulta.cpp",
@@ -730,7 +730,7 @@
             },
             {
               "path": "main.cpp",
-              "initialCode": "#include \"registro.hpp\"\n#include <iostream>\n\nint main() {\n    int numeroDeValores = 0;\n    if (!(std::cin >> numeroDeValores) || numeroDeValores < 1 || numeroDeValores > 8) {\n        std::cout << \"Datos invalidos\\n\";\n        return 0;\n    }\n    for (int i = 0; i < numeroDeValores; ++i) {\n        int valor = 0;\n        if (!(std::cin >> valor)) {\n            std::cout << \"Datos invalidos\\n\";\n            return 0;\n        }\n        const bool aceptado = registro::agregar(valor);\n        const int cantidadLeida = registro::cantidadActual();\n        const int sumaLeida = registro::sumaActual();\n        std::cout << (aceptado ? \"Aceptado\" : \"Rechazo\")\n                  << \";Cantidad:\" << cantidadLeida << \";Suma:\" << sumaLeida\n                  << \";Directo:\" << registro::cantidad << ':' << registro::suma << '\\n';\n    }\n    return 0;\n}\n"
+              "initialCode": "#include \"registro.hpp\"\n#include <iostream>\n\nint main() {\n    int numeroDeValores = 0;\n    if (!(std::cin >> numeroDeValores) || numeroDeValores < 1 || numeroDeValores > 8) {\n        std::cout << \"Datos invalidos\\n\";\n        return 0;\n    }\n    for (int i = 0; i < numeroDeValores; ++i) {\n        int valor = 0;\n        if (!(std::cin >> valor)) {\n            std::cout << \"Datos invalidos\\n\";\n            return 0;\n        }\n        const bool aceptado = registro::agregar(valor);\n        const int cantidadLeida = registro::cantidadActual();\n        const int sumaLeida = registro::sumaActual();\n\n        std::cout << (aceptado ? \"Aceptado\" : \"Rechazo\")\n                  << \";Cantidad:\" << cantidadLeida << \";Suma:\" << sumaLeida\n                  << \";Directo:\" << registro::cantidad << ':' << registro::suma << '\\n';\n    }\n\n    return 0;\n}\n"
             }
           ],
           "sourceFiles": [
@@ -925,7 +925,7 @@
         {
           "type": "code",
           "language": "cpp",
-          "code": "#include \"registro.hpp\"\n#include <iostream>\n\nint main() {\n    int numeroDeValores = 0;\n    if (!(std::cin >> numeroDeValores) || numeroDeValores < 1 || numeroDeValores > 8) {\n        std::cout << \"Datos invalidos\\n\";\n        return 0;\n    }\n    for (int i = 0; i < numeroDeValores; ++i) {\n        int valor = 0;\n        if (!(std::cin >> valor)) {\n            std::cout << \"Datos invalidos\\n\";\n            return 0;\n        }\n        const bool aceptado = registro::agregar(valor);\n        const int cantidadLeida = registro::cantidadActual();\n        const int sumaLeida = registro::sumaActual();\n        std::cout << (aceptado ? \"Aceptado\" : \"Rechazo\")\n                  << \";Cantidad:\" << cantidadLeida << \";Suma:\" << sumaLeida\n                  << \";Directo:\" << registro::cantidad << ':' << registro::suma << '\\n';\n    }\n    return 0;\n}\n"
+          "code": "#include \"registro.hpp\"\n#include <iostream>\n\nint main() {\n    int numeroDeValores = 0;\n    if (!(std::cin >> numeroDeValores) || numeroDeValores < 1 || numeroDeValores > 8) {\n        std::cout << \"Datos invalidos\\n\";\n        return 0;\n    }\n    for (int i = 0; i < numeroDeValores; ++i) {\n        int valor = 0;\n        if (!(std::cin >> valor)) {\n            std::cout << \"Datos invalidos\\n\";\n            return 0;\n        }\n        const bool aceptado = registro::agregar(valor);\n        const int cantidadLeida = registro::cantidadActual();\n        const int sumaLeida = registro::sumaActual();\n\n        std::cout << (aceptado ? \"Aceptado\" : \"Rechazo\")\n                  << \";Cantidad:\" << cantidadLeida << \";Suma:\" << sumaLeida\n                  << \";Directo:\" << registro::cantidad << ':' << registro::suma << '\\n';\n    }\n\n    return 0;\n}\n"
         },
         {
           "type": "paragraph",
@@ -2465,6 +2465,248 @@
       }
     },
     "additions": [],
-    "editorial": []
+    "editorial": [
+      {
+        "id": "block_0000_0002",
+        "beforeSha256": "4254076bca6eba276a5d195859b0d095f38b557caea016d4ef19ad81cb12f88f",
+        "afterSha256": "1a533e39e574e3d7fb00aed7a4c5e6466d71c4de554edb29ce4448b0b0b3c002"
+      },
+      {
+        "id": "block_0001_0002",
+        "beforeSha256": "f46cf3eed7369924fad6f92faf704d95b4be7cf3e9b38cce5ca82844db7e9533",
+        "afterSha256": "42373adcf93df1ca21e204a87fbf53798d860083de97f622f47608f60dd63125"
+      },
+      {
+        "id": "block_0003_0010",
+        "beforeSha256": "1d480ea388401553396f5f1ee5e9204cafe6309228ae45ee9bf7bc80abbf0382",
+        "afterSha256": "1292eb67e965a96eadda402211680c06533a1b470243b37575f23d2989b0ae76"
+      },
+      {
+        "id": "block_0006_0004",
+        "beforeSha256": "0c30a7f2e7ab901476d306e8564f57cfaaaf842394c9fbd51772cfecbc7890d2",
+        "afterSha256": "83431b4bbd860691d4ecccdc97cb30221c07b2391a2d68c746a78e1053e05dcf"
+      },
+      {
+        "id": "block_0007_0007",
+        "beforeSha256": "8ceb2d64382839f8b8fd07cf68c6f885990f60868ac36e18654f4729f1a6f0ca",
+        "afterSha256": "a23b32cdde4e36a96ae3f38e8aec44a5ab0e0dd82600a22e5cfc91e3a5b98a75"
+      },
+      {
+        "id": "block_0008_0010",
+        "beforeSha256": "22967b0af8e5e81ce198a0cce0f0a39efab82b349bfcc27049af132574bfee05",
+        "afterSha256": "d039f2a21d826b21a9f2e1213f86f4db641b510d793eb8ac9d244afd0932a26e"
+      },
+      {
+        "id": "block_0010_0002",
+        "beforeSha256": "6877f60e14909b23e817066a5f1ca73a2e87fc081ae02d97802339a0c775b951",
+        "afterSha256": "0a37b2b25517556c25a5aa501b156b195f0c36ca1f239ec784c744416dc4a539"
+      },
+      {
+        "id": "block_0011_0007",
+        "beforeSha256": "8ad8cb31f3f38cb87266a2d1667ac00946514fc2121238545bc41b496d83159b",
+        "afterSha256": "726bd26e6d653f742cacdabc15ddec09344334d5bca3cd4856e756b0a5fedc41"
+      },
+      {
+        "id": "block_0013_0012",
+        "beforeSha256": "f7f1d733e404f0d0ec9dd26b41ee4f66bb49e2e3a53232ffe6990536654047e4",
+        "afterSha256": "726a49bf7ff000dc8a1358c1a9ef5358b64febda35186a8df590a8b6d92912c1"
+      },
+      {
+        "id": "block_0016_0009",
+        "beforeSha256": "45a7326f071917baf39444888117133c2a36c450ada569e597ee2a126f853603",
+        "afterSha256": "a1b126f2cab01044aa9ddfd34709816e547b35ee658bb4643fc5de7bcde4e286"
+      }
+    ],
+    "sourceFormatRevisions": [
+      {
+        "id": "block_0000_0002",
+        "block": {
+          "type": "output_prediction",
+          "id": "p3_u3l4_extern_mismo_archivo",
+          "language": "cpp",
+          "question": "Predice la salida. Hay dos declaraciones sin inicializador y una definición; las tres corresponden a saldo en el espacio global.",
+          "code": "#include <iostream>\n\nextern int saldo;\nextern int saldo;\n\nint consultar() {\n    return saldo;\n}\n\nint saldo = 7;\n\nint main() {\n    std::cout << consultar();\n    return 0;\n}\n",
+          "answers": [
+            "7"
+          ],
+          "outputComparison": "exact",
+          "explanation": "Las dos declaraciones extern no crean dos saldos ni los reinician. Permiten que consultar encuentre el nombre antes de la definición posterior. Esa definición proporciona el único saldo, inicializado con 7 antes de main en este ejemplo."
+        }
+      },
+      {
+        "id": "block_0001_0002",
+        "block": {
+          "type": "output_prediction",
+          "id": "p3_u3l4_extern_con_inicializador",
+          "language": "cpp",
+          "question": "Predice el valor. La presencia de extern no elimina el inicializador de esta definición.",
+          "code": "#include <iostream>\n\nextern int saldo = 6;\n\nint main() {\n    std::cout << saldo;\n    return 0;\n}\n",
+          "answers": [
+            "6"
+          ],
+          "outputComparison": "exact",
+          "explanation": "La declaración con inicializador define saldo y lo prepara con 6. No es la declaración sin definición que colocaremos en una cabecera compartida."
+        }
+      },
+      {
+        "id": "block_0003_0010",
+        "block": {
+          "type": "code",
+          "language": "cpp",
+          "code": "#include \"estado.hpp\"\n#include <iostream>\n\nint main() {\n    const int antes = lote::consultar();\n    lote::subirDos();\n    const int despues = lote::consultar();\n    std::cout << antes << ':' << despues << ':' << lote::nivel;\n    return 0;\n}\n"
+        }
+      },
+      {
+        "id": "block_0006_0004",
+        "block": {
+          "type": "cpp_compiler",
+          "language": "cpp",
+          "initialCode": "#include \"aviso.hpp\"\n#include <iostream>\n\nint main() {\n    aviso::sumarTres();\n    std::cout << aviso::pendientes;\n    return 0;\n}\n",
+          "projectFiles": [
+            {
+              "path": "aviso.hpp",
+              "initialCode": "#ifndef P3_AVISO_HPP\n#define P3_AVISO_HPP\n\nnamespace aviso {\n    int pendientes = 2;\n    void sumarTres();\n}\n\n#endif\n"
+            },
+            {
+              "path": "aviso.cpp",
+              "initialCode": "#include \"aviso.hpp\"\n\nnamespace aviso {\n    void sumarTres() {\n        pendientes += 3;\n    }\n}\n"
+            },
+            {
+              "path": "main.cpp",
+              "initialCode": "#include \"aviso.hpp\"\n#include <iostream>\n\nint main() {\n    aviso::sumarTres();\n    std::cout << aviso::pendientes;\n    return 0;\n}\n"
+            }
+          ],
+          "sourceFiles": [
+            "aviso.cpp",
+            "main.cpp"
+          ],
+          "initialStandardInput": "",
+          "outputCheck": {
+            "inputComparison": "tokens",
+            "cases": [
+              {
+                "standardInput": "",
+                "outputs": [
+                  "5"
+                ],
+                "explanation": "Construir todas las fuentes seleccionadas y observar el mismo estado desde sus consumidores."
+              }
+            ]
+          }
+        }
+      },
+      {
+        "id": "block_0007_0007",
+        "block": {
+          "type": "code",
+          "language": "cpp",
+          "code": "#include \"aviso.hpp\"\n#include <iostream>\n\nint main() {\n    aviso::sumarTres();\n    std::cout << aviso::pendientes;\n    return 0;\n}\n"
+        }
+      },
+      {
+        "id": "block_0008_0010",
+        "block": {
+          "type": "code",
+          "language": "cpp",
+          "code": "#include \"visitas.hpp\"\n#include <iostream>\n\nint main() {\n    const int a = contarA();\n    const int b = contarB();\n    const int otraA = contarA();\n    std::cout << a << ':' << b << ':' << otraA;\n    return 0;\n}\n"
+        }
+      },
+      {
+        "id": "block_0010_0002",
+        "block": {
+          "type": "output_prediction",
+          "id": "p3_u3l4_redeclarante_interno",
+          "language": "cpp",
+          "question": "Predice los dos valores. La declaración posterior no define otro propio ni borra el 4 inicial.",
+          "code": "#include <iostream>\n\nstatic int propio = 4;\nextern int propio;\n\nint aumentar() {\n    propio += 3;\n    return propio;\n}\n\nint main() {\n    const int resultado = aumentar();\n    std::cout << resultado << ':' << propio;\n    return 0;\n}\n",
+          "answers": [
+            "7:7"
+          ],
+          "outputComparison": "exact",
+          "explanation": "aumentar suma 3 al objeto interno de valor 4 y devuelve 7. La lectura de main encuentra ese mismo 7. Esta redeclaración extern no transforma el enlace interno establecido por static."
+        }
+      },
+      {
+        "id": "block_0011_0007",
+        "block": {
+          "type": "code",
+          "language": "cpp",
+          "code": "#include \"nivel.hpp\"\n#include <iostream>\n\nint main() {\n    const int devuelto = lote::subir();\n    std::cout << devuelto << ':' << lote::nivel;\n    return 0;\n}\n"
+        }
+      },
+      {
+        "id": "block_0013_0012",
+        "block": {
+          "type": "cpp_compiler",
+          "language": "cpp",
+          "initialCode": "#include \"registro.hpp\"\n#include <iostream>\n\nint main() {\n    int numeroDeValores = 0;\n    if (!(std::cin >> numeroDeValores) || numeroDeValores < 1 || numeroDeValores > 8) {\n        std::cout << \"Datos invalidos\\n\";\n        return 0;\n    }\n    for (int i = 0; i < numeroDeValores; ++i) {\n        int valor = 0;\n        if (!(std::cin >> valor)) {\n            std::cout << \"Datos invalidos\\n\";\n            return 0;\n        }\n        const bool aceptado = registro::agregar(valor);\n        const int cantidadLeida = registro::cantidadActual();\n        const int sumaLeida = registro::sumaActual();\n        std::cout << (aceptado ? \"Aceptado\" : \"Rechazo\")\n                  << \";Cantidad:\" << cantidadLeida << \";Suma:\" << sumaLeida\n                  << \";Directo:\" << registro::cantidad << ':' << registro::suma << '\\n';\n    }\n    return 0;\n}\n",
+          "projectFiles": [
+            {
+              "path": "registro.hpp",
+              "initialCode": "#ifndef P3_REGISTRO_HPP\n#define P3_REGISTRO_HPP\n\nnamespace registro {\n    // Declara aqui cantidad y suma sin definirlas.\n    bool agregar(int valor);\n    int cantidadActual();\n    int sumaActual();\n}\n\n#endif\n"
+            },
+            {
+              "path": "registro.cpp",
+              "initialCode": "#include \"registro.hpp\"\n\nnamespace registro {\n    // Define aqui cantidad y suma con valor inicial cero.\n\n    bool agregar(int valor) {\n        // Construye la validacion y actualiza los dos datos compartidos.\n        return valor == 0;\n    }\n}\n"
+            },
+            {
+              "path": "consulta.cpp",
+              "initialCode": "#include \"registro.hpp\"\n\nnamespace registro {\n    int cantidadActual() {\n        return cantidad;\n    }\n\n    int sumaActual() {\n        return suma;\n    }\n}\n"
+            },
+            {
+              "path": "main.cpp",
+              "initialCode": "#include \"registro.hpp\"\n#include <iostream>\n\nint main() {\n    int numeroDeValores = 0;\n    if (!(std::cin >> numeroDeValores) || numeroDeValores < 1 || numeroDeValores > 8) {\n        std::cout << \"Datos invalidos\\n\";\n        return 0;\n    }\n    for (int i = 0; i < numeroDeValores; ++i) {\n        int valor = 0;\n        if (!(std::cin >> valor)) {\n            std::cout << \"Datos invalidos\\n\";\n            return 0;\n        }\n        const bool aceptado = registro::agregar(valor);\n        const int cantidadLeida = registro::cantidadActual();\n        const int sumaLeida = registro::sumaActual();\n        std::cout << (aceptado ? \"Aceptado\" : \"Rechazo\")\n                  << \";Cantidad:\" << cantidadLeida << \";Suma:\" << sumaLeida\n                  << \";Directo:\" << registro::cantidad << ':' << registro::suma << '\\n';\n    }\n    return 0;\n}\n"
+            }
+          ],
+          "sourceFiles": [
+            "registro.cpp",
+            "consulta.cpp",
+            "main.cpp"
+          ],
+          "initialStandardInput": "7\n0 3 -1 3 9 1 10\n",
+          "outputCheck": {
+            "inputComparison": "tokens",
+            "cases": [
+              {
+                "standardInput": "7\n0 3 -1 3 9 1 10\n",
+                "outputs": [
+                  "Aceptado;Cantidad:1;Suma:0;Directo:1:0\nAceptado;Cantidad:2;Suma:3;Directo:2:3\nRechazo;Cantidad:2;Suma:3;Directo:2:3\nAceptado;Cantidad:3;Suma:6;Directo:3:6\nAceptado;Cantidad:4;Suma:15;Directo:4:15\nRechazo;Cantidad:4;Suma:15;Directo:4:15\nRechazo;Cantidad:4;Suma:15;Directo:4:15\n"
+                ],
+                "explanation": "Construir todas las fuentes seleccionadas y observar el mismo estado desde sus consumidores."
+              },
+              {
+                "standardInput": "5\n2 2 2 2 2\n",
+                "outputs": [
+                  "Aceptado;Cantidad:1;Suma:2;Directo:1:2\nAceptado;Cantidad:2;Suma:4;Directo:2:4\nAceptado;Cantidad:3;Suma:6;Directo:3:6\nAceptado;Cantidad:4;Suma:8;Directo:4:8\nRechazo;Cantidad:4;Suma:8;Directo:4:8\n"
+                ],
+                "explanation": "Construir todas las fuentes seleccionadas y observar el mismo estado desde sus consumidores."
+              },
+              {
+                "standardInput": "5\n-1 10 -5 11 0\n",
+                "outputs": [
+                  "Rechazo;Cantidad:0;Suma:0;Directo:0:0\nRechazo;Cantidad:0;Suma:0;Directo:0:0\nRechazo;Cantidad:0;Suma:0;Directo:0:0\nRechazo;Cantidad:0;Suma:0;Directo:0:0\nAceptado;Cantidad:1;Suma:0;Directo:1:0\n"
+                ],
+                "explanation": "Construir todas las fuentes seleccionadas y observar el mismo estado desde sus consumidores."
+              },
+              {
+                "standardInput": "4\n9 9 9 9\n",
+                "outputs": [
+                  "Aceptado;Cantidad:1;Suma:9;Directo:1:9\nAceptado;Cantidad:2;Suma:18;Directo:2:18\nAceptado;Cantidad:3;Suma:27;Directo:3:27\nAceptado;Cantidad:4;Suma:36;Directo:4:36\n"
+                ],
+                "explanation": "Construir todas las fuentes seleccionadas y observar el mismo estado desde sus consumidores."
+              }
+            ]
+          }
+        }
+      },
+      {
+        "id": "block_0016_0009",
+        "block": {
+          "type": "code",
+          "language": "cpp",
+          "code": "#include \"registro.hpp\"\n#include <iostream>\n\nint main() {\n    int numeroDeValores = 0;\n    if (!(std::cin >> numeroDeValores) || numeroDeValores < 1 || numeroDeValores > 8) {\n        std::cout << \"Datos invalidos\\n\";\n        return 0;\n    }\n    for (int i = 0; i < numeroDeValores; ++i) {\n        int valor = 0;\n        if (!(std::cin >> valor)) {\n            std::cout << \"Datos invalidos\\n\";\n            return 0;\n        }\n        const bool aceptado = registro::agregar(valor);\n        const int cantidadLeida = registro::cantidadActual();\n        const int sumaLeida = registro::sumaActual();\n        std::cout << (aceptado ? \"Aceptado\" : \"Rechazo\")\n                  << \";Cantidad:\" << cantidadLeida << \";Suma:\" << sumaLeida\n                  << \";Directo:\" << registro::cantidad << ':' << registro::suma << '\\n';\n    }\n    return 0;\n}\n"
+        }
+      }
+    ]
   }
 }

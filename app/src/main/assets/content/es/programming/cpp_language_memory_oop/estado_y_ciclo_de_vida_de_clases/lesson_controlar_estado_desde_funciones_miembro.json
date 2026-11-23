@@ -24,7 +24,7 @@
         {
           "type": "code",
           "language": "cpp",
-          "code": "class Cupo {\npublic:\n    int usados() const;\n    bool reservar(int cantidad);\n    bool mover_a(Cupo& destino, int cantidad);\nprivate:\n    int usados_ = 0;\n};\nint Cupo::usados() const {\n    return usados_;\n}\n\nbool Cupo::reservar(int cantidad) {\n    if (cantidad <= 0 || cantidad > 6 - usados_) {\n        return false;\n    }\n    usados_ += cantidad;\n    return true;\n}\n"
+          "code": "class Cupo {\npublic:\n    int usados() const;\n    bool reservar(int cantidad);\n    bool mover_a(Cupo& destino, int cantidad);\nprivate:\n    int usados_ = 0;\n};\n\nint Cupo::usados() const {\n    return usados_;\n}\n\nbool Cupo::reservar(int cantidad) {\n    if (cantidad <= 0 || cantidad > 6 - usados_) {\n        return false;\n    }\n    usados_ += cantidad;\n    return true;\n}\n"
         },
         {
           "type": "paragraph",
@@ -111,7 +111,7 @@
           "id": "p3_u6l1_acceso_otro_objeto",
           "language": "cpp",
           "question": "¿Qué muestran las dos comparaciones?",
-          "code": "#include <iostream>\n\nclass Nivel {\npublic:\n    Nivel(int valor) : valor_{valor} {}\n    bool menor_que(const Nivel& otro) const {\n        return valor_ < otro.valor_;\n    }\nprivate:\n    int valor_;\n};\n\nint main() {\n    const Nivel a{2};\n    const Nivel b{5};\n    std::cout << a.menor_que(b) << ':' << b.menor_que(a);\n    return 0;\n}\n",
+          "code": "#include <iostream>\n\nclass Nivel {\npublic:\n    Nivel(int valor) : valor_{valor} {}\n    bool menor_que(const Nivel& otro) const {\n        return valor_ < otro.valor_;\n    }\nprivate:\n    int valor_;\n};\n\nint main() {\n    const Nivel a{2};\n    const Nivel b{5};\n\n    std::cout << a.menor_que(b) << ':' << b.menor_que(a);\n\n    return 0;\n}\n",
           "answers": [
             "1:0"
           ],
@@ -143,7 +143,7 @@
           "id": "p3_u6l1_const_y_otro_destino",
           "language": "cpp",
           "question": "¿Qué valores conserva cada objeto después de copiar_a?",
-          "code": "#include <iostream>\n\nclass Dato {\npublic:\n    Dato(int valor) : valor_{valor} {}\n    int valor() const { return valor_; }\n    void copiar_a(Dato& destino) const {\n        destino.valor_ = valor_;\n    }\nprivate:\n    int valor_;\n};\n\nint main() {\n    const Dato origen{4};\n    Dato destino{1};\n    origen.copiar_a(destino);\n    std::cout << origen.valor() << ':' << destino.valor();\n    return 0;\n}\n",
+          "code": "#include <iostream>\n\nclass Dato {\npublic:\n    Dato(int valor) : valor_{valor} {}\n    int valor() const { return valor_; }\n    void copiar_a(Dato& destino) const {\n        destino.valor_ = valor_;\n    }\nprivate:\n    int valor_;\n};\n\nint main() {\n    const Dato origen{4};\n    Dato destino{1};\n    origen.copiar_a(destino);\n    std::cout << origen.valor() << ':' << destino.valor();\n\n    return 0;\n}\n",
           "answers": [
             "4:4"
           ],
@@ -167,7 +167,7 @@
           "id": "p3_u6l1_consulta_por_valor",
           "language": "cpp",
           "question": "¿Qué muestra el objeto y qué muestra la variable copia?",
-          "code": "#include <iostream>\n\nclass Cuenta {\npublic:\n    int valor() const { return valor_; }\nprivate:\n    int valor_ = 3;\n};\n\nint main() {\n    Cuenta cuenta;\n    int copia = cuenta.valor();\n    copia = 9;\n    std::cout << cuenta.valor() << ':' << copia;\n    return 0;\n}\n",
+          "code": "#include <iostream>\n\nclass Cuenta {\npublic:\n    int valor() const { return valor_; }\nprivate:\n    int valor_ = 3;\n};\n\nint main() {\n    Cuenta cuenta;\n    int copia = cuenta.valor();\n\n    copia = 9;\n\n    std::cout << cuenta.valor() << ':' << copia;\n\n    return 0;\n}\n",
           "answers": [
             "3:9"
           ],
@@ -195,7 +195,7 @@
           "id": "p3_u6l1_referencia_que_expone",
           "language": "cpp",
           "question": "¿Qué muestra esta interfaz que permite saltarse el límite?",
-          "code": "#include <iostream>\n\nclass CuentaExpuesta {\npublic:\n    int valor() const { return valor_; }\n    int& acceso() { return valor_; }\nprivate:\n    int valor_ = 3;\n};\n\nint main() {\n    CuentaExpuesta cuenta;\n    int& acceso = cuenta.acceso();\n    acceso = 9;\n    std::cout << cuenta.valor();\n    return 0;\n}\n",
+          "code": "#include <iostream>\n\nclass CuentaExpuesta {\npublic:\n    int valor() const { return valor_; }\n    int& acceso() { return valor_; }\nprivate:\n    int valor_ = 3;\n};\n\nint main() {\n    CuentaExpuesta cuenta;\n    int& acceso = cuenta.acceso();\n\n    acceso = 9;\n\n    std::cout << cuenta.valor();\n\n    return 0;\n}\n",
           "answers": [
             "9"
           ],
@@ -235,7 +235,7 @@
           "id": "p3_u6l1_rechazo_con_cambio_previo",
           "language": "cpp",
           "question": "¿Qué muestra esta implementación que rechaza después de descontar?",
-          "code": "#include <iostream>\n\nclass Cupo {\npublic:\n    int usados() const;\n    bool reservar(int cantidad);\n    bool mover_a(Cupo& destino, int cantidad);\nprivate:\n    int usados_ = 0;\n};\nint Cupo::usados() const {\n    return usados_;\n}\n\nbool Cupo::reservar(int cantidad) {\n    if (cantidad <= 0 || cantidad > 6 - usados_) {\n        return false;\n    }\n    usados_ += cantidad;\n    return true;\n}\nbool Cupo::mover_a(Cupo& destino, int cantidad) {\n    if (this == &destino || cantidad <= 0 || cantidad > usados_) {\n        return false;\n    }\n    usados_ -= cantidad;\n    if (cantidad > 6 - destino.usados_) {\n        return false;\n    }\n    destino.usados_ += cantidad;\n    return true;\n}\n\nint main() {\n    Cupo a;\n    Cupo b;\n    a.reservar(4);\n    b.reservar(5);\n    const bool aceptado = a.mover_a(b, 2);\n    std::cout << aceptado << ':' << a.usados() << ':' << b.usados();\n    return 0;\n}\n",
+          "code": "#include <iostream>\n\nclass Cupo {\npublic:\n    int usados() const;\n    bool reservar(int cantidad);\n    bool mover_a(Cupo& destino, int cantidad);\nprivate:\n    int usados_ = 0;\n};\n\nint Cupo::usados() const {\n    return usados_;\n}\n\nbool Cupo::reservar(int cantidad) {\n    if (cantidad <= 0 || cantidad > 6 - usados_) {\n        return false;\n    }\n    usados_ += cantidad;\n    return true;\n}\n\nbool Cupo::mover_a(Cupo& destino, int cantidad) {\n    if (this == &destino || cantidad <= 0 || cantidad > usados_) {\n        return false;\n    }\n    usados_ -= cantidad;\n    if (cantidad > 6 - destino.usados_) {\n        return false;\n    }\n    destino.usados_ += cantidad;\n    return true;\n}\n\nint main() {\n    Cupo a;\n    Cupo b;\n    a.reservar(4);\n    b.reservar(5);\n    const bool aceptado = a.mover_a(b, 2);\n    std::cout << aceptado << ':' << a.usados() << ':' << b.usados();\n\n    return 0;\n}\n",
           "answers": [
             "0:2:5"
           ],
@@ -413,7 +413,7 @@
           "id": "p3_u6l1_movimiento_aceptado",
           "language": "cpp",
           "question": "¿Qué muestra la consulta entre dos objetos distintos?",
-          "code": "#include <iostream>\n\nclass Reservas {\npublic:\n    Reservas(int usados) : usados_{usados} {}\n    int usados() const { return usados_; }\n    bool admite(const Reservas& destino, int cantidad) const {\n        return this != &destino && cantidad > 0 && cantidad <= usados_\n               && cantidad <= 6 - destino.usados_;\n    }\nprivate:\n    int usados_;\n};\n\nint main() {\n    const Reservas a{4};\n    const Reservas b{1};\n    const bool permitido = a.admite(b, 2);\n    std::cout << permitido << ':' << a.usados() << ':' << b.usados();\n    return 0;\n}\n",
+          "code": "#include <iostream>\n\nclass Reservas {\npublic:\n    Reservas(int usados) : usados_{usados} {}\n    int usados() const { return usados_; }\n    bool admite(const Reservas& destino, int cantidad) const {\n        return this != &destino && cantidad > 0 && cantidad <= usados_\n               && cantidad <= 6 - destino.usados_;\n    }\nprivate:\n    int usados_;\n};\n\nint main() {\n    const Reservas a{4};\n    const Reservas b{1};\n    const bool permitido = a.admite(b, 2);\n\n    std::cout << permitido << ':' << a.usados() << ':' << b.usados();\n\n    return 0;\n}\n",
           "answers": [
             "1:4:1"
           ],
@@ -425,7 +425,7 @@
           "id": "p3_u6l1_movimiento_a_si_mismo",
           "language": "cpp",
           "question": "¿Qué muestra la consulta que usa a también como destino?",
-          "code": "#include <iostream>\n\nclass Reservas {\npublic:\n    Reservas(int usados) : usados_{usados} {}\n    int usados() const { return usados_; }\n    bool admite(const Reservas& destino, int cantidad) const {\n        return this != &destino && cantidad > 0 && cantidad <= usados_\n               && cantidad <= 6 - destino.usados_;\n    }\nprivate:\n    int usados_;\n};\n\nint main() {\n    const Reservas a{4};\n    const Reservas b{1};\n    const bool permitido = a.admite(a, 2);\n    std::cout << permitido << ':' << a.usados() << ':' << b.usados();\n    return 0;\n}\n",
+          "code": "#include <iostream>\n\nclass Reservas {\npublic:\n    Reservas(int usados) : usados_{usados} {}\n    int usados() const { return usados_; }\n    bool admite(const Reservas& destino, int cantidad) const {\n        return this != &destino && cantidad > 0 && cantidad <= usados_\n               && cantidad <= 6 - destino.usados_;\n    }\nprivate:\n    int usados_;\n};\n\nint main() {\n    const Reservas a{4};\n    const Reservas b{1};\n    const bool permitido = a.admite(a, 2);\n\n    std::cout << permitido << ':' << a.usados() << ':' << b.usados();\n\n    return 0;\n}\n",
           "answers": [
             "0:4:1"
           ],
@@ -444,7 +444,7 @@
           "type": "inline_fill_code",
           "id": "p3_u6l1_identificar_objeto",
           "question": "Completa la comparación: en el primer hueco escribe el nombre especial que señala el objeto de la llamada; en el segundo, obtén la dirección del parámetro otro con el operador de dirección. Usa esos nombres directamente, sin conversiones ni operaciones adicionales.",
-          "template": "#include <iostream>\n\nclass Sensor {\npublic:\n    bool mismo(const Sensor& otro) const {\n        return [] == [];\n    }\n};\n\nint main() {\n    Sensor a;\n    Sensor copia = a;\n    const Sensor& vista = a;\n    std::cout << a.mismo(vista) << ':' << a.mismo(copia);\n    return 0;\n}\n",
+          "template": "#include <iostream>\n\nclass Sensor {\npublic:\n    bool mismo(const Sensor& otro) const {\n        return [] == [];\n    }\n};\n\nint main() {\n    Sensor a;\n    Sensor copia = a;\n    const Sensor& vista = a;\n\n    std::cout << a.mismo(vista) << ':' << a.mismo(copia);\n\n    return 0;\n}\n",
           "answers": [
             "this",
             "&otro"
@@ -482,7 +482,7 @@
         {
           "type": "cpp_compiler",
           "language": "cpp",
-          "initialCode": "#include <iostream>\n\nclass Lectura {\npublic:\n    Lectura(int valor) : valor_{valor} {}\n    int valor() const { return valor_; }\n    void copiar_en(Lectura destino) const;\nprivate:\n    int valor_;\n};\n\nvoid Lectura::copiar_en(Lectura destino) const {\n    destino.valor_ = valor_;\n}\n\nint main() {\n    const Lectura origen{6};\n    Lectura destino{2};\n    origen.copiar_en(destino);\n    std::cout << origen.valor() << ':' << destino.valor();\n    return 0;\n}\n",
+          "initialCode": "#include <iostream>\n\nclass Lectura {\npublic:\n    Lectura(int valor) : valor_{valor} {}\n    int valor() const { return valor_; }\n    void copiar_en(Lectura destino) const;\nprivate:\n    int valor_;\n};\n\nvoid Lectura::copiar_en(Lectura destino) const {\n    destino.valor_ = valor_;\n}\n\nint main() {\n    const Lectura origen{6};\n    Lectura destino{2};\n    origen.copiar_en(destino);\n    std::cout << origen.valor() << ':' << destino.valor();\n\n    return 0;\n}\n",
           "initialStandardInput": "",
           "outputCheck": {
             "inputComparison": "tokens",
@@ -508,7 +508,7 @@
         {
           "type": "code",
           "language": "cpp",
-          "code": "#include <iostream>\n\nclass Lectura {\npublic:\n    Lectura(int valor) : valor_{valor} {}\n    int valor() const { return valor_; }\n    void copiar_en(Lectura& destino) const;\nprivate:\n    int valor_;\n};\n\nvoid Lectura::copiar_en(Lectura& destino) const {\n    destino.valor_ = valor_;\n}\n\nint main() {\n    const Lectura origen{6};\n    Lectura destino{2};\n    origen.copiar_en(destino);\n    std::cout << origen.valor() << ':' << destino.valor();\n    return 0;\n}\n"
+          "code": "#include <iostream>\n\nclass Lectura {\npublic:\n    Lectura(int valor) : valor_{valor} {}\n    int valor() const { return valor_; }\n    void copiar_en(Lectura& destino) const;\nprivate:\n    int valor_;\n};\n\nvoid Lectura::copiar_en(Lectura& destino) const {\n    destino.valor_ = valor_;\n}\n\nint main() {\n    const Lectura origen{6};\n    Lectura destino{2};\n    origen.copiar_en(destino);\n    std::cout << origen.valor() << ':' << destino.valor();\n\n    return 0;\n}\n"
         },
         {
           "type": "paragraph",
@@ -561,7 +561,7 @@
         {
           "type": "cpp_compiler",
           "language": "cpp",
-          "initialCode": "#include <iostream>\n\nclass Cupo {\npublic:\n    int usados() const;\n    bool reservar(int cantidad);\n    bool mover_a(Cupo& destino, int cantidad);\nprivate:\n    int usados_ = 0;\n};\nint Cupo::usados() const {\n    return usados_;\n}\n\nbool Cupo::reservar(int cantidad) {\n    if (cantidad <= 0 || cantidad > 6 - usados_) {\n        return false;\n    }\n    usados_ += cantidad;\n    return true;\n}\n\nbool Cupo::mover_a(Cupo& destino, int cantidad) {\n    // Completa la comprobación y los dos cambios.\n    // El inicial no mueve reservas y devuelve rechazo.\n    (void)destino;\n    (void)cantidad;\n    return false;\n}\n\nint main() {\n    int cantidadOrdenes = 0;\n    if (!(std::cin >> cantidadOrdenes) || cantidadOrdenes < 1 || cantidadOrdenes > 12) {\n        return 1;\n    }\n    Cupo a;\n    Cupo b;\n    a.reservar(4);\n    b.reservar(1);\n    std::cout << \"Inicio:\" << a.usados() << ':' << b.usados() << '\\n';\n    for (int i = 0; i < cantidadOrdenes; ++i) {\n        int operacion = 0;\n        int seleccion = 0;\n        int cantidad = 0;\n        if (!(std::cin >> operacion >> seleccion >> cantidad)) {\n            return 1;\n        }\n        bool aceptado = false;\n        if (operacion == 1 && (seleccion == 0 || seleccion == 1)) {\n            Cupo& elegido = seleccion == 0 ? a : b;\n            aceptado = elegido.reservar(cantidad);\n        } else if (operacion == 2) {\n            if (seleccion == 0) {\n                aceptado = a.mover_a(b, cantidad);\n            } else if (seleccion == 1) {\n                aceptado = b.mover_a(a, cantidad);\n            } else if (seleccion == 2) {\n                aceptado = a.mover_a(a, cantidad);\n            } else if (seleccion == 3) {\n                aceptado = b.mover_a(b, cantidad);\n            }\n        }\n        std::cout << \"Resultado:\" << aceptado << \";A:\" << a.usados()\n                  << \";B:\" << b.usados() << '\\n';\n    }\n    std::cout << \"Total:\" << a.usados() + b.usados();\n    return 0;\n}\n",
+          "initialCode": "#include <iostream>\n\nclass Cupo {\npublic:\n    int usados() const;\n    bool reservar(int cantidad);\n    bool mover_a(Cupo& destino, int cantidad);\nprivate:\n    int usados_ = 0;\n};\n\nint Cupo::usados() const {\n    return usados_;\n}\n\nbool Cupo::reservar(int cantidad) {\n    if (cantidad <= 0 || cantidad > 6 - usados_) {\n        return false;\n    }\n    usados_ += cantidad;\n    return true;\n}\n\nbool Cupo::mover_a(Cupo& destino, int cantidad) {\n    // Completa la comprobación y los dos cambios.\n    // El inicial no mueve reservas y devuelve rechazo.\n    (void)destino;\n    (void)cantidad;\n    return false;\n}\n\nint main() {\n    int cantidadOrdenes = 0;\n    if (!(std::cin >> cantidadOrdenes) || cantidadOrdenes < 1 || cantidadOrdenes > 12) {\n        return 1;\n    }\n    Cupo a;\n    Cupo b;\n    a.reservar(4);\n    b.reservar(1);\n    std::cout << \"Inicio:\" << a.usados() << ':' << b.usados() << '\\n';\n    for (int i = 0; i < cantidadOrdenes; ++i) {\n        int operacion = 0;\n        int seleccion = 0;\n        int cantidad = 0;\n\n        if (!(std::cin >> operacion >> seleccion >> cantidad)) {\n            return 1;\n        }\n        bool aceptado = false;\n        if (operacion == 1 && (seleccion == 0 || seleccion == 1)) {\n            Cupo& elegido = seleccion == 0 ? a : b;\n            aceptado = elegido.reservar(cantidad);\n        } else if (operacion == 2) {\n            if (seleccion == 0) {\n                aceptado = a.mover_a(b, cantidad);\n            } else if (seleccion == 1) {\n                aceptado = b.mover_a(a, cantidad);\n            } else if (seleccion == 2) {\n                aceptado = a.mover_a(a, cantidad);\n            } else if (seleccion == 3) {\n                aceptado = b.mover_a(b, cantidad);\n            }\n        }\n        std::cout << \"Resultado:\" << aceptado << \";A:\" << a.usados()\n                  << \";B:\" << b.usados() << '\\n';\n    }\n    std::cout << \"Total:\" << a.usados() + b.usados();\n\n    return 0;\n}\n",
           "initialStandardInput": "12\n2 0 1\n1 1 1\n2 0 1\n1 1 2\n2 0 1\n2 2 1\n2 1 6\n2 1 4\n2 0 0\n2 0 -1\n2 0 4\n2 0 3\n",
           "outputCheck": {
             "inputComparison": "tokens",
@@ -687,7 +687,7 @@
         {
           "type": "code",
           "language": "cpp",
-          "code": "#include <iostream>\n\nclass Cupo {\npublic:\n    int usados() const;\n    bool reservar(int cantidad);\n    bool mover_a(Cupo& destino, int cantidad);\nprivate:\n    int usados_ = 0;\n};\nint Cupo::usados() const {\n    return usados_;\n}\n\nbool Cupo::reservar(int cantidad) {\n    if (cantidad <= 0 || cantidad > 6 - usados_) {\n        return false;\n    }\n    usados_ += cantidad;\n    return true;\n}\n\nbool Cupo::mover_a(Cupo& destino, int cantidad) {\n    if (this == &destino || cantidad <= 0 || cantidad > usados_\n        || cantidad > 6 - destino.usados_) {\n        return false;\n    }\n    usados_ -= cantidad;\n    destino.usados_ += cantidad;\n    return true;\n}\n\nint main() {\n    int cantidadOrdenes = 0;\n    if (!(std::cin >> cantidadOrdenes) || cantidadOrdenes < 1 || cantidadOrdenes > 12) {\n        return 1;\n    }\n    Cupo a;\n    Cupo b;\n    a.reservar(4);\n    b.reservar(1);\n    std::cout << \"Inicio:\" << a.usados() << ':' << b.usados() << '\\n';\n    for (int i = 0; i < cantidadOrdenes; ++i) {\n        int operacion = 0;\n        int seleccion = 0;\n        int cantidad = 0;\n        if (!(std::cin >> operacion >> seleccion >> cantidad)) {\n            return 1;\n        }\n        bool aceptado = false;\n        if (operacion == 1 && (seleccion == 0 || seleccion == 1)) {\n            Cupo& elegido = seleccion == 0 ? a : b;\n            aceptado = elegido.reservar(cantidad);\n        } else if (operacion == 2) {\n            if (seleccion == 0) {\n                aceptado = a.mover_a(b, cantidad);\n            } else if (seleccion == 1) {\n                aceptado = b.mover_a(a, cantidad);\n            } else if (seleccion == 2) {\n                aceptado = a.mover_a(a, cantidad);\n            } else if (seleccion == 3) {\n                aceptado = b.mover_a(b, cantidad);\n            }\n        }\n        std::cout << \"Resultado:\" << aceptado << \";A:\" << a.usados()\n                  << \";B:\" << b.usados() << '\\n';\n    }\n    std::cout << \"Total:\" << a.usados() + b.usados();\n    return 0;\n}\n"
+          "code": "#include <iostream>\n\nclass Cupo {\npublic:\n    int usados() const;\n    bool reservar(int cantidad);\n    bool mover_a(Cupo& destino, int cantidad);\nprivate:\n    int usados_ = 0;\n};\n\nint Cupo::usados() const {\n    return usados_;\n}\n\nbool Cupo::reservar(int cantidad) {\n    if (cantidad <= 0 || cantidad > 6 - usados_) {\n        return false;\n    }\n    usados_ += cantidad;\n    return true;\n}\n\nbool Cupo::mover_a(Cupo& destino, int cantidad) {\n    if (this == &destino || cantidad <= 0 || cantidad > usados_\n        || cantidad > 6 - destino.usados_) {\n        return false;\n    }\n    usados_ -= cantidad;\n    destino.usados_ += cantidad;\n    return true;\n}\n\nint main() {\n    int cantidadOrdenes = 0;\n    if (!(std::cin >> cantidadOrdenes) || cantidadOrdenes < 1 || cantidadOrdenes > 12) {\n        return 1;\n    }\n    Cupo a;\n    Cupo b;\n    a.reservar(4);\n    b.reservar(1);\n    std::cout << \"Inicio:\" << a.usados() << ':' << b.usados() << '\\n';\n    for (int i = 0; i < cantidadOrdenes; ++i) {\n        int operacion = 0;\n        int seleccion = 0;\n        int cantidad = 0;\n\n        if (!(std::cin >> operacion >> seleccion >> cantidad)) {\n            return 1;\n        }\n        bool aceptado = false;\n        if (operacion == 1 && (seleccion == 0 || seleccion == 1)) {\n            Cupo& elegido = seleccion == 0 ? a : b;\n            aceptado = elegido.reservar(cantidad);\n        } else if (operacion == 2) {\n            if (seleccion == 0) {\n                aceptado = a.mover_a(b, cantidad);\n            } else if (seleccion == 1) {\n                aceptado = b.mover_a(a, cantidad);\n            } else if (seleccion == 2) {\n                aceptado = a.mover_a(a, cantidad);\n            } else if (seleccion == 3) {\n                aceptado = b.mover_a(b, cantidad);\n            }\n        }\n        std::cout << \"Resultado:\" << aceptado << \";A:\" << a.usados()\n                  << \";B:\" << b.usados() << '\\n';\n    }\n    std::cout << \"Total:\" << a.usados() + b.usados();\n\n    return 0;\n}\n"
         },
         {
           "type": "paragraph",
@@ -1830,6 +1830,285 @@
       }
     },
     "additions": [],
-    "editorial": []
+    "editorial": [
+      {
+        "id": "block_0000_0004",
+        "beforeSha256": "c5792628647f9bcb7ee67a15d36fdf7f4ff5e0fba00b8d2bf7bce45116f81989",
+        "afterSha256": "5575d37916c55f5c5f333c2fbffe4949b07a3c913a802272984e857a21169153"
+      },
+      {
+        "id": "block_0003_0002",
+        "beforeSha256": "33c95705f0ba6e79f653431bc5572df91eb7eafe70850b7196fdbd54fb9c74da",
+        "afterSha256": "0d863ac54e743ca93a8b833dcdc5b39c89a34005a6fd8a5f677d1dcc6b4820b0"
+      },
+      {
+        "id": "block_0004_0003",
+        "beforeSha256": "7a59a8959a6481174c22c3d34577f63891f2dbc2d8462add2aec1a730c143315",
+        "afterSha256": "8cb169449c55abe88cecb6c51e087794d176ba470a71fa4c946e54a9e594412b"
+      },
+      {
+        "id": "block_0005_0002",
+        "beforeSha256": "63f66d0046994b896548a919a5033be7c975ee82e6ab6c5efe239a150e351272",
+        "afterSha256": "59e6f1d1a95b229a0fe2699538bd7ba0ef238a64b7367c4e32eca71ab15f3fae"
+      },
+      {
+        "id": "block_0006_0002",
+        "beforeSha256": "76436428eac7fa6052b1b3d76bf035095bf3c2bd58ce3df130887a84e2557859",
+        "afterSha256": "003e983f149c86266acdc0fa16c489d793cda2e2867ba9acae655407c3f8c326"
+      },
+      {
+        "id": "block_0007_0003",
+        "beforeSha256": "8b721e39e54c0556f0b1420a76fcd2dfefb21eb9255f2df5cbffed6841b5ec54",
+        "afterSha256": "0fa23754851f2a036c50aa6880924ef6db3d9eb11d5824ae34f307ce3e74a90b"
+      },
+      {
+        "id": "block_0010_0002",
+        "beforeSha256": "f53afa64a8bbc97abb7c87dd320d893ce3dc5dd1534d7683dc14a51c875451e4",
+        "afterSha256": "e94544fd9bc731853da6643049a00b37fbcf13eab7a5b65fb136b93a19f9283b"
+      },
+      {
+        "id": "block_0010_0003",
+        "beforeSha256": "e654adbe6433d8aece5cf479ee87b1b5b56339589fe8e99db903031a756e1dea",
+        "afterSha256": "f16a89891a571424b9ceada89958f39e3bf39a5f1a3cb2d8dd8cc20876ec5779"
+      },
+      {
+        "id": "block_0011_0001",
+        "beforeSha256": "68e2b61d2f90b28a5f3494ae0af65db22a213ab82732b3d529ae916818ca6bf1",
+        "afterSha256": "88a300e804801ca7b53c71b755377fefcd74f410dfa02964112c64777eca584a"
+      },
+      {
+        "id": "block_0012_0003",
+        "beforeSha256": "66c9f531e94a6d4ed813ea1e16c461eeaeb8c8367e650d0c74d008853da9374f",
+        "afterSha256": "54327fde8e5d781ec0c990d5ef18be2f012131a3c6024379a82d2e840c69f994"
+      },
+      {
+        "id": "block_0013_0001",
+        "beforeSha256": "73f0578745689350ff5c46164c160f93b1285d4c6fdae439a050098239892d3e",
+        "afterSha256": "6e5c27c572cb0801a6a0daeeaf3bf176fb9529fea53cd5410297eef293525e7b"
+      },
+      {
+        "id": "block_0015_0002",
+        "beforeSha256": "fbcd78ae0d5ac724018873972104f6092b3a4189c502ccc7567688639452c313",
+        "afterSha256": "a46c16af68556a837d4dea2d53ae8b9a8c3e978602f9fb384a1d2977dd1e903c"
+      },
+      {
+        "id": "block_0017_0001",
+        "beforeSha256": "54dc476cb5c0ab0a8e4161a02f57315b116226d1315d910a67970de605d6d104",
+        "afterSha256": "af7ab0cbecde0c086b22ea530a3c7dff6cc789c81c91bc6225644435c74f2367"
+      }
+    ],
+    "sourceFormatRevisions": [
+      {
+        "id": "block_0000_0004",
+        "block": {
+          "type": "code",
+          "language": "cpp",
+          "code": "class Cupo {\npublic:\n    int usados() const;\n    bool reservar(int cantidad);\n    bool mover_a(Cupo& destino, int cantidad);\nprivate:\n    int usados_ = 0;\n};\nint Cupo::usados() const {\n    return usados_;\n}\n\nbool Cupo::reservar(int cantidad) {\n    if (cantidad <= 0 || cantidad > 6 - usados_) {\n        return false;\n    }\n    usados_ += cantidad;\n    return true;\n}\n"
+        }
+      },
+      {
+        "id": "block_0003_0002",
+        "block": {
+          "type": "output_prediction",
+          "id": "p3_u6l1_acceso_otro_objeto",
+          "language": "cpp",
+          "question": "¿Qué muestran las dos comparaciones?",
+          "code": "#include <iostream>\n\nclass Nivel {\npublic:\n    Nivel(int valor) : valor_{valor} {}\n    bool menor_que(const Nivel& otro) const {\n        return valor_ < otro.valor_;\n    }\nprivate:\n    int valor_;\n};\n\nint main() {\n    const Nivel a{2};\n    const Nivel b{5};\n    std::cout << a.menor_que(b) << ':' << b.menor_que(a);\n    return 0;\n}\n",
+          "answers": [
+            "1:0"
+          ],
+          "outputComparison": "exact",
+          "explanation": "La primera compara dos con cinco y devuelve true. La segunda compara cinco con dos y devuelve false. Cada llamada consulta los dos objetos, que permanecen distintos y constantes."
+        }
+      },
+      {
+        "id": "block_0004_0003",
+        "block": {
+          "type": "output_prediction",
+          "id": "p3_u6l1_const_y_otro_destino",
+          "language": "cpp",
+          "question": "¿Qué valores conserva cada objeto después de copiar_a?",
+          "code": "#include <iostream>\n\nclass Dato {\npublic:\n    Dato(int valor) : valor_{valor} {}\n    int valor() const { return valor_; }\n    void copiar_a(Dato& destino) const {\n        destino.valor_ = valor_;\n    }\nprivate:\n    int valor_;\n};\n\nint main() {\n    const Dato origen{4};\n    Dato destino{1};\n    origen.copiar_a(destino);\n    std::cout << origen.valor() << ':' << destino.valor();\n    return 0;\n}\n",
+          "answers": [
+            "4:4"
+          ],
+          "outputComparison": "exact",
+          "explanation": "origen conserva cuatro. destino cambia de uno a cuatro mediante su referencia modificable. El método es const respecto del acceso al objeto origen, no respecto de cualquier argumento."
+        }
+      },
+      {
+        "id": "block_0005_0002",
+        "block": {
+          "type": "output_prediction",
+          "id": "p3_u6l1_consulta_por_valor",
+          "language": "cpp",
+          "question": "¿Qué muestra el objeto y qué muestra la variable copia?",
+          "code": "#include <iostream>\n\nclass Cuenta {\npublic:\n    int valor() const { return valor_; }\nprivate:\n    int valor_ = 3;\n};\n\nint main() {\n    Cuenta cuenta;\n    int copia = cuenta.valor();\n    copia = 9;\n    std::cout << cuenta.valor() << ':' << copia;\n    return 0;\n}\n",
+          "answers": [
+            "3:9"
+          ],
+          "outputComparison": "exact",
+          "explanation": "cuenta conserva su miembro con tres. copia es otro int; asignarle nueve sólo modifica esa variable."
+        }
+      },
+      {
+        "id": "block_0006_0002",
+        "block": {
+          "type": "output_prediction",
+          "id": "p3_u6l1_referencia_que_expone",
+          "language": "cpp",
+          "question": "¿Qué muestra esta interfaz que permite saltarse el límite?",
+          "code": "#include <iostream>\n\nclass CuentaExpuesta {\npublic:\n    int valor() const { return valor_; }\n    int& acceso() { return valor_; }\nprivate:\n    int valor_ = 3;\n};\n\nint main() {\n    CuentaExpuesta cuenta;\n    int& acceso = cuenta.acceso();\n    acceso = 9;\n    std::cout << cuenta.valor();\n    return 0;\n}\n",
+          "answers": [
+            "9"
+          ],
+          "outputComparison": "exact",
+          "explanation": "acceso se refiere al miembro valor_ que sigue vivo. La escritura guarda nueve en ese miembro. private restringe el uso de su nombre; no impide una escritura que la propia interfaz permitió mediante una referencia."
+        }
+      },
+      {
+        "id": "block_0007_0003",
+        "block": {
+          "type": "output_prediction",
+          "id": "p3_u6l1_rechazo_con_cambio_previo",
+          "language": "cpp",
+          "question": "¿Qué muestra esta implementación que rechaza después de descontar?",
+          "code": "#include <iostream>\n\nclass Cupo {\npublic:\n    int usados() const;\n    bool reservar(int cantidad);\n    bool mover_a(Cupo& destino, int cantidad);\nprivate:\n    int usados_ = 0;\n};\nint Cupo::usados() const {\n    return usados_;\n}\n\nbool Cupo::reservar(int cantidad) {\n    if (cantidad <= 0 || cantidad > 6 - usados_) {\n        return false;\n    }\n    usados_ += cantidad;\n    return true;\n}\nbool Cupo::mover_a(Cupo& destino, int cantidad) {\n    if (this == &destino || cantidad <= 0 || cantidad > usados_) {\n        return false;\n    }\n    usados_ -= cantidad;\n    if (cantidad > 6 - destino.usados_) {\n        return false;\n    }\n    destino.usados_ += cantidad;\n    return true;\n}\n\nint main() {\n    Cupo a;\n    Cupo b;\n    a.reservar(4);\n    b.reservar(5);\n    const bool aceptado = a.mover_a(b, 2);\n    std::cout << aceptado << ':' << a.usados() << ':' << b.usados();\n    return 0;\n}\n",
+          "answers": [
+            "0:2:5"
+          ],
+          "outputComparison": "exact",
+          "explanation": "Devuelve false, pero a ya quedó en dos. b conserva cinco. Se perdieron dos reservas: el rechazo no conservó los estados anteriores cuatro y cinco."
+        }
+      },
+      {
+        "id": "block_0010_0002",
+        "block": {
+          "type": "output_prediction",
+          "id": "p3_u6l1_movimiento_aceptado",
+          "language": "cpp",
+          "question": "¿Qué muestra la consulta entre dos objetos distintos?",
+          "code": "#include <iostream>\n\nclass Reservas {\npublic:\n    Reservas(int usados) : usados_{usados} {}\n    int usados() const { return usados_; }\n    bool admite(const Reservas& destino, int cantidad) const {\n        return this != &destino && cantidad > 0 && cantidad <= usados_\n               && cantidad <= 6 - destino.usados_;\n    }\nprivate:\n    int usados_;\n};\n\nint main() {\n    const Reservas a{4};\n    const Reservas b{1};\n    const bool permitido = a.admite(b, 2);\n    std::cout << permitido << ':' << a.usados() << ':' << b.usados();\n    return 0;\n}\n",
+          "answers": [
+            "1:4:1"
+          ],
+          "outputComparison": "exact",
+          "explanation": "Se permite mover dos, pero la consulta no ejecuta el movimiento. Los estados siguen siendo cuatro y uno. Ambos objetos son constantes y sólo se consultan."
+        }
+      },
+      {
+        "id": "block_0010_0003",
+        "block": {
+          "type": "output_prediction",
+          "id": "p3_u6l1_movimiento_a_si_mismo",
+          "language": "cpp",
+          "question": "¿Qué muestra la consulta que usa a también como destino?",
+          "code": "#include <iostream>\n\nclass Reservas {\npublic:\n    Reservas(int usados) : usados_{usados} {}\n    int usados() const { return usados_; }\n    bool admite(const Reservas& destino, int cantidad) const {\n        return this != &destino && cantidad > 0 && cantidad <= usados_\n               && cantidad <= 6 - destino.usados_;\n    }\nprivate:\n    int usados_;\n};\n\nint main() {\n    const Reservas a{4};\n    const Reservas b{1};\n    const bool permitido = a.admite(a, 2);\n    std::cout << permitido << ':' << a.usados() << ':' << b.usados();\n    return 0;\n}\n",
+          "answers": [
+            "0:4:1"
+          ],
+          "outputComparison": "exact",
+          "explanation": "this != &destino es falso porque se trata del mismo objeto. La consulta devuelve false y, como en la anterior, conserva cuatro y uno."
+        }
+      },
+      {
+        "id": "block_0011_0001",
+        "block": {
+          "type": "inline_fill_code",
+          "id": "p3_u6l1_identificar_objeto",
+          "question": "Completa la comparación: en el primer hueco escribe el nombre especial que señala el objeto de la llamada; en el segundo, obtén la dirección del parámetro otro con el operador de dirección. Usa esos nombres directamente, sin conversiones ni operaciones adicionales.",
+          "template": "#include <iostream>\n\nclass Sensor {\npublic:\n    bool mismo(const Sensor& otro) const {\n        return [] == [];\n    }\n};\n\nint main() {\n    Sensor a;\n    Sensor copia = a;\n    const Sensor& vista = a;\n    std::cout << a.mismo(vista) << ':' << a.mismo(copia);\n    return 0;\n}\n",
+          "answers": [
+            "this",
+            "&otro"
+          ],
+          "answerAlternatives": [
+            [
+              "this",
+              "(this)"
+            ],
+            [
+              "&otro",
+              "& otro",
+              "(&otro)",
+              "(& otro)"
+            ]
+          ],
+          "explanation": "this señala a a en ambas llamadas. vista se refiere a a, pero copia es otro Sensor. Por eso los resultados son uno y cero. Comparar direcciones no necesita comparar miembros de datos."
+        }
+      },
+      {
+        "id": "block_0012_0003",
+        "block": {
+          "type": "cpp_compiler",
+          "language": "cpp",
+          "initialCode": "#include <iostream>\n\nclass Lectura {\npublic:\n    Lectura(int valor) : valor_{valor} {}\n    int valor() const { return valor_; }\n    void copiar_en(Lectura destino) const;\nprivate:\n    int valor_;\n};\n\nvoid Lectura::copiar_en(Lectura destino) const {\n    destino.valor_ = valor_;\n}\n\nint main() {\n    const Lectura origen{6};\n    Lectura destino{2};\n    origen.copiar_en(destino);\n    std::cout << origen.valor() << ':' << destino.valor();\n    return 0;\n}\n",
+          "initialStandardInput": "",
+          "outputCheck": {
+            "inputComparison": "tokens",
+            "cases": [
+              {
+                "standardInput": "",
+                "outputs": [
+                  "6:6"
+                ],
+                "explanation": "El destino debe ser el objeto del llamador, no una copia. Revisa el parámetro de la declaración y de la definición; el const posterior permite consultar el origen constante."
+              }
+            ]
+          }
+        }
+      },
+      {
+        "id": "block_0013_0001",
+        "block": {
+          "type": "code",
+          "language": "cpp",
+          "code": "#include <iostream>\n\nclass Lectura {\npublic:\n    Lectura(int valor) : valor_{valor} {}\n    int valor() const { return valor_; }\n    void copiar_en(Lectura& destino) const;\nprivate:\n    int valor_;\n};\n\nvoid Lectura::copiar_en(Lectura& destino) const {\n    destino.valor_ = valor_;\n}\n\nint main() {\n    const Lectura origen{6};\n    Lectura destino{2};\n    origen.copiar_en(destino);\n    std::cout << origen.valor() << ':' << destino.valor();\n    return 0;\n}\n"
+        }
+      },
+      {
+        "id": "block_0015_0002",
+        "block": {
+          "type": "cpp_compiler",
+          "language": "cpp",
+          "initialCode": "#include <iostream>\n\nclass Cupo {\npublic:\n    int usados() const;\n    bool reservar(int cantidad);\n    bool mover_a(Cupo& destino, int cantidad);\nprivate:\n    int usados_ = 0;\n};\nint Cupo::usados() const {\n    return usados_;\n}\n\nbool Cupo::reservar(int cantidad) {\n    if (cantidad <= 0 || cantidad > 6 - usados_) {\n        return false;\n    }\n    usados_ += cantidad;\n    return true;\n}\n\nbool Cupo::mover_a(Cupo& destino, int cantidad) {\n    // Completa la comprobación y los dos cambios.\n    // El inicial no mueve reservas y devuelve rechazo.\n    (void)destino;\n    (void)cantidad;\n    return false;\n}\n\nint main() {\n    int cantidadOrdenes = 0;\n    if (!(std::cin >> cantidadOrdenes) || cantidadOrdenes < 1 || cantidadOrdenes > 12) {\n        return 1;\n    }\n    Cupo a;\n    Cupo b;\n    a.reservar(4);\n    b.reservar(1);\n    std::cout << \"Inicio:\" << a.usados() << ':' << b.usados() << '\\n';\n    for (int i = 0; i < cantidadOrdenes; ++i) {\n        int operacion = 0;\n        int seleccion = 0;\n        int cantidad = 0;\n        if (!(std::cin >> operacion >> seleccion >> cantidad)) {\n            return 1;\n        }\n        bool aceptado = false;\n        if (operacion == 1 && (seleccion == 0 || seleccion == 1)) {\n            Cupo& elegido = seleccion == 0 ? a : b;\n            aceptado = elegido.reservar(cantidad);\n        } else if (operacion == 2) {\n            if (seleccion == 0) {\n                aceptado = a.mover_a(b, cantidad);\n            } else if (seleccion == 1) {\n                aceptado = b.mover_a(a, cantidad);\n            } else if (seleccion == 2) {\n                aceptado = a.mover_a(a, cantidad);\n            } else if (seleccion == 3) {\n                aceptado = b.mover_a(b, cantidad);\n            }\n        }\n        std::cout << \"Resultado:\" << aceptado << \";A:\" << a.usados()\n                  << \";B:\" << b.usados() << '\\n';\n    }\n    std::cout << \"Total:\" << a.usados() + b.usados();\n    return 0;\n}\n",
+          "initialStandardInput": "12\n2 0 1\n1 1 1\n2 0 1\n1 1 2\n2 0 1\n2 2 1\n2 1 6\n2 1 4\n2 0 0\n2 0 -1\n2 0 4\n2 0 3\n",
+          "outputCheck": {
+            "inputComparison": "tokens",
+            "cases": [
+              {
+                "standardInput": "12\n2 0 1\n1 1 1\n2 0 1\n1 1 2\n2 0 1\n2 2 1\n2 1 6\n2 1 4\n2 0 0\n2 0 -1\n2 0 4\n2 0 3\n",
+                "outputs": [
+                  "Inicio:4:1\nResultado:1;A:3;B:2\nResultado:1;A:3;B:3\nResultado:1;A:2;B:4\nResultado:1;A:2;B:6\nResultado:0;A:2;B:6\nResultado:0;A:2;B:6\nResultado:0;A:2;B:6\nResultado:1;A:6;B:2\nResultado:0;A:6;B:2\nResultado:0;A:6;B:2\nResultado:1;A:2;B:6\nResultado:0;A:2;B:6\nTotal:8"
+                ],
+                "explanation": "Comprueba todas las condiciones antes de cambiar ambos miembros. Un destino lleno y un autoenvío deben conservar los dos estados anteriores."
+              },
+              {
+                "standardInput": "7\n2 0 4\n2 0 1\n2 1 5\n2 1 1\n2 3 1\n2 0 5\n2 1 6\n",
+                "outputs": [
+                  "Inicio:4:1\nResultado:1;A:0;B:5\nResultado:0;A:0;B:5\nResultado:1;A:5;B:0\nResultado:0;A:5;B:0\nResultado:0;A:5;B:0\nResultado:1;A:0;B:5\nResultado:0;A:0;B:5\nTotal:5"
+                ],
+                "explanation": "Comprueba todas las condiciones antes de cambiar ambos miembros. Un destino lleno y un autoenvío deben conservar los dos estados anteriores."
+              },
+              {
+                "standardInput": "6\n2 0 -2147483648\n2 1 2147483647\n1 0 2147483647\n1 1 -2147483648\n1 0 2\n2 0 5\n",
+                "outputs": [
+                  "Inicio:4:1\nResultado:0;A:4;B:1\nResultado:0;A:4;B:1\nResultado:0;A:4;B:1\nResultado:0;A:4;B:1\nResultado:1;A:6;B:1\nResultado:1;A:1;B:6\nTotal:7"
+                ],
+                "explanation": "Comprueba todas las condiciones antes de cambiar ambos miembros. Un destino lleno y un autoenvío deben conservar los dos estados anteriores."
+              }
+            ]
+          }
+        }
+      },
+      {
+        "id": "block_0017_0001",
+        "block": {
+          "type": "code",
+          "language": "cpp",
+          "code": "#include <iostream>\n\nclass Cupo {\npublic:\n    int usados() const;\n    bool reservar(int cantidad);\n    bool mover_a(Cupo& destino, int cantidad);\nprivate:\n    int usados_ = 0;\n};\nint Cupo::usados() const {\n    return usados_;\n}\n\nbool Cupo::reservar(int cantidad) {\n    if (cantidad <= 0 || cantidad > 6 - usados_) {\n        return false;\n    }\n    usados_ += cantidad;\n    return true;\n}\n\nbool Cupo::mover_a(Cupo& destino, int cantidad) {\n    if (this == &destino || cantidad <= 0 || cantidad > usados_\n        || cantidad > 6 - destino.usados_) {\n        return false;\n    }\n    usados_ -= cantidad;\n    destino.usados_ += cantidad;\n    return true;\n}\n\nint main() {\n    int cantidadOrdenes = 0;\n    if (!(std::cin >> cantidadOrdenes) || cantidadOrdenes < 1 || cantidadOrdenes > 12) {\n        return 1;\n    }\n    Cupo a;\n    Cupo b;\n    a.reservar(4);\n    b.reservar(1);\n    std::cout << \"Inicio:\" << a.usados() << ':' << b.usados() << '\\n';\n    for (int i = 0; i < cantidadOrdenes; ++i) {\n        int operacion = 0;\n        int seleccion = 0;\n        int cantidad = 0;\n        if (!(std::cin >> operacion >> seleccion >> cantidad)) {\n            return 1;\n        }\n        bool aceptado = false;\n        if (operacion == 1 && (seleccion == 0 || seleccion == 1)) {\n            Cupo& elegido = seleccion == 0 ? a : b;\n            aceptado = elegido.reservar(cantidad);\n        } else if (operacion == 2) {\n            if (seleccion == 0) {\n                aceptado = a.mover_a(b, cantidad);\n            } else if (seleccion == 1) {\n                aceptado = b.mover_a(a, cantidad);\n            } else if (seleccion == 2) {\n                aceptado = a.mover_a(a, cantidad);\n            } else if (seleccion == 3) {\n                aceptado = b.mover_a(b, cantidad);\n            }\n        }\n        std::cout << \"Resultado:\" << aceptado << \";A:\" << a.usados()\n                  << \";B:\" << b.usados() << '\\n';\n    }\n    std::cout << \"Total:\" << a.usados() + b.usados();\n    return 0;\n}\n"
+        }
+      }
+    ]
   }
 }

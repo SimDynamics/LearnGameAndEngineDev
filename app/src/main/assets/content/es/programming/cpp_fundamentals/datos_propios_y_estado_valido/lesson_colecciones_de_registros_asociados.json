@@ -25,7 +25,7 @@
         {
           "type": "code",
           "language": "cpp",
-          "code": "#include <iostream>\n#include <string>\n#include <vector>\n\nstruct Lectura {\n    std::string sitio;\n    int personas;\n};\n\nint main() {\n    std::vector<Lectura> registros{{\"Sur\", 3}, {\"Norte\", 7}};\n\n    for (const auto& registro : registros) {\n        std::cout << registro.sitio << \":\" << registro.personas << \";\";\n    }\n    return 0;\n}\n"
+          "code": "#include <iostream>\n#include <string>\n#include <vector>\n\nstruct Lectura {\n    std::string sitio;\n    int personas;\n};\n\nint main() {\n    std::vector<Lectura> registros{{\"Sur\", 3}, {\"Norte\", 7}};\n\n    for (const auto& registro : registros) {\n        std::cout << registro.sitio << \":\" << registro.personas << \";\";\n    }\n\n    return 0;\n}\n"
         },
         {
           "type": "paragraph",
@@ -53,7 +53,7 @@
           "type": "output_prediction",
           "language": "cpp",
           "question": "Este programa cambia sólo el orden de los sitios. Predice su salida real, aunque el informe resultante asocie mal las cantidades.",
-          "code": "#include <iostream>\n#include <string>\n#include <vector>\n#include <algorithm>\n#include <cstddef>\n\nint main() {\n    std::vector<std::string> sitios{\"Sur\", \"Norte\"};\n    std::vector<int> cantidades{3, 7};\n    std::sort(sitios.begin(), sitios.end());\n    for (std::size_t i = 0; i < sitios.size(); ++i) {\n        std::cout << sitios[i] << \":\" << cantidades[i] << \";\";\n    }\n    return 0;\n}\n",
+          "code": "#include <iostream>\n#include <string>\n#include <vector>\n#include <algorithm>\n#include <cstddef>\n\nint main() {\n    std::vector<std::string> sitios{\"Sur\", \"Norte\"};\n    std::vector<int> cantidades{3, 7};\n    std::sort(sitios.begin(), sitios.end());\n    for (std::size_t i = 0; i < sitios.size(); ++i) {\n        std::cout << sitios[i] << \":\" << cantidades[i] << \";\";\n    }\n\n    return 0;\n}\n",
           "answers": [
             "Norte:3;Sur:7;"
           ],
@@ -96,7 +96,7 @@
           "type": "output_prediction",
           "language": "cpp",
           "question": "Predice la salida exacta.",
-          "code": "#include <iostream>\n#include <string>\n#include <vector>\n\nstruct Lectura {\n    std::string sitio;\n    int personas;\n};\n\nint main() {\n    std::vector<Lectura> registros{{\"Patio\", 2}, {\"Sala\", 8}};\n\n    Lectura temporal = registros.at(0);\n    registros.at(0) = registros.at(1);\n    registros.at(1) = temporal;\n    for (const auto& registro : registros) {\n        std::cout << registro.sitio << \":\" << registro.personas << \";\";\n    }\n    return 0;\n}\n",
+          "code": "#include <iostream>\n#include <string>\n#include <vector>\n\nstruct Lectura {\n    std::string sitio;\n    int personas;\n};\n\nint main() {\n    std::vector<Lectura> registros{{\"Patio\", 2}, {\"Sala\", 8}};\n\n    Lectura temporal = registros.at(0);\n    registros.at(0) = registros.at(1);\n    registros.at(1) = temporal;\n\n    for (const auto& registro : registros) {\n        std::cout << registro.sitio << \":\" << registro.personas << \";\";\n    }\n\n    return 0;\n}\n",
           "answers": [
             "Sala:8;Patio:2;"
           ],
@@ -164,7 +164,7 @@
           "type": "output_prediction",
           "language": "cpp",
           "question": "Predice la salida exacta.",
-          "code": "#include <iostream>\n#include <string>\n#include <vector>\n\nstruct Lectura {\n    std::string sitio;\n    int personas;\n};\n\nint main() {\n    std::vector<Lectura> registros{{\"Patio\", 2}, {\"Sala\", 5}};\n\n    for (auto& registro : registros) {\n        if (registro.sitio == \"Patio\") {\n            registro.personas += 3;\n        }\n    }\n\n    for (const auto& registro : registros) {\n        std::cout << registro.sitio << \":\" << registro.personas << \";\";\n    }\n    return 0;\n}\n",
+          "code": "#include <iostream>\n#include <string>\n#include <vector>\n\nstruct Lectura {\n    std::string sitio;\n    int personas;\n};\n\nint main() {\n    std::vector<Lectura> registros{{\"Patio\", 2}, {\"Sala\", 5}};\n\n    for (auto& registro : registros) {\n        if (registro.sitio == \"Patio\") {\n            registro.personas += 3;\n        }\n    }\n\n    for (const auto& registro : registros) {\n        std::cout << registro.sitio << \":\" << registro.personas << \";\";\n    }\n\n    return 0;\n}\n",
           "answers": [
             "Patio:5;Sala:5;"
           ],
@@ -251,7 +251,7 @@
         },
         {
           "type": "cpp_compiler",
-          "initialCode": "#include <iostream>\n#include <string>\n#include <vector>\n\nint main() {\n    // Construye aqui el programa de la consigna.\n    return 0;\n}\n",
+          "initialCode": "#include <iostream>\n#include <string>\n#include <vector>\n\nint main() {\n    // Construye aqui el programa de la consigna.\n    \n    return 0;\n}\n",
           "outputCheck": {
             "cases": [
               {
@@ -433,7 +433,7 @@
         },
         {
           "type": "cpp_compiler",
-          "initialCode": "#include <iostream>\n#include <string>\n#include <vector>\n\nstruct Registro {\n    std::string codigo;\n    int unidades;\n};\n\nint main() {\n    // Construye y compara las dos colecciones.\n    return 0;\n}\n",
+          "initialCode": "#include <iostream>\n#include <string>\n#include <vector>\n\nstruct Registro {\n    std::string codigo;\n    int unidades;\n};\n\nint main() {\n    // Construye y compara las dos colecciones.\n    \n    return 0;\n}\n",
           "outputCheck": {
             "cases": [
               {
@@ -457,7 +457,7 @@
         {
           "type": "code",
           "language": "cpp",
-          "code": "#include <iostream>\n#include <string>\n#include <vector>\n\nstruct Registro {\n    std::string codigo;\n    int unidades;\n};\n\nint main() {\n    std::vector<Registro> registros{\n        {\"A\", 2},\n        {\"B\", 7},\n        {\"A\", 4}\n    };\n    int total = 0;\n    std::vector<Registro> elegidos;\n\n    for (const auto& registro : registros) {\n        std::cout << registro.codigo << \":\" << registro.unidades << \";\";\n        total += registro.unidades;\n        if (registro.unidades >= 4) {\n            elegidos.push_back(registro);\n        }\n    }\n\n    std::cout << \"\\nTotal:\" << total << \"\\nElegidos:\";\n    for (const auto& registro : elegidos) {\n        std::cout << registro.codigo << \":\" << registro.unidades << \";\";\n    }\n    return 0;\n}\n"
+          "code": "#include <iostream>\n#include <string>\n#include <vector>\n\nstruct Registro {\n    std::string codigo;\n    int unidades;\n};\n\nint main() {\n    std::vector<Registro> registros{\n        {\"A\", 2},\n        {\"B\", 7},\n        {\"A\", 4}\n    };\n    int total = 0;\n    std::vector<Registro> elegidos;\n\n    for (const auto& registro : registros) {\n        std::cout << registro.codigo << \":\" << registro.unidades << \";\";\n        total += registro.unidades;\n        if (registro.unidades >= 4) {\n            elegidos.push_back(registro);\n        }\n    }\n\n    std::cout << \"\\nTotal:\" << total << \"\\nElegidos:\";\n    for (const auto& registro : elegidos) {\n        std::cout << registro.codigo << \":\" << registro.unidades << \";\";\n    }\n\n    return 0;\n}\n"
         },
         {
           "type": "output_prediction",
@@ -1629,6 +1629,41 @@
         "id": "block_0007_0008",
         "beforeSha256": "e29faa76860f22e591a8991de28f9d47ea26b1e89e0098efae31228d828c1b76",
         "afterSha256": "e5f8fddc7af67519c8a04cc66965223744361b63f13bf66c24b913e93e207fcb"
+      },
+      {
+        "id": "block_0000_0002",
+        "beforeSha256": "6fd36e16413d81365a4191fefe6f0dcb84b69b8c06492c9d532b55bbfd145c7e",
+        "afterSha256": "a8a5f4af2df99fd9ef7245c7ac5ec64f6f1e8f99452f8f33fff0680f837e2bf9"
+      },
+      {
+        "id": "block_0001_0001",
+        "beforeSha256": "23e7df5d72cf6b4a89ad768ad86c1fca4bf0a500ad89f0fce6d05dc8d1c97567",
+        "afterSha256": "5f932eec0688cc58be23f47cf09de7e6d4bea24366d544235e3252b0e8081e73"
+      },
+      {
+        "id": "block_0002_0001",
+        "beforeSha256": "fc4809107c37d7e5e76a25cde1f07a63ef89e9189b9b0b629d5a8b7b07af2719",
+        "afterSha256": "aed36bdcecb8c4cb8842e7961519f5ab53d251eecac0db6f1bc1e90728f6d4ca"
+      },
+      {
+        "id": "block_0004_0001",
+        "beforeSha256": "2432998e1e5df42f6db9bf43572049b08ec9e53327648ea7fabbfc24fcbd755f",
+        "afterSha256": "70a6fffdd633baa7047a8393907808545e441d983dbae92d3319b73be2089ce4"
+      },
+      {
+        "id": "block_0006_0002",
+        "beforeSha256": "4c30e620addda5a1901fcb58e7bebcdbb58e69f8e79e621b9feb871c70455c27",
+        "afterSha256": "2ae324d5e47d1e98c922d7fcb3598247ad81cdb9fcd5dedc64b0054def47eec9"
+      },
+      {
+        "id": "block_0006_0005",
+        "beforeSha256": "e46279bd0f00a2cda8dcf843ae3a8a256e640041e2ceecd0bdadbf8f3c29be5e",
+        "afterSha256": "b756a741fa2a96dcb01af1d14b29df0d7a82049444252082871efb50c6db1f30"
+      },
+      {
+        "id": "block_0007_0001",
+        "beforeSha256": "3de0945a195815cfa22c2d2d96954e09a76cfdbf4031bc58c5fcec642e8a3ced",
+        "afterSha256": "637b3cb1432e80f846c214629016838e8184cfc8ed979a54de4b2cbe16f13229"
       }
     ],
     "sourceFormatRevisions": [
@@ -1795,6 +1830,55 @@
           "type": "code",
           "language": "cpp",
           "code": "#include <iostream>\n#include <string>\n#include <vector>\n\nstruct Registro {\n    std::string codigo;\n    int unidades;\n};\n\nvoid presentar(const std::vector<Registro>& registros) {\n    for (const auto& registro : registros) {\n        std::cout << registro.codigo << \":\" << registro.unidades << \";\";\n    }\n}\n\nint main() {\n    std::vector<Registro> original{{\"C\", 2}, {\"D\", 1}};\n    const std::vector<Registro> copia = original;\n    original.at(0).unidades += 3;\n    std::cout << \"Original:\";\n    presentar(original);\n    std::cout << \"\\nCopia:\";\n    presentar(copia);\n    return 0;\n}\n"
+        }
+      },
+      {
+        "id": "block_0001_0001",
+        "block": {
+          "type": "output_prediction",
+          "language": "cpp",
+          "question": "Este programa cambia sólo el orden de los sitios. Predice su salida real, aunque el informe resultante asocie mal las cantidades.",
+          "code": "#include <iostream>\n#include <string>\n#include <vector>\n#include <algorithm>\n#include <cstddef>\n\nint main() {\n    std::vector<std::string> sitios{\"Sur\", \"Norte\"};\n    std::vector<int> cantidades{3, 7};\n    std::sort(sitios.begin(), sitios.end());\n    for (std::size_t i = 0; i < sitios.size(); ++i) {\n        std::cout << sitios[i] << \":\" << cantidades[i] << \";\";\n    }\n    return 0;\n}\n",
+          "answers": [
+            "Norte:3;Sur:7;"
+          ],
+          "explanation": "Antes de ordenar, Sur está asociado a 3 y Norte a 7. std::sort deja las etiquetas en el orden Norte, Sur, pero el vector de cantidades sigue en 3, 7. El índice 0 combina entonces Norte:3 y el índice 1, Sur:7. Son los valores que imprime el programa, aunque ya no describen las observaciones iniciales."
+        }
+      },
+      {
+        "id": "block_0006_0002",
+        "block": {
+          "type": "cpp_compiler",
+          "initialCode": "#include <iostream>\n#include <string>\n#include <vector>\n\nint main() {\n    // Construye aqui el programa de la consigna.\n    return 0;\n}\n",
+          "outputCheck": {
+            "cases": [
+              {
+                "standardInput": "",
+                "outputs": [
+                  "Datos:A:2;B:7;A:4;\nTotal:13\nElegidos:B:7;A:4;\nDatos:\nTotal:0\nElegidos:\nDatos:Z:0;\nTotal:0\nElegidos:\nDatos:R:1;R:5;\nTotal:6\nElegidos:R:5;\n"
+                ],
+                "explanation": "En la primera selección, B:7 pasa del índice 1 de la entrada al índice 0 del vector elegido y A:4 aparece después. Las parejas y su orden relativo se conservan, aunque cambien los índices. El caso vacío mantiene un total cero."
+              }
+            ]
+          }
+        }
+      },
+      {
+        "id": "block_0006_0005",
+        "block": {
+          "type": "cpp_compiler",
+          "initialCode": "#include <iostream>\n#include <string>\n#include <vector>\n\nstruct Registro {\n    std::string codigo;\n    int unidades;\n};\n\nint main() {\n    // Construye y compara las dos colecciones.\n    return 0;\n}\n",
+          "outputCheck": {
+            "cases": [
+              {
+                "standardInput": "",
+                "outputs": [
+                  "Original:C:5;D:1;\nCopia:C:2;D:1;"
+                ],
+                "explanation": "La copia mantiene los dos registros anteriores y sus asociaciones. La actualización posterior pertenece sólo al primer registro del vector original."
+              }
+            ]
+          }
         }
       }
     ]

@@ -50,7 +50,7 @@
           "id": "p3_u6l5_referencias_y_expresiones",
           "language": "cpp",
           "question": "Sigue qué objeto recibe cada escritura. ¿Qué muestra el programa completo?",
-          "code": "#include <iostream>\n\nint main() {\n    int dato = 4;\n    int& acceso = dato;\n    int&& calculado = 2 + 3;\n    acceso = 8;\n    calculado = 7;\n    std::cout << dato << ':' << calculado;\n    return 0;\n}\n",
+          "code": "#include <iostream>\n\nint main() {\n    int dato = 4;\n    int& acceso = dato;\n    int&& calculado = 2 + 3;\n\n    acceso = 8;\n    calculado = 7;\n\n    std::cout << dato << ':' << calculado;\n\n    return 0;\n}\n",
           "answers": [
             "8:7"
           ],
@@ -146,7 +146,7 @@
           "id": "p3_u6l5_reutilizar_origen_vacio",
           "language": "cpp",
           "question": "¿Qué valores se consultan desde los dos propietarios al final?",
-          "code": "#include <iostream>\n#include <memory>\n#include <utility>\n\nint main() {\n    auto origen = std::make_unique<int>(6);\n    auto destino = std::move(origen);\n    origen = std::make_unique<int>(9);\n    std::cout << *origen << ':' << *destino;\n    return 0;\n}\n",
+          "code": "#include <iostream>\n#include <memory>\n#include <utility>\n\nint main() {\n    auto origen = std::make_unique<int>(6);\n    auto destino = std::move(origen);\n\n    origen = std::make_unique<int>(9);\n\n    std::cout << *origen << ':' << *destino;\n\n    return 0;\n}\n",
           "answers": [
             "9:6"
           ],
@@ -174,7 +174,7 @@
           "id": "p3_u6l5_asignar_sobre_un_destino_ocupado",
           "language": "cpp",
           "question": "Escribe la traza completa, incluida la destrucción del objeto anterior del destino.",
-          "code": "#include <iostream>\n#include <memory>\n#include <utility>\n\nclass Marca {\npublic:\n    Marca(char etiqueta) : etiqueta_{etiqueta} {\n        std::cout << \"Crear:\" << etiqueta_ << '\\n';\n    }\n    ~Marca() { std::cout << \"Destruir:\" << etiqueta_ << '\\n'; }\n    char etiqueta() const { return etiqueta_; }\nprivate:\n    char etiqueta_;\n};\n\nint main() {\n    {\n        auto origen = std::make_unique<Marca>('A');\n        auto destino = std::make_unique<Marca>('B');\n        std::cout << \"Antes\\n\";\n        destino = std::move(origen);\n        std::cout << \"Estados:\" << (origen != nullptr) << ':'\n                  << (destino != nullptr) << '\\n';\n        std::cout << \"Actual:\" << destino->etiqueta() << '\\n';\n    }\n    std::cout << \"Fuera\";\n    return 0;\n}\n",
+          "code": "#include <iostream>\n#include <memory>\n#include <utility>\n\nclass Marca {\npublic:\n    Marca(char etiqueta) : etiqueta_{etiqueta} {\n        std::cout << \"Crear:\" << etiqueta_ << '\\n';\n    }\n    ~Marca() { std::cout << \"Destruir:\" << etiqueta_ << '\\n'; }\n    char etiqueta() const { return etiqueta_; }\nprivate:\n    char etiqueta_;\n};\n\nint main() {\n    {\n        auto origen = std::make_unique<Marca>('A');\n        auto destino = std::make_unique<Marca>('B');\n\n        std::cout << \"Antes\\n\";\n        destino = std::move(origen);\n        std::cout << \"Estados:\" << (origen != nullptr) << ':'\n                  << (destino != nullptr) << '\\n';\n        std::cout << \"Actual:\" << destino->etiqueta() << '\\n';\n    }\n    std::cout << \"Fuera\";\n\n    return 0;\n}\n",
           "answers": [
             "Crear:A\nCrear:B\nAntes\nDestruir:B\nEstados:0:1\nActual:A\nDestruir:A\nFuera"
           ],
@@ -202,7 +202,7 @@
           "id": "p3_u6l5_asignar_desde_vacio",
           "language": "cpp",
           "question": "¿Qué mensajes y estados produce la asignación desde origen vacío?",
-          "code": "#include <iostream>\n#include <memory>\n#include <utility>\n\nclass Marca {\npublic:\n    Marca(char etiqueta) : etiqueta_{etiqueta} {\n        std::cout << \"Crear:\" << etiqueta_ << '\\n';\n    }\n    ~Marca() { std::cout << \"Destruir:\" << etiqueta_ << '\\n'; }\n    char etiqueta() const { return etiqueta_; }\nprivate:\n    char etiqueta_;\n};\n\nint main() {\n    std::unique_ptr<Marca> origen;\n    auto destino = std::make_unique<Marca>('B');\n    destino = std::move(origen);\n    std::cout << (origen != nullptr) << ':' << (destino != nullptr);\n    return 0;\n}\n",
+          "code": "#include <iostream>\n#include <memory>\n#include <utility>\n\nclass Marca {\npublic:\n    Marca(char etiqueta) : etiqueta_{etiqueta} {\n        std::cout << \"Crear:\" << etiqueta_ << '\\n';\n    }\n    ~Marca() { std::cout << \"Destruir:\" << etiqueta_ << '\\n'; }\n    char etiqueta() const { return etiqueta_; }\nprivate:\n    char etiqueta_;\n};\n\nint main() {\n    std::unique_ptr<Marca> origen;\n    auto destino = std::make_unique<Marca>('B');\n    destino = std::move(origen);\n\n    std::cout << (origen != nullptr) << ':' << (destino != nullptr);\n\n    return 0;\n}\n",
           "answers": [
             "Crear:B\nDestruir:B\n0:0"
           ],
@@ -234,7 +234,7 @@
           "id": "p3_u6l5_prestamo_y_copia_anterior",
           "language": "cpp",
           "question": "¿Qué muestran la copia previa, los dos accesos al objeto vivo y su comparación?",
-          "code": "#include <iostream>\n#include <memory>\n#include <utility>\n\nint main() {\n    auto origen = std::make_unique<int>(3);\n    auto destino = std::make_unique<int>(9);\n    const int* prestado = origen.get();\n    const int* anterior = destino.get();\n    const int copia = *anterior;\n    anterior = nullptr;\n    destino = std::move(origen);\n    std::cout << copia << ':' << *prestado << ':' << *destino << ':'\n              << (prestado == destino.get());\n    prestado = nullptr;\n    return 0;\n}\n",
+          "code": "#include <iostream>\n#include <memory>\n#include <utility>\n\nint main() {\n    auto origen = std::make_unique<int>(3);\n    auto destino = std::make_unique<int>(9);\n    const int* prestado = origen.get();\n    const int* anterior = destino.get();\n    const int copia = *anterior;\n\n    anterior = nullptr;\n    destino = std::move(origen);\n\n    std::cout << copia << ':' << *prestado << ':' << *destino << ':'\n              << (prestado == destino.get());\n    prestado = nullptr;\n    return 0;\n}\n",
           "answers": [
             "9:3:3:1"
           ],
@@ -286,7 +286,7 @@
           "id": "p3_u6l5_move_con_un_entero",
           "language": "cpp",
           "question": "¿Qué valores conservan los dos enteros después de la inicialización?",
-          "code": "#include <iostream>\n#include <memory>\n#include <utility>\n\nint main() {\n    int origen = 3;\n    int destino = std::move(origen);\n    std::cout << origen << ':' << destino;\n    return 0;\n}\n",
+          "code": "#include <iostream>\n#include <memory>\n#include <utility>\n\nint main() {\n    int origen = 3;\n    int destino = std::move(origen);\n\n    std::cout << origen << ':' << destino;\n\n    return 0;\n}\n",
           "answers": [
             "3:3"
           ],
@@ -314,7 +314,7 @@
           "id": "p3_u6l5_recibir_propiedad_por_valor",
           "language": "cpp",
           "question": "¿Qué muestran el valor devuelto y la presencia del propietario original después de la llamada?",
-          "code": "#include <iostream>\n#include <memory>\n#include <utility>\n\nint consumir(std::unique_ptr<int> dato) {\n    if (!dato) {\n        return -1;\n    }\n    return *dato;\n}\n\nint main() {\n    auto propietario = std::make_unique<int>(4);\n    const int copia = consumir(std::move(propietario));\n    std::cout << copia << ':' << (propietario == nullptr);\n    return 0;\n}\n",
+          "code": "#include <iostream>\n#include <memory>\n#include <utility>\n\nint consumir(std::unique_ptr<int> dato) {\n    if (!dato) {\n        return -1;\n    }\n\n    return *dato;\n}\n\nint main() {\n    auto propietario = std::make_unique<int>(4);\n    const int copia = consumir(std::move(propietario));\n\n    std::cout << copia << ':' << (propietario == nullptr);\n\n    return 0;\n}\n",
           "answers": [
             "4:1"
           ],
@@ -342,7 +342,7 @@
           "id": "p3_u6l5_excepcion_despues_de_transferir",
           "language": "cpp",
           "question": "Escribe la traza completa y la comprobación que realiza el catch.",
-          "code": "#include <iostream>\n#include <memory>\n#include <utility>\n\nclass Marca {\npublic:\n    Marca(char etiqueta) : etiqueta_{etiqueta} {\n        std::cout << \"Crear:\" << etiqueta_ << '\\n';\n    }\n    ~Marca() { std::cout << \"Destruir:\" << etiqueta_ << '\\n'; }\n    char etiqueta() const { return etiqueta_; }\nprivate:\n    char etiqueta_;\n};\n\nstruct Fallo {};\n\nvoid consumir(std::unique_ptr<Marca> dato) {\n    std::cout << \"Dentro:\" << dato->etiqueta() << '\\n';\n    throw Fallo{};\n}\n\nint main() {\n    auto propietario = std::make_unique<Marca>('C');\n    try {\n        consumir(std::move(propietario));\n    } catch (const Fallo&) {\n        std::cout << \"Captura:\" << (propietario == nullptr);\n    }\n    return 0;\n}\n",
+          "code": "#include <iostream>\n#include <memory>\n#include <utility>\n\nclass Marca {\npublic:\n    Marca(char etiqueta) : etiqueta_{etiqueta} {\n        std::cout << \"Crear:\" << etiqueta_ << '\\n';\n    }\n    ~Marca() { std::cout << \"Destruir:\" << etiqueta_ << '\\n'; }\n    char etiqueta() const { return etiqueta_; }\nprivate:\n    char etiqueta_;\n};\n\nstruct Fallo {};\n\nvoid consumir(std::unique_ptr<Marca> dato) {\n    std::cout << \"Dentro:\" << dato->etiqueta() << '\\n';\n    throw Fallo{};\n}\n\nint main() {\n    auto propietario = std::make_unique<Marca>('C');\n    try {\n        consumir(std::move(propietario));\n    } catch (const Fallo&) {\n        std::cout << \"Captura:\" << (propietario == nullptr);\n    }\n\n    return 0;\n}\n",
           "answers": [
             "Crear:C\nDentro:C\nDestruir:C\nCaptura:1"
           ],
@@ -374,7 +374,7 @@
           "id": "p3_u6l5_parametro_referencia_sin_consumo",
           "language": "cpp",
           "question": "¿Qué muestra la función y qué conserva main después de la llamada?",
-          "code": "#include <iostream>\n#include <memory>\n#include <utility>\n\nvoid observar(std::unique_ptr<int>&& acceso) {\n    std::cout << (acceso != nullptr);\n}\n\nint main() {\n    auto propietario = std::make_unique<int>(8);\n    observar(std::move(propietario));\n    std::cout << ':' << (propietario != nullptr) << ':' << *propietario;\n    return 0;\n}\n",
+          "code": "#include <iostream>\n#include <memory>\n#include <utility>\n\nvoid observar(std::unique_ptr<int>&& acceso) {\n    std::cout << (acceso != nullptr);\n}\n\nint main() {\n    auto propietario = std::make_unique<int>(8);\n    observar(std::move(propietario));\n    std::cout << ':' << (propietario != nullptr) << ':' << *propietario;\n\n    return 0;\n}\n",
           "answers": [
             "1:1:8"
           ],
@@ -418,7 +418,7 @@
           "id": "p3_u6l5_retornar_propietario_local",
           "language": "cpp",
           "question": "¿Qué muestra el propietario recibido en main?",
-          "code": "#include <iostream>\n#include <memory>\n#include <utility>\n\nstd::unique_ptr<int> crear() {\n    auto propietario = std::make_unique<int>(6);\n    return propietario;\n}\n\nint main() {\n    auto recibido = crear();\n    std::cout << (recibido != nullptr) << ':' << *recibido;\n    return 0;\n}\n",
+          "code": "#include <iostream>\n#include <memory>\n#include <utility>\n\nstd::unique_ptr<int> crear() {\n    auto propietario = std::make_unique<int>(6);\n    return propietario;\n}\n\nint main() {\n    auto recibido = crear();\n\n    std::cout << (recibido != nullptr) << ':' << *recibido;\n\n    return 0;\n}\n",
           "answers": [
             "1:6"
           ],
@@ -437,7 +437,7 @@
           "type": "inline_fill_code",
           "id": "p3_u6l5_completar_movimientos",
           "question": "Completa cada hueco utilizando std::move para ofrecer el propietario que debe ceder su objeto. Escribe la llamada con su calificación std:: y el nombre del propietario origen, sin sustituirla por una conversión de tipo. Primero se construye destino; después, tras crear otro int para origen, se sustituye lo que gestiona destino. No copies al propietario ni utilices un puntero prestado para crear otro.",
-          "template": "#include <iostream>\n#include <memory>\n#include <utility>\n\nint main() {\n    auto origen = std::make_unique<int>(2);\n    std::unique_ptr<int> destino = [];\n    origen = std::make_unique<int>(8);\n    destino = [];\n    std::cout << (origen == nullptr) << ':' << *destino;\n    return 0;\n}\n",
+          "template": "#include <iostream>\n#include <memory>\n#include <utility>\n\nint main() {\n    auto origen = std::make_unique<int>(2);\n    std::unique_ptr<int> destino = [];\n    origen = std::make_unique<int>(8);\n    destino = [];\n\n    std::cout << (origen == nullptr) << ':' << *destino;\n\n    return 0;\n}\n",
           "answers": [
             "std::move(origen)",
             "std::move(origen)"
@@ -489,7 +489,7 @@
         {
           "type": "cpp_compiler",
           "language": "cpp",
-          "initialCode": "#include <iostream>\n#include <memory>\n#include <utility>\n\nint recibir(std::unique_ptr<int>&& entrada) {\n    auto local = entrada;\n    return *local;\n}\n\nint main() {\n    auto propietario = std::make_unique<int>(7);\n    const int copia = recibir(std::move(propietario));\n    std::cout << copia << ':' << (propietario == nullptr);\n    return 0;\n}\n",
+          "initialCode": "#include <iostream>\n#include <memory>\n#include <utility>\n\nint recibir(std::unique_ptr<int>&& entrada) {\n    auto local = entrada;\n    return *local;\n}\n\nint main() {\n    auto propietario = std::make_unique<int>(7);\n    const int copia = recibir(std::move(propietario));\n\n    std::cout << copia << ':' << (propietario == nullptr);\n\n    return 0;\n}\n",
           "initialStandardInput": "",
           "outputCheck": {
             "inputComparison": "tokens",
@@ -515,7 +515,7 @@
         {
           "type": "code",
           "language": "cpp",
-          "code": "#include <iostream>\n#include <memory>\n#include <utility>\n\nint recibir(std::unique_ptr<int>&& entrada) {\n    auto local = std::move(entrada);\n    return *local;\n}\n\nint main() {\n    auto propietario = std::make_unique<int>(7);\n    const int copia = recibir(std::move(propietario));\n    std::cout << copia << ':' << (propietario == nullptr);\n    return 0;\n}\n"
+          "code": "#include <iostream>\n#include <memory>\n#include <utility>\n\nint recibir(std::unique_ptr<int>&& entrada) {\n    auto local = std::move(entrada);\n    return *local;\n}\n\nint main() {\n    auto propietario = std::make_unique<int>(7);\n    const int copia = recibir(std::move(propietario));\n\n    std::cout << copia << ':' << (propietario == nullptr);\n\n    return 0;\n}\n"
         },
         {
           "type": "paragraph",
@@ -777,7 +777,7 @@
         {
           "type": "cpp_compiler",
           "language": "cpp",
-          "initialCode": "#include <iostream>\n#include <memory>\n#include <utility>\n\n#include <new>\n\nbool indice_valido(int indice) {\n    return indice == 0 || indice == 1;\n}\n\nclass Deposito {\npublic:\n    bool hay(int indice) const {\n        return indice == 0 ? primero_ != nullptr : segundo_ != nullptr;\n    }\n    int valor(int indice) const {\n        return indice == 0 ? *primero_ : *segundo_;\n    }\n    bool poner(int indice, int valor);\n    bool cambiar(int indice, int valor);\n    bool vaciar(int indice);\n    bool transferir(int origen, int destino);\nprivate:\n    std::unique_ptr<int>& elegir(int indice) {\n        return indice == 0 ? primero_ : segundo_;\n    }\n    std::unique_ptr<int> primero_ = std::make_unique<int>(4);\n    std::unique_ptr<int> segundo_ = std::make_unique<int>(7);\n};\nbool Deposito::poner(int indice, int valor) {\n    if (!indice_valido(indice) || valor < 0 || valor > 9) {\n        return false;\n    }\n    try {\n        auto candidato = std::make_unique<int>(valor);\n        elegir(indice).swap(candidato);\n        return true;\n    } catch (const std::bad_alloc&) {\n        return false;\n    }\n}\n\nbool Deposito::cambiar(int indice, int valor) {\n    if (!indice_valido(indice) || valor < 0 || valor > 9) {\n        return false;\n    }\n    auto& propietario = elegir(indice);\n    if (!propietario) {\n        return false;\n    }\n    *propietario = valor;\n    return true;\n}\n\nbool Deposito::vaciar(int indice) {\n    if (!indice_valido(indice)) {\n        return false;\n    }\n    elegir(indice).reset();\n    return true;\n}\nbool Deposito::transferir(int origen, int destino) {\n    // Completa las comprobaciones y la transferencia, sin crear otro entero.\n    (void)origen;\n    (void)destino;\n    return false;\n}\nvoid mostrar_dato(bool hay, int valor) {\n    if (hay) {\n        std::cout << valor;\n    } else {\n        std::cout << 'X';\n    }\n}\n\nvoid mostrar(const Deposito& deposito) {\n    for (int indice = 0; indice < 2; ++indice) {\n        if (indice != 0) {\n            std::cout << ':';\n        }\n        const bool hay = deposito.hay(indice);\n        mostrar_dato(hay, hay ? deposito.valor(indice) : 0);\n    }\n}\nint main() {\n    int cantidad = 0;\n    if (!(std::cin >> cantidad) || cantidad < 1 || cantidad > 12) {\n        return 1;\n    }\n    Deposito deposito;\n    std::cout << \"Inicio:\";\n    mostrar(deposito);\n    std::cout << '\\n';\n    for (int i = 0; i < cantidad; ++i) {\n        int operacion = 0;\n        int a = 0;\n        int b = 0;\n        if (!(std::cin >> operacion >> a >> b)) {\n            return 1;\n        }\n        const bool habia0 = deposito.hay(0);\n        const bool habia1 = deposito.hay(1);\n        const int anterior0 = habia0 ? deposito.valor(0) : 0;\n        const int anterior1 = habia1 ? deposito.valor(1) : 0;\n        bool aceptado = false;\n        if (operacion == 1) {\n            aceptado = deposito.transferir(a, b);\n        } else if (operacion == 2) {\n            aceptado = deposito.poner(a, b);\n        } else if (operacion == 3) {\n            aceptado = deposito.vaciar(a);\n        } else if (operacion == 4) {\n            aceptado = deposito.cambiar(a, b);\n        }\n        std::cout << \"Resultado:\" << aceptado << \";Antes:\";\n        mostrar_dato(habia0, anterior0);\n        std::cout << ':';\n        mostrar_dato(habia1, anterior1);\n        std::cout << \";Actual:\";\n        mostrar(deposito);\n        std::cout << '\\n';\n    }\n    std::cout << \"Final:\";\n    mostrar(deposito);\n    return 0;\n}\n",
+          "initialCode": "#include <iostream>\n#include <memory>\n#include <utility>\n\n#include <new>\n\nbool indice_valido(int indice) {\n    return indice == 0 || indice == 1;\n}\n\nclass Deposito {\npublic:\n    bool hay(int indice) const {\n        return indice == 0 ? primero_ != nullptr : segundo_ != nullptr;\n    }\n\n    int valor(int indice) const {\n        return indice == 0 ? *primero_ : *segundo_;\n    }\n\n    bool poner(int indice, int valor);\n    bool cambiar(int indice, int valor);\n    bool vaciar(int indice);\n    bool transferir(int origen, int destino);\nprivate:\n    std::unique_ptr<int>& elegir(int indice) {\n        return indice == 0 ? primero_ : segundo_;\n    }\n    std::unique_ptr<int> primero_ = std::make_unique<int>(4);\n    std::unique_ptr<int> segundo_ = std::make_unique<int>(7);\n};\n\nbool Deposito::poner(int indice, int valor) {\n    if (!indice_valido(indice) || valor < 0 || valor > 9) {\n        return false;\n    }\n    try {\n        auto candidato = std::make_unique<int>(valor);\n        elegir(indice).swap(candidato);\n        return true;\n    } catch (const std::bad_alloc&) {\n        return false;\n    }\n}\n\nbool Deposito::cambiar(int indice, int valor) {\n    if (!indice_valido(indice) || valor < 0 || valor > 9) {\n        return false;\n    }\n    auto& propietario = elegir(indice);\n    if (!propietario) {\n        return false;\n    }\n    *propietario = valor;\n    return true;\n}\n\nbool Deposito::vaciar(int indice) {\n    if (!indice_valido(indice)) {\n        return false;\n    }\n    elegir(indice).reset();\n    return true;\n}\n\nbool Deposito::transferir(int origen, int destino) {\n    // Completa las comprobaciones y la transferencia, sin crear otro entero.\n    (void)origen;\n    (void)destino;\n    return false;\n}\n\nvoid mostrar_dato(bool hay, int valor) {\n    if (hay) {\n        std::cout << valor;\n    } else {\n        std::cout << 'X';\n    }\n}\n\nvoid mostrar(const Deposito& deposito) {\n    for (int indice = 0; indice < 2; ++indice) {\n        if (indice != 0) {\n            std::cout << ':';\n        }\n        const bool hay = deposito.hay(indice);\n        mostrar_dato(hay, hay ? deposito.valor(indice) : 0);\n    }\n}\n\nint main() {\n    int cantidad = 0;\n    if (!(std::cin >> cantidad) || cantidad < 1 || cantidad > 12) {\n        return 1;\n    }\n    Deposito deposito;\n    std::cout << \"Inicio:\";\n    mostrar(deposito);\n    std::cout << '\\n';\n    for (int i = 0; i < cantidad; ++i) {\n        int operacion = 0;\n        int a = 0;\n        int b = 0;\n\n        if (!(std::cin >> operacion >> a >> b)) {\n            return 1;\n        }\n        const bool habia0 = deposito.hay(0);\n        const bool habia1 = deposito.hay(1);\n        const int anterior0 = habia0 ? deposito.valor(0) : 0;\n        const int anterior1 = habia1 ? deposito.valor(1) : 0;\n        bool aceptado = false;\n\n        if (operacion == 1) {\n            aceptado = deposito.transferir(a, b);\n        } else if (operacion == 2) {\n            aceptado = deposito.poner(a, b);\n        } else if (operacion == 3) {\n            aceptado = deposito.vaciar(a);\n        } else if (operacion == 4) {\n            aceptado = deposito.cambiar(a, b);\n        }\n        std::cout << \"Resultado:\" << aceptado << \";Antes:\";\n        mostrar_dato(habia0, anterior0);\n        std::cout << ':';\n        mostrar_dato(habia1, anterior1);\n        std::cout << \";Actual:\";\n        mostrar(deposito);\n        std::cout << '\\n';\n    }\n    std::cout << \"Final:\";\n    mostrar(deposito);\n    return 0;\n}\n",
           "initialStandardInput": "12\n1 0 1\n1 0 1\n2 0 0\n1 0 1\n1 1 1\n1 -1 0\n1 1 0\n4 0 9\n3 0 0\n1 0 1\n2 1 6\n1 1 0\n",
           "outputCheck": {
             "inputComparison": "tokens",
@@ -903,7 +903,7 @@
         {
           "type": "code",
           "language": "cpp",
-          "code": "#include <iostream>\n#include <memory>\n#include <utility>\n\n#include <new>\n\nbool indice_valido(int indice) {\n    return indice == 0 || indice == 1;\n}\n\nclass Deposito {\npublic:\n    bool hay(int indice) const {\n        return indice == 0 ? primero_ != nullptr : segundo_ != nullptr;\n    }\n    int valor(int indice) const {\n        return indice == 0 ? *primero_ : *segundo_;\n    }\n    bool poner(int indice, int valor);\n    bool cambiar(int indice, int valor);\n    bool vaciar(int indice);\n    bool transferir(int origen, int destino);\nprivate:\n    std::unique_ptr<int>& elegir(int indice) {\n        return indice == 0 ? primero_ : segundo_;\n    }\n    std::unique_ptr<int> primero_ = std::make_unique<int>(4);\n    std::unique_ptr<int> segundo_ = std::make_unique<int>(7);\n};\nbool Deposito::poner(int indice, int valor) {\n    if (!indice_valido(indice) || valor < 0 || valor > 9) {\n        return false;\n    }\n    try {\n        auto candidato = std::make_unique<int>(valor);\n        elegir(indice).swap(candidato);\n        return true;\n    } catch (const std::bad_alloc&) {\n        return false;\n    }\n}\n\nbool Deposito::cambiar(int indice, int valor) {\n    if (!indice_valido(indice) || valor < 0 || valor > 9) {\n        return false;\n    }\n    auto& propietario = elegir(indice);\n    if (!propietario) {\n        return false;\n    }\n    *propietario = valor;\n    return true;\n}\n\nbool Deposito::vaciar(int indice) {\n    if (!indice_valido(indice)) {\n        return false;\n    }\n    elegir(indice).reset();\n    return true;\n}\nbool Deposito::transferir(int origen, int destino) {\n    if (!indice_valido(origen) || !indice_valido(destino) || origen == destino) {\n        return false;\n    }\n    auto& saliente = elegir(origen);\n    auto& entrante = elegir(destino);\n    if (!saliente) {\n        return false;\n    }\n    entrante = std::move(saliente);\n    return true;\n}\nvoid mostrar_dato(bool hay, int valor) {\n    if (hay) {\n        std::cout << valor;\n    } else {\n        std::cout << 'X';\n    }\n}\n\nvoid mostrar(const Deposito& deposito) {\n    for (int indice = 0; indice < 2; ++indice) {\n        if (indice != 0) {\n            std::cout << ':';\n        }\n        const bool hay = deposito.hay(indice);\n        mostrar_dato(hay, hay ? deposito.valor(indice) : 0);\n    }\n}\nint main() {\n    int cantidad = 0;\n    if (!(std::cin >> cantidad) || cantidad < 1 || cantidad > 12) {\n        return 1;\n    }\n    Deposito deposito;\n    std::cout << \"Inicio:\";\n    mostrar(deposito);\n    std::cout << '\\n';\n    for (int i = 0; i < cantidad; ++i) {\n        int operacion = 0;\n        int a = 0;\n        int b = 0;\n        if (!(std::cin >> operacion >> a >> b)) {\n            return 1;\n        }\n        const bool habia0 = deposito.hay(0);\n        const bool habia1 = deposito.hay(1);\n        const int anterior0 = habia0 ? deposito.valor(0) : 0;\n        const int anterior1 = habia1 ? deposito.valor(1) : 0;\n        bool aceptado = false;\n        if (operacion == 1) {\n            aceptado = deposito.transferir(a, b);\n        } else if (operacion == 2) {\n            aceptado = deposito.poner(a, b);\n        } else if (operacion == 3) {\n            aceptado = deposito.vaciar(a);\n        } else if (operacion == 4) {\n            aceptado = deposito.cambiar(a, b);\n        }\n        std::cout << \"Resultado:\" << aceptado << \";Antes:\";\n        mostrar_dato(habia0, anterior0);\n        std::cout << ':';\n        mostrar_dato(habia1, anterior1);\n        std::cout << \";Actual:\";\n        mostrar(deposito);\n        std::cout << '\\n';\n    }\n    std::cout << \"Final:\";\n    mostrar(deposito);\n    return 0;\n}\n"
+          "code": "#include <iostream>\n#include <memory>\n#include <utility>\n\n#include <new>\n\nbool indice_valido(int indice) {\n    return indice == 0 || indice == 1;\n}\n\nclass Deposito {\npublic:\n    bool hay(int indice) const {\n        return indice == 0 ? primero_ != nullptr : segundo_ != nullptr;\n    }\n\n    int valor(int indice) const {\n        return indice == 0 ? *primero_ : *segundo_;\n    }\n\n    bool poner(int indice, int valor);\n    bool cambiar(int indice, int valor);\n    bool vaciar(int indice);\n    bool transferir(int origen, int destino);\nprivate:\n    std::unique_ptr<int>& elegir(int indice) {\n        return indice == 0 ? primero_ : segundo_;\n    }\n    std::unique_ptr<int> primero_ = std::make_unique<int>(4);\n    std::unique_ptr<int> segundo_ = std::make_unique<int>(7);\n};\n\nbool Deposito::poner(int indice, int valor) {\n    if (!indice_valido(indice) || valor < 0 || valor > 9) {\n        return false;\n    }\n    try {\n        auto candidato = std::make_unique<int>(valor);\n        elegir(indice).swap(candidato);\n        return true;\n    } catch (const std::bad_alloc&) {\n        return false;\n    }\n}\n\nbool Deposito::cambiar(int indice, int valor) {\n    if (!indice_valido(indice) || valor < 0 || valor > 9) {\n        return false;\n    }\n    auto& propietario = elegir(indice);\n    if (!propietario) {\n        return false;\n    }\n    *propietario = valor;\n    return true;\n}\n\nbool Deposito::vaciar(int indice) {\n    if (!indice_valido(indice)) {\n        return false;\n    }\n    elegir(indice).reset();\n    return true;\n}\n\nbool Deposito::transferir(int origen, int destino) {\n    if (!indice_valido(origen) || !indice_valido(destino) || origen == destino) {\n        return false;\n    }\n    auto& saliente = elegir(origen);\n    auto& entrante = elegir(destino);\n\n    if (!saliente) {\n        return false;\n    }\n    entrante = std::move(saliente);\n    return true;\n}\n\nvoid mostrar_dato(bool hay, int valor) {\n    if (hay) {\n        std::cout << valor;\n    } else {\n        std::cout << 'X';\n    }\n}\n\nvoid mostrar(const Deposito& deposito) {\n    for (int indice = 0; indice < 2; ++indice) {\n        if (indice != 0) {\n            std::cout << ':';\n        }\n        const bool hay = deposito.hay(indice);\n        mostrar_dato(hay, hay ? deposito.valor(indice) : 0);\n    }\n}\n\nint main() {\n    int cantidad = 0;\n    if (!(std::cin >> cantidad) || cantidad < 1 || cantidad > 12) {\n        return 1;\n    }\n    Deposito deposito;\n    std::cout << \"Inicio:\";\n    mostrar(deposito);\n    std::cout << '\\n';\n    for (int i = 0; i < cantidad; ++i) {\n        int operacion = 0;\n        int a = 0;\n        int b = 0;\n\n        if (!(std::cin >> operacion >> a >> b)) {\n            return 1;\n        }\n        const bool habia0 = deposito.hay(0);\n        const bool habia1 = deposito.hay(1);\n        const int anterior0 = habia0 ? deposito.valor(0) : 0;\n        const int anterior1 = habia1 ? deposito.valor(1) : 0;\n        bool aceptado = false;\n\n        if (operacion == 1) {\n            aceptado = deposito.transferir(a, b);\n        } else if (operacion == 2) {\n            aceptado = deposito.poner(a, b);\n        } else if (operacion == 3) {\n            aceptado = deposito.vaciar(a);\n        } else if (operacion == 4) {\n            aceptado = deposito.cambiar(a, b);\n        }\n        std::cout << \"Resultado:\" << aceptado << \";Antes:\";\n        mostrar_dato(habia0, anterior0);\n        std::cout << ':';\n        mostrar_dato(habia1, anterior1);\n        std::cout << \";Actual:\";\n        mostrar(deposito);\n        std::cout << '\\n';\n    }\n    std::cout << \"Final:\";\n    mostrar(deposito);\n    return 0;\n}\n"
         },
         {
           "type": "paragraph",
@@ -2406,6 +2406,342 @@
       }
     },
     "additions": [],
-    "editorial": []
+    "editorial": [
+      {
+        "id": "block_0001_0005",
+        "beforeSha256": "93019d5a15506606ed59fe67b3852a0cdbbf6162d35c5166f4d4b0f7284a79ac",
+        "afterSha256": "38744eda4b1c0920795b2867bc41a2ed965d7b659741cb975190b2a12b0a7806"
+      },
+      {
+        "id": "block_0004_0003",
+        "beforeSha256": "7b21b97afb6b6f7b5bfb6af3320dc004b8a65603a4b436a1681ed8df718384b3",
+        "afterSha256": "6d281f806f63f4b23b575c28cbfa0e8111134fc744ab258a405e213dc1776858"
+      },
+      {
+        "id": "block_0005_0003",
+        "beforeSha256": "a89ff3158cccbefca90b13c5e8137dced5e9f5293f1dfa436d9424e78bd71680",
+        "afterSha256": "efc35428ec2572dabb269dc35041a325bd8cbce0d8bb38061678a53818af7e28"
+      },
+      {
+        "id": "block_0006_0002",
+        "beforeSha256": "89a5ca4600e0ef3986e7fdc9b56cbc77afd93d7d26daf78d09e4328ef1061aaa",
+        "afterSha256": "9c0c34ca4559ef18a9ddc008f4637c11e620c6a1ad95d2273cf9dfd32f48dcc8"
+      },
+      {
+        "id": "block_0007_0003",
+        "beforeSha256": "30baa4f6c85143a4bb1a33bc6172df6023a8c8a144dea1efea34b28b34d7741a",
+        "afterSha256": "c57e1255db18ff1a149fb2dad532e80767b531acf071de0d976614774cf2ac0f"
+      },
+      {
+        "id": "block_0009_0002",
+        "beforeSha256": "10ca08c21f301205d8bc56ca3ef122cdc7bd906ce5b21f4ffdcce9703f460a36",
+        "afterSha256": "33323dc315dba9fc5f1f33d72c7ec134a1acbff9b3ffbfa1efadb3ed8f9945bd"
+      },
+      {
+        "id": "block_0010_0003",
+        "beforeSha256": "a5ed19c6872253eb4f7da79e200490b0c4cf9917de3275caf90e868407c05736",
+        "afterSha256": "508230bdd9889b7d22606e2c683e1e5bcd72f33b384589578380284f14aa2ccd"
+      },
+      {
+        "id": "block_0011_0002",
+        "beforeSha256": "db969f181ff62c03325d401f846f75253a4c43b10b70434a93c06955e4d77f4c",
+        "afterSha256": "8d02d6d44951aaa3cfd085f24c3be34d22374ef36c1a102e845666d723aac2e9"
+      },
+      {
+        "id": "block_0012_0003",
+        "beforeSha256": "0aec44f18c30b0e85889ae8df7e075c7a03d6c234c447d7737643d1a7f1542a1",
+        "afterSha256": "a8ebb628dd25ff47e6515ba96072f47b99e47af150cec0be6f38a15fe90064ea"
+      },
+      {
+        "id": "block_0013_0004",
+        "beforeSha256": "c3276231bf936672b0ceed56e916ba14577bb3e8aef9772c089c7ec22001039d",
+        "afterSha256": "6d438b606662e16c01ed6f814f6af956f2122e3363d40582823455b7271edbfa"
+      },
+      {
+        "id": "block_0014_0001",
+        "beforeSha256": "2420522f0e319de9c4e14732a39582f3a8aaa9d0abc085e470983add229f1937",
+        "afterSha256": "dbce042488da9accf64953365d9c6097df14553988fece4fce61fe5ac5038792"
+      },
+      {
+        "id": "block_0015_0004",
+        "beforeSha256": "3132b607093d77ad9d20c1c25c7bcf707e8e8e0092686805cdfbf64321050948",
+        "afterSha256": "64394c26f93e752c10bf24e66229aa335f561906925152f217cb322ed07bf211"
+      },
+      {
+        "id": "block_0016_0001",
+        "beforeSha256": "50f9b5ce52ce53f99fa45de2ad9381b2c6d7012146be63964008e8fa2b56d1b8",
+        "afterSha256": "45387bd34ce433ee86c68775edba1dcf73c0510925785a1ffdf2bf05727c55d1"
+      },
+      {
+        "id": "block_0021_0002",
+        "beforeSha256": "76b9c4dc605640fc69e6e74fc3b882591707ddcfcfea694afaf855704836aad8",
+        "afterSha256": "9310ba3e53ccaf3f783e30d388726673b04ec1dde8119ae3ad4a0f132437825e"
+      },
+      {
+        "id": "block_0023_0001",
+        "beforeSha256": "cadf0edcbe3afc464790fc1bffbd364faa0ca183c78c6135475003c9846e38ce",
+        "afterSha256": "59fe2ccffda5113178afe4c05f1f1a2fabb60102f3600152deeb8a864bfdf118"
+      }
+    ],
+    "sourceFormatRevisions": [
+      {
+        "id": "block_0001_0005",
+        "block": {
+          "type": "output_prediction",
+          "id": "p3_u6l5_referencias_y_expresiones",
+          "language": "cpp",
+          "question": "Sigue qué objeto recibe cada escritura. ¿Qué muestra el programa completo?",
+          "code": "#include <iostream>\n\nint main() {\n    int dato = 4;\n    int& acceso = dato;\n    int&& calculado = 2 + 3;\n    acceso = 8;\n    calculado = 7;\n    std::cout << dato << ':' << calculado;\n    return 0;\n}\n",
+          "answers": [
+            "8:7"
+          ],
+          "outputComparison": "exact",
+          "explanation": "acceso se refiere a dato, por lo que su asignación alcanza ese objeto. calculado se refiere a otro int, preparado a partir de la suma. Asignar mediante su nombre modifica ese int temporal conservado; no vuelve a calcular la suma ni cambia dato."
+        }
+      },
+      {
+        "id": "block_0004_0003",
+        "block": {
+          "type": "output_prediction",
+          "id": "p3_u6l5_reutilizar_origen_vacio",
+          "language": "cpp",
+          "question": "¿Qué valores se consultan desde los dos propietarios al final?",
+          "code": "#include <iostream>\n#include <memory>\n#include <utility>\n\nint main() {\n    auto origen = std::make_unique<int>(6);\n    auto destino = std::move(origen);\n    origen = std::make_unique<int>(9);\n    std::cout << *origen << ':' << *destino;\n    return 0;\n}\n",
+          "answers": [
+            "9:6"
+          ],
+          "outputComparison": "exact",
+          "explanation": "El primer int quedó bajo responsabilidad de destino. La creación posterior proporciona otro int a origen. Ahora existen dos propietarios de dos objetos distintos, y cada lectura consulta el que corresponde."
+        }
+      },
+      {
+        "id": "block_0005_0003",
+        "block": {
+          "type": "output_prediction",
+          "id": "p3_u6l5_asignar_sobre_un_destino_ocupado",
+          "language": "cpp",
+          "question": "Escribe la traza completa, incluida la destrucción del objeto anterior del destino.",
+          "code": "#include <iostream>\n#include <memory>\n#include <utility>\n\nclass Marca {\npublic:\n    Marca(char etiqueta) : etiqueta_{etiqueta} {\n        std::cout << \"Crear:\" << etiqueta_ << '\\n';\n    }\n    ~Marca() { std::cout << \"Destruir:\" << etiqueta_ << '\\n'; }\n    char etiqueta() const { return etiqueta_; }\nprivate:\n    char etiqueta_;\n};\n\nint main() {\n    {\n        auto origen = std::make_unique<Marca>('A');\n        auto destino = std::make_unique<Marca>('B');\n        std::cout << \"Antes\\n\";\n        destino = std::move(origen);\n        std::cout << \"Estados:\" << (origen != nullptr) << ':'\n                  << (destino != nullptr) << '\\n';\n        std::cout << \"Actual:\" << destino->etiqueta() << '\\n';\n    }\n    std::cout << \"Fuera\";\n    return 0;\n}\n",
+          "answers": [
+            "Crear:A\nCrear:B\nAntes\nDestruir:B\nEstados:0:1\nActual:A\nDestruir:A\nFuera"
+          ],
+          "outputComparison": "exact",
+          "explanation": "La Marca anterior de destino se destruye durante la asignación, antes de imprimir los estados posteriores. La Marca recibida permanece viva bajo el propietario destino hasta salir del bloque. El propietario origen termina vacío y no destruye de nuevo esa Marca."
+        }
+      },
+      {
+        "id": "block_0006_0002",
+        "block": {
+          "type": "output_prediction",
+          "id": "p3_u6l5_asignar_desde_vacio",
+          "language": "cpp",
+          "question": "¿Qué mensajes y estados produce la asignación desde origen vacío?",
+          "code": "#include <iostream>\n#include <memory>\n#include <utility>\n\nclass Marca {\npublic:\n    Marca(char etiqueta) : etiqueta_{etiqueta} {\n        std::cout << \"Crear:\" << etiqueta_ << '\\n';\n    }\n    ~Marca() { std::cout << \"Destruir:\" << etiqueta_ << '\\n'; }\n    char etiqueta() const { return etiqueta_; }\nprivate:\n    char etiqueta_;\n};\n\nint main() {\n    std::unique_ptr<Marca> origen;\n    auto destino = std::make_unique<Marca>('B');\n    destino = std::move(origen);\n    std::cout << (origen != nullptr) << ':' << (destino != nullptr);\n    return 0;\n}\n",
+          "answers": [
+            "Crear:B\nDestruir:B\n0:0"
+          ],
+          "outputComparison": "exact",
+          "explanation": "El destino pierde el objeto que gestionaba porque recibe el estado vacío del origen. La destrucción ocurre durante la asignación. Los dos propietarios quedan sin objeto, y no se añade otra destrucción al terminar sus variables."
+        }
+      },
+      {
+        "id": "block_0007_0003",
+        "block": {
+          "type": "output_prediction",
+          "id": "p3_u6l5_prestamo_y_copia_anterior",
+          "language": "cpp",
+          "question": "¿Qué muestran la copia previa, los dos accesos al objeto vivo y su comparación?",
+          "code": "#include <iostream>\n#include <memory>\n#include <utility>\n\nint main() {\n    auto origen = std::make_unique<int>(3);\n    auto destino = std::make_unique<int>(9);\n    const int* prestado = origen.get();\n    const int* anterior = destino.get();\n    const int copia = *anterior;\n    anterior = nullptr;\n    destino = std::move(origen);\n    std::cout << copia << ':' << *prestado << ':' << *destino << ':'\n              << (prestado == destino.get());\n    prestado = nullptr;\n    return 0;\n}\n",
+          "answers": [
+            "9:3:3:1"
+          ],
+          "outputComparison": "exact",
+          "explanation": "copia es un int independiente del objeto anterior ya destruido. prestado y destino permiten acceder al objeto que vino del origen, que no terminó durante la transferencia. La comparación utiliza dos punteros a ese mismo objeto todavía vivo."
+        }
+      },
+      {
+        "id": "block_0009_0002",
+        "block": {
+          "type": "output_prediction",
+          "id": "p3_u6l5_move_con_un_entero",
+          "language": "cpp",
+          "question": "¿Qué valores conservan los dos enteros después de la inicialización?",
+          "code": "#include <iostream>\n#include <memory>\n#include <utility>\n\nint main() {\n    int origen = 3;\n    int destino = std::move(origen);\n    std::cout << origen << ':' << destino;\n    return 0;\n}\n",
+          "answers": [
+            "3:3"
+          ],
+          "outputComparison": "exact",
+          "explanation": "La inicialización de destino recibe el valor entero. std::move no asigna otro valor a origen ni lo convierte en un entero vacío. La transferencia de responsabilidad que vimos antes procedía de las operaciones de unique_ptr, no de una orden universal incluida en std::move."
+        }
+      },
+      {
+        "id": "block_0010_0003",
+        "block": {
+          "type": "output_prediction",
+          "id": "p3_u6l5_recibir_propiedad_por_valor",
+          "language": "cpp",
+          "question": "¿Qué muestran el valor devuelto y la presencia del propietario original después de la llamada?",
+          "code": "#include <iostream>\n#include <memory>\n#include <utility>\n\nint consumir(std::unique_ptr<int> dato) {\n    if (!dato) {\n        return -1;\n    }\n    return *dato;\n}\n\nint main() {\n    auto propietario = std::make_unique<int>(4);\n    const int copia = consumir(std::move(propietario));\n    std::cout << copia << ':' << (propietario == nullptr);\n    return 0;\n}\n",
+          "answers": [
+            "4:1"
+          ],
+          "outputComparison": "exact",
+          "explanation": "dato recibió la responsabilidad al construirse desde el propietario del llamador. La función devolvió una copia del entero. Tras completar la llamada, esa copia sigue disponible y el propietario original permanece vacío."
+        }
+      },
+      {
+        "id": "block_0011_0002",
+        "block": {
+          "type": "output_prediction",
+          "id": "p3_u6l5_excepcion_despues_de_transferir",
+          "language": "cpp",
+          "question": "Escribe la traza completa y la comprobación que realiza el catch.",
+          "code": "#include <iostream>\n#include <memory>\n#include <utility>\n\nclass Marca {\npublic:\n    Marca(char etiqueta) : etiqueta_{etiqueta} {\n        std::cout << \"Crear:\" << etiqueta_ << '\\n';\n    }\n    ~Marca() { std::cout << \"Destruir:\" << etiqueta_ << '\\n'; }\n    char etiqueta() const { return etiqueta_; }\nprivate:\n    char etiqueta_;\n};\n\nstruct Fallo {};\n\nvoid consumir(std::unique_ptr<Marca> dato) {\n    std::cout << \"Dentro:\" << dato->etiqueta() << '\\n';\n    throw Fallo{};\n}\n\nint main() {\n    auto propietario = std::make_unique<Marca>('C');\n    try {\n        consumir(std::move(propietario));\n    } catch (const Fallo&) {\n        std::cout << \"Captura:\" << (propietario == nullptr);\n    }\n    return 0;\n}\n",
+          "answers": [
+            "Crear:C\nDentro:C\nDestruir:C\nCaptura:1"
+          ],
+          "outputComparison": "exact",
+          "explanation": "La transferencia ya se produjo al inicializar dato. Al propagarse Fallo se destruyen ese propietario y su Marca. Captura consulta el propietario del llamador, que quedó vacío; la excepción no revierte la transferencia ni reconstruye el objeto destruido."
+        }
+      },
+      {
+        "id": "block_0012_0003",
+        "block": {
+          "type": "output_prediction",
+          "id": "p3_u6l5_parametro_referencia_sin_consumo",
+          "language": "cpp",
+          "question": "¿Qué muestra la función y qué conserva main después de la llamada?",
+          "code": "#include <iostream>\n#include <memory>\n#include <utility>\n\nvoid observar(std::unique_ptr<int>&& acceso) {\n    std::cout << (acceso != nullptr);\n}\n\nint main() {\n    auto propietario = std::make_unique<int>(8);\n    observar(std::move(propietario));\n    std::cout << ':' << (propietario != nullptr) << ':' << *propietario;\n    return 0;\n}\n",
+          "answers": [
+            "1:1:8"
+          ],
+          "outputComparison": "exact",
+          "explanation": "acceso se vinculó al propietario de main y sólo lo consultó. No se construyó otro propietario ni se asignó por movimiento. Al regresar, main conserva su propietario con el mismo int vivo y puede leerlo."
+        }
+      },
+      {
+        "id": "block_0013_0004",
+        "block": {
+          "type": "output_prediction",
+          "id": "p3_u6l5_retornar_propietario_local",
+          "language": "cpp",
+          "question": "¿Qué muestra el propietario recibido en main?",
+          "code": "#include <iostream>\n#include <memory>\n#include <utility>\n\nstd::unique_ptr<int> crear() {\n    auto propietario = std::make_unique<int>(6);\n    return propietario;\n}\n\nint main() {\n    auto recibido = crear();\n    std::cout << (recibido != nullptr) << ':' << *recibido;\n    return 0;\n}\n",
+          "answers": [
+            "1:6"
+          ],
+          "outputComparison": "exact",
+          "explanation": "crear devuelve la propiedad por valor y recibido conserva el int creado. El programa no intenta utilizar un propietario local ya terminado. La elisión o el movimiento implícito permiten esta devolución sin una copia prohibida de unique_ptr."
+        }
+      },
+      {
+        "id": "block_0014_0001",
+        "block": {
+          "type": "inline_fill_code",
+          "id": "p3_u6l5_completar_movimientos",
+          "question": "Completa cada hueco utilizando std::move para ofrecer el propietario que debe ceder su objeto. Escribe la llamada con su calificación std:: y el nombre del propietario origen, sin sustituirla por una conversión de tipo. Primero se construye destino; después, tras crear otro int para origen, se sustituye lo que gestiona destino. No copies al propietario ni utilices un puntero prestado para crear otro.",
+          "template": "#include <iostream>\n#include <memory>\n#include <utility>\n\nint main() {\n    auto origen = std::make_unique<int>(2);\n    std::unique_ptr<int> destino = [];\n    origen = std::make_unique<int>(8);\n    destino = [];\n    std::cout << (origen == nullptr) << ':' << *destino;\n    return 0;\n}\n",
+          "answers": [
+            "std::move(origen)",
+            "std::move(origen)"
+          ],
+          "answerAlternatives": [
+            [
+              "std::move(origen)",
+              "std::move( origen )",
+              "(std::move(origen))",
+              "(std::move( origen ))",
+              "std::move((origen))",
+              "std::move( (origen) )",
+              "::std::move(origen)",
+              "(::std::move(origen))"
+            ],
+            [
+              "std::move(origen)",
+              "std::move( origen )",
+              "(std::move(origen))",
+              "(std::move( origen ))",
+              "std::move((origen))",
+              "std::move( (origen) )",
+              "::std::move(origen)",
+              "(::std::move(origen))"
+            ]
+          ],
+          "explanation": "La primera inicialización usa el constructor de movimiento. La segunda transferencia es una asignación sobre un destino ya existente: termina el objeto que éste gestionaba y recibe el recién creado para origen. El origen queda vacío después de esa asignación entre propietarios distintos."
+        }
+      },
+      {
+        "id": "block_0015_0004",
+        "block": {
+          "type": "cpp_compiler",
+          "language": "cpp",
+          "initialCode": "#include <iostream>\n#include <memory>\n#include <utility>\n\nint recibir(std::unique_ptr<int>&& entrada) {\n    auto local = entrada;\n    return *local;\n}\n\nint main() {\n    auto propietario = std::make_unique<int>(7);\n    const int copia = recibir(std::move(propietario));\n    std::cout << copia << ':' << (propietario == nullptr);\n    return 0;\n}\n",
+          "initialStandardInput": "",
+          "outputCheck": {
+            "inputComparison": "tokens",
+            "cases": [
+              {
+                "standardInput": "",
+                "outputs": [
+                  "7:1"
+                ],
+                "explanation": "El parámetro entrada ya es una referencia, pero su nombre se usa como lvalue en ese inicializador. Se necesita ofrecer ese mismo propietario para la construcción por movimiento de local, sin cambiar el contrato por una mera consulta prestada."
+              }
+            ]
+          }
+        }
+      },
+      {
+        "id": "block_0016_0001",
+        "block": {
+          "type": "code",
+          "language": "cpp",
+          "code": "#include <iostream>\n#include <memory>\n#include <utility>\n\nint recibir(std::unique_ptr<int>&& entrada) {\n    auto local = std::move(entrada);\n    return *local;\n}\n\nint main() {\n    auto propietario = std::make_unique<int>(7);\n    const int copia = recibir(std::move(propietario));\n    std::cout << copia << ':' << (propietario == nullptr);\n    return 0;\n}\n"
+        }
+      },
+      {
+        "id": "block_0021_0002",
+        "block": {
+          "type": "cpp_compiler",
+          "language": "cpp",
+          "initialCode": "#include <iostream>\n#include <memory>\n#include <utility>\n\n#include <new>\n\nbool indice_valido(int indice) {\n    return indice == 0 || indice == 1;\n}\n\nclass Deposito {\npublic:\n    bool hay(int indice) const {\n        return indice == 0 ? primero_ != nullptr : segundo_ != nullptr;\n    }\n    int valor(int indice) const {\n        return indice == 0 ? *primero_ : *segundo_;\n    }\n    bool poner(int indice, int valor);\n    bool cambiar(int indice, int valor);\n    bool vaciar(int indice);\n    bool transferir(int origen, int destino);\nprivate:\n    std::unique_ptr<int>& elegir(int indice) {\n        return indice == 0 ? primero_ : segundo_;\n    }\n    std::unique_ptr<int> primero_ = std::make_unique<int>(4);\n    std::unique_ptr<int> segundo_ = std::make_unique<int>(7);\n};\nbool Deposito::poner(int indice, int valor) {\n    if (!indice_valido(indice) || valor < 0 || valor > 9) {\n        return false;\n    }\n    try {\n        auto candidato = std::make_unique<int>(valor);\n        elegir(indice).swap(candidato);\n        return true;\n    } catch (const std::bad_alloc&) {\n        return false;\n    }\n}\n\nbool Deposito::cambiar(int indice, int valor) {\n    if (!indice_valido(indice) || valor < 0 || valor > 9) {\n        return false;\n    }\n    auto& propietario = elegir(indice);\n    if (!propietario) {\n        return false;\n    }\n    *propietario = valor;\n    return true;\n}\n\nbool Deposito::vaciar(int indice) {\n    if (!indice_valido(indice)) {\n        return false;\n    }\n    elegir(indice).reset();\n    return true;\n}\nbool Deposito::transferir(int origen, int destino) {\n    // Completa las comprobaciones y la transferencia, sin crear otro entero.\n    (void)origen;\n    (void)destino;\n    return false;\n}\nvoid mostrar_dato(bool hay, int valor) {\n    if (hay) {\n        std::cout << valor;\n    } else {\n        std::cout << 'X';\n    }\n}\n\nvoid mostrar(const Deposito& deposito) {\n    for (int indice = 0; indice < 2; ++indice) {\n        if (indice != 0) {\n            std::cout << ':';\n        }\n        const bool hay = deposito.hay(indice);\n        mostrar_dato(hay, hay ? deposito.valor(indice) : 0);\n    }\n}\nint main() {\n    int cantidad = 0;\n    if (!(std::cin >> cantidad) || cantidad < 1 || cantidad > 12) {\n        return 1;\n    }\n    Deposito deposito;\n    std::cout << \"Inicio:\";\n    mostrar(deposito);\n    std::cout << '\\n';\n    for (int i = 0; i < cantidad; ++i) {\n        int operacion = 0;\n        int a = 0;\n        int b = 0;\n        if (!(std::cin >> operacion >> a >> b)) {\n            return 1;\n        }\n        const bool habia0 = deposito.hay(0);\n        const bool habia1 = deposito.hay(1);\n        const int anterior0 = habia0 ? deposito.valor(0) : 0;\n        const int anterior1 = habia1 ? deposito.valor(1) : 0;\n        bool aceptado = false;\n        if (operacion == 1) {\n            aceptado = deposito.transferir(a, b);\n        } else if (operacion == 2) {\n            aceptado = deposito.poner(a, b);\n        } else if (operacion == 3) {\n            aceptado = deposito.vaciar(a);\n        } else if (operacion == 4) {\n            aceptado = deposito.cambiar(a, b);\n        }\n        std::cout << \"Resultado:\" << aceptado << \";Antes:\";\n        mostrar_dato(habia0, anterior0);\n        std::cout << ':';\n        mostrar_dato(habia1, anterior1);\n        std::cout << \";Actual:\";\n        mostrar(deposito);\n        std::cout << '\\n';\n    }\n    std::cout << \"Final:\";\n    mostrar(deposito);\n    return 0;\n}\n",
+          "initialStandardInput": "12\n1 0 1\n1 0 1\n2 0 0\n1 0 1\n1 1 1\n1 -1 0\n1 1 0\n4 0 9\n3 0 0\n1 0 1\n2 1 6\n1 1 0\n",
+          "outputCheck": {
+            "inputComparison": "tokens",
+            "cases": [
+              {
+                "standardInput": "12\n1 0 1\n1 0 1\n2 0 0\n1 0 1\n1 1 1\n1 -1 0\n1 1 0\n4 0 9\n3 0 0\n1 0 1\n2 1 6\n1 1 0\n",
+                "outputs": [
+                  "Inicio:4:7\nResultado:1;Antes:4:7;Actual:X:4\nResultado:0;Antes:X:4;Actual:X:4\nResultado:1;Antes:X:4;Actual:0:4\nResultado:1;Antes:0:4;Actual:X:0\nResultado:0;Antes:X:0;Actual:X:0\nResultado:0;Antes:X:0;Actual:X:0\nResultado:1;Antes:X:0;Actual:0:X\nResultado:1;Antes:0:X;Actual:9:X\nResultado:1;Antes:9:X;Actual:X:X\nResultado:0;Antes:X:X;Actual:X:X\nResultado:1;Antes:X:X;Actual:X:6\nResultado:1;Antes:X:6;Actual:6:X\nFinal:6:X"
+                ],
+                "explanation": "Comprueba las condiciones antes de modificar los miembros. La asignación por movimiento conserva el objeto del origen bajo el destino y deja vacío al origen; no es un intercambio ni una copia de su entero."
+              },
+              {
+                "standardInput": "6\n1 1 0\n2 1 7\n1 0 1\n3 0 9\n2 0 0\n1 1 0\n",
+                "outputs": [
+                  "Inicio:4:7\nResultado:1;Antes:4:7;Actual:7:X\nResultado:1;Antes:7:X;Actual:7:7\nResultado:1;Antes:7:7;Actual:X:7\nResultado:1;Antes:X:7;Actual:X:7\nResultado:1;Antes:X:7;Actual:0:7\nResultado:1;Antes:0:7;Actual:7:X\nFinal:7:X"
+                ],
+                "explanation": "Comprueba las condiciones antes de modificar los miembros. La asignación por movimiento conserva el objeto del origen bajo el destino y deja vacío al origen; no es un intercambio ni una copia de su entero."
+              },
+              {
+                "standardInput": "8\n1 0 2\n2 -1 4\n2 0 2147483647\n2 1 -2147483648\n4 0 -1\n3 2 0\n8 0 1\n1 1 0\n",
+                "outputs": [
+                  "Inicio:4:7\nResultado:0;Antes:4:7;Actual:4:7\nResultado:0;Antes:4:7;Actual:4:7\nResultado:0;Antes:4:7;Actual:4:7\nResultado:0;Antes:4:7;Actual:4:7\nResultado:0;Antes:4:7;Actual:4:7\nResultado:0;Antes:4:7;Actual:4:7\nResultado:0;Antes:4:7;Actual:4:7\nResultado:1;Antes:4:7;Actual:7:X\nFinal:7:X"
+                ],
+                "explanation": "Comprueba las condiciones antes de modificar los miembros. La asignación por movimiento conserva el objeto del origen bajo el destino y deja vacío al origen; no es un intercambio ni una copia de su entero."
+              }
+            ]
+          }
+        }
+      },
+      {
+        "id": "block_0023_0001",
+        "block": {
+          "type": "code",
+          "language": "cpp",
+          "code": "#include <iostream>\n#include <memory>\n#include <utility>\n\n#include <new>\n\nbool indice_valido(int indice) {\n    return indice == 0 || indice == 1;\n}\n\nclass Deposito {\npublic:\n    bool hay(int indice) const {\n        return indice == 0 ? primero_ != nullptr : segundo_ != nullptr;\n    }\n    int valor(int indice) const {\n        return indice == 0 ? *primero_ : *segundo_;\n    }\n    bool poner(int indice, int valor);\n    bool cambiar(int indice, int valor);\n    bool vaciar(int indice);\n    bool transferir(int origen, int destino);\nprivate:\n    std::unique_ptr<int>& elegir(int indice) {\n        return indice == 0 ? primero_ : segundo_;\n    }\n    std::unique_ptr<int> primero_ = std::make_unique<int>(4);\n    std::unique_ptr<int> segundo_ = std::make_unique<int>(7);\n};\nbool Deposito::poner(int indice, int valor) {\n    if (!indice_valido(indice) || valor < 0 || valor > 9) {\n        return false;\n    }\n    try {\n        auto candidato = std::make_unique<int>(valor);\n        elegir(indice).swap(candidato);\n        return true;\n    } catch (const std::bad_alloc&) {\n        return false;\n    }\n}\n\nbool Deposito::cambiar(int indice, int valor) {\n    if (!indice_valido(indice) || valor < 0 || valor > 9) {\n        return false;\n    }\n    auto& propietario = elegir(indice);\n    if (!propietario) {\n        return false;\n    }\n    *propietario = valor;\n    return true;\n}\n\nbool Deposito::vaciar(int indice) {\n    if (!indice_valido(indice)) {\n        return false;\n    }\n    elegir(indice).reset();\n    return true;\n}\nbool Deposito::transferir(int origen, int destino) {\n    if (!indice_valido(origen) || !indice_valido(destino) || origen == destino) {\n        return false;\n    }\n    auto& saliente = elegir(origen);\n    auto& entrante = elegir(destino);\n    if (!saliente) {\n        return false;\n    }\n    entrante = std::move(saliente);\n    return true;\n}\nvoid mostrar_dato(bool hay, int valor) {\n    if (hay) {\n        std::cout << valor;\n    } else {\n        std::cout << 'X';\n    }\n}\n\nvoid mostrar(const Deposito& deposito) {\n    for (int indice = 0; indice < 2; ++indice) {\n        if (indice != 0) {\n            std::cout << ':';\n        }\n        const bool hay = deposito.hay(indice);\n        mostrar_dato(hay, hay ? deposito.valor(indice) : 0);\n    }\n}\nint main() {\n    int cantidad = 0;\n    if (!(std::cin >> cantidad) || cantidad < 1 || cantidad > 12) {\n        return 1;\n    }\n    Deposito deposito;\n    std::cout << \"Inicio:\";\n    mostrar(deposito);\n    std::cout << '\\n';\n    for (int i = 0; i < cantidad; ++i) {\n        int operacion = 0;\n        int a = 0;\n        int b = 0;\n        if (!(std::cin >> operacion >> a >> b)) {\n            return 1;\n        }\n        const bool habia0 = deposito.hay(0);\n        const bool habia1 = deposito.hay(1);\n        const int anterior0 = habia0 ? deposito.valor(0) : 0;\n        const int anterior1 = habia1 ? deposito.valor(1) : 0;\n        bool aceptado = false;\n        if (operacion == 1) {\n            aceptado = deposito.transferir(a, b);\n        } else if (operacion == 2) {\n            aceptado = deposito.poner(a, b);\n        } else if (operacion == 3) {\n            aceptado = deposito.vaciar(a);\n        } else if (operacion == 4) {\n            aceptado = deposito.cambiar(a, b);\n        }\n        std::cout << \"Resultado:\" << aceptado << \";Antes:\";\n        mostrar_dato(habia0, anterior0);\n        std::cout << ':';\n        mostrar_dato(habia1, anterior1);\n        std::cout << \";Actual:\";\n        mostrar(deposito);\n        std::cout << '\\n';\n    }\n    std::cout << \"Final:\";\n    mostrar(deposito);\n    return 0;\n}\n"
+        }
+      }
+    ]
   }
 }

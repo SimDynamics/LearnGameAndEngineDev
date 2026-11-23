@@ -22,7 +22,7 @@
           "id": "p3_u4l3_valor_y_resultado",
           "language": "cpp",
           "question": "¿Qué muestra dato:resultado:dato en el orden de las dos salidas?",
-          "code": "#include <iostream>\n\nint sumarDos(int valor) {\n    valor += 2;\n    return valor;\n}\n\nint main() {\n    int dato = 4;\n    const int resultado = sumarDos(dato);\n    std::cout << dato << ':' << resultado;\n    dato = sumarDos(dato);\n    std::cout << ':' << dato;\n    return 0;\n}\n",
+          "code": "#include <iostream>\n\nint sumarDos(int valor) {\n    valor += 2;\n    return valor;\n}\n\nint main() {\n    int dato = 4;\n    const int resultado = sumarDos(dato);\n\n    std::cout << dato << ':' << resultado;\n    dato = sumarDos(dato);\n\n    std::cout << ':' << dato;\n\n    return 0;\n}\n",
           "answers": [
             "4:6:6"
           ],
@@ -44,7 +44,7 @@
         {
           "type": "code",
           "language": "cpp",
-          "code": "#include <iostream>\n\nvoid aumentar(int& valor) {\n    valor += 2;\n}\n\nint main() {\n    int dato = 4;\n    aumentar(dato);\n    std::cout << dato;\n    return 0;\n}\n"
+          "code": "#include <iostream>\n\nvoid aumentar(int& valor) {\n    valor += 2;\n}\n\nint main() {\n    int dato = 4;\n    aumentar(dato);\n    std::cout << dato;\n\n    return 0;\n}\n"
         },
         {
           "type": "paragraph",
@@ -79,7 +79,7 @@
           "id": "p3_u4l3_tres_modos",
           "language": "cpp",
           "question": "¿Qué muestra primero:segundo:tercero:resultado?",
-          "code": "#include <iostream>\n\nint combinar(int copia, int& destino, const int& lectura) {\n    copia += 1;\n    destino += 2;\n    return copia + lectura;\n}\n\nint main() {\n    int primero = 3;\n    int segundo = 4;\n    int tercero = 5;\n    const int resultado = combinar(primero, segundo, tercero);\n    std::cout << primero << ':' << segundo << ':' << tercero << ':' << resultado;\n    return 0;\n}\n",
+          "code": "#include <iostream>\n\nint combinar(int copia, int& destino, const int& lectura) {\n    copia += 1;\n    destino += 2;\n    return copia + lectura;\n}\n\nint main() {\n    int primero = 3;\n    int segundo = 4;\n    int tercero = 5;\n    const int resultado = combinar(primero, segundo, tercero);\n\n    std::cout << primero << ':' << segundo << ':' << tercero << ':' << resultado;\n\n    return 0;\n}\n",
           "answers": [
             "3:6:5:9"
           ],
@@ -103,7 +103,7 @@
           "id": "p3_u4l3_argumento_const_por_valor",
           "language": "cpp",
           "question": "¿Qué muestra limite:resultado?",
-          "code": "#include <iostream>\n\nint calcular(int valor) {\n    valor += 2;\n    return valor;\n}\n\nint main() {\n    const int limite = 4;\n    const int resultado = calcular(limite);\n    std::cout << limite << ':' << resultado;\n    return 0;\n}\n",
+          "code": "#include <iostream>\n\nint calcular(int valor) {\n    valor += 2;\n    return valor;\n}\n\nint main() {\n    const int limite = 4;\n    const int resultado = calcular(limite);\n\n    std::cout << limite << ':' << resultado;\n\n    return 0;\n}\n",
           "answers": [
             "4:6"
           ],
@@ -131,7 +131,7 @@
           "id": "p3_u4l3_const_parametro_sigue_siendo_copia",
           "language": "cpp",
           "question": "¿Qué muestra resultado:dato?",
-          "code": "#include <iostream>\n\nint conservar(const int copia, int& original) {\n    original = 8;\n    return copia;\n}\n\nint main() {\n    int dato = 3;\n    const int resultado = conservar(dato, dato);\n    std::cout << resultado << ':' << dato;\n    return 0;\n}\n",
+          "code": "#include <iostream>\n\nint conservar(const int copia, int& original) {\n    original = 8;\n    return copia;\n}\n\nint main() {\n    int dato = 3;\n    const int resultado = conservar(dato, dato);\n\n    std::cout << resultado << ':' << dato;\n\n    return 0;\n}\n",
           "answers": [
             "3:8"
           ],
@@ -157,7 +157,7 @@
         {
           "type": "code",
           "language": "cpp",
-          "code": "#include <iostream>\n\nint leerDespues(int& destino, const int& lectura) {\n    destino += 2;\n    return lectura;\n}\n\nint main() {\n    int primero = 3;\n    int segundo = 9;\n    const int distinto = leerDespues(primero, segundo);\n    const int trasPrimera = primero;\n    const int compartido = leerDespues(primero, primero);\n    std::cout << trasPrimera << ':' << distinto << ':' << primero << ':' << compartido;\n    return 0;\n}\n"
+          "code": "#include <iostream>\n\nint leerDespues(int& destino, const int& lectura) {\n    destino += 2;\n    return lectura;\n}\n\nint main() {\n    int primero = 3;\n    int segundo = 9;\n    const int distinto = leerDespues(primero, segundo);\n    const int trasPrimera = primero;\n    const int compartido = leerDespues(primero, primero);\n\n    std::cout << trasPrimera << ':' << distinto << ':' << primero << ':' << compartido;\n\n    return 0;\n}\n"
         },
         {
           "type": "math_puzzle",
@@ -267,7 +267,7 @@
           "id": "p3_u4l3_capturar_antes_de_escribir",
           "language": "cpp",
           "question": "¿Qué muestra primero:segundo:compartido:distinto?",
-          "code": "#include <iostream>\n\nint preparar(int& destino, const int& origen) {\n    const int previo = origen;\n    destino = previo + 2;\n    return previo;\n}\n\nint main() {\n    int primero = 4;\n    int segundo = 8;\n    const int compartido = preparar(primero, primero);\n    const int distinto = preparar(segundo, primero);\n    std::cout << primero << ':' << segundo << ':' << compartido << ':' << distinto;\n    return 0;\n}\n",
+          "code": "#include <iostream>\n\nint preparar(int& destino, const int& origen) {\n    const int previo = origen;\n\n    destino = previo + 2;\n    return previo;\n}\n\nint main() {\n    int primero = 4;\n    int segundo = 8;\n    const int compartido = preparar(primero, primero);\n    const int distinto = preparar(segundo, primero);\n\n    std::cout << primero << ':' << segundo << ':' << compartido << ':' << distinto;\n\n    return 0;\n}\n",
           "answers": [
             "6:8:4:6"
           ],
@@ -295,7 +295,7 @@
           "id": "p3_u4l3_arrays_por_valor_y_referencia",
           "language": "cpp",
           "question": "¿Qué muestra resultado:anterior:actual?",
-          "code": "#include <array>\n#include <iostream>\n\nint prepararCopia(std::array<int, 2> datos) {\n    datos[0] = 9;\n    return datos[0];\n}\n\nvoid prepararOriginal(std::array<int, 2>& datos) {\n    datos[0] = 7;\n}\n\nint leerPrimero(const std::array<int, 2>& datos) {\n    return datos[0];\n}\n\nint main() {\n    std::array<int, 2> datos{2, 5};\n    const int resultado = prepararCopia(datos);\n    const int anterior = datos[0];\n    prepararOriginal(datos);\n    const int actual = leerPrimero(datos);\n    std::cout << resultado << ':' << anterior << ':' << actual;\n    return 0;\n}\n",
+          "code": "#include <array>\n#include <iostream>\n\nint prepararCopia(std::array<int, 2> datos) {\n    datos[0] = 9;\n    return datos[0];\n}\n\nvoid prepararOriginal(std::array<int, 2>& datos) {\n    datos[0] = 7;\n}\n\nint leerPrimero(const std::array<int, 2>& datos) {\n    return datos[0];\n}\n\nint main() {\n    std::array<int, 2> datos{2, 5};\n    const int resultado = prepararCopia(datos);\n    const int anterior = datos[0];\n    prepararOriginal(datos);\n    const int actual = leerPrimero(datos);\n    std::cout << resultado << ':' << anterior << ':' << actual;\n\n    return 0;\n}\n",
           "answers": [
             "9:2:7"
           ],
@@ -370,7 +370,7 @@
           "id": "p3_u4l3_conversion_dentro_de_llamada",
           "language": "cpp",
           "question": "¿Qué muestra convertido:primero:directo:segundo?",
-          "code": "#include <iostream>\n\ndouble leerConvertido(const double& lectura, int& original) {\n    original = 9;\n    return lectura;\n}\n\nint leerDirecto(const int& lectura, int& original) {\n    original = 9;\n    return lectura;\n}\n\nint main() {\n    int primero = 4;\n    int segundo = 4;\n    const double convertido = leerConvertido(primero, primero);\n    const int directo = leerDirecto(segundo, segundo);\n    std::cout << convertido << ':' << primero << ':' << directo << ':' << segundo;\n    return 0;\n}\n",
+          "code": "#include <iostream>\n\ndouble leerConvertido(const double& lectura, int& original) {\n    original = 9;\n    return lectura;\n}\n\nint leerDirecto(const int& lectura, int& original) {\n    original = 9;\n    return lectura;\n}\n\nint main() {\n    int primero = 4;\n    int segundo = 4;\n    const double convertido = leerConvertido(primero, primero);\n    const int directo = leerDirecto(segundo, segundo);\n\n    std::cout << convertido << ':' << primero << ':' << directo << ':' << segundo;\n\n    return 0;\n}\n",
           "answers": [
             "4:9:9:9"
           ],
@@ -407,7 +407,7 @@
           "id": "p3_u4l3_resultado_independiente_del_temporal",
           "language": "cpp",
           "question": "¿Qué muestra el programa?",
-          "code": "#include <iostream>\n\nint duplicar(const int& valor) {\n    return valor * 2;\n}\n\nint main() {\n    const int resultado = duplicar(3 + 4);\n    std::cout << resultado;\n    return 0;\n}\n",
+          "code": "#include <iostream>\n\nint duplicar(const int& valor) {\n    return valor * 2;\n}\n\nint main() {\n    const int resultado = duplicar(3 + 4);\n\n    std::cout << resultado;\n\n    return 0;\n}\n",
           "answers": [
             "14"
           ],
@@ -453,7 +453,7 @@
         {
           "type": "cpp_compiler",
           "language": "cpp",
-          "initialCode": "#include <iostream>\n\nbool fijar(int destino, const int& fuente) {\n    destino = fuente;\n    return destino == fuente;\n}\n\nint main() {\n    int destino = 2;\n    int fuente = 6;\n    const bool aceptada = fijar(destino, fuente);\n    std::cout << aceptada << ':' << destino << ':' << fuente;\n    return 0;\n}\n",
+          "initialCode": "#include <iostream>\n\nbool fijar(int destino, const int& fuente) {\n    destino = fuente;\n    return destino == fuente;\n}\n\nint main() {\n    int destino = 2;\n    int fuente = 6;\n    const bool aceptada = fijar(destino, fuente);\n\n    std::cout << aceptada << ':' << destino << ':' << fuente;\n\n    return 0;\n}\n",
           "initialStandardInput": "",
           "outputCheck": {
             "inputComparison": "tokens",
@@ -479,7 +479,7 @@
         {
           "type": "code",
           "language": "cpp",
-          "code": "#include <iostream>\n\nbool fijar(int& destino, const int& fuente) {\n    destino = fuente;\n    return destino == fuente;\n}\n\nint main() {\n    int destino = 2;\n    int fuente = 6;\n    const bool aceptada = fijar(destino, fuente);\n    std::cout << aceptada << ':' << destino << ':' << fuente;\n    return 0;\n}\n"
+          "code": "#include <iostream>\n\nbool fijar(int& destino, const int& fuente) {\n    destino = fuente;\n    return destino == fuente;\n}\n\nint main() {\n    int destino = 2;\n    int fuente = 6;\n    const bool aceptada = fijar(destino, fuente);\n\n    std::cout << aceptada << ':' << destino << ':' << fuente;\n\n    return 0;\n}\n"
         },
         {
           "type": "paragraph",
@@ -562,7 +562,7 @@
         {
           "type": "cpp_compiler",
           "language": "cpp",
-          "initialCode": "#include <array>\n#include <cstddef>\n#include <iostream>\n\nint asignarDesde(int& destino, const int& fuente, int cambio) {\n    // Conserva el valor previo de fuente y valida antes de modificar destino.\n    std::cout << \"Funcion pendiente: \" << destino << ',' << fuente << ',' << cambio << '\\n';\n    return -1;\n}\n\nint main() {\n    std::array<int, 3> datos{2, 5, 8};\n    int cantidad = 0;\n    if (!(std::cin >> cantidad) || cantidad < 1 || cantidad > 12) {\n        return 1;\n    }\n    for (int orden = 0; orden < cantidad; ++orden) {\n        int destino = 0;\n        int origen = 0;\n        int cambio = 0;\n        if (!(std::cin >> destino >> origen >> cambio)) {\n            return 1;\n        }\n        if (destino < 0 || destino > 2 || origen < 0 || origen > 2) {\n            std::cout << \"Indices invalidos;OrigenPrevio:-1\";\n        } else {\n            const int previo = asignarDesde(datos[static_cast<std::size_t>(destino)],\n                                            datos[static_cast<std::size_t>(origen)], cambio);\n            std::cout << (previo < 0 ? \"Rechazo\" : \"Aceptada\") << \";OrigenPrevio:\" << previo;\n        }\n        std::cout << \";Datos:\" << datos[0] << ',' << datos[1] << ',' << datos[2] << '\\n';\n    }\n    return 0;\n}\n",
+          "initialCode": "#include <array>\n#include <cstddef>\n#include <iostream>\n\nint asignarDesde(int& destino, const int& fuente, int cambio) {\n    // Conserva el valor previo de fuente y valida antes de modificar destino.\n    std::cout << \"Funcion pendiente: \" << destino << ',' << fuente << ',' << cambio << '\\n';\n    return -1;\n}\n\nint main() {\n    std::array<int, 3> datos{2, 5, 8};\n    int cantidad = 0;\n\n    if (!(std::cin >> cantidad) || cantidad < 1 || cantidad > 12) {\n        return 1;\n    }\n    for (int orden = 0; orden < cantidad; ++orden) {\n        int destino = 0;\n        int origen = 0;\n        int cambio = 0;\n\n        if (!(std::cin >> destino >> origen >> cambio)) {\n            return 1;\n        }\n        if (destino < 0 || destino > 2 || origen < 0 || origen > 2) {\n            std::cout << \"Indices invalidos;OrigenPrevio:-1\";\n        } else {\n            const int previo = asignarDesde(datos[static_cast<std::size_t>(destino)],\n                                            datos[static_cast<std::size_t>(origen)], cambio);\n            std::cout << (previo < 0 ? \"Rechazo\" : \"Aceptada\") << \";OrigenPrevio:\" << previo;\n        }\n        std::cout << \";Datos:\" << datos[0] << ',' << datos[1] << ',' << datos[2] << '\\n';\n    }\n\n    return 0;\n}\n",
           "initialStandardInput": "8\n0 1 1\n1 1 2\n2 0 -3\n0 2 -3\n2 1 3\n3 0 1\n0 0 0\n1 2 -1\n",
           "outputCheck": {
             "inputComparison": "tokens",
@@ -727,7 +727,7 @@
         {
           "type": "code",
           "language": "cpp",
-          "code": "#include <array>\n#include <cstddef>\n#include <iostream>\n\nint asignarDesde(int& destino, const int& fuente, int cambio) {\n    const int previo = fuente;\n    if (previo < 0 || previo > 9 || cambio < -3 || cambio > 3) {\n        return -1;\n    }\n    const int candidato = previo + cambio;\n    if (candidato < 0 || candidato > 9) {\n        return -1;\n    }\n    destino = candidato;\n    return previo;\n}\n\nint main() {\n    std::array<int, 3> datos{2, 5, 8};\n    int cantidad = 0;\n    if (!(std::cin >> cantidad) || cantidad < 1 || cantidad > 12) {\n        return 1;\n    }\n    for (int orden = 0; orden < cantidad; ++orden) {\n        int destino = 0;\n        int origen = 0;\n        int cambio = 0;\n        if (!(std::cin >> destino >> origen >> cambio)) {\n            return 1;\n        }\n        if (destino < 0 || destino > 2 || origen < 0 || origen > 2) {\n            std::cout << \"Indices invalidos;OrigenPrevio:-1\";\n        } else {\n            const int previo = asignarDesde(datos[static_cast<std::size_t>(destino)],\n                                            datos[static_cast<std::size_t>(origen)], cambio);\n            std::cout << (previo < 0 ? \"Rechazo\" : \"Aceptada\") << \";OrigenPrevio:\" << previo;\n        }\n        std::cout << \";Datos:\" << datos[0] << ',' << datos[1] << ',' << datos[2] << '\\n';\n    }\n    return 0;\n}\n"
+          "code": "#include <array>\n#include <cstddef>\n#include <iostream>\n\nint asignarDesde(int& destino, const int& fuente, int cambio) {\n    const int previo = fuente;\n    if (previo < 0 || previo > 9 || cambio < -3 || cambio > 3) {\n        return -1;\n    }\n    const int candidato = previo + cambio;\n    if (candidato < 0 || candidato > 9) {\n        return -1;\n    }\n    destino = candidato;\n    return previo;\n}\n\nint main() {\n    std::array<int, 3> datos{2, 5, 8};\n    int cantidad = 0;\n\n    if (!(std::cin >> cantidad) || cantidad < 1 || cantidad > 12) {\n        return 1;\n    }\n    for (int orden = 0; orden < cantidad; ++orden) {\n        int destino = 0;\n        int origen = 0;\n        int cambio = 0;\n\n        if (!(std::cin >> destino >> origen >> cambio)) {\n            return 1;\n        }\n        if (destino < 0 || destino > 2 || origen < 0 || origen > 2) {\n            std::cout << \"Indices invalidos;OrigenPrevio:-1\";\n        } else {\n            const int previo = asignarDesde(datos[static_cast<std::size_t>(destino)],\n                                            datos[static_cast<std::size_t>(origen)], cambio);\n            std::cout << (previo < 0 ? \"Rechazo\" : \"Aceptada\") << \";OrigenPrevio:\" << previo;\n        }\n        std::cout << \";Datos:\" << datos[0] << ',' << datos[1] << ',' << datos[2] << '\\n';\n    }\n\n    return 0;\n}\n"
         },
         {
           "type": "paragraph",
@@ -1988,6 +1988,294 @@
       }
     },
     "additions": [],
-    "editorial": []
+    "editorial": [
+      {
+        "id": "block_0000_0003",
+        "beforeSha256": "0a19c84536a9846ae1cef02536834f4b48a9f00dba1e9b1fb39c7eba06e3f55b",
+        "afterSha256": "cf0989e9e29fac33d5633b7350ce0c9b47e3ca55a437d2e6ed74fbf28b0dd39a"
+      },
+      {
+        "id": "block_0001_0002",
+        "beforeSha256": "333052d5e69ccd0f6032b3456f07ecc2546b19845d47941dbe489714b8bb3c4e",
+        "afterSha256": "0da02ffdfefd39d033fc8845dd4c1e24ca4c33ba5a28bdbd53bfb6853687e74a"
+      },
+      {
+        "id": "block_0002_0002",
+        "beforeSha256": "ee1d823958740cc516f0649f8e9538bc8eb385c3486e5e13f45dafced0ea693a",
+        "afterSha256": "19e3ffe149501374a503ebd037639d8655e7bec35732a3e712bc43458d2f6b5a"
+      },
+      {
+        "id": "block_0003_0002",
+        "beforeSha256": "8a24c209d27a14ba22a69c5258bb2f06771b15db63948ce32718d2359109a9b7",
+        "afterSha256": "ea65dfb1c5f585de61a53c3ccb70fc25303742e417f1804dce935a4653a353bd"
+      },
+      {
+        "id": "block_0004_0002",
+        "beforeSha256": "9bfff79a762a9d85f4d5530fa56c5c25e6f55b7a535da1f02684fff2547363b5",
+        "afterSha256": "9f1f5e956a35bf221187a33eba548064e04c21be6dac4da479cd3ebc2c83fd94"
+      },
+      {
+        "id": "block_0005_0002",
+        "beforeSha256": "e1bc14e2e1519d79db72102894b11238b8a5516068c72c60d7d553f82abbcd6c",
+        "afterSha256": "59689cf60be37bfdd718b9340a1a4987f3a35d4c37caffaa2f00c7be29bd28c3"
+      },
+      {
+        "id": "block_0006_0002",
+        "beforeSha256": "5d4c975e29d894b6478b214382725050439bbf9fa123f52a7702f19d17b3aad4",
+        "afterSha256": "00bfa6df858e63dadf41e009b3492a38b37d16b2665937718332cd2d1fd63709"
+      },
+      {
+        "id": "block_0007_0002",
+        "beforeSha256": "00583dd81eeaa55557b7a98ce3a0ade4c141466b8333dc5acc330a5337ea1e12",
+        "afterSha256": "f69d191c8cce02aad1d6b0f6dc9140543a0532c575b35641f74c0ccf7be2d03b"
+      },
+      {
+        "id": "block_0009_0002",
+        "beforeSha256": "1bdff79bc5ac109e52272dec6508e9738b1ba3b40da141e19c4de1d89bc595bd",
+        "afterSha256": "93c43b9af58fedb7e2466719b3ecec2a3b514a7034157218d4a7816d101084b2"
+      },
+      {
+        "id": "block_0010_0002",
+        "beforeSha256": "3b58475dd33054a2a9ac58ec834ef5e277fd12cc6d3026744a9bb58a68167429",
+        "afterSha256": "77a244fcb1398c0ce0bf0052ca9df1b34824b13ab1b620ae37c0332eb8a5c93e"
+      },
+      {
+        "id": "block_0011_0004",
+        "beforeSha256": "293391ba2ea2b69d80d41364b2acad65a204078796baa4dd3a5ed8e0416bdf68",
+        "afterSha256": "ae7b99c5caa89f4da15bc1a6d90bee78ccbcaedc5ba1e9c20c606ca43b0090c9"
+      },
+      {
+        "id": "block_0012_0001",
+        "beforeSha256": "e9ef77a7346826f6982e87602bd4c9c30a3c0a02cf0aa44a021b92527e134a68",
+        "afterSha256": "8446d07f2128ff63d4405508254c1080719cf8d72f304f235ae159d28758216a"
+      },
+      {
+        "id": "block_0013_0014",
+        "beforeSha256": "ee8004cbd73bf0500a88834884b45c08e464a05fdb2727e4d37b16f1fd82982a",
+        "afterSha256": "758072f1d12b90097dae68a94fe33e2ef11b5449128e572e4e899219c8c9b3ff"
+      },
+      {
+        "id": "block_0016_0001",
+        "beforeSha256": "57aced8038ac3ee4c10a2e20c8fa0df1ba4e81b7c824fdf2a45482c1934aa507",
+        "afterSha256": "0d507f5fb50e25c5e3a4b7f570ea11ea854f0d26d6d7376cc5fb98b147abe2ad"
+      }
+    ],
+    "sourceFormatRevisions": [
+      {
+        "id": "block_0000_0003",
+        "block": {
+          "type": "output_prediction",
+          "id": "p3_u4l3_valor_y_resultado",
+          "language": "cpp",
+          "question": "¿Qué muestra dato:resultado:dato en el orden de las dos salidas?",
+          "code": "#include <iostream>\n\nint sumarDos(int valor) {\n    valor += 2;\n    return valor;\n}\n\nint main() {\n    int dato = 4;\n    const int resultado = sumarDos(dato);\n    std::cout << dato << ':' << resultado;\n    dato = sumarDos(dato);\n    std::cout << ':' << dato;\n    return 0;\n}\n",
+          "answers": [
+            "4:6:6"
+          ],
+          "outputComparison": "exact",
+          "explanation": "La primera llamada devuelve 6 y dato conserva 4. La segunda también devuelve 6; esta vez main asigna el resultado a dato. El parámetro no modificó directamente el objeto del llamador."
+        }
+      },
+      {
+        "id": "block_0001_0002",
+        "block": {
+          "type": "code",
+          "language": "cpp",
+          "code": "#include <iostream>\n\nvoid aumentar(int& valor) {\n    valor += 2;\n}\n\nint main() {\n    int dato = 4;\n    aumentar(dato);\n    std::cout << dato;\n    return 0;\n}\n"
+        }
+      },
+      {
+        "id": "block_0002_0002",
+        "block": {
+          "type": "output_prediction",
+          "id": "p3_u4l3_tres_modos",
+          "language": "cpp",
+          "question": "¿Qué muestra primero:segundo:tercero:resultado?",
+          "code": "#include <iostream>\n\nint combinar(int copia, int& destino, const int& lectura) {\n    copia += 1;\n    destino += 2;\n    return copia + lectura;\n}\n\nint main() {\n    int primero = 3;\n    int segundo = 4;\n    int tercero = 5;\n    const int resultado = combinar(primero, segundo, tercero);\n    std::cout << primero << ':' << segundo << ':' << tercero << ':' << resultado;\n    return 0;\n}\n",
+          "answers": [
+            "3:6:5:9"
+          ],
+          "outputComparison": "exact",
+          "explanation": "copia recibe 3 y aumenta a 4, sin cambiar primero. destino aumenta segundo de 4 a 6. lectura permite leer 5 en tercero. Se devuelve 4 + 5, igual a 9."
+        }
+      },
+      {
+        "id": "block_0003_0002",
+        "block": {
+          "type": "output_prediction",
+          "id": "p3_u4l3_argumento_const_por_valor",
+          "language": "cpp",
+          "question": "¿Qué muestra limite:resultado?",
+          "code": "#include <iostream>\n\nint calcular(int valor) {\n    valor += 2;\n    return valor;\n}\n\nint main() {\n    const int limite = 4;\n    const int resultado = calcular(limite);\n    std::cout << limite << ':' << resultado;\n    return 0;\n}\n",
+          "answers": [
+            "4:6"
+          ],
+          "outputComparison": "exact",
+          "explanation": "valor es un int de la función y puede aumentar de 4 a 6. limite es otro objeto const y conserva 4."
+        }
+      },
+      {
+        "id": "block_0004_0002",
+        "block": {
+          "type": "output_prediction",
+          "id": "p3_u4l3_const_parametro_sigue_siendo_copia",
+          "language": "cpp",
+          "question": "¿Qué muestra resultado:dato?",
+          "code": "#include <iostream>\n\nint conservar(const int copia, int& original) {\n    original = 8;\n    return copia;\n}\n\nint main() {\n    int dato = 3;\n    const int resultado = conservar(dato, dato);\n    std::cout << resultado << ':' << dato;\n    return 0;\n}\n",
+          "answers": [
+            "3:8"
+          ],
+          "outputComparison": "exact",
+          "explanation": "copia recibe el 3 inicial. original permite cambiar dato a 8. La función devuelve el 3 del objeto independiente y main puede leer además el nuevo 8."
+        }
+      },
+      {
+        "id": "block_0005_0002",
+        "block": {
+          "type": "code",
+          "language": "cpp",
+          "code": "#include <iostream>\n\nint leerDespues(int& destino, const int& lectura) {\n    destino += 2;\n    return lectura;\n}\n\nint main() {\n    int primero = 3;\n    int segundo = 9;\n    const int distinto = leerDespues(primero, segundo);\n    const int trasPrimera = primero;\n    const int compartido = leerDespues(primero, primero);\n    std::cout << trasPrimera << ':' << distinto << ':' << primero << ':' << compartido;\n    return 0;\n}\n"
+        }
+      },
+      {
+        "id": "block_0006_0002",
+        "block": {
+          "type": "output_prediction",
+          "id": "p3_u4l3_capturar_antes_de_escribir",
+          "language": "cpp",
+          "question": "¿Qué muestra primero:segundo:compartido:distinto?",
+          "code": "#include <iostream>\n\nint preparar(int& destino, const int& origen) {\n    const int previo = origen;\n    destino = previo + 2;\n    return previo;\n}\n\nint main() {\n    int primero = 4;\n    int segundo = 8;\n    const int compartido = preparar(primero, primero);\n    const int distinto = preparar(segundo, primero);\n    std::cout << primero << ':' << segundo << ':' << compartido << ':' << distinto;\n    return 0;\n}\n",
+          "answers": [
+            "6:8:4:6"
+          ],
+          "outputComparison": "exact",
+          "explanation": "La primera llamada conserva 4, escribe 6 en primero y devuelve 4. La segunda lee el 6 de primero, escribe 8 en segundo y devuelve 6. Se conserva cada lectura previa antes de la escritura."
+        }
+      },
+      {
+        "id": "block_0007_0002",
+        "block": {
+          "type": "output_prediction",
+          "id": "p3_u4l3_arrays_por_valor_y_referencia",
+          "language": "cpp",
+          "question": "¿Qué muestra resultado:anterior:actual?",
+          "code": "#include <array>\n#include <iostream>\n\nint prepararCopia(std::array<int, 2> datos) {\n    datos[0] = 9;\n    return datos[0];\n}\n\nvoid prepararOriginal(std::array<int, 2>& datos) {\n    datos[0] = 7;\n}\n\nint leerPrimero(const std::array<int, 2>& datos) {\n    return datos[0];\n}\n\nint main() {\n    std::array<int, 2> datos{2, 5};\n    const int resultado = prepararCopia(datos);\n    const int anterior = datos[0];\n    prepararOriginal(datos);\n    const int actual = leerPrimero(datos);\n    std::cout << resultado << ':' << anterior << ':' << actual;\n    return 0;\n}\n",
+          "answers": [
+            "9:2:7"
+          ],
+          "outputComparison": "exact",
+          "explanation": "prepararCopia modifica su propio array y devuelve 9; el original aún tiene 2 en su primer elemento. prepararOriginal cambia ese elemento a 7. leerPrimero lee 7 sin modificar el array."
+        }
+      },
+      {
+        "id": "block_0009_0002",
+        "block": {
+          "type": "output_prediction",
+          "id": "p3_u4l3_conversion_dentro_de_llamada",
+          "language": "cpp",
+          "question": "¿Qué muestra convertido:primero:directo:segundo?",
+          "code": "#include <iostream>\n\ndouble leerConvertido(const double& lectura, int& original) {\n    original = 9;\n    return lectura;\n}\n\nint leerDirecto(const int& lectura, int& original) {\n    original = 9;\n    return lectura;\n}\n\nint main() {\n    int primero = 4;\n    int segundo = 4;\n    const double convertido = leerConvertido(primero, primero);\n    const int directo = leerDirecto(segundo, segundo);\n    std::cout << convertido << ':' << primero << ':' << directo << ':' << segundo;\n    return 0;\n}\n",
+          "answers": [
+            "4:9:9:9"
+          ],
+          "outputComparison": "exact",
+          "explanation": "leerConvertido recibe lectura referida a un double temporal preparado con 4; original cambia el int primero a 9. leerDirecto recibe dos referencias al int segundo: al cambiarlo a 9, lectura observa 9. Las lecturas se hacen mientras esos objetos siguen vivos."
+        }
+      },
+      {
+        "id": "block_0010_0002",
+        "block": {
+          "type": "output_prediction",
+          "id": "p3_u4l3_resultado_independiente_del_temporal",
+          "language": "cpp",
+          "question": "¿Qué muestra el programa?",
+          "code": "#include <iostream>\n\nint duplicar(const int& valor) {\n    return valor * 2;\n}\n\nint main() {\n    const int resultado = duplicar(3 + 4);\n    std::cout << resultado;\n    return 0;\n}\n",
+          "answers": [
+            "14"
+          ],
+          "outputComparison": "exact",
+          "explanation": "duplicar utiliza el temporal con 7 durante la llamada y devuelve por valor 14. resultado es un int independiente que ya contiene 14 antes de terminar la inicialización; puede leerse después."
+        }
+      },
+      {
+        "id": "block_0011_0004",
+        "block": {
+          "type": "cpp_compiler",
+          "language": "cpp",
+          "initialCode": "#include <iostream>\n\nbool fijar(int destino, const int& fuente) {\n    destino = fuente;\n    return destino == fuente;\n}\n\nint main() {\n    int destino = 2;\n    int fuente = 6;\n    const bool aceptada = fijar(destino, fuente);\n    std::cout << aceptada << ':' << destino << ':' << fuente;\n    return 0;\n}\n",
+          "initialStandardInput": "",
+          "outputCheck": {
+            "inputComparison": "tokens",
+            "cases": [
+              {
+                "standardInput": "",
+                "outputs": [
+                  "1:6:6"
+                ],
+                "explanation": "El primer parámetro debe ser una referencia modificable. El true no basta por sí solo: el objeto destino de main también debe haber recibido 6."
+              }
+            ]
+          }
+        }
+      },
+      {
+        "id": "block_0012_0001",
+        "block": {
+          "type": "code",
+          "language": "cpp",
+          "code": "#include <iostream>\n\nbool fijar(int& destino, const int& fuente) {\n    destino = fuente;\n    return destino == fuente;\n}\n\nint main() {\n    int destino = 2;\n    int fuente = 6;\n    const bool aceptada = fijar(destino, fuente);\n    std::cout << aceptada << ':' << destino << ':' << fuente;\n    return 0;\n}\n"
+        }
+      },
+      {
+        "id": "block_0013_0014",
+        "block": {
+          "type": "cpp_compiler",
+          "language": "cpp",
+          "initialCode": "#include <array>\n#include <cstddef>\n#include <iostream>\n\nint asignarDesde(int& destino, const int& fuente, int cambio) {\n    // Conserva el valor previo de fuente y valida antes de modificar destino.\n    std::cout << \"Funcion pendiente: \" << destino << ',' << fuente << ',' << cambio << '\\n';\n    return -1;\n}\n\nint main() {\n    std::array<int, 3> datos{2, 5, 8};\n    int cantidad = 0;\n    if (!(std::cin >> cantidad) || cantidad < 1 || cantidad > 12) {\n        return 1;\n    }\n    for (int orden = 0; orden < cantidad; ++orden) {\n        int destino = 0;\n        int origen = 0;\n        int cambio = 0;\n        if (!(std::cin >> destino >> origen >> cambio)) {\n            return 1;\n        }\n        if (destino < 0 || destino > 2 || origen < 0 || origen > 2) {\n            std::cout << \"Indices invalidos;OrigenPrevio:-1\";\n        } else {\n            const int previo = asignarDesde(datos[static_cast<std::size_t>(destino)],\n                                            datos[static_cast<std::size_t>(origen)], cambio);\n            std::cout << (previo < 0 ? \"Rechazo\" : \"Aceptada\") << \";OrigenPrevio:\" << previo;\n        }\n        std::cout << \";Datos:\" << datos[0] << ',' << datos[1] << ',' << datos[2] << '\\n';\n    }\n    return 0;\n}\n",
+          "initialStandardInput": "8\n0 1 1\n1 1 2\n2 0 -3\n0 2 -3\n2 1 3\n3 0 1\n0 0 0\n1 2 -1\n",
+          "outputCheck": {
+            "inputComparison": "tokens",
+            "cases": [
+              {
+                "standardInput": "8\n0 1 1\n1 1 2\n2 0 -3\n0 2 -3\n2 1 3\n3 0 1\n0 0 0\n1 2 -1\n",
+                "outputs": [
+                  "Aceptada;OrigenPrevio:5;Datos:6,5,8\nAceptada;OrigenPrevio:5;Datos:6,7,8\nAceptada;OrigenPrevio:6;Datos:6,7,3\nAceptada;OrigenPrevio:3;Datos:0,7,3\nRechazo;OrigenPrevio:-1;Datos:0,7,3\nIndices invalidos;OrigenPrevio:-1;Datos:0,7,3\nAceptada;OrigenPrevio:0;Datos:0,7,3\nAceptada;OrigenPrevio:3;Datos:0,2,3\n"
+                ],
+                "explanation": "La función conserva la lectura previa antes de escribir, actualiza el destino real sólo al aceptar y devuelve por valor esa lectura. Los rechazos conservan el array completo."
+              },
+              {
+                "standardInput": "6\n0 0 -2\n2 2 1\n2 2 1\n1 0 0\n1 2 0\n0 1 -3\n",
+                "outputs": [
+                  "Aceptada;OrigenPrevio:2;Datos:0,5,8\nAceptada;OrigenPrevio:8;Datos:0,5,9\nRechazo;OrigenPrevio:-1;Datos:0,5,9\nAceptada;OrigenPrevio:0;Datos:0,0,9\nAceptada;OrigenPrevio:9;Datos:0,9,9\nAceptada;OrigenPrevio:9;Datos:6,9,9\n"
+                ],
+                "explanation": "La función conserva la lectura previa antes de escribir, actualiza el destino real sólo al aceptar y devuelve por valor esa lectura. Los rechazos conservan el array completo."
+              },
+              {
+                "standardInput": "6\n0 -1 2\n2147483647 0 0\n0 2 -2147483648\n1 0 2147483647\n1 2 0\n2 1 -3\n",
+                "outputs": [
+                  "Indices invalidos;OrigenPrevio:-1;Datos:2,5,8\nIndices invalidos;OrigenPrevio:-1;Datos:2,5,8\nRechazo;OrigenPrevio:-1;Datos:2,5,8\nRechazo;OrigenPrevio:-1;Datos:2,5,8\nAceptada;OrigenPrevio:8;Datos:2,8,8\nAceptada;OrigenPrevio:8;Datos:2,8,5\n"
+                ],
+                "explanation": "La función conserva la lectura previa antes de escribir, actualiza el destino real sólo al aceptar y devuelve por valor esa lectura. Los rechazos conservan el array completo."
+              },
+              {
+                "standardInput": "6\n2 1 0\n1 0 3\n0 2 -3\n2 0 3\n1 1 -3\n1 1 3\n",
+                "outputs": [
+                  "Aceptada;OrigenPrevio:5;Datos:2,5,5\nAceptada;OrigenPrevio:2;Datos:2,5,5\nAceptada;OrigenPrevio:5;Datos:2,5,5\nAceptada;OrigenPrevio:2;Datos:2,5,5\nAceptada;OrigenPrevio:5;Datos:2,2,5\nAceptada;OrigenPrevio:2;Datos:2,5,5\n"
+                ],
+                "explanation": "La función conserva la lectura previa antes de escribir, actualiza el destino real sólo al aceptar y devuelve por valor esa lectura. Los rechazos conservan el array completo."
+              }
+            ]
+          }
+        }
+      },
+      {
+        "id": "block_0016_0001",
+        "block": {
+          "type": "code",
+          "language": "cpp",
+          "code": "#include <array>\n#include <cstddef>\n#include <iostream>\n\nint asignarDesde(int& destino, const int& fuente, int cambio) {\n    const int previo = fuente;\n    if (previo < 0 || previo > 9 || cambio < -3 || cambio > 3) {\n        return -1;\n    }\n    const int candidato = previo + cambio;\n    if (candidato < 0 || candidato > 9) {\n        return -1;\n    }\n    destino = candidato;\n    return previo;\n}\n\nint main() {\n    std::array<int, 3> datos{2, 5, 8};\n    int cantidad = 0;\n    if (!(std::cin >> cantidad) || cantidad < 1 || cantidad > 12) {\n        return 1;\n    }\n    for (int orden = 0; orden < cantidad; ++orden) {\n        int destino = 0;\n        int origen = 0;\n        int cambio = 0;\n        if (!(std::cin >> destino >> origen >> cambio)) {\n            return 1;\n        }\n        if (destino < 0 || destino > 2 || origen < 0 || origen > 2) {\n            std::cout << \"Indices invalidos;OrigenPrevio:-1\";\n        } else {\n            const int previo = asignarDesde(datos[static_cast<std::size_t>(destino)],\n                                            datos[static_cast<std::size_t>(origen)], cambio);\n            std::cout << (previo < 0 ? \"Rechazo\" : \"Aceptada\") << \";OrigenPrevio:\" << previo;\n        }\n        std::cout << \";Datos:\" << datos[0] << ',' << datos[1] << ',' << datos[2] << '\\n';\n    }\n    return 0;\n}\n"
+        }
+      }
+    ]
   }
 }

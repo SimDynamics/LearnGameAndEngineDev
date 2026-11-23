@@ -164,7 +164,7 @@
           "type": "output_prediction",
           "language": "cpp",
           "question": "Predice la salida exacta.",
-          "code": "#include <iostream>\n#include <random>\n#include <vector>\n#include <stdexcept>\n\nint obtener(std::mt19937& motor, int minimo, int maximo) {\n    if (minimo < -12 || minimo > 12 || maximo < -12 || maximo > 12\n        || minimo > maximo) {\n        throw std::invalid_argument(\"Intervalo invalido\");\n    }\n\n    std::uniform_int_distribution<int> elegir{minimo, maximo};\n    return elegir(motor);\n}\n\nint obtener_copia(std::mt19937 motor) {\n    return obtener(motor, 0, 9);\n}\n\nint main() {\n    std::mt19937 motor{163};\n    const std::mt19937 anterior = motor;\n    const int primero = obtener_copia(motor);\n    const int segundo = obtener_copia(motor);\n    std::cout << \"Conservado:\" << (motor == anterior) << '\\n';\n    std::cout << \"Coinciden:\" << (primero == segundo);\n\n    return 0;\n}\n",
+          "code": "#include <iostream>\n#include <random>\n#include <vector>\n#include <stdexcept>\n\nint obtener(std::mt19937& motor, int minimo, int maximo) {\n    if (minimo < -12 || minimo > 12 || maximo < -12 || maximo > 12\n        || minimo > maximo) {\n        throw std::invalid_argument(\"Intervalo invalido\");\n    }\n\n    std::uniform_int_distribution<int> elegir{minimo, maximo};\n    return elegir(motor);\n}\n\nint obtener_copia(std::mt19937 motor) {\n    return obtener(motor, 0, 9);\n}\n\nint main() {\n    std::mt19937 motor{163};\n    const std::mt19937 anterior = motor;\n    const int primero = obtener_copia(motor);\n    const int segundo = obtener_copia(motor);\n\n    std::cout << \"Conservado:\" << (motor == anterior) << '\\n';\n    std::cout << \"Coinciden:\" << (primero == segundo);\n\n    return 0;\n}\n",
           "answers": [
             "Conservado:1\nCoinciden:1"
           ],
@@ -219,7 +219,7 @@
           "type": "output_prediction",
           "language": "cpp",
           "question": "Predice la salida exacta.",
-          "code": "#include <iostream>\n#include <random>\n#include <vector>\n#include <stdexcept>\n\nint main() {\n    std::mt19937 motor{179};\n    const std::mt19937 anterior = motor;\n    const int cantidad{0};\n    const int minimo{3};\n    const int maximo{3};\n    std::vector<int> datos;\n    if (cantidad < 0 || cantidad > 20 || minimo < -12 || minimo > 12\n        || maximo < -12 || maximo > 12 || minimo > maximo) {\n        std::cout << \"Configuracion invalida\";\n    } else {\n        std::uniform_int_distribution<int> elegir{minimo, maximo};\n        for (int i{0}; i < cantidad; ++i) {\n            datos.push_back(elegir(motor));\n        }\n        std::cout << datos.size() << ':' << (motor == anterior);\n    }\n\n    return 0;\n}\n",
+          "code": "#include <iostream>\n#include <random>\n#include <vector>\n#include <stdexcept>\n\nint main() {\n    std::mt19937 motor{179};\n    const std::mt19937 anterior = motor;\n    const int cantidad{0};\n    const int minimo{3};\n    const int maximo{3};\n    std::vector<int> datos;\n\n    if (cantidad < 0 || cantidad > 20 || minimo < -12 || minimo > 12\n        || maximo < -12 || maximo > 12 || minimo > maximo) {\n        std::cout << \"Configuracion invalida\";\n    } else {\n        std::uniform_int_distribution<int> elegir{minimo, maximo};\n        for (int i{0}; i < cantidad; ++i) {\n            datos.push_back(elegir(motor));\n        }\n        std::cout << datos.size() << ':' << (motor == anterior);\n    }\n\n    return 0;\n}\n",
           "answers": [
             "0:1"
           ],
@@ -286,7 +286,7 @@
         },
         {
           "type": "cpp_compiler",
-          "initialCode": "#include <iostream>\n#include <random>\n#include <vector>\n#include <stdexcept>\n\nint main() {\n    // Construye las funciones y las pruebas de la consigna.\n    return 0;\n}\n",
+          "initialCode": "#include <iostream>\n#include <random>\n#include <vector>\n#include <stdexcept>\n\nint main() {\n    // Construye las funciones y las pruebas de la consigna.\n    \n    return 0;\n}\n",
           "outputCheck": {
             "cases": [
               {
@@ -310,7 +310,7 @@
         {
           "type": "code",
           "language": "cpp",
-          "code": "#include <iostream>\n#include <random>\n#include <vector>\n#include <stdexcept>\n\nstd::vector<int> generar(std::mt19937& motor, int cantidad,\n                        int minimo, int maximo) {\n    if (cantidad < 0 || cantidad > 20 || minimo < -12 || minimo > 12\n        || maximo < -12 || maximo > 12 || minimo > maximo) {\n        throw std::invalid_argument(\"Configuracion invalida\");\n    }\n\n    std::uniform_int_distribution<int> elegir{minimo, maximo};\n    std::vector<int> datos;\n\n    for (int i{0}; i < cantidad; ++i) {\n        datos.push_back(elegir(motor));\n    }\n\n    return datos;\n}\n\nint main() {\n    std::mt19937 por_lotes{191};\n    const std::vector<int> primero = generar(por_lotes, 4, -2, 5);\n    std::mt19937 continuacion = por_lotes;\n    const std::vector<int> segundo = generar(por_lotes, 3, -2, 5);\n    const std::vector<int> repetido = generar(continuacion, 3, -2, 5);\n    std::cout << \"Continuacion:\"\n              << (primero.size() == 4 && segundo == repetido) << '\\n';\n\n    const std::mt19937 antes_vacio = por_lotes;\n    const std::vector<int> vacio = generar(por_lotes, 0, 2, 2);\n    std::cout << \"Vacio:\" << vacio.size() << ':';\n    std::cout << (por_lotes == antes_vacio) << '\\n';\n\n    const std::mt19937 antes_error = por_lotes;\n\n    try {\n        const std::vector<int> datos = generar(por_lotes, 3, 5, 2);\n        std::cout << \"Aceptado:\" << datos.size();\n    } catch (const std::invalid_argument&) {\n        std::cout << \"Rechazo:\" << (por_lotes == antes_error);\n    }\n\n    return 0;\n}\n"
+          "code": "#include <iostream>\n#include <random>\n#include <vector>\n#include <stdexcept>\n\nstd::vector<int> generar(std::mt19937& motor, int cantidad,\n                        int minimo, int maximo) {\n    if (cantidad < 0 || cantidad > 20 || minimo < -12 || minimo > 12\n        || maximo < -12 || maximo > 12 || minimo > maximo) {\n        throw std::invalid_argument(\"Configuracion invalida\");\n    }\n\n    std::uniform_int_distribution<int> elegir{minimo, maximo};\n    std::vector<int> datos;\n\n    for (int i{0}; i < cantidad; ++i) {\n        datos.push_back(elegir(motor));\n    }\n\n    return datos;\n}\n\nint main() {\n    std::mt19937 por_lotes{191};\n    const std::vector<int> primero = generar(por_lotes, 4, -2, 5);\n    std::mt19937 continuacion = por_lotes;\n    const std::vector<int> segundo = generar(por_lotes, 3, -2, 5);\n    const std::vector<int> repetido = generar(continuacion, 3, -2, 5);\n\n    std::cout << \"Continuacion:\"\n              << (primero.size() == 4 && segundo == repetido) << '\\n';\n\n    const std::mt19937 antes_vacio = por_lotes;\n    const std::vector<int> vacio = generar(por_lotes, 0, 2, 2);\n\n    std::cout << \"Vacio:\" << vacio.size() << ':';\n    std::cout << (por_lotes == antes_vacio) << '\\n';\n\n    const std::mt19937 antes_error = por_lotes;\n\n    try {\n        const std::vector<int> datos = generar(por_lotes, 3, 5, 2);\n        std::cout << \"Aceptado:\" << datos.size();\n    } catch (const std::invalid_argument&) {\n        std::cout << \"Rechazo:\" << (por_lotes == antes_error);\n    }\n\n    return 0;\n}\n"
         },
         {
           "type": "paragraph",
@@ -362,7 +362,7 @@
         {
           "type": "code",
           "language": "cpp",
-          "code": "#include <iostream>\n#include <random>\n#include <vector>\n#include <stdexcept>\n\nstd::vector<int> generar(std::mt19937& motor, int cantidad,\n                        int minimo, int maximo) {\n    if (cantidad < 0 || cantidad > 20 || minimo < -12 || minimo > 12\n        || maximo < -12 || maximo > 12 || minimo > maximo) {\n        throw std::invalid_argument(\"Configuracion invalida\");\n    }\n\n    std::uniform_int_distribution<int> elegir{minimo, maximo};\n    std::vector<int> datos;\n\n    for (int i{0}; i < cantidad; ++i) {\n        datos.push_back(elegir(motor));\n    }\n\n    return datos;\n}\n\nvoid probar(int cantidad, int minimo, int maximo) {\n    std::mt19937 motor{191};\n    const std::mt19937 antes = motor;\n\n    try {\n        const std::vector<int> primero = generar(motor, cantidad, minimo, maximo);\n\n        std::mt19937 copia = motor;\n        const std::vector<int> segundo = generar(motor, 3, minimo, maximo);\n        const std::vector<int> repetido = generar(copia, 3, minimo, maximo);\n\n        bool rango = true;\n        for (int dato : primero) {\n            rango = rango && dato >= minimo && dato <= maximo;\n        }\n        for (int dato : segundo) {\n            rango = rango && dato >= minimo && dato <= maximo;\n        }\n\n        const std::mt19937 antes_vacio = motor;\n        const std::vector<int> vacio = generar(motor, 0, minimo, maximo);\n        std::cout << \"Cantidad:\" << primero.size() << \";Rango:\" << rango\n                  << \";Continuacion:\" << (segundo == repetido && motor == copia)\n                  << \";Vacio:\" << vacio.size() << \":\" << (motor == antes_vacio);\n\n        const std::mt19937 antes_error = motor;\n        try {\n            const std::vector<int> invalido = generar(motor, 3, 5, 2);\n            std::cout << \";Aceptado:\" << invalido.size();\n        } catch (const std::invalid_argument&) {\n            std::cout << \";Rechazo:\" << (motor == antes_error);\n        }\n        std::cout << \"\\n\";\n    } catch (const std::invalid_argument&) {\n        std::cout << \"Configuracion rechazada:\" << (motor == antes) << \"\\n\";\n    }\n}\n\nint main() {\n    probar(4, -2, 5);\n    probar(0, -12, 12);\n    probar(1, -12, 12);\n    probar(20, -12, 12);\n    probar(3, -12, -12);\n    probar(3, 12, 12);\n    probar(3, 5, 2);\n    probar(3, -13, 12);\n    probar(3, -12, 13);\n    probar(-1, -12, 12);\n    probar(21, -12, 12);\n\n    return 0;\n}\n"
+          "code": "#include <iostream>\n#include <random>\n#include <vector>\n#include <stdexcept>\n\nstd::vector<int> generar(std::mt19937& motor, int cantidad,\n                        int minimo, int maximo) {\n    if (cantidad < 0 || cantidad > 20 || minimo < -12 || minimo > 12\n        || maximo < -12 || maximo > 12 || minimo > maximo) {\n        throw std::invalid_argument(\"Configuracion invalida\");\n    }\n\n    std::uniform_int_distribution<int> elegir{minimo, maximo};\n    std::vector<int> datos;\n\n    for (int i{0}; i < cantidad; ++i) {\n        datos.push_back(elegir(motor));\n    }\n\n    return datos;\n}\n\nvoid probar(int cantidad, int minimo, int maximo) {\n    std::mt19937 motor{191};\n    const std::mt19937 antes = motor;\n\n    try {\n        const std::vector<int> primero = generar(motor, cantidad, minimo, maximo);\n\n        std::mt19937 copia = motor;\n        const std::vector<int> segundo = generar(motor, 3, minimo, maximo);\n        const std::vector<int> repetido = generar(copia, 3, minimo, maximo);\n\n        bool rango = true;\n        for (int dato : primero) {\n            rango = rango && dato >= minimo && dato <= maximo;\n        }\n        for (int dato : segundo) {\n            rango = rango && dato >= minimo && dato <= maximo;\n        }\n\n        const std::mt19937 antes_vacio = motor;\n        const std::vector<int> vacio = generar(motor, 0, minimo, maximo);\n\n        std::cout << \"Cantidad:\" << primero.size() << \";Rango:\" << rango\n                  << \";Continuacion:\" << (segundo == repetido && motor == copia)\n                  << \";Vacio:\" << vacio.size() << \":\" << (motor == antes_vacio);\n\n        const std::mt19937 antes_error = motor;\n        try {\n            const std::vector<int> invalido = generar(motor, 3, 5, 2);\n            std::cout << \";Aceptado:\" << invalido.size();\n        } catch (const std::invalid_argument&) {\n            std::cout << \";Rechazo:\" << (motor == antes_error);\n        }\n        std::cout << \"\\n\";\n    } catch (const std::invalid_argument&) {\n        std::cout << \"Configuracion rechazada:\" << (motor == antes) << \"\\n\";\n    }\n}\n\nint main() {\n    probar(4, -2, 5);\n    probar(0, -12, 12);\n    probar(1, -12, 12);\n    probar(20, -12, 12);\n    probar(3, -12, -12);\n    probar(3, 12, 12);\n    probar(3, 5, 2);\n    probar(3, -13, 12);\n    probar(3, -12, 13);\n    probar(-1, -12, 12);\n    probar(21, -12, 12);\n\n    return 0;\n}\n"
         }
       ]
     },
@@ -1635,6 +1635,31 @@
         "id": "u10_configuracion_vacia_referencia",
         "beforeSha256": "53d34b41333bc1f8164574d367b778ca2010dfc288e02b1ff5fe5f765797cecf",
         "afterSha256": "956b7585f6e7509371ce99117e0559558abf98687ac3c5fe1f390369f3be7cdc"
+      },
+      {
+        "id": "block_0002_0002",
+        "beforeSha256": "513ee0ac250a848ff7a24ec160c6ce14c237084fbaab7f0aa8533459a14773ad",
+        "afterSha256": "ed32e699b9c120e983acdaa867f3496693a09fcfeaabe62646b9777636985021"
+      },
+      {
+        "id": "block_0003_0002",
+        "beforeSha256": "070ce483c07685e7f6ef662547b5daae4549510edd8f58b5298388b8c2d6e91d",
+        "afterSha256": "34b3559710c1b08bbca1230e175f0f86a1cc2694f52b2cc8bcf997775abdfad1"
+      },
+      {
+        "id": "block_0004_0003",
+        "beforeSha256": "e961b0b47b1a3674bd7d30055635416e1183f33b1b69dda0f781cccade107d00",
+        "afterSha256": "2f1bb2a92fc7586bba68d12d6d79db249326e20be3d6281d3dc668f065bc3670"
+      },
+      {
+        "id": "block_0005_0001",
+        "beforeSha256": "ccc0224491c8dc37ffc0800aae1c530df723b97be27c46443517c4800a5cb456",
+        "afterSha256": "679752a9cecaa7eddb5dda01921c85d5f64ec446eec9e1faddeee0f3734bf2c6"
+      },
+      {
+        "id": "block_0005_0005",
+        "beforeSha256": "f3e710fc3962b29984df8add30dce275a3c0e09ddce945ba66566b178d847084",
+        "afterSha256": "95634610743a9c16e613a41d2319045f78c07571b5516ab351e2c3c92f1628a8"
       }
     ],
     "sourceFormatRevisions": [
@@ -1767,6 +1792,24 @@
           "type": "code",
           "language": "cpp",
           "code": "#include <iostream>\n#include <random>\n#include <vector>\n#include <stdexcept>\n\nstd::vector<int> generar(std::mt19937& motor, int cantidad,\n                         int minimo, int maximo) {\n    if (cantidad < 0 || cantidad > 20 || minimo < -12 || minimo > 12\n            || maximo < -12 || maximo > 12 || minimo > maximo) {\n        throw std::invalid_argument(\"Configuracion invalida\");\n    }\n    std::uniform_int_distribution<int> elegir{minimo, maximo};\n    std::vector<int> datos;\n    for (int i{0}; i < cantidad; ++i) {\n        datos.push_back(elegir(motor));\n    }\n    return datos;\n}\n\nvoid probar_vacio(std::mt19937& motor, int minimo, int maximo) {\n    const std::mt19937 antes = motor;\n    std::cout << \"Intervalo:\" << minimo << ':' << maximo;\n    try {\n        const std::vector<int> datos = generar(motor, 0, minimo, maximo);\n        std::cout << \";Vacio:\" << datos.size() << \";Motor:\" << (motor == antes);\n    } catch (const std::invalid_argument&) {\n        std::cout << \";Rechazo:\" << (motor == antes);\n    }\n    std::cout << '\\n';\n}\n\nint main() {\n    std::mt19937 motor{191};\n    generar(motor, 3, -2, 5);\n    probar_vacio(motor, -12, 12);\n    probar_vacio(motor, 5, 2);\n    probar_vacio(motor, -13, 12);\n    probar_vacio(motor, -12, 13);\n    return 0;\n}\n"
+        }
+      },
+      {
+        "id": "block_0004_0003",
+        "block": {
+          "type": "cpp_compiler",
+          "initialCode": "#include <iostream>\n#include <random>\n#include <vector>\n#include <stdexcept>\n\nint main() {\n    // Construye las funciones y las pruebas de la consigna.\n    return 0;\n}\n",
+          "outputCheck": {
+            "cases": [
+              {
+                "standardInput": "",
+                "outputs": [
+                  "Cantidad:4;Rango:1;Continuacion:1;Vacio:0:1;Rechazo:1\nCantidad:0;Rango:1;Continuacion:1;Vacio:0:1;Rechazo:1\nCantidad:1;Rango:1;Continuacion:1;Vacio:0:1;Rechazo:1\nCantidad:20;Rango:1;Continuacion:1;Vacio:0:1;Rechazo:1\nCantidad:3;Rango:1;Continuacion:1;Vacio:0:1;Rechazo:1\nCantidad:3;Rango:1;Continuacion:1;Vacio:0:1;Rechazo:1\nConfiguracion rechazada:1\nConfiguracion rechazada:1\nConfiguracion rechazada:1\nConfiguracion rechazada:1\nConfiguracion rechazada:1\n"
+                ],
+                "explanation": "La validación precede al uso del motor. Las continuaciones se comparan desde el mismo estado; vacío y argumentos rechazados conservan ese estado sin exigir valores distribuidos concretos."
+              }
+            ]
+          }
         }
       }
     ]

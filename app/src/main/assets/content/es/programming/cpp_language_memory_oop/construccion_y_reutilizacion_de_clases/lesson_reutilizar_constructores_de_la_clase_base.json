@@ -55,7 +55,7 @@
           "id": "p3_u9l2_dos_rutas_heredadas_con_marca_inicializada",
           "language": "cpp",
           "question": "Escribe la salida completa. Cada grupo muestra número, canal y marca de un objeto.",
-          "code": "#include <iostream>\n#include <utility>\n\nclass ValorBase {\npublic:\n    explicit ValorBase(int numero) : numero_{numero}, canal_{0} {}\n    ValorBase(int numero, int canal) : numero_{numero}, canal_{canal} {}\n    int numero() const { return numero_; }\n    int canal() const { return canal_; }\nprivate:\n    int numero_;\n    int canal_;\n};\nclass ValorConMarca : public ValorBase {\npublic:\n    using ValorBase::ValorBase;\n    int marca() const { return marca_; }\nprivate:\n    int marca_{8};\n};\nint main() {\n    ValorConMarca a{4};\n    ValorConMarca b{7, 2};\n    std::cout << a.numero() << ':' << a.canal() << ':' << a.marca()\n              << '|' << b.numero() << ':' << b.canal() << ':' << b.marca();\n    return 0;\n}\n",
+          "code": "#include <iostream>\n#include <utility>\n\nclass ValorBase {\npublic:\n    explicit ValorBase(int numero) : numero_{numero}, canal_{0} {}\n    ValorBase(int numero, int canal) : numero_{numero}, canal_{canal} {}\n    int numero() const { return numero_; }\n    int canal() const { return canal_; }\nprivate:\n    int numero_;\n    int canal_;\n};\n\nclass ValorConMarca : public ValorBase {\npublic:\n    using ValorBase::ValorBase;\n    int marca() const { return marca_; }\nprivate:\n    int marca_{8};\n};\n\nint main() {\n    ValorConMarca a{4};\n    ValorConMarca b{7, 2};\n\n    std::cout << a.numero() << ':' << a.canal() << ':' << a.marca()\n              << '|' << b.numero() << ':' << b.canal() << ':' << b.marca();\n    return 0;\n}\n",
           "answers": [
             "4:0:8|7:2:8"
           ],
@@ -83,7 +83,7 @@
           "id": "p3_u9l2_base_antes_de_miembro_en_constructor_heredado",
           "language": "cpp",
           "question": "Escribe la traza de construcción y los dos datos consultados al final.",
-          "code": "#include <iostream>\n#include <utility>\n\nclass BaseConTraza {\npublic:\n    explicit BaseConTraza(int numero) : numero_{numero} {\n        std::cout << \"Base|\";\n    }\n    int numero() const { return numero_; }\nprivate:\n    int numero_;\n};\nclass Sello {\npublic:\n    Sello() : codigo_{9} { std::cout << \"Sello|\"; }\n    int codigo() const { return codigo_; }\nprivate:\n    int codigo_;\n};\nclass ConSello : public BaseConTraza {\npublic:\n    using BaseConTraza::BaseConTraza;\n    int sello() const { return sello_.codigo(); }\nprivate:\n    Sello sello_{};\n};\nint main() {\n    ConSello dato{6};\n    std::cout << dato.numero() << ':' << dato.sello();\n    return 0;\n}\n",
+          "code": "#include <iostream>\n#include <utility>\n\nclass BaseConTraza {\npublic:\n    explicit BaseConTraza(int numero) : numero_{numero} {\n        std::cout << \"Base|\";\n    }\n\n    int numero() const { return numero_; }\nprivate:\n    int numero_;\n};\n\nclass Sello {\npublic:\n    Sello() : codigo_{9} { std::cout << \"Sello|\"; }\n    int codigo() const { return codigo_; }\nprivate:\n    int codigo_;\n};\n\nclass ConSello : public BaseConTraza {\npublic:\n    using BaseConTraza::BaseConTraza;\n    int sello() const { return sello_.codigo(); }\nprivate:\n    Sello sello_{};\n};\n\nint main() {\n    ConSello dato{6};\n\n    std::cout << dato.numero() << ':' << dato.sello();\n\n    return 0;\n}\n",
           "answers": [
             "Base|Sello|6:9"
           ],
@@ -115,7 +115,7 @@
           "id": "p3_u9l2_constructor_propio_y_ruta_heredada_restante",
           "language": "cpp",
           "question": "Escribe la salida completa de esta variante, distinguiendo qué ruta utiliza cada objeto.",
-          "code": "#include <iostream>\n#include <utility>\n\nclass ValorBase {\npublic:\n    explicit ValorBase(int numero) : numero_{numero}, canal_{0} {}\n    ValorBase(int numero, int canal) : numero_{numero}, canal_{canal} {}\n    int numero() const { return numero_; }\n    int canal() const { return canal_; }\nprivate:\n    int numero_;\n    int canal_;\n};\nclass ValorConMarca : public ValorBase {\npublic:\n    using ValorBase::ValorBase;\n    explicit ValorConMarca(int numero) : ValorBase{numero, 3}, marca_{5} {\n        std::cout << \"Propio|\";\n    }\n    int marca() const { return marca_; }\nprivate:\n    int marca_{8};\n};\nint main() {\n    ValorConMarca a{4};\n    ValorConMarca b{7, 2};\n    std::cout << a.numero() << ':' << a.canal() << ':' << a.marca()\n              << '|' << b.numero() << ':' << b.canal() << ':' << b.marca();\n    return 0;\n}\n",
+          "code": "#include <iostream>\n#include <utility>\n\nclass ValorBase {\npublic:\n    explicit ValorBase(int numero) : numero_{numero}, canal_{0} {}\n    ValorBase(int numero, int canal) : numero_{numero}, canal_{canal} {}\n    int numero() const { return numero_; }\n    int canal() const { return canal_; }\nprivate:\n    int numero_;\n    int canal_;\n};\n\nclass ValorConMarca : public ValorBase {\npublic:\n    using ValorBase::ValorBase;\n    explicit ValorConMarca(int numero) : ValorBase{numero, 3}, marca_{5} {\n        std::cout << \"Propio|\";\n    }\n\n    int marca() const { return marca_; }\nprivate:\n    int marca_{8};\n};\n\nint main() {\n    ValorConMarca a{4};\n    ValorConMarca b{7, 2};\n\n    std::cout << a.numero() << ':' << a.canal() << ':' << a.marca()\n              << '|' << b.numero() << ':' << b.canal() << ':' << b.marca();\n    return 0;\n}\n",
           "answers": [
             "Propio|4:3:5|7:2:8"
           ],
@@ -141,7 +141,7 @@
         {
           "type": "code",
           "language": "cpp",
-          "code": "#include <iostream>\n#include <utility>\n\nclass BaseRestringida {\nprotected:\n    explicit BaseRestringida(int numero) : numero_{numero} {}\npublic:\n    int numero() const { return numero_; }\nprivate:\n    int numero_;\n};\nclass Restringida : public BaseRestringida {\npublic:\n    using BaseRestringida::BaseRestringida;\n};\nint main() {\n    Restringida dato{6};\n    std::cout << dato.numero();\n    return 0;\n}\n"
+          "code": "#include <iostream>\n#include <utility>\n\nclass BaseRestringida {\nprotected:\n    explicit BaseRestringida(int numero) : numero_{numero} {}\npublic:\n    int numero() const { return numero_; }\nprivate:\n    int numero_;\n};\n\nclass Restringida : public BaseRestringida {\npublic:\n    using BaseRestringida::BaseRestringida;\n};\n\nint main() {\n    Restringida dato{6};\n\n    std::cout << dato.numero();\n\n    return 0;\n}\n"
         },
         {
           "type": "multiple_choice",
@@ -162,7 +162,7 @@
         {
           "type": "code",
           "language": "cpp",
-          "code": "#include <iostream>\n#include <utility>\n\nclass ValorBase {\npublic:\n    explicit ValorBase(int numero) : numero_{numero}, canal_{0} {}\n    ValorBase(int numero, int canal) : numero_{numero}, canal_{canal} {}\n    int numero() const { return numero_; }\n    int canal() const { return canal_; }\nprivate:\n    int numero_;\n    int canal_;\n};\nclass ConUsingPrivado : public ValorBase {\n    using ValorBase::ValorBase;\npublic:\n    int marca() const { return marca_; }\nprivate:\n    int marca_{6};\n};\nint main() {\n    ConUsingPrivado dato{3};\n    std::cout << dato.numero() << ':' << dato.canal() << ':' << dato.marca();\n    return 0;\n}\n"
+          "code": "#include <iostream>\n#include <utility>\n\nclass ValorBase {\npublic:\n    explicit ValorBase(int numero) : numero_{numero}, canal_{0} {}\n    ValorBase(int numero, int canal) : numero_{numero}, canal_{canal} {}\n    int numero() const { return numero_; }\n    int canal() const { return canal_; }\nprivate:\n    int numero_;\n    int canal_;\n};\n\nclass ConUsingPrivado : public ValorBase {\n    using ValorBase::ValorBase;\npublic:\n    int marca() const { return marca_; }\nprivate:\n    int marca_{6};\n};\n\nint main() {\n    ConUsingPrivado dato{3};\n\n    std::cout << dato.numero() << ':' << dato.canal() << ':' << dato.marca();\n\n    return 0;\n}\n"
         }
       ]
     },
@@ -179,7 +179,7 @@
         {
           "type": "code",
           "language": "cpp",
-          "code": "#include <iostream>\n#include <utility>\n\nclass ValorBase {\npublic:\n    explicit ValorBase(int numero) : numero_{numero}, canal_{0} {}\n    ValorBase(int numero, int canal) : numero_{numero}, canal_{canal} {}\n    int numero() const { return numero_; }\n    int canal() const { return canal_; }\nprivate:\n    int numero_;\n    int canal_;\n};\nclass ValorConMarca : public ValorBase {\npublic:\n    using ValorBase::ValorBase;\n    int marca() const { return marca_; }\nprivate:\n    int marca_{8};\n};\nint main() {\n    ValorConMarca dato = 5;\n    std::cout << dato.numero();\n    return 0;\n}\n"
+          "code": "#include <iostream>\n#include <utility>\n\nclass ValorBase {\npublic:\n    explicit ValorBase(int numero) : numero_{numero}, canal_{0} {}\n    ValorBase(int numero, int canal) : numero_{numero}, canal_{canal} {}\n    int numero() const { return numero_; }\n    int canal() const { return canal_; }\nprivate:\n    int numero_;\n    int canal_;\n};\n\nclass ValorConMarca : public ValorBase {\npublic:\n    using ValorBase::ValorBase;\n    int marca() const { return marca_; }\nprivate:\n    int marca_{8};\n};\n\nint main() {\n    ValorConMarca dato = 5;\n\n    std::cout << dato.numero();\n\n    return 0;\n}\n"
         },
         {
           "type": "multiple_choice",
@@ -223,7 +223,7 @@
           "id": "p3_u9l2_operaciones_propias_de_derivada_con_using",
           "language": "cpp",
           "question": "Escribe los cuatro grupos: inicial, copia, movida y origen después del movimiento.",
-          "code": "#include <iostream>\n#include <utility>\n\nclass PiezaBase {\npublic:\n    PiezaBase() = default;\n    explicit PiezaBase(int numero) : numero_{numero} {}\n    int numero() const { return numero_; }\n    void cambiar(int numero) { numero_ = numero; }\nprivate:\n    int numero_{0};\n};\nclass Pieza : public PiezaBase {\npublic:\n    using PiezaBase::PiezaBase;\n    int marca() const { return marca_; }\n    void marcar(int marca) { marca_ = marca; }\nprivate:\n    int marca_{8};\n};\nint main() {\n    Pieza inicial;\n    Pieza origen{5};\n    origen.marcar(12);\n    Pieza copia{origen};\n    origen.cambiar(7);\n    Pieza movida{std::move(origen)};\n    std::cout << inicial.numero() << ':' << inicial.marca()\n              << '|' << copia.numero() << ':' << copia.marca()\n              << '|' << movida.numero() << ':' << movida.marca()\n              << '|' << origen.numero() << ':' << origen.marca();\n    return 0;\n}\n",
+          "code": "#include <iostream>\n#include <utility>\n\nclass PiezaBase {\npublic:\n    PiezaBase() = default;\n    explicit PiezaBase(int numero) : numero_{numero} {}\n    int numero() const { return numero_; }\n    void cambiar(int numero) { numero_ = numero; }\nprivate:\n    int numero_{0};\n};\n\nclass Pieza : public PiezaBase {\npublic:\n    using PiezaBase::PiezaBase;\n    int marca() const { return marca_; }\n    void marcar(int marca) { marca_ = marca; }\nprivate:\n    int marca_{8};\n};\n\nint main() {\n    Pieza inicial;\n    Pieza origen{5};\n    origen.marcar(12);\n    Pieza copia{origen};\n    origen.cambiar(7);\n    Pieza movida{std::move(origen)};\n    std::cout << inicial.numero() << ':' << inicial.marca()\n              << '|' << copia.numero() << ':' << copia.marca()\n              << '|' << movida.numero() << ':' << movida.marca()\n              << '|' << origen.numero() << ':' << origen.marca();\n    return 0;\n}\n",
           "answers": [
             "0:8|5:12|7:12|7:12"
           ],
@@ -237,7 +237,7 @@
         {
           "type": "code",
           "language": "cpp",
-          "code": "#include <iostream>\n#include <utility>\n\nclass ValorBase {\npublic:\n    explicit ValorBase(int numero) : numero_{numero}, canal_{0} {}\n    ValorBase(int numero, int canal) : numero_{numero}, canal_{canal} {}\n    int numero() const { return numero_; }\n    int canal() const { return canal_; }\nprivate:\n    int numero_;\n    int canal_;\n};\nclass ValorConMarca : public ValorBase {\npublic:\n    using ValorBase::ValorBase;\n    int marca() const { return marca_; }\nprivate:\n    int marca_{8};\n};\nint main() {\n    ValorBase origen{3};\n    ValorConMarca destino{origen};\n    std::cout << destino.numero();\n    return 0;\n}\n"
+          "code": "#include <iostream>\n#include <utility>\n\nclass ValorBase {\npublic:\n    explicit ValorBase(int numero) : numero_{numero}, canal_{0} {}\n    ValorBase(int numero, int canal) : numero_{numero}, canal_{canal} {}\n    int numero() const { return numero_; }\n    int canal() const { return canal_; }\nprivate:\n    int numero_;\n    int canal_;\n};\n\nclass ValorConMarca : public ValorBase {\npublic:\n    using ValorBase::ValorBase;\n    int marca() const { return marca_; }\nprivate:\n    int marca_{8};\n};\n\nint main() {\n    ValorBase origen{3};\n    ValorConMarca destino{origen};\n\n    std::cout << destino.numero();\n\n    return 0;\n}\n"
         },
         {
           "type": "multiple_choice",
@@ -270,7 +270,7 @@
         {
           "type": "code",
           "language": "cpp",
-          "code": "#include <iostream>\n#include <utility>\n\nclass BaseNumero {\npublic:\n    explicit BaseNumero(int numero) : numero_{numero} {}\n    int numero() const { return numero_; }\nprivate:\n    int numero_;\n};\nclass NecesitaCodigo {\npublic:\n    explicit NecesitaCodigo(int codigo) : codigo_{codigo} {}\n    int codigo() const { return codigo_; }\nprivate:\n    int codigo_;\n};\nclass ConCodigo : public BaseNumero {\npublic:\n    using BaseNumero::BaseNumero;\n    int codigo() const { return codigo_.codigo(); }\nprivate:\n    NecesitaCodigo codigo_;\n};\nint main() {\n    ConCodigo dato{4};\n    std::cout << dato.numero() << ':' << dato.codigo();\n    return 0;\n}\n"
+          "code": "#include <iostream>\n#include <utility>\n\nclass BaseNumero {\npublic:\n    explicit BaseNumero(int numero) : numero_{numero} {}\n    int numero() const { return numero_; }\nprivate:\n    int numero_;\n};\n\nclass NecesitaCodigo {\npublic:\n    explicit NecesitaCodigo(int codigo) : codigo_{codigo} {}\n    int codigo() const { return codigo_; }\nprivate:\n    int codigo_;\n};\n\nclass ConCodigo : public BaseNumero {\npublic:\n    using BaseNumero::BaseNumero;\n    int codigo() const { return codigo_.codigo(); }\nprivate:\n    NecesitaCodigo codigo_;\n};\n\nint main() {\n    ConCodigo dato{4};\n\n    std::cout << dato.numero() << ':' << dato.codigo();\n\n    return 0;\n}\n"
         },
         {
           "type": "multiple_choice",
@@ -363,7 +363,7 @@
         {
           "type": "code",
           "language": "cpp",
-          "code": "#include <iostream>\n#include <stdexcept>\n#include <string>\n#include <utility>\n\nclass LecturaBase {\npublic:\n    explicit LecturaBase(int valor) : LecturaBase{0, valor} {}\n\n    LecturaBase(int codigo, int valor) : codigo_{codigo}, valor_{valor} {\n        if (codigo_ < 0 || codigo_ > 9) {\n            throw std::invalid_argument(\"codigo\");\n        }\n    }\n\n    int codigo() const noexcept { return codigo_; }\n    int valor() const noexcept { return valor_; }\n\nprivate:\n    const int codigo_;\n    const int valor_;\n};\n\nclass LecturaEtiquetada : public LecturaBase {\npublic:\n    using LecturaBase::LecturaBase;\n\n    LecturaEtiquetada(int valor, std::string etiqueta)\n        : LecturaBase{valor}, etiqueta_{std::move(etiqueta)} {\n        if (etiqueta_.empty()) {\n            throw std::invalid_argument(\"etiqueta\");\n        }\n    }\n\n    void escribir(std::ostream& salida) const {\n        salida << codigo() << ',' << valor() << ',' << etiqueta_;\n    }\n\nprivate:\n    std::string etiqueta_{\"general\"};\n};\nint main() {\n    LecturaEtiquetada dato{4, \"sensor\"};\n    dato.escribir(std::cout);\n    std::cout << '\\n';\n    return 0;\n}\n"
+          "code": "#include <iostream>\n#include <stdexcept>\n#include <string>\n#include <utility>\n\nclass LecturaBase {\npublic:\n    explicit LecturaBase(int valor) : LecturaBase{0, valor} {}\n\n    LecturaBase(int codigo, int valor) : codigo_{codigo}, valor_{valor} {\n        if (codigo_ < 0 || codigo_ > 9) {\n            throw std::invalid_argument(\"codigo\");\n        }\n    }\n\n    int codigo() const noexcept { return codigo_; }\n    int valor() const noexcept { return valor_; }\n\nprivate:\n    const int codigo_;\n    const int valor_;\n};\n\nclass LecturaEtiquetada : public LecturaBase {\npublic:\n    using LecturaBase::LecturaBase;\n\n    LecturaEtiquetada(int valor, std::string etiqueta)\n        : LecturaBase{valor}, etiqueta_{std::move(etiqueta)} {\n        if (etiqueta_.empty()) {\n            throw std::invalid_argument(\"etiqueta\");\n        }\n    }\n\n    void escribir(std::ostream& salida) const {\n        salida << codigo() << ',' << valor() << ',' << etiqueta_;\n    }\n\nprivate:\n    std::string etiqueta_{\"general\"};\n};\n\nint main() {\n    LecturaEtiquetada dato{4, \"sensor\"};\n    dato.escribir(std::cout);\n    std::cout << '\\n';\n\n    return 0;\n}\n"
         },
         {
           "type": "paragraph",
@@ -399,7 +399,7 @@
           "id": "p3_u9l2_tres_rutas_con_dos_inicializaciones_de_etiqueta",
           "language": "cpp",
           "question": "Escribe las tres líneas de salida. En cada línea conserva código, valor y etiqueta separados por comas.",
-          "code": "#include <iostream>\n#include <stdexcept>\n#include <string>\n#include <utility>\n\nclass LecturaBase {\npublic:\n    explicit LecturaBase(int valor) : LecturaBase{0, valor} {}\n\n    LecturaBase(int codigo, int valor) : codigo_{codigo}, valor_{valor} {\n        if (codigo_ < 0 || codigo_ > 9) {\n            throw std::invalid_argument(\"codigo\");\n        }\n    }\n\n    int codigo() const noexcept { return codigo_; }\n    int valor() const noexcept { return valor_; }\n\nprivate:\n    const int codigo_;\n    const int valor_;\n};\n\nclass LecturaEtiquetada : public LecturaBase {\npublic:\n    using LecturaBase::LecturaBase;\n\n    LecturaEtiquetada(int valor, std::string etiqueta)\n        : LecturaBase{valor}, etiqueta_{std::move(etiqueta)} {\n        if (etiqueta_.empty()) {\n            throw std::invalid_argument(\"etiqueta\");\n        }\n    }\n\n    void escribir(std::ostream& salida) const {\n        salida << codigo() << ',' << valor() << ',' << etiqueta_;\n    }\n\nprivate:\n    std::string etiqueta_{\"general\"};\n};\nint main() {\n    LecturaEtiquetada simple{9};\n    LecturaEtiquetada codificada{2, 9};\n    LecturaEtiquetada nombrada{9, \"mesa\"};\n    simple.escribir(std::cout);\n    std::cout << '\\n';\n    codificada.escribir(std::cout);\n    std::cout << '\\n';\n    nombrada.escribir(std::cout);\n    std::cout << '\\n';\n    return 0;\n}\n",
+          "code": "#include <iostream>\n#include <stdexcept>\n#include <string>\n#include <utility>\n\nclass LecturaBase {\npublic:\n    explicit LecturaBase(int valor) : LecturaBase{0, valor} {}\n\n    LecturaBase(int codigo, int valor) : codigo_{codigo}, valor_{valor} {\n        if (codigo_ < 0 || codigo_ > 9) {\n            throw std::invalid_argument(\"codigo\");\n        }\n    }\n\n    int codigo() const noexcept { return codigo_; }\n    int valor() const noexcept { return valor_; }\n\nprivate:\n    const int codigo_;\n    const int valor_;\n};\n\nclass LecturaEtiquetada : public LecturaBase {\npublic:\n    using LecturaBase::LecturaBase;\n\n    LecturaEtiquetada(int valor, std::string etiqueta)\n        : LecturaBase{valor}, etiqueta_{std::move(etiqueta)} {\n        if (etiqueta_.empty()) {\n            throw std::invalid_argument(\"etiqueta\");\n        }\n    }\n\n    void escribir(std::ostream& salida) const {\n        salida << codigo() << ',' << valor() << ',' << etiqueta_;\n    }\n\nprivate:\n    std::string etiqueta_{\"general\"};\n};\n\nint main() {\n    LecturaEtiquetada simple{9};\n    LecturaEtiquetada codificada{2, 9};\n    LecturaEtiquetada nombrada{9, \"mesa\"};\n    simple.escribir(std::cout);\n    std::cout << '\\n';\n    codificada.escribir(std::cout);\n    std::cout << '\\n';\n    nombrada.escribir(std::cout);\n    std::cout << '\\n';\n\n    return 0;\n}\n",
           "answers": [
             "0,9,general\n2,9,general\n0,9,mesa\n"
           ],
@@ -423,7 +423,7 @@
           "id": "p3_u9l2_recuperar_tras_rechazar_etiqueta",
           "language": "cpp",
           "question": "Escribe la salida completa después del intento con etiqueta vacía y la consulta de anterior.",
-          "code": "#include <iostream>\n#include <stdexcept>\n#include <string>\n#include <utility>\n\nclass LecturaBase {\npublic:\n    explicit LecturaBase(int valor) : LecturaBase{0, valor} {}\n\n    LecturaBase(int codigo, int valor) : codigo_{codigo}, valor_{valor} {\n        if (codigo_ < 0 || codigo_ > 9) {\n            throw std::invalid_argument(\"codigo\");\n        }\n    }\n\n    int codigo() const noexcept { return codigo_; }\n    int valor() const noexcept { return valor_; }\n\nprivate:\n    const int codigo_;\n    const int valor_;\n};\n\nclass LecturaEtiquetada : public LecturaBase {\npublic:\n    using LecturaBase::LecturaBase;\n\n    LecturaEtiquetada(int valor, std::string etiqueta)\n        : LecturaBase{valor}, etiqueta_{std::move(etiqueta)} {\n        if (etiqueta_.empty()) {\n            throw std::invalid_argument(\"etiqueta\");\n        }\n    }\n\n    void escribir(std::ostream& salida) const {\n        salida << codigo() << ',' << valor() << ',' << etiqueta_;\n    }\n\nprivate:\n    std::string etiqueta_{\"general\"};\n};\nint main() {\n    LecturaEtiquetada anterior{3, 7};\n    try {\n        LecturaEtiquetada intento{4, std::string{}};\n        intento.escribir(std::cout);\n        std::cout << '\\n';\n    } catch (const std::invalid_argument&) {\n        std::cout << \"Rechazada\\n\";\n    }\n    anterior.escribir(std::cout);\n    std::cout << '\\n';\n    return 0;\n}\n",
+          "code": "#include <iostream>\n#include <stdexcept>\n#include <string>\n#include <utility>\n\nclass LecturaBase {\npublic:\n    explicit LecturaBase(int valor) : LecturaBase{0, valor} {}\n\n    LecturaBase(int codigo, int valor) : codigo_{codigo}, valor_{valor} {\n        if (codigo_ < 0 || codigo_ > 9) {\n            throw std::invalid_argument(\"codigo\");\n        }\n    }\n\n    int codigo() const noexcept { return codigo_; }\n    int valor() const noexcept { return valor_; }\n\nprivate:\n    const int codigo_;\n    const int valor_;\n};\n\nclass LecturaEtiquetada : public LecturaBase {\npublic:\n    using LecturaBase::LecturaBase;\n\n    LecturaEtiquetada(int valor, std::string etiqueta)\n        : LecturaBase{valor}, etiqueta_{std::move(etiqueta)} {\n        if (etiqueta_.empty()) {\n            throw std::invalid_argument(\"etiqueta\");\n        }\n    }\n\n    void escribir(std::ostream& salida) const {\n        salida << codigo() << ',' << valor() << ',' << etiqueta_;\n    }\n\nprivate:\n    std::string etiqueta_{\"general\"};\n};\n\nint main() {\n    LecturaEtiquetada anterior{3, 7};\n    try {\n        LecturaEtiquetada intento{4, std::string{}};\n        intento.escribir(std::cout);\n        std::cout << '\\n';\n    } catch (const std::invalid_argument&) {\n        std::cout << \"Rechazada\\n\";\n    }\n    anterior.escribir(std::cout);\n    std::cout << '\\n';\n\n    return 0;\n}\n",
           "answers": [
             "Rechazada\n3,7,general\n"
           ],
@@ -1319,6 +1319,207 @@
       }
     },
     "additions": [],
-    "editorial": []
+    "editorial": [
+      {
+        "id": "block_0001_0003",
+        "beforeSha256": "058eaab2ada03ff3cde25ddc4e2042b3f59498a87c0c6b903fd51b7b2e9c5cd6",
+        "afterSha256": "55777bcb5bb42bd0888c9c25b27269b58cb8e457c396306a03d22aa714e98a10"
+      },
+      {
+        "id": "block_0002_0003",
+        "beforeSha256": "ab9e9d1cbe5844e9d8ea054a5651c1c53b3b4bd9ab531f7b93a1cdf2dac8c26b",
+        "afterSha256": "7ebfc03f16979078e029b349fa1d7b4bb46e2cd303a883914f26af39f91ca5a1"
+      },
+      {
+        "id": "block_0003_0003",
+        "beforeSha256": "00104d2e0f5f4ffe38d08ae6e75281e38058c87363e72605e6111c2371ee7f13",
+        "afterSha256": "1ac2d97137a6ff8ad1758026e35f540d73537bf3a37c3bae275d3cc7ecbdf610"
+      },
+      {
+        "id": "block_0004_0002",
+        "beforeSha256": "ea5b248391976fd6ca6320a584ca3a3685667bca4e1d2a6a9145e0424b2a8802",
+        "afterSha256": "6bb22c1128e2701fc58a9f710f7e5369b12e2c1128306c7dccae97a3be55c71a"
+      },
+      {
+        "id": "block_0004_0005",
+        "beforeSha256": "33df771311e8f3323e16f20840e8be24d95beea1399293cfa728fcf0c8795d89",
+        "afterSha256": "8307bc748159039858d413730361deff96f011e9114203a5c67a642479476bb3"
+      },
+      {
+        "id": "block_0005_0002",
+        "beforeSha256": "ead91de4c7bc83d43161d05d50ae9483f2c8b2ee8e353f3012cefe54d08f44d6",
+        "afterSha256": "39f8d8d6473d6019daad8b17765a0bb6521b5094e224fa29df1f324388f98cbb"
+      },
+      {
+        "id": "block_0006_0005",
+        "beforeSha256": "45ab6ad55367c9616be505819562b0a3d299bae950058f621b12e05ffcdaa50c",
+        "afterSha256": "4ce775bf84a4a17178dbab9d32e580631d13c08324727dd9066e4f6d0d7fece1"
+      },
+      {
+        "id": "block_0006_0007",
+        "beforeSha256": "4f5c7070838742250b4cdf693733d9a03782c046c48aaf0933adb7bd032e1eac",
+        "afterSha256": "ad1927e3cc72bd1a76bed38b6da9a655500ee77e57c9de2c104cc5ff925a16ec"
+      },
+      {
+        "id": "block_0007_0003",
+        "beforeSha256": "533ff4d7534bb1ab7eb0876473f13aed79816acd8fbd0a465063563f71f41269",
+        "afterSha256": "c6bbf027d689c944bfae454dfc2cf0facb5ac6301ef0429b0701d8aaebae7f21"
+      },
+      {
+        "id": "block_0009_0001",
+        "beforeSha256": "335279a1d9a3bfddcd29738f5c6b80ed5a870ebd2ea84c385507507cf87f9869",
+        "afterSha256": "4a09e559a04391b87c411af2987e02a47c8764d9645bc5a2678da5e256fbd706"
+      },
+      {
+        "id": "block_0010_0002",
+        "beforeSha256": "3c096cb6fc92829e7d5ddcb3460ec6403e416af9fc5e3ae6f1c6a553e9342415",
+        "afterSha256": "1d99b0fe18ff63115b92ac0253398cb36eec7a5efdff4e1b65d45c3f93d272ea"
+      },
+      {
+        "id": "block_0011_0002",
+        "beforeSha256": "5e3d2e2d9025eac3bfbd5546c244c96e03d86d27ad9066abf0c1174239949722",
+        "afterSha256": "db87e280a1098699a287f5c9d0f1aec6913859ebd22f32dc31c3c5a87178b730"
+      }
+    ],
+    "sourceFormatRevisions": [
+      {
+        "id": "block_0001_0003",
+        "block": {
+          "type": "output_prediction",
+          "id": "p3_u9l2_dos_rutas_heredadas_con_marca_inicializada",
+          "language": "cpp",
+          "question": "Escribe la salida completa. Cada grupo muestra número, canal y marca de un objeto.",
+          "code": "#include <iostream>\n#include <utility>\n\nclass ValorBase {\npublic:\n    explicit ValorBase(int numero) : numero_{numero}, canal_{0} {}\n    ValorBase(int numero, int canal) : numero_{numero}, canal_{canal} {}\n    int numero() const { return numero_; }\n    int canal() const { return canal_; }\nprivate:\n    int numero_;\n    int canal_;\n};\nclass ValorConMarca : public ValorBase {\npublic:\n    using ValorBase::ValorBase;\n    int marca() const { return marca_; }\nprivate:\n    int marca_{8};\n};\nint main() {\n    ValorConMarca a{4};\n    ValorConMarca b{7, 2};\n    std::cout << a.numero() << ':' << a.canal() << ':' << a.marca()\n              << '|' << b.numero() << ':' << b.canal() << ':' << b.marca();\n    return 0;\n}\n",
+          "answers": [
+            "4:0:8|7:2:8"
+          ],
+          "outputComparison": "exact",
+          "explanation": "a utiliza el constructor base de un entero: guarda cuatro como número y elige cero como canal. b utiliza el de dos enteros: guarda siete y dos. En ambos objetos, marca_ se prepara con el ocho de su inicializador de miembro. Los argumentos de b no se distribuyen entre la base y la marca de la derivada."
+        }
+      },
+      {
+        "id": "block_0002_0003",
+        "block": {
+          "type": "output_prediction",
+          "id": "p3_u9l2_base_antes_de_miembro_en_constructor_heredado",
+          "language": "cpp",
+          "question": "Escribe la traza de construcción y los dos datos consultados al final.",
+          "code": "#include <iostream>\n#include <utility>\n\nclass BaseConTraza {\npublic:\n    explicit BaseConTraza(int numero) : numero_{numero} {\n        std::cout << \"Base|\";\n    }\n    int numero() const { return numero_; }\nprivate:\n    int numero_;\n};\nclass Sello {\npublic:\n    Sello() : codigo_{9} { std::cout << \"Sello|\"; }\n    int codigo() const { return codigo_; }\nprivate:\n    int codigo_;\n};\nclass ConSello : public BaseConTraza {\npublic:\n    using BaseConTraza::BaseConTraza;\n    int sello() const { return sello_.codigo(); }\nprivate:\n    Sello sello_{};\n};\nint main() {\n    ConSello dato{6};\n    std::cout << dato.numero() << ':' << dato.sello();\n    return 0;\n}\n",
+          "answers": [
+            "Base|Sello|6:9"
+          ],
+          "outputComparison": "exact",
+          "explanation": "BaseConTraza recibe seis y completa primero su cuerpo, que escribe Base. Después se construye sello_: su constructor establece el código con nueve y luego escribe Sello. Cuando la declaración de dato ha terminado, main puede consultar tanto el número de la base como el código del miembro."
+        }
+      },
+      {
+        "id": "block_0003_0003",
+        "block": {
+          "type": "output_prediction",
+          "id": "p3_u9l2_constructor_propio_y_ruta_heredada_restante",
+          "language": "cpp",
+          "question": "Escribe la salida completa de esta variante, distinguiendo qué ruta utiliza cada objeto.",
+          "code": "#include <iostream>\n#include <utility>\n\nclass ValorBase {\npublic:\n    explicit ValorBase(int numero) : numero_{numero}, canal_{0} {}\n    ValorBase(int numero, int canal) : numero_{numero}, canal_{canal} {}\n    int numero() const { return numero_; }\n    int canal() const { return canal_; }\nprivate:\n    int numero_;\n    int canal_;\n};\nclass ValorConMarca : public ValorBase {\npublic:\n    using ValorBase::ValorBase;\n    explicit ValorConMarca(int numero) : ValorBase{numero, 3}, marca_{5} {\n        std::cout << \"Propio|\";\n    }\n    int marca() const { return marca_; }\nprivate:\n    int marca_{8};\n};\nint main() {\n    ValorConMarca a{4};\n    ValorConMarca b{7, 2};\n    std::cout << a.numero() << ':' << a.canal() << ':' << a.marca()\n              << '|' << b.numero() << ':' << b.canal() << ':' << b.marca();\n    return 0;\n}\n",
+          "answers": [
+            "Propio|4:3:5|7:2:8"
+          ],
+          "outputComparison": "exact",
+          "explanation": "a utiliza ValorConMarca(int): prepara la base con cuatro y tres, prepara marca_ con cinco y escribe Propio. b sigue utilizando la ruta heredada de dos enteros y el inicializador de miembro que establece ocho. El cuerpo propio no se añade automáticamente a las otras rutas heredadas."
+        }
+      },
+      {
+        "id": "block_0004_0002",
+        "block": {
+          "type": "code",
+          "language": "cpp",
+          "code": "#include <iostream>\n#include <utility>\n\nclass BaseRestringida {\nprotected:\n    explicit BaseRestringida(int numero) : numero_{numero} {}\npublic:\n    int numero() const { return numero_; }\nprivate:\n    int numero_;\n};\nclass Restringida : public BaseRestringida {\npublic:\n    using BaseRestringida::BaseRestringida;\n};\nint main() {\n    Restringida dato{6};\n    std::cout << dato.numero();\n    return 0;\n}\n"
+        }
+      },
+      {
+        "id": "block_0004_0005",
+        "block": {
+          "type": "code",
+          "language": "cpp",
+          "code": "#include <iostream>\n#include <utility>\n\nclass ValorBase {\npublic:\n    explicit ValorBase(int numero) : numero_{numero}, canal_{0} {}\n    ValorBase(int numero, int canal) : numero_{numero}, canal_{canal} {}\n    int numero() const { return numero_; }\n    int canal() const { return canal_; }\nprivate:\n    int numero_;\n    int canal_;\n};\nclass ConUsingPrivado : public ValorBase {\n    using ValorBase::ValorBase;\npublic:\n    int marca() const { return marca_; }\nprivate:\n    int marca_{6};\n};\nint main() {\n    ConUsingPrivado dato{3};\n    std::cout << dato.numero() << ':' << dato.canal() << ':' << dato.marca();\n    return 0;\n}\n"
+        }
+      },
+      {
+        "id": "block_0005_0002",
+        "block": {
+          "type": "code",
+          "language": "cpp",
+          "code": "#include <iostream>\n#include <utility>\n\nclass ValorBase {\npublic:\n    explicit ValorBase(int numero) : numero_{numero}, canal_{0} {}\n    ValorBase(int numero, int canal) : numero_{numero}, canal_{canal} {}\n    int numero() const { return numero_; }\n    int canal() const { return canal_; }\nprivate:\n    int numero_;\n    int canal_;\n};\nclass ValorConMarca : public ValorBase {\npublic:\n    using ValorBase::ValorBase;\n    int marca() const { return marca_; }\nprivate:\n    int marca_{8};\n};\nint main() {\n    ValorConMarca dato = 5;\n    std::cout << dato.numero();\n    return 0;\n}\n"
+        }
+      },
+      {
+        "id": "block_0006_0005",
+        "block": {
+          "type": "output_prediction",
+          "id": "p3_u9l2_operaciones_propias_de_derivada_con_using",
+          "language": "cpp",
+          "question": "Escribe los cuatro grupos: inicial, copia, movida y origen después del movimiento.",
+          "code": "#include <iostream>\n#include <utility>\n\nclass PiezaBase {\npublic:\n    PiezaBase() = default;\n    explicit PiezaBase(int numero) : numero_{numero} {}\n    int numero() const { return numero_; }\n    void cambiar(int numero) { numero_ = numero; }\nprivate:\n    int numero_{0};\n};\nclass Pieza : public PiezaBase {\npublic:\n    using PiezaBase::PiezaBase;\n    int marca() const { return marca_; }\n    void marcar(int marca) { marca_ = marca; }\nprivate:\n    int marca_{8};\n};\nint main() {\n    Pieza inicial;\n    Pieza origen{5};\n    origen.marcar(12);\n    Pieza copia{origen};\n    origen.cambiar(7);\n    Pieza movida{std::move(origen)};\n    std::cout << inicial.numero() << ':' << inicial.marca()\n              << '|' << copia.numero() << ':' << copia.marca()\n              << '|' << movida.numero() << ':' << movida.marca()\n              << '|' << origen.numero() << ':' << origen.marca();\n    return 0;\n}\n",
+          "answers": [
+            "0:8|5:12|7:12|7:12"
+          ],
+          "outputComparison": "exact",
+          "explanation": "inicial obtiene el número cero de PiezaBase y la marca ocho de Pieza. copia recibe el número cinco y la marca doce que tenía origen al copiarlo. Cambiar después el número de origen a siete no modifica copia. El movimiento generado mueve las partes que aquí sólo contienen int: esos enteros se copian y no se vacía el origen. movida y origen conservan siete y doce. Que unique_ptr quede vacío al transferir su propiedad no es una regla universal para todo tipo movido."
+        }
+      },
+      {
+        "id": "block_0006_0007",
+        "block": {
+          "type": "code",
+          "language": "cpp",
+          "code": "#include <iostream>\n#include <utility>\n\nclass ValorBase {\npublic:\n    explicit ValorBase(int numero) : numero_{numero}, canal_{0} {}\n    ValorBase(int numero, int canal) : numero_{numero}, canal_{canal} {}\n    int numero() const { return numero_; }\n    int canal() const { return canal_; }\nprivate:\n    int numero_;\n    int canal_;\n};\nclass ValorConMarca : public ValorBase {\npublic:\n    using ValorBase::ValorBase;\n    int marca() const { return marca_; }\nprivate:\n    int marca_{8};\n};\nint main() {\n    ValorBase origen{3};\n    ValorConMarca destino{origen};\n    std::cout << destino.numero();\n    return 0;\n}\n"
+        }
+      },
+      {
+        "id": "block_0007_0003",
+        "block": {
+          "type": "code",
+          "language": "cpp",
+          "code": "#include <iostream>\n#include <utility>\n\nclass BaseNumero {\npublic:\n    explicit BaseNumero(int numero) : numero_{numero} {}\n    int numero() const { return numero_; }\nprivate:\n    int numero_;\n};\nclass NecesitaCodigo {\npublic:\n    explicit NecesitaCodigo(int codigo) : codigo_{codigo} {}\n    int codigo() const { return codigo_; }\nprivate:\n    int codigo_;\n};\nclass ConCodigo : public BaseNumero {\npublic:\n    using BaseNumero::BaseNumero;\n    int codigo() const { return codigo_.codigo(); }\nprivate:\n    NecesitaCodigo codigo_;\n};\nint main() {\n    ConCodigo dato{4};\n    std::cout << dato.numero() << ':' << dato.codigo();\n    return 0;\n}\n"
+        }
+      },
+      {
+        "id": "block_0009_0001",
+        "block": {
+          "type": "code",
+          "language": "cpp",
+          "code": "#include <iostream>\n#include <stdexcept>\n#include <string>\n#include <utility>\n\nclass LecturaBase {\npublic:\n    explicit LecturaBase(int valor) : LecturaBase{0, valor} {}\n\n    LecturaBase(int codigo, int valor) : codigo_{codigo}, valor_{valor} {\n        if (codigo_ < 0 || codigo_ > 9) {\n            throw std::invalid_argument(\"codigo\");\n        }\n    }\n\n    int codigo() const noexcept { return codigo_; }\n    int valor() const noexcept { return valor_; }\n\nprivate:\n    const int codigo_;\n    const int valor_;\n};\n\nclass LecturaEtiquetada : public LecturaBase {\npublic:\n    using LecturaBase::LecturaBase;\n\n    LecturaEtiquetada(int valor, std::string etiqueta)\n        : LecturaBase{valor}, etiqueta_{std::move(etiqueta)} {\n        if (etiqueta_.empty()) {\n            throw std::invalid_argument(\"etiqueta\");\n        }\n    }\n\n    void escribir(std::ostream& salida) const {\n        salida << codigo() << ',' << valor() << ',' << etiqueta_;\n    }\n\nprivate:\n    std::string etiqueta_{\"general\"};\n};\nint main() {\n    LecturaEtiquetada dato{4, \"sensor\"};\n    dato.escribir(std::cout);\n    std::cout << '\\n';\n    return 0;\n}\n"
+        }
+      },
+      {
+        "id": "block_0010_0002",
+        "block": {
+          "type": "output_prediction",
+          "id": "p3_u9l2_tres_rutas_con_dos_inicializaciones_de_etiqueta",
+          "language": "cpp",
+          "question": "Escribe las tres líneas de salida. En cada línea conserva código, valor y etiqueta separados por comas.",
+          "code": "#include <iostream>\n#include <stdexcept>\n#include <string>\n#include <utility>\n\nclass LecturaBase {\npublic:\n    explicit LecturaBase(int valor) : LecturaBase{0, valor} {}\n\n    LecturaBase(int codigo, int valor) : codigo_{codigo}, valor_{valor} {\n        if (codigo_ < 0 || codigo_ > 9) {\n            throw std::invalid_argument(\"codigo\");\n        }\n    }\n\n    int codigo() const noexcept { return codigo_; }\n    int valor() const noexcept { return valor_; }\n\nprivate:\n    const int codigo_;\n    const int valor_;\n};\n\nclass LecturaEtiquetada : public LecturaBase {\npublic:\n    using LecturaBase::LecturaBase;\n\n    LecturaEtiquetada(int valor, std::string etiqueta)\n        : LecturaBase{valor}, etiqueta_{std::move(etiqueta)} {\n        if (etiqueta_.empty()) {\n            throw std::invalid_argument(\"etiqueta\");\n        }\n    }\n\n    void escribir(std::ostream& salida) const {\n        salida << codigo() << ',' << valor() << ',' << etiqueta_;\n    }\n\nprivate:\n    std::string etiqueta_{\"general\"};\n};\nint main() {\n    LecturaEtiquetada simple{9};\n    LecturaEtiquetada codificada{2, 9};\n    LecturaEtiquetada nombrada{9, \"mesa\"};\n    simple.escribir(std::cout);\n    std::cout << '\\n';\n    codificada.escribir(std::cout);\n    std::cout << '\\n';\n    nombrada.escribir(std::cout);\n    std::cout << '\\n';\n    return 0;\n}\n",
+          "answers": [
+            "0,9,general\n2,9,general\n0,9,mesa\n"
+          ],
+          "outputComparison": "exact",
+          "explanation": "simple recibe un único entero, así que usa la ruta heredada de un argumento: código cero, valor nueve y etiqueta general. codificada recibe dos enteros, así que usa la ruta heredada de dos argumentos: código dos, valor nueve y etiqueta general. nombrada recibe un entero y una cadena, por lo que usa el constructor propio: código cero, valor nueve y etiqueta mesa. Las dos rutas heredadas no ejecutan el cuerpo del constructor propio."
+        }
+      },
+      {
+        "id": "block_0011_0002",
+        "block": {
+          "type": "output_prediction",
+          "id": "p3_u9l2_recuperar_tras_rechazar_etiqueta",
+          "language": "cpp",
+          "question": "Escribe la salida completa después del intento con etiqueta vacía y la consulta de anterior.",
+          "code": "#include <iostream>\n#include <stdexcept>\n#include <string>\n#include <utility>\n\nclass LecturaBase {\npublic:\n    explicit LecturaBase(int valor) : LecturaBase{0, valor} {}\n\n    LecturaBase(int codigo, int valor) : codigo_{codigo}, valor_{valor} {\n        if (codigo_ < 0 || codigo_ > 9) {\n            throw std::invalid_argument(\"codigo\");\n        }\n    }\n\n    int codigo() const noexcept { return codigo_; }\n    int valor() const noexcept { return valor_; }\n\nprivate:\n    const int codigo_;\n    const int valor_;\n};\n\nclass LecturaEtiquetada : public LecturaBase {\npublic:\n    using LecturaBase::LecturaBase;\n\n    LecturaEtiquetada(int valor, std::string etiqueta)\n        : LecturaBase{valor}, etiqueta_{std::move(etiqueta)} {\n        if (etiqueta_.empty()) {\n            throw std::invalid_argument(\"etiqueta\");\n        }\n    }\n\n    void escribir(std::ostream& salida) const {\n        salida << codigo() << ',' << valor() << ',' << etiqueta_;\n    }\n\nprivate:\n    std::string etiqueta_{\"general\"};\n};\nint main() {\n    LecturaEtiquetada anterior{3, 7};\n    try {\n        LecturaEtiquetada intento{4, std::string{}};\n        intento.escribir(std::cout);\n        std::cout << '\\n';\n    } catch (const std::invalid_argument&) {\n        std::cout << \"Rechazada\\n\";\n    }\n    anterior.escribir(std::cout);\n    std::cout << '\\n';\n    return 0;\n}\n",
+          "answers": [
+            "Rechazada\n3,7,general\n"
+          ],
+          "outputComparison": "exact",
+          "explanation": "anterior usa la ruta heredada de dos enteros y conserva código tres, valor siete y etiqueta general. intento selecciona el constructor propio: prepara su base y su cadena vacía, pero lanza al comprobar la etiqueta. No se alcanza intento.escribir. El catch muestra Rechazada. Después se consulta anterior, cuyos miembros no participaron en la construcción fallida y conservan sus datos."
+        }
+      }
+    ]
   }
 }

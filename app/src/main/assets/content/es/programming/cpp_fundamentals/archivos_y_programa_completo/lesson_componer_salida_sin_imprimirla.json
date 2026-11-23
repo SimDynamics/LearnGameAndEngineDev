@@ -21,7 +21,7 @@
         {
           "type": "code",
           "language": "cpp",
-          "code": "#include <iostream>\n#include <sstream>\n#include <string>\n\nint main() {\n    std::ostringstream texto;\n    texto << \"Cajas=\" << 4 << \";Estado=\" << \"listo\";\n    std::string mensaje = texto.str();\n\n    std::cout << mensaje;\n    return 0;\n}\n"
+          "code": "#include <iostream>\n#include <sstream>\n#include <string>\n\nint main() {\n    std::ostringstream texto;\n    texto << \"Cajas=\" << 4 << \";Estado=\" << \"listo\";\n    std::string mensaje = texto.str();\n\n    std::cout << mensaje;\n\n    return 0;\n}\n"
         },
         {
           "type": "paragraph",
@@ -63,7 +63,7 @@
           "id": "copia_antes_de_ampliar",
           "question": "Predice la salida después de ampliar el contenido del flujo.",
           "language": "cpp",
-          "code": "#include <iostream>\n#include <sstream>\n#include <string>\n\nint main() {\n    std::ostringstream texto;\n    texto << \"Turno 2\";\n    std::string anterior = texto.str();\n    texto << \" confirmado\";\n\n    std::cout << anterior << \"|\" << texto.str();\n    return 0;\n}\n",
+          "code": "#include <iostream>\n#include <sstream>\n#include <string>\n\nint main() {\n    std::ostringstream texto;\n    texto << \"Turno 2\";\n    std::string anterior = texto.str();\n    texto << \" confirmado\";\n\n    std::cout << anterior << \"|\" << texto.str();\n\n    return 0;\n}\n",
           "answers": [
             "Turno 2|Turno 2 confirmado"
           ],
@@ -85,7 +85,7 @@
           "id": "consultar_no_reinicia",
           "question": "Predice la salida. No hay separador añadido entre las dos inserciones en texto.",
           "language": "cpp",
-          "code": "#include <iostream>\n#include <sstream>\n#include <string>\n\nint main() {\n    std::ostringstream texto;\n    texto << 4;\n    std::string primero = texto.str();\n    texto << 7;\n\n    std::cout << primero << \":\" << texto.str();\n    return 0;\n}\n",
+          "code": "#include <iostream>\n#include <sstream>\n#include <string>\n\nint main() {\n    std::ostringstream texto;\n    texto << 4;\n    std::string primero = texto.str();\n    texto << 7;\n\n    std::cout << primero << \":\" << texto.str();\n\n    return 0;\n}\n",
           "answers": [
             "4:47"
           ],
@@ -160,7 +160,7 @@
         },
         {
           "type": "cpp_compiler",
-          "initialCode": "#include <iostream>\n#include <sstream>\n#include <string>\n\nint main() {\n    // Define una funcion de composicion antes de main y usala aqui.\n    return 0;\n}\n",
+          "initialCode": "#include <iostream>\n#include <sstream>\n#include <string>\n\nint main() {\n    // Define una funcion de composicion antes de main y usala aqui.\n    \n    return 0;\n}\n",
           "outputCheck": {
             "cases": [
               {
@@ -255,7 +255,7 @@
         {
           "type": "code",
           "language": "cpp",
-          "code": "#include <iostream>\n#include <sstream>\n#include <string>\n\nstd::string componer_resumen(int validos, int rechazados) {\n    std::ostringstream texto;\n    texto << \"Validos=\" << validos << \";Rechazados=\" << rechazados;\n    return texto.str();\n}\n\nint main() {\n    std::string primero = componer_resumen(2, 1);\n    std::string segundo = componer_resumen(0, 0);\n\n    std::cout << primero << \"\\n\" << segundo;\n    return 0;\n}\n"
+          "code": "#include <iostream>\n#include <sstream>\n#include <string>\n\nstd::string componer_resumen(int validos, int rechazados) {\n    std::ostringstream texto;\n    texto << \"Validos=\" << validos << \";Rechazados=\" << rechazados;\n    return texto.str();\n}\n\nint main() {\n    std::string primero = componer_resumen(2, 1);\n    std::string segundo = componer_resumen(0, 0);\n\n    std::cout << primero << \"\\n\" << segundo;\n\n    return 0;\n}\n"
         },
         {
           "type": "paragraph",
@@ -272,7 +272,7 @@
         {
           "type": "code",
           "language": "cpp",
-          "code": "#include <iostream>\n#include <sstream>\n#include <string>\n\nstd::string componer_resumen(int validos, int rechazados) {\n    std::ostringstream texto;\n    texto << \"Validos=\" << validos << \";Rechazados=\" << rechazados;\n    return texto.str();\n}\n\nint main() {\n    const std::string primero = componer_resumen(2, 1);\n    const std::string segundo = componer_resumen(0, 0);\n    const std::string tercero = componer_resumen(5, 3);\n\n    std::cout << primero << \"\\n\" << segundo << \"\\n\" << tercero << \"\\n\";\n    return 0;\n}\n"
+          "code": "#include <iostream>\n#include <sstream>\n#include <string>\n\nstd::string componer_resumen(int validos, int rechazados) {\n    std::ostringstream texto;\n    texto << \"Validos=\" << validos << \";Rechazados=\" << rechazados;\n    return texto.str();\n}\n\nint main() {\n    const std::string primero = componer_resumen(2, 1);\n    const std::string segundo = componer_resumen(0, 0);\n    const std::string tercero = componer_resumen(5, 3);\n\n    std::cout << primero << \"\\n\" << segundo << \"\\n\" << tercero << \"\\n\";\n\n    return 0;\n}\n"
         },
         {
           "type": "heading",
@@ -300,7 +300,7 @@
           "id": "destino_archivo_no_es_stdout",
           "question": "Supón que la apertura, la escritura y el cierre tienen éxito. ¿Qué texto aparece en la salida estándar de este programa?",
           "language": "cpp",
-          "code": "#include <fstream>\n#include <iostream>\n#include <sstream>\n#include <string>\n\nint main() {\n    std::ostringstream texto;\n    texto << \"Validos=\" << 2 << \";Rechazados=\" << 1;\n    std::string mensaje = texto.str();\n    std::ofstream salida{\"resumen_lgp.txt\"};\n    if (!salida) {\n        std::cout << \"Error apertura\";\n        return 1;\n    }\n\n    salida << mensaje;\n    salida.close();\n    if (!salida) {\n        std::cout << \"Error escritura\";\n        return 1;\n    }\n\n    std::cout << \"Guardado\";\n    return 0;\n}\n",
+          "code": "#include <fstream>\n#include <iostream>\n#include <sstream>\n#include <string>\n\nint main() {\n    std::ostringstream texto;\n    texto << \"Validos=\" << 2 << \";Rechazados=\" << 1;\n    std::string mensaje = texto.str();\n    std::ofstream salida{\"resumen_lgp.txt\"};\n    if (!salida) {\n        std::cout << \"Error apertura\";\n        return 1;\n    }\n\n    salida << mensaje;\n    salida.close();\n    if (!salida) {\n        std::cout << \"Error escritura\";\n        return 1;\n    }\n\n    std::cout << \"Guardado\";\n\n    return 0;\n}\n",
           "answers": [
             "Guardado"
           ],
@@ -1155,6 +1155,41 @@
         "id": "block_0004_0001",
         "beforeSha256": "b374a65f5a628fcab3d8ebea2ba927ff97276456a514e29c517ccef72b615450",
         "afterSha256": "f31c177a2c0782091b72c4599422a57070b4522730a4d8a1d3b9566c45647f66"
+      },
+      {
+        "id": "block_0000_0002",
+        "beforeSha256": "f459498d72dd32e3b0246c741a5a38bb05817b87fb89318d83320c6d48494c99",
+        "afterSha256": "8b71e0c54aa4c45ac474e38f0dd730f754d4d5da8de7dcd0c7844f8e5ec35c29"
+      },
+      {
+        "id": "block_0001_0001",
+        "beforeSha256": "5039b952216aceb041269e9955bef5b9967b58cbe2f2893a82f509e1d406c887",
+        "afterSha256": "a9c36aba8c7ee209731f3963b28e974c30fbf1d1f460d329fc53f8d50807771d"
+      },
+      {
+        "id": "block_0001_0003",
+        "beforeSha256": "286ff89af9385a4e2ba4c933f38c4dfe3be16a9712a232a370e84b606b09d66d",
+        "afterSha256": "a054265b8a93f4d818d4955e23a79fb27aa92daefc0726b4f420559994633a57"
+      },
+      {
+        "id": "block_0002_0003",
+        "beforeSha256": "2a22d63af34fb093c3feeef538fdb794fa6b57074fddcc601b473162937043b7",
+        "afterSha256": "ed9adbc3c5a5c35c2b17a95344a8220879a5d44ec6ab339c00147056e71ce089"
+      },
+      {
+        "id": "block_0003_0001",
+        "beforeSha256": "1ea0cf8fdcce14959c13a83f6e4d16710cbdcab6b3b4f8d15e065d0bf42c729c",
+        "afterSha256": "6a664a55120bd143d230aae67dccba89dca67d691983d4626d4b397acd007a1c"
+      },
+      {
+        "id": "block_0003_0005",
+        "beforeSha256": "99b7d3519814f127d03e7bb948fcf7de46e356c63515bd9ba2241759a0b8d769",
+        "afterSha256": "7bd3663f67fd3db2814aab947729bd1906ec86f809dbc50caf01a67542122fbb"
+      },
+      {
+        "id": "block_0004_0001",
+        "beforeSha256": "f31c177a2c0782091b72c4599422a57070b4522730a4d8a1d3b9566c45647f66",
+        "afterSha256": "f423faa051ba8db852543ece4cb02b20544864fb0ee345ebe042e0b123aea8c2"
       }
     ],
     "sourceFormatRevisions": [
@@ -1266,6 +1301,38 @@
             "Guardado"
           ],
           "explanation": "texto.str() obtiene Validos=2;Rechazados=1 como cadena. La inserción salida << mensaje envía esa cadena al archivo resumen_lgp.txt. Después de comprobar el cierre, la única inserción en std::cout escribe Guardado.\n\nPor eso la salida estándar contiene ese diagnóstico y el resumen queda en el archivo. Obtener la cadena del flujo no la imprime."
+        }
+      },
+      {
+        "id": "block_0002_0003",
+        "block": {
+          "type": "cpp_compiler",
+          "initialCode": "#include <iostream>\n#include <sstream>\n#include <string>\n\nint main() {\n    // Define una funcion de composicion antes de main y usala aqui.\n    return 0;\n}\n",
+          "outputCheck": {
+            "cases": [
+              {
+                "standardInput": "",
+                "outputs": [
+                  "Validos=2;Rechazados=1\nValidos=0;Rechazados=0\nValidos=5;Rechazados=3\n"
+                ],
+                "explanation": "La salida coincide con las tres líneas pedidas, en su orden y con un salto después de cada una. Comprueba también que tu función forma los campos desde sus parámetros, devuelve la cadena y deja la presentación a main; la coincidencia de la salida no certifica esa organización.",
+                "reviewFeedback": [
+                  {
+                    "outputs": [
+                      ""
+                    ],
+                    "text": "La ejecución terminó sin mostrar texto. Completa la composición y las tres llamadas, guarda sus resultados y envíalos a la salida desde main."
+                  },
+                  {
+                    "outputs": [
+                      "Validos=2;Rechazados=1\nValidos=0;Rechazados=0"
+                    ],
+                    "text": "Esta salida contiene sólo dos líneas y no tiene salto final. Revisa la tercera llamada y los saltos solicitados para la batería completa."
+                  }
+                ]
+              }
+            ]
+          }
         }
       }
     ]

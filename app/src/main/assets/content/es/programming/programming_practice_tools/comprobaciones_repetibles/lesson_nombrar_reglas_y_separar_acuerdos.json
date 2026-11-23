@@ -75,7 +75,7 @@
           "type": "output_prediction",
           "id": "regla_constante_sin_relacion",
           "question": "Esta variante usa enteros y no cambia después ninguna constante. Predice su salida exacta, sin salto final. Describe lo que ejecuta, aunque no cumpla un acuerdo de cajas de seis plazas.",
-          "code": "#include <iostream>\nint cajas_para(int piezas) {\n    const int piezas_por_caja{6};\n    return (piezas + 3) / piezas_por_caja;\n}\nint main() {\n    std::cout << cajas_para(6) << \":\" << cajas_para(7)\n              << \":\" << cajas_para(12) << \":\" << cajas_para(13);\n    return 0;\n}\n",
+          "code": "#include <iostream>\n\nint cajas_para(int piezas) {\n    const int piezas_por_caja{6};\n    return (piezas + 3) / piezas_por_caja;\n}\n\nint main() {\n    std::cout << cajas_para(6) << \":\" << cajas_para(7)\n              << \":\" << cajas_para(12) << \":\" << cajas_para(13);\n    return 0;\n}\n",
           "answers": [
             "1:1:2:2"
           ],
@@ -110,7 +110,7 @@
           "projectFiles": [
             {
               "path": "CMakeLists.txt",
-              "initialCode": "cmake_minimum_required(VERSION 3.20)\nproject(EnviosComprobables LANGUAGES CXX)\nmessage(STATUS \"raiz_antes\")\nadd_subdirectory(componente)\nmessage(STATUS \"raiz_despues\")\nadd_executable(consultar_cajas app/consulta.cpp)\nadd_executable(comprobar_cajas pruebas/cajas_casos.cpp)\ntarget_link_libraries(consultar_cajas PRIVATE envios)\ntarget_link_libraries(comprobar_cajas PRIVATE envios)\ntarget_compile_features(consultar_cajas PRIVATE cxx_std_20)\ntarget_compile_features(comprobar_cajas PRIVATE cxx_std_20)\nset_target_properties(consultar_cajas comprobar_cajas PROPERTIES CXX_EXTENSIONS OFF)\n"
+              "initialCode": "cmake_minimum_required(VERSION 3.20)\nproject(EnviosComprobables LANGUAGES CXX)\nmessage(STATUS \"raiz_antes\")\nadd_subdirectory(componente)\nmessage(STATUS \"raiz_despues\")\nadd_executable(consultar_cajas app/consulta.cpp)\nadd_executable(comprobar_cajas pruebas/cajas_casos.cpp)\n\ntarget_link_libraries(consultar_cajas PRIVATE envios)\ntarget_link_libraries(comprobar_cajas PRIVATE envios)\ntarget_compile_features(consultar_cajas PRIVATE cxx_std_20)\ntarget_compile_features(comprobar_cajas PRIVATE cxx_std_20)\nset_target_properties(consultar_cajas comprobar_cajas PROPERTIES CXX_EXTENSIONS OFF)\n"
             },
             {
               "path": "componente/CMakeLists.txt",
@@ -126,11 +126,11 @@
             },
             {
               "path": "app/consulta.cpp",
-              "initialCode": "#include \"envio/cajas.h\"\n#include <iostream>\n\nint main() {\n    std::cout << cajas_para(4) << \":\" << cajas_para(8);\n    return 0;\n}\n"
+              "initialCode": "#include \"envio/cajas.h\"\n#include <iostream>\n\nint main() {\n    std::cout << cajas_para(4) << \":\" << cajas_para(8);\n\n    return 0;\n}\n"
             },
             {
               "path": "pruebas/cajas_casos.cpp",
-              "initialCode": "#include \"envio/cajas.h\"\n#include <iostream>\n\nbool comprobar(int piezas, int esperado) {\n    const int obtenido{cajas_para(piezas)};\n    const bool coincide{obtenido == esperado};\n    std::cout << \"piezas=\" << piezas << \" esperado=\" << esperado\n              << \" obtenido=\" << obtenido << \" \";\n    if (coincide) { std::cout << \"OK\\n\"; }\n    else { std::cout << \"FALLO\\n\"; }\n    return coincide;\n}\n\nint main() {\n    bool correcto{true};\n    if (!comprobar(0, 0)) { correcto = false; }\n    if (!comprobar(4, 1)) { correcto = false; }\n    if (!comprobar(8, 2)) { correcto = false; }\n    if (!comprobar(20, 5)) { correcto = false; }\n    if (!comprobar(1, 1)) { correcto = false; }\n    if (!comprobar(5, 2)) { correcto = false; }\n    if (!comprobar(17, 5)) { correcto = false; }\n    if (!correcto) {\n        std::cout << \"Bateria: FALLO\\n\";\n        return 1;\n    }\n    std::cout << \"Bateria: OK\\n\";\n    return 0;\n}\n"
+              "initialCode": "#include \"envio/cajas.h\"\n#include <iostream>\n\nbool comprobar(int piezas, int esperado) {\n    const int obtenido{cajas_para(piezas)};\n    const bool coincide{obtenido == esperado};\n\n    std::cout << \"piezas=\" << piezas << \" esperado=\" << esperado\n              << \" obtenido=\" << obtenido << \" \";\n    if (coincide) { std::cout << \"OK\\n\"; }\n    else { std::cout << \"FALLO\\n\"; }\n    return coincide;\n}\n\nint main() {\n    bool correcto{true};\n    if (!comprobar(0, 0)) { correcto = false; }\n    if (!comprobar(4, 1)) { correcto = false; }\n    if (!comprobar(8, 2)) { correcto = false; }\n    if (!comprobar(20, 5)) { correcto = false; }\n    if (!comprobar(1, 1)) { correcto = false; }\n    if (!comprobar(5, 2)) { correcto = false; }\n    if (!comprobar(17, 5)) { correcto = false; }\n    if (!correcto) {\n        std::cout << \"Bateria: FALLO\\n\";\n        return 1;\n    }\n    std::cout << \"Bateria: OK\\n\";\n\n    return 0;\n}\n"
             }
           ],
           "cmake": {
@@ -308,7 +308,7 @@
           "projectFiles": [
             {
               "path": "CMakeLists.txt",
-              "initialCode": "cmake_minimum_required(VERSION 3.20)\nproject(EnviosComprobables LANGUAGES CXX)\nmessage(STATUS \"raiz_antes\")\nadd_subdirectory(componente)\nmessage(STATUS \"raiz_despues\")\nadd_executable(consultar_cajas app/consulta.cpp)\nadd_executable(comprobar_cajas pruebas/cajas_casos.cpp)\ntarget_link_libraries(consultar_cajas PRIVATE envios)\ntarget_link_libraries(comprobar_cajas PRIVATE envios)\ntarget_compile_features(consultar_cajas PRIVATE cxx_std_20)\ntarget_compile_features(comprobar_cajas PRIVATE cxx_std_20)\nset_target_properties(consultar_cajas comprobar_cajas PROPERTIES CXX_EXTENSIONS OFF)\n"
+              "initialCode": "cmake_minimum_required(VERSION 3.20)\nproject(EnviosComprobables LANGUAGES CXX)\nmessage(STATUS \"raiz_antes\")\nadd_subdirectory(componente)\nmessage(STATUS \"raiz_despues\")\nadd_executable(consultar_cajas app/consulta.cpp)\nadd_executable(comprobar_cajas pruebas/cajas_casos.cpp)\n\ntarget_link_libraries(consultar_cajas PRIVATE envios)\ntarget_link_libraries(comprobar_cajas PRIVATE envios)\ntarget_compile_features(consultar_cajas PRIVATE cxx_std_20)\ntarget_compile_features(comprobar_cajas PRIVATE cxx_std_20)\nset_target_properties(consultar_cajas comprobar_cajas PROPERTIES CXX_EXTENSIONS OFF)\n"
             },
             {
               "path": "componente/CMakeLists.txt",
@@ -328,7 +328,7 @@
             },
             {
               "path": "pruebas/cajas_casos.cpp",
-              "initialCode": "#include \"envio/cajas.h\"\n#include <iostream>\n\nbool comprobar(int piezas, int esperado) {\n    const int obtenido{cajas_para(piezas)};\n    const bool coincide{obtenido == esperado};\n    std::cout << \"piezas=\" << piezas << \" esperado=\" << esperado\n              << \" obtenido=\" << obtenido << \" \";\n    if (coincide) { std::cout << \"OK\\n\"; }\n    else { std::cout << \"FALLO\\n\"; }\n    return coincide;\n}\n\nbool comprobar_plazo(int dias, bool esperado) {\n    const bool obtenido{llega_a_tiempo(dias)};\n    const bool coincide{obtenido == esperado};\n    std::cout << \"dias=\" << dias << \" esperado=\" << esperado\n              << \" obtenido=\" << obtenido << \" \";\n    if (coincide) { std::cout << \"OK\\n\"; }\n    else { std::cout << \"FALLO\\n\"; }\n    return coincide;\n}\n\nint main() {\n    bool correcto{true};\n    if (!comprobar(0, 0)) { correcto = false; }\n    if (!comprobar(4, 1)) { correcto = false; }\n    if (!comprobar(8, 2)) { correcto = false; }\n    if (!comprobar(20, 5)) { correcto = false; }\n    if (!comprobar(1, 1)) { correcto = false; }\n    if (!comprobar(5, 2)) { correcto = false; }\n    if (!comprobar(17, 5)) { correcto = false; }\n    if (!comprobar_plazo(4, true)) { correcto = false; }\n    if (!comprobar_plazo(5, false)) { correcto = false; }\n    if (!correcto) {\n        std::cout << \"Bateria: FALLO\\n\";\n        return 1;\n    }\n    std::cout << \"Bateria: OK\\n\";\n    return 0;\n}\n"
+              "initialCode": "#include \"envio/cajas.h\"\n#include <iostream>\n\nbool comprobar(int piezas, int esperado) {\n    const int obtenido{cajas_para(piezas)};\n    const bool coincide{obtenido == esperado};\n\n    std::cout << \"piezas=\" << piezas << \" esperado=\" << esperado\n              << \" obtenido=\" << obtenido << \" \";\n    if (coincide) { std::cout << \"OK\\n\"; }\n    else { std::cout << \"FALLO\\n\"; }\n    return coincide;\n}\n\nbool comprobar_plazo(int dias, bool esperado) {\n    const bool obtenido{llega_a_tiempo(dias)};\n    const bool coincide{obtenido == esperado};\n\n    std::cout << \"dias=\" << dias << \" esperado=\" << esperado\n              << \" obtenido=\" << obtenido << \" \";\n    if (coincide) { std::cout << \"OK\\n\"; }\n    else { std::cout << \"FALLO\\n\"; }\n    return coincide;\n}\n\nint main() {\n    bool correcto{true};\n    if (!comprobar(0, 0)) { correcto = false; }\n    if (!comprobar(4, 1)) { correcto = false; }\n    if (!comprobar(8, 2)) { correcto = false; }\n    if (!comprobar(20, 5)) { correcto = false; }\n    if (!comprobar(1, 1)) { correcto = false; }\n    if (!comprobar(5, 2)) { correcto = false; }\n    if (!comprobar(17, 5)) { correcto = false; }\n    if (!comprobar_plazo(4, true)) { correcto = false; }\n    if (!comprobar_plazo(5, false)) { correcto = false; }\n    if (!correcto) {\n        std::cout << \"Bateria: FALLO\\n\";\n        return 1;\n    }\n    std::cout << \"Bateria: OK\\n\";\n\n    return 0;\n}\n"
             }
           ],
           "cmake": {
@@ -368,7 +368,7 @@
         {
           "type": "code",
           "language": "cpp",
-          "code": "#include \"envio/cajas.h\"\n#include <iostream>\n\nbool comprobar(int piezas, int esperado) {\n    const int obtenido{cajas_para(piezas)};\n    const bool coincide{obtenido == esperado};\n    std::cout << \"piezas=\" << piezas << \" esperado=\" << esperado\n              << \" obtenido=\" << obtenido << \" \";\n    if (coincide) { std::cout << \"OK\\n\"; }\n    else { std::cout << \"FALLO\\n\"; }\n    return coincide;\n}\n\nbool comprobar_plazo(int dias, bool esperado) {\n    const bool obtenido{llega_a_tiempo(dias)};\n    const bool coincide{obtenido == esperado};\n    std::cout << \"dias=\" << dias << \" esperado=\" << esperado\n              << \" obtenido=\" << obtenido << \" \";\n    if (coincide) { std::cout << \"OK\\n\"; }\n    else { std::cout << \"FALLO\\n\"; }\n    return coincide;\n}\n\nint main() {\n    bool correcto{true};\n    if (!comprobar(0, 0)) { correcto = false; }\n    if (!comprobar(4, 1)) { correcto = false; }\n    if (!comprobar(8, 2)) { correcto = false; }\n    if (!comprobar(20, 4)) { correcto = false; }\n    if (!comprobar(1, 1)) { correcto = false; }\n    if (!comprobar(5, 1)) { correcto = false; }\n    if (!comprobar(17, 3)) { correcto = false; }\n    if (!comprobar(6, 1)) { correcto = false; }\n    if (!comprobar(7, 2)) { correcto = false; }\n    if (!comprobar_plazo(4, true)) { correcto = false; }\n    if (!comprobar_plazo(5, false)) { correcto = false; }\n    if (!correcto) {\n        std::cout << \"Bateria: FALLO\\n\";\n        return 1;\n    }\n    std::cout << \"Bateria: OK\\n\";\n    return 0;\n}\n"
+          "code": "#include \"envio/cajas.h\"\n#include <iostream>\n\nbool comprobar(int piezas, int esperado) {\n    const int obtenido{cajas_para(piezas)};\n    const bool coincide{obtenido == esperado};\n\n    std::cout << \"piezas=\" << piezas << \" esperado=\" << esperado\n              << \" obtenido=\" << obtenido << \" \";\n    if (coincide) { std::cout << \"OK\\n\"; }\n    else { std::cout << \"FALLO\\n\"; }\n    return coincide;\n}\n\nbool comprobar_plazo(int dias, bool esperado) {\n    const bool obtenido{llega_a_tiempo(dias)};\n    const bool coincide{obtenido == esperado};\n\n    std::cout << \"dias=\" << dias << \" esperado=\" << esperado\n              << \" obtenido=\" << obtenido << \" \";\n    if (coincide) { std::cout << \"OK\\n\"; }\n    else { std::cout << \"FALLO\\n\"; }\n    return coincide;\n}\n\nint main() {\n    bool correcto{true};\n    if (!comprobar(0, 0)) { correcto = false; }\n    if (!comprobar(4, 1)) { correcto = false; }\n    if (!comprobar(8, 2)) { correcto = false; }\n    if (!comprobar(20, 4)) { correcto = false; }\n    if (!comprobar(1, 1)) { correcto = false; }\n    if (!comprobar(5, 1)) { correcto = false; }\n    if (!comprobar(17, 3)) { correcto = false; }\n    if (!comprobar(6, 1)) { correcto = false; }\n    if (!comprobar(7, 2)) { correcto = false; }\n    if (!comprobar_plazo(4, true)) { correcto = false; }\n    if (!comprobar_plazo(5, false)) { correcto = false; }\n    if (!correcto) {\n        std::cout << \"Bateria: FALLO\\n\";\n        return 1;\n    }\n    std::cout << \"Bateria: OK\\n\";\n\n    return 0;\n}\n"
         },
         {
           "type": "paragraph",
@@ -378,7 +378,7 @@
           "type": "output_prediction",
           "id": "regla_contraprueba_del_limite",
           "question": "Predice la salida exacta de la contraprueba que amplió el único limite a seis, sin salto final. bool se imprime aquí como 0 o 1, sin boolalpha.",
-          "code": "#include <iostream>\nconst int limite{6};\nint cajas_para(int piezas) { return (piezas + limite - 1) / limite; }\nbool llega_a_tiempo(int dias) { return dias <= limite; }\nint main() {\n    std::cout << cajas_para(5) << \":\" << llega_a_tiempo(5);\n    return 0;\n}\n",
+          "code": "#include <iostream>\n\nconst int limite{6};\nint cajas_para(int piezas) { return (piezas + limite - 1) / limite; }\nbool llega_a_tiempo(int dias) { return dias <= limite; }\nint main() {\n    std::cout << cajas_para(5) << \":\" << llega_a_tiempo(5);\n\n    return 0;\n}\n",
           "answers": [
             "1:1"
           ],
@@ -418,7 +418,7 @@
           "projectFiles": [
             {
               "path": "CMakeLists.txt",
-              "initialCode": "cmake_minimum_required(VERSION 3.20)\nproject(EnviosComprobables LANGUAGES CXX)\nmessage(STATUS \"raiz_antes\")\nadd_subdirectory(componente)\nmessage(STATUS \"raiz_despues\")\nadd_executable(consultar_cajas app/consulta.cpp)\nadd_executable(comprobar_cajas pruebas/cajas_casos.cpp)\ntarget_link_libraries(consultar_cajas PRIVATE envios)\ntarget_link_libraries(comprobar_cajas PRIVATE envios)\ntarget_compile_features(consultar_cajas PRIVATE cxx_std_20)\ntarget_compile_features(comprobar_cajas PRIVATE cxx_std_20)\nset_target_properties(consultar_cajas comprobar_cajas PROPERTIES CXX_EXTENSIONS OFF)\n"
+              "initialCode": "cmake_minimum_required(VERSION 3.20)\nproject(EnviosComprobables LANGUAGES CXX)\nmessage(STATUS \"raiz_antes\")\nadd_subdirectory(componente)\nmessage(STATUS \"raiz_despues\")\nadd_executable(consultar_cajas app/consulta.cpp)\nadd_executable(comprobar_cajas pruebas/cajas_casos.cpp)\n\ntarget_link_libraries(consultar_cajas PRIVATE envios)\ntarget_link_libraries(comprobar_cajas PRIVATE envios)\ntarget_compile_features(consultar_cajas PRIVATE cxx_std_20)\ntarget_compile_features(comprobar_cajas PRIVATE cxx_std_20)\nset_target_properties(consultar_cajas comprobar_cajas PROPERTIES CXX_EXTENSIONS OFF)\n"
             },
             {
               "path": "componente/CMakeLists.txt",
@@ -438,7 +438,7 @@
             },
             {
               "path": "pruebas/cajas_casos.cpp",
-              "initialCode": "#include \"envio/cajas.h\"\n#include <iostream>\n\nbool comprobar(int piezas, int esperado) {\n    const int obtenido{cajas_para(piezas)};\n    const bool coincide{obtenido == esperado};\n    std::cout << \"piezas=\" << piezas << \" esperado=\" << esperado\n              << \" obtenido=\" << obtenido << \" \";\n    if (coincide) { std::cout << \"OK\\n\"; }\n    else { std::cout << \"FALLO\\n\"; }\n    return coincide;\n}\n\nbool comprobar_plazo(int dias, bool esperado) {\n    const bool obtenido{llega_a_tiempo(dias)};\n    const bool coincide{obtenido == esperado};\n    std::cout << \"dias=\" << dias << \" esperado=\" << esperado\n              << \" obtenido=\" << obtenido << \" \";\n    if (coincide) { std::cout << \"OK\\n\"; }\n    else { std::cout << \"FALLO\\n\"; }\n    return coincide;\n}\n\nint main() {\n    bool correcto{true};\n    if (!comprobar(0, 0)) { correcto = false; }\n    if (!comprobar(4, 1)) { correcto = false; }\n    if (!comprobar(8, 2)) { correcto = false; }\n    if (!comprobar(20, 4)) { correcto = false; }\n    if (!comprobar(1, 1)) { correcto = false; }\n    if (!comprobar(5, 1)) { correcto = false; }\n    if (!comprobar(17, 3)) { correcto = false; }\n    if (!comprobar(6, 1)) { correcto = false; }\n    if (!comprobar(7, 2)) { correcto = false; }\n    if (!comprobar_plazo(4, true)) { correcto = false; }\n    if (!comprobar_plazo(5, false)) { correcto = false; }\n    if (!correcto) {\n        std::cout << \"Bateria: FALLO\\n\";\n        return 1;\n    }\n    std::cout << \"Bateria: OK\\n\";\n    return 0;\n}\n"
+              "initialCode": "#include \"envio/cajas.h\"\n#include <iostream>\n\nbool comprobar(int piezas, int esperado) {\n    const int obtenido{cajas_para(piezas)};\n    const bool coincide{obtenido == esperado};\n\n    std::cout << \"piezas=\" << piezas << \" esperado=\" << esperado\n              << \" obtenido=\" << obtenido << \" \";\n    if (coincide) { std::cout << \"OK\\n\"; }\n    else { std::cout << \"FALLO\\n\"; }\n    return coincide;\n}\n\nbool comprobar_plazo(int dias, bool esperado) {\n    const bool obtenido{llega_a_tiempo(dias)};\n    const bool coincide{obtenido == esperado};\n\n    std::cout << \"dias=\" << dias << \" esperado=\" << esperado\n              << \" obtenido=\" << obtenido << \" \";\n    if (coincide) { std::cout << \"OK\\n\"; }\n    else { std::cout << \"FALLO\\n\"; }\n    return coincide;\n}\n\nint main() {\n    bool correcto{true};\n    if (!comprobar(0, 0)) { correcto = false; }\n    if (!comprobar(4, 1)) { correcto = false; }\n    if (!comprobar(8, 2)) { correcto = false; }\n    if (!comprobar(20, 4)) { correcto = false; }\n    if (!comprobar(1, 1)) { correcto = false; }\n    if (!comprobar(5, 1)) { correcto = false; }\n    if (!comprobar(17, 3)) { correcto = false; }\n    if (!comprobar(6, 1)) { correcto = false; }\n    if (!comprobar(7, 2)) { correcto = false; }\n    if (!comprobar_plazo(4, true)) { correcto = false; }\n    if (!comprobar_plazo(5, false)) { correcto = false; }\n    if (!correcto) {\n        std::cout << \"Bateria: FALLO\\n\";\n        return 1;\n    }\n    std::cout << \"Bateria: OK\\n\";\n\n    return 0;\n}\n"
             }
           ],
           "cmake": {
@@ -481,7 +481,7 @@
         {
           "type": "cpp_compiler",
           "language": "cpp",
-          "initialCode": "#include <iostream>\n\nconst int limite{5};\n\nint precio_total(int articulos) {\n    return articulos * limite;\n}\n\nbool alcanza_minimo(int articulos) {\n    return articulos >= limite;\n}\n\nbool comprobar(int articulos, int total_esperado, bool minimo_esperado) {\n    const int total{precio_total(articulos)};\n    const bool alcanza{alcanza_minimo(articulos)};\n    const bool coincide{total == total_esperado && alcanza == minimo_esperado};\n    std::cout << \"articulos=\" << articulos << \" total=\" << total\n              << \" esperado=\" << total_esperado << \" minimo=\" << alcanza\n              << \" esperado_minimo=\" << minimo_esperado << \" \";\n    if (coincide) { std::cout << \"OK\\n\"; }\n    else { std::cout << \"FALLO\\n\"; }\n    return coincide;\n}\n\nint main() {\n    bool correcto{true};\n    if (!comprobar(0, 0, false)) { correcto = false; }\n    if (!comprobar(4, 20, false)) { correcto = false; }\n    if (!comprobar(5, 25, true)) { correcto = false; }\n    if (!comprobar(6, 30, true)) { correcto = false; }\n    if (!comprobar(10, 50, true)) { correcto = false; }\n    if (!correcto) { std::cout << \"Bateria: FALLO\\n\"; return 1; }\n    std::cout << \"Bateria: OK\\n\";\n    return 0;\n}\n",
+          "initialCode": "#include <iostream>\n\nconst int limite{5};\n\nint precio_total(int articulos) {\n    return articulos * limite;\n}\n\nbool alcanza_minimo(int articulos) {\n    return articulos >= limite;\n}\n\nbool comprobar(int articulos, int total_esperado, bool minimo_esperado) {\n    const int total{precio_total(articulos)};\n    const bool alcanza{alcanza_minimo(articulos)};\n    const bool coincide{total == total_esperado && alcanza == minimo_esperado};\n\n    std::cout << \"articulos=\" << articulos << \" total=\" << total\n              << \" esperado=\" << total_esperado << \" minimo=\" << alcanza\n              << \" esperado_minimo=\" << minimo_esperado << \" \";\n    if (coincide) { std::cout << \"OK\\n\"; }\n    else { std::cout << \"FALLO\\n\"; }\n    return coincide;\n}\n\nint main() {\n    bool correcto{true};\n    if (!comprobar(0, 0, false)) { correcto = false; }\n    if (!comprobar(4, 20, false)) { correcto = false; }\n    if (!comprobar(5, 25, true)) { correcto = false; }\n    if (!comprobar(6, 30, true)) { correcto = false; }\n    if (!comprobar(10, 50, true)) { correcto = false; }\n    if (!correcto) { std::cout << \"Bateria: FALLO\\n\"; return 1; }\n    std::cout << \"Bateria: OK\\n\";\n\n    return 0;\n}\n",
           "outputCheck": {
             "inputComparison": "exact",
             "cases": [
@@ -506,7 +506,7 @@
         {
           "type": "code",
           "language": "cpp",
-          "code": "#include <iostream>\n\nint precio_total(int articulos) {\n    const int creditos_por_articulo{7};\n    return articulos * creditos_por_articulo;\n}\n\nbool alcanza_minimo(int articulos) {\n    const int minimo_de_articulos{5};\n    return articulos >= minimo_de_articulos;\n}\n\nbool comprobar(int articulos, int total_esperado, bool minimo_esperado) {\n    const int total{precio_total(articulos)};\n    const bool alcanza{alcanza_minimo(articulos)};\n    const bool coincide{total == total_esperado && alcanza == minimo_esperado};\n    std::cout << \"articulos=\" << articulos << \" total=\" << total\n              << \" esperado=\" << total_esperado << \" minimo=\" << alcanza\n              << \" esperado_minimo=\" << minimo_esperado << \" \";\n    if (coincide) { std::cout << \"OK\\n\"; }\n    else { std::cout << \"FALLO\\n\"; }\n    return coincide;\n}\n\nint main() {\n    bool correcto{true};\n    if (!comprobar(0, 0, false)) { correcto = false; }\n    if (!comprobar(4, 28, false)) { correcto = false; }\n    if (!comprobar(5, 35, true)) { correcto = false; }\n    if (!comprobar(6, 42, true)) { correcto = false; }\n    if (!comprobar(10, 70, true)) { correcto = false; }\n    if (!correcto) { std::cout << \"Bateria: FALLO\\n\"; return 1; }\n    std::cout << \"Bateria: OK\\n\";\n    return 0;\n}\n"
+          "code": "#include <iostream>\n\nint precio_total(int articulos) {\n    const int creditos_por_articulo{7};\n    return articulos * creditos_por_articulo;\n}\n\nbool alcanza_minimo(int articulos) {\n    const int minimo_de_articulos{5};\n    return articulos >= minimo_de_articulos;\n}\n\nbool comprobar(int articulos, int total_esperado, bool minimo_esperado) {\n    const int total{precio_total(articulos)};\n    const bool alcanza{alcanza_minimo(articulos)};\n    const bool coincide{total == total_esperado && alcanza == minimo_esperado};\n\n    std::cout << \"articulos=\" << articulos << \" total=\" << total\n              << \" esperado=\" << total_esperado << \" minimo=\" << alcanza\n              << \" esperado_minimo=\" << minimo_esperado << \" \";\n    if (coincide) { std::cout << \"OK\\n\"; }\n    else { std::cout << \"FALLO\\n\"; }\n    return coincide;\n}\n\nint main() {\n    bool correcto{true};\n    if (!comprobar(0, 0, false)) { correcto = false; }\n    if (!comprobar(4, 28, false)) { correcto = false; }\n    if (!comprobar(5, 35, true)) { correcto = false; }\n    if (!comprobar(6, 42, true)) { correcto = false; }\n    if (!comprobar(10, 70, true)) { correcto = false; }\n    if (!correcto) { std::cout << \"Bateria: FALLO\\n\"; return 1; }\n    std::cout << \"Bateria: OK\\n\";\n\n    return 0;\n}\n"
         },
         {
           "type": "paragraph",
@@ -516,7 +516,7 @@
           "type": "drag_fill_code",
           "id": "regla_recuperar_los_papeles",
           "question": "Recupera ahora los dos acuerdos del envío, sin modificar sus declaraciones. Arrastra a cada hueco el nombre que corresponde a ese uso.",
-          "template": "int cajas_para(int piezas) {\n    const int piezas_por_caja{6};\n    return (piezas + [] - 1) / piezas_por_caja;\n}\nbool llega_a_tiempo(int dias) {\n    const int dias_maximos{4};\n    return dias <= [];\n}\n",
+          "template": "int cajas_para(int piezas) {\n    const int piezas_por_caja{6};\n    return (piezas + [] - 1) / piezas_por_caja;\n}\n\nbool llega_a_tiempo(int dias) {\n    const int dias_maximos{4};\n    return dias <= [];\n}\n",
           "choices": [
             "dias_maximos",
             "dias",
@@ -558,7 +558,7 @@
         {
           "type": "cpp_compiler",
           "language": "cpp",
-          "initialCode": "#include <iostream>\n\nconst int acuerdo{7};\n\nint precio_total(int articulos) {\n    return articulos * acuerdo;\n}\n\nbool alcanza_minimo(int articulos) {\n    return articulos >= acuerdo;\n}\n\nbool comprobar(int articulos, int total_esperado, bool minimo_esperado) {\n    const int total{precio_total(articulos)};\n    const bool alcanza{alcanza_minimo(articulos)};\n    const bool coincide{total == total_esperado && alcanza == minimo_esperado};\n    std::cout << \"articulos=\" << articulos << \" total=\" << total\n              << \" esperado=\" << total_esperado << \" minimo=\" << alcanza\n              << \" esperado_minimo=\" << minimo_esperado << \" \";\n    if (coincide) { std::cout << \"OK\\n\"; }\n    else { std::cout << \"FALLO\\n\"; }\n    return coincide;\n}\n\nint main() {\n    bool correcto{true};\n    if (!comprobar(0, 0, false)) { correcto = false; }\n    if (!comprobar(4, 28, false)) { correcto = false; }\n    if (!comprobar(5, 35, true)) { correcto = false; }\n    if (!comprobar(6, 42, true)) { correcto = false; }\n    if (!comprobar(10, 70, true)) { correcto = false; }\n    if (!correcto) { std::cout << \"Bateria: FALLO\\n\"; return 1; }\n    std::cout << \"Bateria: OK\\n\";\n    return 0;\n}\n",
+          "initialCode": "#include <iostream>\n\nconst int acuerdo{7};\n\nint precio_total(int articulos) {\n    return articulos * acuerdo;\n}\n\nbool alcanza_minimo(int articulos) {\n    return articulos >= acuerdo;\n}\n\nbool comprobar(int articulos, int total_esperado, bool minimo_esperado) {\n    const int total{precio_total(articulos)};\n    const bool alcanza{alcanza_minimo(articulos)};\n    const bool coincide{total == total_esperado && alcanza == minimo_esperado};\n\n    std::cout << \"articulos=\" << articulos << \" total=\" << total\n              << \" esperado=\" << total_esperado << \" minimo=\" << alcanza\n              << \" esperado_minimo=\" << minimo_esperado << \" \";\n    if (coincide) { std::cout << \"OK\\n\"; }\n    else { std::cout << \"FALLO\\n\"; }\n    return coincide;\n}\n\nint main() {\n    bool correcto{true};\n    if (!comprobar(0, 0, false)) { correcto = false; }\n    if (!comprobar(4, 28, false)) { correcto = false; }\n    if (!comprobar(5, 35, true)) { correcto = false; }\n    if (!comprobar(6, 42, true)) { correcto = false; }\n    if (!comprobar(10, 70, true)) { correcto = false; }\n    if (!correcto) { std::cout << \"Bateria: FALLO\\n\"; return 1; }\n    std::cout << \"Bateria: OK\\n\";\n\n    return 0;\n}\n",
           "outputCheck": {
             "inputComparison": "exact",
             "cases": [
@@ -2102,6 +2102,315 @@
         "id": "block_0009_0002",
         "beforeSha256": "54a7e872cad8bc5074f9c99a8884165551f6994120148829aa19cb638399301a",
         "afterSha256": "defca45139c8c99933ed4a4a5471fbbbd832fce4a68db7bc5a71c6abccd0375f"
+      },
+      {
+        "id": "block_0001_0004",
+        "beforeSha256": "a0b74799226e96c4e5995fcc2ccaf852939d3db5debcbe1aa6800a3aeb386307",
+        "afterSha256": "0d6147d7415a9bc67c78e3218b36b47229f4777079a372b2604a0a5219aa58d2"
+      },
+      {
+        "id": "block_0002_0004",
+        "beforeSha256": "8318a144fcf7dc5dc6aaf460fc3234501baeeb7da9423e80a0133ec312c2e66b",
+        "afterSha256": "18abfa3b8dd946a4b399d40c68f38d5f6a7c87330013cbd585a6b3a1cc3d1e66"
+      },
+      {
+        "id": "block_0005_0006",
+        "beforeSha256": "f4761a9012d579c6832f9bcd94d8c2547ef9601759bb623f75228bb35af9531e",
+        "afterSha256": "51eb18cd34b13bc3af751927c1839331794e89b4ab8f9c13a153aa5da64e3ea9"
+      },
+      {
+        "id": "block_0006_0003",
+        "beforeSha256": "b431077f65d71813f864cb08412e5c0964c8fcbed5793dd820f2c3a7053dd05c",
+        "afterSha256": "a2a6e4fdf3d2ffc9133fb7bc53c74d5852ab4257c81b148d41e4d289660f1826"
+      },
+      {
+        "id": "block_0006_0005",
+        "beforeSha256": "e37a05865d220e50e9d17fdefc16ce8bea12c4e24c0eeb1c902edfa1c3b6d969",
+        "afterSha256": "70272e109efc723f9ebbf9f73a7556448e28fc5a05b2f25d979a021f83c81386"
+      },
+      {
+        "id": "block_0006_0009",
+        "beforeSha256": "809e4a2665a03df9ca1b1fcc8388e01d339c52e83f70ac47adf59ee809187cd2",
+        "afterSha256": "0517f3280ad02fae3ef0ba432c9965535f174f6365aeab1959f18a793688fb36"
+      },
+      {
+        "id": "block_0007_0004",
+        "beforeSha256": "6f4308439d3e80da55054a925255118fe1bfcee49dced365f8eed30781e90b65",
+        "afterSha256": "25babe91c32f2753d0860ab19645644cd2894392ede119d081972accbf84c3ec"
+      },
+      {
+        "id": "block_0008_0001",
+        "beforeSha256": "0dcd2727e1405d784c13c4e05e60dbcb69c2bda597cbcc356bd5dbbfd1d41dd6",
+        "afterSha256": "7031c0e484a91858560f66d420d114d35b16e59d7770475904131c6758385152"
+      },
+      {
+        "id": "block_0008_0003",
+        "beforeSha256": "5a974274d239dfb5002627378ad1070f143b700ffc6cb02ce895e0326210f782",
+        "afterSha256": "029587e1983cdf49619de46452a3350f1d0572ea2a0910ef0a4def869f1bebdc"
+      },
+      {
+        "id": "block_0008_0007",
+        "beforeSha256": "c97559e0a99cd8566c0292e62b04fa2589acc6ba23064bad7a016acfdd28afa3",
+        "afterSha256": "bdd07452b8d9d97a09e718c32ad2cbbccd43f1f48fee548aeb037fa1c4c80001"
+      }
+    ],
+    "sourceFormatRevisions": [
+      {
+        "id": "block_0001_0004",
+        "block": {
+          "type": "output_prediction",
+          "id": "regla_constante_sin_relacion",
+          "question": "Esta variante usa enteros y no cambia después ninguna constante. Predice su salida exacta, sin salto final. Describe lo que ejecuta, aunque no cumpla un acuerdo de cajas de seis plazas.",
+          "code": "#include <iostream>\nint cajas_para(int piezas) {\n    const int piezas_por_caja{6};\n    return (piezas + 3) / piezas_por_caja;\n}\nint main() {\n    std::cout << cajas_para(6) << \":\" << cajas_para(7)\n              << \":\" << cajas_para(12) << \":\" << cajas_para(13);\n    return 0;\n}\n",
+          "answers": [
+            "1:1:2:2"
+          ],
+          "outputComparison": "exact",
+          "explanation": "Las divisiones son 9/6, 10/6, 15/6 y 16/6: producen 1, 1, 2, 2. Nombrar el divisor no actualizó el desplazamiento; siete y trece piezas muestran que esa variante no cumple la capacidad seis.",
+          "reviewFeedback": "Traza por separado cada suma y la división entre enteros de este cuerpo. No sustituyas la suma escrita por la que esperabas encontrar."
+        }
+      },
+      {
+        "id": "block_0002_0004",
+        "block": {
+          "type": "cpp_compiler",
+          "language": "cpp",
+          "initialCode": "",
+          "projectFiles": [
+            {
+              "path": "CMakeLists.txt",
+              "initialCode": "cmake_minimum_required(VERSION 3.20)\nproject(EnviosComprobables LANGUAGES CXX)\nmessage(STATUS \"raiz_antes\")\nadd_subdirectory(componente)\nmessage(STATUS \"raiz_despues\")\nadd_executable(consultar_cajas app/consulta.cpp)\nadd_executable(comprobar_cajas pruebas/cajas_casos.cpp)\ntarget_link_libraries(consultar_cajas PRIVATE envios)\ntarget_link_libraries(comprobar_cajas PRIVATE envios)\ntarget_compile_features(consultar_cajas PRIVATE cxx_std_20)\ntarget_compile_features(comprobar_cajas PRIVATE cxx_std_20)\nset_target_properties(consultar_cajas comprobar_cajas PROPERTIES CXX_EXTENSIONS OFF)\n"
+            },
+            {
+              "path": "componente/CMakeLists.txt",
+              "initialCode": "message(STATUS \"componente\")\nadd_library(envios STATIC src/cajas.cpp)\ntarget_include_directories(envios PUBLIC publico)\ntarget_compile_features(envios PRIVATE cxx_std_20)\nset_target_properties(envios PROPERTIES CXX_EXTENSIONS OFF)\n"
+            },
+            {
+              "path": "componente/publico/envio/cajas.h",
+              "initialCode": "#ifndef PRACTICA_ENVIO_CAJAS_H\n#define PRACTICA_ENVIO_CAJAS_H\n\n// Dominio: 0 <= piezas <= 20.\n// Minimo numero de cajas de 4 plazas que basta para todas las piezas.\n// Cero piezas requiere cero cajas.\nint cajas_para(int piezas);\n\n#endif\n"
+            },
+            {
+              "path": "componente/src/cajas.cpp",
+              "initialCode": "#include \"envio/cajas.h\"\n\nint cajas_para(int piezas) {\n    return (piezas + 3) / 4;\n}\n"
+            },
+            {
+              "path": "app/consulta.cpp",
+              "initialCode": "#include \"envio/cajas.h\"\n#include <iostream>\n\nint main() {\n    std::cout << cajas_para(4) << \":\" << cajas_para(8);\n    return 0;\n}\n"
+            },
+            {
+              "path": "pruebas/cajas_casos.cpp",
+              "initialCode": "#include \"envio/cajas.h\"\n#include <iostream>\n\nbool comprobar(int piezas, int esperado) {\n    const int obtenido{cajas_para(piezas)};\n    const bool coincide{obtenido == esperado};\n    std::cout << \"piezas=\" << piezas << \" esperado=\" << esperado\n              << \" obtenido=\" << obtenido << \" \";\n    if (coincide) { std::cout << \"OK\\n\"; }\n    else { std::cout << \"FALLO\\n\"; }\n    return coincide;\n}\n\nint main() {\n    bool correcto{true};\n    if (!comprobar(0, 0)) { correcto = false; }\n    if (!comprobar(4, 1)) { correcto = false; }\n    if (!comprobar(8, 2)) { correcto = false; }\n    if (!comprobar(20, 5)) { correcto = false; }\n    if (!comprobar(1, 1)) { correcto = false; }\n    if (!comprobar(5, 2)) { correcto = false; }\n    if (!comprobar(17, 5)) { correcto = false; }\n    if (!correcto) {\n        std::cout << \"Bateria: FALLO\\n\";\n        return 1;\n    }\n    std::cout << \"Bateria: OK\\n\";\n    return 0;\n}\n"
+            }
+          ],
+          "cmake": {
+            "target": "comprobar_cajas",
+            "buildType": "Debug"
+          },
+          "outputCheck": {
+            "inputComparison": "exact",
+            "cases": [
+              {
+                "standardInput": "",
+                "outputs": [
+                  "piezas=0 esperado=0 obtenido=0 OK\npiezas=4 esperado=1 obtenido=1 OK\npiezas=8 esperado=2 obtenido=2 OK\npiezas=20 esperado=5 obtenido=5 OK\npiezas=1 esperado=1 obtenido=1 OK\npiezas=5 esperado=2 obtenido=2 OK\npiezas=17 esperado=5 obtenido=5 OK\nBateria: OK\n"
+                ],
+                "explanation": "Las siete comparaciones conservan sus resultados para cajas de cuatro plazas. La coincidencia de esta salida no distingue por sí sola una capacidad nombrada de las cifras iniciales: el objetivo también pide expresar en el cuerpo la relación entre capacidad y ajuste."
+              }
+            ]
+          }
+        }
+      },
+      {
+        "id": "block_0005_0006",
+        "block": {
+          "type": "cpp_compiler",
+          "language": "cpp",
+          "initialCode": "",
+          "projectFiles": [
+            {
+              "path": "CMakeLists.txt",
+              "initialCode": "cmake_minimum_required(VERSION 3.20)\nproject(EnviosComprobables LANGUAGES CXX)\nmessage(STATUS \"raiz_antes\")\nadd_subdirectory(componente)\nmessage(STATUS \"raiz_despues\")\nadd_executable(consultar_cajas app/consulta.cpp)\nadd_executable(comprobar_cajas pruebas/cajas_casos.cpp)\ntarget_link_libraries(consultar_cajas PRIVATE envios)\ntarget_link_libraries(comprobar_cajas PRIVATE envios)\ntarget_compile_features(consultar_cajas PRIVATE cxx_std_20)\ntarget_compile_features(comprobar_cajas PRIVATE cxx_std_20)\nset_target_properties(consultar_cajas comprobar_cajas PROPERTIES CXX_EXTENSIONS OFF)\n"
+            },
+            {
+              "path": "componente/CMakeLists.txt",
+              "initialCode": "message(STATUS \"componente\")\nadd_library(envios STATIC src/cajas.cpp)\ntarget_include_directories(envios PUBLIC publico)\ntarget_compile_features(envios PRIVATE cxx_std_20)\nset_target_properties(envios PROPERTIES CXX_EXTENSIONS OFF)\n"
+            },
+            {
+              "path": "componente/publico/envio/cajas.h",
+              "initialCode": "#ifndef PRACTICA_ENVIO_CAJAS_H\n#define PRACTICA_ENVIO_CAJAS_H\n\n// Dominio: 0 <= piezas <= 20.\n// Minimo numero de cajas de 4 plazas que basta para todas las piezas.\n// Cero piezas requiere cero cajas.\nint cajas_para(int piezas);\n\n// Dominio: 0 <= dias <= 7. Cumple el plazo si tarda como maximo 4 dias.\nbool llega_a_tiempo(int dias);\n\n#endif\n"
+            },
+            {
+              "path": "componente/src/cajas.cpp",
+              "initialCode": "#include \"envio/cajas.h\"\n\nconst int limite{4};\n\nint cajas_para(int piezas) {\n    return (piezas + limite - 1) / limite;\n}\n\nbool llega_a_tiempo(int dias) {\n    return dias <= limite;\n}\n"
+            },
+            {
+              "path": "app/consulta.cpp",
+              "initialCode": "#include \"envio/cajas.h\"\n#include <iostream>\n\nint main() {\n    std::cout << cajas_para(4) << \":\" << cajas_para(8)\n              << \":\" << llega_a_tiempo(4) << \":\" << llega_a_tiempo(5);\n    return 0;\n}\n"
+            },
+            {
+              "path": "pruebas/cajas_casos.cpp",
+              "initialCode": "#include \"envio/cajas.h\"\n#include <iostream>\n\nbool comprobar(int piezas, int esperado) {\n    const int obtenido{cajas_para(piezas)};\n    const bool coincide{obtenido == esperado};\n    std::cout << \"piezas=\" << piezas << \" esperado=\" << esperado\n              << \" obtenido=\" << obtenido << \" \";\n    if (coincide) { std::cout << \"OK\\n\"; }\n    else { std::cout << \"FALLO\\n\"; }\n    return coincide;\n}\n\nbool comprobar_plazo(int dias, bool esperado) {\n    const bool obtenido{llega_a_tiempo(dias)};\n    const bool coincide{obtenido == esperado};\n    std::cout << \"dias=\" << dias << \" esperado=\" << esperado\n              << \" obtenido=\" << obtenido << \" \";\n    if (coincide) { std::cout << \"OK\\n\"; }\n    else { std::cout << \"FALLO\\n\"; }\n    return coincide;\n}\n\nint main() {\n    bool correcto{true};\n    if (!comprobar(0, 0)) { correcto = false; }\n    if (!comprobar(4, 1)) { correcto = false; }\n    if (!comprobar(8, 2)) { correcto = false; }\n    if (!comprobar(20, 5)) { correcto = false; }\n    if (!comprobar(1, 1)) { correcto = false; }\n    if (!comprobar(5, 2)) { correcto = false; }\n    if (!comprobar(17, 5)) { correcto = false; }\n    if (!comprobar_plazo(4, true)) { correcto = false; }\n    if (!comprobar_plazo(5, false)) { correcto = false; }\n    if (!correcto) {\n        std::cout << \"Bateria: FALLO\\n\";\n        return 1;\n    }\n    std::cout << \"Bateria: OK\\n\";\n    return 0;\n}\n"
+            }
+          ],
+          "cmake": {
+            "target": "comprobar_cajas",
+            "buildType": "Debug"
+          },
+          "outputCheck": {
+            "inputComparison": "exact",
+            "cases": [
+              {
+                "standardInput": "",
+                "outputs": [
+                  "piezas=0 esperado=0 obtenido=0 OK\npiezas=4 esperado=1 obtenido=1 OK\npiezas=8 esperado=2 obtenido=2 OK\npiezas=20 esperado=4 obtenido=4 OK\npiezas=1 esperado=1 obtenido=1 OK\npiezas=5 esperado=1 obtenido=1 OK\npiezas=17 esperado=3 obtenido=3 OK\npiezas=6 esperado=1 obtenido=1 OK\npiezas=7 esperado=2 obtenido=2 OK\ndias=4 esperado=1 obtenido=1 OK\ndias=5 esperado=0 obtenido=0 OK\nBateria: OK\n"
+                ],
+                "explanation": "Los nueve casos de piezas coinciden con el acuerdo de seis plazas y los dos casos de días mantienen el plazo de cuatro. Las líneas muestran los resultados de esas llamadas; la revisión también debe conservar los esperados independientes y separar los nombres y usos de ambos acuerdos."
+              }
+            ]
+          }
+        }
+      },
+      {
+        "id": "block_0006_0003",
+        "block": {
+          "type": "code",
+          "language": "cpp",
+          "code": "#include \"envio/cajas.h\"\n#include <iostream>\n\nbool comprobar(int piezas, int esperado) {\n    const int obtenido{cajas_para(piezas)};\n    const bool coincide{obtenido == esperado};\n    std::cout << \"piezas=\" << piezas << \" esperado=\" << esperado\n              << \" obtenido=\" << obtenido << \" \";\n    if (coincide) { std::cout << \"OK\\n\"; }\n    else { std::cout << \"FALLO\\n\"; }\n    return coincide;\n}\n\nbool comprobar_plazo(int dias, bool esperado) {\n    const bool obtenido{llega_a_tiempo(dias)};\n    const bool coincide{obtenido == esperado};\n    std::cout << \"dias=\" << dias << \" esperado=\" << esperado\n              << \" obtenido=\" << obtenido << \" \";\n    if (coincide) { std::cout << \"OK\\n\"; }\n    else { std::cout << \"FALLO\\n\"; }\n    return coincide;\n}\n\nint main() {\n    bool correcto{true};\n    if (!comprobar(0, 0)) { correcto = false; }\n    if (!comprobar(4, 1)) { correcto = false; }\n    if (!comprobar(8, 2)) { correcto = false; }\n    if (!comprobar(20, 4)) { correcto = false; }\n    if (!comprobar(1, 1)) { correcto = false; }\n    if (!comprobar(5, 1)) { correcto = false; }\n    if (!comprobar(17, 3)) { correcto = false; }\n    if (!comprobar(6, 1)) { correcto = false; }\n    if (!comprobar(7, 2)) { correcto = false; }\n    if (!comprobar_plazo(4, true)) { correcto = false; }\n    if (!comprobar_plazo(5, false)) { correcto = false; }\n    if (!correcto) {\n        std::cout << \"Bateria: FALLO\\n\";\n        return 1;\n    }\n    std::cout << \"Bateria: OK\\n\";\n    return 0;\n}\n"
+        }
+      },
+      {
+        "id": "block_0006_0005",
+        "block": {
+          "type": "output_prediction",
+          "id": "regla_contraprueba_del_limite",
+          "question": "Predice la salida exacta de la contraprueba que amplió el único limite a seis, sin salto final. bool se imprime aquí como 0 o 1, sin boolalpha.",
+          "code": "#include <iostream>\nconst int limite{6};\nint cajas_para(int piezas) { return (piezas + limite - 1) / limite; }\nbool llega_a_tiempo(int dias) { return dias <= limite; }\nint main() {\n    std::cout << cajas_para(5) << \":\" << llega_a_tiempo(5);\n    return 0;\n}\n",
+          "answers": [
+            "1:1"
+          ],
+          "outputComparison": "exact",
+          "explanation": "Con limite igual a 6, cajas_para(5) calcula 10 / 6 y devuelve 1. llega_a_tiempo(5) evalúa 5 <= 6, que es true y se muestra como 1. La salida es 1:1, pero cinco días deberían rechazarse según el plazo conservado de cuatro. El caso de días detecta que el cambio de capacidad alcanzó una regla que debía permanecer igual.",
+          "reviewFeedback": "Lee el único valor que usan ambas funciones en esta revisión. Traza cada comparación por lo que ejecuta, aunque no corresponda al acuerdo que debía conservarse."
+        }
+      },
+      {
+        "id": "block_0006_0009",
+        "block": {
+          "type": "cpp_compiler",
+          "language": "cpp",
+          "initialCode": "",
+          "projectFiles": [
+            {
+              "path": "CMakeLists.txt",
+              "initialCode": "cmake_minimum_required(VERSION 3.20)\nproject(EnviosComprobables LANGUAGES CXX)\nmessage(STATUS \"raiz_antes\")\nadd_subdirectory(componente)\nmessage(STATUS \"raiz_despues\")\nadd_executable(consultar_cajas app/consulta.cpp)\nadd_executable(comprobar_cajas pruebas/cajas_casos.cpp)\ntarget_link_libraries(consultar_cajas PRIVATE envios)\ntarget_link_libraries(comprobar_cajas PRIVATE envios)\ntarget_compile_features(consultar_cajas PRIVATE cxx_std_20)\ntarget_compile_features(comprobar_cajas PRIVATE cxx_std_20)\nset_target_properties(consultar_cajas comprobar_cajas PROPERTIES CXX_EXTENSIONS OFF)\n"
+            },
+            {
+              "path": "componente/CMakeLists.txt",
+              "initialCode": "message(STATUS \"componente\")\nadd_library(envios STATIC src/cajas.cpp)\ntarget_include_directories(envios PUBLIC publico)\ntarget_compile_features(envios PRIVATE cxx_std_20)\nset_target_properties(envios PROPERTIES CXX_EXTENSIONS OFF)\n"
+            },
+            {
+              "path": "componente/publico/envio/cajas.h",
+              "initialCode": "#ifndef PRACTICA_ENVIO_CAJAS_H\n#define PRACTICA_ENVIO_CAJAS_H\n\n// Dominio: 0 <= piezas <= 20.\n// Minimo numero de cajas de 6 plazas que basta para todas las piezas.\n// Cero piezas requiere cero cajas.\nint cajas_para(int piezas);\n\n// Dominio: 0 <= dias <= 7. Cumple el plazo si tarda como maximo 4 dias.\nbool llega_a_tiempo(int dias);\n\n#endif\n"
+            },
+            {
+              "path": "componente/src/cajas.cpp",
+              "initialCode": "#include \"envio/cajas.h\"\n\nint cajas_para(int piezas) {\n    const int piezas_por_caja{6};\n    return (piezas + piezas_por_caja - 1) / piezas_por_caja;\n}\n\nbool llega_a_tiempo(int dias) {\n    const int dias_maximos{6};\n    return dias <= dias_maximos;\n}\n"
+            },
+            {
+              "path": "app/consulta.cpp",
+              "initialCode": "#include \"envio/cajas.h\"\n#include <iostream>\n\nint main() {\n    std::cout << cajas_para(4) << \":\" << cajas_para(8)\n              << \":\" << llega_a_tiempo(4) << \":\" << llega_a_tiempo(5);\n    return 0;\n}\n"
+            },
+            {
+              "path": "pruebas/cajas_casos.cpp",
+              "initialCode": "#include \"envio/cajas.h\"\n#include <iostream>\n\nbool comprobar(int piezas, int esperado) {\n    const int obtenido{cajas_para(piezas)};\n    const bool coincide{obtenido == esperado};\n    std::cout << \"piezas=\" << piezas << \" esperado=\" << esperado\n              << \" obtenido=\" << obtenido << \" \";\n    if (coincide) { std::cout << \"OK\\n\"; }\n    else { std::cout << \"FALLO\\n\"; }\n    return coincide;\n}\n\nbool comprobar_plazo(int dias, bool esperado) {\n    const bool obtenido{llega_a_tiempo(dias)};\n    const bool coincide{obtenido == esperado};\n    std::cout << \"dias=\" << dias << \" esperado=\" << esperado\n              << \" obtenido=\" << obtenido << \" \";\n    if (coincide) { std::cout << \"OK\\n\"; }\n    else { std::cout << \"FALLO\\n\"; }\n    return coincide;\n}\n\nint main() {\n    bool correcto{true};\n    if (!comprobar(0, 0)) { correcto = false; }\n    if (!comprobar(4, 1)) { correcto = false; }\n    if (!comprobar(8, 2)) { correcto = false; }\n    if (!comprobar(20, 4)) { correcto = false; }\n    if (!comprobar(1, 1)) { correcto = false; }\n    if (!comprobar(5, 1)) { correcto = false; }\n    if (!comprobar(17, 3)) { correcto = false; }\n    if (!comprobar(6, 1)) { correcto = false; }\n    if (!comprobar(7, 2)) { correcto = false; }\n    if (!comprobar_plazo(4, true)) { correcto = false; }\n    if (!comprobar_plazo(5, false)) { correcto = false; }\n    if (!correcto) {\n        std::cout << \"Bateria: FALLO\\n\";\n        return 1;\n    }\n    std::cout << \"Bateria: OK\\n\";\n    return 0;\n}\n"
+            }
+          ],
+          "cmake": {
+            "target": "comprobar_cajas",
+            "buildType": "Debug"
+          },
+          "outputCheck": {
+            "inputComparison": "exact",
+            "cases": [
+              {
+                "standardInput": "",
+                "outputs": [
+                  "piezas=0 esperado=0 obtenido=0 OK\npiezas=4 esperado=1 obtenido=1 OK\npiezas=8 esperado=2 obtenido=2 OK\npiezas=20 esperado=4 obtenido=4 OK\npiezas=1 esperado=1 obtenido=1 OK\npiezas=5 esperado=1 obtenido=1 OK\npiezas=17 esperado=3 obtenido=3 OK\npiezas=6 esperado=1 obtenido=1 OK\npiezas=7 esperado=2 obtenido=2 OK\ndias=4 esperado=1 obtenido=1 OK\ndias=5 esperado=0 obtenido=0 OK\nBateria: OK\n"
+                ],
+                "explanation": "La reparación mantiene la capacidad de seis plazas y devuelve al plazo su acuerdo independiente de cuatro días."
+              }
+            ]
+          }
+        }
+      },
+      {
+        "id": "block_0007_0004",
+        "block": {
+          "type": "cpp_compiler",
+          "language": "cpp",
+          "initialCode": "#include <iostream>\n\nconst int limite{5};\n\nint precio_total(int articulos) {\n    return articulos * limite;\n}\n\nbool alcanza_minimo(int articulos) {\n    return articulos >= limite;\n}\n\nbool comprobar(int articulos, int total_esperado, bool minimo_esperado) {\n    const int total{precio_total(articulos)};\n    const bool alcanza{alcanza_minimo(articulos)};\n    const bool coincide{total == total_esperado && alcanza == minimo_esperado};\n    std::cout << \"articulos=\" << articulos << \" total=\" << total\n              << \" esperado=\" << total_esperado << \" minimo=\" << alcanza\n              << \" esperado_minimo=\" << minimo_esperado << \" \";\n    if (coincide) { std::cout << \"OK\\n\"; }\n    else { std::cout << \"FALLO\\n\"; }\n    return coincide;\n}\n\nint main() {\n    bool correcto{true};\n    if (!comprobar(0, 0, false)) { correcto = false; }\n    if (!comprobar(4, 20, false)) { correcto = false; }\n    if (!comprobar(5, 25, true)) { correcto = false; }\n    if (!comprobar(6, 30, true)) { correcto = false; }\n    if (!comprobar(10, 50, true)) { correcto = false; }\n    if (!correcto) { std::cout << \"Bateria: FALLO\\n\"; return 1; }\n    std::cout << \"Bateria: OK\\n\";\n    return 0;\n}\n",
+          "outputCheck": {
+            "inputComparison": "exact",
+            "cases": [
+              {
+                "standardInput": "",
+                "outputs": [
+                  "articulos=0 total=0 esperado=0 minimo=0 esperado_minimo=0 OK\narticulos=4 total=28 esperado=28 minimo=0 esperado_minimo=0 OK\narticulos=5 total=35 esperado=35 minimo=1 esperado_minimo=1 OK\narticulos=6 total=42 esperado=42 minimo=1 esperado_minimo=1 OK\narticulos=10 total=70 esperado=70 minimo=1 esperado_minimo=1 OK\nBateria: OK\n"
+                ],
+                "explanation": "Cambió el precio a siete créditos por artículo; alcanzar el mínimo sigue dependiendo de cinco artículos, con independencia de ese precio."
+              }
+            ]
+          }
+        }
+      },
+      {
+        "id": "block_0008_0001",
+        "block": {
+          "type": "code",
+          "language": "cpp",
+          "code": "#include <iostream>\n\nint precio_total(int articulos) {\n    const int creditos_por_articulo{7};\n    return articulos * creditos_por_articulo;\n}\n\nbool alcanza_minimo(int articulos) {\n    const int minimo_de_articulos{5};\n    return articulos >= minimo_de_articulos;\n}\n\nbool comprobar(int articulos, int total_esperado, bool minimo_esperado) {\n    const int total{precio_total(articulos)};\n    const bool alcanza{alcanza_minimo(articulos)};\n    const bool coincide{total == total_esperado && alcanza == minimo_esperado};\n    std::cout << \"articulos=\" << articulos << \" total=\" << total\n              << \" esperado=\" << total_esperado << \" minimo=\" << alcanza\n              << \" esperado_minimo=\" << minimo_esperado << \" \";\n    if (coincide) { std::cout << \"OK\\n\"; }\n    else { std::cout << \"FALLO\\n\"; }\n    return coincide;\n}\n\nint main() {\n    bool correcto{true};\n    if (!comprobar(0, 0, false)) { correcto = false; }\n    if (!comprobar(4, 28, false)) { correcto = false; }\n    if (!comprobar(5, 35, true)) { correcto = false; }\n    if (!comprobar(6, 42, true)) { correcto = false; }\n    if (!comprobar(10, 70, true)) { correcto = false; }\n    if (!correcto) { std::cout << \"Bateria: FALLO\\n\"; return 1; }\n    std::cout << \"Bateria: OK\\n\";\n    return 0;\n}\n"
+        }
+      },
+      {
+        "id": "block_0008_0003",
+        "block": {
+          "type": "drag_fill_code",
+          "id": "regla_recuperar_los_papeles",
+          "question": "Recupera ahora los dos acuerdos del envío, sin modificar sus declaraciones. Arrastra a cada hueco el nombre que corresponde a ese uso.",
+          "template": "int cajas_para(int piezas) {\n    const int piezas_por_caja{6};\n    return (piezas + [] - 1) / piezas_por_caja;\n}\nbool llega_a_tiempo(int dias) {\n    const int dias_maximos{4};\n    return dias <= [];\n}\n",
+          "choices": [
+            "dias_maximos",
+            "dias",
+            "piezas_por_caja",
+            "piezas"
+          ],
+          "correctOrder": [
+            2,
+            0
+          ],
+          "reviewFeedback": "Revisa qué magnitud representa cada nombre que colocaste y si cumple el papel que tiene en esa operación. Distingue el dato recibido de una regla del envío y comprueba qué debería variar al cambiar sólo uno de los acuerdos.",
+          "explanation": "El desplazamiento se deriva de piezas_por_caja, que expresa la capacidad. La comparación de días utiliza dias_maximos, que expresa el plazo. piezas y dias son los datos recibidos, no las reglas que los interpretan. Mantener separados estos papeles permite cambiar un acuerdo sin modificar el otro."
+        }
+      },
+      {
+        "id": "block_0008_0007",
+        "block": {
+          "type": "cpp_compiler",
+          "language": "cpp",
+          "initialCode": "#include <iostream>\n\nconst int acuerdo{7};\n\nint precio_total(int articulos) {\n    return articulos * acuerdo;\n}\n\nbool alcanza_minimo(int articulos) {\n    return articulos >= acuerdo;\n}\n\nbool comprobar(int articulos, int total_esperado, bool minimo_esperado) {\n    const int total{precio_total(articulos)};\n    const bool alcanza{alcanza_minimo(articulos)};\n    const bool coincide{total == total_esperado && alcanza == minimo_esperado};\n    std::cout << \"articulos=\" << articulos << \" total=\" << total\n              << \" esperado=\" << total_esperado << \" minimo=\" << alcanza\n              << \" esperado_minimo=\" << minimo_esperado << \" \";\n    if (coincide) { std::cout << \"OK\\n\"; }\n    else { std::cout << \"FALLO\\n\"; }\n    return coincide;\n}\n\nint main() {\n    bool correcto{true};\n    if (!comprobar(0, 0, false)) { correcto = false; }\n    if (!comprobar(4, 28, false)) { correcto = false; }\n    if (!comprobar(5, 35, true)) { correcto = false; }\n    if (!comprobar(6, 42, true)) { correcto = false; }\n    if (!comprobar(10, 70, true)) { correcto = false; }\n    if (!correcto) { std::cout << \"Bateria: FALLO\\n\"; return 1; }\n    std::cout << \"Bateria: OK\\n\";\n    return 0;\n}\n",
+          "outputCheck": {
+            "inputComparison": "exact",
+            "cases": [
+              {
+                "standardInput": "",
+                "outputs": [
+                  "articulos=0 total=0 esperado=0 minimo=0 esperado_minimo=0 OK\narticulos=4 total=28 esperado=28 minimo=0 esperado_minimo=0 OK\narticulos=5 total=35 esperado=35 minimo=1 esperado_minimo=1 OK\narticulos=6 total=42 esperado=42 minimo=1 esperado_minimo=1 OK\narticulos=10 total=70 esperado=70 minimo=1 esperado_minimo=1 OK\nBateria: OK\n"
+                ],
+                "explanation": "Los casos de cinco y seis artículos vuelven a alcanzar el mínimo acordado, mientras los totales conservan siete créditos por artículo. La salida comprueba esas comparaciones; separar los nombres y sus usos exige revisar además qué regla representa cada constante."
+              }
+            ]
+          }
+        }
       }
     ]
   },

@@ -42,7 +42,7 @@
           "id": "p3_u7l3_construccion_explicita_para_el_operando",
           "language": "cpp",
           "question": "Escribe el valor de total y el valor que conserva base.",
-          "code": "#include <iostream>\n\nclass Puntos {\npublic:\n    explicit Puntos(int valor) : valor_{valor} {}\n    int valor() const { return valor_; }\n    Puntos operator+(const Puntos& otros) const {\n        return Puntos{valor_ + otros.valor_};\n    }\nprivate:\n    int valor_;\n};\nint main() {\n    const Puntos base{6};\n    Puntos total = base + Puntos{3};\n    std::cout << total.valor() << ':' << base.valor();\n    return 0;\n}\n",
+          "code": "#include <iostream>\n\nclass Puntos {\npublic:\n    explicit Puntos(int valor) : valor_{valor} {}\n    int valor() const { return valor_; }\n    Puntos operator+(const Puntos& otros) const {\n        return Puntos{valor_ + otros.valor_};\n    }\nprivate:\n    int valor_;\n};\n\nint main() {\n    const Puntos base{6};\n    Puntos total = base + Puntos{3};\n\n    std::cout << total.valor() << ':' << base.valor();\n\n    return 0;\n}\n",
           "answers": [
             "9:6"
           ],
@@ -68,7 +68,7 @@
         {
           "type": "code",
           "language": "cpp",
-          "code": "#include <iostream>\n\nclass Puntos {\npublic:\n    explicit Puntos(int valor) : valor_{valor} {}\n    int valor() const { return valor_; }\n    Puntos operator+(const Puntos& otros) const {\n        return Puntos{valor_ + otros.valor_};\n    }\nprivate:\n    int valor_;\n};\nint main() {\n    const Puntos base{6};\n    Puntos total = base + 3;\n    return total.valor();\n}\n"
+          "code": "#include <iostream>\n\nclass Puntos {\npublic:\n    explicit Puntos(int valor) : valor_{valor} {}\n    int valor() const { return valor_; }\n    Puntos operator+(const Puntos& otros) const {\n        return Puntos{valor_ + otros.valor_};\n    }\nprivate:\n    int valor_;\n};\n\nint main() {\n    const Puntos base{6};\n    Puntos total = base + 3;\n    return total.valor();\n}\n"
         },
         {
           "type": "multiple_choice",
@@ -126,7 +126,7 @@
         {
           "type": "code",
           "language": "cpp",
-          "code": "#include <iostream>\n\nclass Puntos {\npublic:\n    explicit Puntos(int valor) : valor_{valor} {}\n    int valor() const { return valor_; }\n    Puntos operator+(const Puntos& otros) const {\n        return Puntos{valor_ + otros.valor_};\n    }\nprivate:\n    int valor_;\n};\nPuntos operator+(const Puntos& puntos, int extra) {\n    const Puntos adicional{extra};\n    return puntos + adicional;\n}\nint main() {\n    const Puntos base{6};\n    Puntos total = 3 + base;\n    return total.valor();\n}\n"
+          "code": "#include <iostream>\n\nclass Puntos {\npublic:\n    explicit Puntos(int valor) : valor_{valor} {}\n    int valor() const { return valor_; }\n    Puntos operator+(const Puntos& otros) const {\n        return Puntos{valor_ + otros.valor_};\n    }\nprivate:\n    int valor_;\n};\n\nPuntos operator+(const Puntos& puntos, int extra) {\n    const Puntos adicional{extra};\n    return puntos + adicional;\n}\n\nint main() {\n    const Puntos base{6};\n    Puntos total = 3 + base;\n    return total.valor();\n}\n"
         },
         {
           "type": "multiple_choice",
@@ -193,7 +193,7 @@
           "id": "p3_u7l3_tres_combinaciones_de_tipos",
           "language": "cpp",
           "question": "Escribe los valores de a, b y c, seguidos del valor final de base.",
-          "code": "#include <iostream>\n\nclass Puntos {\npublic:\n    explicit Puntos(int valor) : valor_{valor} {}\n    int valor() const { return valor_; }\n    Puntos operator+(const Puntos& otros) const {\n        return Puntos{valor_ + otros.valor_};\n    }\nprivate:\n    int valor_;\n};\nPuntos operator+(const Puntos& puntos, int extra) {\n    return puntos + Puntos{extra};\n}\nPuntos operator+(int extra, const Puntos& puntos) {\n    return puntos + extra;\n}\nint main() {\n    const Puntos base{7};\n    const Puntos otros{4};\n    Puntos a = base + otros;\n    Puntos b = base + 5;\n    Puntos c = 2 + base;\n    std::cout << a.valor() << ':' << b.valor() << ':' << c.valor() << ':' << base.valor();\n    return 0;\n}\n",
+          "code": "#include <iostream>\n\nclass Puntos {\npublic:\n    explicit Puntos(int valor) : valor_{valor} {}\n    int valor() const { return valor_; }\n    Puntos operator+(const Puntos& otros) const {\n        return Puntos{valor_ + otros.valor_};\n    }\nprivate:\n    int valor_;\n};\n\nPuntos operator+(const Puntos& puntos, int extra) {\n    return puntos + Puntos{extra};\n}\n\nPuntos operator+(int extra, const Puntos& puntos) {\n    return puntos + extra;\n}\n\nint main() {\n    const Puntos base{7};\n    const Puntos otros{4};\n    Puntos a = base + otros;\n    Puntos b = base + 5;\n    Puntos c = 2 + base;\n\n    std::cout << a.valor() << ':' << b.valor() << ':' << c.valor() << ':' << base.valor();\n\n    return 0;\n}\n",
           "answers": [
             "11:12:9:7"
           ],
@@ -221,7 +221,7 @@
           "id": "p3_u7l3_llamadas_explicitas_a_las_tres_formas",
           "language": "cpp",
           "question": "Escribe los valores devueltos por las tres llamadas, en el orden del programa.",
-          "code": "#include <iostream>\n\nclass Puntos {\npublic:\n    explicit Puntos(int valor) : valor_{valor} {}\n    int valor() const { return valor_; }\n    Puntos operator+(const Puntos& otros) const {\n        return Puntos{valor_ + otros.valor_};\n    }\nprivate:\n    int valor_;\n};\nPuntos operator+(const Puntos& puntos, int extra) {\n    return puntos + Puntos{extra};\n}\nPuntos operator+(int extra, const Puntos& puntos) {\n    return puntos + extra;\n}\nint main() {\n    const Puntos base{9};\n    Puntos a = operator+(base, 4);\n    Puntos b = operator+(4, base);\n    Puntos c = base.operator+(Puntos{4});\n    std::cout << a.valor() << ':' << b.valor() << ':' << c.valor();\n    return 0;\n}\n",
+          "code": "#include <iostream>\n\nclass Puntos {\npublic:\n    explicit Puntos(int valor) : valor_{valor} {}\n    int valor() const { return valor_; }\n    Puntos operator+(const Puntos& otros) const {\n        return Puntos{valor_ + otros.valor_};\n    }\nprivate:\n    int valor_;\n};\n\nPuntos operator+(const Puntos& puntos, int extra) {\n    return puntos + Puntos{extra};\n}\n\nPuntos operator+(int extra, const Puntos& puntos) {\n    return puntos + extra;\n}\n\nint main() {\n    const Puntos base{9};\n    Puntos a = operator+(base, 4);\n    Puntos b = operator+(4, base);\n    Puntos c = base.operator+(Puntos{4});\n\n    std::cout << a.valor() << ':' << b.valor() << ':' << c.valor();\n\n    return 0;\n}\n",
           "answers": [
             "13:13:13"
           ],
@@ -249,7 +249,7 @@
           "id": "p3_u7l3_tipos_intermedios_de_la_cadena",
           "language": "cpp",
           "question": "Escribe los valores de los dos resultados y el valor que conserva base.",
-          "code": "#include <iostream>\n\nclass Puntos {\npublic:\n    explicit Puntos(int valor) : valor_{valor} {}\n    int valor() const { return valor_; }\n    Puntos operator+(const Puntos& otros) const {\n        return Puntos{valor_ + otros.valor_};\n    }\nprivate:\n    int valor_;\n};\nPuntos operator+(const Puntos& puntos, int extra) {\n    return puntos + Puntos{extra};\n}\nPuntos operator+(int extra, const Puntos& puntos) {\n    return puntos + extra;\n}\nint main() {\n    const Puntos base{5};\n    Puntos a = 2 + base + 3;\n    Puntos b = 2 + 3 + base;\n    std::cout << a.valor() << ':' << b.valor() << ':' << base.valor();\n    return 0;\n}\n",
+          "code": "#include <iostream>\n\nclass Puntos {\npublic:\n    explicit Puntos(int valor) : valor_{valor} {}\n    int valor() const { return valor_; }\n    Puntos operator+(const Puntos& otros) const {\n        return Puntos{valor_ + otros.valor_};\n    }\nprivate:\n    int valor_;\n};\n\nPuntos operator+(const Puntos& puntos, int extra) {\n    return puntos + Puntos{extra};\n}\n\nPuntos operator+(int extra, const Puntos& puntos) {\n    return puntos + extra;\n}\n\nint main() {\n    const Puntos base{5};\n    Puntos a = 2 + base + 3;\n    Puntos b = 2 + 3 + base;\n\n    std::cout << a.valor() << ':' << b.valor() << ':' << base.valor();\n\n    return 0;\n}\n",
           "answers": [
             "10:10:5"
           ],
@@ -277,7 +277,7 @@
           "id": "p3_u7l3_resultado_independiente_de_la_base",
           "language": "cpp",
           "question": "¿Qué muestran total y base después de sustituir base?",
-          "code": "#include <iostream>\n\nclass Puntos {\npublic:\n    explicit Puntos(int valor) : valor_{valor} {}\n    int valor() const { return valor_; }\n    Puntos operator+(const Puntos& otros) const {\n        return Puntos{valor_ + otros.valor_};\n    }\nprivate:\n    int valor_;\n};\nPuntos operator+(const Puntos& puntos, int extra) {\n    return puntos + Puntos{extra};\n}\nPuntos operator+(int extra, const Puntos& puntos) {\n    return puntos + extra;\n}\nint main() {\n    Puntos base{8};\n    Puntos total = 3 + base;\n    base = Puntos{2};\n    std::cout << total.valor() << ':' << base.valor();\n    return 0;\n}\n",
+          "code": "#include <iostream>\n\nclass Puntos {\npublic:\n    explicit Puntos(int valor) : valor_{valor} {}\n    int valor() const { return valor_; }\n    Puntos operator+(const Puntos& otros) const {\n        return Puntos{valor_ + otros.valor_};\n    }\nprivate:\n    int valor_;\n};\n\nPuntos operator+(const Puntos& puntos, int extra) {\n    return puntos + Puntos{extra};\n}\n\nPuntos operator+(int extra, const Puntos& puntos) {\n    return puntos + extra;\n}\n\nint main() {\n    Puntos base{8};\n    Puntos total = 3 + base;\n\n    base = Puntos{2};\n\n    std::cout << total.valor() << ':' << base.valor();\n\n    return 0;\n}\n",
           "answers": [
             "11:2"
           ],
@@ -303,7 +303,7 @@
         {
           "type": "code",
           "language": "cpp",
-          "code": "#include <iostream>\n\nclass Puntos {\npublic:\n    explicit Puntos(int valor) : valor_{valor} {}\n    int valor() const { return valor_; }\n    Puntos operator+(const Puntos& otros) const {\n        return Puntos{valor_ + otros.valor_};\n    }\nprivate:\n    int valor_;\n};\nPuntos operator+(const Puntos& puntos, int extra) {\n    return Puntos{puntos.valor_ + extra};\n}\nint main() { return 0; }\n"
+          "code": "#include <iostream>\n\nclass Puntos {\npublic:\n    explicit Puntos(int valor) : valor_{valor} {}\n    int valor() const { return valor_; }\n    Puntos operator+(const Puntos& otros) const {\n        return Puntos{valor_ + otros.valor_};\n    }\nprivate:\n    int valor_;\n};\n\nPuntos operator+(const Puntos& puntos, int extra) {\n    return Puntos{puntos.valor_ + extra};\n}\n\nint main() { return 0; }\n"
         },
         {
           "type": "multiple_choice",
@@ -654,7 +654,7 @@
         {
           "type": "cpp_compiler",
           "language": "cpp",
-          "initialCode": "#include <iostream>\n\nstruct CantidadInvalida {};\nstruct SumaExcesiva {};\n\nclass Cantidad {\npublic:\n    Cantidad() = default;\n    explicit Cantidad(int valor) : unidades_{valor} {\n        if (valor < 0 || valor > 1000) { throw CantidadInvalida{}; }\n    }\n    int valor() const noexcept { return unidades_; }\n    Cantidad operator+(const Cantidad& otra) const;\n    Cantidad& operator+=(const Cantidad& otra);\nprivate:\n    int unidades_ = 0;\n};\nCantidad Cantidad::operator+(const Cantidad& otra) const {\n    const int suma = unidades_ + otra.unidades_;\n    if (suma > 1000) { throw SumaExcesiva{}; }\n    return Cantidad{suma};\n}\nCantidad& Cantidad::operator+=(const Cantidad& otra) {\n    *this = *this + otra;\n    return *this;\n}\nCantidad operator+(const Cantidad& cantidad, int entero) {\n    // Valida el entero, realiza la suma y devuelve otra Cantidad.\n    (void)entero;\n    return cantidad;\n}\n\nCantidad operator+(int entero, const Cantidad& cantidad) {\n    // Conserva el mismo contrato con el entero a la izquierda.\n    (void)entero;\n    return cantidad;\n}\nint main() {\n    int ordenes = 0;\n    if (!(std::cin >> ordenes) || ordenes < 1 || ordenes > 12) { return 1; }\n    Cantidad valores[3]{Cantidad{400}, Cantidad{100}, Cantidad{90}};\n    for (int i = 0; i < ordenes; ++i) {\n        int op = 0, destino = 0, origen = 0, entero = 0;\n        if (!(std::cin >> op >> destino >> origen >> entero)) { return 1; }\n        std::cout << \"Antes:\" << valores[0].valor() << ':' << valores[1].valor() << ':' << valores[2].valor();\n        const char* estado = \"Operacion\";\n        if (op >= 1 && op <= 3) {\n            if (destino < 0 || destino > 2 || (op != 1 && (origen < 0 || origen > 2))) {\n                estado = \"Indice\";\n            } else {\n                try {\n                    if (op == 1) { valores[destino] = Cantidad{entero}; }\n                    else if (op == 2) { valores[destino] = valores[origen] + entero; }\n                    else { valores[destino] = entero + valores[origen]; }\n                    estado = \"Aceptada\";\n                } catch (const CantidadInvalida&) { estado = \"Rango\"; }\n                  catch (const SumaExcesiva&) { estado = \"Suma\"; }\n            }\n        }\n        std::cout << \";Estado:\" << estado << \";Ahora:\" << valores[0].valor() << ':' << valores[1].valor() << ':' << valores[2].valor() << '\\n';\n    }\n    std::cout << \"Final:\" << valores[0].valor() << ':' << valores[1].valor() << ':' << valores[2].valor();\n    return 0;\n}\n",
+          "initialCode": "#include <iostream>\n\nstruct CantidadInvalida {};\nstruct SumaExcesiva {};\n\nclass Cantidad {\npublic:\n    Cantidad() = default;\n    explicit Cantidad(int valor) : unidades_{valor} {\n        if (valor < 0 || valor > 1000) { throw CantidadInvalida{}; }\n    }\n\n    int valor() const noexcept { return unidades_; }\n    Cantidad operator+(const Cantidad& otra) const;\n    Cantidad& operator+=(const Cantidad& otra);\nprivate:\n    int unidades_ = 0;\n};\n\nCantidad Cantidad::operator+(const Cantidad& otra) const {\n    const int suma = unidades_ + otra.unidades_;\n    if (suma > 1000) { throw SumaExcesiva{}; }\n    return Cantidad{suma};\n}\n\nCantidad& Cantidad::operator+=(const Cantidad& otra) {\n    *this = *this + otra;\n    return *this;\n}\n\nCantidad operator+(const Cantidad& cantidad, int entero) {\n    // Valida el entero, realiza la suma y devuelve otra Cantidad.\n    (void)entero;\n    return cantidad;\n}\n\nCantidad operator+(int entero, const Cantidad& cantidad) {\n    // Conserva el mismo contrato con el entero a la izquierda.\n    (void)entero;\n    return cantidad;\n}\n\nint main() {\n    int ordenes = 0;\n    if (!(std::cin >> ordenes) || ordenes < 1 || ordenes > 12) { return 1; }\n    Cantidad valores[3]{Cantidad{400}, Cantidad{100}, Cantidad{90}};\n    for (int i = 0; i < ordenes; ++i) {\n        int op = 0, destino = 0, origen = 0, entero = 0;\n        if (!(std::cin >> op >> destino >> origen >> entero)) { return 1; }\n        std::cout << \"Antes:\" << valores[0].valor() << ':' << valores[1].valor() << ':' << valores[2].valor();\n        const char* estado = \"Operacion\";\n        if (op >= 1 && op <= 3) {\n            if (destino < 0 || destino > 2 || (op != 1 && (origen < 0 || origen > 2))) {\n                estado = \"Indice\";\n            } else {\n                try {\n                    if (op == 1) { valores[destino] = Cantidad{entero}; }\n                    else if (op == 2) { valores[destino] = valores[origen] + entero; }\n                    else { valores[destino] = entero + valores[origen]; }\n                    estado = \"Aceptada\";\n                } catch (const CantidadInvalida&) { estado = \"Rango\"; }\n                  catch (const SumaExcesiva&) { estado = \"Suma\"; }\n            }\n        }\n        std::cout << \";Estado:\" << estado << \";Ahora:\" << valores[0].valor() << ':' << valores[1].valor() << ':' << valores[2].valor() << '\\n';\n    }\n    std::cout << \"Final:\" << valores[0].valor() << ':' << valores[1].valor() << ':' << valores[2].valor();\n\n    return 0;\n}\n",
           "initialStandardInput": "9\n2 2 0 25\n3 1 0 25\n2 0 0 600\n3 2 0 1\n2 2 0 -1\n3 0 1 1001\n1 1 0 0\n3 1 1 1000\n2 2 1 0",
           "outputCheck": {
             "inputComparison": "tokens",
@@ -780,7 +780,7 @@
         {
           "type": "code",
           "language": "cpp",
-          "code": "#include <iostream>\n\nstruct CantidadInvalida {};\nstruct SumaExcesiva {};\n\nclass Cantidad {\npublic:\n    Cantidad() = default;\n    explicit Cantidad(int valor) : unidades_{valor} {\n        if (valor < 0 || valor > 1000) { throw CantidadInvalida{}; }\n    }\n    int valor() const noexcept { return unidades_; }\n    Cantidad operator+(const Cantidad& otra) const;\n    Cantidad& operator+=(const Cantidad& otra);\nprivate:\n    int unidades_ = 0;\n};\nCantidad Cantidad::operator+(const Cantidad& otra) const {\n    const int suma = unidades_ + otra.unidades_;\n    if (suma > 1000) { throw SumaExcesiva{}; }\n    return Cantidad{suma};\n}\nCantidad& Cantidad::operator+=(const Cantidad& otra) {\n    *this = *this + otra;\n    return *this;\n}\nCantidad operator+(const Cantidad& cantidad, int entero) {\n    return cantidad + Cantidad{entero};\n}\nCantidad operator+(int entero, const Cantidad& cantidad) {\n    return cantidad + entero;\n}\nint main() {\n    int ordenes = 0;\n    if (!(std::cin >> ordenes) || ordenes < 1 || ordenes > 12) { return 1; }\n    Cantidad valores[3]{Cantidad{400}, Cantidad{100}, Cantidad{90}};\n    for (int i = 0; i < ordenes; ++i) {\n        int op = 0, destino = 0, origen = 0, entero = 0;\n        if (!(std::cin >> op >> destino >> origen >> entero)) { return 1; }\n        std::cout << \"Antes:\" << valores[0].valor() << ':' << valores[1].valor() << ':' << valores[2].valor();\n        const char* estado = \"Operacion\";\n        if (op >= 1 && op <= 3) {\n            if (destino < 0 || destino > 2 || (op != 1 && (origen < 0 || origen > 2))) {\n                estado = \"Indice\";\n            } else {\n                try {\n                    if (op == 1) { valores[destino] = Cantidad{entero}; }\n                    else if (op == 2) { valores[destino] = valores[origen] + entero; }\n                    else { valores[destino] = entero + valores[origen]; }\n                    estado = \"Aceptada\";\n                } catch (const CantidadInvalida&) { estado = \"Rango\"; }\n                  catch (const SumaExcesiva&) { estado = \"Suma\"; }\n            }\n        }\n        std::cout << \";Estado:\" << estado << \";Ahora:\" << valores[0].valor() << ':' << valores[1].valor() << ':' << valores[2].valor() << '\\n';\n    }\n    std::cout << \"Final:\" << valores[0].valor() << ':' << valores[1].valor() << ':' << valores[2].valor();\n    return 0;\n}\n"
+          "code": "#include <iostream>\n\nstruct CantidadInvalida {};\nstruct SumaExcesiva {};\n\nclass Cantidad {\npublic:\n    Cantidad() = default;\n    explicit Cantidad(int valor) : unidades_{valor} {\n        if (valor < 0 || valor > 1000) { throw CantidadInvalida{}; }\n    }\n\n    int valor() const noexcept { return unidades_; }\n    Cantidad operator+(const Cantidad& otra) const;\n    Cantidad& operator+=(const Cantidad& otra);\nprivate:\n    int unidades_ = 0;\n};\n\nCantidad Cantidad::operator+(const Cantidad& otra) const {\n    const int suma = unidades_ + otra.unidades_;\n    if (suma > 1000) { throw SumaExcesiva{}; }\n    return Cantidad{suma};\n}\n\nCantidad& Cantidad::operator+=(const Cantidad& otra) {\n    *this = *this + otra;\n    return *this;\n}\n\nCantidad operator+(const Cantidad& cantidad, int entero) {\n    return cantidad + Cantidad{entero};\n}\n\nCantidad operator+(int entero, const Cantidad& cantidad) {\n    return cantidad + entero;\n}\n\nint main() {\n    int ordenes = 0;\n    if (!(std::cin >> ordenes) || ordenes < 1 || ordenes > 12) { return 1; }\n    Cantidad valores[3]{Cantidad{400}, Cantidad{100}, Cantidad{90}};\n    for (int i = 0; i < ordenes; ++i) {\n        int op = 0, destino = 0, origen = 0, entero = 0;\n        if (!(std::cin >> op >> destino >> origen >> entero)) { return 1; }\n        std::cout << \"Antes:\" << valores[0].valor() << ':' << valores[1].valor() << ':' << valores[2].valor();\n        const char* estado = \"Operacion\";\n        if (op >= 1 && op <= 3) {\n            if (destino < 0 || destino > 2 || (op != 1 && (origen < 0 || origen > 2))) {\n                estado = \"Indice\";\n            } else {\n                try {\n                    if (op == 1) { valores[destino] = Cantidad{entero}; }\n                    else if (op == 2) { valores[destino] = valores[origen] + entero; }\n                    else { valores[destino] = entero + valores[origen]; }\n                    estado = \"Aceptada\";\n                } catch (const CantidadInvalida&) { estado = \"Rango\"; }\n                  catch (const SumaExcesiva&) { estado = \"Suma\"; }\n            }\n        }\n        std::cout << \";Estado:\" << estado << \";Ahora:\" << valores[0].valor() << ':' << valores[1].valor() << ':' << valores[2].valor() << '\\n';\n    }\n    std::cout << \"Final:\" << valores[0].valor() << ':' << valores[1].valor() << ':' << valores[2].valor();\n\n    return 0;\n}\n"
         },
         {
           "type": "paragraph",
@@ -815,7 +815,7 @@
           "id": "p3_u7l3_entero_negativo_no_es_una_resta",
           "language": "cpp",
           "question": "¿Qué error se trata y qué valores conservan destino y base?",
-          "code": "#include <iostream>\n\nstruct CantidadInvalida {};\nstruct SumaExcesiva {};\n\nclass Cantidad {\npublic:\n    Cantidad() = default;\n    explicit Cantidad(int valor) : unidades_{valor} {\n        if (valor < 0 || valor > 1000) { throw CantidadInvalida{}; }\n    }\n    int valor() const noexcept { return unidades_; }\n    Cantidad operator+(const Cantidad& otra) const;\n    Cantidad& operator+=(const Cantidad& otra);\nprivate:\n    int unidades_ = 0;\n};\nCantidad Cantidad::operator+(const Cantidad& otra) const {\n    const int suma = unidades_ + otra.unidades_;\n    if (suma > 1000) { throw SumaExcesiva{}; }\n    return Cantidad{suma};\n}\nCantidad& Cantidad::operator+=(const Cantidad& otra) {\n    *this = *this + otra;\n    return *this;\n}\nCantidad operator+(const Cantidad& cantidad, int entero) {\n    return cantidad + Cantidad{entero};\n}\nCantidad operator+(int entero, const Cantidad& cantidad) {\n    return cantidad + entero;\n}\nint main() {\n    const Cantidad base{800};\n    Cantidad destino{40};\n    try { destino = base + (-1); }\n    catch (const CantidadInvalida&) { std::cout << \"Rango:\"; }\n    catch (const SumaExcesiva&) { std::cout << \"Suma:\"; }\n    std::cout << destino.valor() << ':' << base.valor();\n    return 0;\n}\n",
+          "code": "#include <iostream>\n\nstruct CantidadInvalida {};\nstruct SumaExcesiva {};\n\nclass Cantidad {\npublic:\n    Cantidad() = default;\n    explicit Cantidad(int valor) : unidades_{valor} {\n        if (valor < 0 || valor > 1000) { throw CantidadInvalida{}; }\n    }\n\n    int valor() const noexcept { return unidades_; }\n    Cantidad operator+(const Cantidad& otra) const;\n    Cantidad& operator+=(const Cantidad& otra);\nprivate:\n    int unidades_ = 0;\n};\n\nCantidad Cantidad::operator+(const Cantidad& otra) const {\n    const int suma = unidades_ + otra.unidades_;\n    if (suma > 1000) { throw SumaExcesiva{}; }\n    return Cantidad{suma};\n}\n\nCantidad& Cantidad::operator+=(const Cantidad& otra) {\n    *this = *this + otra;\n    return *this;\n}\n\nCantidad operator+(const Cantidad& cantidad, int entero) {\n    return cantidad + Cantidad{entero};\n}\n\nCantidad operator+(int entero, const Cantidad& cantidad) {\n    return cantidad + entero;\n}\n\nint main() {\n    const Cantidad base{800};\n    Cantidad destino{40};\n    try { destino = base + (-1); }\n    catch (const CantidadInvalida&) { std::cout << \"Rango:\"; }\n    catch (const SumaExcesiva&) { std::cout << \"Suma:\"; }\n    std::cout << destino.valor() << ':' << base.valor();\n\n    return 0;\n}\n",
           "answers": [
             "Rango:40:800"
           ],
@@ -827,7 +827,7 @@
           "id": "p3_u7l3_entero_admitido_con_suma_excesiva",
           "language": "cpp",
           "question": "¿Qué error se trata y qué valores conservan destino y base?",
-          "code": "#include <iostream>\n\nstruct CantidadInvalida {};\nstruct SumaExcesiva {};\n\nclass Cantidad {\npublic:\n    Cantidad() = default;\n    explicit Cantidad(int valor) : unidades_{valor} {\n        if (valor < 0 || valor > 1000) { throw CantidadInvalida{}; }\n    }\n    int valor() const noexcept { return unidades_; }\n    Cantidad operator+(const Cantidad& otra) const;\n    Cantidad& operator+=(const Cantidad& otra);\nprivate:\n    int unidades_ = 0;\n};\nCantidad Cantidad::operator+(const Cantidad& otra) const {\n    const int suma = unidades_ + otra.unidades_;\n    if (suma > 1000) { throw SumaExcesiva{}; }\n    return Cantidad{suma};\n}\nCantidad& Cantidad::operator+=(const Cantidad& otra) {\n    *this = *this + otra;\n    return *this;\n}\nCantidad operator+(const Cantidad& cantidad, int entero) {\n    return cantidad + Cantidad{entero};\n}\nCantidad operator+(int entero, const Cantidad& cantidad) {\n    return cantidad + entero;\n}\nint main() {\n    const Cantidad base{800};\n    Cantidad destino{40};\n    try { destino = 300 + base; }\n    catch (const CantidadInvalida&) { std::cout << \"Rango:\"; }\n    catch (const SumaExcesiva&) { std::cout << \"Suma:\"; }\n    std::cout << destino.valor() << ':' << base.valor();\n    return 0;\n}\n",
+          "code": "#include <iostream>\n\nstruct CantidadInvalida {};\nstruct SumaExcesiva {};\n\nclass Cantidad {\npublic:\n    Cantidad() = default;\n    explicit Cantidad(int valor) : unidades_{valor} {\n        if (valor < 0 || valor > 1000) { throw CantidadInvalida{}; }\n    }\n\n    int valor() const noexcept { return unidades_; }\n    Cantidad operator+(const Cantidad& otra) const;\n    Cantidad& operator+=(const Cantidad& otra);\nprivate:\n    int unidades_ = 0;\n};\n\nCantidad Cantidad::operator+(const Cantidad& otra) const {\n    const int suma = unidades_ + otra.unidades_;\n    if (suma > 1000) { throw SumaExcesiva{}; }\n    return Cantidad{suma};\n}\n\nCantidad& Cantidad::operator+=(const Cantidad& otra) {\n    *this = *this + otra;\n    return *this;\n}\n\nCantidad operator+(const Cantidad& cantidad, int entero) {\n    return cantidad + Cantidad{entero};\n}\n\nCantidad operator+(int entero, const Cantidad& cantidad) {\n    return cantidad + entero;\n}\n\nint main() {\n    const Cantidad base{800};\n    Cantidad destino{40};\n    try { destino = 300 + base; }\n    catch (const CantidadInvalida&) { std::cout << \"Rango:\"; }\n    catch (const SumaExcesiva&) { std::cout << \"Suma:\"; }\n    std::cout << destino.valor() << ':' << base.valor();\n\n    return 0;\n}\n",
           "answers": [
             "Suma:40:800"
           ],
@@ -851,7 +851,7 @@
           "id": "p3_u7l3_cadena_de_sumas_sin_asignacion_intermedia",
           "language": "cpp",
           "question": "¿Qué muestra el programa después del rechazo de la segunda suma?",
-          "code": "#include <iostream>\n\nstruct CantidadInvalida {};\nstruct SumaExcesiva {};\n\nclass Cantidad {\npublic:\n    Cantidad() = default;\n    explicit Cantidad(int valor) : unidades_{valor} {\n        if (valor < 0 || valor > 1000) { throw CantidadInvalida{}; }\n    }\n    int valor() const noexcept { return unidades_; }\n    Cantidad operator+(const Cantidad& otra) const;\n    Cantidad& operator+=(const Cantidad& otra);\nprivate:\n    int unidades_ = 0;\n};\nCantidad Cantidad::operator+(const Cantidad& otra) const {\n    const int suma = unidades_ + otra.unidades_;\n    if (suma > 1000) { throw SumaExcesiva{}; }\n    return Cantidad{suma};\n}\nCantidad& Cantidad::operator+=(const Cantidad& otra) {\n    *this = *this + otra;\n    return *this;\n}\nCantidad operator+(const Cantidad& cantidad, int entero) {\n    return cantidad + Cantidad{entero};\n}\nCantidad operator+(int entero, const Cantidad& cantidad) {\n    return cantidad + entero;\n}\nint main() {\n    Cantidad a{700};\n    Cantidad resultado{20};\n    try { resultado = (a + 200) + 200; }\n    catch (const SumaExcesiva&) { std::cout << \"Suma:\"; }\n    std::cout << a.valor() << ':' << resultado.valor();\n    return 0;\n}\n",
+          "code": "#include <iostream>\n\nstruct CantidadInvalida {};\nstruct SumaExcesiva {};\n\nclass Cantidad {\npublic:\n    Cantidad() = default;\n    explicit Cantidad(int valor) : unidades_{valor} {\n        if (valor < 0 || valor > 1000) { throw CantidadInvalida{}; }\n    }\n\n    int valor() const noexcept { return unidades_; }\n    Cantidad operator+(const Cantidad& otra) const;\n    Cantidad& operator+=(const Cantidad& otra);\nprivate:\n    int unidades_ = 0;\n};\n\nCantidad Cantidad::operator+(const Cantidad& otra) const {\n    const int suma = unidades_ + otra.unidades_;\n    if (suma > 1000) { throw SumaExcesiva{}; }\n    return Cantidad{suma};\n}\n\nCantidad& Cantidad::operator+=(const Cantidad& otra) {\n    *this = *this + otra;\n    return *this;\n}\n\nCantidad operator+(const Cantidad& cantidad, int entero) {\n    return cantidad + Cantidad{entero};\n}\n\nCantidad operator+(int entero, const Cantidad& cantidad) {\n    return cantidad + entero;\n}\n\nint main() {\n    Cantidad a{700};\n    Cantidad resultado{20};\n    try { resultado = (a + 200) + 200; }\n    catch (const SumaExcesiva&) { std::cout << \"Suma:\"; }\n    std::cout << a.valor() << ':' << resultado.valor();\n\n    return 0;\n}\n",
           "answers": [
             "Suma:700:20"
           ],
@@ -2280,6 +2280,261 @@
       }
     },
     "additions": [],
-    "editorial": []
+    "editorial": [
+      {
+        "id": "block_0001_0002",
+        "beforeSha256": "72bc4bf556d1617aa2f0eb4a274b337029ffe2f25a5fd6787c4ace20a26869ef",
+        "afterSha256": "97500c003ae90c1cd4ddbf3dd78c511b1f7410cd4b1b0e5bb1f01fb1fd1e3f67"
+      },
+      {
+        "id": "block_0002_0002",
+        "beforeSha256": "086df9bcb1c344f76c37cec56666dc8d8573e0eafabc9b5b9e0edffab994d8a9",
+        "afterSha256": "401dbf9c8f889039fa27df1510352099a9067665ac34f7559de5afd64406c910"
+      },
+      {
+        "id": "block_0004_0002",
+        "beforeSha256": "ca3055cae86a977e9485beb327b3eddb0e7b6a4441797e99d69a2fe51a7a4d32",
+        "afterSha256": "ec1a208f715df28cb4f0f090b5c9c8cae37c0ef43f4cdc193e8ae507c79cf2cc"
+      },
+      {
+        "id": "block_0006_0002",
+        "beforeSha256": "59c2b93b4bcafab0c8cbf351e5706d5b395d4db777687799dde4f6f558a6b7e8",
+        "afterSha256": "693defdc88bce25ffd9bebc968da64c2c2b9e2ebc664ce4f425318badc269f67"
+      },
+      {
+        "id": "block_0007_0002",
+        "beforeSha256": "2b30fbd94b404d7ab1ec2778224da3a0f22416780b648eef477067b406ed1c28",
+        "afterSha256": "00807d22a8842f399aa51f6278158c4bb653552ab7d3ed5f4ca23520c5ca0455"
+      },
+      {
+        "id": "block_0008_0002",
+        "beforeSha256": "3ce46d970281ab0eb68073bbac0c6afafe4ca3d44ff6bf3a0082fa17874a87cd",
+        "afterSha256": "63c8763cb6302e0e39711e39e3303d365c1a0e51ba900a2767798a81fb685bd2"
+      },
+      {
+        "id": "block_0009_0002",
+        "beforeSha256": "5bb6b1f04aad07992a1f30209efeab6f303f14ee8b21e95a33744e4ad19948a4",
+        "afterSha256": "7561811fbbc6d129771cc74619e2eca60180d9a5f35b8ae6a9e8e2093395ca6a"
+      },
+      {
+        "id": "block_0010_0002",
+        "beforeSha256": "add15b25dd0a269c6d2180b5c37bd0fd8ff1f78198a725a5c5164a9cd672ef08",
+        "afterSha256": "125a2d7dfac3de2220b72d16b7ddecb0d41f5ba06a41247d55d0754018ae4c74"
+      },
+      {
+        "id": "block_0017_0002",
+        "beforeSha256": "4ea6844992f8c090a6ab220bd1b3db54cfafd7163dffd925ba3101684f210ca4",
+        "afterSha256": "a5518dfeb9ca123857f6f6712c07734c9ea2136a82358c0f9af1ee765d03c7a2"
+      },
+      {
+        "id": "block_0019_0001",
+        "beforeSha256": "b390500b4f40a1a1cdf86529b3c595f73c1792482ea0f704e45c6bfe2e8287b4",
+        "afterSha256": "8b4a9f4854e1f74ad3e4b521448e3e6002b8641220e30a3e86d69c8c3a29bcc3"
+      },
+      {
+        "id": "block_0020_0002",
+        "beforeSha256": "7bc0c0f4b5565f2de95feaeff30f001674700b4543865a2be250f3212eb2eaa7",
+        "afterSha256": "32b3c825b15a421b7828a0722200833dc3d70d485aff5a333df50cdfb122355b"
+      },
+      {
+        "id": "block_0020_0003",
+        "beforeSha256": "2120e107dc5df2d673ba0338b19b0ef6221709069eccf373021223f4db377bf7",
+        "afterSha256": "1d3b4c565178cdc180c09706fe4b660cb03c2a9107070ead67cbacedc8ba3360"
+      },
+      {
+        "id": "block_0021_0002",
+        "beforeSha256": "75f9dfc17195405050799cbeca640d15bfff27b40c115d92f60a52064f033336",
+        "afterSha256": "685af23cd0ac9b6924a2acf4c69d272986ff61e0f86d064cb964fa73a05ddfe2"
+      }
+    ],
+    "sourceFormatRevisions": [
+      {
+        "id": "block_0001_0002",
+        "block": {
+          "type": "output_prediction",
+          "id": "p3_u7l3_construccion_explicita_para_el_operando",
+          "language": "cpp",
+          "question": "Escribe el valor de total y el valor que conserva base.",
+          "code": "#include <iostream>\n\nclass Puntos {\npublic:\n    explicit Puntos(int valor) : valor_{valor} {}\n    int valor() const { return valor_; }\n    Puntos operator+(const Puntos& otros) const {\n        return Puntos{valor_ + otros.valor_};\n    }\nprivate:\n    int valor_;\n};\nint main() {\n    const Puntos base{6};\n    Puntos total = base + Puntos{3};\n    std::cout << total.valor() << ':' << base.valor();\n    return 0;\n}\n",
+          "answers": [
+            "9:6"
+          ],
+          "outputComparison": "exact",
+          "explanation": "El segundo operando ya es un Puntos creado directamente desde tres. El miembro recibe los dos objetos, suma seis y tres y devuelve un resultado nuevo. base conserva seis. explicit permite esa construcción directa; no prohíbe utilizar el constructor."
+        }
+      },
+      {
+        "id": "block_0002_0002",
+        "block": {
+          "type": "code",
+          "language": "cpp",
+          "code": "#include <iostream>\n\nclass Puntos {\npublic:\n    explicit Puntos(int valor) : valor_{valor} {}\n    int valor() const { return valor_; }\n    Puntos operator+(const Puntos& otros) const {\n        return Puntos{valor_ + otros.valor_};\n    }\nprivate:\n    int valor_;\n};\nint main() {\n    const Puntos base{6};\n    Puntos total = base + 3;\n    return total.valor();\n}\n"
+        }
+      },
+      {
+        "id": "block_0004_0002",
+        "block": {
+          "type": "code",
+          "language": "cpp",
+          "code": "#include <iostream>\n\nclass Puntos {\npublic:\n    explicit Puntos(int valor) : valor_{valor} {}\n    int valor() const { return valor_; }\n    Puntos operator+(const Puntos& otros) const {\n        return Puntos{valor_ + otros.valor_};\n    }\nprivate:\n    int valor_;\n};\nPuntos operator+(const Puntos& puntos, int extra) {\n    const Puntos adicional{extra};\n    return puntos + adicional;\n}\nint main() {\n    const Puntos base{6};\n    Puntos total = 3 + base;\n    return total.valor();\n}\n"
+        }
+      },
+      {
+        "id": "block_0006_0002",
+        "block": {
+          "type": "output_prediction",
+          "id": "p3_u7l3_tres_combinaciones_de_tipos",
+          "language": "cpp",
+          "question": "Escribe los valores de a, b y c, seguidos del valor final de base.",
+          "code": "#include <iostream>\n\nclass Puntos {\npublic:\n    explicit Puntos(int valor) : valor_{valor} {}\n    int valor() const { return valor_; }\n    Puntos operator+(const Puntos& otros) const {\n        return Puntos{valor_ + otros.valor_};\n    }\nprivate:\n    int valor_;\n};\nPuntos operator+(const Puntos& puntos, int extra) {\n    return puntos + Puntos{extra};\n}\nPuntos operator+(int extra, const Puntos& puntos) {\n    return puntos + extra;\n}\nint main() {\n    const Puntos base{7};\n    const Puntos otros{4};\n    Puntos a = base + otros;\n    Puntos b = base + 5;\n    Puntos c = 2 + base;\n    std::cout << a.valor() << ':' << b.valor() << ':' << c.valor() << ':' << base.valor();\n    return 0;\n}\n",
+          "answers": [
+            "11:12:9:7"
+          ],
+          "outputComparison": "exact",
+          "explanation": "La suma entre objetos combina siete y cuatro. La suma con el int derecho añade cinco y la suma con el int izquierdo añade dos. Cada camino devuelve un Puntos nuevo y base conserva siete. Las funciones elegidas corresponden a los tipos y a las posiciones de los operandos mostrados."
+        }
+      },
+      {
+        "id": "block_0007_0002",
+        "block": {
+          "type": "output_prediction",
+          "id": "p3_u7l3_llamadas_explicitas_a_las_tres_formas",
+          "language": "cpp",
+          "question": "Escribe los valores devueltos por las tres llamadas, en el orden del programa.",
+          "code": "#include <iostream>\n\nclass Puntos {\npublic:\n    explicit Puntos(int valor) : valor_{valor} {}\n    int valor() const { return valor_; }\n    Puntos operator+(const Puntos& otros) const {\n        return Puntos{valor_ + otros.valor_};\n    }\nprivate:\n    int valor_;\n};\nPuntos operator+(const Puntos& puntos, int extra) {\n    return puntos + Puntos{extra};\n}\nPuntos operator+(int extra, const Puntos& puntos) {\n    return puntos + extra;\n}\nint main() {\n    const Puntos base{9};\n    Puntos a = operator+(base, 4);\n    Puntos b = operator+(4, base);\n    Puntos c = base.operator+(Puntos{4});\n    std::cout << a.valor() << ':' << b.valor() << ':' << c.valor();\n    return 0;\n}\n",
+          "answers": [
+            "13:13:13"
+          ],
+          "outputComparison": "exact",
+          "explanation": "Las dos funciones libres llegan al miembro que suma los dos valores. La llamada miembro ya aporta su segundo Puntos mediante una construcción directa. En los tres recorridos se suman nueve y cuatro. Coincidir en el resultado no significa que las tres expresiones nombren inicialmente la misma función."
+        }
+      },
+      {
+        "id": "block_0008_0002",
+        "block": {
+          "type": "output_prediction",
+          "id": "p3_u7l3_tipos_intermedios_de_la_cadena",
+          "language": "cpp",
+          "question": "Escribe los valores de los dos resultados y el valor que conserva base.",
+          "code": "#include <iostream>\n\nclass Puntos {\npublic:\n    explicit Puntos(int valor) : valor_{valor} {}\n    int valor() const { return valor_; }\n    Puntos operator+(const Puntos& otros) const {\n        return Puntos{valor_ + otros.valor_};\n    }\nprivate:\n    int valor_;\n};\nPuntos operator+(const Puntos& puntos, int extra) {\n    return puntos + Puntos{extra};\n}\nPuntos operator+(int extra, const Puntos& puntos) {\n    return puntos + extra;\n}\nint main() {\n    const Puntos base{5};\n    Puntos a = 2 + base + 3;\n    Puntos b = 2 + 3 + base;\n    std::cout << a.valor() << ':' << b.valor() << ':' << base.valor();\n    return 0;\n}\n",
+          "answers": [
+            "10:10:5"
+          ],
+          "outputComparison": "exact",
+          "explanation": "La primera cadena obtiene primero un Puntos de valor siete y después añade tres. La segunda suma primero los int dos y tres, y después añade ese cinco al Puntos base. Ambas terminan en diez con estos datos, pero comienzan con operaciones de tipos diferentes. base conserva cinco."
+        }
+      },
+      {
+        "id": "block_0009_0002",
+        "block": {
+          "type": "output_prediction",
+          "id": "p3_u7l3_resultado_independiente_de_la_base",
+          "language": "cpp",
+          "question": "¿Qué muestran total y base después de sustituir base?",
+          "code": "#include <iostream>\n\nclass Puntos {\npublic:\n    explicit Puntos(int valor) : valor_{valor} {}\n    int valor() const { return valor_; }\n    Puntos operator+(const Puntos& otros) const {\n        return Puntos{valor_ + otros.valor_};\n    }\nprivate:\n    int valor_;\n};\nPuntos operator+(const Puntos& puntos, int extra) {\n    return puntos + Puntos{extra};\n}\nPuntos operator+(int extra, const Puntos& puntos) {\n    return puntos + extra;\n}\nint main() {\n    Puntos base{8};\n    Puntos total = 3 + base;\n    base = Puntos{2};\n    std::cout << total.valor() << ':' << base.valor();\n    return 0;\n}\n",
+          "answers": [
+            "11:2"
+          ],
+          "outputComparison": "exact",
+          "explanation": "La suma inicial produce un resultado de valor once que se guarda en total. Después base recibe el Puntos construido directamente con dos. Son objetos distintos con sus propios int: total conserva once y base pasa a dos."
+        }
+      },
+      {
+        "id": "block_0010_0002",
+        "block": {
+          "type": "code",
+          "language": "cpp",
+          "code": "#include <iostream>\n\nclass Puntos {\npublic:\n    explicit Puntos(int valor) : valor_{valor} {}\n    int valor() const { return valor_; }\n    Puntos operator+(const Puntos& otros) const {\n        return Puntos{valor_ + otros.valor_};\n    }\nprivate:\n    int valor_;\n};\nPuntos operator+(const Puntos& puntos, int extra) {\n    return Puntos{puntos.valor_ + extra};\n}\nint main() { return 0; }\n"
+        }
+      },
+      {
+        "id": "block_0017_0002",
+        "block": {
+          "type": "cpp_compiler",
+          "language": "cpp",
+          "initialCode": "#include <iostream>\n\nstruct CantidadInvalida {};\nstruct SumaExcesiva {};\n\nclass Cantidad {\npublic:\n    Cantidad() = default;\n    explicit Cantidad(int valor) : unidades_{valor} {\n        if (valor < 0 || valor > 1000) { throw CantidadInvalida{}; }\n    }\n    int valor() const noexcept { return unidades_; }\n    Cantidad operator+(const Cantidad& otra) const;\n    Cantidad& operator+=(const Cantidad& otra);\nprivate:\n    int unidades_ = 0;\n};\nCantidad Cantidad::operator+(const Cantidad& otra) const {\n    const int suma = unidades_ + otra.unidades_;\n    if (suma > 1000) { throw SumaExcesiva{}; }\n    return Cantidad{suma};\n}\nCantidad& Cantidad::operator+=(const Cantidad& otra) {\n    *this = *this + otra;\n    return *this;\n}\nCantidad operator+(const Cantidad& cantidad, int entero) {\n    // Valida el entero, realiza la suma y devuelve otra Cantidad.\n    (void)entero;\n    return cantidad;\n}\n\nCantidad operator+(int entero, const Cantidad& cantidad) {\n    // Conserva el mismo contrato con el entero a la izquierda.\n    (void)entero;\n    return cantidad;\n}\nint main() {\n    int ordenes = 0;\n    if (!(std::cin >> ordenes) || ordenes < 1 || ordenes > 12) { return 1; }\n    Cantidad valores[3]{Cantidad{400}, Cantidad{100}, Cantidad{90}};\n    for (int i = 0; i < ordenes; ++i) {\n        int op = 0, destino = 0, origen = 0, entero = 0;\n        if (!(std::cin >> op >> destino >> origen >> entero)) { return 1; }\n        std::cout << \"Antes:\" << valores[0].valor() << ':' << valores[1].valor() << ':' << valores[2].valor();\n        const char* estado = \"Operacion\";\n        if (op >= 1 && op <= 3) {\n            if (destino < 0 || destino > 2 || (op != 1 && (origen < 0 || origen > 2))) {\n                estado = \"Indice\";\n            } else {\n                try {\n                    if (op == 1) { valores[destino] = Cantidad{entero}; }\n                    else if (op == 2) { valores[destino] = valores[origen] + entero; }\n                    else { valores[destino] = entero + valores[origen]; }\n                    estado = \"Aceptada\";\n                } catch (const CantidadInvalida&) { estado = \"Rango\"; }\n                  catch (const SumaExcesiva&) { estado = \"Suma\"; }\n            }\n        }\n        std::cout << \";Estado:\" << estado << \";Ahora:\" << valores[0].valor() << ':' << valores[1].valor() << ':' << valores[2].valor() << '\\n';\n    }\n    std::cout << \"Final:\" << valores[0].valor() << ':' << valores[1].valor() << ':' << valores[2].valor();\n    return 0;\n}\n",
+          "initialStandardInput": "9\n2 2 0 25\n3 1 0 25\n2 0 0 600\n3 2 0 1\n2 2 0 -1\n3 0 1 1001\n1 1 0 0\n3 1 1 1000\n2 2 1 0",
+          "outputCheck": {
+            "inputComparison": "tokens",
+            "cases": [
+              {
+                "standardInput": "9\n2 2 0 25\n3 1 0 25\n2 0 0 600\n3 2 0 1\n2 2 0 -1\n3 0 1 1001\n1 1 0 0\n3 1 1 1000\n2 2 1 0",
+                "outputs": [
+                  "Antes:400:100:90;Estado:Aceptada;Ahora:400:100:425\nAntes:400:100:425;Estado:Aceptada;Ahora:400:425:425\nAntes:400:425:425;Estado:Aceptada;Ahora:1000:425:425\nAntes:1000:425:425;Estado:Suma;Ahora:1000:425:425\nAntes:1000:425:425;Estado:Rango;Ahora:1000:425:425\nAntes:1000:425:425;Estado:Rango;Ahora:1000:425:425\nAntes:1000:425:425;Estado:Aceptada;Ahora:1000:0:425\nAntes:1000:0:425;Estado:Aceptada;Ahora:1000:1000:425\nAntes:1000:1000:425;Estado:Aceptada;Ahora:1000:1000:1000\nFinal:1000:1000:1000"
+                ],
+                "explanation": "Valida primero el entero como una Cantidad. Suma después dos cantidades admitidas y devuelve el resultado por valor. Las dos orientaciones deben conservar el objeto recibido y distinguir Rango de Suma. No cambies main para fabricar el informe."
+              },
+              {
+                "standardInput": "8\n1 0 0 0\n2 2 0 1000\n3 1 0 1000\n2 0 2 0\n3 0 0 1\n2 2 1 1001\n3 2 1 -1\n2 2 0 0",
+                "outputs": [
+                  "Antes:400:100:90;Estado:Aceptada;Ahora:0:100:90\nAntes:0:100:90;Estado:Aceptada;Ahora:0:100:1000\nAntes:0:100:1000;Estado:Aceptada;Ahora:0:1000:1000\nAntes:0:1000:1000;Estado:Aceptada;Ahora:1000:1000:1000\nAntes:1000:1000:1000;Estado:Suma;Ahora:1000:1000:1000\nAntes:1000:1000:1000;Estado:Rango;Ahora:1000:1000:1000\nAntes:1000:1000:1000;Estado:Rango;Ahora:1000:1000:1000\nAntes:1000:1000:1000;Estado:Aceptada;Ahora:1000:1000:1000\nFinal:1000:1000:1000"
+                ],
+                "explanation": "Valida primero el entero como una Cantidad. Suma después dos cantidades admitidas y devuelve el resultado por valor. Las dos orientaciones deben conservar el objeto recibido y distinguir Rango de Suma. No cambies main para fabricar el informe."
+              },
+              {
+                "standardInput": "8\n2 3 0 20\n3 2 -1 20\n8 2 0 20\n1 0 99 650\n2 2 0 350\n3 2 0 351\n3 0 0 350\n2 0 0 1",
+                "outputs": [
+                  "Antes:400:100:90;Estado:Indice;Ahora:400:100:90\nAntes:400:100:90;Estado:Indice;Ahora:400:100:90\nAntes:400:100:90;Estado:Operacion;Ahora:400:100:90\nAntes:400:100:90;Estado:Aceptada;Ahora:650:100:90\nAntes:650:100:90;Estado:Aceptada;Ahora:650:100:1000\nAntes:650:100:1000;Estado:Suma;Ahora:650:100:1000\nAntes:650:100:1000;Estado:Aceptada;Ahora:1000:100:1000\nAntes:1000:100:1000;Estado:Suma;Ahora:1000:100:1000\nFinal:1000:100:1000"
+                ],
+                "explanation": "Valida primero el entero como una Cantidad. Suma después dos cantidades admitidas y devuelve el resultado por valor. Las dos orientaciones deben conservar el objeto recibido y distinguir Rango de Suma. No cambies main para fabricar el informe."
+              }
+            ]
+          }
+        }
+      },
+      {
+        "id": "block_0019_0001",
+        "block": {
+          "type": "code",
+          "language": "cpp",
+          "code": "#include <iostream>\n\nstruct CantidadInvalida {};\nstruct SumaExcesiva {};\n\nclass Cantidad {\npublic:\n    Cantidad() = default;\n    explicit Cantidad(int valor) : unidades_{valor} {\n        if (valor < 0 || valor > 1000) { throw CantidadInvalida{}; }\n    }\n    int valor() const noexcept { return unidades_; }\n    Cantidad operator+(const Cantidad& otra) const;\n    Cantidad& operator+=(const Cantidad& otra);\nprivate:\n    int unidades_ = 0;\n};\nCantidad Cantidad::operator+(const Cantidad& otra) const {\n    const int suma = unidades_ + otra.unidades_;\n    if (suma > 1000) { throw SumaExcesiva{}; }\n    return Cantidad{suma};\n}\nCantidad& Cantidad::operator+=(const Cantidad& otra) {\n    *this = *this + otra;\n    return *this;\n}\nCantidad operator+(const Cantidad& cantidad, int entero) {\n    return cantidad + Cantidad{entero};\n}\nCantidad operator+(int entero, const Cantidad& cantidad) {\n    return cantidad + entero;\n}\nint main() {\n    int ordenes = 0;\n    if (!(std::cin >> ordenes) || ordenes < 1 || ordenes > 12) { return 1; }\n    Cantidad valores[3]{Cantidad{400}, Cantidad{100}, Cantidad{90}};\n    for (int i = 0; i < ordenes; ++i) {\n        int op = 0, destino = 0, origen = 0, entero = 0;\n        if (!(std::cin >> op >> destino >> origen >> entero)) { return 1; }\n        std::cout << \"Antes:\" << valores[0].valor() << ':' << valores[1].valor() << ':' << valores[2].valor();\n        const char* estado = \"Operacion\";\n        if (op >= 1 && op <= 3) {\n            if (destino < 0 || destino > 2 || (op != 1 && (origen < 0 || origen > 2))) {\n                estado = \"Indice\";\n            } else {\n                try {\n                    if (op == 1) { valores[destino] = Cantidad{entero}; }\n                    else if (op == 2) { valores[destino] = valores[origen] + entero; }\n                    else { valores[destino] = entero + valores[origen]; }\n                    estado = \"Aceptada\";\n                } catch (const CantidadInvalida&) { estado = \"Rango\"; }\n                  catch (const SumaExcesiva&) { estado = \"Suma\"; }\n            }\n        }\n        std::cout << \";Estado:\" << estado << \";Ahora:\" << valores[0].valor() << ':' << valores[1].valor() << ':' << valores[2].valor() << '\\n';\n    }\n    std::cout << \"Final:\" << valores[0].valor() << ':' << valores[1].valor() << ':' << valores[2].valor();\n    return 0;\n}\n"
+        }
+      },
+      {
+        "id": "block_0020_0002",
+        "block": {
+          "type": "output_prediction",
+          "id": "p3_u7l3_entero_negativo_no_es_una_resta",
+          "language": "cpp",
+          "question": "¿Qué error se trata y qué valores conservan destino y base?",
+          "code": "#include <iostream>\n\nstruct CantidadInvalida {};\nstruct SumaExcesiva {};\n\nclass Cantidad {\npublic:\n    Cantidad() = default;\n    explicit Cantidad(int valor) : unidades_{valor} {\n        if (valor < 0 || valor > 1000) { throw CantidadInvalida{}; }\n    }\n    int valor() const noexcept { return unidades_; }\n    Cantidad operator+(const Cantidad& otra) const;\n    Cantidad& operator+=(const Cantidad& otra);\nprivate:\n    int unidades_ = 0;\n};\nCantidad Cantidad::operator+(const Cantidad& otra) const {\n    const int suma = unidades_ + otra.unidades_;\n    if (suma > 1000) { throw SumaExcesiva{}; }\n    return Cantidad{suma};\n}\nCantidad& Cantidad::operator+=(const Cantidad& otra) {\n    *this = *this + otra;\n    return *this;\n}\nCantidad operator+(const Cantidad& cantidad, int entero) {\n    return cantidad + Cantidad{entero};\n}\nCantidad operator+(int entero, const Cantidad& cantidad) {\n    return cantidad + entero;\n}\nint main() {\n    const Cantidad base{800};\n    Cantidad destino{40};\n    try { destino = base + (-1); }\n    catch (const CantidadInvalida&) { std::cout << \"Rango:\"; }\n    catch (const SumaExcesiva&) { std::cout << \"Suma:\"; }\n    std::cout << destino.valor() << ':' << base.valor();\n    return 0;\n}\n",
+          "answers": [
+            "Rango:40:800"
+          ],
+          "outputComparison": "exact",
+          "explanation": "Menos uno no permite construir una Cantidad. Se trata CantidadInvalida como Rango; no se llama al miembro que suma dos cantidades ni se asigna el destino. destino conserva cuarenta y base conserva ochocientas unidades."
+        }
+      },
+      {
+        "id": "block_0020_0003",
+        "block": {
+          "type": "output_prediction",
+          "id": "p3_u7l3_entero_admitido_con_suma_excesiva",
+          "language": "cpp",
+          "question": "¿Qué error se trata y qué valores conservan destino y base?",
+          "code": "#include <iostream>\n\nstruct CantidadInvalida {};\nstruct SumaExcesiva {};\n\nclass Cantidad {\npublic:\n    Cantidad() = default;\n    explicit Cantidad(int valor) : unidades_{valor} {\n        if (valor < 0 || valor > 1000) { throw CantidadInvalida{}; }\n    }\n    int valor() const noexcept { return unidades_; }\n    Cantidad operator+(const Cantidad& otra) const;\n    Cantidad& operator+=(const Cantidad& otra);\nprivate:\n    int unidades_ = 0;\n};\nCantidad Cantidad::operator+(const Cantidad& otra) const {\n    const int suma = unidades_ + otra.unidades_;\n    if (suma > 1000) { throw SumaExcesiva{}; }\n    return Cantidad{suma};\n}\nCantidad& Cantidad::operator+=(const Cantidad& otra) {\n    *this = *this + otra;\n    return *this;\n}\nCantidad operator+(const Cantidad& cantidad, int entero) {\n    return cantidad + Cantidad{entero};\n}\nCantidad operator+(int entero, const Cantidad& cantidad) {\n    return cantidad + entero;\n}\nint main() {\n    const Cantidad base{800};\n    Cantidad destino{40};\n    try { destino = 300 + base; }\n    catch (const CantidadInvalida&) { std::cout << \"Rango:\"; }\n    catch (const SumaExcesiva&) { std::cout << \"Suma:\"; }\n    std::cout << destino.valor() << ':' << base.valor();\n    return 0;\n}\n",
+          "answers": [
+            "Suma:40:800"
+          ],
+          "outputComparison": "exact",
+          "explanation": "Trescientos sí permite construir una Cantidad. Al sumarla con ochocientas se obtiene mil cien, que el + miembro rechaza mediante SumaExcesiva. destino conserva cuarenta y base conserva ochocientas."
+        }
+      },
+      {
+        "id": "block_0021_0002",
+        "block": {
+          "type": "output_prediction",
+          "id": "p3_u7l3_cadena_de_sumas_sin_asignacion_intermedia",
+          "language": "cpp",
+          "question": "¿Qué muestra el programa después del rechazo de la segunda suma?",
+          "code": "#include <iostream>\n\nstruct CantidadInvalida {};\nstruct SumaExcesiva {};\n\nclass Cantidad {\npublic:\n    Cantidad() = default;\n    explicit Cantidad(int valor) : unidades_{valor} {\n        if (valor < 0 || valor > 1000) { throw CantidadInvalida{}; }\n    }\n    int valor() const noexcept { return unidades_; }\n    Cantidad operator+(const Cantidad& otra) const;\n    Cantidad& operator+=(const Cantidad& otra);\nprivate:\n    int unidades_ = 0;\n};\nCantidad Cantidad::operator+(const Cantidad& otra) const {\n    const int suma = unidades_ + otra.unidades_;\n    if (suma > 1000) { throw SumaExcesiva{}; }\n    return Cantidad{suma};\n}\nCantidad& Cantidad::operator+=(const Cantidad& otra) {\n    *this = *this + otra;\n    return *this;\n}\nCantidad operator+(const Cantidad& cantidad, int entero) {\n    return cantidad + Cantidad{entero};\n}\nCantidad operator+(int entero, const Cantidad& cantidad) {\n    return cantidad + entero;\n}\nint main() {\n    Cantidad a{700};\n    Cantidad resultado{20};\n    try { resultado = (a + 200) + 200; }\n    catch (const SumaExcesiva&) { std::cout << \"Suma:\"; }\n    std::cout << a.valor() << ':' << resultado.valor();\n    return 0;\n}\n",
+          "answers": [
+            "Suma:700:20"
+          ],
+          "outputComparison": "exact",
+          "explanation": "a conserva setecientas. La primera suma devuelve una Cantidad de novecientas sin cambiar a. La segunda intenta sumar otras doscientas y rechaza mil cien. resultado conserva veinte porque la asignación esperaba que terminara toda la expresión derecha."
+        }
+      }
+    ]
   }
 }

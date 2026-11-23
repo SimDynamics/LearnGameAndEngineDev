@@ -188,7 +188,7 @@
         },
         {
           "type": "cpp_compiler",
-          "initialCode": "#include <iostream>\n\n// Construye suma_hasta y las comprobaciones antes de main.\nint main() {\n    // Usa la misma funcion en los dos contextos solicitados.\n    return 0;\n}\n",
+          "initialCode": "#include <iostream>\n\n// Construye suma_hasta y las comprobaciones antes de main.\n\nint main() {\n    // Usa la misma funcion en los dos contextos solicitados.\n    return 0;\n}\n",
           "outputCheck": {
             "inputComparison": "tokens",
             "cases": [
@@ -268,7 +268,7 @@
         },
         {
           "type": "cpp_compiler",
-          "initialCode": "#include <iostream>\n\nint main() {\n    // Construye la funcion, las comprobaciones constantes y la lectura.\n    return 0;\n}\n",
+          "initialCode": "#include <iostream>\n\nint main() {\n    // Construye la funcion, las comprobaciones constantes y la lectura.\n    \n    return 0;\n}\n",
           "outputCheck": {
             "inputComparison": "tokens",
             "cases": [
@@ -1808,6 +1808,16 @@
         "id": "block_0005_0001",
         "beforeSha256": "93b80b26b240be91108456c0d2a5f9957d368b0ade96c407ace099a0dfa3c634",
         "afterSha256": "a6a920948d12d8e0df7eaa077c40bba6fc6c55358e2f40749c393001b7c910fe"
+      },
+      {
+        "id": "block_0003_0003",
+        "beforeSha256": "47c912dda92668b41fe332f549ea36a96becdc371893522f331223f8dd3a098f",
+        "afterSha256": "fff4b444fd611117b03a3a6e40554af7e87e18028ed4a33acd4a09447ec6552a"
+      },
+      {
+        "id": "suma_constante_construccion_multicaso_editor",
+        "beforeSha256": "99315cb2fb4929c6793f827ce6a74e8d27c9e5ee9fd4fb3a2fcdb664a1b81f1d",
+        "afterSha256": "b9b5697df993466e39892a497149f79950605c51f5351a7979a849ebb8a1f245"
       }
     ],
     "sourceFormatRevisions": [
@@ -1912,6 +1922,213 @@
           "type": "code",
           "language": "cpp",
           "code": "#include <iostream>\n\nconsteval int doble_obligatorio(int dato) {\n    return dato * 2;\n}\n\nint main() {\n    int resultado = doble_obligatorio(4);\n    std::cout << resultado;\n    return 0;\n}\n"
+        }
+      },
+      {
+        "id": "block_0003_0003",
+        "block": {
+          "type": "cpp_compiler",
+          "initialCode": "#include <iostream>\n\n// Construye suma_hasta y las comprobaciones antes de main.\nint main() {\n    // Usa la misma funcion en los dos contextos solicitados.\n    return 0;\n}\n",
+          "outputCheck": {
+            "inputComparison": "tokens",
+            "cases": [
+              {
+                "standardInput": "",
+                "outputs": [
+                  "15:6",
+                  "15:6\n"
+                ]
+              }
+            ]
+          }
+        }
+      },
+      {
+        "id": "suma_constante_construccion_multicaso_editor",
+        "block": {
+          "type": "cpp_compiler",
+          "initialCode": "#include <iostream>\n\nint main() {\n    // Construye la funcion, las comprobaciones constantes y la lectura.\n    return 0;\n}\n",
+          "outputCheck": {
+            "inputComparison": "tokens",
+            "cases": [
+              {
+                "standardInput": "0",
+                "outputs": [
+                  "15:0",
+                  "15:0\n"
+                ],
+                "explanation": "Con argumento cero, el bucle no incorpora ningún sumando y devuelve cero. El objeto constante mantiene quince, calculado con cinco. Por eso la línea es 15:0: el resultado de esta llamada no arrastra una suma anterior.",
+                "reviewFeedback": [
+                  {
+                    "outputs": [
+                      ""
+                    ],
+                    "text": "No se recibió la línea de resultados. El argumento cero es válido y su suma es cero; comprueba que la inicialización local permite ese caso y que main muestra también el resultado del objeto constante."
+                  }
+                ]
+              },
+              {
+                "standardInput": "1",
+                "outputs": [
+                  "15:1",
+                  "15:1\n"
+                ],
+                "explanation": "Con argumento uno, se incorpora únicamente el sumando uno y se devuelve uno. El primer resultado sigue siendo quince y la línea completa es 15:1. El límite incluido debe permitir esa primera vuelta.",
+                "reviewFeedback": [
+                  {
+                    "outputs": [
+                      ""
+                    ],
+                    "text": "No se recibió la línea de resultados. Para este argumento el bucle debe incorporar el primer entero y terminar. Comprueba la condición de entrada, la actualización y la presentación de ambos resultados."
+                  }
+                ]
+              },
+              {
+                "standardInput": "2",
+                "outputs": [
+                  "15:3",
+                  "15:3\n"
+                ],
+                "explanation": "Con argumento dos, la suma es 1 + 2 = 3. La llamada ordinaria entrega tres y el objeto constante conserva quince, de modo que aparece 15:3. Se incluyen ambos extremos del intervalo de sumandos.",
+                "reviewFeedback": [
+                  {
+                    "outputs": [
+                      ""
+                    ],
+                    "text": "No se recibió la línea de resultados. Comprueba que el recorrido incluye tanto el primer entero como el argumento final y que el acumulador guarda la suma, no sólo el último número visitado."
+                  }
+                ]
+              },
+              {
+                "standardInput": "3",
+                "outputs": [
+                  "15:6",
+                  "15:6\n"
+                ],
+                "explanation": "El argumento tres requiere 1 + 2 + 3 = 6. La línea es 15:6: el primer valor no depende de Entrada y el segundo sí procede de la variable ordinaria leída. El resultado coincide con el intento fijo por el dato usado, no porque deba imprimirse como constante.",
+                "reviewFeedback": [
+                  {
+                    "outputs": [
+                      ""
+                    ],
+                    "text": "No se recibió la línea de resultados. Este caso coincide con el dato del intento fijo, pero debe obtenerse leyendo Entrada y llamando a la función. Comprueba que la presentación utiliza ambos resultados calculados."
+                  }
+                ]
+              },
+              {
+                "standardInput": "4",
+                "outputs": [
+                  "15:10",
+                  "15:10\n"
+                ],
+                "explanation": "Para cuatro se cumple 1 + 2 + 3 + 4 = 10, así que se muestra 15:10. Es el mismo valor que debe comprobar la aserción para ese argumento; la llamada ordinaria debe conservar la regla de suma aunque no sea un contexto constante.",
+                "reviewFeedback": [
+                  {
+                    "outputs": [
+                      ""
+                    ],
+                    "text": "No se recibió la línea de resultados. Este argumento permite contrastar la llamada ordinaria con una de las condiciones constantes solicitadas. Comprueba que ambas utilizan la misma función y que main presenta su valor."
+                  }
+                ]
+              },
+              {
+                "standardInput": "5",
+                "outputs": [
+                  "15:15",
+                  "15:15\n"
+                ],
+                "explanation": "Con cinco, la suma de los enteros incluidos es quince. Ambas llamadas reciben ahora ese argumento, aunque sus contextos son diferentes: el objeto constante y el resultado ordinario valen quince. La línea es 15:15.",
+                "reviewFeedback": [
+                  {
+                    "outputs": [
+                      ""
+                    ],
+                    "text": "No se recibió la línea de resultados. Aunque los valores coincidan, conserva las dos formas solicitadas: la inicialización del objeto constante y la llamada con el argumento que se leyó durante la ejecución."
+                  }
+                ]
+              },
+              {
+                "standardInput": "6",
+                "outputs": [
+                  "15:21",
+                  "15:21\n"
+                ],
+                "explanation": "La suma hasta cinco es quince; al añadir seis se obtiene 15 + 6 = 21. Para el argumento seis, la segunda cantidad es veintiuno y la línea es 15:21. La función calcula desde su propia inicialización local en cada llamada.",
+                "reviewFeedback": [
+                  {
+                    "outputs": [
+                      ""
+                    ],
+                    "text": "No se recibió la línea de resultados. Comprueba que el último sumando también se acumula y que la función no conserva el total de la llamada usada para inicializar el objeto constante."
+                  }
+                ]
+              },
+              {
+                "standardInput": "7",
+                "outputs": [
+                  "15:28",
+                  "15:28\n"
+                ],
+                "explanation": "La suma hasta seis es veintiuno. Incorporar siete da 21 + 7 = 28, por lo que la llamada de Entrada entrega veintiocho y la línea es 15:28. El avance del argumento no significa aumentar siempre uno el resultado.",
+                "reviewFeedback": [
+                  {
+                    "outputs": [
+                      ""
+                    ],
+                    "text": "No se recibió la línea de resultados. Revisa la diferencia entre avanzar el contador y acumular su valor. La función debe sumar todos los enteros del intervalo, mientras main conserva el formato de ambos resultados."
+                  }
+                ]
+              },
+              {
+                "standardInput": "8",
+                "outputs": [
+                  "15:36",
+                  "15:36\n"
+                ],
+                "explanation": "Hasta siete se obtienen veintiocho. Añadir ocho da 28 + 8 = 36 y produce la línea 15:36. El resultado pertenece a esta llamada; no se le añade el valor calculado para el objeto constante.",
+                "reviewFeedback": [
+                  {
+                    "outputs": [
+                      ""
+                    ],
+                    "text": "No se recibió la línea de resultados. Comprueba que cada llamada empieza con su acumulador local y que la presentación no mezcla el valor constante con la suma del argumento leído."
+                  }
+                ]
+              },
+              {
+                "standardInput": "9",
+                "outputs": [
+                  "15:45",
+                  "15:45\n"
+                ],
+                "explanation": "La suma hasta ocho es treinta y seis. Añadir nueve da 36 + 9 = 45, así que la línea es 15:45. Se conserva el mismo bucle para los argumentos pequeños y para éste, sin elegir resultados escritos por caso.",
+                "reviewFeedback": [
+                  {
+                    "outputs": [
+                      ""
+                    ],
+                    "text": "No se recibió la línea de resultados. Revisa el recorrido completo hasta el argumento incluido y comprueba que se devuelve el acumulador final. La misma función debe servir para todos los casos del dominio."
+                  }
+                ]
+              },
+              {
+                "standardInput": "10",
+                "outputs": [
+                  "15:55",
+                  "15:55\n"
+                ],
+                "explanation": "Diez es el extremo superior admitido. La suma anterior es cuarenta y cinco y 45 + 10 = 55. Por eso la línea es 15:55. La condición debe incluir el último sumando sin ampliar el contrato más allá de ese extremo.",
+                "reviewFeedback": [
+                  {
+                    "outputs": [
+                      ""
+                    ],
+                    "text": "No se recibió la línea de resultados. El extremo superior pertenece al dominio. Comprueba que la condición lo incluye, que el avance termina el recorrido y que la función devuelve la suma obtenida."
+                  }
+                ]
+              }
+            ]
+          }
         }
       }
     ]

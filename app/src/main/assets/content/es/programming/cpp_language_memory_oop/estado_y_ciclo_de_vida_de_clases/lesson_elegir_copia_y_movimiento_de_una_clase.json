@@ -22,7 +22,7 @@
           "id": "p3_u6l6_copia_implicita_de_miembro_vector",
           "language": "cpp",
           "question": "Sigue por separado original, copia y asignada. ¿Qué imprime el programa después de las dos modificaciones?",
-          "code": "#include <iostream>\n#include <vector>\n#include <utility>\n\nclass Lista {\npublic:\n    int primero() const { return datos_[0]; }\n    void cambiar(int valor) { datos_[0] = valor; }\nprivate:\n    std::vector<int> datos_{2, 6};\n};\n\nint main() {\n    Lista original;\n    Lista copia = original;\n    Lista asignada;\n    original.cambiar(8);\n    asignada = copia;\n    copia.cambiar(3);\n    std::cout << original.primero() << ':' << copia.primero() << ':' << asignada.primero();\n    return 0;\n}\n",
+          "code": "#include <iostream>\n#include <vector>\n#include <utility>\n\nclass Lista {\npublic:\n    int primero() const { return datos_[0]; }\n    void cambiar(int valor) { datos_[0] = valor; }\nprivate:\n    std::vector<int> datos_{2, 6};\n};\n\nint main() {\n    Lista original;\n    Lista copia = original;\n    Lista asignada;\n    original.cambiar(8);\n    asignada = copia;\n    copia.cambiar(3);\n    std::cout << original.primero() << ':' << copia.primero() << ':' << asignada.primero();\n\n    return 0;\n}\n",
           "answers": [
             "8:3:2"
           ],
@@ -83,7 +83,7 @@
           "id": "p3_u6l6_default_copia_estado_actual",
           "language": "cpp",
           "question": "¿Qué imprime el programa? Distingue los valores iniciales escritos en la clase del estado que tiene original cuando se copia.",
-          "code": "#include <iostream>\n\nstruct Par {\n    Par() = default;\n    Par(const Par&) = default;\n    int primero = 2;\n    int segundo = 5;\n};\n\nint main() {\n    Par original;\n    original.primero = 8;\n    Par copia = original;\n    std::cout << original.primero << ':' << copia.primero << ':' << copia.segundo;\n    return 0;\n}\n",
+          "code": "#include <iostream>\n\nstruct Par {\n    Par() = default;\n    Par(const Par&) = default;\n    int primero = 2;\n    int segundo = 5;\n};\n\nint main() {\n    Par original;\n\n    original.primero = 8;\n    Par copia = original;\n\n    std::cout << original.primero << ':' << copia.primero << ':' << copia.segundo;\n\n    return 0;\n}\n",
           "answers": [
             "8:8:5"
           ],
@@ -124,7 +124,7 @@
           "id": "p3_u6l6_movimiento_implicito_de_miembro_unique",
           "language": "cpp",
           "question": "¿Qué muestran la presencia en origen y el valor consultado en destino?",
-          "code": "#include <iostream>\n#include <memory>\n#include <utility>\n\nclass Caja {\npublic:\n    bool hay() const { return dato_ != nullptr; }\n    int valor() const { return *dato_; }\n    void cambiar(int valor) { *dato_ = valor; }\nprivate:\n    std::unique_ptr<int> dato_ = std::make_unique<int>(4);\n};\n\nint main() {\n    Caja origen;\n    Caja destino = std::move(origen);\n    std::cout << origen.hay() << ':' << destino.valor();\n    return 0;\n}\n",
+          "code": "#include <iostream>\n#include <memory>\n#include <utility>\n\nclass Caja {\npublic:\n    bool hay() const { return dato_ != nullptr; }\n    int valor() const { return *dato_; }\n    void cambiar(int valor) { *dato_ = valor; }\nprivate:\n    std::unique_ptr<int> dato_ = std::make_unique<int>(4);\n};\n\nint main() {\n    Caja origen;\n    Caja destino = std::move(origen);\n\n    std::cout << origen.hay() << ':' << destino.valor();\n\n    return 0;\n}\n",
           "answers": [
             "0:4"
           ],
@@ -164,7 +164,7 @@
           "id": "p3_u6l6_copia_prohibida_movimiento_permitido",
           "language": "cpp",
           "question": "¿Qué imprime el movimiento permitido de Registro? No confundas prohibir la copia de la clase con borrar el valor de un miembro int.",
-          "code": "#include <iostream>\n#include <memory>\n#include <utility>\n\nstruct Registro {\n    Registro() = default;\n    Registro(const Registro&) = delete;\n    Registro& operator=(const Registro&) = delete;\n    Registro(Registro&&) = default;\n    Registro& operator=(Registro&&) = default;\n    int valor = 5;\n};\n\nint main() {\n    Registro origen;\n    Registro destino = std::move(origen);\n    std::cout << origen.valor << ':' << destino.valor;\n    return 0;\n}\n",
+          "code": "#include <iostream>\n#include <memory>\n#include <utility>\n\nstruct Registro {\n    Registro() = default;\n    Registro(const Registro&) = delete;\n    Registro& operator=(const Registro&) = delete;\n    Registro(Registro&&) = default;\n    Registro& operator=(Registro&&) = default;\n    int valor = 5;\n};\n\nint main() {\n    Registro origen;\n    Registro destino = std::move(origen);\n\n    std::cout << origen.valor << ':' << destino.valor;\n\n    return 0;\n}\n",
           "answers": [
             "5:5"
           ],
@@ -192,7 +192,7 @@
           "id": "p3_u6l6_move_sin_constructor_de_movimiento",
           "language": "cpp",
           "question": "¿Qué imprime el programa tras modificar original? Determina qué función inicializa copia.",
-          "code": "#include <iostream>\n#include <vector>\n#include <utility>\n\nclass Lista {\npublic:\n    Lista() = default;\n    Lista(const Lista&) = default;\n    Lista& operator=(const Lista&) = default;\n    int primero() const { return datos_[0]; }\n    void cambiar(int valor) { datos_[0] = valor; }\nprivate:\n    std::vector<int> datos_{2, 6};\n};\n\nint main() {\n    Lista original;\n    Lista copia = std::move(original);\n    original.cambiar(8);\n    std::cout << original.primero() << ':' << copia.primero();\n    return 0;\n}\n",
+          "code": "#include <iostream>\n#include <vector>\n#include <utility>\n\nclass Lista {\npublic:\n    Lista() = default;\n    Lista(const Lista&) = default;\n    Lista& operator=(const Lista&) = default;\n    int primero() const { return datos_[0]; }\n    void cambiar(int valor) { datos_[0] = valor; }\nprivate:\n    std::vector<int> datos_{2, 6};\n};\n\nint main() {\n    Lista original;\n    Lista copia = std::move(original);\n    original.cambiar(8);\n    std::cout << original.primero() << ':' << copia.primero();\n\n    return 0;\n}\n",
           "answers": [
             "8:2"
           ],
@@ -261,7 +261,7 @@
           "id": "p3_u6l6_politica_explicita_caja",
           "language": "cpp",
           "question": "Distingue la construcción de destino de la asignación posterior a otra. ¿Qué imprime el programa?",
-          "code": "#include <iostream>\n#include <memory>\n#include <utility>\n\nclass Caja {\npublic:\n    Caja() = default;\n    Caja(const Caja&) = delete;\n    Caja& operator=(const Caja&) = delete;\n    Caja(Caja&&) = default;\n    Caja& operator=(Caja&&) = default;\n    ~Caja() = default;\n    bool hay() const { return dato_ != nullptr; }\n    int valor() const { return *dato_; }\n    void cambiar(int valor) { *dato_ = valor; }\nprivate:\n    std::unique_ptr<int> dato_ = std::make_unique<int>(4);\n};\n\nint main() {\n    Caja origen;\n    Caja destino = std::move(origen);\n    Caja otra;\n    destino.cambiar(7);\n    otra = std::move(destino);\n    std::cout << origen.hay() << ':' << destino.hay() << ':' << otra.valor();\n    return 0;\n}\n",
+          "code": "#include <iostream>\n#include <memory>\n#include <utility>\n\nclass Caja {\npublic:\n    Caja() = default;\n    Caja(const Caja&) = delete;\n    Caja& operator=(const Caja&) = delete;\n    Caja(Caja&&) = default;\n    Caja& operator=(Caja&&) = default;\n    ~Caja() = default;\n    bool hay() const { return dato_ != nullptr; }\n    int valor() const { return *dato_; }\n    void cambiar(int valor) { *dato_ = valor; }\nprivate:\n    std::unique_ptr<int> dato_ = std::make_unique<int>(4);\n};\n\nint main() {\n    Caja origen;\n    Caja destino = std::move(origen);\n    Caja otra;\n    destino.cambiar(7);\n    otra = std::move(destino);\n\n    std::cout << origen.hay() << ':' << destino.hay() << ':' << otra.valor();\n\n    return 0;\n}\n",
           "answers": [
             "0:0:7"
           ],
@@ -297,7 +297,7 @@
           "id": "p3_u6l6_asignacion_default_y_limpieza",
           "language": "cpp",
           "question": "Escribe la traza completa, desde la primera creación hasta Fuera.",
-          "code": "#include <iostream>\n#include <memory>\n#include <utility>\n\nclass Marca {\npublic:\n    Marca(char etiqueta) : etiqueta_{etiqueta} {\n        std::cout << \"Crear:\" << etiqueta_ << '\\n';\n    }\n    ~Marca() { std::cout << \"Destruir:\" << etiqueta_ << '\\n'; }\n    char etiqueta() const { return etiqueta_; }\nprivate:\n    char etiqueta_;\n};\n\nclass Sobre {\npublic:\n    Sobre(char etiqueta) : dato_{std::make_unique<Marca>(etiqueta)} {}\n    Sobre(const Sobre&) = delete;\n    Sobre& operator=(const Sobre&) = delete;\n    Sobre(Sobre&&) = default;\n    Sobre& operator=(Sobre&&) = default;\n    ~Sobre() = default;\n    bool hay() const { return dato_ != nullptr; }\n    char etiqueta() const { return dato_->etiqueta(); }\nprivate:\n    std::unique_ptr<Marca> dato_;\n};\n\nint main() {\n    {\n        Sobre origen{'A'};\n        Sobre destino{'B'};\n        destino = std::move(origen);\n        std::cout << \"Estados:\" << origen.hay() << ':' << destino.etiqueta() << '\\n';\n    }\n    std::cout << \"Fuera\";\n    return 0;\n}\n",
+          "code": "#include <iostream>\n#include <memory>\n#include <utility>\n\nclass Marca {\npublic:\n    Marca(char etiqueta) : etiqueta_{etiqueta} {\n        std::cout << \"Crear:\" << etiqueta_ << '\\n';\n    }\n    ~Marca() { std::cout << \"Destruir:\" << etiqueta_ << '\\n'; }\n    char etiqueta() const { return etiqueta_; }\nprivate:\n    char etiqueta_;\n};\n\nclass Sobre {\npublic:\n    Sobre(char etiqueta) : dato_{std::make_unique<Marca>(etiqueta)} {}\n    Sobre(const Sobre&) = delete;\n    Sobre& operator=(const Sobre&) = delete;\n    Sobre(Sobre&&) = default;\n    Sobre& operator=(Sobre&&) = default;\n    ~Sobre() = default;\n    bool hay() const { return dato_ != nullptr; }\n    char etiqueta() const { return dato_->etiqueta(); }\nprivate:\n    std::unique_ptr<Marca> dato_;\n};\n\nint main() {\n    {\n        Sobre origen{'A'};\n        Sobre destino{'B'};\n\n        destino = std::move(origen);\n        std::cout << \"Estados:\" << origen.hay() << ':' << destino.etiqueta() << '\\n';\n    }\n    std::cout << \"Fuera\";\n\n    return 0;\n}\n",
           "answers": [
             "Crear:A\nCrear:B\nDestruir:B\nEstados:0:A\nDestruir:A\nFuera"
           ],
@@ -365,7 +365,7 @@
           "id": "p3_u6l6_movimiento_por_miembros_e_invariante",
           "language": "cpp",
           "question": "¿Qué muestran la presencia, la cantidad y la coherencia del origen, seguidas de la coherencia del destino?",
-          "code": "#include <iostream>\n#include <memory>\n#include <utility>\n\nclass Panel {\npublic:\n    bool hay() const { return dato_ != nullptr; }\n    int cantidad() const { return cantidad_; }\n    bool coherente() const { return hay() == (cantidad_ == 1); }\nprivate:\n    std::unique_ptr<int> dato_ = std::make_unique<int>(6);\n    int cantidad_ = 1;\n};\n\nint main() {\n    Panel origen;\n    Panel destino = std::move(origen);\n    std::cout << origen.hay() << ':' << origen.cantidad() << ':'\n              << origen.coherente() << ':' << destino.coherente();\n    return 0;\n}\n",
+          "code": "#include <iostream>\n#include <memory>\n#include <utility>\n\nclass Panel {\npublic:\n    bool hay() const { return dato_ != nullptr; }\n    int cantidad() const { return cantidad_; }\n    bool coherente() const { return hay() == (cantidad_ == 1); }\nprivate:\n    std::unique_ptr<int> dato_ = std::make_unique<int>(6);\n    int cantidad_ = 1;\n};\n\nint main() {\n    Panel origen;\n    Panel destino = std::move(origen);\n\n    std::cout << origen.hay() << ':' << origen.cantidad() << ':'\n              << origen.coherente() << ':' << destino.coherente();\n    return 0;\n}\n",
           "answers": [
             "0:1:0:1"
           ],
@@ -388,7 +388,7 @@
           "type": "inline_fill_code",
           "id": "p3_u6l6_completar_default_delete",
           "question": "Completa cada hueco con una sola palabra clave. Hoja debe declarar explícitamente eliminada la construcción por copia y pedir al compilador la construcción y la asignación por movimiento por miembros. Conserva las declaraciones y las transferencias de main; no escribas cuerpos de funciones ni instrucciones de liberación.",
-          "template": "#include <iostream>\n#include <memory>\n#include <utility>\n\nclass Hoja {\npublic:\n    Hoja() = default;\n    Hoja(const Hoja&) = [];\n    Hoja& operator=(const Hoja&) = delete;\n    Hoja(Hoja&&) = [];\n    Hoja& operator=(Hoja&&) = [];\n    bool hay() const { return dato_ != nullptr; }\n    int valor() const { return *dato_; }\nprivate:\n    std::unique_ptr<int> dato_ = std::make_unique<int>(4);\n};\n\nint main() {\n    Hoja origen;\n    Hoja destino = std::move(origen);\n    Hoja otra;\n    otra = std::move(destino);\n    std::cout << origen.hay() << ':' << destino.hay() << ':' << otra.valor();\n    return 0;\n}\n",
+          "template": "#include <iostream>\n#include <memory>\n#include <utility>\n\nclass Hoja {\npublic:\n    Hoja() = default;\n    Hoja(const Hoja&) = [];\n    Hoja& operator=(const Hoja&) = delete;\n    Hoja(Hoja&&) = [];\n    Hoja& operator=(Hoja&&) = [];\n    bool hay() const { return dato_ != nullptr; }\n    int valor() const { return *dato_; }\nprivate:\n    std::unique_ptr<int> dato_ = std::make_unique<int>(4);\n};\n\nint main() {\n    Hoja origen;\n    Hoja destino = std::move(origen);\n    Hoja otra;\n\n    otra = std::move(destino);\n\n    std::cout << origen.hay() << ':' << destino.hay() << ':' << otra.valor();\n\n    return 0;\n}\n",
           "answers": [
             "delete",
             "default",
@@ -419,7 +419,7 @@
         {
           "type": "cpp_compiler",
           "language": "cpp",
-          "initialCode": "#include <iostream>\n#include <vector>\n#include <utility>\n\nclass Lista {\npublic:\n    Lista() = default;\n    Lista(Lista&) = default;\n    Lista& operator=(const Lista&) = default;\n    int primero() const { return datos_[0]; }\n    void cambiar(int valor) { datos_[0] = valor; }\nprivate:\n    std::vector<int> datos_{3, 6};\n};\n\nint main() {\n    const Lista original;\n    Lista copia = original;\n    copia.cambiar(8);\n    std::cout << original.primero() << ':' << copia.primero();\n    return 0;\n}\n",
+          "initialCode": "#include <iostream>\n#include <vector>\n#include <utility>\n\nclass Lista {\npublic:\n    Lista() = default;\n    Lista(Lista&) = default;\n    Lista& operator=(const Lista&) = default;\n    int primero() const { return datos_[0]; }\n    void cambiar(int valor) { datos_[0] = valor; }\nprivate:\n    std::vector<int> datos_{3, 6};\n};\n\nint main() {\n    const Lista original;\n    Lista copia = original;\n    copia.cambiar(8);\n    std::cout << original.primero() << ':' << copia.primero();\n\n    return 0;\n}\n",
           "initialStandardInput": "",
           "outputCheck": {
             "inputComparison": "tokens",
@@ -445,7 +445,7 @@
         {
           "type": "code",
           "language": "cpp",
-          "code": "#include <iostream>\n#include <vector>\n#include <utility>\n\nclass Lista {\npublic:\n    Lista() = default;\n    Lista(const Lista&) = default;\n    Lista& operator=(const Lista&) = default;\n    int primero() const { return datos_[0]; }\n    void cambiar(int valor) { datos_[0] = valor; }\nprivate:\n    std::vector<int> datos_{3, 6};\n};\n\nint main() {\n    const Lista original;\n    Lista copia = original;\n    copia.cambiar(8);\n    std::cout << original.primero() << ':' << copia.primero();\n    return 0;\n}\n"
+          "code": "#include <iostream>\n#include <vector>\n#include <utility>\n\nclass Lista {\npublic:\n    Lista() = default;\n    Lista(const Lista&) = default;\n    Lista& operator=(const Lista&) = default;\n    int primero() const { return datos_[0]; }\n    void cambiar(int valor) { datos_[0] = valor; }\nprivate:\n    std::vector<int> datos_{3, 6};\n};\n\nint main() {\n    const Lista original;\n    Lista copia = original;\n    copia.cambiar(8);\n    std::cout << original.primero() << ':' << copia.primero();\n\n    return 0;\n}\n"
         },
         {
           "type": "paragraph",
@@ -647,7 +647,7 @@
         {
           "type": "cpp_compiler",
           "language": "cpp",
-          "initialCode": "#include <iostream>\n#include <memory>\n#include <utility>\n\n#include <new>\n\nbool indice_valido(int indice) {\n    return indice == 0 || indice == 1;\n}\n\nclass Ficha {\npublic:\n    // Añade el constructor sin argumentos y las dos operaciones de movimiento.\n    Ficha(const Ficha&) = delete;\n    Ficha& operator=(const Ficha&) = delete;\n    ~Ficha() = default;\n    bool hay() const { return dato_ != nullptr; }\n    int valor() const { return *dato_; }\n    bool poner(int valor);\n    bool cambiar(int valor);\n    bool vaciar();\nprivate:\n    std::unique_ptr<int> dato_ = std::make_unique<int>(4);\n};\nbool Ficha::poner(int valor) {\n    if (valor < 0 || valor > 9) {\n        return false;\n    }\n    try {\n        auto candidato = std::make_unique<int>(valor);\n        dato_.swap(candidato);\n        return true;\n    } catch (const std::bad_alloc&) {\n        return false;\n    }\n}\n\nbool Ficha::cambiar(int valor) {\n    if (!dato_ || valor < 0 || valor > 9) {\n        return false;\n    }\n    *dato_ = valor;\n    return true;\n}\n\nbool Ficha::vaciar() {\n    dato_.reset();\n    return true;\n}\nbool entregar(Ficha& origen, Ficha& destino) {\n    if (&origen == &destino || !origen.hay()) {\n        return false;\n    }\n    Ficha intermedia = std::move(origen);\n    destino = std::move(intermedia);\n    return true;\n}\nvoid mostrar_dato(bool hay, int valor) {\n    if (hay) {\n        std::cout << valor;\n    } else {\n        std::cout << 'X';\n    }\n}\n\nvoid mostrar(const Ficha& primera, const Ficha& segunda) {\n    mostrar_dato(primera.hay(), primera.hay() ? primera.valor() : 0);\n    std::cout << ':';\n    mostrar_dato(segunda.hay(), segunda.hay() ? segunda.valor() : 0);\n}\nint main() {\n    int cantidad = 0;\n    if (!(std::cin >> cantidad) || cantidad < 1 || cantidad > 12) {\n        return 1;\n    }\n    Ficha primera;\n    Ficha segunda;\n    segunda.cambiar(7);\n    std::cout << \"Inicio:\";\n    mostrar(primera, segunda);\n    std::cout << '\\n';\n    for (int i = 0; i < cantidad; ++i) {\n        int operacion = 0;\n        int a = 0;\n        int b = 0;\n        if (!(std::cin >> operacion >> a >> b)) {\n            return 1;\n        }\n        const bool habia0 = primera.hay();\n        const bool habia1 = segunda.hay();\n        const int anterior0 = habia0 ? primera.valor() : 0;\n        const int anterior1 = habia1 ? segunda.valor() : 0;\n        bool aceptado = false;\n        if (operacion == 1 && indice_valido(a) && indice_valido(b)) {\n            Ficha& origen = a == 0 ? primera : segunda;\n            Ficha& destino = b == 0 ? primera : segunda;\n            aceptado = entregar(origen, destino);\n        } else if (indice_valido(a)) {\n            Ficha& ficha = a == 0 ? primera : segunda;\n            if (operacion == 2) {\n                aceptado = ficha.poner(b);\n            } else if (operacion == 3) {\n                aceptado = ficha.vaciar();\n            } else if (operacion == 4) {\n                aceptado = ficha.cambiar(b);\n            }\n        }\n        std::cout << \"Resultado:\" << aceptado << \";Antes:\";\n        mostrar_dato(habia0, anterior0);\n        std::cout << ':';\n        mostrar_dato(habia1, anterior1);\n        std::cout << \";Actual:\";\n        mostrar(primera, segunda);\n        std::cout << '\\n';\n    }\n    std::cout << \"Final:\";\n    mostrar(primera, segunda);\n    return 0;\n}\n",
+          "initialCode": "#include <iostream>\n#include <memory>\n#include <utility>\n\n#include <new>\n\nbool indice_valido(int indice) {\n    return indice == 0 || indice == 1;\n}\n\nclass Ficha {\npublic:\n    // Añade el constructor sin argumentos y las dos operaciones de movimiento.\n    Ficha(const Ficha&) = delete;\n    Ficha& operator=(const Ficha&) = delete;\n    ~Ficha() = default;\n    bool hay() const { return dato_ != nullptr; }\n    int valor() const { return *dato_; }\n    bool poner(int valor);\n    bool cambiar(int valor);\n    bool vaciar();\nprivate:\n    std::unique_ptr<int> dato_ = std::make_unique<int>(4);\n};\n\nbool Ficha::poner(int valor) {\n    if (valor < 0 || valor > 9) {\n        return false;\n    }\n    try {\n        auto candidato = std::make_unique<int>(valor);\n        dato_.swap(candidato);\n        return true;\n    } catch (const std::bad_alloc&) {\n        return false;\n    }\n}\n\nbool Ficha::cambiar(int valor) {\n    if (!dato_ || valor < 0 || valor > 9) {\n        return false;\n    }\n    *dato_ = valor;\n    return true;\n}\n\nbool Ficha::vaciar() {\n    dato_.reset();\n    return true;\n}\n\nbool entregar(Ficha& origen, Ficha& destino) {\n    if (&origen == &destino || !origen.hay()) {\n        return false;\n    }\n    Ficha intermedia = std::move(origen);\n    destino = std::move(intermedia);\n    return true;\n}\n\nvoid mostrar_dato(bool hay, int valor) {\n    if (hay) {\n        std::cout << valor;\n    } else {\n        std::cout << 'X';\n    }\n}\n\nvoid mostrar(const Ficha& primera, const Ficha& segunda) {\n    mostrar_dato(primera.hay(), primera.hay() ? primera.valor() : 0);\n    std::cout << ':';\n    mostrar_dato(segunda.hay(), segunda.hay() ? segunda.valor() : 0);\n}\n\nint main() {\n    int cantidad = 0;\n    if (!(std::cin >> cantidad) || cantidad < 1 || cantidad > 12) {\n        return 1;\n    }\n    Ficha primera;\n    Ficha segunda;\n    segunda.cambiar(7);\n    std::cout << \"Inicio:\";\n    mostrar(primera, segunda);\n    std::cout << '\\n';\n    for (int i = 0; i < cantidad; ++i) {\n        int operacion = 0;\n        int a = 0;\n        int b = 0;\n\n        if (!(std::cin >> operacion >> a >> b)) {\n            return 1;\n        }\n        const bool habia0 = primera.hay();\n        const bool habia1 = segunda.hay();\n        const int anterior0 = habia0 ? primera.valor() : 0;\n        const int anterior1 = habia1 ? segunda.valor() : 0;\n        bool aceptado = false;\n\n        if (operacion == 1 && indice_valido(a) && indice_valido(b)) {\n            Ficha& origen = a == 0 ? primera : segunda;\n            Ficha& destino = b == 0 ? primera : segunda;\n            aceptado = entregar(origen, destino);\n        } else if (indice_valido(a)) {\n            Ficha& ficha = a == 0 ? primera : segunda;\n            if (operacion == 2) {\n                aceptado = ficha.poner(b);\n            } else if (operacion == 3) {\n                aceptado = ficha.vaciar();\n            } else if (operacion == 4) {\n                aceptado = ficha.cambiar(b);\n            }\n        }\n        std::cout << \"Resultado:\" << aceptado << \";Antes:\";\n        mostrar_dato(habia0, anterior0);\n        std::cout << ':';\n        mostrar_dato(habia1, anterior1);\n        std::cout << \";Actual:\";\n        mostrar(primera, segunda);\n        std::cout << '\\n';\n    }\n    std::cout << \"Final:\";\n    mostrar(primera, segunda);\n    return 0;\n}\n",
           "initialStandardInput": "12\n1 0 1\n1 0 1\n2 0 0\n1 0 1\n1 1 1\n1 -1 0\n1 1 0\n4 0 9\n3 0 0\n1 0 1\n2 1 6\n1 1 0\n",
           "outputCheck": {
             "inputComparison": "tokens",
@@ -773,7 +773,7 @@
         {
           "type": "code",
           "language": "cpp",
-          "code": "#include <iostream>\n#include <memory>\n#include <utility>\n\n#include <new>\n\nbool indice_valido(int indice) {\n    return indice == 0 || indice == 1;\n}\n\nclass Ficha {\npublic:\n    Ficha() = default;\n    Ficha(Ficha&&) = default;\n    Ficha& operator=(Ficha&&) = default;\n    Ficha(const Ficha&) = delete;\n    Ficha& operator=(const Ficha&) = delete;\n    ~Ficha() = default;\n    bool hay() const { return dato_ != nullptr; }\n    int valor() const { return *dato_; }\n    bool poner(int valor);\n    bool cambiar(int valor);\n    bool vaciar();\nprivate:\n    std::unique_ptr<int> dato_ = std::make_unique<int>(4);\n};\nbool Ficha::poner(int valor) {\n    if (valor < 0 || valor > 9) {\n        return false;\n    }\n    try {\n        auto candidato = std::make_unique<int>(valor);\n        dato_.swap(candidato);\n        return true;\n    } catch (const std::bad_alloc&) {\n        return false;\n    }\n}\n\nbool Ficha::cambiar(int valor) {\n    if (!dato_ || valor < 0 || valor > 9) {\n        return false;\n    }\n    *dato_ = valor;\n    return true;\n}\n\nbool Ficha::vaciar() {\n    dato_.reset();\n    return true;\n}\nbool entregar(Ficha& origen, Ficha& destino) {\n    if (&origen == &destino || !origen.hay()) {\n        return false;\n    }\n    Ficha intermedia = std::move(origen);\n    destino = std::move(intermedia);\n    return true;\n}\nvoid mostrar_dato(bool hay, int valor) {\n    if (hay) {\n        std::cout << valor;\n    } else {\n        std::cout << 'X';\n    }\n}\n\nvoid mostrar(const Ficha& primera, const Ficha& segunda) {\n    mostrar_dato(primera.hay(), primera.hay() ? primera.valor() : 0);\n    std::cout << ':';\n    mostrar_dato(segunda.hay(), segunda.hay() ? segunda.valor() : 0);\n}\nint main() {\n    int cantidad = 0;\n    if (!(std::cin >> cantidad) || cantidad < 1 || cantidad > 12) {\n        return 1;\n    }\n    Ficha primera;\n    Ficha segunda;\n    segunda.cambiar(7);\n    std::cout << \"Inicio:\";\n    mostrar(primera, segunda);\n    std::cout << '\\n';\n    for (int i = 0; i < cantidad; ++i) {\n        int operacion = 0;\n        int a = 0;\n        int b = 0;\n        if (!(std::cin >> operacion >> a >> b)) {\n            return 1;\n        }\n        const bool habia0 = primera.hay();\n        const bool habia1 = segunda.hay();\n        const int anterior0 = habia0 ? primera.valor() : 0;\n        const int anterior1 = habia1 ? segunda.valor() : 0;\n        bool aceptado = false;\n        if (operacion == 1 && indice_valido(a) && indice_valido(b)) {\n            Ficha& origen = a == 0 ? primera : segunda;\n            Ficha& destino = b == 0 ? primera : segunda;\n            aceptado = entregar(origen, destino);\n        } else if (indice_valido(a)) {\n            Ficha& ficha = a == 0 ? primera : segunda;\n            if (operacion == 2) {\n                aceptado = ficha.poner(b);\n            } else if (operacion == 3) {\n                aceptado = ficha.vaciar();\n            } else if (operacion == 4) {\n                aceptado = ficha.cambiar(b);\n            }\n        }\n        std::cout << \"Resultado:\" << aceptado << \";Antes:\";\n        mostrar_dato(habia0, anterior0);\n        std::cout << ':';\n        mostrar_dato(habia1, anterior1);\n        std::cout << \";Actual:\";\n        mostrar(primera, segunda);\n        std::cout << '\\n';\n    }\n    std::cout << \"Final:\";\n    mostrar(primera, segunda);\n    return 0;\n}\n"
+          "code": "#include <iostream>\n#include <memory>\n#include <utility>\n\n#include <new>\n\nbool indice_valido(int indice) {\n    return indice == 0 || indice == 1;\n}\n\nclass Ficha {\npublic:\n    Ficha() = default;\n    Ficha(Ficha&&) = default;\n    Ficha& operator=(Ficha&&) = default;\n    Ficha(const Ficha&) = delete;\n    Ficha& operator=(const Ficha&) = delete;\n    ~Ficha() = default;\n    bool hay() const { return dato_ != nullptr; }\n    int valor() const { return *dato_; }\n    bool poner(int valor);\n    bool cambiar(int valor);\n    bool vaciar();\nprivate:\n    std::unique_ptr<int> dato_ = std::make_unique<int>(4);\n};\n\nbool Ficha::poner(int valor) {\n    if (valor < 0 || valor > 9) {\n        return false;\n    }\n    try {\n        auto candidato = std::make_unique<int>(valor);\n        dato_.swap(candidato);\n        return true;\n    } catch (const std::bad_alloc&) {\n        return false;\n    }\n}\n\nbool Ficha::cambiar(int valor) {\n    if (!dato_ || valor < 0 || valor > 9) {\n        return false;\n    }\n    *dato_ = valor;\n    return true;\n}\n\nbool Ficha::vaciar() {\n    dato_.reset();\n    return true;\n}\n\nbool entregar(Ficha& origen, Ficha& destino) {\n    if (&origen == &destino || !origen.hay()) {\n        return false;\n    }\n    Ficha intermedia = std::move(origen);\n    destino = std::move(intermedia);\n    return true;\n}\n\nvoid mostrar_dato(bool hay, int valor) {\n    if (hay) {\n        std::cout << valor;\n    } else {\n        std::cout << 'X';\n    }\n}\n\nvoid mostrar(const Ficha& primera, const Ficha& segunda) {\n    mostrar_dato(primera.hay(), primera.hay() ? primera.valor() : 0);\n    std::cout << ':';\n    mostrar_dato(segunda.hay(), segunda.hay() ? segunda.valor() : 0);\n}\n\nint main() {\n    int cantidad = 0;\n    if (!(std::cin >> cantidad) || cantidad < 1 || cantidad > 12) {\n        return 1;\n    }\n    Ficha primera;\n    Ficha segunda;\n    segunda.cambiar(7);\n    std::cout << \"Inicio:\";\n    mostrar(primera, segunda);\n    std::cout << '\\n';\n    for (int i = 0; i < cantidad; ++i) {\n        int operacion = 0;\n        int a = 0;\n        int b = 0;\n\n        if (!(std::cin >> operacion >> a >> b)) {\n            return 1;\n        }\n        const bool habia0 = primera.hay();\n        const bool habia1 = segunda.hay();\n        const int anterior0 = habia0 ? primera.valor() : 0;\n        const int anterior1 = habia1 ? segunda.valor() : 0;\n        bool aceptado = false;\n\n        if (operacion == 1 && indice_valido(a) && indice_valido(b)) {\n            Ficha& origen = a == 0 ? primera : segunda;\n            Ficha& destino = b == 0 ? primera : segunda;\n            aceptado = entregar(origen, destino);\n        } else if (indice_valido(a)) {\n            Ficha& ficha = a == 0 ? primera : segunda;\n            if (operacion == 2) {\n                aceptado = ficha.poner(b);\n            } else if (operacion == 3) {\n                aceptado = ficha.vaciar();\n            } else if (operacion == 4) {\n                aceptado = ficha.cambiar(b);\n            }\n        }\n        std::cout << \"Resultado:\" << aceptado << \";Antes:\";\n        mostrar_dato(habia0, anterior0);\n        std::cout << ':';\n        mostrar_dato(habia1, anterior1);\n        std::cout << \";Actual:\";\n        mostrar(primera, segunda);\n        std::cout << '\\n';\n    }\n    std::cout << \"Final:\";\n    mostrar(primera, segunda);\n    return 0;\n}\n"
         },
         {
           "type": "paragraph",
@@ -2222,6 +2222,281 @@
       }
     },
     "additions": [],
-    "editorial": []
+    "editorial": [
+      {
+        "id": "block_0000_0003",
+        "beforeSha256": "b30fecebf760a744bc3934755fb99389feab28ee674b6583dad3807df50d8a1e",
+        "afterSha256": "afdaae0f6b1cf3a83bdd054e19d267045f44b103de9cf8466ee389cabb4907c8"
+      },
+      {
+        "id": "block_0002_0003",
+        "beforeSha256": "87e27dae31beb8b7e6fe04b3f9f036f81ac4555e03dc07cad0fe511bdf4d59a6",
+        "afterSha256": "4f93ce6d7ea12adc9bf461e2bea7f3dae3aa6b5cde89aab1c135e076b692a780"
+      },
+      {
+        "id": "block_0003_0005",
+        "beforeSha256": "43146f222e69fe6ea5ea94464db714e4bf4eb8b59b953d7a710f04846beadad8",
+        "afterSha256": "b536ff60d492e8eef1157fe01dac59857e1f1131c50c57726d3d40c937b1ebea"
+      },
+      {
+        "id": "block_0004_0004",
+        "beforeSha256": "f8de2b0d2db052d2683bfa45fb7bb4788b30f9d2f9a76c6e3c666f5823348024",
+        "afterSha256": "d1fa3b2e8087fabb13e2ddfe8e66d4f4e4ed72c359465f4abe6488f93b375d25"
+      },
+      {
+        "id": "block_0005_0003",
+        "beforeSha256": "0c4462d946dd1d3a06a3c76d5221928bcc443111c80147692368ad88d6a3dbba",
+        "afterSha256": "0955f30dde6884a58aaec0d7c0e3971aaa1649e37835ecd10fb39cb1797d0721"
+      },
+      {
+        "id": "block_0007_0003",
+        "beforeSha256": "ad8f18607daa1b4b3c33c436a7337054edd930ba6d1308067be0483cd1d82e65",
+        "afterSha256": "ecc851a873802ad3303ccebbbe95db39a7aa1eedff1aad0fde2297fbcbf07b55"
+      },
+      {
+        "id": "block_0008_0003",
+        "beforeSha256": "ceb92aab8da170aaa3c6e456808b9fbe23dd2e53b355d95f35eae17603956baa",
+        "afterSha256": "6c8320b0fa4b36a3b647d2ecae9c25b366e34b5292e893c846f4f939792587c9"
+      },
+      {
+        "id": "block_0010_0003",
+        "beforeSha256": "1a03b8f8df031dffd2cb921e444af28924aba4aa7a58ad128a2f95dbdf24f1ad",
+        "afterSha256": "a63dc42a662e6cbf2d818696d4e17aa18514b72d0212d59c5bea82cc03379e43"
+      },
+      {
+        "id": "block_0011_0001",
+        "beforeSha256": "c11070f818369082eb8bc24990ab94b733f985adc08dcb673a6bf3248af51303",
+        "afterSha256": "4ceed3d97678787ac2e8701607e1d28ce3f0844d0c76f3e3548acc920197b3e9"
+      },
+      {
+        "id": "block_0012_0004",
+        "beforeSha256": "5aa289b63845ebbad5800baf33966cd497ec7ba57468ed27201b9b8373bfb5bd",
+        "afterSha256": "7e19da42cc37766ac66bcacff89251befc99a5affa35e20de3aa4e34f91d0551"
+      },
+      {
+        "id": "block_0013_0001",
+        "beforeSha256": "ce3dc816301dc5aaa94e0ab39a4e152cdf0c2f6c8257833c3d29f73dca94aa65",
+        "afterSha256": "29d9f6a8a0fba53aa95d69867f8106243120132e43554e4f6c8be2f5a64ca15f"
+      },
+      {
+        "id": "block_0018_0002",
+        "beforeSha256": "20fc8bc85a5995cb43f087d184a5d2851bd3d9cd411a1b6e44c4aaad54ec16bb",
+        "afterSha256": "7c2941f5859acda194c5574d4e03e7f625dd8879bedab9bfc497cbb5c900f861"
+      },
+      {
+        "id": "block_0020_0001",
+        "beforeSha256": "c17bf9f105169a886c369c8e29f40ea538aaf88518d211a28896b12e281b7df5",
+        "afterSha256": "27e9b79a6f86b8e4327523532eb741a1259c5ebc691848ba73fa4282b82f3d3f"
+      }
+    ],
+    "sourceFormatRevisions": [
+      {
+        "id": "block_0000_0003",
+        "block": {
+          "type": "output_prediction",
+          "id": "p3_u6l6_copia_implicita_de_miembro_vector",
+          "language": "cpp",
+          "question": "Sigue por separado original, copia y asignada. ¿Qué imprime el programa después de las dos modificaciones?",
+          "code": "#include <iostream>\n#include <vector>\n#include <utility>\n\nclass Lista {\npublic:\n    int primero() const { return datos_[0]; }\n    void cambiar(int valor) { datos_[0] = valor; }\nprivate:\n    std::vector<int> datos_{2, 6};\n};\n\nint main() {\n    Lista original;\n    Lista copia = original;\n    Lista asignada;\n    original.cambiar(8);\n    asignada = copia;\n    copia.cambiar(3);\n    std::cout << original.primero() << ':' << copia.primero() << ':' << asignada.primero();\n    return 0;\n}\n",
+          "answers": [
+            "8:3:2"
+          ],
+          "outputComparison": "exact",
+          "explanation": "copia se construyó con los elementos iniciales de original. Después original cambió su primer elemento. asignada recibió mediante asignación el contenido que copia conservaba en ese momento. El cambio posterior de copia no afecta a ninguno de los otros dos vectores."
+        }
+      },
+      {
+        "id": "block_0002_0003",
+        "block": {
+          "type": "output_prediction",
+          "id": "p3_u6l6_default_copia_estado_actual",
+          "language": "cpp",
+          "question": "¿Qué imprime el programa? Distingue los valores iniciales escritos en la clase del estado que tiene original cuando se copia.",
+          "code": "#include <iostream>\n\nstruct Par {\n    Par() = default;\n    Par(const Par&) = default;\n    int primero = 2;\n    int segundo = 5;\n};\n\nint main() {\n    Par original;\n    original.primero = 8;\n    Par copia = original;\n    std::cout << original.primero << ':' << copia.primero << ':' << copia.segundo;\n    return 0;\n}\n",
+          "answers": [
+            "8:8:5"
+          ],
+          "outputComparison": "exact",
+          "explanation": "El constructor sin argumentos inicializa original. main cambia después su primer miembro. El constructor de copia copia ambos miembros desde el estado que original tiene en ese momento; no vuelve a aplicar a copia los valores iniciales escritos junto a los miembros."
+        }
+      },
+      {
+        "id": "block_0003_0005",
+        "block": {
+          "type": "output_prediction",
+          "id": "p3_u6l6_movimiento_implicito_de_miembro_unique",
+          "language": "cpp",
+          "question": "¿Qué muestran la presencia en origen y el valor consultado en destino?",
+          "code": "#include <iostream>\n#include <memory>\n#include <utility>\n\nclass Caja {\npublic:\n    bool hay() const { return dato_ != nullptr; }\n    int valor() const { return *dato_; }\n    void cambiar(int valor) { *dato_ = valor; }\nprivate:\n    std::unique_ptr<int> dato_ = std::make_unique<int>(4);\n};\n\nint main() {\n    Caja origen;\n    Caja destino = std::move(origen);\n    std::cout << origen.hay() << ':' << destino.valor();\n    return 0;\n}\n",
+          "answers": [
+            "0:4"
+          ],
+          "outputComparison": "exact",
+          "explanation": "Caja no añade declaraciones que impidan generar el constructor de movimiento. Éste construye el unique_ptr de destino por movimiento desde el miembro de origen. El int sigue vivo bajo el propietario de destino; main no intenta consultar el valor de la Caja vacía."
+        }
+      },
+      {
+        "id": "block_0004_0004",
+        "block": {
+          "type": "output_prediction",
+          "id": "p3_u6l6_copia_prohibida_movimiento_permitido",
+          "language": "cpp",
+          "question": "¿Qué imprime el movimiento permitido de Registro? No confundas prohibir la copia de la clase con borrar el valor de un miembro int.",
+          "code": "#include <iostream>\n#include <memory>\n#include <utility>\n\nstruct Registro {\n    Registro() = default;\n    Registro(const Registro&) = delete;\n    Registro& operator=(const Registro&) = delete;\n    Registro(Registro&&) = default;\n    Registro& operator=(Registro&&) = default;\n    int valor = 5;\n};\n\nint main() {\n    Registro origen;\n    Registro destino = std::move(origen);\n    std::cout << origen.valor << ':' << destino.valor;\n    return 0;\n}\n",
+          "answers": [
+            "5:5"
+          ],
+          "outputComparison": "exact",
+          "explanation": "La inicialización solicita el constructor de movimiento, que está permitido. La operación generada inicializa el miembro int con el valor correspondiente del origen. Ese movimiento de un int no vacía ni pone a cero al entero original. Las declaraciones = delete sólo impedirían las operaciones de copia de Registro."
+        }
+      },
+      {
+        "id": "block_0005_0003",
+        "block": {
+          "type": "output_prediction",
+          "id": "p3_u6l6_move_sin_constructor_de_movimiento",
+          "language": "cpp",
+          "question": "¿Qué imprime el programa tras modificar original? Determina qué función inicializa copia.",
+          "code": "#include <iostream>\n#include <vector>\n#include <utility>\n\nclass Lista {\npublic:\n    Lista() = default;\n    Lista(const Lista&) = default;\n    Lista& operator=(const Lista&) = default;\n    int primero() const { return datos_[0]; }\n    void cambiar(int valor) { datos_[0] = valor; }\nprivate:\n    std::vector<int> datos_{2, 6};\n};\n\nint main() {\n    Lista original;\n    Lista copia = std::move(original);\n    original.cambiar(8);\n    std::cout << original.primero() << ':' << copia.primero();\n    return 0;\n}\n",
+          "answers": [
+            "8:2"
+          ],
+          "outputComparison": "exact",
+          "explanation": "Lista declara copia y no declara movimiento. La inicialización utiliza Lista(const Lista&), que copia su vector. original conserva su propio vector y su modificación posterior no cambia el vector de copia. Que aparezca std::move no demuestra que se haya llamado a un constructor de movimiento."
+        }
+      },
+      {
+        "id": "block_0007_0003",
+        "block": {
+          "type": "output_prediction",
+          "id": "p3_u6l6_politica_explicita_caja",
+          "language": "cpp",
+          "question": "Distingue la construcción de destino de la asignación posterior a otra. ¿Qué imprime el programa?",
+          "code": "#include <iostream>\n#include <memory>\n#include <utility>\n\nclass Caja {\npublic:\n    Caja() = default;\n    Caja(const Caja&) = delete;\n    Caja& operator=(const Caja&) = delete;\n    Caja(Caja&&) = default;\n    Caja& operator=(Caja&&) = default;\n    ~Caja() = default;\n    bool hay() const { return dato_ != nullptr; }\n    int valor() const { return *dato_; }\n    void cambiar(int valor) { *dato_ = valor; }\nprivate:\n    std::unique_ptr<int> dato_ = std::make_unique<int>(4);\n};\n\nint main() {\n    Caja origen;\n    Caja destino = std::move(origen);\n    Caja otra;\n    destino.cambiar(7);\n    otra = std::move(destino);\n    std::cout << origen.hay() << ':' << destino.hay() << ':' << otra.valor();\n    return 0;\n}\n",
+          "answers": [
+            "0:0:7"
+          ],
+          "outputComparison": "exact",
+          "explanation": "destino se construye por movimiento y recibe el int de origen. otra se construye después sin argumentos y empieza gestionando otro int. La asignación por movimiento a otra termina ese int anterior y transfiere el que gestionaba destino. Los dos orígenes de esas transferencias entre objetos distintos quedan vacíos."
+        }
+      },
+      {
+        "id": "block_0008_0003",
+        "block": {
+          "type": "output_prediction",
+          "id": "p3_u6l6_asignacion_default_y_limpieza",
+          "language": "cpp",
+          "question": "Escribe la traza completa, desde la primera creación hasta Fuera.",
+          "code": "#include <iostream>\n#include <memory>\n#include <utility>\n\nclass Marca {\npublic:\n    Marca(char etiqueta) : etiqueta_{etiqueta} {\n        std::cout << \"Crear:\" << etiqueta_ << '\\n';\n    }\n    ~Marca() { std::cout << \"Destruir:\" << etiqueta_ << '\\n'; }\n    char etiqueta() const { return etiqueta_; }\nprivate:\n    char etiqueta_;\n};\n\nclass Sobre {\npublic:\n    Sobre(char etiqueta) : dato_{std::make_unique<Marca>(etiqueta)} {}\n    Sobre(const Sobre&) = delete;\n    Sobre& operator=(const Sobre&) = delete;\n    Sobre(Sobre&&) = default;\n    Sobre& operator=(Sobre&&) = default;\n    ~Sobre() = default;\n    bool hay() const { return dato_ != nullptr; }\n    char etiqueta() const { return dato_->etiqueta(); }\nprivate:\n    std::unique_ptr<Marca> dato_;\n};\n\nint main() {\n    {\n        Sobre origen{'A'};\n        Sobre destino{'B'};\n        destino = std::move(origen);\n        std::cout << \"Estados:\" << origen.hay() << ':' << destino.etiqueta() << '\\n';\n    }\n    std::cout << \"Fuera\";\n    return 0;\n}\n",
+          "answers": [
+            "Crear:A\nCrear:B\nDestruir:B\nEstados:0:A\nDestruir:A\nFuera"
+          ],
+          "outputComparison": "exact",
+          "explanation": "Primero se crean las Marcas de origen y destino. La asignación al destino destruye su Marca anterior antes de que main imprima Estados. El origen queda sin Marca. Al salir del bloque, el destino destruye el miembro que conserva la Marca transferida, y con él termina esa Marca. Después se imprime Fuera."
+        }
+      },
+      {
+        "id": "block_0010_0003",
+        "block": {
+          "type": "output_prediction",
+          "id": "p3_u6l6_movimiento_por_miembros_e_invariante",
+          "language": "cpp",
+          "question": "¿Qué muestran la presencia, la cantidad y la coherencia del origen, seguidas de la coherencia del destino?",
+          "code": "#include <iostream>\n#include <memory>\n#include <utility>\n\nclass Panel {\npublic:\n    bool hay() const { return dato_ != nullptr; }\n    int cantidad() const { return cantidad_; }\n    bool coherente() const { return hay() == (cantidad_ == 1); }\nprivate:\n    std::unique_ptr<int> dato_ = std::make_unique<int>(6);\n    int cantidad_ = 1;\n};\n\nint main() {\n    Panel origen;\n    Panel destino = std::move(origen);\n    std::cout << origen.hay() << ':' << origen.cantidad() << ':'\n              << origen.coherente() << ':' << destino.coherente();\n    return 0;\n}\n",
+          "answers": [
+            "0:1:0:1"
+          ],
+          "outputComparison": "exact",
+          "explanation": "El unique_ptr de origen queda vacío al transferirse, pero mover un int conserva en origen el valor que tenía cantidad_. Por eso el origen conserva cantidad_ igual a uno sin gestionar un int, y coherente lo detecta. El destino recibe ambos miembros de forma compatible con el contrato. La consulta es definida: el problema es el invariante lógico, no una lectura de memoria liberada."
+        }
+      },
+      {
+        "id": "block_0011_0001",
+        "block": {
+          "type": "inline_fill_code",
+          "id": "p3_u6l6_completar_default_delete",
+          "question": "Completa cada hueco con una sola palabra clave. Hoja debe declarar explícitamente eliminada la construcción por copia y pedir al compilador la construcción y la asignación por movimiento por miembros. Conserva las declaraciones y las transferencias de main; no escribas cuerpos de funciones ni instrucciones de liberación.",
+          "template": "#include <iostream>\n#include <memory>\n#include <utility>\n\nclass Hoja {\npublic:\n    Hoja() = default;\n    Hoja(const Hoja&) = [];\n    Hoja& operator=(const Hoja&) = delete;\n    Hoja(Hoja&&) = [];\n    Hoja& operator=(Hoja&&) = [];\n    bool hay() const { return dato_ != nullptr; }\n    int valor() const { return *dato_; }\nprivate:\n    std::unique_ptr<int> dato_ = std::make_unique<int>(4);\n};\n\nint main() {\n    Hoja origen;\n    Hoja destino = std::move(origen);\n    Hoja otra;\n    otra = std::move(destino);\n    std::cout << origen.hay() << ':' << destino.hay() << ':' << otra.valor();\n    return 0;\n}\n",
+          "answers": [
+            "delete",
+            "default",
+            "default"
+          ],
+          "explanation": "delete elimina la construcción por copia. default solicita las dos operaciones de movimiento por miembros. El miembro unique_ptr realiza la transferencia; ninguna de esas palabras es un cuerpo vacío ni una instrucción para copiar el int gestionado."
+        }
+      },
+      {
+        "id": "block_0012_0004",
+        "block": {
+          "type": "cpp_compiler",
+          "language": "cpp",
+          "initialCode": "#include <iostream>\n#include <vector>\n#include <utility>\n\nclass Lista {\npublic:\n    Lista() = default;\n    Lista(Lista&) = default;\n    Lista& operator=(const Lista&) = default;\n    int primero() const { return datos_[0]; }\n    void cambiar(int valor) { datos_[0] = valor; }\nprivate:\n    std::vector<int> datos_{3, 6};\n};\n\nint main() {\n    const Lista original;\n    Lista copia = original;\n    copia.cambiar(8);\n    std::cout << original.primero() << ':' << copia.primero();\n    return 0;\n}\n",
+          "initialStandardInput": "",
+          "outputCheck": {
+            "inputComparison": "tokens",
+            "cases": [
+              {
+                "standardInput": "",
+                "outputs": [
+                  "3:8"
+                ],
+                "explanation": "El tipo del parámetro determina qué objetos pueden servir como fuente. La fuente constante debe poder leerse mediante ese parámetro. La operación predeterminada copia su vector y la modificación posterior afecta sólo al destino."
+              }
+            ]
+          }
+        }
+      },
+      {
+        "id": "block_0013_0001",
+        "block": {
+          "type": "code",
+          "language": "cpp",
+          "code": "#include <iostream>\n#include <vector>\n#include <utility>\n\nclass Lista {\npublic:\n    Lista() = default;\n    Lista(const Lista&) = default;\n    Lista& operator=(const Lista&) = default;\n    int primero() const { return datos_[0]; }\n    void cambiar(int valor) { datos_[0] = valor; }\nprivate:\n    std::vector<int> datos_{3, 6};\n};\n\nint main() {\n    const Lista original;\n    Lista copia = original;\n    copia.cambiar(8);\n    std::cout << original.primero() << ':' << copia.primero();\n    return 0;\n}\n"
+        }
+      },
+      {
+        "id": "block_0018_0002",
+        "block": {
+          "type": "cpp_compiler",
+          "language": "cpp",
+          "initialCode": "#include <iostream>\n#include <memory>\n#include <utility>\n\n#include <new>\n\nbool indice_valido(int indice) {\n    return indice == 0 || indice == 1;\n}\n\nclass Ficha {\npublic:\n    // Añade el constructor sin argumentos y las dos operaciones de movimiento.\n    Ficha(const Ficha&) = delete;\n    Ficha& operator=(const Ficha&) = delete;\n    ~Ficha() = default;\n    bool hay() const { return dato_ != nullptr; }\n    int valor() const { return *dato_; }\n    bool poner(int valor);\n    bool cambiar(int valor);\n    bool vaciar();\nprivate:\n    std::unique_ptr<int> dato_ = std::make_unique<int>(4);\n};\nbool Ficha::poner(int valor) {\n    if (valor < 0 || valor > 9) {\n        return false;\n    }\n    try {\n        auto candidato = std::make_unique<int>(valor);\n        dato_.swap(candidato);\n        return true;\n    } catch (const std::bad_alloc&) {\n        return false;\n    }\n}\n\nbool Ficha::cambiar(int valor) {\n    if (!dato_ || valor < 0 || valor > 9) {\n        return false;\n    }\n    *dato_ = valor;\n    return true;\n}\n\nbool Ficha::vaciar() {\n    dato_.reset();\n    return true;\n}\nbool entregar(Ficha& origen, Ficha& destino) {\n    if (&origen == &destino || !origen.hay()) {\n        return false;\n    }\n    Ficha intermedia = std::move(origen);\n    destino = std::move(intermedia);\n    return true;\n}\nvoid mostrar_dato(bool hay, int valor) {\n    if (hay) {\n        std::cout << valor;\n    } else {\n        std::cout << 'X';\n    }\n}\n\nvoid mostrar(const Ficha& primera, const Ficha& segunda) {\n    mostrar_dato(primera.hay(), primera.hay() ? primera.valor() : 0);\n    std::cout << ':';\n    mostrar_dato(segunda.hay(), segunda.hay() ? segunda.valor() : 0);\n}\nint main() {\n    int cantidad = 0;\n    if (!(std::cin >> cantidad) || cantidad < 1 || cantidad > 12) {\n        return 1;\n    }\n    Ficha primera;\n    Ficha segunda;\n    segunda.cambiar(7);\n    std::cout << \"Inicio:\";\n    mostrar(primera, segunda);\n    std::cout << '\\n';\n    for (int i = 0; i < cantidad; ++i) {\n        int operacion = 0;\n        int a = 0;\n        int b = 0;\n        if (!(std::cin >> operacion >> a >> b)) {\n            return 1;\n        }\n        const bool habia0 = primera.hay();\n        const bool habia1 = segunda.hay();\n        const int anterior0 = habia0 ? primera.valor() : 0;\n        const int anterior1 = habia1 ? segunda.valor() : 0;\n        bool aceptado = false;\n        if (operacion == 1 && indice_valido(a) && indice_valido(b)) {\n            Ficha& origen = a == 0 ? primera : segunda;\n            Ficha& destino = b == 0 ? primera : segunda;\n            aceptado = entregar(origen, destino);\n        } else if (indice_valido(a)) {\n            Ficha& ficha = a == 0 ? primera : segunda;\n            if (operacion == 2) {\n                aceptado = ficha.poner(b);\n            } else if (operacion == 3) {\n                aceptado = ficha.vaciar();\n            } else if (operacion == 4) {\n                aceptado = ficha.cambiar(b);\n            }\n        }\n        std::cout << \"Resultado:\" << aceptado << \";Antes:\";\n        mostrar_dato(habia0, anterior0);\n        std::cout << ':';\n        mostrar_dato(habia1, anterior1);\n        std::cout << \";Actual:\";\n        mostrar(primera, segunda);\n        std::cout << '\\n';\n    }\n    std::cout << \"Final:\";\n    mostrar(primera, segunda);\n    return 0;\n}\n",
+          "initialStandardInput": "12\n1 0 1\n1 0 1\n2 0 0\n1 0 1\n1 1 1\n1 -1 0\n1 1 0\n4 0 9\n3 0 0\n1 0 1\n2 1 6\n1 1 0\n",
+          "outputCheck": {
+            "inputComparison": "tokens",
+            "cases": [
+              {
+                "standardInput": "12\n1 0 1\n1 0 1\n2 0 0\n1 0 1\n1 1 1\n1 -1 0\n1 1 0\n4 0 9\n3 0 0\n1 0 1\n2 1 6\n1 1 0\n",
+                "outputs": [
+                  "Inicio:4:7\nResultado:1;Antes:4:7;Actual:X:4\nResultado:0;Antes:X:4;Actual:X:4\nResultado:1;Antes:X:4;Actual:0:4\nResultado:1;Antes:0:4;Actual:X:0\nResultado:0;Antes:X:0;Actual:X:0\nResultado:0;Antes:X:0;Actual:X:0\nResultado:1;Antes:X:0;Actual:0:X\nResultado:1;Antes:0:X;Actual:9:X\nResultado:1;Antes:9:X;Actual:X:X\nResultado:0;Antes:X:X;Actual:X:X\nResultado:1;Antes:X:X;Actual:X:6\nResultado:1;Antes:X:6;Actual:6:X\nFinal:6:X"
+                ],
+                "explanation": "La construcción de la intermedia y la asignación al destino son operaciones diferentes de Ficha. Las definiciones generadas se apoyan en las operaciones de su miembro unique_ptr; las copias de la clase permanecen prohibidas."
+              },
+              {
+                "standardInput": "6\n1 1 0\n2 1 7\n1 0 1\n3 0 9\n2 0 0\n1 1 0\n",
+                "outputs": [
+                  "Inicio:4:7\nResultado:1;Antes:4:7;Actual:7:X\nResultado:1;Antes:7:X;Actual:7:7\nResultado:1;Antes:7:7;Actual:X:7\nResultado:1;Antes:X:7;Actual:X:7\nResultado:1;Antes:X:7;Actual:0:7\nResultado:1;Antes:0:7;Actual:7:X\nFinal:7:X"
+                ],
+                "explanation": "La construcción de la intermedia y la asignación al destino son operaciones diferentes de Ficha. Las definiciones generadas se apoyan en las operaciones de su miembro unique_ptr; las copias de la clase permanecen prohibidas."
+              },
+              {
+                "standardInput": "8\n1 0 2\n2 -1 4\n2 0 2147483647\n2 1 -2147483648\n4 0 -1\n3 2 0\n8 0 1\n1 1 0\n",
+                "outputs": [
+                  "Inicio:4:7\nResultado:0;Antes:4:7;Actual:4:7\nResultado:0;Antes:4:7;Actual:4:7\nResultado:0;Antes:4:7;Actual:4:7\nResultado:0;Antes:4:7;Actual:4:7\nResultado:0;Antes:4:7;Actual:4:7\nResultado:0;Antes:4:7;Actual:4:7\nResultado:0;Antes:4:7;Actual:4:7\nResultado:1;Antes:4:7;Actual:7:X\nFinal:7:X"
+                ],
+                "explanation": "La construcción de la intermedia y la asignación al destino son operaciones diferentes de Ficha. Las definiciones generadas se apoyan en las operaciones de su miembro unique_ptr; las copias de la clase permanecen prohibidas."
+              }
+            ]
+          }
+        }
+      },
+      {
+        "id": "block_0020_0001",
+        "block": {
+          "type": "code",
+          "language": "cpp",
+          "code": "#include <iostream>\n#include <memory>\n#include <utility>\n\n#include <new>\n\nbool indice_valido(int indice) {\n    return indice == 0 || indice == 1;\n}\n\nclass Ficha {\npublic:\n    Ficha() = default;\n    Ficha(Ficha&&) = default;\n    Ficha& operator=(Ficha&&) = default;\n    Ficha(const Ficha&) = delete;\n    Ficha& operator=(const Ficha&) = delete;\n    ~Ficha() = default;\n    bool hay() const { return dato_ != nullptr; }\n    int valor() const { return *dato_; }\n    bool poner(int valor);\n    bool cambiar(int valor);\n    bool vaciar();\nprivate:\n    std::unique_ptr<int> dato_ = std::make_unique<int>(4);\n};\nbool Ficha::poner(int valor) {\n    if (valor < 0 || valor > 9) {\n        return false;\n    }\n    try {\n        auto candidato = std::make_unique<int>(valor);\n        dato_.swap(candidato);\n        return true;\n    } catch (const std::bad_alloc&) {\n        return false;\n    }\n}\n\nbool Ficha::cambiar(int valor) {\n    if (!dato_ || valor < 0 || valor > 9) {\n        return false;\n    }\n    *dato_ = valor;\n    return true;\n}\n\nbool Ficha::vaciar() {\n    dato_.reset();\n    return true;\n}\nbool entregar(Ficha& origen, Ficha& destino) {\n    if (&origen == &destino || !origen.hay()) {\n        return false;\n    }\n    Ficha intermedia = std::move(origen);\n    destino = std::move(intermedia);\n    return true;\n}\nvoid mostrar_dato(bool hay, int valor) {\n    if (hay) {\n        std::cout << valor;\n    } else {\n        std::cout << 'X';\n    }\n}\n\nvoid mostrar(const Ficha& primera, const Ficha& segunda) {\n    mostrar_dato(primera.hay(), primera.hay() ? primera.valor() : 0);\n    std::cout << ':';\n    mostrar_dato(segunda.hay(), segunda.hay() ? segunda.valor() : 0);\n}\nint main() {\n    int cantidad = 0;\n    if (!(std::cin >> cantidad) || cantidad < 1 || cantidad > 12) {\n        return 1;\n    }\n    Ficha primera;\n    Ficha segunda;\n    segunda.cambiar(7);\n    std::cout << \"Inicio:\";\n    mostrar(primera, segunda);\n    std::cout << '\\n';\n    for (int i = 0; i < cantidad; ++i) {\n        int operacion = 0;\n        int a = 0;\n        int b = 0;\n        if (!(std::cin >> operacion >> a >> b)) {\n            return 1;\n        }\n        const bool habia0 = primera.hay();\n        const bool habia1 = segunda.hay();\n        const int anterior0 = habia0 ? primera.valor() : 0;\n        const int anterior1 = habia1 ? segunda.valor() : 0;\n        bool aceptado = false;\n        if (operacion == 1 && indice_valido(a) && indice_valido(b)) {\n            Ficha& origen = a == 0 ? primera : segunda;\n            Ficha& destino = b == 0 ? primera : segunda;\n            aceptado = entregar(origen, destino);\n        } else if (indice_valido(a)) {\n            Ficha& ficha = a == 0 ? primera : segunda;\n            if (operacion == 2) {\n                aceptado = ficha.poner(b);\n            } else if (operacion == 3) {\n                aceptado = ficha.vaciar();\n            } else if (operacion == 4) {\n                aceptado = ficha.cambiar(b);\n            }\n        }\n        std::cout << \"Resultado:\" << aceptado << \";Antes:\";\n        mostrar_dato(habia0, anterior0);\n        std::cout << ':';\n        mostrar_dato(habia1, anterior1);\n        std::cout << \";Actual:\";\n        mostrar(primera, segunda);\n        std::cout << '\\n';\n    }\n    std::cout << \"Final:\";\n    mostrar(primera, segunda);\n    return 0;\n}\n"
+        }
+      }
+    ]
   }
 }

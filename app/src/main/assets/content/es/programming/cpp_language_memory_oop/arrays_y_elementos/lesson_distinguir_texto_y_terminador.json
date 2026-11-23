@@ -59,7 +59,7 @@
           "id": "p3_u2l3_cero_y_digito",
           "language": "cpp",
           "question": "Predice el texto y las tres comparaciones. El array sí contiene un terminador antes de su último elemento.",
-          "code": "#include <iostream>\n\nint main() {\n    char datos[4]{'A', '0', '\\0', 'B'};\n    std::cout << datos << ':' << (datos[1] == '0') << ':'\n              << (datos[1] == '\\0') << ':' << (datos[2] == '\\0');\n    return 0;\n}\n",
+          "code": "#include <iostream>\n\nint main() {\n    char datos[4]{'A', '0', '\\0', 'B'};\n\n    std::cout << datos << ':' << (datos[1] == '0') << ':'\n              << (datos[1] == '\\0') << ':' << (datos[2] == '\\0');\n    return 0;\n}\n",
           "answers": [
             "A0:1:0:1"
           ],
@@ -143,7 +143,7 @@
           "id": "p3_u2l3_array_modificable",
           "language": "cpp",
           "question": "Predice las dos palabras separadas por dos puntos.",
-          "code": "#include <iostream>\n\nint main() {\n    char texto[]{\"sol\"};\n    texto[0] = 'S';\n    std::cout << texto << ':' << \"sol\";\n    return 0;\n}\n",
+          "code": "#include <iostream>\n\nint main() {\n    char texto[]{\"sol\"};\n\n    texto[0] = 'S';\n\n    std::cout << texto << ':' << \"sol\";\n\n    return 0;\n}\n",
           "answers": [
             "Sol:sol"
           ],
@@ -171,7 +171,7 @@
           "id": "p3_u2l3_literales_vecinos",
           "language": "cpp",
           "question": "Predice el texto y el tamaño completo del array en bytes.",
-          "code": "#include <iostream>\n\nint main() {\n    char texto[]{\"Ruta \" \"7\"};\n    std::cout << texto << ':' << sizeof texto;\n    return 0;\n}\n",
+          "code": "#include <iostream>\n\nint main() {\n    char texto[]{\"Ruta \" \"7\"};\n\n    std::cout << texto << ':' << sizeof texto;\n\n    return 0;\n}\n",
           "answers": [
             "Ruta 7:7"
           ],
@@ -259,7 +259,7 @@
           "id": "p3_u2l3_acortar",
           "language": "cpp",
           "question": "Se sustituye la l por NUL. Predice el texto entre corchetes, su longitud, los dos char posteriores que se consultan por índice y la capacidad.",
-          "code": "#include <cstring>\n#include <iostream>\n\nint main() {\n    char texto[6]{\"solar\"};\n    texto[2] = '\\0';\n\n    std::cout << '[' << texto << ']' << ':' << std::strlen(texto) << ':'\n              << texto[3] << texto[4] << ':' << sizeof texto;\n    return 0;\n}\n",
+          "code": "#include <cstring>\n#include <iostream>\n\nint main() {\n    char texto[6]{\"solar\"};\n\n    texto[2] = '\\0';\n\n    std::cout << '[' << texto << ']' << ':' << std::strlen(texto) << ':'\n              << texto[3] << texto[4] << ':' << sizeof texto;\n    return 0;\n}\n",
           "answers": [
             "[so]:2:ar:6"
           ],
@@ -400,7 +400,7 @@
           "id": "p3_u2l3_sin_terminacion",
           "language": "cpp",
           "question": "El programa no utiliza strlen ni envía datos como cadena C. Predice el contador final, la confirmación de terminación y los seis char mostrados uno a uno.",
-          "code": "#include <iostream>\n\nint main() {\n    char datos[6]{'s', 'o', 'l', 'A', 'X', 'Y'};\n    const int capacidad =\n        static_cast<int>(sizeof datos / sizeof datos[0]);\n    int longitud = 0;\n    while (longitud < capacidad && datos[longitud] != '\\0') {\n        ++longitud;\n    }\n\n    std::cout << longitud << ':' << (longitud < capacidad) << ':';\n    for (int i = 0; i < capacidad; ++i) {\n        std::cout << datos[i];\n    }\n    return 0;\n}\n",
+          "code": "#include <iostream>\n\nint main() {\n    char datos[6]{'s', 'o', 'l', 'A', 'X', 'Y'};\n    const int capacidad =\n        static_cast<int>(sizeof datos / sizeof datos[0]);\n    int longitud = 0;\n    while (longitud < capacidad && datos[longitud] != '\\0') {\n        ++longitud;\n    }\n\n    std::cout << longitud << ':' << (longitud < capacidad) << ':';\n    for (int i = 0; i < capacidad; ++i) {\n        std::cout << datos[i];\n    }\n\n    return 0;\n}\n",
           "answers": [
             "6:0:solAXY"
           ],
@@ -451,7 +451,7 @@
         {
           "type": "cpp_compiler",
           "language": "cpp",
-          "initialCode": "#include <iostream>\n\nint main() {\n    int modo = 0;\n    char nuevo = 'A';\n    if (!(std::cin >> modo >> nuevo)) {\n        return 1;\n    }\n    char datos[6]{'s', 'o', 'l', '\\0', 'X', 'Y'};\n    if (modo == 1) {\n        datos[3] = 'a';\n        datos[4] = 'r';\n        datos[5] = '\\0';\n    } else if (modo == 2) {\n        datos[3] = 'A';\n    } else if (modo == 3) {\n        datos[0] = '\\0';\n    } else if (modo == 4) {\n        datos[1] = '\\0';\n    } else if (modo != 0) {\n        return 1;\n    }\n    const int capacidad =\n        static_cast<int>(sizeof datos / sizeof datos[0]);\n    int longitud = 0;\n    while (longitud < capacidad && datos[longitud] != '\\0') {\n        ++longitud;\n    }\n    const bool terminada = longitud < capacidad;\n\n    bool aceptado = false;\n    if (terminada) {\n        // Comprueba el espacio antes de escribir.\n        // Anade nuevo y el terminador siguiente solo al aceptar.\n    }\n\n    int longitudActual = 0;\n    while (longitudActual < capacidad && datos[longitudActual] != '\\0') {\n        ++longitudActual;\n    }\n    std::cout << \"Aceptado=\" << aceptado << '\\n';\n    std::cout << \"Texto=\";\n    if (longitudActual < capacidad) {\n        std::cout << datos;\n    } else {\n        std::cout << \"(sin terminador)\";\n    }\n    std::cout << '\\n' << \"Datos=\";\n    for (int i = 0; i < capacidad; ++i) {\n        if (i != 0) {\n            std::cout << ' ';\n        }\n        if (datos[i] == '\\0') {\n            std::cout << \"NUL\";\n        } else {\n            std::cout << datos[i];\n        }\n    }\n    std::cout << '\\n' << \"Capacidad=\" << capacidad << '\\n';\n    return 0;\n}\n",
+          "initialCode": "#include <iostream>\n\nint main() {\n    int modo = 0;\n    char nuevo = 'A';\n\n    if (!(std::cin >> modo >> nuevo)) {\n        return 1;\n    }\n    char datos[6]{'s', 'o', 'l', '\\0', 'X', 'Y'};\n    if (modo == 1) {\n        datos[3] = 'a';\n        datos[4] = 'r';\n        datos[5] = '\\0';\n    } else if (modo == 2) {\n        datos[3] = 'A';\n    } else if (modo == 3) {\n        datos[0] = '\\0';\n    } else if (modo == 4) {\n        datos[1] = '\\0';\n    } else if (modo != 0) {\n        return 1;\n    }\n    const int capacidad =\n        static_cast<int>(sizeof datos / sizeof datos[0]);\n    int longitud = 0;\n    while (longitud < capacidad && datos[longitud] != '\\0') {\n        ++longitud;\n    }\n    const bool terminada = longitud < capacidad;\n\n    bool aceptado = false;\n    if (terminada) {\n        // Comprueba el espacio antes de escribir.\n        // Anade nuevo y el terminador siguiente solo al aceptar.\n        \n    }\n\n    int longitudActual = 0;\n    while (longitudActual < capacidad && datos[longitudActual] != '\\0') {\n        ++longitudActual;\n    }\n    std::cout << \"Aceptado=\" << aceptado << '\\n';\n    std::cout << \"Texto=\";\n    if (longitudActual < capacidad) {\n        std::cout << datos;\n    } else {\n        std::cout << \"(sin terminador)\";\n    }\n    std::cout << '\\n' << \"Datos=\";\n    for (int i = 0; i < capacidad; ++i) {\n        if (i != 0) {\n            std::cout << ' ';\n        }\n        if (datos[i] == '\\0') {\n            std::cout << \"NUL\";\n        } else {\n            std::cout << datos[i];\n        }\n    }\n    std::cout << '\\n' << \"Capacidad=\" << capacidad << '\\n';\n\n    return 0;\n}\n",
           "initialStandardInput": "0 Z\n",
           "outputCheck": {
             "inputComparison": "tokens",
@@ -585,7 +585,7 @@
         {
           "type": "code",
           "language": "cpp",
-          "code": "#include <iostream>\n\nint main() {\n    int modo = 0;\n    char nuevo = 'A';\n    if (!(std::cin >> modo >> nuevo)) {\n        return 1;\n    }\n    char datos[6]{'s', 'o', 'l', '\\0', 'X', 'Y'};\n    if (modo == 1) {\n        datos[3] = 'a';\n        datos[4] = 'r';\n        datos[5] = '\\0';\n    } else if (modo == 2) {\n        datos[3] = 'A';\n    } else if (modo == 3) {\n        datos[0] = '\\0';\n    } else if (modo == 4) {\n        datos[1] = '\\0';\n    } else if (modo != 0) {\n        return 1;\n    }\n    const int capacidad =\n        static_cast<int>(sizeof datos / sizeof datos[0]);\n    int longitud = 0;\n    while (longitud < capacidad && datos[longitud] != '\\0') {\n        ++longitud;\n    }\n    const bool terminada = longitud < capacidad;\n\n    bool aceptado = false;\n    if (terminada && longitud < capacidad - 1) {\n        datos[longitud] = nuevo;\n        datos[longitud + 1] = '\\0';\n        aceptado = true;\n    }\n\n    int longitudActual = 0;\n    while (longitudActual < capacidad && datos[longitudActual] != '\\0') {\n        ++longitudActual;\n    }\n    std::cout << \"Aceptado=\" << aceptado << '\\n';\n    std::cout << \"Texto=\";\n    if (longitudActual < capacidad) {\n        std::cout << datos;\n    } else {\n        std::cout << \"(sin terminador)\";\n    }\n    std::cout << '\\n' << \"Datos=\";\n    for (int i = 0; i < capacidad; ++i) {\n        if (i != 0) {\n            std::cout << ' ';\n        }\n        if (datos[i] == '\\0') {\n            std::cout << \"NUL\";\n        } else {\n            std::cout << datos[i];\n        }\n    }\n    std::cout << '\\n' << \"Capacidad=\" << capacidad << '\\n';\n    return 0;\n}\n"
+          "code": "#include <iostream>\n\nint main() {\n    int modo = 0;\n    char nuevo = 'A';\n\n    if (!(std::cin >> modo >> nuevo)) {\n        return 1;\n    }\n    char datos[6]{'s', 'o', 'l', '\\0', 'X', 'Y'};\n    if (modo == 1) {\n        datos[3] = 'a';\n        datos[4] = 'r';\n        datos[5] = '\\0';\n    } else if (modo == 2) {\n        datos[3] = 'A';\n    } else if (modo == 3) {\n        datos[0] = '\\0';\n    } else if (modo == 4) {\n        datos[1] = '\\0';\n    } else if (modo != 0) {\n        return 1;\n    }\n    const int capacidad =\n        static_cast<int>(sizeof datos / sizeof datos[0]);\n    int longitud = 0;\n    while (longitud < capacidad && datos[longitud] != '\\0') {\n        ++longitud;\n    }\n    const bool terminada = longitud < capacidad;\n\n    bool aceptado = false;\n    if (terminada && longitud < capacidad - 1) {\n        datos[longitud] = nuevo;\n        datos[longitud + 1] = '\\0';\n        aceptado = true;\n    }\n\n    int longitudActual = 0;\n    while (longitudActual < capacidad && datos[longitudActual] != '\\0') {\n        ++longitudActual;\n    }\n    std::cout << \"Aceptado=\" << aceptado << '\\n';\n    std::cout << \"Texto=\";\n    if (longitudActual < capacidad) {\n        std::cout << datos;\n    } else {\n        std::cout << \"(sin terminador)\";\n    }\n    std::cout << '\\n' << \"Datos=\";\n    for (int i = 0; i < capacidad; ++i) {\n        if (i != 0) {\n            std::cout << ' ';\n        }\n        if (datos[i] == '\\0') {\n            std::cout << \"NUL\";\n        } else {\n            std::cout << datos[i];\n        }\n    }\n    std::cout << '\\n' << \"Capacidad=\" << capacidad << '\\n';\n\n    return 0;\n}\n"
         },
         {
           "type": "paragraph",
@@ -1692,6 +1692,183 @@
       }
     },
     "additions": [],
-    "editorial": []
+    "editorial": [
+      {
+        "id": "block_0001_0003",
+        "beforeSha256": "989c84169bf159a328d7d6788c9fa2770647daa71a5701de51c828679042802b",
+        "afterSha256": "030bc093f92e57a534f5c86607ca0cf0f7cd1e9abac212a673e5c497faf02d7e"
+      },
+      {
+        "id": "block_0004_0002",
+        "beforeSha256": "35134190229b0f315707367505e8d0d7f65cc1c9a98d32490f003898fb655269",
+        "afterSha256": "b9f0d4fd2407c81909049b6f2c111679ab3f6aef969ca9d184d078d0be7f930e"
+      },
+      {
+        "id": "block_0005_0002",
+        "beforeSha256": "d19cf5bed49c7e18f2dc626eedfb3580603e20e487ce22dac57348696b8cf923",
+        "afterSha256": "11cd776c43fa22c7f5650454ba7656e3f2e09509e2868fde8f0dd63fb89b54d3"
+      },
+      {
+        "id": "block_0008_0002",
+        "beforeSha256": "3f99eb731efd889597f0b02741395152d6e8c871f8fef5c8adf5c22c3896a872",
+        "afterSha256": "22cfb36d9ffad717ddb7dd768b3672f9960b6bf7886a2ba9cbc9de51bc9ec68c"
+      },
+      {
+        "id": "block_0010_0004",
+        "beforeSha256": "1c6095cdfa018d4e92a4a0c414e00d5b0241b261ced6ed169dabae0aa1885061",
+        "afterSha256": "252734f8da51a5cb7a0f5d36bf9281271d6f93d2ac1c1b53b17c01237fddcb5d"
+      },
+      {
+        "id": "block_0011_0009",
+        "beforeSha256": "282a2914a0270025080d6038d810ebcea1e0d3cba56c6877db60eb5b6045415b",
+        "afterSha256": "8636775c1a9fd82991babafd682c7bc06f183c7e2d2a9747f53f5d720dedf545"
+      },
+      {
+        "id": "block_0014_0001",
+        "beforeSha256": "e98a28d763142eaa982532ddff0da6d390be8fb5dab1f8a14c24549d2d280861",
+        "afterSha256": "6c38c7c003595f32a6fd0f86903632f0ddff0a7620cacfa3ca05c463f4f5cb74"
+      }
+    ],
+    "sourceFormatRevisions": [
+      {
+        "id": "block_0001_0003",
+        "block": {
+          "type": "output_prediction",
+          "id": "p3_u2l3_cero_y_digito",
+          "language": "cpp",
+          "question": "Predice el texto y las tres comparaciones. El array sí contiene un terminador antes de su último elemento.",
+          "code": "#include <iostream>\n\nint main() {\n    char datos[4]{'A', '0', '\\0', 'B'};\n    std::cout << datos << ':' << (datos[1] == '0') << ':'\n              << (datos[1] == '\\0') << ':' << (datos[2] == '\\0');\n    return 0;\n}\n",
+          "answers": [
+            "A0:1:0:1"
+          ],
+          "outputComparison": "exact",
+          "explanation": "El texto es A0: el dígito se incluye y el primer NUL detiene esa salida. datos[1] coincide con '0', no con '\\0'. datos[2] sí coincide con '\\0'. La B permanece en el array después del terminador."
+        }
+      },
+      {
+        "id": "block_0004_0002",
+        "block": {
+          "type": "output_prediction",
+          "id": "p3_u2l3_array_modificable",
+          "language": "cpp",
+          "question": "Predice las dos palabras separadas por dos puntos.",
+          "code": "#include <iostream>\n\nint main() {\n    char texto[]{\"sol\"};\n    texto[0] = 'S';\n    std::cout << texto << ':' << \"sol\";\n    return 0;\n}\n",
+          "answers": [
+            "Sol:sol"
+          ],
+          "outputComparison": "exact",
+          "explanation": "texto[0] recibe la S mayúscula y la copia local pasa a contener Sol. El literal que se escribe después sigue proporcionando sol."
+        }
+      },
+      {
+        "id": "block_0005_0002",
+        "block": {
+          "type": "output_prediction",
+          "id": "p3_u2l3_literales_vecinos",
+          "language": "cpp",
+          "question": "Predice el texto y el tamaño completo del array en bytes.",
+          "code": "#include <iostream>\n\nint main() {\n    char texto[]{\"Ruta \" \"7\"};\n    std::cout << texto << ':' << sizeof texto;\n    return 0;\n}\n",
+          "answers": [
+            "Ruta 7:7"
+          ],
+          "outputComparison": "exact",
+          "explanation": "El texto contiene seis char: R, u, t, a, un espacio y 7. El literal unido aporta además un terminador final. El array deducido contiene siete elementos."
+        }
+      },
+      {
+        "id": "block_0008_0002",
+        "block": {
+          "type": "output_prediction",
+          "id": "p3_u2l3_acortar",
+          "language": "cpp",
+          "question": "Se sustituye la l por NUL. Predice el texto entre corchetes, su longitud, los dos char posteriores que se consultan por índice y la capacidad.",
+          "code": "#include <cstring>\n#include <iostream>\n\nint main() {\n    char texto[6]{\"solar\"};\n    texto[2] = '\\0';\n\n    std::cout << '[' << texto << ']' << ':' << std::strlen(texto) << ':'\n              << texto[3] << texto[4] << ':' << sizeof texto;\n    return 0;\n}\n",
+          "answers": [
+            "[so]:2:ar:6"
+          ],
+          "outputComparison": "exact",
+          "explanation": "La cadena C pasa a ser so y mide dos. Los índices 3 y 4 siguen conteniendo a y r. El array mantiene seis elementos. Consultarlos por índices válidos no los convierte en continuación de la cadena C acortada."
+        }
+      },
+      {
+        "id": "block_0010_0004",
+        "block": {
+          "type": "output_prediction",
+          "id": "p3_u2l3_sin_terminacion",
+          "language": "cpp",
+          "question": "El programa no utiliza strlen ni envía datos como cadena C. Predice el contador final, la confirmación de terminación y los seis char mostrados uno a uno.",
+          "code": "#include <iostream>\n\nint main() {\n    char datos[6]{'s', 'o', 'l', 'A', 'X', 'Y'};\n    const int capacidad =\n        static_cast<int>(sizeof datos / sizeof datos[0]);\n    int longitud = 0;\n    while (longitud < capacidad && datos[longitud] != '\\0') {\n        ++longitud;\n    }\n\n    std::cout << longitud << ':' << (longitud < capacidad) << ':';\n    for (int i = 0; i < capacidad; ++i) {\n        std::cout << datos[i];\n    }\n    return 0;\n}\n",
+          "answers": [
+            "6:0:solAXY"
+          ],
+          "outputComparison": "exact",
+          "explanation": "Se inspeccionan los índices 0 a 5 sin encontrar NUL. Con longitud igual a 6 falla la primera comparación antes de otro acceso. La confirmación es falsa. El for posterior consulta seis char por sus índices válidos."
+        }
+      },
+      {
+        "id": "block_0011_0009",
+        "block": {
+          "type": "cpp_compiler",
+          "language": "cpp",
+          "initialCode": "#include <iostream>\n\nint main() {\n    int modo = 0;\n    char nuevo = 'A';\n    if (!(std::cin >> modo >> nuevo)) {\n        return 1;\n    }\n    char datos[6]{'s', 'o', 'l', '\\0', 'X', 'Y'};\n    if (modo == 1) {\n        datos[3] = 'a';\n        datos[4] = 'r';\n        datos[5] = '\\0';\n    } else if (modo == 2) {\n        datos[3] = 'A';\n    } else if (modo == 3) {\n        datos[0] = '\\0';\n    } else if (modo == 4) {\n        datos[1] = '\\0';\n    } else if (modo != 0) {\n        return 1;\n    }\n    const int capacidad =\n        static_cast<int>(sizeof datos / sizeof datos[0]);\n    int longitud = 0;\n    while (longitud < capacidad && datos[longitud] != '\\0') {\n        ++longitud;\n    }\n    const bool terminada = longitud < capacidad;\n\n    bool aceptado = false;\n    if (terminada) {\n        // Comprueba el espacio antes de escribir.\n        // Anade nuevo y el terminador siguiente solo al aceptar.\n    }\n\n    int longitudActual = 0;\n    while (longitudActual < capacidad && datos[longitudActual] != '\\0') {\n        ++longitudActual;\n    }\n    std::cout << \"Aceptado=\" << aceptado << '\\n';\n    std::cout << \"Texto=\";\n    if (longitudActual < capacidad) {\n        std::cout << datos;\n    } else {\n        std::cout << \"(sin terminador)\";\n    }\n    std::cout << '\\n' << \"Datos=\";\n    for (int i = 0; i < capacidad; ++i) {\n        if (i != 0) {\n            std::cout << ' ';\n        }\n        if (datos[i] == '\\0') {\n            std::cout << \"NUL\";\n        } else {\n            std::cout << datos[i];\n        }\n    }\n    std::cout << '\\n' << \"Capacidad=\" << capacidad << '\\n';\n    return 0;\n}\n",
+          "initialStandardInput": "0 Z\n",
+          "outputCheck": {
+            "inputComparison": "tokens",
+            "cases": [
+              {
+                "standardInput": "0 Z\n",
+                "outputs": [
+                  "Aceptado=1\nTexto=solZ\nDatos=s o l Z NUL Y\nCapacidad=6\n"
+                ],
+                "explanation": "Comprobar terminación y espacio antes de escribir; añadir el dato y el nuevo terminador. Conservar el resto del array y rechazar sin cambios cuando no quepa o falte terminación."
+              },
+              {
+                "standardInput": "0 0\n",
+                "outputs": [
+                  "Aceptado=1\nTexto=sol0\nDatos=s o l 0 NUL Y\nCapacidad=6\n"
+                ],
+                "explanation": "Comprobar terminación y espacio antes de escribir; añadir el dato y el nuevo terminador. Conservar el resto del array y rechazar sin cambios cuando no quepa o falte terminación."
+              },
+              {
+                "standardInput": "1 Z\n",
+                "outputs": [
+                  "Aceptado=0\nTexto=solar\nDatos=s o l a r NUL\nCapacidad=6\n"
+                ],
+                "explanation": "Comprobar terminación y espacio antes de escribir; añadir el dato y el nuevo terminador. Conservar el resto del array y rechazar sin cambios cuando no quepa o falte terminación."
+              },
+              {
+                "standardInput": "2 B\n",
+                "outputs": [
+                  "Aceptado=0\nTexto=(sin terminador)\nDatos=s o l A X Y\nCapacidad=6\n"
+                ],
+                "explanation": "Comprobar terminación y espacio antes de escribir; añadir el dato y el nuevo terminador. Conservar el resto del array y rechazar sin cambios cuando no quepa o falte terminación."
+              },
+              {
+                "standardInput": "3 Q\n",
+                "outputs": [
+                  "Aceptado=1\nTexto=Q\nDatos=Q NUL l NUL X Y\nCapacidad=6\n"
+                ],
+                "explanation": "Comprobar terminación y espacio antes de escribir; añadir el dato y el nuevo terminador. Conservar el resto del array y rechazar sin cambios cuando no quepa o falte terminación."
+              },
+              {
+                "standardInput": "4 K\n",
+                "outputs": [
+                  "Aceptado=1\nTexto=sK\nDatos=s K NUL NUL X Y\nCapacidad=6\n"
+                ],
+                "explanation": "Comprobar terminación y espacio antes de escribir; añadir el dato y el nuevo terminador. Conservar el resto del array y rechazar sin cambios cuando no quepa o falte terminación."
+              }
+            ]
+          }
+        }
+      },
+      {
+        "id": "block_0014_0001",
+        "block": {
+          "type": "code",
+          "language": "cpp",
+          "code": "#include <iostream>\n\nint main() {\n    int modo = 0;\n    char nuevo = 'A';\n    if (!(std::cin >> modo >> nuevo)) {\n        return 1;\n    }\n    char datos[6]{'s', 'o', 'l', '\\0', 'X', 'Y'};\n    if (modo == 1) {\n        datos[3] = 'a';\n        datos[4] = 'r';\n        datos[5] = '\\0';\n    } else if (modo == 2) {\n        datos[3] = 'A';\n    } else if (modo == 3) {\n        datos[0] = '\\0';\n    } else if (modo == 4) {\n        datos[1] = '\\0';\n    } else if (modo != 0) {\n        return 1;\n    }\n    const int capacidad =\n        static_cast<int>(sizeof datos / sizeof datos[0]);\n    int longitud = 0;\n    while (longitud < capacidad && datos[longitud] != '\\0') {\n        ++longitud;\n    }\n    const bool terminada = longitud < capacidad;\n\n    bool aceptado = false;\n    if (terminada && longitud < capacidad - 1) {\n        datos[longitud] = nuevo;\n        datos[longitud + 1] = '\\0';\n        aceptado = true;\n    }\n\n    int longitudActual = 0;\n    while (longitudActual < capacidad && datos[longitudActual] != '\\0') {\n        ++longitudActual;\n    }\n    std::cout << \"Aceptado=\" << aceptado << '\\n';\n    std::cout << \"Texto=\";\n    if (longitudActual < capacidad) {\n        std::cout << datos;\n    } else {\n        std::cout << \"(sin terminador)\";\n    }\n    std::cout << '\\n' << \"Datos=\";\n    for (int i = 0; i < capacidad; ++i) {\n        if (i != 0) {\n            std::cout << ' ';\n        }\n        if (datos[i] == '\\0') {\n            std::cout << \"NUL\";\n        } else {\n            std::cout << datos[i];\n        }\n    }\n    std::cout << '\\n' << \"Capacidad=\" << capacidad << '\\n';\n    return 0;\n}\n"
+        }
+      }
+    ]
   }
 }

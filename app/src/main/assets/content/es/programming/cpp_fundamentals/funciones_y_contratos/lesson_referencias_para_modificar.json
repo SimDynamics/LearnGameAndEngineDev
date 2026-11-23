@@ -231,7 +231,7 @@
         },
         {
           "type": "cpp_compiler",
-          "initialCode": "#include <iostream>\n#include <vector>\n\nvoid quitar_negativos(std::vector<int>& datos) {\n    for (int& valor : datos) {\n        if (valor < 0) {\n            valor = 0;\n        }\n    }\n}\n\nint main() {\n    std::vector<int> datos;\n    int cantidad_entrada{0};\n\n    std::cin >> cantidad_entrada;\n\n    for (int entrada{0}; entrada < cantidad_entrada; ++entrada) {\n        int dato{0};\n        std::cin >> dato;\n        datos.push_back(dato);\n    }\n\n    quitar_negativos(datos);\n    std::cout << \"Elementos: \" << datos.size() << \"\\n\";\n\n    for (int valor : datos) {\n        std::cout << valor << \"\\n\";\n    }\n\n    return 0;\n}\n",
+          "initialCode": "#include <iostream>\n#include <vector>\n\nvoid quitar_negativos(std::vector<int>& datos) {\n    for (int& valor : datos) {\n        if (valor < 0) {\n            valor = 0;\n        }\n    }\n}\n\nint main() {\n    std::vector<int> datos;\n    int cantidad_entrada{0};\n\n    std::cin >> cantidad_entrada;\n\n    for (int entrada{0}; entrada < cantidad_entrada; ++entrada) {\n        int dato{0};\n\n        std::cin >> dato;\n        datos.push_back(dato);\n    }\n\n    quitar_negativos(datos);\n    std::cout << \"Elementos: \" << datos.size() << \"\\n\";\n\n    for (int valor : datos) {\n        std::cout << valor << \"\\n\";\n    }\n\n    return 0;\n}\n",
           "outputCheck": {
             "inputComparison": "tokens",
             "cases": [
@@ -311,7 +311,7 @@
         {
           "type": "code",
           "language": "cpp",
-          "code": "#include <iostream>\n\nint main() {\n    int zona = 4;\n    int otra = -2;\n    int& vista = zona;\n    vista = otra;\n    otra = 6;\n\n    std::cout << zona << ' ' << vista << ' ' << otra;\n\n    return 0;\n}\n"
+          "code": "#include <iostream>\n\nint main() {\n    int zona = 4;\n    int otra = -2;\n    int& vista = zona;\n\n    vista = otra;\n    otra = 6;\n\n    std::cout << zona << ' ' << vista << ' ' << otra;\n\n    return 0;\n}\n"
         },
         {
           "type": "paragraph",
@@ -347,7 +347,7 @@
         },
         {
           "type": "cpp_compiler",
-          "initialCode": "#include <iostream>\n\nint main() {\n    // Construye intercambiar fuera de main y conecta tus pruebas.\n\n    return 0;\n}\n",
+          "initialCode": "#include <iostream>\n\nint main() {\n    // Construye intercambiar fuera de main y conecta tus pruebas.\n    \n    return 0;\n}\n",
           "outputCheck": {
             "inputComparison": "tokens",
             "cases": [
@@ -584,7 +584,7 @@
           "id": "cpp_fundamentals__funciones_y_contratos__referencias_para_modificar__asignacion_no_reenlaza_la_referencia",
           "question": "Predice la línea final. Sigue el objeto que vista designa desde su inicialización, incluso cuando sus valores cambian.",
           "language": "cpp",
-          "code": "#include <iostream>\n\nvoid intercambiar(int& primero, int& segundo) {\n    const int anterior = primero;\n    primero = segundo;\n    segundo = anterior;\n}\n\nint main() {\n    int primero = 6;\n    int segundo = -4;\n    int& vista = primero;\n    vista = segundo;\n    segundo = 10;\n    intercambiar(vista, segundo);\n    std::cout << primero << ' ' << vista << ' ' << segundo << '\\n';\n\n    return 0;\n}\n",
+          "code": "#include <iostream>\n\nvoid intercambiar(int& primero, int& segundo) {\n    const int anterior = primero;\n    primero = segundo;\n    segundo = anterior;\n}\n\nint main() {\n    int primero = 6;\n    int segundo = -4;\n    int& vista = primero;\n\n    vista = segundo;\n    segundo = 10;\n    intercambiar(vista, segundo);\n    std::cout << primero << ' ' << vista << ' ' << segundo << '\\n';\n\n    return 0;\n}\n",
           "answers": [
             "10 10 -4"
           ],
@@ -729,7 +729,7 @@
         },
         {
           "type": "cpp_compiler",
-          "initialCode": "#include <iostream>\n\nint main() {\n    // Construye intercambiar fuera de main y conecta tus pruebas.\n\n    return 0;\n}\n",
+          "initialCode": "#include <iostream>\n\nint main() {\n    // Construye intercambiar fuera de main y conecta tus pruebas.\n    \n    return 0;\n}\n",
           "initialStandardInput": "7 2",
           "outputCheck": {
             "inputComparison": "tokens",
@@ -3050,6 +3050,31 @@
         "id": "block_0015_0002",
         "beforeSha256": "44e3e6395917635736a46e1eb6e2b18a5184cb5d828be364b9e8536e7db9f32c",
         "afterSha256": "47a57b47cf219208c8726c3c8cb04d07da2b862560a2776890d6fa01276ff2b3"
+      },
+      {
+        "id": "block_0005_0007",
+        "beforeSha256": "ad21d63b171bbc6501b25c58e478c29eb8850e7def970abdd51e2e14c95b4caa",
+        "afterSha256": "ed7b4f75580da4dcca2f064b2ab52198ca94c9cbf9e5d85ffbcdff318bcf30a1"
+      },
+      {
+        "id": "block_0006_0003",
+        "beforeSha256": "492668e4c80ceecf1d7dc57b2e80d758294ecd3a9e78dfaacba7f4dcd4482833",
+        "afterSha256": "b075ca59c364d75ec5a0a29cad681046d5ff1ea5d34a0b100c938b349ab47163"
+      },
+      {
+        "id": "block_0007_0004",
+        "beforeSha256": "b3fab8257595b1a7a4c138bcbc490c223f90ebca44a0c6f7e20861f6a2404d73",
+        "afterSha256": "cc5c4387e4e5c9d37ac477c1116a4ebf857a027b547a26589e0feb2eea0be63a"
+      },
+      {
+        "id": "block_0011_0005",
+        "beforeSha256": "d60400040c0b025162c13c6124d9b9d19dc54fb52c32ee483d25d080d1882d0e",
+        "afterSha256": "32cd5407859db52a0476e62e307726f3fff56640f13aa613f689e9f315d8c9fb"
+      },
+      {
+        "id": "block_0014_0007",
+        "beforeSha256": "6bfbf74060f4de41936a26ae5b63957605a9c60a2e4688befcdd0090ea1ce197",
+        "afterSha256": "0a47609be19b15c7534e1e304fc6cace1d69e9f7f4feaeaaa4321c39e0906df9"
       }
     ],
     "sourceFormatRevisions": [

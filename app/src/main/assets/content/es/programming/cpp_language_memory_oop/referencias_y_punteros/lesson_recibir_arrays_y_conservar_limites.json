@@ -22,7 +22,7 @@
           "id": "p3_u4l10_cuatro_no_impone_cuatro",
           "language": "cpp",
           "question": "¿Qué muestra el programa? primero sólo utiliza el elemento de posición cero.",
-          "code": "#include <iostream>\n\nint primero(int datos[4]) {\n    return datos[0];\n}\n\nint main() {\n    int corto[2]{3, 7};\n    int largo[5]{8, 1, 2, 3, 4};\n    int dato = 6;\n    std::cout << primero(corto) << ':' << primero(largo) << ':' << primero(&dato);\n    return 0;\n}\n",
+          "code": "#include <iostream>\n\nint primero(int datos[4]) {\n    return datos[0];\n}\n\nint main() {\n    int corto[2]{3, 7};\n    int largo[5]{8, 1, 2, 3, 4};\n    int dato = 6;\n\n    std::cout << primero(corto) << ':' << primero(largo) << ':' << primero(&dato);\n\n    return 0;\n}\n",
           "answers": [
             "3:8:6"
           ],
@@ -50,7 +50,7 @@
           "id": "p3_u4l10_parametro_local_y_array_original",
           "language": "cpp",
           "question": "¿Qué muestra datos==nullptr dentro de cambiar, seguido de original[0] y actual==&original[0]?",
-          "code": "#include <iostream>\n\nvoid cambiar(int datos[4]) {\n    datos[0] = 7;\n    datos = nullptr;\n    std::cout << (datos == nullptr) << ':';\n}\n\nint main() {\n    int original[4]{2, 5, 8, 1};\n    int* actual = original;\n    cambiar(actual);\n    std::cout << original[0] << ':' << (actual == &original[0]);\n    return 0;\n}\n",
+          "code": "#include <iostream>\n\nvoid cambiar(int datos[4]) {\n    datos[0] = 7;\n    datos = nullptr;\n\n    std::cout << (datos == nullptr) << ':';\n}\n\nint main() {\n    int original[4]{2, 5, 8, 1};\n    int* actual = original;\n    cambiar(actual);\n    std::cout << original[0] << ':' << (actual == &original[0]);\n\n    return 0;\n}\n",
           "answers": [
             "1:7:1"
           ],
@@ -86,7 +86,7 @@
           "id": "p3_u4l10_prototipos_ajustados",
           "language": "cpp",
           "question": "¿Qué muestra el programa?",
-          "code": "#include <iostream>\n\nint leer(int datos[]);\nint leer(int datos[4]);\n\nint leer(int* datos) {\n    return datos[0];\n}\n\nint main() {\n    int datos[2]{5, 9};\n    std::cout << leer(datos);\n    return 0;\n}\n",
+          "code": "#include <iostream>\n\nint leer(int datos[]);\nint leer(int datos[4]);\n\nint leer(int* datos) {\n    return datos[0];\n}\n\nint main() {\n    int datos[2]{5, 9};\n\n    std::cout << leer(datos);\n\n    return 0;\n}\n",
           "answers": [
             "5"
           ],
@@ -119,7 +119,7 @@
           "id": "p3_u4l10_sizeof_fuera_y_dentro",
           "language": "cpp",
           "question": "¿Qué muestra la cantidad calculada en main y la comparación que devuelve la función?",
-          "code": "#include <iostream>\n\nbool esTamanoDePuntero(int datos[4]) {\n    return sizeof(datos) == sizeof(int*);\n}\n\nint main() {\n    int datos[4]{2, 5, 8, 1};\n    std::cout << sizeof(datos) / sizeof(datos[0]) << ':' << esTamanoDePuntero(datos);\n    return 0;\n}\n",
+          "code": "#include <iostream>\n\nbool esTamanoDePuntero(int datos[4]) {\n    return sizeof(datos) == sizeof(int*);\n}\n\nint main() {\n    int datos[4]{2, 5, 8, 1};\n\n    std::cout << sizeof(datos) / sizeof(datos[0]) << ':' << esTamanoDePuntero(datos);\n\n    return 0;\n}\n",
           "answers": [
             "4:1"
           ],
@@ -147,7 +147,7 @@
           "id": "p3_u4l10_parametro_ajustado_de_lectura",
           "language": "cpp",
           "question": "¿Qué muestra primero(modificables):primero(constantes)?",
-          "code": "#include <iostream>\n\nint primero(const int datos[4]) {\n    return datos[0];\n}\n\nint main() {\n    int modificables[2]{3, 7};\n    const int constantes[3]{8, 1, 2};\n    std::cout << primero(modificables) << ':' << primero(constantes);\n    return 0;\n}\n",
+          "code": "#include <iostream>\n\nint primero(const int datos[4]) {\n    return datos[0];\n}\n\nint main() {\n    int modificables[2]{3, 7};\n    const int constantes[3]{8, 1, 2};\n\n    std::cout << primero(modificables) << ':' << primero(constantes);\n\n    return 0;\n}\n",
           "answers": [
             "3:8"
           ],
@@ -184,7 +184,7 @@
           "id": "p3_u4l10_array_prefijo_y_tramo",
           "language": "cpp",
           "question": "¿Qué muestra sumar sobre el array completo, sus dos primeros enteros y dos enteros desde datos+1?",
-          "code": "#include <iostream>\n\nint sumar(const int datos[], int cantidad) {\n    if (cantidad < 0 || cantidad > 4) {\n        return -1;\n    }\n    if (cantidad == 0) {\n        return 0;\n    }\n    if (datos == nullptr) {\n        return -2;\n    }\n    int total = 0;\n    for (int i = 0; i < cantidad; ++i) {\n        if (datos[i] < 0 || datos[i] > 9) {\n            return -1;\n        }\n        total += datos[i];\n    }\n    return total;\n}\n\nint main() {\n    int datos[4]{2, 5, 8, 1};\n    std::cout << sumar(datos, 4) << ':' << sumar(datos, 2) << ':' << sumar(datos + 1, 2);\n    return 0;\n}\n",
+          "code": "#include <iostream>\n\nint sumar(const int datos[], int cantidad) {\n    if (cantidad < 0 || cantidad > 4) {\n        return -1;\n    }\n    if (cantidad == 0) {\n        return 0;\n    }\n    if (datos == nullptr) {\n        return -2;\n    }\n    int total = 0;\n    for (int i = 0; i < cantidad; ++i) {\n        if (datos[i] < 0 || datos[i] > 9) {\n            return -1;\n        }\n        total += datos[i];\n    }\n\n    return total;\n}\n\nint main() {\n    int datos[4]{2, 5, 8, 1};\n\n    std::cout << sumar(datos, 4) << ':' << sumar(datos, 2) << ':' << sumar(datos + 1, 2);\n\n    return 0;\n}\n",
           "answers": [
             "16:7:13"
           ],
@@ -212,7 +212,7 @@
           "id": "p3_u4l10_cero_no_requiere_elemento",
           "language": "cpp",
           "question": "¿Qué muestran las cuatro llamadas?",
-          "code": "#include <iostream>\n\nint sumar(const int datos[], int cantidad) {\n    if (cantidad < 0 || cantidad > 4) {\n        return -1;\n    }\n    if (cantidad == 0) {\n        return 0;\n    }\n    if (datos == nullptr) {\n        return -2;\n    }\n    int total = 0;\n    for (int i = 0; i < cantidad; ++i) {\n        if (datos[i] < 0 || datos[i] > 9) {\n            return -1;\n        }\n        total += datos[i];\n    }\n    return total;\n}\n\nint main() {\n    int datos[4]{2, 5, 8, 1};\n    std::cout << sumar(datos + 4, 0) << ':' << sumar(nullptr, 0) << ':'\n              << sumar(nullptr, 1) << ':' << sumar(nullptr, -1);\n    return 0;\n}\n",
+          "code": "#include <iostream>\n\nint sumar(const int datos[], int cantidad) {\n    if (cantidad < 0 || cantidad > 4) {\n        return -1;\n    }\n    if (cantidad == 0) {\n        return 0;\n    }\n    if (datos == nullptr) {\n        return -2;\n    }\n    int total = 0;\n    for (int i = 0; i < cantidad; ++i) {\n        if (datos[i] < 0 || datos[i] > 9) {\n            return -1;\n        }\n        total += datos[i];\n    }\n\n    return total;\n}\n\nint main() {\n    int datos[4]{2, 5, 8, 1};\n\n    std::cout << sumar(datos + 4, 0) << ':' << sumar(nullptr, 0) << ':'\n              << sumar(nullptr, 1) << ':' << sumar(nullptr, -1);\n    return 0;\n}\n",
           "answers": [
             "0:0:-2:-1"
           ],
@@ -246,12 +246,12 @@
         {
           "type": "code",
           "language": "cpp",
-          "code": "int sumar(const int datos[], int cantidad) {\n    if (cantidad < 0 || cantidad > 4) {\n        return -1;\n    }\n    if (cantidad == 0) {\n        return 0;\n    }\n    if (datos == nullptr) {\n        return -2;\n    }\n    int total = 0;\n    for (int i = 0; i < cantidad; ++i) {\n        if (datos[i] < 0 || datos[i] > 9) {\n            return -1;\n        }\n        total += datos[i];\n    }\n    return total;\n}\n\nint main() {\n    int corto[2]{3, 7};\n    return sumar(corto, 4);\n}\n"
+          "code": "int sumar(const int datos[], int cantidad) {\n    if (cantidad < 0 || cantidad > 4) {\n        return -1;\n    }\n    if (cantidad == 0) {\n        return 0;\n    }\n    if (datos == nullptr) {\n        return -2;\n    }\n    int total = 0;\n    for (int i = 0; i < cantidad; ++i) {\n        if (datos[i] < 0 || datos[i] > 9) {\n            return -1;\n        }\n        total += datos[i];\n    }\n\n    return total;\n}\n\nint main() {\n    int corto[2]{3, 7};\n    return sumar(corto, 4);\n}\n"
         },
         {
           "type": "code",
           "language": "cpp",
-          "code": "int sumar(const int datos[], int cantidad) {\n    if (cantidad < 0 || cantidad > 4) {\n        return -1;\n    }\n    if (cantidad == 0) {\n        return 0;\n    }\n    if (datos == nullptr) {\n        return -2;\n    }\n    int total = 0;\n    for (int i = 0; i < cantidad; ++i) {\n        if (datos[i] < 0 || datos[i] > 9) {\n            return -1;\n        }\n        total += datos[i];\n    }\n    return total;\n}\n\nint main() {\n    int datos[4]{2, 5, 8, 1};\n    return sumar(datos + 3, 2);\n}\n"
+          "code": "int sumar(const int datos[], int cantidad) {\n    if (cantidad < 0 || cantidad > 4) {\n        return -1;\n    }\n    if (cantidad == 0) {\n        return 0;\n    }\n    if (datos == nullptr) {\n        return -2;\n    }\n    int total = 0;\n    for (int i = 0; i < cantidad; ++i) {\n        if (datos[i] < 0 || datos[i] > 9) {\n            return -1;\n        }\n        total += datos[i];\n    }\n\n    return total;\n}\n\nint main() {\n    int datos[4]{2, 5, 8, 1};\n    return sumar(datos + 3, 2);\n}\n"
         },
         {
           "type": "paragraph",
@@ -415,7 +415,7 @@
           "id": "p3_u4l10_referencia_al_array_completo",
           "language": "cpp",
           "question": "¿Qué muestra cantidad:datos[3] después de marcar?",
-          "code": "#include <iostream>\n\nint marcar(int (&datos)[4]) {\n    datos[3] = 9;\n    return static_cast<int>(sizeof(datos) / sizeof(datos[0]));\n}\n\nint main() {\n    int datos[4]{2, 5, 8, 1};\n    const int cantidad = marcar(datos);\n    std::cout << cantidad << ':' << datos[3];\n    return 0;\n}\n",
+          "code": "#include <iostream>\n\nint marcar(int (&datos)[4]) {\n    datos[3] = 9;\n    return static_cast<int>(sizeof(datos) / sizeof(datos[0]));\n}\n\nint main() {\n    int datos[4]{2, 5, 8, 1};\n    const int cantidad = marcar(datos);\n\n    std::cout << cantidad << ':' << datos[3];\n\n    return 0;\n}\n",
           "answers": [
             "4:9"
           ],
@@ -451,7 +451,7 @@
           "id": "p3_u4l10_referencia_constante_al_array",
           "language": "cpp",
           "question": "¿Qué muestra el primer elemento de cada argumento?",
-          "code": "#include <iostream>\n\nint primero(const int (&datos)[4]) {\n    return datos[0];\n}\n\nint main() {\n    int modificables[4]{3, 7, 2, 1};\n    const int constantes[4]{8, 1, 2, 3};\n    std::cout << primero(modificables) << ':' << primero(constantes);\n    return 0;\n}\n",
+          "code": "#include <iostream>\n\nint primero(const int (&datos)[4]) {\n    return datos[0];\n}\n\nint main() {\n    int modificables[4]{3, 7, 2, 1};\n    const int constantes[4]{8, 1, 2, 3};\n\n    std::cout << primero(modificables) << ':' << primero(constantes);\n\n    return 0;\n}\n",
           "answers": [
             "3:8"
           ],
@@ -494,7 +494,7 @@
           "id": "p3_u4l10_contenedor_por_valor_y_referencia",
           "language": "cpp",
           "question": "¿Qué muestra copia:datos[0]:cantidad:datos[0] en los momentos indicados?",
-          "code": "#include <array>\n#include <iostream>\n\nint cambiarCopia(std::array<int, 4> datos) {\n    datos[0] = 7;\n    return datos[0];\n}\n\nint cambiarOriginal(std::array<int, 4>& datos) {\n    datos[0] = 9;\n    return static_cast<int>(datos.size());\n}\n\nint main() {\n    std::array<int, 4> datos{2, 5, 8, 1};\n    const int copia = cambiarCopia(datos);\n    std::cout << copia << ':' << datos[0] << ':';\n    const int cantidad = cambiarOriginal(datos);\n    std::cout << cantidad << ':' << datos[0];\n    return 0;\n}\n",
+          "code": "#include <array>\n#include <iostream>\n\nint cambiarCopia(std::array<int, 4> datos) {\n    datos[0] = 7;\n    return datos[0];\n}\n\nint cambiarOriginal(std::array<int, 4>& datos) {\n    datos[0] = 9;\n    return static_cast<int>(datos.size());\n}\n\nint main() {\n    std::array<int, 4> datos{2, 5, 8, 1};\n    const int copia = cambiarCopia(datos);\n\n    std::cout << copia << ':' << datos[0] << ':';\n    const int cantidad = cambiarOriginal(datos);\n    std::cout << cantidad << ':' << datos[0];\n\n    return 0;\n}\n",
           "answers": [
             "7:2:4:9"
           ],
@@ -522,7 +522,7 @@
           "id": "p3_u4l10_lectura_del_contenedor",
           "language": "cpp",
           "question": "¿Qué muestra sumar(datos):datos.size()?",
-          "code": "#include <array>\n#include <iostream>\n\nint sumar(const std::array<int, 4>& datos) {\n    int total = 0;\n    for (int valor : datos) {\n        total += valor;\n    }\n    return total;\n}\n\nint main() {\n    const std::array<int, 4> datos{2, 5, 8, 1};\n    std::cout << sumar(datos) << ':' << datos.size();\n    return 0;\n}\n",
+          "code": "#include <array>\n#include <iostream>\n\nint sumar(const std::array<int, 4>& datos) {\n    int total = 0;\n    for (int valor : datos) {\n        total += valor;\n    }\n\n    return total;\n}\n\nint main() {\n    const std::array<int, 4> datos{2, 5, 8, 1};\n\n    std::cout << sumar(datos) << ':' << datos.size();\n\n    return 0;\n}\n",
           "answers": [
             "16:4"
           ],
@@ -557,7 +557,7 @@
           "type": "inline_fill_code",
           "id": "p3_u4l10_referencias_con_extension",
           "question": "Completa un símbolo en cada hueco para recibir por referencia los dos objetos originales. Conserva los paréntesis del parámetro nativo y no cambies el resto del programa.",
-          "template": "#include <array>\n#include <iostream>\n\nint primeroNativo(const int ([]datos)[4]) {\n    return datos[0];\n}\n\nint primeroContenedor(const std::array<int, 4>[] datos) {\n    return datos[0];\n}\n\nint main() {\n    int nativo[4]{2, 5, 8, 1};\n    const std::array<int, 4> contenedor{9, 8, 7, 6};\n    std::cout << primeroNativo(nativo) << ':' << primeroContenedor(contenedor);\n    return 0;\n}\n",
+          "template": "#include <array>\n#include <iostream>\n\nint primeroNativo(const int ([]datos)[4]) {\n    return datos[0];\n}\n\nint primeroContenedor(const std::array<int, 4>[] datos) {\n    return datos[0];\n}\n\nint main() {\n    int nativo[4]{2, 5, 8, 1};\n    const std::array<int, 4> contenedor{9, 8, 7, 6};\n\n    std::cout << primeroNativo(nativo) << ':' << primeroContenedor(contenedor);\n\n    return 0;\n}\n",
           "answers": [
             "&",
             "&"
@@ -612,7 +612,7 @@
         {
           "type": "cpp_compiler",
           "language": "cpp",
-          "initialCode": "#include <array>\n#include <iostream>\n\nint marcar(std::array<int, 4> datos, int valor) {\n    if (valor < 0 || valor > 9) {\n        return -1;\n    }\n    datos[3] = valor;\n    return datos[3];\n}\n\nint main() {\n    std::array<int, 4> datos{2, 5, 8, 1};\n    const int primera = marcar(datos, 0);\n    std::cout << primera << ':' << datos[3] << ':';\n    const int segunda = marcar(datos, 9);\n    std::cout << segunda << ':' << datos[3] << ':';\n    const int rechazo = marcar(datos, 10);\n    std::cout << rechazo << ':' << datos[3];\n    return 0;\n}\n",
+          "initialCode": "#include <array>\n#include <iostream>\n\nint marcar(std::array<int, 4> datos, int valor) {\n    if (valor < 0 || valor > 9) {\n        return -1;\n    }\n    datos[3] = valor;\n    return datos[3];\n}\n\nint main() {\n    std::array<int, 4> datos{2, 5, 8, 1};\n    const int primera = marcar(datos, 0);\n\n    std::cout << primera << ':' << datos[3] << ':';\n    const int segunda = marcar(datos, 9);\n    std::cout << segunda << ':' << datos[3] << ':';\n    const int rechazo = marcar(datos, 10);\n    std::cout << rechazo << ':' << datos[3];\n\n    return 0;\n}\n",
           "initialStandardInput": "",
           "outputCheck": {
             "inputComparison": "tokens",
@@ -638,7 +638,7 @@
         {
           "type": "code",
           "language": "cpp",
-          "code": "#include <array>\n#include <iostream>\n\nint marcar(std::array<int, 4>& datos, int valor) {\n    if (valor < 0 || valor > 9) {\n        return -1;\n    }\n    datos[3] = valor;\n    return datos[3];\n}\n\nint main() {\n    std::array<int, 4> datos{2, 5, 8, 1};\n    const int primera = marcar(datos, 0);\n    std::cout << primera << ':' << datos[3] << ':';\n    const int segunda = marcar(datos, 9);\n    std::cout << segunda << ':' << datos[3] << ':';\n    const int rechazo = marcar(datos, 10);\n    std::cout << rechazo << ':' << datos[3];\n    return 0;\n}\n"
+          "code": "#include <array>\n#include <iostream>\n\nint marcar(std::array<int, 4>& datos, int valor) {\n    if (valor < 0 || valor > 9) {\n        return -1;\n    }\n    datos[3] = valor;\n    return datos[3];\n}\n\nint main() {\n    std::array<int, 4> datos{2, 5, 8, 1};\n    const int primera = marcar(datos, 0);\n\n    std::cout << primera << ':' << datos[3] << ':';\n    const int segunda = marcar(datos, 9);\n    std::cout << segunda << ':' << datos[3] << ':';\n    const int rechazo = marcar(datos, 10);\n    std::cout << rechazo << ':' << datos[3];\n\n    return 0;\n}\n"
         },
         {
           "type": "paragraph",
@@ -733,7 +733,7 @@
         {
           "type": "cpp_compiler",
           "language": "cpp",
-          "initialCode": "#include <array>\n#include <iostream>\n#include <string>\n\nint llenar(int* primero, int cantidad, int valor) {\n    // Construye los rechazos, el caso vacio y las escrituras aceptadas.\n    if (cantidad == 0) {\n        return 0;\n    }\n    if (primero == nullptr) {\n        return -2;\n    }\n    if (valor < 0 || valor > 9) {\n        return -1;\n    }\n    return -1;\n}\n\nint aplicar(std::array<int, 4>& datos, int inicio, int cantidad, int valor) {\n    if (inicio < 0 || inicio > 4) {\n        return -1;\n    }\n    if (cantidad < 0 || cantidad > 4 - inicio) {\n        return -1;\n    }\n    return llenar(datos.data() + inicio, cantidad, valor);\n}\n\nint main() {\n    std::array<int, 4> datos{2, 5, 8, 1};\n    int ordenes = 0;\n    if (!(std::cin >> ordenes) || ordenes < 1 || ordenes > 12) {\n        return 1;\n    }\n    for (int orden = 0; orden < ordenes; ++orden) {\n        int operacion = 0;\n        int inicio = 0;\n        int cantidad = 0;\n        int valor = 0;\n        if (!(std::cin >> operacion >> inicio >> cantidad >> valor)) {\n            return 1;\n        }\n        int procesados = -3;\n        if (operacion == 1) {\n            procesados = aplicar(datos, inicio, cantidad, valor);\n        } else if (operacion == 2) {\n            procesados = llenar(nullptr, cantidad, valor);\n        }\n        std::string estado = \"Cambio\";\n        if (procesados == 0) {\n            estado = \"Vacio\";\n        } else if (procesados == -1) {\n            estado = \"Rechazo\";\n        } else if (procesados == -2) {\n            estado = \"Sin objeto\";\n        } else if (procesados == -3) {\n            estado = \"Orden\";\n        }\n        std::cout << \"Estado:\" << estado << \";Procesados:\" << procesados\n                  << \";Datos:\" << datos[0] << ',' << datos[1] << ',' << datos[2] << ',' << datos[3] << '\\n';\n    }\n    return 0;\n}\n",
+          "initialCode": "#include <array>\n#include <iostream>\n#include <string>\n\nint llenar(int* primero, int cantidad, int valor) {\n    // Construye los rechazos, el caso vacio y las escrituras aceptadas.\n    if (cantidad == 0) {\n        return 0;\n    }\n    if (primero == nullptr) {\n        return -2;\n    }\n    if (valor < 0 || valor > 9) {\n        return -1;\n    }\n\n    return -1;\n}\n\nint aplicar(std::array<int, 4>& datos, int inicio, int cantidad, int valor) {\n    if (inicio < 0 || inicio > 4) {\n        return -1;\n    }\n    if (cantidad < 0 || cantidad > 4 - inicio) {\n        return -1;\n    }\n\n    return llenar(datos.data() + inicio, cantidad, valor);\n}\n\nint main() {\n    std::array<int, 4> datos{2, 5, 8, 1};\n    int ordenes = 0;\n\n    if (!(std::cin >> ordenes) || ordenes < 1 || ordenes > 12) {\n        return 1;\n    }\n    for (int orden = 0; orden < ordenes; ++orden) {\n        int operacion = 0;\n        int inicio = 0;\n        int cantidad = 0;\n        int valor = 0;\n\n        if (!(std::cin >> operacion >> inicio >> cantidad >> valor)) {\n            return 1;\n        }\n        int procesados = -3;\n        if (operacion == 1) {\n            procesados = aplicar(datos, inicio, cantidad, valor);\n        } else if (operacion == 2) {\n            procesados = llenar(nullptr, cantidad, valor);\n        }\n        std::string estado = \"Cambio\";\n        if (procesados == 0) {\n            estado = \"Vacio\";\n        } else if (procesados == -1) {\n            estado = \"Rechazo\";\n        } else if (procesados == -2) {\n            estado = \"Sin objeto\";\n        } else if (procesados == -3) {\n            estado = \"Orden\";\n        }\n        std::cout << \"Estado:\" << estado << \";Procesados:\" << procesados\n                  << \";Datos:\" << datos[0] << ',' << datos[1] << ',' << datos[2] << ',' << datos[3] << '\\n';\n    }\n\n    return 0;\n}\n",
           "initialStandardInput": "12\n1 1 2 7\n1 3 1 0\n1 4 0 2147483647\n1 3 2 9\n1 -1 1 9\n1 0 4 9\n2 0 0 -2147483648\n2 0 1 2147483647\n1 0 1 10\n1 2 2 0\n1 2 2 0\n1 2147483647 0 7\n",
           "outputCheck": {
             "inputComparison": "tokens",
@@ -898,7 +898,7 @@
         {
           "type": "code",
           "language": "cpp",
-          "code": "#include <array>\n#include <iostream>\n#include <string>\n\nint llenar(int* primero, int cantidad, int valor) {\n    if (cantidad < 0 || cantidad > 4) {\n        return -1;\n    }\n    if (cantidad == 0) {\n        return 0;\n    }\n    if (primero == nullptr) {\n        return -2;\n    }\n    if (valor < 0 || valor > 9) {\n        return -1;\n    }\n    for (int i = 0; i < cantidad; ++i) {\n        primero[i] = valor;\n    }\n    return cantidad;\n}\n\nint aplicar(std::array<int, 4>& datos, int inicio, int cantidad, int valor) {\n    if (inicio < 0 || inicio > 4) {\n        return -1;\n    }\n    if (cantidad < 0 || cantidad > 4 - inicio) {\n        return -1;\n    }\n    return llenar(datos.data() + inicio, cantidad, valor);\n}\n\nint main() {\n    std::array<int, 4> datos{2, 5, 8, 1};\n    int ordenes = 0;\n    if (!(std::cin >> ordenes) || ordenes < 1 || ordenes > 12) {\n        return 1;\n    }\n    for (int orden = 0; orden < ordenes; ++orden) {\n        int operacion = 0;\n        int inicio = 0;\n        int cantidad = 0;\n        int valor = 0;\n        if (!(std::cin >> operacion >> inicio >> cantidad >> valor)) {\n            return 1;\n        }\n        int procesados = -3;\n        if (operacion == 1) {\n            procesados = aplicar(datos, inicio, cantidad, valor);\n        } else if (operacion == 2) {\n            procesados = llenar(nullptr, cantidad, valor);\n        }\n        std::string estado = \"Cambio\";\n        if (procesados == 0) {\n            estado = \"Vacio\";\n        } else if (procesados == -1) {\n            estado = \"Rechazo\";\n        } else if (procesados == -2) {\n            estado = \"Sin objeto\";\n        } else if (procesados == -3) {\n            estado = \"Orden\";\n        }\n        std::cout << \"Estado:\" << estado << \";Procesados:\" << procesados\n                  << \";Datos:\" << datos[0] << ',' << datos[1] << ',' << datos[2] << ',' << datos[3] << '\\n';\n    }\n    return 0;\n}\n"
+          "code": "#include <array>\n#include <iostream>\n#include <string>\n\nint llenar(int* primero, int cantidad, int valor) {\n    if (cantidad < 0 || cantidad > 4) {\n        return -1;\n    }\n    if (cantidad == 0) {\n        return 0;\n    }\n    if (primero == nullptr) {\n        return -2;\n    }\n    if (valor < 0 || valor > 9) {\n        return -1;\n    }\n    for (int i = 0; i < cantidad; ++i) {\n        primero[i] = valor;\n    }\n\n    return cantidad;\n}\n\nint aplicar(std::array<int, 4>& datos, int inicio, int cantidad, int valor) {\n    if (inicio < 0 || inicio > 4) {\n        return -1;\n    }\n    if (cantidad < 0 || cantidad > 4 - inicio) {\n        return -1;\n    }\n\n    return llenar(datos.data() + inicio, cantidad, valor);\n}\n\nint main() {\n    std::array<int, 4> datos{2, 5, 8, 1};\n    int ordenes = 0;\n\n    if (!(std::cin >> ordenes) || ordenes < 1 || ordenes > 12) {\n        return 1;\n    }\n    for (int orden = 0; orden < ordenes; ++orden) {\n        int operacion = 0;\n        int inicio = 0;\n        int cantidad = 0;\n        int valor = 0;\n\n        if (!(std::cin >> operacion >> inicio >> cantidad >> valor)) {\n            return 1;\n        }\n        int procesados = -3;\n        if (operacion == 1) {\n            procesados = aplicar(datos, inicio, cantidad, valor);\n        } else if (operacion == 2) {\n            procesados = llenar(nullptr, cantidad, valor);\n        }\n        std::string estado = \"Cambio\";\n        if (procesados == 0) {\n            estado = \"Vacio\";\n        } else if (procesados == -1) {\n            estado = \"Rechazo\";\n        } else if (procesados == -2) {\n            estado = \"Sin objeto\";\n        } else if (procesados == -3) {\n            estado = \"Orden\";\n        }\n        std::cout << \"Estado:\" << estado << \";Procesados:\" << procesados\n                  << \";Datos:\" << datos[0] << ',' << datos[1] << ',' << datos[2] << ',' << datos[3] << '\\n';\n    }\n\n    return 0;\n}\n"
         },
         {
           "type": "paragraph",
@@ -2386,6 +2386,381 @@
       }
     },
     "additions": [],
-    "editorial": []
+    "editorial": [
+      {
+        "id": "block_0000_0003",
+        "beforeSha256": "e0ad781fd19bf9d32444beaff10a1a356bd65cd420b5f124987d32453ebea35f",
+        "afterSha256": "f3f3786704472c16363121f0f032765c7c070c464173676f8e5ce222660a5064"
+      },
+      {
+        "id": "block_0001_0002",
+        "beforeSha256": "370802cf719aaf4bc8910edef27befea4125601fa703fc0eec97e0d9b389f5c2",
+        "afterSha256": "3561cc6e0bf6f04c3aa4cf0292245152298a17e1135b6a257498b31c49946a25"
+      },
+      {
+        "id": "block_0002_0002",
+        "beforeSha256": "5e5ed14cf7472ab8c2283e57d7e20fb034f0608540836d56c2eff8082172c8d8",
+        "afterSha256": "ac7ed837ed2d41826f9fa7dd1514f6b5b6d12f213a0ceedc37d05f163d3b05c7"
+      },
+      {
+        "id": "block_0003_0002",
+        "beforeSha256": "6340015a861507c7ecb9ffedf6c859842a4bcdf1215d5a6974e92cebc3e638a3",
+        "afterSha256": "382429f60eece9343ecceba9220cfd89ff7798b6bad50abe129165d11e26c298"
+      },
+      {
+        "id": "block_0004_0002",
+        "beforeSha256": "d81239abe413eedecd841ac6aa4de1251bd35a1472ee619d9e63ed8bb2413896",
+        "afterSha256": "56820428063b9dcc0892b081422ce0978ed593d2f42eb229f7b26760763da898"
+      },
+      {
+        "id": "block_0005_0003",
+        "beforeSha256": "7326e0293d2d61394e6868e90580f6d7c6b58007d6d6609b6e5d6ed40465f3d6",
+        "afterSha256": "0ce4f321df2f0ba9275a714b1443e608bce4da71a3c1e1acad9cc268abf3b56e"
+      },
+      {
+        "id": "block_0006_0002",
+        "beforeSha256": "2a0971132ed0d2894ad7426f8d902040aae0ff21be574c5cb7e375ea28f5037b",
+        "afterSha256": "a84d1a1fa37a8570f7063ed2794468dbe17ca727e15ac5d13d1b6f88ab313e7a"
+      },
+      {
+        "id": "block_0007_0002",
+        "beforeSha256": "c4caa11a7d50dbec4dff4f24167b8d5e0d618c4f050922f553a76978b2304d34",
+        "afterSha256": "896f25127f691bc8f8c7422e533938713a79c173a19e6c19253356643e40d4d5"
+      },
+      {
+        "id": "block_0007_0003",
+        "beforeSha256": "04f95d77f1931f2fe676582805eb92b3c4790800b3c0e3dc166f19b544bbfd92",
+        "afterSha256": "774829662dfda568bb3fc76d31704a2f8c04b2745deb1a4ae50666d885a236bd"
+      },
+      {
+        "id": "block_0009_0003",
+        "beforeSha256": "012c9201d48c70ac53f1430f800cfcb166c7b8a56bc4c353b37bc095252aee5e",
+        "afterSha256": "8ee2a6139c82c189337e56d8cccd68841ff5468265f5fabb0e9b55cf8324fab3"
+      },
+      {
+        "id": "block_0010_0002",
+        "beforeSha256": "63e0a8abefa6177860c46cd2e337fed8749257706c2d9f7fe4e73e47a2b4a1dd",
+        "afterSha256": "c95281f6b8ce4acb69fd00c683d363f23c3dfaaa3b717891fdf6fabc82f5ea81"
+      },
+      {
+        "id": "block_0011_0002",
+        "beforeSha256": "49539fb5ee3033e9a459ddbffdfc96b586dbb632ec93952e6c64be9c37c12882",
+        "afterSha256": "b8581689ea96b388f09d9df11bed9dc8210ef8acf08fa7d6202903c7b4f78594"
+      },
+      {
+        "id": "block_0012_0002",
+        "beforeSha256": "02ee95ff15fc50e0803cbd833a42050bf4eaeeba77a264c119fd7fd061bf2f0d",
+        "afterSha256": "d80baea6ca1ac6827141ba54c04fbc2203e0c5e5f69d0cea6d76b8ac345aa7ff"
+      },
+      {
+        "id": "block_0013_0002",
+        "beforeSha256": "870a24c46c418e9ac8cd949eea2297643839aa3fe775cfb273817922ea188bb6",
+        "afterSha256": "d19dcbed19a123d2ecce333172891f3e98d24df465d06aa347a35e97814c9fbc"
+      },
+      {
+        "id": "block_0014_0005",
+        "beforeSha256": "6a1fba6c8da304ed4576eb303e08983f0e51faf71ae1c8167cc0a6ea9b8a85c9",
+        "afterSha256": "784d86255747de7691a66910fd4826303ff27da9bafe3b3d71ef88aeac4b1084"
+      },
+      {
+        "id": "block_0015_0001",
+        "beforeSha256": "9bbb01e9be3ebd601e3bab8e11de3a3c46ed31999f925ab99363451c12fdbbe2",
+        "afterSha256": "2622624b71ca4985d67bed5534295b85013d38b7487a070c4b64ce0efa27f321"
+      },
+      {
+        "id": "block_0017_0009",
+        "beforeSha256": "83c2e58ff4375b75ca3d2e2093108d75e5d2eeb7d865437653fc95798b35589c",
+        "afterSha256": "7569887764b472d6219d89cacec32c1aed23ef52202f36c95b6e82708b8d3853"
+      },
+      {
+        "id": "block_0020_0001",
+        "beforeSha256": "9ac9e0b2b126aeef890bdda8cfc120d9dbc4f03102437f47746ccc81ad508602",
+        "afterSha256": "5e045ef246a5d86cb7b506bcb72098f96f3ab6c571e70a6af2471737f7f5a48c"
+      }
+    ],
+    "sourceFormatRevisions": [
+      {
+        "id": "block_0000_0003",
+        "block": {
+          "type": "output_prediction",
+          "id": "p3_u4l10_cuatro_no_impone_cuatro",
+          "language": "cpp",
+          "question": "¿Qué muestra el programa? primero sólo utiliza el elemento de posición cero.",
+          "code": "#include <iostream>\n\nint primero(int datos[4]) {\n    return datos[0];\n}\n\nint main() {\n    int corto[2]{3, 7};\n    int largo[5]{8, 1, 2, 3, 4};\n    int dato = 6;\n    std::cout << primero(corto) << ':' << primero(largo) << ':' << primero(&dato);\n    return 0;\n}\n",
+          "answers": [
+            "3:8:6"
+          ],
+          "outputComparison": "exact",
+          "explanation": "Los arrays de dos y cinco enteros proporcionan su primer elemento. &dato también proporciona un int vivo. Todos esos accesos a posición cero son válidos; el cuatro del parámetro no exige cuatro objetos."
+        }
+      },
+      {
+        "id": "block_0001_0002",
+        "block": {
+          "type": "output_prediction",
+          "id": "p3_u4l10_parametro_local_y_array_original",
+          "language": "cpp",
+          "question": "¿Qué muestra datos==nullptr dentro de cambiar, seguido de original[0] y actual==&original[0]?",
+          "code": "#include <iostream>\n\nvoid cambiar(int datos[4]) {\n    datos[0] = 7;\n    datos = nullptr;\n    std::cout << (datos == nullptr) << ':';\n}\n\nint main() {\n    int original[4]{2, 5, 8, 1};\n    int* actual = original;\n    cambiar(actual);\n    std::cout << original[0] << ':' << (actual == &original[0]);\n    return 0;\n}\n",
+          "answers": [
+            "1:7:1"
+          ],
+          "outputComparison": "exact",
+          "explanation": "La escritura guarda 7 en original[0]. El parámetro local queda nulo, pero actual sigue seleccionando el primer entero."
+        }
+      },
+      {
+        "id": "block_0002_0002",
+        "block": {
+          "type": "output_prediction",
+          "id": "p3_u4l10_prototipos_ajustados",
+          "language": "cpp",
+          "question": "¿Qué muestra el programa?",
+          "code": "#include <iostream>\n\nint leer(int datos[]);\nint leer(int datos[4]);\n\nint leer(int* datos) {\n    return datos[0];\n}\n\nint main() {\n    int datos[2]{5, 9};\n    std::cout << leer(datos);\n    return 0;\n}\n",
+          "answers": [
+            "5"
+          ],
+          "outputComparison": "exact",
+          "explanation": "La llamada utiliza la única definición de leer, cuyo parámetro es int*. El primer entero del argumento vale 5."
+        }
+      },
+      {
+        "id": "block_0003_0002",
+        "block": {
+          "type": "output_prediction",
+          "id": "p3_u4l10_sizeof_fuera_y_dentro",
+          "language": "cpp",
+          "question": "¿Qué muestra la cantidad calculada en main y la comparación que devuelve la función?",
+          "code": "#include <iostream>\n\nbool esTamanoDePuntero(int datos[4]) {\n    return sizeof(datos) == sizeof(int*);\n}\n\nint main() {\n    int datos[4]{2, 5, 8, 1};\n    std::cout << sizeof(datos) / sizeof(datos[0]) << ':' << esTamanoDePuntero(datos);\n    return 0;\n}\n",
+          "answers": [
+            "4:1"
+          ],
+          "outputComparison": "exact",
+          "explanation": "main utiliza el tipo array y obtiene cuatro. Dentro de la función el tamaño coincide con sizeof(int*) porque datos es un puntero."
+        }
+      },
+      {
+        "id": "block_0004_0002",
+        "block": {
+          "type": "output_prediction",
+          "id": "p3_u4l10_parametro_ajustado_de_lectura",
+          "language": "cpp",
+          "question": "¿Qué muestra primero(modificables):primero(constantes)?",
+          "code": "#include <iostream>\n\nint primero(const int datos[4]) {\n    return datos[0];\n}\n\nint main() {\n    int modificables[2]{3, 7};\n    const int constantes[3]{8, 1, 2};\n    std::cout << primero(modificables) << ':' << primero(constantes);\n    return 0;\n}\n",
+          "answers": [
+            "3:8"
+          ],
+          "outputComparison": "exact",
+          "explanation": "Los dos argumentos aportan un primer entero vivo. La función los lee sin escribir mediante su parámetro."
+        }
+      },
+      {
+        "id": "block_0005_0003",
+        "block": {
+          "type": "output_prediction",
+          "id": "p3_u4l10_array_prefijo_y_tramo",
+          "language": "cpp",
+          "question": "¿Qué muestra sumar sobre el array completo, sus dos primeros enteros y dos enteros desde datos+1?",
+          "code": "#include <iostream>\n\nint sumar(const int datos[], int cantidad) {\n    if (cantidad < 0 || cantidad > 4) {\n        return -1;\n    }\n    if (cantidad == 0) {\n        return 0;\n    }\n    if (datos == nullptr) {\n        return -2;\n    }\n    int total = 0;\n    for (int i = 0; i < cantidad; ++i) {\n        if (datos[i] < 0 || datos[i] > 9) {\n            return -1;\n        }\n        total += datos[i];\n    }\n    return total;\n}\n\nint main() {\n    int datos[4]{2, 5, 8, 1};\n    std::cout << sumar(datos, 4) << ':' << sumar(datos, 2) << ':' << sumar(datos + 1, 2);\n    return 0;\n}\n",
+          "answers": [
+            "16:7:13"
+          ],
+          "outputComparison": "exact",
+          "explanation": "El array completo suma 16. El prefijo usa 2 y 5, por lo que suma 7. El tramo interior usa 5 y 8 y suma 13."
+        }
+      },
+      {
+        "id": "block_0006_0002",
+        "block": {
+          "type": "output_prediction",
+          "id": "p3_u4l10_cero_no_requiere_elemento",
+          "language": "cpp",
+          "question": "¿Qué muestran las cuatro llamadas?",
+          "code": "#include <iostream>\n\nint sumar(const int datos[], int cantidad) {\n    if (cantidad < 0 || cantidad > 4) {\n        return -1;\n    }\n    if (cantidad == 0) {\n        return 0;\n    }\n    if (datos == nullptr) {\n        return -2;\n    }\n    int total = 0;\n    for (int i = 0; i < cantidad; ++i) {\n        if (datos[i] < 0 || datos[i] > 9) {\n            return -1;\n        }\n        total += datos[i];\n    }\n    return total;\n}\n\nint main() {\n    int datos[4]{2, 5, 8, 1};\n    std::cout << sumar(datos + 4, 0) << ':' << sumar(nullptr, 0) << ':'\n              << sumar(nullptr, 1) << ':' << sumar(nullptr, -1);\n    return 0;\n}\n",
+          "answers": [
+            "0:0:-2:-1"
+          ],
+          "outputComparison": "exact",
+          "explanation": "El límite posterior con cantidad cero y nullptr con cantidad cero son casos vacíos aceptados. La cantidad positiva sin objeto devuelve -2. La cantidad negativa se rechaza antes con -1."
+        }
+      },
+      {
+        "id": "block_0007_0002",
+        "block": {
+          "type": "code",
+          "language": "cpp",
+          "code": "int sumar(const int datos[], int cantidad) {\n    if (cantidad < 0 || cantidad > 4) {\n        return -1;\n    }\n    if (cantidad == 0) {\n        return 0;\n    }\n    if (datos == nullptr) {\n        return -2;\n    }\n    int total = 0;\n    for (int i = 0; i < cantidad; ++i) {\n        if (datos[i] < 0 || datos[i] > 9) {\n            return -1;\n        }\n        total += datos[i];\n    }\n    return total;\n}\n\nint main() {\n    int corto[2]{3, 7};\n    return sumar(corto, 4);\n}\n"
+        }
+      },
+      {
+        "id": "block_0007_0003",
+        "block": {
+          "type": "code",
+          "language": "cpp",
+          "code": "int sumar(const int datos[], int cantidad) {\n    if (cantidad < 0 || cantidad > 4) {\n        return -1;\n    }\n    if (cantidad == 0) {\n        return 0;\n    }\n    if (datos == nullptr) {\n        return -2;\n    }\n    int total = 0;\n    for (int i = 0; i < cantidad; ++i) {\n        if (datos[i] < 0 || datos[i] > 9) {\n            return -1;\n        }\n        total += datos[i];\n    }\n    return total;\n}\n\nint main() {\n    int datos[4]{2, 5, 8, 1};\n    return sumar(datos + 3, 2);\n}\n"
+        }
+      },
+      {
+        "id": "block_0009_0003",
+        "block": {
+          "type": "output_prediction",
+          "id": "p3_u4l10_referencia_al_array_completo",
+          "language": "cpp",
+          "question": "¿Qué muestra cantidad:datos[3] después de marcar?",
+          "code": "#include <iostream>\n\nint marcar(int (&datos)[4]) {\n    datos[3] = 9;\n    return static_cast<int>(sizeof(datos) / sizeof(datos[0]));\n}\n\nint main() {\n    int datos[4]{2, 5, 8, 1};\n    const int cantidad = marcar(datos);\n    std::cout << cantidad << ':' << datos[3];\n    return 0;\n}\n",
+          "answers": [
+            "4:9"
+          ],
+          "outputComparison": "exact",
+          "explanation": "La referencia conserva el tipo array de cuatro enteros. sizeof obtiene cuatro elementos y la escritura cambia el último del array original a 9."
+        }
+      },
+      {
+        "id": "block_0010_0002",
+        "block": {
+          "type": "output_prediction",
+          "id": "p3_u4l10_referencia_constante_al_array",
+          "language": "cpp",
+          "question": "¿Qué muestra el primer elemento de cada argumento?",
+          "code": "#include <iostream>\n\nint primero(const int (&datos)[4]) {\n    return datos[0];\n}\n\nint main() {\n    int modificables[4]{3, 7, 2, 1};\n    const int constantes[4]{8, 1, 2, 3};\n    std::cout << primero(modificables) << ':' << primero(constantes);\n    return 0;\n}\n",
+          "answers": [
+            "3:8"
+          ],
+          "outputComparison": "exact",
+          "explanation": "Los dos argumentos son arrays de cuatro enteros. La referencia permite leer sus primeros valores sin copiar los arrays."
+        }
+      },
+      {
+        "id": "block_0011_0002",
+        "block": {
+          "type": "output_prediction",
+          "id": "p3_u4l10_contenedor_por_valor_y_referencia",
+          "language": "cpp",
+          "question": "¿Qué muestra copia:datos[0]:cantidad:datos[0] en los momentos indicados?",
+          "code": "#include <array>\n#include <iostream>\n\nint cambiarCopia(std::array<int, 4> datos) {\n    datos[0] = 7;\n    return datos[0];\n}\n\nint cambiarOriginal(std::array<int, 4>& datos) {\n    datos[0] = 9;\n    return static_cast<int>(datos.size());\n}\n\nint main() {\n    std::array<int, 4> datos{2, 5, 8, 1};\n    const int copia = cambiarCopia(datos);\n    std::cout << copia << ':' << datos[0] << ':';\n    const int cantidad = cambiarOriginal(datos);\n    std::cout << cantidad << ':' << datos[0];\n    return 0;\n}\n",
+          "answers": [
+            "7:2:4:9"
+          ],
+          "outputComparison": "exact",
+          "explanation": "La primera función cambia su copia y devuelve 7; el original conserva 2. La segunda recibe una referencia, guarda 9 en el original y devuelve su tamaño cuatro."
+        }
+      },
+      {
+        "id": "block_0012_0002",
+        "block": {
+          "type": "output_prediction",
+          "id": "p3_u4l10_lectura_del_contenedor",
+          "language": "cpp",
+          "question": "¿Qué muestra sumar(datos):datos.size()?",
+          "code": "#include <array>\n#include <iostream>\n\nint sumar(const std::array<int, 4>& datos) {\n    int total = 0;\n    for (int valor : datos) {\n        total += valor;\n    }\n    return total;\n}\n\nint main() {\n    const std::array<int, 4> datos{2, 5, 8, 1};\n    std::cout << sumar(datos) << ':' << datos.size();\n    return 0;\n}\n",
+          "answers": [
+            "16:4"
+          ],
+          "outputComparison": "exact",
+          "explanation": "El recorrido utiliza cuatro enteros del contenedor constante y suma 16. El tamaño conservado por el tipo es cuatro."
+        }
+      },
+      {
+        "id": "block_0013_0002",
+        "block": {
+          "type": "inline_fill_code",
+          "id": "p3_u4l10_referencias_con_extension",
+          "question": "Completa un símbolo en cada hueco para recibir por referencia los dos objetos originales. Conserva los paréntesis del parámetro nativo y no cambies el resto del programa.",
+          "template": "#include <array>\n#include <iostream>\n\nint primeroNativo(const int ([]datos)[4]) {\n    return datos[0];\n}\n\nint primeroContenedor(const std::array<int, 4>[] datos) {\n    return datos[0];\n}\n\nint main() {\n    int nativo[4]{2, 5, 8, 1};\n    const std::array<int, 4> contenedor{9, 8, 7, 6};\n    std::cout << primeroNativo(nativo) << ':' << primeroContenedor(contenedor);\n    return 0;\n}\n",
+          "answers": [
+            "&",
+            "&"
+          ],
+          "answerAlternatives": [
+            [
+              "&"
+            ],
+            [
+              "&"
+            ]
+          ],
+          "explanation": "En el parámetro nativo, & queda junto al nombre dentro de los paréntesis para referirse al array de cuatro. En el parámetro std::array, & se escribe después del tipo del contenedor. Ninguna llamada copia los enteros."
+        }
+      },
+      {
+        "id": "block_0014_0005",
+        "block": {
+          "type": "cpp_compiler",
+          "language": "cpp",
+          "initialCode": "#include <array>\n#include <iostream>\n\nint marcar(std::array<int, 4> datos, int valor) {\n    if (valor < 0 || valor > 9) {\n        return -1;\n    }\n    datos[3] = valor;\n    return datos[3];\n}\n\nint main() {\n    std::array<int, 4> datos{2, 5, 8, 1};\n    const int primera = marcar(datos, 0);\n    std::cout << primera << ':' << datos[3] << ':';\n    const int segunda = marcar(datos, 9);\n    std::cout << segunda << ':' << datos[3] << ':';\n    const int rechazo = marcar(datos, 10);\n    std::cout << rechazo << ':' << datos[3];\n    return 0;\n}\n",
+          "initialStandardInput": "",
+          "outputCheck": {
+            "inputComparison": "tokens",
+            "cases": [
+              {
+                "standardInput": "",
+                "outputs": [
+                  "0:0:9:9:-1:9"
+                ],
+                "explanation": "El parámetro necesita referirse al contenedor modificable original. Las escrituras aceptadas deben observarse desde main y el rechazo debe conservar la última escritura."
+              }
+            ]
+          }
+        }
+      },
+      {
+        "id": "block_0015_0001",
+        "block": {
+          "type": "code",
+          "language": "cpp",
+          "code": "#include <array>\n#include <iostream>\n\nint marcar(std::array<int, 4>& datos, int valor) {\n    if (valor < 0 || valor > 9) {\n        return -1;\n    }\n    datos[3] = valor;\n    return datos[3];\n}\n\nint main() {\n    std::array<int, 4> datos{2, 5, 8, 1};\n    const int primera = marcar(datos, 0);\n    std::cout << primera << ':' << datos[3] << ':';\n    const int segunda = marcar(datos, 9);\n    std::cout << segunda << ':' << datos[3] << ':';\n    const int rechazo = marcar(datos, 10);\n    std::cout << rechazo << ':' << datos[3];\n    return 0;\n}\n"
+        }
+      },
+      {
+        "id": "block_0017_0009",
+        "block": {
+          "type": "cpp_compiler",
+          "language": "cpp",
+          "initialCode": "#include <array>\n#include <iostream>\n#include <string>\n\nint llenar(int* primero, int cantidad, int valor) {\n    // Construye los rechazos, el caso vacio y las escrituras aceptadas.\n    if (cantidad == 0) {\n        return 0;\n    }\n    if (primero == nullptr) {\n        return -2;\n    }\n    if (valor < 0 || valor > 9) {\n        return -1;\n    }\n    return -1;\n}\n\nint aplicar(std::array<int, 4>& datos, int inicio, int cantidad, int valor) {\n    if (inicio < 0 || inicio > 4) {\n        return -1;\n    }\n    if (cantidad < 0 || cantidad > 4 - inicio) {\n        return -1;\n    }\n    return llenar(datos.data() + inicio, cantidad, valor);\n}\n\nint main() {\n    std::array<int, 4> datos{2, 5, 8, 1};\n    int ordenes = 0;\n    if (!(std::cin >> ordenes) || ordenes < 1 || ordenes > 12) {\n        return 1;\n    }\n    for (int orden = 0; orden < ordenes; ++orden) {\n        int operacion = 0;\n        int inicio = 0;\n        int cantidad = 0;\n        int valor = 0;\n        if (!(std::cin >> operacion >> inicio >> cantidad >> valor)) {\n            return 1;\n        }\n        int procesados = -3;\n        if (operacion == 1) {\n            procesados = aplicar(datos, inicio, cantidad, valor);\n        } else if (operacion == 2) {\n            procesados = llenar(nullptr, cantidad, valor);\n        }\n        std::string estado = \"Cambio\";\n        if (procesados == 0) {\n            estado = \"Vacio\";\n        } else if (procesados == -1) {\n            estado = \"Rechazo\";\n        } else if (procesados == -2) {\n            estado = \"Sin objeto\";\n        } else if (procesados == -3) {\n            estado = \"Orden\";\n        }\n        std::cout << \"Estado:\" << estado << \";Procesados:\" << procesados\n                  << \";Datos:\" << datos[0] << ',' << datos[1] << ',' << datos[2] << ',' << datos[3] << '\\n';\n    }\n    return 0;\n}\n",
+          "initialStandardInput": "12\n1 1 2 7\n1 3 1 0\n1 4 0 2147483647\n1 3 2 9\n1 -1 1 9\n1 0 4 9\n2 0 0 -2147483648\n2 0 1 2147483647\n1 0 1 10\n1 2 2 0\n1 2 2 0\n1 2147483647 0 7\n",
+          "outputCheck": {
+            "inputComparison": "tokens",
+            "cases": [
+              {
+                "standardInput": "12\n1 1 2 7\n1 3 1 0\n1 4 0 2147483647\n1 3 2 9\n1 -1 1 9\n1 0 4 9\n2 0 0 -2147483648\n2 0 1 2147483647\n1 0 1 10\n1 2 2 0\n1 2 2 0\n1 2147483647 0 7\n",
+                "outputs": [
+                  "Estado:Cambio;Procesados:2;Datos:2,7,7,1\nEstado:Cambio;Procesados:1;Datos:2,7,7,0\nEstado:Vacio;Procesados:0;Datos:2,7,7,0\nEstado:Rechazo;Procesados:-1;Datos:2,7,7,0\nEstado:Rechazo;Procesados:-1;Datos:2,7,7,0\nEstado:Cambio;Procesados:4;Datos:9,9,9,9\nEstado:Vacio;Procesados:0;Datos:9,9,9,9\nEstado:Sin objeto;Procesados:-2;Datos:9,9,9,9\nEstado:Rechazo;Procesados:-1;Datos:9,9,9,9\nEstado:Cambio;Procesados:2;Datos:9,9,0,0\nEstado:Cambio;Procesados:2;Datos:9,9,0,0\nEstado:Rechazo;Procesados:-1;Datos:9,9,0,0\n"
+                ],
+                "explanation": "El contenedor completo permite preparar un tramo que cabe. El puntero y la cantidad permiten recorrerlo; los rechazos previos y el caso vacío impiden accesos que no corresponden."
+              },
+              {
+                "standardInput": "9\n1 0 0 -2147483648\n1 4 0 -1\n1 4 1 9\n2 8 -1 0\n2 8 5 0\n2 8 0 10\n2 8 1 -1\n1 0 4 0\n1 0 4 0\n",
+                "outputs": [
+                  "Estado:Vacio;Procesados:0;Datos:2,5,8,1\nEstado:Vacio;Procesados:0;Datos:2,5,8,1\nEstado:Rechazo;Procesados:-1;Datos:2,5,8,1\nEstado:Rechazo;Procesados:-1;Datos:2,5,8,1\nEstado:Rechazo;Procesados:-1;Datos:2,5,8,1\nEstado:Vacio;Procesados:0;Datos:2,5,8,1\nEstado:Sin objeto;Procesados:-2;Datos:2,5,8,1\nEstado:Cambio;Procesados:4;Datos:0,0,0,0\nEstado:Cambio;Procesados:4;Datos:0,0,0,0\n"
+                ],
+                "explanation": "El contenedor completo permite preparar un tramo que cabe. El puntero y la cantidad permiten recorrerlo; los rechazos previos y el caso vacío impiden accesos que no corresponden."
+              },
+              {
+                "standardInput": "9\n1 -2147483648 0 5\n1 2147483647 -2147483648 5\n1 0 2147483647 5\n1 2 -2147483648 5\n1 3 1 -2147483648\n1 0 1 2147483647\n2 -2147483648 2147483647 0\n0 2 2 7\n1 1 3 5\n",
+                "outputs": [
+                  "Estado:Rechazo;Procesados:-1;Datos:2,5,8,1\nEstado:Rechazo;Procesados:-1;Datos:2,5,8,1\nEstado:Rechazo;Procesados:-1;Datos:2,5,8,1\nEstado:Rechazo;Procesados:-1;Datos:2,5,8,1\nEstado:Rechazo;Procesados:-1;Datos:2,5,8,1\nEstado:Rechazo;Procesados:-1;Datos:2,5,8,1\nEstado:Rechazo;Procesados:-1;Datos:2,5,8,1\nEstado:Orden;Procesados:-3;Datos:2,5,8,1\nEstado:Cambio;Procesados:3;Datos:2,5,5,5\n"
+                ],
+                "explanation": "El contenedor completo permite preparar un tramo que cabe. El puntero y la cantidad permiten recorrerlo; los rechazos previos y el caso vacío impiden accesos que no corresponden."
+              },
+              {
+                "standardInput": "8\n1 1 2 5\n1 0 1 5\n1 3 1 5\n1 2 1 9\n1 1 2 0\n1 0 0 9\n1 0 4 7\n1 1 1 7\n",
+                "outputs": [
+                  "Estado:Cambio;Procesados:2;Datos:2,5,5,1\nEstado:Cambio;Procesados:1;Datos:5,5,5,1\nEstado:Cambio;Procesados:1;Datos:5,5,5,5\nEstado:Cambio;Procesados:1;Datos:5,5,9,5\nEstado:Cambio;Procesados:2;Datos:5,0,0,5\nEstado:Vacio;Procesados:0;Datos:5,0,0,5\nEstado:Cambio;Procesados:4;Datos:7,7,7,7\nEstado:Cambio;Procesados:1;Datos:7,7,7,7\n"
+                ],
+                "explanation": "El contenedor completo permite preparar un tramo que cabe. El puntero y la cantidad permiten recorrerlo; los rechazos previos y el caso vacío impiden accesos que no corresponden."
+              }
+            ]
+          }
+        }
+      },
+      {
+        "id": "block_0020_0001",
+        "block": {
+          "type": "code",
+          "language": "cpp",
+          "code": "#include <array>\n#include <iostream>\n#include <string>\n\nint llenar(int* primero, int cantidad, int valor) {\n    if (cantidad < 0 || cantidad > 4) {\n        return -1;\n    }\n    if (cantidad == 0) {\n        return 0;\n    }\n    if (primero == nullptr) {\n        return -2;\n    }\n    if (valor < 0 || valor > 9) {\n        return -1;\n    }\n    for (int i = 0; i < cantidad; ++i) {\n        primero[i] = valor;\n    }\n    return cantidad;\n}\n\nint aplicar(std::array<int, 4>& datos, int inicio, int cantidad, int valor) {\n    if (inicio < 0 || inicio > 4) {\n        return -1;\n    }\n    if (cantidad < 0 || cantidad > 4 - inicio) {\n        return -1;\n    }\n    return llenar(datos.data() + inicio, cantidad, valor);\n}\n\nint main() {\n    std::array<int, 4> datos{2, 5, 8, 1};\n    int ordenes = 0;\n    if (!(std::cin >> ordenes) || ordenes < 1 || ordenes > 12) {\n        return 1;\n    }\n    for (int orden = 0; orden < ordenes; ++orden) {\n        int operacion = 0;\n        int inicio = 0;\n        int cantidad = 0;\n        int valor = 0;\n        if (!(std::cin >> operacion >> inicio >> cantidad >> valor)) {\n            return 1;\n        }\n        int procesados = -3;\n        if (operacion == 1) {\n            procesados = aplicar(datos, inicio, cantidad, valor);\n        } else if (operacion == 2) {\n            procesados = llenar(nullptr, cantidad, valor);\n        }\n        std::string estado = \"Cambio\";\n        if (procesados == 0) {\n            estado = \"Vacio\";\n        } else if (procesados == -1) {\n            estado = \"Rechazo\";\n        } else if (procesados == -2) {\n            estado = \"Sin objeto\";\n        } else if (procesados == -3) {\n            estado = \"Orden\";\n        }\n        std::cout << \"Estado:\" << estado << \";Procesados:\" << procesados\n                  << \";Datos:\" << datos[0] << ',' << datos[1] << ',' << datos[2] << ',' << datos[3] << '\\n';\n    }\n    return 0;\n}\n"
+        }
+      }
+    ]
   }
 }

@@ -16,7 +16,7 @@
         {
           "type": "code",
           "language": "cpp",
-          "code": "class Salida {\npublic:\n    Salida() = default;\n    virtual ~Salida() = default;\n    virtual void escribir(std::ostream& destino) const = 0;\n};\nclass SalidaNumero : public Salida {\npublic:\n    explicit SalidaNumero(int numero) : numero_{numero} {}\n    void escribir(std::ostream& destino) const override {\n        destino << \"Numero:\" << numero_;\n    }\nprivate:\n    int numero_;\n};\nclass SalidaCodigo : public Salida {\npublic:\n    explicit SalidaCodigo(int codigo) : codigo_{codigo} {}\n    void escribir(std::ostream& destino) const override {\n        destino << \"Codigo:\" << codigo_;\n    }\nprivate:\n    int codigo_;\n};\n"
+          "code": "class Salida {\npublic:\n    Salida() = default;\n    virtual ~Salida() = default;\n    virtual void escribir(std::ostream& destino) const = 0;\n};\n\nclass SalidaNumero : public Salida {\npublic:\n    explicit SalidaNumero(int numero) : numero_{numero} {}\n    void escribir(std::ostream& destino) const override {\n        destino << \"Numero:\" << numero_;\n    }\nprivate:\n    int numero_;\n};\n\nclass SalidaCodigo : public Salida {\npublic:\n    explicit SalidaCodigo(int codigo) : codigo_{codigo} {}\n    void escribir(std::ostream& destino) const override {\n        destino << \"Codigo:\" << codigo_;\n    }\nprivate:\n    int codigo_;\n};\n"
         },
         {
           "type": "code",
@@ -56,7 +56,7 @@
           "id": "p3_u8l9_insertar_propietario_nombrado_y_resultado",
           "language": "cpp",
           "question": "Escribe toda la salida, con sus separadores |.",
-          "code": "#include <iostream>\n#include <memory>\n#include <utility>\n#include <vector>\n\nclass Salida {\npublic:\n    Salida() = default;\n    virtual ~Salida() = default;\n    virtual void escribir(std::ostream& destino) const = 0;\n};\nclass SalidaNumero : public Salida {\npublic:\n    explicit SalidaNumero(int numero) : numero_{numero} {}\n    void escribir(std::ostream& destino) const override {\n        destino << \"Numero:\" << numero_;\n    }\nprivate:\n    int numero_;\n};\nclass SalidaCodigo : public Salida {\npublic:\n    explicit SalidaCodigo(int codigo) : codigo_{codigo} {}\n    void escribir(std::ostream& destino) const override {\n        destino << \"Codigo:\" << codigo_;\n    }\nprivate:\n    int codigo_;\n};\nint main() {\n    std::vector<std::unique_ptr<Salida>> lista;\n    std::unique_ptr<Salida> nuevo = std::make_unique<SalidaNumero>(4);\n    lista.push_back(std::move(nuevo));\n    lista.push_back(std::make_unique<SalidaCodigo>(9));\n    std::cout << (nuevo == nullptr) << '|' << lista.size() << '|';\n    lista[0]->escribir(std::cout);\n    std::cout << '|';\n    lista[1]->escribir(std::cout);\n    return 0;\n}\n",
+          "code": "#include <iostream>\n#include <memory>\n#include <utility>\n#include <vector>\n\nclass Salida {\npublic:\n    Salida() = default;\n    virtual ~Salida() = default;\n    virtual void escribir(std::ostream& destino) const = 0;\n};\n\nclass SalidaNumero : public Salida {\npublic:\n    explicit SalidaNumero(int numero) : numero_{numero} {}\n    void escribir(std::ostream& destino) const override {\n        destino << \"Numero:\" << numero_;\n    }\nprivate:\n    int numero_;\n};\n\nclass SalidaCodigo : public Salida {\npublic:\n    explicit SalidaCodigo(int codigo) : codigo_{codigo} {}\n    void escribir(std::ostream& destino) const override {\n        destino << \"Codigo:\" << codigo_;\n    }\nprivate:\n    int codigo_;\n};\n\nint main() {\n    std::vector<std::unique_ptr<Salida>> lista;\n    std::unique_ptr<Salida> nuevo = std::make_unique<SalidaNumero>(4);\n    lista.push_back(std::move(nuevo));\n    lista.push_back(std::make_unique<SalidaCodigo>(9));\n    std::cout << (nuevo == nullptr) << '|' << lista.size() << '|';\n    lista[0]->escribir(std::cout);\n    std::cout << '|';\n    lista[1]->escribir(std::cout);\n    return 0;\n}\n",
           "answers": [
             "1|2|Numero:4|Codigo:9"
           ],
@@ -92,7 +92,7 @@
           "id": "p3_u8l9_distinguir_vector_vacio_propietario_nulo_y_cero",
           "language": "cpp",
           "question": "Escribe la salida completa. Conserva también el último separador |.",
-          "code": "#include <iostream>\n#include <memory>\n#include <utility>\n#include <vector>\n\nclass Salida {\npublic:\n    Salida() = default;\n    virtual ~Salida() = default;\n    virtual void escribir(std::ostream& destino) const = 0;\n};\nclass SalidaNumero : public Salida {\npublic:\n    explicit SalidaNumero(int numero) : numero_{numero} {}\n    void escribir(std::ostream& destino) const override {\n        destino << \"Numero:\" << numero_;\n    }\nprivate:\n    int numero_;\n};\nclass SalidaCodigo : public Salida {\npublic:\n    explicit SalidaCodigo(int codigo) : codigo_{codigo} {}\n    void escribir(std::ostream& destino) const override {\n        destino << \"Codigo:\" << codigo_;\n    }\nprivate:\n    int codigo_;\n};\nint main() {\n    std::vector<std::unique_ptr<Salida>> lista;\n    std::cout << lista.empty() << '|';\n    lista.push_back(nullptr);\n    lista.push_back(std::make_unique<SalidaNumero>(0));\n    std::cout << lista.size() << '|' << lista.empty() << '|';\n    for (const auto& propietario : lista) {\n        if (propietario) {\n            propietario->escribir(std::cout);\n        } else {\n            std::cout << \"Ausente\";\n        }\n        std::cout << '|';\n    }\n    return 0;\n}\n",
+          "code": "#include <iostream>\n#include <memory>\n#include <utility>\n#include <vector>\n\nclass Salida {\npublic:\n    Salida() = default;\n    virtual ~Salida() = default;\n    virtual void escribir(std::ostream& destino) const = 0;\n};\n\nclass SalidaNumero : public Salida {\npublic:\n    explicit SalidaNumero(int numero) : numero_{numero} {}\n    void escribir(std::ostream& destino) const override {\n        destino << \"Numero:\" << numero_;\n    }\nprivate:\n    int numero_;\n};\n\nclass SalidaCodigo : public Salida {\npublic:\n    explicit SalidaCodigo(int codigo) : codigo_{codigo} {}\n    void escribir(std::ostream& destino) const override {\n        destino << \"Codigo:\" << codigo_;\n    }\nprivate:\n    int codigo_;\n};\n\nint main() {\n    std::vector<std::unique_ptr<Salida>> lista;\n\n    std::cout << lista.empty() << '|';\n    lista.push_back(nullptr);\n    lista.push_back(std::make_unique<SalidaNumero>(0));\n    std::cout << lista.size() << '|' << lista.empty() << '|';\n    for (const auto& propietario : lista) {\n        if (propietario) {\n            propietario->escribir(std::cout);\n        } else {\n            std::cout << \"Ausente\";\n        }\n        std::cout << '|';\n    }\n\n    return 0;\n}\n",
           "answers": [
             "1|2|0|Ausente|Numero:0|"
           ],
@@ -114,7 +114,7 @@
         {
           "type": "code",
           "language": "cpp",
-          "code": "#include <iostream>\n#include <memory>\n#include <utility>\n#include <vector>\n\nclass Salida {\npublic:\n    Salida() = default;\n    virtual ~Salida() = default;\n    virtual void escribir(std::ostream& destino) const = 0;\n};\nclass SalidaNumero : public Salida {\npublic:\n    explicit SalidaNumero(int numero) : numero_{numero} {}\n    void escribir(std::ostream& destino) const override {\n        destino << \"Numero:\" << numero_;\n    }\nprivate:\n    int numero_;\n};\nclass SalidaCodigo : public Salida {\npublic:\n    explicit SalidaCodigo(int codigo) : codigo_{codigo} {}\n    void escribir(std::ostream& destino) const override {\n        destino << \"Codigo:\" << codigo_;\n    }\nprivate:\n    int codigo_;\n};\nint main() {\n    std::vector<std::unique_ptr<Salida>> lista;\n    lista.push_back(std::make_unique<SalidaNumero>(3));\n    for (auto propietario : lista) {\n        propietario->escribir(std::cout);\n    }\n    return 0;\n}\n"
+          "code": "#include <iostream>\n#include <memory>\n#include <utility>\n#include <vector>\n\nclass Salida {\npublic:\n    Salida() = default;\n    virtual ~Salida() = default;\n    virtual void escribir(std::ostream& destino) const = 0;\n};\n\nclass SalidaNumero : public Salida {\npublic:\n    explicit SalidaNumero(int numero) : numero_{numero} {}\n    void escribir(std::ostream& destino) const override {\n        destino << \"Numero:\" << numero_;\n    }\nprivate:\n    int numero_;\n};\n\nclass SalidaCodigo : public Salida {\npublic:\n    explicit SalidaCodigo(int codigo) : codigo_{codigo} {}\n    void escribir(std::ostream& destino) const override {\n        destino << \"Codigo:\" << codigo_;\n    }\nprivate:\n    int codigo_;\n};\n\nint main() {\n    std::vector<std::unique_ptr<Salida>> lista;\n    lista.push_back(std::make_unique<SalidaNumero>(3));\n    for (auto propietario : lista) {\n        propietario->escribir(std::cout);\n    }\n\n    return 0;\n}\n"
         },
         {
           "type": "multiple_choice",
@@ -173,7 +173,7 @@
         {
           "type": "code",
           "language": "cpp",
-          "code": "#include <iostream>\n#include <memory>\n#include <utility>\n#include <vector>\n\nclass Salida {\npublic:\n    Salida() = default;\n    virtual ~Salida() = default;\n    virtual void escribir(std::ostream& destino) const = 0;\n};\nclass SalidaNumero : public Salida {\npublic:\n    explicit SalidaNumero(int numero) : numero_{numero} {}\n    void escribir(std::ostream& destino) const override {\n        destino << \"Numero:\" << numero_;\n    }\nprivate:\n    int numero_;\n};\nclass SalidaCodigo : public Salida {\npublic:\n    explicit SalidaCodigo(int codigo) : codigo_{codigo} {}\n    void escribir(std::ostream& destino) const override {\n        destino << \"Codigo:\" << codigo_;\n    }\nprivate:\n    int codigo_;\n};\nint main() {\n    std::vector<std::unique_ptr<Salida>> lista;\n    lista.push_back(std::make_unique<SalidaNumero>(6));\n    std::unique_ptr<Salida> extraido = std::move(lista[0]);\n    std::cout << lista.size() << '|' << (lista[0] == nullptr) << '|';\n    extraido->escribir(std::cout);\n    return 0;\n}\n"
+          "code": "#include <iostream>\n#include <memory>\n#include <utility>\n#include <vector>\n\nclass Salida {\npublic:\n    Salida() = default;\n    virtual ~Salida() = default;\n    virtual void escribir(std::ostream& destino) const = 0;\n};\n\nclass SalidaNumero : public Salida {\npublic:\n    explicit SalidaNumero(int numero) : numero_{numero} {}\n    void escribir(std::ostream& destino) const override {\n        destino << \"Numero:\" << numero_;\n    }\nprivate:\n    int numero_;\n};\n\nclass SalidaCodigo : public Salida {\npublic:\n    explicit SalidaCodigo(int codigo) : codigo_{codigo} {}\n    void escribir(std::ostream& destino) const override {\n        destino << \"Codigo:\" << codigo_;\n    }\nprivate:\n    int codigo_;\n};\n\nint main() {\n    std::vector<std::unique_ptr<Salida>> lista;\n    lista.push_back(std::make_unique<SalidaNumero>(6));\n    std::unique_ptr<Salida> extraido = std::move(lista[0]);\n    std::cout << lista.size() << '|' << (lista[0] == nullptr) << '|';\n    extraido->escribir(std::cout);\n    return 0;\n}\n"
         },
         {
           "type": "paragraph",
@@ -208,7 +208,7 @@
           "id": "p3_u8l9_crecimiento_con_prestamo_al_objeto_vivo",
           "language": "cpp",
           "question": "Escribe la salida. No necesitas conocer la capacidad exacta ni las direcciones numéricas.",
-          "code": "#include <iostream>\n#include <memory>\n#include <utility>\n#include <vector>\n\nclass Salida {\npublic:\n    Salida() = default;\n    virtual ~Salida() = default;\n    virtual void escribir(std::ostream& destino) const = 0;\n};\nclass SalidaNumero : public Salida {\npublic:\n    explicit SalidaNumero(int numero) : numero_{numero} {}\n    void escribir(std::ostream& destino) const override {\n        destino << \"Numero:\" << numero_;\n    }\nprivate:\n    int numero_;\n};\nclass SalidaCodigo : public Salida {\npublic:\n    explicit SalidaCodigo(int codigo) : codigo_{codigo} {}\n    void escribir(std::ostream& destino) const override {\n        destino << \"Codigo:\" << codigo_;\n    }\nprivate:\n    int codigo_;\n};\nint main() {\n    std::vector<std::unique_ptr<Salida>> lista;\n    lista.push_back(std::make_unique<SalidaNumero>(8));\n    const Salida* prestado = lista[0].get();\n    lista.reserve(12);\n    lista.push_back(std::make_unique<SalidaCodigo>(5));\n    std::cout << (prestado == lista[0].get()) << '|';\n    prestado->escribir(std::cout);\n    std::cout << '|' << lista.size();\n    return 0;\n}\n",
+          "code": "#include <iostream>\n#include <memory>\n#include <utility>\n#include <vector>\n\nclass Salida {\npublic:\n    Salida() = default;\n    virtual ~Salida() = default;\n    virtual void escribir(std::ostream& destino) const = 0;\n};\n\nclass SalidaNumero : public Salida {\npublic:\n    explicit SalidaNumero(int numero) : numero_{numero} {}\n    void escribir(std::ostream& destino) const override {\n        destino << \"Numero:\" << numero_;\n    }\nprivate:\n    int numero_;\n};\n\nclass SalidaCodigo : public Salida {\npublic:\n    explicit SalidaCodigo(int codigo) : codigo_{codigo} {}\n    void escribir(std::ostream& destino) const override {\n        destino << \"Codigo:\" << codigo_;\n    }\nprivate:\n    int codigo_;\n};\n\nint main() {\n    std::vector<std::unique_ptr<Salida>> lista;\n    lista.push_back(std::make_unique<SalidaNumero>(8));\n    const Salida* prestado = lista[0].get();\n    lista.reserve(12);\n    lista.push_back(std::make_unique<SalidaCodigo>(5));\n    std::cout << (prestado == lista[0].get()) << '|';\n    prestado->escribir(std::cout);\n    std::cout << '|' << lista.size();\n\n    return 0;\n}\n",
           "answers": [
             "1|Numero:8|2"
           ],
@@ -268,7 +268,7 @@
           "id": "p3_u8l9_reset_borrar_elemento_y_vaciar_coleccion",
           "language": "cpp",
           "question": "Escribe toda la salida. Sigue por separado las posiciones del vector y los objetos todavía vivos.",
-          "code": "#include <iostream>\n#include <memory>\n#include <utility>\n#include <vector>\n\nclass Salida {\npublic:\n    Salida() = default;\n    virtual ~Salida() = default;\n    virtual void escribir(std::ostream& destino) const = 0;\n};\nstruct Balance {\n    int vivos = 0;\n    int destruidos = 0;\n};\nclass SalidaContada : public Salida {\npublic:\n    SalidaContada(int numero, Balance& balance) : numero_{numero}, balance_{balance} {\n        ++balance_.vivos;\n    }\n    ~SalidaContada() override {\n        --balance_.vivos;\n        ++balance_.destruidos;\n    }\n    void escribir(std::ostream& destino) const override {\n        destino << \"Numero:\" << numero_;\n    }\nprivate:\n    int numero_;\n    Balance& balance_;\n};\nint main() {\n    Balance balance;\n    std::vector<std::unique_ptr<Salida>> lista;\n    lista.push_back(std::make_unique<SalidaContada>(1, balance));\n    lista.push_back(std::make_unique<SalidaContada>(2, balance));\n    lista.push_back(std::make_unique<SalidaContada>(3, balance));\n    {\n        const Salida* ultima = lista[2].get();\n        lista[1].reset();\n        std::cout << \"Reset:\" << lista.size() << ',' << balance.vivos << ',' << balance.destruidos << '|';\n        lista.erase(lista.begin());\n        std::cout << \"Erase:\" << lista.size() << ',' << balance.vivos << ',' << balance.destruidos << '|';\n        ultima->escribir(std::cout);\n        std::cout << '|';\n    }\n    lista.clear();\n    std::cout << \"Clear:\" << lista.size() << ',' << balance.vivos << ',' << balance.destruidos;\n    return 0;\n}\n",
+          "code": "#include <iostream>\n#include <memory>\n#include <utility>\n#include <vector>\n\nclass Salida {\npublic:\n    Salida() = default;\n    virtual ~Salida() = default;\n    virtual void escribir(std::ostream& destino) const = 0;\n};\n\nstruct Balance {\n    int vivos = 0;\n    int destruidos = 0;\n};\n\nclass SalidaContada : public Salida {\npublic:\n    SalidaContada(int numero, Balance& balance) : numero_{numero}, balance_{balance} {\n        ++balance_.vivos;\n    }\n    ~SalidaContada() override {\n        --balance_.vivos;\n        ++balance_.destruidos;\n    }\n\n    void escribir(std::ostream& destino) const override {\n        destino << \"Numero:\" << numero_;\n    }\nprivate:\n    int numero_;\n    Balance& balance_;\n};\n\nint main() {\n    Balance balance;\n    std::vector<std::unique_ptr<Salida>> lista;\n    lista.push_back(std::make_unique<SalidaContada>(1, balance));\n    lista.push_back(std::make_unique<SalidaContada>(2, balance));\n    lista.push_back(std::make_unique<SalidaContada>(3, balance));\n    {\n        const Salida* ultima = lista[2].get();\n        lista[1].reset();\n        std::cout << \"Reset:\" << lista.size() << ',' << balance.vivos << ',' << balance.destruidos << '|';\n        lista.erase(lista.begin());\n        std::cout << \"Erase:\" << lista.size() << ',' << balance.vivos << ',' << balance.destruidos << '|';\n        ultima->escribir(std::cout);\n        std::cout << '|';\n    }\n    lista.clear();\n    std::cout << \"Clear:\" << lista.size() << ',' << balance.vivos << ',' << balance.destruidos;\n\n    return 0;\n}\n",
           "answers": [
             "Reset:3,2,1|Erase:2,1,2|Numero:3|Clear:0,0,3"
           ],
@@ -290,7 +290,7 @@
         {
           "type": "code",
           "language": "cpp",
-          "code": "#include <iostream>\n#include <memory>\n#include <utility>\n#include <vector>\n\nclass Salida {\npublic:\n    Salida() = default;\n    virtual ~Salida() = default;\n    virtual void escribir(std::ostream& destino) const = 0;\n};\nclass SalidaNumero : public Salida {\npublic:\n    explicit SalidaNumero(int numero) : numero_{numero} {}\n    void escribir(std::ostream& destino) const override {\n        destino << \"Numero:\" << numero_;\n    }\nprivate:\n    int numero_;\n};\nclass SalidaCodigo : public Salida {\npublic:\n    explicit SalidaCodigo(int codigo) : codigo_{codigo} {}\n    void escribir(std::ostream& destino) const override {\n        destino << \"Codigo:\" << codigo_;\n    }\nprivate:\n    int codigo_;\n};\nint main() {\n    std::vector<std::unique_ptr<Salida>> lista;\n    lista.push_back(std::make_unique<SalidaNumero>(3));\n    auto copia = lista;\n    return 0;\n}\n"
+          "code": "#include <iostream>\n#include <memory>\n#include <utility>\n#include <vector>\n\nclass Salida {\npublic:\n    Salida() = default;\n    virtual ~Salida() = default;\n    virtual void escribir(std::ostream& destino) const = 0;\n};\n\nclass SalidaNumero : public Salida {\npublic:\n    explicit SalidaNumero(int numero) : numero_{numero} {}\n    void escribir(std::ostream& destino) const override {\n        destino << \"Numero:\" << numero_;\n    }\nprivate:\n    int numero_;\n};\n\nclass SalidaCodigo : public Salida {\npublic:\n    explicit SalidaCodigo(int codigo) : codigo_{codigo} {}\n    void escribir(std::ostream& destino) const override {\n        destino << \"Codigo:\" << codigo_;\n    }\nprivate:\n    int codigo_;\n};\n\nint main() {\n    std::vector<std::unique_ptr<Salida>> lista;\n    lista.push_back(std::make_unique<SalidaNumero>(3));\n    auto copia = lista;\n    return 0;\n}\n"
         },
         {
           "type": "multiple_choice",
@@ -456,7 +456,7 @@
         {
           "type": "cpp_compiler",
           "language": "cpp",
-          "initialCode": "#include <cstddef>\n#include <iostream>\n#include <memory>\n#include <utility>\n#include <vector>\n\nclass Muestra {\npublic:\n    virtual ~Muestra() = default;\n    virtual int numero() const noexcept = 0;\n    virtual void escribir(std::ostream& salida) const = 0;\n};\nclass MuestraSimple : public Muestra {\npublic:\n    explicit MuestraSimple(int numero) : numero_{numero} {}\n    int numero() const noexcept override { return numero_; }\n    void escribir(std::ostream& salida) const override {\n        salida << \"Numero:\" << numero();\n    }\nprivate:\n    int numero_;\n};\nclass MuestraIdentificada : public Muestra {\npublic:\n    MuestraIdentificada(int numero, int codigo) : numero_{numero}, codigo_{codigo} {}\n    int numero() const noexcept override { return numero_; }\n    int codigo() const noexcept { return codigo_; }\n    void escribir(std::ostream& salida) const override {\n        salida << \"Numero:\" << numero() << \";Codigo:\" << codigo();\n    }\nprivate:\n    int numero_;\n    int codigo_;\n};\nstd::unique_ptr<Muestra> crear(int tipo, int numero, int codigo) {\n    if (tipo == 0) {\n        return std::make_unique<MuestraSimple>(numero);\n    }\n    return std::make_unique<MuestraIdentificada>(numero, codigo);\n}\nusing Muestras = std::vector<std::unique_ptr<Muestra>>;\n\nbool agregar(Muestras& destino, std::unique_ptr<Muestra>& fuente) {\n    // Rechaza el propietario vacio o transfiere su objeto al final del vector.\n    (void)destino;\n    (void)fuente;\n    return false;\n}\nvoid informar(const Muestras& datos, std::ostream& salida) {\n    // Consulta el vector y escribe las muestras mediante su interfaz.\n    (void)datos;\n    salida << \"Pendiente\\n\";\n}\nint main() {\n    int cantidad = 0;\n    if (!(std::cin >> cantidad) || cantidad < 0 || cantidad > 8) {\n        return 1;\n    }\n    Muestras lista;\n    for (int i = 0; i < cantidad; ++i) {\n        int tipo = 0, numero = 0, codigo = 0;\n        if (!(std::cin >> tipo >> numero >> codigo) || tipo < 0 || tipo > 1) {\n            return 1;\n        }\n        std::unique_ptr<Muestra> candidata = crear(tipo, numero, codigo);\n        if (!agregar(lista, candidata)) {\n            std::cout << \"FalloInsercion\";\n            return 2;\n        }\n        if (candidata) {\n            std::cout << \"OrigenNoVacio\";\n            return 3;\n        }\n    }\n    const auto cantidad_previa = lista.size();\n    std::unique_ptr<Muestra> vacia;\n    const bool aceptada = agregar(lista, vacia);\n    if (aceptada || vacia || lista.size() != cantidad_previa) {\n        std::cout << \"FalloRechazo\";\n        return 4;\n    }\n    for (const auto& propietario : lista) {\n        if (!propietario) {\n            std::cout << \"ElementoVacio\";\n            return 5;\n        }\n    }\n    std::cout << \"VacioAceptado:\" << aceptada << '\\n';\n    informar(lista, std::cout);\n    lista.clear();\n    std::cout << \"Final:\" << lista.size();\n    return 0;\n}\n",
+          "initialCode": "#include <cstddef>\n#include <iostream>\n#include <memory>\n#include <utility>\n#include <vector>\n\nclass Muestra {\npublic:\n    virtual ~Muestra() = default;\n    virtual int numero() const noexcept = 0;\n    virtual void escribir(std::ostream& salida) const = 0;\n};\n\nclass MuestraSimple : public Muestra {\npublic:\n    explicit MuestraSimple(int numero) : numero_{numero} {}\n    int numero() const noexcept override { return numero_; }\n    void escribir(std::ostream& salida) const override {\n        salida << \"Numero:\" << numero();\n    }\nprivate:\n    int numero_;\n};\n\nclass MuestraIdentificada : public Muestra {\npublic:\n    MuestraIdentificada(int numero, int codigo) : numero_{numero}, codigo_{codigo} {}\n    int numero() const noexcept override { return numero_; }\n    int codigo() const noexcept { return codigo_; }\n    void escribir(std::ostream& salida) const override {\n        salida << \"Numero:\" << numero() << \";Codigo:\" << codigo();\n    }\nprivate:\n    int numero_;\n    int codigo_;\n};\n\nstd::unique_ptr<Muestra> crear(int tipo, int numero, int codigo) {\n    if (tipo == 0) {\n        return std::make_unique<MuestraSimple>(numero);\n    }\n\n    return std::make_unique<MuestraIdentificada>(numero, codigo);\n}\nusing Muestras = std::vector<std::unique_ptr<Muestra>>;\n\nbool agregar(Muestras& destino, std::unique_ptr<Muestra>& fuente) {\n    // Rechaza el propietario vacio o transfiere su objeto al final del vector.\n    (void)destino;\n    (void)fuente;\n    return false;\n}\n\nvoid informar(const Muestras& datos, std::ostream& salida) {\n    // Consulta el vector y escribe las muestras mediante su interfaz.\n    (void)datos;\n    salida << \"Pendiente\\n\";\n}\n\nint main() {\n    int cantidad = 0;\n    if (!(std::cin >> cantidad) || cantidad < 0 || cantidad > 8) {\n        return 1;\n    }\n    Muestras lista;\n    for (int i = 0; i < cantidad; ++i) {\n        int tipo = 0, numero = 0, codigo = 0;\n        if (!(std::cin >> tipo >> numero >> codigo) || tipo < 0 || tipo > 1) {\n            return 1;\n        }\n        std::unique_ptr<Muestra> candidata = crear(tipo, numero, codigo);\n        if (!agregar(lista, candidata)) {\n            std::cout << \"FalloInsercion\";\n            return 2;\n        }\n        if (candidata) {\n            std::cout << \"OrigenNoVacio\";\n            return 3;\n        }\n    }\n    const auto cantidad_previa = lista.size();\n    std::unique_ptr<Muestra> vacia;\n    const bool aceptada = agregar(lista, vacia);\n    if (aceptada || vacia || lista.size() != cantidad_previa) {\n        std::cout << \"FalloRechazo\";\n        return 4;\n    }\n    for (const auto& propietario : lista) {\n        if (!propietario) {\n            std::cout << \"ElementoVacio\";\n            return 5;\n        }\n    }\n    std::cout << \"VacioAceptado:\" << aceptada << '\\n';\n    informar(lista, std::cout);\n    lista.clear();\n    std::cout << \"Final:\" << lista.size();\n\n    return 0;\n}\n",
           "initialStandardInput": "3\n0 7 99\n1 -4 0\n1 0 -2\n",
           "outputCheck": {
             "inputComparison": "tokens",
@@ -648,7 +648,7 @@
         {
           "type": "code",
           "language": "cpp",
-          "code": "#include <cstddef>\n#include <iostream>\n#include <memory>\n#include <utility>\n#include <vector>\n\nclass Muestra {\npublic:\n    virtual ~Muestra() = default;\n    virtual int numero() const noexcept = 0;\n    virtual void escribir(std::ostream& salida) const = 0;\n};\nclass MuestraSimple : public Muestra {\npublic:\n    explicit MuestraSimple(int numero) : numero_{numero} {}\n    int numero() const noexcept override { return numero_; }\n    void escribir(std::ostream& salida) const override {\n        salida << \"Numero:\" << numero();\n    }\nprivate:\n    int numero_;\n};\nclass MuestraIdentificada : public Muestra {\npublic:\n    MuestraIdentificada(int numero, int codigo) : numero_{numero}, codigo_{codigo} {}\n    int numero() const noexcept override { return numero_; }\n    int codigo() const noexcept { return codigo_; }\n    void escribir(std::ostream& salida) const override {\n        salida << \"Numero:\" << numero() << \";Codigo:\" << codigo();\n    }\nprivate:\n    int numero_;\n    int codigo_;\n};\nstd::unique_ptr<Muestra> crear(int tipo, int numero, int codigo) {\n    if (tipo == 0) {\n        return std::make_unique<MuestraSimple>(numero);\n    }\n    return std::make_unique<MuestraIdentificada>(numero, codigo);\n}\nusing Muestras = std::vector<std::unique_ptr<Muestra>>;\n\nbool agregar(Muestras& destino, std::unique_ptr<Muestra>& fuente) {\n    if (!fuente) {\n        return false;\n    }\n    destino.push_back(std::move(fuente));\n    return true;\n}\nvoid informar(const Muestras& datos, std::ostream& salida) {\n    salida << \"Cantidad:\" << datos.size() << '\\n';\n    std::size_t posicion = 0;\n    for (const auto& propietario : datos) {\n        salida << posicion << ':';\n        propietario->escribir(salida);\n        salida << '\\n';\n        ++posicion;\n    }\n}\nint main() {\n    int cantidad = 0;\n    if (!(std::cin >> cantidad) || cantidad < 0 || cantidad > 8) {\n        return 1;\n    }\n    Muestras lista;\n    for (int i = 0; i < cantidad; ++i) {\n        int tipo = 0, numero = 0, codigo = 0;\n        if (!(std::cin >> tipo >> numero >> codigo) || tipo < 0 || tipo > 1) {\n            return 1;\n        }\n        std::unique_ptr<Muestra> candidata = crear(tipo, numero, codigo);\n        if (!agregar(lista, candidata)) {\n            std::cout << \"FalloInsercion\";\n            return 2;\n        }\n        if (candidata) {\n            std::cout << \"OrigenNoVacio\";\n            return 3;\n        }\n    }\n    const auto cantidad_previa = lista.size();\n    std::unique_ptr<Muestra> vacia;\n    const bool aceptada = agregar(lista, vacia);\n    if (aceptada || vacia || lista.size() != cantidad_previa) {\n        std::cout << \"FalloRechazo\";\n        return 4;\n    }\n    for (const auto& propietario : lista) {\n        if (!propietario) {\n            std::cout << \"ElementoVacio\";\n            return 5;\n        }\n    }\n    std::cout << \"VacioAceptado:\" << aceptada << '\\n';\n    informar(lista, std::cout);\n    lista.clear();\n    std::cout << \"Final:\" << lista.size();\n    return 0;\n}\n"
+          "code": "#include <cstddef>\n#include <iostream>\n#include <memory>\n#include <utility>\n#include <vector>\n\nclass Muestra {\npublic:\n    virtual ~Muestra() = default;\n    virtual int numero() const noexcept = 0;\n    virtual void escribir(std::ostream& salida) const = 0;\n};\n\nclass MuestraSimple : public Muestra {\npublic:\n    explicit MuestraSimple(int numero) : numero_{numero} {}\n    int numero() const noexcept override { return numero_; }\n    void escribir(std::ostream& salida) const override {\n        salida << \"Numero:\" << numero();\n    }\nprivate:\n    int numero_;\n};\n\nclass MuestraIdentificada : public Muestra {\npublic:\n    MuestraIdentificada(int numero, int codigo) : numero_{numero}, codigo_{codigo} {}\n    int numero() const noexcept override { return numero_; }\n    int codigo() const noexcept { return codigo_; }\n    void escribir(std::ostream& salida) const override {\n        salida << \"Numero:\" << numero() << \";Codigo:\" << codigo();\n    }\nprivate:\n    int numero_;\n    int codigo_;\n};\n\nstd::unique_ptr<Muestra> crear(int tipo, int numero, int codigo) {\n    if (tipo == 0) {\n        return std::make_unique<MuestraSimple>(numero);\n    }\n\n    return std::make_unique<MuestraIdentificada>(numero, codigo);\n}\nusing Muestras = std::vector<std::unique_ptr<Muestra>>;\n\nbool agregar(Muestras& destino, std::unique_ptr<Muestra>& fuente) {\n    if (!fuente) {\n        return false;\n    }\n    destino.push_back(std::move(fuente));\n    return true;\n}\n\nvoid informar(const Muestras& datos, std::ostream& salida) {\n    salida << \"Cantidad:\" << datos.size() << '\\n';\n    std::size_t posicion = 0;\n    for (const auto& propietario : datos) {\n        salida << posicion << ':';\n        propietario->escribir(salida);\n        salida << '\\n';\n        ++posicion;\n    }\n}\n\nint main() {\n    int cantidad = 0;\n    if (!(std::cin >> cantidad) || cantidad < 0 || cantidad > 8) {\n        return 1;\n    }\n    Muestras lista;\n    for (int i = 0; i < cantidad; ++i) {\n        int tipo = 0, numero = 0, codigo = 0;\n        if (!(std::cin >> tipo >> numero >> codigo) || tipo < 0 || tipo > 1) {\n            return 1;\n        }\n        std::unique_ptr<Muestra> candidata = crear(tipo, numero, codigo);\n        if (!agregar(lista, candidata)) {\n            std::cout << \"FalloInsercion\";\n            return 2;\n        }\n        if (candidata) {\n            std::cout << \"OrigenNoVacio\";\n            return 3;\n        }\n    }\n    const auto cantidad_previa = lista.size();\n    std::unique_ptr<Muestra> vacia;\n    const bool aceptada = agregar(lista, vacia);\n    if (aceptada || vacia || lista.size() != cantidad_previa) {\n        std::cout << \"FalloRechazo\";\n        return 4;\n    }\n    for (const auto& propietario : lista) {\n        if (!propietario) {\n            std::cout << \"ElementoVacio\";\n            return 5;\n        }\n    }\n    std::cout << \"VacioAceptado:\" << aceptada << '\\n';\n    informar(lista, std::cout);\n    lista.clear();\n    std::cout << \"Final:\" << lista.size();\n\n    return 0;\n}\n"
         },
         {
           "type": "paragraph",
@@ -2095,6 +2095,208 @@
       }
     },
     "additions": [],
-    "editorial": []
+    "editorial": [
+      {
+        "id": "block_0000_0002",
+        "beforeSha256": "bed6655ee2f846622215f6680640f6c10a1e6cc0b47fa2b5a44cbace10440c66",
+        "afterSha256": "0f84971a0ebb06cf05799a11ef68a2c4df70967e9e722a2b50f6f52fc8037483"
+      },
+      {
+        "id": "block_0001_0003",
+        "beforeSha256": "abcd84fe6224fa15a0b575865238792a96ffa07b9c57ca1d27ee3fcbad2363f2",
+        "afterSha256": "3c417f840d12ea5630d34969ac75102976489e2582453e1725ea7c88dd4e99ad"
+      },
+      {
+        "id": "block_0002_0005",
+        "beforeSha256": "a331de74a387b6693b1e5812c64294891f0bb727dccf3aba3bbb4186c75d5df7",
+        "afterSha256": "1c6b66d444ba25dcaa25449cd723fd2b16ec8d45c6f819126538ece57132e4a3"
+      },
+      {
+        "id": "block_0003_0002",
+        "beforeSha256": "e7533a318cff444ee83234f6eb220dcb2148ca62907355d9a33f601aa0b52eb5",
+        "afterSha256": "9e8ecf3019f8e57e9ae754896208e572caeeed9ab267a0b35d1c01cca395f8ce"
+      },
+      {
+        "id": "block_0005_0001",
+        "beforeSha256": "e33ba5e5ecb3d30cee2ff09297470ab9543da78d11bf446163b9d7f3bcc85732",
+        "afterSha256": "b6137e86c46a3bbd76469e2bcc562cbe99366dd02c478cbb406b7fba54a77e89"
+      },
+      {
+        "id": "block_0006_0004",
+        "beforeSha256": "54c81bc4aba511dde028c6dd845c063dfe8aaaea6f3a19594d5c8c1077b59e40",
+        "afterSha256": "7a9ce25fed28d6c7dfb0bddc556a14e87e1d1a2bbc84fc2f9b1d0d73b87aa6a4"
+      },
+      {
+        "id": "block_0008_0005",
+        "beforeSha256": "c72944f606a350c7614b7c616c484c12e79633795304b68a18c8ee536eea6be1",
+        "afterSha256": "9ae8f0e72e63ec8b499ee763d082433c9c7cfc0a5cc29cbcdb46d13a67a19b0d"
+      },
+      {
+        "id": "block_0009_0002",
+        "beforeSha256": "3541dad963c278c95f3e58541c4fefd9d7d94fde57e2eabfb0bf4466a6e191ac",
+        "afterSha256": "7370fad31fedb90550a64fd0978fee8f31675297a080a80a10fb03fab75f3635"
+      },
+      {
+        "id": "block_0015_0002",
+        "beforeSha256": "77792502698baba076681d1d2d84a24ce263e339c9116de89cd256b2fef56165",
+        "afterSha256": "3bd201b678d61aff7042bac28543b3a01fe3f5ad6300ce2fc4d78fab3d5099e7"
+      },
+      {
+        "id": "block_0017_0001",
+        "beforeSha256": "23756fb9e49497d6a21bf3de8691c489b0692e8428ae93c3613869eeee92334f",
+        "afterSha256": "e2264ad0041c6bb54e765adeeae1676b49d31ac5ac5244a3daf3e2fe5ab35579"
+      }
+    ],
+    "sourceFormatRevisions": [
+      {
+        "id": "block_0000_0002",
+        "block": {
+          "type": "code",
+          "language": "cpp",
+          "code": "class Salida {\npublic:\n    Salida() = default;\n    virtual ~Salida() = default;\n    virtual void escribir(std::ostream& destino) const = 0;\n};\nclass SalidaNumero : public Salida {\npublic:\n    explicit SalidaNumero(int numero) : numero_{numero} {}\n    void escribir(std::ostream& destino) const override {\n        destino << \"Numero:\" << numero_;\n    }\nprivate:\n    int numero_;\n};\nclass SalidaCodigo : public Salida {\npublic:\n    explicit SalidaCodigo(int codigo) : codigo_{codigo} {}\n    void escribir(std::ostream& destino) const override {\n        destino << \"Codigo:\" << codigo_;\n    }\nprivate:\n    int codigo_;\n};\n"
+        }
+      },
+      {
+        "id": "block_0001_0003",
+        "block": {
+          "type": "output_prediction",
+          "id": "p3_u8l9_insertar_propietario_nombrado_y_resultado",
+          "language": "cpp",
+          "question": "Escribe toda la salida, con sus separadores |.",
+          "code": "#include <iostream>\n#include <memory>\n#include <utility>\n#include <vector>\n\nclass Salida {\npublic:\n    Salida() = default;\n    virtual ~Salida() = default;\n    virtual void escribir(std::ostream& destino) const = 0;\n};\nclass SalidaNumero : public Salida {\npublic:\n    explicit SalidaNumero(int numero) : numero_{numero} {}\n    void escribir(std::ostream& destino) const override {\n        destino << \"Numero:\" << numero_;\n    }\nprivate:\n    int numero_;\n};\nclass SalidaCodigo : public Salida {\npublic:\n    explicit SalidaCodigo(int codigo) : codigo_{codigo} {}\n    void escribir(std::ostream& destino) const override {\n        destino << \"Codigo:\" << codigo_;\n    }\nprivate:\n    int codigo_;\n};\nint main() {\n    std::vector<std::unique_ptr<Salida>> lista;\n    std::unique_ptr<Salida> nuevo = std::make_unique<SalidaNumero>(4);\n    lista.push_back(std::move(nuevo));\n    lista.push_back(std::make_unique<SalidaCodigo>(9));\n    std::cout << (nuevo == nullptr) << '|' << lista.size() << '|';\n    lista[0]->escribir(std::cout);\n    std::cout << '|';\n    lista[1]->escribir(std::cout);\n    return 0;\n}\n",
+          "answers": [
+            "1|2|Numero:4|Codigo:9"
+          ],
+          "outputComparison": "exact",
+          "explanation": "El primer push_back transfiere el objeto al propietario de la primera posición y deja nuevo vacío. El segundo añade el propietario del objeto SalidaCodigo. Hay dos elementos. Sus llamadas virtuales escriben, respectivamente, el número cuatro y el código nueve. Al terminar lista, sus propietarios retiran los objetos mediante el destructor virtual de la base."
+        }
+      },
+      {
+        "id": "block_0002_0005",
+        "block": {
+          "type": "output_prediction",
+          "id": "p3_u8l9_distinguir_vector_vacio_propietario_nulo_y_cero",
+          "language": "cpp",
+          "question": "Escribe la salida completa. Conserva también el último separador |.",
+          "code": "#include <iostream>\n#include <memory>\n#include <utility>\n#include <vector>\n\nclass Salida {\npublic:\n    Salida() = default;\n    virtual ~Salida() = default;\n    virtual void escribir(std::ostream& destino) const = 0;\n};\nclass SalidaNumero : public Salida {\npublic:\n    explicit SalidaNumero(int numero) : numero_{numero} {}\n    void escribir(std::ostream& destino) const override {\n        destino << \"Numero:\" << numero_;\n    }\nprivate:\n    int numero_;\n};\nclass SalidaCodigo : public Salida {\npublic:\n    explicit SalidaCodigo(int codigo) : codigo_{codigo} {}\n    void escribir(std::ostream& destino) const override {\n        destino << \"Codigo:\" << codigo_;\n    }\nprivate:\n    int codigo_;\n};\nint main() {\n    std::vector<std::unique_ptr<Salida>> lista;\n    std::cout << lista.empty() << '|';\n    lista.push_back(nullptr);\n    lista.push_back(std::make_unique<SalidaNumero>(0));\n    std::cout << lista.size() << '|' << lista.empty() << '|';\n    for (const auto& propietario : lista) {\n        if (propietario) {\n            propietario->escribir(std::cout);\n        } else {\n            std::cout << \"Ausente\";\n        }\n        std::cout << '|';\n    }\n    return 0;\n}\n",
+          "answers": [
+            "1|2|0|Ausente|Numero:0|"
+          ],
+          "outputComparison": "exact",
+          "explanation": "Al principio lista no tiene elementos. Después contiene dos: el primer propietario está vacío y el segundo gestiona una SalidaNumero cuyo dato es cero. size cuenta ambas posiciones y empty ya es falso. El recorrido evita acceder mediante el propietario nulo, escribe Ausente para él y consulta normalmente el objeto de la otra posición."
+        }
+      },
+      {
+        "id": "block_0003_0002",
+        "block": {
+          "type": "code",
+          "language": "cpp",
+          "code": "#include <iostream>\n#include <memory>\n#include <utility>\n#include <vector>\n\nclass Salida {\npublic:\n    Salida() = default;\n    virtual ~Salida() = default;\n    virtual void escribir(std::ostream& destino) const = 0;\n};\nclass SalidaNumero : public Salida {\npublic:\n    explicit SalidaNumero(int numero) : numero_{numero} {}\n    void escribir(std::ostream& destino) const override {\n        destino << \"Numero:\" << numero_;\n    }\nprivate:\n    int numero_;\n};\nclass SalidaCodigo : public Salida {\npublic:\n    explicit SalidaCodigo(int codigo) : codigo_{codigo} {}\n    void escribir(std::ostream& destino) const override {\n        destino << \"Codigo:\" << codigo_;\n    }\nprivate:\n    int codigo_;\n};\nint main() {\n    std::vector<std::unique_ptr<Salida>> lista;\n    lista.push_back(std::make_unique<SalidaNumero>(3));\n    for (auto propietario : lista) {\n        propietario->escribir(std::cout);\n    }\n    return 0;\n}\n"
+        }
+      },
+      {
+        "id": "block_0005_0001",
+        "block": {
+          "type": "code",
+          "language": "cpp",
+          "code": "#include <iostream>\n#include <memory>\n#include <utility>\n#include <vector>\n\nclass Salida {\npublic:\n    Salida() = default;\n    virtual ~Salida() = default;\n    virtual void escribir(std::ostream& destino) const = 0;\n};\nclass SalidaNumero : public Salida {\npublic:\n    explicit SalidaNumero(int numero) : numero_{numero} {}\n    void escribir(std::ostream& destino) const override {\n        destino << \"Numero:\" << numero_;\n    }\nprivate:\n    int numero_;\n};\nclass SalidaCodigo : public Salida {\npublic:\n    explicit SalidaCodigo(int codigo) : codigo_{codigo} {}\n    void escribir(std::ostream& destino) const override {\n        destino << \"Codigo:\" << codigo_;\n    }\nprivate:\n    int codigo_;\n};\nint main() {\n    std::vector<std::unique_ptr<Salida>> lista;\n    lista.push_back(std::make_unique<SalidaNumero>(6));\n    std::unique_ptr<Salida> extraido = std::move(lista[0]);\n    std::cout << lista.size() << '|' << (lista[0] == nullptr) << '|';\n    extraido->escribir(std::cout);\n    return 0;\n}\n"
+        }
+      },
+      {
+        "id": "block_0006_0004",
+        "block": {
+          "type": "output_prediction",
+          "id": "p3_u8l9_crecimiento_con_prestamo_al_objeto_vivo",
+          "language": "cpp",
+          "question": "Escribe la salida. No necesitas conocer la capacidad exacta ni las direcciones numéricas.",
+          "code": "#include <iostream>\n#include <memory>\n#include <utility>\n#include <vector>\n\nclass Salida {\npublic:\n    Salida() = default;\n    virtual ~Salida() = default;\n    virtual void escribir(std::ostream& destino) const = 0;\n};\nclass SalidaNumero : public Salida {\npublic:\n    explicit SalidaNumero(int numero) : numero_{numero} {}\n    void escribir(std::ostream& destino) const override {\n        destino << \"Numero:\" << numero_;\n    }\nprivate:\n    int numero_;\n};\nclass SalidaCodigo : public Salida {\npublic:\n    explicit SalidaCodigo(int codigo) : codigo_{codigo} {}\n    void escribir(std::ostream& destino) const override {\n        destino << \"Codigo:\" << codigo_;\n    }\nprivate:\n    int codigo_;\n};\nint main() {\n    std::vector<std::unique_ptr<Salida>> lista;\n    lista.push_back(std::make_unique<SalidaNumero>(8));\n    const Salida* prestado = lista[0].get();\n    lista.reserve(12);\n    lista.push_back(std::make_unique<SalidaCodigo>(5));\n    std::cout << (prestado == lista[0].get()) << '|';\n    prestado->escribir(std::cout);\n    std::cout << '|' << lista.size();\n    return 0;\n}\n",
+          "answers": [
+            "1|Numero:8|2"
+          ],
+          "outputComparison": "exact",
+          "explanation": "El objeto SalidaNumero continúa vivo después de reserve y del segundo push_back. prestado y el propietario consultado de nuevo en lista[0] siguen accediendo a ese mismo objeto, por lo que la comparación es verdadera. La consulta prestada escribe el número ocho y el vector contiene dos elementos. reserve pide al menos doce posiciones de capacidad, pero no crea doce elementos ni cambia el tipo o la identidad del objeto concreto."
+        }
+      },
+      {
+        "id": "block_0008_0005",
+        "block": {
+          "type": "output_prediction",
+          "id": "p3_u8l9_reset_borrar_elemento_y_vaciar_coleccion",
+          "language": "cpp",
+          "question": "Escribe toda la salida. Sigue por separado las posiciones del vector y los objetos todavía vivos.",
+          "code": "#include <iostream>\n#include <memory>\n#include <utility>\n#include <vector>\n\nclass Salida {\npublic:\n    Salida() = default;\n    virtual ~Salida() = default;\n    virtual void escribir(std::ostream& destino) const = 0;\n};\nstruct Balance {\n    int vivos = 0;\n    int destruidos = 0;\n};\nclass SalidaContada : public Salida {\npublic:\n    SalidaContada(int numero, Balance& balance) : numero_{numero}, balance_{balance} {\n        ++balance_.vivos;\n    }\n    ~SalidaContada() override {\n        --balance_.vivos;\n        ++balance_.destruidos;\n    }\n    void escribir(std::ostream& destino) const override {\n        destino << \"Numero:\" << numero_;\n    }\nprivate:\n    int numero_;\n    Balance& balance_;\n};\nint main() {\n    Balance balance;\n    std::vector<std::unique_ptr<Salida>> lista;\n    lista.push_back(std::make_unique<SalidaContada>(1, balance));\n    lista.push_back(std::make_unique<SalidaContada>(2, balance));\n    lista.push_back(std::make_unique<SalidaContada>(3, balance));\n    {\n        const Salida* ultima = lista[2].get();\n        lista[1].reset();\n        std::cout << \"Reset:\" << lista.size() << ',' << balance.vivos << ',' << balance.destruidos << '|';\n        lista.erase(lista.begin());\n        std::cout << \"Erase:\" << lista.size() << ',' << balance.vivos << ',' << balance.destruidos << '|';\n        ultima->escribir(std::cout);\n        std::cout << '|';\n    }\n    lista.clear();\n    std::cout << \"Clear:\" << lista.size() << ',' << balance.vivos << ',' << balance.destruidos;\n    return 0;\n}\n",
+          "answers": [
+            "Reset:3,2,1|Erase:2,1,2|Numero:3|Clear:0,0,3"
+          ],
+          "outputComparison": "exact",
+          "explanation": "reset retira el objeto de número dos y deja tres elementos, dos objetos vivos y una destrucción. erase elimina el primer propietario, que retira el objeto de número uno: quedan dos elementos, un objeto vivo y dos destrucciones. El objeto de número tres continúa vivo aunque su propietario cambie de posición; ultima puede consultarlo. Después termina ese préstamo y clear elimina los dos elementos restantes, uno vacío y otro con el último objeto. size y vivos quedan en cero y destruidos llega a tres, sin depender de un orden de destrucción entre elementos."
+        }
+      },
+      {
+        "id": "block_0009_0002",
+        "block": {
+          "type": "code",
+          "language": "cpp",
+          "code": "#include <iostream>\n#include <memory>\n#include <utility>\n#include <vector>\n\nclass Salida {\npublic:\n    Salida() = default;\n    virtual ~Salida() = default;\n    virtual void escribir(std::ostream& destino) const = 0;\n};\nclass SalidaNumero : public Salida {\npublic:\n    explicit SalidaNumero(int numero) : numero_{numero} {}\n    void escribir(std::ostream& destino) const override {\n        destino << \"Numero:\" << numero_;\n    }\nprivate:\n    int numero_;\n};\nclass SalidaCodigo : public Salida {\npublic:\n    explicit SalidaCodigo(int codigo) : codigo_{codigo} {}\n    void escribir(std::ostream& destino) const override {\n        destino << \"Codigo:\" << codigo_;\n    }\nprivate:\n    int codigo_;\n};\nint main() {\n    std::vector<std::unique_ptr<Salida>> lista;\n    lista.push_back(std::make_unique<SalidaNumero>(3));\n    auto copia = lista;\n    return 0;\n}\n"
+        }
+      },
+      {
+        "id": "block_0015_0002",
+        "block": {
+          "type": "cpp_compiler",
+          "language": "cpp",
+          "initialCode": "#include <cstddef>\n#include <iostream>\n#include <memory>\n#include <utility>\n#include <vector>\n\nclass Muestra {\npublic:\n    virtual ~Muestra() = default;\n    virtual int numero() const noexcept = 0;\n    virtual void escribir(std::ostream& salida) const = 0;\n};\nclass MuestraSimple : public Muestra {\npublic:\n    explicit MuestraSimple(int numero) : numero_{numero} {}\n    int numero() const noexcept override { return numero_; }\n    void escribir(std::ostream& salida) const override {\n        salida << \"Numero:\" << numero();\n    }\nprivate:\n    int numero_;\n};\nclass MuestraIdentificada : public Muestra {\npublic:\n    MuestraIdentificada(int numero, int codigo) : numero_{numero}, codigo_{codigo} {}\n    int numero() const noexcept override { return numero_; }\n    int codigo() const noexcept { return codigo_; }\n    void escribir(std::ostream& salida) const override {\n        salida << \"Numero:\" << numero() << \";Codigo:\" << codigo();\n    }\nprivate:\n    int numero_;\n    int codigo_;\n};\nstd::unique_ptr<Muestra> crear(int tipo, int numero, int codigo) {\n    if (tipo == 0) {\n        return std::make_unique<MuestraSimple>(numero);\n    }\n    return std::make_unique<MuestraIdentificada>(numero, codigo);\n}\nusing Muestras = std::vector<std::unique_ptr<Muestra>>;\n\nbool agregar(Muestras& destino, std::unique_ptr<Muestra>& fuente) {\n    // Rechaza el propietario vacio o transfiere su objeto al final del vector.\n    (void)destino;\n    (void)fuente;\n    return false;\n}\nvoid informar(const Muestras& datos, std::ostream& salida) {\n    // Consulta el vector y escribe las muestras mediante su interfaz.\n    (void)datos;\n    salida << \"Pendiente\\n\";\n}\nint main() {\n    int cantidad = 0;\n    if (!(std::cin >> cantidad) || cantidad < 0 || cantidad > 8) {\n        return 1;\n    }\n    Muestras lista;\n    for (int i = 0; i < cantidad; ++i) {\n        int tipo = 0, numero = 0, codigo = 0;\n        if (!(std::cin >> tipo >> numero >> codigo) || tipo < 0 || tipo > 1) {\n            return 1;\n        }\n        std::unique_ptr<Muestra> candidata = crear(tipo, numero, codigo);\n        if (!agregar(lista, candidata)) {\n            std::cout << \"FalloInsercion\";\n            return 2;\n        }\n        if (candidata) {\n            std::cout << \"OrigenNoVacio\";\n            return 3;\n        }\n    }\n    const auto cantidad_previa = lista.size();\n    std::unique_ptr<Muestra> vacia;\n    const bool aceptada = agregar(lista, vacia);\n    if (aceptada || vacia || lista.size() != cantidad_previa) {\n        std::cout << \"FalloRechazo\";\n        return 4;\n    }\n    for (const auto& propietario : lista) {\n        if (!propietario) {\n            std::cout << \"ElementoVacio\";\n            return 5;\n        }\n    }\n    std::cout << \"VacioAceptado:\" << aceptada << '\\n';\n    informar(lista, std::cout);\n    lista.clear();\n    std::cout << \"Final:\" << lista.size();\n    return 0;\n}\n",
+          "initialStandardInput": "3\n0 7 99\n1 -4 0\n1 0 -2\n",
+          "outputCheck": {
+            "inputComparison": "tokens",
+            "cases": [
+              {
+                "standardInput": "3\n0 7 99\n1 -4 0\n1 0 -2\n",
+                "outputs": [
+                  "VacioAceptado:0\nCantidad:3\n0:Numero:7\n1:Numero:-4;Codigo:0\n2:Numero:0;Codigo:-2\nFinal:0"
+                ],
+                "explanation": "agregar rechaza un propietario vacío y mueve uno válido al final del vector, conservando el objeto y el orden previo. informar consulta los propietarios existentes, escribe sus posiciones y pide a cada objeto su detalle mediante la operación virtual. clear termina después la propiedad de las muestras."
+              },
+              {
+                "standardInput": "0\n",
+                "outputs": [
+                  "VacioAceptado:0\nCantidad:0\nFinal:0"
+                ],
+                "explanation": "agregar rechaza un propietario vacío y mueve uno válido al final del vector, conservando el objeto y el orden previo. informar consulta los propietarios existentes, escribe sus posiciones y pide a cada objeto su detalle mediante la operación virtual. clear termina después la propiedad de las muestras."
+              },
+              {
+                "standardInput": "1\n0 0 7\n",
+                "outputs": [
+                  "VacioAceptado:0\nCantidad:1\n0:Numero:0\nFinal:0"
+                ],
+                "explanation": "agregar rechaza un propietario vacío y mueve uno válido al final del vector, conservando el objeto y el orden previo. informar consulta los propietarios existentes, escribe sus posiciones y pide a cada objeto su detalle mediante la operación virtual. clear termina después la propiedad de las muestras."
+              },
+              {
+                "standardInput": "2\n1 5 0\n1 5 0\n",
+                "outputs": [
+                  "VacioAceptado:0\nCantidad:2\n0:Numero:5;Codigo:0\n1:Numero:5;Codigo:0\nFinal:0"
+                ],
+                "explanation": "agregar rechaza un propietario vacío y mueve uno válido al final del vector, conservando el objeto y el orden previo. informar consulta los propietarios existentes, escribe sus posiciones y pide a cada objeto su detalle mediante la operación virtual. clear termina después la propiedad de las muestras."
+              },
+              {
+                "standardInput": "2\n0 -9 -3\n1 -9 -3\n",
+                "outputs": [
+                  "VacioAceptado:0\nCantidad:2\n0:Numero:-9\n1:Numero:-9;Codigo:-3\nFinal:0"
+                ],
+                "explanation": "agregar rechaza un propietario vacío y mueve uno válido al final del vector, conservando el objeto y el orden previo. informar consulta los propietarios existentes, escribe sus posiciones y pide a cada objeto su detalle mediante la operación virtual. clear termina después la propiedad de las muestras."
+              }
+            ]
+          }
+        }
+      },
+      {
+        "id": "block_0017_0001",
+        "block": {
+          "type": "code",
+          "language": "cpp",
+          "code": "#include <cstddef>\n#include <iostream>\n#include <memory>\n#include <utility>\n#include <vector>\n\nclass Muestra {\npublic:\n    virtual ~Muestra() = default;\n    virtual int numero() const noexcept = 0;\n    virtual void escribir(std::ostream& salida) const = 0;\n};\nclass MuestraSimple : public Muestra {\npublic:\n    explicit MuestraSimple(int numero) : numero_{numero} {}\n    int numero() const noexcept override { return numero_; }\n    void escribir(std::ostream& salida) const override {\n        salida << \"Numero:\" << numero();\n    }\nprivate:\n    int numero_;\n};\nclass MuestraIdentificada : public Muestra {\npublic:\n    MuestraIdentificada(int numero, int codigo) : numero_{numero}, codigo_{codigo} {}\n    int numero() const noexcept override { return numero_; }\n    int codigo() const noexcept { return codigo_; }\n    void escribir(std::ostream& salida) const override {\n        salida << \"Numero:\" << numero() << \";Codigo:\" << codigo();\n    }\nprivate:\n    int numero_;\n    int codigo_;\n};\nstd::unique_ptr<Muestra> crear(int tipo, int numero, int codigo) {\n    if (tipo == 0) {\n        return std::make_unique<MuestraSimple>(numero);\n    }\n    return std::make_unique<MuestraIdentificada>(numero, codigo);\n}\nusing Muestras = std::vector<std::unique_ptr<Muestra>>;\n\nbool agregar(Muestras& destino, std::unique_ptr<Muestra>& fuente) {\n    if (!fuente) {\n        return false;\n    }\n    destino.push_back(std::move(fuente));\n    return true;\n}\nvoid informar(const Muestras& datos, std::ostream& salida) {\n    salida << \"Cantidad:\" << datos.size() << '\\n';\n    std::size_t posicion = 0;\n    for (const auto& propietario : datos) {\n        salida << posicion << ':';\n        propietario->escribir(salida);\n        salida << '\\n';\n        ++posicion;\n    }\n}\nint main() {\n    int cantidad = 0;\n    if (!(std::cin >> cantidad) || cantidad < 0 || cantidad > 8) {\n        return 1;\n    }\n    Muestras lista;\n    for (int i = 0; i < cantidad; ++i) {\n        int tipo = 0, numero = 0, codigo = 0;\n        if (!(std::cin >> tipo >> numero >> codigo) || tipo < 0 || tipo > 1) {\n            return 1;\n        }\n        std::unique_ptr<Muestra> candidata = crear(tipo, numero, codigo);\n        if (!agregar(lista, candidata)) {\n            std::cout << \"FalloInsercion\";\n            return 2;\n        }\n        if (candidata) {\n            std::cout << \"OrigenNoVacio\";\n            return 3;\n        }\n    }\n    const auto cantidad_previa = lista.size();\n    std::unique_ptr<Muestra> vacia;\n    const bool aceptada = agregar(lista, vacia);\n    if (aceptada || vacia || lista.size() != cantidad_previa) {\n        std::cout << \"FalloRechazo\";\n        return 4;\n    }\n    for (const auto& propietario : lista) {\n        if (!propietario) {\n            std::cout << \"ElementoVacio\";\n            return 5;\n        }\n    }\n    std::cout << \"VacioAceptado:\" << aceptada << '\\n';\n    informar(lista, std::cout);\n    lista.clear();\n    std::cout << \"Final:\" << lista.size();\n    return 0;\n}\n"
+        }
+      }
+    ]
   }
 }

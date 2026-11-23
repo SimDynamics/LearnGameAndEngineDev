@@ -89,7 +89,7 @@
           "id": "p3_u1l5_division_negativa",
           "question": "Predice las tres líneas exactas. Utiliza división entera con truncamiento hacia cero.",
           "language": "cpp",
-          "code": "#include <iostream>\n\nint main() {\n    std::cout << -100 / 6 << '\\n';\n    std::cout << 100 / -6 << '\\n';\n    std::cout << -100 / -6;\n    return 0;\n}\n",
+          "code": "#include <iostream>\n\nint main() {\n    std::cout << -100 / 6 << '\\n';\n    std::cout << 100 / -6 << '\\n';\n    std::cout << -100 / -6;\n\n    return 0;\n}\n",
           "answers": [
             "-16\n-16\n16"
           ],
@@ -306,7 +306,7 @@
         {
           "type": "cpp_compiler",
           "language": "cpp",
-          "initialCode": "#include <iostream>\n#include <limits>\n\nbool multiplicar_comprobado(int a, int b, int& resultado) {\n    // Este punto de partida conserva el dominio no negativo anterior.\n    // Amplia la funcion para cumplir el nuevo contrato.\n    if (a < 0 || b < 0) {\n        return false;\n    }\n    if (a == 0 || b == 0) {\n        resultado = 0;\n        return true;\n    }\n\n    const int maximo = std::numeric_limits<int>::max();\n    if (a > maximo / b) {\n        return false;\n    }\n\n    resultado = a * b;\n    return true;\n}\n\nint main() {\n    int caso = 0;\n    if (!(std::cin >> caso)) {\n        return 1;\n    }\n\n    const int maximo = std::numeric_limits<int>::max();\n    const int minimo = std::numeric_limits<int>::lowest();\n    int a = 0;\n    int b = 0;\n    int esperado = 17;\n    switch (caso) {\n    case 1:\n        a = minimo;\n        b = 1;\n        esperado = minimo;\n        break;\n    case 2:\n        a = minimo;\n        b = -1;\n        break;\n    case 3:\n        a = -1;\n        b = minimo;\n        break;\n    case 4:\n        a = -maximo;\n        b = -1;\n        esperado = maximo;\n        break;\n    case 5:\n        a = maximo;\n        b = -2;\n        break;\n    case 6:\n        a = minimo;\n        b = 2;\n        break;\n    case 7:\n        a = maximo;\n        b = 2;\n        break;\n    case 8:\n        a = minimo;\n        b = 0;\n        esperado = 0;\n        break;\n    case 9:\n        a = 0;\n        b = minimo;\n        esperado = 0;\n        break;\n    case 10:\n        a = 7;\n        b = -6;\n        esperado = -42;\n        break;\n    default:\n        return 1;\n    }\n\n    int resultado = 17;\n    const bool aceptado = multiplicar_comprobado(a, b, resultado);\n    std::cout << \"Aceptado=\" << aceptado << '\\n';\n    std::cout << \"Coincide=\" << (resultado == esperado) << '\\n';\n    std::cout << \"Conservado=\" << (resultado == 17) << '\\n';\n    return 0;\n}\n",
+          "initialCode": "#include <iostream>\n#include <limits>\n\nbool multiplicar_comprobado(int a, int b, int& resultado) {\n    // Este punto de partida conserva el dominio no negativo anterior.\n    // Amplia la funcion para cumplir el nuevo contrato.\n    if (a < 0 || b < 0) {\n        return false;\n    }\n    if (a == 0 || b == 0) {\n        resultado = 0;\n        return true;\n    }\n\n    const int maximo = std::numeric_limits<int>::max();\n    if (a > maximo / b) {\n        return false;\n    }\n\n    resultado = a * b;\n    return true;\n}\n\nint main() {\n    int caso = 0;\n    if (!(std::cin >> caso)) {\n        return 1;\n    }\n\n    const int maximo = std::numeric_limits<int>::max();\n    const int minimo = std::numeric_limits<int>::lowest();\n    int a = 0;\n    int b = 0;\n    int esperado = 17;\n\n    switch (caso) {\n    case 1:\n        a = minimo;\n        b = 1;\n        esperado = minimo;\n        break;\n    case 2:\n        a = minimo;\n        b = -1;\n        break;\n    case 3:\n        a = -1;\n        b = minimo;\n        break;\n    case 4:\n        a = -maximo;\n        b = -1;\n        esperado = maximo;\n        break;\n    case 5:\n        a = maximo;\n        b = -2;\n        break;\n    case 6:\n        a = minimo;\n        b = 2;\n        break;\n    case 7:\n        a = maximo;\n        b = 2;\n        break;\n    case 8:\n        a = minimo;\n        b = 0;\n        esperado = 0;\n        break;\n    case 9:\n        a = 0;\n        b = minimo;\n        esperado = 0;\n        break;\n    case 10:\n        a = 7;\n        b = -6;\n        esperado = -42;\n        break;\n    default:\n        return 1;\n    }\n\n    int resultado = 17;\n    const bool aceptado = multiplicar_comprobado(a, b, resultado);\n\n    std::cout << \"Aceptado=\" << aceptado << '\\n';\n    std::cout << \"Coincide=\" << (resultado == esperado) << '\\n';\n    std::cout << \"Conservado=\" << (resultado == 17) << '\\n';\n\n    return 0;\n}\n",
           "initialStandardInput": "1\n",
           "outputCheck": {
             "inputComparison": "tokens",
@@ -492,7 +492,7 @@
         {
           "type": "code",
           "language": "cpp",
-          "code": "#include <iostream>\n#include <limits>\n\nbool multiplicar_comprobado(int a, int b, int& resultado) {\n    if (a == 0 || b == 0) {\n        resultado = 0;\n        return true;\n    }\n\n    const int maximo = std::numeric_limits<int>::max();\n    const int minimo = std::numeric_limits<int>::lowest();\n    if (a > 0 && b > 0 && a > maximo / b) {\n        return false;\n    }\n    if (a > 0 && b < 0 && b < minimo / a) {\n        return false;\n    }\n    if (a < 0 && b > 0 && a < minimo / b) {\n        return false;\n    }\n    if (a < 0 && b < 0 && a < maximo / b) {\n        return false;\n    }\n\n    resultado = a * b;\n    return true;\n}\n\nint main() {\n    int caso = 0;\n    if (!(std::cin >> caso)) {\n        return 1;\n    }\n\n    const int maximo = std::numeric_limits<int>::max();\n    const int minimo = std::numeric_limits<int>::lowest();\n    int a = 0;\n    int b = 0;\n    int esperado = 17;\n    switch (caso) {\n    case 1:\n        a = minimo;\n        b = 1;\n        esperado = minimo;\n        break;\n    case 2:\n        a = minimo;\n        b = -1;\n        break;\n    case 3:\n        a = -1;\n        b = minimo;\n        break;\n    case 4:\n        a = -maximo;\n        b = -1;\n        esperado = maximo;\n        break;\n    case 5:\n        a = maximo;\n        b = -2;\n        break;\n    case 6:\n        a = minimo;\n        b = 2;\n        break;\n    case 7:\n        a = maximo;\n        b = 2;\n        break;\n    case 8:\n        a = minimo;\n        b = 0;\n        esperado = 0;\n        break;\n    case 9:\n        a = 0;\n        b = minimo;\n        esperado = 0;\n        break;\n    case 10:\n        a = 7;\n        b = -6;\n        esperado = -42;\n        break;\n    default:\n        return 1;\n    }\n\n    int resultado = 17;\n    const bool aceptado = multiplicar_comprobado(a, b, resultado);\n    std::cout << \"Aceptado=\" << aceptado << '\\n';\n    std::cout << \"Coincide=\" << (resultado == esperado) << '\\n';\n    std::cout << \"Conservado=\" << (resultado == 17) << '\\n';\n    return 0;\n}\n"
+          "code": "#include <iostream>\n#include <limits>\n\nbool multiplicar_comprobado(int a, int b, int& resultado) {\n    if (a == 0 || b == 0) {\n        resultado = 0;\n        return true;\n    }\n\n    const int maximo = std::numeric_limits<int>::max();\n    const int minimo = std::numeric_limits<int>::lowest();\n\n    if (a > 0 && b > 0 && a > maximo / b) {\n        return false;\n    }\n    if (a > 0 && b < 0 && b < minimo / a) {\n        return false;\n    }\n    if (a < 0 && b > 0 && a < minimo / b) {\n        return false;\n    }\n    if (a < 0 && b < 0 && a < maximo / b) {\n        return false;\n    }\n\n    resultado = a * b;\n    return true;\n}\n\nint main() {\n    int caso = 0;\n    if (!(std::cin >> caso)) {\n        return 1;\n    }\n\n    const int maximo = std::numeric_limits<int>::max();\n    const int minimo = std::numeric_limits<int>::lowest();\n    int a = 0;\n    int b = 0;\n    int esperado = 17;\n\n    switch (caso) {\n    case 1:\n        a = minimo;\n        b = 1;\n        esperado = minimo;\n        break;\n    case 2:\n        a = minimo;\n        b = -1;\n        break;\n    case 3:\n        a = -1;\n        b = minimo;\n        break;\n    case 4:\n        a = -maximo;\n        b = -1;\n        esperado = maximo;\n        break;\n    case 5:\n        a = maximo;\n        b = -2;\n        break;\n    case 6:\n        a = minimo;\n        b = 2;\n        break;\n    case 7:\n        a = maximo;\n        b = 2;\n        break;\n    case 8:\n        a = minimo;\n        b = 0;\n        esperado = 0;\n        break;\n    case 9:\n        a = 0;\n        b = minimo;\n        esperado = 0;\n        break;\n    case 10:\n        a = 7;\n        b = -6;\n        esperado = -42;\n        break;\n    default:\n        return 1;\n    }\n\n    int resultado = 17;\n    const bool aceptado = multiplicar_comprobado(a, b, resultado);\n\n    std::cout << \"Aceptado=\" << aceptado << '\\n';\n    std::cout << \"Coincide=\" << (resultado == esperado) << '\\n';\n    std::cout << \"Conservado=\" << (resultado == 17) << '\\n';\n\n    return 0;\n}\n"
         },
         {
           "type": "paragraph",
@@ -535,7 +535,7 @@
           "id": "p3_u1l5_destino_compartido",
           "question": "Predice las cuatro líneas exactas. Cada línea muestra el bool retornado y el valor actual del mismo resultado, separados por dos puntos.",
           "language": "cpp",
-          "code": "#include <iostream>\n#include <limits>\n\nbool multiplicar_comprobado(int a, int b, int& resultado) {\n    if (a == 0 || b == 0) {\n        resultado = 0;\n        return true;\n    }\n\n    const int maximo = std::numeric_limits<int>::max();\n    const int minimo = std::numeric_limits<int>::lowest();\n    if (a > 0 && b > 0 && a > maximo / b) {\n        return false;\n    }\n    if (a > 0 && b < 0 && b < minimo / a) {\n        return false;\n    }\n    if (a < 0 && b > 0 && a < minimo / b) {\n        return false;\n    }\n    if (a < 0 && b < 0 && a < maximo / b) {\n        return false;\n    }\n\n    resultado = a * b;\n    return true;\n}\n\nint main() {\n    int resultado = 17;\n    const int maximo = std::numeric_limits<int>::max();\n    const int minimo = std::numeric_limits<int>::lowest();\n\n    const bool primero = multiplicar_comprobado(-7, 6, resultado);\n    std::cout << primero << \":\" << resultado << '\\n';\n\n    const bool segundo = multiplicar_comprobado(minimo, -1, resultado);\n    std::cout << segundo << \":\" << resultado << '\\n';\n\n    const bool tercero = multiplicar_comprobado(0, minimo, resultado);\n    std::cout << tercero << \":\" << resultado << '\\n';\n\n    const bool cuarto = multiplicar_comprobado(maximo, 2, resultado);\n    std::cout << cuarto << \":\" << resultado;\n    return 0;\n}\n",
+          "code": "#include <iostream>\n#include <limits>\n\nbool multiplicar_comprobado(int a, int b, int& resultado) {\n    if (a == 0 || b == 0) {\n        resultado = 0;\n        return true;\n    }\n\n    const int maximo = std::numeric_limits<int>::max();\n    const int minimo = std::numeric_limits<int>::lowest();\n\n    if (a > 0 && b > 0 && a > maximo / b) {\n        return false;\n    }\n    if (a > 0 && b < 0 && b < minimo / a) {\n        return false;\n    }\n    if (a < 0 && b > 0 && a < minimo / b) {\n        return false;\n    }\n    if (a < 0 && b < 0 && a < maximo / b) {\n        return false;\n    }\n\n    resultado = a * b;\n    return true;\n}\n\nint main() {\n    int resultado = 17;\n    const int maximo = std::numeric_limits<int>::max();\n    const int minimo = std::numeric_limits<int>::lowest();\n\n    const bool primero = multiplicar_comprobado(-7, 6, resultado);\n    std::cout << primero << \":\" << resultado << '\\n';\n\n    const bool segundo = multiplicar_comprobado(minimo, -1, resultado);\n    std::cout << segundo << \":\" << resultado << '\\n';\n\n    const bool tercero = multiplicar_comprobado(0, minimo, resultado);\n    std::cout << tercero << \":\" << resultado << '\\n';\n\n    const bool cuarto = multiplicar_comprobado(maximo, 2, resultado);\n    std::cout << cuarto << \":\" << resultado;\n\n    return 0;\n}\n",
           "answers": [
             "1:-42\n0:-42\n1:0\n0:0"
           ],
@@ -1562,6 +1562,151 @@
       }
     },
     "additions": [],
-    "editorial": []
+    "editorial": [
+      {
+        "id": "block_0002_0003",
+        "beforeSha256": "e3ddac7098158853cac241c2aa6206e09c2cab5498cb6001f1e497219efbfba0",
+        "afterSha256": "b2c89424886290b9cb2632621e20b011d64c0d3470a797bf099f9ac975c164db"
+      },
+      {
+        "id": "block_0008_0007",
+        "beforeSha256": "18984a4c0e2dfe74d5df5800b7384ca636a3c7da7132343dd7435a1157cd5b70",
+        "afterSha256": "4f76b6a1de8fa36ebc8b70a492eb3cea340b76c7379bdfb3113968f993549383"
+      },
+      {
+        "id": "block_0010_0001",
+        "beforeSha256": "4e786a3a44a85b8dd779b9badd4109bb82df190c3b5ce116915b198422b93bf4",
+        "afterSha256": "ffebcc951a66543045dfaba4e84199bd00d3f5b1f6c38fc31a261909e15545d9"
+      },
+      {
+        "id": "block_0011_0002",
+        "beforeSha256": "f8cbc0550735ebe046eb687d24edd386380c762683d1715df18b3d6f45416e1e",
+        "afterSha256": "87c32943fe6cebfd99d882d0c53b5ea0203722215f3afc17ea1d616b1cbfdd8c"
+      }
+    ],
+    "sourceFormatRevisions": [
+      {
+        "id": "block_0002_0003",
+        "block": {
+          "type": "output_prediction",
+          "id": "p3_u1l5_division_negativa",
+          "question": "Predice las tres líneas exactas. Utiliza división entera con truncamiento hacia cero.",
+          "language": "cpp",
+          "code": "#include <iostream>\n\nint main() {\n    std::cout << -100 / 6 << '\\n';\n    std::cout << 100 / -6 << '\\n';\n    std::cout << -100 / -6;\n    return 0;\n}\n",
+          "answers": [
+            "-16\n-16\n16"
+          ],
+          "outputComparison": "exact",
+          "explanation": "En las dos primeras divisiones el cociente es negativo y se elimina su fracción, por lo que queda −16. En la tercera los dos signos negativos dan un cociente positivo y queda 16."
+        }
+      },
+      {
+        "id": "block_0008_0007",
+        "block": {
+          "type": "cpp_compiler",
+          "language": "cpp",
+          "initialCode": "#include <iostream>\n#include <limits>\n\nbool multiplicar_comprobado(int a, int b, int& resultado) {\n    // Este punto de partida conserva el dominio no negativo anterior.\n    // Amplia la funcion para cumplir el nuevo contrato.\n    if (a < 0 || b < 0) {\n        return false;\n    }\n    if (a == 0 || b == 0) {\n        resultado = 0;\n        return true;\n    }\n\n    const int maximo = std::numeric_limits<int>::max();\n    if (a > maximo / b) {\n        return false;\n    }\n\n    resultado = a * b;\n    return true;\n}\n\nint main() {\n    int caso = 0;\n    if (!(std::cin >> caso)) {\n        return 1;\n    }\n\n    const int maximo = std::numeric_limits<int>::max();\n    const int minimo = std::numeric_limits<int>::lowest();\n    int a = 0;\n    int b = 0;\n    int esperado = 17;\n    switch (caso) {\n    case 1:\n        a = minimo;\n        b = 1;\n        esperado = minimo;\n        break;\n    case 2:\n        a = minimo;\n        b = -1;\n        break;\n    case 3:\n        a = -1;\n        b = minimo;\n        break;\n    case 4:\n        a = -maximo;\n        b = -1;\n        esperado = maximo;\n        break;\n    case 5:\n        a = maximo;\n        b = -2;\n        break;\n    case 6:\n        a = minimo;\n        b = 2;\n        break;\n    case 7:\n        a = maximo;\n        b = 2;\n        break;\n    case 8:\n        a = minimo;\n        b = 0;\n        esperado = 0;\n        break;\n    case 9:\n        a = 0;\n        b = minimo;\n        esperado = 0;\n        break;\n    case 10:\n        a = 7;\n        b = -6;\n        esperado = -42;\n        break;\n    default:\n        return 1;\n    }\n\n    int resultado = 17;\n    const bool aceptado = multiplicar_comprobado(a, b, resultado);\n    std::cout << \"Aceptado=\" << aceptado << '\\n';\n    std::cout << \"Coincide=\" << (resultado == esperado) << '\\n';\n    std::cout << \"Conservado=\" << (resultado == 17) << '\\n';\n    return 0;\n}\n",
+          "initialStandardInput": "1\n",
+          "outputCheck": {
+            "inputComparison": "tokens",
+            "cases": [
+              {
+                "standardInput": "1\n",
+                "outputs": [
+                  "Aceptado=1\nCoincide=1\nConservado=0\n"
+                ],
+                "explanation": "a = minimo; b = 1. Se acepta y se guarda minimo."
+              },
+              {
+                "standardInput": "2\n",
+                "outputs": [
+                  "Aceptado=0\nCoincide=1\nConservado=1\n"
+                ],
+                "explanation": "a = minimo; b = -1. El producto matemático supera el máximo. Se rechaza y se conserva 17."
+              },
+              {
+                "standardInput": "3\n",
+                "outputs": [
+                  "Aceptado=0\nCoincide=1\nConservado=1\n"
+                ],
+                "explanation": "a = -1; b = minimo. Cambiar el orden de los factores no hace representable el producto. Se rechaza y se conserva 17."
+              },
+              {
+                "standardInput": "4\n",
+                "outputs": [
+                  "Aceptado=1\nCoincide=1\nConservado=0\n"
+                ],
+                "explanation": "a = -maximo; b = -1. Se acepta y se guarda maximo. Preparar -maximo sí es seguro."
+              },
+              {
+                "standardInput": "5\n",
+                "outputs": [
+                  "Aceptado=0\nCoincide=1\nConservado=1\n"
+                ],
+                "explanation": "a = maximo; b = -2. El producto matemático queda por debajo del mínimo. Se rechaza y se conserva 17."
+              },
+              {
+                "standardInput": "6\n",
+                "outputs": [
+                  "Aceptado=0\nCoincide=1\nConservado=1\n"
+                ],
+                "explanation": "a = minimo; b = 2. El producto matemático queda por debajo del mínimo. Se rechaza y se conserva 17."
+              },
+              {
+                "standardInput": "7\n",
+                "outputs": [
+                  "Aceptado=0\nCoincide=1\nConservado=1\n"
+                ],
+                "explanation": "a = maximo; b = 2. El producto matemático supera el máximo. Se rechaza y se conserva 17."
+              },
+              {
+                "standardInput": "8\n",
+                "outputs": [
+                  "Aceptado=1\nCoincide=1\nConservado=0\n"
+                ],
+                "explanation": "a = minimo; b = 0. Se acepta y se guarda 0; no se necesita negar minimo ni dividir."
+              },
+              {
+                "standardInput": "9\n",
+                "outputs": [
+                  "Aceptado=1\nCoincide=1\nConservado=0\n"
+                ],
+                "explanation": "a = 0; b = minimo. Se acepta y se guarda 0 también con los factores en este orden."
+              },
+              {
+                "standardInput": "10\n",
+                "outputs": [
+                  "Aceptado=1\nCoincide=1\nConservado=0\n"
+                ],
+                "explanation": "a = 7; b = -6. Se acepta y se guarda exactamente -42."
+              }
+            ]
+          }
+        }
+      },
+      {
+        "id": "block_0010_0001",
+        "block": {
+          "type": "code",
+          "language": "cpp",
+          "code": "#include <iostream>\n#include <limits>\n\nbool multiplicar_comprobado(int a, int b, int& resultado) {\n    if (a == 0 || b == 0) {\n        resultado = 0;\n        return true;\n    }\n\n    const int maximo = std::numeric_limits<int>::max();\n    const int minimo = std::numeric_limits<int>::lowest();\n    if (a > 0 && b > 0 && a > maximo / b) {\n        return false;\n    }\n    if (a > 0 && b < 0 && b < minimo / a) {\n        return false;\n    }\n    if (a < 0 && b > 0 && a < minimo / b) {\n        return false;\n    }\n    if (a < 0 && b < 0 && a < maximo / b) {\n        return false;\n    }\n\n    resultado = a * b;\n    return true;\n}\n\nint main() {\n    int caso = 0;\n    if (!(std::cin >> caso)) {\n        return 1;\n    }\n\n    const int maximo = std::numeric_limits<int>::max();\n    const int minimo = std::numeric_limits<int>::lowest();\n    int a = 0;\n    int b = 0;\n    int esperado = 17;\n    switch (caso) {\n    case 1:\n        a = minimo;\n        b = 1;\n        esperado = minimo;\n        break;\n    case 2:\n        a = minimo;\n        b = -1;\n        break;\n    case 3:\n        a = -1;\n        b = minimo;\n        break;\n    case 4:\n        a = -maximo;\n        b = -1;\n        esperado = maximo;\n        break;\n    case 5:\n        a = maximo;\n        b = -2;\n        break;\n    case 6:\n        a = minimo;\n        b = 2;\n        break;\n    case 7:\n        a = maximo;\n        b = 2;\n        break;\n    case 8:\n        a = minimo;\n        b = 0;\n        esperado = 0;\n        break;\n    case 9:\n        a = 0;\n        b = minimo;\n        esperado = 0;\n        break;\n    case 10:\n        a = 7;\n        b = -6;\n        esperado = -42;\n        break;\n    default:\n        return 1;\n    }\n\n    int resultado = 17;\n    const bool aceptado = multiplicar_comprobado(a, b, resultado);\n    std::cout << \"Aceptado=\" << aceptado << '\\n';\n    std::cout << \"Coincide=\" << (resultado == esperado) << '\\n';\n    std::cout << \"Conservado=\" << (resultado == 17) << '\\n';\n    return 0;\n}\n"
+        }
+      },
+      {
+        "id": "block_0011_0002",
+        "block": {
+          "type": "output_prediction",
+          "id": "p3_u1l5_destino_compartido",
+          "question": "Predice las cuatro líneas exactas. Cada línea muestra el bool retornado y el valor actual del mismo resultado, separados por dos puntos.",
+          "language": "cpp",
+          "code": "#include <iostream>\n#include <limits>\n\nbool multiplicar_comprobado(int a, int b, int& resultado) {\n    if (a == 0 || b == 0) {\n        resultado = 0;\n        return true;\n    }\n\n    const int maximo = std::numeric_limits<int>::max();\n    const int minimo = std::numeric_limits<int>::lowest();\n    if (a > 0 && b > 0 && a > maximo / b) {\n        return false;\n    }\n    if (a > 0 && b < 0 && b < minimo / a) {\n        return false;\n    }\n    if (a < 0 && b > 0 && a < minimo / b) {\n        return false;\n    }\n    if (a < 0 && b < 0 && a < maximo / b) {\n        return false;\n    }\n\n    resultado = a * b;\n    return true;\n}\n\nint main() {\n    int resultado = 17;\n    const int maximo = std::numeric_limits<int>::max();\n    const int minimo = std::numeric_limits<int>::lowest();\n\n    const bool primero = multiplicar_comprobado(-7, 6, resultado);\n    std::cout << primero << \":\" << resultado << '\\n';\n\n    const bool segundo = multiplicar_comprobado(minimo, -1, resultado);\n    std::cout << segundo << \":\" << resultado << '\\n';\n\n    const bool tercero = multiplicar_comprobado(0, minimo, resultado);\n    std::cout << tercero << \":\" << resultado << '\\n';\n\n    const bool cuarto = multiplicar_comprobado(maximo, 2, resultado);\n    std::cout << cuarto << \":\" << resultado;\n    return 0;\n}\n",
+          "answers": [
+            "1:-42\n0:-42\n1:0\n0:0"
+          ],
+          "outputComparison": "exact",
+          "explanation": "La primera llamada acepta y guarda −42. La segunda rechaza y conserva −42. La tercera acepta el producto cero y sustituye −42 por 0. La cuarta rechaza y conserva ese 0. El bool distingue el cero aceptado del rechazo que deja intacto un cero anterior."
+        }
+      }
+    ]
   }
 }

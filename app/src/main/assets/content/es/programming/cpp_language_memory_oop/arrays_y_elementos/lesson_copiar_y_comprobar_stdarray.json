@@ -20,7 +20,7 @@
         {
           "type": "code",
           "language": "cpp",
-          "code": "#include <array>\n#include <iostream>\n\nint main() {\n    std::array<int, 4> medidas{8, 3};\n    std::cout << medidas.size() << ':' << medidas[0] << ':'\n              << medidas[1] << ':' << medidas[2] << ':' << medidas[3];\n    return 0;\n}\n"
+          "code": "#include <array>\n#include <iostream>\n\nint main() {\n    std::array<int, 4> medidas{8, 3};\n\n    std::cout << medidas.size() << ':' << medidas[0] << ':'\n              << medidas[1] << ':' << medidas[2] << ':' << medidas[3];\n    return 0;\n}\n"
         },
         {
           "type": "paragraph",
@@ -63,7 +63,7 @@
           "id": "p3_u2l6_inicializar_y_contar",
           "language": "cpp",
           "question": "Predice los cinco resultados. Distingue los valores de los elementos, la cantidad y la respuesta de empty().",
-          "code": "#include <array>\n#include <iostream>\n\nint main() {\n    std::array<int, 3> primera{};\n    std::array<int, 3> segunda{6};\n    std::cout << primera[0] << ':' << segunda[0] << ':'\n              << segunda[1] << ':' << segunda.size() << ':' << segunda.empty();\n    return 0;\n}\n",
+          "code": "#include <array>\n#include <iostream>\n\nint main() {\n    std::array<int, 3> primera{};\n    std::array<int, 3> segunda{6};\n\n    std::cout << primera[0] << ':' << segunda[0] << ':'\n              << segunda[1] << ':' << segunda.size() << ':' << segunda.empty();\n    return 0;\n}\n",
           "answers": [
             "0:6:0:3:0"
           ],
@@ -85,7 +85,7 @@
         {
           "type": "code",
           "language": "cpp",
-          "code": "#include <cstddef>\n#include <array>\n#include <iostream>\n\nint main() {\n    constexpr std::size_t cantidad = 2 + 1;\n    std::array<int, cantidad> medidas{5, 9, 2};\n    std::cout << medidas.size() << ':' << medidas[2];\n    return 0;\n}\n"
+          "code": "#include <cstddef>\n#include <array>\n#include <iostream>\n\nint main() {\n    constexpr std::size_t cantidad = 2 + 1;\n    std::array<int, cantidad> medidas{5, 9, 2};\n\n    std::cout << medidas.size() << ':' << medidas[2];\n\n    return 0;\n}\n"
         },
         {
           "type": "paragraph",
@@ -124,7 +124,7 @@
           "id": "p3_u2l6_crear_copia",
           "language": "cpp",
           "question": "El programa crea la copia y después modifica un elemento de cada objeto. Predice los cuatro valores que imprime.",
-          "code": "#include <array>\n#include <iostream>\n\nint main() {\n    std::array<int, 3> original{4, 7, 9};\n    std::array<int, 3> copia = original;\n    copia[1] = 0;\n    original[2] = 5;\n    std::cout << original[1] << ':' << original[2] << ':'\n              << copia[1] << ':' << copia[2];\n    return 0;\n}\n",
+          "code": "#include <array>\n#include <iostream>\n\nint main() {\n    std::array<int, 3> original{4, 7, 9};\n    std::array<int, 3> copia = original;\n\n    copia[1] = 0;\n    original[2] = 5;\n\n    std::cout << original[1] << ':' << original[2] << ':'\n              << copia[1] << ':' << copia[2];\n    return 0;\n}\n",
           "answers": [
             "7:5:0:9"
           ],
@@ -148,7 +148,7 @@
           "id": "p3_u2l6_asignar_conjunto",
           "language": "cpp",
           "question": "Predice qué valores quedan después de la asignación y de los dos cambios posteriores.",
-          "code": "#include <array>\n#include <iostream>\n\nint main() {\n    std::array<int, 3> original{2, 5, 8};\n    std::array<int, 3> copia{};\n    copia = original;\n    original[0] = 9;\n    copia[2] = 0;\n    std::cout << original[0] << ':' << original[2] << ':'\n              << copia[0] << ':' << copia[2];\n    return 0;\n}\n",
+          "code": "#include <array>\n#include <iostream>\n\nint main() {\n    std::array<int, 3> original{2, 5, 8};\n    std::array<int, 3> copia{};\n\n    copia = original;\n    original[0] = 9;\n    copia[2] = 0;\n\n    std::cout << original[0] << ':' << original[2] << ':'\n              << copia[0] << ':' << copia[2];\n    return 0;\n}\n",
           "answers": [
             "9:8:2:0"
           ],
@@ -186,7 +186,7 @@
         {
           "type": "code",
           "language": "cpp",
-          "code": "#include <array>\n#include <iostream>\n\nint main() {\n    std::array<int, 3> original{2, 5, 8};\n    std::array<int, 3> candidata = original;\n    std::array<int, 3> guardada{1, 1, 1};\n    candidata[0] = 6;\n    guardada = candidata;\n    candidata[1] = 0;\n    original[2] = 4;\n    std::cout << original[0] << ':' << original[2] << ':'\n              << candidata[1] << ':' << guardada[1];\n    return 0;\n}\n"
+          "code": "#include <array>\n#include <iostream>\n\nint main() {\n    std::array<int, 3> original{2, 5, 8};\n    std::array<int, 3> candidata = original;\n    std::array<int, 3> guardada{1, 1, 1};\n\n    candidata[0] = 6;\n    guardada = candidata;\n    candidata[1] = 0;\n    original[2] = 4;\n\n    std::cout << original[0] << ':' << original[2] << ':'\n              << candidata[1] << ':' << guardada[1];\n    return 0;\n}\n"
         },
         {
           "type": "math_puzzle",
@@ -312,7 +312,7 @@
           "id": "p3_u2l6_rellenar_y_cambiar",
           "language": "cpp",
           "question": "Compara la inicialización de primera con el relleno de segunda. Predice los cinco valores.",
-          "code": "#include <array>\n#include <iostream>\n\nint main() {\n    std::array<int, 3> primera{4};\n    std::array<int, 3> segunda{};\n    segunda.fill(4);\n    segunda[1] = 2;\n    std::cout << primera[0] << ':' << primera[1] << ':'\n              << segunda[0] << ':' << segunda[1] << ':' << segunda[2];\n    return 0;\n}\n",
+          "code": "#include <array>\n#include <iostream>\n\nint main() {\n    std::array<int, 3> primera{4};\n    std::array<int, 3> segunda{};\n    segunda.fill(4);\n    segunda[1] = 2;\n\n    std::cout << primera[0] << ':' << primera[1] << ':'\n              << segunda[0] << ':' << segunda[1] << ':' << segunda[2];\n    return 0;\n}\n",
           "answers": [
             "4:0:4:2:4"
           ],
@@ -351,7 +351,7 @@
           "id": "p3_u2l6_recorrido_y_extremos",
           "language": "cpp",
           "question": "Cada repetición suma el índice al elemento de esa posición. Todos los índices son válidos y estas sumas pequeñas caben en int. Predice los tres resultados.",
-          "code": "#include <cstddef>\n#include <array>\n#include <iostream>\n\nint main() {\n    std::array<int, 3> valores{3, 1, 4};\n    for (std::size_t i = 0; i < valores.size(); ++i) {\n        valores[i] = valores[i] + static_cast<int>(i);\n    }\n    std::cout << valores.front() << ':' << valores[1] << ':' << valores.back();\n    return 0;\n}\n",
+          "code": "#include <cstddef>\n#include <array>\n#include <iostream>\n\nint main() {\n    std::array<int, 3> valores{3, 1, 4};\n    for (std::size_t i = 0; i < valores.size(); ++i) {\n        valores[i] = valores[i] + static_cast<int>(i);\n    }\n    std::cout << valores.front() << ':' << valores[1] << ':' << valores.back();\n\n    return 0;\n}\n",
           "answers": [
             "3:2:6"
           ],
@@ -381,7 +381,7 @@
         {
           "type": "code",
           "language": "cpp",
-          "code": "#include <stdexcept>\n#include <array>\n#include <iostream>\n\nint main() {\n    std::array<int, 2> valores{3, 6};\n    try {\n        valores.at(valores.size()) = 9;\n        std::cout << \"Cambio realizado\\n\";\n    } catch (const std::out_of_range&) {\n        std::cout << \"Indice invalido\\n\";\n    }\n    std::cout << valores[0] << ':' << valores[1];\n    return 0;\n}\n"
+          "code": "#include <stdexcept>\n#include <array>\n#include <iostream>\n\nint main() {\n    std::array<int, 2> valores{3, 6};\n    try {\n        valores.at(valores.size()) = 9;\n        std::cout << \"Cambio realizado\\n\";\n    } catch (const std::out_of_range&) {\n        std::cout << \"Indice invalido\\n\";\n    }\n    std::cout << valores[0] << ':' << valores[1];\n\n    return 0;\n}\n"
         },
         {
           "type": "paragraph",
@@ -392,7 +392,7 @@
           "id": "p3_u2l6_excepcion_no_deshace",
           "language": "cpp",
           "question": "Este otro programa realiza tres intentos de escritura dentro del try. Predice el rótulo y los valores que llega a mostrar.",
-          "code": "#include <stdexcept>\n#include <array>\n#include <iostream>\n\nint main() {\n    std::array<int, 3> valores{2, 5, 8};\n    try {\n        valores.at(0) = 7;\n        valores.at(3) = 1;\n        valores.at(1) = 9;\n    } catch (const std::out_of_range&) {\n        std::cout << \"Rechazo:\";\n    }\n    std::cout << valores[0] << ':' << valores[1] << ':' << valores[2];\n    return 0;\n}\n",
+          "code": "#include <stdexcept>\n#include <array>\n#include <iostream>\n\nint main() {\n    std::array<int, 3> valores{2, 5, 8};\n    try {\n        valores.at(0) = 7;\n        valores.at(3) = 1;\n        valores.at(1) = 9;\n    } catch (const std::out_of_range&) {\n        std::cout << \"Rechazo:\";\n    }\n    std::cout << valores[0] << ':' << valores[1] << ':' << valores[2];\n\n    return 0;\n}\n",
           "answers": [
             "Rechazo:7:5:8"
           ],
@@ -420,7 +420,7 @@
           "id": "p3_u2l6_sin_elementos",
           "language": "cpp",
           "question": "El programa no accede con [] ni con front o back. Predice la salida de la consulta, el manejo del error y la comparación de sizeof.",
-          "code": "#include <stdexcept>\n#include <array>\n#include <iostream>\n\nint main() {\n    std::array<int, 0> vacio{};\n    vacio.fill(6);\n    std::cout << vacio.size() << ':' << vacio.empty() << ':';\n    try {\n        vacio.at(0) = 9;\n    } catch (const std::out_of_range&) {\n        std::cout << \"Sin elemento:\";\n    }\n    std::cout << (sizeof vacio > 0);\n    return 0;\n}\n",
+          "code": "#include <stdexcept>\n#include <array>\n#include <iostream>\n\nint main() {\n    std::array<int, 0> vacio{};\n    vacio.fill(6);\n    std::cout << vacio.size() << ':' << vacio.empty() << ':';\n    try {\n        vacio.at(0) = 9;\n    } catch (const std::out_of_range&) {\n        std::cout << \"Sin elemento:\";\n    }\n    std::cout << (sizeof vacio > 0);\n\n    return 0;\n}\n",
           "answers": [
             "0:1:Sin elemento:1"
           ],
@@ -496,7 +496,7 @@
         {
           "type": "cpp_compiler",
           "language": "cpp",
-          "initialCode": "#include <array>\n#include <cstddef>\n#include <iostream>\n#include <stdexcept>\n\nint main() {\n    const std::array<int, 4> original{10, 20, 30, 40};\n    std::array<int, 4> guardada{1, 2, 3, 4};\n    int indice1 = 0;\n    int valor1 = 0;\n    int indice2 = 0;\n    int valor2 = 0;\n    if (!(std::cin >> indice1 >> valor1 >> indice2 >> valor2)) {\n        std::cout << \"Error de entrada\\n\";\n        return 0;\n    }\n\n    bool aceptado = false;\n    // Construye aqui una copia candidata de original.\n    // Aplica los dos cambios con at() y guarda el conjunto solo si ambos sirven.\n    // Conserva original y guardada ante cualquier indice invalido.\n\n    std::cout << \"Original:\";\n    for (std::size_t i = 0; i < original.size(); ++i) {\n        std::cout << ' ' << original[i];\n    }\n    std::cout << \"\\nGuardada:\";\n    for (std::size_t i = 0; i < guardada.size(); ++i) {\n        std::cout << ' ' << guardada[i];\n    }\n    std::cout << \"\\nAceptado: \" << aceptado << '\\n';\n    return 0;\n}\n",
+          "initialCode": "#include <array>\n#include <cstddef>\n#include <iostream>\n#include <stdexcept>\n\nint main() {\n    const std::array<int, 4> original{10, 20, 30, 40};\n    std::array<int, 4> guardada{1, 2, 3, 4};\n    int indice1 = 0;\n    int valor1 = 0;\n    int indice2 = 0;\n    int valor2 = 0;\n\n    if (!(std::cin >> indice1 >> valor1 >> indice2 >> valor2)) {\n        std::cout << \"Error de entrada\\n\";\n        return 0;\n    }\n\n    bool aceptado = false;\n    // Construye aqui una copia candidata de original.\n    // Aplica los dos cambios con at() y guarda el conjunto solo si ambos sirven.\n    // Conserva original y guardada ante cualquier indice invalido.\n    \n    std::cout << \"Original:\";\n    for (std::size_t i = 0; i < original.size(); ++i) {\n        std::cout << ' ' << original[i];\n    }\n    std::cout << \"\\nGuardada:\";\n    for (std::size_t i = 0; i < guardada.size(); ++i) {\n        std::cout << ' ' << guardada[i];\n    }\n    std::cout << \"\\nAceptado: \" << aceptado << '\\n';\n\n    return 0;\n}\n",
           "initialStandardInput": "1 7 3 -2\n",
           "outputCheck": {
             "inputComparison": "tokens",
@@ -760,7 +760,7 @@
         {
           "type": "code",
           "language": "cpp",
-          "code": "#include <array>\n#include <cstddef>\n#include <iostream>\n#include <stdexcept>\n\nint main() {\n    const std::array<int, 4> original{10, 20, 30, 40};\n    std::array<int, 4> guardada{1, 2, 3, 4};\n    int indice1 = 0;\n    int valor1 = 0;\n    int indice2 = 0;\n    int valor2 = 0;\n    if (!(std::cin >> indice1 >> valor1 >> indice2 >> valor2)) {\n        std::cout << \"Error de entrada\\n\";\n        return 0;\n    }\n\n    bool aceptado = false;\n    std::array<int, 4> candidata = original;\n    if (indice1 >= 0 && indice2 >= 0) {\n        try {\n            candidata.at(static_cast<std::size_t>(indice1)) = valor1;\n            candidata.at(static_cast<std::size_t>(indice2)) = valor2;\n            guardada = candidata;\n            aceptado = true;\n        } catch (const std::out_of_range&) {\n            // El informe conserva la guardada anterior.\n        }\n    }\n\n    std::cout << \"Original:\";\n    for (std::size_t i = 0; i < original.size(); ++i) {\n        std::cout << ' ' << original[i];\n    }\n    std::cout << \"\\nGuardada:\";\n    for (std::size_t i = 0; i < guardada.size(); ++i) {\n        std::cout << ' ' << guardada[i];\n    }\n    std::cout << \"\\nAceptado: \" << aceptado << '\\n';\n    return 0;\n}\n"
+          "code": "#include <array>\n#include <cstddef>\n#include <iostream>\n#include <stdexcept>\n\nint main() {\n    const std::array<int, 4> original{10, 20, 30, 40};\n    std::array<int, 4> guardada{1, 2, 3, 4};\n    int indice1 = 0;\n    int valor1 = 0;\n    int indice2 = 0;\n    int valor2 = 0;\n\n    if (!(std::cin >> indice1 >> valor1 >> indice2 >> valor2)) {\n        std::cout << \"Error de entrada\\n\";\n        return 0;\n    }\n\n    bool aceptado = false;\n    std::array<int, 4> candidata = original;\n\n    if (indice1 >= 0 && indice2 >= 0) {\n        try {\n            candidata.at(static_cast<std::size_t>(indice1)) = valor1;\n            candidata.at(static_cast<std::size_t>(indice2)) = valor2;\n            guardada = candidata;\n            aceptado = true;\n        } catch (const std::out_of_range&) {\n            // El informe conserva la guardada anterior.\n        }\n    }\n\n    std::cout << \"Original:\";\n    for (std::size_t i = 0; i < original.size(); ++i) {\n        std::cout << ' ' << original[i];\n    }\n    std::cout << \"\\nGuardada:\";\n    for (std::size_t i = 0; i < guardada.size(); ++i) {\n        std::cout << ' ' << guardada[i];\n    }\n    std::cout << \"\\nAceptado: \" << aceptado << '\\n';\n\n    return 0;\n}\n"
         },
         {
           "type": "paragraph",
@@ -2120,6 +2120,282 @@
       }
     },
     "additions": [],
-    "editorial": []
+    "editorial": [
+      {
+        "id": "block_0000_0003",
+        "beforeSha256": "1537be30bbd07a1976de8b280a5433571bcf3997cc532cdd820a80c7c1286781",
+        "afterSha256": "01eb2beee8dffe70c1115a813f96587f6b107c6d8101c3ded312f7e4c3168707"
+      },
+      {
+        "id": "block_0001_0004",
+        "beforeSha256": "d9fe1804ed8cddc5c0320ff4c960465e5ce776ea54bd47867bdcc7bf7a9f5cc3",
+        "afterSha256": "78ffd278cd9391c02ad13956065e21e22fd5f8e183863a84d7612702d45a540b"
+      },
+      {
+        "id": "block_0002_0002",
+        "beforeSha256": "bbcdf506d2ae2afbaf99083e5a0c490e6ba92653db3177ca20c6b0458c21b17b",
+        "afterSha256": "88c13308b31db26454e02a5b1282c91050d52dcd786a933cd490649ed9cfe2a1"
+      },
+      {
+        "id": "block_0003_0003",
+        "beforeSha256": "dcfe4a0d20f90caed43bada8c6842eb021505c278ade03d7f10c6f74aa5e808b",
+        "afterSha256": "b523023f28bd9240898b25d460fea379eb90af29912155b99132813443ed60d1"
+      },
+      {
+        "id": "block_0004_0002",
+        "beforeSha256": "b7c2be1b32bb6c6d4ffad43c72d229daacb50577f6a853602d854f720e560165",
+        "afterSha256": "7e70dac6d57798d5485ec99273907488926d2604a294c73154c02414db3b46be"
+      },
+      {
+        "id": "block_0005_0002",
+        "beforeSha256": "0a4d2090ee8e861d04c7e38acc46211864589b84171c5894a1a378f7fc2da2a4",
+        "afterSha256": "8a9f6f3c51277b9e211cd844ded28d340c9a62dfa17cf0d2b126aa7fa5d00d53"
+      },
+      {
+        "id": "block_0006_0002",
+        "beforeSha256": "c1a5dd2ad73df0a56ba214a4ddbf3d7b7c8c03072c48813bd54a06ba9427c318",
+        "afterSha256": "01e3f5831bf9a100adc1113f8f30f23fc4604cac9c5c47ea151cb902759fd333"
+      },
+      {
+        "id": "block_0007_0003",
+        "beforeSha256": "65f51d38c3c1412d90e93b8ce3075f8ed6968ca18c186e5e5a2021c0114e91ac",
+        "afterSha256": "ff0ba145be345a7a15fb2fcae860b163b079a4866d54100e631e25e6f75de218"
+      },
+      {
+        "id": "block_0008_0003",
+        "beforeSha256": "d345b7af84e7e3740a775045fa2e70913fea52620843fcfba86443147e47a62d",
+        "afterSha256": "af92c10f5d14a5572d2d5480d50170a3a911404d8308b6fe3a3b8711b199bed8"
+      },
+      {
+        "id": "block_0008_0005",
+        "beforeSha256": "8265f2c67f7c13f5c768bae746c6e0aa9aefc18a4dcb34537360ed5d26f82f37",
+        "afterSha256": "33a0ea158c90ed1b9f2be7263ca3807891c76586c4d961c0d4983bb084a27fd1"
+      },
+      {
+        "id": "block_0009_0003",
+        "beforeSha256": "13dbb91eb13e4a759b199b0e69dd4a49f3a29afc47c89740d8251c06f1920396",
+        "afterSha256": "11ef915902d465c0c47118063f2b7cb398d8c43adb9899c659b3cf5b73beb1be"
+      },
+      {
+        "id": "block_0010_0012",
+        "beforeSha256": "187951ced89641eaaab28edd37249f9d59b4d13532bba53d95d7f6104137ba29",
+        "afterSha256": "7f58ef6538f352349cbe92de3a020424a352a3fae74dee8cc6942092c311cd43"
+      },
+      {
+        "id": "block_0014_0001",
+        "beforeSha256": "d16be5eef713297c035b85b17f6c29d1e05b4843d77f5047d2ea494a0132b7b0",
+        "afterSha256": "f0164341be4a8a05692e0ddf25c53067f6ceb04b55cec666008f24ead5a2089d"
+      }
+    ],
+    "sourceFormatRevisions": [
+      {
+        "id": "block_0000_0003",
+        "block": {
+          "type": "code",
+          "language": "cpp",
+          "code": "#include <array>\n#include <iostream>\n\nint main() {\n    std::array<int, 4> medidas{8, 3};\n    std::cout << medidas.size() << ':' << medidas[0] << ':'\n              << medidas[1] << ':' << medidas[2] << ':' << medidas[3];\n    return 0;\n}\n"
+        }
+      },
+      {
+        "id": "block_0001_0004",
+        "block": {
+          "type": "output_prediction",
+          "id": "p3_u2l6_inicializar_y_contar",
+          "language": "cpp",
+          "question": "Predice los cinco resultados. Distingue los valores de los elementos, la cantidad y la respuesta de empty().",
+          "code": "#include <array>\n#include <iostream>\n\nint main() {\n    std::array<int, 3> primera{};\n    std::array<int, 3> segunda{6};\n    std::cout << primera[0] << ':' << segunda[0] << ':'\n              << segunda[1] << ':' << segunda.size() << ':' << segunda.empty();\n    return 0;\n}\n",
+          "answers": [
+            "0:6:0:3:0"
+          ],
+          "outputComparison": "exact",
+          "explanation": "primera tiene tres ceros. segunda contiene 6, 0 y 0; su cantidad sigue siendo tres. empty() da false y se muestra como 0 porque existen esos tres elementos."
+        }
+      },
+      {
+        "id": "block_0002_0002",
+        "block": {
+          "type": "code",
+          "language": "cpp",
+          "code": "#include <cstddef>\n#include <array>\n#include <iostream>\n\nint main() {\n    constexpr std::size_t cantidad = 2 + 1;\n    std::array<int, cantidad> medidas{5, 9, 2};\n    std::cout << medidas.size() << ':' << medidas[2];\n    return 0;\n}\n"
+        }
+      },
+      {
+        "id": "block_0003_0003",
+        "block": {
+          "type": "output_prediction",
+          "id": "p3_u2l6_crear_copia",
+          "language": "cpp",
+          "question": "El programa crea la copia y después modifica un elemento de cada objeto. Predice los cuatro valores que imprime.",
+          "code": "#include <array>\n#include <iostream>\n\nint main() {\n    std::array<int, 3> original{4, 7, 9};\n    std::array<int, 3> copia = original;\n    copia[1] = 0;\n    original[2] = 5;\n    std::cout << original[1] << ':' << original[2] << ':'\n              << copia[1] << ':' << copia[2];\n    return 0;\n}\n",
+          "answers": [
+            "7:5:0:9"
+          ],
+          "outputComparison": "exact",
+          "explanation": "Al copiar, ambos contenían 4, 7 y 9. El cambio de copia[1] sólo guarda 0 en copia. El cambio de original[2] sólo guarda 5 en original; copia[2] conserva 9."
+        }
+      },
+      {
+        "id": "block_0004_0002",
+        "block": {
+          "type": "output_prediction",
+          "id": "p3_u2l6_asignar_conjunto",
+          "language": "cpp",
+          "question": "Predice qué valores quedan después de la asignación y de los dos cambios posteriores.",
+          "code": "#include <array>\n#include <iostream>\n\nint main() {\n    std::array<int, 3> original{2, 5, 8};\n    std::array<int, 3> copia{};\n    copia = original;\n    original[0] = 9;\n    copia[2] = 0;\n    std::cout << original[0] << ':' << original[2] << ':'\n              << copia[0] << ':' << copia[2];\n    return 0;\n}\n",
+          "answers": [
+            "9:8:2:0"
+          ],
+          "outputComparison": "exact",
+          "explanation": "La asignación deja 2, 5 y 8 en copia. Luego original[0] cambia a 9 y copia[2] cambia a 0. No vuelven a copiarse los valores automáticamente al cambiar uno de los objetos."
+        }
+      },
+      {
+        "id": "block_0005_0002",
+        "block": {
+          "type": "code",
+          "language": "cpp",
+          "code": "#include <array>\n#include <iostream>\n\nint main() {\n    std::array<int, 3> original{2, 5, 8};\n    std::array<int, 3> candidata = original;\n    std::array<int, 3> guardada{1, 1, 1};\n    candidata[0] = 6;\n    guardada = candidata;\n    candidata[1] = 0;\n    original[2] = 4;\n    std::cout << original[0] << ':' << original[2] << ':'\n              << candidata[1] << ':' << guardada[1];\n    return 0;\n}\n"
+        }
+      },
+      {
+        "id": "block_0006_0002",
+        "block": {
+          "type": "output_prediction",
+          "id": "p3_u2l6_rellenar_y_cambiar",
+          "language": "cpp",
+          "question": "Compara la inicialización de primera con el relleno de segunda. Predice los cinco valores.",
+          "code": "#include <array>\n#include <iostream>\n\nint main() {\n    std::array<int, 3> primera{4};\n    std::array<int, 3> segunda{};\n    segunda.fill(4);\n    segunda[1] = 2;\n    std::cout << primera[0] << ':' << primera[1] << ':'\n              << segunda[0] << ':' << segunda[1] << ':' << segunda[2];\n    return 0;\n}\n",
+          "answers": [
+            "4:0:4:2:4"
+          ],
+          "outputComparison": "exact",
+          "explanation": "primera queda en 4, 0, 0. fill pone los tres elementos de segunda en 4; después sólo su índice 1 pasa a 2. Las dos cantidades siguen siendo tres."
+        }
+      },
+      {
+        "id": "block_0007_0003",
+        "block": {
+          "type": "output_prediction",
+          "id": "p3_u2l6_recorrido_y_extremos",
+          "language": "cpp",
+          "question": "Cada repetición suma el índice al elemento de esa posición. Todos los índices son válidos y estas sumas pequeñas caben en int. Predice los tres resultados.",
+          "code": "#include <cstddef>\n#include <array>\n#include <iostream>\n\nint main() {\n    std::array<int, 3> valores{3, 1, 4};\n    for (std::size_t i = 0; i < valores.size(); ++i) {\n        valores[i] = valores[i] + static_cast<int>(i);\n    }\n    std::cout << valores.front() << ':' << valores[1] << ':' << valores.back();\n    return 0;\n}\n",
+          "answers": [
+            "3:2:6"
+          ],
+          "outputComparison": "exact",
+          "explanation": "Se ejecutan los índices 0, 1 y 2. Los valores resultan 3 + 0, 1 + 1 y 4 + 2. front() consulta el primero y back() consulta el tercero."
+        }
+      },
+      {
+        "id": "block_0008_0003",
+        "block": {
+          "type": "code",
+          "language": "cpp",
+          "code": "#include <stdexcept>\n#include <array>\n#include <iostream>\n\nint main() {\n    std::array<int, 2> valores{3, 6};\n    try {\n        valores.at(valores.size()) = 9;\n        std::cout << \"Cambio realizado\\n\";\n    } catch (const std::out_of_range&) {\n        std::cout << \"Indice invalido\\n\";\n    }\n    std::cout << valores[0] << ':' << valores[1];\n    return 0;\n}\n"
+        }
+      },
+      {
+        "id": "block_0008_0005",
+        "block": {
+          "type": "output_prediction",
+          "id": "p3_u2l6_excepcion_no_deshace",
+          "language": "cpp",
+          "question": "Este otro programa realiza tres intentos de escritura dentro del try. Predice el rótulo y los valores que llega a mostrar.",
+          "code": "#include <stdexcept>\n#include <array>\n#include <iostream>\n\nint main() {\n    std::array<int, 3> valores{2, 5, 8};\n    try {\n        valores.at(0) = 7;\n        valores.at(3) = 1;\n        valores.at(1) = 9;\n    } catch (const std::out_of_range&) {\n        std::cout << \"Rechazo:\";\n    }\n    std::cout << valores[0] << ':' << valores[1] << ':' << valores[2];\n    return 0;\n}\n",
+          "answers": [
+            "Rechazo:7:5:8"
+          ],
+          "outputComparison": "exact",
+          "explanation": "El índice 0 es válido y su elemento pasa a 7. at(3) falla porque sólo hay tres elementos y el último índice es 2. Se salta la escritura posterior de 9. Capturar el error no deshace la primera escritura: el 7 permanece."
+        }
+      },
+      {
+        "id": "block_0009_0003",
+        "block": {
+          "type": "output_prediction",
+          "id": "p3_u2l6_sin_elementos",
+          "language": "cpp",
+          "question": "El programa no accede con [] ni con front o back. Predice la salida de la consulta, el manejo del error y la comparación de sizeof.",
+          "code": "#include <stdexcept>\n#include <array>\n#include <iostream>\n\nint main() {\n    std::array<int, 0> vacio{};\n    vacio.fill(6);\n    std::cout << vacio.size() << ':' << vacio.empty() << ':';\n    try {\n        vacio.at(0) = 9;\n    } catch (const std::out_of_range&) {\n        std::cout << \"Sin elemento:\";\n    }\n    std::cout << (sizeof vacio > 0);\n    return 0;\n}\n",
+          "answers": [
+            "0:1:Sin elemento:1"
+          ],
+          "outputComparison": "exact",
+          "explanation": "No hay elementos, así que size() muestra 0 y empty() muestra 1. fill no escribe nada. at(0) lanza el error y el catch muestra Sin elemento. sizeof vacio es positivo aunque la cantidad de elementos sea cero."
+        }
+      },
+      {
+        "id": "block_0010_0012",
+        "block": {
+          "type": "cpp_compiler",
+          "language": "cpp",
+          "initialCode": "#include <array>\n#include <cstddef>\n#include <iostream>\n#include <stdexcept>\n\nint main() {\n    const std::array<int, 4> original{10, 20, 30, 40};\n    std::array<int, 4> guardada{1, 2, 3, 4};\n    int indice1 = 0;\n    int valor1 = 0;\n    int indice2 = 0;\n    int valor2 = 0;\n    if (!(std::cin >> indice1 >> valor1 >> indice2 >> valor2)) {\n        std::cout << \"Error de entrada\\n\";\n        return 0;\n    }\n\n    bool aceptado = false;\n    // Construye aqui una copia candidata de original.\n    // Aplica los dos cambios con at() y guarda el conjunto solo si ambos sirven.\n    // Conserva original y guardada ante cualquier indice invalido.\n\n    std::cout << \"Original:\";\n    for (std::size_t i = 0; i < original.size(); ++i) {\n        std::cout << ' ' << original[i];\n    }\n    std::cout << \"\\nGuardada:\";\n    for (std::size_t i = 0; i < guardada.size(); ++i) {\n        std::cout << ' ' << guardada[i];\n    }\n    std::cout << \"\\nAceptado: \" << aceptado << '\\n';\n    return 0;\n}\n",
+          "initialStandardInput": "1 7 3 -2\n",
+          "outputCheck": {
+            "inputComparison": "tokens",
+            "cases": [
+              {
+                "standardInput": "1 7 3 -2\n",
+                "outputs": [
+                  "Original: 10 20 30 40\nGuardada: 10 7 30 -2\nAceptado: 1\n"
+                ],
+                "explanation": "Aplicar los dos cambios en orden a una copia de original; sustituir guardada sólo si ambos índices son válidos. Ante rechazo, conservar 1, 2, 3 y 4."
+              },
+              {
+                "standardInput": "0 0 3 90\n",
+                "outputs": [
+                  "Original: 10 20 30 40\nGuardada: 0 20 30 90\nAceptado: 1\n"
+                ],
+                "explanation": "Aplicar los dos cambios en orden a una copia de original; sustituir guardada sólo si ambos índices son válidos. Ante rechazo, conservar 1, 2, 3 y 4."
+              },
+              {
+                "standardInput": "2 7 2 -3\n",
+                "outputs": [
+                  "Original: 10 20 30 40\nGuardada: 10 20 -3 40\nAceptado: 1\n"
+                ],
+                "explanation": "Aplicar los dos cambios en orden a una copia de original; sustituir guardada sólo si ambos índices son válidos. Ante rechazo, conservar 1, 2, 3 y 4."
+              },
+              {
+                "standardInput": "0 8 4 9\n",
+                "outputs": [
+                  "Original: 10 20 30 40\nGuardada: 1 2 3 4\nAceptado: 0\n"
+                ],
+                "explanation": "Aplicar los dos cambios en orden a una copia de original; sustituir guardada sólo si ambos índices son válidos. Ante rechazo, conservar 1, 2, 3 y 4."
+              },
+              {
+                "standardInput": "4 8 1 9\n",
+                "outputs": [
+                  "Original: 10 20 30 40\nGuardada: 1 2 3 4\nAceptado: 0\n"
+                ],
+                "explanation": "Aplicar los dos cambios en orden a una copia de original; sustituir guardada sólo si ambos índices son válidos. Ante rechazo, conservar 1, 2, 3 y 4."
+              },
+              {
+                "standardInput": "-1 8 1 9\n",
+                "outputs": [
+                  "Original: 10 20 30 40\nGuardada: 1 2 3 4\nAceptado: 0\n"
+                ],
+                "explanation": "Aplicar los dos cambios en orden a una copia de original; sustituir guardada sólo si ambos índices son válidos. Ante rechazo, conservar 1, 2, 3 y 4."
+              },
+              {
+                "standardInput": "0 8 -1 9\n",
+                "outputs": [
+                  "Original: 10 20 30 40\nGuardada: 1 2 3 4\nAceptado: 0\n"
+                ],
+                "explanation": "Aplicar los dos cambios en orden a una copia de original; sustituir guardada sólo si ambos índices son válidos. Ante rechazo, conservar 1, 2, 3 y 4."
+              }
+            ]
+          }
+        }
+      },
+      {
+        "id": "block_0014_0001",
+        "block": {
+          "type": "code",
+          "language": "cpp",
+          "code": "#include <array>\n#include <cstddef>\n#include <iostream>\n#include <stdexcept>\n\nint main() {\n    const std::array<int, 4> original{10, 20, 30, 40};\n    std::array<int, 4> guardada{1, 2, 3, 4};\n    int indice1 = 0;\n    int valor1 = 0;\n    int indice2 = 0;\n    int valor2 = 0;\n    if (!(std::cin >> indice1 >> valor1 >> indice2 >> valor2)) {\n        std::cout << \"Error de entrada\\n\";\n        return 0;\n    }\n\n    bool aceptado = false;\n    std::array<int, 4> candidata = original;\n    if (indice1 >= 0 && indice2 >= 0) {\n        try {\n            candidata.at(static_cast<std::size_t>(indice1)) = valor1;\n            candidata.at(static_cast<std::size_t>(indice2)) = valor2;\n            guardada = candidata;\n            aceptado = true;\n        } catch (const std::out_of_range&) {\n            // El informe conserva la guardada anterior.\n        }\n    }\n\n    std::cout << \"Original:\";\n    for (std::size_t i = 0; i < original.size(); ++i) {\n        std::cout << ' ' << original[i];\n    }\n    std::cout << \"\\nGuardada:\";\n    for (std::size_t i = 0; i < guardada.size(); ++i) {\n        std::cout << ' ' << guardada[i];\n    }\n    std::cout << \"\\nAceptado: \" << aceptado << '\\n';\n    return 0;\n}\n"
+        }
+      }
+    ]
   }
 }

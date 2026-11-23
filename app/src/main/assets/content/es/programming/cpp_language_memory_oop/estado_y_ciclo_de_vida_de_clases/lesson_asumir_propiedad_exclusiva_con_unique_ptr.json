@@ -46,7 +46,7 @@
           "id": "p3_u6l4_vacio_frente_a_valor_cero",
           "language": "cpp",
           "question": "¿Qué muestra el programa? Las dos primeras comparaciones indican si existe un objeto gestionado.",
-          "code": "#include <iostream>\n#include <memory>\n\nint main() {\n    std::unique_ptr<int> vacio;\n    auto cero = std::make_unique<int>();\n    std::cout << (vacio != nullptr) << ':' << (cero != nullptr) << ':' << *cero;\n    return 0;\n}\n",
+          "code": "#include <iostream>\n#include <memory>\n\nint main() {\n    std::unique_ptr<int> vacio;\n    auto cero = std::make_unique<int>();\n    std::cout << (vacio != nullptr) << ':' << (cero != nullptr) << ':' << *cero;\n\n    return 0;\n}\n",
           "answers": [
             "0:1:0"
           ],
@@ -102,7 +102,7 @@
           "id": "p3_u6l4_dos_accesos_prestados",
           "language": "cpp",
           "question": "¿Qué muestran el propietario, el segundo acceso y la comprobación final?",
-          "code": "#include <iostream>\n#include <memory>\n\nint main() {\n    auto propietario = std::make_unique<int>(5);\n    int* primero = propietario.get();\n    const int* segundo = propietario.get();\n    *primero = 8;\n    std::cout << *propietario << ':' << *segundo << ':' << (propietario != nullptr);\n    return 0;\n}\n",
+          "code": "#include <iostream>\n#include <memory>\n\nint main() {\n    auto propietario = std::make_unique<int>(5);\n    int* primero = propietario.get();\n    const int* segundo = propietario.get();\n    *primero = 8;\n    std::cout << *propietario << ':' << *segundo << ':' << (propietario != nullptr);\n\n    return 0;\n}\n",
           "answers": [
             "8:8:1"
           ],
@@ -134,7 +134,7 @@
           "id": "p3_u6l4_copia_del_entero",
           "language": "cpp",
           "question": "¿Qué valores muestran la copia del int y el objeto gestionado?",
-          "code": "#include <iostream>\n#include <memory>\n\nint main() {\n    auto propietario = std::make_unique<int>(3);\n    int copia = *propietario;\n    *propietario = 9;\n    std::cout << copia << ':' << *propietario;\n    return 0;\n}\n",
+          "code": "#include <iostream>\n#include <memory>\n\nint main() {\n    auto propietario = std::make_unique<int>(3);\n    int copia = *propietario;\n    *propietario = 9;\n    std::cout << copia << ':' << *propietario;\n\n    return 0;\n}\n",
           "answers": [
             "3:9"
           ],
@@ -162,7 +162,7 @@
           "id": "p3_u6l4_const_del_propietario_y_del_objeto",
           "language": "cpp",
           "question": "¿Qué muestran los dos objetos después de la escritura permitida?",
-          "code": "#include <iostream>\n#include <memory>\n\nint main() {\n    const std::unique_ptr<int> fijo = std::make_unique<int>(2);\n    std::unique_ptr<const int> lectura = std::make_unique<const int>(5);\n    *fijo = 8;\n    std::cout << *fijo << ':' << *lectura;\n    return 0;\n}\n",
+          "code": "#include <iostream>\n#include <memory>\n\nint main() {\n    const std::unique_ptr<int> fijo = std::make_unique<int>(2);\n    std::unique_ptr<const int> lectura = std::make_unique<const int>(5);\n    *fijo = 8;\n    std::cout << *fijo << ':' << *lectura;\n\n    return 0;\n}\n",
           "answers": [
             "8:5"
           ],
@@ -190,7 +190,7 @@
           "id": "p3_u6l4_miembro_propietario",
           "language": "cpp",
           "question": "Escribe la salida completa de este objeto con un miembro propietario.",
-          "code": "#include <iostream>\n#include <memory>\n\nclass Marca {\npublic:\n    Marca(char etiqueta) : etiqueta_{etiqueta} {\n        std::cout << \"Crear:\" << etiqueta_ << '\\n';\n    }\n    ~Marca() {\n        std::cout << \"Destruir:\" << etiqueta_ << '\\n';\n    }\n    char etiqueta() const { return etiqueta_; }\nprivate:\n    char etiqueta_;\n};\n\nclass Bolsa {\nprivate:\n    std::unique_ptr<Marca> marca_ = std::make_unique<Marca>('M');\n};\n\nint main() {\n    {\n        Bolsa bolsa;\n        std::cout << \"Uso\\n\";\n    }\n    std::cout << \"Fuera\";\n    return 0;\n}\n",
+          "code": "#include <iostream>\n#include <memory>\n\nclass Marca {\npublic:\n    Marca(char etiqueta) : etiqueta_{etiqueta} {\n        std::cout << \"Crear:\" << etiqueta_ << '\\n';\n    }\n    ~Marca() {\n        std::cout << \"Destruir:\" << etiqueta_ << '\\n';\n    }\n    char etiqueta() const { return etiqueta_; }\nprivate:\n    char etiqueta_;\n};\n\nclass Bolsa {\nprivate:\n    std::unique_ptr<Marca> marca_ = std::make_unique<Marca>('M');\n};\n\nint main() {\n    {\n        Bolsa bolsa;\n        std::cout << \"Uso\\n\";\n    }\n    std::cout << \"Fuera\";\n\n    return 0;\n}\n",
           "answers": [
             "Crear:M\nUso\nDestruir:M\nFuera"
           ],
@@ -218,7 +218,7 @@
           "id": "p3_u6l4_vaciar_mediante_reset",
           "language": "cpp",
           "question": "¿Qué mensajes aparecen al vaciar y volver a vaciar?",
-          "code": "#include <iostream>\n#include <memory>\n\nclass Marca {\npublic:\n    Marca(char etiqueta) : etiqueta_{etiqueta} {\n        std::cout << \"Crear:\" << etiqueta_ << '\\n';\n    }\n    ~Marca() {\n        std::cout << \"Destruir:\" << etiqueta_ << '\\n';\n    }\n    char etiqueta() const { return etiqueta_; }\nprivate:\n    char etiqueta_;\n};\n\nint main() {\n    auto propietario = std::make_unique<Marca>('A');\n    std::cout << \"Uso:\" << propietario->etiqueta() << '\\n';\n    propietario.reset();\n    std::cout << \"Vacio:\" << (propietario == nullptr) << '\\n';\n    propietario.reset();\n    std::cout << \"Despues\";\n    return 0;\n}\n",
+          "code": "#include <iostream>\n#include <memory>\n\nclass Marca {\npublic:\n    Marca(char etiqueta) : etiqueta_{etiqueta} {\n        std::cout << \"Crear:\" << etiqueta_ << '\\n';\n    }\n    ~Marca() {\n        std::cout << \"Destruir:\" << etiqueta_ << '\\n';\n    }\n    char etiqueta() const { return etiqueta_; }\nprivate:\n    char etiqueta_;\n};\n\nint main() {\n    auto propietario = std::make_unique<Marca>('A');\n\n    std::cout << \"Uso:\" << propietario->etiqueta() << '\\n';\n    propietario.reset();\n    std::cout << \"Vacio:\" << (propietario == nullptr) << '\\n';\n    propietario.reset();\n    std::cout << \"Despues\";\n\n    return 0;\n}\n",
           "answers": [
             "Crear:A\nUso:A\nDestruir:A\nVacio:1\nDespues"
           ],
@@ -274,7 +274,7 @@
           "id": "p3_u6l4_excepcion_tras_creacion",
           "language": "cpp",
           "question": "¿Qué orden muestran la Marca gestionada y el catch?",
-          "code": "#include <iostream>\n#include <memory>\n\nclass Marca {\npublic:\n    Marca(char etiqueta) : etiqueta_{etiqueta} {\n        std::cout << \"Crear:\" << etiqueta_ << '\\n';\n    }\n    ~Marca() {\n        std::cout << \"Destruir:\" << etiqueta_ << '\\n';\n    }\n    char etiqueta() const { return etiqueta_; }\nprivate:\n    char etiqueta_;\n};\n\nstruct Fallo {};\n\nint main() {\n    try {\n        auto propietario = std::make_unique<Marca>('E');\n        throw Fallo{};\n    } catch (const Fallo&) {\n        std::cout << \"Captura\";\n    }\n    return 0;\n}\n",
+          "code": "#include <iostream>\n#include <memory>\n\nclass Marca {\npublic:\n    Marca(char etiqueta) : etiqueta_{etiqueta} {\n        std::cout << \"Crear:\" << etiqueta_ << '\\n';\n    }\n    ~Marca() {\n        std::cout << \"Destruir:\" << etiqueta_ << '\\n';\n    }\n    char etiqueta() const { return etiqueta_; }\nprivate:\n    char etiqueta_;\n};\n\nstruct Fallo {};\n\nint main() {\n    try {\n        auto propietario = std::make_unique<Marca>('E');\n        throw Fallo{};\n    } catch (const Fallo&) {\n        std::cout << \"Captura\";\n    }\n\n    return 0;\n}\n",
           "answers": [
             "Crear:E\nDestruir:E\nCaptura"
           ],
@@ -298,7 +298,7 @@
           "id": "p3_u6l4_constructor_que_lanza_en_la_creacion",
           "language": "cpp",
           "question": "¿Qué mensajes aparecen cuando el constructor del objeto lanza?",
-          "code": "#include <iostream>\n#include <memory>\n\nstruct Fallo {};\n\nclass Intento {\npublic:\n    Intento(bool fallar) {\n        std::cout << \"Inicio\\n\";\n        if (fallar) {\n            throw Fallo{};\n        }\n        std::cout << \"Listo\\n\";\n    }\n    ~Intento() { std::cout << \"Cierre\\n\"; }\n};\n\nint main() {\n    try {\n        auto propietario = std::make_unique<Intento>(true);\n    } catch (const Fallo&) {\n        std::cout << \"Captura\";\n    }\n    return 0;\n}\n",
+          "code": "#include <iostream>\n#include <memory>\n\nstruct Fallo {};\n\nclass Intento {\npublic:\n    Intento(bool fallar) {\n        std::cout << \"Inicio\\n\";\n        if (fallar) {\n            throw Fallo{};\n        }\n        std::cout << \"Listo\\n\";\n    }\n    ~Intento() { std::cout << \"Cierre\\n\"; }\n};\n\nint main() {\n    try {\n        auto propietario = std::make_unique<Intento>(true);\n    } catch (const Fallo&) {\n        std::cout << \"Captura\";\n    }\n\n    return 0;\n}\n",
           "answers": [
             "Inicio\nCaptura"
           ],
@@ -321,7 +321,7 @@
           "type": "inline_fill_code",
           "id": "p3_u6l4_prestar_y_vaciar",
           "question": "Completa primero la función miembro que presta el puntero sin vaciar al propietario y después la que destruye el objeto y deja al propietario vacío. El programa copia el entero antes de terminarlo y deja de usar el acceso prestado.",
-          "template": "#include <iostream>\n#include <memory>\n\nint main() {\n    auto propietario = std::make_unique<int>(4);\n    const int* acceso = propietario.[]();\n    const int copia = *acceso;\n    acceso = nullptr;\n    propietario.[]();\n    std::cout << copia << ':' << (propietario == nullptr);\n    return 0;\n}\n",
+          "template": "#include <iostream>\n#include <memory>\n\nint main() {\n    auto propietario = std::make_unique<int>(4);\n    const int* acceso = propietario.[]();\n    const int copia = *acceso;\n\n    acceso = nullptr;\n    propietario.[]();\n    std::cout << copia << ':' << (propietario == nullptr);\n\n    return 0;\n}\n",
           "answers": [
             "get",
             "reset"
@@ -359,7 +359,7 @@
         {
           "type": "cpp_compiler",
           "language": "cpp",
-          "initialCode": "#include <iostream>\n#include <memory>\n\nint consultar(std::unique_ptr<int> dato) {\n    return *dato;\n}\n\nint main() {\n    auto propietario = std::make_unique<int>(7);\n    std::cout << consultar(propietario) << ':' << *propietario;\n    return 0;\n}\n",
+          "initialCode": "#include <iostream>\n#include <memory>\n\nint consultar(std::unique_ptr<int> dato) {\n    return *dato;\n}\n\nint main() {\n    auto propietario = std::make_unique<int>(7);\n\n    std::cout << consultar(propietario) << ':' << *propietario;\n\n    return 0;\n}\n",
           "initialStandardInput": "",
           "outputCheck": {
             "inputComparison": "tokens",
@@ -385,7 +385,7 @@
         {
           "type": "code",
           "language": "cpp",
-          "code": "#include <iostream>\n#include <memory>\n\nint consultar(const int* dato) {\n    return *dato;\n}\n\nint main() {\n    auto propietario = std::make_unique<int>(7);\n    std::cout << consultar(propietario.get()) << ':' << *propietario;\n    return 0;\n}\n"
+          "code": "#include <iostream>\n#include <memory>\n\nint consultar(const int* dato) {\n    return *dato;\n}\n\nint main() {\n    auto propietario = std::make_unique<int>(7);\n\n    std::cout << consultar(propietario.get()) << ':' << *propietario;\n\n    return 0;\n}\n"
         },
         {
           "type": "paragraph",
@@ -560,7 +560,7 @@
         {
           "type": "cpp_compiler",
           "language": "cpp",
-          "initialCode": "#include <iostream>\n#include <memory>\n#include <new>\n\nstruct PreparacionFallida {};\n\nclass Caja {\npublic:\n    bool hay() const { return actual_ != nullptr; }\n    int valor() const { return *actual_; }\n    bool cambiar(int valor);\n    bool vaciar();\n    bool reponer(int valor, bool provocarFallo);\nprivate:\n    std::unique_ptr<int> actual_;\n};\nbool Caja::cambiar(int valor) {\n    if (!actual_ || valor < 0 || valor > 9) {\n        return false;\n    }\n    *actual_ = valor;\n    return true;\n}\n\nbool Caja::vaciar() {\n    actual_.reset();\n    return true;\n}\nbool Caja::reponer(int valor, bool provocarFallo) {\n    if (valor < 0 || valor > 9) {\n        return false;\n    }\n    // Completa el candidato propietario, el fallo de prueba, el intercambio y las capturas.\n    (void)provocarFallo;\n    return false;\n}\nvoid mostrar(const Caja& caja) {\n    if (caja.hay()) {\n        std::cout << caja.valor();\n    } else {\n        std::cout << 'X';\n    }\n}\nint main() {\n    int cantidadOrdenes = 0;\n    if (!(std::cin >> cantidadOrdenes) || cantidadOrdenes < 1 || cantidadOrdenes > 12) {\n        return 1;\n    }\n    Caja caja;\n    std::cout << \"Inicio:\";\n    mostrar(caja);\n    std::cout << '\\n';\n    for (int i = 0; i < cantidadOrdenes; ++i) {\n        int operacion = 0;\n        int valor = 0;\n        if (!(std::cin >> operacion >> valor)) {\n            return 1;\n        }\n        const bool habia = caja.hay();\n        const int anterior = habia ? caja.valor() : 0;\n        bool aceptado = false;\n        if (operacion == 1 || operacion == 2) {\n            aceptado = caja.reponer(valor, operacion == 2);\n        } else if (operacion == 3) {\n            aceptado = caja.cambiar(valor);\n        } else if (operacion == 4) {\n            aceptado = caja.vaciar();\n        }\n        std::cout << \"Resultado:\" << aceptado << \";Antes:\";\n        if (habia) {\n            std::cout << anterior;\n        } else {\n            std::cout << 'X';\n        }\n        std::cout << \";Actual:\";\n        mostrar(caja);\n        std::cout << '\\n';\n    }\n    std::cout << \"Final:\";\n    mostrar(caja);\n    return 0;\n}\n",
+          "initialCode": "#include <iostream>\n#include <memory>\n#include <new>\n\nstruct PreparacionFallida {};\n\nclass Caja {\npublic:\n    bool hay() const { return actual_ != nullptr; }\n    int valor() const { return *actual_; }\n    bool cambiar(int valor);\n    bool vaciar();\n    bool reponer(int valor, bool provocarFallo);\nprivate:\n    std::unique_ptr<int> actual_;\n};\n\nbool Caja::cambiar(int valor) {\n    if (!actual_ || valor < 0 || valor > 9) {\n        return false;\n    }\n    *actual_ = valor;\n    return true;\n}\n\nbool Caja::vaciar() {\n    actual_.reset();\n    return true;\n}\n\nbool Caja::reponer(int valor, bool provocarFallo) {\n    if (valor < 0 || valor > 9) {\n        return false;\n    }\n    // Completa el candidato propietario, el fallo de prueba, el intercambio y las capturas.\n    (void)provocarFallo;\n    return false;\n}\n\nvoid mostrar(const Caja& caja) {\n    if (caja.hay()) {\n        std::cout << caja.valor();\n    } else {\n        std::cout << 'X';\n    }\n}\n\nint main() {\n    int cantidadOrdenes = 0;\n    if (!(std::cin >> cantidadOrdenes) || cantidadOrdenes < 1 || cantidadOrdenes > 12) {\n        return 1;\n    }\n    Caja caja;\n    std::cout << \"Inicio:\";\n    mostrar(caja);\n    std::cout << '\\n';\n    for (int i = 0; i < cantidadOrdenes; ++i) {\n        int operacion = 0;\n        int valor = 0;\n\n        if (!(std::cin >> operacion >> valor)) {\n            return 1;\n        }\n        const bool habia = caja.hay();\n        const int anterior = habia ? caja.valor() : 0;\n        bool aceptado = false;\n\n        if (operacion == 1 || operacion == 2) {\n            aceptado = caja.reponer(valor, operacion == 2);\n        } else if (operacion == 3) {\n            aceptado = caja.cambiar(valor);\n        } else if (operacion == 4) {\n            aceptado = caja.vaciar();\n        }\n        std::cout << \"Resultado:\" << aceptado << \";Antes:\";\n        if (habia) {\n            std::cout << anterior;\n        } else {\n            std::cout << 'X';\n        }\n        std::cout << \";Actual:\";\n        mostrar(caja);\n        std::cout << '\\n';\n    }\n    std::cout << \"Final:\";\n    mostrar(caja);\n    return 0;\n}\n",
           "initialStandardInput": "12\n1 4\n3 7\n2 8\n1 0\n4 0\n3 6\n2 5\n1 9\n1 10\n3 -1\n2 6\n4 0\n",
           "outputCheck": {
             "inputComparison": "tokens",
@@ -686,7 +686,7 @@
         {
           "type": "code",
           "language": "cpp",
-          "code": "#include <iostream>\n#include <memory>\n#include <new>\n\nstruct PreparacionFallida {};\n\nclass Caja {\npublic:\n    bool hay() const { return actual_ != nullptr; }\n    int valor() const { return *actual_; }\n    bool cambiar(int valor);\n    bool vaciar();\n    bool reponer(int valor, bool provocarFallo);\nprivate:\n    std::unique_ptr<int> actual_;\n};\nbool Caja::cambiar(int valor) {\n    if (!actual_ || valor < 0 || valor > 9) {\n        return false;\n    }\n    *actual_ = valor;\n    return true;\n}\n\nbool Caja::vaciar() {\n    actual_.reset();\n    return true;\n}\nbool Caja::reponer(int valor, bool provocarFallo) {\n    if (valor < 0 || valor > 9) {\n        return false;\n    }\n    try {\n        auto candidato = std::make_unique<int>(valor);\n        if (provocarFallo) {\n            throw PreparacionFallida{};\n        }\n        actual_.swap(candidato);\n        return true;\n    } catch (const PreparacionFallida&) {\n        return false;\n    } catch (const std::bad_alloc&) {\n        return false;\n    }\n}\nvoid mostrar(const Caja& caja) {\n    if (caja.hay()) {\n        std::cout << caja.valor();\n    } else {\n        std::cout << 'X';\n    }\n}\nint main() {\n    int cantidadOrdenes = 0;\n    if (!(std::cin >> cantidadOrdenes) || cantidadOrdenes < 1 || cantidadOrdenes > 12) {\n        return 1;\n    }\n    Caja caja;\n    std::cout << \"Inicio:\";\n    mostrar(caja);\n    std::cout << '\\n';\n    for (int i = 0; i < cantidadOrdenes; ++i) {\n        int operacion = 0;\n        int valor = 0;\n        if (!(std::cin >> operacion >> valor)) {\n            return 1;\n        }\n        const bool habia = caja.hay();\n        const int anterior = habia ? caja.valor() : 0;\n        bool aceptado = false;\n        if (operacion == 1 || operacion == 2) {\n            aceptado = caja.reponer(valor, operacion == 2);\n        } else if (operacion == 3) {\n            aceptado = caja.cambiar(valor);\n        } else if (operacion == 4) {\n            aceptado = caja.vaciar();\n        }\n        std::cout << \"Resultado:\" << aceptado << \";Antes:\";\n        if (habia) {\n            std::cout << anterior;\n        } else {\n            std::cout << 'X';\n        }\n        std::cout << \";Actual:\";\n        mostrar(caja);\n        std::cout << '\\n';\n    }\n    std::cout << \"Final:\";\n    mostrar(caja);\n    return 0;\n}\n"
+          "code": "#include <iostream>\n#include <memory>\n#include <new>\n\nstruct PreparacionFallida {};\n\nclass Caja {\npublic:\n    bool hay() const { return actual_ != nullptr; }\n    int valor() const { return *actual_; }\n    bool cambiar(int valor);\n    bool vaciar();\n    bool reponer(int valor, bool provocarFallo);\nprivate:\n    std::unique_ptr<int> actual_;\n};\n\nbool Caja::cambiar(int valor) {\n    if (!actual_ || valor < 0 || valor > 9) {\n        return false;\n    }\n    *actual_ = valor;\n    return true;\n}\n\nbool Caja::vaciar() {\n    actual_.reset();\n    return true;\n}\n\nbool Caja::reponer(int valor, bool provocarFallo) {\n    if (valor < 0 || valor > 9) {\n        return false;\n    }\n    try {\n        auto candidato = std::make_unique<int>(valor);\n        if (provocarFallo) {\n            throw PreparacionFallida{};\n        }\n        actual_.swap(candidato);\n        return true;\n    } catch (const PreparacionFallida&) {\n        return false;\n    } catch (const std::bad_alloc&) {\n        return false;\n    }\n}\n\nvoid mostrar(const Caja& caja) {\n    if (caja.hay()) {\n        std::cout << caja.valor();\n    } else {\n        std::cout << 'X';\n    }\n}\n\nint main() {\n    int cantidadOrdenes = 0;\n    if (!(std::cin >> cantidadOrdenes) || cantidadOrdenes < 1 || cantidadOrdenes > 12) {\n        return 1;\n    }\n    Caja caja;\n    std::cout << \"Inicio:\";\n    mostrar(caja);\n    std::cout << '\\n';\n    for (int i = 0; i < cantidadOrdenes; ++i) {\n        int operacion = 0;\n        int valor = 0;\n\n        if (!(std::cin >> operacion >> valor)) {\n            return 1;\n        }\n        const bool habia = caja.hay();\n        const int anterior = habia ? caja.valor() : 0;\n        bool aceptado = false;\n\n        if (operacion == 1 || operacion == 2) {\n            aceptado = caja.reponer(valor, operacion == 2);\n        } else if (operacion == 3) {\n            aceptado = caja.cambiar(valor);\n        } else if (operacion == 4) {\n            aceptado = caja.vaciar();\n        }\n        std::cout << \"Resultado:\" << aceptado << \";Antes:\";\n        if (habia) {\n            std::cout << anterior;\n        } else {\n            std::cout << 'X';\n        }\n        std::cout << \";Actual:\";\n        mostrar(caja);\n        std::cout << '\\n';\n    }\n    std::cout << \"Final:\";\n    mostrar(caja);\n    return 0;\n}\n"
         },
         {
           "type": "paragraph",
@@ -1862,6 +1862,288 @@
       }
     },
     "additions": [],
-    "editorial": []
+    "editorial": [
+      {
+        "id": "block_0001_0004",
+        "beforeSha256": "78b94f73ce6f69a5716a8c3ee6656c51d669da2ae25fceac2e0b4c2a2dd48a6d",
+        "afterSha256": "70d934d362db78e3b32a0b0fd2fe35adfb339d3de1957947cf0aed20e44d5eda"
+      },
+      {
+        "id": "block_0003_0003",
+        "beforeSha256": "429454a7d39b1bc60fb5eaea4ca96b86b7a5c7c2e0af8665e77bb13067e85b2e",
+        "afterSha256": "2fe7248e0946801d9e2581627f8a896f301bb0042ae1cc8698ed0ea03fcb1158"
+      },
+      {
+        "id": "block_0004_0003",
+        "beforeSha256": "4970de78a9ac04552728b6093caebd458438ed86636e79e155920bfe64f53d82",
+        "afterSha256": "734885d462ca40cbf081c1fd574952bd92b290d1d408ca9a1827889f4a948e73"
+      },
+      {
+        "id": "block_0005_0002",
+        "beforeSha256": "da64c67e4e6beb4d61697527a91a7a9eaf516df1868b0bec2d5acbcbf41429c5",
+        "afterSha256": "ea9ef221f90699dfaf94cd707a18a34fbdcee1b789795cc6d7ad883956f17cae"
+      },
+      {
+        "id": "block_0006_0002",
+        "beforeSha256": "94e36f65b73d2f96694b0f330cfde27dc7c92a4feb01c8d3cd5110f439e2a32a",
+        "afterSha256": "8b91fb5343126786fd7e6944e8abd0ce85aca6176b49a734c464429386970073"
+      },
+      {
+        "id": "block_0007_0002",
+        "beforeSha256": "6a00c1094c035b7812e80f600a03fad69d9283b46c1ce7d86459d29f7444b4e8",
+        "afterSha256": "3b0bcfd1600be027c4f94969a9f6e2aea2fb3fc042feecc310663718d1b70c0c"
+      },
+      {
+        "id": "block_0009_0002",
+        "beforeSha256": "d8d7bcb78dadc8384629e319cd370b7962e53eb0933540bb9d986f9ab22685ee",
+        "afterSha256": "9ac8d1e00b7805c8a35b0865926fe9ab498419206d995eb3ccafe6b1104a3c5b"
+      },
+      {
+        "id": "block_0010_0002",
+        "beforeSha256": "1dd324da4078e597adf34b785430bddd8ad3aa75041be7ef71b3697af82e7a4a",
+        "afterSha256": "3a349af835b123454f2e4fd8eec48989b3c17d03e63193526da7d14311e83736"
+      },
+      {
+        "id": "block_0011_0001",
+        "beforeSha256": "2aef469f7d2ed7e7f4d1fed4e15b37606d21685a1ad998d260c26263283b4e7e",
+        "afterSha256": "754ccee60e814bd10a3d83fd27b6309f01cbfdafb9a1d6bf36f892d6eb322be3"
+      },
+      {
+        "id": "block_0012_0004",
+        "beforeSha256": "36d1043ec0acbc207749a1ebe8d821c18192e62997a5a48c87629798b0d749a2",
+        "afterSha256": "32bfc3d91f2def5ab40022888504176461576f8d9eabc3cc7afd76eec7bd4215"
+      },
+      {
+        "id": "block_0013_0001",
+        "beforeSha256": "37ffa6c620af15948a51652d555bee45726e0f7d4785db1ffee75c2e2ebd27c0",
+        "afterSha256": "173e6e658340187f1b335c9e9c708302df87d50d365e5b0d724a8ae570129843"
+      },
+      {
+        "id": "block_0016_0002",
+        "beforeSha256": "71055096bfdcfdd6755eaaa8a1791123f96468f7c192dd41d3d6ea48ce19ea5d",
+        "afterSha256": "ce315ded3e985fff7e9cd5b91ce0ea038d1225309e46b9770bdd6cf82ae3a7fd"
+      },
+      {
+        "id": "block_0018_0001",
+        "beforeSha256": "012ac625b7307c1b70bd58c2407d14b863a251bcba4ee36a47ee96e6c32ba681",
+        "afterSha256": "7ee70e0e6e76767126d14874977b5d6c6f250f5bb9464bb9da09edc85e6118b6"
+      }
+    ],
+    "sourceFormatRevisions": [
+      {
+        "id": "block_0001_0004",
+        "block": {
+          "type": "output_prediction",
+          "id": "p3_u6l4_vacio_frente_a_valor_cero",
+          "language": "cpp",
+          "question": "¿Qué muestra el programa? Las dos primeras comparaciones indican si existe un objeto gestionado.",
+          "code": "#include <iostream>\n#include <memory>\n\nint main() {\n    std::unique_ptr<int> vacio;\n    auto cero = std::make_unique<int>();\n    std::cout << (vacio != nullptr) << ':' << (cero != nullptr) << ':' << *cero;\n    return 0;\n}\n",
+          "answers": [
+            "0:1:0"
+          ],
+          "outputComparison": "exact",
+          "explanation": "vacio no tiene objeto. cero sí gestiona un int, cuyo valor inicial es cero. Sólo se desreferencia el propietario que tiene objeto."
+        }
+      },
+      {
+        "id": "block_0003_0003",
+        "block": {
+          "type": "output_prediction",
+          "id": "p3_u6l4_dos_accesos_prestados",
+          "language": "cpp",
+          "question": "¿Qué muestran el propietario, el segundo acceso y la comprobación final?",
+          "code": "#include <iostream>\n#include <memory>\n\nint main() {\n    auto propietario = std::make_unique<int>(5);\n    int* primero = propietario.get();\n    const int* segundo = propietario.get();\n    *primero = 8;\n    std::cout << *propietario << ':' << *segundo << ':' << (propietario != nullptr);\n    return 0;\n}\n",
+          "answers": [
+            "8:8:1"
+          ],
+          "outputComparison": "exact",
+          "explanation": "Los dos accesos se refieren al mismo int, que el propietario mantiene vivo. La primera vía cambia ese int a ocho y la segunda observa el cambio. get no vacía al propietario."
+        }
+      },
+      {
+        "id": "block_0004_0003",
+        "block": {
+          "type": "output_prediction",
+          "id": "p3_u6l4_copia_del_entero",
+          "language": "cpp",
+          "question": "¿Qué valores muestran la copia del int y el objeto gestionado?",
+          "code": "#include <iostream>\n#include <memory>\n\nint main() {\n    auto propietario = std::make_unique<int>(3);\n    int copia = *propietario;\n    *propietario = 9;\n    std::cout << copia << ':' << *propietario;\n    return 0;\n}\n",
+          "answers": [
+            "3:9"
+          ],
+          "outputComparison": "exact",
+          "explanation": "copia recibió tres como un int independiente. Cambiar el objeto gestionado a nueve no vuelve a escribir en esa copia."
+        }
+      },
+      {
+        "id": "block_0005_0002",
+        "block": {
+          "type": "output_prediction",
+          "id": "p3_u6l4_const_del_propietario_y_del_objeto",
+          "language": "cpp",
+          "question": "¿Qué muestran los dos objetos después de la escritura permitida?",
+          "code": "#include <iostream>\n#include <memory>\n\nint main() {\n    const std::unique_ptr<int> fijo = std::make_unique<int>(2);\n    std::unique_ptr<const int> lectura = std::make_unique<const int>(5);\n    *fijo = 8;\n    std::cout << *fijo << ':' << *lectura;\n    return 0;\n}\n",
+          "answers": [
+            "8:5"
+          ],
+          "outputComparison": "exact",
+          "explanation": "fijo conserva la misma responsabilidad, pero su int puede recibir ocho. lectura permite consultar su int constante con cinco. Se distinguen el propietario y el objeto gestionado."
+        }
+      },
+      {
+        "id": "block_0006_0002",
+        "block": {
+          "type": "output_prediction",
+          "id": "p3_u6l4_miembro_propietario",
+          "language": "cpp",
+          "question": "Escribe la salida completa de este objeto con un miembro propietario.",
+          "code": "#include <iostream>\n#include <memory>\n\nclass Marca {\npublic:\n    Marca(char etiqueta) : etiqueta_{etiqueta} {\n        std::cout << \"Crear:\" << etiqueta_ << '\\n';\n    }\n    ~Marca() {\n        std::cout << \"Destruir:\" << etiqueta_ << '\\n';\n    }\n    char etiqueta() const { return etiqueta_; }\nprivate:\n    char etiqueta_;\n};\n\nclass Bolsa {\nprivate:\n    std::unique_ptr<Marca> marca_ = std::make_unique<Marca>('M');\n};\n\nint main() {\n    {\n        Bolsa bolsa;\n        std::cout << \"Uso\\n\";\n    }\n    std::cout << \"Fuera\";\n    return 0;\n}\n",
+          "answers": [
+            "Crear:M\nUso\nDestruir:M\nFuera"
+          ],
+          "outputComparison": "exact",
+          "explanation": "El propietario miembro mantiene la Marca durante Uso. Al salir del bloque, la destrucción de Bolsa destruye su miembro propietario. Éste destruye la Marca antes de que main imprima Fuera."
+        }
+      },
+      {
+        "id": "block_0007_0002",
+        "block": {
+          "type": "output_prediction",
+          "id": "p3_u6l4_vaciar_mediante_reset",
+          "language": "cpp",
+          "question": "¿Qué mensajes aparecen al vaciar y volver a vaciar?",
+          "code": "#include <iostream>\n#include <memory>\n\nclass Marca {\npublic:\n    Marca(char etiqueta) : etiqueta_{etiqueta} {\n        std::cout << \"Crear:\" << etiqueta_ << '\\n';\n    }\n    ~Marca() {\n        std::cout << \"Destruir:\" << etiqueta_ << '\\n';\n    }\n    char etiqueta() const { return etiqueta_; }\nprivate:\n    char etiqueta_;\n};\n\nint main() {\n    auto propietario = std::make_unique<Marca>('A');\n    std::cout << \"Uso:\" << propietario->etiqueta() << '\\n';\n    propietario.reset();\n    std::cout << \"Vacio:\" << (propietario == nullptr) << '\\n';\n    propietario.reset();\n    std::cout << \"Despues\";\n    return 0;\n}\n",
+          "answers": [
+            "Crear:A\nUso:A\nDestruir:A\nVacio:1\nDespues"
+          ],
+          "outputComparison": "exact",
+          "explanation": "La Marca se destruye en la primera llamada a reset, antes de imprimir Vacio. La segunda llamada no tiene objeto que destruir. Al terminar el propietario ya vacío tampoco se destruye otra Marca."
+        }
+      },
+      {
+        "id": "block_0009_0002",
+        "block": {
+          "type": "output_prediction",
+          "id": "p3_u6l4_excepcion_tras_creacion",
+          "language": "cpp",
+          "question": "¿Qué orden muestran la Marca gestionada y el catch?",
+          "code": "#include <iostream>\n#include <memory>\n\nclass Marca {\npublic:\n    Marca(char etiqueta) : etiqueta_{etiqueta} {\n        std::cout << \"Crear:\" << etiqueta_ << '\\n';\n    }\n    ~Marca() {\n        std::cout << \"Destruir:\" << etiqueta_ << '\\n';\n    }\n    char etiqueta() const { return etiqueta_; }\nprivate:\n    char etiqueta_;\n};\n\nstruct Fallo {};\n\nint main() {\n    try {\n        auto propietario = std::make_unique<Marca>('E');\n        throw Fallo{};\n    } catch (const Fallo&) {\n        std::cout << \"Captura\";\n    }\n    return 0;\n}\n",
+          "answers": [
+            "Crear:E\nDestruir:E\nCaptura"
+          ],
+          "outputComparison": "exact",
+          "explanation": "La Marca E ya se construyó y tenía un propietario completo. Al propagarse Fallo termina ese propietario, que destruye E antes de Captura."
+        }
+      },
+      {
+        "id": "block_0010_0002",
+        "block": {
+          "type": "output_prediction",
+          "id": "p3_u6l4_constructor_que_lanza_en_la_creacion",
+          "language": "cpp",
+          "question": "¿Qué mensajes aparecen cuando el constructor del objeto lanza?",
+          "code": "#include <iostream>\n#include <memory>\n\nstruct Fallo {};\n\nclass Intento {\npublic:\n    Intento(bool fallar) {\n        std::cout << \"Inicio\\n\";\n        if (fallar) {\n            throw Fallo{};\n        }\n        std::cout << \"Listo\\n\";\n    }\n    ~Intento() { std::cout << \"Cierre\\n\"; }\n};\n\nint main() {\n    try {\n        auto propietario = std::make_unique<Intento>(true);\n    } catch (const Fallo&) {\n        std::cout << \"Captura\";\n    }\n    return 0;\n}\n",
+          "answers": [
+            "Inicio\nCaptura"
+          ],
+          "outputComparison": "exact",
+          "explanation": "Sólo se alcanza Inicio y después Captura. No aparece Listo ni Cierre de Intento. La liberación del almacenamiento del intento fallido no depende de un destructor de unique_ptr que aún no se llegó a construir."
+        }
+      },
+      {
+        "id": "block_0011_0001",
+        "block": {
+          "type": "inline_fill_code",
+          "id": "p3_u6l4_prestar_y_vaciar",
+          "question": "Completa primero la función miembro que presta el puntero sin vaciar al propietario y después la que destruye el objeto y deja al propietario vacío. El programa copia el entero antes de terminarlo y deja de usar el acceso prestado.",
+          "template": "#include <iostream>\n#include <memory>\n\nint main() {\n    auto propietario = std::make_unique<int>(4);\n    const int* acceso = propietario.[]();\n    const int copia = *acceso;\n    acceso = nullptr;\n    propietario.[]();\n    std::cout << copia << ':' << (propietario == nullptr);\n    return 0;\n}\n",
+          "answers": [
+            "get",
+            "reset"
+          ],
+          "answerAlternatives": [
+            [
+              "get"
+            ],
+            [
+              "reset"
+            ]
+          ],
+          "explanation": "get permite leer el int mientras vive. copia guarda un valor independiente. El acceso se sobrescribe antes de reset y no se consulta después de terminar el int."
+        }
+      },
+      {
+        "id": "block_0012_0004",
+        "block": {
+          "type": "cpp_compiler",
+          "language": "cpp",
+          "initialCode": "#include <iostream>\n#include <memory>\n\nint consultar(std::unique_ptr<int> dato) {\n    return *dato;\n}\n\nint main() {\n    auto propietario = std::make_unique<int>(7);\n    std::cout << consultar(propietario) << ':' << *propietario;\n    return 0;\n}\n",
+          "initialStandardInput": "",
+          "outputCheck": {
+            "inputComparison": "tokens",
+            "cases": [
+              {
+                "standardInput": "",
+                "outputs": [
+                  "7:7"
+                ],
+                "explanation": "La función sólo toma prestado un acceso de lectura. No necesita copiar ni vaciar al propietario, que permanece en main."
+              }
+            ]
+          }
+        }
+      },
+      {
+        "id": "block_0013_0001",
+        "block": {
+          "type": "code",
+          "language": "cpp",
+          "code": "#include <iostream>\n#include <memory>\n\nint consultar(const int* dato) {\n    return *dato;\n}\n\nint main() {\n    auto propietario = std::make_unique<int>(7);\n    std::cout << consultar(propietario.get()) << ':' << *propietario;\n    return 0;\n}\n"
+        }
+      },
+      {
+        "id": "block_0016_0002",
+        "block": {
+          "type": "cpp_compiler",
+          "language": "cpp",
+          "initialCode": "#include <iostream>\n#include <memory>\n#include <new>\n\nstruct PreparacionFallida {};\n\nclass Caja {\npublic:\n    bool hay() const { return actual_ != nullptr; }\n    int valor() const { return *actual_; }\n    bool cambiar(int valor);\n    bool vaciar();\n    bool reponer(int valor, bool provocarFallo);\nprivate:\n    std::unique_ptr<int> actual_;\n};\nbool Caja::cambiar(int valor) {\n    if (!actual_ || valor < 0 || valor > 9) {\n        return false;\n    }\n    *actual_ = valor;\n    return true;\n}\n\nbool Caja::vaciar() {\n    actual_.reset();\n    return true;\n}\nbool Caja::reponer(int valor, bool provocarFallo) {\n    if (valor < 0 || valor > 9) {\n        return false;\n    }\n    // Completa el candidato propietario, el fallo de prueba, el intercambio y las capturas.\n    (void)provocarFallo;\n    return false;\n}\nvoid mostrar(const Caja& caja) {\n    if (caja.hay()) {\n        std::cout << caja.valor();\n    } else {\n        std::cout << 'X';\n    }\n}\nint main() {\n    int cantidadOrdenes = 0;\n    if (!(std::cin >> cantidadOrdenes) || cantidadOrdenes < 1 || cantidadOrdenes > 12) {\n        return 1;\n    }\n    Caja caja;\n    std::cout << \"Inicio:\";\n    mostrar(caja);\n    std::cout << '\\n';\n    for (int i = 0; i < cantidadOrdenes; ++i) {\n        int operacion = 0;\n        int valor = 0;\n        if (!(std::cin >> operacion >> valor)) {\n            return 1;\n        }\n        const bool habia = caja.hay();\n        const int anterior = habia ? caja.valor() : 0;\n        bool aceptado = false;\n        if (operacion == 1 || operacion == 2) {\n            aceptado = caja.reponer(valor, operacion == 2);\n        } else if (operacion == 3) {\n            aceptado = caja.cambiar(valor);\n        } else if (operacion == 4) {\n            aceptado = caja.vaciar();\n        }\n        std::cout << \"Resultado:\" << aceptado << \";Antes:\";\n        if (habia) {\n            std::cout << anterior;\n        } else {\n            std::cout << 'X';\n        }\n        std::cout << \";Actual:\";\n        mostrar(caja);\n        std::cout << '\\n';\n    }\n    std::cout << \"Final:\";\n    mostrar(caja);\n    return 0;\n}\n",
+          "initialStandardInput": "12\n1 4\n3 7\n2 8\n1 0\n4 0\n3 6\n2 5\n1 9\n1 10\n3 -1\n2 6\n4 0\n",
+          "outputCheck": {
+            "inputComparison": "tokens",
+            "cases": [
+              {
+                "standardInput": "12\n1 4\n3 7\n2 8\n1 0\n4 0\n3 6\n2 5\n1 9\n1 10\n3 -1\n2 6\n4 0\n",
+                "outputs": [
+                  "Inicio:X\nResultado:1;Antes:X;Actual:4\nResultado:1;Antes:4;Actual:7\nResultado:0;Antes:7;Actual:7\nResultado:1;Antes:7;Actual:0\nResultado:1;Antes:0;Actual:X\nResultado:0;Antes:X;Actual:X\nResultado:0;Antes:X;Actual:X\nResultado:1;Antes:X;Actual:9\nResultado:0;Antes:9;Actual:9\nResultado:0;Antes:9;Actual:9\nResultado:0;Antes:9;Actual:9\nResultado:1;Antes:9;Actual:X\nFinal:X"
+                ],
+                "explanation": "Conserva el miembro hasta aceptar la preparación. El candidato propietario limpia su objeto al fallar o el objeto anterior después del intercambio."
+              },
+              {
+                "standardInput": "7\n4 99\n1 0\n2 0\n1 0\n4 -1\n4 0\n3 0\n",
+                "outputs": [
+                  "Inicio:X\nResultado:1;Antes:X;Actual:X\nResultado:1;Antes:X;Actual:0\nResultado:0;Antes:0;Actual:0\nResultado:1;Antes:0;Actual:0\nResultado:1;Antes:0;Actual:X\nResultado:1;Antes:X;Actual:X\nResultado:0;Antes:X;Actual:X\nFinal:X"
+                ],
+                "explanation": "Conserva el miembro hasta aceptar la preparación. El candidato propietario limpia su objeto al fallar o el objeto anterior después del intercambio."
+              },
+              {
+                "standardInput": "7\n1 -2147483648\n2 2147483647\n1 5\n3 2147483647\n9 0\n2 -1\n3 0\n",
+                "outputs": [
+                  "Inicio:X\nResultado:0;Antes:X;Actual:X\nResultado:0;Antes:X;Actual:X\nResultado:1;Antes:X;Actual:5\nResultado:0;Antes:5;Actual:5\nResultado:0;Antes:5;Actual:5\nResultado:0;Antes:5;Actual:5\nResultado:1;Antes:5;Actual:0\nFinal:0"
+                ],
+                "explanation": "Conserva el miembro hasta aceptar la preparación. El candidato propietario limpia su objeto al fallar o el objeto anterior después del intercambio."
+              }
+            ]
+          }
+        }
+      },
+      {
+        "id": "block_0018_0001",
+        "block": {
+          "type": "code",
+          "language": "cpp",
+          "code": "#include <iostream>\n#include <memory>\n#include <new>\n\nstruct PreparacionFallida {};\n\nclass Caja {\npublic:\n    bool hay() const { return actual_ != nullptr; }\n    int valor() const { return *actual_; }\n    bool cambiar(int valor);\n    bool vaciar();\n    bool reponer(int valor, bool provocarFallo);\nprivate:\n    std::unique_ptr<int> actual_;\n};\nbool Caja::cambiar(int valor) {\n    if (!actual_ || valor < 0 || valor > 9) {\n        return false;\n    }\n    *actual_ = valor;\n    return true;\n}\n\nbool Caja::vaciar() {\n    actual_.reset();\n    return true;\n}\nbool Caja::reponer(int valor, bool provocarFallo) {\n    if (valor < 0 || valor > 9) {\n        return false;\n    }\n    try {\n        auto candidato = std::make_unique<int>(valor);\n        if (provocarFallo) {\n            throw PreparacionFallida{};\n        }\n        actual_.swap(candidato);\n        return true;\n    } catch (const PreparacionFallida&) {\n        return false;\n    } catch (const std::bad_alloc&) {\n        return false;\n    }\n}\nvoid mostrar(const Caja& caja) {\n    if (caja.hay()) {\n        std::cout << caja.valor();\n    } else {\n        std::cout << 'X';\n    }\n}\nint main() {\n    int cantidadOrdenes = 0;\n    if (!(std::cin >> cantidadOrdenes) || cantidadOrdenes < 1 || cantidadOrdenes > 12) {\n        return 1;\n    }\n    Caja caja;\n    std::cout << \"Inicio:\";\n    mostrar(caja);\n    std::cout << '\\n';\n    for (int i = 0; i < cantidadOrdenes; ++i) {\n        int operacion = 0;\n        int valor = 0;\n        if (!(std::cin >> operacion >> valor)) {\n            return 1;\n        }\n        const bool habia = caja.hay();\n        const int anterior = habia ? caja.valor() : 0;\n        bool aceptado = false;\n        if (operacion == 1 || operacion == 2) {\n            aceptado = caja.reponer(valor, operacion == 2);\n        } else if (operacion == 3) {\n            aceptado = caja.cambiar(valor);\n        } else if (operacion == 4) {\n            aceptado = caja.vaciar();\n        }\n        std::cout << \"Resultado:\" << aceptado << \";Antes:\";\n        if (habia) {\n            std::cout << anterior;\n        } else {\n            std::cout << 'X';\n        }\n        std::cout << \";Actual:\";\n        mostrar(caja);\n        std::cout << '\\n';\n    }\n    std::cout << \"Final:\";\n    mostrar(caja);\n    return 0;\n}\n"
+        }
+      }
+    ]
   }
 }

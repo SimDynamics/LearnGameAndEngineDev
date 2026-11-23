@@ -104,7 +104,7 @@
         {
           "type": "cpp_compiler",
           "language": "cpp",
-          "initialCode": "#include <cassert>\n#include <iostream>\n\nint cajas_para(int piezas) {\n    const int piezas_por_caja{4};\n    const int cajas = piezas / piezas_por_caja;\n    assert(cajas * piezas_por_caja >= piezas);\n    return cajas;\n}\n\nbool intentar_cajas(int piezas, int& resultado) {\n    if (piezas < 0 || piezas > 20) {\n        return false;\n    }\n    resultado = cajas_para(piezas);\n    return true;\n}\n\nvoid informar_rechazo_cajas(std::ostream& destino, int peticion, int piezas) {\n    destino << \"Cajas: peticion \" << peticion << \", piezas=\" << piezas\n            << \". Se admite un entero de 0 a 20. Revise la cantidad.\\n\";\n}\n\nint main() {\n    int piezas{0};\n    int peticion{0};\n    bool hubo_rechazos{false};\n    while (std::cin >> piezas) {\n        ++peticion;\n        int cajas{77};\n        if (intentar_cajas(piezas, cajas)) {\n            std::cout << \"Cajas=\" << cajas << \"\\n\";\n        } else {\n            hubo_rechazos = true;\n            informar_rechazo_cajas(std::cerr, peticion, piezas);\n        }\n    }\n    return hubo_rechazos ? 1 : 0;\n}\n",
+          "initialCode": "#include <cassert>\n#include <iostream>\n\nint cajas_para(int piezas) {\n    const int piezas_por_caja{4};\n    const int cajas = piezas / piezas_por_caja;\n    assert(cajas * piezas_por_caja >= piezas);\n    return cajas;\n}\n\nbool intentar_cajas(int piezas, int& resultado) {\n    if (piezas < 0 || piezas > 20) {\n        return false;\n    }\n    resultado = cajas_para(piezas);\n    return true;\n}\n\nvoid informar_rechazo_cajas(std::ostream& destino, int peticion, int piezas) {\n    destino << \"Cajas: peticion \" << peticion << \", piezas=\" << piezas\n            << \". Se admite un entero de 0 a 20. Revise la cantidad.\\n\";\n}\n\nint main() {\n    int piezas{0};\n    int peticion{0};\n    bool hubo_rechazos{false};\n\n    while (std::cin >> piezas) {\n        ++peticion;\n        int cajas{77};\n        if (intentar_cajas(piezas, cajas)) {\n            std::cout << \"Cajas=\" << cajas << \"\\n\";\n        } else {\n            hubo_rechazos = true;\n            informar_rechazo_cajas(std::cerr, peticion, piezas);\n        }\n    }\n\n    return hubo_rechazos ? 1 : 0;\n}\n",
           "initialStandardInput": "-1 5\n"
         },
         {
@@ -131,7 +131,7 @@
         {
           "type": "code",
           "language": "cpp",
-          "code": "#define NDEBUG\n#include <cassert>\n#include <iostream>\n\nint cajas_para(int piezas) {\n    const int piezas_por_caja{4};\n    const int cajas = piezas / piezas_por_caja;\n    assert(cajas * piezas_por_caja >= piezas);\n    return cajas;\n}\n\nbool intentar_cajas(int piezas, int& resultado) {\n    if (piezas < 0 || piezas > 20) {\n        return false;\n    }\n    resultado = cajas_para(piezas);\n    return true;\n}\n\nvoid informar_rechazo_cajas(std::ostream& destino, int peticion, int piezas) {\n    destino << \"Cajas: peticion \" << peticion << \", piezas=\" << piezas\n            << \". Se admite un entero de 0 a 20. Revise la cantidad.\\n\";\n}\n\nint main() {\n    int piezas{0};\n    int peticion{0};\n    bool hubo_rechazos{false};\n    while (std::cin >> piezas) {\n        ++peticion;\n        int cajas{77};\n        if (intentar_cajas(piezas, cajas)) {\n            std::cout << \"Cajas=\" << cajas << \"\\n\";\n        } else {\n            hubo_rechazos = true;\n            informar_rechazo_cajas(std::cerr, peticion, piezas);\n        }\n    }\n    return hubo_rechazos ? 1 : 0;\n}\n"
+          "code": "#define NDEBUG\n#include <cassert>\n#include <iostream>\n\nint cajas_para(int piezas) {\n    const int piezas_por_caja{4};\n    const int cajas = piezas / piezas_por_caja;\n    assert(cajas * piezas_por_caja >= piezas);\n    return cajas;\n}\n\nbool intentar_cajas(int piezas, int& resultado) {\n    if (piezas < 0 || piezas > 20) {\n        return false;\n    }\n    resultado = cajas_para(piezas);\n    return true;\n}\n\nvoid informar_rechazo_cajas(std::ostream& destino, int peticion, int piezas) {\n    destino << \"Cajas: peticion \" << peticion << \", piezas=\" << piezas\n            << \". Se admite un entero de 0 a 20. Revise la cantidad.\\n\";\n}\n\nint main() {\n    int piezas{0};\n    int peticion{0};\n    bool hubo_rechazos{false};\n\n    while (std::cin >> piezas) {\n        ++peticion;\n        int cajas{77};\n        if (intentar_cajas(piezas, cajas)) {\n            std::cout << \"Cajas=\" << cajas << \"\\n\";\n        } else {\n            hubo_rechazos = true;\n            informar_rechazo_cajas(std::cerr, peticion, piezas);\n        }\n    }\n\n    return hubo_rechazos ? 1 : 0;\n}\n"
         },
         {
           "type": "paragraph",
@@ -165,7 +165,7 @@
         {
           "type": "cpp_compiler",
           "language": "cpp",
-          "initialCode": "#define NDEBUG\n#include <cassert>\n#include <iostream>\n\nint cajas_para(int piezas) {\n    const int piezas_por_caja{4};\n    const int cajas = piezas / piezas_por_caja;\n    assert(cajas * piezas_por_caja >= piezas);\n    return cajas;\n}\n\nbool intentar_cajas(int piezas, int& resultado) {\n    if (piezas < 0 || piezas > 20) {\n        return false;\n    }\n    resultado = cajas_para(piezas);\n    return true;\n}\n\nvoid informar_rechazo_cajas(std::ostream& destino, int peticion, int piezas) {\n    destino << \"Cajas: peticion \" << peticion << \", piezas=\" << piezas\n            << \". Se admite un entero de 0 a 20. Revise la cantidad.\\n\";\n}\n\nint main() {\n    int piezas{0};\n    int peticion{0};\n    bool hubo_rechazos{false};\n    while (std::cin >> piezas) {\n        ++peticion;\n        int cajas{77};\n        if (intentar_cajas(piezas, cajas)) {\n            std::cout << \"Cajas=\" << cajas << \"\\n\";\n        } else {\n            hubo_rechazos = true;\n            informar_rechazo_cajas(std::cerr, peticion, piezas);\n        }\n    }\n    return hubo_rechazos ? 1 : 0;\n}\n",
+          "initialCode": "#define NDEBUG\n#include <cassert>\n#include <iostream>\n\nint cajas_para(int piezas) {\n    const int piezas_por_caja{4};\n    const int cajas = piezas / piezas_por_caja;\n    assert(cajas * piezas_por_caja >= piezas);\n    return cajas;\n}\n\nbool intentar_cajas(int piezas, int& resultado) {\n    if (piezas < 0 || piezas > 20) {\n        return false;\n    }\n    resultado = cajas_para(piezas);\n    return true;\n}\n\nvoid informar_rechazo_cajas(std::ostream& destino, int peticion, int piezas) {\n    destino << \"Cajas: peticion \" << peticion << \", piezas=\" << piezas\n            << \". Se admite un entero de 0 a 20. Revise la cantidad.\\n\";\n}\n\nint main() {\n    int piezas{0};\n    int peticion{0};\n    bool hubo_rechazos{false};\n\n    while (std::cin >> piezas) {\n        ++peticion;\n        int cajas{77};\n        if (intentar_cajas(piezas, cajas)) {\n            std::cout << \"Cajas=\" << cajas << \"\\n\";\n        } else {\n            hubo_rechazos = true;\n            informar_rechazo_cajas(std::cerr, peticion, piezas);\n        }\n    }\n\n    return hubo_rechazos ? 1 : 0;\n}\n",
           "initialStandardInput": "-1 5\n"
         }
       ]
@@ -192,7 +192,7 @@
         {
           "type": "cpp_compiler",
           "language": "cpp",
-          "initialCode": "#include <cassert>\n#include <iostream>\n\nint cajas_para(int piezas) {\n    const int piezas_por_caja{4};\n    const int cajas = piezas / piezas_por_caja;\n    assert(cajas * piezas_por_caja >= piezas);\n    return cajas;\n}\n\nbool intentar_cajas(int piezas, int& resultado) {\n    if (piezas < 0 || piezas > 20) {\n        return false;\n    }\n    resultado = cajas_para(piezas);\n    return true;\n}\n\nvoid informar_rechazo_cajas(std::ostream& destino, int peticion, int piezas) {\n    destino << \"Cajas: peticion \" << peticion << \", piezas=\" << piezas\n            << \". Se admite un entero de 0 a 20. Revise la cantidad.\\n\";\n}\n\nint main() {\n    int piezas{0};\n    int peticion{0};\n    bool hubo_rechazos{false};\n    while (std::cin >> piezas) {\n        ++peticion;\n        int cajas{77};\n        if (intentar_cajas(piezas, cajas)) {\n            std::cout << \"Cajas=\" << cajas << \"\\n\";\n        } else {\n            hubo_rechazos = true;\n            informar_rechazo_cajas(std::cerr, peticion, piezas);\n        }\n    }\n    return hubo_rechazos ? 1 : 0;\n}\n",
+          "initialCode": "#include <cassert>\n#include <iostream>\n\nint cajas_para(int piezas) {\n    const int piezas_por_caja{4};\n    const int cajas = piezas / piezas_por_caja;\n    assert(cajas * piezas_por_caja >= piezas);\n    return cajas;\n}\n\nbool intentar_cajas(int piezas, int& resultado) {\n    if (piezas < 0 || piezas > 20) {\n        return false;\n    }\n    resultado = cajas_para(piezas);\n    return true;\n}\n\nvoid informar_rechazo_cajas(std::ostream& destino, int peticion, int piezas) {\n    destino << \"Cajas: peticion \" << peticion << \", piezas=\" << piezas\n            << \". Se admite un entero de 0 a 20. Revise la cantidad.\\n\";\n}\n\nint main() {\n    int piezas{0};\n    int peticion{0};\n    bool hubo_rechazos{false};\n\n    while (std::cin >> piezas) {\n        ++peticion;\n        int cajas{77};\n        if (intentar_cajas(piezas, cajas)) {\n            std::cout << \"Cajas=\" << cajas << \"\\n\";\n        } else {\n            hubo_rechazos = true;\n            informar_rechazo_cajas(std::cerr, peticion, piezas);\n        }\n    }\n\n    return hubo_rechazos ? 1 : 0;\n}\n",
           "initialStandardInput": "-1 5\n"
         }
       ]
@@ -206,7 +206,7 @@
         {
           "type": "code",
           "language": "cpp",
-          "code": "#include <cassert>\n#include <iostream>\n\nint cajas_para(int piezas) {\n    const int piezas_por_caja{4};\n    const int cajas = (piezas + piezas_por_caja - 1) / piezas_por_caja;\n    assert(cajas * piezas_por_caja >= piezas);\n    return cajas;\n}\n\nbool intentar_cajas(int piezas, int& resultado) {\n    if (piezas < 0 || piezas > 20) {\n        return false;\n    }\n    resultado = cajas_para(piezas);\n    return true;\n}\n\nvoid informar_rechazo_cajas(std::ostream& destino, int peticion, int piezas) {\n    destino << \"Cajas: peticion \" << peticion << \", piezas=\" << piezas\n            << \". Se admite un entero de 0 a 20. Revise la cantidad.\\n\";\n}\n\nint main() {\n    int piezas{0};\n    int peticion{0};\n    bool hubo_rechazos{false};\n    while (std::cin >> piezas) {\n        ++peticion;\n        int cajas{77};\n        if (intentar_cajas(piezas, cajas)) {\n            std::cout << \"Cajas=\" << cajas << \"\\n\";\n        } else {\n            hubo_rechazos = true;\n            informar_rechazo_cajas(std::cerr, peticion, piezas);\n        }\n    }\n    return hubo_rechazos ? 1 : 0;\n}\n"
+          "code": "#include <cassert>\n#include <iostream>\n\nint cajas_para(int piezas) {\n    const int piezas_por_caja{4};\n    const int cajas = (piezas + piezas_por_caja - 1) / piezas_por_caja;\n    assert(cajas * piezas_por_caja >= piezas);\n    return cajas;\n}\n\nbool intentar_cajas(int piezas, int& resultado) {\n    if (piezas < 0 || piezas > 20) {\n        return false;\n    }\n    resultado = cajas_para(piezas);\n    return true;\n}\n\nvoid informar_rechazo_cajas(std::ostream& destino, int peticion, int piezas) {\n    destino << \"Cajas: peticion \" << peticion << \", piezas=\" << piezas\n            << \". Se admite un entero de 0 a 20. Revise la cantidad.\\n\";\n}\n\nint main() {\n    int piezas{0};\n    int peticion{0};\n    bool hubo_rechazos{false};\n\n    while (std::cin >> piezas) {\n        ++peticion;\n        int cajas{77};\n        if (intentar_cajas(piezas, cajas)) {\n            std::cout << \"Cajas=\" << cajas << \"\\n\";\n        } else {\n            hubo_rechazos = true;\n            informar_rechazo_cajas(std::cerr, peticion, piezas);\n        }\n    }\n\n    return hubo_rechazos ? 1 : 0;\n}\n"
         },
         {
           "type": "paragraph",
@@ -240,7 +240,7 @@
         {
           "type": "code",
           "language": "cpp",
-          "code": "#include <cassert>\n#include <iostream>\n\nint numero_visita{0};\n\nint registrar_visita() {\n    ++numero_visita;\n    return numero_visita;\n}\n\nint main() {\n    assert(registrar_visita() > 0);\n    std::cout << \"Visitas=\" << numero_visita << \"\\n\";\n    return 0;\n}\n"
+          "code": "#include <cassert>\n#include <iostream>\n\nint numero_visita{0};\n\nint registrar_visita() {\n    ++numero_visita;\n    return numero_visita;\n}\n\nint main() {\n    assert(registrar_visita() > 0);\n    std::cout << \"Visitas=\" << numero_visita << \"\\n\";\n\n    return 0;\n}\n"
         },
         {
           "type": "multiple_choice",
@@ -1163,6 +1163,89 @@
         "id": "block_0005_0005",
         "beforeSha256": "2ba287e94c83edc648b465eb9c7c8e2e6156492dace213566360fd7490e10ac4",
         "afterSha256": "e2f5d268626b38357b6b121030e2651a18f2611bbce209f588f9d938e7d3177b"
+      },
+      {
+        "id": "block_0002_0003",
+        "beforeSha256": "8a44c7f579bfd97723924cf4068ccfa1132bd0c1ec8c87d3d0bbabca81bce7d5",
+        "afterSha256": "3afcc3ae7702eb3935f39f42f9989ca5ab123dfb1a34d305de1341809db04fc0"
+      },
+      {
+        "id": "block_0003_0002",
+        "beforeSha256": "7e16a0909717e64d33587082b21d8f0bcf9bf689b0169e31d2a0d1d8af7cf6ce",
+        "afterSha256": "76b8de6123c55981615a65bb2fe526c87a40d0c0f9d254012d04492d32b736d8"
+      },
+      {
+        "id": "block_0003_0007",
+        "beforeSha256": "52e83f22eb81a0a9e2ccbfa214ce89634798f04adff87e37ddef1c55728e70bf",
+        "afterSha256": "36c8f212cffdf4b04ed436b70fd20a75ce8ed8946ef627b700355436c0b6991a"
+      },
+      {
+        "id": "block_0004_0007",
+        "beforeSha256": "8a44c7f579bfd97723924cf4068ccfa1132bd0c1ec8c87d3d0bbabca81bce7d5",
+        "afterSha256": "3afcc3ae7702eb3935f39f42f9989ca5ab123dfb1a34d305de1341809db04fc0"
+      },
+      {
+        "id": "block_0004_0002",
+        "beforeSha256": "70a5a3b9bf215d6ddf235c75e18d00c0fbadd3cfc632f5101b07e5f3ab78b28a",
+        "afterSha256": "22cba1510bbe6d1e476e7e7b98de0e0a84eee66f8d63a99abd320e81072a1d37"
+      },
+      {
+        "id": "block_0005_0002",
+        "beforeSha256": "5fbb17dbb4fb1fc438dcfc2b9c46e0369189f19202ddb737002a6cb8a99110ea",
+        "afterSha256": "0d8a711e8ebeb840a75f9c0271f521a011b21acce8b6e14fa97077b3cc3fdbb7"
+      }
+    ],
+    "sourceFormatRevisions": [
+      {
+        "id": "block_0002_0003",
+        "block": {
+          "type": "cpp_compiler",
+          "language": "cpp",
+          "initialCode": "#include <cassert>\n#include <iostream>\n\nint cajas_para(int piezas) {\n    const int piezas_por_caja{4};\n    const int cajas = piezas / piezas_por_caja;\n    assert(cajas * piezas_por_caja >= piezas);\n    return cajas;\n}\n\nbool intentar_cajas(int piezas, int& resultado) {\n    if (piezas < 0 || piezas > 20) {\n        return false;\n    }\n    resultado = cajas_para(piezas);\n    return true;\n}\n\nvoid informar_rechazo_cajas(std::ostream& destino, int peticion, int piezas) {\n    destino << \"Cajas: peticion \" << peticion << \", piezas=\" << piezas\n            << \". Se admite un entero de 0 a 20. Revise la cantidad.\\n\";\n}\n\nint main() {\n    int piezas{0};\n    int peticion{0};\n    bool hubo_rechazos{false};\n    while (std::cin >> piezas) {\n        ++peticion;\n        int cajas{77};\n        if (intentar_cajas(piezas, cajas)) {\n            std::cout << \"Cajas=\" << cajas << \"\\n\";\n        } else {\n            hubo_rechazos = true;\n            informar_rechazo_cajas(std::cerr, peticion, piezas);\n        }\n    }\n    return hubo_rechazos ? 1 : 0;\n}\n",
+          "initialStandardInput": "-1 5\n"
+        }
+      },
+      {
+        "id": "block_0003_0002",
+        "block": {
+          "type": "code",
+          "language": "cpp",
+          "code": "#define NDEBUG\n#include <cassert>\n#include <iostream>\n\nint cajas_para(int piezas) {\n    const int piezas_por_caja{4};\n    const int cajas = piezas / piezas_por_caja;\n    assert(cajas * piezas_por_caja >= piezas);\n    return cajas;\n}\n\nbool intentar_cajas(int piezas, int& resultado) {\n    if (piezas < 0 || piezas > 20) {\n        return false;\n    }\n    resultado = cajas_para(piezas);\n    return true;\n}\n\nvoid informar_rechazo_cajas(std::ostream& destino, int peticion, int piezas) {\n    destino << \"Cajas: peticion \" << peticion << \", piezas=\" << piezas\n            << \". Se admite un entero de 0 a 20. Revise la cantidad.\\n\";\n}\n\nint main() {\n    int piezas{0};\n    int peticion{0};\n    bool hubo_rechazos{false};\n    while (std::cin >> piezas) {\n        ++peticion;\n        int cajas{77};\n        if (intentar_cajas(piezas, cajas)) {\n            std::cout << \"Cajas=\" << cajas << \"\\n\";\n        } else {\n            hubo_rechazos = true;\n            informar_rechazo_cajas(std::cerr, peticion, piezas);\n        }\n    }\n    return hubo_rechazos ? 1 : 0;\n}\n"
+        }
+      },
+      {
+        "id": "block_0003_0007",
+        "block": {
+          "type": "cpp_compiler",
+          "language": "cpp",
+          "initialCode": "#define NDEBUG\n#include <cassert>\n#include <iostream>\n\nint cajas_para(int piezas) {\n    const int piezas_por_caja{4};\n    const int cajas = piezas / piezas_por_caja;\n    assert(cajas * piezas_por_caja >= piezas);\n    return cajas;\n}\n\nbool intentar_cajas(int piezas, int& resultado) {\n    if (piezas < 0 || piezas > 20) {\n        return false;\n    }\n    resultado = cajas_para(piezas);\n    return true;\n}\n\nvoid informar_rechazo_cajas(std::ostream& destino, int peticion, int piezas) {\n    destino << \"Cajas: peticion \" << peticion << \", piezas=\" << piezas\n            << \". Se admite un entero de 0 a 20. Revise la cantidad.\\n\";\n}\n\nint main() {\n    int piezas{0};\n    int peticion{0};\n    bool hubo_rechazos{false};\n    while (std::cin >> piezas) {\n        ++peticion;\n        int cajas{77};\n        if (intentar_cajas(piezas, cajas)) {\n            std::cout << \"Cajas=\" << cajas << \"\\n\";\n        } else {\n            hubo_rechazos = true;\n            informar_rechazo_cajas(std::cerr, peticion, piezas);\n        }\n    }\n    return hubo_rechazos ? 1 : 0;\n}\n",
+          "initialStandardInput": "-1 5\n"
+        }
+      },
+      {
+        "id": "block_0004_0007",
+        "block": {
+          "type": "cpp_compiler",
+          "language": "cpp",
+          "initialCode": "#include <cassert>\n#include <iostream>\n\nint cajas_para(int piezas) {\n    const int piezas_por_caja{4};\n    const int cajas = piezas / piezas_por_caja;\n    assert(cajas * piezas_por_caja >= piezas);\n    return cajas;\n}\n\nbool intentar_cajas(int piezas, int& resultado) {\n    if (piezas < 0 || piezas > 20) {\n        return false;\n    }\n    resultado = cajas_para(piezas);\n    return true;\n}\n\nvoid informar_rechazo_cajas(std::ostream& destino, int peticion, int piezas) {\n    destino << \"Cajas: peticion \" << peticion << \", piezas=\" << piezas\n            << \". Se admite un entero de 0 a 20. Revise la cantidad.\\n\";\n}\n\nint main() {\n    int piezas{0};\n    int peticion{0};\n    bool hubo_rechazos{false};\n    while (std::cin >> piezas) {\n        ++peticion;\n        int cajas{77};\n        if (intentar_cajas(piezas, cajas)) {\n            std::cout << \"Cajas=\" << cajas << \"\\n\";\n        } else {\n            hubo_rechazos = true;\n            informar_rechazo_cajas(std::cerr, peticion, piezas);\n        }\n    }\n    return hubo_rechazos ? 1 : 0;\n}\n",
+          "initialStandardInput": "-1 5\n"
+        }
+      },
+      {
+        "id": "block_0004_0002",
+        "block": {
+          "type": "code",
+          "language": "cpp",
+          "code": "#include <cassert>\n#include <iostream>\n\nint cajas_para(int piezas) {\n    const int piezas_por_caja{4};\n    const int cajas = (piezas + piezas_por_caja - 1) / piezas_por_caja;\n    assert(cajas * piezas_por_caja >= piezas);\n    return cajas;\n}\n\nbool intentar_cajas(int piezas, int& resultado) {\n    if (piezas < 0 || piezas > 20) {\n        return false;\n    }\n    resultado = cajas_para(piezas);\n    return true;\n}\n\nvoid informar_rechazo_cajas(std::ostream& destino, int peticion, int piezas) {\n    destino << \"Cajas: peticion \" << peticion << \", piezas=\" << piezas\n            << \". Se admite un entero de 0 a 20. Revise la cantidad.\\n\";\n}\n\nint main() {\n    int piezas{0};\n    int peticion{0};\n    bool hubo_rechazos{false};\n    while (std::cin >> piezas) {\n        ++peticion;\n        int cajas{77};\n        if (intentar_cajas(piezas, cajas)) {\n            std::cout << \"Cajas=\" << cajas << \"\\n\";\n        } else {\n            hubo_rechazos = true;\n            informar_rechazo_cajas(std::cerr, peticion, piezas);\n        }\n    }\n    return hubo_rechazos ? 1 : 0;\n}\n"
+        }
+      },
+      {
+        "id": "block_0005_0002",
+        "block": {
+          "type": "code",
+          "language": "cpp",
+          "code": "#include <cassert>\n#include <iostream>\n\nint numero_visita{0};\n\nint registrar_visita() {\n    ++numero_visita;\n    return numero_visita;\n}\n\nint main() {\n    assert(registrar_visita() > 0);\n    std::cout << \"Visitas=\" << numero_visita << \"\\n\";\n    return 0;\n}\n"
+        }
       }
     ]
   },

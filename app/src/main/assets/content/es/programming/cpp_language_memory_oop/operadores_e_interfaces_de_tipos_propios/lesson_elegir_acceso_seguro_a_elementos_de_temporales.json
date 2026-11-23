@@ -157,7 +157,7 @@
           "id": "p3_u7l5_referencia_al_miembro_y_resultado_independiente",
           "language": "cpp",
           "question": "Escribe directa, copia y la consulta final de a, después de la escritura mediante enlace.",
-          "code": "#include <iostream>\n#include <utility>\n\nclass Lectura {\npublic:\n    explicit Lectura(int numero) : numero_{numero} {}\n    int& valor() &;\n    const int& valor() const &;\n    int valor() &&;\n    int valor() const &&;\nprivate:\n    int numero_;\n};\nint& Lectura::valor() & { return numero_; }\nconst int& Lectura::valor() const & { return numero_; }\nint Lectura::valor() && { return numero_; }\nint Lectura::valor() const && { return numero_; }\nint main() {\n    Lectura a{6};\n    const Lectura& vista = a;\n    int& enlace = a.valor();\n    const int& directa = vista.valor();\n    const int& copia = std::move(a).valor();\n    enlace = 20;\n    std::cout << directa << ':' << copia << ':' << a.valor();\n    return 0;\n}\n",
+          "code": "#include <iostream>\n#include <utility>\n\nclass Lectura {\npublic:\n    explicit Lectura(int numero) : numero_{numero} {}\n    int& valor() &;\n    const int& valor() const &;\n    int valor() &&;\n    int valor() const &&;\nprivate:\n    int numero_;\n};\nint& Lectura::valor() & { return numero_; }\nconst int& Lectura::valor() const & { return numero_; }\nint Lectura::valor() && { return numero_; }\nint Lectura::valor() const && { return numero_; }\nint main() {\n    Lectura a{6};\n    const Lectura& vista = a;\n    int& enlace = a.valor();\n    const int& directa = vista.valor();\n    const int& copia = std::move(a).valor();\n\n    enlace = 20;\n\n    std::cout << directa << ':' << copia << ':' << a.valor();\n\n    return 0;\n}\n",
           "answers": [
             "20:6:20"
           ],
@@ -185,7 +185,7 @@
           "id": "p3_u7l5_resultado_independiente_desde_rvalue_constante",
           "language": "cpp",
           "question": "Escribe copia y la consulta final mediante vista, después de cambiar a.",
-          "code": "#include <iostream>\n#include <utility>\n\nclass Lectura {\npublic:\n    explicit Lectura(int numero) : numero_{numero} {}\n    int& valor() &;\n    const int& valor() const &;\n    int valor() &&;\n    int valor() const &&;\nprivate:\n    int numero_;\n};\nint& Lectura::valor() & { return numero_; }\nconst int& Lectura::valor() const & { return numero_; }\nint Lectura::valor() && { return numero_; }\nint Lectura::valor() const && { return numero_; }\nint main() {\n    Lectura a{7};\n    const Lectura& vista = a;\n    const int& copia = std::move(vista).valor();\n    a.valor() = 23;\n    std::cout << copia << ':' << vista.valor();\n    return 0;\n}\n",
+          "code": "#include <iostream>\n#include <utility>\n\nclass Lectura {\npublic:\n    explicit Lectura(int numero) : numero_{numero} {}\n    int& valor() &;\n    const int& valor() const &;\n    int valor() &&;\n    int valor() const &&;\nprivate:\n    int numero_;\n};\nint& Lectura::valor() & { return numero_; }\nconst int& Lectura::valor() const & { return numero_; }\nint Lectura::valor() && { return numero_; }\nint Lectura::valor() const && { return numero_; }\nint main() {\n    Lectura a{7};\n    const Lectura& vista = a;\n    const int& copia = std::move(vista).valor();\n    a.valor() = 23;\n    std::cout << copia << ':' << vista.valor();\n\n    return 0;\n}\n",
           "answers": [
             "7:23"
           ],
@@ -213,7 +213,7 @@
           "id": "p3_u7l5_nombre_rvalue_reference_y_dos_accesos",
           "language": "cpp",
           "question": "Escribe el valor final de a, el resultado conservado en copia y la comprobación de identidad entre alias y a.",
-          "code": "#include <iostream>\n#include <utility>\n\nclass Lectura {\npublic:\n    explicit Lectura(int numero) : numero_{numero} {}\n    int& valor() &;\n    const int& valor() const &;\n    int valor() &&;\n    int valor() const &&;\nprivate:\n    int numero_;\n};\nint& Lectura::valor() & { return numero_; }\nconst int& Lectura::valor() const & { return numero_; }\nint Lectura::valor() && { return numero_; }\nint Lectura::valor() const && { return numero_; }\nint main() {\n    Lectura a{9};\n    Lectura&& alias = std::move(a);\n    int& enlace = alias.valor();\n    const int& copia = std::move(alias).valor();\n    enlace = -3;\n    std::cout << a.valor() << ':' << copia << ':' << (&alias == &a);\n    return 0;\n}\n",
+          "code": "#include <iostream>\n#include <utility>\n\nclass Lectura {\npublic:\n    explicit Lectura(int numero) : numero_{numero} {}\n    int& valor() &;\n    const int& valor() const &;\n    int valor() &&;\n    int valor() const &&;\nprivate:\n    int numero_;\n};\nint& Lectura::valor() & { return numero_; }\nconst int& Lectura::valor() const & { return numero_; }\nint Lectura::valor() && { return numero_; }\nint Lectura::valor() const && { return numero_; }\nint main() {\n    Lectura a{9};\n    Lectura&& alias = std::move(a);\n    int& enlace = alias.valor();\n    const int& copia = std::move(alias).valor();\n\n    enlace = -3;\n\n    std::cout << a.valor() << ':' << copia << ':' << (&alias == &a);\n\n    return 0;\n}\n",
           "answers": [
             "-3:9:1"
           ],
@@ -241,7 +241,7 @@
           "id": "p3_u7l5_vida_del_temporal_y_del_int_devuelto",
           "language": "cpp",
           "question": "Escribe la salida completa, incluidos el rótulo del destructor y la lectura de guardado.",
-          "code": "#include <iostream>\n#include <utility>\n\nclass Lectura {\npublic:\n    explicit Lectura(int numero) : numero_{numero} {}\n    int& valor() &;\n    const int& valor() const &;\n    int valor() &&;\n    int valor() const &&;\n    ~Lectura() { std::cout << \"Fin:\"; }\nprivate:\n    int numero_;\n};\nint& Lectura::valor() & { return numero_; }\nconst int& Lectura::valor() const & { return numero_; }\nint Lectura::valor() && { return numero_; }\nint Lectura::valor() const && { return numero_; }\nint main() {\n    const int& guardado = Lectura{12}.valor();\n    std::cout << guardado;\n    return 0;\n}\n",
+          "code": "#include <iostream>\n#include <utility>\n\nclass Lectura {\npublic:\n    explicit Lectura(int numero) : numero_{numero} {}\n    int& valor() &;\n    const int& valor() const &;\n    int valor() &&;\n    int valor() const &&;\n    ~Lectura() { std::cout << \"Fin:\"; }\nprivate:\n    int numero_;\n};\nint& Lectura::valor() & { return numero_; }\nconst int& Lectura::valor() const & { return numero_; }\nint Lectura::valor() && { return numero_; }\nint Lectura::valor() const && { return numero_; }\nint main() {\n    const int& guardado = Lectura{12}.valor();\n\n    std::cout << guardado;\n\n    return 0;\n}\n",
           "answers": [
             "Fin:12"
           ],
@@ -298,7 +298,7 @@
           "id": "p3_u7l5_const_lvalue_ref_no_bloquea_rvalues",
           "language": "cpp",
           "question": "Escribe lectura y la consulta final de a después de cambiar su miembro.",
-          "code": "#include <iostream>\n#include <utility>\n\nclass Prestamo {\npublic:\n    explicit Prestamo(int numero) : numero_{numero} {}\n    int& valor() & { return numero_; }\n    const int& valor() const & { return numero_; }\nprivate:\n    int numero_;\n};\nint main() {\n    Prestamo a{8};\n    const int& lectura = std::move(a).valor();\n    a.valor() = 24;\n    std::cout << lectura << ':' << a.valor();\n    return 0;\n}\n",
+          "code": "#include <iostream>\n#include <utility>\n\nclass Prestamo {\npublic:\n    explicit Prestamo(int numero) : numero_{numero} {}\n    int& valor() & { return numero_; }\n    const int& valor() const & { return numero_; }\nprivate:\n    int numero_;\n};\n\nint main() {\n    Prestamo a{8};\n    const int& lectura = std::move(a).valor();\n    a.valor() = 24;\n    std::cout << lectura << ':' << a.valor();\n\n    return 0;\n}\n",
           "answers": [
             "24:24"
           ],
@@ -333,7 +333,7 @@
         {
           "type": "code",
           "language": "cpp",
-          "code": "#include <iostream>\n#include <utility>\n\nclass Prestamo {\npublic:\n    explicit Prestamo(int numero) : numero_{numero} {}\n    int& valor() & { return numero_; }\n    const int& valor() const & { return numero_; }\n    int& valor() && = delete;\n    const int& valor() const && = delete;\nprivate:\n    int numero_;\n};\nint main() {\n    int valor = Prestamo{3}.valor();\n    return valor;\n}\n"
+          "code": "#include <iostream>\n#include <utility>\n\nclass Prestamo {\npublic:\n    explicit Prestamo(int numero) : numero_{numero} {}\n    int& valor() & { return numero_; }\n    const int& valor() const & { return numero_; }\n    int& valor() && = delete;\n    const int& valor() const && = delete;\nprivate:\n    int numero_;\n};\n\nint main() {\n    int valor = Prestamo{3}.valor();\n    return valor;\n}\n"
         },
         {
           "type": "multiple_choice",
@@ -362,7 +362,7 @@
         {
           "type": "code",
           "language": "cpp",
-          "code": "#include <iostream>\n#include <utility>\n\nclass Prestamo {\npublic:\n    explicit Prestamo(int numero) : numero_{numero} {}\n    int& valor() & { return numero_; }\n    const int& valor() const & { return numero_; }\n    int& valor() && = delete;\n    const int& valor() const && = delete;\nprivate:\n    int numero_;\n};\nint main() {\n    const Prestamo a{3};\n    int valor = std::move(a).valor();\n    return valor;\n}\n"
+          "code": "#include <iostream>\n#include <utility>\n\nclass Prestamo {\npublic:\n    explicit Prestamo(int numero) : numero_{numero} {}\n    int& valor() & { return numero_; }\n    const int& valor() const & { return numero_; }\n    int& valor() && = delete;\n    const int& valor() const && = delete;\nprivate:\n    int numero_;\n};\n\nint main() {\n    const Prestamo a{3};\n    int valor = std::move(a).valor();\n    return valor;\n}\n"
         },
         {
           "type": "multiple_choice",
@@ -393,7 +393,7 @@
           "id": "p3_u7l5_falta_el_rechazo_del_rvalue_constante",
           "language": "cpp",
           "question": "Escribe lectura y la consulta final mediante vista después de la escritura sobre a.",
-          "code": "#include <iostream>\n#include <utility>\n\nclass Prestamo {\npublic:\n    explicit Prestamo(int numero) : numero_{numero} {}\n    int& valor() & { return numero_; }\n    const int& valor() const & { return numero_; }\n    int& valor() && = delete;\nprivate:\n    int numero_;\n};\nint main() {\n    Prestamo a{5};\n    const Prestamo& vista = a;\n    const int& lectura = std::move(vista).valor();\n    a.valor() = 18;\n    std::cout << lectura << ':' << vista.valor();\n    return 0;\n}\n",
+          "code": "#include <iostream>\n#include <utility>\n\nclass Prestamo {\npublic:\n    explicit Prestamo(int numero) : numero_{numero} {}\n    int& valor() & { return numero_; }\n    const int& valor() const & { return numero_; }\n    int& valor() && = delete;\nprivate:\n    int numero_;\n};\n\nint main() {\n    Prestamo a{5};\n    const Prestamo& vista = a;\n    const int& lectura = std::move(vista).valor();\n    a.valor() = 18;\n    std::cout << lectura << ':' << vista.valor();\n\n    return 0;\n}\n",
           "answers": [
             "18:18"
           ],
@@ -738,7 +738,7 @@
         {
           "type": "cpp_compiler",
           "language": "cpp",
-          "initialCode": "#include <iostream>\n#include <utility>\n\nstruct IndiceFuera {};\n\nclass Terna {\npublic:\n    Terna() = default;\n    Terna(int primero, int segundo, int tercero) : datos_{primero, segundo, tercero} {}\n    int& operator[](int indice) &;\n    const int& operator[](int indice) const &;\n    int operator[](int indice) &&;\n    int operator[](int indice) const &&;\n    void escribir(std::ostream& salida) const {\n        salida << datos_[0] << ':' << datos_[1] << ':' << datos_[2];\n    }\nprivate:\n    int datos_[3]{10, 20, 30};\n};\nint& Terna::operator[](int indice) & {\n    if (indice < 0 || indice >= 3) { throw IndiceFuera{}; }\n    return datos_[indice];\n}\nconst int& Terna::operator[](int indice) const & {\n    if (indice < 0 || indice >= 3) { throw IndiceFuera{}; }\n    return datos_[indice];\n}\nint Terna::operator[](int indice) && {\n    // Comprueba el índice y devuelve una copia del int elegido.\n    (void)indice;\n    return 0;\n}\n\nint Terna::operator[](int indice) const && {\n    // Mantén la misma comprobación y copia en el acceso rvalue constante.\n    (void)indice;\n    return 0;\n}\nint main() {\n    int ordenes = 0;\n    if (!(std::cin >> ordenes) || ordenes < 1 || ordenes > 12) { return 1; }\n    Terna datos;\n    const Terna& lectura = datos;\n    int guardado = -7;\n    for (int i = 0; i < ordenes; ++i) {\n        int op = 0, indice = 0, valor = 0;\n        if (!(std::cin >> op >> indice >> valor)) { return 1; }\n        std::cout << \"Antes:\";\n        datos.escribir(std::cout);\n        const char* estado = \"Aceptada\";\n        try {\n            if (op == 1) { datos[indice] = valor; }\n            else if (op == 2) { guardado = std::move(datos)[indice]; }\n            else if (op == 3) { guardado = std::move(lectura)[indice]; }\n            else if (op == 4) { guardado = Terna{valor, 41, -6}[indice]; }\n            else if (op == 5) {\n                const int& independiente = Terna{valor, 41, -6}[indice];\n                guardado = independiente;\n            } else { estado = \"Operacion\"; }\n        } catch (const IndiceFuera&) { estado = \"Indice\"; }\n        std::cout << \";Estado:\" << estado << \";Copia:\" << guardado << \";Ahora:\";\n        datos.escribir(std::cout);\n        std::cout << '\\n';\n    }\n    std::cout << \"Final:\";\n    datos.escribir(std::cout);\n    std::cout << \";Copia:\" << guardado;\n    return 0;\n}\n",
+          "initialCode": "#include <iostream>\n#include <utility>\n\nstruct IndiceFuera {};\n\nclass Terna {\npublic:\n    Terna() = default;\n    Terna(int primero, int segundo, int tercero) : datos_{primero, segundo, tercero} {}\n    int& operator[](int indice) &;\n    const int& operator[](int indice) const &;\n    int operator[](int indice) &&;\n    int operator[](int indice) const &&;\n    void escribir(std::ostream& salida) const {\n        salida << datos_[0] << ':' << datos_[1] << ':' << datos_[2];\n    }\nprivate:\n    int datos_[3]{10, 20, 30};\n};\nint& Terna::operator[](int indice) & {\n    if (indice < 0 || indice >= 3) { throw IndiceFuera{}; }\n    return datos_[indice];\n}\nconst int& Terna::operator[](int indice) const & {\n    if (indice < 0 || indice >= 3) { throw IndiceFuera{}; }\n    return datos_[indice];\n}\nint Terna::operator[](int indice) && {\n    // Comprueba el índice y devuelve una copia del int elegido.\n    (void)indice;\n    return 0;\n}\n\nint Terna::operator[](int indice) const && {\n    // Mantén la misma comprobación y copia en el acceso rvalue constante.\n    (void)indice;\n    return 0;\n}\n\nint main() {\n    int ordenes = 0;\n    if (!(std::cin >> ordenes) || ordenes < 1 || ordenes > 12) { return 1; }\n    Terna datos;\n    const Terna& lectura = datos;\n    int guardado = -7;\n\n    for (int i = 0; i < ordenes; ++i) {\n        int op = 0, indice = 0, valor = 0;\n        if (!(std::cin >> op >> indice >> valor)) { return 1; }\n        std::cout << \"Antes:\";\n        datos.escribir(std::cout);\n        const char* estado = \"Aceptada\";\n        try {\n            if (op == 1) { datos[indice] = valor; }\n            else if (op == 2) { guardado = std::move(datos)[indice]; }\n            else if (op == 3) { guardado = std::move(lectura)[indice]; }\n            else if (op == 4) { guardado = Terna{valor, 41, -6}[indice]; }\n            else if (op == 5) {\n                const int& independiente = Terna{valor, 41, -6}[indice];\n                guardado = independiente;\n            } else { estado = \"Operacion\"; }\n        } catch (const IndiceFuera&) { estado = \"Indice\"; }\n        std::cout << \";Estado:\" << estado << \";Copia:\" << guardado << \";Ahora:\";\n        datos.escribir(std::cout);\n        std::cout << '\\n';\n    }\n    std::cout << \"Final:\";\n    datos.escribir(std::cout);\n    std::cout << \";Copia:\" << guardado;\n\n    return 0;\n}\n",
           "initialStandardInput": "9\n2 1 0\n1 1 77\n3 1 0\n1 1 -4\n4 0 55\n1 0 12\n5 2 0\n2 3 0\n3 -1 0",
           "outputCheck": {
             "inputComparison": "tokens",
@@ -864,7 +864,7 @@
         {
           "type": "code",
           "language": "cpp",
-          "code": "#include <iostream>\n#include <utility>\n\nstruct IndiceFuera {};\n\nclass Terna {\npublic:\n    Terna() = default;\n    Terna(int primero, int segundo, int tercero) : datos_{primero, segundo, tercero} {}\n    int& operator[](int indice) &;\n    const int& operator[](int indice) const &;\n    int operator[](int indice) &&;\n    int operator[](int indice) const &&;\n    void escribir(std::ostream& salida) const {\n        salida << datos_[0] << ':' << datos_[1] << ':' << datos_[2];\n    }\nprivate:\n    int datos_[3]{10, 20, 30};\n};\nint& Terna::operator[](int indice) & {\n    if (indice < 0 || indice >= 3) { throw IndiceFuera{}; }\n    return datos_[indice];\n}\nconst int& Terna::operator[](int indice) const & {\n    if (indice < 0 || indice >= 3) { throw IndiceFuera{}; }\n    return datos_[indice];\n}\nint Terna::operator[](int indice) && {\n    if (indice < 0 || indice >= 3) { throw IndiceFuera{}; }\n    return datos_[indice];\n}\nint Terna::operator[](int indice) const && {\n    if (indice < 0 || indice >= 3) { throw IndiceFuera{}; }\n    return datos_[indice];\n}\nint main() {\n    int ordenes = 0;\n    if (!(std::cin >> ordenes) || ordenes < 1 || ordenes > 12) { return 1; }\n    Terna datos;\n    const Terna& lectura = datos;\n    int guardado = -7;\n    for (int i = 0; i < ordenes; ++i) {\n        int op = 0, indice = 0, valor = 0;\n        if (!(std::cin >> op >> indice >> valor)) { return 1; }\n        std::cout << \"Antes:\";\n        datos.escribir(std::cout);\n        const char* estado = \"Aceptada\";\n        try {\n            if (op == 1) { datos[indice] = valor; }\n            else if (op == 2) { guardado = std::move(datos)[indice]; }\n            else if (op == 3) { guardado = std::move(lectura)[indice]; }\n            else if (op == 4) { guardado = Terna{valor, 41, -6}[indice]; }\n            else if (op == 5) {\n                const int& independiente = Terna{valor, 41, -6}[indice];\n                guardado = independiente;\n            } else { estado = \"Operacion\"; }\n        } catch (const IndiceFuera&) { estado = \"Indice\"; }\n        std::cout << \";Estado:\" << estado << \";Copia:\" << guardado << \";Ahora:\";\n        datos.escribir(std::cout);\n        std::cout << '\\n';\n    }\n    std::cout << \"Final:\";\n    datos.escribir(std::cout);\n    std::cout << \";Copia:\" << guardado;\n    return 0;\n}\n"
+          "code": "#include <iostream>\n#include <utility>\n\nstruct IndiceFuera {};\n\nclass Terna {\npublic:\n    Terna() = default;\n    Terna(int primero, int segundo, int tercero) : datos_{primero, segundo, tercero} {}\n    int& operator[](int indice) &;\n    const int& operator[](int indice) const &;\n    int operator[](int indice) &&;\n    int operator[](int indice) const &&;\n    void escribir(std::ostream& salida) const {\n        salida << datos_[0] << ':' << datos_[1] << ':' << datos_[2];\n    }\nprivate:\n    int datos_[3]{10, 20, 30};\n};\nint& Terna::operator[](int indice) & {\n    if (indice < 0 || indice >= 3) { throw IndiceFuera{}; }\n    return datos_[indice];\n}\nconst int& Terna::operator[](int indice) const & {\n    if (indice < 0 || indice >= 3) { throw IndiceFuera{}; }\n    return datos_[indice];\n}\nint Terna::operator[](int indice) && {\n    if (indice < 0 || indice >= 3) { throw IndiceFuera{}; }\n    return datos_[indice];\n}\nint Terna::operator[](int indice) const && {\n    if (indice < 0 || indice >= 3) { throw IndiceFuera{}; }\n    return datos_[indice];\n}\n\nint main() {\n    int ordenes = 0;\n    if (!(std::cin >> ordenes) || ordenes < 1 || ordenes > 12) { return 1; }\n    Terna datos;\n    const Terna& lectura = datos;\n    int guardado = -7;\n\n    for (int i = 0; i < ordenes; ++i) {\n        int op = 0, indice = 0, valor = 0;\n        if (!(std::cin >> op >> indice >> valor)) { return 1; }\n        std::cout << \"Antes:\";\n        datos.escribir(std::cout);\n        const char* estado = \"Aceptada\";\n        try {\n            if (op == 1) { datos[indice] = valor; }\n            else if (op == 2) { guardado = std::move(datos)[indice]; }\n            else if (op == 3) { guardado = std::move(lectura)[indice]; }\n            else if (op == 4) { guardado = Terna{valor, 41, -6}[indice]; }\n            else if (op == 5) {\n                const int& independiente = Terna{valor, 41, -6}[indice];\n                guardado = independiente;\n            } else { estado = \"Operacion\"; }\n        } catch (const IndiceFuera&) { estado = \"Indice\"; }\n        std::cout << \";Estado:\" << estado << \";Copia:\" << guardado << \";Ahora:\";\n        datos.escribir(std::cout);\n        std::cout << '\\n';\n    }\n    std::cout << \"Final:\";\n    datos.escribir(std::cout);\n    std::cout << \";Copia:\" << guardado;\n\n    return 0;\n}\n"
         },
         {
           "type": "paragraph",
@@ -2530,6 +2530,208 @@
       }
     },
     "additions": [],
-    "editorial": []
+    "editorial": [
+      {
+        "id": "block_0005_0002",
+        "beforeSha256": "5b39797bfb4059c60b4727f6f6cc141ff578519fc77469561d121c3236a582b5",
+        "afterSha256": "5ab917c4a27dfbafbe2f81748a75f34063fe8f88ea7d295fd13ca1bba0e3ef2f"
+      },
+      {
+        "id": "block_0006_0002",
+        "beforeSha256": "9f681fe76cb2baddca88c73c0d729004e10373e112c517a6802c687a5d8851d9",
+        "afterSha256": "87d9343843ed0a7455cf21f69297995db2a19f4f7e86ccab328a51e1d6674e94"
+      },
+      {
+        "id": "block_0007_0002",
+        "beforeSha256": "a17183b7d90d267d9b7bb58c45ea4088cdda42b2e99daaba3b2195f4e9f3d359",
+        "afterSha256": "6433ab3ff7aab875e7f8f483cc5e959e21a523d1f861c4279982d0aa21c9cb15"
+      },
+      {
+        "id": "block_0008_0002",
+        "beforeSha256": "c0d76f4d1b8228fbcebcfc11b041e86b1acb5ea9fdc7ad900288a82dad731385",
+        "afterSha256": "4f29612d79ac6667ff9bb9927b73bfccb88089a217fce2bece9b306c22bcee29"
+      },
+      {
+        "id": "block_0010_0002",
+        "beforeSha256": "ff729866b0308003a82b3f56a61371f61ba7295ea43ddade2955fe1fb9411de6",
+        "afterSha256": "e6f93ce4e05c8b357113a48d0bbf91d98278d9c2a6193b21d5f2f95d2ef87e42"
+      },
+      {
+        "id": "block_0011_0004",
+        "beforeSha256": "d258a8e83e2edc6f1eb51d395c32d5ea9b38914162d6077350e7ebbcd8797b2f",
+        "afterSha256": "3b48661d21e6e9924a82860a28abcbed342a69be1bd94641dfe5dd03cfe808bb"
+      },
+      {
+        "id": "block_0012_0002",
+        "beforeSha256": "e6802d368c1a315f61623b1011953461c0f79affff3fca70a3547e12ac97520e",
+        "afterSha256": "baadc1b5070396bc276c94d4edba97889f6ffd77dcaacd391eac3aeded8f6ff4"
+      },
+      {
+        "id": "block_0013_0002",
+        "beforeSha256": "9fdc91faefe987ae4d3a65cb3bbb28c6eda4c2a5bcb3ecfe3daf1da65e4f58a5",
+        "afterSha256": "c75ee3490bcd78ffd668001d49e3fcc0e223fc6ff288bbfedd8779d8a98f8645"
+      },
+      {
+        "id": "block_0021_0002",
+        "beforeSha256": "a09a12733f448e3d62bdd47e9b595923e175d03a795ef77d2b46b02a5e35adb7",
+        "afterSha256": "077a9ccb6f83c116f9f167b4b5fdad53f5cf1b3e20e2b968f0887e6b7baa707a"
+      },
+      {
+        "id": "block_0023_0001",
+        "beforeSha256": "d0d75a2213a9a87aca33a0d5ded73cfc8a51cf83f4f12efe106174f211cb5671",
+        "afterSha256": "acd37c3a017da3ad3290db0978851a3d33d8559def60059330729688319f4701"
+      }
+    ],
+    "sourceFormatRevisions": [
+      {
+        "id": "block_0005_0002",
+        "block": {
+          "type": "output_prediction",
+          "id": "p3_u7l5_referencia_al_miembro_y_resultado_independiente",
+          "language": "cpp",
+          "question": "Escribe directa, copia y la consulta final de a, después de la escritura mediante enlace.",
+          "code": "#include <iostream>\n#include <utility>\n\nclass Lectura {\npublic:\n    explicit Lectura(int numero) : numero_{numero} {}\n    int& valor() &;\n    const int& valor() const &;\n    int valor() &&;\n    int valor() const &&;\nprivate:\n    int numero_;\n};\nint& Lectura::valor() & { return numero_; }\nconst int& Lectura::valor() const & { return numero_; }\nint Lectura::valor() && { return numero_; }\nint Lectura::valor() const && { return numero_; }\nint main() {\n    Lectura a{6};\n    const Lectura& vista = a;\n    int& enlace = a.valor();\n    const int& directa = vista.valor();\n    const int& copia = std::move(a).valor();\n    enlace = 20;\n    std::cout << directa << ':' << copia << ':' << a.valor();\n    return 0;\n}\n",
+          "answers": [
+            "20:6:20"
+          ],
+          "outputComparison": "exact",
+          "explanation": "enlace identifica el miembro y lo cambia a veinte. directa se refiere a ese mismo miembro por una vía de lectura, así que observa veinte. La llamada con std::move(a) devolvió por valor el seis que había leído antes: copia mantiene vivo ese int independiente y conserva seis. a sigue existiendo y su consulta final lee veinte."
+        }
+      },
+      {
+        "id": "block_0006_0002",
+        "block": {
+          "type": "output_prediction",
+          "id": "p3_u7l5_resultado_independiente_desde_rvalue_constante",
+          "language": "cpp",
+          "question": "Escribe copia y la consulta final mediante vista, después de cambiar a.",
+          "code": "#include <iostream>\n#include <utility>\n\nclass Lectura {\npublic:\n    explicit Lectura(int numero) : numero_{numero} {}\n    int& valor() &;\n    const int& valor() const &;\n    int valor() &&;\n    int valor() const &&;\nprivate:\n    int numero_;\n};\nint& Lectura::valor() & { return numero_; }\nconst int& Lectura::valor() const & { return numero_; }\nint Lectura::valor() && { return numero_; }\nint Lectura::valor() const && { return numero_; }\nint main() {\n    Lectura a{7};\n    const Lectura& vista = a;\n    const int& copia = std::move(vista).valor();\n    a.valor() = 23;\n    std::cout << copia << ':' << vista.valor();\n    return 0;\n}\n",
+          "answers": [
+            "7:23"
+          ],
+          "outputComparison": "exact",
+          "explanation": "La consulta const && entrega una copia del siete inicial. copia se refiere a ese int independiente. El objeto a cambia después a veintitrés mediante su acceso lvalue modificable, y vista observa ese cambio porque sigue refiriéndose a a. La copia del resultado no cambia con él."
+        }
+      },
+      {
+        "id": "block_0007_0002",
+        "block": {
+          "type": "output_prediction",
+          "id": "p3_u7l5_nombre_rvalue_reference_y_dos_accesos",
+          "language": "cpp",
+          "question": "Escribe el valor final de a, el resultado conservado en copia y la comprobación de identidad entre alias y a.",
+          "code": "#include <iostream>\n#include <utility>\n\nclass Lectura {\npublic:\n    explicit Lectura(int numero) : numero_{numero} {}\n    int& valor() &;\n    const int& valor() const &;\n    int valor() &&;\n    int valor() const &&;\nprivate:\n    int numero_;\n};\nint& Lectura::valor() & { return numero_; }\nconst int& Lectura::valor() const & { return numero_; }\nint Lectura::valor() && { return numero_; }\nint Lectura::valor() const && { return numero_; }\nint main() {\n    Lectura a{9};\n    Lectura&& alias = std::move(a);\n    int& enlace = alias.valor();\n    const int& copia = std::move(alias).valor();\n    enlace = -3;\n    std::cout << a.valor() << ':' << copia << ':' << (&alias == &a);\n    return 0;\n}\n",
+          "answers": [
+            "-3:9:1"
+          ],
+          "outputComparison": "exact",
+          "explanation": "enlace identifica el miembro de a a través del nombre alias y lo cambia a menos tres. La consulta rvalue anterior había devuelto por valor el nueve inicial, que conserva copia. alias y a siguen siendo nombres del mismo objeto, de modo que la comparación de sus direcciones es verdadera."
+        }
+      },
+      {
+        "id": "block_0008_0002",
+        "block": {
+          "type": "output_prediction",
+          "id": "p3_u7l5_vida_del_temporal_y_del_int_devuelto",
+          "language": "cpp",
+          "question": "Escribe la salida completa, incluidos el rótulo del destructor y la lectura de guardado.",
+          "code": "#include <iostream>\n#include <utility>\n\nclass Lectura {\npublic:\n    explicit Lectura(int numero) : numero_{numero} {}\n    int& valor() &;\n    const int& valor() const &;\n    int valor() &&;\n    int valor() const &&;\n    ~Lectura() { std::cout << \"Fin:\"; }\nprivate:\n    int numero_;\n};\nint& Lectura::valor() & { return numero_; }\nconst int& Lectura::valor() const & { return numero_; }\nint Lectura::valor() && { return numero_; }\nint Lectura::valor() const && { return numero_; }\nint main() {\n    const int& guardado = Lectura{12}.valor();\n    std::cout << guardado;\n    return 0;\n}\n",
+          "answers": [
+            "Fin:12"
+          ],
+          "outputComparison": "exact",
+          "explanation": "El resultado int se obtiene antes de terminar la instrucción que inicializa guardado. Al finalizar esa instrucción termina la Lectura temporal y su destructor escribe Fin:. El int del resultado se conserva durante la vida de la referencia local guardado. La lectura posterior de guardado sigue siendo válida y escribe doce."
+        }
+      },
+      {
+        "id": "block_0010_0002",
+        "block": {
+          "type": "output_prediction",
+          "id": "p3_u7l5_const_lvalue_ref_no_bloquea_rvalues",
+          "language": "cpp",
+          "question": "Escribe lectura y la consulta final de a después de cambiar su miembro.",
+          "code": "#include <iostream>\n#include <utility>\n\nclass Prestamo {\npublic:\n    explicit Prestamo(int numero) : numero_{numero} {}\n    int& valor() & { return numero_; }\n    const int& valor() const & { return numero_; }\nprivate:\n    int numero_;\n};\nint main() {\n    Prestamo a{8};\n    const int& lectura = std::move(a).valor();\n    a.valor() = 24;\n    std::cout << lectura << ':' << a.valor();\n    return 0;\n}\n",
+          "answers": [
+            "24:24"
+          ],
+          "outputComparison": "exact",
+          "explanation": "std::move(a).valor() utiliza la versión const & que devuelve const int& al miembro de a. No se ha creado una copia independiente del número. Como a permanece vivo, lectura sigue siendo válida y observa veinticuatro tras la escritura. La nueva consulta de a también lee veinticuatro."
+        }
+      },
+      {
+        "id": "block_0011_0004",
+        "block": {
+          "type": "code",
+          "language": "cpp",
+          "code": "#include <iostream>\n#include <utility>\n\nclass Prestamo {\npublic:\n    explicit Prestamo(int numero) : numero_{numero} {}\n    int& valor() & { return numero_; }\n    const int& valor() const & { return numero_; }\n    int& valor() && = delete;\n    const int& valor() const && = delete;\nprivate:\n    int numero_;\n};\nint main() {\n    int valor = Prestamo{3}.valor();\n    return valor;\n}\n"
+        }
+      },
+      {
+        "id": "block_0012_0002",
+        "block": {
+          "type": "code",
+          "language": "cpp",
+          "code": "#include <iostream>\n#include <utility>\n\nclass Prestamo {\npublic:\n    explicit Prestamo(int numero) : numero_{numero} {}\n    int& valor() & { return numero_; }\n    const int& valor() const & { return numero_; }\n    int& valor() && = delete;\n    const int& valor() const && = delete;\nprivate:\n    int numero_;\n};\nint main() {\n    const Prestamo a{3};\n    int valor = std::move(a).valor();\n    return valor;\n}\n"
+        }
+      },
+      {
+        "id": "block_0013_0002",
+        "block": {
+          "type": "output_prediction",
+          "id": "p3_u7l5_falta_el_rechazo_del_rvalue_constante",
+          "language": "cpp",
+          "question": "Escribe lectura y la consulta final mediante vista después de la escritura sobre a.",
+          "code": "#include <iostream>\n#include <utility>\n\nclass Prestamo {\npublic:\n    explicit Prestamo(int numero) : numero_{numero} {}\n    int& valor() & { return numero_; }\n    const int& valor() const & { return numero_; }\n    int& valor() && = delete;\nprivate:\n    int numero_;\n};\nint main() {\n    Prestamo a{5};\n    const Prestamo& vista = a;\n    const int& lectura = std::move(vista).valor();\n    a.valor() = 18;\n    std::cout << lectura << ':' << vista.valor();\n    return 0;\n}\n",
+          "answers": [
+            "18:18"
+          ],
+          "outputComparison": "exact",
+          "explanation": "La función && eliminada sin const no puede recibir el acceso constante. Como falta const &&, la versión const & atiende la llamada y devuelve una referencia al miembro de a. lectura sigue ese miembro y observa dieciocho después del cambio, igual que la nueva consulta mediante vista."
+        }
+      },
+      {
+        "id": "block_0021_0002",
+        "block": {
+          "type": "cpp_compiler",
+          "language": "cpp",
+          "initialCode": "#include <iostream>\n#include <utility>\n\nstruct IndiceFuera {};\n\nclass Terna {\npublic:\n    Terna() = default;\n    Terna(int primero, int segundo, int tercero) : datos_{primero, segundo, tercero} {}\n    int& operator[](int indice) &;\n    const int& operator[](int indice) const &;\n    int operator[](int indice) &&;\n    int operator[](int indice) const &&;\n    void escribir(std::ostream& salida) const {\n        salida << datos_[0] << ':' << datos_[1] << ':' << datos_[2];\n    }\nprivate:\n    int datos_[3]{10, 20, 30};\n};\nint& Terna::operator[](int indice) & {\n    if (indice < 0 || indice >= 3) { throw IndiceFuera{}; }\n    return datos_[indice];\n}\nconst int& Terna::operator[](int indice) const & {\n    if (indice < 0 || indice >= 3) { throw IndiceFuera{}; }\n    return datos_[indice];\n}\nint Terna::operator[](int indice) && {\n    // Comprueba el índice y devuelve una copia del int elegido.\n    (void)indice;\n    return 0;\n}\n\nint Terna::operator[](int indice) const && {\n    // Mantén la misma comprobación y copia en el acceso rvalue constante.\n    (void)indice;\n    return 0;\n}\nint main() {\n    int ordenes = 0;\n    if (!(std::cin >> ordenes) || ordenes < 1 || ordenes > 12) { return 1; }\n    Terna datos;\n    const Terna& lectura = datos;\n    int guardado = -7;\n    for (int i = 0; i < ordenes; ++i) {\n        int op = 0, indice = 0, valor = 0;\n        if (!(std::cin >> op >> indice >> valor)) { return 1; }\n        std::cout << \"Antes:\";\n        datos.escribir(std::cout);\n        const char* estado = \"Aceptada\";\n        try {\n            if (op == 1) { datos[indice] = valor; }\n            else if (op == 2) { guardado = std::move(datos)[indice]; }\n            else if (op == 3) { guardado = std::move(lectura)[indice]; }\n            else if (op == 4) { guardado = Terna{valor, 41, -6}[indice]; }\n            else if (op == 5) {\n                const int& independiente = Terna{valor, 41, -6}[indice];\n                guardado = independiente;\n            } else { estado = \"Operacion\"; }\n        } catch (const IndiceFuera&) { estado = \"Indice\"; }\n        std::cout << \";Estado:\" << estado << \";Copia:\" << guardado << \";Ahora:\";\n        datos.escribir(std::cout);\n        std::cout << '\\n';\n    }\n    std::cout << \"Final:\";\n    datos.escribir(std::cout);\n    std::cout << \";Copia:\" << guardado;\n    return 0;\n}\n",
+          "initialStandardInput": "9\n2 1 0\n1 1 77\n3 1 0\n1 1 -4\n4 0 55\n1 0 12\n5 2 0\n2 3 0\n3 -1 0",
+          "outputCheck": {
+            "inputComparison": "tokens",
+            "cases": [
+              {
+                "standardInput": "9\n2 1 0\n1 1 77\n3 1 0\n1 1 -4\n4 0 55\n1 0 12\n5 2 0\n2 3 0\n3 -1 0",
+                "outputs": [
+                  "Antes:10:20:30;Estado:Aceptada;Copia:20;Ahora:10:20:30\nAntes:10:20:30;Estado:Aceptada;Copia:20;Ahora:10:77:30\nAntes:10:77:30;Estado:Aceptada;Copia:77;Ahora:10:77:30\nAntes:10:77:30;Estado:Aceptada;Copia:77;Ahora:10:-4:30\nAntes:10:-4:30;Estado:Aceptada;Copia:55;Ahora:10:-4:30\nAntes:10:-4:30;Estado:Aceptada;Copia:55;Ahora:12:-4:30\nAntes:12:-4:30;Estado:Aceptada;Copia:-6;Ahora:12:-4:30\nAntes:12:-4:30;Estado:Indice;Copia:-6;Ahora:12:-4:30\nAntes:12:-4:30;Estado:Indice;Copia:-6;Ahora:12:-4:30\nFinal:12:-4:30;Copia:-6"
+                ],
+                "explanation": "Comprueba ambos límites antes de consultar datos_. Devuelve el int de la posición elegida por valor, sin modificar los elementos. El acceso rvalue constante necesita la misma selección y el mismo rechazo que el modificable."
+              },
+              {
+                "standardInput": "8\n3 2 0\n1 2 -9\n5 1 99\n5 3 99\n4 -1 22\n2 0 0\n1 0 0\n2 0 0",
+                "outputs": [
+                  "Antes:10:20:30;Estado:Aceptada;Copia:30;Ahora:10:20:30\nAntes:10:20:30;Estado:Aceptada;Copia:30;Ahora:10:20:-9\nAntes:10:20:-9;Estado:Aceptada;Copia:41;Ahora:10:20:-9\nAntes:10:20:-9;Estado:Indice;Copia:41;Ahora:10:20:-9\nAntes:10:20:-9;Estado:Indice;Copia:41;Ahora:10:20:-9\nAntes:10:20:-9;Estado:Aceptada;Copia:10;Ahora:10:20:-9\nAntes:10:20:-9;Estado:Aceptada;Copia:10;Ahora:0:20:-9\nAntes:0:20:-9;Estado:Aceptada;Copia:0;Ahora:0:20:-9\nFinal:0:20:-9;Copia:0"
+                ],
+                "explanation": "Comprueba ambos límites antes de consultar datos_. Devuelve el int de la posición elegida por valor, sin modificar los elementos. El acceso rvalue constante necesita la misma selección y el mismo rechazo que el modificable."
+              },
+              {
+                "standardInput": "9\n9 0 0\n1 3 8\n2 -1 0\n3 3 0\n4 2 99\n5 0 100\n3 0 0\n1 1 -5\n5 1 3",
+                "outputs": [
+                  "Antes:10:20:30;Estado:Operacion;Copia:-7;Ahora:10:20:30\nAntes:10:20:30;Estado:Indice;Copia:-7;Ahora:10:20:30\nAntes:10:20:30;Estado:Indice;Copia:-7;Ahora:10:20:30\nAntes:10:20:30;Estado:Indice;Copia:-7;Ahora:10:20:30\nAntes:10:20:30;Estado:Aceptada;Copia:-6;Ahora:10:20:30\nAntes:10:20:30;Estado:Aceptada;Copia:100;Ahora:10:20:30\nAntes:10:20:30;Estado:Aceptada;Copia:10;Ahora:10:20:30\nAntes:10:20:30;Estado:Aceptada;Copia:10;Ahora:10:-5:30\nAntes:10:-5:30;Estado:Aceptada;Copia:41;Ahora:10:-5:30\nFinal:10:-5:30;Copia:41"
+                ],
+                "explanation": "Comprueba ambos límites antes de consultar datos_. Devuelve el int de la posición elegida por valor, sin modificar los elementos. El acceso rvalue constante necesita la misma selección y el mismo rechazo que el modificable."
+              }
+            ]
+          }
+        }
+      },
+      {
+        "id": "block_0023_0001",
+        "block": {
+          "type": "code",
+          "language": "cpp",
+          "code": "#include <iostream>\n#include <utility>\n\nstruct IndiceFuera {};\n\nclass Terna {\npublic:\n    Terna() = default;\n    Terna(int primero, int segundo, int tercero) : datos_{primero, segundo, tercero} {}\n    int& operator[](int indice) &;\n    const int& operator[](int indice) const &;\n    int operator[](int indice) &&;\n    int operator[](int indice) const &&;\n    void escribir(std::ostream& salida) const {\n        salida << datos_[0] << ':' << datos_[1] << ':' << datos_[2];\n    }\nprivate:\n    int datos_[3]{10, 20, 30};\n};\nint& Terna::operator[](int indice) & {\n    if (indice < 0 || indice >= 3) { throw IndiceFuera{}; }\n    return datos_[indice];\n}\nconst int& Terna::operator[](int indice) const & {\n    if (indice < 0 || indice >= 3) { throw IndiceFuera{}; }\n    return datos_[indice];\n}\nint Terna::operator[](int indice) && {\n    if (indice < 0 || indice >= 3) { throw IndiceFuera{}; }\n    return datos_[indice];\n}\nint Terna::operator[](int indice) const && {\n    if (indice < 0 || indice >= 3) { throw IndiceFuera{}; }\n    return datos_[indice];\n}\nint main() {\n    int ordenes = 0;\n    if (!(std::cin >> ordenes) || ordenes < 1 || ordenes > 12) { return 1; }\n    Terna datos;\n    const Terna& lectura = datos;\n    int guardado = -7;\n    for (int i = 0; i < ordenes; ++i) {\n        int op = 0, indice = 0, valor = 0;\n        if (!(std::cin >> op >> indice >> valor)) { return 1; }\n        std::cout << \"Antes:\";\n        datos.escribir(std::cout);\n        const char* estado = \"Aceptada\";\n        try {\n            if (op == 1) { datos[indice] = valor; }\n            else if (op == 2) { guardado = std::move(datos)[indice]; }\n            else if (op == 3) { guardado = std::move(lectura)[indice]; }\n            else if (op == 4) { guardado = Terna{valor, 41, -6}[indice]; }\n            else if (op == 5) {\n                const int& independiente = Terna{valor, 41, -6}[indice];\n                guardado = independiente;\n            } else { estado = \"Operacion\"; }\n        } catch (const IndiceFuera&) { estado = \"Indice\"; }\n        std::cout << \";Estado:\" << estado << \";Copia:\" << guardado << \";Ahora:\";\n        datos.escribir(std::cout);\n        std::cout << '\\n';\n    }\n    std::cout << \"Final:\";\n    datos.escribir(std::cout);\n    std::cout << \";Copia:\" << guardado;\n    return 0;\n}\n"
+        }
+      }
+    ]
   }
 }

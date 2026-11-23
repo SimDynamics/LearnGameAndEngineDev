@@ -22,7 +22,7 @@
           "id": "p3_u4l2_lectura_y_copia",
           "language": "cpp",
           "question": "Después de modificar dato, ¿qué muestra dato:lectura:copia?",
-          "code": "#include <iostream>\n\nint main() {\n    int dato = 4;\n    const int& lectura = dato;\n    const int copia = dato;\n    dato = 7;\n    std::cout << dato << ':' << lectura << ':' << copia;\n    return 0;\n}\n",
+          "code": "#include <iostream>\n\nint main() {\n    int dato = 4;\n    const int& lectura = dato;\n    const int copia = dato;\n\n    dato = 7;\n\n    std::cout << dato << ':' << lectura << ':' << copia;\n\n    return 0;\n}\n",
           "answers": [
             "7:7:4"
           ],
@@ -73,7 +73,7 @@
         {
           "type": "code",
           "language": "cpp",
-          "code": "#include <iostream>\n\nint main() {\n    int dato = 3;\n    int& escritura = dato;\n    const int& lectura = escritura;\n    const int copia = lectura;\n    escritura += 4;\n    dato = 2;\n    std::cout << dato << ':' << escritura << ':' << lectura << ':' << copia;\n    return 0;\n}\n"
+          "code": "#include <iostream>\n\nint main() {\n    int dato = 3;\n    int& escritura = dato;\n    const int& lectura = escritura;\n    const int copia = lectura;\n\n    escritura += 4;\n    dato = 2;\n\n    std::cout << dato << ':' << escritura << ':' << lectura << ':' << copia;\n\n    return 0;\n}\n"
         },
         {
           "type": "math_puzzle",
@@ -183,7 +183,7 @@
           "id": "p3_u4l2_objeto_const_y_copia",
           "language": "cpp",
           "question": "¿Qué muestra limite:lectura:copia?",
-          "code": "#include <iostream>\n\nint main() {\n    const int limite = 7;\n    const int& lectura = limite;\n    int copia = lectura;\n    copia += 2;\n    std::cout << limite << ':' << lectura << ':' << copia;\n    return 0;\n}\n",
+          "code": "#include <iostream>\n\nint main() {\n    const int limite = 7;\n    const int& lectura = limite;\n    int copia = lectura;\n\n    copia += 2;\n\n    std::cout << limite << ':' << lectura << ':' << copia;\n\n    return 0;\n}\n",
           "answers": [
             "7:7:9"
           ],
@@ -275,7 +275,7 @@
           "id": "p3_u4l2_array_y_elemento_const",
           "language": "cpp",
           "question": "¿Qué muestra vista[1]:elegido:copia[1]:datos[0]?",
-          "code": "#include <array>\n#include <iostream>\n\nint main() {\n    std::array<int, 3> datos{2, 4, 6};\n    const std::array<int, 3>& vista = datos;\n    const int& elegido = vista[1];\n    const std::array<int, 3> copia = datos;\n    datos[1] = 9;\n    std::cout << vista[1] << ':' << elegido << ':' << copia[1] << ':' << datos[0];\n    return 0;\n}\n",
+          "code": "#include <array>\n#include <iostream>\n\nint main() {\n    std::array<int, 3> datos{2, 4, 6};\n    const std::array<int, 3>& vista = datos;\n    const int& elegido = vista[1];\n    const std::array<int, 3> copia = datos;\n\n    datos[1] = 9;\n\n    std::cout << vista[1] << ':' << elegido << ':' << copia[1] << ':' << datos[0];\n\n    return 0;\n}\n",
           "answers": [
             "9:9:4:2"
           ],
@@ -303,7 +303,7 @@
           "id": "p3_u4l2_asignacion_observada",
           "language": "cpp",
           "question": "¿Qué muestra vista[0]:vista[1]:elegido:otros[1]?",
-          "code": "#include <array>\n#include <iostream>\n\nint main() {\n    std::array<int, 2> datos{1, 2};\n    const std::array<int, 2>& vista = datos;\n    const int& elegido = vista[0];\n    const std::array<int, 2> otros{5, 8};\n    datos = otros;\n    datos[1] = 6;\n    std::cout << vista[0] << ':' << vista[1] << ':' << elegido << ':' << otros[1];\n    return 0;\n}\n",
+          "code": "#include <array>\n#include <iostream>\n\nint main() {\n    std::array<int, 2> datos{1, 2};\n    const std::array<int, 2>& vista = datos;\n    const int& elegido = vista[0];\n    const std::array<int, 2> otros{5, 8};\n\n    datos = otros;\n    datos[1] = 6;\n\n    std::cout << vista[0] << ':' << vista[1] << ':' << elegido << ':' << otros[1];\n\n    return 0;\n}\n",
           "answers": [
             "5:6:5:8"
           ],
@@ -371,7 +371,7 @@
           "id": "p3_u4l2_resultado_no_receta",
           "language": "cpp",
           "question": "Después de cambiar dato, ¿qué muestra calculado:directo?",
-          "code": "#include <iostream>\n\nint main() {\n    int dato = 3;\n    const int& calculado = dato + 2;\n    const int& directo = dato;\n    dato = 8;\n    std::cout << calculado << ':' << directo;\n    return 0;\n}\n",
+          "code": "#include <iostream>\n\nint main() {\n    int dato = 3;\n    const int& calculado = dato + 2;\n    const int& directo = dato;\n\n    dato = 8;\n\n    std::cout << calculado << ':' << directo;\n\n    return 0;\n}\n",
           "answers": [
             "5:8"
           ],
@@ -395,7 +395,7 @@
           "id": "p3_u4l2_conversion_y_objeto_original",
           "language": "cpp",
           "question": "¿Qué muestra convertido:directo:dato con el formato de salida utilizado?",
-          "code": "#include <iostream>\n\nint main() {\n    int dato = 4;\n    const double& convertido = dato;\n    const int& directo = dato;\n    dato = 7;\n    std::cout << convertido << ':' << directo << ':' << dato;\n    return 0;\n}\n",
+          "code": "#include <iostream>\n\nint main() {\n    int dato = 4;\n    const double& convertido = dato;\n    const int& directo = dato;\n\n    dato = 7;\n\n    std::cout << convertido << ':' << directo << ':' << dato;\n\n    return 0;\n}\n",
           "answers": [
             "4:7:7"
           ],
@@ -423,7 +423,7 @@
           "id": "p3_u4l2_literal_y_otra_referencia",
           "language": "cpp",
           "question": "¿Qué muestra primero:segundo?",
-          "code": "#include <iostream>\n\nint main() {\n    const int& primero = 7;\n    const int& segundo = primero;\n    std::cout << primero << ':' << segundo;\n    return 0;\n}\n",
+          "code": "#include <iostream>\n\nint main() {\n    const int& primero = 7;\n    const int& segundo = primero;\n\n    std::cout << primero << ':' << segundo;\n\n    return 0;\n}\n",
           "answers": [
             "7:7"
           ],
@@ -465,7 +465,7 @@
         {
           "type": "cpp_compiler",
           "language": "cpp",
-          "initialCode": "#include <iostream>\n\nint main() {\n    int dato = 4;\n    const int& lectura = dato;\n    const int antes = lectura;\n    lectura = 7;\n    std::cout << dato << ':' << lectura << ':' << antes;\n    return 0;\n}\n",
+          "initialCode": "#include <iostream>\n\nint main() {\n    int dato = 4;\n    const int& lectura = dato;\n    const int antes = lectura;\n\n    lectura = 7;\n\n    std::cout << dato << ':' << lectura << ':' << antes;\n\n    return 0;\n}\n",
           "initialStandardInput": "",
           "outputCheck": {
             "inputComparison": "tokens",
@@ -491,7 +491,7 @@
         {
           "type": "code",
           "language": "cpp",
-          "code": "#include <iostream>\n\nint main() {\n    int dato = 4;\n    const int& lectura = dato;\n    const int antes = lectura;\n    dato = 7;\n    std::cout << dato << ':' << lectura << ':' << antes;\n    return 0;\n}\n"
+          "code": "#include <iostream>\n\nint main() {\n    int dato = 4;\n    const int& lectura = dato;\n    const int antes = lectura;\n\n    dato = 7;\n\n    std::cout << dato << ':' << lectura << ':' << antes;\n\n    return 0;\n}\n"
         },
         {
           "type": "paragraph",
@@ -570,7 +570,7 @@
         {
           "type": "cpp_compiler",
           "language": "cpp",
-          "initialCode": "#include <array>\n#include <cstddef>\n#include <iostream>\n\nint main() {\n    std::array<int, 3> datos{2, 4, 6};\n    const std::array<int, 3> vista = datos;\n    std::array<int, 3> copia = datos;\n    int cantidad = 0;\n    if (!(std::cin >> cantidad) || cantidad < 1 || cantidad > 12) {\n        return 1;\n    }\n    for (int orden = 0; orden < cantidad; ++orden) {\n        int tipo = 0;\n        if (!(std::cin >> tipo)) {\n            return 1;\n        }\n        if (tipo == 1) {\n            int indice = 0;\n            int valor = 0;\n            if (!(std::cin >> indice >> valor)) {\n                return 1;\n            }\n            // Valida y modifica datos únicamente cuando se acepte.\n            std::cout << \"Pendiente:\" << indice << ',' << valor;\n        } else if (tipo == 2) {\n            // Guarda en copia los valores actuales de datos.\n            std::cout << \"Pendiente\";\n        } else if (tipo == 3) {\n            // Restaura datos desde copia, sin intentar asignar a vista.\n            std::cout << \"Pendiente\";\n        } else {\n            return 1;\n        }\n        std::cout << \";Vista:\" << vista[0] << ',' << vista[1] << ',' << vista[2]\n                  << \";Copia:\" << copia[0] << ',' << copia[1] << ',' << copia[2] << '\\n';\n    }\n    return 0;\n}\n",
+          "initialCode": "#include <array>\n#include <cstddef>\n#include <iostream>\n\nint main() {\n    std::array<int, 3> datos{2, 4, 6};\n    const std::array<int, 3> vista = datos;\n    std::array<int, 3> copia = datos;\n    int cantidad = 0;\n\n    if (!(std::cin >> cantidad) || cantidad < 1 || cantidad > 12) {\n        return 1;\n    }\n    for (int orden = 0; orden < cantidad; ++orden) {\n        int tipo = 0;\n        if (!(std::cin >> tipo)) {\n            return 1;\n        }\n        if (tipo == 1) {\n            int indice = 0;\n            int valor = 0;\n\n            if (!(std::cin >> indice >> valor)) {\n                return 1;\n            }\n            // Valida y modifica datos únicamente cuando se acepte.\n            std::cout << \"Pendiente:\" << indice << ',' << valor;\n        } else if (tipo == 2) {\n            // Guarda en copia los valores actuales de datos.\n            std::cout << \"Pendiente\";\n        } else if (tipo == 3) {\n            // Restaura datos desde copia, sin intentar asignar a vista.\n            std::cout << \"Pendiente\";\n        } else {\n            return 1;\n        }\n        std::cout << \";Vista:\" << vista[0] << ',' << vista[1] << ',' << vista[2]\n                  << \";Copia:\" << copia[0] << ',' << copia[1] << ',' << copia[2] << '\\n';\n    }\n\n    return 0;\n}\n",
           "initialStandardInput": "8\n1 1 9\n3\n1 0 0\n2\n1 2 8\n1 3 5\n1 1 -1\n3\n",
           "outputCheck": {
             "inputComparison": "tokens",
@@ -735,7 +735,7 @@
         {
           "type": "code",
           "language": "cpp",
-          "code": "#include <array>\n#include <cstddef>\n#include <iostream>\n\nint main() {\n    std::array<int, 3> datos{2, 4, 6};\n    const std::array<int, 3>& vista = datos;\n    std::array<int, 3> copia = datos;\n    int cantidad = 0;\n    if (!(std::cin >> cantidad) || cantidad < 1 || cantidad > 12) {\n        return 1;\n    }\n    for (int orden = 0; orden < cantidad; ++orden) {\n        int tipo = 0;\n        if (!(std::cin >> tipo)) {\n            return 1;\n        }\n        if (tipo == 1) {\n            int indice = 0;\n            int valor = 0;\n            if (!(std::cin >> indice >> valor)) {\n                return 1;\n            }\n            if (indice < 0 || indice > 2 || valor < 0 || valor > 9) {\n                std::cout << \"Rechazo\";\n            } else {\n                datos[static_cast<std::size_t>(indice)] = valor;\n                std::cout << \"Cambio\";\n            }\n        } else if (tipo == 2) {\n            copia = datos;\n            std::cout << \"Guardado\";\n        } else if (tipo == 3) {\n            datos = copia;\n            std::cout << \"Restaurado\";\n        } else {\n            return 1;\n        }\n        std::cout << \";Vista:\" << vista[0] << ',' << vista[1] << ',' << vista[2]\n                  << \";Copia:\" << copia[0] << ',' << copia[1] << ',' << copia[2] << '\\n';\n    }\n    return 0;\n}\n"
+          "code": "#include <array>\n#include <cstddef>\n#include <iostream>\n\nint main() {\n    std::array<int, 3> datos{2, 4, 6};\n    const std::array<int, 3>& vista = datos;\n    std::array<int, 3> copia = datos;\n    int cantidad = 0;\n\n    if (!(std::cin >> cantidad) || cantidad < 1 || cantidad > 12) {\n        return 1;\n    }\n    for (int orden = 0; orden < cantidad; ++orden) {\n        int tipo = 0;\n        if (!(std::cin >> tipo)) {\n            return 1;\n        }\n        if (tipo == 1) {\n            int indice = 0;\n            int valor = 0;\n\n            if (!(std::cin >> indice >> valor)) {\n                return 1;\n            }\n            if (indice < 0 || indice > 2 || valor < 0 || valor > 9) {\n                std::cout << \"Rechazo\";\n            } else {\n                datos[static_cast<std::size_t>(indice)] = valor;\n                std::cout << \"Cambio\";\n            }\n        } else if (tipo == 2) {\n            copia = datos;\n            std::cout << \"Guardado\";\n        } else if (tipo == 3) {\n            datos = copia;\n            std::cout << \"Restaurado\";\n        } else {\n            return 1;\n        }\n        std::cout << \";Vista:\" << vista[0] << ',' << vista[1] << ',' << vista[2]\n                  << \";Copia:\" << copia[0] << ',' << copia[1] << ',' << copia[2] << '\\n';\n    }\n\n    return 0;\n}\n"
         },
         {
           "type": "paragraph",
@@ -1994,6 +1994,261 @@
       }
     },
     "additions": [],
-    "editorial": []
+    "editorial": [
+      {
+        "id": "block_0000_0003",
+        "beforeSha256": "bac432edb7aa977cbcd9fbaa79a845ecbd6c6e7590f1187a2e9c4aea00c78438",
+        "afterSha256": "27df85a0743cf1fa0acc382ad5685dc4241be14c82fb8dfcde58555a9585c01c"
+      },
+      {
+        "id": "block_0002_0002",
+        "beforeSha256": "391d7078835326f76967562ee21701aa0b5f8e5d07c66423980fd2105d3e0e60",
+        "afterSha256": "9ef0303d481d2a079a286146ef928264c5e0e446c725436e879b795df0c47ac1"
+      },
+      {
+        "id": "block_0003_0002",
+        "beforeSha256": "00bc65971bca80e9d8aaf36baa7643646937bfc07a651cc1b497c35e0ba2ac59",
+        "afterSha256": "665489fce8b3956884c5ba7038d3f54dad64d47013aeac77ddd964f607c5d926"
+      },
+      {
+        "id": "block_0006_0002",
+        "beforeSha256": "926f0b8af1bc1b795a07ae3e876b6575354a258f6cf3caf56f1e11648b004a5c",
+        "afterSha256": "89eb72f44a7ca0940d3428a422190b952c2dfb1e010435888ff197d3eb36f8cb"
+      },
+      {
+        "id": "block_0007_0002",
+        "beforeSha256": "0a336508cddf10aecc9f9c1562347b906885261b7cc822ae097d2d5219e0a047",
+        "afterSha256": "88b8df4f1fcbd8a6f6eabee12e354bfdaa6ab4475b1159d416b19ce116556d13"
+      },
+      {
+        "id": "block_0009_0003",
+        "beforeSha256": "badf5f48cc6e4950fa45bd9cbb15731d782a7609f7fa183b3bfffb17fc9c6bc0",
+        "afterSha256": "9775336b56fcbd0f718f537f9bd78f2675d3aa80efeae5c4f8ea63f7ab6fa2af"
+      },
+      {
+        "id": "block_0010_0002",
+        "beforeSha256": "f55a2a550a1cb57f7e3f99215692d478e11895e7ca37e1285c3bc6d0f3b7df42",
+        "afterSha256": "acc0715fc2ca405ca66133b0d4925bb779451abffe697f90b5376b8816355761"
+      },
+      {
+        "id": "block_0011_0002",
+        "beforeSha256": "96f6315180571819b24a60892b965a4714c2e5f21a3b504ff99826f932193ff3",
+        "afterSha256": "f2bbf25399b408e141f8159e264980a044885acd3a74b21672a15bc8d4e45994"
+      },
+      {
+        "id": "block_0012_0004",
+        "beforeSha256": "fbacd4cac327059d7ca0d9c421537549f1426a2ede54e48037a4e31491edc8da",
+        "afterSha256": "afe1ca7ece070276ddf746e6bb61d92af161844a16684b1d06ea0885dc8a6af6"
+      },
+      {
+        "id": "block_0013_0001",
+        "beforeSha256": "440448c1f9c024e9d481ba6540ea2da8e60e8f2d90d2c860852898653113b195",
+        "afterSha256": "971f82565f8d3da02ca3aa267689660f9d9e177bc4537b453c32bf5fab1437ba"
+      },
+      {
+        "id": "block_0014_0013",
+        "beforeSha256": "fd23a5e7c2cf390ef14de5933081555040b805301c65540a3e197e679a50df5b",
+        "afterSha256": "da6659e4515cc4531c4036c7c37a63a0a3f743e2dcf38d6d6dadbdc0e2c01b09"
+      },
+      {
+        "id": "block_0017_0001",
+        "beforeSha256": "fc26264da46aaed01e7f23870b12bebed3379ed73b891e63b8029cb39b749d16",
+        "afterSha256": "e71d550704c664ec2847de4eb9772314f3fa9a8c4bb490fae51c74763309503a"
+      }
+    ],
+    "sourceFormatRevisions": [
+      {
+        "id": "block_0000_0003",
+        "block": {
+          "type": "output_prediction",
+          "id": "p3_u4l2_lectura_y_copia",
+          "language": "cpp",
+          "question": "Después de modificar dato, ¿qué muestra dato:lectura:copia?",
+          "code": "#include <iostream>\n\nint main() {\n    int dato = 4;\n    const int& lectura = dato;\n    const int copia = dato;\n    dato = 7;\n    std::cout << dato << ':' << lectura << ':' << copia;\n    return 0;\n}\n",
+          "answers": [
+            "7:7:4"
+          ],
+          "outputComparison": "exact",
+          "explanation": "dato pasa de 4 a 7. lectura sigue refiriéndose a ese mismo entero y permite leer 7. copia es otro objeto y conserva 4; su const impide cambiarlo, no lo mantiene conectado al original."
+        }
+      },
+      {
+        "id": "block_0002_0002",
+        "block": {
+          "type": "code",
+          "language": "cpp",
+          "code": "#include <iostream>\n\nint main() {\n    int dato = 3;\n    int& escritura = dato;\n    const int& lectura = escritura;\n    const int copia = lectura;\n    escritura += 4;\n    dato = 2;\n    std::cout << dato << ':' << escritura << ':' << lectura << ':' << copia;\n    return 0;\n}\n"
+        }
+      },
+      {
+        "id": "block_0003_0002",
+        "block": {
+          "type": "output_prediction",
+          "id": "p3_u4l2_objeto_const_y_copia",
+          "language": "cpp",
+          "question": "¿Qué muestra limite:lectura:copia?",
+          "code": "#include <iostream>\n\nint main() {\n    const int limite = 7;\n    const int& lectura = limite;\n    int copia = lectura;\n    copia += 2;\n    std::cout << limite << ':' << lectura << ':' << copia;\n    return 0;\n}\n",
+          "answers": [
+            "7:7:9"
+          ],
+          "outputComparison": "exact",
+          "explanation": "limite y lectura permiten leer el mismo 7. La nueva variable copia es un int modificable: recibe 7 y después aumenta a 9. No cambia el objeto const."
+        }
+      },
+      {
+        "id": "block_0006_0002",
+        "block": {
+          "type": "output_prediction",
+          "id": "p3_u4l2_array_y_elemento_const",
+          "language": "cpp",
+          "question": "¿Qué muestra vista[1]:elegido:copia[1]:datos[0]?",
+          "code": "#include <array>\n#include <iostream>\n\nint main() {\n    std::array<int, 3> datos{2, 4, 6};\n    const std::array<int, 3>& vista = datos;\n    const int& elegido = vista[1];\n    const std::array<int, 3> copia = datos;\n    datos[1] = 9;\n    std::cout << vista[1] << ':' << elegido << ':' << copia[1] << ':' << datos[0];\n    return 0;\n}\n",
+          "answers": [
+            "9:9:4:2"
+          ],
+          "outputComparison": "exact",
+          "explanation": "vista y elegido permiten leer datos y su elemento uno. Al asignar 9 mediante datos[1], ambos permiten observar ese valor nuevo. La copia conserva 4 en su elemento uno y datos[0] sigue en 2."
+        }
+      },
+      {
+        "id": "block_0007_0002",
+        "block": {
+          "type": "output_prediction",
+          "id": "p3_u4l2_asignacion_observada",
+          "language": "cpp",
+          "question": "¿Qué muestra vista[0]:vista[1]:elegido:otros[1]?",
+          "code": "#include <array>\n#include <iostream>\n\nint main() {\n    std::array<int, 2> datos{1, 2};\n    const std::array<int, 2>& vista = datos;\n    const int& elegido = vista[0];\n    const std::array<int, 2> otros{5, 8};\n    datos = otros;\n    datos[1] = 6;\n    std::cout << vista[0] << ':' << vista[1] << ':' << elegido << ':' << otros[1];\n    return 0;\n}\n",
+          "answers": [
+            "5:6:5:8"
+          ],
+          "outputComparison": "exact",
+          "explanation": "datos = otros copia 5 y 8 al array original. datos[1] = 6 cambia su segundo elemento. vista permite leer 5 y 6; elegido sigue refiriéndose al primero y lee 5. otros es otro array y conserva 8 en su segundo elemento."
+        }
+      },
+      {
+        "id": "block_0009_0003",
+        "block": {
+          "type": "output_prediction",
+          "id": "p3_u4l2_resultado_no_receta",
+          "language": "cpp",
+          "question": "Después de cambiar dato, ¿qué muestra calculado:directo?",
+          "code": "#include <iostream>\n\nint main() {\n    int dato = 3;\n    const int& calculado = dato + 2;\n    const int& directo = dato;\n    dato = 8;\n    std::cout << calculado << ':' << directo;\n    return 0;\n}\n",
+          "answers": [
+            "5:8"
+          ],
+          "outputComparison": "exact",
+          "explanation": "calculado utiliza el temporal que recibió el resultado 3 + 2, igual a 5. directo utiliza dato, que después recibe 8. Son referencias de lectura a objetos distintos."
+        }
+      },
+      {
+        "id": "block_0010_0002",
+        "block": {
+          "type": "output_prediction",
+          "id": "p3_u4l2_conversion_y_objeto_original",
+          "language": "cpp",
+          "question": "¿Qué muestra convertido:directo:dato con el formato de salida utilizado?",
+          "code": "#include <iostream>\n\nint main() {\n    int dato = 4;\n    const double& convertido = dato;\n    const int& directo = dato;\n    dato = 7;\n    std::cout << convertido << ':' << directo << ':' << dato;\n    return 0;\n}\n",
+          "answers": [
+            "4:7:7"
+          ],
+          "outputComparison": "exact",
+          "explanation": "convertido permite leer el double temporal preparado con 4. directo se refiere al int original, que pasa a 7. La salida predeterminada utilizada muestra ese double como 4, sin exigir escribir 4.0."
+        }
+      },
+      {
+        "id": "block_0011_0002",
+        "block": {
+          "type": "output_prediction",
+          "id": "p3_u4l2_literal_y_otra_referencia",
+          "language": "cpp",
+          "question": "¿Qué muestra primero:segundo?",
+          "code": "#include <iostream>\n\nint main() {\n    const int& primero = 7;\n    const int& segundo = primero;\n    std::cout << primero << ':' << segundo;\n    return 0;\n}\n",
+          "answers": [
+            "7:7"
+          ],
+          "outputComparison": "exact",
+          "explanation": "La primera referencia mantiene válido el temporal durante sus usos en este bloque. La segunda se refiere al mismo entero. No se solicita utilizarlo después de terminar esas vidas."
+        }
+      },
+      {
+        "id": "block_0012_0004",
+        "block": {
+          "type": "cpp_compiler",
+          "language": "cpp",
+          "initialCode": "#include <iostream>\n\nint main() {\n    int dato = 4;\n    const int& lectura = dato;\n    const int antes = lectura;\n    lectura = 7;\n    std::cout << dato << ':' << lectura << ':' << antes;\n    return 0;\n}\n",
+          "initialStandardInput": "",
+          "outputCheck": {
+            "inputComparison": "tokens",
+            "cases": [
+              {
+                "standardInput": "",
+                "outputs": [
+                  "7:7:4"
+                ],
+                "explanation": "dato es modificable y recibe 7. lectura observa ese mismo entero sin escribir mediante ella. antes conserva una copia independiente de 4."
+              }
+            ]
+          }
+        }
+      },
+      {
+        "id": "block_0013_0001",
+        "block": {
+          "type": "code",
+          "language": "cpp",
+          "code": "#include <iostream>\n\nint main() {\n    int dato = 4;\n    const int& lectura = dato;\n    const int antes = lectura;\n    dato = 7;\n    std::cout << dato << ':' << lectura << ':' << antes;\n    return 0;\n}\n"
+        }
+      },
+      {
+        "id": "block_0014_0013",
+        "block": {
+          "type": "cpp_compiler",
+          "language": "cpp",
+          "initialCode": "#include <array>\n#include <cstddef>\n#include <iostream>\n\nint main() {\n    std::array<int, 3> datos{2, 4, 6};\n    const std::array<int, 3> vista = datos;\n    std::array<int, 3> copia = datos;\n    int cantidad = 0;\n    if (!(std::cin >> cantidad) || cantidad < 1 || cantidad > 12) {\n        return 1;\n    }\n    for (int orden = 0; orden < cantidad; ++orden) {\n        int tipo = 0;\n        if (!(std::cin >> tipo)) {\n            return 1;\n        }\n        if (tipo == 1) {\n            int indice = 0;\n            int valor = 0;\n            if (!(std::cin >> indice >> valor)) {\n                return 1;\n            }\n            // Valida y modifica datos únicamente cuando se acepte.\n            std::cout << \"Pendiente:\" << indice << ',' << valor;\n        } else if (tipo == 2) {\n            // Guarda en copia los valores actuales de datos.\n            std::cout << \"Pendiente\";\n        } else if (tipo == 3) {\n            // Restaura datos desde copia, sin intentar asignar a vista.\n            std::cout << \"Pendiente\";\n        } else {\n            return 1;\n        }\n        std::cout << \";Vista:\" << vista[0] << ',' << vista[1] << ',' << vista[2]\n                  << \";Copia:\" << copia[0] << ',' << copia[1] << ',' << copia[2] << '\\n';\n    }\n    return 0;\n}\n",
+          "initialStandardInput": "8\n1 1 9\n3\n1 0 0\n2\n1 2 8\n1 3 5\n1 1 -1\n3\n",
+          "outputCheck": {
+            "inputComparison": "tokens",
+            "cases": [
+              {
+                "standardInput": "8\n1 1 9\n3\n1 0 0\n2\n1 2 8\n1 3 5\n1 1 -1\n3\n",
+                "outputs": [
+                  "Cambio;Vista:2,9,6;Copia:2,4,6\nRestaurado;Vista:2,4,6;Copia:2,4,6\nCambio;Vista:0,4,6;Copia:2,4,6\nGuardado;Vista:0,4,6;Copia:0,4,6\nCambio;Vista:0,4,8;Copia:0,4,6\nRechazo;Vista:0,4,8;Copia:0,4,6\nRechazo;Vista:0,4,8;Copia:0,4,6\nRestaurado;Vista:0,4,6;Copia:0,4,6\n"
+                ],
+                "explanation": "Vista permite leer el mismo array datos. Copia es otro array y sólo se reemplaza al guardar. Restaurar escribe en datos y la vista observa esos valores recuperados."
+              },
+              {
+                "standardInput": "6\n3\n2\n1 0 9\n2\n1 2 0\n3\n",
+                "outputs": [
+                  "Restaurado;Vista:2,4,6;Copia:2,4,6\nGuardado;Vista:2,4,6;Copia:2,4,6\nCambio;Vista:9,4,6;Copia:2,4,6\nGuardado;Vista:9,4,6;Copia:9,4,6\nCambio;Vista:9,4,0;Copia:9,4,6\nRestaurado;Vista:9,4,6;Copia:9,4,6\n"
+                ],
+                "explanation": "Vista permite leer el mismo array datos. Copia es otro array y sólo se reemplaza al guardar. Restaurar escribe en datos y la vista observa esos valores recuperados."
+              },
+              {
+                "standardInput": "7\n1 -1 5\n1 2 10\n1 2147483647 0\n1 0 -2147483648\n2\n1 2 9\n3\n",
+                "outputs": [
+                  "Rechazo;Vista:2,4,6;Copia:2,4,6\nRechazo;Vista:2,4,6;Copia:2,4,6\nRechazo;Vista:2,4,6;Copia:2,4,6\nRechazo;Vista:2,4,6;Copia:2,4,6\nGuardado;Vista:2,4,6;Copia:2,4,6\nCambio;Vista:2,4,9;Copia:2,4,6\nRestaurado;Vista:2,4,6;Copia:2,4,6\n"
+                ],
+                "explanation": "Vista permite leer el mismo array datos. Copia es otro array y sólo se reemplaza al guardar. Restaurar escribe en datos y la vista observa esos valores recuperados."
+              },
+              {
+                "standardInput": "8\n1 0 3\n1 1 3\n1 2 3\n2\n1 0 8\n1 1 0\n3\n3\n",
+                "outputs": [
+                  "Cambio;Vista:3,4,6;Copia:2,4,6\nCambio;Vista:3,3,6;Copia:2,4,6\nCambio;Vista:3,3,3;Copia:2,4,6\nGuardado;Vista:3,3,3;Copia:3,3,3\nCambio;Vista:8,3,3;Copia:3,3,3\nCambio;Vista:8,0,3;Copia:3,3,3\nRestaurado;Vista:3,3,3;Copia:3,3,3\nRestaurado;Vista:3,3,3;Copia:3,3,3\n"
+                ],
+                "explanation": "Vista permite leer el mismo array datos. Copia es otro array y sólo se reemplaza al guardar. Restaurar escribe en datos y la vista observa esos valores recuperados."
+              }
+            ]
+          }
+        }
+      },
+      {
+        "id": "block_0017_0001",
+        "block": {
+          "type": "code",
+          "language": "cpp",
+          "code": "#include <array>\n#include <cstddef>\n#include <iostream>\n\nint main() {\n    std::array<int, 3> datos{2, 4, 6};\n    const std::array<int, 3>& vista = datos;\n    std::array<int, 3> copia = datos;\n    int cantidad = 0;\n    if (!(std::cin >> cantidad) || cantidad < 1 || cantidad > 12) {\n        return 1;\n    }\n    for (int orden = 0; orden < cantidad; ++orden) {\n        int tipo = 0;\n        if (!(std::cin >> tipo)) {\n            return 1;\n        }\n        if (tipo == 1) {\n            int indice = 0;\n            int valor = 0;\n            if (!(std::cin >> indice >> valor)) {\n                return 1;\n            }\n            if (indice < 0 || indice > 2 || valor < 0 || valor > 9) {\n                std::cout << \"Rechazo\";\n            } else {\n                datos[static_cast<std::size_t>(indice)] = valor;\n                std::cout << \"Cambio\";\n            }\n        } else if (tipo == 2) {\n            copia = datos;\n            std::cout << \"Guardado\";\n        } else if (tipo == 3) {\n            datos = copia;\n            std::cout << \"Restaurado\";\n        } else {\n            return 1;\n        }\n        std::cout << \";Vista:\" << vista[0] << ',' << vista[1] << ',' << vista[2]\n                  << \";Copia:\" << copia[0] << ',' << copia[1] << ',' << copia[2] << '\\n';\n    }\n    return 0;\n}\n"
+        }
+      }
+    ]
   }
 }

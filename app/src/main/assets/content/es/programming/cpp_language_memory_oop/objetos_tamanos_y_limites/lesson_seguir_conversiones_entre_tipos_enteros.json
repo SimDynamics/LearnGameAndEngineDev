@@ -61,7 +61,7 @@
           "id": "p3_u1l7_mismo_signo",
           "question": "Predice las dos líneas. Cada una muestra el nombre que devuelve la sobrecarga seleccionada y el valor de la suma.",
           "language": "cpp",
-          "code": "#include <iostream>\n#include <string>\n\nstd::string tipo(long) {\n    return \"long\";\n}\n\nstd::string tipo(unsigned long long) {\n    return \"unsigned long long\";\n}\n\nint main() {\n    int piezas = 2;\n    long cajas = 3;\n    unsigned int recibidas = 2;\n    unsigned long long almacenadas = 3;\n\n    const auto con_signo = piezas + cajas;\n    const auto sin_signo = recibidas + almacenadas;\n    std::cout << tipo(con_signo) << ':' << con_signo << '\\n';\n    std::cout << tipo(sin_signo) << ':' << sin_signo;\n    return 0;\n}\n",
+          "code": "#include <iostream>\n#include <string>\n\nstd::string tipo(long) {\n    return \"long\";\n}\n\nstd::string tipo(unsigned long long) {\n    return \"unsigned long long\";\n}\n\nint main() {\n    int piezas = 2;\n    long cajas = 3;\n    unsigned int recibidas = 2;\n    unsigned long long almacenadas = 3;\n\n    const auto con_signo = piezas + cajas;\n    const auto sin_signo = recibidas + almacenadas;\n\n    std::cout << tipo(con_signo) << ':' << con_signo << '\\n';\n    std::cout << tipo(sin_signo) << ':' << sin_signo;\n\n    return 0;\n}\n",
           "answers": [
             "long:5\nunsigned long long:5"
           ],
@@ -221,7 +221,7 @@
           "id": "p3_u1l7_tres_mezclas",
           "question": "Predice las tres líneas exactas utilizando los rangos indicados. Cada resta parte de −1 y 2, pero los tipos de sus operandos son distintos.",
           "language": "cpp",
-          "code": "#include <iostream>\n#include <limits>\n#include <string>\n\nstd::string tipo(long) {\n    return \"long\";\n}\n\nstd::string tipo(unsigned long) {\n    return \"unsigned long\";\n}\n\nstd::string tipo(long long) {\n    return \"long long\";\n}\n\nstd::string tipo(unsigned long long) {\n    return \"unsigned long long\";\n}\n\nint main() {\n    long corto = -1;\n    long long amplio = -1;\n    unsigned int cantidad = 2;\n    unsigned long long cantidad_amplia = 2;\n\n    const auto primero = corto - cantidad;\n    const auto segundo = amplio - cantidad;\n    const auto tercero = amplio - cantidad_amplia;\n\n    const auto maximo_long = std::numeric_limits<unsigned long>::max();\n    const auto maximo_largo = std::numeric_limits<unsigned long long>::max();\n    std::cout << tipo(primero) << ':' << (primero == maximo_long - 2) << '\\n';\n    std::cout << tipo(segundo) << ':' << segundo << '\\n';\n    std::cout << tipo(tercero) << ':' << (tercero == maximo_largo - 2);\n    return 0;\n}\n",
+          "code": "#include <iostream>\n#include <limits>\n#include <string>\n\nstd::string tipo(long) {\n    return \"long\";\n}\n\nstd::string tipo(unsigned long) {\n    return \"unsigned long\";\n}\n\nstd::string tipo(long long) {\n    return \"long long\";\n}\n\nstd::string tipo(unsigned long long) {\n    return \"unsigned long long\";\n}\n\nint main() {\n    long corto = -1;\n    long long amplio = -1;\n    unsigned int cantidad = 2;\n    unsigned long long cantidad_amplia = 2;\n\n    const auto primero = corto - cantidad;\n    const auto segundo = amplio - cantidad;\n    const auto tercero = amplio - cantidad_amplia;\n\n    const auto maximo_long = std::numeric_limits<unsigned long>::max();\n    const auto maximo_largo = std::numeric_limits<unsigned long long>::max();\n\n    std::cout << tipo(primero) << ':' << (primero == maximo_long - 2) << '\\n';\n    std::cout << tipo(segundo) << ':' << segundo << '\\n';\n    std::cout << tipo(tercero) << ':' << (tercero == maximo_largo - 2);\n\n    return 0;\n}\n",
           "answers": [
             "unsigned long:1\nlong long:-3\nunsigned long long:1"
           ],
@@ -312,7 +312,7 @@
         {
           "type": "cpp_compiler",
           "language": "cpp",
-          "initialCode": "#include <iostream>\n#include <limits>\n\nbool convertir_a_con_signo(unsigned long long dato, long long& destino) {\n    // Este inicio escribe antes de comprobar; repara ese orden.\n    destino = static_cast<long long>(dato);\n    return destino >= 0;\n}\n\nint main() {\n    int caso = 0;\n    if (!(std::cin >> caso)) {\n        return 1;\n    }\n\n    const long long maximo = std::numeric_limits<long long>::max();\n    const unsigned long long limite = static_cast<unsigned long long>(maximo);\n    const unsigned long long maximo_sin_signo =\n        std::numeric_limits<unsigned long long>::max();\n    unsigned long long dato = 0;\n    long long esperado = 17;\n    switch (caso) {\n    case 1:\n        dato = maximo_sin_signo;\n        break;\n    case 2:\n        dato = 0;\n        esperado = 0;\n        break;\n    case 3:\n        dato = limite;\n        esperado = maximo;\n        break;\n    case 4:\n        dato = limite + 1;\n        break;\n    case 5:\n        dato = 42;\n        esperado = 42;\n        break;\n    case 6:\n        dato = limite - 1;\n        esperado = maximo - 1;\n        break;\n    case 7:\n        dato = maximo_sin_signo - 1;\n        break;\n    default:\n        return 1;\n    }\n\n    long long destino = 17;\n    const bool aceptado = convertir_a_con_signo(dato, destino);\n    std::cout << \"Aceptado=\" << aceptado << '\\n';\n    std::cout << \"Coincide=\" << (destino == esperado) << '\\n';\n    std::cout << \"Conservado=\" << (destino == 17) << '\\n';\n    return 0;\n}\n",
+          "initialCode": "#include <iostream>\n#include <limits>\n\nbool convertir_a_con_signo(unsigned long long dato, long long& destino) {\n    // Este inicio escribe antes de comprobar; repara ese orden.\n    destino = static_cast<long long>(dato);\n    return destino >= 0;\n}\n\nint main() {\n    int caso = 0;\n    if (!(std::cin >> caso)) {\n        return 1;\n    }\n\n    const long long maximo = std::numeric_limits<long long>::max();\n    const unsigned long long limite = static_cast<unsigned long long>(maximo);\n    const unsigned long long maximo_sin_signo =\n        std::numeric_limits<unsigned long long>::max();\n    unsigned long long dato = 0;\n    long long esperado = 17;\n\n    switch (caso) {\n    case 1:\n        dato = maximo_sin_signo;\n        break;\n    case 2:\n        dato = 0;\n        esperado = 0;\n        break;\n    case 3:\n        dato = limite;\n        esperado = maximo;\n        break;\n    case 4:\n        dato = limite + 1;\n        break;\n    case 5:\n        dato = 42;\n        esperado = 42;\n        break;\n    case 6:\n        dato = limite - 1;\n        esperado = maximo - 1;\n        break;\n    case 7:\n        dato = maximo_sin_signo - 1;\n        break;\n    default:\n        return 1;\n    }\n\n    long long destino = 17;\n    const bool aceptado = convertir_a_con_signo(dato, destino);\n\n    std::cout << \"Aceptado=\" << aceptado << '\\n';\n    std::cout << \"Coincide=\" << (destino == esperado) << '\\n';\n    std::cout << \"Conservado=\" << (destino == 17) << '\\n';\n\n    return 0;\n}\n",
           "initialStandardInput": "1\n",
           "outputCheck": {
             "inputComparison": "tokens",
@@ -450,7 +450,7 @@
         {
           "type": "code",
           "language": "cpp",
-          "code": "#include <iostream>\n#include <limits>\n\nbool convertir_a_con_signo(unsigned long long dato, long long& destino) {\n    const long long maximo = std::numeric_limits<long long>::max();\n    const unsigned long long limite = static_cast<unsigned long long>(maximo);\n    if (dato > limite) {\n        return false;\n    }\n\n    destino = static_cast<long long>(dato);\n    return true;\n}\n\nint main() {\n    int caso = 0;\n    if (!(std::cin >> caso)) {\n        return 1;\n    }\n\n    const long long maximo = std::numeric_limits<long long>::max();\n    const unsigned long long limite = static_cast<unsigned long long>(maximo);\n    const unsigned long long maximo_sin_signo =\n        std::numeric_limits<unsigned long long>::max();\n    unsigned long long dato = 0;\n    long long esperado = 17;\n    switch (caso) {\n    case 1:\n        dato = maximo_sin_signo;\n        break;\n    case 2:\n        dato = 0;\n        esperado = 0;\n        break;\n    case 3:\n        dato = limite;\n        esperado = maximo;\n        break;\n    case 4:\n        dato = limite + 1;\n        break;\n    case 5:\n        dato = 42;\n        esperado = 42;\n        break;\n    case 6:\n        dato = limite - 1;\n        esperado = maximo - 1;\n        break;\n    case 7:\n        dato = maximo_sin_signo - 1;\n        break;\n    default:\n        return 1;\n    }\n\n    long long destino = 17;\n    const bool aceptado = convertir_a_con_signo(dato, destino);\n    std::cout << \"Aceptado=\" << aceptado << '\\n';\n    std::cout << \"Coincide=\" << (destino == esperado) << '\\n';\n    std::cout << \"Conservado=\" << (destino == 17) << '\\n';\n    return 0;\n}\n"
+          "code": "#include <iostream>\n#include <limits>\n\nbool convertir_a_con_signo(unsigned long long dato, long long& destino) {\n    const long long maximo = std::numeric_limits<long long>::max();\n    const unsigned long long limite = static_cast<unsigned long long>(maximo);\n\n    if (dato > limite) {\n        return false;\n    }\n\n    destino = static_cast<long long>(dato);\n    return true;\n}\n\nint main() {\n    int caso = 0;\n    if (!(std::cin >> caso)) {\n        return 1;\n    }\n\n    const long long maximo = std::numeric_limits<long long>::max();\n    const unsigned long long limite = static_cast<unsigned long long>(maximo);\n    const unsigned long long maximo_sin_signo =\n        std::numeric_limits<unsigned long long>::max();\n    unsigned long long dato = 0;\n    long long esperado = 17;\n\n    switch (caso) {\n    case 1:\n        dato = maximo_sin_signo;\n        break;\n    case 2:\n        dato = 0;\n        esperado = 0;\n        break;\n    case 3:\n        dato = limite;\n        esperado = maximo;\n        break;\n    case 4:\n        dato = limite + 1;\n        break;\n    case 5:\n        dato = 42;\n        esperado = 42;\n        break;\n    case 6:\n        dato = limite - 1;\n        esperado = maximo - 1;\n        break;\n    case 7:\n        dato = maximo_sin_signo - 1;\n        break;\n    default:\n        return 1;\n    }\n\n    long long destino = 17;\n    const bool aceptado = convertir_a_con_signo(dato, destino);\n\n    std::cout << \"Aceptado=\" << aceptado << '\\n';\n    std::cout << \"Coincide=\" << (destino == esperado) << '\\n';\n    std::cout << \"Conservado=\" << (destino == 17) << '\\n';\n\n    return 0;\n}\n"
         },
         {
           "type": "paragraph",
@@ -481,7 +481,7 @@
           "id": "p3_u1l7_destino_compartido",
           "question": "Predice las cuatro líneas exactas: cada una muestra el bool de la llamada y el valor actual del mismo destino.",
           "language": "cpp",
-          "code": "#include <iostream>\n#include <limits>\n\nbool convertir_a_con_signo(unsigned long long dato, long long& destino) {\n    const long long maximo = std::numeric_limits<long long>::max();\n    const unsigned long long limite = static_cast<unsigned long long>(maximo);\n    if (dato > limite) {\n        return false;\n    }\n\n    destino = static_cast<long long>(dato);\n    return true;\n}\n\nint main() {\n    long long destino = 17;\n    const unsigned long long maximo =\n        std::numeric_limits<unsigned long long>::max();\n\n    const bool primero = convertir_a_con_signo(42, destino);\n    std::cout << primero << ':' << destino << '\\n';\n\n    const bool segundo = convertir_a_con_signo(maximo, destino);\n    std::cout << segundo << ':' << destino << '\\n';\n\n    const bool tercero = convertir_a_con_signo(0, destino);\n    std::cout << tercero << ':' << destino << '\\n';\n\n    const bool cuarto = convertir_a_con_signo(maximo, destino);\n    std::cout << cuarto << ':' << destino;\n    return 0;\n}\n",
+          "code": "#include <iostream>\n#include <limits>\n\nbool convertir_a_con_signo(unsigned long long dato, long long& destino) {\n    const long long maximo = std::numeric_limits<long long>::max();\n    const unsigned long long limite = static_cast<unsigned long long>(maximo);\n\n    if (dato > limite) {\n        return false;\n    }\n\n    destino = static_cast<long long>(dato);\n    return true;\n}\n\nint main() {\n    long long destino = 17;\n    const unsigned long long maximo =\n        std::numeric_limits<unsigned long long>::max();\n\n    const bool primero = convertir_a_con_signo(42, destino);\n    std::cout << primero << ':' << destino << '\\n';\n\n    const bool segundo = convertir_a_con_signo(maximo, destino);\n    std::cout << segundo << ':' << destino << '\\n';\n\n    const bool tercero = convertir_a_con_signo(0, destino);\n    std::cout << tercero << ':' << destino << '\\n';\n\n    const bool cuarto = convertir_a_con_signo(maximo, destino);\n    std::cout << cuarto << ':' << destino;\n\n    return 0;\n}\n",
           "answers": [
             "1:42\n0:42\n1:0\n0:0"
           ],
@@ -1447,6 +1447,150 @@
       }
     },
     "additions": [],
-    "editorial": []
+    "editorial": [
+      {
+        "id": "block_0001_0004",
+        "beforeSha256": "388e35051b61b7c608e68c2352fea4bba1f7eee33c9a5e9ecfdd7b672cef1016",
+        "afterSha256": "632bf8fc9671b18bf8ca0bc4ee07c463d8a12f66b95f1de15afdf6d29ec91ee1"
+      },
+      {
+        "id": "block_0006_0003",
+        "beforeSha256": "ab6b4ae2572a97e52b3594b5fe4ec22a2ff138f6816ca602efcec005b92ab1ac",
+        "afterSha256": "e66a185df84abdf2f8cdcdb7eb4c2b9dd67aa67165ea6fab8ac22e0de80d86b8"
+      },
+      {
+        "id": "block_0009_0005",
+        "beforeSha256": "1ca9e21c3a1d1c60233e4e67ef98f598cc72aedc27e1df729e6633cc911f29b9",
+        "afterSha256": "12630deee630b3344c4af7970291ffe2bc6c0e5d57aac86bfe9bb60c878c3e72"
+      },
+      {
+        "id": "block_0011_0001",
+        "beforeSha256": "228cc50bc42a44d3424f1e7e456ce83d7d6732101226834fa83b209b8bef4d99",
+        "afterSha256": "40eaba2b1cfca8e95adc1b23f83e40a0128a8dc93e6bbce7604f3c7aafa9d98a"
+      },
+      {
+        "id": "block_0012_0002",
+        "beforeSha256": "4088ffbaea75f65c98072b30ef7c18a8e7db65452d742b5c45311805ce56b276",
+        "afterSha256": "4223870a59c7431765dfa764abe9838b7db8be84c2ff612c62a6bebf4d14aef0"
+      }
+    ],
+    "sourceFormatRevisions": [
+      {
+        "id": "block_0001_0004",
+        "block": {
+          "type": "output_prediction",
+          "id": "p3_u1l7_mismo_signo",
+          "question": "Predice las dos líneas. Cada una muestra el nombre que devuelve la sobrecarga seleccionada y el valor de la suma.",
+          "language": "cpp",
+          "code": "#include <iostream>\n#include <string>\n\nstd::string tipo(long) {\n    return \"long\";\n}\n\nstd::string tipo(unsigned long long) {\n    return \"unsigned long long\";\n}\n\nint main() {\n    int piezas = 2;\n    long cajas = 3;\n    unsigned int recibidas = 2;\n    unsigned long long almacenadas = 3;\n\n    const auto con_signo = piezas + cajas;\n    const auto sin_signo = recibidas + almacenadas;\n    std::cout << tipo(con_signo) << ':' << con_signo << '\\n';\n    std::cout << tipo(sin_signo) << ':' << sin_signo;\n    return 0;\n}\n",
+          "answers": [
+            "long:5\nunsigned long long:5"
+          ],
+          "outputComparison": "exact",
+          "explanation": "piezas + cajas utiliza long: se elige tipo(long) y la suma vale 5. recibidas + almacenadas utiliza unsigned long long: se elige la otra sobrecarga y también vale 5. Los valores iguales no hacen que los tipos sean iguales."
+        }
+      },
+      {
+        "id": "block_0006_0003",
+        "block": {
+          "type": "output_prediction",
+          "id": "p3_u1l7_tres_mezclas",
+          "question": "Predice las tres líneas exactas utilizando los rangos indicados. Cada resta parte de −1 y 2, pero los tipos de sus operandos son distintos.",
+          "language": "cpp",
+          "code": "#include <iostream>\n#include <limits>\n#include <string>\n\nstd::string tipo(long) {\n    return \"long\";\n}\n\nstd::string tipo(unsigned long) {\n    return \"unsigned long\";\n}\n\nstd::string tipo(long long) {\n    return \"long long\";\n}\n\nstd::string tipo(unsigned long long) {\n    return \"unsigned long long\";\n}\n\nint main() {\n    long corto = -1;\n    long long amplio = -1;\n    unsigned int cantidad = 2;\n    unsigned long long cantidad_amplia = 2;\n\n    const auto primero = corto - cantidad;\n    const auto segundo = amplio - cantidad;\n    const auto tercero = amplio - cantidad_amplia;\n\n    const auto maximo_long = std::numeric_limits<unsigned long>::max();\n    const auto maximo_largo = std::numeric_limits<unsigned long long>::max();\n    std::cout << tipo(primero) << ':' << (primero == maximo_long - 2) << '\\n';\n    std::cout << tipo(segundo) << ':' << segundo << '\\n';\n    std::cout << tipo(tercero) << ':' << (tercero == maximo_largo - 2);\n    return 0;\n}\n",
+          "answers": [
+            "unsigned long:1\nlong long:-3\nunsigned long long:1"
+          ],
+          "outputComparison": "exact",
+          "explanation": "La primera resta convierte a unsigned long y da su máximo menos 2: la comparación es 1. La segunda utiliza long long y conserva el valor matemático −3. La tercera utiliza unsigned long long y da su máximo menos 2: la comparación también es 1. Las sobrecargas distinguen los tipos, aunque dos tamaños pudieran coincidir."
+        }
+      },
+      {
+        "id": "block_0009_0005",
+        "block": {
+          "type": "cpp_compiler",
+          "language": "cpp",
+          "initialCode": "#include <iostream>\n#include <limits>\n\nbool convertir_a_con_signo(unsigned long long dato, long long& destino) {\n    // Este inicio escribe antes de comprobar; repara ese orden.\n    destino = static_cast<long long>(dato);\n    return destino >= 0;\n}\n\nint main() {\n    int caso = 0;\n    if (!(std::cin >> caso)) {\n        return 1;\n    }\n\n    const long long maximo = std::numeric_limits<long long>::max();\n    const unsigned long long limite = static_cast<unsigned long long>(maximo);\n    const unsigned long long maximo_sin_signo =\n        std::numeric_limits<unsigned long long>::max();\n    unsigned long long dato = 0;\n    long long esperado = 17;\n    switch (caso) {\n    case 1:\n        dato = maximo_sin_signo;\n        break;\n    case 2:\n        dato = 0;\n        esperado = 0;\n        break;\n    case 3:\n        dato = limite;\n        esperado = maximo;\n        break;\n    case 4:\n        dato = limite + 1;\n        break;\n    case 5:\n        dato = 42;\n        esperado = 42;\n        break;\n    case 6:\n        dato = limite - 1;\n        esperado = maximo - 1;\n        break;\n    case 7:\n        dato = maximo_sin_signo - 1;\n        break;\n    default:\n        return 1;\n    }\n\n    long long destino = 17;\n    const bool aceptado = convertir_a_con_signo(dato, destino);\n    std::cout << \"Aceptado=\" << aceptado << '\\n';\n    std::cout << \"Coincide=\" << (destino == esperado) << '\\n';\n    std::cout << \"Conservado=\" << (destino == 17) << '\\n';\n    return 0;\n}\n",
+          "initialStandardInput": "1\n",
+          "outputCheck": {
+            "inputComparison": "tokens",
+            "cases": [
+              {
+                "standardInput": "1\n",
+                "outputs": [
+                  "Aceptado=0\nCoincide=1\nConservado=1\n"
+                ],
+                "explanation": "dato = maximo_sin_signo. Supera el máximo long long: se rechaza y se conserva 17."
+              },
+              {
+                "standardInput": "2\n",
+                "outputs": [
+                  "Aceptado=1\nCoincide=1\nConservado=0\n"
+                ],
+                "explanation": "dato = 0. Se acepta y se guarda 0."
+              },
+              {
+                "standardInput": "3\n",
+                "outputs": [
+                  "Aceptado=1\nCoincide=1\nConservado=0\n"
+                ],
+                "explanation": "dato = limite, el máximo long long convertido a unsigned long long. Se acepta y se guarda maximo."
+              },
+              {
+                "standardInput": "4\n",
+                "outputs": [
+                  "Aceptado=0\nCoincide=1\nConservado=1\n"
+                ],
+                "explanation": "dato = limite + 1. Esa suma se realiza como unsigned long long y cabe allí, pero el dato supera el máximo long long. Se rechaza y se conserva 17."
+              },
+              {
+                "standardInput": "5\n",
+                "outputs": [
+                  "Aceptado=1\nCoincide=1\nConservado=0\n"
+                ],
+                "explanation": "dato = 42. Se acepta y se guarda 42."
+              },
+              {
+                "standardInput": "6\n",
+                "outputs": [
+                  "Aceptado=1\nCoincide=1\nConservado=0\n"
+                ],
+                "explanation": "dato = limite - 1. Se acepta y se guarda maximo - 1."
+              },
+              {
+                "standardInput": "7\n",
+                "outputs": [
+                  "Aceptado=0\nCoincide=1\nConservado=1\n"
+                ],
+                "explanation": "dato = maximo_sin_signo - 1. Supera el máximo long long: se rechaza y se conserva 17."
+              }
+            ]
+          }
+        }
+      },
+      {
+        "id": "block_0011_0001",
+        "block": {
+          "type": "code",
+          "language": "cpp",
+          "code": "#include <iostream>\n#include <limits>\n\nbool convertir_a_con_signo(unsigned long long dato, long long& destino) {\n    const long long maximo = std::numeric_limits<long long>::max();\n    const unsigned long long limite = static_cast<unsigned long long>(maximo);\n    if (dato > limite) {\n        return false;\n    }\n\n    destino = static_cast<long long>(dato);\n    return true;\n}\n\nint main() {\n    int caso = 0;\n    if (!(std::cin >> caso)) {\n        return 1;\n    }\n\n    const long long maximo = std::numeric_limits<long long>::max();\n    const unsigned long long limite = static_cast<unsigned long long>(maximo);\n    const unsigned long long maximo_sin_signo =\n        std::numeric_limits<unsigned long long>::max();\n    unsigned long long dato = 0;\n    long long esperado = 17;\n    switch (caso) {\n    case 1:\n        dato = maximo_sin_signo;\n        break;\n    case 2:\n        dato = 0;\n        esperado = 0;\n        break;\n    case 3:\n        dato = limite;\n        esperado = maximo;\n        break;\n    case 4:\n        dato = limite + 1;\n        break;\n    case 5:\n        dato = 42;\n        esperado = 42;\n        break;\n    case 6:\n        dato = limite - 1;\n        esperado = maximo - 1;\n        break;\n    case 7:\n        dato = maximo_sin_signo - 1;\n        break;\n    default:\n        return 1;\n    }\n\n    long long destino = 17;\n    const bool aceptado = convertir_a_con_signo(dato, destino);\n    std::cout << \"Aceptado=\" << aceptado << '\\n';\n    std::cout << \"Coincide=\" << (destino == esperado) << '\\n';\n    std::cout << \"Conservado=\" << (destino == 17) << '\\n';\n    return 0;\n}\n"
+        }
+      },
+      {
+        "id": "block_0012_0002",
+        "block": {
+          "type": "output_prediction",
+          "id": "p3_u1l7_destino_compartido",
+          "question": "Predice las cuatro líneas exactas: cada una muestra el bool de la llamada y el valor actual del mismo destino.",
+          "language": "cpp",
+          "code": "#include <iostream>\n#include <limits>\n\nbool convertir_a_con_signo(unsigned long long dato, long long& destino) {\n    const long long maximo = std::numeric_limits<long long>::max();\n    const unsigned long long limite = static_cast<unsigned long long>(maximo);\n    if (dato > limite) {\n        return false;\n    }\n\n    destino = static_cast<long long>(dato);\n    return true;\n}\n\nint main() {\n    long long destino = 17;\n    const unsigned long long maximo =\n        std::numeric_limits<unsigned long long>::max();\n\n    const bool primero = convertir_a_con_signo(42, destino);\n    std::cout << primero << ':' << destino << '\\n';\n\n    const bool segundo = convertir_a_con_signo(maximo, destino);\n    std::cout << segundo << ':' << destino << '\\n';\n\n    const bool tercero = convertir_a_con_signo(0, destino);\n    std::cout << tercero << ':' << destino << '\\n';\n\n    const bool cuarto = convertir_a_con_signo(maximo, destino);\n    std::cout << cuarto << ':' << destino;\n    return 0;\n}\n",
+          "answers": [
+            "1:42\n0:42\n1:0\n0:0"
+          ],
+          "outputComparison": "exact",
+          "explanation": "42 cabe y se guarda. El máximo unsigned long long no cabe como ese mismo positivo en long long: se rechaza conservando 42. Cero sí cabe y sustituye el destino por 0. El último rechazo mantiene ese 0; no restaura 17 ni guarda −1."
+        }
+      }
+    ]
   }
 }

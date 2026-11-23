@@ -152,7 +152,7 @@
           "projectFiles": [
             {
               "path": "CMakeLists.txt",
-              "initialCode": "cmake_minimum_required(VERSION 3.20)\nproject(EnviosComprobables LANGUAGES CXX)\nmessage(STATUS \"raiz_antes\")\nadd_subdirectory(componente)\nmessage(STATUS \"raiz_despues\")\nadd_executable(consultar_cajas app/consulta.cpp)\nadd_executable(comprobar_cajas pruebas/cajas_casos.cpp)\ntarget_link_libraries(consultar_cajas PRIVATE envios)\ntarget_link_libraries(comprobar_cajas PRIVATE envios)\ntarget_compile_features(consultar_cajas PRIVATE cxx_std_20)\ntarget_compile_features(comprobar_cajas PRIVATE cxx_std_20)\nset(clientes consultar_cajas comprobar_cajas)\nset_target_properties(clientes PROPERTIES CXX_EXTENSIONS OFF)\nget_target_property(ext_consulta consultar_cajas CXX_EXTENSIONS)\nget_target_property(ext_comprobador comprobar_cajas CXX_EXTENSIONS)\nmessage(STATUS \"clientes=${clientes}\")\nmessage(STATUS \"ext_consulta=${ext_consulta}\")\nmessage(STATUS \"ext_comprobador=${ext_comprobador}\")\n"
+              "initialCode": "cmake_minimum_required(VERSION 3.20)\nproject(EnviosComprobables LANGUAGES CXX)\nmessage(STATUS \"raiz_antes\")\nadd_subdirectory(componente)\nmessage(STATUS \"raiz_despues\")\nadd_executable(consultar_cajas app/consulta.cpp)\nadd_executable(comprobar_cajas pruebas/cajas_casos.cpp)\n\ntarget_link_libraries(consultar_cajas PRIVATE envios)\ntarget_link_libraries(comprobar_cajas PRIVATE envios)\ntarget_compile_features(consultar_cajas PRIVATE cxx_std_20)\ntarget_compile_features(comprobar_cajas PRIVATE cxx_std_20)\nset(clientes consultar_cajas comprobar_cajas)\nset_target_properties(clientes PROPERTIES CXX_EXTENSIONS OFF)\nget_target_property(ext_consulta consultar_cajas CXX_EXTENSIONS)\nget_target_property(ext_comprobador comprobar_cajas CXX_EXTENSIONS)\nmessage(STATUS \"clientes=${clientes}\")\nmessage(STATUS \"ext_consulta=${ext_consulta}\")\nmessage(STATUS \"ext_comprobador=${ext_comprobador}\")\n"
             },
             {
               "path": "componente/CMakeLists.txt",
@@ -168,11 +168,11 @@
             },
             {
               "path": "app/consulta.cpp",
-              "initialCode": "#include \"envio/cajas.h\"\n#include <iostream>\n\nint main() {\n    std::cout << cajas_para(4) << \":\" << cajas_para(8);\n    return 0;\n}\n"
+              "initialCode": "#include \"envio/cajas.h\"\n#include <iostream>\n\nint main() {\n    std::cout << cajas_para(4) << \":\" << cajas_para(8);\n\n    return 0;\n}\n"
             },
             {
               "path": "pruebas/cajas_casos.cpp",
-              "initialCode": "#include \"envio/cajas.h\"\n#include <iostream>\n\nbool comprobar(int piezas, int esperado) {\n    const int obtenido{cajas_para(piezas)};\n    const bool coincide{obtenido == esperado};\n    std::cout << \"piezas=\" << piezas << \" esperado=\" << esperado\n              << \" obtenido=\" << obtenido << \" \";\n    if (coincide) { std::cout << \"OK\\n\"; }\n    else { std::cout << \"FALLO\\n\"; }\n    return coincide;\n}\n\nint main() {\n    bool correcto{true};\n    if (!comprobar(0, 0)) { correcto = false; }\n    if (!comprobar(4, 1)) { correcto = false; }\n    if (!comprobar(8, 2)) { correcto = false; }\n    if (!comprobar(20, 5)) { correcto = false; }\n    if (!comprobar(1, 1)) { correcto = false; }\n    if (!comprobar(5, 2)) { correcto = false; }\n    if (!comprobar(17, 5)) { correcto = false; }\n    if (!correcto) {\n        std::cout << \"Bateria: FALLO\\n\";\n        return 1;\n    }\n    std::cout << \"Bateria: OK\\n\";\n    return 0;\n}\n"
+              "initialCode": "#include \"envio/cajas.h\"\n#include <iostream>\n\nbool comprobar(int piezas, int esperado) {\n    const int obtenido{cajas_para(piezas)};\n    const bool coincide{obtenido == esperado};\n\n    std::cout << \"piezas=\" << piezas << \" esperado=\" << esperado\n              << \" obtenido=\" << obtenido << \" \";\n    if (coincide) { std::cout << \"OK\\n\"; }\n    else { std::cout << \"FALLO\\n\"; }\n    return coincide;\n}\n\nint main() {\n    bool correcto{true};\n    if (!comprobar(0, 0)) { correcto = false; }\n    if (!comprobar(4, 1)) { correcto = false; }\n    if (!comprobar(8, 2)) { correcto = false; }\n    if (!comprobar(20, 5)) { correcto = false; }\n    if (!comprobar(1, 1)) { correcto = false; }\n    if (!comprobar(5, 2)) { correcto = false; }\n    if (!comprobar(17, 5)) { correcto = false; }\n    if (!correcto) {\n        std::cout << \"Bateria: FALLO\\n\";\n        return 1;\n    }\n    std::cout << \"Bateria: OK\\n\";\n\n    return 0;\n}\n"
             }
           ],
           "cmake": {
@@ -212,7 +212,7 @@
         {
           "type": "code",
           "language": "cmake",
-          "code": "cmake_minimum_required(VERSION 3.20)\nproject(EnviosComprobables LANGUAGES CXX)\nmessage(STATUS \"raiz_antes\")\nadd_subdirectory(componente)\nmessage(STATUS \"raiz_despues\")\nadd_executable(consultar_cajas app/consulta.cpp)\nadd_executable(comprobar_cajas pruebas/cajas_casos.cpp)\ntarget_link_libraries(consultar_cajas PRIVATE envios)\ntarget_link_libraries(comprobar_cajas PRIVATE envios)\ntarget_compile_features(consultar_cajas PRIVATE cxx_std_20)\ntarget_compile_features(comprobar_cajas PRIVATE cxx_std_20)\nset(clientes consultar_cajas comprobar_cajas)\nset_target_properties(${clientes} PROPERTIES CXX_EXTENSIONS OFF)\nget_target_property(ext_consulta consultar_cajas CXX_EXTENSIONS)\nget_target_property(ext_comprobador comprobar_cajas CXX_EXTENSIONS)\nmessage(STATUS \"clientes=${clientes}\")\nmessage(STATUS \"ext_consulta=${ext_consulta}\")\nmessage(STATUS \"ext_comprobador=${ext_comprobador}\")\n"
+          "code": "cmake_minimum_required(VERSION 3.20)\nproject(EnviosComprobables LANGUAGES CXX)\nmessage(STATUS \"raiz_antes\")\nadd_subdirectory(componente)\nmessage(STATUS \"raiz_despues\")\nadd_executable(consultar_cajas app/consulta.cpp)\nadd_executable(comprobar_cajas pruebas/cajas_casos.cpp)\n\ntarget_link_libraries(consultar_cajas PRIVATE envios)\ntarget_link_libraries(comprobar_cajas PRIVATE envios)\ntarget_compile_features(consultar_cajas PRIVATE cxx_std_20)\ntarget_compile_features(comprobar_cajas PRIVATE cxx_std_20)\nset(clientes consultar_cajas comprobar_cajas)\nset_target_properties(${clientes} PROPERTIES CXX_EXTENSIONS OFF)\nget_target_property(ext_consulta consultar_cajas CXX_EXTENSIONS)\nget_target_property(ext_comprobador comprobar_cajas CXX_EXTENSIONS)\nmessage(STATUS \"clientes=${clientes}\")\nmessage(STATUS \"ext_consulta=${ext_consulta}\")\nmessage(STATUS \"ext_comprobador=${ext_comprobador}\")\n"
         },
         {
           "type": "paragraph",
@@ -254,7 +254,7 @@
           "projectFiles": [
             {
               "path": "CMakeLists.txt",
-              "initialCode": "cmake_minimum_required(VERSION 3.20)\nproject(EnviosComprobables LANGUAGES CXX)\nmessage(STATUS \"raiz_antes\")\nadd_subdirectory(componente)\nmessage(STATUS \"raiz_despues\")\nadd_executable(consultar_cajas app/consulta.cpp)\nadd_executable(comprobar_cajas pruebas/cajas_casos.cpp)\ntarget_link_libraries(consultar_cajas PRIVATE envios)\ntarget_link_libraries(comprobar_cajas PRIVATE envios)\ntarget_compile_features(consultar_cajas PRIVATE cxx_std_20)\ntarget_compile_features(comprobar_cajas PRIVATE cxx_std_20)\nset(clientes consultar_cajas comprobar_cajas)\nset_target_properties(\"${clientes}\" PROPERTIES CXX_EXTENSIONS OFF)\nget_target_property(ext_consulta consultar_cajas CXX_EXTENSIONS)\nget_target_property(ext_comprobador comprobar_cajas CXX_EXTENSIONS)\nmessage(STATUS \"clientes=${clientes}\")\nmessage(STATUS \"ext_consulta=${ext_consulta}\")\nmessage(STATUS \"ext_comprobador=${ext_comprobador}\")\n"
+              "initialCode": "cmake_minimum_required(VERSION 3.20)\nproject(EnviosComprobables LANGUAGES CXX)\nmessage(STATUS \"raiz_antes\")\nadd_subdirectory(componente)\nmessage(STATUS \"raiz_despues\")\nadd_executable(consultar_cajas app/consulta.cpp)\nadd_executable(comprobar_cajas pruebas/cajas_casos.cpp)\n\ntarget_link_libraries(consultar_cajas PRIVATE envios)\ntarget_link_libraries(comprobar_cajas PRIVATE envios)\ntarget_compile_features(consultar_cajas PRIVATE cxx_std_20)\ntarget_compile_features(comprobar_cajas PRIVATE cxx_std_20)\nset(clientes consultar_cajas comprobar_cajas)\nset_target_properties(\"${clientes}\" PROPERTIES CXX_EXTENSIONS OFF)\nget_target_property(ext_consulta consultar_cajas CXX_EXTENSIONS)\nget_target_property(ext_comprobador comprobar_cajas CXX_EXTENSIONS)\nmessage(STATUS \"clientes=${clientes}\")\nmessage(STATUS \"ext_consulta=${ext_consulta}\")\nmessage(STATUS \"ext_comprobador=${ext_comprobador}\")\n"
             },
             {
               "path": "componente/CMakeLists.txt",
@@ -270,11 +270,11 @@
             },
             {
               "path": "app/consulta.cpp",
-              "initialCode": "#include \"envio/cajas.h\"\n#include <iostream>\n\nint main() {\n    std::cout << cajas_para(4) << \":\" << cajas_para(8);\n    return 0;\n}\n"
+              "initialCode": "#include \"envio/cajas.h\"\n#include <iostream>\n\nint main() {\n    std::cout << cajas_para(4) << \":\" << cajas_para(8);\n\n    return 0;\n}\n"
             },
             {
               "path": "pruebas/cajas_casos.cpp",
-              "initialCode": "#include \"envio/cajas.h\"\n#include <iostream>\n\nbool comprobar(int piezas, int esperado) {\n    const int obtenido{cajas_para(piezas)};\n    const bool coincide{obtenido == esperado};\n    std::cout << \"piezas=\" << piezas << \" esperado=\" << esperado\n              << \" obtenido=\" << obtenido << \" \";\n    if (coincide) { std::cout << \"OK\\n\"; }\n    else { std::cout << \"FALLO\\n\"; }\n    return coincide;\n}\n\nint main() {\n    bool correcto{true};\n    if (!comprobar(0, 0)) { correcto = false; }\n    if (!comprobar(4, 1)) { correcto = false; }\n    if (!comprobar(8, 2)) { correcto = false; }\n    if (!comprobar(20, 5)) { correcto = false; }\n    if (!comprobar(1, 1)) { correcto = false; }\n    if (!comprobar(5, 2)) { correcto = false; }\n    if (!comprobar(17, 5)) { correcto = false; }\n    if (!correcto) {\n        std::cout << \"Bateria: FALLO\\n\";\n        return 1;\n    }\n    std::cout << \"Bateria: OK\\n\";\n    return 0;\n}\n"
+              "initialCode": "#include \"envio/cajas.h\"\n#include <iostream>\n\nbool comprobar(int piezas, int esperado) {\n    const int obtenido{cajas_para(piezas)};\n    const bool coincide{obtenido == esperado};\n\n    std::cout << \"piezas=\" << piezas << \" esperado=\" << esperado\n              << \" obtenido=\" << obtenido << \" \";\n    if (coincide) { std::cout << \"OK\\n\"; }\n    else { std::cout << \"FALLO\\n\"; }\n    return coincide;\n}\n\nint main() {\n    bool correcto{true};\n    if (!comprobar(0, 0)) { correcto = false; }\n    if (!comprobar(4, 1)) { correcto = false; }\n    if (!comprobar(8, 2)) { correcto = false; }\n    if (!comprobar(20, 5)) { correcto = false; }\n    if (!comprobar(1, 1)) { correcto = false; }\n    if (!comprobar(5, 2)) { correcto = false; }\n    if (!comprobar(17, 5)) { correcto = false; }\n    if (!correcto) {\n        std::cout << \"Bateria: FALLO\\n\";\n        return 1;\n    }\n    std::cout << \"Bateria: OK\\n\";\n\n    return 0;\n}\n"
             }
           ],
           "cmake": {
@@ -385,7 +385,7 @@
           "projectFiles": [
             {
               "path": "CMakeLists.txt",
-              "initialCode": "cmake_minimum_required(VERSION 3.20)\nproject(EnviosComprobables LANGUAGES CXX)\nmessage(STATUS \"raiz_antes\")\nadd_subdirectory(componente)\nmessage(STATUS \"raiz_despues\")\nadd_executable(consultar_cajas app/consulta.cpp)\nadd_executable(comprobar_cajas pruebas/cajas_casos.cpp)\ntarget_link_libraries(consultar_cajas PRIVATE envios)\ntarget_link_libraries(comprobar_cajas PRIVATE envios)\ntarget_compile_features(consultar_cajas PRIVATE cxx_std_20)\ntarget_compile_features(comprobar_cajas PRIVATE cxx_std_20)\nset(clientes consultar_cajas)\nset_target_properties(${clientes} PROPERTIES CXX_EXTENSIONS OFF)\nlist(APPEND clientes comprobar_cajas)\nget_target_property(ext_consulta consultar_cajas CXX_EXTENSIONS)\nget_target_property(ext_comprobador comprobar_cajas CXX_EXTENSIONS)\nmessage(STATUS \"clientes=${clientes}\")\nmessage(STATUS \"ext_consulta=${ext_consulta}\")\nmessage(STATUS \"ext_comprobador=${ext_comprobador}\")\n"
+              "initialCode": "cmake_minimum_required(VERSION 3.20)\nproject(EnviosComprobables LANGUAGES CXX)\nmessage(STATUS \"raiz_antes\")\nadd_subdirectory(componente)\nmessage(STATUS \"raiz_despues\")\nadd_executable(consultar_cajas app/consulta.cpp)\nadd_executable(comprobar_cajas pruebas/cajas_casos.cpp)\n\ntarget_link_libraries(consultar_cajas PRIVATE envios)\ntarget_link_libraries(comprobar_cajas PRIVATE envios)\ntarget_compile_features(consultar_cajas PRIVATE cxx_std_20)\ntarget_compile_features(comprobar_cajas PRIVATE cxx_std_20)\nset(clientes consultar_cajas)\nset_target_properties(${clientes} PROPERTIES CXX_EXTENSIONS OFF)\nlist(APPEND clientes comprobar_cajas)\nget_target_property(ext_consulta consultar_cajas CXX_EXTENSIONS)\nget_target_property(ext_comprobador comprobar_cajas CXX_EXTENSIONS)\nmessage(STATUS \"clientes=${clientes}\")\nmessage(STATUS \"ext_consulta=${ext_consulta}\")\nmessage(STATUS \"ext_comprobador=${ext_comprobador}\")\n"
             },
             {
               "path": "componente/CMakeLists.txt",
@@ -401,11 +401,11 @@
             },
             {
               "path": "app/consulta.cpp",
-              "initialCode": "#include \"envio/cajas.h\"\n#include <iostream>\n\nint main() {\n    std::cout << cajas_para(4) << \":\" << cajas_para(8);\n    return 0;\n}\n"
+              "initialCode": "#include \"envio/cajas.h\"\n#include <iostream>\n\nint main() {\n    std::cout << cajas_para(4) << \":\" << cajas_para(8);\n\n    return 0;\n}\n"
             },
             {
               "path": "pruebas/cajas_casos.cpp",
-              "initialCode": "#include \"envio/cajas.h\"\n#include <iostream>\n\nbool comprobar(int piezas, int esperado) {\n    const int obtenido{cajas_para(piezas)};\n    const bool coincide{obtenido == esperado};\n    std::cout << \"piezas=\" << piezas << \" esperado=\" << esperado\n              << \" obtenido=\" << obtenido << \" \";\n    if (coincide) { std::cout << \"OK\\n\"; }\n    else { std::cout << \"FALLO\\n\"; }\n    return coincide;\n}\n\nint main() {\n    bool correcto{true};\n    if (!comprobar(0, 0)) { correcto = false; }\n    if (!comprobar(4, 1)) { correcto = false; }\n    if (!comprobar(8, 2)) { correcto = false; }\n    if (!comprobar(20, 5)) { correcto = false; }\n    if (!comprobar(1, 1)) { correcto = false; }\n    if (!comprobar(5, 2)) { correcto = false; }\n    if (!comprobar(17, 5)) { correcto = false; }\n    if (!correcto) {\n        std::cout << \"Bateria: FALLO\\n\";\n        return 1;\n    }\n    std::cout << \"Bateria: OK\\n\";\n    return 0;\n}\n"
+              "initialCode": "#include \"envio/cajas.h\"\n#include <iostream>\n\nbool comprobar(int piezas, int esperado) {\n    const int obtenido{cajas_para(piezas)};\n    const bool coincide{obtenido == esperado};\n\n    std::cout << \"piezas=\" << piezas << \" esperado=\" << esperado\n              << \" obtenido=\" << obtenido << \" \";\n    if (coincide) { std::cout << \"OK\\n\"; }\n    else { std::cout << \"FALLO\\n\"; }\n    return coincide;\n}\n\nint main() {\n    bool correcto{true};\n    if (!comprobar(0, 0)) { correcto = false; }\n    if (!comprobar(4, 1)) { correcto = false; }\n    if (!comprobar(8, 2)) { correcto = false; }\n    if (!comprobar(20, 5)) { correcto = false; }\n    if (!comprobar(1, 1)) { correcto = false; }\n    if (!comprobar(5, 2)) { correcto = false; }\n    if (!comprobar(17, 5)) { correcto = false; }\n    if (!correcto) {\n        std::cout << \"Bateria: FALLO\\n\";\n        return 1;\n    }\n    std::cout << \"Bateria: OK\\n\";\n\n    return 0;\n}\n"
             }
           ],
           "cmake": {
@@ -445,7 +445,7 @@
         {
           "type": "code",
           "language": "cmake",
-          "code": "cmake_minimum_required(VERSION 3.20)\nproject(EnviosComprobables LANGUAGES CXX)\nmessage(STATUS \"raiz_antes\")\nadd_subdirectory(componente)\nmessage(STATUS \"raiz_despues\")\nadd_executable(consultar_cajas app/consulta.cpp)\nadd_executable(comprobar_cajas pruebas/cajas_casos.cpp)\ntarget_link_libraries(consultar_cajas PRIVATE envios)\ntarget_link_libraries(comprobar_cajas PRIVATE envios)\ntarget_compile_features(consultar_cajas PRIVATE cxx_std_20)\ntarget_compile_features(comprobar_cajas PRIVATE cxx_std_20)\nset(clientes consultar_cajas)\nlist(APPEND clientes comprobar_cajas)\nset_target_properties(${clientes} PROPERTIES CXX_EXTENSIONS OFF)\nget_target_property(ext_consulta consultar_cajas CXX_EXTENSIONS)\nget_target_property(ext_comprobador comprobar_cajas CXX_EXTENSIONS)\nmessage(STATUS \"clientes=${clientes}\")\nmessage(STATUS \"ext_consulta=${ext_consulta}\")\nmessage(STATUS \"ext_comprobador=${ext_comprobador}\")\n"
+          "code": "cmake_minimum_required(VERSION 3.20)\nproject(EnviosComprobables LANGUAGES CXX)\nmessage(STATUS \"raiz_antes\")\nadd_subdirectory(componente)\nmessage(STATUS \"raiz_despues\")\nadd_executable(consultar_cajas app/consulta.cpp)\nadd_executable(comprobar_cajas pruebas/cajas_casos.cpp)\n\ntarget_link_libraries(consultar_cajas PRIVATE envios)\ntarget_link_libraries(comprobar_cajas PRIVATE envios)\ntarget_compile_features(consultar_cajas PRIVATE cxx_std_20)\ntarget_compile_features(comprobar_cajas PRIVATE cxx_std_20)\nset(clientes consultar_cajas)\nlist(APPEND clientes comprobar_cajas)\nset_target_properties(${clientes} PROPERTIES CXX_EXTENSIONS OFF)\nget_target_property(ext_consulta consultar_cajas CXX_EXTENSIONS)\nget_target_property(ext_comprobador comprobar_cajas CXX_EXTENSIONS)\nmessage(STATUS \"clientes=${clientes}\")\nmessage(STATUS \"ext_consulta=${ext_consulta}\")\nmessage(STATUS \"ext_comprobador=${ext_comprobador}\")\n"
         },
         {
           "type": "paragraph",
@@ -495,7 +495,7 @@
           "projectFiles": [
             {
               "path": "CMakeLists.txt",
-              "initialCode": "cmake_minimum_required(VERSION 3.20)\nproject(LotesLocales LANGUAGES CXX)\nadd_subdirectory(codigo/lotes)\nadd_executable(consultar_lotes programa/consulta.cpp)\nadd_executable(verificar_lotes pruebas/lotes_casos.cpp)\ntarget_link_libraries(consultar_lotes PRIVATE lotes)\ntarget_link_libraries(verificar_lotes PRIVATE lotes)\ntarget_compile_features(consultar_lotes PRIVATE cxx_std_20)\ntarget_compile_features(verificar_lotes PRIVATE cxx_std_20)\n# Reune aqui los consumidores en una variable y aplica la propiedad.\nget_target_property(ext_consulta consultar_lotes CXX_EXTENSIONS)\nget_target_property(ext_verificador verificar_lotes CXX_EXTENSIONS)\nmessage(STATUS \"programas_del_lote=${programas_del_lote}\")\nmessage(STATUS \"ext_consulta=${ext_consulta}\")\nmessage(STATUS \"ext_verificador=${ext_verificador}\")\n"
+              "initialCode": "cmake_minimum_required(VERSION 3.20)\nproject(LotesLocales LANGUAGES CXX)\n\nadd_subdirectory(codigo/lotes)\nadd_executable(consultar_lotes programa/consulta.cpp)\nadd_executable(verificar_lotes pruebas/lotes_casos.cpp)\n\ntarget_link_libraries(consultar_lotes PRIVATE lotes)\ntarget_link_libraries(verificar_lotes PRIVATE lotes)\ntarget_compile_features(consultar_lotes PRIVATE cxx_std_20)\ntarget_compile_features(verificar_lotes PRIVATE cxx_std_20)\n# Reune aqui los consumidores en una variable y aplica la propiedad.\nget_target_property(ext_consulta consultar_lotes CXX_EXTENSIONS)\nget_target_property(ext_verificador verificar_lotes CXX_EXTENSIONS)\nmessage(STATUS \"programas_del_lote=${programas_del_lote}\")\nmessage(STATUS \"ext_consulta=${ext_consulta}\")\nmessage(STATUS \"ext_verificador=${ext_verificador}\")\n"
             },
             {
               "path": "codigo/lotes/CMakeLists.txt",
@@ -511,11 +511,11 @@
             },
             {
               "path": "programa/consulta.cpp",
-              "initialCode": "#include \"lotes/cantidad.h\"\n#include <iostream>\n\nint main() {\n    std::cout << lotes_para(6) << \":\" << lotes_para(12);\n    return 0;\n}\n"
+              "initialCode": "#include \"lotes/cantidad.h\"\n#include <iostream>\n\nint main() {\n    std::cout << lotes_para(6) << \":\" << lotes_para(12);\n\n    return 0;\n}\n"
             },
             {
               "path": "pruebas/lotes_casos.cpp",
-              "initialCode": "#include \"lotes/cantidad.h\"\n#include <iostream>\n\nbool comprobar(int piezas, int esperado) {\n    const int obtenido{lotes_para(piezas)};\n    const bool coincide{obtenido == esperado};\n    std::cout << \"piezas=\" << piezas << \" esperado=\" << esperado\n              << \" obtenido=\" << obtenido << \" \";\n    if (coincide) { std::cout << \"OK\\n\"; }\n    else { std::cout << \"FALLO\\n\"; }\n    return coincide;\n}\n\nint main() {\n    bool correcto{true};\n    if (!comprobar(0, 0)) { correcto = false; }\n    if (!comprobar(6, 1)) { correcto = false; }\n    if (!comprobar(7, 2)) { correcto = false; }\n    if (!comprobar(18, 3)) { correcto = false; }\n    if (!correcto) {\n        std::cout << \"Bateria: FALLO\\n\";\n        return 1;\n    }\n    std::cout << \"Bateria: OK\\n\";\n    return 0;\n}\n"
+              "initialCode": "#include \"lotes/cantidad.h\"\n#include <iostream>\n\nbool comprobar(int piezas, int esperado) {\n    const int obtenido{lotes_para(piezas)};\n    const bool coincide{obtenido == esperado};\n\n    std::cout << \"piezas=\" << piezas << \" esperado=\" << esperado\n              << \" obtenido=\" << obtenido << \" \";\n    if (coincide) { std::cout << \"OK\\n\"; }\n    else { std::cout << \"FALLO\\n\"; }\n    return coincide;\n}\n\nint main() {\n    bool correcto{true};\n    if (!comprobar(0, 0)) { correcto = false; }\n    if (!comprobar(6, 1)) { correcto = false; }\n    if (!comprobar(7, 2)) { correcto = false; }\n    if (!comprobar(18, 3)) { correcto = false; }\n    if (!correcto) {\n        std::cout << \"Bateria: FALLO\\n\";\n        return 1;\n    }\n    std::cout << \"Bateria: OK\\n\";\n\n    return 0;\n}\n"
             }
           ],
           "cmake": {
@@ -555,7 +555,7 @@
         {
           "type": "code",
           "language": "cmake",
-          "code": "cmake_minimum_required(VERSION 3.20)\nproject(LotesLocales LANGUAGES CXX)\nadd_subdirectory(codigo/lotes)\nadd_executable(consultar_lotes programa/consulta.cpp)\nadd_executable(verificar_lotes pruebas/lotes_casos.cpp)\ntarget_link_libraries(consultar_lotes PRIVATE lotes)\ntarget_link_libraries(verificar_lotes PRIVATE lotes)\ntarget_compile_features(consultar_lotes PRIVATE cxx_std_20)\ntarget_compile_features(verificar_lotes PRIVATE cxx_std_20)\nset(programas_del_lote consultar_lotes)\nlist(APPEND programas_del_lote verificar_lotes)\nset_target_properties(${programas_del_lote} PROPERTIES CXX_EXTENSIONS OFF)\nget_target_property(ext_consulta consultar_lotes CXX_EXTENSIONS)\nget_target_property(ext_verificador verificar_lotes CXX_EXTENSIONS)\nmessage(STATUS \"programas_del_lote=${programas_del_lote}\")\nmessage(STATUS \"ext_consulta=${ext_consulta}\")\nmessage(STATUS \"ext_verificador=${ext_verificador}\")\n"
+          "code": "cmake_minimum_required(VERSION 3.20)\nproject(LotesLocales LANGUAGES CXX)\n\nadd_subdirectory(codigo/lotes)\nadd_executable(consultar_lotes programa/consulta.cpp)\nadd_executable(verificar_lotes pruebas/lotes_casos.cpp)\n\ntarget_link_libraries(consultar_lotes PRIVATE lotes)\ntarget_link_libraries(verificar_lotes PRIVATE lotes)\ntarget_compile_features(consultar_lotes PRIVATE cxx_std_20)\ntarget_compile_features(verificar_lotes PRIVATE cxx_std_20)\nset(programas_del_lote consultar_lotes)\nlist(APPEND programas_del_lote verificar_lotes)\nset_target_properties(${programas_del_lote} PROPERTIES CXX_EXTENSIONS OFF)\nget_target_property(ext_consulta consultar_lotes CXX_EXTENSIONS)\nget_target_property(ext_verificador verificar_lotes CXX_EXTENSIONS)\nmessage(STATUS \"programas_del_lote=${programas_del_lote}\")\nmessage(STATUS \"ext_consulta=${ext_consulta}\")\nmessage(STATUS \"ext_verificador=${ext_verificador}\")\n"
         },
         {
           "type": "paragraph",
@@ -2009,6 +2009,303 @@
         "id": "block_0009_0006",
         "beforeSha256": "13809a2f58ba7fbdfea4f2b658c3626455b19fc8954fa7007bcada98b8179d79",
         "afterSha256": "23cef20ec2cb32bdbb0e1b1200a128adee18c20e976d7733cdce9cc926665f93"
+      },
+      {
+        "id": "block_0003_0004",
+        "beforeSha256": "f66cd1866c05edc696400d99788fc6043a39dc77d8e461423d8f5350f57f83ed",
+        "afterSha256": "67cb4f3a44351b061400e5956881eb30376b1ae1d2922f994961d5b7cc31bf57"
+      },
+      {
+        "id": "block_0004_0001",
+        "beforeSha256": "5f8147e3919e1c6421d9331c2792e2828ab0a1dd35d4b0c8b3ed90c647c0506b",
+        "afterSha256": "87b0da976fbd875e3f1c85b09d2c132b10a2d417bfad1943e2bfc7709ee76404"
+      },
+      {
+        "id": "block_0004_0007",
+        "beforeSha256": "ae51635d536600ba3fe10c7de06bffdc17a07993a05230d091410d401b7eabb7",
+        "afterSha256": "bd9b661f9ea04e1fbfd55380501513b8c37cdaab387020f5c4f82502aab1f63b"
+      },
+      {
+        "id": "block_0006_0004",
+        "beforeSha256": "6e00d4dee4bee57f5796395b664038f988557f82a561952c9ab25f5a629a74aa",
+        "afterSha256": "8a5c0dcb9e861a232bbe628b2f5b31ed0b2bbf128af6b92b825b5828d80d59a6"
+      },
+      {
+        "id": "block_0007_0001",
+        "beforeSha256": "1a19f9d47bdcbe37396cfbd4036f36cbcfb42a5b2f0c69f37b4ba17c58fcc67c",
+        "afterSha256": "18642a29b405a7da3edd1b1746b2670e2f3e6b47bccf341cfb8520c7aa5fbfdb"
+      },
+      {
+        "id": "block_0008_0004",
+        "beforeSha256": "deb392f2b1bb526e2d1db23fddd7657b7febb15672e71489e987747cf6528be4",
+        "afterSha256": "ee11e44047f7d66e7fb2625bb4abfbb8dc2b5e7162bfa4626fb5186c94a1e0af"
+      },
+      {
+        "id": "block_0009_0001",
+        "beforeSha256": "f23d533c2ec5866fd62ddee3e162f24c53af7226f55a8d73bb5518ec87030bf8",
+        "afterSha256": "10df77218d6de65507460b7768589bbc233799298206b303af8ffb8a02c9733c"
+      }
+    ],
+    "sourceFormatRevisions": [
+      {
+        "id": "block_0003_0004",
+        "block": {
+          "type": "cpp_compiler",
+          "language": "cpp",
+          "initialCode": "",
+          "projectFiles": [
+            {
+              "path": "CMakeLists.txt",
+              "initialCode": "cmake_minimum_required(VERSION 3.20)\nproject(EnviosComprobables LANGUAGES CXX)\nmessage(STATUS \"raiz_antes\")\nadd_subdirectory(componente)\nmessage(STATUS \"raiz_despues\")\nadd_executable(consultar_cajas app/consulta.cpp)\nadd_executable(comprobar_cajas pruebas/cajas_casos.cpp)\ntarget_link_libraries(consultar_cajas PRIVATE envios)\ntarget_link_libraries(comprobar_cajas PRIVATE envios)\ntarget_compile_features(consultar_cajas PRIVATE cxx_std_20)\ntarget_compile_features(comprobar_cajas PRIVATE cxx_std_20)\nset(clientes consultar_cajas comprobar_cajas)\nset_target_properties(clientes PROPERTIES CXX_EXTENSIONS OFF)\nget_target_property(ext_consulta consultar_cajas CXX_EXTENSIONS)\nget_target_property(ext_comprobador comprobar_cajas CXX_EXTENSIONS)\nmessage(STATUS \"clientes=${clientes}\")\nmessage(STATUS \"ext_consulta=${ext_consulta}\")\nmessage(STATUS \"ext_comprobador=${ext_comprobador}\")\n"
+            },
+            {
+              "path": "componente/CMakeLists.txt",
+              "initialCode": "message(STATUS \"componente\")\nadd_library(envios STATIC src/cajas.cpp)\ntarget_include_directories(envios PUBLIC publico)\ntarget_compile_features(envios PRIVATE cxx_std_20)\nset_target_properties(envios PROPERTIES CXX_EXTENSIONS OFF)\n"
+            },
+            {
+              "path": "componente/publico/envio/cajas.h",
+              "initialCode": "#ifndef PRACTICA_ENVIO_CAJAS_H\n#define PRACTICA_ENVIO_CAJAS_H\n\n// Dominio: 0 <= piezas <= 20.\n// Minimo numero de cajas de 4 plazas que basta para todas las piezas.\n// Cero piezas requiere cero cajas.\nint cajas_para(int piezas);\n\n#endif\n"
+            },
+            {
+              "path": "componente/src/cajas.cpp",
+              "initialCode": "#include \"envio/cajas.h\"\n\nint cajas_para(int piezas) {\n    const int piezas_por_caja{4};\n    return (piezas + piezas_por_caja - 1) / piezas_por_caja;\n}\n"
+            },
+            {
+              "path": "app/consulta.cpp",
+              "initialCode": "#include \"envio/cajas.h\"\n#include <iostream>\n\nint main() {\n    std::cout << cajas_para(4) << \":\" << cajas_para(8);\n    return 0;\n}\n"
+            },
+            {
+              "path": "pruebas/cajas_casos.cpp",
+              "initialCode": "#include \"envio/cajas.h\"\n#include <iostream>\n\nbool comprobar(int piezas, int esperado) {\n    const int obtenido{cajas_para(piezas)};\n    const bool coincide{obtenido == esperado};\n    std::cout << \"piezas=\" << piezas << \" esperado=\" << esperado\n              << \" obtenido=\" << obtenido << \" \";\n    if (coincide) { std::cout << \"OK\\n\"; }\n    else { std::cout << \"FALLO\\n\"; }\n    return coincide;\n}\n\nint main() {\n    bool correcto{true};\n    if (!comprobar(0, 0)) { correcto = false; }\n    if (!comprobar(4, 1)) { correcto = false; }\n    if (!comprobar(8, 2)) { correcto = false; }\n    if (!comprobar(20, 5)) { correcto = false; }\n    if (!comprobar(1, 1)) { correcto = false; }\n    if (!comprobar(5, 2)) { correcto = false; }\n    if (!comprobar(17, 5)) { correcto = false; }\n    if (!correcto) {\n        std::cout << \"Bateria: FALLO\\n\";\n        return 1;\n    }\n    std::cout << \"Bateria: OK\\n\";\n    return 0;\n}\n"
+            }
+          ],
+          "cmake": {
+            "target": "comprobar_cajas",
+            "buildType": "Debug"
+          },
+          "outputCheck": {
+            "inputComparison": "exact",
+            "cases": [
+              {
+                "target": "comprobar_cajas",
+                "standardInput": "",
+                "outputs": [
+                  "piezas=0 esperado=0 obtenido=0 OK\npiezas=4 esperado=1 obtenido=1 OK\npiezas=8 esperado=2 obtenido=2 OK\npiezas=20 esperado=5 obtenido=5 OK\npiezas=1 esperado=1 obtenido=1 OK\npiezas=5 esperado=2 obtenido=2 OK\npiezas=17 esperado=5 obtenido=5 OK\nBateria: OK\n"
+                ],
+                "exitCode": 0
+              },
+              {
+                "target": "consultar_cajas",
+                "standardInput": "",
+                "outputs": [
+                  "1:2"
+                ],
+                "exitCode": 0
+              }
+            ]
+          }
+        }
+      },
+      {
+        "id": "block_0004_0001",
+        "block": {
+          "type": "code",
+          "language": "cmake",
+          "code": "cmake_minimum_required(VERSION 3.20)\nproject(EnviosComprobables LANGUAGES CXX)\nmessage(STATUS \"raiz_antes\")\nadd_subdirectory(componente)\nmessage(STATUS \"raiz_despues\")\nadd_executable(consultar_cajas app/consulta.cpp)\nadd_executable(comprobar_cajas pruebas/cajas_casos.cpp)\ntarget_link_libraries(consultar_cajas PRIVATE envios)\ntarget_link_libraries(comprobar_cajas PRIVATE envios)\ntarget_compile_features(consultar_cajas PRIVATE cxx_std_20)\ntarget_compile_features(comprobar_cajas PRIVATE cxx_std_20)\nset(clientes consultar_cajas comprobar_cajas)\nset_target_properties(${clientes} PROPERTIES CXX_EXTENSIONS OFF)\nget_target_property(ext_consulta consultar_cajas CXX_EXTENSIONS)\nget_target_property(ext_comprobador comprobar_cajas CXX_EXTENSIONS)\nmessage(STATUS \"clientes=${clientes}\")\nmessage(STATUS \"ext_consulta=${ext_consulta}\")\nmessage(STATUS \"ext_comprobador=${ext_comprobador}\")\n"
+        }
+      },
+      {
+        "id": "block_0004_0007",
+        "block": {
+          "type": "cpp_compiler",
+          "language": "cpp",
+          "initialCode": "",
+          "projectFiles": [
+            {
+              "path": "CMakeLists.txt",
+              "initialCode": "cmake_minimum_required(VERSION 3.20)\nproject(EnviosComprobables LANGUAGES CXX)\nmessage(STATUS \"raiz_antes\")\nadd_subdirectory(componente)\nmessage(STATUS \"raiz_despues\")\nadd_executable(consultar_cajas app/consulta.cpp)\nadd_executable(comprobar_cajas pruebas/cajas_casos.cpp)\ntarget_link_libraries(consultar_cajas PRIVATE envios)\ntarget_link_libraries(comprobar_cajas PRIVATE envios)\ntarget_compile_features(consultar_cajas PRIVATE cxx_std_20)\ntarget_compile_features(comprobar_cajas PRIVATE cxx_std_20)\nset(clientes consultar_cajas comprobar_cajas)\nset_target_properties(\"${clientes}\" PROPERTIES CXX_EXTENSIONS OFF)\nget_target_property(ext_consulta consultar_cajas CXX_EXTENSIONS)\nget_target_property(ext_comprobador comprobar_cajas CXX_EXTENSIONS)\nmessage(STATUS \"clientes=${clientes}\")\nmessage(STATUS \"ext_consulta=${ext_consulta}\")\nmessage(STATUS \"ext_comprobador=${ext_comprobador}\")\n"
+            },
+            {
+              "path": "componente/CMakeLists.txt",
+              "initialCode": "message(STATUS \"componente\")\nadd_library(envios STATIC src/cajas.cpp)\ntarget_include_directories(envios PUBLIC publico)\ntarget_compile_features(envios PRIVATE cxx_std_20)\nset_target_properties(envios PROPERTIES CXX_EXTENSIONS OFF)\n"
+            },
+            {
+              "path": "componente/publico/envio/cajas.h",
+              "initialCode": "#ifndef PRACTICA_ENVIO_CAJAS_H\n#define PRACTICA_ENVIO_CAJAS_H\n\n// Dominio: 0 <= piezas <= 20.\n// Minimo numero de cajas de 4 plazas que basta para todas las piezas.\n// Cero piezas requiere cero cajas.\nint cajas_para(int piezas);\n\n#endif\n"
+            },
+            {
+              "path": "componente/src/cajas.cpp",
+              "initialCode": "#include \"envio/cajas.h\"\n\nint cajas_para(int piezas) {\n    const int piezas_por_caja{4};\n    return (piezas + piezas_por_caja - 1) / piezas_por_caja;\n}\n"
+            },
+            {
+              "path": "app/consulta.cpp",
+              "initialCode": "#include \"envio/cajas.h\"\n#include <iostream>\n\nint main() {\n    std::cout << cajas_para(4) << \":\" << cajas_para(8);\n    return 0;\n}\n"
+            },
+            {
+              "path": "pruebas/cajas_casos.cpp",
+              "initialCode": "#include \"envio/cajas.h\"\n#include <iostream>\n\nbool comprobar(int piezas, int esperado) {\n    const int obtenido{cajas_para(piezas)};\n    const bool coincide{obtenido == esperado};\n    std::cout << \"piezas=\" << piezas << \" esperado=\" << esperado\n              << \" obtenido=\" << obtenido << \" \";\n    if (coincide) { std::cout << \"OK\\n\"; }\n    else { std::cout << \"FALLO\\n\"; }\n    return coincide;\n}\n\nint main() {\n    bool correcto{true};\n    if (!comprobar(0, 0)) { correcto = false; }\n    if (!comprobar(4, 1)) { correcto = false; }\n    if (!comprobar(8, 2)) { correcto = false; }\n    if (!comprobar(20, 5)) { correcto = false; }\n    if (!comprobar(1, 1)) { correcto = false; }\n    if (!comprobar(5, 2)) { correcto = false; }\n    if (!comprobar(17, 5)) { correcto = false; }\n    if (!correcto) {\n        std::cout << \"Bateria: FALLO\\n\";\n        return 1;\n    }\n    std::cout << \"Bateria: OK\\n\";\n    return 0;\n}\n"
+            }
+          ],
+          "cmake": {
+            "target": "comprobar_cajas",
+            "buildType": "Debug"
+          },
+          "outputCheck": {
+            "inputComparison": "exact",
+            "cases": [
+              {
+                "target": "comprobar_cajas",
+                "standardInput": "",
+                "outputs": [
+                  "piezas=0 esperado=0 obtenido=0 OK\npiezas=4 esperado=1 obtenido=1 OK\npiezas=8 esperado=2 obtenido=2 OK\npiezas=20 esperado=5 obtenido=5 OK\npiezas=1 esperado=1 obtenido=1 OK\npiezas=5 esperado=2 obtenido=2 OK\npiezas=17 esperado=5 obtenido=5 OK\nBateria: OK\n"
+                ],
+                "exitCode": 0
+              },
+              {
+                "target": "consultar_cajas",
+                "standardInput": "",
+                "outputs": [
+                  "1:2"
+                ],
+                "exitCode": 0
+              }
+            ]
+          }
+        }
+      },
+      {
+        "id": "block_0006_0004",
+        "block": {
+          "type": "cpp_compiler",
+          "language": "cpp",
+          "initialCode": "",
+          "projectFiles": [
+            {
+              "path": "CMakeLists.txt",
+              "initialCode": "cmake_minimum_required(VERSION 3.20)\nproject(EnviosComprobables LANGUAGES CXX)\nmessage(STATUS \"raiz_antes\")\nadd_subdirectory(componente)\nmessage(STATUS \"raiz_despues\")\nadd_executable(consultar_cajas app/consulta.cpp)\nadd_executable(comprobar_cajas pruebas/cajas_casos.cpp)\ntarget_link_libraries(consultar_cajas PRIVATE envios)\ntarget_link_libraries(comprobar_cajas PRIVATE envios)\ntarget_compile_features(consultar_cajas PRIVATE cxx_std_20)\ntarget_compile_features(comprobar_cajas PRIVATE cxx_std_20)\nset(clientes consultar_cajas)\nset_target_properties(${clientes} PROPERTIES CXX_EXTENSIONS OFF)\nlist(APPEND clientes comprobar_cajas)\nget_target_property(ext_consulta consultar_cajas CXX_EXTENSIONS)\nget_target_property(ext_comprobador comprobar_cajas CXX_EXTENSIONS)\nmessage(STATUS \"clientes=${clientes}\")\nmessage(STATUS \"ext_consulta=${ext_consulta}\")\nmessage(STATUS \"ext_comprobador=${ext_comprobador}\")\n"
+            },
+            {
+              "path": "componente/CMakeLists.txt",
+              "initialCode": "message(STATUS \"componente\")\nadd_library(envios STATIC src/cajas.cpp)\ntarget_include_directories(envios PUBLIC publico)\ntarget_compile_features(envios PRIVATE cxx_std_20)\nset_target_properties(envios PROPERTIES CXX_EXTENSIONS OFF)\n"
+            },
+            {
+              "path": "componente/publico/envio/cajas.h",
+              "initialCode": "#ifndef PRACTICA_ENVIO_CAJAS_H\n#define PRACTICA_ENVIO_CAJAS_H\n\n// Dominio: 0 <= piezas <= 20.\n// Minimo numero de cajas de 4 plazas que basta para todas las piezas.\n// Cero piezas requiere cero cajas.\nint cajas_para(int piezas);\n\n#endif\n"
+            },
+            {
+              "path": "componente/src/cajas.cpp",
+              "initialCode": "#include \"envio/cajas.h\"\n\nint cajas_para(int piezas) {\n    const int piezas_por_caja{4};\n    return (piezas + piezas_por_caja - 1) / piezas_por_caja;\n}\n"
+            },
+            {
+              "path": "app/consulta.cpp",
+              "initialCode": "#include \"envio/cajas.h\"\n#include <iostream>\n\nint main() {\n    std::cout << cajas_para(4) << \":\" << cajas_para(8);\n    return 0;\n}\n"
+            },
+            {
+              "path": "pruebas/cajas_casos.cpp",
+              "initialCode": "#include \"envio/cajas.h\"\n#include <iostream>\n\nbool comprobar(int piezas, int esperado) {\n    const int obtenido{cajas_para(piezas)};\n    const bool coincide{obtenido == esperado};\n    std::cout << \"piezas=\" << piezas << \" esperado=\" << esperado\n              << \" obtenido=\" << obtenido << \" \";\n    if (coincide) { std::cout << \"OK\\n\"; }\n    else { std::cout << \"FALLO\\n\"; }\n    return coincide;\n}\n\nint main() {\n    bool correcto{true};\n    if (!comprobar(0, 0)) { correcto = false; }\n    if (!comprobar(4, 1)) { correcto = false; }\n    if (!comprobar(8, 2)) { correcto = false; }\n    if (!comprobar(20, 5)) { correcto = false; }\n    if (!comprobar(1, 1)) { correcto = false; }\n    if (!comprobar(5, 2)) { correcto = false; }\n    if (!comprobar(17, 5)) { correcto = false; }\n    if (!correcto) {\n        std::cout << \"Bateria: FALLO\\n\";\n        return 1;\n    }\n    std::cout << \"Bateria: OK\\n\";\n    return 0;\n}\n"
+            }
+          ],
+          "cmake": {
+            "target": "comprobar_cajas",
+            "buildType": "Debug"
+          },
+          "outputCheck": {
+            "inputComparison": "exact",
+            "cases": [
+              {
+                "target": "comprobar_cajas",
+                "standardInput": "",
+                "outputs": [
+                  "piezas=0 esperado=0 obtenido=0 OK\npiezas=4 esperado=1 obtenido=1 OK\npiezas=8 esperado=2 obtenido=2 OK\npiezas=20 esperado=5 obtenido=5 OK\npiezas=1 esperado=1 obtenido=1 OK\npiezas=5 esperado=2 obtenido=2 OK\npiezas=17 esperado=5 obtenido=5 OK\nBateria: OK\n"
+                ],
+                "exitCode": 0
+              },
+              {
+                "target": "consultar_cajas",
+                "standardInput": "",
+                "outputs": [
+                  "1:2"
+                ],
+                "exitCode": 0
+              }
+            ]
+          }
+        }
+      },
+      {
+        "id": "block_0007_0001",
+        "block": {
+          "type": "code",
+          "language": "cmake",
+          "code": "cmake_minimum_required(VERSION 3.20)\nproject(EnviosComprobables LANGUAGES CXX)\nmessage(STATUS \"raiz_antes\")\nadd_subdirectory(componente)\nmessage(STATUS \"raiz_despues\")\nadd_executable(consultar_cajas app/consulta.cpp)\nadd_executable(comprobar_cajas pruebas/cajas_casos.cpp)\ntarget_link_libraries(consultar_cajas PRIVATE envios)\ntarget_link_libraries(comprobar_cajas PRIVATE envios)\ntarget_compile_features(consultar_cajas PRIVATE cxx_std_20)\ntarget_compile_features(comprobar_cajas PRIVATE cxx_std_20)\nset(clientes consultar_cajas)\nlist(APPEND clientes comprobar_cajas)\nset_target_properties(${clientes} PROPERTIES CXX_EXTENSIONS OFF)\nget_target_property(ext_consulta consultar_cajas CXX_EXTENSIONS)\nget_target_property(ext_comprobador comprobar_cajas CXX_EXTENSIONS)\nmessage(STATUS \"clientes=${clientes}\")\nmessage(STATUS \"ext_consulta=${ext_consulta}\")\nmessage(STATUS \"ext_comprobador=${ext_comprobador}\")\n"
+        }
+      },
+      {
+        "id": "block_0008_0004",
+        "block": {
+          "type": "cpp_compiler",
+          "language": "cpp",
+          "initialCode": "",
+          "projectFiles": [
+            {
+              "path": "CMakeLists.txt",
+              "initialCode": "cmake_minimum_required(VERSION 3.20)\nproject(LotesLocales LANGUAGES CXX)\nadd_subdirectory(codigo/lotes)\nadd_executable(consultar_lotes programa/consulta.cpp)\nadd_executable(verificar_lotes pruebas/lotes_casos.cpp)\ntarget_link_libraries(consultar_lotes PRIVATE lotes)\ntarget_link_libraries(verificar_lotes PRIVATE lotes)\ntarget_compile_features(consultar_lotes PRIVATE cxx_std_20)\ntarget_compile_features(verificar_lotes PRIVATE cxx_std_20)\n# Reune aqui los consumidores en una variable y aplica la propiedad.\nget_target_property(ext_consulta consultar_lotes CXX_EXTENSIONS)\nget_target_property(ext_verificador verificar_lotes CXX_EXTENSIONS)\nmessage(STATUS \"programas_del_lote=${programas_del_lote}\")\nmessage(STATUS \"ext_consulta=${ext_consulta}\")\nmessage(STATUS \"ext_verificador=${ext_verificador}\")\n"
+            },
+            {
+              "path": "codigo/lotes/CMakeLists.txt",
+              "initialCode": "add_library(lotes STATIC motor/cantidad.cpp)\ntarget_include_directories(lotes PUBLIC publico)\ntarget_compile_features(lotes PRIVATE cxx_std_20)\nset_target_properties(lotes PROPERTIES CXX_EXTENSIONS OFF)\n"
+            },
+            {
+              "path": "codigo/lotes/publico/lotes/cantidad.h",
+              "initialCode": "#ifndef PRACTICA_LOTES_CANTIDAD_H\n#define PRACTICA_LOTES_CANTIDAD_H\n\n// Dominio: 0 <= piezas <= 18.\n// Minimo numero de lotes de 6 plazas que basta para todas las piezas.\n// Cero piezas requiere cero lotes.\nint lotes_para(int piezas);\n\n#endif\n"
+            },
+            {
+              "path": "codigo/lotes/motor/cantidad.cpp",
+              "initialCode": "#include \"lotes/cantidad.h\"\n\nint lotes_para(int piezas) {\n    return (piezas + 5) / 6;\n}\n"
+            },
+            {
+              "path": "programa/consulta.cpp",
+              "initialCode": "#include \"lotes/cantidad.h\"\n#include <iostream>\n\nint main() {\n    std::cout << lotes_para(6) << \":\" << lotes_para(12);\n    return 0;\n}\n"
+            },
+            {
+              "path": "pruebas/lotes_casos.cpp",
+              "initialCode": "#include \"lotes/cantidad.h\"\n#include <iostream>\n\nbool comprobar(int piezas, int esperado) {\n    const int obtenido{lotes_para(piezas)};\n    const bool coincide{obtenido == esperado};\n    std::cout << \"piezas=\" << piezas << \" esperado=\" << esperado\n              << \" obtenido=\" << obtenido << \" \";\n    if (coincide) { std::cout << \"OK\\n\"; }\n    else { std::cout << \"FALLO\\n\"; }\n    return coincide;\n}\n\nint main() {\n    bool correcto{true};\n    if (!comprobar(0, 0)) { correcto = false; }\n    if (!comprobar(6, 1)) { correcto = false; }\n    if (!comprobar(7, 2)) { correcto = false; }\n    if (!comprobar(18, 3)) { correcto = false; }\n    if (!correcto) {\n        std::cout << \"Bateria: FALLO\\n\";\n        return 1;\n    }\n    std::cout << \"Bateria: OK\\n\";\n    return 0;\n}\n"
+            }
+          ],
+          "cmake": {
+            "target": "verificar_lotes",
+            "buildType": "Debug"
+          },
+          "outputCheck": {
+            "inputComparison": "exact",
+            "cases": [
+              {
+                "target": "verificar_lotes",
+                "standardInput": "",
+                "outputs": [
+                  "piezas=0 esperado=0 obtenido=0 OK\npiezas=6 esperado=1 obtenido=1 OK\npiezas=7 esperado=2 obtenido=2 OK\npiezas=18 esperado=3 obtenido=3 OK\nBateria: OK\n"
+                ],
+                "exitCode": 0
+              },
+              {
+                "target": "consultar_lotes",
+                "standardInput": "",
+                "outputs": [
+                  "1:2"
+                ],
+                "exitCode": 0
+              }
+            ]
+          }
+        }
+      },
+      {
+        "id": "block_0009_0001",
+        "block": {
+          "type": "code",
+          "language": "cmake",
+          "code": "cmake_minimum_required(VERSION 3.20)\nproject(LotesLocales LANGUAGES CXX)\nadd_subdirectory(codigo/lotes)\nadd_executable(consultar_lotes programa/consulta.cpp)\nadd_executable(verificar_lotes pruebas/lotes_casos.cpp)\ntarget_link_libraries(consultar_lotes PRIVATE lotes)\ntarget_link_libraries(verificar_lotes PRIVATE lotes)\ntarget_compile_features(consultar_lotes PRIVATE cxx_std_20)\ntarget_compile_features(verificar_lotes PRIVATE cxx_std_20)\nset(programas_del_lote consultar_lotes)\nlist(APPEND programas_del_lote verificar_lotes)\nset_target_properties(${programas_del_lote} PROPERTIES CXX_EXTENSIONS OFF)\nget_target_property(ext_consulta consultar_lotes CXX_EXTENSIONS)\nget_target_property(ext_verificador verificar_lotes CXX_EXTENSIONS)\nmessage(STATUS \"programas_del_lote=${programas_del_lote}\")\nmessage(STATUS \"ext_consulta=${ext_consulta}\")\nmessage(STATUS \"ext_verificador=${ext_verificador}\")\n"
+        }
       }
     ]
   },

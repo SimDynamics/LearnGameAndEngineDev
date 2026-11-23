@@ -45,7 +45,7 @@
           "id": "p3_u9l1_destino_antes_de_cuerpo_delegante",
           "language": "cpp",
           "question": "Escribe toda la salida, incluidas las marcas de construcción, consulta y destrucción.",
-          "code": "#include <iostream>\n\nclass Par {\npublic:\n    Par(int primero, int segundo) : primero_{primero}, segundo_{segundo} {\n        std::cout << \"Central|\";\n    }\n    explicit Par(int primero) : Par{primero, 5} {\n        std::cout << \"Uno|\";\n    }\n    ~Par() { std::cout << \"FinPar|\"; }\n    int primero() const { return primero_; }\n    int segundo() const { return segundo_; }\nprivate:\n    int primero_;\n    int segundo_;\n};\nint main() {\n    {\n        Par dato{7};\n        std::cout << dato.primero() << ',' << dato.segundo() << '|';\n    }\n    std::cout << \"Fin\";\n    return 0;\n}\n",
+          "code": "#include <iostream>\n\nclass Par {\npublic:\n    Par(int primero, int segundo) : primero_{primero}, segundo_{segundo} {\n        std::cout << \"Central|\";\n    }\n    explicit Par(int primero) : Par{primero, 5} {\n        std::cout << \"Uno|\";\n    }\n    ~Par() { std::cout << \"FinPar|\"; }\n    int primero() const { return primero_; }\n    int segundo() const { return segundo_; }\nprivate:\n    int primero_;\n    int segundo_;\n};\n\nint main() {\n    {\n        Par dato{7};\n        std::cout << dato.primero() << ',' << dato.segundo() << '|';\n    }\n    std::cout << \"Fin\";\n\n    return 0;\n}\n",
           "answers": [
             "Central|Uno|7,5|FinPar|Fin"
           ],
@@ -110,7 +110,7 @@
           "id": "p3_u9l1_constructor_en_cuerpo_crea_temporal_distinto",
           "language": "cpp",
           "question": "Escribe la salida completa y distingue los dos objetos que se destruyen en momentos diferentes.",
-          "code": "#include <iostream>\n\nclass Ajuste {\npublic:\n    Ajuste(int primero, int segundo) : primero_{primero}, segundo_{segundo} {\n        std::cout << \"Central:\" << primero_ << ',' << segundo_ << '|';\n    }\n    Ajuste() : primero_{0}, segundo_{0} {\n        Ajuste{3, 6};\n        std::cout << \"Cuerpo:\" << primero_ << ',' << segundo_ << '|';\n    }\n    ~Ajuste() { std::cout << \"Fin:\" << primero_ << ',' << segundo_ << '|'; }\n    int primero() const { return primero_; }\n    int segundo() const { return segundo_; }\nprivate:\n    int primero_;\n    int segundo_;\n};\nint main() {\n    {\n        Ajuste dato;\n        std::cout << \"Dato:\" << dato.primero() << ',' << dato.segundo() << '|';\n    }\n    std::cout << \"Fin\";\n    return 0;\n}\n",
+          "code": "#include <iostream>\n\nclass Ajuste {\npublic:\n    Ajuste(int primero, int segundo) : primero_{primero}, segundo_{segundo} {\n        std::cout << \"Central:\" << primero_ << ',' << segundo_ << '|';\n    }\n    Ajuste() : primero_{0}, segundo_{0} {\n        Ajuste{3, 6};\n        std::cout << \"Cuerpo:\" << primero_ << ',' << segundo_ << '|';\n    }\n    ~Ajuste() { std::cout << \"Fin:\" << primero_ << ',' << segundo_ << '|'; }\n    int primero() const { return primero_; }\n    int segundo() const { return segundo_; }\nprivate:\n    int primero_;\n    int segundo_;\n};\n\nint main() {\n    {\n        Ajuste dato;\n        std::cout << \"Dato:\" << dato.primero() << ',' << dato.segundo() << '|';\n    }\n    std::cout << \"Fin\";\n\n    return 0;\n}\n",
           "answers": [
             "Central:3,6|Fin:3,6|Cuerpo:0,0|Dato:0,0|Fin:0,0|Fin"
           ],
@@ -146,7 +146,7 @@
           "id": "p3_u9l1_delegacion_correcta_un_objeto_y_un_miembro",
           "language": "cpp",
           "question": "Escribe la traza completa del programa con modo cero.",
-          "code": "#include <iostream>\n\nstruct Fallo {\n    int etapa;\n};\nclass Marca {\npublic:\n    Marca() { std::cout << \"Marca+|\"; }\n    ~Marca() { std::cout << \"Marca-|\"; }\n};\nclass Preparado {\npublic:\n    Preparado(int valor, int modo) : marca_{}, valor_{valor} {\n        std::cout << \"Destino|\";\n        if (modo == 1) { throw Fallo{1}; }\n        std::cout << \"DestinoListo|\";\n    }\n    explicit Preparado(int modo) : Preparado{6, modo} {\n        std::cout << \"Delegado|\";\n        if (modo == 2) { throw Fallo{2}; }\n        std::cout << \"DelegadoListo|\";\n    }\n    ~Preparado() { std::cout << \"Objeto-|\"; }\n    int valor() const { return valor_; }\nprivate:\n    Marca marca_;\n    int valor_;\n};\nint main() {\n    try {\n        Preparado dato{0};\n        std::cout << \"Uso:\" << dato.valor() << '|';\n    } catch (const Fallo& error) {\n        std::cout << \"Captura:\" << error.etapa << '|';\n    }\n    std::cout << \"Fin\";\n    return 0;\n}\n",
+          "code": "#include <iostream>\n\nstruct Fallo {\n    int etapa;\n};\n\nclass Marca {\npublic:\n    Marca() { std::cout << \"Marca+|\"; }\n    ~Marca() { std::cout << \"Marca-|\"; }\n};\n\nclass Preparado {\npublic:\n    Preparado(int valor, int modo) : marca_{}, valor_{valor} {\n        std::cout << \"Destino|\";\n        if (modo == 1) { throw Fallo{1}; }\n        std::cout << \"DestinoListo|\";\n    }\n    explicit Preparado(int modo) : Preparado{6, modo} {\n        std::cout << \"Delegado|\";\n        if (modo == 2) { throw Fallo{2}; }\n        std::cout << \"DelegadoListo|\";\n    }\n    ~Preparado() { std::cout << \"Objeto-|\"; }\n    int valor() const { return valor_; }\nprivate:\n    Marca marca_;\n    int valor_;\n};\n\nint main() {\n    try {\n        Preparado dato{0};\n        std::cout << \"Uso:\" << dato.valor() << '|';\n    } catch (const Fallo& error) {\n        std::cout << \"Captura:\" << error.etapa << '|';\n    }\n    std::cout << \"Fin\";\n\n    return 0;\n}\n",
           "answers": [
             "Marca+|Destino|DestinoListo|Delegado|DelegadoListo|Uso:6|Objeto-|Marca-|Fin"
           ],
@@ -178,7 +178,7 @@
           "id": "p3_u9l1_destino_directo_que_lanza_antes_de_completarse",
           "language": "cpp",
           "question": "Escribe la salida con modo uno, distinguiendo el destructor del miembro del destructor del objeto.",
-          "code": "#include <iostream>\n\nstruct Fallo {\n    int etapa;\n};\nclass Marca {\npublic:\n    Marca() { std::cout << \"Marca+|\"; }\n    ~Marca() { std::cout << \"Marca-|\"; }\n};\nclass Preparado {\npublic:\n    Preparado(int valor, int modo) : marca_{}, valor_{valor} {\n        std::cout << \"Destino|\";\n        if (modo == 1) { throw Fallo{1}; }\n        std::cout << \"DestinoListo|\";\n    }\n    explicit Preparado(int modo) : Preparado{6, modo} {\n        std::cout << \"Delegado|\";\n        if (modo == 2) { throw Fallo{2}; }\n        std::cout << \"DelegadoListo|\";\n    }\n    ~Preparado() { std::cout << \"Objeto-|\"; }\n    int valor() const { return valor_; }\nprivate:\n    Marca marca_;\n    int valor_;\n};\nint main() {\n    try {\n        Preparado dato{1};\n        std::cout << \"Uso:\" << dato.valor() << '|';\n    } catch (const Fallo& error) {\n        std::cout << \"Captura:\" << error.etapa << '|';\n    }\n    std::cout << \"Fin\";\n    return 0;\n}\n",
+          "code": "#include <iostream>\n\nstruct Fallo {\n    int etapa;\n};\n\nclass Marca {\npublic:\n    Marca() { std::cout << \"Marca+|\"; }\n    ~Marca() { std::cout << \"Marca-|\"; }\n};\n\nclass Preparado {\npublic:\n    Preparado(int valor, int modo) : marca_{}, valor_{valor} {\n        std::cout << \"Destino|\";\n        if (modo == 1) { throw Fallo{1}; }\n        std::cout << \"DestinoListo|\";\n    }\n    explicit Preparado(int modo) : Preparado{6, modo} {\n        std::cout << \"Delegado|\";\n        if (modo == 2) { throw Fallo{2}; }\n        std::cout << \"DelegadoListo|\";\n    }\n    ~Preparado() { std::cout << \"Objeto-|\"; }\n    int valor() const { return valor_; }\nprivate:\n    Marca marca_;\n    int valor_;\n};\n\nint main() {\n    try {\n        Preparado dato{1};\n        std::cout << \"Uso:\" << dato.valor() << '|';\n    } catch (const Fallo& error) {\n        std::cout << \"Captura:\" << error.etapa << '|';\n    }\n    std::cout << \"Fin\";\n\n    return 0;\n}\n",
           "answers": [
             "Marca+|Destino|Marca-|Captura:1|Fin"
           ],
@@ -206,7 +206,7 @@
           "id": "p3_u9l1_cuerpo_delegante_que_lanza_tras_destino_completo",
           "language": "cpp",
           "question": "Escribe la traza para modo dos hasta el catch compatible y el final de main.",
-          "code": "#include <iostream>\n\nstruct Fallo {\n    int etapa;\n};\nclass Marca {\npublic:\n    Marca() { std::cout << \"Marca+|\"; }\n    ~Marca() { std::cout << \"Marca-|\"; }\n};\nclass Preparado {\npublic:\n    Preparado(int valor, int modo) : marca_{}, valor_{valor} {\n        std::cout << \"Destino|\";\n        if (modo == 1) { throw Fallo{1}; }\n        std::cout << \"DestinoListo|\";\n    }\n    explicit Preparado(int modo) : Preparado{6, modo} {\n        std::cout << \"Delegado|\";\n        if (modo == 2) { throw Fallo{2}; }\n        std::cout << \"DelegadoListo|\";\n    }\n    ~Preparado() { std::cout << \"Objeto-|\"; }\n    int valor() const { return valor_; }\nprivate:\n    Marca marca_;\n    int valor_;\n};\nint main() {\n    try {\n        Preparado dato{2};\n        std::cout << \"Uso:\" << dato.valor() << '|';\n    } catch (const Fallo& error) {\n        std::cout << \"Captura:\" << error.etapa << '|';\n    }\n    std::cout << \"Fin\";\n    return 0;\n}\n",
+          "code": "#include <iostream>\n\nstruct Fallo {\n    int etapa;\n};\n\nclass Marca {\npublic:\n    Marca() { std::cout << \"Marca+|\"; }\n    ~Marca() { std::cout << \"Marca-|\"; }\n};\n\nclass Preparado {\npublic:\n    Preparado(int valor, int modo) : marca_{}, valor_{valor} {\n        std::cout << \"Destino|\";\n        if (modo == 1) { throw Fallo{1}; }\n        std::cout << \"DestinoListo|\";\n    }\n    explicit Preparado(int modo) : Preparado{6, modo} {\n        std::cout << \"Delegado|\";\n        if (modo == 2) { throw Fallo{2}; }\n        std::cout << \"DelegadoListo|\";\n    }\n    ~Preparado() { std::cout << \"Objeto-|\"; }\n    int valor() const { return valor_; }\nprivate:\n    Marca marca_;\n    int valor_;\n};\n\nint main() {\n    try {\n        Preparado dato{2};\n        std::cout << \"Uso:\" << dato.valor() << '|';\n    } catch (const Fallo& error) {\n        std::cout << \"Captura:\" << error.etapa << '|';\n    }\n    std::cout << \"Fin\";\n\n    return 0;\n}\n",
           "answers": [
             "Marca+|Destino|DestinoListo|Delegado|Objeto-|Marca-|Captura:2|Fin"
           ],
@@ -281,7 +281,7 @@
         {
           "type": "code",
           "language": "cpp",
-          "code": "#include <iostream>\n#include <stdexcept>\n\nclass Tramo {\npublic:\n    Tramo(int inicio, int fin) : inicio_{inicio}, fin_{fin} {\n        if (fin_ < inicio_) {\n            throw std::invalid_argument(\"orden\");\n        }\n        std::cout << \"Preparado|\";\n    }\n\n    explicit Tramo(int fin) : Tramo(0, fin) {\n        std::cout << \"DesdeCero|\";\n    }\n\n    Tramo() : Tramo(0) {\n        std::cout << \"Vacio|\";\n    }\n\n    ~Tramo() { std::cout << \"Retirado|\"; }\n\n    void escribir(std::ostream& salida) const {\n        salida << '[' << inicio_ << ',' << fin_ << \"]|\";\n    }\n\nprivate:\n    const int inicio_;\n    const int fin_;\n};\nint main() {\n    {\n        Tramo dato;\n        dato.escribir(std::cout);\n    }\n    return 0;\n}\n"
+          "code": "#include <iostream>\n#include <stdexcept>\n\nclass Tramo {\npublic:\n    Tramo(int inicio, int fin) : inicio_{inicio}, fin_{fin} {\n        if (fin_ < inicio_) {\n            throw std::invalid_argument(\"orden\");\n        }\n        std::cout << \"Preparado|\";\n    }\n\n    explicit Tramo(int fin) : Tramo(0, fin) {\n        std::cout << \"DesdeCero|\";\n    }\n\n    Tramo() : Tramo(0) {\n        std::cout << \"Vacio|\";\n    }\n\n    ~Tramo() { std::cout << \"Retirado|\"; }\n\n    void escribir(std::ostream& salida) const {\n        salida << '[' << inicio_ << ',' << fin_ << \"]|\";\n    }\n\nprivate:\n    const int inicio_;\n    const int fin_;\n};\n\nint main() {\n    {\n        Tramo dato;\n        dato.escribir(std::cout);\n    }\n\n    return 0;\n}\n"
         },
         {
           "type": "paragraph",
@@ -369,7 +369,7 @@
           "id": "p3_u9l1_conservar_anterior_si_falla_el_destino",
           "language": "cpp",
           "question": "¿Qué texto completo escribe este programa? Incluye los separadores | y los extremos entre corchetes.",
-          "code": "#include <iostream>\n#include <stdexcept>\n\nclass Tramo {\npublic:\n    Tramo(int inicio, int fin) : inicio_{inicio}, fin_{fin} {\n        if (fin_ < inicio_) {\n            throw std::invalid_argument(\"orden\");\n        }\n        std::cout << \"Preparado|\";\n    }\n\n    explicit Tramo(int fin) : Tramo(0, fin) {\n        std::cout << \"DesdeCero|\";\n    }\n\n    Tramo() : Tramo(0) {\n        std::cout << \"Vacio|\";\n    }\n\n    ~Tramo() { std::cout << \"Retirado|\"; }\n\n    void escribir(std::ostream& salida) const {\n        salida << '[' << inicio_ << ',' << fin_ << \"]|\";\n    }\n\nprivate:\n    const int inicio_;\n    const int fin_;\n};\nint main() {\n    {\n        Tramo anterior{-4, -1};\n        try {\n            Tramo intento{-2};\n            intento.escribir(std::cout);\n        } catch (const std::invalid_argument&) {\n            std::cout << \"Capturado|\";\n        }\n        anterior.escribir(std::cout);\n    }\n    return 0;\n}\n",
+          "code": "#include <iostream>\n#include <stdexcept>\n\nclass Tramo {\npublic:\n    Tramo(int inicio, int fin) : inicio_{inicio}, fin_{fin} {\n        if (fin_ < inicio_) {\n            throw std::invalid_argument(\"orden\");\n        }\n        std::cout << \"Preparado|\";\n    }\n\n    explicit Tramo(int fin) : Tramo(0, fin) {\n        std::cout << \"DesdeCero|\";\n    }\n\n    Tramo() : Tramo(0) {\n        std::cout << \"Vacio|\";\n    }\n\n    ~Tramo() { std::cout << \"Retirado|\"; }\n\n    void escribir(std::ostream& salida) const {\n        salida << '[' << inicio_ << ',' << fin_ << \"]|\";\n    }\n\nprivate:\n    const int inicio_;\n    const int fin_;\n};\n\nint main() {\n    {\n        Tramo anterior{-4, -1};\n        try {\n            Tramo intento{-2};\n            intento.escribir(std::cout);\n        } catch (const std::invalid_argument&) {\n            std::cout << \"Capturado|\";\n        }\n        anterior.escribir(std::cout);\n    }\n\n    return 0;\n}\n",
           "answers": [
             "Preparado|Capturado|[-4,-1]|Retirado|"
           ],
@@ -1170,6 +1170,142 @@
       }
     },
     "additions": [],
-    "editorial": []
+    "editorial": [
+      {
+        "id": "block_0001_0003",
+        "beforeSha256": "ca7367f01ab8d54bace0cb873357b32079554900f7cf7134a4010bad6a23ca20",
+        "afterSha256": "e2ddaf3fb55fac6cfb1a435da17a66ad4f513091770c80bb7ca97af48998c8f9"
+      },
+      {
+        "id": "block_0003_0003",
+        "beforeSha256": "5ffd3acd3e03ff4af42f67b7d318b34abe1b509d7e91d0c6d4206f5bb84151aa",
+        "afterSha256": "107bbbb04a910d4a48d1083b1c1c751062bf571f84652b6a9bd003c93f1ec9c3"
+      },
+      {
+        "id": "block_0004_0004",
+        "beforeSha256": "2cb6d12bf39c3f35338bc5b1704b6aab7d492d45b6ab48f782d8dad69084d326",
+        "afterSha256": "159d361dd0d45a820293f037bc95ee42fbb4a0ccee9d2fc1759a19c94e1eab7b"
+      },
+      {
+        "id": "block_0005_0004",
+        "beforeSha256": "c81589f0b98e5607fc631bac8518f21e0247f5d0b9d29f8840a9cf4862642c38",
+        "afterSha256": "b666312433c35430fba4f6b5a6589f58b883ae7fc59055ff2e99853db30e974e"
+      },
+      {
+        "id": "block_0006_0003",
+        "beforeSha256": "2d9b01c1d70269da90327e3ea5529853aed2378db27b0d605a6b22831afc56a8",
+        "afterSha256": "e488e325ca188eed0b6bba4a456f96482979a727164231de14097689b58ad166"
+      },
+      {
+        "id": "block_0008_0001",
+        "beforeSha256": "69ea7bf850cff3986deea377f14a7f940b69ea24ee823cf85f6200e145e0ec58",
+        "afterSha256": "298d0d2ba0f633794ba279b7688df50b28d333e3a5e4cc0b27e5280c9501bf0a"
+      },
+      {
+        "id": "block_0010_0003",
+        "beforeSha256": "1cac980b09442a0b22a3b604f343daa7b1b76bf51d82eb17732a4f38acd554da",
+        "afterSha256": "7f3e380d2880e85b1bd5bb446665ba54e03b6216735d5f7698d71667dcffcb45"
+      }
+    ],
+    "sourceFormatRevisions": [
+      {
+        "id": "block_0001_0003",
+        "block": {
+          "type": "output_prediction",
+          "id": "p3_u9l1_destino_antes_de_cuerpo_delegante",
+          "language": "cpp",
+          "question": "Escribe toda la salida, incluidas las marcas de construcción, consulta y destrucción.",
+          "code": "#include <iostream>\n\nclass Par {\npublic:\n    Par(int primero, int segundo) : primero_{primero}, segundo_{segundo} {\n        std::cout << \"Central|\";\n    }\n    explicit Par(int primero) : Par{primero, 5} {\n        std::cout << \"Uno|\";\n    }\n    ~Par() { std::cout << \"FinPar|\"; }\n    int primero() const { return primero_; }\n    int segundo() const { return segundo_; }\nprivate:\n    int primero_;\n    int segundo_;\n};\nint main() {\n    {\n        Par dato{7};\n        std::cout << dato.primero() << ',' << dato.segundo() << '|';\n    }\n    std::cout << \"Fin\";\n    return 0;\n}\n",
+          "answers": [
+            "Central|Uno|7,5|FinPar|Fin"
+          ],
+          "outputComparison": "exact",
+          "explanation": "El constructor de dos enteros prepara el primer dato con siete y el segundo con cinco y escribe Central. Después se ejecuta el cuerpo de Par(int), que escribe Uno. La consulta de main obtiene esos dos datos. Al salir del bloque se ejecuta una vez el destructor de dato y aparece FinPar; después main escribe Fin. Los dos cuerpos constructores no representaban dos objetos distintos."
+        }
+      },
+      {
+        "id": "block_0003_0003",
+        "block": {
+          "type": "output_prediction",
+          "id": "p3_u9l1_constructor_en_cuerpo_crea_temporal_distinto",
+          "language": "cpp",
+          "question": "Escribe la salida completa y distingue los dos objetos que se destruyen en momentos diferentes.",
+          "code": "#include <iostream>\n\nclass Ajuste {\npublic:\n    Ajuste(int primero, int segundo) : primero_{primero}, segundo_{segundo} {\n        std::cout << \"Central:\" << primero_ << ',' << segundo_ << '|';\n    }\n    Ajuste() : primero_{0}, segundo_{0} {\n        Ajuste{3, 6};\n        std::cout << \"Cuerpo:\" << primero_ << ',' << segundo_ << '|';\n    }\n    ~Ajuste() { std::cout << \"Fin:\" << primero_ << ',' << segundo_ << '|'; }\n    int primero() const { return primero_; }\n    int segundo() const { return segundo_; }\nprivate:\n    int primero_;\n    int segundo_;\n};\nint main() {\n    {\n        Ajuste dato;\n        std::cout << \"Dato:\" << dato.primero() << ',' << dato.segundo() << '|';\n    }\n    std::cout << \"Fin\";\n    return 0;\n}\n",
+          "answers": [
+            "Central:3,6|Fin:3,6|Cuerpo:0,0|Dato:0,0|Fin:0,0|Fin"
+          ],
+          "outputComparison": "exact",
+          "explanation": "El temporal se construye con tres y seis y escribe Central con esos datos. Al terminar la instrucción se destruye y escribe Fin:3,6. El cuerpo de Ajuste() consulta sus propios miembros, inicializados con cero, y escribe Cuerpo:0,0. dato conserva esos ceros durante la consulta de main y se destruye después al salir del bloque, escribiendo Fin:0,0. Ese temporal no delegó la construcción de dato."
+        }
+      },
+      {
+        "id": "block_0004_0004",
+        "block": {
+          "type": "output_prediction",
+          "id": "p3_u9l1_delegacion_correcta_un_objeto_y_un_miembro",
+          "language": "cpp",
+          "question": "Escribe la traza completa del programa con modo cero.",
+          "code": "#include <iostream>\n\nstruct Fallo {\n    int etapa;\n};\nclass Marca {\npublic:\n    Marca() { std::cout << \"Marca+|\"; }\n    ~Marca() { std::cout << \"Marca-|\"; }\n};\nclass Preparado {\npublic:\n    Preparado(int valor, int modo) : marca_{}, valor_{valor} {\n        std::cout << \"Destino|\";\n        if (modo == 1) { throw Fallo{1}; }\n        std::cout << \"DestinoListo|\";\n    }\n    explicit Preparado(int modo) : Preparado{6, modo} {\n        std::cout << \"Delegado|\";\n        if (modo == 2) { throw Fallo{2}; }\n        std::cout << \"DelegadoListo|\";\n    }\n    ~Preparado() { std::cout << \"Objeto-|\"; }\n    int valor() const { return valor_; }\nprivate:\n    Marca marca_;\n    int valor_;\n};\nint main() {\n    try {\n        Preparado dato{0};\n        std::cout << \"Uso:\" << dato.valor() << '|';\n    } catch (const Fallo& error) {\n        std::cout << \"Captura:\" << error.etapa << '|';\n    }\n    std::cout << \"Fin\";\n    return 0;\n}\n",
+          "answers": [
+            "Marca+|Destino|DestinoListo|Delegado|DelegadoListo|Uso:6|Objeto-|Marca-|Fin"
+          ],
+          "outputComparison": "exact",
+          "explanation": "marca_ se construye una vez. El destino completa su cuerpo, después se completa el cuerpo que delega y main puede consultar el valor seis. Al salir del try se ejecuta ~Preparado, que escribe Objeto-, y después se destruye marca_, que escribe Marca-. El catch no se ejecuta y main añade Fin."
+        }
+      },
+      {
+        "id": "block_0005_0004",
+        "block": {
+          "type": "output_prediction",
+          "id": "p3_u9l1_destino_directo_que_lanza_antes_de_completarse",
+          "language": "cpp",
+          "question": "Escribe la salida con modo uno, distinguiendo el destructor del miembro del destructor del objeto.",
+          "code": "#include <iostream>\n\nstruct Fallo {\n    int etapa;\n};\nclass Marca {\npublic:\n    Marca() { std::cout << \"Marca+|\"; }\n    ~Marca() { std::cout << \"Marca-|\"; }\n};\nclass Preparado {\npublic:\n    Preparado(int valor, int modo) : marca_{}, valor_{valor} {\n        std::cout << \"Destino|\";\n        if (modo == 1) { throw Fallo{1}; }\n        std::cout << \"DestinoListo|\";\n    }\n    explicit Preparado(int modo) : Preparado{6, modo} {\n        std::cout << \"Delegado|\";\n        if (modo == 2) { throw Fallo{2}; }\n        std::cout << \"DelegadoListo|\";\n    }\n    ~Preparado() { std::cout << \"Objeto-|\"; }\n    int valor() const { return valor_; }\nprivate:\n    Marca marca_;\n    int valor_;\n};\nint main() {\n    try {\n        Preparado dato{1};\n        std::cout << \"Uso:\" << dato.valor() << '|';\n    } catch (const Fallo& error) {\n        std::cout << \"Captura:\" << error.etapa << '|';\n    }\n    std::cout << \"Fin\";\n    return 0;\n}\n",
+          "answers": [
+            "Marca+|Destino|Marca-|Captura:1|Fin"
+          ],
+          "outputComparison": "exact",
+          "explanation": "Se construye marca_ y el destino escribe Destino. Después lanza Fallo{1}, sin alcanzar DestinoListo. No se entra en el cuerpo que delega ni se ejecuta ~Preparado. Sí se destruye marca_, que escribe Marca-. La excepción llega después al catch, que escribe Captura:1, y main termina con Fin."
+        }
+      },
+      {
+        "id": "block_0006_0003",
+        "block": {
+          "type": "output_prediction",
+          "id": "p3_u9l1_cuerpo_delegante_que_lanza_tras_destino_completo",
+          "language": "cpp",
+          "question": "Escribe la traza para modo dos hasta el catch compatible y el final de main.",
+          "code": "#include <iostream>\n\nstruct Fallo {\n    int etapa;\n};\nclass Marca {\npublic:\n    Marca() { std::cout << \"Marca+|\"; }\n    ~Marca() { std::cout << \"Marca-|\"; }\n};\nclass Preparado {\npublic:\n    Preparado(int valor, int modo) : marca_{}, valor_{valor} {\n        std::cout << \"Destino|\";\n        if (modo == 1) { throw Fallo{1}; }\n        std::cout << \"DestinoListo|\";\n    }\n    explicit Preparado(int modo) : Preparado{6, modo} {\n        std::cout << \"Delegado|\";\n        if (modo == 2) { throw Fallo{2}; }\n        std::cout << \"DelegadoListo|\";\n    }\n    ~Preparado() { std::cout << \"Objeto-|\"; }\n    int valor() const { return valor_; }\nprivate:\n    Marca marca_;\n    int valor_;\n};\nint main() {\n    try {\n        Preparado dato{2};\n        std::cout << \"Uso:\" << dato.valor() << '|';\n    } catch (const Fallo& error) {\n        std::cout << \"Captura:\" << error.etapa << '|';\n    }\n    std::cout << \"Fin\";\n    return 0;\n}\n",
+          "answers": [
+            "Marca+|Destino|DestinoListo|Delegado|Objeto-|Marca-|Captura:2|Fin"
+          ],
+          "outputComparison": "exact",
+          "explanation": "marca_ se prepara y el destino alcanza DestinoListo. El cuerpo delegante escribe Delegado y lanza Fallo{2}. Como el destino ya había construido el objeto, ahora se ejecuta ~Preparado y aparece Objeto-; después se destruye marca_ y aparece Marca-. No se alcanza DelegadoListo ni Uso. Tras esa destrucción se entra en el catch y se imprime Captura:2, seguido de Fin."
+        }
+      },
+      {
+        "id": "block_0008_0001",
+        "block": {
+          "type": "code",
+          "language": "cpp",
+          "code": "#include <iostream>\n#include <stdexcept>\n\nclass Tramo {\npublic:\n    Tramo(int inicio, int fin) : inicio_{inicio}, fin_{fin} {\n        if (fin_ < inicio_) {\n            throw std::invalid_argument(\"orden\");\n        }\n        std::cout << \"Preparado|\";\n    }\n\n    explicit Tramo(int fin) : Tramo(0, fin) {\n        std::cout << \"DesdeCero|\";\n    }\n\n    Tramo() : Tramo(0) {\n        std::cout << \"Vacio|\";\n    }\n\n    ~Tramo() { std::cout << \"Retirado|\"; }\n\n    void escribir(std::ostream& salida) const {\n        salida << '[' << inicio_ << ',' << fin_ << \"]|\";\n    }\n\nprivate:\n    const int inicio_;\n    const int fin_;\n};\nint main() {\n    {\n        Tramo dato;\n        dato.escribir(std::cout);\n    }\n    return 0;\n}\n"
+        }
+      },
+      {
+        "id": "block_0010_0003",
+        "block": {
+          "type": "output_prediction",
+          "id": "p3_u9l1_conservar_anterior_si_falla_el_destino",
+          "language": "cpp",
+          "question": "¿Qué texto completo escribe este programa? Incluye los separadores | y los extremos entre corchetes.",
+          "code": "#include <iostream>\n#include <stdexcept>\n\nclass Tramo {\npublic:\n    Tramo(int inicio, int fin) : inicio_{inicio}, fin_{fin} {\n        if (fin_ < inicio_) {\n            throw std::invalid_argument(\"orden\");\n        }\n        std::cout << \"Preparado|\";\n    }\n\n    explicit Tramo(int fin) : Tramo(0, fin) {\n        std::cout << \"DesdeCero|\";\n    }\n\n    Tramo() : Tramo(0) {\n        std::cout << \"Vacio|\";\n    }\n\n    ~Tramo() { std::cout << \"Retirado|\"; }\n\n    void escribir(std::ostream& salida) const {\n        salida << '[' << inicio_ << ',' << fin_ << \"]|\";\n    }\n\nprivate:\n    const int inicio_;\n    const int fin_;\n};\nint main() {\n    {\n        Tramo anterior{-4, -1};\n        try {\n            Tramo intento{-2};\n            intento.escribir(std::cout);\n        } catch (const std::invalid_argument&) {\n            std::cout << \"Capturado|\";\n        }\n        anterior.escribir(std::cout);\n    }\n    return 0;\n}\n",
+          "answers": [
+            "Preparado|Capturado|[-4,-1]|Retirado|"
+          ],
+          "outputComparison": "exact",
+          "explanation": "anterior se construye directamente con -4 y -1, acepta su orden y escribe Preparado|. El intento de un argumento -2 delega al constructor de dos argumentos con 0 y -2. Como -2 es menor que 0, ese destino lanza antes de escribir Preparado|. No se ejecuta el cuerpo DesdeCero| ni el destructor de intento. catch escribe Capturado|. anterior conserva sus extremos y escribe [-4,-1]|. Al salir de su bloque se destruye ese único objeto completado y aparece Retirado|."
+        }
+      }
+    ]
   }
 }

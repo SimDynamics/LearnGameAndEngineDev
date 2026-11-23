@@ -19,7 +19,7 @@
         {
           "type": "code",
           "language": "cpp",
-          "code": "class Registro {\npublic:\n    explicit Registro(int numero) : numero_{numero} {}\n    int leer() const { return numero_; }\n    void fijar(int numero) { numero_ = numero; }\nprivate:\n    int numero_;\n};\nclass CanalA : virtual public Registro {\npublic:\n    explicit CanalA(int numero) : Registro{numero} {}\n};\n\nclass CanalB : public virtual Registro {\npublic:\n    explicit CanalB(int numero) : Registro{numero} {}\n};\nclass Encuentro : public CanalA, public CanalB {\npublic:\n    explicit Encuentro(int numero)\n        : Registro{numero}, CanalA{10}, CanalB{20} {}\n};\n"
+          "code": "class Registro {\npublic:\n    explicit Registro(int numero) : numero_{numero} {}\n    int leer() const { return numero_; }\n    void fijar(int numero) { numero_ = numero; }\nprivate:\n    int numero_;\n};\n\nclass CanalA : virtual public Registro {\npublic:\n    explicit CanalA(int numero) : Registro{numero} {}\n};\n\nclass CanalB : public virtual Registro {\npublic:\n    explicit CanalB(int numero) : Registro{numero} {}\n};\n\nclass Encuentro : public CanalA, public CanalB {\npublic:\n    explicit Encuentro(int numero)\n        : Registro{numero}, CanalA{10}, CanalB{20} {}\n};\n"
         },
         {
           "type": "paragraph",
@@ -50,7 +50,7 @@
           "id": "p3_u10l4_ramas_aisladas_y_objeto_completo",
           "language": "cpp",
           "question": "Escribe los tres números que conservan los objetos construidos por separado.",
-          "code": "#include <iostream>\n\nclass Registro {\npublic:\n    explicit Registro(int numero) : numero_{numero} {}\n    int leer() const { return numero_; }\n    void fijar(int numero) { numero_ = numero; }\nprivate:\n    int numero_;\n};\nclass CanalA : virtual public Registro {\npublic:\n    explicit CanalA(int numero) : Registro{numero} {}\n};\n\nclass CanalB : public virtual Registro {\npublic:\n    explicit CanalB(int numero) : Registro{numero} {}\n};\nclass Encuentro : public CanalA, public CanalB {\npublic:\n    explicit Encuentro(int numero)\n        : Registro{numero}, CanalA{10}, CanalB{20} {}\n};\nint main() {\n    CanalA solo_a{3};\n    CanalB solo_b{8};\n    Encuentro conjunto{6};\n    std::cout << solo_a.leer() << ':' << solo_b.leer()\n              << ':' << conjunto.leer();\n    return 0;\n}\n",
+          "code": "#include <iostream>\n\nclass Registro {\npublic:\n    explicit Registro(int numero) : numero_{numero} {}\n    int leer() const { return numero_; }\n    void fijar(int numero) { numero_ = numero; }\nprivate:\n    int numero_;\n};\n\nclass CanalA : virtual public Registro {\npublic:\n    explicit CanalA(int numero) : Registro{numero} {}\n};\n\nclass CanalB : public virtual Registro {\npublic:\n    explicit CanalB(int numero) : Registro{numero} {}\n};\n\nclass Encuentro : public CanalA, public CanalB {\npublic:\n    explicit Encuentro(int numero)\n        : Registro{numero}, CanalA{10}, CanalB{20} {}\n};\n\nint main() {\n    CanalA solo_a{3};\n    CanalB solo_b{8};\n    Encuentro conjunto{6};\n\n    std::cout << solo_a.leer() << ':' << solo_b.leer()\n              << ':' << conjunto.leer();\n    return 0;\n}\n",
           "answers": [
             "3:8:6"
           ],
@@ -74,7 +74,7 @@
           "id": "p3_u10l4_vistas_de_la_base_virtual_comun",
           "language": "cpp",
           "question": "Escribe las consultas iniciales y las tres consultas posteriores al cambio.",
-          "code": "#include <iostream>\n\nclass Registro {\npublic:\n    explicit Registro(int numero) : numero_{numero} {}\n    int leer() const { return numero_; }\n    void fijar(int numero) { numero_ = numero; }\nprivate:\n    int numero_;\n};\nclass CanalA : virtual public Registro {\npublic:\n    explicit CanalA(int numero) : Registro{numero} {}\n};\n\nclass CanalB : public virtual Registro {\npublic:\n    explicit CanalB(int numero) : Registro{numero} {}\n};\nclass Encuentro : public CanalA, public CanalB {\npublic:\n    explicit Encuentro(int numero)\n        : Registro{numero}, CanalA{10}, CanalB{20} {}\n};\nint main() {\n    Encuentro dato{7};\n    CanalA& canal_a = dato;\n    CanalB& canal_b = dato;\n    Registro& directa = dato;\n    Registro* acceso = &dato;\n    std::cout << canal_a.leer() << ':' << canal_b.leer() << '|';\n    canal_a.fijar(4);\n    std::cout << directa.leer() << ':' << acceso->leer()\n              << ':' << canal_b.leer();\n    return 0;\n}\n",
+          "code": "#include <iostream>\n\nclass Registro {\npublic:\n    explicit Registro(int numero) : numero_{numero} {}\n    int leer() const { return numero_; }\n    void fijar(int numero) { numero_ = numero; }\nprivate:\n    int numero_;\n};\n\nclass CanalA : virtual public Registro {\npublic:\n    explicit CanalA(int numero) : Registro{numero} {}\n};\n\nclass CanalB : public virtual Registro {\npublic:\n    explicit CanalB(int numero) : Registro{numero} {}\n};\n\nclass Encuentro : public CanalA, public CanalB {\npublic:\n    explicit Encuentro(int numero)\n        : Registro{numero}, CanalA{10}, CanalB{20} {}\n};\n\nint main() {\n    Encuentro dato{7};\n    CanalA& canal_a = dato;\n    CanalB& canal_b = dato;\n    Registro& directa = dato;\n    Registro* acceso = &dato;\n    std::cout << canal_a.leer() << ':' << canal_b.leer() << '|';\n    canal_a.fijar(4);\n    std::cout << directa.leer() << ':' << acceso->leer()\n              << ':' << canal_b.leer();\n    return 0;\n}\n",
           "answers": [
             "7:7|4:4:4"
           ],
@@ -106,7 +106,7 @@
           "id": "p3_u10l4_argumentos_de_inicializadores_virtuales_ignorados",
           "language": "cpp",
           "question": "Escribe la salida completa: primero se construye solo y después conjunto.",
-          "code": "#include <iostream>\n\nclass Registro {\npublic:\n    explicit Registro(int numero) : numero_{numero} {}\n    int leer() const { return numero_; }\n    void fijar(int numero) { numero_ = numero; }\nprivate:\n    int numero_;\n};\nint elegir(const char* etiqueta, int numero) {\n    std::cout << etiqueta << '|';\n    return numero;\n}\n\nclass CanalConEfectoA : virtual public Registro {\npublic:\n    explicit CanalConEfectoA(int numero)\n        : Registro{elegir(\"ElegirA\", numero)} {\n        std::cout << \"A|\";\n    }\n};\n\nclass CanalConEfectoB : virtual public Registro {\npublic:\n    explicit CanalConEfectoB(int numero)\n        : Registro{elegir(\"ElegirB\", numero)} {\n        std::cout << \"B|\";\n    }\n};\n\nclass EncuentroConEfecto : public CanalConEfectoA, public CanalConEfectoB {\npublic:\n    explicit EncuentroConEfecto(int numero)\n        : Registro{elegir(\"ElegirE\", numero)},\n          CanalConEfectoA{30}, CanalConEfectoB{40} {\n        std::cout << \"E|\";\n    }\n};\nint main() {\n    CanalConEfectoA solo{2};\n    std::cout << solo.leer() << '|';\n    EncuentroConEfecto conjunto{7};\n    std::cout << conjunto.leer();\n    return 0;\n}\n",
+          "code": "#include <iostream>\n\nclass Registro {\npublic:\n    explicit Registro(int numero) : numero_{numero} {}\n    int leer() const { return numero_; }\n    void fijar(int numero) { numero_ = numero; }\nprivate:\n    int numero_;\n};\n\nint elegir(const char* etiqueta, int numero) {\n    std::cout << etiqueta << '|';\n    return numero;\n}\n\nclass CanalConEfectoA : virtual public Registro {\npublic:\n    explicit CanalConEfectoA(int numero)\n        : Registro{elegir(\"ElegirA\", numero)} {\n        std::cout << \"A|\";\n    }\n};\n\nclass CanalConEfectoB : virtual public Registro {\npublic:\n    explicit CanalConEfectoB(int numero)\n        : Registro{elegir(\"ElegirB\", numero)} {\n        std::cout << \"B|\";\n    }\n};\n\nclass EncuentroConEfecto : public CanalConEfectoA, public CanalConEfectoB {\npublic:\n    explicit EncuentroConEfecto(int numero)\n        : Registro{elegir(\"ElegirE\", numero)},\n          CanalConEfectoA{30}, CanalConEfectoB{40} {\n        std::cout << \"E|\";\n    }\n};\n\nint main() {\n    CanalConEfectoA solo{2};\n\n    std::cout << solo.leer() << '|';\n    EncuentroConEfecto conjunto{7};\n    std::cout << conjunto.leer();\n\n    return 0;\n}\n",
           "answers": [
             "ElegirA|A|2|ElegirE|A|B|E|7"
           ],
@@ -138,7 +138,7 @@
           "id": "p3_u10l4_omision_usa_constructor_por_defecto_de_base_virtual",
           "language": "cpp",
           "question": "Escribe el número de solo y después el de conjunto.",
-          "code": "#include <iostream>\n\nclass RegistroConDefecto {\npublic:\n    RegistroConDefecto() : numero_{0} {}\n    explicit RegistroConDefecto(int numero) : numero_{numero} {}\n    int leer() const { return numero_; }\nprivate:\n    int numero_;\n};\n\nclass CanalDefectoA : virtual public RegistroConDefecto {\npublic:\n    explicit CanalDefectoA(int numero) : RegistroConDefecto{numero} {}\n};\n\nclass CanalDefectoB : virtual public RegistroConDefecto {\npublic:\n    explicit CanalDefectoB(int numero) : RegistroConDefecto{numero} {}\n};\n\nclass EncuentroConDefecto : public CanalDefectoA, public CanalDefectoB {\npublic:\n    EncuentroConDefecto(int a, int b) : CanalDefectoA{a}, CanalDefectoB{b} {}\n};\nint main() {\n    CanalDefectoA solo{8};\n    EncuentroConDefecto conjunto{3, 6};\n    std::cout << solo.leer() << ':' << conjunto.leer();\n    return 0;\n}\n",
+          "code": "#include <iostream>\n\nclass RegistroConDefecto {\npublic:\n    RegistroConDefecto() : numero_{0} {}\n    explicit RegistroConDefecto(int numero) : numero_{numero} {}\n    int leer() const { return numero_; }\nprivate:\n    int numero_;\n};\n\nclass CanalDefectoA : virtual public RegistroConDefecto {\npublic:\n    explicit CanalDefectoA(int numero) : RegistroConDefecto{numero} {}\n};\n\nclass CanalDefectoB : virtual public RegistroConDefecto {\npublic:\n    explicit CanalDefectoB(int numero) : RegistroConDefecto{numero} {}\n};\n\nclass EncuentroConDefecto : public CanalDefectoA, public CanalDefectoB {\npublic:\n    EncuentroConDefecto(int a, int b) : CanalDefectoA{a}, CanalDefectoB{b} {}\n};\n\nint main() {\n    CanalDefectoA solo{8};\n    EncuentroConDefecto conjunto{3, 6};\n\n    std::cout << solo.leer() << ':' << conjunto.leer();\n\n    return 0;\n}\n",
           "answers": [
             "8:0"
           ],
@@ -199,7 +199,7 @@
           "id": "p3_u10l4_orden_con_base_virtual_y_miembro",
           "language": "cpp",
           "question": "Escribe la traza completa, desde la primera construcción hasta Fin.",
-          "code": "#include <iostream>\n\nclass RegistroConTraza {\npublic:\n    explicit RegistroConTraza(int numero) : numero_{numero} {\n        std::cout << \"R+\" << numero_ << '|';\n    }\n    ~RegistroConTraza() { std::cout << \"R-\" << numero_ << '|'; }\nprivate:\n    int numero_;\n};\n\nclass TrazaA : virtual public RegistroConTraza {\npublic:\n    explicit TrazaA(int numero) : RegistroConTraza{numero} {\n        std::cout << \"A+|\";\n    }\n    ~TrazaA() { std::cout << \"A-|\"; }\n};\n\nclass TrazaB : virtual public RegistroConTraza {\npublic:\n    explicit TrazaB(int numero) : RegistroConTraza{numero} {\n        std::cout << \"B+|\";\n    }\n    ~TrazaB() { std::cout << \"B-|\"; }\n};\n\nclass Marca {\npublic:\n    Marca() { std::cout << \"M+|\"; }\n    ~Marca() { std::cout << \"M-|\"; }\n};\n\nclass EncuentroConTraza : public TrazaA, public TrazaB {\npublic:\n    explicit EncuentroConTraza(int numero)\n        : RegistroConTraza{numero}, TrazaA{10}, TrazaB{20}, marca_{} {\n        std::cout << \"E+|\";\n    }\n    ~EncuentroConTraza() { std::cout << \"E-|\"; }\nprivate:\n    Marca marca_;\n};\nint main() {\n    {\n        EncuentroConTraza dato{5};\n        std::cout << \"Uso|\";\n    }\n    std::cout << \"Fin\";\n    return 0;\n}\n",
+          "code": "#include <iostream>\n\nclass RegistroConTraza {\npublic:\n    explicit RegistroConTraza(int numero) : numero_{numero} {\n        std::cout << \"R+\" << numero_ << '|';\n    }\n    ~RegistroConTraza() { std::cout << \"R-\" << numero_ << '|'; }\nprivate:\n    int numero_;\n};\n\nclass TrazaA : virtual public RegistroConTraza {\npublic:\n    explicit TrazaA(int numero) : RegistroConTraza{numero} {\n        std::cout << \"A+|\";\n    }\n    ~TrazaA() { std::cout << \"A-|\"; }\n};\n\nclass TrazaB : virtual public RegistroConTraza {\npublic:\n    explicit TrazaB(int numero) : RegistroConTraza{numero} {\n        std::cout << \"B+|\";\n    }\n    ~TrazaB() { std::cout << \"B-|\"; }\n};\n\nclass Marca {\npublic:\n    Marca() { std::cout << \"M+|\"; }\n    ~Marca() { std::cout << \"M-|\"; }\n};\n\nclass EncuentroConTraza : public TrazaA, public TrazaB {\npublic:\n    explicit EncuentroConTraza(int numero)\n        : RegistroConTraza{numero}, TrazaA{10}, TrazaB{20}, marca_{} {\n        std::cout << \"E+|\";\n    }\n    ~EncuentroConTraza() { std::cout << \"E-|\"; }\nprivate:\n    Marca marca_;\n};\n\nint main() {\n    {\n        EncuentroConTraza dato{5};\n        std::cout << \"Uso|\";\n    }\n    std::cout << \"Fin\";\n\n    return 0;\n}\n",
           "answers": [
             "R+5|A+|B+|M+|E+|Uso|E-|M-|B-|A-|R-5|Fin"
           ],
@@ -227,7 +227,7 @@
           "id": "p3_u10l4_copia_independiente_de_objeto_con_base_virtual",
           "language": "cpp",
           "question": "Escribe el número de original, el de copia y la consulta a copia por CanalB.",
-          "code": "#include <iostream>\n\nclass Registro {\npublic:\n    explicit Registro(int numero) : numero_{numero} {}\n    int leer() const { return numero_; }\n    void fijar(int numero) { numero_ = numero; }\nprivate:\n    int numero_;\n};\nclass CanalA : virtual public Registro {\npublic:\n    explicit CanalA(int numero) : Registro{numero} {}\n};\n\nclass CanalB : public virtual Registro {\npublic:\n    explicit CanalB(int numero) : Registro{numero} {}\n};\nclass Encuentro : public CanalA, public CanalB {\npublic:\n    explicit Encuentro(int numero)\n        : Registro{numero}, CanalA{10}, CanalB{20} {}\n};\nint main() {\n    Encuentro original{4};\n    Encuentro copia{original};\n    copia.CanalA::fijar(9);\n    original.CanalB::fijar(2);\n    std::cout << original.leer() << ':' << copia.leer()\n              << ':' << copia.CanalB::leer();\n    return 0;\n}\n",
+          "code": "#include <iostream>\n\nclass Registro {\npublic:\n    explicit Registro(int numero) : numero_{numero} {}\n    int leer() const { return numero_; }\n    void fijar(int numero) { numero_ = numero; }\nprivate:\n    int numero_;\n};\n\nclass CanalA : virtual public Registro {\npublic:\n    explicit CanalA(int numero) : Registro{numero} {}\n};\n\nclass CanalB : public virtual Registro {\npublic:\n    explicit CanalB(int numero) : Registro{numero} {}\n};\n\nclass Encuentro : public CanalA, public CanalB {\npublic:\n    explicit Encuentro(int numero)\n        : Registro{numero}, CanalA{10}, CanalB{20} {}\n};\n\nint main() {\n    Encuentro original{4};\n    Encuentro copia{original};\n    copia.CanalA::fijar(9);\n    original.CanalB::fijar(2);\n    std::cout << original.leer() << ':' << copia.leer()\n              << ':' << copia.CanalB::leer();\n    return 0;\n}\n",
           "answers": [
             "2:9:9"
           ],
@@ -341,7 +341,7 @@
           "id": "p3_u10l4_codigo_compartido_y_copia_completa",
           "language": "cpp",
           "question": "Escribe las dos líneas completas tras los cambios de código y valor.",
-          "code": "#include <iostream>\n\nclass Codigo {\npublic:\n    explicit Codigo(int codigo) : codigo_{codigo} {}\n    int codigo() const { return codigo_; }\n    void cambiar_codigo(int codigo) { codigo_ = codigo; }\nprivate:\n    int codigo_;\n};\nclass ConValor : public virtual Codigo {\npublic:\n    ConValor(int codigo, int valor) : Codigo{codigo}, valor_{valor} {}\n    int valor() const { return valor_; }\n    void cambiar_valor(int valor) { valor_ = valor; }\nprivate:\n    int valor_;\n};\n\nclass ConMarca : public virtual Codigo {\npublic:\n    ConMarca(int codigo, int marca) : Codigo{codigo}, marca_{marca} {}\n    int marca() const { return marca_; }\nprivate:\n    int marca_;\n};\n\nclass Ficha : public ConValor, public ConMarca {\npublic:\n    Ficha(int codigo, int valor, int marca)\n        : Codigo{codigo}, ConValor{codigo, valor}, ConMarca{codigo, marca} {}\n};\nint main() {\n    Ficha original{7, 4, 9};\n    const ConValor& por_valor = original;\n    const ConMarca& por_marca = original;\n    Ficha copia{original};\n    original.cambiar_codigo(5);\n    original.cambiar_valor(-2);\n    copia.cambiar_codigo(8);\n    std::cout << por_valor.codigo() << '|' << por_marca.codigo() << '|'\n              << original.valor() << '|' << original.marca() << '\\n';\n    std::cout << copia.codigo() << '|' << copia.valor() << '|' << copia.marca();\n    return 0;\n}\n",
+          "code": "#include <iostream>\n\nclass Codigo {\npublic:\n    explicit Codigo(int codigo) : codigo_{codigo} {}\n    int codigo() const { return codigo_; }\n    void cambiar_codigo(int codigo) { codigo_ = codigo; }\nprivate:\n    int codigo_;\n};\n\nclass ConValor : public virtual Codigo {\npublic:\n    ConValor(int codigo, int valor) : Codigo{codigo}, valor_{valor} {}\n    int valor() const { return valor_; }\n    void cambiar_valor(int valor) { valor_ = valor; }\nprivate:\n    int valor_;\n};\n\nclass ConMarca : public virtual Codigo {\npublic:\n    ConMarca(int codigo, int marca) : Codigo{codigo}, marca_{marca} {}\n    int marca() const { return marca_; }\nprivate:\n    int marca_;\n};\n\nclass Ficha : public ConValor, public ConMarca {\npublic:\n    Ficha(int codigo, int valor, int marca)\n        : Codigo{codigo}, ConValor{codigo, valor}, ConMarca{codigo, marca} {}\n};\n\nint main() {\n    Ficha original{7, 4, 9};\n    const ConValor& por_valor = original;\n    const ConMarca& por_marca = original;\n    Ficha copia{original};\n    original.cambiar_codigo(5);\n    original.cambiar_valor(-2);\n    copia.cambiar_codigo(8);\n    std::cout << por_valor.codigo() << '|' << por_marca.codigo() << '|'\n              << original.valor() << '|' << original.marca() << '\\n';\n    std::cout << copia.codigo() << '|' << copia.valor() << '|' << copia.marca();\n\n    return 0;\n}\n",
           "answers": [
             "5|5|-2|9\n8|4|9"
           ],
@@ -402,7 +402,7 @@
           "id": "p3_u10l4_objeto_completo_y_vista_a_ficha",
           "language": "cpp",
           "question": "Escribe las consultas de sola, parte y completa, seguidas por la firma.",
-          "code": "#include <iostream>\n\nclass Codigo {\npublic:\n    explicit Codigo(int codigo) : codigo_{codigo} {}\n    int codigo() const { return codigo_; }\n    void cambiar_codigo(int codigo) { codigo_ = codigo; }\nprivate:\n    int codigo_;\n};\nclass ConValor : public virtual Codigo {\npublic:\n    ConValor(int codigo, int valor) : Codigo{codigo}, valor_{valor} {}\n    int valor() const { return valor_; }\n    void cambiar_valor(int valor) { valor_ = valor; }\nprivate:\n    int valor_;\n};\n\nclass ConMarca : public virtual Codigo {\npublic:\n    ConMarca(int codigo, int marca) : Codigo{codigo}, marca_{marca} {}\n    int marca() const { return marca_; }\nprivate:\n    int marca_;\n};\n\nclass Ficha : public ConValor, public ConMarca {\npublic:\n    Ficha(int codigo, int valor, int marca)\n        : Codigo{codigo}, ConValor{codigo, valor}, ConMarca{codigo, marca} {}\n};\nclass FichaFirmada : public Ficha {\npublic:\n    FichaFirmada(int codigo, int valor, int marca, int firma)\n        : Codigo{codigo}, Ficha{100, valor, marca}, firma_{firma} {}\n\n    int firma() const { return firma_; }\nprivate:\n    int firma_;\n};\nint main() {\n    Ficha sola{13, 6, 2};\n    FichaFirmada completa{17, 6, 2, 21};\n    const Ficha& parte = completa;\n    std::cout << sola.codigo() << '|' << parte.codigo() << '|'\n              << completa.codigo() << '|' << completa.firma();\n    return 0;\n}\n",
+          "code": "#include <iostream>\n\nclass Codigo {\npublic:\n    explicit Codigo(int codigo) : codigo_{codigo} {}\n    int codigo() const { return codigo_; }\n    void cambiar_codigo(int codigo) { codigo_ = codigo; }\nprivate:\n    int codigo_;\n};\n\nclass ConValor : public virtual Codigo {\npublic:\n    ConValor(int codigo, int valor) : Codigo{codigo}, valor_{valor} {}\n    int valor() const { return valor_; }\n    void cambiar_valor(int valor) { valor_ = valor; }\nprivate:\n    int valor_;\n};\n\nclass ConMarca : public virtual Codigo {\npublic:\n    ConMarca(int codigo, int marca) : Codigo{codigo}, marca_{marca} {}\n    int marca() const { return marca_; }\nprivate:\n    int marca_;\n};\n\nclass Ficha : public ConValor, public ConMarca {\npublic:\n    Ficha(int codigo, int valor, int marca)\n        : Codigo{codigo}, ConValor{codigo, valor}, ConMarca{codigo, marca} {}\n};\n\nclass FichaFirmada : public Ficha {\npublic:\n    FichaFirmada(int codigo, int valor, int marca, int firma)\n        : Codigo{codigo}, Ficha{100, valor, marca}, firma_{firma} {}\n\n    int firma() const { return firma_; }\nprivate:\n    int firma_;\n};\n\nint main() {\n    Ficha sola{13, 6, 2};\n    FichaFirmada completa{17, 6, 2, 21};\n    const Ficha& parte = completa;\n\n    std::cout << sola.codigo() << '|' << parte.codigo() << '|'\n              << completa.codigo() << '|' << completa.firma();\n    return 0;\n}\n",
           "answers": [
             "13|17|17|21"
           ],
@@ -1228,6 +1228,182 @@
       }
     },
     "additions": [],
-    "editorial": []
+    "editorial": [
+      {
+        "id": "block_0000_0003",
+        "beforeSha256": "91cbf053bbe7ad1c173a5b975c7a14bf8fe8e56fc5c70f6ed031abde248deb5c",
+        "afterSha256": "61828fdbeff2370412e528d67b1469a7317a26b9321a331a3c35c74758ae971f"
+      },
+      {
+        "id": "block_0001_0004",
+        "beforeSha256": "9c4a698857858c46cb56926f3a33c80675480493451d93e84af43fbce118f5f9",
+        "afterSha256": "c70de686fbc0eca6f7bdcfbc759ff0712d2fceaaeaf4a322cf8b6c8153d1a685"
+      },
+      {
+        "id": "block_0002_0002",
+        "beforeSha256": "baebfd18afc1812ece17cb16b53699c30ffdd8086a767341e3897d88b42d1105",
+        "afterSha256": "7193cfec17359cb76776448757ceb9774cd62c7b8130e3028055a4917e5d50a1"
+      },
+      {
+        "id": "block_0003_0003",
+        "beforeSha256": "8d5f84dd989057b2a07d76adc7039d39289221f37982f0ffad0e3d030acadda4",
+        "afterSha256": "c66dd3c51e498fba313614a0b02cfca27a8aa8e5b96c039d493f053ea5335e74"
+      },
+      {
+        "id": "block_0004_0003",
+        "beforeSha256": "beb1fa2368ad913f741b28fa082e0b4fb4cdabb9d5924c9ca6dff8d0c7896e26",
+        "afterSha256": "225699f76a0d41cff1eea4babbb6074af3c59375c5bf93a245b6031a73d365be"
+      },
+      {
+        "id": "block_0006_0003",
+        "beforeSha256": "cc1337b2fe75c033d936e6db806bea880732d849bd3c2391a349b53599a0522e",
+        "afterSha256": "3850c494e6985091284ca6f33766c1041c4e0a7563071d83997d50beb9861c9e"
+      },
+      {
+        "id": "block_0007_0002",
+        "beforeSha256": "572860ad6d51669df8c6c30c5ba00736c32d4a1f3eee21c43671a1da760663dc",
+        "afterSha256": "7c99c117f1a13dc8d92f93998fb12340edfa1a82c369de7586981a09ce44878a"
+      },
+      {
+        "id": "block_0010_0004",
+        "beforeSha256": "9b8c52163571b399f74859e2d165f2182161ef1503043cba8e861fe74f2d1a56",
+        "afterSha256": "2b7fe5a3aff6a8ed3c33f080bb35dd66dec1341f02de7ea434226775ba6aa1ae"
+      },
+      {
+        "id": "block_0012_0003",
+        "beforeSha256": "2651eee2584de2e7163441f623e09e487cac3cc92a91b4cb7d79d91b1f43fe1c",
+        "afterSha256": "f851e19c686990f736e24369e8408619e921c984f18f7240bfe10df7a65432e7"
+      }
+    ],
+    "sourceFormatRevisions": [
+      {
+        "id": "block_0000_0003",
+        "block": {
+          "type": "code",
+          "language": "cpp",
+          "code": "class Registro {\npublic:\n    explicit Registro(int numero) : numero_{numero} {}\n    int leer() const { return numero_; }\n    void fijar(int numero) { numero_ = numero; }\nprivate:\n    int numero_;\n};\nclass CanalA : virtual public Registro {\npublic:\n    explicit CanalA(int numero) : Registro{numero} {}\n};\n\nclass CanalB : public virtual Registro {\npublic:\n    explicit CanalB(int numero) : Registro{numero} {}\n};\nclass Encuentro : public CanalA, public CanalB {\npublic:\n    explicit Encuentro(int numero)\n        : Registro{numero}, CanalA{10}, CanalB{20} {}\n};\n"
+        }
+      },
+      {
+        "id": "block_0001_0004",
+        "block": {
+          "type": "output_prediction",
+          "id": "p3_u10l4_ramas_aisladas_y_objeto_completo",
+          "language": "cpp",
+          "question": "Escribe los tres números que conservan los objetos construidos por separado.",
+          "code": "#include <iostream>\n\nclass Registro {\npublic:\n    explicit Registro(int numero) : numero_{numero} {}\n    int leer() const { return numero_; }\n    void fijar(int numero) { numero_ = numero; }\nprivate:\n    int numero_;\n};\nclass CanalA : virtual public Registro {\npublic:\n    explicit CanalA(int numero) : Registro{numero} {}\n};\n\nclass CanalB : public virtual Registro {\npublic:\n    explicit CanalB(int numero) : Registro{numero} {}\n};\nclass Encuentro : public CanalA, public CanalB {\npublic:\n    explicit Encuentro(int numero)\n        : Registro{numero}, CanalA{10}, CanalB{20} {}\n};\nint main() {\n    CanalA solo_a{3};\n    CanalB solo_b{8};\n    Encuentro conjunto{6};\n    std::cout << solo_a.leer() << ':' << solo_b.leer()\n              << ':' << conjunto.leer();\n    return 0;\n}\n",
+          "answers": [
+            "3:8:6"
+          ],
+          "outputComparison": "exact",
+          "explanation": "solo_a prepara su Registro con tres y solo_b prepara otro Registro con ocho. conjunto es otro objeto completo y su constructor Encuentro prepara su base virtual con seis. Los tres objetos completos no comparten entre sí un Registro: lo comparten las dos ramas que están dentro de cada Encuentro."
+        }
+      },
+      {
+        "id": "block_0002_0002",
+        "block": {
+          "type": "output_prediction",
+          "id": "p3_u10l4_vistas_de_la_base_virtual_comun",
+          "language": "cpp",
+          "question": "Escribe las consultas iniciales y las tres consultas posteriores al cambio.",
+          "code": "#include <iostream>\n\nclass Registro {\npublic:\n    explicit Registro(int numero) : numero_{numero} {}\n    int leer() const { return numero_; }\n    void fijar(int numero) { numero_ = numero; }\nprivate:\n    int numero_;\n};\nclass CanalA : virtual public Registro {\npublic:\n    explicit CanalA(int numero) : Registro{numero} {}\n};\n\nclass CanalB : public virtual Registro {\npublic:\n    explicit CanalB(int numero) : Registro{numero} {}\n};\nclass Encuentro : public CanalA, public CanalB {\npublic:\n    explicit Encuentro(int numero)\n        : Registro{numero}, CanalA{10}, CanalB{20} {}\n};\nint main() {\n    Encuentro dato{7};\n    CanalA& canal_a = dato;\n    CanalB& canal_b = dato;\n    Registro& directa = dato;\n    Registro* acceso = &dato;\n    std::cout << canal_a.leer() << ':' << canal_b.leer() << '|';\n    canal_a.fijar(4);\n    std::cout << directa.leer() << ':' << acceso->leer()\n              << ':' << canal_b.leer();\n    return 0;\n}\n",
+          "answers": [
+            "7:7|4:4:4"
+          ],
+          "outputComparison": "exact",
+          "explanation": "Las dos ramas comienzan consultando el mismo Registro con siete. canal_a.fijar(4) cambia ese único número a cuatro. directa, acceso y canal_b utilizan después esa misma parte y observan cuatro. Las referencias a las ramas no son copias de sus datos."
+        }
+      },
+      {
+        "id": "block_0003_0003",
+        "block": {
+          "type": "output_prediction",
+          "id": "p3_u10l4_argumentos_de_inicializadores_virtuales_ignorados",
+          "language": "cpp",
+          "question": "Escribe la salida completa: primero se construye solo y después conjunto.",
+          "code": "#include <iostream>\n\nclass Registro {\npublic:\n    explicit Registro(int numero) : numero_{numero} {}\n    int leer() const { return numero_; }\n    void fijar(int numero) { numero_ = numero; }\nprivate:\n    int numero_;\n};\nint elegir(const char* etiqueta, int numero) {\n    std::cout << etiqueta << '|';\n    return numero;\n}\n\nclass CanalConEfectoA : virtual public Registro {\npublic:\n    explicit CanalConEfectoA(int numero)\n        : Registro{elegir(\"ElegirA\", numero)} {\n        std::cout << \"A|\";\n    }\n};\n\nclass CanalConEfectoB : virtual public Registro {\npublic:\n    explicit CanalConEfectoB(int numero)\n        : Registro{elegir(\"ElegirB\", numero)} {\n        std::cout << \"B|\";\n    }\n};\n\nclass EncuentroConEfecto : public CanalConEfectoA, public CanalConEfectoB {\npublic:\n    explicit EncuentroConEfecto(int numero)\n        : Registro{elegir(\"ElegirE\", numero)},\n          CanalConEfectoA{30}, CanalConEfectoB{40} {\n        std::cout << \"E|\";\n    }\n};\nint main() {\n    CanalConEfectoA solo{2};\n    std::cout << solo.leer() << '|';\n    EncuentroConEfecto conjunto{7};\n    std::cout << conjunto.leer();\n    return 0;\n}\n",
+          "answers": [
+            "ElegirA|A|2|ElegirE|A|B|E|7"
+          ],
+          "outputComparison": "exact",
+          "explanation": "Al construir solo, CanalConEfectoA es la clase del objeto completo: ejecuta elegir con ElegirA, prepara Registro con dos y escribe A. Después se consulta ese dos. Al construir conjunto, sólo el inicializador de Registro de EncuentroConEfecto ejecuta elegir, con ElegirE y siete. Las ramas ejecutan sus cuerpos A y B, pero no las llamadas elegir de sus inicializadores ignorados. Finalmente se escribe E y se consulta siete."
+        }
+      },
+      {
+        "id": "block_0004_0003",
+        "block": {
+          "type": "output_prediction",
+          "id": "p3_u10l4_omision_usa_constructor_por_defecto_de_base_virtual",
+          "language": "cpp",
+          "question": "Escribe el número de solo y después el de conjunto.",
+          "code": "#include <iostream>\n\nclass RegistroConDefecto {\npublic:\n    RegistroConDefecto() : numero_{0} {}\n    explicit RegistroConDefecto(int numero) : numero_{numero} {}\n    int leer() const { return numero_; }\nprivate:\n    int numero_;\n};\n\nclass CanalDefectoA : virtual public RegistroConDefecto {\npublic:\n    explicit CanalDefectoA(int numero) : RegistroConDefecto{numero} {}\n};\n\nclass CanalDefectoB : virtual public RegistroConDefecto {\npublic:\n    explicit CanalDefectoB(int numero) : RegistroConDefecto{numero} {}\n};\n\nclass EncuentroConDefecto : public CanalDefectoA, public CanalDefectoB {\npublic:\n    EncuentroConDefecto(int a, int b) : CanalDefectoA{a}, CanalDefectoB{b} {}\n};\nint main() {\n    CanalDefectoA solo{8};\n    EncuentroConDefecto conjunto{3, 6};\n    std::cout << solo.leer() << ':' << conjunto.leer();\n    return 0;\n}\n",
+          "answers": [
+            "8:0"
+          ],
+          "outputComparison": "exact",
+          "explanation": "solo tiene tipo CanalDefectoA y prepara su base con ocho. conjunto tiene tipo EncuentroConDefecto: al omitir su inicializador de RegistroConDefecto, usa el constructor sin argumentos, que guarda cero. Los argumentos tres y seis sólo llegan a las ramas; sus inicializadores de la base virtual se ignoran en esta construcción."
+        }
+      },
+      {
+        "id": "block_0006_0003",
+        "block": {
+          "type": "output_prediction",
+          "id": "p3_u10l4_orden_con_base_virtual_y_miembro",
+          "language": "cpp",
+          "question": "Escribe la traza completa, desde la primera construcción hasta Fin.",
+          "code": "#include <iostream>\n\nclass RegistroConTraza {\npublic:\n    explicit RegistroConTraza(int numero) : numero_{numero} {\n        std::cout << \"R+\" << numero_ << '|';\n    }\n    ~RegistroConTraza() { std::cout << \"R-\" << numero_ << '|'; }\nprivate:\n    int numero_;\n};\n\nclass TrazaA : virtual public RegistroConTraza {\npublic:\n    explicit TrazaA(int numero) : RegistroConTraza{numero} {\n        std::cout << \"A+|\";\n    }\n    ~TrazaA() { std::cout << \"A-|\"; }\n};\n\nclass TrazaB : virtual public RegistroConTraza {\npublic:\n    explicit TrazaB(int numero) : RegistroConTraza{numero} {\n        std::cout << \"B+|\";\n    }\n    ~TrazaB() { std::cout << \"B-|\"; }\n};\n\nclass Marca {\npublic:\n    Marca() { std::cout << \"M+|\"; }\n    ~Marca() { std::cout << \"M-|\"; }\n};\n\nclass EncuentroConTraza : public TrazaA, public TrazaB {\npublic:\n    explicit EncuentroConTraza(int numero)\n        : RegistroConTraza{numero}, TrazaA{10}, TrazaB{20}, marca_{} {\n        std::cout << \"E+|\";\n    }\n    ~EncuentroConTraza() { std::cout << \"E-|\"; }\nprivate:\n    Marca marca_;\n};\nint main() {\n    {\n        EncuentroConTraza dato{5};\n        std::cout << \"Uso|\";\n    }\n    std::cout << \"Fin\";\n    return 0;\n}\n",
+          "answers": [
+            "R+5|A+|B+|M+|E+|Uso|E-|M-|B-|A-|R-5|Fin"
+          ],
+          "outputComparison": "exact",
+          "explanation": "Primero se construye RegistroConTraza con cinco. Después terminan los cuerpos de TrazaA y TrazaB; se construye marca_ y termina el cuerpo de EncuentroConTraza. main escribe Uso. Al salir del bloque, se ejecuta primero el cuerpo ~EncuentroConTraza; se destruye marca_; después las ramas en orden inverso, TrazaB y TrazaA. Finalmente se destruye la única base virtual RegistroConTraza y main escribe Fin. Las ramas no vuelven a destruir por separado esa base común."
+        }
+      },
+      {
+        "id": "block_0007_0002",
+        "block": {
+          "type": "output_prediction",
+          "id": "p3_u10l4_copia_independiente_de_objeto_con_base_virtual",
+          "language": "cpp",
+          "question": "Escribe el número de original, el de copia y la consulta a copia por CanalB.",
+          "code": "#include <iostream>\n\nclass Registro {\npublic:\n    explicit Registro(int numero) : numero_{numero} {}\n    int leer() const { return numero_; }\n    void fijar(int numero) { numero_ = numero; }\nprivate:\n    int numero_;\n};\nclass CanalA : virtual public Registro {\npublic:\n    explicit CanalA(int numero) : Registro{numero} {}\n};\n\nclass CanalB : public virtual Registro {\npublic:\n    explicit CanalB(int numero) : Registro{numero} {}\n};\nclass Encuentro : public CanalA, public CanalB {\npublic:\n    explicit Encuentro(int numero)\n        : Registro{numero}, CanalA{10}, CanalB{20} {}\n};\nint main() {\n    Encuentro original{4};\n    Encuentro copia{original};\n    copia.CanalA::fijar(9);\n    original.CanalB::fijar(2);\n    std::cout << original.leer() << ':' << copia.leer()\n              << ':' << copia.CanalB::leer();\n    return 0;\n}\n",
+          "answers": [
+            "2:9:9"
+          ],
+          "outputComparison": "exact",
+          "explanation": "Los dos objetos completos comienzan con cuatro en sus registros independientes. Cambiar por CanalA de copia guarda nueve en el Registro de copia, que también observa su CanalB. Cambiar por CanalB de original guarda dos en otro Registro. Por eso la consulta de original observa dos y las dos consultas de copia observan nueve."
+        }
+      },
+      {
+        "id": "block_0010_0004",
+        "block": {
+          "type": "output_prediction",
+          "id": "p3_u10l4_codigo_compartido_y_copia_completa",
+          "language": "cpp",
+          "question": "Escribe las dos líneas completas tras los cambios de código y valor.",
+          "code": "#include <iostream>\n\nclass Codigo {\npublic:\n    explicit Codigo(int codigo) : codigo_{codigo} {}\n    int codigo() const { return codigo_; }\n    void cambiar_codigo(int codigo) { codigo_ = codigo; }\nprivate:\n    int codigo_;\n};\nclass ConValor : public virtual Codigo {\npublic:\n    ConValor(int codigo, int valor) : Codigo{codigo}, valor_{valor} {}\n    int valor() const { return valor_; }\n    void cambiar_valor(int valor) { valor_ = valor; }\nprivate:\n    int valor_;\n};\n\nclass ConMarca : public virtual Codigo {\npublic:\n    ConMarca(int codigo, int marca) : Codigo{codigo}, marca_{marca} {}\n    int marca() const { return marca_; }\nprivate:\n    int marca_;\n};\n\nclass Ficha : public ConValor, public ConMarca {\npublic:\n    Ficha(int codigo, int valor, int marca)\n        : Codigo{codigo}, ConValor{codigo, valor}, ConMarca{codigo, marca} {}\n};\nint main() {\n    Ficha original{7, 4, 9};\n    const ConValor& por_valor = original;\n    const ConMarca& por_marca = original;\n    Ficha copia{original};\n    original.cambiar_codigo(5);\n    original.cambiar_valor(-2);\n    copia.cambiar_codigo(8);\n    std::cout << por_valor.codigo() << '|' << por_marca.codigo() << '|'\n              << original.valor() << '|' << original.marca() << '\\n';\n    std::cout << copia.codigo() << '|' << copia.valor() << '|' << copia.marca();\n    return 0;\n}\n",
+          "answers": [
+            "5|5|-2|9\n8|4|9"
+          ],
+          "outputComparison": "exact",
+          "explanation": "Las dos vistas de original observan su código cinco porque ambas alcanzan el mismo Codigo. Su valor pasa a menos dos y su marca conserva nueve. copia es otro objeto completo: cambia su código a ocho y conserva los datos copiados, cuatro y nueve. Tener una base compartida dentro de cada ficha no comparte los datos entre fichas distintas."
+        }
+      },
+      {
+        "id": "block_0012_0003",
+        "block": {
+          "type": "output_prediction",
+          "id": "p3_u10l4_objeto_completo_y_vista_a_ficha",
+          "language": "cpp",
+          "question": "Escribe las consultas de sola, parte y completa, seguidas por la firma.",
+          "code": "#include <iostream>\n\nclass Codigo {\npublic:\n    explicit Codigo(int codigo) : codigo_{codigo} {}\n    int codigo() const { return codigo_; }\n    void cambiar_codigo(int codigo) { codigo_ = codigo; }\nprivate:\n    int codigo_;\n};\nclass ConValor : public virtual Codigo {\npublic:\n    ConValor(int codigo, int valor) : Codigo{codigo}, valor_{valor} {}\n    int valor() const { return valor_; }\n    void cambiar_valor(int valor) { valor_ = valor; }\nprivate:\n    int valor_;\n};\n\nclass ConMarca : public virtual Codigo {\npublic:\n    ConMarca(int codigo, int marca) : Codigo{codigo}, marca_{marca} {}\n    int marca() const { return marca_; }\nprivate:\n    int marca_;\n};\n\nclass Ficha : public ConValor, public ConMarca {\npublic:\n    Ficha(int codigo, int valor, int marca)\n        : Codigo{codigo}, ConValor{codigo, valor}, ConMarca{codigo, marca} {}\n};\nclass FichaFirmada : public Ficha {\npublic:\n    FichaFirmada(int codigo, int valor, int marca, int firma)\n        : Codigo{codigo}, Ficha{100, valor, marca}, firma_{firma} {}\n\n    int firma() const { return firma_; }\nprivate:\n    int firma_;\n};\nint main() {\n    Ficha sola{13, 6, 2};\n    FichaFirmada completa{17, 6, 2, 21};\n    const Ficha& parte = completa;\n    std::cout << sola.codigo() << '|' << parte.codigo() << '|'\n              << completa.codigo() << '|' << completa.firma();\n    return 0;\n}\n",
+          "answers": [
+            "13|17|17|21"
+          ],
+          "outputComparison": "exact",
+          "explanation": "sola tiene el código trece inicializado por su constructor Ficha. completa tiene el código diecisiete inicializado por FichaFirmada. parte sigue sobre esa misma completa y observa diecisiete; obtener la referencia no ejecuta otro constructor. La firma de completa es veintiuno. El cien entregado internamente a Ficha no sustituyó el código que preparó la clase completa."
+        }
+      }
+    ]
   }
 }

@@ -122,7 +122,7 @@
         {
           "type": "cpp_compiler",
           "language": "cpp",
-          "initialCode": "#include <iostream>\n\nint cajas_para(int piezas) {\n    const int piezas_por_caja{4};\n    return (piezas + piezas_por_caja - 1) / piezas_por_caja;\n}\n\nbool intentar_cajas(int piezas, int& resultado) {\n    if (piezas < 0 || piezas > 20) {\n        return false;\n    }\n    resultado = cajas_para(piezas);\n    return true;\n}\n\nvoid informar_rechazo_cajas(std::ostream& destino, int peticion, int piezas) {\n    destino << \"Error\\n\";\n}\n\nint main() {\n    int piezas{0};\n    int peticion{0};\n    bool hubo_rechazos{false};\n    while (std::cin >> piezas) {\n        ++peticion;\n        int cajas{77};\n        if (intentar_cajas(piezas, cajas)) {\n            std::cout << \"Cajas=\" << cajas << \"\\n\";\n        } else {\n            hubo_rechazos = true;\n            informar_rechazo_cajas(std::cerr, peticion, piezas);\n        }\n    }\n    return hubo_rechazos ? 1 : 0;\n}\n",
+          "initialCode": "#include <iostream>\n\nint cajas_para(int piezas) {\n    const int piezas_por_caja{4};\n    return (piezas + piezas_por_caja - 1) / piezas_por_caja;\n}\n\nbool intentar_cajas(int piezas, int& resultado) {\n    if (piezas < 0 || piezas > 20) {\n        return false;\n    }\n    resultado = cajas_para(piezas);\n    return true;\n}\n\nvoid informar_rechazo_cajas(std::ostream& destino, int peticion, int piezas) {\n    destino << \"Error\\n\";\n}\n\nint main() {\n    int piezas{0};\n    int peticion{0};\n    bool hubo_rechazos{false};\n\n    while (std::cin >> piezas) {\n        ++peticion;\n        int cajas{77};\n        if (intentar_cajas(piezas, cajas)) {\n            std::cout << \"Cajas=\" << cajas << \"\\n\";\n        } else {\n            hubo_rechazos = true;\n            informar_rechazo_cajas(std::cerr, peticion, piezas);\n        }\n    }\n\n    return hubo_rechazos ? 1 : 0;\n}\n",
           "initialStandardInput": "-1 0 21 5\n"
         },
         {
@@ -144,7 +144,7 @@
         {
           "type": "code",
           "language": "cpp",
-          "code": "#include <iostream>\n\nint cajas_para(int piezas) {\n    const int piezas_por_caja{4};\n    return (piezas + piezas_por_caja - 1) / piezas_por_caja;\n}\n\nbool intentar_cajas(int piezas, int& resultado) {\n    if (piezas < 0 || piezas > 20) {\n        return false;\n    }\n    resultado = cajas_para(piezas);\n    return true;\n}\n\nvoid informar_rechazo_cajas(std::ostream& destino, int peticion, int piezas) {\n    destino << \"Cajas: peticion \" << peticion << \", piezas=\" << piezas\n            << \". Se admite un entero de 0 a 20. Revise la cantidad.\\n\";\n}\n\nint main() {\n    int piezas{0};\n    int peticion{0};\n    bool hubo_rechazos{false};\n    while (std::cin >> piezas) {\n        ++peticion;\n        int cajas{77};\n        if (intentar_cajas(piezas, cajas)) {\n            std::cout << \"Cajas=\" << cajas << \"\\n\";\n        } else {\n            hubo_rechazos = true;\n            informar_rechazo_cajas(std::cerr, peticion, piezas);\n        }\n    }\n    return hubo_rechazos ? 1 : 0;\n}\n"
+          "code": "#include <iostream>\n\nint cajas_para(int piezas) {\n    const int piezas_por_caja{4};\n    return (piezas + piezas_por_caja - 1) / piezas_por_caja;\n}\n\nbool intentar_cajas(int piezas, int& resultado) {\n    if (piezas < 0 || piezas > 20) {\n        return false;\n    }\n    resultado = cajas_para(piezas);\n    return true;\n}\n\nvoid informar_rechazo_cajas(std::ostream& destino, int peticion, int piezas) {\n    destino << \"Cajas: peticion \" << peticion << \", piezas=\" << piezas\n            << \". Se admite un entero de 0 a 20. Revise la cantidad.\\n\";\n}\n\nint main() {\n    int piezas{0};\n    int peticion{0};\n    bool hubo_rechazos{false};\n\n    while (std::cin >> piezas) {\n        ++peticion;\n        int cajas{77};\n        if (intentar_cajas(piezas, cajas)) {\n            std::cout << \"Cajas=\" << cajas << \"\\n\";\n        } else {\n            hubo_rechazos = true;\n            informar_rechazo_cajas(std::cerr, peticion, piezas);\n        }\n    }\n\n    return hubo_rechazos ? 1 : 0;\n}\n"
         },
         {
           "type": "paragraph",
@@ -218,7 +218,7 @@
         {
           "type": "cpp_compiler",
           "language": "cpp",
-          "initialCode": "#include <iostream>\n\nbool calcular_saldo(int cobros, int devoluciones, int& saldo) {\n    if (cobros < 0 || cobros > 9 || devoluciones < 0 || devoluciones > 9) {\n        return false;\n    }\n    saldo = cobros - devoluciones;\n    return true;\n}\n\nvoid informar_rechazo_saldo(std::ostream& destino, int peticion,\n                            int cobros, int devoluciones) {\n    destino << \"Error de saldo\\n\";\n}\n\nint main() {\n    int cobros{0};\n    int devoluciones{0};\n    int peticion{0};\n    bool hubo_rechazos{false};\n    while (std::cin >> cobros >> devoluciones) {\n        ++peticion;\n        int resultado{77};\n        if (calcular_saldo(cobros, devoluciones, resultado)) {\n            std::cout << \"Saldo=\" << resultado << \"\\n\";\n        } else {\n            hubo_rechazos = true;\n            informar_rechazo_saldo(std::cerr, peticion, cobros, devoluciones);\n        }\n    }\n    return hubo_rechazos ? 1 : 0;\n}\n",
+          "initialCode": "#include <iostream>\n\nbool calcular_saldo(int cobros, int devoluciones, int& saldo) {\n    if (cobros < 0 || cobros > 9 || devoluciones < 0 || devoluciones > 9) {\n        return false;\n    }\n    saldo = cobros - devoluciones;\n    return true;\n}\n\nvoid informar_rechazo_saldo(std::ostream& destino, int peticion,\n                            int cobros, int devoluciones) {\n    destino << \"Error de saldo\\n\";\n}\n\nint main() {\n    int cobros{0};\n    int devoluciones{0};\n    int peticion{0};\n    bool hubo_rechazos{false};\n\n    while (std::cin >> cobros >> devoluciones) {\n        ++peticion;\n        int resultado{77};\n        if (calcular_saldo(cobros, devoluciones, resultado)) {\n            std::cout << \"Saldo=\" << resultado << \"\\n\";\n        } else {\n            hubo_rechazos = true;\n            informar_rechazo_saldo(std::cerr, peticion, cobros, devoluciones);\n        }\n    }\n\n    return hubo_rechazos ? 1 : 0;\n}\n",
           "initialStandardInput": "2 3 10 0 0 -1 5 5\n"
         },
         {
@@ -240,7 +240,7 @@
         {
           "type": "code",
           "language": "cpp",
-          "code": "#include <iostream>\n\nbool calcular_saldo(int cobros, int devoluciones, int& saldo) {\n    if (cobros < 0 || cobros > 9 || devoluciones < 0 || devoluciones > 9) {\n        return false;\n    }\n    saldo = cobros - devoluciones;\n    return true;\n}\n\nvoid informar_rechazo_saldo(std::ostream& destino, int peticion,\n                            int cobros, int devoluciones) {\n    destino << \"Saldo: peticion \" << peticion << \", cobros=\" << cobros\n            << \", devoluciones=\" << devoluciones\n            << \". Se admiten enteros de 0 a 9 en ambos campos. Revise el par de datos.\\n\";\n}\n\nint main() {\n    int cobros{0};\n    int devoluciones{0};\n    int peticion{0};\n    bool hubo_rechazos{false};\n    while (std::cin >> cobros >> devoluciones) {\n        ++peticion;\n        int resultado{77};\n        if (calcular_saldo(cobros, devoluciones, resultado)) {\n            std::cout << \"Saldo=\" << resultado << \"\\n\";\n        } else {\n            hubo_rechazos = true;\n            informar_rechazo_saldo(std::cerr, peticion, cobros, devoluciones);\n        }\n    }\n    return hubo_rechazos ? 1 : 0;\n}\n"
+          "code": "#include <iostream>\n\nbool calcular_saldo(int cobros, int devoluciones, int& saldo) {\n    if (cobros < 0 || cobros > 9 || devoluciones < 0 || devoluciones > 9) {\n        return false;\n    }\n    saldo = cobros - devoluciones;\n    return true;\n}\n\nvoid informar_rechazo_saldo(std::ostream& destino, int peticion,\n                            int cobros, int devoluciones) {\n    destino << \"Saldo: peticion \" << peticion << \", cobros=\" << cobros\n            << \", devoluciones=\" << devoluciones\n            << \". Se admiten enteros de 0 a 9 en ambos campos. Revise el par de datos.\\n\";\n}\n\nint main() {\n    int cobros{0};\n    int devoluciones{0};\n    int peticion{0};\n    bool hubo_rechazos{false};\n\n    while (std::cin >> cobros >> devoluciones) {\n        ++peticion;\n        int resultado{77};\n        if (calcular_saldo(cobros, devoluciones, resultado)) {\n            std::cout << \"Saldo=\" << resultado << \"\\n\";\n        } else {\n            hubo_rechazos = true;\n            informar_rechazo_saldo(std::cerr, peticion, cobros, devoluciones);\n        }\n    }\n\n    return hubo_rechazos ? 1 : 0;\n}\n"
         },
         {
           "type": "paragraph",
@@ -1419,6 +1419,62 @@
         "id": "block_0008_0003",
         "beforeSha256": "497625f0c5af5ffff2dacb26590a454a49c61e915c522763edb3a670787ef222",
         "afterSha256": "849ba7a680b273ba25729ab05da0e3691b08bf64e1f69d1d0fcc0e000af0dd8d"
+      },
+      {
+        "id": "block_0003_0003",
+        "beforeSha256": "d7e5c96c11e7b86a0623c52c3eeef290665a1cbb76880fd3881e2b08fc51c3e0",
+        "afterSha256": "fa603816dc159b276d4fc914bec2ea8f0a1b48676eea33afb4e79aa8f5e18840"
+      },
+      {
+        "id": "block_0004_0002",
+        "beforeSha256": "dbb5be24670288948c9df27c3d132a16da7a2f00612f06e007a5e39f83127c1d",
+        "afterSha256": "a5511d443f94684489a3f5b3a0ab908abba8410811073cd13d4a7d246201c72f"
+      },
+      {
+        "id": "block_0006_0003",
+        "beforeSha256": "e6c5a6c25e58df0c6cc0146a3e82a8bfd1c962fc31a677293a3bd2a969a5829b",
+        "afterSha256": "673c1a84bd4eef1baf144b78fa24a827007d54e2899a76e2d53570533ebe65a1"
+      },
+      {
+        "id": "block_0007_0002",
+        "beforeSha256": "1afa0c118fb1315131a86f6bbf6754a3940eb46dd50314fe10057719b5af9031",
+        "afterSha256": "ad26d42da80ec6d340ab9c57acb2321f7e1d0d80e2dc342e1f118a49f1d85770"
+      }
+    ],
+    "sourceFormatRevisions": [
+      {
+        "id": "block_0003_0003",
+        "block": {
+          "type": "cpp_compiler",
+          "language": "cpp",
+          "initialCode": "#include <iostream>\n\nint cajas_para(int piezas) {\n    const int piezas_por_caja{4};\n    return (piezas + piezas_por_caja - 1) / piezas_por_caja;\n}\n\nbool intentar_cajas(int piezas, int& resultado) {\n    if (piezas < 0 || piezas > 20) {\n        return false;\n    }\n    resultado = cajas_para(piezas);\n    return true;\n}\n\nvoid informar_rechazo_cajas(std::ostream& destino, int peticion, int piezas) {\n    destino << \"Error\\n\";\n}\n\nint main() {\n    int piezas{0};\n    int peticion{0};\n    bool hubo_rechazos{false};\n    while (std::cin >> piezas) {\n        ++peticion;\n        int cajas{77};\n        if (intentar_cajas(piezas, cajas)) {\n            std::cout << \"Cajas=\" << cajas << \"\\n\";\n        } else {\n            hubo_rechazos = true;\n            informar_rechazo_cajas(std::cerr, peticion, piezas);\n        }\n    }\n    return hubo_rechazos ? 1 : 0;\n}\n",
+          "initialStandardInput": "-1 0 21 5\n"
+        }
+      },
+      {
+        "id": "block_0004_0002",
+        "block": {
+          "type": "code",
+          "language": "cpp",
+          "code": "#include <iostream>\n\nint cajas_para(int piezas) {\n    const int piezas_por_caja{4};\n    return (piezas + piezas_por_caja - 1) / piezas_por_caja;\n}\n\nbool intentar_cajas(int piezas, int& resultado) {\n    if (piezas < 0 || piezas > 20) {\n        return false;\n    }\n    resultado = cajas_para(piezas);\n    return true;\n}\n\nvoid informar_rechazo_cajas(std::ostream& destino, int peticion, int piezas) {\n    destino << \"Cajas: peticion \" << peticion << \", piezas=\" << piezas\n            << \". Se admite un entero de 0 a 20. Revise la cantidad.\\n\";\n}\n\nint main() {\n    int piezas{0};\n    int peticion{0};\n    bool hubo_rechazos{false};\n    while (std::cin >> piezas) {\n        ++peticion;\n        int cajas{77};\n        if (intentar_cajas(piezas, cajas)) {\n            std::cout << \"Cajas=\" << cajas << \"\\n\";\n        } else {\n            hubo_rechazos = true;\n            informar_rechazo_cajas(std::cerr, peticion, piezas);\n        }\n    }\n    return hubo_rechazos ? 1 : 0;\n}\n"
+        }
+      },
+      {
+        "id": "block_0006_0003",
+        "block": {
+          "type": "cpp_compiler",
+          "language": "cpp",
+          "initialCode": "#include <iostream>\n\nbool calcular_saldo(int cobros, int devoluciones, int& saldo) {\n    if (cobros < 0 || cobros > 9 || devoluciones < 0 || devoluciones > 9) {\n        return false;\n    }\n    saldo = cobros - devoluciones;\n    return true;\n}\n\nvoid informar_rechazo_saldo(std::ostream& destino, int peticion,\n                            int cobros, int devoluciones) {\n    destino << \"Error de saldo\\n\";\n}\n\nint main() {\n    int cobros{0};\n    int devoluciones{0};\n    int peticion{0};\n    bool hubo_rechazos{false};\n    while (std::cin >> cobros >> devoluciones) {\n        ++peticion;\n        int resultado{77};\n        if (calcular_saldo(cobros, devoluciones, resultado)) {\n            std::cout << \"Saldo=\" << resultado << \"\\n\";\n        } else {\n            hubo_rechazos = true;\n            informar_rechazo_saldo(std::cerr, peticion, cobros, devoluciones);\n        }\n    }\n    return hubo_rechazos ? 1 : 0;\n}\n",
+          "initialStandardInput": "2 3 10 0 0 -1 5 5\n"
+        }
+      },
+      {
+        "id": "block_0007_0002",
+        "block": {
+          "type": "code",
+          "language": "cpp",
+          "code": "#include <iostream>\n\nbool calcular_saldo(int cobros, int devoluciones, int& saldo) {\n    if (cobros < 0 || cobros > 9 || devoluciones < 0 || devoluciones > 9) {\n        return false;\n    }\n    saldo = cobros - devoluciones;\n    return true;\n}\n\nvoid informar_rechazo_saldo(std::ostream& destino, int peticion,\n                            int cobros, int devoluciones) {\n    destino << \"Saldo: peticion \" << peticion << \", cobros=\" << cobros\n            << \", devoluciones=\" << devoluciones\n            << \". Se admiten enteros de 0 a 9 en ambos campos. Revise el par de datos.\\n\";\n}\n\nint main() {\n    int cobros{0};\n    int devoluciones{0};\n    int peticion{0};\n    bool hubo_rechazos{false};\n    while (std::cin >> cobros >> devoluciones) {\n        ++peticion;\n        int resultado{77};\n        if (calcular_saldo(cobros, devoluciones, resultado)) {\n            std::cout << \"Saldo=\" << resultado << \"\\n\";\n        } else {\n            hubo_rechazos = true;\n            informar_rechazo_saldo(std::cerr, peticion, cobros, devoluciones);\n        }\n    }\n    return hubo_rechazos ? 1 : 0;\n}\n"
+        }
       }
     ]
   },

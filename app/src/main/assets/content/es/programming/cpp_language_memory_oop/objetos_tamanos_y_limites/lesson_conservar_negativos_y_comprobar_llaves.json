@@ -92,7 +92,7 @@
         {
           "type": "cpp_compiler",
           "language": "cpp",
-          "initialCode": "#include <iostream>\n#include <limits>\n\nbool convertir_a_int(long long dato, int& destino) {\n    // Este inicio solo comprueba el extremo superior.\n    const long long maximo =\n        static_cast<long long>(std::numeric_limits<int>::max());\n    if (dato > maximo) {\n        return false;\n    }\n\n    destino = static_cast<int>(dato);\n    return true;\n}\n\nint main() {\n    int caso = 0;\n    if (!(std::cin >> caso)) {\n        return 1;\n    }\n\n    const long long minimo =\n        static_cast<long long>(std::numeric_limits<int>::lowest());\n    const long long maximo =\n        static_cast<long long>(std::numeric_limits<int>::max());\n    if (minimo == std::numeric_limits<long long>::lowest()\n        || maximo == std::numeric_limits<long long>::max()) {\n        return 2;\n    }\n\n    long long dato = 0;\n    int esperado = 17;\n    switch (caso) {\n    case 1:\n        dato = minimo - 1;\n        break;\n    case 2:\n        dato = minimo;\n        esperado = std::numeric_limits<int>::lowest();\n        break;\n    case 3:\n        dato = -42;\n        esperado = -42;\n        break;\n    case 4:\n        dato = 0;\n        esperado = 0;\n        break;\n    case 5:\n        dato = 42;\n        esperado = 42;\n        break;\n    case 6:\n        dato = maximo;\n        esperado = std::numeric_limits<int>::max();\n        break;\n    case 7:\n        dato = maximo + 1;\n        break;\n    default:\n        return 1;\n    }\n\n    int destino = 17;\n    const bool aceptado = convertir_a_int(dato, destino);\n    std::cout << \"Aceptado=\" << aceptado << '\\n';\n    std::cout << \"Coincide=\" << (destino == esperado) << '\\n';\n    std::cout << \"Conservado=\" << (destino == 17) << '\\n';\n    return 0;\n}\n",
+          "initialCode": "#include <iostream>\n#include <limits>\n\nbool convertir_a_int(long long dato, int& destino) {\n    // Este inicio solo comprueba el extremo superior.\n    const long long maximo =\n        static_cast<long long>(std::numeric_limits<int>::max());\n    if (dato > maximo) {\n        return false;\n    }\n\n    destino = static_cast<int>(dato);\n    return true;\n}\n\nint main() {\n    int caso = 0;\n    if (!(std::cin >> caso)) {\n        return 1;\n    }\n\n    const long long minimo =\n        static_cast<long long>(std::numeric_limits<int>::lowest());\n    const long long maximo =\n        static_cast<long long>(std::numeric_limits<int>::max());\n    if (minimo == std::numeric_limits<long long>::lowest()\n        || maximo == std::numeric_limits<long long>::max()) {\n        return 2;\n    }\n\n    long long dato = 0;\n    int esperado = 17;\n\n    switch (caso) {\n    case 1:\n        dato = minimo - 1;\n        break;\n    case 2:\n        dato = minimo;\n        esperado = std::numeric_limits<int>::lowest();\n        break;\n    case 3:\n        dato = -42;\n        esperado = -42;\n        break;\n    case 4:\n        dato = 0;\n        esperado = 0;\n        break;\n    case 5:\n        dato = 42;\n        esperado = 42;\n        break;\n    case 6:\n        dato = maximo;\n        esperado = std::numeric_limits<int>::max();\n        break;\n    case 7:\n        dato = maximo + 1;\n        break;\n    default:\n        return 1;\n    }\n\n    int destino = 17;\n    const bool aceptado = convertir_a_int(dato, destino);\n\n    std::cout << \"Aceptado=\" << aceptado << '\\n';\n    std::cout << \"Coincide=\" << (destino == esperado) << '\\n';\n    std::cout << \"Conservado=\" << (destino == 17) << '\\n';\n\n    return 0;\n}\n",
           "initialStandardInput": "1\n",
           "outputCheck": {
             "inputComparison": "tokens",
@@ -230,7 +230,7 @@
         {
           "type": "code",
           "language": "cpp",
-          "code": "#include <iostream>\n#include <limits>\n\nbool convertir_a_int(long long dato, int& destino) {\n    const long long minimo =\n        static_cast<long long>(std::numeric_limits<int>::lowest());\n    const long long maximo =\n        static_cast<long long>(std::numeric_limits<int>::max());\n    if (dato < minimo || dato > maximo) {\n        return false;\n    }\n\n    destino = static_cast<int>(dato);\n    return true;\n}\n\nint main() {\n    int caso = 0;\n    if (!(std::cin >> caso)) {\n        return 1;\n    }\n\n    const long long minimo =\n        static_cast<long long>(std::numeric_limits<int>::lowest());\n    const long long maximo =\n        static_cast<long long>(std::numeric_limits<int>::max());\n    if (minimo == std::numeric_limits<long long>::lowest()\n        || maximo == std::numeric_limits<long long>::max()) {\n        return 2;\n    }\n\n    long long dato = 0;\n    int esperado = 17;\n    switch (caso) {\n    case 1:\n        dato = minimo - 1;\n        break;\n    case 2:\n        dato = minimo;\n        esperado = std::numeric_limits<int>::lowest();\n        break;\n    case 3:\n        dato = -42;\n        esperado = -42;\n        break;\n    case 4:\n        dato = 0;\n        esperado = 0;\n        break;\n    case 5:\n        dato = 42;\n        esperado = 42;\n        break;\n    case 6:\n        dato = maximo;\n        esperado = std::numeric_limits<int>::max();\n        break;\n    case 7:\n        dato = maximo + 1;\n        break;\n    default:\n        return 1;\n    }\n\n    int destino = 17;\n    const bool aceptado = convertir_a_int(dato, destino);\n    std::cout << \"Aceptado=\" << aceptado << '\\n';\n    std::cout << \"Coincide=\" << (destino == esperado) << '\\n';\n    std::cout << \"Conservado=\" << (destino == 17) << '\\n';\n    return 0;\n}\n"
+          "code": "#include <iostream>\n#include <limits>\n\nbool convertir_a_int(long long dato, int& destino) {\n    const long long minimo =\n        static_cast<long long>(std::numeric_limits<int>::lowest());\n    const long long maximo =\n        static_cast<long long>(std::numeric_limits<int>::max());\n    if (dato < minimo || dato > maximo) {\n        return false;\n    }\n\n    destino = static_cast<int>(dato);\n    return true;\n}\n\nint main() {\n    int caso = 0;\n    if (!(std::cin >> caso)) {\n        return 1;\n    }\n\n    const long long minimo =\n        static_cast<long long>(std::numeric_limits<int>::lowest());\n    const long long maximo =\n        static_cast<long long>(std::numeric_limits<int>::max());\n    if (minimo == std::numeric_limits<long long>::lowest()\n        || maximo == std::numeric_limits<long long>::max()) {\n        return 2;\n    }\n\n    long long dato = 0;\n    int esperado = 17;\n\n    switch (caso) {\n    case 1:\n        dato = minimo - 1;\n        break;\n    case 2:\n        dato = minimo;\n        esperado = std::numeric_limits<int>::lowest();\n        break;\n    case 3:\n        dato = -42;\n        esperado = -42;\n        break;\n    case 4:\n        dato = 0;\n        esperado = 0;\n        break;\n    case 5:\n        dato = 42;\n        esperado = 42;\n        break;\n    case 6:\n        dato = maximo;\n        esperado = std::numeric_limits<int>::max();\n        break;\n    case 7:\n        dato = maximo + 1;\n        break;\n    default:\n        return 1;\n    }\n\n    int destino = 17;\n    const bool aceptado = convertir_a_int(dato, destino);\n\n    std::cout << \"Aceptado=\" << aceptado << '\\n';\n    std::cout << \"Coincide=\" << (destino == esperado) << '\\n';\n    std::cout << \"Conservado=\" << (destino == 17) << '\\n';\n\n    return 0;\n}\n"
         },
         {
           "type": "paragraph",
@@ -301,7 +301,7 @@
           "id": "p3_u1l8_constantes_y_cero",
           "question": "Predice la salida exacta de las tres inicializaciones válidas.",
           "language": "cpp",
-          "code": "#include <iostream>\n\nint main() {\n    int cero{};\n    int primero{-42LL};\n    const long long fijo = -42;\n    int segundo{fijo};\n\n    std::cout << cero << ':' << primero << ':' << segundo;\n    return 0;\n}\n",
+          "code": "#include <iostream>\n\nint main() {\n    int cero{};\n    int primero{-42LL};\n    const long long fijo = -42;\n    int segundo{fijo};\n\n    std::cout << cero << ':' << primero << ':' << segundo;\n\n    return 0;\n}\n",
           "answers": [
             "0:-42:-42"
           ],
@@ -323,7 +323,7 @@
         {
           "type": "code",
           "language": "cpp",
-          "code": "#include <iostream>\n\nint main() {\n    long long dato = -42;\n    int copia{dato};\n    std::cout << copia;\n    return 0;\n}\n"
+          "code": "#include <iostream>\n\nint main() {\n    long long dato = -42;\n    int copia{dato};\n\n    std::cout << copia;\n\n    return 0;\n}\n"
         },
         {
           "type": "paragraph",
@@ -356,7 +356,7 @@
         {
           "type": "code",
           "language": "cpp",
-          "code": "#include <iostream>\n#include <limits>\n\n\nint main() {\n    long long dato = 0;\n    if (!(std::cin >> dato)) {\n        return 1;\n    }\n\n    const long long minimo = std::numeric_limits<int>::lowest();\n    const long long maximo = std::numeric_limits<int>::max();\n    if (dato < minimo || dato > maximo) {\n        return 0;\n    }\n\n    int copia{dato};\n    std::cout << copia;\n    return 0;\n}\n"
+          "code": "#include <iostream>\n#include <limits>\n\n\nint main() {\n    long long dato = 0;\n    if (!(std::cin >> dato)) {\n        return 1;\n    }\n\n    const long long minimo = std::numeric_limits<int>::lowest();\n    const long long maximo = std::numeric_limits<int>::max();\n\n    if (dato < minimo || dato > maximo) {\n        return 0;\n    }\n\n    int copia{dato};\n    std::cout << copia;\n\n    return 0;\n}\n"
         },
         {
           "type": "paragraph",
@@ -389,7 +389,7 @@
         {
           "type": "code",
           "language": "cpp",
-          "code": "#include <iostream>\n\nint main() {\n    long long dato = -42;\n    const long long fijo = dato;\n    int copia{fijo};\n    std::cout << copia;\n    return 0;\n}\n"
+          "code": "#include <iostream>\n\nint main() {\n    long long dato = -42;\n    const long long fijo = dato;\n    int copia{fijo};\n\n    std::cout << copia;\n\n    return 0;\n}\n"
         },
         {
           "type": "paragraph",
@@ -428,7 +428,7 @@
           "id": "p3_u1l8_cast_entre_llaves",
           "question": "Predice las dos comparaciones para el entorno Windows indicado. La primera pregunta si el original supera el máximo int; la segunda, si la copia contiene el mínimo int.",
           "language": "cpp",
-          "code": "#include <iostream>\n#include <limits>\n\n\nint main() {\n    const long long maximo = std::numeric_limits<int>::max();\n    if (maximo == std::numeric_limits<long long>::max()) {\n        return 2;\n    }\n\n    const long long dato = maximo + 1;\n    int copia{static_cast<int>(dato)};\n    std::cout << (dato > maximo) << ':'\n              << (copia == std::numeric_limits<int>::lowest());\n    return 0;\n}\n",
+          "code": "#include <iostream>\n#include <limits>\n\n\nint main() {\n    const long long maximo = std::numeric_limits<int>::max();\n    if (maximo == std::numeric_limits<long long>::max()) {\n        return 2;\n    }\n\n    const long long dato = maximo + 1;\n    int copia{static_cast<int>(dato)};\n\n    std::cout << (dato > maximo) << ':'\n              << (copia == std::numeric_limits<int>::lowest());\n    return 0;\n}\n",
           "answers": [
             "1:1"
           ],
@@ -467,7 +467,7 @@
         {
           "type": "cpp_compiler",
           "language": "cpp",
-          "initialCode": "#include <iostream>\n#include <limits>\n\nbool convertir_a_int(long long dato, int& destino) {\n    const long long minimo =\n        static_cast<long long>(std::numeric_limits<int>::lowest());\n    const long long maximo =\n        static_cast<long long>(std::numeric_limits<int>::max());\n    if (dato < minimo || dato > maximo) {\n        return false;\n    }\n\n    destino = static_cast<int>(dato);\n    return true;\n}\n\nint main() {\n    long long dato = 0;\n    if (!(std::cin >> dato)) {\n        return 1;\n    }\n\n    int destino{dato};\n    std::cout << \"Valor=\" << destino << '\\n';\n    return 0;\n}\n",
+          "initialCode": "#include <iostream>\n#include <limits>\n\nbool convertir_a_int(long long dato, int& destino) {\n    const long long minimo =\n        static_cast<long long>(std::numeric_limits<int>::lowest());\n    const long long maximo =\n        static_cast<long long>(std::numeric_limits<int>::max());\n    if (dato < minimo || dato > maximo) {\n        return false;\n    }\n\n    destino = static_cast<int>(dato);\n    return true;\n}\n\nint main() {\n    long long dato = 0;\n    if (!(std::cin >> dato)) {\n        return 1;\n    }\n\n    int destino{dato};\n    std::cout << \"Valor=\" << destino << '\\n';\n\n    return 0;\n}\n",
           "initialStandardInput": "2147483648\n",
           "outputCheck": {
             "inputComparison": "tokens",
@@ -545,7 +545,7 @@
         {
           "type": "code",
           "language": "cpp",
-          "code": "#include <iostream>\n#include <limits>\n\nbool convertir_a_int(long long dato, int& destino) {\n    const long long minimo =\n        static_cast<long long>(std::numeric_limits<int>::lowest());\n    const long long maximo =\n        static_cast<long long>(std::numeric_limits<int>::max());\n    if (dato < minimo || dato > maximo) {\n        return false;\n    }\n\n    destino = static_cast<int>(dato);\n    return true;\n}\n\nint main() {\n    long long dato = 0;\n    if (!(std::cin >> dato)) {\n        return 1;\n    }\n\n    int destino{17};\n    if (!convertir_a_int(dato, destino)) {\n        std::cout << \"Fuera de rango\\n\";\n        return 0;\n    }\n\n    int copia{destino};\n    std::cout << \"Valor=\" << copia << '\\n';\n    return 0;\n}\n"
+          "code": "#include <iostream>\n#include <limits>\n\nbool convertir_a_int(long long dato, int& destino) {\n    const long long minimo =\n        static_cast<long long>(std::numeric_limits<int>::lowest());\n    const long long maximo =\n        static_cast<long long>(std::numeric_limits<int>::max());\n    if (dato < minimo || dato > maximo) {\n        return false;\n    }\n\n    destino = static_cast<int>(dato);\n    return true;\n}\n\nint main() {\n    long long dato = 0;\n    if (!(std::cin >> dato)) {\n        return 1;\n    }\n\n    int destino{17};\n    if (!convertir_a_int(dato, destino)) {\n        std::cout << \"Fuera de rango\\n\";\n        return 0;\n    }\n\n    int copia{destino};\n    std::cout << \"Valor=\" << copia << '\\n';\n\n    return 0;\n}\n"
         },
         {
           "type": "paragraph",
@@ -572,7 +572,7 @@
           "id": "p3_u1l8_secuencia",
           "question": "Predice las cuatro líneas para el entorno de la práctica. Cada una contiene el bool de la llamada y el valor actual del mismo destino.",
           "language": "cpp",
-          "code": "#include <iostream>\n#include <limits>\n\nbool convertir_a_int(long long dato, int& destino) {\n    const long long minimo =\n        static_cast<long long>(std::numeric_limits<int>::lowest());\n    const long long maximo =\n        static_cast<long long>(std::numeric_limits<int>::max());\n    if (dato < minimo || dato > maximo) {\n        return false;\n    }\n\n    destino = static_cast<int>(dato);\n    return true;\n}\n\nint main() {\n    const long long minimo = std::numeric_limits<int>::lowest();\n    const long long maximo = std::numeric_limits<int>::max();\n    if (minimo == std::numeric_limits<long long>::lowest()\n        || maximo == std::numeric_limits<long long>::max()) {\n        return 2;\n    }\n\n    int destino = 17;\n    const bool primero = convertir_a_int(-42, destino);\n    std::cout << primero << ':' << destino << '\\n';\n\n    const bool segundo = convertir_a_int(minimo - 1, destino);\n    std::cout << segundo << ':' << destino << '\\n';\n\n    const bool tercero = convertir_a_int(0, destino);\n    std::cout << tercero << ':' << destino << '\\n';\n\n    const bool cuarto = convertir_a_int(maximo + 1, destino);\n    std::cout << cuarto << ':' << destino;\n    return 0;\n}\n",
+          "code": "#include <iostream>\n#include <limits>\n\nbool convertir_a_int(long long dato, int& destino) {\n    const long long minimo =\n        static_cast<long long>(std::numeric_limits<int>::lowest());\n    const long long maximo =\n        static_cast<long long>(std::numeric_limits<int>::max());\n    if (dato < minimo || dato > maximo) {\n        return false;\n    }\n\n    destino = static_cast<int>(dato);\n    return true;\n}\n\nint main() {\n    const long long minimo = std::numeric_limits<int>::lowest();\n    const long long maximo = std::numeric_limits<int>::max();\n\n    if (minimo == std::numeric_limits<long long>::lowest()\n        || maximo == std::numeric_limits<long long>::max()) {\n        return 2;\n    }\n\n    int destino = 17;\n    const bool primero = convertir_a_int(-42, destino);\n\n    std::cout << primero << ':' << destino << '\\n';\n\n    const bool segundo = convertir_a_int(minimo - 1, destino);\n    std::cout << segundo << ':' << destino << '\\n';\n\n    const bool tercero = convertir_a_int(0, destino);\n    std::cout << tercero << ':' << destino << '\\n';\n\n    const bool cuarto = convertir_a_int(maximo + 1, destino);\n    std::cout << cuarto << ':' << destino;\n\n    return 0;\n}\n",
           "answers": [
             "1:-42\n0:-42\n1:0\n0:0"
           ],
@@ -1652,6 +1652,249 @@
       }
     },
     "additions": [],
-    "editorial": []
+    "editorial": [
+      {
+        "id": "block_0002_0006",
+        "beforeSha256": "a7b9357edfbfdb8175da82dc62d5c45990557596a54109c31a87e8410d32ae4c",
+        "afterSha256": "bd9aa7c80c0ca66c310402393c93fd2c7969feb3cbad7f03fb007cb54875c261"
+      },
+      {
+        "id": "block_0004_0001",
+        "beforeSha256": "051ca95623086bb2d556a2645ab3770e089ab2d9d1e351426712c38dad89f6ce",
+        "afterSha256": "b5b69499282e5fb446d7ea9a28721de115b54eec79bc2d51a4693a6bfd8ea6e6"
+      },
+      {
+        "id": "block_0006_0005",
+        "beforeSha256": "d1608c605091d9869bcf995ca31868aa04a51ddaddd960b81a5947805d341383",
+        "afterSha256": "5effd1589bbeee5c93cdc9b57d0c1e6dd62e519281823532ef3b4a84588c5dd2"
+      },
+      {
+        "id": "block_0007_0002",
+        "beforeSha256": "566570af51d1672b10ee63c6fdd323007e6ae8bbf3ee6103674c0d2444fddee1",
+        "afterSha256": "55b9c711cdb83e5b87a9f717007f5a4eb13b88c0ae0d00ba84946e127ed38de5"
+      },
+      {
+        "id": "block_0008_0002",
+        "beforeSha256": "81a5a1d457d0c44ece3213f89a89456c0c97f275d347a35aaaa876be7fb5d6ee",
+        "afterSha256": "47a827818220f320be7fc06a85ea1f2c8c1c8056388149cd00dac6a9553b6895"
+      },
+      {
+        "id": "block_0009_0002",
+        "beforeSha256": "cebfb87b9ec9a0ffea531efddf32b0e237beb190dc9b5b4c7f27855c3f71bb46",
+        "afterSha256": "16831d431f2a8024ee20a70736b1cb573c7723715425885f682a9d339bb62202"
+      },
+      {
+        "id": "block_0010_0003",
+        "beforeSha256": "5e902a76eae54941c9c449e45423ae3bd2dbc7b06d14c9cb3558d69330d1f3bc",
+        "afterSha256": "18d0435d191e1fa278038789e823d578936524f13c37c339980e1c21c2ccf097"
+      },
+      {
+        "id": "block_0011_0006",
+        "beforeSha256": "9f0d59360dc21c7e51220ed8a744bcbaadfcbba2a06cf003f1adb8c5377714eb",
+        "afterSha256": "970ac7970a5608fa5491a0ca08c1f2826f6094b9372e8bc7ee0c58c6f9fe4740"
+      },
+      {
+        "id": "block_0012_0001",
+        "beforeSha256": "004e998a87b31e35e248ba96607d6cc28b02f975ec3bea845c4bffc7993781b0",
+        "afterSha256": "884ae591c04f7593f6a740aef15fbb48bbe4d6c69222ebd4f798ef1a946b9b1b"
+      },
+      {
+        "id": "block_0013_0002",
+        "beforeSha256": "0811347b7186fa4fa39f4383bdca8a47c450b698892797db92f35257ea42f914",
+        "afterSha256": "5359ee3e00a9592fd9b5624fd405f2aa1182ee9ef936100d18e9fa71b07cb8d5"
+      }
+    ],
+    "sourceFormatRevisions": [
+      {
+        "id": "block_0002_0006",
+        "block": {
+          "type": "cpp_compiler",
+          "language": "cpp",
+          "initialCode": "#include <iostream>\n#include <limits>\n\nbool convertir_a_int(long long dato, int& destino) {\n    // Este inicio solo comprueba el extremo superior.\n    const long long maximo =\n        static_cast<long long>(std::numeric_limits<int>::max());\n    if (dato > maximo) {\n        return false;\n    }\n\n    destino = static_cast<int>(dato);\n    return true;\n}\n\nint main() {\n    int caso = 0;\n    if (!(std::cin >> caso)) {\n        return 1;\n    }\n\n    const long long minimo =\n        static_cast<long long>(std::numeric_limits<int>::lowest());\n    const long long maximo =\n        static_cast<long long>(std::numeric_limits<int>::max());\n    if (minimo == std::numeric_limits<long long>::lowest()\n        || maximo == std::numeric_limits<long long>::max()) {\n        return 2;\n    }\n\n    long long dato = 0;\n    int esperado = 17;\n    switch (caso) {\n    case 1:\n        dato = minimo - 1;\n        break;\n    case 2:\n        dato = minimo;\n        esperado = std::numeric_limits<int>::lowest();\n        break;\n    case 3:\n        dato = -42;\n        esperado = -42;\n        break;\n    case 4:\n        dato = 0;\n        esperado = 0;\n        break;\n    case 5:\n        dato = 42;\n        esperado = 42;\n        break;\n    case 6:\n        dato = maximo;\n        esperado = std::numeric_limits<int>::max();\n        break;\n    case 7:\n        dato = maximo + 1;\n        break;\n    default:\n        return 1;\n    }\n\n    int destino = 17;\n    const bool aceptado = convertir_a_int(dato, destino);\n    std::cout << \"Aceptado=\" << aceptado << '\\n';\n    std::cout << \"Coincide=\" << (destino == esperado) << '\\n';\n    std::cout << \"Conservado=\" << (destino == 17) << '\\n';\n    return 0;\n}\n",
+          "initialStandardInput": "1\n",
+          "outputCheck": {
+            "inputComparison": "tokens",
+            "cases": [
+              {
+                "standardInput": "1\n",
+                "outputs": [
+                  "Aceptado=0\nCoincide=1\nConservado=1\n"
+                ],
+                "explanation": "dato = minimo - 1, calculado como long long. No cabe en int: se rechaza y se conserva 17."
+              },
+              {
+                "standardInput": "2\n",
+                "outputs": [
+                  "Aceptado=1\nCoincide=1\nConservado=0\n"
+                ],
+                "explanation": "dato = minimo. Se acepta y se guarda exactamente el mínimo int."
+              },
+              {
+                "standardInput": "3\n",
+                "outputs": [
+                  "Aceptado=1\nCoincide=1\nConservado=0\n"
+                ],
+                "explanation": "dato = -42. Se acepta y se guarda -42."
+              },
+              {
+                "standardInput": "4\n",
+                "outputs": [
+                  "Aceptado=1\nCoincide=1\nConservado=0\n"
+                ],
+                "explanation": "dato = 0. Se acepta y se guarda 0."
+              },
+              {
+                "standardInput": "5\n",
+                "outputs": [
+                  "Aceptado=1\nCoincide=1\nConservado=0\n"
+                ],
+                "explanation": "dato = 42. Se acepta y se guarda 42."
+              },
+              {
+                "standardInput": "6\n",
+                "outputs": [
+                  "Aceptado=1\nCoincide=1\nConservado=0\n"
+                ],
+                "explanation": "dato = maximo. Se acepta y se guarda exactamente el máximo int."
+              },
+              {
+                "standardInput": "7\n",
+                "outputs": [
+                  "Aceptado=0\nCoincide=1\nConservado=1\n"
+                ],
+                "explanation": "dato = maximo + 1, calculado como long long. No cabe en int: se rechaza y se conserva 17."
+              }
+            ]
+          }
+        }
+      },
+      {
+        "id": "block_0004_0001",
+        "block": {
+          "type": "code",
+          "language": "cpp",
+          "code": "#include <iostream>\n#include <limits>\n\nbool convertir_a_int(long long dato, int& destino) {\n    const long long minimo =\n        static_cast<long long>(std::numeric_limits<int>::lowest());\n    const long long maximo =\n        static_cast<long long>(std::numeric_limits<int>::max());\n    if (dato < minimo || dato > maximo) {\n        return false;\n    }\n\n    destino = static_cast<int>(dato);\n    return true;\n}\n\nint main() {\n    int caso = 0;\n    if (!(std::cin >> caso)) {\n        return 1;\n    }\n\n    const long long minimo =\n        static_cast<long long>(std::numeric_limits<int>::lowest());\n    const long long maximo =\n        static_cast<long long>(std::numeric_limits<int>::max());\n    if (minimo == std::numeric_limits<long long>::lowest()\n        || maximo == std::numeric_limits<long long>::max()) {\n        return 2;\n    }\n\n    long long dato = 0;\n    int esperado = 17;\n    switch (caso) {\n    case 1:\n        dato = minimo - 1;\n        break;\n    case 2:\n        dato = minimo;\n        esperado = std::numeric_limits<int>::lowest();\n        break;\n    case 3:\n        dato = -42;\n        esperado = -42;\n        break;\n    case 4:\n        dato = 0;\n        esperado = 0;\n        break;\n    case 5:\n        dato = 42;\n        esperado = 42;\n        break;\n    case 6:\n        dato = maximo;\n        esperado = std::numeric_limits<int>::max();\n        break;\n    case 7:\n        dato = maximo + 1;\n        break;\n    default:\n        return 1;\n    }\n\n    int destino = 17;\n    const bool aceptado = convertir_a_int(dato, destino);\n    std::cout << \"Aceptado=\" << aceptado << '\\n';\n    std::cout << \"Coincide=\" << (destino == esperado) << '\\n';\n    std::cout << \"Conservado=\" << (destino == 17) << '\\n';\n    return 0;\n}\n"
+        }
+      },
+      {
+        "id": "block_0006_0005",
+        "block": {
+          "type": "output_prediction",
+          "id": "p3_u1l8_constantes_y_cero",
+          "question": "Predice la salida exacta de las tres inicializaciones válidas.",
+          "language": "cpp",
+          "code": "#include <iostream>\n\nint main() {\n    int cero{};\n    int primero{-42LL};\n    const long long fijo = -42;\n    int segundo{fijo};\n\n    std::cout << cero << ':' << primero << ':' << segundo;\n    return 0;\n}\n",
+          "answers": [
+            "0:-42:-42"
+          ],
+          "outputComparison": "exact",
+          "explanation": "La lista vacía deja cero en el int cero. −42LL es una constante long long representable en int. fijo es un entero const inicializado con una expresión constante representable. Ambos int terminan con −42."
+        }
+      },
+      {
+        "id": "block_0007_0002",
+        "block": {
+          "type": "code",
+          "language": "cpp",
+          "code": "#include <iostream>\n\nint main() {\n    long long dato = -42;\n    int copia{dato};\n    std::cout << copia;\n    return 0;\n}\n"
+        }
+      },
+      {
+        "id": "block_0008_0002",
+        "block": {
+          "type": "code",
+          "language": "cpp",
+          "code": "#include <iostream>\n#include <limits>\n\n\nint main() {\n    long long dato = 0;\n    if (!(std::cin >> dato)) {\n        return 1;\n    }\n\n    const long long minimo = std::numeric_limits<int>::lowest();\n    const long long maximo = std::numeric_limits<int>::max();\n    if (dato < minimo || dato > maximo) {\n        return 0;\n    }\n\n    int copia{dato};\n    std::cout << copia;\n    return 0;\n}\n"
+        }
+      },
+      {
+        "id": "block_0009_0002",
+        "block": {
+          "type": "code",
+          "language": "cpp",
+          "code": "#include <iostream>\n\nint main() {\n    long long dato = -42;\n    const long long fijo = dato;\n    int copia{fijo};\n    std::cout << copia;\n    return 0;\n}\n"
+        }
+      },
+      {
+        "id": "block_0010_0003",
+        "block": {
+          "type": "output_prediction",
+          "id": "p3_u1l8_cast_entre_llaves",
+          "question": "Predice las dos comparaciones para el entorno Windows indicado. La primera pregunta si el original supera el máximo int; la segunda, si la copia contiene el mínimo int.",
+          "language": "cpp",
+          "code": "#include <iostream>\n#include <limits>\n\n\nint main() {\n    const long long maximo = std::numeric_limits<int>::max();\n    if (maximo == std::numeric_limits<long long>::max()) {\n        return 2;\n    }\n\n    const long long dato = maximo + 1;\n    int copia{static_cast<int>(dato)};\n    std::cout << (dato > maximo) << ':'\n              << (copia == std::numeric_limits<int>::lowest());\n    return 0;\n}\n",
+          "answers": [
+            "1:1"
+          ],
+          "outputComparison": "exact",
+          "explanation": "El original es maximo + 1 calculado como long long: la primera comparación es verdadera. El cast lo convierte al mínimo int y las llaves reciben ese int ya convertido: la segunda también es verdadera. El programa compila, pero no conserva el dato original."
+        }
+      },
+      {
+        "id": "block_0011_0006",
+        "block": {
+          "type": "cpp_compiler",
+          "language": "cpp",
+          "initialCode": "#include <iostream>\n#include <limits>\n\nbool convertir_a_int(long long dato, int& destino) {\n    const long long minimo =\n        static_cast<long long>(std::numeric_limits<int>::lowest());\n    const long long maximo =\n        static_cast<long long>(std::numeric_limits<int>::max());\n    if (dato < minimo || dato > maximo) {\n        return false;\n    }\n\n    destino = static_cast<int>(dato);\n    return true;\n}\n\nint main() {\n    long long dato = 0;\n    if (!(std::cin >> dato)) {\n        return 1;\n    }\n\n    int destino{dato};\n    std::cout << \"Valor=\" << destino << '\\n';\n    return 0;\n}\n",
+          "initialStandardInput": "2147483648\n",
+          "outputCheck": {
+            "inputComparison": "tokens",
+            "cases": [
+              {
+                "standardInput": "2147483648\n",
+                "outputs": [
+                  "Fuera de rango\n"
+                ],
+                "explanation": "Dato una unidad por encima del máximo int de la implementación Windows indicada."
+              },
+              {
+                "standardInput": "-42\n",
+                "outputs": [
+                  "Valor=-42\n"
+                ],
+                "explanation": "Negativo ordinario que debe conservarse."
+              },
+              {
+                "standardInput": "-2147483649\n",
+                "outputs": [
+                  "Fuera de rango\n"
+                ],
+                "explanation": "Dato una unidad por debajo del mínimo int de la implementación indicada."
+              },
+              {
+                "standardInput": "0\n",
+                "outputs": [
+                  "Valor=0\n"
+                ],
+                "explanation": "Cero es un valor admitido."
+              }
+            ]
+          }
+        }
+      },
+      {
+        "id": "block_0012_0001",
+        "block": {
+          "type": "code",
+          "language": "cpp",
+          "code": "#include <iostream>\n#include <limits>\n\nbool convertir_a_int(long long dato, int& destino) {\n    const long long minimo =\n        static_cast<long long>(std::numeric_limits<int>::lowest());\n    const long long maximo =\n        static_cast<long long>(std::numeric_limits<int>::max());\n    if (dato < minimo || dato > maximo) {\n        return false;\n    }\n\n    destino = static_cast<int>(dato);\n    return true;\n}\n\nint main() {\n    long long dato = 0;\n    if (!(std::cin >> dato)) {\n        return 1;\n    }\n\n    int destino{17};\n    if (!convertir_a_int(dato, destino)) {\n        std::cout << \"Fuera de rango\\n\";\n        return 0;\n    }\n\n    int copia{destino};\n    std::cout << \"Valor=\" << copia << '\\n';\n    return 0;\n}\n"
+        }
+      },
+      {
+        "id": "block_0013_0002",
+        "block": {
+          "type": "output_prediction",
+          "id": "p3_u1l8_secuencia",
+          "question": "Predice las cuatro líneas para el entorno de la práctica. Cada una contiene el bool de la llamada y el valor actual del mismo destino.",
+          "language": "cpp",
+          "code": "#include <iostream>\n#include <limits>\n\nbool convertir_a_int(long long dato, int& destino) {\n    const long long minimo =\n        static_cast<long long>(std::numeric_limits<int>::lowest());\n    const long long maximo =\n        static_cast<long long>(std::numeric_limits<int>::max());\n    if (dato < minimo || dato > maximo) {\n        return false;\n    }\n\n    destino = static_cast<int>(dato);\n    return true;\n}\n\nint main() {\n    const long long minimo = std::numeric_limits<int>::lowest();\n    const long long maximo = std::numeric_limits<int>::max();\n    if (minimo == std::numeric_limits<long long>::lowest()\n        || maximo == std::numeric_limits<long long>::max()) {\n        return 2;\n    }\n\n    int destino = 17;\n    const bool primero = convertir_a_int(-42, destino);\n    std::cout << primero << ':' << destino << '\\n';\n\n    const bool segundo = convertir_a_int(minimo - 1, destino);\n    std::cout << segundo << ':' << destino << '\\n';\n\n    const bool tercero = convertir_a_int(0, destino);\n    std::cout << tercero << ':' << destino << '\\n';\n\n    const bool cuarto = convertir_a_int(maximo + 1, destino);\n    std::cout << cuarto << ':' << destino;\n    return 0;\n}\n",
+          "answers": [
+            "1:-42\n0:-42\n1:0\n0:0"
+          ],
+          "outputComparison": "exact",
+          "explanation": "−42 cabe y se guarda. El dato inferior al mínimo no cabe y se conserva −42. Cero se acepta y sustituye ese valor por 0. El dato superior al máximo se rechaza manteniendo 0. No se guarda el resultado de un cast rechazado."
+        }
+      }
+    ]
   }
 }

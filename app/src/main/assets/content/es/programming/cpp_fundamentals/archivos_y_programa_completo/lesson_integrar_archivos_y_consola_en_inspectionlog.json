@@ -157,7 +157,7 @@
           "id": "cpp_fundamentals__archivos_y_programa_completo__integrar_archivos_y_consola_en_inspectionlog__resultado_y_cantidad",
           "question": "Este fragmento aísla la decisión de main. ¿Qué línea muestra? El valor devuelto por la operación no es el número de grupos.",
           "language": "cpp",
-          "code": "#include <iostream>\nint main() {\n    const int resultado{2};\n    const int grupos{1};\n    if (resultado == 0) { std::cout << \"Verificado: \" << grupos << \"\\n\"; }\n    else if (resultado == 2) { std::cout << \"Rechazado\\n\"; }\n    else { std::cout << \"Error tecnico\\n\"; }\n    return 0;\n}\n",
+          "code": "#include <iostream>\n\nint main() {\n    const int resultado{2};\n    const int grupos{1};\n\n    if (resultado == 0) { std::cout << \"Verificado: \" << grupos << \"\\n\"; }\n    else if (resultado == 2) { std::cout << \"Rechazado\\n\"; }\n    else { std::cout << \"Error tecnico\\n\"; }\n    return 0;\n}\n",
           "answers": [
             "Rechazado"
           ],
@@ -187,7 +187,7 @@
         {
           "type": "code",
           "language": "cpp",
-          "code": "#include \"aplicacion.h\"\n\nbool mostrar_informe(const Conjunto& conjunto, std::ostream& salida) {\n    if (!conjunto_valido(conjunto)) { return false; }\n    int aceptados{0};\n    int rechazados{0};\n    for (const Grupo& grupo : conjunto.grupos) {\n        for (const Registro& registro : grupo.registros) {\n            aceptados += registro.recuento.aceptados;\n            rechazados += registro.recuento.rechazados;\n        }\n    }\n    salida << \"Grupos: \" << conjunto.grupos.size()\n           << \"\\nAceptados: \" << aceptados\n           << \"\\nRechazados: \" << rechazados << \"\\n\";\n    const Informe_mayor mayor = seleccionar_mayor(conjunto);\n    if (mayor.hay_grupo) {\n        std::string nombre;\n        if (!nombre_grupo(mayor.id, nombre)) { return false; }\n        salida << \"Mayor: \" << nombre << ' ' << mayor.aceptados << \"\\n\";\n    } else {\n        salida << \"Mayor: ninguno\\n\";\n    }\n    return static_cast<bool>(salida);\n}\n"
+          "code": "#include \"aplicacion.h\"\n\nbool mostrar_informe(const Conjunto& conjunto, std::ostream& salida) {\n    if (!conjunto_valido(conjunto)) { return false; }\n    int aceptados{0};\n    int rechazados{0};\n\n    for (const Grupo& grupo : conjunto.grupos) {\n        for (const Registro& registro : grupo.registros) {\n            aceptados += registro.recuento.aceptados;\n            rechazados += registro.recuento.rechazados;\n        }\n    }\n    salida << \"Grupos: \" << conjunto.grupos.size()\n           << \"\\nAceptados: \" << aceptados\n           << \"\\nRechazados: \" << rechazados << \"\\n\";\n    const Informe_mayor mayor = seleccionar_mayor(conjunto);\n    if (mayor.hay_grupo) {\n        std::string nombre;\n        if (!nombre_grupo(mayor.id, nombre)) { return false; }\n        salida << \"Mayor: \" << nombre << ' ' << mayor.aceptados << \"\\n\";\n    } else {\n        salida << \"Mayor: ninguno\\n\";\n    }\n\n    return static_cast<bool>(salida);\n}\n"
         }
       ]
     },
@@ -1110,6 +1110,40 @@
         "id": "block_0003_0001",
         "beforeSha256": "82b4f765d862fd294a57cd88e63b43a73655a8e35c32185321ea08f4b5424709",
         "afterSha256": "69a33aee152332752b31e16ec1a02796d88d3f64f89e9ac3eb6446d7f8c9c55c"
+      },
+      {
+        "id": "block_0003_0005",
+        "beforeSha256": "353b5262690caa5a35dfcb1e6ae9365518937fbfd22a1e613786b76eec8580df",
+        "afterSha256": "2b0189b7241522a549a8397ea71c7826a35aed7f06d3f65efb5c3745bd70b3bd"
+      },
+      {
+        "id": "block_0004_0004",
+        "beforeSha256": "507c2fae29e183d534aa1a7f0017f3ff2fc97c49fd90ef2a8e90a2c64e2459ae",
+        "afterSha256": "ae9387799ae9333e92c4d7f49d4b0fd0509e6410fae884c2835b3b22adac154d"
+      }
+    ],
+    "sourceFormatRevisions": [
+      {
+        "id": "block_0003_0005",
+        "block": {
+          "type": "output_prediction",
+          "id": "cpp_fundamentals__archivos_y_programa_completo__integrar_archivos_y_consola_en_inspectionlog__resultado_y_cantidad",
+          "question": "Este fragmento aísla la decisión de main. ¿Qué línea muestra? El valor devuelto por la operación no es el número de grupos.",
+          "language": "cpp",
+          "code": "#include <iostream>\nint main() {\n    const int resultado{2};\n    const int grupos{1};\n    if (resultado == 0) { std::cout << \"Verificado: \" << grupos << \"\\n\"; }\n    else if (resultado == 2) { std::cout << \"Rechazado\\n\"; }\n    else { std::cout << \"Error tecnico\\n\"; }\n    return 0;\n}\n",
+          "answers": [
+            "Rechazado"
+          ],
+          "explanation": "La decisión usa resultado, cuyo valor es 2. Por eso muestra Rechazado. La cantidad de grupos vale 1, pero no participa en la condición que clasifica la operación."
+        }
+      },
+      {
+        "id": "block_0004_0004",
+        "block": {
+          "type": "code",
+          "language": "cpp",
+          "code": "#include \"aplicacion.h\"\n\nbool mostrar_informe(const Conjunto& conjunto, std::ostream& salida) {\n    if (!conjunto_valido(conjunto)) { return false; }\n    int aceptados{0};\n    int rechazados{0};\n    for (const Grupo& grupo : conjunto.grupos) {\n        for (const Registro& registro : grupo.registros) {\n            aceptados += registro.recuento.aceptados;\n            rechazados += registro.recuento.rechazados;\n        }\n    }\n    salida << \"Grupos: \" << conjunto.grupos.size()\n           << \"\\nAceptados: \" << aceptados\n           << \"\\nRechazados: \" << rechazados << \"\\n\";\n    const Informe_mayor mayor = seleccionar_mayor(conjunto);\n    if (mayor.hay_grupo) {\n        std::string nombre;\n        if (!nombre_grupo(mayor.id, nombre)) { return false; }\n        salida << \"Mayor: \" << nombre << ' ' << mayor.aceptados << \"\\n\";\n    } else {\n        salida << \"Mayor: ninguno\\n\";\n    }\n    return static_cast<bool>(salida);\n}\n"
+        }
       }
     ]
   },

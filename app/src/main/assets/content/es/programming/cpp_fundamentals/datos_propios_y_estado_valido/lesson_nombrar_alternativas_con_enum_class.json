@@ -65,7 +65,7 @@
           "type": "fill_code",
           "language": "cpp",
           "question": "Completa sólo el nombre del tipo que califica enviado.",
-          "code": "#include <iostream>\n#include <string>\n#include <vector>\n\nenum class Estado {\n    preparado, enviado, cancelado\n};\n\nint main() {\n    Estado estado = ___::enviado;\n    std::cout << (estado == Estado::enviado);\n    return 0;\n}\n",
+          "code": "#include <iostream>\n#include <string>\n#include <vector>\n\nenum class Estado {\n    preparado, enviado, cancelado\n};\n\nint main() {\n    Estado estado = ___::enviado;\n\n    std::cout << (estado == Estado::enviado);\n\n    return 0;\n}\n",
           "answers": [
             "Estado"
           ],
@@ -75,7 +75,7 @@
           "type": "output_prediction",
           "language": "cpp",
           "question": "Predice la salida exacta.",
-          "code": "#include <iostream>\n#include <string>\n#include <vector>\n\nenum class Estado {\n    preparado,\n    enviado,\n    cancelado\n};\n\nint main() {\n    Estado a = Estado::preparado;\n    Estado b = Estado::cancelado;\n    a = Estado::enviado;\n    std::cout << (a == Estado::enviado)\n              << \" \" << (b == Estado::enviado);\n\n    return 0;\n}\n",
+          "code": "#include <iostream>\n#include <string>\n#include <vector>\n\nenum class Estado {\n    preparado,\n    enviado,\n    cancelado\n};\n\nint main() {\n    Estado a = Estado::preparado;\n    Estado b = Estado::cancelado;\n\n    a = Estado::enviado;\n\n    std::cout << (a == Estado::enviado)\n              << \" \" << (b == Estado::enviado);\n\n    return 0;\n}\n",
           "answers": [
             "1 0"
           ],
@@ -108,7 +108,7 @@
           "type": "output_prediction",
           "language": "cpp",
           "question": "Predice la salida exacta.",
-          "code": "#include <iostream>\n#include <string>\n#include <vector>\n\nenum class Estado {\n    preparado, enviado, cancelado\n};\n\nint main() {\n    Estado estado = Estado::cancelado;\n    std::cout << static_cast<int>(estado);\n    return 0;\n}\n",
+          "code": "#include <iostream>\n#include <string>\n#include <vector>\n\nenum class Estado {\n    preparado, enviado, cancelado\n};\n\nint main() {\n    Estado estado = Estado::cancelado;\n\n    std::cout << static_cast<int>(estado);\n\n    return 0;\n}\n",
           "answers": [
             "2"
           ],
@@ -190,7 +190,7 @@
         {
           "type": "code",
           "language": "cpp",
-          "code": "#include <iostream>\n#include <string>\n#include <vector>\n\nenum class Estado {\n    preparado,\n    enviado,\n    cancelado\n};\n\nstd::string nombre(Estado estado) {\n\n    if (estado == Estado::preparado) {\n        return \"Preparado\";\n    }\n\n    if (estado == Estado::enviado) {\n        return \"Enviado\";\n    }\n\n    if (estado == Estado::cancelado) {\n        return \"Cancelado\";\n    }\n    return \"No reconocido\";\n}\n\nint main() {\n    std::cout << nombre(Estado::enviado);\n\n    return 0;\n}\n"
+          "code": "#include <iostream>\n#include <string>\n#include <vector>\n\nenum class Estado {\n    preparado,\n    enviado,\n    cancelado\n};\n\nstd::string nombre(Estado estado) {\n\n    if (estado == Estado::preparado) {\n        return \"Preparado\";\n    }\n\n    if (estado == Estado::enviado) {\n        return \"Enviado\";\n    }\n\n    if (estado == Estado::cancelado) {\n        return \"Cancelado\";\n    }\n\n    return \"No reconocido\";\n}\n\nint main() {\n    std::cout << nombre(Estado::enviado);\n\n    return 0;\n}\n"
         },
         {
           "type": "paragraph",
@@ -210,7 +210,7 @@
           "type": "output_prediction",
           "language": "cpp",
           "question": "Predice la salida exacta.",
-          "code": "#include <iostream>\n#include <string>\n#include <vector>\n\nenum class Estado {\n    preparado, enviado, cancelado\n};\n\nstd::string nombre(Estado estado) {\n    if (estado == Estado::preparado) { return \"Preparado\"; }\n    if (estado == Estado::enviado) { return \"Enviado\"; }\n    if (estado == Estado::cancelado) { return \"Cancelado\"; }\n    return \"No reconocido\";\n}\n\nint main() {\n    Estado estado = Estado::cancelado;\n    std::cout << nombre(estado);\n    return 0;\n}\n",
+          "code": "#include <iostream>\n#include <string>\n#include <vector>\n\nenum class Estado {\n    preparado, enviado, cancelado\n};\n\nstd::string nombre(Estado estado) {\n    if (estado == Estado::preparado) { return \"Preparado\"; }\n    if (estado == Estado::enviado) { return \"Enviado\"; }\n    if (estado == Estado::cancelado) { return \"Cancelado\"; }\n    return \"No reconocido\";\n}\n\nint main() {\n    Estado estado = Estado::cancelado;\n\n    std::cout << nombre(estado);\n\n    return 0;\n}\n",
           "answers": [
             "Cancelado"
           ],
@@ -293,7 +293,7 @@
         },
         {
           "type": "cpp_compiler",
-          "initialCode": "#include <iostream>\n#include <string>\n#include <vector>\n\nint main() {\n    // Construye aqui el programa de la consigna.\n\n    return 0;\n}\n",
+          "initialCode": "#include <iostream>\n#include <string>\n#include <vector>\n\nint main() {\n    // Construye aqui el programa de la consigna.\n    \n    return 0;\n}\n",
           "outputCheck": {
             "cases": [
               {
@@ -331,13 +331,13 @@
         {
           "type": "code",
           "language": "cpp",
-          "code": "#include <iostream>\n#include <string>\n#include <vector>\n\nenum class Prioridad {\n    normal,\n    urgente,\n    aplazada\n};\n\nstd::string nombre_prioridad(Prioridad prioridad) {\n\n    if (prioridad == Prioridad::normal) {\n        return \"Normal\";\n    }\n\n    if (prioridad == Prioridad::urgente) {\n        return \"Urgente\";\n    }\n\n    if (prioridad == Prioridad::aplazada) {\n        return \"Aplazada\";\n    }\n    return \"No reconocida\";\n}\n\nint main() {\n    Prioridad prioridad = Prioridad::urgente;\n    std::cout << nombre_prioridad(prioridad);\n\n    return 0;\n}\n"
+          "code": "#include <iostream>\n#include <string>\n#include <vector>\n\nenum class Prioridad {\n    normal,\n    urgente,\n    aplazada\n};\n\nstd::string nombre_prioridad(Prioridad prioridad) {\n\n    if (prioridad == Prioridad::normal) {\n        return \"Normal\";\n    }\n\n    if (prioridad == Prioridad::urgente) {\n        return \"Urgente\";\n    }\n\n    if (prioridad == Prioridad::aplazada) {\n        return \"Aplazada\";\n    }\n\n    return \"No reconocida\";\n}\n\nint main() {\n    Prioridad prioridad = Prioridad::urgente;\n\n    std::cout << nombre_prioridad(prioridad);\n\n    return 0;\n}\n"
         },
         {
           "type": "output_prediction",
           "language": "cpp",
           "question": "Predice la salida exacta.",
-          "code": "#include <iostream>\n#include <string>\n#include <vector>\n\nenum class Estado {\n    preparado,\n    enviado,\n    cancelado\n};\n\nstruct Registro {\n    std::string codigo;\n    Estado estado;\n};\n\nint main() {\n    Registro original{\"A3\", Estado::preparado};\n    Registro copia = original;\n    original.estado = Estado::enviado;\n    std::cout << (copia.estado == Estado::preparado)\n              << \" \" << (original.estado == Estado::preparado);\n\n    return 0;\n}\n",
+          "code": "#include <iostream>\n#include <string>\n#include <vector>\n\nenum class Estado {\n    preparado,\n    enviado,\n    cancelado\n};\n\nstruct Registro {\n    std::string codigo;\n    Estado estado;\n};\n\nint main() {\n    Registro original{\"A3\", Estado::preparado};\n    Registro copia = original;\n\n    original.estado = Estado::enviado;\n\n    std::cout << (copia.estado == Estado::preparado)\n              << \" \" << (original.estado == Estado::preparado);\n\n    return 0;\n}\n",
           "answers": [
             "1 0"
           ],
@@ -394,7 +394,7 @@
         {
           "type": "code",
           "language": "cpp",
-          "code": "#include <vector>\n#include <iostream>\n#include <string>\n#include <vector>\n\nenum class Prioridad {\n    normal,\n    urgente,\n    aplazada\n};\n\nstd::string nombre_prioridad(Prioridad prioridad) {\n\n    if (prioridad == Prioridad::normal) {\n        return \"Normal\";\n    }\n\n    if (prioridad == Prioridad::urgente) {\n        return \"Urgente\";\n    }\n\n    if (prioridad == Prioridad::aplazada) {\n        return \"Aplazada\";\n    }\n    return \"No reconocida\";\n}\n\nstruct Registro {\n    std::string codigo;\n    Prioridad prioridad;\n};\n\nint main() {\n    std::cout << nombre_prioridad(Prioridad::urgente) << \"\\n\";\n    std::cout << nombre_prioridad(Prioridad::normal) << \"\\n\";\n    std::cout << nombre_prioridad(Prioridad::aplazada) << \"\\n\";\n    std::cout << nombre_prioridad(static_cast<Prioridad>(9)) << \"\\n\";\n\n    const std::vector<Registro> registros{\n        {\"A\", Prioridad::normal},\n        {\"B\", Prioridad::urgente},\n        {\"C\", Prioridad::aplazada}\n    };\n\n    for (const auto& registro : registros) {\n        std::cout << registro.codigo << \":\" << nombre_prioridad(registro.prioridad) << \";\";\n    }\n\n    return 0;\n}\n"
+          "code": "#include <vector>\n#include <iostream>\n#include <string>\n#include <vector>\n\nenum class Prioridad {\n    normal,\n    urgente,\n    aplazada\n};\n\nstd::string nombre_prioridad(Prioridad prioridad) {\n\n    if (prioridad == Prioridad::normal) {\n        return \"Normal\";\n    }\n\n    if (prioridad == Prioridad::urgente) {\n        return \"Urgente\";\n    }\n\n    if (prioridad == Prioridad::aplazada) {\n        return \"Aplazada\";\n    }\n\n    return \"No reconocida\";\n}\n\nstruct Registro {\n    std::string codigo;\n    Prioridad prioridad;\n};\n\nint main() {\n    std::cout << nombre_prioridad(Prioridad::urgente) << \"\\n\";\n    std::cout << nombre_prioridad(Prioridad::normal) << \"\\n\";\n    std::cout << nombre_prioridad(Prioridad::aplazada) << \"\\n\";\n    std::cout << nombre_prioridad(static_cast<Prioridad>(9)) << \"\\n\";\n\n    const std::vector<Registro> registros{\n        {\"A\", Prioridad::normal},\n        {\"B\", Prioridad::urgente},\n        {\"C\", Prioridad::aplazada}\n    };\n\n    for (const auto& registro : registros) {\n        std::cout << registro.codigo << \":\" << nombre_prioridad(registro.prioridad) << \";\";\n    }\n\n    return 0;\n}\n"
         }
       ]
     }
@@ -1498,6 +1498,51 @@
         "id": "block_0007_0008",
         "beforeSha256": "56d9c44a23a21b79ae8e14b4118912e6b5ad1e3979630a635e5e69e9470c12c0",
         "afterSha256": "767298979c338efac0d5048701fcbaa631808d942fc6bc5ab5b5b45b7229f52e"
+      },
+      {
+        "id": "block_0001_0002",
+        "beforeSha256": "e1b60a8a9374d1371572ed2b4f29362687ccbb6a41c74c077d2037aa7370537c",
+        "afterSha256": "336bb4ec85d90425fe1ab2f435347fe3a06baf347ec6b9d9815f49cb77b418b9"
+      },
+      {
+        "id": "block_0001_0003",
+        "beforeSha256": "505a68710e5f938a9c7769ee57a1e5a4d43cc0552583262e7b8b8458cacfbed0",
+        "afterSha256": "6ddc797c44a89e4dc2a56b7369be2f467128f1d481d97797cb2fe8c2618fce42"
+      },
+      {
+        "id": "block_0002_0002",
+        "beforeSha256": "fa9c482f1a95938338964b9aefe597919c4e3659014ca11db5266d43507f522f",
+        "afterSha256": "e73923e92f454dc3a00870d6185bac5480025f333108f80003e4a021a4d9fe4d"
+      },
+      {
+        "id": "block_0004_0001",
+        "beforeSha256": "aaf94734818b471c8b301b83c83d253b27397087669a43c0609673a0476d79f9",
+        "afterSha256": "681384ed4ef7203777408b4af38b6fce4c73144eecd80406f911c872d2d4985b"
+      },
+      {
+        "id": "block_0004_0003",
+        "beforeSha256": "43dae08921498b6efe99ed9675605ca9d0eeda3290357b5ee10a1b063e759193",
+        "afterSha256": "6e5b18ea83403c42603bfc117d82733359231169ec908b0ce1c29a518938a06b"
+      },
+      {
+        "id": "block_0006_0002",
+        "beforeSha256": "4b3527e4ce0bccbab366c4dc2b3eae69441230517577b2e81e14c515191e72da",
+        "afterSha256": "af127c2f5fb923c9878e2077ee00023c0e3846e9879519996eca7c625abc208b"
+      },
+      {
+        "id": "block_0007_0001",
+        "beforeSha256": "a5b33b5bd54dc1309a9aa6a7f539c861f5de35dbdb556fcb3dbd65fea7d6c583",
+        "afterSha256": "631731576dc79b9629d8485da6f2ade55d4d39006fe49c21bd5d8ba17e113002"
+      },
+      {
+        "id": "block_0007_0002",
+        "beforeSha256": "63df4aa11cc68209d7697a6cb0bd956a2761f152e4ef49f69e37e7e757ca1b93",
+        "afterSha256": "b1fa6c0a1afd3286c34930e4772e4e8eb41f4c96b0a92363dd1826c3298cc468"
+      },
+      {
+        "id": "block_0007_0008",
+        "beforeSha256": "767298979c338efac0d5048701fcbaa631808d942fc6bc5ab5b5b45b7229f52e",
+        "afterSha256": "1da4c1d3135494b7ebfa82f1b988f77e4631c03ca5cb597384d72abc7076de5b"
       }
     ],
     "sourceFormatRevisions": [
@@ -1596,6 +1641,45 @@
           "type": "code",
           "language": "cpp",
           "code": "#include <vector>\n#include <iostream>\n#include <string>\n#include <vector>\n\nenum class Prioridad { normal, urgente, aplazada };\n\nstd::string nombre_prioridad(Prioridad prioridad) {\n    if (prioridad == Prioridad::normal) { return \"Normal\"; }\n    if (prioridad == Prioridad::urgente) { return \"Urgente\"; }\n    if (prioridad == Prioridad::aplazada) { return \"Aplazada\"; }\n    return \"No reconocida\";\n}\n\nstruct Registro {\n    std::string codigo;\n    Prioridad prioridad;\n};\n\nint main() {\n    std::cout << nombre_prioridad(Prioridad::urgente) << \"\\n\";\n    std::cout << nombre_prioridad(Prioridad::normal) << \"\\n\";\n    std::cout << nombre_prioridad(Prioridad::aplazada) << \"\\n\";\n    std::cout << nombre_prioridad(static_cast<Prioridad>(9)) << \"\\n\";\n    const std::vector<Registro> registros{{\"A\", Prioridad::normal}, {\"B\", Prioridad::urgente}, {\"C\", Prioridad::aplazada}};\n    for (const auto& registro : registros) {\n        std::cout << registro.codigo << \":\" << nombre_prioridad(registro.prioridad) << \";\";\n    }\n    return 0;\n}\n"
+        }
+      },
+      {
+        "id": "block_0001_0002",
+        "block": {
+          "type": "fill_code",
+          "language": "cpp",
+          "question": "Completa sólo el nombre del tipo que califica enviado.",
+          "code": "#include <iostream>\n#include <string>\n#include <vector>\n\nenum class Estado {\n    preparado, enviado, cancelado\n};\n\nint main() {\n    Estado estado = ___::enviado;\n    std::cout << (estado == Estado::enviado);\n    return 0;\n}\n",
+          "answers": [
+            "Estado"
+          ],
+          "explanation": "Estado es el nombre del tipo. Al escribir Estado::enviado, :: indica que buscamos el enumerador enviado dentro de ese tipo. Así el valor usado para inicializar estado pertenece a Estado."
+        }
+      },
+      {
+        "id": "block_0002_0002",
+        "block": {
+          "type": "output_prediction",
+          "language": "cpp",
+          "question": "Predice la salida exacta.",
+          "code": "#include <iostream>\n#include <string>\n#include <vector>\n\nenum class Estado {\n    preparado, enviado, cancelado\n};\n\nint main() {\n    Estado estado = Estado::cancelado;\n    std::cout << static_cast<int>(estado);\n    return 0;\n}\n",
+          "answers": [
+            "2"
+          ],
+          "explanation": "preparado es el primer enumerador y no tiene un valor escrito, por lo que le corresponde cero. enviado toma el siguiente valor, uno, y cancelado toma dos. estado guarda Estado::cancelado; static_cast<int>(estado) obtiene su representación como entero y std::cout muestra 2."
+        }
+      },
+      {
+        "id": "block_0004_0003",
+        "block": {
+          "type": "output_prediction",
+          "language": "cpp",
+          "question": "Predice la salida exacta.",
+          "code": "#include <iostream>\n#include <string>\n#include <vector>\n\nenum class Estado {\n    preparado, enviado, cancelado\n};\n\nstd::string nombre(Estado estado) {\n    if (estado == Estado::preparado) { return \"Preparado\"; }\n    if (estado == Estado::enviado) { return \"Enviado\"; }\n    if (estado == Estado::cancelado) { return \"Cancelado\"; }\n    return \"No reconocido\";\n}\n\nint main() {\n    Estado estado = Estado::cancelado;\n    std::cout << nombre(estado);\n    return 0;\n}\n",
+          "answers": [
+            "Cancelado"
+          ],
+          "explanation": "estado contiene Estado::cancelado. En nombre, las comparaciones con Estado::preparado y Estado::enviado son falsas. La comparación con Estado::cancelado es verdadera y devuelve el texto Cancelado. std::cout muestra ese texto, sin las comillas del literal."
         }
       }
     ]

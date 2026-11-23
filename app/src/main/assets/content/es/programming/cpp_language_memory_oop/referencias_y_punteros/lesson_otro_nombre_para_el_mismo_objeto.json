@@ -18,7 +18,7 @@
           "id": "p3_u4l1_recuperar_copia",
           "language": "cpp",
           "question": "¿Qué valores muestra el programa?",
-          "code": "#include <iostream>\n\nint main() {\n    int piezas = 4;\n    int copia = piezas;\n    piezas = 7;\n    std::cout << piezas << ':' << copia;\n    return 0;\n}\n",
+          "code": "#include <iostream>\n\nint main() {\n    int piezas = 4;\n    int copia = piezas;\n\n    piezas = 7;\n\n    std::cout << piezas << ':' << copia;\n\n    return 0;\n}\n",
           "answers": [
             "7:4"
           ],
@@ -44,7 +44,7 @@
         {
           "type": "code",
           "language": "cpp",
-          "code": "#include <iostream>\n\nint main() {\n    int piezas = 5;\n    int& disponibles = piezas;\n    disponibles += 3;\n    std::cout << piezas << ':' << disponibles;\n    return 0;\n}\n"
+          "code": "#include <iostream>\n\nint main() {\n    int piezas = 5;\n    int& disponibles = piezas;\n\n    disponibles += 3;\n\n    std::cout << piezas << ':' << disponibles;\n\n    return 0;\n}\n"
         },
         {
           "type": "paragraph",
@@ -83,7 +83,7 @@
           "id": "p3_u4l1_alias_y_copia",
           "language": "cpp",
           "question": "Sigue las dos modificaciones. ¿Qué muestra cantidad:actual:copia?",
-          "code": "#include <iostream>\n\nint main() {\n    int cantidad = 4;\n    int copia = cantidad;\n    int& actual = cantidad;\n    cantidad = 6;\n    ++actual;\n    std::cout << cantidad << ':' << actual << ':' << copia;\n    return 0;\n}\n",
+          "code": "#include <iostream>\n\nint main() {\n    int cantidad = 4;\n    int copia = cantidad;\n    int& actual = cantidad;\n\n    cantidad = 6;\n    ++actual;\n\n    std::cout << cantidad << ':' << actual << ':' << copia;\n\n    return 0;\n}\n",
           "answers": [
             "7:7:4"
           ],
@@ -117,7 +117,7 @@
         {
           "type": "code",
           "language": "cpp",
-          "code": "#include <iostream>\n\nint main() {\n    int primero = 3;\n    int segundo = 8;\n    int& nombre = primero;\n    nombre = segundo;\n    segundo = 1;\n    ++nombre;\n    std::cout << primero << ':' << segundo << ':' << nombre;\n    return 0;\n}\n"
+          "code": "#include <iostream>\n\nint main() {\n    int primero = 3;\n    int segundo = 8;\n    int& nombre = primero;\n\n    nombre = segundo;\n    segundo = 1;\n    ++nombre;\n\n    std::cout << primero << ':' << segundo << ':' << nombre;\n\n    return 0;\n}\n"
         },
         {
           "type": "math_puzzle",
@@ -213,7 +213,7 @@
           "id": "p3_u4l1_alias_desde_alias",
           "language": "cpp",
           "question": "¿Qué valores muestra total:primero:segundo?",
-          "code": "#include <iostream>\n\nint main() {\n    int total = 2;\n    int& primero = total;\n    int& segundo = primero;\n    segundo += 3;\n    primero += 4;\n    std::cout << total << ':' << primero << ':' << segundo;\n    return 0;\n}\n",
+          "code": "#include <iostream>\n\nint main() {\n    int total = 2;\n    int& primero = total;\n    int& segundo = primero;\n\n    segundo += 3;\n    primero += 4;\n\n    std::cout << total << ':' << primero << ':' << segundo;\n\n    return 0;\n}\n",
           "answers": [
             "9:9:9"
           ],
@@ -308,7 +308,7 @@
           "id": "p3_u4l1_elemento_elegido",
           "language": "cpp",
           "question": "¿Qué muestra el programa al leer los tres elementos, elegido y datos[indice]?",
-          "code": "#include <array>\n#include <iostream>\n\nint main() {\n    std::array<int, 3> datos{1, 4, 7};\n    int indice = 0;\n    int& elegido = datos[indice];\n    indice = 2;\n    elegido += 3;\n    std::cout << datos[0] << ':' << datos[1] << ':' << datos[2]\n              << ':' << elegido << ':' << datos[indice];\n    return 0;\n}\n",
+          "code": "#include <array>\n#include <iostream>\n\nint main() {\n    std::array<int, 3> datos{1, 4, 7};\n    int indice = 0;\n    int& elegido = datos[indice];\n\n    indice = 2;\n    elegido += 3;\n\n    std::cout << datos[0] << ':' << datos[1] << ':' << datos[2]\n              << ':' << elegido << ':' << datos[indice];\n    return 0;\n}\n",
           "answers": [
             "4:4:7:4:7"
           ],
@@ -336,7 +336,7 @@
           "id": "p3_u4l1_array_completo",
           "language": "cpp",
           "question": "¿Qué valores muestra datos[0]:datos[1]:copia[0]:copia[1]?",
-          "code": "#include <array>\n#include <iostream>\n\nint main() {\n    std::array<int, 3> datos{2, 5, 8};\n    std::array<int, 3> copia = datos;\n    std::array<int, 3>& vista = datos;\n    vista[1] = 9;\n    copia[0] = 7;\n    std::cout << datos[0] << ':' << datos[1]\n              << ':' << copia[0] << ':' << copia[1];\n    return 0;\n}\n",
+          "code": "#include <array>\n#include <iostream>\n\nint main() {\n    std::array<int, 3> datos{2, 5, 8};\n    std::array<int, 3> copia = datos;\n    std::array<int, 3>& vista = datos;\n\n    vista[1] = 9;\n    copia[0] = 7;\n\n    std::cout << datos[0] << ':' << datos[1]\n              << ':' << copia[0] << ':' << copia[1];\n    return 0;\n}\n",
           "answers": [
             "2:9:7:5"
           ],
@@ -352,7 +352,7 @@
           "id": "p3_u4l1_asignar_array_sin_reenlazar",
           "language": "cpp",
           "question": "¿Qué valores muestra datos[0]:datos[1]:otro[0]:otro[1]?",
-          "code": "#include <array>\n#include <iostream>\n\nint main() {\n    std::array<int, 2> datos{1, 2};\n    std::array<int, 2> otro{6, 7};\n    std::array<int, 2>& vista = datos;\n    vista = otro;\n    otro[0] = 9;\n    vista[1] += 1;\n    std::cout << datos[0] << ':' << datos[1] << ':' << otro[0] << ':' << otro[1];\n    return 0;\n}\n",
+          "code": "#include <array>\n#include <iostream>\n\nint main() {\n    std::array<int, 2> datos{1, 2};\n    std::array<int, 2> otro{6, 7};\n    std::array<int, 2>& vista = datos;\n\n    vista = otro;\n    otro[0] = 9;\n    vista[1] += 1;\n\n    std::cout << datos[0] << ':' << datos[1] << ':' << otro[0] << ':' << otro[1];\n\n    return 0;\n}\n",
           "answers": [
             "6:8:9:7"
           ],
@@ -380,7 +380,7 @@
           "id": "p3_u4l1_terminar_alias_local",
           "language": "cpp",
           "question": "¿Qué valor se puede leer mediante total después del bloque interior?",
-          "code": "#include <iostream>\n\nint main() {\n    int total = 4;\n    {\n        int& local = total;\n        local += 2;\n    }\n    std::cout << total;\n    return 0;\n}\n",
+          "code": "#include <iostream>\n\nint main() {\n    int total = 4;\n    {\n        int& local = total;\n        local += 2;\n    }\n    std::cout << total;\n\n    return 0;\n}\n",
           "answers": [
             "6"
           ],
@@ -414,7 +414,7 @@
         {
           "type": "cpp_compiler",
           "language": "cpp",
-          "initialCode": "#include <iostream>\n\nint main() {\n    int principal = 4;\n    int secundario = 9;\n    int alias = principal;\n    const int respaldo = principal;\n    alias = secundario;\n    secundario = 1;\n    alias += 2;\n    std::cout << principal << ':' << alias << ':' << respaldo << ':' << secundario;\n    return 0;\n}\n",
+          "initialCode": "#include <iostream>\n\nint main() {\n    int principal = 4;\n    int secundario = 9;\n    int alias = principal;\n    const int respaldo = principal;\n\n    alias = secundario;\n    secundario = 1;\n    alias += 2;\n\n    std::cout << principal << ':' << alias << ':' << respaldo << ':' << secundario;\n\n    return 0;\n}\n",
           "initialStandardInput": "",
           "outputCheck": {
             "inputComparison": "tokens",
@@ -440,7 +440,7 @@
         {
           "type": "code",
           "language": "cpp",
-          "code": "#include <iostream>\n\nint main() {\n    int principal = 4;\n    int secundario = 9;\n    int& alias = principal;\n    const int respaldo = principal;\n    alias = secundario;\n    secundario = 1;\n    alias += 2;\n    std::cout << principal << ':' << alias << ':' << respaldo << ':' << secundario;\n    return 0;\n}\n"
+          "code": "#include <iostream>\n\nint main() {\n    int principal = 4;\n    int secundario = 9;\n    int& alias = principal;\n    const int respaldo = principal;\n\n    alias = secundario;\n    secundario = 1;\n    alias += 2;\n\n    std::cout << principal << ':' << alias << ':' << respaldo << ':' << secundario;\n\n    return 0;\n}\n"
         },
         {
           "type": "paragraph",
@@ -551,7 +551,7 @@
         {
           "type": "cpp_compiler",
           "language": "cpp",
-          "initialCode": "#include <array>\n#include <cstddef>\n#include <iostream>\n\nint main() {\n    std::array<int, 3> datos{2, 5, 8};\n    int cantidad = 0;\n    if (!(std::cin >> cantidad) || cantidad < 1 || cantidad > 10) {\n        return 1;\n    }\n    for (int orden = 0; orden < cantidad; ++orden) {\n        int indice = 0;\n        int cambio = 0;\n        if (!(std::cin >> indice >> cambio)) {\n            return 1;\n        }\n        // Completa aquí la validación, la referencia y la copia del valor previo.\n        std::cout << \"Pendiente;Indice:\" << indice << \";Cambio:\" << cambio;\n        std::cout << \";Datos:\" << datos[0] << ',' << datos[1] << ',' << datos[2] << '\\n';\n    }\n    return 0;\n}\n",
+          "initialCode": "#include <array>\n#include <cstddef>\n#include <iostream>\n\nint main() {\n    std::array<int, 3> datos{2, 5, 8};\n    int cantidad = 0;\n\n    if (!(std::cin >> cantidad) || cantidad < 1 || cantidad > 10) {\n        return 1;\n    }\n    for (int orden = 0; orden < cantidad; ++orden) {\n        int indice = 0;\n        int cambio = 0;\n\n        if (!(std::cin >> indice >> cambio)) {\n            return 1;\n        }\n        // Completa aquí la validación, la referencia y la copia del valor previo.\n        \n        std::cout << \"Pendiente;Indice:\" << indice << \";Cambio:\" << cambio;\n        std::cout << \";Datos:\" << datos[0] << ',' << datos[1] << ',' << datos[2] << '\\n';\n    }\n\n    return 0;\n}\n",
           "initialStandardInput": "7\n1 2\n0 -3\n2 -3\n3 1\n1 -2\n0 3\n2 4\n",
           "outputCheck": {
             "inputComparison": "tokens",
@@ -716,7 +716,7 @@
         {
           "type": "code",
           "language": "cpp",
-          "code": "#include <array>\n#include <cstddef>\n#include <iostream>\n\nint main() {\n    std::array<int, 3> datos{2, 5, 8};\n    int cantidad = 0;\n    if (!(std::cin >> cantidad) || cantidad < 1 || cantidad > 10) {\n        return 1;\n    }\n    for (int orden = 0; orden < cantidad; ++orden) {\n        int indice = 0;\n        int cambio = 0;\n        if (!(std::cin >> indice >> cambio)) {\n            return 1;\n        }\n        if (indice < 0 || indice > 2) {\n            std::cout << \"Indice invalido;Antes:-1;Actual:-1\";\n        } else {\n            int& seleccionado = datos[static_cast<std::size_t>(indice)];\n            const int antes = seleccionado;\n            bool aceptada = false;\n            if (cambio >= -3 && cambio <= 3) {\n                const int candidato = seleccionado + cambio;\n                if (candidato >= 0 && candidato <= 9) {\n                    seleccionado = candidato;\n                    aceptada = true;\n                }\n            }\n            std::cout << (aceptada ? \"Aceptada\" : \"Rechazo\")\n                      << \";Antes:\" << antes << \";Actual:\" << seleccionado;\n        }\n        std::cout << \";Datos:\" << datos[0] << ',' << datos[1] << ',' << datos[2] << '\\n';\n    }\n    return 0;\n}\n"
+          "code": "#include <array>\n#include <cstddef>\n#include <iostream>\n\nint main() {\n    std::array<int, 3> datos{2, 5, 8};\n    int cantidad = 0;\n\n    if (!(std::cin >> cantidad) || cantidad < 1 || cantidad > 10) {\n        return 1;\n    }\n    for (int orden = 0; orden < cantidad; ++orden) {\n        int indice = 0;\n        int cambio = 0;\n\n        if (!(std::cin >> indice >> cambio)) {\n            return 1;\n        }\n        if (indice < 0 || indice > 2) {\n            std::cout << \"Indice invalido;Antes:-1;Actual:-1\";\n        } else {\n            int& seleccionado = datos[static_cast<std::size_t>(indice)];\n            const int antes = seleccionado;\n            bool aceptada = false;\n\n            if (cambio >= -3 && cambio <= 3) {\n                const int candidato = seleccionado + cambio;\n                if (candidato >= 0 && candidato <= 9) {\n                    seleccionado = candidato;\n                    aceptada = true;\n                }\n            }\n            std::cout << (aceptada ? \"Aceptada\" : \"Rechazo\")\n                      << \";Antes:\" << antes << \";Actual:\" << seleccionado;\n        }\n        std::cout << \";Datos:\" << datos[0] << ',' << datos[1] << ',' << datos[2] << '\\n';\n    }\n\n    return 0;\n}\n"
         },
         {
           "type": "paragraph",
@@ -2000,6 +2000,274 @@
       }
     },
     "additions": [],
-    "editorial": []
+    "editorial": [
+      {
+        "id": "block_0000_0002",
+        "beforeSha256": "e437fc18de4879ceea5c1bb9d17ba2335b5b20fcce2b43f7061cf14e4b0cd636",
+        "afterSha256": "78613def19491b412b70101f3951b1b30a72d91679545eb27798f31a7fb30afe"
+      },
+      {
+        "id": "block_0001_0002",
+        "beforeSha256": "92fc4f2dc983bf5661ccbeaad9c6c689a26c759f9b46e6435233697ae8390be7",
+        "afterSha256": "013a048d8fb16796b037b39b41a319cd61631039d9ba88e5f0289addc2d28f81"
+      },
+      {
+        "id": "block_0002_0002",
+        "beforeSha256": "810cb97975712d48c0d07cdb2eb0a481b47ed1d62a9c3c056753245dcfbb1d6b",
+        "afterSha256": "aa95e85c741b102f49c6811a7d33e276ecf3b0f8d338d1f9c4deebcaf5f6389b"
+      },
+      {
+        "id": "block_0003_0002",
+        "beforeSha256": "51e0477e6b0ebee2a5e65fe94fa10cb1a6d023e59a1b260ad3d3b98ea12b65a3",
+        "afterSha256": "95681e72687f52eec9fa4160fbddf282e71b9e4832c81246de558bf8307b7c34"
+      },
+      {
+        "id": "block_0004_0002",
+        "beforeSha256": "70a35db588e53131d2f0fd7a9b985f3776d7df58d5aabaf8e4091c66e98eb05c",
+        "afterSha256": "ef8b5a723c902cf4046a39884c8af202a8d301dfb2628a781b2287d64cbe0281"
+      },
+      {
+        "id": "block_0007_0002",
+        "beforeSha256": "e6d5649fc8a2bf3abc59e6a26bed68a5bd2933fc49136d7965686307e17ceb0f",
+        "afterSha256": "a5173003eea017db3a5b4dc544390c70fa5b8ba0b381864afe53ea1084c2d82c"
+      },
+      {
+        "id": "block_0008_0002",
+        "beforeSha256": "acde6f3797227c799d168e5645aca6564c90e42f3ee09f7de134fc04bce36357",
+        "afterSha256": "84e6f64888280d6505f69f9a5fd721967e2567c6d92c83ec4a2145ff99fc9400"
+      },
+      {
+        "id": "block_0008_0004",
+        "beforeSha256": "6223e0a927c7af6d9bc8acea69dc2f867d0daa1172724118cfd08d256cb69244",
+        "afterSha256": "0f4e4a52cc1fdba89cf1c6cbd8c604a74845f860bf8279e59cd10e1b90489ada"
+      },
+      {
+        "id": "block_0009_0002",
+        "beforeSha256": "683cdb06d0a412c72d507024c862185500edf7ac5b8c46936ad083bf71a38fdb",
+        "afterSha256": "7c94b41b16d52b2813246ccc85392139a3cf59b516e1fbd910ccd86804372d98"
+      },
+      {
+        "id": "block_0010_0004",
+        "beforeSha256": "8ed9635ae862fb1f7f34aa56848884745e736baf6a6760a014a15aa3f7430a08",
+        "afterSha256": "5c295e9fb186214a33f71ad4eb49cb0f7adf0336ebae209fd1c5305451462393"
+      },
+      {
+        "id": "block_0011_0001",
+        "beforeSha256": "6009b8e61e8e65109227b6d6d49ba0d2ba703f790c0e2695415648a86ad83a47",
+        "afterSha256": "949476c5f3a17974e8a0648800627376b4c56d26b2ef6db4beacd229c031715c"
+      },
+      {
+        "id": "block_0013_0014",
+        "beforeSha256": "2cf60804cdde30ecaa50acb2319ad3e81c0fa159fdbc705dec32d6f1aa41a830",
+        "afterSha256": "0f9877930ab02bcb9980bc0b6ee7ed1b467db28c34897bbe813c2b2442a51962"
+      },
+      {
+        "id": "block_0016_0001",
+        "beforeSha256": "9d802166c8a292d924554134caf2b193014b3af5fa351dd33ff1e8c73f55ac20",
+        "afterSha256": "b416a52c4b352fe25b5c1070b52c692d309b8b262f9b12eea1e2f478a4236b88"
+      }
+    ],
+    "sourceFormatRevisions": [
+      {
+        "id": "block_0000_0002",
+        "block": {
+          "type": "output_prediction",
+          "id": "p3_u4l1_recuperar_copia",
+          "language": "cpp",
+          "question": "¿Qué valores muestra el programa?",
+          "code": "#include <iostream>\n\nint main() {\n    int piezas = 4;\n    int copia = piezas;\n    piezas = 7;\n    std::cout << piezas << ':' << copia;\n    return 0;\n}\n",
+          "answers": [
+            "7:4"
+          ],
+          "outputComparison": "exact",
+          "explanation": "copia recibe 4 al inicializarse. La asignación posterior cambia piezas a 7, pero no vuelve a inicializar copia ni la conecta con piezas."
+        }
+      },
+      {
+        "id": "block_0001_0002",
+        "block": {
+          "type": "code",
+          "language": "cpp",
+          "code": "#include <iostream>\n\nint main() {\n    int piezas = 5;\n    int& disponibles = piezas;\n    disponibles += 3;\n    std::cout << piezas << ':' << disponibles;\n    return 0;\n}\n"
+        }
+      },
+      {
+        "id": "block_0002_0002",
+        "block": {
+          "type": "output_prediction",
+          "id": "p3_u4l1_alias_y_copia",
+          "language": "cpp",
+          "question": "Sigue las dos modificaciones. ¿Qué muestra cantidad:actual:copia?",
+          "code": "#include <iostream>\n\nint main() {\n    int cantidad = 4;\n    int copia = cantidad;\n    int& actual = cantidad;\n    cantidad = 6;\n    ++actual;\n    std::cout << cantidad << ':' << actual << ':' << copia;\n    return 0;\n}\n",
+          "answers": [
+            "7:7:4"
+          ],
+          "outputComparison": "exact",
+          "explanation": "copia recibe 4. actual se refiere a cantidad. La asignación guarda 6 en cantidad y ++actual aumenta ese mismo entero a 7. La copia conserva 4."
+        }
+      },
+      {
+        "id": "block_0003_0002",
+        "block": {
+          "type": "code",
+          "language": "cpp",
+          "code": "#include <iostream>\n\nint main() {\n    int primero = 3;\n    int segundo = 8;\n    int& nombre = primero;\n    nombre = segundo;\n    segundo = 1;\n    ++nombre;\n    std::cout << primero << ':' << segundo << ':' << nombre;\n    return 0;\n}\n"
+        }
+      },
+      {
+        "id": "block_0004_0002",
+        "block": {
+          "type": "output_prediction",
+          "id": "p3_u4l1_alias_desde_alias",
+          "language": "cpp",
+          "question": "¿Qué valores muestra total:primero:segundo?",
+          "code": "#include <iostream>\n\nint main() {\n    int total = 2;\n    int& primero = total;\n    int& segundo = primero;\n    segundo += 3;\n    primero += 4;\n    std::cout << total << ':' << primero << ':' << segundo;\n    return 0;\n}\n",
+          "answers": [
+            "9:9:9"
+          ],
+          "outputComparison": "exact",
+          "explanation": "Los tres nombres permiten utilizar total. segundo += 3 deja ese entero en 5 y primero += 4 lo deja en 9. Ninguna de las dos referencias es una copia del valor inicial."
+        }
+      },
+      {
+        "id": "block_0007_0002",
+        "block": {
+          "type": "output_prediction",
+          "id": "p3_u4l1_elemento_elegido",
+          "language": "cpp",
+          "question": "¿Qué muestra el programa al leer los tres elementos, elegido y datos[indice]?",
+          "code": "#include <array>\n#include <iostream>\n\nint main() {\n    std::array<int, 3> datos{1, 4, 7};\n    int indice = 0;\n    int& elegido = datos[indice];\n    indice = 2;\n    elegido += 3;\n    std::cout << datos[0] << ':' << datos[1] << ':' << datos[2]\n              << ':' << elegido << ':' << datos[indice];\n    return 0;\n}\n",
+          "answers": [
+            "4:4:7:4:7"
+          ],
+          "outputComparison": "exact",
+          "explanation": "indice valía cero al inicializar elegido, que se refiere a datos[0]. Cambiar indice a 2 no cambia ese destino. elegido += 3 aumenta datos[0] de 1 a 4. La lectura datos[indice] utiliza ahora el índice 2 y obtiene 7."
+        }
+      },
+      {
+        "id": "block_0008_0002",
+        "block": {
+          "type": "output_prediction",
+          "id": "p3_u4l1_array_completo",
+          "language": "cpp",
+          "question": "¿Qué valores muestra datos[0]:datos[1]:copia[0]:copia[1]?",
+          "code": "#include <array>\n#include <iostream>\n\nint main() {\n    std::array<int, 3> datos{2, 5, 8};\n    std::array<int, 3> copia = datos;\n    std::array<int, 3>& vista = datos;\n    vista[1] = 9;\n    copia[0] = 7;\n    std::cout << datos[0] << ':' << datos[1]\n              << ':' << copia[0] << ':' << copia[1];\n    return 0;\n}\n",
+          "answers": [
+            "2:9:7:5"
+          ],
+          "outputComparison": "exact",
+          "explanation": "vista[1] = 9 cambia datos[1]. copia[0] = 7 cambia sólo la copia. datos[0] sigue en 2 y copia[1] conserva el 5 que recibió antes de esas modificaciones."
+        }
+      },
+      {
+        "id": "block_0008_0004",
+        "block": {
+          "type": "output_prediction",
+          "id": "p3_u4l1_asignar_array_sin_reenlazar",
+          "language": "cpp",
+          "question": "¿Qué valores muestra datos[0]:datos[1]:otro[0]:otro[1]?",
+          "code": "#include <array>\n#include <iostream>\n\nint main() {\n    std::array<int, 2> datos{1, 2};\n    std::array<int, 2> otro{6, 7};\n    std::array<int, 2>& vista = datos;\n    vista = otro;\n    otro[0] = 9;\n    vista[1] += 1;\n    std::cout << datos[0] << ':' << datos[1] << ':' << otro[0] << ':' << otro[1];\n    return 0;\n}\n",
+          "answers": [
+            "6:8:9:7"
+          ],
+          "outputComparison": "exact",
+          "explanation": "vista = otro copia 6 y 7 en datos. otro[0] = 9 cambia sólo el otro array. vista[1] += 1 sigue actuando sobre datos y aumenta su segundo elemento a 8. vista no pasó a referirse a otro."
+        }
+      },
+      {
+        "id": "block_0009_0002",
+        "block": {
+          "type": "output_prediction",
+          "id": "p3_u4l1_terminar_alias_local",
+          "language": "cpp",
+          "question": "¿Qué valor se puede leer mediante total después del bloque interior?",
+          "code": "#include <iostream>\n\nint main() {\n    int total = 4;\n    {\n        int& local = total;\n        local += 2;\n    }\n    std::cout << total;\n    return 0;\n}\n",
+          "answers": [
+            "6"
+          ],
+          "outputComparison": "exact",
+          "explanation": "local += 2 modifica total de 4 a 6. El cierre del bloque termina el uso de ese nombre local, pero no el entero definido en main. Por eso la lectura posterior de total es válida."
+        }
+      },
+      {
+        "id": "block_0010_0004",
+        "block": {
+          "type": "cpp_compiler",
+          "language": "cpp",
+          "initialCode": "#include <iostream>\n\nint main() {\n    int principal = 4;\n    int secundario = 9;\n    int alias = principal;\n    const int respaldo = principal;\n    alias = secundario;\n    secundario = 1;\n    alias += 2;\n    std::cout << principal << ':' << alias << ':' << respaldo << ':' << secundario;\n    return 0;\n}\n",
+          "initialStandardInput": "",
+          "outputCheck": {
+            "inputComparison": "tokens",
+            "cases": [
+              {
+                "standardInput": "",
+                "outputs": [
+                  "11:11:4:1"
+                ],
+                "explanation": "alias se refiere a principal. La asignación desde secundario copia 9 a principal; el cambio posterior de secundario no cambia ese destino. El incremento final deja principal y alias en 11; respaldo conserva 4."
+              }
+            ]
+          }
+        }
+      },
+      {
+        "id": "block_0011_0001",
+        "block": {
+          "type": "code",
+          "language": "cpp",
+          "code": "#include <iostream>\n\nint main() {\n    int principal = 4;\n    int secundario = 9;\n    int& alias = principal;\n    const int respaldo = principal;\n    alias = secundario;\n    secundario = 1;\n    alias += 2;\n    std::cout << principal << ':' << alias << ':' << respaldo << ':' << secundario;\n    return 0;\n}\n"
+        }
+      },
+      {
+        "id": "block_0013_0014",
+        "block": {
+          "type": "cpp_compiler",
+          "language": "cpp",
+          "initialCode": "#include <array>\n#include <cstddef>\n#include <iostream>\n\nint main() {\n    std::array<int, 3> datos{2, 5, 8};\n    int cantidad = 0;\n    if (!(std::cin >> cantidad) || cantidad < 1 || cantidad > 10) {\n        return 1;\n    }\n    for (int orden = 0; orden < cantidad; ++orden) {\n        int indice = 0;\n        int cambio = 0;\n        if (!(std::cin >> indice >> cambio)) {\n            return 1;\n        }\n        // Completa aquí la validación, la referencia y la copia del valor previo.\n        std::cout << \"Pendiente;Indice:\" << indice << \";Cambio:\" << cambio;\n        std::cout << \";Datos:\" << datos[0] << ',' << datos[1] << ',' << datos[2] << '\\n';\n    }\n    return 0;\n}\n",
+          "initialStandardInput": "7\n1 2\n0 -3\n2 -3\n3 1\n1 -2\n0 3\n2 4\n",
+          "outputCheck": {
+            "inputComparison": "tokens",
+            "cases": [
+              {
+                "standardInput": "7\n1 2\n0 -3\n2 -3\n3 1\n1 -2\n0 3\n2 4\n",
+                "outputs": [
+                  "Aceptada;Antes:5;Actual:7;Datos:2,7,8\nRechazo;Antes:2;Actual:2;Datos:2,7,8\nAceptada;Antes:8;Actual:5;Datos:2,7,5\nIndice invalido;Antes:-1;Actual:-1;Datos:2,7,5\nAceptada;Antes:7;Actual:5;Datos:2,5,5\nAceptada;Antes:2;Actual:5;Datos:5,5,5\nRechazo;Antes:5;Actual:5;Datos:5,5,5\n"
+                ],
+                "explanation": "Cada Antes es una copia del valor previo del elemento. La referencia modifica sólo la posición elegida cuando se acepta; los rechazos conservan las tres posiciones."
+              },
+              {
+                "standardInput": "6\n0 -2\n0 0\n2 1\n2 1\n-1 2\n2 -3\n",
+                "outputs": [
+                  "Aceptada;Antes:2;Actual:0;Datos:0,5,8\nAceptada;Antes:0;Actual:0;Datos:0,5,8\nAceptada;Antes:8;Actual:9;Datos:0,5,9\nRechazo;Antes:9;Actual:9;Datos:0,5,9\nIndice invalido;Antes:-1;Actual:-1;Datos:0,5,9\nAceptada;Antes:9;Actual:6;Datos:0,5,6\n"
+                ],
+                "explanation": "Cada Antes es una copia del valor previo del elemento. La referencia modifica sólo la posición elegida cuando se acepta; los rechazos conservan las tres posiciones."
+              },
+              {
+                "standardInput": "5\n1 -3\n1 -2\n1 -1\n1 3\n1 3\n",
+                "outputs": [
+                  "Aceptada;Antes:5;Actual:2;Datos:2,2,8\nAceptada;Antes:2;Actual:0;Datos:2,0,8\nRechazo;Antes:0;Actual:0;Datos:2,0,8\nAceptada;Antes:0;Actual:3;Datos:2,3,8\nAceptada;Antes:3;Actual:6;Datos:2,6,8\n"
+                ],
+                "explanation": "Cada Antes es una copia del valor previo del elemento. La referencia modifica sólo la posición elegida cuando se acepta; los rechazos conservan las tres posiciones."
+              },
+              {
+                "standardInput": "5\n3 2147483647\n0 -2147483648\n2 2147483647\n1 -4\n0 1\n",
+                "outputs": [
+                  "Indice invalido;Antes:-1;Actual:-1;Datos:2,5,8\nRechazo;Antes:2;Actual:2;Datos:2,5,8\nRechazo;Antes:8;Actual:8;Datos:2,5,8\nRechazo;Antes:5;Actual:5;Datos:2,5,8\nAceptada;Antes:2;Actual:3;Datos:3,5,8\n"
+                ],
+                "explanation": "Cada Antes es una copia del valor previo del elemento. La referencia modifica sólo la posición elegida cuando se acepta; los rechazos conservan las tres posiciones."
+              }
+            ]
+          }
+        }
+      },
+      {
+        "id": "block_0016_0001",
+        "block": {
+          "type": "code",
+          "language": "cpp",
+          "code": "#include <array>\n#include <cstddef>\n#include <iostream>\n\nint main() {\n    std::array<int, 3> datos{2, 5, 8};\n    int cantidad = 0;\n    if (!(std::cin >> cantidad) || cantidad < 1 || cantidad > 10) {\n        return 1;\n    }\n    for (int orden = 0; orden < cantidad; ++orden) {\n        int indice = 0;\n        int cambio = 0;\n        if (!(std::cin >> indice >> cambio)) {\n            return 1;\n        }\n        if (indice < 0 || indice > 2) {\n            std::cout << \"Indice invalido;Antes:-1;Actual:-1\";\n        } else {\n            int& seleccionado = datos[static_cast<std::size_t>(indice)];\n            const int antes = seleccionado;\n            bool aceptada = false;\n            if (cambio >= -3 && cambio <= 3) {\n                const int candidato = seleccionado + cambio;\n                if (candidato >= 0 && candidato <= 9) {\n                    seleccionado = candidato;\n                    aceptada = true;\n                }\n            }\n            std::cout << (aceptada ? \"Aceptada\" : \"Rechazo\")\n                      << \";Antes:\" << antes << \";Actual:\" << seleccionado;\n        }\n        std::cout << \";Datos:\" << datos[0] << ',' << datos[1] << ',' << datos[2] << '\\n';\n    }\n    return 0;\n}\n"
+        }
+      }
+    ]
   }
 }

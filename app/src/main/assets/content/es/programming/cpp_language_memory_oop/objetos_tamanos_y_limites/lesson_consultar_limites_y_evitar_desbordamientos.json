@@ -57,7 +57,7 @@
           "id": "p3_u1l2_consultas",
           "language": "cpp",
           "question": "Completa los nombres de las consultas para obtener el menor int y el mayor int, en ese orden. Escribe sólo los nombres, sin paréntesis.",
-          "template": "#include <iostream>\n#include <limits>\n\nint main() {\n    const int inferior = std::numeric_limits<int>::[]();\n    const int superior = std::numeric_limits<int>::[]();\n    std::cout << (inferior <= 0 && 0 <= superior);\n    return 0;\n}\n",
+          "template": "#include <iostream>\n#include <limits>\n\nint main() {\n    const int inferior = std::numeric_limits<int>::[]();\n    const int superior = std::numeric_limits<int>::[]();\n\n    std::cout << (inferior <= 0 && 0 <= superior);\n\n    return 0;\n}\n",
           "answers": [
             "lowest",
             "max"
@@ -84,7 +84,7 @@
         {
           "type": "code",
           "language": "cpp",
-          "code": "#include <iostream>\n#include <limits>\n\nint main() {\n    const int inferior = std::numeric_limits<int>::lowest();\n    const int superior = std::numeric_limits<int>::max();\n\n    std::cout << \"MinimoInt=\" << inferior << '\\n';\n    std::cout << \"MaximoInt=\" << superior << '\\n';\n    std::cout << \"MaximoLong=\" << std::numeric_limits<long>::max() << '\\n';\n    return 0;\n}\n"
+          "code": "#include <iostream>\n#include <limits>\n\nint main() {\n    const int inferior = std::numeric_limits<int>::lowest();\n    const int superior = std::numeric_limits<int>::max();\n\n    std::cout << \"MinimoInt=\" << inferior << '\\n';\n    std::cout << \"MaximoInt=\" << superior << '\\n';\n    std::cout << \"MaximoLong=\" << std::numeric_limits<long>::max() << '\\n';\n\n    return 0;\n}\n"
         },
         {
           "type": "paragraph",
@@ -197,7 +197,7 @@
           "id": "p3_u1l2_incremento_en_frontera",
           "question": "Predice las dos líneas exactas. La primera llamada empieza en el máximo; la segunda, en el entero inmediatamente anterior.",
           "language": "cpp",
-          "code": "#include <iostream>\n#include <limits>\n\nbool subir_uno(int& valor) {\n    const int limite = std::numeric_limits<int>::max();\n    if (valor == limite) {\n        return false;\n    }\n\n    ++valor;\n    return true;\n}\n\nint main() {\n    const int limite = std::numeric_limits<int>::max();\n    int valor = limite;\n    const bool primero = subir_uno(valor);\n    std::cout << primero << \":\" << (valor == limite) << '\\n';\n\n    valor = limite - 1;\n    const bool segundo = subir_uno(valor);\n    std::cout << segundo << \":\" << (valor == limite);\n    return 0;\n}\n",
+          "code": "#include <iostream>\n#include <limits>\n\nbool subir_uno(int& valor) {\n    const int limite = std::numeric_limits<int>::max();\n    if (valor == limite) {\n        return false;\n    }\n\n    ++valor;\n    return true;\n}\n\nint main() {\n    const int limite = std::numeric_limits<int>::max();\n    int valor = limite;\n    const bool primero = subir_uno(valor);\n\n    std::cout << primero << \":\" << (valor == limite) << '\\n';\n\n    valor = limite - 1;\n    const bool segundo = subir_uno(valor);\n\n    std::cout << segundo << \":\" << (valor == limite);\n\n    return 0;\n}\n",
           "answers": [
             "0:1\n1:1"
           ],
@@ -240,7 +240,7 @@
         {
           "type": "cpp_compiler",
           "language": "cpp",
-          "initialCode": "#include <iostream>\n#include <limits>\n\nbool bajar_uno(int& valor) {\n    const int minimo = std::numeric_limits<int>::lowest();\n    // Esta version comprueba una condicion, pero todavia no cambia valor.\n    return valor > minimo;\n}\n\nint main() {\n    int distancia = 0;\n    if (!(std::cin >> distancia) || distancia < 0 || distancia > 2) {\n        return 1;\n    }\n\n    const int minimo = std::numeric_limits<int>::lowest();\n    int valor = minimo + distancia;\n    const int original = valor;\n    const bool aceptado = bajar_uno(valor);\n\n    std::cout << \"Aceptado=\" << aceptado << '\\n';\n    std::cout << \"EnMinimo=\" << (valor == minimo) << '\\n';\n    std::cout << \"Conservado=\" << (valor == original) << '\\n';\n    return 0;\n}\n",
+          "initialCode": "#include <iostream>\n#include <limits>\n\nbool bajar_uno(int& valor) {\n    const int minimo = std::numeric_limits<int>::lowest();\n    // Esta version comprueba una condicion, pero todavia no cambia valor.\n    return valor > minimo;\n}\n\nint main() {\n    int distancia = 0;\n    if (!(std::cin >> distancia) || distancia < 0 || distancia > 2) {\n        return 1;\n    }\n\n    const int minimo = std::numeric_limits<int>::lowest();\n    int valor = minimo + distancia;\n    const int original = valor;\n    const bool aceptado = bajar_uno(valor);\n\n    std::cout << \"Aceptado=\" << aceptado << '\\n';\n    std::cout << \"EnMinimo=\" << (valor == minimo) << '\\n';\n    std::cout << \"Conservado=\" << (valor == original) << '\\n';\n\n    return 0;\n}\n",
           "initialStandardInput": "1\n",
           "outputCheck": {
             "inputComparison": "tokens",
@@ -302,7 +302,7 @@
         {
           "type": "code",
           "language": "cpp",
-          "code": "#include <iostream>\n#include <limits>\n\nbool bajar_uno(int& valor) {\n    const int minimo = std::numeric_limits<int>::lowest();\n    if (valor == minimo) {\n        return false;\n    }\n\n    --valor;\n    return true;\n}\n\nint main() {\n    int distancia = 0;\n    if (!(std::cin >> distancia) || distancia < 0 || distancia > 2) {\n        return 1;\n    }\n\n    const int minimo = std::numeric_limits<int>::lowest();\n    int valor = minimo + distancia;\n    const int original = valor;\n    const bool aceptado = bajar_uno(valor);\n\n    std::cout << \"Aceptado=\" << aceptado << '\\n';\n    std::cout << \"EnMinimo=\" << (valor == minimo) << '\\n';\n    std::cout << \"Conservado=\" << (valor == original) << '\\n';\n    return 0;\n}\n"
+          "code": "#include <iostream>\n#include <limits>\n\nbool bajar_uno(int& valor) {\n    const int minimo = std::numeric_limits<int>::lowest();\n    if (valor == minimo) {\n        return false;\n    }\n\n    --valor;\n    return true;\n}\n\nint main() {\n    int distancia = 0;\n    if (!(std::cin >> distancia) || distancia < 0 || distancia > 2) {\n        return 1;\n    }\n\n    const int minimo = std::numeric_limits<int>::lowest();\n    int valor = minimo + distancia;\n    const int original = valor;\n    const bool aceptado = bajar_uno(valor);\n\n    std::cout << \"Aceptado=\" << aceptado << '\\n';\n    std::cout << \"EnMinimo=\" << (valor == minimo) << '\\n';\n    std::cout << \"Conservado=\" << (valor == original) << '\\n';\n\n    return 0;\n}\n"
         },
         {
           "type": "paragraph",
@@ -952,6 +952,124 @@
       }
     },
     "additions": [],
-    "editorial": []
+    "editorial": [
+      {
+        "id": "block_0001_0005",
+        "beforeSha256": "134d4995237547d087dfd55be766f25862f69f763cebc0e9156b95ce74257b10",
+        "afterSha256": "5073a9101ef5f60c19be9e5bbfc2cbe188981b36ea74537240c8c2496b1278d8"
+      },
+      {
+        "id": "block_0002_0001",
+        "beforeSha256": "02df9d759f6875d85094195faa76ac3b5483be88b7f688880df61e33b9b37da6",
+        "afterSha256": "dc8e207deceb6a1e985b5928f476952c7a726a9e6a8a5d44f2743f2d486626af"
+      },
+      {
+        "id": "block_0005_0001",
+        "beforeSha256": "4651d1f29d168e7fc2ca52761c1f20082b0a15b27d12fe24d199b9af178cda1e",
+        "afterSha256": "93f24dfd33c49d048db6968bcc718ee2e2c1214055813bbc9c3385a912f28c5f"
+      },
+      {
+        "id": "block_0006_0005",
+        "beforeSha256": "fd1c793c6178636c42fa68b16d9d7a4c1de25aa8996540bc8e4d071955411781",
+        "afterSha256": "8b059b08d261024565f22998fc6f6edfb38a2a2925c9d4f38eaebb3daf57231b"
+      },
+      {
+        "id": "block_0007_0001",
+        "beforeSha256": "608c011456893ce84580acf566827364e1f90d25a450cc27e3d16fb0a56b6ee4",
+        "afterSha256": "b19123a29db085b76119187481d5609c0a313037ecb9bedae1ee0f9861955f6c"
+      }
+    ],
+    "sourceFormatRevisions": [
+      {
+        "id": "block_0001_0005",
+        "block": {
+          "type": "inline_fill_code",
+          "id": "p3_u1l2_consultas",
+          "language": "cpp",
+          "question": "Completa los nombres de las consultas para obtener el menor int y el mayor int, en ese orden. Escribe sólo los nombres, sin paréntesis.",
+          "template": "#include <iostream>\n#include <limits>\n\nint main() {\n    const int inferior = std::numeric_limits<int>::[]();\n    const int superior = std::numeric_limits<int>::[]();\n    std::cout << (inferior <= 0 && 0 <= superior);\n    return 0;\n}\n",
+          "answers": [
+            "lowest",
+            "max"
+          ],
+          "answerAlternatives": [
+            [
+              "lowest",
+              "min"
+            ],
+            [
+              "max"
+            ]
+          ],
+          "explanation": "lowest() y, para int, también min() obtienen el extremo inferior. max() obtiene el superior. Las variables conservan los valores que informa la implementación; no son tamaños en bytes."
+        }
+      },
+      {
+        "id": "block_0002_0001",
+        "block": {
+          "type": "code",
+          "language": "cpp",
+          "code": "#include <iostream>\n#include <limits>\n\nint main() {\n    const int inferior = std::numeric_limits<int>::lowest();\n    const int superior = std::numeric_limits<int>::max();\n\n    std::cout << \"MinimoInt=\" << inferior << '\\n';\n    std::cout << \"MaximoInt=\" << superior << '\\n';\n    std::cout << \"MaximoLong=\" << std::numeric_limits<long>::max() << '\\n';\n    return 0;\n}\n"
+        }
+      },
+      {
+        "id": "block_0005_0001",
+        "block": {
+          "type": "output_prediction",
+          "id": "p3_u1l2_incremento_en_frontera",
+          "question": "Predice las dos líneas exactas. La primera llamada empieza en el máximo; la segunda, en el entero inmediatamente anterior.",
+          "language": "cpp",
+          "code": "#include <iostream>\n#include <limits>\n\nbool subir_uno(int& valor) {\n    const int limite = std::numeric_limits<int>::max();\n    if (valor == limite) {\n        return false;\n    }\n\n    ++valor;\n    return true;\n}\n\nint main() {\n    const int limite = std::numeric_limits<int>::max();\n    int valor = limite;\n    const bool primero = subir_uno(valor);\n    std::cout << primero << \":\" << (valor == limite) << '\\n';\n\n    valor = limite - 1;\n    const bool segundo = subir_uno(valor);\n    std::cout << segundo << \":\" << (valor == limite);\n    return 0;\n}\n",
+          "answers": [
+            "0:1\n1:1"
+          ],
+          "outputComparison": "exact",
+          "explanation": "En la primera llamada, valor ya coincide con limite: se rechaza y se conserva, por lo que aparece 0:1. Después se asigna limite−1. La segunda llamada incrementa hasta limite y aparece 1:1. No se calcula limite+1."
+        }
+      },
+      {
+        "id": "block_0006_0005",
+        "block": {
+          "type": "cpp_compiler",
+          "language": "cpp",
+          "initialCode": "#include <iostream>\n#include <limits>\n\nbool bajar_uno(int& valor) {\n    const int minimo = std::numeric_limits<int>::lowest();\n    // Esta version comprueba una condicion, pero todavia no cambia valor.\n    return valor > minimo;\n}\n\nint main() {\n    int distancia = 0;\n    if (!(std::cin >> distancia) || distancia < 0 || distancia > 2) {\n        return 1;\n    }\n\n    const int minimo = std::numeric_limits<int>::lowest();\n    int valor = minimo + distancia;\n    const int original = valor;\n    const bool aceptado = bajar_uno(valor);\n\n    std::cout << \"Aceptado=\" << aceptado << '\\n';\n    std::cout << \"EnMinimo=\" << (valor == minimo) << '\\n';\n    std::cout << \"Conservado=\" << (valor == original) << '\\n';\n    return 0;\n}\n",
+          "initialStandardInput": "1\n",
+          "outputCheck": {
+            "inputComparison": "tokens",
+            "cases": [
+              {
+                "standardInput": "1\n",
+                "outputs": [
+                  "Aceptado=1\nEnMinimo=1\nConservado=0\n"
+                ],
+                "explanation": "Comienza en minimo+1. El decremento se acepta, llega al mínimo y cambia el valor original."
+              },
+              {
+                "standardInput": "0\n",
+                "outputs": [
+                  "Aceptado=0\nEnMinimo=1\nConservado=1\n"
+                ],
+                "explanation": "Ensayo opcional: comienza en el mínimo, rechaza sin restar y conserva el valor."
+              },
+              {
+                "standardInput": "2\n",
+                "outputs": [
+                  "Aceptado=1\nEnMinimo=0\nConservado=0\n"
+                ],
+                "explanation": "Ensayo opcional: comienza en minimo+2 y termina en minimo+1; cambia sin llegar todavía al mínimo."
+              }
+            ]
+          }
+        }
+      },
+      {
+        "id": "block_0007_0001",
+        "block": {
+          "type": "code",
+          "language": "cpp",
+          "code": "#include <iostream>\n#include <limits>\n\nbool bajar_uno(int& valor) {\n    const int minimo = std::numeric_limits<int>::lowest();\n    if (valor == minimo) {\n        return false;\n    }\n\n    --valor;\n    return true;\n}\n\nint main() {\n    int distancia = 0;\n    if (!(std::cin >> distancia) || distancia < 0 || distancia > 2) {\n        return 1;\n    }\n\n    const int minimo = std::numeric_limits<int>::lowest();\n    int valor = minimo + distancia;\n    const int original = valor;\n    const bool aceptado = bajar_uno(valor);\n\n    std::cout << \"Aceptado=\" << aceptado << '\\n';\n    std::cout << \"EnMinimo=\" << (valor == minimo) << '\\n';\n    std::cout << \"Conservado=\" << (valor == original) << '\\n';\n    return 0;\n}\n"
+        }
+      }
+    ]
   }
 }

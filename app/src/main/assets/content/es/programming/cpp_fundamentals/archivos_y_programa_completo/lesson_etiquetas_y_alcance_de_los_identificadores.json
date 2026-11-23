@@ -44,7 +44,7 @@
         {
           "type": "code",
           "language": "cpp",
-          "code": "#include <iostream>\n#include <sstream>\n#include <string>\n#include <vector>\n\nconst std::vector<std::string> nombres_grupos{\"rojo\", \"verde\", \"azul\"};\n\nbool buscar_grupo(const std::string& nombre, int& destino) {\n    for (int id = 0; id < 3; ++id) {\n        if (nombres_grupos.at(id) == nombre) {\n            destino = id;\n            return true;\n        }\n    }\n    return false;\n}\n\nbool nombre_grupo(int id, std::string& destino) {\n    if (id < 0 || id >= 3) {\n        return false;\n    }\n    destino = nombres_grupos.at(id);\n    return true;\n}\n\nint main() {\n    int id{9};\n    bool encontrado = buscar_grupo(\"azul\", id);\n    std::cout << encontrado << ':' << id << '\\n';\n    encontrado = buscar_grupo(\"gris\", id);\n    std::cout << encontrado << ':' << id;\n    return 0;\n}\n"
+          "code": "#include <iostream>\n#include <sstream>\n#include <string>\n#include <vector>\n\nconst std::vector<std::string> nombres_grupos{\"rojo\", \"verde\", \"azul\"};\n\nbool buscar_grupo(const std::string& nombre, int& destino) {\n    for (int id = 0; id < 3; ++id) {\n        if (nombres_grupos.at(id) == nombre) {\n            destino = id;\n            return true;\n        }\n    }\n\n    return false;\n}\n\nbool nombre_grupo(int id, std::string& destino) {\n    if (id < 0 || id >= 3) {\n        return false;\n    }\n    destino = nombres_grupos.at(id);\n    return true;\n}\n\nint main() {\n    int id{9};\n    bool encontrado = buscar_grupo(\"azul\", id);\n\n    std::cout << encontrado << ':' << id << '\\n';\n    encontrado = buscar_grupo(\"gris\", id);\n\n    std::cout << encontrado << ':' << id;\n\n    return 0;\n}\n"
         },
         {
           "type": "paragraph",
@@ -106,7 +106,7 @@
           "id": "dos_direcciones_de_la_tabla",
           "question": "Predice las dos líneas. Cada bool indica el resultado de una conversión actual.",
           "language": "cpp",
-          "code": "#include <iostream>\n#include <sstream>\n#include <string>\n#include <vector>\n\nconst std::vector<std::string> nombres_grupos{\"rojo\", \"verde\", \"azul\"};\n\nbool buscar_grupo(const std::string& nombre, int& destino) {\n    for (int id = 0; id < 3; ++id) {\n        if (nombres_grupos.at(id) == nombre) {\n            destino = id;\n            return true;\n        }\n    }\n    return false;\n}\n\nbool nombre_grupo(int id, std::string& destino) {\n    if (id < 0 || id >= 3) {\n        return false;\n    }\n    destino = nombres_grupos.at(id);\n    return true;\n}\n\nint main() {\n    std::string nombre{\"previo\"};\n    bool obtenido = nombre_grupo(1, nombre);\n    std::cout << obtenido << ':' << nombre << '\\n';\n    obtenido = nombre_grupo(3, nombre);\n    std::cout << obtenido << ':' << nombre;\n    return 0;\n}\n",
+          "code": "#include <iostream>\n#include <sstream>\n#include <string>\n#include <vector>\n\nconst std::vector<std::string> nombres_grupos{\"rojo\", \"verde\", \"azul\"};\n\nbool buscar_grupo(const std::string& nombre, int& destino) {\n    for (int id = 0; id < 3; ++id) {\n        if (nombres_grupos.at(id) == nombre) {\n            destino = id;\n            return true;\n        }\n    }\n\n    return false;\n}\n\nbool nombre_grupo(int id, std::string& destino) {\n    if (id < 0 || id >= 3) {\n        return false;\n    }\n    destino = nombres_grupos.at(id);\n    return true;\n}\n\nint main() {\n    std::string nombre{\"previo\"};\n    bool obtenido = nombre_grupo(1, nombre);\n\n    std::cout << obtenido << ':' << nombre << '\\n';\n    obtenido = nombre_grupo(3, nombre);\n\n    std::cout << obtenido << ':' << nombre;\n\n    return 0;\n}\n",
           "answers": [
             "1:verde\n0:verde"
           ],
@@ -144,7 +144,7 @@
         },
         {
           "type": "cpp_compiler",
-          "initialCode": "#include <iostream>\n#include <sstream>\n#include <string>\n#include <vector>\n\nconst std::vector<std::string> nombres_grupos{\"rojo\", \"verde\", \"azul\"};\n\n// Define las dos funciones y las pruebas de sus contratos.\nint main() {\n    return 0;\n}\n",
+          "initialCode": "#include <iostream>\n#include <sstream>\n#include <string>\n#include <vector>\n\nconst std::vector<std::string> nombres_grupos{\"rojo\", \"verde\", \"azul\"};\n\n// Define las dos funciones y las pruebas de sus contratos.\n\nint main() {\n    return 0;\n}\n",
           "outputCheck": {
             "cases": [
               {
@@ -180,7 +180,7 @@
         {
           "type": "code",
           "language": "cpp",
-          "code": "#include <iostream>\n#include <sstream>\n#include <string>\n#include <vector>\n\nconst std::vector<std::string> nombres_grupos{\"rojo\", \"verde\", \"azul\"};\n\nbool buscar_grupo(const std::string& nombre, int& destino) {\n    for (int id = 0; id < 3; ++id) {\n        if (nombres_grupos.at(id) == nombre) {\n            destino = id;\n            return true;\n        }\n    }\n    return false;\n}\n\nbool nombre_grupo(int id, std::string& destino) {\n    if (id < 0 || id >= 3) {\n        return false;\n    }\n    destino = nombres_grupos.at(id);\n    return true;\n}\n\nint main() {\n    for (const std::string& original : nombres_grupos) {\n        int id{-1};\n        std::string recuperado{\"previo\"};\n        bool encontrado = buscar_grupo(original, id);\n        bool convertido = false;\n        if (encontrado) { convertido = nombre_grupo(id, recuperado); }\n        std::cout << original << ':' << encontrado << ':'\n                  << convertido << ':' << (recuperado == original) << '\\n';\n    }\n    int id{8};\n    bool encontrado = buscar_grupo(\"gris\", id);\n    std::string nombre{\"previo\"};\n    bool convertido = nombre_grupo(-1, nombre);\n    std::cout << encontrado << ':' << id << ':' << convertido << ':' << nombre;\n    return 0;\n}\n"
+          "code": "#include <iostream>\n#include <sstream>\n#include <string>\n#include <vector>\n\nconst std::vector<std::string> nombres_grupos{\"rojo\", \"verde\", \"azul\"};\n\nbool buscar_grupo(const std::string& nombre, int& destino) {\n    for (int id = 0; id < 3; ++id) {\n        if (nombres_grupos.at(id) == nombre) {\n            destino = id;\n            return true;\n        }\n    }\n\n    return false;\n}\n\nbool nombre_grupo(int id, std::string& destino) {\n    if (id < 0 || id >= 3) {\n        return false;\n    }\n    destino = nombres_grupos.at(id);\n    return true;\n}\n\nint main() {\n    for (const std::string& original : nombres_grupos) {\n        int id{-1};\n        std::string recuperado{\"previo\"};\n        bool encontrado = buscar_grupo(original, id);\n        bool convertido = false;\n\n        if (encontrado) { convertido = nombre_grupo(id, recuperado); }\n        std::cout << original << ':' << encontrado << ':'\n                  << convertido << ':' << (recuperado == original) << '\\n';\n    }\n    int id{8};\n    bool encontrado = buscar_grupo(\"gris\", id);\n    std::string nombre{\"previo\"};\n    bool convertido = nombre_grupo(-1, nombre);\n\n    std::cout << encontrado << ':' << id << ':' << convertido << ':' << nombre;\n\n    return 0;\n}\n"
         },
         {
           "type": "paragraph",
@@ -205,7 +205,7 @@
         {
           "type": "code",
           "language": "cpp",
-          "code": "#include <iostream>\n#include <sstream>\n#include <string>\n#include <vector>\n\nconst std::vector<std::string> nombres_grupos{\"rojo\", \"verde\", \"azul\"};\n\nbool buscar_grupo(const std::string& nombre, int& destino) {\n    for (int id = 0; id < 3; ++id) {\n        if (nombres_grupos.at(id) == nombre) {\n            destino = id;\n            return true;\n        }\n    }\n    return false;\n}\n\nbool nombre_grupo(int id, std::string& destino) {\n    if (id < 0 || id >= 3) {\n        return false;\n    }\n    destino = nombres_grupos.at(id);\n    return true;\n}\n\nint main() {\n    for (const std::string& original : nombres_grupos) {\n        int id{-1};\n        std::string recuperado{\"previo\"};\n        const bool encontrado = buscar_grupo(original, id);\n        bool convertido = false;\n        if (encontrado) convertido = nombre_grupo(id, recuperado);\n        std::cout << original << ':' << encontrado << ':' << convertido << ':' << (recuperado == original) << \"\\n\";\n    }\n    int id = 8;\n    bool encontrado = buscar_grupo(\"gris\", id);\n    std::cout << \"Buscar:\" << encontrado << ':' << id << \"\\n\";\n    id = 7;\n    encontrado = buscar_grupo(\"\", id);\n    std::cout << \"Buscar:\" << encontrado << ':' << id << \"\\n\";\n    id = 6;\n    encontrado = buscar_grupo(\"Rojo\", id);\n    std::cout << \"Buscar:\" << encontrado << ':' << id << \"\\n\";\n    std::string nombre{\"previo\"};\n    bool convertido = nombre_grupo(-1, nombre);\n    std::cout << \"Nombre:\" << convertido << ':' << nombre << \"\\n\";\n    nombre = \"otro\";\n    convertido = nombre_grupo(3, nombre);\n    std::cout << \"Nombre:\" << convertido << ':' << nombre << \"\\n\";\n    return 0;\n}\n"
+          "code": "#include <iostream>\n#include <sstream>\n#include <string>\n#include <vector>\n\nconst std::vector<std::string> nombres_grupos{\"rojo\", \"verde\", \"azul\"};\n\nbool buscar_grupo(const std::string& nombre, int& destino) {\n    for (int id = 0; id < 3; ++id) {\n        if (nombres_grupos.at(id) == nombre) {\n            destino = id;\n            return true;\n        }\n    }\n\n    return false;\n}\n\nbool nombre_grupo(int id, std::string& destino) {\n    if (id < 0 || id >= 3) {\n        return false;\n    }\n    destino = nombres_grupos.at(id);\n    return true;\n}\n\nint main() {\n    for (const std::string& original : nombres_grupos) {\n        int id{-1};\n        std::string recuperado{\"previo\"};\n        const bool encontrado = buscar_grupo(original, id);\n        bool convertido = false;\n\n        if (encontrado) convertido = nombre_grupo(id, recuperado);\n        std::cout << original << ':' << encontrado << ':' << convertido << ':' << (recuperado == original) << \"\\n\";\n    }\n    int id = 8;\n    bool encontrado = buscar_grupo(\"gris\", id);\n\n    std::cout << \"Buscar:\" << encontrado << ':' << id << \"\\n\";\n    id = 7;\n    encontrado = buscar_grupo(\"\", id);\n\n    std::cout << \"Buscar:\" << encontrado << ':' << id << \"\\n\";\n    id = 6;\n    encontrado = buscar_grupo(\"Rojo\", id);\n\n    std::cout << \"Buscar:\" << encontrado << ':' << id << \"\\n\";\n    std::string nombre{\"previo\"};\n    bool convertido = nombre_grupo(-1, nombre);\n\n    std::cout << \"Nombre:\" << convertido << ':' << nombre << \"\\n\";\n    nombre = \"otro\";\n    convertido = nombre_grupo(3, nombre);\n\n    std::cout << \"Nombre:\" << convertido << ':' << nombre << \"\\n\";\n\n    return 0;\n}\n"
         },
         {
           "type": "heading",
@@ -237,7 +237,7 @@
         },
         {
           "type": "cpp_compiler",
-          "initialCode": "#include <iostream>\n#include <sstream>\n#include <string>\n#include <vector>\n\nconst std::vector<std::string> nombres_grupos{\"rojo\", \"verde\", \"azul\"};\n\nbool buscar_grupo(const std::string& nombre, int& destino) {\n    // Busca una coincidencia completa y conserva el destino si no existe.\n    (void)nombre;\n    (void)destino;\n    return false;\n}\n\nbool nombre_grupo(int id, std::string& destino) {\n    // Comprueba el dominio antes de consultar la posicion.\n    (void)id;\n    (void)destino;\n    return false;\n}\n\nint main() {\n    int caso{0};\n    if (!(std::cin >> caso)) { return 1; }\n    std::vector<std::string> consultas;\n    std::vector<int> identificadores;\n    if (caso == 1) {\n        consultas = {\"azul\", \"gris\", \"rojo\", \"roj\", \"verde\", \"verde!\"};\n        identificadores = {2, 3, 0, -1, 1};\n    } else if (caso == 2) {\n        consultas = {\"verde\", \"Verde\", \"azul\", \" azul\", \"rojo\", \"rojo \"};\n        identificadores = {1, 4, 2, -2, 0};\n    } else { return 1; }\n    int id{9};\n    for (const std::string& consulta : consultas) {\n        const bool encontrado = buscar_grupo(consulta, id);\n        std::cout << \"Buscar:\" << encontrado << ':' << id << '\\n';\n    }\n    std::string nombre{\"previo\"};\n    for (int solicitado : identificadores) {\n        const bool convertido = nombre_grupo(solicitado, nombre);\n        std::cout << \"Nombre:\" << convertido << ':' << nombre << '\\n';\n    }\n    return 0;\n}\n",
+          "initialCode": "#include <iostream>\n#include <sstream>\n#include <string>\n#include <vector>\n\nconst std::vector<std::string> nombres_grupos{\"rojo\", \"verde\", \"azul\"};\n\nbool buscar_grupo(const std::string& nombre, int& destino) {\n    // Busca una coincidencia completa y conserva el destino si no existe.\n    (void)nombre;\n    (void)destino;\n    return false;\n}\n\nbool nombre_grupo(int id, std::string& destino) {\n    // Comprueba el dominio antes de consultar la posicion.\n    (void)id;\n    (void)destino;\n    return false;\n}\n\nint main() {\n    int caso{0};\n    if (!(std::cin >> caso)) { return 1; }\n    std::vector<std::string> consultas;\n    std::vector<int> identificadores;\n\n    if (caso == 1) {\n        consultas = {\"azul\", \"gris\", \"rojo\", \"roj\", \"verde\", \"verde!\"};\n        identificadores = {2, 3, 0, -1, 1};\n    } else if (caso == 2) {\n        consultas = {\"verde\", \"Verde\", \"azul\", \" azul\", \"rojo\", \"rojo \"};\n        identificadores = {1, 4, 2, -2, 0};\n    } else { return 1; }\n    int id{9};\n    for (const std::string& consulta : consultas) {\n        const bool encontrado = buscar_grupo(consulta, id);\n        std::cout << \"Buscar:\" << encontrado << ':' << id << '\\n';\n    }\n    std::string nombre{\"previo\"};\n    for (int solicitado : identificadores) {\n        const bool convertido = nombre_grupo(solicitado, nombre);\n        std::cout << \"Nombre:\" << convertido << ':' << nombre << '\\n';\n    }\n\n    return 0;\n}\n",
           "initialStandardInput": "1\n",
           "outputCheck": {
             "inputComparison": "tokens",
@@ -284,7 +284,7 @@
         {
           "type": "code",
           "language": "cpp",
-          "code": "#include <iostream>\n#include <sstream>\n#include <string>\n#include <vector>\n\nconst std::vector<std::string> nombres_grupos{\"rojo\", \"verde\", \"azul\"};\n\nbool buscar_grupo(const std::string& nombre, int& destino) {\n    for (int id = 0; id < 3; ++id) {\n        if (nombres_grupos.at(id) == nombre) {\n            destino = id;\n            return true;\n        }\n    }\n    return false;\n}\n\nbool nombre_grupo(int id, std::string& destino) {\n    if (id < 0 || id >= 3) {\n        return false;\n    }\n    destino = nombres_grupos.at(id);\n    return true;\n}\n\nint main() {\n    int caso{0};\n    if (!(std::cin >> caso)) { return 1; }\n    std::vector<std::string> consultas;\n    std::vector<int> identificadores;\n    if (caso == 1) {\n        consultas = {\"azul\", \"gris\", \"rojo\", \"roj\", \"verde\", \"verde!\"};\n        identificadores = {2, 3, 0, -1, 1};\n    } else if (caso == 2) {\n        consultas = {\"verde\", \"Verde\", \"azul\", \" azul\", \"rojo\", \"rojo \"};\n        identificadores = {1, 4, 2, -2, 0};\n    } else { return 1; }\n    int id{9};\n    for (const std::string& consulta : consultas) {\n        const bool encontrado = buscar_grupo(consulta, id);\n        std::cout << \"Buscar:\" << encontrado << ':' << id << '\\n';\n    }\n    std::string nombre{\"previo\"};\n    for (int solicitado : identificadores) {\n        const bool convertido = nombre_grupo(solicitado, nombre);\n        std::cout << \"Nombre:\" << convertido << ':' << nombre << '\\n';\n    }\n    return 0;\n}\n"
+          "code": "#include <iostream>\n#include <sstream>\n#include <string>\n#include <vector>\n\nconst std::vector<std::string> nombres_grupos{\"rojo\", \"verde\", \"azul\"};\n\nbool buscar_grupo(const std::string& nombre, int& destino) {\n    for (int id = 0; id < 3; ++id) {\n        if (nombres_grupos.at(id) == nombre) {\n            destino = id;\n            return true;\n        }\n    }\n\n    return false;\n}\n\nbool nombre_grupo(int id, std::string& destino) {\n    if (id < 0 || id >= 3) {\n        return false;\n    }\n    destino = nombres_grupos.at(id);\n    return true;\n}\n\nint main() {\n    int caso{0};\n    if (!(std::cin >> caso)) { return 1; }\n    std::vector<std::string> consultas;\n    std::vector<int> identificadores;\n\n    if (caso == 1) {\n        consultas = {\"azul\", \"gris\", \"rojo\", \"roj\", \"verde\", \"verde!\"};\n        identificadores = {2, 3, 0, -1, 1};\n    } else if (caso == 2) {\n        consultas = {\"verde\", \"Verde\", \"azul\", \" azul\", \"rojo\", \"rojo \"};\n        identificadores = {1, 4, 2, -2, 0};\n    } else { return 1; }\n    int id{9};\n    for (const std::string& consulta : consultas) {\n        const bool encontrado = buscar_grupo(consulta, id);\n        std::cout << \"Buscar:\" << encontrado << ':' << id << '\\n';\n    }\n    std::string nombre{\"previo\"};\n    for (int solicitado : identificadores) {\n        const bool convertido = nombre_grupo(solicitado, nombre);\n        std::cout << \"Nombre:\" << convertido << ':' << nombre << '\\n';\n    }\n\n    return 0;\n}\n"
         },
         {
           "type": "paragraph",
@@ -1132,6 +1132,160 @@
         "id": "u12_etiquetas_correspondencia_fija_referencia_razonamiento",
         "beforeSha256": "55d7b843273aa1a97c433048692e823858d8366738f934a105bce6ceebc3464d",
         "afterSha256": "e3ee5548fa90753a1b1f07d3aba290998fe1dfa4a9fce390d57352c260118946"
+      },
+      {
+        "id": "block_0001_0001",
+        "beforeSha256": "e7d06cdf8dd4c068cf79c42e17fe64c8b696bcdfb875c3061e4e416de01b127a",
+        "afterSha256": "c79ca403c48cf065caf27cb8e1b5bd9507e06a4a13c58a2699552e8452c5081e"
+      },
+      {
+        "id": "block_0002_0004",
+        "beforeSha256": "996542b890bd368eaf61329515e3cd7f02b7be746ce8e0b8c8675bc60b944f10",
+        "afterSha256": "01447b7c5910b72d4dcbba20f1a75573a20334054f675cdc09c22a66e19d0818"
+      },
+      {
+        "id": "block_0003_0003",
+        "beforeSha256": "d082f9c4a53dff9d5230408148a66b4b4f34c84787c9b1ed9e0c2ad230461c21",
+        "afterSha256": "bc0d7194c03588a6ed6e1182034207ec5444b7f79bfbc42125f6beeb69a1c8c1"
+      },
+      {
+        "id": "block_0004_0001",
+        "beforeSha256": "5d30893c5110967fbbef097e3237571ec8a632c683e2b63880a5b8e38984c96e",
+        "afterSha256": "6dc44f57bea64c630e53866ebdad9a6edd4fc0b02c69844ab1be765e6ff47560"
+      },
+      {
+        "id": "block_0005_0001",
+        "beforeSha256": "51f59aa0e5591b7d6f41e881a43bc4667e9f394e7038bccbf7e28947cd6ad243",
+        "afterSha256": "be3ab0bc6c968e9cdb2ba3ad8ccc8672fdb4261e9aa4ab80bdc69247257f6c6f"
+      },
+      {
+        "id": "u12_etiquetas_correspondencia_fija_construccion",
+        "beforeSha256": "0d824001092e8a374f8f21287160390a34ee43d941c0b2d81bc2cc353db946c5",
+        "afterSha256": "ac01560b027c1dd6be1a5c5f1d151a558620b8eebc9d348c76d2164d3b701082"
+      },
+      {
+        "id": "u12_etiquetas_correspondencia_fija_referencia_codigo",
+        "beforeSha256": "d2b5451fdc8e804b4239030b2b087e43e8e58db06f960e5ee045ce61e435d33b",
+        "afterSha256": "e18bf3be34353c0b9ea20820c2e4c283a2c3f7a2388e319b4ce8ff84dc3a4d67"
+      }
+    ],
+    "sourceFormatRevisions": [
+      {
+        "id": "block_0001_0001",
+        "block": {
+          "type": "code",
+          "language": "cpp",
+          "code": "#include <iostream>\n#include <sstream>\n#include <string>\n#include <vector>\n\nconst std::vector<std::string> nombres_grupos{\"rojo\", \"verde\", \"azul\"};\n\nbool buscar_grupo(const std::string& nombre, int& destino) {\n    for (int id = 0; id < 3; ++id) {\n        if (nombres_grupos.at(id) == nombre) {\n            destino = id;\n            return true;\n        }\n    }\n    return false;\n}\n\nbool nombre_grupo(int id, std::string& destino) {\n    if (id < 0 || id >= 3) {\n        return false;\n    }\n    destino = nombres_grupos.at(id);\n    return true;\n}\n\nint main() {\n    int id{9};\n    bool encontrado = buscar_grupo(\"azul\", id);\n    std::cout << encontrado << ':' << id << '\\n';\n    encontrado = buscar_grupo(\"gris\", id);\n    std::cout << encontrado << ':' << id;\n    return 0;\n}\n"
+        }
+      },
+      {
+        "id": "block_0002_0004",
+        "block": {
+          "type": "output_prediction",
+          "id": "dos_direcciones_de_la_tabla",
+          "question": "Predice las dos líneas. Cada bool indica el resultado de una conversión actual.",
+          "language": "cpp",
+          "code": "#include <iostream>\n#include <sstream>\n#include <string>\n#include <vector>\n\nconst std::vector<std::string> nombres_grupos{\"rojo\", \"verde\", \"azul\"};\n\nbool buscar_grupo(const std::string& nombre, int& destino) {\n    for (int id = 0; id < 3; ++id) {\n        if (nombres_grupos.at(id) == nombre) {\n            destino = id;\n            return true;\n        }\n    }\n    return false;\n}\n\nbool nombre_grupo(int id, std::string& destino) {\n    if (id < 0 || id >= 3) {\n        return false;\n    }\n    destino = nombres_grupos.at(id);\n    return true;\n}\n\nint main() {\n    std::string nombre{\"previo\"};\n    bool obtenido = nombre_grupo(1, nombre);\n    std::cout << obtenido << ':' << nombre << '\\n';\n    obtenido = nombre_grupo(3, nombre);\n    std::cout << obtenido << ':' << nombre;\n    return 0;\n}\n",
+          "answers": [
+            "1:verde\n0:verde"
+          ],
+          "explanation": "La primera llamada comprueba que 1 está dentro del dominio y copia el elemento de esa posición, \"verde\", en nombre. Devuelve true y produce la primera línea 1:verde.\n\nLa segunda recibe 3, que se rechaza antes de acceder a la tabla. Devuelve false y no vuelve a asignar: nombre conserva \"verde\", no su inicialización \"previo\". La segunda línea es 0:verde y no tiene salto final."
+        }
+      },
+      {
+        "id": "block_0003_0003",
+        "block": {
+          "type": "cpp_compiler",
+          "initialCode": "#include <iostream>\n#include <sstream>\n#include <string>\n#include <vector>\n\nconst std::vector<std::string> nombres_grupos{\"rojo\", \"verde\", \"azul\"};\n\n// Define las dos funciones y las pruebas de sus contratos.\nint main() {\n    return 0;\n}\n",
+          "outputCheck": {
+            "cases": [
+              {
+                "standardInput": "",
+                "outputs": [
+                  "rojo:1:1:1\nverde:1:1:1\nazul:1:1:1\nBuscar:0:8\nBuscar:0:7\nBuscar:0:6\nNombre:0:previo\nNombre:0:otro\n"
+                ],
+                "explanation": "La salida coincide con la batería solicitada. Las tres cadenas vuelven al nombre original y las búsquedas inválidas conservan los destinos 8, 7 y 6. Las conversiones de los identificadores fuera del dominio conservan previo y otro.\n\nLas tres igualdades verdaderas comprueban la ida y vuelta con este cliente, pero no muestran el número obtenido para cada nombre. Dos conversiones que utilizaran la misma asociación equivocada podrían recuperar el texto inicial. La práctica posterior mostrará también los ID concretos y consultará nombres a partir de enteros independientes.",
+                "reviewFeedback": [
+                  {
+                    "outputs": [
+                      ""
+                    ],
+                    "text": "El programa termina sin imprimir. Define las dos conversiones y prepara la batería completa en main. Debe mostrar primero las tres idas y vueltas válidas y después los cinco rechazos, con los destinos iniciales y el orden especificados. No basta definir las funciones sin llamarlas."
+                  }
+                ]
+              }
+            ]
+          }
+        }
+      },
+      {
+        "id": "block_0004_0001",
+        "block": {
+          "type": "code",
+          "language": "cpp",
+          "code": "#include <iostream>\n#include <sstream>\n#include <string>\n#include <vector>\n\nconst std::vector<std::string> nombres_grupos{\"rojo\", \"verde\", \"azul\"};\n\nbool buscar_grupo(const std::string& nombre, int& destino) {\n    for (int id = 0; id < 3; ++id) {\n        if (nombres_grupos.at(id) == nombre) {\n            destino = id;\n            return true;\n        }\n    }\n    return false;\n}\n\nbool nombre_grupo(int id, std::string& destino) {\n    if (id < 0 || id >= 3) {\n        return false;\n    }\n    destino = nombres_grupos.at(id);\n    return true;\n}\n\nint main() {\n    for (const std::string& original : nombres_grupos) {\n        int id{-1};\n        std::string recuperado{\"previo\"};\n        bool encontrado = buscar_grupo(original, id);\n        bool convertido = false;\n        if (encontrado) { convertido = nombre_grupo(id, recuperado); }\n        std::cout << original << ':' << encontrado << ':'\n                  << convertido << ':' << (recuperado == original) << '\\n';\n    }\n    int id{8};\n    bool encontrado = buscar_grupo(\"gris\", id);\n    std::string nombre{\"previo\"};\n    bool convertido = nombre_grupo(-1, nombre);\n    std::cout << encontrado << ':' << id << ':' << convertido << ':' << nombre;\n    return 0;\n}\n"
+        }
+      },
+      {
+        "id": "block_0005_0001",
+        "block": {
+          "type": "code",
+          "language": "cpp",
+          "code": "#include <iostream>\n#include <sstream>\n#include <string>\n#include <vector>\n\nconst std::vector<std::string> nombres_grupos{\"rojo\", \"verde\", \"azul\"};\n\nbool buscar_grupo(const std::string& nombre, int& destino) {\n    for (int id = 0; id < 3; ++id) {\n        if (nombres_grupos.at(id) == nombre) {\n            destino = id;\n            return true;\n        }\n    }\n    return false;\n}\n\nbool nombre_grupo(int id, std::string& destino) {\n    if (id < 0 || id >= 3) {\n        return false;\n    }\n    destino = nombres_grupos.at(id);\n    return true;\n}\n\nint main() {\n    for (const std::string& original : nombres_grupos) {\n        int id{-1};\n        std::string recuperado{\"previo\"};\n        const bool encontrado = buscar_grupo(original, id);\n        bool convertido = false;\n        if (encontrado) convertido = nombre_grupo(id, recuperado);\n        std::cout << original << ':' << encontrado << ':' << convertido << ':' << (recuperado == original) << \"\\n\";\n    }\n    int id = 8;\n    bool encontrado = buscar_grupo(\"gris\", id);\n    std::cout << \"Buscar:\" << encontrado << ':' << id << \"\\n\";\n    id = 7;\n    encontrado = buscar_grupo(\"\", id);\n    std::cout << \"Buscar:\" << encontrado << ':' << id << \"\\n\";\n    id = 6;\n    encontrado = buscar_grupo(\"Rojo\", id);\n    std::cout << \"Buscar:\" << encontrado << ':' << id << \"\\n\";\n    std::string nombre{\"previo\"};\n    bool convertido = nombre_grupo(-1, nombre);\n    std::cout << \"Nombre:\" << convertido << ':' << nombre << \"\\n\";\n    nombre = \"otro\";\n    convertido = nombre_grupo(3, nombre);\n    std::cout << \"Nombre:\" << convertido << ':' << nombre << \"\\n\";\n    return 0;\n}\n"
+        }
+      },
+      {
+        "id": "u12_etiquetas_correspondencia_fija_construccion",
+        "block": {
+          "type": "cpp_compiler",
+          "initialCode": "#include <iostream>\n#include <sstream>\n#include <string>\n#include <vector>\n\nconst std::vector<std::string> nombres_grupos{\"rojo\", \"verde\", \"azul\"};\n\nbool buscar_grupo(const std::string& nombre, int& destino) {\n    // Busca una coincidencia completa y conserva el destino si no existe.\n    (void)nombre;\n    (void)destino;\n    return false;\n}\n\nbool nombre_grupo(int id, std::string& destino) {\n    // Comprueba el dominio antes de consultar la posicion.\n    (void)id;\n    (void)destino;\n    return false;\n}\n\nint main() {\n    int caso{0};\n    if (!(std::cin >> caso)) { return 1; }\n    std::vector<std::string> consultas;\n    std::vector<int> identificadores;\n    if (caso == 1) {\n        consultas = {\"azul\", \"gris\", \"rojo\", \"roj\", \"verde\", \"verde!\"};\n        identificadores = {2, 3, 0, -1, 1};\n    } else if (caso == 2) {\n        consultas = {\"verde\", \"Verde\", \"azul\", \" azul\", \"rojo\", \"rojo \"};\n        identificadores = {1, 4, 2, -2, 0};\n    } else { return 1; }\n    int id{9};\n    for (const std::string& consulta : consultas) {\n        const bool encontrado = buscar_grupo(consulta, id);\n        std::cout << \"Buscar:\" << encontrado << ':' << id << '\\n';\n    }\n    std::string nombre{\"previo\"};\n    for (int solicitado : identificadores) {\n        const bool convertido = nombre_grupo(solicitado, nombre);\n        std::cout << \"Nombre:\" << convertido << ':' << nombre << '\\n';\n    }\n    return 0;\n}\n",
+          "initialStandardInput": "1\n",
+          "outputCheck": {
+            "inputComparison": "tokens",
+            "cases": [
+              {
+                "standardInput": "1\n",
+                "outputs": [
+                  "Buscar:1:2\nBuscar:0:2\nBuscar:1:0\nBuscar:0:0\nBuscar:1:1\nBuscar:0:1\nNombre:1:azul\nNombre:0:azul\nNombre:1:rojo\nNombre:0:rojo\nNombre:1:verde\n"
+                ],
+                "exitCode": 0,
+                "explanation": "La salida muestra los ID concretos 2, 0 y 1 para azul, rojo y verde. Las búsquedas de gris, el prefijo incompleto y el nombre con signo conservan el último ID aceptado. En la dirección independiente se obtienen azul, rojo y verde para los enteros dos, cero y uno; los enteros tres y menos uno conservan el nombre anterior.\n\nLa coincidencia con estas líneas permite contrastar tanto la correspondencia acordada como la conservación de destinos que ya habían cambiado tras un éxito.",
+                "reviewFeedback": [
+                  {
+                    "outputs": [
+                      "Buscar:1:0\nBuscar:0:0\nBuscar:1:1\nBuscar:0:1\nBuscar:1:2\nBuscar:0:2\nNombre:1:verde\nNombre:0:verde\nNombre:1:azul\nNombre:0:azul\nNombre:1:rojo\n"
+                    ],
+                    "text": "Los nombres y los números no siguen la asociación publicada, aunque tus dos conversiones puedan deshacer una a la otra. Revisa la posición asignada a cada nombre: rojo → 0, verde → 1, azul → 2. La primera serie muestra el ID obtenido y la segunda parte de enteros independientes. No basta recuperar el nombre después de dos conversiones que comparten la misma asociación equivocada."
+                  }
+                ]
+              },
+              {
+                "standardInput": "2\n",
+                "outputs": [
+                  "Buscar:1:1\nBuscar:0:1\nBuscar:1:2\nBuscar:0:2\nBuscar:1:0\nBuscar:0:0\nNombre:1:verde\nNombre:0:verde\nNombre:1:azul\nNombre:0:azul\nNombre:1:rojo\n"
+                ],
+                "exitCode": 0,
+                "explanation": "La primera serie muestra los ID 1, 2 y 0 tras los nombres exactos. La variante con mayúscula y las dos variantes con espacio se rechazan conservando, respectivamente, esos mismos destinos. En la segunda serie, los enteros uno, dos y cero obtienen verde, azul y rojo; cuatro y menos dos no sustituyen el nombre anterior.\n\nLos resultados se refieren a cada llamada actual: un destino conservado después de un rechazo sigue mostrando el dato del éxito anterior.",
+                "reviewFeedback": [
+                  {
+                    "outputs": [
+                      "Buscar:1:2\nBuscar:0:2\nBuscar:1:0\nBuscar:0:0\nBuscar:1:1\nBuscar:0:1\nNombre:1:rojo\nNombre:0:rojo\nNombre:1:verde\nNombre:0:verde\nNombre:1:azul\n"
+                    ],
+                    "text": "Los nombres y los números no siguen la asociación publicada, aunque tus dos conversiones puedan deshacer una a la otra. Revisa la posición asignada a cada nombre: rojo → 0, verde → 1, azul → 2. La primera serie muestra el ID obtenido y la segunda parte de enteros independientes. No basta recuperar el nombre después de dos conversiones que comparten la misma asociación equivocada."
+                  }
+                ]
+              }
+            ]
+          }
+        }
+      },
+      {
+        "id": "u12_etiquetas_correspondencia_fija_referencia_codigo",
+        "block": {
+          "type": "code",
+          "language": "cpp",
+          "code": "#include <iostream>\n#include <sstream>\n#include <string>\n#include <vector>\n\nconst std::vector<std::string> nombres_grupos{\"rojo\", \"verde\", \"azul\"};\n\nbool buscar_grupo(const std::string& nombre, int& destino) {\n    for (int id = 0; id < 3; ++id) {\n        if (nombres_grupos.at(id) == nombre) {\n            destino = id;\n            return true;\n        }\n    }\n    return false;\n}\n\nbool nombre_grupo(int id, std::string& destino) {\n    if (id < 0 || id >= 3) {\n        return false;\n    }\n    destino = nombres_grupos.at(id);\n    return true;\n}\n\nint main() {\n    int caso{0};\n    if (!(std::cin >> caso)) { return 1; }\n    std::vector<std::string> consultas;\n    std::vector<int> identificadores;\n    if (caso == 1) {\n        consultas = {\"azul\", \"gris\", \"rojo\", \"roj\", \"verde\", \"verde!\"};\n        identificadores = {2, 3, 0, -1, 1};\n    } else if (caso == 2) {\n        consultas = {\"verde\", \"Verde\", \"azul\", \" azul\", \"rojo\", \"rojo \"};\n        identificadores = {1, 4, 2, -2, 0};\n    } else { return 1; }\n    int id{9};\n    for (const std::string& consulta : consultas) {\n        const bool encontrado = buscar_grupo(consulta, id);\n        std::cout << \"Buscar:\" << encontrado << ':' << id << '\\n';\n    }\n    std::string nombre{\"previo\"};\n    for (int solicitado : identificadores) {\n        const bool convertido = nombre_grupo(solicitado, nombre);\n        std::cout << \"Nombre:\" << convertido << ':' << nombre << '\\n';\n    }\n    return 0;\n}\n"
+        }
       }
     ]
   },

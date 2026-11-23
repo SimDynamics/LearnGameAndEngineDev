@@ -195,7 +195,7 @@
         {
           "type": "code",
           "language": "cpp",
-          "code": "bool letra_ascii(char c) {\n    return (c >= 'A' && c <= 'Z') || (c >= 'a' && c <= 'z');\n}\nbool digito_ascii(char c) {\n    return c >= '0' && c <= '9';\n}\nbool id_valido(const std::string& id) {\n    if (id.empty() || id.size() > 12 || !letra_ascii(id[0]))\n        return false;\n    for (char c : id)\n        if (!letra_ascii(c) && !digito_ascii(c) && c != '_')\n            return false;\n    return true;\n}"
+          "code": "bool letra_ascii(char c) {\n    return (c >= 'A' && c <= 'Z') || (c >= 'a' && c <= 'z');\n}\n\nbool digito_ascii(char c) {\n    return c >= '0' && c <= '9';\n}\n\nbool id_valido(const std::string& id) {\n    if (id.empty() || id.size() > 12 || !letra_ascii(id[0]))\n        return false;\n    for (char c : id)\n        if (!letra_ascii(c) && !digito_ascii(c) && c != '_')\n            return false;\n    return true;\n}"
         },
         {
           "type": "paragraph",
@@ -395,7 +395,7 @@
         {
           "type": "cpp_compiler",
           "language": "cpp",
-          "initialCode": "#include <iostream>\n#include <string>\n\n// Completa esta función, sin modificar main.\nbool tamano_valido(const std::string& texto, int& destino)\n{\n    // Acepta 1..5 dígitos decimales ASCII y valor 1..30000.\n    // Ante un rechazo conserva destino.\n    return false;\n}\n\nint main()\n{\n    std::string texto;\n    while (std::cin >> texto) {\n        int destino = 91;\n        const bool aceptado = tamano_valido(texto, destino);\n        std::cout << texto << ':' << aceptado << ':' << destino << '\\n';\n    }\n    return 0;\n}\n",
+          "initialCode": "#include <iostream>\n#include <string>\n\n// Completa esta función, sin modificar main.\nbool tamano_valido(const std::string& texto, int& destino)\n{\n    // Acepta 1..5 dígitos decimales ASCII y valor 1..30000.\n    // Ante un rechazo conserva destino.\n    return false;\n}\n\nint main()\n{\n    std::string texto;\n    while (std::cin >> texto) {\n        int destino = 91;\n        const bool aceptado = tamano_valido(texto, destino);\n\n        std::cout << texto << ':' << aceptado << ':' << destino << '\\n';\n    }\n\n    return 0;\n}\n",
           "outputCheck": {
             "inputComparison": "exact",
             "cases": [
@@ -520,7 +520,7 @@
         {
           "type": "code",
           "language": "cpp",
-          "code": "#include \"assetcheck/registro.hpp\"\n\n#include <locale>\n#include <sstream>\n\nnamespace assetcheck {\nnamespace {\nbool letra_ascii(char c) {\n    return (c >= 'A' && c <= 'Z') || (c >= 'a' && c <= 'z');\n}\nbool digito_ascii(char c) {\n    return c >= '0' && c <= '9';\n}\nbool id_valido(const std::string& id) {\n    if (id.empty() || id.size() > 12 || !letra_ascii(id[0]))\n        return false;\n    for (char c : id)\n        if (!letra_ascii(c) && !digito_ascii(c) && c != '_')\n            return false;\n    return true;\n}\nbool tamano_valido(const std::string& texto, int& destino)\n{\n    if (texto.empty() || texto.size() > 5) {\n        return false;\n    }\n    int candidato = 0;\n    for (char c : texto) {\n        if (c < '0' || c > '9') {\n            return false;\n        }\n        candidato = candidato * 10 + (c - '0');\n    }\n    if (candidato < 1 || candidato > 30000) {\n        return false;\n    }\n    destino = candidato;\n    return true;\n}\n} // namespace\n\nResultado leer_registro(const std::string& linea, Registro& destino)\n{\n    if (linea.size() > 80) return Resultado::formato;\n    for (unsigned char ch : linea) {\n        if (ch != '\\t' && (ch < 32 || ch > 126))\n            return Resultado::formato;\n    }\n\n    std::istringstream entrada(linea);\n    entrada.imbue(std::locale::classic());\n    std::string id, tipo, tamano, extra;\n    if (!(entrada >> id >> tipo >> tamano) || (entrada >> extra))\n        return Resultado::formato;\n\n    if (!id_valido(id)) return Resultado::id;\n    if (tipo != \"textura\" && tipo != \"malla\" && tipo != \"sonido\")\n        return Resultado::tipo;\n\n    int cantidad = 0;\n    if (!tamano_valido(tamano, cantidad)) return Resultado::tamano;\n\n    Registro candidato{id, tipo, cantidad};\n    destino = candidato;\n    return Resultado::aceptado;\n}\n} // namespace assetcheck\n"
+          "code": "#include \"assetcheck/registro.hpp\"\n\n#include <locale>\n#include <sstream>\n\nnamespace assetcheck {\nnamespace {\nbool letra_ascii(char c) {\n    return (c >= 'A' && c <= 'Z') || (c >= 'a' && c <= 'z');\n}\n\nbool digito_ascii(char c) {\n    return c >= '0' && c <= '9';\n}\n\nbool id_valido(const std::string& id) {\n    if (id.empty() || id.size() > 12 || !letra_ascii(id[0]))\n        return false;\n    for (char c : id)\n        if (!letra_ascii(c) && !digito_ascii(c) && c != '_')\n            return false;\n    return true;\n}\n\nbool tamano_valido(const std::string& texto, int& destino)\n{\n    if (texto.empty() || texto.size() > 5) {\n        return false;\n    }\n    int candidato = 0;\n    for (char c : texto) {\n        if (c < '0' || c > '9') {\n            return false;\n        }\n        candidato = candidato * 10 + (c - '0');\n    }\n    if (candidato < 1 || candidato > 30000) {\n        return false;\n    }\n    destino = candidato;\n    return true;\n}\n} // namespace\n\nResultado leer_registro(const std::string& linea, Registro& destino)\n{\n    if (linea.size() > 80) return Resultado::formato;\n    for (unsigned char ch : linea) {\n        if (ch != '\\t' && (ch < 32 || ch > 126))\n            return Resultado::formato;\n    }\n\n    std::istringstream entrada(linea);\n    entrada.imbue(std::locale::classic());\n    std::string id, tipo, tamano, extra;\n    if (!(entrada >> id >> tipo >> tamano) || (entrada >> extra))\n        return Resultado::formato;\n\n    if (!id_valido(id)) return Resultado::id;\n    if (tipo != \"textura\" && tipo != \"malla\" && tipo != \"sonido\")\n        return Resultado::tipo;\n\n    int cantidad = 0;\n    if (!tamano_valido(tamano, cantidad)) return Resultado::tamano;\n\n    Registro candidato{id, tipo, cantidad};\n    destino = candidato;\n    return Resultado::aceptado;\n}\n} // namespace assetcheck\n"
         },
         {
           "type": "paragraph",
@@ -541,7 +541,7 @@
         {
           "type": "code",
           "language": "cpp",
-          "code": "#include \"assetcheck/registro.hpp\"\n\n#include <iostream>\n#include <string>\n#include <vector>\n\nusing assetcheck::Registro;\nusing assetcheck::Resultado;\nusing assetcheck::leer_registro;\n\nbool iguales(const Registro& a, const Registro& b)\n{\n    return a.id == b.id && a.tipo == b.tipo &&\n           a.tamano_bytes == b.tamano_bytes;\n}\n\nstruct Caso {\n    std::string nombre;\n    std::string linea;\n    Resultado esperado;\n    Registro registro_esperado;\n};\n\nint main()\n{\n    const Registro anterior{\"Anterior\", \"sonido\", 87};\n    const std::vector<Caso> pruebas{\n        {\"normal\", \"Roca malla 240\", Resultado::aceptado, {\"Roca\", \"malla\", 240}},\n        {\"tabuladores\", \"\\tBrisa\\tsonido\\t00009\\t\", Resultado::aceptado, {\"Brisa\", \"sonido\", 9}},\n        {\"minimos\", \"A textura 1\", Resultado::aceptado, {\"A\", \"textura\", 1}},\n        {\"maximos\", \"Abc123456789 malla 30000\", Resultado::aceptado, {\"Abc123456789\", \"malla\", 30000}},\n        {\"minusculas\", \"roca malla 240\", Resultado::aceptado, {\"roca\", \"malla\", 240}},\n        {\"80 bytes\", \"Roca malla 240\" + std::string(66, ' '), Resultado::aceptado, {\"Roca\", \"malla\", 240}},\n        {\"81 bytes\", \"Roca malla 240\" + std::string(67, ' '), Resultado::formato, anterior},\n        {\"cuarto campo\", \"Roca malla 240 extra\", Resultado::formato, anterior},\n        {\"falta tamano\", \"Roca malla\", Resultado::formato, anterior},\n        {\"vacia\", \"\", Resultado::formato, anterior},\n        {\"solo separadores\", \" \\t \", Resultado::formato, anterior},\n        {\"NUL interno\", std::string(\"Roca\\0 malla 240\", 15), Resultado::formato, anterior},\n        {\"LF interno\", \"Roca\\n malla 240\", Resultado::formato, anterior},\n        {\"CR interno\", \"Roca\\r malla 240\", Resultado::formato, anterior},\n        {\"DEL\", std::string(1, static_cast<char>(127)) + \" malla 4\", Resultado::formato, anterior},\n        {\"UTF8\", \"\\xC3\\x91 malla 4\", Resultado::formato, anterior},\n        {\"ID antes de tipo\", \"_A material 0\", Resultado::id, anterior},\n        {\"ID empieza con cifra\", \"7Roca malla 2\", Resultado::id, anterior},\n        {\"ID de 13\", \"Abc1234567890 malla 2\", Resultado::id, anterior},\n        {\"guion en ID\", \"Ro-ca malla 2\", Resultado::id, anterior},\n        {\"tipo antes de tamano\", \"Roca Malla 0\", Resultado::tipo, anterior},\n        {\"cero\", \"Roca malla 0\", Resultado::tamano, anterior},\n        {\"signo\", \"Roca malla +12\", Resultado::tamano, anterior},\n        {\"sufijo\", \"Roca malla 12x\", Resultado::tamano, anterior},\n        {\"seis digitos\", \"Roca malla 000001\", Resultado::tamano, anterior},\n        {\"sobre limite\", \"Roca malla 30001\", Resultado::tamano, anterior},\n        {\"cinco nueves\", \"Roca malla 99999\", Resultado::tamano, anterior}\n    };\n\n    int casos = 0;\n    int fallos = 0;\n    for (const Caso& caso : pruebas) {\n        ++casos;\n        Registro destino = anterior;\n        const Resultado obtenido = leer_registro(caso.linea, destino);\n        if (obtenido != caso.esperado || !iguales(destino, caso.registro_esperado)) {\n            ++fallos;\n            std::cerr << \"Fallo: \" << caso.nombre << '\\n';\n        }\n    }\n\n    // Estas tres llamadas comparten destino y forman un solo caso de continuacion.\n    ++casos;\n    Registro destino = anterior;\n    const Resultado r1 = leer_registro(\"Puerta malla 8\", destino);\n    const bool primero = r1 == Resultado::aceptado &&\n                         iguales(destino, Registro{\"Puerta\", \"malla\", 8});\n    const Resultado r2 = leer_registro(\"Puerta sonido +9\", destino);\n    const bool segundo = r2 == Resultado::tamano &&\n                         iguales(destino, Registro{\"Puerta\", \"malla\", 8});\n    const Resultado r3 = leer_registro(\"Puerta sonido 9\", destino);\n    const bool tercero = r3 == Resultado::aceptado &&\n                         iguales(destino, Registro{\"Puerta\", \"sonido\", 9});\n    if (!primero || !segundo || !tercero) {\n        ++fallos;\n        std::cerr << \"Fallo: continuacion\\n\";\n    }\n\n    std::cout << \"Casos=\" << casos << \" Fallos=\" << fallos << '\\n';\n    return fallos == 0 ? 0 : 1;\n}\n"
+          "code": "#include \"assetcheck/registro.hpp\"\n\n#include <iostream>\n#include <string>\n#include <vector>\n\nusing assetcheck::Registro;\nusing assetcheck::Resultado;\nusing assetcheck::leer_registro;\n\nbool iguales(const Registro& a, const Registro& b)\n{\n    return a.id == b.id && a.tipo == b.tipo &&\n           a.tamano_bytes == b.tamano_bytes;\n}\n\nstruct Caso {\n    std::string nombre;\n    std::string linea;\n    Resultado esperado;\n    Registro registro_esperado;\n};\n\nint main()\n{\n    const Registro anterior{\"Anterior\", \"sonido\", 87};\n    const std::vector<Caso> pruebas{\n        {\"normal\", \"Roca malla 240\", Resultado::aceptado, {\"Roca\", \"malla\", 240}},\n        {\"tabuladores\", \"\\tBrisa\\tsonido\\t00009\\t\", Resultado::aceptado, {\"Brisa\", \"sonido\", 9}},\n        {\"minimos\", \"A textura 1\", Resultado::aceptado, {\"A\", \"textura\", 1}},\n        {\"maximos\", \"Abc123456789 malla 30000\", Resultado::aceptado, {\"Abc123456789\", \"malla\", 30000}},\n        {\"minusculas\", \"roca malla 240\", Resultado::aceptado, {\"roca\", \"malla\", 240}},\n        {\"80 bytes\", \"Roca malla 240\" + std::string(66, ' '), Resultado::aceptado, {\"Roca\", \"malla\", 240}},\n        {\"81 bytes\", \"Roca malla 240\" + std::string(67, ' '), Resultado::formato, anterior},\n        {\"cuarto campo\", \"Roca malla 240 extra\", Resultado::formato, anterior},\n        {\"falta tamano\", \"Roca malla\", Resultado::formato, anterior},\n        {\"vacia\", \"\", Resultado::formato, anterior},\n        {\"solo separadores\", \" \\t \", Resultado::formato, anterior},\n        {\"NUL interno\", std::string(\"Roca\\0 malla 240\", 15), Resultado::formato, anterior},\n        {\"LF interno\", \"Roca\\n malla 240\", Resultado::formato, anterior},\n        {\"CR interno\", \"Roca\\r malla 240\", Resultado::formato, anterior},\n        {\"DEL\", std::string(1, static_cast<char>(127)) + \" malla 4\", Resultado::formato, anterior},\n        {\"UTF8\", \"\\xC3\\x91 malla 4\", Resultado::formato, anterior},\n        {\"ID antes de tipo\", \"_A material 0\", Resultado::id, anterior},\n        {\"ID empieza con cifra\", \"7Roca malla 2\", Resultado::id, anterior},\n        {\"ID de 13\", \"Abc1234567890 malla 2\", Resultado::id, anterior},\n        {\"guion en ID\", \"Ro-ca malla 2\", Resultado::id, anterior},\n        {\"tipo antes de tamano\", \"Roca Malla 0\", Resultado::tipo, anterior},\n        {\"cero\", \"Roca malla 0\", Resultado::tamano, anterior},\n        {\"signo\", \"Roca malla +12\", Resultado::tamano, anterior},\n        {\"sufijo\", \"Roca malla 12x\", Resultado::tamano, anterior},\n        {\"seis digitos\", \"Roca malla 000001\", Resultado::tamano, anterior},\n        {\"sobre limite\", \"Roca malla 30001\", Resultado::tamano, anterior},\n        {\"cinco nueves\", \"Roca malla 99999\", Resultado::tamano, anterior}\n    };\n\n    int casos = 0;\n    int fallos = 0;\n\n    for (const Caso& caso : pruebas) {\n        ++casos;\n        Registro destino = anterior;\n        const Resultado obtenido = leer_registro(caso.linea, destino);\n\n        if (obtenido != caso.esperado || !iguales(destino, caso.registro_esperado)) {\n            ++fallos;\n            std::cerr << \"Fallo: \" << caso.nombre << '\\n';\n        }\n    }\n\n    // Estas tres llamadas comparten destino y forman un solo caso de continuacion.\n    ++casos;\n    Registro destino = anterior;\n    const Resultado r1 = leer_registro(\"Puerta malla 8\", destino);\n    const bool primero = r1 == Resultado::aceptado &&\n                         iguales(destino, Registro{\"Puerta\", \"malla\", 8});\n    const Resultado r2 = leer_registro(\"Puerta sonido +9\", destino);\n    const bool segundo = r2 == Resultado::tamano &&\n                         iguales(destino, Registro{\"Puerta\", \"malla\", 8});\n    const Resultado r3 = leer_registro(\"Puerta sonido 9\", destino);\n    const bool tercero = r3 == Resultado::aceptado &&\n                         iguales(destino, Registro{\"Puerta\", \"sonido\", 9});\n    if (!primero || !segundo || !tercero) {\n        ++fallos;\n        std::cerr << \"Fallo: continuacion\\n\";\n    }\n\n    std::cout << \"Casos=\" << casos << \" Fallos=\" << fallos << '\\n';\n    return fallos == 0 ? 0 : 1;\n}\n"
         },
         {
           "type": "paragraph",
@@ -558,7 +558,7 @@
         {
           "type": "code",
           "language": "cmake",
-          "code": "cmake_minimum_required(VERSION 3.20)\nproject(AssetCheck LANGUAGES CXX)\nadd_library(assetcheck_registro STATIC src/registro.cpp)\ntarget_include_directories(assetcheck_registro PUBLIC include)\ntarget_compile_features(assetcheck_registro PUBLIC cxx_std_20)\nset_target_properties(assetcheck_registro PROPERTIES CXX_EXTENSIONS OFF)\nadd_executable(comprobar_registro pruebas/casos.cpp)\ntarget_link_libraries(comprobar_registro PRIVATE assetcheck_registro)\nset_target_properties(comprobar_registro PROPERTIES CXX_EXTENSIONS OFF)\nenable_testing()\nadd_test(NAME comprobar_registro COMMAND comprobar_registro)\n"
+          "code": "cmake_minimum_required(VERSION 3.20)\nproject(AssetCheck LANGUAGES CXX)\n\nadd_library(assetcheck_registro STATIC src/registro.cpp)\n\ntarget_include_directories(assetcheck_registro PUBLIC include)\ntarget_compile_features(assetcheck_registro PUBLIC cxx_std_20)\nset_target_properties(assetcheck_registro PROPERTIES CXX_EXTENSIONS OFF)\nadd_executable(comprobar_registro pruebas/casos.cpp)\n\ntarget_link_libraries(comprobar_registro PRIVATE assetcheck_registro)\nset_target_properties(comprobar_registro PROPERTIES CXX_EXTENSIONS OFF)\nenable_testing()\nadd_test(NAME comprobar_registro COMMAND comprobar_registro)\n"
         },
         {
           "type": "paragraph",
@@ -4305,6 +4305,106 @@
         "id": "block_0007_0004",
         "beforeSha256": "32446d68e711261f0aac922fd8188a431bb680fcae6bda4c3b661ece4337eb14",
         "afterSha256": "91b764d2627b2aa1cb965b8628bafc408876d0baced25954e903bdad6639bee2"
+      },
+      {
+        "id": "block_0003_0002",
+        "beforeSha256": "433048d828d072538d892a7e333e559c195f9f8224f55d34de9ddcc19a684fc5",
+        "afterSha256": "2352547f02d4e79ffe594711e1f324974fd9bee8a8e56e1c3cfa42ffe31f0dc9"
+      },
+      {
+        "id": "block_0005_0002",
+        "beforeSha256": "269626bdcd6ce1bf05cd335f6e5e679765c3c30454c9c4e78230c19322774e04",
+        "afterSha256": "87d53b7ba79d51f47f7684b99bbb2ddf2393059df58a8168261961597ee8b1f6"
+      },
+      {
+        "id": "u4l4_fuente_registro_completa",
+        "beforeSha256": "df5bacd77bcbbf1c105836ebd2979492f07cb03bf5ec124cf1528a9d18d8a25a",
+        "afterSha256": "6fdfb0f2b348732f45565edbdbcf8c469859b12c44356c841d2200be909fd16f"
+      },
+      {
+        "id": "u4l4_fuente_comprobador_completa",
+        "beforeSha256": "fb1e73ccc5bb7659debf1cb294e192dc5f16b1c9491a29624fdb5aad2c7437b2",
+        "afterSha256": "7fa39ef7b014cfd6d8cab1512a45d7090308b47aedb79873f6d272dcdfa60fb9"
+      },
+      {
+        "id": "block_0007_0002",
+        "beforeSha256": "5c9c9a367c3513be40cfdb5c50cae73a2c66b0d6d8102097d69e841f2eb75e7c",
+        "afterSha256": "d9bd5a7e8641e826a9b656db00ff87ae9cc013cd0e3f3b0e8f36c87cf22c0bc1"
+      }
+    ],
+    "sourceFormatRevisions": [
+      {
+        "id": "block_0003_0002",
+        "block": {
+          "type": "code",
+          "language": "cpp",
+          "code": "bool letra_ascii(char c) {\n    return (c >= 'A' && c <= 'Z') || (c >= 'a' && c <= 'z');\n}\nbool digito_ascii(char c) {\n    return c >= '0' && c <= '9';\n}\nbool id_valido(const std::string& id) {\n    if (id.empty() || id.size() > 12 || !letra_ascii(id[0]))\n        return false;\n    for (char c : id)\n        if (!letra_ascii(c) && !digito_ascii(c) && c != '_')\n            return false;\n    return true;\n}"
+        }
+      },
+      {
+        "id": "block_0005_0002",
+        "block": {
+          "type": "cpp_compiler",
+          "language": "cpp",
+          "initialCode": "#include <iostream>\n#include <string>\n\n// Completa esta función, sin modificar main.\nbool tamano_valido(const std::string& texto, int& destino)\n{\n    // Acepta 1..5 dígitos decimales ASCII y valor 1..30000.\n    // Ante un rechazo conserva destino.\n    return false;\n}\n\nint main()\n{\n    std::string texto;\n    while (std::cin >> texto) {\n        int destino = 91;\n        const bool aceptado = tamano_valido(texto, destino);\n        std::cout << texto << ':' << aceptado << ':' << destino << '\\n';\n    }\n    return 0;\n}\n",
+          "outputCheck": {
+            "inputComparison": "exact",
+            "cases": [
+              {
+                "standardInput": "1 30000 00001\n",
+                "outputs": [
+                  "1:1:1\n30000:1:30000\n00001:1:1\n"
+                ],
+                "explanation": "1 y 30000 son los extremos admitidos; 00001 tiene cinco dígitos y representa 1."
+              },
+              {
+                "standardInput": "0 +12 12x 000001 30001\n",
+                "outputs": [
+                  "0:0:91\n+12:0:91\n12x:0:91\n000001:0:91\n30001:0:91\n"
+                ],
+                "explanation": "Cero, signo, sufijo, seis dígitos y valores fuera de rango se rechazan sin cambiar 91."
+              },
+              {
+                "standardInput": "29999 00000 00009\n",
+                "outputs": [
+                  "29999:1:29999\n00000:0:91\n00009:1:9\n"
+                ],
+                "explanation": "La validación de la escritura y la del valor son independientes."
+              },
+              {
+                "standardInput": "5 abc -1 99999 030000\n",
+                "outputs": [
+                  "5:1:5\nabc:0:91\n-1:0:91\n99999:0:91\n030000:0:91\n"
+                ],
+                "explanation": "Todos los rechazos conservan el destino; sólo 5 es admisible."
+              }
+            ]
+          }
+        }
+      },
+      {
+        "id": "u4l4_fuente_registro_completa",
+        "block": {
+          "type": "code",
+          "language": "cpp",
+          "code": "#include \"assetcheck/registro.hpp\"\n\n#include <locale>\n#include <sstream>\n\nnamespace assetcheck {\nnamespace {\nbool letra_ascii(char c) {\n    return (c >= 'A' && c <= 'Z') || (c >= 'a' && c <= 'z');\n}\nbool digito_ascii(char c) {\n    return c >= '0' && c <= '9';\n}\nbool id_valido(const std::string& id) {\n    if (id.empty() || id.size() > 12 || !letra_ascii(id[0]))\n        return false;\n    for (char c : id)\n        if (!letra_ascii(c) && !digito_ascii(c) && c != '_')\n            return false;\n    return true;\n}\nbool tamano_valido(const std::string& texto, int& destino)\n{\n    if (texto.empty() || texto.size() > 5) {\n        return false;\n    }\n    int candidato = 0;\n    for (char c : texto) {\n        if (c < '0' || c > '9') {\n            return false;\n        }\n        candidato = candidato * 10 + (c - '0');\n    }\n    if (candidato < 1 || candidato > 30000) {\n        return false;\n    }\n    destino = candidato;\n    return true;\n}\n} // namespace\n\nResultado leer_registro(const std::string& linea, Registro& destino)\n{\n    if (linea.size() > 80) return Resultado::formato;\n    for (unsigned char ch : linea) {\n        if (ch != '\\t' && (ch < 32 || ch > 126))\n            return Resultado::formato;\n    }\n\n    std::istringstream entrada(linea);\n    entrada.imbue(std::locale::classic());\n    std::string id, tipo, tamano, extra;\n    if (!(entrada >> id >> tipo >> tamano) || (entrada >> extra))\n        return Resultado::formato;\n\n    if (!id_valido(id)) return Resultado::id;\n    if (tipo != \"textura\" && tipo != \"malla\" && tipo != \"sonido\")\n        return Resultado::tipo;\n\n    int cantidad = 0;\n    if (!tamano_valido(tamano, cantidad)) return Resultado::tamano;\n\n    Registro candidato{id, tipo, cantidad};\n    destino = candidato;\n    return Resultado::aceptado;\n}\n} // namespace assetcheck\n"
+        }
+      },
+      {
+        "id": "u4l4_fuente_comprobador_completa",
+        "block": {
+          "type": "code",
+          "language": "cpp",
+          "code": "#include \"assetcheck/registro.hpp\"\n\n#include <iostream>\n#include <string>\n#include <vector>\n\nusing assetcheck::Registro;\nusing assetcheck::Resultado;\nusing assetcheck::leer_registro;\n\nbool iguales(const Registro& a, const Registro& b)\n{\n    return a.id == b.id && a.tipo == b.tipo &&\n           a.tamano_bytes == b.tamano_bytes;\n}\n\nstruct Caso {\n    std::string nombre;\n    std::string linea;\n    Resultado esperado;\n    Registro registro_esperado;\n};\n\nint main()\n{\n    const Registro anterior{\"Anterior\", \"sonido\", 87};\n    const std::vector<Caso> pruebas{\n        {\"normal\", \"Roca malla 240\", Resultado::aceptado, {\"Roca\", \"malla\", 240}},\n        {\"tabuladores\", \"\\tBrisa\\tsonido\\t00009\\t\", Resultado::aceptado, {\"Brisa\", \"sonido\", 9}},\n        {\"minimos\", \"A textura 1\", Resultado::aceptado, {\"A\", \"textura\", 1}},\n        {\"maximos\", \"Abc123456789 malla 30000\", Resultado::aceptado, {\"Abc123456789\", \"malla\", 30000}},\n        {\"minusculas\", \"roca malla 240\", Resultado::aceptado, {\"roca\", \"malla\", 240}},\n        {\"80 bytes\", \"Roca malla 240\" + std::string(66, ' '), Resultado::aceptado, {\"Roca\", \"malla\", 240}},\n        {\"81 bytes\", \"Roca malla 240\" + std::string(67, ' '), Resultado::formato, anterior},\n        {\"cuarto campo\", \"Roca malla 240 extra\", Resultado::formato, anterior},\n        {\"falta tamano\", \"Roca malla\", Resultado::formato, anterior},\n        {\"vacia\", \"\", Resultado::formato, anterior},\n        {\"solo separadores\", \" \\t \", Resultado::formato, anterior},\n        {\"NUL interno\", std::string(\"Roca\\0 malla 240\", 15), Resultado::formato, anterior},\n        {\"LF interno\", \"Roca\\n malla 240\", Resultado::formato, anterior},\n        {\"CR interno\", \"Roca\\r malla 240\", Resultado::formato, anterior},\n        {\"DEL\", std::string(1, static_cast<char>(127)) + \" malla 4\", Resultado::formato, anterior},\n        {\"UTF8\", \"\\xC3\\x91 malla 4\", Resultado::formato, anterior},\n        {\"ID antes de tipo\", \"_A material 0\", Resultado::id, anterior},\n        {\"ID empieza con cifra\", \"7Roca malla 2\", Resultado::id, anterior},\n        {\"ID de 13\", \"Abc1234567890 malla 2\", Resultado::id, anterior},\n        {\"guion en ID\", \"Ro-ca malla 2\", Resultado::id, anterior},\n        {\"tipo antes de tamano\", \"Roca Malla 0\", Resultado::tipo, anterior},\n        {\"cero\", \"Roca malla 0\", Resultado::tamano, anterior},\n        {\"signo\", \"Roca malla +12\", Resultado::tamano, anterior},\n        {\"sufijo\", \"Roca malla 12x\", Resultado::tamano, anterior},\n        {\"seis digitos\", \"Roca malla 000001\", Resultado::tamano, anterior},\n        {\"sobre limite\", \"Roca malla 30001\", Resultado::tamano, anterior},\n        {\"cinco nueves\", \"Roca malla 99999\", Resultado::tamano, anterior}\n    };\n\n    int casos = 0;\n    int fallos = 0;\n    for (const Caso& caso : pruebas) {\n        ++casos;\n        Registro destino = anterior;\n        const Resultado obtenido = leer_registro(caso.linea, destino);\n        if (obtenido != caso.esperado || !iguales(destino, caso.registro_esperado)) {\n            ++fallos;\n            std::cerr << \"Fallo: \" << caso.nombre << '\\n';\n        }\n    }\n\n    // Estas tres llamadas comparten destino y forman un solo caso de continuacion.\n    ++casos;\n    Registro destino = anterior;\n    const Resultado r1 = leer_registro(\"Puerta malla 8\", destino);\n    const bool primero = r1 == Resultado::aceptado &&\n                         iguales(destino, Registro{\"Puerta\", \"malla\", 8});\n    const Resultado r2 = leer_registro(\"Puerta sonido +9\", destino);\n    const bool segundo = r2 == Resultado::tamano &&\n                         iguales(destino, Registro{\"Puerta\", \"malla\", 8});\n    const Resultado r3 = leer_registro(\"Puerta sonido 9\", destino);\n    const bool tercero = r3 == Resultado::aceptado &&\n                         iguales(destino, Registro{\"Puerta\", \"sonido\", 9});\n    if (!primero || !segundo || !tercero) {\n        ++fallos;\n        std::cerr << \"Fallo: continuacion\\n\";\n    }\n\n    std::cout << \"Casos=\" << casos << \" Fallos=\" << fallos << '\\n';\n    return fallos == 0 ? 0 : 1;\n}\n"
+        }
+      },
+      {
+        "id": "block_0007_0002",
+        "block": {
+          "type": "code",
+          "language": "cmake",
+          "code": "cmake_minimum_required(VERSION 3.20)\nproject(AssetCheck LANGUAGES CXX)\nadd_library(assetcheck_registro STATIC src/registro.cpp)\ntarget_include_directories(assetcheck_registro PUBLIC include)\ntarget_compile_features(assetcheck_registro PUBLIC cxx_std_20)\nset_target_properties(assetcheck_registro PROPERTIES CXX_EXTENSIONS OFF)\nadd_executable(comprobar_registro pruebas/casos.cpp)\ntarget_link_libraries(comprobar_registro PRIVATE assetcheck_registro)\nset_target_properties(comprobar_registro PROPERTIES CXX_EXTENSIONS OFF)\nenable_testing()\nadd_test(NAME comprobar_registro COMMAND comprobar_registro)\n"
+        }
       }
     ]
   }

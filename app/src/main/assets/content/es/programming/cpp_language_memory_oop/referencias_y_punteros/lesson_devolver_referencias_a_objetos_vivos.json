@@ -22,7 +22,7 @@
           "id": "p3_u4l4_recibir_copia_y_alias",
           "language": "cpp",
           "question": "¿Qué muestra dato:copia:alias?",
-          "code": "#include <iostream>\n\nint& acceder(int& dato) {\n    return dato;\n}\n\nint main() {\n    int dato = 4;\n    int copia = acceder(dato);\n    int& alias = acceder(dato);\n    alias = 7;\n    std::cout << dato << ':' << copia << ':' << alias;\n    return 0;\n}\n",
+          "code": "#include <iostream>\n\nint& acceder(int& dato) {\n    return dato;\n}\n\nint main() {\n    int dato = 4;\n    int copia = acceder(dato);\n    int& alias = acceder(dato);\n\n    alias = 7;\n\n    std::cout << dato << ':' << copia << ':' << alias;\n\n    return 0;\n}\n",
           "answers": [
             "7:4:7"
           ],
@@ -70,7 +70,7 @@
           "id": "p3_u4l4_escribir_en_resultado",
           "language": "cpp",
           "question": "¿Qué valor muestra el programa?",
-          "code": "#include <iostream>\n\nint& acceder(int& dato) {\n    return dato;\n}\n\nint main() {\n    int dato = 3;\n    acceder(dato) = 8;\n    acceder(dato) += 1;\n    std::cout << dato;\n    return 0;\n}\n",
+          "code": "#include <iostream>\n\nint& acceder(int& dato) {\n    return dato;\n}\n\nint main() {\n    int dato = 3;\n    acceder(dato) = 8;\n    acceder(dato) += 1;\n    std::cout << dato;\n\n    return 0;\n}\n",
           "answers": [
             "9"
           ],
@@ -98,7 +98,7 @@
           "id": "p3_u4l4_lectura_retornada_y_copia",
           "language": "cpp",
           "question": "¿Qué muestra lectura:copia?",
-          "code": "#include <iostream>\n\nconst int& observar(const int& dato) {\n    return dato;\n}\n\nint main() {\n    int dato = 4;\n    const int& lectura = observar(dato);\n    const int copia = observar(dato);\n    dato = 9;\n    std::cout << lectura << ':' << copia;\n    return 0;\n}\n",
+          "code": "#include <iostream>\n\nconst int& observar(const int& dato) {\n    return dato;\n}\n\nint main() {\n    int dato = 4;\n    const int& lectura = observar(dato);\n    const int copia = observar(dato);\n\n    dato = 9;\n\n    std::cout << lectura << ':' << copia;\n\n    return 0;\n}\n",
           "answers": [
             "9:4"
           ],
@@ -134,7 +134,7 @@
           "id": "p3_u4l4_auto_copia_y_auto_referencia",
           "language": "cpp",
           "question": "¿Qué muestra dato:alias:lectura:copia?",
-          "code": "#include <iostream>\n\nint& acceder(int& dato) {\n    return dato;\n}\n\nconst int& observar(const int& dato) {\n    return dato;\n}\n\nint main() {\n    int dato = 3;\n    auto copia = acceder(dato);\n    auto& alias = acceder(dato);\n    const auto& lectura = observar(dato);\n    ++copia;\n    alias = 8;\n    std::cout << dato << ':' << alias << ':' << lectura << ':' << copia;\n    return 0;\n}\n",
+          "code": "#include <iostream>\n\nint& acceder(int& dato) {\n    return dato;\n}\n\nconst int& observar(const int& dato) {\n    return dato;\n}\n\nint main() {\n    int dato = 3;\n    auto copia = acceder(dato);\n    auto& alias = acceder(dato);\n    const auto& lectura = observar(dato);\n\n    ++copia;\n    alias = 8;\n\n    std::cout << dato << ':' << alias << ':' << lectura << ':' << copia;\n\n    return 0;\n}\n",
           "answers": [
             "8:8:8:4"
           ],
@@ -162,7 +162,7 @@
           "id": "p3_u4l4_seleccion_conservada",
           "language": "cpp",
           "question": "¿Qué muestra datos[0]:datos[1]:datos[2]:anterior?",
-          "code": "#include <array>\n#include <cstddef>\n#include <iostream>\n\nint& elegir(std::array<int, 3>& datos, int indice) {\n    return datos.at(static_cast<std::size_t>(indice));\n}\n\nint main() {\n    std::array<int, 3> datos{2, 5, 8};\n    int indice = 0;\n    int& anterior = elegir(datos, indice);\n    indice = 2;\n    elegir(datos, indice) = 9;\n    anterior = 4;\n    std::cout << datos[0] << ':' << datos[1] << ':' << datos[2] << ':' << anterior;\n    return 0;\n}\n",
+          "code": "#include <array>\n#include <cstddef>\n#include <iostream>\n\nint& elegir(std::array<int, 3>& datos, int indice) {\n    return datos.at(static_cast<std::size_t>(indice));\n}\n\nint main() {\n    std::array<int, 3> datos{2, 5, 8};\n    int indice = 0;\n    int& anterior = elegir(datos, indice);\n\n    indice = 2;\n    elegir(datos, indice) = 9;\n    anterior = 4;\n\n    std::cout << datos[0] << ':' << datos[1] << ':' << datos[2] << ':' << anterior;\n\n    return 0;\n}\n",
           "answers": [
             "4:5:9:4"
           ],
@@ -261,7 +261,7 @@
           "id": "p3_u4l4_valor_desde_local",
           "language": "cpp",
           "question": "¿Qué muestra el programa?",
-          "code": "#include <iostream>\n\nint calcular() {\n    int local = 4;\n    return local;\n}\n\nint main() {\n    const int resultado = calcular();\n    std::cout << resultado;\n    return 0;\n}\n",
+          "code": "#include <iostream>\n\nint calcular() {\n    int local = 4;\n    return local;\n}\n\nint main() {\n    const int resultado = calcular();\n\n    std::cout << resultado;\n\n    return 0;\n}\n",
           "answers": [
             "4"
           ],
@@ -289,7 +289,7 @@
           "id": "p3_u4l4_copiar_temporal_a_tiempo",
           "language": "cpp",
           "question": "¿Qué muestra este programa, que copia el valor mientras el temporal sigue vivo?",
-          "code": "#include <iostream>\n\nconst int& eco(const int& dato) {\n    return dato;\n}\n\nint main() {\n    const int copia = eco(7);\n    std::cout << copia;\n    return 0;\n}\n",
+          "code": "#include <iostream>\n\nconst int& eco(const int& dato) {\n    return dato;\n}\n\nint main() {\n    const int copia = eco(7);\n\n    std::cout << copia;\n\n    return 0;\n}\n",
           "answers": [
             "7"
           ],
@@ -329,7 +329,7 @@
           "id": "p3_u4l4_retorno_static",
           "language": "cpp",
           "question": "¿Qué muestra contador():alias:copia?",
-          "code": "#include <iostream>\n\nint& contador() {\n    static int valor = 0;\n    return valor;\n}\n\nint main() {\n    const int copia = contador();\n    int& alias = contador();\n    alias = 3;\n    contador() += 2;\n    std::cout << contador() << ':' << alias << ':' << copia;\n    return 0;\n}\n",
+          "code": "#include <iostream>\n\nint& contador() {\n    static int valor = 0;\n    return valor;\n}\n\nint main() {\n    const int copia = contador();\n    int& alias = contador();\n\n    alias = 3;\n    contador() += 2;\n    std::cout << contador() << ':' << alias << ':' << copia;\n\n    return 0;\n}\n",
           "answers": [
             "5:5:0"
           ],
@@ -357,7 +357,7 @@
           "id": "p3_u4l4_selector_que_rechaza",
           "language": "cpp",
           "question": "¿Qué muestra la secuencia completa con sus dos puntos?",
-          "code": "#include <array>\n#include <cstddef>\n#include <iostream>\n#include <stdexcept>\n\nint& elegir(std::array<int, 2>& datos, int indice) {\n    if (indice < 0 || indice > 1) {\n        throw std::out_of_range(\"indice\");\n    }\n    return datos.at(static_cast<std::size_t>(indice));\n}\n\nint main() {\n    std::array<int, 2> datos{2, 4};\n    elegir(datos, 1) = 7;\n    std::cout << datos[0] << ':' << datos[1] << ':';\n    try {\n        elegir(datos, -1) = 9;\n    } catch (const std::out_of_range&) {\n        std::cout << \"Fuera\";\n    }\n    std::cout << ':' << datos[0] << ':' << datos[1];\n    return 0;\n}\n",
+          "code": "#include <array>\n#include <cstddef>\n#include <iostream>\n#include <stdexcept>\n\nint& elegir(std::array<int, 2>& datos, int indice) {\n    if (indice < 0 || indice > 1) {\n        throw std::out_of_range(\"indice\");\n    }\n\n    return datos.at(static_cast<std::size_t>(indice));\n}\n\nint main() {\n    std::array<int, 2> datos{2, 4};\n    elegir(datos, 1) = 7;\n    std::cout << datos[0] << ':' << datos[1] << ':';\n    try {\n        elegir(datos, -1) = 9;\n    } catch (const std::out_of_range&) {\n        std::cout << \"Fuera\";\n    }\n    std::cout << ':' << datos[0] << ':' << datos[1];\n\n    return 0;\n}\n",
           "answers": [
             "2:7:Fuera:2:7"
           ],
@@ -434,7 +434,7 @@
         {
           "type": "cpp_compiler",
           "language": "cpp",
-          "initialCode": "#include <iostream>\n\nint acceder(int& dato) {\n    return dato;\n}\n\nint main() {\n    int dato = 4;\n    acceder(dato) = 9;\n    const int copia = acceder(dato);\n    acceder(dato) = 6;\n    std::cout << dato << ':' << copia;\n    return 0;\n}\n",
+          "initialCode": "#include <iostream>\n\nint acceder(int& dato) {\n    return dato;\n}\n\nint main() {\n    int dato = 4;\n    acceder(dato) = 9;\n    const int copia = acceder(dato);\n    acceder(dato) = 6;\n    std::cout << dato << ':' << copia;\n\n    return 0;\n}\n",
           "initialStandardInput": "",
           "outputCheck": {
             "inputComparison": "tokens",
@@ -460,7 +460,7 @@
         {
           "type": "code",
           "language": "cpp",
-          "code": "#include <iostream>\n\nint& acceder(int& dato) {\n    return dato;\n}\n\nint main() {\n    int dato = 4;\n    acceder(dato) = 9;\n    const int copia = acceder(dato);\n    acceder(dato) = 6;\n    std::cout << dato << ':' << copia;\n    return 0;\n}\n"
+          "code": "#include <iostream>\n\nint& acceder(int& dato) {\n    return dato;\n}\n\nint main() {\n    int dato = 4;\n    acceder(dato) = 9;\n    const int copia = acceder(dato);\n    acceder(dato) = 6;\n    std::cout << dato << ':' << copia;\n\n    return 0;\n}\n"
         },
         {
           "type": "paragraph",
@@ -539,7 +539,7 @@
         {
           "type": "cpp_compiler",
           "language": "cpp",
-          "initialCode": "#include <array>\n#include <cstddef>\n#include <iostream>\n#include <stdexcept>\n\nint seleccionar(std::array<int, 3>& datos, int indice) {\n    if (indice < 0 || indice > 2) {\n        throw std::out_of_range(\"indice\");\n    }\n    return datos.at(static_cast<std::size_t>(indice));\n}\n\nint consultar(const std::array<int, 3>& datos, int indice) {\n    if (indice < 0 || indice > 2) {\n        throw std::out_of_range(\"indice\");\n    }\n    return datos.at(static_cast<std::size_t>(indice));\n}\n\nint main() {\n    std::array<int, 3> datos{2, 5, 8};\n    const int& vista = consultar(datos, 1);\n    const int copia = consultar(datos, 1);\n    int cantidad = 0;\n    if (!(std::cin >> cantidad) || cantidad < 1 || cantidad > 12) {\n        return 1;\n    }\n    for (int orden = 0; orden < cantidad; ++orden) {\n        int indice = 0;\n        int valor = 0;\n        if (!(std::cin >> indice >> valor)) {\n            return 1;\n        }\n        try {\n            int& destino = seleccionar(datos, indice);\n            if (valor < 0 || valor > 9) {\n                std::cout << \"Rechazo\";\n            } else {\n                destino = valor;\n                std::cout << \"Cambio\";\n            }\n            std::cout << \";Valor:\" << destino;\n        } catch (const std::out_of_range&) {\n            std::cout << \"Indice invalido;Valor:-1\";\n        }\n        std::cout << \";Vista:\" << vista << \";Copia:\" << copia\n                  << \";Datos:\" << datos[0] << ',' << datos[1] << ',' << datos[2] << '\\n';\n    }\n    return 0;\n}\n",
+          "initialCode": "#include <array>\n#include <cstddef>\n#include <iostream>\n#include <stdexcept>\n\nint seleccionar(std::array<int, 3>& datos, int indice) {\n    if (indice < 0 || indice > 2) {\n        throw std::out_of_range(\"indice\");\n    }\n\n    return datos.at(static_cast<std::size_t>(indice));\n}\n\nint consultar(const std::array<int, 3>& datos, int indice) {\n    if (indice < 0 || indice > 2) {\n        throw std::out_of_range(\"indice\");\n    }\n\n    return datos.at(static_cast<std::size_t>(indice));\n}\n\nint main() {\n    std::array<int, 3> datos{2, 5, 8};\n    const int& vista = consultar(datos, 1);\n    const int copia = consultar(datos, 1);\n    int cantidad = 0;\n\n    if (!(std::cin >> cantidad) || cantidad < 1 || cantidad > 12) {\n        return 1;\n    }\n    for (int orden = 0; orden < cantidad; ++orden) {\n        int indice = 0;\n        int valor = 0;\n\n        if (!(std::cin >> indice >> valor)) {\n            return 1;\n        }\n        try {\n            int& destino = seleccionar(datos, indice);\n            if (valor < 0 || valor > 9) {\n                std::cout << \"Rechazo\";\n            } else {\n                destino = valor;\n                std::cout << \"Cambio\";\n            }\n            std::cout << \";Valor:\" << destino;\n        } catch (const std::out_of_range&) {\n            std::cout << \"Indice invalido;Valor:-1\";\n        }\n        std::cout << \";Vista:\" << vista << \";Copia:\" << copia\n                  << \";Datos:\" << datos[0] << ',' << datos[1] << ',' << datos[2] << '\\n';\n    }\n\n    return 0;\n}\n",
           "initialStandardInput": "8\n1 7\n0 4\n3 2\n1 10\n2 0\n1 0\n-1 8\n1 9\n",
           "outputCheck": {
             "inputComparison": "tokens",
@@ -704,7 +704,7 @@
         {
           "type": "code",
           "language": "cpp",
-          "code": "#include <array>\n#include <cstddef>\n#include <iostream>\n#include <stdexcept>\n\nint& seleccionar(std::array<int, 3>& datos, int indice) {\n    if (indice < 0 || indice > 2) {\n        throw std::out_of_range(\"indice\");\n    }\n    return datos.at(static_cast<std::size_t>(indice));\n}\n\nconst int& consultar(const std::array<int, 3>& datos, int indice) {\n    if (indice < 0 || indice > 2) {\n        throw std::out_of_range(\"indice\");\n    }\n    return datos.at(static_cast<std::size_t>(indice));\n}\n\nint main() {\n    std::array<int, 3> datos{2, 5, 8};\n    const int& vista = consultar(datos, 1);\n    const int copia = consultar(datos, 1);\n    int cantidad = 0;\n    if (!(std::cin >> cantidad) || cantidad < 1 || cantidad > 12) {\n        return 1;\n    }\n    for (int orden = 0; orden < cantidad; ++orden) {\n        int indice = 0;\n        int valor = 0;\n        if (!(std::cin >> indice >> valor)) {\n            return 1;\n        }\n        try {\n            int& destino = seleccionar(datos, indice);\n            if (valor < 0 || valor > 9) {\n                std::cout << \"Rechazo\";\n            } else {\n                destino = valor;\n                std::cout << \"Cambio\";\n            }\n            std::cout << \";Valor:\" << destino;\n        } catch (const std::out_of_range&) {\n            std::cout << \"Indice invalido;Valor:-1\";\n        }\n        std::cout << \";Vista:\" << vista << \";Copia:\" << copia\n                  << \";Datos:\" << datos[0] << ',' << datos[1] << ',' << datos[2] << '\\n';\n    }\n    return 0;\n}\n"
+          "code": "#include <array>\n#include <cstddef>\n#include <iostream>\n#include <stdexcept>\n\nint& seleccionar(std::array<int, 3>& datos, int indice) {\n    if (indice < 0 || indice > 2) {\n        throw std::out_of_range(\"indice\");\n    }\n\n    return datos.at(static_cast<std::size_t>(indice));\n}\n\nconst int& consultar(const std::array<int, 3>& datos, int indice) {\n    if (indice < 0 || indice > 2) {\n        throw std::out_of_range(\"indice\");\n    }\n\n    return datos.at(static_cast<std::size_t>(indice));\n}\n\nint main() {\n    std::array<int, 3> datos{2, 5, 8};\n    const int& vista = consultar(datos, 1);\n    const int copia = consultar(datos, 1);\n    int cantidad = 0;\n\n    if (!(std::cin >> cantidad) || cantidad < 1 || cantidad > 12) {\n        return 1;\n    }\n    for (int orden = 0; orden < cantidad; ++orden) {\n        int indice = 0;\n        int valor = 0;\n\n        if (!(std::cin >> indice >> valor)) {\n            return 1;\n        }\n        try {\n            int& destino = seleccionar(datos, indice);\n            if (valor < 0 || valor > 9) {\n                std::cout << \"Rechazo\";\n            } else {\n                destino = valor;\n                std::cout << \"Cambio\";\n            }\n            std::cout << \";Valor:\" << destino;\n        } catch (const std::out_of_range&) {\n            std::cout << \"Indice invalido;Valor:-1\";\n        }\n        std::cout << \";Vista:\" << vista << \";Copia:\" << copia\n                  << \";Datos:\" << datos[0] << ',' << datos[1] << ',' << datos[2] << '\\n';\n    }\n\n    return 0;\n}\n"
         },
         {
           "type": "paragraph",
@@ -2054,6 +2054,288 @@
       }
     },
     "additions": [],
-    "editorial": []
+    "editorial": [
+      {
+        "id": "block_0000_0003",
+        "beforeSha256": "1a8b733dbfd604b3c460df76404f1531a4d40e4c15ab02896a1b1f4b11bac832",
+        "afterSha256": "d15caf2053f7bcb86f4f1a2c545ebcbaa7ee20bcb4249a425226fbd4c8956b00"
+      },
+      {
+        "id": "block_0002_0002",
+        "beforeSha256": "dd3558661bf275fd3fc33e6b4a36b67d9afebcc1f4723a4c742ee05880d9f3a8",
+        "afterSha256": "8c144b611b8ae98ec78f4d09c8b0527ea93fdd5596a4bc8e572439fd79d7ddaa"
+      },
+      {
+        "id": "block_0003_0002",
+        "beforeSha256": "516bacf4fe0ba82f05e61b13ef9b9af3f1a9ea668948c198f51c7348f5034474",
+        "afterSha256": "8ce0344f34ab3e4dc876c053b70f951eb932b697ebf751d9b5fcdd801c4504fd"
+      },
+      {
+        "id": "block_0004_0002",
+        "beforeSha256": "4ef1e09c3867f634cc6f875f220650509d55f4e12c258070afe0d94453b0b961",
+        "afterSha256": "74afca88eaf20136491b0ae07658356cfe82300c37ed5ea2579bfca363965166"
+      },
+      {
+        "id": "block_0005_0002",
+        "beforeSha256": "1e66d637e5a9b950ef955ac165ac7efb74f33198cfaad0a52654a4394f29a648",
+        "afterSha256": "0b425a8e94e329a744f11c5543bed7e1fcf486ef7dcf7320d58e6dd7edde3463"
+      },
+      {
+        "id": "block_0008_0002",
+        "beforeSha256": "836be154daf3f0034788eaf52d7631e4263aae743326243fb83dfbe8af8bf9fe",
+        "afterSha256": "0b1dc15cde03aa5a6022ea874792181552b1ca4e1a2de0b423c96a13139afd67"
+      },
+      {
+        "id": "block_0009_0002",
+        "beforeSha256": "50ec5c5be68a76d1255b89bb34aa0721419c8039b4f9e051f67feecd84308ac6",
+        "afterSha256": "bbd65d9c615cc16c92f1050310671c48d86f86f3a0612ef4ed566905d8541250"
+      },
+      {
+        "id": "block_0010_0002",
+        "beforeSha256": "d226b992defd51deb38db5feb9ec1736fbe237c43e5b7c562256a514205337fc",
+        "afterSha256": "f562e5e35b07bc5a764ac49129bd225d224c8ce9464ddb14aee2e5ed3b4a238e"
+      },
+      {
+        "id": "block_0011_0002",
+        "beforeSha256": "4a4ccf2fe1a54cc07bf63afe1f1d6a07976a773c0344c96c41b2c5da0fe1f7de",
+        "afterSha256": "63592a0d48f4e8ae742fa233b526b9a5afdc942b5601bfd64d0add24952f2883"
+      },
+      {
+        "id": "block_0013_0004",
+        "beforeSha256": "c9cc0363fd26cec983c33aafe848ec9387fb755d008d00fed337ea4cbe0838ff",
+        "afterSha256": "e9253a3055999f0dd6e3f6db3effa1fe442d17573b43260bb9756e5f792da12c"
+      },
+      {
+        "id": "block_0014_0001",
+        "beforeSha256": "b630f2f4f79c3188581487961cb7c8aea43a9a6924dac470bbb0c0049e93c261",
+        "afterSha256": "676c7f2d54476fd5b0c416c8fc9cf93901b54aabad2881b5aa59f5bf23912517"
+      },
+      {
+        "id": "block_0015_0013",
+        "beforeSha256": "2b5a7c0e6acf03a2053d73c5bf5b0825829ec2bdfe946e688787cfb168e32f3a",
+        "afterSha256": "10301ac7feb41b1db6b78c93e99fcafe6b3e756725ba446740ff0e360b62344a"
+      },
+      {
+        "id": "block_0018_0001",
+        "beforeSha256": "01265b893c1c0c18833d136ea2c375b30b240048ac1e6b9a524465122930476c",
+        "afterSha256": "8bdeec0b997e9bd1988abe78a587bc3262da072f4197ca930ce9ce3ac4e0bc56"
+      }
+    ],
+    "sourceFormatRevisions": [
+      {
+        "id": "block_0000_0003",
+        "block": {
+          "type": "output_prediction",
+          "id": "p3_u4l4_recibir_copia_y_alias",
+          "language": "cpp",
+          "question": "¿Qué muestra dato:copia:alias?",
+          "code": "#include <iostream>\n\nint& acceder(int& dato) {\n    return dato;\n}\n\nint main() {\n    int dato = 4;\n    int copia = acceder(dato);\n    int& alias = acceder(dato);\n    alias = 7;\n    std::cout << dato << ':' << copia << ':' << alias;\n    return 0;\n}\n",
+          "answers": [
+            "7:4:7"
+          ],
+          "outputComparison": "exact",
+          "explanation": "La función devuelve acceso al entero de main. int copia crea otro entero con 4. int& alias conserva la referencia al original. La asignación mediante alias deja dato en 7 y la copia sigue en 4."
+        }
+      },
+      {
+        "id": "block_0002_0002",
+        "block": {
+          "type": "output_prediction",
+          "id": "p3_u4l4_escribir_en_resultado",
+          "language": "cpp",
+          "question": "¿Qué valor muestra el programa?",
+          "code": "#include <iostream>\n\nint& acceder(int& dato) {\n    return dato;\n}\n\nint main() {\n    int dato = 3;\n    acceder(dato) = 8;\n    acceder(dato) += 1;\n    std::cout << dato;\n    return 0;\n}\n",
+          "answers": [
+            "9"
+          ],
+          "outputComparison": "exact",
+          "explanation": "La primera llamada permite asignar 8 a dato. La segunda permite aumentar ese mismo entero en uno. El resultado final es 9."
+        }
+      },
+      {
+        "id": "block_0003_0002",
+        "block": {
+          "type": "output_prediction",
+          "id": "p3_u4l4_lectura_retornada_y_copia",
+          "language": "cpp",
+          "question": "¿Qué muestra lectura:copia?",
+          "code": "#include <iostream>\n\nconst int& observar(const int& dato) {\n    return dato;\n}\n\nint main() {\n    int dato = 4;\n    const int& lectura = observar(dato);\n    const int copia = observar(dato);\n    dato = 9;\n    std::cout << lectura << ':' << copia;\n    return 0;\n}\n",
+          "answers": [
+            "9:4"
+          ],
+          "outputComparison": "exact",
+          "explanation": "lectura se refiere al entero dato y observa el cambio a 9. copia es otro entero constante preparado con el 4 anterior."
+        }
+      },
+      {
+        "id": "block_0004_0002",
+        "block": {
+          "type": "output_prediction",
+          "id": "p3_u4l4_auto_copia_y_auto_referencia",
+          "language": "cpp",
+          "question": "¿Qué muestra dato:alias:lectura:copia?",
+          "code": "#include <iostream>\n\nint& acceder(int& dato) {\n    return dato;\n}\n\nconst int& observar(const int& dato) {\n    return dato;\n}\n\nint main() {\n    int dato = 3;\n    auto copia = acceder(dato);\n    auto& alias = acceder(dato);\n    const auto& lectura = observar(dato);\n    ++copia;\n    alias = 8;\n    std::cout << dato << ':' << alias << ':' << lectura << ':' << copia;\n    return 0;\n}\n",
+          "answers": [
+            "8:8:8:4"
+          ],
+          "outputComparison": "exact",
+          "explanation": "copia comienza con 3 y aumenta a 4 por su cuenta. alias permite asignar 8 al original. dato, alias y lectura permiten leer ese 8."
+        }
+      },
+      {
+        "id": "block_0005_0002",
+        "block": {
+          "type": "output_prediction",
+          "id": "p3_u4l4_seleccion_conservada",
+          "language": "cpp",
+          "question": "¿Qué muestra datos[0]:datos[1]:datos[2]:anterior?",
+          "code": "#include <array>\n#include <cstddef>\n#include <iostream>\n\nint& elegir(std::array<int, 3>& datos, int indice) {\n    return datos.at(static_cast<std::size_t>(indice));\n}\n\nint main() {\n    std::array<int, 3> datos{2, 5, 8};\n    int indice = 0;\n    int& anterior = elegir(datos, indice);\n    indice = 2;\n    elegir(datos, indice) = 9;\n    anterior = 4;\n    std::cout << datos[0] << ':' << datos[1] << ':' << datos[2] << ':' << anterior;\n    return 0;\n}\n",
+          "answers": [
+            "4:5:9:4"
+          ],
+          "outputComparison": "exact",
+          "explanation": "anterior se inicializa para referirse al elemento cero. La llamada posterior utiliza el índice dos y escribe 9 allí. anterior = 4 sigue escribiendo en el elemento cero."
+        }
+      },
+      {
+        "id": "block_0008_0002",
+        "block": {
+          "type": "output_prediction",
+          "id": "p3_u4l4_valor_desde_local",
+          "language": "cpp",
+          "question": "¿Qué muestra el programa?",
+          "code": "#include <iostream>\n\nint calcular() {\n    int local = 4;\n    return local;\n}\n\nint main() {\n    const int resultado = calcular();\n    std::cout << resultado;\n    return 0;\n}\n",
+          "answers": [
+            "4"
+          ],
+          "outputComparison": "exact",
+          "explanation": "calcular devuelve el valor 4. resultado es un int del llamador y permite conservarlo después de terminar la llamada."
+        }
+      },
+      {
+        "id": "block_0009_0002",
+        "block": {
+          "type": "output_prediction",
+          "id": "p3_u4l4_copiar_temporal_a_tiempo",
+          "language": "cpp",
+          "question": "¿Qué muestra este programa, que copia el valor mientras el temporal sigue vivo?",
+          "code": "#include <iostream>\n\nconst int& eco(const int& dato) {\n    return dato;\n}\n\nint main() {\n    const int copia = eco(7);\n    std::cout << copia;\n    return 0;\n}\n",
+          "answers": [
+            "7"
+          ],
+          "outputComparison": "exact",
+          "explanation": "eco devuelve la referencia al temporal con 7. Después se lee ese valor para inicializar copia, mientras el temporal todavía existe. Al llegar al punto y coma termina la expresión completa y termina ese temporal. El cout posterior utiliza el entero copia, que sigue vivo."
+        }
+      },
+      {
+        "id": "block_0010_0002",
+        "block": {
+          "type": "output_prediction",
+          "id": "p3_u4l4_retorno_static",
+          "language": "cpp",
+          "question": "¿Qué muestra contador():alias:copia?",
+          "code": "#include <iostream>\n\nint& contador() {\n    static int valor = 0;\n    return valor;\n}\n\nint main() {\n    const int copia = contador();\n    int& alias = contador();\n    alias = 3;\n    contador() += 2;\n    std::cout << contador() << ':' << alias << ':' << copia;\n    return 0;\n}\n",
+          "answers": [
+            "5:5:0"
+          ],
+          "outputComparison": "exact",
+          "explanation": "La copia inicial conserva cero. alias y las llamadas a contador utilizan el mismo entero persistente: pasa a 3 y después a 5."
+        }
+      },
+      {
+        "id": "block_0011_0002",
+        "block": {
+          "type": "output_prediction",
+          "id": "p3_u4l4_selector_que_rechaza",
+          "language": "cpp",
+          "question": "¿Qué muestra la secuencia completa con sus dos puntos?",
+          "code": "#include <array>\n#include <cstddef>\n#include <iostream>\n#include <stdexcept>\n\nint& elegir(std::array<int, 2>& datos, int indice) {\n    if (indice < 0 || indice > 1) {\n        throw std::out_of_range(\"indice\");\n    }\n    return datos.at(static_cast<std::size_t>(indice));\n}\n\nint main() {\n    std::array<int, 2> datos{2, 4};\n    elegir(datos, 1) = 7;\n    std::cout << datos[0] << ':' << datos[1] << ':';\n    try {\n        elegir(datos, -1) = 9;\n    } catch (const std::out_of_range&) {\n        std::cout << \"Fuera\";\n    }\n    std::cout << ':' << datos[0] << ':' << datos[1];\n    return 0;\n}\n",
+          "answers": [
+            "2:7:Fuera:2:7"
+          ],
+          "outputComparison": "exact",
+          "explanation": "La primera selección permite escribir 7 en el elemento uno. El índice -1 provoca la excepción antes del acceso. Se muestra Fuera y el array conserva 2,7."
+        }
+      },
+      {
+        "id": "block_0013_0004",
+        "block": {
+          "type": "cpp_compiler",
+          "language": "cpp",
+          "initialCode": "#include <iostream>\n\nint acceder(int& dato) {\n    return dato;\n}\n\nint main() {\n    int dato = 4;\n    acceder(dato) = 9;\n    const int copia = acceder(dato);\n    acceder(dato) = 6;\n    std::cout << dato << ':' << copia;\n    return 0;\n}\n",
+          "initialStandardInput": "",
+          "outputCheck": {
+            "inputComparison": "tokens",
+            "cases": [
+              {
+                "standardInput": "",
+                "outputs": [
+                  "6:9"
+                ],
+                "explanation": "El retorno int& permite escribir en dato mediante la llamada. La declaración const int copia conserva otro entero con el valor intermedio 9."
+              }
+            ]
+          }
+        }
+      },
+      {
+        "id": "block_0014_0001",
+        "block": {
+          "type": "code",
+          "language": "cpp",
+          "code": "#include <iostream>\n\nint& acceder(int& dato) {\n    return dato;\n}\n\nint main() {\n    int dato = 4;\n    acceder(dato) = 9;\n    const int copia = acceder(dato);\n    acceder(dato) = 6;\n    std::cout << dato << ':' << copia;\n    return 0;\n}\n"
+        }
+      },
+      {
+        "id": "block_0015_0013",
+        "block": {
+          "type": "cpp_compiler",
+          "language": "cpp",
+          "initialCode": "#include <array>\n#include <cstddef>\n#include <iostream>\n#include <stdexcept>\n\nint seleccionar(std::array<int, 3>& datos, int indice) {\n    if (indice < 0 || indice > 2) {\n        throw std::out_of_range(\"indice\");\n    }\n    return datos.at(static_cast<std::size_t>(indice));\n}\n\nint consultar(const std::array<int, 3>& datos, int indice) {\n    if (indice < 0 || indice > 2) {\n        throw std::out_of_range(\"indice\");\n    }\n    return datos.at(static_cast<std::size_t>(indice));\n}\n\nint main() {\n    std::array<int, 3> datos{2, 5, 8};\n    const int& vista = consultar(datos, 1);\n    const int copia = consultar(datos, 1);\n    int cantidad = 0;\n    if (!(std::cin >> cantidad) || cantidad < 1 || cantidad > 12) {\n        return 1;\n    }\n    for (int orden = 0; orden < cantidad; ++orden) {\n        int indice = 0;\n        int valor = 0;\n        if (!(std::cin >> indice >> valor)) {\n            return 1;\n        }\n        try {\n            int& destino = seleccionar(datos, indice);\n            if (valor < 0 || valor > 9) {\n                std::cout << \"Rechazo\";\n            } else {\n                destino = valor;\n                std::cout << \"Cambio\";\n            }\n            std::cout << \";Valor:\" << destino;\n        } catch (const std::out_of_range&) {\n            std::cout << \"Indice invalido;Valor:-1\";\n        }\n        std::cout << \";Vista:\" << vista << \";Copia:\" << copia\n                  << \";Datos:\" << datos[0] << ',' << datos[1] << ',' << datos[2] << '\\n';\n    }\n    return 0;\n}\n",
+          "initialStandardInput": "8\n1 7\n0 4\n3 2\n1 10\n2 0\n1 0\n-1 8\n1 9\n",
+          "outputCheck": {
+            "inputComparison": "tokens",
+            "cases": [
+              {
+                "standardInput": "8\n1 7\n0 4\n3 2\n1 10\n2 0\n1 0\n-1 8\n1 9\n",
+                "outputs": [
+                  "Cambio;Valor:7;Vista:7;Copia:5;Datos:2,7,8\nCambio;Valor:4;Vista:7;Copia:5;Datos:4,7,8\nIndice invalido;Valor:-1;Vista:7;Copia:5;Datos:4,7,8\nRechazo;Valor:7;Vista:7;Copia:5;Datos:4,7,8\nCambio;Valor:0;Vista:7;Copia:5;Datos:4,7,0\nCambio;Valor:0;Vista:0;Copia:5;Datos:4,0,0\nIndice invalido;Valor:-1;Vista:0;Copia:5;Datos:4,0,0\nCambio;Valor:9;Vista:9;Copia:5;Datos:4,9,0\n"
+                ],
+                "explanation": "seleccionar y consultar deben ofrecer referencias a los elementos del array de main. Las escrituras actualizan esos elementos; la vista sigue al elemento uno y la copia conserva cinco."
+              },
+              {
+                "standardInput": "6\n0 0\n2 9\n1 5\n1 5\n2 -1\n2 0\n",
+                "outputs": [
+                  "Cambio;Valor:0;Vista:5;Copia:5;Datos:0,5,8\nCambio;Valor:9;Vista:5;Copia:5;Datos:0,5,9\nCambio;Valor:5;Vista:5;Copia:5;Datos:0,5,9\nCambio;Valor:5;Vista:5;Copia:5;Datos:0,5,9\nRechazo;Valor:9;Vista:5;Copia:5;Datos:0,5,9\nCambio;Valor:0;Vista:5;Copia:5;Datos:0,5,0\n"
+                ],
+                "explanation": "seleccionar y consultar deben ofrecer referencias a los elementos del array de main. Las escrituras actualizan esos elementos; la vista sigue al elemento uno y la copia conserva cinco."
+              },
+              {
+                "standardInput": "6\n2147483647 0\n-2147483648 9\n0 2147483647\n1 -2147483648\n-1 10\n1 6\n",
+                "outputs": [
+                  "Indice invalido;Valor:-1;Vista:5;Copia:5;Datos:2,5,8\nIndice invalido;Valor:-1;Vista:5;Copia:5;Datos:2,5,8\nRechazo;Valor:2;Vista:5;Copia:5;Datos:2,5,8\nRechazo;Valor:5;Vista:5;Copia:5;Datos:2,5,8\nIndice invalido;Valor:-1;Vista:5;Copia:5;Datos:2,5,8\nCambio;Valor:6;Vista:6;Copia:5;Datos:2,6,8\n"
+                ],
+                "explanation": "seleccionar y consultar deben ofrecer referencias a los elementos del array de main. Las escrituras actualizan esos elementos; la vista sigue al elemento uno y la copia conserva cinco."
+              },
+              {
+                "standardInput": "6\n2 3\n0 3\n1 3\n0 9\n2 0\n1 8\n",
+                "outputs": [
+                  "Cambio;Valor:3;Vista:5;Copia:5;Datos:2,5,3\nCambio;Valor:3;Vista:5;Copia:5;Datos:3,5,3\nCambio;Valor:3;Vista:3;Copia:5;Datos:3,3,3\nCambio;Valor:9;Vista:3;Copia:5;Datos:9,3,3\nCambio;Valor:0;Vista:3;Copia:5;Datos:9,3,0\nCambio;Valor:8;Vista:8;Copia:5;Datos:9,8,0\n"
+                ],
+                "explanation": "seleccionar y consultar deben ofrecer referencias a los elementos del array de main. Las escrituras actualizan esos elementos; la vista sigue al elemento uno y la copia conserva cinco."
+              }
+            ]
+          }
+        }
+      },
+      {
+        "id": "block_0018_0001",
+        "block": {
+          "type": "code",
+          "language": "cpp",
+          "code": "#include <array>\n#include <cstddef>\n#include <iostream>\n#include <stdexcept>\n\nint& seleccionar(std::array<int, 3>& datos, int indice) {\n    if (indice < 0 || indice > 2) {\n        throw std::out_of_range(\"indice\");\n    }\n    return datos.at(static_cast<std::size_t>(indice));\n}\n\nconst int& consultar(const std::array<int, 3>& datos, int indice) {\n    if (indice < 0 || indice > 2) {\n        throw std::out_of_range(\"indice\");\n    }\n    return datos.at(static_cast<std::size_t>(indice));\n}\n\nint main() {\n    std::array<int, 3> datos{2, 5, 8};\n    const int& vista = consultar(datos, 1);\n    const int copia = consultar(datos, 1);\n    int cantidad = 0;\n    if (!(std::cin >> cantidad) || cantidad < 1 || cantidad > 12) {\n        return 1;\n    }\n    for (int orden = 0; orden < cantidad; ++orden) {\n        int indice = 0;\n        int valor = 0;\n        if (!(std::cin >> indice >> valor)) {\n            return 1;\n        }\n        try {\n            int& destino = seleccionar(datos, indice);\n            if (valor < 0 || valor > 9) {\n                std::cout << \"Rechazo\";\n            } else {\n                destino = valor;\n                std::cout << \"Cambio\";\n            }\n            std::cout << \";Valor:\" << destino;\n        } catch (const std::out_of_range&) {\n            std::cout << \"Indice invalido;Valor:-1\";\n        }\n        std::cout << \";Vista:\" << vista << \";Copia:\" << copia\n                  << \";Datos:\" << datos[0] << ',' << datos[1] << ',' << datos[2] << '\\n';\n    }\n    return 0;\n}\n"
+        }
+      }
+    ]
   }
 }

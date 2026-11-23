@@ -67,7 +67,7 @@
           "id": "p3_u6l2_bloque_y_const",
           "language": "cpp",
           "question": "Escribe las líneas que muestra este programa, incluida la última sin salto final.",
-          "code": "#include <iostream>\n\nstruct Fallo {};\n\nclass Marca {\npublic:\n    Marca(char etiqueta, bool fallar = false) : etiqueta_{etiqueta} {\n        std::cout << \"Inicio:\" << etiqueta_ << '\\n';\n        if (fallar) {\n            throw Fallo{};\n        }\n        std::cout << \"Lista:\" << etiqueta_ << '\\n';\n    }\n    ~Marca() {\n        std::cout << \"Fin:\" << etiqueta_ << '\\n';\n    }\n    char etiqueta() const { return etiqueta_; }\nprivate:\n    char etiqueta_;\n};\n\nint main() {\n    std::cout << \"Antes\\n\";\n    {\n        const Marca marca{'A'};\n        std::cout << \"Uso:\" << marca.etiqueta() << '\\n';\n    }\n    std::cout << \"Despues\";\n    return 0;\n}\n",
+          "code": "#include <iostream>\n\nstruct Fallo {};\n\nclass Marca {\npublic:\n    Marca(char etiqueta, bool fallar = false) : etiqueta_{etiqueta} {\n        std::cout << \"Inicio:\" << etiqueta_ << '\\n';\n        if (fallar) {\n            throw Fallo{};\n        }\n        std::cout << \"Lista:\" << etiqueta_ << '\\n';\n    }\n    ~Marca() {\n        std::cout << \"Fin:\" << etiqueta_ << '\\n';\n    }\n    char etiqueta() const { return etiqueta_; }\nprivate:\n    char etiqueta_;\n};\n\nint main() {\n    std::cout << \"Antes\\n\";\n    {\n        const Marca marca{'A'};\n        std::cout << \"Uso:\" << marca.etiqueta() << '\\n';\n    }\n    std::cout << \"Despues\";\n\n    return 0;\n}\n",
           "answers": [
             "Antes\nInicio:A\nLista:A\nUso:A\nFin:A\nDespues"
           ],
@@ -95,7 +95,7 @@
           "id": "p3_u6l2_miembros_y_cuerpo",
           "language": "cpp",
           "question": "¿Qué traza produce el caso que termina normalmente?",
-          "code": "#include <iostream>\n\nstruct Fallo {};\n\nclass Marca {\npublic:\n    Marca(char etiqueta, bool fallar = false) : etiqueta_{etiqueta} {\n        std::cout << \"Inicio:\" << etiqueta_ << '\\n';\n        if (fallar) {\n            throw Fallo{};\n        }\n        std::cout << \"Lista:\" << etiqueta_ << '\\n';\n    }\n    ~Marca() {\n        std::cout << \"Fin:\" << etiqueta_ << '\\n';\n    }\n    char etiqueta() const { return etiqueta_; }\nprivate:\n    char etiqueta_;\n};\nclass Pareja {\npublic:\n    Pareja(int modo) : primera_{'A', modo == 1}, segunda_{'B', modo == 2} {\n        std::cout << \"Cuerpo\\n\";\n        if (modo == 3) {\n            throw Fallo{};\n        }\n    }\n    ~Pareja() {\n        std::cout << \"Cierre:\" << primera_.etiqueta() << segunda_.etiqueta() << '\\n';\n    }\nprivate:\n    Marca primera_;\n    Marca segunda_;\n};\n\nint main() {\n    try {\n        Pareja pareja{0};\n        std::cout << \"Uso\\n\";\n    } catch (const Fallo&) {\n        std::cout << \"Captura\\n\";\n    }\n    std::cout << \"Despues\";\n    return 0;\n}\n",
+          "code": "#include <iostream>\n\nstruct Fallo {};\n\nclass Marca {\npublic:\n    Marca(char etiqueta, bool fallar = false) : etiqueta_{etiqueta} {\n        std::cout << \"Inicio:\" << etiqueta_ << '\\n';\n        if (fallar) {\n            throw Fallo{};\n        }\n        std::cout << \"Lista:\" << etiqueta_ << '\\n';\n    }\n    ~Marca() {\n        std::cout << \"Fin:\" << etiqueta_ << '\\n';\n    }\n    char etiqueta() const { return etiqueta_; }\nprivate:\n    char etiqueta_;\n};\n\nclass Pareja {\npublic:\n    Pareja(int modo) : primera_{'A', modo == 1}, segunda_{'B', modo == 2} {\n        std::cout << \"Cuerpo\\n\";\n        if (modo == 3) {\n            throw Fallo{};\n        }\n    }\n    ~Pareja() {\n        std::cout << \"Cierre:\" << primera_.etiqueta() << segunda_.etiqueta() << '\\n';\n    }\nprivate:\n    Marca primera_;\n    Marca segunda_;\n};\n\nint main() {\n    try {\n        Pareja pareja{0};\n        std::cout << \"Uso\\n\";\n    } catch (const Fallo&) {\n        std::cout << \"Captura\\n\";\n    }\n    std::cout << \"Despues\";\n\n    return 0;\n}\n",
           "answers": [
             "Inicio:A\nLista:A\nInicio:B\nLista:B\nCuerpo\nUso\nCierre:AB\nFin:B\nFin:A\nDespues"
           ],
@@ -143,7 +143,7 @@
           "id": "p3_u6l2_destructor_generado",
           "language": "cpp",
           "question": "Escribe la salida completa de esta versión sin ~Pareja escrito.",
-          "code": "#include <iostream>\n\nstruct Fallo {};\n\nclass Marca {\npublic:\n    Marca(char etiqueta, bool fallar = false) : etiqueta_{etiqueta} {\n        std::cout << \"Inicio:\" << etiqueta_ << '\\n';\n        if (fallar) {\n            throw Fallo{};\n        }\n        std::cout << \"Lista:\" << etiqueta_ << '\\n';\n    }\n    ~Marca() {\n        std::cout << \"Fin:\" << etiqueta_ << '\\n';\n    }\n    char etiqueta() const { return etiqueta_; }\nprivate:\n    char etiqueta_;\n};\nclass Pareja {\npublic:\n    Pareja(int modo) : primera_{'A', modo == 1}, segunda_{'B', modo == 2} {\n        std::cout << \"Cuerpo\\n\";\n        if (modo == 3) {\n            throw Fallo{};\n        }\n    }\nprivate:\n    Marca primera_;\n    Marca segunda_;\n};\n\nint main() {\n    try {\n        Pareja pareja{0};\n        std::cout << \"Uso\\n\";\n    } catch (const Fallo&) {\n        std::cout << \"Captura\\n\";\n    }\n    std::cout << \"Despues\";\n    return 0;\n}\n",
+          "code": "#include <iostream>\n\nstruct Fallo {};\n\nclass Marca {\npublic:\n    Marca(char etiqueta, bool fallar = false) : etiqueta_{etiqueta} {\n        std::cout << \"Inicio:\" << etiqueta_ << '\\n';\n        if (fallar) {\n            throw Fallo{};\n        }\n        std::cout << \"Lista:\" << etiqueta_ << '\\n';\n    }\n    ~Marca() {\n        std::cout << \"Fin:\" << etiqueta_ << '\\n';\n    }\n    char etiqueta() const { return etiqueta_; }\nprivate:\n    char etiqueta_;\n};\n\nclass Pareja {\npublic:\n    Pareja(int modo) : primera_{'A', modo == 1}, segunda_{'B', modo == 2} {\n        std::cout << \"Cuerpo\\n\";\n        if (modo == 3) {\n            throw Fallo{};\n        }\n    }\nprivate:\n    Marca primera_;\n    Marca segunda_;\n};\n\nint main() {\n    try {\n        Pareja pareja{0};\n        std::cout << \"Uso\\n\";\n    } catch (const Fallo&) {\n        std::cout << \"Captura\\n\";\n    }\n    std::cout << \"Despues\";\n\n    return 0;\n}\n",
           "answers": [
             "Inicio:A\nLista:A\nInicio:B\nLista:B\nCuerpo\nUso\nFin:B\nFin:A\nDespues"
           ],
@@ -171,7 +171,7 @@
           "id": "p3_u6l2_falla_primero",
           "language": "cpp",
           "question": "¿Qué mensajes aparecen cuando falla el primer miembro?",
-          "code": "#include <iostream>\n\nstruct Fallo {};\n\nclass Marca {\npublic:\n    Marca(char etiqueta, bool fallar = false) : etiqueta_{etiqueta} {\n        std::cout << \"Inicio:\" << etiqueta_ << '\\n';\n        if (fallar) {\n            throw Fallo{};\n        }\n        std::cout << \"Lista:\" << etiqueta_ << '\\n';\n    }\n    ~Marca() {\n        std::cout << \"Fin:\" << etiqueta_ << '\\n';\n    }\n    char etiqueta() const { return etiqueta_; }\nprivate:\n    char etiqueta_;\n};\nclass Pareja {\npublic:\n    Pareja(int modo) : primera_{'A', modo == 1}, segunda_{'B', modo == 2} {\n        std::cout << \"Cuerpo\\n\";\n        if (modo == 3) {\n            throw Fallo{};\n        }\n    }\n    ~Pareja() {\n        std::cout << \"Cierre:\" << primera_.etiqueta() << segunda_.etiqueta() << '\\n';\n    }\nprivate:\n    Marca primera_;\n    Marca segunda_;\n};\n\nint main() {\n    try {\n        Pareja pareja{1};\n        std::cout << \"Uso\\n\";\n    } catch (const Fallo&) {\n        std::cout << \"Captura\\n\";\n    }\n    std::cout << \"Despues\";\n    return 0;\n}\n",
+          "code": "#include <iostream>\n\nstruct Fallo {};\n\nclass Marca {\npublic:\n    Marca(char etiqueta, bool fallar = false) : etiqueta_{etiqueta} {\n        std::cout << \"Inicio:\" << etiqueta_ << '\\n';\n        if (fallar) {\n            throw Fallo{};\n        }\n        std::cout << \"Lista:\" << etiqueta_ << '\\n';\n    }\n    ~Marca() {\n        std::cout << \"Fin:\" << etiqueta_ << '\\n';\n    }\n    char etiqueta() const { return etiqueta_; }\nprivate:\n    char etiqueta_;\n};\n\nclass Pareja {\npublic:\n    Pareja(int modo) : primera_{'A', modo == 1}, segunda_{'B', modo == 2} {\n        std::cout << \"Cuerpo\\n\";\n        if (modo == 3) {\n            throw Fallo{};\n        }\n    }\n    ~Pareja() {\n        std::cout << \"Cierre:\" << primera_.etiqueta() << segunda_.etiqueta() << '\\n';\n    }\nprivate:\n    Marca primera_;\n    Marca segunda_;\n};\n\nint main() {\n    try {\n        Pareja pareja{1};\n        std::cout << \"Uso\\n\";\n    } catch (const Fallo&) {\n        std::cout << \"Captura\\n\";\n    }\n    std::cout << \"Despues\";\n\n    return 0;\n}\n",
           "answers": [
             "Inicio:A\nCaptura\nDespues"
           ],
@@ -199,7 +199,7 @@
           "id": "p3_u6l2_falla_segundo",
           "language": "cpp",
           "question": "¿Qué traza muestra este segundo intento de construcción?",
-          "code": "#include <iostream>\n\nstruct Fallo {};\n\nclass Marca {\npublic:\n    Marca(char etiqueta, bool fallar = false) : etiqueta_{etiqueta} {\n        std::cout << \"Inicio:\" << etiqueta_ << '\\n';\n        if (fallar) {\n            throw Fallo{};\n        }\n        std::cout << \"Lista:\" << etiqueta_ << '\\n';\n    }\n    ~Marca() {\n        std::cout << \"Fin:\" << etiqueta_ << '\\n';\n    }\n    char etiqueta() const { return etiqueta_; }\nprivate:\n    char etiqueta_;\n};\nclass Pareja {\npublic:\n    Pareja(int modo) : primera_{'A', modo == 1}, segunda_{'B', modo == 2} {\n        std::cout << \"Cuerpo\\n\";\n        if (modo == 3) {\n            throw Fallo{};\n        }\n    }\n    ~Pareja() {\n        std::cout << \"Cierre:\" << primera_.etiqueta() << segunda_.etiqueta() << '\\n';\n    }\nprivate:\n    Marca primera_;\n    Marca segunda_;\n};\n\nint main() {\n    try {\n        Pareja pareja{2};\n        std::cout << \"Uso\\n\";\n    } catch (const Fallo&) {\n        std::cout << \"Captura\\n\";\n    }\n    std::cout << \"Despues\";\n    return 0;\n}\n",
+          "code": "#include <iostream>\n\nstruct Fallo {};\n\nclass Marca {\npublic:\n    Marca(char etiqueta, bool fallar = false) : etiqueta_{etiqueta} {\n        std::cout << \"Inicio:\" << etiqueta_ << '\\n';\n        if (fallar) {\n            throw Fallo{};\n        }\n        std::cout << \"Lista:\" << etiqueta_ << '\\n';\n    }\n    ~Marca() {\n        std::cout << \"Fin:\" << etiqueta_ << '\\n';\n    }\n    char etiqueta() const { return etiqueta_; }\nprivate:\n    char etiqueta_;\n};\n\nclass Pareja {\npublic:\n    Pareja(int modo) : primera_{'A', modo == 1}, segunda_{'B', modo == 2} {\n        std::cout << \"Cuerpo\\n\";\n        if (modo == 3) {\n            throw Fallo{};\n        }\n    }\n    ~Pareja() {\n        std::cout << \"Cierre:\" << primera_.etiqueta() << segunda_.etiqueta() << '\\n';\n    }\nprivate:\n    Marca primera_;\n    Marca segunda_;\n};\n\nint main() {\n    try {\n        Pareja pareja{2};\n        std::cout << \"Uso\\n\";\n    } catch (const Fallo&) {\n        std::cout << \"Captura\\n\";\n    }\n    std::cout << \"Despues\";\n\n    return 0;\n}\n",
           "answers": [
             "Inicio:A\nLista:A\nInicio:B\nFin:A\nCaptura\nDespues"
           ],
@@ -223,7 +223,7 @@
           "id": "p3_u6l2_falla_cuerpo",
           "language": "cpp",
           "question": "¿Qué sucede si el fallo sale del cuerpo de Pareja?",
-          "code": "#include <iostream>\n\nstruct Fallo {};\n\nclass Marca {\npublic:\n    Marca(char etiqueta, bool fallar = false) : etiqueta_{etiqueta} {\n        std::cout << \"Inicio:\" << etiqueta_ << '\\n';\n        if (fallar) {\n            throw Fallo{};\n        }\n        std::cout << \"Lista:\" << etiqueta_ << '\\n';\n    }\n    ~Marca() {\n        std::cout << \"Fin:\" << etiqueta_ << '\\n';\n    }\n    char etiqueta() const { return etiqueta_; }\nprivate:\n    char etiqueta_;\n};\nclass Pareja {\npublic:\n    Pareja(int modo) : primera_{'A', modo == 1}, segunda_{'B', modo == 2} {\n        std::cout << \"Cuerpo\\n\";\n        if (modo == 3) {\n            throw Fallo{};\n        }\n    }\n    ~Pareja() {\n        std::cout << \"Cierre:\" << primera_.etiqueta() << segunda_.etiqueta() << '\\n';\n    }\nprivate:\n    Marca primera_;\n    Marca segunda_;\n};\n\nint main() {\n    try {\n        Pareja pareja{3};\n        std::cout << \"Uso\\n\";\n    } catch (const Fallo&) {\n        std::cout << \"Captura\\n\";\n    }\n    std::cout << \"Despues\";\n    return 0;\n}\n",
+          "code": "#include <iostream>\n\nstruct Fallo {};\n\nclass Marca {\npublic:\n    Marca(char etiqueta, bool fallar = false) : etiqueta_{etiqueta} {\n        std::cout << \"Inicio:\" << etiqueta_ << '\\n';\n        if (fallar) {\n            throw Fallo{};\n        }\n        std::cout << \"Lista:\" << etiqueta_ << '\\n';\n    }\n    ~Marca() {\n        std::cout << \"Fin:\" << etiqueta_ << '\\n';\n    }\n    char etiqueta() const { return etiqueta_; }\nprivate:\n    char etiqueta_;\n};\n\nclass Pareja {\npublic:\n    Pareja(int modo) : primera_{'A', modo == 1}, segunda_{'B', modo == 2} {\n        std::cout << \"Cuerpo\\n\";\n        if (modo == 3) {\n            throw Fallo{};\n        }\n    }\n    ~Pareja() {\n        std::cout << \"Cierre:\" << primera_.etiqueta() << segunda_.etiqueta() << '\\n';\n    }\nprivate:\n    Marca primera_;\n    Marca segunda_;\n};\n\nint main() {\n    try {\n        Pareja pareja{3};\n        std::cout << \"Uso\\n\";\n    } catch (const Fallo&) {\n        std::cout << \"Captura\\n\";\n    }\n    std::cout << \"Despues\";\n\n    return 0;\n}\n",
           "answers": [
             "Inicio:A\nLista:A\nInicio:B\nLista:B\nCuerpo\nFin:B\nFin:A\nCaptura\nDespues"
           ],
@@ -374,7 +374,7 @@
           "id": "p3_u6l2_local_del_cuerpo",
           "language": "cpp",
           "question": "Sigue el objeto local del cuerpo y después los miembros. ¿Qué se muestra?",
-          "code": "#include <iostream>\n\nstruct Fallo {};\n\nclass Marca {\npublic:\n    Marca(char etiqueta, bool fallar = false) : etiqueta_{etiqueta} {\n        std::cout << \"Inicio:\" << etiqueta_ << '\\n';\n        if (fallar) {\n            throw Fallo{};\n        }\n        std::cout << \"Lista:\" << etiqueta_ << '\\n';\n    }\n    ~Marca() {\n        std::cout << \"Fin:\" << etiqueta_ << '\\n';\n    }\n    char etiqueta() const { return etiqueta_; }\nprivate:\n    char etiqueta_;\n};\nclass Pareja {\npublic:\n    Pareja(int modo) : primera_{'A', modo == 1}, segunda_{'B', modo == 2} {\n        std::cout << \"Cuerpo\\n\";\n        if (modo == 3) {\n            Marca temporal{'T'};\n            throw Fallo{};\n        }\n    }\n    ~Pareja() {\n        std::cout << \"Cierre:\" << primera_.etiqueta() << segunda_.etiqueta() << '\\n';\n    }\nprivate:\n    Marca primera_;\n    Marca segunda_;\n};\n\nint main() {\n    try {\n        Pareja pareja{3};\n        std::cout << \"Uso\\n\";\n    } catch (const Fallo&) {\n        std::cout << \"Captura\\n\";\n    }\n    std::cout << \"Despues\";\n    return 0;\n}\n",
+          "code": "#include <iostream>\n\nstruct Fallo {};\n\nclass Marca {\npublic:\n    Marca(char etiqueta, bool fallar = false) : etiqueta_{etiqueta} {\n        std::cout << \"Inicio:\" << etiqueta_ << '\\n';\n        if (fallar) {\n            throw Fallo{};\n        }\n        std::cout << \"Lista:\" << etiqueta_ << '\\n';\n    }\n    ~Marca() {\n        std::cout << \"Fin:\" << etiqueta_ << '\\n';\n    }\n    char etiqueta() const { return etiqueta_; }\nprivate:\n    char etiqueta_;\n};\n\nclass Pareja {\npublic:\n    Pareja(int modo) : primera_{'A', modo == 1}, segunda_{'B', modo == 2} {\n        std::cout << \"Cuerpo\\n\";\n        if (modo == 3) {\n            Marca temporal{'T'};\n            throw Fallo{};\n        }\n    }\n    ~Pareja() {\n        std::cout << \"Cierre:\" << primera_.etiqueta() << segunda_.etiqueta() << '\\n';\n    }\nprivate:\n    Marca primera_;\n    Marca segunda_;\n};\n\nint main() {\n    try {\n        Pareja pareja{3};\n        std::cout << \"Uso\\n\";\n    } catch (const Fallo&) {\n        std::cout << \"Captura\\n\";\n    }\n    std::cout << \"Despues\";\n\n    return 0;\n}\n",
           "answers": [
             "Inicio:A\nLista:A\nInicio:B\nLista:B\nCuerpo\nInicio:T\nLista:T\nFin:T\nFin:B\nFin:A\nCaptura\nDespues"
           ],
@@ -402,7 +402,7 @@
           "id": "p3_u6l2_salida_mediante_return",
           "language": "cpp",
           "question": "¿En qué orden aparecen los mensajes de paso y de main?",
-          "code": "#include <iostream>\n\nstruct Fallo {};\n\nclass Marca {\npublic:\n    Marca(char etiqueta, bool fallar = false) : etiqueta_{etiqueta} {\n        std::cout << \"Inicio:\" << etiqueta_ << '\\n';\n        if (fallar) {\n            throw Fallo{};\n        }\n        std::cout << \"Lista:\" << etiqueta_ << '\\n';\n    }\n    ~Marca() {\n        std::cout << \"Fin:\" << etiqueta_ << '\\n';\n    }\n    char etiqueta() const { return etiqueta_; }\nprivate:\n    char etiqueta_;\n};\n\nvoid paso() {\n    Marca local{'R'};\n    std::cout << \"AntesReturn\\n\";\n    return;\n}\n\nint main() {\n    paso();\n    std::cout << \"Vuelta\";\n    return 0;\n}\n",
+          "code": "#include <iostream>\n\nstruct Fallo {};\n\nclass Marca {\npublic:\n    Marca(char etiqueta, bool fallar = false) : etiqueta_{etiqueta} {\n        std::cout << \"Inicio:\" << etiqueta_ << '\\n';\n        if (fallar) {\n            throw Fallo{};\n        }\n        std::cout << \"Lista:\" << etiqueta_ << '\\n';\n    }\n    ~Marca() {\n        std::cout << \"Fin:\" << etiqueta_ << '\\n';\n    }\n    char etiqueta() const { return etiqueta_; }\nprivate:\n    char etiqueta_;\n};\n\nvoid paso() {\n    Marca local{'R'};\n    std::cout << \"AntesReturn\\n\";\n    return;\n}\n\nint main() {\n    paso();\n    std::cout << \"Vuelta\";\n\n    return 0;\n}\n",
           "answers": [
             "Inicio:R\nLista:R\nAntesReturn\nFin:R\nVuelta"
           ],
@@ -426,7 +426,7 @@
           "id": "p3_u6l2_puntero_y_objeto_dinamico",
           "language": "cpp",
           "question": "¿Qué muestra el programa y cuándo aparece Fin?",
-          "code": "#include <iostream>\n\nstruct Fallo {};\n\nclass Marca {\npublic:\n    Marca(char etiqueta, bool fallar = false) : etiqueta_{etiqueta} {\n        std::cout << \"Inicio:\" << etiqueta_ << '\\n';\n        if (fallar) {\n            throw Fallo{};\n        }\n        std::cout << \"Lista:\" << etiqueta_ << '\\n';\n    }\n    ~Marca() {\n        std::cout << \"Fin:\" << etiqueta_ << '\\n';\n    }\n    char etiqueta() const { return etiqueta_; }\nprivate:\n    char etiqueta_;\n};\n\nint main() {\n    Marca* responsable = nullptr;\n    {\n        Marca* acceso = new Marca{'D'};\n        responsable = acceso;\n    }\n    std::cout << \"Sigue:\" << responsable->etiqueta() << '\\n';\n    delete responsable;\n    responsable = nullptr;\n    std::cout << \"Despues\";\n    return 0;\n}\n",
+          "code": "#include <iostream>\n\nstruct Fallo {};\n\nclass Marca {\npublic:\n    Marca(char etiqueta, bool fallar = false) : etiqueta_{etiqueta} {\n        std::cout << \"Inicio:\" << etiqueta_ << '\\n';\n        if (fallar) {\n            throw Fallo{};\n        }\n        std::cout << \"Lista:\" << etiqueta_ << '\\n';\n    }\n    ~Marca() {\n        std::cout << \"Fin:\" << etiqueta_ << '\\n';\n    }\n    char etiqueta() const { return etiqueta_; }\nprivate:\n    char etiqueta_;\n};\n\nint main() {\n    Marca* responsable = nullptr;\n    {\n        Marca* acceso = new Marca{'D'};\n        responsable = acceso;\n    }\n    std::cout << \"Sigue:\" << responsable->etiqueta() << '\\n';\n    delete responsable;\n    responsable = nullptr;\n\n    std::cout << \"Despues\";\n\n    return 0;\n}\n",
           "answers": [
             "Inicio:D\nLista:D\nSigue:D\nFin:D\nDespues"
           ],
@@ -500,7 +500,7 @@
         {
           "type": "cpp_compiler",
           "language": "cpp",
-          "initialCode": "#include <iostream>\n\nstruct Fallo {};\n\nclass Marca {\npublic:\n    Marca(char etiqueta, bool fallar = false) : etiqueta_{etiqueta} {\n        std::cout << \"Inicio:\" << etiqueta_ << '\\n';\n        if (fallar) {\n            throw Fallo{};\n        }\n        std::cout << \"Lista:\" << etiqueta_ << '\\n';\n    }\n    ~Marca() {\n        std::cout << \"Fin:\" << etiqueta_ << '\\n';\n    }\n    char etiqueta() const { return etiqueta_; }\nprivate:\n    char etiqueta_;\n};\nclass Kit {\npublic:\n    Kit() : derecha_{'B'}, izquierda_{'A'} {\n        std::cout << \"Kit\\n\";\n    }\n    ~Kit() {\n        std::cout << \"CierreKit\\n\";\n    }\nprivate:\n    Marca derecha_;\n    Marca izquierda_;\n};\n\nint main() {\n    {\n        Kit kit;\n    }\n    std::cout << \"Despues\";\n    return 0;\n}\n",
+          "initialCode": "#include <iostream>\n\nstruct Fallo {};\n\nclass Marca {\npublic:\n    Marca(char etiqueta, bool fallar = false) : etiqueta_{etiqueta} {\n        std::cout << \"Inicio:\" << etiqueta_ << '\\n';\n        if (fallar) {\n            throw Fallo{};\n        }\n        std::cout << \"Lista:\" << etiqueta_ << '\\n';\n    }\n    ~Marca() {\n        std::cout << \"Fin:\" << etiqueta_ << '\\n';\n    }\n    char etiqueta() const { return etiqueta_; }\nprivate:\n    char etiqueta_;\n};\n\nclass Kit {\npublic:\n    Kit() : derecha_{'B'}, izquierda_{'A'} {\n        std::cout << \"Kit\\n\";\n    }\n    ~Kit() {\n        std::cout << \"CierreKit\\n\";\n    }\nprivate:\n    Marca derecha_;\n    Marca izquierda_;\n};\n\nint main() {\n    {\n        Kit kit;\n    }\n    std::cout << \"Despues\";\n\n    return 0;\n}\n",
           "initialStandardInput": "",
           "outputCheck": {
             "inputComparison": "tokens",
@@ -526,7 +526,7 @@
         {
           "type": "code",
           "language": "cpp",
-          "code": "#include <iostream>\n\nstruct Fallo {};\n\nclass Marca {\npublic:\n    Marca(char etiqueta, bool fallar = false) : etiqueta_{etiqueta} {\n        std::cout << \"Inicio:\" << etiqueta_ << '\\n';\n        if (fallar) {\n            throw Fallo{};\n        }\n        std::cout << \"Lista:\" << etiqueta_ << '\\n';\n    }\n    ~Marca() {\n        std::cout << \"Fin:\" << etiqueta_ << '\\n';\n    }\n    char etiqueta() const { return etiqueta_; }\nprivate:\n    char etiqueta_;\n};\nclass Kit {\npublic:\n    Kit() : izquierda_{'A'}, derecha_{'B'} {\n        std::cout << \"Kit\\n\";\n    }\n    ~Kit() {\n        std::cout << \"CierreKit\\n\";\n    }\nprivate:\n    Marca izquierda_;\n    Marca derecha_;\n};\n\nint main() {\n    {\n        Kit kit;\n    }\n    std::cout << \"Despues\";\n    return 0;\n}\n"
+          "code": "#include <iostream>\n\nstruct Fallo {};\n\nclass Marca {\npublic:\n    Marca(char etiqueta, bool fallar = false) : etiqueta_{etiqueta} {\n        std::cout << \"Inicio:\" << etiqueta_ << '\\n';\n        if (fallar) {\n            throw Fallo{};\n        }\n        std::cout << \"Lista:\" << etiqueta_ << '\\n';\n    }\n    ~Marca() {\n        std::cout << \"Fin:\" << etiqueta_ << '\\n';\n    }\n    char etiqueta() const { return etiqueta_; }\nprivate:\n    char etiqueta_;\n};\n\nclass Kit {\npublic:\n    Kit() : izquierda_{'A'}, derecha_{'B'} {\n        std::cout << \"Kit\\n\";\n    }\n    ~Kit() {\n        std::cout << \"CierreKit\\n\";\n    }\nprivate:\n    Marca izquierda_;\n    Marca derecha_;\n};\n\nint main() {\n    {\n        Kit kit;\n    }\n    std::cout << \"Despues\";\n\n    return 0;\n}\n"
         },
         {
           "type": "paragraph",
@@ -579,7 +579,7 @@
         {
           "type": "cpp_compiler",
           "language": "cpp",
-          "initialCode": "#include <iostream>\n\nstruct Interrupcion {};\n\nclass Parte {\npublic:\n    Parte(int id, char etapa, bool fallar) : id_{id}, etapa_{etapa} {\n        std::cout << \"Intento:\" << id_ << ':' << etapa_ << '\\n';\n        if (fallar) {\n            throw Interrupcion{};\n        }\n        std::cout << \"Lista:\" << id_ << ':' << etapa_ << '\\n';\n    }\n    ~Parte() {\n        std::cout << \"Fin:\" << id_ << ':' << etapa_ << '\\n';\n    }\nprivate:\n    int id_;\n    char etapa_;\n};\nclass Sesion {\npublic:\n    Sesion(int id, int modo);\n    ~Sesion();\n    int identificador() const { return id_; }\nprivate:\n    int id_;\n    Parte lectura_;\n    Parte calculo_;\n    Parte informe_;\n};\nSesion::Sesion(int id, int modo)\n    : id_{id}, lectura_{id, 'L', false}, calculo_{id, 'C', false},\n      informe_{id, 'I', false} {\n    // Completa los predicados de los inicializadores y el cuerpo.\n    (void)modo;\n}\n\nSesion::~Sesion() {\n    // Escribe sólo la línea de cierre; los miembros se destruyen automáticamente.\n}\n\nint main() {\n    int id = 0;\n    int modo = 0;\n    if (!(std::cin >> id >> modo) || id < 1 || id > 9 || modo < 0 || modo > 4) {\n        return 1;\n    }\n    try {\n        Sesion sesion{id, modo};\n        std::cout << \"Uso:\" << sesion.identificador() << '\\n';\n    } catch (const Interrupcion&) {\n        std::cout << \"Captura\\n\";\n    }\n    std::cout << \"Despues\";\n    return 0;\n}\n",
+          "initialCode": "#include <iostream>\n\nstruct Interrupcion {};\n\nclass Parte {\npublic:\n    Parte(int id, char etapa, bool fallar) : id_{id}, etapa_{etapa} {\n        std::cout << \"Intento:\" << id_ << ':' << etapa_ << '\\n';\n        if (fallar) {\n            throw Interrupcion{};\n        }\n        std::cout << \"Lista:\" << id_ << ':' << etapa_ << '\\n';\n    }\n    ~Parte() {\n        std::cout << \"Fin:\" << id_ << ':' << etapa_ << '\\n';\n    }\nprivate:\n    int id_;\n    char etapa_;\n};\n\nclass Sesion {\npublic:\n    Sesion(int id, int modo);\n    ~Sesion();\n    int identificador() const { return id_; }\nprivate:\n    int id_;\n    Parte lectura_;\n    Parte calculo_;\n    Parte informe_;\n};\nSesion::Sesion(int id, int modo)\n    : id_{id}, lectura_{id, 'L', false}, calculo_{id, 'C', false},\n      informe_{id, 'I', false} {\n    // Completa los predicados de los inicializadores y el cuerpo.\n    (void)modo;\n}\n\nSesion::~Sesion() {\n    // Escribe sólo la línea de cierre; los miembros se destruyen automáticamente.\n    \n}\n\nint main() {\n    int id = 0;\n    int modo = 0;\n\n    if (!(std::cin >> id >> modo) || id < 1 || id > 9 || modo < 0 || modo > 4) {\n        return 1;\n    }\n    try {\n        Sesion sesion{id, modo};\n        std::cout << \"Uso:\" << sesion.identificador() << '\\n';\n    } catch (const Interrupcion&) {\n        std::cout << \"Captura\\n\";\n    }\n    std::cout << \"Despues\";\n\n    return 0;\n}\n",
           "initialStandardInput": "2 0\n",
           "outputCheck": {
             "inputComparison": "tokens",
@@ -771,7 +771,7 @@
         {
           "type": "code",
           "language": "cpp",
-          "code": "#include <iostream>\n\nstruct Interrupcion {};\n\nclass Parte {\npublic:\n    Parte(int id, char etapa, bool fallar) : id_{id}, etapa_{etapa} {\n        std::cout << \"Intento:\" << id_ << ':' << etapa_ << '\\n';\n        if (fallar) {\n            throw Interrupcion{};\n        }\n        std::cout << \"Lista:\" << id_ << ':' << etapa_ << '\\n';\n    }\n    ~Parte() {\n        std::cout << \"Fin:\" << id_ << ':' << etapa_ << '\\n';\n    }\nprivate:\n    int id_;\n    char etapa_;\n};\nclass Sesion {\npublic:\n    Sesion(int id, int modo);\n    ~Sesion();\n    int identificador() const { return id_; }\nprivate:\n    int id_;\n    Parte lectura_;\n    Parte calculo_;\n    Parte informe_;\n};\nSesion::Sesion(int id, int modo)\n    : id_{id}, lectura_{id, 'L', modo == 1}, calculo_{id, 'C', modo == 2},\n      informe_{id, 'I', modo == 3} {\n    std::cout << \"Cuerpo:\" << id_ << '\\n';\n    if (modo == 4) {\n        throw Interrupcion{};\n    }\n}\n\nSesion::~Sesion() {\n    std::cout << \"Cierre:\" << id_ << '\\n';\n}\n\nint main() {\n    int id = 0;\n    int modo = 0;\n    if (!(std::cin >> id >> modo) || id < 1 || id > 9 || modo < 0 || modo > 4) {\n        return 1;\n    }\n    try {\n        Sesion sesion{id, modo};\n        std::cout << \"Uso:\" << sesion.identificador() << '\\n';\n    } catch (const Interrupcion&) {\n        std::cout << \"Captura\\n\";\n    }\n    std::cout << \"Despues\";\n    return 0;\n}\n"
+          "code": "#include <iostream>\n\nstruct Interrupcion {};\n\nclass Parte {\npublic:\n    Parte(int id, char etapa, bool fallar) : id_{id}, etapa_{etapa} {\n        std::cout << \"Intento:\" << id_ << ':' << etapa_ << '\\n';\n        if (fallar) {\n            throw Interrupcion{};\n        }\n        std::cout << \"Lista:\" << id_ << ':' << etapa_ << '\\n';\n    }\n    ~Parte() {\n        std::cout << \"Fin:\" << id_ << ':' << etapa_ << '\\n';\n    }\nprivate:\n    int id_;\n    char etapa_;\n};\n\nclass Sesion {\npublic:\n    Sesion(int id, int modo);\n    ~Sesion();\n    int identificador() const { return id_; }\nprivate:\n    int id_;\n    Parte lectura_;\n    Parte calculo_;\n    Parte informe_;\n};\nSesion::Sesion(int id, int modo)\n    : id_{id}, lectura_{id, 'L', modo == 1}, calculo_{id, 'C', modo == 2},\n      informe_{id, 'I', modo == 3} {\n    std::cout << \"Cuerpo:\" << id_ << '\\n';\n    if (modo == 4) {\n        throw Interrupcion{};\n    }\n}\n\nSesion::~Sesion() {\n    std::cout << \"Cierre:\" << id_ << '\\n';\n}\n\nint main() {\n    int id = 0;\n    int modo = 0;\n\n    if (!(std::cin >> id >> modo) || id < 1 || id > 9 || modo < 0 || modo > 4) {\n        return 1;\n    }\n    try {\n        Sesion sesion{id, modo};\n        std::cout << \"Uso:\" << sesion.identificador() << '\\n';\n    } catch (const Interrupcion&) {\n        std::cout << \"Captura\\n\";\n    }\n    std::cout << \"Despues\";\n\n    return 0;\n}\n"
         },
         {
           "type": "paragraph",
@@ -2070,6 +2070,295 @@
       }
     },
     "additions": [],
-    "editorial": []
+    "editorial": [
+      {
+        "id": "block_0002_0002",
+        "beforeSha256": "36ad4ca645e603345b10f11041101f75cfc41ecc3a8d2bc1484abaa7aafe6d26",
+        "afterSha256": "3cfb5885921e0ed47834f2f12fd3d172aed7285f0ca835e9f1764c351b2eb72e"
+      },
+      {
+        "id": "block_0003_0003",
+        "beforeSha256": "982f77d02b1037c3a780717278e80906279aa6ea623c1cb1df4941d2f6de8c95",
+        "afterSha256": "73be9269f763223ec3b7063035ab00c9f03da01c2316a7fcdb57625ff6ec8955"
+      },
+      {
+        "id": "block_0005_0002",
+        "beforeSha256": "9cc1e0e7d25dfc2ea0260eaccb56f641559fd9b8647d1caf74602d64250af89c",
+        "afterSha256": "264d25e1b2749264f5225ce4ddb86ffe76d20c631a24d9fa61acd56e97a5c336"
+      },
+      {
+        "id": "block_0006_0002",
+        "beforeSha256": "7dae8ad38fddc2cc05e874d325c6a98397231f4a4e23f82d046186b4d75e9578",
+        "afterSha256": "73a09dfe1dec63e2e6b75534749c76d36c43b443420060c7013747dccf517767"
+      },
+      {
+        "id": "block_0007_0002",
+        "beforeSha256": "eb3181e470f88d8c70da93acc6ff6e31ca5002a74a8789809e55ac37f56a2bfa",
+        "afterSha256": "9ebfab07489f2d5381957bc1d713fa2858600703751cbb5e548a10013c2954af"
+      },
+      {
+        "id": "block_0008_0002",
+        "beforeSha256": "e19c9b78f45ec31e4e2c12c91ffe2ff409d75814e88a69abf063a0077db19e29",
+        "afterSha256": "38b80038ff60c973eb3d6ff281a440c9978bcf3a0e839472427336c6603f8970"
+      },
+      {
+        "id": "block_0010_0002",
+        "beforeSha256": "57f8949ba0300372c4fae0cd1aa9222b15eea89531bb437aaca31d3b05ce8319",
+        "afterSha256": "c1ec623ff3ae86f1fb7ba1b844b1d01bac15a21aeb4a8dc2625b656234cd5b29"
+      },
+      {
+        "id": "block_0011_0002",
+        "beforeSha256": "fc559d7bdb3aaf234c57be7a5ade595aba230053193cc0789171da3e3ad5d1a5",
+        "afterSha256": "dbb686dc89a5280831d81437884e8ffc63debbc609be87442870983ae8d24462"
+      },
+      {
+        "id": "block_0012_0002",
+        "beforeSha256": "8e6c84f5cfd15d56ac038c89877230ecb1fa3a4faa7eac3af65440cfcfbfcd07",
+        "afterSha256": "bb7a4f7f75362d50c9134d5a3410830709949d1c35ad075f7958f80515d7f52b"
+      },
+      {
+        "id": "block_0014_0004",
+        "beforeSha256": "e7a2ba683b3401156ad54650414806a72f6eeb01345184c2c434f2526e844f3a",
+        "afterSha256": "68a8d330b4298b0d00ae7c1157c19175f50ce4417f8c4815f112d53ef2025cf3"
+      },
+      {
+        "id": "block_0015_0001",
+        "beforeSha256": "a07a7a9f3c189547bc3df629710062f9594516a0d190178762b7f2408198dbb8",
+        "afterSha256": "f53626756cac96f7c15f61b0967b28b2bffdf5092b91ae91bfb15ba50216bbd4"
+      },
+      {
+        "id": "block_0017_0002",
+        "beforeSha256": "1443e32c2b9abdbff5196ecc0831669ea7cf226108410715c23b2a33b9f93be5",
+        "afterSha256": "9dc2d607af4814d52b9afd593d1a04baae0f2540006cdb90f8f8662c277cc2f3"
+      },
+      {
+        "id": "block_0019_0001",
+        "beforeSha256": "3ee8d00acb77785e57433bb785ed5a55edef50ae771bec42768207197798b396",
+        "afterSha256": "5373c33c0b48158d412d57bad0f496de11309fb69e3d765cad3d724c0cdf6647"
+      }
+    ],
+    "sourceFormatRevisions": [
+      {
+        "id": "block_0002_0002",
+        "block": {
+          "type": "output_prediction",
+          "id": "p3_u6l2_bloque_y_const",
+          "language": "cpp",
+          "question": "Escribe las líneas que muestra este programa, incluida la última sin salto final.",
+          "code": "#include <iostream>\n\nstruct Fallo {};\n\nclass Marca {\npublic:\n    Marca(char etiqueta, bool fallar = false) : etiqueta_{etiqueta} {\n        std::cout << \"Inicio:\" << etiqueta_ << '\\n';\n        if (fallar) {\n            throw Fallo{};\n        }\n        std::cout << \"Lista:\" << etiqueta_ << '\\n';\n    }\n    ~Marca() {\n        std::cout << \"Fin:\" << etiqueta_ << '\\n';\n    }\n    char etiqueta() const { return etiqueta_; }\nprivate:\n    char etiqueta_;\n};\n\nint main() {\n    std::cout << \"Antes\\n\";\n    {\n        const Marca marca{'A'};\n        std::cout << \"Uso:\" << marca.etiqueta() << '\\n';\n    }\n    std::cout << \"Despues\";\n    return 0;\n}\n",
+          "answers": [
+            "Antes\nInicio:A\nLista:A\nUso:A\nFin:A\nDespues"
+          ],
+          "outputComparison": "exact",
+          "explanation": "La marca se construye dentro de las llaves interiores. Su destructor se ejecuta al salir de ellas, antes de la última impresión de main. Ser constante no prolonga su duración."
+        }
+      },
+      {
+        "id": "block_0003_0003",
+        "block": {
+          "type": "output_prediction",
+          "id": "p3_u6l2_miembros_y_cuerpo",
+          "language": "cpp",
+          "question": "¿Qué traza produce el caso que termina normalmente?",
+          "code": "#include <iostream>\n\nstruct Fallo {};\n\nclass Marca {\npublic:\n    Marca(char etiqueta, bool fallar = false) : etiqueta_{etiqueta} {\n        std::cout << \"Inicio:\" << etiqueta_ << '\\n';\n        if (fallar) {\n            throw Fallo{};\n        }\n        std::cout << \"Lista:\" << etiqueta_ << '\\n';\n    }\n    ~Marca() {\n        std::cout << \"Fin:\" << etiqueta_ << '\\n';\n    }\n    char etiqueta() const { return etiqueta_; }\nprivate:\n    char etiqueta_;\n};\nclass Pareja {\npublic:\n    Pareja(int modo) : primera_{'A', modo == 1}, segunda_{'B', modo == 2} {\n        std::cout << \"Cuerpo\\n\";\n        if (modo == 3) {\n            throw Fallo{};\n        }\n    }\n    ~Pareja() {\n        std::cout << \"Cierre:\" << primera_.etiqueta() << segunda_.etiqueta() << '\\n';\n    }\nprivate:\n    Marca primera_;\n    Marca segunda_;\n};\n\nint main() {\n    try {\n        Pareja pareja{0};\n        std::cout << \"Uso\\n\";\n    } catch (const Fallo&) {\n        std::cout << \"Captura\\n\";\n    }\n    std::cout << \"Despues\";\n    return 0;\n}\n",
+          "answers": [
+            "Inicio:A\nLista:A\nInicio:B\nLista:B\nCuerpo\nUso\nCierre:AB\nFin:B\nFin:A\nDespues"
+          ],
+          "outputComparison": "exact",
+          "explanation": "Los dos miembros terminan su construcción antes del cuerpo de Pareja. Al salir del try, ~Pareja consulta ambos y después se destruyen B y A. No se entra en catch."
+        }
+      },
+      {
+        "id": "block_0005_0002",
+        "block": {
+          "type": "output_prediction",
+          "id": "p3_u6l2_destructor_generado",
+          "language": "cpp",
+          "question": "Escribe la salida completa de esta versión sin ~Pareja escrito.",
+          "code": "#include <iostream>\n\nstruct Fallo {};\n\nclass Marca {\npublic:\n    Marca(char etiqueta, bool fallar = false) : etiqueta_{etiqueta} {\n        std::cout << \"Inicio:\" << etiqueta_ << '\\n';\n        if (fallar) {\n            throw Fallo{};\n        }\n        std::cout << \"Lista:\" << etiqueta_ << '\\n';\n    }\n    ~Marca() {\n        std::cout << \"Fin:\" << etiqueta_ << '\\n';\n    }\n    char etiqueta() const { return etiqueta_; }\nprivate:\n    char etiqueta_;\n};\nclass Pareja {\npublic:\n    Pareja(int modo) : primera_{'A', modo == 1}, segunda_{'B', modo == 2} {\n        std::cout << \"Cuerpo\\n\";\n        if (modo == 3) {\n            throw Fallo{};\n        }\n    }\nprivate:\n    Marca primera_;\n    Marca segunda_;\n};\n\nint main() {\n    try {\n        Pareja pareja{0};\n        std::cout << \"Uso\\n\";\n    } catch (const Fallo&) {\n        std::cout << \"Captura\\n\";\n    }\n    std::cout << \"Despues\";\n    return 0;\n}\n",
+          "answers": [
+            "Inicio:A\nLista:A\nInicio:B\nLista:B\nCuerpo\nUso\nFin:B\nFin:A\nDespues"
+          ],
+          "outputComparison": "exact",
+          "explanation": "No existe la impresión personalizada Cierre, pero sí se ejecutan los destructores de los miembros B y A. Omitir un destructor propio no convierte esos miembros en objetos que deban terminarse a mano."
+        }
+      },
+      {
+        "id": "block_0006_0002",
+        "block": {
+          "type": "output_prediction",
+          "id": "p3_u6l2_falla_primero",
+          "language": "cpp",
+          "question": "¿Qué mensajes aparecen cuando falla el primer miembro?",
+          "code": "#include <iostream>\n\nstruct Fallo {};\n\nclass Marca {\npublic:\n    Marca(char etiqueta, bool fallar = false) : etiqueta_{etiqueta} {\n        std::cout << \"Inicio:\" << etiqueta_ << '\\n';\n        if (fallar) {\n            throw Fallo{};\n        }\n        std::cout << \"Lista:\" << etiqueta_ << '\\n';\n    }\n    ~Marca() {\n        std::cout << \"Fin:\" << etiqueta_ << '\\n';\n    }\n    char etiqueta() const { return etiqueta_; }\nprivate:\n    char etiqueta_;\n};\nclass Pareja {\npublic:\n    Pareja(int modo) : primera_{'A', modo == 1}, segunda_{'B', modo == 2} {\n        std::cout << \"Cuerpo\\n\";\n        if (modo == 3) {\n            throw Fallo{};\n        }\n    }\n    ~Pareja() {\n        std::cout << \"Cierre:\" << primera_.etiqueta() << segunda_.etiqueta() << '\\n';\n    }\nprivate:\n    Marca primera_;\n    Marca segunda_;\n};\n\nint main() {\n    try {\n        Pareja pareja{1};\n        std::cout << \"Uso\\n\";\n    } catch (const Fallo&) {\n        std::cout << \"Captura\\n\";\n    }\n    std::cout << \"Despues\";\n    return 0;\n}\n",
+          "answers": [
+            "Inicio:A\nCaptura\nDespues"
+          ],
+          "outputComparison": "exact",
+          "explanation": "Sólo se alcanza Inicio de A. Su constructor lanza antes de Lista, por lo que no se ejecuta ~Marca para A. No hay miembros Marca anteriores completados que destruir; el catch recibe la excepción."
+        }
+      },
+      {
+        "id": "block_0007_0002",
+        "block": {
+          "type": "output_prediction",
+          "id": "p3_u6l2_falla_segundo",
+          "language": "cpp",
+          "question": "¿Qué traza muestra este segundo intento de construcción?",
+          "code": "#include <iostream>\n\nstruct Fallo {};\n\nclass Marca {\npublic:\n    Marca(char etiqueta, bool fallar = false) : etiqueta_{etiqueta} {\n        std::cout << \"Inicio:\" << etiqueta_ << '\\n';\n        if (fallar) {\n            throw Fallo{};\n        }\n        std::cout << \"Lista:\" << etiqueta_ << '\\n';\n    }\n    ~Marca() {\n        std::cout << \"Fin:\" << etiqueta_ << '\\n';\n    }\n    char etiqueta() const { return etiqueta_; }\nprivate:\n    char etiqueta_;\n};\nclass Pareja {\npublic:\n    Pareja(int modo) : primera_{'A', modo == 1}, segunda_{'B', modo == 2} {\n        std::cout << \"Cuerpo\\n\";\n        if (modo == 3) {\n            throw Fallo{};\n        }\n    }\n    ~Pareja() {\n        std::cout << \"Cierre:\" << primera_.etiqueta() << segunda_.etiqueta() << '\\n';\n    }\nprivate:\n    Marca primera_;\n    Marca segunda_;\n};\n\nint main() {\n    try {\n        Pareja pareja{2};\n        std::cout << \"Uso\\n\";\n    } catch (const Fallo&) {\n        std::cout << \"Captura\\n\";\n    }\n    std::cout << \"Despues\";\n    return 0;\n}\n",
+          "answers": [
+            "Inicio:A\nLista:A\nInicio:B\nFin:A\nCaptura\nDespues"
+          ],
+          "outputComparison": "exact",
+          "explanation": "A alcanzó Lista y por eso se destruye. B sólo alcanzó Inicio; no ejecuta su destructor. El cuerpo de Pareja no empezó y su destructor no se llama."
+        }
+      },
+      {
+        "id": "block_0008_0002",
+        "block": {
+          "type": "output_prediction",
+          "id": "p3_u6l2_falla_cuerpo",
+          "language": "cpp",
+          "question": "¿Qué sucede si el fallo sale del cuerpo de Pareja?",
+          "code": "#include <iostream>\n\nstruct Fallo {};\n\nclass Marca {\npublic:\n    Marca(char etiqueta, bool fallar = false) : etiqueta_{etiqueta} {\n        std::cout << \"Inicio:\" << etiqueta_ << '\\n';\n        if (fallar) {\n            throw Fallo{};\n        }\n        std::cout << \"Lista:\" << etiqueta_ << '\\n';\n    }\n    ~Marca() {\n        std::cout << \"Fin:\" << etiqueta_ << '\\n';\n    }\n    char etiqueta() const { return etiqueta_; }\nprivate:\n    char etiqueta_;\n};\nclass Pareja {\npublic:\n    Pareja(int modo) : primera_{'A', modo == 1}, segunda_{'B', modo == 2} {\n        std::cout << \"Cuerpo\\n\";\n        if (modo == 3) {\n            throw Fallo{};\n        }\n    }\n    ~Pareja() {\n        std::cout << \"Cierre:\" << primera_.etiqueta() << segunda_.etiqueta() << '\\n';\n    }\nprivate:\n    Marca primera_;\n    Marca segunda_;\n};\n\nint main() {\n    try {\n        Pareja pareja{3};\n        std::cout << \"Uso\\n\";\n    } catch (const Fallo&) {\n        std::cout << \"Captura\\n\";\n    }\n    std::cout << \"Despues\";\n    return 0;\n}\n",
+          "answers": [
+            "Inicio:A\nLista:A\nInicio:B\nLista:B\nCuerpo\nFin:B\nFin:A\nCaptura\nDespues"
+          ],
+          "outputComparison": "exact",
+          "explanation": "A y B llegaron a Lista. Se imprime Cuerpo y después se lanza. B y A se destruyen antes de Captura, sin la línea Cierre propia de ~Pareja."
+        }
+      },
+      {
+        "id": "block_0010_0002",
+        "block": {
+          "type": "output_prediction",
+          "id": "p3_u6l2_local_del_cuerpo",
+          "language": "cpp",
+          "question": "Sigue el objeto local del cuerpo y después los miembros. ¿Qué se muestra?",
+          "code": "#include <iostream>\n\nstruct Fallo {};\n\nclass Marca {\npublic:\n    Marca(char etiqueta, bool fallar = false) : etiqueta_{etiqueta} {\n        std::cout << \"Inicio:\" << etiqueta_ << '\\n';\n        if (fallar) {\n            throw Fallo{};\n        }\n        std::cout << \"Lista:\" << etiqueta_ << '\\n';\n    }\n    ~Marca() {\n        std::cout << \"Fin:\" << etiqueta_ << '\\n';\n    }\n    char etiqueta() const { return etiqueta_; }\nprivate:\n    char etiqueta_;\n};\nclass Pareja {\npublic:\n    Pareja(int modo) : primera_{'A', modo == 1}, segunda_{'B', modo == 2} {\n        std::cout << \"Cuerpo\\n\";\n        if (modo == 3) {\n            Marca temporal{'T'};\n            throw Fallo{};\n        }\n    }\n    ~Pareja() {\n        std::cout << \"Cierre:\" << primera_.etiqueta() << segunda_.etiqueta() << '\\n';\n    }\nprivate:\n    Marca primera_;\n    Marca segunda_;\n};\n\nint main() {\n    try {\n        Pareja pareja{3};\n        std::cout << \"Uso\\n\";\n    } catch (const Fallo&) {\n        std::cout << \"Captura\\n\";\n    }\n    std::cout << \"Despues\";\n    return 0;\n}\n",
+          "answers": [
+            "Inicio:A\nLista:A\nInicio:B\nLista:B\nCuerpo\nInicio:T\nLista:T\nFin:T\nFin:B\nFin:A\nCaptura\nDespues"
+          ],
+          "outputComparison": "exact",
+          "explanation": "T termina de construirse dentro del cuerpo y se destruye al salir de ese bloque por la excepción. Después se destruyen B y A. La pareja no completó su constructor, por lo que no se imprime Cierre."
+        }
+      },
+      {
+        "id": "block_0011_0002",
+        "block": {
+          "type": "output_prediction",
+          "id": "p3_u6l2_salida_mediante_return",
+          "language": "cpp",
+          "question": "¿En qué orden aparecen los mensajes de paso y de main?",
+          "code": "#include <iostream>\n\nstruct Fallo {};\n\nclass Marca {\npublic:\n    Marca(char etiqueta, bool fallar = false) : etiqueta_{etiqueta} {\n        std::cout << \"Inicio:\" << etiqueta_ << '\\n';\n        if (fallar) {\n            throw Fallo{};\n        }\n        std::cout << \"Lista:\" << etiqueta_ << '\\n';\n    }\n    ~Marca() {\n        std::cout << \"Fin:\" << etiqueta_ << '\\n';\n    }\n    char etiqueta() const { return etiqueta_; }\nprivate:\n    char etiqueta_;\n};\n\nvoid paso() {\n    Marca local{'R'};\n    std::cout << \"AntesReturn\\n\";\n    return;\n}\n\nint main() {\n    paso();\n    std::cout << \"Vuelta\";\n    return 0;\n}\n",
+          "answers": [
+            "Inicio:R\nLista:R\nAntesReturn\nFin:R\nVuelta"
+          ],
+          "outputComparison": "exact",
+          "explanation": "La función imprime AntesReturn y termina su local R antes de regresar. La impresión Vuelta pertenece a main y ocurre después. No hay copia ni retorno de un objeto Marca."
+        }
+      },
+      {
+        "id": "block_0012_0002",
+        "block": {
+          "type": "output_prediction",
+          "id": "p3_u6l2_puntero_y_objeto_dinamico",
+          "language": "cpp",
+          "question": "¿Qué muestra el programa y cuándo aparece Fin?",
+          "code": "#include <iostream>\n\nstruct Fallo {};\n\nclass Marca {\npublic:\n    Marca(char etiqueta, bool fallar = false) : etiqueta_{etiqueta} {\n        std::cout << \"Inicio:\" << etiqueta_ << '\\n';\n        if (fallar) {\n            throw Fallo{};\n        }\n        std::cout << \"Lista:\" << etiqueta_ << '\\n';\n    }\n    ~Marca() {\n        std::cout << \"Fin:\" << etiqueta_ << '\\n';\n    }\n    char etiqueta() const { return etiqueta_; }\nprivate:\n    char etiqueta_;\n};\n\nint main() {\n    Marca* responsable = nullptr;\n    {\n        Marca* acceso = new Marca{'D'};\n        responsable = acceso;\n    }\n    std::cout << \"Sigue:\" << responsable->etiqueta() << '\\n';\n    delete responsable;\n    responsable = nullptr;\n    std::cout << \"Despues\";\n    return 0;\n}\n",
+          "answers": [
+            "Inicio:D\nLista:D\nSigue:D\nFin:D\nDespues"
+          ],
+          "outputComparison": "exact",
+          "explanation": "Cerrar el bloque del puntero acceso no destruye el Marca dinámico. responsable permite consultarlo todavía. delete ejecuta su destructor; después sólo se sobrescribe responsable con nullptr, sin usar su valor anterior."
+        }
+      },
+      {
+        "id": "block_0014_0004",
+        "block": {
+          "type": "cpp_compiler",
+          "language": "cpp",
+          "initialCode": "#include <iostream>\n\nstruct Fallo {};\n\nclass Marca {\npublic:\n    Marca(char etiqueta, bool fallar = false) : etiqueta_{etiqueta} {\n        std::cout << \"Inicio:\" << etiqueta_ << '\\n';\n        if (fallar) {\n            throw Fallo{};\n        }\n        std::cout << \"Lista:\" << etiqueta_ << '\\n';\n    }\n    ~Marca() {\n        std::cout << \"Fin:\" << etiqueta_ << '\\n';\n    }\n    char etiqueta() const { return etiqueta_; }\nprivate:\n    char etiqueta_;\n};\nclass Kit {\npublic:\n    Kit() : derecha_{'B'}, izquierda_{'A'} {\n        std::cout << \"Kit\\n\";\n    }\n    ~Kit() {\n        std::cout << \"CierreKit\\n\";\n    }\nprivate:\n    Marca derecha_;\n    Marca izquierda_;\n};\n\nint main() {\n    {\n        Kit kit;\n    }\n    std::cout << \"Despues\";\n    return 0;\n}\n",
+          "initialStandardInput": "",
+          "outputCheck": {
+            "inputComparison": "tokens",
+            "cases": [
+              {
+                "standardInput": "",
+                "outputs": [
+                  "Inicio:A\nLista:A\nInicio:B\nLista:B\nKit\nCierreKit\nFin:B\nFin:A\nDespues"
+                ],
+                "explanation": "El orden lo fijan las declaraciones de los miembros. La lista debe mostrar la misma secuencia; los destructores de los miembros se llaman automáticamente en el orden inverso."
+              }
+            ]
+          }
+        }
+      },
+      {
+        "id": "block_0015_0001",
+        "block": {
+          "type": "code",
+          "language": "cpp",
+          "code": "#include <iostream>\n\nstruct Fallo {};\n\nclass Marca {\npublic:\n    Marca(char etiqueta, bool fallar = false) : etiqueta_{etiqueta} {\n        std::cout << \"Inicio:\" << etiqueta_ << '\\n';\n        if (fallar) {\n            throw Fallo{};\n        }\n        std::cout << \"Lista:\" << etiqueta_ << '\\n';\n    }\n    ~Marca() {\n        std::cout << \"Fin:\" << etiqueta_ << '\\n';\n    }\n    char etiqueta() const { return etiqueta_; }\nprivate:\n    char etiqueta_;\n};\nclass Kit {\npublic:\n    Kit() : izquierda_{'A'}, derecha_{'B'} {\n        std::cout << \"Kit\\n\";\n    }\n    ~Kit() {\n        std::cout << \"CierreKit\\n\";\n    }\nprivate:\n    Marca izquierda_;\n    Marca derecha_;\n};\n\nint main() {\n    {\n        Kit kit;\n    }\n    std::cout << \"Despues\";\n    return 0;\n}\n"
+        }
+      },
+      {
+        "id": "block_0017_0002",
+        "block": {
+          "type": "cpp_compiler",
+          "language": "cpp",
+          "initialCode": "#include <iostream>\n\nstruct Interrupcion {};\n\nclass Parte {\npublic:\n    Parte(int id, char etapa, bool fallar) : id_{id}, etapa_{etapa} {\n        std::cout << \"Intento:\" << id_ << ':' << etapa_ << '\\n';\n        if (fallar) {\n            throw Interrupcion{};\n        }\n        std::cout << \"Lista:\" << id_ << ':' << etapa_ << '\\n';\n    }\n    ~Parte() {\n        std::cout << \"Fin:\" << id_ << ':' << etapa_ << '\\n';\n    }\nprivate:\n    int id_;\n    char etapa_;\n};\nclass Sesion {\npublic:\n    Sesion(int id, int modo);\n    ~Sesion();\n    int identificador() const { return id_; }\nprivate:\n    int id_;\n    Parte lectura_;\n    Parte calculo_;\n    Parte informe_;\n};\nSesion::Sesion(int id, int modo)\n    : id_{id}, lectura_{id, 'L', false}, calculo_{id, 'C', false},\n      informe_{id, 'I', false} {\n    // Completa los predicados de los inicializadores y el cuerpo.\n    (void)modo;\n}\n\nSesion::~Sesion() {\n    // Escribe sólo la línea de cierre; los miembros se destruyen automáticamente.\n}\n\nint main() {\n    int id = 0;\n    int modo = 0;\n    if (!(std::cin >> id >> modo) || id < 1 || id > 9 || modo < 0 || modo > 4) {\n        return 1;\n    }\n    try {\n        Sesion sesion{id, modo};\n        std::cout << \"Uso:\" << sesion.identificador() << '\\n';\n    } catch (const Interrupcion&) {\n        std::cout << \"Captura\\n\";\n    }\n    std::cout << \"Despues\";\n    return 0;\n}\n",
+          "initialStandardInput": "2 0\n",
+          "outputCheck": {
+            "inputComparison": "tokens",
+            "cases": [
+              {
+                "standardInput": "2 0\n",
+                "outputs": [
+                  "Intento:2:L\nLista:2:L\nIntento:2:C\nLista:2:C\nIntento:2:I\nLista:2:I\nCuerpo:2\nUso:2\nCierre:2\nFin:2:I\nFin:2:C\nFin:2:L\nDespues"
+                ],
+                "explanation": "Inicializa cada miembro antes del cuerpo y activa el fallo en la etapa solicitada. La destrucción automática ya termina los miembros completados; el destructor propio sólo imprime el cierre de una sesión construida."
+              },
+              {
+                "standardInput": "3 1\n",
+                "outputs": [
+                  "Intento:3:L\nCaptura\nDespues"
+                ],
+                "explanation": "Inicializa cada miembro antes del cuerpo y activa el fallo en la etapa solicitada. La destrucción automática ya termina los miembros completados; el destructor propio sólo imprime el cierre de una sesión construida."
+              },
+              {
+                "standardInput": "4 2\n",
+                "outputs": [
+                  "Intento:4:L\nLista:4:L\nIntento:4:C\nFin:4:L\nCaptura\nDespues"
+                ],
+                "explanation": "Inicializa cada miembro antes del cuerpo y activa el fallo en la etapa solicitada. La destrucción automática ya termina los miembros completados; el destructor propio sólo imprime el cierre de una sesión construida."
+              },
+              {
+                "standardInput": "5 3\n",
+                "outputs": [
+                  "Intento:5:L\nLista:5:L\nIntento:5:C\nLista:5:C\nIntento:5:I\nFin:5:C\nFin:5:L\nCaptura\nDespues"
+                ],
+                "explanation": "Inicializa cada miembro antes del cuerpo y activa el fallo en la etapa solicitada. La destrucción automática ya termina los miembros completados; el destructor propio sólo imprime el cierre de una sesión construida."
+              },
+              {
+                "standardInput": "6 4\n",
+                "outputs": [
+                  "Intento:6:L\nLista:6:L\nIntento:6:C\nLista:6:C\nIntento:6:I\nLista:6:I\nCuerpo:6\nFin:6:I\nFin:6:C\nFin:6:L\nCaptura\nDespues"
+                ],
+                "explanation": "Inicializa cada miembro antes del cuerpo y activa el fallo en la etapa solicitada. La destrucción automática ya termina los miembros completados; el destructor propio sólo imprime el cierre de una sesión construida."
+              }
+            ]
+          }
+        }
+      },
+      {
+        "id": "block_0019_0001",
+        "block": {
+          "type": "code",
+          "language": "cpp",
+          "code": "#include <iostream>\n\nstruct Interrupcion {};\n\nclass Parte {\npublic:\n    Parte(int id, char etapa, bool fallar) : id_{id}, etapa_{etapa} {\n        std::cout << \"Intento:\" << id_ << ':' << etapa_ << '\\n';\n        if (fallar) {\n            throw Interrupcion{};\n        }\n        std::cout << \"Lista:\" << id_ << ':' << etapa_ << '\\n';\n    }\n    ~Parte() {\n        std::cout << \"Fin:\" << id_ << ':' << etapa_ << '\\n';\n    }\nprivate:\n    int id_;\n    char etapa_;\n};\nclass Sesion {\npublic:\n    Sesion(int id, int modo);\n    ~Sesion();\n    int identificador() const { return id_; }\nprivate:\n    int id_;\n    Parte lectura_;\n    Parte calculo_;\n    Parte informe_;\n};\nSesion::Sesion(int id, int modo)\n    : id_{id}, lectura_{id, 'L', modo == 1}, calculo_{id, 'C', modo == 2},\n      informe_{id, 'I', modo == 3} {\n    std::cout << \"Cuerpo:\" << id_ << '\\n';\n    if (modo == 4) {\n        throw Interrupcion{};\n    }\n}\n\nSesion::~Sesion() {\n    std::cout << \"Cierre:\" << id_ << '\\n';\n}\n\nint main() {\n    int id = 0;\n    int modo = 0;\n    if (!(std::cin >> id >> modo) || id < 1 || id > 9 || modo < 0 || modo > 4) {\n        return 1;\n    }\n    try {\n        Sesion sesion{id, modo};\n        std::cout << \"Uso:\" << sesion.identificador() << '\\n';\n    } catch (const Interrupcion&) {\n        std::cout << \"Captura\\n\";\n    }\n    std::cout << \"Despues\";\n    return 0;\n}\n"
+        }
+      }
+    ]
   }
 }

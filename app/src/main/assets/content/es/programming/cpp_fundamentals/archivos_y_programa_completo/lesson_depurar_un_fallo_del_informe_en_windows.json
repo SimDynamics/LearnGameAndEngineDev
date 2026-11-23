@@ -413,7 +413,7 @@
         {
           "type": "code",
           "language": "cpp",
-          "code": "#include \"aplicacion.h\"\n\nbool mostrar_informe(const Conjunto& conjunto, std::ostream& salida) {\n    if (!conjunto_valido(conjunto)) { return false; }\n    int aceptados{0};\n    int rechazados{0};\n    for (const Grupo& grupo : conjunto.grupos) {\n        for (const Registro& registro : grupo.registros) {\n            aceptados = registro.recuento.aceptados;\n            rechazados += registro.recuento.rechazados;\n        }\n    }\n    salida << \"Grupos: \" << conjunto.grupos.size()\n           << \"\\nAceptados: \" << aceptados\n           << \"\\nRechazados: \" << rechazados << \"\\n\";\n    const Informe_mayor mayor = seleccionar_mayor(conjunto);\n    if (mayor.hay_grupo) {\n        std::string nombre;\n        if (!nombre_grupo(mayor.id, nombre)) { return false; }\n        salida << \"Mayor: \" << nombre << ' ' << mayor.aceptados << \"\\n\";\n    } else {\n        salida << \"Mayor: ninguno\\n\";\n    }\n    return static_cast<bool>(salida);\n}\n"
+          "code": "#include \"aplicacion.h\"\n\nbool mostrar_informe(const Conjunto& conjunto, std::ostream& salida) {\n    if (!conjunto_valido(conjunto)) { return false; }\n    int aceptados{0};\n    int rechazados{0};\n\n    for (const Grupo& grupo : conjunto.grupos) {\n        for (const Registro& registro : grupo.registros) {\n            aceptados = registro.recuento.aceptados;\n            rechazados += registro.recuento.rechazados;\n        }\n    }\n    salida << \"Grupos: \" << conjunto.grupos.size()\n           << \"\\nAceptados: \" << aceptados\n           << \"\\nRechazados: \" << rechazados << \"\\n\";\n    const Informe_mayor mayor = seleccionar_mayor(conjunto);\n    if (mayor.hay_grupo) {\n        std::string nombre;\n        if (!nombre_grupo(mayor.id, nombre)) { return false; }\n        salida << \"Mayor: \" << nombre << ' ' << mayor.aceptados << \"\\n\";\n    } else {\n        salida << \"Mayor: ninguno\\n\";\n    }\n\n    return static_cast<bool>(salida);\n}\n"
         },
         {
           "type": "paragraph",
@@ -1580,6 +1580,21 @@
         "id": "block_0008_0008",
         "beforeSha256": "e6feaa5340075ce36b5c7dd63762989562ed29e57c8588d2e6891d33ddc10184",
         "afterSha256": "b22f82303a671654d2eca1d8ddc2511256f44bc08619fe7712e6d918ba2f10ea"
+      },
+      {
+        "id": "block_0007_0004",
+        "beforeSha256": "70bd44f3ddaeb9aa44eebedf15da385e9a723e400b0aecb2bcc460df549abedc",
+        "afterSha256": "7215b57375d2dcbb6dc4cd39b76f744ea29dbe20ddf040f4c9a008eb92adef1e"
+      }
+    ],
+    "sourceFormatRevisions": [
+      {
+        "id": "block_0007_0004",
+        "block": {
+          "type": "code",
+          "language": "cpp",
+          "code": "#include \"aplicacion.h\"\n\nbool mostrar_informe(const Conjunto& conjunto, std::ostream& salida) {\n    if (!conjunto_valido(conjunto)) { return false; }\n    int aceptados{0};\n    int rechazados{0};\n    for (const Grupo& grupo : conjunto.grupos) {\n        for (const Registro& registro : grupo.registros) {\n            aceptados = registro.recuento.aceptados;\n            rechazados += registro.recuento.rechazados;\n        }\n    }\n    salida << \"Grupos: \" << conjunto.grupos.size()\n           << \"\\nAceptados: \" << aceptados\n           << \"\\nRechazados: \" << rechazados << \"\\n\";\n    const Informe_mayor mayor = seleccionar_mayor(conjunto);\n    if (mayor.hay_grupo) {\n        std::string nombre;\n        if (!nombre_grupo(mayor.id, nombre)) { return false; }\n        salida << \"Mayor: \" << nombre << ' ' << mayor.aceptados << \"\\n\";\n    } else {\n        salida << \"Mayor: ninguno\\n\";\n    }\n    return static_cast<bool>(salida);\n}\n"
+        }
       }
     ]
   },

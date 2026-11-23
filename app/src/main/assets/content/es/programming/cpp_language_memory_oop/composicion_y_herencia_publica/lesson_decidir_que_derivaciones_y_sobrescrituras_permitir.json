@@ -45,7 +45,7 @@
           "id": "p3_u8l11_clase_final_permite_objetos_copias_y_cambios",
           "language": "cpp",
           "question": "Escribe la salida de las dos consultas, con el separador |.",
-          "code": "#include <iostream>\n\nclass NumeroBase {\npublic:\n    explicit NumeroBase(int numero) : numero_{numero} {}\n    int numero() const { return numero_; }\n    void cambiar(int numero) { numero_ = numero; }\nprivate:\n    int numero_;\n};\nclass NumeroCerrado final : public NumeroBase {\npublic:\n    explicit NumeroCerrado(int numero) : NumeroBase{numero} {}\n};\nint main() {\n    NumeroCerrado original{4};\n    NumeroCerrado copia{original};\n    original.cambiar(8);\n    const NumeroBase& vista = original;\n    std::cout << vista.numero() << '|' << copia.numero();\n    return 0;\n}\n",
+          "code": "#include <iostream>\n\nclass NumeroBase {\npublic:\n    explicit NumeroBase(int numero) : numero_{numero} {}\n    int numero() const { return numero_; }\n    void cambiar(int numero) { numero_ = numero; }\nprivate:\n    int numero_;\n};\n\nclass NumeroCerrado final : public NumeroBase {\npublic:\n    explicit NumeroCerrado(int numero) : NumeroBase{numero} {}\n};\n\nint main() {\n    NumeroCerrado original{4};\n    NumeroCerrado copia{original};\n    original.cambiar(8);\n    const NumeroBase& vista = original;\n    std::cout << vista.numero() << '|' << copia.numero();\n\n    return 0;\n}\n",
           "answers": [
             "8|4"
           ],
@@ -67,7 +67,7 @@
         {
           "type": "code",
           "language": "cpp",
-          "code": "#include <iostream>\n\nclass NumeroBase {\npublic:\n    explicit NumeroBase(int numero) : numero_{numero} {}\n    int numero() const { return numero_; }\n    void cambiar(int numero) { numero_ = numero; }\nprivate:\n    int numero_;\n};\nclass NumeroCerrado final : public NumeroBase {\npublic:\n    explicit NumeroCerrado(int numero) : NumeroBase{numero} {}\n};\nclass NumeroConMarca : public NumeroCerrado {\n};\nint main() { return 0; }\n"
+          "code": "#include <iostream>\n\nclass NumeroBase {\npublic:\n    explicit NumeroBase(int numero) : numero_{numero} {}\n    int numero() const { return numero_; }\n    void cambiar(int numero) { numero_ = numero; }\nprivate:\n    int numero_;\n};\n\nclass NumeroCerrado final : public NumeroBase {\npublic:\n    explicit NumeroCerrado(int numero) : NumeroBase{numero} {}\n};\n\nclass NumeroConMarca : public NumeroCerrado {\n};\nint main() { return 0; }\n"
         },
         {
           "type": "multiple_choice",
@@ -102,7 +102,7 @@
           "id": "p3_u8l11_funcion_final_y_otra_operacion_extensible",
           "language": "cpp",
           "question": "Escribe la salida de las llamadas mediante vista.",
-          "code": "#include <iostream>\n\nclass Operacion {\npublic:\n    virtual ~Operacion() = default;\n    virtual int numero() const { return 2; }\n    virtual int codigo() const { return 4; }\n};\nclass NumeroReservado : public Operacion {\npublic:\n    int numero() const final { return 7; }\n    int codigo() const override { return 8; }\n};\nclass OperacionExtendida : public NumeroReservado {\npublic:\n    int codigo() const override { return 9; }\n};\nint main() {\n    OperacionExtendida dato;\n    const Operacion& vista = dato;\n    std::cout << vista.numero() << '|' << vista.codigo();\n    return 0;\n}\n",
+          "code": "#include <iostream>\n\nclass Operacion {\npublic:\n    virtual ~Operacion() = default;\n    virtual int numero() const { return 2; }\n    virtual int codigo() const { return 4; }\n};\n\nclass NumeroReservado : public Operacion {\npublic:\n    int numero() const final { return 7; }\n    int codigo() const override { return 8; }\n};\n\nclass OperacionExtendida : public NumeroReservado {\npublic:\n    int codigo() const override { return 9; }\n};\n\nint main() {\n    OperacionExtendida dato;\n    const Operacion& vista = dato;\n\n    std::cout << vista.numero() << '|' << vista.codigo();\n\n    return 0;\n}\n",
           "answers": [
             "7|9"
           ],
@@ -124,7 +124,7 @@
         {
           "type": "code",
           "language": "cpp",
-          "code": "#include <iostream>\n\nclass Operacion {\npublic:\n    virtual ~Operacion() = default;\n    virtual int numero() const { return 2; }\n    virtual int codigo() const { return 4; }\n};\nclass NumeroReservado : public Operacion {\npublic:\n    int numero() const final { return 7; }\n    int codigo() const override { return 8; }\n};\nclass OperacionExtendida : public NumeroReservado {\npublic:\n    int codigo() const override { return 9; }\n};\nclass SustitucionInvalida : public NumeroReservado {\npublic:\n    int numero() const { return 11; }\n};\nint main() { return 0; }\n"
+          "code": "#include <iostream>\n\nclass Operacion {\npublic:\n    virtual ~Operacion() = default;\n    virtual int numero() const { return 2; }\n    virtual int codigo() const { return 4; }\n};\n\nclass NumeroReservado : public Operacion {\npublic:\n    int numero() const final { return 7; }\n    int codigo() const override { return 8; }\n};\n\nclass OperacionExtendida : public NumeroReservado {\npublic:\n    int codigo() const override { return 9; }\n};\n\nclass SustitucionInvalida : public NumeroReservado {\npublic:\n    int numero() const { return 11; }\n};\nint main() { return 0; }\n"
         },
         {
           "type": "paragraph",
@@ -172,7 +172,7 @@
           "id": "p3_u8l11_sobrecarga_con_otro_parametro_no_sobrescribe_final",
           "language": "cpp",
           "question": "Escribe toda la salida de las tres consultas.",
-          "code": "#include <iostream>\n\nclass Operacion {\npublic:\n    virtual ~Operacion() = default;\n    virtual int numero() const { return 2; }\n    virtual int codigo() const { return 4; }\n};\nclass NumeroReservado : public Operacion {\npublic:\n    int numero() const final { return 7; }\n    int codigo() const override { return 8; }\n};\nclass OperacionExtendida : public NumeroReservado {\npublic:\n    int codigo() const override { return 9; }\n};\nclass ConAlternativa : public NumeroReservado {\npublic:\n    using NumeroReservado::numero;\n    int numero(int alternativa) const { return alternativa; }\n};\nint main() {\n    ConAlternativa dato;\n    const Operacion& vista = dato;\n    std::cout << dato.numero() << '|' << dato.numero(12) << '|'\n              << vista.numero();\n    return 0;\n}\n",
+          "code": "#include <iostream>\n\nclass Operacion {\npublic:\n    virtual ~Operacion() = default;\n    virtual int numero() const { return 2; }\n    virtual int codigo() const { return 4; }\n};\n\nclass NumeroReservado : public Operacion {\npublic:\n    int numero() const final { return 7; }\n    int codigo() const override { return 8; }\n};\n\nclass OperacionExtendida : public NumeroReservado {\npublic:\n    int codigo() const override { return 9; }\n};\n\nclass ConAlternativa : public NumeroReservado {\npublic:\n    using NumeroReservado::numero;\n    int numero(int alternativa) const { return alternativa; }\n};\n\nint main() {\n    ConAlternativa dato;\n    const Operacion& vista = dato;\n\n    std::cout << dato.numero() << '|' << dato.numero(12) << '|'\n              << vista.numero();\n    return 0;\n}\n",
           "answers": [
             "7|12|7"
           ],
@@ -231,7 +231,7 @@
           "type": "inline_fill_code",
           "id": "p3_u8l11_cerrar_operacion_y_clase_con_alcances_distintos",
           "question": "Completa cada declaración para cumplir las dos restricciones del enunciado: conservar la implementación de id() en las derivadas de InformeEstable e impedir nuevas derivadas de InformeCerrado. Las demás operaciones deben seguir siendo utilizables.",
-          "template": "class Informe {\npublic:\n    virtual ~Informe() = default;\n    virtual int id() const = 0;\n    virtual void escribir(std::ostream& salida) const = 0;\n};\nclass InformeEstable : public Informe {\npublic:\n    int id() const [] { return 7; }\n    void escribir(std::ostream& salida) const override { salida << \"Estable\"; }\n};\nclass InformeExtendido : public InformeEstable {\npublic:\n    void escribir(std::ostream& salida) const override { salida << \"Extendido\"; }\n};\nclass InformeCerrado [] : public InformeEstable {\npublic:\n    void escribir(std::ostream& salida) const override { salida << \"Cerrado\"; }\n};\n",
+          "template": "class Informe {\npublic:\n    virtual ~Informe() = default;\n    virtual int id() const = 0;\n    virtual void escribir(std::ostream& salida) const = 0;\n};\n\nclass InformeEstable : public Informe {\npublic:\n    int id() const [] { return 7; }\n    void escribir(std::ostream& salida) const override { salida << \"Estable\"; }\n};\n\nclass InformeExtendido : public InformeEstable {\npublic:\n    void escribir(std::ostream& salida) const override { salida << \"Extendido\"; }\n};\n\nclass InformeCerrado [] : public InformeEstable {\npublic:\n    void escribir(std::ostream& salida) const override { salida << \"Cerrado\"; }\n};\n",
           "answers": [
             "final",
             "final"
@@ -259,7 +259,7 @@
         {
           "type": "code",
           "language": "cpp",
-          "code": "#include <iostream>\n\nclass Informe {\npublic:\n    virtual ~Informe() = default;\n    virtual int id() const = 0;\n    virtual void escribir(std::ostream& salida) const = 0;\n};\nclass InformeEstable : public Informe {\npublic:\n    int id() const final { return 7; }\n    void escribir(std::ostream& salida) const override { salida << \"Estable\"; }\n};\nclass InformeExtendido : public InformeEstable {\npublic:\n    void escribir(std::ostream& salida) const override { salida << \"Extendido\"; }\n};\nclass InformeCerrado final : public InformeEstable {\npublic:\n    void escribir(std::ostream& salida) const override { salida << \"Cerrado\"; }\n};\nvoid presentar(const Informe& dato) {\n    std::cout << dato.id() << ':';\n    dato.escribir(std::cout);\n}\nint main() {\n    InformeExtendido extendido;\n    InformeCerrado cerrado;\n    presentar(extendido);\n    std::cout << '|';\n    presentar(cerrado);\n    return 0;\n}\n"
+          "code": "#include <iostream>\n\nclass Informe {\npublic:\n    virtual ~Informe() = default;\n    virtual int id() const = 0;\n    virtual void escribir(std::ostream& salida) const = 0;\n};\n\nclass InformeEstable : public Informe {\npublic:\n    int id() const final { return 7; }\n    void escribir(std::ostream& salida) const override { salida << \"Estable\"; }\n};\n\nclass InformeExtendido : public InformeEstable {\npublic:\n    void escribir(std::ostream& salida) const override { salida << \"Extendido\"; }\n};\n\nclass InformeCerrado final : public InformeEstable {\npublic:\n    void escribir(std::ostream& salida) const override { salida << \"Cerrado\"; }\n};\n\nvoid presentar(const Informe& dato) {\n    std::cout << dato.id() << ':';\n    dato.escribir(std::cout);\n}\n\nint main() {\n    InformeExtendido extendido;\n    InformeCerrado cerrado;\n    presentar(extendido);\n    std::cout << '|';\n    presentar(cerrado);\n    return 0;\n}\n"
         },
         {
           "type": "paragraph",
@@ -297,7 +297,7 @@
         {
           "type": "code",
           "language": "cpp",
-          "code": "#include <iostream>\n\nclass Informe {\npublic:\n    virtual ~Informe() = default;\n    virtual int id() const = 0;\n    virtual void escribir(std::ostream& salida) const = 0;\n};\nclass InformeEstable : public Informe {\npublic:\n    int id() const final { return 7; }\n    void escribir(std::ostream& salida) const override { salida << \"Estable\"; }\n};\nclass InformeExtendido : public InformeEstable {\npublic:\n    void escribir(std::ostream& salida) const override { salida << \"Extendido\"; }\n};\nclass InformeCerrado final : public InformeEstable {\npublic:\n    void escribir(std::ostream& salida) const override { salida << \"Cerrado\"; }\n};\nclass Otro : public InformeEstable {\npublic:\n    int id() const { return 9; }\n};\nint main() { return 0; }\n"
+          "code": "#include <iostream>\n\nclass Informe {\npublic:\n    virtual ~Informe() = default;\n    virtual int id() const = 0;\n    virtual void escribir(std::ostream& salida) const = 0;\n};\n\nclass InformeEstable : public Informe {\npublic:\n    int id() const final { return 7; }\n    void escribir(std::ostream& salida) const override { salida << \"Estable\"; }\n};\n\nclass InformeExtendido : public InformeEstable {\npublic:\n    void escribir(std::ostream& salida) const override { salida << \"Extendido\"; }\n};\n\nclass InformeCerrado final : public InformeEstable {\npublic:\n    void escribir(std::ostream& salida) const override { salida << \"Cerrado\"; }\n};\n\nclass Otro : public InformeEstable {\npublic:\n    int id() const { return 9; }\n};\nint main() { return 0; }\n"
         },
         {
           "type": "multiple_choice",
@@ -1048,6 +1048,150 @@
       }
     },
     "additions": [],
-    "editorial": []
+    "editorial": [
+      {
+        "id": "block_0001_0003",
+        "beforeSha256": "9ca9987fbc604e464a47e4e586d1a8cbacaf8ed077ca3b8d4d5ed04a1f2f6f4b",
+        "afterSha256": "40bdb9275f655cc22148001ced05b2bdf5a0fbb7756286b7edef414bbc9da309"
+      },
+      {
+        "id": "block_0002_0002",
+        "beforeSha256": "6810f3360e1a3b2437aa8f228804d8a05256b781e12df74c375aa58e98ae790e",
+        "afterSha256": "e2107147bd32d29db47cc4945614570855d33d13392803e81a8e372d8fab9a6b"
+      },
+      {
+        "id": "block_0003_0003",
+        "beforeSha256": "ef38c9903bd346371fb24f8a68e249e9d6b08118d118c272822ca06fed0a0ef0",
+        "afterSha256": "de28787a3d88ab811d07511f47f3b4baefcd0783d8702a5fa2107ea06c15112e"
+      },
+      {
+        "id": "block_0004_0002",
+        "beforeSha256": "348819d594ad973bd0b9b45c0d902ffeadc14bece9a7e2470069375bbb7f5884",
+        "afterSha256": "9a208ca755b46f50be51a39f0f409ddff474b9f5efadf957d4c709c027a74083"
+      },
+      {
+        "id": "block_0005_0003",
+        "beforeSha256": "94d6a71a29385a2f3a5f1f9531682c7c34e8c48997beeabce08c9f5e65dfc007",
+        "afterSha256": "74cafb0475482c1d9bb6196661e772ababc24a41fb408f2e8dcac2506baf9f4f"
+      },
+      {
+        "id": "block_0007_0005",
+        "beforeSha256": "0fd690a7b8e42b88044db2f00e2d0950714b98772874f5f402617738fb7240af",
+        "afterSha256": "afba40860f319c108d64bc0565296033e821c337b5b7c8a4ef34347ed828c03c"
+      },
+      {
+        "id": "block_0008_0001",
+        "beforeSha256": "39baaff03ddf9c15158942a6a8037e814d698e1d4c3caba288b268ca1b3de3f4",
+        "afterSha256": "9cf4260358461ae0bf557df843faaaa4cecaf592d41cc3a138205ed94c1f7e2c"
+      },
+      {
+        "id": "block_0009_0002",
+        "beforeSha256": "c00f5f30d1938adc1779d7007e1c8b0ae617ecda5b840072ff75453773cbdf5b",
+        "afterSha256": "199efe4956c66aa24cad48736ed406e7bc42db66f18813981866d99b600267bf"
+      }
+    ],
+    "sourceFormatRevisions": [
+      {
+        "id": "block_0001_0003",
+        "block": {
+          "type": "output_prediction",
+          "id": "p3_u8l11_clase_final_permite_objetos_copias_y_cambios",
+          "language": "cpp",
+          "question": "Escribe la salida de las dos consultas, con el separador |.",
+          "code": "#include <iostream>\n\nclass NumeroBase {\npublic:\n    explicit NumeroBase(int numero) : numero_{numero} {}\n    int numero() const { return numero_; }\n    void cambiar(int numero) { numero_ = numero; }\nprivate:\n    int numero_;\n};\nclass NumeroCerrado final : public NumeroBase {\npublic:\n    explicit NumeroCerrado(int numero) : NumeroBase{numero} {}\n};\nint main() {\n    NumeroCerrado original{4};\n    NumeroCerrado copia{original};\n    original.cambiar(8);\n    const NumeroBase& vista = original;\n    std::cout << vista.numero() << '|' << copia.numero();\n    return 0;\n}\n",
+          "answers": [
+            "8|4"
+          ],
+          "outputComparison": "exact",
+          "explanation": "La copia recibe el número cuatro que tenía original al construirse. Después cambiar asigna ocho únicamente al dato de original. vista consulta ese objeto como NumeroBase y obtiene ocho; copia conserva cuatro. La marca final no impide la herencia ya declarada, la construcción, esta copia ni el cambio permitido por la interfaz."
+        }
+      },
+      {
+        "id": "block_0002_0002",
+        "block": {
+          "type": "code",
+          "language": "cpp",
+          "code": "#include <iostream>\n\nclass NumeroBase {\npublic:\n    explicit NumeroBase(int numero) : numero_{numero} {}\n    int numero() const { return numero_; }\n    void cambiar(int numero) { numero_ = numero; }\nprivate:\n    int numero_;\n};\nclass NumeroCerrado final : public NumeroBase {\npublic:\n    explicit NumeroCerrado(int numero) : NumeroBase{numero} {}\n};\nclass NumeroConMarca : public NumeroCerrado {\n};\nint main() { return 0; }\n"
+        }
+      },
+      {
+        "id": "block_0003_0003",
+        "block": {
+          "type": "output_prediction",
+          "id": "p3_u8l11_funcion_final_y_otra_operacion_extensible",
+          "language": "cpp",
+          "question": "Escribe la salida de las llamadas mediante vista.",
+          "code": "#include <iostream>\n\nclass Operacion {\npublic:\n    virtual ~Operacion() = default;\n    virtual int numero() const { return 2; }\n    virtual int codigo() const { return 4; }\n};\nclass NumeroReservado : public Operacion {\npublic:\n    int numero() const final { return 7; }\n    int codigo() const override { return 8; }\n};\nclass OperacionExtendida : public NumeroReservado {\npublic:\n    int codigo() const override { return 9; }\n};\nint main() {\n    OperacionExtendida dato;\n    const Operacion& vista = dato;\n    std::cout << vista.numero() << '|' << vista.codigo();\n    return 0;\n}\n",
+          "answers": [
+            "7|9"
+          ],
+          "outputComparison": "exact",
+          "explanation": "La llamada a numero utiliza la implementación final de NumeroReservado y devuelve siete. La llamada a codigo utiliza la nueva sobrescritura de OperacionExtendida y devuelve nueve. Que una función sea final no obliga a cerrar toda su clase ni impide sobrescribir otras operaciones que sigan permitiéndolo."
+        }
+      },
+      {
+        "id": "block_0004_0002",
+        "block": {
+          "type": "code",
+          "language": "cpp",
+          "code": "#include <iostream>\n\nclass Operacion {\npublic:\n    virtual ~Operacion() = default;\n    virtual int numero() const { return 2; }\n    virtual int codigo() const { return 4; }\n};\nclass NumeroReservado : public Operacion {\npublic:\n    int numero() const final { return 7; }\n    int codigo() const override { return 8; }\n};\nclass OperacionExtendida : public NumeroReservado {\npublic:\n    int codigo() const override { return 9; }\n};\nclass SustitucionInvalida : public NumeroReservado {\npublic:\n    int numero() const { return 11; }\n};\nint main() { return 0; }\n"
+        }
+      },
+      {
+        "id": "block_0005_0003",
+        "block": {
+          "type": "output_prediction",
+          "id": "p3_u8l11_sobrecarga_con_otro_parametro_no_sobrescribe_final",
+          "language": "cpp",
+          "question": "Escribe toda la salida de las tres consultas.",
+          "code": "#include <iostream>\n\nclass Operacion {\npublic:\n    virtual ~Operacion() = default;\n    virtual int numero() const { return 2; }\n    virtual int codigo() const { return 4; }\n};\nclass NumeroReservado : public Operacion {\npublic:\n    int numero() const final { return 7; }\n    int codigo() const override { return 8; }\n};\nclass OperacionExtendida : public NumeroReservado {\npublic:\n    int codigo() const override { return 9; }\n};\nclass ConAlternativa : public NumeroReservado {\npublic:\n    using NumeroReservado::numero;\n    int numero(int alternativa) const { return alternativa; }\n};\nint main() {\n    ConAlternativa dato;\n    const Operacion& vista = dato;\n    std::cout << dato.numero() << '|' << dato.numero(12) << '|'\n              << vista.numero();\n    return 0;\n}\n",
+          "answers": [
+            "7|12|7"
+          ],
+          "outputComparison": "exact",
+          "explanation": "dato.numero() utiliza la consulta heredada final y devuelve siete. dato.numero(12) utiliza la sobrecarga que recibe un int y devuelve doce. La llamada sin argumentos mediante vista sigue utilizando la operación virtual final y devuelve siete. Añadir la sobrecarga no sustituyó esa operación."
+        }
+      },
+      {
+        "id": "block_0007_0005",
+        "block": {
+          "type": "inline_fill_code",
+          "id": "p3_u8l11_cerrar_operacion_y_clase_con_alcances_distintos",
+          "question": "Completa cada declaración para cumplir las dos restricciones del enunciado: conservar la implementación de id() en las derivadas de InformeEstable e impedir nuevas derivadas de InformeCerrado. Las demás operaciones deben seguir siendo utilizables.",
+          "template": "class Informe {\npublic:\n    virtual ~Informe() = default;\n    virtual int id() const = 0;\n    virtual void escribir(std::ostream& salida) const = 0;\n};\nclass InformeEstable : public Informe {\npublic:\n    int id() const [] { return 7; }\n    void escribir(std::ostream& salida) const override { salida << \"Estable\"; }\n};\nclass InformeExtendido : public InformeEstable {\npublic:\n    void escribir(std::ostream& salida) const override { salida << \"Extendido\"; }\n};\nclass InformeCerrado [] : public InformeEstable {\npublic:\n    void escribir(std::ostream& salida) const override { salida << \"Cerrado\"; }\n};\n",
+          "answers": [
+            "final",
+            "final"
+          ],
+          "answerAlternatives": [
+            [
+              "final",
+              "override final",
+              "final override"
+            ],
+            [
+              "final"
+            ]
+          ],
+          "explanation": "id() sobrescribe una operación virtual de Informe y final impide otra sobrescritura en sus derivadas. La clase InformeEstable sigue abierta, por eso InformeExtendido puede cambiar escribir. final después del nombre InformeCerrado impide utilizar esa clase como base de una nueva derivada, sin impedir que herede de InformeEstable."
+        }
+      },
+      {
+        "id": "block_0008_0001",
+        "block": {
+          "type": "code",
+          "language": "cpp",
+          "code": "#include <iostream>\n\nclass Informe {\npublic:\n    virtual ~Informe() = default;\n    virtual int id() const = 0;\n    virtual void escribir(std::ostream& salida) const = 0;\n};\nclass InformeEstable : public Informe {\npublic:\n    int id() const final { return 7; }\n    void escribir(std::ostream& salida) const override { salida << \"Estable\"; }\n};\nclass InformeExtendido : public InformeEstable {\npublic:\n    void escribir(std::ostream& salida) const override { salida << \"Extendido\"; }\n};\nclass InformeCerrado final : public InformeEstable {\npublic:\n    void escribir(std::ostream& salida) const override { salida << \"Cerrado\"; }\n};\nvoid presentar(const Informe& dato) {\n    std::cout << dato.id() << ':';\n    dato.escribir(std::cout);\n}\nint main() {\n    InformeExtendido extendido;\n    InformeCerrado cerrado;\n    presentar(extendido);\n    std::cout << '|';\n    presentar(cerrado);\n    return 0;\n}\n"
+        }
+      },
+      {
+        "id": "block_0009_0002",
+        "block": {
+          "type": "code",
+          "language": "cpp",
+          "code": "#include <iostream>\n\nclass Informe {\npublic:\n    virtual ~Informe() = default;\n    virtual int id() const = 0;\n    virtual void escribir(std::ostream& salida) const = 0;\n};\nclass InformeEstable : public Informe {\npublic:\n    int id() const final { return 7; }\n    void escribir(std::ostream& salida) const override { salida << \"Estable\"; }\n};\nclass InformeExtendido : public InformeEstable {\npublic:\n    void escribir(std::ostream& salida) const override { salida << \"Extendido\"; }\n};\nclass InformeCerrado final : public InformeEstable {\npublic:\n    void escribir(std::ostream& salida) const override { salida << \"Cerrado\"; }\n};\nclass Otro : public InformeEstable {\npublic:\n    int id() const { return 9; }\n};\nint main() { return 0; }\n"
+        }
+      }
+    ]
   }
 }

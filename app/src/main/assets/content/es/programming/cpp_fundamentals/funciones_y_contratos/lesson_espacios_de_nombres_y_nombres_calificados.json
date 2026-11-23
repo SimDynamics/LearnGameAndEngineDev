@@ -533,7 +533,7 @@
         },
         {
           "type": "cpp_compiler",
-          "initialCode": "#include <iostream>\n#include <vector>\n\nint main() {\n    // Construye los espacios de nombres, las funciones, la lectura y el informe.\n    return 0;\n}\n",
+          "initialCode": "#include <iostream>\n#include <vector>\n\nint main() {\n    // Construye los espacios de nombres, las funciones, la lectura y el informe.\n    \n    return 0;\n}\n",
           "outputCheck": {
             "inputComparison": "tokens",
             "cases": [
@@ -811,7 +811,7 @@
         },
         {
           "type": "cpp_compiler",
-          "initialCode": "#include <iostream>\n#include <vector>\n\nnamespace Pedido {\n    bool datos_validos(const std::vector<int>& piezas) {\n        if (piezas.size() > 6) {\n            return false;\n        }\n\n        for (int cantidad : piezas) {\n            if (cantidad < 0 || cantidad > 20) {\n                return false;\n            }\n        }\n\n        return true;\n    }\n}\n\nnamespace Estuches {\n    int necesarios(int piezas) {\n        return (piezas + 3) / 4;\n    }\n}\n\nnamespace Cajas {\n    int necesarios(int piezas) {\n        return (piezas + 6) / 7;\n    }\n}\n\nint main() {\n    std::vector<int> piezas;\n    int cantidad_entrada{0};\n\n    std::cin >> cantidad_entrada;\n\n    for (int entrada{0}; entrada < cantidad_entrada; ++entrada) {\n        int dato{0};\n        std::cin >> dato;\n        piezas.push_back(dato);\n    }\n\n    if (!Pedido::datos_validos(piezas)) {\n        std::cout << \"Pedido invalido\";\n        return 0;\n    }\n\n    using Estuches::necesarios;\n\n    int total_estuches = 0;\n    int total_cajas = 0;\n\n    for (int cantidad : piezas) {\n        total_estuches += necesarios(cantidad);\n        total_cajas += Cajas::necesarios(cantidad);\n    }\n\n    std::cout << \"Estuches: \" << total_estuches;\n    std::cout << \"\\nCajas: \" << total_cajas;\n\n    return 0;\n}\n",
+          "initialCode": "#include <iostream>\n#include <vector>\n\nnamespace Pedido {\n    bool datos_validos(const std::vector<int>& piezas) {\n        if (piezas.size() > 6) {\n            return false;\n        }\n\n        for (int cantidad : piezas) {\n            if (cantidad < 0 || cantidad > 20) {\n                return false;\n            }\n        }\n\n        return true;\n    }\n}\n\nnamespace Estuches {\n    int necesarios(int piezas) {\n        return (piezas + 3) / 4;\n    }\n}\n\nnamespace Cajas {\n    int necesarios(int piezas) {\n        return (piezas + 6) / 7;\n    }\n}\n\nint main() {\n    std::vector<int> piezas;\n    int cantidad_entrada{0};\n\n    std::cin >> cantidad_entrada;\n\n    for (int entrada{0}; entrada < cantidad_entrada; ++entrada) {\n        int dato{0};\n\n        std::cin >> dato;\n        piezas.push_back(dato);\n    }\n\n    if (!Pedido::datos_validos(piezas)) {\n        std::cout << \"Pedido invalido\";\n        return 0;\n    }\n\n    using Estuches::necesarios;\n\n    int total_estuches = 0;\n    int total_cajas = 0;\n\n    for (int cantidad : piezas) {\n        total_estuches += necesarios(cantidad);\n        total_cajas += Cajas::necesarios(cantidad);\n    }\n\n    std::cout << \"Estuches: \" << total_estuches;\n    std::cout << \"\\nCajas: \" << total_cajas;\n\n    return 0;\n}\n",
           "outputCheck": {
             "inputComparison": "tokens",
             "cases": [
@@ -2884,6 +2884,16 @@
         "id": "block_0010_0002",
         "beforeSha256": "40d736932cc408b2ee32544412d7524c629aa1aee1eb0fa3972bdc8023b9e439",
         "afterSha256": "e57c4898849c7e5704be852b32eaa68c158950238a2fedb6f4a6bca9ef7ad4d3"
+      },
+      {
+        "id": "politicas_recipientes_construccion_multicaso_editor",
+        "beforeSha256": "71a6b50fc1b2c89fca1d47514e12529156e4690c91ec2d0d05c83d59bf620618",
+        "afterSha256": "3b0c482558740e4bc1c2fe7fe922863ec021eabd961ef1972f9afec9a8c18242"
+      },
+      {
+        "id": "block_0009_0008",
+        "beforeSha256": "26167b40cd1869346d0fcc2b3820c8bfef04e40023407aeccf7c3cdd1e81fcd0",
+        "afterSha256": "4e291200ea9b94a10feb642fa6a6ff5a08a47d1e47139cc24bb9b5aa66c68d8e"
       }
     ],
     "sourceFormatRevisions": [
@@ -3077,6 +3087,178 @@
             "Pedido invalido"
           ],
           "explanation": "La validación examina la colección completa antes de llamar a necesarios. No se presenta un prefijo del plan para 2 ni se calcula el dato negativo."
+        }
+      },
+      {
+        "id": "politicas_recipientes_construccion_multicaso_editor",
+        "block": {
+          "type": "cpp_compiler",
+          "initialCode": "#include <iostream>\n#include <vector>\n\nint main() {\n    // Construye los espacios de nombres, las funciones, la lectura y el informe.\n    return 0;\n}\n",
+          "outputCheck": {
+            "inputComparison": "tokens",
+            "cases": [
+              {
+                "standardInput": "4 0 4 7 20",
+                "outputs": [
+                  "Estuches: 8\nCajas: 5",
+                  "Estuches: 8\nCajas: 5\n"
+                ],
+                "explanation": "Para los pedidos cero, cuatro, siete y veinte, los estuches necesarios son 0, 1, 2 y 5; las cajas necesarias son 0, 1, 1 y 3. Al acumular por pedido aparecen Estuches: 8 y Cajas: 5. El pedido sin piezas no añade recipientes y ninguno comparte sus sobrantes con otro.",
+                "reviewFeedback": [
+                  {
+                    "outputs": [
+                      ""
+                    ],
+                    "text": "No se recibió el informe. Revisa cada pedido por separado, incluidos el vacío y las capacidades exactas. Acumula después las necesidades de cada política sin juntar previamente todas las piezas."
+                  }
+                ]
+              },
+              {
+                "standardInput": "0",
+                "outputs": [
+                  "Estuches: 0\nCajas: 0",
+                  "Estuches: 0\nCajas: 0\n"
+                ],
+                "explanation": "La cantidad cero produce una colección vacía válida. No se llama a ningún cálculo individual y ambos contadores permanecen en cero. Las dos líneas son Estuches: 0 y Cajas: 0; no corresponde un rechazo.",
+                "reviewFeedback": [
+                  {
+                    "outputs": [
+                      ""
+                    ],
+                    "text": "No se recibió el informe. Vacío está permitido y los contadores necesitan su inicialización local aunque el recorrido no tenga vueltas. Presenta ambos rótulos con sus totales, sin tratar la ausencia de pedidos como un rechazo."
+                  }
+                ]
+              },
+              {
+                "standardInput": "6 20 20 20 20 20 20",
+                "outputs": [
+                  "Estuches: 30\nCajas: 18",
+                  "Estuches: 30\nCajas: 18\n"
+                ],
+                "explanation": "Cada pedido de veinte piezas requiere cinco estuches o tres cajas. Hay seis pedidos independientes: sus totales son treinta y dieciocho, por lo que aparecen Estuches: 30 y Cajas: 18. Tanto la cantidad de pedidos como sus piezas están en los extremos admitidos.",
+                "reviewFeedback": [
+                  {
+                    "outputs": [
+                      ""
+                    ],
+                    "text": "No se recibió el informe. La colección alcanza el tamaño máximo válido y cada pedido también está en su extremo superior. Comprueba la inclusión de ambas fronteras y la acumulación por pedido en cada política."
+                  }
+                ]
+              },
+              {
+                "standardInput": "1 0",
+                "outputs": [
+                  "Estuches: 0\nCajas: 0",
+                  "Estuches: 0\nCajas: 0\n"
+                ],
+                "explanation": "El pedido tiene cero piezas y no consume ningún recipiente. Ambas políticas devuelven cero: Estuches: 0 y Cajas: 0. No es lo mismo que no tener pedidos, aunque sus totales coincidan; la colección debe conservar ese elemento.",
+                "reviewFeedback": [
+                  {
+                    "outputs": [
+                      ""
+                    ],
+                    "text": "No se recibió el informe. Existe un pedido válido sin piezas. Comprueba que las funciones no añaden un recipiente cuando el resto es cero y que el dato original sigue perteneciendo a la colección."
+                  }
+                ]
+              },
+              {
+                "standardInput": "1 4",
+                "outputs": [
+                  "Estuches: 1\nCajas: 1",
+                  "Estuches: 1\nCajas: 1\n"
+                ],
+                "explanation": "Cuatro piezas llenan un estuche y caben también en una caja. Se obtiene Estuches: 1 y Cajas: 1. La igualdad con la capacidad no necesita un segundo estuche; sólo un resto pendiente exige otro recipiente.",
+                "reviewFeedback": [
+                  {
+                    "outputs": [
+                      ""
+                    ],
+                    "text": "No se recibió el informe. Comprueba qué ocurre cuando la división por la capacidad es exacta. No debe añadirse otro recipiente por una cantidad de piezas que ya está completamente empaquetada."
+                  }
+                ]
+              },
+              {
+                "standardInput": "1 7",
+                "outputs": [
+                  "Estuches: 2\nCajas: 1",
+                  "Estuches: 2\nCajas: 1\n"
+                ],
+                "explanation": "Siete piezas necesitan dos estuches de capacidad cuatro y una caja de capacidad siete. Por eso aparecen Estuches: 2 y Cajas: 1. Las funciones conservan nombres iguales, pero aplican capacidades diferentes.",
+                "reviewFeedback": [
+                  {
+                    "outputs": [
+                      ""
+                    ],
+                    "text": "No se recibió el informe. Este pedido distingue las capacidades: el espacio del nombre debe llevar a la regla prevista. Comprueba cada llamada y el tratamiento del resto en cada política."
+                  }
+                ]
+              },
+              {
+                "standardInput": "1 -1",
+                "outputs": [
+                  "Pedido invalido",
+                  "Pedido invalido\n"
+                ],
+                "explanation": "Menos uno está fuera del dominio de piezas. La validación rechaza toda la colección antes de calcular y la única salida es Pedido invalido. No se transforma el dato negativo en una necesidad de recipientes.",
+                "reviewFeedback": [
+                  {
+                    "outputs": [
+                      ""
+                    ],
+                    "text": "No se recibió ninguna salida. Hay un pedido con piezas negativas. Comprueba la validación de la colección y presenta Pedido invalido sin calcular ni imprimir un prefijo de totales."
+                  }
+                ]
+              },
+              {
+                "standardInput": "1 21",
+                "outputs": [
+                  "Pedido invalido",
+                  "Pedido invalido\n"
+                ],
+                "explanation": "Veintiuno supera el máximo de veinte piezas por pedido. Aunque la colección tenga un tamaño válido, debe aparecer sólo Pedido invalido. La comprobación del tamaño no sustituye revisar cada cantidad.",
+                "reviewFeedback": [
+                  {
+                    "outputs": [
+                      ""
+                    ],
+                    "text": "No se recibió ninguna salida. Este pedido supera el máximo de piezas admitido. Comprueba que se revisan los valores individuales antes de llamar a cualquiera de las políticas y que se muestra Pedido invalido."
+                  }
+                ]
+              },
+              {
+                "standardInput": "7 0 0 0 0 0 0 0",
+                "outputs": [
+                  "Pedido invalido",
+                  "Pedido invalido\n"
+                ],
+                "explanation": "Los siete pedidos contienen cero piezas, pero el tamaño supera el máximo de seis. Por eso la salida completa es Pedido invalido. Que cada elemento cumpla su intervalo no convierte la colección completa en válida.",
+                "reviewFeedback": [
+                  {
+                    "outputs": [
+                      ""
+                    ],
+                    "text": "No se recibió ninguna salida. Todos los valores individuales son válidos, pero la colección tiene demasiados elementos. Comprueba el límite de tamaño antes de calcular totales y presenta Pedido invalido."
+                  }
+                ]
+              },
+              {
+                "standardInput": "2 1 1",
+                "outputs": [
+                  "Estuches: 2\nCajas: 2",
+                  "Estuches: 2\nCajas: 2\n"
+                ],
+                "explanation": "Cada uno de los dos pedidos tiene una pieza y necesita su propio estuche y su propia caja. Los totales son Estuches: 2 y Cajas: 2. Si se sumaran primero las dos piezas, cabrían en un recipiente de cada política y se obtendría un plan distinto del solicitado.",
+                "reviewFeedback": [
+                  {
+                    "outputs": [
+                      ""
+                    ],
+                    "text": "No se recibió el informe. La pertenencia a un espacio no garantiza empaquetar por pedido. Comprueba que cada elemento tiene su propia llamada y que sólo después se suman sus necesidades; los sobrantes de pedidos diferentes no comparten recipiente."
+                  }
+                ]
+              }
+            ]
+          }
         }
       }
     ]

@@ -51,7 +51,7 @@
           "id": "p3_u6l12_consulta_por_referencia_const",
           "language": "cpp",
           "question": "Escribe los dos valores consultados y el valor final de original, en el orden de la impresión.",
-          "code": "#include <iostream>\n#include <memory>\n#include <utility>\n#include <new>\n\nclass Paquete {\npublic:\n    explicit Paquete(int valor) : dato_{std::make_unique<int>(valor)} {}\n    Paquete(const Paquete& otra) : dato_{} {\n        if (otra.dato_) { dato_ = std::make_unique<int>(*otra.dato_); }\n    }\n    Paquete(Paquete&&) noexcept = default;\n    ~Paquete() = default;\n    int valor() const noexcept { return dato_ ? *dato_ : -1; }\n    void fijar(int valor) noexcept { if (dato_) { *dato_ = valor; } }\nprivate:\n    std::unique_ptr<int> dato_;\n};\nint observar(const Paquete& dato) noexcept { return dato.valor(); }\nint main() {\n    Paquete original{4};\n    int a = observar(original);\n    int b = observar(std::move(original));\n    std::cout << a << ':' << b << ':' << original.valor();\n    return 0;\n}\n",
+          "code": "#include <iostream>\n#include <memory>\n#include <utility>\n#include <new>\n\nclass Paquete {\npublic:\n    explicit Paquete(int valor) : dato_{std::make_unique<int>(valor)} {}\n    Paquete(const Paquete& otra) : dato_{} {\n        if (otra.dato_) { dato_ = std::make_unique<int>(*otra.dato_); }\n    }\n    Paquete(Paquete&&) noexcept = default;\n    ~Paquete() = default;\n    int valor() const noexcept { return dato_ ? *dato_ : -1; }\n    void fijar(int valor) noexcept { if (dato_) { *dato_ = valor; } }\nprivate:\n    std::unique_ptr<int> dato_;\n};\nint observar(const Paquete& dato) noexcept { return dato.valor(); }\nint main() {\n    Paquete original{4};\n    int a = observar(original);\n    int b = observar(std::move(original));\n\n    std::cout << a << ':' << b << ':' << original.valor();\n\n    return 0;\n}\n",
           "answers": [
             "4:4:4"
           ],
@@ -75,7 +75,7 @@
           "id": "p3_u6l12_parametro_por_valor_copia_y_movimiento",
           "language": "cpp",
           "question": "Escribe la línea posterior a cada llamada: primero el resultado de cambiar y después el estado observado en original.",
-          "code": "#include <iostream>\n#include <memory>\n#include <utility>\n#include <new>\n\nclass Paquete {\npublic:\n    explicit Paquete(int valor) : dato_{std::make_unique<int>(valor)} {}\n    Paquete(const Paquete& otra) : dato_{} {\n        if (otra.dato_) { dato_ = std::make_unique<int>(*otra.dato_); }\n    }\n    Paquete(Paquete&&) noexcept = default;\n    ~Paquete() = default;\n    int valor() const noexcept { return dato_ ? *dato_ : -1; }\n    void fijar(int valor) noexcept { if (dato_) { *dato_ = valor; } }\nprivate:\n    std::unique_ptr<int> dato_;\n};\nint cambiar(Paquete recibido) noexcept {\n    recibido.fijar(8);\n    return recibido.valor();\n}\nint main() {\n    Paquete original{4};\n    int a = cambiar(original);\n    std::cout << a << ':' << original.valor() << '\\n';\n    int b = cambiar(std::move(original));\n    std::cout << b << ':' << original.valor();\n    return 0;\n}\n",
+          "code": "#include <iostream>\n#include <memory>\n#include <utility>\n#include <new>\n\nclass Paquete {\npublic:\n    explicit Paquete(int valor) : dato_{std::make_unique<int>(valor)} {}\n    Paquete(const Paquete& otra) : dato_{} {\n        if (otra.dato_) { dato_ = std::make_unique<int>(*otra.dato_); }\n    }\n    Paquete(Paquete&&) noexcept = default;\n    ~Paquete() = default;\n    int valor() const noexcept { return dato_ ? *dato_ : -1; }\n    void fijar(int valor) noexcept { if (dato_) { *dato_ = valor; } }\nprivate:\n    std::unique_ptr<int> dato_;\n};\n\nint cambiar(Paquete recibido) noexcept {\n    recibido.fijar(8);\n    return recibido.valor();\n}\n\nint main() {\n    Paquete original{4};\n    int a = cambiar(original);\n\n    std::cout << a << ':' << original.valor() << '\\n';\n    int b = cambiar(std::move(original));\n    std::cout << b << ':' << original.valor();\n\n    return 0;\n}\n",
           "answers": [
             "8:4\n8:-1"
           ],
@@ -131,7 +131,7 @@
           "id": "p3_u6l12_referencia_de_oferta_sin_consumo",
           "language": "cpp",
           "question": "¿Qué muestran el valor visto por la función y el valor que conserva original?",
-          "code": "#include <iostream>\n#include <memory>\n#include <utility>\n#include <new>\n\nclass Paquete {\npublic:\n    explicit Paquete(int valor) : dato_{std::make_unique<int>(valor)} {}\n    Paquete(const Paquete& otra) : dato_{} {\n        if (otra.dato_) { dato_ = std::make_unique<int>(*otra.dato_); }\n    }\n    Paquete(Paquete&&) noexcept = default;\n    ~Paquete() = default;\n    int valor() const noexcept { return dato_ ? *dato_ : -1; }\n    void fijar(int valor) noexcept { if (dato_) { *dato_ = valor; } }\nprivate:\n    std::unique_ptr<int> dato_;\n};\nint ver_oferta(Paquete&& ofrecido) noexcept { return ofrecido.valor(); }\nint main() {\n    Paquete original{6};\n    int visto = ver_oferta(std::move(original));\n    std::cout << visto << ':' << original.valor();\n    return 0;\n}\n",
+          "code": "#include <iostream>\n#include <memory>\n#include <utility>\n#include <new>\n\nclass Paquete {\npublic:\n    explicit Paquete(int valor) : dato_{std::make_unique<int>(valor)} {}\n    Paquete(const Paquete& otra) : dato_{} {\n        if (otra.dato_) { dato_ = std::make_unique<int>(*otra.dato_); }\n    }\n    Paquete(Paquete&&) noexcept = default;\n    ~Paquete() = default;\n    int valor() const noexcept { return dato_ ? *dato_ : -1; }\n    void fijar(int valor) noexcept { if (dato_) { *dato_ = valor; } }\nprivate:\n    std::unique_ptr<int> dato_;\n};\nint ver_oferta(Paquete&& ofrecido) noexcept { return ofrecido.valor(); }\nint main() {\n    Paquete original{6};\n    int visto = ver_oferta(std::move(original));\n\n    std::cout << visto << ':' << original.valor();\n\n    return 0;\n}\n",
           "answers": [
             "6:6"
           ],
@@ -159,7 +159,7 @@
           "id": "p3_u6l12_copia_desde_parametro_con_nombre",
           "language": "cpp",
           "question": "¿Qué muestran el resultado de cambiar la copia local y el dato que conserva original?",
-          "code": "#include <iostream>\n#include <memory>\n#include <utility>\n#include <new>\n\nclass Paquete {\npublic:\n    explicit Paquete(int valor) : dato_{std::make_unique<int>(valor)} {}\n    Paquete(const Paquete& otra) : dato_{} {\n        if (otra.dato_) { dato_ = std::make_unique<int>(*otra.dato_); }\n    }\n    Paquete(Paquete&&) noexcept = default;\n    ~Paquete() = default;\n    int valor() const noexcept { return dato_ ? *dato_ : -1; }\n    void fijar(int valor) noexcept { if (dato_) { *dato_ = valor; } }\nprivate:\n    std::unique_ptr<int> dato_;\n};\nint cambiar_copia(Paquete&& ofrecido) {\n    Paquete copia{ofrecido};\n    copia.fijar(9);\n    return copia.valor();\n}\nint main() {\n    Paquete original{3};\n    int cambiado = cambiar_copia(std::move(original));\n    std::cout << cambiado << ':' << original.valor();\n    return 0;\n}\n",
+          "code": "#include <iostream>\n#include <memory>\n#include <utility>\n#include <new>\n\nclass Paquete {\npublic:\n    explicit Paquete(int valor) : dato_{std::make_unique<int>(valor)} {}\n    Paquete(const Paquete& otra) : dato_{} {\n        if (otra.dato_) { dato_ = std::make_unique<int>(*otra.dato_); }\n    }\n    Paquete(Paquete&&) noexcept = default;\n    ~Paquete() = default;\n    int valor() const noexcept { return dato_ ? *dato_ : -1; }\n    void fijar(int valor) noexcept { if (dato_) { *dato_ = valor; } }\nprivate:\n    std::unique_ptr<int> dato_;\n};\n\nint cambiar_copia(Paquete&& ofrecido) {\n    Paquete copia{ofrecido};\n    copia.fijar(9);\n    return copia.valor();\n}\n\nint main() {\n    Paquete original{3};\n    int cambiado = cambiar_copia(std::move(original));\n\n    std::cout << cambiado << ':' << original.valor();\n\n    return 0;\n}\n",
           "answers": [
             "9:3"
           ],
@@ -187,7 +187,7 @@
           "id": "p3_u6l12_rechazo_tras_recibir_por_valor",
           "language": "cpp",
           "question": "Escribe el bool devuelto por aceptar_cero y el valor que muestra después original.",
-          "code": "#include <iostream>\n#include <memory>\n#include <utility>\n#include <new>\n\nclass Paquete {\npublic:\n    explicit Paquete(int valor) : dato_{std::make_unique<int>(valor)} {}\n    Paquete(const Paquete& otra) : dato_{} {\n        if (otra.dato_) { dato_ = std::make_unique<int>(*otra.dato_); }\n    }\n    Paquete(Paquete&&) noexcept = default;\n    ~Paquete() = default;\n    int valor() const noexcept { return dato_ ? *dato_ : -1; }\n    void fijar(int valor) noexcept { if (dato_) { *dato_ = valor; } }\nprivate:\n    std::unique_ptr<int> dato_;\n};\nbool aceptar_cero(Paquete recibido) noexcept { return recibido.valor() == 0; }\nint main() {\n    Paquete original{4};\n    bool aceptado = aceptar_cero(std::move(original));\n    std::cout << aceptado << ':' << original.valor();\n    return 0;\n}\n",
+          "code": "#include <iostream>\n#include <memory>\n#include <utility>\n#include <new>\n\nclass Paquete {\npublic:\n    explicit Paquete(int valor) : dato_{std::make_unique<int>(valor)} {}\n    Paquete(const Paquete& otra) : dato_{} {\n        if (otra.dato_) { dato_ = std::make_unique<int>(*otra.dato_); }\n    }\n    Paquete(Paquete&&) noexcept = default;\n    ~Paquete() = default;\n    int valor() const noexcept { return dato_ ? *dato_ : -1; }\n    void fijar(int valor) noexcept { if (dato_) { *dato_ = valor; } }\nprivate:\n    std::unique_ptr<int> dato_;\n};\nbool aceptar_cero(Paquete recibido) noexcept { return recibido.valor() == 0; }\nint main() {\n    Paquete original{4};\n    bool aceptado = aceptar_cero(std::move(original));\n\n    std::cout << aceptado << ':' << original.valor();\n\n    return 0;\n}\n",
           "answers": [
             "0:-1"
           ],
@@ -223,7 +223,7 @@
           "id": "p3_u6l12_resultado_directo_del_mismo_tipo",
           "language": "cpp",
           "question": "El programa es válido en C++23. ¿Qué valor conserva el objeto lista construido por crear()?",
-          "code": "#include <iostream>\n#include <memory>\n#include <utility>\n#include <new>\n\nclass Fija {\npublic:\n    explicit Fija(int valor) : valor_{valor} {}\n    Fija(const Fija&) = delete;\n    Fija(Fija&&) = delete;\n    ~Fija() = default;\n    int valor() const noexcept { return valor_; }\nprivate:\n    int valor_;\n};\nFija crear() { return Fija{7}; }\nint main() {\n    Fija lista = crear();\n    std::cout << lista.valor();\n    return 0;\n}\n",
+          "code": "#include <iostream>\n#include <memory>\n#include <utility>\n#include <new>\n\nclass Fija {\npublic:\n    explicit Fija(int valor) : valor_{valor} {}\n    Fija(const Fija&) = delete;\n    Fija(Fija&&) = delete;\n    ~Fija() = default;\n    int valor() const noexcept { return valor_; }\nprivate:\n    int valor_;\n};\nFija crear() { return Fija{7}; }\nint main() {\n    Fija lista = crear();\n\n    std::cout << lista.valor();\n\n    return 0;\n}\n",
           "answers": [
             "7"
           ],
@@ -295,7 +295,7 @@
           "id": "p3_u6l12_retorno_de_local_con_nombre",
           "language": "cpp",
           "question": "¿Qué valor muestra listo después de completar preparar?",
-          "code": "#include <iostream>\n#include <memory>\n#include <utility>\n#include <new>\n\nclass Paquete {\npublic:\n    explicit Paquete(int valor) : dato_{std::make_unique<int>(valor)} {}\n    Paquete(const Paquete& otra) : dato_{} {\n        if (otra.dato_) { dato_ = std::make_unique<int>(*otra.dato_); }\n    }\n    Paquete(Paquete&&) noexcept = default;\n    ~Paquete() = default;\n    int valor() const noexcept { return dato_ ? *dato_ : -1; }\n    void fijar(int valor) noexcept { if (dato_) { *dato_ = valor; } }\nprivate:\n    std::unique_ptr<int> dato_;\n};\nPaquete preparar(int valor) {\n    Paquete resultado{valor};\n    return resultado;\n}\nint main() {\n    Paquete listo = preparar(7);\n    std::cout << listo.valor();\n    return 0;\n}\n",
+          "code": "#include <iostream>\n#include <memory>\n#include <utility>\n#include <new>\n\nclass Paquete {\npublic:\n    explicit Paquete(int valor) : dato_{std::make_unique<int>(valor)} {}\n    Paquete(const Paquete& otra) : dato_{} {\n        if (otra.dato_) { dato_ = std::make_unique<int>(*otra.dato_); }\n    }\n    Paquete(Paquete&&) noexcept = default;\n    ~Paquete() = default;\n    int valor() const noexcept { return dato_ ? *dato_ : -1; }\n    void fijar(int valor) noexcept { if (dato_) { *dato_ = valor; } }\nprivate:\n    std::unique_ptr<int> dato_;\n};\n\nPaquete preparar(int valor) {\n    Paquete resultado{valor};\n    return resultado;\n}\n\nint main() {\n    Paquete listo = preparar(7);\n\n    std::cout << listo.valor();\n\n    return 0;\n}\n",
           "answers": [
             "7"
           ],
@@ -327,7 +327,7 @@
           "id": "p3_u6l12_retorno_de_parametro_por_valor",
           "language": "cpp",
           "question": "Escribe los valores finales de original, copia y transferido, en el orden del programa.",
-          "code": "#include <iostream>\n#include <memory>\n#include <utility>\n#include <new>\n\nclass Paquete {\npublic:\n    explicit Paquete(int valor) : dato_{std::make_unique<int>(valor)} {}\n    Paquete(const Paquete& otra) : dato_{} {\n        if (otra.dato_) { dato_ = std::make_unique<int>(*otra.dato_); }\n    }\n    Paquete(Paquete&&) noexcept = default;\n    ~Paquete() = default;\n    int valor() const noexcept { return dato_ ? *dato_ : -1; }\n    void fijar(int valor) noexcept { if (dato_) { *dato_ = valor; } }\nprivate:\n    std::unique_ptr<int> dato_;\n};\nPaquete devolver(Paquete recibido) { return recibido; }\nint main() {\n    Paquete original{5};\n    Paquete copia = devolver(original);\n    Paquete transferido = devolver(std::move(original));\n    copia.fijar(2);\n    std::cout << original.valor() << ':' << copia.valor() << ':' << transferido.valor();\n    return 0;\n}\n",
+          "code": "#include <iostream>\n#include <memory>\n#include <utility>\n#include <new>\n\nclass Paquete {\npublic:\n    explicit Paquete(int valor) : dato_{std::make_unique<int>(valor)} {}\n    Paquete(const Paquete& otra) : dato_{} {\n        if (otra.dato_) { dato_ = std::make_unique<int>(*otra.dato_); }\n    }\n    Paquete(Paquete&&) noexcept = default;\n    ~Paquete() = default;\n    int valor() const noexcept { return dato_ ? *dato_ : -1; }\n    void fijar(int valor) noexcept { if (dato_) { *dato_ = valor; } }\nprivate:\n    std::unique_ptr<int> dato_;\n};\nPaquete devolver(Paquete recibido) { return recibido; }\nint main() {\n    Paquete original{5};\n    Paquete copia = devolver(original);\n    Paquete transferido = devolver(std::move(original));\n    copia.fijar(2);\n    std::cout << original.valor() << ':' << copia.valor() << ':' << transferido.valor();\n\n    return 0;\n}\n",
           "answers": [
             "-1:2:5"
           ],
@@ -355,7 +355,7 @@
           "id": "p3_u6l12_retorno_desde_referencia_de_oferta",
           "language": "cpp",
           "question": "¿Qué muestran original y recibido después de devolver_oferta?",
-          "code": "#include <iostream>\n#include <memory>\n#include <utility>\n#include <new>\n\nclass Paquete {\npublic:\n    explicit Paquete(int valor) : dato_{std::make_unique<int>(valor)} {}\n    Paquete(const Paquete& otra) : dato_{} {\n        if (otra.dato_) { dato_ = std::make_unique<int>(*otra.dato_); }\n    }\n    Paquete(Paquete&&) noexcept = default;\n    ~Paquete() = default;\n    int valor() const noexcept { return dato_ ? *dato_ : -1; }\n    void fijar(int valor) noexcept { if (dato_) { *dato_ = valor; } }\nprivate:\n    std::unique_ptr<int> dato_;\n};\nPaquete devolver_oferta(Paquete&& ofrecido) { return ofrecido; }\nint main() {\n    Paquete original{8};\n    Paquete recibido = devolver_oferta(std::move(original));\n    std::cout << original.valor() << ':' << recibido.valor();\n    return 0;\n}\n",
+          "code": "#include <iostream>\n#include <memory>\n#include <utility>\n#include <new>\n\nclass Paquete {\npublic:\n    explicit Paquete(int valor) : dato_{std::make_unique<int>(valor)} {}\n    Paquete(const Paquete& otra) : dato_{} {\n        if (otra.dato_) { dato_ = std::make_unique<int>(*otra.dato_); }\n    }\n    Paquete(Paquete&&) noexcept = default;\n    ~Paquete() = default;\n    int valor() const noexcept { return dato_ ? *dato_ : -1; }\n    void fijar(int valor) noexcept { if (dato_) { *dato_ = valor; } }\nprivate:\n    std::unique_ptr<int> dato_;\n};\nPaquete devolver_oferta(Paquete&& ofrecido) { return ofrecido; }\nint main() {\n    Paquete original{8};\n    Paquete recibido = devolver_oferta(std::move(original));\n\n    std::cout << original.valor() << ':' << recibido.valor();\n\n    return 0;\n}\n",
           "answers": [
             "-1:8"
           ],
@@ -383,7 +383,7 @@
           "id": "p3_u6l12_resultado_copiado_desde_lectura",
           "language": "cpp",
           "question": "¿Qué muestran original y copia después de modificar copia?",
-          "code": "#include <iostream>\n#include <memory>\n#include <utility>\n#include <new>\n\nclass Paquete {\npublic:\n    explicit Paquete(int valor) : dato_{std::make_unique<int>(valor)} {}\n    Paquete(const Paquete& otra) : dato_{} {\n        if (otra.dato_) { dato_ = std::make_unique<int>(*otra.dato_); }\n    }\n    Paquete(Paquete&&) noexcept = default;\n    ~Paquete() = default;\n    int valor() const noexcept { return dato_ ? *dato_ : -1; }\n    void fijar(int valor) noexcept { if (dato_) { *dato_ = valor; } }\nprivate:\n    std::unique_ptr<int> dato_;\n};\nPaquete duplicar(const Paquete& original) { return original; }\nint main() {\n    Paquete original{6};\n    Paquete copia = duplicar(original);\n    copia.fijar(1);\n    std::cout << original.valor() << ':' << copia.valor();\n    return 0;\n}\n",
+          "code": "#include <iostream>\n#include <memory>\n#include <utility>\n#include <new>\n\nclass Paquete {\npublic:\n    explicit Paquete(int valor) : dato_{std::make_unique<int>(valor)} {}\n    Paquete(const Paquete& otra) : dato_{} {\n        if (otra.dato_) { dato_ = std::make_unique<int>(*otra.dato_); }\n    }\n    Paquete(Paquete&&) noexcept = default;\n    ~Paquete() = default;\n    int valor() const noexcept { return dato_ ? *dato_ : -1; }\n    void fijar(int valor) noexcept { if (dato_) { *dato_ = valor; } }\nprivate:\n    std::unique_ptr<int> dato_;\n};\nPaquete duplicar(const Paquete& original) { return original; }\nint main() {\n    Paquete original{6};\n    Paquete copia = duplicar(original);\n    copia.fijar(1);\n    std::cout << original.valor() << ':' << copia.valor();\n\n    return 0;\n}\n",
           "answers": [
             "6:1"
           ],
@@ -730,7 +730,7 @@
         {
           "type": "cpp_compiler",
           "language": "cpp",
-          "initialCode": "#include <iostream>\n#include <memory>\n#include <utility>\n#include <new>\n\nclass Tramo {\npublic:\n    Tramo() = default;\n    Tramo(const Tramo& otra);\n    Tramo& operator=(const Tramo& otra);\n    Tramo(Tramo&& otra) noexcept;\n    Tramo& operator=(Tramo&& otra) noexcept;\n    ~Tramo() = default;\n    int cantidad() const noexcept { return cantidad_; }\n    const int* acceso() const noexcept { return datos_.get(); }\n    bool configurar(int cantidad) noexcept;\n    bool leer(int indice, int& resultado) const noexcept;\n    bool escribir(int indice, int valor) noexcept;\n    bool vaciar() noexcept;\n    int sumar() const noexcept;\n    void intercambiar(Tramo& otra) noexcept;\nprivate:\n    std::unique_ptr<int[]> datos_{};\n    int cantidad_ = 0;\n};\nTramo::Tramo(const Tramo& otra) : datos_{}, cantidad_{0} {\n    if (otra.cantidad_ != 0) {\n        datos_ = std::make_unique<int[]>(otra.cantidad_);\n        for (int i = 0; i < otra.cantidad_; ++i) {\n            datos_[i] = otra.datos_[i];\n        }\n        cantidad_ = otra.cantidad_;\n    }\n}\nTramo::Tramo(Tramo&& otra) noexcept\n    : datos_{std::move(otra.datos_)}, cantidad_{otra.cantidad_} {\n    otra.cantidad_ = 0;\n}\nTramo& Tramo::operator=(const Tramo& otra) {\n    if (this != &otra) {\n        Tramo candidata{otra};\n        intercambiar(candidata);\n    }\n    return *this;\n}\nTramo& Tramo::operator=(Tramo&& otra) noexcept {\n    if (this != &otra) {\n        datos_ = std::move(otra.datos_);\n        cantidad_ = otra.cantidad_;\n        otra.cantidad_ = 0;\n    }\n    return *this;\n}\nbool Tramo::configurar(int cantidad) noexcept {\n    if (cantidad < 0 || cantidad > 4) {\n        return false;\n    }\n    if (cantidad == 0) {\n        return vaciar();\n    }\n    try {\n        auto candidata = std::make_unique<int[]>(cantidad);\n        datos_.swap(candidata);\n        cantidad_ = cantidad;\n        return true;\n    } catch (const std::bad_alloc&) {\n        return false;\n    }\n}\nbool Tramo::leer(int indice, int& resultado) const noexcept {\n    if (indice < 0 || indice >= cantidad_) {\n        return false;\n    }\n    resultado = datos_[indice];\n    return true;\n}\nbool Tramo::escribir(int indice, int valor) noexcept {\n    if (indice < 0 || indice >= cantidad_ || valor < 0 || valor > 9) {\n        return false;\n    }\n    datos_[indice] = valor;\n    return true;\n}\n\nbool Tramo::vaciar() noexcept {\n    datos_.reset();\n    cantidad_ = 0;\n    return true;\n}\n\nint Tramo::sumar() const noexcept {\n    int suma = 0;\n    for (int i = 0; i < cantidad_; ++i) {\n        suma += datos_[i];\n    }\n    return suma;\n}\n\nvoid Tramo::intercambiar(Tramo& otra) noexcept {\n    datos_.swap(otra.datos_);\n    std::swap(cantidad_, otra.cantidad_);\n}\nTramo copia_modificada(const Tramo& origen, int indice, int valor) {\n    // El llamador ya comprobó que indice y valor son válidos.\n    (void)origen;\n    (void)indice;\n    (void)valor;\n    return Tramo{};\n}\nbool tomar_si_cabe(Tramo& destino, Tramo&& origen, int limite) noexcept {\n    // Comprueba el límite antes de decidir si consumes el origen ofrecido.\n    (void)destino;\n    (void)origen;\n    (void)limite;\n    return false;\n}\nvoid mostrar(const Tramo& lote) {\n    std::cout << lote.cantidad() << '[';\n    for (int i = 0; i < lote.cantidad(); ++i) {\n        int valor = -1;\n        lote.leer(i, valor);\n        if (i != 0) {\n            std::cout << ',';\n        }\n        std::cout << valor;\n    }\n    std::cout << ']';\n}\nint main() {\n    int ordenes = 0;\n    if (!(std::cin >> ordenes) || ordenes < 1 || ordenes > 12) { return 1; }\n    Tramo tramos[2];\n    if (!tramos[0].configurar(3) || !tramos[1].configurar(1)) { return 1; }\n    tramos[0].escribir(0, 1);\n    tramos[0].escribir(2, 4);\n    tramos[1].escribir(0, 8);\n    for (int i = 0; i < ordenes; ++i) {\n        int op = 0, destino = 0, a = 0, b = 0, c = 0;\n        if (!(std::cin >> op >> destino >> a >> b >> c)) { return 1; }\n        std::cout << \"Antes:A=\"; mostrar(tramos[0]);\n        std::cout << \";B=\"; mostrar(tramos[1]);\n        bool aceptado = false;\n        if (destino >= 0 && destino < 2) {\n            Tramo& actual = tramos[destino];\n            if (op == 1 && a >= 0 && a < 2) {\n                const Tramo& origen = tramos[a];\n                if (b >= 0 && b < origen.cantidad() && c >= 0 && c <= 9) {\n                    try {\n                        actual = copia_modificada(origen, b, c);\n                        aceptado = true;\n                    } catch (const std::bad_alloc&) {\n                        aceptado = false;\n                    }\n                }\n            } else if (op == 2 && a >= 0 && a < 2) {\n                aceptado = tomar_si_cabe(actual, std::move(tramos[a]), b);\n            } else if (op == 3) {\n                aceptado = actual.escribir(a, b);\n            } else if (op == 4) {\n                aceptado = actual.configurar(a);\n            }\n        }\n        std::cout << \";Aceptado:\" << aceptado << \";Ahora:A=\";\n        mostrar(tramos[0]); std::cout << \";B=\"; mostrar(tramos[1]);\n        std::cout << '\\n';\n    }\n    std::cout << \"Sumas:\" << tramos[0].sumar() << ':' << tramos[1].sumar();\n    return 0;\n}\n",
+          "initialCode": "#include <iostream>\n#include <memory>\n#include <utility>\n#include <new>\n\nclass Tramo {\npublic:\n    Tramo() = default;\n    Tramo(const Tramo& otra);\n    Tramo& operator=(const Tramo& otra);\n    Tramo(Tramo&& otra) noexcept;\n    Tramo& operator=(Tramo&& otra) noexcept;\n    ~Tramo() = default;\n    int cantidad() const noexcept { return cantidad_; }\n    const int* acceso() const noexcept { return datos_.get(); }\n    bool configurar(int cantidad) noexcept;\n    bool leer(int indice, int& resultado) const noexcept;\n    bool escribir(int indice, int valor) noexcept;\n    bool vaciar() noexcept;\n    int sumar() const noexcept;\n    void intercambiar(Tramo& otra) noexcept;\nprivate:\n    std::unique_ptr<int[]> datos_{};\n    int cantidad_ = 0;\n};\nTramo::Tramo(const Tramo& otra) : datos_{}, cantidad_{0} {\n    if (otra.cantidad_ != 0) {\n        datos_ = std::make_unique<int[]>(otra.cantidad_);\n        for (int i = 0; i < otra.cantidad_; ++i) {\n            datos_[i] = otra.datos_[i];\n        }\n        cantidad_ = otra.cantidad_;\n    }\n}\nTramo::Tramo(Tramo&& otra) noexcept\n    : datos_{std::move(otra.datos_)}, cantidad_{otra.cantidad_} {\n    otra.cantidad_ = 0;\n}\n\nTramo& Tramo::operator=(const Tramo& otra) {\n    if (this != &otra) {\n        Tramo candidata{otra};\n        intercambiar(candidata);\n    }\n\n    return *this;\n}\n\nTramo& Tramo::operator=(Tramo&& otra) noexcept {\n    if (this != &otra) {\n        datos_ = std::move(otra.datos_);\n        cantidad_ = otra.cantidad_;\n        otra.cantidad_ = 0;\n    }\n\n    return *this;\n}\n\nbool Tramo::configurar(int cantidad) noexcept {\n    if (cantidad < 0 || cantidad > 4) {\n        return false;\n    }\n    if (cantidad == 0) {\n        return vaciar();\n    }\n    try {\n        auto candidata = std::make_unique<int[]>(cantidad);\n        datos_.swap(candidata);\n        cantidad_ = cantidad;\n        return true;\n    } catch (const std::bad_alloc&) {\n        return false;\n    }\n}\n\nbool Tramo::leer(int indice, int& resultado) const noexcept {\n    if (indice < 0 || indice >= cantidad_) {\n        return false;\n    }\n    resultado = datos_[indice];\n    return true;\n}\n\nbool Tramo::escribir(int indice, int valor) noexcept {\n    if (indice < 0 || indice >= cantidad_ || valor < 0 || valor > 9) {\n        return false;\n    }\n    datos_[indice] = valor;\n    return true;\n}\n\nbool Tramo::vaciar() noexcept {\n    datos_.reset();\n    cantidad_ = 0;\n    return true;\n}\n\nint Tramo::sumar() const noexcept {\n    int suma = 0;\n    for (int i = 0; i < cantidad_; ++i) {\n        suma += datos_[i];\n    }\n\n    return suma;\n}\n\nvoid Tramo::intercambiar(Tramo& otra) noexcept {\n    datos_.swap(otra.datos_);\n    std::swap(cantidad_, otra.cantidad_);\n}\n\nTramo copia_modificada(const Tramo& origen, int indice, int valor) {\n    // El llamador ya comprobó que indice y valor son válidos.\n    (void)origen;\n    (void)indice;\n    (void)valor;\n    return Tramo{};\n}\n\nbool tomar_si_cabe(Tramo& destino, Tramo&& origen, int limite) noexcept {\n    // Comprueba el límite antes de decidir si consumes el origen ofrecido.\n    (void)destino;\n    (void)origen;\n    (void)limite;\n    return false;\n}\n\nvoid mostrar(const Tramo& lote) {\n    std::cout << lote.cantidad() << '[';\n    for (int i = 0; i < lote.cantidad(); ++i) {\n        int valor = -1;\n        lote.leer(i, valor);\n        if (i != 0) {\n            std::cout << ',';\n        }\n        std::cout << valor;\n    }\n    std::cout << ']';\n}\n\nint main() {\n    int ordenes = 0;\n    if (!(std::cin >> ordenes) || ordenes < 1 || ordenes > 12) { return 1; }\n    Tramo tramos[2];\n    if (!tramos[0].configurar(3) || !tramos[1].configurar(1)) { return 1; }\n    tramos[0].escribir(0, 1);\n    tramos[0].escribir(2, 4);\n    tramos[1].escribir(0, 8);\n    for (int i = 0; i < ordenes; ++i) {\n        int op = 0, destino = 0, a = 0, b = 0, c = 0;\n        if (!(std::cin >> op >> destino >> a >> b >> c)) { return 1; }\n        std::cout << \"Antes:A=\"; mostrar(tramos[0]);\n        std::cout << \";B=\"; mostrar(tramos[1]);\n        bool aceptado = false;\n\n        if (destino >= 0 && destino < 2) {\n            Tramo& actual = tramos[destino];\n            if (op == 1 && a >= 0 && a < 2) {\n                const Tramo& origen = tramos[a];\n                if (b >= 0 && b < origen.cantidad() && c >= 0 && c <= 9) {\n                    try {\n                        actual = copia_modificada(origen, b, c);\n                        aceptado = true;\n                    } catch (const std::bad_alloc&) {\n                        aceptado = false;\n                    }\n                }\n            } else if (op == 2 && a >= 0 && a < 2) {\n                aceptado = tomar_si_cabe(actual, std::move(tramos[a]), b);\n            } else if (op == 3) {\n                aceptado = actual.escribir(a, b);\n            } else if (op == 4) {\n                aceptado = actual.configurar(a);\n            }\n        }\n        std::cout << \";Aceptado:\" << aceptado << \";Ahora:A=\";\n        mostrar(tramos[0]); std::cout << \";B=\"; mostrar(tramos[1]);\n        std::cout << '\\n';\n    }\n    std::cout << \"Sumas:\" << tramos[0].sumar() << ':' << tramos[1].sumar();\n\n    return 0;\n}\n",
           "initialStandardInput": "8\n1 1 0 1 7\n2 0 1 2 0\n2 0 1 3 0\n1 1 0 2 9\n1 0 0 0 6\n1 1 0 3 5\n2 1 0 4 0\n2 1 0 0 0\n",
           "outputCheck": {
             "inputComparison": "tokens",
@@ -856,7 +856,7 @@
         {
           "type": "code",
           "language": "cpp",
-          "code": "#include <iostream>\n#include <memory>\n#include <utility>\n#include <new>\n\nclass Tramo {\npublic:\n    Tramo() = default;\n    Tramo(const Tramo& otra);\n    Tramo& operator=(const Tramo& otra);\n    Tramo(Tramo&& otra) noexcept;\n    Tramo& operator=(Tramo&& otra) noexcept;\n    ~Tramo() = default;\n    int cantidad() const noexcept { return cantidad_; }\n    const int* acceso() const noexcept { return datos_.get(); }\n    bool configurar(int cantidad) noexcept;\n    bool leer(int indice, int& resultado) const noexcept;\n    bool escribir(int indice, int valor) noexcept;\n    bool vaciar() noexcept;\n    int sumar() const noexcept;\n    void intercambiar(Tramo& otra) noexcept;\nprivate:\n    std::unique_ptr<int[]> datos_{};\n    int cantidad_ = 0;\n};\nTramo::Tramo(const Tramo& otra) : datos_{}, cantidad_{0} {\n    if (otra.cantidad_ != 0) {\n        datos_ = std::make_unique<int[]>(otra.cantidad_);\n        for (int i = 0; i < otra.cantidad_; ++i) {\n            datos_[i] = otra.datos_[i];\n        }\n        cantidad_ = otra.cantidad_;\n    }\n}\nTramo::Tramo(Tramo&& otra) noexcept\n    : datos_{std::move(otra.datos_)}, cantidad_{otra.cantidad_} {\n    otra.cantidad_ = 0;\n}\nTramo& Tramo::operator=(const Tramo& otra) {\n    if (this != &otra) {\n        Tramo candidata{otra};\n        intercambiar(candidata);\n    }\n    return *this;\n}\nTramo& Tramo::operator=(Tramo&& otra) noexcept {\n    if (this != &otra) {\n        datos_ = std::move(otra.datos_);\n        cantidad_ = otra.cantidad_;\n        otra.cantidad_ = 0;\n    }\n    return *this;\n}\nbool Tramo::configurar(int cantidad) noexcept {\n    if (cantidad < 0 || cantidad > 4) {\n        return false;\n    }\n    if (cantidad == 0) {\n        return vaciar();\n    }\n    try {\n        auto candidata = std::make_unique<int[]>(cantidad);\n        datos_.swap(candidata);\n        cantidad_ = cantidad;\n        return true;\n    } catch (const std::bad_alloc&) {\n        return false;\n    }\n}\nbool Tramo::leer(int indice, int& resultado) const noexcept {\n    if (indice < 0 || indice >= cantidad_) {\n        return false;\n    }\n    resultado = datos_[indice];\n    return true;\n}\nbool Tramo::escribir(int indice, int valor) noexcept {\n    if (indice < 0 || indice >= cantidad_ || valor < 0 || valor > 9) {\n        return false;\n    }\n    datos_[indice] = valor;\n    return true;\n}\n\nbool Tramo::vaciar() noexcept {\n    datos_.reset();\n    cantidad_ = 0;\n    return true;\n}\n\nint Tramo::sumar() const noexcept {\n    int suma = 0;\n    for (int i = 0; i < cantidad_; ++i) {\n        suma += datos_[i];\n    }\n    return suma;\n}\n\nvoid Tramo::intercambiar(Tramo& otra) noexcept {\n    datos_.swap(otra.datos_);\n    std::swap(cantidad_, otra.cantidad_);\n}\nTramo copia_modificada(const Tramo& origen, int indice, int valor) {\n    Tramo resultado{origen};\n    resultado.escribir(indice, valor);\n    return resultado;\n}\nbool tomar_si_cabe(Tramo& destino, Tramo&& origen, int limite) noexcept {\n    if (limite < 0 || limite > 4 || origen.cantidad() > limite) {\n        return false;\n    }\n    destino = std::move(origen);\n    return true;\n}\nvoid mostrar(const Tramo& lote) {\n    std::cout << lote.cantidad() << '[';\n    for (int i = 0; i < lote.cantidad(); ++i) {\n        int valor = -1;\n        lote.leer(i, valor);\n        if (i != 0) {\n            std::cout << ',';\n        }\n        std::cout << valor;\n    }\n    std::cout << ']';\n}\nint main() {\n    int ordenes = 0;\n    if (!(std::cin >> ordenes) || ordenes < 1 || ordenes > 12) { return 1; }\n    Tramo tramos[2];\n    if (!tramos[0].configurar(3) || !tramos[1].configurar(1)) { return 1; }\n    tramos[0].escribir(0, 1);\n    tramos[0].escribir(2, 4);\n    tramos[1].escribir(0, 8);\n    for (int i = 0; i < ordenes; ++i) {\n        int op = 0, destino = 0, a = 0, b = 0, c = 0;\n        if (!(std::cin >> op >> destino >> a >> b >> c)) { return 1; }\n        std::cout << \"Antes:A=\"; mostrar(tramos[0]);\n        std::cout << \";B=\"; mostrar(tramos[1]);\n        bool aceptado = false;\n        if (destino >= 0 && destino < 2) {\n            Tramo& actual = tramos[destino];\n            if (op == 1 && a >= 0 && a < 2) {\n                const Tramo& origen = tramos[a];\n                if (b >= 0 && b < origen.cantidad() && c >= 0 && c <= 9) {\n                    try {\n                        actual = copia_modificada(origen, b, c);\n                        aceptado = true;\n                    } catch (const std::bad_alloc&) {\n                        aceptado = false;\n                    }\n                }\n            } else if (op == 2 && a >= 0 && a < 2) {\n                aceptado = tomar_si_cabe(actual, std::move(tramos[a]), b);\n            } else if (op == 3) {\n                aceptado = actual.escribir(a, b);\n            } else if (op == 4) {\n                aceptado = actual.configurar(a);\n            }\n        }\n        std::cout << \";Aceptado:\" << aceptado << \";Ahora:A=\";\n        mostrar(tramos[0]); std::cout << \";B=\"; mostrar(tramos[1]);\n        std::cout << '\\n';\n    }\n    std::cout << \"Sumas:\" << tramos[0].sumar() << ':' << tramos[1].sumar();\n    return 0;\n}\n"
+          "code": "#include <iostream>\n#include <memory>\n#include <utility>\n#include <new>\n\nclass Tramo {\npublic:\n    Tramo() = default;\n    Tramo(const Tramo& otra);\n    Tramo& operator=(const Tramo& otra);\n    Tramo(Tramo&& otra) noexcept;\n    Tramo& operator=(Tramo&& otra) noexcept;\n    ~Tramo() = default;\n    int cantidad() const noexcept { return cantidad_; }\n    const int* acceso() const noexcept { return datos_.get(); }\n    bool configurar(int cantidad) noexcept;\n    bool leer(int indice, int& resultado) const noexcept;\n    bool escribir(int indice, int valor) noexcept;\n    bool vaciar() noexcept;\n    int sumar() const noexcept;\n    void intercambiar(Tramo& otra) noexcept;\nprivate:\n    std::unique_ptr<int[]> datos_{};\n    int cantidad_ = 0;\n};\nTramo::Tramo(const Tramo& otra) : datos_{}, cantidad_{0} {\n    if (otra.cantidad_ != 0) {\n        datos_ = std::make_unique<int[]>(otra.cantidad_);\n        for (int i = 0; i < otra.cantidad_; ++i) {\n            datos_[i] = otra.datos_[i];\n        }\n        cantidad_ = otra.cantidad_;\n    }\n}\nTramo::Tramo(Tramo&& otra) noexcept\n    : datos_{std::move(otra.datos_)}, cantidad_{otra.cantidad_} {\n    otra.cantidad_ = 0;\n}\n\nTramo& Tramo::operator=(const Tramo& otra) {\n    if (this != &otra) {\n        Tramo candidata{otra};\n        intercambiar(candidata);\n    }\n\n    return *this;\n}\n\nTramo& Tramo::operator=(Tramo&& otra) noexcept {\n    if (this != &otra) {\n        datos_ = std::move(otra.datos_);\n        cantidad_ = otra.cantidad_;\n        otra.cantidad_ = 0;\n    }\n\n    return *this;\n}\n\nbool Tramo::configurar(int cantidad) noexcept {\n    if (cantidad < 0 || cantidad > 4) {\n        return false;\n    }\n    if (cantidad == 0) {\n        return vaciar();\n    }\n    try {\n        auto candidata = std::make_unique<int[]>(cantidad);\n        datos_.swap(candidata);\n        cantidad_ = cantidad;\n        return true;\n    } catch (const std::bad_alloc&) {\n        return false;\n    }\n}\n\nbool Tramo::leer(int indice, int& resultado) const noexcept {\n    if (indice < 0 || indice >= cantidad_) {\n        return false;\n    }\n    resultado = datos_[indice];\n    return true;\n}\n\nbool Tramo::escribir(int indice, int valor) noexcept {\n    if (indice < 0 || indice >= cantidad_ || valor < 0 || valor > 9) {\n        return false;\n    }\n    datos_[indice] = valor;\n    return true;\n}\n\nbool Tramo::vaciar() noexcept {\n    datos_.reset();\n    cantidad_ = 0;\n    return true;\n}\n\nint Tramo::sumar() const noexcept {\n    int suma = 0;\n    for (int i = 0; i < cantidad_; ++i) {\n        suma += datos_[i];\n    }\n\n    return suma;\n}\n\nvoid Tramo::intercambiar(Tramo& otra) noexcept {\n    datos_.swap(otra.datos_);\n    std::swap(cantidad_, otra.cantidad_);\n}\n\nTramo copia_modificada(const Tramo& origen, int indice, int valor) {\n    Tramo resultado{origen};\n    resultado.escribir(indice, valor);\n    return resultado;\n}\n\nbool tomar_si_cabe(Tramo& destino, Tramo&& origen, int limite) noexcept {\n    if (limite < 0 || limite > 4 || origen.cantidad() > limite) {\n        return false;\n    }\n    destino = std::move(origen);\n    return true;\n}\n\nvoid mostrar(const Tramo& lote) {\n    std::cout << lote.cantidad() << '[';\n    for (int i = 0; i < lote.cantidad(); ++i) {\n        int valor = -1;\n        lote.leer(i, valor);\n        if (i != 0) {\n            std::cout << ',';\n        }\n        std::cout << valor;\n    }\n    std::cout << ']';\n}\n\nint main() {\n    int ordenes = 0;\n    if (!(std::cin >> ordenes) || ordenes < 1 || ordenes > 12) { return 1; }\n    Tramo tramos[2];\n    if (!tramos[0].configurar(3) || !tramos[1].configurar(1)) { return 1; }\n    tramos[0].escribir(0, 1);\n    tramos[0].escribir(2, 4);\n    tramos[1].escribir(0, 8);\n    for (int i = 0; i < ordenes; ++i) {\n        int op = 0, destino = 0, a = 0, b = 0, c = 0;\n        if (!(std::cin >> op >> destino >> a >> b >> c)) { return 1; }\n        std::cout << \"Antes:A=\"; mostrar(tramos[0]);\n        std::cout << \";B=\"; mostrar(tramos[1]);\n        bool aceptado = false;\n\n        if (destino >= 0 && destino < 2) {\n            Tramo& actual = tramos[destino];\n            if (op == 1 && a >= 0 && a < 2) {\n                const Tramo& origen = tramos[a];\n                if (b >= 0 && b < origen.cantidad() && c >= 0 && c <= 9) {\n                    try {\n                        actual = copia_modificada(origen, b, c);\n                        aceptado = true;\n                    } catch (const std::bad_alloc&) {\n                        aceptado = false;\n                    }\n                }\n            } else if (op == 2 && a >= 0 && a < 2) {\n                aceptado = tomar_si_cabe(actual, std::move(tramos[a]), b);\n            } else if (op == 3) {\n                aceptado = actual.escribir(a, b);\n            } else if (op == 4) {\n                aceptado = actual.configurar(a);\n            }\n        }\n        std::cout << \";Aceptado:\" << aceptado << \";Ahora:A=\";\n        mostrar(tramos[0]); std::cout << \";B=\"; mostrar(tramos[1]);\n        std::cout << '\\n';\n    }\n    std::cout << \"Sumas:\" << tramos[0].sumar() << ':' << tramos[1].sumar();\n\n    return 0;\n}\n"
         },
         {
           "type": "paragraph",
@@ -2522,6 +2522,262 @@
       }
     },
     "additions": [],
-    "editorial": []
+    "editorial": [
+      {
+        "id": "block_0001_0003",
+        "beforeSha256": "dba2782a6e4f64b23bdff93f70090e4b7e9c97f2636ba80ed5f4a671231cb660",
+        "afterSha256": "a6f252b172590902fc3413a7738469b41357114a935e6e5cea119dbc4eeb744d"
+      },
+      {
+        "id": "block_0002_0002",
+        "beforeSha256": "104fe65e48960f21bc1376bba704d0d2bf623cf19ee481a91dafeb0243f8e6b0",
+        "afterSha256": "9645ef39e23b1286fd73ca5fb9b253fb1fc2005866f72d4cea0e4b886bbe2f36"
+      },
+      {
+        "id": "block_0004_0002",
+        "beforeSha256": "463913752944fe6beaf6bff7ef01d61d692ade4eb4aaf536fb6ac3df30cd18a3",
+        "afterSha256": "bae13cc814c6d3ae0ee9e5fd681dcbc2bd19b5a373fda5582a31b6005f24592f"
+      },
+      {
+        "id": "block_0005_0002",
+        "beforeSha256": "9c1d283610d8ccd8f53bb38f727027d960ce898b409e8438500e5bdfb4aca35b",
+        "afterSha256": "7393eac0b7f78620e4dd53568ed0e781b77faa37cf4e7e185013c760a4f2dee0"
+      },
+      {
+        "id": "block_0006_0002",
+        "beforeSha256": "a46616194faa73ad4fc3d27c96db6ec3290bfb032727cf6732e51e06f0e96330",
+        "afterSha256": "90eb33f278ff78daa253b6fd5e6fa450ad50d090c3ecbe099f36d89fbc90453c"
+      },
+      {
+        "id": "block_0007_0004",
+        "beforeSha256": "9f842e2ffe69448930ec3065537f45e96186179fc93d4aea448a2eb6bea15607",
+        "afterSha256": "1f90e7e3cad7117a2b12ea4f12365a245443ab56efb218f813533e8bbf07df6a"
+      },
+      {
+        "id": "block_0010_0002",
+        "beforeSha256": "4da53191a9c2f8f22b2f6fb2d04e6f65f3f176b84b854f6277a5c45f469f8b5c",
+        "afterSha256": "fa1b4d2a135bba410514c121fb103cd9d74351d878bf97f842f4dba3f89e86c6"
+      },
+      {
+        "id": "block_0011_0003",
+        "beforeSha256": "cf16325c28a3adb91fdd761ca4a0ec303f467044fad543196ca434b522ffd7d7",
+        "afterSha256": "fb30cdb5704ab01328fd6fc8e1f4f0923c7c0f2addfa02ffcd2ce39ca9933e55"
+      },
+      {
+        "id": "block_0012_0002",
+        "beforeSha256": "6f745cde5dede18da3f20f5c389d414d77e6d6080bdb04f839606429cb523d6f",
+        "afterSha256": "333bc0d6cada885bf89a0cf27941fcca7de2cfca94998d5f98221aa48fe4402b"
+      },
+      {
+        "id": "block_0013_0002",
+        "beforeSha256": "76c1fef9f242c97b28eec1cd684b5373b1a1563ffbe6dde9800d827605b9e025",
+        "afterSha256": "6b80b7571d111e8f6d54289a6cd11e0b780648a94db57b5a6e5379566d95da71"
+      },
+      {
+        "id": "block_0021_0002",
+        "beforeSha256": "bcd7bd2a83a5db46cb4467d2f9f898ce0b306cb0cd9c305540c56f52be7df5fc",
+        "afterSha256": "54d8ef0bbcda6f2d886f2b3c77abae152a63c437cf627113fdfdd790ede1950b"
+      },
+      {
+        "id": "block_0023_0001",
+        "beforeSha256": "27960213ad5727290bbd3a4c332cdb097b087484eadba0b69218e0ad346d8e6c",
+        "afterSha256": "b15dbde6854fd1843407fd30058119ce8a41abbc63c0313cc460747230e14e1c"
+      }
+    ],
+    "sourceFormatRevisions": [
+      {
+        "id": "block_0001_0003",
+        "block": {
+          "type": "output_prediction",
+          "id": "p3_u6l12_consulta_por_referencia_const",
+          "language": "cpp",
+          "question": "Escribe los dos valores consultados y el valor final de original, en el orden de la impresión.",
+          "code": "#include <iostream>\n#include <memory>\n#include <utility>\n#include <new>\n\nclass Paquete {\npublic:\n    explicit Paquete(int valor) : dato_{std::make_unique<int>(valor)} {}\n    Paquete(const Paquete& otra) : dato_{} {\n        if (otra.dato_) { dato_ = std::make_unique<int>(*otra.dato_); }\n    }\n    Paquete(Paquete&&) noexcept = default;\n    ~Paquete() = default;\n    int valor() const noexcept { return dato_ ? *dato_ : -1; }\n    void fijar(int valor) noexcept { if (dato_) { *dato_ = valor; } }\nprivate:\n    std::unique_ptr<int> dato_;\n};\nint observar(const Paquete& dato) noexcept { return dato.valor(); }\nint main() {\n    Paquete original{4};\n    int a = observar(original);\n    int b = observar(std::move(original));\n    std::cout << a << ':' << b << ':' << original.valor();\n    return 0;\n}\n",
+          "answers": [
+            "4:4:4"
+          ],
+          "outputComparison": "exact",
+          "explanation": "Ambas llamadas enlazan dato con el mismo Paquete original. observar sólo consulta su int. No se construye otro Paquete ni se mueve su miembro propietario, aunque una llamada utilice std::move. El original conserva el dato que ya tenía."
+        }
+      },
+      {
+        "id": "block_0002_0002",
+        "block": {
+          "type": "output_prediction",
+          "id": "p3_u6l12_parametro_por_valor_copia_y_movimiento",
+          "language": "cpp",
+          "question": "Escribe la línea posterior a cada llamada: primero el resultado de cambiar y después el estado observado en original.",
+          "code": "#include <iostream>\n#include <memory>\n#include <utility>\n#include <new>\n\nclass Paquete {\npublic:\n    explicit Paquete(int valor) : dato_{std::make_unique<int>(valor)} {}\n    Paquete(const Paquete& otra) : dato_{} {\n        if (otra.dato_) { dato_ = std::make_unique<int>(*otra.dato_); }\n    }\n    Paquete(Paquete&&) noexcept = default;\n    ~Paquete() = default;\n    int valor() const noexcept { return dato_ ? *dato_ : -1; }\n    void fijar(int valor) noexcept { if (dato_) { *dato_ = valor; } }\nprivate:\n    std::unique_ptr<int> dato_;\n};\nint cambiar(Paquete recibido) noexcept {\n    recibido.fijar(8);\n    return recibido.valor();\n}\nint main() {\n    Paquete original{4};\n    int a = cambiar(original);\n    std::cout << a << ':' << original.valor() << '\\n';\n    int b = cambiar(std::move(original));\n    std::cout << b << ':' << original.valor();\n    return 0;\n}\n",
+          "answers": [
+            "8:4\n8:-1"
+          ],
+          "outputComparison": "exact",
+          "explanation": "La primera llamada construye una copia independiente; la escritura del cuerpo afecta al int de recibido y original conserva el suyo. La segunda transfiere el propietario antes de entrar en cambiar. El cuerpo modifica el int recibido, mientras original ya está vacío. Al terminar la expresión de esa llamada, el parámetro ya se ha destruido y su propietario ha limpiado el int recibido."
+        }
+      },
+      {
+        "id": "block_0004_0002",
+        "block": {
+          "type": "output_prediction",
+          "id": "p3_u6l12_referencia_de_oferta_sin_consumo",
+          "language": "cpp",
+          "question": "¿Qué muestran el valor visto por la función y el valor que conserva original?",
+          "code": "#include <iostream>\n#include <memory>\n#include <utility>\n#include <new>\n\nclass Paquete {\npublic:\n    explicit Paquete(int valor) : dato_{std::make_unique<int>(valor)} {}\n    Paquete(const Paquete& otra) : dato_{} {\n        if (otra.dato_) { dato_ = std::make_unique<int>(*otra.dato_); }\n    }\n    Paquete(Paquete&&) noexcept = default;\n    ~Paquete() = default;\n    int valor() const noexcept { return dato_ ? *dato_ : -1; }\n    void fijar(int valor) noexcept { if (dato_) { *dato_ = valor; } }\nprivate:\n    std::unique_ptr<int> dato_;\n};\nint ver_oferta(Paquete&& ofrecido) noexcept { return ofrecido.valor(); }\nint main() {\n    Paquete original{6};\n    int visto = ver_oferta(std::move(original));\n    std::cout << visto << ':' << original.valor();\n    return 0;\n}\n",
+          "answers": [
+            "6:6"
+          ],
+          "outputComparison": "exact",
+          "explanation": "El parámetro es una referencia al original. El cuerpo sólo lee el int del mismo objeto. std::move en la llamada permite enlazar la referencia, pero aquí no se realiza ninguna construcción ni asignación que consuma ese propietario."
+        }
+      },
+      {
+        "id": "block_0005_0002",
+        "block": {
+          "type": "output_prediction",
+          "id": "p3_u6l12_copia_desde_parametro_con_nombre",
+          "language": "cpp",
+          "question": "¿Qué muestran el resultado de cambiar la copia local y el dato que conserva original?",
+          "code": "#include <iostream>\n#include <memory>\n#include <utility>\n#include <new>\n\nclass Paquete {\npublic:\n    explicit Paquete(int valor) : dato_{std::make_unique<int>(valor)} {}\n    Paquete(const Paquete& otra) : dato_{} {\n        if (otra.dato_) { dato_ = std::make_unique<int>(*otra.dato_); }\n    }\n    Paquete(Paquete&&) noexcept = default;\n    ~Paquete() = default;\n    int valor() const noexcept { return dato_ ? *dato_ : -1; }\n    void fijar(int valor) noexcept { if (dato_) { *dato_ = valor; } }\nprivate:\n    std::unique_ptr<int> dato_;\n};\nint cambiar_copia(Paquete&& ofrecido) {\n    Paquete copia{ofrecido};\n    copia.fijar(9);\n    return copia.valor();\n}\nint main() {\n    Paquete original{3};\n    int cambiado = cambiar_copia(std::move(original));\n    std::cout << cambiado << ':' << original.valor();\n    return 0;\n}\n",
+          "answers": [
+            "9:3"
+          ],
+          "outputComparison": "exact",
+          "explanation": "copia se construye desde el nombre ofrecido sin solicitar un movimiento en esa construcción. Interviene el constructor de copia, que prepara otro int. La escritura modifica ese int independiente y original conserva el suyo. El parámetro de referencia no añade otro propietario."
+        }
+      },
+      {
+        "id": "block_0006_0002",
+        "block": {
+          "type": "output_prediction",
+          "id": "p3_u6l12_rechazo_tras_recibir_por_valor",
+          "language": "cpp",
+          "question": "Escribe el bool devuelto por aceptar_cero y el valor que muestra después original.",
+          "code": "#include <iostream>\n#include <memory>\n#include <utility>\n#include <new>\n\nclass Paquete {\npublic:\n    explicit Paquete(int valor) : dato_{std::make_unique<int>(valor)} {}\n    Paquete(const Paquete& otra) : dato_{} {\n        if (otra.dato_) { dato_ = std::make_unique<int>(*otra.dato_); }\n    }\n    Paquete(Paquete&&) noexcept = default;\n    ~Paquete() = default;\n    int valor() const noexcept { return dato_ ? *dato_ : -1; }\n    void fijar(int valor) noexcept { if (dato_) { *dato_ = valor; } }\nprivate:\n    std::unique_ptr<int> dato_;\n};\nbool aceptar_cero(Paquete recibido) noexcept { return recibido.valor() == 0; }\nint main() {\n    Paquete original{4};\n    bool aceptado = aceptar_cero(std::move(original));\n    std::cout << aceptado << ':' << original.valor();\n    return 0;\n}\n",
+          "answers": [
+            "0:-1"
+          ],
+          "outputComparison": "exact",
+          "explanation": "El dato recibido no cumple la condición de aceptación. Sin embargo, el movimiento que construyó el parámetro ya había dejado vacío a original antes de entrar en el cuerpo. Devolver false no transfiere el propietario de vuelta. Cuando se limpia el parámetro se libera el int que había recibido."
+        }
+      },
+      {
+        "id": "block_0007_0004",
+        "block": {
+          "type": "output_prediction",
+          "id": "p3_u6l12_resultado_directo_del_mismo_tipo",
+          "language": "cpp",
+          "question": "El programa es válido en C++23. ¿Qué valor conserva el objeto lista construido por crear()?",
+          "code": "#include <iostream>\n#include <memory>\n#include <utility>\n#include <new>\n\nclass Fija {\npublic:\n    explicit Fija(int valor) : valor_{valor} {}\n    Fija(const Fija&) = delete;\n    Fija(Fija&&) = delete;\n    ~Fija() = default;\n    int valor() const noexcept { return valor_; }\nprivate:\n    int valor_;\n};\nFija crear() { return Fija{7}; }\nint main() {\n    Fija lista = crear();\n    std::cout << lista.valor();\n    return 0;\n}\n",
+          "answers": [
+            "7"
+          ],
+          "outputComparison": "exact",
+          "explanation": "return Fija{7} construye el resultado de tipo Fija, que inicializa directamente lista. No se necesita copiar ni mover otro Fija intermedio; por eso eliminar esas dos operaciones no impide este programa. El constructor desde int establece el valor que después consulta lista.valor()."
+        }
+      },
+      {
+        "id": "block_0010_0002",
+        "block": {
+          "type": "output_prediction",
+          "id": "p3_u6l12_retorno_de_local_con_nombre",
+          "language": "cpp",
+          "question": "¿Qué valor muestra listo después de completar preparar?",
+          "code": "#include <iostream>\n#include <memory>\n#include <utility>\n#include <new>\n\nclass Paquete {\npublic:\n    explicit Paquete(int valor) : dato_{std::make_unique<int>(valor)} {}\n    Paquete(const Paquete& otra) : dato_{} {\n        if (otra.dato_) { dato_ = std::make_unique<int>(*otra.dato_); }\n    }\n    Paquete(Paquete&&) noexcept = default;\n    ~Paquete() = default;\n    int valor() const noexcept { return dato_ ? *dato_ : -1; }\n    void fijar(int valor) noexcept { if (dato_) { *dato_ = valor; } }\nprivate:\n    std::unique_ptr<int> dato_;\n};\nPaquete preparar(int valor) {\n    Paquete resultado{valor};\n    return resultado;\n}\nint main() {\n    Paquete listo = preparar(7);\n    std::cout << listo.valor();\n    return 0;\n}\n",
+          "answers": [
+            "7"
+          ],
+          "outputComparison": "exact",
+          "explanation": "El resultado conserva el int preparado a partir del argumento valor. Si se aplica NRVO, el local se construye directamente como ese resultado. En el otro camino, el movimiento entrega su propietario al resultado. listo sigue siendo un propietario válido después de terminar preparar."
+        }
+      },
+      {
+        "id": "block_0011_0003",
+        "block": {
+          "type": "output_prediction",
+          "id": "p3_u6l12_retorno_de_parametro_por_valor",
+          "language": "cpp",
+          "question": "Escribe los valores finales de original, copia y transferido, en el orden del programa.",
+          "code": "#include <iostream>\n#include <memory>\n#include <utility>\n#include <new>\n\nclass Paquete {\npublic:\n    explicit Paquete(int valor) : dato_{std::make_unique<int>(valor)} {}\n    Paquete(const Paquete& otra) : dato_{} {\n        if (otra.dato_) { dato_ = std::make_unique<int>(*otra.dato_); }\n    }\n    Paquete(Paquete&&) noexcept = default;\n    ~Paquete() = default;\n    int valor() const noexcept { return dato_ ? *dato_ : -1; }\n    void fijar(int valor) noexcept { if (dato_) { *dato_ = valor; } }\nprivate:\n    std::unique_ptr<int> dato_;\n};\nPaquete devolver(Paquete recibido) { return recibido; }\nint main() {\n    Paquete original{5};\n    Paquete copia = devolver(original);\n    Paquete transferido = devolver(std::move(original));\n    copia.fijar(2);\n    std::cout << original.valor() << ':' << copia.valor() << ':' << transferido.valor();\n    return 0;\n}\n",
+          "answers": [
+            "-1:2:5"
+          ],
+          "outputComparison": "exact",
+          "explanation": "La primera llamada copia original al parámetro y devuelve ese propietario independiente. La segunda mueve desde original al parámetro y después devuelve el propietario recibido. La modificación posterior de copia afecta sólo a su int. No se utiliza NRVO para el parámetro ni se necesita escribir std::move en su return."
+        }
+      },
+      {
+        "id": "block_0012_0002",
+        "block": {
+          "type": "output_prediction",
+          "id": "p3_u6l12_retorno_desde_referencia_de_oferta",
+          "language": "cpp",
+          "question": "¿Qué muestran original y recibido después de devolver_oferta?",
+          "code": "#include <iostream>\n#include <memory>\n#include <utility>\n#include <new>\n\nclass Paquete {\npublic:\n    explicit Paquete(int valor) : dato_{std::make_unique<int>(valor)} {}\n    Paquete(const Paquete& otra) : dato_{} {\n        if (otra.dato_) { dato_ = std::make_unique<int>(*otra.dato_); }\n    }\n    Paquete(Paquete&&) noexcept = default;\n    ~Paquete() = default;\n    int valor() const noexcept { return dato_ ? *dato_ : -1; }\n    void fijar(int valor) noexcept { if (dato_) { *dato_ = valor; } }\nprivate:\n    std::unique_ptr<int> dato_;\n};\nPaquete devolver_oferta(Paquete&& ofrecido) { return ofrecido; }\nint main() {\n    Paquete original{8};\n    Paquete recibido = devolver_oferta(std::move(original));\n    std::cout << original.valor() << ':' << recibido.valor();\n    return 0;\n}\n",
+          "answers": [
+            "-1:8"
+          ],
+          "outputComparison": "exact",
+          "explanation": "La llamada enlaza ofrecido con original. Después, return ofrecido inicializa el resultado por movimiento desde ese mismo objeto. Su int pasa a recibido y original queda vacío. La transferencia ocurre al construir el resultado, no por el simple enlace del parámetro."
+        }
+      },
+      {
+        "id": "block_0013_0002",
+        "block": {
+          "type": "output_prediction",
+          "id": "p3_u6l12_resultado_copiado_desde_lectura",
+          "language": "cpp",
+          "question": "¿Qué muestran original y copia después de modificar copia?",
+          "code": "#include <iostream>\n#include <memory>\n#include <utility>\n#include <new>\n\nclass Paquete {\npublic:\n    explicit Paquete(int valor) : dato_{std::make_unique<int>(valor)} {}\n    Paquete(const Paquete& otra) : dato_{} {\n        if (otra.dato_) { dato_ = std::make_unique<int>(*otra.dato_); }\n    }\n    Paquete(Paquete&&) noexcept = default;\n    ~Paquete() = default;\n    int valor() const noexcept { return dato_ ? *dato_ : -1; }\n    void fijar(int valor) noexcept { if (dato_) { *dato_ = valor; } }\nprivate:\n    std::unique_ptr<int> dato_;\n};\nPaquete duplicar(const Paquete& original) { return original; }\nint main() {\n    Paquete original{6};\n    Paquete copia = duplicar(original);\n    copia.fijar(1);\n    std::cout << original.valor() << ':' << copia.valor();\n    return 0;\n}\n",
+          "answers": [
+            "6:1"
+          ],
+          "outputComparison": "exact",
+          "explanation": "duplicar devuelve un Paquete nuevo por valor. Al construirse desde el parámetro const Paquete&, se utiliza la copia independiente y original conserva su int. La escritura posterior sólo cambia el int de copia. Devolver por valor no obliga a consumir un objeto que se recibió por referencia."
+        }
+      },
+      {
+        "id": "block_0021_0002",
+        "block": {
+          "type": "cpp_compiler",
+          "language": "cpp",
+          "initialCode": "#include <iostream>\n#include <memory>\n#include <utility>\n#include <new>\n\nclass Tramo {\npublic:\n    Tramo() = default;\n    Tramo(const Tramo& otra);\n    Tramo& operator=(const Tramo& otra);\n    Tramo(Tramo&& otra) noexcept;\n    Tramo& operator=(Tramo&& otra) noexcept;\n    ~Tramo() = default;\n    int cantidad() const noexcept { return cantidad_; }\n    const int* acceso() const noexcept { return datos_.get(); }\n    bool configurar(int cantidad) noexcept;\n    bool leer(int indice, int& resultado) const noexcept;\n    bool escribir(int indice, int valor) noexcept;\n    bool vaciar() noexcept;\n    int sumar() const noexcept;\n    void intercambiar(Tramo& otra) noexcept;\nprivate:\n    std::unique_ptr<int[]> datos_{};\n    int cantidad_ = 0;\n};\nTramo::Tramo(const Tramo& otra) : datos_{}, cantidad_{0} {\n    if (otra.cantidad_ != 0) {\n        datos_ = std::make_unique<int[]>(otra.cantidad_);\n        for (int i = 0; i < otra.cantidad_; ++i) {\n            datos_[i] = otra.datos_[i];\n        }\n        cantidad_ = otra.cantidad_;\n    }\n}\nTramo::Tramo(Tramo&& otra) noexcept\n    : datos_{std::move(otra.datos_)}, cantidad_{otra.cantidad_} {\n    otra.cantidad_ = 0;\n}\nTramo& Tramo::operator=(const Tramo& otra) {\n    if (this != &otra) {\n        Tramo candidata{otra};\n        intercambiar(candidata);\n    }\n    return *this;\n}\nTramo& Tramo::operator=(Tramo&& otra) noexcept {\n    if (this != &otra) {\n        datos_ = std::move(otra.datos_);\n        cantidad_ = otra.cantidad_;\n        otra.cantidad_ = 0;\n    }\n    return *this;\n}\nbool Tramo::configurar(int cantidad) noexcept {\n    if (cantidad < 0 || cantidad > 4) {\n        return false;\n    }\n    if (cantidad == 0) {\n        return vaciar();\n    }\n    try {\n        auto candidata = std::make_unique<int[]>(cantidad);\n        datos_.swap(candidata);\n        cantidad_ = cantidad;\n        return true;\n    } catch (const std::bad_alloc&) {\n        return false;\n    }\n}\nbool Tramo::leer(int indice, int& resultado) const noexcept {\n    if (indice < 0 || indice >= cantidad_) {\n        return false;\n    }\n    resultado = datos_[indice];\n    return true;\n}\nbool Tramo::escribir(int indice, int valor) noexcept {\n    if (indice < 0 || indice >= cantidad_ || valor < 0 || valor > 9) {\n        return false;\n    }\n    datos_[indice] = valor;\n    return true;\n}\n\nbool Tramo::vaciar() noexcept {\n    datos_.reset();\n    cantidad_ = 0;\n    return true;\n}\n\nint Tramo::sumar() const noexcept {\n    int suma = 0;\n    for (int i = 0; i < cantidad_; ++i) {\n        suma += datos_[i];\n    }\n    return suma;\n}\n\nvoid Tramo::intercambiar(Tramo& otra) noexcept {\n    datos_.swap(otra.datos_);\n    std::swap(cantidad_, otra.cantidad_);\n}\nTramo copia_modificada(const Tramo& origen, int indice, int valor) {\n    // El llamador ya comprobó que indice y valor son válidos.\n    (void)origen;\n    (void)indice;\n    (void)valor;\n    return Tramo{};\n}\nbool tomar_si_cabe(Tramo& destino, Tramo&& origen, int limite) noexcept {\n    // Comprueba el límite antes de decidir si consumes el origen ofrecido.\n    (void)destino;\n    (void)origen;\n    (void)limite;\n    return false;\n}\nvoid mostrar(const Tramo& lote) {\n    std::cout << lote.cantidad() << '[';\n    for (int i = 0; i < lote.cantidad(); ++i) {\n        int valor = -1;\n        lote.leer(i, valor);\n        if (i != 0) {\n            std::cout << ',';\n        }\n        std::cout << valor;\n    }\n    std::cout << ']';\n}\nint main() {\n    int ordenes = 0;\n    if (!(std::cin >> ordenes) || ordenes < 1 || ordenes > 12) { return 1; }\n    Tramo tramos[2];\n    if (!tramos[0].configurar(3) || !tramos[1].configurar(1)) { return 1; }\n    tramos[0].escribir(0, 1);\n    tramos[0].escribir(2, 4);\n    tramos[1].escribir(0, 8);\n    for (int i = 0; i < ordenes; ++i) {\n        int op = 0, destino = 0, a = 0, b = 0, c = 0;\n        if (!(std::cin >> op >> destino >> a >> b >> c)) { return 1; }\n        std::cout << \"Antes:A=\"; mostrar(tramos[0]);\n        std::cout << \";B=\"; mostrar(tramos[1]);\n        bool aceptado = false;\n        if (destino >= 0 && destino < 2) {\n            Tramo& actual = tramos[destino];\n            if (op == 1 && a >= 0 && a < 2) {\n                const Tramo& origen = tramos[a];\n                if (b >= 0 && b < origen.cantidad() && c >= 0 && c <= 9) {\n                    try {\n                        actual = copia_modificada(origen, b, c);\n                        aceptado = true;\n                    } catch (const std::bad_alloc&) {\n                        aceptado = false;\n                    }\n                }\n            } else if (op == 2 && a >= 0 && a < 2) {\n                aceptado = tomar_si_cabe(actual, std::move(tramos[a]), b);\n            } else if (op == 3) {\n                aceptado = actual.escribir(a, b);\n            } else if (op == 4) {\n                aceptado = actual.configurar(a);\n            }\n        }\n        std::cout << \";Aceptado:\" << aceptado << \";Ahora:A=\";\n        mostrar(tramos[0]); std::cout << \";B=\"; mostrar(tramos[1]);\n        std::cout << '\\n';\n    }\n    std::cout << \"Sumas:\" << tramos[0].sumar() << ':' << tramos[1].sumar();\n    return 0;\n}\n",
+          "initialStandardInput": "8\n1 1 0 1 7\n2 0 1 2 0\n2 0 1 3 0\n1 1 0 2 9\n1 0 0 0 6\n1 1 0 3 5\n2 1 0 4 0\n2 1 0 0 0\n",
+          "outputCheck": {
+            "inputComparison": "tokens",
+            "cases": [
+              {
+                "standardInput": "8\n1 1 0 1 7\n2 0 1 2 0\n2 0 1 3 0\n1 1 0 2 9\n1 0 0 0 6\n1 1 0 3 5\n2 1 0 4 0\n2 1 0 0 0\n",
+                "outputs": [
+                  "Antes:A=3[1,0,4];B=1[8];Aceptado:1;Ahora:A=3[1,0,4];B=3[1,7,4]\nAntes:A=3[1,0,4];B=3[1,7,4];Aceptado:0;Ahora:A=3[1,0,4];B=3[1,7,4]\nAntes:A=3[1,0,4];B=3[1,7,4];Aceptado:1;Ahora:A=3[1,7,4];B=0[]\nAntes:A=3[1,7,4];B=0[];Aceptado:1;Ahora:A=3[1,7,4];B=3[1,7,9]\nAntes:A=3[1,7,4];B=3[1,7,9];Aceptado:1;Ahora:A=3[6,7,4];B=3[1,7,9]\nAntes:A=3[6,7,4];B=3[1,7,9];Aceptado:0;Ahora:A=3[6,7,4];B=3[1,7,9]\nAntes:A=3[6,7,4];B=3[1,7,9];Aceptado:1;Ahora:A=0[];B=3[6,7,4]\nAntes:A=0[];B=3[6,7,4];Aceptado:1;Ahora:A=0[];B=0[]\nSumas:0:0"
+                ],
+                "explanation": "La copia modificada necesita otro Tramo y debe conservar el origen durante la llamada. Para tomar el array, comprueba antes el límite y sólo al aceptar ejecuta la asignación por movimiento. Vincular && no consume por sí solo el origen."
+              },
+              {
+                "standardInput": "9\n2 0 0 3 0\n2 1 0 -1 0\n2 1 0 5 0\n1 1 0 0 0\n3 0 0 9 0\n2 1 0 3 0\n4 0 2 0 0\n3 0 1 8 0\n1 1 0 1 4\n",
+                "outputs": [
+                  "Antes:A=3[1,0,4];B=1[8];Aceptado:1;Ahora:A=3[1,0,4];B=1[8]\nAntes:A=3[1,0,4];B=1[8];Aceptado:0;Ahora:A=3[1,0,4];B=1[8]\nAntes:A=3[1,0,4];B=1[8];Aceptado:0;Ahora:A=3[1,0,4];B=1[8]\nAntes:A=3[1,0,4];B=1[8];Aceptado:1;Ahora:A=3[1,0,4];B=3[0,0,4]\nAntes:A=3[1,0,4];B=3[0,0,4];Aceptado:1;Ahora:A=3[9,0,4];B=3[0,0,4]\nAntes:A=3[9,0,4];B=3[0,0,4];Aceptado:1;Ahora:A=0[];B=3[9,0,4]\nAntes:A=0[];B=3[9,0,4];Aceptado:1;Ahora:A=2[0,0];B=3[9,0,4]\nAntes:A=2[0,0];B=3[9,0,4];Aceptado:1;Ahora:A=2[0,8];B=3[9,0,4]\nAntes:A=2[0,8];B=3[9,0,4];Aceptado:1;Ahora:A=2[0,8];B=2[0,4]\nSumas:8:4"
+                ],
+                "explanation": "La copia modificada necesita otro Tramo y debe conservar el origen durante la llamada. Para tomar el array, comprueba antes el límite y sólo al aceptar ejecuta la asignación por movimiento. Vincular && no consume por sí solo el origen."
+              },
+              {
+                "standardInput": "8\n4 0 0 0 0\n1 1 0 0 5\n2 1 0 0 0\n4 0 4 0 0\n3 0 3 9 0\n1 1 0 3 0\n2 0 1 4 0\n2 1 1 3 0\n",
+                "outputs": [
+                  "Antes:A=3[1,0,4];B=1[8];Aceptado:1;Ahora:A=0[];B=1[8]\nAntes:A=0[];B=1[8];Aceptado:0;Ahora:A=0[];B=1[8]\nAntes:A=0[];B=1[8];Aceptado:1;Ahora:A=0[];B=0[]\nAntes:A=0[];B=0[];Aceptado:1;Ahora:A=4[0,0,0,0];B=0[]\nAntes:A=4[0,0,0,0];B=0[];Aceptado:1;Ahora:A=4[0,0,0,9];B=0[]\nAntes:A=4[0,0,0,9];B=0[];Aceptado:1;Ahora:A=4[0,0,0,9];B=4[0,0,0,0]\nAntes:A=4[0,0,0,9];B=4[0,0,0,0];Aceptado:1;Ahora:A=4[0,0,0,0];B=0[]\nAntes:A=4[0,0,0,0];B=0[];Aceptado:1;Ahora:A=4[0,0,0,0];B=0[]\nSumas:0:0"
+                ],
+                "explanation": "La copia modificada necesita otro Tramo y debe conservar el origen durante la llamada. Para tomar el array, comprueba antes el límite y sólo al aceptar ejecuta la asignación por movimiento. Vincular && no consume por sí solo el origen."
+              }
+            ]
+          }
+        }
+      },
+      {
+        "id": "block_0023_0001",
+        "block": {
+          "type": "code",
+          "language": "cpp",
+          "code": "#include <iostream>\n#include <memory>\n#include <utility>\n#include <new>\n\nclass Tramo {\npublic:\n    Tramo() = default;\n    Tramo(const Tramo& otra);\n    Tramo& operator=(const Tramo& otra);\n    Tramo(Tramo&& otra) noexcept;\n    Tramo& operator=(Tramo&& otra) noexcept;\n    ~Tramo() = default;\n    int cantidad() const noexcept { return cantidad_; }\n    const int* acceso() const noexcept { return datos_.get(); }\n    bool configurar(int cantidad) noexcept;\n    bool leer(int indice, int& resultado) const noexcept;\n    bool escribir(int indice, int valor) noexcept;\n    bool vaciar() noexcept;\n    int sumar() const noexcept;\n    void intercambiar(Tramo& otra) noexcept;\nprivate:\n    std::unique_ptr<int[]> datos_{};\n    int cantidad_ = 0;\n};\nTramo::Tramo(const Tramo& otra) : datos_{}, cantidad_{0} {\n    if (otra.cantidad_ != 0) {\n        datos_ = std::make_unique<int[]>(otra.cantidad_);\n        for (int i = 0; i < otra.cantidad_; ++i) {\n            datos_[i] = otra.datos_[i];\n        }\n        cantidad_ = otra.cantidad_;\n    }\n}\nTramo::Tramo(Tramo&& otra) noexcept\n    : datos_{std::move(otra.datos_)}, cantidad_{otra.cantidad_} {\n    otra.cantidad_ = 0;\n}\nTramo& Tramo::operator=(const Tramo& otra) {\n    if (this != &otra) {\n        Tramo candidata{otra};\n        intercambiar(candidata);\n    }\n    return *this;\n}\nTramo& Tramo::operator=(Tramo&& otra) noexcept {\n    if (this != &otra) {\n        datos_ = std::move(otra.datos_);\n        cantidad_ = otra.cantidad_;\n        otra.cantidad_ = 0;\n    }\n    return *this;\n}\nbool Tramo::configurar(int cantidad) noexcept {\n    if (cantidad < 0 || cantidad > 4) {\n        return false;\n    }\n    if (cantidad == 0) {\n        return vaciar();\n    }\n    try {\n        auto candidata = std::make_unique<int[]>(cantidad);\n        datos_.swap(candidata);\n        cantidad_ = cantidad;\n        return true;\n    } catch (const std::bad_alloc&) {\n        return false;\n    }\n}\nbool Tramo::leer(int indice, int& resultado) const noexcept {\n    if (indice < 0 || indice >= cantidad_) {\n        return false;\n    }\n    resultado = datos_[indice];\n    return true;\n}\nbool Tramo::escribir(int indice, int valor) noexcept {\n    if (indice < 0 || indice >= cantidad_ || valor < 0 || valor > 9) {\n        return false;\n    }\n    datos_[indice] = valor;\n    return true;\n}\n\nbool Tramo::vaciar() noexcept {\n    datos_.reset();\n    cantidad_ = 0;\n    return true;\n}\n\nint Tramo::sumar() const noexcept {\n    int suma = 0;\n    for (int i = 0; i < cantidad_; ++i) {\n        suma += datos_[i];\n    }\n    return suma;\n}\n\nvoid Tramo::intercambiar(Tramo& otra) noexcept {\n    datos_.swap(otra.datos_);\n    std::swap(cantidad_, otra.cantidad_);\n}\nTramo copia_modificada(const Tramo& origen, int indice, int valor) {\n    Tramo resultado{origen};\n    resultado.escribir(indice, valor);\n    return resultado;\n}\nbool tomar_si_cabe(Tramo& destino, Tramo&& origen, int limite) noexcept {\n    if (limite < 0 || limite > 4 || origen.cantidad() > limite) {\n        return false;\n    }\n    destino = std::move(origen);\n    return true;\n}\nvoid mostrar(const Tramo& lote) {\n    std::cout << lote.cantidad() << '[';\n    for (int i = 0; i < lote.cantidad(); ++i) {\n        int valor = -1;\n        lote.leer(i, valor);\n        if (i != 0) {\n            std::cout << ',';\n        }\n        std::cout << valor;\n    }\n    std::cout << ']';\n}\nint main() {\n    int ordenes = 0;\n    if (!(std::cin >> ordenes) || ordenes < 1 || ordenes > 12) { return 1; }\n    Tramo tramos[2];\n    if (!tramos[0].configurar(3) || !tramos[1].configurar(1)) { return 1; }\n    tramos[0].escribir(0, 1);\n    tramos[0].escribir(2, 4);\n    tramos[1].escribir(0, 8);\n    for (int i = 0; i < ordenes; ++i) {\n        int op = 0, destino = 0, a = 0, b = 0, c = 0;\n        if (!(std::cin >> op >> destino >> a >> b >> c)) { return 1; }\n        std::cout << \"Antes:A=\"; mostrar(tramos[0]);\n        std::cout << \";B=\"; mostrar(tramos[1]);\n        bool aceptado = false;\n        if (destino >= 0 && destino < 2) {\n            Tramo& actual = tramos[destino];\n            if (op == 1 && a >= 0 && a < 2) {\n                const Tramo& origen = tramos[a];\n                if (b >= 0 && b < origen.cantidad() && c >= 0 && c <= 9) {\n                    try {\n                        actual = copia_modificada(origen, b, c);\n                        aceptado = true;\n                    } catch (const std::bad_alloc&) {\n                        aceptado = false;\n                    }\n                }\n            } else if (op == 2 && a >= 0 && a < 2) {\n                aceptado = tomar_si_cabe(actual, std::move(tramos[a]), b);\n            } else if (op == 3) {\n                aceptado = actual.escribir(a, b);\n            } else if (op == 4) {\n                aceptado = actual.configurar(a);\n            }\n        }\n        std::cout << \";Aceptado:\" << aceptado << \";Ahora:A=\";\n        mostrar(tramos[0]); std::cout << \";B=\"; mostrar(tramos[1]);\n        std::cout << '\\n';\n    }\n    std::cout << \"Sumas:\" << tramos[0].sumar() << ':' << tramos[1].sumar();\n    return 0;\n}\n"
+        }
+      }
+    ]
   }
 }

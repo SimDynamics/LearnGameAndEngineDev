@@ -52,7 +52,7 @@
         {
           "type": "code",
           "language": "cpp",
-          "code": "// lote.hpp, junto a registro.hpp (la biblioteca anterior)\n#include \"assetcheck/registro.hpp\"\n#include <cstddef>\n#include <string>\n#include <vector>\nnamespace assetcheck {\nstruct Admision { std::size_t linea; Registro registro; };\nstruct Rechazo {\n    std::size_t linea;\n    Resultado causa;\n    std::size_t primera = 0;\n};\nstruct Lote {\n    std::vector<Admision> admitidos;\n    std::vector<Rechazo> rechazados;\n};\nvoid procesar_linea(const std::string& texto,\n                   std::size_t numero, Lote& lote);\n}"
+          "code": "// lote.hpp, junto a registro.hpp (la biblioteca anterior)\n#include \"assetcheck/registro.hpp\"\n#include <cstddef>\n#include <string>\n#include <vector>\n\nnamespace assetcheck {\nstruct Admision { std::size_t linea; Registro registro; };\nstruct Rechazo {\n    std::size_t linea;\n    Resultado causa;\n    std::size_t primera = 0;\n};\n\nstruct Lote {\n    std::vector<Admision> admitidos;\n    std::vector<Rechazo> rechazados;\n};\nvoid procesar_linea(const std::string& texto,\n                   std::size_t numero, Lote& lote);\n}"
         },
         {
           "type": "paragraph",
@@ -94,7 +94,7 @@
         {
           "type": "code",
           "language": "cpp",
-          "code": "Registro candidata;\nconst Resultado local = leer_registro(texto, candidata);\nif (local != Resultado::aceptado) {\n    lote.rechazados.push_back({numero, local, 0});\n    return;\n}\n// Sólo aquí se consulta el ID entre admisiones anteriores."
+          "code": "Registro candidata;\nconst Resultado local = leer_registro(texto, candidata);\n\nif (local != Resultado::aceptado) {\n    lote.rechazados.push_back({numero, local, 0});\n    return;\n}\n// Sólo aquí se consulta el ID entre admisiones anteriores."
         },
         {
           "type": "paragraph",
@@ -352,7 +352,7 @@
         {
           "type": "cpp_compiler",
           "language": "cpp",
-          "initialCode": "#include <iostream>\n#include <sstream>\n#include <string>\n#include <vector>\n\nstruct Registro { std::string id, tipo; int bytes = 0; };\nstruct Admision { Registro registro; int primera; };\nenum class Resultado { aceptado, formato, id, tipo, tamano };\n\nbool letra(char c) { return (c >= 'A' && c <= 'Z') || (c >= 'a' && c <= 'z'); }\nbool digito(char c) { return c >= '0' && c <= '9'; }\nResultado leer_registro(const std::string& linea, Registro& destino) {\n    if (linea.size() > 80) return Resultado::formato;\n    for (unsigned char c : linea)\n        if (c != '\\t' && (c < 32 || c > 126)) return Resultado::formato;\n    std::istringstream flujo(linea);\n    std::string id, tipo, texto, extra;\n    if (!(flujo >> id >> tipo >> texto) || (flujo >> extra)) return Resultado::formato;\n    if (id.size() > 12 || !letra(id[0])) return Resultado::id;\n    for (char c : id) if (!letra(c) && !digito(c) && c != '_') return Resultado::id;\n    if (tipo != \"textura\" && tipo != \"malla\" && tipo != \"sonido\") return Resultado::tipo;\n    if (texto.empty() || texto.size() > 5) return Resultado::tamano;\n    int bytes = 0;\n    for (char c : texto) {\n        if (!digito(c)) return Resultado::tamano;\n        bytes = bytes * 10 + c - '0';\n    }\n    if (bytes < 1 || bytes > 30000) return Resultado::tamano;\n    destino = {id, tipo, bytes};\n    return Resultado::aceptado;\n}\nconst char* nombre(Resultado r) {\n    switch (r) {\n        case Resultado::formato: return \"FORMATO\";\n        case Resultado::id: return \"ID\";\n        case Resultado::tipo: return \"TIPO\";\n        case Resultado::tamano: return \"TAMANO\";\n        default: return \"ACEPTADO\";\n    }\n}\n\n// Completa sólo esta función después de la validación local.\nvoid procesar_linea(const std::string& linea, int numero, std::vector<Admision>& admitidos) {\n    Registro candidata;\n    const Resultado local = leer_registro(linea, candidata);\n    if (local != Resultado::aceptado) {\n        std::cout << \"R \" << numero << ' ' << nombre(local) << '\\n';\n        return;\n    }\n    // TODO: busca un ID idéntico entre TODAS las admisiones anteriores.\n    // Si existe, escribe: R numero DUPLICADO primera\n    // y termina sin cambiar admitidos.\n    // Si no existe, inserta {candidata, numero} y escribe:\n    // A numero id tipo bytes\n}\n\nint main() {\n    std::vector<Admision> admitidos;\n    std::string linea;\n    int numero = 0;\n    while (std::getline(std::cin, linea))\n        procesar_linea(linea, ++numero, admitidos);\n}\n",
+          "initialCode": "#include <iostream>\n#include <sstream>\n#include <string>\n#include <vector>\n\nstruct Registro { std::string id, tipo; int bytes = 0; };\nstruct Admision { Registro registro; int primera; };\nenum class Resultado { aceptado, formato, id, tipo, tamano };\n\nbool letra(char c) { return (c >= 'A' && c <= 'Z') || (c >= 'a' && c <= 'z'); }\nbool digito(char c) { return c >= '0' && c <= '9'; }\nResultado leer_registro(const std::string& linea, Registro& destino) {\n    if (linea.size() > 80) return Resultado::formato;\n    for (unsigned char c : linea)\n        if (c != '\\t' && (c < 32 || c > 126)) return Resultado::formato;\n    std::istringstream flujo(linea);\n    std::string id, tipo, texto, extra;\n    if (!(flujo >> id >> tipo >> texto) || (flujo >> extra)) return Resultado::formato;\n    if (id.size() > 12 || !letra(id[0])) return Resultado::id;\n    for (char c : id) if (!letra(c) && !digito(c) && c != '_') return Resultado::id;\n    if (tipo != \"textura\" && tipo != \"malla\" && tipo != \"sonido\") return Resultado::tipo;\n    if (texto.empty() || texto.size() > 5) return Resultado::tamano;\n    int bytes = 0;\n    for (char c : texto) {\n        if (!digito(c)) return Resultado::tamano;\n        bytes = bytes * 10 + c - '0';\n    }\n    if (bytes < 1 || bytes > 30000) return Resultado::tamano;\n    destino = {id, tipo, bytes};\n    return Resultado::aceptado;\n}\n\nconst char* nombre(Resultado r) {\n    switch (r) {\n        case Resultado::formato: return \"FORMATO\";\n        case Resultado::id: return \"ID\";\n        case Resultado::tipo: return \"TIPO\";\n        case Resultado::tamano: return \"TAMANO\";\n        default: return \"ACEPTADO\";\n    }\n}\n\n// Completa sólo esta función después de la validación local.\nvoid procesar_linea(const std::string& linea, int numero, std::vector<Admision>& admitidos) {\n    Registro candidata;\n    const Resultado local = leer_registro(linea, candidata);\n\n    if (local != Resultado::aceptado) {\n        std::cout << \"R \" << numero << ' ' << nombre(local) << '\\n';\n        return;\n    }\n    // TODO: busca un ID idéntico entre TODAS las admisiones anteriores.\n    // Si existe, escribe: R numero DUPLICADO primera\n    // y termina sin cambiar admitidos.\n    // Si no existe, inserta {candidata, numero} y escribe:\n    // A numero id tipo bytes\n    \n}\n\nint main() {\n    std::vector<Admision> admitidos;\n    std::string linea;\n    int numero = 0;\n\n    while (std::getline(std::cin, linea))\n        procesar_linea(linea, ++numero, admitidos);\n}\n",
           "outputCheck": {
             "inputComparison": "exact",
             "cases": [
@@ -536,7 +536,7 @@
         {
           "type": "code",
           "language": "cpp",
-          "code": "#pragma once\n// lote.hpp, junto a registro.hpp (la biblioteca anterior)\n#include \"assetcheck/registro.hpp\"\n#include <cstddef>\n#include <string>\n#include <vector>\nnamespace assetcheck {\nstruct Admision { std::size_t linea; Registro registro; };\nstruct Rechazo {\n    std::size_t linea;\n    Resultado causa;\n    std::size_t primera = 0;\n};\nstruct Lote {\n    std::vector<Admision> admitidos;\n    std::vector<Rechazo> rechazados;\n};\nvoid procesar_linea(const std::string& texto,\n                   std::size_t numero, Lote& lote);\n}"
+          "code": "#pragma once\n// lote.hpp, junto a registro.hpp (la biblioteca anterior)\n#include \"assetcheck/registro.hpp\"\n#include <cstddef>\n#include <string>\n#include <vector>\n\nnamespace assetcheck {\nstruct Admision { std::size_t linea; Registro registro; };\nstruct Rechazo {\n    std::size_t linea;\n    Resultado causa;\n    std::size_t primera = 0;\n};\n\nstruct Lote {\n    std::vector<Admision> admitidos;\n    std::vector<Rechazo> rechazados;\n};\nvoid procesar_linea(const std::string& texto,\n                   std::size_t numero, Lote& lote);\n}"
         },
         {
           "type": "image",
@@ -552,7 +552,7 @@
         {
           "type": "code",
           "language": "cpp",
-          "code": "// src/lote.cpp\n#include \"assetcheck/lote.hpp\"\nnamespace assetcheck {\nvoid procesar_linea(const std::string& texto,\n                    std::size_t numero, Lote& lote) {\n    Registro candidata;\n    const Resultado local = leer_registro(texto, candidata);\n    if (local != Resultado::aceptado) {\n        lote.rechazados.push_back({numero, local, 0});\n        return;\n    }\n    for (const auto& anterior : lote.admitidos) {\n        if (anterior.registro.id == candidata.id) {\n            lote.rechazados.push_back(\n                {numero, Resultado::duplicado, anterior.linea});\n            return;\n        }\n    }\n    lote.admitidos.push_back({numero, candidata});\n}\n}"
+          "code": "// src/lote.cpp\n#include \"assetcheck/lote.hpp\"\n\nnamespace assetcheck {\nvoid procesar_linea(const std::string& texto,\n                    std::size_t numero, Lote& lote) {\n    Registro candidata;\n    const Resultado local = leer_registro(texto, candidata);\n\n    if (local != Resultado::aceptado) {\n        lote.rechazados.push_back({numero, local, 0});\n        return;\n    }\n    for (const auto& anterior : lote.admitidos) {\n        if (anterior.registro.id == candidata.id) {\n            lote.rechazados.push_back(\n                {numero, Resultado::duplicado, anterior.linea});\n            return;\n        }\n    }\n    lote.admitidos.push_back({numero, candidata});\n}\n}"
         },
         {
           "type": "image",
@@ -568,7 +568,7 @@
         {
           "type": "code",
           "language": "cmake",
-          "code": "# Añadir después de definir assetcheck_registro.\nadd_library(assetcheck_lote STATIC src/lote.cpp)\ntarget_include_directories(assetcheck_lote PUBLIC include)\ntarget_link_libraries(assetcheck_lote PUBLIC assetcheck_registro)\ntarget_compile_features(assetcheck_lote PUBLIC cxx_std_20)\nset_target_properties(assetcheck_lote PROPERTIES CXX_EXTENSIONS OFF)\n\nadd_executable(comprobar_lote pruebas/lote_casos.cpp)\ntarget_link_libraries(comprobar_lote PRIVATE assetcheck_lote)\nadd_test(NAME comprobar_lote COMMAND comprobar_lote)"
+          "code": "# Añadir después de definir assetcheck_registro.\nadd_library(assetcheck_lote STATIC src/lote.cpp)\n\ntarget_include_directories(assetcheck_lote PUBLIC include)\ntarget_link_libraries(assetcheck_lote PUBLIC assetcheck_registro)\ntarget_compile_features(assetcheck_lote PUBLIC cxx_std_20)\nset_target_properties(assetcheck_lote PROPERTIES CXX_EXTENSIONS OFF)\n\nadd_executable(comprobar_lote pruebas/lote_casos.cpp)\n\ntarget_link_libraries(comprobar_lote PRIVATE assetcheck_lote)\nadd_test(NAME comprobar_lote COMMAND comprobar_lote)"
         },
         {
           "type": "code",
@@ -627,7 +627,7 @@
         {
           "type": "code",
           "language": "cpp",
-          "code": "#include \"assetcheck/lote.hpp\"\n#include <cstddef>\n#include <iostream>\n#include <string>\n#include <vector>\n\nnamespace {\nusing assetcheck::Lote;\nusing assetcheck::Registro;\nusing assetcheck::Resultado;\n\nbool mismo_registro(const Registro& obtenido, const Registro& esperado) {\n    return obtenido.id == esperado.id\n        && obtenido.tipo == esperado.tipo\n        && obtenido.tamano_bytes == esperado.tamano_bytes;\n}\n\nbool mismo_lote(const Lote& obtenido, const Lote& esperado) {\n    // La igualdad de tamanos detecta tanto elementos faltantes como sobrantes.\n    if (obtenido.admitidos.size() != esperado.admitidos.size()\n        || obtenido.rechazados.size() != esperado.rechazados.size()) {\n        return false;\n    }\n    // Se comparan posiciones, no conjuntos: tambien importa el orden.\n    for (std::size_t i = 0; i < esperado.admitidos.size(); ++i) {\n        if (obtenido.admitidos[i].linea != esperado.admitidos[i].linea\n            || !mismo_registro(obtenido.admitidos[i].registro,\n                               esperado.admitidos[i].registro)) {\n            return false;\n        }\n    }\n    for (std::size_t i = 0; i < esperado.rechazados.size(); ++i) {\n        if (obtenido.rechazados[i].linea != esperado.rechazados[i].linea\n            || obtenido.rechazados[i].causa != esperado.rechazados[i].causa\n            || obtenido.rechazados[i].primera != esperado.rechazados[i].primera) {\n            return false;\n        }\n    }\n    return true;\n}\n\nconst char* nombre(Resultado resultado) {\n    switch (resultado) {\n        case Resultado::aceptado: return \"ACEPTADO\";\n        case Resultado::formato: return \"FORMATO\";\n        case Resultado::id: return \"ID\";\n        case Resultado::tipo: return \"TIPO\";\n        case Resultado::tamano: return \"TAMANO\";\n        case Resultado::duplicado: return \"DUPLICADO\";\n    }\n    return \"RESULTADO_DESCONOCIDO\";\n}\n\nvoid mostrar_lote(const Lote& lote) {\n    std::cerr << \"Admitidos=\" << lote.admitidos.size()\n              << \" Rechazados=\" << lote.rechazados.size() << '\\n';\n    for (const auto& admision : lote.admitidos) {\n        std::cerr << \"A \" << admision.linea << ' ' << admision.registro.id\n                  << ' ' << admision.registro.tipo << ' '\n                  << admision.registro.tamano_bytes << '\\n';\n    }\n    for (const auto& rechazo : lote.rechazados) {\n        std::cerr << \"R \" << rechazo.linea << ' ' << nombre(rechazo.causa)\n                  << ' ' << rechazo.primera << '\\n';\n    }\n}\n\nstruct Caso {\n    const char* nombre;\n    std::vector<std::string> lineas;\n    Lote esperado;\n};\n} // namespace"
+          "code": "#include \"assetcheck/lote.hpp\"\n#include <cstddef>\n#include <iostream>\n#include <string>\n#include <vector>\n\nnamespace {\nusing assetcheck::Lote;\nusing assetcheck::Registro;\nusing assetcheck::Resultado;\n\nbool mismo_registro(const Registro& obtenido, const Registro& esperado) {\n    return obtenido.id == esperado.id\n        && obtenido.tipo == esperado.tipo\n        && obtenido.tamano_bytes == esperado.tamano_bytes;\n}\n\nbool mismo_lote(const Lote& obtenido, const Lote& esperado) {\n    // La igualdad de tamanos detecta tanto elementos faltantes como sobrantes.\n    if (obtenido.admitidos.size() != esperado.admitidos.size()\n        || obtenido.rechazados.size() != esperado.rechazados.size()) {\n        return false;\n    }\n    // Se comparan posiciones, no conjuntos: tambien importa el orden.\n    for (std::size_t i = 0; i < esperado.admitidos.size(); ++i) {\n        if (obtenido.admitidos[i].linea != esperado.admitidos[i].linea\n            || !mismo_registro(obtenido.admitidos[i].registro,\n                               esperado.admitidos[i].registro)) {\n            return false;\n        }\n    }\n    for (std::size_t i = 0; i < esperado.rechazados.size(); ++i) {\n        if (obtenido.rechazados[i].linea != esperado.rechazados[i].linea\n            || obtenido.rechazados[i].causa != esperado.rechazados[i].causa\n            || obtenido.rechazados[i].primera != esperado.rechazados[i].primera) {\n            return false;\n        }\n    }\n\n    return true;\n}\n\nconst char* nombre(Resultado resultado) {\n    switch (resultado) {\n        case Resultado::aceptado: return \"ACEPTADO\";\n        case Resultado::formato: return \"FORMATO\";\n        case Resultado::id: return \"ID\";\n        case Resultado::tipo: return \"TIPO\";\n        case Resultado::tamano: return \"TAMANO\";\n        case Resultado::duplicado: return \"DUPLICADO\";\n    }\n\n    return \"RESULTADO_DESCONOCIDO\";\n}\n\nvoid mostrar_lote(const Lote& lote) {\n    std::cerr << \"Admitidos=\" << lote.admitidos.size()\n              << \" Rechazados=\" << lote.rechazados.size() << '\\n';\n    for (const auto& admision : lote.admitidos) {\n        std::cerr << \"A \" << admision.linea << ' ' << admision.registro.id\n                  << ' ' << admision.registro.tipo << ' '\n                  << admision.registro.tamano_bytes << '\\n';\n    }\n    for (const auto& rechazo : lote.rechazados) {\n        std::cerr << \"R \" << rechazo.linea << ' ' << nombre(rechazo.causa)\n                  << ' ' << rechazo.primera << '\\n';\n    }\n}\n\nstruct Caso {\n    const char* nombre;\n    std::vector<std::string> lineas;\n    Lote esperado;\n};\n} // namespace"
         },
         {
           "type": "paragraph",
@@ -653,7 +653,7 @@
         {
           "type": "code",
           "language": "cpp",
-          "code": "    int comprobaciones = 0;\n    int fallos = 0;\n    for (const Caso& caso : casos) {\n        Lote obtenido; // Estado nuevo para cada ensayo completo.\n        for (std::size_t i = 0; i < caso.lineas.size(); ++i) {\n            assetcheck::procesar_linea(caso.lineas[i], i + 1, obtenido);\n        }\n        ++comprobaciones;\n        if (!mismo_lote(obtenido, caso.esperado)) {\n            ++fallos;\n            std::cerr << \"Comprobacion \" << comprobaciones << \": \" << caso.nombre\n                      << \"\\nEsperado:\\n\";\n            mostrar_lote(caso.esperado);\n            std::cerr << \"Obtenido:\\n\";\n            mostrar_lote(obtenido);\n        }\n    }\n    std::cout << \"Comprobaciones=\" << comprobaciones << \" Fallos=\" << fallos << '\\n';\n    return fallos == 0 ? 0 : 1;\n}"
+          "code": "    int comprobaciones = 0;\n    int fallos = 0;\n\n    for (const Caso& caso : casos) {\n        Lote obtenido; // Estado nuevo para cada ensayo completo.\n        for (std::size_t i = 0; i < caso.lineas.size(); ++i) {\n            assetcheck::procesar_linea(caso.lineas[i], i + 1, obtenido);\n        }\n        ++comprobaciones;\n        if (!mismo_lote(obtenido, caso.esperado)) {\n            ++fallos;\n            std::cerr << \"Comprobacion \" << comprobaciones << \": \" << caso.nombre\n                      << \"\\nEsperado:\\n\";\n            mostrar_lote(caso.esperado);\n            std::cerr << \"Obtenido:\\n\";\n            mostrar_lote(obtenido);\n        }\n    }\n    std::cout << \"Comprobaciones=\" << comprobaciones << \" Fallos=\" << fallos << '\\n';\n    return fallos == 0 ? 0 : 1;\n}"
         },
         {
           "type": "image",
@@ -3739,6 +3739,145 @@
         "id": "block_0008_0006",
         "beforeSha256": "48ed5372b5c4d93e5727a0bba4cdb7a5cf622babe7144d55164430396b7dd869",
         "afterSha256": "b4a34719a9de4fcd93539236da2cf603f9b55de91fed3193af06e37bd0b202f1"
+      },
+      {
+        "id": "block_0001_0002",
+        "beforeSha256": "68ace359533268458ba83035a8d25fa8643807320ec0d3c8f20c2a13a6dbaf66",
+        "afterSha256": "31d14d87e8fdfb264f421b0b2a9f5e00cfc29424259a8f0148abc716f4bcf1b5"
+      },
+      {
+        "id": "block_0002_0002",
+        "beforeSha256": "585ff8a800ffd1e321dd40c017f0c51edd86856c3e5ab062cc20f2146604b95a",
+        "afterSha256": "46a977d56fe6b8e7c3fae807f61ca5778aa025991b30fec39daefb1ff6c5eaa3"
+      },
+      {
+        "id": "block_0005_0002",
+        "beforeSha256": "6df1cac38c1667d17d87f936aec54e05de27ec0876cf7d8bcb4e2c16e2eb66db",
+        "afterSha256": "2e123b9abb5d102e0939ff94f392caab7006516ba33b21dbc41b1b47fc855b2f"
+      },
+      {
+        "id": "u4l5_cabecera_completa",
+        "beforeSha256": "82a7564301701bd2b8b3e4015ef3f38a541d269a90087c8af916cea74a44f083",
+        "afterSha256": "7666ce8a0c633b1798e1578523975f533385378555bf2b48db5c0749cabbe705"
+      },
+      {
+        "id": "block_0007_0002",
+        "beforeSha256": "a2dbd7cc996f0be8f125486dfb4721bbe57bf0cea390c753b787190a4f7eabaf",
+        "afterSha256": "df424fcfb5942269996d6dab1ca9e15a375b7f9a949833528972bc012d0b784d"
+      },
+      {
+        "id": "block_0007_0004",
+        "beforeSha256": "56d242c58e2052cb799ee4290499c530312e71c282e267a241d4081fbac8a42a",
+        "afterSha256": "8e2426302c0d1af8fc1ac17154615cf970be900c0b773813e0367f32f627945f"
+      },
+      {
+        "id": "u4l5_comprobador_auxiliares",
+        "beforeSha256": "34951d04d244f9ad6347b0597df21921c80ad948539f923d03749438ad8674a3",
+        "afterSha256": "f39baad5aabc191ab2fa42ba36b649eab00a381cd0557c817936c4227279bdcf"
+      },
+      {
+        "id": "u4l5_comprobador_recorrido",
+        "beforeSha256": "ba93e48a4052faee58867b599d7958a7e578fca4ed221474b7e13a4aac0740bc",
+        "afterSha256": "feb2b12d0573a38001d855a2636c73a66ea30a75a842445a6a3f26f7008bbc3f"
+      }
+    ],
+    "sourceFormatRevisions": [
+      {
+        "id": "block_0001_0002",
+        "block": {
+          "type": "code",
+          "language": "cpp",
+          "code": "// lote.hpp, junto a registro.hpp (la biblioteca anterior)\n#include \"assetcheck/registro.hpp\"\n#include <cstddef>\n#include <string>\n#include <vector>\nnamespace assetcheck {\nstruct Admision { std::size_t linea; Registro registro; };\nstruct Rechazo {\n    std::size_t linea;\n    Resultado causa;\n    std::size_t primera = 0;\n};\nstruct Lote {\n    std::vector<Admision> admitidos;\n    std::vector<Rechazo> rechazados;\n};\nvoid procesar_linea(const std::string& texto,\n                   std::size_t numero, Lote& lote);\n}"
+        }
+      },
+      {
+        "id": "block_0002_0002",
+        "block": {
+          "type": "code",
+          "language": "cpp",
+          "code": "Registro candidata;\nconst Resultado local = leer_registro(texto, candidata);\nif (local != Resultado::aceptado) {\n    lote.rechazados.push_back({numero, local, 0});\n    return;\n}\n// Sólo aquí se consulta el ID entre admisiones anteriores."
+        }
+      },
+      {
+        "id": "block_0005_0002",
+        "block": {
+          "type": "cpp_compiler",
+          "language": "cpp",
+          "initialCode": "#include <iostream>\n#include <sstream>\n#include <string>\n#include <vector>\n\nstruct Registro { std::string id, tipo; int bytes = 0; };\nstruct Admision { Registro registro; int primera; };\nenum class Resultado { aceptado, formato, id, tipo, tamano };\n\nbool letra(char c) { return (c >= 'A' && c <= 'Z') || (c >= 'a' && c <= 'z'); }\nbool digito(char c) { return c >= '0' && c <= '9'; }\nResultado leer_registro(const std::string& linea, Registro& destino) {\n    if (linea.size() > 80) return Resultado::formato;\n    for (unsigned char c : linea)\n        if (c != '\\t' && (c < 32 || c > 126)) return Resultado::formato;\n    std::istringstream flujo(linea);\n    std::string id, tipo, texto, extra;\n    if (!(flujo >> id >> tipo >> texto) || (flujo >> extra)) return Resultado::formato;\n    if (id.size() > 12 || !letra(id[0])) return Resultado::id;\n    for (char c : id) if (!letra(c) && !digito(c) && c != '_') return Resultado::id;\n    if (tipo != \"textura\" && tipo != \"malla\" && tipo != \"sonido\") return Resultado::tipo;\n    if (texto.empty() || texto.size() > 5) return Resultado::tamano;\n    int bytes = 0;\n    for (char c : texto) {\n        if (!digito(c)) return Resultado::tamano;\n        bytes = bytes * 10 + c - '0';\n    }\n    if (bytes < 1 || bytes > 30000) return Resultado::tamano;\n    destino = {id, tipo, bytes};\n    return Resultado::aceptado;\n}\nconst char* nombre(Resultado r) {\n    switch (r) {\n        case Resultado::formato: return \"FORMATO\";\n        case Resultado::id: return \"ID\";\n        case Resultado::tipo: return \"TIPO\";\n        case Resultado::tamano: return \"TAMANO\";\n        default: return \"ACEPTADO\";\n    }\n}\n\n// Completa sólo esta función después de la validación local.\nvoid procesar_linea(const std::string& linea, int numero, std::vector<Admision>& admitidos) {\n    Registro candidata;\n    const Resultado local = leer_registro(linea, candidata);\n    if (local != Resultado::aceptado) {\n        std::cout << \"R \" << numero << ' ' << nombre(local) << '\\n';\n        return;\n    }\n    // TODO: busca un ID idéntico entre TODAS las admisiones anteriores.\n    // Si existe, escribe: R numero DUPLICADO primera\n    // y termina sin cambiar admitidos.\n    // Si no existe, inserta {candidata, numero} y escribe:\n    // A numero id tipo bytes\n}\n\nint main() {\n    std::vector<Admision> admitidos;\n    std::string linea;\n    int numero = 0;\n    while (std::getline(std::cin, linea))\n        procesar_linea(linea, ++numero, admitidos);\n}\n",
+          "outputCheck": {
+            "inputComparison": "exact",
+            "cases": [
+              {
+                "standardInput": "A malla 1\nA sonido 4\n",
+                "outputs": [
+                  "A 1 A malla 1\nR 2 DUPLICADO 1\n"
+                ],
+                "explanation": "Se conserva la primera admisión completa de A: malla y 1 byte."
+              },
+              {
+                "standardInput": "B sonido 0\nB sonido 3\nB malla 5\n",
+                "outputs": [
+                  "R 1 TAMANO\nA 2 B sonido 3\nR 3 DUPLICADO 2\n"
+                ],
+                "explanation": "La primera B se rechazó localmente. La segunda B es la primera admitida."
+              },
+              {
+                "standardInput": "A textura 1\nb malla 2\nA sonido 3\na malla 4\nb sonido 5\n",
+                "outputs": [
+                  "A 1 A textura 1\nA 2 b malla 2\nR 3 DUPLICADO 1\nA 4 a malla 4\nR 5 DUPLICADO 2\n"
+                ],
+                "explanation": "Se busca entre todas las admisiones, no sólo la última. A y a son distintos."
+              },
+              {
+                "standardInput": "X texture 2\nX textura 1\n\nX textura 8\n",
+                "outputs": [
+                  "R 1 TIPO\nA 2 X textura 1\nR 3 FORMATO\nR 4 DUPLICADO 2\n"
+                ],
+                "explanation": "El rechazo de tipo no reserva X; una línea vacía también cuenta y se rechaza por FORMATO."
+              }
+            ]
+          }
+        }
+      },
+      {
+        "id": "u4l5_cabecera_completa",
+        "block": {
+          "type": "code",
+          "language": "cpp",
+          "code": "#pragma once\n// lote.hpp, junto a registro.hpp (la biblioteca anterior)\n#include \"assetcheck/registro.hpp\"\n#include <cstddef>\n#include <string>\n#include <vector>\nnamespace assetcheck {\nstruct Admision { std::size_t linea; Registro registro; };\nstruct Rechazo {\n    std::size_t linea;\n    Resultado causa;\n    std::size_t primera = 0;\n};\nstruct Lote {\n    std::vector<Admision> admitidos;\n    std::vector<Rechazo> rechazados;\n};\nvoid procesar_linea(const std::string& texto,\n                   std::size_t numero, Lote& lote);\n}"
+        }
+      },
+      {
+        "id": "block_0007_0002",
+        "block": {
+          "type": "code",
+          "language": "cpp",
+          "code": "// src/lote.cpp\n#include \"assetcheck/lote.hpp\"\nnamespace assetcheck {\nvoid procesar_linea(const std::string& texto,\n                    std::size_t numero, Lote& lote) {\n    Registro candidata;\n    const Resultado local = leer_registro(texto, candidata);\n    if (local != Resultado::aceptado) {\n        lote.rechazados.push_back({numero, local, 0});\n        return;\n    }\n    for (const auto& anterior : lote.admitidos) {\n        if (anterior.registro.id == candidata.id) {\n            lote.rechazados.push_back(\n                {numero, Resultado::duplicado, anterior.linea});\n            return;\n        }\n    }\n    lote.admitidos.push_back({numero, candidata});\n}\n}"
+        }
+      },
+      {
+        "id": "block_0007_0004",
+        "block": {
+          "type": "code",
+          "language": "cmake",
+          "code": "# Añadir después de definir assetcheck_registro.\nadd_library(assetcheck_lote STATIC src/lote.cpp)\ntarget_include_directories(assetcheck_lote PUBLIC include)\ntarget_link_libraries(assetcheck_lote PUBLIC assetcheck_registro)\ntarget_compile_features(assetcheck_lote PUBLIC cxx_std_20)\nset_target_properties(assetcheck_lote PROPERTIES CXX_EXTENSIONS OFF)\n\nadd_executable(comprobar_lote pruebas/lote_casos.cpp)\ntarget_link_libraries(comprobar_lote PRIVATE assetcheck_lote)\nadd_test(NAME comprobar_lote COMMAND comprobar_lote)"
+        }
+      },
+      {
+        "id": "u4l5_comprobador_auxiliares",
+        "block": {
+          "type": "code",
+          "language": "cpp",
+          "code": "#include \"assetcheck/lote.hpp\"\n#include <cstddef>\n#include <iostream>\n#include <string>\n#include <vector>\n\nnamespace {\nusing assetcheck::Lote;\nusing assetcheck::Registro;\nusing assetcheck::Resultado;\n\nbool mismo_registro(const Registro& obtenido, const Registro& esperado) {\n    return obtenido.id == esperado.id\n        && obtenido.tipo == esperado.tipo\n        && obtenido.tamano_bytes == esperado.tamano_bytes;\n}\n\nbool mismo_lote(const Lote& obtenido, const Lote& esperado) {\n    // La igualdad de tamanos detecta tanto elementos faltantes como sobrantes.\n    if (obtenido.admitidos.size() != esperado.admitidos.size()\n        || obtenido.rechazados.size() != esperado.rechazados.size()) {\n        return false;\n    }\n    // Se comparan posiciones, no conjuntos: tambien importa el orden.\n    for (std::size_t i = 0; i < esperado.admitidos.size(); ++i) {\n        if (obtenido.admitidos[i].linea != esperado.admitidos[i].linea\n            || !mismo_registro(obtenido.admitidos[i].registro,\n                               esperado.admitidos[i].registro)) {\n            return false;\n        }\n    }\n    for (std::size_t i = 0; i < esperado.rechazados.size(); ++i) {\n        if (obtenido.rechazados[i].linea != esperado.rechazados[i].linea\n            || obtenido.rechazados[i].causa != esperado.rechazados[i].causa\n            || obtenido.rechazados[i].primera != esperado.rechazados[i].primera) {\n            return false;\n        }\n    }\n    return true;\n}\n\nconst char* nombre(Resultado resultado) {\n    switch (resultado) {\n        case Resultado::aceptado: return \"ACEPTADO\";\n        case Resultado::formato: return \"FORMATO\";\n        case Resultado::id: return \"ID\";\n        case Resultado::tipo: return \"TIPO\";\n        case Resultado::tamano: return \"TAMANO\";\n        case Resultado::duplicado: return \"DUPLICADO\";\n    }\n    return \"RESULTADO_DESCONOCIDO\";\n}\n\nvoid mostrar_lote(const Lote& lote) {\n    std::cerr << \"Admitidos=\" << lote.admitidos.size()\n              << \" Rechazados=\" << lote.rechazados.size() << '\\n';\n    for (const auto& admision : lote.admitidos) {\n        std::cerr << \"A \" << admision.linea << ' ' << admision.registro.id\n                  << ' ' << admision.registro.tipo << ' '\n                  << admision.registro.tamano_bytes << '\\n';\n    }\n    for (const auto& rechazo : lote.rechazados) {\n        std::cerr << \"R \" << rechazo.linea << ' ' << nombre(rechazo.causa)\n                  << ' ' << rechazo.primera << '\\n';\n    }\n}\n\nstruct Caso {\n    const char* nombre;\n    std::vector<std::string> lineas;\n    Lote esperado;\n};\n} // namespace"
+        }
+      },
+      {
+        "id": "u4l5_comprobador_recorrido",
+        "block": {
+          "type": "code",
+          "language": "cpp",
+          "code": "    int comprobaciones = 0;\n    int fallos = 0;\n    for (const Caso& caso : casos) {\n        Lote obtenido; // Estado nuevo para cada ensayo completo.\n        for (std::size_t i = 0; i < caso.lineas.size(); ++i) {\n            assetcheck::procesar_linea(caso.lineas[i], i + 1, obtenido);\n        }\n        ++comprobaciones;\n        if (!mismo_lote(obtenido, caso.esperado)) {\n            ++fallos;\n            std::cerr << \"Comprobacion \" << comprobaciones << \": \" << caso.nombre\n                      << \"\\nEsperado:\\n\";\n            mostrar_lote(caso.esperado);\n            std::cerr << \"Obtenido:\\n\";\n            mostrar_lote(obtenido);\n        }\n    }\n    std::cout << \"Comprobaciones=\" << comprobaciones << \" Fallos=\" << fallos << '\\n';\n    return fallos == 0 ? 0 : 1;\n}"
+        }
       }
     ]
   }

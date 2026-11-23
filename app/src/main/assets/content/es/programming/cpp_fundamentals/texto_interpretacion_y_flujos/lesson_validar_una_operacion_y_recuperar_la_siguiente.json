@@ -143,7 +143,7 @@
         {
           "type": "code",
           "language": "cpp",
-          "code": "#include <iostream>\n#include <sstream>\n#include <string>\n\nbool analizar_cantidad(const std::string& texto, int& resultado) {\n    std::istringstream campos{texto};\n    int cantidad = 0;\n\n    if (!(campos >> cantidad)) {\n        return false;\n    }\n\n    if (cantidad < 1 || cantidad > 12) {\n        return false;\n    }\n\n    std::string extra;\n    if (campos >> extra) {\n        return false;\n    }\n\n    if (campos.bad() || !campos.eof()) {\n        return false;\n    }\n\n    resultado = cantidad;\n    return true;\n}\n\nint main() {\n    int cantidad = 3;\n    const bool aceptada = analizar_cantidad(\" 8 \", cantidad);\n    std::cout << aceptada << \" \" << cantidad;\n\n    return 0;\n}\n"
+          "code": "#include <iostream>\n#include <sstream>\n#include <string>\n\nbool analizar_cantidad(const std::string& texto, int& resultado) {\n    std::istringstream campos{texto};\n    int cantidad = 0;\n\n    if (!(campos >> cantidad)) {\n        return false;\n    }\n\n    if (cantidad < 1 || cantidad > 12) {\n        return false;\n    }\n\n    std::string extra;\n    if (campos >> extra) {\n        return false;\n    }\n\n    if (campos.bad() || !campos.eof()) {\n        return false;\n    }\n\n    resultado = cantidad;\n    return true;\n}\n\nint main() {\n    int cantidad = 3;\n    const bool aceptada = analizar_cantidad(\" 8 \", cantidad);\n\n    std::cout << aceptada << \" \" << cantidad;\n\n    return 0;\n}\n"
         },
         {
           "type": "paragraph",
@@ -169,7 +169,7 @@
           "type": "output_prediction",
           "question": "Predice las tres líneas, siguiendo también el estado de cantidad en el llamador.",
           "language": "cpp",
-          "code": "#include <iostream>\n#include <sstream>\n#include <string>\n\nbool analizar_cantidad(const std::string& texto, int& resultado) {\n    std::istringstream campos{texto};\n    int cantidad = 0;\n\n    if (!(campos >> cantidad)) {\n        return false;\n    }\n\n    if (cantidad < 1 || cantidad > 12) {\n        return false;\n    }\n\n    std::string extra;\n    if (campos >> extra) {\n        return false;\n    }\n\n    if (campos.bad() || !campos.eof()) {\n        return false;\n    }\n\n    resultado = cantidad;\n    return true;\n}\n\nint main() {\n    int cantidad = 4;\n    const bool primera = analizar_cantidad(\"15\", cantidad);\n    std::cout << primera << \" \" << cantidad << \"\\n\";\n\n    const bool segunda = analizar_cantidad(\"7x\", cantidad);\n    std::cout << segunda << \" \" << cantidad << \"\\n\";\n\n    const bool tercera = analizar_cantidad(\" 9 \", cantidad);\n    std::cout << tercera << \" \" << cantidad;\n\n    return 0;\n}\n",
+          "code": "#include <iostream>\n#include <sstream>\n#include <string>\n\nbool analizar_cantidad(const std::string& texto, int& resultado) {\n    std::istringstream campos{texto};\n    int cantidad = 0;\n\n    if (!(campos >> cantidad)) {\n        return false;\n    }\n\n    if (cantidad < 1 || cantidad > 12) {\n        return false;\n    }\n\n    std::string extra;\n    if (campos >> extra) {\n        return false;\n    }\n\n    if (campos.bad() || !campos.eof()) {\n        return false;\n    }\n\n    resultado = cantidad;\n    return true;\n}\n\nint main() {\n    int cantidad = 4;\n    const bool primera = analizar_cantidad(\"15\", cantidad);\n\n    std::cout << primera << \" \" << cantidad << \"\\n\";\n\n    const bool segunda = analizar_cantidad(\"7x\", cantidad);\n    std::cout << segunda << \" \" << cantidad << \"\\n\";\n\n    const bool tercera = analizar_cantidad(\" 9 \", cantidad);\n    std::cout << tercera << \" \" << cantidad;\n\n    return 0;\n}\n",
           "answers": [
             "0 4\n0 4\n1 9"
           ],
@@ -374,7 +374,7 @@
         },
         {
           "type": "cpp_compiler",
-          "initialCode": "#include <iostream>\n#include <sstream>\n#include <string>\n\n// Copia aqui tu funcion de analisis, probar y los auxiliares necesarios.\n\nint main() {\n    probar(\"2\\nx\\n6 ruido\\n0\\n\");\n    probar(\"6\");\n    probar(\"7\");\n    probar(\"-1\");\n    probar(\"3x\");\n    probar(\" 4 \");\n    probar(\"\");\n    probar(\"\\n\");\n    probar(\"x\\n5\");\n\n    int resultado = 3;\n    bool valida = analizar_nivel(\"4 extra\", resultado);\n    std::cout << valida << ':' << resultado << \"\\n\";\n\n    valida = analizar_nivel(\"5\", resultado);\n    std::cout << valida << ':' << resultado << \"\\n\";\n\n    valida = analizar_nivel(\"7\", resultado);\n    std::cout << valida << ':' << resultado << \"\\n\";\n\n    valida = analizar_nivel(\"+6\", resultado);\n    std::cout << valida << ':' << resultado << \"\\n\";\n\n    valida = analizar_nivel(\"-1\", resultado);\n    std::cout << valida << ':' << resultado << \"\\n\";\n\n    valida = analizar_nivel(\"0005\", resultado);\n    std::cout << valida << ':' << resultado << \"\\n\";\n\n    return 0;\n}\n",
+          "initialCode": "#include <iostream>\n#include <sstream>\n#include <string>\n\n// Copia aqui tu funcion de analisis, probar y los auxiliares necesarios.\n\nint main() {\n    probar(\"2\\nx\\n6 ruido\\n0\\n\");\n    probar(\"6\");\n    probar(\"7\");\n    probar(\"-1\");\n    probar(\"3x\");\n    probar(\" 4 \");\n    probar(\"\");\n    probar(\"\\n\");\n    probar(\"x\\n5\");\n\n    int resultado = 3;\n    bool valida = analizar_nivel(\"4 extra\", resultado);\n\n    std::cout << valida << ':' << resultado << \"\\n\";\n\n    valida = analizar_nivel(\"5\", resultado);\n\n    std::cout << valida << ':' << resultado << \"\\n\";\n\n    valida = analizar_nivel(\"7\", resultado);\n\n    std::cout << valida << ':' << resultado << \"\\n\";\n\n    valida = analizar_nivel(\"+6\", resultado);\n\n    std::cout << valida << ':' << resultado << \"\\n\";\n\n    valida = analizar_nivel(\"-1\", resultado);\n\n    std::cout << valida << ':' << resultado << \"\\n\";\n\n    valida = analizar_nivel(\"0005\", resultado);\n\n    std::cout << valida << ':' << resultado << \"\\n\";\n\n    return 0;\n}\n",
           "outputCheck": {
             "inputComparison": "exact",
             "cases": [
@@ -465,7 +465,7 @@
         {
           "type": "code",
           "language": "cpp",
-          "code": "#include <iostream>\n#include <sstream>\n#include <string>\n\nbool analizar_nivel(const std::string& texto, int& resultado) {\n    std::istringstream campos{texto};\n    int cantidad = 0;\n\n    if (!(campos >> cantidad)) {\n        return false;\n    }\n\n    if (cantidad < 0 || cantidad > 6) {\n        return false;\n    }\n\n    std::string extra;\n    if (campos >> extra) {\n        return false;\n    }\n\n    if (campos.bad() || !campos.eof()) {\n        return false;\n    }\n\n    resultado = cantidad;\n    return true;\n}\n\nvoid probar(const std::string& texto) {\n    std::istringstream origen{texto};\n    std::string linea;\n\n    while (std::getline(origen, linea)) {\n        int nivel = 0;\n        if (analizar_nivel(linea, nivel)) {\n            std::cout << \"Nivel: \" << nivel << \"\\n\";\n        } else {\n            std::cout << \"Operacion invalida\\n\";\n        }\n    }\n\n    if (origen.bad()) {\n        std::cout << \"Fallo del origen\\n\";\n    }\n}\n\nint main() {\n    probar(\"2\\nx\\n6 ruido\\n0\\n\");\n    probar(\"6\");\n    probar(\"7\");\n    probar(\"-1\");\n    probar(\"3x\");\n    probar(\" 4 \");\n    probar(\"\");\n    probar(\"\\n\");\n    probar(\"x\\n5\");\n\n    int resultado = 3;\n    bool valida = analizar_nivel(\"4 extra\", resultado);\n    std::cout << valida << ':' << resultado << \"\\n\";\n\n    valida = analizar_nivel(\"5\", resultado);\n    std::cout << valida << ':' << resultado << \"\\n\";\n\n    return 0;\n}\n"
+          "code": "#include <iostream>\n#include <sstream>\n#include <string>\n\nbool analizar_nivel(const std::string& texto, int& resultado) {\n    std::istringstream campos{texto};\n    int cantidad = 0;\n\n    if (!(campos >> cantidad)) {\n        return false;\n    }\n\n    if (cantidad < 0 || cantidad > 6) {\n        return false;\n    }\n\n    std::string extra;\n    if (campos >> extra) {\n        return false;\n    }\n\n    if (campos.bad() || !campos.eof()) {\n        return false;\n    }\n\n    resultado = cantidad;\n    return true;\n}\n\nvoid probar(const std::string& texto) {\n    std::istringstream origen{texto};\n    std::string linea;\n\n    while (std::getline(origen, linea)) {\n        int nivel = 0;\n        if (analizar_nivel(linea, nivel)) {\n            std::cout << \"Nivel: \" << nivel << \"\\n\";\n        } else {\n            std::cout << \"Operacion invalida\\n\";\n        }\n    }\n\n    if (origen.bad()) {\n        std::cout << \"Fallo del origen\\n\";\n    }\n}\n\nint main() {\n    probar(\"2\\nx\\n6 ruido\\n0\\n\");\n    probar(\"6\");\n    probar(\"7\");\n    probar(\"-1\");\n    probar(\"3x\");\n    probar(\" 4 \");\n    probar(\"\");\n    probar(\"\\n\");\n    probar(\"x\\n5\");\n\n    int resultado = 3;\n    bool valida = analizar_nivel(\"4 extra\", resultado);\n\n    std::cout << valida << ':' << resultado << \"\\n\";\n\n    valida = analizar_nivel(\"5\", resultado);\n\n    std::cout << valida << ':' << resultado << \"\\n\";\n\n    return 0;\n}\n"
         }
       ]
     }
@@ -1684,6 +1684,26 @@
         "id": "block_0008_0001",
         "beforeSha256": "94eec7c4486dbd050115eff4b35abddfc71f86d242dc2b888e32ec2f0f892b84",
         "afterSha256": "7f7064794d65cda92d25b0a84b5d63211c819bf831c08d7ada62ee5723da766b"
+      },
+      {
+        "id": "block_0003_0001",
+        "beforeSha256": "a5f5950f908219a8ba571827bfe244b0e90bebe8c12f5974655fca5b786b4b4a",
+        "afterSha256": "31ddbc4f7abe1fd90cee3017009096fb57cd4da238c22658e95f508846b77d3b"
+      },
+      {
+        "id": "block_0003_0004",
+        "beforeSha256": "bf134ec79aea28a0e119f0de13ffceb02d86d5101e13a7ac4d7ee602fcbe2599",
+        "afterSha256": "fd3e061f8ef44dd9aaae3be9969fed7aabc3611843d3ac32dd5323b7463adc0b"
+      },
+      {
+        "id": "u11_nivel_conservacion_y_representaciones_comprobacion",
+        "beforeSha256": "8692ffd659b176467d22def736db9e42c329558133cbd756292d390aba1f2a57",
+        "afterSha256": "f10a7fd89a55bd020a3c87484bff4882e63d057a3ba198b86b733c5aee703f8c"
+      },
+      {
+        "id": "block_0008_0001",
+        "beforeSha256": "7f7064794d65cda92d25b0a84b5d63211c819bf831c08d7ada62ee5723da766b",
+        "afterSha256": "0830f98a6cf7a0d5dac0bf01c5ef454420e5b0368859ee856af2f3526f5a5ad5"
       }
     ],
     "choiceRevisions": [

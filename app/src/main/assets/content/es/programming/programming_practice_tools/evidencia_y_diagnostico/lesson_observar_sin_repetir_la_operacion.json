@@ -25,7 +25,7 @@
           "id": "obs_predecir_dos_operaciones_de_trabajo",
           "language": "cpp",
           "question": "Predice la salida exacta del programa de referencia. No hay espacios ni salto final.",
-          "code": "#include <iostream>\n\nint numero_visita{0};\n\nint registrar_visita() {\n    ++numero_visita;\n    return numero_visita;\n}\n\nint main() {\n    const int primera = registrar_visita();\n    const int segunda = registrar_visita();\n    std::cout << \"R:\" << primera << \":\" << segunda;\n    return 0;\n}\n",
+          "code": "#include <iostream>\n\nint numero_visita{0};\n\nint registrar_visita() {\n    ++numero_visita;\n    return numero_visita;\n}\n\nint main() {\n    const int primera = registrar_visita();\n    const int segunda = registrar_visita();\n\n    std::cout << \"R:\" << primera << \":\" << segunda;\n\n    return 0;\n}\n",
           "answers": [
             "R:1:2"
           ],
@@ -54,7 +54,7 @@
           "id": "obs_predecir_diagnostico_que_repite",
           "language": "cpp",
           "question": "Predice las dos líneas de esta revisión. Conserva el salto entre DIAG y R; no hay salto final.",
-          "code": "#include <iostream>\n\nint numero_visita{0};\n\nint registrar_visita() {\n    ++numero_visita;\n    return numero_visita;\n}\n\nint main() {\n    const int primera = registrar_visita();\n    std::cout << \"DIAG:\" << registrar_visita() << \"\\n\";\n    const int segunda = registrar_visita();\n    std::cout << \"R:\" << primera << \":\" << segunda;\n    return 0;\n}\n",
+          "code": "#include <iostream>\n\nint numero_visita{0};\n\nint registrar_visita() {\n    ++numero_visita;\n    return numero_visita;\n}\n\nint main() {\n    const int primera = registrar_visita();\n\n    std::cout << \"DIAG:\" << registrar_visita() << \"\\n\";\n    const int segunda = registrar_visita();\n    std::cout << \"R:\" << primera << \":\" << segunda;\n\n    return 0;\n}\n",
           "answers": [
             "DIAG:2\nR:1:3"
           ],
@@ -166,7 +166,7 @@
         {
           "type": "cpp_compiler",
           "language": "cpp",
-          "initialCode": "#include <iostream>\n\nint numero_visita{0};\n\nint registrar_visita() {\n    ++numero_visita;\n    return numero_visita;\n}\n\nint main() {\n    const int primera = registrar_visita();\n    std::cout << \"DIAG:\" << registrar_visita() << \"\\n\";\n    const int segunda = registrar_visita();\n    std::cout << \"R:\" << primera << \":\" << segunda;\n    return 0;\n}\n",
+          "initialCode": "#include <iostream>\n\nint numero_visita{0};\n\nint registrar_visita() {\n    ++numero_visita;\n    return numero_visita;\n}\n\nint main() {\n    const int primera = registrar_visita();\n\n    std::cout << \"DIAG:\" << registrar_visita() << \"\\n\";\n    const int segunda = registrar_visita();\n    std::cout << \"R:\" << primera << \":\" << segunda;\n\n    return 0;\n}\n",
           "outputCheck": {
             "inputComparison": "exact",
             "cases": [
@@ -199,7 +199,7 @@
         {
           "type": "code",
           "language": "cpp",
-          "code": "#include <iostream>\n\nint numero_visita{0};\n\nint registrar_visita() {\n    ++numero_visita;\n    return numero_visita;\n}\n\nint main() {\n    const int primera = registrar_visita();\n    std::cout << \"DIAG:\" << primera << \"\\n\";\n    const int segunda = registrar_visita();\n    std::cout << \"R:\" << primera << \":\" << segunda;\n    return 0;\n}\n"
+          "code": "#include <iostream>\n\nint numero_visita{0};\n\nint registrar_visita() {\n    ++numero_visita;\n    return numero_visita;\n}\n\nint main() {\n    const int primera = registrar_visita();\n\n    std::cout << \"DIAG:\" << primera << \"\\n\";\n    const int segunda = registrar_visita();\n    std::cout << \"R:\" << primera << \":\" << segunda;\n\n    return 0;\n}\n"
         },
         {
           "type": "paragraph",
@@ -210,7 +210,7 @@
           "id": "obs_recuperar_el_resultado_tras_otra_operacion",
           "language": "cpp",
           "question": "La observación se ha retrasado hasta después de la segunda visita. Completa únicamente el nombre del objeto que conserva el resultado de la primera; no escribas una constante ni otra llamada.",
-          "code": "#include <iostream>\n\nint numero_visita{0};\n\nint registrar_visita() {\n    ++numero_visita;\n    return numero_visita;\n}\n\nint main() {\n    const int primera_guardada = registrar_visita();\n    const int posterior = registrar_visita();\n    std::cout << \"DIAG:\" << ___ << \"\\n\";\n    std::cout << \"R:\" << primera_guardada << \":\" << posterior;\n    return 0;\n}\n",
+          "code": "#include <iostream>\n\nint numero_visita{0};\n\nint registrar_visita() {\n    ++numero_visita;\n    return numero_visita;\n}\n\nint main() {\n    const int primera_guardada = registrar_visita();\n    const int posterior = registrar_visita();\n\n    std::cout << \"DIAG:\" << ___ << \"\\n\";\n    std::cout << \"R:\" << primera_guardada << \":\" << posterior;\n\n    return 0;\n}\n",
           "answers": [
             "primera_guardada"
           ],
@@ -234,7 +234,7 @@
           "id": "obs_predecir_efecto_despues_del_trabajo",
           "language": "cpp",
           "question": "Predice las tres líneas. Hay saltos entre DIAG, R y C, pero no después de C. Cuenta también la llamada escrita dentro del diagnóstico.",
-          "code": "#include <iostream>\n\nint numero_visita{0};\n\nint registrar_visita() {\n    ++numero_visita;\n    return numero_visita;\n}\n\nint main() {\n    const int primera = registrar_visita();\n    const int segunda = registrar_visita();\n    const int tercera = registrar_visita();\n    std::cout << \"DIAG:\" << registrar_visita() << \"\\n\";\n    std::cout << \"R:\" << primera << \":\" << segunda << \":\" << tercera << \"\\n\";\n    std::cout << \"C:\" << numero_visita;\n    return 0;\n}\n",
+          "code": "#include <iostream>\n\nint numero_visita{0};\n\nint registrar_visita() {\n    ++numero_visita;\n    return numero_visita;\n}\n\nint main() {\n    const int primera = registrar_visita();\n    const int segunda = registrar_visita();\n    const int tercera = registrar_visita();\n\n    std::cout << \"DIAG:\" << registrar_visita() << \"\\n\";\n    std::cout << \"R:\" << primera << \":\" << segunda << \":\" << tercera << \"\\n\";\n    std::cout << \"C:\" << numero_visita;\n\n    return 0;\n}\n",
           "answers": [
             "DIAG:4\nR:1:2:3\nC:4"
           ],
@@ -249,7 +249,7 @@
         {
           "type": "cpp_compiler",
           "language": "cpp",
-          "initialCode": "#include <iostream>\n\nint numero_visita{0};\n\nint registrar_visita() {\n    ++numero_visita;\n    return numero_visita;\n}\n\nint main() {\n    const int primera = registrar_visita();\n    const int segunda = registrar_visita();\n    const int tercera = registrar_visita();\n    std::cout << \"DIAG:\" << registrar_visita() << \"\\n\";\n    std::cout << \"R:\" << primera << \":\" << segunda << \":\" << tercera << \"\\n\";\n    std::cout << \"C:\" << numero_visita;\n    return 0;\n}\n",
+          "initialCode": "#include <iostream>\n\nint numero_visita{0};\n\nint registrar_visita() {\n    ++numero_visita;\n    return numero_visita;\n}\n\nint main() {\n    const int primera = registrar_visita();\n    const int segunda = registrar_visita();\n    const int tercera = registrar_visita();\n\n    std::cout << \"DIAG:\" << registrar_visita() << \"\\n\";\n    std::cout << \"R:\" << primera << \":\" << segunda << \":\" << tercera << \"\\n\";\n    std::cout << \"C:\" << numero_visita;\n\n    return 0;\n}\n",
           "outputCheck": {
             "inputComparison": "exact",
             "cases": [
@@ -301,7 +301,7 @@
           "id": "obs_predecir_recalculo_sin_efectos",
           "language": "cpp",
           "question": "Predice las dos líneas de este programa. Hay un salto entre DIAG y R, sin salto final.",
-          "code": "#include <iostream>\n\nint piezas_de_cajas(int cajas) {\n    return 3 * cajas;\n}\n\nint main() {\n    const int preparadas = piezas_de_cajas(4);\n    std::cout << \"DIAG:\" << piezas_de_cajas(4) << \"\\n\";\n    std::cout << \"R:\" << preparadas;\n    return 0;\n}\n",
+          "code": "#include <iostream>\n\nint piezas_de_cajas(int cajas) {\n    return 3 * cajas;\n}\n\nint main() {\n    const int preparadas = piezas_de_cajas(4);\n\n    std::cout << \"DIAG:\" << piezas_de_cajas(4) << \"\\n\";\n    std::cout << \"R:\" << preparadas;\n\n    return 0;\n}\n",
           "answers": [
             "DIAG:12\nR:12"
           ],
@@ -351,7 +351,7 @@
           "id": "obs_predecir_una_retirada_anadida",
           "language": "cpp",
           "question": "Predice DIAG y R. Conserva el salto entre ambas líneas; no hay salto final.",
-          "code": "#include <iostream>\n\nint unidades{4};\n\nint retirar_unidad() {\n    --unidades;\n    return unidades;\n}\n\nint main() {\n    const int primera = retirar_unidad();\n    std::cout << \"DIAG:\" << retirar_unidad() << \"\\n\";\n    const int segunda = retirar_unidad();\n    std::cout << \"R:\" << primera << \":\" << segunda;\n    return 0;\n}\n",
+          "code": "#include <iostream>\n\nint unidades{4};\n\nint retirar_unidad() {\n    --unidades;\n    return unidades;\n}\n\nint main() {\n    const int primera = retirar_unidad();\n\n    std::cout << \"DIAG:\" << retirar_unidad() << \"\\n\";\n    const int segunda = retirar_unidad();\n    std::cout << \"R:\" << primera << \":\" << segunda;\n\n    return 0;\n}\n",
           "answers": [
             "DIAG:2\nR:3:1"
           ],
@@ -366,7 +366,7 @@
         {
           "type": "cpp_compiler",
           "language": "cpp",
-          "initialCode": "#include <iostream>\n\nint unidades{4};\n\nint retirar_unidad() {\n    --unidades;\n    return unidades;\n}\n\nint main() {\n    const int primera = retirar_unidad();\n    std::cout << \"DIAG:\" << retirar_unidad() << \"\\n\";\n    const int segunda = retirar_unidad();\n    std::cout << \"R:\" << primera << \":\" << segunda;\n    return 0;\n}\n",
+          "initialCode": "#include <iostream>\n\nint unidades{4};\n\nint retirar_unidad() {\n    --unidades;\n    return unidades;\n}\n\nint main() {\n    const int primera = retirar_unidad();\n\n    std::cout << \"DIAG:\" << retirar_unidad() << \"\\n\";\n    const int segunda = retirar_unidad();\n    std::cout << \"R:\" << primera << \":\" << segunda;\n\n    return 0;\n}\n",
           "outputCheck": {
             "inputComparison": "exact",
             "cases": [
@@ -395,7 +395,7 @@
         {
           "type": "code",
           "language": "cpp",
-          "code": "#include <iostream>\n\nint unidades{4};\n\nint retirar_unidad() {\n    --unidades;\n    return unidades;\n}\n\nint main() {\n    const int primera = retirar_unidad();\n    std::cout << \"DIAG:\" << primera << \"\\n\";\n    const int segunda = retirar_unidad();\n    std::cout << \"R:\" << primera << \":\" << segunda;\n    return 0;\n}\n"
+          "code": "#include <iostream>\n\nint unidades{4};\n\nint retirar_unidad() {\n    --unidades;\n    return unidades;\n}\n\nint main() {\n    const int primera = retirar_unidad();\n\n    std::cout << \"DIAG:\" << primera << \"\\n\";\n    const int segunda = retirar_unidad();\n    std::cout << \"R:\" << primera << \":\" << segunda;\n\n    return 0;\n}\n"
         },
         {
           "type": "paragraph",
@@ -450,7 +450,7 @@
         {
           "type": "cpp_compiler",
           "language": "cpp",
-          "initialCode": "#include <iostream>\n\nint unidades{6};\n\nint retirar_unidad() {\n    --unidades;\n    return unidades;\n}\n\nint main() {\n    const int primera = retirar_unidad();\n    std::cout << \"DIAG:\" << retirar_unidad() << \"\\n\";\n    const int segunda = retirar_unidad();\n    std::cout << \"R:\" << primera << \":\" << segunda;\n    return 0;\n}\n",
+          "initialCode": "#include <iostream>\n\nint unidades{6};\n\nint retirar_unidad() {\n    --unidades;\n    return unidades;\n}\n\nint main() {\n    const int primera = retirar_unidad();\n\n    std::cout << \"DIAG:\" << retirar_unidad() << \"\\n\";\n    const int segunda = retirar_unidad();\n    std::cout << \"R:\" << primera << \":\" << segunda;\n\n    return 0;\n}\n",
           "outputCheck": {
             "inputComparison": "exact",
             "cases": [
@@ -1783,6 +1783,259 @@
         "id": "block_0008_0003",
         "beforeSha256": "3a0a56a23a053e7651087873803c5fa18894cd2070810ea88390e5da8d023bca",
         "afterSha256": "52a080db60ac3ca226538646d1d4778ec9105b53eb17e564d5da8dac64f71142"
+      },
+      {
+        "id": "block_0000_0004",
+        "beforeSha256": "c6838d42d3430851409250891858135c31995fdd7d9a206364bb5e858db5bc14",
+        "afterSha256": "2a8c07b327838eb6e4a1e158b34219eb529fb78d1c7e7f4e332f2e77eb5ede69"
+      },
+      {
+        "id": "block_0001_0002",
+        "beforeSha256": "5c69d0b0b17ff6044282399205b355c709667bbbc43d4077f6cc5aadb97934be",
+        "afterSha256": "7c5965ed4c832e212c7caa702bc1ea511d71b989c453b7bf013a4f0e9d537727"
+      },
+      {
+        "id": "block_0003_0003",
+        "beforeSha256": "a84e84dba8321abc79178e1ef516de436c329565cd330ba1091fe511ce515383",
+        "afterSha256": "9abc3e8d514f78b4005f542223176290b54f827795702d0a72ffddcc4b8b81da"
+      },
+      {
+        "id": "block_0004_0002",
+        "beforeSha256": "a1e541975ad0019d00affc2d32d081b4b2f2c4d5ba948f5d20aff3bf8ddebc9c",
+        "afterSha256": "b4f27cbd7b7cac94fc6cc97ab5589812d198099bb9a502083dd8b44f4c711a92"
+      },
+      {
+        "id": "block_0004_0004",
+        "beforeSha256": "9f68f84ae17d9359ece3cd5bedc7f2231cc4fba77806ee292863705617342415",
+        "afterSha256": "b3085d7fb9894666bd7fe631f5ddf3d425d75d3c1d2bc04c217efec08e64b5cb"
+      },
+      {
+        "id": "block_0005_0002",
+        "beforeSha256": "ac08c3b2ec84000e0b16a87a5804ea5f9f936ff1b8960d69308534365a84885b",
+        "afterSha256": "ac63d9909529f47dd77a3eee44cc8b48aeab95faf5abf8d2e23d699985dff2a6"
+      },
+      {
+        "id": "block_0005_0004",
+        "beforeSha256": "8ce547698cb36e40412b31143624a17705de35ae85b13baa007f0bdfd8db790a",
+        "afterSha256": "16b0bbbe6e43dc5e9046031bd2510af78519870c70a3680ca14b84d373c8081b"
+      },
+      {
+        "id": "block_0006_0003",
+        "beforeSha256": "b062ec48d3341279f1a3b1cce5671b063880078dc306bedfd1c5a76082037024",
+        "afterSha256": "34f0abb2e3941c18a654ed3a51a14c24783cdc20124d56e214baba6d8a237fd8"
+      },
+      {
+        "id": "block_0007_0003",
+        "beforeSha256": "34506610ef89143ff74420066bb756fa3710e0ce833e666d3e225463fb879b3b",
+        "afterSha256": "c7fda2959ad313a8d5f85afd6477bfb447986344aa99d45240a3dc08e650e4f1"
+      },
+      {
+        "id": "block_0007_0005",
+        "beforeSha256": "4ced460e69f44a0be7f873ae957bb1a287bb4655022508f8265f6b9dca4133ee",
+        "afterSha256": "cd761b36a63a356c417c626a5e3fd4c3f52f36c19ad7367d8382eb62a035fb5f"
+      },
+      {
+        "id": "block_0008_0002",
+        "beforeSha256": "8c39393bf3aecc154dafb3894e1d2ca750b4774adb8009d817d3c19338bab9c3",
+        "afterSha256": "90d22d26c9221206eda7d00650e118773164ae16163cb08d49a5ce2caf8ed2ae"
+      },
+      {
+        "id": "block_0008_0009",
+        "beforeSha256": "c59eec773b01739830e669e60a8f8ec24066f5c3afeefd9110112ea08a0c604a",
+        "afterSha256": "5614dbefcc140d071904c169ddcfd9bccec12dadee9dc6faece02eca51fd6756"
+      }
+    ],
+    "sourceFormatRevisions": [
+      {
+        "id": "block_0000_0004",
+        "block": {
+          "type": "output_prediction",
+          "id": "obs_predecir_dos_operaciones_de_trabajo",
+          "language": "cpp",
+          "question": "Predice la salida exacta del programa de referencia. No hay espacios ni salto final.",
+          "code": "#include <iostream>\n\nint numero_visita{0};\n\nint registrar_visita() {\n    ++numero_visita;\n    return numero_visita;\n}\n\nint main() {\n    const int primera = registrar_visita();\n    const int segunda = registrar_visita();\n    std::cout << \"R:\" << primera << \":\" << segunda;\n    return 0;\n}\n",
+          "answers": [
+            "R:1:2"
+          ],
+          "explanation": "La primera llamada registra la visita 1 y devuelve 1. La segunda registra la visita 2 y devuelve 2. Los dos resultados guardados producen R:1:2; imprimirlos no llama otra vez al servicio.",
+          "outputComparison": "exact",
+          "reviewFeedback": "Distingue las llamadas al servicio de las lecturas de resultados ya guardados. Sigue los valores de esos objetos en orden y compón únicamente lo que envía cada expresión a cout."
+        }
+      },
+      {
+        "id": "block_0001_0002",
+        "block": {
+          "type": "output_prediction",
+          "id": "obs_predecir_diagnostico_que_repite",
+          "language": "cpp",
+          "question": "Predice las dos líneas de esta revisión. Conserva el salto entre DIAG y R; no hay salto final.",
+          "code": "#include <iostream>\n\nint numero_visita{0};\n\nint registrar_visita() {\n    ++numero_visita;\n    return numero_visita;\n}\n\nint main() {\n    const int primera = registrar_visita();\n    std::cout << \"DIAG:\" << registrar_visita() << \"\\n\";\n    const int segunda = registrar_visita();\n    std::cout << \"R:\" << primera << \":\" << segunda;\n    return 0;\n}\n",
+          "answers": [
+            "DIAG:2\nR:1:3"
+          ],
+          "explanation": "La primera visita deja el contador en 1. La llamada dentro de cout registra otra visita y devuelve 2, que se imprime en DIAG. La segunda visita de trabajo ocurre después y devuelve 3. La salida es DIAG:2, salto de línea, R:1:3; la revisión ejecutó tres operaciones de registro.",
+          "outputComparison": "exact",
+          "reviewFeedback": "Anota el estado antes y después de cada llamada escrita, incluida la que aparece al calcular el diagnóstico. Después sitúa cada resultado en su impresión y conserva los saltos del código."
+        }
+      },
+      {
+        "id": "block_0003_0003",
+        "block": {
+          "type": "cpp_compiler",
+          "language": "cpp",
+          "initialCode": "#include <iostream>\n\nint numero_visita{0};\n\nint registrar_visita() {\n    ++numero_visita;\n    return numero_visita;\n}\n\nint main() {\n    const int primera = registrar_visita();\n    std::cout << \"DIAG:\" << registrar_visita() << \"\\n\";\n    const int segunda = registrar_visita();\n    std::cout << \"R:\" << primera << \":\" << segunda;\n    return 0;\n}\n",
+          "outputCheck": {
+            "inputComparison": "exact",
+            "cases": [
+              {
+                "standardInput": "",
+                "outputs": [
+                  "DIAG:1\nR:1:2"
+                ],
+                "explanation": "El diagnóstico utiliza el resultado de la primera visita; no registra una visita adicional y la segunda operación de trabajo conserva el resultado 2."
+              }
+            ]
+          }
+        }
+      },
+      {
+        "id": "block_0004_0002",
+        "block": {
+          "type": "code",
+          "language": "cpp",
+          "code": "#include <iostream>\n\nint numero_visita{0};\n\nint registrar_visita() {\n    ++numero_visita;\n    return numero_visita;\n}\n\nint main() {\n    const int primera = registrar_visita();\n    std::cout << \"DIAG:\" << primera << \"\\n\";\n    const int segunda = registrar_visita();\n    std::cout << \"R:\" << primera << \":\" << segunda;\n    return 0;\n}\n"
+        }
+      },
+      {
+        "id": "block_0004_0004",
+        "block": {
+          "type": "fill_code",
+          "id": "obs_recuperar_el_resultado_tras_otra_operacion",
+          "language": "cpp",
+          "question": "La observación se ha retrasado hasta después de la segunda visita. Completa únicamente el nombre del objeto que conserva el resultado de la primera; no escribas una constante ni otra llamada.",
+          "code": "#include <iostream>\n\nint numero_visita{0};\n\nint registrar_visita() {\n    ++numero_visita;\n    return numero_visita;\n}\n\nint main() {\n    const int primera_guardada = registrar_visita();\n    const int posterior = registrar_visita();\n    std::cout << \"DIAG:\" << ___ << \"\\n\";\n    std::cout << \"R:\" << primera_guardada << \":\" << posterior;\n    return 0;\n}\n",
+          "answers": [
+            "primera_guardada"
+          ],
+          "explanation": "primera_guardada conserva el resultado 1 aunque el contador ya haya avanzado a 2. posterior y numero_visita representan otros datos en este punto. La observación pedida es DIAG:1, seguida de R:1:2, sin ejecutar una tercera operación.",
+          "reviewFeedback": "Relaciona cada objeto guardado con la llamada que le dio su valor. Busca la procedencia del resultado pedido, no sólo el valor actual del servicio; responde con un nombre ya declarado, sin añadir operaciones."
+        }
+      },
+      {
+        "id": "block_0005_0002",
+        "block": {
+          "type": "output_prediction",
+          "id": "obs_predecir_efecto_despues_del_trabajo",
+          "language": "cpp",
+          "question": "Predice las tres líneas. Hay saltos entre DIAG, R y C, pero no después de C. Cuenta también la llamada escrita dentro del diagnóstico.",
+          "code": "#include <iostream>\n\nint numero_visita{0};\n\nint registrar_visita() {\n    ++numero_visita;\n    return numero_visita;\n}\n\nint main() {\n    const int primera = registrar_visita();\n    const int segunda = registrar_visita();\n    const int tercera = registrar_visita();\n    std::cout << \"DIAG:\" << registrar_visita() << \"\\n\";\n    std::cout << \"R:\" << primera << \":\" << segunda << \":\" << tercera << \"\\n\";\n    std::cout << \"C:\" << numero_visita;\n    return 0;\n}\n",
+          "answers": [
+            "DIAG:4\nR:1:2:3\nC:4"
+          ],
+          "outputComparison": "exact",
+          "explanation": "Las visitas de trabajo guardan 1, 2 y 3. La llamada posterior del diagnóstico registra la visita 4. R conserva sus valores anteriores, pero el estado final mostrado en C es 4; conservar R no demuestra que se hayan conservado las operaciones del experimento.",
+          "reviewFeedback": "Registra por separado los resultados copiados y el estado que permanece en el servicio. Sigue también las operaciones posteriores a esas copias antes de componer cada línea de salida."
+        }
+      },
+      {
+        "id": "block_0005_0004",
+        "block": {
+          "type": "cpp_compiler",
+          "language": "cpp",
+          "initialCode": "#include <iostream>\n\nint numero_visita{0};\n\nint registrar_visita() {\n    ++numero_visita;\n    return numero_visita;\n}\n\nint main() {\n    const int primera = registrar_visita();\n    const int segunda = registrar_visita();\n    const int tercera = registrar_visita();\n    std::cout << \"DIAG:\" << registrar_visita() << \"\\n\";\n    std::cout << \"R:\" << primera << \":\" << segunda << \":\" << tercera << \"\\n\";\n    std::cout << \"C:\" << numero_visita;\n    return 0;\n}\n",
+          "outputCheck": {
+            "inputComparison": "exact",
+            "cases": [
+              {
+                "standardInput": "",
+                "outputs": [
+                  "DIAG:2\nR:1:2:3\nC:3"
+                ],
+                "explanation": "El dato histórico de la segunda visita es 2 y el estado final sigue siendo 3: observar ese resultado no añade otra visita."
+              }
+            ]
+          }
+        }
+      },
+      {
+        "id": "block_0006_0003",
+        "block": {
+          "type": "output_prediction",
+          "id": "obs_predecir_recalculo_sin_efectos",
+          "language": "cpp",
+          "question": "Predice las dos líneas de este programa. Hay un salto entre DIAG y R, sin salto final.",
+          "code": "#include <iostream>\n\nint piezas_de_cajas(int cajas) {\n    return 3 * cajas;\n}\n\nint main() {\n    const int preparadas = piezas_de_cajas(4);\n    std::cout << \"DIAG:\" << piezas_de_cajas(4) << \"\\n\";\n    std::cout << \"R:\" << preparadas;\n    return 0;\n}\n",
+          "answers": [
+            "DIAG:12\nR:12"
+          ],
+          "outputComparison": "exact",
+          "explanation": "Cada llamada calcula 3 por 4 y devuelve 12 sin registrar visitas ni modificar un resumen externo. La segunda llamada no cambia preparadas. main imprime DIAG:12, un salto y R:12; la impresión sí añade una línea a la salida.",
+          "reviewFeedback": "Calcula cada llamada a partir de sus argumentos y examina qué objetos puede modificar su cuerpo. Distingue ese cálculo de la impresión realizada en main y reconstruye sus separadores."
+        }
+      },
+      {
+        "id": "block_0007_0003",
+        "block": {
+          "type": "output_prediction",
+          "id": "obs_predecir_una_retirada_anadida",
+          "language": "cpp",
+          "question": "Predice DIAG y R. Conserva el salto entre ambas líneas; no hay salto final.",
+          "code": "#include <iostream>\n\nint unidades{4};\n\nint retirar_unidad() {\n    --unidades;\n    return unidades;\n}\n\nint main() {\n    const int primera = retirar_unidad();\n    std::cout << \"DIAG:\" << retirar_unidad() << \"\\n\";\n    const int segunda = retirar_unidad();\n    std::cout << \"R:\" << primera << \":\" << segunda;\n    return 0;\n}\n",
+          "answers": [
+            "DIAG:2\nR:3:1"
+          ],
+          "outputComparison": "exact",
+          "explanation": "La primera retirada deja 3 unidades. El diagnóstico vuelve a retirar y muestra 2. La segunda retirada de trabajo deja 1. La revisión produjo DIAG:2 y R:3:1 porque realizó tres retiradas, aunque sólo se solicitaron dos.",
+          "reviewFeedback": "Sigue cuántas unidades quedan antes y después de cada llamada, también dentro del diagnóstico. Conserva por separado los retornos guardados y usa el estado vigente cuando ocurra la siguiente retirada."
+        }
+      },
+      {
+        "id": "block_0007_0005",
+        "block": {
+          "type": "cpp_compiler",
+          "language": "cpp",
+          "initialCode": "#include <iostream>\n\nint unidades{4};\n\nint retirar_unidad() {\n    --unidades;\n    return unidades;\n}\n\nint main() {\n    const int primera = retirar_unidad();\n    std::cout << \"DIAG:\" << retirar_unidad() << \"\\n\";\n    const int segunda = retirar_unidad();\n    std::cout << \"R:\" << primera << \":\" << segunda;\n    return 0;\n}\n",
+          "outputCheck": {
+            "inputComparison": "exact",
+            "cases": [
+              {
+                "standardInput": "",
+                "outputs": [
+                  "DIAG:3\nR:3:2"
+                ],
+                "explanation": "Las dos retiradas de trabajo dejan 3 y 2 unidades. El diagnóstico reutiliza el primer resultado sin consumir una unidad adicional."
+              }
+            ]
+          }
+        }
+      },
+      {
+        "id": "block_0008_0002",
+        "block": {
+          "type": "code",
+          "language": "cpp",
+          "code": "#include <iostream>\n\nint unidades{4};\n\nint retirar_unidad() {\n    --unidades;\n    return unidades;\n}\n\nint main() {\n    const int primera = retirar_unidad();\n    std::cout << \"DIAG:\" << primera << \"\\n\";\n    const int segunda = retirar_unidad();\n    std::cout << \"R:\" << primera << \":\" << segunda;\n    return 0;\n}\n"
+        }
+      },
+      {
+        "id": "block_0008_0009",
+        "block": {
+          "type": "cpp_compiler",
+          "language": "cpp",
+          "initialCode": "#include <iostream>\n\nint unidades{6};\n\nint retirar_unidad() {\n    --unidades;\n    return unidades;\n}\n\nint main() {\n    const int primera = retirar_unidad();\n    std::cout << \"DIAG:\" << retirar_unidad() << \"\\n\";\n    const int segunda = retirar_unidad();\n    std::cout << \"R:\" << primera << \":\" << segunda;\n    return 0;\n}\n",
+          "outputCheck": {
+            "inputComparison": "exact",
+            "cases": [
+              {
+                "standardInput": "",
+                "outputs": [
+                  "DIAG:5\nR:5:4"
+                ],
+                "explanation": "Con seis unidades iniciales, las retiradas de trabajo dejan cinco y cuatro. El diagnóstico sigue describiendo la primera retirada sin ejecutar una tercera."
+              }
+            ]
+          }
+        }
       }
     ]
   },

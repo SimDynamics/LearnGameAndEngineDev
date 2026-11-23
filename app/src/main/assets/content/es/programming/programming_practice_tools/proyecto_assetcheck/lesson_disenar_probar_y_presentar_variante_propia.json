@@ -1032,7 +1032,7 @@
         {
           "type": "code",
           "language": "cmake",
-          "code": "add_library(assetcheck_estadisticas STATIC src/estadisticas.cpp)\ntarget_include_directories(assetcheck_estadisticas PUBLIC include)\ntarget_link_libraries(assetcheck_estadisticas PUBLIC assetcheck_lote)\ntarget_compile_features(assetcheck_estadisticas PUBLIC cxx_std_23)"
+          "code": "add_library(assetcheck_estadisticas STATIC src/estadisticas.cpp)\n\ntarget_include_directories(assetcheck_estadisticas PUBLIC include)\ntarget_link_libraries(assetcheck_estadisticas PUBLIC assetcheck_lote)\ntarget_compile_features(assetcheck_estadisticas PUBLIC cxx_std_23)"
         },
         {
           "type": "paragraph",
@@ -2671,7 +2671,7 @@
         {
           "type": "cpp_compiler",
           "language": "cpp",
-          "initialCode": "#include <iostream>\n#include <string>\n#include <vector>\n\nstruct Registro { std::string tipo; int bytes; };\nstruct Totales { int texturas=0; int mallas=0; int sonidos=0; int bytes=0; };\n\n// Repara sólo esta función. Cada registro ya fue admitido.\nTotales contar_tipos(const std::vector<Registro>& admitidos) {\n    Totales total;\n    for (const Registro& r : admitidos) {\n        total = {};\n        if (r.tipo == \"textura\") ++total.texturas;\n        else if (r.tipo == \"malla\") ++total.mallas;\n        else if (r.tipo == \"sonido\") ++total.sonidos;\n        total.bytes += r.bytes;\n    }\n    return total;\n}\n\nint main() {\n    int cantidad=0;\n    if (!(std::cin >> cantidad) || cantidad < 0 || cantidad > 100) return 1;\n    std::vector<Registro> admitidos;\n    for (int i=0; i<cantidad; ++i) {\n        Registro r;\n        if (!(std::cin >> r.tipo >> r.bytes)) return 1;\n        admitidos.push_back(r);\n    }\n    const Totales t=contar_tipos(admitidos);\n    std::cout << \"textura=\" << t.texturas << \" malla=\" << t.mallas\n              << \" sonido=\" << t.sonidos << \" bytes=\" << t.bytes << '\\n';\n}\n",
+          "initialCode": "#include <iostream>\n#include <string>\n#include <vector>\n\nstruct Registro { std::string tipo; int bytes; };\nstruct Totales { int texturas=0; int mallas=0; int sonidos=0; int bytes=0; };\n\n// Repara sólo esta función. Cada registro ya fue admitido.\nTotales contar_tipos(const std::vector<Registro>& admitidos) {\n    Totales total;\n    for (const Registro& r : admitidos) {\n        total = {};\n        if (r.tipo == \"textura\") ++total.texturas;\n        else if (r.tipo == \"malla\") ++total.mallas;\n        else if (r.tipo == \"sonido\") ++total.sonidos;\n        total.bytes += r.bytes;\n    }\n\n    return total;\n}\n\nint main() {\n    int cantidad=0;\n    if (!(std::cin >> cantidad) || cantidad < 0 || cantidad > 100) return 1;\n    std::vector<Registro> admitidos;\n    for (int i=0; i<cantidad; ++i) {\n        Registro r;\n        if (!(std::cin >> r.tipo >> r.bytes)) return 1;\n        admitidos.push_back(r);\n    }\n    const Totales t=contar_tipos(admitidos);\n    std::cout << \"textura=\" << t.texturas << \" malla=\" << t.mallas\n              << \" sonido=\" << t.sonidos << \" bytes=\" << t.bytes << '\\n';\n}\n",
           "initialStandardInput": "2\nmalla 2\nsonido 7\n",
           "outputCheck": {
             "inputComparison": "exact",
@@ -2784,7 +2784,7 @@
         {
           "type": "code",
           "language": "cpp",
-          "code": "Totales contar_tipos(const std::vector<Registro>& admitidos) {\n    Totales total;\n    for (const Registro& r : admitidos) {\n        if (r.tipo == \"textura\") ++total.texturas;\n        else if (r.tipo == \"malla\") ++total.mallas;\n        else if (r.tipo == \"sonido\") ++total.sonidos;\n        total.bytes += r.bytes;\n    }\n    return total;\n}"
+          "code": "Totales contar_tipos(const std::vector<Registro>& admitidos) {\n    Totales total;\n    for (const Registro& r : admitidos) {\n        if (r.tipo == \"textura\") ++total.texturas;\n        else if (r.tipo == \"malla\") ++total.mallas;\n        else if (r.tipo == \"sonido\") ++total.sonidos;\n        total.bytes += r.bytes;\n    }\n\n    return total;\n}"
         },
         {
           "type": "paragraph",
@@ -2806,7 +2806,7 @@
           "type": "output_prediction",
           "id": "assetcheck_u4l7_prediccion_caso_facil",
           "question": "Este programa conserva deliberadamente el reinicio defectuoso y recibe un solo registro. Predice su única fila, sin incluir el salto de línea final en la respuesta.",
-          "code": "#include <iostream>\n#include <string>\n#include <vector>\n\nstruct Registro { std::string tipo; int bytes; };\nstruct Totales { int texturas=0; int mallas=0; int sonidos=0; int bytes=0; };\n\n// Repara sólo esta función. Cada registro ya fue admitido.\nTotales contar_tipos(const std::vector<Registro>& admitidos) {\n    Totales total;\n    for (const Registro& r : admitidos) {\n        total = {};\n        if (r.tipo == \"textura\") ++total.texturas;\n        else if (r.tipo == \"malla\") ++total.mallas;\n        else if (r.tipo == \"sonido\") ++total.sonidos;\n        total.bytes += r.bytes;\n    }\n    return total;\n}\n\nint main() {\n    const std::vector<Registro> admitidos{{\"sonido\", 7}};\n    const Totales t=contar_tipos(admitidos);\n    std::cout << \"textura=\" << t.texturas << \" malla=\" << t.mallas\n              << \" sonido=\" << t.sonidos << \" bytes=\" << t.bytes << '\\n';\n}\n",
+          "code": "#include <iostream>\n#include <string>\n#include <vector>\n\nstruct Registro { std::string tipo; int bytes; };\nstruct Totales { int texturas=0; int mallas=0; int sonidos=0; int bytes=0; };\n\n// Repara sólo esta función. Cada registro ya fue admitido.\nTotales contar_tipos(const std::vector<Registro>& admitidos) {\n    Totales total;\n    for (const Registro& r : admitidos) {\n        total = {};\n        if (r.tipo == \"textura\") ++total.texturas;\n        else if (r.tipo == \"malla\") ++total.mallas;\n        else if (r.tipo == \"sonido\") ++total.sonidos;\n        total.bytes += r.bytes;\n    }\n\n    return total;\n}\n\nint main() {\n    const std::vector<Registro> admitidos{{\"sonido\", 7}};\n    const Totales t=contar_tipos(admitidos);\n\n    std::cout << \"textura=\" << t.texturas << \" malla=\" << t.mallas\n              << \" sonido=\" << t.sonidos << \" bytes=\" << t.bytes << '\\n';\n}\n",
           "answers": [
             "textura=0 malla=0 sonido=1 bytes=7"
           ],
@@ -3490,7 +3490,7 @@
         {
           "type": "code",
           "language": "cmake",
-          "code": "add_library(assetcheck_estadisticas STATIC src/estadisticas.cpp)\ntarget_include_directories(assetcheck_estadisticas PUBLIC include)\ntarget_link_libraries(assetcheck_estadisticas PUBLIC assetcheck_lote)\ntarget_compile_features(assetcheck_estadisticas PUBLIC cxx_std_23)\n\nadd_executable(assetcheck_tipos src/cliente_tipos.cpp)\ntarget_link_libraries(assetcheck_tipos\n  PRIVATE assetcheck_estadisticas assetcheck_manifiesto)\n\nadd_executable(comprobar_estadisticas pruebas/estadisticas_casos.cpp)\ntarget_link_libraries(comprobar_estadisticas PRIVATE assetcheck_estadisticas)\nadd_test(NAME comprobar_estadisticas COMMAND comprobar_estadisticas)\n\nadd_test(NAME comprobar_tipos_cli COMMAND \"${CMAKE_COMMAND}\"\n  \"-DCLIENTE=$<TARGET_FILE:assetcheck_tipos>\"\n  \"-DDIR=${CMAKE_CURRENT_BINARY_DIR}\"\n  -P \"${CMAKE_CURRENT_SOURCE_DIR}/pruebas/comprobar_tipos_cli.cmake\")"
+          "code": "add_library(assetcheck_estadisticas STATIC src/estadisticas.cpp)\n\ntarget_include_directories(assetcheck_estadisticas PUBLIC include)\ntarget_link_libraries(assetcheck_estadisticas PUBLIC assetcheck_lote)\ntarget_compile_features(assetcheck_estadisticas PUBLIC cxx_std_23)\n\nadd_executable(assetcheck_tipos src/cliente_tipos.cpp)\n\ntarget_link_libraries(assetcheck_tipos\n  PRIVATE assetcheck_estadisticas assetcheck_manifiesto)\n\nadd_executable(comprobar_estadisticas pruebas/estadisticas_casos.cpp)\n\ntarget_link_libraries(comprobar_estadisticas PRIVATE assetcheck_estadisticas)\nadd_test(NAME comprobar_estadisticas COMMAND comprobar_estadisticas)\n\nadd_test(NAME comprobar_tipos_cli COMMAND \"${CMAKE_COMMAND}\"\n  \"-DCLIENTE=$<TARGET_FILE:assetcheck_tipos>\"\n  \"-DDIR=${CMAKE_CURRENT_BINARY_DIR}\"\n  -P \"${CMAKE_CURRENT_SOURCE_DIR}/pruebas/comprobar_tipos_cli.cmake\")"
         }
       ]
     },
@@ -18077,6 +18077,31 @@
             "text": "Añadiremos también AssetCheck/muestras/variante.txt -text al .gitattributes de la raíz, que desde AssetCheck se encuentra en la carpeta padre. -text evita que Git cambie los terminadores de esta entrada (Git, 2026a).\n\nLa receta exige conservar las dos reglas anteriores. ReadAllBytes obtiene el contenido y ASCII.GetString permite examinar las reglas con Contains. EndsWith comprueba que el archivo anterior termine en LF. La nueva regla se convierte a bytes y el signo + la añade al arreglo anterior; [byte[]] conserva el tipo que utiliza WriteAllBytes. Si encuentra una diferencia o una regla ya añadida, se detiene para conservar el archivo.\n\nLa consulta posterior con Get-Content debe mostrar las tres rutas, cada una con -text. No cambia las muestras ni la configuración global de Git."
           }
         }
+      },
+      {
+        "id": "u4l7_cmake_cuatro_ordenes",
+        "beforeSha256": "22d19390e42234eda118963bb2499af3851d3e996f5e86539a93b12c1e53a241",
+        "afterSha256": "9aa096fed4c999315eb2814102c4866c54289aa4a4d7d5221458b9355aab5562"
+      },
+      {
+        "id": "u4l7_depurar_editor",
+        "beforeSha256": "9507bc791bea74cab6cac6ca034121603c4be0d2998a6b94b951e482f5c749ef",
+        "afterSha256": "29b9c8b4de2380351cd7d83c39c0d55d053c154b21a5b0475c1e9e18e21fd5eb"
+      },
+      {
+        "id": "u4l7_depurar_referencia_funcion",
+        "beforeSha256": "0740906acc170c36380e1b006fdae4b646fbff120a58d27083baa76d94f772b8",
+        "afterSha256": "33fc1f11a0171f2d1f5dc1669627fc44e2ac830a56a7de31204f9ab7a1ef1118"
+      },
+      {
+        "id": "u4l7_depurar_prediccion_caso_facil",
+        "beforeSha256": "f22cbc6d393feff2830f8d2478fa536154c0996e914890a0b03530c1d00bd39c",
+        "afterSha256": "9894fad850190aa99feb1c21d71e881da7d0a30f5dc2f333cc6406771e704e15"
+      },
+      {
+        "id": "block_0008_0002",
+        "beforeSha256": "f0597637ed510714994da5b1ba71f54a865f8bb488655cb63376536fc6dfa7c3",
+        "afterSha256": "a48311d94324383fcce6a0c34e26c9e041afc499b9e93fb7da4a0705d841cf50"
       }
     ],
     "sourceFormatRevisions": [
@@ -18159,6 +18184,78 @@
           "type": "code",
           "language": "cpp",
           "code": "Lote lote;\nprocesar_linea(\"A malla 2\", 1, lote);\nprocesar_linea(\"B sonido 7\", 2, lote);\nprocesar_linea(\"A sonido 9\", 3, lote); // Duplicado.\nconst Estadisticas e=contar_tipos(lote);\n// Expectativas fijadas antes de ejecutar:\ncomprobar(e.mallas == 1, \"Malla admitida\");\ncomprobar(e.sonidos == 1, \"Sonido admitido\");\ncomprobar(e.bytes_total == 9, \"2+7, sin duplicado\");"
+        }
+      },
+      {
+        "id": "u4l7_cmake_cuatro_ordenes",
+        "block": {
+          "type": "code",
+          "language": "cmake",
+          "code": "add_library(assetcheck_estadisticas STATIC src/estadisticas.cpp)\ntarget_include_directories(assetcheck_estadisticas PUBLIC include)\ntarget_link_libraries(assetcheck_estadisticas PUBLIC assetcheck_lote)\ntarget_compile_features(assetcheck_estadisticas PUBLIC cxx_std_23)"
+        }
+      },
+      {
+        "id": "u4l7_depurar_editor",
+        "block": {
+          "type": "cpp_compiler",
+          "language": "cpp",
+          "initialCode": "#include <iostream>\n#include <string>\n#include <vector>\n\nstruct Registro { std::string tipo; int bytes; };\nstruct Totales { int texturas=0; int mallas=0; int sonidos=0; int bytes=0; };\n\n// Repara sólo esta función. Cada registro ya fue admitido.\nTotales contar_tipos(const std::vector<Registro>& admitidos) {\n    Totales total;\n    for (const Registro& r : admitidos) {\n        total = {};\n        if (r.tipo == \"textura\") ++total.texturas;\n        else if (r.tipo == \"malla\") ++total.mallas;\n        else if (r.tipo == \"sonido\") ++total.sonidos;\n        total.bytes += r.bytes;\n    }\n    return total;\n}\n\nint main() {\n    int cantidad=0;\n    if (!(std::cin >> cantidad) || cantidad < 0 || cantidad > 100) return 1;\n    std::vector<Registro> admitidos;\n    for (int i=0; i<cantidad; ++i) {\n        Registro r;\n        if (!(std::cin >> r.tipo >> r.bytes)) return 1;\n        admitidos.push_back(r);\n    }\n    const Totales t=contar_tipos(admitidos);\n    std::cout << \"textura=\" << t.texturas << \" malla=\" << t.mallas\n              << \" sonido=\" << t.sonidos << \" bytes=\" << t.bytes << '\\n';\n}\n",
+          "initialStandardInput": "2\nmalla 2\nsonido 7\n",
+          "outputCheck": {
+            "inputComparison": "exact",
+            "cases": [
+              {
+                "standardInput": "2\nmalla 2\nsonido 7\n",
+                "outputs": [
+                  "textura=0 malla=1 sonido=1 bytes=9\n"
+                ],
+                "explanation": "Una sola colección contiene una malla y un sonido. Sus bytes suman 2+7=9."
+              },
+              {
+                "standardInput": "0\n",
+                "outputs": [
+                  "textura=0 malla=0 sonido=0 bytes=0\n"
+                ],
+                "explanation": "Ensayo opcional: la colección vacía devuelve cuatro ceros; el programa inicial ya pasa este caso."
+              },
+              {
+                "standardInput": "1\ntextura 30000\n",
+                "outputs": [
+                  "textura=1 malla=0 sonido=0 bytes=30000\n"
+                ],
+                "explanation": "Ensayo opcional: con un solo registro no se observa lo que ocurre al visitar un segundo elemento."
+              },
+              {
+                "standardInput": "6\nmalla 2\nsonido 7\ntextura 5\nmalla 3\nsonido 4\nsonido 6\n",
+                "outputs": [
+                  "textura=1 malla=2 sonido=3 bytes=27\n"
+                ],
+                "explanation": "Ensayo opcional: seis admisiones, cantidades asimétricas y 2+7+5+3+4+6=27 bytes."
+              }
+            ]
+          }
+        }
+      },
+      {
+        "id": "u4l7_depurar_referencia_funcion",
+        "block": {
+          "type": "code",
+          "language": "cpp",
+          "code": "Totales contar_tipos(const std::vector<Registro>& admitidos) {\n    Totales total;\n    for (const Registro& r : admitidos) {\n        if (r.tipo == \"textura\") ++total.texturas;\n        else if (r.tipo == \"malla\") ++total.mallas;\n        else if (r.tipo == \"sonido\") ++total.sonidos;\n        total.bytes += r.bytes;\n    }\n    return total;\n}"
+        }
+      },
+      {
+        "id": "u4l7_depurar_prediccion_caso_facil",
+        "block": {
+          "type": "output_prediction",
+          "id": "assetcheck_u4l7_prediccion_caso_facil",
+          "question": "Este programa conserva deliberadamente el reinicio defectuoso y recibe un solo registro. Predice su única fila, sin incluir el salto de línea final en la respuesta.",
+          "code": "#include <iostream>\n#include <string>\n#include <vector>\n\nstruct Registro { std::string tipo; int bytes; };\nstruct Totales { int texturas=0; int mallas=0; int sonidos=0; int bytes=0; };\n\n// Repara sólo esta función. Cada registro ya fue admitido.\nTotales contar_tipos(const std::vector<Registro>& admitidos) {\n    Totales total;\n    for (const Registro& r : admitidos) {\n        total = {};\n        if (r.tipo == \"textura\") ++total.texturas;\n        else if (r.tipo == \"malla\") ++total.mallas;\n        else if (r.tipo == \"sonido\") ++total.sonidos;\n        total.bytes += r.bytes;\n    }\n    return total;\n}\n\nint main() {\n    const std::vector<Registro> admitidos{{\"sonido\", 7}};\n    const Totales t=contar_tipos(admitidos);\n    std::cout << \"textura=\" << t.texturas << \" malla=\" << t.mallas\n              << \" sonido=\" << t.sonidos << \" bytes=\" << t.bytes << '\\n';\n}\n",
+          "answers": [
+            "textura=0 malla=0 sonido=1 bytes=7"
+          ],
+          "outputComparison": "exact",
+          "explanation": "Sólo hay una visita. El reinicio deja cuatro ceros y esa misma visita añade un sonido y 7 bytes; ya no llega una segunda visita que borre esos datos. El resultado coincide con el correcto para este caso fácil. El caso de dos registros sí obliga a conservar una aportación anterior y distingue el defecto."
         }
       }
     ],

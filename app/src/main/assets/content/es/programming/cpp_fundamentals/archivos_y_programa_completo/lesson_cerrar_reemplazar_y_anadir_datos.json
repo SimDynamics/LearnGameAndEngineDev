@@ -66,7 +66,7 @@
         {
           "type": "code",
           "language": "cpp",
-          "code": "#include <fstream>\n#include <iostream>\n\nint main() {\n    {\n        std::ofstream salida{\"serie_lgp.txt\"};\n        if (!salida) {\n            std::cout << \"Error apertura inicial\";\n            return 1;\n        }\n\n        salida << \"1 2\";\n        salida.close();\n        if (!salida) {\n            std::cout << \"Error escritura inicial\";\n            return 1;\n        }\n    }\n\n    {\n        std::ofstream salida{\"serie_lgp.txt\", std::ios::app};\n        if (!salida) {\n            std::cout << \"Error segunda apertura\";\n            return 1;\n        }\n\n        salida << \" 3\";\n        salida.close();\n        if (!salida) {\n            std::cout << \"Error segunda escritura\";\n            return 1;\n        }\n    }\n\n    std::ifstream entrada{\"serie_lgp.txt\"};\n    if (!entrada) {\n        std::cout << \"Error apertura de entrada\";\n        return 1;\n    }\n\n    int a{0};\n    int b{0};\n    int c{0};\n\n    if (!(entrada >> a >> b >> c)) {\n        std::cout << \"Lectura incompleta\";\n        return 1;\n    }\n\n    std::cout << \"Total=\" << a + b + c;\n    return 0;\n}\n"
+          "code": "#include <fstream>\n#include <iostream>\n\nint main() {\n    {\n        std::ofstream salida{\"serie_lgp.txt\"};\n        if (!salida) {\n            std::cout << \"Error apertura inicial\";\n            return 1;\n        }\n\n        salida << \"1 2\";\n        salida.close();\n        if (!salida) {\n            std::cout << \"Error escritura inicial\";\n            return 1;\n        }\n    }\n\n    {\n        std::ofstream salida{\"serie_lgp.txt\", std::ios::app};\n        if (!salida) {\n            std::cout << \"Error segunda apertura\";\n            return 1;\n        }\n\n        salida << \" 3\";\n        salida.close();\n        if (!salida) {\n            std::cout << \"Error segunda escritura\";\n            return 1;\n        }\n    }\n\n    std::ifstream entrada{\"serie_lgp.txt\"};\n    if (!entrada) {\n        std::cout << \"Error apertura de entrada\";\n        return 1;\n    }\n\n    int a{0};\n    int b{0};\n    int c{0};\n\n    if (!(entrada >> a >> b >> c)) {\n        std::cout << \"Lectura incompleta\";\n        return 1;\n    }\n\n    std::cout << \"Total=\" << a + b + c;\n\n    return 0;\n}\n"
         },
         {
           "type": "paragraph",
@@ -108,7 +108,7 @@
           "id": "segunda_apertura_reemplaza",
           "question": "Supón que las aperturas, escrituras y cierres tienen éxito. Esta versión omite std::ios::app en la segunda apertura. Predice el diagnóstico visible.",
           "language": "cpp",
-          "code": "#include <fstream>\n#include <iostream>\n\nint main() {\n    {\n        std::ofstream salida{\"serie_lgp.txt\"};\n        if (!salida) {\n            std::cout << \"Error apertura inicial\";\n            return 1;\n        }\n\n        salida << \"1 2\";\n        salida.close();\n        if (!salida) {\n            std::cout << \"Error escritura inicial\";\n            return 1;\n        }\n    }\n\n    {\n        std::ofstream salida{\"serie_lgp.txt\"};\n        if (!salida) {\n            std::cout << \"Error segunda apertura\";\n            return 1;\n        }\n\n        salida << \" 3\";\n        salida.close();\n        if (!salida) {\n            std::cout << \"Error segunda escritura\";\n            return 1;\n        }\n    }\n\n    std::ifstream entrada{\"serie_lgp.txt\"};\n    if (!entrada) {\n        std::cout << \"Error apertura de entrada\";\n        return 1;\n    }\n\n    int a{0};\n    int b{0};\n    int c{0};\n\n    if (!(entrada >> a >> b >> c)) {\n        std::cout << \"Lectura incompleta\";\n        return 1;\n    }\n\n    std::cout << \"Total=\" << a + b + c;\n    return 0;\n}\n",
+          "code": "#include <fstream>\n#include <iostream>\n\nint main() {\n    {\n        std::ofstream salida{\"serie_lgp.txt\"};\n        if (!salida) {\n            std::cout << \"Error apertura inicial\";\n            return 1;\n        }\n\n        salida << \"1 2\";\n        salida.close();\n        if (!salida) {\n            std::cout << \"Error escritura inicial\";\n            return 1;\n        }\n    }\n\n    {\n        std::ofstream salida{\"serie_lgp.txt\"};\n        if (!salida) {\n            std::cout << \"Error segunda apertura\";\n            return 1;\n        }\n\n        salida << \" 3\";\n        salida.close();\n        if (!salida) {\n            std::cout << \"Error segunda escritura\";\n            return 1;\n        }\n    }\n\n    std::ifstream entrada{\"serie_lgp.txt\"};\n    if (!entrada) {\n        std::cout << \"Error apertura de entrada\";\n        return 1;\n    }\n\n    int a{0};\n    int b{0};\n    int c{0};\n\n    if (!(entrada >> a >> b >> c)) {\n        std::cout << \"Lectura incompleta\";\n        return 1;\n    }\n\n    std::cout << \"Total=\" << a + b + c;\n\n    return 0;\n}\n",
           "answers": [
             "Lectura incompleta"
           ],
@@ -163,7 +163,7 @@
         },
         {
           "type": "cpp_compiler",
-          "initialCode": "#include <fstream>\n#include <iostream>\n\nint main() {\n    // Construye las dos escrituras y la lectura comprobada.\n    return 0;\n}\n",
+          "initialCode": "#include <fstream>\n#include <iostream>\n\nint main() {\n    // Construye las dos escrituras y la lectura comprobada.\n    \n    return 0;\n}\n",
           "outputCheck": {
             "cases": [
               {
@@ -191,7 +191,7 @@
         {
           "type": "code",
           "language": "cpp",
-          "code": "#include <fstream>\n#include <iostream>\n\nint main() {\n    {\n        std::ofstream salida{\"serie_lgp.txt\"};\n        if (!salida) {\n            std::cout << \"Error apertura inicial\";\n            return 1;\n        }\n\n        salida << \"3 4\";\n        salida.close();\n        if (!salida) {\n            std::cout << \"Error escritura inicial\";\n            return 1;\n        }\n    }\n\n    {\n        std::ofstream salida{\"serie_lgp.txt\", std::ios::app};\n        if (!salida) {\n            std::cout << \"Error segunda apertura\";\n            return 1;\n        }\n\n        salida << \" 5\";\n        salida.close();\n        if (!salida) {\n            std::cout << \"Error segunda escritura\";\n            return 1;\n        }\n    }\n\n    std::ifstream entrada{\"serie_lgp.txt\"};\n    if (!entrada) {\n        std::cout << \"Error apertura de entrada\";\n        return 1;\n    }\n\n    int a{0};\n    int b{0};\n    int c{0};\n\n    if (!(entrada >> a >> b >> c)) {\n        std::cout << \"Lectura incompleta\";\n        return 1;\n    }\n\n    std::cout << \"Total=\" << a + b + c;\n    return 0;\n}\n"
+          "code": "#include <fstream>\n#include <iostream>\n\nint main() {\n    {\n        std::ofstream salida{\"serie_lgp.txt\"};\n        if (!salida) {\n            std::cout << \"Error apertura inicial\";\n            return 1;\n        }\n\n        salida << \"3 4\";\n        salida.close();\n        if (!salida) {\n            std::cout << \"Error escritura inicial\";\n            return 1;\n        }\n    }\n\n    {\n        std::ofstream salida{\"serie_lgp.txt\", std::ios::app};\n        if (!salida) {\n            std::cout << \"Error segunda apertura\";\n            return 1;\n        }\n\n        salida << \" 5\";\n        salida.close();\n        if (!salida) {\n            std::cout << \"Error segunda escritura\";\n            return 1;\n        }\n    }\n\n    std::ifstream entrada{\"serie_lgp.txt\"};\n    if (!entrada) {\n        std::cout << \"Error apertura de entrada\";\n        return 1;\n    }\n\n    int a{0};\n    int b{0};\n    int c{0};\n\n    if (!(entrada >> a >> b >> c)) {\n        std::cout << \"Lectura incompleta\";\n        return 1;\n    }\n\n    std::cout << \"Total=\" << a + b + c;\n\n    return 0;\n}\n"
         },
         {
           "type": "paragraph",
@@ -257,7 +257,7 @@
         },
         {
           "type": "cpp_compiler",
-          "initialCode": "#include <fstream>\n#include <iostream>\n\nint main() {\n    {\n        std::ofstream salida{\"serie_lgp.txt\"};\n        if (!salida) {\n            std::cout << \"Error apertura inicial\";\n            return 1;\n        }\n\n        salida << \"3 4\";\n        salida.close();\n        if (!salida) {\n            std::cout << \"Error escritura inicial\";\n            return 1;\n        }\n    }\n\n    {\n        std::ofstream salida{\"serie_lgp.txt\"};\n        if (!salida) {\n            std::cout << \"Error segunda apertura\";\n            return 1;\n        }\n\n        salida << \" 5\";\n        salida.close();\n        if (!salida) {\n            std::cout << \"Error segunda escritura\";\n            return 1;\n        }\n    }\n\n    std::ifstream entrada{\"serie_lgp.txt\"};\n    if (!entrada) {\n        std::cout << \"Error apertura de entrada\";\n        return 1;\n    }\n\n    int a{0};\n    int b{0};\n    int c{0};\n\n    if (!(entrada >> a >> b >> c)) {\n        std::cout << \"Lectura incompleta\";\n        return 1;\n    }\n\n    std::cout << \"Total=\" << a + b + c;\n    return 0;\n}\n",
+          "initialCode": "#include <fstream>\n#include <iostream>\n\nint main() {\n    {\n        std::ofstream salida{\"serie_lgp.txt\"};\n        if (!salida) {\n            std::cout << \"Error apertura inicial\";\n            return 1;\n        }\n\n        salida << \"3 4\";\n        salida.close();\n        if (!salida) {\n            std::cout << \"Error escritura inicial\";\n            return 1;\n        }\n    }\n\n    {\n        std::ofstream salida{\"serie_lgp.txt\"};\n        if (!salida) {\n            std::cout << \"Error segunda apertura\";\n            return 1;\n        }\n\n        salida << \" 5\";\n        salida.close();\n        if (!salida) {\n            std::cout << \"Error segunda escritura\";\n            return 1;\n        }\n    }\n\n    std::ifstream entrada{\"serie_lgp.txt\"};\n    if (!entrada) {\n        std::cout << \"Error apertura de entrada\";\n        return 1;\n    }\n\n    int a{0};\n    int b{0};\n    int c{0};\n\n    if (!(entrada >> a >> b >> c)) {\n        std::cout << \"Lectura incompleta\";\n        return 1;\n    }\n\n    std::cout << \"Total=\" << a + b + c;\n\n    return 0;\n}\n",
           "outputCheck": {
             "cases": [
               {
@@ -281,7 +281,7 @@
         {
           "type": "code",
           "language": "cpp",
-          "code": "#include <fstream>\n#include <iostream>\n\nint main() {\n    {\n        std::ofstream salida{\"serie_lgp.txt\"};\n        if (!salida) {\n            std::cout << \"Error apertura inicial\";\n            return 1;\n        }\n        salida << \"3 4\";\n        salida.close();\n        if (!salida) {\n            std::cout << \"Error escritura inicial\";\n            return 1;\n        }\n    }\n    {\n        std::ofstream salida{\"serie_lgp.txt\", std::ios::app};\n        if (!salida) {\n            std::cout << \"Error segunda apertura\";\n            return 1;\n        }\n        salida << \" 5\";\n        salida.close();\n        if (!salida) {\n            std::cout << \"Error segunda escritura\";\n            return 1;\n        }\n    }\n    std::ifstream entrada{\"serie_lgp.txt\"};\n    if (!entrada) {\n        std::cout << \"Error apertura de entrada\";\n        return 1;\n    }\n    int a{0};\n    int b{0};\n    int c{0};\n    if (!(entrada >> a >> b >> c)) {\n        std::cout << \"Lectura incompleta\";\n        return 1;\n    }\n    std::cout << \"Total=\" << a + b + c;\n    return 0;\n}\n"
+          "code": "#include <fstream>\n#include <iostream>\n\nint main() {\n    {\n        std::ofstream salida{\"serie_lgp.txt\"};\n        if (!salida) {\n            std::cout << \"Error apertura inicial\";\n            return 1;\n        }\n        salida << \"3 4\";\n        salida.close();\n        if (!salida) {\n            std::cout << \"Error escritura inicial\";\n            return 1;\n        }\n    }\n    {\n        std::ofstream salida{\"serie_lgp.txt\", std::ios::app};\n        if (!salida) {\n            std::cout << \"Error segunda apertura\";\n            return 1;\n        }\n        salida << \" 5\";\n        salida.close();\n        if (!salida) {\n            std::cout << \"Error segunda escritura\";\n            return 1;\n        }\n    }\n    std::ifstream entrada{\"serie_lgp.txt\"};\n    if (!entrada) {\n        std::cout << \"Error apertura de entrada\";\n        return 1;\n    }\n    int a{0};\n    int b{0};\n    int c{0};\n\n    if (!(entrada >> a >> b >> c)) {\n        std::cout << \"Lectura incompleta\";\n        return 1;\n    }\n    std::cout << \"Total=\" << a + b + c;\n\n    return 0;\n}\n"
         }
       ]
     },
@@ -326,7 +326,7 @@
         },
         {
           "type": "cpp_compiler",
-          "initialCode": "#include <fstream>\n#include <iostream>\n\nint main() {\n    {\n        std::ofstream salida{\"serie_lgp.txt\"};\n        if (!salida) {\n            std::cout << \"Error apertura inicial\";\n            return 1;\n        }\n\n        salida << \"3 4\";\n        salida.close();\n        if (!salida) {\n            std::cout << \"Error escritura inicial\";\n            return 1;\n        }\n    }\n\n    {\n        std::ofstream salida{\"serie_lgp.txt\", std::ios::app};\n        if (!salida) {\n            std::cout << \"Error segunda apertura\";\n            return 1;\n        }\n\n        salida << \"5\";\n        salida.close();\n        if (!salida) {\n            std::cout << \"Error segunda escritura\";\n            return 1;\n        }\n    }\n\n    std::ifstream entrada{\"serie_lgp.txt\"};\n    if (!entrada) {\n        std::cout << \"Error apertura de entrada\";\n        return 1;\n    }\n\n    int a{0};\n    int b{0};\n    int c{0};\n\n    if (!(entrada >> a >> b >> c)) {\n        std::cout << \"Lectura incompleta\";\n        return 1;\n    }\n\n    std::cout << \"Total=\" << a + b + c;\n    return 0;\n}\n",
+          "initialCode": "#include <fstream>\n#include <iostream>\n\nint main() {\n    {\n        std::ofstream salida{\"serie_lgp.txt\"};\n        if (!salida) {\n            std::cout << \"Error apertura inicial\";\n            return 1;\n        }\n\n        salida << \"3 4\";\n        salida.close();\n        if (!salida) {\n            std::cout << \"Error escritura inicial\";\n            return 1;\n        }\n    }\n\n    {\n        std::ofstream salida{\"serie_lgp.txt\", std::ios::app};\n        if (!salida) {\n            std::cout << \"Error segunda apertura\";\n            return 1;\n        }\n\n        salida << \"5\";\n        salida.close();\n        if (!salida) {\n            std::cout << \"Error segunda escritura\";\n            return 1;\n        }\n    }\n\n    std::ifstream entrada{\"serie_lgp.txt\"};\n    if (!entrada) {\n        std::cout << \"Error apertura de entrada\";\n        return 1;\n    }\n\n    int a{0};\n    int b{0};\n    int c{0};\n\n    if (!(entrada >> a >> b >> c)) {\n        std::cout << \"Lectura incompleta\";\n        return 1;\n    }\n\n    std::cout << \"Total=\" << a + b + c;\n\n    return 0;\n}\n",
           "outputCheck": {
             "cases": [
               {
@@ -369,7 +369,7 @@
         },
         {
           "type": "cpp_compiler",
-          "initialCode": "#include <fstream>\n#include <iostream>\n\nint main() {\n    // Lee la entrada, construye el archivo y comprueba cada valor recuperado.\n    return 0;\n}\n",
+          "initialCode": "#include <fstream>\n#include <iostream>\n\nint main() {\n    // Lee la entrada, construye el archivo y comprueba cada valor recuperado.\n    \n    return 0;\n}\n",
           "initialStandardInput": "3 4 5\n",
           "outputCheck": {
             "inputComparison": "tokens",
@@ -452,7 +452,7 @@
         {
           "type": "code",
           "language": "cpp",
-          "code": "#include <fstream>\n#include <iostream>\n\nint main() {\n    {\n        std::ofstream salida{\"serie_lgp.txt\"};\n        if (!salida) {\n            std::cout << \"Error apertura inicial\";\n            return 1;\n        }\n        salida << \"3 4\";\n        salida.close();\n        if (!salida) {\n            std::cout << \"Error escritura inicial\";\n            return 1;\n        }\n    }\n    {\n        std::ofstream salida{\"serie_lgp.txt\", std::ios::app};\n        if (!salida) {\n            std::cout << \"Error segunda apertura\";\n            return 1;\n        }\n        salida << \" 5\";\n        salida.close();\n        if (!salida) {\n            std::cout << \"Error segunda escritura\";\n            return 1;\n        }\n    }\n    std::ifstream entrada{\"serie_lgp.txt\"};\n    if (!entrada) {\n        std::cout << \"Error apertura de entrada\";\n        return 1;\n    }\n    int a{0};\n    int b{0};\n    int c{0};\n    if (!(entrada >> a >> b >> c)) {\n        std::cout << \"Lectura incompleta\";\n        return 1;\n    }\n    std::cout << \"Total=\" << a + b + c;\n    return 0;\n}\n"
+          "code": "#include <fstream>\n#include <iostream>\n\nint main() {\n    {\n        std::ofstream salida{\"serie_lgp.txt\"};\n        if (!salida) {\n            std::cout << \"Error apertura inicial\";\n            return 1;\n        }\n        salida << \"3 4\";\n        salida.close();\n        if (!salida) {\n            std::cout << \"Error escritura inicial\";\n            return 1;\n        }\n    }\n    {\n        std::ofstream salida{\"serie_lgp.txt\", std::ios::app};\n        if (!salida) {\n            std::cout << \"Error segunda apertura\";\n            return 1;\n        }\n        salida << \" 5\";\n        salida.close();\n        if (!salida) {\n            std::cout << \"Error segunda escritura\";\n            return 1;\n        }\n    }\n    std::ifstream entrada{\"serie_lgp.txt\"};\n    if (!entrada) {\n        std::cout << \"Error apertura de entrada\";\n        return 1;\n    }\n    int a{0};\n    int b{0};\n    int c{0};\n\n    if (!(entrada >> a >> b >> c)) {\n        std::cout << \"Lectura incompleta\";\n        return 1;\n    }\n    std::cout << \"Total=\" << a + b + c;\n\n    return 0;\n}\n"
         },
         {
           "type": "heading",
@@ -1411,6 +1411,51 @@
         "id": "u12_archivo_orden_y_suma_referencia_codigo",
         "beforeSha256": "57e10748d71ef0c0ea2920d9c07c2ac852a220389c774cea9ac548d14fd8c92f",
         "afterSha256": "bb9f41255d94afe5d57a33e1cddb5e87d2cc7dbe19444641ed9e6a7e7f9565de"
+      },
+      {
+        "id": "block_0001_0002",
+        "beforeSha256": "3e7899e14c21c42867344ea68c69f027310b5846752bb9a09a0f8c902dde9ecb",
+        "afterSha256": "df7cc8dc1ba362a01bfa934828c2d0b10a240af8f8a64db88b74d12593a644c7"
+      },
+      {
+        "id": "block_0002_0001",
+        "beforeSha256": "6dcf7d64fb18e534b9610de98f3d42731d06439c1ac2a5a31c8caca9d4571c6d",
+        "afterSha256": "10940260fe7522b0db7e88a61dd68719236550819aea362fbf6fa22e9662e9e7"
+      },
+      {
+        "id": "block_0003_0003",
+        "beforeSha256": "1c3cf41754a98c32424155c735962c0be9e525cba6830b48918395cd6dd28f6f",
+        "afterSha256": "df9dadd346200b8bce42e530f81c080be31263dd3836e935ac92039cfb2cbf43"
+      },
+      {
+        "id": "block_0004_0001",
+        "beforeSha256": "fcd1cf0e8489696ac467f6be264d5a078fe6548d658605040ab276e7d7d745f8",
+        "afterSha256": "34ff35047afec14125331a63eecdd7192297137487b0c295d4c1f76a7fb78572"
+      },
+      {
+        "id": "block_0005_0003",
+        "beforeSha256": "b5155da3b57cd589ad40b7f0af99756be2b45163d9243de60b1a90eb2e704684",
+        "afterSha256": "d9de7fb199102d84749bae1d3abaf95a9c17e8621df8eeb3679a5ca2e6f1d208"
+      },
+      {
+        "id": "block_0006_0001",
+        "beforeSha256": "531e81421ec49683b942880d02737cbb4d2c17867501351fea5f1820c4b46498",
+        "afterSha256": "9f9c31642f80320d28824e8815e451ad99c2df4f10ecb3abb026dafb69e4bb0b"
+      },
+      {
+        "id": "block_0007_0003",
+        "beforeSha256": "458ebbd545daa099f0bb6604118803f137e63ee57e6e38fe26746c12d9fca7bd",
+        "afterSha256": "dc03d9ce3c1029a5ff43490539d1345f8a795179260dcdb224fd4a401468ffe1"
+      },
+      {
+        "id": "u12_archivo_orden_y_suma_comprobacion",
+        "beforeSha256": "6aa5e678869ca8cbc2c3377c17e2b563b944e82bacf5f08272974ef1585f8f25",
+        "afterSha256": "9929dade19814a206696bdb8db21b8d25895249b2955a066f8e76ce8f83f5957"
+      },
+      {
+        "id": "block_0008_0001",
+        "beforeSha256": "531e81421ec49683b942880d02737cbb4d2c17867501351fea5f1820c4b46498",
+        "afterSha256": "9f9c31642f80320d28824e8815e451ad99c2df4f10ecb3abb026dafb69e4bb0b"
       }
     ],
     "sourceFormatRevisions": [
@@ -1486,6 +1531,117 @@
           "type": "code",
           "language": "cpp",
           "code": "#include <fstream>\n#include <iostream>\n\nint main() {\n    int primero{0};\n    int segundo{0};\n    int tercero{0};\n    if (!(std::cin >> primero >> segundo >> tercero)) {\n        std::cout << \"Error entrada\";\n        return 1;\n    }\n    {\n        std::ofstream salida{\"serie_lgp.txt\"};\n        if (!salida) {\n            std::cout << \"Error apertura inicial\";\n            return 1;\n        }\n        salida << primero << ' ' << segundo;\n        salida.close();\n        if (!salida) {\n            std::cout << \"Error escritura inicial\";\n            return 1;\n        }\n    }\n    {\n        std::ofstream salida{\"serie_lgp.txt\", std::ios::app};\n        if (!salida) {\n            std::cout << \"Error segunda apertura\";\n            return 1;\n        }\n        salida << ' ' << tercero;\n        salida.close();\n        if (!salida) {\n            std::cout << \"Error segunda escritura\";\n            return 1;\n        }\n    }\n    std::ifstream entrada{\"serie_lgp.txt\"};\n    if (!entrada) {\n        std::cout << \"Error apertura de entrada\";\n        return 1;\n    }\n    int a{0};\n    int b{0};\n    int c{0};\n    if (!(entrada >> a >> b >> c)) {\n        std::cout << \"Lectura incompleta\";\n        return 1;\n    }\n    std::cout << \"Leidos=\" << a << \",\" << b << \",\" << c\n              << \";Total=\" << a + b + c << \"\\n\";\n    return 0;\n}\n"
+        }
+      },
+      {
+        "id": "block_0003_0003",
+        "block": {
+          "type": "cpp_compiler",
+          "initialCode": "#include <fstream>\n#include <iostream>\n\nint main() {\n    // Construye las dos escrituras y la lectura comprobada.\n    return 0;\n}\n",
+          "outputCheck": {
+            "cases": [
+              {
+                "standardInput": "",
+                "outputs": [
+                  "Total=12",
+                  "Total=12\n"
+                ]
+              }
+            ]
+          }
+        }
+      },
+      {
+        "id": "block_0006_0001",
+        "block": {
+          "type": "code",
+          "language": "cpp",
+          "code": "#include <fstream>\n#include <iostream>\n\nint main() {\n    {\n        std::ofstream salida{\"serie_lgp.txt\"};\n        if (!salida) {\n            std::cout << \"Error apertura inicial\";\n            return 1;\n        }\n        salida << \"3 4\";\n        salida.close();\n        if (!salida) {\n            std::cout << \"Error escritura inicial\";\n            return 1;\n        }\n    }\n    {\n        std::ofstream salida{\"serie_lgp.txt\", std::ios::app};\n        if (!salida) {\n            std::cout << \"Error segunda apertura\";\n            return 1;\n        }\n        salida << \" 5\";\n        salida.close();\n        if (!salida) {\n            std::cout << \"Error segunda escritura\";\n            return 1;\n        }\n    }\n    std::ifstream entrada{\"serie_lgp.txt\"};\n    if (!entrada) {\n        std::cout << \"Error apertura de entrada\";\n        return 1;\n    }\n    int a{0};\n    int b{0};\n    int c{0};\n    if (!(entrada >> a >> b >> c)) {\n        std::cout << \"Lectura incompleta\";\n        return 1;\n    }\n    std::cout << \"Total=\" << a + b + c;\n    return 0;\n}\n"
+        }
+      },
+      {
+        "id": "u12_archivo_orden_y_suma_comprobacion",
+        "block": {
+          "type": "cpp_compiler",
+          "initialCode": "#include <fstream>\n#include <iostream>\n\nint main() {\n    // Lee la entrada, construye el archivo y comprueba cada valor recuperado.\n    return 0;\n}\n",
+          "initialStandardInput": "3 4 5\n",
+          "outputCheck": {
+            "inputComparison": "tokens",
+            "cases": [
+              {
+                "standardInput": "3 4 5\n",
+                "outputs": [
+                  "Leidos=3,4,5;Total=12\n"
+                ],
+                "exitCode": 0,
+                "explanation": "El lector conserva 3, 4 y 5, en ese orden, y calcula 12. Intercambiar los dos primeros destinos también daría suma 12, pero alteraría el primer campo a 4 y el segundo a 3. Los campos individuales distinguen ese error.",
+                "reviewFeedback": [
+                  {
+                    "outputs": [
+                      "Leidos=4,3,5;Total=12\n"
+                    ],
+                    "text": "La suma coincide, pero los dos primeros campos aparecen intercambiados. Sigue la primera y la segunda extracción: cada una debe escribir en la variable que después se presenta en esa misma posición. Comprueba los valores individuales antes de utilizar el total como evidencia."
+                  }
+                ]
+              },
+              {
+                "standardInput": "0 7 -7\n",
+                "outputs": [
+                  "Leidos=0,7,-7;Total=0\n"
+                ],
+                "exitCode": 0,
+                "explanation": "Los valores leídos son 0, 7 y -7. La suma es 0 porque los dos últimos se compensan; eso no elimina ninguno de los tres valores ni permite cambiar su orden.",
+                "reviewFeedback": [
+                  {
+                    "outputs": [
+                      "Leidos=7,0,-7;Total=0\n"
+                    ],
+                    "text": "La suma coincide, pero los dos primeros campos aparecen intercambiados. Sigue la primera y la segunda extracción: cada una debe escribir en la variable que después se presenta en esa misma posición. Comprueba los valores individuales antes de utilizar el total como evidencia."
+                  }
+                ]
+              },
+              {
+                "standardInput": "-4 10 0\n",
+                "outputs": [
+                  "Leidos=-4,10,0;Total=6\n"
+                ],
+                "exitCode": 0,
+                "explanation": "La lectura obtiene -4, 10 y 0, cuya suma es 6. El último cero es el tercer valor del archivo; debe conservar su campo aunque no cambie la suma.",
+                "reviewFeedback": [
+                  {
+                    "outputs": [
+                      "Leidos=10,-4,0;Total=6\n"
+                    ],
+                    "text": "La suma coincide, pero los dos primeros campos aparecen intercambiados. Sigue la primera y la segunda extracción: cada una debe escribir en la variable que después se presenta en esa misma posición. Comprueba los valores individuales antes de utilizar el total como evidencia."
+                  }
+                ]
+              },
+              {
+                "standardInput": "8 -3 2\n",
+                "outputs": [
+                  "Leidos=8,-3,2;Total=7\n"
+                ],
+                "exitCode": 0,
+                "explanation": "El archivo permite obtener 8, -3 y 2, y la suma calculada es 7. El signo pertenece al segundo valor. Una suma correcta no basta si se ha alterado cuál ocupa cada posición.",
+                "reviewFeedback": [
+                  {
+                    "outputs": [
+                      "Leidos=-3,8,2;Total=7\n"
+                    ],
+                    "text": "La suma coincide, pero los dos primeros campos aparecen intercambiados. Sigue la primera y la segunda extracción: cada una debe escribir en la variable que después se presenta en esa misma posición. Comprueba los valores individuales antes de utilizar el total como evidencia."
+                  }
+                ]
+              }
+            ]
+          }
+        }
+      },
+      {
+        "id": "block_0008_0001",
+        "block": {
+          "type": "code",
+          "language": "cpp",
+          "code": "#include <fstream>\n#include <iostream>\n\nint main() {\n    {\n        std::ofstream salida{\"serie_lgp.txt\"};\n        if (!salida) {\n            std::cout << \"Error apertura inicial\";\n            return 1;\n        }\n        salida << \"3 4\";\n        salida.close();\n        if (!salida) {\n            std::cout << \"Error escritura inicial\";\n            return 1;\n        }\n    }\n    {\n        std::ofstream salida{\"serie_lgp.txt\", std::ios::app};\n        if (!salida) {\n            std::cout << \"Error segunda apertura\";\n            return 1;\n        }\n        salida << \" 5\";\n        salida.close();\n        if (!salida) {\n            std::cout << \"Error segunda escritura\";\n            return 1;\n        }\n    }\n    std::ifstream entrada{\"serie_lgp.txt\"};\n    if (!entrada) {\n        std::cout << \"Error apertura de entrada\";\n        return 1;\n    }\n    int a{0};\n    int b{0};\n    int c{0};\n    if (!(entrada >> a >> b >> c)) {\n        std::cout << \"Lectura incompleta\";\n        return 1;\n    }\n    std::cout << \"Total=\" << a + b + c;\n    return 0;\n}\n"
         }
       }
     ]

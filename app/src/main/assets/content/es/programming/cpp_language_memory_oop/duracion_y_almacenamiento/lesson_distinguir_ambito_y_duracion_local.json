@@ -16,7 +16,7 @@
         {
           "type": "code",
           "language": "cpp",
-          "code": "#include <iostream>\n\nint main() {\n    int total = 5;\n    {\n        int aporte = 3;\n        total += aporte;\n    }\n    std::cout << total;\n    return 0;\n}\n"
+          "code": "#include <iostream>\n\nint main() {\n    int total = 5;\n    {\n        int aporte = 3;\n        total += aporte;\n    }\n    std::cout << total;\n\n    return 0;\n}\n"
         },
         {
           "type": "paragraph",
@@ -43,7 +43,7 @@
           "id": "p3_u3l1_alcanzar_declaracion",
           "language": "cpp",
           "question": "El programa llama a preparar con cero y después con tres. Predice el mensaje interior y los dos resultados que imprime main.",
-          "code": "#include <iostream>\n\nint preparar(int entrada) {\n    if (entrada > 0) {\n        int resultado = entrada + 2;\n        std::cout << \"Dentro:\" << resultado << ';';\n        return resultado;\n    }\n    return 0;\n}\n\nint main() {\n    const int primero = preparar(0);\n    const int segundo = preparar(3);\n    std::cout << primero << ':' << segundo;\n    return 0;\n}\n",
+          "code": "#include <iostream>\n\nint preparar(int entrada) {\n    if (entrada > 0) {\n        int resultado = entrada + 2;\n        std::cout << \"Dentro:\" << resultado << ';';\n        return resultado;\n    }\n\n    return 0;\n}\n\nint main() {\n    const int primero = preparar(0);\n    const int segundo = preparar(3);\n\n    std::cout << primero << ':' << segundo;\n\n    return 0;\n}\n",
           "answers": [
             "Dentro:5;0:5"
           ],
@@ -71,7 +71,7 @@
           "id": "p3_u3l1_ocultar_y_recuperar",
           "language": "cpp",
           "question": "Predice las tres consultas de dato. La primera está dentro del bloque, pero antes de declarar su dato interior.",
-          "code": "#include <iostream>\n\nint main() {\n    int dato = 4;\n    {\n        std::cout << dato << ':';\n        int dato = 9;\n        dato += 1;\n        std::cout << dato << ':';\n    }\n    std::cout << dato;\n    return 0;\n}\n",
+          "code": "#include <iostream>\n\nint main() {\n    int dato = 4;\n    {\n        std::cout << dato << ':';\n        int dato = 9;\n        dato += 1;\n        std::cout << dato << ':';\n    }\n    std::cout << dato;\n\n    return 0;\n}\n",
           "answers": [
             "4:10:4"
           ],
@@ -107,7 +107,7 @@
           "id": "p3_u3l1_nombre_distinto",
           "language": "cpp",
           "question": "Predice el valor de ajustado y el valor de dato al terminar el bloque.",
-          "code": "#include <iostream>\n\nint main() {\n    int dato = 6;\n    {\n        int ajustado = dato + 1;\n        ajustado += 2;\n        std::cout << ajustado << ':';\n    }\n    std::cout << dato;\n    return 0;\n}\n",
+          "code": "#include <iostream>\n\nint main() {\n    int dato = 6;\n    {\n        int ajustado = dato + 1;\n        ajustado += 2;\n        std::cout << ajustado << ':';\n    }\n    std::cout << dato;\n\n    return 0;\n}\n",
           "answers": [
             "9:6"
           ],
@@ -147,7 +147,7 @@
           "id": "p3_u3l1_caller_sigue_existiendo",
           "language": "cpp",
           "question": "calcular recibe un valor mediante entrada y define su propio dato. Predice el dato que imprime dentro y los valores que muestra main después.",
-          "code": "#include <iostream>\n\nint calcular(int entrada) {\n    int dato = entrada + 3;\n    std::cout << dato << ':';\n    return dato * 2;\n}\n\nint main() {\n    int dato = 12;\n    const int devuelto = calcular(dato);\n    std::cout << dato << ':' << devuelto;\n    return 0;\n}\n",
+          "code": "#include <iostream>\n\nint calcular(int entrada) {\n    int dato = entrada + 3;\n\n    std::cout << dato << ':';\n    return dato * 2;\n}\n\nint main() {\n    int dato = 12;\n    const int devuelto = calcular(dato);\n\n    std::cout << dato << ':' << devuelto;\n\n    return 0;\n}\n",
           "answers": [
             "15:12:30"
           ],
@@ -183,7 +183,7 @@
           "id": "p3_u3l1_reiniciar_llamada",
           "language": "cpp",
           "question": "Predice los dos resultados. En cada llamada se vuelve a ejecutar int total = 0;.",
-          "code": "#include <iostream>\n\nint calcular(int entrada) {\n    int total = 0;\n    total += entrada;\n    total += 2;\n    return total;\n}\n\nint main() {\n    const int primero = calcular(3);\n    const int segundo = calcular(1);\n    std::cout << primero << ':' << segundo;\n    return 0;\n}\n",
+          "code": "#include <iostream>\n\nint calcular(int entrada) {\n    int total = 0;\n\n    total += entrada;\n    total += 2;\n    return total;\n}\n\nint main() {\n    const int primero = calcular(3);\n    const int segundo = calcular(1);\n\n    std::cout << primero << ':' << segundo;\n\n    return 0;\n}\n",
           "answers": [
             "5:3"
           ],
@@ -211,7 +211,7 @@
           "id": "p3_u3l1_reiniciar_repeticion",
           "language": "cpp",
           "question": "Predice los tres aportes y el total final. El caso impar no modifica aporte después de su inicialización.",
-          "code": "#include <iostream>\n\nint main() {\n    int total = 0;\n    for (int i = 0; i < 3; ++i) {\n        int aporte = 0;\n        if (i % 2 == 0) {\n            aporte = i + 1;\n        }\n        std::cout << aporte << ':';\n        total += aporte;\n    }\n    std::cout << total;\n    return 0;\n}\n",
+          "code": "#include <iostream>\n\nint main() {\n    int total = 0;\n    for (int i = 0; i < 3; ++i) {\n        int aporte = 0;\n        if (i % 2 == 0) {\n            aporte = i + 1;\n        }\n        std::cout << aporte << ':';\n        total += aporte;\n    }\n    std::cout << total;\n\n    return 0;\n}\n",
           "answers": [
             "1:0:3:4"
           ],
@@ -237,7 +237,7 @@
         {
           "type": "code",
           "language": "cpp",
-          "code": "#include <iostream>\n\nint main() {\n    int saldo = 10;\n    {\n        int aporte = 3;\n        saldo += aporte;\n        {\n            int saldo = 2;\n            saldo += aporte;\n            std::cout << saldo << ':';\n        }\n        std::cout << saldo << ':' << aporte << ':';\n    }\n    std::cout << saldo;\n    return 0;\n}\n"
+          "code": "#include <iostream>\n\nint main() {\n    int saldo = 10;\n    {\n        int aporte = 3;\n        saldo += aporte;\n        {\n            int saldo = 2;\n            saldo += aporte;\n            std::cout << saldo << ':';\n        }\n        std::cout << saldo << ':' << aporte << ':';\n    }\n    std::cout << saldo;\n\n    return 0;\n}\n"
         },
         {
           "type": "math_puzzle",
@@ -362,7 +362,7 @@
           "id": "p3_u3l1_devolver_valor",
           "language": "cpp",
           "question": "Predice las dos respuestas. La primera llamada sale desde el if y no alcanza la suma posterior.",
-          "code": "#include <iostream>\n\nint preparar(int entrada) {\n    int local = entrada + 2;\n    if (entrada < 0) {\n        return local;\n    }\n    local += 3;\n    return local;\n}\n\nint main() {\n    const int primero = preparar(-1);\n    const int segundo = preparar(2);\n    std::cout << primero << ':' << segundo;\n    return 0;\n}\n",
+          "code": "#include <iostream>\n\nint preparar(int entrada) {\n    int local = entrada + 2;\n    if (entrada < 0) {\n        return local;\n    }\n    local += 3;\n    return local;\n}\n\nint main() {\n    const int primero = preparar(-1);\n    const int segundo = preparar(2);\n\n    std::cout << primero << ':' << segundo;\n\n    return 0;\n}\n",
           "answers": [
             "1:7"
           ],
@@ -390,7 +390,7 @@
           "id": "p3_u3l1_copia_fuera_del_bloque",
           "language": "cpp",
           "question": "Predice los dos valores de guardada al salir del bloque de actual.",
-          "code": "#include <array>\n#include <iostream>\n\nint main() {\n    std::array<int, 2> guardada{};\n    {\n        std::array<int, 2> actual{3, 7};\n        guardada = actual;\n        actual[0] = 9;\n    }\n    std::cout << guardada[0] << ':' << guardada[1];\n    return 0;\n}\n",
+          "code": "#include <array>\n#include <iostream>\n\nint main() {\n    std::array<int, 2> guardada{};\n    {\n        std::array<int, 2> actual{3, 7};\n        guardada = actual;\n        actual[0] = 9;\n    }\n    std::cout << guardada[0] << ':' << guardada[1];\n\n    return 0;\n}\n",
           "answers": [
             "3:7"
           ],
@@ -418,7 +418,7 @@
           "id": "p3_u3l1_auto_y_duracion",
           "language": "cpp",
           "question": "Predice los resultados de las dos llamadas, sin atribuir a auto una conservación de valores.",
-          "code": "#include <iostream>\n\nint calcular() {\n    auto total = 2;\n    total += 3;\n    return total;\n}\n\nint main() {\n    const int primero = calcular();\n    const int segundo = calcular();\n    std::cout << primero << ':' << segundo;\n    return 0;\n}\n",
+          "code": "#include <iostream>\n\nint calcular() {\n    auto total = 2;\n\n    total += 3;\n    return total;\n}\n\nint main() {\n    const int primero = calcular();\n    const int segundo = calcular();\n\n    std::cout << primero << ':' << segundo;\n\n    return 0;\n}\n",
           "answers": [
             "5:5"
           ],
@@ -478,7 +478,7 @@
         {
           "type": "cpp_compiler",
           "language": "cpp",
-          "initialCode": "#include <array>\n#include <cstddef>\n#include <iostream>\n\nint calcularGrupo(std::array<int, 3> grupo) {\n    // Construye aqui la suma de los aportes de este grupo.\n    // Cada positivo aporta el doble; los demas aportan cero.\n    return grupo[0];\n}\n\nint main() {\n    std::array<std::array<int, 3>, 2> grupos{};\n    for (std::size_t fila = 0; fila < grupos.size(); ++fila) {\n        for (std::size_t i = 0; i < grupos[fila].size(); ++i) {\n            if (!(std::cin >> grupos[fila][i]) ||\n                grupos[fila][i] < -100 || grupos[fila][i] > 100) {\n                std::cout << \"Datos invalidos\\n\";\n                return 0;\n            }\n        }\n    }\n\n    int totalLote = 0;\n    for (std::size_t fila = 0; fila < grupos.size(); ++fila) {\n        const int resultado = calcularGrupo(grupos[fila]);\n        std::cout << \"Grupo \" << fila << \": \" << resultado << '\\n';\n        totalLote += resultado;\n    }\n    std::cout << \"Total: \" << totalLote << \"\\nOriginal\\n\";\n    for (std::size_t fila = 0; fila < grupos.size(); ++fila) {\n        for (std::size_t i = 0; i < grupos[fila].size(); ++i) {\n            if (i != 0) {\n                std::cout << ' ';\n            }\n            std::cout << grupos[fila][i];\n        }\n        std::cout << '\\n';\n    }\n    return 0;\n}\n",
+          "initialCode": "#include <array>\n#include <cstddef>\n#include <iostream>\n\nint calcularGrupo(std::array<int, 3> grupo) {\n    // Construye aqui la suma de los aportes de este grupo.\n    // Cada positivo aporta el doble; los demas aportan cero.\n    \n    return grupo[0];\n}\n\nint main() {\n    std::array<std::array<int, 3>, 2> grupos{};\n    for (std::size_t fila = 0; fila < grupos.size(); ++fila) {\n        for (std::size_t i = 0; i < grupos[fila].size(); ++i) {\n            if (!(std::cin >> grupos[fila][i]) ||\n                grupos[fila][i] < -100 || grupos[fila][i] > 100) {\n                std::cout << \"Datos invalidos\\n\";\n                return 0;\n            }\n        }\n    }\n\n    int totalLote = 0;\n    for (std::size_t fila = 0; fila < grupos.size(); ++fila) {\n        const int resultado = calcularGrupo(grupos[fila]);\n        std::cout << \"Grupo \" << fila << \": \" << resultado << '\\n';\n        totalLote += resultado;\n    }\n    std::cout << \"Total: \" << totalLote << \"\\nOriginal\\n\";\n    for (std::size_t fila = 0; fila < grupos.size(); ++fila) {\n        for (std::size_t i = 0; i < grupos[fila].size(); ++i) {\n            if (i != 0) {\n                std::cout << ' ';\n            }\n            std::cout << grupos[fila][i];\n        }\n        std::cout << '\\n';\n    }\n\n    return 0;\n}\n",
           "initialStandardInput": "2 -1 3\n-4 1 0\n",
           "outputCheck": {
             "inputComparison": "tokens",
@@ -664,7 +664,7 @@
         {
           "type": "code",
           "language": "cpp",
-          "code": "#include <array>\n#include <cstddef>\n#include <iostream>\n\nint calcularGrupo(std::array<int, 3> grupo) {\n    int total = 0;\n    for (std::size_t i = 0; i < grupo.size(); ++i) {\n        int aporte = 0;\n        if (grupo[i] > 0) {\n            aporte = grupo[i] * 2;\n        }\n        total += aporte;\n    }\n    return total;\n}\n\nint main() {\n    std::array<std::array<int, 3>, 2> grupos{};\n    for (std::size_t fila = 0; fila < grupos.size(); ++fila) {\n        for (std::size_t i = 0; i < grupos[fila].size(); ++i) {\n            if (!(std::cin >> grupos[fila][i]) ||\n                grupos[fila][i] < -100 || grupos[fila][i] > 100) {\n                std::cout << \"Datos invalidos\\n\";\n                return 0;\n            }\n        }\n    }\n\n    int totalLote = 0;\n    for (std::size_t fila = 0; fila < grupos.size(); ++fila) {\n        const int resultado = calcularGrupo(grupos[fila]);\n        std::cout << \"Grupo \" << fila << \": \" << resultado << '\\n';\n        totalLote += resultado;\n    }\n    std::cout << \"Total: \" << totalLote << \"\\nOriginal\\n\";\n    for (std::size_t fila = 0; fila < grupos.size(); ++fila) {\n        for (std::size_t i = 0; i < grupos[fila].size(); ++i) {\n            if (i != 0) {\n                std::cout << ' ';\n            }\n            std::cout << grupos[fila][i];\n        }\n        std::cout << '\\n';\n    }\n    return 0;\n}\n"
+          "code": "#include <array>\n#include <cstddef>\n#include <iostream>\n\nint calcularGrupo(std::array<int, 3> grupo) {\n    int total = 0;\n    for (std::size_t i = 0; i < grupo.size(); ++i) {\n        int aporte = 0;\n        if (grupo[i] > 0) {\n            aporte = grupo[i] * 2;\n        }\n        total += aporte;\n    }\n\n    return total;\n}\n\nint main() {\n    std::array<std::array<int, 3>, 2> grupos{};\n    for (std::size_t fila = 0; fila < grupos.size(); ++fila) {\n        for (std::size_t i = 0; i < grupos[fila].size(); ++i) {\n            if (!(std::cin >> grupos[fila][i]) ||\n                grupos[fila][i] < -100 || grupos[fila][i] > 100) {\n                std::cout << \"Datos invalidos\\n\";\n                return 0;\n            }\n        }\n    }\n\n    int totalLote = 0;\n    for (std::size_t fila = 0; fila < grupos.size(); ++fila) {\n        const int resultado = calcularGrupo(grupos[fila]);\n        std::cout << \"Grupo \" << fila << \": \" << resultado << '\\n';\n        totalLote += resultado;\n    }\n    std::cout << \"Total: \" << totalLote << \"\\nOriginal\\n\";\n    for (std::size_t fila = 0; fila < grupos.size(); ++fila) {\n        for (std::size_t i = 0; i < grupos[fila].size(); ++i) {\n            if (i != 0) {\n                std::cout << ' ';\n            }\n            std::cout << grupos[fila][i];\n        }\n        std::cout << '\\n';\n    }\n\n    return 0;\n}\n"
         },
         {
           "type": "paragraph",
@@ -1819,6 +1819,282 @@
       }
     },
     "additions": [],
-    "editorial": []
+    "editorial": [
+      {
+        "id": "block_0000_0002",
+        "beforeSha256": "4531f87d027ef48836f7ea084fa949c419c154b21acf26c44af6b650217c0b86",
+        "afterSha256": "428f6879741c67e9a6c0d7c96599fd0caadec05ffe1e850c718fc5eaa6f0a13d"
+      },
+      {
+        "id": "block_0001_0002",
+        "beforeSha256": "24e89af3002552594c680f43e9fc01a9016c2d7a2a2aef05aabb96bea75bc28a",
+        "afterSha256": "8e3fdc897fd15eb30f1f6a16b567202b237e59bb76194103e53a3bc11ea50c2a"
+      },
+      {
+        "id": "block_0002_0002",
+        "beforeSha256": "1e0e19a0fa591cfe0ccb77076e4b0244e2aaa589618434b86c78293b6bef3289",
+        "afterSha256": "9f3cf535418ff5f490ca3edbae6e4fd9742a6b1df61617beda961e9b4ab9e57a"
+      },
+      {
+        "id": "block_0003_0002",
+        "beforeSha256": "29bc17c46883e22700651478e0931424bb381cc30010b0c0bb6de86c58488c1f",
+        "afterSha256": "61a0dcf3f8b70b1646be852dbfe1bf47597923b480da7db5c954b9da3dfe79bf"
+      },
+      {
+        "id": "block_0004_0002",
+        "beforeSha256": "924c6e335108058b1a8b56f13648d28804cc2ddc1756ae1cb805ff11aab09fbb",
+        "afterSha256": "b70e0147db322e36558cb1eb931ded22c5d7d9daca392963fccbd58305dc0f75"
+      },
+      {
+        "id": "block_0005_0002",
+        "beforeSha256": "c69150482bd954e0e012d9e28f1a822fd5a6627929fde3c636a85226590c567b",
+        "afterSha256": "06c57cae2708c41c8b694f9de968358b0199d1d2571af2a9449e675fee0a3db3"
+      },
+      {
+        "id": "block_0006_0002",
+        "beforeSha256": "77d95d97debaa16f85916448d5c3723b9e20242c6e21a9a9830b00a2716daedf",
+        "afterSha256": "ae942eeca66b46724d2d659d0c3312af7eae2847feb73e3c91e38dbdeca11002"
+      },
+      {
+        "id": "block_0007_0002",
+        "beforeSha256": "28ee55ec9eebb59dc457e2c00a8e72da2117974c72c195ad13affee8c57ce58c",
+        "afterSha256": "e4290de2d031538c92614c690628bf656eeb1c5ab6685ca2cca843e940f937e6"
+      },
+      {
+        "id": "block_0008_0002",
+        "beforeSha256": "c4d349fd0b6dcb04e0f92f7d9e07632642ec83b76c218cb83a474868f27ff61a",
+        "afterSha256": "5139477fd1774d6e8734873fd5e12e3e11ffc1aea90eb77710c09eb225d8f29d"
+      },
+      {
+        "id": "block_0009_0002",
+        "beforeSha256": "279090394f8cf5c5249dfc944715c95bf06b3ccae69da39380044b8f6daffb36",
+        "afterSha256": "5ac041392cf50883b970b16d7b4de46f46f27a463d08602d14e62258dabd0d23"
+      },
+      {
+        "id": "block_0010_0002",
+        "beforeSha256": "74b025e4dbb3086ebcad6681496c32da74efe2599added046136c1852b5899c7",
+        "afterSha256": "f33aaaee921feb0a59c2b0d51d902e804f782383e446f8fa8c865c79bc48dc99"
+      },
+      {
+        "id": "block_0011_0011",
+        "beforeSha256": "bda3c7611b06436a2ebffb617a42547bdb7187bfee9415e3a1328566fc069470",
+        "afterSha256": "afc3c1259a907fc6f82c0a3e206d1eb6765e19d4525a34da8525610084266fb0"
+      },
+      {
+        "id": "block_0014_0001",
+        "beforeSha256": "66f7317710be8dd280384bd883527e7400a844179495e441593a9d7bbd640a00",
+        "afterSha256": "b48bc8d1153ad43af2c3e4108d0f05ee2c869e636af06c78f4c29c50fde2e413"
+      }
+    ],
+    "sourceFormatRevisions": [
+      {
+        "id": "block_0000_0002",
+        "block": {
+          "type": "code",
+          "language": "cpp",
+          "code": "#include <iostream>\n\nint main() {\n    int total = 5;\n    {\n        int aporte = 3;\n        total += aporte;\n    }\n    std::cout << total;\n    return 0;\n}\n"
+        }
+      },
+      {
+        "id": "block_0001_0002",
+        "block": {
+          "type": "output_prediction",
+          "id": "p3_u3l1_alcanzar_declaracion",
+          "language": "cpp",
+          "question": "El programa llama a preparar con cero y después con tres. Predice el mensaje interior y los dos resultados que imprime main.",
+          "code": "#include <iostream>\n\nint preparar(int entrada) {\n    if (entrada > 0) {\n        int resultado = entrada + 2;\n        std::cout << \"Dentro:\" << resultado << ';';\n        return resultado;\n    }\n    return 0;\n}\n\nint main() {\n    const int primero = preparar(0);\n    const int segundo = preparar(3);\n    std::cout << primero << ':' << segundo;\n    return 0;\n}\n",
+          "answers": [
+            "Dentro:5;0:5"
+          ],
+          "outputComparison": "exact",
+          "explanation": "Con cero no se entra en el if, no se ejecuta la definición de resultado y se devuelve cero. Con tres sí se define resultado con 5, se imprime Dentro:5; y se devuelve ese valor. main conserva los dos resultados."
+        }
+      },
+      {
+        "id": "block_0002_0002",
+        "block": {
+          "type": "output_prediction",
+          "id": "p3_u3l1_ocultar_y_recuperar",
+          "language": "cpp",
+          "question": "Predice las tres consultas de dato. La primera está dentro del bloque, pero antes de declarar su dato interior.",
+          "code": "#include <iostream>\n\nint main() {\n    int dato = 4;\n    {\n        std::cout << dato << ':';\n        int dato = 9;\n        dato += 1;\n        std::cout << dato << ':';\n    }\n    std::cout << dato;\n    return 0;\n}\n",
+          "answers": [
+            "4:10:4"
+          ],
+          "outputComparison": "exact",
+          "explanation": "La primera consulta encuentra el dato exterior de valor 4. Después se declara el interior con 9 y se le suma uno: la segunda muestra 10. Al salir, la última consulta encuentra otra vez el objeto exterior, que conservó 4."
+        }
+      },
+      {
+        "id": "block_0003_0002",
+        "block": {
+          "type": "output_prediction",
+          "id": "p3_u3l1_nombre_distinto",
+          "language": "cpp",
+          "question": "Predice el valor de ajustado y el valor de dato al terminar el bloque.",
+          "code": "#include <iostream>\n\nint main() {\n    int dato = 6;\n    {\n        int ajustado = dato + 1;\n        ajustado += 2;\n        std::cout << ajustado << ':';\n    }\n    std::cout << dato;\n    return 0;\n}\n",
+          "answers": [
+            "9:6"
+          ],
+          "outputComparison": "exact",
+          "explanation": "ajustado comienza con el valor de dato más uno: 7. Después pasa a 9. dato sigue conteniendo 6 porque sólo se consultó para inicializar el otro objeto."
+        }
+      },
+      {
+        "id": "block_0004_0002",
+        "block": {
+          "type": "output_prediction",
+          "id": "p3_u3l1_caller_sigue_existiendo",
+          "language": "cpp",
+          "question": "calcular recibe un valor mediante entrada y define su propio dato. Predice el dato que imprime dentro y los valores que muestra main después.",
+          "code": "#include <iostream>\n\nint calcular(int entrada) {\n    int dato = entrada + 3;\n    std::cout << dato << ':';\n    return dato * 2;\n}\n\nint main() {\n    int dato = 12;\n    const int devuelto = calcular(dato);\n    std::cout << dato << ':' << devuelto;\n    return 0;\n}\n",
+          "answers": [
+            "15:12:30"
+          ],
+          "outputComparison": "exact",
+          "explanation": "entrada recibe el valor 12. El dato de calcular comienza con 15 y se utiliza para devolver 30. El dato de main sigue conteniendo 12; no es el mismo objeto que el dato de calcular."
+        }
+      },
+      {
+        "id": "block_0005_0002",
+        "block": {
+          "type": "output_prediction",
+          "id": "p3_u3l1_reiniciar_llamada",
+          "language": "cpp",
+          "question": "Predice los dos resultados. En cada llamada se vuelve a ejecutar int total = 0;.",
+          "code": "#include <iostream>\n\nint calcular(int entrada) {\n    int total = 0;\n    total += entrada;\n    total += 2;\n    return total;\n}\n\nint main() {\n    const int primero = calcular(3);\n    const int segundo = calcular(1);\n    std::cout << primero << ':' << segundo;\n    return 0;\n}\n",
+          "answers": [
+            "5:3"
+          ],
+          "outputComparison": "exact",
+          "explanation": "La primera llamada suma 3 y 2 a su total inicial cero y devuelve 5. En la segunda, un total nuevo empieza con cero, recibe 1 y después 2 y devuelve 3. No empieza con el 5 anterior."
+        }
+      },
+      {
+        "id": "block_0006_0002",
+        "block": {
+          "type": "output_prediction",
+          "id": "p3_u3l1_reiniciar_repeticion",
+          "language": "cpp",
+          "question": "Predice los tres aportes y el total final. El caso impar no modifica aporte después de su inicialización.",
+          "code": "#include <iostream>\n\nint main() {\n    int total = 0;\n    for (int i = 0; i < 3; ++i) {\n        int aporte = 0;\n        if (i % 2 == 0) {\n            aporte = i + 1;\n        }\n        std::cout << aporte << ':';\n        total += aporte;\n    }\n    std::cout << total;\n    return 0;\n}\n",
+          "answers": [
+            "1:0:3:4"
+          ],
+          "outputComparison": "exact",
+          "explanation": "Con i igual a cero, aporte pasa a 1. Con i igual a uno, el nuevo aporte comienza con cero y el if no lo cambia. Con i igual a dos, el siguiente aporte pasa a 3. total conserva la suma 1 + 0 + 3 y termina en 4."
+        }
+      },
+      {
+        "id": "block_0007_0002",
+        "block": {
+          "type": "code",
+          "language": "cpp",
+          "code": "#include <iostream>\n\nint main() {\n    int saldo = 10;\n    {\n        int aporte = 3;\n        saldo += aporte;\n        {\n            int saldo = 2;\n            saldo += aporte;\n            std::cout << saldo << ':';\n        }\n        std::cout << saldo << ':' << aporte << ':';\n    }\n    std::cout << saldo;\n    return 0;\n}\n"
+        }
+      },
+      {
+        "id": "block_0008_0002",
+        "block": {
+          "type": "output_prediction",
+          "id": "p3_u3l1_devolver_valor",
+          "language": "cpp",
+          "question": "Predice las dos respuestas. La primera llamada sale desde el if y no alcanza la suma posterior.",
+          "code": "#include <iostream>\n\nint preparar(int entrada) {\n    int local = entrada + 2;\n    if (entrada < 0) {\n        return local;\n    }\n    local += 3;\n    return local;\n}\n\nint main() {\n    const int primero = preparar(-1);\n    const int segundo = preparar(2);\n    std::cout << primero << ':' << segundo;\n    return 0;\n}\n",
+          "answers": [
+            "1:7"
+          ],
+          "outputComparison": "exact",
+          "explanation": "Con -1, local se inicializa con 1 y ese valor se devuelve antes de sumar tres. Con 2, un local nuevo comienza con 4 y después pasa a 7. main conserva ambos int devueltos."
+        }
+      },
+      {
+        "id": "block_0009_0002",
+        "block": {
+          "type": "output_prediction",
+          "id": "p3_u3l1_copia_fuera_del_bloque",
+          "language": "cpp",
+          "question": "Predice los dos valores de guardada al salir del bloque de actual.",
+          "code": "#include <array>\n#include <iostream>\n\nint main() {\n    std::array<int, 2> guardada{};\n    {\n        std::array<int, 2> actual{3, 7};\n        guardada = actual;\n        actual[0] = 9;\n    }\n    std::cout << guardada[0] << ':' << guardada[1];\n    return 0;\n}\n",
+          "answers": [
+            "3:7"
+          ],
+          "outputComparison": "exact",
+          "explanation": "guardada recibe 3 y 7 antes de cambiar actual[0] a 9. Al cerrar el bloque termina actual, pero guardada continúa en main con sus propios enteros y muestra 3:7."
+        }
+      },
+      {
+        "id": "block_0010_0002",
+        "block": {
+          "type": "output_prediction",
+          "id": "p3_u3l1_auto_y_duracion",
+          "language": "cpp",
+          "question": "Predice los resultados de las dos llamadas, sin atribuir a auto una conservación de valores.",
+          "code": "#include <iostream>\n\nint calcular() {\n    auto total = 2;\n    total += 3;\n    return total;\n}\n\nint main() {\n    const int primero = calcular();\n    const int segundo = calcular();\n    std::cout << primero << ':' << segundo;\n    return 0;\n}\n",
+          "answers": [
+            "5:5"
+          ],
+          "outputComparison": "exact",
+          "explanation": "Cada llamada inicializa un total de tipo int con 2 y después le suma 3. Las dos devuelven 5. La segunda no empieza con el resultado anterior."
+        }
+      },
+      {
+        "id": "block_0011_0011",
+        "block": {
+          "type": "cpp_compiler",
+          "language": "cpp",
+          "initialCode": "#include <array>\n#include <cstddef>\n#include <iostream>\n\nint calcularGrupo(std::array<int, 3> grupo) {\n    // Construye aqui la suma de los aportes de este grupo.\n    // Cada positivo aporta el doble; los demas aportan cero.\n    return grupo[0];\n}\n\nint main() {\n    std::array<std::array<int, 3>, 2> grupos{};\n    for (std::size_t fila = 0; fila < grupos.size(); ++fila) {\n        for (std::size_t i = 0; i < grupos[fila].size(); ++i) {\n            if (!(std::cin >> grupos[fila][i]) ||\n                grupos[fila][i] < -100 || grupos[fila][i] > 100) {\n                std::cout << \"Datos invalidos\\n\";\n                return 0;\n            }\n        }\n    }\n\n    int totalLote = 0;\n    for (std::size_t fila = 0; fila < grupos.size(); ++fila) {\n        const int resultado = calcularGrupo(grupos[fila]);\n        std::cout << \"Grupo \" << fila << \": \" << resultado << '\\n';\n        totalLote += resultado;\n    }\n    std::cout << \"Total: \" << totalLote << \"\\nOriginal\\n\";\n    for (std::size_t fila = 0; fila < grupos.size(); ++fila) {\n        for (std::size_t i = 0; i < grupos[fila].size(); ++i) {\n            if (i != 0) {\n                std::cout << ' ';\n            }\n            std::cout << grupos[fila][i];\n        }\n        std::cout << '\\n';\n    }\n    return 0;\n}\n",
+          "initialStandardInput": "2 -1 3\n-4 1 0\n",
+          "outputCheck": {
+            "inputComparison": "tokens",
+            "cases": [
+              {
+                "standardInput": "2 -1 3\n-4 1 0\n",
+                "outputs": [
+                  "Grupo 0: 10\nGrupo 1: 2\nTotal: 12\nOriginal\n2 -1 3\n-4 1 0\n"
+                ],
+                "explanation": "Calcular el doble de cada positivo, sumar por grupo con locales nuevos y conservar el lote original; informar ambos grupos y su total."
+              },
+              {
+                "standardInput": "0 0 0\n-3 -2 -1\n",
+                "outputs": [
+                  "Grupo 0: 0\nGrupo 1: 0\nTotal: 0\nOriginal\n0 0 0\n-3 -2 -1\n"
+                ],
+                "explanation": "Calcular el doble de cada positivo, sumar por grupo con locales nuevos y conservar el lote original; informar ambos grupos y su total."
+              },
+              {
+                "standardInput": "1 2 3\n4 5 6\n",
+                "outputs": [
+                  "Grupo 0: 12\nGrupo 1: 30\nTotal: 42\nOriginal\n1 2 3\n4 5 6\n"
+                ],
+                "explanation": "Calcular el doble de cada positivo, sumar por grupo con locales nuevos y conservar el lote original; informar ambos grupos y su total."
+              },
+              {
+                "standardInput": "5 0 0\n0 0 5\n",
+                "outputs": [
+                  "Grupo 0: 10\nGrupo 1: 10\nTotal: 20\nOriginal\n5 0 0\n0 0 5\n"
+                ],
+                "explanation": "Calcular el doble de cada positivo, sumar por grupo con locales nuevos y conservar el lote original; informar ambos grupos y su total."
+              },
+              {
+                "standardInput": "100 100 100\n-100 100 -100\n",
+                "outputs": [
+                  "Grupo 0: 600\nGrupo 1: 200\nTotal: 800\nOriginal\n100 100 100\n-100 100 -100\n"
+                ],
+                "explanation": "Calcular el doble de cada positivo, sumar por grupo con locales nuevos y conservar el lote original; informar ambos grupos y su total."
+              }
+            ]
+          }
+        }
+      },
+      {
+        "id": "block_0014_0001",
+        "block": {
+          "type": "code",
+          "language": "cpp",
+          "code": "#include <array>\n#include <cstddef>\n#include <iostream>\n\nint calcularGrupo(std::array<int, 3> grupo) {\n    int total = 0;\n    for (std::size_t i = 0; i < grupo.size(); ++i) {\n        int aporte = 0;\n        if (grupo[i] > 0) {\n            aporte = grupo[i] * 2;\n        }\n        total += aporte;\n    }\n    return total;\n}\n\nint main() {\n    std::array<std::array<int, 3>, 2> grupos{};\n    for (std::size_t fila = 0; fila < grupos.size(); ++fila) {\n        for (std::size_t i = 0; i < grupos[fila].size(); ++i) {\n            if (!(std::cin >> grupos[fila][i]) ||\n                grupos[fila][i] < -100 || grupos[fila][i] > 100) {\n                std::cout << \"Datos invalidos\\n\";\n                return 0;\n            }\n        }\n    }\n\n    int totalLote = 0;\n    for (std::size_t fila = 0; fila < grupos.size(); ++fila) {\n        const int resultado = calcularGrupo(grupos[fila]);\n        std::cout << \"Grupo \" << fila << \": \" << resultado << '\\n';\n        totalLote += resultado;\n    }\n    std::cout << \"Total: \" << totalLote << \"\\nOriginal\\n\";\n    for (std::size_t fila = 0; fila < grupos.size(); ++fila) {\n        for (std::size_t i = 0; i < grupos[fila].size(); ++i) {\n            if (i != 0) {\n                std::cout << ' ';\n            }\n            std::cout << grupos[fila][i];\n        }\n        std::cout << '\\n';\n    }\n    return 0;\n}\n"
+        }
+      }
+    ]
   }
 }

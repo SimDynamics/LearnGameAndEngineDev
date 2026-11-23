@@ -81,7 +81,7 @@
           "id": "p3_u1l11_igualdad_convertida",
           "question": "Predice las tres líneas en el formato y redondeo indicados. La última compara dos double.",
           "language": "cpp",
-          "code": "#include <iomanip>\n#include <iostream>\n#include <limits>\n\nint main() {\n    if (std::numeric_limits<long long>::radix != 2\n        || std::numeric_limits<long long>::digits != 63\n        || std::numeric_limits<double>::radix != 2\n        || std::numeric_limits<double>::digits != 53) {\n        return 2;\n    }\n\n    long long original = 9007199254740993LL;\n    double aproximado = static_cast<double>(original);\n\n    std::cout << original << '\\n';\n    std::cout << std::fixed << std::setprecision(0);\n    std::cout << aproximado << '\\n';\n    std::cout << (aproximado == static_cast<double>(original));\n    return 0;\n}\n",
+          "code": "#include <iomanip>\n#include <iostream>\n#include <limits>\n\nint main() {\n    if (std::numeric_limits<long long>::radix != 2\n        || std::numeric_limits<long long>::digits != 63\n        || std::numeric_limits<double>::radix != 2\n        || std::numeric_limits<double>::digits != 53) {\n        return 2;\n    }\n\n    long long original = 9007199254740993LL;\n    double aproximado = static_cast<double>(original);\n\n    std::cout << original << '\\n';\n    std::cout << std::fixed << std::setprecision(0);\n    std::cout << aproximado << '\\n';\n    std::cout << (aproximado == static_cast<double>(original));\n\n    return 0;\n}\n",
           "answers": [
             "9007199254740993\n9007199254740992\n1"
           ],
@@ -107,7 +107,7 @@
         {
           "type": "code",
           "language": "cpp",
-          "code": "#include <iomanip>\n#include <iostream>\n#include <limits>\n\nint main() {\n    if (std::numeric_limits<long long>::radix != 2\n        || std::numeric_limits<long long>::digits != 63\n        || std::numeric_limits<double>::radix != 2\n        || std::numeric_limits<double>::digits != 53) {\n        return 2;\n    }\n\n    long long maximo = std::numeric_limits<long long>::max();\n    double cota = static_cast<double>(maximo);\n\n    std::cout << maximo << '\\n';\n    std::cout << std::fixed << std::setprecision(0);\n    std::cout << cota << '\\n';\n    std::cout << (cota <= static_cast<double>(maximo));\n    return 0;\n}\n"
+          "code": "#include <iomanip>\n#include <iostream>\n#include <limits>\n\nint main() {\n    if (std::numeric_limits<long long>::radix != 2\n        || std::numeric_limits<long long>::digits != 63\n        || std::numeric_limits<double>::radix != 2\n        || std::numeric_limits<double>::digits != 53) {\n        return 2;\n    }\n\n    long long maximo = std::numeric_limits<long long>::max();\n    double cota = static_cast<double>(maximo);\n\n    std::cout << maximo << '\\n';\n    std::cout << std::fixed << std::setprecision(0);\n    std::cout << cota << '\\n';\n    std::cout << (cota <= static_cast<double>(maximo));\n\n    return 0;\n}\n"
         },
         {
           "type": "paragraph",
@@ -243,7 +243,7 @@
           "id": "p3_u1l11_paridad_negativa",
           "question": "Predice las tres comparaciones. La última usa == 1 para que puedas contrastarla con != 0.",
           "language": "cpp",
-          "code": "#include <iostream>\n\nint main() {\n    long long par = -18;\n    long long impar = -17;\n    std::cout << (par % 2 != 0) << ':'\n              << (impar % 2 != 0) << ':'\n              << (impar % 2 == 1);\n    return 0;\n}\n",
+          "code": "#include <iostream>\n\nint main() {\n    long long par = -18;\n    long long impar = -17;\n\n    std::cout << (par % 2 != 0) << ':'\n              << (impar % 2 != 0) << ':'\n              << (impar % 2 == 1);\n    return 0;\n}\n",
           "answers": [
             "0:1:0"
           ],
@@ -290,7 +290,7 @@
         {
           "type": "cpp_compiler",
           "language": "cpp",
-          "initialCode": "#include <iomanip>\n#include <iostream>\n#include <limits>\n\nbool convertir_ll_exacto(long long dato, double& destino) {\n    double candidato = static_cast<double>(dato);\n    // A la derecha tambien se convierte el original a double.\n    if (candidato != static_cast<double>(dato)) {\n        return false;\n    }\n    destino = candidato;\n    return true;\n}\n\nint main() {\n    if (std::numeric_limits<long long>::radix != 2\n        || std::numeric_limits<long long>::digits != 63\n        || std::numeric_limits<double>::radix != 2\n        || std::numeric_limits<double>::digits != 53) {\n        return 2;\n    }\n\n    int caso = 0;\n    if (!(std::cin >> caso)) {\n        return 1;\n    }\n\n    const long long umbral = 9007199254740992LL;\n    long long dato = 0;\n    switch (caso) {\n    case 1:\n        dato = umbral + 1;\n        break;\n    case 2:\n        dato = umbral;\n        break;\n    case 3:\n        dato = umbral + 2;\n        break;\n    case 4:\n        dato = -umbral - 2;\n        break;\n    case 5:\n        dato = std::numeric_limits<long long>::lowest();\n        break;\n    case 6:\n        dato = std::numeric_limits<long long>::lowest() + 1;\n        break;\n    case 7:\n        dato = std::numeric_limits<long long>::max();\n        break;\n    case 8:\n        dato = 0;\n        break;\n    case 9:\n        dato = -42;\n        break;\n    case 10:\n        dato = 18014398509481986LL;\n        break;\n    case 11:\n        dato = 18014398509481988LL;\n        break;\n    default:\n        return 1;\n    }\n\n    double destino = 17.0;\n    const bool aceptado = convertir_ll_exacto(dato, destino);\n    std::cout << \"Original=\" << dato << '\\n';\n    std::cout << \"Aceptado=\" << aceptado << '\\n';\n    std::cout << std::fixed << std::setprecision(0);\n    std::cout << \"Destino=\" << destino << '\\n';\n    return 0;\n}\n",
+          "initialCode": "#include <iomanip>\n#include <iostream>\n#include <limits>\n\nbool convertir_ll_exacto(long long dato, double& destino) {\n    double candidato = static_cast<double>(dato);\n    // A la derecha tambien se convierte el original a double.\n    if (candidato != static_cast<double>(dato)) {\n        return false;\n    }\n    destino = candidato;\n    return true;\n}\n\nint main() {\n    if (std::numeric_limits<long long>::radix != 2\n        || std::numeric_limits<long long>::digits != 63\n        || std::numeric_limits<double>::radix != 2\n        || std::numeric_limits<double>::digits != 53) {\n        return 2;\n    }\n\n    int caso = 0;\n    if (!(std::cin >> caso)) {\n        return 1;\n    }\n\n    const long long umbral = 9007199254740992LL;\n    long long dato = 0;\n\n    switch (caso) {\n    case 1:\n        dato = umbral + 1;\n        break;\n    case 2:\n        dato = umbral;\n        break;\n    case 3:\n        dato = umbral + 2;\n        break;\n    case 4:\n        dato = -umbral - 2;\n        break;\n    case 5:\n        dato = std::numeric_limits<long long>::lowest();\n        break;\n    case 6:\n        dato = std::numeric_limits<long long>::lowest() + 1;\n        break;\n    case 7:\n        dato = std::numeric_limits<long long>::max();\n        break;\n    case 8:\n        dato = 0;\n        break;\n    case 9:\n        dato = -42;\n        break;\n    case 10:\n        dato = 18014398509481986LL;\n        break;\n    case 11:\n        dato = 18014398509481988LL;\n        break;\n    default:\n        return 1;\n    }\n\n    double destino = 17.0;\n    const bool aceptado = convertir_ll_exacto(dato, destino);\n\n    std::cout << \"Original=\" << dato << '\\n';\n    std::cout << \"Aceptado=\" << aceptado << '\\n';\n    std::cout << std::fixed << std::setprecision(0);\n    std::cout << \"Destino=\" << destino << '\\n';\n\n    return 0;\n}\n",
           "initialStandardInput": "1\n",
           "outputCheck": {
             "inputComparison": "tokens",
@@ -516,7 +516,7 @@
         {
           "type": "code",
           "language": "cpp",
-          "code": "#include <iomanip>\n#include <iostream>\n#include <limits>\n\nbool convertir_ll_exacto(long long dato, double& destino) {\n    const long long umbral = 9007199254740992LL;\n    long long reducido = dato;\n    while (reducido < -umbral || reducido > umbral) {\n        if (reducido % 2 != 0) {\n            return false;\n        }\n        reducido /= 2;\n    }\n\n    destino = static_cast<double>(dato);\n    return true;\n}\n\nint main() {\n    if (std::numeric_limits<long long>::radix != 2\n        || std::numeric_limits<long long>::digits != 63\n        || std::numeric_limits<double>::radix != 2\n        || std::numeric_limits<double>::digits != 53) {\n        return 2;\n    }\n\n    int caso = 0;\n    if (!(std::cin >> caso)) {\n        return 1;\n    }\n\n    const long long umbral = 9007199254740992LL;\n    long long dato = 0;\n    switch (caso) {\n    case 1:\n        dato = umbral + 1;\n        break;\n    case 2:\n        dato = umbral;\n        break;\n    case 3:\n        dato = umbral + 2;\n        break;\n    case 4:\n        dato = -umbral - 2;\n        break;\n    case 5:\n        dato = std::numeric_limits<long long>::lowest();\n        break;\n    case 6:\n        dato = std::numeric_limits<long long>::lowest() + 1;\n        break;\n    case 7:\n        dato = std::numeric_limits<long long>::max();\n        break;\n    case 8:\n        dato = 0;\n        break;\n    case 9:\n        dato = -42;\n        break;\n    case 10:\n        dato = 18014398509481986LL;\n        break;\n    case 11:\n        dato = 18014398509481988LL;\n        break;\n    default:\n        return 1;\n    }\n\n    double destino = 17.0;\n    const bool aceptado = convertir_ll_exacto(dato, destino);\n    std::cout << \"Original=\" << dato << '\\n';\n    std::cout << \"Aceptado=\" << aceptado << '\\n';\n    std::cout << std::fixed << std::setprecision(0);\n    std::cout << \"Destino=\" << destino << '\\n';\n    return 0;\n}\n"
+          "code": "#include <iomanip>\n#include <iostream>\n#include <limits>\n\nbool convertir_ll_exacto(long long dato, double& destino) {\n    const long long umbral = 9007199254740992LL;\n    long long reducido = dato;\n\n    while (reducido < -umbral || reducido > umbral) {\n        if (reducido % 2 != 0) {\n            return false;\n        }\n        reducido /= 2;\n    }\n\n    destino = static_cast<double>(dato);\n    return true;\n}\n\nint main() {\n    if (std::numeric_limits<long long>::radix != 2\n        || std::numeric_limits<long long>::digits != 63\n        || std::numeric_limits<double>::radix != 2\n        || std::numeric_limits<double>::digits != 53) {\n        return 2;\n    }\n\n    int caso = 0;\n    if (!(std::cin >> caso)) {\n        return 1;\n    }\n\n    const long long umbral = 9007199254740992LL;\n    long long dato = 0;\n\n    switch (caso) {\n    case 1:\n        dato = umbral + 1;\n        break;\n    case 2:\n        dato = umbral;\n        break;\n    case 3:\n        dato = umbral + 2;\n        break;\n    case 4:\n        dato = -umbral - 2;\n        break;\n    case 5:\n        dato = std::numeric_limits<long long>::lowest();\n        break;\n    case 6:\n        dato = std::numeric_limits<long long>::lowest() + 1;\n        break;\n    case 7:\n        dato = std::numeric_limits<long long>::max();\n        break;\n    case 8:\n        dato = 0;\n        break;\n    case 9:\n        dato = -42;\n        break;\n    case 10:\n        dato = 18014398509481986LL;\n        break;\n    case 11:\n        dato = 18014398509481988LL;\n        break;\n    default:\n        return 1;\n    }\n\n    double destino = 17.0;\n    const bool aceptado = convertir_ll_exacto(dato, destino);\n\n    std::cout << \"Original=\" << dato << '\\n';\n    std::cout << \"Aceptado=\" << aceptado << '\\n';\n    std::cout << std::fixed << std::setprecision(0);\n    std::cout << \"Destino=\" << destino << '\\n';\n\n    return 0;\n}\n"
         },
         {
           "type": "paragraph",
@@ -547,7 +547,7 @@
           "id": "p3_u1l11_secuencia",
           "question": "Predice las cuatro líneas en el entorno de la práctica. Cada una escribe el bool y el destino posterior.",
           "language": "cpp",
-          "code": "#include <iomanip>\n#include <iostream>\n#include <limits>\n\nbool convertir_ll_exacto(long long dato, double& destino) {\n    const long long umbral = 9007199254740992LL;\n    long long reducido = dato;\n    while (reducido < -umbral || reducido > umbral) {\n        if (reducido % 2 != 0) {\n            return false;\n        }\n        reducido /= 2;\n    }\n\n    destino = static_cast<double>(dato);\n    return true;\n}\n\nint main() {\n    if (std::numeric_limits<long long>::radix != 2\n        || std::numeric_limits<long long>::digits != 63\n        || std::numeric_limits<double>::radix != 2\n        || std::numeric_limits<double>::digits != 53) {\n        return 2;\n    }\n\n    double destino = 17.0;\n    std::cout << std::fixed << std::setprecision(0);\n    bool aceptado = convertir_ll_exacto(9007199254740994LL, destino);\n    std::cout << aceptado << ':' << destino << '\\n';\n    aceptado = convertir_ll_exacto(9007199254740993LL, destino);\n    std::cout << aceptado << ':' << destino << '\\n';\n    aceptado = convertir_ll_exacto(0, destino);\n    std::cout << aceptado << ':' << destino << '\\n';\n    aceptado = convertir_ll_exacto(std::numeric_limits<long long>::max(), destino);\n    std::cout << aceptado << ':' << destino;\n    return 0;\n}\n",
+          "code": "#include <iomanip>\n#include <iostream>\n#include <limits>\n\nbool convertir_ll_exacto(long long dato, double& destino) {\n    const long long umbral = 9007199254740992LL;\n    long long reducido = dato;\n\n    while (reducido < -umbral || reducido > umbral) {\n        if (reducido % 2 != 0) {\n            return false;\n        }\n        reducido /= 2;\n    }\n\n    destino = static_cast<double>(dato);\n    return true;\n}\n\nint main() {\n    if (std::numeric_limits<long long>::radix != 2\n        || std::numeric_limits<long long>::digits != 63\n        || std::numeric_limits<double>::radix != 2\n        || std::numeric_limits<double>::digits != 53) {\n        return 2;\n    }\n\n    double destino = 17.0;\n    std::cout << std::fixed << std::setprecision(0);\n    bool aceptado = convertir_ll_exacto(9007199254740994LL, destino);\n    std::cout << aceptado << ':' << destino << '\\n';\n    aceptado = convertir_ll_exacto(9007199254740993LL, destino);\n\n    std::cout << aceptado << ':' << destino << '\\n';\n    aceptado = convertir_ll_exacto(0, destino);\n\n    std::cout << aceptado << ':' << destino << '\\n';\n    aceptado = convertir_ll_exacto(std::numeric_limits<long long>::max(), destino);\n\n    std::cout << aceptado << ':' << destino;\n\n    return 0;\n}\n",
           "answers": [
             "1:9007199254740994\n0:9007199254740994\n1:0\n0:0"
           ],
@@ -1612,6 +1612,191 @@
       }
     },
     "additions": [],
-    "editorial": []
+    "editorial": [
+      {
+        "id": "block_0002_0003",
+        "beforeSha256": "578b6bfc3481e2b3daf65ef62e23789c1d27551a57959b4a02324570c7d56b09",
+        "afterSha256": "2d6c1d12ade4f5b358e8466ebd7e8d0564924e99eb35ae2a3350d15966c1338b"
+      },
+      {
+        "id": "block_0003_0002",
+        "beforeSha256": "d06ddca8a29e695e970b9baafabae8b17b70f6e356a0756a3e7856a894e1bd0b",
+        "afterSha256": "c0cbe11243d47b047b9995640f5d799ca5722d9833326b92ea1debfb428b3421"
+      },
+      {
+        "id": "block_0007_0002",
+        "beforeSha256": "bfa901d069f4b56ac19223f04243ce701d7fc7eb5e9cdb18346954e882e3c244",
+        "afterSha256": "00ef66b29922ead7db9cc03899a6f2c41c75bffa68d0bc20b8cee11f706cffbe"
+      },
+      {
+        "id": "block_0008_0006",
+        "beforeSha256": "e19778e96200ce72e55ef7724891a6e75593224ed99d73ee62d35c3b34c686e1",
+        "afterSha256": "544fea6151d6cfb072c90d35f77190baf259f375017faec89bbe5a9db0643651"
+      },
+      {
+        "id": "block_0012_0001",
+        "beforeSha256": "7a7ebb5de3fb1fab5d7046b533ec8a1cf3f344ae1bcd60fa60e36040bca82329",
+        "afterSha256": "6a07954869c9993ef4786fb9f4cf70a48fb9e31978119e60389ef122a5af2a37"
+      },
+      {
+        "id": "block_0013_0002",
+        "beforeSha256": "e49ec19dbd92fdc6a87d230d150ff1a8f4e208edefd78c6a7d144986554e6364",
+        "afterSha256": "35f93b94fb9da0f19d3f224553dec553cb033ebd7e8782eb09df660e7e68d6ce"
+      }
+    ],
+    "sourceFormatRevisions": [
+      {
+        "id": "block_0002_0003",
+        "block": {
+          "type": "output_prediction",
+          "id": "p3_u1l11_igualdad_convertida",
+          "question": "Predice las tres líneas en el formato y redondeo indicados. La última compara dos double.",
+          "language": "cpp",
+          "code": "#include <iomanip>\n#include <iostream>\n#include <limits>\n\nint main() {\n    if (std::numeric_limits<long long>::radix != 2\n        || std::numeric_limits<long long>::digits != 63\n        || std::numeric_limits<double>::radix != 2\n        || std::numeric_limits<double>::digits != 53) {\n        return 2;\n    }\n\n    long long original = 9007199254740993LL;\n    double aproximado = static_cast<double>(original);\n\n    std::cout << original << '\\n';\n    std::cout << std::fixed << std::setprecision(0);\n    std::cout << aproximado << '\\n';\n    std::cout << (aproximado == static_cast<double>(original));\n    return 0;\n}\n",
+          "answers": [
+            "9007199254740993\n9007199254740992\n1"
+          ],
+          "outputComparison": "exact",
+          "explanation": "El entero original conserva 9007199254740993. Convertirlo a binary64 en esta configuración obtiene 9007199254740992. La conversión explícita del otro lado obtiene lo mismo, por lo que la comparación es verdadera sin acreditar exactitud."
+        }
+      },
+      {
+        "id": "block_0003_0002",
+        "block": {
+          "type": "code",
+          "language": "cpp",
+          "code": "#include <iomanip>\n#include <iostream>\n#include <limits>\n\nint main() {\n    if (std::numeric_limits<long long>::radix != 2\n        || std::numeric_limits<long long>::digits != 63\n        || std::numeric_limits<double>::radix != 2\n        || std::numeric_limits<double>::digits != 53) {\n        return 2;\n    }\n\n    long long maximo = std::numeric_limits<long long>::max();\n    double cota = static_cast<double>(maximo);\n\n    std::cout << maximo << '\\n';\n    std::cout << std::fixed << std::setprecision(0);\n    std::cout << cota << '\\n';\n    std::cout << (cota <= static_cast<double>(maximo));\n    return 0;\n}\n"
+        }
+      },
+      {
+        "id": "block_0007_0002",
+        "block": {
+          "type": "output_prediction",
+          "id": "p3_u1l11_paridad_negativa",
+          "question": "Predice las tres comparaciones. La última usa == 1 para que puedas contrastarla con != 0.",
+          "language": "cpp",
+          "code": "#include <iostream>\n\nint main() {\n    long long par = -18;\n    long long impar = -17;\n    std::cout << (par % 2 != 0) << ':'\n              << (impar % 2 != 0) << ':'\n              << (impar % 2 == 1);\n    return 0;\n}\n",
+          "answers": [
+            "0:1:0"
+          ],
+          "outputComparison": "exact",
+          "explanation": "−18 es par y deja resto cero. −17 es impar y deja resto −1: != 0 lo detecta, pero == 1 no lo detecta."
+        }
+      },
+      {
+        "id": "block_0008_0006",
+        "block": {
+          "type": "cpp_compiler",
+          "language": "cpp",
+          "initialCode": "#include <iomanip>\n#include <iostream>\n#include <limits>\n\nbool convertir_ll_exacto(long long dato, double& destino) {\n    double candidato = static_cast<double>(dato);\n    // A la derecha tambien se convierte el original a double.\n    if (candidato != static_cast<double>(dato)) {\n        return false;\n    }\n    destino = candidato;\n    return true;\n}\n\nint main() {\n    if (std::numeric_limits<long long>::radix != 2\n        || std::numeric_limits<long long>::digits != 63\n        || std::numeric_limits<double>::radix != 2\n        || std::numeric_limits<double>::digits != 53) {\n        return 2;\n    }\n\n    int caso = 0;\n    if (!(std::cin >> caso)) {\n        return 1;\n    }\n\n    const long long umbral = 9007199254740992LL;\n    long long dato = 0;\n    switch (caso) {\n    case 1:\n        dato = umbral + 1;\n        break;\n    case 2:\n        dato = umbral;\n        break;\n    case 3:\n        dato = umbral + 2;\n        break;\n    case 4:\n        dato = -umbral - 2;\n        break;\n    case 5:\n        dato = std::numeric_limits<long long>::lowest();\n        break;\n    case 6:\n        dato = std::numeric_limits<long long>::lowest() + 1;\n        break;\n    case 7:\n        dato = std::numeric_limits<long long>::max();\n        break;\n    case 8:\n        dato = 0;\n        break;\n    case 9:\n        dato = -42;\n        break;\n    case 10:\n        dato = 18014398509481986LL;\n        break;\n    case 11:\n        dato = 18014398509481988LL;\n        break;\n    default:\n        return 1;\n    }\n\n    double destino = 17.0;\n    const bool aceptado = convertir_ll_exacto(dato, destino);\n    std::cout << \"Original=\" << dato << '\\n';\n    std::cout << \"Aceptado=\" << aceptado << '\\n';\n    std::cout << std::fixed << std::setprecision(0);\n    std::cout << \"Destino=\" << destino << '\\n';\n    return 0;\n}\n",
+          "initialStandardInput": "1\n",
+          "outputCheck": {
+            "inputComparison": "tokens",
+            "cases": [
+              {
+                "standardInput": "1\n",
+                "outputs": [
+                  "Original=9007199254740993\nAceptado=0\nDestino=17\n"
+                ],
+                "explanation": "Entero original 9007199254740993: no representable exactamente; conservar el destino."
+              },
+              {
+                "standardInput": "2\n",
+                "outputs": [
+                  "Original=9007199254740992\nAceptado=1\nDestino=9007199254740992\n"
+                ],
+                "explanation": "Entero original 9007199254740992: representable exactamente."
+              },
+              {
+                "standardInput": "3\n",
+                "outputs": [
+                  "Original=9007199254740994\nAceptado=1\nDestino=9007199254740994\n"
+                ],
+                "explanation": "Entero original 9007199254740994: representable exactamente."
+              },
+              {
+                "standardInput": "4\n",
+                "outputs": [
+                  "Original=-9007199254740994\nAceptado=1\nDestino=-9007199254740994\n"
+                ],
+                "explanation": "Entero original -9007199254740994: representable exactamente."
+              },
+              {
+                "standardInput": "5\n",
+                "outputs": [
+                  "Original=-9223372036854775808\nAceptado=1\nDestino=-9223372036854775808\n"
+                ],
+                "explanation": "Entero original -9223372036854775808: representable exactamente."
+              },
+              {
+                "standardInput": "6\n",
+                "outputs": [
+                  "Original=-9223372036854775807\nAceptado=0\nDestino=17\n"
+                ],
+                "explanation": "Entero original -9223372036854775807: no representable exactamente; conservar el destino."
+              },
+              {
+                "standardInput": "7\n",
+                "outputs": [
+                  "Original=9223372036854775807\nAceptado=0\nDestino=17\n"
+                ],
+                "explanation": "Entero original 9223372036854775807: no representable exactamente; conservar el destino."
+              },
+              {
+                "standardInput": "8\n",
+                "outputs": [
+                  "Original=0\nAceptado=1\nDestino=0\n"
+                ],
+                "explanation": "Entero original 0: representable exactamente."
+              },
+              {
+                "standardInput": "9\n",
+                "outputs": [
+                  "Original=-42\nAceptado=1\nDestino=-42\n"
+                ],
+                "explanation": "Entero original -42: representable exactamente."
+              },
+              {
+                "standardInput": "10\n",
+                "outputs": [
+                  "Original=18014398509481986\nAceptado=0\nDestino=17\n"
+                ],
+                "explanation": "Entero original 18014398509481986: no representable exactamente; conservar el destino."
+              },
+              {
+                "standardInput": "11\n",
+                "outputs": [
+                  "Original=18014398509481988\nAceptado=1\nDestino=18014398509481988\n"
+                ],
+                "explanation": "Entero original 18014398509481988: representable exactamente."
+              }
+            ]
+          }
+        }
+      },
+      {
+        "id": "block_0012_0001",
+        "block": {
+          "type": "code",
+          "language": "cpp",
+          "code": "#include <iomanip>\n#include <iostream>\n#include <limits>\n\nbool convertir_ll_exacto(long long dato, double& destino) {\n    const long long umbral = 9007199254740992LL;\n    long long reducido = dato;\n    while (reducido < -umbral || reducido > umbral) {\n        if (reducido % 2 != 0) {\n            return false;\n        }\n        reducido /= 2;\n    }\n\n    destino = static_cast<double>(dato);\n    return true;\n}\n\nint main() {\n    if (std::numeric_limits<long long>::radix != 2\n        || std::numeric_limits<long long>::digits != 63\n        || std::numeric_limits<double>::radix != 2\n        || std::numeric_limits<double>::digits != 53) {\n        return 2;\n    }\n\n    int caso = 0;\n    if (!(std::cin >> caso)) {\n        return 1;\n    }\n\n    const long long umbral = 9007199254740992LL;\n    long long dato = 0;\n    switch (caso) {\n    case 1:\n        dato = umbral + 1;\n        break;\n    case 2:\n        dato = umbral;\n        break;\n    case 3:\n        dato = umbral + 2;\n        break;\n    case 4:\n        dato = -umbral - 2;\n        break;\n    case 5:\n        dato = std::numeric_limits<long long>::lowest();\n        break;\n    case 6:\n        dato = std::numeric_limits<long long>::lowest() + 1;\n        break;\n    case 7:\n        dato = std::numeric_limits<long long>::max();\n        break;\n    case 8:\n        dato = 0;\n        break;\n    case 9:\n        dato = -42;\n        break;\n    case 10:\n        dato = 18014398509481986LL;\n        break;\n    case 11:\n        dato = 18014398509481988LL;\n        break;\n    default:\n        return 1;\n    }\n\n    double destino = 17.0;\n    const bool aceptado = convertir_ll_exacto(dato, destino);\n    std::cout << \"Original=\" << dato << '\\n';\n    std::cout << \"Aceptado=\" << aceptado << '\\n';\n    std::cout << std::fixed << std::setprecision(0);\n    std::cout << \"Destino=\" << destino << '\\n';\n    return 0;\n}\n"
+        }
+      },
+      {
+        "id": "block_0013_0002",
+        "block": {
+          "type": "output_prediction",
+          "id": "p3_u1l11_secuencia",
+          "question": "Predice las cuatro líneas en el entorno de la práctica. Cada una escribe el bool y el destino posterior.",
+          "language": "cpp",
+          "code": "#include <iomanip>\n#include <iostream>\n#include <limits>\n\nbool convertir_ll_exacto(long long dato, double& destino) {\n    const long long umbral = 9007199254740992LL;\n    long long reducido = dato;\n    while (reducido < -umbral || reducido > umbral) {\n        if (reducido % 2 != 0) {\n            return false;\n        }\n        reducido /= 2;\n    }\n\n    destino = static_cast<double>(dato);\n    return true;\n}\n\nint main() {\n    if (std::numeric_limits<long long>::radix != 2\n        || std::numeric_limits<long long>::digits != 63\n        || std::numeric_limits<double>::radix != 2\n        || std::numeric_limits<double>::digits != 53) {\n        return 2;\n    }\n\n    double destino = 17.0;\n    std::cout << std::fixed << std::setprecision(0);\n    bool aceptado = convertir_ll_exacto(9007199254740994LL, destino);\n    std::cout << aceptado << ':' << destino << '\\n';\n    aceptado = convertir_ll_exacto(9007199254740993LL, destino);\n    std::cout << aceptado << ':' << destino << '\\n';\n    aceptado = convertir_ll_exacto(0, destino);\n    std::cout << aceptado << ':' << destino << '\\n';\n    aceptado = convertir_ll_exacto(std::numeric_limits<long long>::max(), destino);\n    std::cout << aceptado << ':' << destino;\n    return 0;\n}\n",
+          "answers": [
+            "1:9007199254740994\n0:9007199254740994\n1:0\n0:0"
+          ],
+          "outputComparison": "exact",
+          "explanation": "Se guarda 9007199254740994 porque es exacto. El rechazo del siguiente dato conserva ese valor. Cero se acepta y lo sustituye. El máximo long long necesita más precisión de la disponible y se rechaza conservando cero."
+        }
+      }
+    ]
   }
 }

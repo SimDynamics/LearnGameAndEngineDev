@@ -63,8 +63,8 @@
         {
           "type": "output_prediction",
           "language": "cpp",
-          "question": "Hay ocho herramientas disponibles y se retiran tres. ¿Qué muestra el programa en cada renglón?",
-          "code": "#include <iostream>\n\nint main() {\n    int disponibles = 8;\n    int al_inicio = disponibles;\n    disponibles -= 3;\n    std::cout << \"Inicio: \" << al_inicio << \"\\n\";\n    std::cout << \"Ahora: \" << disponibles;\n    return 0;\n}\n",
+          "question": "Hay ocho herramientas disponibles y se retiran tres. ¿Qué texto muestra el programa en cada renglón de la salida?",
+          "code": "#include <iostream>\n\nint main() {\n    int disponibles = 8;\n\n    int al_inicio = disponibles;\n\n    disponibles -= 3;\n\n    std::cout << \"Inicio: \" << al_inicio << \"\\n\";\n    std::cout << \"Ahora: \" << disponibles;\n\n    return 0;\n}\n",
           "answers": [
             "Inicio: 8\nAhora: 5"
           ],
@@ -91,7 +91,7 @@
         },
         {
           "type": "order_code",
-          "question": "Ordena el programa para que muestre Sala-02 / Sala-02 lista. Guarda una copia de la etiqueta antes de añadirle la palabra lista.",
+          "question": "Ordena las instrucciones para que el programa muestre Sala-02 / Sala-02 lista en un solo renglón de la salida. Guarda una copia de la etiqueta antes de añadirle la palabra lista.",
           "fragments": [
             "    etiqueta += \" lista\";",
             "    std::cout << inicial << \" / \" << etiqueta;",
@@ -120,7 +120,7 @@
           "type": "fill_code",
           "language": "cpp",
           "question": "Las variables primero y segundo guardan las longitudes de dos tramos de cable en metros. Escribe el operador que falta para calcular cuántos metros hay en total.",
-          "code": "#include <iostream>\n\nint main() {\n    double primero = 1.5;\n    double segundo = 2.25;\n    double total = primero ___ segundo;\n    std::cout << total;\n    return 0;\n}\n",
+          "code": "#include <iostream>\n\nint main() {\n    double primero = 1.5;\n    double segundo = 2.25;\n\n    double total = primero ___ segundo;\n\n    std::cout << total;\n\n    return 0;\n}\n",
           "answers": [
             "+"
           ],
@@ -160,8 +160,8 @@
         {
           "type": "output_prediction",
           "language": "cpp",
-          "question": "total guarda cinco metros como un entero. El programa convierte la longitud a double antes de dividirla. ¿Qué renglón escribe?",
-          "code": "#include <iostream>\n\nint main() {\n    int total = 5;\n    double mitad = static_cast<double>(total) / 2;\n    std::cout << \"Mitad: \" << mitad;\n    return 0;\n}\n",
+          "question": "total guarda cinco metros como un entero. El programa convierte la longitud a double antes de dividirla. ¿Qué texto aparece en la salida?",
+          "code": "#include <iostream>\n\nint main() {\n    int total = 5;\n\n    double mitad = static_cast<double>(total) / 2;\n\n    std::cout << \"Mitad: \" << mitad;\n\n    return 0;\n}\n",
           "answers": [
             "Mitad: 2.5"
           ],
@@ -176,7 +176,7 @@
             "Otro caso, ocho metros, cuyo resultado calculado es cuatro."
           ],
           "correctIndex": 2,
-          "explanation": "Con ocho metros, la mitad debe ser cuatro. La salida fija 2.5 falla esa prueba. Con ocho, la división entera y la división con double dan cuatro. Prueba también siete metros. La división entera da tres y la mitad que necesitas mide tres metros y medio (Stroustrup, 2024)."
+          "explanation": "Con una cinta de ocho metros, la mitad debe medir cuatro metros. Una salida fija de 2.5 falla ese caso. Con una cinta de siete metros, la mitad debe medir tres metros y medio. La división entera daría tres y fallaría ese caso (Stroustrup, 2024)."
         }
       ]
     },
@@ -234,11 +234,16 @@
         },
         {
           "type": "paragraph",
-          "text": "Escribe dentro de main el programa del informe. Guarda el nombre de la estación, la cantidad de mesas y la longitud de cada tramo en variables. Suma los dos tramos y guarda el resultado en otra variable. Muestra el nombre, la cantidad de mesas y el total de metros en tres renglones.\n\nSalida esperada\nPuesto 03\nMesas: 6\nCable: 3.75 m\n\nElige nombres breves que identifiquen esos datos. Conserva el cero del nombre y el espacio antes de la unidad. Pulsa «Compilar, ejecutar y comprobar». El salto al final del último renglón es opcional."
+          "text": "Escribe el programa del informe dentro de main. Guarda en variables el nombre de la estación, la cantidad de mesas y la longitud de cada tramo. Suma los dos tramos y guarda el resultado en otra variable. Muestra el nombre, la cantidad de mesas y el total de metros, cada uno en su propio renglón de la salida.\n\nSalida esperada\nPuesto 03\nMesas: 6\nCable: 3.75 m\n\nConserva el cero del nombre y el espacio antes de la unidad. Deja vacío el campo «Entrada», porque este programa usa los datos escritos en el código. Pulsa «Compilar, ejecutar y comprobar». Puedes añadir un salto de línea al final de la salida.",
+          "emphasis": [
+            {
+              "text": "cada uno en su propio renglón de la salida"
+            }
+          ]
         },
         {
           "type": "cpp_compiler",
-          "initialCode": "#include <iostream>\n#include <string>\n\nint main() {\n    // Escribe aqui tu programa.\n    return 0;\n}\n",
+          "initialCode": "#include <iostream>\n#include <string>\n\nint main() {\n    // Escribe aqui tu programa.\n    \n    return 0;\n}\n",
           "outputCheck": {
             "inputComparison": "exact",
             "cases": [
@@ -254,6 +259,39 @@
         },
         {
           "type": "heading",
+          "text": "Comparar el cálculo con el primer informe"
+        },
+        {
+          "type": "code",
+          "language": "cpp",
+          "code": "#include <iostream>\n#include <string>\n\nint main() {\n    std::string estacion = \"Puesto 03\";\n    int mesas = 6;\n    double tramo_a = 1.5;\n    double tramo_b = 2.25;\n\n    double cable_total_m = tramo_a + tramo_b;\n\n    std::cout << estacion << '\\n';\n    std::cout << \"Mesas: \" << mesas << '\\n';\n    std::cout << \"Cable: \" << cable_total_m << \" m\";\n\n    return 0;\n}\n"
+        },
+        {
+          "type": "paragraph",
+          "text": "En esta solución, tramo_a guarda 1.5 metros y tramo_b guarda 2.25 metros. La suma guarda 3.75 en cable_total_m. La última instrucción con std::cout muestra el total seguido de un espacio y la unidad m.\n\nPrueba opcional en este editor\nCambia en tu código el valor inicial del recuento de mesas a 0, el del primer tramo a 2.0 y el del segundo a 3.5. Pulsa «Compilar, ejecutar y comprobar» y compara la salida de esta ejecución con estos tres renglones.\n\nSalida esperada para la prueba opcional\nPuesto 03\nMesas: 0\nCable: 5.5 m\n\nLa comprobación automática sigue usando la salida del caso de seis mesas.",
+          "emphasis": [
+            {
+              "text": "Prueba opcional en este editor"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "blocks": [
+        {
+          "type": "multiple_choice",
+          "question": "Un informe muestra Cable: 3.75 m con tramos de 1.5 y 2.25 metros. ¿Qué resultado aporta evidencia de que el programa suma las dos medidas?",
+          "options": [
+            "Que al cambiar un tramo conocido también cambia la suma de acuerdo con lo esperado.",
+            "Que siempre se imprime el literal \"3.75\".",
+            "Que existe un comentario que dice sumar."
+          ],
+          "correctIndex": 0,
+          "explanation": "Si un solo tramo mide un metro más, el total debe aumentar un metro. Una prueba cambia el primer tramo y conserva el segundo. Otra cambia el segundo y conserva el primero. Así puedes comprobar que ambas medidas afectan a la suma."
+        },
+        {
+          "type": "heading",
           "text": "Volver a calcular el total después de sustituir un tramo"
         },
         {
@@ -262,7 +300,7 @@
         },
         {
           "type": "inline_fill_code",
-          "template": "#include <iostream>\n\nint main() {\n    double tramo_a = 1.5;\n    double tramo_b = 2.25;\n    double cable_total_m = tramo_a + tramo_b;\n    tramo_b = 3.25;\n    cable_total_m = tramo_a + [];\n    std::cout << cable_total_m << \" m\";\n    return 0;\n}\n",
+          "template": "#include <iostream>\n\nint main() {\n    double tramo_a = 1.5;\n    double tramo_b = 2.25;\n\n    double cable_total_m = tramo_a + tramo_b;\n\n    tramo_b = 3.25;\n\n    cable_total_m = tramo_a + [];\n\n    std::cout << cable_total_m << \" m\";\n\n    return 0;\n}\n",
           "answers": [
             "tramo_b"
           ],
@@ -277,61 +315,28 @@
       "blocks": [
         {
           "type": "heading",
-          "text": "Comparar el cálculo con el primer informe"
-        },
-        {
-          "type": "code",
-          "language": "cpp",
-          "code": "#include <iostream>\n#include <string>\n\nint main() {\n    std::string estacion = \"Puesto 03\";\n    int mesas = 6;\n    double tramo_a = 1.5;\n    double tramo_b = 2.25;\n    double cable_total_m = tramo_a + tramo_b;\n\n    std::cout << estacion << '\\n';\n    std::cout << \"Mesas: \" << mesas << '\\n';\n    std::cout << \"Cable: \" << cable_total_m << \" m\";\n    return 0;\n}\n"
-        },
-        {
-          "type": "paragraph",
-          "text": "En esta solución, las dos variables de los tramos guardan metros. La instrucción que suma los tramos consulta sus valores y guarda 3.75 en una tercera variable. Después, std::cout escribe ese total seguido de un espacio y la letra m, que indica la unidad.\n\nSi quieres hacer una prueba más, cambia las mesas a cero y las medidas a 2.0 y 3.5 metros. Compara tú la salida con estos tres renglones. El botón del editor comprueba el caso original de seis mesas.\n\nPuesto 03\nMesas: 0\nCable: 5.5 m",
-          "emphasis": [
-            {
-              "text": "consulta sus valores"
-            }
-          ]
-        },
-        {
-          "type": "multiple_choice",
-          "question": "El primer informe muestra Cable: 3.75 m. ¿Qué prueba ayuda a comprobar que el programa suma las dos medidas?",
-          "options": [
-            "Que al cambiar un tramo conocido también cambia la suma de acuerdo con lo esperado.",
-            "Que siempre se imprime el literal \"3.75\".",
-            "Que existe un comentario que dice sumar."
-          ],
-          "correctIndex": 0,
-          "explanation": "Haz una prueba que cambie solo uno de los tramos. Si ese tramo mide un metro más, el total también debe aumentar un metro. Repite la prueba cambiando solo el otro tramo para comprobar que ambos intervienen."
-        }
-      ]
-    },
-    {
-      "blocks": [
-        {
-          "type": "heading",
-          "text": "Predecir qué cambia al modificar el identificador de la estación"
+          "text": "Predecir la salida tras cambiar el identificador y la cantidad de mesas"
         },
         {
           "type": "output_prediction",
           "language": "cpp",
-          "question": "El programa guarda un informe con el identificador 03. Después cambia el identificador de la estación y la cantidad de mesas. ¿Qué nombre y qué cantidades aparecen en los dos renglones?",
-          "code": "#include <iostream>\n#include <string>\n\nint main() {\n    std::string nombre = \"Puesto\";\n    std::string codigo = \"03\";\n    std::string informe = nombre + \" \" + codigo;\n    int mesas = 4;\n    int registradas = mesas;\n    mesas += 2;\n    codigo = \"04\";\n    std::cout << informe << \"\\n\";\n    std::cout << registradas << \" \" << mesas;\n    return 0;\n}\n",
+          "question": "El programa guarda un texto en informe cuando codigo contiene 03. Después asigna 04 a codigo y suma dos a mesas. ¿Qué texto muestra en el primer renglón de la salida y qué cantidades muestra en el segundo?",
+          "code": "#include <iostream>\n#include <string>\n\nint main() {\n    std::string nombre = \"Puesto\";\n    std::string codigo = \"03\";\n\n    std::string informe = nombre + \" \" + codigo;\n\n    int mesas = 4;\n    int registradas = mesas;\n\n    mesas += 2;\n    codigo = \"04\";\n\n    std::cout << informe << \"\\n\";\n    std::cout << registradas << \" \" << mesas;\n\n    return 0;\n}\n",
           "answers": [
             "Puesto 03\n4 6"
           ],
-          "explanation": "informe se construye cuando codigo contiene 03. La asignación posterior a codigo deja intacto el texto guardado en informe. Por eso el primer renglón dice Puesto 03. En el segundo aparece 4 6: se guardaron cuatro mesas en registradas antes de añadir dos a mesas (Stroustrup, 2024)."
+          "explanation": "informe guarda Puesto 03 antes de que codigo cambie a 04. Ese texto aparece en el primer renglón de la salida. El segundo muestra 4 6. registradas guarda cuatro antes de que la suma deje seis en mesas (Stroustrup, 2024)."
         },
         {
           "type": "multiple_choice",
-          "question": "La ejecución coincide con la salida de un solo caso. ¿Qué conviene hacer para entender y comprobar la solución?",
+          "question": "Un programa muestra la cantidad inicial de mesas y la cantidad que hay después de añadir dos. Su salida coincide con la esperada para un solo caso. ¿Qué conviene hacer para comprobar si el programa calcula bien con otra cantidad inicial?",
           "options": [
             "Calcular qué debería mostrar otro caso, ejecutarlo y comparar los resultados.",
             "Repetir el mismo dato como única prueba de los casos distintos.",
             "Cambiar datos sin calcular las salidas que deberían producir."
           ],
           "correctIndex": 0,
-          "explanation": "Un acierto es evidencia de ese caso; explicación, variación y construcción independiente aportan evidencias distintas."
+          "explanation": "En otro caso con ocho mesas iniciales y dos nuevas, la salida debe mostrar ocho como recuento inicial y diez como recuento actualizado. Calcular esos valores antes de ejecutar permite comparar lo esperado con lo que muestra el programa en ese caso."
         }
       ]
     },
@@ -364,11 +369,16 @@
         },
         {
           "type": "paragraph",
-          "text": "Construye el registro dentro de main. Guarda el nombre de la biblioteca y la cantidad de libros. Conserva la cantidad inicial en otra variable. Suma la devolución a los libros disponibles y muestra los dos recuentos en el orden que muestra el ejemplo.\n\nSalida esperada\nModulo 02\nInicio: 7\nAhora: 10\n\nPulsa «Compilar, ejecutar y comprobar». El salto al final del último renglón es opcional."
+          "text": "Construye el registro dentro de main. Guarda el nombre de la biblioteca y la cantidad inicial de libros. Copia esa cantidad en otra variable antes de sumar los tres libros devueltos a los disponibles. Muestra el nombre de la biblioteca, el recuento de apertura y el recuento después de la devolución. Escribe cada dato en su propio renglón de la salida.\n\nSalida esperada\nModulo 02\nInicio: 7\nAhora: 10\n\nDeja vacío el campo «Entrada», porque este programa usa los datos escritos en el código. Pulsa «Compilar, ejecutar y comprobar». Puedes añadir un salto de línea al final de la salida.",
+          "emphasis": [
+            {
+              "text": "antes de sumar los tres libros devueltos"
+            }
+          ]
         },
         {
           "type": "cpp_compiler",
-          "initialCode": "#include <iostream>\n#include <string>\n\nint main() {\n    // Escribe aqui tu programa.\n    return 0;\n}\n",
+          "initialCode": "#include <iostream>\n#include <string>\n\nint main() {\n    // Escribe aqui tu programa.\n    \n    return 0;\n}\n",
           "outputCheck": {
             "inputComparison": "exact",
             "cases": [
@@ -384,6 +394,41 @@
         },
         {
           "type": "heading",
+          "text": "Revisar dónde se guarda el recuento inicial"
+        },
+        {
+          "type": "code",
+          "language": "cpp",
+          "code": "#include <iostream>\n#include <string>\n\nint main() {\n    std::string nombre = \"Modulo 02\";\n    int libros = 7;\n\n    int al_inicio = libros;\n\n    int devolucion = 3;\n    libros += devolucion;\n\n    std::cout << nombre << \"\\n\";\n    std::cout << \"Inicio: \" << al_inicio << \"\\n\";\n    std::cout << \"Ahora: \" << libros;\n\n    return 0;\n}\n"
+        },
+        {
+          "type": "paragraph",
+          "text": "En esta solución, al_inicio recibe una copia del valor de libros cuando hay siete. Al sumar los tres libros devueltos, libros pasa de siete a diez. al_inicio conserva siete (Stroustrup, 2024).\n\nPrueba opcional en este editor\nCambia en tu código la cantidad inicial de libros a 0 y la cantidad devuelta a 2. Pulsa «Compilar, ejecutar y comprobar» y compara la salida de esta ejecución con estos tres renglones.\n\nSalida esperada para la prueba opcional\nModulo 02\nInicio: 0\nAhora: 2\n\nLa comprobación automática sigue usando la salida del caso de siete libros.",
+          "emphasis": [
+            {
+              "text": "Prueba opcional en este editor"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "blocks": [
+        {
+          "type": "output_prediction",
+          "id": "cpp_fundamentals__objetos_y_estado__representar_procesar_y_recuperar__recuperar_registro_con_otra_devolucion",
+          "language": "cpp",
+          "question": "En Modulo 02 hay cuatro libros y se devuelven cinco. Escribe los tres renglones de la salida. Conserva los espacios de los rótulos y omite el salto de línea final.",
+          "code": "#include <iostream>\n#include <string>\n\nint main() {\n    std::string nombre = \"Modulo 02\";\n    int libros = 4;\n\n    int al_inicio = libros;\n\n    int devolucion = 5;\n    libros += devolucion;\n\n    std::cout << nombre << \"\\n\";\n    std::cout << \"Inicio: \" << al_inicio << \"\\n\";\n    std::cout << \"Ahora: \" << libros;\n\n    return 0;\n}\n",
+          "answers": [
+            "Modulo 02\nInicio: 4\nAhora: 9"
+          ],
+          "outputComparison": "exact",
+          "reviewFeedback": "En el segundo renglón se muestra la copia tomada antes de la devolución. En el tercero se muestra la cantidad que ya incluye los cinco libros devueltos.",
+          "explanation": "El primer renglón muestra Modulo 02. La copia conserva cuatro y el recuento actualizado vale nueve. Los renglones siguientes son Inicio: 4 y Ahora: 9."
+        },
+        {
+          "type": "heading",
           "text": "Registrar una devolución y un préstamo"
         },
         {
@@ -392,7 +437,7 @@
         },
         {
           "type": "inline_fill_code",
-          "template": "#include <iostream>\n\nint main() {\n    int libros = 0;\n    int libros_iniciales = libros;\n    int libros_devueltos = 2;\n    int libros_prestados = 1;\n    libros [] libros_devueltos;\n    libros [] libros_prestados;\n    std::cout << libros_iniciales << \" \" << libros;\n    return 0;\n}\n",
+          "template": "#include <iostream>\n\nint main() {\n    int libros = 0;\n\n    int libros_iniciales = libros;\n\n    int libros_devueltos = 2;\n    int libros_prestados = 1;\n\n    libros [] libros_devueltos;\n    libros [] libros_prestados;\n\n    std::cout << libros_iniciales << \" \" << libros;\n\n    return 0;\n}\n",
           "answers": [
             "+=",
             "-="
@@ -408,46 +453,62 @@
       "blocks": [
         {
           "type": "heading",
-          "text": "Revisar dónde se guarda el recuento inicial"
+          "text": "Distinguir el total guardado de la suma de los tramos actuales"
         },
         {
-          "type": "code",
-          "language": "cpp",
-          "code": "#include <iostream>\n#include <string>\n\nint main() {\n    std::string nombre = \"Modulo 02\";\n    int libros = 7;\n    int al_inicio = libros;\n    int devolucion = 3;\n    libros += devolucion;\n    std::cout << nombre << \"\\n\";\n    std::cout << \"Inicio: \" << al_inicio << \"\\n\";\n    std::cout << \"Ahora: \" << libros;\n    return 0;\n}\n"
+          "type": "note",
+          "text": "Cambiar un solo tramo por vez permite revisar si su medida afecta al total."
         },
         {
           "type": "paragraph",
-          "text": "En la solución, al_inicio guarda el valor de libros en el momento de la copia. Cuando se suman los tres libros devueltos, libros pasa de siete a diez. La copia conserva siete (Stroustrup, 2024).\n\nPara revisar tu programa con una biblioteca vacía, puedes cambiar los valores iniciales a cero libros y dos devueltos. En esa ejecución, el renglón de inicio debe mostrar cero y el de ahora debe mostrar dos. En este ensayo compara tú la consola con esos dos recuentos. El botón comprueba el caso inicial de siete libros.",
+          "text": "Antes del cambio, los tramos miden 1.5 y 2.25 metros. El programa guarda la suma en cable_total_m. Después cambia la medida del primer tramo. Sigue las instrucciones para saber qué valor muestra std::cout.",
           "emphasis": [
             {
-              "text": "en el momento de la copia"
+              "text": "qué valor muestra std::cout"
             }
           ]
         },
         {
           "type": "output_prediction",
-          "id": "cpp_fundamentals__objetos_y_estado__representar_procesar_y_recuperar__recuperar_registro_con_otra_devolucion",
           "language": "cpp",
-          "question": "En Modulo 02 hay cuatro libros y se devuelven cinco. Escribe los tres renglones que muestra el programa, con los espacios de los rótulos y sin salto al final.",
-          "code": "#include <iostream>\n#include <string>\n\nint main() {\n    std::string nombre = \"Modulo 02\";\n    int libros = 4;\n    int al_inicio = libros;\n    int devolucion = 5;\n    libros += devolucion;\n    std::cout << nombre << \"\\n\";\n    std::cout << \"Inicio: \" << al_inicio << \"\\n\";\n    std::cout << \"Ahora: \" << libros;\n    return 0;\n}\n",
+          "code": "#include <iostream>\n\nint main() {\n    double tramo_a = 1.5;\n    double tramo_b = 2.25;\n\n    double cable_total_m = tramo_a + tramo_b;\n\n    tramo_a = 2.5;\n\n    std::cout << cable_total_m << \" m\";\n\n    return 0;\n}\n",
           "answers": [
-            "Modulo 02\nInicio: 4\nAhora: 9"
+            "3.75 m"
           ],
-          "outputComparison": "exact",
-          "reviewFeedback": "En el segundo renglón se muestra la copia tomada antes de la devolución. En el tercero se muestra la cantidad que ya incluye los cinco libros devueltos.",
-          "explanation": "El primer renglón muestra Modulo 02. La copia conserva cuatro y el recuento actualizado vale nueve. Los renglones siguientes son Inicio: 4 y Ahora: 9."
+          "id": "p1u2l10_predecir_total_fijo",
+          "question": "Después de calcular el total, el programa cambia la longitud del primer tramo. ¿Qué texto muestra std::cout? Sigue el valor de cable_total_m en el código.",
+          "reviewFeedback": "Busca si se vuelve a calcular cable_total_m después de sustituir el primer tramo.",
+          "explanation": "El programa imprime 3.75 m porque la suma se guardó en cable_total_m antes de sustituir el tramo. La suma de las medidas actuales daría 4.75 metros. Para obtenerla hay que ejecutar la suma después de cambiar el tramo."
         },
+        {
+          "type": "paragraph",
+          "text": "Si el primer tramo pasa de 1.5 a 2.5 metros y el segundo sigue midiendo 2.25 metros, la suma de las medidas actuales es 4.75 metros. Si el primero mide 1.5 metros y solo cambia el segundo a 3.25 metros, la suma también es 4.75 metros.\n\nCada comparación aumenta un tramo distinto en un metro. En ambos casos, un informe que suma las medidas actuales debe mostrar 4.75 m. El programa de la predicción muestra 3.75 m porque conserva el total calculado con los tramos originales.",
+          "emphasis": [
+            {
+              "text": "conserva el total calculado con los tramos originales"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "blocks": [
         {
           "type": "heading",
           "text": "Reparar una copia que se hizo después de la devolución"
         },
         {
           "type": "paragraph",
-          "text": "El programa del editor recibe tres cantidades enteras del campo «Entrada». La primera indica cuántos libros hay al abrir, la segunda cuántos se devuelven y la tercera cuántos se prestan. Puedes suponer que hay libros suficientes para el préstamo.\n\nEl programa calcula bien cuántos quedan al cerrar, pero cuenta los libros devueltos entre los que ya había al abrir. Mueve la instrucción que guarda la copia para que el primer renglón muestre los libros que había antes de la devolución. Conserva la lectura y el cálculo.\n\nEntrada\n4 5 2\nSalida esperada\nInicio: 4\nAhora: 7\n\nPulsa «Compilar, ejecutar y comprobar». Con este caso puedes avanzar. El salto final es opcional."
+          "text": "El programa del editor lee tres cantidades enteras del campo «Entrada». La primera indica cuántos libros hay al abrir, la segunda cuántos se devuelven y la tercera cuántos se prestan. Puedes suponer que hay libros suficientes para el préstamo.\n\nEl programa suma los devueltos antes de guardar la cantidad de apertura. Mueve la instrucción que guarda la copia para hacerla antes de esa suma. Así, Inicio: mostrará los libros que había al abrir en el primer renglón de la salida. Conserva la lectura, la suma de la devolución y la resta del préstamo.\n\nEntrada\n4 5 2\nSalida esperada\nInicio: 4\nAhora: 7\n\nPulsa «Compilar, ejecutar y comprobar». Con este caso puedes avanzar. Puedes añadir un salto de línea al final de la salida.",
+          "emphasis": [
+            {
+              "text": "antes de esa suma"
+            }
+          ]
         },
         {
           "type": "cpp_compiler",
-          "initialCode": "#include <iostream>\n\nint main() {\n    int libros = 0;\n    int libros_devueltos = 0;\n    int libros_prestados = 0;\n    std::cin >> libros >> libros_devueltos >> libros_prestados;\n\n    libros += libros_devueltos;\n    int libros_iniciales = libros;\n    libros -= libros_prestados;\n\n    std::cout << \"Inicio: \" << libros_iniciales << '\\n';\n    std::cout << \"Ahora: \" << libros;\n    return 0;\n}\n",
+          "initialCode": "#include <iostream>\n\nint main() {\n    int libros = 0;\n    int libros_devueltos = 0;\n    int libros_prestados = 0;\n\n    std::cin >> libros >> libros_devueltos >> libros_prestados;\n\n    libros += libros_devueltos;\n\n    int libros_iniciales = libros;\n\n    libros -= libros_prestados;\n\n    std::cout << \"Inicio: \" << libros_iniciales << '\\n';\n    std::cout << \"Ahora: \" << libros;\n\n    return 0;\n}\n",
           "initialStandardInput": "4 5 2",
           "outputCheck": {
             "inputComparison": "tokens",
@@ -475,48 +536,7 @@
               }
             ]
           }
-        }
-      ]
-    },
-    {
-      "blocks": [
-        {
-          "type": "heading",
-          "text": "Comprobar si la suma usa los dos tramos"
         },
-        {
-          "type": "note",
-          "text": "Una sola medida cambia en cada prueba. Así puedes distinguir qué tramo interviene en la suma."
-        },
-        {
-          "type": "paragraph",
-          "text": "El informe empieza con 1.5 metros y 2.25 metros. Imagina que alguien guarda directamente 3.75 en el total. Para esos datos, imprimir ese número y calcular la suma producen el mismo mensaje. Cambia un tramo y vuelve a calcular cuánto cable debería aparecer en el informe."
-        },
-        {
-          "type": "output_prediction",
-          "language": "cpp",
-          "code": "#include <iostream>\n\nint main() {\n    double tramo_a = 1.5;\n    double tramo_b = 2.25;\n    double cable_total_m = tramo_a + tramo_b;\n    tramo_a = 2.5;\n    std::cout << cable_total_m << \" m\";\n    return 0;\n}\n",
-          "answers": [
-            "3.75 m"
-          ],
-          "id": "p1u2l10_predecir_total_fijo",
-          "question": "Este programa cambia la longitud del primer tramo. ¿Qué escribe en realidad? Lee qué valor tiene cable_total_m cuando se muestra.",
-          "reviewFeedback": "Busca si se vuelve a calcular cable_total_m después de sustituir el primer tramo.",
-          "explanation": "El programa imprime 3.75 m porque la suma se guardó en cable_total_m antes de sustituir el tramo. La suma de las medidas actuales daría 4.75 metros. Para obtenerla hay que ejecutar la suma después de cambiar el tramo."
-        },
-        {
-          "type": "paragraph",
-          "text": "Si cambias el primer tramo de 1.5 a 2.5 metros, añades un metro. El nuevo total debe ser 4.75 metros. En otra prueba, vuelve a usar el primer tramo de 1.5 metros y cambia el segundo a 3.25 metros. El total también debe aumentar un metro. Si sólo una de las dos pruebas cambia la salida, revisa qué variable falta en la suma.",
-          "emphasis": [
-            {
-              "text": "la salida, revisa qué variable falta en la suma"
-            }
-          ]
-        }
-      ]
-    },
-    {
-      "blocks": [
         {
           "type": "heading",
           "text": "Comparar la reparación con otras entregas"
@@ -527,19 +547,19 @@
         },
         {
           "type": "paragraph",
-          "text": "Con 4 5 2, la lectura guarda cuatro libros disponibles, cinco devueltos y dos prestados. La copia conserva cuatro. Al sumar cinco y restar dos, el recuento final queda en siete. El programa escribe Inicio: 4 y Ahora: 7 en renglones distintos."
+          "text": "Con 4 5 2 en «Entrada», std::cin lee cuatro libros disponibles al abrir, cinco devueltos y dos prestados. libros_iniciales guarda cuatro antes de la devolución. Al sumar cinco a libros y después restar dos, quedan siete. Las instrucciones con std::cout muestran Inicio: 4 en el primer renglón de la salida y Ahora: 7 en el segundo."
         },
         {
           "type": "code",
           "language": "cpp",
-          "code": "#include <iostream>\n\nint main() {\n    int libros = 0;\n    int libros_devueltos = 0;\n    int libros_prestados = 0;\n    std::cin >> libros >> libros_devueltos >> libros_prestados;\n\n    int libros_iniciales = libros;\n    libros += libros_devueltos;\n    libros -= libros_prestados;\n\n    std::cout << \"Inicio: \" << libros_iniciales << '\\n';\n    std::cout << \"Ahora: \" << libros;\n    return 0;\n}\n"
+          "code": "#include <iostream>\n\nint main() {\n    int libros = 0;\n    int libros_devueltos = 0;\n    int libros_prestados = 0;\n\n    std::cin >> libros >> libros_devueltos >> libros_prestados;\n\n    int libros_iniciales = libros;\n\n    libros += libros_devueltos;\n    libros -= libros_prestados;\n\n    std::cout << \"Inicio: \" << libros_iniciales << '\\n';\n    std::cout << \"Ahora: \" << libros;\n\n    return 0;\n}\n"
         },
         {
           "type": "paragraph",
-          "text": "Puedes probar otras dos entradas en el editor de la reparación. Conserva el código.\n\nEntrada opcional\n0 2 1\nSalida esperada\nInicio: 0\nAhora: 1\n\nEntrada opcional\n6 0 2\nSalida esperada\nInicio: 6\nAhora: 4\n\nCuando se devuelven cero libros, sumar la devolución deja el recuento igual. Ese caso permite comprobar la resta del préstamo. Para detectar una copia guardada después de la devolución, usa también una devolución mayor que cero.",
+          "text": "Para probar otras cantidades en este editor, conserva tu código, cambia solo los datos del campo «Entrada» y pulsa «Compilar, ejecutar y comprobar» para cada ensayo opcional.\n\nEntrada opcional\n0 2 1\nSalida esperada\nInicio: 0\nAhora: 1\n\nEntrada opcional\n6 0 2\nSalida esperada\nInicio: 6\nAhora: 4\n\nCon la devolución de dos libros puedes detectar si la copia se hace después de la suma. Con la devolución de cero libros, la suma deja el recuento igual y el préstamo de dos lo reduce de seis a cuatro.",
           "emphasis": [
             {
-              "text": "sumar la devolución deja el recuento igual"
+              "text": "cambia solo los datos del campo «Entrada»"
             }
           ]
         }
@@ -876,18 +896,18 @@
           "block_0004_0005",
           "block_0004_0003",
           "block_0004_0002",
-          "block_0004_0006",
-          "block_0004_0007",
-          "p1u2l10_actualizar_cable"
+          "block_0005_0000",
+          "p1u2l10_ejemplo_informe",
+          "block_0005_0002"
         ]
       },
       {
         "id": "page_0005",
         "blocks": [
-          "block_0005_0000",
-          "p1u2l10_ejemplo_informe",
-          "block_0005_0002",
-          "block_0005_0003"
+          "block_0005_0003",
+          "block_0004_0006",
+          "block_0004_0007",
+          "p1u2l10_actualizar_cable"
         ]
       },
       {
@@ -906,21 +926,18 @@
           "block_0007_0004",
           "block_0007_0003",
           "block_0007_0002",
-          "block_0007_0005",
-          "block_0007_0006",
-          "p1u2l10_devolver_y_prestar"
+          "block_0008_0000",
+          "block_0008_0001",
+          "block_0008_0002"
         ]
       },
       {
         "id": "page_0008",
         "blocks": [
-          "block_0008_0000",
-          "block_0008_0001",
-          "block_0008_0002",
           "block_0008_0003",
-          "block_0008_0004",
-          "block_0008_0005",
-          "p1u2l10_reparar_registro"
+          "block_0007_0005",
+          "block_0007_0006",
+          "p1u2l10_devolver_y_prestar"
         ]
       },
       {
@@ -936,6 +953,9 @@
       {
         "id": "page_0010",
         "blocks": [
+          "block_0008_0004",
+          "block_0008_0005",
+          "p1u2l10_reparar_registro",
           "block_0010_0000",
           "block_0010_0001",
           "block_0010_0002",
@@ -2047,6 +2067,181 @@
         "id": "block_0006_0002",
         "beforeSha256": "407e32113429be66833bc2d3fca635bfff02d4e742b2d084c01ebb7708b232c2",
         "afterSha256": "08451dbdb945c8b3ae50f943354277fe0d57fb54485da3dc86d13019c9a5795d"
+      },
+      {
+        "id": "block_0004_0003",
+        "beforeSha256": "ea74858f9bf03ac88da57c25b9ba0801cd16f5488e0f0a5687c4f017a81e2090",
+        "afterSha256": "8f872dce2f2c815afd94485c12114a8ad458bb06abd71ef3564fafdb5e1543f0"
+      },
+      {
+        "id": "block_0005_0002",
+        "beforeSha256": "e4436cf05c1db47c14e30bdd2189d74bda586ac119cdc97dc7fca30394b1a996",
+        "afterSha256": "148554ce1bb03a84a7d87e433f99e8b15b0944cae4478dad58a1b81ba856ff8e"
+      },
+      {
+        "id": "block_0006_0000",
+        "beforeSha256": "1a34077ebe57fe6af99f7306f3ff1c28a6026c906f60e134012bb6c04d5d7d7f",
+        "afterSha256": "0518d101b2fac8412107574a912a386fbaf5d686af4ee94c7ac3fbbf6490f990"
+      },
+      {
+        "id": "block_0007_0003",
+        "beforeSha256": "3e7362e2363e01fb5b05f404341f7154931df3a8f35e540106f3431a528d8c62",
+        "afterSha256": "485db08153c89e49982d05193f1f7677ba6a550fc1d45e1409a571404023d1c0"
+      },
+      {
+        "id": "block_0008_0002",
+        "beforeSha256": "45669c6f6afcea3da93aa20f6c85eb63ce6f406b9ffd83160d12b31d31219869",
+        "afterSha256": "6101b41ed12e6b1f3d812456f26829886ca89ac200e2be63d2ee9569bc7ccceb"
+      },
+      {
+        "id": "block_0008_0005",
+        "beforeSha256": "8d2c207f53e98c5562cde81e5d782e509d6a8290f7bb767c6d945c67388318ac",
+        "afterSha256": "d162868f527afa5c46674e5c4440c133ee74c50f4db55d63fa96107f8a498170"
+      },
+      {
+        "id": "block_0009_0000",
+        "beforeSha256": "1217a11874ab881215cff51e44f01887c6ba29d2ef089cd35af6b7bbc8a3e7ca",
+        "afterSha256": "68bb52d55b3a3cf2103df177c61f8f6edb7533f5c81721e00bd4a624e08fa3ce"
+      },
+      {
+        "id": "block_0009_0001",
+        "beforeSha256": "2290381d71f6b7f083bc86eb5c80112d4bedad4f9c3ea585813ff4d9fc827c15",
+        "afterSha256": "2191919a6ab30154cef548179eeca22b029d3f850523573cb224ba9eaaf756d3"
+      },
+      {
+        "id": "block_0009_0002",
+        "beforeSha256": "60a0a94ed6e1072ccde35dc868e7bd96198ca9d5e9b26213c80629efff679018",
+        "afterSha256": "d339c9863480a30f6d3f1c222840a7526c012f0496c52ddff29507939a48aece"
+      },
+      {
+        "id": "block_0009_0004",
+        "beforeSha256": "daa6566330fa0aac98dc9faa144afd53c58e103cd7274ce328558e8abf938e43",
+        "afterSha256": "0eeb4424b0dc00373af29ec2749a00cc00c742c0cd15db3691ba752dd8492b93"
+      },
+      {
+        "id": "block_0010_0002",
+        "beforeSha256": "52372b09e8f5340761f32e204fdd37eb870ed90bf636b46a1d31af7c95d6e0d9",
+        "afterSha256": "bea4a3b5fea6537a52d9d9ec7a5fcab5ad7daa2f4df8d9a3ce457f4c090f2e69"
+      },
+      {
+        "id": "block_0010_0004",
+        "beforeSha256": "4ba12e3b22b8aad4086c3e64b278d93089e8f421735842015c4ce07dc6bccf81",
+        "afterSha256": "f5bad6c2dfaa91bea2805912aa8d8b3658e7cb37f784391c2a6d74ed39fac245"
+      },
+      {
+        "id": "block_0001_0001",
+        "beforeSha256": "477eed23803a0a36174b9211e55fc6d464fd8c343ebd6695f05fe1b4022cf9a3",
+        "afterSha256": "1338f9320344f0749b17e0a1bcd0dd254fe409e36995df43105927d3edbad698"
+      },
+      {
+        "id": "block_0002_0001",
+        "beforeSha256": "0a25d026e53001aee7666c6be488b70ee724f4e6777a47280b4da63bd2821689",
+        "afterSha256": "3cbfcecab014e8bd47930f59a5327cf033c609c08ded04636e7ad7d6a863efa7"
+      },
+      {
+        "id": "block_0003_0003",
+        "beforeSha256": "d52d1aedf86ba59f6bd21af0905e3eca4c124455b1294908224c86046f90cca0",
+        "afterSha256": "846224af09ffe6dbccd4bb43042e441efc40a8845fcdd95fb71458f00ebd86f8"
+      },
+      {
+        "id": "block_0003_0004",
+        "beforeSha256": "0e3e137b5836da57e729101df599df02e16e1dc78560b2a818c61c3acd99174e",
+        "afterSha256": "2dadc8f7be8b5467815ca97848a6270216775fcdb2a56f1317ca009df62c865b"
+      },
+      {
+        "id": "block_0005_0003",
+        "beforeSha256": "82bf4b6509df50cf9bd18a7cf94bc9c0370a694a82d0fdd687004e59d8ab5c05",
+        "afterSha256": "12d16bf53384835d59683804eee77e46a45f7234fa099e880d0a06a115780557"
+      },
+      {
+        "id": "block_0006_0001",
+        "beforeSha256": "281f1683193353d370760efd80c514b9d87729a04b206b3870442d1d54cf58b6",
+        "afterSha256": "f0da0339d341d82ffbc5048bfd1e269ea9fe854431f4002559b8593ef26ea9a0"
+      },
+      {
+        "id": "block_0006_0002",
+        "beforeSha256": "08451dbdb945c8b3ae50f943354277fe0d57fb54485da3dc86d13019c9a5795d",
+        "afterSha256": "7f7db8389d78977bea2a417ff3760cb1effb469bcfa59a91760a895842b3214a"
+      },
+      {
+        "id": "block_0008_0003",
+        "beforeSha256": "aa9d814ddde108ccc2c7dc4a81d1f2dd5cda43a78fac21a691110ad20bc0f0f1",
+        "afterSha256": "e85ea4072f03c9aef760c09201e5b1e2a094a806fe251652a1f1ef434208d9e5"
+      },
+      {
+        "id": "p1u2l10_predecir_total_fijo",
+        "beforeSha256": "b8091c13222471dae1797d15a815989dc6ee087f11615738a35dd19ce667c06b",
+        "afterSha256": "f594a3c436949b48eb6f77bcbe4cfd22642756f95e45f8eba741dff7ac0788ea"
+      },
+      {
+        "id": "block_0001_0001",
+        "beforeSha256": "1338f9320344f0749b17e0a1bcd0dd254fe409e36995df43105927d3edbad698",
+        "afterSha256": "10f3f1f5ad34b7418f95f5ec0276c183efb4d9b22a3f028c4cd3e98c486b894e"
+      },
+      {
+        "id": "block_0002_0002",
+        "beforeSha256": "c48cb08049764a0c60c6cf69889876b4a905165bd309b1e51b9d61d1a6586748",
+        "afterSha256": "9e69389ef8a955969e3aa2b7f0f2682b5577f4336f644a20a0e0cc42dfe37a97"
+      },
+      {
+        "id": "block_0003_0003",
+        "beforeSha256": "846224af09ffe6dbccd4bb43042e441efc40a8845fcdd95fb71458f00ebd86f8",
+        "afterSha256": "2b4f993ffdb9031f6a32e112ee953f4027a2ded3bcea09e0a871d94528b6283c"
+      },
+      {
+        "id": "block_0004_0002",
+        "beforeSha256": "41a5df567cecc2d69d5556f12dbd1019c0cbd35a7074fd439262ca570481ab82",
+        "afterSha256": "11cd327e251deac9202d9b0074cb4ef78d3538794ce54c87834092f5f8c5c0c5"
+      },
+      {
+        "id": "p1u2l10_actualizar_cable",
+        "beforeSha256": "64403e98737eff28d1d1092e540da355a62b7999292c681295780186a441271e",
+        "afterSha256": "3b9b68650ac625bceb87894f2188a7fb3a4333e1aa082b66c3e56c37a49b4e62"
+      },
+      {
+        "id": "p1u2l10_ejemplo_informe",
+        "beforeSha256": "968fbcfb4ddbe5b7e0f2e5fb32ffa35167f554b44ff4309eb14079b17dfe0f4a",
+        "afterSha256": "fe2c3863e6aa914ee40706cab122f4e1722683cf7a211f26c5a4bd826d88137e"
+      },
+      {
+        "id": "block_0006_0001",
+        "beforeSha256": "f0da0339d341d82ffbc5048bfd1e269ea9fe854431f4002559b8593ef26ea9a0",
+        "afterSha256": "dcbcb962d81abec256ee3fabcb31d057f39247f53b97ca2a739d29691d5d5f08"
+      },
+      {
+        "id": "block_0007_0002",
+        "beforeSha256": "8ed155ed18f49f027f92edb8bf57f17764104eefa85f840b43ebba8e3e789e37",
+        "afterSha256": "fb2d3334fc3d5cca734fb64709dc549a3694c00e1468b5ee519b3b5be37f83b8"
+      },
+      {
+        "id": "p1u2l10_devolver_y_prestar",
+        "beforeSha256": "91611fa2fad78dd2b8aa9965545326a1b70c87a3c596c68d6e1b0038620fe1cd",
+        "afterSha256": "8f5b832983c27662bcc22a56909abe0d5926d45dc3834a4084909a99b26cb170"
+      },
+      {
+        "id": "block_0008_0001",
+        "beforeSha256": "3c89d9800ccd93424b14db776c65a2223842636e844f0dd4d109bdaf0fc5e52a",
+        "afterSha256": "cc5bda82360ac7f4cfc8d3ce49878ad0c8f9c796b6508dc2c0f6a0d53cac35d1"
+      },
+      {
+        "id": "block_0008_0003",
+        "beforeSha256": "e85ea4072f03c9aef760c09201e5b1e2a094a806fe251652a1f1ef434208d9e5",
+        "afterSha256": "e387939c64fcec4ce568b9a37f4d8dd2edbe4bfa18aca507a420df1ee49beb32"
+      },
+      {
+        "id": "p1u2l10_reparar_registro",
+        "beforeSha256": "e1c940d897bd7ae592cedc240d366c7a5b17cbf23154c6f3a45d3893717e6205",
+        "afterSha256": "482d5d769da6bd7e6aa21ea8477e12c595def784e568ab18fb48e8cc6911859c"
+      },
+      {
+        "id": "p1u2l10_predecir_total_fijo",
+        "beforeSha256": "f594a3c436949b48eb6f77bcbe4cfd22642756f95e45f8eba741dff7ac0788ea",
+        "afterSha256": "a0890aeeaa131eb5a9a36d5b3305abdabce4d0137712ecc546ef23ad40aedca6"
+      },
+      {
+        "id": "p1u2l10_ejemplo_copia_reparada",
+        "beforeSha256": "b9b64268a685a706fc59755b40ceeee133ce62fd6c65f2e9210ae658d40b79f1",
+        "afterSha256": "4a6885b80793b0b55b91a34e20a76817df0339e87e52144fedb109283938cd70"
       }
     ],
     "orderRefinements": [
@@ -5059,6 +5254,216 @@
         },
         "semanticRootBefore": true
       }
+    ],
+    "sourceFormatRevisions": [
+      {
+        "id": "block_0001_0001",
+        "block": {
+          "type": "output_prediction",
+          "language": "cpp",
+          "question": "Hay ocho herramientas disponibles y se retiran tres. ¿Qué texto muestra el programa en cada renglón de la salida?",
+          "code": "#include <iostream>\n\nint main() {\n    int disponibles = 8;\n    int al_inicio = disponibles;\n    disponibles -= 3;\n    std::cout << \"Inicio: \" << al_inicio << \"\\n\";\n    std::cout << \"Ahora: \" << disponibles;\n    return 0;\n}\n",
+          "answers": [
+            "Inicio: 8\nAhora: 5"
+          ],
+          "explanation": "La copia guarda ocho en al_inicio. Después, al restar tres, disponibles pasa de ocho a cinco. El renglón Inicio: 8 usa la copia y Ahora: 5 usa el recuento actualizado (Stroustrup, 2024)."
+        }
+      },
+      {
+        "id": "block_0002_0002",
+        "block": {
+          "type": "fill_code",
+          "language": "cpp",
+          "question": "Las variables primero y segundo guardan las longitudes de dos tramos de cable en metros. Escribe el operador que falta para calcular cuántos metros hay en total.",
+          "code": "#include <iostream>\n\nint main() {\n    double primero = 1.5;\n    double segundo = 2.25;\n    double total = primero ___ segundo;\n    std::cout << total;\n    return 0;\n}\n",
+          "answers": [
+            "+"
+          ],
+          "explanation": "El operador + suma los dos tramos. Con 1.5 y 2.25 metros, total recibe 3.75. Las dos variables de los tramos conservan sus medidas (Stroustrup, 2024)."
+        }
+      },
+      {
+        "id": "block_0003_0003",
+        "block": {
+          "type": "output_prediction",
+          "language": "cpp",
+          "question": "total guarda cinco metros como un entero. El programa convierte la longitud a double antes de dividirla. ¿Qué texto aparece en la salida?",
+          "code": "#include <iostream>\n\nint main() {\n    int total = 5;\n    double mitad = static_cast<double>(total) / 2;\n    std::cout << \"Mitad: \" << mitad;\n    return 0;\n}\n",
+          "answers": [
+            "Mitad: 2.5"
+          ],
+          "explanation": "static_cast<double>(total) produce el valor cinco de tipo double. Ese valor dividido entre dos da 2.5. La consola muestra Mitad: 2.5 (Stroustrup, 2024)."
+        }
+      },
+      {
+        "id": "block_0004_0002",
+        "block": {
+          "type": "cpp_compiler",
+          "initialCode": "#include <iostream>\n#include <string>\n\nint main() {\n    // Escribe aqui tu programa.\n    return 0;\n}\n",
+          "outputCheck": {
+            "inputComparison": "exact",
+            "cases": [
+              {
+                "standardInput": "",
+                "outputs": [
+                  "Puesto 03\nMesas: 6\nCable: 3.75 m",
+                  "Puesto 03\nMesas: 6\nCable: 3.75 m\n"
+                ]
+              }
+            ]
+          }
+        }
+      },
+      {
+        "id": "p1u2l10_actualizar_cable",
+        "block": {
+          "type": "inline_fill_code",
+          "template": "#include <iostream>\n\nint main() {\n    double tramo_a = 1.5;\n    double tramo_b = 2.25;\n    double cable_total_m = tramo_a + tramo_b;\n    tramo_b = 3.25;\n    cable_total_m = tramo_a + [];\n    std::cout << cable_total_m << \" m\";\n    return 0;\n}\n",
+          "answers": [
+            "tramo_b"
+          ],
+          "id": "p1u2l10_actualizar_cable",
+          "question": "Tras sustituir el segundo tramo de cable, actualiza el total. Completa la suma con el nombre de la variable que guarda la medida del tramo sustituido. La consola debe mostrar 4.75 m.",
+          "reviewFeedback": "La suma ya incluye tramo_a. Localiza en el código la variable a la que se asignó la medida de 3.25 metros.",
+          "explanation": "La actualización lee 1.5 metros de tramo_a y 3.25 de tramo_b. Al sumarlos, cable_total_m pasa de 3.75 a 4.75."
+        }
+      },
+      {
+        "id": "p1u2l10_ejemplo_informe",
+        "block": {
+          "type": "code",
+          "language": "cpp",
+          "code": "#include <iostream>\n#include <string>\n\nint main() {\n    std::string estacion = \"Puesto 03\";\n    int mesas = 6;\n    double tramo_a = 1.5;\n    double tramo_b = 2.25;\n    double cable_total_m = tramo_a + tramo_b;\n\n    std::cout << estacion << '\\n';\n    std::cout << \"Mesas: \" << mesas << '\\n';\n    std::cout << \"Cable: \" << cable_total_m << \" m\";\n    return 0;\n}\n"
+        }
+      },
+      {
+        "id": "block_0006_0001",
+        "block": {
+          "type": "output_prediction",
+          "language": "cpp",
+          "question": "El programa guarda un texto en informe cuando codigo contiene 03. Después asigna 04 a codigo y suma dos a mesas. ¿Qué texto muestra en el primer renglón de la salida y qué cantidades muestra en el segundo?",
+          "code": "#include <iostream>\n#include <string>\n\nint main() {\n    std::string nombre = \"Puesto\";\n    std::string codigo = \"03\";\n    std::string informe = nombre + \" \" + codigo;\n    int mesas = 4;\n    int registradas = mesas;\n    mesas += 2;\n    codigo = \"04\";\n    std::cout << informe << \"\\n\";\n    std::cout << registradas << \" \" << mesas;\n    return 0;\n}\n",
+          "answers": [
+            "Puesto 03\n4 6"
+          ],
+          "explanation": "informe guarda Puesto 03 antes de que codigo cambie a 04. Ese texto aparece en el primer renglón de la salida. El segundo muestra 4 6. registradas guarda cuatro antes de que la suma deje seis en mesas (Stroustrup, 2024)."
+        }
+      },
+      {
+        "id": "block_0007_0002",
+        "block": {
+          "type": "cpp_compiler",
+          "initialCode": "#include <iostream>\n#include <string>\n\nint main() {\n    // Escribe aqui tu programa.\n    return 0;\n}\n",
+          "outputCheck": {
+            "inputComparison": "exact",
+            "cases": [
+              {
+                "standardInput": "",
+                "outputs": [
+                  "Modulo 02\nInicio: 7\nAhora: 10",
+                  "Modulo 02\nInicio: 7\nAhora: 10\n"
+                ]
+              }
+            ]
+          }
+        }
+      },
+      {
+        "id": "p1u2l10_devolver_y_prestar",
+        "block": {
+          "type": "inline_fill_code",
+          "template": "#include <iostream>\n\nint main() {\n    int libros = 0;\n    int libros_iniciales = libros;\n    int libros_devueltos = 2;\n    int libros_prestados = 1;\n    libros [] libros_devueltos;\n    libros [] libros_prestados;\n    std::cout << libros_iniciales << \" \" << libros;\n    return 0;\n}\n",
+          "answers": [
+            "+=",
+            "-="
+          ],
+          "id": "p1u2l10_devolver_y_prestar",
+          "question": "Escribe el operador que añade los libros devueltos y el que descuenta los prestados. Al final el programa debe mostrar primero los libros que había al abrir y luego los disponibles: 0 1.",
+          "reviewFeedback": "El primer cambio aumenta el recuento en dos. El segundo disminuye ese mismo recuento en uno.",
+          "explanation": "Después de libros += libros_devueltos; hay dos libros. Después de libros -= libros_prestados; queda uno. La copia tomada al abrir sigue valiendo cero."
+        }
+      },
+      {
+        "id": "block_0008_0001",
+        "block": {
+          "type": "code",
+          "language": "cpp",
+          "code": "#include <iostream>\n#include <string>\n\nint main() {\n    std::string nombre = \"Modulo 02\";\n    int libros = 7;\n    int al_inicio = libros;\n    int devolucion = 3;\n    libros += devolucion;\n    std::cout << nombre << \"\\n\";\n    std::cout << \"Inicio: \" << al_inicio << \"\\n\";\n    std::cout << \"Ahora: \" << libros;\n    return 0;\n}\n"
+        }
+      },
+      {
+        "id": "block_0008_0003",
+        "block": {
+          "type": "output_prediction",
+          "id": "cpp_fundamentals__objetos_y_estado__representar_procesar_y_recuperar__recuperar_registro_con_otra_devolucion",
+          "language": "cpp",
+          "question": "En Modulo 02 hay cuatro libros y se devuelven cinco. Escribe los tres renglones de la salida. Conserva los espacios de los rótulos y omite el salto de línea final.",
+          "code": "#include <iostream>\n#include <string>\n\nint main() {\n    std::string nombre = \"Modulo 02\";\n    int libros = 4;\n    int al_inicio = libros;\n    int devolucion = 5;\n    libros += devolucion;\n    std::cout << nombre << \"\\n\";\n    std::cout << \"Inicio: \" << al_inicio << \"\\n\";\n    std::cout << \"Ahora: \" << libros;\n    return 0;\n}\n",
+          "answers": [
+            "Modulo 02\nInicio: 4\nAhora: 9"
+          ],
+          "outputComparison": "exact",
+          "reviewFeedback": "En el segundo renglón se muestra la copia tomada antes de la devolución. En el tercero se muestra la cantidad que ya incluye los cinco libros devueltos.",
+          "explanation": "El primer renglón muestra Modulo 02. La copia conserva cuatro y el recuento actualizado vale nueve. Los renglones siguientes son Inicio: 4 y Ahora: 9."
+        }
+      },
+      {
+        "id": "p1u2l10_reparar_registro",
+        "block": {
+          "type": "cpp_compiler",
+          "initialCode": "#include <iostream>\n\nint main() {\n    int libros = 0;\n    int libros_devueltos = 0;\n    int libros_prestados = 0;\n    std::cin >> libros >> libros_devueltos >> libros_prestados;\n\n    libros += libros_devueltos;\n    int libros_iniciales = libros;\n    libros -= libros_prestados;\n\n    std::cout << \"Inicio: \" << libros_iniciales << '\\n';\n    std::cout << \"Ahora: \" << libros;\n    return 0;\n}\n",
+          "initialStandardInput": "4 5 2",
+          "outputCheck": {
+            "inputComparison": "tokens",
+            "cases": [
+              {
+                "standardInput": "4 5 2",
+                "outputs": [
+                  "Inicio: 4\nAhora: 7",
+                  "Inicio: 4\nAhora: 7\n"
+                ]
+              },
+              {
+                "standardInput": "0 2 1",
+                "outputs": [
+                  "Inicio: 0\nAhora: 1",
+                  "Inicio: 0\nAhora: 1\n"
+                ]
+              },
+              {
+                "standardInput": "6 0 2",
+                "outputs": [
+                  "Inicio: 6\nAhora: 4",
+                  "Inicio: 6\nAhora: 4\n"
+                ]
+              }
+            ]
+          }
+        }
+      },
+      {
+        "id": "p1u2l10_predecir_total_fijo",
+        "block": {
+          "type": "output_prediction",
+          "language": "cpp",
+          "code": "#include <iostream>\n\nint main() {\n    double tramo_a = 1.5;\n    double tramo_b = 2.25;\n    double cable_total_m = tramo_a + tramo_b;\n    tramo_a = 2.5;\n    std::cout << cable_total_m << \" m\";\n    return 0;\n}\n",
+          "answers": [
+            "3.75 m"
+          ],
+          "id": "p1u2l10_predecir_total_fijo",
+          "question": "Después de calcular el total, el programa cambia la longitud del primer tramo. ¿Qué texto muestra std::cout? Sigue el valor de cable_total_m en el código.",
+          "reviewFeedback": "Busca si se vuelve a calcular cable_total_m después de sustituir el primer tramo.",
+          "explanation": "El programa imprime 3.75 m porque la suma se guardó en cable_total_m antes de sustituir el tramo. La suma de las medidas actuales daría 4.75 metros. Para obtenerla hay que ejecutar la suma después de cambiar el tramo."
+        }
+      },
+      {
+        "id": "p1u2l10_ejemplo_copia_reparada",
+        "block": {
+          "type": "code",
+          "language": "cpp",
+          "code": "#include <iostream>\n\nint main() {\n    int libros = 0;\n    int libros_devueltos = 0;\n    int libros_prestados = 0;\n    std::cin >> libros >> libros_devueltos >> libros_prestados;\n\n    int libros_iniciales = libros;\n    libros += libros_devueltos;\n    libros -= libros_prestados;\n\n    std::cout << \"Inicio: \" << libros_iniciales << '\\n';\n    std::cout << \"Ahora: \" << libros;\n    return 0;\n}\n"
+        }
+      }
     ]
   },
   "activityAfter": [
@@ -5435,7 +5840,7 @@
       {
         "block": "block_0001_0001",
         "path": "/question",
-        "sourceSha256": "a07ee6b72516dedae8cc55e8eb3d1474b9d7aec5e43f71779a79e534efcc4e6d",
+        "sourceSha256": "f9278fdc05196b50e3de6886793a54c2a7946b427da44ae8fdd67d72300e62d0",
         "spans": []
       },
       {
@@ -5535,18 +5940,18 @@
       {
         "block": "block_0002_0001",
         "path": "/question",
-        "sourceSha256": "0a02f223a4001ddf97b20ff7bc51d783f099863ac32f6eaaa1c557881017ab8f",
+        "sourceSha256": "efbdbc36e2792ed8ee31b4ae586aa9a3c2f85a260203b1a6c6c924d16fb8cba7",
         "spans": [
           {
-            "start": 36,
-            "end": 59,
+            "start": 54,
+            "end": 77,
             "text": "Sala-02 / Sala-02 lista",
             "role": "output",
             "reading": "natural"
           },
           {
-            "start": 122,
-            "end": 127,
+            "start": 172,
+            "end": 177,
             "text": "lista",
             "role": "data",
             "reading": "natural"
@@ -5835,7 +6240,7 @@
       {
         "block": "block_0003_0003",
         "path": "/question",
-        "sourceSha256": "0d3a407a9ae894b3f1fd0c8a63ec2f71c6374d1229f3a8083292cf3a6b06c0ae",
+        "sourceSha256": "c055d9d4b5c5c0bcd11145b816de552989a0892d4bc9cc788da7cf6b570f7cb7",
         "spans": [
           {
             "start": 0,
@@ -5912,25 +6317,18 @@
       {
         "block": "block_0003_0004",
         "path": "/explanation",
-        "sourceSha256": "95ccd20c34f1384a084aee4cc3c05603a4f43d346b5f70684f3ee6d61f06261b",
+        "sourceSha256": "2c607e8dbc5189526caffab777b0c6428631a8605dc0ed49bd065a3292f72978",
         "spans": [
           {
-            "start": 58,
-            "end": 61,
+            "start": 84,
+            "end": 87,
             "text": "2.5",
             "role": "output",
             "reading": "natural"
           },
           {
-            "start": 127,
-            "end": 133,
-            "text": "double",
-            "role": "cpp",
-            "reading": "technical"
-          },
-          {
-            "start": 252,
-            "end": 270,
+            "start": 226,
+            "end": 244,
             "text": "(Stroustrup, 2024)",
             "role": "citation",
             "reading": "natural"
@@ -6342,19 +6740,33 @@
       {
         "block": "block_0004_0003",
         "path": "/text",
-        "sourceSha256": "3a0f498bad739dfd73030c8377c616cf000e43cb07521774c9c50921dfb64c59",
+        "sourceSha256": "ff549f7c4b36ec02d5255af93fbfb7a6c728914304926757b79c5851ce6c7b3c",
         "spans": [
           {
-            "start": 18,
-            "end": 22,
+            "start": 42,
+            "end": 46,
             "text": "main",
             "role": "cpp",
             "reading": "technical"
           },
           {
-            "start": 301,
-            "end": 333,
-            "text": "Puesto 03\nMesas: 6\nCable: 3.75 m",
+            "start": 327,
+            "end": 336,
+            "text": "Puesto 03",
+            "role": "output",
+            "reading": "natural"
+          },
+          {
+            "start": 337,
+            "end": 345,
+            "text": "Mesas: 6",
+            "role": "output",
+            "reading": "natural"
+          },
+          {
+            "start": 346,
+            "end": 359,
+            "text": "Cable: 3.75 m",
             "role": "output",
             "reading": "natural"
           }
@@ -6396,47 +6808,103 @@
       {
         "block": "block_0005_0002",
         "path": "/text",
-        "sourceSha256": "a3821e5a9a2105660da0517f5a15f7cbfd641e130a94dd794f14ced89b6261a0",
+        "sourceSha256": "760bc62f0923307f94fd0db784a4885f41d571358b6b88d30195c147ee762795",
         "spans": [
           {
-            "start": 131,
-            "end": 135,
+            "start": 18,
+            "end": 25,
+            "text": "tramo_a",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 33,
+            "end": 36,
+            "text": "1.5",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 46,
+            "end": 53,
+            "text": "tramo_b",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 61,
+            "end": 65,
+            "text": "2.25",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 89,
+            "end": 93,
             "text": "3.75",
             "role": "data",
             "reading": "natural"
           },
           {
-            "start": 170,
-            "end": 179,
+            "start": 97,
+            "end": 110,
+            "text": "cable_total_m",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 138,
+            "end": 147,
             "text": "std::cout",
             "role": "cpp",
             "reading": "technical"
           },
           {
-            "start": 231,
-            "end": 232,
+            "start": 199,
+            "end": 200,
             "text": "m",
             "role": "output",
             "reading": "natural"
           },
           {
-            "start": 330,
-            "end": 333,
+            "start": 295,
+            "end": 296,
+            "text": "0",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 320,
+            "end": 323,
             "text": "2.0",
-            "role": "data",
-            "reading": "natural"
+            "role": "cpp",
+            "reading": "technical"
           },
           {
-            "start": 336,
-            "end": 339,
+            "start": 343,
+            "end": 346,
             "text": "3.5",
-            "role": "data",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 492,
+            "end": 501,
+            "text": "Puesto 03",
+            "role": "output",
             "reading": "natural"
           },
           {
-            "start": 458,
-            "end": 489,
-            "text": "Puesto 03\nMesas: 0\nCable: 5.5 m",
+            "start": 502,
+            "end": 510,
+            "text": "Mesas: 0",
+            "role": "output",
+            "reading": "natural"
+          },
+          {
+            "start": 511,
+            "end": 523,
+            "text": "Cable: 5.5 m",
             "role": "output",
             "reading": "natural"
           }
@@ -6445,13 +6913,27 @@
       {
         "block": "block_0005_0003",
         "path": "/question",
-        "sourceSha256": "23d69af5e8edba47184ff606a3c729ddd262fe6c2ed3f4f22edb15c7ff705f6a",
+        "sourceSha256": "4f3de028554c181ca852f82d32a3d94b06d8d513fe6068489f2f7e785111f8a6",
         "spans": [
           {
-            "start": 26,
-            "end": 39,
+            "start": 19,
+            "end": 32,
             "text": "Cable: 3.75 m",
             "role": "output",
+            "reading": "natural"
+          },
+          {
+            "start": 47,
+            "end": 50,
+            "text": "1.5",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 53,
+            "end": 57,
+            "text": "2.25",
+            "role": "data",
             "reading": "natural"
           }
         ]
@@ -6459,7 +6941,7 @@
       {
         "block": "block_0005_0003",
         "path": "/explanation",
-        "sourceSha256": "8243f0eeecfe61e24c973ab5a6c4b3755a211e3609e8946b839c23ff923e3499",
+        "sourceSha256": "d144db69471ae4ad8c1283af72c8c7815f6127ff56627f3be783ac76966e7455",
         "spans": []
       },
       {
@@ -6491,19 +6973,62 @@
       {
         "block": "block_0006_0000",
         "path": "/text",
-        "sourceSha256": "35d7c747463643f37d1aa19602a52c81d1ee5384d3018234584a16a51a3ec59f",
+        "sourceSha256": "9736dbea7680cbac9d58b76b503b3fa0b2e5533f0aa6d71f0f47f20fe7745c38",
         "spans": []
       },
       {
         "block": "block_0006_0001",
         "path": "/question",
-        "sourceSha256": "d98a1996132067361656260b48cc29f782557606ff653e5a5a8fad73069df874",
-        "spans": []
+        "sourceSha256": "017539cc7ed74607686fb23db0d56db5839a4448c41de7946ce1cc67a03cf57b",
+        "spans": [
+          {
+            "start": 31,
+            "end": 38,
+            "text": "informe",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 46,
+            "end": 52,
+            "text": "codigo",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 62,
+            "end": 64,
+            "text": "03",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 81,
+            "end": 83,
+            "text": "04",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 86,
+            "end": 92,
+            "text": "codigo",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 106,
+            "end": 111,
+            "text": "mesas",
+            "role": "cpp",
+            "reading": "technical"
+          }
+        ]
       },
       {
         "block": "block_0006_0001",
         "path": "/explanation",
-        "sourceSha256": "c5d259e1a4d79056de2f2863a1b349361b582c9615bbc6ac67fc66a72a9e6312",
+        "sourceSha256": "09ccf732d020c585d60436b7882757b1ea5e43fe5159d565bd82d6143ef6921e",
         "spans": [
           {
             "start": 0,
@@ -6513,64 +7038,50 @@
             "reading": "technical"
           },
           {
-            "start": 28,
-            "end": 34,
-            "text": "codigo",
-            "role": "cpp",
-            "reading": "technical"
-          },
-          {
-            "start": 44,
-            "end": 46,
-            "text": "03",
-            "role": "data",
-            "reading": "natural"
-          },
-          {
-            "start": 74,
-            "end": 80,
-            "text": "codigo",
-            "role": "cpp",
-            "reading": "technical"
-          },
-          {
-            "start": 115,
-            "end": 122,
-            "text": "informe",
-            "role": "cpp",
-            "reading": "technical"
-          },
-          {
-            "start": 155,
-            "end": 164,
+            "start": 15,
+            "end": 24,
             "text": "Puesto 03",
             "role": "output",
             "reading": "natural"
           },
           {
-            "start": 188,
-            "end": 191,
+            "start": 38,
+            "end": 44,
+            "text": "codigo",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 54,
+            "end": 56,
+            "text": "04",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 130,
+            "end": 133,
             "text": "4 6",
             "role": "output",
             "reading": "natural"
           },
           {
-            "start": 222,
-            "end": 233,
+            "start": 135,
+            "end": 146,
             "text": "registradas",
             "role": "cpp",
             "reading": "technical"
           },
           {
-            "start": 256,
-            "end": 261,
+            "start": 195,
+            "end": 200,
             "text": "mesas",
             "role": "cpp",
             "reading": "technical"
           },
           {
-            "start": 262,
-            "end": 280,
+            "start": 201,
+            "end": 219,
             "text": "(Stroustrup, 2024)",
             "role": "citation",
             "reading": "natural"
@@ -6580,13 +7091,13 @@
       {
         "block": "block_0006_0002",
         "path": "/question",
-        "sourceSha256": "f107de2fa73e2e76d3f42d065a39145747a6790b37ebee96194465e3c5661bb1",
+        "sourceSha256": "59ea05a52388820a5c8b84bf2780b2c148d7dea749a6787faf3c441bbb58c408",
         "spans": []
       },
       {
         "block": "block_0006_0002",
         "path": "/explanation",
-        "sourceSha256": "c806ed11cbb536980b80f6462b32fa8d8b9da5316653f0214575f22dbf3f2b4d",
+        "sourceSha256": "9eeb21ce3c0cae761864038c2482eac559b1c14eeb62ce6ce9adaaa1ae148342",
         "spans": []
       },
       {
@@ -6930,7 +7441,7 @@
       {
         "block": "block_0007_0003",
         "path": "/text",
-        "sourceSha256": "a7e5198c203eae3ad2d519b2bd76a9fedba4ba4f89eb6d48bd55f734490a47c3",
+        "sourceSha256": "e8ce2bdb9b54e0edb4c3d9ea9cab29c5408d5607ff2bf75f9f1323c88575e98e",
         "spans": [
           {
             "start": 32,
@@ -6940,9 +7451,23 @@
             "reading": "technical"
           },
           {
-            "start": 269,
-            "end": 298,
-            "text": "Modulo 02\nInicio: 7\nAhora: 10",
+            "start": 371,
+            "end": 380,
+            "text": "Modulo 02",
+            "role": "output",
+            "reading": "natural"
+          },
+          {
+            "start": 381,
+            "end": 390,
+            "text": "Inicio: 7",
+            "role": "output",
+            "reading": "natural"
+          },
+          {
+            "start": 391,
+            "end": 400,
+            "text": "Ahora: 10",
             "role": "output",
             "reading": "natural"
           }
@@ -6969,34 +7494,76 @@
       {
         "block": "block_0008_0002",
         "path": "/text",
-        "sourceSha256": "2ce65bac43553ab8508fc92a8b752c945a9195e3d16f1f32704f61fb0e88aff0",
+        "sourceSha256": "ae16aa9b2a642ae3d4b895f7a4e66f58d9a6ef50040600a2eb098b84ad41b151",
         "spans": [
           {
-            "start": 16,
-            "end": 25,
+            "start": 18,
+            "end": 27,
             "text": "al_inicio",
             "role": "cpp",
             "reading": "technical"
           },
           {
-            "start": 45,
-            "end": 51,
+            "start": 58,
+            "end": 64,
             "text": "libros",
             "role": "cpp",
             "reading": "technical"
           },
           {
-            "start": 122,
-            "end": 128,
+            "start": 119,
+            "end": 125,
             "text": "libros",
             "role": "cpp",
             "reading": "technical"
           },
           {
-            "start": 175,
-            "end": 193,
+            "start": 148,
+            "end": 157,
+            "text": "al_inicio",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 173,
+            "end": 191,
             "text": "(Stroustrup, 2024)",
             "role": "citation",
+            "reading": "natural"
+          },
+          {
+            "start": 277,
+            "end": 278,
+            "text": "0",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 304,
+            "end": 305,
+            "text": "2",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 451,
+            "end": 460,
+            "text": "Modulo 02",
+            "role": "output",
+            "reading": "natural"
+          },
+          {
+            "start": 461,
+            "end": 470,
+            "text": "Inicio: 0",
+            "role": "output",
+            "reading": "natural"
+          },
+          {
+            "start": 471,
+            "end": 479,
+            "text": "Ahora: 2",
+            "role": "output",
             "reading": "natural"
           }
         ]
@@ -7004,7 +7571,7 @@
       {
         "block": "block_0008_0003",
         "path": "/question",
-        "sourceSha256": "5c2458f4b6a5aca59e902fbba4bf9ff8b2143a309a85747f69002b5e07678952",
+        "sourceSha256": "ef715f143b294a02c24b22211269c511478b0ffcbf3b0224d28ff27b83eec182",
         "spans": [
           {
             "start": 3,
@@ -7058,19 +7625,33 @@
       {
         "block": "block_0008_0005",
         "path": "/text",
-        "sourceSha256": "e49aeea3b5ba21512f691a7ffb77348b2c10c1850cefc96c80a94e3bc37cb3d8",
+        "sourceSha256": "64201edfafa3aceb9c48c0c6e9434eaa380958aed9c28a95ad108436bebc2f20",
         "spans": [
           {
-            "start": 529,
-            "end": 534,
+            "start": 396,
+            "end": 403,
+            "text": "Inicio:",
+            "role": "output",
+            "reading": "natural"
+          },
+          {
+            "start": 558,
+            "end": 563,
             "text": "4 5 2",
             "role": "data",
             "reading": "natural"
           },
           {
-            "start": 551,
-            "end": 569,
-            "text": "Inicio: 4\nAhora: 7",
+            "start": 580,
+            "end": 589,
+            "text": "Inicio: 4",
+            "role": "output",
+            "reading": "natural"
+          },
+          {
+            "start": 590,
+            "end": 598,
+            "text": "Ahora: 7",
             "role": "output",
             "reading": "natural"
           }
@@ -7079,81 +7660,116 @@
       {
         "block": "block_0009_0000",
         "path": "/text",
-        "sourceSha256": "c92b8912176cc0ca6b9bab3c367ab100ce9ffe854e0e7cb397db06ac87facb66",
+        "sourceSha256": "c52e1f4812911088643124d2b51c005784b3751e051a19417481378186b60886",
         "spans": []
       },
       {
         "block": "block_0009_0001",
         "path": "/text",
-        "sourceSha256": "a4a19eec1cd2c02285ff0eccc55dd673d333f022f6b87526edf24ad462f743b2",
+        "sourceSha256": "b798fe946a46bc8b85c90a214328d155f6ae3fb096369aff8cb6f5d07fbabfa6",
         "spans": []
       },
       {
         "block": "block_0009_0002",
         "path": "/text",
-        "sourceSha256": "a9ff3c71d9784b7b64ff2b66f639ad1b1e43aaa4c74cf68442c25c856754115e",
+        "sourceSha256": "4a1a397ee28edf3d45eb2be5bf5938ac131ac0e0cfae4d57102d7a78eacd5238",
         "spans": [
           {
-            "start": 23,
-            "end": 26,
+            "start": 35,
+            "end": 38,
             "text": "1.5",
             "role": "data",
             "reading": "natural"
           },
           {
-            "start": 36,
-            "end": 40,
+            "start": 41,
+            "end": 45,
             "text": "2.25",
             "role": "data",
             "reading": "natural"
           },
           {
-            "start": 89,
-            "end": 93,
-            "text": "3.75",
-            "role": "data",
-            "reading": "natural"
+            "start": 84,
+            "end": 97,
+            "text": "cable_total_m",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 195,
+            "end": 204,
+            "text": "std::cout",
+            "role": "cpp",
+            "reading": "technical"
           }
         ]
       },
       {
         "block": "block_0009_0004",
         "path": "/text",
-        "sourceSha256": "9ba7dab6c69e7a27c44212afc098b29e919cbb815d32f4aff64262b2b93b347b",
+        "sourceSha256": "690a0de220ec1824806ac32b8ba232d1eeb52cf09844ea15ca9c99a144b756cf",
         "spans": [
           {
-            "start": 30,
-            "end": 33,
+            "start": 27,
+            "end": 30,
             "text": "1.5",
             "role": "data",
             "reading": "natural"
           },
           {
-            "start": 36,
-            "end": 39,
+            "start": 33,
+            "end": 36,
             "text": "2.5",
             "role": "data",
             "reading": "natural"
           },
           {
-            "start": 89,
-            "end": 93,
+            "start": 72,
+            "end": 76,
+            "text": "2.25",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 120,
+            "end": 124,
             "text": "4.75",
             "role": "data",
             "reading": "natural"
           },
           {
-            "start": 151,
-            "end": 154,
+            "start": 152,
+            "end": 155,
             "text": "1.5",
             "role": "data",
             "reading": "natural"
           },
           {
-            "start": 184,
-            "end": 188,
+            "start": 190,
+            "end": 194,
             "text": "3.25",
             "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 222,
+            "end": 226,
+            "text": "4.75",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 362,
+            "end": 368,
+            "text": "4.75 m",
+            "role": "output",
+            "reading": "natural"
+          },
+          {
+            "start": 407,
+            "end": 413,
+            "text": "3.75 m",
+            "role": "output",
             "reading": "natural"
           }
         ]
@@ -7173,7 +7789,7 @@
       {
         "block": "block_0010_0002",
         "path": "/text",
-        "sourceSha256": "a0e8065d2d93b9e987f2308e65a488813c256c02dc0548cd57ba0cad98850216",
+        "sourceSha256": "8eed7a08b5b3f89274b3c4495be7fcb4326712bf8e4434c10a9afdde6d37b446",
         "spans": [
           {
             "start": 4,
@@ -7183,15 +7799,43 @@
             "reading": "natural"
           },
           {
-            "start": 198,
-            "end": 207,
+            "start": 24,
+            "end": 32,
+            "text": "std::cin",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 106,
+            "end": 122,
+            "text": "libros_iniciales",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 178,
+            "end": 184,
+            "text": "libros",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 243,
+            "end": 252,
+            "text": "std::cout",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 262,
+            "end": 271,
             "text": "Inicio: 4",
             "role": "output",
             "reading": "natural"
           },
           {
-            "start": 210,
-            "end": 218,
+            "start": 308,
+            "end": 316,
             "text": "Ahora: 7",
             "role": "output",
             "reading": "natural"
@@ -7201,33 +7845,47 @@
       {
         "block": "block_0010_0004",
         "path": "/text",
-        "sourceSha256": "60018ed91e861d7797620f4dc45816e106208097c7c6856d4a61a96cd2bdf01d",
+        "sourceSha256": "6a28f091fd11658fd0dbd8e1660b04cf0b37345129d7b6ac004759145a67048c",
         "spans": [
           {
-            "start": 102,
-            "end": 107,
+            "start": 193,
+            "end": 198,
             "text": "0 2 1",
             "role": "data",
             "reading": "natural"
           },
           {
-            "start": 124,
-            "end": 142,
-            "text": "Inicio: 0\nAhora: 1",
+            "start": 215,
+            "end": 224,
+            "text": "Inicio: 0",
             "role": "output",
             "reading": "natural"
           },
           {
-            "start": 161,
-            "end": 166,
+            "start": 225,
+            "end": 233,
+            "text": "Ahora: 1",
+            "role": "output",
+            "reading": "natural"
+          },
+          {
+            "start": 252,
+            "end": 257,
             "text": "6 0 2",
             "role": "data",
             "reading": "natural"
           },
           {
-            "start": 183,
-            "end": 201,
-            "text": "Inicio: 6\nAhora: 4",
+            "start": 274,
+            "end": 283,
+            "text": "Inicio: 6",
+            "role": "output",
+            "reading": "natural"
+          },
+          {
+            "start": 284,
+            "end": 292,
+            "text": "Ahora: 4",
             "role": "output",
             "reading": "natural"
           }
@@ -7382,11 +8040,18 @@
       {
         "block": "p1u2l10_predecir_total_fijo",
         "path": "/question",
-        "sourceSha256": "c5ac7b89de24b9cdccc30abcc6d5486ba34a3e074ca9e098613ccce126f557a3",
+        "sourceSha256": "4b3087469a970798be44a377609f430c76d90c3c34f7e77b0e363dfcc6ed4c1b",
         "spans": [
           {
-            "start": 97,
-            "end": 110,
+            "start": 98,
+            "end": 107,
+            "text": "std::cout",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 127,
+            "end": 140,
             "text": "cable_total_m",
             "role": "cpp",
             "reading": "technical"

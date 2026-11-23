@@ -124,7 +124,7 @@
         },
         {
           "type": "cpp_compiler",
-          "initialCode": "#include <iostream>\n#include <cmath>\n\n// Define convertir_entero antes de main, o declara su firma y define despues.\nint main() {\n    // Construye las llamadas y observa bool, destino y origen tras cada una.\n\n    return 0;\n}\n",
+          "initialCode": "#include <iostream>\n#include <cmath>\n\n// Define convertir_entero antes de main, o declara su firma y define despues.\n\nint main() {\n    // Construye las llamadas y observa bool, destino y origen tras cada una.\n    \n    return 0;\n}\n",
           "outputCheck": {
             "inputComparison": "tokens",
             "cases": [
@@ -177,7 +177,7 @@
         },
         {
           "type": "cpp_compiler",
-          "initialCode": "#include <iostream>\n#include <cmath>\n\nbool convertir_entero(double origen, int& destino) {\n    if (!std::isfinite(origen) || origen < -100.0 || origen > 100.0) {\n        return false;\n    }\n\n    const int candidato = static_cast<int>(origen);\n    const double vuelta = static_cast<double>(candidato);\n\n    if (vuelta != origen) {\n        return false;\n    }\n\n    destino = candidato;\n    return true;\n}\n\nint main() {\n    double origen{0.0};\n    int destino{0};\n\n    std::cin >> origen >> destino;\n    const double copia = origen;\n    const bool aceptado = convertir_entero(origen, destino);\n\n    std::cout << \"Aceptado: \" << aceptado << \";Destino: \" << destino\n              << \";Origen: \" << origen << \";Conservado: \" << (origen == copia);\n\n    return 0;\n}\n",
+          "initialCode": "#include <iostream>\n#include <cmath>\n\nbool convertir_entero(double origen, int& destino) {\n    if (!std::isfinite(origen) || origen < -100.0 || origen > 100.0) {\n        return false;\n    }\n\n    const int candidato = static_cast<int>(origen);\n    const double vuelta = static_cast<double>(candidato);\n\n    if (vuelta != origen) {\n        return false;\n    }\n\n    destino = candidato;\n    return true;\n}\n\nint main() {\n    double origen{0.0};\n    int destino{0};\n\n    std::cin >> origen >> destino;\n\n    const double copia = origen;\n    const bool aceptado = convertir_entero(origen, destino);\n\n    std::cout << \"Aceptado: \" << aceptado << \";Destino: \" << destino\n              << \";Origen: \" << origen << \";Conservado: \" << (origen == copia);\n\n    return 0;\n}\n",
           "outputCheck": {
             "inputComparison": "tokens",
             "cases": [
@@ -322,7 +322,7 @@
         },
         {
           "type": "cpp_compiler",
-          "initialCode": "#include <iostream>\n#include <cmath>\n#include <vector>\n#include <cstddef>\n\n// Recupera convertir_entero antes de main, o declara su firma y define despues.\nint main() {\n    // Construye la clasificacion, los conteos y la prueba de conservacion.\n\n    return 0;\n}\n",
+          "initialCode": "#include <iostream>\n#include <cmath>\n#include <vector>\n#include <cstddef>\n\n// Recupera convertir_entero antes de main, o declara su firma y define despues.\n\nint main() {\n    // Construye la clasificacion, los conteos y la prueba de conservacion.\n    \n    return 0;\n}\n",
           "outputCheck": {
             "inputComparison": "tokens",
             "cases": [
@@ -355,7 +355,7 @@
         {
           "type": "code",
           "language": "cpp",
-          "code": "#include <iostream>\n#include <cmath>\n#include <vector>\n#include <cstddef>\n\nbool convertir_entero(double origen, int& destino) {\n    if (!std::isfinite(origen) || origen < -100.0 || origen > 100.0) {\n        return false;\n    }\n\n    const int candidato = static_cast<int>(origen);\n    const double vuelta = static_cast<double>(candidato);\n\n    if (vuelta != origen) {\n        return false;\n    }\n\n    destino = candidato;\n    return true;\n}\n\nint main() {\n    std::vector<double> origen{-100.0, -2.5, 0.0, 4.0, 100.0, 101.0};\n    const std::vector<double> copia = origen;\n    std::vector<int> enteros;\n    int rechazados{0};\n    int ceros{0};\n\n    for (const double dato : origen) {\n        int destino{17};\n        const bool aceptado = convertir_entero(dato, destino);\n        if (aceptado) {\n            enteros.push_back(destino);\n            if (destino == 0) {\n                ++ceros;\n            }\n        } else {\n            ++rechazados;\n        }\n    }\n\n    bool conservados = origen.size() == copia.size();\n    if (conservados) {\n        for (std::size_t i{0}; i < origen.size(); ++i) {\n            if (origen.at(i) != copia.at(i)) {\n                conservados = false;\n            }\n        }\n    }\n\n    std::cout << \"Enteros:\";\n\n    for (const int valor : enteros) {\n        std::cout << valor << \";\";\n    }\n\n    std::cout << \"\\nRechazados: \" << rechazados\n              << \"\\nCeros aceptados: \" << ceros\n              << \"\\nDatos conservados: \" << conservados << \"\\n\";\n\n    return 0;\n}\n"
+          "code": "#include <iostream>\n#include <cmath>\n#include <vector>\n#include <cstddef>\n\nbool convertir_entero(double origen, int& destino) {\n    if (!std::isfinite(origen) || origen < -100.0 || origen > 100.0) {\n        return false;\n    }\n\n    const int candidato = static_cast<int>(origen);\n    const double vuelta = static_cast<double>(candidato);\n\n    if (vuelta != origen) {\n        return false;\n    }\n\n    destino = candidato;\n    return true;\n}\n\nint main() {\n    std::vector<double> origen{-100.0, -2.5, 0.0, 4.0, 100.0, 101.0};\n    const std::vector<double> copia = origen;\n    std::vector<int> enteros;\n    int rechazados{0};\n    int ceros{0};\n\n    for (const double dato : origen) {\n        int destino{17};\n        const bool aceptado = convertir_entero(dato, destino);\n\n        if (aceptado) {\n            enteros.push_back(destino);\n            if (destino == 0) {\n                ++ceros;\n            }\n        } else {\n            ++rechazados;\n        }\n    }\n\n    bool conservados = origen.size() == copia.size();\n    if (conservados) {\n        for (std::size_t i{0}; i < origen.size(); ++i) {\n            if (origen.at(i) != copia.at(i)) {\n                conservados = false;\n            }\n        }\n    }\n\n    std::cout << \"Enteros:\";\n\n    for (const int valor : enteros) {\n        std::cout << valor << \";\";\n    }\n\n    std::cout << \"\\nRechazados: \" << rechazados\n              << \"\\nCeros aceptados: \" << ceros\n              << \"\\nDatos conservados: \" << conservados << \"\\n\";\n\n    return 0;\n}\n"
         },
         {
           "type": "paragraph",
@@ -366,7 +366,7 @@
           "id": "cpp_fundamentals__funciones_y_contratos__conversion_comprobada_sin_perdida__coleccion_con_fraccion_proxima_y_ceros",
           "question": "Predice las cuatro líneas para esta colección nueva. 3.0000001 se almacena como un valor distinto de 3.0; no se admite una tolerancia.",
           "language": "cpp",
-          "code": "#include <iostream>\n#include <cmath>\n#include <vector>\n#include <cstddef>\n\nbool convertir_entero(double origen, int& destino) {\n    if (!std::isfinite(origen) || origen < -100.0 || origen > 100.0) {\n        return false;\n    }\n\n    const int candidato = static_cast<int>(origen);\n    const double vuelta = static_cast<double>(candidato);\n\n    if (vuelta != origen) {\n        return false;\n    }\n\n    destino = candidato;\n    return true;\n}\n\nint main() {\n    std::vector<double> origen{3.0000001, 0.0, -0.5, 5.0, -100.5, 0.0, 100.0};\n    const std::vector<double> copia = origen;\n    std::vector<int> enteros;\n    int rechazados{0};\n    int ceros{0};\n\n    for (const double dato : origen) {\n        int destino{17};\n        const bool aceptado = convertir_entero(dato, destino);\n        if (aceptado) {\n            enteros.push_back(destino);\n            if (destino == 0) {\n                ++ceros;\n            }\n        } else {\n            ++rechazados;\n        }\n    }\n\n    bool conservados = origen.size() == copia.size();\n    if (conservados) {\n        for (std::size_t i{0}; i < origen.size(); ++i) {\n            if (origen.at(i) != copia.at(i)) {\n                conservados = false;\n            }\n        }\n    }\n\n    std::cout << \"Enteros:\";\n\n    for (const int valor : enteros) {\n        std::cout << valor << \";\";\n    }\n\n    std::cout << \"\\nRechazados: \" << rechazados\n              << \"\\nCeros aceptados: \" << ceros\n              << \"\\nDatos conservados: \" << conservados << \"\\n\";\n\n    return 0;\n}\n",
+          "code": "#include <iostream>\n#include <cmath>\n#include <vector>\n#include <cstddef>\n\nbool convertir_entero(double origen, int& destino) {\n    if (!std::isfinite(origen) || origen < -100.0 || origen > 100.0) {\n        return false;\n    }\n\n    const int candidato = static_cast<int>(origen);\n    const double vuelta = static_cast<double>(candidato);\n\n    if (vuelta != origen) {\n        return false;\n    }\n\n    destino = candidato;\n    return true;\n}\n\nint main() {\n    std::vector<double> origen{3.0000001, 0.0, -0.5, 5.0, -100.5, 0.0, 100.0};\n    const std::vector<double> copia = origen;\n    std::vector<int> enteros;\n    int rechazados{0};\n    int ceros{0};\n\n    for (const double dato : origen) {\n        int destino{17};\n        const bool aceptado = convertir_entero(dato, destino);\n\n        if (aceptado) {\n            enteros.push_back(destino);\n            if (destino == 0) {\n                ++ceros;\n            }\n        } else {\n            ++rechazados;\n        }\n    }\n\n    bool conservados = origen.size() == copia.size();\n    if (conservados) {\n        for (std::size_t i{0}; i < origen.size(); ++i) {\n            if (origen.at(i) != copia.at(i)) {\n                conservados = false;\n            }\n        }\n    }\n\n    std::cout << \"Enteros:\";\n\n    for (const int valor : enteros) {\n        std::cout << valor << \";\";\n    }\n\n    std::cout << \"\\nRechazados: \" << rechazados\n              << \"\\nCeros aceptados: \" << ceros\n              << \"\\nDatos conservados: \" << conservados << \"\\n\";\n\n    return 0;\n}\n",
           "answers": [
             "Enteros:0;5;0;100;\nRechazados: 3\nCeros aceptados: 2\nDatos conservados: 1"
           ],
@@ -395,7 +395,7 @@
         },
         {
           "type": "cpp_compiler",
-          "initialCode": "#include <iostream>\n#include <cmath>\n#include <vector>\n#include <cstddef>\n\n// Recupera convertir_entero antes de main, o declara su firma y define despues.\nint main() {\n    // Construye la clasificacion, los conteos y la prueba de conservacion.\n\n    return 0;\n}\n",
+          "initialCode": "#include <iostream>\n#include <cmath>\n#include <vector>\n#include <cstddef>\n\n// Recupera convertir_entero antes de main, o declara su firma y define despues.\n\nint main() {\n    // Construye la clasificacion, los conteos y la prueba de conservacion.\n    \n    return 0;\n}\n",
           "outputCheck": {
             "inputComparison": "tokens",
             "cases": [
@@ -462,7 +462,7 @@
         },
         {
           "type": "cpp_compiler",
-          "initialCode": "#include <iostream>\n#include <cmath>\n#include <vector>\n#include <cstddef>\n\nbool convertir_entero(double origen, int& destino) {\n    if (!std::isfinite(origen) || origen < -100.0 || origen > 100.0) {\n        return false;\n    }\n\n    const int candidato = static_cast<int>(origen);\n    const double vuelta = static_cast<double>(candidato);\n\n    if (vuelta != origen) {\n        return false;\n    }\n\n    destino = candidato;\n    return true;\n}\n\nint main() {\n    std::vector<double> origen;\n    int cantidad_entrada{0};\n\n    std::cin >> cantidad_entrada;\n\n    for (int entrada{0}; entrada < cantidad_entrada; ++entrada) {\n        double dato{0};\n        std::cin >> dato;\n        origen.push_back(dato);\n    }\n\n    int previo{0};\n\n    std::cin >> previo;\n    const std::vector<double> copia = origen;\n    std::vector<int> enteros;\n    int rechazados{0};\n    int ceros{0};\n\n    for (const double dato : origen) {\n        int destino{previo};\n        const bool aceptado = convertir_entero(dato, destino);\n        if (aceptado) {\n            enteros.push_back(destino);\n            if (destino == 0) {\n                ++ceros;\n            }\n        } else {\n            ++rechazados;\n        }\n    }\n\n    bool conservados = origen.size() == copia.size();\n    if (conservados) {\n        for (std::size_t i{0}; i < origen.size(); ++i) {\n            if (origen.at(i) != copia.at(i)) {\n                conservados = false;\n            }\n        }\n    }\n\n    std::cout << \"Enteros:\";\n\n    for (const int valor : enteros) {\n        std::cout << valor << \";\";\n    }\n\n    std::cout << \"\\nRechazados: \" << rechazados\n              << \"\\nCeros aceptados: \" << ceros\n              << \"\\nDatos conservados: \" << conservados << \"\\n\";\n\n    return 0;\n}\n",
+          "initialCode": "#include <iostream>\n#include <cmath>\n#include <vector>\n#include <cstddef>\n\nbool convertir_entero(double origen, int& destino) {\n    if (!std::isfinite(origen) || origen < -100.0 || origen > 100.0) {\n        return false;\n    }\n\n    const int candidato = static_cast<int>(origen);\n    const double vuelta = static_cast<double>(candidato);\n\n    if (vuelta != origen) {\n        return false;\n    }\n\n    destino = candidato;\n    return true;\n}\n\nint main() {\n    std::vector<double> origen;\n    int cantidad_entrada{0};\n\n    std::cin >> cantidad_entrada;\n\n    for (int entrada{0}; entrada < cantidad_entrada; ++entrada) {\n        double dato{0};\n\n        std::cin >> dato;\n        origen.push_back(dato);\n    }\n\n    int previo{0};\n\n    std::cin >> previo;\n\n    const std::vector<double> copia = origen;\n    std::vector<int> enteros;\n    int rechazados{0};\n    int ceros{0};\n\n    for (const double dato : origen) {\n        int destino{previo};\n        const bool aceptado = convertir_entero(dato, destino);\n\n        if (aceptado) {\n            enteros.push_back(destino);\n            if (destino == 0) {\n                ++ceros;\n            }\n        } else {\n            ++rechazados;\n        }\n    }\n\n    bool conservados = origen.size() == copia.size();\n    if (conservados) {\n        for (std::size_t i{0}; i < origen.size(); ++i) {\n            if (origen.at(i) != copia.at(i)) {\n                conservados = false;\n            }\n        }\n    }\n\n    std::cout << \"Enteros:\";\n\n    for (const int valor : enteros) {\n        std::cout << valor << \";\";\n    }\n\n    std::cout << \"\\nRechazados: \" << rechazados\n              << \"\\nCeros aceptados: \" << ceros\n              << \"\\nDatos conservados: \" << conservados << \"\\n\";\n\n    return 0;\n}\n",
           "outputCheck": {
             "inputComparison": "tokens",
             "cases": [
@@ -1675,6 +1675,41 @@
         "id": "block_0006_0011",
         "beforeSha256": "d130bdc8b399f81257cefc116660fda0969fecf206a204d0f45d9db69d135936",
         "afterSha256": "236bd05af01a611f4d7e51561a4cbb03e70b47d20cbd0c04263196d11a783946"
+      },
+      {
+        "id": "block_0002_0005",
+        "beforeSha256": "d84d48d4373843cea98a64f690a51579b866c66da5b0893007d1ec46bf384143",
+        "afterSha256": "0c42a9034f898aba29f6b37e3a08c37f4312d9a29ae5cbc37f32a706ea124e0a"
+      },
+      {
+        "id": "block_0003_0007",
+        "beforeSha256": "25826eac27b8c26ff779c23ac1b380c3a3026048dcad45c65a277b9b8a235c3c",
+        "afterSha256": "3f8ea8bf37857337e46fe37fb4d82cc9a44cde9d301bd541210c95cc870fcbcc"
+      },
+      {
+        "id": "block_0005_0005",
+        "beforeSha256": "d10b6794e2e0abc79e1632898be73209ad5be9538a746ae8f2db9e1feb10320d",
+        "afterSha256": "608045b276a87498fe4c9c8f77e7140a10e093e72b2094093fadbba3833cea90"
+      },
+      {
+        "id": "block_0006_0002",
+        "beforeSha256": "1a7eda0c177758708910853c1c31ae6d8a12600131a1e71acab8a1fb29e789c5",
+        "afterSha256": "19ed3e4703ccff5197a76a6cf985dbbdc90dc74262ab44366e19aabb9157eb59"
+      },
+      {
+        "id": "block_0006_0004",
+        "beforeSha256": "8904fa54239a713b4e87f2d681669ebc65b4bc93767d9b8035a7cb2a984f2453",
+        "afterSha256": "45a86b4e0c25f59fdbac5c2b1a067749ecd2b3c0b0f4366e5e9b041ea48827d8"
+      },
+      {
+        "id": "block_0006_0009",
+        "beforeSha256": "36806e416089f3bbfa4f3a28740eecc5c458e022f7811710e545503a12ce0ea6",
+        "afterSha256": "cbc8dd73992a07637a7fe387a2eef748458e7a4967eef25b7f20418eda75bd5b"
+      },
+      {
+        "id": "block_0006_0012",
+        "beforeSha256": "ad08c7bd38d78849897f6bcf8fc356da350e18e6383992a591e2e8deede683f9",
+        "afterSha256": "40417d521f20a93eeee683ca750930b610ff8af80dca7f349e081c1da8accae0"
       }
     ],
     "sourceFormatRevisions": [

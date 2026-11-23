@@ -50,7 +50,7 @@
           "id": "p3_u5l1_llaves_vacias",
           "language": "cpp",
           "question": "¿Qué muestra el programa?",
-          "code": "#include <iostream>\n\nint main() {\n    int* actual = new int{};\n    std::cout << *actual << ':';\n    *actual = 6;\n    std::cout << *actual;\n    delete actual;\n    actual = nullptr;\n    return 0;\n}\n",
+          "code": "#include <iostream>\n\nint main() {\n    int* actual = new int{};\n\n    std::cout << *actual << ':';\n    *actual = 6;\n    std::cout << *actual;\n    delete actual;\n    actual = nullptr;\n    return 0;\n}\n",
           "answers": [
             "0:6"
           ],
@@ -97,7 +97,7 @@
         {
           "type": "code",
           "language": "cpp",
-          "code": "#include <iostream>\n\nint main() {\n    int* actual = new int;\n    std::cout << *actual;\n    delete actual;\n    return 0;\n}\n"
+          "code": "#include <iostream>\n\nint main() {\n    int* actual = new int;\n\n    std::cout << *actual;\n    delete actual;\n    return 0;\n}\n"
         },
         {
           "type": "multiple_choice",
@@ -224,7 +224,7 @@
           "id": "p3_u5l1_liberar_vaciar_y_reutilizar",
           "language": "cpp",
           "question": "¿Qué muestra copia, la comparación con nullptr y el valor de la nueva reserva?",
-          "code": "#include <iostream>\n\nint main() {\n    int* actual = new int{3};\n    int copia = *actual;\n    delete actual;\n    actual = nullptr;\n    std::cout << copia << ':' << (actual == nullptr) << ':';\n    delete actual;\n    actual = new int{7};\n    std::cout << *actual;\n    delete actual;\n    actual = nullptr;\n    return 0;\n}\n",
+          "code": "#include <iostream>\n\nint main() {\n    int* actual = new int{3};\n    int copia = *actual;\n    delete actual;\n    actual = nullptr;\n\n    std::cout << copia << ':' << (actual == nullptr) << ':';\n    delete actual;\n    actual = new int{7};\n\n    std::cout << *actual;\n    delete actual;\n    actual = nullptr;\n    return 0;\n}\n",
           "answers": [
             "3:1:7"
           ],
@@ -255,12 +255,12 @@
         {
           "type": "code",
           "language": "cpp",
-          "code": "int main() {\n    int* actual = new int{4};\n    actual = nullptr;\n    return 0;\n}\n"
+          "code": "int main() {\n    int* actual = new int{4};\n\n    actual = nullptr;\n    return 0;\n}\n"
         },
         {
           "type": "code",
           "language": "cpp",
-          "code": "#include <iostream>\n\nint main() {\n    int* actual = new int{4};\n    delete actual;\n    std::cout << *actual;\n    return 0;\n}\n"
+          "code": "#include <iostream>\n\nint main() {\n    int* actual = new int{4};\n    delete actual;\n    std::cout << *actual;\n\n    return 0;\n}\n"
         },
         {
           "type": "code",
@@ -334,7 +334,7 @@
           "id": "p3_u5l1_objeto_constante",
           "language": "cpp",
           "question": "¿Qué muestra este programa?",
-          "code": "#include <iostream>\n\nint main() {\n    const int* actual = new const int{9};\n    std::cout << *actual << ':';\n    delete actual;\n    actual = nullptr;\n    std::cout << (actual == nullptr);\n    return 0;\n}\n",
+          "code": "#include <iostream>\n\nint main() {\n    const int* actual = new const int{9};\n\n    std::cout << *actual << ':';\n    delete actual;\n    actual = nullptr;\n\n    std::cout << (actual == nullptr);\n\n    return 0;\n}\n",
           "answers": [
             "9:1"
           ],
@@ -379,7 +379,7 @@
           "id": "p3_u5l1_liberar_y_vaciar_al_llamador",
           "language": "cpp",
           "question": "¿Qué muestra el programa completo?",
-          "code": "#include <iostream>\n\nint leer(const int* acceso) {\n    if (acceso == nullptr) {\n        return -1;\n    }\n    return *acceso;\n}\n\nvoid liberar(int*& responsable) {\n    delete responsable;\n    responsable = nullptr;\n}\n\nint main() {\n    int* actual = new int{4};\n    std::cout << leer(actual) << ':';\n    liberar(actual);\n    std::cout << (actual == nullptr) << ':' << leer(actual);\n    liberar(actual);\n    return 0;\n}\n",
+          "code": "#include <iostream>\n\nint leer(const int* acceso) {\n    if (acceso == nullptr) {\n        return -1;\n    }\n\n    return *acceso;\n}\n\nvoid liberar(int*& responsable) {\n    delete responsable;\n    responsable = nullptr;\n}\n\nint main() {\n    int* actual = new int{4};\n\n    std::cout << leer(actual) << ':';\n    liberar(actual);\n    std::cout << (actual == nullptr) << ':' << leer(actual);\n    liberar(actual);\n    return 0;\n}\n",
           "answers": [
             "4:1:-1"
           ],
@@ -393,7 +393,7 @@
         {
           "type": "code",
           "language": "cpp",
-          "code": "#include <iostream>\n\nvoid liberar(int* copia) {\n    delete copia;\n    copia = nullptr;\n}\n\nint main() {\n    int* actual = new int{4};\n    liberar(actual);\n    std::cout << *actual;\n    return 0;\n}\n"
+          "code": "#include <iostream>\n\nvoid liberar(int* copia) {\n    delete copia;\n    copia = nullptr;\n}\n\nint main() {\n    int* actual = new int{4};\n    liberar(actual);\n    std::cout << *actual;\n\n    return 0;\n}\n"
         }
       ]
     },
@@ -410,7 +410,7 @@
         {
           "type": "code",
           "language": "cpp",
-          "code": "#include <iostream>\n\nint main() {\n    int* actual = nullptr;\n    int* observador = nullptr;\n    std::cout << \"A\\n\";\n    actual = new int{4};\n    observador = actual;\n    std::cout << \"B:\" << *observador << '\\n';\n    observador = nullptr;\n    std::cout << \"C:\" << *actual << '\\n';\n    delete actual;\n    actual = nullptr;\n    std::cout << \"D\\n\";\n    return 0;\n}\n"
+          "code": "#include <iostream>\n\nint main() {\n    int* actual = nullptr;\n    int* observador = nullptr;\n\n    std::cout << \"A\\n\";\n    actual = new int{4};\n    observador = actual;\n\n    std::cout << \"B:\" << *observador << '\\n';\n    observador = nullptr;\n\n    std::cout << \"C:\" << *actual << '\\n';\n    delete actual;\n    actual = nullptr;\n\n    std::cout << \"D\\n\";\n\n    return 0;\n}\n"
         },
         {
           "type": "math_puzzle",
@@ -515,7 +515,7 @@
           "type": "inline_fill_code",
           "id": "p3_u5l1_pareja_new_delete",
           "question": "Completa las palabras que crean y liberan el único int, y el valor que deja actual como puntero nulo. La copia del valor debe conservarse.",
-          "template": "#include <cstddef>\n#include <iostream>\n\nint main() {\n    int* actual = [] int{5};\n    int copia = *actual;\n    [] actual;\n    actual = [];\n    std::cout << copia << ':' << (actual == nullptr);\n    return 0;\n}\n",
+          "template": "#include <cstddef>\n#include <iostream>\n\nint main() {\n    int* actual = [] int{5};\n    int copia = *actual;\n    [] actual;\n    actual = [];\n\n    std::cout << copia << ':' << (actual == nullptr);\n\n    return 0;\n}\n",
           "answers": [
             "new",
             "delete",
@@ -564,7 +564,7 @@
         {
           "type": "cpp_compiler",
           "language": "cpp",
-          "initialCode": "#include <iostream>\n\nvoid preparar(int* destino, int valor) {\n    int local = valor;\n    destino = &local;\n    std::cout << *destino << ':';\n}\n\nint main() {\n    int* actual = nullptr;\n    preparar(actual, 7);\n    std::cout << (actual == nullptr);\n    delete actual;\n    actual = nullptr;\n    return 0;\n}\n",
+          "initialCode": "#include <iostream>\n\nvoid preparar(int* destino, int valor) {\n    int local = valor;\n    destino = &local;\n\n    std::cout << *destino << ':';\n}\n\nint main() {\n    int* actual = nullptr;\n    preparar(actual, 7);\n    std::cout << (actual == nullptr);\n    delete actual;\n    actual = nullptr;\n    return 0;\n}\n",
           "initialStandardInput": "",
           "outputCheck": {
             "inputComparison": "tokens",
@@ -590,7 +590,7 @@
         {
           "type": "code",
           "language": "cpp",
-          "code": "#include <iostream>\n\nvoid preparar(int*& destino, int valor) {\n    destino = new int{valor};\n    std::cout << *destino << ':';\n}\n\nint main() {\n    int* actual = nullptr;\n    preparar(actual, 7);\n    std::cout << (actual == nullptr);\n    delete actual;\n    actual = nullptr;\n    return 0;\n}\n"
+          "code": "#include <iostream>\n\nvoid preparar(int*& destino, int valor) {\n    destino = new int{valor};\n\n    std::cout << *destino << ':';\n}\n\nint main() {\n    int* actual = nullptr;\n    preparar(actual, 7);\n    std::cout << (actual == nullptr);\n    delete actual;\n    actual = nullptr;\n    return 0;\n}\n"
         },
         {
           "type": "paragraph",
@@ -659,7 +659,7 @@
         {
           "type": "cpp_compiler",
           "language": "cpp",
-          "initialCode": "#include <iostream>\n\nbool crear(int*& actual, int valor) {\n    if (actual != nullptr || valor < 0 || valor > 9) {\n        return false;\n    }\n    // Crea el entero y deja su acceso en actual.\n    return false;\n}\n\nbool retirar(int*& actual) {\n    if (actual == nullptr) {\n        return false;\n    }\n    // Libera el entero, deja actual nulo y comunica lo realizado.\n    return false;\n}\n\nint main() {\n    int ordenes = 0;\n    if (!(std::cin >> ordenes) || ordenes < 1 || ordenes > 12) {\n        return 1;\n    }\n    int* actual = nullptr;\n    bool hayCopia = false;\n    int copia = 0;\n    int creados = 0;\n    int liberados = 0;\n    for (int i = 0; i < ordenes; ++i) {\n        int operacion = 0;\n        int valor = 0;\n        if (!(std::cin >> operacion >> valor)) {\n            retirar(actual);\n            return 1;\n        }\n        const char* estado = \"Orden\";\n        if (operacion == 1) {\n            if (crear(actual, valor)) {\n                ++creados;\n                estado = \"Creado\";\n            } else {\n                estado = \"Rechazo\";\n            }\n        } else if (operacion == 2) {\n            if (actual != nullptr && valor >= 0 && valor <= 9) {\n                *actual = valor;\n                estado = \"Cambio\";\n            } else {\n                estado = \"Rechazo\";\n            }\n        } else if (operacion == 3) {\n            if (retirar(actual)) {\n                ++liberados;\n                estado = \"Liberado\";\n            } else {\n                estado = \"Vacio\";\n            }\n        } else if (operacion == 4) {\n            if (actual != nullptr) {\n                copia = *actual;\n                hayCopia = true;\n                estado = \"Copia\";\n            } else {\n                estado = \"Rechazo\";\n            }\n        }\n        std::cout << \"Estado:\" << estado << \";Actual:\";\n        if (actual == nullptr) {\n            std::cout << 'X';\n        } else {\n            std::cout << *actual;\n        }\n        std::cout << \";Copia:\";\n        if (hayCopia) {\n            std::cout << copia;\n        } else {\n            std::cout << 'X';\n        }\n        std::cout << \";Creados:\" << creados << \";Liberados:\" << liberados << '\\n';\n    }\n    const bool cierre = retirar(actual);\n    if (cierre) {\n        ++liberados;\n    }\n    std::cout << \"Cierre:\" << cierre << \";Creados:\" << creados\n              << \";Liberados:\" << liberados << '\\n';\n    return 0;\n}\n",
+          "initialCode": "#include <iostream>\n\nbool crear(int*& actual, int valor) {\n    if (actual != nullptr || valor < 0 || valor > 9) {\n        return false;\n    }\n    // Crea el entero y deja su acceso en actual.\n    return false;\n}\n\nbool retirar(int*& actual) {\n    if (actual == nullptr) {\n        return false;\n    }\n    // Libera el entero, deja actual nulo y comunica lo realizado.\n    return false;\n}\n\nint main() {\n    int ordenes = 0;\n    if (!(std::cin >> ordenes) || ordenes < 1 || ordenes > 12) {\n        return 1;\n    }\n    int* actual = nullptr;\n    bool hayCopia = false;\n    int copia = 0;\n    int creados = 0;\n    int liberados = 0;\n\n    for (int i = 0; i < ordenes; ++i) {\n        int operacion = 0;\n        int valor = 0;\n\n        if (!(std::cin >> operacion >> valor)) {\n            retirar(actual);\n            return 1;\n        }\n        const char* estado = \"Orden\";\n        if (operacion == 1) {\n            if (crear(actual, valor)) {\n                ++creados;\n                estado = \"Creado\";\n            } else {\n                estado = \"Rechazo\";\n            }\n        } else if (operacion == 2) {\n            if (actual != nullptr && valor >= 0 && valor <= 9) {\n                *actual = valor;\n                estado = \"Cambio\";\n            } else {\n                estado = \"Rechazo\";\n            }\n        } else if (operacion == 3) {\n            if (retirar(actual)) {\n                ++liberados;\n                estado = \"Liberado\";\n            } else {\n                estado = \"Vacio\";\n            }\n        } else if (operacion == 4) {\n            if (actual != nullptr) {\n                copia = *actual;\n                hayCopia = true;\n                estado = \"Copia\";\n            } else {\n                estado = \"Rechazo\";\n            }\n        }\n        std::cout << \"Estado:\" << estado << \";Actual:\";\n        if (actual == nullptr) {\n            std::cout << 'X';\n        } else {\n            std::cout << *actual;\n        }\n        std::cout << \";Copia:\";\n        if (hayCopia) {\n            std::cout << copia;\n        } else {\n            std::cout << 'X';\n        }\n        std::cout << \";Creados:\" << creados << \";Liberados:\" << liberados << '\\n';\n    }\n    const bool cierre = retirar(actual);\n    if (cierre) {\n        ++liberados;\n    }\n    std::cout << \"Cierre:\" << cierre << \";Creados:\" << creados\n              << \";Liberados:\" << liberados << '\\n';\n    return 0;\n}\n",
           "initialStandardInput": "12\n3 0\n1 0\n4 0\n1 7\n2 9\n3 0\n4 0\n3 0\n1 5\n4 0\n2 1\n0 0\n",
           "outputCheck": {
             "inputComparison": "tokens",
@@ -785,7 +785,7 @@
         {
           "type": "code",
           "language": "cpp",
-          "code": "#include <iostream>\n\nbool crear(int*& actual, int valor) {\n    if (actual != nullptr || valor < 0 || valor > 9) {\n        return false;\n    }\n    actual = new int{valor};\n    return true;\n}\n\nbool retirar(int*& actual) {\n    if (actual == nullptr) {\n        return false;\n    }\n    delete actual;\n    actual = nullptr;\n    return true;\n}\n\nint main() {\n    int ordenes = 0;\n    if (!(std::cin >> ordenes) || ordenes < 1 || ordenes > 12) {\n        return 1;\n    }\n    int* actual = nullptr;\n    bool hayCopia = false;\n    int copia = 0;\n    int creados = 0;\n    int liberados = 0;\n    for (int i = 0; i < ordenes; ++i) {\n        int operacion = 0;\n        int valor = 0;\n        if (!(std::cin >> operacion >> valor)) {\n            retirar(actual);\n            return 1;\n        }\n        const char* estado = \"Orden\";\n        if (operacion == 1) {\n            if (crear(actual, valor)) {\n                ++creados;\n                estado = \"Creado\";\n            } else {\n                estado = \"Rechazo\";\n            }\n        } else if (operacion == 2) {\n            if (actual != nullptr && valor >= 0 && valor <= 9) {\n                *actual = valor;\n                estado = \"Cambio\";\n            } else {\n                estado = \"Rechazo\";\n            }\n        } else if (operacion == 3) {\n            if (retirar(actual)) {\n                ++liberados;\n                estado = \"Liberado\";\n            } else {\n                estado = \"Vacio\";\n            }\n        } else if (operacion == 4) {\n            if (actual != nullptr) {\n                copia = *actual;\n                hayCopia = true;\n                estado = \"Copia\";\n            } else {\n                estado = \"Rechazo\";\n            }\n        }\n        std::cout << \"Estado:\" << estado << \";Actual:\";\n        if (actual == nullptr) {\n            std::cout << 'X';\n        } else {\n            std::cout << *actual;\n        }\n        std::cout << \";Copia:\";\n        if (hayCopia) {\n            std::cout << copia;\n        } else {\n            std::cout << 'X';\n        }\n        std::cout << \";Creados:\" << creados << \";Liberados:\" << liberados << '\\n';\n    }\n    const bool cierre = retirar(actual);\n    if (cierre) {\n        ++liberados;\n    }\n    std::cout << \"Cierre:\" << cierre << \";Creados:\" << creados\n              << \";Liberados:\" << liberados << '\\n';\n    return 0;\n}\n"
+          "code": "#include <iostream>\n\nbool crear(int*& actual, int valor) {\n    if (actual != nullptr || valor < 0 || valor > 9) {\n        return false;\n    }\n    actual = new int{valor};\n    return true;\n}\n\nbool retirar(int*& actual) {\n    if (actual == nullptr) {\n        return false;\n    }\n    delete actual;\n    actual = nullptr;\n    return true;\n}\n\nint main() {\n    int ordenes = 0;\n    if (!(std::cin >> ordenes) || ordenes < 1 || ordenes > 12) {\n        return 1;\n    }\n    int* actual = nullptr;\n    bool hayCopia = false;\n    int copia = 0;\n    int creados = 0;\n    int liberados = 0;\n\n    for (int i = 0; i < ordenes; ++i) {\n        int operacion = 0;\n        int valor = 0;\n\n        if (!(std::cin >> operacion >> valor)) {\n            retirar(actual);\n            return 1;\n        }\n        const char* estado = \"Orden\";\n        if (operacion == 1) {\n            if (crear(actual, valor)) {\n                ++creados;\n                estado = \"Creado\";\n            } else {\n                estado = \"Rechazo\";\n            }\n        } else if (operacion == 2) {\n            if (actual != nullptr && valor >= 0 && valor <= 9) {\n                *actual = valor;\n                estado = \"Cambio\";\n            } else {\n                estado = \"Rechazo\";\n            }\n        } else if (operacion == 3) {\n            if (retirar(actual)) {\n                ++liberados;\n                estado = \"Liberado\";\n            } else {\n                estado = \"Vacio\";\n            }\n        } else if (operacion == 4) {\n            if (actual != nullptr) {\n                copia = *actual;\n                hayCopia = true;\n                estado = \"Copia\";\n            } else {\n                estado = \"Rechazo\";\n            }\n        }\n        std::cout << \"Estado:\" << estado << \";Actual:\";\n        if (actual == nullptr) {\n            std::cout << 'X';\n        } else {\n            std::cout << *actual;\n        }\n        std::cout << \";Copia:\";\n        if (hayCopia) {\n            std::cout << copia;\n        } else {\n            std::cout << 'X';\n        }\n        std::cout << \";Creados:\" << creados << \";Liberados:\" << liberados << '\\n';\n    }\n    const bool cierre = retirar(actual);\n    if (cierre) {\n        ++liberados;\n    }\n    std::cout << \"Cierre:\" << cierre << \";Creados:\" << creados\n              << \";Liberados:\" << liberados << '\\n';\n    return 0;\n}\n"
         },
         {
           "type": "paragraph",
@@ -2108,6 +2108,280 @@
       }
     },
     "additions": [],
-    "editorial": []
+    "editorial": [
+      {
+        "id": "block_0001_0002",
+        "beforeSha256": "8e69e860bf9a97ff2a91f22cd810ad7e155d81c1e8ba8f05adebc8f42e32677f",
+        "afterSha256": "aa262124a8fbac1259fbd7f7b46dfdca2b66fea0eda6cb2a34d09cf8f1a7d789"
+      },
+      {
+        "id": "block_0002_0004",
+        "beforeSha256": "c4335d39a2636f24ab8d11ed038e55f1944684bde7896b650b7dd01df9965426",
+        "afterSha256": "2dde12fa4a7774844f8a307c7e3372c402dde720cb1fd8ddffb6185871f0b52c"
+      },
+      {
+        "id": "block_0006_0003",
+        "beforeSha256": "bf4fcd390f7e9c8f34f158dcc2ae7009ff96fa1c0559d5477fab99b6bb1a1c96",
+        "afterSha256": "d32062adb0eba01e77f9e92e24078897f3fb7f8b0d90b0ea9e5e143c7233d4e5"
+      },
+      {
+        "id": "block_0007_0002",
+        "beforeSha256": "c09153bbbeb0374926e6b121c97d41729d054dacf15e6137a9f0a693c25e3fb0",
+        "afterSha256": "561836c4d6aa4da7d67413dda75ef737fd2cb914fab24c30c8b710b22b87675b"
+      },
+      {
+        "id": "block_0007_0003",
+        "beforeSha256": "791f3af0b2c3fbc47d01182c3488b800609950b6ba8466054c8ce829a4a115d3",
+        "afterSha256": "1e2584b34003e0847604fd87359a0b818ccbef2ce2dd638820d10cb88045095b"
+      },
+      {
+        "id": "block_0009_0002",
+        "beforeSha256": "80df53316b5ce2d296f837deafb6178018f9da297bc516b5f8fd6505a559683e",
+        "afterSha256": "0254e48e5de9d71790324c6d3ecdc657ebc7e0ac434b42fbdf9788f7a039cf7f"
+      },
+      {
+        "id": "block_0010_0002",
+        "beforeSha256": "2b16f14cf8b8a5baffece0fedc9ec723d1b9db9fd7726119c0ae1c7e699df4fc",
+        "afterSha256": "534b45f525df2d9af9560566a47f435fc43289658ef94e4f42c19db29540352c"
+      },
+      {
+        "id": "block_0010_0004",
+        "beforeSha256": "840c1996c1ca3fd8c150dbf6a51fba4507ef200e4177c4973c5d08bdef04c2ab",
+        "afterSha256": "7acbce3c7b4cb68d78239e58b42448a1af36ef22d7dcfb1df54a3c710e003c41"
+      },
+      {
+        "id": "block_0011_0002",
+        "beforeSha256": "3cba1388d735b1f211bbfd6ba838e3f0b5f989ac39492eab99b9cb002d5fceea",
+        "afterSha256": "e1a37a1b1212478a2bcf92b5266d67a0069daaaa4f23d8da3c8d4570b31803f4"
+      },
+      {
+        "id": "block_0012_0001",
+        "beforeSha256": "a78eafec339a1a3882cb992cd270addbfed67557efc167fd7e039ad4e0fce56d",
+        "afterSha256": "99cf32f10fa53d2e93396129f362d6e68677905208ab6a1bff2d3bed550517a4"
+      },
+      {
+        "id": "block_0013_0003",
+        "beforeSha256": "e2540198dfa4b5b1d24d1467652b3d1f8f69b2606b010ecca1c16e88ea321526",
+        "afterSha256": "ee50dd40353f49064b04163d7b8cc0aeb9dc643f0debd81e4122fe05cbba944d"
+      },
+      {
+        "id": "block_0014_0001",
+        "beforeSha256": "96cf4e68850a72676273772c31a90c871a4e3880df024d9ecd892f5f7e6910a9",
+        "afterSha256": "b4fd4b64102480bf8700485b2173f851b7b77c854e18735c6df3676f29a2f8ee"
+      },
+      {
+        "id": "block_0016_0002",
+        "beforeSha256": "17805b2687c0b2b6ef8d2ab98cf670f906972bf388806122acfaba4a09802eb5",
+        "afterSha256": "be673fcb878298d02d1d1b5845935a844eeee3c495ae987e1f5726994e667e46"
+      },
+      {
+        "id": "block_0018_0001",
+        "beforeSha256": "e9bd766a0849d2e280553f7aa098af6806f134b1ff055f82ddd9893a9e71e709",
+        "afterSha256": "580e4356650b6290a7ef08a4173abf6e15a8948d09355a07e87ef592aff39064"
+      }
+    ],
+    "sourceFormatRevisions": [
+      {
+        "id": "block_0001_0002",
+        "block": {
+          "type": "output_prediction",
+          "id": "p3_u5l1_llaves_vacias",
+          "language": "cpp",
+          "question": "¿Qué muestra el programa?",
+          "code": "#include <iostream>\n\nint main() {\n    int* actual = new int{};\n    std::cout << *actual << ':';\n    *actual = 6;\n    std::cout << *actual;\n    delete actual;\n    actual = nullptr;\n    return 0;\n}\n",
+          "answers": [
+            "0:6"
+          ],
+          "outputComparison": "exact",
+          "explanation": "El entero comienza en cero por la inicialización con llaves vacías. La escritura posterior lo cambia a 6."
+        }
+      },
+      {
+        "id": "block_0002_0004",
+        "block": {
+          "type": "code",
+          "language": "cpp",
+          "code": "#include <iostream>\n\nint main() {\n    int* actual = new int;\n    std::cout << *actual;\n    delete actual;\n    return 0;\n}\n"
+        }
+      },
+      {
+        "id": "block_0006_0003",
+        "block": {
+          "type": "output_prediction",
+          "id": "p3_u5l1_liberar_vaciar_y_reutilizar",
+          "language": "cpp",
+          "question": "¿Qué muestra copia, la comparación con nullptr y el valor de la nueva reserva?",
+          "code": "#include <iostream>\n\nint main() {\n    int* actual = new int{3};\n    int copia = *actual;\n    delete actual;\n    actual = nullptr;\n    std::cout << copia << ':' << (actual == nullptr) << ':';\n    delete actual;\n    actual = new int{7};\n    std::cout << *actual;\n    delete actual;\n    actual = nullptr;\n    return 0;\n}\n",
+          "answers": [
+            "3:1:7"
+          ],
+          "outputComparison": "exact",
+          "explanation": "copia conserva el valor 3 en su propio int automático. La comparación se hace después de asignar nullptr. El delete nulo es válido. La nueva reserva crea otro int con 7; no suponemos qué dirección obtiene."
+        }
+      },
+      {
+        "id": "block_0007_0002",
+        "block": {
+          "type": "code",
+          "language": "cpp",
+          "code": "int main() {\n    int* actual = new int{4};\n    actual = nullptr;\n    return 0;\n}\n"
+        }
+      },
+      {
+        "id": "block_0007_0003",
+        "block": {
+          "type": "code",
+          "language": "cpp",
+          "code": "#include <iostream>\n\nint main() {\n    int* actual = new int{4};\n    delete actual;\n    std::cout << *actual;\n    return 0;\n}\n"
+        }
+      },
+      {
+        "id": "block_0009_0002",
+        "block": {
+          "type": "output_prediction",
+          "id": "p3_u5l1_objeto_constante",
+          "language": "cpp",
+          "question": "¿Qué muestra este programa?",
+          "code": "#include <iostream>\n\nint main() {\n    const int* actual = new const int{9};\n    std::cout << *actual << ':';\n    delete actual;\n    actual = nullptr;\n    std::cout << (actual == nullptr);\n    return 0;\n}\n",
+          "answers": [
+            "9:1"
+          ],
+          "outputComparison": "exact",
+          "explanation": "Se lee 9 antes de liberar el objeto constante. Después se asigna nullptr a la variable puntero, que no es const, y se compara ese nuevo valor nulo."
+        }
+      },
+      {
+        "id": "block_0010_0002",
+        "block": {
+          "type": "output_prediction",
+          "id": "p3_u5l1_liberar_y_vaciar_al_llamador",
+          "language": "cpp",
+          "question": "¿Qué muestra el programa completo?",
+          "code": "#include <iostream>\n\nint leer(const int* acceso) {\n    if (acceso == nullptr) {\n        return -1;\n    }\n    return *acceso;\n}\n\nvoid liberar(int*& responsable) {\n    delete responsable;\n    responsable = nullptr;\n}\n\nint main() {\n    int* actual = new int{4};\n    std::cout << leer(actual) << ':';\n    liberar(actual);\n    std::cout << (actual == nullptr) << ':' << leer(actual);\n    liberar(actual);\n    return 0;\n}\n",
+          "answers": [
+            "4:1:-1"
+          ],
+          "outputComparison": "exact",
+          "explanation": "La primera lectura obtiene 4. liberar termina el objeto y deja actual nulo; por eso la comparación produce 1 y leer devuelve el indicador -1 del estado vacío. La segunda liberación recibe nullptr."
+        }
+      },
+      {
+        "id": "block_0010_0004",
+        "block": {
+          "type": "code",
+          "language": "cpp",
+          "code": "#include <iostream>\n\nvoid liberar(int* copia) {\n    delete copia;\n    copia = nullptr;\n}\n\nint main() {\n    int* actual = new int{4};\n    liberar(actual);\n    std::cout << *actual;\n    return 0;\n}\n"
+        }
+      },
+      {
+        "id": "block_0011_0002",
+        "block": {
+          "type": "code",
+          "language": "cpp",
+          "code": "#include <iostream>\n\nint main() {\n    int* actual = nullptr;\n    int* observador = nullptr;\n    std::cout << \"A\\n\";\n    actual = new int{4};\n    observador = actual;\n    std::cout << \"B:\" << *observador << '\\n';\n    observador = nullptr;\n    std::cout << \"C:\" << *actual << '\\n';\n    delete actual;\n    actual = nullptr;\n    std::cout << \"D\\n\";\n    return 0;\n}\n"
+        }
+      },
+      {
+        "id": "block_0012_0001",
+        "block": {
+          "type": "inline_fill_code",
+          "id": "p3_u5l1_pareja_new_delete",
+          "question": "Completa las palabras que crean y liberan el único int, y el valor que deja actual como puntero nulo. La copia del valor debe conservarse.",
+          "template": "#include <cstddef>\n#include <iostream>\n\nint main() {\n    int* actual = [] int{5};\n    int copia = *actual;\n    [] actual;\n    actual = [];\n    std::cout << copia << ':' << (actual == nullptr);\n    return 0;\n}\n",
+          "answers": [
+            "new",
+            "delete",
+            "nullptr"
+          ],
+          "answerAlternatives": [
+            [
+              "new"
+            ],
+            [
+              "delete"
+            ],
+            [
+              "nullptr",
+              "0",
+              "NULL",
+              "{}"
+            ]
+          ],
+          "explanation": "new int{5} crea el int inicializado; delete actual lo libera; asignar nullptr vacía el puntero. copia es otro int y conserva 5. También se admiten las otras escrituras válidas del valor nulo en este programa; preferimos nullptr porque expresa directamente ese propósito."
+        }
+      },
+      {
+        "id": "block_0013_0003",
+        "block": {
+          "type": "cpp_compiler",
+          "language": "cpp",
+          "initialCode": "#include <iostream>\n\nvoid preparar(int* destino, int valor) {\n    int local = valor;\n    destino = &local;\n    std::cout << *destino << ':';\n}\n\nint main() {\n    int* actual = nullptr;\n    preparar(actual, 7);\n    std::cout << (actual == nullptr);\n    delete actual;\n    actual = nullptr;\n    return 0;\n}\n",
+          "initialStandardInput": "",
+          "outputCheck": {
+            "inputComparison": "tokens",
+            "cases": [
+              {
+                "standardInput": "",
+                "outputs": [
+                  "7:0"
+                ],
+                "explanation": "La función debe crear un int que siga vivo y reasignar el puntero del llamador. Conserva la liberación de main; no devuelvas la dirección de un objeto automático."
+              }
+            ]
+          }
+        }
+      },
+      {
+        "id": "block_0014_0001",
+        "block": {
+          "type": "code",
+          "language": "cpp",
+          "code": "#include <iostream>\n\nvoid preparar(int*& destino, int valor) {\n    destino = new int{valor};\n    std::cout << *destino << ':';\n}\n\nint main() {\n    int* actual = nullptr;\n    preparar(actual, 7);\n    std::cout << (actual == nullptr);\n    delete actual;\n    actual = nullptr;\n    return 0;\n}\n"
+        }
+      },
+      {
+        "id": "block_0016_0002",
+        "block": {
+          "type": "cpp_compiler",
+          "language": "cpp",
+          "initialCode": "#include <iostream>\n\nbool crear(int*& actual, int valor) {\n    if (actual != nullptr || valor < 0 || valor > 9) {\n        return false;\n    }\n    // Crea el entero y deja su acceso en actual.\n    return false;\n}\n\nbool retirar(int*& actual) {\n    if (actual == nullptr) {\n        return false;\n    }\n    // Libera el entero, deja actual nulo y comunica lo realizado.\n    return false;\n}\n\nint main() {\n    int ordenes = 0;\n    if (!(std::cin >> ordenes) || ordenes < 1 || ordenes > 12) {\n        return 1;\n    }\n    int* actual = nullptr;\n    bool hayCopia = false;\n    int copia = 0;\n    int creados = 0;\n    int liberados = 0;\n    for (int i = 0; i < ordenes; ++i) {\n        int operacion = 0;\n        int valor = 0;\n        if (!(std::cin >> operacion >> valor)) {\n            retirar(actual);\n            return 1;\n        }\n        const char* estado = \"Orden\";\n        if (operacion == 1) {\n            if (crear(actual, valor)) {\n                ++creados;\n                estado = \"Creado\";\n            } else {\n                estado = \"Rechazo\";\n            }\n        } else if (operacion == 2) {\n            if (actual != nullptr && valor >= 0 && valor <= 9) {\n                *actual = valor;\n                estado = \"Cambio\";\n            } else {\n                estado = \"Rechazo\";\n            }\n        } else if (operacion == 3) {\n            if (retirar(actual)) {\n                ++liberados;\n                estado = \"Liberado\";\n            } else {\n                estado = \"Vacio\";\n            }\n        } else if (operacion == 4) {\n            if (actual != nullptr) {\n                copia = *actual;\n                hayCopia = true;\n                estado = \"Copia\";\n            } else {\n                estado = \"Rechazo\";\n            }\n        }\n        std::cout << \"Estado:\" << estado << \";Actual:\";\n        if (actual == nullptr) {\n            std::cout << 'X';\n        } else {\n            std::cout << *actual;\n        }\n        std::cout << \";Copia:\";\n        if (hayCopia) {\n            std::cout << copia;\n        } else {\n            std::cout << 'X';\n        }\n        std::cout << \";Creados:\" << creados << \";Liberados:\" << liberados << '\\n';\n    }\n    const bool cierre = retirar(actual);\n    if (cierre) {\n        ++liberados;\n    }\n    std::cout << \"Cierre:\" << cierre << \";Creados:\" << creados\n              << \";Liberados:\" << liberados << '\\n';\n    return 0;\n}\n",
+          "initialStandardInput": "12\n3 0\n1 0\n4 0\n1 7\n2 9\n3 0\n4 0\n3 0\n1 5\n4 0\n2 1\n0 0\n",
+          "outputCheck": {
+            "inputComparison": "tokens",
+            "cases": [
+              {
+                "standardInput": "12\n3 0\n1 0\n4 0\n1 7\n2 9\n3 0\n4 0\n3 0\n1 5\n4 0\n2 1\n0 0\n",
+                "outputs": [
+                  "Estado:Vacio;Actual:X;Copia:X;Creados:0;Liberados:0\nEstado:Creado;Actual:0;Copia:X;Creados:1;Liberados:0\nEstado:Copia;Actual:0;Copia:0;Creados:1;Liberados:0\nEstado:Rechazo;Actual:0;Copia:0;Creados:1;Liberados:0\nEstado:Cambio;Actual:9;Copia:0;Creados:1;Liberados:0\nEstado:Liberado;Actual:X;Copia:0;Creados:1;Liberados:1\nEstado:Rechazo;Actual:X;Copia:0;Creados:1;Liberados:1\nEstado:Vacio;Actual:X;Copia:0;Creados:1;Liberados:1\nEstado:Creado;Actual:5;Copia:0;Creados:2;Liberados:1\nEstado:Copia;Actual:5;Copia:5;Creados:2;Liberados:1\nEstado:Cambio;Actual:1;Copia:5;Creados:2;Liberados:1\nEstado:Orden;Actual:1;Copia:5;Creados:2;Liberados:1\nCierre:1;Creados:2;Liberados:2\n"
+                ],
+                "explanation": "Distingue cero de nullptr y copia del valor de copia del puntero. Conserva el objeto en los rechazos y libera sólo el objeto vivo antes de vaciar actual."
+              },
+              {
+                "standardInput": "8\n1 -1\n1 10\n2 4\n4 0\n1 9\n1 -2147483648\n2 2147483647\n3 2147483647\n",
+                "outputs": [
+                  "Estado:Rechazo;Actual:X;Copia:X;Creados:0;Liberados:0\nEstado:Rechazo;Actual:X;Copia:X;Creados:0;Liberados:0\nEstado:Rechazo;Actual:X;Copia:X;Creados:0;Liberados:0\nEstado:Rechazo;Actual:X;Copia:X;Creados:0;Liberados:0\nEstado:Creado;Actual:9;Copia:X;Creados:1;Liberados:0\nEstado:Rechazo;Actual:9;Copia:X;Creados:1;Liberados:0\nEstado:Rechazo;Actual:9;Copia:X;Creados:1;Liberados:0\nEstado:Liberado;Actual:X;Copia:X;Creados:1;Liberados:1\nCierre:0;Creados:1;Liberados:1\n"
+                ],
+                "explanation": "Distingue cero de nullptr y copia del valor de copia del puntero. Conserva el objeto en los rechazos y libera sólo el objeto vivo antes de vaciar actual."
+              },
+              {
+                "standardInput": "8\n1 4\n4 -1\n3 0\n1 4\n2 6\n4 0\n3 0\n3 0\n",
+                "outputs": [
+                  "Estado:Creado;Actual:4;Copia:X;Creados:1;Liberados:0\nEstado:Copia;Actual:4;Copia:4;Creados:1;Liberados:0\nEstado:Liberado;Actual:X;Copia:4;Creados:1;Liberados:1\nEstado:Creado;Actual:4;Copia:4;Creados:2;Liberados:1\nEstado:Cambio;Actual:6;Copia:4;Creados:2;Liberados:1\nEstado:Copia;Actual:6;Copia:6;Creados:2;Liberados:1\nEstado:Liberado;Actual:X;Copia:6;Creados:2;Liberados:2\nEstado:Vacio;Actual:X;Copia:6;Creados:2;Liberados:2\nCierre:0;Creados:2;Liberados:2\n"
+                ],
+                "explanation": "Distingue cero de nullptr y copia del valor de copia del puntero. Conserva el objeto en los rechazos y libera sólo el objeto vivo antes de vaciar actual."
+              }
+            ]
+          }
+        }
+      },
+      {
+        "id": "block_0018_0001",
+        "block": {
+          "type": "code",
+          "language": "cpp",
+          "code": "#include <iostream>\n\nbool crear(int*& actual, int valor) {\n    if (actual != nullptr || valor < 0 || valor > 9) {\n        return false;\n    }\n    actual = new int{valor};\n    return true;\n}\n\nbool retirar(int*& actual) {\n    if (actual == nullptr) {\n        return false;\n    }\n    delete actual;\n    actual = nullptr;\n    return true;\n}\n\nint main() {\n    int ordenes = 0;\n    if (!(std::cin >> ordenes) || ordenes < 1 || ordenes > 12) {\n        return 1;\n    }\n    int* actual = nullptr;\n    bool hayCopia = false;\n    int copia = 0;\n    int creados = 0;\n    int liberados = 0;\n    for (int i = 0; i < ordenes; ++i) {\n        int operacion = 0;\n        int valor = 0;\n        if (!(std::cin >> operacion >> valor)) {\n            retirar(actual);\n            return 1;\n        }\n        const char* estado = \"Orden\";\n        if (operacion == 1) {\n            if (crear(actual, valor)) {\n                ++creados;\n                estado = \"Creado\";\n            } else {\n                estado = \"Rechazo\";\n            }\n        } else if (operacion == 2) {\n            if (actual != nullptr && valor >= 0 && valor <= 9) {\n                *actual = valor;\n                estado = \"Cambio\";\n            } else {\n                estado = \"Rechazo\";\n            }\n        } else if (operacion == 3) {\n            if (retirar(actual)) {\n                ++liberados;\n                estado = \"Liberado\";\n            } else {\n                estado = \"Vacio\";\n            }\n        } else if (operacion == 4) {\n            if (actual != nullptr) {\n                copia = *actual;\n                hayCopia = true;\n                estado = \"Copia\";\n            } else {\n                estado = \"Rechazo\";\n            }\n        }\n        std::cout << \"Estado:\" << estado << \";Actual:\";\n        if (actual == nullptr) {\n            std::cout << 'X';\n        } else {\n            std::cout << *actual;\n        }\n        std::cout << \";Copia:\";\n        if (hayCopia) {\n            std::cout << copia;\n        } else {\n            std::cout << 'X';\n        }\n        std::cout << \";Creados:\" << creados << \";Liberados:\" << liberados << '\\n';\n    }\n    const bool cierre = retirar(actual);\n    if (cierre) {\n        ++liberados;\n    }\n    std::cout << \"Cierre:\" << cierre << \";Creados:\" << creados\n              << \";Liberados:\" << liberados << '\\n';\n    return 0;\n}\n"
+        }
+      }
+    ]
   }
 }

@@ -321,7 +321,7 @@
         },
         {
           "type": "cpp_compiler",
-          "initialCode": "#include <iostream>\n#include <random>\n#include <vector>\n#include <stdexcept>\n\nint main() {\n    // Construye las funciones y las pruebas de la consigna.\n    return 0;\n}\n",
+          "initialCode": "#include <iostream>\n#include <random>\n#include <vector>\n#include <stdexcept>\n\nint main() {\n    // Construye las funciones y las pruebas de la consigna.\n    \n    return 0;\n}\n",
           "outputCheck": {
             "cases": [
               {
@@ -366,7 +366,7 @@
         },
         {
           "type": "cpp_compiler",
-          "initialCode": "#include <iostream>\n#include <random>\n#include <vector>\n#include <stdexcept>\n\nint contar_desde(const std::vector<int>& datos,int minimo) {\n    int cantidad=0;\n    for(int dato:datos) { if(dato>minimo) { ++cantidad; } }\n    return cantidad;\n}\n\nint main() {\n    // Construye las comparaciones sin reparar el defecto de esta actividad.\n    return 0;\n}\n",
+          "initialCode": "#include <iostream>\n#include <random>\n#include <vector>\n#include <stdexcept>\n\nint contar_desde(const std::vector<int>& datos,int minimo) {\n    int cantidad=0;\n    for(int dato:datos) { if(dato>minimo) { ++cantidad; } }\n    return cantidad;\n}\n\nint main() {\n    // Construye las comparaciones sin reparar el defecto de esta actividad.\n    \n    return 0;\n}\n",
           "outputCheck": {
             "cases": [
               {
@@ -391,7 +391,7 @@
         {
           "type": "code",
           "language": "cpp",
-          "code": "#include <iostream>\n#include <random>\n#include <vector>\n#include <stdexcept>\n\nint contar_desde(const std::vector<int>& datos, int minimo) {\n    int cantidad{0};\n\n    for (int dato : datos) {\n        if (dato >= minimo) {\n            ++cantidad;\n        }\n    }\n\n    return cantidad;\n}\n\nint esperado_por_descartes(const std::vector<int>& datos, int minimo) {\n    int rechazados{0};\n\n    for (int dato : datos) {\n        if (dato < minimo) {\n            ++rechazados;\n        }\n    }\n\n    return static_cast<int>(datos.size()) - rechazados;\n}\n\nbool verificar(const std::vector<int>& datos, int minimo, int esperado) {\n    const int real = contar_desde(datos, minimo);\n    return real == esperado;\n}\n\nint main() {\n    int fallos_elegidos{0};\n\n    if (!verificar({}, 4, 0)) {\n        ++fallos_elegidos;\n    }\n    if (!verificar({1, 2}, 3, 0)) {\n        ++fallos_elegidos;\n    }\n    if (!verificar({4, 4}, 4, 2)) {\n        ++fallos_elegidos;\n    }\n    if (!verificar({3, 4, 4, 5}, 4, 3)) {\n        ++fallos_elegidos;\n    }\n\n    std::cout << \"Fallos elegidos:\" << fallos_elegidos << '\\n';\n\n    std::mt19937 motor{229};\n    std::uniform_int_distribution<int> tamanos{0, 12};\n    std::uniform_int_distribution<int> minimos{0, 9};\n    std::uniform_int_distribution<int> valores{0, 9};\n    int fallos_generados{0};\n\n    for (int intento{0}; intento < 40; ++intento) {\n        const int cantidad = tamanos(motor);\n        const int minimo = minimos(motor);\n        std::vector<int> datos;\n\n        for (int i{0}; i < cantidad; ++i) {\n            datos.push_back(valores(motor));\n        }\n\n        const int real = contar_desde(datos, minimo);\n        const int esperado = esperado_por_descartes(datos, minimo);\n        if (real != esperado) {\n            ++fallos_generados;\n            std::cout << \"Caso:\" << intento << \";Minimo:\" << minimo << \";Datos:\";\n            for (int dato : datos) {\n                std::cout << '[' << dato << ']';\n            }\n            std::cout << '\\n';\n        }\n    }\n\n    std::cout << \"Fallos generados:\" << fallos_generados;\n\n    return 0;\n}\n"
+          "code": "#include <iostream>\n#include <random>\n#include <vector>\n#include <stdexcept>\n\nint contar_desde(const std::vector<int>& datos, int minimo) {\n    int cantidad{0};\n\n    for (int dato : datos) {\n        if (dato >= minimo) {\n            ++cantidad;\n        }\n    }\n\n    return cantidad;\n}\n\nint esperado_por_descartes(const std::vector<int>& datos, int minimo) {\n    int rechazados{0};\n\n    for (int dato : datos) {\n        if (dato < minimo) {\n            ++rechazados;\n        }\n    }\n\n    return static_cast<int>(datos.size()) - rechazados;\n}\n\nbool verificar(const std::vector<int>& datos, int minimo, int esperado) {\n    const int real = contar_desde(datos, minimo);\n    return real == esperado;\n}\n\nint main() {\n    int fallos_elegidos{0};\n\n    if (!verificar({}, 4, 0)) {\n        ++fallos_elegidos;\n    }\n    if (!verificar({1, 2}, 3, 0)) {\n        ++fallos_elegidos;\n    }\n    if (!verificar({4, 4}, 4, 2)) {\n        ++fallos_elegidos;\n    }\n    if (!verificar({3, 4, 4, 5}, 4, 3)) {\n        ++fallos_elegidos;\n    }\n\n    std::cout << \"Fallos elegidos:\" << fallos_elegidos << '\\n';\n\n    std::mt19937 motor{229};\n    std::uniform_int_distribution<int> tamanos{0, 12};\n    std::uniform_int_distribution<int> minimos{0, 9};\n    std::uniform_int_distribution<int> valores{0, 9};\n    int fallos_generados{0};\n\n    for (int intento{0}; intento < 40; ++intento) {\n        const int cantidad = tamanos(motor);\n        const int minimo = minimos(motor);\n        std::vector<int> datos;\n\n        for (int i{0}; i < cantidad; ++i) {\n            datos.push_back(valores(motor));\n        }\n\n        const int real = contar_desde(datos, minimo);\n        const int esperado = esperado_por_descartes(datos, minimo);\n\n        if (real != esperado) {\n            ++fallos_generados;\n            std::cout << \"Caso:\" << intento << \";Minimo:\" << minimo << \";Datos:\";\n            for (int dato : datos) {\n                std::cout << '[' << dato << ']';\n            }\n            std::cout << '\\n';\n        }\n    }\n\n    std::cout << \"Fallos generados:\" << fallos_generados;\n\n    return 0;\n}\n"
         },
         {
           "type": "paragraph",
@@ -457,7 +457,7 @@
         },
         {
           "type": "cpp_compiler",
-          "initialCode": "#include <iostream>\n#include <random>\n#include <vector>\n#include <stdexcept>\n\nint main() {\n    // Construye las funciones y las pruebas de la consigna.\n    return 0;\n}\n",
+          "initialCode": "#include <iostream>\n#include <random>\n#include <vector>\n#include <stdexcept>\n\nint main() {\n    // Construye las funciones y las pruebas de la consigna.\n    \n    return 0;\n}\n",
           "outputCheck": {
             "cases": [
               {
@@ -477,7 +477,7 @@
         {
           "type": "code",
           "language": "cpp",
-          "code": "#include <iostream>\n#include <random>\n#include <vector>\n#include <stdexcept>\n\nint contar_desde(const std::vector<int>& datos, int minimo) {\n    int cantidad{0};\n\n    for (int dato : datos) {\n        if (dato > minimo) {\n            ++cantidad;\n        }\n    }\n\n    return cantidad;\n}\n\nint esperado_por_descartes(const std::vector<int>& datos, int minimo) {\n    int rechazados{0};\n\n    for (int dato : datos) {\n        if (dato < minimo) {\n            ++rechazados;\n        }\n    }\n\n    return static_cast<int>(datos.size()) - rechazados;\n}\n\nbool verificar(const std::vector<int>& datos, int minimo, int esperado) {\n    const int real = contar_desde(datos, minimo);\n    return real == esperado;\n}\n\nint main() {\n    int fallos_elegidos{0};\n\n    if (!verificar({}, 4, 0)) {\n        ++fallos_elegidos;\n    }\n    if (!verificar({1, 2}, 3, 0)) {\n        ++fallos_elegidos;\n    }\n    if (!verificar({4, 4}, 4, 2)) {\n        ++fallos_elegidos;\n    }\n    if (!verificar({3, 4, 4, 5}, 4, 3)) {\n        ++fallos_elegidos;\n    }\n\n    std::cout << \"Fallos elegidos:\" << fallos_elegidos << '\\n';\n\n    std::mt19937 motor{229};\n    std::uniform_int_distribution<int> tamanos{0, 12};\n    std::uniform_int_distribution<int> minimos{0, 9};\n    std::uniform_int_distribution<int> valores{0, 9};\n    int fallos_generados{0};\n\n    for (int intento{0}; intento < 40; ++intento) {\n        const int cantidad = tamanos(motor);\n        const int minimo = minimos(motor);\n        std::vector<int> datos;\n\n        for (int i{0}; i < cantidad; ++i) {\n            datos.push_back(valores(motor));\n        }\n\n        const int real = contar_desde(datos, minimo);\n        const int esperado = esperado_por_descartes(datos, minimo);\n        if (real != esperado) {\n            ++fallos_generados;\n            std::cerr << \"Caso:\" << intento << \";Minimo:\" << minimo << \";Datos:\";\n            for (int dato : datos) {\n                std::cerr << '[' << dato << ']';\n            }\n            std::cerr << '\\n';\n        }\n    }\n    std::cerr << \"Fallos generados:\" << fallos_generados;\n    return 0;\n}\n"
+          "code": "#include <iostream>\n#include <random>\n#include <vector>\n#include <stdexcept>\n\nint contar_desde(const std::vector<int>& datos, int minimo) {\n    int cantidad{0};\n\n    for (int dato : datos) {\n        if (dato > minimo) {\n            ++cantidad;\n        }\n    }\n\n    return cantidad;\n}\n\nint esperado_por_descartes(const std::vector<int>& datos, int minimo) {\n    int rechazados{0};\n\n    for (int dato : datos) {\n        if (dato < minimo) {\n            ++rechazados;\n        }\n    }\n\n    return static_cast<int>(datos.size()) - rechazados;\n}\n\nbool verificar(const std::vector<int>& datos, int minimo, int esperado) {\n    const int real = contar_desde(datos, minimo);\n    return real == esperado;\n}\n\nint main() {\n    int fallos_elegidos{0};\n\n    if (!verificar({}, 4, 0)) {\n        ++fallos_elegidos;\n    }\n    if (!verificar({1, 2}, 3, 0)) {\n        ++fallos_elegidos;\n    }\n    if (!verificar({4, 4}, 4, 2)) {\n        ++fallos_elegidos;\n    }\n    if (!verificar({3, 4, 4, 5}, 4, 3)) {\n        ++fallos_elegidos;\n    }\n\n    std::cout << \"Fallos elegidos:\" << fallos_elegidos << '\\n';\n\n    std::mt19937 motor{229};\n    std::uniform_int_distribution<int> tamanos{0, 12};\n    std::uniform_int_distribution<int> minimos{0, 9};\n    std::uniform_int_distribution<int> valores{0, 9};\n    int fallos_generados{0};\n\n    for (int intento{0}; intento < 40; ++intento) {\n        const int cantidad = tamanos(motor);\n        const int minimo = minimos(motor);\n        std::vector<int> datos;\n\n        for (int i{0}; i < cantidad; ++i) {\n            datos.push_back(valores(motor));\n        }\n\n        const int real = contar_desde(datos, minimo);\n        const int esperado = esperado_por_descartes(datos, minimo);\n\n        if (real != esperado) {\n            ++fallos_generados;\n            std::cerr << \"Caso:\" << intento << \";Minimo:\" << minimo << \";Datos:\";\n            for (int dato : datos) {\n                std::cerr << '[' << dato << ']';\n            }\n            std::cerr << '\\n';\n        }\n    }\n    std::cerr << \"Fallos generados:\" << fallos_generados;\n\n    return 0;\n}\n"
         },
         {
           "type": "heading",
@@ -605,7 +605,7 @@
         {
           "type": "code",
           "language": "cpp",
-          "code": "#include <iostream>\n#include <random>\n#include <vector>\n\nstd::vector<int> seleccionar_desde(const std::vector<int>& datos, int minimo) {\n    std::vector<int> resultado;\n\n    for (int dato : datos) {\n        if (dato >= minimo) {\n            resultado.push_back(dato);\n        }\n    }\n\n    return resultado;\n}\n\nint esperado_por_descartes(const std::vector<int>& datos, int minimo) {\n    int descartados = 0;\n\n    for (int dato : datos) {\n        if (dato < minimo) {\n            ++descartados;\n        }\n    }\n\n    return static_cast<int>(datos.size()) - descartados;\n}\n\nbool propiedades(const std::vector<int>& datos,\n                 const std::vector<int>& elegidos, int minimo) {\n    if (static_cast<int>(elegidos.size()) != esperado_por_descartes(datos, minimo)) {\n        return false;\n    }\n    std::size_t posicion = 0;\n\n    for (int elegido : elegidos) {\n        if (elegido < minimo) {\n            return false;\n        }\n        while (posicion < datos.size() && datos.at(posicion) != elegido) {\n            ++posicion;\n        }\n        if (posicion == datos.size()) {\n            return false;\n        }\n        ++posicion;\n    }\n\n    return true;\n}\n\nint main() {\n    int fijos = 0;\n\n    if (seleccionar_desde({},4) != std::vector<int>{}) {\n        ++fijos;\n    }\n    if (seleccionar_desde({1,2},3) != std::vector<int>{}) {\n        ++fijos;\n    }\n    if (seleccionar_desde({4,4},4) != std::vector<int>{4,4}) {\n        ++fijos;\n    }\n    if (seleccionar_desde({3,4,4,5},4) != std::vector<int>{4,4,5}) {\n        ++fijos;\n    }\n    if (seleccionar_desde({0,4,9},0) != std::vector<int>{0,4,9}) {\n        ++fijos;\n    }\n    if (seleccionar_desde({0,4,9},9) != std::vector<int>{9}) {\n        ++fijos;\n    }\n\n    const std::vector<int> iguales{5,5,5,5,5,5,5,5,5,5,5,5};\n    if (seleccionar_desde(iguales,5) != iguales) {\n        ++fijos;\n    }\n\n    std::mt19937 motor{229};\n    std::uniform_int_distribution<int> tamanos{0,12},\n        minimos{0,9}, valores{0,9};\n    int fallos = 0;\n    bool conservado = true;\n\n    for (int intento = 0; intento < 40; ++intento) {\n        const int cantidad = tamanos(motor);\n        const int minimo = minimos(motor);\n        std::vector<int> datos;\n\n        for (int i = 0; i < cantidad; ++i) {\n            datos.push_back(valores(motor));\n        }\n\n        const std::vector<int> original = datos;\n        const std::vector<int> elegidos = seleccionar_desde(datos, minimo);\n        conservado = conservado && datos == original;\n\n        if (!propiedades(datos, elegidos, minimo)) {\n            ++fallos;\n            std::cerr << \"Minimo:\" << minimo << \";Datos:\";\n            for (int dato : datos) {\n                std::cerr << '[' << dato << ']';\n            }\n            std::cerr << '\\n';\n        }\n    }\n\n    std::cout << \"Fallos elegidos:\" << fijos\n              << \"\\nFallos generados:\" << fallos\n              << \"\\nConservacion:\" << conservado << \"\\n\";\n\n    return 0;\n}\n"
+          "code": "#include <iostream>\n#include <random>\n#include <vector>\n\nstd::vector<int> seleccionar_desde(const std::vector<int>& datos, int minimo) {\n    std::vector<int> resultado;\n\n    for (int dato : datos) {\n        if (dato >= minimo) {\n            resultado.push_back(dato);\n        }\n    }\n\n    return resultado;\n}\n\nint esperado_por_descartes(const std::vector<int>& datos, int minimo) {\n    int descartados = 0;\n\n    for (int dato : datos) {\n        if (dato < minimo) {\n            ++descartados;\n        }\n    }\n\n    return static_cast<int>(datos.size()) - descartados;\n}\n\nbool propiedades(const std::vector<int>& datos,\n                 const std::vector<int>& elegidos, int minimo) {\n    if (static_cast<int>(elegidos.size()) != esperado_por_descartes(datos, minimo)) {\n        return false;\n    }\n    std::size_t posicion = 0;\n\n    for (int elegido : elegidos) {\n        if (elegido < minimo) {\n            return false;\n        }\n        while (posicion < datos.size() && datos.at(posicion) != elegido) {\n            ++posicion;\n        }\n        if (posicion == datos.size()) {\n            return false;\n        }\n        ++posicion;\n    }\n\n    return true;\n}\n\nint main() {\n    int fijos = 0;\n\n    if (seleccionar_desde({},4) != std::vector<int>{}) {\n        ++fijos;\n    }\n    if (seleccionar_desde({1,2},3) != std::vector<int>{}) {\n        ++fijos;\n    }\n    if (seleccionar_desde({4,4},4) != std::vector<int>{4,4}) {\n        ++fijos;\n    }\n    if (seleccionar_desde({3,4,4,5},4) != std::vector<int>{4,4,5}) {\n        ++fijos;\n    }\n    if (seleccionar_desde({0,4,9},0) != std::vector<int>{0,4,9}) {\n        ++fijos;\n    }\n    if (seleccionar_desde({0,4,9},9) != std::vector<int>{9}) {\n        ++fijos;\n    }\n\n    const std::vector<int> iguales{5,5,5,5,5,5,5,5,5,5,5,5};\n    if (seleccionar_desde(iguales,5) != iguales) {\n        ++fijos;\n    }\n\n    std::mt19937 motor{229};\n    std::uniform_int_distribution<int> tamanos{0,12},\n        minimos{0,9}, valores{0,9};\n    int fallos = 0;\n    bool conservado = true;\n\n    for (int intento = 0; intento < 40; ++intento) {\n        const int cantidad = tamanos(motor);\n        const int minimo = minimos(motor);\n        std::vector<int> datos;\n\n        for (int i = 0; i < cantidad; ++i) {\n            datos.push_back(valores(motor));\n        }\n\n        const std::vector<int> original = datos;\n        const std::vector<int> elegidos = seleccionar_desde(datos, minimo);\n\n        conservado = conservado && datos == original;\n\n        if (!propiedades(datos, elegidos, minimo)) {\n            ++fallos;\n            std::cerr << \"Minimo:\" << minimo << \";Datos:\";\n            for (int dato : datos) {\n                std::cerr << '[' << dato << ']';\n            }\n            std::cerr << '\\n';\n        }\n    }\n\n    std::cout << \"Fallos elegidos:\" << fijos\n              << \"\\nFallos generados:\" << fallos\n              << \"\\nConservacion:\" << conservado << \"\\n\";\n\n    return 0;\n}\n"
         }
       ]
     }
@@ -1669,6 +1669,36 @@
         "id": "block_0007_0002",
         "beforeSha256": "c40c1e0934488149cd69e4a81c213511fff5cda0686234c19ed86a34aeef6be5",
         "afterSha256": "4ee5b6d8b5814b43b2ecd6c9550d7c18592e3e57824df1e6f456faa4dcd69b94"
+      },
+      {
+        "id": "block_0004_0004",
+        "beforeSha256": "a3e5d95300bb9ac91552981d4e906291c2d17a968a00f15e16e2d76888a01d52",
+        "afterSha256": "500b7df824fcc4ff1f3ac9568831e50baa2efa3137d017bd3d539ad4430c57b9"
+      },
+      {
+        "id": "block_0004_0007",
+        "beforeSha256": "d3bc68737aea4696526f4d2a18604b4500d7193d757703321975650cc9d12356",
+        "afterSha256": "be6fb4081caf799e8c19d814f72a2307191449744e838aec1f91c92b4277a716"
+      },
+      {
+        "id": "block_0005_0001",
+        "beforeSha256": "909d38d537a0c2255eb96418f2f29417192b3db4809f4b8bb850bc2585799cdb",
+        "afterSha256": "3c93f137cdbf304a8e0b0fdde2ba7d11daea4d2e57260f25322c94e3bb3a7284"
+      },
+      {
+        "id": "block_0005_0006",
+        "beforeSha256": "1512403d23541969ffd757e6995650f3fecc6d1ae328ecb26852d20728f6d610",
+        "afterSha256": "d6a78b5db081826b6de8f0f1193fa73720888dfe9b0bce853a02475d8c3b2bc5"
+      },
+      {
+        "id": "block_0005_0008",
+        "beforeSha256": "0a43a22c06f329a0b413e9cca66da690cfda39e7dc5af0df744e1d38e6aedc1a",
+        "afterSha256": "713ae187c46daff286f4adad74db6285ce3f3284645314bbfefd7548c6072e60"
+      },
+      {
+        "id": "block_0007_0002",
+        "beforeSha256": "4ee5b6d8b5814b43b2ecd6c9550d7c18592e3e57824df1e6f456faa4dcd69b94",
+        "afterSha256": "99e1d406099746c1f1d8ca4bd717a480027826375eacc44ebfb24d90cf5b546c"
       }
     ],
     "sourceFormatRevisions": [
@@ -1728,6 +1758,61 @@
           "type": "code",
           "language": "cpp",
           "code": "#include <iostream>\n#include <random>\n#include <vector>\n\nstd::vector<int> seleccionar_desde(const std::vector<int>& datos,int minimo) {\n    std::vector<int> resultado;\n    for(int dato:datos) { if(dato>=minimo) { resultado.push_back(dato); } }\n    return resultado;\n}\n\nint esperado_por_descartes(const std::vector<int>& datos,int minimo) {\n    int descartados=0;\n    for(int dato:datos) { if(dato<minimo) { ++descartados; } }\n    return static_cast<int>(datos.size())-descartados;\n}\n\nbool propiedades(const std::vector<int>& datos,const std::vector<int>& elegidos,int minimo) {\n    if(static_cast<int>(elegidos.size())!=esperado_por_descartes(datos,minimo)) { return false; }\n    std::size_t posicion=0;\n    for(int elegido:elegidos) {\n        if(elegido<minimo) { return false; }\n        while(posicion<datos.size() && datos.at(posicion)!=elegido) { ++posicion; }\n        if(posicion==datos.size()) { return false; }\n        ++posicion;\n    }\n    return true;\n}\n\nint main() {\n    int fijos=0;\n    if(seleccionar_desde({},4)!=std::vector<int>{}) { ++fijos; }\n    if(seleccionar_desde({1,2},3)!=std::vector<int>{}) { ++fijos; }\n    if(seleccionar_desde({4,4},4)!=std::vector<int>{4,4}) { ++fijos; }\n    if(seleccionar_desde({3,4,4,5},4)!=std::vector<int>{4,4,5}) { ++fijos; }\n    if(seleccionar_desde({0,4,9},0)!=std::vector<int>{0,4,9}) { ++fijos; }\n    if(seleccionar_desde({0,4,9},9)!=std::vector<int>{9}) { ++fijos; }\n    const std::vector<int> iguales{5,5,5,5,5,5,5,5,5,5,5,5};\n    if(seleccionar_desde(iguales,5)!=iguales) { ++fijos; }\n    std::mt19937 motor{229};\n    std::uniform_int_distribution<int> tamanos{0,12},minimos{0,9},valores{0,9};\n    int fallos=0;\n    bool conservado=true;\n    for(int intento=0;intento<40;++intento) {\n        const int cantidad=tamanos(motor);\n        const int minimo=minimos(motor);\n        std::vector<int> datos;\n        for(int i=0;i<cantidad;++i) { datos.push_back(valores(motor)); }\n        const std::vector<int> original=datos;\n        const std::vector<int> elegidos=seleccionar_desde(datos,minimo);\n        conservado=conservado && datos==original;\n        if(!propiedades(datos,elegidos,minimo)) {\n            ++fallos;\n            std::cerr<<\"Minimo:\"<<minimo<<\";Datos:\";\n            for(int dato:datos) { std::cerr<<'['<<dato<<']'; }\n            std::cerr<<'\\n';\n        }\n    }\n    std::cout<<\"Fallos elegidos:\"<<fijos<<\"\\nFallos generados:\"<<fallos\n             <<\"\\nConservacion:\"<<conservado<<\"\\n\";\n    return 0;\n}\n"
+        }
+      },
+      {
+        "id": "block_0004_0004",
+        "block": {
+          "type": "cpp_compiler",
+          "initialCode": "#include <iostream>\n#include <random>\n#include <vector>\n#include <stdexcept>\n\nint main() {\n    // Construye las funciones y las pruebas de la consigna.\n    return 0;\n}\n",
+          "outputCheck": {
+            "cases": [
+              {
+                "standardInput": "",
+                "outputs": [
+                  "Fallos elegidos:0\nFallos generados:0"
+                ],
+                "explanation": "Los cuatro casos elegidos esperan, en orden, cero, cero, dos y tres elementos. La implementación que incluye la igualdad coincide con esas expectativas y muestra Fallos elegidos:0. En cada ensayo generado, contar los valores que cumplen el mínimo da lo mismo que restar del tamaño los que quedan por debajo: se muestra Fallos generados:0. Estas comparaciones respaldan los casos realmente ejecutados, sin demostrar que se recorrió todo el dominio."
+              }
+            ]
+          }
+        }
+      },
+      {
+        "id": "block_0004_0007",
+        "block": {
+          "type": "cpp_compiler",
+          "initialCode": "#include <iostream>\n#include <random>\n#include <vector>\n#include <stdexcept>\n\nint contar_desde(const std::vector<int>& datos,int minimo) {\n    int cantidad=0;\n    for(int dato:datos) { if(dato>minimo) { ++cantidad; } }\n    return cantidad;\n}\n\nint main() {\n    // Construye las comparaciones sin reparar el defecto de esta actividad.\n    return 0;\n}\n",
+          "outputCheck": {
+            "cases": [
+              {
+                "standardInput": "",
+                "outputs": [
+                  "Fallos elegidos:2\n"
+                ],
+                "explanation": "La condición > devuelve cero para {4,4} con mínimo cuatro, aunque se esperan dos. Para {3,4,4,5} con mínimo cuatro sólo cuenta el cinco: devuelve uno en lugar de tres. Son dos casos con desacuerdo, de modo que stdout muestra Fallos elegidos:2; no se cuenta un fallo por cada aparición perdida. El vacío y {1,2} siguen dando sus ceros esperados. El informe de ensayos generados se observa en stderr: su cantidad depende de las muestras y no se fija una respuesta común a todas las bibliotecas.",
+                "standardError": "nonBlank"
+              }
+            ]
+          }
+        }
+      },
+      {
+        "id": "block_0005_0006",
+        "block": {
+          "type": "cpp_compiler",
+          "initialCode": "#include <iostream>\n#include <random>\n#include <vector>\n#include <stdexcept>\n\nint main() {\n    // Construye las funciones y las pruebas de la consigna.\n    return 0;\n}\n",
+          "outputCheck": {
+            "cases": [
+              {
+                "standardInput": "",
+                "outputs": [
+                  "Fronteras:0"
+                ],
+                "explanation": "Con mínimo cero, los tres valores de {0,4,9} se cuentan; con mínimo nueve, sólo se cuenta el nueve. Doce valores cinco aportan doce al usar mínimo cinco y cero al usar mínimo seis. Son los cuatro resultados esperados, por lo que las comparaciones del programa dejan Fronteras:0. Cada aparición que cumple el criterio cuenta una vez, aunque su valor esté repetido."
+              }
+            ]
+          }
         }
       }
     ]

@@ -96,7 +96,7 @@
           "projectFiles": [
             {
               "path": "CMakeLists.txt",
-              "initialCode": "cmake_minimum_required(VERSION 3.20)\nproject(AvisosYContrato LANGUAGES CXX)\nadd_library(cantidades STATIC cantidad.cpp)\ntarget_compile_features(cantidades PUBLIC cxx_std_20)\nset_target_properties(cantidades PROPERTIES CXX_EXTENSIONS OFF)\ntarget_compile_options(cantidades PRIVATE -Wall -Wextra -Wpedantic)\nadd_executable(comprobar_cantidad comprobar.cpp)\ntarget_link_libraries(comprobar_cantidad PRIVATE cantidades)\nset_target_properties(comprobar_cantidad PROPERTIES CXX_EXTENSIONS OFF)\n"
+              "initialCode": "cmake_minimum_required(VERSION 3.20)\nproject(AvisosYContrato LANGUAGES CXX)\n\nadd_library(cantidades STATIC cantidad.cpp)\n\ntarget_compile_features(cantidades PUBLIC cxx_std_20)\nset_target_properties(cantidades PROPERTIES CXX_EXTENSIONS OFF)\ntarget_compile_options(cantidades PRIVATE -Wall -Wextra -Wpedantic)\nadd_executable(comprobar_cantidad comprobar.cpp)\n\ntarget_link_libraries(comprobar_cantidad PRIVATE cantidades)\nset_target_properties(comprobar_cantidad PROPERTIES CXX_EXTENSIONS OFF)\n"
             },
             {
               "path": "cantidad.hpp",
@@ -108,7 +108,7 @@
             },
             {
               "path": "comprobar.cpp",
-              "initialCode": "#include \"cantidad.hpp\"\n#include <iostream>\n\nint main() {\n    const int datos[] = {-1, 0, 20, 21};\n    const bool esperados[] = {false, true, true, false};\n    bool todo_bien = true;\n    for (int i = 0; i < 4; ++i) {\n        const bool obtenido = cantidad_admitida(datos[i]);\n        const bool coincide = obtenido == esperados[i];\n        std::cout << \"dato=\" << datos[i]\n                  << \" esperado=\" << esperados[i]\n                  << \" obtenido=\" << obtenido\n                  << (coincide ? \" OK\\n\" : \" ERROR\\n\");\n        todo_bien = todo_bien && coincide;\n    }\n    std::cout << (todo_bien ? \"Bateria: OK\\n\" : \"Bateria: ERROR\\n\");\n    return todo_bien ? 0 : 1;\n}\n"
+              "initialCode": "#include \"cantidad.hpp\"\n#include <iostream>\n\nint main() {\n    const int datos[] = {-1, 0, 20, 21};\n    const bool esperados[] = {false, true, true, false};\n    bool todo_bien = true;\n\n    for (int i = 0; i < 4; ++i) {\n        const bool obtenido = cantidad_admitida(datos[i]);\n        const bool coincide = obtenido == esperados[i];\n\n        std::cout << \"dato=\" << datos[i]\n                  << \" esperado=\" << esperados[i]\n                  << \" obtenido=\" << obtenido\n                  << (coincide ? \" OK\\n\" : \" ERROR\\n\");\n        todo_bien = todo_bien && coincide;\n    }\n    std::cout << (todo_bien ? \"Bateria: OK\\n\" : \"Bateria: ERROR\\n\");\n    return todo_bien ? 0 : 1;\n}\n"
             }
           ],
           "cmake": {
@@ -116,7 +116,7 @@
             "buildType": "Debug"
           },
           "language": "cpp",
-          "initialCode": "#include \"cantidad.hpp\"\n#include <iostream>\n\nint main() {\n    const int datos[] = {-1, 0, 20, 21};\n    const bool esperados[] = {false, true, true, false};\n    bool todo_bien = true;\n    for (int i = 0; i < 4; ++i) {\n        const bool obtenido = cantidad_admitida(datos[i]);\n        const bool coincide = obtenido == esperados[i];\n        std::cout << \"dato=\" << datos[i]\n                  << \" esperado=\" << esperados[i]\n                  << \" obtenido=\" << obtenido\n                  << (coincide ? \" OK\\n\" : \" ERROR\\n\");\n        todo_bien = todo_bien && coincide;\n    }\n    std::cout << (todo_bien ? \"Bateria: OK\\n\" : \"Bateria: ERROR\\n\");\n    return todo_bien ? 0 : 1;\n}\n",
+          "initialCode": "#include \"cantidad.hpp\"\n#include <iostream>\n\nint main() {\n    const int datos[] = {-1, 0, 20, 21};\n    const bool esperados[] = {false, true, true, false};\n    bool todo_bien = true;\n\n    for (int i = 0; i < 4; ++i) {\n        const bool obtenido = cantidad_admitida(datos[i]);\n        const bool coincide = obtenido == esperados[i];\n\n        std::cout << \"dato=\" << datos[i]\n                  << \" esperado=\" << esperados[i]\n                  << \" obtenido=\" << obtenido\n                  << (coincide ? \" OK\\n\" : \" ERROR\\n\");\n        todo_bien = todo_bien && coincide;\n    }\n    std::cout << (todo_bien ? \"Bateria: OK\\n\" : \"Bateria: ERROR\\n\");\n    return todo_bien ? 0 : 1;\n}\n",
           "outputCheck": {
             "inputComparison": "exact",
             "cases": [
@@ -1057,6 +1057,55 @@
         "id": "block_0000_0002",
         "beforeSha256": "e3f970635574b1903d4386f5db294d280c3d3d84e9d7b0136a84f7628dc35c1d",
         "afterSha256": "70f4b321f6b88349c3580bc35a619f637f1c94d3ebc669f6c72e788ccaee9026"
+      },
+      {
+        "id": "block_0002_0004",
+        "beforeSha256": "1267e6b1cf8f3eb6d55d714b48ce7e5dc84ed57ecd3bc68631a318c34e16df52",
+        "afterSha256": "291f71eb944063ac01607b1db3e1b77ced7fbe68203a4ceae80ee0c02e42195d"
+      }
+    ],
+    "sourceFormatRevisions": [
+      {
+        "id": "block_0002_0004",
+        "block": {
+          "type": "cpp_compiler",
+          "projectFiles": [
+            {
+              "path": "CMakeLists.txt",
+              "initialCode": "cmake_minimum_required(VERSION 3.20)\nproject(AvisosYContrato LANGUAGES CXX)\nadd_library(cantidades STATIC cantidad.cpp)\ntarget_compile_features(cantidades PUBLIC cxx_std_20)\nset_target_properties(cantidades PROPERTIES CXX_EXTENSIONS OFF)\ntarget_compile_options(cantidades PRIVATE -Wall -Wextra -Wpedantic)\nadd_executable(comprobar_cantidad comprobar.cpp)\ntarget_link_libraries(comprobar_cantidad PRIVATE cantidades)\nset_target_properties(comprobar_cantidad PROPERTIES CXX_EXTENSIONS OFF)\n"
+            },
+            {
+              "path": "cantidad.hpp",
+              "initialCode": "#ifndef CANTIDAD_HPP\n#define CANTIDAD_HPP\n\nbool cantidad_admitida(int dato);\n\n#endif\n"
+            },
+            {
+              "path": "cantidad.cpp",
+              "initialCode": "#include \"cantidad.hpp\"\n\nbool cantidad_admitida(int dato) {\n    return (0 <= dato) <= 20;\n}\n"
+            },
+            {
+              "path": "comprobar.cpp",
+              "initialCode": "#include \"cantidad.hpp\"\n#include <iostream>\n\nint main() {\n    const int datos[] = {-1, 0, 20, 21};\n    const bool esperados[] = {false, true, true, false};\n    bool todo_bien = true;\n    for (int i = 0; i < 4; ++i) {\n        const bool obtenido = cantidad_admitida(datos[i]);\n        const bool coincide = obtenido == esperados[i];\n        std::cout << \"dato=\" << datos[i]\n                  << \" esperado=\" << esperados[i]\n                  << \" obtenido=\" << obtenido\n                  << (coincide ? \" OK\\n\" : \" ERROR\\n\");\n        todo_bien = todo_bien && coincide;\n    }\n    std::cout << (todo_bien ? \"Bateria: OK\\n\" : \"Bateria: ERROR\\n\");\n    return todo_bien ? 0 : 1;\n}\n"
+            }
+          ],
+          "cmake": {
+            "target": "comprobar_cantidad",
+            "buildType": "Debug"
+          },
+          "language": "cpp",
+          "initialCode": "#include \"cantidad.hpp\"\n#include <iostream>\n\nint main() {\n    const int datos[] = {-1, 0, 20, 21};\n    const bool esperados[] = {false, true, true, false};\n    bool todo_bien = true;\n    for (int i = 0; i < 4; ++i) {\n        const bool obtenido = cantidad_admitida(datos[i]);\n        const bool coincide = obtenido == esperados[i];\n        std::cout << \"dato=\" << datos[i]\n                  << \" esperado=\" << esperados[i]\n                  << \" obtenido=\" << obtenido\n                  << (coincide ? \" OK\\n\" : \" ERROR\\n\");\n        todo_bien = todo_bien && coincide;\n    }\n    std::cout << (todo_bien ? \"Bateria: OK\\n\" : \"Bateria: ERROR\\n\");\n    return todo_bien ? 0 : 1;\n}\n",
+          "outputCheck": {
+            "inputComparison": "exact",
+            "cases": [
+              {
+                "standardInput": "",
+                "outputs": [
+                  "dato=-1 esperado=0 obtenido=0 OK\ndato=0 esperado=1 obtenido=1 OK\ndato=20 esperado=1 obtenido=1 OK\ndato=21 esperado=0 obtenido=0 OK\nBateria: OK\n"
+                ],
+                "explanation": "El comprobador exige rechazar -1 y 21 y admitir 0 y 20; por eso sus cuatro filas terminan en OK y el resumen es Bateria: OK. Esta comprobación de salida no inspecciona qué opciones recibió el compilador ni exige un aviso durante la construcción inicial. Esas observaciones corresponden a otra fase."
+              }
+            ]
+          }
+        }
       }
     ]
   },

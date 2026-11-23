@@ -60,7 +60,7 @@
         {
           "type": "code",
           "language": "cpp",
-          "code": "#include <iostream>\n#include <fstream>\n\nint main() {\n    std::ofstream salida{\"muestra_lgp.txt\"};\n    if (!salida) {\n        std::cout << \"Error apertura de salida\";\n        return 1;\n    }\n\n    salida << \"2 5\";\n    salida.close();\n    if (!salida) {\n        std::cout << \"Error escritura\";\n        return 1;\n    }\n\n    std::ifstream entrada{\"muestra_lgp.txt\"};\n    if (!entrada) {\n        std::cout << \"Error apertura de entrada\";\n        return 1;\n    }\n\n    int primero{0};\n    int segundo{0};\n    if (!(entrada >> primero >> segundo)) {\n        std::cout << \"Formato invalido\";\n        return 1;\n    }\n\n    std::cout << \"Total=\" << primero + segundo;\n    return 0;\n}\n"
+          "code": "#include <iostream>\n#include <fstream>\n\nint main() {\n    std::ofstream salida{\"muestra_lgp.txt\"};\n    if (!salida) {\n        std::cout << \"Error apertura de salida\";\n        return 1;\n    }\n\n    salida << \"2 5\";\n    salida.close();\n    if (!salida) {\n        std::cout << \"Error escritura\";\n        return 1;\n    }\n\n    std::ifstream entrada{\"muestra_lgp.txt\"};\n    if (!entrada) {\n        std::cout << \"Error apertura de entrada\";\n        return 1;\n    }\n\n    int primero{0};\n    int segundo{0};\n\n    if (!(entrada >> primero >> segundo)) {\n        std::cout << \"Formato invalido\";\n        return 1;\n    }\n\n    std::cout << \"Total=\" << primero + segundo;\n\n    return 0;\n}\n"
         },
         {
           "type": "paragraph",
@@ -112,7 +112,7 @@
           "id": "otra_muestra_misma_suma",
           "question": "Supón que apertura, escritura y lectura se completan. Predice la salida de esta versión con otros dos valores.",
           "language": "cpp",
-          "code": "#include <iostream>\n#include <fstream>\n\nint main() {\n    std::ofstream salida{\"muestra_lgp.txt\"};\n    if (!salida) {\n        std::cout << \"Error apertura de salida\";\n        return 1;\n    }\n\n    salida << \"3 8\";\n    salida.close();\n    if (!salida) {\n        std::cout << \"Error escritura\";\n        return 1;\n    }\n\n    std::ifstream entrada{\"muestra_lgp.txt\"};\n    if (!entrada) {\n        std::cout << \"Error apertura de entrada\";\n        return 1;\n    }\n\n    int primero{0};\n    int segundo{0};\n    if (!(entrada >> primero >> segundo)) {\n        std::cout << \"Formato invalido\";\n        return 1;\n    }\n\n    std::cout << \"Total=\" << primero + segundo;\n    return 0;\n}\n",
+          "code": "#include <iostream>\n#include <fstream>\n\nint main() {\n    std::ofstream salida{\"muestra_lgp.txt\"};\n    if (!salida) {\n        std::cout << \"Error apertura de salida\";\n        return 1;\n    }\n\n    salida << \"3 8\";\n    salida.close();\n    if (!salida) {\n        std::cout << \"Error escritura\";\n        return 1;\n    }\n\n    std::ifstream entrada{\"muestra_lgp.txt\"};\n    if (!entrada) {\n        std::cout << \"Error apertura de entrada\";\n        return 1;\n    }\n\n    int primero{0};\n    int segundo{0};\n\n    if (!(entrada >> primero >> segundo)) {\n        std::cout << \"Formato invalido\";\n        return 1;\n    }\n\n    std::cout << \"Total=\" << primero + segundo;\n\n    return 0;\n}\n",
           "answers": [
             "Total=11"
           ],
@@ -173,7 +173,7 @@
         },
         {
           "type": "cpp_compiler",
-          "initialCode": "#include <iostream>\n#include <fstream>\n\nint main() {\n    // Construye la escritura, el cierre, la lectura y la comprobacion.\n    return 0;\n}\n",
+          "initialCode": "#include <iostream>\n#include <fstream>\n\nint main() {\n    // Construye la escritura, el cierre, la lectura y la comprobacion.\n    \n    return 0;\n}\n",
           "outputCheck": {
             "cases": [
               {
@@ -200,7 +200,7 @@
         {
           "type": "code",
           "language": "cpp",
-          "code": "#include <iostream>\n#include <fstream>\n\nint main() {\n    std::ofstream salida{\"datos_recarga.txt\"};\n    if (!salida) {\n        std::cout << \"Error apertura de salida\";\n        return 1;\n    }\n\n    salida << \"4 7\";\n    salida.close();\n    if (!salida) {\n        std::cout << \"Error escritura\";\n        return 1;\n    }\n\n    std::ifstream entrada{\"datos_recarga.txt\"};\n    if (!entrada) {\n        std::cout << \"Error apertura de entrada\";\n        return 1;\n    }\n\n    int primero{0};\n    int segundo{0};\n    if (!(entrada >> primero >> segundo)) {\n        std::cout << \"Formato invalido\";\n        return 1;\n    }\n\n    std::cout << \"Total=\" << primero + segundo;\n    return 0;\n}\n"
+          "code": "#include <iostream>\n#include <fstream>\n\nint main() {\n    std::ofstream salida{\"datos_recarga.txt\"};\n    if (!salida) {\n        std::cout << \"Error apertura de salida\";\n        return 1;\n    }\n\n    salida << \"4 7\";\n    salida.close();\n    if (!salida) {\n        std::cout << \"Error escritura\";\n        return 1;\n    }\n\n    std::ifstream entrada{\"datos_recarga.txt\"};\n    if (!entrada) {\n        std::cout << \"Error apertura de entrada\";\n        return 1;\n    }\n\n    int primero{0};\n    int segundo{0};\n\n    if (!(entrada >> primero >> segundo)) {\n        std::cout << \"Formato invalido\";\n        return 1;\n    }\n\n    std::cout << \"Total=\" << primero + segundo;\n\n    return 0;\n}\n"
         },
         {
           "type": "paragraph",
@@ -225,7 +225,7 @@
         {
           "type": "code",
           "language": "cpp",
-          "code": "#include <iostream>\n#include <fstream>\n\nint probar(int a, int b) {\n    std::ofstream salida{\"datos_recarga.txt\"};\n    if (!salida) {\n        std::cout << \"Error apertura de salida\";\n        return 1;\n    }\n\n    salida << a << ' ' << b;\n    salida.close();\n    if (!salida) {\n        std::cout << \"Error escritura\";\n        return 1;\n    }\n\n    std::ifstream entrada{\"datos_recarga.txt\"};\n    if (!entrada) {\n        std::cout << \"Error apertura de entrada\";\n        return 1;\n    }\n\n    int primero{0};\n    int segundo{0};\n    if (!(entrada >> primero >> segundo)) {\n        std::cout << \"Formato invalido\";\n        return 1;\n    }\n\n    std::cout << \"Total=\" << primero + segundo << \"\\n\";\n    return 0;\n}\n\nint main() {\n    if (probar(4, 7) != 0)\n        return 1;\n    if (probar(0, 6) != 0)\n        return 1;\n    return 0;\n}\n"
+          "code": "#include <iostream>\n#include <fstream>\n\nint probar(int a, int b) {\n    std::ofstream salida{\"datos_recarga.txt\"};\n    if (!salida) {\n        std::cout << \"Error apertura de salida\";\n        return 1;\n    }\n\n    salida << a << ' ' << b;\n    salida.close();\n    if (!salida) {\n        std::cout << \"Error escritura\";\n        return 1;\n    }\n\n    std::ifstream entrada{\"datos_recarga.txt\"};\n    if (!entrada) {\n        std::cout << \"Error apertura de entrada\";\n        return 1;\n    }\n\n    int primero{0};\n    int segundo{0};\n\n    if (!(entrada >> primero >> segundo)) {\n        std::cout << \"Formato invalido\";\n        return 1;\n    }\n\n    std::cout << \"Total=\" << primero + segundo << \"\\n\";\n\n    return 0;\n}\n\nint main() {\n    if (probar(4, 7) != 0)\n        return 1;\n    if (probar(0, 6) != 0)\n        return 1;\n    return 0;\n}\n"
         },
         {
           "type": "heading",
@@ -257,7 +257,7 @@
         },
         {
           "type": "cpp_compiler",
-          "initialCode": "#include <iostream>\n#include <fstream>\n#include <string>\n\n// Escribe aqui tus funciones antes del cliente.\n\nvoid recorrer(int a, int b) {\n    const std::string ruta{\"par_observable.txt\"};\n    const bool escrito{escribir_par(ruta, a, b)};\n    int primero{90};\n    int segundo{80};\n    bool leido{false};\n    if (escrito)\n        leido = leer_par(ruta, primero, segundo);\n    std::cout << \"Recorrido=\" << escrito << ':' << leido << ':'\n              << primero << ':' << segundo << '\\n';\n}\n\nint main() {\n    recorrer(4, 7);\n    recorrer(0, 6);\n    recorrer(-3, 8);\n\n    int primero{90};\n    int segundo{80};\n    const bool ausente{leer_par(\"par_no_creado.txt\", primero, segundo)};\n    std::cout << \"Ausente=\" << ausente << ':' << primero << ':' << segundo << '\\n';\n\n    std::ofstream muestra{\"par_incompleto.txt\"};\n    if (!muestra)\n        return 1;\n    muestra << \"5 x\";\n    muestra.close();\n    if (!muestra)\n        return 1;\n    const bool incompleta{leer_par(\"par_incompleto.txt\", primero, segundo)};\n    std::cout << \"Incompleta=\" << incompleta << ':' << primero << ':' << segundo << '\\n';\n\n    const bool imposible{escribir_par(\"subcarpeta_ausente/par.txt\", 4, 7)};\n    std::cout << \"Salida ausente=\" << imposible << '\\n';\n    return 0;\n}\n",
+          "initialCode": "#include <iostream>\n#include <fstream>\n#include <string>\n\n// Escribe aqui tus funciones antes del cliente.\n\nvoid recorrer(int a, int b) {\n    const std::string ruta{\"par_observable.txt\"};\n    const bool escrito{escribir_par(ruta, a, b)};\n    int primero{90};\n    int segundo{80};\n    bool leido{false};\n\n    if (escrito)\n        leido = leer_par(ruta, primero, segundo);\n    std::cout << \"Recorrido=\" << escrito << ':' << leido << ':'\n              << primero << ':' << segundo << '\\n';\n}\n\nint main() {\n    recorrer(4, 7);\n    recorrer(0, 6);\n    recorrer(-3, 8);\n\n    int primero{90};\n    int segundo{80};\n    const bool ausente{leer_par(\"par_no_creado.txt\", primero, segundo)};\n\n    std::cout << \"Ausente=\" << ausente << ':' << primero << ':' << segundo << '\\n';\n\n    std::ofstream muestra{\"par_incompleto.txt\"};\n    if (!muestra)\n        return 1;\n    muestra << \"5 x\";\n    muestra.close();\n    if (!muestra)\n        return 1;\n    const bool incompleta{leer_par(\"par_incompleto.txt\", primero, segundo)};\n    std::cout << \"Incompleta=\" << incompleta << ':' << primero << ':' << segundo << '\\n';\n\n    const bool imposible{escribir_par(\"subcarpeta_ausente/par.txt\", 4, 7)};\n    std::cout << \"Salida ausente=\" << imposible << '\\n';\n\n    return 0;\n}\n",
           "outputCheck": {
             "inputComparison": "exact",
             "cases": [
@@ -299,7 +299,7 @@
         {
           "type": "code",
           "language": "cpp",
-          "code": "#include <iostream>\n#include <fstream>\n#include <string>\n\nbool escribir_par(const std::string& ruta, int a, int b) {\n    std::ofstream salida{ruta};\n    if (!salida)\n        return false;\n    salida << a << ' ' << b;\n    salida.close();\n    if (!salida)\n        return false;\n    return true;\n}\n\nbool leer_par(const std::string& ruta, int& primero, int& segundo) {\n    std::ifstream entrada{ruta};\n    if (!entrada)\n        return false;\n    int candidato_primero{0};\n    int candidato_segundo{0};\n    if (!(entrada >> candidato_primero >> candidato_segundo))\n        return false;\n    primero = candidato_primero;\n    segundo = candidato_segundo;\n    return true;\n}\n\nvoid recorrer(int a, int b) {\n    const std::string ruta{\"par_observable.txt\"};\n    const bool escrito{escribir_par(ruta, a, b)};\n    int primero{90};\n    int segundo{80};\n    bool leido{false};\n    if (escrito)\n        leido = leer_par(ruta, primero, segundo);\n    std::cout << \"Recorrido=\" << escrito << ':' << leido << ':'\n              << primero << ':' << segundo << '\\n';\n}\n\nint main() {\n    recorrer(4, 7);\n    recorrer(0, 6);\n    recorrer(-3, 8);\n\n    int primero{90};\n    int segundo{80};\n    const bool ausente{leer_par(\"par_no_creado.txt\", primero, segundo)};\n    std::cout << \"Ausente=\" << ausente << ':' << primero << ':' << segundo << '\\n';\n\n    std::ofstream muestra{\"par_incompleto.txt\"};\n    if (!muestra)\n        return 1;\n    muestra << \"5 x\";\n    muestra.close();\n    if (!muestra)\n        return 1;\n    const bool incompleta{leer_par(\"par_incompleto.txt\", primero, segundo)};\n    std::cout << \"Incompleta=\" << incompleta << ':' << primero << ':' << segundo << '\\n';\n\n    const bool imposible{escribir_par(\"subcarpeta_ausente/par.txt\", 4, 7)};\n    std::cout << \"Salida ausente=\" << imposible << '\\n';\n    return 0;\n}\n"
+          "code": "#include <iostream>\n#include <fstream>\n#include <string>\n\nbool escribir_par(const std::string& ruta, int a, int b) {\n    std::ofstream salida{ruta};\n    if (!salida)\n        return false;\n    salida << a << ' ' << b;\n    salida.close();\n    if (!salida)\n        return false;\n    return true;\n}\n\nbool leer_par(const std::string& ruta, int& primero, int& segundo) {\n    std::ifstream entrada{ruta};\n    if (!entrada)\n        return false;\n    int candidato_primero{0};\n    int candidato_segundo{0};\n\n    if (!(entrada >> candidato_primero >> candidato_segundo))\n        return false;\n    primero = candidato_primero;\n    segundo = candidato_segundo;\n    return true;\n}\n\nvoid recorrer(int a, int b) {\n    const std::string ruta{\"par_observable.txt\"};\n    const bool escrito{escribir_par(ruta, a, b)};\n    int primero{90};\n    int segundo{80};\n    bool leido{false};\n\n    if (escrito)\n        leido = leer_par(ruta, primero, segundo);\n    std::cout << \"Recorrido=\" << escrito << ':' << leido << ':'\n              << primero << ':' << segundo << '\\n';\n}\n\nint main() {\n    recorrer(4, 7);\n    recorrer(0, 6);\n    recorrer(-3, 8);\n\n    int primero{90};\n    int segundo{80};\n    const bool ausente{leer_par(\"par_no_creado.txt\", primero, segundo)};\n\n    std::cout << \"Ausente=\" << ausente << ':' << primero << ':' << segundo << '\\n';\n\n    std::ofstream muestra{\"par_incompleto.txt\"};\n    if (!muestra)\n        return 1;\n    muestra << \"5 x\";\n    muestra.close();\n    if (!muestra)\n        return 1;\n    const bool incompleta{leer_par(\"par_incompleto.txt\", primero, segundo)};\n    std::cout << \"Incompleta=\" << incompleta << ':' << primero << ':' << segundo << '\\n';\n\n    const bool imposible{escribir_par(\"subcarpeta_ausente/par.txt\", 4, 7)};\n    std::cout << \"Salida ausente=\" << imposible << '\\n';\n\n    return 0;\n}\n"
         },
         {
           "type": "paragraph",
@@ -1136,6 +1136,41 @@
         "id": "block_0004_0004",
         "beforeSha256": "ec581894d2559999672045427eab5a20289114325e43a206b2be524d63c13842",
         "afterSha256": "936ec6cc8ee5ccb8a5e132381afb88ff1027fd1fbb307665dbd25f5f6a374af5"
+      },
+      {
+        "id": "block_0001_0001",
+        "beforeSha256": "fc365f61b15a074859e24c73a77709649b4b98c2d420fef6068f6df77225759b",
+        "afterSha256": "72b2491398b5d6736917d16c3396ae8ed8722901105499c2d622ad2bf7e224a1"
+      },
+      {
+        "id": "block_0002_0001",
+        "beforeSha256": "9e2a6e8529b10e55176704b013cda5935fa39b170b5ffcae63b87d9a85cf548c",
+        "afterSha256": "7d61a31b347ca749c419004b2f917a5448390a6c0fc4278a9e069a310fd6af20"
+      },
+      {
+        "id": "block_0003_0003",
+        "beforeSha256": "f61a4c2c484371af9eae2a49f0aed76bbb9e0dea56069febe9c3340bfca9192f",
+        "afterSha256": "d8dfee159d25260fea2586ab2769b09767169160576c158c18e886152780a40d"
+      },
+      {
+        "id": "block_0004_0001",
+        "beforeSha256": "6403a989b3f3ea5c31309905ec3bd53c571abec627d0bf954c5a206200e5a23f",
+        "afterSha256": "7c23ece601b00f3ee453fd803e606afdf955527a62178ca926056dbb67189c40"
+      },
+      {
+        "id": "block_0005_0001",
+        "beforeSha256": "7c7e984c7981523b05a3cde13425b9b2cbffdfbb755f45122df84391d2f4601b",
+        "afterSha256": "9b748903fe053398b8b8e6dcb84dd11f4a61a343762f8a7012c6f2573a77b332"
+      },
+      {
+        "id": "u12_archivo_campos_y_destinos_conservados_comprobacion",
+        "beforeSha256": "9b73c9c4765b4f830ae5ed944e2c1bbf8ae47ad68ab8d3c948238a890048d212",
+        "afterSha256": "ed93167e84f26f5acfc5a89fe1986f07719c2824defe55e2117f43577412d509"
+      },
+      {
+        "id": "u12_archivo_campos_y_destinos_conservados_referencia_codigo",
+        "beforeSha256": "c8cba72ebef852242e72ed9a68bacc2bcc8f837bf5d635d797b2a5a0f43d700f",
+        "afterSha256": "4c6ec264f97c2e2c3fdc7c8b3d59022d02d693c83346a228aa66a82bdb12b842"
       }
     ],
     "sourceFormatRevisions": [
@@ -1224,6 +1259,23 @@
           "type": "code",
           "language": "cpp",
           "code": "#include <iostream>\n#include <fstream>\n#include <string>\n\nbool escribir_par(const std::string& ruta, int a, int b) {\n    std::ofstream salida{ruta};\n    if (!salida) return false;\n    salida << a << ' ' << b;\n    salida.close();\n    if (!salida) return false;\n    return true;\n}\n\nbool leer_par(const std::string& ruta, int& primero, int& segundo) {\n    std::ifstream entrada{ruta};\n    if (!entrada) return false;\n    int candidato_primero{0};\n    int candidato_segundo{0};\n    if (!(entrada >> candidato_primero >> candidato_segundo)) return false;\n    primero = candidato_primero;\n    segundo = candidato_segundo;\n    return true;\n}\n\nvoid recorrer(int a, int b) {\n    const std::string ruta{\"par_observable.txt\"};\n    const bool escrito{escribir_par(ruta, a, b)};\n    int primero{90};\n    int segundo{80};\n    bool leido{false};\n    if (escrito) leido = leer_par(ruta, primero, segundo);\n    std::cout << \"Recorrido=\" << escrito << ':' << leido << ':'\n              << primero << ':' << segundo << '\\n';\n}\n\nint main() {\n    recorrer(4, 7);\n    recorrer(0, 6);\n    recorrer(-3, 8);\n\n    int primero{90};\n    int segundo{80};\n    const bool ausente{leer_par(\"par_no_creado.txt\", primero, segundo)};\n    std::cout << \"Ausente=\" << ausente << ':' << primero << ':' << segundo << '\\n';\n\n    std::ofstream muestra{\"par_incompleto.txt\"};\n    if (!muestra) return 1;\n    muestra << \"5 x\";\n    muestra.close();\n    if (!muestra) return 1;\n    const bool incompleta{leer_par(\"par_incompleto.txt\", primero, segundo)};\n    std::cout << \"Incompleta=\" << incompleta << ':' << primero << ':' << segundo << '\\n';\n\n    const bool imposible{escribir_par(\"subcarpeta_ausente/par.txt\", 4, 7)};\n    std::cout << \"Salida ausente=\" << imposible << '\\n';\n    return 0;\n}\n"
+        }
+      },
+      {
+        "id": "block_0003_0003",
+        "block": {
+          "type": "cpp_compiler",
+          "initialCode": "#include <iostream>\n#include <fstream>\n\nint main() {\n    // Construye la escritura, el cierre, la lectura y la comprobacion.\n    return 0;\n}\n",
+          "outputCheck": {
+            "cases": [
+              {
+                "standardInput": "",
+                "outputs": [
+                  "Total=11\nTotal=6\n"
+                ]
+              }
+            ]
+          }
         }
       }
     ]

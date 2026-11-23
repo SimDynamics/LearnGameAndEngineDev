@@ -262,7 +262,7 @@
           "question": "El programa empieza con int cajas = 0;. El campo «Entrada» contiene muchos. Al ejecutar std::cin >> cajas;, el programa intenta leer una cantidad entera. ¿Qué debe comprobar después de la lectura y antes de usar cajas en la suma cajas += 3;?",
           "options": [
             "La lectura debe considerarse válida porque la variable tenía un cero inicial.",
-            "No se obtuvo el dato entero esperado; antes de usarlo hay que detectar y manejar el fallo.",
+            "Que std::cin haya leído un entero. Si registra un fallo, el programa debe omitir la suma.",
             "cin convierte cualquier palabra a su cantidad equivalente."
           ],
           "correctIndex": 1,
@@ -329,7 +329,7 @@
         },
         {
           "type": "cpp_compiler",
-          "initialCode": "#include <iostream>\n#include <string>\n\nint main() {\n    std::string nombre;\n    int cajas = 0;\n\n    // Lee aquí el nombre y la cantidad de cajas.\n\n    cajas += 3;\n\n    std::cout << nombre << \": \" << cajas;\n\n    return 0;\n}\n",
+          "initialCode": "#include <iostream>\n#include <string>\n\nint main() {\n    std::string nombre;\n    int cajas = 0;\n\n    // Lee aquí el nombre y la cantidad de cajas.\n    \n    cajas += 3;\n\n    std::cout << nombre << \": \" << cajas;\n\n    return 0;\n}\n",
           "initialStandardInput": "Rita 4",
           "outputCheck": {
             "inputComparison": "tokens",
@@ -393,7 +393,7 @@
           "type": "output_prediction",
           "language": "cpp",
           "question": "El programa recibe 6 y copia la cantidad antes de sumar una caja. ¿Qué dos cantidades aparecen en la consola, en el orden indicado por std::cout?",
-          "code": "#include <iostream>\n\nint main() {\n    int cajas = 0;\n\n    std::cin >> cajas;\n\n    int recibidas = cajas;\n    cajas += 1;\n\n    std::cout << recibidas << \" \" << cajas;\n\n    return 0;\n}\n",
+          "code": "#include <iostream>\n\nint main() {\n    int cajas = 0;\n\n    std::cin >> cajas;\n\n    int recibidas = cajas;\n\n    cajas += 1;\n\n    std::cout << recibidas << \" \" << cajas;\n\n    return 0;\n}\n",
           "answers": [
             "6 7"
           ],
@@ -503,7 +503,7 @@
         },
         {
           "type": "cpp_compiler",
-          "initialCode": "#include <iostream>\n#include <string>\n\nint main() {\n    // Construye la lectura, el cálculo y la presentación desde la consigna.\n\n    return 0;\n}\n",
+          "initialCode": "#include <iostream>\n#include <string>\n\nint main() {\n    // Construye la lectura, el cálculo y la presentación desde la consigna.\n    \n    return 0;\n}\n",
           "initialStandardInput": "Iris 4 2",
           "outputCheck": {
             "inputComparison": "tokens",
@@ -622,7 +622,7 @@
           "id": "cpp_fundamentals__objetos_y_estado__leer_una_entrada_conocida__copia_despues_de_lectura",
           "language": "cpp",
           "question": "El programa recibe Kiro 3 en el primer renglón y 1 en el segundo. ¿Qué escribe después de guardar la cantidad original de paquetes y añadir un paquete?",
-          "code": "#include <iostream>\n#include <string>\n\nint main() {\n    std::string nombre;\n    int paquetes{0};\n    int sueltas{0};\n\n    std::cin >> nombre >> paquetes >> sueltas;\n\n    int total{(5 * paquetes) + sueltas};\n    int originales{paquetes};\n    paquetes += 1;\n\n    std::cout << nombre << ' ' << total << ' ' << originales << ' ' << paquetes;\n\n    return 0;\n}\n",
+          "code": "#include <iostream>\n#include <string>\n\nint main() {\n    std::string nombre;\n    int paquetes{0};\n    int sueltas{0};\n\n    std::cin >> nombre >> paquetes >> sueltas;\n\n    int total{(5 * paquetes) + sueltas};\n\n    int originales{paquetes};\n\n    paquetes += 1;\n\n    std::cout << nombre << ' ' << total << ' ' << originales << ' ' << paquetes;\n\n    return 0;\n}\n",
           "answers": [
             "Kiro 16 3 4"
           ],
@@ -2807,6 +2807,31 @@
         "id": "block_0005_0003",
         "beforeSha256": "b064455d5aab1782789110bfcf682ae69572d217327cf6cbb4acdfce25fab870",
         "afterSha256": "9d586a4426fc73ba1f5a31329972fbdf51c1d514793d6a4b9ae3239e2e2d5495"
+      },
+      {
+        "id": "p1u2l9_reparar_lectura_de_cajas",
+        "beforeSha256": "da7a39d9f9b5adf0f160b02ae6610d2b55e453cf1516ac254d5248a56f472910",
+        "afterSha256": "1fe08fcf46d1ca4125bb93113a82dc61c6d7b1d5811e0d7777e95307913b0d7d"
+      },
+      {
+        "id": "block_0007_0004",
+        "beforeSha256": "1956e37abac1e4e646640be8388e3cbf61ee71eb08d24ca6c0314a981aecf393",
+        "afterSha256": "90388d7fb4e59671794de1ddecd2fd93b9d23734786c97a266e24d0ae5a361ed"
+      },
+      {
+        "id": "block_0009_0003",
+        "beforeSha256": "6ca39a4006b1be4f71fc02e37fef1efb35f9db68aa7c7a1adda2ce04fdf168d3",
+        "afterSha256": "9948caa1a1a320405c92678161e248e47273eb2bbfad17782a3f2e97f3d51f70"
+      },
+      {
+        "id": "block_0011_0001",
+        "beforeSha256": "0465189b2c3dbe835e9f5c175dddec8747c7b0de1e78d0b836cc28210f5246d6",
+        "afterSha256": "b61768831433d5dce6c3a35c285dca927c940ff828f44751106ee36f19dc66b2"
+      },
+      {
+        "id": "block_0005_0003",
+        "beforeSha256": "9d586a4426fc73ba1f5a31329972fbdf51c1d514793d6a4b9ae3239e2e2d5495",
+        "afterSha256": "e582cb189546300318200b0fb457f59d03378909fd640d5858bd7947a508b162"
       }
     ],
     "retired": [
@@ -7230,6 +7255,50 @@
           "reviewFeedback": "Calcula cuántas piezas hay en los 20 paquetes. ¿Cuántas piezas sueltas hay que sumar después?"
         }
       }
+    ],
+    "choiceRevisions": [
+      {
+        "id": "block_0005_0003",
+        "block": {
+          "type": "multiple_choice",
+          "question": "El programa empieza con int cajas = 0;. El campo «Entrada» contiene muchos. Al ejecutar std::cin >> cajas;, el programa intenta leer una cantidad entera. ¿Qué debe comprobar después de la lectura y antes de usar cajas en la suma cajas += 3;?",
+          "options": [
+            "La lectura debe considerarse válida porque la variable tenía un cero inicial.",
+            "No se obtuvo el dato entero esperado; antes de usarlo hay que detectar y manejar el fallo.",
+            "cin convierte cualquier palabra a su cantidad equivalente."
+          ],
+          "correctIndex": 1,
+          "explanation": "std::cin encuentra la eme de muchos y registra un fallo. El 0 que queda en cajas no es una cantidad leída. Antes de ejecutar cajas += 3;, el programa debe comprobar que la lectura tuvo éxito (Köppe et al., 2023).",
+          "reviewFeedback": [
+            "Conocer el valor inicial de cajas y saber si la lectura obtuvo un entero son dos comprobaciones distintas.",
+            "Revisa si la palabra muchos contiene cifras que la lectura pueda interpretar como un entero.",
+            "Para guardar un entero, la instrucción tiene que leer un número. ¿Qué puede leer al llegar a la eme de muchos?"
+          ]
+        },
+        "optionIndex": 1,
+        "replacement": "Que std::cin haya leído un entero. Si registra un fallo, el programa debe omitir la suma.",
+        "semanticBefore": {
+          "block": "block_0005_0003",
+          "path": "/options/1",
+          "sourceSha256": "ee25046dfec3f1d74455fdc76bca5124f56191620d249a28db405f240a1c5fc4",
+          "spans": []
+        },
+        "semanticAfter": {
+          "block": "block_0005_0003",
+          "path": "/options/1",
+          "sourceSha256": "f16e3a80c19d36d36ff2fd44ba44108733abc27084e6cf84ea3933196b9fd017",
+          "spans": [
+            {
+              "start": 4,
+              "end": 12,
+              "text": "std::cin",
+              "role": "cpp",
+              "reading": "technical"
+            }
+          ]
+        },
+        "semanticRootBefore": true
+      }
     ]
   },
   "referenceAfter": [
@@ -8896,8 +8965,16 @@
       {
         "block": "block_0005_0003",
         "path": "/options/1",
-        "sourceSha256": "ee25046dfec3f1d74455fdc76bca5124f56191620d249a28db405f240a1c5fc4",
-        "spans": []
+        "sourceSha256": "f16e3a80c19d36d36ff2fd44ba44108733abc27084e6cf84ea3933196b9fd017",
+        "spans": [
+          {
+            "start": 4,
+            "end": 12,
+            "text": "std::cin",
+            "role": "cpp",
+            "reading": "technical"
+          }
+        ]
       },
       {
         "block": "block_0005_0003",

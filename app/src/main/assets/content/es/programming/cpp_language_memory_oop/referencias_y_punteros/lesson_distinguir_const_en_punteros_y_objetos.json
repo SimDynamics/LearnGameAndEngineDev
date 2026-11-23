@@ -22,7 +22,7 @@
           "id": "p3_u4l6_lectura_de_objeto_modificable",
           "language": "cpp",
           "question": "¿Qué muestra *lectura:dato?",
-          "code": "#include <iostream>\n\nint main() {\n    int dato = 4;\n    const int* lectura = &dato;\n    dato = 8;\n    std::cout << *lectura << ':' << dato;\n    return 0;\n}\n",
+          "code": "#include <iostream>\n\nint main() {\n    int dato = 4;\n    const int* lectura = &dato;\n\n    dato = 8;\n\n    std::cout << *lectura << ':' << dato;\n\n    return 0;\n}\n",
           "answers": [
             "8:8"
           ],
@@ -46,7 +46,7 @@
           "id": "p3_u4l6_reasignar_lectura",
           "language": "cpp",
           "question": "¿Qué muestra primero:*lectura:copia?",
-          "code": "#include <iostream>\n\nint main() {\n    int primero = 3;\n    int segundo = 8;\n    const int* lectura = &primero;\n    const int copia = *lectura;\n    lectura = &segundo;\n    std::cout << primero << ':' << *lectura << ':' << copia;\n    return 0;\n}\n",
+          "code": "#include <iostream>\n\nint main() {\n    int primero = 3;\n    int segundo = 8;\n    const int* lectura = &primero;\n    const int copia = *lectura;\n\n    lectura = &segundo;\n\n    std::cout << primero << ':' << *lectura << ':' << copia;\n\n    return 0;\n}\n",
           "answers": [
             "3:8:3"
           ],
@@ -82,7 +82,7 @@
           "id": "p3_u4l6_objeto_real_const",
           "language": "cpp",
           "question": "¿Qué muestra *lectura:limite?",
-          "code": "#include <iostream>\n\nint main() {\n    const int limite = 9;\n    const int* lectura = &limite;\n    std::cout << *lectura << ':' << limite;\n    return 0;\n}\n",
+          "code": "#include <iostream>\n\nint main() {\n    const int limite = 9;\n    const int* lectura = &limite;\n\n    std::cout << *lectura << ':' << limite;\n\n    return 0;\n}\n",
           "answers": [
             "9:9"
           ],
@@ -115,7 +115,7 @@
           "id": "p3_u4l6_puntero_fijo_escritura",
           "language": "cpp",
           "question": "¿Qué muestra dato:*fijo?",
-          "code": "#include <iostream>\n\nint main() {\n    int dato = 4;\n    int* const fijo = &dato;\n    *fijo = 7;\n    std::cout << dato << ':' << *fijo;\n    return 0;\n}\n",
+          "code": "#include <iostream>\n\nint main() {\n    int dato = 4;\n    int* const fijo = &dato;\n    *fijo = 7;\n    std::cout << dato << ':' << *fijo;\n\n    return 0;\n}\n",
           "answers": [
             "7:7"
           ],
@@ -151,7 +151,7 @@
           "id": "p3_u4l6_dos_restricciones",
           "language": "cpp",
           "question": "¿Qué muestra el programa?",
-          "code": "#include <iostream>\n\nint main() {\n    int dato = 2;\n    const int* const vista = &dato;\n    dato = 9;\n    std::cout << *vista;\n    return 0;\n}\n",
+          "code": "#include <iostream>\n\nint main() {\n    int dato = 2;\n    const int* const vista = &dato;\n\n    dato = 9;\n\n    std::cout << *vista;\n\n    return 0;\n}\n",
           "answers": [
             "9"
           ],
@@ -179,7 +179,7 @@
           "id": "p3_u4l6_const_antes_o_despues_de_int",
           "language": "cpp",
           "question": "¿Qué muestra *primera:*segunda?",
-          "code": "#include <iostream>\n\nint main() {\n    int dato = 4;\n    const int* primera = &dato;\n    int const* segunda = &dato;\n    dato = 6;\n    std::cout << *primera << ':' << *segunda;\n    return 0;\n}\n",
+          "code": "#include <iostream>\n\nint main() {\n    int dato = 4;\n    const int* primera = &dato;\n    int const* segunda = &dato;\n\n    dato = 6;\n\n    std::cout << *primera << ':' << *segunda;\n\n    return 0;\n}\n",
           "answers": [
             "6:6"
           ],
@@ -203,7 +203,7 @@
           "id": "p3_u4l6_anadir_permiso_de_lectura",
           "language": "cpp",
           "question": "¿Qué muestra *lectura?",
-          "code": "#include <iostream>\n\nint main() {\n    int dato = 4;\n    int* escritura = &dato;\n    const int* lectura = escritura;\n    *escritura = 8;\n    std::cout << *lectura;\n    return 0;\n}\n",
+          "code": "#include <iostream>\n\nint main() {\n    int dato = 4;\n    int* escritura = &dato;\n    const int* lectura = escritura;\n    *escritura = 8;\n    std::cout << *lectura;\n\n    return 0;\n}\n",
           "answers": [
             "8"
           ],
@@ -248,7 +248,7 @@
           "id": "p3_u4l6_copiar_puntero_fijo",
           "language": "cpp",
           "question": "¿Qué muestra primero:*fijo:segundo?",
-          "code": "#include <iostream>\n\nint main() {\n    int primero = 2;\n    int segundo = 3;\n    int* const fijo = &primero;\n    int* copia = fijo;\n    copia = &segundo;\n    *fijo = 7;\n    *copia = 6;\n    std::cout << primero << ':' << *fijo << ':' << segundo;\n    return 0;\n}\n",
+          "code": "#include <iostream>\n\nint main() {\n    int primero = 2;\n    int segundo = 3;\n    int* const fijo = &primero;\n    int* copia = fijo;\n\n    copia = &segundo;\n    *fijo = 7;\n    *copia = 6;\n    std::cout << primero << ':' << *fijo << ':' << segundo;\n\n    return 0;\n}\n",
           "answers": [
             "7:7:6"
           ],
@@ -272,7 +272,7 @@
           "id": "p3_u4l6_copiar_puntero_fijo_de_lectura",
           "language": "cpp",
           "question": "¿Qué muestra *fija:*copia?",
-          "code": "#include <iostream>\n\nint main() {\n    int primero = 4;\n    int segundo = 8;\n    const int* const fija = &primero;\n    const int* copia = fija;\n    copia = &segundo;\n    primero = 7;\n    std::cout << *fija << ':' << *copia;\n    return 0;\n}\n",
+          "code": "#include <iostream>\n\nint main() {\n    int primero = 4;\n    int segundo = 8;\n    const int* const fija = &primero;\n    const int* copia = fija;\n\n    copia = &segundo;\n    primero = 7;\n\n    std::cout << *fija << ':' << *copia;\n\n    return 0;\n}\n",
           "answers": [
             "7:8"
           ],
@@ -296,7 +296,7 @@
           "id": "p3_u4l6_deduccion_de_copias",
           "language": "cpp",
           "question": "¿Qué muestra primero:segundo:*fijo:*lectura?",
-          "code": "#include <iostream>\n\nint main() {\n    int primero = 2;\n    int segundo = 5;\n    int* const fijo = &primero;\n    auto escritura = fijo;\n    escritura = &segundo;\n    *escritura = 9;\n    const int* const fijaDeLectura = &primero;\n    auto lectura = fijaDeLectura;\n    lectura = &segundo;\n    primero = 7;\n    std::cout << primero << ':' << segundo << ':' << *fijo << ':' << *lectura;\n    return 0;\n}\n",
+          "code": "#include <iostream>\n\nint main() {\n    int primero = 2;\n    int segundo = 5;\n    int* const fijo = &primero;\n    auto escritura = fijo;\n\n    escritura = &segundo;\n    *escritura = 9;\n    const int* const fijaDeLectura = &primero;\n    auto lectura = fijaDeLectura;\n\n    lectura = &segundo;\n    primero = 7;\n\n    std::cout << primero << ':' << segundo << ':' << *fijo << ':' << *lectura;\n\n    return 0;\n}\n",
           "answers": [
             "7:9:7:9"
           ],
@@ -324,7 +324,7 @@
           "id": "p3_u4l6_const_no_implica_objeto",
           "language": "cpp",
           "question": "¿Qué muestra la comparación?",
-          "code": "#include <iostream>\n\nint main() {\n    const int* const ausente = nullptr;\n    std::cout << (ausente == nullptr);\n    return 0;\n}\n",
+          "code": "#include <iostream>\n\nint main() {\n    const int* const ausente = nullptr;\n\n    std::cout << (ausente == nullptr);\n\n    return 0;\n}\n",
           "answers": [
             "1"
           ],
@@ -543,7 +543,7 @@
         {
           "type": "cpp_compiler",
           "language": "cpp",
-          "initialCode": "#include <iostream>\n\nint main() {\n    int dato = 4;\n    const int* lectura = &dato;\n    int* const destino = &dato;\n    const int copia = *destino;\n    *lectura = 7;\n    std::cout << dato << ':' << *lectura << ':' << copia;\n    return 0;\n}\n",
+          "initialCode": "#include <iostream>\n\nint main() {\n    int dato = 4;\n    const int* lectura = &dato;\n    int* const destino = &dato;\n    const int copia = *destino;\n    *lectura = 7;\n    std::cout << dato << ':' << *lectura << ':' << copia;\n\n    return 0;\n}\n",
           "initialStandardInput": "",
           "outputCheck": {
             "inputComparison": "tokens",
@@ -569,7 +569,7 @@
         {
           "type": "code",
           "language": "cpp",
-          "code": "#include <iostream>\n\nint main() {\n    int dato = 4;\n    const int* lectura = &dato;\n    int* const destino = &dato;\n    const int copia = *destino;\n    *destino = 7;\n    std::cout << dato << ':' << *lectura << ':' << copia;\n    return 0;\n}\n"
+          "code": "#include <iostream>\n\nint main() {\n    int dato = 4;\n    const int* lectura = &dato;\n    int* const destino = &dato;\n    const int copia = *destino;\n    *destino = 7;\n    std::cout << dato << ':' << *lectura << ':' << copia;\n\n    return 0;\n}\n"
         },
         {
           "type": "paragraph",
@@ -604,7 +604,7 @@
           "id": "p3_u4l6_lectura_de_arrays_const_y_modificables",
           "language": "cpp",
           "question": "¿Qué muestra *lectura:*fija:datos[1]?",
-          "code": "#include <array>\n#include <cstddef>\n#include <iostream>\n#include <string>\n\nconst int* consultar(const std::array<int, 3>& datos, int indice) {\n    if (indice < 0 || indice > 2) {\n        return nullptr;\n    }\n    return &datos.at(static_cast<std::size_t>(indice));\n}\n\nint main() {\n    std::array<int, 3> datos{2, 5, 8};\n    const std::array<int, 3> constantes{3, 6, 9};\n    const int* lectura = consultar(datos, 1);\n    const int* const fija = lectura;\n    datos[1] = 7;\n    lectura = consultar(constantes, 2);\n    std::cout << *lectura << ':' << *fija << ':' << datos[1];\n    return 0;\n}\n",
+          "code": "#include <array>\n#include <cstddef>\n#include <iostream>\n#include <string>\n\nconst int* consultar(const std::array<int, 3>& datos, int indice) {\n    if (indice < 0 || indice > 2) {\n        return nullptr;\n    }\n\n    return &datos.at(static_cast<std::size_t>(indice));\n}\n\nint main() {\n    std::array<int, 3> datos{2, 5, 8};\n    const std::array<int, 3> constantes{3, 6, 9};\n    const int* lectura = consultar(datos, 1);\n    const int* const fija = lectura;\n\n    datos[1] = 7;\n    lectura = consultar(constantes, 2);\n\n    std::cout << *lectura << ':' << *fija << ':' << datos[1];\n\n    return 0;\n}\n",
           "answers": [
             "9:7:7"
           ],
@@ -684,7 +684,7 @@
         {
           "type": "cpp_compiler",
           "language": "cpp",
-          "initialCode": "#include <array>\n#include <cstddef>\n#include <iostream>\n#include <string>\n\nconst int* consultar(const std::array<int, 3>& datos, int indice) {\n    if (indice < 0 || indice > 2) {\n        return nullptr;\n    }\n    return &datos.at(static_cast<std::size_t>(indice));\n}\n\nint main() {\n    std::array<int, 3> datos{2, 5, 8};\n    const int limite = 9;\n    const int* vista = nullptr;\n    int* const destino = &datos[1];\n    const int* const tope = &limite;\n    const int copia = *destino;\n    int cantidad = 0;\n    if (!(std::cin >> cantidad) || cantidad < 1 || cantidad > 12) {\n        return 1;\n    }\n    for (int orden = 0; orden < cantidad; ++orden) {\n        int operacion = 0;\n        int argumento = 0;\n        if (!(std::cin >> operacion >> argumento)) {\n            return 1;\n        }\n        std::string estado = \"Pendiente\";\n        if ((operacion == 2 || operacion == 3) &&\n            (argumento < 0 || argumento > *tope)) {\n            estado = \"Rechazo\";\n        } else {\n            // Implementa las operaciones aqui; conserva tipos y comprobaciones.\n        }\n        std::cout << estado << \";Vista:\";\n        if (vista == nullptr) {\n            std::cout << 'X';\n        } else {\n            std::cout << *vista;\n        }\n        std::cout << \";Destino:\" << *destino << \";Copia:\" << copia\n                  << \";Datos:\" << datos[0] << ',' << datos[1] << ',' << datos[2] << '\\n';\n    }\n    return 0;\n}\n",
+          "initialCode": "#include <array>\n#include <cstddef>\n#include <iostream>\n#include <string>\n\nconst int* consultar(const std::array<int, 3>& datos, int indice) {\n    if (indice < 0 || indice > 2) {\n        return nullptr;\n    }\n\n    return &datos.at(static_cast<std::size_t>(indice));\n}\n\nint main() {\n    std::array<int, 3> datos{2, 5, 8};\n    const int limite = 9;\n    const int* vista = nullptr;\n    int* const destino = &datos[1];\n    const int* const tope = &limite;\n    const int copia = *destino;\n    int cantidad = 0;\n\n    if (!(std::cin >> cantidad) || cantidad < 1 || cantidad > 12) {\n        return 1;\n    }\n    for (int orden = 0; orden < cantidad; ++orden) {\n        int operacion = 0;\n        int argumento = 0;\n\n        if (!(std::cin >> operacion >> argumento)) {\n            return 1;\n        }\n        std::string estado = \"Pendiente\";\n        if ((operacion == 2 || operacion == 3) &&\n            (argumento < 0 || argumento > *tope)) {\n            estado = \"Rechazo\";\n        } else {\n            // Implementa las operaciones aqui; conserva tipos y comprobaciones.\n            \n        }\n        std::cout << estado << \";Vista:\";\n        if (vista == nullptr) {\n            std::cout << 'X';\n        } else {\n            std::cout << *vista;\n        }\n        std::cout << \";Destino:\" << *destino << \";Copia:\" << copia\n                  << \";Datos:\" << datos[0] << ',' << datos[1] << ',' << datos[2] << '\\n';\n    }\n\n    return 0;\n}\n",
           "initialStandardInput": "12\n1 -1\n2 7\n1 1\n2 0\n3 9\n1 0\n3 0\n2 8\n4 0\n1 1\n1 3\n2 10\n",
           "outputCheck": {
             "inputComparison": "tokens",
@@ -849,7 +849,7 @@
         {
           "type": "code",
           "language": "cpp",
-          "code": "#include <array>\n#include <cstddef>\n#include <iostream>\n#include <string>\n\nconst int* consultar(const std::array<int, 3>& datos, int indice) {\n    if (indice < 0 || indice > 2) {\n        return nullptr;\n    }\n    return &datos.at(static_cast<std::size_t>(indice));\n}\n\nint main() {\n    std::array<int, 3> datos{2, 5, 8};\n    const int limite = 9;\n    const int* vista = nullptr;\n    int* const destino = &datos[1];\n    const int* const tope = &limite;\n    const int copia = *destino;\n    int cantidad = 0;\n    if (!(std::cin >> cantidad) || cantidad < 1 || cantidad > 12) {\n        return 1;\n    }\n    for (int orden = 0; orden < cantidad; ++orden) {\n        int operacion = 0;\n        int argumento = 0;\n        if (!(std::cin >> operacion >> argumento)) {\n            return 1;\n        }\n        std::string estado = \"Pendiente\";\n        if ((operacion == 2 || operacion == 3) &&\n            (argumento < 0 || argumento > *tope)) {\n            estado = \"Rechazo\";\n        } else {\n            if (operacion == 1) {\n                vista = consultar(datos, argumento);\n                if (vista == nullptr) {\n                    estado = \"Indice invalido\";\n                } else {\n                    estado = \"Elegida\";\n                }\n            } else if (operacion == 2) {\n                *destino = argumento;\n                estado = \"Cambio\";\n            } else if (operacion == 3) {\n                datos[0] = argumento;\n                estado = \"Cambio\";\n            } else if (operacion == 4) {\n                vista = nullptr;\n                estado = \"Sin vista\";\n            } else {\n                estado = \"Operacion invalida\";\n            }\n        }\n        std::cout << estado << \";Vista:\";\n        if (vista == nullptr) {\n            std::cout << 'X';\n        } else {\n            std::cout << *vista;\n        }\n        std::cout << \";Destino:\" << *destino << \";Copia:\" << copia\n                  << \";Datos:\" << datos[0] << ',' << datos[1] << ',' << datos[2] << '\\n';\n    }\n    return 0;\n}\n"
+          "code": "#include <array>\n#include <cstddef>\n#include <iostream>\n#include <string>\n\nconst int* consultar(const std::array<int, 3>& datos, int indice) {\n    if (indice < 0 || indice > 2) {\n        return nullptr;\n    }\n\n    return &datos.at(static_cast<std::size_t>(indice));\n}\n\nint main() {\n    std::array<int, 3> datos{2, 5, 8};\n    const int limite = 9;\n    const int* vista = nullptr;\n    int* const destino = &datos[1];\n    const int* const tope = &limite;\n    const int copia = *destino;\n    int cantidad = 0;\n\n    if (!(std::cin >> cantidad) || cantidad < 1 || cantidad > 12) {\n        return 1;\n    }\n    for (int orden = 0; orden < cantidad; ++orden) {\n        int operacion = 0;\n        int argumento = 0;\n\n        if (!(std::cin >> operacion >> argumento)) {\n            return 1;\n        }\n        std::string estado = \"Pendiente\";\n        if ((operacion == 2 || operacion == 3) &&\n            (argumento < 0 || argumento > *tope)) {\n            estado = \"Rechazo\";\n        } else {\n            if (operacion == 1) {\n                vista = consultar(datos, argumento);\n                if (vista == nullptr) {\n                    estado = \"Indice invalido\";\n                } else {\n                    estado = \"Elegida\";\n                }\n            } else if (operacion == 2) {\n                *destino = argumento;\n                estado = \"Cambio\";\n            } else if (operacion == 3) {\n                datos[0] = argumento;\n                estado = \"Cambio\";\n            } else if (operacion == 4) {\n                vista = nullptr;\n                estado = \"Sin vista\";\n            } else {\n                estado = \"Operacion invalida\";\n            }\n        }\n        std::cout << estado << \";Vista:\";\n        if (vista == nullptr) {\n            std::cout << 'X';\n        } else {\n            std::cout << *vista;\n        }\n        std::cout << \";Destino:\" << *destino << \";Copia:\" << copia\n                  << \";Datos:\" << datos[0] << ',' << datos[1] << ',' << datos[2] << '\\n';\n    }\n\n    return 0;\n}\n"
         },
         {
           "type": "paragraph",
@@ -2214,6 +2214,348 @@
       }
     },
     "additions": [],
-    "editorial": []
+    "editorial": [
+      {
+        "id": "block_0000_0003",
+        "beforeSha256": "f68d838985e9bac1ada71a6108e8de74abae8f260c2963312d09f3b33ec172e4",
+        "afterSha256": "7dc5cac446a112d6a9af343aba061a7f7833fb60b1fb7df9dac40f5f8eb7dcd4"
+      },
+      {
+        "id": "block_0001_0002",
+        "beforeSha256": "7045bcb9e7811bed81f4fb2c7252e3257e3d857c7cbbe80ea109c231753855e8",
+        "afterSha256": "983a1c214a2bebd70177807ed4d1b07501e61e918e8a5f9c0737cdde3225d20d"
+      },
+      {
+        "id": "block_0002_0002",
+        "beforeSha256": "af7acced0261d49dace64c023084cfa94b70cdd6010afbb91ec407ebb2f2437e",
+        "afterSha256": "40557dec0673fc72847d2374b90dff321304262819a14aa973b522fc889a8ca5"
+      },
+      {
+        "id": "block_0003_0002",
+        "beforeSha256": "97f97530fc5a024a28bc7b77df53f43c716f4c37cee03b6d123719d32fc97722",
+        "afterSha256": "5f520bf1383784988e09a853b9d75746fe7167ef098a27df93f8a9dd4915b55d"
+      },
+      {
+        "id": "block_0004_0002",
+        "beforeSha256": "67af447192787e71b31575f5edfd4ec88bf88f546835be4a2ab62f30692eb4ce",
+        "afterSha256": "eaa03964f9ded8ff5d2e6d76fda3a4a3cc4ad066544ee5ca14ffda0f24fe8db4"
+      },
+      {
+        "id": "block_0005_0002",
+        "beforeSha256": "a0670776858f5ba7d067552a759f845cb8247ec265e2a36384a50fa3a3121f20",
+        "afterSha256": "f0e3ba1bde78ba596005460cb84c0fc6256260acaefaaafbbfc8cdadd9e09ac9"
+      },
+      {
+        "id": "block_0006_0002",
+        "beforeSha256": "39827b9145670457b184196c13415b0a4a51348c3431eb6f838c0abc1a7948a1",
+        "afterSha256": "c2a9186ea81fa8e78e322a701dc3b629b5571a67c4fb94a10bef444ffde0e4ee"
+      },
+      {
+        "id": "block_0007_0002",
+        "beforeSha256": "24f9acda2727bfbfd6b60e5f2e7ac6486da821c2e2198c4e7eb418c2ddfcc32b",
+        "afterSha256": "6224e374956dd52043b2c2da8466ed5a3cd65d8cabd4d83ac2b8811c7cd0c1d0"
+      },
+      {
+        "id": "block_0008_0002",
+        "beforeSha256": "215884d3b09869bc0e50708318f8403f0b637c45c6480eb2d43c2a5604247c75",
+        "afterSha256": "bcf8e73c18c89efe7bdf1dc3a612a5db663a71040cfba015b76ec341685e2840"
+      },
+      {
+        "id": "block_0009_0002",
+        "beforeSha256": "a413f41de8bbd6a7aaf64cf5f10e268e6ee958a75bc11177d4c98083f2678ab9",
+        "afterSha256": "39d1e3cb9a810c77ed8cd13d1d9828096f393b67b6579930f576454a5665b6a6"
+      },
+      {
+        "id": "block_0010_0002",
+        "beforeSha256": "c8e1805c25e04c1df3d48942150041ad4d9e6138fb188194ffdd72abe49aeb18",
+        "afterSha256": "865a79843a5e64143da876d40e1a39f7ce1dacf3969347156efdf5b91603fad3"
+      },
+      {
+        "id": "block_0013_0003",
+        "beforeSha256": "f66e2dd3b64620076eaefc1bd4321927f0265e0a7a37a2db53feb6071217c085",
+        "afterSha256": "f4d08f52c985a235647dfc7f902a1fb442cd85f7a9a494246d346950cc227e84"
+      },
+      {
+        "id": "block_0014_0001",
+        "beforeSha256": "24db08535780ba649aabe07a007177d74ba50c29ef43a961bee731848d19ddeb",
+        "afterSha256": "fcc711fa01954467af8f2ab1fc102a48f29278e55f68dec2482536b3bedd96ac"
+      },
+      {
+        "id": "block_0015_0002",
+        "beforeSha256": "f39bc0c72ba590c7ec648b5e2a4200ee506a28a1cba31b2147f9a5c34afc1cb9",
+        "afterSha256": "70b5771bcbc0b5bc1e34e7e7b96d0c5c2c3b94df463bd7a21f5764aab77dc17e"
+      },
+      {
+        "id": "block_0016_0016",
+        "beforeSha256": "95a22d54bc0eb39661e589f002459e0c29c952c9d224d1b1dcd43e538fbeecea",
+        "afterSha256": "a70719a995c97dac7824642f524fd25ecc56002e4bcff5b2c5bcd8df66fc6bba"
+      },
+      {
+        "id": "block_0019_0001",
+        "beforeSha256": "f22be6d42c8cf6ca82795a9b8252dfbf8fb8e87da8484008c9cf5a73d09dbc04",
+        "afterSha256": "914f48996b86ac526b4ef38feb19a18809f674bc1d46563e02a797912e891380"
+      }
+    ],
+    "sourceFormatRevisions": [
+      {
+        "id": "block_0000_0003",
+        "block": {
+          "type": "output_prediction",
+          "id": "p3_u4l6_lectura_de_objeto_modificable",
+          "language": "cpp",
+          "question": "¿Qué muestra *lectura:dato?",
+          "code": "#include <iostream>\n\nint main() {\n    int dato = 4;\n    const int* lectura = &dato;\n    dato = 8;\n    std::cout << *lectura << ':' << dato;\n    return 0;\n}\n",
+          "answers": [
+            "8:8"
+          ],
+          "outputComparison": "exact",
+          "explanation": "lectura señala dato. La asignación dato = 8 cambia el entero por su nombre, y después *lectura permite leer ese mismo 8. const no guardó una copia del 4 inicial."
+        }
+      },
+      {
+        "id": "block_0001_0002",
+        "block": {
+          "type": "output_prediction",
+          "id": "p3_u4l6_reasignar_lectura",
+          "language": "cpp",
+          "question": "¿Qué muestra primero:*lectura:copia?",
+          "code": "#include <iostream>\n\nint main() {\n    int primero = 3;\n    int segundo = 8;\n    const int* lectura = &primero;\n    const int copia = *lectura;\n    lectura = &segundo;\n    std::cout << primero << ':' << *lectura << ':' << copia;\n    return 0;\n}\n",
+          "answers": [
+            "3:8:3"
+          ],
+          "outputComparison": "exact",
+          "explanation": "copia conserva el 3 leído en primero. lectura recibe después la dirección de segundo y permite leer 8. Reasignar el puntero no cambia ninguno de esos enteros."
+        }
+      },
+      {
+        "id": "block_0002_0002",
+        "block": {
+          "type": "output_prediction",
+          "id": "p3_u4l6_objeto_real_const",
+          "language": "cpp",
+          "question": "¿Qué muestra *lectura:limite?",
+          "code": "#include <iostream>\n\nint main() {\n    const int limite = 9;\n    const int* lectura = &limite;\n    std::cout << *lectura << ':' << limite;\n    return 0;\n}\n",
+          "answers": [
+            "9:9"
+          ],
+          "outputComparison": "exact",
+          "explanation": "Ambas expresiones leen el mismo entero constante. El puntero no copia su valor ni permite modificarlo."
+        }
+      },
+      {
+        "id": "block_0003_0002",
+        "block": {
+          "type": "output_prediction",
+          "id": "p3_u4l6_puntero_fijo_escritura",
+          "language": "cpp",
+          "question": "¿Qué muestra dato:*fijo?",
+          "code": "#include <iostream>\n\nint main() {\n    int dato = 4;\n    int* const fijo = &dato;\n    *fijo = 7;\n    std::cout << dato << ':' << *fijo;\n    return 0;\n}\n",
+          "answers": [
+            "7:7"
+          ],
+          "outputComparison": "exact",
+          "explanation": "*fijo = 7 escribe en dato. El valor de puntero fijo sigue siendo la dirección que recibió al inicializarse."
+        }
+      },
+      {
+        "id": "block_0004_0002",
+        "block": {
+          "type": "output_prediction",
+          "id": "p3_u4l6_dos_restricciones",
+          "language": "cpp",
+          "question": "¿Qué muestra el programa?",
+          "code": "#include <iostream>\n\nint main() {\n    int dato = 2;\n    const int* const vista = &dato;\n    dato = 9;\n    std::cout << *vista;\n    return 0;\n}\n",
+          "answers": [
+            "9"
+          ],
+          "outputComparison": "exact",
+          "explanation": "vista conserva la dirección de dato y permite leerlo. dato era modificable: su asignación cambia el entero a 9, que después se observa mediante la vista."
+        }
+      },
+      {
+        "id": "block_0005_0002",
+        "block": {
+          "type": "output_prediction",
+          "id": "p3_u4l6_const_antes_o_despues_de_int",
+          "language": "cpp",
+          "question": "¿Qué muestra *primera:*segunda?",
+          "code": "#include <iostream>\n\nint main() {\n    int dato = 4;\n    const int* primera = &dato;\n    int const* segunda = &dato;\n    dato = 6;\n    std::cout << *primera << ':' << *segunda;\n    return 0;\n}\n",
+          "answers": [
+            "6:6"
+          ],
+          "outputComparison": "exact",
+          "explanation": "Las dos declaraciones permiten leer dato sin escribir mediante esos punteros. Cambiar dato a 6 por su nombre se observa mediante ambos."
+        }
+      },
+      {
+        "id": "block_0006_0002",
+        "block": {
+          "type": "output_prediction",
+          "id": "p3_u4l6_anadir_permiso_de_lectura",
+          "language": "cpp",
+          "question": "¿Qué muestra *lectura?",
+          "code": "#include <iostream>\n\nint main() {\n    int dato = 4;\n    int* escritura = &dato;\n    const int* lectura = escritura;\n    *escritura = 8;\n    std::cout << *lectura;\n    return 0;\n}\n",
+          "answers": [
+            "8"
+          ],
+          "outputComparison": "exact",
+          "explanation": "Los dos punteros señalan dato. escritura permite guardar 8 y lectura permite observar ese mismo valor."
+        }
+      },
+      {
+        "id": "block_0007_0002",
+        "block": {
+          "type": "output_prediction",
+          "id": "p3_u4l6_copiar_puntero_fijo",
+          "language": "cpp",
+          "question": "¿Qué muestra primero:*fijo:segundo?",
+          "code": "#include <iostream>\n\nint main() {\n    int primero = 2;\n    int segundo = 3;\n    int* const fijo = &primero;\n    int* copia = fijo;\n    copia = &segundo;\n    *fijo = 7;\n    *copia = 6;\n    std::cout << primero << ':' << *fijo << ':' << segundo;\n    return 0;\n}\n",
+          "answers": [
+            "7:7:6"
+          ],
+          "outputComparison": "exact",
+          "explanation": "fijo conserva primero y permite guardar 7 allí. copia recibe después &segundo y permite guardar 6 allí. Son dos variables puntero distintas."
+        }
+      },
+      {
+        "id": "block_0008_0002",
+        "block": {
+          "type": "output_prediction",
+          "id": "p3_u4l6_copiar_puntero_fijo_de_lectura",
+          "language": "cpp",
+          "question": "¿Qué muestra *fija:*copia?",
+          "code": "#include <iostream>\n\nint main() {\n    int primero = 4;\n    int segundo = 8;\n    const int* const fija = &primero;\n    const int* copia = fija;\n    copia = &segundo;\n    primero = 7;\n    std::cout << *fija << ':' << *copia;\n    return 0;\n}\n",
+          "answers": [
+            "7:8"
+          ],
+          "outputComparison": "exact",
+          "explanation": "fija conserva primero. copia elige después segundo y permite leer 8. primero cambia por su nombre a 7 y fija permite leer ese 7."
+        }
+      },
+      {
+        "id": "block_0009_0002",
+        "block": {
+          "type": "output_prediction",
+          "id": "p3_u4l6_deduccion_de_copias",
+          "language": "cpp",
+          "question": "¿Qué muestra primero:segundo:*fijo:*lectura?",
+          "code": "#include <iostream>\n\nint main() {\n    int primero = 2;\n    int segundo = 5;\n    int* const fijo = &primero;\n    auto escritura = fijo;\n    escritura = &segundo;\n    *escritura = 9;\n    const int* const fijaDeLectura = &primero;\n    auto lectura = fijaDeLectura;\n    lectura = &segundo;\n    primero = 7;\n    std::cout << primero << ':' << segundo << ':' << *fijo << ':' << *lectura;\n    return 0;\n}\n",
+          "answers": [
+            "7:9:7:9"
+          ],
+          "outputComparison": "exact",
+          "explanation": "escritura es otro int* y permite cambiar segundo a 9. lectura es otro const int* y puede seleccionar segundo para leerlo. fijo conserva primero, cuyo valor se cambia a 7 por su nombre."
+        }
+      },
+      {
+        "id": "block_0010_0002",
+        "block": {
+          "type": "output_prediction",
+          "id": "p3_u4l6_const_no_implica_objeto",
+          "language": "cpp",
+          "question": "¿Qué muestra la comparación?",
+          "code": "#include <iostream>\n\nint main() {\n    const int* const ausente = nullptr;\n    std::cout << (ausente == nullptr);\n    return 0;\n}\n",
+          "answers": [
+            "1"
+          ],
+          "outputComparison": "exact",
+          "explanation": "ausente se inicializa con nullptr y la comparación es verdadera. No se realiza ninguna lectura mediante el puntero."
+        }
+      },
+      {
+        "id": "block_0013_0003",
+        "block": {
+          "type": "cpp_compiler",
+          "language": "cpp",
+          "initialCode": "#include <iostream>\n\nint main() {\n    int dato = 4;\n    const int* lectura = &dato;\n    int* const destino = &dato;\n    const int copia = *destino;\n    *lectura = 7;\n    std::cout << dato << ':' << *lectura << ':' << copia;\n    return 0;\n}\n",
+          "initialStandardInput": "",
+          "outputCheck": {
+            "inputComparison": "tokens",
+            "cases": [
+              {
+                "standardInput": "",
+                "outputs": [
+                  "7:7:4"
+                ],
+                "explanation": "La escritura utiliza el acceso modificable. La vista observa el dato nuevo y la copia conserva el valor inicial."
+              }
+            ]
+          }
+        }
+      },
+      {
+        "id": "block_0014_0001",
+        "block": {
+          "type": "code",
+          "language": "cpp",
+          "code": "#include <iostream>\n\nint main() {\n    int dato = 4;\n    const int* lectura = &dato;\n    int* const destino = &dato;\n    const int copia = *destino;\n    *destino = 7;\n    std::cout << dato << ':' << *lectura << ':' << copia;\n    return 0;\n}\n"
+        }
+      },
+      {
+        "id": "block_0015_0002",
+        "block": {
+          "type": "output_prediction",
+          "id": "p3_u4l6_lectura_de_arrays_const_y_modificables",
+          "language": "cpp",
+          "question": "¿Qué muestra *lectura:*fija:datos[1]?",
+          "code": "#include <array>\n#include <cstddef>\n#include <iostream>\n#include <string>\n\nconst int* consultar(const std::array<int, 3>& datos, int indice) {\n    if (indice < 0 || indice > 2) {\n        return nullptr;\n    }\n    return &datos.at(static_cast<std::size_t>(indice));\n}\n\nint main() {\n    std::array<int, 3> datos{2, 5, 8};\n    const std::array<int, 3> constantes{3, 6, 9};\n    const int* lectura = consultar(datos, 1);\n    const int* const fija = lectura;\n    datos[1] = 7;\n    lectura = consultar(constantes, 2);\n    std::cout << *lectura << ':' << *fija << ':' << datos[1];\n    return 0;\n}\n",
+          "answers": [
+            "9:7:7"
+          ],
+          "outputComparison": "exact",
+          "explanation": "fija conserva el elemento uno de datos y permite leer su cambio a 7. lectura se reasigna al elemento dos del array constantes y lee 9. La función no creó copias de los arrays ni de sus elementos."
+        }
+      },
+      {
+        "id": "block_0016_0016",
+        "block": {
+          "type": "cpp_compiler",
+          "language": "cpp",
+          "initialCode": "#include <array>\n#include <cstddef>\n#include <iostream>\n#include <string>\n\nconst int* consultar(const std::array<int, 3>& datos, int indice) {\n    if (indice < 0 || indice > 2) {\n        return nullptr;\n    }\n    return &datos.at(static_cast<std::size_t>(indice));\n}\n\nint main() {\n    std::array<int, 3> datos{2, 5, 8};\n    const int limite = 9;\n    const int* vista = nullptr;\n    int* const destino = &datos[1];\n    const int* const tope = &limite;\n    const int copia = *destino;\n    int cantidad = 0;\n    if (!(std::cin >> cantidad) || cantidad < 1 || cantidad > 12) {\n        return 1;\n    }\n    for (int orden = 0; orden < cantidad; ++orden) {\n        int operacion = 0;\n        int argumento = 0;\n        if (!(std::cin >> operacion >> argumento)) {\n            return 1;\n        }\n        std::string estado = \"Pendiente\";\n        if ((operacion == 2 || operacion == 3) &&\n            (argumento < 0 || argumento > *tope)) {\n            estado = \"Rechazo\";\n        } else {\n            // Implementa las operaciones aqui; conserva tipos y comprobaciones.\n        }\n        std::cout << estado << \";Vista:\";\n        if (vista == nullptr) {\n            std::cout << 'X';\n        } else {\n            std::cout << *vista;\n        }\n        std::cout << \";Destino:\" << *destino << \";Copia:\" << copia\n                  << \";Datos:\" << datos[0] << ',' << datos[1] << ',' << datos[2] << '\\n';\n    }\n    return 0;\n}\n",
+          "initialStandardInput": "12\n1 -1\n2 7\n1 1\n2 0\n3 9\n1 0\n3 0\n2 8\n4 0\n1 1\n1 3\n2 10\n",
+          "outputCheck": {
+            "inputComparison": "tokens",
+            "cases": [
+              {
+                "standardInput": "12\n1 -1\n2 7\n1 1\n2 0\n3 9\n1 0\n3 0\n2 8\n4 0\n1 1\n1 3\n2 10\n",
+                "outputs": [
+                  "Indice invalido;Vista:X;Destino:5;Copia:5;Datos:2,5,8\nCambio;Vista:X;Destino:7;Copia:5;Datos:2,7,8\nElegida;Vista:7;Destino:7;Copia:5;Datos:2,7,8\nCambio;Vista:0;Destino:0;Copia:5;Datos:2,0,8\nCambio;Vista:0;Destino:0;Copia:5;Datos:9,0,8\nElegida;Vista:9;Destino:0;Copia:5;Datos:9,0,8\nCambio;Vista:0;Destino:0;Copia:5;Datos:0,0,8\nCambio;Vista:0;Destino:8;Copia:5;Datos:0,8,8\nSin vista;Vista:X;Destino:8;Copia:5;Datos:0,8,8\nElegida;Vista:8;Destino:8;Copia:5;Datos:0,8,8\nIndice invalido;Vista:X;Destino:8;Copia:5;Datos:0,8,8\nRechazo;Vista:X;Destino:8;Copia:5;Datos:0,8,8\n"
+                ],
+                "explanation": "La vista sólo permite leer pero observa escrituras válidas sobre el mismo elemento. destino conserva la posición uno, tope conserva el límite constante y copia mantiene el valor inicial."
+              },
+              {
+                "standardInput": "10\n1 2\n2 9\n3 5\n1 0\n3 5\n1 1\n2 9\n4 100\n2 -1\n3 10\n",
+                "outputs": [
+                  "Elegida;Vista:8;Destino:5;Copia:5;Datos:2,5,8\nCambio;Vista:8;Destino:9;Copia:5;Datos:2,9,8\nCambio;Vista:8;Destino:9;Copia:5;Datos:5,9,8\nElegida;Vista:5;Destino:9;Copia:5;Datos:5,9,8\nCambio;Vista:5;Destino:9;Copia:5;Datos:5,9,8\nElegida;Vista:9;Destino:9;Copia:5;Datos:5,9,8\nCambio;Vista:9;Destino:9;Copia:5;Datos:5,9,8\nSin vista;Vista:X;Destino:9;Copia:5;Datos:5,9,8\nRechazo;Vista:X;Destino:9;Copia:5;Datos:5,9,8\nRechazo;Vista:X;Destino:9;Copia:5;Datos:5,9,8\n"
+                ],
+                "explanation": "La vista sólo permite leer pero observa escrituras válidas sobre el mismo elemento. destino conserva la posición uno, tope conserva el límite constante y copia mantiene el valor inicial."
+              },
+              {
+                "standardInput": "10\n1 1\n1 -2147483648\n1 2147483647\n2 -2147483648\n3 2147483647\n0 7\n1 0\n3 9\n4 -2147483648\n2 0\n",
+                "outputs": [
+                  "Elegida;Vista:5;Destino:5;Copia:5;Datos:2,5,8\nIndice invalido;Vista:X;Destino:5;Copia:5;Datos:2,5,8\nIndice invalido;Vista:X;Destino:5;Copia:5;Datos:2,5,8\nRechazo;Vista:X;Destino:5;Copia:5;Datos:2,5,8\nRechazo;Vista:X;Destino:5;Copia:5;Datos:2,5,8\nOperacion invalida;Vista:X;Destino:5;Copia:5;Datos:2,5,8\nElegida;Vista:2;Destino:5;Copia:5;Datos:2,5,8\nCambio;Vista:9;Destino:5;Copia:5;Datos:9,5,8\nSin vista;Vista:X;Destino:5;Copia:5;Datos:9,5,8\nCambio;Vista:X;Destino:0;Copia:5;Datos:9,0,8\n"
+                ],
+                "explanation": "La vista sólo permite leer pero observa escrituras válidas sobre el mismo elemento. destino conserva la posición uno, tope conserva el límite constante y copia mantiene el valor inicial."
+              },
+              {
+                "standardInput": "8\n1 0\n2 9\n3 7\n1 1\n2 4\n4 0\n3 0\n1 1\n",
+                "outputs": [
+                  "Elegida;Vista:2;Destino:5;Copia:5;Datos:2,5,8\nCambio;Vista:2;Destino:9;Copia:5;Datos:2,9,8\nCambio;Vista:7;Destino:9;Copia:5;Datos:7,9,8\nElegida;Vista:9;Destino:9;Copia:5;Datos:7,9,8\nCambio;Vista:4;Destino:4;Copia:5;Datos:7,4,8\nSin vista;Vista:X;Destino:4;Copia:5;Datos:7,4,8\nCambio;Vista:X;Destino:4;Copia:5;Datos:0,4,8\nElegida;Vista:4;Destino:4;Copia:5;Datos:0,4,8\n"
+                ],
+                "explanation": "La vista sólo permite leer pero observa escrituras válidas sobre el mismo elemento. destino conserva la posición uno, tope conserva el límite constante y copia mantiene el valor inicial."
+              }
+            ]
+          }
+        }
+      },
+      {
+        "id": "block_0019_0001",
+        "block": {
+          "type": "code",
+          "language": "cpp",
+          "code": "#include <array>\n#include <cstddef>\n#include <iostream>\n#include <string>\n\nconst int* consultar(const std::array<int, 3>& datos, int indice) {\n    if (indice < 0 || indice > 2) {\n        return nullptr;\n    }\n    return &datos.at(static_cast<std::size_t>(indice));\n}\n\nint main() {\n    std::array<int, 3> datos{2, 5, 8};\n    const int limite = 9;\n    const int* vista = nullptr;\n    int* const destino = &datos[1];\n    const int* const tope = &limite;\n    const int copia = *destino;\n    int cantidad = 0;\n    if (!(std::cin >> cantidad) || cantidad < 1 || cantidad > 12) {\n        return 1;\n    }\n    for (int orden = 0; orden < cantidad; ++orden) {\n        int operacion = 0;\n        int argumento = 0;\n        if (!(std::cin >> operacion >> argumento)) {\n            return 1;\n        }\n        std::string estado = \"Pendiente\";\n        if ((operacion == 2 || operacion == 3) &&\n            (argumento < 0 || argumento > *tope)) {\n            estado = \"Rechazo\";\n        } else {\n            if (operacion == 1) {\n                vista = consultar(datos, argumento);\n                if (vista == nullptr) {\n                    estado = \"Indice invalido\";\n                } else {\n                    estado = \"Elegida\";\n                }\n            } else if (operacion == 2) {\n                *destino = argumento;\n                estado = \"Cambio\";\n            } else if (operacion == 3) {\n                datos[0] = argumento;\n                estado = \"Cambio\";\n            } else if (operacion == 4) {\n                vista = nullptr;\n                estado = \"Sin vista\";\n            } else {\n                estado = \"Operacion invalida\";\n            }\n        }\n        std::cout << estado << \";Vista:\";\n        if (vista == nullptr) {\n            std::cout << 'X';\n        } else {\n            std::cout << *vista;\n        }\n        std::cout << \";Destino:\" << *destino << \";Copia:\" << copia\n                  << \";Datos:\" << datos[0] << ',' << datos[1] << ',' << datos[2] << '\\n';\n    }\n    return 0;\n}\n"
+        }
+      }
+    ]
   }
 }

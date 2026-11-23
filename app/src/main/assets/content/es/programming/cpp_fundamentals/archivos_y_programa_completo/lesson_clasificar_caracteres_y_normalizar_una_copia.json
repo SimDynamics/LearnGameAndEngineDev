@@ -31,7 +31,7 @@
         {
           "type": "code",
           "language": "cpp",
-          "code": "#include <cctype>\n#include <iostream>\n\nint main() {\n    const char caracter = 'Q';\n    const unsigned char unidad = static_cast<unsigned char>(caracter);\n    const bool letra = std::isalpha(unidad) != 0;\n    const bool digito = std::isdigit(unidad) != 0;\n    const bool blanco = std::isspace(unidad) != 0;\n    std::cout << letra << ':' << digito << ':' << blanco;\n    return 0;\n}\n"
+          "code": "#include <cctype>\n#include <iostream>\n\nint main() {\n    const char caracter = 'Q';\n    const unsigned char unidad = static_cast<unsigned char>(caracter);\n    const bool letra = std::isalpha(unidad) != 0;\n    const bool digito = std::isdigit(unidad) != 0;\n    const bool blanco = std::isspace(unidad) != 0;\n\n    std::cout << letra << ':' << digito << ':' << blanco;\n\n    return 0;\n}\n"
         },
         {
           "type": "paragraph",
@@ -47,7 +47,7 @@
           "type": "output_prediction",
           "language": "cpp",
           "question": "Predice la salida con otro carácter.",
-          "code": "#include <cctype>\n#include <iostream>\n\nint main() {\n    const char caracter = '5';\n    const unsigned char unidad = static_cast<unsigned char>(caracter);\n    const bool letra = std::isalpha(unidad) != 0;\n    const bool digito = std::isdigit(unidad) != 0;\n    const bool blanco = std::isspace(unidad) != 0;\n    std::cout << letra << ':' << digito << ':' << blanco;\n    return 0;\n}\n",
+          "code": "#include <cctype>\n#include <iostream>\n\nint main() {\n    const char caracter = '5';\n    const unsigned char unidad = static_cast<unsigned char>(caracter);\n    const bool letra = std::isalpha(unidad) != 0;\n    const bool digito = std::isdigit(unidad) != 0;\n    const bool blanco = std::isspace(unidad) != 0;\n\n    std::cout << letra << ':' << digito << ':' << blanco;\n\n    return 0;\n}\n",
           "answers": [
             "0:1:0"
           ],
@@ -102,7 +102,7 @@
           "type": "fill_code",
           "language": "cpp",
           "question": "Completa sólo el tipo de la conversión: debe obtener primero la unidad de carácter sin signo.",
-          "code": "#include <cctype>\n#include <iostream>\n\nint main() {\n    const char caracter = 'Q';\n    const unsigned char unidad = static_cast<___>(caracter);\n    const bool letra = std::isalpha(unidad) != 0;\n    const bool digito = std::isdigit(unidad) != 0;\n    const bool blanco = std::isspace(unidad) != 0;\n    std::cout << letra << ':' << digito << ':' << blanco;\n    return 0;\n}\n",
+          "code": "#include <cctype>\n#include <iostream>\n\nint main() {\n    const char caracter = 'Q';\n    const unsigned char unidad = static_cast<___>(caracter);\n    const bool letra = std::isalpha(unidad) != 0;\n    const bool digito = std::isdigit(unidad) != 0;\n    const bool blanco = std::isspace(unidad) != 0;\n\n    std::cout << letra << ':' << digito << ':' << blanco;\n\n    return 0;\n}\n",
           "answers": [
             "unsigned char",
             "char unsigned"
@@ -124,7 +124,7 @@
           "type": "output_prediction",
           "language": "cpp",
           "question": "Aquí se usa la marca permitida, sin convertirla en char. Predice ambos bool.",
-          "code": "#include <cctype>\n#include <cstdio>\n#include <iostream>\n\nint main() {\n    const bool digito = std::isdigit(EOF) != 0;\n    const bool sigue_fin = std::tolower(EOF) == EOF;\n    std::cout << digito << ':' << sigue_fin;\n    return 0;\n}\n",
+          "code": "#include <cctype>\n#include <cstdio>\n#include <iostream>\n\nint main() {\n    const bool digito = std::isdigit(EOF) != 0;\n    const bool sigue_fin = std::tolower(EOF) == EOF;\n\n    std::cout << digito << ':' << sigue_fin;\n\n    return 0;\n}\n",
           "answers": [
             "0:1"
           ],
@@ -173,7 +173,7 @@
           "type": "output_prediction",
           "language": "cpp",
           "question": "Compara biblioteca y política de tres separadores. Predice la salida.",
-          "code": "#include <cctype>\n#include <iostream>\n\nint main() {\n    const char caracter = '\\r';\n    const bool biblioteca = std::isspace(static_cast<unsigned char>(caracter)) != 0;\n    const bool separador = caracter == ' ' || caracter == '\\t' || caracter == '\\n';\n    std::cout << biblioteca << ':' << separador;\n    return 0;\n}\n",
+          "code": "#include <cctype>\n#include <iostream>\n\nint main() {\n    const char caracter = '\\r';\n    const bool biblioteca = std::isspace(static_cast<unsigned char>(caracter)) != 0;\n    const bool separador = caracter == ' ' || caracter == '\\t' || caracter == '\\n';\n\n    std::cout << biblioteca << ':' << separador;\n\n    return 0;\n}\n",
           "answers": [
             "1:0"
           ],
@@ -200,7 +200,7 @@
           "type": "output_prediction",
           "language": "cpp",
           "question": "Este informe conserva todos los caracteres del string. Predice los cuatro recuentos.",
-          "code": "#include <cctype>\n#include <iostream>\n#include <string>\n\nint main() {\n    const std::string texto{\"A\\v9_\"};\n    int letras{0};\n    int digitos{0};\n    int blancos{0};\n    int otros{0};\n    for (char caracter : texto) {\n        const unsigned char unidad = static_cast<unsigned char>(caracter);\n        if (std::isalpha(unidad) != 0) { ++letras; }\n        else if (std::isdigit(unidad) != 0) { ++digitos; }\n        else if (std::isspace(unidad) != 0) { ++blancos; }\n        else { ++otros; }\n    }\n    std::cout << letras << ':' << digitos << ':' << blancos << ':' << otros;\n    return 0;\n}\n",
+          "code": "#include <cctype>\n#include <iostream>\n#include <string>\n\nint main() {\n    const std::string texto{\"A\\v9_\"};\n    int letras{0};\n    int digitos{0};\n    int blancos{0};\n    int otros{0};\n\n    for (char caracter : texto) {\n        const unsigned char unidad = static_cast<unsigned char>(caracter);\n        if (std::isalpha(unidad) != 0) { ++letras; }\n        else if (std::isdigit(unidad) != 0) { ++digitos; }\n        else if (std::isspace(unidad) != 0) { ++blancos; }\n        else { ++otros; }\n    }\n    std::cout << letras << ':' << digitos << ':' << blancos << ':' << otros;\n\n    return 0;\n}\n",
           "answers": [
             "1:1:1:1"
           ],
@@ -232,7 +232,7 @@
         {
           "type": "code",
           "language": "cpp",
-          "code": "#include <cctype>\n#include <iostream>\n\nint main() {\n    const char original = 'R';\n    const int resultado = std::tolower(static_cast<unsigned char>(original));\n    const char minuscula = static_cast<char>(resultado);\n    const char mayuscula = static_cast<char>(std::toupper(static_cast<unsigned char>(minuscula)));\n    const char signo = static_cast<char>(std::tolower(static_cast<unsigned char>('#')));\n    std::cout << original << ':' << minuscula << ':' << mayuscula << ':' << signo;\n    return 0;\n}\n"
+          "code": "#include <cctype>\n#include <iostream>\n\nint main() {\n    const char original = 'R';\n    const int resultado = std::tolower(static_cast<unsigned char>(original));\n    const char minuscula = static_cast<char>(resultado);\n    const char mayuscula = static_cast<char>(std::toupper(static_cast<unsigned char>(minuscula)));\n    const char signo = static_cast<char>(std::tolower(static_cast<unsigned char>('#')));\n\n    std::cout << original << ':' << minuscula << ':' << mayuscula << ':' << signo;\n\n    return 0;\n}\n"
         },
         {
           "type": "paragraph",
@@ -242,7 +242,7 @@
           "type": "output_prediction",
           "language": "cpp",
           "question": "Predice las tres partes; ningún resultado es la marca EOF.",
-          "code": "#include <cctype>\n#include <iostream>\n\nint main() {\n    const char letra = 'k';\n    const char numero = '8';\n    std::cout << static_cast<char>(std::toupper(static_cast<unsigned char>(letra))) << ':'\n              << static_cast<char>(std::tolower(static_cast<unsigned char>(numero))) << ':'\n              << letra;\n    return 0;\n}\n",
+          "code": "#include <cctype>\n#include <iostream>\n\nint main() {\n    const char letra = 'k';\n    const char numero = '8';\n\n    std::cout << static_cast<char>(std::toupper(static_cast<unsigned char>(letra))) << ':'\n              << static_cast<char>(std::tolower(static_cast<unsigned char>(numero))) << ':'\n              << letra;\n    return 0;\n}\n",
           "answers": [
             "K:8:k"
           ],
@@ -286,7 +286,7 @@
         {
           "type": "code",
           "language": "cpp",
-          "code": "#include <cctype>\n#include <iostream>\n#include <string>\n\nint main() {\n    const std::string recibido{\"LaGo-4\"};\n    std::string copia = recibido;\n    for (char& caracter : copia) {\n        caracter = static_cast<char>(std::tolower(static_cast<unsigned char>(caracter)));\n    }\n    std::cout << recibido << ':' << copia;\n    return 0;\n}\n"
+          "code": "#include <cctype>\n#include <iostream>\n#include <string>\n\nint main() {\n    const std::string recibido{\"LaGo-4\"};\n    std::string copia = recibido;\n\n    for (char& caracter : copia) {\n        caracter = static_cast<char>(std::tolower(static_cast<unsigned char>(caracter)));\n    }\n    std::cout << recibido << ':' << copia;\n\n    return 0;\n}\n"
         },
         {
           "type": "paragraph",
@@ -431,7 +431,7 @@
         {
           "type": "code",
           "language": "cpp",
-          "code": "#include <cctype>\n#include <iostream>\n#include <string>\n\nbool texto_admitido(const std::string& texto) {\n    if (texto.size() > 40) { return false; }\n    for (char caracter : texto) {\n        if (static_cast<unsigned char>(caracter) > 127) { return false; }\n    }\n    return true;\n}\n\nstruct Resumen_caracteres {\n    int letras;\n    int digitos;\n    int blancos;\n    int otros;\n};\n\nResumen_caracteres resumir(const std::string& texto) {\n    Resumen_caracteres resultado{0, 0, 0, 0};\n    for (char caracter : texto) {\n        const unsigned char unidad = static_cast<unsigned char>(caracter);\n        if (std::isalpha(unidad) != 0) { ++resultado.letras; }\n        else if (std::isdigit(unidad) != 0) { ++resultado.digitos; }\n        else if (std::isspace(unidad) != 0) { ++resultado.blancos; }\n        else { ++resultado.otros; }\n    }\n    return resultado;\n}\n\nstd::string copiar_en_minusculas(const std::string& texto) {\n    std::string resultado = texto;\n    for (char& caracter : resultado) {\n        caracter = static_cast<char>(std::tolower(static_cast<unsigned char>(caracter)));\n    }\n    return resultado;\n}\n\nstd::string copiar_en_mayusculas(const std::string& texto) {\n    std::string resultado = texto;\n    for (char& caracter : resultado) {\n        caracter = static_cast<char>(std::toupper(static_cast<unsigned char>(caracter)));\n    }\n    return resultado;\n}\n\nint main() {\n    std::string entrada{\"CaJa 2.\"};\n    const std::string previo = entrada;\n    if (!texto_admitido(entrada)) {\n        std::cout << \"Texto rechazado\";\n        return 0;\n    }\n    const Resumen_caracteres resumen = resumir(entrada);\n    const std::string minusculas = copiar_en_minusculas(entrada);\n    const std::string mayusculas = copiar_en_mayusculas(entrada);\n    std::cout << \"Original:<\" << entrada << \">\\n\"\n              << \"Minusculas:<\" << minusculas << \">\\n\"\n              << \"Mayusculas:<\" << mayusculas << \">\\n\"\n              << \"Letras:\" << resumen.letras << \";Digitos:\" << resumen.digitos\n              << \";Blancos:\" << resumen.blancos << \";Otros:\" << resumen.otros\n              << \"\\nEntrada conservada:\" << (entrada == previo);\n    return 0;\n}\n"
+          "code": "#include <cctype>\n#include <iostream>\n#include <string>\n\nbool texto_admitido(const std::string& texto) {\n    if (texto.size() > 40) { return false; }\n    for (char caracter : texto) {\n        if (static_cast<unsigned char>(caracter) > 127) { return false; }\n    }\n\n    return true;\n}\n\nstruct Resumen_caracteres {\n    int letras;\n    int digitos;\n    int blancos;\n    int otros;\n};\n\nResumen_caracteres resumir(const std::string& texto) {\n    Resumen_caracteres resultado{0, 0, 0, 0};\n    for (char caracter : texto) {\n        const unsigned char unidad = static_cast<unsigned char>(caracter);\n        if (std::isalpha(unidad) != 0) { ++resultado.letras; }\n        else if (std::isdigit(unidad) != 0) { ++resultado.digitos; }\n        else if (std::isspace(unidad) != 0) { ++resultado.blancos; }\n        else { ++resultado.otros; }\n    }\n\n    return resultado;\n}\n\nstd::string copiar_en_minusculas(const std::string& texto) {\n    std::string resultado = texto;\n    for (char& caracter : resultado) {\n        caracter = static_cast<char>(std::tolower(static_cast<unsigned char>(caracter)));\n    }\n\n    return resultado;\n}\n\nstd::string copiar_en_mayusculas(const std::string& texto) {\n    std::string resultado = texto;\n    for (char& caracter : resultado) {\n        caracter = static_cast<char>(std::toupper(static_cast<unsigned char>(caracter)));\n    }\n\n    return resultado;\n}\n\nint main() {\n    std::string entrada{\"CaJa 2.\"};\n    const std::string previo = entrada;\n\n    if (!texto_admitido(entrada)) {\n        std::cout << \"Texto rechazado\";\n        return 0;\n    }\n    const Resumen_caracteres resumen = resumir(entrada);\n    const std::string minusculas = copiar_en_minusculas(entrada);\n    const std::string mayusculas = copiar_en_mayusculas(entrada);\n\n    std::cout << \"Original:<\" << entrada << \">\\n\"\n              << \"Minusculas:<\" << minusculas << \">\\n\"\n              << \"Mayusculas:<\" << mayusculas << \">\\n\"\n              << \"Letras:\" << resumen.letras << \";Digitos:\" << resumen.digitos\n              << \";Blancos:\" << resumen.blancos << \";Otros:\" << resumen.otros\n              << \"\\nEntrada conservada:\" << (entrada == previo);\n    return 0;\n}\n"
         },
         {
           "type": "paragraph",
@@ -468,7 +468,7 @@
         {
           "type": "code",
           "language": "cpp",
-          "code": "#include <cctype>\n#include <iostream>\n#include <string>\n\nbool texto_admitido(const std::string& texto) {\n    if (texto.size() > 40) { return false; }\n    for (char caracter : texto) {\n        if (static_cast<unsigned char>(caracter) > 127) { return false; }\n    }\n    return true;\n}\n\nstruct Resumen_caracteres {\n    int letras;\n    int digitos;\n    int blancos;\n    int otros;\n};\n\nResumen_caracteres resumir(const std::string& texto) {\n    Resumen_caracteres resultado{0, 0, 0, 0};\n    for (char caracter : texto) {\n        const unsigned char unidad = static_cast<unsigned char>(caracter);\n        if (std::isalpha(unidad) != 0) { ++resultado.letras; }\n        else if (std::isdigit(unidad) != 0) { ++resultado.digitos; }\n        else if (std::isspace(unidad) != 0) { ++resultado.blancos; }\n        else { ++resultado.otros; }\n    }\n    return resultado;\n}\n\nstd::string copiar_en_minusculas(const std::string& texto) {\n    std::string resultado = texto;\n    for (char& caracter : resultado) {\n        caracter = static_cast<char>(std::tolower(static_cast<unsigned char>(caracter)));\n    }\n    return resultado;\n}\n\nstd::string copiar_en_mayusculas(const std::string& texto) {\n    std::string resultado = texto;\n    for (char& caracter : resultado) {\n        caracter = static_cast<char>(std::toupper(static_cast<unsigned char>(caracter)));\n    }\n    return resultado;\n}\n\nvoid probar(const std::string& entrada) {\n    const std::string previo = entrada;\n    if (!texto_admitido(entrada)) {\n        std::cout << \"Texto rechazado\\n\";\n        return;\n    }\n    const Resumen_caracteres resumen = resumir(entrada);\n    const std::string minusculas = copiar_en_minusculas(entrada);\n    const std::string mayusculas = copiar_en_mayusculas(entrada);\n    std::cout << \"Original:<\" << entrada << \">\\n\"\n              << \"Minusculas:<\" << minusculas << \">\\n\"\n              << \"Mayusculas:<\" << mayusculas << \">\\n\"\n              << \"Letras:\" << resumen.letras << \";Digitos:\" << resumen.digitos\n              << \";Blancos:\" << resumen.blancos << \";Otros:\" << resumen.otros\n              << \"\\nEntrada conservada:\" << (entrada == previo)\n              << \"\\nUnidades:\" << entrada.size() << \"\\n\";\n}\n\nint main() {\n    std::cout << \"Caso 1\\n\"; probar(\"NoDo 7!\");\n    std::cout << \"Caso 2\\n\"; probar(\"\");\n    std::cout << \"Caso 3\\n\"; probar(\"aZ09_\");\n    std::cout << \"Caso 4\\n\"; probar(std::string(40, 'a'));\n    std::cout << \"Caso 5\\n\"; probar(std::string(41, 'a'));\n    std::cout << \"Caso 6\\n\"; probar(\" \\t\\n\\r\\f\\v\");\n    std::cout << \"Caso 7\\n\"; probar(std::string(1, static_cast<char>(-1)));\n    return 0;\n}\n"
+          "code": "#include <cctype>\n#include <iostream>\n#include <string>\n\nbool texto_admitido(const std::string& texto) {\n    if (texto.size() > 40) { return false; }\n    for (char caracter : texto) {\n        if (static_cast<unsigned char>(caracter) > 127) { return false; }\n    }\n\n    return true;\n}\n\nstruct Resumen_caracteres {\n    int letras;\n    int digitos;\n    int blancos;\n    int otros;\n};\n\nResumen_caracteres resumir(const std::string& texto) {\n    Resumen_caracteres resultado{0, 0, 0, 0};\n    for (char caracter : texto) {\n        const unsigned char unidad = static_cast<unsigned char>(caracter);\n        if (std::isalpha(unidad) != 0) { ++resultado.letras; }\n        else if (std::isdigit(unidad) != 0) { ++resultado.digitos; }\n        else if (std::isspace(unidad) != 0) { ++resultado.blancos; }\n        else { ++resultado.otros; }\n    }\n\n    return resultado;\n}\n\nstd::string copiar_en_minusculas(const std::string& texto) {\n    std::string resultado = texto;\n    for (char& caracter : resultado) {\n        caracter = static_cast<char>(std::tolower(static_cast<unsigned char>(caracter)));\n    }\n\n    return resultado;\n}\n\nstd::string copiar_en_mayusculas(const std::string& texto) {\n    std::string resultado = texto;\n    for (char& caracter : resultado) {\n        caracter = static_cast<char>(std::toupper(static_cast<unsigned char>(caracter)));\n    }\n\n    return resultado;\n}\n\nvoid probar(const std::string& entrada) {\n    const std::string previo = entrada;\n    if (!texto_admitido(entrada)) {\n        std::cout << \"Texto rechazado\\n\";\n        return;\n    }\n    const Resumen_caracteres resumen = resumir(entrada);\n    const std::string minusculas = copiar_en_minusculas(entrada);\n    const std::string mayusculas = copiar_en_mayusculas(entrada);\n\n    std::cout << \"Original:<\" << entrada << \">\\n\"\n              << \"Minusculas:<\" << minusculas << \">\\n\"\n              << \"Mayusculas:<\" << mayusculas << \">\\n\"\n              << \"Letras:\" << resumen.letras << \";Digitos:\" << resumen.digitos\n              << \";Blancos:\" << resumen.blancos << \";Otros:\" << resumen.otros\n              << \"\\nEntrada conservada:\" << (entrada == previo)\n              << \"\\nUnidades:\" << entrada.size() << \"\\n\";\n}\n\nint main() {\n    std::cout << \"Caso 1\\n\"; probar(\"NoDo 7!\");\n    std::cout << \"Caso 2\\n\"; probar(\"\");\n    std::cout << \"Caso 3\\n\"; probar(\"aZ09_\");\n    std::cout << \"Caso 4\\n\"; probar(std::string(40, 'a'));\n    std::cout << \"Caso 5\\n\"; probar(std::string(41, 'a'));\n    std::cout << \"Caso 6\\n\"; probar(\" \\t\\n\\r\\f\\v\");\n    std::cout << \"Caso 7\\n\"; probar(std::string(1, static_cast<char>(-1)));\n\n    return 0;\n}\n"
         }
       ]
     },
@@ -498,7 +498,7 @@
           "type": "output_prediction",
           "language": "cpp",
           "question": "Esta política de consulta ignora caja básica y conserva el texto recibido. Predice los tres bool.",
-          "code": "#include <cctype>\n#include <iostream>\n#include <string>\n\nstd::string copiar_en_minusculas(const std::string& texto) {\n    std::string resultado = texto;\n    for (char& caracter : resultado) {\n        caracter = static_cast<char>(std::tolower(static_cast<unsigned char>(caracter)));\n    }\n    return resultado;\n}\n\nint main() {\n    const std::string recibido{\"TaBlA\"};\n    const std::string copia = copiar_en_minusculas(recibido);\n    std::cout << (recibido == \"tabla\") << ':' << (copia == \"tabla\") << ':'\n              << (recibido == \"TaBlA\");\n    return 0;\n}\n",
+          "code": "#include <cctype>\n#include <iostream>\n#include <string>\n\nstd::string copiar_en_minusculas(const std::string& texto) {\n    std::string resultado = texto;\n    for (char& caracter : resultado) {\n        caracter = static_cast<char>(std::tolower(static_cast<unsigned char>(caracter)));\n    }\n\n    return resultado;\n}\n\nint main() {\n    const std::string recibido{\"TaBlA\"};\n    const std::string copia = copiar_en_minusculas(recibido);\n\n    std::cout << (recibido == \"tabla\") << ':' << (copia == \"tabla\") << ':'\n              << (recibido == \"TaBlA\");\n    return 0;\n}\n",
           "answers": [
             "0:1:1"
           ],
@@ -550,7 +550,7 @@
         },
         {
           "type": "cpp_compiler",
-          "initialCode": "#include <cctype>\n#include <iostream>\n#include <string>\n\nint main() {\n    // Construye la copia y la bateria de recuperacion.\n    return 0;\n}\n",
+          "initialCode": "#include <cctype>\n#include <iostream>\n#include <string>\n\nint main() {\n    // Construye la copia y la bateria de recuperacion.\n    \n    return 0;\n}\n",
           "outputCheck": {
             "cases": [
               {
@@ -582,7 +582,7 @@
         {
           "type": "code",
           "language": "cpp",
-          "code": "#include <cctype>\n#include <iostream>\n#include <string>\n\nstd::string copiar_en_minusculas(const std::string& entrada) {\n    std::string copia = entrada;\n    for (char& c : copia)\n        c = static_cast<char>(std::tolower(static_cast<unsigned char>(c)));\n    return copia;\n}\n\nint main() {\n    const std::string a{\"ABC9_\"};\n    const std::string b{\"abc9_\"};\n    const std::string c{\"--7\"};\n    std::cout << copiar_en_minusculas(a) << \"\\n\" << copiar_en_minusculas(b) << \"\\n\"\n              << copiar_en_minusculas(c) << \"\\n\" << a << \"\\n\";\n    return 0;\n}\n"
+          "code": "#include <cctype>\n#include <iostream>\n#include <string>\n\nstd::string copiar_en_minusculas(const std::string& entrada) {\n    std::string copia = entrada;\n    for (char& c : copia)\n        c = static_cast<char>(std::tolower(static_cast<unsigned char>(c)));\n    return copia;\n}\n\nint main() {\n    const std::string a{\"ABC9_\"};\n    const std::string b{\"abc9_\"};\n    const std::string c{\"--7\"};\n\n    std::cout << copiar_en_minusculas(a) << \"\\n\" << copiar_en_minusculas(b) << \"\\n\"\n              << copiar_en_minusculas(c) << \"\\n\" << a << \"\\n\";\n    return 0;\n}\n"
         },
         {
           "type": "heading",
@@ -626,7 +626,7 @@
         },
         {
           "type": "cpp_compiler",
-          "initialCode": "#include <cctype>\n#include <iostream>\n#include <string>\n\nbool texto_admitido(const std::string& texto) {\n    // Valida la longitud y todas las unidades antes del resumen y las copias.\n    (void)texto;\n    return false;\n}\n\nstruct Resumen_caracteres {\n    int letras;\n    int digitos;\n    int blancos;\n    int otros;\n};\n\nResumen_caracteres resumir(const std::string& texto) {\n    // Cuenta cada unidad admitida en una sola categoria.\n    (void)texto;\n    return {0, 0, 0, 0};\n}\n\nstd::string copiar_en_minusculas(const std::string& texto) {\n    // Devuelve la copia en minusculas sin perder unidades.\n    return texto;\n}\n\nstd::string copiar_en_mayusculas(const std::string& texto) {\n    // Devuelve la copia en mayusculas sin perder unidades.\n    return texto;\n}\n\nvoid mostrar_unidades(const std::string& texto) {\n    bool primera = true;\n    for (char caracter : texto) {\n        if (!primera) { std::cout << ':'; }\n        std::cout << static_cast<int>(static_cast<unsigned char>(caracter));\n        primera = false;\n    }\n    std::cout << '\\n';\n}\n\nint main() {\n    int caso{0};\n    if (!(std::cin >> caso)) { return 1; }\n    std::string entrada;\n    if (caso == 1) { entrada = {'A', '\\0', 'Z', static_cast<char>(127), '9'}; }\n    else if (caso == 2) { entrada = {'A', '\\0', static_cast<char>(-1), 'Z'}; }\n    else if (caso == 3) { entrada = {'\\0'}; }\n    else if (caso == 4) { entrada = {static_cast<char>(127), '\\t', 'b'}; }\n    else { return 1; }\n    const std::string previo = entrada;\n    const bool admitido = texto_admitido(entrada);\n    std::cout << \"Admitido=\" << admitido << \"|Unidades=\" << entrada.size() << '\\n';\n    if (admitido) {\n        const Resumen_caracteres resumen = resumir(entrada);\n        const std::string minusculas = copiar_en_minusculas(entrada);\n        const std::string mayusculas = copiar_en_mayusculas(entrada);\n        std::cout << \"Resumen=\" << resumen.letras << ':' << resumen.digitos << ':'\n                  << resumen.blancos << ':' << resumen.otros << '\\n';\n        std::cout << \"Original=\"; mostrar_unidades(entrada);\n        std::cout << \"Minusculas=\"; mostrar_unidades(minusculas);\n        std::cout << \"Mayusculas=\"; mostrar_unidades(mayusculas);\n    }\n    std::cout << \"Entrada conservada=\" << (entrada == previo) << '\\n';\n    return 0;\n}\n",
+          "initialCode": "#include <cctype>\n#include <iostream>\n#include <string>\n\nbool texto_admitido(const std::string& texto) {\n    // Valida la longitud y todas las unidades antes del resumen y las copias.\n    (void)texto;\n    return false;\n}\n\nstruct Resumen_caracteres {\n    int letras;\n    int digitos;\n    int blancos;\n    int otros;\n};\n\nResumen_caracteres resumir(const std::string& texto) {\n    // Cuenta cada unidad admitida en una sola categoria.\n    (void)texto;\n    return {0, 0, 0, 0};\n}\n\nstd::string copiar_en_minusculas(const std::string& texto) {\n    // Devuelve la copia en minusculas sin perder unidades.\n    return texto;\n}\n\nstd::string copiar_en_mayusculas(const std::string& texto) {\n    // Devuelve la copia en mayusculas sin perder unidades.\n    return texto;\n}\n\nvoid mostrar_unidades(const std::string& texto) {\n    bool primera = true;\n    for (char caracter : texto) {\n        if (!primera) { std::cout << ':'; }\n        std::cout << static_cast<int>(static_cast<unsigned char>(caracter));\n        primera = false;\n    }\n    std::cout << '\\n';\n}\n\nint main() {\n    int caso{0};\n    if (!(std::cin >> caso)) { return 1; }\n    std::string entrada;\n    if (caso == 1) { entrada = {'A', '\\0', 'Z', static_cast<char>(127), '9'}; }\n    else if (caso == 2) { entrada = {'A', '\\0', static_cast<char>(-1), 'Z'}; }\n    else if (caso == 3) { entrada = {'\\0'}; }\n    else if (caso == 4) { entrada = {static_cast<char>(127), '\\t', 'b'}; }\n    else { return 1; }\n    const std::string previo = entrada;\n    const bool admitido = texto_admitido(entrada);\n\n    std::cout << \"Admitido=\" << admitido << \"|Unidades=\" << entrada.size() << '\\n';\n\n    if (admitido) {\n        const Resumen_caracteres resumen = resumir(entrada);\n        const std::string minusculas = copiar_en_minusculas(entrada);\n        const std::string mayusculas = copiar_en_mayusculas(entrada);\n\n        std::cout << \"Resumen=\" << resumen.letras << ':' << resumen.digitos << ':'\n                  << resumen.blancos << ':' << resumen.otros << '\\n';\n        std::cout << \"Original=\"; mostrar_unidades(entrada);\n        std::cout << \"Minusculas=\"; mostrar_unidades(minusculas);\n        std::cout << \"Mayusculas=\"; mostrar_unidades(mayusculas);\n    }\n    std::cout << \"Entrada conservada=\" << (entrada == previo) << '\\n';\n\n    return 0;\n}\n",
           "initialStandardInput": "1\n",
           "outputCheck": {
             "inputComparison": "tokens",
@@ -697,7 +697,7 @@
         {
           "type": "code",
           "language": "cpp",
-          "code": "#include <cctype>\n#include <iostream>\n#include <string>\n\nbool texto_admitido(const std::string& texto) {\n    if (texto.size() > 40) { return false; }\n    for (char caracter : texto) {\n        if (static_cast<unsigned char>(caracter) > 127) { return false; }\n    }\n    return true;\n}\n\nstruct Resumen_caracteres {\n    int letras;\n    int digitos;\n    int blancos;\n    int otros;\n};\n\nResumen_caracteres resumir(const std::string& texto) {\n    Resumen_caracteres resultado{0, 0, 0, 0};\n    for (char caracter : texto) {\n        const unsigned char unidad = static_cast<unsigned char>(caracter);\n        if (std::isalpha(unidad) != 0) { ++resultado.letras; }\n        else if (std::isdigit(unidad) != 0) { ++resultado.digitos; }\n        else if (std::isspace(unidad) != 0) { ++resultado.blancos; }\n        else { ++resultado.otros; }\n    }\n    return resultado;\n}\n\nstd::string copiar_en_minusculas(const std::string& texto) {\n    std::string resultado = texto;\n    for (char& caracter : resultado) {\n        caracter = static_cast<char>(std::tolower(static_cast<unsigned char>(caracter)));\n    }\n    return resultado;\n}\n\nstd::string copiar_en_mayusculas(const std::string& texto) {\n    std::string resultado = texto;\n    for (char& caracter : resultado) {\n        caracter = static_cast<char>(std::toupper(static_cast<unsigned char>(caracter)));\n    }\n    return resultado;\n}\n\nvoid mostrar_unidades(const std::string& texto) {\n    bool primera = true;\n    for (char caracter : texto) {\n        if (!primera) { std::cout << ':'; }\n        std::cout << static_cast<int>(static_cast<unsigned char>(caracter));\n        primera = false;\n    }\n    std::cout << '\\n';\n}\n\nint main() {\n    int caso{0};\n    if (!(std::cin >> caso)) { return 1; }\n    std::string entrada;\n    if (caso == 1) { entrada = {'A', '\\0', 'Z', static_cast<char>(127), '9'}; }\n    else if (caso == 2) { entrada = {'A', '\\0', static_cast<char>(-1), 'Z'}; }\n    else if (caso == 3) { entrada = {'\\0'}; }\n    else if (caso == 4) { entrada = {static_cast<char>(127), '\\t', 'b'}; }\n    else { return 1; }\n    const std::string previo = entrada;\n    const bool admitido = texto_admitido(entrada);\n    std::cout << \"Admitido=\" << admitido << \"|Unidades=\" << entrada.size() << '\\n';\n    if (admitido) {\n        const Resumen_caracteres resumen = resumir(entrada);\n        const std::string minusculas = copiar_en_minusculas(entrada);\n        const std::string mayusculas = copiar_en_mayusculas(entrada);\n        std::cout << \"Resumen=\" << resumen.letras << ':' << resumen.digitos << ':'\n                  << resumen.blancos << ':' << resumen.otros << '\\n';\n        std::cout << \"Original=\"; mostrar_unidades(entrada);\n        std::cout << \"Minusculas=\"; mostrar_unidades(minusculas);\n        std::cout << \"Mayusculas=\"; mostrar_unidades(mayusculas);\n    }\n    std::cout << \"Entrada conservada=\" << (entrada == previo) << '\\n';\n    return 0;\n}\n"
+          "code": "#include <cctype>\n#include <iostream>\n#include <string>\n\nbool texto_admitido(const std::string& texto) {\n    if (texto.size() > 40) { return false; }\n    for (char caracter : texto) {\n        if (static_cast<unsigned char>(caracter) > 127) { return false; }\n    }\n\n    return true;\n}\n\nstruct Resumen_caracteres {\n    int letras;\n    int digitos;\n    int blancos;\n    int otros;\n};\n\nResumen_caracteres resumir(const std::string& texto) {\n    Resumen_caracteres resultado{0, 0, 0, 0};\n    for (char caracter : texto) {\n        const unsigned char unidad = static_cast<unsigned char>(caracter);\n        if (std::isalpha(unidad) != 0) { ++resultado.letras; }\n        else if (std::isdigit(unidad) != 0) { ++resultado.digitos; }\n        else if (std::isspace(unidad) != 0) { ++resultado.blancos; }\n        else { ++resultado.otros; }\n    }\n\n    return resultado;\n}\n\nstd::string copiar_en_minusculas(const std::string& texto) {\n    std::string resultado = texto;\n    for (char& caracter : resultado) {\n        caracter = static_cast<char>(std::tolower(static_cast<unsigned char>(caracter)));\n    }\n\n    return resultado;\n}\n\nstd::string copiar_en_mayusculas(const std::string& texto) {\n    std::string resultado = texto;\n    for (char& caracter : resultado) {\n        caracter = static_cast<char>(std::toupper(static_cast<unsigned char>(caracter)));\n    }\n\n    return resultado;\n}\n\nvoid mostrar_unidades(const std::string& texto) {\n    bool primera = true;\n    for (char caracter : texto) {\n        if (!primera) { std::cout << ':'; }\n        std::cout << static_cast<int>(static_cast<unsigned char>(caracter));\n        primera = false;\n    }\n    std::cout << '\\n';\n}\n\nint main() {\n    int caso{0};\n    if (!(std::cin >> caso)) { return 1; }\n    std::string entrada;\n    if (caso == 1) { entrada = {'A', '\\0', 'Z', static_cast<char>(127), '9'}; }\n    else if (caso == 2) { entrada = {'A', '\\0', static_cast<char>(-1), 'Z'}; }\n    else if (caso == 3) { entrada = {'\\0'}; }\n    else if (caso == 4) { entrada = {static_cast<char>(127), '\\t', 'b'}; }\n    else { return 1; }\n    const std::string previo = entrada;\n    const bool admitido = texto_admitido(entrada);\n\n    std::cout << \"Admitido=\" << admitido << \"|Unidades=\" << entrada.size() << '\\n';\n\n    if (admitido) {\n        const Resumen_caracteres resumen = resumir(entrada);\n        const std::string minusculas = copiar_en_minusculas(entrada);\n        const std::string mayusculas = copiar_en_mayusculas(entrada);\n\n        std::cout << \"Resumen=\" << resumen.letras << ':' << resumen.digitos << ':'\n                  << resumen.blancos << ':' << resumen.otros << '\\n';\n        std::cout << \"Original=\"; mostrar_unidades(entrada);\n        std::cout << \"Minusculas=\"; mostrar_unidades(minusculas);\n        std::cout << \"Mayusculas=\"; mostrar_unidades(mayusculas);\n    }\n    std::cout << \"Entrada conservada=\" << (entrada == previo) << '\\n';\n\n    return 0;\n}\n"
         },
         {
           "type": "paragraph",
@@ -2401,6 +2401,338 @@
         "id": "u12_caracteres_nul_interior_entrada_salida_3",
         "beforeSha256": "b8f52ff3eb87a47836dd2cf86639082655921481134d57cc7f73b69a964f6034",
         "afterSha256": "f0ca129af2e769b7fee320b87a067b57cf2964218da00a8ddd2c5e1b555c2a5e"
+      },
+      {
+        "id": "block_0000_0003",
+        "beforeSha256": "bddb54a0d012989b8215834a259567c5cb4bfd2a3b9b26e004fe474b41bc406b",
+        "afterSha256": "80f5757a14dc9faee52a1bf42678047930cb921e61c815430153cea957cda849"
+      },
+      {
+        "id": "block_0000_0005",
+        "beforeSha256": "d274265cdabaa01a6a521233585833ef727a33aa33c3fee75f42609acf5424b5",
+        "afterSha256": "bf91c53869a2cf5832d2440159d2332935e7f23fa29d691497dacd09caa843e4"
+      },
+      {
+        "id": "block_0001_0003",
+        "beforeSha256": "6b9dfe0dbf5ff0c505a3d0218345332c91cc805945e95b64c149ec32e7075045",
+        "afterSha256": "cffb98154ea81802d86341191be0eade132b3988983814827e7af65ddda76882"
+      },
+      {
+        "id": "block_0001_0005",
+        "beforeSha256": "635e7e714d315d2b992cbc22afddad1c8e326fdf5cbed5b6eae484b123788c48",
+        "afterSha256": "6d1c8ad83fdddf90014de34ff35c64ad7c073915909d4d69f1000bf068eaa535"
+      },
+      {
+        "id": "block_0002_0003",
+        "beforeSha256": "0c260f25fb1398bd1eb7ade87d0bfb8a7d3a48f297d369681635548a67cb0c62",
+        "afterSha256": "6f6ff14e8b1ac6a1ab937094cd769bfd5f41b58a42509e4ad9512a566db62934"
+      },
+      {
+        "id": "block_0002_0005",
+        "beforeSha256": "b79ac25a46156e3090a9fddb5d4b28079a301e91690e81b63538dd8cf2b6e6a5",
+        "afterSha256": "a4694e3db5bf2c9896b9aba5eaa7a5b9acedcaf19cb56e24921d52def9323001"
+      },
+      {
+        "id": "block_0003_0002",
+        "beforeSha256": "0b1608ab87b800cdc78269b1e150afd7ecd7b4d0f955b7daa36ed069c0d098d8",
+        "afterSha256": "15d2ec2a0e45e82a8f497aa3cbe75959257e975c84b2a55e7b34a37d7a1eb63f"
+      },
+      {
+        "id": "block_0003_0004",
+        "beforeSha256": "44e4c3225e3abb1edf0e1ee2ef9d0f20599e69a7efa33b49a8bd022ac6bd657a",
+        "afterSha256": "22d4fb214f4f136e4ce230181add1b9fd3f8a6a01253ccffea5b281aedf311b8"
+      },
+      {
+        "id": "block_0004_0002",
+        "beforeSha256": "450b61559a4993ab6f47b27f602476673207dd1f8331fea4adf045297e26254a",
+        "afterSha256": "e8c49da7cc23103d9efc07fd9d60f467a3f3af2824765356966cbaa976e9517f"
+      },
+      {
+        "id": "block_0006_0001",
+        "beforeSha256": "f2cd9d4a8acf2c87c96be7eee2537ef29f2a631db7b946b202696fe35841dd1c",
+        "afterSha256": "8139c7dc1e23b836b06b2b49c54949dd2c6ca4a8d40a6d94c276c0c44a937cac"
+      },
+      {
+        "id": "block_0008_0001",
+        "beforeSha256": "717d3d4399d02c8220fbabdfeacbfdcde46900ae95f971391b46f0f4a7ddc22f",
+        "afterSha256": "c4e82f51295ea7d4bf9a3521e106ad1daa16051c1d8f7a8177857a4db3c22c6f"
+      },
+      {
+        "id": "block_0007_0002",
+        "beforeSha256": "6c52eb0e619515683c8eb29d47060f4d8e75a3d151b5d94a1f01c1335362ea26",
+        "afterSha256": "280af679b4d95f32a932c58a0b078a5247eeae1d97250b05b1822c7aa2df5b1e"
+      },
+      {
+        "id": "block_0009_0002",
+        "beforeSha256": "a126974884cde3e0ea3db8717bc51a9ba0f468944114ce0a90ee4bd4afd50dfc",
+        "afterSha256": "8f3a243546fa94364f7286c8274c04601c255eca223db30358bdbe55754d9f0a"
+      },
+      {
+        "id": "block_0010_0001",
+        "beforeSha256": "2f67dc44cbd9cc1d629cdf01368256faf62bb26afa4f33d6e4abd3cbe7443560",
+        "afterSha256": "fdfbce9dd28a0bc535ce1125e8aca30afdf5e4a2f1c63289c4d1337a47de4483"
+      },
+      {
+        "id": "u12_caracteres_nul_interior_construccion",
+        "beforeSha256": "0ba44ce8ba33c7b4e974481ec1dbf864fc3f4f3a7a04bdb7c9237daf3ad39d3d",
+        "afterSha256": "f1e53cd914bc6f7ef4822dd1899ec8f485d45728bd73179617cd263e8bcc2ff9"
+      },
+      {
+        "id": "u12_caracteres_nul_interior_referencia_codigo",
+        "beforeSha256": "a98bc9e31d64894adaf5cad984fc065853d9ccebec51c8b714dc9160918ed594",
+        "afterSha256": "26d9d4ef05b710a85c5d0836528217289277199a7ad963dcdb3d5bd6228cbd37"
+      }
+    ],
+    "sourceFormatRevisions": [
+      {
+        "id": "block_0000_0003",
+        "block": {
+          "type": "code",
+          "language": "cpp",
+          "code": "#include <cctype>\n#include <iostream>\n\nint main() {\n    const char caracter = 'Q';\n    const unsigned char unidad = static_cast<unsigned char>(caracter);\n    const bool letra = std::isalpha(unidad) != 0;\n    const bool digito = std::isdigit(unidad) != 0;\n    const bool blanco = std::isspace(unidad) != 0;\n    std::cout << letra << ':' << digito << ':' << blanco;\n    return 0;\n}\n"
+        }
+      },
+      {
+        "id": "block_0000_0005",
+        "block": {
+          "type": "output_prediction",
+          "language": "cpp",
+          "question": "Predice la salida con otro carácter.",
+          "code": "#include <cctype>\n#include <iostream>\n\nint main() {\n    const char caracter = '5';\n    const unsigned char unidad = static_cast<unsigned char>(caracter);\n    const bool letra = std::isalpha(unidad) != 0;\n    const bool digito = std::isdigit(unidad) != 0;\n    const bool blanco = std::isspace(unidad) != 0;\n    std::cout << letra << ':' << digito << ':' << blanco;\n    return 0;\n}\n",
+          "answers": [
+            "0:1:0"
+          ],
+          "explanation": "El carácter '5' satisface la pregunta de std::isdigit, pero no las de std::isalpha ni std::isspace en la configuración indicada. Cada comparación con cero produce un bool y la salida respeta el orden letra, dígito y blanco: 0:1:0.\n\nSe muestra el resultado lógico de cada pregunta; no se está imprimiendo ni el código numérico del carácter ni el entero interno que devuelve cada clasificador.",
+          "reviewFeedback": "Aplica las tres preguntas al mismo carácter y conserva el orden letra, dígito y blanco. Los valores mostrados son los bool obtenidos al comparar cada resultado con cero."
+        }
+      },
+      {
+        "id": "block_0001_0003",
+        "block": {
+          "type": "fill_code",
+          "language": "cpp",
+          "question": "Completa sólo el tipo de la conversión: debe obtener primero la unidad de carácter sin signo.",
+          "code": "#include <cctype>\n#include <iostream>\n\nint main() {\n    const char caracter = 'Q';\n    const unsigned char unidad = static_cast<___>(caracter);\n    const bool letra = std::isalpha(unidad) != 0;\n    const bool digito = std::isdigit(unidad) != 0;\n    const bool blanco = std::isspace(unidad) != 0;\n    std::cout << letra << ':' << digito << ':' << blanco;\n    return 0;\n}\n",
+          "answers": [
+            "unsigned char",
+            "char unsigned"
+          ],
+          "explanation": "unsigned char y char unsigned nombran el mismo tipo. La conversión se evalúa antes de llamar a std::isalpha: primero obtiene la unidad sin signo y luego esa unidad se proporciona como argumento.\n\nEn este programa, la entrada sigue siendo 'Q' y se obtiene 1:0:0. El propósito de la conversión es preparar un argumento dentro del dominio, no transformar la letra ni determinar su categoría. Convertir un valor negativo sólo a int no lo vuelve positivo.",
+          "reviewFeedback": "La conversión que falta debe obtener el valor de la unidad sin signo antes de que se utilice como argumento. Conservar un negativo mediante una conversión a int no cumple ese propósito."
+        }
+      },
+      {
+        "id": "block_0001_0005",
+        "block": {
+          "type": "output_prediction",
+          "language": "cpp",
+          "question": "Aquí se usa la marca permitida, sin convertirla en char. Predice ambos bool.",
+          "code": "#include <cctype>\n#include <cstdio>\n#include <iostream>\n\nint main() {\n    const bool digito = std::isdigit(EOF) != 0;\n    const bool sigue_fin = std::tolower(EOF) == EOF;\n    std::cout << digito << ':' << sigue_fin;\n    return 0;\n}\n",
+          "answers": [
+            "0:1"
+          ],
+          "explanation": "EOF representa la marca de fin permitida, conservada aquí como int. No representa un dígito, por lo que la primera comparación produce 0. std::tolower devuelve la misma marca en este caso, así que la igualdad con EOF produce 1.\n\nSe obtiene 0:1 sin reducir previamente la marca a char. La preparación de una unidad almacenada en una cadena y el tratamiento de esta marca entera son situaciones distintas.",
+          "reviewFeedback": "EOF se mantiene como una marca int permitida en estas llamadas. Decide si la marca representa un dígito y si la conversión de minúsculas la conserva; no la conviertas antes en char."
+        }
+      },
+      {
+        "id": "block_0002_0003",
+        "block": {
+          "type": "output_prediction",
+          "language": "cpp",
+          "question": "Compara biblioteca y política de tres separadores. Predice la salida.",
+          "code": "#include <cctype>\n#include <iostream>\n\nint main() {\n    const char caracter = '\\r';\n    const bool biblioteca = std::isspace(static_cast<unsigned char>(caracter)) != 0;\n    const bool separador = caracter == ' ' || caracter == '\\t' || caracter == '\\n';\n    std::cout << biblioteca << ':' << separador;\n    return 0;\n}\n",
+          "answers": [
+            "1:0"
+          ],
+          "explanation": "La entrada es el retorno de carro escrito como '\\r'. La biblioteca lo incluye entre sus seis blancos, de modo que biblioteca vale verdadero. Las tres igualdades del lector comparan con espacio, tabulador horizontal y salto de línea; ninguna coincide con ese retorno de carro.\n\nPor eso separador vale falso y se presenta 1:0. No hay contradicción: las dos condiciones responden a listas distintas.",
+          "reviewFeedback": "Compara el carácter con la lista explícita de tres separadores y, por separado, con los seis blancos de la biblioteca en la configuración de C."
+        }
+      },
+      {
+        "id": "block_0002_0005",
+        "block": {
+          "type": "output_prediction",
+          "language": "cpp",
+          "question": "Este informe conserva todos los caracteres del string. Predice los cuatro recuentos.",
+          "code": "#include <cctype>\n#include <iostream>\n#include <string>\n\nint main() {\n    const std::string texto{\"A\\v9_\"};\n    int letras{0};\n    int digitos{0};\n    int blancos{0};\n    int otros{0};\n    for (char caracter : texto) {\n        const unsigned char unidad = static_cast<unsigned char>(caracter);\n        if (std::isalpha(unidad) != 0) { ++letras; }\n        else if (std::isdigit(unidad) != 0) { ++digitos; }\n        else if (std::isspace(unidad) != 0) { ++blancos; }\n        else { ++otros; }\n    }\n    std::cout << letras << ':' << digitos << ':' << blancos << ':' << otros;\n    return 0;\n}\n",
+          "answers": [
+            "1:1:1:1"
+          ],
+          "explanation": "La primera unidad, A, incrementa letras. El tabulador vertical incrementa blancos; 9 incrementa dígitos, y el guion bajo incrementa otros. La cadena de alternativas elige un único incremento por unidad.\n\nLos contadores se imprimen en el orden letras, dígitos, blancos y otros, que produce 1:1:1:1. Su suma es cuatro, la longitud de esta muestra. El guion bajo no pasa a ser una letra por poder aparecer en otros contextos de programación.",
+          "reviewFeedback": "Recorre las cuatro unidades y sigue la cadena if/else if/else. Incrementa un único contador por unidad; recuerda que el tabulador vertical es blanco y que el guion bajo no es una letra básica."
+        }
+      },
+      {
+        "id": "block_0003_0002",
+        "block": {
+          "type": "code",
+          "language": "cpp",
+          "code": "#include <cctype>\n#include <iostream>\n\nint main() {\n    const char original = 'R';\n    const int resultado = std::tolower(static_cast<unsigned char>(original));\n    const char minuscula = static_cast<char>(resultado);\n    const char mayuscula = static_cast<char>(std::toupper(static_cast<unsigned char>(minuscula)));\n    const char signo = static_cast<char>(std::tolower(static_cast<unsigned char>('#')));\n    std::cout << original << ':' << minuscula << ':' << mayuscula << ':' << signo;\n    return 0;\n}\n"
+        }
+      },
+      {
+        "id": "block_0003_0004",
+        "block": {
+          "type": "output_prediction",
+          "language": "cpp",
+          "question": "Predice las tres partes; ningún resultado es la marca EOF.",
+          "code": "#include <cctype>\n#include <iostream>\n\nint main() {\n    const char letra = 'k';\n    const char numero = '8';\n    std::cout << static_cast<char>(std::toupper(static_cast<unsigned char>(letra))) << ':'\n              << static_cast<char>(std::tolower(static_cast<unsigned char>(numero))) << ':'\n              << letra;\n    return 0;\n}\n",
+          "answers": [
+            "K:8:k"
+          ],
+          "explanation": "std::toupper obtiene la mayúscula correspondiente a 'k', que se convierte a char para mostrar K. std::tolower deja el dígito '8' igual. Ninguna llamada asigna un valor nuevo a letra.\n\nLa última inserción vuelve a leer esa variable, que conserva 'k'. La salida es K:8:k, sin salto final. Obtener un valor transformado no modifica automáticamente el objeto usado como argumento.",
+          "reviewFeedback": "Separa el valor devuelto de la variable que se usó como argumento. La letra tiene una conversión de caja; un dígito conserva su valor y las llamadas no reasignan por sí solas letra."
+        }
+      },
+      {
+        "id": "block_0004_0002",
+        "block": {
+          "type": "code",
+          "language": "cpp",
+          "code": "#include <cctype>\n#include <iostream>\n#include <string>\n\nint main() {\n    const std::string recibido{\"LaGo-4\"};\n    std::string copia = recibido;\n    for (char& caracter : copia) {\n        caracter = static_cast<char>(std::tolower(static_cast<unsigned char>(caracter)));\n    }\n    std::cout << recibido << ':' << copia;\n    return 0;\n}\n"
+        }
+      },
+      {
+        "id": "block_0006_0001",
+        "block": {
+          "type": "code",
+          "language": "cpp",
+          "code": "#include <cctype>\n#include <iostream>\n#include <string>\n\nbool texto_admitido(const std::string& texto) {\n    if (texto.size() > 40) { return false; }\n    for (char caracter : texto) {\n        if (static_cast<unsigned char>(caracter) > 127) { return false; }\n    }\n    return true;\n}\n\nstruct Resumen_caracteres {\n    int letras;\n    int digitos;\n    int blancos;\n    int otros;\n};\n\nResumen_caracteres resumir(const std::string& texto) {\n    Resumen_caracteres resultado{0, 0, 0, 0};\n    for (char caracter : texto) {\n        const unsigned char unidad = static_cast<unsigned char>(caracter);\n        if (std::isalpha(unidad) != 0) { ++resultado.letras; }\n        else if (std::isdigit(unidad) != 0) { ++resultado.digitos; }\n        else if (std::isspace(unidad) != 0) { ++resultado.blancos; }\n        else { ++resultado.otros; }\n    }\n    return resultado;\n}\n\nstd::string copiar_en_minusculas(const std::string& texto) {\n    std::string resultado = texto;\n    for (char& caracter : resultado) {\n        caracter = static_cast<char>(std::tolower(static_cast<unsigned char>(caracter)));\n    }\n    return resultado;\n}\n\nstd::string copiar_en_mayusculas(const std::string& texto) {\n    std::string resultado = texto;\n    for (char& caracter : resultado) {\n        caracter = static_cast<char>(std::toupper(static_cast<unsigned char>(caracter)));\n    }\n    return resultado;\n}\n\nint main() {\n    std::string entrada{\"CaJa 2.\"};\n    const std::string previo = entrada;\n    if (!texto_admitido(entrada)) {\n        std::cout << \"Texto rechazado\";\n        return 0;\n    }\n    const Resumen_caracteres resumen = resumir(entrada);\n    const std::string minusculas = copiar_en_minusculas(entrada);\n    const std::string mayusculas = copiar_en_mayusculas(entrada);\n    std::cout << \"Original:<\" << entrada << \">\\n\"\n              << \"Minusculas:<\" << minusculas << \">\\n\"\n              << \"Mayusculas:<\" << mayusculas << \">\\n\"\n              << \"Letras:\" << resumen.letras << \";Digitos:\" << resumen.digitos\n              << \";Blancos:\" << resumen.blancos << \";Otros:\" << resumen.otros\n              << \"\\nEntrada conservada:\" << (entrada == previo);\n    return 0;\n}\n"
+        }
+      },
+      {
+        "id": "block_0008_0001",
+        "block": {
+          "type": "code",
+          "language": "cpp",
+          "code": "#include <cctype>\n#include <iostream>\n#include <string>\n\nbool texto_admitido(const std::string& texto) {\n    if (texto.size() > 40) { return false; }\n    for (char caracter : texto) {\n        if (static_cast<unsigned char>(caracter) > 127) { return false; }\n    }\n    return true;\n}\n\nstruct Resumen_caracteres {\n    int letras;\n    int digitos;\n    int blancos;\n    int otros;\n};\n\nResumen_caracteres resumir(const std::string& texto) {\n    Resumen_caracteres resultado{0, 0, 0, 0};\n    for (char caracter : texto) {\n        const unsigned char unidad = static_cast<unsigned char>(caracter);\n        if (std::isalpha(unidad) != 0) { ++resultado.letras; }\n        else if (std::isdigit(unidad) != 0) { ++resultado.digitos; }\n        else if (std::isspace(unidad) != 0) { ++resultado.blancos; }\n        else { ++resultado.otros; }\n    }\n    return resultado;\n}\n\nstd::string copiar_en_minusculas(const std::string& texto) {\n    std::string resultado = texto;\n    for (char& caracter : resultado) {\n        caracter = static_cast<char>(std::tolower(static_cast<unsigned char>(caracter)));\n    }\n    return resultado;\n}\n\nstd::string copiar_en_mayusculas(const std::string& texto) {\n    std::string resultado = texto;\n    for (char& caracter : resultado) {\n        caracter = static_cast<char>(std::toupper(static_cast<unsigned char>(caracter)));\n    }\n    return resultado;\n}\n\nvoid probar(const std::string& entrada) {\n    const std::string previo = entrada;\n    if (!texto_admitido(entrada)) {\n        std::cout << \"Texto rechazado\\n\";\n        return;\n    }\n    const Resumen_caracteres resumen = resumir(entrada);\n    const std::string minusculas = copiar_en_minusculas(entrada);\n    const std::string mayusculas = copiar_en_mayusculas(entrada);\n    std::cout << \"Original:<\" << entrada << \">\\n\"\n              << \"Minusculas:<\" << minusculas << \">\\n\"\n              << \"Mayusculas:<\" << mayusculas << \">\\n\"\n              << \"Letras:\" << resumen.letras << \";Digitos:\" << resumen.digitos\n              << \";Blancos:\" << resumen.blancos << \";Otros:\" << resumen.otros\n              << \"\\nEntrada conservada:\" << (entrada == previo)\n              << \"\\nUnidades:\" << entrada.size() << \"\\n\";\n}\n\nint main() {\n    std::cout << \"Caso 1\\n\"; probar(\"NoDo 7!\");\n    std::cout << \"Caso 2\\n\"; probar(\"\");\n    std::cout << \"Caso 3\\n\"; probar(\"aZ09_\");\n    std::cout << \"Caso 4\\n\"; probar(std::string(40, 'a'));\n    std::cout << \"Caso 5\\n\"; probar(std::string(41, 'a'));\n    std::cout << \"Caso 6\\n\"; probar(\" \\t\\n\\r\\f\\v\");\n    std::cout << \"Caso 7\\n\"; probar(std::string(1, static_cast<char>(-1)));\n    return 0;\n}\n"
+        }
+      },
+      {
+        "id": "block_0007_0002",
+        "block": {
+          "type": "output_prediction",
+          "language": "cpp",
+          "question": "Esta política de consulta ignora caja básica y conserva el texto recibido. Predice los tres bool.",
+          "code": "#include <cctype>\n#include <iostream>\n#include <string>\n\nstd::string copiar_en_minusculas(const std::string& texto) {\n    std::string resultado = texto;\n    for (char& caracter : resultado) {\n        caracter = static_cast<char>(std::tolower(static_cast<unsigned char>(caracter)));\n    }\n    return resultado;\n}\n\nint main() {\n    const std::string recibido{\"TaBlA\"};\n    const std::string copia = copiar_en_minusculas(recibido);\n    std::cout << (recibido == \"tabla\") << ':' << (copia == \"tabla\") << ':'\n              << (recibido == \"TaBlA\");\n    return 0;\n}\n",
+          "answers": [
+            "0:1:1"
+          ],
+          "explanation": "recibido contiene \"TaBlA\", por lo que su igualdad exacta con \"tabla\" es falsa. El recorrido transforma las tres mayúsculas de copia y deja en ella \"tabla\"; la segunda igualdad es verdadera.\n\nLa tercera comparación consulta de nuevo el original, que aún contiene \"TaBlA\". Los tres resultados forman 0:1:1. El resultado de una comparación depende del objeto consultado y de la política elegida, no sólo de que exista una copia normalizada.",
+          "reviewFeedback": "Evalúa cada igualdad con el texto que realmente contiene ese objeto. La copia normalizada puede satisfacer una comparación que no satisface el original, y obtenerla no cambia recibido."
+        }
+      },
+      {
+        "id": "block_0009_0002",
+        "block": {
+          "type": "cpp_compiler",
+          "initialCode": "#include <cctype>\n#include <iostream>\n#include <string>\n\nint main() {\n    // Construye la copia y la bateria de recuperacion.\n    return 0;\n}\n",
+          "outputCheck": {
+            "cases": [
+              {
+                "standardInput": "",
+                "outputs": [
+                  "abc9_\nabc9_\n--7\nABC9_\n"
+                ],
+                "explanation": "La salida coincide con los cuatro informes solicitados: abc9_, abc9_, --7 y ABC9_, en ese orden y en líneas separadas. La primera copia cambia las letras mayúsculas por minúsculas; la segunda conserva las letras que ya estaban en minúscula, y la tercera conserva los dos signos y el dígito. La última línea muestra el primer argumento original, ABC9_, después de las tres llamadas.\n\nEn el contrato de esta práctica, copiar_en_minusculas devuelve una copia sin modificar el texto de origen; main muestra cada resultado devuelto y, por último, el primer argumento. La función de copia no imprime por sí misma.",
+                "reviewFeedback": [
+                  {
+                    "outputs": [
+                      ""
+                    ],
+                    "text": "La ejecución no mostró ningún texto. Revisa que main llame a copiar_en_minusculas con cada uno de los tres argumentos de la batería y muestre el resultado devuelto por cada llamada. Después debe mostrar el primer argumento original en otra línea. Comprueba que todas las líneas terminen con salto; definir la función sin llamarla ni imprimir sus resultados deja la consola vacía."
+                  }
+                ]
+              }
+            ]
+          }
+        }
+      },
+      {
+        "id": "block_0010_0001",
+        "block": {
+          "type": "code",
+          "language": "cpp",
+          "code": "#include <cctype>\n#include <iostream>\n#include <string>\n\nstd::string copiar_en_minusculas(const std::string& entrada) {\n    std::string copia = entrada;\n    for (char& c : copia)\n        c = static_cast<char>(std::tolower(static_cast<unsigned char>(c)));\n    return copia;\n}\n\nint main() {\n    const std::string a{\"ABC9_\"};\n    const std::string b{\"abc9_\"};\n    const std::string c{\"--7\"};\n    std::cout << copiar_en_minusculas(a) << \"\\n\" << copiar_en_minusculas(b) << \"\\n\"\n              << copiar_en_minusculas(c) << \"\\n\" << a << \"\\n\";\n    return 0;\n}\n"
+        }
+      },
+      {
+        "id": "u12_caracteres_nul_interior_construccion",
+        "block": {
+          "type": "cpp_compiler",
+          "initialCode": "#include <cctype>\n#include <iostream>\n#include <string>\n\nbool texto_admitido(const std::string& texto) {\n    // Valida la longitud y todas las unidades antes del resumen y las copias.\n    (void)texto;\n    return false;\n}\n\nstruct Resumen_caracteres {\n    int letras;\n    int digitos;\n    int blancos;\n    int otros;\n};\n\nResumen_caracteres resumir(const std::string& texto) {\n    // Cuenta cada unidad admitida en una sola categoria.\n    (void)texto;\n    return {0, 0, 0, 0};\n}\n\nstd::string copiar_en_minusculas(const std::string& texto) {\n    // Devuelve la copia en minusculas sin perder unidades.\n    return texto;\n}\n\nstd::string copiar_en_mayusculas(const std::string& texto) {\n    // Devuelve la copia en mayusculas sin perder unidades.\n    return texto;\n}\n\nvoid mostrar_unidades(const std::string& texto) {\n    bool primera = true;\n    for (char caracter : texto) {\n        if (!primera) { std::cout << ':'; }\n        std::cout << static_cast<int>(static_cast<unsigned char>(caracter));\n        primera = false;\n    }\n    std::cout << '\\n';\n}\n\nint main() {\n    int caso{0};\n    if (!(std::cin >> caso)) { return 1; }\n    std::string entrada;\n    if (caso == 1) { entrada = {'A', '\\0', 'Z', static_cast<char>(127), '9'}; }\n    else if (caso == 2) { entrada = {'A', '\\0', static_cast<char>(-1), 'Z'}; }\n    else if (caso == 3) { entrada = {'\\0'}; }\n    else if (caso == 4) { entrada = {static_cast<char>(127), '\\t', 'b'}; }\n    else { return 1; }\n    const std::string previo = entrada;\n    const bool admitido = texto_admitido(entrada);\n    std::cout << \"Admitido=\" << admitido << \"|Unidades=\" << entrada.size() << '\\n';\n    if (admitido) {\n        const Resumen_caracteres resumen = resumir(entrada);\n        const std::string minusculas = copiar_en_minusculas(entrada);\n        const std::string mayusculas = copiar_en_mayusculas(entrada);\n        std::cout << \"Resumen=\" << resumen.letras << ':' << resumen.digitos << ':'\n                  << resumen.blancos << ':' << resumen.otros << '\\n';\n        std::cout << \"Original=\"; mostrar_unidades(entrada);\n        std::cout << \"Minusculas=\"; mostrar_unidades(minusculas);\n        std::cout << \"Mayusculas=\"; mostrar_unidades(mayusculas);\n    }\n    std::cout << \"Entrada conservada=\" << (entrada == previo) << '\\n';\n    return 0;\n}\n",
+          "initialStandardInput": "1\n",
+          "outputCheck": {
+            "inputComparison": "tokens",
+            "cases": [
+              {
+                "standardInput": "1\n",
+                "outputs": [
+                  "Admitido=1|Unidades=5\nResumen=2:1:0:2\nOriginal=65:0:90:127:57\nMinusculas=97:0:122:127:57\nMayusculas=65:0:90:127:57\nEntrada conservada=1\n"
+                ],
+                "exitCode": 0,
+                "explanation": "La salida coincide con las cinco unidades. El cero interior y DEL cuentan como otros; las letras y el dígito posteriores al cero también se recorren. En la copia minúscula cambian los códigos 65 → 97 y 90 → 122, mientras que 0, 127 y 57 permanecen en sus posiciones. Los contadores suman cinco y el cliente presenta el original conservado. La existencia de NUL no reduce la longitud ni termina el recorrido.",
+                "reviewFeedback": [
+                  {
+                    "outputs": [
+                      "Admitido=1|Unidades=5\nResumen=1:0:0:0\nOriginal=65:0:90:127:57\nMinusculas=97:0:90:127:57\nMayusculas=65:0:90:127:57\nEntrada conservada=1\n"
+                    ],
+                    "text": "La salida es compatible con detener uno o más recorridos al encontrar '\\0'. Esa unidad pertenece a la longitud de la cadena: debe validarse, contarse como otra y conservarse en las copias, mientras el recorrido continúa con los elementos siguientes. Comprueba por separado el validador, el resumen y cada conversión; el cero no es la marca entera EOF."
+                  }
+                ]
+              },
+              {
+                "standardInput": "2\n",
+                "outputs": [
+                  "Admitido=0|Unidades=4\nEntrada conservada=1\n"
+                ],
+                "exitCode": 0,
+                "explanation": "El informe muestra rechazo con longitud 4 y entrada conservada. La unidad posterior al cero queda fuera del dominio ASCII; encontrar antes una unidad válida de valor cero no basta para admitir toda la cadena. Con el cliente dado, el rechazo evita llamar al resumen y a las copias, por lo que no aparecen esas líneas.",
+                "reviewFeedback": [
+                  {
+                    "outputs": [
+                      "Admitido=1|Unidades=4\nResumen=1:0:0:0\nOriginal=65:0:255:90\nMinusculas=97:0:255:90\nMayusculas=65:0:255:90\nEntrada conservada=1\n"
+                    ],
+                    "text": "La salida es compatible con detener uno o más recorridos al encontrar '\\0'. Esa unidad pertenece a la longitud de la cadena: debe validarse, contarse como otra y conservarse en las copias, mientras el recorrido continúa con los elementos siguientes. Comprueba por separado el validador, el resumen y cada conversión; el cero no es la marca entera EOF."
+                  }
+                ]
+              },
+              {
+                "standardInput": "3\n",
+                "outputs": [
+                  "Admitido=1|Unidades=1\nResumen=0:0:0:1\nOriginal=0\nMinusculas=0\nMayusculas=0\nEntrada conservada=1\n"
+                ],
+                "exitCode": 0,
+                "explanation": "La cadena contiene exactamente una unidad de valor cero. Su longitud es 1, se cuenta una unidad en otros y ambas copias muestran el mismo 0. No se confunde con el caso vacío, cuyos contadores y longitud serían cero. El cliente confirma además que el original conserva su contenido.",
+                "reviewFeedback": [
+                  {
+                    "outputs": [
+                      "Admitido=1|Unidades=1\nResumen=0:0:0:0\nOriginal=0\nMinusculas=0\nMayusculas=0\nEntrada conservada=1\n"
+                    ],
+                    "text": "La salida es compatible con detener uno o más recorridos al encontrar '\\0'. Esa unidad pertenece a la longitud de la cadena: debe validarse, contarse como otra y conservarse en las copias, mientras el recorrido continúa con los elementos siguientes. Comprueba por separado el validador, el resumen y cada conversión; el cero no es la marca entera EOF."
+                  }
+                ]
+              },
+              {
+                "standardInput": "4\n",
+                "outputs": [
+                  "Admitido=1|Unidades=3\nResumen=1:0:1:1\nOriginal=127:9:98\nMinusculas=127:9:98\nMayusculas=127:9:66\nEntrada conservada=1\n"
+                ],
+                "exitCode": 0,
+                "explanation": "Los informes coinciden con tres unidades: DEL cuenta en otros, el tabulador horizontal en blancos y la letra en letras. El 9 del diagnóstico es el código del tabulador; no se cuenta como un dígito decimal del texto. La copia mayúscula cambia 98 por 66 y conserva las otras dos unidades."
+              }
+            ]
+          }
+        }
+      },
+      {
+        "id": "u12_caracteres_nul_interior_referencia_codigo",
+        "block": {
+          "type": "code",
+          "language": "cpp",
+          "code": "#include <cctype>\n#include <iostream>\n#include <string>\n\nbool texto_admitido(const std::string& texto) {\n    if (texto.size() > 40) { return false; }\n    for (char caracter : texto) {\n        if (static_cast<unsigned char>(caracter) > 127) { return false; }\n    }\n    return true;\n}\n\nstruct Resumen_caracteres {\n    int letras;\n    int digitos;\n    int blancos;\n    int otros;\n};\n\nResumen_caracteres resumir(const std::string& texto) {\n    Resumen_caracteres resultado{0, 0, 0, 0};\n    for (char caracter : texto) {\n        const unsigned char unidad = static_cast<unsigned char>(caracter);\n        if (std::isalpha(unidad) != 0) { ++resultado.letras; }\n        else if (std::isdigit(unidad) != 0) { ++resultado.digitos; }\n        else if (std::isspace(unidad) != 0) { ++resultado.blancos; }\n        else { ++resultado.otros; }\n    }\n    return resultado;\n}\n\nstd::string copiar_en_minusculas(const std::string& texto) {\n    std::string resultado = texto;\n    for (char& caracter : resultado) {\n        caracter = static_cast<char>(std::tolower(static_cast<unsigned char>(caracter)));\n    }\n    return resultado;\n}\n\nstd::string copiar_en_mayusculas(const std::string& texto) {\n    std::string resultado = texto;\n    for (char& caracter : resultado) {\n        caracter = static_cast<char>(std::toupper(static_cast<unsigned char>(caracter)));\n    }\n    return resultado;\n}\n\nvoid mostrar_unidades(const std::string& texto) {\n    bool primera = true;\n    for (char caracter : texto) {\n        if (!primera) { std::cout << ':'; }\n        std::cout << static_cast<int>(static_cast<unsigned char>(caracter));\n        primera = false;\n    }\n    std::cout << '\\n';\n}\n\nint main() {\n    int caso{0};\n    if (!(std::cin >> caso)) { return 1; }\n    std::string entrada;\n    if (caso == 1) { entrada = {'A', '\\0', 'Z', static_cast<char>(127), '9'}; }\n    else if (caso == 2) { entrada = {'A', '\\0', static_cast<char>(-1), 'Z'}; }\n    else if (caso == 3) { entrada = {'\\0'}; }\n    else if (caso == 4) { entrada = {static_cast<char>(127), '\\t', 'b'}; }\n    else { return 1; }\n    const std::string previo = entrada;\n    const bool admitido = texto_admitido(entrada);\n    std::cout << \"Admitido=\" << admitido << \"|Unidades=\" << entrada.size() << '\\n';\n    if (admitido) {\n        const Resumen_caracteres resumen = resumir(entrada);\n        const std::string minusculas = copiar_en_minusculas(entrada);\n        const std::string mayusculas = copiar_en_mayusculas(entrada);\n        std::cout << \"Resumen=\" << resumen.letras << ':' << resumen.digitos << ':'\n                  << resumen.blancos << ':' << resumen.otros << '\\n';\n        std::cout << \"Original=\"; mostrar_unidades(entrada);\n        std::cout << \"Minusculas=\"; mostrar_unidades(minusculas);\n        std::cout << \"Mayusculas=\"; mostrar_unidades(mayusculas);\n    }\n    std::cout << \"Entrada conservada=\" << (entrada == previo) << '\\n';\n    return 0;\n}\n"
+        }
       }
     ]
   },

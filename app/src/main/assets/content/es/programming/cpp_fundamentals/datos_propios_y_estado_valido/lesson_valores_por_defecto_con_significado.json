@@ -68,7 +68,7 @@
           "type": "output_prediction",
           "language": "cpp",
           "question": "Predice la salida exacta.",
-          "code": "#include <iostream>\n#include <string>\n#include <vector>\n\nstruct ContadorInvalido {};\n\nclass Contador {\npublic:\n    Contador() {}\n    Contador(int inicial) : valor_{inicial} {\n        if (valor_ < 0 || valor_ > 5) { throw ContadorInvalido{}; }\n    }\n    int valor() const { return valor_; }\nprivate:\n    int valor_ = 0;\n};\n\nint main() {\n    Contador a{2};\n    Contador b;\n    Contador c{0};\n    std::cout << a.valor() << \":\" << b.valor() << \":\" << c.valor();\n    return 0;\n}\n",
+          "code": "#include <iostream>\n#include <string>\n#include <vector>\n\nstruct ContadorInvalido {};\n\nclass Contador {\npublic:\n    Contador() {}\n    Contador(int inicial) : valor_{inicial} {\n        if (valor_ < 0 || valor_ > 5) { throw ContadorInvalido{}; }\n    }\n\n    int valor() const { return valor_; }\nprivate:\n    int valor_ = 0;\n};\n\nint main() {\n    Contador a{2};\n    Contador b;\n    Contador c{0};\n\n    std::cout << a.valor() << \":\" << b.valor() << \":\" << c.valor();\n\n    return 0;\n}\n",
           "answers": [
             "2:0:0"
           ],
@@ -86,7 +86,7 @@
           "type": "output_prediction",
           "language": "cpp",
           "question": "Predice la salida exacta.",
-          "code": "#include <iostream>\n#include <string>\n#include <vector>\n\nstruct ContadorInvalido {};\n\nclass Contador {\npublic:\n    Contador() {}\n    Contador(int inicial) : valor_{inicial} {\n        if (valor_ < 0 || valor_ > 5) { throw ContadorInvalido{}; }\n    }\n    int valor() const { return valor_; }\nprivate:\n    int valor_ = 0;\n};\n\nint main() {\n    try {\n        Contador contador{6};\n        std::cout << contador.valor();\n    } catch (const ContadorInvalido&) {\n        std::cout << \"Rechazado\";\n    }\n    return 0;\n}\n",
+          "code": "#include <iostream>\n#include <string>\n#include <vector>\n\nstruct ContadorInvalido {};\n\nclass Contador {\npublic:\n    Contador() {}\n    Contador(int inicial) : valor_{inicial} {\n        if (valor_ < 0 || valor_ > 5) { throw ContadorInvalido{}; }\n    }\n\n    int valor() const { return valor_; }\nprivate:\n    int valor_ = 0;\n};\n\nint main() {\n    try {\n        Contador contador{6};\n        std::cout << contador.valor();\n    } catch (const ContadorInvalido&) {\n        std::cout << \"Rechazado\";\n    }\n\n    return 0;\n}\n",
           "answers": [
             "Rechazado"
           ],
@@ -112,7 +112,7 @@
           "type": "fill_code",
           "language": "cpp",
           "question": "Completa sólo el valor inicial del miembro para que la construcción sin argumentos empiece en cero.",
-          "code": "#include <iostream>\n#include <string>\n#include <vector>\n\nstruct ContadorInvalido {};\n\nclass Contador {\npublic:\n    Contador() {}\n    Contador(int inicial) : valor_{inicial} {\n        if (valor_ < 0 || valor_ > 5) { throw ContadorInvalido{}; }\n    }\n    int valor() const { return valor_; }\nprivate:\n    int valor_ = ___;\n};\n\nint main() {\n    Contador contador;\n    std::cout << contador.valor();\n    return 0;\n}\n",
+          "code": "#include <iostream>\n#include <string>\n#include <vector>\n\nstruct ContadorInvalido {};\n\nclass Contador {\npublic:\n    Contador() {}\n    Contador(int inicial) : valor_{inicial} {\n        if (valor_ < 0 || valor_ > 5) { throw ContadorInvalido{}; }\n    }\n\n    int valor() const { return valor_; }\nprivate:\n    int valor_ = ___;\n};\n\nint main() {\n    Contador contador;\n\n    std::cout << contador.valor();\n\n    return 0;\n}\n",
           "answers": [
             "0"
           ],
@@ -171,7 +171,7 @@
           "type": "output_prediction",
           "language": "cpp",
           "question": "Predice la salida exacta.",
-          "code": "#include <iostream>\n#include <string>\n#include <vector>\n\nenum class Estado {\n    preparado, enviado, cancelado\n};\n\nstruct PedidoInvalido {};\n\nclass Pedido {\npublic:\n    Pedido(std::string codigo, int unidades) : codigo_{codigo}, unidades_{unidades} {\n        if (codigo_.empty() || unidades_ < 1 || unidades_ > 20) {\n            throw PedidoInvalido{};\n        }\n    }\n    std::string codigo() const { return codigo_; }\n    int unidades() const { return unidades_; }\n    Estado estado() const { return estado_; }\n    bool cambiar_unidades(int nuevas) {\n        if (estado_ != Estado::preparado || nuevas < 1 || nuevas > 20) { return false; }\n        unidades_ = nuevas;\n        return true;\n    }\n    bool enviar() {\n        if (estado_ != Estado::preparado) { return false; }\n        estado_ = Estado::enviado;\n        return true;\n    }\n    bool cancelar() {\n        if (estado_ != Estado::preparado) { return false; }\n        estado_ = Estado::cancelado;\n        return true;\n    }\nprivate:\n    std::string codigo_;\n    int unidades_;\n    Estado estado_ = Estado::preparado;\n};\n\nint main() {\n    std::vector<Pedido> pedidos;\n    pedidos.push_back(Pedido{\"T\", 2});\n    std::cout << pedidos.size() << \" \" << pedidos.at(0).codigo();\n    return 0;\n}\n",
+          "code": "#include <iostream>\n#include <string>\n#include <vector>\n\nenum class Estado {\n    preparado, enviado, cancelado\n};\n\nstruct PedidoInvalido {};\n\nclass Pedido {\npublic:\n    Pedido(std::string codigo, int unidades) : codigo_{codigo}, unidades_{unidades} {\n        if (codigo_.empty() || unidades_ < 1 || unidades_ > 20) {\n            throw PedidoInvalido{};\n        }\n    }\n\n    std::string codigo() const { return codigo_; }\n    int unidades() const { return unidades_; }\n    Estado estado() const { return estado_; }\n    bool cambiar_unidades(int nuevas) {\n        if (estado_ != Estado::preparado || nuevas < 1 || nuevas > 20) { return false; }\n        unidades_ = nuevas;\n        return true;\n    }\n\n    bool enviar() {\n        if (estado_ != Estado::preparado) { return false; }\n        estado_ = Estado::enviado;\n        return true;\n    }\n\n    bool cancelar() {\n        if (estado_ != Estado::preparado) { return false; }\n        estado_ = Estado::cancelado;\n        return true;\n    }\nprivate:\n    std::string codigo_;\n    int unidades_;\n    Estado estado_ = Estado::preparado;\n};\n\nint main() {\n    std::vector<Pedido> pedidos;\n    pedidos.push_back(Pedido{\"T\", 2});\n    std::cout << pedidos.size() << \" \" << pedidos.at(0).codigo();\n\n    return 0;\n}\n",
           "answers": [
             "1 T"
           ],
@@ -201,7 +201,7 @@
           "type": "output_prediction",
           "language": "cpp",
           "question": "Predice la salida exacta.",
-          "code": "#include <iostream>\n#include <string>\n#include <vector>\n\nenum class Estado {\n    preparado, enviado, cancelado\n};\n\nstruct PedidoInvalido {};\n\nclass Pedido {\npublic:\n    Pedido(std::string codigo, int unidades) : codigo_{codigo}, unidades_{unidades} {\n        if (codigo_.empty() || unidades_ < 1 || unidades_ > 20) {\n            throw PedidoInvalido{};\n        }\n    }\n    std::string codigo() const { return codigo_; }\n    int unidades() const { return unidades_; }\n    Estado estado() const { return estado_; }\n    bool cambiar_unidades(int nuevas) {\n        if (estado_ != Estado::preparado || nuevas < 1 || nuevas > 20) { return false; }\n        unidades_ = nuevas;\n        return true;\n    }\n    bool enviar() {\n        if (estado_ != Estado::preparado) { return false; }\n        estado_ = Estado::enviado;\n        return true;\n    }\n    bool cancelar() {\n        if (estado_ != Estado::preparado) { return false; }\n        estado_ = Estado::cancelado;\n        return true;\n    }\nprivate:\n    std::string codigo_;\n    int unidades_;\n    Estado estado_ = Estado::preparado;\n};\n\nint main() {\n    std::vector<Pedido> pedidos{{\"A\", 1}, {\"B\", 5}};\n    std::cout << pedidos.size() << \":\" << pedidos.at(1).unidades();\n    return 0;\n}\n",
+          "code": "#include <iostream>\n#include <string>\n#include <vector>\n\nenum class Estado {\n    preparado, enviado, cancelado\n};\n\nstruct PedidoInvalido {};\n\nclass Pedido {\npublic:\n    Pedido(std::string codigo, int unidades) : codigo_{codigo}, unidades_{unidades} {\n        if (codigo_.empty() || unidades_ < 1 || unidades_ > 20) {\n            throw PedidoInvalido{};\n        }\n    }\n\n    std::string codigo() const { return codigo_; }\n    int unidades() const { return unidades_; }\n    Estado estado() const { return estado_; }\n    bool cambiar_unidades(int nuevas) {\n        if (estado_ != Estado::preparado || nuevas < 1 || nuevas > 20) { return false; }\n        unidades_ = nuevas;\n        return true;\n    }\n\n    bool enviar() {\n        if (estado_ != Estado::preparado) { return false; }\n        estado_ = Estado::enviado;\n        return true;\n    }\n\n    bool cancelar() {\n        if (estado_ != Estado::preparado) { return false; }\n        estado_ = Estado::cancelado;\n        return true;\n    }\nprivate:\n    std::string codigo_;\n    int unidades_;\n    Estado estado_ = Estado::preparado;\n};\n\nint main() {\n    std::vector<Pedido> pedidos{{\"A\", 1}, {\"B\", 5}};\n\n    std::cout << pedidos.size() << \":\" << pedidos.at(1).unidades();\n\n    return 0;\n}\n",
           "answers": [
             "2:5"
           ],
@@ -235,7 +235,7 @@
         },
         {
           "type": "cpp_compiler",
-          "initialCode": "#include <iostream>\n#include <string>\n#include <vector>\n\nint main() {\n    // Construye aqui el programa de la consigna.\n    return 0;\n}\n",
+          "initialCode": "#include <iostream>\n#include <string>\n#include <vector>\n\nint main() {\n    // Construye aqui el programa de la consigna.\n    \n    return 0;\n}\n",
           "outputCheck": {
             "cases": [
               {
@@ -294,7 +294,7 @@
           "type": "output_prediction",
           "language": "cpp",
           "question": "Predice la salida exacta.",
-          "code": "#include <iostream>\n#include <string>\n#include <vector>\n\nstruct ContadorInvalido {};\n\nclass Contador {\npublic:\n    Contador() {}\n    Contador(int inicial) : valor_{inicial} {\n        if (valor_ < 0 || valor_ > 5) { throw ContadorInvalido{}; }\n    }\n    int valor() const { return valor_; }\nprivate:\n    int valor_ = 0;\n};\n\nint main() {\n    const Contador origen{5};\n    Contador copia = origen;\n    std::cout << copia.valor();\n    return 0;\n}\n",
+          "code": "#include <iostream>\n#include <string>\n#include <vector>\n\nstruct ContadorInvalido {};\n\nclass Contador {\npublic:\n    Contador() {}\n    Contador(int inicial) : valor_{inicial} {\n        if (valor_ < 0 || valor_ > 5) { throw ContadorInvalido{}; }\n    }\n\n    int valor() const { return valor_; }\nprivate:\n    int valor_ = 0;\n};\n\nint main() {\n    const Contador origen{5};\n    Contador copia = origen;\n\n    std::cout << copia.valor();\n\n    return 0;\n}\n",
           "answers": [
             "5"
           ],
@@ -391,7 +391,7 @@
           "id": "cpp_fundamentals__datos_propios_y_estado_valido__valores_por_defecto_con_significado__explicit_directa_predeterminado_y_copia",
           "language": "cpp",
           "question": "El constructor con int lleva explicit. Predice los valores de la construcción sin argumentos, la construcción directa y la copia de un Contador existente.",
-          "code": "#include <iostream>\n\nstruct ContadorInvalido {};\n\nclass Contador {\npublic:\n    Contador() {}\n    explicit Contador(int inicial) : valor_{inicial} {\n        if (valor_ < 0 || valor_ > 5) { throw ContadorInvalido{}; }\n    }\n    int valor() const { return valor_; }\nprivate:\n    int valor_ = 0;\n};\n\nint main() {\n    const Contador inicio;\n    const Contador directo{5};\n    const Contador copia = directo;\n    std::cout << inicio.valor() << ':' << directo.valor() << ':' << copia.valor();\n    return 0;\n}\n",
+          "code": "#include <iostream>\n\nstruct ContadorInvalido {};\n\nclass Contador {\npublic:\n    Contador() {}\n    explicit Contador(int inicial) : valor_{inicial} {\n        if (valor_ < 0 || valor_ > 5) { throw ContadorInvalido{}; }\n    }\n\n    int valor() const { return valor_; }\nprivate:\n    int valor_ = 0;\n};\n\nint main() {\n    const Contador inicio;\n    const Contador directo{5};\n    const Contador copia = directo;\n\n    std::cout << inicio.valor() << ':' << directo.valor() << ':' << copia.valor();\n\n    return 0;\n}\n",
           "answers": [
             "0:5:5"
           ],
@@ -517,7 +517,7 @@
           "id": "cpp_fundamentals__datos_propios_y_estado_valido__valores_por_defecto_con_significado__argumento_construido_y_objeto_existente",
           "language": "cpp",
           "question": "Ambas llamadas aportan objetos Contador. Predice la salida exacta.",
-          "code": "#include <iostream>\n\nstruct ContadorInvalido {};\n\nclass Contador {\npublic:\n    Contador() {}\n    explicit Contador(int inicial) : valor_{inicial} {\n        if (valor_ < 0 || valor_ > 5) { throw ContadorInvalido{}; }\n    }\n    int valor() const { return valor_; }\nprivate:\n    int valor_ = 0;\n};\n\nint leer(const Contador& contador) {\n    return contador.valor();\n}\n\nint main() {\n    const Contador existente{1};\n    std::cout << leer(Contador{4}) << ':' << leer(existente) << ':';\n    std::cout << existente.valor();\n    return 0;\n}\n",
+          "code": "#include <iostream>\n\nstruct ContadorInvalido {};\n\nclass Contador {\npublic:\n    Contador() {}\n    explicit Contador(int inicial) : valor_{inicial} {\n        if (valor_ < 0 || valor_ > 5) { throw ContadorInvalido{}; }\n    }\n\n    int valor() const { return valor_; }\nprivate:\n    int valor_ = 0;\n};\n\nint leer(const Contador& contador) {\n    return contador.valor();\n}\n\nint main() {\n    const Contador existente{1};\n\n    std::cout << leer(Contador{4}) << ':' << leer(existente) << ':';\n    std::cout << existente.valor();\n\n    return 0;\n}\n",
           "answers": [
             "4:1:1"
           ],
@@ -551,7 +551,7 @@
           "id": "cpp_fundamentals__datos_propios_y_estado_valido__valores_por_defecto_con_significado__explicit_y_dominio_son_decisiones_distintas",
           "language": "cpp",
           "question": "Todas las solicitudes construyen directamente. Predice las cuatro líneas y distingue aceptación de excepción.",
-          "code": "#include <iostream>\n#include <vector>\n\nstruct ContadorInvalido {};\n\nclass Contador {\npublic:\n    Contador() {}\n    explicit Contador(int inicial) : valor_{inicial} {\n        if (valor_ < 0 || valor_ > 5) { throw ContadorInvalido{}; }\n    }\n    int valor() const { return valor_; }\nprivate:\n    int valor_ = 0;\n};\n\nint main() {\n    for (int inicial : std::vector<int>{0, 6, 5, -1}) {\n        try {\n            const Contador contador{inicial};\n            std::cout << \"Valor:\" << contador.valor() << '\\n';\n        } catch (const ContadorInvalido&) {\n            std::cout << \"Rechazado:\" << inicial << '\\n';\n        }\n    }\n    return 0;\n}\n",
+          "code": "#include <iostream>\n#include <vector>\n\nstruct ContadorInvalido {};\n\nclass Contador {\npublic:\n    Contador() {}\n    explicit Contador(int inicial) : valor_{inicial} {\n        if (valor_ < 0 || valor_ > 5) { throw ContadorInvalido{}; }\n    }\n\n    int valor() const { return valor_; }\nprivate:\n    int valor_ = 0;\n};\n\nint main() {\n    for (int inicial : std::vector<int>{0, 6, 5, -1}) {\n        try {\n            const Contador contador{inicial};\n            std::cout << \"Valor:\" << contador.valor() << '\\n';\n        } catch (const ContadorInvalido&) {\n            std::cout << \"Rechazado:\" << inicial << '\\n';\n        }\n    }\n\n    return 0;\n}\n",
           "answers": [
             "Valor:0\nRechazado:6\nValor:5\nRechazado:-1"
           ],
@@ -606,7 +606,7 @@
         },
         {
           "type": "cpp_compiler",
-          "initialCode": "#include <iostream>\n\nint main() {\n    // Construye Contador, leer y las pruebas de la consigna.\n    return 0;\n}\n",
+          "initialCode": "#include <iostream>\n\nint main() {\n    // Construye Contador, leer y las pruebas de la consigna.\n    \n    return 0;\n}\n",
           "outputCheck": {
             "cases": [
               {
@@ -661,7 +661,7 @@
         },
         {
           "type": "cpp_compiler",
-          "initialCode": "#include <iostream>\n\nstruct ContadorInvalido {};\n\nclass Contador {\npublic:\n    Contador() {}\n    explicit Contador(int inicial) : valor_{inicial} {\n        if (valor_ < 0 || valor_ > 5) { throw ContadorInvalido{}; }\n    }\n    int valor() const { return valor_; }\nprivate:\n    int valor_ = 0;\n};\n\nint leer(const Contador& contador) {\n    return contador.valor();\n}\n\nint main() {\n    // Añade la declaración indicada.\n    return 0;\n}\n",
+          "initialCode": "#include <iostream>\n\nstruct ContadorInvalido {};\n\nclass Contador {\npublic:\n    Contador() {}\n    explicit Contador(int inicial) : valor_{inicial} {\n        if (valor_ < 0 || valor_ > 5) { throw ContadorInvalido{}; }\n    }\n\n    int valor() const { return valor_; }\nprivate:\n    int valor_ = 0;\n};\n\nint leer(const Contador& contador) {\n    return contador.valor();\n}\n\nint main() {\n    // Añade la declaración indicada.\n    \n    return 0;\n}\n",
           "compileCheck": {
             "diagnostic": "explicit-copy-initialization",
             "explanation": "Contador no_permitido = 3; necesita una conversión implícita desde int para inicializar el objeto. El constructor explicit no permite esa conversión. El rechazo ocurre al compilar; no se ejecutó el programa ni se lanzó ContadorInvalido."
@@ -685,7 +685,7 @@
         },
         {
           "type": "cpp_compiler",
-          "initialCode": "#include <iostream>\n\nstruct ContadorInvalido {};\n\nclass Contador {\npublic:\n    Contador() {}\n    explicit Contador(int inicial) : valor_{inicial} {\n        if (valor_ < 0 || valor_ > 5) { throw ContadorInvalido{}; }\n    }\n    int valor() const { return valor_; }\nprivate:\n    int valor_ = 0;\n};\n\nint leer(const Contador& contador) {\n    return contador.valor();\n}\n\nint main() {\n    // Añade la llamada indicada.\n    return 0;\n}\n",
+          "initialCode": "#include <iostream>\n\nstruct ContadorInvalido {};\n\nclass Contador {\npublic:\n    Contador() {}\n    explicit Contador(int inicial) : valor_{inicial} {\n        if (valor_ < 0 || valor_ > 5) { throw ContadorInvalido{}; }\n    }\n\n    int valor() const { return valor_; }\nprivate:\n    int valor_ = 0;\n};\n\nint leer(const Contador& contador) {\n    return contador.valor();\n}\n\nint main() {\n    // Añade la llamada indicada.\n    \n    return 0;\n}\n",
           "compileCheck": {
             "diagnostic": "explicit-argument-conversion",
             "explanation": "En leer(3), el argumento tiene tipo int y el parámetro requiere un Contador mediante const Contador&. El constructor explicit no permite la conversión implícita necesaria para esa llamada. El rechazo ocurre al compilar, antes de ejecutar el programa."
@@ -712,7 +712,7 @@
         },
         {
           "type": "cpp_compiler",
-          "initialCode": "#include <iostream>\n\nstruct ContadorInvalido {};\n\nclass Contador {\npublic:\n    Contador() {}\n\n    explicit Contador(int inicial) : valor_{inicial} {\n        if (valor_ < 0 || valor_ > 5) {\n            throw ContadorInvalido{};\n        }\n    }\n\n    int valor() const {\n        return valor_;\n    }\n\nprivate:\n    int valor_ = 0;\n};\n\nint leer(const Contador& contador) {\n    return contador.valor();\n}\n\nint main() {\n    // Construye el argumento y muestra la consulta.\n    return 0;\n}\n",
+          "initialCode": "#include <iostream>\n\nstruct ContadorInvalido {};\n\nclass Contador {\npublic:\n    Contador() {}\n\n    explicit Contador(int inicial) : valor_{inicial} {\n        if (valor_ < 0 || valor_ > 5) {\n            throw ContadorInvalido{};\n        }\n    }\n\n    int valor() const {\n        return valor_;\n    }\n\nprivate:\n    int valor_ = 0;\n};\n\nint leer(const Contador& contador) {\n    return contador.valor();\n}\n\nint main() {\n    // Construye el argumento y muestra la consulta.\n    \n    return 0;\n}\n",
           "outputCheck": {
             "cases": [
               {
@@ -746,7 +746,7 @@
         },
         {
           "type": "cpp_compiler",
-          "initialCode": "#include <iostream>\n\nstruct ContadorInvalido {};\n\nclass Contador {\npublic:\n    Contador() {}\n\n    explicit Contador(int inicial) : valor_{inicial} {\n        if (valor_ < 0 || valor_ > 5) {\n            throw ContadorInvalido{};\n        }\n    }\n\n    int valor() const {\n        return valor_;\n    }\n\nprivate:\n    int valor_ = 0;\n};\n\nint leer(const Contador& contador) {\n    return contador.valor();\n}\n\nint main() {\n    // Construye las dos pruebas de frontera.\n    return 0;\n}\n",
+          "initialCode": "#include <iostream>\n\nstruct ContadorInvalido {};\n\nclass Contador {\npublic:\n    Contador() {}\n\n    explicit Contador(int inicial) : valor_{inicial} {\n        if (valor_ < 0 || valor_ > 5) {\n            throw ContadorInvalido{};\n        }\n    }\n\n    int valor() const {\n        return valor_;\n    }\n\nprivate:\n    int valor_ = 0;\n};\n\nint leer(const Contador& contador) {\n    return contador.valor();\n}\n\nint main() {\n    // Construye las dos pruebas de frontera.\n    \n    return 0;\n}\n",
           "outputCheck": {
             "cases": [
               {
@@ -924,7 +924,7 @@
         {
           "type": "code",
           "language": "cpp",
-          "code": "#include <iostream>\n\nstruct ContadorInvalido {};\n\nclass Contador {\npublic:\n    Contador() {}\n\n    explicit Contador(int inicial) : valor_{inicial} {\n        if (valor_ < 0 || valor_ > 5) {\n            throw ContadorInvalido{};\n        }\n    }\n\n    int valor() const {\n        return valor_;\n    }\n\nprivate:\n    int valor_ = 0;\n};\n\nint main() {\n    Contador destino{2};\n    const Contador origen{4};\n\n    std::cout << destino.valor() << ':';\n\n    destino = origen;\n    std::cout << destino.valor() << ':' << origen.valor();\n\n    return 0;\n}\n"
+          "code": "#include <iostream>\n\nstruct ContadorInvalido {};\n\nclass Contador {\npublic:\n    Contador() {}\n\n    explicit Contador(int inicial) : valor_{inicial} {\n        if (valor_ < 0 || valor_ > 5) {\n            throw ContadorInvalido{};\n        }\n    }\n\n    int valor() const {\n        return valor_;\n    }\n\nprivate:\n    int valor_ = 0;\n};\n\nint main() {\n    Contador destino{2};\n    const Contador origen{4};\n\n    std::cout << destino.valor() << ':';\n\n    destino = origen;\n\n    std::cout << destino.valor() << ':' << origen.valor();\n\n    return 0;\n}\n"
         },
         {
           "type": "paragraph",
@@ -982,7 +982,7 @@
         },
         {
           "type": "cpp_compiler",
-          "initialCode": "#include <iostream>\n\nint main() {\n    // Escribe Contador y recupera las pruebas de asignacion.\n    return 0;\n}\n",
+          "initialCode": "#include <iostream>\n\nint main() {\n    // Escribe Contador y recupera las pruebas de asignacion.\n    \n    return 0;\n}\n",
           "outputCheck": {
             "cases": [
               {
@@ -1022,7 +1022,7 @@
         },
         {
           "type": "cpp_compiler",
-          "initialCode": "#include <iostream>\n\nstruct ContadorInvalido {};\n\nclass Contador {\npublic:\n    Contador() {}\n    explicit Contador(int inicial) : valor_{inicial} {\n        if (valor_ < 0 || valor_ > 5) { throw ContadorInvalido{}; }\n    }\n    int valor() const { return valor_; }\nprivate:\n    int valor_ = 0;\n};\n\nint main() {\n    Contador destino{2};\n    // Añade la asignación indicada.\n    return 0;\n}\n",
+          "initialCode": "#include <iostream>\n\nstruct ContadorInvalido {};\n\nclass Contador {\npublic:\n    Contador() {}\n    explicit Contador(int inicial) : valor_{inicial} {\n        if (valor_ < 0 || valor_ > 5) { throw ContadorInvalido{}; }\n    }\n\n    int valor() const { return valor_; }\nprivate:\n    int valor_ = 0;\n};\n\nint main() {\n    Contador destino{2};\n    // Añade la asignación indicada.\n    \n    return 0;\n}\n",
           "compileCheck": {
             "diagnostic": "explicit-assignment",
             "explanation": "destino ya es un objeto Contador. Asignarle 3 necesitaría convertir implícitamente ese int en un Contador, y el constructor explicit no permite esa conversión. La asignación se rechaza al compilar; no se ejecuta la comprobación que podría lanzar ContadorInvalido."
@@ -1082,7 +1082,7 @@
         {
           "type": "code",
           "language": "cpp",
-          "code": "#include <iostream>\n\nstruct ContadorInvalido {};\n\nclass Contador {\npublic:\n    Contador() {}\n\n    explicit Contador(int inicial) : valor_{inicial} {\n        if (valor_ < 0 || valor_ > 5) {\n            throw ContadorInvalido{};\n        }\n    }\n\n    int valor() const {\n        return valor_;\n    }\n\nprivate:\n    int valor_ = 0;\n};\n\nint main() {\n    Contador destino{2};\n    const Contador origen{4};\n\n    std::cout << \"Inicio:\" << destino.valor() << '\\n';\n\n    destino = origen;\n    std::cout << \"Desde objeto:\" << destino.valor() << '\\n';\n\n    destino = Contador{1};\n    std::cout << \"Desde construccion:\" << destino.valor() << '\\n';\n\n    try {\n        destino = Contador{6};\n    } catch (const ContadorInvalido&) {\n        std::cout << \"Rechazado:6\\n\";\n    }\n\n    std::cout << \"Conservado:\" << destino.valor() << '\\n';\n    // Error intencional para probar por separado:\n    // destino = 3;\n\n    return 0;\n}\n"
+          "code": "#include <iostream>\n\nstruct ContadorInvalido {};\n\nclass Contador {\npublic:\n    Contador() {}\n\n    explicit Contador(int inicial) : valor_{inicial} {\n        if (valor_ < 0 || valor_ > 5) {\n            throw ContadorInvalido{};\n        }\n    }\n\n    int valor() const {\n        return valor_;\n    }\n\nprivate:\n    int valor_ = 0;\n};\n\nint main() {\n    Contador destino{2};\n    const Contador origen{4};\n\n    std::cout << \"Inicio:\" << destino.valor() << '\\n';\n\n    destino = origen;\n\n    std::cout << \"Desde objeto:\" << destino.valor() << '\\n';\n\n    destino = Contador{1};\n\n    std::cout << \"Desde construccion:\" << destino.valor() << '\\n';\n\n    try {\n        destino = Contador{6};\n    } catch (const ContadorInvalido&) {\n        std::cout << \"Rechazado:6\\n\";\n    }\n\n    std::cout << \"Conservado:\" << destino.valor() << '\\n';\n    // Error intencional para probar por separado:\n    // destino = 3;\n\n    return 0;\n}\n"
         },
         {
           "type": "paragraph",
@@ -1101,7 +1101,7 @@
           "id": "cpp_fundamentals__datos_propios_y_estado_valido__valores_por_defecto_con_significado__asignacion_y_rechazo_conservan_destino",
           "language": "cpp",
           "question": "Predice toda la salida. Cada consulta observa el objeto indicado después de las instrucciones que se han ejecutado.",
-          "code": "#include <iostream>\n\nstruct ContadorInvalido {};\n\nclass Contador {\npublic:\n    Contador() {}\n\n    explicit Contador(int inicial) : valor_{inicial} {\n        if (valor_ < 0 || valor_ > 5) {\n            throw ContadorInvalido{};\n        }\n    }\n\n    int valor() const {\n        return valor_;\n    }\n\nprivate:\n    int valor_ = 0;\n};\n\nint main() {\n    Contador destino{5};\n    const Contador origen{2};\n    destino = origen;\n    std::cout << destino.valor() << ':' << origen.valor() << ':';\n\n    destino = Contador{3};\n    try {\n        destino = Contador{-1};\n    } catch (const ContadorInvalido&) {\n        std::cout << destino.valor() << ':';\n    }\n\n    std::cout << destino.valor();\n\n    return 0;\n}\n",
+          "code": "#include <iostream>\n\nstruct ContadorInvalido {};\n\nclass Contador {\npublic:\n    Contador() {}\n\n    explicit Contador(int inicial) : valor_{inicial} {\n        if (valor_ < 0 || valor_ > 5) {\n            throw ContadorInvalido{};\n        }\n    }\n\n    int valor() const {\n        return valor_;\n    }\n\nprivate:\n    int valor_ = 0;\n};\n\nint main() {\n    Contador destino{5};\n    const Contador origen{2};\n\n    destino = origen;\n\n    std::cout << destino.valor() << ':' << origen.valor() << ':';\n\n    destino = Contador{3};\n    try {\n        destino = Contador{-1};\n    } catch (const ContadorInvalido&) {\n        std::cout << destino.valor() << ':';\n    }\n\n    std::cout << destino.valor();\n\n    return 0;\n}\n",
           "answers": [
             "2:2:3:3"
           ],
@@ -1131,7 +1131,7 @@
         {
           "type": "code",
           "language": "cpp",
-          "code": "#include <iostream>\n\nstruct ContadorInvalido {};\n\nclass Contador {\npublic:\n    Contador() {}\n\n    explicit Contador(int inicial) : valor_{inicial} {\n        if (valor_ < 0 || valor_ > 5) {\n            throw ContadorInvalido{};\n        }\n    }\n\n    int valor() const {\n        return valor_;\n    }\n\nprivate:\n    int valor_ = 0;\n};\n\nint main() {\n    Contador destino{2};\n    destino = Contador{3};\n    std::cout << destino.valor();\n\n    return 0;\n}\n"
+          "code": "#include <iostream>\n\nstruct ContadorInvalido {};\n\nclass Contador {\npublic:\n    Contador() {}\n\n    explicit Contador(int inicial) : valor_{inicial} {\n        if (valor_ < 0 || valor_ > 5) {\n            throw ContadorInvalido{};\n        }\n    }\n\n    int valor() const {\n        return valor_;\n    }\n\nprivate:\n    int valor_ = 0;\n};\n\nint main() {\n    Contador destino{2};\n\n    destino = Contador{3};\n\n    std::cout << destino.valor();\n\n    return 0;\n}\n"
         }
       ]
     }
@@ -3621,6 +3621,111 @@
         "id": "block_0015_0007",
         "beforeSha256": "8879b14c2f26b06e62e6eafb8c1fc1f9bc95039237219072a64902bfe604eb5a",
         "afterSha256": "de6dc08bfeae053df973a0881806d8faa073f3cececcb55a8635e132d113740f"
+      },
+      {
+        "id": "block_0001_0003",
+        "beforeSha256": "529497aa966549c6567d56f62b63ecc243c0e7240f0b700e47cc643a84638b2e",
+        "afterSha256": "4598becb5458b5de9e4286a1e18c6dd02049a8cf6b4eb26d609ecb2c41bffde5"
+      },
+      {
+        "id": "block_0002_0001",
+        "beforeSha256": "59b8f3768d70e92e6d7e50cf082682d8657b7a9299f0f0a4b7d12ddc6069c77d",
+        "afterSha256": "2bda9798b5b88bd6bed3ee52ab4abf55aac1c82d4ba0e85de23b6afe9bba62ce"
+      },
+      {
+        "id": "block_0002_0003",
+        "beforeSha256": "d42d522272e5bd5a8096f6a8aeaeba8347b4e7ebf033eacb6dee411d46964571",
+        "afterSha256": "9c0255916ac63cd2eb57f3bad97c4a2b5a3a8e258118248ab810f70399892877"
+      },
+      {
+        "id": "block_0004_0001",
+        "beforeSha256": "3c53d19681e7062de634348f8bb0016966221af98e8c606479fcab285cf306dc",
+        "afterSha256": "cc8898f320bd40bbdbb45d9dea8941eb8227a14390e02d823b813eabfe0b4724"
+      },
+      {
+        "id": "block_0004_0004",
+        "beforeSha256": "367bb4011f908dbc3a909fc493bf46dedd73f7568b37d0dbf64ee9c85590a00e",
+        "afterSha256": "a4b036f28bf4b7a66c4fe06d64245cda0c879f35eca90d9db4d242a32db40c91"
+      },
+      {
+        "id": "block_0005_0002",
+        "beforeSha256": "accdd6ed85ed29d99e13e438959bde5e82822ff3b87046d7b05e745197944229",
+        "afterSha256": "c384ccb62fea5cdb86b4477ed6e3775aa1819a3e686fca6e4c491e79d73410e1"
+      },
+      {
+        "id": "block_0006_0003",
+        "beforeSha256": "15199bc85e87b03c6f3d0ae04f523376d5a9786bc799f1c1e49064970fc1e0d3",
+        "afterSha256": "59c628ea374cf927673339a6e7c6b9e4470580dbea4389f452a26178e8eeb7bd"
+      },
+      {
+        "id": "block_0008_0002",
+        "beforeSha256": "d6cb15acc3fb4ffa6cc652867f0c6425d5f2ab6724eb529e3b5b9481b670d278",
+        "afterSha256": "acdc53ed61028adf312c974a5a477122171e05c5c09695e17e11c6a19db7cb33"
+      },
+      {
+        "id": "block_0010_0004",
+        "beforeSha256": "7edc96047f1c6be7cfdbd93dfb9768cf1a4d33aed126dc4c46e692b6c9eea9b7",
+        "afterSha256": "9d30d44541c32f673f9a3d4b209a26206443cab51feffc0d02868e11029ae3a5"
+      },
+      {
+        "id": "block_0011_0002",
+        "beforeSha256": "66b4d388b91bc542fdfffd2735d7659dc032ce751af267363901846148917ce7",
+        "afterSha256": "a58dddb9958e134f2abea975be9c489cc0726e70748e55ef9800e4f808515da4"
+      },
+      {
+        "id": "block_0012_0003",
+        "beforeSha256": "48f45f3414599d6b512706564ab618d152493a8fa08c059d7c24a9f2effa5909",
+        "afterSha256": "81dd28696f579e8065338d6e5b74caa5f3d23286c65cfe742d35cf114fb5eb55"
+      },
+      {
+        "id": "block_0012_0008",
+        "beforeSha256": "5f1324f4e69a65a25e90c7a47365223be02124c3be7fa3745294e5b7b3116415",
+        "afterSha256": "e170a7d7e1445f1fc0e3c1e4d8c768edb1b9fd085d62a2582f7c4f367c287f50"
+      },
+      {
+        "id": "block_0012_0011",
+        "beforeSha256": "3b4cf265a3a317e627313e677477973249ea452812a9dbbbc95e7c5a6339b6ee",
+        "afterSha256": "1ac2dc6f95d50b70baa7084e83a82e9072e8cadaf6374716dfc40e9b05c571c6"
+      },
+      {
+        "id": "block_0012_0014",
+        "beforeSha256": "c432cd2f0a0e2a8551e0481af634ba9477389ed7894cf4836bc885c340015b42",
+        "afterSha256": "5439b102970322e631f68c2b9c6f6fc77e0369728bc5aba1e9fbdc1dc557ffc5"
+      },
+      {
+        "id": "block_0012_0017",
+        "beforeSha256": "ae80f4b39cf7d61502444c71b09edfd22e5520a5c1843e116519138a9e426e8d",
+        "afterSha256": "c56b5c23fe844d322d10f1dd9648c4a5e9257a7661ca60ba5d144fb2320a1b7f"
+      },
+      {
+        "id": "block_0014_0002",
+        "beforeSha256": "86789f08edd92a9b5056c6592cfaa2e5999055f19c5a8236e073fc47fba72a53",
+        "afterSha256": "abfdf02bea12a9ae1b20cd296c139fce3a284ddcdb556d7d06b5057f5adcfd29"
+      },
+      {
+        "id": "block_0014_0007",
+        "beforeSha256": "d677aac99d737eddf60c32a2c2169002463184868e9b4f0336ca4db49cb417bb",
+        "afterSha256": "d9fd7af2c3119a523d346cdec42b942d2f29aee2af5271e5ad0678646b82fbfb"
+      },
+      {
+        "id": "block_0014_0011",
+        "beforeSha256": "4e034c6aac0b2d3c5855fd6214c02436d9b0ff87f93706b641bbdfb4f728c968",
+        "afterSha256": "e6ba0c268fb3e3ba1c120f6c55f84c32961da7013e10a74b43f8d0a13c73fb72"
+      },
+      {
+        "id": "block_0015_0002",
+        "beforeSha256": "d6c073f3d7d1a09fa7bab1cf3a5c8ff9c167d616c873e26a5f97b100effee34f",
+        "afterSha256": "d17ed956f05f434a72f89ecb7834c10df3e59d8b2a709db4e270174e6bf0360c"
+      },
+      {
+        "id": "block_0015_0004",
+        "beforeSha256": "abcaed0e573ee5edb86db443dce9b207f05085e925a5201f2f5d10e6be34ee36",
+        "afterSha256": "583fa1120371b39a131f4a3befc3e550475a0ca27ea920052248baf729d22460"
+      },
+      {
+        "id": "block_0015_0007",
+        "beforeSha256": "de6dc08bfeae053df973a0881806d8faa073f3cececcb55a8635e132d113740f",
+        "afterSha256": "d8c17263826bb4e13e9d83a07eca579a040a9dd5c1980be8224c9a9c70c994d4"
       }
     ],
     "sourceFormatRevisions": [
@@ -3824,6 +3929,213 @@
           "type": "code",
           "language": "cpp",
           "code": "#include <iostream>\n\nstruct ContadorInvalido {};\n\nclass Contador {\npublic:\n    Contador() {}\n    explicit Contador(int inicial) : valor_{inicial} {\n        if (valor_ < 0 || valor_ > 5) { throw ContadorInvalido{}; }\n    }\n    int valor() const { return valor_; }\nprivate:\n    int valor_ = 0;\n};\n\nint main() {\n    Contador destino{2};\n    destino = Contador{3};\n    std::cout << destino.valor();\n    return 0;\n}\n"
+        }
+      },
+      {
+        "id": "block_0001_0003",
+        "block": {
+          "type": "output_prediction",
+          "language": "cpp",
+          "question": "Predice la salida exacta.",
+          "code": "#include <iostream>\n#include <string>\n#include <vector>\n\nstruct ContadorInvalido {};\n\nclass Contador {\npublic:\n    Contador() {}\n    Contador(int inicial) : valor_{inicial} {\n        if (valor_ < 0 || valor_ > 5) { throw ContadorInvalido{}; }\n    }\n    int valor() const { return valor_; }\nprivate:\n    int valor_ = 0;\n};\n\nint main() {\n    Contador a{2};\n    Contador b;\n    Contador c{0};\n    std::cout << a.valor() << \":\" << b.valor() << \":\" << c.valor();\n    return 0;\n}\n",
+          "answers": [
+            "2:0:0"
+          ],
+          "explanation": "a se construye con el argumento 2 y conserva dos. b solicita Contador(), que utiliza el cero escrito en el miembro. c solicita el constructor con argumento y proporciona 0, que también pertenece al dominio. Al consultar los tres objetos aparece 2:0:0."
+        }
+      },
+      {
+        "id": "block_0002_0001",
+        "block": {
+          "type": "output_prediction",
+          "language": "cpp",
+          "question": "Predice la salida exacta.",
+          "code": "#include <iostream>\n#include <string>\n#include <vector>\n\nstruct ContadorInvalido {};\n\nclass Contador {\npublic:\n    Contador() {}\n    Contador(int inicial) : valor_{inicial} {\n        if (valor_ < 0 || valor_ > 5) { throw ContadorInvalido{}; }\n    }\n    int valor() const { return valor_; }\nprivate:\n    int valor_ = 0;\n};\n\nint main() {\n    try {\n        Contador contador{6};\n        std::cout << contador.valor();\n    } catch (const ContadorInvalido&) {\n        std::cout << \"Rechazado\";\n    }\n    return 0;\n}\n",
+          "answers": [
+            "Rechazado"
+          ],
+          "explanation": "Contador contador{6}; utiliza el constructor con argumento. Seis supera el máximo cinco y la condición lanza ContadorInvalido. No se alcanza la consulta contador.valor(); el catch presenta Rechazado. El constructor sin argumentos no sustituye esa solicitud rechazada."
+        }
+      },
+      {
+        "id": "block_0002_0003",
+        "block": {
+          "type": "fill_code",
+          "language": "cpp",
+          "question": "Completa sólo el valor inicial del miembro para que la construcción sin argumentos empiece en cero.",
+          "code": "#include <iostream>\n#include <string>\n#include <vector>\n\nstruct ContadorInvalido {};\n\nclass Contador {\npublic:\n    Contador() {}\n    Contador(int inicial) : valor_{inicial} {\n        if (valor_ < 0 || valor_ > 5) { throw ContadorInvalido{}; }\n    }\n    int valor() const { return valor_; }\nprivate:\n    int valor_ = ___;\n};\n\nint main() {\n    Contador contador;\n    std::cout << contador.valor();\n    return 0;\n}\n",
+          "answers": [
+            "0"
+          ],
+          "explanation": "Contador() no escribe otro inicializador para valor_, de modo que se utiliza el de la declaración del miembro. Con int valor_ = 0;, ese miembro recibe cero antes de entrar en el cuerpo vacío del constructor. La consulta devuelve entonces 0."
+        }
+      },
+      {
+        "id": "block_0004_0001",
+        "block": {
+          "type": "output_prediction",
+          "language": "cpp",
+          "question": "Predice la salida exacta.",
+          "code": "#include <iostream>\n#include <string>\n#include <vector>\n\nenum class Estado {\n    preparado, enviado, cancelado\n};\n\nstruct PedidoInvalido {};\n\nclass Pedido {\npublic:\n    Pedido(std::string codigo, int unidades) : codigo_{codigo}, unidades_{unidades} {\n        if (codigo_.empty() || unidades_ < 1 || unidades_ > 20) {\n            throw PedidoInvalido{};\n        }\n    }\n    std::string codigo() const { return codigo_; }\n    int unidades() const { return unidades_; }\n    Estado estado() const { return estado_; }\n    bool cambiar_unidades(int nuevas) {\n        if (estado_ != Estado::preparado || nuevas < 1 || nuevas > 20) { return false; }\n        unidades_ = nuevas;\n        return true;\n    }\n    bool enviar() {\n        if (estado_ != Estado::preparado) { return false; }\n        estado_ = Estado::enviado;\n        return true;\n    }\n    bool cancelar() {\n        if (estado_ != Estado::preparado) { return false; }\n        estado_ = Estado::cancelado;\n        return true;\n    }\nprivate:\n    std::string codigo_;\n    int unidades_;\n    Estado estado_ = Estado::preparado;\n};\n\nint main() {\n    std::vector<Pedido> pedidos;\n    pedidos.push_back(Pedido{\"T\", 2});\n    std::cout << pedidos.size() << \" \" << pedidos.at(0).codigo();\n    return 0;\n}\n",
+          "answers": [
+            "1 T"
+          ],
+          "explanation": "El vector empieza vacío, sin construir ningún Pedido. pedidos.push_back(Pedido{\"T\", 2}) añade el pedido construido con código T y dos unidades. Después hay un elemento y su consulta codigo() devuelve T. La salida es 1 T."
+        }
+      },
+      {
+        "id": "block_0004_0004",
+        "block": {
+          "type": "output_prediction",
+          "language": "cpp",
+          "question": "Predice la salida exacta.",
+          "code": "#include <iostream>\n#include <string>\n#include <vector>\n\nenum class Estado {\n    preparado, enviado, cancelado\n};\n\nstruct PedidoInvalido {};\n\nclass Pedido {\npublic:\n    Pedido(std::string codigo, int unidades) : codigo_{codigo}, unidades_{unidades} {\n        if (codigo_.empty() || unidades_ < 1 || unidades_ > 20) {\n            throw PedidoInvalido{};\n        }\n    }\n    std::string codigo() const { return codigo_; }\n    int unidades() const { return unidades_; }\n    Estado estado() const { return estado_; }\n    bool cambiar_unidades(int nuevas) {\n        if (estado_ != Estado::preparado || nuevas < 1 || nuevas > 20) { return false; }\n        unidades_ = nuevas;\n        return true;\n    }\n    bool enviar() {\n        if (estado_ != Estado::preparado) { return false; }\n        estado_ = Estado::enviado;\n        return true;\n    }\n    bool cancelar() {\n        if (estado_ != Estado::preparado) { return false; }\n        estado_ = Estado::cancelado;\n        return true;\n    }\nprivate:\n    std::string codigo_;\n    int unidades_;\n    Estado estado_ = Estado::preparado;\n};\n\nint main() {\n    std::vector<Pedido> pedidos{{\"A\", 1}, {\"B\", 5}};\n    std::cout << pedidos.size() << \":\" << pedidos.at(1).unidades();\n    return 0;\n}\n",
+          "answers": [
+            "2:5"
+          ],
+          "explanation": "La lista proporciona los argumentos de cada elemento: el primero se construye con código A y una unidad; el segundo, con código B y cinco unidades. El vector tiene dos elementos, y pedidos.at(1).unidades() consulta el segundo. Por eso la salida es 2:5, sin solicitar construcciones sin argumentos."
+        }
+      },
+      {
+        "id": "block_0005_0002",
+        "block": {
+          "type": "cpp_compiler",
+          "initialCode": "#include <iostream>\n#include <string>\n#include <vector>\n\nint main() {\n    // Construye aqui el programa de la consigna.\n    return 0;\n}\n",
+          "outputCheck": {
+            "cases": [
+              {
+                "standardInput": "",
+                "outputs": [
+                  "Defecto:0\nValor:0\nValor:3\nRechazado:-1\nRechazado:4\nVector:0:0"
+                ],
+                "explanation": "El estado predeterminado cero pertenece al dominio y permite construir cada elemento del vector. Los argumentos -1 y 4 siguen siendo rechazados, sin transformarse en cero."
+              }
+            ]
+          }
+        }
+      },
+      {
+        "id": "block_0006_0003",
+        "block": {
+          "type": "output_prediction",
+          "language": "cpp",
+          "question": "Predice la salida exacta.",
+          "code": "#include <iostream>\n#include <string>\n#include <vector>\n\nstruct ContadorInvalido {};\n\nclass Contador {\npublic:\n    Contador() {}\n    Contador(int inicial) : valor_{inicial} {\n        if (valor_ < 0 || valor_ > 5) { throw ContadorInvalido{}; }\n    }\n    int valor() const { return valor_; }\nprivate:\n    int valor_ = 0;\n};\n\nint main() {\n    const Contador origen{5};\n    Contador copia = origen;\n    std::cout << copia.valor();\n    return 0;\n}\n",
+          "answers": [
+            "5"
+          ],
+          "explanation": "origen ya es un Contador cuyo valor es cinco. Contador copia = origen; crea otro objeto copiando ese miembro. No solicita Contador() ni reemplaza el valor copiado por cero: la consulta de copia muestra 5."
+        }
+      },
+      {
+        "id": "block_0008_0002",
+        "block": {
+          "type": "output_prediction",
+          "id": "cpp_fundamentals__datos_propios_y_estado_valido__valores_por_defecto_con_significado__explicit_directa_predeterminado_y_copia",
+          "language": "cpp",
+          "question": "El constructor con int lleva explicit. Predice los valores de la construcción sin argumentos, la construcción directa y la copia de un Contador existente.",
+          "code": "#include <iostream>\n\nstruct ContadorInvalido {};\n\nclass Contador {\npublic:\n    Contador() {}\n    explicit Contador(int inicial) : valor_{inicial} {\n        if (valor_ < 0 || valor_ > 5) { throw ContadorInvalido{}; }\n    }\n    int valor() const { return valor_; }\nprivate:\n    int valor_ = 0;\n};\n\nint main() {\n    const Contador inicio;\n    const Contador directo{5};\n    const Contador copia = directo;\n    std::cout << inicio.valor() << ':' << directo.valor() << ':' << copia.valor();\n    return 0;\n}\n",
+          "answers": [
+            "0:5:5"
+          ],
+          "explanation": "inicio utiliza Contador() y empieza en cero. directo se construye expresamente con el argumento 5. copia recibe otro Contador, cuyo valor es cinco, y no necesita convertir un int. explicit Contador(int) no prohíbe esa copia. Las tres consultas muestran 0:5:5."
+        }
+      },
+      {
+        "id": "block_0010_0004",
+        "block": {
+          "type": "output_prediction",
+          "id": "cpp_fundamentals__datos_propios_y_estado_valido__valores_por_defecto_con_significado__argumento_construido_y_objeto_existente",
+          "language": "cpp",
+          "question": "Ambas llamadas aportan objetos Contador. Predice la salida exacta.",
+          "code": "#include <iostream>\n\nstruct ContadorInvalido {};\n\nclass Contador {\npublic:\n    Contador() {}\n    explicit Contador(int inicial) : valor_{inicial} {\n        if (valor_ < 0 || valor_ > 5) { throw ContadorInvalido{}; }\n    }\n    int valor() const { return valor_; }\nprivate:\n    int valor_ = 0;\n};\n\nint leer(const Contador& contador) {\n    return contador.valor();\n}\n\nint main() {\n    const Contador existente{1};\n    std::cout << leer(Contador{4}) << ':' << leer(existente) << ':';\n    std::cout << existente.valor();\n    return 0;\n}\n",
+          "answers": [
+            "4:1:1"
+          ],
+          "explanation": "leer(Contador{4}) consulta el objeto construido con cuatro y devuelve 4. leer(existente) recibe el objeto que ya contiene uno y devuelve 1 sin modificarlo. La última consulta sigue observando uno en existente. Por eso se muestra 4:1:1; explicit no cambia esos valores ni impide pasar objetos que ya tienen el tipo pedido."
+        }
+      },
+      {
+        "id": "block_0011_0002",
+        "block": {
+          "type": "output_prediction",
+          "id": "cpp_fundamentals__datos_propios_y_estado_valido__valores_por_defecto_con_significado__explicit_y_dominio_son_decisiones_distintas",
+          "language": "cpp",
+          "question": "Todas las solicitudes construyen directamente. Predice las cuatro líneas y distingue aceptación de excepción.",
+          "code": "#include <iostream>\n#include <vector>\n\nstruct ContadorInvalido {};\n\nclass Contador {\npublic:\n    Contador() {}\n    explicit Contador(int inicial) : valor_{inicial} {\n        if (valor_ < 0 || valor_ > 5) { throw ContadorInvalido{}; }\n    }\n    int valor() const { return valor_; }\nprivate:\n    int valor_ = 0;\n};\n\nint main() {\n    for (int inicial : std::vector<int>{0, 6, 5, -1}) {\n        try {\n            const Contador contador{inicial};\n            std::cout << \"Valor:\" << contador.valor() << '\\n';\n        } catch (const ContadorInvalido&) {\n            std::cout << \"Rechazado:\" << inicial << '\\n';\n        }\n    }\n    return 0;\n}\n",
+          "answers": [
+            "Valor:0\nRechazado:6\nValor:5\nRechazado:-1"
+          ],
+          "explanation": "Cero y cinco pertenecen al dominio. Seis supera el máximo cinco y menos uno está por debajo de cero: esas dos construcciones lanzan ContadorInvalido. Cada catch trata su intento y permite continuar con el siguiente dato. En el orden del recorrido aparecen estas cuatro líneas:\n\nValor:0\nRechazado:6\nValor:5\nRechazado:-1\n\nEstos rechazos ocurren al ejecutar un programa válido; Contador copia = 3;, en cambio, pide una conversión implícita impedida y no permite compilar."
+        }
+      },
+      {
+        "id": "block_0012_0003",
+        "block": {
+          "type": "cpp_compiler",
+          "initialCode": "#include <iostream>\n\nint main() {\n    // Construye Contador, leer y las pruebas de la consigna.\n    return 0;\n}\n",
+          "outputCheck": {
+            "cases": [
+              {
+                "standardInput": "",
+                "outputs": [
+                  "Predeterminado:0\nDirecto:4\nArgumento:2\nCopia:4\nRechazado:-1\nRechazado:6\n"
+                ],
+                "explanation": "explicit conserva la construcción directa y las copias entre Contador. Los argumentos numéricos inválidos llegan al constructor y son rechazados durante la ejecución."
+              }
+            ]
+          }
+        }
+      },
+      {
+        "id": "block_0012_0008",
+        "block": {
+          "type": "cpp_compiler",
+          "initialCode": "#include <iostream>\n\nstruct ContadorInvalido {};\n\nclass Contador {\npublic:\n    Contador() {}\n    explicit Contador(int inicial) : valor_{inicial} {\n        if (valor_ < 0 || valor_ > 5) { throw ContadorInvalido{}; }\n    }\n    int valor() const { return valor_; }\nprivate:\n    int valor_ = 0;\n};\n\nint leer(const Contador& contador) {\n    return contador.valor();\n}\n\nint main() {\n    // Añade la declaración indicada.\n    return 0;\n}\n",
+          "compileCheck": {
+            "diagnostic": "explicit-copy-initialization",
+            "explanation": "Contador no_permitido = 3; necesita una conversión implícita desde int para inicializar el objeto. El constructor explicit no permite esa conversión. El rechazo ocurre al compilar; no se ejecutó el programa ni se lanzó ContadorInvalido."
+          }
+        }
+      },
+      {
+        "id": "block_0012_0011",
+        "block": {
+          "type": "cpp_compiler",
+          "initialCode": "#include <iostream>\n\nstruct ContadorInvalido {};\n\nclass Contador {\npublic:\n    Contador() {}\n    explicit Contador(int inicial) : valor_{inicial} {\n        if (valor_ < 0 || valor_ > 5) { throw ContadorInvalido{}; }\n    }\n    int valor() const { return valor_; }\nprivate:\n    int valor_ = 0;\n};\n\nint leer(const Contador& contador) {\n    return contador.valor();\n}\n\nint main() {\n    // Añade la llamada indicada.\n    return 0;\n}\n",
+          "compileCheck": {
+            "diagnostic": "explicit-argument-conversion",
+            "explanation": "En leer(3), el argumento tiene tipo int y el parámetro requiere un Contador mediante const Contador&. El constructor explicit no permite la conversión implícita necesaria para esa llamada. El rechazo ocurre al compilar, antes de ejecutar el programa."
+          }
+        }
+      },
+      {
+        "id": "block_0014_0007",
+        "block": {
+          "type": "cpp_compiler",
+          "initialCode": "#include <iostream>\n\nint main() {\n    // Escribe Contador y recupera las pruebas de asignacion.\n    return 0;\n}\n",
+          "outputCheck": {
+            "cases": [
+              {
+                "standardInput": "",
+                "outputs": [
+                  "Inicio:2\nDesde objeto:4\nDesde construccion:1\nRechazado:6\nConservado:1\n"
+                ],
+                "explanation": "La construcción de Contador{6} lanza antes de proporcionar el nuevo valor. La asignación no llega a sustituir el uno que ya tenía destino."
+              }
+            ]
+          }
+        }
+      },
+      {
+        "id": "block_0014_0011",
+        "block": {
+          "type": "cpp_compiler",
+          "initialCode": "#include <iostream>\n\nstruct ContadorInvalido {};\n\nclass Contador {\npublic:\n    Contador() {}\n    explicit Contador(int inicial) : valor_{inicial} {\n        if (valor_ < 0 || valor_ > 5) { throw ContadorInvalido{}; }\n    }\n    int valor() const { return valor_; }\nprivate:\n    int valor_ = 0;\n};\n\nint main() {\n    Contador destino{2};\n    // Añade la asignación indicada.\n    return 0;\n}\n",
+          "compileCheck": {
+            "diagnostic": "explicit-assignment",
+            "explanation": "destino ya es un objeto Contador. Asignarle 3 necesitaría convertir implícitamente ese int en un Contador, y el constructor explicit no permite esa conversión. La asignación se rechaza al compilar; no se ejecuta la comprobación que podría lanzar ContadorInvalido."
+          }
         }
       }
     ]

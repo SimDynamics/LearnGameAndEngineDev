@@ -71,7 +71,7 @@
           "id": "p3_u7l6_igualdad_generada_sobre_array_y_dos_objetos",
           "language": "cpp",
           "question": "Escribe las tres comparaciones de valor y la comparación final de direcciones, en el orden del programa.",
-          "code": "#include <iostream>\n#include <memory>\n\nclass Terna {\npublic:\n    Terna(int primero, int segundo, int tercero) : datos_{primero, segundo, tercero} {}\n    bool operator==(const Terna&) const = default;\nprivate:\n    int datos_[3];\n};\nint main() {\n    const Terna a{1, 2, 3}, b{1, 2, 3}, c{1, 2, 4};\n    std::cout << (a == b) << ':' << (a != b) << ':' << (a == c) << ':' << (&a == &b);\n    return 0;\n}\n",
+          "code": "#include <iostream>\n#include <memory>\n\nclass Terna {\npublic:\n    Terna(int primero, int segundo, int tercero) : datos_{primero, segundo, tercero} {}\n    bool operator==(const Terna&) const = default;\nprivate:\n    int datos_[3];\n};\n\nint main() {\n    const Terna a{1, 2, 3}, b{1, 2, 3}, c{1, 2, 4};\n\n    std::cout << (a == b) << ':' << (a != b) << ':' << (a == c) << ':' << (&a == &b);\n\n    return 0;\n}\n",
           "answers": [
             "1:0:0:0"
           ],
@@ -99,7 +99,7 @@
           "id": "p3_u7l6_copia_de_terna_y_cambio_de_valor",
           "language": "cpp",
           "question": "Escribe antes, la nueva igualdad, la desigualdad y la comparación de a consigo misma.",
-          "code": "#include <iostream>\n#include <memory>\n\nclass Terna {\npublic:\n    Terna(int primero, int segundo, int tercero) : datos_{primero, segundo, tercero} {}\n    bool operator==(const Terna&) const = default;\nprivate:\n    int datos_[3];\n};\nint main() {\n    const Terna a{1, 4, 9};\n    Terna b = a;\n    bool antes = (a == b);\n    b = Terna{1, 4, -9};\n    std::cout << antes << ':' << (a == b) << ':' << (a != b) << ':' << (a == a);\n    return 0;\n}\n",
+          "code": "#include <iostream>\n#include <memory>\n\nclass Terna {\npublic:\n    Terna(int primero, int segundo, int tercero) : datos_{primero, segundo, tercero} {}\n    bool operator==(const Terna&) const = default;\nprivate:\n    int datos_[3];\n};\n\nint main() {\n    const Terna a{1, 4, 9};\n    Terna b = a;\n    bool antes = (a == b);\n\n    b = Terna{1, 4, -9};\n\n    std::cout << antes << ':' << (a == b) << ':' << (a != b) << ':' << (a == a);\n\n    return 0;\n}\n",
           "answers": [
             "1:0:1:1"
           ],
@@ -127,7 +127,7 @@
           "id": "p3_u7l6_todos_los_miembros_del_registro_participan",
           "language": "cpp",
           "question": "Escribe la igualdad de a y b, su desigualdad y la igualdad de a y c.",
-          "code": "#include <iostream>\n#include <memory>\n\nclass Registro {\npublic:\n    Registro(int numero, int revision) : numero_{numero}, revision_{revision} {}\n    bool operator==(const Registro&) const = default;\nprivate:\n    int numero_;\n    int revision_;\n};\nint main() {\n    const Registro a{6, 1}, b{6, 2}, c{6, 1};\n    std::cout << (a == b) << ':' << (a != b) << ':' << (a == c);\n    return 0;\n}\n",
+          "code": "#include <iostream>\n#include <memory>\n\nclass Registro {\npublic:\n    Registro(int numero, int revision) : numero_{numero}, revision_{revision} {}\n    bool operator==(const Registro&) const = default;\nprivate:\n    int numero_;\n    int revision_;\n};\n\nint main() {\n    const Registro a{6, 1}, b{6, 2}, c{6, 1};\n\n    std::cout << (a == b) << ':' << (a != b) << ':' << (a == c);\n\n    return 0;\n}\n",
           "answers": [
             "0:1:1"
           ],
@@ -182,7 +182,7 @@
           "id": "p3_u7l6_desigualdad_reutiliza_la_igualdad_bool",
           "language": "cpp",
           "question": "Escribe las dos desigualdades y la negación de la llamada explícita de igualdad.",
-          "code": "#include <iostream>\n#include <memory>\n\nclass Sello {\npublic:\n    explicit Sello(int codigo) : codigo_{codigo} {}\n    bool operator==(const Sello&) const = default;\nprivate:\n    int codigo_;\n};\nint main() {\n    const Sello a{3}, b{3}, c{5};\n    std::cout << (a != b) << ':' << (a != c) << ':' << (!a.operator==(c));\n    return 0;\n}\n",
+          "code": "#include <iostream>\n#include <memory>\n\nclass Sello {\npublic:\n    explicit Sello(int codigo) : codigo_{codigo} {}\n    bool operator==(const Sello&) const = default;\nprivate:\n    int codigo_;\n};\n\nint main() {\n    const Sello a{3}, b{3}, c{5};\n\n    std::cout << (a != b) << ':' << (a != c) << ':' << (!a.operator==(c));\n\n    return 0;\n}\n",
           "answers": [
             "0:1:1"
           ],
@@ -208,7 +208,7 @@
         {
           "type": "code",
           "language": "cpp",
-          "code": "#include <iostream>\n#include <memory>\n\nclass Sello {\npublic:\n    explicit Sello(int codigo) : codigo_{codigo} {}\n    bool operator==(const Sello&) const = default;\nprivate:\n    int codigo_;\n};\nint main() {\n    const Sello a{3}, b{5};\n    std::cout << a.operator!=(b);\n    return 0;\n}\n"
+          "code": "#include <iostream>\n#include <memory>\n\nclass Sello {\npublic:\n    explicit Sello(int codigo) : codigo_{codigo} {}\n    bool operator==(const Sello&) const = default;\nprivate:\n    int codigo_;\n};\n\nint main() {\n    const Sello a{3}, b{5};\n\n    std::cout << a.operator!=(b);\n\n    return 0;\n}\n"
         },
         {
           "type": "multiple_choice",
@@ -237,7 +237,7 @@
         {
           "type": "code",
           "language": "cpp",
-          "code": "#include <iostream>\n#include <memory>\n\nclass Sello {\npublic:\n    explicit Sello(int codigo) : codigo_{codigo} {}\n    int operator==(const Sello&) const = default;\nprivate:\n    int codigo_;\n};\nint main() {\n    const Sello a{3}, b{3};\n    return a == b;\n}\n"
+          "code": "#include <iostream>\n#include <memory>\n\nclass Sello {\npublic:\n    explicit Sello(int codigo) : codigo_{codigo} {}\n    int operator==(const Sello&) const = default;\nprivate:\n    int codigo_;\n};\n\nint main() {\n    const Sello a{3}, b{3};\n    return a == b;\n}\n"
         },
         {
           "type": "multiple_choice",
@@ -272,7 +272,7 @@
           "id": "p3_u7l6_igualdad_de_miembro_unique_ptr_y_contenido",
           "language": "cpp",
           "question": "Escribe las cinco comparaciones en el orden del programa. Distingue el valor de los enteros, las direcciones guardadas y las direcciones de las Cajas.",
-          "code": "#include <iostream>\n#include <memory>\n\nclass Caja {\npublic:\n    Caja() = default;\n    explicit Caja(int numero) : dato_{std::make_unique<int>(numero)} {}\n    const int* acceso() const noexcept { return dato_.get(); }\n    bool operator==(const Caja&) const = default;\nprivate:\n    std::unique_ptr<int> dato_{};\n};\nint main() {\n    const Caja a{8}, b{8}, vacia1, vacia2;\n    std::cout << (a == b) << ':' << (a == a) << ':' << (vacia1 == vacia2)\n              << ':' << (&vacia1 == &vacia2) << ':' << (a.acceso() == b.acceso());\n    return 0;\n}\n",
+          "code": "#include <iostream>\n#include <memory>\n\nclass Caja {\npublic:\n    Caja() = default;\n    explicit Caja(int numero) : dato_{std::make_unique<int>(numero)} {}\n    const int* acceso() const noexcept { return dato_.get(); }\n    bool operator==(const Caja&) const = default;\nprivate:\n    std::unique_ptr<int> dato_{};\n};\n\nint main() {\n    const Caja a{8}, b{8}, vacia1, vacia2;\n\n    std::cout << (a == b) << ':' << (a == a) << ':' << (vacia1 == vacia2)\n              << ':' << (&vacia1 == &vacia2) << ':' << (a.acceso() == b.acceso());\n    return 0;\n}\n",
           "answers": [
             "0:1:1:0:0"
           ],
@@ -318,7 +318,7 @@
         {
           "type": "code",
           "language": "cpp",
-          "code": "#include <iostream>\n#include <memory>\n\nstruct Semilla { int numero; };\nstruct Lote {\n    Semilla dato;\n    bool operator==(const Lote&) const = default;\n};\nint main() {\n    const Lote a{{7}}, b{{7}};\n    return a == b;\n}\n"
+          "code": "#include <iostream>\n#include <memory>\n\nstruct Semilla { int numero; };\nstruct Lote {\n    Semilla dato;\n    bool operator==(const Lote&) const = default;\n};\n\nint main() {\n    const Lote a{{7}}, b{{7}};\n    return a == b;\n}\n"
         },
         {
           "type": "multiple_choice",
@@ -638,7 +638,7 @@
         {
           "type": "cpp_compiler",
           "language": "cpp",
-          "initialCode": "#include <iostream>\n#include <memory>\n\nclass LecturaOpcional {\npublic:\n    LecturaOpcional() = default;\n    explicit LecturaOpcional(int numero) : dato_{std::make_unique<int>(numero)} {}\n    void cargar(int numero) { dato_ = std::make_unique<int>(numero); }\n    void vaciar() noexcept { dato_.reset(); }\n    const int* acceso() const noexcept { return dato_.get(); }\n    bool leer(int& numero) const noexcept {\n        if (!dato_) { return false; }\n        numero = *dato_;\n        return true;\n    }\n    void escribir(std::ostream& salida) const {\n        if (dato_) { salida << *dato_; }\n        else { salida << \"Vacio\"; }\n    }\n    bool operator==(const LecturaOpcional& otra) const;\nprivate:\n    std::unique_ptr<int> dato_{};\n};\nbool LecturaOpcional::operator==(const LecturaOpcional& otra) const {\n    // Define la igualdad de contenido, incluyendo ambos estados de presencia.\n    return dato_ == otra.dato_;\n}\nstruct Observacion {\n    bool presente;\n    int numero;\n    const int* direccion;\n    bool operator==(const Observacion&) const = default;\n};\n\nObservacion observar(const LecturaOpcional& lectura) {\n    Observacion estado{false, 0, lectura.acceso()};\n    estado.presente = lectura.leer(estado.numero);\n    return estado;\n}\nint main() {\n    int ordenes = 0;\n    if (!(std::cin >> ordenes) || ordenes < 1 || ordenes > 12) { return 1; }\n    LecturaOpcional a{8}, b{8};\n    for (int i = 0; i < ordenes; ++i) {\n        int op = 0, valor = 0;\n        if (!(std::cin >> op >> valor)) { return 1; }\n        const char* estado = \"Aceptada\";\n        if (op == 1) { a.cargar(valor); }\n        else if (op == 2) { b.cargar(valor); }\n        else if (op == 3) { a.vaciar(); }\n        else if (op == 4) { b.vaciar(); }\n        else if (op != 5) { estado = \"Operacion\"; }\n        const Observacion antesA = observar(a), antesB = observar(b);\n        const LecturaOpcional& izquierda = a;\n        const LecturaOpcional& derecha = b;\n        const bool iguales = (izquierda == derecha);\n        const bool distintos = (izquierda != derecha);\n        const bool vuelta = (derecha == izquierda);\n        const bool propiaA = (izquierda == izquierda);\n        const bool propiaB = (derecha == derecha);\n        const bool mismaDireccion = (a.acceso() == b.acceso());\n        const bool conservado = (antesA == observar(a) && antesB == observar(b));\n        std::cout << \"Estado:\" << estado << \";Iguales:\" << iguales << \";Distintos:\" << distintos\n                  << \";Vuelta:\" << vuelta << \";AutoA:\" << propiaA << \";AutoB:\" << propiaB\n                  << \";MismaDireccion:\" << mismaDireccion << \";Conservado:\" << conservado << \";A:\";\n        a.escribir(std::cout);\n        std::cout << \";B:\";\n        b.escribir(std::cout);\n        std::cout << '\\n';\n    }\n    std::cout << \"FinalA:\";\n    a.escribir(std::cout);\n    std::cout << \";FinalB:\";\n    b.escribir(std::cout);\n    return 0;\n}\n",
+          "initialCode": "#include <iostream>\n#include <memory>\n\nclass LecturaOpcional {\npublic:\n    LecturaOpcional() = default;\n    explicit LecturaOpcional(int numero) : dato_{std::make_unique<int>(numero)} {}\n    void cargar(int numero) { dato_ = std::make_unique<int>(numero); }\n    void vaciar() noexcept { dato_.reset(); }\n    const int* acceso() const noexcept { return dato_.get(); }\n    bool leer(int& numero) const noexcept {\n        if (!dato_) { return false; }\n        numero = *dato_;\n        return true;\n    }\n\n    void escribir(std::ostream& salida) const {\n        if (dato_) { salida << *dato_; }\n        else { salida << \"Vacio\"; }\n    }\n    bool operator==(const LecturaOpcional& otra) const;\nprivate:\n    std::unique_ptr<int> dato_{};\n};\n\nbool LecturaOpcional::operator==(const LecturaOpcional& otra) const {\n    // Define la igualdad de contenido, incluyendo ambos estados de presencia.\n    \n    return dato_ == otra.dato_;\n}\n\nstruct Observacion {\n    bool presente;\n    int numero;\n    const int* direccion;\n    bool operator==(const Observacion&) const = default;\n};\n\nObservacion observar(const LecturaOpcional& lectura) {\n    Observacion estado{false, 0, lectura.acceso()};\n\n    estado.presente = lectura.leer(estado.numero);\n    return estado;\n}\n\nint main() {\n    int ordenes = 0;\n    if (!(std::cin >> ordenes) || ordenes < 1 || ordenes > 12) { return 1; }\n    LecturaOpcional a{8}, b{8};\n    for (int i = 0; i < ordenes; ++i) {\n        int op = 0, valor = 0;\n        if (!(std::cin >> op >> valor)) { return 1; }\n        const char* estado = \"Aceptada\";\n        if (op == 1) { a.cargar(valor); }\n        else if (op == 2) { b.cargar(valor); }\n        else if (op == 3) { a.vaciar(); }\n        else if (op == 4) { b.vaciar(); }\n        else if (op != 5) { estado = \"Operacion\"; }\n        const Observacion antesA = observar(a), antesB = observar(b);\n        const LecturaOpcional& izquierda = a;\n        const LecturaOpcional& derecha = b;\n        const bool iguales = (izquierda == derecha);\n        const bool distintos = (izquierda != derecha);\n        const bool vuelta = (derecha == izquierda);\n        const bool propiaA = (izquierda == izquierda);\n        const bool propiaB = (derecha == derecha);\n        const bool mismaDireccion = (a.acceso() == b.acceso());\n        const bool conservado = (antesA == observar(a) && antesB == observar(b));\n\n        std::cout << \"Estado:\" << estado << \";Iguales:\" << iguales << \";Distintos:\" << distintos\n                  << \";Vuelta:\" << vuelta << \";AutoA:\" << propiaA << \";AutoB:\" << propiaB\n                  << \";MismaDireccion:\" << mismaDireccion << \";Conservado:\" << conservado << \";A:\";\n        a.escribir(std::cout);\n        std::cout << \";B:\";\n        b.escribir(std::cout);\n        std::cout << '\\n';\n    }\n    std::cout << \"FinalA:\";\n    a.escribir(std::cout);\n    std::cout << \";FinalB:\";\n    b.escribir(std::cout);\n    return 0;\n}\n",
           "initialStandardInput": "8\n5 0\n2 9\n1 9\n3 0\n4 0\n1 0\n2 0\n5 0",
           "outputCheck": {
             "inputComparison": "tokens",
@@ -764,7 +764,7 @@
         {
           "type": "code",
           "language": "cpp",
-          "code": "#include <iostream>\n#include <memory>\n\nclass LecturaOpcional {\npublic:\n    LecturaOpcional() = default;\n    explicit LecturaOpcional(int numero) : dato_{std::make_unique<int>(numero)} {}\n    void cargar(int numero) { dato_ = std::make_unique<int>(numero); }\n    void vaciar() noexcept { dato_.reset(); }\n    const int* acceso() const noexcept { return dato_.get(); }\n    bool leer(int& numero) const noexcept {\n        if (!dato_) { return false; }\n        numero = *dato_;\n        return true;\n    }\n    void escribir(std::ostream& salida) const {\n        if (dato_) { salida << *dato_; }\n        else { salida << \"Vacio\"; }\n    }\n    bool operator==(const LecturaOpcional& otra) const;\nprivate:\n    std::unique_ptr<int> dato_{};\n};\nbool LecturaOpcional::operator==(const LecturaOpcional& otra) const {\n    if (!dato_ || !otra.dato_) {\n        return !dato_ && !otra.dato_;\n    }\n    return *dato_ == *otra.dato_;\n}\nstruct Observacion {\n    bool presente;\n    int numero;\n    const int* direccion;\n    bool operator==(const Observacion&) const = default;\n};\n\nObservacion observar(const LecturaOpcional& lectura) {\n    Observacion estado{false, 0, lectura.acceso()};\n    estado.presente = lectura.leer(estado.numero);\n    return estado;\n}\nint main() {\n    int ordenes = 0;\n    if (!(std::cin >> ordenes) || ordenes < 1 || ordenes > 12) { return 1; }\n    LecturaOpcional a{8}, b{8};\n    for (int i = 0; i < ordenes; ++i) {\n        int op = 0, valor = 0;\n        if (!(std::cin >> op >> valor)) { return 1; }\n        const char* estado = \"Aceptada\";\n        if (op == 1) { a.cargar(valor); }\n        else if (op == 2) { b.cargar(valor); }\n        else if (op == 3) { a.vaciar(); }\n        else if (op == 4) { b.vaciar(); }\n        else if (op != 5) { estado = \"Operacion\"; }\n        const Observacion antesA = observar(a), antesB = observar(b);\n        const LecturaOpcional& izquierda = a;\n        const LecturaOpcional& derecha = b;\n        const bool iguales = (izquierda == derecha);\n        const bool distintos = (izquierda != derecha);\n        const bool vuelta = (derecha == izquierda);\n        const bool propiaA = (izquierda == izquierda);\n        const bool propiaB = (derecha == derecha);\n        const bool mismaDireccion = (a.acceso() == b.acceso());\n        const bool conservado = (antesA == observar(a) && antesB == observar(b));\n        std::cout << \"Estado:\" << estado << \";Iguales:\" << iguales << \";Distintos:\" << distintos\n                  << \";Vuelta:\" << vuelta << \";AutoA:\" << propiaA << \";AutoB:\" << propiaB\n                  << \";MismaDireccion:\" << mismaDireccion << \";Conservado:\" << conservado << \";A:\";\n        a.escribir(std::cout);\n        std::cout << \";B:\";\n        b.escribir(std::cout);\n        std::cout << '\\n';\n    }\n    std::cout << \"FinalA:\";\n    a.escribir(std::cout);\n    std::cout << \";FinalB:\";\n    b.escribir(std::cout);\n    return 0;\n}\n"
+          "code": "#include <iostream>\n#include <memory>\n\nclass LecturaOpcional {\npublic:\n    LecturaOpcional() = default;\n    explicit LecturaOpcional(int numero) : dato_{std::make_unique<int>(numero)} {}\n    void cargar(int numero) { dato_ = std::make_unique<int>(numero); }\n    void vaciar() noexcept { dato_.reset(); }\n    const int* acceso() const noexcept { return dato_.get(); }\n    bool leer(int& numero) const noexcept {\n        if (!dato_) { return false; }\n        numero = *dato_;\n        return true;\n    }\n\n    void escribir(std::ostream& salida) const {\n        if (dato_) { salida << *dato_; }\n        else { salida << \"Vacio\"; }\n    }\n    bool operator==(const LecturaOpcional& otra) const;\nprivate:\n    std::unique_ptr<int> dato_{};\n};\n\nbool LecturaOpcional::operator==(const LecturaOpcional& otra) const {\n    if (!dato_ || !otra.dato_) {\n        return !dato_ && !otra.dato_;\n    }\n\n    return *dato_ == *otra.dato_;\n}\n\nstruct Observacion {\n    bool presente;\n    int numero;\n    const int* direccion;\n    bool operator==(const Observacion&) const = default;\n};\n\nObservacion observar(const LecturaOpcional& lectura) {\n    Observacion estado{false, 0, lectura.acceso()};\n\n    estado.presente = lectura.leer(estado.numero);\n    return estado;\n}\n\nint main() {\n    int ordenes = 0;\n    if (!(std::cin >> ordenes) || ordenes < 1 || ordenes > 12) { return 1; }\n    LecturaOpcional a{8}, b{8};\n    for (int i = 0; i < ordenes; ++i) {\n        int op = 0, valor = 0;\n        if (!(std::cin >> op >> valor)) { return 1; }\n        const char* estado = \"Aceptada\";\n        if (op == 1) { a.cargar(valor); }\n        else if (op == 2) { b.cargar(valor); }\n        else if (op == 3) { a.vaciar(); }\n        else if (op == 4) { b.vaciar(); }\n        else if (op != 5) { estado = \"Operacion\"; }\n        const Observacion antesA = observar(a), antesB = observar(b);\n        const LecturaOpcional& izquierda = a;\n        const LecturaOpcional& derecha = b;\n        const bool iguales = (izquierda == derecha);\n        const bool distintos = (izquierda != derecha);\n        const bool vuelta = (derecha == izquierda);\n        const bool propiaA = (izquierda == izquierda);\n        const bool propiaB = (derecha == derecha);\n        const bool mismaDireccion = (a.acceso() == b.acceso());\n        const bool conservado = (antesA == observar(a) && antesB == observar(b));\n\n        std::cout << \"Estado:\" << estado << \";Iguales:\" << iguales << \";Distintos:\" << distintos\n                  << \";Vuelta:\" << vuelta << \";AutoA:\" << propiaA << \";AutoB:\" << propiaB\n                  << \";MismaDireccion:\" << mismaDireccion << \";Conservado:\" << conservado << \";A:\";\n        a.escribir(std::cout);\n        std::cout << \";B:\";\n        b.escribir(std::cout);\n        std::cout << '\\n';\n    }\n    std::cout << \"FinalA:\";\n    a.escribir(std::cout);\n    std::cout << \";FinalB:\";\n    b.escribir(std::cout);\n    return 0;\n}\n"
         },
         {
           "type": "paragraph",
@@ -2219,6 +2219,201 @@
       }
     },
     "additions": [],
-    "editorial": []
+    "editorial": [
+      {
+        "id": "block_0002_0002",
+        "beforeSha256": "dccbf8b60c5aa6918607a88cc9b39758e34a3634807755f1dcf5476849be2fef",
+        "afterSha256": "ac36658d065dcf37ce99b49e2fd56a3d1fe38357e842b01aa5dd9dfcd87a8f41"
+      },
+      {
+        "id": "block_0003_0002",
+        "beforeSha256": "64f4953b5b5c41184e4081a7460235d15e40635ce3d62c8b99aa8105867332c9",
+        "afterSha256": "36f2b6aaaaa7bfe649145ee29d960afb6dc538662782bbf5845deba8ab86d082"
+      },
+      {
+        "id": "block_0004_0002",
+        "beforeSha256": "99dc60e514343ad1bac15c4f102b8806825f358044bacc8350fb7cdeaedeb020",
+        "afterSha256": "169d484af60cb7b99142b493b2ee5ea2ed53b6c43115588d6e522b39f92905e9"
+      },
+      {
+        "id": "block_0006_0002",
+        "beforeSha256": "0758d2a4050b80b25490e491253e54ea2874bdf986be458869f328bc003abbd1",
+        "afterSha256": "9c83a2f2d1e55c48bf89bd50bd89ce9397cc2a809c49bb37c5681373a63f94cf"
+      },
+      {
+        "id": "block_0007_0002",
+        "beforeSha256": "4850d3c9ee8fa65377e162c49b53848556bf7dcaad3fd4dd1cfd7f6ce36f94fd",
+        "afterSha256": "2ecfc0d52a491e9827f3133dccd128d4d9ccc3486a1744b8ab0d1878215190f4"
+      },
+      {
+        "id": "block_0008_0002",
+        "beforeSha256": "3bbceb8b17fee0deb45b2f2f5d3d16436e9a377d3d7bddf1fcd78c9fa5bdab35",
+        "afterSha256": "91fe0740df9c6dd1f2af78f41ae78e351acfd28ccc6284364b1a5d44ee36a9fa"
+      },
+      {
+        "id": "block_0009_0003",
+        "beforeSha256": "97edc5106ea65d23450cc9f0de61848ac315b1d97d3f26e618b0bc132b7a2dcd",
+        "afterSha256": "82b83af423298d8fac1b47f0993ee810b99b78f246c9dedebddd25cac3bf3cfb"
+      },
+      {
+        "id": "block_0011_0002",
+        "beforeSha256": "94a6d59d7c1c14e05273934d6aea7ce957ccd1861768b4e31fff4bd0902c0a18",
+        "afterSha256": "c0db2b39e9db9f7ac8a3aea98c6dd8af200b6ea52c6e8d53636250f3db8e23fd"
+      },
+      {
+        "id": "block_0018_0002",
+        "beforeSha256": "1f0400144f375bb19e3d15dfe4cedd9790d99bb6acad49e6d9f0d4ec79b8bfa9",
+        "afterSha256": "7f712d1e4322dcb647bbd3eca510bb5942d3c09f1e4dfa0d37366aa33f00dc87"
+      },
+      {
+        "id": "block_0020_0001",
+        "beforeSha256": "40b7b9d63c0bd486a357a8d592a943930b1ac25c036f4166fca2f5a0ebb387ed",
+        "afterSha256": "0f99b81b2b3c6ff4cbbd131e4bc0cadddadd0578710e3d9e05b49e51e5e528a8"
+      }
+    ],
+    "sourceFormatRevisions": [
+      {
+        "id": "block_0002_0002",
+        "block": {
+          "type": "output_prediction",
+          "id": "p3_u7l6_igualdad_generada_sobre_array_y_dos_objetos",
+          "language": "cpp",
+          "question": "Escribe las tres comparaciones de valor y la comparación final de direcciones, en el orden del programa.",
+          "code": "#include <iostream>\n#include <memory>\n\nclass Terna {\npublic:\n    Terna(int primero, int segundo, int tercero) : datos_{primero, segundo, tercero} {}\n    bool operator==(const Terna&) const = default;\nprivate:\n    int datos_[3];\n};\nint main() {\n    const Terna a{1, 2, 3}, b{1, 2, 3}, c{1, 2, 4};\n    std::cout << (a == b) << ':' << (a != b) << ':' << (a == c) << ':' << (&a == &b);\n    return 0;\n}\n",
+          "answers": [
+            "1:0:0:0"
+          ],
+          "outputComparison": "exact",
+          "explanation": "a y b coinciden en las tres posiciones, por lo que su igualdad es verdadera y su desigualdad falsa. c difiere de a en la última posición, así que no tiene el mismo valor completo. a y b son objetos distintos con arrays propios: sus direcciones no son iguales."
+        }
+      },
+      {
+        "id": "block_0003_0002",
+        "block": {
+          "type": "output_prediction",
+          "id": "p3_u7l6_copia_de_terna_y_cambio_de_valor",
+          "language": "cpp",
+          "question": "Escribe antes, la nueva igualdad, la desigualdad y la comparación de a consigo misma.",
+          "code": "#include <iostream>\n#include <memory>\n\nclass Terna {\npublic:\n    Terna(int primero, int segundo, int tercero) : datos_{primero, segundo, tercero} {}\n    bool operator==(const Terna&) const = default;\nprivate:\n    int datos_[3];\n};\nint main() {\n    const Terna a{1, 4, 9};\n    Terna b = a;\n    bool antes = (a == b);\n    b = Terna{1, 4, -9};\n    std::cout << antes << ':' << (a == b) << ':' << (a != b) << ':' << (a == a);\n    return 0;\n}\n",
+          "answers": [
+            "1:0:1:1"
+          ],
+          "outputComparison": "exact",
+          "explanation": "La copia inicial tiene los tres valores de a y antes guarda true. Después b recibe una Terna cuyo tercer número es menos nueve, mientras a conserva nueve en esa posición. La nueva igualdad es false y la desigualdad true. La Terna a conserva los mismos tres números al compararse consigo misma."
+        }
+      },
+      {
+        "id": "block_0004_0002",
+        "block": {
+          "type": "output_prediction",
+          "id": "p3_u7l6_todos_los_miembros_del_registro_participan",
+          "language": "cpp",
+          "question": "Escribe la igualdad de a y b, su desigualdad y la igualdad de a y c.",
+          "code": "#include <iostream>\n#include <memory>\n\nclass Registro {\npublic:\n    Registro(int numero, int revision) : numero_{numero}, revision_{revision} {}\n    bool operator==(const Registro&) const = default;\nprivate:\n    int numero_;\n    int revision_;\n};\nint main() {\n    const Registro a{6, 1}, b{6, 2}, c{6, 1};\n    std::cout << (a == b) << ':' << (a != b) << ':' << (a == c);\n    return 0;\n}\n",
+          "answers": [
+            "0:1:1"
+          ],
+          "outputComparison": "exact",
+          "explanation": "a y b guardan el mismo número, pero sus revisiones son distintas. Como la igualdad predeterminada compara ambos miembros, a == b es false y a != b es true. c coincide con a tanto en número como en revisión, así que esa igualdad es true."
+        }
+      },
+      {
+        "id": "block_0006_0002",
+        "block": {
+          "type": "output_prediction",
+          "id": "p3_u7l6_desigualdad_reutiliza_la_igualdad_bool",
+          "language": "cpp",
+          "question": "Escribe las dos desigualdades y la negación de la llamada explícita de igualdad.",
+          "code": "#include <iostream>\n#include <memory>\n\nclass Sello {\npublic:\n    explicit Sello(int codigo) : codigo_{codigo} {}\n    bool operator==(const Sello&) const = default;\nprivate:\n    int codigo_;\n};\nint main() {\n    const Sello a{3}, b{3}, c{5};\n    std::cout << (a != b) << ':' << (a != c) << ':' << (!a.operator==(c));\n    return 0;\n}\n",
+          "answers": [
+            "0:1:1"
+          ],
+          "outputComparison": "exact",
+          "explanation": "a y b guardan el mismo código, por lo que a != b es false. c tiene otro código y a != c es true. La llamada a.operator==(c) también devuelve false y su negación es true. El programa utiliza la misma regla de igualdad sin declarar operator!=."
+        }
+      },
+      {
+        "id": "block_0007_0002",
+        "block": {
+          "type": "code",
+          "language": "cpp",
+          "code": "#include <iostream>\n#include <memory>\n\nclass Sello {\npublic:\n    explicit Sello(int codigo) : codigo_{codigo} {}\n    bool operator==(const Sello&) const = default;\nprivate:\n    int codigo_;\n};\nint main() {\n    const Sello a{3}, b{5};\n    std::cout << a.operator!=(b);\n    return 0;\n}\n"
+        }
+      },
+      {
+        "id": "block_0008_0002",
+        "block": {
+          "type": "code",
+          "language": "cpp",
+          "code": "#include <iostream>\n#include <memory>\n\nclass Sello {\npublic:\n    explicit Sello(int codigo) : codigo_{codigo} {}\n    int operator==(const Sello&) const = default;\nprivate:\n    int codigo_;\n};\nint main() {\n    const Sello a{3}, b{3};\n    return a == b;\n}\n"
+        }
+      },
+      {
+        "id": "block_0009_0003",
+        "block": {
+          "type": "output_prediction",
+          "id": "p3_u7l6_igualdad_de_miembro_unique_ptr_y_contenido",
+          "language": "cpp",
+          "question": "Escribe las cinco comparaciones en el orden del programa. Distingue el valor de los enteros, las direcciones guardadas y las direcciones de las Cajas.",
+          "code": "#include <iostream>\n#include <memory>\n\nclass Caja {\npublic:\n    Caja() = default;\n    explicit Caja(int numero) : dato_{std::make_unique<int>(numero)} {}\n    const int* acceso() const noexcept { return dato_.get(); }\n    bool operator==(const Caja&) const = default;\nprivate:\n    std::unique_ptr<int> dato_{};\n};\nint main() {\n    const Caja a{8}, b{8}, vacia1, vacia2;\n    std::cout << (a == b) << ':' << (a == a) << ':' << (vacia1 == vacia2)\n              << ':' << (&vacia1 == &vacia2) << ':' << (a.acceso() == b.acceso());\n    return 0;\n}\n",
+          "answers": [
+            "0:1:1:0:0"
+          ],
+          "outputComparison": "exact",
+          "explanation": "a y b tienen reservas distintas, aunque ambas guarden ocho; sus unique_ptr no son iguales. a comparada consigo misma sí conserva el mismo puntero. Las dos Cajas vacías tienen punteros nulos, así que sus miembros son iguales, aunque vacia1 y vacia2 sean objetos diferentes. Las direcciones de sus objetos son distintas, y también lo son las dos reservas de a y b."
+        }
+      },
+      {
+        "id": "block_0011_0002",
+        "block": {
+          "type": "code",
+          "language": "cpp",
+          "code": "#include <iostream>\n#include <memory>\n\nstruct Semilla { int numero; };\nstruct Lote {\n    Semilla dato;\n    bool operator==(const Lote&) const = default;\n};\nint main() {\n    const Lote a{{7}}, b{{7}};\n    return a == b;\n}\n"
+        }
+      },
+      {
+        "id": "block_0018_0002",
+        "block": {
+          "type": "cpp_compiler",
+          "language": "cpp",
+          "initialCode": "#include <iostream>\n#include <memory>\n\nclass LecturaOpcional {\npublic:\n    LecturaOpcional() = default;\n    explicit LecturaOpcional(int numero) : dato_{std::make_unique<int>(numero)} {}\n    void cargar(int numero) { dato_ = std::make_unique<int>(numero); }\n    void vaciar() noexcept { dato_.reset(); }\n    const int* acceso() const noexcept { return dato_.get(); }\n    bool leer(int& numero) const noexcept {\n        if (!dato_) { return false; }\n        numero = *dato_;\n        return true;\n    }\n    void escribir(std::ostream& salida) const {\n        if (dato_) { salida << *dato_; }\n        else { salida << \"Vacio\"; }\n    }\n    bool operator==(const LecturaOpcional& otra) const;\nprivate:\n    std::unique_ptr<int> dato_{};\n};\nbool LecturaOpcional::operator==(const LecturaOpcional& otra) const {\n    // Define la igualdad de contenido, incluyendo ambos estados de presencia.\n    return dato_ == otra.dato_;\n}\nstruct Observacion {\n    bool presente;\n    int numero;\n    const int* direccion;\n    bool operator==(const Observacion&) const = default;\n};\n\nObservacion observar(const LecturaOpcional& lectura) {\n    Observacion estado{false, 0, lectura.acceso()};\n    estado.presente = lectura.leer(estado.numero);\n    return estado;\n}\nint main() {\n    int ordenes = 0;\n    if (!(std::cin >> ordenes) || ordenes < 1 || ordenes > 12) { return 1; }\n    LecturaOpcional a{8}, b{8};\n    for (int i = 0; i < ordenes; ++i) {\n        int op = 0, valor = 0;\n        if (!(std::cin >> op >> valor)) { return 1; }\n        const char* estado = \"Aceptada\";\n        if (op == 1) { a.cargar(valor); }\n        else if (op == 2) { b.cargar(valor); }\n        else if (op == 3) { a.vaciar(); }\n        else if (op == 4) { b.vaciar(); }\n        else if (op != 5) { estado = \"Operacion\"; }\n        const Observacion antesA = observar(a), antesB = observar(b);\n        const LecturaOpcional& izquierda = a;\n        const LecturaOpcional& derecha = b;\n        const bool iguales = (izquierda == derecha);\n        const bool distintos = (izquierda != derecha);\n        const bool vuelta = (derecha == izquierda);\n        const bool propiaA = (izquierda == izquierda);\n        const bool propiaB = (derecha == derecha);\n        const bool mismaDireccion = (a.acceso() == b.acceso());\n        const bool conservado = (antesA == observar(a) && antesB == observar(b));\n        std::cout << \"Estado:\" << estado << \";Iguales:\" << iguales << \";Distintos:\" << distintos\n                  << \";Vuelta:\" << vuelta << \";AutoA:\" << propiaA << \";AutoB:\" << propiaB\n                  << \";MismaDireccion:\" << mismaDireccion << \";Conservado:\" << conservado << \";A:\";\n        a.escribir(std::cout);\n        std::cout << \";B:\";\n        b.escribir(std::cout);\n        std::cout << '\\n';\n    }\n    std::cout << \"FinalA:\";\n    a.escribir(std::cout);\n    std::cout << \";FinalB:\";\n    b.escribir(std::cout);\n    return 0;\n}\n",
+          "initialStandardInput": "8\n5 0\n2 9\n1 9\n3 0\n4 0\n1 0\n2 0\n5 0",
+          "outputCheck": {
+            "inputComparison": "tokens",
+            "cases": [
+              {
+                "standardInput": "8\n5 0\n2 9\n1 9\n3 0\n4 0\n1 0\n2 0\n5 0",
+                "outputs": [
+                  "Estado:Aceptada;Iguales:1;Distintos:0;Vuelta:1;AutoA:1;AutoB:1;MismaDireccion:0;Conservado:1;A:8;B:8\nEstado:Aceptada;Iguales:0;Distintos:1;Vuelta:0;AutoA:1;AutoB:1;MismaDireccion:0;Conservado:1;A:8;B:9\nEstado:Aceptada;Iguales:1;Distintos:0;Vuelta:1;AutoA:1;AutoB:1;MismaDireccion:0;Conservado:1;A:9;B:9\nEstado:Aceptada;Iguales:0;Distintos:1;Vuelta:0;AutoA:1;AutoB:1;MismaDireccion:0;Conservado:1;A:Vacio;B:9\nEstado:Aceptada;Iguales:1;Distintos:0;Vuelta:1;AutoA:1;AutoB:1;MismaDireccion:1;Conservado:1;A:Vacio;B:Vacio\nEstado:Aceptada;Iguales:0;Distintos:1;Vuelta:0;AutoA:1;AutoB:1;MismaDireccion:0;Conservado:1;A:0;B:Vacio\nEstado:Aceptada;Iguales:1;Distintos:0;Vuelta:1;AutoA:1;AutoB:1;MismaDireccion:0;Conservado:1;A:0;B:0\nEstado:Aceptada;Iguales:1;Distintos:0;Vuelta:1;AutoA:1;AutoB:1;MismaDireccion:0;Conservado:1;A:0;B:0\nFinalA:0;FinalB:0"
+                ],
+                "explanation": "Distingue presencia y valor antes de desreferenciar. Ambos vacíos se consideran iguales; una ausencia no equivale a un cero almacenado. Los dos números iguales deben admitirse aunque estén en reservas distintas. Compara sin modificar los operandos."
+              },
+              {
+                "standardInput": "8\n3 0\n4 0\n1 -1\n2 0\n2 -1\n1 -2\n3 0\n2 17",
+                "outputs": [
+                  "Estado:Aceptada;Iguales:0;Distintos:1;Vuelta:0;AutoA:1;AutoB:1;MismaDireccion:0;Conservado:1;A:Vacio;B:8\nEstado:Aceptada;Iguales:1;Distintos:0;Vuelta:1;AutoA:1;AutoB:1;MismaDireccion:1;Conservado:1;A:Vacio;B:Vacio\nEstado:Aceptada;Iguales:0;Distintos:1;Vuelta:0;AutoA:1;AutoB:1;MismaDireccion:0;Conservado:1;A:-1;B:Vacio\nEstado:Aceptada;Iguales:0;Distintos:1;Vuelta:0;AutoA:1;AutoB:1;MismaDireccion:0;Conservado:1;A:-1;B:0\nEstado:Aceptada;Iguales:1;Distintos:0;Vuelta:1;AutoA:1;AutoB:1;MismaDireccion:0;Conservado:1;A:-1;B:-1\nEstado:Aceptada;Iguales:0;Distintos:1;Vuelta:0;AutoA:1;AutoB:1;MismaDireccion:0;Conservado:1;A:-2;B:-1\nEstado:Aceptada;Iguales:0;Distintos:1;Vuelta:0;AutoA:1;AutoB:1;MismaDireccion:0;Conservado:1;A:Vacio;B:-1\nEstado:Aceptada;Iguales:0;Distintos:1;Vuelta:0;AutoA:1;AutoB:1;MismaDireccion:0;Conservado:1;A:Vacio;B:17\nFinalA:Vacio;FinalB:17"
+                ],
+                "explanation": "Distingue presencia y valor antes de desreferenciar. Ambos vacíos se consideran iguales; una ausencia no equivale a un cero almacenado. Los dos números iguales deben admitirse aunque estén en reservas distintas. Compara sin modificar los operandos."
+              },
+              {
+                "standardInput": "8\n1 -4\n2 -4\n9 100\n4 0\n1 0\n2 0\n3 0\n4 0",
+                "outputs": [
+                  "Estado:Aceptada;Iguales:0;Distintos:1;Vuelta:0;AutoA:1;AutoB:1;MismaDireccion:0;Conservado:1;A:-4;B:8\nEstado:Aceptada;Iguales:1;Distintos:0;Vuelta:1;AutoA:1;AutoB:1;MismaDireccion:0;Conservado:1;A:-4;B:-4\nEstado:Operacion;Iguales:1;Distintos:0;Vuelta:1;AutoA:1;AutoB:1;MismaDireccion:0;Conservado:1;A:-4;B:-4\nEstado:Aceptada;Iguales:0;Distintos:1;Vuelta:0;AutoA:1;AutoB:1;MismaDireccion:0;Conservado:1;A:-4;B:Vacio\nEstado:Aceptada;Iguales:0;Distintos:1;Vuelta:0;AutoA:1;AutoB:1;MismaDireccion:0;Conservado:1;A:0;B:Vacio\nEstado:Aceptada;Iguales:1;Distintos:0;Vuelta:1;AutoA:1;AutoB:1;MismaDireccion:0;Conservado:1;A:0;B:0\nEstado:Aceptada;Iguales:0;Distintos:1;Vuelta:0;AutoA:1;AutoB:1;MismaDireccion:0;Conservado:1;A:Vacio;B:0\nEstado:Aceptada;Iguales:1;Distintos:0;Vuelta:1;AutoA:1;AutoB:1;MismaDireccion:1;Conservado:1;A:Vacio;B:Vacio\nFinalA:Vacio;FinalB:Vacio"
+                ],
+                "explanation": "Distingue presencia y valor antes de desreferenciar. Ambos vacíos se consideran iguales; una ausencia no equivale a un cero almacenado. Los dos números iguales deben admitirse aunque estén en reservas distintas. Compara sin modificar los operandos."
+              }
+            ]
+          }
+        }
+      },
+      {
+        "id": "block_0020_0001",
+        "block": {
+          "type": "code",
+          "language": "cpp",
+          "code": "#include <iostream>\n#include <memory>\n\nclass LecturaOpcional {\npublic:\n    LecturaOpcional() = default;\n    explicit LecturaOpcional(int numero) : dato_{std::make_unique<int>(numero)} {}\n    void cargar(int numero) { dato_ = std::make_unique<int>(numero); }\n    void vaciar() noexcept { dato_.reset(); }\n    const int* acceso() const noexcept { return dato_.get(); }\n    bool leer(int& numero) const noexcept {\n        if (!dato_) { return false; }\n        numero = *dato_;\n        return true;\n    }\n    void escribir(std::ostream& salida) const {\n        if (dato_) { salida << *dato_; }\n        else { salida << \"Vacio\"; }\n    }\n    bool operator==(const LecturaOpcional& otra) const;\nprivate:\n    std::unique_ptr<int> dato_{};\n};\nbool LecturaOpcional::operator==(const LecturaOpcional& otra) const {\n    if (!dato_ || !otra.dato_) {\n        return !dato_ && !otra.dato_;\n    }\n    return *dato_ == *otra.dato_;\n}\nstruct Observacion {\n    bool presente;\n    int numero;\n    const int* direccion;\n    bool operator==(const Observacion&) const = default;\n};\n\nObservacion observar(const LecturaOpcional& lectura) {\n    Observacion estado{false, 0, lectura.acceso()};\n    estado.presente = lectura.leer(estado.numero);\n    return estado;\n}\nint main() {\n    int ordenes = 0;\n    if (!(std::cin >> ordenes) || ordenes < 1 || ordenes > 12) { return 1; }\n    LecturaOpcional a{8}, b{8};\n    for (int i = 0; i < ordenes; ++i) {\n        int op = 0, valor = 0;\n        if (!(std::cin >> op >> valor)) { return 1; }\n        const char* estado = \"Aceptada\";\n        if (op == 1) { a.cargar(valor); }\n        else if (op == 2) { b.cargar(valor); }\n        else if (op == 3) { a.vaciar(); }\n        else if (op == 4) { b.vaciar(); }\n        else if (op != 5) { estado = \"Operacion\"; }\n        const Observacion antesA = observar(a), antesB = observar(b);\n        const LecturaOpcional& izquierda = a;\n        const LecturaOpcional& derecha = b;\n        const bool iguales = (izquierda == derecha);\n        const bool distintos = (izquierda != derecha);\n        const bool vuelta = (derecha == izquierda);\n        const bool propiaA = (izquierda == izquierda);\n        const bool propiaB = (derecha == derecha);\n        const bool mismaDireccion = (a.acceso() == b.acceso());\n        const bool conservado = (antesA == observar(a) && antesB == observar(b));\n        std::cout << \"Estado:\" << estado << \";Iguales:\" << iguales << \";Distintos:\" << distintos\n                  << \";Vuelta:\" << vuelta << \";AutoA:\" << propiaA << \";AutoB:\" << propiaB\n                  << \";MismaDireccion:\" << mismaDireccion << \";Conservado:\" << conservado << \";A:\";\n        a.escribir(std::cout);\n        std::cout << \";B:\";\n        b.escribir(std::cout);\n        std::cout << '\\n';\n    }\n    std::cout << \"FinalA:\";\n    a.escribir(std::cout);\n    std::cout << \";FinalB:\";\n    b.escribir(std::cout);\n    return 0;\n}\n"
+        }
+      }
+    ]
   }
 }

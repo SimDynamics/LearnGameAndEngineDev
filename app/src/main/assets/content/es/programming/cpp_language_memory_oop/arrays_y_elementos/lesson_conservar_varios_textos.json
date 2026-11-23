@@ -16,7 +16,7 @@
         {
           "type": "code",
           "language": "cpp",
-          "code": "#include <cstring>\n#include <iostream>\n\nint main() {\n    char nombres[2][6]{\"Sol\", \"Luna\"};\n    std::cout << '[' << nombres[0] << \"]:[\" << nombres[1] << \"]:\"\n              << std::strlen(nombres[0]) << ':' << std::strlen(nombres[1]);\n    return 0;\n}\n"
+          "code": "#include <cstring>\n#include <iostream>\n\nint main() {\n    char nombres[2][6]{\"Sol\", \"Luna\"};\n\n    std::cout << '[' << nombres[0] << \"]:[\" << nombres[1] << \"]:\"\n              << std::strlen(nombres[0]) << ':' << std::strlen(nombres[1]);\n    return 0;\n}\n"
         },
         {
           "type": "paragraph",
@@ -163,7 +163,7 @@
           "id": "p3_u2l8_acortar_una_fila",
           "language": "cpp",
           "question": "Predice el texto de ambas filas, la nueva longitud y la comparación del char que quedó después del terminador.",
-          "code": "#include <cstring>\n#include <iostream>\n\nint main() {\n    char nombres[2][6]{\"Sol\", \"Luna\"};\n    nombres[0][1] = '\\0';\n    std::cout << '[' << nombres[0] << \"]:\" << std::strlen(nombres[0]) << ':'\n              << (nombres[0][2] == 'l') << \":[\" << nombres[1] << ']';\n    return 0;\n}\n",
+          "code": "#include <cstring>\n#include <iostream>\n\nint main() {\n    char nombres[2][6]{\"Sol\", \"Luna\"};\n\n    nombres[0][1] = '\\0';\n\n    std::cout << '[' << nombres[0] << \"]:\" << std::strlen(nombres[0]) << ':'\n              << (nombres[0][2] == 'l') << \":[\" << nombres[1] << ']';\n    return 0;\n}\n",
           "answers": [
             "[S]:1:1:[Luna]"
           ],
@@ -191,7 +191,7 @@
           "id": "p3_u2l8_filas_no_inicializadas_explicitamente",
           "language": "cpp",
           "question": "El array declara tres filas y sólo proporciona dos literales. Predice la cantidad de filas, la capacidad de cada una y las dos longitudes.",
-          "code": "#include <cstring>\n#include <iostream>\n\nint main() {\n    char nombres[3][6]{\"A\", \"BC\"};\n    std::cout << sizeof nombres / sizeof nombres[0] << ':'\n              << sizeof nombres[0] / sizeof nombres[0][0] << ':'\n              << std::strlen(nombres[1]) << ':' << std::strlen(nombres[2]);\n    return 0;\n}\n",
+          "code": "#include <cstring>\n#include <iostream>\n\nint main() {\n    char nombres[3][6]{\"A\", \"BC\"};\n\n    std::cout << sizeof nombres / sizeof nombres[0] << ':'\n              << sizeof nombres[0] / sizeof nombres[0][0] << ':'\n              << std::strlen(nombres[1]) << ':' << std::strlen(nombres[2]);\n    return 0;\n}\n",
           "answers": [
             "3:6:2:0"
           ],
@@ -251,7 +251,7 @@
           "id": "p3_u2l8_lineas_en_filas",
           "language": "cpp",
           "question": "En este ejemplo ambas líneas caben; la segunda está vacía y tiene su salto. Predice los textos, la comprobación conjunta y la línea restante.",
-          "code": "#include <sstream>\n#include <string>\n#include <cstring>\n#include <iostream>\n\nint main() {\n    std::istringstream entrada{\"A B\\n\\nfin\\n\"};\n    char nombres[2][6]{};\n    entrada.getline(nombres[0], 6);\n    const bool primera = !entrada.fail();\n    entrada.getline(nombres[1], 6);\n    const bool segunda = !entrada.fail();\n    std::string restante;\n    std::getline(entrada, restante);\n    std::cout << '[' << nombres[0] << \"]:[\" << nombres[1] << \"]:\"\n              << (primera && segunda) << \":[\" << restante << ']';\n    return 0;\n}\n",
+          "code": "#include <sstream>\n#include <string>\n#include <cstring>\n#include <iostream>\n\nint main() {\n    std::istringstream entrada{\"A B\\n\\nfin\\n\"};\n    char nombres[2][6]{};\n    entrada.getline(nombres[0], 6);\n    const bool primera = !entrada.fail();\n    entrada.getline(nombres[1], 6);\n    const bool segunda = !entrada.fail();\n    std::string restante;\n\n    std::getline(entrada, restante);\n\n    std::cout << '[' << nombres[0] << \"]:[\" << nombres[1] << \"]:\"\n              << (primera && segunda) << \":[\" << restante << ']';\n    return 0;\n}\n",
           "answers": [
             "[A B]:[]:1:[fin]"
           ],
@@ -279,7 +279,7 @@
           "id": "p3_u2l8_copiar_fila_texto",
           "language": "cpp",
           "question": "El programa copia la fila uno en la fila cero y después cambia una letra de la copia. Predice ambos textos y la longitud.",
-          "code": "#include <cstddef>\n#include <cstring>\n#include <iostream>\n\nint main() {\n    char nombres[2][6]{\"Norte\", \"Sur\"};\n    for (std::size_t columna = 0; columna < 6; ++columna) {\n        nombres[0][columna] = nombres[1][columna];\n    }\n    nombres[0][0] = 'L';\n    std::cout << '[' << nombres[0] << \"]:[\" << nombres[1] << \"]:\"\n              << std::strlen(nombres[0]);\n    return 0;\n}\n",
+          "code": "#include <cstddef>\n#include <cstring>\n#include <iostream>\n\nint main() {\n    char nombres[2][6]{\"Norte\", \"Sur\"};\n    for (std::size_t columna = 0; columna < 6; ++columna) {\n        nombres[0][columna] = nombres[1][columna];\n    }\n    nombres[0][0] = 'L';\n\n    std::cout << '[' << nombres[0] << \"]:[\" << nombres[1] << \"]:\"\n              << std::strlen(nombres[0]);\n    return 0;\n}\n",
           "answers": [
             "[Lur]:[Sur]:3"
           ],
@@ -307,7 +307,7 @@
           "id": "p3_u2l8_copiar_strings",
           "language": "cpp",
           "question": "Predice los cuatro textos después de crear la copia y modificar sus dos objetos.",
-          "code": "#include <array>\n#include <cstddef>\n#include <iostream>\n#include <string>\n\nint main() {\n    std::array<std::string, 2> original{\"Sol\", \"Luna\"};\n    auto copia = original;\n    copia[0] = \"Bosque\";\n    copia[1][0] = 'C';\n    std::cout << '[' << original[0] << \"]:[\" << original[1] << \"]:[\"\n              << copia[0] << \"]:[\" << copia[1] << ']';\n    return 0;\n}\n",
+          "code": "#include <array>\n#include <cstddef>\n#include <iostream>\n#include <string>\n\nint main() {\n    std::array<std::string, 2> original{\"Sol\", \"Luna\"};\n    auto copia = original;\n\n    copia[0] = \"Bosque\";\n    copia[1][0] = 'C';\n\n    std::cout << '[' << original[0] << \"]:[\" << original[1] << \"]:[\"\n              << copia[0] << \"]:[\" << copia[1] << ']';\n    return 0;\n}\n",
           "answers": [
             "[Sol]:[Luna]:[Bosque]:[Cuna]"
           ],
@@ -331,7 +331,7 @@
           "id": "p3_u2l8_lineas_en_strings",
           "language": "cpp",
           "question": "Predice la cantidad de objetos, las longitudes de los dos textos y la comprobación de ambas lecturas.",
-          "code": "#include <sstream>\n#include <array>\n#include <cstddef>\n#include <iostream>\n#include <string>\n\nint main() {\n    std::istringstream entrada{\"Bosque azul\\n\\n\"};\n    std::array<std::string, 2> nombres{};\n    const bool primera = static_cast<bool>(std::getline(entrada, nombres[0]));\n    const bool segunda = static_cast<bool>(std::getline(entrada, nombres[1]));\n    std::cout << nombres.size() << ':' << nombres[0].size() << ':'\n              << nombres[1].size() << ':' << (primera && segunda);\n    return 0;\n}\n",
+          "code": "#include <sstream>\n#include <array>\n#include <cstddef>\n#include <iostream>\n#include <string>\n\nint main() {\n    std::istringstream entrada{\"Bosque azul\\n\\n\"};\n    std::array<std::string, 2> nombres{};\n    const bool primera = static_cast<bool>(std::getline(entrada, nombres[0]));\n    const bool segunda = static_cast<bool>(std::getline(entrada, nombres[1]));\n\n    std::cout << nombres.size() << ':' << nombres[0].size() << ':'\n              << nombres[1].size() << ':' << (primera && segunda);\n    return 0;\n}\n",
           "answers": [
             "2:11:0:1"
           ],
@@ -359,7 +359,7 @@
           "id": "p3_u2l8_nul_al_convertir",
           "language": "cpp",
           "question": "El string tiene tres elementos y la fila dispone de seis posiciones. Predice la longitud del string y el texto que llega a imprimirse entre corchetes.",
-          "code": "#include <string>\n#include <cstddef>\n#include <cstring>\n#include <iostream>\n\nint main() {\n    const std::string texto{'A', '\\0', 'B'};\n    char fila[6]{};\n    for (std::size_t i = 0; i < texto.size(); ++i) {\n        fila[i] = texto[i];\n    }\n    fila[texto.size()] = '\\0';\n    std::cout << texto.size() << \":[\" << fila << ']';\n    return 0;\n}\n",
+          "code": "#include <string>\n#include <cstddef>\n#include <cstring>\n#include <iostream>\n\nint main() {\n    const std::string texto{'A', '\\0', 'B'};\n    char fila[6]{};\n\n    for (std::size_t i = 0; i < texto.size(); ++i) {\n        fila[i] = texto[i];\n    }\n    fila[texto.size()] = '\\0';\n\n    std::cout << texto.size() << \":[\" << fila << ']';\n\n    return 0;\n}\n",
           "answers": [
             "3:[A]"
           ],
@@ -387,7 +387,7 @@
           "id": "p3_u2l8_validar_nul",
           "language": "cpp",
           "question": "El tamaño cabe en una fila, pero el programa comprueba otra condición del formato. Predice el tamaño y el valor lógico final.",
-          "code": "#include <string>\n#include <cstddef>\n#include <iostream>\n\nint main() {\n    const std::string texto{'S', '\\0', 'o', 'l'};\n    bool valido = texto.size() < 6;\n    for (std::size_t i = 0; i < texto.size(); ++i) {\n        if (texto[i] == '\\0') {\n            valido = false;\n        }\n    }\n    std::cout << texto.size() << ':' << valido;\n    return 0;\n}\n",
+          "code": "#include <string>\n#include <cstddef>\n#include <iostream>\n\nint main() {\n    const std::string texto{'S', '\\0', 'o', 'l'};\n    bool valido = texto.size() < 6;\n\n    for (std::size_t i = 0; i < texto.size(); ++i) {\n        if (texto[i] == '\\0') {\n            valido = false;\n        }\n    }\n    std::cout << texto.size() << ':' << valido;\n\n    return 0;\n}\n",
           "answers": [
             "4:0"
           ],
@@ -466,7 +466,7 @@
         {
           "type": "cpp_compiler",
           "language": "cpp",
-          "initialCode": "#include <array>\n#include <cstddef>\n#include <cstring>\n#include <iostream>\n#include <string>\n\nint main() {\n    char guardadas[2][6]{\"Norte\", \"Sur\"};\n    std::array<std::string, 2> propuestas{};\n    const bool primeraLeida = static_cast<bool>(std::getline(std::cin, propuestas[0]));\n    const bool segundaLeida = static_cast<bool>(std::getline(std::cin, propuestas[1]));\n    bool aceptado = false;\n\n    if (primeraLeida && segundaLeida) {\n        // Valida ambas propuestas antes de sustituir ninguna fila guardada.\n        // Cada texto debe caber con su NUL final y no contener NUL interiores.\n        // Construye las candidatas y copia ambos textos solo si todo es valido.\n    }\n\n    std::cout << \"Guardadas\\n\";\n    for (std::size_t fila = 0; fila < 2; ++fila) {\n        std::cout << fila << \":[\" << guardadas[fila] << \"]:\"\n                  << std::strlen(guardadas[fila]) << '\\n';\n    }\n    std::cout << \"Aceptado: \" << aceptado << '\\n';\n    return 0;\n}\n",
+          "initialCode": "#include <array>\n#include <cstddef>\n#include <cstring>\n#include <iostream>\n#include <string>\n\nint main() {\n    char guardadas[2][6]{\"Norte\", \"Sur\"};\n    std::array<std::string, 2> propuestas{};\n    const bool primeraLeida = static_cast<bool>(std::getline(std::cin, propuestas[0]));\n    const bool segundaLeida = static_cast<bool>(std::getline(std::cin, propuestas[1]));\n    bool aceptado = false;\n\n    if (primeraLeida && segundaLeida) {\n        // Valida ambas propuestas antes de sustituir ninguna fila guardada.\n        // Cada texto debe caber con su NUL final y no contener NUL interiores.\n        // Construye las candidatas y copia ambos textos solo si todo es valido.\n        \n    }\n\n    std::cout << \"Guardadas\\n\";\n    for (std::size_t fila = 0; fila < 2; ++fila) {\n        std::cout << fila << \":[\" << guardadas[fila] << \"]:\"\n                  << std::strlen(guardadas[fila]) << '\\n';\n    }\n    std::cout << \"Aceptado: \" << aceptado << '\\n';\n\n    return 0;\n}\n",
           "initialStandardInput": "Mar\nRio 2\n",
           "outputCheck": {
             "inputComparison": "exact",
@@ -697,7 +697,7 @@
         {
           "type": "code",
           "language": "cpp",
-          "code": "#include <array>\n#include <cstddef>\n#include <cstring>\n#include <iostream>\n#include <string>\n\nint main() {\n    char guardadas[2][6]{\"Norte\", \"Sur\"};\n    std::array<std::string, 2> propuestas{};\n    const bool primeraLeida = static_cast<bool>(std::getline(std::cin, propuestas[0]));\n    const bool segundaLeida = static_cast<bool>(std::getline(std::cin, propuestas[1]));\n    bool aceptado = false;\n\n    bool validas = primeraLeida && segundaLeida;\n    for (std::size_t fila = 0; fila < propuestas.size(); ++fila) {\n        if (propuestas[fila].size() >= 6) {\n            validas = false;\n        }\n        for (std::size_t i = 0; i < propuestas[fila].size(); ++i) {\n            if (propuestas[fila][i] == '\\0') {\n                validas = false;\n            }\n        }\n    }\n    if (validas) {\n        char candidatas[2][6]{};\n        for (std::size_t fila = 0; fila < propuestas.size(); ++fila) {\n            for (std::size_t i = 0; i < propuestas[fila].size(); ++i) {\n                candidatas[fila][i] = propuestas[fila][i];\n            }\n            candidatas[fila][propuestas[fila].size()] = '\\0';\n        }\n        for (std::size_t fila = 0; fila < 2; ++fila) {\n            for (std::size_t i = 0; i < 6; ++i) {\n                guardadas[fila][i] = candidatas[fila][i];\n            }\n        }\n        aceptado = true;\n    }\n\n    std::cout << \"Guardadas\\n\";\n    for (std::size_t fila = 0; fila < 2; ++fila) {\n        std::cout << fila << \":[\" << guardadas[fila] << \"]:\"\n                  << std::strlen(guardadas[fila]) << '\\n';\n    }\n    std::cout << \"Aceptado: \" << aceptado << '\\n';\n    return 0;\n}\n"
+          "code": "#include <array>\n#include <cstddef>\n#include <cstring>\n#include <iostream>\n#include <string>\n\nint main() {\n    char guardadas[2][6]{\"Norte\", \"Sur\"};\n    std::array<std::string, 2> propuestas{};\n    const bool primeraLeida = static_cast<bool>(std::getline(std::cin, propuestas[0]));\n    const bool segundaLeida = static_cast<bool>(std::getline(std::cin, propuestas[1]));\n    bool aceptado = false;\n\n    bool validas = primeraLeida && segundaLeida;\n    for (std::size_t fila = 0; fila < propuestas.size(); ++fila) {\n        if (propuestas[fila].size() >= 6) {\n            validas = false;\n        }\n        for (std::size_t i = 0; i < propuestas[fila].size(); ++i) {\n            if (propuestas[fila][i] == '\\0') {\n                validas = false;\n            }\n        }\n    }\n    if (validas) {\n        char candidatas[2][6]{};\n        for (std::size_t fila = 0; fila < propuestas.size(); ++fila) {\n            for (std::size_t i = 0; i < propuestas[fila].size(); ++i) {\n                candidatas[fila][i] = propuestas[fila][i];\n            }\n            candidatas[fila][propuestas[fila].size()] = '\\0';\n        }\n        for (std::size_t fila = 0; fila < 2; ++fila) {\n            for (std::size_t i = 0; i < 6; ++i) {\n                guardadas[fila][i] = candidatas[fila][i];\n            }\n        }\n        aceptado = true;\n    }\n\n    std::cout << \"Guardadas\\n\";\n    for (std::size_t fila = 0; fila < 2; ++fila) {\n        std::cout << fila << \":[\" << guardadas[fila] << \"]:\"\n                  << std::strlen(guardadas[fila]) << '\\n';\n    }\n    std::cout << \"Aceptado: \" << aceptado << '\\n';\n\n    return 0;\n}\n"
         },
         {
           "type": "paragraph",
@@ -1943,6 +1943,256 @@
       }
     },
     "additions": [],
-    "editorial": []
+    "editorial": [
+      {
+        "id": "block_0000_0002",
+        "beforeSha256": "08859753b08b93c7a0cddd5ecc64cd7480cd2094deb90507dafd5fb2a5996524",
+        "afterSha256": "30c63a96d8cd8066409ce410b10dd38513560c67be62e7cd2ebac771b05810e3"
+      },
+      {
+        "id": "block_0002_0002",
+        "beforeSha256": "2a9a5f2f623be2d9be639ac9917d2b0ce2e3a9ebc429cbb4834eedbaf96be475",
+        "afterSha256": "e365e1bf2ee0652939142c020e87f2bc9b5bd07676faf952d10a4cde857bb752"
+      },
+      {
+        "id": "block_0003_0002",
+        "beforeSha256": "2d670974b7200056a2126cbf628e7ade273d217a1991f2d37e9f774c28f406f5",
+        "afterSha256": "39576f3099cd581dfb82d71ce0d8d027bd44b70b41ee96134a55695a9a33114c"
+      },
+      {
+        "id": "block_0005_0002",
+        "beforeSha256": "01593b13033378581f83163c75bcc0e5f4068bb83b5ecfbbcf3f03254946e13a",
+        "afterSha256": "d293750761ce8473b38c48b3bf9f1d55b24549bc664c5f8a0a8dd322b91a0722"
+      },
+      {
+        "id": "block_0006_0002",
+        "beforeSha256": "08162e5877146d9d55a9b0695d7fa827ba47e63245538f4762645e2b1999af0d",
+        "afterSha256": "7a107e0dab725e620d821397f2d12c12c0fdc6baf823c7ee426666526ff6cb71"
+      },
+      {
+        "id": "block_0007_0003",
+        "beforeSha256": "b9b4b3b044b1f827951967f2fd8d955ae6cae3067b6e8404d4ef3f27beb169c3",
+        "afterSha256": "42000cee0e92c3ecdda9383944ad6b284bd9a706a5eb330ecf3e2a70a49b69db"
+      },
+      {
+        "id": "block_0008_0002",
+        "beforeSha256": "a1e35026ff0a96d581d384845f7df000d7d4629f6aabef4779b7ce5da15e864d",
+        "afterSha256": "787b5101b0b764cd5c05a4189f2d42dfc9e11751e22c8f87c2d68aacf6b358e2"
+      },
+      {
+        "id": "block_0009_0002",
+        "beforeSha256": "6ad40dbc171342fdd63780e54a34932645ffc1727068032e647dbff06ce94de3",
+        "afterSha256": "1c680f52a1996cfdcbf870f26eb7ffcad5e1e8ef08db04b60a53f0bd3a5046c9"
+      },
+      {
+        "id": "block_0010_0002",
+        "beforeSha256": "5f4b6587b24277bfaf1cdb1952bd1055a8a5b95238f2416684618a0833023795",
+        "afterSha256": "749f5993262a9630466d130a70a1ff249e8a1456d6419999c2513b3746d0dbc7"
+      },
+      {
+        "id": "block_0011_0012",
+        "beforeSha256": "817257d15ad8758710622ec6eb51fdb4c67a56f5c60146b9462831fa2c18ce2c",
+        "afterSha256": "48aa4ae7028c6ae8c82360f26f7b05608daa8fc1336cd26c004eba8f9715065a"
+      },
+      {
+        "id": "block_0015_0001",
+        "beforeSha256": "2b5f8a42177ef07941b5a12527aad73824cc0270e9a5df83ef6db90dcab02a5e",
+        "afterSha256": "6a71377a55077938f13c6bb8386aba07c4a222e9d53cb79f4d8b2857037689fd"
+      }
+    ],
+    "sourceFormatRevisions": [
+      {
+        "id": "block_0000_0002",
+        "block": {
+          "type": "code",
+          "language": "cpp",
+          "code": "#include <cstring>\n#include <iostream>\n\nint main() {\n    char nombres[2][6]{\"Sol\", \"Luna\"};\n    std::cout << '[' << nombres[0] << \"]:[\" << nombres[1] << \"]:\"\n              << std::strlen(nombres[0]) << ':' << std::strlen(nombres[1]);\n    return 0;\n}\n"
+        }
+      },
+      {
+        "id": "block_0002_0002",
+        "block": {
+          "type": "output_prediction",
+          "id": "p3_u2l8_acortar_una_fila",
+          "language": "cpp",
+          "question": "Predice el texto de ambas filas, la nueva longitud y la comparación del char que quedó después del terminador.",
+          "code": "#include <cstring>\n#include <iostream>\n\nint main() {\n    char nombres[2][6]{\"Sol\", \"Luna\"};\n    nombres[0][1] = '\\0';\n    std::cout << '[' << nombres[0] << \"]:\" << std::strlen(nombres[0]) << ':'\n              << (nombres[0][2] == 'l') << \":[\" << nombres[1] << ']';\n    return 0;\n}\n",
+          "answers": [
+            "[S]:1:1:[Luna]"
+          ],
+          "outputComparison": "exact",
+          "explanation": "La fila cero contiene S, NUL, l y otros ceros. La salida se detiene después de S y strlen cuenta uno. La l sigue en el índice 2, por lo que la comparación es true y se muestra como 1. La otra fila conserva Luna."
+        }
+      },
+      {
+        "id": "block_0003_0002",
+        "block": {
+          "type": "output_prediction",
+          "id": "p3_u2l8_filas_no_inicializadas_explicitamente",
+          "language": "cpp",
+          "question": "El array declara tres filas y sólo proporciona dos literales. Predice la cantidad de filas, la capacidad de cada una y las dos longitudes.",
+          "code": "#include <cstring>\n#include <iostream>\n\nint main() {\n    char nombres[3][6]{\"A\", \"BC\"};\n    std::cout << sizeof nombres / sizeof nombres[0] << ':'\n              << sizeof nombres[0] / sizeof nombres[0][0] << ':'\n              << std::strlen(nombres[1]) << ':' << std::strlen(nombres[2]);\n    return 0;\n}\n",
+          "answers": [
+            "3:6:2:0"
+          ],
+          "outputComparison": "exact",
+          "explanation": "Hay tres filas de seis char. BC tiene longitud dos. Los char de la tercera fila se inicializan en cero, así que representa una cadena vacía."
+        }
+      },
+      {
+        "id": "block_0005_0002",
+        "block": {
+          "type": "output_prediction",
+          "id": "p3_u2l8_lineas_en_filas",
+          "language": "cpp",
+          "question": "En este ejemplo ambas líneas caben; la segunda está vacía y tiene su salto. Predice los textos, la comprobación conjunta y la línea restante.",
+          "code": "#include <sstream>\n#include <string>\n#include <cstring>\n#include <iostream>\n\nint main() {\n    std::istringstream entrada{\"A B\\n\\nfin\\n\"};\n    char nombres[2][6]{};\n    entrada.getline(nombres[0], 6);\n    const bool primera = !entrada.fail();\n    entrada.getline(nombres[1], 6);\n    const bool segunda = !entrada.fail();\n    std::string restante;\n    std::getline(entrada, restante);\n    std::cout << '[' << nombres[0] << \"]:[\" << nombres[1] << \"]:\"\n              << (primera && segunda) << \":[\" << restante << ']';\n    return 0;\n}\n",
+          "answers": [
+            "[A B]:[]:1:[fin]"
+          ],
+          "outputComparison": "exact",
+          "explanation": "La primera fila conserva A, el espacio y B. El segundo getline consume el salto de una línea vacía y deja una cadena vacía válida. Las dos lecturas tienen éxito; la línea siguiente sigue siendo fin."
+        }
+      },
+      {
+        "id": "block_0006_0002",
+        "block": {
+          "type": "output_prediction",
+          "id": "p3_u2l8_copiar_fila_texto",
+          "language": "cpp",
+          "question": "El programa copia la fila uno en la fila cero y después cambia una letra de la copia. Predice ambos textos y la longitud.",
+          "code": "#include <cstddef>\n#include <cstring>\n#include <iostream>\n\nint main() {\n    char nombres[2][6]{\"Norte\", \"Sur\"};\n    for (std::size_t columna = 0; columna < 6; ++columna) {\n        nombres[0][columna] = nombres[1][columna];\n    }\n    nombres[0][0] = 'L';\n    std::cout << '[' << nombres[0] << \"]:[\" << nombres[1] << \"]:\"\n              << std::strlen(nombres[0]);\n    return 0;\n}\n",
+          "answers": [
+            "[Lur]:[Sur]:3"
+          ],
+          "outputComparison": "exact",
+          "explanation": "Se copian S, u, r, NUL y los dos ceros restantes. Cambiar el primer char de la fila cero a L sólo modifica esa fila. La fila uno conserva Sur y ambas siguen teniendo longitud tres."
+        }
+      },
+      {
+        "id": "block_0007_0003",
+        "block": {
+          "type": "output_prediction",
+          "id": "p3_u2l8_copiar_strings",
+          "language": "cpp",
+          "question": "Predice los cuatro textos después de crear la copia y modificar sus dos objetos.",
+          "code": "#include <array>\n#include <cstddef>\n#include <iostream>\n#include <string>\n\nint main() {\n    std::array<std::string, 2> original{\"Sol\", \"Luna\"};\n    auto copia = original;\n    copia[0] = \"Bosque\";\n    copia[1][0] = 'C';\n    std::cout << '[' << original[0] << \"]:[\" << original[1] << \"]:[\"\n              << copia[0] << \"]:[\" << copia[1] << ']';\n    return 0;\n}\n",
+          "answers": [
+            "[Sol]:[Luna]:[Bosque]:[Cuna]"
+          ],
+          "outputComparison": "exact",
+          "explanation": "Los originales conservan Sol y Luna. La primera cadena de la copia pasa a Bosque, de seis char; la segunda cambia su primera letra y queda Cuna. No existe en este tipo el límite de cinco char propio de nuestras filas nativas de seis."
+        }
+      },
+      {
+        "id": "block_0008_0002",
+        "block": {
+          "type": "output_prediction",
+          "id": "p3_u2l8_lineas_en_strings",
+          "language": "cpp",
+          "question": "Predice la cantidad de objetos, las longitudes de los dos textos y la comprobación de ambas lecturas.",
+          "code": "#include <sstream>\n#include <array>\n#include <cstddef>\n#include <iostream>\n#include <string>\n\nint main() {\n    std::istringstream entrada{\"Bosque azul\\n\\n\"};\n    std::array<std::string, 2> nombres{};\n    const bool primera = static_cast<bool>(std::getline(entrada, nombres[0]));\n    const bool segunda = static_cast<bool>(std::getline(entrada, nombres[1]));\n    std::cout << nombres.size() << ':' << nombres[0].size() << ':'\n              << nombres[1].size() << ':' << (primera && segunda);\n    return 0;\n}\n",
+          "answers": [
+            "2:11:0:1"
+          ],
+          "outputComparison": "exact",
+          "explanation": "El array conserva dos objetos. Bosque azul tiene once char, incluido el espacio; la segunda línea aporta un texto vacío y su salto. Ambas lecturas tienen éxito."
+        }
+      },
+      {
+        "id": "block_0009_0002",
+        "block": {
+          "type": "output_prediction",
+          "id": "p3_u2l8_nul_al_convertir",
+          "language": "cpp",
+          "question": "El string tiene tres elementos y la fila dispone de seis posiciones. Predice la longitud del string y el texto que llega a imprimirse entre corchetes.",
+          "code": "#include <string>\n#include <cstddef>\n#include <cstring>\n#include <iostream>\n\nint main() {\n    const std::string texto{'A', '\\0', 'B'};\n    char fila[6]{};\n    for (std::size_t i = 0; i < texto.size(); ++i) {\n        fila[i] = texto[i];\n    }\n    fila[texto.size()] = '\\0';\n    std::cout << texto.size() << \":[\" << fila << ']';\n    return 0;\n}\n",
+          "answers": [
+            "3:[A]"
+          ],
+          "outputComparison": "exact",
+          "explanation": "El string contiene A, NUL y B: tres char. La copia incluye esos tres y otro NUL al final, pero imprimir fila se detiene en su primer NUL, el del índice uno. Por eso sólo muestra A."
+        }
+      },
+      {
+        "id": "block_0010_0002",
+        "block": {
+          "type": "output_prediction",
+          "id": "p3_u2l8_validar_nul",
+          "language": "cpp",
+          "question": "El tamaño cabe en una fila, pero el programa comprueba otra condición del formato. Predice el tamaño y el valor lógico final.",
+          "code": "#include <string>\n#include <cstddef>\n#include <iostream>\n\nint main() {\n    const std::string texto{'S', '\\0', 'o', 'l'};\n    bool valido = texto.size() < 6;\n    for (std::size_t i = 0; i < texto.size(); ++i) {\n        if (texto[i] == '\\0') {\n            valido = false;\n        }\n    }\n    std::cout << texto.size() << ':' << valido;\n    return 0;\n}\n",
+          "answers": [
+            "4:0"
+          ],
+          "outputComparison": "exact",
+          "explanation": "El string tiene cuatro elementos, incluido el NUL. La longitud cabe, pero la comprobación encuentra ese NUL en el índice uno y deja valido en false, que se muestra como 0."
+        }
+      },
+      {
+        "id": "block_0011_0012",
+        "block": {
+          "type": "cpp_compiler",
+          "language": "cpp",
+          "initialCode": "#include <array>\n#include <cstddef>\n#include <cstring>\n#include <iostream>\n#include <string>\n\nint main() {\n    char guardadas[2][6]{\"Norte\", \"Sur\"};\n    std::array<std::string, 2> propuestas{};\n    const bool primeraLeida = static_cast<bool>(std::getline(std::cin, propuestas[0]));\n    const bool segundaLeida = static_cast<bool>(std::getline(std::cin, propuestas[1]));\n    bool aceptado = false;\n\n    if (primeraLeida && segundaLeida) {\n        // Valida ambas propuestas antes de sustituir ninguna fila guardada.\n        // Cada texto debe caber con su NUL final y no contener NUL interiores.\n        // Construye las candidatas y copia ambos textos solo si todo es valido.\n    }\n\n    std::cout << \"Guardadas\\n\";\n    for (std::size_t fila = 0; fila < 2; ++fila) {\n        std::cout << fila << \":[\" << guardadas[fila] << \"]:\"\n                  << std::strlen(guardadas[fila]) << '\\n';\n    }\n    std::cout << \"Aceptado: \" << aceptado << '\\n';\n    return 0;\n}\n",
+          "initialStandardInput": "Mar\nRio 2\n",
+          "outputCheck": {
+            "inputComparison": "exact",
+            "cases": [
+              {
+                "standardInput": "Mar\nRio 2\n",
+                "outputs": [
+                  "Guardadas\n0:[Mar]:3\n1:[Rio 2]:5\nAceptado: 1\n"
+                ],
+                "explanation": "Validar ambas lecturas y los dos textos, convertir sin perder char y sustituir ambos nombres sólo al aceptar; ante rechazo conservar Norte y Sur."
+              },
+              {
+                "standardInput": "\n\n",
+                "outputs": [
+                  "Guardadas\n0:[]:0\n1:[]:0\nAceptado: 1\n"
+                ],
+                "explanation": "Validar ambas lecturas y los dos textos, convertir sin perder char y sustituir ambos nombres sólo al aceptar; ante rechazo conservar Norte y Sur."
+              },
+              {
+                "standardInput": "Mar\nabcdef\n",
+                "outputs": [
+                  "Guardadas\n0:[Norte]:5\n1:[Sur]:3\nAceptado: 0\n"
+                ],
+                "explanation": "Validar ambas lecturas y los dos textos, convertir sin perder char y sustituir ambos nombres sólo al aceptar; ante rechazo conservar Norte y Sur."
+              },
+              {
+                "standardInput": "abcdef\nSol\n",
+                "outputs": [
+                  "Guardadas\n0:[Norte]:5\n1:[Sur]:3\nAceptado: 0\n"
+                ],
+                "explanation": "Validar ambas lecturas y los dos textos, convertir sin perder char y sustituir ambos nombres sólo al aceptar; ante rechazo conservar Norte y Sur."
+              },
+              {
+                "standardInput": " Mar \nSur  ",
+                "outputs": [
+                  "Guardadas\n0:[ Mar ]:5\n1:[Sur  ]:5\nAceptado: 1\n"
+                ],
+                "explanation": "Validar ambas lecturas y los dos textos, convertir sin perder char y sustituir ambos nombres sólo al aceptar; ante rechazo conservar Norte y Sur."
+              },
+              {
+                "standardInput": "Mar\n",
+                "outputs": [
+                  "Guardadas\n0:[Norte]:5\n1:[Sur]:3\nAceptado: 0\n"
+                ],
+                "explanation": "Validar ambas lecturas y los dos textos, convertir sin perder char y sustituir ambos nombres sólo al aceptar; ante rechazo conservar Norte y Sur."
+              }
+            ]
+          }
+        }
+      },
+      {
+        "id": "block_0015_0001",
+        "block": {
+          "type": "code",
+          "language": "cpp",
+          "code": "#include <array>\n#include <cstddef>\n#include <cstring>\n#include <iostream>\n#include <string>\n\nint main() {\n    char guardadas[2][6]{\"Norte\", \"Sur\"};\n    std::array<std::string, 2> propuestas{};\n    const bool primeraLeida = static_cast<bool>(std::getline(std::cin, propuestas[0]));\n    const bool segundaLeida = static_cast<bool>(std::getline(std::cin, propuestas[1]));\n    bool aceptado = false;\n\n    bool validas = primeraLeida && segundaLeida;\n    for (std::size_t fila = 0; fila < propuestas.size(); ++fila) {\n        if (propuestas[fila].size() >= 6) {\n            validas = false;\n        }\n        for (std::size_t i = 0; i < propuestas[fila].size(); ++i) {\n            if (propuestas[fila][i] == '\\0') {\n                validas = false;\n            }\n        }\n    }\n    if (validas) {\n        char candidatas[2][6]{};\n        for (std::size_t fila = 0; fila < propuestas.size(); ++fila) {\n            for (std::size_t i = 0; i < propuestas[fila].size(); ++i) {\n                candidatas[fila][i] = propuestas[fila][i];\n            }\n            candidatas[fila][propuestas[fila].size()] = '\\0';\n        }\n        for (std::size_t fila = 0; fila < 2; ++fila) {\n            for (std::size_t i = 0; i < 6; ++i) {\n                guardadas[fila][i] = candidatas[fila][i];\n            }\n        }\n        aceptado = true;\n    }\n\n    std::cout << \"Guardadas\\n\";\n    for (std::size_t fila = 0; fila < 2; ++fila) {\n        std::cout << fila << \":[\" << guardadas[fila] << \"]:\"\n                  << std::strlen(guardadas[fila]) << '\\n';\n    }\n    std::cout << \"Aceptado: \" << aceptado << '\\n';\n    return 0;\n}\n"
+        }
+      }
+    ]
   }
 }

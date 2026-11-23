@@ -126,7 +126,7 @@
           "type": "output_prediction",
           "language": "cpp",
           "question": "Predice la salida exacta.",
-          "code": "#include <iostream>\n#include <string>\n#include <vector>\n\nenum class Estado {\n    preparado, enviado, cancelado\n};\n\nstruct PedidoInvalido {};\n\nclass Pedido {\npublic:\n    Pedido(std::string codigo, int unidades) : codigo_{codigo}, unidades_{unidades} {\n        if (codigo_.empty() || unidades_ < 1 || unidades_ > 20) {\n            throw PedidoInvalido{};\n        }\n    }\n    std::string codigo() const { return codigo_; }\n    int unidades() const { return unidades_; }\n    Estado estado() const { return estado_; }\nprivate:\n    std::string codigo_;\n    int unidades_;\n    Estado estado_ = Estado::preparado;\n};\n\nint main() {\n    try {\n        Pedido pedido{\"B2\", 20};\n        std::cout << pedido.unidades();\n    } catch (const PedidoInvalido&) {\n        std::cout << \"Rechazado\";\n    }\n    return 0;\n}\n",
+          "code": "#include <iostream>\n#include <string>\n#include <vector>\n\nenum class Estado {\n    preparado, enviado, cancelado\n};\n\nstruct PedidoInvalido {};\n\nclass Pedido {\npublic:\n    Pedido(std::string codigo, int unidades) : codigo_{codigo}, unidades_{unidades} {\n        if (codigo_.empty() || unidades_ < 1 || unidades_ > 20) {\n            throw PedidoInvalido{};\n        }\n    }\n\n    std::string codigo() const { return codigo_; }\n    int unidades() const { return unidades_; }\n    Estado estado() const { return estado_; }\nprivate:\n    std::string codigo_;\n    int unidades_;\n    Estado estado_ = Estado::preparado;\n};\n\nint main() {\n    try {\n        Pedido pedido{\"B2\", 20};\n        std::cout << pedido.unidades();\n    } catch (const PedidoInvalido&) {\n        std::cout << \"Rechazado\";\n    }\n\n    return 0;\n}\n",
           "answers": [
             "20"
           ],
@@ -281,7 +281,7 @@
         },
         {
           "type": "cpp_compiler",
-          "initialCode": "#include <iostream>\n#include <string>\n#include <vector>\n\nint main() {\n    // Construye aqui el programa de la consigna.\n\n    return 0;\n}\n",
+          "initialCode": "#include <iostream>\n#include <string>\n#include <vector>\n\nint main() {\n    // Construye aqui el programa de la consigna.\n    \n    return 0;\n}\n",
           "outputCheck": {
             "cases": [
               {
@@ -1500,6 +1500,16 @@
         "id": "block_0000_0002",
         "beforeSha256": "44bdc6ab4a456ac9d810669f3f402c73a57b98f9215fb42605a8434eb4e3e3a2",
         "afterSha256": "0e691c4a8ae3522119a56e5d648b3ddeb22ca399e7e9a41d7d947caf6c835fbe"
+      },
+      {
+        "id": "block_0002_0003",
+        "beforeSha256": "24efc86bd2c9471d95c405c17171250f6d3628f0a97e154c09867b4413152c8d",
+        "afterSha256": "31ea6d422e52afb5180586426bee64ebab1da721daadd85a87d3e4bfb6c04cb1"
+      },
+      {
+        "id": "block_0006_0002",
+        "beforeSha256": "9bae6a89f5cd61d8252f86739957884053ba4f5acac453d1c314d2db9b1daa21",
+        "afterSha256": "cf15909f50d49ddfd16e4c6ed01478bb93877998312938777dbe3a43d91aa0b3"
       }
     ],
     "sourceFormatRevisions": [
@@ -1624,6 +1634,19 @@
           "type": "code",
           "language": "cpp",
           "code": "int main() {\n    probar(\"L\", 1);\n    probar(\"L\", 5);\n    probar(\"L\", 0);\n    probar(\"L\", 6);\n    probar(\"\", 2);\n    probar(\"L\", -1);\n    probar(\"M\", 2);\n    probar(\"Zona B\", 3);\n    probar(\"R7\", 4);\n    return 0;\n}\n"
+        }
+      },
+      {
+        "id": "block_0002_0003",
+        "block": {
+          "type": "output_prediction",
+          "language": "cpp",
+          "question": "Predice la salida exacta.",
+          "code": "#include <iostream>\n#include <string>\n#include <vector>\n\nenum class Estado {\n    preparado, enviado, cancelado\n};\n\nstruct PedidoInvalido {};\n\nclass Pedido {\npublic:\n    Pedido(std::string codigo, int unidades) : codigo_{codigo}, unidades_{unidades} {\n        if (codigo_.empty() || unidades_ < 1 || unidades_ > 20) {\n            throw PedidoInvalido{};\n        }\n    }\n    std::string codigo() const { return codigo_; }\n    int unidades() const { return unidades_; }\n    Estado estado() const { return estado_; }\nprivate:\n    std::string codigo_;\n    int unidades_;\n    Estado estado_ = Estado::preparado;\n};\n\nint main() {\n    try {\n        Pedido pedido{\"B2\", 20};\n        std::cout << pedido.unidades();\n    } catch (const PedidoInvalido&) {\n        std::cout << \"Rechazado\";\n    }\n    return 0;\n}\n",
+          "answers": [
+            "20"
+          ],
+          "explanation": "El código B2 no está vacío y veinte coincide con el máximo permitido. La cantidad no es menor que uno ni mayor que veinte; por tanto, ninguna condición del if provoca el rechazo. El constructor termina normalmente y pedido.unidades() devuelve veinte, que std::cout presenta como 20."
         }
       }
     ]

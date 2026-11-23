@@ -22,7 +22,7 @@
           "id": "p3_u4l8_alias_de_variable_puntero",
           "language": "cpp",
           "question": "¿Qué muestra primero:segundo:actual==&segundo?",
-          "code": "#include <iostream>\n\nint main() {\n    int primero = 2;\n    int segundo = 5;\n    int* actual = &primero;\n    int*& seleccion = actual;\n    seleccion = &segundo;\n    *seleccion = 7;\n    std::cout << primero << ':' << segundo << ':' << (actual == &segundo);\n    return 0;\n}\n",
+          "code": "#include <iostream>\n\nint main() {\n    int primero = 2;\n    int segundo = 5;\n    int* actual = &primero;\n    int*& seleccion = actual;\n\n    seleccion = &segundo;\n    *seleccion = 7;\n    std::cout << primero << ':' << segundo << ':' << (actual == &segundo);\n\n    return 0;\n}\n",
           "answers": [
             "2:7:1"
           ],
@@ -50,7 +50,7 @@
           "id": "p3_u4l8_copia_y_referencia",
           "language": "cpp",
           "question": "¿Qué muestra el programa completo? Los tres valores lógicos aparecen antes del valor de dato.",
-          "code": "#include <iostream>\n\nvoid vaciarCopia(int* local) {\n    local = nullptr;\n    std::cout << (local == nullptr) << ':';\n}\n\nvoid vaciarOriginal(int*& seleccion) {\n    seleccion = nullptr;\n}\n\nint main() {\n    int dato = 4;\n    int* actual = &dato;\n    vaciarCopia(actual);\n    std::cout << (actual == &dato) << ':';\n    vaciarOriginal(actual);\n    std::cout << (actual == nullptr) << ':' << dato;\n    return 0;\n}\n",
+          "code": "#include <iostream>\n\nvoid vaciarCopia(int* local) {\n    local = nullptr;\n\n    std::cout << (local == nullptr) << ':';\n}\n\nvoid vaciarOriginal(int*& seleccion) {\n    seleccion = nullptr;\n}\n\nint main() {\n    int dato = 4;\n    int* actual = &dato;\n    vaciarCopia(actual);\n    std::cout << (actual == &dato) << ':';\n    vaciarOriginal(actual);\n    std::cout << (actual == nullptr) << ':' << dato;\n\n    return 0;\n}\n",
           "answers": [
             "1:1:1:4"
           ],
@@ -86,7 +86,7 @@
           "id": "p3_u4l8_objeto_puntero_nulo",
           "language": "cpp",
           "question": "¿Qué muestra actual==&dato:*actual:actual==nullptr:dato en los momentos indicados?",
-          "code": "#include <iostream>\n\nvoid dirigir(int*& seleccion, int* propuesta) {\n    seleccion = propuesta;\n}\n\nint main() {\n    int dato = 0;\n    int* actual = nullptr;\n    dirigir(actual, &dato);\n    std::cout << (actual == &dato) << ':' << *actual << ':';\n    dirigir(actual, nullptr);\n    std::cout << (actual == nullptr) << ':' << dato;\n    return 0;\n}\n",
+          "code": "#include <iostream>\n\nvoid dirigir(int*& seleccion, int* propuesta) {\n    seleccion = propuesta;\n}\n\nint main() {\n    int dato = 0;\n    int* actual = nullptr;\n    dirigir(actual, &dato);\n    std::cout << (actual == &dato) << ':' << *actual << ':';\n    dirigir(actual, nullptr);\n    std::cout << (actual == nullptr) << ':' << dato;\n\n    return 0;\n}\n",
           "answers": [
             "1:0:1:0"
           ],
@@ -128,7 +128,7 @@
           "id": "p3_u4l8_copia_previa_y_alias",
           "language": "cpp",
           "question": "¿Qué muestra primero:segundo:*actual:alias==&segundo?",
-          "code": "#include <iostream>\n\nvoid dirigir(int*& seleccion, int* propuesta) {\n    seleccion = propuesta;\n}\n\nint main() {\n    int primero = 2;\n    int segundo = 5;\n    int* actual = &primero;\n    int* copia = actual;\n    int*& alias = actual;\n    dirigir(alias, &segundo);\n    *copia = 8;\n    std::cout << primero << ':' << segundo << ':' << *actual << ':' << (alias == &segundo);\n    return 0;\n}\n",
+          "code": "#include <iostream>\n\nvoid dirigir(int*& seleccion, int* propuesta) {\n    seleccion = propuesta;\n}\n\nint main() {\n    int primero = 2;\n    int segundo = 5;\n    int* actual = &primero;\n    int* copia = actual;\n    int*& alias = actual;\n    dirigir(alias, &segundo);\n    *copia = 8;\n    std::cout << primero << ':' << segundo << ':' << *actual << ':' << (alias == &segundo);\n\n    return 0;\n}\n",
           "answers": [
             "8:5:5:1"
           ],
@@ -164,7 +164,7 @@
           "id": "p3_u4l8_referencia_al_entero",
           "language": "cpp",
           "question": "¿Qué muestra primero:segundo:*actual?",
-          "code": "#include <iostream>\n\nvoid dirigir(int*& seleccion, int* propuesta) {\n    seleccion = propuesta;\n}\n\nint main() {\n    int primero = 2;\n    int segundo = 5;\n    int* actual = &primero;\n    int& dato = *actual;\n    dirigir(actual, &segundo);\n    dato = 9;\n    std::cout << primero << ':' << segundo << ':' << *actual;\n    return 0;\n}\n",
+          "code": "#include <iostream>\n\nvoid dirigir(int*& seleccion, int* propuesta) {\n    seleccion = propuesta;\n}\n\nint main() {\n    int primero = 2;\n    int segundo = 5;\n    int* actual = &primero;\n    int& dato = *actual;\n    dirigir(actual, &segundo);\n    dato = 9;\n\n    std::cout << primero << ':' << segundo << ':' << *actual;\n\n    return 0;\n}\n",
           "answers": [
             "9:5:5"
           ],
@@ -192,7 +192,7 @@
           "id": "p3_u4l8_referencia_a_vista",
           "language": "cpp",
           "question": "¿Qué muestra la lectura de vista antes y después de seleccionar limite, seguida de vista==&limite?",
-          "code": "#include <iostream>\n\nvoid dirigirLectura(const int*& seleccion, const int* propuesta) {\n    seleccion = propuesta;\n}\n\nint main() {\n    int dato = 3;\n    const int limite = 8;\n    const int* vista = nullptr;\n    dirigirLectura(vista, &dato);\n    dato = 7;\n    std::cout << *vista << ':';\n    dirigirLectura(vista, &limite);\n    std::cout << *vista << ':' << (vista == &limite);\n    return 0;\n}\n",
+          "code": "#include <iostream>\n\nvoid dirigirLectura(const int*& seleccion, const int* propuesta) {\n    seleccion = propuesta;\n}\n\nint main() {\n    int dato = 3;\n    const int limite = 8;\n    const int* vista = nullptr;\n    dirigirLectura(vista, &dato);\n    dato = 7;\n\n    std::cout << *vista << ':';\n    dirigirLectura(vista, &limite);\n    std::cout << *vista << ':' << (vista == &limite);\n\n    return 0;\n}\n",
           "answers": [
             "7:8:1"
           ],
@@ -271,7 +271,7 @@
           "id": "p3_u4l8_puntero_fijo_por_referencia",
           "language": "cpp",
           "question": "¿Qué muestra dato:primera:segunda?",
-          "code": "#include <iostream>\n\nbool escribirFijo(int* const& seleccion, int valor) {\n    if (seleccion == nullptr || valor < 0 || valor > 9) {\n        return false;\n    }\n    *seleccion = valor;\n    return true;\n}\n\nint main() {\n    int dato = 2;\n    int* actual = &dato;\n    const bool primera = escribirFijo(actual, 5);\n    const bool segunda = escribirFijo(&dato, 6);\n    std::cout << dato << ':' << primera << ':' << segunda;\n    return 0;\n}\n",
+          "code": "#include <iostream>\n\nbool escribirFijo(int* const& seleccion, int valor) {\n    if (seleccion == nullptr || valor < 0 || valor > 9) {\n        return false;\n    }\n    *seleccion = valor;\n    return true;\n}\n\nint main() {\n    int dato = 2;\n    int* actual = &dato;\n    const bool primera = escribirFijo(actual, 5);\n    const bool segunda = escribirFijo(&dato, 6);\n\n    std::cout << dato << ':' << primera << ':' << segunda;\n\n    return 0;\n}\n",
           "answers": [
             "6:1:1"
           ],
@@ -308,7 +308,7 @@
           "id": "p3_u4l8_dos_vias_al_mismo_puntero",
           "language": "cpp",
           "question": "¿Qué muestra el programa? Las dos comparaciones se realizan antes y después de vaciar cambio.",
-          "code": "#include <iostream>\n\nvoid observarYVaciar(int* const& lectura, int*& cambio) {\n    std::cout << (lectura == nullptr) << ':';\n    cambio = nullptr;\n    std::cout << (lectura == nullptr);\n}\n\nint main() {\n    int dato = 4;\n    int* actual = &dato;\n    observarYVaciar(actual, actual);\n    std::cout << ':' << dato;\n    return 0;\n}\n",
+          "code": "#include <iostream>\n\nvoid observarYVaciar(int* const& lectura, int*& cambio) {\n    std::cout << (lectura == nullptr) << ':';\n    cambio = nullptr;\n\n    std::cout << (lectura == nullptr);\n}\n\nint main() {\n    int dato = 4;\n    int* actual = &dato;\n    observarYVaciar(actual, actual);\n    std::cout << ':' << dato;\n\n    return 0;\n}\n",
           "answers": [
             "0:1:4"
           ],
@@ -451,7 +451,7 @@
           "id": "p3_u4l8_parametros_con_mismo_objeto",
           "language": "cpp",
           "question": "¿Qué muestra el programa después de la llamada con variables distintas y después de la llamada con actual dos veces?",
-          "code": "#include <iostream>\n\nvoid copiarYVaciar(int*& destino, int*& origen) {\n    destino = origen;\n    origen = nullptr;\n}\n\nint main() {\n    int primero = 2;\n    int segundo = 5;\n    int* actual = &primero;\n    int* guardado = &segundo;\n    copiarYVaciar(actual, guardado);\n    std::cout << (actual == &segundo) << ':' << (guardado == nullptr) << ':';\n    copiarYVaciar(actual, actual);\n    std::cout << (actual == nullptr) << ':' << primero << ':' << segundo;\n    return 0;\n}\n",
+          "code": "#include <iostream>\n\nvoid copiarYVaciar(int*& destino, int*& origen) {\n    destino = origen;\n    origen = nullptr;\n}\n\nint main() {\n    int primero = 2;\n    int segundo = 5;\n    int* actual = &primero;\n    int* guardado = &segundo;\n    copiarYVaciar(actual, guardado);\n    std::cout << (actual == &segundo) << ':' << (guardado == nullptr) << ':';\n    copiarYVaciar(actual, actual);\n    std::cout << (actual == nullptr) << ':' << primero << ':' << segundo;\n\n    return 0;\n}\n",
           "answers": [
             "1:1:1:2:5"
           ],
@@ -491,7 +491,7 @@
           "id": "p3_u4l8_seleccionar_objeto_del_llamador",
           "language": "cpp",
           "question": "¿Qué muestra dato:actual==&dato?",
-          "code": "#include <iostream>\n\nvoid seleccionarDato(int*& seleccion, int& dato) {\n    seleccion = &dato;\n}\n\nint main() {\n    int dato = 4;\n    int* actual = nullptr;\n    seleccionarDato(actual, dato);\n    *actual = 7;\n    std::cout << dato << ':' << (actual == &dato);\n    return 0;\n}\n",
+          "code": "#include <iostream>\n\nvoid seleccionarDato(int*& seleccion, int& dato) {\n    seleccion = &dato;\n}\n\nint main() {\n    int dato = 4;\n    int* actual = nullptr;\n    seleccionarDato(actual, dato);\n    *actual = 7;\n    std::cout << dato << ':' << (actual == &dato);\n\n    return 0;\n}\n",
           "answers": [
             "7:1"
           ],
@@ -527,7 +527,7 @@
           "type": "inline_fill_code",
           "id": "p3_u4l8_firmas_referencias_puntero",
           "question": "Completa ambos tipos para que las llamadas cambien actual y vista directamente.",
-          "template": "#include <iostream>\n\nvoid vaciar([] seleccion) {\n    seleccion = nullptr;\n}\n\nvoid dirigirLectura([] seleccion, const int* propuesta) {\n    seleccion = propuesta;\n}\n\nint main() {\n    int dato = 4;\n    const int limite = 8;\n    int* actual = &dato;\n    const int* vista = nullptr;\n    vaciar(actual);\n    dirigirLectura(vista, &limite);\n    std::cout << (actual == nullptr) << ':' << *vista;\n    return 0;\n}\n",
+          "template": "#include <iostream>\n\nvoid vaciar([] seleccion) {\n    seleccion = nullptr;\n}\n\nvoid dirigirLectura([] seleccion, const int* propuesta) {\n    seleccion = propuesta;\n}\n\nint main() {\n    int dato = 4;\n    const int limite = 8;\n    int* actual = &dato;\n    const int* vista = nullptr;\n    vaciar(actual);\n    dirigirLectura(vista, &limite);\n    std::cout << (actual == nullptr) << ':' << *vista;\n\n    return 0;\n}\n",
           "answers": [
             "int*&",
             "const int*&"
@@ -592,7 +592,7 @@
         {
           "type": "cpp_compiler",
           "language": "cpp",
-          "initialCode": "#include <iostream>\n\nvoid intercambiar(int*& primero, int*& segundo) {\n    primero = segundo;\n    segundo = primero;\n}\n\nint main() {\n    int datoA = 2;\n    int datoB = 5;\n    int* actual = &datoA;\n    int* guardado = &datoB;\n    intercambiar(actual, guardado);\n    std::cout << (actual == &datoB) << ':' << (guardado == &datoA) << ':';\n    intercambiar(actual, actual);\n    std::cout << (actual == &datoB) << ':';\n    int* vacio = nullptr;\n    intercambiar(guardado, vacio);\n    std::cout << (guardado == nullptr) << ':' << (vacio == &datoA);\n    return 0;\n}\n",
+          "initialCode": "#include <iostream>\n\nvoid intercambiar(int*& primero, int*& segundo) {\n    primero = segundo;\n    segundo = primero;\n}\n\nint main() {\n    int datoA = 2;\n    int datoB = 5;\n    int* actual = &datoA;\n    int* guardado = &datoB;\n    intercambiar(actual, guardado);\n    std::cout << (actual == &datoB) << ':' << (guardado == &datoA) << ':';\n    intercambiar(actual, actual);\n    std::cout << (actual == &datoB) << ':';\n    int* vacio = nullptr;\n    intercambiar(guardado, vacio);\n    std::cout << (guardado == nullptr) << ':' << (vacio == &datoA);\n\n    return 0;\n}\n",
           "initialStandardInput": "",
           "outputCheck": {
             "inputComparison": "tokens",
@@ -618,7 +618,7 @@
         {
           "type": "code",
           "language": "cpp",
-          "code": "#include <iostream>\n\nvoid intercambiar(int*& primero, int*& segundo) {\n    int* previo = primero;\n    primero = segundo;\n    segundo = previo;\n}\n\nint main() {\n    int datoA = 2;\n    int datoB = 5;\n    int* actual = &datoA;\n    int* guardado = &datoB;\n    intercambiar(actual, guardado);\n    std::cout << (actual == &datoB) << ':' << (guardado == &datoA) << ':';\n    intercambiar(actual, actual);\n    std::cout << (actual == &datoB) << ':';\n    int* vacio = nullptr;\n    intercambiar(guardado, vacio);\n    std::cout << (guardado == nullptr) << ':' << (vacio == &datoA);\n    return 0;\n}\n"
+          "code": "#include <iostream>\n\nvoid intercambiar(int*& primero, int*& segundo) {\n    int* previo = primero;\n    primero = segundo;\n    segundo = previo;\n}\n\nint main() {\n    int datoA = 2;\n    int datoB = 5;\n    int* actual = &datoA;\n    int* guardado = &datoB;\n    intercambiar(actual, guardado);\n    std::cout << (actual == &datoB) << ':' << (guardado == &datoA) << ':';\n    intercambiar(actual, actual);\n    std::cout << (actual == &datoB) << ':';\n    int* vacio = nullptr;\n    intercambiar(guardado, vacio);\n    std::cout << (guardado == nullptr) << ':' << (vacio == &datoA);\n\n    return 0;\n}\n"
         },
         {
           "type": "paragraph",
@@ -721,7 +721,7 @@
         {
           "type": "cpp_compiler",
           "language": "cpp",
-          "initialCode": "#include <array>\n#include <cstddef>\n#include <iostream>\n#include <string>\n\nbool seleccionar(int*& actual, std::array<int, 3>& datos, int indice) {\n    if (indice < 0 || indice > 2) {\n        return false;\n    }\n    // Falta guardar la seleccion; de momento solo compara la anterior.\n    return actual == &datos.at(static_cast<std::size_t>(indice));\n}\n\nvoid intercambiar(int*& primero, int*& segundo) {\n    if (primero == segundo) {\n        return;\n    }\n    // Falta intercambiar las selecciones distintas.\n}\n\nvoid vaciar(int*& actual) {\n    actual = nullptr;\n}\n\nstd::string escribir(int* destino, int valor) {\n    if (destino == nullptr) {\n        return \"Sin objeto\";\n    }\n    if (valor < 0 || valor > 9) {\n        return \"Rechazo\";\n    }\n    *destino = valor;\n    return \"Cambio\";\n}\n\nint main() {\n    std::array<int, 3> datos{2, 5, 8};\n    int* actual = nullptr;\n    int* guardado = nullptr;\n    int cantidad = 0;\n    if (!(std::cin >> cantidad) || cantidad < 1 || cantidad > 12) {\n        return 1;\n    }\n    for (int orden = 0; orden < cantidad; ++orden) {\n        int operacion = 0;\n        int argumento = 0;\n        if (!(std::cin >> operacion >> argumento)) {\n            return 1;\n        }\n        std::string estado = \"Orden\";\n        if (operacion == 1) {\n            estado = seleccionar(actual, datos, argumento) ? \"Seleccion\" : \"Rechazo\";\n        } else if (operacion == 2) {\n            guardado = actual;\n            estado = \"Guardado\";\n        } else if (operacion == 3) {\n            intercambiar(actual, guardado);\n            estado = \"Intercambio\";\n        } else if (operacion == 4) {\n            vaciar(actual);\n            estado = \"Vacio\";\n        } else if (operacion == 5) {\n            estado = escribir(actual, argumento);\n        } else if (operacion == 6) {\n            estado = escribir(guardado, argumento);\n        }\n        std::cout << \"Estado:\" << estado << \";Actual:\";\n        if (actual == nullptr) {\n            std::cout << 'X';\n        } else {\n            std::cout << *actual;\n        }\n        std::cout << \";Guardado:\";\n        if (guardado == nullptr) {\n            std::cout << 'X';\n        } else {\n            std::cout << *guardado;\n        }\n        std::cout << \";Datos:\" << datos[0] << ',' << datos[1] << ',' << datos[2] << '\\n';\n    }\n    return 0;\n}\n",
+          "initialCode": "#include <array>\n#include <cstddef>\n#include <iostream>\n#include <string>\n\nbool seleccionar(int*& actual, std::array<int, 3>& datos, int indice) {\n    if (indice < 0 || indice > 2) {\n        return false;\n    }\n    // Falta guardar la seleccion; de momento solo compara la anterior.\n    return actual == &datos.at(static_cast<std::size_t>(indice));\n}\n\nvoid intercambiar(int*& primero, int*& segundo) {\n    if (primero == segundo) {\n        return;\n    }\n    // Falta intercambiar las selecciones distintas.\n}\n\nvoid vaciar(int*& actual) {\n    actual = nullptr;\n}\n\nstd::string escribir(int* destino, int valor) {\n    if (destino == nullptr) {\n        return \"Sin objeto\";\n    }\n    if (valor < 0 || valor > 9) {\n        return \"Rechazo\";\n    }\n    *destino = valor;\n    return \"Cambio\";\n}\n\nint main() {\n    std::array<int, 3> datos{2, 5, 8};\n    int* actual = nullptr;\n    int* guardado = nullptr;\n    int cantidad = 0;\n\n    if (!(std::cin >> cantidad) || cantidad < 1 || cantidad > 12) {\n        return 1;\n    }\n    for (int orden = 0; orden < cantidad; ++orden) {\n        int operacion = 0;\n        int argumento = 0;\n\n        if (!(std::cin >> operacion >> argumento)) {\n            return 1;\n        }\n        std::string estado = \"Orden\";\n        if (operacion == 1) {\n            estado = seleccionar(actual, datos, argumento) ? \"Seleccion\" : \"Rechazo\";\n        } else if (operacion == 2) {\n            guardado = actual;\n            estado = \"Guardado\";\n        } else if (operacion == 3) {\n            intercambiar(actual, guardado);\n            estado = \"Intercambio\";\n        } else if (operacion == 4) {\n            vaciar(actual);\n            estado = \"Vacio\";\n        } else if (operacion == 5) {\n            estado = escribir(actual, argumento);\n        } else if (operacion == 6) {\n            estado = escribir(guardado, argumento);\n        }\n        std::cout << \"Estado:\" << estado << \";Actual:\";\n        if (actual == nullptr) {\n            std::cout << 'X';\n        } else {\n            std::cout << *actual;\n        }\n        std::cout << \";Guardado:\";\n        if (guardado == nullptr) {\n            std::cout << 'X';\n        } else {\n            std::cout << *guardado;\n        }\n        std::cout << \";Datos:\" << datos[0] << ',' << datos[1] << ',' << datos[2] << '\\n';\n    }\n\n    return 0;\n}\n",
           "initialStandardInput": "12\n1 0\n2 0\n1 1\n3 0\n5 0\n6 9\n1 3\n4 0\n3 0\n1 -1\n5 10\n5 0\n",
           "outputCheck": {
             "inputComparison": "tokens",
@@ -898,7 +898,7 @@
         {
           "type": "code",
           "language": "cpp",
-          "code": "#include <array>\n#include <cstddef>\n#include <iostream>\n#include <string>\n\nbool seleccionar(int*& actual, std::array<int, 3>& datos, int indice) {\n    if (indice < 0 || indice > 2) {\n        return false;\n    }\n    actual = &datos.at(static_cast<std::size_t>(indice));\n    return true;\n}\n\nvoid intercambiar(int*& primero, int*& segundo) {\n    int* previo = primero;\n    primero = segundo;\n    segundo = previo;\n}\n\nvoid vaciar(int*& actual) {\n    actual = nullptr;\n}\n\nstd::string escribir(int* destino, int valor) {\n    if (destino == nullptr) {\n        return \"Sin objeto\";\n    }\n    if (valor < 0 || valor > 9) {\n        return \"Rechazo\";\n    }\n    *destino = valor;\n    return \"Cambio\";\n}\n\nint main() {\n    std::array<int, 3> datos{2, 5, 8};\n    int* actual = nullptr;\n    int* guardado = nullptr;\n    int cantidad = 0;\n    if (!(std::cin >> cantidad) || cantidad < 1 || cantidad > 12) {\n        return 1;\n    }\n    for (int orden = 0; orden < cantidad; ++orden) {\n        int operacion = 0;\n        int argumento = 0;\n        if (!(std::cin >> operacion >> argumento)) {\n            return 1;\n        }\n        std::string estado = \"Orden\";\n        if (operacion == 1) {\n            estado = seleccionar(actual, datos, argumento) ? \"Seleccion\" : \"Rechazo\";\n        } else if (operacion == 2) {\n            guardado = actual;\n            estado = \"Guardado\";\n        } else if (operacion == 3) {\n            intercambiar(actual, guardado);\n            estado = \"Intercambio\";\n        } else if (operacion == 4) {\n            vaciar(actual);\n            estado = \"Vacio\";\n        } else if (operacion == 5) {\n            estado = escribir(actual, argumento);\n        } else if (operacion == 6) {\n            estado = escribir(guardado, argumento);\n        }\n        std::cout << \"Estado:\" << estado << \";Actual:\";\n        if (actual == nullptr) {\n            std::cout << 'X';\n        } else {\n            std::cout << *actual;\n        }\n        std::cout << \";Guardado:\";\n        if (guardado == nullptr) {\n            std::cout << 'X';\n        } else {\n            std::cout << *guardado;\n        }\n        std::cout << \";Datos:\" << datos[0] << ',' << datos[1] << ',' << datos[2] << '\\n';\n    }\n    return 0;\n}\n"
+          "code": "#include <array>\n#include <cstddef>\n#include <iostream>\n#include <string>\n\nbool seleccionar(int*& actual, std::array<int, 3>& datos, int indice) {\n    if (indice < 0 || indice > 2) {\n        return false;\n    }\n    actual = &datos.at(static_cast<std::size_t>(indice));\n    return true;\n}\n\nvoid intercambiar(int*& primero, int*& segundo) {\n    int* previo = primero;\n    primero = segundo;\n    segundo = previo;\n}\n\nvoid vaciar(int*& actual) {\n    actual = nullptr;\n}\n\nstd::string escribir(int* destino, int valor) {\n    if (destino == nullptr) {\n        return \"Sin objeto\";\n    }\n    if (valor < 0 || valor > 9) {\n        return \"Rechazo\";\n    }\n    *destino = valor;\n    return \"Cambio\";\n}\n\nint main() {\n    std::array<int, 3> datos{2, 5, 8};\n    int* actual = nullptr;\n    int* guardado = nullptr;\n    int cantidad = 0;\n\n    if (!(std::cin >> cantidad) || cantidad < 1 || cantidad > 12) {\n        return 1;\n    }\n    for (int orden = 0; orden < cantidad; ++orden) {\n        int operacion = 0;\n        int argumento = 0;\n\n        if (!(std::cin >> operacion >> argumento)) {\n            return 1;\n        }\n        std::string estado = \"Orden\";\n        if (operacion == 1) {\n            estado = seleccionar(actual, datos, argumento) ? \"Seleccion\" : \"Rechazo\";\n        } else if (operacion == 2) {\n            guardado = actual;\n            estado = \"Guardado\";\n        } else if (operacion == 3) {\n            intercambiar(actual, guardado);\n            estado = \"Intercambio\";\n        } else if (operacion == 4) {\n            vaciar(actual);\n            estado = \"Vacio\";\n        } else if (operacion == 5) {\n            estado = escribir(actual, argumento);\n        } else if (operacion == 6) {\n            estado = escribir(guardado, argumento);\n        }\n        std::cout << \"Estado:\" << estado << \";Actual:\";\n        if (actual == nullptr) {\n            std::cout << 'X';\n        } else {\n            std::cout << *actual;\n        }\n        std::cout << \";Guardado:\";\n        if (guardado == nullptr) {\n            std::cout << 'X';\n        } else {\n            std::cout << *guardado;\n        }\n        std::cout << \";Datos:\" << datos[0] << ',' << datos[1] << ',' << datos[2] << '\\n';\n    }\n\n    return 0;\n}\n"
         },
         {
           "type": "paragraph",
@@ -2338,6 +2338,345 @@
       }
     },
     "additions": [],
-    "editorial": []
+    "editorial": [
+      {
+        "id": "block_0000_0003",
+        "beforeSha256": "d3c9e66997f41b37b2a49305a83ac093634029a1fddc41110787fa37e4dffbd7",
+        "afterSha256": "8659bbcc44d89c2bc666073ee37f5fbfebec1af0bab9b16d24077b0d8ac1cbcf"
+      },
+      {
+        "id": "block_0001_0002",
+        "beforeSha256": "c47cd8103b3721c9e5b73c614af63314a7193ac0f7e63ea6cc946e484cd4a669",
+        "afterSha256": "6ef8be426737b94ef25d1ad40bd2998b3fa5a3f870357cf172cabc04deba8c78"
+      },
+      {
+        "id": "block_0002_0002",
+        "beforeSha256": "f262f97b95982d150179a0fcb17e25cdf2c1884ebb92bc131c780c54ad5c7423",
+        "afterSha256": "5da93b1cbbeae3dce20d30909dc47251c492499c00147b006f218c4eb440226c"
+      },
+      {
+        "id": "block_0003_0002",
+        "beforeSha256": "47d0304b846ad581a87baeef04260eb0c1e682bb734ae1e140ea4362260e5159",
+        "afterSha256": "bdbbb8ce6c3e9e8d43e20ca62e12587e9dec512a554a21bc03b5a8ce0edafb82"
+      },
+      {
+        "id": "block_0004_0002",
+        "beforeSha256": "c246a9ac07b07e9ba11759f6fc69056d636ebe84779fcf70b5e45695787b51be",
+        "afterSha256": "630ef918a268b0f32e49e431ba5174c2e9faf8e6cd8c3dbe51597039d8ea5bf3"
+      },
+      {
+        "id": "block_0005_0002",
+        "beforeSha256": "5dc24533bcd5cb3d5d6c296f02256e57876aa839281f1ea83dfa987100352fec",
+        "afterSha256": "16dd3398e480e781d488a3bcee78a68d3669dd96cfe2fee7a54ff17a8268d5a3"
+      },
+      {
+        "id": "block_0007_0002",
+        "beforeSha256": "a8b797ac38063e3b6392e36fa270dce7f3e3f37aa6f9847d413bba75298d2e01",
+        "afterSha256": "f445c4f5d46ba4c32a5b77e1e37b79f6b7e7addeee8d7c88d0b615f635b9f851"
+      },
+      {
+        "id": "block_0008_0002",
+        "beforeSha256": "b42ced220c4f1ed171df462d173bc5cc7c02b416841585a83c113273ddac8b9e",
+        "afterSha256": "e773ba51678216980cd04bdbeaa8ad1ea279b24ba795225d6a842ada9193bf82"
+      },
+      {
+        "id": "block_0009_0002",
+        "beforeSha256": "d62b9b4f78f309f7cae243fbcc674980fd956e335a0615bc66d2982ff3da3e68",
+        "afterSha256": "86a8586431f3544ab62e94f48cdb17afb2ac0ad4a62bafea98e2bc39bd1f7706"
+      },
+      {
+        "id": "block_0010_0002",
+        "beforeSha256": "b83ac4ff34de9768db7c2bde4a8bfd9b6e8258e3009025ce4c5492651abc4074",
+        "afterSha256": "5174465fb0d2be4f5921badbb4b705948a14ebc7ab8ea7a8cd6aae9378528cce"
+      },
+      {
+        "id": "block_0011_0002",
+        "beforeSha256": "059d48051ebff4c0cd1af3458bdadf86209d2cfa06a687e803fbf58c34e25aed",
+        "afterSha256": "a359e210aa57891a077fa9cc7286475b5a78a07bd6d78168c8640ee76480b5b8"
+      },
+      {
+        "id": "block_0012_0005",
+        "beforeSha256": "eb90d1e2af69b78964f24f8b638c6b2652087f548b4e4ab5b8426aa4023eb866",
+        "afterSha256": "2defc0ef5e17cd29f7824f5a9e31563445c84ab67e9410fe0bfad75e7c3b9360"
+      },
+      {
+        "id": "block_0013_0001",
+        "beforeSha256": "f937de58fe97a6f8cf2c6091b5db11ea11011fa3ed5af303b0d772b2642e787f",
+        "afterSha256": "c9f3c98cb9441db59f9a978375f8af042c8cb469bc665cfc5b59d5d5774536b6"
+      },
+      {
+        "id": "block_0015_0009",
+        "beforeSha256": "1a94db936157e8ed04f8d7643b6cb33af54b7d19cfd26c59c32021d2de042eb4",
+        "afterSha256": "d9406cec36a7383f0c37ce4233c9a8bc2a6f06a527ace3afd4b5d8729a76886b"
+      },
+      {
+        "id": "block_0018_0001",
+        "beforeSha256": "b80a6585206e751e55ee7944cf32ab34ef3448ffb9d523a843315a77afecdd14",
+        "afterSha256": "b8c7e8aae5021adb4f16f2579a84f0293d644dfd7c7d95bc3646876876c31e5e"
+      }
+    ],
+    "sourceFormatRevisions": [
+      {
+        "id": "block_0000_0003",
+        "block": {
+          "type": "output_prediction",
+          "id": "p3_u4l8_alias_de_variable_puntero",
+          "language": "cpp",
+          "question": "¿Qué muestra primero:segundo:actual==&segundo?",
+          "code": "#include <iostream>\n\nint main() {\n    int primero = 2;\n    int segundo = 5;\n    int* actual = &primero;\n    int*& seleccion = actual;\n    seleccion = &segundo;\n    *seleccion = 7;\n    std::cout << primero << ':' << segundo << ':' << (actual == &segundo);\n    return 0;\n}\n",
+          "answers": [
+            "2:7:1"
+          ],
+          "outputComparison": "exact",
+          "explanation": "La referencia seleccion sigue enlazada con actual. Asignarle &segundo cambia actual. La escritura mediante * utiliza segundo y lo deja en 7; primero conserva 2."
+        }
+      },
+      {
+        "id": "block_0001_0002",
+        "block": {
+          "type": "output_prediction",
+          "id": "p3_u4l8_copia_y_referencia",
+          "language": "cpp",
+          "question": "¿Qué muestra el programa completo? Los tres valores lógicos aparecen antes del valor de dato.",
+          "code": "#include <iostream>\n\nvoid vaciarCopia(int* local) {\n    local = nullptr;\n    std::cout << (local == nullptr) << ':';\n}\n\nvoid vaciarOriginal(int*& seleccion) {\n    seleccion = nullptr;\n}\n\nint main() {\n    int dato = 4;\n    int* actual = &dato;\n    vaciarCopia(actual);\n    std::cout << (actual == &dato) << ':';\n    vaciarOriginal(actual);\n    std::cout << (actual == nullptr) << ':' << dato;\n    return 0;\n}\n",
+          "answers": [
+            "1:1:1:4"
+          ],
+          "outputComparison": "exact",
+          "explanation": "La copia local queda nula: primer 1. actual aún señala dato: segundo 1. La llamada por referencia deja actual nulo: tercer 1. dato sigue vivo y vale 4."
+        }
+      },
+      {
+        "id": "block_0002_0002",
+        "block": {
+          "type": "output_prediction",
+          "id": "p3_u4l8_objeto_puntero_nulo",
+          "language": "cpp",
+          "question": "¿Qué muestra actual==&dato:*actual:actual==nullptr:dato en los momentos indicados?",
+          "code": "#include <iostream>\n\nvoid dirigir(int*& seleccion, int* propuesta) {\n    seleccion = propuesta;\n}\n\nint main() {\n    int dato = 0;\n    int* actual = nullptr;\n    dirigir(actual, &dato);\n    std::cout << (actual == &dato) << ':' << *actual << ':';\n    dirigir(actual, nullptr);\n    std::cout << (actual == nullptr) << ':' << dato;\n    return 0;\n}\n",
+          "answers": [
+            "1:0:1:0"
+          ],
+          "outputComparison": "exact",
+          "explanation": "La primera llamada instala &dato en actual y permite leer cero. La segunda guarda nullptr en la misma variable puntero. dato conserva cero y no se destruye."
+        }
+      },
+      {
+        "id": "block_0003_0002",
+        "block": {
+          "type": "output_prediction",
+          "id": "p3_u4l8_copia_previa_y_alias",
+          "language": "cpp",
+          "question": "¿Qué muestra primero:segundo:*actual:alias==&segundo?",
+          "code": "#include <iostream>\n\nvoid dirigir(int*& seleccion, int* propuesta) {\n    seleccion = propuesta;\n}\n\nint main() {\n    int primero = 2;\n    int segundo = 5;\n    int* actual = &primero;\n    int* copia = actual;\n    int*& alias = actual;\n    dirigir(alias, &segundo);\n    *copia = 8;\n    std::cout << primero << ':' << segundo << ':' << *actual << ':' << (alias == &segundo);\n    return 0;\n}\n",
+          "answers": [
+            "8:5:5:1"
+          ],
+          "outputComparison": "exact",
+          "explanation": "actual y alias pasan a seleccionar segundo. copia sigue seleccionando primero y allí escribe 8. segundo conserva 5."
+        }
+      },
+      {
+        "id": "block_0004_0002",
+        "block": {
+          "type": "output_prediction",
+          "id": "p3_u4l8_referencia_al_entero",
+          "language": "cpp",
+          "question": "¿Qué muestra primero:segundo:*actual?",
+          "code": "#include <iostream>\n\nvoid dirigir(int*& seleccion, int* propuesta) {\n    seleccion = propuesta;\n}\n\nint main() {\n    int primero = 2;\n    int segundo = 5;\n    int* actual = &primero;\n    int& dato = *actual;\n    dirigir(actual, &segundo);\n    dato = 9;\n    std::cout << primero << ':' << segundo << ':' << *actual;\n    return 0;\n}\n",
+          "answers": [
+            "9:5:5"
+          ],
+          "outputComparison": "exact",
+          "explanation": "dato continúa siendo otro nombre de primero y guarda allí 9. actual ya señala segundo, que conserva 5."
+        }
+      },
+      {
+        "id": "block_0005_0002",
+        "block": {
+          "type": "output_prediction",
+          "id": "p3_u4l8_referencia_a_vista",
+          "language": "cpp",
+          "question": "¿Qué muestra la lectura de vista antes y después de seleccionar limite, seguida de vista==&limite?",
+          "code": "#include <iostream>\n\nvoid dirigirLectura(const int*& seleccion, const int* propuesta) {\n    seleccion = propuesta;\n}\n\nint main() {\n    int dato = 3;\n    const int limite = 8;\n    const int* vista = nullptr;\n    dirigirLectura(vista, &dato);\n    dato = 7;\n    std::cout << *vista << ':';\n    dirigirLectura(vista, &limite);\n    std::cout << *vista << ':' << (vista == &limite);\n    return 0;\n}\n",
+          "answers": [
+            "7:8:1"
+          ],
+          "outputComparison": "exact",
+          "explanation": "vista primero señala dato y observa su cambio a 7. Después la función guarda &limite en vista, que permite leer 8 sin modificar ese objeto constante."
+        }
+      },
+      {
+        "id": "block_0007_0002",
+        "block": {
+          "type": "output_prediction",
+          "id": "p3_u4l8_puntero_fijo_por_referencia",
+          "language": "cpp",
+          "question": "¿Qué muestra dato:primera:segunda?",
+          "code": "#include <iostream>\n\nbool escribirFijo(int* const& seleccion, int valor) {\n    if (seleccion == nullptr || valor < 0 || valor > 9) {\n        return false;\n    }\n    *seleccion = valor;\n    return true;\n}\n\nint main() {\n    int dato = 2;\n    int* actual = &dato;\n    const bool primera = escribirFijo(actual, 5);\n    const bool segunda = escribirFijo(&dato, 6);\n    std::cout << dato << ':' << primera << ':' << segunda;\n    return 0;\n}\n",
+          "answers": [
+            "6:1:1"
+          ],
+          "outputComparison": "exact",
+          "explanation": "Ambas llamadas escriben en dato. La referencia impide reasignar seleccion, pero no convierte dato en constante."
+        }
+      },
+      {
+        "id": "block_0008_0002",
+        "block": {
+          "type": "output_prediction",
+          "id": "p3_u4l8_dos_vias_al_mismo_puntero",
+          "language": "cpp",
+          "question": "¿Qué muestra el programa? Las dos comparaciones se realizan antes y después de vaciar cambio.",
+          "code": "#include <iostream>\n\nvoid observarYVaciar(int* const& lectura, int*& cambio) {\n    std::cout << (lectura == nullptr) << ':';\n    cambio = nullptr;\n    std::cout << (lectura == nullptr);\n}\n\nint main() {\n    int dato = 4;\n    int* actual = &dato;\n    observarYVaciar(actual, actual);\n    std::cout << ':' << dato;\n    return 0;\n}\n",
+          "answers": [
+            "0:1:4"
+          ],
+          "outputComparison": "exact",
+          "explanation": "lectura observa primero &dato y después nullptr porque ambas referencias utilizan actual. dato conserva 4."
+        }
+      },
+      {
+        "id": "block_0009_0002",
+        "block": {
+          "type": "output_prediction",
+          "id": "p3_u4l8_parametros_con_mismo_objeto",
+          "language": "cpp",
+          "question": "¿Qué muestra el programa después de la llamada con variables distintas y después de la llamada con actual dos veces?",
+          "code": "#include <iostream>\n\nvoid copiarYVaciar(int*& destino, int*& origen) {\n    destino = origen;\n    origen = nullptr;\n}\n\nint main() {\n    int primero = 2;\n    int segundo = 5;\n    int* actual = &primero;\n    int* guardado = &segundo;\n    copiarYVaciar(actual, guardado);\n    std::cout << (actual == &segundo) << ':' << (guardado == nullptr) << ':';\n    copiarYVaciar(actual, actual);\n    std::cout << (actual == nullptr) << ':' << primero << ':' << segundo;\n    return 0;\n}\n",
+          "answers": [
+            "1:1:1:2:5"
+          ],
+          "outputComparison": "exact",
+          "explanation": "La primera llamada copia &segundo en actual y vacía guardado. En la segunda, destino y origen son actual: la primera asignación conserva su selección y la segunda la deja nula. Los enteros siguen valiendo 2 y 5."
+        }
+      },
+      {
+        "id": "block_0010_0002",
+        "block": {
+          "type": "output_prediction",
+          "id": "p3_u4l8_seleccionar_objeto_del_llamador",
+          "language": "cpp",
+          "question": "¿Qué muestra dato:actual==&dato?",
+          "code": "#include <iostream>\n\nvoid seleccionarDato(int*& seleccion, int& dato) {\n    seleccion = &dato;\n}\n\nint main() {\n    int dato = 4;\n    int* actual = nullptr;\n    seleccionarDato(actual, dato);\n    *actual = 7;\n    std::cout << dato << ':' << (actual == &dato);\n    return 0;\n}\n",
+          "answers": [
+            "7:1"
+          ],
+          "outputComparison": "exact",
+          "explanation": "seleccionarDato guarda &dato en actual. dato pertenece a main y sigue vivo cuando main escribe 7 mediante el puntero."
+        }
+      },
+      {
+        "id": "block_0011_0002",
+        "block": {
+          "type": "inline_fill_code",
+          "id": "p3_u4l8_firmas_referencias_puntero",
+          "question": "Completa ambos tipos para que las llamadas cambien actual y vista directamente.",
+          "template": "#include <iostream>\n\nvoid vaciar([] seleccion) {\n    seleccion = nullptr;\n}\n\nvoid dirigirLectura([] seleccion, const int* propuesta) {\n    seleccion = propuesta;\n}\n\nint main() {\n    int dato = 4;\n    const int limite = 8;\n    int* actual = &dato;\n    const int* vista = nullptr;\n    vaciar(actual);\n    dirigirLectura(vista, &limite);\n    std::cout << (actual == nullptr) << ':' << *vista;\n    return 0;\n}\n",
+          "answers": [
+            "int*&",
+            "const int*&"
+          ],
+          "answerAlternatives": [
+            [
+              "int*&",
+              "int *&",
+              "int* &",
+              "int * &"
+            ],
+            [
+              "const int*&",
+              "const int *&",
+              "const int* &",
+              "const int * &",
+              "int const*&",
+              "int const *&",
+              "int const* &",
+              "int const * &"
+            ]
+          ],
+          "explanation": "int*& enlaza con actual, que permite escribir en su entero. const int*& enlaza con vista, una variable reasignable que ofrece lectura del entero. Ambas funciones cambian la variable puntero aportada."
+        }
+      },
+      {
+        "id": "block_0012_0005",
+        "block": {
+          "type": "cpp_compiler",
+          "language": "cpp",
+          "initialCode": "#include <iostream>\n\nvoid intercambiar(int*& primero, int*& segundo) {\n    primero = segundo;\n    segundo = primero;\n}\n\nint main() {\n    int datoA = 2;\n    int datoB = 5;\n    int* actual = &datoA;\n    int* guardado = &datoB;\n    intercambiar(actual, guardado);\n    std::cout << (actual == &datoB) << ':' << (guardado == &datoA) << ':';\n    intercambiar(actual, actual);\n    std::cout << (actual == &datoB) << ':';\n    int* vacio = nullptr;\n    intercambiar(guardado, vacio);\n    std::cout << (guardado == nullptr) << ':' << (vacio == &datoA);\n    return 0;\n}\n",
+          "initialStandardInput": "",
+          "outputCheck": {
+            "inputComparison": "tokens",
+            "cases": [
+              {
+                "standardInput": "",
+                "outputs": [
+                  "1:1:1:1:1"
+                ],
+                "explanation": "Conserva el valor de puntero de primero antes de sustituirlo. Al final copia ese valor previo en segundo; no se utiliza * para intercambiar selecciones."
+              }
+            ]
+          }
+        }
+      },
+      {
+        "id": "block_0013_0001",
+        "block": {
+          "type": "code",
+          "language": "cpp",
+          "code": "#include <iostream>\n\nvoid intercambiar(int*& primero, int*& segundo) {\n    int* previo = primero;\n    primero = segundo;\n    segundo = previo;\n}\n\nint main() {\n    int datoA = 2;\n    int datoB = 5;\n    int* actual = &datoA;\n    int* guardado = &datoB;\n    intercambiar(actual, guardado);\n    std::cout << (actual == &datoB) << ':' << (guardado == &datoA) << ':';\n    intercambiar(actual, actual);\n    std::cout << (actual == &datoB) << ':';\n    int* vacio = nullptr;\n    intercambiar(guardado, vacio);\n    std::cout << (guardado == nullptr) << ':' << (vacio == &datoA);\n    return 0;\n}\n"
+        }
+      },
+      {
+        "id": "block_0015_0009",
+        "block": {
+          "type": "cpp_compiler",
+          "language": "cpp",
+          "initialCode": "#include <array>\n#include <cstddef>\n#include <iostream>\n#include <string>\n\nbool seleccionar(int*& actual, std::array<int, 3>& datos, int indice) {\n    if (indice < 0 || indice > 2) {\n        return false;\n    }\n    // Falta guardar la seleccion; de momento solo compara la anterior.\n    return actual == &datos.at(static_cast<std::size_t>(indice));\n}\n\nvoid intercambiar(int*& primero, int*& segundo) {\n    if (primero == segundo) {\n        return;\n    }\n    // Falta intercambiar las selecciones distintas.\n}\n\nvoid vaciar(int*& actual) {\n    actual = nullptr;\n}\n\nstd::string escribir(int* destino, int valor) {\n    if (destino == nullptr) {\n        return \"Sin objeto\";\n    }\n    if (valor < 0 || valor > 9) {\n        return \"Rechazo\";\n    }\n    *destino = valor;\n    return \"Cambio\";\n}\n\nint main() {\n    std::array<int, 3> datos{2, 5, 8};\n    int* actual = nullptr;\n    int* guardado = nullptr;\n    int cantidad = 0;\n    if (!(std::cin >> cantidad) || cantidad < 1 || cantidad > 12) {\n        return 1;\n    }\n    for (int orden = 0; orden < cantidad; ++orden) {\n        int operacion = 0;\n        int argumento = 0;\n        if (!(std::cin >> operacion >> argumento)) {\n            return 1;\n        }\n        std::string estado = \"Orden\";\n        if (operacion == 1) {\n            estado = seleccionar(actual, datos, argumento) ? \"Seleccion\" : \"Rechazo\";\n        } else if (operacion == 2) {\n            guardado = actual;\n            estado = \"Guardado\";\n        } else if (operacion == 3) {\n            intercambiar(actual, guardado);\n            estado = \"Intercambio\";\n        } else if (operacion == 4) {\n            vaciar(actual);\n            estado = \"Vacio\";\n        } else if (operacion == 5) {\n            estado = escribir(actual, argumento);\n        } else if (operacion == 6) {\n            estado = escribir(guardado, argumento);\n        }\n        std::cout << \"Estado:\" << estado << \";Actual:\";\n        if (actual == nullptr) {\n            std::cout << 'X';\n        } else {\n            std::cout << *actual;\n        }\n        std::cout << \";Guardado:\";\n        if (guardado == nullptr) {\n            std::cout << 'X';\n        } else {\n            std::cout << *guardado;\n        }\n        std::cout << \";Datos:\" << datos[0] << ',' << datos[1] << ',' << datos[2] << '\\n';\n    }\n    return 0;\n}\n",
+          "initialStandardInput": "12\n1 0\n2 0\n1 1\n3 0\n5 0\n6 9\n1 3\n4 0\n3 0\n1 -1\n5 10\n5 0\n",
+          "outputCheck": {
+            "inputComparison": "tokens",
+            "cases": [
+              {
+                "standardInput": "12\n1 0\n2 0\n1 1\n3 0\n5 0\n6 9\n1 3\n4 0\n3 0\n1 -1\n5 10\n5 0\n",
+                "outputs": [
+                  "Estado:Seleccion;Actual:2;Guardado:X;Datos:2,5,8\nEstado:Guardado;Actual:2;Guardado:2;Datos:2,5,8\nEstado:Seleccion;Actual:5;Guardado:2;Datos:2,5,8\nEstado:Intercambio;Actual:2;Guardado:5;Datos:2,5,8\nEstado:Cambio;Actual:0;Guardado:5;Datos:0,5,8\nEstado:Cambio;Actual:0;Guardado:9;Datos:0,9,8\nEstado:Rechazo;Actual:0;Guardado:9;Datos:0,9,8\nEstado:Vacio;Actual:X;Guardado:9;Datos:0,9,8\nEstado:Intercambio;Actual:9;Guardado:X;Datos:0,9,8\nEstado:Rechazo;Actual:9;Guardado:X;Datos:0,9,8\nEstado:Rechazo;Actual:9;Guardado:X;Datos:0,9,8\nEstado:Cambio;Actual:0;Guardado:X;Datos:0,0,8\n"
+                ],
+                "explanation": "Las referencias cambian las variables puntero originales. El rechazo de un índice conserva la selección; el intercambio conserva ambas selecciones previas y no escribe en los enteros."
+              },
+              {
+                "standardInput": "10\n3 0\n5 10\n1 2\n2 0\n1 2\n6 0\n4 0\n2 0\n3 0\n6 -1\n",
+                "outputs": [
+                  "Estado:Intercambio;Actual:X;Guardado:X;Datos:2,5,8\nEstado:Sin objeto;Actual:X;Guardado:X;Datos:2,5,8\nEstado:Seleccion;Actual:8;Guardado:X;Datos:2,5,8\nEstado:Guardado;Actual:8;Guardado:8;Datos:2,5,8\nEstado:Seleccion;Actual:8;Guardado:8;Datos:2,5,8\nEstado:Cambio;Actual:0;Guardado:0;Datos:2,5,0\nEstado:Vacio;Actual:X;Guardado:0;Datos:2,5,0\nEstado:Guardado;Actual:X;Guardado:X;Datos:2,5,0\nEstado:Intercambio;Actual:X;Guardado:X;Datos:2,5,0\nEstado:Sin objeto;Actual:X;Guardado:X;Datos:2,5,0\n"
+                ],
+                "explanation": "Las referencias cambian las variables puntero originales. El rechazo de un índice conserva la selección; el intercambio conserva ambas selecciones previas y no escribe en los enteros."
+              },
+              {
+                "standardInput": "9\n1 -2147483648\n1 0\n1 2147483647\n5 -2147483648\n5 2147483647\n2 0\n1 2\n0 7\n3 0\n",
+                "outputs": [
+                  "Estado:Rechazo;Actual:X;Guardado:X;Datos:2,5,8\nEstado:Seleccion;Actual:2;Guardado:X;Datos:2,5,8\nEstado:Rechazo;Actual:2;Guardado:X;Datos:2,5,8\nEstado:Rechazo;Actual:2;Guardado:X;Datos:2,5,8\nEstado:Rechazo;Actual:2;Guardado:X;Datos:2,5,8\nEstado:Guardado;Actual:2;Guardado:2;Datos:2,5,8\nEstado:Seleccion;Actual:8;Guardado:2;Datos:2,5,8\nEstado:Orden;Actual:8;Guardado:2;Datos:2,5,8\nEstado:Intercambio;Actual:2;Guardado:8;Datos:2,5,8\n"
+                ],
+                "explanation": "Las referencias cambian las variables puntero originales. El rechazo de un índice conserva la selección; el intercambio conserva ambas selecciones previas y no escribe en los enteros."
+              },
+              {
+                "standardInput": "10\n1 0\n5 5\n2 0\n1 1\n3 0\n5 7\n6 9\n1 0\n3 0\n5 0\n",
+                "outputs": [
+                  "Estado:Seleccion;Actual:2;Guardado:X;Datos:2,5,8\nEstado:Cambio;Actual:5;Guardado:X;Datos:5,5,8\nEstado:Guardado;Actual:5;Guardado:5;Datos:5,5,8\nEstado:Seleccion;Actual:5;Guardado:5;Datos:5,5,8\nEstado:Intercambio;Actual:5;Guardado:5;Datos:5,5,8\nEstado:Cambio;Actual:7;Guardado:5;Datos:7,5,8\nEstado:Cambio;Actual:7;Guardado:9;Datos:7,9,8\nEstado:Seleccion;Actual:7;Guardado:9;Datos:7,9,8\nEstado:Intercambio;Actual:9;Guardado:7;Datos:7,9,8\nEstado:Cambio;Actual:0;Guardado:7;Datos:7,0,8\n"
+                ],
+                "explanation": "Las referencias cambian las variables puntero originales. El rechazo de un índice conserva la selección; el intercambio conserva ambas selecciones previas y no escribe en los enteros."
+              }
+            ]
+          }
+        }
+      },
+      {
+        "id": "block_0018_0001",
+        "block": {
+          "type": "code",
+          "language": "cpp",
+          "code": "#include <array>\n#include <cstddef>\n#include <iostream>\n#include <string>\n\nbool seleccionar(int*& actual, std::array<int, 3>& datos, int indice) {\n    if (indice < 0 || indice > 2) {\n        return false;\n    }\n    actual = &datos.at(static_cast<std::size_t>(indice));\n    return true;\n}\n\nvoid intercambiar(int*& primero, int*& segundo) {\n    int* previo = primero;\n    primero = segundo;\n    segundo = previo;\n}\n\nvoid vaciar(int*& actual) {\n    actual = nullptr;\n}\n\nstd::string escribir(int* destino, int valor) {\n    if (destino == nullptr) {\n        return \"Sin objeto\";\n    }\n    if (valor < 0 || valor > 9) {\n        return \"Rechazo\";\n    }\n    *destino = valor;\n    return \"Cambio\";\n}\n\nint main() {\n    std::array<int, 3> datos{2, 5, 8};\n    int* actual = nullptr;\n    int* guardado = nullptr;\n    int cantidad = 0;\n    if (!(std::cin >> cantidad) || cantidad < 1 || cantidad > 12) {\n        return 1;\n    }\n    for (int orden = 0; orden < cantidad; ++orden) {\n        int operacion = 0;\n        int argumento = 0;\n        if (!(std::cin >> operacion >> argumento)) {\n            return 1;\n        }\n        std::string estado = \"Orden\";\n        if (operacion == 1) {\n            estado = seleccionar(actual, datos, argumento) ? \"Seleccion\" : \"Rechazo\";\n        } else if (operacion == 2) {\n            guardado = actual;\n            estado = \"Guardado\";\n        } else if (operacion == 3) {\n            intercambiar(actual, guardado);\n            estado = \"Intercambio\";\n        } else if (operacion == 4) {\n            vaciar(actual);\n            estado = \"Vacio\";\n        } else if (operacion == 5) {\n            estado = escribir(actual, argumento);\n        } else if (operacion == 6) {\n            estado = escribir(guardado, argumento);\n        }\n        std::cout << \"Estado:\" << estado << \";Actual:\";\n        if (actual == nullptr) {\n            std::cout << 'X';\n        } else {\n            std::cout << *actual;\n        }\n        std::cout << \";Guardado:\";\n        if (guardado == nullptr) {\n            std::cout << 'X';\n        } else {\n            std::cout << *guardado;\n        }\n        std::cout << \";Datos:\" << datos[0] << ',' << datos[1] << ',' << datos[2] << '\\n';\n    }\n    return 0;\n}\n"
+        }
+      }
+    ]
   }
 }

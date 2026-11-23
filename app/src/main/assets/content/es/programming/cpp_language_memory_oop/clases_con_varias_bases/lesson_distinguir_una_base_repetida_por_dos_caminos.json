@@ -15,7 +15,7 @@
         {
           "type": "code",
           "language": "cpp",
-          "code": "class Registro {\npublic:\n    explicit Registro(int numero) : numero_{numero} {}\n    int leer() const { return numero_; }\n    void fijar(int numero) { numero_ = numero; }\nprivate:\n    int numero_;\n};\nclass CanalA : public Registro {\npublic:\n    explicit CanalA(int numero) : Registro{numero} {}\n};\nclass CanalB : public Registro {\npublic:\n    explicit CanalB(int numero) : Registro{numero} {}\n};\nclass DobleRuta : public CanalA, public CanalB {\npublic:\n    DobleRuta(int a, int b) : CanalA{a}, CanalB{b} {}\n};\n"
+          "code": "class Registro {\npublic:\n    explicit Registro(int numero) : numero_{numero} {}\n    int leer() const { return numero_; }\n    void fijar(int numero) { numero_ = numero; }\nprivate:\n    int numero_;\n};\n\nclass CanalA : public Registro {\npublic:\n    explicit CanalA(int numero) : Registro{numero} {}\n};\n\nclass CanalB : public Registro {\npublic:\n    explicit CanalB(int numero) : Registro{numero} {}\n};\n\nclass DobleRuta : public CanalA, public CanalB {\npublic:\n    DobleRuta(int a, int b) : CanalA{a}, CanalB{b} {}\n};\n"
         },
         {
           "type": "paragraph",
@@ -46,7 +46,7 @@
           "id": "p3_u10l3_elegir_rama_y_despues_base_repetida",
           "language": "cpp",
           "question": "Escribe la salida completa antes y después de modificar los dos registros elegidos.",
-          "code": "#include <iostream>\n\nclass Registro {\npublic:\n    explicit Registro(int numero) : numero_{numero} {}\n    int leer() const { return numero_; }\n    void fijar(int numero) { numero_ = numero; }\nprivate:\n    int numero_;\n};\nclass CanalA : public Registro {\npublic:\n    explicit CanalA(int numero) : Registro{numero} {}\n};\nclass CanalB : public Registro {\npublic:\n    explicit CanalB(int numero) : Registro{numero} {}\n};\nclass DobleRuta : public CanalA, public CanalB {\npublic:\n    DobleRuta(int a, int b) : CanalA{a}, CanalB{b} {}\n};\nint main() {\n    DobleRuta dato{4, 9};\n    CanalA& canal_a = dato;\n    CanalB& canal_b = dato;\n    Registro& registro_a = canal_a;\n    Registro& registro_b = canal_b;\n    std::cout << registro_a.leer() << ':' << registro_b.leer() << '|';\n    registro_a.fijar(6);\n    registro_b.fijar(2);\n    std::cout << registro_a.leer() << ':' << registro_b.leer();\n    return 0;\n}\n",
+          "code": "#include <iostream>\n\nclass Registro {\npublic:\n    explicit Registro(int numero) : numero_{numero} {}\n    int leer() const { return numero_; }\n    void fijar(int numero) { numero_ = numero; }\nprivate:\n    int numero_;\n};\n\nclass CanalA : public Registro {\npublic:\n    explicit CanalA(int numero) : Registro{numero} {}\n};\n\nclass CanalB : public Registro {\npublic:\n    explicit CanalB(int numero) : Registro{numero} {}\n};\n\nclass DobleRuta : public CanalA, public CanalB {\npublic:\n    DobleRuta(int a, int b) : CanalA{a}, CanalB{b} {}\n};\n\nint main() {\n    DobleRuta dato{4, 9};\n    CanalA& canal_a = dato;\n    CanalB& canal_b = dato;\n    Registro& registro_a = canal_a;\n    Registro& registro_b = canal_b;\n    std::cout << registro_a.leer() << ':' << registro_b.leer() << '|';\n    registro_a.fijar(6);\n    registro_b.fijar(2);\n    std::cout << registro_a.leer() << ':' << registro_b.leer();\n\n    return 0;\n}\n",
           "answers": [
             "4:9|6:2"
           ],
@@ -116,7 +116,7 @@
           "id": "p3_u10l3_llamadas_calificadas_por_rama_de_base_repetida",
           "language": "cpp",
           "question": "Escribe las dos lecturas después de la modificación calificada.",
-          "code": "#include <iostream>\n\nclass Registro {\npublic:\n    explicit Registro(int numero) : numero_{numero} {}\n    int leer() const { return numero_; }\n    void fijar(int numero) { numero_ = numero; }\nprivate:\n    int numero_;\n};\nclass CanalA : public Registro {\npublic:\n    explicit CanalA(int numero) : Registro{numero} {}\n};\nclass CanalB : public Registro {\npublic:\n    explicit CanalB(int numero) : Registro{numero} {}\n};\nclass DobleRuta : public CanalA, public CanalB {\npublic:\n    DobleRuta(int a, int b) : CanalA{a}, CanalB{b} {}\n};\nint main() {\n    DobleRuta dato{3, 8};\n    dato.CanalA::fijar(5);\n    std::cout << dato.CanalA::leer() << ':' << dato.CanalB::leer();\n    return 0;\n}\n",
+          "code": "#include <iostream>\n\nclass Registro {\npublic:\n    explicit Registro(int numero) : numero_{numero} {}\n    int leer() const { return numero_; }\n    void fijar(int numero) { numero_ = numero; }\nprivate:\n    int numero_;\n};\n\nclass CanalA : public Registro {\npublic:\n    explicit CanalA(int numero) : Registro{numero} {}\n};\n\nclass CanalB : public Registro {\npublic:\n    explicit CanalB(int numero) : Registro{numero} {}\n};\n\nclass DobleRuta : public CanalA, public CanalB {\npublic:\n    DobleRuta(int a, int b) : CanalA{a}, CanalB{b} {}\n};\n\nint main() {\n    DobleRuta dato{3, 8};\n    dato.CanalA::fijar(5);\n    std::cout << dato.CanalA::leer() << ':' << dato.CanalB::leer();\n\n    return 0;\n}\n",
           "answers": [
             "5:8"
           ],
@@ -146,7 +146,7 @@
         {
           "type": "code",
           "language": "cpp",
-          "code": "#include <iostream>\n\nclass Registro {\npublic:\n    explicit Registro(int numero) : numero_{numero} {}\n    int leer() const { return numero_; }\n    void fijar(int numero) { numero_ = numero; }\nprivate:\n    int numero_;\n};\nclass CanalA : public Registro {\npublic:\n    explicit CanalA(int numero) : Registro{numero} {}\n};\nclass CanalB : public Registro {\npublic:\n    explicit CanalB(int numero) : Registro{numero} {}\n};\nclass ConUsing : public CanalA, public CanalB {\npublic:\n    ConUsing(int a, int b) : CanalA{a}, CanalB{b} {}\n    using CanalA::leer;\n};\nint main() {\n    ConUsing dato{4, 9};\n    std::cout << dato.leer();\n    return 0;\n}\n"
+          "code": "#include <iostream>\n\nclass Registro {\npublic:\n    explicit Registro(int numero) : numero_{numero} {}\n    int leer() const { return numero_; }\n    void fijar(int numero) { numero_ = numero; }\nprivate:\n    int numero_;\n};\n\nclass CanalA : public Registro {\npublic:\n    explicit CanalA(int numero) : Registro{numero} {}\n};\n\nclass CanalB : public Registro {\npublic:\n    explicit CanalB(int numero) : Registro{numero} {}\n};\n\nclass ConUsing : public CanalA, public CanalB {\npublic:\n    ConUsing(int a, int b) : CanalA{a}, CanalB{b} {}\n    using CanalA::leer;\n};\n\nint main() {\n    ConUsing dato{4, 9};\n\n    std::cout << dato.leer();\n\n    return 0;\n}\n"
         },
         {
           "type": "multiple_choice",
@@ -179,7 +179,7 @@
         {
           "type": "code",
           "language": "cpp",
-          "code": "#include <iostream>\n\nclass Registro {\npublic:\n    explicit Registro(int numero) : numero_{numero} {}\n    int leer() const { return numero_; }\n    void fijar(int numero) { numero_ = numero; }\nprivate:\n    int numero_;\n};\nclass CanalPropio : public Registro {\npublic:\n    explicit CanalPropio(int numero) : Registro{numero} {}\n    int leer() const { return Registro::leer(); }\n};\nclass CanalB : public Registro {\npublic:\n    explicit CanalB(int numero) : Registro{numero} {}\n};\nclass ConFuncionPropia : public CanalPropio, public CanalB {\npublic:\n    ConFuncionPropia(int a, int b) : CanalPropio{a}, CanalB{b} {}\n    using CanalPropio::leer;\n};\nint main() {\n    ConFuncionPropia dato{4, 9};\n    std::cout << dato.leer();\n    return 0;\n}\n"
+          "code": "#include <iostream>\n\nclass Registro {\npublic:\n    explicit Registro(int numero) : numero_{numero} {}\n    int leer() const { return numero_; }\n    void fijar(int numero) { numero_ = numero; }\nprivate:\n    int numero_;\n};\n\nclass CanalPropio : public Registro {\npublic:\n    explicit CanalPropio(int numero) : Registro{numero} {}\n    int leer() const { return Registro::leer(); }\n};\n\nclass CanalB : public Registro {\npublic:\n    explicit CanalB(int numero) : Registro{numero} {}\n};\n\nclass ConFuncionPropia : public CanalPropio, public CanalB {\npublic:\n    ConFuncionPropia(int a, int b) : CanalPropio{a}, CanalB{b} {}\n    using CanalPropio::leer;\n};\n\nint main() {\n    ConFuncionPropia dato{4, 9};\n\n    std::cout << dato.leer();\n\n    return 0;\n}\n"
         },
         {
           "type": "paragraph",
@@ -210,7 +210,7 @@
           "id": "p3_u10l3_traza_de_dos_partes_del_mismo_tipo_base",
           "language": "cpp",
           "question": "Escribe toda la traza desde la construcción hasta Fin.",
-          "code": "#include <iostream>\n\nclass RegistroConTraza {\npublic:\n    explicit RegistroConTraza(int numero) : numero_{numero} {\n        std::cout << \"R+\" << numero_ << '|';\n    }\n    ~RegistroConTraza() { std::cout << \"R-\" << numero_ << '|'; }\nprivate:\n    int numero_;\n};\nclass TrazaA : public RegistroConTraza {\npublic:\n    explicit TrazaA(int numero) : RegistroConTraza{numero} {\n        std::cout << \"A+|\";\n    }\n    ~TrazaA() { std::cout << \"A-|\"; }\n};\nclass TrazaB : public RegistroConTraza {\npublic:\n    explicit TrazaB(int numero) : RegistroConTraza{numero} {\n        std::cout << \"B+|\";\n    }\n    ~TrazaB() { std::cout << \"B-|\"; }\n};\nclass DobleConTraza : public TrazaA, public TrazaB {\npublic:\n    DobleConTraza(int a, int b) : TrazaA{a}, TrazaB{b} {\n        std::cout << \"D+|\";\n    }\n    ~DobleConTraza() { std::cout << \"D-|\"; }\n};\nint main() {\n    {\n        DobleConTraza dato{4, 9};\n        std::cout << \"Uso|\";\n    }\n    std::cout << \"Fin\";\n    return 0;\n}\n",
+          "code": "#include <iostream>\n\nclass RegistroConTraza {\npublic:\n    explicit RegistroConTraza(int numero) : numero_{numero} {\n        std::cout << \"R+\" << numero_ << '|';\n    }\n    ~RegistroConTraza() { std::cout << \"R-\" << numero_ << '|'; }\nprivate:\n    int numero_;\n};\n\nclass TrazaA : public RegistroConTraza {\npublic:\n    explicit TrazaA(int numero) : RegistroConTraza{numero} {\n        std::cout << \"A+|\";\n    }\n    ~TrazaA() { std::cout << \"A-|\"; }\n};\n\nclass TrazaB : public RegistroConTraza {\npublic:\n    explicit TrazaB(int numero) : RegistroConTraza{numero} {\n        std::cout << \"B+|\";\n    }\n    ~TrazaB() { std::cout << \"B-|\"; }\n};\n\nclass DobleConTraza : public TrazaA, public TrazaB {\npublic:\n    DobleConTraza(int a, int b) : TrazaA{a}, TrazaB{b} {\n        std::cout << \"D+|\";\n    }\n    ~DobleConTraza() { std::cout << \"D-|\"; }\n};\n\nint main() {\n    {\n        DobleConTraza dato{4, 9};\n        std::cout << \"Uso|\";\n    }\n    std::cout << \"Fin\";\n\n    return 0;\n}\n",
           "answers": [
             "R+4|A+|R+9|B+|D+|Uso|D-|B-|R-9|A-|R-4|Fin"
           ],
@@ -238,7 +238,7 @@
           "id": "p3_u10l3_copia_completa_de_las_dos_ramas",
           "language": "cpp",
           "question": "Escribe las dos lecturas de original y después las dos de copia.",
-          "code": "#include <iostream>\n\nclass Registro {\npublic:\n    explicit Registro(int numero) : numero_{numero} {}\n    int leer() const { return numero_; }\n    void fijar(int numero) { numero_ = numero; }\nprivate:\n    int numero_;\n};\nclass CanalA : public Registro {\npublic:\n    explicit CanalA(int numero) : Registro{numero} {}\n};\nclass CanalB : public Registro {\npublic:\n    explicit CanalB(int numero) : Registro{numero} {}\n};\nclass DobleRuta : public CanalA, public CanalB {\npublic:\n    DobleRuta(int a, int b) : CanalA{a}, CanalB{b} {}\n};\nint main() {\n    DobleRuta original{2, 7};\n    DobleRuta copia{original};\n    original.CanalA::fijar(5);\n    copia.CanalB::fijar(9);\n    std::cout << original.CanalA::leer() << ':' << original.CanalB::leer()\n              << '|' << copia.CanalA::leer() << ':' << copia.CanalB::leer();\n    return 0;\n}\n",
+          "code": "#include <iostream>\n\nclass Registro {\npublic:\n    explicit Registro(int numero) : numero_{numero} {}\n    int leer() const { return numero_; }\n    void fijar(int numero) { numero_ = numero; }\nprivate:\n    int numero_;\n};\n\nclass CanalA : public Registro {\npublic:\n    explicit CanalA(int numero) : Registro{numero} {}\n};\n\nclass CanalB : public Registro {\npublic:\n    explicit CanalB(int numero) : Registro{numero} {}\n};\n\nclass DobleRuta : public CanalA, public CanalB {\npublic:\n    DobleRuta(int a, int b) : CanalA{a}, CanalB{b} {}\n};\n\nint main() {\n    DobleRuta original{2, 7};\n    DobleRuta copia{original};\n    original.CanalA::fijar(5);\n    copia.CanalB::fijar(9);\n    std::cout << original.CanalA::leer() << ':' << original.CanalB::leer()\n              << '|' << copia.CanalA::leer() << ':' << copia.CanalB::leer();\n    return 0;\n}\n",
           "answers": [
             "5:7|2:9"
           ],
@@ -329,7 +329,7 @@
           "id": "p3_u10l3_cambiar_una_lectura_sin_cambiar_la_otra",
           "language": "cpp",
           "question": "Escribe las tres líneas completas. Primero se consultan las vistas iniciales; después se cambia el exterior y al final el interior.",
-          "code": "#include <iostream>\n\nclass Sensor {\npublic:\n    explicit Sensor(int lectura) : lectura_{lectura} {}\n    int leer() const { return lectura_; }\n    void fijar(int lectura) { lectura_ = lectura; }\nprivate:\n    int lectura_;\n};\n\nclass Exterior : public Sensor {\npublic:\n    explicit Exterior(int lectura) : Sensor{lectura} {}\n};\n\nclass Interior : public Sensor {\npublic:\n    explicit Interior(int lectura) : Sensor{lectura} {}\n};\nclass Estacion : public Exterior, public Interior {\npublic:\n    Estacion(int exterior, int interior)\n        : Exterior{exterior}, Interior{interior} {}\n\n    const Sensor& sensor_exterior() const {\n        const Exterior& rama = *this;\n        return rama;\n    }\n\n    const Sensor& sensor_interior() const {\n        const Interior& rama = *this;\n        return rama;\n    }\n};\nint main() {\n    Estacion dato{6, 19};\n    const Sensor& fuera = dato.sensor_exterior();\n    const Sensor& dentro = dato.sensor_interior();\n    std::cout << fuera.leer() << '|' << dentro.leer() << '\\n';\n    dato.Exterior::fijar(8);\n    std::cout << fuera.leer() << '|' << dentro.leer() << '\\n';\n    dato.Interior::fijar(17);\n    std::cout << fuera.leer() << '|' << dentro.leer();\n    return 0;\n}\n",
+          "code": "#include <iostream>\n\nclass Sensor {\npublic:\n    explicit Sensor(int lectura) : lectura_{lectura} {}\n    int leer() const { return lectura_; }\n    void fijar(int lectura) { lectura_ = lectura; }\nprivate:\n    int lectura_;\n};\n\nclass Exterior : public Sensor {\npublic:\n    explicit Exterior(int lectura) : Sensor{lectura} {}\n};\n\nclass Interior : public Sensor {\npublic:\n    explicit Interior(int lectura) : Sensor{lectura} {}\n};\n\nclass Estacion : public Exterior, public Interior {\npublic:\n    Estacion(int exterior, int interior)\n        : Exterior{exterior}, Interior{interior} {}\n\n    const Sensor& sensor_exterior() const {\n        const Exterior& rama = *this;\n        return rama;\n    }\n\n    const Sensor& sensor_interior() const {\n        const Interior& rama = *this;\n        return rama;\n    }\n};\n\nint main() {\n    Estacion dato{6, 19};\n    const Sensor& fuera = dato.sensor_exterior();\n    const Sensor& dentro = dato.sensor_interior();\n\n    std::cout << fuera.leer() << '|' << dentro.leer() << '\\n';\n    dato.Exterior::fijar(8);\n    std::cout << fuera.leer() << '|' << dentro.leer() << '\\n';\n    dato.Interior::fijar(17);\n    std::cout << fuera.leer() << '|' << dentro.leer();\n\n    return 0;\n}\n",
           "answers": [
             "6|19\n8|19\n8|17"
           ],
@@ -353,7 +353,7 @@
           "id": "p3_u10l3_copia_de_una_parte_y_copia_completa",
           "language": "cpp",
           "question": "Escribe las dos líneas de salida después de las modificaciones.",
-          "code": "#include <iostream>\n\nclass Sensor {\npublic:\n    explicit Sensor(int lectura) : lectura_{lectura} {}\n    int leer() const { return lectura_; }\n    void fijar(int lectura) { lectura_ = lectura; }\nprivate:\n    int lectura_;\n};\n\nclass Exterior : public Sensor {\npublic:\n    explicit Exterior(int lectura) : Sensor{lectura} {}\n};\n\nclass Interior : public Sensor {\npublic:\n    explicit Interior(int lectura) : Sensor{lectura} {}\n};\nclass Estacion : public Exterior, public Interior {\npublic:\n    Estacion(int exterior, int interior)\n        : Exterior{exterior}, Interior{interior} {}\n\n    const Sensor& sensor_exterior() const {\n        const Exterior& rama = *this;\n        return rama;\n    }\n\n    const Sensor& sensor_interior() const {\n        const Interior& rama = *this;\n        return rama;\n    }\n};\nint main() {\n    Estacion original{4, 15};\n    const Sensor& vista = original.sensor_exterior();\n    Sensor lectura_copiada{vista};\n    Estacion copia{original};\n    original.Exterior::fijar(7);\n    copia.Interior::fijar(18);\n    std::cout << vista.leer() << '|' << lectura_copiada.leer()\n              << '|' << original.sensor_interior().leer() << '\\n';\n    std::cout << copia.sensor_exterior().leer() << '|'\n              << copia.sensor_interior().leer();\n    return 0;\n}\n",
+          "code": "#include <iostream>\n\nclass Sensor {\npublic:\n    explicit Sensor(int lectura) : lectura_{lectura} {}\n    int leer() const { return lectura_; }\n    void fijar(int lectura) { lectura_ = lectura; }\nprivate:\n    int lectura_;\n};\n\nclass Exterior : public Sensor {\npublic:\n    explicit Exterior(int lectura) : Sensor{lectura} {}\n};\n\nclass Interior : public Sensor {\npublic:\n    explicit Interior(int lectura) : Sensor{lectura} {}\n};\n\nclass Estacion : public Exterior, public Interior {\npublic:\n    Estacion(int exterior, int interior)\n        : Exterior{exterior}, Interior{interior} {}\n\n    const Sensor& sensor_exterior() const {\n        const Exterior& rama = *this;\n        return rama;\n    }\n\n    const Sensor& sensor_interior() const {\n        const Interior& rama = *this;\n        return rama;\n    }\n};\n\nint main() {\n    Estacion original{4, 15};\n    const Sensor& vista = original.sensor_exterior();\n    Sensor lectura_copiada{vista};\n    Estacion copia{original};\n    original.Exterior::fijar(7);\n    copia.Interior::fijar(18);\n    std::cout << vista.leer() << '|' << lectura_copiada.leer()\n              << '|' << original.sensor_interior().leer() << '\\n';\n    std::cout << copia.sensor_exterior().leer() << '|'\n              << copia.sensor_interior().leer();\n    return 0;\n}\n",
           "answers": [
             "7|4|15\n4|18"
           ],
@@ -1122,6 +1122,168 @@
       }
     },
     "additions": [],
-    "editorial": []
+    "editorial": [
+      {
+        "id": "block_0000_0002",
+        "beforeSha256": "ee144c3954c98144d61fda036e5aacf241a286004cdecb5ab70df2ed2d75320e",
+        "afterSha256": "8f6f98d28352f3b818ebdb6f79cfc4a57f817cab50579fff090a2cccc21a2588"
+      },
+      {
+        "id": "block_0001_0003",
+        "beforeSha256": "a128fb281eaa42971b0f512503c6af2b538b4ed145c57c93d296ca395cfc4922",
+        "afterSha256": "3a096c730d45528a31839d094336816c7501cc4861c82123a6c9b58b09928b87"
+      },
+      {
+        "id": "block_0003_0002",
+        "beforeSha256": "6811d296d74b1ac9439a0c8ccf7cf1a9e1f249271fbc4b702bfe08de0201cf0f",
+        "afterSha256": "00bac9c3daf70e78680def3dce9dbe2acce1388e60ff08c6484b41e39c1d6f64"
+      },
+      {
+        "id": "block_0004_0003",
+        "beforeSha256": "7d20c80037b967ffa3d91e9eb4accc6d2119cac968313ba808ae554bb42233b0",
+        "afterSha256": "c10a082da32bf79d0bac79ed028482f3469f8ac2d0ec3ac51c7832600762283c"
+      },
+      {
+        "id": "block_0005_0002",
+        "beforeSha256": "eb7e86910bc551fe801e52ac2a4d6289e595144d9c67e912845c7f3dcd1888ef",
+        "afterSha256": "7ea776687bdf7d7ce12eabbf21cb33406155ab27eb3c042e83a97bd796fd85e2"
+      },
+      {
+        "id": "block_0006_0003",
+        "beforeSha256": "88de89ce655768b9a10de41be6a48c86463a88715366a69421d1507ba4598658",
+        "afterSha256": "a21410dad4e0bd824f951538ff66ca3223d30a71f67447b3e7fd146f764b9772"
+      },
+      {
+        "id": "block_0007_0002",
+        "beforeSha256": "cbf38ceb00293c46c0daa6e031de8f220f7bdd574e861b939f5e64ada02892e3",
+        "afterSha256": "663c848148fdf1ce9def390391e09de4351ce1f5b22e8d7648b0e5d3a97c92c3"
+      },
+      {
+        "id": "block_0009_0005",
+        "beforeSha256": "f23e659c3e1439116ddda9b2c851b346e87646c610ea3a927b0a325eb81e5362",
+        "afterSha256": "90de5e752c5eb7a686c9f00bda119945bda3624c622eb0bf47fe1107486d4451"
+      },
+      {
+        "id": "block_0010_0002",
+        "beforeSha256": "f3ebe17cdd34d34c404b96777754fc789c00fc7b411f42959ca80ef64dff83d1",
+        "afterSha256": "bef23a4b129033bd911a82d326b60a42429fd153eb140a59794184f485e4f262"
+      }
+    ],
+    "sourceFormatRevisions": [
+      {
+        "id": "block_0000_0002",
+        "block": {
+          "type": "code",
+          "language": "cpp",
+          "code": "class Registro {\npublic:\n    explicit Registro(int numero) : numero_{numero} {}\n    int leer() const { return numero_; }\n    void fijar(int numero) { numero_ = numero; }\nprivate:\n    int numero_;\n};\nclass CanalA : public Registro {\npublic:\n    explicit CanalA(int numero) : Registro{numero} {}\n};\nclass CanalB : public Registro {\npublic:\n    explicit CanalB(int numero) : Registro{numero} {}\n};\nclass DobleRuta : public CanalA, public CanalB {\npublic:\n    DobleRuta(int a, int b) : CanalA{a}, CanalB{b} {}\n};\n"
+        }
+      },
+      {
+        "id": "block_0001_0003",
+        "block": {
+          "type": "output_prediction",
+          "id": "p3_u10l3_elegir_rama_y_despues_base_repetida",
+          "language": "cpp",
+          "question": "Escribe la salida completa antes y después de modificar los dos registros elegidos.",
+          "code": "#include <iostream>\n\nclass Registro {\npublic:\n    explicit Registro(int numero) : numero_{numero} {}\n    int leer() const { return numero_; }\n    void fijar(int numero) { numero_ = numero; }\nprivate:\n    int numero_;\n};\nclass CanalA : public Registro {\npublic:\n    explicit CanalA(int numero) : Registro{numero} {}\n};\nclass CanalB : public Registro {\npublic:\n    explicit CanalB(int numero) : Registro{numero} {}\n};\nclass DobleRuta : public CanalA, public CanalB {\npublic:\n    DobleRuta(int a, int b) : CanalA{a}, CanalB{b} {}\n};\nint main() {\n    DobleRuta dato{4, 9};\n    CanalA& canal_a = dato;\n    CanalB& canal_b = dato;\n    Registro& registro_a = canal_a;\n    Registro& registro_b = canal_b;\n    std::cout << registro_a.leer() << ':' << registro_b.leer() << '|';\n    registro_a.fijar(6);\n    registro_b.fijar(2);\n    std::cout << registro_a.leer() << ':' << registro_b.leer();\n    return 0;\n}\n",
+          "answers": [
+            "4:9|6:2"
+          ],
+          "outputComparison": "exact",
+          "explanation": "El Registro de CanalA comienza con cuatro y el de CanalB con nueve. Las dos referencias se obtienen mediante los canales correspondientes. registro_a guarda seis sólo en el primero; registro_b guarda dos sólo en el segundo. Las consultas finales observan seis y dos. No se han fusionado los registros por tener el mismo tipo."
+        }
+      },
+      {
+        "id": "block_0003_0002",
+        "block": {
+          "type": "output_prediction",
+          "id": "p3_u10l3_llamadas_calificadas_por_rama_de_base_repetida",
+          "language": "cpp",
+          "question": "Escribe las dos lecturas después de la modificación calificada.",
+          "code": "#include <iostream>\n\nclass Registro {\npublic:\n    explicit Registro(int numero) : numero_{numero} {}\n    int leer() const { return numero_; }\n    void fijar(int numero) { numero_ = numero; }\nprivate:\n    int numero_;\n};\nclass CanalA : public Registro {\npublic:\n    explicit CanalA(int numero) : Registro{numero} {}\n};\nclass CanalB : public Registro {\npublic:\n    explicit CanalB(int numero) : Registro{numero} {}\n};\nclass DobleRuta : public CanalA, public CanalB {\npublic:\n    DobleRuta(int a, int b) : CanalA{a}, CanalB{b} {}\n};\nint main() {\n    DobleRuta dato{3, 8};\n    dato.CanalA::fijar(5);\n    std::cout << dato.CanalA::leer() << ':' << dato.CanalB::leer();\n    return 0;\n}\n",
+          "answers": [
+            "5:8"
+          ],
+          "outputComparison": "exact",
+          "explanation": "El Registro de CanalA comienza con tres y el de CanalB con ocho. La llamada dato.CanalA::fijar(5) sólo sustituye el dato del primero. Las consultas calificadas obtienen después cinco por CanalA y ocho por CanalB."
+        }
+      },
+      {
+        "id": "block_0004_0003",
+        "block": {
+          "type": "code",
+          "language": "cpp",
+          "code": "#include <iostream>\n\nclass Registro {\npublic:\n    explicit Registro(int numero) : numero_{numero} {}\n    int leer() const { return numero_; }\n    void fijar(int numero) { numero_ = numero; }\nprivate:\n    int numero_;\n};\nclass CanalA : public Registro {\npublic:\n    explicit CanalA(int numero) : Registro{numero} {}\n};\nclass CanalB : public Registro {\npublic:\n    explicit CanalB(int numero) : Registro{numero} {}\n};\nclass ConUsing : public CanalA, public CanalB {\npublic:\n    ConUsing(int a, int b) : CanalA{a}, CanalB{b} {}\n    using CanalA::leer;\n};\nint main() {\n    ConUsing dato{4, 9};\n    std::cout << dato.leer();\n    return 0;\n}\n"
+        }
+      },
+      {
+        "id": "block_0005_0002",
+        "block": {
+          "type": "code",
+          "language": "cpp",
+          "code": "#include <iostream>\n\nclass Registro {\npublic:\n    explicit Registro(int numero) : numero_{numero} {}\n    int leer() const { return numero_; }\n    void fijar(int numero) { numero_ = numero; }\nprivate:\n    int numero_;\n};\nclass CanalPropio : public Registro {\npublic:\n    explicit CanalPropio(int numero) : Registro{numero} {}\n    int leer() const { return Registro::leer(); }\n};\nclass CanalB : public Registro {\npublic:\n    explicit CanalB(int numero) : Registro{numero} {}\n};\nclass ConFuncionPropia : public CanalPropio, public CanalB {\npublic:\n    ConFuncionPropia(int a, int b) : CanalPropio{a}, CanalB{b} {}\n    using CanalPropio::leer;\n};\nint main() {\n    ConFuncionPropia dato{4, 9};\n    std::cout << dato.leer();\n    return 0;\n}\n"
+        }
+      },
+      {
+        "id": "block_0006_0003",
+        "block": {
+          "type": "output_prediction",
+          "id": "p3_u10l3_traza_de_dos_partes_del_mismo_tipo_base",
+          "language": "cpp",
+          "question": "Escribe toda la traza desde la construcción hasta Fin.",
+          "code": "#include <iostream>\n\nclass RegistroConTraza {\npublic:\n    explicit RegistroConTraza(int numero) : numero_{numero} {\n        std::cout << \"R+\" << numero_ << '|';\n    }\n    ~RegistroConTraza() { std::cout << \"R-\" << numero_ << '|'; }\nprivate:\n    int numero_;\n};\nclass TrazaA : public RegistroConTraza {\npublic:\n    explicit TrazaA(int numero) : RegistroConTraza{numero} {\n        std::cout << \"A+|\";\n    }\n    ~TrazaA() { std::cout << \"A-|\"; }\n};\nclass TrazaB : public RegistroConTraza {\npublic:\n    explicit TrazaB(int numero) : RegistroConTraza{numero} {\n        std::cout << \"B+|\";\n    }\n    ~TrazaB() { std::cout << \"B-|\"; }\n};\nclass DobleConTraza : public TrazaA, public TrazaB {\npublic:\n    DobleConTraza(int a, int b) : TrazaA{a}, TrazaB{b} {\n        std::cout << \"D+|\";\n    }\n    ~DobleConTraza() { std::cout << \"D-|\"; }\n};\nint main() {\n    {\n        DobleConTraza dato{4, 9};\n        std::cout << \"Uso|\";\n    }\n    std::cout << \"Fin\";\n    return 0;\n}\n",
+          "answers": [
+            "R+4|A+|R+9|B+|D+|Uso|D-|B-|R-9|A-|R-4|Fin"
+          ],
+          "outputComparison": "exact",
+          "explanation": "Primero se construye el RegistroConTraza con cuatro y termina el cuerpo de TrazaA. Después se construye el RegistroConTraza con nueve y termina TrazaB. Al final se ejecuta el cuerpo de DobleConTraza y main escribe Uso. Al salir del bloque se ejecuta ~DobleConTraza; después se destruye TrazaB con su RegistroConTraza de nueve, y finalmente TrazaA con el suyo de cuatro. Hay dos ejecuciones del destructor de RegistroConTraza porque hay dos partes distintas, no porque una misma parte se destruya dos veces."
+        }
+      },
+      {
+        "id": "block_0007_0002",
+        "block": {
+          "type": "output_prediction",
+          "id": "p3_u10l3_copia_completa_de_las_dos_ramas",
+          "language": "cpp",
+          "question": "Escribe las dos lecturas de original y después las dos de copia.",
+          "code": "#include <iostream>\n\nclass Registro {\npublic:\n    explicit Registro(int numero) : numero_{numero} {}\n    int leer() const { return numero_; }\n    void fijar(int numero) { numero_ = numero; }\nprivate:\n    int numero_;\n};\nclass CanalA : public Registro {\npublic:\n    explicit CanalA(int numero) : Registro{numero} {}\n};\nclass CanalB : public Registro {\npublic:\n    explicit CanalB(int numero) : Registro{numero} {}\n};\nclass DobleRuta : public CanalA, public CanalB {\npublic:\n    DobleRuta(int a, int b) : CanalA{a}, CanalB{b} {}\n};\nint main() {\n    DobleRuta original{2, 7};\n    DobleRuta copia{original};\n    original.CanalA::fijar(5);\n    copia.CanalB::fijar(9);\n    std::cout << original.CanalA::leer() << ':' << original.CanalB::leer()\n              << '|' << copia.CanalA::leer() << ':' << copia.CanalB::leer();\n    return 0;\n}\n",
+          "answers": [
+            "5:7|2:9"
+          ],
+          "outputComparison": "exact",
+          "explanation": "Ambos objetos comienzan con dos en la rama CanalA y siete en CanalB. Después sólo cambia CanalA de original, que guarda cinco, y sólo cambia CanalB de copia, que guarda nueve. original conserva siete en su otra rama y copia conserva dos en la suya. Las cuatro partes Registro pertenecen a dos objetos completos diferentes."
+        }
+      },
+      {
+        "id": "block_0009_0005",
+        "block": {
+          "type": "output_prediction",
+          "id": "p3_u10l3_cambiar_una_lectura_sin_cambiar_la_otra",
+          "language": "cpp",
+          "question": "Escribe las tres líneas completas. Primero se consultan las vistas iniciales; después se cambia el exterior y al final el interior.",
+          "code": "#include <iostream>\n\nclass Sensor {\npublic:\n    explicit Sensor(int lectura) : lectura_{lectura} {}\n    int leer() const { return lectura_; }\n    void fijar(int lectura) { lectura_ = lectura; }\nprivate:\n    int lectura_;\n};\n\nclass Exterior : public Sensor {\npublic:\n    explicit Exterior(int lectura) : Sensor{lectura} {}\n};\n\nclass Interior : public Sensor {\npublic:\n    explicit Interior(int lectura) : Sensor{lectura} {}\n};\nclass Estacion : public Exterior, public Interior {\npublic:\n    Estacion(int exterior, int interior)\n        : Exterior{exterior}, Interior{interior} {}\n\n    const Sensor& sensor_exterior() const {\n        const Exterior& rama = *this;\n        return rama;\n    }\n\n    const Sensor& sensor_interior() const {\n        const Interior& rama = *this;\n        return rama;\n    }\n};\nint main() {\n    Estacion dato{6, 19};\n    const Sensor& fuera = dato.sensor_exterior();\n    const Sensor& dentro = dato.sensor_interior();\n    std::cout << fuera.leer() << '|' << dentro.leer() << '\\n';\n    dato.Exterior::fijar(8);\n    std::cout << fuera.leer() << '|' << dentro.leer() << '\\n';\n    dato.Interior::fijar(17);\n    std::cout << fuera.leer() << '|' << dentro.leer();\n    return 0;\n}\n",
+          "answers": [
+            "6|19\n8|19\n8|17"
+          ],
+          "outputComparison": "exact",
+          "explanation": "Las vistas comienzan sobre las lecturas seis y diecinueve. Exterior::fijar cambia sólo el Sensor de Exterior a ocho; Interior conserva diecinueve. Después Interior::fijar cambia sólo su Sensor a diecisiete. fuera y dentro siguen sobre las dos partes de dato, por lo que muestran las modificaciones correspondientes."
+        }
+      },
+      {
+        "id": "block_0010_0002",
+        "block": {
+          "type": "output_prediction",
+          "id": "p3_u10l3_copia_de_una_parte_y_copia_completa",
+          "language": "cpp",
+          "question": "Escribe las dos líneas de salida después de las modificaciones.",
+          "code": "#include <iostream>\n\nclass Sensor {\npublic:\n    explicit Sensor(int lectura) : lectura_{lectura} {}\n    int leer() const { return lectura_; }\n    void fijar(int lectura) { lectura_ = lectura; }\nprivate:\n    int lectura_;\n};\n\nclass Exterior : public Sensor {\npublic:\n    explicit Exterior(int lectura) : Sensor{lectura} {}\n};\n\nclass Interior : public Sensor {\npublic:\n    explicit Interior(int lectura) : Sensor{lectura} {}\n};\nclass Estacion : public Exterior, public Interior {\npublic:\n    Estacion(int exterior, int interior)\n        : Exterior{exterior}, Interior{interior} {}\n\n    const Sensor& sensor_exterior() const {\n        const Exterior& rama = *this;\n        return rama;\n    }\n\n    const Sensor& sensor_interior() const {\n        const Interior& rama = *this;\n        return rama;\n    }\n};\nint main() {\n    Estacion original{4, 15};\n    const Sensor& vista = original.sensor_exterior();\n    Sensor lectura_copiada{vista};\n    Estacion copia{original};\n    original.Exterior::fijar(7);\n    copia.Interior::fijar(18);\n    std::cout << vista.leer() << '|' << lectura_copiada.leer()\n              << '|' << original.sensor_interior().leer() << '\\n';\n    std::cout << copia.sensor_exterior().leer() << '|'\n              << copia.sensor_interior().leer();\n    return 0;\n}\n",
+          "answers": [
+            "7|4|15\n4|18"
+          ],
+          "outputComparison": "exact",
+          "explanation": "vista sigue sobre el exterior de original y observa siete. lectura_copiada es otro Sensor y conserva cuatro. El interior de original sigue siendo quince. La estación copia conserva cuatro en su exterior y cambia su interior a dieciocho. Copiar la estación copia las dos partes; obtener una vista sólo permite utilizar una parte existente."
+        }
+      }
+    ]
   }
 }

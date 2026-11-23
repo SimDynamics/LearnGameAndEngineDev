@@ -22,7 +22,7 @@
           "id": "p3_u4l7_direccion_y_puntero_existente",
           "language": "cpp",
           "question": "¿Qué muestra dato:primera:segunda:ausente?",
-          "code": "#include <iostream>\n\nbool escribir(int* destino, int valor) {\n    if (destino == nullptr || valor < 0 || valor > 9) {\n        return false;\n    }\n    *destino = valor;\n    return true;\n}\n\nint main() {\n    int dato = 3;\n    int* actual = &dato;\n    const bool primera = escribir(&dato, 5);\n    const bool segunda = escribir(actual, 7);\n    const bool ausente = escribir(nullptr, 9);\n    std::cout << dato << ':' << primera << ':' << segunda << ':' << ausente;\n    return 0;\n}\n",
+          "code": "#include <iostream>\n\nbool escribir(int* destino, int valor) {\n    if (destino == nullptr || valor < 0 || valor > 9) {\n        return false;\n    }\n    *destino = valor;\n    return true;\n}\n\nint main() {\n    int dato = 3;\n    int* actual = &dato;\n    const bool primera = escribir(&dato, 5);\n    const bool segunda = escribir(actual, 7);\n    const bool ausente = escribir(nullptr, 9);\n\n    std::cout << dato << ':' << primera << ':' << segunda << ':' << ausente;\n\n    return 0;\n}\n",
           "answers": [
             "7:1:1:0"
           ],
@@ -50,7 +50,7 @@
           "id": "p3_u4l7_nulo_solo_dentro",
           "language": "cpp",
           "question": "¿Qué muestra nuloDentro:actual==&dato?",
-          "code": "#include <iostream>\n\nbool dejarNulo(int* local) {\n    local = nullptr;\n    return local == nullptr;\n}\n\nint main() {\n    int dato = 4;\n    int* actual = &dato;\n    const bool nuloDentro = dejarNulo(actual);\n    std::cout << nuloDentro << ':' << (actual == &dato);\n    return 0;\n}\n",
+          "code": "#include <iostream>\n\nbool dejarNulo(int* local) {\n    local = nullptr;\n    return local == nullptr;\n}\n\nint main() {\n    int dato = 4;\n    int* actual = &dato;\n    const bool nuloDentro = dejarNulo(actual);\n\n    std::cout << nuloDentro << ':' << (actual == &dato);\n\n    return 0;\n}\n",
           "answers": [
             "1:1"
           ],
@@ -86,7 +86,7 @@
           "id": "p3_u4l7_otra_seleccion_en_la_funcion",
           "language": "cpp",
           "question": "¿Qué muestra primero:segundo:*actual?",
-          "code": "#include <iostream>\n\nvoid dirigir(int* local, int* propuesta) {\n    local = propuesta;\n    if (local != nullptr) {\n        *local = 9;\n    }\n}\n\nint main() {\n    int primero = 2;\n    int segundo = 5;\n    int* actual = &primero;\n    dirigir(actual, &segundo);\n    std::cout << primero << ':' << segundo << ':' << *actual;\n    return 0;\n}\n",
+          "code": "#include <iostream>\n\nvoid dirigir(int* local, int* propuesta) {\n    local = propuesta;\n    if (local != nullptr) {\n        *local = 9;\n    }\n}\n\nint main() {\n    int primero = 2;\n    int segundo = 5;\n    int* actual = &primero;\n    dirigir(actual, &segundo);\n    std::cout << primero << ':' << segundo << ':' << *actual;\n\n    return 0;\n}\n",
           "answers": [
             "2:9:2"
           ],
@@ -114,7 +114,7 @@
           "id": "p3_u4l7_const_del_parametro_local",
           "language": "cpp",
           "question": "¿Qué muestra dato:actual==nullptr?",
-          "code": "#include <iostream>\n\nvoid fijar(int* destino);\n\nvoid fijar(int* const destino) {\n    if (destino != nullptr) {\n        *destino = 6;\n    }\n}\n\nint main() {\n    int dato = 3;\n    int* actual = &dato;\n    fijar(actual);\n    actual = nullptr;\n    std::cout << dato << ':' << (actual == nullptr);\n    return 0;\n}\n",
+          "code": "#include <iostream>\n\nvoid fijar(int* destino);\n\nvoid fijar(int* const destino) {\n    if (destino != nullptr) {\n        *destino = 6;\n    }\n}\n\nint main() {\n    int dato = 3;\n    int* actual = &dato;\n    fijar(actual);\n    actual = nullptr;\n\n    std::cout << dato << ':' << (actual == nullptr);\n\n    return 0;\n}\n",
           "answers": [
             "6:1"
           ],
@@ -156,7 +156,7 @@
           "id": "p3_u4l7_copiar_puntero_fijo_del_llamador",
           "language": "cpp",
           "question": "¿Qué muestra dato:aceptado:actual==&dato?",
-          "code": "#include <iostream>\n\nbool escribir(int* destino, int valor) {\n    if (destino == nullptr || valor < 0 || valor > 9) {\n        return false;\n    }\n    *destino = valor;\n    return true;\n}\n\nint main() {\n    int dato = 4;\n    int* const actual = &dato;\n    const bool aceptado = escribir(actual, 8);\n    std::cout << dato << ':' << aceptado << ':' << (actual == &dato);\n    return 0;\n}\n",
+          "code": "#include <iostream>\n\nbool escribir(int* destino, int valor) {\n    if (destino == nullptr || valor < 0 || valor > 9) {\n        return false;\n    }\n    *destino = valor;\n    return true;\n}\n\nint main() {\n    int dato = 4;\n    int* const actual = &dato;\n    const bool aceptado = escribir(actual, 8);\n\n    std::cout << dato << ':' << aceptado << ':' << (actual == &dato);\n\n    return 0;\n}\n",
           "answers": [
             "8:1:1"
           ],
@@ -180,7 +180,7 @@
           "id": "p3_u4l7_leer_objetos_y_ausencia",
           "language": "cpp",
           "question": "¿Qué muestra leer(actual):leer(&limite):leer(nullptr)?",
-          "code": "#include <iostream>\n\nint leer(const int* origen) {\n    if (origen == nullptr) {\n        return -1;\n    }\n    return *origen;\n}\n\nint main() {\n    int dato = 0;\n    const int limite = 9;\n    int* actual = &dato;\n    std::cout << leer(actual) << ':' << leer(&limite) << ':' << leer(nullptr);\n    return 0;\n}\n",
+          "code": "#include <iostream>\n\nint leer(const int* origen) {\n    if (origen == nullptr) {\n        return -1;\n    }\n\n    return *origen;\n}\n\nint main() {\n    int dato = 0;\n    const int limite = 9;\n    int* actual = &dato;\n\n    std::cout << leer(actual) << ':' << leer(&limite) << ':' << leer(nullptr);\n\n    return 0;\n}\n",
           "answers": [
             "0:9:-1"
           ],
@@ -218,7 +218,7 @@
           "id": "p3_u4l7_reasignar_parametro_de_lectura",
           "language": "cpp",
           "question": "¿Qué muestra obtenido:*actual?",
-          "code": "#include <iostream>\n\nint leerOtro(const int* local, const int* propuesta) {\n    local = propuesta;\n    if (local == nullptr) {\n        return -1;\n    }\n    return *local;\n}\n\nint main() {\n    int primero = 2;\n    const int segundo = 8;\n    const int* actual = &primero;\n    const int obtenido = leerOtro(actual, &segundo);\n    std::cout << obtenido << ':' << *actual;\n    return 0;\n}\n",
+          "code": "#include <iostream>\n\nint leerOtro(const int* local, const int* propuesta) {\n    local = propuesta;\n    if (local == nullptr) {\n        return -1;\n    }\n\n    return *local;\n}\n\nint main() {\n    int primero = 2;\n    const int segundo = 8;\n    const int* actual = &primero;\n    const int obtenido = leerOtro(actual, &segundo);\n\n    std::cout << obtenido << ':' << *actual;\n\n    return 0;\n}\n",
           "answers": [
             "8:2"
           ],
@@ -254,7 +254,7 @@
           "id": "p3_u4l7_leer_despues_con_objeto_compartido",
           "language": "cpp",
           "question": "¿Qué muestra primero:segundo:distinto:compartido?",
-          "code": "#include <iostream>\n\nint modificarYLeer(int* destino, const int* lectura) {\n    if (destino == nullptr || lectura == nullptr) {\n        return -1;\n    }\n    *destino = 7;\n    return *lectura;\n}\n\nint main() {\n    int primero = 2;\n    int segundo = 5;\n    const int distinto = modificarYLeer(&primero, &segundo);\n    const int compartido = modificarYLeer(&primero, &primero);\n    std::cout << primero << ':' << segundo << ':' << distinto << ':' << compartido;\n    return 0;\n}\n",
+          "code": "#include <iostream>\n\nint modificarYLeer(int* destino, const int* lectura) {\n    if (destino == nullptr || lectura == nullptr) {\n        return -1;\n    }\n    *destino = 7;\n    return *lectura;\n}\n\nint main() {\n    int primero = 2;\n    int segundo = 5;\n    const int distinto = modificarYLeer(&primero, &segundo);\n    const int compartido = modificarYLeer(&primero, &primero);\n\n    std::cout << primero << ':' << segundo << ':' << distinto << ':' << compartido;\n\n    return 0;\n}\n",
           "answers": [
             "7:5:5:7"
           ],
@@ -280,7 +280,7 @@
         {
           "type": "code",
           "language": "cpp",
-          "code": "#include <iostream>\n\nint conservarYEscribir(int* destino, const int* origen) {\n    if (destino == nullptr || origen == nullptr) {\n        return -1;\n    }\n    const int previo = *origen;\n    if (previo < 0 || previo > 8) {\n        return -1;\n    }\n    *destino = previo + 1;\n    return previo;\n}\n\nint main() {\n    int dato = 4;\n    const int anterior = conservarYEscribir(&dato, &dato);\n    std::cout << dato << ':' << anterior;\n    return 0;\n}\n"
+          "code": "#include <iostream>\n\nint conservarYEscribir(int* destino, const int* origen) {\n    if (destino == nullptr || origen == nullptr) {\n        return -1;\n    }\n    const int previo = *origen;\n    if (previo < 0 || previo > 8) {\n        return -1;\n    }\n    *destino = previo + 1;\n    return previo;\n}\n\nint main() {\n    int dato = 4;\n    const int anterior = conservarYEscribir(&dato, &dato);\n\n    std::cout << dato << ':' << anterior;\n\n    return 0;\n}\n"
         },
         {
           "type": "math_puzzle",
@@ -362,7 +362,7 @@
           "id": "p3_u4l7_resultado_y_puntero_del_llamador",
           "language": "cpp",
           "question": "¿Qué muestra actual==&primero:propuesto==&segundo?",
-          "code": "#include <iostream>\n\nint* sustituir(int* local, int* propuesta) {\n    local = propuesta;\n    return local;\n}\n\nint main() {\n    int primero = 2;\n    int segundo = 5;\n    int* actual = &primero;\n    int* propuesto = sustituir(actual, &segundo);\n    std::cout << (actual == &primero) << ':' << (propuesto == &segundo);\n    return 0;\n}\n",
+          "code": "#include <iostream>\n\nint* sustituir(int* local, int* propuesta) {\n    local = propuesta;\n    return local;\n}\n\nint main() {\n    int primero = 2;\n    int segundo = 5;\n    int* actual = &primero;\n    int* propuesto = sustituir(actual, &segundo);\n\n    std::cout << (actual == &primero) << ':' << (propuesto == &segundo);\n\n    return 0;\n}\n",
           "answers": [
             "1:1"
           ],
@@ -447,7 +447,7 @@
         {
           "type": "cpp_compiler",
           "language": "cpp",
-          "initialCode": "#include <iostream>\n\nint* sustituir(int* local, int* propuesta) {\n    local = propuesta;\n    return local;\n}\n\nint main() {\n    int primero = 4;\n    int segundo = 5;\n    int* actual = &primero;\n    sustituir(actual, &segundo);\n    *actual = 7;\n    std::cout << primero << ':' << segundo << ':' << (actual == &segundo);\n    return 0;\n}\n",
+          "initialCode": "#include <iostream>\n\nint* sustituir(int* local, int* propuesta) {\n    local = propuesta;\n    return local;\n}\n\nint main() {\n    int primero = 4;\n    int segundo = 5;\n    int* actual = &primero;\n    sustituir(actual, &segundo);\n    *actual = 7;\n    std::cout << primero << ':' << segundo << ':' << (actual == &segundo);\n\n    return 0;\n}\n",
           "initialStandardInput": "",
           "outputCheck": {
             "inputComparison": "tokens",
@@ -473,7 +473,7 @@
         {
           "type": "code",
           "language": "cpp",
-          "code": "#include <iostream>\n\nint* sustituir(int* local, int* propuesta) {\n    local = propuesta;\n    return local;\n}\n\nint main() {\n    int primero = 4;\n    int segundo = 5;\n    int* actual = &primero;\n    actual = sustituir(actual, &segundo);\n    *actual = 7;\n    std::cout << primero << ':' << segundo << ':' << (actual == &segundo);\n    return 0;\n}\n"
+          "code": "#include <iostream>\n\nint* sustituir(int* local, int* propuesta) {\n    local = propuesta;\n    return local;\n}\n\nint main() {\n    int primero = 4;\n    int segundo = 5;\n    int* actual = &primero;\n\n    actual = sustituir(actual, &segundo);\n    *actual = 7;\n    std::cout << primero << ':' << segundo << ':' << (actual == &segundo);\n\n    return 0;\n}\n"
         },
         {
           "type": "paragraph",
@@ -572,7 +572,7 @@
         {
           "type": "cpp_compiler",
           "language": "cpp",
-          "initialCode": "#include <array>\n#include <cstddef>\n#include <iostream>\n#include <string>\n\nint* elegir(std::array<int, 3>& datos, int indice) {\n    if (indice < 0 || indice > 2) {\n        return nullptr;\n    }\n    return &datos.at(static_cast<std::size_t>(indice));\n}\n\nint copiarDesde(int* destino, const int* origen, int ajuste) {\n    if (destino == nullptr || origen == nullptr) {\n        return -2;\n    }\n    if (*origen < 0 || *origen > 9 || ajuste < -3 || ajuste > 3) {\n        return -1;\n    }\n    // Construye el resultado, compruebalo y escribe solo si se acepta.\n    return -1;\n}\n\nint main() {\n    std::array<int, 3> datos{2, 5, 8};\n    int cantidad = 0;\n    if (!(std::cin >> cantidad) || cantidad < 1 || cantidad > 12) {\n        return 1;\n    }\n    for (int orden = 0; orden < cantidad; ++orden) {\n        int indiceDestino = 0;\n        int indiceOrigen = 0;\n        int ajuste = 0;\n        if (!(std::cin >> indiceDestino >> indiceOrigen >> ajuste)) {\n            return 1;\n        }\n        int* destino = elegir(datos, indiceDestino);\n        const int* origen = elegir(datos, indiceOrigen);\n        const int previo = copiarDesde(destino, origen, ajuste);\n        std::string estado = \"Cambio\";\n        if (previo == -2) {\n            estado = \"Sin objeto\";\n        } else if (previo == -1) {\n            estado = \"Rechazo\";\n        }\n        std::cout << \"Estado:\" << estado << \";Previo:\" << previo << \";Destino:\";\n        if (destino == nullptr) {\n            std::cout << 'X';\n        } else {\n            std::cout << *destino;\n        }\n        std::cout << \";Origen:\";\n        if (origen == nullptr) {\n            std::cout << 'X';\n        } else {\n            std::cout << *origen;\n        }\n        std::cout << \";Datos:\" << datos[0] << ',' << datos[1] << ',' << datos[2] << '\\n';\n    }\n    return 0;\n}\n",
+          "initialCode": "#include <array>\n#include <cstddef>\n#include <iostream>\n#include <string>\n\nint* elegir(std::array<int, 3>& datos, int indice) {\n    if (indice < 0 || indice > 2) {\n        return nullptr;\n    }\n\n    return &datos.at(static_cast<std::size_t>(indice));\n}\n\nint copiarDesde(int* destino, const int* origen, int ajuste) {\n    if (destino == nullptr || origen == nullptr) {\n        return -2;\n    }\n    if (*origen < 0 || *origen > 9 || ajuste < -3 || ajuste > 3) {\n        return -1;\n    }\n    // Construye el resultado, compruebalo y escribe solo si se acepta.\n    \n    return -1;\n}\n\nint main() {\n    std::array<int, 3> datos{2, 5, 8};\n    int cantidad = 0;\n\n    if (!(std::cin >> cantidad) || cantidad < 1 || cantidad > 12) {\n        return 1;\n    }\n    for (int orden = 0; orden < cantidad; ++orden) {\n        int indiceDestino = 0;\n        int indiceOrigen = 0;\n        int ajuste = 0;\n\n        if (!(std::cin >> indiceDestino >> indiceOrigen >> ajuste)) {\n            return 1;\n        }\n        int* destino = elegir(datos, indiceDestino);\n        const int* origen = elegir(datos, indiceOrigen);\n        const int previo = copiarDesde(destino, origen, ajuste);\n        std::string estado = \"Cambio\";\n\n        if (previo == -2) {\n            estado = \"Sin objeto\";\n        } else if (previo == -1) {\n            estado = \"Rechazo\";\n        }\n        std::cout << \"Estado:\" << estado << \";Previo:\" << previo << \";Destino:\";\n        if (destino == nullptr) {\n            std::cout << 'X';\n        } else {\n            std::cout << *destino;\n        }\n        std::cout << \";Origen:\";\n        if (origen == nullptr) {\n            std::cout << 'X';\n        } else {\n            std::cout << *origen;\n        }\n        std::cout << \";Datos:\" << datos[0] << ',' << datos[1] << ',' << datos[2] << '\\n';\n    }\n\n    return 0;\n}\n",
           "initialStandardInput": "12\n0 1 2\n1 1 1\n2 0 -3\n3 1 2147483647\n0 -1 0\n0 2 2147483647\n2 0 3\n0 2 -3\n2 0 -1\n1 2 0\n1 1 0\n2 1 -1\n",
           "outputCheck": {
             "inputComparison": "tokens",
@@ -737,7 +737,7 @@
         {
           "type": "code",
           "language": "cpp",
-          "code": "#include <array>\n#include <cstddef>\n#include <iostream>\n#include <string>\n\nint* elegir(std::array<int, 3>& datos, int indice) {\n    if (indice < 0 || indice > 2) {\n        return nullptr;\n    }\n    return &datos.at(static_cast<std::size_t>(indice));\n}\n\nint copiarDesde(int* destino, const int* origen, int ajuste) {\n    if (destino == nullptr || origen == nullptr) {\n        return -2;\n    }\n    if (*origen < 0 || *origen > 9 || ajuste < -3 || ajuste > 3) {\n        return -1;\n    }\n    const int previo = *origen;\n    const int nuevo = previo + ajuste;\n    if (nuevo < 0 || nuevo > 9) {\n        return -1;\n    }\n    *destino = nuevo;\n    return previo;\n}\n\nint main() {\n    std::array<int, 3> datos{2, 5, 8};\n    int cantidad = 0;\n    if (!(std::cin >> cantidad) || cantidad < 1 || cantidad > 12) {\n        return 1;\n    }\n    for (int orden = 0; orden < cantidad; ++orden) {\n        int indiceDestino = 0;\n        int indiceOrigen = 0;\n        int ajuste = 0;\n        if (!(std::cin >> indiceDestino >> indiceOrigen >> ajuste)) {\n            return 1;\n        }\n        int* destino = elegir(datos, indiceDestino);\n        const int* origen = elegir(datos, indiceOrigen);\n        const int previo = copiarDesde(destino, origen, ajuste);\n        std::string estado = \"Cambio\";\n        if (previo == -2) {\n            estado = \"Sin objeto\";\n        } else if (previo == -1) {\n            estado = \"Rechazo\";\n        }\n        std::cout << \"Estado:\" << estado << \";Previo:\" << previo << \";Destino:\";\n        if (destino == nullptr) {\n            std::cout << 'X';\n        } else {\n            std::cout << *destino;\n        }\n        std::cout << \";Origen:\";\n        if (origen == nullptr) {\n            std::cout << 'X';\n        } else {\n            std::cout << *origen;\n        }\n        std::cout << \";Datos:\" << datos[0] << ',' << datos[1] << ',' << datos[2] << '\\n';\n    }\n    return 0;\n}\n"
+          "code": "#include <array>\n#include <cstddef>\n#include <iostream>\n#include <string>\n\nint* elegir(std::array<int, 3>& datos, int indice) {\n    if (indice < 0 || indice > 2) {\n        return nullptr;\n    }\n\n    return &datos.at(static_cast<std::size_t>(indice));\n}\n\nint copiarDesde(int* destino, const int* origen, int ajuste) {\n    if (destino == nullptr || origen == nullptr) {\n        return -2;\n    }\n    if (*origen < 0 || *origen > 9 || ajuste < -3 || ajuste > 3) {\n        return -1;\n    }\n    const int previo = *origen;\n    const int nuevo = previo + ajuste;\n\n    if (nuevo < 0 || nuevo > 9) {\n        return -1;\n    }\n    *destino = nuevo;\n    return previo;\n}\n\nint main() {\n    std::array<int, 3> datos{2, 5, 8};\n    int cantidad = 0;\n\n    if (!(std::cin >> cantidad) || cantidad < 1 || cantidad > 12) {\n        return 1;\n    }\n    for (int orden = 0; orden < cantidad; ++orden) {\n        int indiceDestino = 0;\n        int indiceOrigen = 0;\n        int ajuste = 0;\n\n        if (!(std::cin >> indiceDestino >> indiceOrigen >> ajuste)) {\n            return 1;\n        }\n        int* destino = elegir(datos, indiceDestino);\n        const int* origen = elegir(datos, indiceOrigen);\n        const int previo = copiarDesde(destino, origen, ajuste);\n        std::string estado = \"Cambio\";\n\n        if (previo == -2) {\n            estado = \"Sin objeto\";\n        } else if (previo == -1) {\n            estado = \"Rechazo\";\n        }\n        std::cout << \"Estado:\" << estado << \";Previo:\" << previo << \";Destino:\";\n        if (destino == nullptr) {\n            std::cout << 'X';\n        } else {\n            std::cout << *destino;\n        }\n        std::cout << \";Origen:\";\n        if (origen == nullptr) {\n            std::cout << 'X';\n        } else {\n            std::cout << *origen;\n        }\n        std::cout << \";Datos:\" << datos[0] << ',' << datos[1] << ',' << datos[2] << '\\n';\n    }\n\n    return 0;\n}\n"
         },
         {
           "type": "paragraph",
@@ -2078,6 +2078,301 @@
       }
     },
     "additions": [],
-    "editorial": []
+    "editorial": [
+      {
+        "id": "block_0000_0003",
+        "beforeSha256": "31115c3d92d5b3c0b2d617048d49907d01d20f781e54f3f60f4b3c758ef0939e",
+        "afterSha256": "e49a0ed8957fdc5b6a66f99115846537b2a46ad5b66b572bbc52e7d3cdd41cc8"
+      },
+      {
+        "id": "block_0001_0002",
+        "beforeSha256": "8c53f8d672291939346fd8d0b07e812e5751a33f710986bd04678b1b2a4cfb06",
+        "afterSha256": "23e29c85bc63bc74afa71efbacc4125fdc675c47c003e52fd256fd4a536c5cbb"
+      },
+      {
+        "id": "block_0002_0002",
+        "beforeSha256": "6ea42bbf235d1c5c6017917e596cb862ef50d81ea18bdbf330f0cef7398375fd",
+        "afterSha256": "d2c7caaddb0ac885c1900ffb1ac2d540092ab8188e9e9662f49cc6b0d1877ddc"
+      },
+      {
+        "id": "block_0003_0002",
+        "beforeSha256": "ca8781a5c23bb15f54ae3e42b28ab78dfa9f95375c2e942e26c9444b0ed27b3d",
+        "afterSha256": "a38106a0ad8bc572a92a1d52d78d01ab89d756de942d8ef2250bb7c6b2b85b4a"
+      },
+      {
+        "id": "block_0004_0002",
+        "beforeSha256": "34ccb837edc7ae3fb91f61c156c2a2c60b1463be5f92e08cc45259b694508220",
+        "afterSha256": "ed656b3b26cf0215de1bdd7c8c841df212ece4b35cf67ac7949d6ffb8ca5ca24"
+      },
+      {
+        "id": "block_0005_0002",
+        "beforeSha256": "a848452e0e609a28007c6d1ea456160c74a300bfdf59d785443c122aa5873aaf",
+        "afterSha256": "9328bdb1e82b6d577689c436677dd4fad20fa51a9ef7bd906d24df4fc0c86c1a"
+      },
+      {
+        "id": "block_0006_0002",
+        "beforeSha256": "e19ad8502cf35d9fc7811f99ec32046e73b7e61437456b379eee70ffd57e4812",
+        "afterSha256": "c91fbf01edc4a45d44f92540e654d6508bcd3566a9905c44363ff16280b1527b"
+      },
+      {
+        "id": "block_0007_0002",
+        "beforeSha256": "bcaa17f18fd10d74122b9d27621e24a77f0b87a37b63faf2ceb9ed85f77078e7",
+        "afterSha256": "7fe119654eebae5efb242d7111f3487b01d188563947ae8cf8aba280d9d628c0"
+      },
+      {
+        "id": "block_0008_0002",
+        "beforeSha256": "e727b9cc0c2eb7b7be639be638dfa8399b6b936bde0a23e3cca372d91a91ba1c",
+        "afterSha256": "7fd1a9b6eedbaf3422f6dee0259d95e83d15d3a7e51f1b7b4d2ed24882fdc5ec"
+      },
+      {
+        "id": "block_0009_0002",
+        "beforeSha256": "22bad2e22bfcede98165b9c72394f489a922418a4511cd76f1fbc03c8ac222d3",
+        "afterSha256": "f093206c7457441f47e63385dfa46fef063f5595c034f62cd61c57d0398c9a27"
+      },
+      {
+        "id": "block_0012_0003",
+        "beforeSha256": "b5e2914d65befb9229166693e254a6a6296c09dd66ddc7a7432068cd70c0f115",
+        "afterSha256": "e7633c3928ea95e2902900a28af7fd5e415717da63dbd13df59737e3b5f2df9f"
+      },
+      {
+        "id": "block_0013_0001",
+        "beforeSha256": "f9c31d94a023002b01b1fd0de732579643de6555e0de109f73e2e2a2bc712ed9",
+        "afterSha256": "ea131a8415a4d327eec5e972cbf035c3df6b6172e3b8b6df858cc3ccd6d4fbb7"
+      },
+      {
+        "id": "block_0015_0012",
+        "beforeSha256": "491c4200e6aab389c83b3d31b8a379aa7f8d5bf0220e68c45e2b48ed70c1a0be",
+        "afterSha256": "580d7f617e37f871a54a7a447973c1aa29e87c24bcae4305055ab4a27099e378"
+      },
+      {
+        "id": "block_0018_0001",
+        "beforeSha256": "6e672a8e2e53145538041d3601a4f3ea637d16b509ecb093b4b254795a2e9399",
+        "afterSha256": "9ec7ad028c7fb57ae6eed209eddb269c9bebadffa0dd2c1489b546b80c597c7a"
+      }
+    ],
+    "sourceFormatRevisions": [
+      {
+        "id": "block_0000_0003",
+        "block": {
+          "type": "output_prediction",
+          "id": "p3_u4l7_direccion_y_puntero_existente",
+          "language": "cpp",
+          "question": "¿Qué muestra dato:primera:segunda:ausente?",
+          "code": "#include <iostream>\n\nbool escribir(int* destino, int valor) {\n    if (destino == nullptr || valor < 0 || valor > 9) {\n        return false;\n    }\n    *destino = valor;\n    return true;\n}\n\nint main() {\n    int dato = 3;\n    int* actual = &dato;\n    const bool primera = escribir(&dato, 5);\n    const bool segunda = escribir(actual, 7);\n    const bool ausente = escribir(nullptr, 9);\n    std::cout << dato << ':' << primera << ':' << segunda << ':' << ausente;\n    return 0;\n}\n",
+          "answers": [
+            "7:1:1:0"
+          ],
+          "outputComparison": "exact",
+          "explanation": "La primera llamada recibe &dato y guarda 5. La segunda copia actual, que señala el mismo dato, y guarda 7. La tercera recibe nullptr y devuelve false antes de utilizar el puntero."
+        }
+      },
+      {
+        "id": "block_0001_0002",
+        "block": {
+          "type": "output_prediction",
+          "id": "p3_u4l7_nulo_solo_dentro",
+          "language": "cpp",
+          "question": "¿Qué muestra nuloDentro:actual==&dato?",
+          "code": "#include <iostream>\n\nbool dejarNulo(int* local) {\n    local = nullptr;\n    return local == nullptr;\n}\n\nint main() {\n    int dato = 4;\n    int* actual = &dato;\n    const bool nuloDentro = dejarNulo(actual);\n    std::cout << nuloDentro << ':' << (actual == &dato);\n    return 0;\n}\n",
+          "answers": [
+            "1:1"
+          ],
+          "outputComparison": "exact",
+          "explanation": "El parámetro termina nulo y la función devuelve true. actual conserva &dato y por eso su comparación también es verdadera."
+        }
+      },
+      {
+        "id": "block_0002_0002",
+        "block": {
+          "type": "output_prediction",
+          "id": "p3_u4l7_otra_seleccion_en_la_funcion",
+          "language": "cpp",
+          "question": "¿Qué muestra primero:segundo:*actual?",
+          "code": "#include <iostream>\n\nvoid dirigir(int* local, int* propuesta) {\n    local = propuesta;\n    if (local != nullptr) {\n        *local = 9;\n    }\n}\n\nint main() {\n    int primero = 2;\n    int segundo = 5;\n    int* actual = &primero;\n    dirigir(actual, &segundo);\n    std::cout << primero << ':' << segundo << ':' << *actual;\n    return 0;\n}\n",
+          "answers": [
+            "2:9:2"
+          ],
+          "outputComparison": "exact",
+          "explanation": "local pasa a señalar segundo y allí escribe 9. actual sigue señalando primero, que conserva 2."
+        }
+      },
+      {
+        "id": "block_0003_0002",
+        "block": {
+          "type": "output_prediction",
+          "id": "p3_u4l7_const_del_parametro_local",
+          "language": "cpp",
+          "question": "¿Qué muestra dato:actual==nullptr?",
+          "code": "#include <iostream>\n\nvoid fijar(int* destino);\n\nvoid fijar(int* const destino) {\n    if (destino != nullptr) {\n        *destino = 6;\n    }\n}\n\nint main() {\n    int dato = 3;\n    int* actual = &dato;\n    fijar(actual);\n    actual = nullptr;\n    std::cout << dato << ':' << (actual == nullptr);\n    return 0;\n}\n",
+          "answers": [
+            "6:1"
+          ],
+          "outputComparison": "exact",
+          "explanation": "fijar utiliza su copia constante del puntero para guardar 6 en dato. Después main puede asignar nullptr a actual, que no se declaró const."
+        }
+      },
+      {
+        "id": "block_0004_0002",
+        "block": {
+          "type": "output_prediction",
+          "id": "p3_u4l7_copiar_puntero_fijo_del_llamador",
+          "language": "cpp",
+          "question": "¿Qué muestra dato:aceptado:actual==&dato?",
+          "code": "#include <iostream>\n\nbool escribir(int* destino, int valor) {\n    if (destino == nullptr || valor < 0 || valor > 9) {\n        return false;\n    }\n    *destino = valor;\n    return true;\n}\n\nint main() {\n    int dato = 4;\n    int* const actual = &dato;\n    const bool aceptado = escribir(actual, 8);\n    std::cout << dato << ':' << aceptado << ':' << (actual == &dato);\n    return 0;\n}\n",
+          "answers": [
+            "8:1:1"
+          ],
+          "outputComparison": "exact",
+          "explanation": "El parámetro destino permite escribir 8 en dato. actual conserva &dato: ni la copia del puntero ni la escritura modificaron su propia selección."
+        }
+      },
+      {
+        "id": "block_0005_0002",
+        "block": {
+          "type": "output_prediction",
+          "id": "p3_u4l7_leer_objetos_y_ausencia",
+          "language": "cpp",
+          "question": "¿Qué muestra leer(actual):leer(&limite):leer(nullptr)?",
+          "code": "#include <iostream>\n\nint leer(const int* origen) {\n    if (origen == nullptr) {\n        return -1;\n    }\n    return *origen;\n}\n\nint main() {\n    int dato = 0;\n    const int limite = 9;\n    int* actual = &dato;\n    std::cout << leer(actual) << ':' << leer(&limite) << ':' << leer(nullptr);\n    return 0;\n}\n",
+          "answers": [
+            "0:9:-1"
+          ],
+          "outputComparison": "exact",
+          "explanation": "actual señala un entero que vale cero; leer devuelve ese cero. El objeto limite permite leer 9. La llamada nula devuelve -1 antes del acceso."
+        }
+      },
+      {
+        "id": "block_0006_0002",
+        "block": {
+          "type": "output_prediction",
+          "id": "p3_u4l7_reasignar_parametro_de_lectura",
+          "language": "cpp",
+          "question": "¿Qué muestra obtenido:*actual?",
+          "code": "#include <iostream>\n\nint leerOtro(const int* local, const int* propuesta) {\n    local = propuesta;\n    if (local == nullptr) {\n        return -1;\n    }\n    return *local;\n}\n\nint main() {\n    int primero = 2;\n    const int segundo = 8;\n    const int* actual = &primero;\n    const int obtenido = leerOtro(actual, &segundo);\n    std::cout << obtenido << ':' << *actual;\n    return 0;\n}\n",
+          "answers": [
+            "8:2"
+          ],
+          "outputComparison": "exact",
+          "explanation": "La copia local elige segundo y lee 8. actual conserva primero y permite leer 2."
+        }
+      },
+      {
+        "id": "block_0007_0002",
+        "block": {
+          "type": "output_prediction",
+          "id": "p3_u4l7_leer_despues_con_objeto_compartido",
+          "language": "cpp",
+          "question": "¿Qué muestra primero:segundo:distinto:compartido?",
+          "code": "#include <iostream>\n\nint modificarYLeer(int* destino, const int* lectura) {\n    if (destino == nullptr || lectura == nullptr) {\n        return -1;\n    }\n    *destino = 7;\n    return *lectura;\n}\n\nint main() {\n    int primero = 2;\n    int segundo = 5;\n    const int distinto = modificarYLeer(&primero, &segundo);\n    const int compartido = modificarYLeer(&primero, &primero);\n    std::cout << primero << ':' << segundo << ':' << distinto << ':' << compartido;\n    return 0;\n}\n",
+          "answers": [
+            "7:5:5:7"
+          ],
+          "outputComparison": "exact",
+          "explanation": "La primera llamada guarda 7 en primero y lee segundo, que conserva 5. En la segunda ambos punteros señalan primero: la lectura posterior permite obtener 7."
+        }
+      },
+      {
+        "id": "block_0008_0002",
+        "block": {
+          "type": "code",
+          "language": "cpp",
+          "code": "#include <iostream>\n\nint conservarYEscribir(int* destino, const int* origen) {\n    if (destino == nullptr || origen == nullptr) {\n        return -1;\n    }\n    const int previo = *origen;\n    if (previo < 0 || previo > 8) {\n        return -1;\n    }\n    *destino = previo + 1;\n    return previo;\n}\n\nint main() {\n    int dato = 4;\n    const int anterior = conservarYEscribir(&dato, &dato);\n    std::cout << dato << ':' << anterior;\n    return 0;\n}\n"
+        }
+      },
+      {
+        "id": "block_0009_0002",
+        "block": {
+          "type": "output_prediction",
+          "id": "p3_u4l7_resultado_y_puntero_del_llamador",
+          "language": "cpp",
+          "question": "¿Qué muestra actual==&primero:propuesto==&segundo?",
+          "code": "#include <iostream>\n\nint* sustituir(int* local, int* propuesta) {\n    local = propuesta;\n    return local;\n}\n\nint main() {\n    int primero = 2;\n    int segundo = 5;\n    int* actual = &primero;\n    int* propuesto = sustituir(actual, &segundo);\n    std::cout << (actual == &primero) << ':' << (propuesto == &segundo);\n    return 0;\n}\n",
+          "answers": [
+            "1:1"
+          ],
+          "outputComparison": "exact",
+          "explanation": "La función devuelve &segundo y propuesto lo conserva. actual es otra variable y mantiene &primero."
+        }
+      },
+      {
+        "id": "block_0012_0003",
+        "block": {
+          "type": "cpp_compiler",
+          "language": "cpp",
+          "initialCode": "#include <iostream>\n\nint* sustituir(int* local, int* propuesta) {\n    local = propuesta;\n    return local;\n}\n\nint main() {\n    int primero = 4;\n    int segundo = 5;\n    int* actual = &primero;\n    sustituir(actual, &segundo);\n    *actual = 7;\n    std::cout << primero << ':' << segundo << ':' << (actual == &segundo);\n    return 0;\n}\n",
+          "initialStandardInput": "",
+          "outputCheck": {
+            "inputComparison": "tokens",
+            "cases": [
+              {
+                "standardInput": "",
+                "outputs": [
+                  "4:7:1"
+                ],
+                "explanation": "El llamador debe guardar el puntero devuelto en actual. Después la escritura utiliza segundo y la comparación confirma esa selección."
+              }
+            ]
+          }
+        }
+      },
+      {
+        "id": "block_0013_0001",
+        "block": {
+          "type": "code",
+          "language": "cpp",
+          "code": "#include <iostream>\n\nint* sustituir(int* local, int* propuesta) {\n    local = propuesta;\n    return local;\n}\n\nint main() {\n    int primero = 4;\n    int segundo = 5;\n    int* actual = &primero;\n    actual = sustituir(actual, &segundo);\n    *actual = 7;\n    std::cout << primero << ':' << segundo << ':' << (actual == &segundo);\n    return 0;\n}\n"
+        }
+      },
+      {
+        "id": "block_0015_0012",
+        "block": {
+          "type": "cpp_compiler",
+          "language": "cpp",
+          "initialCode": "#include <array>\n#include <cstddef>\n#include <iostream>\n#include <string>\n\nint* elegir(std::array<int, 3>& datos, int indice) {\n    if (indice < 0 || indice > 2) {\n        return nullptr;\n    }\n    return &datos.at(static_cast<std::size_t>(indice));\n}\n\nint copiarDesde(int* destino, const int* origen, int ajuste) {\n    if (destino == nullptr || origen == nullptr) {\n        return -2;\n    }\n    if (*origen < 0 || *origen > 9 || ajuste < -3 || ajuste > 3) {\n        return -1;\n    }\n    // Construye el resultado, compruebalo y escribe solo si se acepta.\n    return -1;\n}\n\nint main() {\n    std::array<int, 3> datos{2, 5, 8};\n    int cantidad = 0;\n    if (!(std::cin >> cantidad) || cantidad < 1 || cantidad > 12) {\n        return 1;\n    }\n    for (int orden = 0; orden < cantidad; ++orden) {\n        int indiceDestino = 0;\n        int indiceOrigen = 0;\n        int ajuste = 0;\n        if (!(std::cin >> indiceDestino >> indiceOrigen >> ajuste)) {\n            return 1;\n        }\n        int* destino = elegir(datos, indiceDestino);\n        const int* origen = elegir(datos, indiceOrigen);\n        const int previo = copiarDesde(destino, origen, ajuste);\n        std::string estado = \"Cambio\";\n        if (previo == -2) {\n            estado = \"Sin objeto\";\n        } else if (previo == -1) {\n            estado = \"Rechazo\";\n        }\n        std::cout << \"Estado:\" << estado << \";Previo:\" << previo << \";Destino:\";\n        if (destino == nullptr) {\n            std::cout << 'X';\n        } else {\n            std::cout << *destino;\n        }\n        std::cout << \";Origen:\";\n        if (origen == nullptr) {\n            std::cout << 'X';\n        } else {\n            std::cout << *origen;\n        }\n        std::cout << \";Datos:\" << datos[0] << ',' << datos[1] << ',' << datos[2] << '\\n';\n    }\n    return 0;\n}\n",
+          "initialStandardInput": "12\n0 1 2\n1 1 1\n2 0 -3\n3 1 2147483647\n0 -1 0\n0 2 2147483647\n2 0 3\n0 2 -3\n2 0 -1\n1 2 0\n1 1 0\n2 1 -1\n",
+          "outputCheck": {
+            "inputComparison": "tokens",
+            "cases": [
+              {
+                "standardInput": "12\n0 1 2\n1 1 1\n2 0 -3\n3 1 2147483647\n0 -1 0\n0 2 2147483647\n2 0 3\n0 2 -3\n2 0 -1\n1 2 0\n1 1 0\n2 1 -1\n",
+                "outputs": [
+                  "Estado:Cambio;Previo:5;Destino:7;Origen:5;Datos:7,5,8\nEstado:Cambio;Previo:5;Destino:6;Origen:6;Datos:7,6,8\nEstado:Cambio;Previo:7;Destino:4;Origen:7;Datos:7,6,4\nEstado:Sin objeto;Previo:-2;Destino:X;Origen:6;Datos:7,6,4\nEstado:Sin objeto;Previo:-2;Destino:7;Origen:X;Datos:7,6,4\nEstado:Rechazo;Previo:-1;Destino:7;Origen:4;Datos:7,6,4\nEstado:Rechazo;Previo:-1;Destino:4;Origen:7;Datos:7,6,4\nEstado:Cambio;Previo:4;Destino:1;Origen:4;Datos:1,6,4\nEstado:Cambio;Previo:1;Destino:0;Origen:1;Datos:1,6,0\nEstado:Cambio;Previo:0;Destino:0;Origen:0;Datos:1,0,0\nEstado:Cambio;Previo:0;Destino:0;Origen:0;Datos:1,0,0\nEstado:Rechazo;Previo:-1;Destino:0;Origen:0;Datos:1,0,0\n"
+                ],
+                "explanation": "Se conserva una copia del valor de origen antes de escribir. El retorno identifica esa copia o la causa de rechazo; los punteros del llamador siguen permitiendo leer sus objetos después de la llamada."
+              },
+              {
+                "standardInput": "8\n0 0 -2\n1 0 0\n2 2 1\n2 2 0\n0 2 -3\n1 0 3\n0 1 1\n2 0 -3\n",
+                "outputs": [
+                  "Estado:Cambio;Previo:2;Destino:0;Origen:0;Datos:0,5,8\nEstado:Cambio;Previo:0;Destino:0;Origen:0;Datos:0,0,8\nEstado:Cambio;Previo:8;Destino:9;Origen:9;Datos:0,0,9\nEstado:Cambio;Previo:9;Destino:9;Origen:9;Datos:0,0,9\nEstado:Cambio;Previo:9;Destino:6;Origen:9;Datos:6,0,9\nEstado:Cambio;Previo:6;Destino:9;Origen:6;Datos:6,9,9\nEstado:Rechazo;Previo:-1;Destino:6;Origen:9;Datos:6,9,9\nEstado:Cambio;Previo:6;Destino:3;Origen:6;Datos:6,9,3\n"
+                ],
+                "explanation": "Se conserva una copia del valor de origen antes de escribir. El retorno identifica esa copia o la causa de rechazo; los punteros del llamador siguen permitiendo leer sus objetos después de la llamada."
+              },
+              {
+                "standardInput": "9\n-2147483648 1 0\n0 2147483647 -2147483648\n2147483647 -2147483648 2147483647\n1 2 -2147483648\n2 0 4\n2 0 -4\n0 1 -3\n1 2 1\n0 0 3\n",
+                "outputs": [
+                  "Estado:Sin objeto;Previo:-2;Destino:X;Origen:5;Datos:2,5,8\nEstado:Sin objeto;Previo:-2;Destino:2;Origen:X;Datos:2,5,8\nEstado:Sin objeto;Previo:-2;Destino:X;Origen:X;Datos:2,5,8\nEstado:Rechazo;Previo:-1;Destino:5;Origen:8;Datos:2,5,8\nEstado:Rechazo;Previo:-1;Destino:8;Origen:2;Datos:2,5,8\nEstado:Rechazo;Previo:-1;Destino:8;Origen:2;Datos:2,5,8\nEstado:Cambio;Previo:5;Destino:2;Origen:5;Datos:2,5,8\nEstado:Cambio;Previo:8;Destino:9;Origen:8;Datos:2,9,8\nEstado:Cambio;Previo:2;Destino:5;Origen:5;Datos:5,9,8\n"
+                ],
+                "explanation": "Se conserva una copia del valor de origen antes de escribir. El retorno identifica esa copia o la causa de rechazo; los punteros del llamador siguen permitiendo leer sus objetos después de la llamada."
+              },
+              {
+                "standardInput": "7\n0 1 0\n0 0 2\n1 0 0\n2 1 -3\n2 2 -3\n2 2 -1\n0 2 0\n",
+                "outputs": [
+                  "Estado:Cambio;Previo:5;Destino:5;Origen:5;Datos:5,5,8\nEstado:Cambio;Previo:5;Destino:7;Origen:7;Datos:7,5,8\nEstado:Cambio;Previo:7;Destino:7;Origen:7;Datos:7,7,8\nEstado:Cambio;Previo:7;Destino:4;Origen:7;Datos:7,7,4\nEstado:Cambio;Previo:4;Destino:1;Origen:1;Datos:7,7,1\nEstado:Cambio;Previo:1;Destino:0;Origen:0;Datos:7,7,0\nEstado:Cambio;Previo:0;Destino:0;Origen:0;Datos:0,7,0\n"
+                ],
+                "explanation": "Se conserva una copia del valor de origen antes de escribir. El retorno identifica esa copia o la causa de rechazo; los punteros del llamador siguen permitiendo leer sus objetos después de la llamada."
+              }
+            ]
+          }
+        }
+      },
+      {
+        "id": "block_0018_0001",
+        "block": {
+          "type": "code",
+          "language": "cpp",
+          "code": "#include <array>\n#include <cstddef>\n#include <iostream>\n#include <string>\n\nint* elegir(std::array<int, 3>& datos, int indice) {\n    if (indice < 0 || indice > 2) {\n        return nullptr;\n    }\n    return &datos.at(static_cast<std::size_t>(indice));\n}\n\nint copiarDesde(int* destino, const int* origen, int ajuste) {\n    if (destino == nullptr || origen == nullptr) {\n        return -2;\n    }\n    if (*origen < 0 || *origen > 9 || ajuste < -3 || ajuste > 3) {\n        return -1;\n    }\n    const int previo = *origen;\n    const int nuevo = previo + ajuste;\n    if (nuevo < 0 || nuevo > 9) {\n        return -1;\n    }\n    *destino = nuevo;\n    return previo;\n}\n\nint main() {\n    std::array<int, 3> datos{2, 5, 8};\n    int cantidad = 0;\n    if (!(std::cin >> cantidad) || cantidad < 1 || cantidad > 12) {\n        return 1;\n    }\n    for (int orden = 0; orden < cantidad; ++orden) {\n        int indiceDestino = 0;\n        int indiceOrigen = 0;\n        int ajuste = 0;\n        if (!(std::cin >> indiceDestino >> indiceOrigen >> ajuste)) {\n            return 1;\n        }\n        int* destino = elegir(datos, indiceDestino);\n        const int* origen = elegir(datos, indiceOrigen);\n        const int previo = copiarDesde(destino, origen, ajuste);\n        std::string estado = \"Cambio\";\n        if (previo == -2) {\n            estado = \"Sin objeto\";\n        } else if (previo == -1) {\n            estado = \"Rechazo\";\n        }\n        std::cout << \"Estado:\" << estado << \";Previo:\" << previo << \";Destino:\";\n        if (destino == nullptr) {\n            std::cout << 'X';\n        } else {\n            std::cout << *destino;\n        }\n        std::cout << \";Origen:\";\n        if (origen == nullptr) {\n            std::cout << 'X';\n        } else {\n            std::cout << *origen;\n        }\n        std::cout << \";Datos:\" << datos[0] << ',' << datos[1] << ',' << datos[2] << '\\n';\n    }\n    return 0;\n}\n"
+        }
+      }
+    ]
   }
 }

@@ -313,7 +313,7 @@
         },
         {
           "type": "cpp_compiler",
-          "initialCode": "#include <iostream>\n#include <string>\n#include <vector>\n\nint main() {\n    // Construye aqui el programa de la consigna.\n    return 0;\n}\n",
+          "initialCode": "#include <iostream>\n#include <string>\n#include <vector>\n\nint main() {\n    // Construye aqui el programa de la consigna.\n    \n    return 0;\n}\n",
           "outputCheck": {
             "cases": [
               {
@@ -1411,6 +1411,11 @@
         "id": "block_0007_0006",
         "beforeSha256": "991ff3684f50a59e92a810a23ad14788dc41b400e73b346008a9d9b12a6904be",
         "afterSha256": "bc3162d4b31bed943bcd2f778619459f2ce0abb80a2cda1b492b6c8d196cce0c"
+      },
+      {
+        "id": "block_0006_0002",
+        "beforeSha256": "f8eb852495a14b4cb8849a3fcd5c0a35b3f952adc07705dd96954af5e582cda7",
+        "afterSha256": "57e63e9c0befbbc0a526be9dd255199f09e0e0823ac7a4564544ce99d6f70d03"
       }
     ],
     "sourceFormatRevisions": [
@@ -1513,6 +1518,24 @@
           "type": "code",
           "language": "cpp",
           "code": "#include <iostream>\n#include <string>\n#include <vector>\n\nstruct Registro {\n    std::string codigo;\n    int unidades;\n};\n\nvoid probar(const std::string& codigo, int unidades) {\n    Registro original{codigo, unidades};\n    std::cout << original.codigo << \":\" << original.unidades << \"\\n\";\n    Registro copia = original;\n    original.unidades += 3;\n    std::cout << \"Original \" << original.codigo << \":\" << original.unidades << \"\\n\";\n    std::cout << \"Copia \" << copia.codigo << \":\" << copia.unidades << \"\\n\";\n}\n\nint main() {\n    probar(\"R4\", 6);\n    probar(\"S0\", 0);\n    return 0;\n}\n"
+        }
+      },
+      {
+        "id": "block_0006_0002",
+        "block": {
+          "type": "cpp_compiler",
+          "initialCode": "#include <iostream>\n#include <string>\n#include <vector>\n\nint main() {\n    // Construye aqui el programa de la consigna.\n    return 0;\n}\n",
+          "outputCheck": {
+            "cases": [
+              {
+                "standardInput": "",
+                "outputs": [
+                  "R4:6\nOriginal R4:9\nCopia R4:6\nS0:0\nOriginal S0:3\nCopia S0:0\n"
+                ],
+                "explanation": "Cada registro conserva sus miembros asociados. Aumentar las unidades del original no cambia la copia, incluso cuando la cantidad inicial era cero."
+              }
+            ]
+          }
         }
       }
     ]

@@ -16,7 +16,7 @@
         {
           "type": "code",
           "language": "cpp",
-          "code": "#include <iostream>\n\nint agregar(int cantidad) {\n    int total = 0;\n    total += cantidad;\n    return total;\n}\n\nint main() {\n    const int primero = agregar(3);\n    const int segundo = agregar(2);\n    std::cout << primero << ':' << segundo;\n    return 0;\n}\n"
+          "code": "#include <iostream>\n\nint agregar(int cantidad) {\n    int total = 0;\n\n    total += cantidad;\n    return total;\n}\n\nint main() {\n    const int primero = agregar(3);\n    const int segundo = agregar(2);\n\n    std::cout << primero << ':' << segundo;\n\n    return 0;\n}\n"
         },
         {
           "type": "paragraph",
@@ -41,7 +41,7 @@
         {
           "type": "code",
           "language": "cpp",
-          "code": "#include <iostream>\n\nint agregar(int cantidad) {\n    static int total = 0;\n    total += cantidad;\n    return total;\n}\n\nint main() {\n    const int primero = agregar(3);\n    const int segundo = agregar(2);\n    std::cout << primero << ':' << segundo;\n    return 0;\n}\n"
+          "code": "#include <iostream>\n\nint agregar(int cantidad) {\n    static int total = 0;\n\n    total += cantidad;\n    return total;\n}\n\nint main() {\n    const int primero = agregar(3);\n    const int segundo = agregar(2);\n\n    std::cout << primero << ':' << segundo;\n\n    return 0;\n}\n"
         },
         {
           "type": "paragraph",
@@ -110,7 +110,7 @@
           "id": "p3_u3l2_constante_no_const",
           "language": "cpp",
           "question": "Predice los resultados de las dos llamadas. La suma posterior a la declaración sí se ejecuta en cada llamada.",
-          "code": "#include <iostream>\n\nint siguiente() {\n    static int valor = 4;\n    valor += 2;\n    return valor;\n}\n\nint main() {\n    const int primero = siguiente();\n    const int segundo = siguiente();\n    std::cout << primero << ':' << segundo;\n    return 0;\n}\n",
+          "code": "#include <iostream>\n\nint siguiente() {\n    static int valor = 4;\n\n    valor += 2;\n    return valor;\n}\n\nint main() {\n    const int primero = siguiente();\n    const int segundo = siguiente();\n\n    std::cout << primero << ':' << segundo;\n\n    return 0;\n}\n",
           "answers": [
             "6:8"
           ],
@@ -138,7 +138,7 @@
           "id": "p3_u3l2_cero_sin_inicializador",
           "language": "cpp",
           "question": "Este total es local static y no tiene inicializador escrito. Predice los dos resultados.",
-          "code": "#include <iostream>\n\nint agregar(int cantidad) {\n    static int total;\n    total += cantidad;\n    return total;\n}\n\nint main() {\n    const int primero = agregar(3);\n    const int segundo = agregar(2);\n    std::cout << primero << ':' << segundo;\n    return 0;\n}\n",
+          "code": "#include <iostream>\n\nint agregar(int cantidad) {\n    static int total;\n\n    total += cantidad;\n    return total;\n}\n\nint main() {\n    const int primero = agregar(3);\n    const int segundo = agregar(2);\n\n    std::cout << primero << ':' << segundo;\n\n    return 0;\n}\n",
           "answers": [
             "3:5"
           ],
@@ -166,7 +166,7 @@
           "id": "p3_u3l2_primera_declaracion_alcanzada",
           "language": "cpp",
           "question": "Predice la salida completa. Distingue una llamada que sale antes de la declaración, la primera que la alcanza y la llamada posterior.",
-          "code": "#include <iostream>\n\nint preparar(int semilla) {\n    std::cout << \"Preparar:\" << semilla << ';';\n    return semilla + 1;\n}\n\nint conservar(int semilla) {\n    if (semilla < 0) {\n        return -1;\n    }\n    static int base = preparar(semilla);\n    return base;\n}\n\nint main() {\n    const int omitido = conservar(-2);\n    std::cout << omitido << ':';\n    const int primero = conservar(4);\n    std::cout << primero << ':';\n    const int segundo = conservar(9);\n    std::cout << segundo;\n    return 0;\n}\n",
+          "code": "#include <iostream>\n\nint preparar(int semilla) {\n    std::cout << \"Preparar:\" << semilla << ';';\n    return semilla + 1;\n}\n\nint conservar(int semilla) {\n    if (semilla < 0) {\n        return -1;\n    }\n    static int base = preparar(semilla);\n    return base;\n}\n\nint main() {\n    const int omitido = conservar(-2);\n\n    std::cout << omitido << ':';\n    const int primero = conservar(4);\n    std::cout << primero << ':';\n    const int segundo = conservar(9);\n    std::cout << segundo;\n\n    return 0;\n}\n",
           "answers": [
             "-1:Preparar:4;5:5"
           ],
@@ -194,7 +194,7 @@
           "id": "p3_u3l2_reintentar_inicializacion",
           "language": "cpp",
           "question": "El primer intento falla y main lo atiende. Predice los mensajes y los dos valores que se obtienen después.",
-          "code": "#include <stdexcept>\n#include <iostream>\n\nint preparar(int semilla) {\n    std::cout << \"Intento:\" << semilla << ';';\n    if (semilla < 0) {\n        throw std::runtime_error(\"Sin base\");\n    }\n    return semilla + 1;\n}\n\nint conservar(int semilla) {\n    static int base = preparar(semilla);\n    return base;\n}\n\nint main() {\n    try {\n        conservar(-1);\n    } catch (const std::exception& error) {\n        std::cout << error.what() << ';';\n    }\n    const int primero = conservar(4);\n    std::cout << \"Valor:\" << primero << ';';\n    const int segundo = conservar(9);\n    std::cout << \"Final:\" << segundo;\n    return 0;\n}\n",
+          "code": "#include <stdexcept>\n#include <iostream>\n\nint preparar(int semilla) {\n    std::cout << \"Intento:\" << semilla << ';';\n    if (semilla < 0) {\n        throw std::runtime_error(\"Sin base\");\n    }\n\n    return semilla + 1;\n}\n\nint conservar(int semilla) {\n    static int base = preparar(semilla);\n    return base;\n}\n\nint main() {\n    try {\n        conservar(-1);\n    } catch (const std::exception& error) {\n        std::cout << error.what() << ';';\n    }\n    const int primero = conservar(4);\n    std::cout << \"Valor:\" << primero << ';';\n    const int segundo = conservar(9);\n    std::cout << \"Final:\" << segundo;\n\n    return 0;\n}\n",
           "answers": [
             "Intento:-1;Sin base;Intento:4;Valor:5;Final:5"
           ],
@@ -222,7 +222,7 @@
           "id": "p3_u3l2_asignacion_repetida",
           "language": "cpp",
           "question": "Predice los dos resultados. Hay una asignación a cero después de la declaración static.",
-          "code": "#include <iostream>\n\nint agregar(int cantidad) {\n    static int total = 0;\n    total = 0;\n    total += cantidad;\n    return total;\n}\n\nint main() {\n    const int primero = agregar(3);\n    const int segundo = agregar(2);\n    std::cout << primero << ':' << segundo;\n    return 0;\n}\n",
+          "code": "#include <iostream>\n\nint agregar(int cantidad) {\n    static int total = 0;\n\n    total = 0;\n    total += cantidad;\n    return total;\n}\n\nint main() {\n    const int primero = agregar(3);\n    const int segundo = agregar(2);\n\n    std::cout << primero << ':' << segundo;\n\n    return 0;\n}\n",
           "answers": [
             "3:2"
           ],
@@ -256,7 +256,7 @@
         {
           "type": "code",
           "language": "cpp",
-          "code": "#include <iostream>\n\nint registrar(int cantidad, bool reiniciar) {\n    static int total = 0;\n    if (reiniciar) {\n        total = 0;\n    }\n    total += cantidad;\n    return total;\n}\n\nint main() {\n    const int a = registrar(3, false);\n    const int b = registrar(2, false);\n    const int c = registrar(4, true);\n    const int d = registrar(1, false);\n    std::cout << a << ':' << b << ':' << c << ':' << d;\n    return 0;\n}\n"
+          "code": "#include <iostream>\n\nint registrar(int cantidad, bool reiniciar) {\n    static int total = 0;\n    if (reiniciar) {\n        total = 0;\n    }\n    total += cantidad;\n    return total;\n}\n\nint main() {\n    const int a = registrar(3, false);\n    const int b = registrar(2, false);\n    const int c = registrar(4, true);\n    const int d = registrar(1, false);\n\n    std::cout << a << ':' << b << ':' << c << ':' << d;\n\n    return 0;\n}\n"
         },
         {
           "type": "math_puzzle",
@@ -376,7 +376,7 @@
           "id": "p3_u3l2_distintos_llamadores",
           "language": "cpp",
           "question": "Predice las tres respuestas: primero llama clienteA, después clienteB y después clienteA otra vez.",
-          "code": "#include <iostream>\n\nint siguiente() {\n    static int turno = 0;\n    turno += 1;\n    return turno;\n}\n\nint clienteA() {\n    return siguiente();\n}\n\nint clienteB() {\n    return siguiente();\n}\n\nint main() {\n    const int a = clienteA();\n    const int b = clienteB();\n    const int c = clienteA();\n    std::cout << a << ':' << b << ':' << c;\n    return 0;\n}\n",
+          "code": "#include <iostream>\n\nint siguiente() {\n    static int turno = 0;\n\n    turno += 1;\n    return turno;\n}\n\nint clienteA() {\n    return siguiente();\n}\n\nint clienteB() {\n    return siguiente();\n}\n\nint main() {\n    const int a = clienteA();\n    const int b = clienteB();\n    const int c = clienteA();\n\n    std::cout << a << ':' << b << ':' << c;\n\n    return 0;\n}\n",
           "answers": [
             "1:2:3"
           ],
@@ -404,7 +404,7 @@
           "id": "p3_u3l2_distintas_declaraciones",
           "language": "cpp",
           "question": "Predice las respuestas. No confundas estas dos definiciones con los dos clientes de la página anterior.",
-          "code": "#include <iostream>\n\nint sumarA(int cantidad) {\n    static int total = 0;\n    total += cantidad;\n    return total;\n}\n\nint sumarB(int cantidad) {\n    static int total = 0;\n    total += cantidad;\n    return total;\n}\n\nint main() {\n    const int a = sumarA(2);\n    const int b = sumarB(3);\n    const int c = sumarA(1);\n    std::cout << a << ':' << b << ':' << c;\n    return 0;\n}\n",
+          "code": "#include <iostream>\n\nint sumarA(int cantidad) {\n    static int total = 0;\n\n    total += cantidad;\n    return total;\n}\n\nint sumarB(int cantidad) {\n    static int total = 0;\n\n    total += cantidad;\n    return total;\n}\n\nint main() {\n    const int a = sumarA(2);\n    const int b = sumarB(3);\n    const int c = sumarA(1);\n\n    std::cout << a << ':' << b << ':' << c;\n\n    return 0;\n}\n",
           "answers": [
             "2:3:3"
           ],
@@ -428,7 +428,7 @@
           "id": "p3_u3l2_duracion_en_repeticiones",
           "language": "cpp",
           "question": "Predice las tres parejas. En cada una se muestra primero acumulado y después actual.",
-          "code": "#include <iostream>\n\nint main() {\n    for (int i = 0; i < 3; ++i) {\n        static int acumulado = 0;\n        int actual = 0;\n        acumulado += 2;\n        actual += 2;\n        std::cout << acumulado << ':' << actual << ';';\n    }\n    return 0;\n}\n",
+          "code": "#include <iostream>\n\nint main() {\n    for (int i = 0; i < 3; ++i) {\n        static int acumulado = 0;\n        int actual = 0;\n\n        acumulado += 2;\n        actual += 2;\n        std::cout << acumulado << ':' << actual << ';';\n    }\n\n    return 0;\n}\n",
           "answers": [
             "2:2;4:2;6:2;"
           ],
@@ -450,7 +450,7 @@
         {
           "type": "code",
           "language": "cpp",
-          "code": "#include <iostream>\n\nint siguiente() {\n    static int numero = 0;\n    numero += 1;\n    return numero;\n}\n\nint main() {\n    const int a = siguiente();\n    const int b = siguiente();\n    std::cout << a << ':' << b;\n    return 0;\n}\n"
+          "code": "#include <iostream>\n\nint siguiente() {\n    static int numero = 0;\n\n    numero += 1;\n    return numero;\n}\n\nint main() {\n    const int a = siguiente();\n    const int b = siguiente();\n\n    std::cout << a << ':' << b;\n\n    return 0;\n}\n"
         },
         {
           "type": "paragraph",
@@ -557,7 +557,7 @@
         {
           "type": "cpp_compiler",
           "language": "cpp",
-          "initialCode": "#include <iostream>\n\nint gestionar(int orden, int cantidad) {\n    // Conserva aqui un unico total entre llamadas.\n    // Aplica el contrato de consultar, sumar o reiniciar.\n    // Devuelve -1 al rechazar y conserva el total anterior.\n    if (orden == 0) {\n        return 0;\n    }\n    return cantidad;\n}\n\nint main() {\n    int numeroDeOrdenes = 0;\n    if (!(std::cin >> numeroDeOrdenes) ||\n        numeroDeOrdenes < 1 || numeroDeOrdenes > 15) {\n        std::cout << \"Datos invalidos\\n\";\n        return 0;\n    }\n    for (int i = 0; i < numeroDeOrdenes; ++i) {\n        int orden = 0;\n        int cantidad = 0;\n        if (!(std::cin >> orden >> cantidad)) {\n            std::cout << \"Datos invalidos\\n\";\n            return 0;\n        }\n        const int respuesta = gestionar(orden, cantidad);\n        const int totalActual = gestionar(0, 0);\n        if (respuesta == -1) {\n            std::cout << \"Rechazo\";\n        } else {\n            std::cout << \"Aceptado:\" << respuesta;\n        }\n        std::cout << \";Total:\" << totalActual << '\\n';\n    }\n    return 0;\n}\n",
+          "initialCode": "#include <iostream>\n\nint gestionar(int orden, int cantidad) {\n    // Conserva aqui un unico total entre llamadas.\n    // Aplica el contrato de consultar, sumar o reiniciar.\n    // Devuelve -1 al rechazar y conserva el total anterior.\n    if (orden == 0) {\n        return 0;\n    }\n\n    return cantidad;\n}\n\nint main() {\n    int numeroDeOrdenes = 0;\n    if (!(std::cin >> numeroDeOrdenes) ||\n        numeroDeOrdenes < 1 || numeroDeOrdenes > 15) {\n        std::cout << \"Datos invalidos\\n\";\n        return 0;\n    }\n    for (int i = 0; i < numeroDeOrdenes; ++i) {\n        int orden = 0;\n        int cantidad = 0;\n\n        if (!(std::cin >> orden >> cantidad)) {\n            std::cout << \"Datos invalidos\\n\";\n            return 0;\n        }\n        const int respuesta = gestionar(orden, cantidad);\n        const int totalActual = gestionar(0, 0);\n\n        if (respuesta == -1) {\n            std::cout << \"Rechazo\";\n        } else {\n            std::cout << \"Aceptado:\" << respuesta;\n        }\n        std::cout << \";Total:\" << totalActual << '\\n';\n    }\n\n    return 0;\n}\n",
           "initialStandardInput": "9\n0 0\n1 4\n1 5\n2 1\n1 5\n1 5\n1 2\n2 0\n1 3\n",
           "outputCheck": {
             "inputComparison": "tokens",
@@ -710,7 +710,7 @@
         {
           "type": "code",
           "language": "cpp",
-          "code": "#include <iostream>\n\nint gestionar(int orden, int cantidad) {\n    static int total = 0;\n    if (orden == 0 && cantidad == 0) {\n        return total;\n    }\n    if (orden == 2 && cantidad == 0) {\n        total = 0;\n        return total;\n    }\n    if (orden != 1 || cantidad < 1 || cantidad > 5 ||\n        cantidad > 20 - total) {\n        return -1;\n    }\n    total += cantidad;\n    return total;\n}\n\nint main() {\n    int numeroDeOrdenes = 0;\n    if (!(std::cin >> numeroDeOrdenes) ||\n        numeroDeOrdenes < 1 || numeroDeOrdenes > 15) {\n        std::cout << \"Datos invalidos\\n\";\n        return 0;\n    }\n    for (int i = 0; i < numeroDeOrdenes; ++i) {\n        int orden = 0;\n        int cantidad = 0;\n        if (!(std::cin >> orden >> cantidad)) {\n            std::cout << \"Datos invalidos\\n\";\n            return 0;\n        }\n        const int respuesta = gestionar(orden, cantidad);\n        const int totalActual = gestionar(0, 0);\n        if (respuesta == -1) {\n            std::cout << \"Rechazo\";\n        } else {\n            std::cout << \"Aceptado:\" << respuesta;\n        }\n        std::cout << \";Total:\" << totalActual << '\\n';\n    }\n    return 0;\n}\n"
+          "code": "#include <iostream>\n\nint gestionar(int orden, int cantidad) {\n    static int total = 0;\n    if (orden == 0 && cantidad == 0) {\n        return total;\n    }\n    if (orden == 2 && cantidad == 0) {\n        total = 0;\n        return total;\n    }\n    if (orden != 1 || cantidad < 1 || cantidad > 5 ||\n        cantidad > 20 - total) {\n        return -1;\n    }\n    total += cantidad;\n    return total;\n}\n\nint main() {\n    int numeroDeOrdenes = 0;\n    if (!(std::cin >> numeroDeOrdenes) ||\n        numeroDeOrdenes < 1 || numeroDeOrdenes > 15) {\n        std::cout << \"Datos invalidos\\n\";\n        return 0;\n    }\n    for (int i = 0; i < numeroDeOrdenes; ++i) {\n        int orden = 0;\n        int cantidad = 0;\n\n        if (!(std::cin >> orden >> cantidad)) {\n            std::cout << \"Datos invalidos\\n\";\n            return 0;\n        }\n        const int respuesta = gestionar(orden, cantidad);\n        const int totalActual = gestionar(0, 0);\n\n        if (respuesta == -1) {\n            std::cout << \"Rechazo\";\n        } else {\n            std::cout << \"Aceptado:\" << respuesta;\n        }\n        std::cout << \";Total:\" << totalActual << '\\n';\n    }\n\n    return 0;\n}\n"
         },
         {
           "type": "paragraph",
@@ -2034,6 +2034,281 @@
       }
     },
     "additions": [],
-    "editorial": []
+    "editorial": [
+      {
+        "id": "block_0000_0002",
+        "beforeSha256": "302a76ad7aef789cb512cb5ac5dc7d0801d8d564848c5cf3168698ed4932077a",
+        "afterSha256": "643b590badadff124ed4fe20511a5b3d3c1e8f137ec7f8ddb7cd3a75f3b0499d"
+      },
+      {
+        "id": "block_0001_0002",
+        "beforeSha256": "15014934a9e381c68ca3e3e3dfc27cdee3010defe33d3aee5a41be7339fc9a2f",
+        "afterSha256": "d72baa50f6dd4dd6e30472e518a95aa1ef8cebe1f0dad45055e4445a7c26cb6c"
+      },
+      {
+        "id": "block_0003_0004",
+        "beforeSha256": "77cbf191354206801ffaa151a9cf245cbd633bd41351356697a70d6c273db3ba",
+        "afterSha256": "c71e95b69f94db214b52b44da5d48168d3248eabc42850e251005bb46aa1f714"
+      },
+      {
+        "id": "block_0004_0002",
+        "beforeSha256": "30841728b35e42ed369a5b0d8f7152d7bcf2727f1ba2d18863fd5ee9a1bcc9eb",
+        "afterSha256": "02d36cb9052b097b89567e8acaac68fc4fad5ce7a0925420ff4d76b81b5899cd"
+      },
+      {
+        "id": "block_0005_0002",
+        "beforeSha256": "bc6271b8efcd0951f9579a57020df8a3de6b465c93a42a0036fd902562d1a552",
+        "afterSha256": "bb95b5fa3cbb188e790d20845b6dc85cba01adf78e6267133d5df1ea0f1f1de3"
+      },
+      {
+        "id": "block_0006_0002",
+        "beforeSha256": "521e4a9bd5d855bc55e578124be57ca67278f0745933c2064c84737bbed9c9df",
+        "afterSha256": "f6e7e479b4aa1e69c83bfa8c9357248da0bcb2c6a4daf2f19f848de127acef00"
+      },
+      {
+        "id": "block_0007_0002",
+        "beforeSha256": "a84ebea96ec571e632943f09b58a133eaec3466294eb9b7624f3cb49115fcc1a",
+        "afterSha256": "e0710dd6c5d147d4c5c7635952c5a4070b2317d9b23e235936d8b58acede1b75"
+      },
+      {
+        "id": "block_0008_0002",
+        "beforeSha256": "a6d313eaff0d71eedea2c625cee70b7d9756703574325b3e8d1e64b16371627b",
+        "afterSha256": "f2a456fbc843d3950c73b49a1a1c8ac10a842959710dd1d218b7a9fb36d207c0"
+      },
+      {
+        "id": "block_0009_0002",
+        "beforeSha256": "396daf61f44adffcdb191054a47d85ea32b03b2562b19c32c5e1d8f1535ae32f",
+        "afterSha256": "80c52d52bb12e2b692a40f3b720b6ad97f870e767df890cbc2bf454d4f350da8"
+      },
+      {
+        "id": "block_0010_0002",
+        "beforeSha256": "98d0e9fc58f332d71c9e7b3cad84dd13d318665e207bf30862c62f380459ca47",
+        "afterSha256": "584b4ab364f5e96837a4bf973033c7a9e8c61fa8ecdb37a1f2b304eacdb0d4b3"
+      },
+      {
+        "id": "block_0011_0002",
+        "beforeSha256": "f3123982df6f93816d12ceff62f021bd09ef42587546e7c8fbdb2fcbafc78759",
+        "afterSha256": "98245bc35a380a9edd28199b1990bea7ad032a63771cc3d6e253e0c219e42d57"
+      },
+      {
+        "id": "block_0012_0001",
+        "beforeSha256": "48ebaf9c17851dcf3617ca1106352af15d6bf1f1ee6b6444a2625d4560b34ba0",
+        "afterSha256": "43cd75257b3ad6f6365865cacff66bce7e1b13fe7e7e4496cf1c99d52a11ef82"
+      },
+      {
+        "id": "block_0014_0012",
+        "beforeSha256": "c7e0225ab16dbf03feb125a1015160c6151dc802425d73ec0096c80eb0310f79",
+        "afterSha256": "1be6e7fed46dfea5aaaa4cdba0bc185d23fef60a866322a2d8af2afe8f57b318"
+      },
+      {
+        "id": "block_0017_0001",
+        "beforeSha256": "8651079dc3ab3702f45045cb41aa5f906b20efb1deaa1d75414f590d0fd12345",
+        "afterSha256": "cb5366a169a82330699612d720c00f942d2e43c85d0472777762b0c5dec93b81"
+      }
+    ],
+    "sourceFormatRevisions": [
+      {
+        "id": "block_0000_0002",
+        "block": {
+          "type": "code",
+          "language": "cpp",
+          "code": "#include <iostream>\n\nint agregar(int cantidad) {\n    int total = 0;\n    total += cantidad;\n    return total;\n}\n\nint main() {\n    const int primero = agregar(3);\n    const int segundo = agregar(2);\n    std::cout << primero << ':' << segundo;\n    return 0;\n}\n"
+        }
+      },
+      {
+        "id": "block_0001_0002",
+        "block": {
+          "type": "code",
+          "language": "cpp",
+          "code": "#include <iostream>\n\nint agregar(int cantidad) {\n    static int total = 0;\n    total += cantidad;\n    return total;\n}\n\nint main() {\n    const int primero = agregar(3);\n    const int segundo = agregar(2);\n    std::cout << primero << ':' << segundo;\n    return 0;\n}\n"
+        }
+      },
+      {
+        "id": "block_0003_0004",
+        "block": {
+          "type": "output_prediction",
+          "id": "p3_u3l2_constante_no_const",
+          "language": "cpp",
+          "question": "Predice los resultados de las dos llamadas. La suma posterior a la declaración sí se ejecuta en cada llamada.",
+          "code": "#include <iostream>\n\nint siguiente() {\n    static int valor = 4;\n    valor += 2;\n    return valor;\n}\n\nint main() {\n    const int primero = siguiente();\n    const int segundo = siguiente();\n    std::cout << primero << ':' << segundo;\n    return 0;\n}\n",
+          "answers": [
+            "6:8"
+          ],
+          "outputComparison": "exact",
+          "explanation": "valor comienza con 4. La primera suma lo deja en 6. La segunda llamada encuentra ese 6 y lo aumenta hasta 8. El inicializador constante no impide modificar este int ni vuelve a colocarlo en 4."
+        }
+      },
+      {
+        "id": "block_0004_0002",
+        "block": {
+          "type": "output_prediction",
+          "id": "p3_u3l2_cero_sin_inicializador",
+          "language": "cpp",
+          "question": "Este total es local static y no tiene inicializador escrito. Predice los dos resultados.",
+          "code": "#include <iostream>\n\nint agregar(int cantidad) {\n    static int total;\n    total += cantidad;\n    return total;\n}\n\nint main() {\n    const int primero = agregar(3);\n    const int segundo = agregar(2);\n    std::cout << primero << ':' << segundo;\n    return 0;\n}\n",
+          "answers": [
+            "3:5"
+          ],
+          "outputComparison": "exact",
+          "explanation": "El total estático comienza en cero. La primera llamada lo deja en 3 y la segunda le suma 2 hasta llegar a 5. No se lee un int automático sin inicializar."
+        }
+      },
+      {
+        "id": "block_0005_0002",
+        "block": {
+          "type": "output_prediction",
+          "id": "p3_u3l2_primera_declaracion_alcanzada",
+          "language": "cpp",
+          "question": "Predice la salida completa. Distingue una llamada que sale antes de la declaración, la primera que la alcanza y la llamada posterior.",
+          "code": "#include <iostream>\n\nint preparar(int semilla) {\n    std::cout << \"Preparar:\" << semilla << ';';\n    return semilla + 1;\n}\n\nint conservar(int semilla) {\n    if (semilla < 0) {\n        return -1;\n    }\n    static int base = preparar(semilla);\n    return base;\n}\n\nint main() {\n    const int omitido = conservar(-2);\n    std::cout << omitido << ':';\n    const int primero = conservar(4);\n    std::cout << primero << ':';\n    const int segundo = conservar(9);\n    std::cout << segundo;\n    return 0;\n}\n",
+          "answers": [
+            "-1:Preparar:4;5:5"
+          ],
+          "outputComparison": "exact",
+          "explanation": "conservar(-2) devuelve -1 antes de alcanzar static y no llama a preparar. conservar(4) alcanza por primera vez la declaración: imprime Preparar:4; e inicializa base con 5. conservar(9) tiene un parámetro nuevo de valor 9, pero base ya está inicializada y conserva 5."
+        }
+      },
+      {
+        "id": "block_0006_0002",
+        "block": {
+          "type": "output_prediction",
+          "id": "p3_u3l2_reintentar_inicializacion",
+          "language": "cpp",
+          "question": "El primer intento falla y main lo atiende. Predice los mensajes y los dos valores que se obtienen después.",
+          "code": "#include <stdexcept>\n#include <iostream>\n\nint preparar(int semilla) {\n    std::cout << \"Intento:\" << semilla << ';';\n    if (semilla < 0) {\n        throw std::runtime_error(\"Sin base\");\n    }\n    return semilla + 1;\n}\n\nint conservar(int semilla) {\n    static int base = preparar(semilla);\n    return base;\n}\n\nint main() {\n    try {\n        conservar(-1);\n    } catch (const std::exception& error) {\n        std::cout << error.what() << ';';\n    }\n    const int primero = conservar(4);\n    std::cout << \"Valor:\" << primero << ';';\n    const int segundo = conservar(9);\n    std::cout << \"Final:\" << segundo;\n    return 0;\n}\n",
+          "answers": [
+            "Intento:-1;Sin base;Intento:4;Valor:5;Final:5"
+          ],
+          "outputComparison": "exact",
+          "explanation": "El intento con -1 imprime su mensaje y lanza Sin base. base no queda inicializada con éxito. La llamada con 4 vuelve a ejecutar preparar y obtiene 5. La llamada con 9 ya no repite esa preparación y devuelve el 5 conservado."
+        }
+      },
+      {
+        "id": "block_0007_0002",
+        "block": {
+          "type": "output_prediction",
+          "id": "p3_u3l2_asignacion_repetida",
+          "language": "cpp",
+          "question": "Predice los dos resultados. Hay una asignación a cero después de la declaración static.",
+          "code": "#include <iostream>\n\nint agregar(int cantidad) {\n    static int total = 0;\n    total = 0;\n    total += cantidad;\n    return total;\n}\n\nint main() {\n    const int primero = agregar(3);\n    const int segundo = agregar(2);\n    std::cout << primero << ':' << segundo;\n    return 0;\n}\n",
+          "answers": [
+            "3:2"
+          ],
+          "outputComparison": "exact",
+          "explanation": "La primera llamada pone total en cero mediante la asignación y después suma 3. La segunda conserva el objeto, pero vuelve a ejecutar la asignación total = 0; antes de sumar 2. static no impide que una instrucción sustituya el valor conservado."
+        }
+      },
+      {
+        "id": "block_0008_0002",
+        "block": {
+          "type": "code",
+          "language": "cpp",
+          "code": "#include <iostream>\n\nint registrar(int cantidad, bool reiniciar) {\n    static int total = 0;\n    if (reiniciar) {\n        total = 0;\n    }\n    total += cantidad;\n    return total;\n}\n\nint main() {\n    const int a = registrar(3, false);\n    const int b = registrar(2, false);\n    const int c = registrar(4, true);\n    const int d = registrar(1, false);\n    std::cout << a << ':' << b << ':' << c << ':' << d;\n    return 0;\n}\n"
+        }
+      },
+      {
+        "id": "block_0009_0002",
+        "block": {
+          "type": "output_prediction",
+          "id": "p3_u3l2_distintos_llamadores",
+          "language": "cpp",
+          "question": "Predice las tres respuestas: primero llama clienteA, después clienteB y después clienteA otra vez.",
+          "code": "#include <iostream>\n\nint siguiente() {\n    static int turno = 0;\n    turno += 1;\n    return turno;\n}\n\nint clienteA() {\n    return siguiente();\n}\n\nint clienteB() {\n    return siguiente();\n}\n\nint main() {\n    const int a = clienteA();\n    const int b = clienteB();\n    const int c = clienteA();\n    std::cout << a << ':' << b << ':' << c;\n    return 0;\n}\n",
+          "answers": [
+            "1:2:3"
+          ],
+          "outputComparison": "exact",
+          "explanation": "La primera llamada aumenta turno de 0 a 1. La segunda lo aumenta de 1 a 2 aunque proceda de clienteB. La tercera lo deja en 3. No hay un contador distinto para cada cliente."
+        }
+      },
+      {
+        "id": "block_0010_0002",
+        "block": {
+          "type": "output_prediction",
+          "id": "p3_u3l2_distintas_declaraciones",
+          "language": "cpp",
+          "question": "Predice las respuestas. No confundas estas dos definiciones con los dos clientes de la página anterior.",
+          "code": "#include <iostream>\n\nint sumarA(int cantidad) {\n    static int total = 0;\n    total += cantidad;\n    return total;\n}\n\nint sumarB(int cantidad) {\n    static int total = 0;\n    total += cantidad;\n    return total;\n}\n\nint main() {\n    const int a = sumarA(2);\n    const int b = sumarB(3);\n    const int c = sumarA(1);\n    std::cout << a << ':' << b << ':' << c;\n    return 0;\n}\n",
+          "answers": [
+            "2:3:3"
+          ],
+          "outputComparison": "exact",
+          "explanation": "El total de sumarA pasa de 0 a 2. El de sumarB empieza con su propio cero y pasa a 3. La última llamada vuelve a sumarA y aumenta su 2 hasta 3. Los dos objetos no se fusionan por tener el mismo nombre."
+        }
+      },
+      {
+        "id": "block_0011_0002",
+        "block": {
+          "type": "output_prediction",
+          "id": "p3_u3l2_duracion_en_repeticiones",
+          "language": "cpp",
+          "question": "Predice las tres parejas. En cada una se muestra primero acumulado y después actual.",
+          "code": "#include <iostream>\n\nint main() {\n    for (int i = 0; i < 3; ++i) {\n        static int acumulado = 0;\n        int actual = 0;\n        acumulado += 2;\n        actual += 2;\n        std::cout << acumulado << ':' << actual << ';';\n    }\n    return 0;\n}\n",
+          "answers": [
+            "2:2;4:2;6:2;"
+          ],
+          "outputComparison": "exact",
+          "explanation": "acumulado recibe las tres sumas de 2 y pasa por 2, 4 y 6. Cada actual comienza en cero y sólo recibe la suma de su repetición: siempre muestra 2. Las dos declaraciones están en el mismo bloque, pero tienen distinta duración del almacenamiento."
+        }
+      },
+      {
+        "id": "block_0012_0001",
+        "block": {
+          "type": "code",
+          "language": "cpp",
+          "code": "#include <iostream>\n\nint siguiente() {\n    static int numero = 0;\n    numero += 1;\n    return numero;\n}\n\nint main() {\n    const int a = siguiente();\n    const int b = siguiente();\n    std::cout << a << ':' << b;\n    return 0;\n}\n"
+        }
+      },
+      {
+        "id": "block_0014_0012",
+        "block": {
+          "type": "cpp_compiler",
+          "language": "cpp",
+          "initialCode": "#include <iostream>\n\nint gestionar(int orden, int cantidad) {\n    // Conserva aqui un unico total entre llamadas.\n    // Aplica el contrato de consultar, sumar o reiniciar.\n    // Devuelve -1 al rechazar y conserva el total anterior.\n    if (orden == 0) {\n        return 0;\n    }\n    return cantidad;\n}\n\nint main() {\n    int numeroDeOrdenes = 0;\n    if (!(std::cin >> numeroDeOrdenes) ||\n        numeroDeOrdenes < 1 || numeroDeOrdenes > 15) {\n        std::cout << \"Datos invalidos\\n\";\n        return 0;\n    }\n    for (int i = 0; i < numeroDeOrdenes; ++i) {\n        int orden = 0;\n        int cantidad = 0;\n        if (!(std::cin >> orden >> cantidad)) {\n            std::cout << \"Datos invalidos\\n\";\n            return 0;\n        }\n        const int respuesta = gestionar(orden, cantidad);\n        const int totalActual = gestionar(0, 0);\n        if (respuesta == -1) {\n            std::cout << \"Rechazo\";\n        } else {\n            std::cout << \"Aceptado:\" << respuesta;\n        }\n        std::cout << \";Total:\" << totalActual << '\\n';\n    }\n    return 0;\n}\n",
+          "initialStandardInput": "9\n0 0\n1 4\n1 5\n2 1\n1 5\n1 5\n1 2\n2 0\n1 3\n",
+          "outputCheck": {
+            "inputComparison": "tokens",
+            "cases": [
+              {
+                "standardInput": "9\n0 0\n1 4\n1 5\n2 1\n1 5\n1 5\n1 2\n2 0\n1 3\n",
+                "outputs": [
+                  "Aceptado:0;Total:0\nAceptado:4;Total:4\nAceptado:9;Total:9\nRechazo;Total:9\nAceptado:14;Total:14\nAceptado:19;Total:19\nRechazo;Total:19\nAceptado:0;Total:0\nAceptado:3;Total:3\n"
+                ],
+                "explanation": "Procesar las órdenes en secuencia, conservar el total entre llamadas y rechazos, aplicar sólo las órdenes válidas y mostrar el resultado y el estado consultado."
+              },
+              {
+                "standardInput": "7\n1 5\n1 5\n1 5\n1 5\n1 1\n0 0\n2 0\n",
+                "outputs": [
+                  "Aceptado:5;Total:5\nAceptado:10;Total:10\nAceptado:15;Total:15\nAceptado:20;Total:20\nRechazo;Total:20\nAceptado:20;Total:20\nAceptado:0;Total:0\n"
+                ],
+                "explanation": "Procesar las órdenes en secuencia, conservar el total entre llamadas y rechazos, aplicar sólo las órdenes válidas y mostrar el resultado y el estado consultado."
+              },
+              {
+                "standardInput": "8\n1 2\n1 0\n1 -1\n1 6\n3 0\n0 1\n2 -1\n0 0\n",
+                "outputs": [
+                  "Aceptado:2;Total:2\nRechazo;Total:2\nRechazo;Total:2\nRechazo;Total:2\nRechazo;Total:2\nRechazo;Total:2\nRechazo;Total:2\nAceptado:2;Total:2\n"
+                ],
+                "explanation": "Procesar las órdenes en secuencia, conservar el total entre llamadas y rechazos, aplicar sólo las órdenes válidas y mostrar el resultado y el estado consultado."
+              },
+              {
+                "standardInput": "7\n1 5\n2 0\n0 0\n2 0\n1 1\n1 4\n0 0\n",
+                "outputs": [
+                  "Aceptado:5;Total:5\nAceptado:0;Total:0\nAceptado:0;Total:0\nAceptado:0;Total:0\nAceptado:1;Total:1\nAceptado:5;Total:5\nAceptado:5;Total:5\n"
+                ],
+                "explanation": "Procesar las órdenes en secuencia, conservar el total entre llamadas y rechazos, aplicar sólo las órdenes válidas y mostrar el resultado y el estado consultado."
+              }
+            ]
+          }
+        }
+      },
+      {
+        "id": "block_0017_0001",
+        "block": {
+          "type": "code",
+          "language": "cpp",
+          "code": "#include <iostream>\n\nint gestionar(int orden, int cantidad) {\n    static int total = 0;\n    if (orden == 0 && cantidad == 0) {\n        return total;\n    }\n    if (orden == 2 && cantidad == 0) {\n        total = 0;\n        return total;\n    }\n    if (orden != 1 || cantidad < 1 || cantidad > 5 ||\n        cantidad > 20 - total) {\n        return -1;\n    }\n    total += cantidad;\n    return total;\n}\n\nint main() {\n    int numeroDeOrdenes = 0;\n    if (!(std::cin >> numeroDeOrdenes) ||\n        numeroDeOrdenes < 1 || numeroDeOrdenes > 15) {\n        std::cout << \"Datos invalidos\\n\";\n        return 0;\n    }\n    for (int i = 0; i < numeroDeOrdenes; ++i) {\n        int orden = 0;\n        int cantidad = 0;\n        if (!(std::cin >> orden >> cantidad)) {\n            std::cout << \"Datos invalidos\\n\";\n            return 0;\n        }\n        const int respuesta = gestionar(orden, cantidad);\n        const int totalActual = gestionar(0, 0);\n        if (respuesta == -1) {\n            std::cout << \"Rechazo\";\n        } else {\n            std::cout << \"Aceptado:\" << respuesta;\n        }\n        std::cout << \";Total:\" << totalActual << '\\n';\n    }\n    return 0;\n}\n"
+        }
+      }
+    ]
   }
 }

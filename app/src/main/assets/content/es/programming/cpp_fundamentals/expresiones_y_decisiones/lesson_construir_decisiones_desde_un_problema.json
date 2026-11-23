@@ -107,7 +107,7 @@
           "type": "output_prediction",
           "question": "El código usa 20 fichas y capacidad de 6. El taller rechaza los sobrantes. Sigue las decisiones y escribe el renglón que muestra el programa.",
           "language": "cpp",
-          "code": "#include <iostream>\n\nint main() {\n    const int fichas = 20;\n    int capacidad = 6;\n    const bool acepta_sobrantes = false;\n    if ((fichas < 0) || (fichas > 30) || (capacidad < 1) || (capacidad > 6)) {\n        std::cout << \"Datos invalidos\";\n    } else if (fichas == 0) {\n        std::cout << \"Sin trabajo\";\n    } else {\n        const int grupos = fichas / capacidad;\n        const int sobrantes = fichas % capacidad;\n        if (sobrantes == 0) {\n            std::cout << \"Grupos: \" << grupos;\n        } else if (acepta_sobrantes) {\n            std::cout << \"Grupos: \" << grupos << \"\\n\";\n            std::cout << \"Sobrantes: \" << sobrantes;\n        } else {\n            std::cout << \"Reparto pendiente\";\n        }\n    }\n    return 0;\n}\n",
+          "code": "#include <iostream>\n\nint main() {\n    const int fichas = 20;\n    int capacidad = 6;\n    const bool acepta_sobrantes = false;\n\n    if ((fichas < 0) || (fichas > 30) || (capacidad < 1) || (capacidad > 6)) {\n        std::cout << \"Datos invalidos\";\n    } else if (fichas == 0) {\n        std::cout << \"Sin trabajo\";\n    } else {\n        const int grupos = fichas / capacidad;\n        const int sobrantes = fichas % capacidad;\n\n        if (sobrantes == 0) {\n            std::cout << \"Grupos: \" << grupos;\n        } else if (acepta_sobrantes) {\n            std::cout << \"Grupos: \" << grupos << \"\\n\";\n            std::cout << \"Sobrantes: \" << sobrantes;\n        } else {\n            std::cout << \"Reparto pendiente\";\n        }\n    }\n\n    return 0;\n}\n",
           "answers": [
             "Reparto pendiente"
           ],
@@ -124,7 +124,7 @@
         {
           "type": "code",
           "language": "cpp",
-          "code": "#include <iostream>\n\nint main() {\n    int fichas = 14;\n    int capacidad = 4;\n    int codigo_sobrantes = 1;\n    const bool acepta_sobrantes = codigo_sobrantes != 0;\n\n    if ((fichas < 0) || (fichas > 30) || (capacidad < 1) || (capacidad > 6)) {\n        std::cout << \"Datos invalidos\";\n    } else if (fichas == 0) {\n        std::cout << \"Sin trabajo\";\n    } else {\n        const int grupos = fichas / capacidad;\n        const int sobrantes = fichas % capacidad;\n\n        if (sobrantes != 0 && !acepta_sobrantes) {\n            std::cout << \"Reparto pendiente\";\n        } else {\n            std::cout << \"Grupos: \" << grupos;\n            if (sobrantes != 0) {\n                std::cout << \"\\nSobrantes: \" << sobrantes;\n            }\n        }\n    }\n\n    return 0;\n}\n"
+          "code": "#include <iostream>\n\nint main() {\n    int fichas = 14;\n    int capacidad = 4;\n    int codigo_sobrantes = 1;\n\n    const bool acepta_sobrantes = codigo_sobrantes != 0;\n\n    if ((fichas < 0) || (fichas > 30) || (capacidad < 1) || (capacidad > 6)) {\n        std::cout << \"Datos invalidos\";\n    } else if (fichas == 0) {\n        std::cout << \"Sin trabajo\";\n    } else {\n        const int grupos = fichas / capacidad;\n        const int sobrantes = fichas % capacidad;\n\n        if (sobrantes != 0 && !acepta_sobrantes) {\n            std::cout << \"Reparto pendiente\";\n        } else {\n            std::cout << \"Grupos: \" << grupos;\n\n            if (sobrantes != 0) {\n                std::cout << \"\\nSobrantes: \" << sobrantes;\n            }\n        }\n    }\n\n    return 0;\n}\n"
         }
       ]
     },
@@ -174,7 +174,7 @@
         },
         {
           "type": "cpp_compiler",
-          "initialCode": "#include <iostream>\n\nint main() {\n    int fichas{0};\n    int capacidad{0};\n    int codigo_sobrantes{0};\n    std::cin >> fichas >> capacidad >> codigo_sobrantes;\n\n    const bool acepta_sobrantes = codigo_sobrantes != 0;\n\n    if ((fichas < 0) || (fichas > 30) || (capacidad < 1) || (capacidad > 6)) {\n        std::cout << \"Datos invalidos\";\n    } else if (fichas == 0) {\n        std::cout << \"Sin trabajo\";\n    } else {\n        const int grupos = fichas / capacidad;\n        const int sobrantes = fichas % capacidad;\n\n        if (sobrantes == 0) {\n            std::cout << \"Grupos: \" << grupos;\n        } else if (acepta_sobrantes) {\n            std::cout << \"Grupos: \" << grupos << \"\\n\";\n            std::cout << \"Sobrantes: \" << sobrantes;\n        } else {\n            std::cout << \"Reparto pendiente\";\n        }\n    }\n\n    return 0;\n}\n",
+          "initialCode": "#include <iostream>\n\nint main() {\n    int fichas{0};\n    int capacidad{0};\n    int codigo_sobrantes{0};\n\n    std::cin >> fichas >> capacidad >> codigo_sobrantes;\n\n    const bool acepta_sobrantes = codigo_sobrantes != 0;\n\n    if ((fichas < 0) || (fichas > 30) || (capacidad < 1) || (capacidad > 6)) {\n        std::cout << \"Datos invalidos\";\n    } else if (fichas == 0) {\n        std::cout << \"Sin trabajo\";\n    } else {\n        const int grupos = fichas / capacidad;\n        const int sobrantes = fichas % capacidad;\n\n        if (sobrantes == 0) {\n            std::cout << \"Grupos: \" << grupos;\n        } else if (acepta_sobrantes) {\n            std::cout << \"Grupos: \" << grupos << \"\\n\";\n            std::cout << \"Sobrantes: \" << sobrantes;\n        } else {\n            std::cout << \"Reparto pendiente\";\n        }\n    }\n\n    return 0;\n}\n",
           "initialStandardInput": "0 4 1",
           "outputCheck": {
             "inputComparison": "tokens",
@@ -305,7 +305,7 @@
         {
           "type": "code",
           "language": "cpp",
-          "code": "#include <iostream>\n\nint main() {\n    int fichas{0};\n    int capacidad{0};\n    int codigo_sobrantes{0};\n    std::cin >> fichas >> capacidad >> codigo_sobrantes;\n\n    const bool acepta_sobrantes = codigo_sobrantes != 0;\n\n    if ((fichas < 1) || (fichas > 30) || (capacidad < 1) || (capacidad > 6)) {\n        std::cout << \"Datos invalidos\";\n    } else {\n        const int grupos = fichas / capacidad;\n        const int sobrantes = fichas % capacidad;\n\n        if (sobrantes == 0) {\n            std::cout << \"Grupos: \" << grupos;\n        } else if (acepta_sobrantes) {\n            std::cout << \"Grupos: \" << grupos << \"\\n\";\n            std::cout << \"Sobrantes: \" << sobrantes;\n        } else {\n            std::cout << \"Reparto pendiente\";\n        }\n    }\n\n    return 0;\n}\n"
+          "code": "#include <iostream>\n\nint main() {\n    int fichas{0};\n    int capacidad{0};\n    int codigo_sobrantes{0};\n\n    std::cin >> fichas >> capacidad >> codigo_sobrantes;\n\n    const bool acepta_sobrantes = codigo_sobrantes != 0;\n\n    if ((fichas < 1) || (fichas > 30) || (capacidad < 1) || (capacidad > 6)) {\n        std::cout << \"Datos invalidos\";\n    } else {\n        const int grupos = fichas / capacidad;\n        const int sobrantes = fichas % capacidad;\n\n        if (sobrantes == 0) {\n            std::cout << \"Grupos: \" << grupos;\n        } else if (acepta_sobrantes) {\n            std::cout << \"Grupos: \" << grupos << \"\\n\";\n            std::cout << \"Sobrantes: \" << sobrantes;\n        } else {\n            std::cout << \"Reparto pendiente\";\n        }\n    }\n\n    return 0;\n}\n"
         },
         {
           "type": "paragraph",
@@ -1247,6 +1247,26 @@
         "id": "block_0004_0003",
         "beforeSha256": "097724d7ca68bfc19d54a095e911a1c192209f29c94ca644f6cd492eab673318",
         "afterSha256": "30ccd1be6bd3f7c533dc46d3a5848870d3d859d4351d542686167b8ac5e86bdf"
+      },
+      {
+        "id": "block_0003_0003",
+        "beforeSha256": "c8d7f5a7b5216f7034610148e46fc72d526ecf19fc70e9385ee750642dec64f2",
+        "afterSha256": "855884297bf478d01cde46a8de99b42945d819d620eccb9b46f895840385a03b"
+      },
+      {
+        "id": "p1u3l8_ejemplo_original",
+        "beforeSha256": "ff6959a5c8836799c4814c082d28826f6de9fc4adc317b2e11b53f70a24657a7",
+        "afterSha256": "27abd34bdd27c5ebf8e6ab39a684808773ae36dac7e51938b63154a83bbecaff"
+      },
+      {
+        "id": "p1u3l8_cambiar_minimo",
+        "beforeSha256": "cb8970317afa99cab4065963ccb335ac7e49ebdbe6cc30dcc9d143df8174651c",
+        "afterSha256": "1e0c4c3b229b1b3d1dbe2424b838254e7576c4cdfa642e92179994d0e059163e"
+      },
+      {
+        "id": "p1u3l8_ejemplo_minimo",
+        "beforeSha256": "9d819f877695e385dc7dcb4fef3821eecac5b703e5d36ccdd01f63a18bd79c0d",
+        "afterSha256": "c0333a9effda0ba6e3272830b958c895eee4fdaaad984bdfd926bf2e1dfa03cd"
       }
     ],
     "sourceFormatRevisions": [
@@ -1264,6 +1284,139 @@
           "type": "code",
           "language": "cpp",
           "code": "#include <iostream>\n\nint main() {\n    const int fichas = 18;\n    int capacidad = 5;\n    const bool acepta_sobrantes = true;\n    if ((fichas < 1) || (fichas > 30) || (capacidad < 1) || (capacidad > 6)) {\n        std::cout << \"Datos invalidos\";\n    } else {\n        const int grupos = fichas / capacidad;\n        const int sobrantes = fichas % capacidad;\n        if (sobrantes == 0) {\n            std::cout << \"Grupos: \" << grupos;\n        } else if (acepta_sobrantes) {\n            std::cout << \"Grupos: \" << grupos << \"\\n\";\n            std::cout << \"Sobrantes: \" << sobrantes;\n        } else {\n            std::cout << \"Reparto pendiente\";\n        }\n    }\n    return 0;\n}\n"
+        }
+      },
+      {
+        "id": "block_0003_0003",
+        "block": {
+          "type": "output_prediction",
+          "question": "El código usa 20 fichas y capacidad de 6. El taller rechaza los sobrantes. Sigue las decisiones y escribe el renglón que muestra el programa.",
+          "language": "cpp",
+          "code": "#include <iostream>\n\nint main() {\n    const int fichas = 20;\n    int capacidad = 6;\n    const bool acepta_sobrantes = false;\n    if ((fichas < 0) || (fichas > 30) || (capacidad < 1) || (capacidad > 6)) {\n        std::cout << \"Datos invalidos\";\n    } else if (fichas == 0) {\n        std::cout << \"Sin trabajo\";\n    } else {\n        const int grupos = fichas / capacidad;\n        const int sobrantes = fichas % capacidad;\n        if (sobrantes == 0) {\n            std::cout << \"Grupos: \" << grupos;\n        } else if (acepta_sobrantes) {\n            std::cout << \"Grupos: \" << grupos << \"\\n\";\n            std::cout << \"Sobrantes: \" << sobrantes;\n        } else {\n            std::cout << \"Reparto pendiente\";\n        }\n    }\n    return 0;\n}\n",
+          "answers": [
+            "Reparto pendiente"
+          ],
+          "explanation": "Veinte fichas permiten llenar tres grupos y sobran dos. La condición sobrantes == 0 da false y acepta_sobrantes vale false. Se ejecuta el último else y aparece solo Reparto pendiente."
+        }
+      },
+      {
+        "id": "p1u3l8_ejemplo_original",
+        "block": {
+          "type": "code",
+          "language": "cpp",
+          "code": "#include <iostream>\n\nint main() {\n    int fichas = 14;\n    int capacidad = 4;\n    int codigo_sobrantes = 1;\n    const bool acepta_sobrantes = codigo_sobrantes != 0;\n\n    if ((fichas < 0) || (fichas > 30) || (capacidad < 1) || (capacidad > 6)) {\n        std::cout << \"Datos invalidos\";\n    } else if (fichas == 0) {\n        std::cout << \"Sin trabajo\";\n    } else {\n        const int grupos = fichas / capacidad;\n        const int sobrantes = fichas % capacidad;\n\n        if (sobrantes != 0 && !acepta_sobrantes) {\n            std::cout << \"Reparto pendiente\";\n        } else {\n            std::cout << \"Grupos: \" << grupos;\n            if (sobrantes != 0) {\n                std::cout << \"\\nSobrantes: \" << sobrantes;\n            }\n        }\n    }\n\n    return 0;\n}\n"
+        }
+      },
+      {
+        "id": "p1u3l8_cambiar_minimo",
+        "block": {
+          "type": "cpp_compiler",
+          "initialCode": "#include <iostream>\n\nint main() {\n    int fichas{0};\n    int capacidad{0};\n    int codigo_sobrantes{0};\n    std::cin >> fichas >> capacidad >> codigo_sobrantes;\n\n    const bool acepta_sobrantes = codigo_sobrantes != 0;\n\n    if ((fichas < 0) || (fichas > 30) || (capacidad < 1) || (capacidad > 6)) {\n        std::cout << \"Datos invalidos\";\n    } else if (fichas == 0) {\n        std::cout << \"Sin trabajo\";\n    } else {\n        const int grupos = fichas / capacidad;\n        const int sobrantes = fichas % capacidad;\n\n        if (sobrantes == 0) {\n            std::cout << \"Grupos: \" << grupos;\n        } else if (acepta_sobrantes) {\n            std::cout << \"Grupos: \" << grupos << \"\\n\";\n            std::cout << \"Sobrantes: \" << sobrantes;\n        } else {\n            std::cout << \"Reparto pendiente\";\n        }\n    }\n\n    return 0;\n}\n",
+          "initialStandardInput": "0 4 1",
+          "outputCheck": {
+            "inputComparison": "tokens",
+            "cases": [
+              {
+                "standardInput": "0 4 1",
+                "outputs": [
+                  "Datos invalidos",
+                  "Datos invalidos\n"
+                ]
+              },
+              {
+                "standardInput": "14 4 1",
+                "outputs": [
+                  "Grupos: 3\nSobrantes: 2",
+                  "Grupos: 3\nSobrantes: 2\n"
+                ]
+              },
+              {
+                "standardInput": "14 4 0",
+                "outputs": [
+                  "Reparto pendiente",
+                  "Reparto pendiente\n"
+                ]
+              },
+              {
+                "standardInput": "12 4 1",
+                "outputs": [
+                  "Grupos: 3",
+                  "Grupos: 3\n"
+                ]
+              },
+              {
+                "standardInput": "12 4 0",
+                "outputs": [
+                  "Grupos: 3",
+                  "Grupos: 3\n"
+                ]
+              },
+              {
+                "standardInput": "30 6 1",
+                "outputs": [
+                  "Grupos: 5",
+                  "Grupos: 5\n"
+                ]
+              },
+              {
+                "standardInput": "-1 4 1",
+                "outputs": [
+                  "Datos invalidos",
+                  "Datos invalidos\n"
+                ]
+              },
+              {
+                "standardInput": "31 4 1",
+                "outputs": [
+                  "Datos invalidos",
+                  "Datos invalidos\n"
+                ]
+              },
+              {
+                "standardInput": "12 0 1",
+                "outputs": [
+                  "Datos invalidos",
+                  "Datos invalidos\n"
+                ]
+              },
+              {
+                "standardInput": "12 7 1",
+                "outputs": [
+                  "Datos invalidos",
+                  "Datos invalidos\n"
+                ]
+              },
+              {
+                "standardInput": "0 0 1",
+                "outputs": [
+                  "Datos invalidos",
+                  "Datos invalidos\n"
+                ]
+              },
+              {
+                "standardInput": "1 4 1",
+                "outputs": [
+                  "Grupos: 0\nSobrantes: 1",
+                  "Grupos: 0\nSobrantes: 1\n"
+                ]
+              },
+              {
+                "standardInput": "1 4 0",
+                "outputs": [
+                  "Reparto pendiente",
+                  "Reparto pendiente\n"
+                ]
+              }
+            ]
+          }
+        }
+      },
+      {
+        "id": "p1u3l8_ejemplo_minimo",
+        "block": {
+          "type": "code",
+          "language": "cpp",
+          "code": "#include <iostream>\n\nint main() {\n    int fichas{0};\n    int capacidad{0};\n    int codigo_sobrantes{0};\n    std::cin >> fichas >> capacidad >> codigo_sobrantes;\n\n    const bool acepta_sobrantes = codigo_sobrantes != 0;\n\n    if ((fichas < 1) || (fichas > 30) || (capacidad < 1) || (capacidad > 6)) {\n        std::cout << \"Datos invalidos\";\n    } else {\n        const int grupos = fichas / capacidad;\n        const int sobrantes = fichas % capacidad;\n\n        if (sobrantes == 0) {\n            std::cout << \"Grupos: \" << grupos;\n        } else if (acepta_sobrantes) {\n            std::cout << \"Grupos: \" << grupos << \"\\n\";\n            std::cout << \"Sobrantes: \" << sobrantes;\n        } else {\n            std::cout << \"Reparto pendiente\";\n        }\n    }\n\n    return 0;\n}\n"
         }
       }
     ],

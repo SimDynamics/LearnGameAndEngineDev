@@ -140,7 +140,7 @@
         {
           "type": "code",
           "language": "cmake",
-          "code": "add_library(preparacion STATIC src/entrega.cpp)\nadd_executable(medir app/main.cpp)\ntarget_include_directories(preparacion PUBLIC include)\ntarget_link_libraries(medir PRIVATE preparacion)\n"
+          "code": "add_library(preparacion STATIC src/entrega.cpp)\nadd_executable(medir app/main.cpp)\n\ntarget_include_directories(preparacion PUBLIC include)\ntarget_link_libraries(medir PRIVATE preparacion)\n"
         },
         {
           "type": "paragraph",
@@ -206,7 +206,7 @@
           "id": "cab_oraculo_independiente_de_rutas",
           "language": "cpp",
           "question": "¿Qué salida produce este programa? Conserva los dos puntos y no añadas salto final.",
-          "code": "#include <iostream>\n\nint minutos_preparacion(int unidades) {\n    if (unidades == 0) {\n        return 0;\n    }\n    return 3 + 2 * unidades;\n}\n\nint main() {\n    std::cout << minutos_preparacion(0) << ':'\n              << minutos_preparacion(1) << ':'\n              << minutos_preparacion(5);\n    return 0;\n}\n",
+          "code": "#include <iostream>\n\nint minutos_preparacion(int unidades) {\n    if (unidades == 0) {\n        return 0;\n    }\n\n    return 3 + 2 * unidades;\n}\n\nint main() {\n    std::cout << minutos_preparacion(0) << ':'\n              << minutos_preparacion(1) << ':'\n              << minutos_preparacion(5);\n    return 0;\n}\n",
           "answers": [
             "0:5:13"
           ],
@@ -255,7 +255,7 @@
           "projectFiles": [
             {
               "path": "CMakeLists.txt",
-              "initialCode": "cmake_minimum_required(VERSION 3.20)\nproject(Tiempos LANGUAGES CXX)\nadd_library(preparacion STATIC src/entrega.cpp)\nadd_executable(medir app/main.cpp)\ntarget_compile_features(preparacion PRIVATE cxx_std_20)\ntarget_compile_features(medir PRIVATE cxx_std_20)\nset_target_properties(preparacion medir PROPERTIES CXX_EXTENSIONS OFF)\ntarget_include_directories(preparacion PRIVATE include)\ntarget_link_libraries(medir PRIVATE preparacion)\n"
+              "initialCode": "cmake_minimum_required(VERSION 3.20)\nproject(Tiempos LANGUAGES CXX)\n\nadd_library(preparacion STATIC src/entrega.cpp)\nadd_executable(medir app/main.cpp)\n\ntarget_compile_features(preparacion PRIVATE cxx_std_20)\ntarget_compile_features(medir PRIVATE cxx_std_20)\nset_target_properties(preparacion medir PROPERTIES CXX_EXTENSIONS OFF)\ntarget_include_directories(preparacion PRIVATE include)\ntarget_link_libraries(medir PRIVATE preparacion)\n"
             },
             {
               "path": "include/paquetes/entrega.h",
@@ -263,7 +263,7 @@
             },
             {
               "path": "src/entrega.cpp",
-              "initialCode": "#include \"paquetes/entrega.h\"\n\nint minutos_preparacion(int unidades) {\n    if (unidades == 0) {\n        return 0;\n    }\n    return 3 + 2 * unidades;\n}\n"
+              "initialCode": "#include \"paquetes/entrega.h\"\n\nint minutos_preparacion(int unidades) {\n    if (unidades == 0) {\n        return 0;\n    }\n\n    return 3 + 2 * unidades;\n}\n"
             },
             {
               "path": "app/main.cpp",
@@ -323,7 +323,7 @@
         {
           "type": "code",
           "language": "cmake",
-          "code": "cmake_minimum_required(VERSION 3.20)\nproject(Tiempos LANGUAGES CXX)\nadd_library(preparacion STATIC src/entrega.cpp)\nadd_executable(medir app/main.cpp)\ntarget_compile_features(preparacion PRIVATE cxx_std_20)\ntarget_compile_features(medir PRIVATE cxx_std_20)\nset_target_properties(preparacion medir PROPERTIES CXX_EXTENSIONS OFF)\ntarget_include_directories(preparacion PUBLIC include)\ntarget_link_libraries(medir PRIVATE preparacion)\n"
+          "code": "cmake_minimum_required(VERSION 3.20)\nproject(Tiempos LANGUAGES CXX)\n\nadd_library(preparacion STATIC src/entrega.cpp)\nadd_executable(medir app/main.cpp)\n\ntarget_compile_features(preparacion PRIVATE cxx_std_20)\ntarget_compile_features(medir PRIVATE cxx_std_20)\nset_target_properties(preparacion medir PROPERTIES CXX_EXTENSIONS OFF)\ntarget_include_directories(preparacion PUBLIC include)\ntarget_link_libraries(medir PRIVATE preparacion)\n"
         },
         {
           "type": "paragraph",
@@ -334,7 +334,7 @@
           "id": "cab_recuperar_cero_y_extremo",
           "language": "cpp",
           "question": "¿Qué salida produce este programa? Conserva los dos puntos y no añadas salto final.",
-          "code": "#include <iostream>\n\nint minutos_preparacion(int unidades) {\n    if (unidades == 0) {\n        return 0;\n    }\n    return 3 + 2 * unidades;\n}\n\nint main() {\n    std::cout << minutos_preparacion(0) << ':'\n              << minutos_preparacion(12) << ':'\n              << minutos_preparacion(2);\n    return 0;\n}\n",
+          "code": "#include <iostream>\n\nint minutos_preparacion(int unidades) {\n    if (unidades == 0) {\n        return 0;\n    }\n\n    return 3 + 2 * unidades;\n}\n\nint main() {\n    std::cout << minutos_preparacion(0) << ':'\n              << minutos_preparacion(12) << ':'\n              << minutos_preparacion(2);\n    return 0;\n}\n",
           "answers": [
             "0:27:7"
           ],
@@ -378,7 +378,7 @@
           "projectFiles": [
             {
               "path": "CMakeLists.txt",
-              "initialCode": "cmake_minimum_required(VERSION 3.20)\nproject(Tiempos LANGUAGES CXX)\nadd_library(preparacion STATIC src/entrega.cpp)\nadd_executable(medir app/main.cpp)\ntarget_compile_features(preparacion PRIVATE cxx_std_20)\ntarget_compile_features(medir PRIVATE cxx_std_20)\nset_target_properties(preparacion medir PROPERTIES CXX_EXTENSIONS OFF)\ntarget_include_directories(preparacion PUBLIC include)\ntarget_link_libraries(medir PRIVATE preparacion)\n"
+              "initialCode": "cmake_minimum_required(VERSION 3.20)\nproject(Tiempos LANGUAGES CXX)\n\nadd_library(preparacion STATIC src/entrega.cpp)\nadd_executable(medir app/main.cpp)\n\ntarget_compile_features(preparacion PRIVATE cxx_std_20)\ntarget_compile_features(medir PRIVATE cxx_std_20)\nset_target_properties(preparacion medir PROPERTIES CXX_EXTENSIONS OFF)\ntarget_include_directories(preparacion PUBLIC include)\ntarget_link_libraries(medir PRIVATE preparacion)\n"
             },
             {
               "path": "include/paquetes/entrega.h",
@@ -386,7 +386,7 @@
             },
             {
               "path": "src/entrega.cpp",
-              "initialCode": "#include \"paquetes/entrega.h\"\n\nint minutos_preparacion(int unidades) {\n    if (unidades == 0) {\n        return 0;\n    }\n    return 3 + 2 * unidades;\n}\n"
+              "initialCode": "#include \"paquetes/entrega.h\"\n\nint minutos_preparacion(int unidades) {\n    if (unidades == 0) {\n        return 0;\n    }\n\n    return 3 + 2 * unidades;\n}\n"
             },
             {
               "path": "app/main.cpp",
@@ -425,7 +425,7 @@
           "projectFiles": [
             {
               "path": "CMakeLists.txt",
-              "initialCode": "cmake_minimum_required(VERSION 3.20)\nproject(Tiempos LANGUAGES CXX)\nadd_library(preparacion STATIC src/entrega.cpp)\nadd_executable(medir app/main.cpp)\ntarget_compile_features(preparacion PRIVATE cxx_std_20)\ntarget_compile_features(medir PRIVATE cxx_std_20)\nset_target_properties(preparacion medir PROPERTIES CXX_EXTENSIONS OFF)\ntarget_include_directories(preparacion PUBLIC include)\ntarget_link_libraries(medir PRIVATE preparacion)\n"
+              "initialCode": "cmake_minimum_required(VERSION 3.20)\nproject(Tiempos LANGUAGES CXX)\n\nadd_library(preparacion STATIC src/entrega.cpp)\nadd_executable(medir app/main.cpp)\n\ntarget_compile_features(preparacion PRIVATE cxx_std_20)\ntarget_compile_features(medir PRIVATE cxx_std_20)\nset_target_properties(preparacion medir PROPERTIES CXX_EXTENSIONS OFF)\ntarget_include_directories(preparacion PUBLIC include)\ntarget_link_libraries(medir PRIVATE preparacion)\n"
             },
             {
               "path": "include/paquetes/entrega.h",
@@ -540,7 +540,7 @@
           "projectFiles": [
             {
               "path": "CMakeLists.txt",
-              "initialCode": "cmake_minimum_required(VERSION 3.20)\nproject(Tiempos LANGUAGES CXX)\nadd_library(preparacion STATIC src/entrega.cpp)\nadd_executable(medir app/main.cpp)\ntarget_compile_features(preparacion PRIVATE cxx_std_20)\ntarget_compile_features(medir PRIVATE cxx_std_20)\nset_target_properties(preparacion medir PROPERTIES CXX_EXTENSIONS OFF)\ntarget_include_directories(preparacion\n    PUBLIC include\n    PRIVATE interno\n)\ntarget_link_libraries(medir PRIVATE preparacion)\n"
+              "initialCode": "cmake_minimum_required(VERSION 3.20)\nproject(Tiempos LANGUAGES CXX)\n\nadd_library(preparacion STATIC src/entrega.cpp)\nadd_executable(medir app/main.cpp)\n\ntarget_compile_features(preparacion PRIVATE cxx_std_20)\ntarget_compile_features(medir PRIVATE cxx_std_20)\nset_target_properties(preparacion medir PROPERTIES CXX_EXTENSIONS OFF)\ntarget_include_directories(preparacion\n    PUBLIC include\n    PRIVATE interno\n)\ntarget_link_libraries(medir PRIVATE preparacion)\n"
             },
             {
               "path": "include/paquetes/entrega.h",
@@ -548,7 +548,7 @@
             },
             {
               "path": "src/entrega.cpp",
-              "initialCode": "#include \"paquetes/entrega.h\"\n#include \"ajuste.h\"\n\nint minutos_preparacion(int unidades) {\n    if (unidades == 0) {\n        return 0;\n    }\n    return minutos_base + minutos_por_unidad * unidades;\n}\n"
+              "initialCode": "#include \"paquetes/entrega.h\"\n#include \"ajuste.h\"\n\nint minutos_preparacion(int unidades) {\n    if (unidades == 0) {\n        return 0;\n    }\n\n    return minutos_base + minutos_por_unidad * unidades;\n}\n"
             },
             {
               "path": "interno/ajuste.h",
@@ -624,7 +624,7 @@
           "projectFiles": [
             {
               "path": "CMakeLists.txt",
-              "initialCode": "cmake_minimum_required(VERSION 3.20)\nproject(Tiempos LANGUAGES CXX)\nadd_library(preparacion STATIC src/entrega.cpp)\nadd_executable(medir app/main.cpp)\ntarget_compile_features(preparacion PRIVATE cxx_std_20)\ntarget_compile_features(medir PRIVATE cxx_std_20)\nset_target_properties(preparacion medir PROPERTIES CXX_EXTENSIONS OFF)\ntarget_include_directories(preparacion\n    PUBLIC include\n)\ntarget_link_libraries(medir PRIVATE preparacion)\n"
+              "initialCode": "cmake_minimum_required(VERSION 3.20)\nproject(Tiempos LANGUAGES CXX)\n\nadd_library(preparacion STATIC src/entrega.cpp)\nadd_executable(medir app/main.cpp)\n\ntarget_compile_features(preparacion PRIVATE cxx_std_20)\ntarget_compile_features(medir PRIVATE cxx_std_20)\nset_target_properties(preparacion medir PROPERTIES CXX_EXTENSIONS OFF)\ntarget_include_directories(preparacion\n    PUBLIC include\n)\ntarget_link_libraries(medir PRIVATE preparacion)\n"
             },
             {
               "path": "include/paquetes/entrega.h",
@@ -632,7 +632,7 @@
             },
             {
               "path": "src/entrega.cpp",
-              "initialCode": "#include \"paquetes/entrega.h\"\n#include \"ajuste.h\"\n\nint minutos_preparacion(int unidades) {\n    if (unidades == 0) {\n        return 0;\n    }\n    return minutos_base + minutos_por_unidad * unidades;\n}\n"
+              "initialCode": "#include \"paquetes/entrega.h\"\n#include \"ajuste.h\"\n\nint minutos_preparacion(int unidades) {\n    if (unidades == 0) {\n        return 0;\n    }\n\n    return minutos_base + minutos_por_unidad * unidades;\n}\n"
             },
             {
               "path": "interno/ajuste.h",
@@ -675,7 +675,7 @@
           "projectFiles": [
             {
               "path": "CMakeLists.txt",
-              "initialCode": "cmake_minimum_required(VERSION 3.20)\nproject(Tiempos LANGUAGES CXX)\nadd_library(preparacion STATIC src/entrega.cpp)\nadd_executable(medir app/main.cpp)\ntarget_compile_features(preparacion PRIVATE cxx_std_20)\ntarget_compile_features(medir PRIVATE cxx_std_20)\nset_target_properties(preparacion medir PROPERTIES CXX_EXTENSIONS OFF)\ntarget_include_directories(preparacion\n    PUBLIC include\n    PRIVATE interno\n)\ntarget_link_libraries(medir PRIVATE preparacion)\n"
+              "initialCode": "cmake_minimum_required(VERSION 3.20)\nproject(Tiempos LANGUAGES CXX)\n\nadd_library(preparacion STATIC src/entrega.cpp)\nadd_executable(medir app/main.cpp)\n\ntarget_compile_features(preparacion PRIVATE cxx_std_20)\ntarget_compile_features(medir PRIVATE cxx_std_20)\nset_target_properties(preparacion medir PROPERTIES CXX_EXTENSIONS OFF)\ntarget_include_directories(preparacion\n    PUBLIC include\n    PRIVATE interno\n)\ntarget_link_libraries(medir PRIVATE preparacion)\n"
             },
             {
               "path": "include/paquetes/entrega.h",
@@ -683,7 +683,7 @@
             },
             {
               "path": "src/entrega.cpp",
-              "initialCode": "#include \"paquetes/entrega.h\"\n#include \"ajuste.h\"\n\nint minutos_preparacion(int unidades) {\n    if (unidades == 0) {\n        return 0;\n    }\n    return minutos_base + minutos_por_unidad * unidades;\n}\n"
+              "initialCode": "#include \"paquetes/entrega.h\"\n#include \"ajuste.h\"\n\nint minutos_preparacion(int unidades) {\n    if (unidades == 0) {\n        return 0;\n    }\n\n    return minutos_base + minutos_por_unidad * unidades;\n}\n"
             },
             {
               "path": "interno/ajuste.h",
@@ -726,7 +726,7 @@
           "projectFiles": [
             {
               "path": "CMakeLists.txt",
-              "initialCode": "cmake_minimum_required(VERSION 3.20)\nproject(Tiempos LANGUAGES CXX)\nadd_library(preparacion STATIC src/entrega.cpp)\nadd_executable(medir app/main.cpp)\ntarget_compile_features(preparacion PRIVATE cxx_std_20)\ntarget_compile_features(medir PRIVATE cxx_std_20)\nset_target_properties(preparacion medir PROPERTIES CXX_EXTENSIONS OFF)\ntarget_include_directories(preparacion\n    PUBLIC include\n    PRIVATE interno\n)\ntarget_link_libraries(medir PRIVATE preparacion)\n"
+              "initialCode": "cmake_minimum_required(VERSION 3.20)\nproject(Tiempos LANGUAGES CXX)\n\nadd_library(preparacion STATIC src/entrega.cpp)\nadd_executable(medir app/main.cpp)\n\ntarget_compile_features(preparacion PRIVATE cxx_std_20)\ntarget_compile_features(medir PRIVATE cxx_std_20)\nset_target_properties(preparacion medir PROPERTIES CXX_EXTENSIONS OFF)\ntarget_include_directories(preparacion\n    PUBLIC include\n    PRIVATE interno\n)\ntarget_link_libraries(medir PRIVATE preparacion)\n"
             },
             {
               "path": "include/paquetes/entrega.h",
@@ -734,7 +734,7 @@
             },
             {
               "path": "src/entrega.cpp",
-              "initialCode": "#include \"paquetes/entrega.h\"\n#include \"ajuste.h\"\n\nint minutos_preparacion(int unidades) {\n    if (unidades == 0) {\n        return 0;\n    }\n    return minutos_base + minutos_por_unidad * unidades;\n}\n"
+              "initialCode": "#include \"paquetes/entrega.h\"\n#include \"ajuste.h\"\n\nint minutos_preparacion(int unidades) {\n    if (unidades == 0) {\n        return 0;\n    }\n\n    return minutos_base + minutos_por_unidad * unidades;\n}\n"
             },
             {
               "path": "interno/ajuste.h",
@@ -777,7 +777,7 @@
         {
           "type": "code",
           "language": "cmake",
-          "code": "add_library(preparacion STATIC src/entrega.cpp)\nadd_executable(medir app/main.cpp)\ntarget_include_directories(preparacion PUBLIC include)\ntarget_include_directories(medir PRIVATE include)\n# En este experimento falta la relación de enlace.\n"
+          "code": "add_library(preparacion STATIC src/entrega.cpp)\nadd_executable(medir app/main.cpp)\n\ntarget_include_directories(preparacion PUBLIC include)\ntarget_include_directories(medir PRIVATE include)\n# En este experimento falta la relación de enlace.\n"
         },
         {
           "type": "paragraph",
@@ -898,7 +898,7 @@
         {
           "type": "code",
           "language": "cmake",
-          "code": "cmake_minimum_required(VERSION 3.20)\nproject(SalaLocal LANGUAGES CXX)\nadd_library(aforo STATIC motor/cupo.cpp)\nadd_executable(consultar_aforo programas/consulta.cpp)\ntarget_compile_features(aforo PRIVATE cxx_std_20)\ntarget_compile_features(consultar_aforo PRIVATE cxx_std_20)\nset_target_properties(aforo consultar_aforo PROPERTIES CXX_EXTENSIONS OFF)\ntarget_include_directories(aforo PUBLIC publico)\ntarget_link_libraries(consultar_aforo PRIVATE aforo)\n"
+          "code": "cmake_minimum_required(VERSION 3.20)\nproject(SalaLocal LANGUAGES CXX)\n\nadd_library(aforo STATIC motor/cupo.cpp)\nadd_executable(consultar_aforo programas/consulta.cpp)\n\ntarget_compile_features(aforo PRIVATE cxx_std_20)\ntarget_compile_features(consultar_aforo PRIVATE cxx_std_20)\nset_target_properties(aforo consultar_aforo PROPERTIES CXX_EXTENSIONS OFF)\ntarget_include_directories(aforo PUBLIC publico)\ntarget_link_libraries(consultar_aforo PRIVATE aforo)\n"
         },
         {
           "type": "output_prediction",
@@ -945,7 +945,7 @@
         {
           "type": "code",
           "language": "cmake",
-          "code": "add_executable(resumen herramientas/resumen.cpp)\ntarget_compile_features(resumen PRIVATE cxx_std_20)\nset_target_properties(resumen PROPERTIES CXX_EXTENSIONS OFF)\ntarget_link_libraries(resumen PRIVATE preparacion)\n"
+          "code": "add_executable(resumen herramientas/resumen.cpp)\n\ntarget_compile_features(resumen PRIVATE cxx_std_20)\nset_target_properties(resumen PROPERTIES CXX_EXTENSIONS OFF)\ntarget_link_libraries(resumen PRIVATE preparacion)\n"
         },
         {
           "type": "multiple_choice",
@@ -986,7 +986,7 @@
           "id": "cab_revision_y_datos_no_son_la_ruta",
           "language": "cpp",
           "question": "¿Qué salida produce este programa? Conserva los dos puntos y no añadas salto final.",
-          "code": "#include <iostream>\n\nint minutos_preparacion(int unidades) {\n    if (unidades == 0) {\n        return 0;\n    }\n    return 4 + 2 * unidades;\n}\n\nint main() {\n    std::cout << minutos_preparacion(2) << ':'\n              << minutos_preparacion(0) << ':'\n              << minutos_preparacion(12);\n    return 0;\n}\n",
+          "code": "#include <iostream>\n\nint minutos_preparacion(int unidades) {\n    if (unidades == 0) {\n        return 0;\n    }\n\n    return 4 + 2 * unidades;\n}\n\nint main() {\n    std::cout << minutos_preparacion(2) << ':'\n              << minutos_preparacion(0) << ':'\n              << minutos_preparacion(12);\n    return 0;\n}\n",
           "answers": [
             "8:0:28"
           ],
@@ -3041,6 +3041,481 @@
         "id": "block_0005_0001",
         "beforeSha256": "38a0089abeadc5fd29f2235d07af3b86e31f378823f97daa8ef155a25769bad7",
         "afterSha256": "80e37f7ad68e0d5dd837cec59c69d50021ea373ead639b00e718738d8e6d775d"
+      },
+      {
+        "id": "block_0002_0003",
+        "beforeSha256": "cc3b7d6e743d803c64b3ffd72691ecd46dd0300c8c6db8d088a0bc1e088b824a",
+        "afterSha256": "15a11669634c67c843eae37cdf222e18a6aa1f9782b5df309e9e7c8963fe339a"
+      },
+      {
+        "id": "block_0003_0004",
+        "beforeSha256": "cedd403081e085b65959bc5f36643e457e6671d242a43853da3e470396d43fe2",
+        "afterSha256": "cdb8dd1c9733ed92129ce83f5893ba6a7606a3c2caa6467672e908682f95b4a8"
+      },
+      {
+        "id": "block_0004_0002",
+        "beforeSha256": "05327ada2640fb88da240c635c7be57ee769f1f3fd4161095c285ec719687d51",
+        "afterSha256": "b81e60459166705fde69109ffd381c5ee95b625b303e3787197e33ddd4c9c808"
+      },
+      {
+        "id": "block_0005_0002",
+        "beforeSha256": "776b0f8df95ecef02517bac13a8634ec398bd94cd89fda7036fc810092700e65",
+        "afterSha256": "b5116ce3a86c1770426edcede18747be1786b7977606d2ff5988db28bde85262"
+      },
+      {
+        "id": "block_0005_0004",
+        "beforeSha256": "bffb4f9cd17abad002626a70751336942341963bf3a59441888e91fae8a995d1",
+        "afterSha256": "3d3c99342bfabb01701a473820e892f07b29b9064834c268ebcb167efd19f1da"
+      },
+      {
+        "id": "block_0005_0009",
+        "beforeSha256": "c81a7a26bd08d808c5a96c888ba8ddac80a4f2dd9532bdbaf2bb6d4bfd98f926",
+        "afterSha256": "09237f5fc85b7ca4bcec9294317c322872a739995db6a10660feeabe60dcd5ca"
+      },
+      {
+        "id": "block_0005_0012",
+        "beforeSha256": "ae0350082114597a7ffa082fb198ef8b4313de7ed28c7bd9eed75f2acb31faa0",
+        "afterSha256": "1c36f16a68d804ea0542919f9ac0fbe1d80d9e7aa7e9bd79a8adb0b7b40c5931"
+      },
+      {
+        "id": "block_0007_0002",
+        "beforeSha256": "314a06b640f11a8a23197e0b455f22bc016dfadca898245432fb72b93a419a81",
+        "afterSha256": "196117c3a8c9fe401c68c1a157be4bc509cd6d176d3f39b7e2bc8081f6a96033"
+      },
+      {
+        "id": "block_0007_0008",
+        "beforeSha256": "45f1e5197309208282e1fdcdc7b819dae4bef111eca3f1a7066013c621efe662",
+        "afterSha256": "e2c8e6d4f77f4114d1bc975e57594b2aae967ac0f2efff07d745a09b4738daec"
+      },
+      {
+        "id": "block_0007_0011",
+        "beforeSha256": "198e9798e269462ee7d78696135cd424f48ef8234f94fe8da18976cfd6068f45",
+        "afterSha256": "6f7eee33273d7df2b8c1e4f4dedb5f2c52e0bc2becc41f01fa98f14468712074"
+      },
+      {
+        "id": "block_0007_0014",
+        "beforeSha256": "60a754b547d3498de6f2ead11d608db92603bd3a6518c30fdc5b31f2bdf06315",
+        "afterSha256": "5877400989fe5d958ad365caa8d06cff1ad9bf1250f7630b024ba6aeba96b890"
+      },
+      {
+        "id": "block_0008_0002",
+        "beforeSha256": "31a8f214891be7a514bb00132fada6f0771fdcfe37d40ba290b3733b2d966ff9",
+        "afterSha256": "a11fe967081b8816cfdcc17068e3a4502b5e058928b5a5efc4e96a9ffeb9c0e7"
+      },
+      {
+        "id": "block_0010_0002",
+        "beforeSha256": "6f9cc72f9b42a23ad9ec7dc4bf3a0f9af152ac9f9ee3060e13837be9c469959e",
+        "afterSha256": "670f2646e8a9366c646fe762bf78de603e949dfd25d059791aa3e026a312e5a4"
+      },
+      {
+        "id": "block_0011_0002",
+        "beforeSha256": "5e4ec30d864a6ad00f9c20ccba59e2bf36432079a66cd7c6209b5510861195f8",
+        "afterSha256": "1654be4c77c455bd5cc0e771815e3494ca8aa7fb78f8209db8f63dba1e318230"
+      },
+      {
+        "id": "block_0011_0006",
+        "beforeSha256": "2cdab989b53f21953e350d098bba555fff7bc93fb98e023858a6a63c155bb70d",
+        "afterSha256": "d0886628946665c8ce42cef216a2967ff13a6ddae2b1455252df6c96a221cb49"
+      }
+    ],
+    "sourceFormatRevisions": [
+      {
+        "id": "block_0002_0003",
+        "block": {
+          "type": "code",
+          "language": "cmake",
+          "code": "add_library(preparacion STATIC src/entrega.cpp)\nadd_executable(medir app/main.cpp)\ntarget_include_directories(preparacion PUBLIC include)\ntarget_link_libraries(medir PRIVATE preparacion)\n"
+        }
+      },
+      {
+        "id": "block_0003_0004",
+        "block": {
+          "type": "output_prediction",
+          "id": "cab_oraculo_independiente_de_rutas",
+          "language": "cpp",
+          "question": "¿Qué salida produce este programa? Conserva los dos puntos y no añadas salto final.",
+          "code": "#include <iostream>\n\nint minutos_preparacion(int unidades) {\n    if (unidades == 0) {\n        return 0;\n    }\n    return 3 + 2 * unidades;\n}\n\nint main() {\n    std::cout << minutos_preparacion(0) << ':'\n              << minutos_preparacion(1) << ':'\n              << minutos_preparacion(5);\n    return 0;\n}\n",
+          "answers": [
+            "0:5:13"
+          ],
+          "outputComparison": "exact",
+          "explanation": "Cero unidades retorna por su caso especial. Una unidad requiere 3 + 2 minutos y cinco requieren 3 + 10. El flujo std::cout inserta los tres resultados con dos separadores y sin salto final. Este esperado procede del contrato, antes de observar la construcción.",
+          "reviewFeedback": "Separa la llamada que usa el caso de cero de las que aplican la fórmula. Calcula cada retorno por separado y reconstruye después los caracteres que agrega cout."
+        }
+      },
+      {
+        "id": "block_0004_0002",
+        "block": {
+          "type": "cpp_compiler",
+          "language": "cpp",
+          "initialCode": "",
+          "projectFiles": [
+            {
+              "path": "CMakeLists.txt",
+              "initialCode": "cmake_minimum_required(VERSION 3.20)\nproject(Tiempos LANGUAGES CXX)\nadd_library(preparacion STATIC src/entrega.cpp)\nadd_executable(medir app/main.cpp)\ntarget_compile_features(preparacion PRIVATE cxx_std_20)\ntarget_compile_features(medir PRIVATE cxx_std_20)\nset_target_properties(preparacion medir PROPERTIES CXX_EXTENSIONS OFF)\ntarget_include_directories(preparacion PRIVATE include)\ntarget_link_libraries(medir PRIVATE preparacion)\n"
+            },
+            {
+              "path": "include/paquetes/entrega.h",
+              "initialCode": "#ifndef PRACTICA_PAQUETES_ENTREGA_H\n#define PRACTICA_PAQUETES_ENTREGA_H\n\n// Dominio: 0 <= unidades <= 12.\n// Cero unidades: cero minutos. Si hay unidades: 3 + 2 * unidades.\nint minutos_preparacion(int unidades);\n\n#endif\n"
+            },
+            {
+              "path": "src/entrega.cpp",
+              "initialCode": "#include \"paquetes/entrega.h\"\n\nint minutos_preparacion(int unidades) {\n    if (unidades == 0) {\n        return 0;\n    }\n    return 3 + 2 * unidades;\n}\n"
+            },
+            {
+              "path": "app/main.cpp",
+              "initialCode": "#include \"paquetes/entrega.h\"\n#include <iostream>\n\nint main() {\n    std::cout << minutos_preparacion(0) << ':'\n              << minutos_preparacion(1) << ':'\n              << minutos_preparacion(5);\n    return 0;\n}\n"
+            }
+          ],
+          "cmake": {
+            "target": "medir",
+            "buildType": "Debug"
+          },
+          "outputCheck": {
+            "inputComparison": "exact",
+            "cases": [
+              {
+                "standardInput": "",
+                "outputs": [
+                  "0:5:13"
+                ],
+                "explanation": "La búsqueda pública permite construir el cliente y la salida conserva el contrato de preparación; publicar una ruta no cambia el cálculo."
+              }
+            ]
+          }
+        }
+      },
+      {
+        "id": "block_0005_0002",
+        "block": {
+          "type": "code",
+          "language": "cmake",
+          "code": "cmake_minimum_required(VERSION 3.20)\nproject(Tiempos LANGUAGES CXX)\nadd_library(preparacion STATIC src/entrega.cpp)\nadd_executable(medir app/main.cpp)\ntarget_compile_features(preparacion PRIVATE cxx_std_20)\ntarget_compile_features(medir PRIVATE cxx_std_20)\nset_target_properties(preparacion medir PROPERTIES CXX_EXTENSIONS OFF)\ntarget_include_directories(preparacion PUBLIC include)\ntarget_link_libraries(medir PRIVATE preparacion)\n"
+        }
+      },
+      {
+        "id": "block_0005_0004",
+        "block": {
+          "type": "output_prediction",
+          "id": "cab_recuperar_cero_y_extremo",
+          "language": "cpp",
+          "question": "¿Qué salida produce este programa? Conserva los dos puntos y no añadas salto final.",
+          "code": "#include <iostream>\n\nint minutos_preparacion(int unidades) {\n    if (unidades == 0) {\n        return 0;\n    }\n    return 3 + 2 * unidades;\n}\n\nint main() {\n    std::cout << minutos_preparacion(0) << ':'\n              << minutos_preparacion(12) << ':'\n              << minutos_preparacion(2);\n    return 0;\n}\n",
+          "answers": [
+            "0:27:7"
+          ],
+          "outputComparison": "exact",
+          "explanation": "El caso cero sigue sin preparación; doce unidades requieren 3 + 24 minutos y dos requieren 3 + 4. Los tres argumentos están en el dominio. La nueva secuencia permite recuperar el extremo superior sin sustituir el oráculo de la primera ejecución.",
+          "reviewFeedback": "Comprueba los argumentos de esta revisión y la rama que alcanza cada llamada. No reutilices una salida de las llamadas anteriores sólo porque la firma y la cabecera se conservaron."
+        }
+      },
+      {
+        "id": "block_0005_0009",
+        "block": {
+          "type": "cpp_compiler",
+          "language": "cpp",
+          "initialCode": "",
+          "projectFiles": [
+            {
+              "path": "CMakeLists.txt",
+              "initialCode": "cmake_minimum_required(VERSION 3.20)\nproject(Tiempos LANGUAGES CXX)\nadd_library(preparacion STATIC src/entrega.cpp)\nadd_executable(medir app/main.cpp)\ntarget_compile_features(preparacion PRIVATE cxx_std_20)\ntarget_compile_features(medir PRIVATE cxx_std_20)\nset_target_properties(preparacion medir PROPERTIES CXX_EXTENSIONS OFF)\ntarget_include_directories(preparacion PUBLIC include)\ntarget_link_libraries(medir PRIVATE preparacion)\n"
+            },
+            {
+              "path": "include/paquetes/entrega.h",
+              "initialCode": "#ifndef PRACTICA_PAQUETES_ENTREGA_H\n#define PRACTICA_PAQUETES_ENTREGA_H\n\n// Dominio: 0 <= unidades <= 12.\n// Cero unidades: cero minutos. Si hay unidades: 3 + 2 * unidades.\nint minutos_preparacion(int unidades);\n\n#endif\n"
+            },
+            {
+              "path": "src/entrega.cpp",
+              "initialCode": "#include \"paquetes/entrega.h\"\n\nint minutos_preparacion(int unidades) {\n    if (unidades == 0) {\n        return 0;\n    }\n    return 3 + 2 * unidades;\n}\n"
+            },
+            {
+              "path": "app/main.cpp",
+              "initialCode": "#include \"paquetes/entrega.h\"\n#include <iostream>\n\nint main() {\n    std::cout << minutos_preparacion(0) << ':'\n              << minutos_preparacion(12) << ':'\n              << minutos_preparacion(2);\n    return 0;\n}\n"
+            }
+          ],
+          "cmake": {
+            "target": "medir",
+            "buildType": "Debug"
+          },
+          "outputCheck": {
+            "inputComparison": "exact",
+            "cases": [
+              {
+                "standardInput": "",
+                "outputs": [
+                  "0:27:7"
+                ],
+                "explanation": "La nueva ejecución conserva la regla de cero y aplica 3 + 2 * unidades en los casos positivos, independientemente de las rutas de cabeceras."
+              }
+            ]
+          }
+        }
+      },
+      {
+        "id": "block_0005_0012",
+        "block": {
+          "type": "cpp_compiler",
+          "language": "cpp",
+          "initialCode": "",
+          "projectFiles": [
+            {
+              "path": "CMakeLists.txt",
+              "initialCode": "cmake_minimum_required(VERSION 3.20)\nproject(Tiempos LANGUAGES CXX)\nadd_library(preparacion STATIC src/entrega.cpp)\nadd_executable(medir app/main.cpp)\ntarget_compile_features(preparacion PRIVATE cxx_std_20)\ntarget_compile_features(medir PRIVATE cxx_std_20)\nset_target_properties(preparacion medir PROPERTIES CXX_EXTENSIONS OFF)\ntarget_include_directories(preparacion PUBLIC include)\ntarget_link_libraries(medir PRIVATE preparacion)\n"
+            },
+            {
+              "path": "include/paquetes/entrega.h",
+              "initialCode": "#ifndef PRACTICA_PAQUETES_ENTREGA_H\n#define PRACTICA_PAQUETES_ENTREGA_H\n\n// Dominio: 0 <= unidades <= 12.\n// Cero unidades: cero minutos. Si hay unidades: 3 + 2 * unidades.\nint minutos_preparacion(int unidades);\n\n#endif\n"
+            },
+            {
+              "path": "src/entrega.cpp",
+              "initialCode": "#include \"paquetes/entrega.h\"\n\nint minutos_preparacion(int unidades) {\n    return 3 + 2 * unidades;\n}\n"
+            },
+            {
+              "path": "app/main.cpp",
+              "initialCode": "#include \"paquetes/entrega.h\"\n#include <iostream>\n\nint main() {\n    std::cout << minutos_preparacion(0) << ':'\n              << minutos_preparacion(12) << ':'\n              << minutos_preparacion(2);\n    return 0;\n}\n"
+            }
+          ],
+          "cmake": {
+            "target": "medir",
+            "buildType": "Debug"
+          },
+          "outputCheck": {
+            "inputComparison": "exact",
+            "cases": [
+              {
+                "standardInput": "",
+                "outputs": [
+                  "0:27:7"
+                ],
+                "explanation": "El caso cero vuelve a devolver cero. La reparación corresponde al cálculo; la búsqueda pública ya era correcta y debe conservarse."
+              }
+            ]
+          }
+        }
+      },
+      {
+        "id": "block_0007_0002",
+        "block": {
+          "type": "cpp_compiler",
+          "language": "cpp",
+          "initialCode": "",
+          "projectFiles": [
+            {
+              "path": "CMakeLists.txt",
+              "initialCode": "cmake_minimum_required(VERSION 3.20)\nproject(Tiempos LANGUAGES CXX)\nadd_library(preparacion STATIC src/entrega.cpp)\nadd_executable(medir app/main.cpp)\ntarget_compile_features(preparacion PRIVATE cxx_std_20)\ntarget_compile_features(medir PRIVATE cxx_std_20)\nset_target_properties(preparacion medir PROPERTIES CXX_EXTENSIONS OFF)\ntarget_include_directories(preparacion\n    PUBLIC include\n    PRIVATE interno\n)\ntarget_link_libraries(medir PRIVATE preparacion)\n"
+            },
+            {
+              "path": "include/paquetes/entrega.h",
+              "initialCode": "#ifndef PRACTICA_PAQUETES_ENTREGA_H\n#define PRACTICA_PAQUETES_ENTREGA_H\n\n// Dominio: 0 <= unidades <= 12.\n// Cero unidades: cero minutos. Si hay unidades: 3 + 2 * unidades.\nint minutos_preparacion(int unidades);\n\n#endif\n"
+            },
+            {
+              "path": "src/entrega.cpp",
+              "initialCode": "#include \"paquetes/entrega.h\"\n#include \"ajuste.h\"\n\nint minutos_preparacion(int unidades) {\n    if (unidades == 0) {\n        return 0;\n    }\n    return minutos_base + minutos_por_unidad * unidades;\n}\n"
+            },
+            {
+              "path": "interno/ajuste.h",
+              "initialCode": "#ifndef PRACTICA_AJUSTE_INTERNO_H\n#define PRACTICA_AJUSTE_INTERNO_H\n\nconstexpr int minutos_base = 3;\nconstexpr int minutos_por_unidad = 2;\n\n#endif\n"
+            },
+            {
+              "path": "app/main.cpp",
+              "initialCode": "#include \"paquetes/entrega.h\"\n#include <iostream>\n\nint main() {\n    std::cout << minutos_preparacion(0) << ':'\n              << minutos_preparacion(1) << ':'\n              << minutos_preparacion(5);\n    return 0;\n}\n"
+            }
+          ],
+          "cmake": {
+            "target": "medir",
+            "buildType": "Debug"
+          },
+          "outputCheck": {
+            "inputComparison": "exact",
+            "cases": [
+              {
+                "standardInput": "",
+                "outputs": [
+                  "0:5:13"
+                ],
+                "explanation": "La biblioteca usa su ruta interna y el cliente recibe la pública. Las mismas cantidades conservan el mismo comportamiento."
+              }
+            ]
+          }
+        }
+      },
+      {
+        "id": "block_0007_0008",
+        "block": {
+          "type": "cpp_compiler",
+          "language": "cpp",
+          "initialCode": "",
+          "projectFiles": [
+            {
+              "path": "CMakeLists.txt",
+              "initialCode": "cmake_minimum_required(VERSION 3.20)\nproject(Tiempos LANGUAGES CXX)\nadd_library(preparacion STATIC src/entrega.cpp)\nadd_executable(medir app/main.cpp)\ntarget_compile_features(preparacion PRIVATE cxx_std_20)\ntarget_compile_features(medir PRIVATE cxx_std_20)\nset_target_properties(preparacion medir PROPERTIES CXX_EXTENSIONS OFF)\ntarget_include_directories(preparacion\n    PUBLIC include\n)\ntarget_link_libraries(medir PRIVATE preparacion)\n"
+            },
+            {
+              "path": "include/paquetes/entrega.h",
+              "initialCode": "#ifndef PRACTICA_PAQUETES_ENTREGA_H\n#define PRACTICA_PAQUETES_ENTREGA_H\n\n// Dominio: 0 <= unidades <= 12.\n// Cero unidades: cero minutos. Si hay unidades: 3 + 2 * unidades.\nint minutos_preparacion(int unidades);\n\n#endif\n"
+            },
+            {
+              "path": "src/entrega.cpp",
+              "initialCode": "#include \"paquetes/entrega.h\"\n#include \"ajuste.h\"\n\nint minutos_preparacion(int unidades) {\n    if (unidades == 0) {\n        return 0;\n    }\n    return minutos_base + minutos_por_unidad * unidades;\n}\n"
+            },
+            {
+              "path": "interno/ajuste.h",
+              "initialCode": "#ifndef PRACTICA_AJUSTE_INTERNO_H\n#define PRACTICA_AJUSTE_INTERNO_H\n\nconstexpr int minutos_base = 3;\nconstexpr int minutos_por_unidad = 2;\n\n#endif\n"
+            },
+            {
+              "path": "app/main.cpp",
+              "initialCode": "#include \"paquetes/entrega.h\"\n#include <iostream>\n\nint main() {\n    std::cout << minutos_preparacion(0) << ':'\n              << minutos_preparacion(1) << ':'\n              << minutos_preparacion(5);\n    return 0;\n}\n"
+            }
+          ],
+          "cmake": {
+            "target": "medir",
+            "buildType": "Debug"
+          },
+          "outputCheck": {
+            "inputComparison": "exact",
+            "cases": [
+              {
+                "standardInput": "",
+                "outputs": [
+                  "0:5:13"
+                ],
+                "explanation": "La implementación recupera su búsqueda privada y las llamadas conservadas producen los mismos resultados. El cliente sigue usando la interfaz pública."
+              }
+            ]
+          }
+        }
+      },
+      {
+        "id": "block_0007_0011",
+        "block": {
+          "type": "cpp_compiler",
+          "language": "cpp",
+          "initialCode": "",
+          "projectFiles": [
+            {
+              "path": "CMakeLists.txt",
+              "initialCode": "cmake_minimum_required(VERSION 3.20)\nproject(Tiempos LANGUAGES CXX)\nadd_library(preparacion STATIC src/entrega.cpp)\nadd_executable(medir app/main.cpp)\ntarget_compile_features(preparacion PRIVATE cxx_std_20)\ntarget_compile_features(medir PRIVATE cxx_std_20)\nset_target_properties(preparacion medir PROPERTIES CXX_EXTENSIONS OFF)\ntarget_include_directories(preparacion\n    PUBLIC include\n    PRIVATE interno\n)\ntarget_link_libraries(medir PRIVATE preparacion)\n"
+            },
+            {
+              "path": "include/paquetes/entrega.h",
+              "initialCode": "#ifndef PRACTICA_PAQUETES_ENTREGA_H\n#define PRACTICA_PAQUETES_ENTREGA_H\n\n// Dominio: 0 <= unidades <= 12.\n// Cero unidades: cero minutos. Si hay unidades: 3 + 2 * unidades.\nint minutos_preparacion(int unidades);\n\n#endif\n"
+            },
+            {
+              "path": "src/entrega.cpp",
+              "initialCode": "#include \"paquetes/entrega.h\"\n#include \"ajuste.h\"\n\nint minutos_preparacion(int unidades) {\n    if (unidades == 0) {\n        return 0;\n    }\n    return minutos_base + minutos_por_unidad * unidades;\n}\n"
+            },
+            {
+              "path": "interno/ajuste.h",
+              "initialCode": "#ifndef PRACTICA_AJUSTE_INTERNO_H\n#define PRACTICA_AJUSTE_INTERNO_H\n\nconstexpr int minutos_base = 3;\nconstexpr int minutos_por_unidad = 2;\n\n#endif\n"
+            },
+            {
+              "path": "app/main.cpp",
+              "initialCode": "#include \"ajuste.h\"\n#include \"paquetes/entrega.h\"\n#include <iostream>\n\nint main() {\n    std::cout << minutos_preparacion(0) << ':'\n              << minutos_preparacion(1) << ':'\n              << minutos_preparacion(5);\n    return 0;\n}\n"
+            }
+          ],
+          "cmake": {
+            "target": "medir",
+            "buildType": "Debug"
+          },
+          "outputCheck": {
+            "inputComparison": "exact",
+            "cases": [
+              {
+                "standardInput": "",
+                "outputs": [
+                  "0:5:13"
+                ],
+                "explanation": "Retirar la inclusión experimental recupera el cliente que sólo utiliza la interfaz pública. El resultado conserva las tres llamadas sin publicar la ruta interna."
+              }
+            ]
+          }
+        }
+      },
+      {
+        "id": "block_0007_0014",
+        "block": {
+          "type": "cpp_compiler",
+          "language": "cpp",
+          "initialCode": "",
+          "projectFiles": [
+            {
+              "path": "CMakeLists.txt",
+              "initialCode": "cmake_minimum_required(VERSION 3.20)\nproject(Tiempos LANGUAGES CXX)\nadd_library(preparacion STATIC src/entrega.cpp)\nadd_executable(medir app/main.cpp)\ntarget_compile_features(preparacion PRIVATE cxx_std_20)\ntarget_compile_features(medir PRIVATE cxx_std_20)\nset_target_properties(preparacion medir PROPERTIES CXX_EXTENSIONS OFF)\ntarget_include_directories(preparacion\n    PUBLIC include\n    PRIVATE interno\n)\ntarget_link_libraries(medir PRIVATE preparacion)\n"
+            },
+            {
+              "path": "include/paquetes/entrega.h",
+              "initialCode": "#ifndef PRACTICA_PAQUETES_ENTREGA_H\n#define PRACTICA_PAQUETES_ENTREGA_H\n\n// Dominio: 0 <= unidades <= 12.\n// Cero unidades: cero minutos. Si hay unidades: 3 + 2 * unidades.\nint minutos_preparacion(int unidades);\n\n#endif\n"
+            },
+            {
+              "path": "src/entrega.cpp",
+              "initialCode": "#include \"paquetes/entrega.h\"\n#include \"ajuste.h\"\n\nint minutos_preparacion(int unidades) {\n    if (unidades == 0) {\n        return 0;\n    }\n    return minutos_base + minutos_por_unidad * unidades;\n}\n"
+            },
+            {
+              "path": "interno/ajuste.h",
+              "initialCode": "#ifndef PRACTICA_AJUSTE_INTERNO_H\n#define PRACTICA_AJUSTE_INTERNO_H\n\nconstexpr int minutos_base = 3;\nconstexpr int minutos_por_unidad = 2;\n\n#endif\n"
+            },
+            {
+              "path": "app/main.cpp",
+              "initialCode": "#include \"paquetes/entrega.h\"\n#include <iostream>\n\nint main() {\n    std::cout << minutos_preparacion(0) << ':'\n              << minutos_preparacion(1) << ':'\n              << minutos_preparacion(5);\n    return 0;\n}\n"
+            }
+          ],
+          "cmake": {
+            "target": "medir",
+            "buildType": "Debug"
+          },
+          "outputCheck": {
+            "inputComparison": "exact",
+            "cases": [
+              {
+                "standardInput": "",
+                "outputs": [
+                  "0:6:14"
+                ],
+                "explanation": "La revisión cumple el requisito nuevo de cuatro minutos iniciales para cantidades positivas, conservando dos por unidad y cero para cero."
+              }
+            ]
+          }
+        }
+      },
+      {
+        "id": "block_0008_0002",
+        "block": {
+          "type": "code",
+          "language": "cmake",
+          "code": "add_library(preparacion STATIC src/entrega.cpp)\nadd_executable(medir app/main.cpp)\ntarget_include_directories(preparacion PUBLIC include)\ntarget_include_directories(medir PRIVATE include)\n# En este experimento falta la relación de enlace.\n"
+        }
+      },
+      {
+        "id": "block_0010_0002",
+        "block": {
+          "type": "code",
+          "language": "cmake",
+          "code": "cmake_minimum_required(VERSION 3.20)\nproject(SalaLocal LANGUAGES CXX)\nadd_library(aforo STATIC motor/cupo.cpp)\nadd_executable(consultar_aforo programas/consulta.cpp)\ntarget_compile_features(aforo PRIVATE cxx_std_20)\ntarget_compile_features(consultar_aforo PRIVATE cxx_std_20)\nset_target_properties(aforo consultar_aforo PROPERTIES CXX_EXTENSIONS OFF)\ntarget_include_directories(aforo PUBLIC publico)\ntarget_link_libraries(consultar_aforo PRIVATE aforo)\n"
+        }
+      },
+      {
+        "id": "block_0011_0002",
+        "block": {
+          "type": "code",
+          "language": "cmake",
+          "code": "add_executable(resumen herramientas/resumen.cpp)\ntarget_compile_features(resumen PRIVATE cxx_std_20)\nset_target_properties(resumen PROPERTIES CXX_EXTENSIONS OFF)\ntarget_link_libraries(resumen PRIVATE preparacion)\n"
+        }
+      },
+      {
+        "id": "block_0011_0006",
+        "block": {
+          "type": "output_prediction",
+          "id": "cab_revision_y_datos_no_son_la_ruta",
+          "language": "cpp",
+          "question": "¿Qué salida produce este programa? Conserva los dos puntos y no añadas salto final.",
+          "code": "#include <iostream>\n\nint minutos_preparacion(int unidades) {\n    if (unidades == 0) {\n        return 0;\n    }\n    return 4 + 2 * unidades;\n}\n\nint main() {\n    std::cout << minutos_preparacion(2) << ':'\n              << minutos_preparacion(0) << ':'\n              << minutos_preparacion(12);\n    return 0;\n}\n",
+          "answers": [
+            "8:0:28"
+          ],
+          "outputComparison": "exact",
+          "explanation": "Dos unidades usan la fórmula nueva y devuelven ocho; cero retorna cero; doce usan 4 + 24. La diferencia de resultados procede del contrato y de las llamadas revisadas, no de que una búsqueda se llame PUBLIC o PRIVATE.",
+          "reviewFeedback": "Traza cada llamada hasta su retorno con la fórmula que realmente aparece en esta revisión. Separa el cambio de contrato del cambio de argumentos y de los requisitos de búsqueda."
+        }
       }
     ]
   },

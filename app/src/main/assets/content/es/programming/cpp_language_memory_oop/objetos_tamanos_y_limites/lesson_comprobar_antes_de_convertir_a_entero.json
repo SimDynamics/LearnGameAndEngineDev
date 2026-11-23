@@ -21,7 +21,7 @@
           "id": "p3_u1l10_hacia_cero",
           "question": "Predice la salida de estas conversiones. Todos sus resultados enteros caben en int.",
           "language": "cpp",
-          "code": "#include <iostream>\n\nint main() {\n    double positiva = 6.75;\n    double negativa = -6.75;\n    std::cout << static_cast<int>(positiva) << ':'\n              << static_cast<int>(negativa) << ':'\n              << static_cast<int>(-0.75);\n    return 0;\n}\n",
+          "code": "#include <iostream>\n\nint main() {\n    double positiva = 6.75;\n    double negativa = -6.75;\n\n    std::cout << static_cast<int>(positiva) << ':'\n              << static_cast<int>(negativa) << ':'\n              << static_cast<int>(-0.75);\n    return 0;\n}\n",
           "answers": [
             "6:-6:0"
           ],
@@ -75,7 +75,7 @@
         {
           "type": "code",
           "language": "cpp",
-          "code": "#include <cmath>\n#include <iostream>\n\nint main() {\n    double dato = -3.75;\n    double candidato = std::trunc(dato);\n    std::cout << dato << ':' << candidato << ':'\n              << (dato == candidato);\n    return 0;\n}\n"
+          "code": "#include <cmath>\n#include <iostream>\n\nint main() {\n    double dato = -3.75;\n    double candidato = std::trunc(dato);\n\n    std::cout << dato << ':' << candidato << ':'\n              << (dato == candidato);\n    return 0;\n}\n"
         },
         {
           "type": "paragraph",
@@ -194,7 +194,7 @@
         {
           "type": "cpp_compiler",
           "language": "cpp",
-          "initialCode": "#include <cmath>\n#include <iostream>\n#include <limits>\n\nbool truncar_a_int(double dato, int& destino) {\n    if (!std::isfinite(dato)) {\n        return false;\n    }\n\n    const double minimo =\n        static_cast<double>(std::numeric_limits<int>::lowest());\n    const double maximo =\n        static_cast<double>(std::numeric_limits<int>::max());\n    // Este control descarta tambien algunas fracciones convertibles.\n    if (dato < minimo || dato > maximo) {\n        return false;\n    }\n\n    destino = static_cast<int>(dato);\n    return true;\n}\n\nint main() {\n    if (std::numeric_limits<int>::radix != 2\n        || std::numeric_limits<int>::digits != 31\n        || std::numeric_limits<double>::radix != 2\n        || std::numeric_limits<double>::digits != 53) {\n        return 2;\n    }\n\n    int caso = 0;\n    if (!(std::cin >> caso)) {\n        return 1;\n    }\n\n    const double minimo =\n        static_cast<double>(std::numeric_limits<int>::lowest());\n    const double maximo =\n        static_cast<double>(std::numeric_limits<int>::max());\n    double dato = 0.0;\n    switch (caso) {\n    case 1: dato = maximo + 0.5; break;\n    case 2: dato = minimo - 0.5; break;\n    case 3: dato = maximo + 1.0; break;\n    case 4: dato = minimo - 1.0; break;\n    case 5: dato = -3.75; break;\n    case 6: dato = -0.75; break;\n    case 7: dato = std::numeric_limits<double>::infinity(); break;\n    case 8: dato = std::numeric_limits<double>::quiet_NaN(); break;\n    case 9: dato = -std::numeric_limits<double>::infinity(); break;\n    case 10: dato = 0.0; break;\n    default: return 1;\n    }\n\n    int destino = 17;\n    const bool aceptado = truncar_a_int(dato, destino);\n    std::cout << \"Aceptado=\" << aceptado << '\\n';\n    std::cout << \"Destino=\" << destino << '\\n';\n    return 0;\n}\n",
+          "initialCode": "#include <cmath>\n#include <iostream>\n#include <limits>\n\nbool truncar_a_int(double dato, int& destino) {\n    if (!std::isfinite(dato)) {\n        return false;\n    }\n\n    const double minimo =\n        static_cast<double>(std::numeric_limits<int>::lowest());\n    const double maximo =\n        static_cast<double>(std::numeric_limits<int>::max());\n    // Este control descarta tambien algunas fracciones convertibles.\n    if (dato < minimo || dato > maximo) {\n        return false;\n    }\n\n    destino = static_cast<int>(dato);\n    return true;\n}\n\nint main() {\n    if (std::numeric_limits<int>::radix != 2\n        || std::numeric_limits<int>::digits != 31\n        || std::numeric_limits<double>::radix != 2\n        || std::numeric_limits<double>::digits != 53) {\n        return 2;\n    }\n\n    int caso = 0;\n    if (!(std::cin >> caso)) {\n        return 1;\n    }\n\n    const double minimo =\n        static_cast<double>(std::numeric_limits<int>::lowest());\n    const double maximo =\n        static_cast<double>(std::numeric_limits<int>::max());\n    double dato = 0.0;\n    switch (caso) {\n    case 1: dato = maximo + 0.5; break;\n    case 2: dato = minimo - 0.5; break;\n    case 3: dato = maximo + 1.0; break;\n    case 4: dato = minimo - 1.0; break;\n    case 5: dato = -3.75; break;\n    case 6: dato = -0.75; break;\n    case 7: dato = std::numeric_limits<double>::infinity(); break;\n    case 8: dato = std::numeric_limits<double>::quiet_NaN(); break;\n    case 9: dato = -std::numeric_limits<double>::infinity(); break;\n    case 10: dato = 0.0; break;\n    default: return 1;\n    }\n\n    int destino = 17;\n    const bool aceptado = truncar_a_int(dato, destino);\n\n    std::cout << \"Aceptado=\" << aceptado << '\\n';\n    std::cout << \"Destino=\" << destino << '\\n';\n\n    return 0;\n}\n",
           "initialStandardInput": "1\n",
           "outputCheck": {
             "inputComparison": "tokens",
@@ -392,7 +392,7 @@
         {
           "type": "code",
           "language": "cpp",
-          "code": "#include <cmath>\n#include <iostream>\n#include <limits>\n\nbool truncar_a_int(double dato, int& destino) {\n    if (!std::isfinite(dato)) {\n        return false;\n    }\n\n    const double truncado = std::trunc(dato);\n    const double minimo =\n        static_cast<double>(std::numeric_limits<int>::lowest());\n    const double maximo =\n        static_cast<double>(std::numeric_limits<int>::max());\n    if (truncado < minimo || truncado > maximo) {\n        return false;\n    }\n\n    destino = static_cast<int>(truncado);\n    return true;\n}\n\nint main() {\n    if (std::numeric_limits<int>::radix != 2\n        || std::numeric_limits<int>::digits != 31\n        || std::numeric_limits<double>::radix != 2\n        || std::numeric_limits<double>::digits != 53) {\n        return 2;\n    }\n\n    int caso = 0;\n    if (!(std::cin >> caso)) {\n        return 1;\n    }\n\n    const double minimo =\n        static_cast<double>(std::numeric_limits<int>::lowest());\n    const double maximo =\n        static_cast<double>(std::numeric_limits<int>::max());\n    double dato = 0.0;\n    switch (caso) {\n    case 1: dato = maximo + 0.5; break;\n    case 2: dato = minimo - 0.5; break;\n    case 3: dato = maximo + 1.0; break;\n    case 4: dato = minimo - 1.0; break;\n    case 5: dato = -3.75; break;\n    case 6: dato = -0.75; break;\n    case 7: dato = std::numeric_limits<double>::infinity(); break;\n    case 8: dato = std::numeric_limits<double>::quiet_NaN(); break;\n    case 9: dato = -std::numeric_limits<double>::infinity(); break;\n    case 10: dato = 0.0; break;\n    default: return 1;\n    }\n\n    int destino = 17;\n    const bool aceptado = truncar_a_int(dato, destino);\n    std::cout << \"Aceptado=\" << aceptado << '\\n';\n    std::cout << \"Destino=\" << destino << '\\n';\n    return 0;\n}\n"
+          "code": "#include <cmath>\n#include <iostream>\n#include <limits>\n\nbool truncar_a_int(double dato, int& destino) {\n    if (!std::isfinite(dato)) {\n        return false;\n    }\n\n    const double truncado = std::trunc(dato);\n    const double minimo =\n        static_cast<double>(std::numeric_limits<int>::lowest());\n    const double maximo =\n        static_cast<double>(std::numeric_limits<int>::max());\n    if (truncado < minimo || truncado > maximo) {\n        return false;\n    }\n\n    destino = static_cast<int>(truncado);\n    return true;\n}\n\nint main() {\n    if (std::numeric_limits<int>::radix != 2\n        || std::numeric_limits<int>::digits != 31\n        || std::numeric_limits<double>::radix != 2\n        || std::numeric_limits<double>::digits != 53) {\n        return 2;\n    }\n\n    int caso = 0;\n    if (!(std::cin >> caso)) {\n        return 1;\n    }\n\n    const double minimo =\n        static_cast<double>(std::numeric_limits<int>::lowest());\n    const double maximo =\n        static_cast<double>(std::numeric_limits<int>::max());\n    double dato = 0.0;\n    switch (caso) {\n    case 1: dato = maximo + 0.5; break;\n    case 2: dato = minimo - 0.5; break;\n    case 3: dato = maximo + 1.0; break;\n    case 4: dato = minimo - 1.0; break;\n    case 5: dato = -3.75; break;\n    case 6: dato = -0.75; break;\n    case 7: dato = std::numeric_limits<double>::infinity(); break;\n    case 8: dato = std::numeric_limits<double>::quiet_NaN(); break;\n    case 9: dato = -std::numeric_limits<double>::infinity(); break;\n    case 10: dato = 0.0; break;\n    default: return 1;\n    }\n\n    int destino = 17;\n    const bool aceptado = truncar_a_int(dato, destino);\n\n    std::cout << \"Aceptado=\" << aceptado << '\\n';\n    std::cout << \"Destino=\" << destino << '\\n';\n\n    return 0;\n}\n"
         },
         {
           "type": "paragraph",
@@ -466,7 +466,7 @@
         {
           "type": "cpp_compiler",
           "language": "cpp",
-          "initialCode": "#include <cmath>\n#include <iostream>\n#include <limits>\n\nbool truncar_a_int(double dato, int& destino) {\n    if (!std::isfinite(dato)) {\n        return false;\n    }\n\n    const double truncado = std::trunc(dato);\n    const double minimo =\n        static_cast<double>(std::numeric_limits<int>::lowest());\n    const double maximo =\n        static_cast<double>(std::numeric_limits<int>::max());\n    if (truncado < minimo || truncado > maximo) {\n        return false;\n    }\n\n    destino = static_cast<int>(truncado);\n    return true;\n}\nbool conservar_a_int(double dato, int& destino) {\n    // Este inicio puede cambiar destino antes de decidir el rechazo.\n    if (!truncar_a_int(dato, destino)) {\n        return false;\n    }\n    return static_cast<double>(destino) == dato;\n}\n\nint main() {\n    if (std::numeric_limits<int>::radix != 2\n        || std::numeric_limits<int>::digits != 31\n        || std::numeric_limits<double>::radix != 2\n        || std::numeric_limits<double>::digits != 53) {\n        return 2;\n    }\n\n    int caso = 0;\n    if (!(std::cin >> caso)) {\n        return 1;\n    }\n\n    const double minimo =\n        static_cast<double>(std::numeric_limits<int>::lowest());\n    const double maximo =\n        static_cast<double>(std::numeric_limits<int>::max());\n    double dato = 0.0;\n    int destino = 61;\n    switch (caso) {\n    case 1: dato = -3.75; break;\n    case 2: dato = -3.0; destino = -7; break;\n    case 3: dato = maximo + 0.5; destino = 11; break;\n    case 4: dato = maximo; destino = -7; break;\n    case 5: dato = minimo; destino = 11; break;\n    case 6: dato = 0.0; destino = 42; break;\n    case 7: dato = minimo - 0.5; destino = -8; break;\n    case 8: dato = std::numeric_limits<double>::quiet_NaN(); destino = -9; break;\n    case 9: dato = std::numeric_limits<double>::infinity(); destino = 10; break;\n    default: return 1;\n    }\n\n    const bool aceptado = conservar_a_int(dato, destino);\n    std::cout << \"Aceptado=\" << aceptado << '\\n';\n    std::cout << \"Destino=\" << destino << '\\n';\n    return 0;\n}\n",
+          "initialCode": "#include <cmath>\n#include <iostream>\n#include <limits>\n\nbool truncar_a_int(double dato, int& destino) {\n    if (!std::isfinite(dato)) {\n        return false;\n    }\n\n    const double truncado = std::trunc(dato);\n    const double minimo =\n        static_cast<double>(std::numeric_limits<int>::lowest());\n    const double maximo =\n        static_cast<double>(std::numeric_limits<int>::max());\n    if (truncado < minimo || truncado > maximo) {\n        return false;\n    }\n\n    destino = static_cast<int>(truncado);\n    return true;\n}\n\nbool conservar_a_int(double dato, int& destino) {\n    // Este inicio puede cambiar destino antes de decidir el rechazo.\n    if (!truncar_a_int(dato, destino)) {\n        return false;\n    }\n\n    return static_cast<double>(destino) == dato;\n}\n\nint main() {\n    if (std::numeric_limits<int>::radix != 2\n        || std::numeric_limits<int>::digits != 31\n        || std::numeric_limits<double>::radix != 2\n        || std::numeric_limits<double>::digits != 53) {\n        return 2;\n    }\n\n    int caso = 0;\n    if (!(std::cin >> caso)) {\n        return 1;\n    }\n\n    const double minimo =\n        static_cast<double>(std::numeric_limits<int>::lowest());\n    const double maximo =\n        static_cast<double>(std::numeric_limits<int>::max());\n    double dato = 0.0;\n    int destino = 61;\n\n    switch (caso) {\n    case 1: dato = -3.75; break;\n    case 2: dato = -3.0; destino = -7; break;\n    case 3: dato = maximo + 0.5; destino = 11; break;\n    case 4: dato = maximo; destino = -7; break;\n    case 5: dato = minimo; destino = 11; break;\n    case 6: dato = 0.0; destino = 42; break;\n    case 7: dato = minimo - 0.5; destino = -8; break;\n    case 8: dato = std::numeric_limits<double>::quiet_NaN(); destino = -9; break;\n    case 9: dato = std::numeric_limits<double>::infinity(); destino = 10; break;\n    default: return 1;\n    }\n\n    const bool aceptado = conservar_a_int(dato, destino);\n    std::cout << \"Aceptado=\" << aceptado << '\\n';\n    std::cout << \"Destino=\" << destino << '\\n';\n\n    return 0;\n}\n",
           "initialStandardInput": "1\n",
           "outputCheck": {
             "inputComparison": "tokens",
@@ -636,7 +636,7 @@
         {
           "type": "code",
           "language": "cpp",
-          "code": "#include <cmath>\n#include <iostream>\n#include <limits>\n\nbool truncar_a_int(double dato, int& destino) {\n    if (!std::isfinite(dato)) {\n        return false;\n    }\n\n    const double truncado = std::trunc(dato);\n    const double minimo =\n        static_cast<double>(std::numeric_limits<int>::lowest());\n    const double maximo =\n        static_cast<double>(std::numeric_limits<int>::max());\n    if (truncado < minimo || truncado > maximo) {\n        return false;\n    }\n\n    destino = static_cast<int>(truncado);\n    return true;\n}\nbool conservar_a_int(double dato, int& destino) {\n    int candidato = 0;\n    if (!truncar_a_int(dato, candidato)) {\n        return false;\n    }\n    if (static_cast<double>(candidato) != dato) {\n        return false;\n    }\n\n    destino = candidato;\n    return true;\n}\n\nint main() {\n    if (std::numeric_limits<int>::radix != 2\n        || std::numeric_limits<int>::digits != 31\n        || std::numeric_limits<double>::radix != 2\n        || std::numeric_limits<double>::digits != 53) {\n        return 2;\n    }\n\n    int caso = 0;\n    if (!(std::cin >> caso)) {\n        return 1;\n    }\n\n    const double minimo =\n        static_cast<double>(std::numeric_limits<int>::lowest());\n    const double maximo =\n        static_cast<double>(std::numeric_limits<int>::max());\n    double dato = 0.0;\n    int destino = 61;\n    switch (caso) {\n    case 1: dato = -3.75; break;\n    case 2: dato = -3.0; destino = -7; break;\n    case 3: dato = maximo + 0.5; destino = 11; break;\n    case 4: dato = maximo; destino = -7; break;\n    case 5: dato = minimo; destino = 11; break;\n    case 6: dato = 0.0; destino = 42; break;\n    case 7: dato = minimo - 0.5; destino = -8; break;\n    case 8: dato = std::numeric_limits<double>::quiet_NaN(); destino = -9; break;\n    case 9: dato = std::numeric_limits<double>::infinity(); destino = 10; break;\n    default: return 1;\n    }\n\n    const bool aceptado = conservar_a_int(dato, destino);\n    std::cout << \"Aceptado=\" << aceptado << '\\n';\n    std::cout << \"Destino=\" << destino << '\\n';\n    return 0;\n}\n"
+          "code": "#include <cmath>\n#include <iostream>\n#include <limits>\n\nbool truncar_a_int(double dato, int& destino) {\n    if (!std::isfinite(dato)) {\n        return false;\n    }\n\n    const double truncado = std::trunc(dato);\n    const double minimo =\n        static_cast<double>(std::numeric_limits<int>::lowest());\n    const double maximo =\n        static_cast<double>(std::numeric_limits<int>::max());\n    if (truncado < minimo || truncado > maximo) {\n        return false;\n    }\n\n    destino = static_cast<int>(truncado);\n    return true;\n}\n\nbool conservar_a_int(double dato, int& destino) {\n    int candidato = 0;\n    if (!truncar_a_int(dato, candidato)) {\n        return false;\n    }\n    if (static_cast<double>(candidato) != dato) {\n        return false;\n    }\n\n    destino = candidato;\n    return true;\n}\n\nint main() {\n    if (std::numeric_limits<int>::radix != 2\n        || std::numeric_limits<int>::digits != 31\n        || std::numeric_limits<double>::radix != 2\n        || std::numeric_limits<double>::digits != 53) {\n        return 2;\n    }\n\n    int caso = 0;\n    if (!(std::cin >> caso)) {\n        return 1;\n    }\n\n    const double minimo =\n        static_cast<double>(std::numeric_limits<int>::lowest());\n    const double maximo =\n        static_cast<double>(std::numeric_limits<int>::max());\n    double dato = 0.0;\n    int destino = 61;\n\n    switch (caso) {\n    case 1: dato = -3.75; break;\n    case 2: dato = -3.0; destino = -7; break;\n    case 3: dato = maximo + 0.5; destino = 11; break;\n    case 4: dato = maximo; destino = -7; break;\n    case 5: dato = minimo; destino = 11; break;\n    case 6: dato = 0.0; destino = 42; break;\n    case 7: dato = minimo - 0.5; destino = -8; break;\n    case 8: dato = std::numeric_limits<double>::quiet_NaN(); destino = -9; break;\n    case 9: dato = std::numeric_limits<double>::infinity(); destino = 10; break;\n    default: return 1;\n    }\n\n    const bool aceptado = conservar_a_int(dato, destino);\n    std::cout << \"Aceptado=\" << aceptado << '\\n';\n    std::cout << \"Destino=\" << destino << '\\n';\n\n    return 0;\n}\n"
         },
         {
           "type": "paragraph",
@@ -663,7 +663,7 @@
           "id": "p3_u1l10_secuencia_contratos",
           "question": "Predice cada bool y el destino posterior en el entorno de la práctica. Las cuatro llamadas se ejecutan en orden y comparten el mismo objeto destino.",
           "language": "cpp",
-          "code": "#include <cmath>\n#include <iostream>\n#include <limits>\n\nbool truncar_a_int(double dato, int& destino) {\n    if (!std::isfinite(dato)) {\n        return false;\n    }\n\n    const double truncado = std::trunc(dato);\n    const double minimo =\n        static_cast<double>(std::numeric_limits<int>::lowest());\n    const double maximo =\n        static_cast<double>(std::numeric_limits<int>::max());\n    if (truncado < minimo || truncado > maximo) {\n        return false;\n    }\n\n    destino = static_cast<int>(truncado);\n    return true;\n}\nbool conservar_a_int(double dato, int& destino) {\n    int candidato = 0;\n    if (!truncar_a_int(dato, candidato)) {\n        return false;\n    }\n    if (static_cast<double>(candidato) != dato) {\n        return false;\n    }\n\n    destino = candidato;\n    return true;\n}\n\nint main() {\n    if (std::numeric_limits<int>::radix != 2\n        || std::numeric_limits<int>::digits != 31\n        || std::numeric_limits<double>::radix != 2\n        || std::numeric_limits<double>::digits != 53) {\n        return 2;\n    }\n\n    int destino = 42;\n    bool aceptado = conservar_a_int(-3.0, destino);\n    std::cout << aceptado << ':' << destino << '\\n';\n    aceptado = conservar_a_int(-0.75, destino);\n    std::cout << aceptado << ':' << destino << '\\n';\n    aceptado = truncar_a_int(-0.75, destino);\n    std::cout << aceptado << ':' << destino << '\\n';\n    aceptado = truncar_a_int(2147483648.0, destino);\n    std::cout << aceptado << ':' << destino;\n    return 0;\n}\n",
+          "code": "#include <cmath>\n#include <iostream>\n#include <limits>\n\nbool truncar_a_int(double dato, int& destino) {\n    if (!std::isfinite(dato)) {\n        return false;\n    }\n\n    const double truncado = std::trunc(dato);\n    const double minimo =\n        static_cast<double>(std::numeric_limits<int>::lowest());\n    const double maximo =\n        static_cast<double>(std::numeric_limits<int>::max());\n    if (truncado < minimo || truncado > maximo) {\n        return false;\n    }\n\n    destino = static_cast<int>(truncado);\n    return true;\n}\n\nbool conservar_a_int(double dato, int& destino) {\n    int candidato = 0;\n    if (!truncar_a_int(dato, candidato)) {\n        return false;\n    }\n    if (static_cast<double>(candidato) != dato) {\n        return false;\n    }\n\n    destino = candidato;\n    return true;\n}\n\nint main() {\n    if (std::numeric_limits<int>::radix != 2\n        || std::numeric_limits<int>::digits != 31\n        || std::numeric_limits<double>::radix != 2\n        || std::numeric_limits<double>::digits != 53) {\n        return 2;\n    }\n\n    int destino = 42;\n    bool aceptado = conservar_a_int(-3.0, destino);\n\n    std::cout << aceptado << ':' << destino << '\\n';\n    aceptado = conservar_a_int(-0.75, destino);\n\n    std::cout << aceptado << ':' << destino << '\\n';\n    aceptado = truncar_a_int(-0.75, destino);\n\n    std::cout << aceptado << ':' << destino << '\\n';\n    aceptado = truncar_a_int(2147483648.0, destino);\n\n    std::cout << aceptado << ':' << destino;\n\n    return 0;\n}\n",
           "answers": [
             "1:-3\n0:-3\n1:0\n0:0"
           ],
@@ -691,7 +691,7 @@
           "id": "p3_u1l10_unsigned_cero",
           "question": "Este programa sólo convierte −0.75, cuyo truncado cabe en unsigned int. Predice la salida.",
           "language": "cpp",
-          "code": "#include <iostream>\n\nint main() {\n    double dato = -0.75;\n    unsigned int copia = static_cast<unsigned int>(dato);\n    std::cout << copia;\n    return 0;\n}\n",
+          "code": "#include <iostream>\n\nint main() {\n    double dato = -0.75;\n    unsigned int copia = static_cast<unsigned int>(dato);\n\n    std::cout << copia;\n\n    return 0;\n}\n",
           "answers": [
             "0"
           ],
@@ -2022,6 +2022,279 @@
       }
     },
     "additions": [],
-    "editorial": []
+    "editorial": [
+      {
+        "id": "block_0000_0003",
+        "beforeSha256": "93e0bb3ad9c6f5dbab2c3e07adc4a8c942c2fee92c1314a9cc443b0bc80767c4",
+        "afterSha256": "63e65e81d02e05b8a2e046a0908c654654cc4e62593ac709f79d53938148b610"
+      },
+      {
+        "id": "block_0002_0002",
+        "beforeSha256": "cffe84ded878a6b8c658138e771a2684fe5062bfa4a62851d6e95bbfa537ccf8",
+        "afterSha256": "9c1a8e6f63ec0108428c9d705e9683082441788b954b1ac6f06ea44af63a17ac"
+      },
+      {
+        "id": "block_0005_0006",
+        "beforeSha256": "44c87e5a3ec993e9b892b00f684222ac97b25c28ec2ca9b173a77b87c84d709a",
+        "afterSha256": "0a710b801681cd34b2add30ad2edaa3fd705657ef0f8e1964aca3c3b364f9d1a"
+      },
+      {
+        "id": "block_0008_0001",
+        "beforeSha256": "af13405080dec954c41ea80aaf34edf47962c50350e96ca1d8c910a5b9ca28e5",
+        "afterSha256": "2ae287289bfd486d74e63c79814509a6e905d6b6380187b87e18c79101de8f32"
+      },
+      {
+        "id": "block_0010_0005",
+        "beforeSha256": "53d60951d8f04862ada0d59139482062ef1baa129a149264c47db9d4462c01b4",
+        "afterSha256": "59173cbb4235d38f2141aee2bea2a8d04c75560c339acff69d8b4c8ce9fb2452"
+      },
+      {
+        "id": "block_0012_0001",
+        "beforeSha256": "e6b78b43fd00bc0faf5a68bf203e66f19611c6c1c58ea48ae4977bb45472316b",
+        "afterSha256": "677f697d41b3a2493f389591b2eaedc7c2281af3eea202057a17182944d5d22c"
+      },
+      {
+        "id": "block_0013_0002",
+        "beforeSha256": "a516d95c64485a7b2034c0d48c3f267003bad0e9acb5c46266c8176b03d731e7",
+        "afterSha256": "d7abba004f275fee4cf9daad6a43f8b8bda3bbc85a2b2239184cb044e59be6f7"
+      },
+      {
+        "id": "block_0014_0003",
+        "beforeSha256": "36e641ac90273f5b1270a90825deb6b010690cf8a9a22b369d700187e27ceedf",
+        "afterSha256": "d475e99a0ee57d2ee49e03db166dfc3230e877dcec758ecd89ef4e15ebbae6fe"
+      }
+    ],
+    "sourceFormatRevisions": [
+      {
+        "id": "block_0000_0003",
+        "block": {
+          "type": "output_prediction",
+          "id": "p3_u1l10_hacia_cero",
+          "question": "Predice la salida de estas conversiones. Todos sus resultados enteros caben en int.",
+          "language": "cpp",
+          "code": "#include <iostream>\n\nint main() {\n    double positiva = 6.75;\n    double negativa = -6.75;\n    std::cout << static_cast<int>(positiva) << ':'\n              << static_cast<int>(negativa) << ':'\n              << static_cast<int>(-0.75);\n    return 0;\n}\n",
+          "answers": [
+            "6:-6:0"
+          ],
+          "outputComparison": "exact",
+          "explanation": "Se descarta la fracción sin cambiar de lado respecto de cero: 6.75 da 6 y −6.75 da −6. El valor entre −1 y 0 produce el entero 0. No se aplica el redondeo al más cercano."
+        }
+      },
+      {
+        "id": "block_0002_0002",
+        "block": {
+          "type": "code",
+          "language": "cpp",
+          "code": "#include <cmath>\n#include <iostream>\n\nint main() {\n    double dato = -3.75;\n    double candidato = std::trunc(dato);\n    std::cout << dato << ':' << candidato << ':'\n              << (dato == candidato);\n    return 0;\n}\n"
+        }
+      },
+      {
+        "id": "block_0005_0006",
+        "block": {
+          "type": "cpp_compiler",
+          "language": "cpp",
+          "initialCode": "#include <cmath>\n#include <iostream>\n#include <limits>\n\nbool truncar_a_int(double dato, int& destino) {\n    if (!std::isfinite(dato)) {\n        return false;\n    }\n\n    const double minimo =\n        static_cast<double>(std::numeric_limits<int>::lowest());\n    const double maximo =\n        static_cast<double>(std::numeric_limits<int>::max());\n    // Este control descarta tambien algunas fracciones convertibles.\n    if (dato < minimo || dato > maximo) {\n        return false;\n    }\n\n    destino = static_cast<int>(dato);\n    return true;\n}\n\nint main() {\n    if (std::numeric_limits<int>::radix != 2\n        || std::numeric_limits<int>::digits != 31\n        || std::numeric_limits<double>::radix != 2\n        || std::numeric_limits<double>::digits != 53) {\n        return 2;\n    }\n\n    int caso = 0;\n    if (!(std::cin >> caso)) {\n        return 1;\n    }\n\n    const double minimo =\n        static_cast<double>(std::numeric_limits<int>::lowest());\n    const double maximo =\n        static_cast<double>(std::numeric_limits<int>::max());\n    double dato = 0.0;\n    switch (caso) {\n    case 1: dato = maximo + 0.5; break;\n    case 2: dato = minimo - 0.5; break;\n    case 3: dato = maximo + 1.0; break;\n    case 4: dato = minimo - 1.0; break;\n    case 5: dato = -3.75; break;\n    case 6: dato = -0.75; break;\n    case 7: dato = std::numeric_limits<double>::infinity(); break;\n    case 8: dato = std::numeric_limits<double>::quiet_NaN(); break;\n    case 9: dato = -std::numeric_limits<double>::infinity(); break;\n    case 10: dato = 0.0; break;\n    default: return 1;\n    }\n\n    int destino = 17;\n    const bool aceptado = truncar_a_int(dato, destino);\n    std::cout << \"Aceptado=\" << aceptado << '\\n';\n    std::cout << \"Destino=\" << destino << '\\n';\n    return 0;\n}\n",
+          "initialStandardInput": "1\n",
+          "outputCheck": {
+            "inputComparison": "tokens",
+            "cases": [
+              {
+                "standardInput": "1\n",
+                "outputs": [
+                  "Aceptado=1\nDestino=2147483647\n"
+                ],
+                "explanation": "maximo + 0.5 = 2147483647.5"
+              },
+              {
+                "standardInput": "2\n",
+                "outputs": [
+                  "Aceptado=1\nDestino=-2147483648\n"
+                ],
+                "explanation": "minimo - 0.5 = -2147483648.5"
+              },
+              {
+                "standardInput": "3\n",
+                "outputs": [
+                  "Aceptado=0\nDestino=17\n"
+                ],
+                "explanation": "maximo + 1.0 = 2147483648"
+              },
+              {
+                "standardInput": "4\n",
+                "outputs": [
+                  "Aceptado=0\nDestino=17\n"
+                ],
+                "explanation": "minimo - 1.0 = -2147483649"
+              },
+              {
+                "standardInput": "5\n",
+                "outputs": [
+                  "Aceptado=1\nDestino=-3\n"
+                ],
+                "explanation": "-3.75"
+              },
+              {
+                "standardInput": "6\n",
+                "outputs": [
+                  "Aceptado=1\nDestino=0\n"
+                ],
+                "explanation": "-0.75"
+              },
+              {
+                "standardInput": "7\n",
+                "outputs": [
+                  "Aceptado=0\nDestino=17\n"
+                ],
+                "explanation": "infinito positivo"
+              },
+              {
+                "standardInput": "8\n",
+                "outputs": [
+                  "Aceptado=0\nDestino=17\n"
+                ],
+                "explanation": "NaN"
+              },
+              {
+                "standardInput": "9\n",
+                "outputs": [
+                  "Aceptado=0\nDestino=17\n"
+                ],
+                "explanation": "infinito negativo"
+              },
+              {
+                "standardInput": "10\n",
+                "outputs": [
+                  "Aceptado=1\nDestino=0\n"
+                ],
+                "explanation": "0.0"
+              }
+            ]
+          }
+        }
+      },
+      {
+        "id": "block_0008_0001",
+        "block": {
+          "type": "code",
+          "language": "cpp",
+          "code": "#include <cmath>\n#include <iostream>\n#include <limits>\n\nbool truncar_a_int(double dato, int& destino) {\n    if (!std::isfinite(dato)) {\n        return false;\n    }\n\n    const double truncado = std::trunc(dato);\n    const double minimo =\n        static_cast<double>(std::numeric_limits<int>::lowest());\n    const double maximo =\n        static_cast<double>(std::numeric_limits<int>::max());\n    if (truncado < minimo || truncado > maximo) {\n        return false;\n    }\n\n    destino = static_cast<int>(truncado);\n    return true;\n}\n\nint main() {\n    if (std::numeric_limits<int>::radix != 2\n        || std::numeric_limits<int>::digits != 31\n        || std::numeric_limits<double>::radix != 2\n        || std::numeric_limits<double>::digits != 53) {\n        return 2;\n    }\n\n    int caso = 0;\n    if (!(std::cin >> caso)) {\n        return 1;\n    }\n\n    const double minimo =\n        static_cast<double>(std::numeric_limits<int>::lowest());\n    const double maximo =\n        static_cast<double>(std::numeric_limits<int>::max());\n    double dato = 0.0;\n    switch (caso) {\n    case 1: dato = maximo + 0.5; break;\n    case 2: dato = minimo - 0.5; break;\n    case 3: dato = maximo + 1.0; break;\n    case 4: dato = minimo - 1.0; break;\n    case 5: dato = -3.75; break;\n    case 6: dato = -0.75; break;\n    case 7: dato = std::numeric_limits<double>::infinity(); break;\n    case 8: dato = std::numeric_limits<double>::quiet_NaN(); break;\n    case 9: dato = -std::numeric_limits<double>::infinity(); break;\n    case 10: dato = 0.0; break;\n    default: return 1;\n    }\n\n    int destino = 17;\n    const bool aceptado = truncar_a_int(dato, destino);\n    std::cout << \"Aceptado=\" << aceptado << '\\n';\n    std::cout << \"Destino=\" << destino << '\\n';\n    return 0;\n}\n"
+        }
+      },
+      {
+        "id": "block_0010_0005",
+        "block": {
+          "type": "cpp_compiler",
+          "language": "cpp",
+          "initialCode": "#include <cmath>\n#include <iostream>\n#include <limits>\n\nbool truncar_a_int(double dato, int& destino) {\n    if (!std::isfinite(dato)) {\n        return false;\n    }\n\n    const double truncado = std::trunc(dato);\n    const double minimo =\n        static_cast<double>(std::numeric_limits<int>::lowest());\n    const double maximo =\n        static_cast<double>(std::numeric_limits<int>::max());\n    if (truncado < minimo || truncado > maximo) {\n        return false;\n    }\n\n    destino = static_cast<int>(truncado);\n    return true;\n}\nbool conservar_a_int(double dato, int& destino) {\n    // Este inicio puede cambiar destino antes de decidir el rechazo.\n    if (!truncar_a_int(dato, destino)) {\n        return false;\n    }\n    return static_cast<double>(destino) == dato;\n}\n\nint main() {\n    if (std::numeric_limits<int>::radix != 2\n        || std::numeric_limits<int>::digits != 31\n        || std::numeric_limits<double>::radix != 2\n        || std::numeric_limits<double>::digits != 53) {\n        return 2;\n    }\n\n    int caso = 0;\n    if (!(std::cin >> caso)) {\n        return 1;\n    }\n\n    const double minimo =\n        static_cast<double>(std::numeric_limits<int>::lowest());\n    const double maximo =\n        static_cast<double>(std::numeric_limits<int>::max());\n    double dato = 0.0;\n    int destino = 61;\n    switch (caso) {\n    case 1: dato = -3.75; break;\n    case 2: dato = -3.0; destino = -7; break;\n    case 3: dato = maximo + 0.5; destino = 11; break;\n    case 4: dato = maximo; destino = -7; break;\n    case 5: dato = minimo; destino = 11; break;\n    case 6: dato = 0.0; destino = 42; break;\n    case 7: dato = minimo - 0.5; destino = -8; break;\n    case 8: dato = std::numeric_limits<double>::quiet_NaN(); destino = -9; break;\n    case 9: dato = std::numeric_limits<double>::infinity(); destino = 10; break;\n    default: return 1;\n    }\n\n    const bool aceptado = conservar_a_int(dato, destino);\n    std::cout << \"Aceptado=\" << aceptado << '\\n';\n    std::cout << \"Destino=\" << destino << '\\n';\n    return 0;\n}\n",
+          "initialStandardInput": "1\n",
+          "outputCheck": {
+            "inputComparison": "tokens",
+            "cases": [
+              {
+                "standardInput": "1\n",
+                "outputs": [
+                  "Aceptado=0\nDestino=61\n"
+                ],
+                "explanation": "-3.75; destino previo 61"
+              },
+              {
+                "standardInput": "2\n",
+                "outputs": [
+                  "Aceptado=1\nDestino=-3\n"
+                ],
+                "explanation": "-3.0; destino previo -7"
+              },
+              {
+                "standardInput": "3\n",
+                "outputs": [
+                  "Aceptado=0\nDestino=11\n"
+                ],
+                "explanation": "2147483647.5; destino previo 11"
+              },
+              {
+                "standardInput": "4\n",
+                "outputs": [
+                  "Aceptado=1\nDestino=2147483647\n"
+                ],
+                "explanation": "2147483647.0; destino previo -7"
+              },
+              {
+                "standardInput": "5\n",
+                "outputs": [
+                  "Aceptado=1\nDestino=-2147483648\n"
+                ],
+                "explanation": "-2147483648.0; destino previo 11"
+              },
+              {
+                "standardInput": "6\n",
+                "outputs": [
+                  "Aceptado=1\nDestino=0\n"
+                ],
+                "explanation": "0.0; destino previo 42"
+              },
+              {
+                "standardInput": "7\n",
+                "outputs": [
+                  "Aceptado=0\nDestino=-8\n"
+                ],
+                "explanation": "-2147483648.5; destino previo -8"
+              },
+              {
+                "standardInput": "8\n",
+                "outputs": [
+                  "Aceptado=0\nDestino=-9\n"
+                ],
+                "explanation": "NaN; destino previo -9"
+              },
+              {
+                "standardInput": "9\n",
+                "outputs": [
+                  "Aceptado=0\nDestino=10\n"
+                ],
+                "explanation": "infinito positivo; destino previo 10"
+              }
+            ]
+          }
+        }
+      },
+      {
+        "id": "block_0012_0001",
+        "block": {
+          "type": "code",
+          "language": "cpp",
+          "code": "#include <cmath>\n#include <iostream>\n#include <limits>\n\nbool truncar_a_int(double dato, int& destino) {\n    if (!std::isfinite(dato)) {\n        return false;\n    }\n\n    const double truncado = std::trunc(dato);\n    const double minimo =\n        static_cast<double>(std::numeric_limits<int>::lowest());\n    const double maximo =\n        static_cast<double>(std::numeric_limits<int>::max());\n    if (truncado < minimo || truncado > maximo) {\n        return false;\n    }\n\n    destino = static_cast<int>(truncado);\n    return true;\n}\nbool conservar_a_int(double dato, int& destino) {\n    int candidato = 0;\n    if (!truncar_a_int(dato, candidato)) {\n        return false;\n    }\n    if (static_cast<double>(candidato) != dato) {\n        return false;\n    }\n\n    destino = candidato;\n    return true;\n}\n\nint main() {\n    if (std::numeric_limits<int>::radix != 2\n        || std::numeric_limits<int>::digits != 31\n        || std::numeric_limits<double>::radix != 2\n        || std::numeric_limits<double>::digits != 53) {\n        return 2;\n    }\n\n    int caso = 0;\n    if (!(std::cin >> caso)) {\n        return 1;\n    }\n\n    const double minimo =\n        static_cast<double>(std::numeric_limits<int>::lowest());\n    const double maximo =\n        static_cast<double>(std::numeric_limits<int>::max());\n    double dato = 0.0;\n    int destino = 61;\n    switch (caso) {\n    case 1: dato = -3.75; break;\n    case 2: dato = -3.0; destino = -7; break;\n    case 3: dato = maximo + 0.5; destino = 11; break;\n    case 4: dato = maximo; destino = -7; break;\n    case 5: dato = minimo; destino = 11; break;\n    case 6: dato = 0.0; destino = 42; break;\n    case 7: dato = minimo - 0.5; destino = -8; break;\n    case 8: dato = std::numeric_limits<double>::quiet_NaN(); destino = -9; break;\n    case 9: dato = std::numeric_limits<double>::infinity(); destino = 10; break;\n    default: return 1;\n    }\n\n    const bool aceptado = conservar_a_int(dato, destino);\n    std::cout << \"Aceptado=\" << aceptado << '\\n';\n    std::cout << \"Destino=\" << destino << '\\n';\n    return 0;\n}\n"
+        }
+      },
+      {
+        "id": "block_0013_0002",
+        "block": {
+          "type": "output_prediction",
+          "id": "p3_u1l10_secuencia_contratos",
+          "question": "Predice cada bool y el destino posterior en el entorno de la práctica. Las cuatro llamadas se ejecutan en orden y comparten el mismo objeto destino.",
+          "language": "cpp",
+          "code": "#include <cmath>\n#include <iostream>\n#include <limits>\n\nbool truncar_a_int(double dato, int& destino) {\n    if (!std::isfinite(dato)) {\n        return false;\n    }\n\n    const double truncado = std::trunc(dato);\n    const double minimo =\n        static_cast<double>(std::numeric_limits<int>::lowest());\n    const double maximo =\n        static_cast<double>(std::numeric_limits<int>::max());\n    if (truncado < minimo || truncado > maximo) {\n        return false;\n    }\n\n    destino = static_cast<int>(truncado);\n    return true;\n}\nbool conservar_a_int(double dato, int& destino) {\n    int candidato = 0;\n    if (!truncar_a_int(dato, candidato)) {\n        return false;\n    }\n    if (static_cast<double>(candidato) != dato) {\n        return false;\n    }\n\n    destino = candidato;\n    return true;\n}\n\nint main() {\n    if (std::numeric_limits<int>::radix != 2\n        || std::numeric_limits<int>::digits != 31\n        || std::numeric_limits<double>::radix != 2\n        || std::numeric_limits<double>::digits != 53) {\n        return 2;\n    }\n\n    int destino = 42;\n    bool aceptado = conservar_a_int(-3.0, destino);\n    std::cout << aceptado << ':' << destino << '\\n';\n    aceptado = conservar_a_int(-0.75, destino);\n    std::cout << aceptado << ':' << destino << '\\n';\n    aceptado = truncar_a_int(-0.75, destino);\n    std::cout << aceptado << ':' << destino << '\\n';\n    aceptado = truncar_a_int(2147483648.0, destino);\n    std::cout << aceptado << ':' << destino;\n    return 0;\n}\n",
+          "answers": [
+            "1:-3\n0:-3\n1:0\n0:0"
+          ],
+          "outputComparison": "exact",
+          "explanation": "−3.0 se conserva exactamente. −0.75 no cumple el contrato exacto y deja −3. La misma fracción sí cumple el contrato de truncamiento y guarda 0. 2147483648 no cabe tras truncar y deja ese cero anterior."
+        }
+      },
+      {
+        "id": "block_0014_0003",
+        "block": {
+          "type": "output_prediction",
+          "id": "p3_u1l10_unsigned_cero",
+          "question": "Este programa sólo convierte −0.75, cuyo truncado cabe en unsigned int. Predice la salida.",
+          "language": "cpp",
+          "code": "#include <iostream>\n\nint main() {\n    double dato = -0.75;\n    unsigned int copia = static_cast<unsigned int>(dato);\n    std::cout << copia;\n    return 0;\n}\n",
+          "answers": [
+            "0"
+          ],
+          "outputComparison": "exact",
+          "explanation": "−0.75 pierde su fracción hacia cero y el entero obtenido es 0. Cero cabe en unsigned int. Esto no autoriza a convertir −1.0 ni otros datos cuyo truncado sea negativo."
+        }
+      }
+    ]
   }
 }

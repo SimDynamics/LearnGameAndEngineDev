@@ -203,7 +203,7 @@
         },
         {
           "type": "cpp_compiler",
-          "initialCode": "#include <iostream>\n#include <sstream>\n#include <string>\n\n// Escribe aqui tus funciones antes del cliente.\n\nvoid probar(const std::string& texto) {\n    std::string codigo{\"0999\"};\n    int cajas{19};\n    const bool aceptada{leer_ficha(texto, codigo, cajas)};\n    std::cout << aceptada << ':' << codigo << ':' << cajas << '\\n';\n}\n\nint main() {\n    probar(\"0007 03\");\n    probar(\"0123 20\");\n    probar(\"0000 0\");\n\n    probar(\"7 3\");\n    probar(\"00x7 3\");\n    probar(\"0007 tres\");\n    probar(\"0007 21\");\n    probar(\"0007 -1\");\n    probar(\"0007 3 extra\");\n    probar(\"0007\");\n\n    probar(\" \\t0007\\n03 \\t\");\n    return 0;\n}\n",
+          "initialCode": "#include <iostream>\n#include <sstream>\n#include <string>\n\n// Escribe aqui tus funciones antes del cliente.\n\nvoid probar(const std::string& texto) {\n    std::string codigo{\"0999\"};\n    int cajas{19};\n    const bool aceptada{leer_ficha(texto, codigo, cajas)};\n\n    std::cout << aceptada << ':' << codigo << ':' << cajas << '\\n';\n}\n\nint main() {\n    probar(\"0007 03\");\n    probar(\"0123 20\");\n    probar(\"0000 0\");\n\n    probar(\"7 3\");\n    probar(\"00x7 3\");\n    probar(\"0007 tres\");\n    probar(\"0007 21\");\n    probar(\"0007 -1\");\n    probar(\"0007 3 extra\");\n    probar(\"0007\");\n\n    probar(\" \\t0007\\n03 \\t\");\n    return 0;\n}\n",
           "outputCheck": {
             "inputComparison": "exact",
             "cases": [
@@ -239,7 +239,7 @@
         {
           "type": "code",
           "language": "cpp",
-          "code": "#include <iostream>\n#include <sstream>\n#include <string>\n\nbool leer_ficha(const std::string& texto, std::string& codigo, int& cajas) {\n    std::istringstream entrada{texto};\n    std::string candidato_codigo;\n    int candidato_cajas{0};\n\n    if (!(entrada >> candidato_codigo >> candidato_cajas))\n        return false;\n\n    if (candidato_codigo.size() != 4)\n        return false;\n\n    for (char caracter : candidato_codigo) {\n        if (caracter < '0' || caracter > '9')\n            return false;\n    }\n\n    if (candidato_cajas < 0 || candidato_cajas > 20)\n        return false;\n\n    char sobrante{};\n    if (entrada >> sobrante)\n        return false;\n\n    codigo = candidato_codigo;\n    cajas = candidato_cajas;\n    return true;\n}\n\nvoid probar(const std::string& texto) {\n    std::string codigo{\"0999\"};\n    int cajas{19};\n    const bool aceptada{leer_ficha(texto, codigo, cajas)};\n    std::cout << aceptada << ':' << codigo << ':' << cajas << '\\n';\n}\n\nint main() {\n    probar(\"0007 03\");\n    probar(\"0123 20\");\n    probar(\"0000 0\");\n\n    probar(\"7 3\");\n    probar(\"00x7 3\");\n    probar(\"0007 tres\");\n    probar(\"0007 21\");\n    probar(\"0007 -1\");\n    probar(\"0007 3 extra\");\n    probar(\"0007\");\n\n    probar(\" \\t0007\\n03 \\t\");\n    return 0;\n}\n"
+          "code": "#include <iostream>\n#include <sstream>\n#include <string>\n\nbool leer_ficha(const std::string& texto, std::string& codigo, int& cajas) {\n    std::istringstream entrada{texto};\n    std::string candidato_codigo;\n    int candidato_cajas{0};\n\n    if (!(entrada >> candidato_codigo >> candidato_cajas))\n        return false;\n\n    if (candidato_codigo.size() != 4)\n        return false;\n\n    for (char caracter : candidato_codigo) {\n        if (caracter < '0' || caracter > '9')\n            return false;\n    }\n\n    if (candidato_cajas < 0 || candidato_cajas > 20)\n        return false;\n\n    char sobrante{};\n    if (entrada >> sobrante)\n        return false;\n\n    codigo = candidato_codigo;\n    cajas = candidato_cajas;\n    return true;\n}\n\nvoid probar(const std::string& texto) {\n    std::string codigo{\"0999\"};\n    int cajas{19};\n    const bool aceptada{leer_ficha(texto, codigo, cajas)};\n\n    std::cout << aceptada << ':' << codigo << ':' << cajas << '\\n';\n}\n\nint main() {\n    probar(\"0007 03\");\n    probar(\"0123 20\");\n    probar(\"0000 0\");\n\n    probar(\"7 3\");\n    probar(\"00x7 3\");\n    probar(\"0007 tres\");\n    probar(\"0007 21\");\n    probar(\"0007 -1\");\n    probar(\"0007 3 extra\");\n    probar(\"0007\");\n\n    probar(\" \\t0007\\n03 \\t\");\n    return 0;\n}\n"
         },
         {
           "type": "paragraph",
@@ -807,6 +807,16 @@
         "id": "u12_codigo_textual_y_cantidad_cliente",
         "beforeSha256": "97ad9739de74ab9c3a01ce0d4546bbcf2e0760c8c24d7d841aa80a6b7a5158ae",
         "afterSha256": "0d62beeec3319fbc4d7f6b91ff7eb8b41ceccfdf89179f220f11ca06ce4747fb"
+      },
+      {
+        "id": "u12_codigo_textual_y_cantidad_comprobacion",
+        "beforeSha256": "c7a86c4dd58396b38b47a363aa6fe1867122eb55d7a436a7904040b64dca97a5",
+        "afterSha256": "c73d0ee8f1337f43e41ce9e22215cc64f1d36dd325a02dddf1ec1fc3f3ee1b19"
+      },
+      {
+        "id": "u12_codigo_textual_y_cantidad_referencia_codigo",
+        "beforeSha256": "c705472ccf7ac922c00af2eeb211d7b607a3e8cd5c11dbe217bcee9ef7643006",
+        "afterSha256": "69c6da4e470e9699d605bba318cae85a73e7e9b48c50199756aff29fb8595f68"
       }
     ],
     "sourceFormatRevisions": [

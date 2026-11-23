@@ -68,7 +68,7 @@
         {
           "type": "cpp_compiler",
           "language": "cpp",
-          "initialCode": "#include <iostream>\n\nint main() {\n    // PENDIENTE: recibir peticiones y usar la interfaz segun su contrato.\n    std::cerr << \"PENDIENTE: cliente sin implementar\\n\";\n    return 1;\n}\n",
+          "initialCode": "#include <iostream>\n\nint main() {\n    // PENDIENTE: recibir peticiones y usar la interfaz segun su contrato.\n    \n    std::cerr << \"PENDIENTE: cliente sin implementar\\n\";\n    return 1;\n}\n",
           "projectFiles": [
             {
               "path": "CMakeLists.txt",
@@ -80,15 +80,15 @@
             },
             {
               "path": "src/ajuste.cpp",
-              "initialCode": "#include \"control/ajuste.h\"\n\nbool intentar_ajuste(int valor, int inferior, int superior, int& ajuste) {\n    // PENDIENTE: este cuerpo no implementa el contrato.\n    // Sustituyelo por tu solucion; rechazarlo todo no es una implementacion valida.\n    return false;\n}\n"
+              "initialCode": "#include \"control/ajuste.h\"\n\nbool intentar_ajuste(int valor, int inferior, int superior, int& ajuste) {\n    // PENDIENTE: este cuerpo no implementa el contrato.\n    // Sustituyelo por tu solucion; rechazarlo todo no es una implementacion valida.\n    \n    return false;\n}\n"
             },
             {
               "path": "app/consulta.cpp",
-              "initialCode": "#include <iostream>\n\nint main() {\n    // PENDIENTE: recibir peticiones y usar la interfaz segun su contrato.\n    std::cerr << \"PENDIENTE: cliente sin implementar\\n\";\n    return 1;\n}\n"
+              "initialCode": "#include <iostream>\n\nint main() {\n    // PENDIENTE: recibir peticiones y usar la interfaz segun su contrato.\n    \n    std::cerr << \"PENDIENTE: cliente sin implementar\\n\";\n    return 1;\n}\n"
             },
             {
               "path": "pruebas/casos.cpp",
-              "initialCode": "#include <iostream>\n\nint main() {\n    // PENDIENTE: llamar a la biblioteca y comparar con esperados independientes.\n    std::cerr << \"PENDIENTE: comprobador sin implementar\\n\";\n    return 1;\n}\n"
+              "initialCode": "#include <iostream>\n\nint main() {\n    // PENDIENTE: llamar a la biblioteca y comparar con esperados independientes.\n    \n    std::cerr << \"PENDIENTE: comprobador sin implementar\\n\";\n    return 1;\n}\n"
             }
           ],
           "initialStandardInput": "2 3 7\n5 3 7\n9 3 7\n0 7 3\n4 4 4\n21 3 7\n",
@@ -125,7 +125,7 @@
         {
           "type": "code",
           "language": "cpp",
-          "code": "#include \"control/ajuste.h\"\n\nbool intentar_ajuste(int valor, int inferior, int superior, int& ajuste) {\n    if (valor < -20 || valor > 20 || inferior < -20 || inferior > 20\n            || superior < -20 || superior > 20 || inferior > superior) {\n        return false;\n    }\n    if (valor < inferior) {\n        ajuste = inferior - valor;\n    } else if (valor > superior) {\n        ajuste = superior - valor;\n    } else {\n        ajuste = 0;\n    }\n    return true;\n}\n"
+          "code": "#include \"control/ajuste.h\"\n\nbool intentar_ajuste(int valor, int inferior, int superior, int& ajuste) {\n    if (valor < -20 || valor > 20 || inferior < -20 || inferior > 20\n            || superior < -20 || superior > 20 || inferior > superior) {\n        return false;\n    }\n    if (valor < inferior) {\n        ajuste = inferior - valor;\n    } else if (valor > superior) {\n        ajuste = superior - valor;\n    } else {\n        ajuste = 0;\n    }\n\n    return true;\n}\n"
         },
         {
           "type": "paragraph",
@@ -134,7 +134,7 @@
         {
           "type": "code",
           "language": "cmake",
-          "code": "cmake_minimum_required(VERSION 3.20)\nproject(AjustesConEvidencia LANGUAGES CXX)\n\nadd_library(ajustes STATIC src/ajuste.cpp)\ntarget_include_directories(ajustes PUBLIC publico)\nadd_executable(consultar_ajustes app/consulta.cpp)\nadd_executable(comprobar_ajustes pruebas/casos.cpp)\ntarget_link_libraries(consultar_ajustes PRIVATE ajustes)\ntarget_link_libraries(comprobar_ajustes PRIVATE ajustes)\ntarget_compile_features(ajustes PRIVATE cxx_std_20)\ntarget_compile_features(consultar_ajustes PRIVATE cxx_std_20)\ntarget_compile_features(comprobar_ajustes PRIVATE cxx_std_20)\nset_target_properties(ajustes consultar_ajustes comprobar_ajustes PROPERTIES CXX_EXTENSIONS OFF)\ntarget_compile_options(ajustes PRIVATE -Wall -Wextra -Wpedantic)\ntarget_compile_options(consultar_ajustes PRIVATE -Wall -Wextra -Wpedantic)\ntarget_compile_options(comprobar_ajustes PRIVATE -Wall -Wextra -Wpedantic)\n"
+          "code": "cmake_minimum_required(VERSION 3.20)\nproject(AjustesConEvidencia LANGUAGES CXX)\n\nadd_library(ajustes STATIC src/ajuste.cpp)\n\ntarget_include_directories(ajustes PUBLIC publico)\nadd_executable(consultar_ajustes app/consulta.cpp)\nadd_executable(comprobar_ajustes pruebas/casos.cpp)\n\ntarget_link_libraries(consultar_ajustes PRIVATE ajustes)\ntarget_link_libraries(comprobar_ajustes PRIVATE ajustes)\ntarget_compile_features(ajustes PRIVATE cxx_std_20)\ntarget_compile_features(consultar_ajustes PRIVATE cxx_std_20)\ntarget_compile_features(comprobar_ajustes PRIVATE cxx_std_20)\nset_target_properties(ajustes consultar_ajustes comprobar_ajustes PROPERTIES CXX_EXTENSIONS OFF)\ntarget_compile_options(ajustes PRIVATE -Wall -Wextra -Wpedantic)\ntarget_compile_options(consultar_ajustes PRIVATE -Wall -Wextra -Wpedantic)\ntarget_compile_options(comprobar_ajustes PRIVATE -Wall -Wextra -Wpedantic)\n"
         },
         {
           "type": "paragraph",
@@ -155,7 +155,7 @@
         {
           "type": "code",
           "language": "cpp",
-          "code": "#include \"control/ajuste.h\"\n#include <iostream>\n\nvoid informar_rechazo(std::ostream& destino, int peticion,\n                     int valor, int inferior, int superior) {\n    destino << \"Rechazo: peticion=\" << peticion << \" valor=\" << valor\n            << \" inferior=\" << inferior << \" superior=\" << superior\n            << \". Se admiten valores de -20 a 20 con inferior <= superior.\"\n            << \" Revise los tres valores.\\n\";\n}\n\nint main() {\n    int valor{0};\n    int inferior{0};\n    int superior{0};\n    int ajuste{77};\n    int peticion{0};\n    int aceptadas{0};\n    int rechazadas{0};\n    int suma{0};\n    while (std::cin >> valor >> inferior >> superior) {\n        ++peticion;\n        if (intentar_ajuste(valor, inferior, superior, ajuste)) {\n            ++aceptadas;\n            suma += ajuste;\n            std::cout << \"Peticion=\" << peticion << \" Ajuste=\" << ajuste << \"\\n\";\n        } else {\n            ++rechazadas;\n            informar_rechazo(std::cerr, peticion, valor, inferior, superior);\n        }\n    }\n    std::cout << \"Aceptadas=\" << aceptadas << \" Rechazadas=\" << rechazadas\n              << \" Suma=\" << suma << \"\\n\";\n    return rechazadas > 0 ? 1 : 0;\n}\n"
+          "code": "#include \"control/ajuste.h\"\n#include <iostream>\n\nvoid informar_rechazo(std::ostream& destino, int peticion,\n                     int valor, int inferior, int superior) {\n    destino << \"Rechazo: peticion=\" << peticion << \" valor=\" << valor\n            << \" inferior=\" << inferior << \" superior=\" << superior\n            << \". Se admiten valores de -20 a 20 con inferior <= superior.\"\n            << \" Revise los tres valores.\\n\";\n}\n\nint main() {\n    int valor{0};\n    int inferior{0};\n    int superior{0};\n    int ajuste{77};\n    int peticion{0};\n    int aceptadas{0};\n    int rechazadas{0};\n    int suma{0};\n\n    while (std::cin >> valor >> inferior >> superior) {\n        ++peticion;\n        if (intentar_ajuste(valor, inferior, superior, ajuste)) {\n            ++aceptadas;\n            suma += ajuste;\n            std::cout << \"Peticion=\" << peticion << \" Ajuste=\" << ajuste << \"\\n\";\n        } else {\n            ++rechazadas;\n            informar_rechazo(std::cerr, peticion, valor, inferior, superior);\n        }\n    }\n    std::cout << \"Aceptadas=\" << aceptadas << \" Rechazadas=\" << rechazadas\n              << \" Suma=\" << suma << \"\\n\";\n    return rechazadas > 0 ? 1 : 0;\n}\n"
         },
         {
           "type": "paragraph",
@@ -193,7 +193,7 @@
         {
           "type": "code",
           "language": "cpp",
-          "code": "#include \"control/ajuste.h\"\n#include <iostream>\n\nbool comprobar(int caso, int valor, int inferior, int superior,\n               int inicial, bool aceptacion_esperada, int ajuste_esperado) {\n    int obtenido{inicial};\n    const bool aceptado = intentar_ajuste(valor, inferior, superior, obtenido);\n    const bool coincide = aceptado == aceptacion_esperada && obtenido == ajuste_esperado;\n    std::cout << \"Caso=\" << caso << \" Acepta=\" << aceptado << \" Ajuste=\" << obtenido\n              << \" EsperaAcepta=\" << aceptacion_esperada\n              << \" EsperaAjuste=\" << ajuste_esperado;\n    if (coincide) { std::cout << \" OK\\n\"; }\n    else { std::cout << \" FALLO\\n\"; }\n    return coincide;\n}\n\nint main() {\n    int fallos{0};\n    if (!comprobar(1, 2, 3, 7, 77, true, 1)) { ++fallos; }\n    if (!comprobar(2, 5, 3, 7, -8, true, 0)) { ++fallos; }\n    if (!comprobar(3, 9, 3, 7, 19, true, -2)) { ++fallos; }\n    if (!comprobar(4, 4, 4, 4, -4, true, 0)) { ++fallos; }\n    if (!comprobar(5, -20, 20, 20, 8, true, 40)) { ++fallos; }\n    if (!comprobar(6, 20, -20, -20, 17, true, -40)) { ++fallos; }\n    if (!comprobar(7, 0, 7, 3, 77, false, 77)) { ++fallos; }\n    if (!comprobar(8, 21, 3, 7, -8, false, -8)) { ++fallos; }\n    if (!comprobar(9, -21, 3, 7, 19, false, 19)) { ++fallos; }\n    if (!comprobar(10, 0, -21, 7, -4, false, -4)) { ++fallos; }\n    if (!comprobar(11, 0, 3, 21, 8, false, 8)) { ++fallos; }\n    std::cout << \"Fallos=\" << fallos << \"\\n\";\n    return fallos == 0 ? 0 : 1;\n}\n"
+          "code": "#include \"control/ajuste.h\"\n#include <iostream>\n\nbool comprobar(int caso, int valor, int inferior, int superior,\n               int inicial, bool aceptacion_esperada, int ajuste_esperado) {\n    int obtenido{inicial};\n    const bool aceptado = intentar_ajuste(valor, inferior, superior, obtenido);\n    const bool coincide = aceptado == aceptacion_esperada && obtenido == ajuste_esperado;\n\n    std::cout << \"Caso=\" << caso << \" Acepta=\" << aceptado << \" Ajuste=\" << obtenido\n              << \" EsperaAcepta=\" << aceptacion_esperada\n              << \" EsperaAjuste=\" << ajuste_esperado;\n    if (coincide) { std::cout << \" OK\\n\"; }\n    else { std::cout << \" FALLO\\n\"; }\n    return coincide;\n}\n\nint main() {\n    int fallos{0};\n    if (!comprobar(1, 2, 3, 7, 77, true, 1)) { ++fallos; }\n    if (!comprobar(2, 5, 3, 7, -8, true, 0)) { ++fallos; }\n    if (!comprobar(3, 9, 3, 7, 19, true, -2)) { ++fallos; }\n    if (!comprobar(4, 4, 4, 4, -4, true, 0)) { ++fallos; }\n    if (!comprobar(5, -20, 20, 20, 8, true, 40)) { ++fallos; }\n    if (!comprobar(6, 20, -20, -20, 17, true, -40)) { ++fallos; }\n    if (!comprobar(7, 0, 7, 3, 77, false, 77)) { ++fallos; }\n    if (!comprobar(8, 21, 3, 7, -8, false, -8)) { ++fallos; }\n    if (!comprobar(9, -21, 3, 7, 19, false, 19)) { ++fallos; }\n    if (!comprobar(10, 0, -21, 7, -4, false, -4)) { ++fallos; }\n    if (!comprobar(11, 0, 3, 21, 8, false, 8)) { ++fallos; }\n    std::cout << \"Fallos=\" << fallos << \"\\n\";\n    return fallos == 0 ? 0 : 1;\n}\n"
         },
         {
           "type": "paragraph",
@@ -214,7 +214,7 @@
         {
           "type": "code",
           "language": "cpp",
-          "code": "bool intentar_ajuste(int valor, int inferior, int superior, int& ajuste) {\n    if (valor < -20 || valor > 20 || inferior < -20 || inferior > 20\n            || superior < -20 || superior > 20 || inferior > superior) {\n        return false;\n    }\n    if (valor < inferior) {\n        ajuste = inferior - valor;\n    } else if (valor > superior) {\n        ajuste = valor - superior;\n    } else {\n        ajuste = 0;\n    }\n    return true;\n}\n"
+          "code": "bool intentar_ajuste(int valor, int inferior, int superior, int& ajuste) {\n    if (valor < -20 || valor > 20 || inferior < -20 || inferior > 20\n            || superior < -20 || superior > 20 || inferior > superior) {\n        return false;\n    }\n    if (valor < inferior) {\n        ajuste = inferior - valor;\n    } else if (valor > superior) {\n        ajuste = valor - superior;\n    } else {\n        ajuste = 0;\n    }\n\n    return true;\n}\n"
         },
         {
           "type": "paragraph",
@@ -231,11 +231,11 @@
         {
           "type": "cpp_compiler",
           "language": "cpp",
-          "initialCode": "#include <iostream>\n\nint main() {\n    // PENDIENTE: recibir peticiones y usar la interfaz segun su contrato.\n    std::cerr << \"PENDIENTE: cliente sin implementar\\n\";\n    return 1;\n}\n",
+          "initialCode": "#include <iostream>\n\nint main() {\n    // PENDIENTE: recibir peticiones y usar la interfaz segun su contrato.\n    \n    std::cerr << \"PENDIENTE: cliente sin implementar\\n\";\n    return 1;\n}\n",
           "projectFiles": [
             {
               "path": "CMakeLists.txt",
-              "initialCode": "cmake_minimum_required(VERSION 3.20)\nproject(AjustesConEvidencia LANGUAGES CXX)\n\nadd_library(ajustes STATIC src/ajuste.cpp)\ntarget_include_directories(ajustes PUBLIC publico)\nadd_executable(consultar_ajustes app/consulta.cpp)\nadd_executable(comprobar_ajustes pruebas/casos.cpp)\ntarget_link_libraries(consultar_ajustes PRIVATE ajustes)\ntarget_link_libraries(comprobar_ajustes PRIVATE ajustes)\ntarget_compile_features(ajustes PRIVATE cxx_std_20)\ntarget_compile_features(consultar_ajustes PRIVATE cxx_std_20)\ntarget_compile_features(comprobar_ajustes PRIVATE cxx_std_20)\nset_target_properties(ajustes consultar_ajustes comprobar_ajustes PROPERTIES CXX_EXTENSIONS OFF)\ntarget_compile_options(ajustes PRIVATE -Wall -Wextra -Wpedantic)\ntarget_compile_options(consultar_ajustes PRIVATE -Wall -Wextra -Wpedantic)\ntarget_compile_options(comprobar_ajustes PRIVATE -Wall -Wextra -Wpedantic)\n"
+              "initialCode": "cmake_minimum_required(VERSION 3.20)\nproject(AjustesConEvidencia LANGUAGES CXX)\n\nadd_library(ajustes STATIC src/ajuste.cpp)\n\ntarget_include_directories(ajustes PUBLIC publico)\nadd_executable(consultar_ajustes app/consulta.cpp)\nadd_executable(comprobar_ajustes pruebas/casos.cpp)\n\ntarget_link_libraries(consultar_ajustes PRIVATE ajustes)\ntarget_link_libraries(comprobar_ajustes PRIVATE ajustes)\ntarget_compile_features(ajustes PRIVATE cxx_std_20)\ntarget_compile_features(consultar_ajustes PRIVATE cxx_std_20)\ntarget_compile_features(comprobar_ajustes PRIVATE cxx_std_20)\nset_target_properties(ajustes consultar_ajustes comprobar_ajustes PROPERTIES CXX_EXTENSIONS OFF)\ntarget_compile_options(ajustes PRIVATE -Wall -Wextra -Wpedantic)\ntarget_compile_options(consultar_ajustes PRIVATE -Wall -Wextra -Wpedantic)\ntarget_compile_options(comprobar_ajustes PRIVATE -Wall -Wextra -Wpedantic)\n"
             },
             {
               "path": "publico/control/ajuste.h",
@@ -243,15 +243,15 @@
             },
             {
               "path": "src/ajuste.cpp",
-              "initialCode": "#include \"control/ajuste.h\"\n\nbool intentar_ajuste(int valor, int inferior, int superior, int& ajuste) {\n    if (valor < -20 || valor > 20 || inferior < -20 || inferior > 20\n            || superior < -20 || superior > 20 || inferior > superior) {\n        return false;\n    }\n    if (valor < inferior) {\n        ajuste = inferior - valor;\n    } else if (valor > superior) {\n        ajuste = valor - superior;\n    } else {\n        ajuste = 0;\n    }\n    return true;\n}\n"
+              "initialCode": "#include \"control/ajuste.h\"\n\nbool intentar_ajuste(int valor, int inferior, int superior, int& ajuste) {\n    if (valor < -20 || valor > 20 || inferior < -20 || inferior > 20\n            || superior < -20 || superior > 20 || inferior > superior) {\n        return false;\n    }\n    if (valor < inferior) {\n        ajuste = inferior - valor;\n    } else if (valor > superior) {\n        ajuste = valor - superior;\n    } else {\n        ajuste = 0;\n    }\n\n    return true;\n}\n"
             },
             {
               "path": "app/consulta.cpp",
-              "initialCode": "#include \"control/ajuste.h\"\n#include <iostream>\n\nvoid informar_rechazo(std::ostream& destino, int peticion,\n                     int valor, int inferior, int superior) {\n    destino << \"Rechazo: peticion=\" << peticion << \" valor=\" << valor\n            << \" inferior=\" << inferior << \" superior=\" << superior\n            << \". Se admiten valores de -20 a 20 con inferior <= superior.\"\n            << \" Revise los tres valores.\\n\";\n}\n\nint main() {\n    int valor{0};\n    int inferior{0};\n    int superior{0};\n    int ajuste{77};\n    int peticion{0};\n    int aceptadas{0};\n    int rechazadas{0};\n    int suma{0};\n    while (std::cin >> valor >> inferior >> superior) {\n        ++peticion;\n        if (intentar_ajuste(valor, inferior, superior, ajuste)) {\n            ++aceptadas;\n            suma += ajuste;\n            std::cout << \"Peticion=\" << peticion << \" Ajuste=\" << ajuste << \"\\n\";\n        } else {\n            ++rechazadas;\n            informar_rechazo(std::cerr, peticion, valor, inferior, superior);\n        }\n    }\n    std::cout << \"Aceptadas=\" << aceptadas << \" Rechazadas=\" << rechazadas\n              << \" Suma=\" << suma << \"\\n\";\n    return rechazadas > 0 ? 1 : 0;\n}\n"
+              "initialCode": "#include \"control/ajuste.h\"\n#include <iostream>\n\nvoid informar_rechazo(std::ostream& destino, int peticion,\n                     int valor, int inferior, int superior) {\n    destino << \"Rechazo: peticion=\" << peticion << \" valor=\" << valor\n            << \" inferior=\" << inferior << \" superior=\" << superior\n            << \". Se admiten valores de -20 a 20 con inferior <= superior.\"\n            << \" Revise los tres valores.\\n\";\n}\n\nint main() {\n    int valor{0};\n    int inferior{0};\n    int superior{0};\n    int ajuste{77};\n    int peticion{0};\n    int aceptadas{0};\n    int rechazadas{0};\n    int suma{0};\n\n    while (std::cin >> valor >> inferior >> superior) {\n        ++peticion;\n        if (intentar_ajuste(valor, inferior, superior, ajuste)) {\n            ++aceptadas;\n            suma += ajuste;\n            std::cout << \"Peticion=\" << peticion << \" Ajuste=\" << ajuste << \"\\n\";\n        } else {\n            ++rechazadas;\n            informar_rechazo(std::cerr, peticion, valor, inferior, superior);\n        }\n    }\n    std::cout << \"Aceptadas=\" << aceptadas << \" Rechazadas=\" << rechazadas\n              << \" Suma=\" << suma << \"\\n\";\n    return rechazadas > 0 ? 1 : 0;\n}\n"
             },
             {
               "path": "pruebas/casos.cpp",
-              "initialCode": "#include \"control/ajuste.h\"\n#include <iostream>\n\nbool comprobar(int caso, int valor, int inferior, int superior,\n               int inicial, bool aceptacion_esperada, int ajuste_esperado) {\n    int obtenido{inicial};\n    const bool aceptado = intentar_ajuste(valor, inferior, superior, obtenido);\n    const bool coincide = aceptado == aceptacion_esperada && obtenido == ajuste_esperado;\n    std::cout << \"Caso=\" << caso << \" Acepta=\" << aceptado << \" Ajuste=\" << obtenido\n              << \" EsperaAcepta=\" << aceptacion_esperada\n              << \" EsperaAjuste=\" << ajuste_esperado;\n    if (coincide) { std::cout << \" OK\\n\"; }\n    else { std::cout << \" FALLO\\n\"; }\n    return coincide;\n}\n\nint main() {\n    int fallos{0};\n    if (!comprobar(1, 2, 3, 7, 77, true, 1)) { ++fallos; }\n    if (!comprobar(2, 5, 3, 7, -8, true, 0)) { ++fallos; }\n    if (!comprobar(3, 9, 3, 7, 19, true, -2)) { ++fallos; }\n    if (!comprobar(4, 4, 4, 4, -4, true, 0)) { ++fallos; }\n    if (!comprobar(5, -20, 20, 20, 8, true, 40)) { ++fallos; }\n    if (!comprobar(6, 20, -20, -20, 17, true, -40)) { ++fallos; }\n    if (!comprobar(7, 0, 7, 3, 77, false, 77)) { ++fallos; }\n    if (!comprobar(8, 21, 3, 7, -8, false, -8)) { ++fallos; }\n    if (!comprobar(9, -21, 3, 7, 19, false, 19)) { ++fallos; }\n    if (!comprobar(10, 0, -21, 7, -4, false, -4)) { ++fallos; }\n    if (!comprobar(11, 0, 3, 21, 8, false, 8)) { ++fallos; }\n    std::cout << \"Fallos=\" << fallos << \"\\n\";\n    return fallos == 0 ? 0 : 1;\n}\n"
+              "initialCode": "#include \"control/ajuste.h\"\n#include <iostream>\n\nbool comprobar(int caso, int valor, int inferior, int superior,\n               int inicial, bool aceptacion_esperada, int ajuste_esperado) {\n    int obtenido{inicial};\n    const bool aceptado = intentar_ajuste(valor, inferior, superior, obtenido);\n    const bool coincide = aceptado == aceptacion_esperada && obtenido == ajuste_esperado;\n\n    std::cout << \"Caso=\" << caso << \" Acepta=\" << aceptado << \" Ajuste=\" << obtenido\n              << \" EsperaAcepta=\" << aceptacion_esperada\n              << \" EsperaAjuste=\" << ajuste_esperado;\n    if (coincide) { std::cout << \" OK\\n\"; }\n    else { std::cout << \" FALLO\\n\"; }\n    return coincide;\n}\n\nint main() {\n    int fallos{0};\n    if (!comprobar(1, 2, 3, 7, 77, true, 1)) { ++fallos; }\n    if (!comprobar(2, 5, 3, 7, -8, true, 0)) { ++fallos; }\n    if (!comprobar(3, 9, 3, 7, 19, true, -2)) { ++fallos; }\n    if (!comprobar(4, 4, 4, 4, -4, true, 0)) { ++fallos; }\n    if (!comprobar(5, -20, 20, 20, 8, true, 40)) { ++fallos; }\n    if (!comprobar(6, 20, -20, -20, 17, true, -40)) { ++fallos; }\n    if (!comprobar(7, 0, 7, 3, 77, false, 77)) { ++fallos; }\n    if (!comprobar(8, 21, 3, 7, -8, false, -8)) { ++fallos; }\n    if (!comprobar(9, -21, 3, 7, 19, false, 19)) { ++fallos; }\n    if (!comprobar(10, 0, -21, 7, -4, false, -4)) { ++fallos; }\n    if (!comprobar(11, 0, 3, 21, 8, false, 8)) { ++fallos; }\n    std::cout << \"Fallos=\" << fallos << \"\\n\";\n    return fallos == 0 ? 0 : 1;\n}\n"
             }
           ],
           "initialStandardInput": "2 3 7\n5 3 7\n9 3 7\n0 7 3\n4 4 4\n21 3 7\n",
@@ -304,11 +304,11 @@
         {
           "type": "cpp_compiler",
           "language": "cpp",
-          "initialCode": "#include <iostream>\n\nint main() {\n    // PENDIENTE: recibir peticiones y usar la interfaz segun su contrato.\n    std::cerr << \"PENDIENTE: cliente sin implementar\\n\";\n    return 1;\n}\n",
+          "initialCode": "#include <iostream>\n\nint main() {\n    // PENDIENTE: recibir peticiones y usar la interfaz segun su contrato.\n    \n    std::cerr << \"PENDIENTE: cliente sin implementar\\n\";\n    return 1;\n}\n",
           "projectFiles": [
             {
               "path": "CMakeLists.txt",
-              "initialCode": "cmake_minimum_required(VERSION 3.20)\nproject(AjustesConEvidencia LANGUAGES CXX)\n\nadd_library(ajustes STATIC src/ajuste.cpp)\ntarget_include_directories(ajustes PUBLIC publico)\nadd_executable(consultar_ajustes app/consulta.cpp)\nadd_executable(comprobar_ajustes pruebas/casos.cpp)\ntarget_link_libraries(consultar_ajustes PRIVATE ajustes)\ntarget_link_libraries(comprobar_ajustes PRIVATE ajustes)\ntarget_compile_features(ajustes PRIVATE cxx_std_20)\ntarget_compile_features(consultar_ajustes PRIVATE cxx_std_20)\ntarget_compile_features(comprobar_ajustes PRIVATE cxx_std_20)\nset_target_properties(ajustes consultar_ajustes comprobar_ajustes PROPERTIES CXX_EXTENSIONS OFF)\ntarget_compile_options(ajustes PRIVATE -Wall -Wextra -Wpedantic)\ntarget_compile_options(consultar_ajustes PRIVATE -Wall -Wextra -Wpedantic)\ntarget_compile_options(comprobar_ajustes PRIVATE -Wall -Wextra -Wpedantic)\n"
+              "initialCode": "cmake_minimum_required(VERSION 3.20)\nproject(AjustesConEvidencia LANGUAGES CXX)\n\nadd_library(ajustes STATIC src/ajuste.cpp)\n\ntarget_include_directories(ajustes PUBLIC publico)\nadd_executable(consultar_ajustes app/consulta.cpp)\nadd_executable(comprobar_ajustes pruebas/casos.cpp)\n\ntarget_link_libraries(consultar_ajustes PRIVATE ajustes)\ntarget_link_libraries(comprobar_ajustes PRIVATE ajustes)\ntarget_compile_features(ajustes PRIVATE cxx_std_20)\ntarget_compile_features(consultar_ajustes PRIVATE cxx_std_20)\ntarget_compile_features(comprobar_ajustes PRIVATE cxx_std_20)\nset_target_properties(ajustes consultar_ajustes comprobar_ajustes PROPERTIES CXX_EXTENSIONS OFF)\ntarget_compile_options(ajustes PRIVATE -Wall -Wextra -Wpedantic)\ntarget_compile_options(consultar_ajustes PRIVATE -Wall -Wextra -Wpedantic)\ntarget_compile_options(comprobar_ajustes PRIVATE -Wall -Wextra -Wpedantic)\n"
             },
             {
               "path": "publico/control/ajuste.h",
@@ -316,15 +316,15 @@
             },
             {
               "path": "src/ajuste.cpp",
-              "initialCode": "#include \"control/ajuste.h\"\n\nbool intentar_ajuste(int valor, int inferior, int superior, int& ajuste) {\n    if (valor < -20 || valor > 20 || inferior < -20 || inferior > 20\n            || superior < -20 || superior > 20 || inferior > superior) {\n        return false;\n    }\n    if (valor < inferior) {\n        ajuste = inferior - valor;\n    } else if (valor > superior) {\n        ajuste = superior - valor;\n    } else {\n        ajuste = 0;\n    }\n    return true;\n}\n"
+              "initialCode": "#include \"control/ajuste.h\"\n\nbool intentar_ajuste(int valor, int inferior, int superior, int& ajuste) {\n    if (valor < -20 || valor > 20 || inferior < -20 || inferior > 20\n            || superior < -20 || superior > 20 || inferior > superior) {\n        return false;\n    }\n    if (valor < inferior) {\n        ajuste = inferior - valor;\n    } else if (valor > superior) {\n        ajuste = superior - valor;\n    } else {\n        ajuste = 0;\n    }\n\n    return true;\n}\n"
             },
             {
               "path": "app/consulta.cpp",
-              "initialCode": "#include \"control/ajuste.h\"\n#include <iostream>\n\nvoid informar_rechazo(std::ostream& destino, int peticion,\n                     int valor, int inferior, int superior) {\n    destino << \"Rechazo: peticion=\" << peticion << \" valor=\" << valor\n            << \" inferior=\" << inferior << \" superior=\" << superior\n            << \". Se admiten valores de -20 a 20 con inferior <= superior.\"\n            << \" Revise los tres valores.\\n\";\n}\n\nint main() {\n    int valor{0};\n    int inferior{0};\n    int superior{0};\n    int ajuste{77};\n    int peticion{0};\n    int aceptadas{0};\n    int rechazadas{0};\n    int suma{0};\n    while (std::cin >> valor >> inferior >> superior) {\n        ++peticion;\n        if (intentar_ajuste(valor, inferior, superior, ajuste)) {\n            ++aceptadas;\n            suma += ajuste;\n            std::cout << \"Peticion=\" << peticion << \" Ajuste=\" << ajuste << \"\\n\";\n        } else {\n            ++rechazadas;\n            informar_rechazo(std::cerr, peticion, valor, inferior, superior);\n        }\n    }\n    std::cout << \"Aceptadas=\" << aceptadas << \" Rechazadas=\" << rechazadas\n              << \" Suma=\" << suma << \"\\n\";\n    return rechazadas > 0 ? 1 : 0;\n}\n"
+              "initialCode": "#include \"control/ajuste.h\"\n#include <iostream>\n\nvoid informar_rechazo(std::ostream& destino, int peticion,\n                     int valor, int inferior, int superior) {\n    destino << \"Rechazo: peticion=\" << peticion << \" valor=\" << valor\n            << \" inferior=\" << inferior << \" superior=\" << superior\n            << \". Se admiten valores de -20 a 20 con inferior <= superior.\"\n            << \" Revise los tres valores.\\n\";\n}\n\nint main() {\n    int valor{0};\n    int inferior{0};\n    int superior{0};\n    int ajuste{77};\n    int peticion{0};\n    int aceptadas{0};\n    int rechazadas{0};\n    int suma{0};\n\n    while (std::cin >> valor >> inferior >> superior) {\n        ++peticion;\n        if (intentar_ajuste(valor, inferior, superior, ajuste)) {\n            ++aceptadas;\n            suma += ajuste;\n            std::cout << \"Peticion=\" << peticion << \" Ajuste=\" << ajuste << \"\\n\";\n        } else {\n            ++rechazadas;\n            informar_rechazo(std::cerr, peticion, valor, inferior, superior);\n        }\n    }\n    std::cout << \"Aceptadas=\" << aceptadas << \" Rechazadas=\" << rechazadas\n              << \" Suma=\" << suma << \"\\n\";\n    return rechazadas > 0 ? 1 : 0;\n}\n"
             },
             {
               "path": "pruebas/casos.cpp",
-              "initialCode": "#include \"control/ajuste.h\"\n#include <iostream>\n\nbool comprobar(int caso, int valor, int inferior, int superior,\n               int inicial, bool aceptacion_esperada, int ajuste_esperado) {\n    int obtenido{inicial};\n    const bool aceptado = intentar_ajuste(valor, inferior, superior, obtenido);\n    const bool coincide = aceptado == aceptacion_esperada && obtenido == ajuste_esperado;\n    std::cout << \"Caso=\" << caso << \" Acepta=\" << aceptado << \" Ajuste=\" << obtenido\n              << \" EsperaAcepta=\" << aceptacion_esperada\n              << \" EsperaAjuste=\" << ajuste_esperado;\n    if (coincide) { std::cout << \" OK\\n\"; }\n    else { std::cout << \" FALLO\\n\"; }\n    return coincide;\n}\n\nint main() {\n    int fallos{0};\n    if (!comprobar(1, 2, 3, 7, 77, true, 1)) { ++fallos; }\n    if (!comprobar(2, 5, 3, 7, -8, true, 0)) { ++fallos; }\n    if (!comprobar(3, 9, 3, 7, 19, true, -2)) { ++fallos; }\n    if (!comprobar(4, 4, 4, 4, -4, true, 0)) { ++fallos; }\n    if (!comprobar(5, -20, 20, 20, 8, true, 40)) { ++fallos; }\n    if (!comprobar(6, 20, -20, -20, 17, true, -40)) { ++fallos; }\n    if (!comprobar(7, 0, 7, 3, 77, false, 77)) { ++fallos; }\n    if (!comprobar(8, 21, 3, 7, -8, false, -8)) { ++fallos; }\n    if (!comprobar(9, -21, 3, 7, 19, false, 19)) { ++fallos; }\n    if (!comprobar(10, 0, -21, 7, -4, false, -4)) { ++fallos; }\n    if (!comprobar(11, 0, 3, 21, 8, false, 8)) { ++fallos; }\n    std::cout << \"Fallos=\" << fallos << \"\\n\";\n    return fallos == 0 ? 0 : 1;\n}\n"
+              "initialCode": "#include \"control/ajuste.h\"\n#include <iostream>\n\nbool comprobar(int caso, int valor, int inferior, int superior,\n               int inicial, bool aceptacion_esperada, int ajuste_esperado) {\n    int obtenido{inicial};\n    const bool aceptado = intentar_ajuste(valor, inferior, superior, obtenido);\n    const bool coincide = aceptado == aceptacion_esperada && obtenido == ajuste_esperado;\n\n    std::cout << \"Caso=\" << caso << \" Acepta=\" << aceptado << \" Ajuste=\" << obtenido\n              << \" EsperaAcepta=\" << aceptacion_esperada\n              << \" EsperaAjuste=\" << ajuste_esperado;\n    if (coincide) { std::cout << \" OK\\n\"; }\n    else { std::cout << \" FALLO\\n\"; }\n    return coincide;\n}\n\nint main() {\n    int fallos{0};\n    if (!comprobar(1, 2, 3, 7, 77, true, 1)) { ++fallos; }\n    if (!comprobar(2, 5, 3, 7, -8, true, 0)) { ++fallos; }\n    if (!comprobar(3, 9, 3, 7, 19, true, -2)) { ++fallos; }\n    if (!comprobar(4, 4, 4, 4, -4, true, 0)) { ++fallos; }\n    if (!comprobar(5, -20, 20, 20, 8, true, 40)) { ++fallos; }\n    if (!comprobar(6, 20, -20, -20, 17, true, -40)) { ++fallos; }\n    if (!comprobar(7, 0, 7, 3, 77, false, 77)) { ++fallos; }\n    if (!comprobar(8, 21, 3, 7, -8, false, -8)) { ++fallos; }\n    if (!comprobar(9, -21, 3, 7, 19, false, 19)) { ++fallos; }\n    if (!comprobar(10, 0, -21, 7, -4, false, -4)) { ++fallos; }\n    if (!comprobar(11, 0, 3, 21, 8, false, 8)) { ++fallos; }\n    std::cout << \"Fallos=\" << fallos << \"\\n\";\n    return fallos == 0 ? 0 : 1;\n}\n"
             }
           ],
           "initialStandardInput": "2 3 7\n5 3 7\n9 3 7\n0 7 3\n4 4 4\n21 3 7\n",
@@ -1414,6 +1414,205 @@
         "id": "block_0002_0002",
         "beforeSha256": "8c3a2a754d560a3663932679bb8c7f7e46d04cee060956e845ee2155b342d2ac",
         "afterSha256": "6c2e0f81bb3386ce7c4b33ebf799d0f51beda753b8a5a6abd1280a75c8108947"
+      },
+      {
+        "id": "block_0002_0003",
+        "beforeSha256": "bc1528f80876cc2d64e207b98346cbaa32260771d649fdafece2d76c9dee665c",
+        "afterSha256": "8eb748c94c98be89a312c7d59d0222d9e619b47f515ca3079aaffdbad331c0bc"
+      },
+      {
+        "id": "block_0003_0004",
+        "beforeSha256": "498f64f5451a488ba773390162f2d80c6c0aa17d5f290a50635f8f3b63513ae3",
+        "afterSha256": "582593267f2e355959e496e8afa66ad853e59fcbde9336d5a2c03b6efb19f015"
+      },
+      {
+        "id": "block_0003_0006",
+        "beforeSha256": "0b318300bb2e2b4a5239951e215b081bb6e3934addaf5999dfa21eb104563aa8",
+        "afterSha256": "4a8a0acc19bc5e6ea0af35c14644948c4df5816adcb179ec68e156130bb90e97"
+      },
+      {
+        "id": "block_0004_0002",
+        "beforeSha256": "5d78186eab881b14eabffec187f40a98b137f72957762dcdbe25c575f431d465",
+        "afterSha256": "c4f9d1446f9de708703de38e7168fc00ac80dd020d9b48bb3d359b734301644d"
+      },
+      {
+        "id": "block_0005_0002",
+        "beforeSha256": "98f040b8d56449c901d016e22299bf3f3833ccb5b737d0be00b468aa0800e898",
+        "afterSha256": "c5c3ce982705b6f150b74ff6eb4c9bf07e807d8973b3d148c71498d597b0bb90"
+      },
+      {
+        "id": "block_0006_0002",
+        "beforeSha256": "46fc872193f5581aba02d68fb665cf911d3269f5a8af04e8397eba0810aee7d3",
+        "afterSha256": "e3891d76f1d7a9b6b559fcd4f81c6e6faf8760194915b966b879dd840694165c"
+      },
+      {
+        "id": "block_0006_0008",
+        "beforeSha256": "a7ca69cb57d62eb89c543f0685cb48c08fe92ca5e098d1c59cfcadb2577ab471",
+        "afterSha256": "1ef166267893abe5f0f5d855df7f2a3a1c5843ffe2428d66c5405ae84f4bd7e4"
+      },
+      {
+        "id": "block_0006_0011",
+        "beforeSha256": "ba6a4bce565478eb0ccb01c247759e6c6480df4f006f0a89b9752e2bfce4b44f",
+        "afterSha256": "f9b700a3cae40d193e237338f1552ef0c30710a2f5390ec6d74f5056753e049c"
+      }
+    ],
+    "sourceFormatRevisions": [
+      {
+        "id": "block_0002_0003",
+        "block": {
+          "type": "cpp_compiler",
+          "language": "cpp",
+          "initialCode": "#include <iostream>\n\nint main() {\n    // PENDIENTE: recibir peticiones y usar la interfaz segun su contrato.\n    std::cerr << \"PENDIENTE: cliente sin implementar\\n\";\n    return 1;\n}\n",
+          "projectFiles": [
+            {
+              "path": "CMakeLists.txt",
+              "initialCode": ""
+            },
+            {
+              "path": "publico/control/ajuste.h",
+              "initialCode": "#ifndef PRACTICA_CONTROL_AJUSTE_H\n#define PRACTICA_CONTROL_AJUSTE_H\n\n// Acepta valor, inferior y superior en [-20,20], con inferior <= superior.\n// El ajuste que se suma a valor lo deja dentro del intervalo con el cambio de menor magnitud:\n// cero dentro, hasta inferior por debajo y hasta superior por encima.\n// Devuelve true y escribe ese ajuste al aceptar.\n// Devuelve false y conserva exactamente ajuste al rechazar.\n// No imprime ni termina el programa.\nbool intentar_ajuste(int valor, int inferior, int superior, int& ajuste);\n\n#endif\n"
+            },
+            {
+              "path": "src/ajuste.cpp",
+              "initialCode": "#include \"control/ajuste.h\"\n\nbool intentar_ajuste(int valor, int inferior, int superior, int& ajuste) {\n    // PENDIENTE: este cuerpo no implementa el contrato.\n    // Sustituyelo por tu solucion; rechazarlo todo no es una implementacion valida.\n    return false;\n}\n"
+            },
+            {
+              "path": "app/consulta.cpp",
+              "initialCode": "#include <iostream>\n\nint main() {\n    // PENDIENTE: recibir peticiones y usar la interfaz segun su contrato.\n    std::cerr << \"PENDIENTE: cliente sin implementar\\n\";\n    return 1;\n}\n"
+            },
+            {
+              "path": "pruebas/casos.cpp",
+              "initialCode": "#include <iostream>\n\nint main() {\n    // PENDIENTE: llamar a la biblioteca y comparar con esperados independientes.\n    std::cerr << \"PENDIENTE: comprobador sin implementar\\n\";\n    return 1;\n}\n"
+            }
+          ],
+          "initialStandardInput": "2 3 7\n5 3 7\n9 3 7\n0 7 3\n4 4 4\n21 3 7\n",
+          "cmake": {
+            "target": "consultar_ajustes",
+            "buildType": "Debug"
+          }
+        }
+      },
+      {
+        "id": "block_0003_0004",
+        "block": {
+          "type": "code",
+          "language": "cpp",
+          "code": "#include \"control/ajuste.h\"\n\nbool intentar_ajuste(int valor, int inferior, int superior, int& ajuste) {\n    if (valor < -20 || valor > 20 || inferior < -20 || inferior > 20\n            || superior < -20 || superior > 20 || inferior > superior) {\n        return false;\n    }\n    if (valor < inferior) {\n        ajuste = inferior - valor;\n    } else if (valor > superior) {\n        ajuste = superior - valor;\n    } else {\n        ajuste = 0;\n    }\n    return true;\n}\n"
+        }
+      },
+      {
+        "id": "block_0003_0006",
+        "block": {
+          "type": "code",
+          "language": "cmake",
+          "code": "cmake_minimum_required(VERSION 3.20)\nproject(AjustesConEvidencia LANGUAGES CXX)\n\nadd_library(ajustes STATIC src/ajuste.cpp)\ntarget_include_directories(ajustes PUBLIC publico)\nadd_executable(consultar_ajustes app/consulta.cpp)\nadd_executable(comprobar_ajustes pruebas/casos.cpp)\ntarget_link_libraries(consultar_ajustes PRIVATE ajustes)\ntarget_link_libraries(comprobar_ajustes PRIVATE ajustes)\ntarget_compile_features(ajustes PRIVATE cxx_std_20)\ntarget_compile_features(consultar_ajustes PRIVATE cxx_std_20)\ntarget_compile_features(comprobar_ajustes PRIVATE cxx_std_20)\nset_target_properties(ajustes consultar_ajustes comprobar_ajustes PROPERTIES CXX_EXTENSIONS OFF)\ntarget_compile_options(ajustes PRIVATE -Wall -Wextra -Wpedantic)\ntarget_compile_options(consultar_ajustes PRIVATE -Wall -Wextra -Wpedantic)\ntarget_compile_options(comprobar_ajustes PRIVATE -Wall -Wextra -Wpedantic)\n"
+        }
+      },
+      {
+        "id": "block_0004_0002",
+        "block": {
+          "type": "code",
+          "language": "cpp",
+          "code": "#include \"control/ajuste.h\"\n#include <iostream>\n\nvoid informar_rechazo(std::ostream& destino, int peticion,\n                     int valor, int inferior, int superior) {\n    destino << \"Rechazo: peticion=\" << peticion << \" valor=\" << valor\n            << \" inferior=\" << inferior << \" superior=\" << superior\n            << \". Se admiten valores de -20 a 20 con inferior <= superior.\"\n            << \" Revise los tres valores.\\n\";\n}\n\nint main() {\n    int valor{0};\n    int inferior{0};\n    int superior{0};\n    int ajuste{77};\n    int peticion{0};\n    int aceptadas{0};\n    int rechazadas{0};\n    int suma{0};\n    while (std::cin >> valor >> inferior >> superior) {\n        ++peticion;\n        if (intentar_ajuste(valor, inferior, superior, ajuste)) {\n            ++aceptadas;\n            suma += ajuste;\n            std::cout << \"Peticion=\" << peticion << \" Ajuste=\" << ajuste << \"\\n\";\n        } else {\n            ++rechazadas;\n            informar_rechazo(std::cerr, peticion, valor, inferior, superior);\n        }\n    }\n    std::cout << \"Aceptadas=\" << aceptadas << \" Rechazadas=\" << rechazadas\n              << \" Suma=\" << suma << \"\\n\";\n    return rechazadas > 0 ? 1 : 0;\n}\n"
+        }
+      },
+      {
+        "id": "block_0005_0002",
+        "block": {
+          "type": "code",
+          "language": "cpp",
+          "code": "#include \"control/ajuste.h\"\n#include <iostream>\n\nbool comprobar(int caso, int valor, int inferior, int superior,\n               int inicial, bool aceptacion_esperada, int ajuste_esperado) {\n    int obtenido{inicial};\n    const bool aceptado = intentar_ajuste(valor, inferior, superior, obtenido);\n    const bool coincide = aceptado == aceptacion_esperada && obtenido == ajuste_esperado;\n    std::cout << \"Caso=\" << caso << \" Acepta=\" << aceptado << \" Ajuste=\" << obtenido\n              << \" EsperaAcepta=\" << aceptacion_esperada\n              << \" EsperaAjuste=\" << ajuste_esperado;\n    if (coincide) { std::cout << \" OK\\n\"; }\n    else { std::cout << \" FALLO\\n\"; }\n    return coincide;\n}\n\nint main() {\n    int fallos{0};\n    if (!comprobar(1, 2, 3, 7, 77, true, 1)) { ++fallos; }\n    if (!comprobar(2, 5, 3, 7, -8, true, 0)) { ++fallos; }\n    if (!comprobar(3, 9, 3, 7, 19, true, -2)) { ++fallos; }\n    if (!comprobar(4, 4, 4, 4, -4, true, 0)) { ++fallos; }\n    if (!comprobar(5, -20, 20, 20, 8, true, 40)) { ++fallos; }\n    if (!comprobar(6, 20, -20, -20, 17, true, -40)) { ++fallos; }\n    if (!comprobar(7, 0, 7, 3, 77, false, 77)) { ++fallos; }\n    if (!comprobar(8, 21, 3, 7, -8, false, -8)) { ++fallos; }\n    if (!comprobar(9, -21, 3, 7, 19, false, 19)) { ++fallos; }\n    if (!comprobar(10, 0, -21, 7, -4, false, -4)) { ++fallos; }\n    if (!comprobar(11, 0, 3, 21, 8, false, 8)) { ++fallos; }\n    std::cout << \"Fallos=\" << fallos << \"\\n\";\n    return fallos == 0 ? 0 : 1;\n}\n"
+        }
+      },
+      {
+        "id": "block_0006_0002",
+        "block": {
+          "type": "code",
+          "language": "cpp",
+          "code": "bool intentar_ajuste(int valor, int inferior, int superior, int& ajuste) {\n    if (valor < -20 || valor > 20 || inferior < -20 || inferior > 20\n            || superior < -20 || superior > 20 || inferior > superior) {\n        return false;\n    }\n    if (valor < inferior) {\n        ajuste = inferior - valor;\n    } else if (valor > superior) {\n        ajuste = valor - superior;\n    } else {\n        ajuste = 0;\n    }\n    return true;\n}\n"
+        }
+      },
+      {
+        "id": "block_0006_0008",
+        "block": {
+          "type": "cpp_compiler",
+          "language": "cpp",
+          "initialCode": "#include <iostream>\n\nint main() {\n    // PENDIENTE: recibir peticiones y usar la interfaz segun su contrato.\n    std::cerr << \"PENDIENTE: cliente sin implementar\\n\";\n    return 1;\n}\n",
+          "projectFiles": [
+            {
+              "path": "CMakeLists.txt",
+              "initialCode": "cmake_minimum_required(VERSION 3.20)\nproject(AjustesConEvidencia LANGUAGES CXX)\n\nadd_library(ajustes STATIC src/ajuste.cpp)\ntarget_include_directories(ajustes PUBLIC publico)\nadd_executable(consultar_ajustes app/consulta.cpp)\nadd_executable(comprobar_ajustes pruebas/casos.cpp)\ntarget_link_libraries(consultar_ajustes PRIVATE ajustes)\ntarget_link_libraries(comprobar_ajustes PRIVATE ajustes)\ntarget_compile_features(ajustes PRIVATE cxx_std_20)\ntarget_compile_features(consultar_ajustes PRIVATE cxx_std_20)\ntarget_compile_features(comprobar_ajustes PRIVATE cxx_std_20)\nset_target_properties(ajustes consultar_ajustes comprobar_ajustes PROPERTIES CXX_EXTENSIONS OFF)\ntarget_compile_options(ajustes PRIVATE -Wall -Wextra -Wpedantic)\ntarget_compile_options(consultar_ajustes PRIVATE -Wall -Wextra -Wpedantic)\ntarget_compile_options(comprobar_ajustes PRIVATE -Wall -Wextra -Wpedantic)\n"
+            },
+            {
+              "path": "publico/control/ajuste.h",
+              "initialCode": "#ifndef PRACTICA_CONTROL_AJUSTE_H\n#define PRACTICA_CONTROL_AJUSTE_H\n\n// Acepta valor, inferior y superior en [-20,20], con inferior <= superior.\n// El ajuste que se suma a valor lo deja dentro del intervalo con el cambio de menor magnitud:\n// cero dentro, hasta inferior por debajo y hasta superior por encima.\n// Devuelve true y escribe ese ajuste al aceptar.\n// Devuelve false y conserva exactamente ajuste al rechazar.\n// No imprime ni termina el programa.\nbool intentar_ajuste(int valor, int inferior, int superior, int& ajuste);\n\n#endif\n"
+            },
+            {
+              "path": "src/ajuste.cpp",
+              "initialCode": "#include \"control/ajuste.h\"\n\nbool intentar_ajuste(int valor, int inferior, int superior, int& ajuste) {\n    if (valor < -20 || valor > 20 || inferior < -20 || inferior > 20\n            || superior < -20 || superior > 20 || inferior > superior) {\n        return false;\n    }\n    if (valor < inferior) {\n        ajuste = inferior - valor;\n    } else if (valor > superior) {\n        ajuste = valor - superior;\n    } else {\n        ajuste = 0;\n    }\n    return true;\n}\n"
+            },
+            {
+              "path": "app/consulta.cpp",
+              "initialCode": "#include \"control/ajuste.h\"\n#include <iostream>\n\nvoid informar_rechazo(std::ostream& destino, int peticion,\n                     int valor, int inferior, int superior) {\n    destino << \"Rechazo: peticion=\" << peticion << \" valor=\" << valor\n            << \" inferior=\" << inferior << \" superior=\" << superior\n            << \". Se admiten valores de -20 a 20 con inferior <= superior.\"\n            << \" Revise los tres valores.\\n\";\n}\n\nint main() {\n    int valor{0};\n    int inferior{0};\n    int superior{0};\n    int ajuste{77};\n    int peticion{0};\n    int aceptadas{0};\n    int rechazadas{0};\n    int suma{0};\n    while (std::cin >> valor >> inferior >> superior) {\n        ++peticion;\n        if (intentar_ajuste(valor, inferior, superior, ajuste)) {\n            ++aceptadas;\n            suma += ajuste;\n            std::cout << \"Peticion=\" << peticion << \" Ajuste=\" << ajuste << \"\\n\";\n        } else {\n            ++rechazadas;\n            informar_rechazo(std::cerr, peticion, valor, inferior, superior);\n        }\n    }\n    std::cout << \"Aceptadas=\" << aceptadas << \" Rechazadas=\" << rechazadas\n              << \" Suma=\" << suma << \"\\n\";\n    return rechazadas > 0 ? 1 : 0;\n}\n"
+            },
+            {
+              "path": "pruebas/casos.cpp",
+              "initialCode": "#include \"control/ajuste.h\"\n#include <iostream>\n\nbool comprobar(int caso, int valor, int inferior, int superior,\n               int inicial, bool aceptacion_esperada, int ajuste_esperado) {\n    int obtenido{inicial};\n    const bool aceptado = intentar_ajuste(valor, inferior, superior, obtenido);\n    const bool coincide = aceptado == aceptacion_esperada && obtenido == ajuste_esperado;\n    std::cout << \"Caso=\" << caso << \" Acepta=\" << aceptado << \" Ajuste=\" << obtenido\n              << \" EsperaAcepta=\" << aceptacion_esperada\n              << \" EsperaAjuste=\" << ajuste_esperado;\n    if (coincide) { std::cout << \" OK\\n\"; }\n    else { std::cout << \" FALLO\\n\"; }\n    return coincide;\n}\n\nint main() {\n    int fallos{0};\n    if (!comprobar(1, 2, 3, 7, 77, true, 1)) { ++fallos; }\n    if (!comprobar(2, 5, 3, 7, -8, true, 0)) { ++fallos; }\n    if (!comprobar(3, 9, 3, 7, 19, true, -2)) { ++fallos; }\n    if (!comprobar(4, 4, 4, 4, -4, true, 0)) { ++fallos; }\n    if (!comprobar(5, -20, 20, 20, 8, true, 40)) { ++fallos; }\n    if (!comprobar(6, 20, -20, -20, 17, true, -40)) { ++fallos; }\n    if (!comprobar(7, 0, 7, 3, 77, false, 77)) { ++fallos; }\n    if (!comprobar(8, 21, 3, 7, -8, false, -8)) { ++fallos; }\n    if (!comprobar(9, -21, 3, 7, 19, false, 19)) { ++fallos; }\n    if (!comprobar(10, 0, -21, 7, -4, false, -4)) { ++fallos; }\n    if (!comprobar(11, 0, 3, 21, 8, false, 8)) { ++fallos; }\n    std::cout << \"Fallos=\" << fallos << \"\\n\";\n    return fallos == 0 ? 0 : 1;\n}\n"
+            }
+          ],
+          "initialStandardInput": "2 3 7\n5 3 7\n9 3 7\n0 7 3\n4 4 4\n21 3 7\n",
+          "cmake": {
+            "target": "comprobar_ajustes",
+            "buildType": "Debug"
+          },
+          "outputCheck": {
+            "inputComparison": "exact",
+            "cases": [
+              {
+                "standardInput": "",
+                "outputs": [
+                  "Caso=1 Acepta=1 Ajuste=1 EsperaAcepta=1 EsperaAjuste=1 OK\nCaso=2 Acepta=1 Ajuste=0 EsperaAcepta=1 EsperaAjuste=0 OK\nCaso=3 Acepta=1 Ajuste=-2 EsperaAcepta=1 EsperaAjuste=-2 OK\nCaso=4 Acepta=1 Ajuste=0 EsperaAcepta=1 EsperaAjuste=0 OK\nCaso=5 Acepta=1 Ajuste=40 EsperaAcepta=1 EsperaAjuste=40 OK\nCaso=6 Acepta=1 Ajuste=-40 EsperaAcepta=1 EsperaAjuste=-40 OK\nCaso=7 Acepta=0 Ajuste=77 EsperaAcepta=0 EsperaAjuste=77 OK\nCaso=8 Acepta=0 Ajuste=-8 EsperaAcepta=0 EsperaAjuste=-8 OK\nCaso=9 Acepta=0 Ajuste=19 EsperaAcepta=0 EsperaAjuste=19 OK\nCaso=10 Acepta=0 Ajuste=-4 EsperaAcepta=0 EsperaAjuste=-4 OK\nCaso=11 Acepta=0 Ajuste=8 EsperaAcepta=0 EsperaAjuste=8 OK\nFallos=0\n"
+                ],
+                "explanation": "La salida coincide con el informe esperado de once casos y Fallos=0, con retorno 0. En la referencia, la resta reparada obtiene -2 y -40 en los dos casos que antes discrepaban; los rechazos conservan sus destinos. Este acierto de salida no demuestra por sí solo que se observara primero el defecto ni que se mantuvieran intactos los archivos y las comparaciones requeridos por la consigna."
+              }
+            ]
+          }
+        }
+      },
+      {
+        "id": "block_0006_0011",
+        "block": {
+          "type": "cpp_compiler",
+          "language": "cpp",
+          "initialCode": "#include <iostream>\n\nint main() {\n    // PENDIENTE: recibir peticiones y usar la interfaz segun su contrato.\n    std::cerr << \"PENDIENTE: cliente sin implementar\\n\";\n    return 1;\n}\n",
+          "projectFiles": [
+            {
+              "path": "CMakeLists.txt",
+              "initialCode": "cmake_minimum_required(VERSION 3.20)\nproject(AjustesConEvidencia LANGUAGES CXX)\n\nadd_library(ajustes STATIC src/ajuste.cpp)\ntarget_include_directories(ajustes PUBLIC publico)\nadd_executable(consultar_ajustes app/consulta.cpp)\nadd_executable(comprobar_ajustes pruebas/casos.cpp)\ntarget_link_libraries(consultar_ajustes PRIVATE ajustes)\ntarget_link_libraries(comprobar_ajustes PRIVATE ajustes)\ntarget_compile_features(ajustes PRIVATE cxx_std_20)\ntarget_compile_features(consultar_ajustes PRIVATE cxx_std_20)\ntarget_compile_features(comprobar_ajustes PRIVATE cxx_std_20)\nset_target_properties(ajustes consultar_ajustes comprobar_ajustes PROPERTIES CXX_EXTENSIONS OFF)\ntarget_compile_options(ajustes PRIVATE -Wall -Wextra -Wpedantic)\ntarget_compile_options(consultar_ajustes PRIVATE -Wall -Wextra -Wpedantic)\ntarget_compile_options(comprobar_ajustes PRIVATE -Wall -Wextra -Wpedantic)\n"
+            },
+            {
+              "path": "publico/control/ajuste.h",
+              "initialCode": "#ifndef PRACTICA_CONTROL_AJUSTE_H\n#define PRACTICA_CONTROL_AJUSTE_H\n\n// Acepta valor, inferior y superior en [-20,20], con inferior <= superior.\n// El ajuste que se suma a valor lo deja dentro del intervalo con el cambio de menor magnitud:\n// cero dentro, hasta inferior por debajo y hasta superior por encima.\n// Devuelve true y escribe ese ajuste al aceptar.\n// Devuelve false y conserva exactamente ajuste al rechazar.\n// No imprime ni termina el programa.\nbool intentar_ajuste(int valor, int inferior, int superior, int& ajuste);\n\n#endif\n"
+            },
+            {
+              "path": "src/ajuste.cpp",
+              "initialCode": "#include \"control/ajuste.h\"\n\nbool intentar_ajuste(int valor, int inferior, int superior, int& ajuste) {\n    if (valor < -20 || valor > 20 || inferior < -20 || inferior > 20\n            || superior < -20 || superior > 20 || inferior > superior) {\n        return false;\n    }\n    if (valor < inferior) {\n        ajuste = inferior - valor;\n    } else if (valor > superior) {\n        ajuste = superior - valor;\n    } else {\n        ajuste = 0;\n    }\n    return true;\n}\n"
+            },
+            {
+              "path": "app/consulta.cpp",
+              "initialCode": "#include \"control/ajuste.h\"\n#include <iostream>\n\nvoid informar_rechazo(std::ostream& destino, int peticion,\n                     int valor, int inferior, int superior) {\n    destino << \"Rechazo: peticion=\" << peticion << \" valor=\" << valor\n            << \" inferior=\" << inferior << \" superior=\" << superior\n            << \". Se admiten valores de -20 a 20 con inferior <= superior.\"\n            << \" Revise los tres valores.\\n\";\n}\n\nint main() {\n    int valor{0};\n    int inferior{0};\n    int superior{0};\n    int ajuste{77};\n    int peticion{0};\n    int aceptadas{0};\n    int rechazadas{0};\n    int suma{0};\n    while (std::cin >> valor >> inferior >> superior) {\n        ++peticion;\n        if (intentar_ajuste(valor, inferior, superior, ajuste)) {\n            ++aceptadas;\n            suma += ajuste;\n            std::cout << \"Peticion=\" << peticion << \" Ajuste=\" << ajuste << \"\\n\";\n        } else {\n            ++rechazadas;\n            informar_rechazo(std::cerr, peticion, valor, inferior, superior);\n        }\n    }\n    std::cout << \"Aceptadas=\" << aceptadas << \" Rechazadas=\" << rechazadas\n              << \" Suma=\" << suma << \"\\n\";\n    return rechazadas > 0 ? 1 : 0;\n}\n"
+            },
+            {
+              "path": "pruebas/casos.cpp",
+              "initialCode": "#include \"control/ajuste.h\"\n#include <iostream>\n\nbool comprobar(int caso, int valor, int inferior, int superior,\n               int inicial, bool aceptacion_esperada, int ajuste_esperado) {\n    int obtenido{inicial};\n    const bool aceptado = intentar_ajuste(valor, inferior, superior, obtenido);\n    const bool coincide = aceptado == aceptacion_esperada && obtenido == ajuste_esperado;\n    std::cout << \"Caso=\" << caso << \" Acepta=\" << aceptado << \" Ajuste=\" << obtenido\n              << \" EsperaAcepta=\" << aceptacion_esperada\n              << \" EsperaAjuste=\" << ajuste_esperado;\n    if (coincide) { std::cout << \" OK\\n\"; }\n    else { std::cout << \" FALLO\\n\"; }\n    return coincide;\n}\n\nint main() {\n    int fallos{0};\n    if (!comprobar(1, 2, 3, 7, 77, true, 1)) { ++fallos; }\n    if (!comprobar(2, 5, 3, 7, -8, true, 0)) { ++fallos; }\n    if (!comprobar(3, 9, 3, 7, 19, true, -2)) { ++fallos; }\n    if (!comprobar(4, 4, 4, 4, -4, true, 0)) { ++fallos; }\n    if (!comprobar(5, -20, 20, 20, 8, true, 40)) { ++fallos; }\n    if (!comprobar(6, 20, -20, -20, 17, true, -40)) { ++fallos; }\n    if (!comprobar(7, 0, 7, 3, 77, false, 77)) { ++fallos; }\n    if (!comprobar(8, 21, 3, 7, -8, false, -8)) { ++fallos; }\n    if (!comprobar(9, -21, 3, 7, 19, false, 19)) { ++fallos; }\n    if (!comprobar(10, 0, -21, 7, -4, false, -4)) { ++fallos; }\n    if (!comprobar(11, 0, 3, 21, 8, false, 8)) { ++fallos; }\n    std::cout << \"Fallos=\" << fallos << \"\\n\";\n    return fallos == 0 ? 0 : 1;\n}\n"
+            }
+          ],
+          "initialStandardInput": "2 3 7\n5 3 7\n9 3 7\n0 7 3\n4 4 4\n21 3 7\n",
+          "cmake": {
+            "target": "comprobar_ajustes",
+            "buildType": "Debug"
+          }
+        }
       }
     ]
   },

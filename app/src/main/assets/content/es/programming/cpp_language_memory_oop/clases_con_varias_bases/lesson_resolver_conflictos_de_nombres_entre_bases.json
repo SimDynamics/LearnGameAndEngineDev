@@ -15,7 +15,7 @@
         {
           "type": "code",
           "language": "cpp",
-          "code": "class Enteros {\npublic:\n    void mostrar(int numero, std::ostream& salida) const {\n        salida << \"Entero:\" << numero;\n    }\n};\nclass Textos {\npublic:\n    void mostrar(const std::string& texto, std::ostream& salida) const {\n        salida << \"Texto:\" << texto;\n    }\n};\n"
+          "code": "class Enteros {\npublic:\n    void mostrar(int numero, std::ostream& salida) const {\n        salida << \"Entero:\" << numero;\n    }\n};\n\nclass Textos {\npublic:\n    void mostrar(const std::string& texto, std::ostream& salida) const {\n        salida << \"Texto:\" << texto;\n    }\n};\n"
         },
         {
           "type": "paragraph",
@@ -24,7 +24,7 @@
         {
           "type": "code",
           "language": "cpp",
-          "code": "#include <iostream>\n#include <string>\n\nclass Enteros {\npublic:\n    void mostrar(int numero, std::ostream& salida) const {\n        salida << \"Entero:\" << numero;\n    }\n};\nclass Textos {\npublic:\n    void mostrar(const std::string& texto, std::ostream& salida) const {\n        salida << \"Texto:\" << texto;\n    }\n};\nclass SinSeleccion : public Enteros, public Textos {};\nint main() {\n    SinSeleccion dato;\n    dato.mostrar(3, std::cout);\n    return 0;\n}\n"
+          "code": "#include <iostream>\n#include <string>\n\nclass Enteros {\npublic:\n    void mostrar(int numero, std::ostream& salida) const {\n        salida << \"Entero:\" << numero;\n    }\n};\n\nclass Textos {\npublic:\n    void mostrar(const std::string& texto, std::ostream& salida) const {\n        salida << \"Texto:\" << texto;\n    }\n};\nclass SinSeleccion : public Enteros, public Textos {};\nint main() {\n    SinSeleccion dato;\n    dato.mostrar(3, std::cout);\n    return 0;\n}\n"
         },
         {
           "type": "multiple_choice",
@@ -55,7 +55,7 @@
           "id": "p3_u10l2_calificar_dos_llamadas_a_bases_independientes",
           "language": "cpp",
           "question": "Escribe la salida de las dos llamadas calificadas.",
-          "code": "#include <iostream>\n#include <string>\n\nclass Enteros {\npublic:\n    void mostrar(int numero, std::ostream& salida) const {\n        salida << \"Entero:\" << numero;\n    }\n};\nclass Textos {\npublic:\n    void mostrar(const std::string& texto, std::ostream& salida) const {\n        salida << \"Texto:\" << texto;\n    }\n};\nclass SinSeleccion : public Enteros, public Textos {};\nint main() {\n    SinSeleccion dato;\n    dato.Enteros::mostrar(3, std::cout);\n    std::cout << '|';\n    dato.Textos::mostrar(std::string{\"sol\"}, std::cout);\n    return 0;\n}\n",
+          "code": "#include <iostream>\n#include <string>\n\nclass Enteros {\npublic:\n    void mostrar(int numero, std::ostream& salida) const {\n        salida << \"Entero:\" << numero;\n    }\n};\n\nclass Textos {\npublic:\n    void mostrar(const std::string& texto, std::ostream& salida) const {\n        salida << \"Texto:\" << texto;\n    }\n};\nclass SinSeleccion : public Enteros, public Textos {};\nint main() {\n    SinSeleccion dato;\n    dato.Enteros::mostrar(3, std::cout);\n    std::cout << '|';\n    dato.Textos::mostrar(std::string{\"sol\"}, std::cout);\n    return 0;\n}\n",
           "answers": [
             "Entero:3|Texto:sol"
           ],
@@ -83,7 +83,7 @@
           "id": "p3_u10l2_using_de_una_base_y_calificacion_de_la_otra",
           "language": "cpp",
           "question": "Escribe la salida. Distingue la llamada sin calificar de la llamada que sigue nombrando Textos.",
-          "code": "#include <iostream>\n#include <string>\n\nclass Enteros {\npublic:\n    void mostrar(int numero, std::ostream& salida) const {\n        salida << \"Entero:\" << numero;\n    }\n};\nclass Textos {\npublic:\n    void mostrar(const std::string& texto, std::ostream& salida) const {\n        salida << \"Texto:\" << texto;\n    }\n};\nclass SoloEnteros : public Enteros, public Textos {\npublic:\n    using Enteros::mostrar;\n};\nint main() {\n    SoloEnteros dato;\n    dato.mostrar(4, std::cout);\n    std::cout << '|';\n    dato.Textos::mostrar(std::string{\"luz\"}, std::cout);\n    return 0;\n}\n",
+          "code": "#include <iostream>\n#include <string>\n\nclass Enteros {\npublic:\n    void mostrar(int numero, std::ostream& salida) const {\n        salida << \"Entero:\" << numero;\n    }\n};\n\nclass Textos {\npublic:\n    void mostrar(const std::string& texto, std::ostream& salida) const {\n        salida << \"Texto:\" << texto;\n    }\n};\n\nclass SoloEnteros : public Enteros, public Textos {\npublic:\n    using Enteros::mostrar;\n};\n\nint main() {\n    SoloEnteros dato;\n    dato.mostrar(4, std::cout);\n    std::cout << '|';\n    dato.Textos::mostrar(std::string{\"luz\"}, std::cout);\n    return 0;\n}\n",
           "answers": [
             "Entero:4|Texto:luz"
           ],
@@ -114,7 +114,7 @@
           "type": "inline_fill_code",
           "id": "p3_u10l2_reunir_sobrecargas_de_dos_bases",
           "question": "Completa los dos using en el orden indicado: primero el mostrar de FormatoNumero y después el mostrar de FormatoTexto, para ofrecer ambas sobrecargas mediante Opciones.",
-          "template": "class FormatoNumero {\npublic:\n    void mostrar(int numero, std::ostream& salida) const {\n        salida << \"Entero:\" << numero;\n    }\n};\nclass FormatoTexto {\npublic:\n    void mostrar(const std::string& texto, std::ostream& salida) const {\n        salida << \"Texto:\" << texto;\n    }\n};\nclass Opciones : public FormatoNumero, public FormatoTexto {\npublic:\n    using [];\n    using [];\n};\n",
+          "template": "class FormatoNumero {\npublic:\n    void mostrar(int numero, std::ostream& salida) const {\n        salida << \"Entero:\" << numero;\n    }\n};\n\nclass FormatoTexto {\npublic:\n    void mostrar(const std::string& texto, std::ostream& salida) const {\n        salida << \"Texto:\" << texto;\n    }\n};\n\nclass Opciones : public FormatoNumero, public FormatoTexto {\npublic:\n    using [];\n    using [];\n};\n",
           "answers": [
             "FormatoNumero::mostrar",
             "FormatoTexto::mostrar"
@@ -148,7 +148,7 @@
           "id": "p3_u10l2_dos_using_forman_sobrecargas_utilizables",
           "language": "cpp",
           "question": "Escribe la salida del programa completo con los dos using.",
-          "code": "#include <iostream>\n#include <string>\n\nclass FormatoNumero {\npublic:\n    void mostrar(int numero, std::ostream& salida) const {\n        salida << \"Entero:\" << numero;\n    }\n};\nclass FormatoTexto {\npublic:\n    void mostrar(const std::string& texto, std::ostream& salida) const {\n        salida << \"Texto:\" << texto;\n    }\n};\nclass Opciones : public FormatoNumero, public FormatoTexto {\npublic:\n    using FormatoNumero::mostrar;\n    using FormatoTexto::mostrar;\n};\nint main() {\n    Opciones dato;\n    dato.mostrar(8, std::cout);\n    std::cout << '|';\n    dato.mostrar(std::string{\"nube\"}, std::cout);\n    return 0;\n}\n",
+          "code": "#include <iostream>\n#include <string>\n\nclass FormatoNumero {\npublic:\n    void mostrar(int numero, std::ostream& salida) const {\n        salida << \"Entero:\" << numero;\n    }\n};\n\nclass FormatoTexto {\npublic:\n    void mostrar(const std::string& texto, std::ostream& salida) const {\n        salida << \"Texto:\" << texto;\n    }\n};\n\nclass Opciones : public FormatoNumero, public FormatoTexto {\npublic:\n    using FormatoNumero::mostrar;\n    using FormatoTexto::mostrar;\n};\n\nint main() {\n    Opciones dato;\n    dato.mostrar(8, std::cout);\n    std::cout << '|';\n    dato.mostrar(std::string{\"nube\"}, std::cout);\n    return 0;\n}\n",
           "answers": [
             "Entero:8|Texto:nube"
           ],
@@ -174,7 +174,7 @@
         {
           "type": "code",
           "language": "cpp",
-          "code": "#include <iostream>\n#include <string>\n\nclass Inicio {\npublic:\n    explicit Inicio(int valor) : valor_{valor} {}\n    int valor() const { return valor_; }\nprivate:\n    int valor_;\n};\nclass Final {\npublic:\n    explicit Final(int valor) : valor_{valor} {}\n    int valor() const { return valor_; }\nprivate:\n    int valor_;\n};\nclass ConIguales : public Inicio, public Final {\npublic:\n    ConIguales(int inicio, int final) : Inicio{inicio}, Final{final} {}\n    using Inicio::valor;\n    using Final::valor;\n};\nint main() {\n    ConIguales dato{4, 9};\n    std::cout << dato.valor();\n    return 0;\n}\n"
+          "code": "#include <iostream>\n#include <string>\n\nclass Inicio {\npublic:\n    explicit Inicio(int valor) : valor_{valor} {}\n    int valor() const { return valor_; }\nprivate:\n    int valor_;\n};\n\nclass Final {\npublic:\n    explicit Final(int valor) : valor_{valor} {}\n    int valor() const { return valor_; }\nprivate:\n    int valor_;\n};\n\nclass ConIguales : public Inicio, public Final {\npublic:\n    ConIguales(int inicio, int final) : Inicio{inicio}, Final{final} {}\n    using Inicio::valor;\n    using Final::valor;\n};\n\nint main() {\n    ConIguales dato{4, 9};\n\n    std::cout << dato.valor();\n\n    return 0;\n}\n"
         },
         {
           "type": "multiple_choice",
@@ -205,7 +205,7 @@
           "id": "p3_u10l2_calificar_consultas_con_firmas_iguales",
           "language": "cpp",
           "question": "Escribe los dos valores obtenidos al seleccionar las bases.",
-          "code": "#include <iostream>\n#include <string>\n\nclass Inicio {\npublic:\n    explicit Inicio(int valor) : valor_{valor} {}\n    int valor() const { return valor_; }\nprivate:\n    int valor_;\n};\nclass Final {\npublic:\n    explicit Final(int valor) : valor_{valor} {}\n    int valor() const { return valor_; }\nprivate:\n    int valor_;\n};\nclass ConIguales : public Inicio, public Final {\npublic:\n    ConIguales(int inicio, int final) : Inicio{inicio}, Final{final} {}\n    using Inicio::valor;\n    using Final::valor;\n};\nint main() {\n    ConIguales dato{4, 9};\n    std::cout << dato.Inicio::valor() << '|' << dato.Final::valor();\n    return 0;\n}\n",
+          "code": "#include <iostream>\n#include <string>\n\nclass Inicio {\npublic:\n    explicit Inicio(int valor) : valor_{valor} {}\n    int valor() const { return valor_; }\nprivate:\n    int valor_;\n};\n\nclass Final {\npublic:\n    explicit Final(int valor) : valor_{valor} {}\n    int valor() const { return valor_; }\nprivate:\n    int valor_;\n};\n\nclass ConIguales : public Inicio, public Final {\npublic:\n    ConIguales(int inicio, int final) : Inicio{inicio}, Final{final} {}\n    using Inicio::valor;\n    using Final::valor;\n};\n\nint main() {\n    ConIguales dato{4, 9};\n\n    std::cout << dato.Inicio::valor() << '|' << dato.Final::valor();\n\n    return 0;\n}\n",
           "answers": [
             "4|9"
           ],
@@ -229,7 +229,7 @@
           "id": "p3_u10l2_funcion_propia_que_elige_una_operacion_base",
           "language": "cpp",
           "question": "Escribe las consultas mediante la derivada y mediante las dos vistas de base.",
-          "code": "#include <iostream>\n#include <string>\n\nclass Inicio {\npublic:\n    explicit Inicio(int valor) : valor_{valor} {}\n    int valor() const { return valor_; }\nprivate:\n    int valor_;\n};\nclass Final {\npublic:\n    explicit Final(int valor) : valor_{valor} {}\n    int valor() const { return valor_; }\nprivate:\n    int valor_;\n};\nclass Preferida : public Inicio, public Final {\npublic:\n    Preferida(int inicio, int final) : Inicio{inicio}, Final{final} {}\n    int valor() const { return Final::valor(); }\n    int otro_valor() const { return Inicio::valor(); }\n};\nint main() {\n    Preferida dato{4, 9};\n    const Inicio& inicio = dato;\n    const Final& final = dato;\n    std::cout << dato.valor() << '|' << dato.otro_valor()\n              << '|' << inicio.valor() << '|' << final.valor();\n    return 0;\n}\n",
+          "code": "#include <iostream>\n#include <string>\n\nclass Inicio {\npublic:\n    explicit Inicio(int valor) : valor_{valor} {}\n    int valor() const { return valor_; }\nprivate:\n    int valor_;\n};\n\nclass Final {\npublic:\n    explicit Final(int valor) : valor_{valor} {}\n    int valor() const { return valor_; }\nprivate:\n    int valor_;\n};\n\nclass Preferida : public Inicio, public Final {\npublic:\n    Preferida(int inicio, int final) : Inicio{inicio}, Final{final} {}\n    int valor() const { return Final::valor(); }\n    int otro_valor() const { return Inicio::valor(); }\n};\n\nint main() {\n    Preferida dato{4, 9};\n    const Inicio& inicio = dato;\n    const Final& final = dato;\n\n    std::cout << dato.valor() << '|' << dato.otro_valor()\n              << '|' << inicio.valor() << '|' << final.valor();\n    return 0;\n}\n",
           "answers": [
             "9|4|4|9"
           ],
@@ -328,7 +328,7 @@
           "id": "p3_u10l2_consulta_propia_y_vistas_base",
           "language": "cpp",
           "question": "Escribe las dos líneas completas. En cada línea se consulta primero Entradas, después Salidas y al final Balance.",
-          "code": "#include <iostream>\n\nclass Entradas {\npublic:\n    explicit Entradas(int inicial) : entradas_{inicial} {}\n    int valor() const { return entradas_; }\n    void fijar_entradas(int nuevo) { entradas_ = nuevo; }\nprivate:\n    int entradas_;\n};\n\nclass Salidas {\npublic:\n    explicit Salidas(int inicial) : salidas_{inicial} {}\n    int valor() const { return salidas_; }\n    void fijar_salidas(int nuevo) { salidas_ = nuevo; }\nprivate:\n    int salidas_;\n};\nclass Balance : public Entradas, public Salidas {\npublic:\n    Balance(int entradas, int salidas)\n        : Entradas{entradas}, Salidas{salidas} {}\n\n    int valor() const {\n        return Entradas::valor() - Salidas::valor();\n    }\n};\nint main() {\n    Balance dato{9, 3};\n    const Entradas& entradas = dato;\n    const Salidas& salidas = dato;\n    std::cout << entradas.valor() << '|' << salidas.valor()\n              << '|' << dato.valor() << '\\n';\n    dato.fijar_entradas(2);\n    std::cout << entradas.valor() << '|' << salidas.valor()\n              << '|' << dato.valor();\n    return 0;\n}\n",
+          "code": "#include <iostream>\n\nclass Entradas {\npublic:\n    explicit Entradas(int inicial) : entradas_{inicial} {}\n    int valor() const { return entradas_; }\n    void fijar_entradas(int nuevo) { entradas_ = nuevo; }\nprivate:\n    int entradas_;\n};\n\nclass Salidas {\npublic:\n    explicit Salidas(int inicial) : salidas_{inicial} {}\n    int valor() const { return salidas_; }\n    void fijar_salidas(int nuevo) { salidas_ = nuevo; }\nprivate:\n    int salidas_;\n};\n\nclass Balance : public Entradas, public Salidas {\npublic:\n    Balance(int entradas, int salidas)\n        : Entradas{entradas}, Salidas{salidas} {}\n\n    int valor() const {\n        return Entradas::valor() - Salidas::valor();\n    }\n};\n\nint main() {\n    Balance dato{9, 3};\n    const Entradas& entradas = dato;\n    const Salidas& salidas = dato;\n\n    std::cout << entradas.valor() << '|' << salidas.valor()\n              << '|' << dato.valor() << '\\n';\n    dato.fijar_entradas(2);\n    std::cout << entradas.valor() << '|' << salidas.valor()\n              << '|' << dato.valor();\n    return 0;\n}\n",
           "answers": [
             "9|3|6\n2|3|-1"
           ],
@@ -352,7 +352,7 @@
           "id": "p3_u10l2_copia_completa_y_balance_independiente",
           "language": "cpp",
           "question": "Escribe la salida completa después de las dos modificaciones.",
-          "code": "#include <iostream>\n\nclass Entradas {\npublic:\n    explicit Entradas(int inicial) : entradas_{inicial} {}\n    int valor() const { return entradas_; }\n    void fijar_entradas(int nuevo) { entradas_ = nuevo; }\nprivate:\n    int entradas_;\n};\n\nclass Salidas {\npublic:\n    explicit Salidas(int inicial) : salidas_{inicial} {}\n    int valor() const { return salidas_; }\n    void fijar_salidas(int nuevo) { salidas_ = nuevo; }\nprivate:\n    int salidas_;\n};\nclass Balance : public Entradas, public Salidas {\npublic:\n    Balance(int entradas, int salidas)\n        : Entradas{entradas}, Salidas{salidas} {}\n\n    int valor() const {\n        return Entradas::valor() - Salidas::valor();\n    }\n};\nint main() {\n    Balance original{5, 2};\n    Balance copia{original};\n    original.fijar_salidas(7);\n    copia.fijar_entradas(8);\n    std::cout << original.valor() << '|' << copia.valor() << '|'\n              << original.Entradas::valor() << '|'\n              << copia.Salidas::valor();\n    return 0;\n}\n",
+          "code": "#include <iostream>\n\nclass Entradas {\npublic:\n    explicit Entradas(int inicial) : entradas_{inicial} {}\n    int valor() const { return entradas_; }\n    void fijar_entradas(int nuevo) { entradas_ = nuevo; }\nprivate:\n    int entradas_;\n};\n\nclass Salidas {\npublic:\n    explicit Salidas(int inicial) : salidas_{inicial} {}\n    int valor() const { return salidas_; }\n    void fijar_salidas(int nuevo) { salidas_ = nuevo; }\nprivate:\n    int salidas_;\n};\n\nclass Balance : public Entradas, public Salidas {\npublic:\n    Balance(int entradas, int salidas)\n        : Entradas{entradas}, Salidas{salidas} {}\n\n    int valor() const {\n        return Entradas::valor() - Salidas::valor();\n    }\n};\n\nint main() {\n    Balance original{5, 2};\n    Balance copia{original};\n    original.fijar_salidas(7);\n    copia.fijar_entradas(8);\n    std::cout << original.valor() << '|' << copia.valor() << '|'\n              << original.Entradas::valor() << '|'\n              << copia.Salidas::valor();\n    return 0;\n}\n",
           "answers": [
             "-2|6|5|2"
           ],
@@ -1058,6 +1058,217 @@
       }
     },
     "additions": [],
-    "editorial": []
+    "editorial": [
+      {
+        "id": "block_0000_0002",
+        "beforeSha256": "86f1af60d5120f75af8f2852941e7c80a40df87da7aed2eda642fcb4dab1e27b",
+        "afterSha256": "6dfb5565373db5a40f43abd06591b3893e095ac947a18230ec64b5293d7c25f8"
+      },
+      {
+        "id": "block_0000_0004",
+        "beforeSha256": "8afcdad1f1b3486f9518ae7cb50a69a6cd1d1b2e68281431fcdd048fdb6c60b6",
+        "afterSha256": "d0304cfa6e396293d722eea2c2cd36dd9fbbcf3250fda43e889644dbb08ed7ab"
+      },
+      {
+        "id": "block_0001_0002",
+        "beforeSha256": "eca30f0854966980fc12e6de8da59642049b8d2e82c94b0146d6e5092a73b67e",
+        "afterSha256": "aff5eeb46ed045451692948b86df20e30cd49b2f390102460e38c6596eef918f"
+      },
+      {
+        "id": "block_0002_0002",
+        "beforeSha256": "817460b66ad0c72feadb224277028a7e7cf9c7721cc70a3630914d079e7d267e",
+        "afterSha256": "e73d106bf3fdaaf16f7980827f6eac5ab011100b96ca703dc80fbcc09c3a6ef6"
+      },
+      {
+        "id": "block_0003_0003",
+        "beforeSha256": "d7577eba7ccbf7f9507080736653772b2b11d9e828112c93805bac69e90103a7",
+        "afterSha256": "91eddad8bb4fd8e9e149098aa39d65d9f7c2b860ebbe1f15f976fbe075af590e"
+      },
+      {
+        "id": "block_0004_0002",
+        "beforeSha256": "fc9accd260303077196664460732e87f27b85cf2ebd956e77edb4c1ee80173e4",
+        "afterSha256": "8e4f0b52ed3702c5cec551da3419cb078a31cfa99e6c05d5f3a5c58cf8fb3981"
+      },
+      {
+        "id": "block_0005_0003",
+        "beforeSha256": "bafa727ffa095c31ebde26014cb91d27eb253c3c46a836d0e2e0d56dfa3fdd97",
+        "afterSha256": "2020e5106ba4fef88736a38c8df291948f826d2d6369d6d0504a60ce464f633e"
+      },
+      {
+        "id": "block_0006_0002",
+        "beforeSha256": "8d33a8f00a62ddef1faeb56c5e6738ab6ebbc6223b044c7e0d6ca4c6aac38154",
+        "afterSha256": "de24a07af116c460e5a8610a821158fef5eeb1b334614e644f55833f8281312c"
+      },
+      {
+        "id": "block_0007_0002",
+        "beforeSha256": "10193e307a7f2bc8bf72d67fb8dd8cb70347f2fc5cbee681f2ef17560fc9b909",
+        "afterSha256": "72b7ca4ecf96c61d7f1a4edd0749073930dcacfa9938c6243d1b073986e68a84"
+      },
+      {
+        "id": "block_0009_0005",
+        "beforeSha256": "26503a4b77218faca86690d44bf2190abb153d6636d9ca375ca8306722bc8529",
+        "afterSha256": "9faa9ce7a36921eea0c78143859512b933da9df329ff63511fcb63ed259374ef"
+      },
+      {
+        "id": "block_0010_0002",
+        "beforeSha256": "e1445cb49a28974e0301082237d5ec3fcf2fb20d7250fe2f4575844ec2bc38cf",
+        "afterSha256": "f394a8390969759b223d34c86ff17464a689fb2915091e10b8467956e6f811dd"
+      }
+    ],
+    "sourceFormatRevisions": [
+      {
+        "id": "block_0000_0002",
+        "block": {
+          "type": "code",
+          "language": "cpp",
+          "code": "class Enteros {\npublic:\n    void mostrar(int numero, std::ostream& salida) const {\n        salida << \"Entero:\" << numero;\n    }\n};\nclass Textos {\npublic:\n    void mostrar(const std::string& texto, std::ostream& salida) const {\n        salida << \"Texto:\" << texto;\n    }\n};\n"
+        }
+      },
+      {
+        "id": "block_0000_0004",
+        "block": {
+          "type": "code",
+          "language": "cpp",
+          "code": "#include <iostream>\n#include <string>\n\nclass Enteros {\npublic:\n    void mostrar(int numero, std::ostream& salida) const {\n        salida << \"Entero:\" << numero;\n    }\n};\nclass Textos {\npublic:\n    void mostrar(const std::string& texto, std::ostream& salida) const {\n        salida << \"Texto:\" << texto;\n    }\n};\nclass SinSeleccion : public Enteros, public Textos {};\nint main() {\n    SinSeleccion dato;\n    dato.mostrar(3, std::cout);\n    return 0;\n}\n"
+        }
+      },
+      {
+        "id": "block_0001_0002",
+        "block": {
+          "type": "output_prediction",
+          "id": "p3_u10l2_calificar_dos_llamadas_a_bases_independientes",
+          "language": "cpp",
+          "question": "Escribe la salida de las dos llamadas calificadas.",
+          "code": "#include <iostream>\n#include <string>\n\nclass Enteros {\npublic:\n    void mostrar(int numero, std::ostream& salida) const {\n        salida << \"Entero:\" << numero;\n    }\n};\nclass Textos {\npublic:\n    void mostrar(const std::string& texto, std::ostream& salida) const {\n        salida << \"Texto:\" << texto;\n    }\n};\nclass SinSeleccion : public Enteros, public Textos {};\nint main() {\n    SinSeleccion dato;\n    dato.Enteros::mostrar(3, std::cout);\n    std::cout << '|';\n    dato.Textos::mostrar(std::string{\"sol\"}, std::cout);\n    return 0;\n}\n",
+          "answers": [
+            "Entero:3|Texto:sol"
+          ],
+          "outputComparison": "exact",
+          "explanation": "La primera llamada indica Enteros y proporciona el entero tres, por lo que escribe Entero:3. La segunda indica Textos y proporciona la cadena sol, por lo que escribe Texto:sol. main coloca | entre ellas. Elegir la declaración en cada llamada no añade una función mostrar propia a SinSeleccion."
+        }
+      },
+      {
+        "id": "block_0002_0002",
+        "block": {
+          "type": "output_prediction",
+          "id": "p3_u10l2_using_de_una_base_y_calificacion_de_la_otra",
+          "language": "cpp",
+          "question": "Escribe la salida. Distingue la llamada sin calificar de la llamada que sigue nombrando Textos.",
+          "code": "#include <iostream>\n#include <string>\n\nclass Enteros {\npublic:\n    void mostrar(int numero, std::ostream& salida) const {\n        salida << \"Entero:\" << numero;\n    }\n};\nclass Textos {\npublic:\n    void mostrar(const std::string& texto, std::ostream& salida) const {\n        salida << \"Texto:\" << texto;\n    }\n};\nclass SoloEnteros : public Enteros, public Textos {\npublic:\n    using Enteros::mostrar;\n};\nint main() {\n    SoloEnteros dato;\n    dato.mostrar(4, std::cout);\n    std::cout << '|';\n    dato.Textos::mostrar(std::string{\"luz\"}, std::cout);\n    return 0;\n}\n",
+          "answers": [
+            "Entero:4|Texto:luz"
+          ],
+          "outputComparison": "exact",
+          "explanation": "La llamada dato.mostrar con cuatro utiliza la declaración seleccionada por using Enteros::mostrar y escribe Entero:4. La función de Textos sigue existiendo y la llamada calificada la utiliza para escribir Texto:luz. El using no hizo desaparecer esa parte base."
+        }
+      },
+      {
+        "id": "block_0003_0003",
+        "block": {
+          "type": "inline_fill_code",
+          "id": "p3_u10l2_reunir_sobrecargas_de_dos_bases",
+          "question": "Completa los dos using en el orden indicado: primero el mostrar de FormatoNumero y después el mostrar de FormatoTexto, para ofrecer ambas sobrecargas mediante Opciones.",
+          "template": "class FormatoNumero {\npublic:\n    void mostrar(int numero, std::ostream& salida) const {\n        salida << \"Entero:\" << numero;\n    }\n};\nclass FormatoTexto {\npublic:\n    void mostrar(const std::string& texto, std::ostream& salida) const {\n        salida << \"Texto:\" << texto;\n    }\n};\nclass Opciones : public FormatoNumero, public FormatoTexto {\npublic:\n    using [];\n    using [];\n};\n",
+          "answers": [
+            "FormatoNumero::mostrar",
+            "FormatoTexto::mostrar"
+          ],
+          "answerAlternatives": [
+            [
+              "FormatoNumero::mostrar",
+              "::FormatoNumero::mostrar"
+            ],
+            [
+              "FormatoTexto::mostrar",
+              "::FormatoTexto::mostrar"
+            ]
+          ],
+          "explanation": "Los dos using nombran las operaciones de las dos bases: FormatoNumero::mostrar y FormatoTexto::mostrar. Sus primeros parámetros son distintos, int y const std::string&, de modo que las llamadas del ejemplo pueden elegir una sobrecarga después de encontrar correctamente el conjunto de funciones. No se heredan constructores con estas declaraciones: se nombran funciones ordinarias."
+        }
+      },
+      {
+        "id": "block_0004_0002",
+        "block": {
+          "type": "output_prediction",
+          "id": "p3_u10l2_dos_using_forman_sobrecargas_utilizables",
+          "language": "cpp",
+          "question": "Escribe la salida del programa completo con los dos using.",
+          "code": "#include <iostream>\n#include <string>\n\nclass FormatoNumero {\npublic:\n    void mostrar(int numero, std::ostream& salida) const {\n        salida << \"Entero:\" << numero;\n    }\n};\nclass FormatoTexto {\npublic:\n    void mostrar(const std::string& texto, std::ostream& salida) const {\n        salida << \"Texto:\" << texto;\n    }\n};\nclass Opciones : public FormatoNumero, public FormatoTexto {\npublic:\n    using FormatoNumero::mostrar;\n    using FormatoTexto::mostrar;\n};\nint main() {\n    Opciones dato;\n    dato.mostrar(8, std::cout);\n    std::cout << '|';\n    dato.mostrar(std::string{\"nube\"}, std::cout);\n    return 0;\n}\n",
+          "answers": [
+            "Entero:8|Texto:nube"
+          ],
+          "outputComparison": "exact",
+          "explanation": "Con el entero ocho se selecciona la operación de FormatoNumero y se escribe Entero:8. Con la cadena nube se selecciona la de FormatoTexto y se escribe Texto:nube. Los using resolvieron qué declaraciones se ofrecen con ese nombre; los argumentos permiten después elegir entre esas firmas distintas."
+        }
+      },
+      {
+        "id": "block_0005_0003",
+        "block": {
+          "type": "code",
+          "language": "cpp",
+          "code": "#include <iostream>\n#include <string>\n\nclass Inicio {\npublic:\n    explicit Inicio(int valor) : valor_{valor} {}\n    int valor() const { return valor_; }\nprivate:\n    int valor_;\n};\nclass Final {\npublic:\n    explicit Final(int valor) : valor_{valor} {}\n    int valor() const { return valor_; }\nprivate:\n    int valor_;\n};\nclass ConIguales : public Inicio, public Final {\npublic:\n    ConIguales(int inicio, int final) : Inicio{inicio}, Final{final} {}\n    using Inicio::valor;\n    using Final::valor;\n};\nint main() {\n    ConIguales dato{4, 9};\n    std::cout << dato.valor();\n    return 0;\n}\n"
+        }
+      },
+      {
+        "id": "block_0006_0002",
+        "block": {
+          "type": "output_prediction",
+          "id": "p3_u10l2_calificar_consultas_con_firmas_iguales",
+          "language": "cpp",
+          "question": "Escribe los dos valores obtenidos al seleccionar las bases.",
+          "code": "#include <iostream>\n#include <string>\n\nclass Inicio {\npublic:\n    explicit Inicio(int valor) : valor_{valor} {}\n    int valor() const { return valor_; }\nprivate:\n    int valor_;\n};\nclass Final {\npublic:\n    explicit Final(int valor) : valor_{valor} {}\n    int valor() const { return valor_; }\nprivate:\n    int valor_;\n};\nclass ConIguales : public Inicio, public Final {\npublic:\n    ConIguales(int inicio, int final) : Inicio{inicio}, Final{final} {}\n    using Inicio::valor;\n    using Final::valor;\n};\nint main() {\n    ConIguales dato{4, 9};\n    std::cout << dato.Inicio::valor() << '|' << dato.Final::valor();\n    return 0;\n}\n",
+          "answers": [
+            "4|9"
+          ],
+          "outputComparison": "exact",
+          "explanation": "dato.Inicio::valor() consulta el cuatro de la parte Inicio. dato.Final::valor() consulta el nueve de la parte Final. La presencia de ambos using no impide hacer estas llamadas calificadas y no reúne los dos int en un solo dato."
+        }
+      },
+      {
+        "id": "block_0007_0002",
+        "block": {
+          "type": "output_prediction",
+          "id": "p3_u10l2_funcion_propia_que_elige_una_operacion_base",
+          "language": "cpp",
+          "question": "Escribe las consultas mediante la derivada y mediante las dos vistas de base.",
+          "code": "#include <iostream>\n#include <string>\n\nclass Inicio {\npublic:\n    explicit Inicio(int valor) : valor_{valor} {}\n    int valor() const { return valor_; }\nprivate:\n    int valor_;\n};\nclass Final {\npublic:\n    explicit Final(int valor) : valor_{valor} {}\n    int valor() const { return valor_; }\nprivate:\n    int valor_;\n};\nclass Preferida : public Inicio, public Final {\npublic:\n    Preferida(int inicio, int final) : Inicio{inicio}, Final{final} {}\n    int valor() const { return Final::valor(); }\n    int otro_valor() const { return Inicio::valor(); }\n};\nint main() {\n    Preferida dato{4, 9};\n    const Inicio& inicio = dato;\n    const Final& final = dato;\n    std::cout << dato.valor() << '|' << dato.otro_valor()\n              << '|' << inicio.valor() << '|' << final.valor();\n    return 0;\n}\n",
+          "answers": [
+            "9|4|4|9"
+          ],
+          "outputComparison": "exact",
+          "explanation": "La consulta propia dato.valor() ejecuta el cuerpo de Preferida y devuelve el nueve de Final. otro_valor devuelve el cuatro de Inicio. Las referencias inicio y final tienen tipos de base y sus funciones ordinarias consultan respectivamente cuatro y nueve. La función propia no borró ni reemplazó esas dos funciones base."
+        }
+      },
+      {
+        "id": "block_0009_0005",
+        "block": {
+          "type": "output_prediction",
+          "id": "p3_u10l2_consulta_propia_y_vistas_base",
+          "language": "cpp",
+          "question": "Escribe las dos líneas completas. En cada línea se consulta primero Entradas, después Salidas y al final Balance.",
+          "code": "#include <iostream>\n\nclass Entradas {\npublic:\n    explicit Entradas(int inicial) : entradas_{inicial} {}\n    int valor() const { return entradas_; }\n    void fijar_entradas(int nuevo) { entradas_ = nuevo; }\nprivate:\n    int entradas_;\n};\n\nclass Salidas {\npublic:\n    explicit Salidas(int inicial) : salidas_{inicial} {}\n    int valor() const { return salidas_; }\n    void fijar_salidas(int nuevo) { salidas_ = nuevo; }\nprivate:\n    int salidas_;\n};\nclass Balance : public Entradas, public Salidas {\npublic:\n    Balance(int entradas, int salidas)\n        : Entradas{entradas}, Salidas{salidas} {}\n\n    int valor() const {\n        return Entradas::valor() - Salidas::valor();\n    }\n};\nint main() {\n    Balance dato{9, 3};\n    const Entradas& entradas = dato;\n    const Salidas& salidas = dato;\n    std::cout << entradas.valor() << '|' << salidas.valor()\n              << '|' << dato.valor() << '\\n';\n    dato.fijar_entradas(2);\n    std::cout << entradas.valor() << '|' << salidas.valor()\n              << '|' << dato.valor();\n    return 0;\n}\n",
+          "answers": [
+            "9|3|6\n2|3|-1"
+          ],
+          "outputComparison": "exact",
+          "explanation": "Primero las bases guardan nueve y tres; Balance resta y devuelve seis. Después fijar_entradas sustituye nueve por dos. La vista Entradas observa dos, la vista Salidas conserva tres y Balance calcula dos menos tres, que da menos uno. No hay llamada virtual: cada referencia base utiliza la función no virtual de su propio tipo."
+        }
+      },
+      {
+        "id": "block_0010_0002",
+        "block": {
+          "type": "output_prediction",
+          "id": "p3_u10l2_copia_completa_y_balance_independiente",
+          "language": "cpp",
+          "question": "Escribe la salida completa después de las dos modificaciones.",
+          "code": "#include <iostream>\n\nclass Entradas {\npublic:\n    explicit Entradas(int inicial) : entradas_{inicial} {}\n    int valor() const { return entradas_; }\n    void fijar_entradas(int nuevo) { entradas_ = nuevo; }\nprivate:\n    int entradas_;\n};\n\nclass Salidas {\npublic:\n    explicit Salidas(int inicial) : salidas_{inicial} {}\n    int valor() const { return salidas_; }\n    void fijar_salidas(int nuevo) { salidas_ = nuevo; }\nprivate:\n    int salidas_;\n};\nclass Balance : public Entradas, public Salidas {\npublic:\n    Balance(int entradas, int salidas)\n        : Entradas{entradas}, Salidas{salidas} {}\n\n    int valor() const {\n        return Entradas::valor() - Salidas::valor();\n    }\n};\nint main() {\n    Balance original{5, 2};\n    Balance copia{original};\n    original.fijar_salidas(7);\n    copia.fijar_entradas(8);\n    std::cout << original.valor() << '|' << copia.valor() << '|'\n              << original.Entradas::valor() << '|'\n              << copia.Salidas::valor();\n    return 0;\n}\n",
+          "answers": [
+            "-2|6|5|2"
+          ],
+          "outputComparison": "exact",
+          "explanation": "Los dos objetos comienzan con cinco entradas y dos salidas. original pasa a tener siete salidas: cinco menos siete da menos dos. copia pasa a tener ocho entradas y conserva dos salidas: ocho menos dos da seis. Las entradas de original siguen siendo cinco y las salidas de copia siguen siendo dos. Las consultas no comparten los datos de las copias."
+        }
+      }
+    ]
   }
 }

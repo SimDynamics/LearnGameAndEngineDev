@@ -26,7 +26,7 @@
           "id": "p3_u2l4_dos_palabras",
           "language": "cpp",
           "question": "Predice las dos palabras entre corchetes. Los arrays tienen espacio para cada palabra y su terminador.",
-          "code": "#include <iostream>\n#include <sstream>\n#include <string>\n\nint main() {\n    std::istringstream entrada{\" \\tLuna roja\\n\"};\n    char primera[8]{};\n    char segunda[8]{};\n    entrada >> primera >> segunda;\n    std::cout << '[' << primera << \"]|[\" << segunda << ']';\n    return 0;\n}\n",
+          "code": "#include <iostream>\n#include <sstream>\n#include <string>\n\nint main() {\n    std::istringstream entrada{\" \\tLuna roja\\n\"};\n    char primera[8]{};\n    char segunda[8]{};\n    entrada >> primera >> segunda;\n    std::cout << '[' << primera << \"]|[\" << segunda << ']';\n\n    return 0;\n}\n",
           "answers": [
             "[Luna]|[roja]"
           ],
@@ -90,7 +90,7 @@
           "id": "p3_u2l4_dos_lineas",
           "language": "cpp",
           "question": "Predice las dos líneas entre corchetes, separadas por |. Conserva los espacios que pertenezcan al primer texto.",
-          "code": "#include <iostream>\n#include <sstream>\n#include <string>\n\nint main() {\n    std::istringstream entrada{\"  mar azul\\nfin\\n\"};\n    char primera[12]{};\n    char segunda[8]{};\n    entrada.getline(primera, 12);\n    entrada.getline(segunda, 8);\n    std::cout << '[' << primera << \"]|[\" << segunda << ']';\n    return 0;\n}\n",
+          "code": "#include <iostream>\n#include <sstream>\n#include <string>\n\nint main() {\n    std::istringstream entrada{\"  mar azul\\nfin\\n\"};\n    char primera[12]{};\n    char segunda[8]{};\n    entrada.getline(primera, 12);\n    entrada.getline(segunda, 8);\n    std::cout << '[' << primera << \"]|[\" << segunda << ']';\n\n    return 0;\n}\n",
           "answers": [
             "[  mar azul]|[fin]"
           ],
@@ -150,7 +150,7 @@
           "id": "p3_u2l4_ajuste_exacto",
           "language": "cpp",
           "question": "Predice el texto, fail(), eof(), el recuento capturado y la línea siguiente.",
-          "code": "#include <iostream>\n#include <sstream>\n#include <string>\n\nint main() {\n    std::istringstream entrada{\"sol\\nresto\\n\"};\n    char texto[4]{};\n    entrada.getline(texto, 4);\n    const bool fallo = entrada.fail();\n    const bool fin = entrada.eof();\n    const auto extraidos = entrada.gcount();\n    std::string siguiente;\n    std::getline(entrada, siguiente);\n    std::cout << '[' << texto << \"]:\" << fallo << ':' << fin << ':'\n              << extraidos << \":[\" << siguiente << ']';\n    return 0;\n}\n",
+          "code": "#include <iostream>\n#include <sstream>\n#include <string>\n\nint main() {\n    std::istringstream entrada{\"sol\\nresto\\n\"};\n    char texto[4]{};\n    entrada.getline(texto, 4);\n    const bool fallo = entrada.fail();\n    const bool fin = entrada.eof();\n    const auto extraidos = entrada.gcount();\n    std::string siguiente;\n\n    std::getline(entrada, siguiente);\n\n    std::cout << '[' << texto << \"]:\" << fallo << ':' << fin << ':'\n              << extraidos << \":[\" << siguiente << ']';\n    return 0;\n}\n",
           "answers": [
             "[sol]:0:0:4:[resto]"
           ],
@@ -309,7 +309,7 @@
           "id": "p3_u2l4_fallo_y_reintento",
           "language": "cpp",
           "question": "Predice el primer texto, el fallo y recuento iniciales, el segundo destino y el resto recibido después de clear().",
-          "code": "#include <iostream>\n#include <sstream>\n#include <string>\n\nint main() {\n    std::istringstream entrada{\"soles\\nfin\\n\"};\n    char primera[4]{};\n    char segunda[4]{'X', 'Y', 'Z', '\\0'};\n    entrada.getline(primera, 4);\n    const bool fallo = entrada.fail();\n    const auto extraidos = entrada.gcount();\n    entrada.getline(segunda, 4);\n    entrada.clear();\n    std::string resto;\n    std::getline(entrada, resto);\n    std::cout << '[' << primera << \"]:\" << fallo << ':' << extraidos\n              << \":[\" << segunda << \"]:[\" << resto << ']';\n    return 0;\n}\n",
+          "code": "#include <iostream>\n#include <sstream>\n#include <string>\n\nint main() {\n    std::istringstream entrada{\"soles\\nfin\\n\"};\n    char primera[4]{};\n    char segunda[4]{'X', 'Y', 'Z', '\\0'};\n    entrada.getline(primera, 4);\n    const bool fallo = entrada.fail();\n    const auto extraidos = entrada.gcount();\n    entrada.getline(segunda, 4);\n    entrada.clear();\n    std::string resto;\n\n    std::getline(entrada, resto);\n\n    std::cout << '[' << primera << \"]:\" << fallo << ':' << extraidos\n              << \":[\" << segunda << \"]:[\" << resto << ']';\n    return 0;\n}\n",
           "answers": [
             "[sol]:1:3:[]:[es]"
           ],
@@ -461,7 +461,7 @@
         {
           "type": "cpp_compiler",
           "language": "cpp",
-          "initialCode": "#include <iostream>\n#include <limits>\n#include <string>\n\nint main() {\n    char candidato[6]{};\n    std::cin.getline(candidato, 6);\n    const bool fallo = std::cin.fail();\n    const bool fin = std::cin.eof();\n    if (std::cin.bad()) {\n        return 2;\n    }\n    std::string registro = \"base\";\n    bool aceptado = false;\n    std::string siguiente;\n    bool haySiguiente = false;\n\n    // Conserva registro si la primera lectura no cabe.\n    // Recupera el resto de esa linea antes de leer la siguiente.\n\n    std::cout << \"Lectura=\" << fallo << ':' << fin << '\\n';\n    std::cout << \"Aceptado=\" << aceptado << '\\n';\n    std::cout << \"Registro=[\" << registro << \"]\\n\";\n    std::cout << \"Siguiente=\" << haySiguiente << \":[\" << siguiente << \"]\\n\";\n    return 0;\n}\n",
+          "initialCode": "#include <iostream>\n#include <limits>\n#include <string>\n\nint main() {\n    char candidato[6]{};\n\n    std::cin.getline(candidato, 6);\n\n    const bool fallo = std::cin.fail();\n    const bool fin = std::cin.eof();\n\n    if (std::cin.bad()) {\n        return 2;\n    }\n    std::string registro = \"base\";\n    bool aceptado = false;\n    std::string siguiente;\n    bool haySiguiente = false;\n\n    // Conserva registro si la primera lectura no cabe.\n    // Recupera el resto de esa linea antes de leer la siguiente.\n\n    std::cout << \"Lectura=\" << fallo << ':' << fin << '\\n';\n    std::cout << \"Aceptado=\" << aceptado << '\\n';\n    std::cout << \"Registro=[\" << registro << \"]\\n\";\n    std::cout << \"Siguiente=\" << haySiguiente << \":[\" << siguiente << \"]\\n\";\n\n    return 0;\n}\n",
           "initialStandardInput": "Luz 2\nfin\n",
           "outputCheck": {
             "inputComparison": "exact",
@@ -730,7 +730,7 @@
         {
           "type": "code",
           "language": "cpp",
-          "code": "#include <iostream>\n#include <limits>\n#include <string>\n\nint main() {\n    char candidato[6]{};\n    std::cin.getline(candidato, 6);\n    const bool fallo = std::cin.fail();\n    const bool fin = std::cin.eof();\n    if (std::cin.bad()) {\n        return 2;\n    }\n    std::string registro = \"base\";\n    bool aceptado = false;\n    std::string siguiente;\n    bool haySiguiente = false;\n\n    if (!fallo) {\n        registro = candidato;\n        aceptado = true;\n    } else if (!fin) {\n        std::cin.clear();\n        std::cin.ignore(std::numeric_limits<std::streamsize>::max(), '\\n');\n    }\n    haySiguiente = static_cast<bool>(std::getline(std::cin, siguiente));\n\n    std::cout << \"Lectura=\" << fallo << ':' << fin << '\\n';\n    std::cout << \"Aceptado=\" << aceptado << '\\n';\n    std::cout << \"Registro=[\" << registro << \"]\\n\";\n    std::cout << \"Siguiente=\" << haySiguiente << \":[\" << siguiente << \"]\\n\";\n    return 0;\n}\n"
+          "code": "#include <iostream>\n#include <limits>\n#include <string>\n\nint main() {\n    char candidato[6]{};\n\n    std::cin.getline(candidato, 6);\n\n    const bool fallo = std::cin.fail();\n    const bool fin = std::cin.eof();\n\n    if (std::cin.bad()) {\n        return 2;\n    }\n    std::string registro = \"base\";\n    bool aceptado = false;\n    std::string siguiente;\n    bool haySiguiente = false;\n\n    if (!fallo) {\n        registro = candidato;\n        aceptado = true;\n    } else if (!fin) {\n        std::cin.clear();\n        std::cin.ignore(std::numeric_limits<std::streamsize>::max(), '\\n');\n    }\n    haySiguiente = static_cast<bool>(std::getline(std::cin, siguiente));\n\n    std::cout << \"Lectura=\" << fallo << ':' << fin << '\\n';\n    std::cout << \"Aceptado=\" << aceptado << '\\n';\n    std::cout << \"Registro=[\" << registro << \"]\\n\";\n    std::cout << \"Siguiente=\" << haySiguiente << \":[\" << siguiente << \"]\\n\";\n\n    return 0;\n}\n"
         },
         {
           "type": "paragraph",
@@ -2053,6 +2053,177 @@
       }
     },
     "additions": [],
-    "editorial": []
+    "editorial": [
+      {
+        "id": "block_0000_0004",
+        "beforeSha256": "a8a2fefc1c1928115e314b87a2718bc19c2c9d1516e947a5f97dc720763589b0",
+        "afterSha256": "fd580093d0389e53840b115e1f57236ff355bd2788e086ec2f8d281552987890"
+      },
+      {
+        "id": "block_0002_0004",
+        "beforeSha256": "72163124e45096786771aa0c7cc64ba25f240a88b6542838ba05239aa423c779",
+        "afterSha256": "80a9a301c903530a68b41f67583fc4fa49c4559be6310dfca009d56bb1f1906d"
+      },
+      {
+        "id": "block_0004_0003",
+        "beforeSha256": "6735177bf1035404834becc21fee8299c32a5a31901139727c822cb3dccf091c",
+        "afterSha256": "233b0142e88d19791e980b1d76266386376d87b29bf30c0b4fe951c8a655778a"
+      },
+      {
+        "id": "block_0007_0003",
+        "beforeSha256": "3b4e486bd9916ce0e277e9168fa6eee396fb523c201809f4865adc98437883f0",
+        "afterSha256": "5235ceb8d88daa7e40392dc39d0af7ff09645fbf4445b6684069806b9b55812b"
+      },
+      {
+        "id": "block_0011_0011",
+        "beforeSha256": "c97908131a8d5c4183159dde3403aade02333b869426f5b15907376558848afb",
+        "afterSha256": "235523ec76cce9fe3757cafe119770ebd7fc91bb0c8c5c4d3a4e1bc74984b70b"
+      },
+      {
+        "id": "block_0015_0001",
+        "beforeSha256": "446ecb4143349cce2c92fabbe34ff93f542a0a196877792265712791312988fd",
+        "afterSha256": "a568ee26145fccc6908ff7d478057936b65a204040dca0797cbf587b2db53df6"
+      }
+    ],
+    "sourceFormatRevisions": [
+      {
+        "id": "block_0000_0004",
+        "block": {
+          "type": "output_prediction",
+          "id": "p3_u2l4_dos_palabras",
+          "language": "cpp",
+          "question": "Predice las dos palabras entre corchetes. Los arrays tienen espacio para cada palabra y su terminador.",
+          "code": "#include <iostream>\n#include <sstream>\n#include <string>\n\nint main() {\n    std::istringstream entrada{\" \\tLuna roja\\n\"};\n    char primera[8]{};\n    char segunda[8]{};\n    entrada >> primera >> segunda;\n    std::cout << '[' << primera << \"]|[\" << segunda << ']';\n    return 0;\n}\n",
+          "answers": [
+            "[Luna]|[roja]"
+          ],
+          "outputComparison": "exact",
+          "explanation": "La primera extracción omite el espacio y el tabulador iniciales y guarda Luna. La segunda omite el espacio que separa las palabras y guarda roja. Los blancos no forman parte de esas palabras."
+        }
+      },
+      {
+        "id": "block_0002_0004",
+        "block": {
+          "type": "output_prediction",
+          "id": "p3_u2l4_dos_lineas",
+          "language": "cpp",
+          "question": "Predice las dos líneas entre corchetes, separadas por |. Conserva los espacios que pertenezcan al primer texto.",
+          "code": "#include <iostream>\n#include <sstream>\n#include <string>\n\nint main() {\n    std::istringstream entrada{\"  mar azul\\nfin\\n\"};\n    char primera[12]{};\n    char segunda[8]{};\n    entrada.getline(primera, 12);\n    entrada.getline(segunda, 8);\n    std::cout << '[' << primera << \"]|[\" << segunda << ']';\n    return 0;\n}\n",
+          "answers": [
+            "[  mar azul]|[fin]"
+          ],
+          "outputComparison": "exact",
+          "explanation": "La primera lectura conserva los dos espacios iniciales y el espacio entre las palabras. Extrae su salto de línea. La segunda lectura empieza en fin, que ya pertenece a la línea siguiente."
+        }
+      },
+      {
+        "id": "block_0004_0003",
+        "block": {
+          "type": "output_prediction",
+          "id": "p3_u2l4_ajuste_exacto",
+          "language": "cpp",
+          "question": "Predice el texto, fail(), eof(), el recuento capturado y la línea siguiente.",
+          "code": "#include <iostream>\n#include <sstream>\n#include <string>\n\nint main() {\n    std::istringstream entrada{\"sol\\nresto\\n\"};\n    char texto[4]{};\n    entrada.getline(texto, 4);\n    const bool fallo = entrada.fail();\n    const bool fin = entrada.eof();\n    const auto extraidos = entrada.gcount();\n    std::string siguiente;\n    std::getline(entrada, siguiente);\n    std::cout << '[' << texto << \"]:\" << fallo << ':' << fin << ':'\n              << extraidos << \":[\" << siguiente << ']';\n    return 0;\n}\n",
+          "answers": [
+            "[sol]:0:0:4:[resto]"
+          ],
+          "outputComparison": "exact",
+          "explanation": "Los tres char caben. Se extrae también su salto, por lo que gcount es cuatro y no hay fallo ni fin de entrada. El salto ya consumido permite que la siguiente lectura reciba resto."
+        }
+      },
+      {
+        "id": "block_0007_0003",
+        "block": {
+          "type": "output_prediction",
+          "id": "p3_u2l4_fallo_y_reintento",
+          "language": "cpp",
+          "question": "Predice el primer texto, el fallo y recuento iniciales, el segundo destino y el resto recibido después de clear().",
+          "code": "#include <iostream>\n#include <sstream>\n#include <string>\n\nint main() {\n    std::istringstream entrada{\"soles\\nfin\\n\"};\n    char primera[4]{};\n    char segunda[4]{'X', 'Y', 'Z', '\\0'};\n    entrada.getline(primera, 4);\n    const bool fallo = entrada.fail();\n    const auto extraidos = entrada.gcount();\n    entrada.getline(segunda, 4);\n    entrada.clear();\n    std::string resto;\n    std::getline(entrada, resto);\n    std::cout << '[' << primera << \"]:\" << fallo << ':' << extraidos\n              << \":[\" << segunda << \"]:[\" << resto << ']';\n    return 0;\n}\n",
+          "answers": [
+            "[sol]:1:3:[]:[es]"
+          ],
+          "outputComparison": "exact",
+          "explanation": "La primera llamada guarda sol y deja es y su salto pendientes. La segunda no extrae nada porque sigue el fallo y deja su destino con NUL inicial. clear restaura el estado, pero no consume es: la siguiente lectura obtiene ese resto, no fin."
+        }
+      },
+      {
+        "id": "block_0011_0011",
+        "block": {
+          "type": "cpp_compiler",
+          "language": "cpp",
+          "initialCode": "#include <iostream>\n#include <limits>\n#include <string>\n\nint main() {\n    char candidato[6]{};\n    std::cin.getline(candidato, 6);\n    const bool fallo = std::cin.fail();\n    const bool fin = std::cin.eof();\n    if (std::cin.bad()) {\n        return 2;\n    }\n    std::string registro = \"base\";\n    bool aceptado = false;\n    std::string siguiente;\n    bool haySiguiente = false;\n\n    // Conserva registro si la primera lectura no cabe.\n    // Recupera el resto de esa linea antes de leer la siguiente.\n\n    std::cout << \"Lectura=\" << fallo << ':' << fin << '\\n';\n    std::cout << \"Aceptado=\" << aceptado << '\\n';\n    std::cout << \"Registro=[\" << registro << \"]\\n\";\n    std::cout << \"Siguiente=\" << haySiguiente << \":[\" << siguiente << \"]\\n\";\n    return 0;\n}\n",
+          "initialStandardInput": "Luz 2\nfin\n",
+          "outputCheck": {
+            "inputComparison": "exact",
+            "cases": [
+              {
+                "standardInput": "Luz 2\nfin\n",
+                "outputs": [
+                  "Lectura=0:0\nAceptado=1\nRegistro=[Luz 2]\nSiguiente=1:[fin]\n"
+                ],
+                "explanation": "Aceptar la primera línea sólo si no falla, conservar el registro al rechazar y descartar únicamente el resto rechazado antes de leer la siguiente línea."
+              },
+              {
+                "standardInput": "sol\nluna\n",
+                "outputs": [
+                  "Lectura=0:0\nAceptado=1\nRegistro=[sol]\nSiguiente=1:[luna]\n"
+                ],
+                "explanation": "Aceptar la primera línea sólo si no falla, conservar el registro al rechazar y descartar únicamente el resto rechazado antes de leer la siguiente línea."
+              },
+              {
+                "standardInput": "\nsegunda\n",
+                "outputs": [
+                  "Lectura=0:0\nAceptado=1\nRegistro=[]\nSiguiente=1:[segunda]\n"
+                ],
+                "explanation": "Aceptar la primera línea sólo si no falla, conservar el registro al rechazar y descartar únicamente el resto rechazado antes de leer la siguiente línea."
+              },
+              {
+                "standardInput": "abcdef resto\nultima\n",
+                "outputs": [
+                  "Lectura=1:0\nAceptado=0\nRegistro=[base]\nSiguiente=1:[ultima]\n"
+                ],
+                "explanation": "Aceptar la primera línea sólo si no falla, conservar el registro al rechazar y descartar únicamente el resto rechazado antes de leer la siguiente línea."
+              },
+              {
+                "standardInput": "  A  \nX",
+                "outputs": [
+                  "Lectura=0:0\nAceptado=1\nRegistro=[  A  ]\nSiguiente=1:[X]\n"
+                ],
+                "explanation": "Aceptar la primera línea sólo si no falla, conservar el registro al rechazar y descartar únicamente el resto rechazado antes de leer la siguiente línea."
+              },
+              {
+                "standardInput": "sol",
+                "outputs": [
+                  "Lectura=0:1\nAceptado=1\nRegistro=[sol]\nSiguiente=0:[]\n"
+                ],
+                "explanation": "Aceptar la primera línea sólo si no falla, conservar el registro al rechazar y descartar únicamente el resto rechazado antes de leer la siguiente línea."
+              },
+              {
+                "standardInput": "",
+                "outputs": [
+                  "Lectura=1:1\nAceptado=0\nRegistro=[base]\nSiguiente=0:[]\n"
+                ],
+                "explanation": "Aceptar la primera línea sólo si no falla, conservar el registro al rechazar y descartar únicamente el resto rechazado antes de leer la siguiente línea."
+              },
+              {
+                "standardInput": "abcdef",
+                "outputs": [
+                  "Lectura=1:0\nAceptado=0\nRegistro=[base]\nSiguiente=0:[]\n"
+                ],
+                "explanation": "Aceptar la primera línea sólo si no falla, conservar el registro al rechazar y descartar únicamente el resto rechazado antes de leer la siguiente línea."
+              }
+            ]
+          }
+        }
+      },
+      {
+        "id": "block_0015_0001",
+        "block": {
+          "type": "code",
+          "language": "cpp",
+          "code": "#include <iostream>\n#include <limits>\n#include <string>\n\nint main() {\n    char candidato[6]{};\n    std::cin.getline(candidato, 6);\n    const bool fallo = std::cin.fail();\n    const bool fin = std::cin.eof();\n    if (std::cin.bad()) {\n        return 2;\n    }\n    std::string registro = \"base\";\n    bool aceptado = false;\n    std::string siguiente;\n    bool haySiguiente = false;\n\n    if (!fallo) {\n        registro = candidato;\n        aceptado = true;\n    } else if (!fin) {\n        std::cin.clear();\n        std::cin.ignore(std::numeric_limits<std::streamsize>::max(), '\\n');\n    }\n    haySiguiente = static_cast<bool>(std::getline(std::cin, siguiente));\n\n    std::cout << \"Lectura=\" << fallo << ':' << fin << '\\n';\n    std::cout << \"Aceptado=\" << aceptado << '\\n';\n    std::cout << \"Registro=[\" << registro << \"]\\n\";\n    std::cout << \"Siguiente=\" << haySiguiente << \":[\" << siguiente << \"]\\n\";\n    return 0;\n}\n"
+        }
+      }
+    ]
   }
 }

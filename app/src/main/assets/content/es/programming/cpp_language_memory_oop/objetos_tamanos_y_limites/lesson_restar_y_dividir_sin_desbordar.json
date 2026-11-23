@@ -93,7 +93,7 @@
           "id": "p3_u1l6_signos_de_rechazo",
           "language": "cpp",
           "question": "Completa sólo < o > para rechazar diferencias fuera del intervalo y permitir alcanzar exactamente sus extremos. El fragmento pertenece a una función bool.",
-          "template": "if (b > 0 && a [] minimo + b) {\n    return false;\n}\nif (b < 0 && a [] maximo + b) {\n    return false;\n}\n",
+          "template": "if (b > 0 && a [] minimo + b) {\n    return false;\n}\n\nif (b < 0 && a [] maximo + b) {\n    return false;\n}\n",
           "answers": [
             "<",
             ">"
@@ -168,7 +168,7 @@
         {
           "type": "cpp_compiler",
           "language": "cpp",
-          "initialCode": "#include <iostream>\n#include <limits>\n\nbool restar_comprobado(int a, int b, int& resultado) {\n    // Este inicio solo resuelve la resta de dos valores iguales.\n    if (a == b) {\n        resultado = 0;\n        return true;\n    }\n\n    // Amplia la funcion sin calcular una resta fuera de rango.\n    return false;\n}\n\nint main() {\n    int caso = 0;\n    if (!(std::cin >> caso)) {\n        return 1;\n    }\n\n    const int maximo = std::numeric_limits<int>::max();\n    const int minimo = std::numeric_limits<int>::lowest();\n    int a = 0;\n    int b = 0;\n    int esperado = 17;\n    switch (caso) {\n    case 1:\n        a = minimo + 3;\n        b = 3;\n        esperado = minimo;\n        break;\n    case 2:\n        a = minimo + 2;\n        b = 3;\n        break;\n    case 3:\n        a = maximo - 3;\n        b = -3;\n        esperado = maximo;\n        break;\n    case 4:\n        a = maximo - 2;\n        b = -3;\n        break;\n    case 5:\n        a = minimo;\n        b = minimo;\n        esperado = 0;\n        break;\n    case 6:\n        a = -1;\n        b = minimo;\n        esperado = maximo;\n        break;\n    case 7:\n        a = 0;\n        b = minimo;\n        break;\n    case 8:\n        a = maximo;\n        b = 0;\n        esperado = maximo;\n        break;\n    default:\n        return 1;\n    }\n\n    int resultado = 17;\n    const bool aceptado = restar_comprobado(a, b, resultado);\n    std::cout << \"Aceptado=\" << aceptado << '\\n';\n    std::cout << \"Coincide=\" << (resultado == esperado) << '\\n';\n    std::cout << \"Conservado=\" << (resultado == 17) << '\\n';\n    return 0;\n}\n",
+          "initialCode": "#include <iostream>\n#include <limits>\n\nbool restar_comprobado(int a, int b, int& resultado) {\n    // Este inicio solo resuelve la resta de dos valores iguales.\n    if (a == b) {\n        resultado = 0;\n        return true;\n    }\n\n    // Amplia la funcion sin calcular una resta fuera de rango.\n    return false;\n}\n\nint main() {\n    int caso = 0;\n    if (!(std::cin >> caso)) {\n        return 1;\n    }\n\n    const int maximo = std::numeric_limits<int>::max();\n    const int minimo = std::numeric_limits<int>::lowest();\n    int a = 0;\n    int b = 0;\n    int esperado = 17;\n\n    switch (caso) {\n    case 1:\n        a = minimo + 3;\n        b = 3;\n        esperado = minimo;\n        break;\n    case 2:\n        a = minimo + 2;\n        b = 3;\n        break;\n    case 3:\n        a = maximo - 3;\n        b = -3;\n        esperado = maximo;\n        break;\n    case 4:\n        a = maximo - 2;\n        b = -3;\n        break;\n    case 5:\n        a = minimo;\n        b = minimo;\n        esperado = 0;\n        break;\n    case 6:\n        a = -1;\n        b = minimo;\n        esperado = maximo;\n        break;\n    case 7:\n        a = 0;\n        b = minimo;\n        break;\n    case 8:\n        a = maximo;\n        b = 0;\n        esperado = maximo;\n        break;\n    default:\n        return 1;\n    }\n\n    int resultado = 17;\n    const bool aceptado = restar_comprobado(a, b, resultado);\n\n    std::cout << \"Aceptado=\" << aceptado << '\\n';\n    std::cout << \"Coincide=\" << (resultado == esperado) << '\\n';\n    std::cout << \"Conservado=\" << (resultado == 17) << '\\n';\n\n    return 0;\n}\n",
           "initialStandardInput": "1\n",
           "outputCheck": {
             "inputComparison": "tokens",
@@ -322,7 +322,7 @@
         {
           "type": "code",
           "language": "cpp",
-          "code": "#include <iostream>\n#include <limits>\n\nbool restar_comprobado(int a, int b, int& resultado) {\n    const int maximo = std::numeric_limits<int>::max();\n    const int minimo = std::numeric_limits<int>::lowest();\n    if (b > 0 && a < minimo + b) {\n        return false;\n    }\n    if (b < 0 && a > maximo + b) {\n        return false;\n    }\n\n    resultado = a - b;\n    return true;\n}\n\nint main() {\n    int caso = 0;\n    if (!(std::cin >> caso)) {\n        return 1;\n    }\n\n    const int maximo = std::numeric_limits<int>::max();\n    const int minimo = std::numeric_limits<int>::lowest();\n    int a = 0;\n    int b = 0;\n    int esperado = 17;\n    switch (caso) {\n    case 1:\n        a = minimo + 3;\n        b = 3;\n        esperado = minimo;\n        break;\n    case 2:\n        a = minimo + 2;\n        b = 3;\n        break;\n    case 3:\n        a = maximo - 3;\n        b = -3;\n        esperado = maximo;\n        break;\n    case 4:\n        a = maximo - 2;\n        b = -3;\n        break;\n    case 5:\n        a = minimo;\n        b = minimo;\n        esperado = 0;\n        break;\n    case 6:\n        a = -1;\n        b = minimo;\n        esperado = maximo;\n        break;\n    case 7:\n        a = 0;\n        b = minimo;\n        break;\n    case 8:\n        a = maximo;\n        b = 0;\n        esperado = maximo;\n        break;\n    default:\n        return 1;\n    }\n\n    int resultado = 17;\n    const bool aceptado = restar_comprobado(a, b, resultado);\n    std::cout << \"Aceptado=\" << aceptado << '\\n';\n    std::cout << \"Coincide=\" << (resultado == esperado) << '\\n';\n    std::cout << \"Conservado=\" << (resultado == 17) << '\\n';\n    return 0;\n}\n"
+          "code": "#include <iostream>\n#include <limits>\n\nbool restar_comprobado(int a, int b, int& resultado) {\n    const int maximo = std::numeric_limits<int>::max();\n    const int minimo = std::numeric_limits<int>::lowest();\n\n    if (b > 0 && a < minimo + b) {\n        return false;\n    }\n    if (b < 0 && a > maximo + b) {\n        return false;\n    }\n\n    resultado = a - b;\n    return true;\n}\n\nint main() {\n    int caso = 0;\n    if (!(std::cin >> caso)) {\n        return 1;\n    }\n\n    const int maximo = std::numeric_limits<int>::max();\n    const int minimo = std::numeric_limits<int>::lowest();\n    int a = 0;\n    int b = 0;\n    int esperado = 17;\n\n    switch (caso) {\n    case 1:\n        a = minimo + 3;\n        b = 3;\n        esperado = minimo;\n        break;\n    case 2:\n        a = minimo + 2;\n        b = 3;\n        break;\n    case 3:\n        a = maximo - 3;\n        b = -3;\n        esperado = maximo;\n        break;\n    case 4:\n        a = maximo - 2;\n        b = -3;\n        break;\n    case 5:\n        a = minimo;\n        b = minimo;\n        esperado = 0;\n        break;\n    case 6:\n        a = -1;\n        b = minimo;\n        esperado = maximo;\n        break;\n    case 7:\n        a = 0;\n        b = minimo;\n        break;\n    case 8:\n        a = maximo;\n        b = 0;\n        esperado = maximo;\n        break;\n    default:\n        return 1;\n    }\n\n    int resultado = 17;\n    const bool aceptado = restar_comprobado(a, b, resultado);\n\n    std::cout << \"Aceptado=\" << aceptado << '\\n';\n    std::cout << \"Coincide=\" << (resultado == esperado) << '\\n';\n    std::cout << \"Conservado=\" << (resultado == 17) << '\\n';\n\n    return 0;\n}\n"
         },
         {
           "type": "paragraph",
@@ -429,7 +429,7 @@
           "id": "p3_u1l6_truncamiento",
           "question": "Predice las cuatro líneas exactas de estas divisiones int permitidas.",
           "language": "cpp",
-          "code": "#include <iostream>\n\nint main() {\n    std::cout << -17 / 5 << '\\n';\n    std::cout << 17 / -5 << '\\n';\n    std::cout << -17 / -5 << '\\n';\n    std::cout << 2 / 5;\n    return 0;\n}\n",
+          "code": "#include <iostream>\n\nint main() {\n    std::cout << -17 / 5 << '\\n';\n    std::cout << 17 / -5 << '\\n';\n    std::cout << -17 / -5 << '\\n';\n    std::cout << 2 / 5;\n\n    return 0;\n}\n",
           "answers": [
             "-3\n-3\n3\n0"
           ],
@@ -468,7 +468,7 @@
         {
           "type": "cpp_compiler",
           "language": "cpp",
-          "initialCode": "#include <iostream>\n#include <limits>\n\nbool dividir_comprobado(int a, int b, int& resultado) {\n    // Este inicio solo resuelve la division entre uno.\n    if (b == 1) {\n        resultado = a;\n        return true;\n    }\n\n    // Amplia la funcion comprobando los datos antes de dividir.\n    return false;\n}\n\nint main() {\n    int caso = 0;\n    if (!(std::cin >> caso)) {\n        return 1;\n    }\n\n    const int maximo = std::numeric_limits<int>::max();\n    const int minimo = std::numeric_limits<int>::lowest();\n    int a = 0;\n    int b = 0;\n    int esperado = 17;\n    switch (caso) {\n    case 1:\n        a = -17;\n        b = 5;\n        esperado = -3;\n        break;\n    case 2:\n        a = 17;\n        b = -5;\n        esperado = -3;\n        break;\n    case 3:\n        a = -17;\n        b = -5;\n        esperado = 3;\n        break;\n    case 4:\n        a = minimo;\n        b = -1;\n        break;\n    case 5:\n        a = minimo;\n        b = 1;\n        esperado = minimo;\n        break;\n    case 6:\n        a = 0;\n        b = 0;\n        break;\n    case 7:\n        a = 0;\n        b = minimo;\n        esperado = 0;\n        break;\n    case 8:\n        a = minimo;\n        b = minimo;\n        esperado = 1;\n        break;\n    case 9:\n        a = 2;\n        b = 5;\n        esperado = 0;\n        break;\n    case 10:\n        a = maximo;\n        b = -1;\n        esperado = -maximo;\n        break;\n    default:\n        return 1;\n    }\n\n    int resultado = 17;\n    const bool aceptado = dividir_comprobado(a, b, resultado);\n    std::cout << \"Aceptado=\" << aceptado << '\\n';\n    std::cout << \"Coincide=\" << (resultado == esperado) << '\\n';\n    std::cout << \"Conservado=\" << (resultado == 17) << '\\n';\n    return 0;\n}\n",
+          "initialCode": "#include <iostream>\n#include <limits>\n\nbool dividir_comprobado(int a, int b, int& resultado) {\n    // Este inicio solo resuelve la division entre uno.\n    if (b == 1) {\n        resultado = a;\n        return true;\n    }\n\n    // Amplia la funcion comprobando los datos antes de dividir.\n    return false;\n}\n\nint main() {\n    int caso = 0;\n    if (!(std::cin >> caso)) {\n        return 1;\n    }\n\n    const int maximo = std::numeric_limits<int>::max();\n    const int minimo = std::numeric_limits<int>::lowest();\n    int a = 0;\n    int b = 0;\n    int esperado = 17;\n\n    switch (caso) {\n    case 1:\n        a = -17;\n        b = 5;\n        esperado = -3;\n        break;\n    case 2:\n        a = 17;\n        b = -5;\n        esperado = -3;\n        break;\n    case 3:\n        a = -17;\n        b = -5;\n        esperado = 3;\n        break;\n    case 4:\n        a = minimo;\n        b = -1;\n        break;\n    case 5:\n        a = minimo;\n        b = 1;\n        esperado = minimo;\n        break;\n    case 6:\n        a = 0;\n        b = 0;\n        break;\n    case 7:\n        a = 0;\n        b = minimo;\n        esperado = 0;\n        break;\n    case 8:\n        a = minimo;\n        b = minimo;\n        esperado = 1;\n        break;\n    case 9:\n        a = 2;\n        b = 5;\n        esperado = 0;\n        break;\n    case 10:\n        a = maximo;\n        b = -1;\n        esperado = -maximo;\n        break;\n    default:\n        return 1;\n    }\n\n    int resultado = 17;\n    const bool aceptado = dividir_comprobado(a, b, resultado);\n\n    std::cout << \"Aceptado=\" << aceptado << '\\n';\n    std::cout << \"Coincide=\" << (resultado == esperado) << '\\n';\n    std::cout << \"Conservado=\" << (resultado == 17) << '\\n';\n\n    return 0;\n}\n",
           "initialStandardInput": "1\n",
           "outputCheck": {
             "inputComparison": "tokens",
@@ -654,7 +654,7 @@
         {
           "type": "code",
           "language": "cpp",
-          "code": "#include <iostream>\n#include <limits>\n\nbool dividir_comprobado(int a, int b, int& resultado) {\n    if (b == 0) {\n        return false;\n    }\n\n    const int minimo = std::numeric_limits<int>::lowest();\n    if (a == minimo && b == -1) {\n        return false;\n    }\n\n    resultado = a / b;\n    return true;\n}\n\nint main() {\n    int caso = 0;\n    if (!(std::cin >> caso)) {\n        return 1;\n    }\n\n    const int maximo = std::numeric_limits<int>::max();\n    const int minimo = std::numeric_limits<int>::lowest();\n    int a = 0;\n    int b = 0;\n    int esperado = 17;\n    switch (caso) {\n    case 1:\n        a = -17;\n        b = 5;\n        esperado = -3;\n        break;\n    case 2:\n        a = 17;\n        b = -5;\n        esperado = -3;\n        break;\n    case 3:\n        a = -17;\n        b = -5;\n        esperado = 3;\n        break;\n    case 4:\n        a = minimo;\n        b = -1;\n        break;\n    case 5:\n        a = minimo;\n        b = 1;\n        esperado = minimo;\n        break;\n    case 6:\n        a = 0;\n        b = 0;\n        break;\n    case 7:\n        a = 0;\n        b = minimo;\n        esperado = 0;\n        break;\n    case 8:\n        a = minimo;\n        b = minimo;\n        esperado = 1;\n        break;\n    case 9:\n        a = 2;\n        b = 5;\n        esperado = 0;\n        break;\n    case 10:\n        a = maximo;\n        b = -1;\n        esperado = -maximo;\n        break;\n    default:\n        return 1;\n    }\n\n    int resultado = 17;\n    const bool aceptado = dividir_comprobado(a, b, resultado);\n    std::cout << \"Aceptado=\" << aceptado << '\\n';\n    std::cout << \"Coincide=\" << (resultado == esperado) << '\\n';\n    std::cout << \"Conservado=\" << (resultado == 17) << '\\n';\n    return 0;\n}\n"
+          "code": "#include <iostream>\n#include <limits>\n\nbool dividir_comprobado(int a, int b, int& resultado) {\n    if (b == 0) {\n        return false;\n    }\n\n    const int minimo = std::numeric_limits<int>::lowest();\n    if (a == minimo && b == -1) {\n        return false;\n    }\n\n    resultado = a / b;\n    return true;\n}\n\nint main() {\n    int caso = 0;\n    if (!(std::cin >> caso)) {\n        return 1;\n    }\n\n    const int maximo = std::numeric_limits<int>::max();\n    const int minimo = std::numeric_limits<int>::lowest();\n    int a = 0;\n    int b = 0;\n    int esperado = 17;\n\n    switch (caso) {\n    case 1:\n        a = -17;\n        b = 5;\n        esperado = -3;\n        break;\n    case 2:\n        a = 17;\n        b = -5;\n        esperado = -3;\n        break;\n    case 3:\n        a = -17;\n        b = -5;\n        esperado = 3;\n        break;\n    case 4:\n        a = minimo;\n        b = -1;\n        break;\n    case 5:\n        a = minimo;\n        b = 1;\n        esperado = minimo;\n        break;\n    case 6:\n        a = 0;\n        b = 0;\n        break;\n    case 7:\n        a = 0;\n        b = minimo;\n        esperado = 0;\n        break;\n    case 8:\n        a = minimo;\n        b = minimo;\n        esperado = 1;\n        break;\n    case 9:\n        a = 2;\n        b = 5;\n        esperado = 0;\n        break;\n    case 10:\n        a = maximo;\n        b = -1;\n        esperado = -maximo;\n        break;\n    default:\n        return 1;\n    }\n\n    int resultado = 17;\n    const bool aceptado = dividir_comprobado(a, b, resultado);\n\n    std::cout << \"Aceptado=\" << aceptado << '\\n';\n    std::cout << \"Coincide=\" << (resultado == esperado) << '\\n';\n    std::cout << \"Conservado=\" << (resultado == 17) << '\\n';\n\n    return 0;\n}\n"
         },
         {
           "type": "paragraph",
@@ -709,7 +709,7 @@
           "id": "p3_u1l6_secuencia_compartida",
           "question": "Predice las cinco líneas exactas. Cada línea contiene el bool de esa llamada y el valor actual del destino, separados por dos puntos.",
           "language": "cpp",
-          "code": "#include <iostream>\n#include <limits>\n\nbool restar_comprobado(int a, int b, int& resultado) {\n    const int maximo = std::numeric_limits<int>::max();\n    const int minimo = std::numeric_limits<int>::lowest();\n    if (b > 0 && a < minimo + b) {\n        return false;\n    }\n    if (b < 0 && a > maximo + b) {\n        return false;\n    }\n\n    resultado = a - b;\n    return true;\n}\n\nbool dividir_comprobado(int a, int b, int& resultado) {\n    if (b == 0) {\n        return false;\n    }\n\n    const int minimo = std::numeric_limits<int>::lowest();\n    if (a == minimo && b == -1) {\n        return false;\n    }\n\n    resultado = a / b;\n    return true;\n}\n\nint main() {\n    const int minimo = std::numeric_limits<int>::lowest();\n    int resultado = 17;\n\n    const bool primero = restar_comprobado(8, 50, resultado);\n    std::cout << primero << \":\" << resultado << '\\n';\n\n    const bool segundo = restar_comprobado(0, minimo, resultado);\n    std::cout << segundo << \":\" << resultado << '\\n';\n\n    const bool tercero = dividir_comprobado(2, 5, resultado);\n    std::cout << tercero << \":\" << resultado << '\\n';\n\n    const bool cuarto = dividir_comprobado(0, 0, resultado);\n    std::cout << cuarto << \":\" << resultado << '\\n';\n\n    const bool quinto = dividir_comprobado(minimo, -1, resultado);\n    std::cout << quinto << \":\" << resultado;\n    return 0;\n}\n",
+          "code": "#include <iostream>\n#include <limits>\n\nbool restar_comprobado(int a, int b, int& resultado) {\n    const int maximo = std::numeric_limits<int>::max();\n    const int minimo = std::numeric_limits<int>::lowest();\n\n    if (b > 0 && a < minimo + b) {\n        return false;\n    }\n    if (b < 0 && a > maximo + b) {\n        return false;\n    }\n\n    resultado = a - b;\n    return true;\n}\n\nbool dividir_comprobado(int a, int b, int& resultado) {\n    if (b == 0) {\n        return false;\n    }\n\n    const int minimo = std::numeric_limits<int>::lowest();\n    if (a == minimo && b == -1) {\n        return false;\n    }\n\n    resultado = a / b;\n    return true;\n}\n\nint main() {\n    const int minimo = std::numeric_limits<int>::lowest();\n    int resultado = 17;\n\n    const bool primero = restar_comprobado(8, 50, resultado);\n    std::cout << primero << \":\" << resultado << '\\n';\n\n    const bool segundo = restar_comprobado(0, minimo, resultado);\n    std::cout << segundo << \":\" << resultado << '\\n';\n\n    const bool tercero = dividir_comprobado(2, 5, resultado);\n    std::cout << tercero << \":\" << resultado << '\\n';\n\n    const bool cuarto = dividir_comprobado(0, 0, resultado);\n    std::cout << cuarto << \":\" << resultado << '\\n';\n\n    const bool quinto = dividir_comprobado(minimo, -1, resultado);\n    std::cout << quinto << \":\" << resultado;\n\n    return 0;\n}\n",
           "answers": [
             "1:-42\n0:-42\n1:0\n0:0\n0:0"
           ],
@@ -1997,6 +1997,259 @@
       }
     },
     "additions": [],
-    "editorial": []
+    "editorial": [
+      {
+        "id": "block_0002_0005",
+        "beforeSha256": "10d2a6f286da710633546933c8ca4b504b90b25da5857bb3b2d8fe1f7becaba2",
+        "afterSha256": "a1125819f6529d4bb465bf373cadbc3c722a8f89d966a7b3859ff41c00079c0e"
+      },
+      {
+        "id": "block_0004_0007",
+        "beforeSha256": "5d57c739ad7c5d41d45ef430ba7387fff1b116b89c27a3617f1fa0cdb8124d27",
+        "afterSha256": "fdcd2eb94ae1602b2a7502613df192d92e9e2e3e3d10c7a90af1c9dbbe0760e8"
+      },
+      {
+        "id": "block_0006_0001",
+        "beforeSha256": "497fd5bd316b66452b3ec8dbfe307271935ac9b97ebc7166c51478bb7938f70e",
+        "afterSha256": "36c4cf4dc400a54bf2ab12223079c68f596fddabf99d4477d08b44823e46d8a1"
+      },
+      {
+        "id": "block_0009_0003",
+        "beforeSha256": "867aa570b25fa0c231a68726c312a8209a6b7d05201ba2770511c5c72bdd65df",
+        "afterSha256": "b0fb120df1002ffaa9fdb431d8e4ac183077cb4b5b2f1e21f57a36b1b0671d2c"
+      },
+      {
+        "id": "block_0010_0006",
+        "beforeSha256": "360fdb11336fce373e11ea800d76f91e89dd6ac8fce693c4a6f320e6dfa577aa",
+        "afterSha256": "23c645595c97a27ce9d4982a93f5ab8f73fe0d3abe044ffe5c8c87733975659c"
+      },
+      {
+        "id": "block_0012_0001",
+        "beforeSha256": "a4750d281e2d2be2c20d28a2b3b2d29fa610796a1500cbfd43539ec2ca37e6ef",
+        "afterSha256": "54c87cc858873470e7a9ea2c730b9c36cc05823212173d6f93b9f0d0d97f9564"
+      },
+      {
+        "id": "block_0014_0002",
+        "beforeSha256": "c7a55874a3ad819575f2c85ff0d751c1eba4f631e569ea8d7169efa7df214059",
+        "afterSha256": "da52840f50b5f1a7e0e7f1a0d5bfe62047f0d3462342d8ba1b4c62f07fcaf0a4"
+      }
+    ],
+    "sourceFormatRevisions": [
+      {
+        "id": "block_0002_0005",
+        "block": {
+          "type": "inline_fill_code",
+          "id": "p3_u1l6_signos_de_rechazo",
+          "language": "cpp",
+          "question": "Completa sólo < o > para rechazar diferencias fuera del intervalo y permitir alcanzar exactamente sus extremos. El fragmento pertenece a una función bool.",
+          "template": "if (b > 0 && a [] minimo + b) {\n    return false;\n}\nif (b < 0 && a [] maximo + b) {\n    return false;\n}\n",
+          "answers": [
+            "<",
+            ">"
+          ],
+          "explanation": "Restar un positivo puede bajar del mínimo: se rechaza a < minimo+b. Restar un negativo puede superar el máximo: se rechaza a > maximo+b. Ambas comparaciones son estrictas para permitir llegar al extremo."
+        }
+      },
+      {
+        "id": "block_0004_0007",
+        "block": {
+          "type": "cpp_compiler",
+          "language": "cpp",
+          "initialCode": "#include <iostream>\n#include <limits>\n\nbool restar_comprobado(int a, int b, int& resultado) {\n    // Este inicio solo resuelve la resta de dos valores iguales.\n    if (a == b) {\n        resultado = 0;\n        return true;\n    }\n\n    // Amplia la funcion sin calcular una resta fuera de rango.\n    return false;\n}\n\nint main() {\n    int caso = 0;\n    if (!(std::cin >> caso)) {\n        return 1;\n    }\n\n    const int maximo = std::numeric_limits<int>::max();\n    const int minimo = std::numeric_limits<int>::lowest();\n    int a = 0;\n    int b = 0;\n    int esperado = 17;\n    switch (caso) {\n    case 1:\n        a = minimo + 3;\n        b = 3;\n        esperado = minimo;\n        break;\n    case 2:\n        a = minimo + 2;\n        b = 3;\n        break;\n    case 3:\n        a = maximo - 3;\n        b = -3;\n        esperado = maximo;\n        break;\n    case 4:\n        a = maximo - 2;\n        b = -3;\n        break;\n    case 5:\n        a = minimo;\n        b = minimo;\n        esperado = 0;\n        break;\n    case 6:\n        a = -1;\n        b = minimo;\n        esperado = maximo;\n        break;\n    case 7:\n        a = 0;\n        b = minimo;\n        break;\n    case 8:\n        a = maximo;\n        b = 0;\n        esperado = maximo;\n        break;\n    default:\n        return 1;\n    }\n\n    int resultado = 17;\n    const bool aceptado = restar_comprobado(a, b, resultado);\n    std::cout << \"Aceptado=\" << aceptado << '\\n';\n    std::cout << \"Coincide=\" << (resultado == esperado) << '\\n';\n    std::cout << \"Conservado=\" << (resultado == 17) << '\\n';\n    return 0;\n}\n",
+          "initialStandardInput": "1\n",
+          "outputCheck": {
+            "inputComparison": "tokens",
+            "cases": [
+              {
+                "standardInput": "1\n",
+                "outputs": [
+                  "Aceptado=1\nCoincide=1\nConservado=0\n"
+                ],
+                "explanation": "a = minimo + 3; b = 3. Se acepta y se guarda minimo."
+              },
+              {
+                "standardInput": "2\n",
+                "outputs": [
+                  "Aceptado=0\nCoincide=1\nConservado=1\n"
+                ],
+                "explanation": "a = minimo + 2; b = 3. La diferencia matemática queda una unidad por debajo del mínimo. Se rechaza y se conserva 17."
+              },
+              {
+                "standardInput": "3\n",
+                "outputs": [
+                  "Aceptado=1\nCoincide=1\nConservado=0\n"
+                ],
+                "explanation": "a = maximo - 3; b = -3. Se acepta y se guarda maximo."
+              },
+              {
+                "standardInput": "4\n",
+                "outputs": [
+                  "Aceptado=0\nCoincide=1\nConservado=1\n"
+                ],
+                "explanation": "a = maximo - 2; b = -3. La diferencia matemática supera el máximo en una unidad. Se rechaza y se conserva 17."
+              },
+              {
+                "standardInput": "5\n",
+                "outputs": [
+                  "Aceptado=1\nCoincide=1\nConservado=0\n"
+                ],
+                "explanation": "a = minimo; b = minimo. Se acepta y se guarda 0 sin negar ninguno de los datos."
+              },
+              {
+                "standardInput": "6\n",
+                "outputs": [
+                  "Aceptado=1\nCoincide=1\nConservado=0\n"
+                ],
+                "explanation": "a = -1; b = minimo. Se acepta y se guarda maximo."
+              },
+              {
+                "standardInput": "7\n",
+                "outputs": [
+                  "Aceptado=0\nCoincide=1\nConservado=1\n"
+                ],
+                "explanation": "a = 0; b = minimo. El opuesto matemático del mínimo no cabe. Se rechaza y se conserva 17."
+              },
+              {
+                "standardInput": "8\n",
+                "outputs": [
+                  "Aceptado=1\nCoincide=1\nConservado=0\n"
+                ],
+                "explanation": "a = maximo; b = 0. Se acepta y se guarda maximo."
+              }
+            ]
+          }
+        }
+      },
+      {
+        "id": "block_0006_0001",
+        "block": {
+          "type": "code",
+          "language": "cpp",
+          "code": "#include <iostream>\n#include <limits>\n\nbool restar_comprobado(int a, int b, int& resultado) {\n    const int maximo = std::numeric_limits<int>::max();\n    const int minimo = std::numeric_limits<int>::lowest();\n    if (b > 0 && a < minimo + b) {\n        return false;\n    }\n    if (b < 0 && a > maximo + b) {\n        return false;\n    }\n\n    resultado = a - b;\n    return true;\n}\n\nint main() {\n    int caso = 0;\n    if (!(std::cin >> caso)) {\n        return 1;\n    }\n\n    const int maximo = std::numeric_limits<int>::max();\n    const int minimo = std::numeric_limits<int>::lowest();\n    int a = 0;\n    int b = 0;\n    int esperado = 17;\n    switch (caso) {\n    case 1:\n        a = minimo + 3;\n        b = 3;\n        esperado = minimo;\n        break;\n    case 2:\n        a = minimo + 2;\n        b = 3;\n        break;\n    case 3:\n        a = maximo - 3;\n        b = -3;\n        esperado = maximo;\n        break;\n    case 4:\n        a = maximo - 2;\n        b = -3;\n        break;\n    case 5:\n        a = minimo;\n        b = minimo;\n        esperado = 0;\n        break;\n    case 6:\n        a = -1;\n        b = minimo;\n        esperado = maximo;\n        break;\n    case 7:\n        a = 0;\n        b = minimo;\n        break;\n    case 8:\n        a = maximo;\n        b = 0;\n        esperado = maximo;\n        break;\n    default:\n        return 1;\n    }\n\n    int resultado = 17;\n    const bool aceptado = restar_comprobado(a, b, resultado);\n    std::cout << \"Aceptado=\" << aceptado << '\\n';\n    std::cout << \"Coincide=\" << (resultado == esperado) << '\\n';\n    std::cout << \"Conservado=\" << (resultado == 17) << '\\n';\n    return 0;\n}\n"
+        }
+      },
+      {
+        "id": "block_0009_0003",
+        "block": {
+          "type": "output_prediction",
+          "id": "p3_u1l6_truncamiento",
+          "question": "Predice las cuatro líneas exactas de estas divisiones int permitidas.",
+          "language": "cpp",
+          "code": "#include <iostream>\n\nint main() {\n    std::cout << -17 / 5 << '\\n';\n    std::cout << 17 / -5 << '\\n';\n    std::cout << -17 / -5 << '\\n';\n    std::cout << 2 / 5;\n    return 0;\n}\n",
+          "answers": [
+            "-3\n-3\n3\n0"
+          ],
+          "outputComparison": "exact",
+          "explanation": "Las dos primeras divisiones tienen cociente negativo y descartan la fracción hacia cero: −3. La tercera produce un positivo y queda 3. La cuarta descarta 0.4 y da 0. Ningún divisor es cero ni se solicita minimo / -1."
+        }
+      },
+      {
+        "id": "block_0010_0006",
+        "block": {
+          "type": "cpp_compiler",
+          "language": "cpp",
+          "initialCode": "#include <iostream>\n#include <limits>\n\nbool dividir_comprobado(int a, int b, int& resultado) {\n    // Este inicio solo resuelve la division entre uno.\n    if (b == 1) {\n        resultado = a;\n        return true;\n    }\n\n    // Amplia la funcion comprobando los datos antes de dividir.\n    return false;\n}\n\nint main() {\n    int caso = 0;\n    if (!(std::cin >> caso)) {\n        return 1;\n    }\n\n    const int maximo = std::numeric_limits<int>::max();\n    const int minimo = std::numeric_limits<int>::lowest();\n    int a = 0;\n    int b = 0;\n    int esperado = 17;\n    switch (caso) {\n    case 1:\n        a = -17;\n        b = 5;\n        esperado = -3;\n        break;\n    case 2:\n        a = 17;\n        b = -5;\n        esperado = -3;\n        break;\n    case 3:\n        a = -17;\n        b = -5;\n        esperado = 3;\n        break;\n    case 4:\n        a = minimo;\n        b = -1;\n        break;\n    case 5:\n        a = minimo;\n        b = 1;\n        esperado = minimo;\n        break;\n    case 6:\n        a = 0;\n        b = 0;\n        break;\n    case 7:\n        a = 0;\n        b = minimo;\n        esperado = 0;\n        break;\n    case 8:\n        a = minimo;\n        b = minimo;\n        esperado = 1;\n        break;\n    case 9:\n        a = 2;\n        b = 5;\n        esperado = 0;\n        break;\n    case 10:\n        a = maximo;\n        b = -1;\n        esperado = -maximo;\n        break;\n    default:\n        return 1;\n    }\n\n    int resultado = 17;\n    const bool aceptado = dividir_comprobado(a, b, resultado);\n    std::cout << \"Aceptado=\" << aceptado << '\\n';\n    std::cout << \"Coincide=\" << (resultado == esperado) << '\\n';\n    std::cout << \"Conservado=\" << (resultado == 17) << '\\n';\n    return 0;\n}\n",
+          "initialStandardInput": "1\n",
+          "outputCheck": {
+            "inputComparison": "tokens",
+            "cases": [
+              {
+                "standardInput": "1\n",
+                "outputs": [
+                  "Aceptado=1\nCoincide=1\nConservado=0\n"
+                ],
+                "explanation": "a = -17; b = 5. Se acepta y se guarda -3: la fracción se descarta hacia cero."
+              },
+              {
+                "standardInput": "2\n",
+                "outputs": [
+                  "Aceptado=1\nCoincide=1\nConservado=0\n"
+                ],
+                "explanation": "a = 17; b = -5. Se acepta y se guarda -3."
+              },
+              {
+                "standardInput": "3\n",
+                "outputs": [
+                  "Aceptado=1\nCoincide=1\nConservado=0\n"
+                ],
+                "explanation": "a = -17; b = -5. Se acepta y se guarda 3."
+              },
+              {
+                "standardInput": "4\n",
+                "outputs": [
+                  "Aceptado=0\nCoincide=1\nConservado=1\n"
+                ],
+                "explanation": "a = minimo; b = -1. El cociente matemático no cabe. Se rechaza y se conserva 17."
+              },
+              {
+                "standardInput": "5\n",
+                "outputs": [
+                  "Aceptado=1\nCoincide=1\nConservado=0\n"
+                ],
+                "explanation": "a = minimo; b = 1. Se acepta y se guarda minimo."
+              },
+              {
+                "standardInput": "6\n",
+                "outputs": [
+                  "Aceptado=0\nCoincide=1\nConservado=1\n"
+                ],
+                "explanation": "a = 0; b = 0. El divisor cero debe rechazarse aunque el dividendo sea cero. Se conserva 17."
+              },
+              {
+                "standardInput": "7\n",
+                "outputs": [
+                  "Aceptado=1\nCoincide=1\nConservado=0\n"
+                ],
+                "explanation": "a = 0; b = minimo. El divisor es distinto de cero. Se acepta y se guarda 0."
+              },
+              {
+                "standardInput": "8\n",
+                "outputs": [
+                  "Aceptado=1\nCoincide=1\nConservado=0\n"
+                ],
+                "explanation": "a = minimo; b = minimo. Se acepta y se guarda 1."
+              },
+              {
+                "standardInput": "9\n",
+                "outputs": [
+                  "Aceptado=1\nCoincide=1\nConservado=0\n"
+                ],
+                "explanation": "a = 2; b = 5. Se acepta y se guarda 0; no se exige una división sin resto."
+              },
+              {
+                "standardInput": "10\n",
+                "outputs": [
+                  "Aceptado=1\nCoincide=1\nConservado=0\n"
+                ],
+                "explanation": "a = maximo; b = -1. Se acepta y se guarda -maximo, que sí es representable."
+              }
+            ]
+          }
+        }
+      },
+      {
+        "id": "block_0012_0001",
+        "block": {
+          "type": "code",
+          "language": "cpp",
+          "code": "#include <iostream>\n#include <limits>\n\nbool dividir_comprobado(int a, int b, int& resultado) {\n    if (b == 0) {\n        return false;\n    }\n\n    const int minimo = std::numeric_limits<int>::lowest();\n    if (a == minimo && b == -1) {\n        return false;\n    }\n\n    resultado = a / b;\n    return true;\n}\n\nint main() {\n    int caso = 0;\n    if (!(std::cin >> caso)) {\n        return 1;\n    }\n\n    const int maximo = std::numeric_limits<int>::max();\n    const int minimo = std::numeric_limits<int>::lowest();\n    int a = 0;\n    int b = 0;\n    int esperado = 17;\n    switch (caso) {\n    case 1:\n        a = -17;\n        b = 5;\n        esperado = -3;\n        break;\n    case 2:\n        a = 17;\n        b = -5;\n        esperado = -3;\n        break;\n    case 3:\n        a = -17;\n        b = -5;\n        esperado = 3;\n        break;\n    case 4:\n        a = minimo;\n        b = -1;\n        break;\n    case 5:\n        a = minimo;\n        b = 1;\n        esperado = minimo;\n        break;\n    case 6:\n        a = 0;\n        b = 0;\n        break;\n    case 7:\n        a = 0;\n        b = minimo;\n        esperado = 0;\n        break;\n    case 8:\n        a = minimo;\n        b = minimo;\n        esperado = 1;\n        break;\n    case 9:\n        a = 2;\n        b = 5;\n        esperado = 0;\n        break;\n    case 10:\n        a = maximo;\n        b = -1;\n        esperado = -maximo;\n        break;\n    default:\n        return 1;\n    }\n\n    int resultado = 17;\n    const bool aceptado = dividir_comprobado(a, b, resultado);\n    std::cout << \"Aceptado=\" << aceptado << '\\n';\n    std::cout << \"Coincide=\" << (resultado == esperado) << '\\n';\n    std::cout << \"Conservado=\" << (resultado == 17) << '\\n';\n    return 0;\n}\n"
+        }
+      },
+      {
+        "id": "block_0014_0002",
+        "block": {
+          "type": "output_prediction",
+          "id": "p3_u1l6_secuencia_compartida",
+          "question": "Predice las cinco líneas exactas. Cada línea contiene el bool de esa llamada y el valor actual del destino, separados por dos puntos.",
+          "language": "cpp",
+          "code": "#include <iostream>\n#include <limits>\n\nbool restar_comprobado(int a, int b, int& resultado) {\n    const int maximo = std::numeric_limits<int>::max();\n    const int minimo = std::numeric_limits<int>::lowest();\n    if (b > 0 && a < minimo + b) {\n        return false;\n    }\n    if (b < 0 && a > maximo + b) {\n        return false;\n    }\n\n    resultado = a - b;\n    return true;\n}\n\nbool dividir_comprobado(int a, int b, int& resultado) {\n    if (b == 0) {\n        return false;\n    }\n\n    const int minimo = std::numeric_limits<int>::lowest();\n    if (a == minimo && b == -1) {\n        return false;\n    }\n\n    resultado = a / b;\n    return true;\n}\n\nint main() {\n    const int minimo = std::numeric_limits<int>::lowest();\n    int resultado = 17;\n\n    const bool primero = restar_comprobado(8, 50, resultado);\n    std::cout << primero << \":\" << resultado << '\\n';\n\n    const bool segundo = restar_comprobado(0, minimo, resultado);\n    std::cout << segundo << \":\" << resultado << '\\n';\n\n    const bool tercero = dividir_comprobado(2, 5, resultado);\n    std::cout << tercero << \":\" << resultado << '\\n';\n\n    const bool cuarto = dividir_comprobado(0, 0, resultado);\n    std::cout << cuarto << \":\" << resultado << '\\n';\n\n    const bool quinto = dividir_comprobado(minimo, -1, resultado);\n    std::cout << quinto << \":\" << resultado;\n    return 0;\n}\n",
+          "answers": [
+            "1:-42\n0:-42\n1:0\n0:0\n0:0"
+          ],
+          "outputComparison": "exact",
+          "explanation": "8−50 se acepta y guarda −42. 0−minimo no cabe, así que conserva −42. 2/5 se acepta y guarda 0. 0/0 se rechaza y conserva ese cero. minimo/−1 también se rechaza sin modificarlo. Los dos rechazos finales no deben borrar el último cociente válido."
+        }
+      }
+    ]
   }
 }

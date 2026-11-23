@@ -18,7 +18,7 @@
           "id": "p3_u4l9_conversion_del_array",
           "language": "cpp",
           "question": "¿Qué muestra actual==&datos[0]:datos[0]:datos[2] en los momentos indicados?",
-          "code": "#include <iostream>\n\nint main() {\n    int datos[4]{2, 5, 8, 1};\n    int* actual = datos;\n    std::cout << (actual == &datos[0]) << ':';\n    actual = &datos[2];\n    *actual = 7;\n    std::cout << datos[0] << ':' << datos[2];\n    return 0;\n}\n",
+          "code": "#include <iostream>\n\nint main() {\n    int datos[4]{2, 5, 8, 1};\n    int* actual = datos;\n\n    std::cout << (actual == &datos[0]) << ':';\n    actual = &datos[2];\n    *actual = 7;\n    std::cout << datos[0] << ':' << datos[2];\n\n    return 0;\n}\n",
           "answers": [
             "1:2:7"
           ],
@@ -32,7 +32,7 @@
         {
           "type": "code",
           "language": "cpp",
-          "code": "int main() {\n    int datos[4]{2, 5, 8, 1};\n    int* actual = datos;\n    datos = actual;\n    return 0;\n}\n"
+          "code": "int main() {\n    int datos[4]{2, 5, 8, 1};\n    int* actual = datos;\n\n    datos = actual;\n    return 0;\n}\n"
         }
       ]
     },
@@ -55,7 +55,7 @@
           "id": "p3_u4l9_sizeof_y_auto",
           "language": "cpp",
           "question": "¿Qué muestra la cantidad de elementos de datos, la comparación de tamaños del puntero y el valor final de datos[0]?",
-          "code": "#include <iostream>\n\nint main() {\n    int datos[4]{2, 5, 8, 1};\n    auto seleccion = datos;\n    seleccion[0] = 9;\n    std::cout << sizeof(datos) / sizeof(datos[0]) << ':'\n              << (sizeof(seleccion) == sizeof(int*)) << ':' << datos[0];\n    return 0;\n}\n",
+          "code": "#include <iostream>\n\nint main() {\n    int datos[4]{2, 5, 8, 1};\n    auto seleccion = datos;\n\n    seleccion[0] = 9;\n\n    std::cout << sizeof(datos) / sizeof(datos[0]) << ':'\n              << (sizeof(seleccion) == sizeof(int*)) << ':' << datos[0];\n    return 0;\n}\n",
           "answers": [
             "4:1:9"
           ],
@@ -91,7 +91,7 @@
           "id": "p3_u4l9_puntero_de_stdarray",
           "language": "cpp",
           "question": "¿Qué muestra actual==&datos[0]:datos[0]:*vista?",
-          "code": "#include <array>\n#include <iostream>\n\nint main() {\n    std::array<int, 4> datos{2, 5, 8, 1};\n    const std::array<int, 2> limites{0, 9};\n    int* actual = datos.data();\n    const int* vista = limites.data();\n    *actual = 7;\n    std::cout << (actual == &datos[0]) << ':' << datos[0] << ':' << *vista;\n    return 0;\n}\n",
+          "code": "#include <array>\n#include <iostream>\n\nint main() {\n    std::array<int, 4> datos{2, 5, 8, 1};\n    const std::array<int, 2> limites{0, 9};\n    int* actual = datos.data();\n    const int* vista = limites.data();\n    *actual = 7;\n    std::cout << (actual == &datos[0]) << ':' << datos[0] << ':' << *vista;\n\n    return 0;\n}\n",
           "answers": [
             "1:7:0"
           ],
@@ -124,7 +124,7 @@
           "id": "p3_u4l9_expresion_y_asignacion",
           "language": "cpp",
           "question": "¿Qué muestra *actual:*propuesta:*actual:propuesta==&datos[2] en los momentos indicados?",
-          "code": "#include <iostream>\n\nint main() {\n    int datos[4]{2, 5, 8, 1};\n    int* actual = datos;\n    int* propuesta = actual + 2;\n    std::cout << *actual << ':' << *propuesta << ':';\n    actual += 1;\n    std::cout << *actual << ':' << (propuesta == &datos[2]);\n    return 0;\n}\n",
+          "code": "#include <iostream>\n\nint main() {\n    int datos[4]{2, 5, 8, 1};\n    int* actual = datos;\n    int* propuesta = actual + 2;\n\n    std::cout << *actual << ':' << *propuesta << ':';\n    actual += 1;\n\n    std::cout << *actual << ':' << (propuesta == &datos[2]);\n\n    return 0;\n}\n",
           "answers": [
             "2:8:5:1"
           ],
@@ -157,7 +157,7 @@
           "id": "p3_u4l9_subindices_relativos",
           "language": "cpp",
           "question": "¿Qué muestra actual[0]:actual[-1]:*(actual+1):datos[1]?",
-          "code": "#include <iostream>\n\nint main() {\n    int datos[4]{2, 5, 8, 1};\n    int* actual = &datos[2];\n    actual[-1] = 6;\n    std::cout << actual[0] << ':' << actual[-1] << ':' << *(actual + 1) << ':' << datos[1];\n    return 0;\n}\n",
+          "code": "#include <iostream>\n\nint main() {\n    int datos[4]{2, 5, 8, 1};\n    int* actual = &datos[2];\n\n    actual[-1] = 6;\n\n    std::cout << actual[0] << ':' << actual[-1] << ':' << *(actual + 1) << ':' << datos[1];\n\n    return 0;\n}\n",
           "answers": [
             "8:6:1:6"
           ],
@@ -197,7 +197,7 @@
           "id": "p3_u4l9_fin_y_ultimo_elemento",
           "language": "cpp",
           "question": "¿Qué muestra fin!=nullptr:fin[-1]:*actual:actual==&datos[3]?",
-          "code": "#include <iostream>\n\nint main() {\n    int datos[4]{2, 5, 8, 1};\n    int* inicio = datos;\n    int* fin = inicio + 4;\n    std::cout << (fin != nullptr) << ':' << fin[-1] << ':';\n    int* actual = fin;\n    --actual;\n    std::cout << *actual << ':' << (actual == &datos[3]);\n    return 0;\n}\n",
+          "code": "#include <iostream>\n\nint main() {\n    int datos[4]{2, 5, 8, 1};\n    int* inicio = datos;\n    int* fin = inicio + 4;\n\n    std::cout << (fin != nullptr) << ':' << fin[-1] << ':';\n    int* actual = fin;\n    --actual;\n\n    std::cout << *actual << ':' << (actual == &datos[3]);\n\n    return 0;\n}\n",
           "answers": [
             "1:1:1:1"
           ],
@@ -237,7 +237,7 @@
           "id": "p3_u4l9_separacion_con_signo",
           "language": "cpp",
           "question": "¿Qué muestra ancho:ida:vuelta?",
-          "code": "#include <cstddef>\n#include <iostream>\n\nint main() {\n    int datos[4]{2, 5, 8, 1};\n    const int* inicio = datos;\n    const int* primero = inicio + 1;\n    const int* tercero = inicio + 3;\n    const int* fin = inicio + 4;\n    const std::ptrdiff_t ancho = fin - inicio;\n    const std::ptrdiff_t ida = tercero - primero;\n    const std::ptrdiff_t vuelta = primero - tercero;\n    std::cout << ancho << ':' << ida << ':' << vuelta;\n    return 0;\n}\n",
+          "code": "#include <cstddef>\n#include <iostream>\n\nint main() {\n    int datos[4]{2, 5, 8, 1};\n    const int* inicio = datos;\n    const int* primero = inicio + 1;\n    const int* tercero = inicio + 3;\n    const int* fin = inicio + 4;\n    const std::ptrdiff_t ancho = fin - inicio;\n    const std::ptrdiff_t ida = tercero - primero;\n    const std::ptrdiff_t vuelta = primero - tercero;\n\n    std::cout << ancho << ':' << ida << ':' << vuelta;\n\n    return 0;\n}\n",
           "answers": [
             "4:2:-2"
           ],
@@ -269,7 +269,7 @@
           "id": "p3_u4l9_recorrido_hacia_delante",
           "language": "cpp",
           "question": "¿Qué muestra el programa completo, incluida la suma final?",
-          "code": "#include <iostream>\n\nint main() {\n    int datos[4]{2, 5, 8, 1};\n    const int* inicio = datos;\n    const int* fin = inicio + 4;\n    int suma = 0;\n    for (const int* actual = inicio; actual != fin; ++actual) {\n        std::cout << *actual << ':';\n        suma += *actual;\n    }\n    std::cout << suma;\n    return 0;\n}\n",
+          "code": "#include <iostream>\n\nint main() {\n    int datos[4]{2, 5, 8, 1};\n    const int* inicio = datos;\n    const int* fin = inicio + 4;\n    int suma = 0;\n\n    for (const int* actual = inicio; actual != fin; ++actual) {\n        std::cout << *actual << ':';\n        suma += *actual;\n    }\n    std::cout << suma;\n\n    return 0;\n}\n",
           "answers": [
             "2:5:8:1:16"
           ],
@@ -297,7 +297,7 @@
           "id": "p3_u4l9_recorrido_hacia_atras",
           "language": "cpp",
           "question": "¿Qué muestra el programa, incluida la cantidad de elementos utilizados?",
-          "code": "#include <iostream>\n\nint main() {\n    int datos[3]{6, 0, 9};\n    const int* inicio = datos;\n    const int* fin = inicio + 3;\n    int cantidad = 0;\n    for (const int* actual = fin; actual != inicio;) {\n        --actual;\n        std::cout << *actual << ':';\n        ++cantidad;\n    }\n    std::cout << cantidad;\n    return 0;\n}\n",
+          "code": "#include <iostream>\n\nint main() {\n    int datos[3]{6, 0, 9};\n    const int* inicio = datos;\n    const int* fin = inicio + 3;\n    int cantidad = 0;\n\n    for (const int* actual = fin; actual != inicio;) {\n        --actual;\n        std::cout << *actual << ':';\n        ++cantidad;\n    }\n    std::cout << cantidad;\n\n    return 0;\n}\n",
           "answers": [
             "9:0:6:3"
           ],
@@ -337,7 +337,7 @@
           "id": "p3_u4l9_lectura_que_avanza",
           "language": "cpp",
           "question": "¿Qué muestra *vista:vista==&datos[1]?",
-          "code": "#include <iostream>\n\nint main() {\n    int datos[4]{2, 5, 8, 1};\n    const int* vista = datos;\n    ++vista;\n    datos[1] = 7;\n    std::cout << *vista << ':' << (vista == &datos[1]);\n    return 0;\n}\n",
+          "code": "#include <iostream>\n\nint main() {\n    int datos[4]{2, 5, 8, 1};\n    const int* vista = datos;\n\n    ++vista;\n    datos[1] = 7;\n\n    std::cout << *vista << ':' << (vista == &datos[1]);\n\n    return 0;\n}\n",
           "answers": [
             "7:1"
           ],
@@ -347,7 +347,7 @@
         {
           "type": "code",
           "language": "cpp",
-          "code": "int main() {\n    int datos[4]{2, 5, 8, 1};\n    const int* vista = datos;\n    vista[1] = 7;\n    return 0;\n}\n"
+          "code": "int main() {\n    int datos[4]{2, 5, 8, 1};\n    const int* vista = datos;\n\n    vista[1] = 7;\n    return 0;\n}\n"
         },
         {
           "type": "paragraph",
@@ -479,12 +479,12 @@
         {
           "type": "code",
           "language": "cpp",
-          "code": "#include <iostream>\n\nint main() {\n    int datos[4]{2, 5, 8, 1};\n    int* fin = datos + 4;\n    std::cout << *fin;\n    return 0;\n}\n"
+          "code": "#include <iostream>\n\nint main() {\n    int datos[4]{2, 5, 8, 1};\n    int* fin = datos + 4;\n\n    std::cout << *fin;\n\n    return 0;\n}\n"
         },
         {
           "type": "code",
           "language": "cpp",
-          "code": "#include <iostream>\n\nint main() {\n    int datos[4]{2, 5, 8, 1};\n    int* inicio = datos;\n    for (int* actual = inicio + 3; actual >= inicio; --actual) {\n        std::cout << *actual;\n    }\n    return 0;\n}\n"
+          "code": "#include <iostream>\n\nint main() {\n    int datos[4]{2, 5, 8, 1};\n    int* inicio = datos;\n\n    for (int* actual = inicio + 3; actual >= inicio; --actual) {\n        std::cout << *actual;\n    }\n\n    return 0;\n}\n"
         },
         {
           "type": "paragraph",
@@ -519,7 +519,7 @@
           "id": "p3_u4l9_array_original_y_copia",
           "language": "cpp",
           "question": "¿Qué muestra *vista:copia[2]:vista==&datos[2]?",
-          "code": "#include <array>\n#include <iostream>\n\nint main() {\n    std::array<int, 4> datos{2, 5, 8, 1};\n    const int* vista = datos.data() + 2;\n    std::array<int, 4> copia = datos;\n    datos[2] = 0;\n    std::cout << *vista << ':' << copia[2] << ':' << (vista == &datos[2]);\n    return 0;\n}\n",
+          "code": "#include <array>\n#include <iostream>\n\nint main() {\n    std::array<int, 4> datos{2, 5, 8, 1};\n    const int* vista = datos.data() + 2;\n    std::array<int, 4> copia = datos;\n\n    datos[2] = 0;\n\n    std::cout << *vista << ':' << copia[2] << ':' << (vista == &datos[2]);\n\n    return 0;\n}\n",
           "answers": [
             "0:8:1"
           ],
@@ -546,7 +546,7 @@
           "type": "inline_fill_code",
           "id": "p3_u4l9_tipo_referencia_y_diferencia",
           "question": "Completa el parámetro con int, * y & para cambiar actual del llamador. En el segundo hueco escribe el nombre del tipo con signo de la biblioteca estándar que presentamos como resultado de restar punteros. No uses auto ni otro tipo entero.",
-          "template": "#include <cstddef>\n#include <iostream>\n\nvoid retrocederUno([] actual, int* inicio) {\n    if (actual != inicio) {\n        --actual;\n    }\n}\n\nint main() {\n    int datos[4]{2, 5, 8, 1};\n    int* inicio = datos;\n    int* actual = inicio + 4;\n    retrocederUno(actual, inicio);\n    const [] posicion = actual - inicio;\n    std::cout << posicion << ':' << *actual;\n    return 0;\n}\n",
+          "template": "#include <cstddef>\n#include <iostream>\n\nvoid retrocederUno([] actual, int* inicio) {\n    if (actual != inicio) {\n        --actual;\n    }\n}\n\nint main() {\n    int datos[4]{2, 5, 8, 1};\n    int* inicio = datos;\n    int* actual = inicio + 4;\n    retrocederUno(actual, inicio);\n    const [] posicion = actual - inicio;\n    std::cout << posicion << ':' << *actual;\n\n    return 0;\n}\n",
           "answers": [
             "int*&",
             "std::ptrdiff_t"
@@ -603,7 +603,7 @@
         {
           "type": "cpp_compiler",
           "language": "cpp",
-          "initialCode": "#include <iostream>\n\nint main() {\n    int datos[4]{2, 5, 8, 1};\n    const int* inicio = datos;\n    const int* fin = inicio + 4;\n    for (const int* actual = fin; actual != inicio;) {\n        --actual;\n        if (actual != inicio) {\n            std::cout << *actual << ':';\n        }\n    }\n    std::cout << \"Fin\";\n    return 0;\n}\n",
+          "initialCode": "#include <iostream>\n\nint main() {\n    int datos[4]{2, 5, 8, 1};\n    const int* inicio = datos;\n    const int* fin = inicio + 4;\n\n    for (const int* actual = fin; actual != inicio;) {\n        --actual;\n        if (actual != inicio) {\n            std::cout << *actual << ':';\n        }\n    }\n    std::cout << \"Fin\";\n\n    return 0;\n}\n",
           "initialStandardInput": "",
           "outputCheck": {
             "inputComparison": "tokens",
@@ -629,7 +629,7 @@
         {
           "type": "code",
           "language": "cpp",
-          "code": "#include <iostream>\n\nint main() {\n    int datos[4]{2, 5, 8, 1};\n    const int* inicio = datos;\n    const int* fin = inicio + 4;\n    for (const int* actual = fin; actual != inicio;) {\n        --actual;\n        std::cout << *actual << ':';\n    }\n    std::cout << \"Fin\";\n    return 0;\n}\n"
+          "code": "#include <iostream>\n\nint main() {\n    int datos[4]{2, 5, 8, 1};\n    const int* inicio = datos;\n    const int* fin = inicio + 4;\n\n    for (const int* actual = fin; actual != inicio;) {\n        --actual;\n        std::cout << *actual << ':';\n    }\n    std::cout << \"Fin\";\n\n    return 0;\n}\n"
         },
         {
           "type": "paragraph",
@@ -724,7 +724,7 @@
         {
           "type": "cpp_compiler",
           "language": "cpp",
-          "initialCode": "#include <array>\n#include <cstddef>\n#include <iostream>\n#include <string>\n\nbool mover(int*& actual, int* inicio, int pasos) {\n    // Construye los limites y aplica solo los desplazamientos aceptados.\n    return pasos == 0 && actual == inicio;\n}\n\nbool situar(int*& actual, int* inicio, int indice) {\n    if (indice < 0 || indice > 4) {\n        return false;\n    }\n    actual = inicio + indice;\n    return true;\n}\n\nstd::string escribir(int* actual, int* fin, int valor) {\n    if (actual == fin) {\n        return \"Fin\";\n    }\n    if (valor < 0 || valor > 9) {\n        return \"Rechazo\";\n    }\n    *actual = valor;\n    return \"Cambio\";\n}\n\nint main() {\n    std::array<int, 4> datos{2, 5, 8, 1};\n    int* inicio = datos.data();\n    int* fin = inicio + 4;\n    int* actual = inicio;\n    int cantidad = 0;\n    if (!(std::cin >> cantidad) || cantidad < 1 || cantidad > 12) {\n        return 1;\n    }\n    for (int orden = 0; orden < cantidad; ++orden) {\n        int operacion = 0;\n        int argumento = 0;\n        if (!(std::cin >> operacion >> argumento)) {\n            return 1;\n        }\n        std::string estado = \"Orden\";\n        if (operacion == 1) {\n            estado = situar(actual, inicio, argumento) ? \"Seleccion\" : \"Rechazo\";\n        } else if (operacion == 2) {\n            estado = mover(actual, inicio, argumento) ? \"Movimiento\" : \"Rechazo\";\n        } else if (operacion == 3) {\n            estado = escribir(actual, fin, argumento);\n        }\n        std::cout << \"Estado:\" << estado << \";Pos:\" << (actual - inicio) << \";Valor:\";\n        if (actual == fin) {\n            std::cout << 'X';\n        } else {\n            std::cout << *actual;\n        }\n        std::cout << \";Datos:\" << datos[0] << ',' << datos[1] << ',' << datos[2] << ',' << datos[3] << '\\n';\n    }\n    return 0;\n}\n",
+          "initialCode": "#include <array>\n#include <cstddef>\n#include <iostream>\n#include <string>\n\nbool mover(int*& actual, int* inicio, int pasos) {\n    // Construye los limites y aplica solo los desplazamientos aceptados.\n    \n    return pasos == 0 && actual == inicio;\n}\n\nbool situar(int*& actual, int* inicio, int indice) {\n    if (indice < 0 || indice > 4) {\n        return false;\n    }\n    actual = inicio + indice;\n    return true;\n}\n\nstd::string escribir(int* actual, int* fin, int valor) {\n    if (actual == fin) {\n        return \"Fin\";\n    }\n    if (valor < 0 || valor > 9) {\n        return \"Rechazo\";\n    }\n    *actual = valor;\n    return \"Cambio\";\n}\n\nint main() {\n    std::array<int, 4> datos{2, 5, 8, 1};\n    int* inicio = datos.data();\n    int* fin = inicio + 4;\n    int* actual = inicio;\n    int cantidad = 0;\n\n    if (!(std::cin >> cantidad) || cantidad < 1 || cantidad > 12) {\n        return 1;\n    }\n    for (int orden = 0; orden < cantidad; ++orden) {\n        int operacion = 0;\n        int argumento = 0;\n\n        if (!(std::cin >> operacion >> argumento)) {\n            return 1;\n        }\n        std::string estado = \"Orden\";\n        if (operacion == 1) {\n            estado = situar(actual, inicio, argumento) ? \"Seleccion\" : \"Rechazo\";\n        } else if (operacion == 2) {\n            estado = mover(actual, inicio, argumento) ? \"Movimiento\" : \"Rechazo\";\n        } else if (operacion == 3) {\n            estado = escribir(actual, fin, argumento);\n        }\n        std::cout << \"Estado:\" << estado << \";Pos:\" << (actual - inicio) << \";Valor:\";\n        if (actual == fin) {\n            std::cout << 'X';\n        } else {\n            std::cout << *actual;\n        }\n        std::cout << \";Datos:\" << datos[0] << ',' << datos[1] << ',' << datos[2] << ',' << datos[3] << '\\n';\n    }\n\n    return 0;\n}\n",
           "initialStandardInput": "12\n2 4\n3 7\n2 1\n2 -1\n3 9\n2 -3\n2 -1\n2 2\n3 0\n2 0\n2 2147483647\n2 -2147483648\n",
           "outputCheck": {
             "inputComparison": "tokens",
@@ -889,7 +889,7 @@
         {
           "type": "code",
           "language": "cpp",
-          "code": "#include <array>\n#include <cstddef>\n#include <iostream>\n#include <string>\n\nbool mover(int*& actual, int* inicio, int pasos) {\n    const std::ptrdiff_t posicion = actual - inicio;\n    if (pasos < -posicion || pasos > 4 - posicion) {\n        return false;\n    }\n    actual += pasos;\n    return true;\n}\n\nbool situar(int*& actual, int* inicio, int indice) {\n    if (indice < 0 || indice > 4) {\n        return false;\n    }\n    actual = inicio + indice;\n    return true;\n}\n\nstd::string escribir(int* actual, int* fin, int valor) {\n    if (actual == fin) {\n        return \"Fin\";\n    }\n    if (valor < 0 || valor > 9) {\n        return \"Rechazo\";\n    }\n    *actual = valor;\n    return \"Cambio\";\n}\n\nint main() {\n    std::array<int, 4> datos{2, 5, 8, 1};\n    int* inicio = datos.data();\n    int* fin = inicio + 4;\n    int* actual = inicio;\n    int cantidad = 0;\n    if (!(std::cin >> cantidad) || cantidad < 1 || cantidad > 12) {\n        return 1;\n    }\n    for (int orden = 0; orden < cantidad; ++orden) {\n        int operacion = 0;\n        int argumento = 0;\n        if (!(std::cin >> operacion >> argumento)) {\n            return 1;\n        }\n        std::string estado = \"Orden\";\n        if (operacion == 1) {\n            estado = situar(actual, inicio, argumento) ? \"Seleccion\" : \"Rechazo\";\n        } else if (operacion == 2) {\n            estado = mover(actual, inicio, argumento) ? \"Movimiento\" : \"Rechazo\";\n        } else if (operacion == 3) {\n            estado = escribir(actual, fin, argumento);\n        }\n        std::cout << \"Estado:\" << estado << \";Pos:\" << (actual - inicio) << \";Valor:\";\n        if (actual == fin) {\n            std::cout << 'X';\n        } else {\n            std::cout << *actual;\n        }\n        std::cout << \";Datos:\" << datos[0] << ',' << datos[1] << ',' << datos[2] << ',' << datos[3] << '\\n';\n    }\n    return 0;\n}\n"
+          "code": "#include <array>\n#include <cstddef>\n#include <iostream>\n#include <string>\n\nbool mover(int*& actual, int* inicio, int pasos) {\n    const std::ptrdiff_t posicion = actual - inicio;\n    if (pasos < -posicion || pasos > 4 - posicion) {\n        return false;\n    }\n    actual += pasos;\n    return true;\n}\n\nbool situar(int*& actual, int* inicio, int indice) {\n    if (indice < 0 || indice > 4) {\n        return false;\n    }\n    actual = inicio + indice;\n    return true;\n}\n\nstd::string escribir(int* actual, int* fin, int valor) {\n    if (actual == fin) {\n        return \"Fin\";\n    }\n    if (valor < 0 || valor > 9) {\n        return \"Rechazo\";\n    }\n    *actual = valor;\n    return \"Cambio\";\n}\n\nint main() {\n    std::array<int, 4> datos{2, 5, 8, 1};\n    int* inicio = datos.data();\n    int* fin = inicio + 4;\n    int* actual = inicio;\n    int cantidad = 0;\n\n    if (!(std::cin >> cantidad) || cantidad < 1 || cantidad > 12) {\n        return 1;\n    }\n    for (int orden = 0; orden < cantidad; ++orden) {\n        int operacion = 0;\n        int argumento = 0;\n\n        if (!(std::cin >> operacion >> argumento)) {\n            return 1;\n        }\n        std::string estado = \"Orden\";\n        if (operacion == 1) {\n            estado = situar(actual, inicio, argumento) ? \"Seleccion\" : \"Rechazo\";\n        } else if (operacion == 2) {\n            estado = mover(actual, inicio, argumento) ? \"Movimiento\" : \"Rechazo\";\n        } else if (operacion == 3) {\n            estado = escribir(actual, fin, argumento);\n        }\n        std::cout << \"Estado:\" << estado << \";Pos:\" << (actual - inicio) << \";Valor:\";\n        if (actual == fin) {\n            std::cout << 'X';\n        } else {\n            std::cout << *actual;\n        }\n        std::cout << \";Datos:\" << datos[0] << ',' << datos[1] << ',' << datos[2] << ',' << datos[3] << '\\n';\n    }\n\n    return 0;\n}\n"
         },
         {
           "type": "paragraph",
@@ -2386,6 +2386,413 @@
       }
     },
     "additions": [],
-    "editorial": []
+    "editorial": [
+      {
+        "id": "block_0000_0002",
+        "beforeSha256": "b6209a30f54cf3c581e78fbfb2152a52dee7053da98fd0637876387eb19e8a3e",
+        "afterSha256": "43230ab6022b2f8214622c2291a7639104e87d3b651f430ede18477a232b7293"
+      },
+      {
+        "id": "block_0000_0004",
+        "beforeSha256": "83ad4e3df191924388019ade21247bdb152df630dc499880268ea1f7a72b0ea5",
+        "afterSha256": "7290b07a2ca9a9be2db8e597eb3858bd6a8f003a2465b6a37ba8f40bee1eeb62"
+      },
+      {
+        "id": "block_0001_0003",
+        "beforeSha256": "513499be34fbf77292ed847783680ff396c4df149dd855dc5f89f8f5542e536b",
+        "afterSha256": "b28d052189f99bddc736ee27fdf9d1b5ff48d95d77ced834258f9c48cbc020d5"
+      },
+      {
+        "id": "block_0002_0002",
+        "beforeSha256": "fd364160236dba813bfb5fc782fa1589840862a5afc4f50e5c86da01c5e50df8",
+        "afterSha256": "040513893c633224ca0715c2d72eebfdb737fc1e5557e5fff2fb42b13c90a25b"
+      },
+      {
+        "id": "block_0003_0002",
+        "beforeSha256": "b551fd3d08fcc21c8f741fd7848f0669d3f028bcf78e17b6dcb1b85edaffb65d",
+        "afterSha256": "4533ed002008d9553092a75788e7af489180f6dd38732f4108faa1ccc87aa0b7"
+      },
+      {
+        "id": "block_0004_0002",
+        "beforeSha256": "f4a153aff0151244753142839dbfb4dff25c7b577ad6df04ba5ff0446960fe9b",
+        "afterSha256": "37d66b5d5e86f56ef5f3201c21b964c281f684e094cde2dbaca4870db92d148d"
+      },
+      {
+        "id": "block_0005_0002",
+        "beforeSha256": "45d6030aa45988e69c30e17fab5674c9619f96ee85acd850876bc3838229e929",
+        "afterSha256": "b8fdff708bd324a367158884637b6886fbb7a4d13d24637e4f0c305ee3af7974"
+      },
+      {
+        "id": "block_0006_0002",
+        "beforeSha256": "279667bf548e3e7c56b583fc1241e2d9b135f3a3a10f017df09f1a6d752c2466",
+        "afterSha256": "086b20aebf601b76af24a0cc7461ba69c228ccd7b9d1549bb8a646f3eff45463"
+      },
+      {
+        "id": "block_0007_0002",
+        "beforeSha256": "db70a8d0d260160e4693aa01fc5950441e5f14ba4c84bdb5fdf8045572dad0cc",
+        "afterSha256": "cb832e0cc39b2f430ca087fde9394fc346d7dd8332a5fbf1aeb793cd20e11266"
+      },
+      {
+        "id": "block_0008_0002",
+        "beforeSha256": "cf52efd6fab4d3bbcffdc41acea10f56b574db1f072f6749487dd87941bdf18c",
+        "afterSha256": "30a4c517db2e0fa60d5d451085f6490591a1a7176fa9e565ab94abd5cc797c7a"
+      },
+      {
+        "id": "block_0009_0002",
+        "beforeSha256": "8460429815347b3e6f972b9faa7ef91ac7f86039ed77967fb5df9700333dfc1c",
+        "afterSha256": "1b27807163fab5f8c7adf60cbc1529e80b7dbc5f420315c0170cf0b8c8090e12"
+      },
+      {
+        "id": "block_0009_0003",
+        "beforeSha256": "9af4540983b6b3b9ad22ab01538bfb4930594b890650d232226426017e17ee90",
+        "afterSha256": "03bd118617b2dd500af710f85c18ac670eef8f19594b52ccf5e7ec9e35bdfdcb"
+      },
+      {
+        "id": "block_0011_0003",
+        "beforeSha256": "d3e20858ed33152feaf41a82a9998716a8640db985f4b44f4e22f33d08ca0f12",
+        "afterSha256": "d39e0f229cde84b14d2919f34b0c0d25a89224a0e230b269123d7da6abcf80f1"
+      },
+      {
+        "id": "block_0011_0004",
+        "beforeSha256": "b244e96e7983bef364e5040e0be929017e3e4f7410d942dc050704332d1cacfe",
+        "afterSha256": "bb00151b9e39f7e0cded6887a514ffdab8f57963f2d5426ac2705a769f1038c9"
+      },
+      {
+        "id": "block_0012_0002",
+        "beforeSha256": "10ade5439beb605b3fe617db602359f92fb3835599d3873d6c20b72b380b7cd3",
+        "afterSha256": "56a2a92ab94f5220754c472fc5cb99f2e9fb683560643609f30e86937e826ed8"
+      },
+      {
+        "id": "block_0013_0002",
+        "beforeSha256": "f4811a38270af6fc469ba38ad36ed972a1944cb90a00a53a81165094958eb8f6",
+        "afterSha256": "6b5a684ddac0ad81129e544fd1741a46640a007a9520e9f0c06ddb6eca5aa858"
+      },
+      {
+        "id": "block_0014_0004",
+        "beforeSha256": "c925ce58db10f30eeda3deb140aa79d0507eeeb2d580f11ce26ed351b68f4d8a",
+        "afterSha256": "f8d52d785cd101251677cf95fcedb44d05f176b3024b1268aea5eea0bfeec65c"
+      },
+      {
+        "id": "block_0015_0001",
+        "beforeSha256": "695a905ed281cc8607e4d76dd15aac218ea77224914118704a71aaec7c692a44",
+        "afterSha256": "af8cc7bdef6539a6306ee1382554cfa8a1c9bcbc2ad31153e9c883e9e84b33e6"
+      },
+      {
+        "id": "block_0017_0009",
+        "beforeSha256": "0f0a32df2ce60de12fbd981c53a86d3a80f66fcfd50f85b0e9566dca0322e977",
+        "afterSha256": "e631fe93dd0b07f4cf043f3048c5e661c2e483a307e396f9607699dafddd8786"
+      },
+      {
+        "id": "block_0020_0001",
+        "beforeSha256": "2253e88ee7d52c153b801cb186954de71c9c5559b2361d4f8c336851117b4016",
+        "afterSha256": "86da5dc6898b5891ff4564a94095ec7f03ebd4f9b59deea564e4a8db95dbe1a2"
+      }
+    ],
+    "sourceFormatRevisions": [
+      {
+        "id": "block_0000_0002",
+        "block": {
+          "type": "output_prediction",
+          "id": "p3_u4l9_conversion_del_array",
+          "language": "cpp",
+          "question": "¿Qué muestra actual==&datos[0]:datos[0]:datos[2] en los momentos indicados?",
+          "code": "#include <iostream>\n\nint main() {\n    int datos[4]{2, 5, 8, 1};\n    int* actual = datos;\n    std::cout << (actual == &datos[0]) << ':';\n    actual = &datos[2];\n    *actual = 7;\n    std::cout << datos[0] << ':' << datos[2];\n    return 0;\n}\n",
+          "answers": [
+            "1:2:7"
+          ],
+          "outputComparison": "exact",
+          "explanation": "La inicialización selecciona el primer elemento. Después actual pasa a seleccionar el tercero y la escritura cambia datos[2] a 7. datos[0] conserva 2."
+        }
+      },
+      {
+        "id": "block_0000_0004",
+        "block": {
+          "type": "code",
+          "language": "cpp",
+          "code": "int main() {\n    int datos[4]{2, 5, 8, 1};\n    int* actual = datos;\n    datos = actual;\n    return 0;\n}\n"
+        }
+      },
+      {
+        "id": "block_0001_0003",
+        "block": {
+          "type": "output_prediction",
+          "id": "p3_u4l9_sizeof_y_auto",
+          "language": "cpp",
+          "question": "¿Qué muestra la cantidad de elementos de datos, la comparación de tamaños del puntero y el valor final de datos[0]?",
+          "code": "#include <iostream>\n\nint main() {\n    int datos[4]{2, 5, 8, 1};\n    auto seleccion = datos;\n    seleccion[0] = 9;\n    std::cout << sizeof(datos) / sizeof(datos[0]) << ':'\n              << (sizeof(seleccion) == sizeof(int*)) << ':' << datos[0];\n    return 0;\n}\n",
+          "answers": [
+            "4:1:9"
+          ],
+          "outputComparison": "exact",
+          "explanation": "La división usa el array completo y uno de sus elementos, por lo que da cuatro. seleccion es int*: su tamaño coincide con sizeof(int*). La escritura cambia el array original."
+        }
+      },
+      {
+        "id": "block_0002_0002",
+        "block": {
+          "type": "output_prediction",
+          "id": "p3_u4l9_puntero_de_stdarray",
+          "language": "cpp",
+          "question": "¿Qué muestra actual==&datos[0]:datos[0]:*vista?",
+          "code": "#include <array>\n#include <iostream>\n\nint main() {\n    std::array<int, 4> datos{2, 5, 8, 1};\n    const std::array<int, 2> limites{0, 9};\n    int* actual = datos.data();\n    const int* vista = limites.data();\n    *actual = 7;\n    std::cout << (actual == &datos[0]) << ':' << datos[0] << ':' << *vista;\n    return 0;\n}\n",
+          "answers": [
+            "1:7:0"
+          ],
+          "outputComparison": "exact",
+          "explanation": "data() permite seleccionar el primer elemento. actual ofrece escritura sobre datos; vista ofrece lectura del primer límite, que vale cero."
+        }
+      },
+      {
+        "id": "block_0003_0002",
+        "block": {
+          "type": "output_prediction",
+          "id": "p3_u4l9_expresion_y_asignacion",
+          "language": "cpp",
+          "question": "¿Qué muestra *actual:*propuesta:*actual:propuesta==&datos[2] en los momentos indicados?",
+          "code": "#include <iostream>\n\nint main() {\n    int datos[4]{2, 5, 8, 1};\n    int* actual = datos;\n    int* propuesta = actual + 2;\n    std::cout << *actual << ':' << *propuesta << ':';\n    actual += 1;\n    std::cout << *actual << ':' << (propuesta == &datos[2]);\n    return 0;\n}\n",
+          "answers": [
+            "2:8:5:1"
+          ],
+          "outputComparison": "exact",
+          "explanation": "propuesta recibe la selección del tercer elemento mientras actual conserva la del primero. La asignación += 1 cambia después actual para seleccionar el segundo."
+        }
+      },
+      {
+        "id": "block_0004_0002",
+        "block": {
+          "type": "output_prediction",
+          "id": "p3_u4l9_subindices_relativos",
+          "language": "cpp",
+          "question": "¿Qué muestra actual[0]:actual[-1]:*(actual+1):datos[1]?",
+          "code": "#include <iostream>\n\nint main() {\n    int datos[4]{2, 5, 8, 1};\n    int* actual = &datos[2];\n    actual[-1] = 6;\n    std::cout << actual[0] << ':' << actual[-1] << ':' << *(actual + 1) << ':' << datos[1];\n    return 0;\n}\n",
+          "answers": [
+            "8:6:1:6"
+          ],
+          "outputComparison": "exact",
+          "explanation": "El puntero selecciona el tercer entero. Retroceder uno utiliza el segundo y lo cambia a 6. Avanzar uno utiliza el cuarto, que vale 1."
+        }
+      },
+      {
+        "id": "block_0005_0002",
+        "block": {
+          "type": "output_prediction",
+          "id": "p3_u4l9_fin_y_ultimo_elemento",
+          "language": "cpp",
+          "question": "¿Qué muestra fin!=nullptr:fin[-1]:*actual:actual==&datos[3]?",
+          "code": "#include <iostream>\n\nint main() {\n    int datos[4]{2, 5, 8, 1};\n    int* inicio = datos;\n    int* fin = inicio + 4;\n    std::cout << (fin != nullptr) << ':' << fin[-1] << ':';\n    int* actual = fin;\n    --actual;\n    std::cout << *actual << ':' << (actual == &datos[3]);\n    return 0;\n}\n",
+          "answers": [
+            "1:1:1:1"
+          ],
+          "outputComparison": "exact",
+          "explanation": "fin es el límite posterior y no es nulo. fin[-1] retrocede al cuarto entero. actual comienza en fin y --actual lo lleva al mismo cuarto entero antes de leerlo."
+        }
+      },
+      {
+        "id": "block_0006_0002",
+        "block": {
+          "type": "output_prediction",
+          "id": "p3_u4l9_separacion_con_signo",
+          "language": "cpp",
+          "question": "¿Qué muestra ancho:ida:vuelta?",
+          "code": "#include <cstddef>\n#include <iostream>\n\nint main() {\n    int datos[4]{2, 5, 8, 1};\n    const int* inicio = datos;\n    const int* primero = inicio + 1;\n    const int* tercero = inicio + 3;\n    const int* fin = inicio + 4;\n    const std::ptrdiff_t ancho = fin - inicio;\n    const std::ptrdiff_t ida = tercero - primero;\n    const std::ptrdiff_t vuelta = primero - tercero;\n    std::cout << ancho << ':' << ida << ':' << vuelta;\n    return 0;\n}\n",
+          "answers": [
+            "4:2:-2"
+          ],
+          "outputComparison": "exact",
+          "explanation": "El límite está cuatro posiciones después del inicio. La posición tres está dos después de la posición uno; invertir la resta produce menos dos."
+        }
+      },
+      {
+        "id": "block_0007_0002",
+        "block": {
+          "type": "output_prediction",
+          "id": "p3_u4l9_recorrido_hacia_delante",
+          "language": "cpp",
+          "question": "¿Qué muestra el programa completo, incluida la suma final?",
+          "code": "#include <iostream>\n\nint main() {\n    int datos[4]{2, 5, 8, 1};\n    const int* inicio = datos;\n    const int* fin = inicio + 4;\n    int suma = 0;\n    for (const int* actual = inicio; actual != fin; ++actual) {\n        std::cout << *actual << ':';\n        suma += *actual;\n    }\n    std::cout << suma;\n    return 0;\n}\n",
+          "answers": [
+            "2:5:8:1:16"
+          ],
+          "outputComparison": "exact",
+          "explanation": "Se leen cuatro elementos y se suman 2, 5, 8 y 1. La suma da 16. El puntero alcanza fin sólo para terminar, sin leer un quinto entero."
+        }
+      },
+      {
+        "id": "block_0008_0002",
+        "block": {
+          "type": "output_prediction",
+          "id": "p3_u4l9_recorrido_hacia_atras",
+          "language": "cpp",
+          "question": "¿Qué muestra el programa, incluida la cantidad de elementos utilizados?",
+          "code": "#include <iostream>\n\nint main() {\n    int datos[3]{6, 0, 9};\n    const int* inicio = datos;\n    const int* fin = inicio + 3;\n    int cantidad = 0;\n    for (const int* actual = fin; actual != inicio;) {\n        --actual;\n        std::cout << *actual << ':';\n        ++cantidad;\n    }\n    std::cout << cantidad;\n    return 0;\n}\n",
+          "answers": [
+            "9:0:6:3"
+          ],
+          "outputComparison": "exact",
+          "explanation": "Se empieza en el límite posterior. Los retrocesos llevan a los elementos de valores 9, 0 y 6. Se cuentan tres lecturas y no se vuelve a decrementar desde inicio."
+        }
+      },
+      {
+        "id": "block_0009_0002",
+        "block": {
+          "type": "output_prediction",
+          "id": "p3_u4l9_lectura_que_avanza",
+          "language": "cpp",
+          "question": "¿Qué muestra *vista:vista==&datos[1]?",
+          "code": "#include <iostream>\n\nint main() {\n    int datos[4]{2, 5, 8, 1};\n    const int* vista = datos;\n    ++vista;\n    datos[1] = 7;\n    std::cout << *vista << ':' << (vista == &datos[1]);\n    return 0;\n}\n",
+          "answers": [
+            "7:1"
+          ],
+          "outputComparison": "exact",
+          "explanation": "El incremento selecciona el segundo entero. La asignación por el nombre del array lo cambia a 7 y vista permite leer ese valor."
+        }
+      },
+      {
+        "id": "block_0009_0003",
+        "block": {
+          "type": "code",
+          "language": "cpp",
+          "code": "int main() {\n    int datos[4]{2, 5, 8, 1};\n    const int* vista = datos;\n    vista[1] = 7;\n    return 0;\n}\n"
+        }
+      },
+      {
+        "id": "block_0011_0003",
+        "block": {
+          "type": "code",
+          "language": "cpp",
+          "code": "#include <iostream>\n\nint main() {\n    int datos[4]{2, 5, 8, 1};\n    int* fin = datos + 4;\n    std::cout << *fin;\n    return 0;\n}\n"
+        }
+      },
+      {
+        "id": "block_0011_0004",
+        "block": {
+          "type": "code",
+          "language": "cpp",
+          "code": "#include <iostream>\n\nint main() {\n    int datos[4]{2, 5, 8, 1};\n    int* inicio = datos;\n    for (int* actual = inicio + 3; actual >= inicio; --actual) {\n        std::cout << *actual;\n    }\n    return 0;\n}\n"
+        }
+      },
+      {
+        "id": "block_0012_0002",
+        "block": {
+          "type": "output_prediction",
+          "id": "p3_u4l9_array_original_y_copia",
+          "language": "cpp",
+          "question": "¿Qué muestra *vista:copia[2]:vista==&datos[2]?",
+          "code": "#include <array>\n#include <iostream>\n\nint main() {\n    std::array<int, 4> datos{2, 5, 8, 1};\n    const int* vista = datos.data() + 2;\n    std::array<int, 4> copia = datos;\n    datos[2] = 0;\n    std::cout << *vista << ':' << copia[2] << ':' << (vista == &datos[2]);\n    return 0;\n}\n",
+          "answers": [
+            "0:8:1"
+          ],
+          "outputComparison": "exact",
+          "explanation": "La copia conserva el 8 anterior. vista sigue seleccionando datos[2] y observa su cambio a cero."
+        }
+      },
+      {
+        "id": "block_0013_0002",
+        "block": {
+          "type": "inline_fill_code",
+          "id": "p3_u4l9_tipo_referencia_y_diferencia",
+          "question": "Completa el parámetro con int, * y & para cambiar actual del llamador. En el segundo hueco escribe el nombre del tipo con signo de la biblioteca estándar que presentamos como resultado de restar punteros. No uses auto ni otro tipo entero.",
+          "template": "#include <cstddef>\n#include <iostream>\n\nvoid retrocederUno([] actual, int* inicio) {\n    if (actual != inicio) {\n        --actual;\n    }\n}\n\nint main() {\n    int datos[4]{2, 5, 8, 1};\n    int* inicio = datos;\n    int* actual = inicio + 4;\n    retrocederUno(actual, inicio);\n    const [] posicion = actual - inicio;\n    std::cout << posicion << ':' << *actual;\n    return 0;\n}\n",
+          "answers": [
+            "int*&",
+            "std::ptrdiff_t"
+          ],
+          "answerAlternatives": [
+            [
+              "int*&",
+              "int *&",
+              "int* &",
+              "int * &"
+            ],
+            [
+              "std::ptrdiff_t",
+              "std ::ptrdiff_t",
+              "std:: ptrdiff_t",
+              "std :: ptrdiff_t"
+            ]
+          ],
+          "explanation": "La referencia int*& cambia la variable actual del llamador. Después del retroceso desde el límite, la diferencia actual - inicio vale tres y tiene tipo std::ptrdiff_t. El elemento seleccionado vale uno."
+        }
+      },
+      {
+        "id": "block_0014_0004",
+        "block": {
+          "type": "cpp_compiler",
+          "language": "cpp",
+          "initialCode": "#include <iostream>\n\nint main() {\n    int datos[4]{2, 5, 8, 1};\n    const int* inicio = datos;\n    const int* fin = inicio + 4;\n    for (const int* actual = fin; actual != inicio;) {\n        --actual;\n        if (actual != inicio) {\n            std::cout << *actual << ':';\n        }\n    }\n    std::cout << \"Fin\";\n    return 0;\n}\n",
+          "initialStandardInput": "",
+          "outputCheck": {
+            "inputComparison": "tokens",
+            "cases": [
+              {
+                "standardInput": "",
+                "outputs": [
+                  "1:8:5:2:Fin"
+                ],
+                "explanation": "La condición exterior decide si queda otro elemento. Una vez realizado el decremento, también hay que utilizar el elemento de inicio; no se lo debe excluir con otra condición."
+              }
+            ]
+          }
+        }
+      },
+      {
+        "id": "block_0015_0001",
+        "block": {
+          "type": "code",
+          "language": "cpp",
+          "code": "#include <iostream>\n\nint main() {\n    int datos[4]{2, 5, 8, 1};\n    const int* inicio = datos;\n    const int* fin = inicio + 4;\n    for (const int* actual = fin; actual != inicio;) {\n        --actual;\n        std::cout << *actual << ':';\n    }\n    std::cout << \"Fin\";\n    return 0;\n}\n"
+        }
+      },
+      {
+        "id": "block_0017_0009",
+        "block": {
+          "type": "cpp_compiler",
+          "language": "cpp",
+          "initialCode": "#include <array>\n#include <cstddef>\n#include <iostream>\n#include <string>\n\nbool mover(int*& actual, int* inicio, int pasos) {\n    // Construye los limites y aplica solo los desplazamientos aceptados.\n    return pasos == 0 && actual == inicio;\n}\n\nbool situar(int*& actual, int* inicio, int indice) {\n    if (indice < 0 || indice > 4) {\n        return false;\n    }\n    actual = inicio + indice;\n    return true;\n}\n\nstd::string escribir(int* actual, int* fin, int valor) {\n    if (actual == fin) {\n        return \"Fin\";\n    }\n    if (valor < 0 || valor > 9) {\n        return \"Rechazo\";\n    }\n    *actual = valor;\n    return \"Cambio\";\n}\n\nint main() {\n    std::array<int, 4> datos{2, 5, 8, 1};\n    int* inicio = datos.data();\n    int* fin = inicio + 4;\n    int* actual = inicio;\n    int cantidad = 0;\n    if (!(std::cin >> cantidad) || cantidad < 1 || cantidad > 12) {\n        return 1;\n    }\n    for (int orden = 0; orden < cantidad; ++orden) {\n        int operacion = 0;\n        int argumento = 0;\n        if (!(std::cin >> operacion >> argumento)) {\n            return 1;\n        }\n        std::string estado = \"Orden\";\n        if (operacion == 1) {\n            estado = situar(actual, inicio, argumento) ? \"Seleccion\" : \"Rechazo\";\n        } else if (operacion == 2) {\n            estado = mover(actual, inicio, argumento) ? \"Movimiento\" : \"Rechazo\";\n        } else if (operacion == 3) {\n            estado = escribir(actual, fin, argumento);\n        }\n        std::cout << \"Estado:\" << estado << \";Pos:\" << (actual - inicio) << \";Valor:\";\n        if (actual == fin) {\n            std::cout << 'X';\n        } else {\n            std::cout << *actual;\n        }\n        std::cout << \";Datos:\" << datos[0] << ',' << datos[1] << ',' << datos[2] << ',' << datos[3] << '\\n';\n    }\n    return 0;\n}\n",
+          "initialStandardInput": "12\n2 4\n3 7\n2 1\n2 -1\n3 9\n2 -3\n2 -1\n2 2\n3 0\n2 0\n2 2147483647\n2 -2147483648\n",
+          "outputCheck": {
+            "inputComparison": "tokens",
+            "cases": [
+              {
+                "standardInput": "12\n2 4\n3 7\n2 1\n2 -1\n3 9\n2 -3\n2 -1\n2 2\n3 0\n2 0\n2 2147483647\n2 -2147483648\n",
+                "outputs": [
+                  "Estado:Movimiento;Pos:4;Valor:X;Datos:2,5,8,1\nEstado:Fin;Pos:4;Valor:X;Datos:2,5,8,1\nEstado:Rechazo;Pos:4;Valor:X;Datos:2,5,8,1\nEstado:Movimiento;Pos:3;Valor:1;Datos:2,5,8,1\nEstado:Cambio;Pos:3;Valor:9;Datos:2,5,8,9\nEstado:Movimiento;Pos:0;Valor:2;Datos:2,5,8,9\nEstado:Rechazo;Pos:0;Valor:2;Datos:2,5,8,9\nEstado:Movimiento;Pos:2;Valor:8;Datos:2,5,8,9\nEstado:Cambio;Pos:2;Valor:0;Datos:2,5,0,9\nEstado:Movimiento;Pos:2;Valor:0;Datos:2,5,0,9\nEstado:Rechazo;Pos:2;Valor:0;Datos:2,5,0,9\nEstado:Rechazo;Pos:2;Valor:0;Datos:2,5,0,9\n"
+                ],
+                "explanation": "El movimiento cambia el puntero del llamador sólo después de aceptar los límites. Las posiciones de cero a cuatro son válidas para el puntero; sólo las de cero a tres permiten utilizar un entero."
+              },
+              {
+                "standardInput": "10\n1 4\n3 2147483647\n2 0\n2 -4\n3 0\n1 3\n3 9\n2 1\n2 -1\n3 10\n",
+                "outputs": [
+                  "Estado:Seleccion;Pos:4;Valor:X;Datos:2,5,8,1\nEstado:Fin;Pos:4;Valor:X;Datos:2,5,8,1\nEstado:Movimiento;Pos:4;Valor:X;Datos:2,5,8,1\nEstado:Movimiento;Pos:0;Valor:2;Datos:2,5,8,1\nEstado:Cambio;Pos:0;Valor:0;Datos:0,5,8,1\nEstado:Seleccion;Pos:3;Valor:1;Datos:0,5,8,1\nEstado:Cambio;Pos:3;Valor:9;Datos:0,5,8,9\nEstado:Movimiento;Pos:4;Valor:X;Datos:0,5,8,9\nEstado:Movimiento;Pos:3;Valor:9;Datos:0,5,8,9\nEstado:Rechazo;Pos:3;Valor:9;Datos:0,5,8,9\n"
+                ],
+                "explanation": "El movimiento cambia el puntero del llamador sólo después de aceptar los límites. Las posiciones de cero a cuatro son válidas para el puntero; sólo las de cero a tres permiten utilizar un entero."
+              },
+              {
+                "standardInput": "10\n1 -2147483648\n1 2\n1 2147483647\n2 -3\n2 3\n3 -2147483648\n0 8\n2 -2\n2 4\n3 -1\n",
+                "outputs": [
+                  "Estado:Rechazo;Pos:0;Valor:2;Datos:2,5,8,1\nEstado:Seleccion;Pos:2;Valor:8;Datos:2,5,8,1\nEstado:Rechazo;Pos:2;Valor:8;Datos:2,5,8,1\nEstado:Rechazo;Pos:2;Valor:8;Datos:2,5,8,1\nEstado:Rechazo;Pos:2;Valor:8;Datos:2,5,8,1\nEstado:Rechazo;Pos:2;Valor:8;Datos:2,5,8,1\nEstado:Orden;Pos:2;Valor:8;Datos:2,5,8,1\nEstado:Movimiento;Pos:0;Valor:2;Datos:2,5,8,1\nEstado:Movimiento;Pos:4;Valor:X;Datos:2,5,8,1\nEstado:Fin;Pos:4;Valor:X;Datos:2,5,8,1\n"
+                ],
+                "explanation": "El movimiento cambia el puntero del llamador sólo después de aceptar los límites. Las posiciones de cero a cuatro son válidas para el puntero; sólo las de cero a tres permiten utilizar un entero."
+              },
+              {
+                "standardInput": "10\n3 5\n2 1\n3 5\n2 -1\n3 7\n2 1\n3 9\n2 2\n3 0\n2 -3\n",
+                "outputs": [
+                  "Estado:Cambio;Pos:0;Valor:5;Datos:5,5,8,1\nEstado:Movimiento;Pos:1;Valor:5;Datos:5,5,8,1\nEstado:Cambio;Pos:1;Valor:5;Datos:5,5,8,1\nEstado:Movimiento;Pos:0;Valor:5;Datos:5,5,8,1\nEstado:Cambio;Pos:0;Valor:7;Datos:7,5,8,1\nEstado:Movimiento;Pos:1;Valor:5;Datos:7,5,8,1\nEstado:Cambio;Pos:1;Valor:9;Datos:7,9,8,1\nEstado:Movimiento;Pos:3;Valor:1;Datos:7,9,8,1\nEstado:Cambio;Pos:3;Valor:0;Datos:7,9,8,0\nEstado:Movimiento;Pos:0;Valor:7;Datos:7,9,8,0\n"
+                ],
+                "explanation": "El movimiento cambia el puntero del llamador sólo después de aceptar los límites. Las posiciones de cero a cuatro son válidas para el puntero; sólo las de cero a tres permiten utilizar un entero."
+              }
+            ]
+          }
+        }
+      },
+      {
+        "id": "block_0020_0001",
+        "block": {
+          "type": "code",
+          "language": "cpp",
+          "code": "#include <array>\n#include <cstddef>\n#include <iostream>\n#include <string>\n\nbool mover(int*& actual, int* inicio, int pasos) {\n    const std::ptrdiff_t posicion = actual - inicio;\n    if (pasos < -posicion || pasos > 4 - posicion) {\n        return false;\n    }\n    actual += pasos;\n    return true;\n}\n\nbool situar(int*& actual, int* inicio, int indice) {\n    if (indice < 0 || indice > 4) {\n        return false;\n    }\n    actual = inicio + indice;\n    return true;\n}\n\nstd::string escribir(int* actual, int* fin, int valor) {\n    if (actual == fin) {\n        return \"Fin\";\n    }\n    if (valor < 0 || valor > 9) {\n        return \"Rechazo\";\n    }\n    *actual = valor;\n    return \"Cambio\";\n}\n\nint main() {\n    std::array<int, 4> datos{2, 5, 8, 1};\n    int* inicio = datos.data();\n    int* fin = inicio + 4;\n    int* actual = inicio;\n    int cantidad = 0;\n    if (!(std::cin >> cantidad) || cantidad < 1 || cantidad > 12) {\n        return 1;\n    }\n    for (int orden = 0; orden < cantidad; ++orden) {\n        int operacion = 0;\n        int argumento = 0;\n        if (!(std::cin >> operacion >> argumento)) {\n            return 1;\n        }\n        std::string estado = \"Orden\";\n        if (operacion == 1) {\n            estado = situar(actual, inicio, argumento) ? \"Seleccion\" : \"Rechazo\";\n        } else if (operacion == 2) {\n            estado = mover(actual, inicio, argumento) ? \"Movimiento\" : \"Rechazo\";\n        } else if (operacion == 3) {\n            estado = escribir(actual, fin, argumento);\n        }\n        std::cout << \"Estado:\" << estado << \";Pos:\" << (actual - inicio) << \";Valor:\";\n        if (actual == fin) {\n            std::cout << 'X';\n        } else {\n            std::cout << *actual;\n        }\n        std::cout << \";Datos:\" << datos[0] << ',' << datos[1] << ',' << datos[2] << ',' << datos[3] << '\\n';\n    }\n    return 0;\n}\n"
+        }
+      }
+    ]
   }
 }

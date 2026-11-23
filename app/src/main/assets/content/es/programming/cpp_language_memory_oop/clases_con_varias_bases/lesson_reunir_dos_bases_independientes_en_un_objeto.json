@@ -16,7 +16,7 @@
         {
           "type": "code",
           "language": "cpp",
-          "code": "class ConNumero {\npublic:\n    explicit ConNumero(int numero) : numero_{numero} {}\n    int numero() const { return numero_; }\n    void poner_numero(int numero) { numero_ = numero; }\nprivate:\n    int numero_;\n};\nclass ConCodigo {\npublic:\n    explicit ConCodigo(int codigo) : codigo_{codigo} {}\n    int codigo() const { return codigo_; }\n    void poner_codigo(int codigo) { codigo_ = codigo; }\nprivate:\n    int codigo_;\n};\n"
+          "code": "class ConNumero {\npublic:\n    explicit ConNumero(int numero) : numero_{numero} {}\n    int numero() const { return numero_; }\n    void poner_numero(int numero) { numero_ = numero; }\nprivate:\n    int numero_;\n};\n\nclass ConCodigo {\npublic:\n    explicit ConCodigo(int codigo) : codigo_{codigo} {}\n    int codigo() const { return codigo_; }\n    void poner_codigo(int codigo) { codigo_ = codigo; }\nprivate:\n    int codigo_;\n};\n"
         },
         {
           "type": "paragraph",
@@ -25,7 +25,7 @@
         {
           "type": "code",
           "language": "cpp",
-          "code": "void cambiar_numero(ConNumero& dato, int numero) {\n    dato.poner_numero(numero);\n}\nint consultar_codigo(const ConCodigo& dato) {\n    return dato.codigo();\n}\n"
+          "code": "void cambiar_numero(ConNumero& dato, int numero) {\n    dato.poner_numero(numero);\n}\n\nint consultar_codigo(const ConCodigo& dato) {\n    return dato.codigo();\n}\n"
         },
         {
           "type": "paragraph",
@@ -59,7 +59,7 @@
         {
           "type": "code",
           "language": "cpp",
-          "code": "#include <iostream>\n\nclass ConNumero {\npublic:\n    explicit ConNumero(int numero) : numero_{numero} {}\n    int numero() const { return numero_; }\n    void poner_numero(int numero) { numero_ = numero; }\nprivate:\n    int numero_;\n};\nclass ConCodigo {\npublic:\n    explicit ConCodigo(int codigo) : codigo_{codigo} {}\n    int codigo() const { return codigo_; }\n    void poner_codigo(int codigo) { codigo_ = codigo; }\nprivate:\n    int codigo_;\n};\nclass Incompleto : public ConNumero, public ConCodigo {\npublic:\n    explicit Incompleto(int numero) : ConNumero{numero} {}\n};\nint main() {\n    Incompleto dato{4};\n    std::cout << dato.numero();\n    return 0;\n}\n"
+          "code": "#include <iostream>\n\nclass ConNumero {\npublic:\n    explicit ConNumero(int numero) : numero_{numero} {}\n    int numero() const { return numero_; }\n    void poner_numero(int numero) { numero_ = numero; }\nprivate:\n    int numero_;\n};\n\nclass ConCodigo {\npublic:\n    explicit ConCodigo(int codigo) : codigo_{codigo} {}\n    int codigo() const { return codigo_; }\n    void poner_codigo(int codigo) { codigo_ = codigo; }\nprivate:\n    int codigo_;\n};\n\nclass Incompleto : public ConNumero, public ConCodigo {\npublic:\n    explicit Incompleto(int numero) : ConNumero{numero} {}\n};\n\nint main() {\n    Incompleto dato{4};\n\n    std::cout << dato.numero();\n\n    return 0;\n}\n"
         },
         {
           "type": "multiple_choice",
@@ -94,7 +94,7 @@
           "id": "p3_u10l1_referencias_y_punteros_a_dos_bases_del_mismo_objeto",
           "language": "cpp",
           "question": "Escribe la salida completa antes y después de modificar las dos partes.",
-          "code": "#include <iostream>\n\nclass ConNumero {\npublic:\n    explicit ConNumero(int numero) : numero_{numero} {}\n    int numero() const { return numero_; }\n    void poner_numero(int numero) { numero_ = numero; }\nprivate:\n    int numero_;\n};\nclass ConCodigo {\npublic:\n    explicit ConCodigo(int codigo) : codigo_{codigo} {}\n    int codigo() const { return codigo_; }\n    void poner_codigo(int codigo) { codigo_ = codigo; }\nprivate:\n    int codigo_;\n};\nvoid cambiar_numero(ConNumero& dato, int numero) {\n    dato.poner_numero(numero);\n}\nint consultar_codigo(const ConCodigo& dato) {\n    return dato.codigo();\n}\nclass RegistroDoble : public ConNumero, public ConCodigo {\npublic:\n    RegistroDoble(int numero, int codigo)\n        : ConNumero{numero}, ConCodigo{codigo} {}\n};\nint main() {\n    RegistroDoble dato{3, 8};\n    ConNumero& numero = dato;\n    const ConCodigo& codigo = dato;\n    ConNumero* numero_ptr = &dato;\n    ConCodigo* codigo_ptr = &dato;\n    std::cout << numero.numero() << ':' << codigo.codigo() << '|';\n    cambiar_numero(dato, 5);\n    codigo_ptr->poner_codigo(9);\n    std::cout << dato.numero() << ':' << consultar_codigo(dato) << '|'\n              << numero_ptr->numero() << ':' << codigo.codigo();\n    return 0;\n}\n",
+          "code": "#include <iostream>\n\nclass ConNumero {\npublic:\n    explicit ConNumero(int numero) : numero_{numero} {}\n    int numero() const { return numero_; }\n    void poner_numero(int numero) { numero_ = numero; }\nprivate:\n    int numero_;\n};\n\nclass ConCodigo {\npublic:\n    explicit ConCodigo(int codigo) : codigo_{codigo} {}\n    int codigo() const { return codigo_; }\n    void poner_codigo(int codigo) { codigo_ = codigo; }\nprivate:\n    int codigo_;\n};\n\nvoid cambiar_numero(ConNumero& dato, int numero) {\n    dato.poner_numero(numero);\n}\n\nint consultar_codigo(const ConCodigo& dato) {\n    return dato.codigo();\n}\n\nclass RegistroDoble : public ConNumero, public ConCodigo {\npublic:\n    RegistroDoble(int numero, int codigo)\n        : ConNumero{numero}, ConCodigo{codigo} {}\n};\n\nint main() {\n    RegistroDoble dato{3, 8};\n    ConNumero& numero = dato;\n    const ConCodigo& codigo = dato;\n    ConNumero* numero_ptr = &dato;\n    ConCodigo* codigo_ptr = &dato;\n    std::cout << numero.numero() << ':' << codigo.codigo() << '|';\n    cambiar_numero(dato, 5);\n    codigo_ptr->poner_codigo(9);\n    std::cout << dato.numero() << ':' << consultar_codigo(dato) << '|'\n              << numero_ptr->numero() << ':' << codigo.codigo();\n    return 0;\n}\n",
           "answers": [
             "3:8|5:9|5:9"
           ],
@@ -130,7 +130,7 @@
           "id": "p3_u10l1_dos_relaciones_con_accesos_distintos",
           "language": "cpp",
           "question": "Escribe las tres consultas del programa: vista pública, consulta propia y ayudante llamado desde dentro.",
-          "code": "#include <iostream>\n\nclass ConNumero {\npublic:\n    explicit ConNumero(int numero) : numero_{numero} {}\n    int numero() const { return numero_; }\n    void poner_numero(int numero) { numero_ = numero; }\nprivate:\n    int numero_;\n};\nclass ConCodigo {\npublic:\n    explicit ConCodigo(int codigo) : codigo_{codigo} {}\n    int codigo() const { return codigo_; }\n    void poner_codigo(int codigo) { codigo_ = codigo; }\nprivate:\n    int codigo_;\n};\nvoid cambiar_numero(ConNumero& dato, int numero) {\n    dato.poner_numero(numero);\n}\nint consultar_codigo(const ConCodigo& dato) {\n    return dato.codigo();\n}\nclass RegistroReservado : public ConNumero, private ConCodigo {\npublic:\n    RegistroReservado(int numero, int codigo)\n        : ConNumero{numero}, ConCodigo{codigo} {}\n    int codigo_visible() const { return ConCodigo::codigo(); }\n    int codigo_por_funcion() const { return consultar_codigo(*this); }\n};\nint main() {\n    RegistroReservado dato{4, 7};\n    const ConNumero& numero = dato;\n    std::cout << numero.numero() << ':' << dato.codigo_visible()\n              << ':' << dato.codigo_por_funcion();\n    return 0;\n}\n",
+          "code": "#include <iostream>\n\nclass ConNumero {\npublic:\n    explicit ConNumero(int numero) : numero_{numero} {}\n    int numero() const { return numero_; }\n    void poner_numero(int numero) { numero_ = numero; }\nprivate:\n    int numero_;\n};\n\nclass ConCodigo {\npublic:\n    explicit ConCodigo(int codigo) : codigo_{codigo} {}\n    int codigo() const { return codigo_; }\n    void poner_codigo(int codigo) { codigo_ = codigo; }\nprivate:\n    int codigo_;\n};\n\nvoid cambiar_numero(ConNumero& dato, int numero) {\n    dato.poner_numero(numero);\n}\n\nint consultar_codigo(const ConCodigo& dato) {\n    return dato.codigo();\n}\n\nclass RegistroReservado : public ConNumero, private ConCodigo {\npublic:\n    RegistroReservado(int numero, int codigo)\n        : ConNumero{numero}, ConCodigo{codigo} {}\n    int codigo_visible() const { return ConCodigo::codigo(); }\n    int codigo_por_funcion() const { return consultar_codigo(*this); }\n};\n\nint main() {\n    RegistroReservado dato{4, 7};\n    const ConNumero& numero = dato;\n\n    std::cout << numero.numero() << ':' << dato.codigo_visible()\n              << ':' << dato.codigo_por_funcion();\n    return 0;\n}\n",
           "answers": [
             "4:7:7"
           ],
@@ -174,7 +174,7 @@
           "id": "p3_u10l1_orden_de_dos_bases_miembro_y_cuerpo",
           "language": "cpp",
           "question": "Escribe toda la traza, incluidas la consulta de uso y la destrucción al terminar el bloque.",
-          "code": "#include <iostream>\n\nclass Primera {\npublic:\n    explicit Primera(int numero) : numero_{numero} { std::cout << \"N+|\"; }\n    ~Primera() { std::cout << \"N-|\"; }\n    int numero() const { return numero_; }\nprivate:\n    int numero_;\n};\nclass Segunda {\npublic:\n    explicit Segunda(int codigo) : codigo_{codigo} { std::cout << \"C+|\"; }\n    ~Segunda() { std::cout << \"C-|\"; }\n    int codigo() const { return codigo_; }\nprivate:\n    int codigo_;\n};\nclass Marca {\npublic:\n    Marca() { std::cout << \"M+|\"; }\n    ~Marca() { std::cout << \"M-|\"; }\n};\nclass ConOrden : public Primera, public Segunda {\npublic:\n    ConOrden(int numero, int codigo)\n        : Primera{numero}, Segunda{codigo}, marca_{} {\n        std::cout << \"D+|\";\n    }\n    ~ConOrden() { std::cout << \"D-|\"; }\nprivate:\n    Marca marca_;\n};\nint main() {\n    {\n        ConOrden dato{4, 7};\n        std::cout << \"Uso:\" << dato.numero() << ',' << dato.codigo() << '|';\n    }\n    std::cout << \"Fin\";\n    return 0;\n}\n",
+          "code": "#include <iostream>\n\nclass Primera {\npublic:\n    explicit Primera(int numero) : numero_{numero} { std::cout << \"N+|\"; }\n    ~Primera() { std::cout << \"N-|\"; }\n    int numero() const { return numero_; }\nprivate:\n    int numero_;\n};\n\nclass Segunda {\npublic:\n    explicit Segunda(int codigo) : codigo_{codigo} { std::cout << \"C+|\"; }\n    ~Segunda() { std::cout << \"C-|\"; }\n    int codigo() const { return codigo_; }\nprivate:\n    int codigo_;\n};\n\nclass Marca {\npublic:\n    Marca() { std::cout << \"M+|\"; }\n    ~Marca() { std::cout << \"M-|\"; }\n};\n\nclass ConOrden : public Primera, public Segunda {\npublic:\n    ConOrden(int numero, int codigo)\n        : Primera{numero}, Segunda{codigo}, marca_{} {\n        std::cout << \"D+|\";\n    }\n    ~ConOrden() { std::cout << \"D-|\"; }\nprivate:\n    Marca marca_;\n};\n\nint main() {\n    {\n        ConOrden dato{4, 7};\n        std::cout << \"Uso:\" << dato.numero() << ',' << dato.codigo() << '|';\n    }\n    std::cout << \"Fin\";\n\n    return 0;\n}\n",
           "answers": [
             "N+|C+|M+|D+|Uso:4,7|D-|M-|C-|N-|Fin"
           ],
@@ -202,7 +202,7 @@
           "id": "p3_u10l1_copia_independiente_de_objeto_con_dos_bases",
           "language": "cpp",
           "question": "Escribe número y código de original y después los de copia.",
-          "code": "#include <iostream>\n\nclass ConNumero {\npublic:\n    explicit ConNumero(int numero) : numero_{numero} {}\n    int numero() const { return numero_; }\n    void poner_numero(int numero) { numero_ = numero; }\nprivate:\n    int numero_;\n};\nclass ConCodigo {\npublic:\n    explicit ConCodigo(int codigo) : codigo_{codigo} {}\n    int codigo() const { return codigo_; }\n    void poner_codigo(int codigo) { codigo_ = codigo; }\nprivate:\n    int codigo_;\n};\nclass RegistroDoble : public ConNumero, public ConCodigo {\npublic:\n    RegistroDoble(int numero, int codigo)\n        : ConNumero{numero}, ConCodigo{codigo} {}\n};\nint main() {\n    RegistroDoble original{2, 6};\n    RegistroDoble copia{original};\n    original.poner_numero(4);\n    copia.poner_codigo(9);\n    std::cout << original.numero() << ':' << original.codigo()\n              << '|' << copia.numero() << ':' << copia.codigo();\n    return 0;\n}\n",
+          "code": "#include <iostream>\n\nclass ConNumero {\npublic:\n    explicit ConNumero(int numero) : numero_{numero} {}\n    int numero() const { return numero_; }\n    void poner_numero(int numero) { numero_ = numero; }\nprivate:\n    int numero_;\n};\n\nclass ConCodigo {\npublic:\n    explicit ConCodigo(int codigo) : codigo_{codigo} {}\n    int codigo() const { return codigo_; }\n    void poner_codigo(int codigo) { codigo_ = codigo; }\nprivate:\n    int codigo_;\n};\n\nclass RegistroDoble : public ConNumero, public ConCodigo {\npublic:\n    RegistroDoble(int numero, int codigo)\n        : ConNumero{numero}, ConCodigo{codigo} {}\n};\n\nint main() {\n    RegistroDoble original{2, 6};\n    RegistroDoble copia{original};\n    original.poner_numero(4);\n    copia.poner_codigo(9);\n    std::cout << original.numero() << ':' << original.codigo()\n              << '|' << copia.numero() << ':' << copia.codigo();\n    return 0;\n}\n",
           "answers": [
             "4:6|2:9"
           ],
@@ -317,7 +317,7 @@
         {
           "type": "cpp_compiler",
           "language": "cpp",
-          "initialCode": "#include <iostream>\n\nclass ConValor {\npublic:\n    virtual ~ConValor() = default;\n    virtual int valor() const = 0;\n};\n\nclass ConInforme {\npublic:\n    virtual ~ConInforme() = default;\n    virtual void escribir(std::ostream& salida) const = 0;\n};\nclass Muestra : public ConValor, public ConInforme {\npublic:\n    Muestra(int codigo, int valor) : codigo_{codigo}, valor_{valor} {}\n\n    int valor() const override { return 0; }\n\n    void escribir(std::ostream& salida) const override {\n        salida << \"Pendiente\";\n    }\n\n    void cambiar(int nuevo) { valor_ = nuevo; }\n\nprivate:\n    int codigo_;\n    int valor_;\n};\nvoid mostrar(const ConValor& valor, const ConInforme& informe) {\n    std::cout << \"Valor: \" << valor.valor() << '\\n';\n    std::cout << \"Informe: \";\n    informe.escribir(std::cout);\n    std::cout << '\\n';\n}\n\nint main() {\n    int codigo = 0;\n    int inicial = 0;\n    int nuevo = 0;\n    if (!(std::cin >> codigo >> inicial >> nuevo)) {\n        return 1;\n    }\n    Muestra dato{codigo, inicial};\n    const ConValor& vista_valor = dato;\n    const ConInforme& vista_informe = dato;\n    mostrar(vista_valor, vista_informe);\n    dato.cambiar(nuevo);\n    mostrar(vista_valor, vista_informe);\n    return 0;\n}\n",
+          "initialCode": "#include <iostream>\n\nclass ConValor {\npublic:\n    virtual ~ConValor() = default;\n    virtual int valor() const = 0;\n};\n\nclass ConInforme {\npublic:\n    virtual ~ConInforme() = default;\n    virtual void escribir(std::ostream& salida) const = 0;\n};\n\nclass Muestra : public ConValor, public ConInforme {\npublic:\n    Muestra(int codigo, int valor) : codigo_{codigo}, valor_{valor} {}\n\n    int valor() const override { return 0; }\n\n    void escribir(std::ostream& salida) const override {\n        salida << \"Pendiente\";\n    }\n\n    void cambiar(int nuevo) { valor_ = nuevo; }\n\nprivate:\n    int codigo_;\n    int valor_;\n};\n\nvoid mostrar(const ConValor& valor, const ConInforme& informe) {\n    std::cout << \"Valor: \" << valor.valor() << '\\n';\n    std::cout << \"Informe: \";\n    informe.escribir(std::cout);\n    std::cout << '\\n';\n}\n\nint main() {\n    int codigo = 0;\n    int inicial = 0;\n    int nuevo = 0;\n\n    if (!(std::cin >> codigo >> inicial >> nuevo)) {\n        return 1;\n    }\n    Muestra dato{codigo, inicial};\n    const ConValor& vista_valor = dato;\n    const ConInforme& vista_informe = dato;\n    mostrar(vista_valor, vista_informe);\n    dato.cambiar(nuevo);\n    mostrar(vista_valor, vista_informe);\n    return 0;\n}\n",
           "initialStandardInput": "7 3 -2\n",
           "outputCheck": {
             "inputComparison": "tokens",
@@ -421,7 +421,7 @@
         {
           "type": "code",
           "language": "cpp",
-          "code": "#include <iostream>\n\nclass ConValor {\npublic:\n    virtual ~ConValor() = default;\n    virtual int valor() const = 0;\n};\n\nclass ConInforme {\npublic:\n    virtual ~ConInforme() = default;\n    virtual void escribir(std::ostream& salida) const = 0;\n};\nclass Muestra : public ConValor, public ConInforme {\npublic:\n    Muestra(int codigo, int valor) : codigo_{codigo}, valor_{valor} {}\n\n    int valor() const override { return valor_; }\n\n    void escribir(std::ostream& salida) const override {\n        salida << codigo_ << '=' << valor_;\n    }\n\n    void cambiar(int nuevo) { valor_ = nuevo; }\n\nprivate:\n    int codigo_;\n    int valor_;\n};\nvoid mostrar(const ConValor& valor, const ConInforme& informe) {\n    std::cout << \"Valor: \" << valor.valor() << '\\n';\n    std::cout << \"Informe: \";\n    informe.escribir(std::cout);\n    std::cout << '\\n';\n}\n\nint main() {\n    int codigo = 0;\n    int inicial = 0;\n    int nuevo = 0;\n    if (!(std::cin >> codigo >> inicial >> nuevo)) {\n        return 1;\n    }\n    Muestra dato{codigo, inicial};\n    const ConValor& vista_valor = dato;\n    const ConInforme& vista_informe = dato;\n    mostrar(vista_valor, vista_informe);\n    dato.cambiar(nuevo);\n    mostrar(vista_valor, vista_informe);\n    return 0;\n}\n"
+          "code": "#include <iostream>\n\nclass ConValor {\npublic:\n    virtual ~ConValor() = default;\n    virtual int valor() const = 0;\n};\n\nclass ConInforme {\npublic:\n    virtual ~ConInforme() = default;\n    virtual void escribir(std::ostream& salida) const = 0;\n};\n\nclass Muestra : public ConValor, public ConInforme {\npublic:\n    Muestra(int codigo, int valor) : codigo_{codigo}, valor_{valor} {}\n\n    int valor() const override { return valor_; }\n\n    void escribir(std::ostream& salida) const override {\n        salida << codigo_ << '=' << valor_;\n    }\n\n    void cambiar(int nuevo) { valor_ = nuevo; }\n\nprivate:\n    int codigo_;\n    int valor_;\n};\n\nvoid mostrar(const ConValor& valor, const ConInforme& informe) {\n    std::cout << \"Valor: \" << valor.valor() << '\\n';\n    std::cout << \"Informe: \";\n    informe.escribir(std::cout);\n    std::cout << '\\n';\n}\n\nint main() {\n    int codigo = 0;\n    int inicial = 0;\n    int nuevo = 0;\n\n    if (!(std::cin >> codigo >> inicial >> nuevo)) {\n        return 1;\n    }\n    Muestra dato{codigo, inicial};\n    const ConValor& vista_valor = dato;\n    const ConInforme& vista_informe = dato;\n    mostrar(vista_valor, vista_informe);\n    dato.cambiar(nuevo);\n    mostrar(vista_valor, vista_informe);\n    return 0;\n}\n"
         },
         {
           "type": "paragraph",
@@ -456,7 +456,7 @@
           "id": "p3_u10l1_vista_frente_a_copia_con_dos_interfaces",
           "language": "cpp",
           "question": "Escribe la salida completa después de cambiar original y copia.",
-          "code": "#include <iostream>\n\nclass ConValor {\npublic:\n    virtual ~ConValor() = default;\n    virtual int valor() const = 0;\n};\n\nclass ConInforme {\npublic:\n    virtual ~ConInforme() = default;\n    virtual void escribir(std::ostream& salida) const = 0;\n};\nclass Muestra : public ConValor, public ConInforme {\npublic:\n    Muestra(int codigo, int valor) : codigo_{codigo}, valor_{valor} {}\n\n    int valor() const override { return valor_; }\n\n    void escribir(std::ostream& salida) const override {\n        salida << codigo_ << '=' << valor_;\n    }\n\n    void cambiar(int nuevo) { valor_ = nuevo; }\n\nprivate:\n    int codigo_;\n    int valor_;\n};\nint main() {\n    Muestra original{2, 4};\n    const ConValor& vista = original;\n    Muestra copia{original};\n    original.cambiar(8);\n    copia.cambiar(6);\n    std::cout << vista.valor() << '|' << copia.valor() << '|';\n    original.escribir(std::cout);\n    std::cout << '|';\n    copia.escribir(std::cout);\n    return 0;\n}\n",
+          "code": "#include <iostream>\n\nclass ConValor {\npublic:\n    virtual ~ConValor() = default;\n    virtual int valor() const = 0;\n};\n\nclass ConInforme {\npublic:\n    virtual ~ConInforme() = default;\n    virtual void escribir(std::ostream& salida) const = 0;\n};\n\nclass Muestra : public ConValor, public ConInforme {\npublic:\n    Muestra(int codigo, int valor) : codigo_{codigo}, valor_{valor} {}\n\n    int valor() const override { return valor_; }\n\n    void escribir(std::ostream& salida) const override {\n        salida << codigo_ << '=' << valor_;\n    }\n\n    void cambiar(int nuevo) { valor_ = nuevo; }\n\nprivate:\n    int codigo_;\n    int valor_;\n};\n\nint main() {\n    Muestra original{2, 4};\n    const ConValor& vista = original;\n    Muestra copia{original};\n    original.cambiar(8);\n    copia.cambiar(6);\n    std::cout << vista.valor() << '|' << copia.valor() << '|';\n    original.escribir(std::cout);\n    std::cout << '|';\n    copia.escribir(std::cout);\n    return 0;\n}\n",
           "answers": [
             "8|6|2=8|2=6"
           ],
@@ -1396,6 +1396,201 @@
       }
     },
     "additions": [],
-    "editorial": []
+    "editorial": [
+      {
+        "id": "block_0000_0002",
+        "beforeSha256": "eee16bb3ee9811f510aacf5a2dc64a173cff93b363cd5a143df38426c5686f1a",
+        "afterSha256": "56e28488c5f813adbb836e1d0ef4703bfe30ea468c29bedb8bddc9cd6defd1dd"
+      },
+      {
+        "id": "block_0000_0004",
+        "beforeSha256": "e4d6b63c7667965e8cb0c6d9e001b89cd4d8077e6b48f6365a8e45f6792281a9",
+        "afterSha256": "39194ab0980d52fa68fbe4bc8f8fa9e1ebfed4f65721fca687fbee7d16fa723f"
+      },
+      {
+        "id": "block_0001_0005",
+        "beforeSha256": "a9eb0df07a311198c98067aa982c867e283e3d1bd13e072515385ee47634742a",
+        "afterSha256": "ee7537e852fa6169fd027c47bcca7d2e0f35a23644a708e3b8f30bea46b75ca6"
+      },
+      {
+        "id": "block_0002_0003",
+        "beforeSha256": "cbd08e42c6e426040f67de4d958028fec9dc46f591256b59ec6db5ddf0302216",
+        "afterSha256": "7dd4c6d1a0188a580df7df8cf43c5981ff6a8276ca28158bdf042dd45ac2a4e0"
+      },
+      {
+        "id": "block_0003_0002",
+        "beforeSha256": "b53aab9b2dd397bb290411490243879be016d7bc7bab3cce0f54e0122988962f",
+        "afterSha256": "5ff50f21f5f2684e772567cf1dbbecf5b1bb652183ec8425a82ae7c88aee5aa0"
+      },
+      {
+        "id": "block_0004_0003",
+        "beforeSha256": "50b991fb10b3c7ac83836fba0ef49f05d8d9cd9cb446aa51acac2733d826e1eb",
+        "afterSha256": "ce26171b72c0cf366096cb807f115400dd13be49473e05a53d7fe94bffed8d52"
+      },
+      {
+        "id": "block_0005_0002",
+        "beforeSha256": "ea049ab56c139cd9d48ca39e3593ea6f523fc6ef71c3727deaf14fddf4fa8c22",
+        "afterSha256": "9e0738a5c598d1918686cfe9d38f8210cf8669e4636d27ae775a4c1c54482ec4"
+      },
+      {
+        "id": "block_0007_0011",
+        "beforeSha256": "517126e673b4888a81ceeb2b686f97b490fb3d2969b372a3c49c7d8981e93ed9",
+        "afterSha256": "5b41a073a6ac7b3a17f651ddfca6513fc5d1d15795153848eedf4c7ba13afe90"
+      },
+      {
+        "id": "block_0009_0001",
+        "beforeSha256": "978c78f98fa17cf9bba7fa820c7066bbcdf0167c971b0d965613f29d5c3a806c",
+        "afterSha256": "967d5e4989a41bf0a96e4e5a67dbc82b6dd909e76eea283fde716265add964aa"
+      },
+      {
+        "id": "block_0010_0002",
+        "beforeSha256": "16faae0292070c9988eadda5a37792915ba79080b9100e31797e2670c198e3cb",
+        "afterSha256": "8e2493cca8ea071399c91d1dbad46d81ebaa11f4651a919ea2611a755105b3c4"
+      }
+    ],
+    "sourceFormatRevisions": [
+      {
+        "id": "block_0000_0002",
+        "block": {
+          "type": "code",
+          "language": "cpp",
+          "code": "class ConNumero {\npublic:\n    explicit ConNumero(int numero) : numero_{numero} {}\n    int numero() const { return numero_; }\n    void poner_numero(int numero) { numero_ = numero; }\nprivate:\n    int numero_;\n};\nclass ConCodigo {\npublic:\n    explicit ConCodigo(int codigo) : codigo_{codigo} {}\n    int codigo() const { return codigo_; }\n    void poner_codigo(int codigo) { codigo_ = codigo; }\nprivate:\n    int codigo_;\n};\n"
+        }
+      },
+      {
+        "id": "block_0000_0004",
+        "block": {
+          "type": "code",
+          "language": "cpp",
+          "code": "void cambiar_numero(ConNumero& dato, int numero) {\n    dato.poner_numero(numero);\n}\nint consultar_codigo(const ConCodigo& dato) {\n    return dato.codigo();\n}\n"
+        }
+      },
+      {
+        "id": "block_0001_0005",
+        "block": {
+          "type": "code",
+          "language": "cpp",
+          "code": "#include <iostream>\n\nclass ConNumero {\npublic:\n    explicit ConNumero(int numero) : numero_{numero} {}\n    int numero() const { return numero_; }\n    void poner_numero(int numero) { numero_ = numero; }\nprivate:\n    int numero_;\n};\nclass ConCodigo {\npublic:\n    explicit ConCodigo(int codigo) : codigo_{codigo} {}\n    int codigo() const { return codigo_; }\n    void poner_codigo(int codigo) { codigo_ = codigo; }\nprivate:\n    int codigo_;\n};\nclass Incompleto : public ConNumero, public ConCodigo {\npublic:\n    explicit Incompleto(int numero) : ConNumero{numero} {}\n};\nint main() {\n    Incompleto dato{4};\n    std::cout << dato.numero();\n    return 0;\n}\n"
+        }
+      },
+      {
+        "id": "block_0002_0003",
+        "block": {
+          "type": "output_prediction",
+          "id": "p3_u10l1_referencias_y_punteros_a_dos_bases_del_mismo_objeto",
+          "language": "cpp",
+          "question": "Escribe la salida completa antes y después de modificar las dos partes.",
+          "code": "#include <iostream>\n\nclass ConNumero {\npublic:\n    explicit ConNumero(int numero) : numero_{numero} {}\n    int numero() const { return numero_; }\n    void poner_numero(int numero) { numero_ = numero; }\nprivate:\n    int numero_;\n};\nclass ConCodigo {\npublic:\n    explicit ConCodigo(int codigo) : codigo_{codigo} {}\n    int codigo() const { return codigo_; }\n    void poner_codigo(int codigo) { codigo_ = codigo; }\nprivate:\n    int codigo_;\n};\nvoid cambiar_numero(ConNumero& dato, int numero) {\n    dato.poner_numero(numero);\n}\nint consultar_codigo(const ConCodigo& dato) {\n    return dato.codigo();\n}\nclass RegistroDoble : public ConNumero, public ConCodigo {\npublic:\n    RegistroDoble(int numero, int codigo)\n        : ConNumero{numero}, ConCodigo{codigo} {}\n};\nint main() {\n    RegistroDoble dato{3, 8};\n    ConNumero& numero = dato;\n    const ConCodigo& codigo = dato;\n    ConNumero* numero_ptr = &dato;\n    ConCodigo* codigo_ptr = &dato;\n    std::cout << numero.numero() << ':' << codigo.codigo() << '|';\n    cambiar_numero(dato, 5);\n    codigo_ptr->poner_codigo(9);\n    std::cout << dato.numero() << ':' << consultar_codigo(dato) << '|'\n              << numero_ptr->numero() << ':' << codigo.codigo();\n    return 0;\n}\n",
+          "answers": [
+            "3:8|5:9|5:9"
+          ],
+          "outputComparison": "exact",
+          "explanation": "El registro comienza con número tres y código ocho. cambiar_numero recibe una referencia a su parte ConNumero y guarda cinco. codigo_ptr modifica la parte ConCodigo y guarda nueve. Las consultas mediante dato, el ayudante, numero_ptr y la referencia constante codigo observan esas mismas partes actualizadas. No eran cuatro copias por tener cuatro vistas."
+        }
+      },
+      {
+        "id": "block_0003_0002",
+        "block": {
+          "type": "output_prediction",
+          "id": "p3_u10l1_dos_relaciones_con_accesos_distintos",
+          "language": "cpp",
+          "question": "Escribe las tres consultas del programa: vista pública, consulta propia y ayudante llamado desde dentro.",
+          "code": "#include <iostream>\n\nclass ConNumero {\npublic:\n    explicit ConNumero(int numero) : numero_{numero} {}\n    int numero() const { return numero_; }\n    void poner_numero(int numero) { numero_ = numero; }\nprivate:\n    int numero_;\n};\nclass ConCodigo {\npublic:\n    explicit ConCodigo(int codigo) : codigo_{codigo} {}\n    int codigo() const { return codigo_; }\n    void poner_codigo(int codigo) { codigo_ = codigo; }\nprivate:\n    int codigo_;\n};\nvoid cambiar_numero(ConNumero& dato, int numero) {\n    dato.poner_numero(numero);\n}\nint consultar_codigo(const ConCodigo& dato) {\n    return dato.codigo();\n}\nclass RegistroReservado : public ConNumero, private ConCodigo {\npublic:\n    RegistroReservado(int numero, int codigo)\n        : ConNumero{numero}, ConCodigo{codigo} {}\n    int codigo_visible() const { return ConCodigo::codigo(); }\n    int codigo_por_funcion() const { return consultar_codigo(*this); }\n};\nint main() {\n    RegistroReservado dato{4, 7};\n    const ConNumero& numero = dato;\n    std::cout << numero.numero() << ':' << dato.codigo_visible()\n              << ':' << dato.codigo_por_funcion();\n    return 0;\n}\n",
+          "answers": [
+            "4:7:7"
+          ],
+          "outputComparison": "exact",
+          "explanation": "La referencia de main a ConNumero es válida y obtiene cuatro. codigo_visible consulta internamente la base privada y obtiene siete. codigo_por_funcion solicita dentro del método una referencia a ConCodigo para el ayudante, que también obtiene siete. Ninguna de esas consultas vuelve pública la relación con ConCodigo."
+        }
+      },
+      {
+        "id": "block_0004_0003",
+        "block": {
+          "type": "output_prediction",
+          "id": "p3_u10l1_orden_de_dos_bases_miembro_y_cuerpo",
+          "language": "cpp",
+          "question": "Escribe toda la traza, incluidas la consulta de uso y la destrucción al terminar el bloque.",
+          "code": "#include <iostream>\n\nclass Primera {\npublic:\n    explicit Primera(int numero) : numero_{numero} { std::cout << \"N+|\"; }\n    ~Primera() { std::cout << \"N-|\"; }\n    int numero() const { return numero_; }\nprivate:\n    int numero_;\n};\nclass Segunda {\npublic:\n    explicit Segunda(int codigo) : codigo_{codigo} { std::cout << \"C+|\"; }\n    ~Segunda() { std::cout << \"C-|\"; }\n    int codigo() const { return codigo_; }\nprivate:\n    int codigo_;\n};\nclass Marca {\npublic:\n    Marca() { std::cout << \"M+|\"; }\n    ~Marca() { std::cout << \"M-|\"; }\n};\nclass ConOrden : public Primera, public Segunda {\npublic:\n    ConOrden(int numero, int codigo)\n        : Primera{numero}, Segunda{codigo}, marca_{} {\n        std::cout << \"D+|\";\n    }\n    ~ConOrden() { std::cout << \"D-|\"; }\nprivate:\n    Marca marca_;\n};\nint main() {\n    {\n        ConOrden dato{4, 7};\n        std::cout << \"Uso:\" << dato.numero() << ',' << dato.codigo() << '|';\n    }\n    std::cout << \"Fin\";\n    return 0;\n}\n",
+          "answers": [
+            "N+|C+|M+|D+|Uso:4,7|D-|M-|C-|N-|Fin"
+          ],
+          "outputComparison": "exact",
+          "explanation": "Se completan Primera, Segunda y marca_ antes de ejecutar el cuerpo constructor de ConOrden, de modo que aparecen N+, C+, M+ y D+. main consulta el número cuatro y el código siete. Al salir del bloque empieza el cuerpo de ~ConOrden, que escribe D-. Después se destruyen el miembro, la segunda base y la primera, escribiendo M-, C- y N-. Por último main escribe Fin."
+        }
+      },
+      {
+        "id": "block_0005_0002",
+        "block": {
+          "type": "output_prediction",
+          "id": "p3_u10l1_copia_independiente_de_objeto_con_dos_bases",
+          "language": "cpp",
+          "question": "Escribe número y código de original y después los de copia.",
+          "code": "#include <iostream>\n\nclass ConNumero {\npublic:\n    explicit ConNumero(int numero) : numero_{numero} {}\n    int numero() const { return numero_; }\n    void poner_numero(int numero) { numero_ = numero; }\nprivate:\n    int numero_;\n};\nclass ConCodigo {\npublic:\n    explicit ConCodigo(int codigo) : codigo_{codigo} {}\n    int codigo() const { return codigo_; }\n    void poner_codigo(int codigo) { codigo_ = codigo; }\nprivate:\n    int codigo_;\n};\nclass RegistroDoble : public ConNumero, public ConCodigo {\npublic:\n    RegistroDoble(int numero, int codigo)\n        : ConNumero{numero}, ConCodigo{codigo} {}\n};\nint main() {\n    RegistroDoble original{2, 6};\n    RegistroDoble copia{original};\n    original.poner_numero(4);\n    copia.poner_codigo(9);\n    std::cout << original.numero() << ':' << original.codigo()\n              << '|' << copia.numero() << ':' << copia.codigo();\n    return 0;\n}\n",
+          "answers": [
+            "4:6|2:9"
+          ],
+          "outputComparison": "exact",
+          "explanation": "copia comienza con el número dos y el código seis que tenía original. Después se cambia sólo el número de original a cuatro y sólo el código de copia a nueve. El resultado distingue los dos registros: original conserva código seis y copia conserva número dos. Las referencias a bases del ejemplo anterior observaban el mismo registro; esta declaración de copia creó otro."
+        }
+      },
+      {
+        "id": "block_0007_0011",
+        "block": {
+          "type": "cpp_compiler",
+          "language": "cpp",
+          "initialCode": "#include <iostream>\n\nclass ConValor {\npublic:\n    virtual ~ConValor() = default;\n    virtual int valor() const = 0;\n};\n\nclass ConInforme {\npublic:\n    virtual ~ConInforme() = default;\n    virtual void escribir(std::ostream& salida) const = 0;\n};\nclass Muestra : public ConValor, public ConInforme {\npublic:\n    Muestra(int codigo, int valor) : codigo_{codigo}, valor_{valor} {}\n\n    int valor() const override { return 0; }\n\n    void escribir(std::ostream& salida) const override {\n        salida << \"Pendiente\";\n    }\n\n    void cambiar(int nuevo) { valor_ = nuevo; }\n\nprivate:\n    int codigo_;\n    int valor_;\n};\nvoid mostrar(const ConValor& valor, const ConInforme& informe) {\n    std::cout << \"Valor: \" << valor.valor() << '\\n';\n    std::cout << \"Informe: \";\n    informe.escribir(std::cout);\n    std::cout << '\\n';\n}\n\nint main() {\n    int codigo = 0;\n    int inicial = 0;\n    int nuevo = 0;\n    if (!(std::cin >> codigo >> inicial >> nuevo)) {\n        return 1;\n    }\n    Muestra dato{codigo, inicial};\n    const ConValor& vista_valor = dato;\n    const ConInforme& vista_informe = dato;\n    mostrar(vista_valor, vista_informe);\n    dato.cambiar(nuevo);\n    mostrar(vista_valor, vista_informe);\n    return 0;\n}\n",
+          "initialStandardInput": "7 3 -2\n",
+          "outputCheck": {
+            "inputComparison": "tokens",
+            "cases": [
+              {
+                "standardInput": "7 3 -2\n",
+                "outputs": [
+                  "Valor: 3\nInforme: 7=3\nValor: -2\nInforme: 7=-2\n"
+                ],
+                "explanation": "valor() debe consultar el estado actual y escribir debe utilizar el flujo recibido, mostrando código=valor. Las dos vistas de main siguen refiriéndose al mismo objeto antes y después de cambiar."
+              },
+              {
+                "standardInput": "0 0 0\n",
+                "outputs": [
+                  "Valor: 0\nInforme: 0=0\nValor: 0\nInforme: 0=0\n"
+                ],
+                "explanation": "valor() debe consultar el estado actual y escribir debe utilizar el flujo recibido, mostrando código=valor. Las dos vistas de main siguen refiriéndose al mismo objeto antes y después de cambiar."
+              },
+              {
+                "standardInput": "-4 -8 5\n",
+                "outputs": [
+                  "Valor: -8\nInforme: -4=-8\nValor: 5\nInforme: -4=5\n"
+                ],
+                "explanation": "valor() debe consultar el estado actual y escribir debe utilizar el flujo recibido, mostrando código=valor. Las dos vistas de main siguen refiriéndose al mismo objeto antes y después de cambiar."
+              }
+            ]
+          }
+        }
+      },
+      {
+        "id": "block_0009_0001",
+        "block": {
+          "type": "code",
+          "language": "cpp",
+          "code": "#include <iostream>\n\nclass ConValor {\npublic:\n    virtual ~ConValor() = default;\n    virtual int valor() const = 0;\n};\n\nclass ConInforme {\npublic:\n    virtual ~ConInforme() = default;\n    virtual void escribir(std::ostream& salida) const = 0;\n};\nclass Muestra : public ConValor, public ConInforme {\npublic:\n    Muestra(int codigo, int valor) : codigo_{codigo}, valor_{valor} {}\n\n    int valor() const override { return valor_; }\n\n    void escribir(std::ostream& salida) const override {\n        salida << codigo_ << '=' << valor_;\n    }\n\n    void cambiar(int nuevo) { valor_ = nuevo; }\n\nprivate:\n    int codigo_;\n    int valor_;\n};\nvoid mostrar(const ConValor& valor, const ConInforme& informe) {\n    std::cout << \"Valor: \" << valor.valor() << '\\n';\n    std::cout << \"Informe: \";\n    informe.escribir(std::cout);\n    std::cout << '\\n';\n}\n\nint main() {\n    int codigo = 0;\n    int inicial = 0;\n    int nuevo = 0;\n    if (!(std::cin >> codigo >> inicial >> nuevo)) {\n        return 1;\n    }\n    Muestra dato{codigo, inicial};\n    const ConValor& vista_valor = dato;\n    const ConInforme& vista_informe = dato;\n    mostrar(vista_valor, vista_informe);\n    dato.cambiar(nuevo);\n    mostrar(vista_valor, vista_informe);\n    return 0;\n}\n"
+        }
+      },
+      {
+        "id": "block_0010_0002",
+        "block": {
+          "type": "output_prediction",
+          "id": "p3_u10l1_vista_frente_a_copia_con_dos_interfaces",
+          "language": "cpp",
+          "question": "Escribe la salida completa después de cambiar original y copia.",
+          "code": "#include <iostream>\n\nclass ConValor {\npublic:\n    virtual ~ConValor() = default;\n    virtual int valor() const = 0;\n};\n\nclass ConInforme {\npublic:\n    virtual ~ConInforme() = default;\n    virtual void escribir(std::ostream& salida) const = 0;\n};\nclass Muestra : public ConValor, public ConInforme {\npublic:\n    Muestra(int codigo, int valor) : codigo_{codigo}, valor_{valor} {}\n\n    int valor() const override { return valor_; }\n\n    void escribir(std::ostream& salida) const override {\n        salida << codigo_ << '=' << valor_;\n    }\n\n    void cambiar(int nuevo) { valor_ = nuevo; }\n\nprivate:\n    int codigo_;\n    int valor_;\n};\nint main() {\n    Muestra original{2, 4};\n    const ConValor& vista = original;\n    Muestra copia{original};\n    original.cambiar(8);\n    copia.cambiar(6);\n    std::cout << vista.valor() << '|' << copia.valor() << '|';\n    original.escribir(std::cout);\n    std::cout << '|';\n    copia.escribir(std::cout);\n    return 0;\n}\n",
+          "answers": [
+            "8|6|2=8|2=6"
+          ],
+          "outputComparison": "exact",
+          "explanation": "vista sigue sobre original y consulta ocho. copia tiene su propio valor y consulta seis. Los dos códigos se copiaron con el valor dos y no cambian. Por eso original escribe 2=8 y copia escribe 2=6. Las referencias a una base consultan un objeto existente; la construcción de una copia completa de Muestra crea otro objeto."
+        }
+      }
+    ]
   }
 }

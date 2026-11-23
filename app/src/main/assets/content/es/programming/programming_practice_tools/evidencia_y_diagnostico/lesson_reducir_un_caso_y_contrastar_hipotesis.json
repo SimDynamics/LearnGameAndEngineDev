@@ -149,7 +149,7 @@
           "id": "observar_secuencia_minima",
           "language": "cpp",
           "question": "Predice la salida de esta implementación, no la pareja requerida por el contrato. Las dos llamadas pertenecen a la misma ejecución.",
-          "code": "#include <iostream>\n#include <vector>\n\nint acumulado{0};\n\nint contar_altos(std::vector<int> datos, int minimo) {\n    for (int valor : datos) {\n        if (valor >= minimo) {\n            ++acumulado;\n        }\n    }\n    return acumulado;\n}\n\nint main() {\n    const int primera = contar_altos({2}, 2);\n    const int segunda = contar_altos({}, 2);\n    std::cout << primera << ':' << segunda;\n    return 0;\n}\n",
+          "code": "#include <iostream>\n#include <vector>\n\nint acumulado{0};\n\nint contar_altos(std::vector<int> datos, int minimo) {\n    for (int valor : datos) {\n        if (valor >= minimo) {\n            ++acumulado;\n        }\n    }\n\n    return acumulado;\n}\n\nint main() {\n    const int primera = contar_altos({2}, 2);\n    const int segunda = contar_altos({}, 2);\n\n    std::cout << primera << ':' << segunda;\n\n    return 0;\n}\n",
           "answers": [
             "1:1"
           ],
@@ -244,7 +244,7 @@
           "id": "control_invertir_orden",
           "language": "cpp",
           "question": "Predice la salida de la implementación investigada al invertir el orden de las dos consultas.",
-          "code": "#include <iostream>\n#include <vector>\n\nint acumulado{0};\n\nint contar_altos(std::vector<int> datos, int minimo) {\n    for (int valor : datos) {\n        if (valor >= minimo) {\n            ++acumulado;\n        }\n    }\n    return acumulado;\n}\n\nint main() {\n    const int primera = contar_altos({}, 2);\n    const int segunda = contar_altos({2}, 2);\n    std::cout << primera << ':' << segunda;\n    return 0;\n}\n",
+          "code": "#include <iostream>\n#include <vector>\n\nint acumulado{0};\n\nint contar_altos(std::vector<int> datos, int minimo) {\n    for (int valor : datos) {\n        if (valor >= minimo) {\n            ++acumulado;\n        }\n    }\n\n    return acumulado;\n}\n\nint main() {\n    const int primera = contar_altos({}, 2);\n    const int segunda = contar_altos({2}, 2);\n\n    std::cout << primera << ':' << segunda;\n\n    return 0;\n}\n",
           "answers": [
             "0:1"
           ],
@@ -294,7 +294,7 @@
         },
         {
           "type": "cpp_compiler",
-          "initialCode": "#include <iostream>\n#include <vector>\n\nint acumulado{0};\n\nint contar_altos(std::vector<int> datos, int minimo) {\n    // Repara el recuento sin cambiar el contrato ni las consultas.\n    for (int valor : datos) {\n        if (valor >= minimo) {\n            ++acumulado;\n        }\n    }\n    return acumulado;\n}\n\nint main() {\n    const int primera = contar_altos({2}, 2);\n    const int segunda = contar_altos({}, 2);\n    std::cout << \"Minimo:\" << primera << ':' << segunda << '\\n';\n\n    const int tercera = contar_altos({8, 1, 5}, 5);\n    const int cuarta = contar_altos({6, 7}, 5);\n    const int quinta = contar_altos({}, 9);\n    std::cout << \"Nuevo:\" << tercera << ':' << cuarta << ':' << quinta;\n    return 0;\n}\n",
+          "initialCode": "#include <iostream>\n#include <vector>\n\nint acumulado{0};\n\nint contar_altos(std::vector<int> datos, int minimo) {\n    // Repara el recuento sin cambiar el contrato ni las consultas.\n    for (int valor : datos) {\n        if (valor >= minimo) {\n            ++acumulado;\n        }\n    }\n\n    return acumulado;\n}\n\nint main() {\n    const int primera = contar_altos({2}, 2);\n    const int segunda = contar_altos({}, 2);\n\n    std::cout << \"Minimo:\" << primera << ':' << segunda << '\\n';\n\n    const int tercera = contar_altos({8, 1, 5}, 5);\n    const int cuarta = contar_altos({6, 7}, 5);\n    const int quinta = contar_altos({}, 9);\n\n    std::cout << \"Nuevo:\" << tercera << ':' << cuarta << ':' << quinta;\n\n    return 0;\n}\n",
           "outputCheck": {
             "inputComparison": "exact",
             "cases": [
@@ -323,7 +323,7 @@
         {
           "type": "code",
           "language": "cpp",
-          "code": "#include <iostream>\n#include <vector>\n\nint contar_altos(std::vector<int> datos, int minimo) {\n    int cantidad{0};\n    for (int valor : datos) {\n        if (valor >= minimo) {\n            ++cantidad;\n        }\n    }\n    return cantidad;\n}\n\nint main() {\n    const int primera = contar_altos({2}, 2);\n    const int segunda = contar_altos({}, 2);\n    std::cout << \"Minimo:\" << primera << ':' << segunda << '\\n';\n\n    const int tercera = contar_altos({8, 1, 5}, 5);\n    const int cuarta = contar_altos({6, 7}, 5);\n    const int quinta = contar_altos({}, 9);\n    std::cout << \"Nuevo:\" << tercera << ':' << cuarta << ':' << quinta;\n    return 0;\n}\n"
+          "code": "#include <iostream>\n#include <vector>\n\nint contar_altos(std::vector<int> datos, int minimo) {\n    int cantidad{0};\n    for (int valor : datos) {\n        if (valor >= minimo) {\n            ++cantidad;\n        }\n    }\n\n    return cantidad;\n}\n\nint main() {\n    const int primera = contar_altos({2}, 2);\n    const int segunda = contar_altos({}, 2);\n\n    std::cout << \"Minimo:\" << primera << ':' << segunda << '\\n';\n\n    const int tercera = contar_altos({8, 1, 5}, 5);\n    const int cuarta = contar_altos({6, 7}, 5);\n    const int quinta = contar_altos({}, 9);\n\n    std::cout << \"Nuevo:\" << tercera << ':' << cuarta << ':' << quinta;\n\n    return 0;\n}\n"
         },
         {
           "type": "paragraph",
@@ -360,7 +360,7 @@
         },
         {
           "type": "cpp_compiler",
-          "initialCode": "#include <iostream>\n#include <vector>\n\nint acumulado{0};\n\nint contar_altos(std::vector<int> datos, int minimo) {\n    // Repara el recuento sin cambiar el contrato ni las consultas.\n    for (int valor : datos) {\n        if (valor >= minimo) {\n            ++acumulado;\n        }\n    }\n    return acumulado;\n}\n\nint main() {\n    const int primera = contar_altos({2}, 2);\n    const int segunda = contar_altos({}, 2);\n    std::cout << \"Minimo:\" << primera << ':' << segunda << '\\n';\n\n    const int tercera = contar_altos({6, 7}, 5);\n    const int cuarta = contar_altos({8, 1, 5}, 5);\n    const int quinta = contar_altos({}, 9);\n    std::cout << \"Nuevo:\" << tercera << ':' << cuarta << ':' << quinta;\n    return 0;\n}\n",
+          "initialCode": "#include <iostream>\n#include <vector>\n\nint acumulado{0};\n\nint contar_altos(std::vector<int> datos, int minimo) {\n    // Repara el recuento sin cambiar el contrato ni las consultas.\n    for (int valor : datos) {\n        if (valor >= minimo) {\n            ++acumulado;\n        }\n    }\n\n    return acumulado;\n}\n\nint main() {\n    const int primera = contar_altos({2}, 2);\n    const int segunda = contar_altos({}, 2);\n\n    std::cout << \"Minimo:\" << primera << ':' << segunda << '\\n';\n\n    const int tercera = contar_altos({6, 7}, 5);\n    const int cuarta = contar_altos({8, 1, 5}, 5);\n    const int quinta = contar_altos({}, 9);\n\n    std::cout << \"Nuevo:\" << tercera << ':' << cuarta << ':' << quinta;\n\n    return 0;\n}\n",
           "outputCheck": {
             "inputComparison": "exact",
             "cases": [
@@ -391,7 +391,7 @@
           "id": "contraprueba_de_retorno_especial",
           "language": "cpp",
           "question": "Predice la salida de esta reparación parcial para las dos consultas no vacías. Calcula aparte lo que exige el contrato.",
-          "code": "#include <iostream>\n#include <vector>\n\nint acumulado{0};\n\nint contar_altos(std::vector<int> datos, int minimo) {\n    if (datos.empty()) {\n        return 0;\n    }\n    for (int valor : datos) {\n        if (valor >= minimo) {\n            ++acumulado;\n        }\n    }\n    return acumulado;\n}\n\nint main() {\n    const int primera = contar_altos({8, 1, 5}, 5);\n    const int segunda = contar_altos({6, 7}, 5);\n    std::cout << primera << ':' << segunda;\n    return 0;\n}\n",
+          "code": "#include <iostream>\n#include <vector>\n\nint acumulado{0};\n\nint contar_altos(std::vector<int> datos, int minimo) {\n    if (datos.empty()) {\n        return 0;\n    }\n    for (int valor : datos) {\n        if (valor >= minimo) {\n            ++acumulado;\n        }\n    }\n\n    return acumulado;\n}\n\nint main() {\n    const int primera = contar_altos({8, 1, 5}, 5);\n    const int segunda = contar_altos({6, 7}, 5);\n\n    std::cout << primera << ':' << segunda;\n\n    return 0;\n}\n",
           "answers": [
             "2:4"
           ],
@@ -440,7 +440,7 @@
           "id": "estado_conservado_con_otro_contrato",
           "language": "cpp",
           "question": "Predice la salida. ¿Coincide con la intención de registrar visitas desde el comienzo de esta ejecución?",
-          "code": "#include <iostream>\n\nint numero_visita{0};\n\nint registrar_visita() {\n    ++numero_visita;\n    return numero_visita;\n}\n\nint main() {\n    const int primera = registrar_visita();\n    const int segunda = registrar_visita();\n    const int tercera = registrar_visita();\n    std::cout << primera << ':' << segunda << ':' << tercera;\n    return 0;\n}\n",
+          "code": "#include <iostream>\n\nint numero_visita{0};\n\nint registrar_visita() {\n    ++numero_visita;\n    return numero_visita;\n}\n\nint main() {\n    const int primera = registrar_visita();\n    const int segunda = registrar_visita();\n    const int tercera = registrar_visita();\n\n    std::cout << primera << ':' << segunda << ':' << tercera;\n\n    return 0;\n}\n",
           "answers": [
             "1:2:3"
           ],
@@ -1841,6 +1841,149 @@
         "id": "block_0009_0004",
         "beforeSha256": "2db1d942648e77a91b4b871ba2542e6f5b2c574d94424130a82f79ba9eeacd90",
         "afterSha256": "04a1a0003d177f139256614313f7c54f265c2d084b8cd19a05f63b72f0a81f5d"
+      },
+      {
+        "id": "block_0003_0003",
+        "beforeSha256": "42a685df644e66aafa9db29abf61587f5ca7067f0028b43e5ba699b0a6029f8f",
+        "afterSha256": "6e395ae22222fdb8b393051e2c42aad6d90e86dc65b28514acc8403fcac54804"
+      },
+      {
+        "id": "block_0005_0002",
+        "beforeSha256": "b3087ce8b9e6e8f616bf789d910d9f94021b691968f2c1b2139988c5d7206fd1",
+        "afterSha256": "f07ea03f4d5d0eea871534728876fda1c1341ffb4b7f0362e9187d96d01b0587"
+      },
+      {
+        "id": "block_0006_0004",
+        "beforeSha256": "0e8a9ac7cd7d70e68b4a722e51c0f0e589637ebe59fd77d9f7edce8cd072f686",
+        "afterSha256": "0a8f254ff1cd4ff1d35c49375e56990d07eb65f4eec6cf52d28a975f29cf92ff"
+      },
+      {
+        "id": "block_0007_0001",
+        "beforeSha256": "212effc932f27c0210e9a7d94bdca44db8ba026d3ddd87ffe2610986b1c7d434",
+        "afterSha256": "04b2d1dd3f0e593f65f20ac33290cb3b331490d9df18d7d321a6d279cca21f92"
+      },
+      {
+        "id": "block_0007_0007",
+        "beforeSha256": "7bf6ef4a52c82aec8f00cb2e779246920ddb6d5aeb80f2c97e2aa0f5f64c1fbc",
+        "afterSha256": "2d9fac7e6e55bec0aa17facb4bdc48abe4ac23fef252910329fef8edaf3a520c"
+      },
+      {
+        "id": "block_0008_0002",
+        "beforeSha256": "3f5eba307a428592ce0147fb006d8e3e14811c66b75d8d51cb6f4b15fbe01072",
+        "afterSha256": "dacb1f95ef7521d9f80726062a7c019fe12f376f453f3e6d36b47afb52e8c9c2"
+      },
+      {
+        "id": "block_0009_0002",
+        "beforeSha256": "e0d5c2237815e358b065f937ca4b277de9e1dffc7f504d4d6bcaa1f63f3f3dda",
+        "afterSha256": "d20a36afe2d926f0d768459f9ecaa6fa343eb76756abd0163736b658ea24f773"
+      }
+    ],
+    "sourceFormatRevisions": [
+      {
+        "id": "block_0003_0003",
+        "block": {
+          "type": "output_prediction",
+          "id": "observar_secuencia_minima",
+          "language": "cpp",
+          "question": "Predice la salida de esta implementación, no la pareja requerida por el contrato. Las dos llamadas pertenecen a la misma ejecución.",
+          "code": "#include <iostream>\n#include <vector>\n\nint acumulado{0};\n\nint contar_altos(std::vector<int> datos, int minimo) {\n    for (int valor : datos) {\n        if (valor >= minimo) {\n            ++acumulado;\n        }\n    }\n    return acumulado;\n}\n\nint main() {\n    const int primera = contar_altos({2}, 2);\n    const int segunda = contar_altos({}, 2);\n    std::cout << primera << ':' << segunda;\n    return 0;\n}\n",
+          "answers": [
+            "1:1"
+          ],
+          "explanation": "La primera llamada encuentra un dato válido e incrementa acumulado de 0 a 1. El vector de la segunda está vacío, así que no hay incrementos; sin embargo, la función devuelve el 1 conservado. El requisito pedía 1:0. La observación coincide con H_arrastre y contradice H_frontera para esta prueba.",
+          "reviewFeedback": "Sigue la preparación del contador y sus cambios a lo largo de las dos llamadas. Distingue no ejecutar incrementos de preparar de nuevo el contador; predice la implementación mostrada antes de juzgar su contrato."
+        }
+      },
+      {
+        "id": "block_0005_0002",
+        "block": {
+          "type": "output_prediction",
+          "id": "control_invertir_orden",
+          "language": "cpp",
+          "question": "Predice la salida de la implementación investigada al invertir el orden de las dos consultas.",
+          "code": "#include <iostream>\n#include <vector>\n\nint acumulado{0};\n\nint contar_altos(std::vector<int> datos, int minimo) {\n    for (int valor : datos) {\n        if (valor >= minimo) {\n            ++acumulado;\n        }\n    }\n    return acumulado;\n}\n\nint main() {\n    const int primera = contar_altos({}, 2);\n    const int segunda = contar_altos({2}, 2);\n    std::cout << primera << ':' << segunda;\n    return 0;\n}\n",
+          "answers": [
+            "0:1"
+          ],
+          "explanation": "El vacío inicial no incrementa acumulado y devuelve 0. Después, el dato 2 incrementa el total a 1 y devuelve 1. En este orden concreto la salida coincide con lo requerido, aunque el código sigue siendo el mismo que fallaba con el orden anterior.",
+          "reviewFeedback": "Comienza con la preparación indicada y sigue las consultas en su nuevo orden. No traslades a este experimento el contador final de otra ejecución ni reinicies entre las llamadas de ésta."
+        }
+      },
+      {
+        "id": "block_0006_0004",
+        "block": {
+          "type": "cpp_compiler",
+          "initialCode": "#include <iostream>\n#include <vector>\n\nint acumulado{0};\n\nint contar_altos(std::vector<int> datos, int minimo) {\n    // Repara el recuento sin cambiar el contrato ni las consultas.\n    for (int valor : datos) {\n        if (valor >= minimo) {\n            ++acumulado;\n        }\n    }\n    return acumulado;\n}\n\nint main() {\n    const int primera = contar_altos({2}, 2);\n    const int segunda = contar_altos({}, 2);\n    std::cout << \"Minimo:\" << primera << ':' << segunda << '\\n';\n\n    const int tercera = contar_altos({8, 1, 5}, 5);\n    const int cuarta = contar_altos({6, 7}, 5);\n    const int quinta = contar_altos({}, 9);\n    std::cout << \"Nuevo:\" << tercera << ':' << cuarta << ':' << quinta;\n    return 0;\n}\n",
+          "outputCheck": {
+            "inputComparison": "exact",
+            "cases": [
+              {
+                "standardInput": "",
+                "outputs": [
+                  "Minimo:1:0\nNuevo:2:2:0"
+                ],
+                "explanation": "Cada llamada comienza su propio recuento: la consulta vacía no reutiliza resultados anteriores y las dos consultas no vacías se cuentan por separado."
+              }
+            ]
+          }
+        }
+      },
+      {
+        "id": "block_0007_0001",
+        "block": {
+          "type": "code",
+          "language": "cpp",
+          "code": "#include <iostream>\n#include <vector>\n\nint contar_altos(std::vector<int> datos, int minimo) {\n    int cantidad{0};\n    for (int valor : datos) {\n        if (valor >= minimo) {\n            ++cantidad;\n        }\n    }\n    return cantidad;\n}\n\nint main() {\n    const int primera = contar_altos({2}, 2);\n    const int segunda = contar_altos({}, 2);\n    std::cout << \"Minimo:\" << primera << ':' << segunda << '\\n';\n\n    const int tercera = contar_altos({8, 1, 5}, 5);\n    const int cuarta = contar_altos({6, 7}, 5);\n    const int quinta = contar_altos({}, 9);\n    std::cout << \"Nuevo:\" << tercera << ':' << cuarta << ':' << quinta;\n    return 0;\n}\n"
+        }
+      },
+      {
+        "id": "block_0007_0007",
+        "block": {
+          "type": "cpp_compiler",
+          "initialCode": "#include <iostream>\n#include <vector>\n\nint acumulado{0};\n\nint contar_altos(std::vector<int> datos, int minimo) {\n    // Repara el recuento sin cambiar el contrato ni las consultas.\n    for (int valor : datos) {\n        if (valor >= minimo) {\n            ++acumulado;\n        }\n    }\n    return acumulado;\n}\n\nint main() {\n    const int primera = contar_altos({2}, 2);\n    const int segunda = contar_altos({}, 2);\n    std::cout << \"Minimo:\" << primera << ':' << segunda << '\\n';\n\n    const int tercera = contar_altos({6, 7}, 5);\n    const int cuarta = contar_altos({8, 1, 5}, 5);\n    const int quinta = contar_altos({}, 9);\n    std::cout << \"Nuevo:\" << tercera << ':' << cuarta << ':' << quinta;\n    return 0;\n}\n",
+          "outputCheck": {
+            "inputComparison": "exact",
+            "cases": [
+              {
+                "standardInput": "",
+                "outputs": [
+                  "Minimo:1:0\nNuevo:2:2:0"
+                ],
+                "explanation": "Cada llamada comienza su propio recuento: la consulta vacía no reutiliza resultados anteriores y las dos consultas no vacías se cuentan por separado."
+              }
+            ]
+          }
+        }
+      },
+      {
+        "id": "block_0008_0002",
+        "block": {
+          "type": "output_prediction",
+          "id": "contraprueba_de_retorno_especial",
+          "language": "cpp",
+          "question": "Predice la salida de esta reparación parcial para las dos consultas no vacías. Calcula aparte lo que exige el contrato.",
+          "code": "#include <iostream>\n#include <vector>\n\nint acumulado{0};\n\nint contar_altos(std::vector<int> datos, int minimo) {\n    if (datos.empty()) {\n        return 0;\n    }\n    for (int valor : datos) {\n        if (valor >= minimo) {\n            ++acumulado;\n        }\n    }\n    return acumulado;\n}\n\nint main() {\n    const int primera = contar_altos({8, 1, 5}, 5);\n    const int segunda = contar_altos({6, 7}, 5);\n    std::cout << primera << ':' << segunda;\n    return 0;\n}\n",
+          "answers": [
+            "2:4"
+          ],
+          "explanation": "La primera llamada cuenta 8 y 5 y deja acumulado en 2. La segunda cuenta 6 y 7, los añade a ese total y devuelve 4. El contrato exige 2:2. El caso vacío pasó por una salida especial; la dependencia que contaminaba otras consultas permaneció.",
+          "reviewFeedback": "Determina si las consultas mostradas pasan por el retorno especial. Sigue después el contador en las dos llamadas efectivas, separando lo que ejecuta esa reparación parcial de lo que pide el requisito."
+        }
+      },
+      {
+        "id": "block_0009_0002",
+        "block": {
+          "type": "output_prediction",
+          "id": "estado_conservado_con_otro_contrato",
+          "language": "cpp",
+          "question": "Predice la salida. ¿Coincide con la intención de registrar visitas desde el comienzo de esta ejecución?",
+          "code": "#include <iostream>\n\nint numero_visita{0};\n\nint registrar_visita() {\n    ++numero_visita;\n    return numero_visita;\n}\n\nint main() {\n    const int primera = registrar_visita();\n    const int segunda = registrar_visita();\n    const int tercera = registrar_visita();\n    std::cout << primera << ':' << segunda << ':' << tercera;\n    return 0;\n}\n",
+          "answers": [
+            "1:2:3"
+          ],
+          "explanation": "Cada llamada incrementa el mismo numero_visita y devuelve el total alcanzado. Ahora conservar esa historia expresa precisamente el requisito; preparar a cero en cada llamada haría que todas devolvieran 1.",
+          "reviewFeedback": "Sigue las llamadas de este programa y cuándo se prepara su contador. Calcula primero lo que hace el cuerpo mostrado; después contrasta esa historia con el nuevo contrato de visitas."
+        }
       }
     ]
   },

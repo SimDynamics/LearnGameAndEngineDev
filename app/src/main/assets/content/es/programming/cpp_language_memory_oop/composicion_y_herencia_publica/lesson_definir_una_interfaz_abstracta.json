@@ -49,7 +49,7 @@
         {
           "type": "code",
           "language": "cpp",
-          "code": "#include <iostream>\n#include <memory>\n\nclass Salida {\npublic:\n    Salida() = default;\n    virtual ~Salida() = default;\n    virtual void escribir(std::ostream& destino) const = 0;\n};\nint main() {\n    Salida dato;\n    return 0;\n}\n"
+          "code": "#include <iostream>\n#include <memory>\n\nclass Salida {\npublic:\n    Salida() = default;\n    virtual ~Salida() = default;\n    virtual void escribir(std::ostream& destino) const = 0;\n};\n\nint main() {\n    Salida dato;\n    return 0;\n}\n"
         },
         {
           "type": "multiple_choice",
@@ -88,7 +88,7 @@
           "id": "p3_u8l8_referencia_y_puntero_a_interfaz_abstracta",
           "language": "cpp",
           "question": "Escribe toda la salida, conservando los rótulos y el separador |.",
-          "code": "#include <iostream>\n#include <memory>\n\nclass Salida {\npublic:\n    Salida() = default;\n    virtual ~Salida() = default;\n    virtual void escribir(std::ostream& destino) const = 0;\n};\nclass SalidaNumero : public Salida {\npublic:\n    explicit SalidaNumero(int numero) : numero_{numero} {}\n    void escribir(std::ostream& destino) const override {\n        destino << \"Numero:\" << numero_;\n    }\nprivate:\n    int numero_;\n};\nclass SalidaCodigo : public Salida {\npublic:\n    explicit SalidaCodigo(int codigo) : codigo_{codigo} {}\n    void escribir(std::ostream& destino) const override {\n        destino << \"Codigo:\" << codigo_;\n    }\nprivate:\n    int codigo_;\n};\nvoid presentar(const Salida& dato, std::ostream& destino) {\n    dato.escribir(destino);\n}\nint main() {\n    SalidaNumero numero{7};\n    SalidaCodigo codigo{-2};\n    const Salida& vista = numero;\n    const Salida* acceso = &codigo;\n    presentar(vista, std::cout);\n    std::cout << '|';\n    acceso->escribir(std::cout);\n    return 0;\n}\n",
+          "code": "#include <iostream>\n#include <memory>\n\nclass Salida {\npublic:\n    Salida() = default;\n    virtual ~Salida() = default;\n    virtual void escribir(std::ostream& destino) const = 0;\n};\n\nclass SalidaNumero : public Salida {\npublic:\n    explicit SalidaNumero(int numero) : numero_{numero} {}\n    void escribir(std::ostream& destino) const override {\n        destino << \"Numero:\" << numero_;\n    }\nprivate:\n    int numero_;\n};\n\nclass SalidaCodigo : public Salida {\npublic:\n    explicit SalidaCodigo(int codigo) : codigo_{codigo} {}\n    void escribir(std::ostream& destino) const override {\n        destino << \"Codigo:\" << codigo_;\n    }\nprivate:\n    int codigo_;\n};\n\nvoid presentar(const Salida& dato, std::ostream& destino) {\n    dato.escribir(destino);\n}\n\nint main() {\n    SalidaNumero numero{7};\n    SalidaCodigo codigo{-2};\n    const Salida& vista = numero;\n    const Salida* acceso = &codigo;\n    presentar(vista, std::cout);\n    std::cout << '|';\n    acceso->escribir(std::cout);\n    return 0;\n}\n",
           "answers": [
             "Numero:7|Codigo:-2"
           ],
@@ -111,7 +111,7 @@
           "type": "inline_fill_code",
           "id": "p3_u8l8_completar_operacion_pura_y_sobrescritura",
           "question": "En el primer hueco escribe la notación que hace pura la función virtual. En el segundo escribe la palabra que comprueba la sobrescritura. Los puntos y coma y los cuerpos ya están escritos.",
-          "template": "class Origen {\npublic:\n    Origen() = default;\n    virtual ~Origen() = default;\n    virtual int dato() const [];\n};\nclass OrigenFijo : public Origen {\npublic:\n    explicit OrigenFijo(int valor) : valor_{valor} {}\n    int dato() const [] { return valor_; }\nprivate:\n    int valor_;\n};\n",
+          "template": "class Origen {\npublic:\n    Origen() = default;\n    virtual ~Origen() = default;\n    virtual int dato() const [];\n};\n\nclass OrigenFijo : public Origen {\npublic:\n    explicit OrigenFijo(int valor) : valor_{valor} {}\n    int dato() const [] { return valor_; }\nprivate:\n    int valor_;\n};\n",
           "answers": [
             "= 0",
             "override"
@@ -138,7 +138,7 @@
         {
           "type": "code",
           "language": "cpp",
-          "code": "#include <iostream>\n#include <memory>\n\nclass Origen {\npublic:\n    Origen() = default;\n    virtual ~Origen() = default;\n    virtual int dato() const = 0;\n};\nclass OrigenFijo : public Origen {\npublic:\n    explicit OrigenFijo(int valor) : valor_{valor} {}\n    int dato() const override { return valor_; }\nprivate:\n    int valor_;\n};\nint main() {\n    OrigenFijo primero{6};\n    OrigenFijo segundo{9};\n    const Origen& vista = primero;\n    const Origen* acceso = &segundo;\n    std::cout << vista.dato() << '|' << acceso->dato();\n    return 0;\n}\n"
+          "code": "#include <iostream>\n#include <memory>\n\nclass Origen {\npublic:\n    Origen() = default;\n    virtual ~Origen() = default;\n    virtual int dato() const = 0;\n};\n\nclass OrigenFijo : public Origen {\npublic:\n    explicit OrigenFijo(int valor) : valor_{valor} {}\n    int dato() const override { return valor_; }\nprivate:\n    int valor_;\n};\n\nint main() {\n    OrigenFijo primero{6};\n    OrigenFijo segundo{9};\n    const Origen& vista = primero;\n    const Origen* acceso = &segundo;\n\n    std::cout << vista.dato() << '|' << acceso->dato();\n\n    return 0;\n}\n"
         },
         {
           "type": "paragraph",
@@ -169,7 +169,7 @@
           "id": "p3_u8l8_completar_interfaz_y_heredar_implementacion",
           "language": "cpp",
           "question": "Escribe la salida completa de las consultas, con sus separadores.",
-          "code": "#include <iostream>\n#include <memory>\n\nclass Informe {\npublic:\n    Informe() = default;\n    virtual ~Informe() = default;\n    virtual int numero() const = 0;\n    virtual void escribir(std::ostream& destino) const = 0;\n};\nclass InformeConNumero : public Informe {\npublic:\n    explicit InformeConNumero(int numero) : numero_{numero} {}\n    int numero() const override { return numero_; }\nprivate:\n    int numero_;\n};\nclass InformePlano : public InformeConNumero {\npublic:\n    explicit InformePlano(int numero) : InformeConNumero{numero} {}\n    void escribir(std::ostream& destino) const override {\n        destino << \"Dato:\" << numero();\n    }\n};\nclass InformeHeredado : public InformePlano {\npublic:\n    explicit InformeHeredado(int numero) : InformePlano{numero} {}\n};\nint main() {\n    InformePlano primero{5};\n    InformeHeredado segundo{12};\n    const Informe& vista = segundo;\n    primero.escribir(std::cout);\n    std::cout << '|';\n    vista.escribir(std::cout);\n    std::cout << '|' << vista.numero();\n    return 0;\n}\n",
+          "code": "#include <iostream>\n#include <memory>\n\nclass Informe {\npublic:\n    Informe() = default;\n    virtual ~Informe() = default;\n    virtual int numero() const = 0;\n    virtual void escribir(std::ostream& destino) const = 0;\n};\n\nclass InformeConNumero : public Informe {\npublic:\n    explicit InformeConNumero(int numero) : numero_{numero} {}\n    int numero() const override { return numero_; }\nprivate:\n    int numero_;\n};\n\nclass InformePlano : public InformeConNumero {\npublic:\n    explicit InformePlano(int numero) : InformeConNumero{numero} {}\n    void escribir(std::ostream& destino) const override {\n        destino << \"Dato:\" << numero();\n    }\n};\n\nclass InformeHeredado : public InformePlano {\npublic:\n    explicit InformeHeredado(int numero) : InformePlano{numero} {}\n};\n\nint main() {\n    InformePlano primero{5};\n    InformeHeredado segundo{12};\n    const Informe& vista = segundo;\n    primero.escribir(std::cout);\n    std::cout << '|';\n    vista.escribir(std::cout);\n    std::cout << '|' << vista.numero();\n\n    return 0;\n}\n",
           "answers": [
             "Dato:5|Dato:12|12"
           ],
@@ -191,7 +191,7 @@
         {
           "type": "code",
           "language": "cpp",
-          "code": "#include <iostream>\n#include <memory>\n\nclass Informe {\npublic:\n    Informe() = default;\n    virtual ~Informe() = default;\n    virtual int numero() const = 0;\n    virtual void escribir(std::ostream& destino) const = 0;\n};\nclass InformeConNumero : public Informe {\npublic:\n    explicit InformeConNumero(int numero) : numero_{numero} {}\n    int numero() const override { return numero_; }\nprivate:\n    int numero_;\n};\nclass InformePlano : public InformeConNumero {\npublic:\n    explicit InformePlano(int numero) : InformeConNumero{numero} {}\n    void escribir(std::ostream& destino) const override {\n        destino << \"Dato:\" << numero();\n    }\n};\nclass InformeHeredado : public InformePlano {\npublic:\n    explicit InformeHeredado(int numero) : InformePlano{numero} {}\n};\nint main() {\n    InformeConNumero dato{4};\n    return 0;\n}\n"
+          "code": "#include <iostream>\n#include <memory>\n\nclass Informe {\npublic:\n    Informe() = default;\n    virtual ~Informe() = default;\n    virtual int numero() const = 0;\n    virtual void escribir(std::ostream& destino) const = 0;\n};\n\nclass InformeConNumero : public Informe {\npublic:\n    explicit InformeConNumero(int numero) : numero_{numero} {}\n    int numero() const override { return numero_; }\nprivate:\n    int numero_;\n};\n\nclass InformePlano : public InformeConNumero {\npublic:\n    explicit InformePlano(int numero) : InformeConNumero{numero} {}\n    void escribir(std::ostream& destino) const override {\n        destino << \"Dato:\" << numero();\n    }\n};\n\nclass InformeHeredado : public InformePlano {\npublic:\n    explicit InformeHeredado(int numero) : InformePlano{numero} {}\n};\n\nint main() {\n    InformeConNumero dato{4};\n    return 0;\n}\n"
         },
         {
           "type": "multiple_choice",
@@ -224,7 +224,7 @@
         {
           "type": "code",
           "language": "cpp",
-          "code": "#include <iostream>\n#include <memory>\n\nclass Reservada {\npublic:\n    virtual ~Reservada() = default;\n    int numero() const { return 4; }\nprotected:\n    Reservada() = default;\n};\nclass ReservadaPublica : public Reservada {\npublic:\n    ReservadaPublica() = default;\n};\nint main() {\n    Reservada dato;\n    return 0;\n}\n"
+          "code": "#include <iostream>\n#include <memory>\n\nclass Reservada {\npublic:\n    virtual ~Reservada() = default;\n    int numero() const { return 4; }\nprotected:\n    Reservada() = default;\n};\n\nclass ReservadaPublica : public Reservada {\npublic:\n    ReservadaPublica() = default;\n};\n\nint main() {\n    Reservada dato;\n    return 0;\n}\n"
         },
         {
           "type": "multiple_choice",
@@ -259,7 +259,7 @@
           "id": "p3_u8l8_construir_y_destruir_parte_de_base_abstracta",
           "language": "cpp",
           "question": "Escribe toda la salida, incluyendo las marcas de construcción, el informe y la destrucción.",
-          "code": "#include <iostream>\n#include <memory>\n\nclass Parte {\npublic:\n    virtual ~Parte() { std::cout << \"CerrarBase|\"; }\n    virtual void escribir(std::ostream& destino) const = 0;\nprotected:\n    explicit Parte(int valor) : valor_{valor} {\n        std::cout << \"CrearBase|\";\n    }\n    int valor() const { return valor_; }\nprivate:\n    int valor_;\n};\nclass ParteConcreta : public Parte {\npublic:\n    explicit ParteConcreta(int valor) : Parte{valor} {\n        std::cout << \"CrearDerivada|\";\n    }\n    ~ParteConcreta() override { std::cout << \"CerrarDerivada|\"; }\n    void escribir(std::ostream& destino) const override {\n        destino << \"Valor:\" << valor();\n    }\n};\nint main() {\n    {\n        ParteConcreta dato{8};\n        dato.escribir(std::cout);\n        std::cout << '|';\n    }\n    std::cout << \"Fin\";\n    return 0;\n}\n",
+          "code": "#include <iostream>\n#include <memory>\n\nclass Parte {\npublic:\n    virtual ~Parte() { std::cout << \"CerrarBase|\"; }\n    virtual void escribir(std::ostream& destino) const = 0;\nprotected:\n    explicit Parte(int valor) : valor_{valor} {\n        std::cout << \"CrearBase|\";\n    }\n\n    int valor() const { return valor_; }\nprivate:\n    int valor_;\n};\n\nclass ParteConcreta : public Parte {\npublic:\n    explicit ParteConcreta(int valor) : Parte{valor} {\n        std::cout << \"CrearDerivada|\";\n    }\n    ~ParteConcreta() override { std::cout << \"CerrarDerivada|\"; }\n    void escribir(std::ostream& destino) const override {\n        destino << \"Valor:\" << valor();\n    }\n};\n\nint main() {\n    {\n        ParteConcreta dato{8};\n        dato.escribir(std::cout);\n        std::cout << '|';\n    }\n    std::cout << \"Fin\";\n\n    return 0;\n}\n",
           "answers": [
             "CrearBase|CrearDerivada|Valor:8|CerrarDerivada|CerrarBase|Fin"
           ],
@@ -287,7 +287,7 @@
           "id": "p3_u8l8_propiedad_exclusiva_mediante_interfaz_abstracta",
           "language": "cpp",
           "question": "Escribe la salida completa, incluida la consulta de vacío y el último Fin.",
-          "code": "#include <iostream>\n#include <memory>\n\nclass Parte {\npublic:\n    virtual ~Parte() { std::cout << \"CerrarBase|\"; }\n    virtual void escribir(std::ostream& destino) const = 0;\nprotected:\n    explicit Parte(int valor) : valor_{valor} {\n        std::cout << \"CrearBase|\";\n    }\n    int valor() const { return valor_; }\nprivate:\n    int valor_;\n};\nclass ParteConcreta : public Parte {\npublic:\n    explicit ParteConcreta(int valor) : Parte{valor} {\n        std::cout << \"CrearDerivada|\";\n    }\n    ~ParteConcreta() override { std::cout << \"CerrarDerivada|\"; }\n    void escribir(std::ostream& destino) const override {\n        destino << \"Valor:\" << valor();\n    }\n};\nint main() {\n    {\n        std::unique_ptr<Parte> propietario = std::make_unique<ParteConcreta>(-3);\n        {\n            const Parte& vista = *propietario;\n            vista.escribir(std::cout);\n            std::cout << '|';\n        }\n        propietario.reset();\n        std::cout << \"Vacio:\" << (propietario == nullptr) << '|';\n    }\n    std::cout << \"Fin\";\n    return 0;\n}\n",
+          "code": "#include <iostream>\n#include <memory>\n\nclass Parte {\npublic:\n    virtual ~Parte() { std::cout << \"CerrarBase|\"; }\n    virtual void escribir(std::ostream& destino) const = 0;\nprotected:\n    explicit Parte(int valor) : valor_{valor} {\n        std::cout << \"CrearBase|\";\n    }\n\n    int valor() const { return valor_; }\nprivate:\n    int valor_;\n};\n\nclass ParteConcreta : public Parte {\npublic:\n    explicit ParteConcreta(int valor) : Parte{valor} {\n        std::cout << \"CrearDerivada|\";\n    }\n    ~ParteConcreta() override { std::cout << \"CerrarDerivada|\"; }\n    void escribir(std::ostream& destino) const override {\n        destino << \"Valor:\" << valor();\n    }\n};\n\nint main() {\n    {\n        std::unique_ptr<Parte> propietario = std::make_unique<ParteConcreta>(-3);\n        {\n            const Parte& vista = *propietario;\n            vista.escribir(std::cout);\n            std::cout << '|';\n        }\n        propietario.reset();\n        std::cout << \"Vacio:\" << (propietario == nullptr) << '|';\n    }\n    std::cout << \"Fin\";\n\n    return 0;\n}\n",
           "answers": [
             "CrearBase|CrearDerivada|Valor:-3|CerrarDerivada|CerrarBase|Vacio:1|Fin"
           ],
@@ -315,7 +315,7 @@
           "id": "p3_u8l8_cuerpo_exterior_de_funcion_pura",
           "language": "cpp",
           "question": "Escribe la salida de la llamada mediante vista.",
-          "code": "#include <iostream>\n#include <memory>\n\nclass Mensaje {\npublic:\n    Mensaje() = default;\n    virtual ~Mensaje() = default;\n    virtual void escribir(std::ostream& destino) const = 0;\n};\nvoid Mensaje::escribir(std::ostream& destino) const {\n    destino << \"Comun\";\n}\nclass MensajeMarcado : public Mensaje {\npublic:\n    explicit MensajeMarcado(int marca) : marca_{marca} {}\n    void escribir(std::ostream& destino) const override {\n        Mensaje::escribir(destino);\n        destino << \";Marca:\" << marca_;\n    }\nprivate:\n    int marca_;\n};\nint main() {\n    MensajeMarcado dato{6};\n    const Mensaje& vista = dato;\n    vista.escribir(std::cout);\n    return 0;\n}\n",
+          "code": "#include <iostream>\n#include <memory>\n\nclass Mensaje {\npublic:\n    Mensaje() = default;\n    virtual ~Mensaje() = default;\n    virtual void escribir(std::ostream& destino) const = 0;\n};\n\nvoid Mensaje::escribir(std::ostream& destino) const {\n    destino << \"Comun\";\n}\n\nclass MensajeMarcado : public Mensaje {\npublic:\n    explicit MensajeMarcado(int marca) : marca_{marca} {}\n    void escribir(std::ostream& destino) const override {\n        Mensaje::escribir(destino);\n        destino << \";Marca:\" << marca_;\n    }\nprivate:\n    int marca_;\n};\n\nint main() {\n    MensajeMarcado dato{6};\n    const Mensaje& vista = dato;\n    vista.escribir(std::cout);\n    return 0;\n}\n",
           "answers": [
             "Comun;Marca:6"
           ],
@@ -498,7 +498,7 @@
         {
           "type": "cpp_compiler",
           "language": "cpp",
-          "initialCode": "#include <iostream>\n#include <memory>\n#include <utility>\n\nclass Muestra {\npublic:\n    virtual ~Muestra() = default;\n    virtual int numero() const noexcept = 0;\n    virtual void escribir(std::ostream& salida) const = 0;\n};\nclass MuestraSimple : public Muestra {\npublic:\n    explicit MuestraSimple(int numero) : numero_{numero} {}\n    int numero() const noexcept override { return numero_; }\n    void escribir(std::ostream& salida) const override {\n        salida << \"Pendiente\";\n    }\nprivate:\n    int numero_;\n};\nclass MuestraIdentificada : public Muestra {\npublic:\n    MuestraIdentificada(int numero, int codigo) : numero_{numero}, codigo_{codigo} {}\n    int numero() const noexcept override { return numero_; }\n    int codigo() const noexcept { return codigo_; }\n    void escribir(std::ostream& salida) const override {\n        salida << \"Pendiente\";\n    }\nprivate:\n    int numero_;\n    int codigo_;\n};\nstd::unique_ptr<Muestra> crear(int tipo, int numero, int codigo) {\n    (void)tipo;\n    (void)numero;\n    (void)codigo;\n    return {};\n}\nvoid presentar(const Muestra& dato, std::ostream& salida) {\n    (void)dato;\n    salida << \"Pendiente\\n\";\n}\nint main() {\n    int tipo = 0, numero = 0, codigo = 0;\n    if (!(std::cin >> tipo >> numero >> codigo) || tipo < 0 || tipo > 1) {\n        return 1;\n    }\n    std::unique_ptr<Muestra> origen = crear(tipo, numero, codigo);\n    if (!origen) {\n        std::cout << \"SinMuestra\";\n        return 2;\n    }\n    presentar(*origen, std::cout);\n    std::unique_ptr<Muestra> destino = std::move(origen);\n    std::cout << \"Propiedad:\" << (origen != nullptr) << ','\n              << (destino != nullptr) << '\\n';\n    destino.reset();\n    std::cout << \"DestinoVacio:\" << (destino == nullptr);\n    return 0;\n}\n",
+          "initialCode": "#include <iostream>\n#include <memory>\n#include <utility>\n\nclass Muestra {\npublic:\n    virtual ~Muestra() = default;\n    virtual int numero() const noexcept = 0;\n    virtual void escribir(std::ostream& salida) const = 0;\n};\n\nclass MuestraSimple : public Muestra {\npublic:\n    explicit MuestraSimple(int numero) : numero_{numero} {}\n    int numero() const noexcept override { return numero_; }\n    void escribir(std::ostream& salida) const override {\n        salida << \"Pendiente\";\n    }\nprivate:\n    int numero_;\n};\n\nclass MuestraIdentificada : public Muestra {\npublic:\n    MuestraIdentificada(int numero, int codigo) : numero_{numero}, codigo_{codigo} {}\n    int numero() const noexcept override { return numero_; }\n    int codigo() const noexcept { return codigo_; }\n    void escribir(std::ostream& salida) const override {\n        salida << \"Pendiente\";\n    }\nprivate:\n    int numero_;\n    int codigo_;\n};\n\nstd::unique_ptr<Muestra> crear(int tipo, int numero, int codigo) {\n    (void)tipo;\n    (void)numero;\n    (void)codigo;\n    return {};\n}\n\nvoid presentar(const Muestra& dato, std::ostream& salida) {\n    (void)dato;\n    salida << \"Pendiente\\n\";\n}\n\nint main() {\n    int tipo = 0, numero = 0, codigo = 0;\n    if (!(std::cin >> tipo >> numero >> codigo) || tipo < 0 || tipo > 1) {\n        return 1;\n    }\n    std::unique_ptr<Muestra> origen = crear(tipo, numero, codigo);\n    if (!origen) {\n        std::cout << \"SinMuestra\";\n        return 2;\n    }\n    presentar(*origen, std::cout);\n    std::unique_ptr<Muestra> destino = std::move(origen);\n    std::cout << \"Propiedad:\" << (origen != nullptr) << ','\n              << (destino != nullptr) << '\\n';\n    destino.reset();\n    std::cout << \"DestinoVacio:\" << (destino == nullptr);\n\n    return 0;\n}\n",
           "initialStandardInput": "1 -4 0",
           "outputCheck": {
             "inputComparison": "tokens",
@@ -690,7 +690,7 @@
         {
           "type": "code",
           "language": "cpp",
-          "code": "#include <iostream>\n#include <memory>\n#include <utility>\n\nclass Muestra {\npublic:\n    virtual ~Muestra() = default;\n    virtual int numero() const noexcept = 0;\n    virtual void escribir(std::ostream& salida) const = 0;\n};\nclass MuestraSimple : public Muestra {\npublic:\n    explicit MuestraSimple(int numero) : numero_{numero} {}\n    int numero() const noexcept override { return numero_; }\n    void escribir(std::ostream& salida) const override {\n        salida << \"Numero:\" << numero();\n    }\nprivate:\n    int numero_;\n};\nclass MuestraIdentificada : public Muestra {\npublic:\n    MuestraIdentificada(int numero, int codigo) : numero_{numero}, codigo_{codigo} {}\n    int numero() const noexcept override { return numero_; }\n    int codigo() const noexcept { return codigo_; }\n    void escribir(std::ostream& salida) const override {\n        salida << \"Numero:\" << numero() << \";Codigo:\" << codigo();\n    }\nprivate:\n    int numero_;\n    int codigo_;\n};\nstd::unique_ptr<Muestra> crear(int tipo, int numero, int codigo) {\n    if (tipo == 0) {\n        return std::make_unique<MuestraSimple>(numero);\n    }\n    return std::make_unique<MuestraIdentificada>(numero, codigo);\n}\nvoid presentar(const Muestra& dato, std::ostream& salida) {\n    salida << \"Numero:\" << dato.numero() << '\\n';\n    salida << \"Detalle:\";\n    dato.escribir(salida);\n    salida << '\\n';\n}\nint main() {\n    int tipo = 0, numero = 0, codigo = 0;\n    if (!(std::cin >> tipo >> numero >> codigo) || tipo < 0 || tipo > 1) {\n        return 1;\n    }\n    std::unique_ptr<Muestra> origen = crear(tipo, numero, codigo);\n    if (!origen) {\n        std::cout << \"SinMuestra\";\n        return 2;\n    }\n    presentar(*origen, std::cout);\n    std::unique_ptr<Muestra> destino = std::move(origen);\n    std::cout << \"Propiedad:\" << (origen != nullptr) << ','\n              << (destino != nullptr) << '\\n';\n    destino.reset();\n    std::cout << \"DestinoVacio:\" << (destino == nullptr);\n    return 0;\n}\n"
+          "code": "#include <iostream>\n#include <memory>\n#include <utility>\n\nclass Muestra {\npublic:\n    virtual ~Muestra() = default;\n    virtual int numero() const noexcept = 0;\n    virtual void escribir(std::ostream& salida) const = 0;\n};\n\nclass MuestraSimple : public Muestra {\npublic:\n    explicit MuestraSimple(int numero) : numero_{numero} {}\n    int numero() const noexcept override { return numero_; }\n    void escribir(std::ostream& salida) const override {\n        salida << \"Numero:\" << numero();\n    }\nprivate:\n    int numero_;\n};\n\nclass MuestraIdentificada : public Muestra {\npublic:\n    MuestraIdentificada(int numero, int codigo) : numero_{numero}, codigo_{codigo} {}\n    int numero() const noexcept override { return numero_; }\n    int codigo() const noexcept { return codigo_; }\n    void escribir(std::ostream& salida) const override {\n        salida << \"Numero:\" << numero() << \";Codigo:\" << codigo();\n    }\nprivate:\n    int numero_;\n    int codigo_;\n};\n\nstd::unique_ptr<Muestra> crear(int tipo, int numero, int codigo) {\n    if (tipo == 0) {\n        return std::make_unique<MuestraSimple>(numero);\n    }\n\n    return std::make_unique<MuestraIdentificada>(numero, codigo);\n}\n\nvoid presentar(const Muestra& dato, std::ostream& salida) {\n    salida << \"Numero:\" << dato.numero() << '\\n';\n    salida << \"Detalle:\";\n    dato.escribir(salida);\n    salida << '\\n';\n}\n\nint main() {\n    int tipo = 0, numero = 0, codigo = 0;\n    if (!(std::cin >> tipo >> numero >> codigo) || tipo < 0 || tipo > 1) {\n        return 1;\n    }\n    std::unique_ptr<Muestra> origen = crear(tipo, numero, codigo);\n    if (!origen) {\n        std::cout << \"SinMuestra\";\n        return 2;\n    }\n    presentar(*origen, std::cout);\n    std::unique_ptr<Muestra> destino = std::move(origen);\n    std::cout << \"Propiedad:\" << (origen != nullptr) << ','\n              << (destino != nullptr) << '\\n';\n    destino.reset();\n    std::cout << \"DestinoVacio:\" << (destino == nullptr);\n\n    return 0;\n}\n"
         },
         {
           "type": "paragraph",
@@ -2212,6 +2212,256 @@
       }
     },
     "additions": [],
-    "editorial": []
+    "editorial": [
+      {
+        "id": "block_0001_0003",
+        "beforeSha256": "8e5548ff2f4bbcc7b6feea24b80758f424455780bc4de8f8842d2a6d067f8aef",
+        "afterSha256": "219800e15cbdf9aa4778b6d32368668f7c4f03913c26200893a112dcf3bf134f"
+      },
+      {
+        "id": "block_0002_0004",
+        "beforeSha256": "64de9726919414b27c9b80c345481cfd1e57407b03cbaab55106ff1cf1864a9f",
+        "afterSha256": "d2b73be6ac04690ac99de9f784d2b2b7f31781e8129ecc6a8ade634ba537868b"
+      },
+      {
+        "id": "block_0003_0002",
+        "beforeSha256": "dfa30c75f3510a3d4a46010befb0613f51af3f625a7d3c828b73be257551977b",
+        "afterSha256": "36b20ea7227fbaae94f260538cbc0558bca811a78b17c20d55d2ca44b8513c33"
+      },
+      {
+        "id": "block_0004_0001",
+        "beforeSha256": "7a17a075225a2f343c048df3eb8b7ead26b8b16f9cf393ad0cc041e1af706410",
+        "afterSha256": "8fb38ae42ef5bb58db8017681e09ba2df1e42329d3dcce31dc4c6bcea98acf2b"
+      },
+      {
+        "id": "block_0005_0003",
+        "beforeSha256": "ca21bba05ed58929d637b36efdf9b8c10b1c3c573e415f4f05f082f5827e3adb",
+        "afterSha256": "41303aa57d0196820921e9979b8aa513132b76c029d0967115594bc194275057"
+      },
+      {
+        "id": "block_0006_0002",
+        "beforeSha256": "419782d6b8665d02ac87376dec6820a2445f6a47bc85e4509136ce743eff32bb",
+        "afterSha256": "d632eecc855bef1b1d43ca8482a57c3852b94c93b870a262437fcfa37d06032d"
+      },
+      {
+        "id": "block_0007_0003",
+        "beforeSha256": "a3188595b2e60d2df7c45121e2de3c7f7939dbe9a81af0082fb9f8e827ae944a",
+        "afterSha256": "18083da4982b368a83b970fc48b5de304a9d11d1fbb30ce424117b5fb71448a0"
+      },
+      {
+        "id": "block_0008_0003",
+        "beforeSha256": "3d3de27a1be446bc8725d556bf2bbf8184228d284c3b05bf56d1a19c20be13d1",
+        "afterSha256": "4d17762a6bfc6ca770f7f1b386b15df154733961303ec69be576cf09a52c447b"
+      },
+      {
+        "id": "block_0009_0003",
+        "beforeSha256": "c20a814eecd490404c663051615b5f2fb318138d7f11b945378a01bd43b7e360",
+        "afterSha256": "ea29b200f32abd29f513ceecc82d1cc415309364fa05882c20b7e021b9f734f0"
+      },
+      {
+        "id": "block_0010_0003",
+        "beforeSha256": "51695e1a7e7cb11be36e2d4fb0e9333a858d393bb08556dd772e5012d1c086aa",
+        "afterSha256": "37930a5f4e4a6c8d1ee57f8cfb787b4aabc1cf10aa70b4e47f655fe50a91e46b"
+      },
+      {
+        "id": "block_0017_0002",
+        "beforeSha256": "7739dd319a518896fb15ccc16f1c88a53d0ea2c8ddca4dcebcf2a876e928dc64",
+        "afterSha256": "0280f20e412b98ac29f13d3d29c49351ed5bd65d3f2a94c01fc9fd60bb3c8249"
+      },
+      {
+        "id": "block_0019_0001",
+        "beforeSha256": "e2e90e65e79df1f5868a2c1b1ef7eeca27144bc74016ce460822f1e66af505ac",
+        "afterSha256": "a6843d0fb85e7d4a18ed51d425c70474af54251cccfa9c2a3018821d3f14ce7e"
+      }
+    ],
+    "sourceFormatRevisions": [
+      {
+        "id": "block_0001_0003",
+        "block": {
+          "type": "code",
+          "language": "cpp",
+          "code": "#include <iostream>\n#include <memory>\n\nclass Salida {\npublic:\n    Salida() = default;\n    virtual ~Salida() = default;\n    virtual void escribir(std::ostream& destino) const = 0;\n};\nint main() {\n    Salida dato;\n    return 0;\n}\n"
+        }
+      },
+      {
+        "id": "block_0002_0004",
+        "block": {
+          "type": "output_prediction",
+          "id": "p3_u8l8_referencia_y_puntero_a_interfaz_abstracta",
+          "language": "cpp",
+          "question": "Escribe toda la salida, conservando los rótulos y el separador |.",
+          "code": "#include <iostream>\n#include <memory>\n\nclass Salida {\npublic:\n    Salida() = default;\n    virtual ~Salida() = default;\n    virtual void escribir(std::ostream& destino) const = 0;\n};\nclass SalidaNumero : public Salida {\npublic:\n    explicit SalidaNumero(int numero) : numero_{numero} {}\n    void escribir(std::ostream& destino) const override {\n        destino << \"Numero:\" << numero_;\n    }\nprivate:\n    int numero_;\n};\nclass SalidaCodigo : public Salida {\npublic:\n    explicit SalidaCodigo(int codigo) : codigo_{codigo} {}\n    void escribir(std::ostream& destino) const override {\n        destino << \"Codigo:\" << codigo_;\n    }\nprivate:\n    int codigo_;\n};\nvoid presentar(const Salida& dato, std::ostream& destino) {\n    dato.escribir(destino);\n}\nint main() {\n    SalidaNumero numero{7};\n    SalidaCodigo codigo{-2};\n    const Salida& vista = numero;\n    const Salida* acceso = &codigo;\n    presentar(vista, std::cout);\n    std::cout << '|';\n    acceso->escribir(std::cout);\n    return 0;\n}\n",
+          "answers": [
+            "Numero:7|Codigo:-2"
+          ],
+          "outputComparison": "exact",
+          "explanation": "vista accede al objeto numero. presentar pide su operación virtual y obtiene escribir de SalidaNumero, con el número siete. acceso apunta al objeto codigo, de modo que su llamada utiliza SalidaCodigo y muestra el código menos dos. Ambos accesos tienen tipo base, pero no crean objetos Salida ni copian los datos de los objetos concretos."
+        }
+      },
+      {
+        "id": "block_0003_0002",
+        "block": {
+          "type": "inline_fill_code",
+          "id": "p3_u8l8_completar_operacion_pura_y_sobrescritura",
+          "question": "En el primer hueco escribe la notación que hace pura la función virtual. En el segundo escribe la palabra que comprueba la sobrescritura. Los puntos y coma y los cuerpos ya están escritos.",
+          "template": "class Origen {\npublic:\n    Origen() = default;\n    virtual ~Origen() = default;\n    virtual int dato() const [];\n};\nclass OrigenFijo : public Origen {\npublic:\n    explicit OrigenFijo(int valor) : valor_{valor} {}\n    int dato() const [] { return valor_; }\nprivate:\n    int valor_;\n};\n",
+          "answers": [
+            "= 0",
+            "override"
+          ],
+          "answerAlternatives": [
+            [
+              "= 0",
+              "=0"
+            ],
+            [
+              "override"
+            ]
+          ],
+          "explanation": "= 0 declara pura la operación de Origen. override solicita comprobar que OrigenFijo::dato corresponde a la operación virtual base, incluido su const final. El cuerpo de la derivada devuelve su miembro valor_; la notación de pureza no es ese cuerpo ni un valor devuelto."
+        }
+      },
+      {
+        "id": "block_0004_0001",
+        "block": {
+          "type": "code",
+          "language": "cpp",
+          "code": "#include <iostream>\n#include <memory>\n\nclass Origen {\npublic:\n    Origen() = default;\n    virtual ~Origen() = default;\n    virtual int dato() const = 0;\n};\nclass OrigenFijo : public Origen {\npublic:\n    explicit OrigenFijo(int valor) : valor_{valor} {}\n    int dato() const override { return valor_; }\nprivate:\n    int valor_;\n};\nint main() {\n    OrigenFijo primero{6};\n    OrigenFijo segundo{9};\n    const Origen& vista = primero;\n    const Origen* acceso = &segundo;\n    std::cout << vista.dato() << '|' << acceso->dato();\n    return 0;\n}\n"
+        }
+      },
+      {
+        "id": "block_0005_0003",
+        "block": {
+          "type": "output_prediction",
+          "id": "p3_u8l8_completar_interfaz_y_heredar_implementacion",
+          "language": "cpp",
+          "question": "Escribe la salida completa de las consultas, con sus separadores.",
+          "code": "#include <iostream>\n#include <memory>\n\nclass Informe {\npublic:\n    Informe() = default;\n    virtual ~Informe() = default;\n    virtual int numero() const = 0;\n    virtual void escribir(std::ostream& destino) const = 0;\n};\nclass InformeConNumero : public Informe {\npublic:\n    explicit InformeConNumero(int numero) : numero_{numero} {}\n    int numero() const override { return numero_; }\nprivate:\n    int numero_;\n};\nclass InformePlano : public InformeConNumero {\npublic:\n    explicit InformePlano(int numero) : InformeConNumero{numero} {}\n    void escribir(std::ostream& destino) const override {\n        destino << \"Dato:\" << numero();\n    }\n};\nclass InformeHeredado : public InformePlano {\npublic:\n    explicit InformeHeredado(int numero) : InformePlano{numero} {}\n};\nint main() {\n    InformePlano primero{5};\n    InformeHeredado segundo{12};\n    const Informe& vista = segundo;\n    primero.escribir(std::cout);\n    std::cout << '|';\n    vista.escribir(std::cout);\n    std::cout << '|' << vista.numero();\n    return 0;\n}\n",
+          "answers": [
+            "Dato:5|Dato:12|12"
+          ],
+          "outputComparison": "exact",
+          "explanation": "primero utiliza escribir de InformePlano y numero de InformeConNumero, con el valor cinco. segundo hereda esas mismas implementaciones y conserva el valor doce. vista accede a segundo como Informe; sus llamadas obtienen el informe con doce y después ese mismo número. InformeHeredado es concreta aunque no vuelva a declarar numero ni escribir."
+        }
+      },
+      {
+        "id": "block_0006_0002",
+        "block": {
+          "type": "code",
+          "language": "cpp",
+          "code": "#include <iostream>\n#include <memory>\n\nclass Informe {\npublic:\n    Informe() = default;\n    virtual ~Informe() = default;\n    virtual int numero() const = 0;\n    virtual void escribir(std::ostream& destino) const = 0;\n};\nclass InformeConNumero : public Informe {\npublic:\n    explicit InformeConNumero(int numero) : numero_{numero} {}\n    int numero() const override { return numero_; }\nprivate:\n    int numero_;\n};\nclass InformePlano : public InformeConNumero {\npublic:\n    explicit InformePlano(int numero) : InformeConNumero{numero} {}\n    void escribir(std::ostream& destino) const override {\n        destino << \"Dato:\" << numero();\n    }\n};\nclass InformeHeredado : public InformePlano {\npublic:\n    explicit InformeHeredado(int numero) : InformePlano{numero} {}\n};\nint main() {\n    InformeConNumero dato{4};\n    return 0;\n}\n"
+        }
+      },
+      {
+        "id": "block_0007_0003",
+        "block": {
+          "type": "code",
+          "language": "cpp",
+          "code": "#include <iostream>\n#include <memory>\n\nclass Reservada {\npublic:\n    virtual ~Reservada() = default;\n    int numero() const { return 4; }\nprotected:\n    Reservada() = default;\n};\nclass ReservadaPublica : public Reservada {\npublic:\n    ReservadaPublica() = default;\n};\nint main() {\n    Reservada dato;\n    return 0;\n}\n"
+        }
+      },
+      {
+        "id": "block_0008_0003",
+        "block": {
+          "type": "output_prediction",
+          "id": "p3_u8l8_construir_y_destruir_parte_de_base_abstracta",
+          "language": "cpp",
+          "question": "Escribe toda la salida, incluyendo las marcas de construcción, el informe y la destrucción.",
+          "code": "#include <iostream>\n#include <memory>\n\nclass Parte {\npublic:\n    virtual ~Parte() { std::cout << \"CerrarBase|\"; }\n    virtual void escribir(std::ostream& destino) const = 0;\nprotected:\n    explicit Parte(int valor) : valor_{valor} {\n        std::cout << \"CrearBase|\";\n    }\n    int valor() const { return valor_; }\nprivate:\n    int valor_;\n};\nclass ParteConcreta : public Parte {\npublic:\n    explicit ParteConcreta(int valor) : Parte{valor} {\n        std::cout << \"CrearDerivada|\";\n    }\n    ~ParteConcreta() override { std::cout << \"CerrarDerivada|\"; }\n    void escribir(std::ostream& destino) const override {\n        destino << \"Valor:\" << valor();\n    }\n};\nint main() {\n    {\n        ParteConcreta dato{8};\n        dato.escribir(std::cout);\n        std::cout << '|';\n    }\n    std::cout << \"Fin\";\n    return 0;\n}\n",
+          "answers": [
+            "CrearBase|CrearDerivada|Valor:8|CerrarDerivada|CerrarBase|Fin"
+          ],
+          "outputComparison": "exact",
+          "explanation": "Primero se prepara la base Parte y después se ejecuta el cuerpo de ParteConcreta. La consulta del objeto completo escribe el valor ocho. Al salir del bloque se ejecuta el destructor derivado y luego el base, y main escribe Fin. La base abstracta participa en ese objeto derivado; no se creó un objeto independiente de tipo Parte."
+        }
+      },
+      {
+        "id": "block_0009_0003",
+        "block": {
+          "type": "output_prediction",
+          "id": "p3_u8l8_propiedad_exclusiva_mediante_interfaz_abstracta",
+          "language": "cpp",
+          "question": "Escribe la salida completa, incluida la consulta de vacío y el último Fin.",
+          "code": "#include <iostream>\n#include <memory>\n\nclass Parte {\npublic:\n    virtual ~Parte() { std::cout << \"CerrarBase|\"; }\n    virtual void escribir(std::ostream& destino) const = 0;\nprotected:\n    explicit Parte(int valor) : valor_{valor} {\n        std::cout << \"CrearBase|\";\n    }\n    int valor() const { return valor_; }\nprivate:\n    int valor_;\n};\nclass ParteConcreta : public Parte {\npublic:\n    explicit ParteConcreta(int valor) : Parte{valor} {\n        std::cout << \"CrearDerivada|\";\n    }\n    ~ParteConcreta() override { std::cout << \"CerrarDerivada|\"; }\n    void escribir(std::ostream& destino) const override {\n        destino << \"Valor:\" << valor();\n    }\n};\nint main() {\n    {\n        std::unique_ptr<Parte> propietario = std::make_unique<ParteConcreta>(-3);\n        {\n            const Parte& vista = *propietario;\n            vista.escribir(std::cout);\n            std::cout << '|';\n        }\n        propietario.reset();\n        std::cout << \"Vacio:\" << (propietario == nullptr) << '|';\n    }\n    std::cout << \"Fin\";\n    return 0;\n}\n",
+          "answers": [
+            "CrearBase|CrearDerivada|Valor:-3|CerrarDerivada|CerrarBase|Vacio:1|Fin"
+          ],
+          "outputComparison": "exact",
+          "explanation": "make_unique construye primero la base y después la derivada. vista obtiene la operación concreta y escribe el valor menos tres. reset destruye el objeto completo: primero el cuerpo derivado y después el base. El propietario queda vacío y aparece Vacio:1. Al salir de su bloque ya no queda otro objeto que retirar y main escribe Fin."
+        }
+      },
+      {
+        "id": "block_0010_0003",
+        "block": {
+          "type": "output_prediction",
+          "id": "p3_u8l8_cuerpo_exterior_de_funcion_pura",
+          "language": "cpp",
+          "question": "Escribe la salida de la llamada mediante vista.",
+          "code": "#include <iostream>\n#include <memory>\n\nclass Mensaje {\npublic:\n    Mensaje() = default;\n    virtual ~Mensaje() = default;\n    virtual void escribir(std::ostream& destino) const = 0;\n};\nvoid Mensaje::escribir(std::ostream& destino) const {\n    destino << \"Comun\";\n}\nclass MensajeMarcado : public Mensaje {\npublic:\n    explicit MensajeMarcado(int marca) : marca_{marca} {}\n    void escribir(std::ostream& destino) const override {\n        Mensaje::escribir(destino);\n        destino << \";Marca:\" << marca_;\n    }\nprivate:\n    int marca_;\n};\nint main() {\n    MensajeMarcado dato{6};\n    const Mensaje& vista = dato;\n    vista.escribir(std::cout);\n    return 0;\n}\n",
+          "answers": [
+            "Comun;Marca:6"
+          ],
+          "outputComparison": "exact",
+          "explanation": "vista accede al MensajeMarcado. Su escribir llama expresamente al cuerpo Mensaje::escribir, que escribe Comun, y después añade la marca seis. Esa reutilización requiere que el cuerpo base esté definido. La declaración base sigue teniendo = 0; no sería válido declarar un objeto independiente de tipo Mensaje."
+        }
+      },
+      {
+        "id": "block_0017_0002",
+        "block": {
+          "type": "cpp_compiler",
+          "language": "cpp",
+          "initialCode": "#include <iostream>\n#include <memory>\n#include <utility>\n\nclass Muestra {\npublic:\n    virtual ~Muestra() = default;\n    virtual int numero() const noexcept = 0;\n    virtual void escribir(std::ostream& salida) const = 0;\n};\nclass MuestraSimple : public Muestra {\npublic:\n    explicit MuestraSimple(int numero) : numero_{numero} {}\n    int numero() const noexcept override { return numero_; }\n    void escribir(std::ostream& salida) const override {\n        salida << \"Pendiente\";\n    }\nprivate:\n    int numero_;\n};\nclass MuestraIdentificada : public Muestra {\npublic:\n    MuestraIdentificada(int numero, int codigo) : numero_{numero}, codigo_{codigo} {}\n    int numero() const noexcept override { return numero_; }\n    int codigo() const noexcept { return codigo_; }\n    void escribir(std::ostream& salida) const override {\n        salida << \"Pendiente\";\n    }\nprivate:\n    int numero_;\n    int codigo_;\n};\nstd::unique_ptr<Muestra> crear(int tipo, int numero, int codigo) {\n    (void)tipo;\n    (void)numero;\n    (void)codigo;\n    return {};\n}\nvoid presentar(const Muestra& dato, std::ostream& salida) {\n    (void)dato;\n    salida << \"Pendiente\\n\";\n}\nint main() {\n    int tipo = 0, numero = 0, codigo = 0;\n    if (!(std::cin >> tipo >> numero >> codigo) || tipo < 0 || tipo > 1) {\n        return 1;\n    }\n    std::unique_ptr<Muestra> origen = crear(tipo, numero, codigo);\n    if (!origen) {\n        std::cout << \"SinMuestra\";\n        return 2;\n    }\n    presentar(*origen, std::cout);\n    std::unique_ptr<Muestra> destino = std::move(origen);\n    std::cout << \"Propiedad:\" << (origen != nullptr) << ','\n              << (destino != nullptr) << '\\n';\n    destino.reset();\n    std::cout << \"DestinoVacio:\" << (destino == nullptr);\n    return 0;\n}\n",
+          "initialStandardInput": "1 -4 0",
+          "outputCheck": {
+            "inputComparison": "tokens",
+            "cases": [
+              {
+                "standardInput": "1 -4 0",
+                "outputs": [
+                  "Numero:-4\nDetalle:Numero:-4;Codigo:0\nPropiedad:0,1\nDestinoVacio:1"
+                ],
+                "explanation": "Las clases concretas implementan las operaciones puras con sus propios datos. crear construye la clase solicitada y devuelve su propietario base. presentar consulta numero y llama a escribir a través de la referencia base, sin reconstruir el comportamiento de la clase concreta."
+              },
+              {
+                "standardInput": "0 0 7",
+                "outputs": [
+                  "Numero:0\nDetalle:Numero:0\nPropiedad:0,1\nDestinoVacio:1"
+                ],
+                "explanation": "Las clases concretas implementan las operaciones puras con sus propios datos. crear construye la clase solicitada y devuelve su propietario base. presentar consulta numero y llama a escribir a través de la referencia base, sin reconstruir el comportamiento de la clase concreta."
+              },
+              {
+                "standardInput": "0 -9 0",
+                "outputs": [
+                  "Numero:-9\nDetalle:Numero:-9\nPropiedad:0,1\nDestinoVacio:1"
+                ],
+                "explanation": "Las clases concretas implementan las operaciones puras con sus propios datos. crear construye la clase solicitada y devuelve su propietario base. presentar consulta numero y llama a escribir a través de la referencia base, sin reconstruir el comportamiento de la clase concreta."
+              },
+              {
+                "standardInput": "1 12 -3",
+                "outputs": [
+                  "Numero:12\nDetalle:Numero:12;Codigo:-3\nPropiedad:0,1\nDestinoVacio:1"
+                ],
+                "explanation": "Las clases concretas implementan las operaciones puras con sus propios datos. crear construye la clase solicitada y devuelve su propietario base. presentar consulta numero y llama a escribir a través de la referencia base, sin reconstruir el comportamiento de la clase concreta."
+              },
+              {
+                "standardInput": "1 0 0",
+                "outputs": [
+                  "Numero:0\nDetalle:Numero:0;Codigo:0\nPropiedad:0,1\nDestinoVacio:1"
+                ],
+                "explanation": "Las clases concretas implementan las operaciones puras con sus propios datos. crear construye la clase solicitada y devuelve su propietario base. presentar consulta numero y llama a escribir a través de la referencia base, sin reconstruir el comportamiento de la clase concreta."
+              }
+            ]
+          }
+        }
+      },
+      {
+        "id": "block_0019_0001",
+        "block": {
+          "type": "code",
+          "language": "cpp",
+          "code": "#include <iostream>\n#include <memory>\n#include <utility>\n\nclass Muestra {\npublic:\n    virtual ~Muestra() = default;\n    virtual int numero() const noexcept = 0;\n    virtual void escribir(std::ostream& salida) const = 0;\n};\nclass MuestraSimple : public Muestra {\npublic:\n    explicit MuestraSimple(int numero) : numero_{numero} {}\n    int numero() const noexcept override { return numero_; }\n    void escribir(std::ostream& salida) const override {\n        salida << \"Numero:\" << numero();\n    }\nprivate:\n    int numero_;\n};\nclass MuestraIdentificada : public Muestra {\npublic:\n    MuestraIdentificada(int numero, int codigo) : numero_{numero}, codigo_{codigo} {}\n    int numero() const noexcept override { return numero_; }\n    int codigo() const noexcept { return codigo_; }\n    void escribir(std::ostream& salida) const override {\n        salida << \"Numero:\" << numero() << \";Codigo:\" << codigo();\n    }\nprivate:\n    int numero_;\n    int codigo_;\n};\nstd::unique_ptr<Muestra> crear(int tipo, int numero, int codigo) {\n    if (tipo == 0) {\n        return std::make_unique<MuestraSimple>(numero);\n    }\n    return std::make_unique<MuestraIdentificada>(numero, codigo);\n}\nvoid presentar(const Muestra& dato, std::ostream& salida) {\n    salida << \"Numero:\" << dato.numero() << '\\n';\n    salida << \"Detalle:\";\n    dato.escribir(salida);\n    salida << '\\n';\n}\nint main() {\n    int tipo = 0, numero = 0, codigo = 0;\n    if (!(std::cin >> tipo >> numero >> codigo) || tipo < 0 || tipo > 1) {\n        return 1;\n    }\n    std::unique_ptr<Muestra> origen = crear(tipo, numero, codigo);\n    if (!origen) {\n        std::cout << \"SinMuestra\";\n        return 2;\n    }\n    presentar(*origen, std::cout);\n    std::unique_ptr<Muestra> destino = std::move(origen);\n    std::cout << \"Propiedad:\" << (origen != nullptr) << ','\n              << (destino != nullptr) << '\\n';\n    destino.reset();\n    std::cout << \"DestinoVacio:\" << (destino == nullptr);\n    return 0;\n}\n"
+        }
+      }
+    ]
   }
 }

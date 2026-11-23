@@ -85,7 +85,7 @@
           "id": "p3_u1l4_umbrales",
           "question": "Predice los cuatro valores, en su orden. Un 1 significa que la comparación de rechazo resulta verdadera para el límite didáctico.",
           "language": "cpp",
-          "code": "#include <iostream>\n\nint main() {\n    const int superior = 100;\n    const int inferior = -100;\n    std::cout << (98 > superior - 2) << \":\"\n              << (98 > superior - 3) << \":\"\n              << (-98 < inferior - (-2)) << \":\"\n              << (-98 < inferior - (-3));\n    return 0;\n}\n",
+          "code": "#include <iostream>\n\nint main() {\n    const int superior = 100;\n    const int inferior = -100;\n\n    std::cout << (98 > superior - 2) << \":\"\n              << (98 > superior - 3) << \":\"\n              << (-98 < inferior - (-2)) << \":\"\n              << (-98 < inferior - (-3));\n    return 0;\n}\n",
           "answers": [
             "0:1:0:1"
           ],
@@ -113,7 +113,7 @@
           "id": "p3_u1l4_comparaciones_de_rechazo",
           "language": "cpp",
           "question": "Completa sólo < o > en cada comparación para rechazar resultados fuera del rango y permitir llegar exactamente a sus extremos. El fragmento pertenece a una función que retorna bool.",
-          "template": "if (b > 0 && a [] maximo - b) {\n    return false;\n}\nif (b < 0 && a [] minimo - b) {\n    return false;\n}\n",
+          "template": "if (b > 0 && a [] maximo - b) {\n    return false;\n}\n\nif (b < 0 && a [] minimo - b) {\n    return false;\n}\n",
           "answers": [
             ">",
             "<"
@@ -156,7 +156,7 @@
         {
           "type": "cpp_compiler",
           "language": "cpp",
-          "initialCode": "#include <iostream>\n#include <limits>\n\nbool sumar_comprobado(int a, int b, int& resultado) {\n    if (b == 0) {\n        resultado = a;\n        return true;\n    }\n\n    // Completa las comprobaciones y sustituye este resultado provisional.\n    resultado = 0;\n    return true;\n}\n\nint main() {\n    int caso = 0;\n    if (!(std::cin >> caso)) {\n        return 1;\n    }\n\n    const int maximo = std::numeric_limits<int>::max();\n    const int minimo = std::numeric_limits<int>::lowest();\n    int a = 0;\n    int b = 0;\n    switch (caso) {\n    case 1: a = maximo - 2; b = 2; break;\n    case 2: a = maximo - 2; b = 3; break;\n    case 3: a = minimo + 2; b = -2; break;\n    case 4: a = minimo + 2; b = -3; break;\n    case 5: a = 0; b = minimo; break;\n    case 6: a = -1; b = minimo; break;\n    default: return 1;\n    }\n\n    int resultado = 17;\n    const bool aceptado = sumar_comprobado(a, b, resultado);\n    std::cout << \"Aceptado=\" << aceptado << '\\n';\n    std::cout << \"EsMaximo=\" << (resultado == maximo) << '\\n';\n    std::cout << \"EsMinimo=\" << (resultado == minimo) << '\\n';\n    std::cout << \"Conservado=\" << (resultado == 17) << '\\n';\n    return 0;\n}\n",
+          "initialCode": "#include <iostream>\n#include <limits>\n\nbool sumar_comprobado(int a, int b, int& resultado) {\n    if (b == 0) {\n        resultado = a;\n        return true;\n    }\n\n    // Completa las comprobaciones y sustituye este resultado provisional.\n    resultado = 0;\n    return true;\n}\n\nint main() {\n    int caso = 0;\n    if (!(std::cin >> caso)) {\n        return 1;\n    }\n\n    const int maximo = std::numeric_limits<int>::max();\n    const int minimo = std::numeric_limits<int>::lowest();\n    int a = 0;\n    int b = 0;\n\n    switch (caso) {\n    case 1: a = maximo - 2; b = 2; break;\n    case 2: a = maximo - 2; b = 3; break;\n    case 3: a = minimo + 2; b = -2; break;\n    case 4: a = minimo + 2; b = -3; break;\n    case 5: a = 0; b = minimo; break;\n    case 6: a = -1; b = minimo; break;\n    default: return 1;\n    }\n\n    int resultado = 17;\n    const bool aceptado = sumar_comprobado(a, b, resultado);\n\n    std::cout << \"Aceptado=\" << aceptado << '\\n';\n    std::cout << \"EsMaximo=\" << (resultado == maximo) << '\\n';\n    std::cout << \"EsMinimo=\" << (resultado == minimo) << '\\n';\n    std::cout << \"Conservado=\" << (resultado == 17) << '\\n';\n\n    return 0;\n}\n",
           "initialStandardInput": "1\n",
           "outputCheck": {
             "inputComparison": "tokens",
@@ -266,7 +266,7 @@
         {
           "type": "code",
           "language": "cpp",
-          "code": "#include <iostream>\n#include <limits>\n\nbool sumar_comprobado(int a, int b, int& resultado) {\n    const int maximo = std::numeric_limits<int>::max();\n    const int minimo = std::numeric_limits<int>::lowest();\n    if (b > 0 && a > maximo - b) {\n        return false;\n    }\n    if (b < 0 && a < minimo - b) {\n        return false;\n    }\n\n    resultado = a + b;\n    return true;\n}\n\nint main() {\n    int caso = 0;\n    if (!(std::cin >> caso)) {\n        return 1;\n    }\n\n    const int maximo = std::numeric_limits<int>::max();\n    const int minimo = std::numeric_limits<int>::lowest();\n    int a = 0;\n    int b = 0;\n    switch (caso) {\n    case 1: a = maximo - 2; b = 2; break;\n    case 2: a = maximo - 2; b = 3; break;\n    case 3: a = minimo + 2; b = -2; break;\n    case 4: a = minimo + 2; b = -3; break;\n    case 5: a = 0; b = minimo; break;\n    case 6: a = -1; b = minimo; break;\n    default: return 1;\n    }\n\n    int resultado = 17;\n    const bool aceptado = sumar_comprobado(a, b, resultado);\n    std::cout << \"Aceptado=\" << aceptado << '\\n';\n    std::cout << \"EsMaximo=\" << (resultado == maximo) << '\\n';\n    std::cout << \"EsMinimo=\" << (resultado == minimo) << '\\n';\n    std::cout << \"Conservado=\" << (resultado == 17) << '\\n';\n    return 0;\n}\n"
+          "code": "#include <iostream>\n#include <limits>\n\nbool sumar_comprobado(int a, int b, int& resultado) {\n    const int maximo = std::numeric_limits<int>::max();\n    const int minimo = std::numeric_limits<int>::lowest();\n\n    if (b > 0 && a > maximo - b) {\n        return false;\n    }\n    if (b < 0 && a < minimo - b) {\n        return false;\n    }\n\n    resultado = a + b;\n    return true;\n}\n\nint main() {\n    int caso = 0;\n    if (!(std::cin >> caso)) {\n        return 1;\n    }\n\n    const int maximo = std::numeric_limits<int>::max();\n    const int minimo = std::numeric_limits<int>::lowest();\n    int a = 0;\n    int b = 0;\n\n    switch (caso) {\n    case 1: a = maximo - 2; b = 2; break;\n    case 2: a = maximo - 2; b = 3; break;\n    case 3: a = minimo + 2; b = -2; break;\n    case 4: a = minimo + 2; b = -3; break;\n    case 5: a = 0; b = minimo; break;\n    case 6: a = -1; b = minimo; break;\n    default: return 1;\n    }\n\n    int resultado = 17;\n    const bool aceptado = sumar_comprobado(a, b, resultado);\n\n    std::cout << \"Aceptado=\" << aceptado << '\\n';\n    std::cout << \"EsMaximo=\" << (resultado == maximo) << '\\n';\n    std::cout << \"EsMinimo=\" << (resultado == minimo) << '\\n';\n    std::cout << \"Conservado=\" << (resultado == 17) << '\\n';\n\n    return 0;\n}\n"
         },
         {
           "type": "paragraph",
@@ -376,7 +376,7 @@
         {
           "type": "cpp_compiler",
           "language": "cpp",
-          "initialCode": "#include <iostream>\n#include <limits>\n\nbool producto_no_negativo(int a, int b, int& resultado) {\n    if (a < 0 || b < 0) {\n        return false;\n    }\n\n    // Sustituye este resultado provisional por el calculo comprobado.\n    resultado = 0;\n    return true;\n}\n\nint main() {\n    int caso = 0;\n    if (!(std::cin >> caso)) {\n        return 1;\n    }\n\n    const int maximo = std::numeric_limits<int>::max();\n    int a = 0;\n    int b = 0;\n    switch (caso) {\n    case 1: a = maximo; b = 1; break;\n    case 2: a = 8; b = 3; break;\n    case 3: a = maximo / 2 + 1; b = 2; break;\n    case 4: a = maximo; b = 0; break;\n    case 5: a = -1; b = 0; break;\n    case 6: a = 0; b = maximo; break;\n    case 7: a = 0; b = -1; break;\n    default: return 1;\n    }\n\n    int resultado = 17;\n    const bool aceptado = producto_no_negativo(a, b, resultado);\n    std::cout << \"Aceptado=\" << aceptado << '\\n';\n    std::cout << \"EsMaximo=\" << (resultado == maximo) << '\\n';\n    std::cout << \"EsCero=\" << (resultado == 0) << '\\n';\n    std::cout << \"Conservado=\" << (resultado == 17) << '\\n';\n    return 0;\n}\n",
+          "initialCode": "#include <iostream>\n#include <limits>\n\nbool producto_no_negativo(int a, int b, int& resultado) {\n    if (a < 0 || b < 0) {\n        return false;\n    }\n\n    // Sustituye este resultado provisional por el calculo comprobado.\n    resultado = 0;\n    return true;\n}\n\nint main() {\n    int caso = 0;\n    if (!(std::cin >> caso)) {\n        return 1;\n    }\n\n    const int maximo = std::numeric_limits<int>::max();\n    int a = 0;\n    int b = 0;\n\n    switch (caso) {\n    case 1: a = maximo; b = 1; break;\n    case 2: a = 8; b = 3; break;\n    case 3: a = maximo / 2 + 1; b = 2; break;\n    case 4: a = maximo; b = 0; break;\n    case 5: a = -1; b = 0; break;\n    case 6: a = 0; b = maximo; break;\n    case 7: a = 0; b = -1; break;\n    default: return 1;\n    }\n\n    int resultado = 17;\n    const bool aceptado = producto_no_negativo(a, b, resultado);\n\n    std::cout << \"Aceptado=\" << aceptado << '\\n';\n    std::cout << \"EsMaximo=\" << (resultado == maximo) << '\\n';\n    std::cout << \"EsCero=\" << (resultado == 0) << '\\n';\n    std::cout << \"Conservado=\" << (resultado == 17) << '\\n';\n\n    return 0;\n}\n",
           "initialStandardInput": "1\n",
           "outputCheck": {
             "inputComparison": "tokens",
@@ -502,7 +502,7 @@
         {
           "type": "code",
           "language": "cpp",
-          "code": "#include <iostream>\n#include <limits>\n\nbool producto_no_negativo(int a, int b, int& resultado) {\n    if (a < 0 || b < 0) {\n        return false;\n    }\n    if (a == 0 || b == 0) {\n        resultado = 0;\n        return true;\n    }\n\n    const int maximo = std::numeric_limits<int>::max();\n    if (a > maximo / b) {\n        return false;\n    }\n\n    resultado = a * b;\n    return true;\n}\n\nint main() {\n    int caso = 0;\n    if (!(std::cin >> caso)) {\n        return 1;\n    }\n\n    const int maximo = std::numeric_limits<int>::max();\n    int a = 0;\n    int b = 0;\n    switch (caso) {\n    case 1: a = maximo; b = 1; break;\n    case 2: a = 8; b = 3; break;\n    case 3: a = maximo / 2 + 1; b = 2; break;\n    case 4: a = maximo; b = 0; break;\n    case 5: a = -1; b = 0; break;\n    case 6: a = 0; b = maximo; break;\n    case 7: a = 0; b = -1; break;\n    default: return 1;\n    }\n\n    int resultado = 17;\n    const bool aceptado = producto_no_negativo(a, b, resultado);\n    std::cout << \"Aceptado=\" << aceptado << '\\n';\n    std::cout << \"EsMaximo=\" << (resultado == maximo) << '\\n';\n    std::cout << \"EsCero=\" << (resultado == 0) << '\\n';\n    std::cout << \"Conservado=\" << (resultado == 17) << '\\n';\n    return 0;\n}\n"
+          "code": "#include <iostream>\n#include <limits>\n\nbool producto_no_negativo(int a, int b, int& resultado) {\n    if (a < 0 || b < 0) {\n        return false;\n    }\n    if (a == 0 || b == 0) {\n        resultado = 0;\n        return true;\n    }\n\n    const int maximo = std::numeric_limits<int>::max();\n    if (a > maximo / b) {\n        return false;\n    }\n\n    resultado = a * b;\n    return true;\n}\n\nint main() {\n    int caso = 0;\n    if (!(std::cin >> caso)) {\n        return 1;\n    }\n\n    const int maximo = std::numeric_limits<int>::max();\n    int a = 0;\n    int b = 0;\n\n    switch (caso) {\n    case 1: a = maximo; b = 1; break;\n    case 2: a = 8; b = 3; break;\n    case 3: a = maximo / 2 + 1; b = 2; break;\n    case 4: a = maximo; b = 0; break;\n    case 5: a = -1; b = 0; break;\n    case 6: a = 0; b = maximo; break;\n    case 7: a = 0; b = -1; break;\n    default: return 1;\n    }\n\n    int resultado = 17;\n    const bool aceptado = producto_no_negativo(a, b, resultado);\n\n    std::cout << \"Aceptado=\" << aceptado << '\\n';\n    std::cout << \"EsMaximo=\" << (resultado == maximo) << '\\n';\n    std::cout << \"EsCero=\" << (resultado == 0) << '\\n';\n    std::cout << \"Conservado=\" << (resultado == 17) << '\\n';\n\n    return 0;\n}\n"
         },
         {
           "type": "paragraph",
@@ -533,7 +533,7 @@
           "id": "p3_u1l4_secuencia_conservada",
           "question": "Predice las dos líneas exactas. Cada una muestra el bool retornado y el contenido actual del mismo destino.",
           "language": "cpp",
-          "code": "#include <iostream>\n#include <limits>\n\nbool producto_no_negativo(int a, int b, int& resultado) {\n    if (a < 0 || b < 0) {\n        return false;\n    }\n    if (a == 0 || b == 0) {\n        resultado = 0;\n        return true;\n    }\n\n    const int maximo = std::numeric_limits<int>::max();\n    if (a > maximo / b) {\n        return false;\n    }\n\n    resultado = a * b;\n    return true;\n}\n\nint main() {\n    int resultado = 17;\n    const bool primero = producto_no_negativo(6, 7, resultado);\n    std::cout << primero << \":\" << resultado << '\\n';\n\n    const int maximo = std::numeric_limits<int>::max();\n    const bool segundo = producto_no_negativo(maximo, 2, resultado);\n    std::cout << segundo << \":\" << resultado;\n    return 0;\n}\n",
+          "code": "#include <iostream>\n#include <limits>\n\nbool producto_no_negativo(int a, int b, int& resultado) {\n    if (a < 0 || b < 0) {\n        return false;\n    }\n    if (a == 0 || b == 0) {\n        resultado = 0;\n        return true;\n    }\n\n    const int maximo = std::numeric_limits<int>::max();\n    if (a > maximo / b) {\n        return false;\n    }\n\n    resultado = a * b;\n    return true;\n}\n\nint main() {\n    int resultado = 17;\n    const bool primero = producto_no_negativo(6, 7, resultado);\n\n    std::cout << primero << \":\" << resultado << '\\n';\n\n    const int maximo = std::numeric_limits<int>::max();\n    const bool segundo = producto_no_negativo(maximo, 2, resultado);\n\n    std::cout << segundo << \":\" << resultado;\n\n    return 0;\n}\n",
           "answers": [
             "1:42\n0:42"
           ],
@@ -1527,6 +1527,224 @@
       }
     },
     "additions": [],
-    "editorial": []
+    "editorial": [
+      {
+        "id": "block_0002_0005",
+        "beforeSha256": "04e9cfb6c95f2344b889b52bf529645e88725e43c86fce67585a4fcbb797adb3",
+        "afterSha256": "7a2fb0b1394d3201cdb68a1e8e99f71236ca0470203b1623660c26125cccaf00"
+      },
+      {
+        "id": "block_0003_0003",
+        "beforeSha256": "45b88bdf2d575ebb934b6354030771831f38017759b6ee3c869cdfb9cb02b89b",
+        "afterSha256": "63ccb16fbf674af4f0678e1551a4baeb9f2c46f6005ceb9c9ba29cd8266e64a2"
+      },
+      {
+        "id": "block_0004_0006",
+        "beforeSha256": "20738f09d87a343cd97c7703be8b0b466acba3f6d920af6a6e7c97bcac82b8a2",
+        "afterSha256": "0c924716c066886c4ef27cb7312071498acc59409a47caa23c76b0265815b47a"
+      },
+      {
+        "id": "block_0005_0001",
+        "beforeSha256": "c26cd7509c7c9cf0ad0d294574542fb7c2bf088cdd285e6a21eeb5dee159f9d1",
+        "afterSha256": "3ba20ae56e9f06503256a06d9710a2e31d4b23821e39232e3a4354de658bedc8"
+      },
+      {
+        "id": "block_0008_0005",
+        "beforeSha256": "1a90a65cbcc577a3d8385c1d13ad8480257da7c8c9452fcde3da6c41e3d7631d",
+        "afterSha256": "2c917557bbfdcb87884acc13032f12875946ad6fa2fc80ed6a717e6818c3e102"
+      },
+      {
+        "id": "block_0009_0001",
+        "beforeSha256": "c46ad6dd17089c97e24320743787bd0183b441dc5f5ff864a4eda4513089cb1f",
+        "afterSha256": "bc7832994a92dd11c5ef907fca0c49bf48d2efbd0b0286ecaab2799e579f22a0"
+      },
+      {
+        "id": "block_0010_0002",
+        "beforeSha256": "fc6da957b9d8c87c6cb81a52086f71cfde9807119077511924355e7260d1eebf",
+        "afterSha256": "01a4a2fe9c7d4748538f405d88b1ceec5c9ceb368402a65b2606db18b38a170c"
+      }
+    ],
+    "sourceFormatRevisions": [
+      {
+        "id": "block_0002_0005",
+        "block": {
+          "type": "output_prediction",
+          "id": "p3_u1l4_umbrales",
+          "question": "Predice los cuatro valores, en su orden. Un 1 significa que la comparación de rechazo resulta verdadera para el límite didáctico.",
+          "language": "cpp",
+          "code": "#include <iostream>\n\nint main() {\n    const int superior = 100;\n    const int inferior = -100;\n    std::cout << (98 > superior - 2) << \":\"\n              << (98 > superior - 3) << \":\"\n              << (-98 < inferior - (-2)) << \":\"\n              << (-98 < inferior - (-3));\n    return 0;\n}\n",
+          "answers": [
+            "0:1:0:1"
+          ],
+          "outputComparison": "exact",
+          "explanation": "98 no supera 98, pero sí supera 97. −98 no es menor que −98, pero sí es menor que −97. Llegar al extremo se permite; quedar fuera se rechaza."
+        }
+      },
+      {
+        "id": "block_0003_0003",
+        "block": {
+          "type": "inline_fill_code",
+          "id": "p3_u1l4_comparaciones_de_rechazo",
+          "language": "cpp",
+          "question": "Completa sólo < o > en cada comparación para rechazar resultados fuera del rango y permitir llegar exactamente a sus extremos. El fragmento pertenece a una función que retorna bool.",
+          "template": "if (b > 0 && a [] maximo - b) {\n    return false;\n}\nif (b < 0 && a [] minimo - b) {\n    return false;\n}\n",
+          "answers": [
+            ">",
+            "<"
+          ],
+          "explanation": "Se rechaza a > maximo-b en el caso positivo y a < minimo-b en el negativo. Usar >= o <= rechazaría también el resultado que llega exactamente al extremo."
+        }
+      },
+      {
+        "id": "block_0004_0006",
+        "block": {
+          "type": "cpp_compiler",
+          "language": "cpp",
+          "initialCode": "#include <iostream>\n#include <limits>\n\nbool sumar_comprobado(int a, int b, int& resultado) {\n    if (b == 0) {\n        resultado = a;\n        return true;\n    }\n\n    // Completa las comprobaciones y sustituye este resultado provisional.\n    resultado = 0;\n    return true;\n}\n\nint main() {\n    int caso = 0;\n    if (!(std::cin >> caso)) {\n        return 1;\n    }\n\n    const int maximo = std::numeric_limits<int>::max();\n    const int minimo = std::numeric_limits<int>::lowest();\n    int a = 0;\n    int b = 0;\n    switch (caso) {\n    case 1: a = maximo - 2; b = 2; break;\n    case 2: a = maximo - 2; b = 3; break;\n    case 3: a = minimo + 2; b = -2; break;\n    case 4: a = minimo + 2; b = -3; break;\n    case 5: a = 0; b = minimo; break;\n    case 6: a = -1; b = minimo; break;\n    default: return 1;\n    }\n\n    int resultado = 17;\n    const bool aceptado = sumar_comprobado(a, b, resultado);\n    std::cout << \"Aceptado=\" << aceptado << '\\n';\n    std::cout << \"EsMaximo=\" << (resultado == maximo) << '\\n';\n    std::cout << \"EsMinimo=\" << (resultado == minimo) << '\\n';\n    std::cout << \"Conservado=\" << (resultado == 17) << '\\n';\n    return 0;\n}\n",
+          "initialStandardInput": "1\n",
+          "outputCheck": {
+            "inputComparison": "tokens",
+            "cases": [
+              {
+                "standardInput": "1\n",
+                "outputs": [
+                  "Aceptado=1\nEsMaximo=1\nEsMinimo=0\nConservado=0\n"
+                ],
+                "explanation": "a = maximo - 2; b = 2. La suma llega exactamente al máximo."
+              },
+              {
+                "standardInput": "2\n",
+                "outputs": [
+                  "Aceptado=0\nEsMaximo=0\nEsMinimo=0\nConservado=1\n"
+                ],
+                "explanation": "a = maximo - 2; b = 3. La suma matemática supera el máximo en una unidad."
+              },
+              {
+                "standardInput": "3\n",
+                "outputs": [
+                  "Aceptado=1\nEsMaximo=0\nEsMinimo=1\nConservado=0\n"
+                ],
+                "explanation": "a = minimo + 2; b = -2. La suma llega exactamente al mínimo."
+              },
+              {
+                "standardInput": "4\n",
+                "outputs": [
+                  "Aceptado=0\nEsMaximo=0\nEsMinimo=0\nConservado=1\n"
+                ],
+                "explanation": "a = minimo + 2; b = -3. La suma matemática queda una unidad por debajo del mínimo."
+              },
+              {
+                "standardInput": "5\n",
+                "outputs": [
+                  "Aceptado=1\nEsMaximo=0\nEsMinimo=1\nConservado=0\n"
+                ],
+                "explanation": "a = 0; b = minimo. La suma da el mínimo y debe aceptarse."
+              },
+              {
+                "standardInput": "6\n",
+                "outputs": [
+                  "Aceptado=0\nEsMaximo=0\nEsMinimo=0\nConservado=1\n"
+                ],
+                "explanation": "a = -1; b = minimo. La suma matemática queda por debajo del mínimo."
+              }
+            ]
+          }
+        }
+      },
+      {
+        "id": "block_0005_0001",
+        "block": {
+          "type": "code",
+          "language": "cpp",
+          "code": "#include <iostream>\n#include <limits>\n\nbool sumar_comprobado(int a, int b, int& resultado) {\n    const int maximo = std::numeric_limits<int>::max();\n    const int minimo = std::numeric_limits<int>::lowest();\n    if (b > 0 && a > maximo - b) {\n        return false;\n    }\n    if (b < 0 && a < minimo - b) {\n        return false;\n    }\n\n    resultado = a + b;\n    return true;\n}\n\nint main() {\n    int caso = 0;\n    if (!(std::cin >> caso)) {\n        return 1;\n    }\n\n    const int maximo = std::numeric_limits<int>::max();\n    const int minimo = std::numeric_limits<int>::lowest();\n    int a = 0;\n    int b = 0;\n    switch (caso) {\n    case 1: a = maximo - 2; b = 2; break;\n    case 2: a = maximo - 2; b = 3; break;\n    case 3: a = minimo + 2; b = -2; break;\n    case 4: a = minimo + 2; b = -3; break;\n    case 5: a = 0; b = minimo; break;\n    case 6: a = -1; b = minimo; break;\n    default: return 1;\n    }\n\n    int resultado = 17;\n    const bool aceptado = sumar_comprobado(a, b, resultado);\n    std::cout << \"Aceptado=\" << aceptado << '\\n';\n    std::cout << \"EsMaximo=\" << (resultado == maximo) << '\\n';\n    std::cout << \"EsMinimo=\" << (resultado == minimo) << '\\n';\n    std::cout << \"Conservado=\" << (resultado == 17) << '\\n';\n    return 0;\n}\n"
+        }
+      },
+      {
+        "id": "block_0008_0005",
+        "block": {
+          "type": "cpp_compiler",
+          "language": "cpp",
+          "initialCode": "#include <iostream>\n#include <limits>\n\nbool producto_no_negativo(int a, int b, int& resultado) {\n    if (a < 0 || b < 0) {\n        return false;\n    }\n\n    // Sustituye este resultado provisional por el calculo comprobado.\n    resultado = 0;\n    return true;\n}\n\nint main() {\n    int caso = 0;\n    if (!(std::cin >> caso)) {\n        return 1;\n    }\n\n    const int maximo = std::numeric_limits<int>::max();\n    int a = 0;\n    int b = 0;\n    switch (caso) {\n    case 1: a = maximo; b = 1; break;\n    case 2: a = 8; b = 3; break;\n    case 3: a = maximo / 2 + 1; b = 2; break;\n    case 4: a = maximo; b = 0; break;\n    case 5: a = -1; b = 0; break;\n    case 6: a = 0; b = maximo; break;\n    case 7: a = 0; b = -1; break;\n    default: return 1;\n    }\n\n    int resultado = 17;\n    const bool aceptado = producto_no_negativo(a, b, resultado);\n    std::cout << \"Aceptado=\" << aceptado << '\\n';\n    std::cout << \"EsMaximo=\" << (resultado == maximo) << '\\n';\n    std::cout << \"EsCero=\" << (resultado == 0) << '\\n';\n    std::cout << \"Conservado=\" << (resultado == 17) << '\\n';\n    return 0;\n}\n",
+          "initialStandardInput": "1\n",
+          "outputCheck": {
+            "inputComparison": "tokens",
+            "cases": [
+              {
+                "standardInput": "1\n",
+                "outputs": [
+                  "Aceptado=1\nEsMaximo=1\nEsCero=0\nConservado=0\n"
+                ],
+                "explanation": "a = maximo; b = 1. El producto llega exactamente al máximo."
+              },
+              {
+                "standardInput": "2\n",
+                "outputs": [
+                  "Aceptado=1\nEsMaximo=0\nEsCero=0\nConservado=0\n"
+                ],
+                "explanation": "a = 8; b = 3. El producto es 24: cabe, es positivo y no llega al máximo."
+              },
+              {
+                "standardInput": "3\n",
+                "outputs": [
+                  "Aceptado=0\nEsMaximo=0\nEsCero=0\nConservado=1\n"
+                ],
+                "explanation": "a = maximo / 2 + 1; b = 2. Se debe rechazar antes de multiplicar."
+              },
+              {
+                "standardInput": "4\n",
+                "outputs": [
+                  "Aceptado=1\nEsMaximo=0\nEsCero=1\nConservado=0\n"
+                ],
+                "explanation": "a = maximo; b = 0. El producto aceptado es cero."
+              },
+              {
+                "standardInput": "5\n",
+                "outputs": [
+                  "Aceptado=0\nEsMaximo=0\nEsCero=0\nConservado=1\n"
+                ],
+                "explanation": "a = -1; b = 0. El primer dato está fuera del dominio no negativo."
+              },
+              {
+                "standardInput": "6\n",
+                "outputs": [
+                  "Aceptado=1\nEsMaximo=0\nEsCero=1\nConservado=0\n"
+                ],
+                "explanation": "a = 0; b = maximo. El producto aceptado es cero."
+              },
+              {
+                "standardInput": "7\n",
+                "outputs": [
+                  "Aceptado=0\nEsMaximo=0\nEsCero=0\nConservado=1\n"
+                ],
+                "explanation": "a = 0; b = -1. El segundo dato está fuera del dominio no negativo."
+              }
+            ]
+          }
+        }
+      },
+      {
+        "id": "block_0009_0001",
+        "block": {
+          "type": "code",
+          "language": "cpp",
+          "code": "#include <iostream>\n#include <limits>\n\nbool producto_no_negativo(int a, int b, int& resultado) {\n    if (a < 0 || b < 0) {\n        return false;\n    }\n    if (a == 0 || b == 0) {\n        resultado = 0;\n        return true;\n    }\n\n    const int maximo = std::numeric_limits<int>::max();\n    if (a > maximo / b) {\n        return false;\n    }\n\n    resultado = a * b;\n    return true;\n}\n\nint main() {\n    int caso = 0;\n    if (!(std::cin >> caso)) {\n        return 1;\n    }\n\n    const int maximo = std::numeric_limits<int>::max();\n    int a = 0;\n    int b = 0;\n    switch (caso) {\n    case 1: a = maximo; b = 1; break;\n    case 2: a = 8; b = 3; break;\n    case 3: a = maximo / 2 + 1; b = 2; break;\n    case 4: a = maximo; b = 0; break;\n    case 5: a = -1; b = 0; break;\n    case 6: a = 0; b = maximo; break;\n    case 7: a = 0; b = -1; break;\n    default: return 1;\n    }\n\n    int resultado = 17;\n    const bool aceptado = producto_no_negativo(a, b, resultado);\n    std::cout << \"Aceptado=\" << aceptado << '\\n';\n    std::cout << \"EsMaximo=\" << (resultado == maximo) << '\\n';\n    std::cout << \"EsCero=\" << (resultado == 0) << '\\n';\n    std::cout << \"Conservado=\" << (resultado == 17) << '\\n';\n    return 0;\n}\n"
+        }
+      },
+      {
+        "id": "block_0010_0002",
+        "block": {
+          "type": "output_prediction",
+          "id": "p3_u1l4_secuencia_conservada",
+          "question": "Predice las dos líneas exactas. Cada una muestra el bool retornado y el contenido actual del mismo destino.",
+          "language": "cpp",
+          "code": "#include <iostream>\n#include <limits>\n\nbool producto_no_negativo(int a, int b, int& resultado) {\n    if (a < 0 || b < 0) {\n        return false;\n    }\n    if (a == 0 || b == 0) {\n        resultado = 0;\n        return true;\n    }\n\n    const int maximo = std::numeric_limits<int>::max();\n    if (a > maximo / b) {\n        return false;\n    }\n\n    resultado = a * b;\n    return true;\n}\n\nint main() {\n    int resultado = 17;\n    const bool primero = producto_no_negativo(6, 7, resultado);\n    std::cout << primero << \":\" << resultado << '\\n';\n\n    const int maximo = std::numeric_limits<int>::max();\n    const bool segundo = producto_no_negativo(maximo, 2, resultado);\n    std::cout << segundo << \":\" << resultado;\n    return 0;\n}\n",
+          "answers": [
+            "1:42\n0:42"
+          ],
+          "outputComparison": "exact",
+          "explanation": "La primera llamada acepta y guarda 42. La segunda detecta que maximo×2 no cabe, retorna false y conserva ese último resultado válido. Por eso la segunda línea es 0:42, no 0:17 ni 0:0."
+        }
+      }
+    ]
   }
 }

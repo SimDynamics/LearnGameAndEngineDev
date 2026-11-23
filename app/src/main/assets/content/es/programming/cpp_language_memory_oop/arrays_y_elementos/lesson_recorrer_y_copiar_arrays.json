@@ -26,7 +26,7 @@
           "id": "p3_u2l2_recorrido",
           "language": "cpp",
           "question": "Predice las cuatro líneas. Cada una contiene el índice, el signo = y el valor de ese elemento.",
-          "code": "#include <iostream>\n\nint main() {\n    int datos[4]{6, -2, 4, 0};\n    const int cantidad =\n        static_cast<int>(sizeof datos / sizeof datos[0]);\n\n    for (int i = 0; i < cantidad; ++i) {\n        std::cout << i << '=' << datos[i] << '\\n';\n    }\n    return 0;\n}\n",
+          "code": "#include <iostream>\n\nint main() {\n    int datos[4]{6, -2, 4, 0};\n    const int cantidad =\n        static_cast<int>(sizeof datos / sizeof datos[0]);\n\n    for (int i = 0; i < cantidad; ++i) {\n        std::cout << i << '=' << datos[i] << '\\n';\n    }\n\n    return 0;\n}\n",
           "answers": [
             "0=6\n1=-2\n2=4\n3=0\n"
           ],
@@ -249,7 +249,7 @@
           "id": "p3_u2l2_copia_independiente",
           "language": "cpp",
           "question": "Predice las dos líneas: primero los tres valores finales de origen; después los de copia.",
-          "code": "#include <iostream>\n\nint main() {\n    int origen[3]{6, -2, 4};\n    int copia[3]{};\n    const int cantidad =\n        static_cast<int>(sizeof origen / sizeof origen[0]);\n\n    for (int i = 0; i < cantidad; ++i) {\n        copia[i] = origen[i];\n    }\n    origen[0] = 8;\n    copia[1] = 9;\n\n    std::cout << origen[0] << ':' << origen[1] << ':' << origen[2]\n              << '\\n';\n    std::cout << copia[0] << ':' << copia[1] << ':' << copia[2];\n    return 0;\n}\n",
+          "code": "#include <iostream>\n\nint main() {\n    int origen[3]{6, -2, 4};\n    int copia[3]{};\n    const int cantidad =\n        static_cast<int>(sizeof origen / sizeof origen[0]);\n\n    for (int i = 0; i < cantidad; ++i) {\n        copia[i] = origen[i];\n    }\n    origen[0] = 8;\n    copia[1] = 9;\n\n    std::cout << origen[0] << ':' << origen[1] << ':' << origen[2]\n              << '\\n';\n    std::cout << copia[0] << ':' << copia[1] << ':' << copia[2];\n\n    return 0;\n}\n",
           "answers": [
             "8:-2:4\n6:9:4"
           ],
@@ -392,7 +392,7 @@
         {
           "type": "cpp_compiler",
           "language": "cpp",
-          "initialCode": "#include <iostream>\n\nint main() {\n    int origen[5]{8, 0, -3, 7, 2};\n    int copia[4]{90, 91, 92, 93};\n    const int capacidadOrigen =\n        static_cast<int>(sizeof origen / sizeof origen[0]);\n    const int capacidadCopia =\n        static_cast<int>(sizeof copia / sizeof copia[0]);\n    int cantidad = 0;\n    int indice = 0;\n    int nuevo = 0;\n    if (!(std::cin >> cantidad >> indice >> nuevo)) {\n        return 1;\n    }\n\n    bool aceptado = false;\n    // Comprueba todos los limites antes de cambiar los arrays.\n    // Al aceptar, copia el prefijo y despues cambia el elemento del origen.\n\n    std::cout << \"Aceptado=\" << aceptado << '\\n';\n    std::cout << \"Origen=\";\n    for (int i = 0; i < capacidadOrigen; ++i) {\n        if (i != 0) {\n            std::cout << ' ';\n        }\n        std::cout << origen[i];\n    }\n    std::cout << '\\n' << \"Copia=\";\n    for (int i = 0; i < capacidadCopia; ++i) {\n        if (i != 0) {\n            std::cout << ' ';\n        }\n        std::cout << copia[i];\n    }\n    std::cout << '\\n';\n    return 0;\n}\n",
+          "initialCode": "#include <iostream>\n\nint main() {\n    int origen[5]{8, 0, -3, 7, 2};\n    int copia[4]{90, 91, 92, 93};\n    const int capacidadOrigen =\n        static_cast<int>(sizeof origen / sizeof origen[0]);\n    const int capacidadCopia =\n        static_cast<int>(sizeof copia / sizeof copia[0]);\n    int cantidad = 0;\n    int indice = 0;\n    int nuevo = 0;\n\n    if (!(std::cin >> cantidad >> indice >> nuevo)) {\n        return 1;\n    }\n\n    bool aceptado = false;\n    // Comprueba todos los limites antes de cambiar los arrays.\n    // Al aceptar, copia el prefijo y despues cambia el elemento del origen.\n\n    std::cout << \"Aceptado=\" << aceptado << '\\n';\n    std::cout << \"Origen=\";\n    for (int i = 0; i < capacidadOrigen; ++i) {\n        if (i != 0) {\n            std::cout << ' ';\n        }\n        std::cout << origen[i];\n    }\n    std::cout << '\\n' << \"Copia=\";\n    for (int i = 0; i < capacidadCopia; ++i) {\n        if (i != 0) {\n            std::cout << ' ';\n        }\n        std::cout << copia[i];\n    }\n    std::cout << '\\n';\n\n    return 0;\n}\n",
           "initialStandardInput": "3 1 99\n",
           "outputCheck": {
             "inputComparison": "tokens",
@@ -558,7 +558,7 @@
         {
           "type": "code",
           "language": "cpp",
-          "code": "#include <iostream>\n\nint main() {\n    int origen[5]{8, 0, -3, 7, 2};\n    int copia[4]{90, 91, 92, 93};\n    const int capacidadOrigen =\n        static_cast<int>(sizeof origen / sizeof origen[0]);\n    const int capacidadCopia =\n        static_cast<int>(sizeof copia / sizeof copia[0]);\n    int cantidad = 0;\n    int indice = 0;\n    int nuevo = 0;\n    if (!(std::cin >> cantidad >> indice >> nuevo)) {\n        return 1;\n    }\n\n    bool aceptado = false;\n    if (cantidad >= 0 && cantidad <= capacidadOrigen\n        && cantidad <= capacidadCopia\n        && indice >= 0 && indice < capacidadOrigen) {\n        for (int i = 0; i < cantidad; ++i) {\n            copia[i] = origen[i];\n        }\n        origen[indice] = nuevo;\n        aceptado = true;\n    }\n\n    std::cout << \"Aceptado=\" << aceptado << '\\n';\n    std::cout << \"Origen=\";\n    for (int i = 0; i < capacidadOrigen; ++i) {\n        if (i != 0) {\n            std::cout << ' ';\n        }\n        std::cout << origen[i];\n    }\n    std::cout << '\\n' << \"Copia=\";\n    for (int i = 0; i < capacidadCopia; ++i) {\n        if (i != 0) {\n            std::cout << ' ';\n        }\n        std::cout << copia[i];\n    }\n    std::cout << '\\n';\n    return 0;\n}\n"
+          "code": "#include <iostream>\n\nint main() {\n    int origen[5]{8, 0, -3, 7, 2};\n    int copia[4]{90, 91, 92, 93};\n    const int capacidadOrigen =\n        static_cast<int>(sizeof origen / sizeof origen[0]);\n    const int capacidadCopia =\n        static_cast<int>(sizeof copia / sizeof copia[0]);\n    int cantidad = 0;\n    int indice = 0;\n    int nuevo = 0;\n\n    if (!(std::cin >> cantidad >> indice >> nuevo)) {\n        return 1;\n    }\n\n    bool aceptado = false;\n    if (cantidad >= 0 && cantidad <= capacidadOrigen\n        && cantidad <= capacidadCopia\n        && indice >= 0 && indice < capacidadOrigen) {\n        for (int i = 0; i < cantidad; ++i) {\n            copia[i] = origen[i];\n        }\n        origen[indice] = nuevo;\n        aceptado = true;\n    }\n\n    std::cout << \"Aceptado=\" << aceptado << '\\n';\n    std::cout << \"Origen=\";\n    for (int i = 0; i < capacidadOrigen; ++i) {\n        if (i != 0) {\n            std::cout << ' ';\n        }\n        std::cout << origen[i];\n    }\n    std::cout << '\\n' << \"Copia=\";\n    for (int i = 0; i < capacidadCopia; ++i) {\n        if (i != 0) {\n            std::cout << ' ';\n        }\n        std::cout << copia[i];\n    }\n    std::cout << '\\n';\n\n    return 0;\n}\n"
         },
         {
           "type": "paragraph",
@@ -589,7 +589,7 @@
           "id": "p3_u2l2_copiar_otra_vez",
           "language": "cpp",
           "question": "Primero se copian dos elementos. Después cambia origen[0] y sólo se vuelve a copiar el primero. Predice los tres valores finales de copia.",
-          "code": "#include <iostream>\n\nint main() {\n    int origen[3]{3, 7, 9};\n    int copia[3]{90, 91, 92};\n\n    for (int i = 0; i < 2; ++i) {\n        copia[i] = origen[i];\n    }\n    origen[0] = -4;\n    for (int i = 0; i < 1; ++i) {\n        copia[i] = origen[i];\n    }\n\n    std::cout << copia[0] << ':' << copia[1] << ':' << copia[2];\n    return 0;\n}\n",
+          "code": "#include <iostream>\n\nint main() {\n    int origen[3]{3, 7, 9};\n    int copia[3]{90, 91, 92};\n\n    for (int i = 0; i < 2; ++i) {\n        copia[i] = origen[i];\n    }\n    origen[0] = -4;\n    for (int i = 0; i < 1; ++i) {\n        copia[i] = origen[i];\n    }\n\n    std::cout << copia[0] << ':' << copia[1] << ':' << copia[2];\n\n    return 0;\n}\n",
           "answers": [
             "-4:7:92"
           ],
@@ -621,7 +621,7 @@
           "id": "p3_u2l2_recorrido_inverso",
           "language": "cpp",
           "question": "Predice el orden en que se muestran los tres valores. El array no se modifica.",
-          "code": "#include <cstddef>\n#include <iostream>\n\nint main() {\n    int datos[3]{6, -2, 4};\n    const std::size_t cantidad = sizeof datos / sizeof datos[0];\n\n    for (std::size_t pendientes = cantidad; pendientes > 0; --pendientes) {\n        const std::size_t indice = pendientes - 1;\n        if (pendientes != cantidad) {\n            std::cout << ':';\n        }\n        std::cout << datos[indice];\n    }\n    return 0;\n}\n",
+          "code": "#include <cstddef>\n#include <iostream>\n\nint main() {\n    int datos[3]{6, -2, 4};\n    const std::size_t cantidad = sizeof datos / sizeof datos[0];\n\n    for (std::size_t pendientes = cantidad; pendientes > 0; --pendientes) {\n        const std::size_t indice = pendientes - 1;\n        if (pendientes != cantidad) {\n            std::cout << ':';\n        }\n        std::cout << datos[indice];\n    }\n\n    return 0;\n}\n",
           "answers": [
             "4:-2:6"
           ],
@@ -1670,6 +1670,177 @@
       }
     },
     "additions": [],
-    "editorial": []
+    "editorial": [
+      {
+        "id": "block_0000_0004",
+        "beforeSha256": "f0a56fc9bba9be75dbda15a253c211c069e788f29c4c139fbd132567807f5b21",
+        "afterSha256": "7752df10634500e2b18b0786bccc421a93cae78d90fd9a511d4dba516d25f4a7"
+      },
+      {
+        "id": "block_0005_0001",
+        "beforeSha256": "37c3b33743b349e529809981e4f6f8214c24b765d3aa62252bf351ccb62b8b10",
+        "afterSha256": "4f9d17f0ac79d6916ac105b000f77463b84e316f1147d373dd34d568c549b655"
+      },
+      {
+        "id": "block_0009_0006",
+        "beforeSha256": "90f420dbf2018e427d1d7d67df495b8015580e1838c42f8f499afd3f76656ecc",
+        "afterSha256": "f5236d16d2248d2e3c83539a0148557eafd721ba415994a6222df79e4f7c863b"
+      },
+      {
+        "id": "block_0012_0001",
+        "beforeSha256": "a90d22e5baad852ccb698b6eb423b43845fc4b70d2109cecfc09213421e47db0",
+        "afterSha256": "dfae3cc39c92b42efad5a8d9d25cdbda05d734a3e06ce4e4eacc01e2d4163a0b"
+      },
+      {
+        "id": "block_0013_0002",
+        "beforeSha256": "0ed4b14fe0c88f5e59fba0de2e8d8479a5fed2c9848d7834a88a4802be5802eb",
+        "afterSha256": "c4b40f4341632f480f396c0de5629e0f0e5362664180467764158902509eff39"
+      },
+      {
+        "id": "block_0014_0004",
+        "beforeSha256": "de1f76c8fe9522558e4077c950000d8a1b111d0427466dc2b3e4d6d42fc86780",
+        "afterSha256": "967a3ae1154062cf2eb66c9a5b5297727c63aa4d7eb3e54e8ed00368691662d9"
+      }
+    ],
+    "sourceFormatRevisions": [
+      {
+        "id": "block_0000_0004",
+        "block": {
+          "type": "output_prediction",
+          "id": "p3_u2l2_recorrido",
+          "language": "cpp",
+          "question": "Predice las cuatro líneas. Cada una contiene el índice, el signo = y el valor de ese elemento.",
+          "code": "#include <iostream>\n\nint main() {\n    int datos[4]{6, -2, 4, 0};\n    const int cantidad =\n        static_cast<int>(sizeof datos / sizeof datos[0]);\n\n    for (int i = 0; i < cantidad; ++i) {\n        std::cout << i << '=' << datos[i] << '\\n';\n    }\n    return 0;\n}\n",
+          "answers": [
+            "0=6\n1=-2\n2=4\n3=0\n"
+          ],
+          "outputComparison": "exact",
+          "explanation": "Se visitan los cuatro índices válidos. El último elemento también se muestra aunque su valor sea cero: la parada depende del índice y de cantidad, no del valor leído."
+        }
+      },
+      {
+        "id": "block_0005_0001",
+        "block": {
+          "type": "output_prediction",
+          "id": "p3_u2l2_copia_independiente",
+          "language": "cpp",
+          "question": "Predice las dos líneas: primero los tres valores finales de origen; después los de copia.",
+          "code": "#include <iostream>\n\nint main() {\n    int origen[3]{6, -2, 4};\n    int copia[3]{};\n    const int cantidad =\n        static_cast<int>(sizeof origen / sizeof origen[0]);\n\n    for (int i = 0; i < cantidad; ++i) {\n        copia[i] = origen[i];\n    }\n    origen[0] = 8;\n    copia[1] = 9;\n\n    std::cout << origen[0] << ':' << origen[1] << ':' << origen[2]\n              << '\\n';\n    std::cout << copia[0] << ':' << copia[1] << ':' << copia[2];\n    return 0;\n}\n",
+          "answers": [
+            "8:-2:4\n6:9:4"
+          ],
+          "outputComparison": "exact",
+          "explanation": "El bucle copia 6, −2 y 4. Después origen[0] cambia a 8 y copia[1] a 9. El resto conserva sus valores. La primera línea muestra el origen; la segunda, el destino."
+        }
+      },
+      {
+        "id": "block_0009_0006",
+        "block": {
+          "type": "cpp_compiler",
+          "language": "cpp",
+          "initialCode": "#include <iostream>\n\nint main() {\n    int origen[5]{8, 0, -3, 7, 2};\n    int copia[4]{90, 91, 92, 93};\n    const int capacidadOrigen =\n        static_cast<int>(sizeof origen / sizeof origen[0]);\n    const int capacidadCopia =\n        static_cast<int>(sizeof copia / sizeof copia[0]);\n    int cantidad = 0;\n    int indice = 0;\n    int nuevo = 0;\n    if (!(std::cin >> cantidad >> indice >> nuevo)) {\n        return 1;\n    }\n\n    bool aceptado = false;\n    // Comprueba todos los limites antes de cambiar los arrays.\n    // Al aceptar, copia el prefijo y despues cambia el elemento del origen.\n\n    std::cout << \"Aceptado=\" << aceptado << '\\n';\n    std::cout << \"Origen=\";\n    for (int i = 0; i < capacidadOrigen; ++i) {\n        if (i != 0) {\n            std::cout << ' ';\n        }\n        std::cout << origen[i];\n    }\n    std::cout << '\\n' << \"Copia=\";\n    for (int i = 0; i < capacidadCopia; ++i) {\n        if (i != 0) {\n            std::cout << ' ';\n        }\n        std::cout << copia[i];\n    }\n    std::cout << '\\n';\n    return 0;\n}\n",
+          "initialStandardInput": "3 1 99\n",
+          "outputCheck": {
+            "inputComparison": "tokens",
+            "cases": [
+              {
+                "standardInput": "3 1 99\n",
+                "outputs": [
+                  "Aceptado=1\nOrigen=8 99 -3 7 2\nCopia=8 0 -3 93\n"
+                ],
+                "explanation": "Validar cantidad e índice antes de cambiar datos; copiar primero y modificar después el origen. Conservar los elementos no afectados y los dos arrays al rechazar."
+              },
+              {
+                "standardInput": "4 4 -8\n",
+                "outputs": [
+                  "Aceptado=1\nOrigen=8 0 -3 7 -8\nCopia=8 0 -3 7\n"
+                ],
+                "explanation": "Validar cantidad e índice antes de cambiar datos; copiar primero y modificar después el origen. Conservar los elementos no afectados y los dos arrays al rechazar."
+              },
+              {
+                "standardInput": "0 2 30\n",
+                "outputs": [
+                  "Aceptado=1\nOrigen=8 0 30 7 2\nCopia=90 91 92 93\n"
+                ],
+                "explanation": "Validar cantidad e índice antes de cambiar datos; copiar primero y modificar después el origen. Conservar los elementos no afectados y los dos arrays al rechazar."
+              },
+              {
+                "standardInput": "1 0 0\n",
+                "outputs": [
+                  "Aceptado=1\nOrigen=0 0 -3 7 2\nCopia=8 91 92 93\n"
+                ],
+                "explanation": "Validar cantidad e índice antes de cambiar datos; copiar primero y modificar después el origen. Conservar los elementos no afectados y los dos arrays al rechazar."
+              },
+              {
+                "standardInput": "5 1 99\n",
+                "outputs": [
+                  "Aceptado=0\nOrigen=8 0 -3 7 2\nCopia=90 91 92 93\n"
+                ],
+                "explanation": "Validar cantidad e índice antes de cambiar datos; copiar primero y modificar después el origen. Conservar los elementos no afectados y los dos arrays al rechazar."
+              },
+              {
+                "standardInput": "-1 0 25\n",
+                "outputs": [
+                  "Aceptado=0\nOrigen=8 0 -3 7 2\nCopia=90 91 92 93\n"
+                ],
+                "explanation": "Validar cantidad e índice antes de cambiar datos; copiar primero y modificar después el origen. Conservar los elementos no afectados y los dos arrays al rechazar."
+              },
+              {
+                "standardInput": "3 -1 25\n",
+                "outputs": [
+                  "Aceptado=0\nOrigen=8 0 -3 7 2\nCopia=90 91 92 93\n"
+                ],
+                "explanation": "Validar cantidad e índice antes de cambiar datos; copiar primero y modificar después el origen. Conservar los elementos no afectados y los dos arrays al rechazar."
+              },
+              {
+                "standardInput": "3 5 25\n",
+                "outputs": [
+                  "Aceptado=0\nOrigen=8 0 -3 7 2\nCopia=90 91 92 93\n"
+                ],
+                "explanation": "Validar cantidad e índice antes de cambiar datos; copiar primero y modificar después el origen. Conservar los elementos no afectados y los dos arrays al rechazar."
+              }
+            ]
+          }
+        }
+      },
+      {
+        "id": "block_0012_0001",
+        "block": {
+          "type": "code",
+          "language": "cpp",
+          "code": "#include <iostream>\n\nint main() {\n    int origen[5]{8, 0, -3, 7, 2};\n    int copia[4]{90, 91, 92, 93};\n    const int capacidadOrigen =\n        static_cast<int>(sizeof origen / sizeof origen[0]);\n    const int capacidadCopia =\n        static_cast<int>(sizeof copia / sizeof copia[0]);\n    int cantidad = 0;\n    int indice = 0;\n    int nuevo = 0;\n    if (!(std::cin >> cantidad >> indice >> nuevo)) {\n        return 1;\n    }\n\n    bool aceptado = false;\n    if (cantidad >= 0 && cantidad <= capacidadOrigen\n        && cantidad <= capacidadCopia\n        && indice >= 0 && indice < capacidadOrigen) {\n        for (int i = 0; i < cantidad; ++i) {\n            copia[i] = origen[i];\n        }\n        origen[indice] = nuevo;\n        aceptado = true;\n    }\n\n    std::cout << \"Aceptado=\" << aceptado << '\\n';\n    std::cout << \"Origen=\";\n    for (int i = 0; i < capacidadOrigen; ++i) {\n        if (i != 0) {\n            std::cout << ' ';\n        }\n        std::cout << origen[i];\n    }\n    std::cout << '\\n' << \"Copia=\";\n    for (int i = 0; i < capacidadCopia; ++i) {\n        if (i != 0) {\n            std::cout << ' ';\n        }\n        std::cout << copia[i];\n    }\n    std::cout << '\\n';\n    return 0;\n}\n"
+        }
+      },
+      {
+        "id": "block_0013_0002",
+        "block": {
+          "type": "output_prediction",
+          "id": "p3_u2l2_copiar_otra_vez",
+          "language": "cpp",
+          "question": "Primero se copian dos elementos. Después cambia origen[0] y sólo se vuelve a copiar el primero. Predice los tres valores finales de copia.",
+          "code": "#include <iostream>\n\nint main() {\n    int origen[3]{3, 7, 9};\n    int copia[3]{90, 91, 92};\n\n    for (int i = 0; i < 2; ++i) {\n        copia[i] = origen[i];\n    }\n    origen[0] = -4;\n    for (int i = 0; i < 1; ++i) {\n        copia[i] = origen[i];\n    }\n\n    std::cout << copia[0] << ':' << copia[1] << ':' << copia[2];\n    return 0;\n}\n",
+          "answers": [
+            "-4:7:92"
+          ],
+          "outputComparison": "exact",
+          "explanation": "La primera copia deja 3, 7 y 92. La segunda sustituye sólo copia[0] por el nuevo −4. copia[1] conserva el 7 de la primera copia y copia[2] conserva su valor inicial 92."
+        }
+      },
+      {
+        "id": "block_0014_0004",
+        "block": {
+          "type": "output_prediction",
+          "id": "p3_u2l2_recorrido_inverso",
+          "language": "cpp",
+          "question": "Predice el orden en que se muestran los tres valores. El array no se modifica.",
+          "code": "#include <cstddef>\n#include <iostream>\n\nint main() {\n    int datos[3]{6, -2, 4};\n    const std::size_t cantidad = sizeof datos / sizeof datos[0];\n\n    for (std::size_t pendientes = cantidad; pendientes > 0; --pendientes) {\n        const std::size_t indice = pendientes - 1;\n        if (pendientes != cantidad) {\n            std::cout << ':';\n        }\n        std::cout << datos[indice];\n    }\n    return 0;\n}\n",
+          "answers": [
+            "4:-2:6"
+          ],
+          "outputComparison": "exact",
+          "explanation": "pendientes vale 3, 2 y 1 dentro del cuerpo; los índices son 2, 1 y 0. Con pendientes igual a 0 falla la condición antes de calcular otro índice."
+        }
+      }
+    ]
   }
 }

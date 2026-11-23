@@ -22,7 +22,7 @@
           "id": "p3_u4l11_construccion_desde_arrays",
           "language": "cpp",
           "question": "¿Qué muestra el programa, incluidas las cantidades y la comparación de data()?",
-          "code": "#include <array>\n#include <iostream>\n#include <span>\n\nint main() {\n    int nativo[3]{3, 7, 1};\n    std::array<int, 4> datos{2, 5, 8, 1};\n    std::span<int> vista{datos};\n    std::span<const int> lectura{nativo};\n    vista[1] = 6;\n    std::cout << vista.size() << ':' << datos[1] << ':' << lectura.size()\n              << ':' << lectura[1] << ':' << (vista.data() == datos.data());\n    return 0;\n}\n",
+          "code": "#include <array>\n#include <iostream>\n#include <span>\n\nint main() {\n    int nativo[3]{3, 7, 1};\n    std::array<int, 4> datos{2, 5, 8, 1};\n    std::span<int> vista{datos};\n    std::span<const int> lectura{nativo};\n    vista[1] = 6;\n\n    std::cout << vista.size() << ':' << datos[1] << ':' << lectura.size()\n              << ':' << lectura[1] << ':' << (vista.data() == datos.data());\n    return 0;\n}\n",
           "answers": [
             "4:6:3:7:1"
           ],
@@ -54,7 +54,7 @@
           "id": "p3_u4l11_vista_y_copia_de_datos",
           "language": "cpp",
           "question": "¿Qué muestra vista[2]:datos[2]:copia[2], seguido de la comparación de size_bytes()?",
-          "code": "#include <array>\n#include <iostream>\n#include <span>\n\nint main() {\n    std::array<int, 4> datos{2, 5, 8, 1};\n    std::span<int> vista{datos};\n    std::span<int> otraVista = vista;\n    std::array<int, 4> copia = datos;\n    otraVista[2] = 0;\n    std::cout << vista[2] << ':' << datos[2] << ':' << copia[2] << ':'\n              << (vista.size_bytes() == 4 * sizeof(int));\n    return 0;\n}\n",
+          "code": "#include <array>\n#include <iostream>\n#include <span>\n\nint main() {\n    std::array<int, 4> datos{2, 5, 8, 1};\n    std::span<int> vista{datos};\n    std::span<int> otraVista = vista;\n    std::array<int, 4> copia = datos;\n    otraVista[2] = 0;\n\n    std::cout << vista[2] << ':' << datos[2] << ':' << copia[2] << ':'\n              << (vista.size_bytes() == 4 * sizeof(int));\n    return 0;\n}\n",
           "answers": [
             "0:0:8:1"
           ],
@@ -90,7 +90,7 @@
           "id": "p3_u4l11_lectura_observa_las_escrituras",
           "language": "cpp",
           "question": "¿Qué muestra lectura[1]:lectura.size()?",
-          "code": "#include <array>\n#include <iostream>\n#include <span>\n\nint main() {\n    std::array<int, 4> datos{2, 5, 8, 1};\n    std::span<int> escritura{datos};\n    std::span<const int> lectura = escritura;\n    escritura[1] = 0;\n    std::cout << lectura[1] << ':' << lectura.size();\n    return 0;\n}\n",
+          "code": "#include <array>\n#include <iostream>\n#include <span>\n\nint main() {\n    std::array<int, 4> datos{2, 5, 8, 1};\n    std::span<int> escritura{datos};\n    std::span<const int> lectura = escritura;\n    escritura[1] = 0;\n\n    std::cout << lectura[1] << ':' << lectura.size();\n\n    return 0;\n}\n",
           "answers": [
             "0:4"
           ],
@@ -128,7 +128,7 @@
           "id": "p3_u4l11_vista_constante_elementos_modificables",
           "language": "cpp",
           "question": "¿Qué muestra vista.size():datos[0]?",
-          "code": "#include <array>\n#include <iostream>\n#include <span>\n\nint main() {\n    std::array<int, 4> datos{2, 5, 8, 1};\n    const std::span<int> vista{datos};\n    vista[0] = 7;\n    std::cout << vista.size() << ':' << datos[0];\n    return 0;\n}\n",
+          "code": "#include <array>\n#include <iostream>\n#include <span>\n\nint main() {\n    std::array<int, 4> datos{2, 5, 8, 1};\n    const std::span<int> vista{datos};\n\n    vista[0] = 7;\n\n    std::cout << vista.size() << ':' << datos[0];\n\n    return 0;\n}\n",
           "answers": [
             "4:7"
           ],
@@ -138,7 +138,7 @@
         {
           "type": "code",
           "language": "cpp",
-          "code": "#include <array>\n#include <span>\n\nint main() {\n    std::array<int, 4> primero{2, 5, 8, 1};\n    std::array<int, 4> segundo{0, 1, 2, 3};\n    const std::span<int> vista{primero};\n    vista = std::span<int>{segundo};\n    return 0;\n}\n"
+          "code": "#include <array>\n#include <span>\n\nint main() {\n    std::array<int, 4> primero{2, 5, 8, 1};\n    std::array<int, 4> segundo{0, 1, 2, 3};\n    const std::span<int> vista{primero};\n\n    vista = std::span<int>{segundo};\n    return 0;\n}\n"
         },
         {
           "type": "multiple_choice",
@@ -169,7 +169,7 @@
           "id": "p3_u4l11_vacia_por_defecto",
           "language": "cpp",
           "question": "¿Qué muestra el programa?",
-          "code": "#include <array>\n#include <iostream>\n#include <span>\n\nint main() {\n    std::span<int> vacia;\n    std::array<int, 4> datos{2, 5, 8, 1};\n    std::span<int> vista{datos};\n    vista = std::span<int>{};\n    std::cout << vacia.size() << ':' << vacia.empty() << ':'\n              << (vacia.data() == nullptr) << ':' << vista.empty() << ':' << datos[0];\n    return 0;\n}\n",
+          "code": "#include <array>\n#include <iostream>\n#include <span>\n\nint main() {\n    std::span<int> vacia;\n    std::array<int, 4> datos{2, 5, 8, 1};\n    std::span<int> vista{datos};\n    vista = std::span<int>{};\n\n    std::cout << vacia.size() << ':' << vacia.empty() << ':'\n              << (vacia.data() == nullptr) << ':' << vista.empty() << ':' << datos[0];\n    return 0;\n}\n",
           "answers": [
             "0:1:1:1:2"
           ],
@@ -201,7 +201,7 @@
           "id": "p3_u4l11_subvistas_que_comparten_elementos",
           "language": "cpp",
           "question": "¿Qué muestra el programa después de escribir mediante centro?",
-          "code": "#include <array>\n#include <iostream>\n#include <span>\n\nint main() {\n    std::array<int, 4> datos{2, 5, 8, 1};\n    std::span<int> total{datos};\n    std::span<int> prefijo = total.first(2);\n    std::span<int> cola = total.last(2);\n    std::span<int> centro = total.subspan(1, 2);\n    centro[0] = 6;\n    std::cout << prefijo.size() << ':' << prefijo.back() << ':' << cola.front()\n              << ':' << centro[1] << ':' << total[1];\n    return 0;\n}\n",
+          "code": "#include <array>\n#include <iostream>\n#include <span>\n\nint main() {\n    std::array<int, 4> datos{2, 5, 8, 1};\n    std::span<int> total{datos};\n    std::span<int> prefijo = total.first(2);\n    std::span<int> cola = total.last(2);\n    std::span<int> centro = total.subspan(1, 2);\n    centro[0] = 6;\n\n    std::cout << prefijo.size() << ':' << prefijo.back() << ':' << cola.front()\n              << ':' << centro[1] << ':' << total[1];\n    return 0;\n}\n",
           "answers": [
             "2:6:8:8:6"
           ],
@@ -417,7 +417,7 @@
           "id": "p3_u4l11_recortar_la_copia_del_span",
           "language": "cpp",
           "question": "¿Qué muestra el programa completo?",
-          "code": "#include <array>\n#include <iostream>\n#include <span>\n\nvoid recortar(std::span<int> local) {\n    local = local.subspan(1, 2);\n    local[0] = 9;\n    std::cout << local.size() << ':' << local[0] << ':';\n}\n\nint main() {\n    std::array<int, 4> datos{2, 5, 8, 1};\n    std::span<int> vista{datos};\n    recortar(vista);\n    std::cout << vista.size() << ':' << vista[0] << ':' << datos[1];\n    return 0;\n}\n",
+          "code": "#include <array>\n#include <iostream>\n#include <span>\n\nvoid recortar(std::span<int> local) {\n    local = local.subspan(1, 2);\n    local[0] = 9;\n\n    std::cout << local.size() << ':' << local[0] << ':';\n}\n\nint main() {\n    std::array<int, 4> datos{2, 5, 8, 1};\n    std::span<int> vista{datos};\n    recortar(vista);\n    std::cout << vista.size() << ':' << vista[0] << ':' << datos[1];\n\n    return 0;\n}\n",
           "answers": [
             "2:9:4:2:9"
           ],
@@ -453,7 +453,7 @@
           "id": "p3_u4l11_referencia_al_objeto_span",
           "language": "cpp",
           "question": "¿Qué muestra vista.size():vista[0]:datos[0]?",
-          "code": "#include <array>\n#include <iostream>\n#include <span>\n\nvoid recortar(std::span<int>& vista) {\n    vista = vista.subspan(1, 2);\n}\n\nint main() {\n    std::array<int, 4> datos{2, 5, 8, 1};\n    std::span<int> vista{datos};\n    recortar(vista);\n    std::cout << vista.size() << ':' << vista[0] << ':' << datos[0];\n    return 0;\n}\n",
+          "code": "#include <array>\n#include <iostream>\n#include <span>\n\nvoid recortar(std::span<int>& vista) {\n    vista = vista.subspan(1, 2);\n}\n\nint main() {\n    std::array<int, 4> datos{2, 5, 8, 1};\n    std::span<int> vista{datos};\n    recortar(vista);\n    std::cout << vista.size() << ':' << vista[0] << ':' << datos[0];\n\n    return 0;\n}\n",
           "answers": [
             "2:5:2"
           ],
@@ -481,7 +481,7 @@
           "id": "p3_u4l11_extension_fija_y_vista_variable",
           "language": "cpp",
           "question": "¿Qué muestra fija.size():variable.size():fija[2]?",
-          "code": "#include <array>\n#include <iostream>\n#include <span>\n\nint main() {\n    std::array<int, 4> datos{2, 5, 8, 1};\n    std::span<int, 4> fija{datos};\n    std::span<int> variable = fija;\n    variable = variable.first(2);\n    std::cout << fija.size() << ':' << variable.size() << ':' << fija[2];\n    return 0;\n}\n",
+          "code": "#include <array>\n#include <iostream>\n#include <span>\n\nint main() {\n    std::array<int, 4> datos{2, 5, 8, 1};\n    std::span<int, 4> fija{datos};\n    std::span<int> variable = fija;\n    variable = variable.first(2);\n\n    std::cout << fija.size() << ':' << variable.size() << ':' << fija[2];\n\n    return 0;\n}\n",
           "answers": [
             "4:2:8"
           ],
@@ -528,7 +528,7 @@
           "id": "p3_u4l11_devolver_vista_de_objetos_vivos",
           "language": "cpp",
           "question": "¿Qué muestra vista.size():vista[0] después del cambio en main?",
-          "code": "#include <array>\n#include <iostream>\n#include <span>\n\nstd::span<const int> primeros(std::span<const int> datos) {\n    return datos.first(2);\n}\n\nint main() {\n    std::array<int, 4> datos{2, 5, 8, 1};\n    std::span<const int> vista = primeros(std::span<const int>{datos});\n    datos[0] = 7;\n    std::cout << vista.size() << ':' << vista[0];\n    return 0;\n}\n",
+          "code": "#include <array>\n#include <iostream>\n#include <span>\n\nstd::span<const int> primeros(std::span<const int> datos) {\n    return datos.first(2);\n}\n\nint main() {\n    std::array<int, 4> datos{2, 5, 8, 1};\n    std::span<const int> vista = primeros(std::span<const int>{datos});\n    datos[0] = 7;\n\n    std::cout << vista.size() << ':' << vista[0];\n\n    return 0;\n}\n",
           "answers": [
             "2:7"
           ],
@@ -560,7 +560,7 @@
           "type": "inline_fill_code",
           "id": "p3_u4l11_permiso_de_elementos",
           "question": "Completa el primer hueco con el tipo de los enteros modificables y el segundo con la palabra que protege los int de la vista de lectura. No cambies el resto del programa.",
-          "template": "#include <array>\n#include <iostream>\n#include <span>\n\nvoid cambiar(std::span<[]> vista) {\n    if (!vista.empty()) {\n        vista[0] = 7;\n    }\n}\n\nint leer(std::span<[] int> vista) {\n    if (vista.empty()) {\n        return -1;\n    }\n    return vista[0];\n}\n\nint main() {\n    std::array<int, 4> datos{2, 5, 8, 1};\n    cambiar(std::span<int>{datos});\n    std::cout << leer(std::span<const int>{datos}) << ':' << datos[0];\n    return 0;\n}\n",
+          "template": "#include <array>\n#include <iostream>\n#include <span>\n\nvoid cambiar(std::span<[]> vista) {\n    if (!vista.empty()) {\n        vista[0] = 7;\n    }\n}\n\nint leer(std::span<[] int> vista) {\n    if (vista.empty()) {\n        return -1;\n    }\n\n    return vista[0];\n}\n\nint main() {\n    std::array<int, 4> datos{2, 5, 8, 1};\n    cambiar(std::span<int>{datos});\n    std::cout << leer(std::span<const int>{datos}) << ':' << datos[0];\n\n    return 0;\n}\n",
           "answers": [
             "int",
             "const"
@@ -613,7 +613,7 @@
         {
           "type": "cpp_compiler",
           "language": "cpp",
-          "initialCode": "#include <array>\n#include <iostream>\n#include <span>\n\nvoid acotar(std::span<int> vista) {\n    vista = vista.first(2);\n}\n\nint main() {\n    std::array<int, 4> datos{2, 5, 8, 1};\n    std::span<int> actual{datos};\n    acotar(actual);\n    std::cout << actual.size() << ':' << actual[1] << ':';\n    actual[1] = 0;\n    std::cout << datos[1];\n    return 0;\n}\n",
+          "initialCode": "#include <array>\n#include <iostream>\n#include <span>\n\nvoid acotar(std::span<int> vista) {\n    vista = vista.first(2);\n}\n\nint main() {\n    std::array<int, 4> datos{2, 5, 8, 1};\n    std::span<int> actual{datos};\n    acotar(actual);\n    std::cout << actual.size() << ':' << actual[1] << ':';\n    actual[1] = 0;\n\n    std::cout << datos[1];\n\n    return 0;\n}\n",
           "initialStandardInput": "",
           "outputCheck": {
             "inputComparison": "tokens",
@@ -639,7 +639,7 @@
         {
           "type": "code",
           "language": "cpp",
-          "code": "#include <array>\n#include <iostream>\n#include <span>\n\nvoid acotar(std::span<int>& vista) {\n    vista = vista.first(2);\n}\n\nint main() {\n    std::array<int, 4> datos{2, 5, 8, 1};\n    std::span<int> actual{datos};\n    acotar(actual);\n    std::cout << actual.size() << ':' << actual[1] << ':';\n    actual[1] = 0;\n    std::cout << datos[1];\n    return 0;\n}\n"
+          "code": "#include <array>\n#include <iostream>\n#include <span>\n\nvoid acotar(std::span<int>& vista) {\n    vista = vista.first(2);\n}\n\nint main() {\n    std::array<int, 4> datos{2, 5, 8, 1};\n    std::span<int> actual{datos};\n    acotar(actual);\n    std::cout << actual.size() << ':' << actual[1] << ':';\n    actual[1] = 0;\n\n    std::cout << datos[1];\n\n    return 0;\n}\n"
         },
         {
           "type": "paragraph",
@@ -758,7 +758,7 @@
         {
           "type": "cpp_compiler",
           "language": "cpp",
-          "initialCode": "#include <array>\n#include <cstddef>\n#include <iostream>\n#include <span>\n#include <string>\n\nbool seleccionar(std::span<int> total, std::span<int>& actual, int inicio, int cantidad) {\n    if (inicio < 0 || cantidad < 0) {\n        return false;\n    }\n    const auto posicion = static_cast<std::size_t>(inicio);\n    const auto longitud = static_cast<std::size_t>(cantidad);\n    if (posicion > total.size() || longitud > total.size() - posicion) {\n        return false;\n    }\n    actual = total.subspan(posicion, longitud);\n    return true;\n}\n\nint ajustar(std::span<int> vista, int ajuste) {\n    if (vista.size() > 4) {\n        return -1;\n    }\n    if (vista.empty()) {\n        return 0;\n    }\n    if (ajuste < -3 || ajuste > 3) {\n        return -1;\n    }\n    // Comprueba todos los datos y resultados antes de escribir.\n    return -1;\n}\n\nint main() {\n    std::array<int, 4> datos{2, 5, 8, 1};\n    std::span<int> total{datos};\n    std::span<int> actual;\n    std::span<const int> guardada;\n    int ordenes = 0;\n    if (!(std::cin >> ordenes) || ordenes < 1 || ordenes > 12) {\n        return 1;\n    }\n    for (int orden = 0; orden < ordenes; ++orden) {\n        int operacion = 0;\n        int inicio = 0;\n        int cantidad = 0;\n        int ajuste = 0;\n        if (!(std::cin >> operacion >> inicio >> cantidad >> ajuste)) {\n            return 1;\n        }\n        std::string estado = \"Orden\";\n        int resultado = -2;\n        if (operacion == 1) {\n            const bool aceptada = seleccionar(total, actual, inicio, cantidad);\n            estado = aceptada ? \"Seleccion\" : \"Rechazo\";\n            resultado = aceptada ? 1 : -1;\n        } else if (operacion == 2) {\n            guardada = actual;\n            estado = \"Guardada\";\n            resultado = 0;\n        } else if (operacion == 3) {\n            resultado = ajustar(actual, ajuste);\n            estado = resultado < 0 ? \"Rechazo\" : resultado == 0 ? \"Vacio\" : \"Cambio\";\n        } else if (operacion == 4) {\n            actual = std::span<int>{};\n            estado = \"Vacio\";\n            resultado = 0;\n        }\n        std::cout << \"Estado:\" << estado << \";Resultado:\" << resultado << \";Actual:\" << actual.size() << '/';\n        if (actual.empty()) {\n            std::cout << 'X';\n        } else {\n            std::cout << actual[0];\n        }\n        std::cout << \";Guardada:\" << guardada.size() << '/';\n        if (guardada.empty()) {\n            std::cout << 'X';\n        } else {\n            std::cout << guardada[0];\n        }\n        std::cout << \";Datos:\" << datos[0] << ',' << datos[1] << ',' << datos[2] << ',' << datos[3] << '\\n';\n    }\n    return 0;\n}\n",
+          "initialCode": "#include <array>\n#include <cstddef>\n#include <iostream>\n#include <span>\n#include <string>\n\nbool seleccionar(std::span<int> total, std::span<int>& actual, int inicio, int cantidad) {\n    if (inicio < 0 || cantidad < 0) {\n        return false;\n    }\n    const auto posicion = static_cast<std::size_t>(inicio);\n    const auto longitud = static_cast<std::size_t>(cantidad);\n\n    if (posicion > total.size() || longitud > total.size() - posicion) {\n        return false;\n    }\n    actual = total.subspan(posicion, longitud);\n    return true;\n}\n\nint ajustar(std::span<int> vista, int ajuste) {\n    if (vista.size() > 4) {\n        return -1;\n    }\n    if (vista.empty()) {\n        return 0;\n    }\n    if (ajuste < -3 || ajuste > 3) {\n        return -1;\n    }\n    // Comprueba todos los datos y resultados antes de escribir.\n    \n    return -1;\n}\n\nint main() {\n    std::array<int, 4> datos{2, 5, 8, 1};\n    std::span<int> total{datos};\n    std::span<int> actual;\n    std::span<const int> guardada;\n    int ordenes = 0;\n    if (!(std::cin >> ordenes) || ordenes < 1 || ordenes > 12) {\n        return 1;\n    }\n    for (int orden = 0; orden < ordenes; ++orden) {\n        int operacion = 0;\n        int inicio = 0;\n        int cantidad = 0;\n        int ajuste = 0;\n\n        if (!(std::cin >> operacion >> inicio >> cantidad >> ajuste)) {\n            return 1;\n        }\n        std::string estado = \"Orden\";\n        int resultado = -2;\n\n        if (operacion == 1) {\n            const bool aceptada = seleccionar(total, actual, inicio, cantidad);\n            estado = aceptada ? \"Seleccion\" : \"Rechazo\";\n            resultado = aceptada ? 1 : -1;\n        } else if (operacion == 2) {\n            guardada = actual;\n            estado = \"Guardada\";\n            resultado = 0;\n        } else if (operacion == 3) {\n            resultado = ajustar(actual, ajuste);\n            estado = resultado < 0 ? \"Rechazo\" : resultado == 0 ? \"Vacio\" : \"Cambio\";\n        } else if (operacion == 4) {\n            actual = std::span<int>{};\n            estado = \"Vacio\";\n            resultado = 0;\n        }\n        std::cout << \"Estado:\" << estado << \";Resultado:\" << resultado << \";Actual:\" << actual.size() << '/';\n        if (actual.empty()) {\n            std::cout << 'X';\n        } else {\n            std::cout << actual[0];\n        }\n        std::cout << \";Guardada:\" << guardada.size() << '/';\n        if (guardada.empty()) {\n            std::cout << 'X';\n        } else {\n            std::cout << guardada[0];\n        }\n        std::cout << \";Datos:\" << datos[0] << ',' << datos[1] << ',' << datos[2] << ',' << datos[3] << '\\n';\n    }\n\n    return 0;\n}\n",
           "initialStandardInput": "12\n1 1 2 0\n2 0 0 0\n3 0 0 1\n3 0 0 1\n1 0 1 0\n3 0 0 -2\n4 0 0 0\n3 0 0 2147483647\n1 4 0 0\n1 3 2 0\n1 1 2 0\n3 0 0 0\n",
           "outputCheck": {
             "inputComparison": "tokens",
@@ -923,7 +923,7 @@
         {
           "type": "code",
           "language": "cpp",
-          "code": "#include <array>\n#include <cstddef>\n#include <iostream>\n#include <span>\n#include <string>\n\nbool seleccionar(std::span<int> total, std::span<int>& actual, int inicio, int cantidad) {\n    if (inicio < 0 || cantidad < 0) {\n        return false;\n    }\n    const auto posicion = static_cast<std::size_t>(inicio);\n    const auto longitud = static_cast<std::size_t>(cantidad);\n    if (posicion > total.size() || longitud > total.size() - posicion) {\n        return false;\n    }\n    actual = total.subspan(posicion, longitud);\n    return true;\n}\n\nint ajustar(std::span<int> vista, int ajuste) {\n    if (vista.size() > 4) {\n        return -1;\n    }\n    if (vista.empty()) {\n        return 0;\n    }\n    if (ajuste < -3 || ajuste > 3) {\n        return -1;\n    }\n    for (int dato : vista) {\n        if (dato < 0 || dato > 9) {\n            return -1;\n        }\n        const int nuevo = dato + ajuste;\n        if (nuevo < 0 || nuevo > 9) {\n            return -1;\n        }\n    }\n    for (int& dato : vista) {\n        dato += ajuste;\n    }\n    return static_cast<int>(vista.size());\n}\n\nint main() {\n    std::array<int, 4> datos{2, 5, 8, 1};\n    std::span<int> total{datos};\n    std::span<int> actual;\n    std::span<const int> guardada;\n    int ordenes = 0;\n    if (!(std::cin >> ordenes) || ordenes < 1 || ordenes > 12) {\n        return 1;\n    }\n    for (int orden = 0; orden < ordenes; ++orden) {\n        int operacion = 0;\n        int inicio = 0;\n        int cantidad = 0;\n        int ajuste = 0;\n        if (!(std::cin >> operacion >> inicio >> cantidad >> ajuste)) {\n            return 1;\n        }\n        std::string estado = \"Orden\";\n        int resultado = -2;\n        if (operacion == 1) {\n            const bool aceptada = seleccionar(total, actual, inicio, cantidad);\n            estado = aceptada ? \"Seleccion\" : \"Rechazo\";\n            resultado = aceptada ? 1 : -1;\n        } else if (operacion == 2) {\n            guardada = actual;\n            estado = \"Guardada\";\n            resultado = 0;\n        } else if (operacion == 3) {\n            resultado = ajustar(actual, ajuste);\n            estado = resultado < 0 ? \"Rechazo\" : resultado == 0 ? \"Vacio\" : \"Cambio\";\n        } else if (operacion == 4) {\n            actual = std::span<int>{};\n            estado = \"Vacio\";\n            resultado = 0;\n        }\n        std::cout << \"Estado:\" << estado << \";Resultado:\" << resultado << \";Actual:\" << actual.size() << '/';\n        if (actual.empty()) {\n            std::cout << 'X';\n        } else {\n            std::cout << actual[0];\n        }\n        std::cout << \";Guardada:\" << guardada.size() << '/';\n        if (guardada.empty()) {\n            std::cout << 'X';\n        } else {\n            std::cout << guardada[0];\n        }\n        std::cout << \";Datos:\" << datos[0] << ',' << datos[1] << ',' << datos[2] << ',' << datos[3] << '\\n';\n    }\n    return 0;\n}\n"
+          "code": "#include <array>\n#include <cstddef>\n#include <iostream>\n#include <span>\n#include <string>\n\nbool seleccionar(std::span<int> total, std::span<int>& actual, int inicio, int cantidad) {\n    if (inicio < 0 || cantidad < 0) {\n        return false;\n    }\n    const auto posicion = static_cast<std::size_t>(inicio);\n    const auto longitud = static_cast<std::size_t>(cantidad);\n\n    if (posicion > total.size() || longitud > total.size() - posicion) {\n        return false;\n    }\n    actual = total.subspan(posicion, longitud);\n    return true;\n}\n\nint ajustar(std::span<int> vista, int ajuste) {\n    if (vista.size() > 4) {\n        return -1;\n    }\n    if (vista.empty()) {\n        return 0;\n    }\n    if (ajuste < -3 || ajuste > 3) {\n        return -1;\n    }\n    for (int dato : vista) {\n        if (dato < 0 || dato > 9) {\n            return -1;\n        }\n        const int nuevo = dato + ajuste;\n        if (nuevo < 0 || nuevo > 9) {\n            return -1;\n        }\n    }\n    for (int& dato : vista) {\n        dato += ajuste;\n    }\n\n    return static_cast<int>(vista.size());\n}\n\nint main() {\n    std::array<int, 4> datos{2, 5, 8, 1};\n    std::span<int> total{datos};\n    std::span<int> actual;\n    std::span<const int> guardada;\n    int ordenes = 0;\n    if (!(std::cin >> ordenes) || ordenes < 1 || ordenes > 12) {\n        return 1;\n    }\n    for (int orden = 0; orden < ordenes; ++orden) {\n        int operacion = 0;\n        int inicio = 0;\n        int cantidad = 0;\n        int ajuste = 0;\n\n        if (!(std::cin >> operacion >> inicio >> cantidad >> ajuste)) {\n            return 1;\n        }\n        std::string estado = \"Orden\";\n        int resultado = -2;\n\n        if (operacion == 1) {\n            const bool aceptada = seleccionar(total, actual, inicio, cantidad);\n            estado = aceptada ? \"Seleccion\" : \"Rechazo\";\n            resultado = aceptada ? 1 : -1;\n        } else if (operacion == 2) {\n            guardada = actual;\n            estado = \"Guardada\";\n            resultado = 0;\n        } else if (operacion == 3) {\n            resultado = ajustar(actual, ajuste);\n            estado = resultado < 0 ? \"Rechazo\" : resultado == 0 ? \"Vacio\" : \"Cambio\";\n        } else if (operacion == 4) {\n            actual = std::span<int>{};\n            estado = \"Vacio\";\n            resultado = 0;\n        }\n        std::cout << \"Estado:\" << estado << \";Resultado:\" << resultado << \";Actual:\" << actual.size() << '/';\n        if (actual.empty()) {\n            std::cout << 'X';\n        } else {\n            std::cout << actual[0];\n        }\n        std::cout << \";Guardada:\" << guardada.size() << '/';\n        if (guardada.empty()) {\n            std::cout << 'X';\n        } else {\n            std::cout << guardada[0];\n        }\n        std::cout << \";Datos:\" << datos[0] << ',' << datos[1] << ',' << datos[2] << ',' << datos[3] << '\\n';\n    }\n\n    return 0;\n}\n"
         },
         {
           "type": "paragraph",
@@ -2485,6 +2485,350 @@
       }
     },
     "additions": [],
-    "editorial": []
+    "editorial": [
+      {
+        "id": "block_0000_0003",
+        "beforeSha256": "d04b8b3b3602e1344d6b3f4dc1372119ce8a45cb168087d30868aa973a7837c9",
+        "afterSha256": "37bdb75455e552c6767df846d66a4e0a3f3fbbe652b0fabcd6604ffb5e36935c"
+      },
+      {
+        "id": "block_0001_0003",
+        "beforeSha256": "e29c909616cf60f69ea2e1d7068616bb64f93e4a03e57d7f0ec8b8124cf96291",
+        "afterSha256": "6f4aece6a31f6cd3507212ec325c028f66983890aa9ce9f68ce7e5a378afcedf"
+      },
+      {
+        "id": "block_0002_0002",
+        "beforeSha256": "d03001f9d16a630f1fbeeca0a30f9a29388313c0c5af3dcd9c3722f76581be8d",
+        "afterSha256": "fda0e1f3d17e8c3640fb4e09090607d96356acd695ca9c7aadd47c3e7ced1a9e"
+      },
+      {
+        "id": "block_0003_0002",
+        "beforeSha256": "eca661dba689a5f32301e7f90bb441403160b631bf46d03b27d7c3ab34ffc40e",
+        "afterSha256": "3e7f384549e72135c2e17a8f7c0adfd14c29726a3bb7bfe854b8d83264041259"
+      },
+      {
+        "id": "block_0003_0003",
+        "beforeSha256": "8937cf596ca54679018b2ca361bf75b91854f4862e2a02007415a47886f5c8a2",
+        "afterSha256": "a6cfabd65caa09072341c9d19d81bf3c7b897866a106cf06bb7ec762bfa7a748"
+      },
+      {
+        "id": "block_0004_0002",
+        "beforeSha256": "ae3a48f0d76e085d8d664fce80001483aedb12ca8e6d5e0d532907234def487c",
+        "afterSha256": "07860db0264658af36f305d29108e872616f695edd88afd2207889fc46687a07"
+      },
+      {
+        "id": "block_0005_0003",
+        "beforeSha256": "22a120fd56a3ae26934395358ea7840c1a73fe78bde856849586b6b5ec81564f",
+        "afterSha256": "6e0abe01a62daea8f0f5a1a1c998ad2fbb5effce8522c2a068a82f9c677f575e"
+      },
+      {
+        "id": "block_0009_0003",
+        "beforeSha256": "60a5757ec31623cc9db17436e9b4e7c735486847df7ff218871fe596ed2e7e8b",
+        "afterSha256": "6217e3513d1545c315b2688eaeb8b12d8559eacdaa7a8732d51b3ffda5a663af"
+      },
+      {
+        "id": "block_0010_0002",
+        "beforeSha256": "ea8a0af8ff741934f7357d940c55a1f76bb204a34c9d5ef41d1718d009c74447",
+        "afterSha256": "5e3c06ee22918ea3b532c0a59c3ffeb0896b528886f0fb90dcd426dd13299155"
+      },
+      {
+        "id": "block_0011_0002",
+        "beforeSha256": "1f3fb0c31c5def91b506078832aa62379be18cf7405a757b30bd00ab29004537",
+        "afterSha256": "5f906489a9314f99e2fdad4812f506413d520bd2a850c3513a5680c8b7bb3892"
+      },
+      {
+        "id": "block_0012_0002",
+        "beforeSha256": "0232047f9a4d5a71d11d984d2bc9cc349923a5c22549ec57d4ff1bf301edcf4d",
+        "afterSha256": "934e9d329585856e55e265b8c99bbdb23f4474e22b1f0e1afc94417f40461e35"
+      },
+      {
+        "id": "block_0013_0002",
+        "beforeSha256": "37b1f3524eb9cb50cdcc48945e19cc5ecac634b98e1b53aebacc9a33c6ee7711",
+        "afterSha256": "5128e7440a7059c492a0de73ce1d0170421b08bcc505e2541d843ac744399103"
+      },
+      {
+        "id": "block_0014_0004",
+        "beforeSha256": "bc3908d8ac0275a76669d0110f2e05fd7a689fed7d51ad4417fc278007f1d1d1",
+        "afterSha256": "16ce096fd49914b982e1ea06b3b74e933ee28fc0eeae7d03157540f111d60a31"
+      },
+      {
+        "id": "block_0015_0001",
+        "beforeSha256": "b8a4f57c81b43c78110f6e770e254d0c1305b5b9d9c22b338a0b76752f7ec43a",
+        "afterSha256": "99b6b78a403579c063516be0dcdcca184abc6e603f414b0c95a1dc7ffc5f4d42"
+      },
+      {
+        "id": "block_0018_0009",
+        "beforeSha256": "ceb28e4249791016db62dd56facc9c96767a577c206509d4fea23e6eca73902e",
+        "afterSha256": "02e9238c983db0ee10e52918d364295a7829814c85f2d500e7a22e8ea4c43ece"
+      },
+      {
+        "id": "block_0021_0001",
+        "beforeSha256": "96adddbd392099f70297a532515e77d7d98abc496b0cb141a1c6c2feb9b6c549",
+        "afterSha256": "91849f4cede15bd29ac7968d207ecc772ef70b8e044fde63a59a5fc1d95a304f"
+      }
+    ],
+    "sourceFormatRevisions": [
+      {
+        "id": "block_0000_0003",
+        "block": {
+          "type": "output_prediction",
+          "id": "p3_u4l11_construccion_desde_arrays",
+          "language": "cpp",
+          "question": "¿Qué muestra el programa, incluidas las cantidades y la comparación de data()?",
+          "code": "#include <array>\n#include <iostream>\n#include <span>\n\nint main() {\n    int nativo[3]{3, 7, 1};\n    std::array<int, 4> datos{2, 5, 8, 1};\n    std::span<int> vista{datos};\n    std::span<const int> lectura{nativo};\n    vista[1] = 6;\n    std::cout << vista.size() << ':' << datos[1] << ':' << lectura.size()\n              << ':' << lectura[1] << ':' << (vista.data() == datos.data());\n    return 0;\n}\n",
+          "answers": [
+            "4:6:3:7:1"
+          ],
+          "outputComparison": "exact",
+          "explanation": "vista utiliza los cuatro enteros de datos y la escritura cambia el segundo a 6. lectura utiliza tres enteros del array nativo y lee 7 en su posición uno. data() conserva el inicio de datos."
+        }
+      },
+      {
+        "id": "block_0001_0003",
+        "block": {
+          "type": "output_prediction",
+          "id": "p3_u4l11_vista_y_copia_de_datos",
+          "language": "cpp",
+          "question": "¿Qué muestra vista[2]:datos[2]:copia[2], seguido de la comparación de size_bytes()?",
+          "code": "#include <array>\n#include <iostream>\n#include <span>\n\nint main() {\n    std::array<int, 4> datos{2, 5, 8, 1};\n    std::span<int> vista{datos};\n    std::span<int> otraVista = vista;\n    std::array<int, 4> copia = datos;\n    otraVista[2] = 0;\n    std::cout << vista[2] << ':' << datos[2] << ':' << copia[2] << ':'\n              << (vista.size_bytes() == 4 * sizeof(int));\n    return 0;\n}\n",
+          "answers": [
+            "0:0:8:1"
+          ],
+          "outputComparison": "exact",
+          "explanation": "otraVista y vista utilizan el tercer entero original y observan cero. copia conserva el 8 anterior en otro array. Cuatro int ocupan cuatro veces sizeof(int)."
+        }
+      },
+      {
+        "id": "block_0002_0002",
+        "block": {
+          "type": "output_prediction",
+          "id": "p3_u4l11_lectura_observa_las_escrituras",
+          "language": "cpp",
+          "question": "¿Qué muestra lectura[1]:lectura.size()?",
+          "code": "#include <array>\n#include <iostream>\n#include <span>\n\nint main() {\n    std::array<int, 4> datos{2, 5, 8, 1};\n    std::span<int> escritura{datos};\n    std::span<const int> lectura = escritura;\n    escritura[1] = 0;\n    std::cout << lectura[1] << ':' << lectura.size();\n    return 0;\n}\n",
+          "answers": [
+            "0:4"
+          ],
+          "outputComparison": "exact",
+          "explanation": "La escritura modifica el segundo entero original. lectura utiliza ese mismo entero y observa cero; conserva cuatro elementos."
+        }
+      },
+      {
+        "id": "block_0003_0002",
+        "block": {
+          "type": "output_prediction",
+          "id": "p3_u4l11_vista_constante_elementos_modificables",
+          "language": "cpp",
+          "question": "¿Qué muestra vista.size():datos[0]?",
+          "code": "#include <array>\n#include <iostream>\n#include <span>\n\nint main() {\n    std::array<int, 4> datos{2, 5, 8, 1};\n    const std::span<int> vista{datos};\n    vista[0] = 7;\n    std::cout << vista.size() << ':' << datos[0];\n    return 0;\n}\n",
+          "answers": [
+            "4:7"
+          ],
+          "outputComparison": "exact",
+          "explanation": "No se cambia el objeto vista: se escribe en el primer entero que permite utilizar. Ese entero sigue siendo modificable y queda en 7."
+        }
+      },
+      {
+        "id": "block_0003_0003",
+        "block": {
+          "type": "code",
+          "language": "cpp",
+          "code": "#include <array>\n#include <span>\n\nint main() {\n    std::array<int, 4> primero{2, 5, 8, 1};\n    std::array<int, 4> segundo{0, 1, 2, 3};\n    const std::span<int> vista{primero};\n    vista = std::span<int>{segundo};\n    return 0;\n}\n"
+        }
+      },
+      {
+        "id": "block_0004_0002",
+        "block": {
+          "type": "output_prediction",
+          "id": "p3_u4l11_vacia_por_defecto",
+          "language": "cpp",
+          "question": "¿Qué muestra el programa?",
+          "code": "#include <array>\n#include <iostream>\n#include <span>\n\nint main() {\n    std::span<int> vacia;\n    std::array<int, 4> datos{2, 5, 8, 1};\n    std::span<int> vista{datos};\n    vista = std::span<int>{};\n    std::cout << vacia.size() << ':' << vacia.empty() << ':'\n              << (vacia.data() == nullptr) << ':' << vista.empty() << ':' << datos[0];\n    return 0;\n}\n",
+          "answers": [
+            "0:1:1:1:2"
+          ],
+          "outputComparison": "exact",
+          "explanation": "La vista vacia contiene cero elementos, está vacía y su inicio es nulo. La otra vista también queda vacía al reasignarse. datos[0] sigue existiendo y conserva 2."
+        }
+      },
+      {
+        "id": "block_0005_0003",
+        "block": {
+          "type": "output_prediction",
+          "id": "p3_u4l11_subvistas_que_comparten_elementos",
+          "language": "cpp",
+          "question": "¿Qué muestra el programa después de escribir mediante centro?",
+          "code": "#include <array>\n#include <iostream>\n#include <span>\n\nint main() {\n    std::array<int, 4> datos{2, 5, 8, 1};\n    std::span<int> total{datos};\n    std::span<int> prefijo = total.first(2);\n    std::span<int> cola = total.last(2);\n    std::span<int> centro = total.subspan(1, 2);\n    centro[0] = 6;\n    std::cout << prefijo.size() << ':' << prefijo.back() << ':' << cola.front()\n              << ':' << centro[1] << ':' << total[1];\n    return 0;\n}\n",
+          "answers": [
+            "2:6:8:8:6"
+          ],
+          "outputComparison": "exact",
+          "explanation": "prefijo utiliza los elementos cero y uno; cola, dos y tres; centro, uno y dos. La escritura centro[0] cambia el elemento uno y también se observa mediante prefijo y total."
+        }
+      },
+      {
+        "id": "block_0009_0003",
+        "block": {
+          "type": "output_prediction",
+          "id": "p3_u4l11_recortar_la_copia_del_span",
+          "language": "cpp",
+          "question": "¿Qué muestra el programa completo?",
+          "code": "#include <array>\n#include <iostream>\n#include <span>\n\nvoid recortar(std::span<int> local) {\n    local = local.subspan(1, 2);\n    local[0] = 9;\n    std::cout << local.size() << ':' << local[0] << ':';\n}\n\nint main() {\n    std::array<int, 4> datos{2, 5, 8, 1};\n    std::span<int> vista{datos};\n    recortar(vista);\n    std::cout << vista.size() << ':' << vista[0] << ':' << datos[1];\n    return 0;\n}\n",
+          "answers": [
+            "2:9:4:2:9"
+          ],
+          "outputComparison": "exact",
+          "explanation": "local pasa a tener dos elementos y escribe 9 en datos[1]. vista en main conserva su selección de cuatro y sigue leyendo 2 en su índice cero."
+        }
+      },
+      {
+        "id": "block_0010_0002",
+        "block": {
+          "type": "output_prediction",
+          "id": "p3_u4l11_referencia_al_objeto_span",
+          "language": "cpp",
+          "question": "¿Qué muestra vista.size():vista[0]:datos[0]?",
+          "code": "#include <array>\n#include <iostream>\n#include <span>\n\nvoid recortar(std::span<int>& vista) {\n    vista = vista.subspan(1, 2);\n}\n\nint main() {\n    std::array<int, 4> datos{2, 5, 8, 1};\n    std::span<int> vista{datos};\n    recortar(vista);\n    std::cout << vista.size() << ':' << vista[0] << ':' << datos[0];\n    return 0;\n}\n",
+          "answers": [
+            "2:5:2"
+          ],
+          "outputComparison": "exact",
+          "explanation": "La vista del llamador pasa a seleccionar los elementos uno y dos. Su primer valor es 5. El array completo conserva sus cuatro enteros y su primer valor 2."
+        }
+      },
+      {
+        "id": "block_0011_0002",
+        "block": {
+          "type": "output_prediction",
+          "id": "p3_u4l11_extension_fija_y_vista_variable",
+          "language": "cpp",
+          "question": "¿Qué muestra fija.size():variable.size():fija[2]?",
+          "code": "#include <array>\n#include <iostream>\n#include <span>\n\nint main() {\n    std::array<int, 4> datos{2, 5, 8, 1};\n    std::span<int, 4> fija{datos};\n    std::span<int> variable = fija;\n    variable = variable.first(2);\n    std::cout << fija.size() << ':' << variable.size() << ':' << fija[2];\n    return 0;\n}\n",
+          "answers": [
+            "4:2:8"
+          ],
+          "outputComparison": "exact",
+          "explanation": "fija conserva cuatro elementos. variable es otro objeto de cantidad variable que se recorta a dos. El tercer entero del array, accesible mediante fija, conserva 8."
+        }
+      },
+      {
+        "id": "block_0012_0002",
+        "block": {
+          "type": "output_prediction",
+          "id": "p3_u4l11_devolver_vista_de_objetos_vivos",
+          "language": "cpp",
+          "question": "¿Qué muestra vista.size():vista[0] después del cambio en main?",
+          "code": "#include <array>\n#include <iostream>\n#include <span>\n\nstd::span<const int> primeros(std::span<const int> datos) {\n    return datos.first(2);\n}\n\nint main() {\n    std::array<int, 4> datos{2, 5, 8, 1};\n    std::span<const int> vista = primeros(std::span<const int>{datos});\n    datos[0] = 7;\n    std::cout << vista.size() << ':' << vista[0];\n    return 0;\n}\n",
+          "answers": [
+            "2:7"
+          ],
+          "outputComparison": "exact",
+          "explanation": "La vista devuelta conserva dos elementos del array de main. Cuando main cambia datos[0] a 7, la vista permite observar ese valor."
+        }
+      },
+      {
+        "id": "block_0013_0002",
+        "block": {
+          "type": "inline_fill_code",
+          "id": "p3_u4l11_permiso_de_elementos",
+          "question": "Completa el primer hueco con el tipo de los enteros modificables y el segundo con la palabra que protege los int de la vista de lectura. No cambies el resto del programa.",
+          "template": "#include <array>\n#include <iostream>\n#include <span>\n\nvoid cambiar(std::span<[]> vista) {\n    if (!vista.empty()) {\n        vista[0] = 7;\n    }\n}\n\nint leer(std::span<[] int> vista) {\n    if (vista.empty()) {\n        return -1;\n    }\n    return vista[0];\n}\n\nint main() {\n    std::array<int, 4> datos{2, 5, 8, 1};\n    cambiar(std::span<int>{datos});\n    std::cout << leer(std::span<const int>{datos}) << ':' << datos[0];\n    return 0;\n}\n",
+          "answers": [
+            "int",
+            "const"
+          ],
+          "answerAlternatives": [
+            [
+              "int",
+              "signed int",
+              "signed"
+            ],
+            [
+              "const"
+            ]
+          ],
+          "explanation": "span<int> ofrece escritura en esos int. span<const int> ofrece lectura y permite observar el 7 que se guardó en el array original. El paso por valor de las vistas no copia los enteros."
+        }
+      },
+      {
+        "id": "block_0014_0004",
+        "block": {
+          "type": "cpp_compiler",
+          "language": "cpp",
+          "initialCode": "#include <array>\n#include <iostream>\n#include <span>\n\nvoid acotar(std::span<int> vista) {\n    vista = vista.first(2);\n}\n\nint main() {\n    std::array<int, 4> datos{2, 5, 8, 1};\n    std::span<int> actual{datos};\n    acotar(actual);\n    std::cout << actual.size() << ':' << actual[1] << ':';\n    actual[1] = 0;\n    std::cout << datos[1];\n    return 0;\n}\n",
+          "initialStandardInput": "",
+          "outputCheck": {
+            "inputComparison": "tokens",
+            "cases": [
+              {
+                "standardInput": "",
+                "outputs": [
+                  "2:5:0"
+                ],
+                "explanation": "Recibe una referencia al objeto vista si la función debe cambiar la selección que conserva main. El array permanece completo y la escritura por la vista recortada utiliza datos[1]."
+              }
+            ]
+          }
+        }
+      },
+      {
+        "id": "block_0015_0001",
+        "block": {
+          "type": "code",
+          "language": "cpp",
+          "code": "#include <array>\n#include <iostream>\n#include <span>\n\nvoid acotar(std::span<int>& vista) {\n    vista = vista.first(2);\n}\n\nint main() {\n    std::array<int, 4> datos{2, 5, 8, 1};\n    std::span<int> actual{datos};\n    acotar(actual);\n    std::cout << actual.size() << ':' << actual[1] << ':';\n    actual[1] = 0;\n    std::cout << datos[1];\n    return 0;\n}\n"
+        }
+      },
+      {
+        "id": "block_0018_0009",
+        "block": {
+          "type": "cpp_compiler",
+          "language": "cpp",
+          "initialCode": "#include <array>\n#include <cstddef>\n#include <iostream>\n#include <span>\n#include <string>\n\nbool seleccionar(std::span<int> total, std::span<int>& actual, int inicio, int cantidad) {\n    if (inicio < 0 || cantidad < 0) {\n        return false;\n    }\n    const auto posicion = static_cast<std::size_t>(inicio);\n    const auto longitud = static_cast<std::size_t>(cantidad);\n    if (posicion > total.size() || longitud > total.size() - posicion) {\n        return false;\n    }\n    actual = total.subspan(posicion, longitud);\n    return true;\n}\n\nint ajustar(std::span<int> vista, int ajuste) {\n    if (vista.size() > 4) {\n        return -1;\n    }\n    if (vista.empty()) {\n        return 0;\n    }\n    if (ajuste < -3 || ajuste > 3) {\n        return -1;\n    }\n    // Comprueba todos los datos y resultados antes de escribir.\n    return -1;\n}\n\nint main() {\n    std::array<int, 4> datos{2, 5, 8, 1};\n    std::span<int> total{datos};\n    std::span<int> actual;\n    std::span<const int> guardada;\n    int ordenes = 0;\n    if (!(std::cin >> ordenes) || ordenes < 1 || ordenes > 12) {\n        return 1;\n    }\n    for (int orden = 0; orden < ordenes; ++orden) {\n        int operacion = 0;\n        int inicio = 0;\n        int cantidad = 0;\n        int ajuste = 0;\n        if (!(std::cin >> operacion >> inicio >> cantidad >> ajuste)) {\n            return 1;\n        }\n        std::string estado = \"Orden\";\n        int resultado = -2;\n        if (operacion == 1) {\n            const bool aceptada = seleccionar(total, actual, inicio, cantidad);\n            estado = aceptada ? \"Seleccion\" : \"Rechazo\";\n            resultado = aceptada ? 1 : -1;\n        } else if (operacion == 2) {\n            guardada = actual;\n            estado = \"Guardada\";\n            resultado = 0;\n        } else if (operacion == 3) {\n            resultado = ajustar(actual, ajuste);\n            estado = resultado < 0 ? \"Rechazo\" : resultado == 0 ? \"Vacio\" : \"Cambio\";\n        } else if (operacion == 4) {\n            actual = std::span<int>{};\n            estado = \"Vacio\";\n            resultado = 0;\n        }\n        std::cout << \"Estado:\" << estado << \";Resultado:\" << resultado << \";Actual:\" << actual.size() << '/';\n        if (actual.empty()) {\n            std::cout << 'X';\n        } else {\n            std::cout << actual[0];\n        }\n        std::cout << \";Guardada:\" << guardada.size() << '/';\n        if (guardada.empty()) {\n            std::cout << 'X';\n        } else {\n            std::cout << guardada[0];\n        }\n        std::cout << \";Datos:\" << datos[0] << ',' << datos[1] << ',' << datos[2] << ',' << datos[3] << '\\n';\n    }\n    return 0;\n}\n",
+          "initialStandardInput": "12\n1 1 2 0\n2 0 0 0\n3 0 0 1\n3 0 0 1\n1 0 1 0\n3 0 0 -2\n4 0 0 0\n3 0 0 2147483647\n1 4 0 0\n1 3 2 0\n1 1 2 0\n3 0 0 0\n",
+          "outputCheck": {
+            "inputComparison": "tokens",
+            "cases": [
+              {
+                "standardInput": "12\n1 1 2 0\n2 0 0 0\n3 0 0 1\n3 0 0 1\n1 0 1 0\n3 0 0 -2\n4 0 0 0\n3 0 0 2147483647\n1 4 0 0\n1 3 2 0\n1 1 2 0\n3 0 0 0\n",
+                "outputs": [
+                  "Estado:Seleccion;Resultado:1;Actual:2/5;Guardada:0/X;Datos:2,5,8,1\nEstado:Guardada;Resultado:0;Actual:2/5;Guardada:2/5;Datos:2,5,8,1\nEstado:Cambio;Resultado:2;Actual:2/6;Guardada:2/6;Datos:2,6,9,1\nEstado:Rechazo;Resultado:-1;Actual:2/6;Guardada:2/6;Datos:2,6,9,1\nEstado:Seleccion;Resultado:1;Actual:1/2;Guardada:2/6;Datos:2,6,9,1\nEstado:Cambio;Resultado:1;Actual:1/0;Guardada:2/6;Datos:0,6,9,1\nEstado:Vacio;Resultado:0;Actual:0/X;Guardada:2/6;Datos:0,6,9,1\nEstado:Vacio;Resultado:0;Actual:0/X;Guardada:2/6;Datos:0,6,9,1\nEstado:Seleccion;Resultado:1;Actual:0/X;Guardada:2/6;Datos:0,6,9,1\nEstado:Rechazo;Resultado:-1;Actual:0/X;Guardada:2/6;Datos:0,6,9,1\nEstado:Seleccion;Resultado:1;Actual:2/6;Guardada:2/6;Datos:0,6,9,1\nEstado:Cambio;Resultado:2;Actual:2/6;Guardada:2/6;Datos:0,6,9,1\n"
+                ],
+                "explanation": "La primera etapa comprueba sin escribir. La segunda actualiza todos los elementos aceptados. La vista guardada conserva su selección y observa las escrituras del almacenamiento compartido."
+              },
+              {
+                "standardInput": "10\n2 9 9 9\n3 0 0 -2147483648\n1 0 4 0\n3 0 0 2147483647\n3 0 0 -1\n3 0 0 -1\n2 0 0 0\n4 0 0 0\n1 2 0 0\n2 0 0 0\n",
+                "outputs": [
+                  "Estado:Guardada;Resultado:0;Actual:0/X;Guardada:0/X;Datos:2,5,8,1\nEstado:Vacio;Resultado:0;Actual:0/X;Guardada:0/X;Datos:2,5,8,1\nEstado:Seleccion;Resultado:1;Actual:4/2;Guardada:0/X;Datos:2,5,8,1\nEstado:Rechazo;Resultado:-1;Actual:4/2;Guardada:0/X;Datos:2,5,8,1\nEstado:Cambio;Resultado:4;Actual:4/1;Guardada:0/X;Datos:1,4,7,0\nEstado:Rechazo;Resultado:-1;Actual:4/1;Guardada:0/X;Datos:1,4,7,0\nEstado:Guardada;Resultado:0;Actual:4/1;Guardada:4/1;Datos:1,4,7,0\nEstado:Vacio;Resultado:0;Actual:0/X;Guardada:4/1;Datos:1,4,7,0\nEstado:Seleccion;Resultado:1;Actual:0/X;Guardada:4/1;Datos:1,4,7,0\nEstado:Guardada;Resultado:0;Actual:0/X;Guardada:0/X;Datos:1,4,7,0\n"
+                ],
+                "explanation": "La primera etapa comprueba sin escribir. La segunda actualiza todos los elementos aceptados. La vista guardada conserva su selección y observa las escrituras del almacenamiento compartido."
+              },
+              {
+                "standardInput": "9\n1 -2147483648 0 0\n1 0 2147483647 0\n1 2 -2147483648 0\n1 2 2 0\n2 0 0 0\n1 2147483647 0 0\n3 0 0 2\n0 2 2 3\n3 0 0 -3\n",
+                "outputs": [
+                  "Estado:Rechazo;Resultado:-1;Actual:0/X;Guardada:0/X;Datos:2,5,8,1\nEstado:Rechazo;Resultado:-1;Actual:0/X;Guardada:0/X;Datos:2,5,8,1\nEstado:Rechazo;Resultado:-1;Actual:0/X;Guardada:0/X;Datos:2,5,8,1\nEstado:Seleccion;Resultado:1;Actual:2/8;Guardada:0/X;Datos:2,5,8,1\nEstado:Guardada;Resultado:0;Actual:2/8;Guardada:2/8;Datos:2,5,8,1\nEstado:Rechazo;Resultado:-1;Actual:2/8;Guardada:2/8;Datos:2,5,8,1\nEstado:Rechazo;Resultado:-1;Actual:2/8;Guardada:2/8;Datos:2,5,8,1\nEstado:Orden;Resultado:-2;Actual:2/8;Guardada:2/8;Datos:2,5,8,1\nEstado:Rechazo;Resultado:-1;Actual:2/8;Guardada:2/8;Datos:2,5,8,1\n"
+                ],
+                "explanation": "La primera etapa comprueba sin escribir. La segunda actualiza todos los elementos aceptados. La vista guardada conserva su selección y observa las escrituras del almacenamiento compartido."
+              },
+              {
+                "standardInput": "10\n1 0 1 0\n3 0 0 3\n2 0 0 0\n1 1 1 0\n3 0 0 2\n1 0 2 0\n3 0 0 -1\n3 0 0 0\n1 0 0 0\n3 0 0 -4\n",
+                "outputs": [
+                  "Estado:Seleccion;Resultado:1;Actual:1/2;Guardada:0/X;Datos:2,5,8,1\nEstado:Cambio;Resultado:1;Actual:1/5;Guardada:0/X;Datos:5,5,8,1\nEstado:Guardada;Resultado:0;Actual:1/5;Guardada:1/5;Datos:5,5,8,1\nEstado:Seleccion;Resultado:1;Actual:1/5;Guardada:1/5;Datos:5,5,8,1\nEstado:Cambio;Resultado:1;Actual:1/7;Guardada:1/5;Datos:5,7,8,1\nEstado:Seleccion;Resultado:1;Actual:2/5;Guardada:1/5;Datos:5,7,8,1\nEstado:Cambio;Resultado:2;Actual:2/4;Guardada:1/4;Datos:4,6,8,1\nEstado:Cambio;Resultado:2;Actual:2/4;Guardada:1/4;Datos:4,6,8,1\nEstado:Seleccion;Resultado:1;Actual:0/X;Guardada:1/4;Datos:4,6,8,1\nEstado:Vacio;Resultado:0;Actual:0/X;Guardada:1/4;Datos:4,6,8,1\n"
+                ],
+                "explanation": "La primera etapa comprueba sin escribir. La segunda actualiza todos los elementos aceptados. La vista guardada conserva su selección y observa las escrituras del almacenamiento compartido."
+              }
+            ]
+          }
+        }
+      },
+      {
+        "id": "block_0021_0001",
+        "block": {
+          "type": "code",
+          "language": "cpp",
+          "code": "#include <array>\n#include <cstddef>\n#include <iostream>\n#include <span>\n#include <string>\n\nbool seleccionar(std::span<int> total, std::span<int>& actual, int inicio, int cantidad) {\n    if (inicio < 0 || cantidad < 0) {\n        return false;\n    }\n    const auto posicion = static_cast<std::size_t>(inicio);\n    const auto longitud = static_cast<std::size_t>(cantidad);\n    if (posicion > total.size() || longitud > total.size() - posicion) {\n        return false;\n    }\n    actual = total.subspan(posicion, longitud);\n    return true;\n}\n\nint ajustar(std::span<int> vista, int ajuste) {\n    if (vista.size() > 4) {\n        return -1;\n    }\n    if (vista.empty()) {\n        return 0;\n    }\n    if (ajuste < -3 || ajuste > 3) {\n        return -1;\n    }\n    for (int dato : vista) {\n        if (dato < 0 || dato > 9) {\n            return -1;\n        }\n        const int nuevo = dato + ajuste;\n        if (nuevo < 0 || nuevo > 9) {\n            return -1;\n        }\n    }\n    for (int& dato : vista) {\n        dato += ajuste;\n    }\n    return static_cast<int>(vista.size());\n}\n\nint main() {\n    std::array<int, 4> datos{2, 5, 8, 1};\n    std::span<int> total{datos};\n    std::span<int> actual;\n    std::span<const int> guardada;\n    int ordenes = 0;\n    if (!(std::cin >> ordenes) || ordenes < 1 || ordenes > 12) {\n        return 1;\n    }\n    for (int orden = 0; orden < ordenes; ++orden) {\n        int operacion = 0;\n        int inicio = 0;\n        int cantidad = 0;\n        int ajuste = 0;\n        if (!(std::cin >> operacion >> inicio >> cantidad >> ajuste)) {\n            return 1;\n        }\n        std::string estado = \"Orden\";\n        int resultado = -2;\n        if (operacion == 1) {\n            const bool aceptada = seleccionar(total, actual, inicio, cantidad);\n            estado = aceptada ? \"Seleccion\" : \"Rechazo\";\n            resultado = aceptada ? 1 : -1;\n        } else if (operacion == 2) {\n            guardada = actual;\n            estado = \"Guardada\";\n            resultado = 0;\n        } else if (operacion == 3) {\n            resultado = ajustar(actual, ajuste);\n            estado = resultado < 0 ? \"Rechazo\" : resultado == 0 ? \"Vacio\" : \"Cambio\";\n        } else if (operacion == 4) {\n            actual = std::span<int>{};\n            estado = \"Vacio\";\n            resultado = 0;\n        }\n        std::cout << \"Estado:\" << estado << \";Resultado:\" << resultado << \";Actual:\" << actual.size() << '/';\n        if (actual.empty()) {\n            std::cout << 'X';\n        } else {\n            std::cout << actual[0];\n        }\n        std::cout << \";Guardada:\" << guardada.size() << '/';\n        if (guardada.empty()) {\n            std::cout << 'X';\n        } else {\n            std::cout << guardada[0];\n        }\n        std::cout << \";Datos:\" << datos[0] << ',' << datos[1] << ',' << datos[2] << ',' << datos[3] << '\\n';\n    }\n    return 0;\n}\n"
+        }
+      }
+    ]
   }
 }

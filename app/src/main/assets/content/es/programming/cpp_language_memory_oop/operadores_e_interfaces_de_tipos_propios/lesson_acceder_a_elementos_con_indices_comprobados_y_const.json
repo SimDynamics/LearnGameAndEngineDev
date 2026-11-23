@@ -77,7 +77,7 @@
           "id": "p3_u7l4_acceso_mutable_y_constante",
           "language": "cpp",
           "question": "Escribe las dos lecturas de a y la lectura de b en el orden del programa.",
-          "code": "#include <iostream>\n\nstruct IndiceFuera {};\n\nclass DosLecturas {\npublic:\n    DosLecturas(int primera, int segunda) : datos_{primera, segunda} {}\n    int& operator[](int indice);\n    const int& operator[](int indice) const;\nprivate:\n    int datos_[2];\n};\nint& DosLecturas::operator[](int indice) {\n    if (indice < 0 || indice >= 2) { throw IndiceFuera{}; }\n    return datos_[indice];\n}\nconst int& DosLecturas::operator[](int indice) const {\n    if (indice < 0 || indice >= 2) { throw IndiceFuera{}; }\n    return datos_[indice];\n}\nint main() {\n    DosLecturas a{4, 9};\n    const DosLecturas b{2, 8};\n    a[0] = 6;\n    std::cout << a[0] << ':' << a[1] << ':' << b[1];\n    return 0;\n}\n",
+          "code": "#include <iostream>\n\nstruct IndiceFuera {};\n\nclass DosLecturas {\npublic:\n    DosLecturas(int primera, int segunda) : datos_{primera, segunda} {}\n    int& operator[](int indice);\n    const int& operator[](int indice) const;\nprivate:\n    int datos_[2];\n};\n\nint& DosLecturas::operator[](int indice) {\n    if (indice < 0 || indice >= 2) { throw IndiceFuera{}; }\n    return datos_[indice];\n}\n\nconst int& DosLecturas::operator[](int indice) const {\n    if (indice < 0 || indice >= 2) { throw IndiceFuera{}; }\n    return datos_[indice];\n}\n\nint main() {\n    DosLecturas a{4, 9};\n    const DosLecturas b{2, 8};\n\n    a[0] = 6;\n\n    std::cout << a[0] << ':' << a[1] << ':' << b[1];\n\n    return 0;\n}\n",
           "answers": [
             "6:9:8"
           ],
@@ -103,7 +103,7 @@
         {
           "type": "code",
           "language": "cpp",
-          "code": "#include <iostream>\n\nstruct IndiceFuera {};\n\nclass DosLecturas {\npublic:\n    DosLecturas(int primera, int segunda) : datos_{primera, segunda} {}\n    int& operator[](int indice);\n    const int& operator[](int indice) const;\nprivate:\n    int datos_[2];\n};\nint& DosLecturas::operator[](int indice) {\n    if (indice < 0 || indice >= 2) { throw IndiceFuera{}; }\n    return datos_[indice];\n}\nconst int& DosLecturas::operator[](int indice) const {\n    if (indice < 0 || indice >= 2) { throw IndiceFuera{}; }\n    return datos_[indice];\n}\nint main() {\n    const DosLecturas a{3, 9};\n    a[0] = 8;\n    return 0;\n}\n"
+          "code": "#include <iostream>\n\nstruct IndiceFuera {};\n\nclass DosLecturas {\npublic:\n    DosLecturas(int primera, int segunda) : datos_{primera, segunda} {}\n    int& operator[](int indice);\n    const int& operator[](int indice) const;\nprivate:\n    int datos_[2];\n};\n\nint& DosLecturas::operator[](int indice) {\n    if (indice < 0 || indice >= 2) { throw IndiceFuera{}; }\n    return datos_[indice];\n}\n\nconst int& DosLecturas::operator[](int indice) const {\n    if (indice < 0 || indice >= 2) { throw IndiceFuera{}; }\n    return datos_[indice];\n}\n\nint main() {\n    const DosLecturas a{3, 9};\n\n    a[0] = 8;\n    return 0;\n}\n"
         },
         {
           "type": "multiple_choice",
@@ -134,7 +134,7 @@
           "id": "p3_u7l4_const_en_el_resultado_no_cambia_el_receptor",
           "language": "cpp",
           "question": "Escribe la lectura conservada por referencia y la consulta posterior del elemento de a.",
-          "code": "#include <iostream>\n\nstruct IndiceFuera {};\n\nclass DosLecturas {\npublic:\n    DosLecturas(int primera, int segunda) : datos_{primera, segunda} {}\n    int& operator[](int indice);\n    const int& operator[](int indice) const;\nprivate:\n    int datos_[2];\n};\nint& DosLecturas::operator[](int indice) {\n    if (indice < 0 || indice >= 2) { throw IndiceFuera{}; }\n    return datos_[indice];\n}\nconst int& DosLecturas::operator[](int indice) const {\n    if (indice < 0 || indice >= 2) { throw IndiceFuera{}; }\n    return datos_[indice];\n}\nint main() {\n    DosLecturas a{5, 6};\n    const int& lectura = a[0];\n    a[0] = 14;\n    std::cout << lectura << ':' << a[0];\n    return 0;\n}\n",
+          "code": "#include <iostream>\n\nstruct IndiceFuera {};\n\nclass DosLecturas {\npublic:\n    DosLecturas(int primera, int segunda) : datos_{primera, segunda} {}\n    int& operator[](int indice);\n    const int& operator[](int indice) const;\nprivate:\n    int datos_[2];\n};\n\nint& DosLecturas::operator[](int indice) {\n    if (indice < 0 || indice >= 2) { throw IndiceFuera{}; }\n    return datos_[indice];\n}\n\nconst int& DosLecturas::operator[](int indice) const {\n    if (indice < 0 || indice >= 2) { throw IndiceFuera{}; }\n    return datos_[indice];\n}\n\nint main() {\n    DosLecturas a{5, 6};\n    const int& lectura = a[0];\n\n    a[0] = 14;\n\n    std::cout << lectura << ':' << a[0];\n\n    return 0;\n}\n",
           "answers": [
             "14:14"
           ],
@@ -162,7 +162,7 @@
           "id": "p3_u7l4_referencia_constante_y_copia_del_elemento",
           "language": "cpp",
           "question": "Escribe vivo, copia y la nueva consulta mediante lectura tras cambiar el elemento.",
-          "code": "#include <iostream>\n\nstruct IndiceFuera {};\n\nclass DosLecturas {\npublic:\n    DosLecturas(int primera, int segunda) : datos_{primera, segunda} {}\n    int& operator[](int indice);\n    const int& operator[](int indice) const;\nprivate:\n    int datos_[2];\n};\nint& DosLecturas::operator[](int indice) {\n    if (indice < 0 || indice >= 2) { throw IndiceFuera{}; }\n    return datos_[indice];\n}\nconst int& DosLecturas::operator[](int indice) const {\n    if (indice < 0 || indice >= 2) { throw IndiceFuera{}; }\n    return datos_[indice];\n}\nint main() {\n    DosLecturas a{3, 8};\n    const DosLecturas& lectura = a;\n    const int& vivo = lectura[1];\n    auto copia = lectura[1];\n    a[1] = 21;\n    std::cout << vivo << ':' << copia << ':' << lectura[1];\n    return 0;\n}\n",
+          "code": "#include <iostream>\n\nstruct IndiceFuera {};\n\nclass DosLecturas {\npublic:\n    DosLecturas(int primera, int segunda) : datos_{primera, segunda} {}\n    int& operator[](int indice);\n    const int& operator[](int indice) const;\nprivate:\n    int datos_[2];\n};\n\nint& DosLecturas::operator[](int indice) {\n    if (indice < 0 || indice >= 2) { throw IndiceFuera{}; }\n    return datos_[indice];\n}\n\nconst int& DosLecturas::operator[](int indice) const {\n    if (indice < 0 || indice >= 2) { throw IndiceFuera{}; }\n    return datos_[indice];\n}\n\nint main() {\n    DosLecturas a{3, 8};\n    const DosLecturas& lectura = a;\n    const int& vivo = lectura[1];\n    auto copia = lectura[1];\n\n    a[1] = 21;\n\n    std::cout << vivo << ':' << copia << ':' << lectura[1];\n\n    return 0;\n}\n",
           "answers": [
             "21:8:21"
           ],
@@ -190,7 +190,7 @@
           "id": "p3_u7l4_copia_del_objeto_y_alias_del_original",
           "language": "cpp",
           "question": "Escribe el segundo elemento de a, el de b y el valor observado mediante enlace.",
-          "code": "#include <iostream>\n\nstruct IndiceFuera {};\n\nclass DosLecturas {\npublic:\n    DosLecturas(int primera, int segunda) : datos_{primera, segunda} {}\n    int& operator[](int indice);\n    const int& operator[](int indice) const;\nprivate:\n    int datos_[2];\n};\nint& DosLecturas::operator[](int indice) {\n    if (indice < 0 || indice >= 2) { throw IndiceFuera{}; }\n    return datos_[indice];\n}\nconst int& DosLecturas::operator[](int indice) const {\n    if (indice < 0 || indice >= 2) { throw IndiceFuera{}; }\n    return datos_[indice];\n}\nint main() {\n    DosLecturas a{7, 12};\n    int& enlace = a[1];\n    DosLecturas b = a;\n    b[1] = -4;\n    enlace = 20;\n    std::cout << a[1] << ':' << b[1] << ':' << enlace;\n    return 0;\n}\n",
+          "code": "#include <iostream>\n\nstruct IndiceFuera {};\n\nclass DosLecturas {\npublic:\n    DosLecturas(int primera, int segunda) : datos_{primera, segunda} {}\n    int& operator[](int indice);\n    const int& operator[](int indice) const;\nprivate:\n    int datos_[2];\n};\n\nint& DosLecturas::operator[](int indice) {\n    if (indice < 0 || indice >= 2) { throw IndiceFuera{}; }\n    return datos_[indice];\n}\n\nconst int& DosLecturas::operator[](int indice) const {\n    if (indice < 0 || indice >= 2) { throw IndiceFuera{}; }\n    return datos_[indice];\n}\n\nint main() {\n    DosLecturas a{7, 12};\n    int& enlace = a[1];\n    DosLecturas b = a;\n\n    b[1] = -4;\n    enlace = 20;\n\n    std::cout << a[1] << ':' << b[1] << ':' << enlace;\n\n    return 0;\n}\n",
           "answers": [
             "20:-4:20"
           ],
@@ -251,7 +251,7 @@
         {
           "type": "code",
           "language": "cpp",
-          "code": "#include <iostream>\n\nstruct IndiceFuera {};\n\nclass DosLecturas {\npublic:\n    DosLecturas(int primera, int segunda) : datos_{primera, segunda} {}\n    int& operator[](int indice);\n    const int& operator[](int indice) const;\nprivate:\n    int datos_[2];\n};\nint& DosLecturas::operator[](int indice) {\n    if (indice < 0 || indice >= 2) { throw IndiceFuera{}; }\n    return datos_[indice];\n}\nconst int& DosLecturas::operator[](int indice) const {\n    if (indice < 0 || indice >= 2) { throw IndiceFuera{}; }\n    return datos_[indice];\n}\nint& seleccionar(DosLecturas& lecturas, int indice) {\n    return lecturas[indice];\n}\nint main() {\n    DosLecturas a{2, 9};\n    int& r = seleccionar(a, 1);\n    r = 15;\n    std::cout << a[0] << ':' << a[1] << ':' << (&r == &a[1]);\n    return 0;\n}\n"
+          "code": "#include <iostream>\n\nstruct IndiceFuera {};\n\nclass DosLecturas {\npublic:\n    DosLecturas(int primera, int segunda) : datos_{primera, segunda} {}\n    int& operator[](int indice);\n    const int& operator[](int indice) const;\nprivate:\n    int datos_[2];\n};\n\nint& DosLecturas::operator[](int indice) {\n    if (indice < 0 || indice >= 2) { throw IndiceFuera{}; }\n    return datos_[indice];\n}\n\nconst int& DosLecturas::operator[](int indice) const {\n    if (indice < 0 || indice >= 2) { throw IndiceFuera{}; }\n    return datos_[indice];\n}\n\nint& seleccionar(DosLecturas& lecturas, int indice) {\n    return lecturas[indice];\n}\n\nint main() {\n    DosLecturas a{2, 9};\n    int& r = seleccionar(a, 1);\n\n    r = 15;\n\n    std::cout << a[0] << ':' << a[1] << ':' << (&r == &a[1]);\n\n    return 0;\n}\n"
         },
         {
           "type": "paragraph",
@@ -274,7 +274,7 @@
           "id": "p3_u7l4_rechazo_de_indice_y_alias_conservado",
           "language": "cpp",
           "question": "Escribe el rótulo del tratamiento del error y los dos valores finales de a.",
-          "code": "#include <iostream>\n\nstruct IndiceFuera {};\n\nclass DosLecturas {\npublic:\n    DosLecturas(int primera, int segunda) : datos_{primera, segunda} {}\n    int& operator[](int indice);\n    const int& operator[](int indice) const;\nprivate:\n    int datos_[2];\n};\nint& DosLecturas::operator[](int indice) {\n    if (indice < 0 || indice >= 2) { throw IndiceFuera{}; }\n    return datos_[indice];\n}\nconst int& DosLecturas::operator[](int indice) const {\n    if (indice < 0 || indice >= 2) { throw IndiceFuera{}; }\n    return datos_[indice];\n}\nint main() {\n    DosLecturas a{5, 11};\n    const DosLecturas& lectura = a;\n    int& enlace = a[1];\n    try { lectura[2]; }\n    catch (const IndiceFuera&) { std::cout << \"Indice:\"; }\n    enlace = 17;\n    std::cout << a[0] << ':' << a[1];\n    return 0;\n}\n",
+          "code": "#include <iostream>\n\nstruct IndiceFuera {};\n\nclass DosLecturas {\npublic:\n    DosLecturas(int primera, int segunda) : datos_{primera, segunda} {}\n    int& operator[](int indice);\n    const int& operator[](int indice) const;\nprivate:\n    int datos_[2];\n};\n\nint& DosLecturas::operator[](int indice) {\n    if (indice < 0 || indice >= 2) { throw IndiceFuera{}; }\n    return datos_[indice];\n}\n\nconst int& DosLecturas::operator[](int indice) const {\n    if (indice < 0 || indice >= 2) { throw IndiceFuera{}; }\n    return datos_[indice];\n}\n\nint main() {\n    DosLecturas a{5, 11};\n    const DosLecturas& lectura = a;\n    int& enlace = a[1];\n    try { lectura[2]; }\n    catch (const IndiceFuera&) { std::cout << \"Indice:\"; }\n    enlace = 17;\n\n    std::cout << a[0] << ':' << a[1];\n\n    return 0;\n}\n",
           "answers": [
             "Indice:5:17"
           ],
@@ -300,7 +300,7 @@
         {
           "type": "code",
           "language": "cpp",
-          "code": "#include <iostream>\n\nstruct IndiceFuera {};\n\nclass DosLecturas {\npublic:\n    DosLecturas(int primera, int segunda) : datos_{primera, segunda} {}\n    int& operator[](int indice);\n    int& operator[](int indice) const;\nprivate:\n    int datos_[2];\n};\nint& DosLecturas::operator[](int indice) {\n    if (indice < 0 || indice >= 2) { throw IndiceFuera{}; }\n    return datos_[indice];\n}\nint& DosLecturas::operator[](int indice) const {\n    if (indice < 0 || indice >= 2) { throw IndiceFuera{}; }\n    return datos_[indice];\n}\nint main() { return 0; }\n"
+          "code": "#include <iostream>\n\nstruct IndiceFuera {};\n\nclass DosLecturas {\npublic:\n    DosLecturas(int primera, int segunda) : datos_{primera, segunda} {}\n    int& operator[](int indice);\n    int& operator[](int indice) const;\nprivate:\n    int datos_[2];\n};\n\nint& DosLecturas::operator[](int indice) {\n    if (indice < 0 || indice >= 2) { throw IndiceFuera{}; }\n    return datos_[indice];\n}\n\nint& DosLecturas::operator[](int indice) const {\n    if (indice < 0 || indice >= 2) { throw IndiceFuera{}; }\n    return datos_[indice];\n}\n\nint main() { return 0; }\n"
         },
         {
           "type": "multiple_choice",
@@ -401,7 +401,7 @@
           "id": "p3_u7l4_alias_nombrado_de_referencia_rvalue",
           "language": "cpp",
           "question": "Escribe las dos consultas posteriores a la escritura y la comprobación de identidad entre los nombres del objeto.",
-          "code": "#include <iostream>\n\nstruct IndiceFuera {};\n\nclass DosLecturas {\npublic:\n    DosLecturas(int primera, int segunda) : datos_{primera, segunda} {}\n    int& operator[](int indice);\n    const int& operator[](int indice) const;\nprivate:\n    int datos_[2];\n};\nint& DosLecturas::operator[](int indice) {\n    if (indice < 0 || indice >= 2) { throw IndiceFuera{}; }\n    return datos_[indice];\n}\nconst int& DosLecturas::operator[](int indice) const {\n    if (indice < 0 || indice >= 2) { throw IndiceFuera{}; }\n    return datos_[indice];\n}\n#include <utility>\nint main() {\n    DosLecturas a{6, 13};\n    DosLecturas&& otro_nombre = std::move(a);\n    int& r = otro_nombre[0];\n    r = 19;\n    std::cout << a[0] << ':' << otro_nombre[0] << ':' << (&otro_nombre == &a);\n    return 0;\n}\n",
+          "code": "#include <iostream>\n\nstruct IndiceFuera {};\n\nclass DosLecturas {\npublic:\n    DosLecturas(int primera, int segunda) : datos_{primera, segunda} {}\n    int& operator[](int indice);\n    const int& operator[](int indice) const;\nprivate:\n    int datos_[2];\n};\n\nint& DosLecturas::operator[](int indice) {\n    if (indice < 0 || indice >= 2) { throw IndiceFuera{}; }\n    return datos_[indice];\n}\n\nconst int& DosLecturas::operator[](int indice) const {\n    if (indice < 0 || indice >= 2) { throw IndiceFuera{}; }\n    return datos_[indice];\n}\n#include <utility>\n\nint main() {\n    DosLecturas a{6, 13};\n    DosLecturas&& otro_nombre = std::move(a);\n    int& r = otro_nombre[0];\n    r = 19;\n\n    std::cout << a[0] << ':' << otro_nombre[0] << ':' << (&otro_nombre == &a);\n\n    return 0;\n}\n",
           "answers": [
             "19:19:1"
           ],
@@ -707,7 +707,7 @@
         {
           "type": "cpp_compiler",
           "language": "cpp",
-          "initialCode": "#include <iostream>\n\nstruct IndiceFuera {};\n\nclass Terna {\npublic:\n    Terna() = default;\n    Terna(int primero, int segundo, int tercero) : datos_{primero, segundo, tercero} {}\n    int& operator[](int indice);\n    const int& operator[](int indice) const;\n    void escribir(std::ostream& salida) const {\n        salida << datos_[0] << ':' << datos_[1] << ':' << datos_[2];\n    }\nprivate:\n    int datos_[3]{10, 20, 30};\n};\nint& Terna::operator[](int indice) {\n    // Comprueba el índice y devuelve una referencia al elemento elegido.\n    (void)indice;\n    return datos_[0];\n}\n\nconst int& Terna::operator[](int indice) const {\n    // Comprueba también el acceso constante, sin permitir escribir por el retorno.\n    (void)indice;\n    return datos_[0];\n}\nint main() {\n    int ordenes = 0;\n    if (!(std::cin >> ordenes) || ordenes < 1 || ordenes > 12) { return 1; }\n    Terna datos;\n    const Terna& lectura = datos;\n    int* enlace = &datos[0];\n    const int* observado = &lectura[2];\n    for (int i = 0; i < ordenes; ++i) {\n        int op = 0, indice = 0, valor = 0;\n        if (!(std::cin >> op >> indice >> valor)) { return 1; }\n        std::cout << \"Antes:\";\n        datos.escribir(std::cout);\n        const char* estado = \"Aceptada\";\n        int resultado = 0;\n        try {\n            if (op == 1) { int& r = datos[indice]; resultado = r; }\n            else if (op == 2) { const int& r = lectura[indice]; resultado = r; }\n            else if (op == 3) { datos[indice] = valor; resultado = valor; }\n            else if (op == 4) { enlace = &datos[indice]; resultado = *enlace; }\n            else if (op == 5) { *enlace = valor; resultado = *enlace; }\n            else if (op == 6) { observado = &lectura[indice]; resultado = *observado; }\n            else { estado = \"Operacion\"; }\n        } catch (const IndiceFuera&) { estado = \"Indice\"; }\n        std::cout << \";Estado:\" << estado << \";Dato:\" << resultado\n                  << \";Enlace:\" << *enlace << \";Visto:\" << *observado << \";Ahora:\";\n        datos.escribir(std::cout);\n        std::cout << '\\n';\n    }\n    std::cout << \"Final:\";\n    datos.escribir(std::cout);\n    return 0;\n}\n",
+          "initialCode": "#include <iostream>\n\nstruct IndiceFuera {};\n\nclass Terna {\npublic:\n    Terna() = default;\n    Terna(int primero, int segundo, int tercero) : datos_{primero, segundo, tercero} {}\n    int& operator[](int indice);\n    const int& operator[](int indice) const;\n    void escribir(std::ostream& salida) const {\n        salida << datos_[0] << ':' << datos_[1] << ':' << datos_[2];\n    }\nprivate:\n    int datos_[3]{10, 20, 30};\n};\n\nint& Terna::operator[](int indice) {\n    // Comprueba el índice y devuelve una referencia al elemento elegido.\n    (void)indice;\n    return datos_[0];\n}\n\nconst int& Terna::operator[](int indice) const {\n    // Comprueba también el acceso constante, sin permitir escribir por el retorno.\n    (void)indice;\n    return datos_[0];\n}\n\nint main() {\n    int ordenes = 0;\n    if (!(std::cin >> ordenes) || ordenes < 1 || ordenes > 12) { return 1; }\n    Terna datos;\n    const Terna& lectura = datos;\n    int* enlace = &datos[0];\n    const int* observado = &lectura[2];\n\n    for (int i = 0; i < ordenes; ++i) {\n        int op = 0, indice = 0, valor = 0;\n        if (!(std::cin >> op >> indice >> valor)) { return 1; }\n        std::cout << \"Antes:\";\n        datos.escribir(std::cout);\n        const char* estado = \"Aceptada\";\n        int resultado = 0;\n        try {\n            if (op == 1) { int& r = datos[indice]; resultado = r; }\n            else if (op == 2) { const int& r = lectura[indice]; resultado = r; }\n            else if (op == 3) { datos[indice] = valor; resultado = valor; }\n            else if (op == 4) { enlace = &datos[indice]; resultado = *enlace; }\n            else if (op == 5) { *enlace = valor; resultado = *enlace; }\n            else if (op == 6) { observado = &lectura[indice]; resultado = *observado; }\n            else { estado = \"Operacion\"; }\n        } catch (const IndiceFuera&) { estado = \"Indice\"; }\n        std::cout << \";Estado:\" << estado << \";Dato:\" << resultado\n                  << \";Enlace:\" << *enlace << \";Visto:\" << *observado << \";Ahora:\";\n        datos.escribir(std::cout);\n        std::cout << '\\n';\n    }\n    std::cout << \"Final:\";\n    datos.escribir(std::cout);\n    return 0;\n}\n",
           "initialStandardInput": "9\n3 1 25\n4 1 0\n6 1 0\n5 99 -4\n1 2 0\n2 0 0\n4 3 0\n6 -1 0\n5 -99 0",
           "outputCheck": {
             "inputComparison": "tokens",
@@ -833,7 +833,7 @@
         {
           "type": "code",
           "language": "cpp",
-          "code": "#include <iostream>\n\nstruct IndiceFuera {};\n\nclass Terna {\npublic:\n    Terna() = default;\n    Terna(int primero, int segundo, int tercero) : datos_{primero, segundo, tercero} {}\n    int& operator[](int indice);\n    const int& operator[](int indice) const;\n    void escribir(std::ostream& salida) const {\n        salida << datos_[0] << ':' << datos_[1] << ':' << datos_[2];\n    }\nprivate:\n    int datos_[3]{10, 20, 30};\n};\nint& Terna::operator[](int indice) {\n    if (indice < 0 || indice >= 3) { throw IndiceFuera{}; }\n    return datos_[indice];\n}\nconst int& Terna::operator[](int indice) const {\n    if (indice < 0 || indice >= 3) { throw IndiceFuera{}; }\n    return datos_[indice];\n}\nint main() {\n    int ordenes = 0;\n    if (!(std::cin >> ordenes) || ordenes < 1 || ordenes > 12) { return 1; }\n    Terna datos;\n    const Terna& lectura = datos;\n    int* enlace = &datos[0];\n    const int* observado = &lectura[2];\n    for (int i = 0; i < ordenes; ++i) {\n        int op = 0, indice = 0, valor = 0;\n        if (!(std::cin >> op >> indice >> valor)) { return 1; }\n        std::cout << \"Antes:\";\n        datos.escribir(std::cout);\n        const char* estado = \"Aceptada\";\n        int resultado = 0;\n        try {\n            if (op == 1) { int& r = datos[indice]; resultado = r; }\n            else if (op == 2) { const int& r = lectura[indice]; resultado = r; }\n            else if (op == 3) { datos[indice] = valor; resultado = valor; }\n            else if (op == 4) { enlace = &datos[indice]; resultado = *enlace; }\n            else if (op == 5) { *enlace = valor; resultado = *enlace; }\n            else if (op == 6) { observado = &lectura[indice]; resultado = *observado; }\n            else { estado = \"Operacion\"; }\n        } catch (const IndiceFuera&) { estado = \"Indice\"; }\n        std::cout << \";Estado:\" << estado << \";Dato:\" << resultado\n                  << \";Enlace:\" << *enlace << \";Visto:\" << *observado << \";Ahora:\";\n        datos.escribir(std::cout);\n        std::cout << '\\n';\n    }\n    std::cout << \"Final:\";\n    datos.escribir(std::cout);\n    return 0;\n}\n"
+          "code": "#include <iostream>\n\nstruct IndiceFuera {};\n\nclass Terna {\npublic:\n    Terna() = default;\n    Terna(int primero, int segundo, int tercero) : datos_{primero, segundo, tercero} {}\n    int& operator[](int indice);\n    const int& operator[](int indice) const;\n    void escribir(std::ostream& salida) const {\n        salida << datos_[0] << ':' << datos_[1] << ':' << datos_[2];\n    }\nprivate:\n    int datos_[3]{10, 20, 30};\n};\n\nint& Terna::operator[](int indice) {\n    if (indice < 0 || indice >= 3) { throw IndiceFuera{}; }\n    return datos_[indice];\n}\n\nconst int& Terna::operator[](int indice) const {\n    if (indice < 0 || indice >= 3) { throw IndiceFuera{}; }\n    return datos_[indice];\n}\n\nint main() {\n    int ordenes = 0;\n    if (!(std::cin >> ordenes) || ordenes < 1 || ordenes > 12) { return 1; }\n    Terna datos;\n    const Terna& lectura = datos;\n    int* enlace = &datos[0];\n    const int* observado = &lectura[2];\n\n    for (int i = 0; i < ordenes; ++i) {\n        int op = 0, indice = 0, valor = 0;\n        if (!(std::cin >> op >> indice >> valor)) { return 1; }\n        std::cout << \"Antes:\";\n        datos.escribir(std::cout);\n        const char* estado = \"Aceptada\";\n        int resultado = 0;\n        try {\n            if (op == 1) { int& r = datos[indice]; resultado = r; }\n            else if (op == 2) { const int& r = lectura[indice]; resultado = r; }\n            else if (op == 3) { datos[indice] = valor; resultado = valor; }\n            else if (op == 4) { enlace = &datos[indice]; resultado = *enlace; }\n            else if (op == 5) { *enlace = valor; resultado = *enlace; }\n            else if (op == 6) { observado = &lectura[indice]; resultado = *observado; }\n            else { estado = \"Operacion\"; }\n        } catch (const IndiceFuera&) { estado = \"Indice\"; }\n        std::cout << \";Estado:\" << estado << \";Dato:\" << resultado\n                  << \";Enlace:\" << *enlace << \";Visto:\" << *observado << \";Ahora:\";\n        datos.escribir(std::cout);\n        std::cout << '\\n';\n    }\n    std::cout << \"Final:\";\n    datos.escribir(std::cout);\n    return 0;\n}\n"
         },
         {
           "type": "paragraph",
@@ -2517,6 +2517,221 @@
       }
     },
     "additions": [],
-    "editorial": []
+    "editorial": [
+      {
+        "id": "block_0002_0002",
+        "beforeSha256": "839e16396b6232c9467f77f69cafbe323318959f7119ff56dd6b7119a098ff9d",
+        "afterSha256": "17e4a7bebff9109a004a40584eabde310d6a496cf36e9d5f15f72fd79814f5a0"
+      },
+      {
+        "id": "block_0003_0002",
+        "beforeSha256": "049e1ae5d3668f90b379ef2ddd642b36d5c9269513a570f66bb6535f453eb896",
+        "afterSha256": "d1276d733f0b1c833d2ae040a0d26356016a879cb9ba4a37de87117692051956"
+      },
+      {
+        "id": "block_0004_0002",
+        "beforeSha256": "0513e7fbf6223142e3c2116ed6dff7cbb02a07f2b9c4971257b57099ca7df718",
+        "afterSha256": "f255df6964cd7153c6609c9aa28fa6bf4accbd1c0ffff33d892b2c8585fd3835"
+      },
+      {
+        "id": "block_0005_0002",
+        "beforeSha256": "ed0344a27d7540f131ba632518656ecb9ecc4c8f02b1f2cc2da35783cdb5a1da",
+        "afterSha256": "eddf7dd11a9c5fc5b26d5fafbfe0c3975ed5763ee9caa5bab7a08d17a86b6ee3"
+      },
+      {
+        "id": "block_0006_0002",
+        "beforeSha256": "b8ddf950b134790c91e4948310b831363643d729d77531ac2274d0874aa1ca78",
+        "afterSha256": "b0448a3b9cc268cfd31d6f098d04f43b32a146b25af20d4ea11e9afb60768d69"
+      },
+      {
+        "id": "block_0008_0004",
+        "beforeSha256": "a0d294e38869d6e7cb044f74bb8ac568ded12cfcca2317436d04bb58671307b9",
+        "afterSha256": "64091a4e77cfd3c0318edcdec9028adfb20fccf80cce215b315fe8eae80c3e53"
+      },
+      {
+        "id": "block_0009_0002",
+        "beforeSha256": "40cbc1b3ea8ac4059a7e598082b253fa68ca06e58dc7f24906ea2b8c0f00ff0e",
+        "afterSha256": "7b61c7cfe68dbb6df0cbf9e5743462c67491f763f48bb52a00df464314e58cd8"
+      },
+      {
+        "id": "block_0010_0002",
+        "beforeSha256": "c46d5153a3cd75df3ad7d366615526b42ca3a1445073b3d2450f9ca98af526a7",
+        "afterSha256": "8e709e5e5b1fd276f45c5d026bc751c872867537555b09b0afbd567b379e9065"
+      },
+      {
+        "id": "block_0013_0002",
+        "beforeSha256": "507507abe5e5b53ec9fbfc73662ac0ae27f71132776d7b43044e94c8da7ffc56",
+        "afterSha256": "af5132b7a213bdf1733dfae5d002554f0c9886a66ddd68fada8b2d5f96de78f6"
+      },
+      {
+        "id": "block_0021_0002",
+        "beforeSha256": "a3ca38330ae98d6769f3477e9c302ac415eeee2310ee04f0e2e0270aad737788",
+        "afterSha256": "ee70b536d74b6c5702e1d3bfda0b7ee705de45aaf88504e45ffad2eee7c8ebeb"
+      },
+      {
+        "id": "block_0023_0001",
+        "beforeSha256": "a5b82f037f4c38c21d0a9edddad5814c6d0c1c23367f9f05ef04a47ae00cbc20",
+        "afterSha256": "38fbc606adc33293b1d61704a8cbadc848d8eac9cf0aadd369b463feb4634305"
+      }
+    ],
+    "sourceFormatRevisions": [
+      {
+        "id": "block_0002_0002",
+        "block": {
+          "type": "output_prediction",
+          "id": "p3_u7l4_acceso_mutable_y_constante",
+          "language": "cpp",
+          "question": "Escribe las dos lecturas de a y la lectura de b en el orden del programa.",
+          "code": "#include <iostream>\n\nstruct IndiceFuera {};\n\nclass DosLecturas {\npublic:\n    DosLecturas(int primera, int segunda) : datos_{primera, segunda} {}\n    int& operator[](int indice);\n    const int& operator[](int indice) const;\nprivate:\n    int datos_[2];\n};\nint& DosLecturas::operator[](int indice) {\n    if (indice < 0 || indice >= 2) { throw IndiceFuera{}; }\n    return datos_[indice];\n}\nconst int& DosLecturas::operator[](int indice) const {\n    if (indice < 0 || indice >= 2) { throw IndiceFuera{}; }\n    return datos_[indice];\n}\nint main() {\n    DosLecturas a{4, 9};\n    const DosLecturas b{2, 8};\n    a[0] = 6;\n    std::cout << a[0] << ':' << a[1] << ':' << b[1];\n    return 0;\n}\n",
+          "answers": [
+            "6:9:8"
+          ],
+          "outputComparison": "exact",
+          "explanation": "El acceso modificable de a devuelve una referencia a su primer elemento y la asignación lo cambia a seis. El segundo elemento conserva nueve. b es constante, por lo que su acceso utiliza la versión const y permite leer el ocho del índice uno."
+        }
+      },
+      {
+        "id": "block_0003_0002",
+        "block": {
+          "type": "code",
+          "language": "cpp",
+          "code": "#include <iostream>\n\nstruct IndiceFuera {};\n\nclass DosLecturas {\npublic:\n    DosLecturas(int primera, int segunda) : datos_{primera, segunda} {}\n    int& operator[](int indice);\n    const int& operator[](int indice) const;\nprivate:\n    int datos_[2];\n};\nint& DosLecturas::operator[](int indice) {\n    if (indice < 0 || indice >= 2) { throw IndiceFuera{}; }\n    return datos_[indice];\n}\nconst int& DosLecturas::operator[](int indice) const {\n    if (indice < 0 || indice >= 2) { throw IndiceFuera{}; }\n    return datos_[indice];\n}\nint main() {\n    const DosLecturas a{3, 9};\n    a[0] = 8;\n    return 0;\n}\n"
+        }
+      },
+      {
+        "id": "block_0004_0002",
+        "block": {
+          "type": "output_prediction",
+          "id": "p3_u7l4_const_en_el_resultado_no_cambia_el_receptor",
+          "language": "cpp",
+          "question": "Escribe la lectura conservada por referencia y la consulta posterior del elemento de a.",
+          "code": "#include <iostream>\n\nstruct IndiceFuera {};\n\nclass DosLecturas {\npublic:\n    DosLecturas(int primera, int segunda) : datos_{primera, segunda} {}\n    int& operator[](int indice);\n    const int& operator[](int indice) const;\nprivate:\n    int datos_[2];\n};\nint& DosLecturas::operator[](int indice) {\n    if (indice < 0 || indice >= 2) { throw IndiceFuera{}; }\n    return datos_[indice];\n}\nconst int& DosLecturas::operator[](int indice) const {\n    if (indice < 0 || indice >= 2) { throw IndiceFuera{}; }\n    return datos_[indice];\n}\nint main() {\n    DosLecturas a{5, 6};\n    const int& lectura = a[0];\n    a[0] = 14;\n    std::cout << lectura << ':' << a[0];\n    return 0;\n}\n",
+          "answers": [
+            "14:14"
+          ],
+          "outputComparison": "exact",
+          "explanation": "lectura se refiere al primer elemento de a, sin permitir escribir por ese nombre. La asignación posterior mediante a cambia ese mismo int a catorce. Las dos consultas leen catorce. La referencia no guardaba una copia del cinco inicial."
+        }
+      },
+      {
+        "id": "block_0005_0002",
+        "block": {
+          "type": "output_prediction",
+          "id": "p3_u7l4_referencia_constante_y_copia_del_elemento",
+          "language": "cpp",
+          "question": "Escribe vivo, copia y la nueva consulta mediante lectura tras cambiar el elemento.",
+          "code": "#include <iostream>\n\nstruct IndiceFuera {};\n\nclass DosLecturas {\npublic:\n    DosLecturas(int primera, int segunda) : datos_{primera, segunda} {}\n    int& operator[](int indice);\n    const int& operator[](int indice) const;\nprivate:\n    int datos_[2];\n};\nint& DosLecturas::operator[](int indice) {\n    if (indice < 0 || indice >= 2) { throw IndiceFuera{}; }\n    return datos_[indice];\n}\nconst int& DosLecturas::operator[](int indice) const {\n    if (indice < 0 || indice >= 2) { throw IndiceFuera{}; }\n    return datos_[indice];\n}\nint main() {\n    DosLecturas a{3, 8};\n    const DosLecturas& lectura = a;\n    const int& vivo = lectura[1];\n    auto copia = lectura[1];\n    a[1] = 21;\n    std::cout << vivo << ':' << copia << ':' << lectura[1];\n    return 0;\n}\n",
+          "answers": [
+            "21:8:21"
+          ],
+          "outputComparison": "exact",
+          "explanation": "vivo conserva un alias de lectura al elemento de índice uno. copia guarda en otro int el ocho que leyó al construirse. Cuando a cambia ese elemento a veintiuno, vivo y el nuevo acceso mediante lectura observan veintiuno. La copia independiente conserva ocho."
+        }
+      },
+      {
+        "id": "block_0006_0002",
+        "block": {
+          "type": "output_prediction",
+          "id": "p3_u7l4_copia_del_objeto_y_alias_del_original",
+          "language": "cpp",
+          "question": "Escribe el segundo elemento de a, el de b y el valor observado mediante enlace.",
+          "code": "#include <iostream>\n\nstruct IndiceFuera {};\n\nclass DosLecturas {\npublic:\n    DosLecturas(int primera, int segunda) : datos_{primera, segunda} {}\n    int& operator[](int indice);\n    const int& operator[](int indice) const;\nprivate:\n    int datos_[2];\n};\nint& DosLecturas::operator[](int indice) {\n    if (indice < 0 || indice >= 2) { throw IndiceFuera{}; }\n    return datos_[indice];\n}\nconst int& DosLecturas::operator[](int indice) const {\n    if (indice < 0 || indice >= 2) { throw IndiceFuera{}; }\n    return datos_[indice];\n}\nint main() {\n    DosLecturas a{7, 12};\n    int& enlace = a[1];\n    DosLecturas b = a;\n    b[1] = -4;\n    enlace = 20;\n    std::cout << a[1] << ':' << b[1] << ':' << enlace;\n    return 0;\n}\n",
+          "answers": [
+            "20:-4:20"
+          ],
+          "outputComparison": "exact",
+          "explanation": "b tiene su propio array. Cambiar b[1] a menos cuatro no modifica a. enlace sigue identificando a[1], así que escribir veinte mediante él cambia ese elemento de a. Las consultas finales de a[1] y enlace leen el mismo veinte, mientras b conserva menos cuatro."
+        }
+      },
+      {
+        "id": "block_0008_0004",
+        "block": {
+          "type": "code",
+          "language": "cpp",
+          "code": "#include <iostream>\n\nstruct IndiceFuera {};\n\nclass DosLecturas {\npublic:\n    DosLecturas(int primera, int segunda) : datos_{primera, segunda} {}\n    int& operator[](int indice);\n    const int& operator[](int indice) const;\nprivate:\n    int datos_[2];\n};\nint& DosLecturas::operator[](int indice) {\n    if (indice < 0 || indice >= 2) { throw IndiceFuera{}; }\n    return datos_[indice];\n}\nconst int& DosLecturas::operator[](int indice) const {\n    if (indice < 0 || indice >= 2) { throw IndiceFuera{}; }\n    return datos_[indice];\n}\nint& seleccionar(DosLecturas& lecturas, int indice) {\n    return lecturas[indice];\n}\nint main() {\n    DosLecturas a{2, 9};\n    int& r = seleccionar(a, 1);\n    r = 15;\n    std::cout << a[0] << ':' << a[1] << ':' << (&r == &a[1]);\n    return 0;\n}\n"
+        }
+      },
+      {
+        "id": "block_0009_0002",
+        "block": {
+          "type": "output_prediction",
+          "id": "p3_u7l4_rechazo_de_indice_y_alias_conservado",
+          "language": "cpp",
+          "question": "Escribe el rótulo del tratamiento del error y los dos valores finales de a.",
+          "code": "#include <iostream>\n\nstruct IndiceFuera {};\n\nclass DosLecturas {\npublic:\n    DosLecturas(int primera, int segunda) : datos_{primera, segunda} {}\n    int& operator[](int indice);\n    const int& operator[](int indice) const;\nprivate:\n    int datos_[2];\n};\nint& DosLecturas::operator[](int indice) {\n    if (indice < 0 || indice >= 2) { throw IndiceFuera{}; }\n    return datos_[indice];\n}\nconst int& DosLecturas::operator[](int indice) const {\n    if (indice < 0 || indice >= 2) { throw IndiceFuera{}; }\n    return datos_[indice];\n}\nint main() {\n    DosLecturas a{5, 11};\n    const DosLecturas& lectura = a;\n    int& enlace = a[1];\n    try { lectura[2]; }\n    catch (const IndiceFuera&) { std::cout << \"Indice:\"; }\n    enlace = 17;\n    std::cout << a[0] << ':' << a[1];\n    return 0;\n}\n",
+          "answers": [
+            "Indice:5:17"
+          ],
+          "outputComparison": "exact",
+          "explanation": "lectura[2] lanza IndiceFuera antes de acceder al array. El tratamiento escribe Indice:. enlace todavía identifica el segundo elemento de a, que permanece vivo. La escritura posterior lo cambia a diecisiete y el primer elemento conserva cinco."
+        }
+      },
+      {
+        "id": "block_0010_0002",
+        "block": {
+          "type": "code",
+          "language": "cpp",
+          "code": "#include <iostream>\n\nstruct IndiceFuera {};\n\nclass DosLecturas {\npublic:\n    DosLecturas(int primera, int segunda) : datos_{primera, segunda} {}\n    int& operator[](int indice);\n    int& operator[](int indice) const;\nprivate:\n    int datos_[2];\n};\nint& DosLecturas::operator[](int indice) {\n    if (indice < 0 || indice >= 2) { throw IndiceFuera{}; }\n    return datos_[indice];\n}\nint& DosLecturas::operator[](int indice) const {\n    if (indice < 0 || indice >= 2) { throw IndiceFuera{}; }\n    return datos_[indice];\n}\nint main() { return 0; }\n"
+        }
+      },
+      {
+        "id": "block_0013_0002",
+        "block": {
+          "type": "output_prediction",
+          "id": "p3_u7l4_alias_nombrado_de_referencia_rvalue",
+          "language": "cpp",
+          "question": "Escribe las dos consultas posteriores a la escritura y la comprobación de identidad entre los nombres del objeto.",
+          "code": "#include <iostream>\n\nstruct IndiceFuera {};\n\nclass DosLecturas {\npublic:\n    DosLecturas(int primera, int segunda) : datos_{primera, segunda} {}\n    int& operator[](int indice);\n    const int& operator[](int indice) const;\nprivate:\n    int datos_[2];\n};\nint& DosLecturas::operator[](int indice) {\n    if (indice < 0 || indice >= 2) { throw IndiceFuera{}; }\n    return datos_[indice];\n}\nconst int& DosLecturas::operator[](int indice) const {\n    if (indice < 0 || indice >= 2) { throw IndiceFuera{}; }\n    return datos_[indice];\n}\n#include <utility>\nint main() {\n    DosLecturas a{6, 13};\n    DosLecturas&& otro_nombre = std::move(a);\n    int& r = otro_nombre[0];\n    r = 19;\n    std::cout << a[0] << ':' << otro_nombre[0] << ':' << (&otro_nombre == &a);\n    return 0;\n}\n",
+          "answers": [
+            "19:19:1"
+          ],
+          "outputComparison": "exact",
+          "explanation": "No se ha construido otra DosLecturas ni se ha transferido su array. r identifica el primer elemento del mismo a y lo cambia a diecinueve. Consultarlo mediante a o mediante otro_nombre produce diecinueve. La comparación confirma que ambos nombres identifican el mismo objeto, que sigue vivo."
+        }
+      },
+      {
+        "id": "block_0021_0002",
+        "block": {
+          "type": "cpp_compiler",
+          "language": "cpp",
+          "initialCode": "#include <iostream>\n\nstruct IndiceFuera {};\n\nclass Terna {\npublic:\n    Terna() = default;\n    Terna(int primero, int segundo, int tercero) : datos_{primero, segundo, tercero} {}\n    int& operator[](int indice);\n    const int& operator[](int indice) const;\n    void escribir(std::ostream& salida) const {\n        salida << datos_[0] << ':' << datos_[1] << ':' << datos_[2];\n    }\nprivate:\n    int datos_[3]{10, 20, 30};\n};\nint& Terna::operator[](int indice) {\n    // Comprueba el índice y devuelve una referencia al elemento elegido.\n    (void)indice;\n    return datos_[0];\n}\n\nconst int& Terna::operator[](int indice) const {\n    // Comprueba también el acceso constante, sin permitir escribir por el retorno.\n    (void)indice;\n    return datos_[0];\n}\nint main() {\n    int ordenes = 0;\n    if (!(std::cin >> ordenes) || ordenes < 1 || ordenes > 12) { return 1; }\n    Terna datos;\n    const Terna& lectura = datos;\n    int* enlace = &datos[0];\n    const int* observado = &lectura[2];\n    for (int i = 0; i < ordenes; ++i) {\n        int op = 0, indice = 0, valor = 0;\n        if (!(std::cin >> op >> indice >> valor)) { return 1; }\n        std::cout << \"Antes:\";\n        datos.escribir(std::cout);\n        const char* estado = \"Aceptada\";\n        int resultado = 0;\n        try {\n            if (op == 1) { int& r = datos[indice]; resultado = r; }\n            else if (op == 2) { const int& r = lectura[indice]; resultado = r; }\n            else if (op == 3) { datos[indice] = valor; resultado = valor; }\n            else if (op == 4) { enlace = &datos[indice]; resultado = *enlace; }\n            else if (op == 5) { *enlace = valor; resultado = *enlace; }\n            else if (op == 6) { observado = &lectura[indice]; resultado = *observado; }\n            else { estado = \"Operacion\"; }\n        } catch (const IndiceFuera&) { estado = \"Indice\"; }\n        std::cout << \";Estado:\" << estado << \";Dato:\" << resultado\n                  << \";Enlace:\" << *enlace << \";Visto:\" << *observado << \";Ahora:\";\n        datos.escribir(std::cout);\n        std::cout << '\\n';\n    }\n    std::cout << \"Final:\";\n    datos.escribir(std::cout);\n    return 0;\n}\n",
+          "initialStandardInput": "9\n3 1 25\n4 1 0\n6 1 0\n5 99 -4\n1 2 0\n2 0 0\n4 3 0\n6 -1 0\n5 -99 0",
+          "outputCheck": {
+            "inputComparison": "tokens",
+            "cases": [
+              {
+                "standardInput": "9\n3 1 25\n4 1 0\n6 1 0\n5 99 -4\n1 2 0\n2 0 0\n4 3 0\n6 -1 0\n5 -99 0",
+                "outputs": [
+                  "Antes:10:20:30;Estado:Aceptada;Dato:25;Enlace:10;Visto:30;Ahora:10:25:30\nAntes:10:25:30;Estado:Aceptada;Dato:25;Enlace:25;Visto:30;Ahora:10:25:30\nAntes:10:25:30;Estado:Aceptada;Dato:25;Enlace:25;Visto:25;Ahora:10:25:30\nAntes:10:25:30;Estado:Aceptada;Dato:-4;Enlace:-4;Visto:-4;Ahora:10:-4:30\nAntes:10:-4:30;Estado:Aceptada;Dato:30;Enlace:-4;Visto:-4;Ahora:10:-4:30\nAntes:10:-4:30;Estado:Aceptada;Dato:10;Enlace:-4;Visto:-4;Ahora:10:-4:30\nAntes:10:-4:30;Estado:Indice;Dato:0;Enlace:-4;Visto:-4;Ahora:10:-4:30\nAntes:10:-4:30;Estado:Indice;Dato:0;Enlace:-4;Visto:-4;Ahora:10:-4:30\nAntes:10:-4:30;Estado:Aceptada;Dato:0;Enlace:0;Visto:0;Ahora:10:0:30\nFinal:10:0:30"
+                ],
+                "explanation": "Comprueba ambos límites antes del array. Devuelve una referencia al elemento solicitado: modificable para datos y de sólo lectura para lectura. Los dos punteros de main deben seguir identificando elementos vivos y observar sus cambios reales."
+              },
+              {
+                "standardInput": "8\n6 0 0\n4 2 0\n3 0 -8\n3 2 55\n5 0 7\n2 3 0\n1 -1 0\n6 2 0",
+                "outputs": [
+                  "Antes:10:20:30;Estado:Aceptada;Dato:10;Enlace:10;Visto:10;Ahora:10:20:30\nAntes:10:20:30;Estado:Aceptada;Dato:30;Enlace:30;Visto:10;Ahora:10:20:30\nAntes:10:20:30;Estado:Aceptada;Dato:-8;Enlace:30;Visto:-8;Ahora:-8:20:30\nAntes:-8:20:30;Estado:Aceptada;Dato:55;Enlace:55;Visto:-8;Ahora:-8:20:55\nAntes:-8:20:55;Estado:Aceptada;Dato:7;Enlace:7;Visto:-8;Ahora:-8:20:7\nAntes:-8:20:7;Estado:Indice;Dato:0;Enlace:7;Visto:-8;Ahora:-8:20:7\nAntes:-8:20:7;Estado:Indice;Dato:0;Enlace:7;Visto:-8;Ahora:-8:20:7\nAntes:-8:20:7;Estado:Aceptada;Dato:7;Enlace:7;Visto:7;Ahora:-8:20:7\nFinal:-8:20:7"
+                ],
+                "explanation": "Comprueba ambos límites antes del array. Devuelve una referencia al elemento solicitado: modificable para datos y de sólo lectura para lectura. Los dos punteros de main deben seguir identificando elementos vivos y observar sus cambios reales."
+              },
+              {
+                "standardInput": "9\n4 1 0\n6 1 0\n4 -1 0\n6 3 0\n5 100 42\n9 0 0\n3 3 8\n3 0 0\n2 0 0",
+                "outputs": [
+                  "Antes:10:20:30;Estado:Aceptada;Dato:20;Enlace:20;Visto:30;Ahora:10:20:30\nAntes:10:20:30;Estado:Aceptada;Dato:20;Enlace:20;Visto:20;Ahora:10:20:30\nAntes:10:20:30;Estado:Indice;Dato:0;Enlace:20;Visto:20;Ahora:10:20:30\nAntes:10:20:30;Estado:Indice;Dato:0;Enlace:20;Visto:20;Ahora:10:20:30\nAntes:10:20:30;Estado:Aceptada;Dato:42;Enlace:42;Visto:42;Ahora:10:42:30\nAntes:10:42:30;Estado:Operacion;Dato:0;Enlace:42;Visto:42;Ahora:10:42:30\nAntes:10:42:30;Estado:Indice;Dato:0;Enlace:42;Visto:42;Ahora:10:42:30\nAntes:10:42:30;Estado:Aceptada;Dato:0;Enlace:42;Visto:42;Ahora:0:42:30\nAntes:0:42:30;Estado:Aceptada;Dato:0;Enlace:42;Visto:42;Ahora:0:42:30\nFinal:0:42:30"
+                ],
+                "explanation": "Comprueba ambos límites antes del array. Devuelve una referencia al elemento solicitado: modificable para datos y de sólo lectura para lectura. Los dos punteros de main deben seguir identificando elementos vivos y observar sus cambios reales."
+              }
+            ]
+          }
+        }
+      },
+      {
+        "id": "block_0023_0001",
+        "block": {
+          "type": "code",
+          "language": "cpp",
+          "code": "#include <iostream>\n\nstruct IndiceFuera {};\n\nclass Terna {\npublic:\n    Terna() = default;\n    Terna(int primero, int segundo, int tercero) : datos_{primero, segundo, tercero} {}\n    int& operator[](int indice);\n    const int& operator[](int indice) const;\n    void escribir(std::ostream& salida) const {\n        salida << datos_[0] << ':' << datos_[1] << ':' << datos_[2];\n    }\nprivate:\n    int datos_[3]{10, 20, 30};\n};\nint& Terna::operator[](int indice) {\n    if (indice < 0 || indice >= 3) { throw IndiceFuera{}; }\n    return datos_[indice];\n}\nconst int& Terna::operator[](int indice) const {\n    if (indice < 0 || indice >= 3) { throw IndiceFuera{}; }\n    return datos_[indice];\n}\nint main() {\n    int ordenes = 0;\n    if (!(std::cin >> ordenes) || ordenes < 1 || ordenes > 12) { return 1; }\n    Terna datos;\n    const Terna& lectura = datos;\n    int* enlace = &datos[0];\n    const int* observado = &lectura[2];\n    for (int i = 0; i < ordenes; ++i) {\n        int op = 0, indice = 0, valor = 0;\n        if (!(std::cin >> op >> indice >> valor)) { return 1; }\n        std::cout << \"Antes:\";\n        datos.escribir(std::cout);\n        const char* estado = \"Aceptada\";\n        int resultado = 0;\n        try {\n            if (op == 1) { int& r = datos[indice]; resultado = r; }\n            else if (op == 2) { const int& r = lectura[indice]; resultado = r; }\n            else if (op == 3) { datos[indice] = valor; resultado = valor; }\n            else if (op == 4) { enlace = &datos[indice]; resultado = *enlace; }\n            else if (op == 5) { *enlace = valor; resultado = *enlace; }\n            else if (op == 6) { observado = &lectura[indice]; resultado = *observado; }\n            else { estado = \"Operacion\"; }\n        } catch (const IndiceFuera&) { estado = \"Indice\"; }\n        std::cout << \";Estado:\" << estado << \";Dato:\" << resultado\n                  << \";Enlace:\" << *enlace << \";Visto:\" << *observado << \";Ahora:\";\n        datos.escribir(std::cout);\n        std::cout << '\\n';\n    }\n    std::cout << \"Final:\";\n    datos.escribir(std::cout);\n    return 0;\n}\n"
+        }
+      }
+    ]
   }
 }

@@ -22,7 +22,7 @@
           "id": "p3_u8l5_destruccion_automatica_sin_destructor_virtual",
           "language": "cpp",
           "question": "Escribe la salida completa: el informe, las marcas de destrucción y el texto posterior al bloque.",
-          "code": "#include <iostream>\n#include <memory>\n#include <sstream>\n#include <utility>\n\nclass Marca {\npublic:\n    ~Marca() { std::cout << \"M|\"; }\n};\nclass Lectura {\npublic:\n    explicit Lectura(int valor) : valor_{valor} {}\n    ~Lectura() { std::cout << \"B|\"; }\n    int valor() const noexcept { return valor_; }\n    virtual void escribir(std::ostream& salida) const { salida << \"Numero:\" << valor_; }\nprivate:\n    int valor_;\n};\nclass LecturaIdentificada : public Lectura {\npublic:\n    LecturaIdentificada(int valor, int codigo) : Lectura{valor}, codigo_{codigo} {}\n    ~LecturaIdentificada() { std::cout << \"D|\"; }\n    void escribir(std::ostream& salida) const override {\n        Lectura::escribir(salida);\n        salida << \";Codigo:\" << codigo_;\n    }\nprivate:\n    int codigo_;\n    Marca marca_;\n};\nint main() {\n    {\n        const LecturaIdentificada dato{7, 21};\n        const Lectura& vista = dato;\n        vista.escribir(std::cout);\n        std::cout << '|';\n    }\n    std::cout << \"Fin\";\n    return 0;\n}\n",
+          "code": "#include <iostream>\n#include <memory>\n#include <sstream>\n#include <utility>\n\nclass Marca {\npublic:\n    ~Marca() { std::cout << \"M|\"; }\n};\n\nclass Lectura {\npublic:\n    explicit Lectura(int valor) : valor_{valor} {}\n    ~Lectura() { std::cout << \"B|\"; }\n    int valor() const noexcept { return valor_; }\n    virtual void escribir(std::ostream& salida) const { salida << \"Numero:\" << valor_; }\nprivate:\n    int valor_;\n};\n\nclass LecturaIdentificada : public Lectura {\npublic:\n    LecturaIdentificada(int valor, int codigo) : Lectura{valor}, codigo_{codigo} {}\n    ~LecturaIdentificada() { std::cout << \"D|\"; }\n    void escribir(std::ostream& salida) const override {\n        Lectura::escribir(salida);\n        salida << \";Codigo:\" << codigo_;\n    }\nprivate:\n    int codigo_;\n    Marca marca_;\n};\n\nint main() {\n    {\n        const LecturaIdentificada dato{7, 21};\n        const Lectura& vista = dato;\n        vista.escribir(std::cout);\n        std::cout << '|';\n    }\n    std::cout << \"Fin\";\n\n    return 0;\n}\n",
           "answers": [
             "Numero:7;Codigo:21|D|M|B|Fin"
           ],
@@ -77,7 +77,7 @@
         {
           "type": "code",
           "language": "cpp",
-          "code": "class Marca {\npublic:\n    ~Marca() { std::cout << \"M|\"; }\n};\nclass Lectura {\npublic:\n    explicit Lectura(int valor) : valor_{valor} {}\n    virtual ~Lectura() { std::cout << \"B|\"; }\n    int valor() const noexcept { return valor_; }\n    virtual void escribir(std::ostream& salida) const { salida << \"Numero:\" << valor_; }\nprivate:\n    int valor_;\n};\nclass LecturaIdentificada : public Lectura {\npublic:\n    LecturaIdentificada(int valor, int codigo) : Lectura{valor}, codigo_{codigo} {}\n    ~LecturaIdentificada() override { std::cout << \"D|\"; }\n    void escribir(std::ostream& salida) const override {\n        Lectura::escribir(salida);\n        salida << \";Codigo:\" << codigo_;\n    }\nprivate:\n    int codigo_;\n    Marca marca_;\n};\n"
+          "code": "class Marca {\npublic:\n    ~Marca() { std::cout << \"M|\"; }\n};\n\nclass Lectura {\npublic:\n    explicit Lectura(int valor) : valor_{valor} {}\n    virtual ~Lectura() { std::cout << \"B|\"; }\n    int valor() const noexcept { return valor_; }\n    virtual void escribir(std::ostream& salida) const { salida << \"Numero:\" << valor_; }\nprivate:\n    int valor_;\n};\n\nclass LecturaIdentificada : public Lectura {\npublic:\n    LecturaIdentificada(int valor, int codigo) : Lectura{valor}, codigo_{codigo} {}\n    ~LecturaIdentificada() override { std::cout << \"D|\"; }\n    void escribir(std::ostream& salida) const override {\n        Lectura::escribir(salida);\n        salida << \";Codigo:\" << codigo_;\n    }\nprivate:\n    int codigo_;\n    Marca marca_;\n};\n"
         },
         {
           "type": "paragraph",
@@ -106,7 +106,7 @@
         {
           "type": "code",
           "language": "cpp",
-          "code": "#include <iostream>\n#include <memory>\n#include <sstream>\n#include <utility>\n\nclass Marca {\npublic:\n    ~Marca() { std::cout << \"M|\"; }\n};\nclass Lectura {\npublic:\n    explicit Lectura(int valor) : valor_{valor} {}\n    ~Lectura() { std::cout << \"B|\"; }\n    int valor() const noexcept { return valor_; }\n    virtual void escribir(std::ostream& salida) const { salida << \"Numero:\" << valor_; }\nprivate:\n    int valor_;\n};\nclass LecturaIdentificada : public Lectura {\npublic:\n    LecturaIdentificada(int valor, int codigo) : Lectura{valor}, codigo_{codigo} {}\n    ~LecturaIdentificada() override { std::cout << \"D|\"; }\n    void escribir(std::ostream& salida) const override {\n        Lectura::escribir(salida);\n        salida << \";Codigo:\" << codigo_;\n    }\nprivate:\n    int codigo_;\n    Marca marca_;\n};\nint main() {\n    const LecturaIdentificada dato{3, 9};\n    return 0;\n}\n"
+          "code": "#include <iostream>\n#include <memory>\n#include <sstream>\n#include <utility>\n\nclass Marca {\npublic:\n    ~Marca() { std::cout << \"M|\"; }\n};\n\nclass Lectura {\npublic:\n    explicit Lectura(int valor) : valor_{valor} {}\n    ~Lectura() { std::cout << \"B|\"; }\n    int valor() const noexcept { return valor_; }\n    virtual void escribir(std::ostream& salida) const { salida << \"Numero:\" << valor_; }\nprivate:\n    int valor_;\n};\n\nclass LecturaIdentificada : public Lectura {\npublic:\n    LecturaIdentificada(int valor, int codigo) : Lectura{valor}, codigo_{codigo} {}\n    ~LecturaIdentificada() override { std::cout << \"D|\"; }\n    void escribir(std::ostream& salida) const override {\n        Lectura::escribir(salida);\n        salida << \";Codigo:\" << codigo_;\n    }\nprivate:\n    int codigo_;\n    Marca marca_;\n};\n\nint main() {\n    const LecturaIdentificada dato{3, 9};\n    return 0;\n}\n"
         },
         {
           "type": "multiple_choice",
@@ -137,7 +137,7 @@
           "id": "p3_u8l5_borrado_individual_con_destructor_virtual",
           "language": "cpp",
           "question": "Escribe el informe, las marcas de destrucción y la comparación final con nullptr, en el orden del programa.",
-          "code": "#include <iostream>\n#include <memory>\n#include <sstream>\n#include <utility>\n\nclass Marca {\npublic:\n    ~Marca() { std::cout << \"M|\"; }\n};\nclass Lectura {\npublic:\n    explicit Lectura(int valor) : valor_{valor} {}\n    virtual ~Lectura() { std::cout << \"B|\"; }\n    int valor() const noexcept { return valor_; }\n    virtual void escribir(std::ostream& salida) const { salida << \"Numero:\" << valor_; }\nprivate:\n    int valor_;\n};\nclass LecturaIdentificada : public Lectura {\npublic:\n    LecturaIdentificada(int valor, int codigo) : Lectura{valor}, codigo_{codigo} {}\n    ~LecturaIdentificada() override { std::cout << \"D|\"; }\n    void escribir(std::ostream& salida) const override {\n        Lectura::escribir(salida);\n        salida << \";Codigo:\" << codigo_;\n    }\nprivate:\n    int codigo_;\n    Marca marca_;\n};\nint main() {\n    Lectura* acceso = new LecturaIdentificada{8, 5};\n    acceso->escribir(std::cout);\n    std::cout << '|';\n    delete acceso;\n    acceso = nullptr;\n    std::cout << (acceso == nullptr);\n    return 0;\n}\n",
+          "code": "#include <iostream>\n#include <memory>\n#include <sstream>\n#include <utility>\n\nclass Marca {\npublic:\n    ~Marca() { std::cout << \"M|\"; }\n};\n\nclass Lectura {\npublic:\n    explicit Lectura(int valor) : valor_{valor} {}\n    virtual ~Lectura() { std::cout << \"B|\"; }\n    int valor() const noexcept { return valor_; }\n    virtual void escribir(std::ostream& salida) const { salida << \"Numero:\" << valor_; }\nprivate:\n    int valor_;\n};\n\nclass LecturaIdentificada : public Lectura {\npublic:\n    LecturaIdentificada(int valor, int codigo) : Lectura{valor}, codigo_{codigo} {}\n    ~LecturaIdentificada() override { std::cout << \"D|\"; }\n    void escribir(std::ostream& salida) const override {\n        Lectura::escribir(salida);\n        salida << \";Codigo:\" << codigo_;\n    }\nprivate:\n    int codigo_;\n    Marca marca_;\n};\n\nint main() {\n    Lectura* acceso = new LecturaIdentificada{8, 5};\n    acceso->escribir(std::cout);\n    std::cout << '|';\n    delete acceso;\n    acceso = nullptr;\n\n    std::cout << (acceso == nullptr);\n\n    return 0;\n}\n",
           "answers": [
             "Numero:8;Codigo:5|D|M|B|1"
           ],
@@ -177,7 +177,7 @@
           "id": "p3_u8l5_propietario_base_y_salida_del_bloque",
           "language": "cpp",
           "question": "Escribe la salida completa, incluido el informe y la limpieza al terminar el bloque interior.",
-          "code": "#include <iostream>\n#include <memory>\n#include <sstream>\n#include <utility>\n\nclass Marca {\npublic:\n    ~Marca() { std::cout << \"M|\"; }\n};\nclass Lectura {\npublic:\n    explicit Lectura(int valor) : valor_{valor} {}\n    virtual ~Lectura() { std::cout << \"B|\"; }\n    int valor() const noexcept { return valor_; }\n    virtual void escribir(std::ostream& salida) const { salida << \"Numero:\" << valor_; }\nprivate:\n    int valor_;\n};\nclass LecturaIdentificada : public Lectura {\npublic:\n    LecturaIdentificada(int valor, int codigo) : Lectura{valor}, codigo_{codigo} {}\n    ~LecturaIdentificada() override { std::cout << \"D|\"; }\n    void escribir(std::ostream& salida) const override {\n        Lectura::escribir(salida);\n        salida << \";Codigo:\" << codigo_;\n    }\nprivate:\n    int codigo_;\n    Marca marca_;\n};\nint main() {\n    {\n        std::unique_ptr<Lectura> dato = std::make_unique<LecturaIdentificada>(-3, 9);\n        dato->escribir(std::cout);\n        std::cout << '|';\n    }\n    std::cout << \"Fin\";\n    return 0;\n}\n",
+          "code": "#include <iostream>\n#include <memory>\n#include <sstream>\n#include <utility>\n\nclass Marca {\npublic:\n    ~Marca() { std::cout << \"M|\"; }\n};\n\nclass Lectura {\npublic:\n    explicit Lectura(int valor) : valor_{valor} {}\n    virtual ~Lectura() { std::cout << \"B|\"; }\n    int valor() const noexcept { return valor_; }\n    virtual void escribir(std::ostream& salida) const { salida << \"Numero:\" << valor_; }\nprivate:\n    int valor_;\n};\n\nclass LecturaIdentificada : public Lectura {\npublic:\n    LecturaIdentificada(int valor, int codigo) : Lectura{valor}, codigo_{codigo} {}\n    ~LecturaIdentificada() override { std::cout << \"D|\"; }\n    void escribir(std::ostream& salida) const override {\n        Lectura::escribir(salida);\n        salida << \";Codigo:\" << codigo_;\n    }\nprivate:\n    int codigo_;\n    Marca marca_;\n};\n\nint main() {\n    {\n        std::unique_ptr<Lectura> dato = std::make_unique<LecturaIdentificada>(-3, 9);\n        dato->escribir(std::cout);\n        std::cout << '|';\n    }\n    std::cout << \"Fin\";\n\n    return 0;\n}\n",
           "answers": [
             "Numero:-3;Codigo:9|D|M|B|Fin"
           ],
@@ -234,7 +234,7 @@
           "id": "p3_u8l5_mover_propietario_derivado_a_propietario_base",
           "language": "cpp",
           "question": "Escribe las comparaciones iniciales de los propietarios, el informe, las marcas de reset y la comparación final.",
-          "code": "#include <iostream>\n#include <memory>\n#include <sstream>\n#include <utility>\n\nclass Marca {\npublic:\n    ~Marca() { std::cout << \"M|\"; }\n};\nclass Lectura {\npublic:\n    explicit Lectura(int valor) : valor_{valor} {}\n    virtual ~Lectura() { std::cout << \"B|\"; }\n    int valor() const noexcept { return valor_; }\n    virtual void escribir(std::ostream& salida) const { salida << \"Numero:\" << valor_; }\nprivate:\n    int valor_;\n};\nclass LecturaIdentificada : public Lectura {\npublic:\n    LecturaIdentificada(int valor, int codigo) : Lectura{valor}, codigo_{codigo} {}\n    ~LecturaIdentificada() override { std::cout << \"D|\"; }\n    void escribir(std::ostream& salida) const override {\n        Lectura::escribir(salida);\n        salida << \";Codigo:\" << codigo_;\n    }\nprivate:\n    int codigo_;\n    Marca marca_;\n};\nint main() {\n    auto origen = std::make_unique<LecturaIdentificada>(4, 7);\n    std::unique_ptr<Lectura> destino = std::move(origen);\n    std::cout << (origen == nullptr) << ':' << (destino != nullptr) << '|';\n    destino->escribir(std::cout);\n    std::cout << '|';\n    destino.reset();\n    std::cout << (destino == nullptr);\n    return 0;\n}\n",
+          "code": "#include <iostream>\n#include <memory>\n#include <sstream>\n#include <utility>\n\nclass Marca {\npublic:\n    ~Marca() { std::cout << \"M|\"; }\n};\n\nclass Lectura {\npublic:\n    explicit Lectura(int valor) : valor_{valor} {}\n    virtual ~Lectura() { std::cout << \"B|\"; }\n    int valor() const noexcept { return valor_; }\n    virtual void escribir(std::ostream& salida) const { salida << \"Numero:\" << valor_; }\nprivate:\n    int valor_;\n};\n\nclass LecturaIdentificada : public Lectura {\npublic:\n    LecturaIdentificada(int valor, int codigo) : Lectura{valor}, codigo_{codigo} {}\n    ~LecturaIdentificada() override { std::cout << \"D|\"; }\n    void escribir(std::ostream& salida) const override {\n        Lectura::escribir(salida);\n        salida << \";Codigo:\" << codigo_;\n    }\nprivate:\n    int codigo_;\n    Marca marca_;\n};\n\nint main() {\n    auto origen = std::make_unique<LecturaIdentificada>(4, 7);\n    std::unique_ptr<Lectura> destino = std::move(origen);\n    std::cout << (origen == nullptr) << ':' << (destino != nullptr) << '|';\n    destino->escribir(std::cout);\n    std::cout << '|';\n    destino.reset();\n    std::cout << (destino == nullptr);\n\n    return 0;\n}\n",
           "answers": [
             "1:1|Numero:4;Codigo:7|D|M|B|1"
           ],
@@ -262,7 +262,7 @@
           "id": "p3_u8l5_reset_ocupado_y_reset_vacio",
           "language": "cpp",
           "question": "Escribe las marcas de limpieza y los textos posteriores a cada reset, respetando los separadores.",
-          "code": "#include <iostream>\n#include <memory>\n#include <sstream>\n#include <utility>\n\nclass Marca {\npublic:\n    ~Marca() { std::cout << \"M|\"; }\n};\nclass Lectura {\npublic:\n    explicit Lectura(int valor) : valor_{valor} {}\n    virtual ~Lectura() { std::cout << \"B|\"; }\n    int valor() const noexcept { return valor_; }\n    virtual void escribir(std::ostream& salida) const { salida << \"Numero:\" << valor_; }\nprivate:\n    int valor_;\n};\nclass LecturaIdentificada : public Lectura {\npublic:\n    LecturaIdentificada(int valor, int codigo) : Lectura{valor}, codigo_{codigo} {}\n    ~LecturaIdentificada() override { std::cout << \"D|\"; }\n    void escribir(std::ostream& salida) const override {\n        Lectura::escribir(salida);\n        salida << \";Codigo:\" << codigo_;\n    }\nprivate:\n    int codigo_;\n    Marca marca_;\n};\nint main() {\n    std::unique_ptr<Lectura> dato = std::make_unique<LecturaIdentificada>(2, 3);\n    dato.reset();\n    std::cout << \"Vacio:\" << (dato == nullptr) << '|';\n    dato.reset();\n    std::cout << \"Fin\";\n    return 0;\n}\n",
+          "code": "#include <iostream>\n#include <memory>\n#include <sstream>\n#include <utility>\n\nclass Marca {\npublic:\n    ~Marca() { std::cout << \"M|\"; }\n};\n\nclass Lectura {\npublic:\n    explicit Lectura(int valor) : valor_{valor} {}\n    virtual ~Lectura() { std::cout << \"B|\"; }\n    int valor() const noexcept { return valor_; }\n    virtual void escribir(std::ostream& salida) const { salida << \"Numero:\" << valor_; }\nprivate:\n    int valor_;\n};\n\nclass LecturaIdentificada : public Lectura {\npublic:\n    LecturaIdentificada(int valor, int codigo) : Lectura{valor}, codigo_{codigo} {}\n    ~LecturaIdentificada() override { std::cout << \"D|\"; }\n    void escribir(std::ostream& salida) const override {\n        Lectura::escribir(salida);\n        salida << \";Codigo:\" << codigo_;\n    }\nprivate:\n    int codigo_;\n    Marca marca_;\n};\n\nint main() {\n    std::unique_ptr<Lectura> dato = std::make_unique<LecturaIdentificada>(2, 3);\n    dato.reset();\n    std::cout << \"Vacio:\" << (dato == nullptr) << '|';\n    dato.reset();\n    std::cout << \"Fin\";\n\n    return 0;\n}\n",
           "answers": [
             "D|M|B|Vacio:1|Fin"
           ],
@@ -293,7 +293,7 @@
           "type": "inline_fill_code",
           "id": "p3_u8l5_destructor_virtual_default_y_override",
           "question": "Completa las dos palabras: la que hace virtual el destructor de Panel y la que comprueba que el destructor de PanelConDato lo sobrescribe. Conserva = default; no añadas cuerpos ni borrados manuales.",
-          "template": "class Panel {\npublic:\n    [] ~Panel() = default;\n};\nclass PanelConDato : public Panel {\npublic:\n    explicit PanelConDato(int valor) : dato_{std::make_unique<int>(valor)} {}\n    ~PanelConDato() [] = default;\n    int valor() const noexcept { return *dato_; }\nprivate:\n    std::unique_ptr<int> dato_;\n};\n",
+          "template": "class Panel {\npublic:\n    [] ~Panel() = default;\n};\n\nclass PanelConDato : public Panel {\npublic:\n    explicit PanelConDato(int valor) : dato_{std::make_unique<int>(valor)} {}\n    ~PanelConDato() [] = default;\n    int valor() const noexcept { return *dato_; }\nprivate:\n    std::unique_ptr<int> dato_;\n};\n",
           "answers": [
             "virtual",
             "override"
@@ -319,7 +319,7 @@
         {
           "type": "code",
           "language": "cpp",
-          "code": "class Panel {\npublic:\n    virtual ~Panel() = default;\n};\nclass PanelConDato : public Panel {\npublic:\n    explicit PanelConDato(int valor) : dato_{std::make_unique<int>(valor)} {}\n    ~PanelConDato() override = default;\n    int valor() const noexcept { return *dato_; }\nprivate:\n    std::unique_ptr<int> dato_;\n};\n"
+          "code": "class Panel {\npublic:\n    virtual ~Panel() = default;\n};\n\nclass PanelConDato : public Panel {\npublic:\n    explicit PanelConDato(int valor) : dato_{std::make_unique<int>(valor)} {}\n    ~PanelConDato() override = default;\n    int valor() const noexcept { return *dato_; }\nprivate:\n    std::unique_ptr<int> dato_;\n};\n"
         },
         {
           "type": "paragraph",
@@ -328,7 +328,7 @@
         {
           "type": "code",
           "language": "cpp",
-          "code": "int main() {\n    auto origen = std::make_unique<PanelConDato>(14);\n    std::cout << origen->valor() << '|';\n    std::unique_ptr<Panel> destino = std::move(origen);\n    std::cout << (origen == nullptr) << ':' << (destino != nullptr) << '|';\n    destino.reset();\n    std::cout << (destino == nullptr);\n    return 0;\n}\n"
+          "code": "int main() {\n    auto origen = std::make_unique<PanelConDato>(14);\n\n    std::cout << origen->valor() << '|';\n    std::unique_ptr<Panel> destino = std::move(origen);\n    std::cout << (origen == nullptr) << ':' << (destino != nullptr) << '|';\n    destino.reset();\n    std::cout << (destino == nullptr);\n\n    return 0;\n}\n"
         },
         {
           "type": "paragraph",
@@ -351,7 +351,7 @@
           "id": "p3_u8l5_destructor_virtual_predeterminado_y_miembro",
           "language": "cpp",
           "question": "Escribe el informe y la salida que realmente producen los destructores de esta versión, seguida de Fin.",
-          "code": "#include <iostream>\n#include <memory>\n#include <sstream>\n#include <utility>\n\nclass Marca {\npublic:\n    ~Marca() { std::cout << \"M|\"; }\n};\nclass Lectura {\npublic:\n    explicit Lectura(int valor) : valor_{valor} {}\n    virtual ~Lectura() = default;\n    int valor() const noexcept { return valor_; }\n    virtual void escribir(std::ostream& salida) const { salida << \"Numero:\" << valor_; }\nprivate:\n    int valor_;\n};\nclass LecturaIdentificada : public Lectura {\npublic:\n    LecturaIdentificada(int valor, int codigo) : Lectura{valor}, codigo_{codigo} {}\n    ~LecturaIdentificada() override = default;\n    void escribir(std::ostream& salida) const override {\n        Lectura::escribir(salida);\n        salida << \";Codigo:\" << codigo_;\n    }\nprivate:\n    int codigo_;\n    Marca marca_;\n};\nint main() {\n    {\n        std::unique_ptr<Lectura> dato = std::make_unique<LecturaIdentificada>(6, 10);\n        dato->escribir(std::cout);\n        std::cout << '|';\n    }\n    std::cout << \"Fin\";\n    return 0;\n}\n",
+          "code": "#include <iostream>\n#include <memory>\n#include <sstream>\n#include <utility>\n\nclass Marca {\npublic:\n    ~Marca() { std::cout << \"M|\"; }\n};\n\nclass Lectura {\npublic:\n    explicit Lectura(int valor) : valor_{valor} {}\n    virtual ~Lectura() = default;\n    int valor() const noexcept { return valor_; }\n    virtual void escribir(std::ostream& salida) const { salida << \"Numero:\" << valor_; }\nprivate:\n    int valor_;\n};\n\nclass LecturaIdentificada : public Lectura {\npublic:\n    LecturaIdentificada(int valor, int codigo) : Lectura{valor}, codigo_{codigo} {}\n    ~LecturaIdentificada() override = default;\n    void escribir(std::ostream& salida) const override {\n        Lectura::escribir(salida);\n        salida << \";Codigo:\" << codigo_;\n    }\nprivate:\n    int codigo_;\n    Marca marca_;\n};\n\nint main() {\n    {\n        std::unique_ptr<Lectura> dato = std::make_unique<LecturaIdentificada>(6, 10);\n        dato->escribir(std::cout);\n        std::cout << '|';\n    }\n    std::cout << \"Fin\";\n\n    return 0;\n}\n",
           "answers": [
             "Numero:6;Codigo:10|M|Fin"
           ],
@@ -404,7 +404,7 @@
           "id": "p3_u8l5_derivada_automatica_con_destructor_base_protegido",
           "language": "cpp",
           "question": "Escribe el informe, las marcas al salir del bloque y el texto final.",
-          "code": "#include <iostream>\n#include <memory>\n#include <sstream>\n#include <utility>\n\nclass Marca {\npublic:\n    ~Marca() { std::cout << \"M|\"; }\n};\nclass Lectura {\npublic:\n    explicit Lectura(int valor) : valor_{valor} {}\n    int valor() const noexcept { return valor_; }\n    virtual void escribir(std::ostream& salida) const { salida << \"Numero:\" << valor_; }\nprotected:\n    ~Lectura() { std::cout << \"B|\"; }\nprivate:\n    int valor_;\n};\nclass LecturaIdentificada : public Lectura {\npublic:\n    LecturaIdentificada(int valor, int codigo) : Lectura{valor}, codigo_{codigo} {}\n    ~LecturaIdentificada() { std::cout << \"D|\"; }\n    void escribir(std::ostream& salida) const override {\n        Lectura::escribir(salida);\n        salida << \";Codigo:\" << codigo_;\n    }\nprivate:\n    int codigo_;\n    Marca marca_;\n};\nint main() {\n    {\n        const LecturaIdentificada dato{5, 12};\n        dato.escribir(std::cout);\n        std::cout << '|';\n    }\n    std::cout << \"Fin\";\n    return 0;\n}\n",
+          "code": "#include <iostream>\n#include <memory>\n#include <sstream>\n#include <utility>\n\nclass Marca {\npublic:\n    ~Marca() { std::cout << \"M|\"; }\n};\n\nclass Lectura {\npublic:\n    explicit Lectura(int valor) : valor_{valor} {}\n    int valor() const noexcept { return valor_; }\n    virtual void escribir(std::ostream& salida) const { salida << \"Numero:\" << valor_; }\nprotected:\n    ~Lectura() { std::cout << \"B|\"; }\nprivate:\n    int valor_;\n};\n\nclass LecturaIdentificada : public Lectura {\npublic:\n    LecturaIdentificada(int valor, int codigo) : Lectura{valor}, codigo_{codigo} {}\n    ~LecturaIdentificada() { std::cout << \"D|\"; }\n    void escribir(std::ostream& salida) const override {\n        Lectura::escribir(salida);\n        salida << \";Codigo:\" << codigo_;\n    }\nprivate:\n    int codigo_;\n    Marca marca_;\n};\n\nint main() {\n    {\n        const LecturaIdentificada dato{5, 12};\n        dato.escribir(std::cout);\n        std::cout << '|';\n    }\n    std::cout << \"Fin\";\n\n    return 0;\n}\n",
           "answers": [
             "Numero:5;Codigo:12|D|M|B|Fin"
           ],
@@ -426,7 +426,7 @@
         {
           "type": "code",
           "language": "cpp",
-          "code": "#include <iostream>\n#include <memory>\n#include <sstream>\n#include <utility>\n\nclass Marca {\npublic:\n    ~Marca() { std::cout << \"M|\"; }\n};\nclass Lectura {\npublic:\n    explicit Lectura(int valor) : valor_{valor} {}\n    int valor() const noexcept { return valor_; }\n    virtual void escribir(std::ostream& salida) const { salida << \"Numero:\" << valor_; }\nprotected:\n    ~Lectura() { std::cout << \"B|\"; }\nprivate:\n    int valor_;\n};\nclass LecturaIdentificada : public Lectura {\npublic:\n    LecturaIdentificada(int valor, int codigo) : Lectura{valor}, codigo_{codigo} {}\n    ~LecturaIdentificada() { std::cout << \"D|\"; }\n    void escribir(std::ostream& salida) const override {\n        Lectura::escribir(salida);\n        salida << \";Codigo:\" << codigo_;\n    }\nprivate:\n    int codigo_;\n    Marca marca_;\n};\nint main() {\n    Lectura* acceso = new LecturaIdentificada{3, 9};\n    delete acceso;\n    return 0;\n}\n"
+          "code": "#include <iostream>\n#include <memory>\n#include <sstream>\n#include <utility>\n\nclass Marca {\npublic:\n    ~Marca() { std::cout << \"M|\"; }\n};\n\nclass Lectura {\npublic:\n    explicit Lectura(int valor) : valor_{valor} {}\n    int valor() const noexcept { return valor_; }\n    virtual void escribir(std::ostream& salida) const { salida << \"Numero:\" << valor_; }\nprotected:\n    ~Lectura() { std::cout << \"B|\"; }\nprivate:\n    int valor_;\n};\n\nclass LecturaIdentificada : public Lectura {\npublic:\n    LecturaIdentificada(int valor, int codigo) : Lectura{valor}, codigo_{codigo} {}\n    ~LecturaIdentificada() { std::cout << \"D|\"; }\n    void escribir(std::ostream& salida) const override {\n        Lectura::escribir(salida);\n        salida << \";Codigo:\" << codigo_;\n    }\nprivate:\n    int codigo_;\n    Marca marca_;\n};\n\nint main() {\n    Lectura* acceso = new LecturaIdentificada{3, 9};\n    delete acceso;\n    return 0;\n}\n"
         },
         {
           "type": "multiple_choice",
@@ -455,7 +455,7 @@
         {
           "type": "code",
           "language": "cpp",
-          "code": "#include <iostream>\n#include <memory>\n#include <sstream>\n#include <utility>\n\nclass Marca {\npublic:\n    ~Marca() { std::cout << \"M|\"; }\n};\nclass Lectura {\npublic:\n    explicit Lectura(int valor) : valor_{valor} {}\n    int valor() const noexcept { return valor_; }\n    virtual void escribir(std::ostream& salida) const { salida << \"Numero:\" << valor_; }\nprotected:\n    ~Lectura() { std::cout << \"B|\"; }\nprivate:\n    int valor_;\n};\nclass LecturaIdentificada : public Lectura {\npublic:\n    LecturaIdentificada(int valor, int codigo) : Lectura{valor}, codigo_{codigo} {}\n    ~LecturaIdentificada() { std::cout << \"D|\"; }\n    void escribir(std::ostream& salida) const override {\n        Lectura::escribir(salida);\n        salida << \";Codigo:\" << codigo_;\n    }\nprivate:\n    int codigo_;\n    Marca marca_;\n};\nint main() {\n    std::unique_ptr<Lectura> dato = std::make_unique<LecturaIdentificada>(3, 9);\n    return 0;\n}\n"
+          "code": "#include <iostream>\n#include <memory>\n#include <sstream>\n#include <utility>\n\nclass Marca {\npublic:\n    ~Marca() { std::cout << \"M|\"; }\n};\n\nclass Lectura {\npublic:\n    explicit Lectura(int valor) : valor_{valor} {}\n    int valor() const noexcept { return valor_; }\n    virtual void escribir(std::ostream& salida) const { salida << \"Numero:\" << valor_; }\nprotected:\n    ~Lectura() { std::cout << \"B|\"; }\nprivate:\n    int valor_;\n};\n\nclass LecturaIdentificada : public Lectura {\npublic:\n    LecturaIdentificada(int valor, int codigo) : Lectura{valor}, codigo_{codigo} {}\n    ~LecturaIdentificada() { std::cout << \"D|\"; }\n    void escribir(std::ostream& salida) const override {\n        Lectura::escribir(salida);\n        salida << \";Codigo:\" << codigo_;\n    }\nprivate:\n    int codigo_;\n    Marca marca_;\n};\n\nint main() {\n    std::unique_ptr<Lectura> dato = std::make_unique<LecturaIdentificada>(3, 9);\n    return 0;\n}\n"
         },
         {
           "type": "multiple_choice",
@@ -576,7 +576,7 @@
         {
           "type": "cpp_compiler",
           "language": "cpp",
-          "initialCode": "#include <iostream>\n#include <memory>\n#include <sstream>\n#include <utility>\n\nstruct Ciclo {\n    int bases_vivas = 0;\n    int derivadas_vivas = 0;\n    int fichas_vivas = 0;\n    int bases_destruidas = 0;\n    int derivadas_destruidas = 0;\n    int fichas_destruidas = 0;\n};\nclass Ficha {\npublic:\n    Ficha(int codigo, Ciclo& ciclo) : codigo_{codigo}, ciclo_{ciclo} { ++ciclo_.fichas_vivas; }\n    Ficha(const Ficha&) = delete;\n    Ficha& operator=(const Ficha&) = delete;\n    ~Ficha() noexcept { --ciclo_.fichas_vivas; ++ciclo_.fichas_destruidas; }\n    int codigo() const noexcept { return codigo_; }\nprivate:\n    int codigo_;\n    Ciclo& ciclo_;\n};\nclass Medida {\npublic:\n    Medida(int numero, Ciclo& ciclo) : numero_{numero}, ciclo_{ciclo} { ++ciclo_.bases_vivas; }\n    virtual ~Medida() noexcept;\n    Medida(const Medida&) = delete;\n    Medida& operator=(const Medida&) = delete;\n    int numero() const noexcept { return numero_; }\n    virtual void escribir(std::ostream& salida) const { salida << \"Numero:\" << numero_; }\nprivate:\n    int numero_;\n    Ciclo& ciclo_;\n};\nclass MedidaIdentificada : public Medida {\npublic:\n    MedidaIdentificada(int numero, int codigo, Ciclo& ciclo)\n        : Medida{numero, ciclo}, ficha_{std::make_unique<Ficha>(codigo, ciclo)}, balance_{ciclo} {\n        ++balance_.derivadas_vivas;\n    }\n    ~MedidaIdentificada() noexcept override;\n    void escribir(std::ostream& salida) const override {\n        Medida::escribir(salida);\n        salida << \";Codigo:\" << ficha_->codigo();\n    }\nprivate:\n    std::unique_ptr<Ficha> ficha_;\n    Ciclo& balance_;\n};\nMedida::~Medida() noexcept {\n    // Registra el final de esta parte base en ciclo_.\n}\nMedidaIdentificada::~MedidaIdentificada() noexcept {\n    // Registra el final de esta derivada en balance_. No borres ficha_ manualmente.\n}\nstd::unique_ptr<Medida> crear_medida(int numero, int codigo, Ciclo& ciclo) {\n    // Construye una MedidaIdentificada con ambos datos y el ciclo recibido.\n    (void)codigo;\n    return std::make_unique<Medida>(numero, ciclo);\n}\nint main() {\n    int numero = 0, codigo = 0, retiro = 0;\n    if (!(std::cin >> numero >> codigo >> retiro) || retiro < 0 || retiro > 1) { return 1; }\n    Ciclo ciclo;\n    {\n        auto origen = crear_medida(numero, codigo, ciclo);\n        std::ostringstream informe;\n        {\n            const Medida& vista = *origen;\n            vista.escribir(informe);\n        }\n        std::cout << \"Informe:\" << informe.str() << '\\n';\n        std::unique_ptr<Medida> destino = std::move(origen);\n        std::cout << \"Movido:\" << (origen == nullptr) << ',' << (destino != nullptr) << '\\n';\n        std::cout << \"Vivos:\" << ciclo.bases_vivas << ',' << ciclo.derivadas_vivas << ',' << ciclo.fichas_vivas << '\\n';\n        if (retiro == 1) { destino.reset(); }\n        std::cout << \"AntesDeSalir:\" << ciclo.bases_vivas << ',' << ciclo.derivadas_vivas << ',' << ciclo.fichas_vivas << '\\n';\n    }\n    std::cout << \"FinalVivos:\" << ciclo.bases_vivas << ',' << ciclo.derivadas_vivas << ',' << ciclo.fichas_vivas << '\\n'\n              << \"Destruidos:\" << ciclo.bases_destruidas << ',' << ciclo.derivadas_destruidas << ',' << ciclo.fichas_destruidas;\n    return 0;\n}\n",
+          "initialCode": "#include <iostream>\n#include <memory>\n#include <sstream>\n#include <utility>\n\nstruct Ciclo {\n    int bases_vivas = 0;\n    int derivadas_vivas = 0;\n    int fichas_vivas = 0;\n    int bases_destruidas = 0;\n    int derivadas_destruidas = 0;\n    int fichas_destruidas = 0;\n};\n\nclass Ficha {\npublic:\n    Ficha(int codigo, Ciclo& ciclo) : codigo_{codigo}, ciclo_{ciclo} { ++ciclo_.fichas_vivas; }\n    Ficha(const Ficha&) = delete;\n    Ficha& operator=(const Ficha&) = delete;\n    ~Ficha() noexcept { --ciclo_.fichas_vivas; ++ciclo_.fichas_destruidas; }\n    int codigo() const noexcept { return codigo_; }\nprivate:\n    int codigo_;\n    Ciclo& ciclo_;\n};\n\nclass Medida {\npublic:\n    Medida(int numero, Ciclo& ciclo) : numero_{numero}, ciclo_{ciclo} { ++ciclo_.bases_vivas; }\n    virtual ~Medida() noexcept;\n    Medida(const Medida&) = delete;\n    Medida& operator=(const Medida&) = delete;\n    int numero() const noexcept { return numero_; }\n    virtual void escribir(std::ostream& salida) const { salida << \"Numero:\" << numero_; }\nprivate:\n    int numero_;\n    Ciclo& ciclo_;\n};\n\nclass MedidaIdentificada : public Medida {\npublic:\n    MedidaIdentificada(int numero, int codigo, Ciclo& ciclo)\n        : Medida{numero, ciclo}, ficha_{std::make_unique<Ficha>(codigo, ciclo)}, balance_{ciclo} {\n        ++balance_.derivadas_vivas;\n    }\n    ~MedidaIdentificada() noexcept override;\n    void escribir(std::ostream& salida) const override {\n        Medida::escribir(salida);\n        salida << \";Codigo:\" << ficha_->codigo();\n    }\nprivate:\n    std::unique_ptr<Ficha> ficha_;\n    Ciclo& balance_;\n};\n\nMedida::~Medida() noexcept {\n    // Registra el final de esta parte base en ciclo_.\n    \n}\n\nMedidaIdentificada::~MedidaIdentificada() noexcept {\n    // Registra el final de esta derivada en balance_. No borres ficha_ manualmente.\n    \n}\n\nstd::unique_ptr<Medida> crear_medida(int numero, int codigo, Ciclo& ciclo) {\n    // Construye una MedidaIdentificada con ambos datos y el ciclo recibido.\n    (void)codigo;\n    return std::make_unique<Medida>(numero, ciclo);\n}\n\nint main() {\n    int numero = 0, codigo = 0, retiro = 0;\n    if (!(std::cin >> numero >> codigo >> retiro) || retiro < 0 || retiro > 1) { return 1; }\n    Ciclo ciclo;\n    {\n        auto origen = crear_medida(numero, codigo, ciclo);\n        std::ostringstream informe;\n        {\n            const Medida& vista = *origen;\n            vista.escribir(informe);\n        }\n        std::cout << \"Informe:\" << informe.str() << '\\n';\n        std::unique_ptr<Medida> destino = std::move(origen);\n        std::cout << \"Movido:\" << (origen == nullptr) << ',' << (destino != nullptr) << '\\n';\n        std::cout << \"Vivos:\" << ciclo.bases_vivas << ',' << ciclo.derivadas_vivas << ',' << ciclo.fichas_vivas << '\\n';\n        if (retiro == 1) { destino.reset(); }\n        std::cout << \"AntesDeSalir:\" << ciclo.bases_vivas << ',' << ciclo.derivadas_vivas << ',' << ciclo.fichas_vivas << '\\n';\n    }\n    std::cout << \"FinalVivos:\" << ciclo.bases_vivas << ',' << ciclo.derivadas_vivas << ',' << ciclo.fichas_vivas << '\\n'\n              << \"Destruidos:\" << ciclo.bases_destruidas << ',' << ciclo.derivadas_destruidas << ',' << ciclo.fichas_destruidas;\n    return 0;\n}\n",
           "initialStandardInput": "6 41 1",
           "outputCheck": {
             "inputComparison": "tokens",
@@ -768,7 +768,7 @@
         {
           "type": "code",
           "language": "cpp",
-          "code": "#include <iostream>\n#include <memory>\n#include <sstream>\n#include <utility>\n\nstruct Ciclo {\n    int bases_vivas = 0;\n    int derivadas_vivas = 0;\n    int fichas_vivas = 0;\n    int bases_destruidas = 0;\n    int derivadas_destruidas = 0;\n    int fichas_destruidas = 0;\n};\nclass Ficha {\npublic:\n    Ficha(int codigo, Ciclo& ciclo) : codigo_{codigo}, ciclo_{ciclo} { ++ciclo_.fichas_vivas; }\n    Ficha(const Ficha&) = delete;\n    Ficha& operator=(const Ficha&) = delete;\n    ~Ficha() noexcept { --ciclo_.fichas_vivas; ++ciclo_.fichas_destruidas; }\n    int codigo() const noexcept { return codigo_; }\nprivate:\n    int codigo_;\n    Ciclo& ciclo_;\n};\nclass Medida {\npublic:\n    Medida(int numero, Ciclo& ciclo) : numero_{numero}, ciclo_{ciclo} { ++ciclo_.bases_vivas; }\n    virtual ~Medida() noexcept;\n    Medida(const Medida&) = delete;\n    Medida& operator=(const Medida&) = delete;\n    int numero() const noexcept { return numero_; }\n    virtual void escribir(std::ostream& salida) const { salida << \"Numero:\" << numero_; }\nprivate:\n    int numero_;\n    Ciclo& ciclo_;\n};\nclass MedidaIdentificada : public Medida {\npublic:\n    MedidaIdentificada(int numero, int codigo, Ciclo& ciclo)\n        : Medida{numero, ciclo}, ficha_{std::make_unique<Ficha>(codigo, ciclo)}, balance_{ciclo} {\n        ++balance_.derivadas_vivas;\n    }\n    ~MedidaIdentificada() noexcept override;\n    void escribir(std::ostream& salida) const override {\n        Medida::escribir(salida);\n        salida << \";Codigo:\" << ficha_->codigo();\n    }\nprivate:\n    std::unique_ptr<Ficha> ficha_;\n    Ciclo& balance_;\n};\nMedida::~Medida() noexcept {\n    --ciclo_.bases_vivas;\n    ++ciclo_.bases_destruidas;\n}\nMedidaIdentificada::~MedidaIdentificada() noexcept {\n    --balance_.derivadas_vivas;\n    ++balance_.derivadas_destruidas;\n}\nstd::unique_ptr<Medida> crear_medida(int numero, int codigo, Ciclo& ciclo) {\n    return std::make_unique<MedidaIdentificada>(numero, codigo, ciclo);\n}\nint main() {\n    int numero = 0, codigo = 0, retiro = 0;\n    if (!(std::cin >> numero >> codigo >> retiro) || retiro < 0 || retiro > 1) { return 1; }\n    Ciclo ciclo;\n    {\n        auto origen = crear_medida(numero, codigo, ciclo);\n        std::ostringstream informe;\n        {\n            const Medida& vista = *origen;\n            vista.escribir(informe);\n        }\n        std::cout << \"Informe:\" << informe.str() << '\\n';\n        std::unique_ptr<Medida> destino = std::move(origen);\n        std::cout << \"Movido:\" << (origen == nullptr) << ',' << (destino != nullptr) << '\\n';\n        std::cout << \"Vivos:\" << ciclo.bases_vivas << ',' << ciclo.derivadas_vivas << ',' << ciclo.fichas_vivas << '\\n';\n        if (retiro == 1) { destino.reset(); }\n        std::cout << \"AntesDeSalir:\" << ciclo.bases_vivas << ',' << ciclo.derivadas_vivas << ',' << ciclo.fichas_vivas << '\\n';\n    }\n    std::cout << \"FinalVivos:\" << ciclo.bases_vivas << ',' << ciclo.derivadas_vivas << ',' << ciclo.fichas_vivas << '\\n'\n              << \"Destruidos:\" << ciclo.bases_destruidas << ',' << ciclo.derivadas_destruidas << ',' << ciclo.fichas_destruidas;\n    return 0;\n}\n"
+          "code": "#include <iostream>\n#include <memory>\n#include <sstream>\n#include <utility>\n\nstruct Ciclo {\n    int bases_vivas = 0;\n    int derivadas_vivas = 0;\n    int fichas_vivas = 0;\n    int bases_destruidas = 0;\n    int derivadas_destruidas = 0;\n    int fichas_destruidas = 0;\n};\n\nclass Ficha {\npublic:\n    Ficha(int codigo, Ciclo& ciclo) : codigo_{codigo}, ciclo_{ciclo} { ++ciclo_.fichas_vivas; }\n    Ficha(const Ficha&) = delete;\n    Ficha& operator=(const Ficha&) = delete;\n    ~Ficha() noexcept { --ciclo_.fichas_vivas; ++ciclo_.fichas_destruidas; }\n    int codigo() const noexcept { return codigo_; }\nprivate:\n    int codigo_;\n    Ciclo& ciclo_;\n};\n\nclass Medida {\npublic:\n    Medida(int numero, Ciclo& ciclo) : numero_{numero}, ciclo_{ciclo} { ++ciclo_.bases_vivas; }\n    virtual ~Medida() noexcept;\n    Medida(const Medida&) = delete;\n    Medida& operator=(const Medida&) = delete;\n    int numero() const noexcept { return numero_; }\n    virtual void escribir(std::ostream& salida) const { salida << \"Numero:\" << numero_; }\nprivate:\n    int numero_;\n    Ciclo& ciclo_;\n};\n\nclass MedidaIdentificada : public Medida {\npublic:\n    MedidaIdentificada(int numero, int codigo, Ciclo& ciclo)\n        : Medida{numero, ciclo}, ficha_{std::make_unique<Ficha>(codigo, ciclo)}, balance_{ciclo} {\n        ++balance_.derivadas_vivas;\n    }\n    ~MedidaIdentificada() noexcept override;\n    void escribir(std::ostream& salida) const override {\n        Medida::escribir(salida);\n        salida << \";Codigo:\" << ficha_->codigo();\n    }\nprivate:\n    std::unique_ptr<Ficha> ficha_;\n    Ciclo& balance_;\n};\n\nMedida::~Medida() noexcept {\n    --ciclo_.bases_vivas;\n    ++ciclo_.bases_destruidas;\n}\n\nMedidaIdentificada::~MedidaIdentificada() noexcept {\n    --balance_.derivadas_vivas;\n    ++balance_.derivadas_destruidas;\n}\n\nstd::unique_ptr<Medida> crear_medida(int numero, int codigo, Ciclo& ciclo) {\n    return std::make_unique<MedidaIdentificada>(numero, codigo, ciclo);\n}\n\nint main() {\n    int numero = 0, codigo = 0, retiro = 0;\n    if (!(std::cin >> numero >> codigo >> retiro) || retiro < 0 || retiro > 1) { return 1; }\n    Ciclo ciclo;\n    {\n        auto origen = crear_medida(numero, codigo, ciclo);\n        std::ostringstream informe;\n        {\n            const Medida& vista = *origen;\n            vista.escribir(informe);\n        }\n        std::cout << \"Informe:\" << informe.str() << '\\n';\n        std::unique_ptr<Medida> destino = std::move(origen);\n        std::cout << \"Movido:\" << (origen == nullptr) << ',' << (destino != nullptr) << '\\n';\n        std::cout << \"Vivos:\" << ciclo.bases_vivas << ',' << ciclo.derivadas_vivas << ',' << ciclo.fichas_vivas << '\\n';\n        if (retiro == 1) { destino.reset(); }\n        std::cout << \"AntesDeSalir:\" << ciclo.bases_vivas << ',' << ciclo.derivadas_vivas << ',' << ciclo.fichas_vivas << '\\n';\n    }\n    std::cout << \"FinalVivos:\" << ciclo.bases_vivas << ',' << ciclo.derivadas_vivas << ',' << ciclo.fichas_vivas << '\\n'\n              << \"Destruidos:\" << ciclo.bases_destruidas << ',' << ciclo.derivadas_destruidas << ',' << ciclo.fichas_destruidas;\n    return 0;\n}\n"
         },
         {
           "type": "paragraph",
@@ -2412,6 +2412,321 @@
       }
     },
     "additions": [],
-    "editorial": []
+    "editorial": [
+      {
+        "id": "block_0000_0003",
+        "beforeSha256": "e5367cee6fc80793a8103cd27a3f0b63ef7c8b09ebbc6001028bbd982c706bcf",
+        "afterSha256": "c95faca0050365ac23e7621d384a78acc58c37594a4696c89285fe5d566995ba"
+      },
+      {
+        "id": "block_0002_0001",
+        "beforeSha256": "7e776632240b1593b8fbb3b545a78f7e898452753877cbae76303058ba48c115",
+        "afterSha256": "6fe7f3c5f7133414f5b49156fcabdf7661f71ea66791c757ac58c1bdde6b0ffa"
+      },
+      {
+        "id": "block_0003_0002",
+        "beforeSha256": "ebfb69d50827acb883dc13cf954abab5d4199bd69bc455313e918a3a5263d944",
+        "afterSha256": "3609d14b5af88a9840ca4702363f6848e8a14ffc4a4aec5c5a5bc9f15511ffe0"
+      },
+      {
+        "id": "block_0004_0002",
+        "beforeSha256": "16a9eabecd1be9909b6a0c6942115f41c290806456add6009951513d940517a2",
+        "afterSha256": "a6fd9af111feca02d9e3d132b75a353b656675a769d49190f8000b3db57da67c"
+      },
+      {
+        "id": "block_0005_0003",
+        "beforeSha256": "07fa8734d855b0146e0d03c2027ef3ba6e593073f1551b9139d4880941bec65c",
+        "afterSha256": "4a84cd8370e1606b92d3c04555599caa947106dcbda52f0210f10774cb276ee4"
+      },
+      {
+        "id": "block_0007_0002",
+        "beforeSha256": "fb32844d3d548b4e37bc14a189246a6bb84f367d9db63758e38d8475425e9931",
+        "afterSha256": "e63aaa67af05f7171c5536ae3da72c082c76d3fad3b59a6650d8ae37d2d873c0"
+      },
+      {
+        "id": "block_0008_0002",
+        "beforeSha256": "86e2afcd3441f765a7707a2f9c66fa50b0b11034e197792721f2ec1bc237b076",
+        "afterSha256": "03c5eeb127ff4f0af7d071c873c661094f9a2a63d02e86386ac79b49bb7a98d4"
+      },
+      {
+        "id": "block_0009_0003",
+        "beforeSha256": "d1188538284fcf56e073389263d6ed70a69abc63963be5cea388fdf9787c8dc9",
+        "afterSha256": "f869d88086c22a3ecf28314ca4ed8a5c76c82ca2e946bb0ce7efeb5a12ab7c78"
+      },
+      {
+        "id": "block_0010_0001",
+        "beforeSha256": "6017cfb9f5de1705328b38a7b594f59e9596b891dcd55c42aa5626067fc1c795",
+        "afterSha256": "d9362233bb415f29391120e0a02aaa1acb33207357c3dd9a437c1ea0e0a3f275"
+      },
+      {
+        "id": "block_0010_0003",
+        "beforeSha256": "1ef6ca53d2acf87119c583034c04094114ef58137ed3e867b23ab357ee9cdb84",
+        "afterSha256": "dc294fe4da67aac5bb216ec131e9a75024cfabfa44a2430bf252375b994ae1a0"
+      },
+      {
+        "id": "block_0011_0002",
+        "beforeSha256": "f0e9591a7178793174e4aa4f44465db146bae3b186cf762bed58f114a6f16491",
+        "afterSha256": "1fb0d24ff025fbb96356d746813f3188886f18987e1c05d5881f998ff2cd6792"
+      },
+      {
+        "id": "block_0013_0002",
+        "beforeSha256": "02434658f1516e4590d31eea47831b6f2466d15bdb33b2a5fd1708aec6d025d0",
+        "afterSha256": "56a6be13151e597ff80097938fb971435c7f218d5fbdd94a3c1e214c2f3ddd68"
+      },
+      {
+        "id": "block_0014_0002",
+        "beforeSha256": "fecff7a67edc78f6a5f0fa6a0c52015881c4533a56489cb951c74a2b53370e72",
+        "afterSha256": "048f404cd9d263c76459324cc7a1c2cd807a297156686cf1a21a9ca83f21b605"
+      },
+      {
+        "id": "block_0015_0002",
+        "beforeSha256": "519827cc05e9425bc93c64920ce90fd41a726b62a59aa18322b4ddfd2bdedad6",
+        "afterSha256": "c086a311f6e83025e04e3517b8c9a9e0cc441433c5dd6c553b3b29b1345d3dee"
+      },
+      {
+        "id": "block_0020_0002",
+        "beforeSha256": "d950deb90bac8be2e4e4269e0e87a346497bb113cf5d127fcfdcc913fc7757c4",
+        "afterSha256": "63eac6cd5cf7ed037605cdcc6cbacab3988d4866e187438911a588b8ae660f8c"
+      },
+      {
+        "id": "block_0022_0001",
+        "beforeSha256": "5f0e1b1fc0905d69c87ca7a267f24341519615b3f136ccb00d6e9a64e35639ef",
+        "afterSha256": "3d309dcda025ac0fa5c304e7a3bf2776c26fccf6aafc13d6134ca5ae63c44aa1"
+      }
+    ],
+    "sourceFormatRevisions": [
+      {
+        "id": "block_0000_0003",
+        "block": {
+          "type": "output_prediction",
+          "id": "p3_u8l5_destruccion_automatica_sin_destructor_virtual",
+          "language": "cpp",
+          "question": "Escribe la salida completa: el informe, las marcas de destrucción y el texto posterior al bloque.",
+          "code": "#include <iostream>\n#include <memory>\n#include <sstream>\n#include <utility>\n\nclass Marca {\npublic:\n    ~Marca() { std::cout << \"M|\"; }\n};\nclass Lectura {\npublic:\n    explicit Lectura(int valor) : valor_{valor} {}\n    ~Lectura() { std::cout << \"B|\"; }\n    int valor() const noexcept { return valor_; }\n    virtual void escribir(std::ostream& salida) const { salida << \"Numero:\" << valor_; }\nprivate:\n    int valor_;\n};\nclass LecturaIdentificada : public Lectura {\npublic:\n    LecturaIdentificada(int valor, int codigo) : Lectura{valor}, codigo_{codigo} {}\n    ~LecturaIdentificada() { std::cout << \"D|\"; }\n    void escribir(std::ostream& salida) const override {\n        Lectura::escribir(salida);\n        salida << \";Codigo:\" << codigo_;\n    }\nprivate:\n    int codigo_;\n    Marca marca_;\n};\nint main() {\n    {\n        const LecturaIdentificada dato{7, 21};\n        const Lectura& vista = dato;\n        vista.escribir(std::cout);\n        std::cout << '|';\n    }\n    std::cout << \"Fin\";\n    return 0;\n}\n",
+          "answers": [
+            "Numero:7;Codigo:21|D|M|B|Fin"
+          ],
+          "outputComparison": "exact",
+          "explanation": "La referencia permite obtener el informe Numero:7;Codigo:21. Al salir del bloque se destruye dato como LecturaIdentificada: su cuerpo escribe D|, el miembro Marca escribe M| y la parte Lectura escribe B|. Después se imprime Fin. Esa destrucción automática del objeto derivado no necesitaba seleccionar su destructor mediante un delete de tipo base."
+        }
+      },
+      {
+        "id": "block_0002_0001",
+        "block": {
+          "type": "code",
+          "language": "cpp",
+          "code": "class Marca {\npublic:\n    ~Marca() { std::cout << \"M|\"; }\n};\nclass Lectura {\npublic:\n    explicit Lectura(int valor) : valor_{valor} {}\n    virtual ~Lectura() { std::cout << \"B|\"; }\n    int valor() const noexcept { return valor_; }\n    virtual void escribir(std::ostream& salida) const { salida << \"Numero:\" << valor_; }\nprivate:\n    int valor_;\n};\nclass LecturaIdentificada : public Lectura {\npublic:\n    LecturaIdentificada(int valor, int codigo) : Lectura{valor}, codigo_{codigo} {}\n    ~LecturaIdentificada() override { std::cout << \"D|\"; }\n    void escribir(std::ostream& salida) const override {\n        Lectura::escribir(salida);\n        salida << \";Codigo:\" << codigo_;\n    }\nprivate:\n    int codigo_;\n    Marca marca_;\n};\n"
+        }
+      },
+      {
+        "id": "block_0003_0002",
+        "block": {
+          "type": "code",
+          "language": "cpp",
+          "code": "#include <iostream>\n#include <memory>\n#include <sstream>\n#include <utility>\n\nclass Marca {\npublic:\n    ~Marca() { std::cout << \"M|\"; }\n};\nclass Lectura {\npublic:\n    explicit Lectura(int valor) : valor_{valor} {}\n    ~Lectura() { std::cout << \"B|\"; }\n    int valor() const noexcept { return valor_; }\n    virtual void escribir(std::ostream& salida) const { salida << \"Numero:\" << valor_; }\nprivate:\n    int valor_;\n};\nclass LecturaIdentificada : public Lectura {\npublic:\n    LecturaIdentificada(int valor, int codigo) : Lectura{valor}, codigo_{codigo} {}\n    ~LecturaIdentificada() override { std::cout << \"D|\"; }\n    void escribir(std::ostream& salida) const override {\n        Lectura::escribir(salida);\n        salida << \";Codigo:\" << codigo_;\n    }\nprivate:\n    int codigo_;\n    Marca marca_;\n};\nint main() {\n    const LecturaIdentificada dato{3, 9};\n    return 0;\n}\n"
+        }
+      },
+      {
+        "id": "block_0004_0002",
+        "block": {
+          "type": "output_prediction",
+          "id": "p3_u8l5_borrado_individual_con_destructor_virtual",
+          "language": "cpp",
+          "question": "Escribe el informe, las marcas de destrucción y la comparación final con nullptr, en el orden del programa.",
+          "code": "#include <iostream>\n#include <memory>\n#include <sstream>\n#include <utility>\n\nclass Marca {\npublic:\n    ~Marca() { std::cout << \"M|\"; }\n};\nclass Lectura {\npublic:\n    explicit Lectura(int valor) : valor_{valor} {}\n    virtual ~Lectura() { std::cout << \"B|\"; }\n    int valor() const noexcept { return valor_; }\n    virtual void escribir(std::ostream& salida) const { salida << \"Numero:\" << valor_; }\nprivate:\n    int valor_;\n};\nclass LecturaIdentificada : public Lectura {\npublic:\n    LecturaIdentificada(int valor, int codigo) : Lectura{valor}, codigo_{codigo} {}\n    ~LecturaIdentificada() override { std::cout << \"D|\"; }\n    void escribir(std::ostream& salida) const override {\n        Lectura::escribir(salida);\n        salida << \";Codigo:\" << codigo_;\n    }\nprivate:\n    int codigo_;\n    Marca marca_;\n};\nint main() {\n    Lectura* acceso = new LecturaIdentificada{8, 5};\n    acceso->escribir(std::cout);\n    std::cout << '|';\n    delete acceso;\n    acceso = nullptr;\n    std::cout << (acceso == nullptr);\n    return 0;\n}\n",
+          "answers": [
+            "Numero:8;Codigo:5|D|M|B|1"
+          ],
+          "outputComparison": "exact",
+          "explanation": "La consulta virtual muestra Numero:8;Codigo:5. delete acceso inicia el destructor de LecturaIdentificada, cuyo cuerpo escribe D|. Después se destruye Marca y escribe M|; por último la base escribe B|. La instrucción posterior guarda nullptr en la variable acceso y la comparación de ese valor nuevo da uno."
+        }
+      },
+      {
+        "id": "block_0005_0003",
+        "block": {
+          "type": "output_prediction",
+          "id": "p3_u8l5_propietario_base_y_salida_del_bloque",
+          "language": "cpp",
+          "question": "Escribe la salida completa, incluido el informe y la limpieza al terminar el bloque interior.",
+          "code": "#include <iostream>\n#include <memory>\n#include <sstream>\n#include <utility>\n\nclass Marca {\npublic:\n    ~Marca() { std::cout << \"M|\"; }\n};\nclass Lectura {\npublic:\n    explicit Lectura(int valor) : valor_{valor} {}\n    virtual ~Lectura() { std::cout << \"B|\"; }\n    int valor() const noexcept { return valor_; }\n    virtual void escribir(std::ostream& salida) const { salida << \"Numero:\" << valor_; }\nprivate:\n    int valor_;\n};\nclass LecturaIdentificada : public Lectura {\npublic:\n    LecturaIdentificada(int valor, int codigo) : Lectura{valor}, codigo_{codigo} {}\n    ~LecturaIdentificada() override { std::cout << \"D|\"; }\n    void escribir(std::ostream& salida) const override {\n        Lectura::escribir(salida);\n        salida << \";Codigo:\" << codigo_;\n    }\nprivate:\n    int codigo_;\n    Marca marca_;\n};\nint main() {\n    {\n        std::unique_ptr<Lectura> dato = std::make_unique<LecturaIdentificada>(-3, 9);\n        dato->escribir(std::cout);\n        std::cout << '|';\n    }\n    std::cout << \"Fin\";\n    return 0;\n}\n",
+          "answers": [
+            "Numero:-3;Codigo:9|D|M|B|Fin"
+          ],
+          "outputComparison": "exact",
+          "explanation": "dato gestiona la LecturaIdentificada creada con número menos tres y código nueve. Su consulta obtiene el informe completo. Al terminar el bloque se destruye el propietario, que elimina el objeto mediante Lectura*. El destructor virtual permite la secuencia D|M|B|. Después main imprime Fin, sin necesitar un delete manual."
+        }
+      },
+      {
+        "id": "block_0007_0002",
+        "block": {
+          "type": "output_prediction",
+          "id": "p3_u8l5_mover_propietario_derivado_a_propietario_base",
+          "language": "cpp",
+          "question": "Escribe las comparaciones iniciales de los propietarios, el informe, las marcas de reset y la comparación final.",
+          "code": "#include <iostream>\n#include <memory>\n#include <sstream>\n#include <utility>\n\nclass Marca {\npublic:\n    ~Marca() { std::cout << \"M|\"; }\n};\nclass Lectura {\npublic:\n    explicit Lectura(int valor) : valor_{valor} {}\n    virtual ~Lectura() { std::cout << \"B|\"; }\n    int valor() const noexcept { return valor_; }\n    virtual void escribir(std::ostream& salida) const { salida << \"Numero:\" << valor_; }\nprivate:\n    int valor_;\n};\nclass LecturaIdentificada : public Lectura {\npublic:\n    LecturaIdentificada(int valor, int codigo) : Lectura{valor}, codigo_{codigo} {}\n    ~LecturaIdentificada() override { std::cout << \"D|\"; }\n    void escribir(std::ostream& salida) const override {\n        Lectura::escribir(salida);\n        salida << \";Codigo:\" << codigo_;\n    }\nprivate:\n    int codigo_;\n    Marca marca_;\n};\nint main() {\n    auto origen = std::make_unique<LecturaIdentificada>(4, 7);\n    std::unique_ptr<Lectura> destino = std::move(origen);\n    std::cout << (origen == nullptr) << ':' << (destino != nullptr) << '|';\n    destino->escribir(std::cout);\n    std::cout << '|';\n    destino.reset();\n    std::cout << (destino == nullptr);\n    return 0;\n}\n",
+          "answers": [
+            "1:1|Numero:4;Codigo:7|D|M|B|1"
+          ],
+          "outputComparison": "exact",
+          "explanation": "La transferencia deja origen vacío y destino ocupado: las dos comparaciones dan uno. destino consulta el mismo objeto con número cuatro y código siete. Su reset destruye la derivada, luego Marca y después la base, con D|M|B|. destino queda vacío y su comparación final da uno. El propietario origen ya no posee otro objeto que deba destruirse después."
+        }
+      },
+      {
+        "id": "block_0008_0002",
+        "block": {
+          "type": "output_prediction",
+          "id": "p3_u8l5_reset_ocupado_y_reset_vacio",
+          "language": "cpp",
+          "question": "Escribe las marcas de limpieza y los textos posteriores a cada reset, respetando los separadores.",
+          "code": "#include <iostream>\n#include <memory>\n#include <sstream>\n#include <utility>\n\nclass Marca {\npublic:\n    ~Marca() { std::cout << \"M|\"; }\n};\nclass Lectura {\npublic:\n    explicit Lectura(int valor) : valor_{valor} {}\n    virtual ~Lectura() { std::cout << \"B|\"; }\n    int valor() const noexcept { return valor_; }\n    virtual void escribir(std::ostream& salida) const { salida << \"Numero:\" << valor_; }\nprivate:\n    int valor_;\n};\nclass LecturaIdentificada : public Lectura {\npublic:\n    LecturaIdentificada(int valor, int codigo) : Lectura{valor}, codigo_{codigo} {}\n    ~LecturaIdentificada() override { std::cout << \"D|\"; }\n    void escribir(std::ostream& salida) const override {\n        Lectura::escribir(salida);\n        salida << \";Codigo:\" << codigo_;\n    }\nprivate:\n    int codigo_;\n    Marca marca_;\n};\nint main() {\n    std::unique_ptr<Lectura> dato = std::make_unique<LecturaIdentificada>(2, 3);\n    dato.reset();\n    std::cout << \"Vacio:\" << (dato == nullptr) << '|';\n    dato.reset();\n    std::cout << \"Fin\";\n    return 0;\n}\n",
+          "answers": [
+            "D|M|B|Vacio:1|Fin"
+          ],
+          "outputComparison": "exact",
+          "explanation": "El primer reset encuentra un objeto y provoca D|M|B|. El propietario queda vacío, así que Vacio: va seguido de uno. El segundo reset no gestiona ningún objeto que destruir y no repite las marcas. Después se imprime Fin. La destrucción posterior del propietario vacío tampoco añade otra limpieza del objeto anterior."
+        }
+      },
+      {
+        "id": "block_0009_0003",
+        "block": {
+          "type": "inline_fill_code",
+          "id": "p3_u8l5_destructor_virtual_default_y_override",
+          "question": "Completa las dos palabras: la que hace virtual el destructor de Panel y la que comprueba que el destructor de PanelConDato lo sobrescribe. Conserva = default; no añadas cuerpos ni borrados manuales.",
+          "template": "class Panel {\npublic:\n    [] ~Panel() = default;\n};\nclass PanelConDato : public Panel {\npublic:\n    explicit PanelConDato(int valor) : dato_{std::make_unique<int>(valor)} {}\n    ~PanelConDato() [] = default;\n    int valor() const noexcept { return *dato_; }\nprivate:\n    std::unique_ptr<int> dato_;\n};\n",
+          "answers": [
+            "virtual",
+            "override"
+          ],
+          "answerAlternatives": [
+            [
+              "virtual"
+            ],
+            [
+              "override"
+            ]
+          ],
+          "explanation": "virtual ~Panel() = default ofrece el destructor público y virtual de la base sin exigir instrucciones propias. ~PanelConDato() override = default comprueba la correspondencia y conserva la limpieza automática de dato_. Al destruir la derivada, el miembro unique_ptr destruye su int; no se necesita otro delete dentro de la clase."
+        }
+      },
+      {
+        "id": "block_0010_0001",
+        "block": {
+          "type": "code",
+          "language": "cpp",
+          "code": "class Panel {\npublic:\n    virtual ~Panel() = default;\n};\nclass PanelConDato : public Panel {\npublic:\n    explicit PanelConDato(int valor) : dato_{std::make_unique<int>(valor)} {}\n    ~PanelConDato() override = default;\n    int valor() const noexcept { return *dato_; }\nprivate:\n    std::unique_ptr<int> dato_;\n};\n"
+        }
+      },
+      {
+        "id": "block_0010_0003",
+        "block": {
+          "type": "code",
+          "language": "cpp",
+          "code": "int main() {\n    auto origen = std::make_unique<PanelConDato>(14);\n    std::cout << origen->valor() << '|';\n    std::unique_ptr<Panel> destino = std::move(origen);\n    std::cout << (origen == nullptr) << ':' << (destino != nullptr) << '|';\n    destino.reset();\n    std::cout << (destino == nullptr);\n    return 0;\n}\n"
+        }
+      },
+      {
+        "id": "block_0011_0002",
+        "block": {
+          "type": "output_prediction",
+          "id": "p3_u8l5_destructor_virtual_predeterminado_y_miembro",
+          "language": "cpp",
+          "question": "Escribe el informe y la salida que realmente producen los destructores de esta versión, seguida de Fin.",
+          "code": "#include <iostream>\n#include <memory>\n#include <sstream>\n#include <utility>\n\nclass Marca {\npublic:\n    ~Marca() { std::cout << \"M|\"; }\n};\nclass Lectura {\npublic:\n    explicit Lectura(int valor) : valor_{valor} {}\n    virtual ~Lectura() = default;\n    int valor() const noexcept { return valor_; }\n    virtual void escribir(std::ostream& salida) const { salida << \"Numero:\" << valor_; }\nprivate:\n    int valor_;\n};\nclass LecturaIdentificada : public Lectura {\npublic:\n    LecturaIdentificada(int valor, int codigo) : Lectura{valor}, codigo_{codigo} {}\n    ~LecturaIdentificada() override = default;\n    void escribir(std::ostream& salida) const override {\n        Lectura::escribir(salida);\n        salida << \";Codigo:\" << codigo_;\n    }\nprivate:\n    int codigo_;\n    Marca marca_;\n};\nint main() {\n    {\n        std::unique_ptr<Lectura> dato = std::make_unique<LecturaIdentificada>(6, 10);\n        dato->escribir(std::cout);\n        std::cout << '|';\n    }\n    std::cout << \"Fin\";\n    return 0;\n}\n",
+          "answers": [
+            "Numero:6;Codigo:10|M|Fin"
+          ],
+          "outputComparison": "exact",
+          "explanation": "El informe virtual contiene número seis y código diez. Al destruir el propietario se destruye correctamente la LecturaIdentificada. Su destructor predeterminado no imprime D|, pero sí continúa con sus miembros; Marca imprime M|. El destructor predeterminado de Lectura no imprime B|. Finalmente se imprime Fin. Las marcas ausentes corresponden a instrucciones retiradas, no a partes que se hayan dejado sin destruir."
+        }
+      },
+      {
+        "id": "block_0013_0002",
+        "block": {
+          "type": "output_prediction",
+          "id": "p3_u8l5_derivada_automatica_con_destructor_base_protegido",
+          "language": "cpp",
+          "question": "Escribe el informe, las marcas al salir del bloque y el texto final.",
+          "code": "#include <iostream>\n#include <memory>\n#include <sstream>\n#include <utility>\n\nclass Marca {\npublic:\n    ~Marca() { std::cout << \"M|\"; }\n};\nclass Lectura {\npublic:\n    explicit Lectura(int valor) : valor_{valor} {}\n    int valor() const noexcept { return valor_; }\n    virtual void escribir(std::ostream& salida) const { salida << \"Numero:\" << valor_; }\nprotected:\n    ~Lectura() { std::cout << \"B|\"; }\nprivate:\n    int valor_;\n};\nclass LecturaIdentificada : public Lectura {\npublic:\n    LecturaIdentificada(int valor, int codigo) : Lectura{valor}, codigo_{codigo} {}\n    ~LecturaIdentificada() { std::cout << \"D|\"; }\n    void escribir(std::ostream& salida) const override {\n        Lectura::escribir(salida);\n        salida << \";Codigo:\" << codigo_;\n    }\nprivate:\n    int codigo_;\n    Marca marca_;\n};\nint main() {\n    {\n        const LecturaIdentificada dato{5, 12};\n        dato.escribir(std::cout);\n        std::cout << '|';\n    }\n    std::cout << \"Fin\";\n    return 0;\n}\n",
+          "answers": [
+            "Numero:5;Codigo:12|D|M|B|Fin"
+          ],
+          "outputComparison": "exact",
+          "explanation": "El objeto local se consulta como LecturaIdentificada y muestra número cinco y código doce. Al salir de su bloque, el destructor público de la derivada escribe D|, el miembro escribe M| y la continuación puede utilizar el destructor protegido de Lectura, que escribe B|. Después aparece Fin. No se ha pedido a main que acceda directamente al destructor base."
+        }
+      },
+      {
+        "id": "block_0014_0002",
+        "block": {
+          "type": "code",
+          "language": "cpp",
+          "code": "#include <iostream>\n#include <memory>\n#include <sstream>\n#include <utility>\n\nclass Marca {\npublic:\n    ~Marca() { std::cout << \"M|\"; }\n};\nclass Lectura {\npublic:\n    explicit Lectura(int valor) : valor_{valor} {}\n    int valor() const noexcept { return valor_; }\n    virtual void escribir(std::ostream& salida) const { salida << \"Numero:\" << valor_; }\nprotected:\n    ~Lectura() { std::cout << \"B|\"; }\nprivate:\n    int valor_;\n};\nclass LecturaIdentificada : public Lectura {\npublic:\n    LecturaIdentificada(int valor, int codigo) : Lectura{valor}, codigo_{codigo} {}\n    ~LecturaIdentificada() { std::cout << \"D|\"; }\n    void escribir(std::ostream& salida) const override {\n        Lectura::escribir(salida);\n        salida << \";Codigo:\" << codigo_;\n    }\nprivate:\n    int codigo_;\n    Marca marca_;\n};\nint main() {\n    Lectura* acceso = new LecturaIdentificada{3, 9};\n    delete acceso;\n    return 0;\n}\n"
+        }
+      },
+      {
+        "id": "block_0015_0002",
+        "block": {
+          "type": "code",
+          "language": "cpp",
+          "code": "#include <iostream>\n#include <memory>\n#include <sstream>\n#include <utility>\n\nclass Marca {\npublic:\n    ~Marca() { std::cout << \"M|\"; }\n};\nclass Lectura {\npublic:\n    explicit Lectura(int valor) : valor_{valor} {}\n    int valor() const noexcept { return valor_; }\n    virtual void escribir(std::ostream& salida) const { salida << \"Numero:\" << valor_; }\nprotected:\n    ~Lectura() { std::cout << \"B|\"; }\nprivate:\n    int valor_;\n};\nclass LecturaIdentificada : public Lectura {\npublic:\n    LecturaIdentificada(int valor, int codigo) : Lectura{valor}, codigo_{codigo} {}\n    ~LecturaIdentificada() { std::cout << \"D|\"; }\n    void escribir(std::ostream& salida) const override {\n        Lectura::escribir(salida);\n        salida << \";Codigo:\" << codigo_;\n    }\nprivate:\n    int codigo_;\n    Marca marca_;\n};\nint main() {\n    std::unique_ptr<Lectura> dato = std::make_unique<LecturaIdentificada>(3, 9);\n    return 0;\n}\n"
+        }
+      },
+      {
+        "id": "block_0020_0002",
+        "block": {
+          "type": "cpp_compiler",
+          "language": "cpp",
+          "initialCode": "#include <iostream>\n#include <memory>\n#include <sstream>\n#include <utility>\n\nstruct Ciclo {\n    int bases_vivas = 0;\n    int derivadas_vivas = 0;\n    int fichas_vivas = 0;\n    int bases_destruidas = 0;\n    int derivadas_destruidas = 0;\n    int fichas_destruidas = 0;\n};\nclass Ficha {\npublic:\n    Ficha(int codigo, Ciclo& ciclo) : codigo_{codigo}, ciclo_{ciclo} { ++ciclo_.fichas_vivas; }\n    Ficha(const Ficha&) = delete;\n    Ficha& operator=(const Ficha&) = delete;\n    ~Ficha() noexcept { --ciclo_.fichas_vivas; ++ciclo_.fichas_destruidas; }\n    int codigo() const noexcept { return codigo_; }\nprivate:\n    int codigo_;\n    Ciclo& ciclo_;\n};\nclass Medida {\npublic:\n    Medida(int numero, Ciclo& ciclo) : numero_{numero}, ciclo_{ciclo} { ++ciclo_.bases_vivas; }\n    virtual ~Medida() noexcept;\n    Medida(const Medida&) = delete;\n    Medida& operator=(const Medida&) = delete;\n    int numero() const noexcept { return numero_; }\n    virtual void escribir(std::ostream& salida) const { salida << \"Numero:\" << numero_; }\nprivate:\n    int numero_;\n    Ciclo& ciclo_;\n};\nclass MedidaIdentificada : public Medida {\npublic:\n    MedidaIdentificada(int numero, int codigo, Ciclo& ciclo)\n        : Medida{numero, ciclo}, ficha_{std::make_unique<Ficha>(codigo, ciclo)}, balance_{ciclo} {\n        ++balance_.derivadas_vivas;\n    }\n    ~MedidaIdentificada() noexcept override;\n    void escribir(std::ostream& salida) const override {\n        Medida::escribir(salida);\n        salida << \";Codigo:\" << ficha_->codigo();\n    }\nprivate:\n    std::unique_ptr<Ficha> ficha_;\n    Ciclo& balance_;\n};\nMedida::~Medida() noexcept {\n    // Registra el final de esta parte base en ciclo_.\n}\nMedidaIdentificada::~MedidaIdentificada() noexcept {\n    // Registra el final de esta derivada en balance_. No borres ficha_ manualmente.\n}\nstd::unique_ptr<Medida> crear_medida(int numero, int codigo, Ciclo& ciclo) {\n    // Construye una MedidaIdentificada con ambos datos y el ciclo recibido.\n    (void)codigo;\n    return std::make_unique<Medida>(numero, ciclo);\n}\nint main() {\n    int numero = 0, codigo = 0, retiro = 0;\n    if (!(std::cin >> numero >> codigo >> retiro) || retiro < 0 || retiro > 1) { return 1; }\n    Ciclo ciclo;\n    {\n        auto origen = crear_medida(numero, codigo, ciclo);\n        std::ostringstream informe;\n        {\n            const Medida& vista = *origen;\n            vista.escribir(informe);\n        }\n        std::cout << \"Informe:\" << informe.str() << '\\n';\n        std::unique_ptr<Medida> destino = std::move(origen);\n        std::cout << \"Movido:\" << (origen == nullptr) << ',' << (destino != nullptr) << '\\n';\n        std::cout << \"Vivos:\" << ciclo.bases_vivas << ',' << ciclo.derivadas_vivas << ',' << ciclo.fichas_vivas << '\\n';\n        if (retiro == 1) { destino.reset(); }\n        std::cout << \"AntesDeSalir:\" << ciclo.bases_vivas << ',' << ciclo.derivadas_vivas << ',' << ciclo.fichas_vivas << '\\n';\n    }\n    std::cout << \"FinalVivos:\" << ciclo.bases_vivas << ',' << ciclo.derivadas_vivas << ',' << ciclo.fichas_vivas << '\\n'\n              << \"Destruidos:\" << ciclo.bases_destruidas << ',' << ciclo.derivadas_destruidas << ',' << ciclo.fichas_destruidas;\n    return 0;\n}\n",
+          "initialStandardInput": "6 41 1",
+          "outputCheck": {
+            "inputComparison": "tokens",
+            "cases": [
+              {
+                "standardInput": "6 41 1",
+                "outputs": [
+                  "Informe:Numero:6;Codigo:41\nMovido:1,1\nVivos:1,1,1\nAntesDeSalir:0,0,0\nFinalVivos:0,0,0\nDestruidos:1,1,1"
+                ],
+                "explanation": "crear_medida devuelve make_unique<MedidaIdentificada>(numero, codigo, ciclo) como propietario base. Cada destructor actualiza los dos contadores que le corresponden. El miembro unique_ptr<Ficha> se destruye automáticamente; no se borra manualmente. Al salir, o al llamar reset, el destructor virtual permite completar la derivada y su base una vez."
+              },
+              {
+                "standardInput": "0 -3 0",
+                "outputs": [
+                  "Informe:Numero:0;Codigo:-3\nMovido:1,1\nVivos:1,1,1\nAntesDeSalir:1,1,1\nFinalVivos:0,0,0\nDestruidos:1,1,1"
+                ],
+                "explanation": "crear_medida devuelve make_unique<MedidaIdentificada>(numero, codigo, ciclo) como propietario base. Cada destructor actualiza los dos contadores que le corresponden. El miembro unique_ptr<Ficha> se destruye automáticamente; no se borra manualmente. Al salir, o al llamar reset, el destructor virtual permite completar la derivada y su base una vez."
+              },
+              {
+                "standardInput": "-7 0 1",
+                "outputs": [
+                  "Informe:Numero:-7;Codigo:0\nMovido:1,1\nVivos:1,1,1\nAntesDeSalir:0,0,0\nFinalVivos:0,0,0\nDestruidos:1,1,1"
+                ],
+                "explanation": "crear_medida devuelve make_unique<MedidaIdentificada>(numero, codigo, ciclo) como propietario base. Cada destructor actualiza los dos contadores que le corresponden. El miembro unique_ptr<Ficha> se destruye automáticamente; no se borra manualmente. Al salir, o al llamar reset, el destructor virtual permite completar la derivada y su base una vez."
+              },
+              {
+                "standardInput": "19 4 0",
+                "outputs": [
+                  "Informe:Numero:19;Codigo:4\nMovido:1,1\nVivos:1,1,1\nAntesDeSalir:1,1,1\nFinalVivos:0,0,0\nDestruidos:1,1,1"
+                ],
+                "explanation": "crear_medida devuelve make_unique<MedidaIdentificada>(numero, codigo, ciclo) como propietario base. Cada destructor actualiza los dos contadores que le corresponden. El miembro unique_ptr<Ficha> se destruye automáticamente; no se borra manualmente. Al salir, o al llamar reset, el destructor virtual permite completar la derivada y su base una vez."
+              },
+              {
+                "standardInput": "-11 23 1",
+                "outputs": [
+                  "Informe:Numero:-11;Codigo:23\nMovido:1,1\nVivos:1,1,1\nAntesDeSalir:0,0,0\nFinalVivos:0,0,0\nDestruidos:1,1,1"
+                ],
+                "explanation": "crear_medida devuelve make_unique<MedidaIdentificada>(numero, codigo, ciclo) como propietario base. Cada destructor actualiza los dos contadores que le corresponden. El miembro unique_ptr<Ficha> se destruye automáticamente; no se borra manualmente. Al salir, o al llamar reset, el destructor virtual permite completar la derivada y su base una vez."
+              }
+            ]
+          }
+        }
+      },
+      {
+        "id": "block_0022_0001",
+        "block": {
+          "type": "code",
+          "language": "cpp",
+          "code": "#include <iostream>\n#include <memory>\n#include <sstream>\n#include <utility>\n\nstruct Ciclo {\n    int bases_vivas = 0;\n    int derivadas_vivas = 0;\n    int fichas_vivas = 0;\n    int bases_destruidas = 0;\n    int derivadas_destruidas = 0;\n    int fichas_destruidas = 0;\n};\nclass Ficha {\npublic:\n    Ficha(int codigo, Ciclo& ciclo) : codigo_{codigo}, ciclo_{ciclo} { ++ciclo_.fichas_vivas; }\n    Ficha(const Ficha&) = delete;\n    Ficha& operator=(const Ficha&) = delete;\n    ~Ficha() noexcept { --ciclo_.fichas_vivas; ++ciclo_.fichas_destruidas; }\n    int codigo() const noexcept { return codigo_; }\nprivate:\n    int codigo_;\n    Ciclo& ciclo_;\n};\nclass Medida {\npublic:\n    Medida(int numero, Ciclo& ciclo) : numero_{numero}, ciclo_{ciclo} { ++ciclo_.bases_vivas; }\n    virtual ~Medida() noexcept;\n    Medida(const Medida&) = delete;\n    Medida& operator=(const Medida&) = delete;\n    int numero() const noexcept { return numero_; }\n    virtual void escribir(std::ostream& salida) const { salida << \"Numero:\" << numero_; }\nprivate:\n    int numero_;\n    Ciclo& ciclo_;\n};\nclass MedidaIdentificada : public Medida {\npublic:\n    MedidaIdentificada(int numero, int codigo, Ciclo& ciclo)\n        : Medida{numero, ciclo}, ficha_{std::make_unique<Ficha>(codigo, ciclo)}, balance_{ciclo} {\n        ++balance_.derivadas_vivas;\n    }\n    ~MedidaIdentificada() noexcept override;\n    void escribir(std::ostream& salida) const override {\n        Medida::escribir(salida);\n        salida << \";Codigo:\" << ficha_->codigo();\n    }\nprivate:\n    std::unique_ptr<Ficha> ficha_;\n    Ciclo& balance_;\n};\nMedida::~Medida() noexcept {\n    --ciclo_.bases_vivas;\n    ++ciclo_.bases_destruidas;\n}\nMedidaIdentificada::~MedidaIdentificada() noexcept {\n    --balance_.derivadas_vivas;\n    ++balance_.derivadas_destruidas;\n}\nstd::unique_ptr<Medida> crear_medida(int numero, int codigo, Ciclo& ciclo) {\n    return std::make_unique<MedidaIdentificada>(numero, codigo, ciclo);\n}\nint main() {\n    int numero = 0, codigo = 0, retiro = 0;\n    if (!(std::cin >> numero >> codigo >> retiro) || retiro < 0 || retiro > 1) { return 1; }\n    Ciclo ciclo;\n    {\n        auto origen = crear_medida(numero, codigo, ciclo);\n        std::ostringstream informe;\n        {\n            const Medida& vista = *origen;\n            vista.escribir(informe);\n        }\n        std::cout << \"Informe:\" << informe.str() << '\\n';\n        std::unique_ptr<Medida> destino = std::move(origen);\n        std::cout << \"Movido:\" << (origen == nullptr) << ',' << (destino != nullptr) << '\\n';\n        std::cout << \"Vivos:\" << ciclo.bases_vivas << ',' << ciclo.derivadas_vivas << ',' << ciclo.fichas_vivas << '\\n';\n        if (retiro == 1) { destino.reset(); }\n        std::cout << \"AntesDeSalir:\" << ciclo.bases_vivas << ',' << ciclo.derivadas_vivas << ',' << ciclo.fichas_vivas << '\\n';\n    }\n    std::cout << \"FinalVivos:\" << ciclo.bases_vivas << ',' << ciclo.derivadas_vivas << ',' << ciclo.fichas_vivas << '\\n'\n              << \"Destruidos:\" << ciclo.bases_destruidas << ',' << ciclo.derivadas_destruidas << ',' << ciclo.fichas_destruidas;\n    return 0;\n}\n"
+        }
+      }
+    ]
   }
 }

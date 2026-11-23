@@ -69,7 +69,7 @@
         {
           "type": "code",
           "language": "cpp",
-          "code": "#include <iostream>\n#include <sstream>\n\nstruct Cantidad { int unidades; };\n\nstd::ostream& operator<<(std::ostream& destino, const Cantidad& valor) {\n    return destino << '(' << valor.unidades << ')';\n}\n\nint main() {\n    const Cantidad resumen{2};\n    std::cout << resumen;\n    return 0;\n}\n"
+          "code": "#include <iostream>\n#include <sstream>\n\nstruct Cantidad { int unidades; };\n\nstd::ostream& operator<<(std::ostream& destino, const Cantidad& valor) {\n    return destino << '(' << valor.unidades << ')';\n}\n\nint main() {\n    const Cantidad resumen{2};\n\n    std::cout << resumen;\n\n    return 0;\n}\n"
         },
         {
           "type": "paragraph",
@@ -106,7 +106,7 @@
           "id": "dos_registros_encadenados",
           "question": "Predice la salida completa de las dos cantidades, incluido el separador que aporta main.",
           "language": "cpp",
-          "code": "#include <iostream>\n#include <sstream>\n\nstruct Cantidad { int unidades; };\n\nstd::ostream& operator<<(std::ostream& destino, const Cantidad& valor) {\n    return destino << '(' << valor.unidades << ')';\n}\n\nint main() {\n    const Cantidad primero{5};\n    const Cantidad segundo{0};\n    std::cout << primero << \"|\" << segundo;\n    return 0;\n}\n",
+          "code": "#include <iostream>\n#include <sstream>\n\nstruct Cantidad { int unidades; };\n\nstd::ostream& operator<<(std::ostream& destino, const Cantidad& valor) {\n    return destino << '(' << valor.unidades << ')';\n}\n\nint main() {\n    const Cantidad primero{5};\n    const Cantidad segundo{0};\n\n    std::cout << primero << \"|\" << segundo;\n\n    return 0;\n}\n",
           "answers": [
             "(5)|(0)"
           ],
@@ -117,7 +117,7 @@
           "id": "registro_en_memoria",
           "question": "Predice la salida. El operador recibe aquí un ostringstream.",
           "language": "cpp",
-          "code": "#include <iostream>\n#include <sstream>\n\nstruct Cantidad { int unidades; };\n\nstd::ostream& operator<<(std::ostream& destino, const Cantidad& valor) {\n    return destino << '(' << valor.unidades << ')';\n}\n\nint main() {\n    std::ostringstream captura;\n    captura << Cantidad{1} << \";fin\";\n    std::cout << \"Captura=\" << captura.str();\n    return 0;\n}\n",
+          "code": "#include <iostream>\n#include <sstream>\n\nstruct Cantidad { int unidades; };\n\nstd::ostream& operator<<(std::ostream& destino, const Cantidad& valor) {\n    return destino << '(' << valor.unidades << ')';\n}\n\nint main() {\n    std::ostringstream captura;\n    captura << Cantidad{1} << \";fin\";\n    std::cout << \"Captura=\" << captura.str();\n\n    return 0;\n}\n",
           "answers": [
             "Captura=(1);fin"
           ],
@@ -189,7 +189,7 @@
         },
         {
           "type": "cpp_compiler",
-          "initialCode": "#include <fstream>\n#include <iostream>\n#include <sstream>\n\nstruct Recuento {\n    int aceptados;\n    int rechazados;\n};\n\nint main() {\n    // Define operator<< antes de main y prueba ambos destinos.\n    return 0;\n}\n",
+          "initialCode": "#include <fstream>\n#include <iostream>\n#include <sstream>\n\nstruct Recuento {\n    int aceptados;\n    int rechazados;\n};\n\nint main() {\n    // Define operator<< antes de main y prueba ambos destinos.\n    \n    return 0;\n}\n",
           "outputCheck": {
             "cases": [
               {
@@ -216,7 +216,7 @@
         {
           "type": "code",
           "language": "cpp",
-          "code": "#include <fstream>\n#include <iostream>\n#include <sstream>\n\nstruct Recuento {\n    int aceptados;\n    int rechazados;\n};\n\nbool recuento_valido(const Recuento& valor) {\n    return valor.aceptados >= 0 && valor.aceptados <= 10\n        && valor.rechazados >= 0 && valor.rechazados <= 10;\n}\n\nstd::ostream& operator<<(std::ostream& destino, const Recuento& valor) {\n    return destino << '[' << valor.aceptados << ';' << valor.rechazados << ']';\n}\n\nint main() {\n    const Recuento resumen{3, 2};\n    std::ostringstream captura;\n    captura << resumen << \";fin\";\n    std::ofstream archivo{\"recuento_lgp.txt\"};\n    if (!archivo) {\n        std::cout << \"Error apertura\";\n        return 1;\n    }\n    archivo << resumen;\n    archivo.close();\n    if (!archivo) {\n        std::cout << \"Error escritura\";\n        return 1;\n    }\n    std::cout << \"Memoria=\" << captura.str() << \"|Guardado\";\n    return 0;\n}\n"
+          "code": "#include <fstream>\n#include <iostream>\n#include <sstream>\n\nstruct Recuento {\n    int aceptados;\n    int rechazados;\n};\n\nbool recuento_valido(const Recuento& valor) {\n    return valor.aceptados >= 0 && valor.aceptados <= 10\n        && valor.rechazados >= 0 && valor.rechazados <= 10;\n}\n\nstd::ostream& operator<<(std::ostream& destino, const Recuento& valor) {\n    return destino << '[' << valor.aceptados << ';' << valor.rechazados << ']';\n}\n\nint main() {\n    const Recuento resumen{3, 2};\n    std::ostringstream captura;\n    captura << resumen << \";fin\";\n    std::ofstream archivo{\"recuento_lgp.txt\"};\n    if (!archivo) {\n        std::cout << \"Error apertura\";\n        return 1;\n    }\n    archivo << resumen;\n    archivo.close();\n    if (!archivo) {\n        std::cout << \"Error escritura\";\n        return 1;\n    }\n    std::cout << \"Memoria=\" << captura.str() << \"|Guardado\";\n\n    return 0;\n}\n"
         },
         {
           "type": "paragraph",
@@ -362,7 +362,7 @@
         {
           "type": "code",
           "language": "cpp",
-          "code": "#include <fstream>\n#include <iostream>\n#include <sstream>\n\nstruct Recuento {\n    int aceptados;\n    int rechazados;\n};\n\nbool recuento_valido(const Recuento& valor) {\n    return valor.aceptados >= 0 && valor.aceptados <= 10\n        && valor.rechazados >= 0 && valor.rechazados <= 10;\n}\n\nstd::ostream& operator<<(std::ostream& destino, const Recuento& valor) {\n    return destino << '[' << valor.aceptados << ';' << valor.rechazados << ']';\n}\n\nint probar(const Recuento& resumen) {\n    std::ostringstream captura;\n    captura << resumen << \";fin\";\n    std::ofstream archivo{\"recuento_lgp.txt\"};\n    if (!archivo) {\n        std::cout << \"Error apertura\";\n        return 1;\n    }\n    archivo << resumen;\n    archivo.close();\n    if (!archivo) {\n        std::cout << \"Error escritura\";\n        return 1;\n    }\n    std::cout << \"Memoria=\" << captura.str() << \"|Guardado\\n\";\n    return 0;\n}\n\nint main() {\n    if (probar({3, 2}) != 0) return 1;\n    if (probar({0, 0}) != 0) return 1;\n    if (probar({10, 10}) != 0) return 1;\n    return 0;\n}\n"
+          "code": "#include <fstream>\n#include <iostream>\n#include <sstream>\n\nstruct Recuento {\n    int aceptados;\n    int rechazados;\n};\n\nbool recuento_valido(const Recuento& valor) {\n    return valor.aceptados >= 0 && valor.aceptados <= 10\n        && valor.rechazados >= 0 && valor.rechazados <= 10;\n}\n\nstd::ostream& operator<<(std::ostream& destino, const Recuento& valor) {\n    return destino << '[' << valor.aceptados << ';' << valor.rechazados << ']';\n}\n\nint probar(const Recuento& resumen) {\n    std::ostringstream captura;\n    captura << resumen << \";fin\";\n    std::ofstream archivo{\"recuento_lgp.txt\"};\n    if (!archivo) {\n        std::cout << \"Error apertura\";\n        return 1;\n    }\n    archivo << resumen;\n    archivo.close();\n    if (!archivo) {\n        std::cout << \"Error escritura\";\n        return 1;\n    }\n    std::cout << \"Memoria=\" << captura.str() << \"|Guardado\\n\";\n\n    return 0;\n}\n\nint main() {\n    if (probar({3, 2}) != 0) return 1;\n    if (probar({0, 0}) != 0) return 1;\n    if (probar({10, 10}) != 0) return 1;\n    return 0;\n}\n"
         },
         {
           "type": "heading",
@@ -1340,6 +1340,107 @@
         "id": "u12_insercion_dos_configuraciones_entrada_2",
         "beforeSha256": "ccb9d1a33226445b2636e179a32c09426d571681d9479f53af3a9a1c1019f030",
         "afterSha256": "96fd4c89ceb245b35dc979a717ac6922472b072c2ecdc391469f04e240e2d6b4"
+      },
+      {
+        "id": "block_0001_0002",
+        "beforeSha256": "84a72d42a4aae58e6d6473c0b3ca0c8e41fced4ae048dcf11a3d5303a0f2e52b",
+        "afterSha256": "789b0da42b72a30ec3e0db30b864eeedae82caa9f90f1e2c28580f13c4c7b006"
+      },
+      {
+        "id": "block_0002_0001",
+        "beforeSha256": "33c8d993ba4254451683f8abb2913eaeff55b8327da9ae37128ede61d7602b12",
+        "afterSha256": "4e8155551d5502fd0e7875db729bf1b8d40d1deb4e3fed7f30cdecebb1a404e3"
+      },
+      {
+        "id": "block_0002_0002",
+        "beforeSha256": "f3fbe63191afb7ca41261a256b180d703770f48c236d8940ec2921173122af5a",
+        "afterSha256": "72c52bfab53f50d692a367eb23be4cab6f96890de3877057cf3ab787eab2283f"
+      },
+      {
+        "id": "block_0003_0004",
+        "beforeSha256": "09ea4a66bb870cf9654b8f5e05553982a2e58939161ff57d20675080aa52bef6",
+        "afterSha256": "1f2f45d68103d5eae39d2323a5f17bcfa932d8561ff49839d401d3d447bc9501"
+      },
+      {
+        "id": "block_0004_0001",
+        "beforeSha256": "92f21e5db34eb99eebef121e155aeb164c81c780613173267fa45f34ac178e25",
+        "afterSha256": "83426722cd6714056f1857356c6e2b7eb88fc74fe07f6216c9989f24f7d8bd13"
+      },
+      {
+        "id": "block_0005_0001",
+        "beforeSha256": "3bbe65e1631cd146aa950bf9b2666533aa776d9e74b92e60cb595e0529e44e95",
+        "afterSha256": "b95e3457118cc0465e21f9841db220060415649e578ce5b12f025f2b36fd5614"
+      }
+    ],
+    "sourceFormatRevisions": [
+      {
+        "id": "block_0001_0002",
+        "block": {
+          "type": "code",
+          "language": "cpp",
+          "code": "#include <iostream>\n#include <sstream>\n\nstruct Cantidad { int unidades; };\n\nstd::ostream& operator<<(std::ostream& destino, const Cantidad& valor) {\n    return destino << '(' << valor.unidades << ')';\n}\n\nint main() {\n    const Cantidad resumen{2};\n    std::cout << resumen;\n    return 0;\n}\n"
+        }
+      },
+      {
+        "id": "block_0002_0001",
+        "block": {
+          "type": "output_prediction",
+          "id": "dos_registros_encadenados",
+          "question": "Predice la salida completa de las dos cantidades, incluido el separador que aporta main.",
+          "language": "cpp",
+          "code": "#include <iostream>\n#include <sstream>\n\nstruct Cantidad { int unidades; };\n\nstd::ostream& operator<<(std::ostream& destino, const Cantidad& valor) {\n    return destino << '(' << valor.unidades << ')';\n}\n\nint main() {\n    const Cantidad primero{5};\n    const Cantidad segundo{0};\n    std::cout << primero << \"|\" << segundo;\n    return 0;\n}\n",
+          "answers": [
+            "(5)|(0)"
+          ],
+          "explanation": "La primera llamada recibe primero, cuyo campo vale 5, y escribe (5). Devuelve el mismo std::cout, de modo que la siguiente inserción añade | en la consola.\n\nLa última llamada recibe segundo, con campo 0, y escribe (0). La salida queda (5)|(0), sin salto final. El separador pertenece al llamador: el operador de Cantidad sólo escribe sus paréntesis y su campo."
+        }
+      },
+      {
+        "id": "block_0002_0002",
+        "block": {
+          "type": "output_prediction",
+          "id": "registro_en_memoria",
+          "question": "Predice la salida. El operador recibe aquí un ostringstream.",
+          "language": "cpp",
+          "code": "#include <iostream>\n#include <sstream>\n\nstruct Cantidad { int unidades; };\n\nstd::ostream& operator<<(std::ostream& destino, const Cantidad& valor) {\n    return destino << '(' << valor.unidades << ')';\n}\n\nint main() {\n    std::ostringstream captura;\n    captura << Cantidad{1} << \";fin\";\n    std::cout << \"Captura=\" << captura.str();\n    return 0;\n}\n",
+          "answers": [
+            "Captura=(1);fin"
+          ],
+          "explanation": "El primer destino es captura, así que (1) se guarda en memoria. La referencia que devuelve el operador permite añadir ;fin a ese mismo flujo. Hasta ese momento, esas inserciones no han enviado su cadena a la consola.\n\nDespués, main muestra la etiqueta Captura= y el contenido de captura.str(). El resultado es Captura=(1);fin. Si el operador utilizara o devolviera std::cout por su cuenta, parte del texto aparecería antes de esa etiqueta o en el destino equivocado."
+        }
+      },
+      {
+        "id": "block_0003_0004",
+        "block": {
+          "type": "cpp_compiler",
+          "initialCode": "#include <fstream>\n#include <iostream>\n#include <sstream>\n\nstruct Recuento {\n    int aceptados;\n    int rechazados;\n};\n\nint main() {\n    // Define operator<< antes de main y prueba ambos destinos.\n    return 0;\n}\n",
+          "outputCheck": {
+            "cases": [
+              {
+                "standardInput": "",
+                "outputs": [
+                  "Memoria=[3;2];fin|Guardado\nMemoria=[0;0];fin|Guardado\nMemoria=[10;10];fin|Guardado\n"
+                ]
+              }
+            ]
+          }
+        }
+      },
+      {
+        "id": "block_0004_0001",
+        "block": {
+          "type": "code",
+          "language": "cpp",
+          "code": "#include <fstream>\n#include <iostream>\n#include <sstream>\n\nstruct Recuento {\n    int aceptados;\n    int rechazados;\n};\n\nbool recuento_valido(const Recuento& valor) {\n    return valor.aceptados >= 0 && valor.aceptados <= 10\n        && valor.rechazados >= 0 && valor.rechazados <= 10;\n}\n\nstd::ostream& operator<<(std::ostream& destino, const Recuento& valor) {\n    return destino << '[' << valor.aceptados << ';' << valor.rechazados << ']';\n}\n\nint main() {\n    const Recuento resumen{3, 2};\n    std::ostringstream captura;\n    captura << resumen << \";fin\";\n    std::ofstream archivo{\"recuento_lgp.txt\"};\n    if (!archivo) {\n        std::cout << \"Error apertura\";\n        return 1;\n    }\n    archivo << resumen;\n    archivo.close();\n    if (!archivo) {\n        std::cout << \"Error escritura\";\n        return 1;\n    }\n    std::cout << \"Memoria=\" << captura.str() << \"|Guardado\";\n    return 0;\n}\n"
+        }
+      },
+      {
+        "id": "block_0005_0001",
+        "block": {
+          "type": "code",
+          "language": "cpp",
+          "code": "#include <fstream>\n#include <iostream>\n#include <sstream>\n\nstruct Recuento {\n    int aceptados;\n    int rechazados;\n};\n\nbool recuento_valido(const Recuento& valor) {\n    return valor.aceptados >= 0 && valor.aceptados <= 10\n        && valor.rechazados >= 0 && valor.rechazados <= 10;\n}\n\nstd::ostream& operator<<(std::ostream& destino, const Recuento& valor) {\n    return destino << '[' << valor.aceptados << ';' << valor.rechazados << ']';\n}\n\nint probar(const Recuento& resumen) {\n    std::ostringstream captura;\n    captura << resumen << \";fin\";\n    std::ofstream archivo{\"recuento_lgp.txt\"};\n    if (!archivo) {\n        std::cout << \"Error apertura\";\n        return 1;\n    }\n    archivo << resumen;\n    archivo.close();\n    if (!archivo) {\n        std::cout << \"Error escritura\";\n        return 1;\n    }\n    std::cout << \"Memoria=\" << captura.str() << \"|Guardado\\n\";\n    return 0;\n}\n\nint main() {\n    if (probar({3, 2}) != 0) return 1;\n    if (probar({0, 0}) != 0) return 1;\n    if (probar({10, 10}) != 0) return 1;\n    return 0;\n}\n"
+        }
       }
     ]
   },

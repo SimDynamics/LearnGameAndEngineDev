@@ -22,7 +22,7 @@
           "id": "p3_u2l5_blanco_con_get",
           "language": "cpp",
           "question": "Predice si primero recibe un espacio y qué carácter recibe segundo.",
-          "code": "#include <iostream>\n#include <sstream>\n#include <string>\n\nint main() {\n    std::istringstream entrada{\" \\nZ\"};\n    char primero = '?';\n    char segundo = '?';\n    entrada.get(primero);\n    entrada >> segundo;\n    std::cout << (primero == ' ') << ':' << segundo;\n    return 0;\n}\n",
+          "code": "#include <iostream>\n#include <sstream>\n#include <string>\n\nint main() {\n    std::istringstream entrada{\" \\nZ\"};\n    char primero = '?';\n    char segundo = '?';\n    entrada.get(primero);\n    entrada >> segundo;\n    std::cout << (primero == ' ') << ':' << segundo;\n\n    return 0;\n}\n",
           "answers": [
             "1:Z"
           ],
@@ -78,7 +78,7 @@
           "id": "p3_u2l5_vacia_y_recuperacion",
           "language": "cpp",
           "question": "Predice el texto, el fallo y recuento iniciales, el éxito del get anterior a clear, la comparación del salto después de clear y la línea siguiente.",
-          "code": "#include <iostream>\n#include <sstream>\n#include <string>\n\nint main() {\n    std::istringstream entrada{\"\\nfin\\n\"};\n    char texto[4]{'X', 'Y', 'Z', '\\0'};\n    entrada.get(texto, 4);\n    const bool fallo = entrada.fail();\n    const auto cuenta = entrada.gcount();\n    char salto = '?';\n    const bool antes = static_cast<bool>(entrada.get(salto));\n    entrada.clear();\n    entrada.get(salto);\n    std::string siguiente;\n    std::getline(entrada, siguiente);\n    std::cout << '[' << texto << \"]:\" << fallo << ':' << cuenta << ':'\n              << antes << ':' << (salto == '\\n') << \":[\" << siguiente << ']';\n    return 0;\n}\n",
+          "code": "#include <iostream>\n#include <sstream>\n#include <string>\n\nint main() {\n    std::istringstream entrada{\"\\nfin\\n\"};\n    char texto[4]{'X', 'Y', 'Z', '\\0'};\n    entrada.get(texto, 4);\n    const bool fallo = entrada.fail();\n    const auto cuenta = entrada.gcount();\n    char salto = '?';\n    const bool antes = static_cast<bool>(entrada.get(salto));\n    entrada.clear();\n    entrada.get(salto);\n    std::string siguiente;\n\n    std::getline(entrada, siguiente);\n\n    std::cout << '[' << texto << \"]:\" << fallo << ':' << cuenta << ':'\n              << antes << ':' << (salto == '\\n') << \":[\" << siguiente << ']';\n    return 0;\n}\n",
           "answers": [
             "[]:1:0:0:1:[fin]"
           ],
@@ -106,7 +106,7 @@
           "id": "p3_u2l5_cadena_no_general",
           "language": "cpp",
           "question": "Este programa aplica el encadenamiento sin comprobar qué carácter queda. Predice el prefijo, el fallo consultado y el resto de esa línea.",
-          "code": "#include <iostream>\n#include <sstream>\n#include <string>\n\nint main() {\n    std::istringstream entrada{\"solar\\nfin\\n\"};\n    char texto[4]{};\n    entrada.get(texto, 4).get();\n    const bool fallo = entrada.fail();\n    std::string resto;\n    std::getline(entrada, resto);\n    std::cout << '[' << texto << \"]:\" << fallo << \":[\" << resto << ']';\n    return 0;\n}\n",
+          "code": "#include <iostream>\n#include <sstream>\n#include <string>\n\nint main() {\n    std::istringstream entrada{\"solar\\nfin\\n\"};\n    char texto[4]{};\n    entrada.get(texto, 4).get();\n    const bool fallo = entrada.fail();\n    std::string resto;\n\n    std::getline(entrada, resto);\n\n    std::cout << '[' << texto << \"]:\" << fallo << \":[\" << resto << ']';\n\n    return 0;\n}\n",
           "answers": [
             "[sol]:0:[r]"
           ],
@@ -134,7 +134,7 @@
           "id": "p3_u2l5_valor_y_estado",
           "language": "cpp",
           "question": "Predice si el valor leído es cero, si la lectura no falló y el carácter siguiente.",
-          "code": "#include <iostream>\n#include <sstream>\n#include <string>\n\nint main() {\n    const std::string fuente{'\\0', 'Q'};\n    std::istringstream entrada{fuente};\n    const auto valor = entrada.get();\n    const bool exito = !entrada.fail();\n    char siguiente = '?';\n    entrada.get(siguiente);\n    std::cout << (valor == 0) << ':' << exito << ':' << siguiente;\n    return 0;\n}\n",
+          "code": "#include <iostream>\n#include <sstream>\n#include <string>\n\nint main() {\n    const std::string fuente{'\\0', 'Q'};\n    std::istringstream entrada{fuente};\n    const auto valor = entrada.get();\n    const bool exito = !entrada.fail();\n    char siguiente = '?';\n    entrada.get(siguiente);\n    std::cout << (valor == 0) << ':' << exito << ':' << siguiente;\n\n    return 0;\n}\n",
           "answers": [
             "1:1:Q"
           ],
@@ -261,7 +261,7 @@
           "id": "p3_u2l5_numero_y_linea",
           "language": "cpp",
           "question": "Predice el número, el primer texto obtenido con getline y el texto de la lectura siguiente. Conserva los espacios entre corchetes.",
-          "code": "#include <iostream>\n#include <sstream>\n#include <string>\n\nint main() {\n    std::istringstream entrada{\"12\\n  Sol\\n\"};\n    int numero = 0;\n    char texto[6]{};\n    entrada >> numero;\n    entrada.getline(texto, 6);\n    std::string siguiente;\n    std::getline(entrada, siguiente);\n    std::cout << numero << \":[\" << texto << \"]:[\" << siguiente << ']';\n    return 0;\n}\n",
+          "code": "#include <iostream>\n#include <sstream>\n#include <string>\n\nint main() {\n    std::istringstream entrada{\"12\\n  Sol\\n\"};\n    int numero = 0;\n    char texto[6]{};\n    entrada >> numero;\n    entrada.getline(texto, 6);\n    std::string siguiente;\n\n    std::getline(entrada, siguiente);\n\n    std::cout << numero << \":[\" << texto << \"]:[\" << siguiente << ']';\n\n    return 0;\n}\n",
           "answers": [
             "12:[]:[  Sol]"
           ],
@@ -285,7 +285,7 @@
           "id": "p3_u2l5_un_caracter",
           "language": "cpp",
           "question": "Aquí hay tres espacios entre el número y el salto. Predice el número, el texto guardado y la línea siguiente.",
-          "code": "#include <iostream>\n#include <sstream>\n#include <string>\n\nint main() {\n    std::istringstream entrada{\"12   \\nLuna\\n\"};\n    int numero = 0;\n    char texto[6]{};\n    entrada >> numero;\n    entrada.get();\n    entrada.getline(texto, 6);\n    std::string siguiente;\n    std::getline(entrada, siguiente);\n    std::cout << numero << \":[\" << texto << \"]:[\" << siguiente << ']';\n    return 0;\n}\n",
+          "code": "#include <iostream>\n#include <sstream>\n#include <string>\n\nint main() {\n    std::istringstream entrada{\"12   \\nLuna\\n\"};\n    int numero = 0;\n    char texto[6]{};\n    entrada >> numero;\n    entrada.get();\n    entrada.getline(texto, 6);\n    std::string siguiente;\n\n    std::getline(entrada, siguiente);\n\n    std::cout << numero << \":[\" << texto << \"]:[\" << siguiente << ']';\n\n    return 0;\n}\n",
           "answers": [
             "12:[  ]:[Luna]"
           ],
@@ -321,7 +321,7 @@
           "id": "p3_u2l5_blancos_con_significado",
           "language": "cpp",
           "question": "El programa aplica ws después del entero. Predice el número y el texto que termina conservando.",
-          "code": "#include <iostream>\n#include <sstream>\n#include <string>\n\nint main() {\n    std::istringstream entrada{\"12\\n\\n  Sol\\n\"};\n    int numero = 0;\n    entrada >> numero;\n    entrada >> std::ws;\n    std::string texto;\n    std::getline(entrada, texto);\n    std::cout << numero << \":[\" << texto << ']';\n    return 0;\n}\n",
+          "code": "#include <iostream>\n#include <sstream>\n#include <string>\n\nint main() {\n    std::istringstream entrada{\"12\\n\\n  Sol\\n\"};\n    int numero = 0;\n    entrada >> numero;\n    entrada >> std::ws;\n    std::string texto;\n\n    std::getline(entrada, texto);\n\n    std::cout << numero << \":[\" << texto << ']';\n\n    return 0;\n}\n",
           "answers": [
             "12:[Sol]"
           ],
@@ -353,7 +353,7 @@
           "id": "p3_u2l5_texto_misma_linea",
           "language": "cpp",
           "question": "El ejemplo ya contiene el separador esperado y un salto final. Predice el número, la comparación del separador y el texto.",
-          "code": "#include <iostream>\n#include <sstream>\n#include <string>\n\nint main() {\n    std::istringstream entrada{\"12; Luz\\n\"};\n    int numero = 0;\n    char separador = '?';\n    char texto[6]{};\n    entrada >> numero;\n    entrada.get(separador);\n    entrada.getline(texto, 6);\n    std::cout << numero << ':' << (separador == ';') << \":[\" << texto << ']';\n    return 0;\n}\n",
+          "code": "#include <iostream>\n#include <sstream>\n#include <string>\n\nint main() {\n    std::istringstream entrada{\"12; Luz\\n\"};\n    int numero = 0;\n    char separador = '?';\n    char texto[6]{};\n    entrada >> numero;\n    entrada.get(separador);\n    entrada.getline(texto, 6);\n    std::cout << numero << ':' << (separador == ';') << \":[\" << texto << ']';\n\n    return 0;\n}\n",
           "answers": [
             "12:1:[ Luz]"
           ],
@@ -456,7 +456,7 @@
         {
           "type": "cpp_compiler",
           "language": "cpp",
-          "initialCode": "#include <iostream>\n#include <limits>\n#include <string>\n\nint main() {\n    int nuevoNumero = 0;\n    const bool numeroLeido = static_cast<bool>(std::cin >> nuevoNumero);\n    if (std::cin.bad()) {\n        return 2;\n    }\n    int numero = 42;\n    std::string registro = \"base\";\n    bool aceptado = false;\n\n    if (numeroLeido) {\n        // Comprueba el separador y lee la etiqueta con limite.\n    }\n    // Conserva o actualiza el registro segun el contrato.\n    // Descarta solo el resto rechazado que siga pendiente.\n\n    std::string siguiente;\n    const bool haySiguiente = static_cast<bool>(std::getline(std::cin, siguiente));\n    std::cout << \"Aceptado=\" << aceptado << '\\n';\n    std::cout << \"Registro=\" << numero << \":[\" << registro << \"]\\n\";\n    std::cout << \"Siguiente=\" << haySiguiente << \":[\" << siguiente << \"]\\n\";\n    return 0;\n}\n",
+          "initialCode": "#include <iostream>\n#include <limits>\n#include <string>\n\nint main() {\n    int nuevoNumero = 0;\n    const bool numeroLeido = static_cast<bool>(std::cin >> nuevoNumero);\n\n    if (std::cin.bad()) {\n        return 2;\n    }\n    int numero = 42;\n    std::string registro = \"base\";\n    bool aceptado = false;\n\n    if (numeroLeido) {\n        // Comprueba el separador y lee la etiqueta con limite.\n        \n    }\n    // Conserva o actualiza el registro segun el contrato.\n    // Descarta solo el resto rechazado que siga pendiente.\n\n    std::string siguiente;\n    const bool haySiguiente = static_cast<bool>(std::getline(std::cin, siguiente));\n\n    std::cout << \"Aceptado=\" << aceptado << '\\n';\n    std::cout << \"Registro=\" << numero << \":[\" << registro << \"]\\n\";\n    std::cout << \"Siguiente=\" << haySiguiente << \":[\" << siguiente << \"]\\n\";\n\n    return 0;\n}\n",
           "initialStandardInput": "7;  Sol\nfin\n",
           "outputCheck": {
             "inputComparison": "exact",
@@ -725,7 +725,7 @@
         {
           "type": "code",
           "language": "cpp",
-          "code": "#include <iostream>\n#include <limits>\n#include <string>\n\nint main() {\n    int nuevoNumero = 0;\n    const bool numeroLeido = static_cast<bool>(std::cin >> nuevoNumero);\n    if (std::cin.bad()) {\n        return 2;\n    }\n    int numero = 42;\n    std::string registro = \"base\";\n    bool aceptado = false;\n\n    bool saltoConsumido = false;\n    if (numeroLeido) {\n        char separador = '?';\n        if (std::cin.get(separador)) {\n            if (separador == ';') {\n                char candidato[6]{};\n                std::cin.getline(candidato, 6);\n                saltoConsumido = !std::cin.fail() && !std::cin.eof();\n                if (saltoConsumido) {\n                    numero = nuevoNumero;\n                    registro = candidato;\n                    aceptado = true;\n                }\n            } else {\n                saltoConsumido = separador == '\\n';\n            }\n        }\n    }\n    if (std::cin.bad()) {\n        return 2;\n    }\n    if (!aceptado && !saltoConsumido && !std::cin.eof()) {\n        std::cin.clear();\n        std::cin.ignore(std::numeric_limits<std::streamsize>::max(), '\\n');\n    }\n\n    std::string siguiente;\n    const bool haySiguiente = static_cast<bool>(std::getline(std::cin, siguiente));\n    std::cout << \"Aceptado=\" << aceptado << '\\n';\n    std::cout << \"Registro=\" << numero << \":[\" << registro << \"]\\n\";\n    std::cout << \"Siguiente=\" << haySiguiente << \":[\" << siguiente << \"]\\n\";\n    return 0;\n}\n"
+          "code": "#include <iostream>\n#include <limits>\n#include <string>\n\nint main() {\n    int nuevoNumero = 0;\n    const bool numeroLeido = static_cast<bool>(std::cin >> nuevoNumero);\n\n    if (std::cin.bad()) {\n        return 2;\n    }\n    int numero = 42;\n    std::string registro = \"base\";\n    bool aceptado = false;\n\n    bool saltoConsumido = false;\n    if (numeroLeido) {\n        char separador = '?';\n        if (std::cin.get(separador)) {\n            if (separador == ';') {\n                char candidato[6]{};\n\n                std::cin.getline(candidato, 6);\n\n                saltoConsumido = !std::cin.fail() && !std::cin.eof();\n                if (saltoConsumido) {\n                    numero = nuevoNumero;\n                    registro = candidato;\n                    aceptado = true;\n                }\n            } else {\n                saltoConsumido = separador == '\\n';\n            }\n        }\n    }\n    if (std::cin.bad()) {\n        return 2;\n    }\n    if (!aceptado && !saltoConsumido && !std::cin.eof()) {\n        std::cin.clear();\n        std::cin.ignore(std::numeric_limits<std::streamsize>::max(), '\\n');\n    }\n\n    std::string siguiente;\n    const bool haySiguiente = static_cast<bool>(std::getline(std::cin, siguiente));\n\n    std::cout << \"Aceptado=\" << aceptado << '\\n';\n    std::cout << \"Registro=\" << numero << \":[\" << registro << \"]\\n\";\n    std::cout << \"Siguiente=\" << haySiguiente << \":[\" << siguiente << \"]\\n\";\n\n    return 0;\n}\n"
         },
         {
           "type": "paragraph",
@@ -2008,6 +2008,257 @@
       }
     },
     "additions": [],
-    "editorial": []
+    "editorial": [
+      {
+        "id": "block_0000_0003",
+        "beforeSha256": "21279e16e5a108ae1e66e7879a9e53f27ab6c7ea7b5d8dd374313058b7ec1bcc",
+        "afterSha256": "ddee71c1cbfd9fe3f4228e8d2e605847729ba48b36ae1618dd808ee9542a09b4"
+      },
+      {
+        "id": "block_0002_0003",
+        "beforeSha256": "a75668ac74670bb82d08fef88e9358438f04fc71d9f0401827fe02189269e26c",
+        "afterSha256": "c33b5d68c769201f03e1a4c3475bb1aa81b4acfb9c59600ec34dfabfaa7b431f"
+      },
+      {
+        "id": "block_0003_0003",
+        "beforeSha256": "dc0e35dd5feeb45441e9a16c9ef5d96a3137bb5af833182afbc22723fe686f5d",
+        "afterSha256": "cfe5bea305c543f369c99a02e39a7b5e4878c6b79c8017affa282cd0d46b501b"
+      },
+      {
+        "id": "block_0004_0003",
+        "beforeSha256": "9e9ef5eab6cf840fa3f1a68d14d92bfbe56582e61bb3d59c4022c9ebfc24bd7f",
+        "afterSha256": "aa5fea21b2026dced4eb4221c6d6d4b83f9ff1fd21f4fc500408a7868fa0e4b6"
+      },
+      {
+        "id": "block_0006_0002",
+        "beforeSha256": "af5e7a8e66cb679919eae5233c0d7e5034026431e5a7252739fa3ca521dd2de6",
+        "afterSha256": "41156c79311200c50525f27626e89fe0bdf9a0a5e87e571bcc229becce6abf86"
+      },
+      {
+        "id": "block_0007_0002",
+        "beforeSha256": "7fa03236c58ba571b11c42920ce2f77d4c86c758bcf54f6d148cb061f1982b39",
+        "afterSha256": "148293f8c151f335691385dbf67ee1ae1dc7d4d325117f738088c5b85bf7f336"
+      },
+      {
+        "id": "block_0008_0002",
+        "beforeSha256": "8c8697631e3157e13a31f98a61e7dab31acfe26f936717371f65958137c7c69d",
+        "afterSha256": "776ee5a051d9d479758f0cb75bb4aeae7321c7a5307a864d88b5cb9f89eaeb15"
+      },
+      {
+        "id": "block_0009_0003",
+        "beforeSha256": "f66945a067262c0d72e2b903b286a9d429079d8084dac7e26223a36eb2d747fb",
+        "afterSha256": "131d757f4df057b2e8dc7c284a5c0d527acdd192b77a5943be8bb4d09c16a84c"
+      },
+      {
+        "id": "block_0011_0011",
+        "beforeSha256": "24457ced59c11a54faa2f92a8aa5ea75f2f54230b713e985835f5a502d2de21b",
+        "afterSha256": "a6ae95793872cbf4aa758c7176637b90077ad4c4c279de346a7ce810019af559"
+      },
+      {
+        "id": "block_0015_0001",
+        "beforeSha256": "e89fc4e65a0b010856485035b97581ee5615054b626b9ec0088d1f791e0b5308",
+        "afterSha256": "ba1cba8f6dbae70ed9ffd8cc1263bb1a017d492fefb296950af6ba02dfc0ea5d"
+      }
+    ],
+    "sourceFormatRevisions": [
+      {
+        "id": "block_0000_0003",
+        "block": {
+          "type": "output_prediction",
+          "id": "p3_u2l5_blanco_con_get",
+          "language": "cpp",
+          "question": "Predice si primero recibe un espacio y qué carácter recibe segundo.",
+          "code": "#include <iostream>\n#include <sstream>\n#include <string>\n\nint main() {\n    std::istringstream entrada{\" \\nZ\"};\n    char primero = '?';\n    char segundo = '?';\n    entrada.get(primero);\n    entrada >> segundo;\n    std::cout << (primero == ' ') << ':' << segundo;\n    return 0;\n}\n",
+          "answers": [
+            "1:Z"
+          ],
+          "outputComparison": "exact",
+          "explanation": "get guarda el espacio inicial en primero. La extracción >> siguiente omite el salto y guarda Z. No son dos formas intercambiables si ese blanco forma parte del dato."
+        }
+      },
+      {
+        "id": "block_0002_0003",
+        "block": {
+          "type": "output_prediction",
+          "id": "p3_u2l5_vacia_y_recuperacion",
+          "language": "cpp",
+          "question": "Predice el texto, el fallo y recuento iniciales, el éxito del get anterior a clear, la comparación del salto después de clear y la línea siguiente.",
+          "code": "#include <iostream>\n#include <sstream>\n#include <string>\n\nint main() {\n    std::istringstream entrada{\"\\nfin\\n\"};\n    char texto[4]{'X', 'Y', 'Z', '\\0'};\n    entrada.get(texto, 4);\n    const bool fallo = entrada.fail();\n    const auto cuenta = entrada.gcount();\n    char salto = '?';\n    const bool antes = static_cast<bool>(entrada.get(salto));\n    entrada.clear();\n    entrada.get(salto);\n    std::string siguiente;\n    std::getline(entrada, siguiente);\n    std::cout << '[' << texto << \"]:\" << fallo << ':' << cuenta << ':'\n              << antes << ':' << (salto == '\\n') << \":[\" << siguiente << ']';\n    return 0;\n}\n",
+          "answers": [
+            "[]:1:0:0:1:[fin]"
+          ],
+          "outputComparison": "exact",
+          "explanation": "El primer get al array no extrae nada y escribe NUL. Antes de clear no se puede extraer el salto. Tras clear, get lo obtiene y permite que std::getline reciba fin."
+        }
+      },
+      {
+        "id": "block_0003_0003",
+        "block": {
+          "type": "output_prediction",
+          "id": "p3_u2l5_cadena_no_general",
+          "language": "cpp",
+          "question": "Este programa aplica el encadenamiento sin comprobar qué carácter queda. Predice el prefijo, el fallo consultado y el resto de esa línea.",
+          "code": "#include <iostream>\n#include <sstream>\n#include <string>\n\nint main() {\n    std::istringstream entrada{\"solar\\nfin\\n\"};\n    char texto[4]{};\n    entrada.get(texto, 4).get();\n    const bool fallo = entrada.fail();\n    std::string resto;\n    std::getline(entrada, resto);\n    std::cout << '[' << texto << \"]:\" << fallo << \":[\" << resto << ']';\n    return 0;\n}\n",
+          "answers": [
+            "[sol]:0:[r]"
+          ],
+          "outputComparison": "exact",
+          "explanation": "En el array caben tres char del texto: sol. Todavía queda ar y el salto. get() consume la a, no el salto; std::getline recibe la r restante. No hay fallo que detecte por sí solo esa pérdida lógica."
+        }
+      },
+      {
+        "id": "block_0004_0003",
+        "block": {
+          "type": "output_prediction",
+          "id": "p3_u2l5_valor_y_estado",
+          "language": "cpp",
+          "question": "Predice si el valor leído es cero, si la lectura no falló y el carácter siguiente.",
+          "code": "#include <iostream>\n#include <sstream>\n#include <string>\n\nint main() {\n    const std::string fuente{'\\0', 'Q'};\n    std::istringstream entrada{fuente};\n    const auto valor = entrada.get();\n    const bool exito = !entrada.fail();\n    char siguiente = '?';\n    entrada.get(siguiente);\n    std::cout << (valor == 0) << ':' << exito << ':' << siguiente;\n    return 0;\n}\n",
+          "answers": [
+            "1:1:Q"
+          ],
+          "outputComparison": "exact",
+          "explanation": "Se leyó NUL correctamente. Su valor es cero y fail() sigue siendo false. Interpretar sólo ese valor como bool confundiría un dato cero con un fallo. Después se extrae Q."
+        }
+      },
+      {
+        "id": "block_0006_0002",
+        "block": {
+          "type": "output_prediction",
+          "id": "p3_u2l5_numero_y_linea",
+          "language": "cpp",
+          "question": "Predice el número, el primer texto obtenido con getline y el texto de la lectura siguiente. Conserva los espacios entre corchetes.",
+          "code": "#include <iostream>\n#include <sstream>\n#include <string>\n\nint main() {\n    std::istringstream entrada{\"12\\n  Sol\\n\"};\n    int numero = 0;\n    char texto[6]{};\n    entrada >> numero;\n    entrada.getline(texto, 6);\n    std::string siguiente;\n    std::getline(entrada, siguiente);\n    std::cout << numero << \":[\" << texto << \"]:[\" << siguiente << ']';\n    return 0;\n}\n",
+          "answers": [
+            "12:[]:[  Sol]"
+          ],
+          "outputComparison": "exact",
+          "explanation": "La extracción numérica deja el primer salto. La lectura al array consume sólo ese salto y obtiene un texto vacío. La siguiente sí recibe los dos espacios y Sol."
+        }
+      },
+      {
+        "id": "block_0007_0002",
+        "block": {
+          "type": "output_prediction",
+          "id": "p3_u2l5_un_caracter",
+          "language": "cpp",
+          "question": "Aquí hay tres espacios entre el número y el salto. Predice el número, el texto guardado y la línea siguiente.",
+          "code": "#include <iostream>\n#include <sstream>\n#include <string>\n\nint main() {\n    std::istringstream entrada{\"12   \\nLuna\\n\"};\n    int numero = 0;\n    char texto[6]{};\n    entrada >> numero;\n    entrada.get();\n    entrada.getline(texto, 6);\n    std::string siguiente;\n    std::getline(entrada, siguiente);\n    std::cout << numero << \":[\" << texto << \"]:[\" << siguiente << ']';\n    return 0;\n}\n",
+          "answers": [
+            "12:[  ]:[Luna]"
+          ],
+          "outputComparison": "exact",
+          "explanation": "get() consume sólo uno de los tres espacios. getline conserva los otros dos antes de extraer el salto. No se obtiene todavía la línea Luna en ese array."
+        }
+      },
+      {
+        "id": "block_0008_0002",
+        "block": {
+          "type": "output_prediction",
+          "id": "p3_u2l5_blancos_con_significado",
+          "language": "cpp",
+          "question": "El programa aplica ws después del entero. Predice el número y el texto que termina conservando.",
+          "code": "#include <iostream>\n#include <sstream>\n#include <string>\n\nint main() {\n    std::istringstream entrada{\"12\\n\\n  Sol\\n\"};\n    int numero = 0;\n    entrada >> numero;\n    entrada >> std::ws;\n    std::string texto;\n    std::getline(entrada, texto);\n    std::cout << numero << \":[\" << texto << ']';\n    return 0;\n}\n",
+          "answers": [
+            "12:[Sol]"
+          ],
+          "outputComparison": "exact",
+          "explanation": "ws consume el salto pendiente, la línea vacía siguiente y los dos espacios anteriores a Sol. Si esa línea vacía o esos espacios eran datos, ya se perdieron antes de getline."
+        }
+      },
+      {
+        "id": "block_0009_0003",
+        "block": {
+          "type": "output_prediction",
+          "id": "p3_u2l5_texto_misma_linea",
+          "language": "cpp",
+          "question": "El ejemplo ya contiene el separador esperado y un salto final. Predice el número, la comparación del separador y el texto.",
+          "code": "#include <iostream>\n#include <sstream>\n#include <string>\n\nint main() {\n    std::istringstream entrada{\"12; Luz\\n\"};\n    int numero = 0;\n    char separador = '?';\n    char texto[6]{};\n    entrada >> numero;\n    entrada.get(separador);\n    entrada.getline(texto, 6);\n    std::cout << numero << ':' << (separador == ';') << \":[\" << texto << ']';\n    return 0;\n}\n",
+          "answers": [
+            "12:1:[ Luz]"
+          ],
+          "outputComparison": "exact",
+          "explanation": "get obtiene el punto y coma sin saltar caracteres. getline recibe el espacio y Luz: cuatro char de texto que caben junto al terminador. Descartar hasta el salto en este punto eliminaría toda esa etiqueta."
+        }
+      },
+      {
+        "id": "block_0011_0011",
+        "block": {
+          "type": "cpp_compiler",
+          "language": "cpp",
+          "initialCode": "#include <iostream>\n#include <limits>\n#include <string>\n\nint main() {\n    int nuevoNumero = 0;\n    const bool numeroLeido = static_cast<bool>(std::cin >> nuevoNumero);\n    if (std::cin.bad()) {\n        return 2;\n    }\n    int numero = 42;\n    std::string registro = \"base\";\n    bool aceptado = false;\n\n    if (numeroLeido) {\n        // Comprueba el separador y lee la etiqueta con limite.\n    }\n    // Conserva o actualiza el registro segun el contrato.\n    // Descarta solo el resto rechazado que siga pendiente.\n\n    std::string siguiente;\n    const bool haySiguiente = static_cast<bool>(std::getline(std::cin, siguiente));\n    std::cout << \"Aceptado=\" << aceptado << '\\n';\n    std::cout << \"Registro=\" << numero << \":[\" << registro << \"]\\n\";\n    std::cout << \"Siguiente=\" << haySiguiente << \":[\" << siguiente << \"]\\n\";\n    return 0;\n}\n",
+          "initialStandardInput": "7;  Sol\nfin\n",
+          "outputCheck": {
+            "inputComparison": "exact",
+            "cases": [
+              {
+                "standardInput": "7;  Sol\nfin\n",
+                "outputs": [
+                  "Aceptado=1\nRegistro=7:[  Sol]\nSiguiente=1:[fin]\n"
+                ],
+                "explanation": "Comprobar el separador inmediato, la etiqueta y su salto; actualizar el par sólo al aceptar y conservar la siguiente línea al recuperar un rechazo."
+              },
+              {
+                "standardInput": "0;\nfin\n",
+                "outputs": [
+                  "Aceptado=1\nRegistro=0:[]\nSiguiente=1:[fin]\n"
+                ],
+                "explanation": "Comprobar el separador inmediato, la etiqueta y su salto; actualizar el par sólo al aceptar y conservar la siguiente línea al recuperar un rechazo."
+              },
+              {
+                "standardInput": "3 ;Sol\nfin\n",
+                "outputs": [
+                  "Aceptado=0\nRegistro=42:[base]\nSiguiente=1:[fin]\n"
+                ],
+                "explanation": "Comprobar el separador inmediato, la etiqueta y su salto; actualizar el par sólo al aceptar y conservar la siguiente línea al recuperar un rechazo."
+              },
+              {
+                "standardInput": "3x;Sol\nfin\n",
+                "outputs": [
+                  "Aceptado=0\nRegistro=42:[base]\nSiguiente=1:[fin]\n"
+                ],
+                "explanation": "Comprobar el separador inmediato, la etiqueta y su salto; actualizar el par sólo al aceptar y conservar la siguiente línea al recuperar un rechazo."
+              },
+              {
+                "standardInput": "4\nfin\n",
+                "outputs": [
+                  "Aceptado=0\nRegistro=42:[base]\nSiguiente=1:[fin]\n"
+                ],
+                "explanation": "Comprobar el separador inmediato, la etiqueta y su salto; actualizar el par sólo al aceptar y conservar la siguiente línea al recuperar un rechazo."
+              },
+              {
+                "standardInput": "8;abcdef\nfin\n",
+                "outputs": [
+                  "Aceptado=0\nRegistro=42:[base]\nSiguiente=1:[fin]\n"
+                ],
+                "explanation": "Comprobar el separador inmediato, la etiqueta y su salto; actualizar el par sólo al aceptar y conservar la siguiente línea al recuperar un rechazo."
+              },
+              {
+                "standardInput": "9;Sol",
+                "outputs": [
+                  "Aceptado=0\nRegistro=42:[base]\nSiguiente=0:[]\n"
+                ],
+                "explanation": "Comprobar el separador inmediato, la etiqueta y su salto; actualizar el par sólo al aceptar y conservar la siguiente línea al recuperar un rechazo."
+              },
+              {
+                "standardInput": "oops;Sol\nfin\n",
+                "outputs": [
+                  "Aceptado=0\nRegistro=42:[base]\nSiguiente=1:[fin]\n"
+                ],
+                "explanation": "Comprobar el separador inmediato, la etiqueta y su salto; actualizar el par sólo al aceptar y conservar la siguiente línea al recuperar un rechazo."
+              }
+            ]
+          }
+        }
+      },
+      {
+        "id": "block_0015_0001",
+        "block": {
+          "type": "code",
+          "language": "cpp",
+          "code": "#include <iostream>\n#include <limits>\n#include <string>\n\nint main() {\n    int nuevoNumero = 0;\n    const bool numeroLeido = static_cast<bool>(std::cin >> nuevoNumero);\n    if (std::cin.bad()) {\n        return 2;\n    }\n    int numero = 42;\n    std::string registro = \"base\";\n    bool aceptado = false;\n\n    bool saltoConsumido = false;\n    if (numeroLeido) {\n        char separador = '?';\n        if (std::cin.get(separador)) {\n            if (separador == ';') {\n                char candidato[6]{};\n                std::cin.getline(candidato, 6);\n                saltoConsumido = !std::cin.fail() && !std::cin.eof();\n                if (saltoConsumido) {\n                    numero = nuevoNumero;\n                    registro = candidato;\n                    aceptado = true;\n                }\n            } else {\n                saltoConsumido = separador == '\\n';\n            }\n        }\n    }\n    if (std::cin.bad()) {\n        return 2;\n    }\n    if (!aceptado && !saltoConsumido && !std::cin.eof()) {\n        std::cin.clear();\n        std::cin.ignore(std::numeric_limits<std::streamsize>::max(), '\\n');\n    }\n\n    std::string siguiente;\n    const bool haySiguiente = static_cast<bool>(std::getline(std::cin, siguiente));\n    std::cout << \"Aceptado=\" << aceptado << '\\n';\n    std::cout << \"Registro=\" << numero << \":[\" << registro << \"]\\n\";\n    std::cout << \"Siguiente=\" << haySiguiente << \":[\" << siguiente << \"]\\n\";\n    return 0;\n}\n"
+        }
+      }
+    ]
   }
 }

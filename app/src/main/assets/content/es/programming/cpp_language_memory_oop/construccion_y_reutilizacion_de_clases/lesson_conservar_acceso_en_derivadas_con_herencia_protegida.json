@@ -51,7 +51,7 @@
           "id": "p3_u9l4_cadena_protegida_con_acceso_interno_posterior",
           "language": "cpp",
           "question": "Escribe toda la salida, siguiendo qué parte del mismo objeto consultan las tres funciones finales.",
-          "code": "#include <iostream>\n\nclass RegistroBase {\npublic:\n    explicit RegistroBase(int numero) : numero_{numero} {}\n    int leer() const { return numero_; }\nprotected:\n    void guardar(int numero) { numero_ = numero; }\nprivate:\n    int numero_;\n};\nint consultar_registro(const RegistroBase& registro) {\n    return registro.leer();\n}\nclass Intermedia : protected RegistroBase {\npublic:\n    explicit Intermedia(int numero) : RegistroBase{numero} {}\n    int consulta() const { return RegistroBase::leer(); }\n};\nclass Posterior : public Intermedia {\npublic:\n    explicit Posterior(int numero) : Intermedia{numero} {}\n    void cambiar(int numero) { guardar(numero); }\n    int por_referencia() const { return consultar_registro(*this); }\n    int por_puntero() const {\n        const RegistroBase* vista = this;\n        return vista->leer();\n    }\n};\nint main() {\n    Posterior dato{4};\n    std::cout << dato.consulta() << '|';\n    dato.cambiar(9);\n    std::cout << dato.consulta() << ':' << dato.por_referencia()\n              << ':' << dato.por_puntero();\n    return 0;\n}\n",
+          "code": "#include <iostream>\n\nclass RegistroBase {\npublic:\n    explicit RegistroBase(int numero) : numero_{numero} {}\n    int leer() const { return numero_; }\nprotected:\n    void guardar(int numero) { numero_ = numero; }\nprivate:\n    int numero_;\n};\n\nint consultar_registro(const RegistroBase& registro) {\n    return registro.leer();\n}\n\nclass Intermedia : protected RegistroBase {\npublic:\n    explicit Intermedia(int numero) : RegistroBase{numero} {}\n    int consulta() const { return RegistroBase::leer(); }\n};\n\nclass Posterior : public Intermedia {\npublic:\n    explicit Posterior(int numero) : Intermedia{numero} {}\n    void cambiar(int numero) { guardar(numero); }\n    int por_referencia() const { return consultar_registro(*this); }\n    int por_puntero() const {\n        const RegistroBase* vista = this;\n        return vista->leer();\n    }\n};\n\nint main() {\n    Posterior dato{4};\n\n    std::cout << dato.consulta() << '|';\n    dato.cambiar(9);\n    std::cout << dato.consulta() << ':' << dato.por_referencia()\n              << ':' << dato.por_puntero();\n    return 0;\n}\n",
           "answers": [
             "4|9:9:9"
           ],
@@ -113,7 +113,7 @@
           "id": "p3_u9l4_base_privada_no_elimina_funciones_publicas_intermedias",
           "language": "cpp",
           "question": "Escribe la salida y distingue la llamada a una función de IntermediaPrivada del acceso directo a RegistroBase.",
-          "code": "#include <iostream>\n\nclass RegistroBase {\npublic:\n    explicit RegistroBase(int numero) : numero_{numero} {}\n    int leer() const { return numero_; }\nprotected:\n    void guardar(int numero) { numero_ = numero; }\nprivate:\n    int numero_;\n};\nclass IntermediaPrivada : private RegistroBase {\npublic:\n    explicit IntermediaPrivada(int numero) : RegistroBase{numero} {}\n    int consulta() const { return RegistroBase::leer(); }\n    void cambiar(int numero) { RegistroBase::guardar(numero); }\n};\nclass PosteriorDesdePrivada : public IntermediaPrivada {\npublic:\n    explicit PosteriorDesdePrivada(int numero) : IntermediaPrivada{numero} {}\n    void preparar(int numero) { IntermediaPrivada::cambiar(numero); }\n};\nint main() {\n    PosteriorDesdePrivada dato{2};\n    std::cout << dato.consulta() << '|';\n    dato.preparar(6);\n    std::cout << dato.consulta();\n    return 0;\n}\n",
+          "code": "#include <iostream>\n\nclass RegistroBase {\npublic:\n    explicit RegistroBase(int numero) : numero_{numero} {}\n    int leer() const { return numero_; }\nprotected:\n    void guardar(int numero) { numero_ = numero; }\nprivate:\n    int numero_;\n};\n\nclass IntermediaPrivada : private RegistroBase {\npublic:\n    explicit IntermediaPrivada(int numero) : RegistroBase{numero} {}\n    int consulta() const { return RegistroBase::leer(); }\n    void cambiar(int numero) { RegistroBase::guardar(numero); }\n};\n\nclass PosteriorDesdePrivada : public IntermediaPrivada {\npublic:\n    explicit PosteriorDesdePrivada(int numero) : IntermediaPrivada{numero} {}\n    void preparar(int numero) { IntermediaPrivada::cambiar(numero); }\n};\n\nint main() {\n    PosteriorDesdePrivada dato{2};\n\n    std::cout << dato.consulta() << '|';\n    dato.preparar(6);\n    std::cout << dato.consulta();\n\n    return 0;\n}\n",
           "answers": [
             "2|6"
           ],
@@ -143,7 +143,7 @@
         {
           "type": "code",
           "language": "cpp",
-          "code": "#include <iostream>\n\nclass RegistroBase {\npublic:\n    explicit RegistroBase(int numero) : numero_{numero} {}\n    int leer() const { return numero_; }\nprotected:\n    void guardar(int numero) { numero_ = numero; }\nprivate:\n    int numero_;\n};\nclass Intermedia : protected RegistroBase {\npublic:\n    explicit Intermedia(int numero) : RegistroBase{numero} {}\n    int consulta() const { return RegistroBase::leer(); }\n};\nclass PosteriorIncorrecta : public Intermedia {\npublic:\n    explicit PosteriorIncorrecta(int numero) : Intermedia{numero} {}\n    int directo() const { return numero_; }\n};\nint main() {\n    PosteriorIncorrecta dato{4};\n    std::cout << dato.consulta();\n    return 0;\n}\n"
+          "code": "#include <iostream>\n\nclass RegistroBase {\npublic:\n    explicit RegistroBase(int numero) : numero_{numero} {}\n    int leer() const { return numero_; }\nprotected:\n    void guardar(int numero) { numero_ = numero; }\nprivate:\n    int numero_;\n};\n\nclass Intermedia : protected RegistroBase {\npublic:\n    explicit Intermedia(int numero) : RegistroBase{numero} {}\n    int consulta() const { return RegistroBase::leer(); }\n};\n\nclass PosteriorIncorrecta : public Intermedia {\npublic:\n    explicit PosteriorIncorrecta(int numero) : Intermedia{numero} {}\n    int directo() const { return numero_; }\n};\n\nint main() {\n    PosteriorIncorrecta dato{4};\n\n    std::cout << dato.consulta();\n\n    return 0;\n}\n"
         },
         {
           "type": "multiple_choice",
@@ -174,7 +174,7 @@
           "id": "p3_u9l4_operacion_protegida_sobre_otro_objeto_del_tipo_derivado",
           "language": "cpp",
           "question": "Escribe los valores finales de origen y destino después de guardar_en.",
-          "code": "#include <iostream>\n\nclass RegistroBase {\npublic:\n    explicit RegistroBase(int numero) : numero_{numero} {}\n    int leer() const { return numero_; }\nprotected:\n    void guardar(int numero) { numero_ = numero; }\nprivate:\n    int numero_;\n};\nclass Intermedia : protected RegistroBase {\npublic:\n    explicit Intermedia(int numero) : RegistroBase{numero} {}\n    int consulta() const { return RegistroBase::leer(); }\n};\nclass Gestor : public Intermedia {\npublic:\n    explicit Gestor(int numero) : Intermedia{numero} {}\n    void guardar_en(Gestor& destino, int numero) {\n        destino.guardar(numero);\n    }\n    int leer_otro(const RegistroBase& otro) const { return otro.leer(); }\n};\nint main() {\n    Gestor origen{4};\n    Gestor destino{8};\n    origen.guardar_en(destino, 6);\n    std::cout << origen.consulta() << ':' << destino.consulta();\n    return 0;\n}\n",
+          "code": "#include <iostream>\n\nclass RegistroBase {\npublic:\n    explicit RegistroBase(int numero) : numero_{numero} {}\n    int leer() const { return numero_; }\nprotected:\n    void guardar(int numero) { numero_ = numero; }\nprivate:\n    int numero_;\n};\n\nclass Intermedia : protected RegistroBase {\npublic:\n    explicit Intermedia(int numero) : RegistroBase{numero} {}\n    int consulta() const { return RegistroBase::leer(); }\n};\n\nclass Gestor : public Intermedia {\npublic:\n    explicit Gestor(int numero) : Intermedia{numero} {}\n    void guardar_en(Gestor& destino, int numero) {\n        destino.guardar(numero);\n    }\n\n    int leer_otro(const RegistroBase& otro) const { return otro.leer(); }\n};\n\nint main() {\n    Gestor origen{4};\n    Gestor destino{8};\n    origen.guardar_en(destino, 6);\n    std::cout << origen.consulta() << ':' << destino.consulta();\n\n    return 0;\n}\n",
           "answers": [
             "4:6"
           ],
@@ -223,7 +223,7 @@
           "id": "p3_u9l4_defaults_de_base_y_de_miembro_son_distintos",
           "language": "cpp",
           "question": "Escribe la salida completa. En PorClase se usan funciones propias; en PorStruct se utiliza también la interfaz pública heredada.",
-          "code": "#include <iostream>\n\nclass RegistroBase {\npublic:\n    explicit RegistroBase(int numero) : numero_{numero} {}\n    int leer() const { return numero_; }\nprotected:\n    void guardar(int numero) { numero_ = numero; }\nprivate:\n    int numero_;\n};\nclass PorClase : RegistroBase {\n    int marca_{5};\npublic:\n    PorClase() : RegistroBase{3} {}\n    int numero() const { return RegistroBase::leer(); }\n    int marca() const { return marca_; }\n};\nstruct PorStruct : RegistroBase {\n    int marca_{6};\n    PorStruct() : RegistroBase{4} {}\n};\nint main() {\n    const PorClase a;\n    const PorStruct b;\n    std::cout << a.numero() << ':' << a.marca()\n              << '|' << b.leer() << ':' << b.marca_;\n    return 0;\n}\n",
+          "code": "#include <iostream>\n\nclass RegistroBase {\npublic:\n    explicit RegistroBase(int numero) : numero_{numero} {}\n    int leer() const { return numero_; }\nprotected:\n    void guardar(int numero) { numero_ = numero; }\nprivate:\n    int numero_;\n};\n\nclass PorClase : RegistroBase {\n    int marca_{5};\npublic:\n    PorClase() : RegistroBase{3} {}\n    int numero() const { return RegistroBase::leer(); }\n    int marca() const { return marca_; }\n};\n\nstruct PorStruct : RegistroBase {\n    int marca_{6};\n    PorStruct() : RegistroBase{4} {}\n};\n\nint main() {\n    const PorClase a;\n    const PorStruct b;\n\n    std::cout << a.numero() << ':' << a.marca()\n              << '|' << b.leer() << ':' << b.marca_;\n    return 0;\n}\n",
           "answers": [
             "3:5|4:6"
           ],
@@ -314,7 +314,7 @@
         {
           "type": "code",
           "language": "cpp",
-          "code": "#include <iostream>\n#include <stdexcept>\n\nclass EstadoBase {\npublic:\n    explicit EstadoBase(int inicial) : numero_{inicial} {}\n    int leer() const noexcept { return numero_; }\nprotected:\n    void fijar(int nuevo) noexcept { numero_ = nuevo; }\nprivate:\n    int numero_;\n};\n\nclass Componente : protected EstadoBase {\npublic:\n    explicit Componente(int inicial) : EstadoBase{inicial} {}\n    int actual() const noexcept { return EstadoBase::leer(); }\n};\n\nclass Limitado : public Componente {\npublic:\n    Limitado(int inicial, int limite)\n        : Componente{inicial}, limite_{limite} {\n        if (limite_ < 0 || inicial < 0 || inicial > limite_) {\n            throw std::invalid_argument(\"rango\");\n        }\n    }\n\n    bool cambiar(int nuevo) noexcept {\n        if (nuevo < 0 || nuevo > limite_) {\n            return false;\n        }\n        EstadoBase::fijar(nuevo);\n        return true;\n    }\n\nprivate:\n    int limite_;\n};\nint main() {\n    Limitado dato{2, 5};\n    std::cout << dato.actual() << '|';\n    bool aceptado = dato.cambiar(5);\n    std::cout << aceptado << ':' << dato.actual() << '|';\n    aceptado = dato.cambiar(6);\n    std::cout << aceptado << ':' << dato.actual();\n    return 0;\n}\n"
+          "code": "#include <iostream>\n#include <stdexcept>\n\nclass EstadoBase {\npublic:\n    explicit EstadoBase(int inicial) : numero_{inicial} {}\n    int leer() const noexcept { return numero_; }\nprotected:\n    void fijar(int nuevo) noexcept { numero_ = nuevo; }\nprivate:\n    int numero_;\n};\n\nclass Componente : protected EstadoBase {\npublic:\n    explicit Componente(int inicial) : EstadoBase{inicial} {}\n    int actual() const noexcept { return EstadoBase::leer(); }\n};\n\nclass Limitado : public Componente {\npublic:\n    Limitado(int inicial, int limite)\n        : Componente{inicial}, limite_{limite} {\n        if (limite_ < 0 || inicial < 0 || inicial > limite_) {\n            throw std::invalid_argument(\"rango\");\n        }\n    }\n\n    bool cambiar(int nuevo) noexcept {\n        if (nuevo < 0 || nuevo > limite_) {\n            return false;\n        }\n        EstadoBase::fijar(nuevo);\n        return true;\n    }\n\nprivate:\n    int limite_;\n};\n\nint main() {\n    Limitado dato{2, 5};\n\n    std::cout << dato.actual() << '|';\n    bool aceptado = dato.cambiar(5);\n    std::cout << aceptado << ':' << dato.actual() << '|';\n    aceptado = dato.cambiar(6);\n\n    std::cout << aceptado << ':' << dato.actual();\n\n    return 0;\n}\n"
         },
         {
           "type": "paragraph",
@@ -354,7 +354,7 @@
           "id": "p3_u9l4_aceptar_extremos_y_conservar_tras_rechazo",
           "language": "cpp",
           "question": "Escribe la salida completa. Cada grupo contiene el resultado bool y el estado posterior, separados por dos puntos.",
-          "code": "#include <iostream>\n#include <stdexcept>\n\nclass EstadoBase {\npublic:\n    explicit EstadoBase(int inicial) : numero_{inicial} {}\n    int leer() const noexcept { return numero_; }\nprotected:\n    void fijar(int nuevo) noexcept { numero_ = nuevo; }\nprivate:\n    int numero_;\n};\n\nclass Componente : protected EstadoBase {\npublic:\n    explicit Componente(int inicial) : EstadoBase{inicial} {}\n    int actual() const noexcept { return EstadoBase::leer(); }\n};\n\nclass Limitado : public Componente {\npublic:\n    Limitado(int inicial, int limite)\n        : Componente{inicial}, limite_{limite} {\n        if (limite_ < 0 || inicial < 0 || inicial > limite_) {\n            throw std::invalid_argument(\"rango\");\n        }\n    }\n\n    bool cambiar(int nuevo) noexcept {\n        if (nuevo < 0 || nuevo > limite_) {\n            return false;\n        }\n        EstadoBase::fijar(nuevo);\n        return true;\n    }\n\nprivate:\n    int limite_;\n};\nint main() {\n    Limitado dato{3, 4};\n    bool aceptado = dato.cambiar(-1);\n    std::cout << aceptado << ':' << dato.actual() << '|';\n    aceptado = dato.cambiar(0);\n    std::cout << aceptado << ':' << dato.actual() << '|';\n    aceptado = dato.cambiar(4);\n    std::cout << aceptado << ':' << dato.actual() << '|';\n    aceptado = dato.cambiar(5);\n    std::cout << aceptado << ':' << dato.actual();\n    return 0;\n}\n",
+          "code": "#include <iostream>\n#include <stdexcept>\n\nclass EstadoBase {\npublic:\n    explicit EstadoBase(int inicial) : numero_{inicial} {}\n    int leer() const noexcept { return numero_; }\nprotected:\n    void fijar(int nuevo) noexcept { numero_ = nuevo; }\nprivate:\n    int numero_;\n};\n\nclass Componente : protected EstadoBase {\npublic:\n    explicit Componente(int inicial) : EstadoBase{inicial} {}\n    int actual() const noexcept { return EstadoBase::leer(); }\n};\n\nclass Limitado : public Componente {\npublic:\n    Limitado(int inicial, int limite)\n        : Componente{inicial}, limite_{limite} {\n        if (limite_ < 0 || inicial < 0 || inicial > limite_) {\n            throw std::invalid_argument(\"rango\");\n        }\n    }\n\n    bool cambiar(int nuevo) noexcept {\n        if (nuevo < 0 || nuevo > limite_) {\n            return false;\n        }\n        EstadoBase::fijar(nuevo);\n        return true;\n    }\n\nprivate:\n    int limite_;\n};\n\nint main() {\n    Limitado dato{3, 4};\n    bool aceptado = dato.cambiar(-1);\n\n    std::cout << aceptado << ':' << dato.actual() << '|';\n    aceptado = dato.cambiar(0);\n\n    std::cout << aceptado << ':' << dato.actual() << '|';\n    aceptado = dato.cambiar(4);\n\n    std::cout << aceptado << ':' << dato.actual() << '|';\n    aceptado = dato.cambiar(5);\n\n    std::cout << aceptado << ':' << dato.actual();\n\n    return 0;\n}\n",
           "answers": [
             "0:3|1:0|1:4|0:4"
           ],
@@ -378,7 +378,7 @@
           "id": "p3_u9l4_copiar_estado_y_limite_de_extension",
           "language": "cpp",
           "question": "Escribe los resultados y estados consultados en este programa, incluido el último estado de original.",
-          "code": "#include <iostream>\n#include <stdexcept>\n\nclass EstadoBase {\npublic:\n    explicit EstadoBase(int inicial) : numero_{inicial} {}\n    int leer() const noexcept { return numero_; }\nprotected:\n    void fijar(int nuevo) noexcept { numero_ = nuevo; }\nprivate:\n    int numero_;\n};\n\nclass Componente : protected EstadoBase {\npublic:\n    explicit Componente(int inicial) : EstadoBase{inicial} {}\n    int actual() const noexcept { return EstadoBase::leer(); }\n};\n\nclass Limitado : public Componente {\npublic:\n    Limitado(int inicial, int limite)\n        : Componente{inicial}, limite_{limite} {\n        if (limite_ < 0 || inicial < 0 || inicial > limite_) {\n            throw std::invalid_argument(\"rango\");\n        }\n    }\n\n    bool cambiar(int nuevo) noexcept {\n        if (nuevo < 0 || nuevo > limite_) {\n            return false;\n        }\n        EstadoBase::fijar(nuevo);\n        return true;\n    }\n\nprivate:\n    int limite_;\n};\nint main() {\n    Limitado original{2, 5};\n    Limitado copia{original};\n    bool aceptado = original.cambiar(5);\n    std::cout << aceptado << ':' << original.actual() << '|';\n    aceptado = copia.cambiar(1);\n    std::cout << aceptado << ':' << copia.actual() << '|';\n    aceptado = copia.cambiar(6);\n    std::cout << aceptado << ':' << copia.actual() << '|'\n              << original.actual();\n    return 0;\n}\n",
+          "code": "#include <iostream>\n#include <stdexcept>\n\nclass EstadoBase {\npublic:\n    explicit EstadoBase(int inicial) : numero_{inicial} {}\n    int leer() const noexcept { return numero_; }\nprotected:\n    void fijar(int nuevo) noexcept { numero_ = nuevo; }\nprivate:\n    int numero_;\n};\n\nclass Componente : protected EstadoBase {\npublic:\n    explicit Componente(int inicial) : EstadoBase{inicial} {}\n    int actual() const noexcept { return EstadoBase::leer(); }\n};\n\nclass Limitado : public Componente {\npublic:\n    Limitado(int inicial, int limite)\n        : Componente{inicial}, limite_{limite} {\n        if (limite_ < 0 || inicial < 0 || inicial > limite_) {\n            throw std::invalid_argument(\"rango\");\n        }\n    }\n\n    bool cambiar(int nuevo) noexcept {\n        if (nuevo < 0 || nuevo > limite_) {\n            return false;\n        }\n        EstadoBase::fijar(nuevo);\n        return true;\n    }\n\nprivate:\n    int limite_;\n};\n\nint main() {\n    Limitado original{2, 5};\n    Limitado copia{original};\n    bool aceptado = original.cambiar(5);\n\n    std::cout << aceptado << ':' << original.actual() << '|';\n    aceptado = copia.cambiar(1);\n\n    std::cout << aceptado << ':' << copia.actual() << '|';\n    aceptado = copia.cambiar(6);\n\n    std::cout << aceptado << ':' << copia.actual() << '|'\n              << original.actual();\n    return 0;\n}\n",
           "answers": [
             "1:5|1:1|0:1|5"
           ],
@@ -400,7 +400,7 @@
         {
           "type": "code",
           "language": "cpp",
-          "code": "int consultar_componente(const Componente& dato) {\n    return dato.actual();\n}\nint main() {\n    Limitado dato{3, 5};\n    std::cout << consultar_componente(dato);\n    return 0;\n}\n"
+          "code": "int consultar_componente(const Componente& dato) {\n    return dato.actual();\n}\n\nint main() {\n    Limitado dato{3, 5};\n\n    std::cout << consultar_componente(dato);\n\n    return 0;\n}\n"
         },
         {
           "type": "code",
@@ -1274,6 +1274,168 @@
       }
     },
     "additions": [],
-    "editorial": []
+    "editorial": [
+      {
+        "id": "block_0001_0003",
+        "beforeSha256": "59984edebfe18f775e070c6b53119e563c35bb4ccc8dad0f6bee400922b73be8",
+        "afterSha256": "d6ad2b5b8962985cf3370d6cdd8b880b12568b2e5c8353e0ca10849f3ff1fcd2"
+      },
+      {
+        "id": "block_0003_0002",
+        "beforeSha256": "f5b991d5bb6bc2bed97165aad046d4cc10130bc0dbad461b0fe1615f58735f88",
+        "afterSha256": "e8daae3698e6726567f4cde03e8183e80dddb666917dbdfe93eaed7ff959cdee"
+      },
+      {
+        "id": "block_0004_0002",
+        "beforeSha256": "bc67a4234a10318a61508fe81de6999792592a57aa67269de733af784a878188",
+        "afterSha256": "b04c9c43244ca66a9f4ef1a1ecaaccf90c18f42d09ac95f9150d359103fd59a7"
+      },
+      {
+        "id": "block_0005_0002",
+        "beforeSha256": "74758def6dcaa011edd6fcc74ff1a5fba7d401431266dfe84d41dbe79ecfa657",
+        "afterSha256": "b03c0d4e572cab5b5bb07d044b9182d067d7d46a462166cf3a3465cd6150bccf"
+      },
+      {
+        "id": "block_0006_0003",
+        "beforeSha256": "2311492a479f548363e60d66b79ebcb5581890207d1fdee2badcb81cde199142",
+        "afterSha256": "d4c984df371a61b07bc7cbb6d24d377ec468e3e97d5075bc398fed0f0edd8317"
+      },
+      {
+        "id": "block_0009_0001",
+        "beforeSha256": "794d0e4206e88a44437eb3cae0f41e79f0554489d36cedfeffd2f729092b2de2",
+        "afterSha256": "bcaf9dc11bb301f2be1042a633c4b7fde088abaf016fa82e708575ca7bcdb01d"
+      },
+      {
+        "id": "block_0010_0002",
+        "beforeSha256": "d6210d0a854486e1cf364fb7b2207cc1c63f2db5a3420d2ce4ed1429dc9851fd",
+        "afterSha256": "9f4df123e5ca8ac7cdff31122e0bffdd4541d64589eaf6d5d979343e5b836c4d"
+      },
+      {
+        "id": "block_0011_0002",
+        "beforeSha256": "8de9d42ece52e78af30e8f7875cc800b8879e602b681d27f7884c5a2a0c0c39f",
+        "afterSha256": "057d9c1035809a15d0e8b69eca8102253fd320d5e7b1738fd3c2b44c3340d93b"
+      },
+      {
+        "id": "block_0012_0002",
+        "beforeSha256": "aeaac5b0da7df16b4b86b4bbdd6474e6b55f788ecda961d15a07eb297f2d64b5",
+        "afterSha256": "14495df13a60ba98afa795e38be02016212d4a6a8259ec5e47f50c8a8643310f"
+      }
+    ],
+    "sourceFormatRevisions": [
+      {
+        "id": "block_0001_0003",
+        "block": {
+          "type": "output_prediction",
+          "id": "p3_u9l4_cadena_protegida_con_acceso_interno_posterior",
+          "language": "cpp",
+          "question": "Escribe toda la salida, siguiendo qué parte del mismo objeto consultan las tres funciones finales.",
+          "code": "#include <iostream>\n\nclass RegistroBase {\npublic:\n    explicit RegistroBase(int numero) : numero_{numero} {}\n    int leer() const { return numero_; }\nprotected:\n    void guardar(int numero) { numero_ = numero; }\nprivate:\n    int numero_;\n};\nint consultar_registro(const RegistroBase& registro) {\n    return registro.leer();\n}\nclass Intermedia : protected RegistroBase {\npublic:\n    explicit Intermedia(int numero) : RegistroBase{numero} {}\n    int consulta() const { return RegistroBase::leer(); }\n};\nclass Posterior : public Intermedia {\npublic:\n    explicit Posterior(int numero) : Intermedia{numero} {}\n    void cambiar(int numero) { guardar(numero); }\n    int por_referencia() const { return consultar_registro(*this); }\n    int por_puntero() const {\n        const RegistroBase* vista = this;\n        return vista->leer();\n    }\n};\nint main() {\n    Posterior dato{4};\n    std::cout << dato.consulta() << '|';\n    dato.cambiar(9);\n    std::cout << dato.consulta() << ':' << dato.por_referencia()\n              << ':' << dato.por_puntero();\n    return 0;\n}\n",
+          "answers": [
+            "4|9:9:9"
+          ],
+          "outputComparison": "exact",
+          "explanation": "El objeto comienza con cuatro en su parte RegistroBase, que consulta devuelve mediante Intermedia. cambiar guarda nueve en esa misma parte. Después consulta, por_referencia y por_puntero observan nueve. No se ha copiado el objeto al crear las vistas. La consulta pública propia de Intermedia sigue disponible en Posterior."
+        }
+      },
+      {
+        "id": "block_0003_0002",
+        "block": {
+          "type": "output_prediction",
+          "id": "p3_u9l4_base_privada_no_elimina_funciones_publicas_intermedias",
+          "language": "cpp",
+          "question": "Escribe la salida y distingue la llamada a una función de IntermediaPrivada del acceso directo a RegistroBase.",
+          "code": "#include <iostream>\n\nclass RegistroBase {\npublic:\n    explicit RegistroBase(int numero) : numero_{numero} {}\n    int leer() const { return numero_; }\nprotected:\n    void guardar(int numero) { numero_ = numero; }\nprivate:\n    int numero_;\n};\nclass IntermediaPrivada : private RegistroBase {\npublic:\n    explicit IntermediaPrivada(int numero) : RegistroBase{numero} {}\n    int consulta() const { return RegistroBase::leer(); }\n    void cambiar(int numero) { RegistroBase::guardar(numero); }\n};\nclass PosteriorDesdePrivada : public IntermediaPrivada {\npublic:\n    explicit PosteriorDesdePrivada(int numero) : IntermediaPrivada{numero} {}\n    void preparar(int numero) { IntermediaPrivada::cambiar(numero); }\n};\nint main() {\n    PosteriorDesdePrivada dato{2};\n    std::cout << dato.consulta() << '|';\n    dato.preparar(6);\n    std::cout << dato.consulta();\n    return 0;\n}\n",
+          "answers": [
+            "2|6"
+          ],
+          "outputComparison": "exact",
+          "explanation": "El objeto comienza con dos. consulta es pública en IntermediaPrivada y está disponible a través de PosteriorDesdePrivada. preparar llama a cambiar, también pública, cuyo cuerpo autorizado guarda seis en RegistroBase. La última consulta obtiene seis. No fue necesario que preparar accediera directamente a guardar ni que convirtiera el objeto en una vista de RegistroBase."
+        }
+      },
+      {
+        "id": "block_0004_0002",
+        "block": {
+          "type": "code",
+          "language": "cpp",
+          "code": "#include <iostream>\n\nclass RegistroBase {\npublic:\n    explicit RegistroBase(int numero) : numero_{numero} {}\n    int leer() const { return numero_; }\nprotected:\n    void guardar(int numero) { numero_ = numero; }\nprivate:\n    int numero_;\n};\nclass Intermedia : protected RegistroBase {\npublic:\n    explicit Intermedia(int numero) : RegistroBase{numero} {}\n    int consulta() const { return RegistroBase::leer(); }\n};\nclass PosteriorIncorrecta : public Intermedia {\npublic:\n    explicit PosteriorIncorrecta(int numero) : Intermedia{numero} {}\n    int directo() const { return numero_; }\n};\nint main() {\n    PosteriorIncorrecta dato{4};\n    std::cout << dato.consulta();\n    return 0;\n}\n"
+        }
+      },
+      {
+        "id": "block_0005_0002",
+        "block": {
+          "type": "output_prediction",
+          "id": "p3_u9l4_operacion_protegida_sobre_otro_objeto_del_tipo_derivado",
+          "language": "cpp",
+          "question": "Escribe los valores finales de origen y destino después de guardar_en.",
+          "code": "#include <iostream>\n\nclass RegistroBase {\npublic:\n    explicit RegistroBase(int numero) : numero_{numero} {}\n    int leer() const { return numero_; }\nprotected:\n    void guardar(int numero) { numero_ = numero; }\nprivate:\n    int numero_;\n};\nclass Intermedia : protected RegistroBase {\npublic:\n    explicit Intermedia(int numero) : RegistroBase{numero} {}\n    int consulta() const { return RegistroBase::leer(); }\n};\nclass Gestor : public Intermedia {\npublic:\n    explicit Gestor(int numero) : Intermedia{numero} {}\n    void guardar_en(Gestor& destino, int numero) {\n        destino.guardar(numero);\n    }\n    int leer_otro(const RegistroBase& otro) const { return otro.leer(); }\n};\nint main() {\n    Gestor origen{4};\n    Gestor destino{8};\n    origen.guardar_en(destino, 6);\n    std::cout << origen.consulta() << ':' << destino.consulta();\n    return 0;\n}\n",
+          "answers": [
+            "4:6"
+          ],
+          "outputComparison": "exact",
+          "explanation": "guardar_en se invoca mediante origen, pero llama a guardar sobre destino. Por eso el primer objeto conserva cuatro y el segundo cambia de ocho a seis. La protección permite ese acceso desde Gestor sobre una expresión de tipo Gestor; no significa que siempre se deba modificar el objeto que recibió la llamada."
+        }
+      },
+      {
+        "id": "block_0006_0003",
+        "block": {
+          "type": "output_prediction",
+          "id": "p3_u9l4_defaults_de_base_y_de_miembro_son_distintos",
+          "language": "cpp",
+          "question": "Escribe la salida completa. En PorClase se usan funciones propias; en PorStruct se utiliza también la interfaz pública heredada.",
+          "code": "#include <iostream>\n\nclass RegistroBase {\npublic:\n    explicit RegistroBase(int numero) : numero_{numero} {}\n    int leer() const { return numero_; }\nprotected:\n    void guardar(int numero) { numero_ = numero; }\nprivate:\n    int numero_;\n};\nclass PorClase : RegistroBase {\n    int marca_{5};\npublic:\n    PorClase() : RegistroBase{3} {}\n    int numero() const { return RegistroBase::leer(); }\n    int marca() const { return marca_; }\n};\nstruct PorStruct : RegistroBase {\n    int marca_{6};\n    PorStruct() : RegistroBase{4} {}\n};\nint main() {\n    const PorClase a;\n    const PorStruct b;\n    std::cout << a.numero() << ':' << a.marca()\n              << '|' << b.leer() << ':' << b.marca_;\n    return 0;\n}\n",
+          "answers": [
+            "3:5|4:6"
+          ],
+          "outputComparison": "exact",
+          "explanation": "PorClase tiene base privada y marca_ privada. Sus funciones públicas devuelven el número tres y la marca cinco. PorStruct tiene base pública y marca_ pública por defecto, así que main puede usar b.leer() y b.marca_ para obtener cuatro y seis. Los inicializadores establecieron todos esos valores antes de la consulta."
+        }
+      },
+      {
+        "id": "block_0009_0001",
+        "block": {
+          "type": "code",
+          "language": "cpp",
+          "code": "#include <iostream>\n#include <stdexcept>\n\nclass EstadoBase {\npublic:\n    explicit EstadoBase(int inicial) : numero_{inicial} {}\n    int leer() const noexcept { return numero_; }\nprotected:\n    void fijar(int nuevo) noexcept { numero_ = nuevo; }\nprivate:\n    int numero_;\n};\n\nclass Componente : protected EstadoBase {\npublic:\n    explicit Componente(int inicial) : EstadoBase{inicial} {}\n    int actual() const noexcept { return EstadoBase::leer(); }\n};\n\nclass Limitado : public Componente {\npublic:\n    Limitado(int inicial, int limite)\n        : Componente{inicial}, limite_{limite} {\n        if (limite_ < 0 || inicial < 0 || inicial > limite_) {\n            throw std::invalid_argument(\"rango\");\n        }\n    }\n\n    bool cambiar(int nuevo) noexcept {\n        if (nuevo < 0 || nuevo > limite_) {\n            return false;\n        }\n        EstadoBase::fijar(nuevo);\n        return true;\n    }\n\nprivate:\n    int limite_;\n};\nint main() {\n    Limitado dato{2, 5};\n    std::cout << dato.actual() << '|';\n    bool aceptado = dato.cambiar(5);\n    std::cout << aceptado << ':' << dato.actual() << '|';\n    aceptado = dato.cambiar(6);\n    std::cout << aceptado << ':' << dato.actual();\n    return 0;\n}\n"
+        }
+      },
+      {
+        "id": "block_0010_0002",
+        "block": {
+          "type": "output_prediction",
+          "id": "p3_u9l4_aceptar_extremos_y_conservar_tras_rechazo",
+          "language": "cpp",
+          "question": "Escribe la salida completa. Cada grupo contiene el resultado bool y el estado posterior, separados por dos puntos.",
+          "code": "#include <iostream>\n#include <stdexcept>\n\nclass EstadoBase {\npublic:\n    explicit EstadoBase(int inicial) : numero_{inicial} {}\n    int leer() const noexcept { return numero_; }\nprotected:\n    void fijar(int nuevo) noexcept { numero_ = nuevo; }\nprivate:\n    int numero_;\n};\n\nclass Componente : protected EstadoBase {\npublic:\n    explicit Componente(int inicial) : EstadoBase{inicial} {}\n    int actual() const noexcept { return EstadoBase::leer(); }\n};\n\nclass Limitado : public Componente {\npublic:\n    Limitado(int inicial, int limite)\n        : Componente{inicial}, limite_{limite} {\n        if (limite_ < 0 || inicial < 0 || inicial > limite_) {\n            throw std::invalid_argument(\"rango\");\n        }\n    }\n\n    bool cambiar(int nuevo) noexcept {\n        if (nuevo < 0 || nuevo > limite_) {\n            return false;\n        }\n        EstadoBase::fijar(nuevo);\n        return true;\n    }\n\nprivate:\n    int limite_;\n};\nint main() {\n    Limitado dato{3, 4};\n    bool aceptado = dato.cambiar(-1);\n    std::cout << aceptado << ':' << dato.actual() << '|';\n    aceptado = dato.cambiar(0);\n    std::cout << aceptado << ':' << dato.actual() << '|';\n    aceptado = dato.cambiar(4);\n    std::cout << aceptado << ':' << dato.actual() << '|';\n    aceptado = dato.cambiar(5);\n    std::cout << aceptado << ':' << dato.actual();\n    return 0;\n}\n",
+          "answers": [
+            "0:3|1:0|1:4|0:4"
+          ],
+          "outputComparison": "exact",
+          "explanation": "Menos uno se rechaza y conserva tres. Cero se acepta y sustituye el dato por cero. Cuatro se acepta porque coincide con el límite. Cinco se rechaza y conserva cuatro. Los bool de aceptación son respectivamente 0, 1, 1 y 0. El acceso protegido permite la llamada interna, pero es la condición de cambiar la que evita guardar los candidatos rechazados."
+        }
+      },
+      {
+        "id": "block_0011_0002",
+        "block": {
+          "type": "output_prediction",
+          "id": "p3_u9l4_copiar_estado_y_limite_de_extension",
+          "language": "cpp",
+          "question": "Escribe los resultados y estados consultados en este programa, incluido el último estado de original.",
+          "code": "#include <iostream>\n#include <stdexcept>\n\nclass EstadoBase {\npublic:\n    explicit EstadoBase(int inicial) : numero_{inicial} {}\n    int leer() const noexcept { return numero_; }\nprotected:\n    void fijar(int nuevo) noexcept { numero_ = nuevo; }\nprivate:\n    int numero_;\n};\n\nclass Componente : protected EstadoBase {\npublic:\n    explicit Componente(int inicial) : EstadoBase{inicial} {}\n    int actual() const noexcept { return EstadoBase::leer(); }\n};\n\nclass Limitado : public Componente {\npublic:\n    Limitado(int inicial, int limite)\n        : Componente{inicial}, limite_{limite} {\n        if (limite_ < 0 || inicial < 0 || inicial > limite_) {\n            throw std::invalid_argument(\"rango\");\n        }\n    }\n\n    bool cambiar(int nuevo) noexcept {\n        if (nuevo < 0 || nuevo > limite_) {\n            return false;\n        }\n        EstadoBase::fijar(nuevo);\n        return true;\n    }\n\nprivate:\n    int limite_;\n};\nint main() {\n    Limitado original{2, 5};\n    Limitado copia{original};\n    bool aceptado = original.cambiar(5);\n    std::cout << aceptado << ':' << original.actual() << '|';\n    aceptado = copia.cambiar(1);\n    std::cout << aceptado << ':' << copia.actual() << '|';\n    aceptado = copia.cambiar(6);\n    std::cout << aceptado << ':' << copia.actual() << '|'\n              << original.actual();\n    return 0;\n}\n",
+          "answers": [
+            "1:5|1:1|0:1|5"
+          ],
+          "outputComparison": "exact",
+          "explanation": "copia comienza con estado dos y límite cinco. original acepta cinco y conserva su propio estado cinco. copia acepta uno y después rechaza seis porque su límite copiado también es cinco, así que conserva uno. La última consulta de original sigue obteniendo cinco. Cambiar un objeto no modifica el otro; la herencia protegida no los hace compartir el mismo int."
+        }
+      },
+      {
+        "id": "block_0012_0002",
+        "block": {
+          "type": "code",
+          "language": "cpp",
+          "code": "int consultar_componente(const Componente& dato) {\n    return dato.actual();\n}\nint main() {\n    Limitado dato{3, 5};\n    std::cout << consultar_componente(dato);\n    return 0;\n}\n"
+        }
+      }
+    ]
   }
 }

@@ -394,7 +394,7 @@
         },
         {
           "type": "cpp_compiler",
-          "initialCode": "#include <iostream>\n#include <string>\n#include <vector>\n\nint main() {\n    // Construye aqui el programa de la consigna.\n    return 0;\n}\n",
+          "initialCode": "#include <iostream>\n#include <string>\n#include <vector>\n\nint main() {\n    // Construye aqui el programa de la consigna.\n    \n    return 0;\n}\n",
           "outputCheck": {
             "cases": [
               {
@@ -500,7 +500,7 @@
           "type": "output_prediction",
           "language": "cpp",
           "question": "Predice la salida exacta.",
-          "code": "#include <iostream>\n#include <string>\n#include <vector>\n\nenum class Estado {\n    preparado, enviado, cancelado\n};\n\nstruct PedidoInvalido {};\n\nclass Pedido {\npublic:\n    Pedido(std::string codigo, int unidades) : codigo_{codigo}, unidades_{unidades} {\n        if (codigo_.empty() || unidades_ < 1 || unidades_ > 20) {\n            throw PedidoInvalido{};\n        }\n    }\n    std::string codigo() const { return codigo_; }\n    int unidades() const { return unidades_; }\n    Estado estado() const { return estado_; }\n    bool cambiar_unidades(int nuevas) {\n        if (estado_ != Estado::preparado || nuevas < 1 || nuevas > 20) { return false; }\n        unidades_ = nuevas;\n        return true;\n    }\n    bool enviar() {\n        if (estado_ != Estado::preparado) { return false; }\n        estado_ = Estado::enviado;\n        return true;\n    }\n    bool cancelar() {\n        if (estado_ != Estado::preparado) { return false; }\n        estado_ = Estado::cancelado;\n        return true;\n    }\nprivate:\n    std::string codigo_;\n    int unidades_;\n    Estado estado_ = Estado::preparado;\n};\n\nint main() {\n    Pedido a{\"P\", 3};\n    Pedido b = a;\n    b.cancelar();\n    std::cout << a.enviar() << \" \" << b.enviar() << \" \" << b.unidades();\n    return 0;\n}\n",
+          "code": "#include <iostream>\n#include <string>\n#include <vector>\n\nenum class Estado {\n    preparado, enviado, cancelado\n};\n\nstruct PedidoInvalido {};\n\nclass Pedido {\npublic:\n    Pedido(std::string codigo, int unidades) : codigo_{codigo}, unidades_{unidades} {\n        if (codigo_.empty() || unidades_ < 1 || unidades_ > 20) {\n            throw PedidoInvalido{};\n        }\n    }\n\n    std::string codigo() const { return codigo_; }\n    int unidades() const { return unidades_; }\n    Estado estado() const { return estado_; }\n    bool cambiar_unidades(int nuevas) {\n        if (estado_ != Estado::preparado || nuevas < 1 || nuevas > 20) { return false; }\n        unidades_ = nuevas;\n        return true;\n    }\n\n    bool enviar() {\n        if (estado_ != Estado::preparado) { return false; }\n        estado_ = Estado::enviado;\n        return true;\n    }\n\n    bool cancelar() {\n        if (estado_ != Estado::preparado) { return false; }\n        estado_ = Estado::cancelado;\n        return true;\n    }\nprivate:\n    std::string codigo_;\n    int unidades_;\n    Estado estado_ = Estado::preparado;\n};\n\nint main() {\n    Pedido a{\"P\", 3};\n    Pedido b = a;\n    b.cancelar();\n    std::cout << a.enviar() << \" \" << b.enviar() << \" \" << b.unidades();\n\n    return 0;\n}\n",
           "answers": [
             "1 0 3"
           ],
@@ -601,7 +601,7 @@
         },
         {
           "type": "cpp_compiler",
-          "initialCode": "#include <iostream>\n#include <string>\n#include <vector>\n\nenum class Estado {\n    preparado,\n    enviado,\n    cancelado\n};\n\nstruct PedidoInvalido {};\n\nclass Pedido {\npublic:\n    Pedido(std::string codigo, int unidades)\n        : codigo_{codigo}, unidades_{unidades} {\n        if (codigo_.empty() || unidades_ < 1 || unidades_ > 20) {\n            throw PedidoInvalido{};\n        }\n    }\n\n    std::string codigo() const {\n        return codigo_;\n    }\n\n    int unidades() const {\n        return unidades_;\n    }\n\n    Estado estado() const {\n        return estado_;\n    }\n\n    bool cambiar_unidades(int nuevas) {\n        if (estado_ != Estado::preparado || nuevas < 1 || nuevas > 20) {\n            return false;\n        }\n\n        unidades_ = nuevas;\n        return true;\n    }\n\n    bool enviar() {\n        if (estado_ != Estado::preparado) {\n            return false;\n        }\n\n        estado_ = Estado::enviado;\n        return true;\n    }\n\n    bool cancelar() {\n        if (estado_ != Estado::preparado) {\n            return false;\n        }\n\n        estado_ = Estado::cancelado;\n        return true;\n    }\n\nprivate:\n    std::string codigo_;\n    int unidades_;\n    Estado estado_ = Estado::preparado;\n};\n\nint main() {\n    // Construye aqui el programa de la consigna.\n\n    return 0;\n}\n",
+          "initialCode": "#include <iostream>\n#include <string>\n#include <vector>\n\nenum class Estado {\n    preparado,\n    enviado,\n    cancelado\n};\n\nstruct PedidoInvalido {};\n\nclass Pedido {\npublic:\n    Pedido(std::string codigo, int unidades)\n        : codigo_{codigo}, unidades_{unidades} {\n        if (codigo_.empty() || unidades_ < 1 || unidades_ > 20) {\n            throw PedidoInvalido{};\n        }\n    }\n\n    std::string codigo() const {\n        return codigo_;\n    }\n\n    int unidades() const {\n        return unidades_;\n    }\n\n    Estado estado() const {\n        return estado_;\n    }\n\n    bool cambiar_unidades(int nuevas) {\n        if (estado_ != Estado::preparado || nuevas < 1 || nuevas > 20) {\n            return false;\n        }\n\n        unidades_ = nuevas;\n        return true;\n    }\n\n    bool enviar() {\n        if (estado_ != Estado::preparado) {\n            return false;\n        }\n\n        estado_ = Estado::enviado;\n        return true;\n    }\n\n    bool cancelar() {\n        if (estado_ != Estado::preparado) {\n            return false;\n        }\n\n        estado_ = Estado::cancelado;\n        return true;\n    }\n\nprivate:\n    std::string codigo_;\n    int unidades_;\n    Estado estado_ = Estado::preparado;\n};\n\nint main() {\n    // Construye aqui el programa de la consigna.\n    \n    return 0;\n}\n",
           "outputCheck": {
             "cases": [
               {
@@ -2202,6 +2202,21 @@
         "id": "block_0007_0006",
         "beforeSha256": "9f5b29c7fa2322f1b5802c4fea850789fb225ad1e143cf850555320b323da2c2",
         "afterSha256": "068c0801d720f5657fcc870193506a8786061c19a5839695e5db966c02087573"
+      },
+      {
+        "id": "block_0001_0002",
+        "beforeSha256": "458df6a70c9ff5ae772bbc83f1515880489fcb786e11c3c9b3d5df88e35d90c1",
+        "afterSha256": "a90194d69f91042fd85f6cadcb4d64c41ee6e7a15b0d48c9d612aad7efed2547"
+      },
+      {
+        "id": "block_0002_0004",
+        "beforeSha256": "d993d74d96b8e9e0463d5743cef5ca6390e631be4c179f36a60256c5e0d83be9",
+        "afterSha256": "2ab41f93459c81577067b1a7e95f64667e8d1e9e250ca924af3fdc05882f52ba"
+      },
+      {
+        "id": "block_0004_0002",
+        "beforeSha256": "93d80e2d272e1be0d1b8f0ddaf725987b690b5ed2e4dac6942345b16d7fc4fbd",
+        "afterSha256": "2e34d031be004fb3bffaba3f176111c7d892ecd1c7d8a3af4a24da799ad7f69f"
       }
     ],
     "sourceFormatRevisions": [
@@ -2269,6 +2284,38 @@
           "type": "code",
           "language": "cpp",
           "code": "#include <iostream>\n#include <string>\n#include <vector>\n\nenum class Estado {\n    preparado, enviado, cancelado\n};\n\nstruct PedidoInvalido {};\n\nclass Pedido {\npublic:\n    Pedido(std::string codigo, int unidades) : codigo_{codigo}, unidades_{unidades} {\n        if (codigo_.empty() || unidades_ < 1 || unidades_ > 20) {\n            throw PedidoInvalido{};\n        }\n    }\n    std::string codigo() const { return codigo_; }\n    int unidades() const { return unidades_; }\n    Estado estado() const { return estado_; }\n    bool cambiar_unidades(int nuevas) {\n        if (estado_ != Estado::preparado || nuevas < 1 || nuevas > 20) { return false; }\n        unidades_ = nuevas;\n        return true;\n    }\n    bool enviar() {\n        if (estado_ != Estado::preparado) { return false; }\n        estado_ = Estado::enviado;\n        return true;\n    }\n    bool cancelar() {\n        if (estado_ != Estado::preparado) { return false; }\n        estado_ = Estado::cancelado;\n        return true;\n    }\nprivate:\n    std::string codigo_;\n    int unidades_;\n    Estado estado_ = Estado::preparado;\n};\n\nint main() {\n    Pedido original{\"C\", 2};\n    Pedido copia = original;\n    original.cambiar_unidades(5);\n    copia.enviar();\n    std::cout << \"Original:\" << original.codigo() << \":\" << original.unidades()\n              << \":\" << (original.estado() == Estado::preparado) << \"\\n\";\n    std::cout << \"Copia:\" << copia.codigo() << \":\" << copia.unidades()\n              << \":\" << (copia.estado() == Estado::enviado);\n    return 0;\n}\n"
+        }
+      },
+      {
+        "id": "block_0001_0002",
+        "block": {
+          "type": "cpp_compiler",
+          "initialCode": "#include <iostream>\n#include <string>\n#include <vector>\n\nint main() {\n    // Construye aqui el programa de la consigna.\n    return 0;\n}\n",
+          "outputCheck": {
+            "cases": [
+              {
+                "standardInput": "",
+                "outputs": [
+                  "1:7\n0:7\n1:1\n0:1\n0:7",
+                  "1:7\n0:7\n1:1\n0:1\n0:7\n"
+                ],
+                "explanation": "Cambiar a siete acepta; cero se rechaza conservando siete. Enviar deja el pedido enviado; cancelar y cambiar cantidades después se rechazan sin modificar ese estado."
+              }
+            ]
+          }
+        }
+      },
+      {
+        "id": "block_0002_0004",
+        "block": {
+          "type": "output_prediction",
+          "language": "cpp",
+          "question": "Predice la salida exacta.",
+          "code": "#include <iostream>\n#include <string>\n#include <vector>\n\nenum class Estado {\n    preparado, enviado, cancelado\n};\n\nstruct PedidoInvalido {};\n\nclass Pedido {\npublic:\n    Pedido(std::string codigo, int unidades) : codigo_{codigo}, unidades_{unidades} {\n        if (codigo_.empty() || unidades_ < 1 || unidades_ > 20) {\n            throw PedidoInvalido{};\n        }\n    }\n    std::string codigo() const { return codigo_; }\n    int unidades() const { return unidades_; }\n    Estado estado() const { return estado_; }\n    bool cambiar_unidades(int nuevas) {\n        if (estado_ != Estado::preparado || nuevas < 1 || nuevas > 20) { return false; }\n        unidades_ = nuevas;\n        return true;\n    }\n    bool enviar() {\n        if (estado_ != Estado::preparado) { return false; }\n        estado_ = Estado::enviado;\n        return true;\n    }\n    bool cancelar() {\n        if (estado_ != Estado::preparado) { return false; }\n        estado_ = Estado::cancelado;\n        return true;\n    }\nprivate:\n    std::string codigo_;\n    int unidades_;\n    Estado estado_ = Estado::preparado;\n};\n\nint main() {\n    Pedido a{\"P\", 3};\n    Pedido b = a;\n    b.cancelar();\n    std::cout << a.enviar() << \" \" << b.enviar() << \" \" << b.unidades();\n    return 0;\n}\n",
+          "answers": [
+            "1 0 3"
+          ],
+          "explanation": "Al construir b como copia de a, ambos empiezan con código P, tres unidades y estado preparado. La llamada b.cancelar() cambia sólo b a cancelado. Después, a.enviar() se acepta y devuelve true, mientras b.enviar() se rechaza y devuelve false porque b ya está cancelado. Ese rechazo conserva las tres unidades de b. Por eso se muestra 1 0 3: los dos resultados de enviar y la cantidad que conserva b."
         }
       }
     ]

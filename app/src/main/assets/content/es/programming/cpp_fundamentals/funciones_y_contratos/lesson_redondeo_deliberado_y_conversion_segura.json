@@ -131,7 +131,7 @@
         },
         {
           "type": "cpp_compiler",
-          "initialCode": "#include <iostream>\n#include <cmath>\n\n// Define redondear_entero antes de main o declara su firma y define despues.\nint main() {\n    // Construye las llamadas y sus trazas a partir del contrato.\n\n    return 0;\n}\n",
+          "initialCode": "#include <iostream>\n#include <cmath>\n\n// Define redondear_entero antes de main o declara su firma y define despues.\n\nint main() {\n    // Construye las llamadas y sus trazas a partir del contrato.\n    \n    return 0;\n}\n",
           "outputCheck": {
             "inputComparison": "tokens",
             "cases": [
@@ -200,7 +200,7 @@
         },
         {
           "type": "cpp_compiler",
-          "initialCode": "#include <iostream>\n#include <cmath>\n\nbool redondear_entero(double origen, int& destino) {\n    if (!std::isfinite(origen) || origen < -100.0 || origen > 100.0) {\n        return false;\n    }\n\n    const double candidato = std::round(origen);\n    destino = static_cast<int>(candidato);\n    return true;\n}\n\nint main() {\n    double origen{0.0};\n    int destino{0};\n\n    std::cin >> origen >> destino;\n    const double copia = origen;\n    const bool aceptado = redondear_entero(origen, destino);\n\n    std::cout << aceptado << ':' << destino << \";Origen: \" << origen\n              << \";Conservado: \" << (origen == copia);\n\n    return 0;\n}\n",
+          "initialCode": "#include <iostream>\n#include <cmath>\n\nbool redondear_entero(double origen, int& destino) {\n    if (!std::isfinite(origen) || origen < -100.0 || origen > 100.0) {\n        return false;\n    }\n\n    const double candidato = std::round(origen);\n    destino = static_cast<int>(candidato);\n    return true;\n}\n\nint main() {\n    double origen{0.0};\n    int destino{0};\n\n    std::cin >> origen >> destino;\n\n    const double copia = origen;\n    const bool aceptado = redondear_entero(origen, destino);\n\n    std::cout << aceptado << ':' << destino << \";Origen: \" << origen\n              << \";Conservado: \" << (origen == copia);\n\n    return 0;\n}\n",
           "outputCheck": {
             "inputComparison": "tokens",
             "cases": [
@@ -333,7 +333,7 @@
         },
         {
           "type": "cpp_compiler",
-          "initialCode": "#include <iostream>\n#include <cmath>\n#include <vector>\n\n// Define o recupera tu propia redondear_entero antes de main.\nint main() {\n    // Construye las observaciones, la clasificacion y las pruebas del contrato.\n\n    return 0;\n}\n",
+          "initialCode": "#include <iostream>\n#include <cmath>\n#include <vector>\n\n// Define o recupera tu propia redondear_entero antes de main.\n\nint main() {\n    // Construye las observaciones, la clasificacion y las pruebas del contrato.\n    \n    return 0;\n}\n",
           "outputCheck": {
             "inputComparison": "tokens",
             "cases": [
@@ -393,7 +393,7 @@
         },
         {
           "type": "cpp_compiler",
-          "initialCode": "#include <iostream>\n#include <cmath>\n#include <vector>\n\nint main() {\n    // Construye la lectura, la funcion y la clasificacion de la consigna.\n\n    return 0;\n}\n",
+          "initialCode": "#include <iostream>\n#include <cmath>\n#include <vector>\n\nint main() {\n    // Construye la lectura, la funcion y la clasificacion de la consigna.\n    \n    return 0;\n}\n",
           "outputCheck": {
             "inputComparison": "tokens",
             "cases": [
@@ -539,7 +539,7 @@
         },
         {
           "type": "cpp_compiler",
-          "initialCode": "#include <iostream>\n#include <cmath>\n#include <vector>\n\nbool redondear_entero(double origen, int& destino) {\n    if (!std::isfinite(origen) || origen < -100.0 || origen > 100.0) {\n        return false;\n    }\n\n    const double candidato = std::round(origen);\n    destino = static_cast<int>(candidato);\n    return true;\n}\n\nint main() {\n    std::vector<double> datos;\n    int cantidad_entrada{0};\n\n    std::cin >> cantidad_entrada;\n\n    for (int entrada{0}; entrada < cantidad_entrada; ++entrada) {\n        double dato{0};\n        std::cin >> dato;\n        datos.push_back(dato);\n    }\n\n    const std::vector<double> original = datos;\n    std::vector<int> marcas;\n    int colisiones{0};\n    int rechazados{0};\n\n    for (const double origen : datos) {\n        int marca{71};\n        if (!redondear_entero(origen, marca)) {\n            ++rechazados;\n        } else {\n            bool encontrada{false};\n            for (const int existente : marcas) {\n                if (existente == marca) {\n                    encontrada = true;\n                    break;\n                }\n            }\n            if (encontrada) {\n                ++colisiones;\n            } else {\n                marcas.push_back(marca);\n            }\n        }\n    }\n\n    std::cout << \"Marcas:\";\n\n    for (const int marca : marcas) {\n        std::cout << ' ' << marca;\n    }\n\n    std::cout << \"\\nColisiones: \" << colisiones\n              << \"\\nRechazados: \" << rechazados\n              << \"\\nDatos conservados: \" << (datos == original) << '\\n';\n\n    return 0;\n}\n",
+          "initialCode": "#include <iostream>\n#include <cmath>\n#include <vector>\n\nbool redondear_entero(double origen, int& destino) {\n    if (!std::isfinite(origen) || origen < -100.0 || origen > 100.0) {\n        return false;\n    }\n\n    const double candidato = std::round(origen);\n    destino = static_cast<int>(candidato);\n    return true;\n}\n\nint main() {\n    std::vector<double> datos;\n    int cantidad_entrada{0};\n\n    std::cin >> cantidad_entrada;\n\n    for (int entrada{0}; entrada < cantidad_entrada; ++entrada) {\n        double dato{0};\n\n        std::cin >> dato;\n        datos.push_back(dato);\n    }\n\n    const std::vector<double> original = datos;\n    std::vector<int> marcas;\n    int colisiones{0};\n    int rechazados{0};\n\n    for (const double origen : datos) {\n        int marca{71};\n        if (!redondear_entero(origen, marca)) {\n            ++rechazados;\n        } else {\n            bool encontrada{false};\n            for (const int existente : marcas) {\n                if (existente == marca) {\n                    encontrada = true;\n                    break;\n                }\n            }\n            if (encontrada) {\n                ++colisiones;\n            } else {\n                marcas.push_back(marca);\n            }\n        }\n    }\n\n    std::cout << \"Marcas:\";\n\n    for (const int marca : marcas) {\n        std::cout << ' ' << marca;\n    }\n\n    std::cout << \"\\nColisiones: \" << colisiones\n              << \"\\nRechazados: \" << rechazados\n              << \"\\nDatos conservados: \" << (datos == original) << '\\n';\n\n    return 0;\n}\n",
           "outputCheck": {
             "inputComparison": "tokens",
             "cases": [
@@ -2058,6 +2058,31 @@
         "id": "block_0006_0008",
         "beforeSha256": "d7314e7e0afa331e759f6c0a4ba382428e098c91e347cbeff4bc1b2c1bbccd3f",
         "afterSha256": "a90498903be19be939bc154e5348b06b380e7b81efad10ce422c876f44da6a88"
+      },
+      {
+        "id": "block_0002_0005",
+        "beforeSha256": "2233ebcaebb476fbbc712b213707743b99c54f0dd32f50dbc59c8e8bb99306cf",
+        "afterSha256": "31aa0f9b2e8d41c0a4ae886cea875a112f0d07c85eaacd0abf7196c0cded8605"
+      },
+      {
+        "id": "block_0003_0009",
+        "beforeSha256": "f17383cdce93534b8fb303f8a853e9e7205fdeead096e712d77dd09d0ea96dbb",
+        "afterSha256": "3506f93a88992901887610e520461fbb29ec50d6de8a502543ebd1d73f49e00b"
+      },
+      {
+        "id": "block_0005_0005",
+        "beforeSha256": "3533e867750ad889cb5d23c52782c67233d1f03c32e1b51813e42c6309efae24",
+        "afterSha256": "8bbf962c329adf15c97f381817b319987f69665220f433ccab0b0dd624609915"
+      },
+      {
+        "id": "marcas_redondeadas_construccion_multicaso_editor",
+        "beforeSha256": "d72c31ef0874fb0109ffbc83476d79076caeb510975def55d33db70b2c6288b2",
+        "afterSha256": "f7b971929b4ec98cc385f7f5c48860748d62b9df07ed225999caac41d6b6361c"
+      },
+      {
+        "id": "block_0006_0009",
+        "beforeSha256": "7c2180b0de8464fc5b6db81e0fbc3b05f0f346192deb3fb5b10953f0091cb187",
+        "afterSha256": "7b69ae91a794c0592de631543fd7dbdb1e9fe2fa598fa9477eab1812aa2d39cb"
       }
     ],
     "sourceFormatRevisions": [

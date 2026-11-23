@@ -206,7 +206,7 @@
           "id": "p3_u2l1_bytes_y_elementos",
           "question": "Predice las dos comparaciones y la cantidad de elementos. El resultado no requiere suponer sizeof(int) igual a 4.",
           "language": "cpp",
-          "code": "#include <iostream>\n\nint main() {\n    int lecturas[4]{4, 7, -2, 5};\n    std::cout << (sizeof lecturas == 4 * sizeof(int)) << ':'\n              << sizeof lecturas / sizeof lecturas[0] << ':'\n              << (sizeof lecturas[0] == sizeof(int));\n    return 0;\n}\n",
+          "code": "#include <iostream>\n\nint main() {\n    int lecturas[4]{4, 7, -2, 5};\n\n    std::cout << (sizeof lecturas == 4 * sizeof(int)) << ':'\n              << sizeof lecturas / sizeof lecturas[0] << ':'\n              << (sizeof lecturas[0] == sizeof(int));\n    return 0;\n}\n",
           "answers": [
             "1:4:1"
           ],
@@ -238,7 +238,7 @@
           "id": "p3_u2l1_extension_inferida",
           "question": "El cociente de los tamaños cuenta los elementos de cada array. Predice esas dos cantidades y el último valor de previstas.",
           "language": "cpp",
-          "code": "#include <iostream>\n\nint main() {\n    int marcas[]{2, 5, 9};\n    int previstas[4]{2, 5, 9};\n    std::cout << sizeof marcas / sizeof marcas[0] << ':'\n              << sizeof previstas / sizeof previstas[0] << ':'\n              << previstas[3];\n    return 0;\n}\n",
+          "code": "#include <iostream>\n\nint main() {\n    int marcas[]{2, 5, 9};\n    int previstas[4]{2, 5, 9};\n\n    std::cout << sizeof marcas / sizeof marcas[0] << ':'\n              << sizeof previstas / sizeof previstas[0] << ':'\n              << previstas[3];\n    return 0;\n}\n",
           "answers": [
             "3:4:0"
           ],
@@ -266,7 +266,7 @@
           "id": "p3_u2l1_asignar_antes_de_leer",
           "question": "Predice la salida. No se leen los valores de lecturas[1], lecturas[2] ni lecturas[3].",
           "language": "cpp",
-          "code": "#include <iostream>\n\nint main() {\n    int lecturas[4];\n    lecturas[0] = 9;\n    std::cout << lecturas[0] << ':'\n              << sizeof lecturas / sizeof lecturas[0];\n    return 0;\n}\n",
+          "code": "#include <iostream>\n\nint main() {\n    int lecturas[4];\n\n    lecturas[0] = 9;\n\n    std::cout << lecturas[0] << ':'\n              << sizeof lecturas / sizeof lecturas[0];\n    return 0;\n}\n",
           "answers": [
             "9:4"
           ],
@@ -365,7 +365,7 @@
         {
           "type": "cpp_compiler",
           "language": "cpp",
-          "initialCode": "#include <iostream>\n\nint main() {\n    int lecturas[4]{4, 7, -2, 5};\n    const int cantidad =\n        static_cast<int>(sizeof lecturas / sizeof lecturas[0]);\n    int indice = 0;\n    int nuevo = 0;\n    if (!(std::cin >> indice >> nuevo)) {\n        return 1;\n    }\n\n    bool aceptado = false;\n    // Escribe aqui la comprobacion del indice y la asignacion valida.\n\n    std::cout << \"Aceptado=\" << aceptado << '\\n';\n    std::cout << \"Datos=\";\n    for (int i = 0; i < cantidad; ++i) {\n        if (i != 0) {\n            std::cout << ' ';\n        }\n        std::cout << lecturas[i];\n    }\n    std::cout << '\\n' << \"Cantidad=\" << cantidad << '\\n';\n    return 0;\n}\n",
+          "initialCode": "#include <iostream>\n\nint main() {\n    int lecturas[4]{4, 7, -2, 5};\n    const int cantidad =\n        static_cast<int>(sizeof lecturas / sizeof lecturas[0]);\n    int indice = 0;\n    int nuevo = 0;\n\n    if (!(std::cin >> indice >> nuevo)) {\n        return 1;\n    }\n\n    bool aceptado = false;\n    // Escribe aqui la comprobacion del indice y la asignacion valida.\n    \n    std::cout << \"Aceptado=\" << aceptado << '\\n';\n    std::cout << \"Datos=\";\n    for (int i = 0; i < cantidad; ++i) {\n        if (i != 0) {\n            std::cout << ' ';\n        }\n        std::cout << lecturas[i];\n    }\n    std::cout << '\\n' << \"Cantidad=\" << cantidad << '\\n';\n\n    return 0;\n}\n",
           "initialStandardInput": "3 99\n",
           "outputCheck": {
             "inputComparison": "tokens",
@@ -503,7 +503,7 @@
         {
           "type": "code",
           "language": "cpp",
-          "code": "#include <iostream>\n\nint main() {\n    int lecturas[4]{4, 7, -2, 5};\n    const int cantidad =\n        static_cast<int>(sizeof lecturas / sizeof lecturas[0]);\n    int indice = 0;\n    int nuevo = 0;\n    if (!(std::cin >> indice >> nuevo)) {\n        return 1;\n    }\n\n    bool aceptado = false;\n    if (indice >= 0 && indice < cantidad) {\n        lecturas[indice] = nuevo;\n        aceptado = true;\n    }\n\n    std::cout << \"Aceptado=\" << aceptado << '\\n';\n    std::cout << \"Datos=\";\n    for (int i = 0; i < cantidad; ++i) {\n        if (i != 0) {\n            std::cout << ' ';\n        }\n        std::cout << lecturas[i];\n    }\n    std::cout << '\\n' << \"Cantidad=\" << cantidad << '\\n';\n    return 0;\n}\n"
+          "code": "#include <iostream>\n\nint main() {\n    int lecturas[4]{4, 7, -2, 5};\n    const int cantidad =\n        static_cast<int>(sizeof lecturas / sizeof lecturas[0]);\n    int indice = 0;\n    int nuevo = 0;\n\n    if (!(std::cin >> indice >> nuevo)) {\n        return 1;\n    }\n\n    bool aceptado = false;\n    if (indice >= 0 && indice < cantidad) {\n        lecturas[indice] = nuevo;\n        aceptado = true;\n    }\n\n    std::cout << \"Aceptado=\" << aceptado << '\\n';\n    std::cout << \"Datos=\";\n    for (int i = 0; i < cantidad; ++i) {\n        if (i != 0) {\n            std::cout << ' ';\n        }\n        std::cout << lecturas[i];\n    }\n    std::cout << '\\n' << \"Cantidad=\" << cantidad << '\\n';\n\n    return 0;\n}\n"
         },
         {
           "type": "paragraph",
@@ -1428,6 +1428,150 @@
       }
     },
     "additions": [],
-    "editorial": []
+    "editorial": [
+      {
+        "id": "block_0004_0003",
+        "beforeSha256": "533e0bda4c2eb67fefbde21ef8915cc14f94da9891d6d30dc9d8359092904c72",
+        "afterSha256": "97a7bdb92fc4c24e14c315835ced70d24903b990d07e07e2b93b7b4d690e560d"
+      },
+      {
+        "id": "block_0005_0003",
+        "beforeSha256": "7ba00a9e0fe0bea46a6204076e18e31091551ee3146b98a672b935e91cd910a3",
+        "afterSha256": "b467af6fd21d051adcc5832efdd311b500bb32cde3aea035fda4e5d1d69d9d75"
+      },
+      {
+        "id": "block_0006_0003",
+        "beforeSha256": "3ea884eb7eac9b50007229ccb75b8a0836376f0bb4c72933d61a58b72a34a19c",
+        "afterSha256": "df9c9434deefa5ea4ef6abbfa43adbee81bf59509e00945276b9d829ca7301e3"
+      },
+      {
+        "id": "block_0009_0006",
+        "beforeSha256": "a36372b58219f79295823058be2a7bfffcf5ed8880a633ed5487cd502060a2fc",
+        "afterSha256": "9d50924013351083e45d9686ca807f250defd4f4240684141f4d4eebb6c659c7"
+      },
+      {
+        "id": "block_0011_0001",
+        "beforeSha256": "5d885226994ee11cc5075b54c7dae5b826533ecd2fbefba2568aa2b9741a12c8",
+        "afterSha256": "2c9ba3870f89e22b80491ded639a6a8c4b7cba45ef2ec7c33ac2595927754f3d"
+      }
+    ],
+    "sourceFormatRevisions": [
+      {
+        "id": "block_0004_0003",
+        "block": {
+          "type": "output_prediction",
+          "id": "p3_u2l1_bytes_y_elementos",
+          "question": "Predice las dos comparaciones y la cantidad de elementos. El resultado no requiere suponer sizeof(int) igual a 4.",
+          "language": "cpp",
+          "code": "#include <iostream>\n\nint main() {\n    int lecturas[4]{4, 7, -2, 5};\n    std::cout << (sizeof lecturas == 4 * sizeof(int)) << ':'\n              << sizeof lecturas / sizeof lecturas[0] << ':'\n              << (sizeof lecturas[0] == sizeof(int));\n    return 0;\n}\n",
+          "answers": [
+            "1:4:1"
+          ],
+          "outputComparison": "exact",
+          "explanation": "El tamaño completo es cuatro veces sizeof(int), la división cuenta cuatro elementos y el tamaño de lecturas[0] coincide con sizeof(int). Los bytes y la cantidad de elementos son medidas distintas."
+        }
+      },
+      {
+        "id": "block_0005_0003",
+        "block": {
+          "type": "output_prediction",
+          "id": "p3_u2l1_extension_inferida",
+          "question": "El cociente de los tamaños cuenta los elementos de cada array. Predice esas dos cantidades y el último valor de previstas.",
+          "language": "cpp",
+          "code": "#include <iostream>\n\nint main() {\n    int marcas[]{2, 5, 9};\n    int previstas[4]{2, 5, 9};\n    std::cout << sizeof marcas / sizeof marcas[0] << ':'\n              << sizeof previstas / sizeof previstas[0] << ':'\n              << previstas[3];\n    return 0;\n}\n",
+          "answers": [
+            "3:4:0"
+          ],
+          "outputComparison": "exact",
+          "explanation": "La primera lista determina tres elementos. La segunda definición pide cuatro y proporciona sólo tres valores, así que el cuarto vale 0. La extensión y la cantidad de inicializadores no siempre coinciden."
+        }
+      },
+      {
+        "id": "block_0006_0003",
+        "block": {
+          "type": "output_prediction",
+          "id": "p3_u2l1_asignar_antes_de_leer",
+          "question": "Predice la salida. No se leen los valores de lecturas[1], lecturas[2] ni lecturas[3].",
+          "language": "cpp",
+          "code": "#include <iostream>\n\nint main() {\n    int lecturas[4];\n    lecturas[0] = 9;\n    std::cout << lecturas[0] << ':'\n              << sizeof lecturas / sizeof lecturas[0];\n    return 0;\n}\n",
+          "answers": [
+            "9:4"
+          ],
+          "outputComparison": "exact",
+          "explanation": "lecturas[0] recibe 9 antes de leerse. La división de tamaños da cuatro sin leer los valores restantes. Esa medición no permite afirmar que los demás int sean cero."
+        }
+      },
+      {
+        "id": "block_0009_0006",
+        "block": {
+          "type": "cpp_compiler",
+          "language": "cpp",
+          "initialCode": "#include <iostream>\n\nint main() {\n    int lecturas[4]{4, 7, -2, 5};\n    const int cantidad =\n        static_cast<int>(sizeof lecturas / sizeof lecturas[0]);\n    int indice = 0;\n    int nuevo = 0;\n    if (!(std::cin >> indice >> nuevo)) {\n        return 1;\n    }\n\n    bool aceptado = false;\n    // Escribe aqui la comprobacion del indice y la asignacion valida.\n\n    std::cout << \"Aceptado=\" << aceptado << '\\n';\n    std::cout << \"Datos=\";\n    for (int i = 0; i < cantidad; ++i) {\n        if (i != 0) {\n            std::cout << ' ';\n        }\n        std::cout << lecturas[i];\n    }\n    std::cout << '\\n' << \"Cantidad=\" << cantidad << '\\n';\n    return 0;\n}\n",
+          "initialStandardInput": "3 99\n",
+          "outputCheck": {
+            "inputComparison": "tokens",
+            "cases": [
+              {
+                "standardInput": "3 99\n",
+                "outputs": [
+                  "Aceptado=1\nDatos=4 7 -2 99\nCantidad=4\n"
+                ],
+                "explanation": "Comprobar el índice antes del acceso; cambiar sólo el elemento válido y conservar todo el array al rechazar."
+              },
+              {
+                "standardInput": "0 -9\n",
+                "outputs": [
+                  "Aceptado=1\nDatos=-9 7 -2 5\nCantidad=4\n"
+                ],
+                "explanation": "Comprobar el índice antes del acceso; cambiar sólo el elemento válido y conservar todo el array al rechazar."
+              },
+              {
+                "standardInput": "2 0\n",
+                "outputs": [
+                  "Aceptado=1\nDatos=4 7 0 5\nCantidad=4\n"
+                ],
+                "explanation": "Comprobar el índice antes del acceso; cambiar sólo el elemento válido y conservar todo el array al rechazar."
+              },
+              {
+                "standardInput": "1 8\n",
+                "outputs": [
+                  "Aceptado=1\nDatos=4 8 -2 5\nCantidad=4\n"
+                ],
+                "explanation": "Comprobar el índice antes del acceso; cambiar sólo el elemento válido y conservar todo el array al rechazar."
+              },
+              {
+                "standardInput": "-1 99\n",
+                "outputs": [
+                  "Aceptado=0\nDatos=4 7 -2 5\nCantidad=4\n"
+                ],
+                "explanation": "Comprobar el índice antes del acceso; cambiar sólo el elemento válido y conservar todo el array al rechazar."
+              },
+              {
+                "standardInput": "4 99\n",
+                "outputs": [
+                  "Aceptado=0\nDatos=4 7 -2 5\nCantidad=4\n"
+                ],
+                "explanation": "Comprobar el índice antes del acceso; cambiar sólo el elemento válido y conservar todo el array al rechazar."
+              },
+              {
+                "standardInput": "1000 1\n",
+                "outputs": [
+                  "Aceptado=0\nDatos=4 7 -2 5\nCantidad=4\n"
+                ],
+                "explanation": "Comprobar el índice antes del acceso; cambiar sólo el elemento válido y conservar todo el array al rechazar."
+              }
+            ]
+          }
+        }
+      },
+      {
+        "id": "block_0011_0001",
+        "block": {
+          "type": "code",
+          "language": "cpp",
+          "code": "#include <iostream>\n\nint main() {\n    int lecturas[4]{4, 7, -2, 5};\n    const int cantidad =\n        static_cast<int>(sizeof lecturas / sizeof lecturas[0]);\n    int indice = 0;\n    int nuevo = 0;\n    if (!(std::cin >> indice >> nuevo)) {\n        return 1;\n    }\n\n    bool aceptado = false;\n    if (indice >= 0 && indice < cantidad) {\n        lecturas[indice] = nuevo;\n        aceptado = true;\n    }\n\n    std::cout << \"Aceptado=\" << aceptado << '\\n';\n    std::cout << \"Datos=\";\n    for (int i = 0; i < cantidad; ++i) {\n        if (i != 0) {\n            std::cout << ' ';\n        }\n        std::cout << lecturas[i];\n    }\n    std::cout << '\\n' << \"Cantidad=\" << cantidad << '\\n';\n    return 0;\n}\n"
+        }
+      }
+    ]
   }
 }

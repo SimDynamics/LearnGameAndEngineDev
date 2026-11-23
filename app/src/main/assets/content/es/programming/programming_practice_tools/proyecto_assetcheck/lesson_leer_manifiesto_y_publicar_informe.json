@@ -52,7 +52,7 @@
         {
           "type": "code",
           "language": "cpp",
-          "code": "#include <fstream>\nstd::ifstream archivo(ruta, std::ios::binary);\nif (!archivo.is_open()) {\n    error = ErrorGlobal::apertura;\n    return false;\n}\n// La ruta se recibe del cliente y no se adivina."
+          "code": "#include <fstream>\n\nstd::ifstream archivo(ruta, std::ios::binary);\nif (!archivo.is_open()) {\n    error = ErrorGlobal::apertura;\n    return false;\n}\n// La ruta se recibe del cliente y no se adivina."
         },
         {
           "type": "paragraph",
@@ -366,7 +366,7 @@
         {
           "type": "cpp_compiler",
           "language": "cpp",
-          "initialCode": "#include <iostream>\n#include <string>\nstruct Conteo {\n    int lineas = 0;\n    int vacias = 0;\n    int cr_sueltos = 0;\n    bool excedido = false;\n};\n\n// Trabaja con bytes preparados, sin abrir un archivo del equipo.\nConteo contar_lineas(const std::string& bytes) {\n    Conteo resultado;\n    // TODO: reconoce LF y CRLF, y cuenta cada línea física.\n    // Un CR sin LF es contenido y se cuenta como CR suelto.\n    // No inventes otra línea vacía después de un terminador final.\n    // Si aparece la línea 101, devuelve {0,0,0,true}.\n    return resultado;\n}\n\nstd::string datos(const std::string& nombre) {\n    if (nombre == \"VACIO\") return \"\";\n    if (nombre == \"LF\") return \"A malla 1\\nB sonido 2\\n\";\n    if (nombre == \"CRLF\") return \"A malla 1\\r\\nB sonido 2\\r\\n\";\n    if (nombre == \"ULTIMA\") return \"A malla 1\\nB sonido 2\";\n    if (nombre == \"BLANCO\") return \"A malla 1\\n\\nB sonido 2\\n\";\n    if (nombre == \"CRSUELTO\") return \"A malla\\r 1\\n\";\n    if (nombre == \"FINALCR\") return \"A malla 1\\r\";\n    if (nombre == \"CIEN\" || nombre == \"CIENTOUNO\") {\n        std::string x;\n        const int n = nombre == \"CIEN\" ? 100 : 101;\n        for (int i = 0; i < n; ++i) x += \"A malla 1\\n\";\n        return x;\n    }\n    return \"\";\n}\nint main() {\n    std::string nombre;\n    while (std::cin >> nombre) {\n        const Conteo r = contar_lineas(datos(nombre));\n        std::cout << nombre << ':' << r.lineas << ':' << r.vacias << ':'\n                  << r.cr_sueltos << ':' << r.excedido << '\\n';\n    }\n}\n",
+          "initialCode": "#include <iostream>\n#include <string>\nstruct Conteo {\n    int lineas = 0;\n    int vacias = 0;\n    int cr_sueltos = 0;\n    bool excedido = false;\n};\n\n// Trabaja con bytes preparados, sin abrir un archivo del equipo.\nConteo contar_lineas(const std::string& bytes) {\n    Conteo resultado;\n    // TODO: reconoce LF y CRLF, y cuenta cada línea física.\n    // Un CR sin LF es contenido y se cuenta como CR suelto.\n    // No inventes otra línea vacía después de un terminador final.\n    // Si aparece la línea 101, devuelve {0,0,0,true}.\n    \n    return resultado;\n}\n\nstd::string datos(const std::string& nombre) {\n    if (nombre == \"VACIO\") return \"\";\n    if (nombre == \"LF\") return \"A malla 1\\nB sonido 2\\n\";\n    if (nombre == \"CRLF\") return \"A malla 1\\r\\nB sonido 2\\r\\n\";\n    if (nombre == \"ULTIMA\") return \"A malla 1\\nB sonido 2\";\n    if (nombre == \"BLANCO\") return \"A malla 1\\n\\nB sonido 2\\n\";\n    if (nombre == \"CRSUELTO\") return \"A malla\\r 1\\n\";\n    if (nombre == \"FINALCR\") return \"A malla 1\\r\";\n    if (nombre == \"CIEN\" || nombre == \"CIENTOUNO\") {\n        std::string x;\n        const int n = nombre == \"CIEN\" ? 100 : 101;\n        for (int i = 0; i < n; ++i) x += \"A malla 1\\n\";\n        return x;\n    }\n    return \"\";\n}\nint main() {\n    std::string nombre;\n    while (std::cin >> nombre) {\n        const Conteo r = contar_lineas(datos(nombre));\n        std::cout << nombre << ':' << r.lineas << ':' << r.vacias << ':'\n                  << r.cr_sueltos << ':' << r.excedido << '\\n';\n    }\n}\n",
           "outputCheck": {
             "inputComparison": "exact",
             "cases": [
@@ -561,7 +561,7 @@
         {
           "type": "code",
           "language": "cpp",
-          "code": "#pragma once\n#include \"assetcheck/lote.hpp\"\n#include <filesystem>\n#include <iosfwd>\n#include <string>\nnamespace assetcheck {\nenum class ErrorGlobal { ninguno, apertura, lectura, limite_lineas };\nbool revisar_flujo(std::istream& origen, Lote& destino,\n                   ErrorGlobal& error);\nbool revisar_archivo(const std::filesystem::path& ruta, Lote& destino,\n                    ErrorGlobal& error);\nstd::string salida_admisiones(const Lote& lote);\nstd::string salida_rechazos(const Lote& lote);\nstd::string diagnostico_global(ErrorGlobal error);\nint codigo_terminacion(ErrorGlobal error, const Lote& lote);\n}"
+          "code": "#pragma once\n#include \"assetcheck/lote.hpp\"\n#include <filesystem>\n#include <iosfwd>\n#include <string>\n\nnamespace assetcheck {\nenum class ErrorGlobal { ninguno, apertura, lectura, limite_lineas };\nbool revisar_flujo(std::istream& origen, Lote& destino,\n                   ErrorGlobal& error);\nbool revisar_archivo(const std::filesystem::path& ruta, Lote& destino,\n                    ErrorGlobal& error);\nstd::string salida_admisiones(const Lote& lote);\nstd::string salida_rechazos(const Lote& lote);\nstd::string diagnostico_global(ErrorGlobal error);\nint codigo_terminacion(ErrorGlobal error, const Lote& lote);\n}"
         },
         {
           "type": "paragraph",
@@ -829,7 +829,7 @@
         {
           "type": "code",
           "language": "cpp",
-          "code": "int main(int argc, char* argv[]) {\n    if (argc != 2) {\n        std::cerr << \"ERROR causa=APERTURA\\n\";\n        return 2;\n    }\n    assetcheck::Lote informe;\n    assetcheck::ErrorGlobal error = assetcheck::ErrorGlobal::ninguno;\n    if (!assetcheck::revisar_archivo(argv[1], informe, error)) {\n        std::cerr << assetcheck::diagnostico_global(error);\n        return 2;\n    }\n    std::cout << assetcheck::salida_admisiones(informe);\n    std::cerr << assetcheck::salida_rechazos(informe);\n    return assetcheck::codigo_terminacion(error, informe);\n}"
+          "code": "int main(int argc, char* argv[]) {\n    if (argc != 2) {\n        std::cerr << \"ERROR causa=APERTURA\\n\";\n        return 2;\n    }\n    assetcheck::Lote informe;\n    assetcheck::ErrorGlobal error = assetcheck::ErrorGlobal::ninguno;\n\n    if (!assetcheck::revisar_archivo(argv[1], informe, error)) {\n        std::cerr << assetcheck::diagnostico_global(error);\n        return 2;\n    }\n    std::cout << assetcheck::salida_admisiones(informe);\n    std::cerr << assetcheck::salida_rechazos(informe);\n    return assetcheck::codigo_terminacion(error, informe);\n}"
         },
         {
           "type": "paragraph",
@@ -1613,7 +1613,7 @@
         {
           "type": "code",
           "language": "cmake",
-          "code": "cmake_minimum_required(VERSION 3.20)\nproject(AssetCheckEtapa3 VERSION 0.3 LANGUAGES CXX)\nset(CMAKE_CXX_STANDARD 23)\nset(CMAKE_CXX_STANDARD_REQUIRED ON)\nset(CMAKE_CXX_EXTENSIONS OFF)\nenable_testing()\n\nadd_library(assetcheck_registro STATIC src/registro.cpp)\ntarget_include_directories(assetcheck_registro PUBLIC include)\ntarget_compile_features(assetcheck_registro PUBLIC cxx_std_23)\n\nadd_library(assetcheck_lote STATIC src/lote.cpp)\ntarget_include_directories(assetcheck_lote PUBLIC include)\ntarget_link_libraries(assetcheck_lote PUBLIC assetcheck_registro)\ntarget_compile_features(assetcheck_lote PUBLIC cxx_std_23)\n\nadd_library(assetcheck_manifiesto STATIC src/manifiesto.cpp)\ntarget_include_directories(assetcheck_manifiesto PUBLIC include)\ntarget_link_libraries(assetcheck_manifiesto PUBLIC assetcheck_lote)\ntarget_compile_features(assetcheck_manifiesto PUBLIC cxx_std_23)\n\nadd_executable(assetcheck src/cliente.cpp)\ntarget_link_libraries(assetcheck PRIVATE assetcheck_manifiesto)\nadd_executable(comprobar_registro pruebas/casos.cpp)\ntarget_link_libraries(comprobar_registro PRIVATE assetcheck_registro)\nadd_test(NAME comprobar_registro COMMAND comprobar_registro)\nadd_executable(comprobar_lote pruebas/lote_casos.cpp)\ntarget_link_libraries(comprobar_lote PRIVATE assetcheck_lote)\nadd_test(NAME comprobar_lote COMMAND comprobar_lote)\nadd_executable(comprobar_manifiesto pruebas/manifiesto_casos.cpp)\ntarget_link_libraries(comprobar_manifiesto PRIVATE assetcheck_manifiesto)\nadd_test(NAME comprobar_manifiesto COMMAND comprobar_manifiesto)"
+          "code": "cmake_minimum_required(VERSION 3.20)\nproject(AssetCheckEtapa3 VERSION 0.3 LANGUAGES CXX)\nset(CMAKE_CXX_STANDARD 23)\nset(CMAKE_CXX_STANDARD_REQUIRED ON)\nset(CMAKE_CXX_EXTENSIONS OFF)\nenable_testing()\n\nadd_library(assetcheck_registro STATIC src/registro.cpp)\n\ntarget_include_directories(assetcheck_registro PUBLIC include)\ntarget_compile_features(assetcheck_registro PUBLIC cxx_std_23)\n\nadd_library(assetcheck_lote STATIC src/lote.cpp)\n\ntarget_include_directories(assetcheck_lote PUBLIC include)\ntarget_link_libraries(assetcheck_lote PUBLIC assetcheck_registro)\ntarget_compile_features(assetcheck_lote PUBLIC cxx_std_23)\n\nadd_library(assetcheck_manifiesto STATIC src/manifiesto.cpp)\n\ntarget_include_directories(assetcheck_manifiesto PUBLIC include)\ntarget_link_libraries(assetcheck_manifiesto PUBLIC assetcheck_lote)\ntarget_compile_features(assetcheck_manifiesto PUBLIC cxx_std_23)\n\nadd_executable(assetcheck src/cliente.cpp)\n\ntarget_link_libraries(assetcheck PRIVATE assetcheck_manifiesto)\nadd_executable(comprobar_registro pruebas/casos.cpp)\n\ntarget_link_libraries(comprobar_registro PRIVATE assetcheck_registro)\nadd_test(NAME comprobar_registro COMMAND comprobar_registro)\nadd_executable(comprobar_lote pruebas/lote_casos.cpp)\n\ntarget_link_libraries(comprobar_lote PRIVATE assetcheck_lote)\nadd_test(NAME comprobar_lote COMMAND comprobar_lote)\nadd_executable(comprobar_manifiesto pruebas/manifiesto_casos.cpp)\n\ntarget_link_libraries(comprobar_manifiesto PRIVATE assetcheck_manifiesto)\nadd_test(NAME comprobar_manifiesto COMMAND comprobar_manifiesto)"
         },
         {
           "type": "heading",
@@ -10606,6 +10606,106 @@
             "type": "paragraph",
             "text": "Conservaremos estos bytes también al versionar el archivo. Desde AssetCheck, .. señala la carpeta padre del repositorio, donde ya existe .gitattributes. Añadiremos una regla para AssetCheck/muestras/variacion_lector.txt; la regla anterior de lote.txt permanece.\n\nEl atributo -text desactiva la conversión de finales de línea de Git para esa ruta (Git, 2026a). La receta obtiene la ruta existente con Resolve-Path y lee sus bytes con ReadAllBytes. ASCII.GetString permite comprobar el texto de esas reglas. Contains verifica que siga presente la regla de lote.txt y que la nueva no esté ya añadida. EndsWith comprueba que el archivo anterior termine en LF; si no se cumple alguna condición, se detiene sin reescribirlo.\n\nLa nueva regla se convierte a bytes con su terminador CRLF. El signo + concatena el arreglo anterior con esos bytes nuevos; [byte[]] conserva el tipo de elementos que espera WriteAllBytes. Se guarda el conjunto manteniendo intactos los bytes anteriores. Si la regla ya existe, la receta lo indica y no la duplica. No cambia la configuración global de Git ni publica archivos."
           }
+        }
+      },
+      {
+        "id": "block_0001_0002",
+        "beforeSha256": "56681d2e91a6cbb01686def4e5a99472e8dca32dcf0ef6bf4911c4ad86a15548",
+        "afterSha256": "ceff1d0f1849aecc3fc22e1453dfc3f82ce67a8cbeb55bec26693f7f5b3210d4"
+      },
+      {
+        "id": "block_0006_0002",
+        "beforeSha256": "93ff9ce778a0c24368b8c5445f2f8f1c136e26197783b4f5f43f99307ff99242",
+        "afterSha256": "8a49b6fc780755a3e9672067c54d3796952a02d087a922cff2b2b7d2811a4a6c"
+      },
+      {
+        "id": "block_0008_0002",
+        "beforeSha256": "2599a84a8b8c1720f8801b9bc7a1d04a6f6c64818e7099a578c0748c58d89e7c",
+        "afterSha256": "6ef3cf87214061cc49443ce6d915edf6d508acd19a3f503507549fe734956406"
+      },
+      {
+        "id": "block_0009_0002",
+        "beforeSha256": "7f04bdb7020a7d81251961f8b1dfb6801ffa2779840dd8b9f48616bb2f6f8066",
+        "afterSha256": "b248f2d92777a9eb9b2d318577c4a654455bc49383e1604ac5335a28bba1dc6c"
+      },
+      {
+        "id": "block_0010_0002",
+        "beforeSha256": "42ec7c1242a88a24a46267a63f0010164fca0e06344e653b4c80894cdefdc9bc",
+        "afterSha256": "4b5b775ef790c186ffb8cf6a14cb2ba11322d7573b053c492672c23f0af1c77d"
+      }
+    ],
+    "sourceFormatRevisions": [
+      {
+        "id": "block_0001_0002",
+        "block": {
+          "type": "code",
+          "language": "cpp",
+          "code": "#include <fstream>\nstd::ifstream archivo(ruta, std::ios::binary);\nif (!archivo.is_open()) {\n    error = ErrorGlobal::apertura;\n    return false;\n}\n// La ruta se recibe del cliente y no se adivina."
+        }
+      },
+      {
+        "id": "block_0006_0002",
+        "block": {
+          "type": "cpp_compiler",
+          "language": "cpp",
+          "initialCode": "#include <iostream>\n#include <string>\nstruct Conteo {\n    int lineas = 0;\n    int vacias = 0;\n    int cr_sueltos = 0;\n    bool excedido = false;\n};\n\n// Trabaja con bytes preparados, sin abrir un archivo del equipo.\nConteo contar_lineas(const std::string& bytes) {\n    Conteo resultado;\n    // TODO: reconoce LF y CRLF, y cuenta cada línea física.\n    // Un CR sin LF es contenido y se cuenta como CR suelto.\n    // No inventes otra línea vacía después de un terminador final.\n    // Si aparece la línea 101, devuelve {0,0,0,true}.\n    return resultado;\n}\n\nstd::string datos(const std::string& nombre) {\n    if (nombre == \"VACIO\") return \"\";\n    if (nombre == \"LF\") return \"A malla 1\\nB sonido 2\\n\";\n    if (nombre == \"CRLF\") return \"A malla 1\\r\\nB sonido 2\\r\\n\";\n    if (nombre == \"ULTIMA\") return \"A malla 1\\nB sonido 2\";\n    if (nombre == \"BLANCO\") return \"A malla 1\\n\\nB sonido 2\\n\";\n    if (nombre == \"CRSUELTO\") return \"A malla\\r 1\\n\";\n    if (nombre == \"FINALCR\") return \"A malla 1\\r\";\n    if (nombre == \"CIEN\" || nombre == \"CIENTOUNO\") {\n        std::string x;\n        const int n = nombre == \"CIEN\" ? 100 : 101;\n        for (int i = 0; i < n; ++i) x += \"A malla 1\\n\";\n        return x;\n    }\n    return \"\";\n}\nint main() {\n    std::string nombre;\n    while (std::cin >> nombre) {\n        const Conteo r = contar_lineas(datos(nombre));\n        std::cout << nombre << ':' << r.lineas << ':' << r.vacias << ':'\n                  << r.cr_sueltos << ':' << r.excedido << '\\n';\n    }\n}\n",
+          "outputCheck": {
+            "inputComparison": "exact",
+            "cases": [
+              {
+                "standardInput": "VACIO LF CRLF\n",
+                "outputs": [
+                  "VACIO:0:0:0:0\nLF:2:0:0:0\nCRLF:2:0:0:0\n"
+                ],
+                "explanation": "El archivo vacío no contiene líneas; LF y CRLF delimitan dos, sin línea fantasma final."
+              },
+              {
+                "standardInput": "ULTIMA BLANCO\n",
+                "outputs": [
+                  "ULTIMA:2:0:0:0\nBLANCO:3:1:0:0\n"
+                ],
+                "explanation": "La última línea sin terminador sí existe; dos LF consecutivos crean una línea vacía intermedia."
+              },
+              {
+                "standardInput": "CRSUELTO FINALCR\n",
+                "outputs": [
+                  "CRSUELTO:1:0:1:0\nFINALCR:1:0:1:0\n"
+                ],
+                "explanation": "Un CR aislado, interior o al final sin LF, permanece como contenido inválido en la lectura real."
+              },
+              {
+                "standardInput": "CIEN CIENTOUNO\n",
+                "outputs": [
+                  "CIEN:100:0:0:0\nCIENTOUNO:0:0:0:1\n"
+                ],
+                "explanation": "Cien líneas están permitidas; la 101 invalida globalmente el intento y no publica contadores parciales."
+              }
+            ]
+          }
+        }
+      },
+      {
+        "id": "block_0008_0002",
+        "block": {
+          "type": "code",
+          "language": "cpp",
+          "code": "#pragma once\n#include \"assetcheck/lote.hpp\"\n#include <filesystem>\n#include <iosfwd>\n#include <string>\nnamespace assetcheck {\nenum class ErrorGlobal { ninguno, apertura, lectura, limite_lineas };\nbool revisar_flujo(std::istream& origen, Lote& destino,\n                   ErrorGlobal& error);\nbool revisar_archivo(const std::filesystem::path& ruta, Lote& destino,\n                    ErrorGlobal& error);\nstd::string salida_admisiones(const Lote& lote);\nstd::string salida_rechazos(const Lote& lote);\nstd::string diagnostico_global(ErrorGlobal error);\nint codigo_terminacion(ErrorGlobal error, const Lote& lote);\n}"
+        }
+      },
+      {
+        "id": "block_0009_0002",
+        "block": {
+          "type": "code",
+          "language": "cpp",
+          "code": "int main(int argc, char* argv[]) {\n    if (argc != 2) {\n        std::cerr << \"ERROR causa=APERTURA\\n\";\n        return 2;\n    }\n    assetcheck::Lote informe;\n    assetcheck::ErrorGlobal error = assetcheck::ErrorGlobal::ninguno;\n    if (!assetcheck::revisar_archivo(argv[1], informe, error)) {\n        std::cerr << assetcheck::diagnostico_global(error);\n        return 2;\n    }\n    std::cout << assetcheck::salida_admisiones(informe);\n    std::cerr << assetcheck::salida_rechazos(informe);\n    return assetcheck::codigo_terminacion(error, informe);\n}"
+        }
+      },
+      {
+        "id": "block_0010_0002",
+        "block": {
+          "type": "code",
+          "language": "cmake",
+          "code": "cmake_minimum_required(VERSION 3.20)\nproject(AssetCheckEtapa3 VERSION 0.3 LANGUAGES CXX)\nset(CMAKE_CXX_STANDARD 23)\nset(CMAKE_CXX_STANDARD_REQUIRED ON)\nset(CMAKE_CXX_EXTENSIONS OFF)\nenable_testing()\n\nadd_library(assetcheck_registro STATIC src/registro.cpp)\ntarget_include_directories(assetcheck_registro PUBLIC include)\ntarget_compile_features(assetcheck_registro PUBLIC cxx_std_23)\n\nadd_library(assetcheck_lote STATIC src/lote.cpp)\ntarget_include_directories(assetcheck_lote PUBLIC include)\ntarget_link_libraries(assetcheck_lote PUBLIC assetcheck_registro)\ntarget_compile_features(assetcheck_lote PUBLIC cxx_std_23)\n\nadd_library(assetcheck_manifiesto STATIC src/manifiesto.cpp)\ntarget_include_directories(assetcheck_manifiesto PUBLIC include)\ntarget_link_libraries(assetcheck_manifiesto PUBLIC assetcheck_lote)\ntarget_compile_features(assetcheck_manifiesto PUBLIC cxx_std_23)\n\nadd_executable(assetcheck src/cliente.cpp)\ntarget_link_libraries(assetcheck PRIVATE assetcheck_manifiesto)\nadd_executable(comprobar_registro pruebas/casos.cpp)\ntarget_link_libraries(comprobar_registro PRIVATE assetcheck_registro)\nadd_test(NAME comprobar_registro COMMAND comprobar_registro)\nadd_executable(comprobar_lote pruebas/lote_casos.cpp)\ntarget_link_libraries(comprobar_lote PRIVATE assetcheck_lote)\nadd_test(NAME comprobar_lote COMMAND comprobar_lote)\nadd_executable(comprobar_manifiesto pruebas/manifiesto_casos.cpp)\ntarget_link_libraries(comprobar_manifiesto PRIVATE assetcheck_manifiesto)\nadd_test(NAME comprobar_manifiesto COMMAND comprobar_manifiesto)"
         }
       }
     ]

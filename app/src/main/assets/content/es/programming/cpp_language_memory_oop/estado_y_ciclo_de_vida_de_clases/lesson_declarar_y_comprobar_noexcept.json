@@ -47,7 +47,7 @@
           "id": "p3_u6l9_declaraciones_y_consultas",
           "language": "cpp",
           "question": "Escribe las dos líneas: primero las cuatro consultas y después las dos llamadas ejecutadas de verdad.",
-          "code": "#include <iostream>\n#include <memory>\n#include <utility>\n\nint normal(int dato) { return dato; }\nint prometida(int dato) noexcept { return dato; }\nint explicita(int dato) noexcept(true) { return dato; }\nint permitida(int dato) noexcept(false) { return dato; }\n\nint main() {\n    std::cout << noexcept(normal(3)) << ':' << noexcept(prometida(3)) << ':'\n              << noexcept(explicita(3)) << ':' << noexcept(permitida(3)) << '\\n';\n    std::cout << normal(3) << ':' << prometida(3);\n    return 0;\n}\n",
+          "code": "#include <iostream>\n#include <memory>\n#include <utility>\n\nint normal(int dato) { return dato; }\nint prometida(int dato) noexcept { return dato; }\nint explicita(int dato) noexcept(true) { return dato; }\nint permitida(int dato) noexcept(false) { return dato; }\n\nint main() {\n    std::cout << noexcept(normal(3)) << ':' << noexcept(prometida(3)) << ':'\n              << noexcept(explicita(3)) << ':' << noexcept(permitida(3)) << '\\n';\n    std::cout << normal(3) << ':' << prometida(3);\n\n    return 0;\n}\n",
           "answers": [
             "0:1:1:0\n3:3"
           ],
@@ -75,7 +75,7 @@
           "id": "p3_u6l9_consulta_sin_incremento",
           "language": "cpp",
           "question": "¿Qué imprimen la consulta y cuenta en la primera línea, y la lectura final en la segunda?",
-          "code": "#include <iostream>\n#include <memory>\n#include <utility>\n\nint main() {\n    int cuenta = 0;\n    std::cout << noexcept(++cuenta) << ':' << cuenta << '\\n';\n    ++cuenta;\n    std::cout << cuenta;\n    return 0;\n}\n",
+          "code": "#include <iostream>\n#include <memory>\n#include <utility>\n\nint main() {\n    int cuenta = 0;\n\n    std::cout << noexcept(++cuenta) << ':' << cuenta << '\\n';\n    ++cuenta;\n\n    std::cout << cuenta;\n\n    return 0;\n}\n",
           "answers": [
             "1:0\n1"
           ],
@@ -103,7 +103,7 @@
           "id": "p3_u6l9_nombre_frente_a_llamada",
           "language": "cpp",
           "question": "¿Qué imprimen la consulta del nombre y la consulta de la llamada?",
-          "code": "#include <iostream>\n#include <memory>\n#include <utility>\n\nint normal(int dato) { return dato; }\n\nint main() {\n    std::cout << noexcept(normal) << ':' << noexcept(normal(2));\n    return 0;\n}\n",
+          "code": "#include <iostream>\n#include <memory>\n#include <utility>\n\nint normal(int dato) { return dato; }\n\nint main() {\n    std::cout << noexcept(normal) << ':' << noexcept(normal(2));\n\n    return 0;\n}\n",
           "answers": [
             "1:0"
           ],
@@ -146,7 +146,7 @@
           "type": "inline_fill_code",
           "id": "p3_u6l9_completar_promesa_coherente",
           "question": "Completa ambos huecos para que leer tenga el compromiso de no dejar salir excepciones tanto en su declaración como en su definición. Usa la palabra clave correspondiente, con o sin el valor verdadero explícito. Conserva el cuerpo, la consulta y la llamada real de main.",
-          "template": "#include <iostream>\n#include <memory>\n#include <utility>\n\nint leer(int dato) [];\n\nint leer(int dato) [] {\n    return dato;\n}\n\nint main() {\n    std::cout << noexcept(leer(3)) << ':' << leer(3);\n    return 0;\n}\n",
+          "template": "#include <iostream>\n#include <memory>\n#include <utility>\n\nint leer(int dato) [];\n\nint leer(int dato) [] {\n    return dato;\n}\n\nint main() {\n    std::cout << noexcept(leer(3)) << ':' << leer(3);\n\n    return 0;\n}\n",
           "answers": [
             "noexcept",
             "noexcept"
@@ -184,7 +184,7 @@
           "id": "p3_u6l9_argumento_falla_antes_de_entrar",
           "language": "cpp",
           "question": "Escribe las consultas de la primera línea y el informe producido por el catch. Sigue si llega a iniciarse el cuerpo de aceptar.",
-          "code": "#include <iostream>\n#include <memory>\n#include <utility>\n\nstruct Fuera {};\nint entradas = 0;\n\nint preparar() { throw Fuera{}; }\nint aceptar(int dato) noexcept {\n    ++entradas;\n    return dato;\n}\n\nint main() {\n    std::cout << noexcept(aceptar(1)) << ':'\n              << noexcept(aceptar(preparar())) << '\\n';\n    try {\n        std::cout << aceptar(preparar());\n    } catch (const Fuera&) {\n        std::cout << \"Capturada:\" << entradas;\n    }\n    return 0;\n}\n",
+          "code": "#include <iostream>\n#include <memory>\n#include <utility>\n\nstruct Fuera {};\nint entradas = 0;\n\nint preparar() { throw Fuera{}; }\nint aceptar(int dato) noexcept {\n    ++entradas;\n    return dato;\n}\n\nint main() {\n    std::cout << noexcept(aceptar(1)) << ':'\n              << noexcept(aceptar(preparar())) << '\\n';\n    try {\n        std::cout << aceptar(preparar());\n    } catch (const Fuera&) {\n        std::cout << \"Capturada:\" << entradas;\n    }\n\n    return 0;\n}\n",
           "answers": [
             "1:0\nCapturada:0"
           ],
@@ -208,7 +208,7 @@
           "id": "p3_u6l9_consultar_sin_ejecutar_limite",
           "language": "cpp",
           "question": "¿Qué imprime este programa, que sólo consulta la expresión de llamada?",
-          "code": "#include <iostream>\n#include <memory>\n#include <utility>\n\nstruct Fuera {};\n\nvoid lanzar() { throw Fuera{}; }\nvoid limite() noexcept { lanzar(); }\n\nint main() {\n    std::cout << noexcept(limite());\n    return 0;\n}\n",
+          "code": "#include <iostream>\n#include <memory>\n#include <utility>\n\nstruct Fuera {};\n\nvoid lanzar() { throw Fuera{}; }\nvoid limite() noexcept { lanzar(); }\n\nint main() {\n    std::cout << noexcept(limite());\n\n    return 0;\n}\n",
           "answers": [
             "1"
           ],
@@ -298,7 +298,7 @@
         {
           "type": "code",
           "language": "cpp",
-          "code": "#include <iostream>\n#include <memory>\n#include <utility>\n\nint normal(int dato) { return dato; }\nint segura(int dato) noexcept { return dato; }\nint preparar() { return 3; }\n\nint main() {\n    int cuenta = 0;\n    std::cout << noexcept(normal(2)) << ':' << noexcept(segura(2)) << ':'\n              << noexcept(segura(preparar())) << ':' << noexcept(++cuenta)\n              << ':' << cuenta;\n    return 0;\n}\n"
+          "code": "#include <iostream>\n#include <memory>\n#include <utility>\n\nint normal(int dato) { return dato; }\nint segura(int dato) noexcept { return dato; }\nint preparar() { return 3; }\n\nint main() {\n    int cuenta = 0;\n\n    std::cout << noexcept(normal(2)) << ':' << noexcept(segura(2)) << ':'\n              << noexcept(segura(preparar())) << ':' << noexcept(++cuenta)\n              << ':' << cuenta;\n    return 0;\n}\n"
         },
         {
           "type": "math_puzzle",
@@ -458,7 +458,7 @@
         {
           "type": "cpp_compiler",
           "language": "cpp",
-          "initialCode": "#include <iostream>\n#include <memory>\n#include <utility>\n\nstruct Fuera {};\nint revisiones = 0;\n\nint revisar(int entrada) {\n    ++revisiones;\n    if (entrada < 0 || entrada > 9) {\n        throw Fuera{};\n    }\n    return 9 - entrada;\n}\n\nbool aplicar_revision(int& estado, int entrada) noexcept;\nbool aplicar_revision(int& estado, int entrada) noexcept {\n    // Completa la revisión y el tratamiento de Fuera dentro de esta función.\n    (void)estado;\n    (void)entrada;\n    return false;\n}\nint main() {\n    int cantidad = 0;\n    if (!(std::cin >> cantidad) || cantidad < 1 || cantidad > 12) {\n        return 1;\n    }\n    int estado = 4;\n    std::cout << \"Inicio:\" << estado << \";Noexcept:\"\n              << noexcept(aplicar_revision(estado, 0))\n              << \";Revisiones:\" << revisiones << '\\n';\n    for (int i = 0; i < cantidad; ++i) {\n        int entrada = 0;\n        if (!(std::cin >> entrada)) {\n            return 1;\n        }\n        const int antes = estado;\n        const bool aceptado = aplicar_revision(estado, entrada);\n        std::cout << \"Resultado:\" << aceptado << \";Antes:\" << antes\n                  << \";Actual:\" << estado << \";Revisiones:\"\n                  << revisiones << '\\n';\n    }\n    std::cout << \"Final:\" << estado << \";Revisiones:\" << revisiones;\n    return 0;\n}\n",
+          "initialCode": "#include <iostream>\n#include <memory>\n#include <utility>\n\nstruct Fuera {};\nint revisiones = 0;\n\nint revisar(int entrada) {\n    ++revisiones;\n    if (entrada < 0 || entrada > 9) {\n        throw Fuera{};\n    }\n\n    return 9 - entrada;\n}\n\nbool aplicar_revision(int& estado, int entrada) noexcept;\nbool aplicar_revision(int& estado, int entrada) noexcept {\n    // Completa la revisión y el tratamiento de Fuera dentro de esta función.\n    (void)estado;\n    (void)entrada;\n    return false;\n}\n\nint main() {\n    int cantidad = 0;\n    if (!(std::cin >> cantidad) || cantidad < 1 || cantidad > 12) {\n        return 1;\n    }\n    int estado = 4;\n    std::cout << \"Inicio:\" << estado << \";Noexcept:\"\n              << noexcept(aplicar_revision(estado, 0))\n              << \";Revisiones:\" << revisiones << '\\n';\n    for (int i = 0; i < cantidad; ++i) {\n        int entrada = 0;\n        if (!(std::cin >> entrada)) {\n            return 1;\n        }\n        const int antes = estado;\n        const bool aceptado = aplicar_revision(estado, entrada);\n\n        std::cout << \"Resultado:\" << aceptado << \";Antes:\" << antes\n                  << \";Actual:\" << estado << \";Revisiones:\"\n                  << revisiones << '\\n';\n    }\n    std::cout << \"Final:\" << estado << \";Revisiones:\" << revisiones;\n\n    return 0;\n}\n",
           "initialStandardInput": "8\n2\n10\n0\n9\n-1\n4\n5\n2147483647\n",
           "outputCheck": {
             "inputComparison": "tokens",
@@ -584,7 +584,7 @@
         {
           "type": "code",
           "language": "cpp",
-          "code": "#include <iostream>\n#include <memory>\n#include <utility>\n\nstruct Fuera {};\nint revisiones = 0;\n\nint revisar(int entrada) {\n    ++revisiones;\n    if (entrada < 0 || entrada > 9) {\n        throw Fuera{};\n    }\n    return 9 - entrada;\n}\n\nbool aplicar_revision(int& estado, int entrada) noexcept;\nbool aplicar_revision(int& estado, int entrada) noexcept {\n    try {\n        const int candidato = revisar(entrada);\n        estado = candidato;\n        return true;\n    } catch (const Fuera&) {\n        return false;\n    }\n}\nint main() {\n    int cantidad = 0;\n    if (!(std::cin >> cantidad) || cantidad < 1 || cantidad > 12) {\n        return 1;\n    }\n    int estado = 4;\n    std::cout << \"Inicio:\" << estado << \";Noexcept:\"\n              << noexcept(aplicar_revision(estado, 0))\n              << \";Revisiones:\" << revisiones << '\\n';\n    for (int i = 0; i < cantidad; ++i) {\n        int entrada = 0;\n        if (!(std::cin >> entrada)) {\n            return 1;\n        }\n        const int antes = estado;\n        const bool aceptado = aplicar_revision(estado, entrada);\n        std::cout << \"Resultado:\" << aceptado << \";Antes:\" << antes\n                  << \";Actual:\" << estado << \";Revisiones:\"\n                  << revisiones << '\\n';\n    }\n    std::cout << \"Final:\" << estado << \";Revisiones:\" << revisiones;\n    return 0;\n}\n"
+          "code": "#include <iostream>\n#include <memory>\n#include <utility>\n\nstruct Fuera {};\nint revisiones = 0;\n\nint revisar(int entrada) {\n    ++revisiones;\n    if (entrada < 0 || entrada > 9) {\n        throw Fuera{};\n    }\n\n    return 9 - entrada;\n}\n\nbool aplicar_revision(int& estado, int entrada) noexcept;\nbool aplicar_revision(int& estado, int entrada) noexcept {\n    try {\n        const int candidato = revisar(entrada);\n        estado = candidato;\n        return true;\n    } catch (const Fuera&) {\n        return false;\n    }\n}\n\nint main() {\n    int cantidad = 0;\n    if (!(std::cin >> cantidad) || cantidad < 1 || cantidad > 12) {\n        return 1;\n    }\n    int estado = 4;\n    std::cout << \"Inicio:\" << estado << \";Noexcept:\"\n              << noexcept(aplicar_revision(estado, 0))\n              << \";Revisiones:\" << revisiones << '\\n';\n    for (int i = 0; i < cantidad; ++i) {\n        int entrada = 0;\n        if (!(std::cin >> entrada)) {\n            return 1;\n        }\n        const int antes = estado;\n        const bool aceptado = aplicar_revision(estado, entrada);\n\n        std::cout << \"Resultado:\" << aceptado << \";Antes:\" << antes\n                  << \";Actual:\" << estado << \";Revisiones:\"\n                  << revisiones << '\\n';\n    }\n    std::cout << \"Final:\" << estado << \";Revisiones:\" << revisiones;\n\n    return 0;\n}\n"
         },
         {
           "type": "paragraph",
@@ -619,7 +619,7 @@
           "id": "p3_u6l9_captura_interna_y_contador",
           "language": "cpp",
           "question": "¿Qué muestran los dos resultados de aceptación, el estado, el contador y la consulta final?",
-          "code": "#include <iostream>\n#include <memory>\n#include <utility>\n\nstruct Fuera {};\nint revisiones = 0;\n\nint revisar(int entrada) {\n    ++revisiones;\n    if (entrada < 0 || entrada > 9) {\n        throw Fuera{};\n    }\n    return 9 - entrada;\n}\n\nbool aplicar_revision(int& estado, int entrada) noexcept;\nbool aplicar_revision(int& estado, int entrada) noexcept {\n    try {\n        const int candidato = revisar(entrada);\n        estado = candidato;\n        return true;\n    } catch (const Fuera&) {\n        return false;\n    }\n}\n\nint main() {\n    int estado = 4;\n    const bool primera = aplicar_revision(estado, 10);\n    const bool segunda = aplicar_revision(estado, 2);\n    std::cout << primera << ':' << segunda << ':' << estado << ':'\n              << revisiones << ':' << noexcept(aplicar_revision(estado, 8));\n    return 0;\n}\n",
+          "code": "#include <iostream>\n#include <memory>\n#include <utility>\n\nstruct Fuera {};\nint revisiones = 0;\n\nint revisar(int entrada) {\n    ++revisiones;\n    if (entrada < 0 || entrada > 9) {\n        throw Fuera{};\n    }\n\n    return 9 - entrada;\n}\n\nbool aplicar_revision(int& estado, int entrada) noexcept;\nbool aplicar_revision(int& estado, int entrada) noexcept {\n    try {\n        const int candidato = revisar(entrada);\n        estado = candidato;\n        return true;\n    } catch (const Fuera&) {\n        return false;\n    }\n}\n\nint main() {\n    int estado = 4;\n    const bool primera = aplicar_revision(estado, 10);\n    const bool segunda = aplicar_revision(estado, 2);\n\n    std::cout << primera << ':' << segunda << ':' << estado << ':'\n              << revisiones << ':' << noexcept(aplicar_revision(estado, 8));\n    return 0;\n}\n",
           "answers": [
             "0:1:7:2:1"
           ],
@@ -651,7 +651,7 @@
           "id": "p3_u6l9_movimiento_y_especificacion",
           "language": "cpp",
           "question": "¿Qué muestran las tres consultas, en el orden Generada, Propia y Prometida?",
-          "code": "#include <iostream>\n#include <memory>\n#include <utility>\n\nstruct Generada {\n    std::unique_ptr<int> dato;\n};\n\nstruct Propia {\n    std::unique_ptr<int> dato;\n    Propia() = default;\n    Propia(Propia&& otra) : dato{std::move(otra.dato)} {}\n};\n\nstruct Prometida {\n    std::unique_ptr<int> dato;\n    Prometida() = default;\n    Prometida(Prometida&& otra) noexcept : dato{std::move(otra.dato)} {}\n};\n\nint main() {\n    Generada a;\n    Propia b;\n    Prometida d;\n    std::cout << noexcept(Generada{std::move(a)}) << ':'\n              << noexcept(Propia{std::move(b)}) << ':'\n              << noexcept(Prometida{std::move(d)});\n    return 0;\n}\n",
+          "code": "#include <iostream>\n#include <memory>\n#include <utility>\n\nstruct Generada {\n    std::unique_ptr<int> dato;\n};\n\nstruct Propia {\n    std::unique_ptr<int> dato;\n    Propia() = default;\n    Propia(Propia&& otra) : dato{std::move(otra.dato)} {}\n};\n\nstruct Prometida {\n    std::unique_ptr<int> dato;\n    Prometida() = default;\n    Prometida(Prometida&& otra) noexcept : dato{std::move(otra.dato)} {}\n};\n\nint main() {\n    Generada a;\n    Propia b;\n    Prometida d;\n\n    std::cout << noexcept(Generada{std::move(a)}) << ':'\n              << noexcept(Propia{std::move(b)}) << ':'\n              << noexcept(Prometida{std::move(d)});\n    return 0;\n}\n",
           "answers": [
             "1:0:1"
           ],
@@ -1809,6 +1809,244 @@
       }
     },
     "additions": [],
-    "editorial": []
+    "editorial": [
+      {
+        "id": "block_0001_0003",
+        "beforeSha256": "38e5bc22967cf70fb2d1f9eade2e456c4f7b7ed6958d251549550767da59097f",
+        "afterSha256": "19c3e706ab21ad735b27d57a3462eddab813408ec9471d24a75ce306cc8e5aa4"
+      },
+      {
+        "id": "block_0002_0003",
+        "beforeSha256": "a45e6c0dbfa452952d5a88669f57d73797792e6a83177bdbbcbcda79c81a99fd",
+        "afterSha256": "4bb3cf81ffef802fe3c85d26baa2c778e4d7837e5cc68f67f142d5b1b5316117"
+      },
+      {
+        "id": "block_0003_0003",
+        "beforeSha256": "b3c05b6bcc7312533d30abec4e29185de78117acbf1ef0632f6bc49c44dfffda",
+        "afterSha256": "cb7543c16d6e0391e9babc2b316ae397f559bee2cc4bc1ace5c0b4259c978696"
+      },
+      {
+        "id": "block_0005_0003",
+        "beforeSha256": "82c1284b0e727ede8be91483e58795ad209291a6706552fbc19e0d13b7832913",
+        "afterSha256": "09f0e3f713b0810810a71bae2b999c94ec0f3334766570f2db43bef180ba9daa"
+      },
+      {
+        "id": "block_0006_0003",
+        "beforeSha256": "89c9ca41bf4bf26bde1e1b4e9066ebe3d49afd3a48655717fa17904974c613d4",
+        "afterSha256": "224f92367bad62575dca7d6a3457882abe22310305501cfc9ddc94e86a953122"
+      },
+      {
+        "id": "block_0007_0002",
+        "beforeSha256": "d51d4957f1a437df0449c98bc0ffeaad1d8fae22ac378b35af1c8112bbf8dbf7",
+        "afterSha256": "1718de37909ec20b74d1a6a739ce6c73029b52d15ea5d6941875f46f3527e96f"
+      },
+      {
+        "id": "block_0010_0003",
+        "beforeSha256": "79a339f66c8e0a0e548d20271c6d831387cc2787fd97f60bf5e3be423cc4ffc7",
+        "afterSha256": "85429ce7548645f9f896c4c61aafc8cb7055e2184421d7b50231c12559bdeb3f"
+      },
+      {
+        "id": "block_0013_0002",
+        "beforeSha256": "368ad2fc809b76618bfbc12901b323a0d428ce06a016deb174504fc49f569f17",
+        "afterSha256": "e02c85a2e952c3fb9c5cfa1e0c5aa7b5de08cb58aa2cb1342585996985ca2fe2"
+      },
+      {
+        "id": "block_0015_0001",
+        "beforeSha256": "37309376e622da005f137bfb877a73a10a9c05fc8e414963405aca5d5578855e",
+        "afterSha256": "06ec2d0dc9fc8770cf9a59ce0fbea259284afa35a69d3ff26a596cd1f0cc4eed"
+      },
+      {
+        "id": "block_0016_0002",
+        "beforeSha256": "cc6acaabdf39921067dea70d7b95b6a09fbb4c3db74a4c03214173e4d46dda6e",
+        "afterSha256": "b65aa4355381731214c079c1c8aef2f908197429236962f8e23cfb9c3687b8a5"
+      },
+      {
+        "id": "block_0017_0003",
+        "beforeSha256": "25f98b377b82fd7438690675c353f30a65b0a4a5bd87fc2a6ef7fd817c90968f",
+        "afterSha256": "f20666d52639bbc6c02ee90461d064242347882f4f8f1ba9fb0b0bbf3aa66a20"
+      }
+    ],
+    "sourceFormatRevisions": [
+      {
+        "id": "block_0001_0003",
+        "block": {
+          "type": "output_prediction",
+          "id": "p3_u6l9_declaraciones_y_consultas",
+          "language": "cpp",
+          "question": "Escribe las dos líneas: primero las cuatro consultas y después las dos llamadas ejecutadas de verdad.",
+          "code": "#include <iostream>\n#include <memory>\n#include <utility>\n\nint normal(int dato) { return dato; }\nint prometida(int dato) noexcept { return dato; }\nint explicita(int dato) noexcept(true) { return dato; }\nint permitida(int dato) noexcept(false) { return dato; }\n\nint main() {\n    std::cout << noexcept(normal(3)) << ':' << noexcept(prometida(3)) << ':'\n              << noexcept(explicita(3)) << ':' << noexcept(permitida(3)) << '\\n';\n    std::cout << normal(3) << ':' << prometida(3);\n    return 0;\n}\n",
+          "answers": [
+            "0:1:1:0\n3:3"
+          ],
+          "outputComparison": "exact",
+          "explanation": "Las consultas distinguen las funciones con compromiso de no propagación de las funciones ordinarias que permiten propagar. No ejecutan ninguna de ellas. La segunda línea sí llama a normal y prometida: ambas devuelven el dato recibido. Permitir propagar no obliga a lanzar una excepción."
+        }
+      },
+      {
+        "id": "block_0002_0003",
+        "block": {
+          "type": "output_prediction",
+          "id": "p3_u6l9_consulta_sin_incremento",
+          "language": "cpp",
+          "question": "¿Qué imprimen la consulta y cuenta en la primera línea, y la lectura final en la segunda?",
+          "code": "#include <iostream>\n#include <memory>\n#include <utility>\n\nint main() {\n    int cuenta = 0;\n    std::cout << noexcept(++cuenta) << ':' << cuenta << '\\n';\n    ++cuenta;\n    std::cout << cuenta;\n    return 0;\n}\n",
+          "answers": [
+            "1:0\n1"
+          ],
+          "outputComparison": "exact",
+          "explanation": "El operador responde sobre la expresión de incremento sin modificar cuenta. Sólo la instrucción posterior incrementa el entero. La clasificación de esa expresión no es una prueba de que se haya ejecutado ni una orden para ejecutarla."
+        }
+      },
+      {
+        "id": "block_0003_0003",
+        "block": {
+          "type": "output_prediction",
+          "id": "p3_u6l9_nombre_frente_a_llamada",
+          "language": "cpp",
+          "question": "¿Qué imprimen la consulta del nombre y la consulta de la llamada?",
+          "code": "#include <iostream>\n#include <memory>\n#include <utility>\n\nint normal(int dato) { return dato; }\n\nint main() {\n    std::cout << noexcept(normal) << ':' << noexcept(normal(2));\n    return 0;\n}\n",
+          "answers": [
+            "1:0"
+          ],
+          "outputComparison": "exact",
+          "explanation": "Nombrar normal no es una llamada que pueda propagar su excepción. normal(2) sí es una expresión de llamada a una función ordinaria sin especificación de no propagación. El operador distingue ambas expresiones sin ejecutar el cuerpo en ninguno de los dos casos."
+        }
+      },
+      {
+        "id": "block_0005_0003",
+        "block": {
+          "type": "inline_fill_code",
+          "id": "p3_u6l9_completar_promesa_coherente",
+          "question": "Completa ambos huecos para que leer tenga el compromiso de no dejar salir excepciones tanto en su declaración como en su definición. Usa la palabra clave correspondiente, con o sin el valor verdadero explícito. Conserva el cuerpo, la consulta y la llamada real de main.",
+          "template": "#include <iostream>\n#include <memory>\n#include <utility>\n\nint leer(int dato) [];\n\nint leer(int dato) [] {\n    return dato;\n}\n\nint main() {\n    std::cout << noexcept(leer(3)) << ':' << leer(3);\n    return 0;\n}\n",
+          "answers": [
+            "noexcept",
+            "noexcept"
+          ],
+          "answerAlternatives": [
+            [
+              "noexcept",
+              "noexcept(true)"
+            ],
+            [
+              "noexcept",
+              "noexcept(true)"
+            ]
+          ],
+          "explanation": "Las dos posiciones deben expresar la misma especificación de no propagación. noexcept y noexcept(true) son equivalentes. La consulta de main no ejecuta leer; la llamada posterior sí lo hace y devuelve el entero recibido."
+        }
+      },
+      {
+        "id": "block_0006_0003",
+        "block": {
+          "type": "output_prediction",
+          "id": "p3_u6l9_argumento_falla_antes_de_entrar",
+          "language": "cpp",
+          "question": "Escribe las consultas de la primera línea y el informe producido por el catch. Sigue si llega a iniciarse el cuerpo de aceptar.",
+          "code": "#include <iostream>\n#include <memory>\n#include <utility>\n\nstruct Fuera {};\nint entradas = 0;\n\nint preparar() { throw Fuera{}; }\nint aceptar(int dato) noexcept {\n    ++entradas;\n    return dato;\n}\n\nint main() {\n    std::cout << noexcept(aceptar(1)) << ':'\n              << noexcept(aceptar(preparar())) << '\\n';\n    try {\n        std::cout << aceptar(preparar());\n    } catch (const Fuera&) {\n        std::cout << \"Capturada:\" << entradas;\n    }\n    return 0;\n}\n",
+          "answers": [
+            "1:0\nCapturada:0"
+          ],
+          "outputComparison": "exact",
+          "explanation": "La llamada con un literal no necesita ejecutar preparar. La llamada cuyo argumento depende de preparar incluye esa operación potencialmente lanzadora. Al ejecutar la segunda forma, preparar lanza antes de entrar en aceptar; por eso entradas no aumenta y el catch exterior puede recibir Fuera. La excepción no ha salido del cuerpo de aceptar."
+        }
+      },
+      {
+        "id": "block_0007_0002",
+        "block": {
+          "type": "output_prediction",
+          "id": "p3_u6l9_consultar_sin_ejecutar_limite",
+          "language": "cpp",
+          "question": "¿Qué imprime este programa, que sólo consulta la expresión de llamada?",
+          "code": "#include <iostream>\n#include <memory>\n#include <utility>\n\nstruct Fuera {};\n\nvoid lanzar() { throw Fuera{}; }\nvoid limite() noexcept { lanzar(); }\n\nint main() {\n    std::cout << noexcept(limite());\n    return 0;\n}\n",
+          "answers": [
+            "1"
+          ],
+          "outputComparison": "exact",
+          "explanation": "La consulta produce su resultado a partir de la llamada a una función declarada noexcept. No se entra en limite y no se ejecuta lanzar. Este programa no provoca la salida de una excepción a través de ese compromiso."
+        }
+      },
+      {
+        "id": "block_0010_0003",
+        "block": {
+          "type": "code",
+          "language": "cpp",
+          "code": "#include <iostream>\n#include <memory>\n#include <utility>\n\nint normal(int dato) { return dato; }\nint segura(int dato) noexcept { return dato; }\nint preparar() { return 3; }\n\nint main() {\n    int cuenta = 0;\n    std::cout << noexcept(normal(2)) << ':' << noexcept(segura(2)) << ':'\n              << noexcept(segura(preparar())) << ':' << noexcept(++cuenta)\n              << ':' << cuenta;\n    return 0;\n}\n"
+        }
+      },
+      {
+        "id": "block_0013_0002",
+        "block": {
+          "type": "cpp_compiler",
+          "language": "cpp",
+          "initialCode": "#include <iostream>\n#include <memory>\n#include <utility>\n\nstruct Fuera {};\nint revisiones = 0;\n\nint revisar(int entrada) {\n    ++revisiones;\n    if (entrada < 0 || entrada > 9) {\n        throw Fuera{};\n    }\n    return 9 - entrada;\n}\n\nbool aplicar_revision(int& estado, int entrada) noexcept;\nbool aplicar_revision(int& estado, int entrada) noexcept {\n    // Completa la revisión y el tratamiento de Fuera dentro de esta función.\n    (void)estado;\n    (void)entrada;\n    return false;\n}\nint main() {\n    int cantidad = 0;\n    if (!(std::cin >> cantidad) || cantidad < 1 || cantidad > 12) {\n        return 1;\n    }\n    int estado = 4;\n    std::cout << \"Inicio:\" << estado << \";Noexcept:\"\n              << noexcept(aplicar_revision(estado, 0))\n              << \";Revisiones:\" << revisiones << '\\n';\n    for (int i = 0; i < cantidad; ++i) {\n        int entrada = 0;\n        if (!(std::cin >> entrada)) {\n            return 1;\n        }\n        const int antes = estado;\n        const bool aceptado = aplicar_revision(estado, entrada);\n        std::cout << \"Resultado:\" << aceptado << \";Antes:\" << antes\n                  << \";Actual:\" << estado << \";Revisiones:\"\n                  << revisiones << '\\n';\n    }\n    std::cout << \"Final:\" << estado << \";Revisiones:\" << revisiones;\n    return 0;\n}\n",
+          "initialStandardInput": "8\n2\n10\n0\n9\n-1\n4\n5\n2147483647\n",
+          "outputCheck": {
+            "inputComparison": "tokens",
+            "cases": [
+              {
+                "standardInput": "8\n2\n10\n0\n9\n-1\n4\n5\n2147483647\n",
+                "outputs": [
+                  "Inicio:4;Noexcept:1;Revisiones:0\nResultado:1;Antes:4;Actual:7;Revisiones:1\nResultado:0;Antes:7;Actual:7;Revisiones:2\nResultado:1;Antes:7;Actual:9;Revisiones:3\nResultado:1;Antes:9;Actual:0;Revisiones:4\nResultado:0;Antes:0;Actual:0;Revisiones:5\nResultado:1;Antes:0;Actual:5;Revisiones:6\nResultado:1;Antes:5;Actual:4;Revisiones:7\nResultado:0;Antes:4;Actual:4;Revisiones:8\nFinal:4;Revisiones:8"
+                ],
+                "explanation": "Prepara el candidato con una única llamada a revisar dentro de try. Asigna al estado sólo cuando la llamada vuelve normalmente. Trata Fuera dentro de esta función y devuelve false conservando el estado. El contador ya incrementado no se restaura."
+              },
+              {
+                "standardInput": "3\n0\n0\n9\n",
+                "outputs": [
+                  "Inicio:4;Noexcept:1;Revisiones:0\nResultado:1;Antes:4;Actual:9;Revisiones:1\nResultado:1;Antes:9;Actual:9;Revisiones:2\nResultado:1;Antes:9;Actual:0;Revisiones:3\nFinal:0;Revisiones:3"
+                ],
+                "explanation": "Prepara el candidato con una única llamada a revisar dentro de try. Asigna al estado sólo cuando la llamada vuelve normalmente. Trata Fuera dentro de esta función y devuelve false conservando el estado. El contador ya incrementado no se restaura."
+              },
+              {
+                "standardInput": "4\n-2147483648\n-1\n10\n9\n",
+                "outputs": [
+                  "Inicio:4;Noexcept:1;Revisiones:0\nResultado:0;Antes:4;Actual:4;Revisiones:1\nResultado:0;Antes:4;Actual:4;Revisiones:2\nResultado:0;Antes:4;Actual:4;Revisiones:3\nResultado:1;Antes:4;Actual:0;Revisiones:4\nFinal:0;Revisiones:4"
+                ],
+                "explanation": "Prepara el candidato con una única llamada a revisar dentro de try. Asigna al estado sólo cuando la llamada vuelve normalmente. Trata Fuera dentro de esta función y devuelve false conservando el estado. El contador ya incrementado no se restaura."
+              }
+            ]
+          }
+        }
+      },
+      {
+        "id": "block_0015_0001",
+        "block": {
+          "type": "code",
+          "language": "cpp",
+          "code": "#include <iostream>\n#include <memory>\n#include <utility>\n\nstruct Fuera {};\nint revisiones = 0;\n\nint revisar(int entrada) {\n    ++revisiones;\n    if (entrada < 0 || entrada > 9) {\n        throw Fuera{};\n    }\n    return 9 - entrada;\n}\n\nbool aplicar_revision(int& estado, int entrada) noexcept;\nbool aplicar_revision(int& estado, int entrada) noexcept {\n    try {\n        const int candidato = revisar(entrada);\n        estado = candidato;\n        return true;\n    } catch (const Fuera&) {\n        return false;\n    }\n}\nint main() {\n    int cantidad = 0;\n    if (!(std::cin >> cantidad) || cantidad < 1 || cantidad > 12) {\n        return 1;\n    }\n    int estado = 4;\n    std::cout << \"Inicio:\" << estado << \";Noexcept:\"\n              << noexcept(aplicar_revision(estado, 0))\n              << \";Revisiones:\" << revisiones << '\\n';\n    for (int i = 0; i < cantidad; ++i) {\n        int entrada = 0;\n        if (!(std::cin >> entrada)) {\n            return 1;\n        }\n        const int antes = estado;\n        const bool aceptado = aplicar_revision(estado, entrada);\n        std::cout << \"Resultado:\" << aceptado << \";Antes:\" << antes\n                  << \";Actual:\" << estado << \";Revisiones:\"\n                  << revisiones << '\\n';\n    }\n    std::cout << \"Final:\" << estado << \";Revisiones:\" << revisiones;\n    return 0;\n}\n"
+        }
+      },
+      {
+        "id": "block_0016_0002",
+        "block": {
+          "type": "output_prediction",
+          "id": "p3_u6l9_captura_interna_y_contador",
+          "language": "cpp",
+          "question": "¿Qué muestran los dos resultados de aceptación, el estado, el contador y la consulta final?",
+          "code": "#include <iostream>\n#include <memory>\n#include <utility>\n\nstruct Fuera {};\nint revisiones = 0;\n\nint revisar(int entrada) {\n    ++revisiones;\n    if (entrada < 0 || entrada > 9) {\n        throw Fuera{};\n    }\n    return 9 - entrada;\n}\n\nbool aplicar_revision(int& estado, int entrada) noexcept;\nbool aplicar_revision(int& estado, int entrada) noexcept {\n    try {\n        const int candidato = revisar(entrada);\n        estado = candidato;\n        return true;\n    } catch (const Fuera&) {\n        return false;\n    }\n}\n\nint main() {\n    int estado = 4;\n    const bool primera = aplicar_revision(estado, 10);\n    const bool segunda = aplicar_revision(estado, 2);\n    std::cout << primera << ':' << segunda << ':' << estado << ':'\n              << revisiones << ':' << noexcept(aplicar_revision(estado, 8));\n    return 0;\n}\n",
+          "answers": [
+            "0:1:7:2:1"
+          ],
+          "outputComparison": "exact",
+          "explanation": "La primera revisión rechaza diez lanzando Fuera y la captura devuelve false. La segunda acepta dos y obtiene siete. Sólo se han ejecutado dos revisiones; la consulta final devuelve true sin ejecutar el adaptador."
+        }
+      },
+      {
+        "id": "block_0017_0003",
+        "block": {
+          "type": "output_prediction",
+          "id": "p3_u6l9_movimiento_y_especificacion",
+          "language": "cpp",
+          "question": "¿Qué muestran las tres consultas, en el orden Generada, Propia y Prometida?",
+          "code": "#include <iostream>\n#include <memory>\n#include <utility>\n\nstruct Generada {\n    std::unique_ptr<int> dato;\n};\n\nstruct Propia {\n    std::unique_ptr<int> dato;\n    Propia() = default;\n    Propia(Propia&& otra) : dato{std::move(otra.dato)} {}\n};\n\nstruct Prometida {\n    std::unique_ptr<int> dato;\n    Prometida() = default;\n    Prometida(Prometida&& otra) noexcept : dato{std::move(otra.dato)} {}\n};\n\nint main() {\n    Generada a;\n    Propia b;\n    Prometida d;\n    std::cout << noexcept(Generada{std::move(a)}) << ':'\n              << noexcept(Propia{std::move(b)}) << ':'\n              << noexcept(Prometida{std::move(d)});\n    return 0;\n}\n",
+          "answers": [
+            "1:0:1"
+          ],
+          "outputComparison": "exact",
+          "explanation": "El movimiento generado utiliza la especificación que corresponde al miembro propietario. El constructor propio de Propia, sin la declaración expresa, sigue siendo potencialmente lanzador aunque su cuerpo actual sólo mueva ese miembro. Prometida expresa la promesa en su declaración."
+        }
+      }
+    ]
   }
 }
