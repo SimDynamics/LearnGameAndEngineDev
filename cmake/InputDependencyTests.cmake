@@ -222,4 +222,35 @@ function(lgaed_add_local_dependency_view_tests source_root presentation_target)
     add_test(NAME native.joint_local_int_view
         COMMAND lgaed_local_dependency_view_tests --joint-local-int "${_joint_fixture_dir}/manifest.json")
     set_tests_properties(native.joint_local_int_view PROPERTIES TIMEOUT 600 RUN_SERIAL TRUE)
+
+    # Eight independently pinned current input owners adopt their own private
+    # plans. Keep both earlier exports and all eighteen historical owners intact.
+    set(_decision_fixture_dir "${CMAKE_CURRENT_BINARY_DIR}/test-fixtures/input-decisions")
+    set(_decision_fixture_files "${_decision_fixture_dir}/manifest.json")
+    foreach(_lesson IN ITEMS u3l3 u3l4 u3l5 u3l6 u3l7 u3l8 u4l1 u4l2)
+        foreach(_file IN ITEMS before.json after.json)
+            list(APPEND _decision_fixture_files "${_decision_fixture_dir}/${_lesson}/${_file}")
+        endforeach()
+    endforeach()
+    add_custom_command(OUTPUT ${_decision_fixture_files}
+        COMMAND "${Python3_EXECUTABLE}" -B
+            "${source_root}/scripts/curriculum/input_decision_fixture_source.py"
+            --output-dir "${_decision_fixture_dir}"
+        DEPENDS "${source_root}/scripts/curriculum/input_decision_fixture_source.py"
+            "${source_root}/scripts/curriculum/diagnostic_fixture_source.py"
+            "${source_root}/scripts/curriculum/stable_state_layout.py"
+        VERBATIM)
+    add_custom_target(lgaed_input_decision_fixtures DEPENDS ${_decision_fixture_files})
+    add_dependencies(lgaed_local_dependency_view_tests lgaed_input_decision_fixtures)
+    foreach(_lesson IN ITEMS u3l3 u3l4 u3l5 u3l6 u3l7 u3l8 u4l1 u4l2)
+        add_test(NAME native.input_decisions_view_${_lesson}
+            COMMAND lgaed_local_dependency_view_tests --input-decisions
+                "${_decision_fixture_dir}/manifest.json" "${_lesson}")
+        set_tests_properties(native.input_decisions_view_${_lesson}
+            PROPERTIES TIMEOUT 600 RUN_SERIAL TRUE)
+    endforeach()
+    add_test(NAME native.input_decision_authoring
+        COMMAND "${Python3_EXECUTABLE}" -B -m unittest discover
+            -s "${source_root}/scripts/curriculum" -p test_input_decision_authoring.py -v)
+    set_tests_properties(native.input_decision_authoring PROPERTIES TIMEOUT 120)
 endfunction()

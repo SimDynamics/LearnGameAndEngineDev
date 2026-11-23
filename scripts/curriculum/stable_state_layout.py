@@ -6919,8 +6919,12 @@ def _validate_compiler_input_checks(document: dict) -> None:
         "compilerInterfaceCollectionChecks", "compilerPolymorphicCloneChecks", "compilerDualInterfaceChecks",
     }
     for check in checks:
-        require(type(check) is dict and set(check) == {"activity", "probes"},
-                "An input check requires exactly activity and probes")
+        require(type(check) is dict and set(check) in (
+                    {"activity", "probes"}, {"activity", "probes", "allowSameOutput"}),
+                "An input check requires activity and probes, with optional allowSameOutput")
+        require("allowSameOutput" not in check or check["allowSameOutput"] is True,
+                "allowSameOutput must be true when present")
+        allow_same_output = check.get("allowSameOutput", False)
         identity = _identity(check["activity"])
         require(identity not in seen, "Duplicate input-check owner")
         seen.add(identity)
@@ -6960,6 +6964,7 @@ def _validate_compiler_input_checks(document: dict) -> None:
                 "An input check requires 1..8 private executions")
         known = {_input_case_key(first["standardInput"], comparison)}
         visible = {value.replace("\r\n", "\n") for value in first["outputs"]}
+        distinguishes_first = False
         for probe in probes:
             require(type(probe) is dict and set(probe) == {"standardInput", "outputs"},
                     "An input probe requires exactly standardInput and outputs")
@@ -6976,9 +6981,13 @@ def _validate_compiler_input_checks(document: dict) -> None:
                         len(text.encode("utf-8")) <= 4096 for text in outputs),
                     "Private input needs 1..4 bounded exact output alternatives")
             canonical = [text.replace("\r\n", "\n") for text in outputs]
+            distinguishes = not (set(canonical) & visible)
             require(len(set(canonical)) == len(canonical) and
-                    not (set(canonical) & visible),
+                    (allow_same_output or distinguishes),
                     "Private output must be distinct and distinguish the first public result")
+            distinguishes_first |= distinguishes
+        require(distinguishes_first,
+                "An input check needs a probe whose alternatives all distinguish the first public result")
 
 
 def _preserves_compiler_local_int_checks(previous: dict, current: dict) -> bool:

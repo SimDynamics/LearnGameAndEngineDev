@@ -2897,9 +2897,14 @@ struct LessonView {
                     +ui(" de "," of "," sur ")+std::to_string(hooks.unit_count)
                     +" / "+ui("Lección ","Lesson ","Leçon ")+std::to_string(hooks.lesson_number)
                     +ui(" de "," of "," sur ")+std::to_string(hooks.lesson_count);
-                if(hooks.course_number>0)label=ui("Curso ","Course ","Cours ")+std::to_string(hooks.course_number)+": "+label;
+                if(hooks.course_number>0){
+                    auto course_label=ui("Curso ","Course ","Cours ")+std::to_string(hooks.course_number);
+                    if(hooks.course_number<=hooks.course_count)
+                        course_label+=ui(" de "," of "," sur ")+std::to_string(hooks.course_count);
+                    label=course_label+": "+label;
+                }
             }
-            const auto caption = label + "  " + std::to_string(page + 1) + ui(" de "," of "," sur ") + std::to_string(lesson.pages.size());
+            const auto caption = label + " / " + ui("Página ","Page ","Page ") + std::to_string(page + 1) + ui(" de "," of "," sur ") + std::to_string(lesson.pages.size());
             const bool caption_changed=control_text(title)!=caption;
             set_rich_text(title,caption,{},false,RichTextRole::lesson_title);
             SendMessageW(title,EM_SETSEL,0,-1);

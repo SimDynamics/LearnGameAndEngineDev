@@ -1364,7 +1364,8 @@ std::string dual_interface_completion_seal(
 }
 std::string input_completion_seal(std::string_view key,std::string_view program,
         const curriculum::CppInputCheck& spec) {
-    auto frame=std::string("compiler-input-complete-v1/")+token(key)+token(program)+
+    auto frame=std::string(spec.allow_same_output?
+        "compiler-input-same-output-complete-v1/":"compiler-input-complete-v1/")+token(key)+token(program)+
         token(std::to_string(spec.probes.size()));
     for(const auto& probe:spec.probes) {
         frame+=token(probe.standard_input)+token(std::to_string(probe.outputs.size()));

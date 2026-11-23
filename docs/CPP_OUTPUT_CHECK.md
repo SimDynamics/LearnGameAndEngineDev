@@ -4139,7 +4139,41 @@ con la comparación `exact` o `tokens` ya declarada. En `tokens`, sólo se
 separan espacio, tabulador, CR, LF, tabulación vertical y salto de página,
 igual que en el evaluador nativo. Un espacio Unicode no se transforma
 silenciosamente en un separador ASCII. Las salidas privadas deben diferir
-de las alternativas del primer resultado público.
+de las alternativas del primer resultado público, salvo la opción explícita
+descrita a continuación.
+
+### Entradas distintas que deben conservar el resultado
+
+Una decisión puede producir la misma respuesta para varias entradas correctas:
+por ejemplo, distintas combinaciones de permisos pueden exigir `Entrada denegada`.
+Para comprobarlas, una nueva declaración puede incluir `allowSameOutput: true`
+junto a `activity` y `probes`. Este ejemplo mínimo combina una denegación y
+una admisión del editor U3L5, cuyo primer caso público es `1 0 0`:
+
+```json
+{
+  "activity": "p1u3l5_construir_acceso",
+  "allowSameOutput": true,
+  "probes": [
+    {"standardInput": "0 0 1", "outputs": ["Entrada denegada", "Entrada denegada\n"]},
+    {"standardInput": "1 0 1", "outputs": ["Entrada permitida", "Entrada permitida\n"]}
+  ]
+}
+```
+
+La opción sólo admite el booleano `true`; para el contrato anterior se omite
+el campo. `false`, números, cadenas, valores nulos y miembros duplicados son
+inválidos. Sin el campo, cada sonda sigue teniendo que diferir del primer
+resultado público. Con él, al menos una sonda debe tener **todas** sus
+alternativas disjuntas de las del primer caso, después de normalizar CRLF.
+Una sonda con una alternativa igual y otra diferente no satisface ese requisito.
+Así, imprimir siempre el primer resultado nunca acredita el plan. El modo
+también admite planes en los que todas las sondas son contrastantes.
+
+Los límites, la unicidad de las entradas y los demás contratos se mantienen.
+No se pueden cambiar la opción ni las sondas de un propietario ya publicado;
+la ampliación permite añadir propietarios nuevos conservando exactamente el
+prefijo de declaraciones previo.
 
 Una entrada privada sí puede coincidir con un caso público opcional: su
 ejecución interna no acredita ese caso ni lo convierte en otra tarea manual.
@@ -4164,6 +4198,13 @@ Las evidencias incluyen el hash de la fuente y del ejecutable, la entrada
 exacta y el resultado real del proceso. Una evidencia incompleta, cancelada,
 de otro binario o perteneciente a otra solicitud no concede el objetivo.
 
+El modo forma parte de la captura y del sello. Las declaraciones sin la
+opción conservan exactamente sus dominios `compiler-input-capture-v1/` y
+`compiler-input-complete-v1/`, sin añadir tokens al formato anterior.
+`allowSameOutput: true` usa `compiler-input-same-output-capture-v1/` y
+`compiler-input-same-output-complete-v1/`. Una captura o un sello de un modo
+no acredita una solicitud del otro.
+
 El nuevo ámbito de recibos `input/v1/` conserva por separado programa, casos,
 finalización y sello de las comprobaciones privadas. El recibo stdout
 anterior permanece intacto aunque el alumno cambie una impresión fija por
@@ -4185,6 +4226,24 @@ públicos y reabre perfiles QA con recibos, borradores, entrada y selección.
 `input_dependency_fixture_source.py` autentica la publicación y exporta
 `before.json`, `after.json` y su manifiesto sin sobrescribir otros datos.
 Esta propuesta QA no publica la declaración en el currículo.
+
+`input_decision_fixture_source.py` autentica las ocho lecciones U3L3–U3L8 y
+U4L1–U4L2 en `08a11877a2d2c0bf96a846660e3baea69e53f758`. Conserva sus 53 casos
+públicos y sus dos editores por lección; el único cambio de cada propuesta
+es añadir `compilerInputChecks` para el editor de construcción. Los planes
+reúnen 40 sondas: 33 contrastantes y siete que deben conservar el primer
+resultado. Sólo U3L5, U3L6 y U3L7 requieren la opción nueva; U3L8 conserva
+el límite de ocho sondas usando sus siete entradas válidas seleccionadas.
+
+Los ocho tests `native.input_decisions_view_u*` usan un modo independiente
+de `local_dependency_view_tests.cpp`. Ejercitan los botones Win32, los dos
+cargadores, un caso opcional antes del obligatorio, las impresiones fijas,
+la reapertura y el reinicio con sus recibos y borradores. Cinco programas
+incorrectos adicionales pasan el primer caso y las sondas contrastantes,
+pero fallan las denegaciones o los límites que deben permanecer iguales.
+La autoría comprueba sus fuentes, casos y hashes en
+`native.input_decision_authoring`. Estas fixtures técnicas no modifican los
+JSON curriculares ni acreditan por sí mismas ejecución nativa de Windows.
 
 Las pruebas Win32 `native.curricular_input_lab` y
 `native.prepared_input_predictions` ejercitan la edición actual. Sus modos

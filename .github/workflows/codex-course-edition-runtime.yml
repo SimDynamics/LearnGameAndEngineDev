@@ -61,6 +61,8 @@ on:
       - scripts/curriculum/local_scalar_fixture_source.py
       - scripts/curriculum/input_dependency_fixture_source.py
       - scripts/curriculum/test_input_dependency_authoring.py
+      - scripts/curriculum/input_decision_fixture_source.py
+      - scripts/curriculum/test_input_decision_authoring.py
       - native/core/cpp_local_role_probe.hpp
       - native/core/cpp_local_role_probe_tests.cpp
       - native/platform/windows/local_role_state_tests.cpp
@@ -133,8 +135,58 @@ permissions:
   contents: read
 
 jobs:
+  # Explicitly selected pushes validate only the changed header/input contracts.
+  # Ordinary pushes and workflow_dispatch retain the complete default jobs below.
+  run-input-decisions:
+    name: Verify focused Win32 lesson header and input-decision contracts
+    if: ${{ github.event_name == 'push' && startsWith(github.event.head_commit.message, 'qa-input-decisions:') }}
+    runs-on: windows-2025-vs2026
+    timeout-minutes: 30
+    steps:
+      - name: Read exact Codex revision and authenticated fixture history
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+          persist-credentials: false
+      - name: Select Python for authenticated input fixtures
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - name: Activate hosted MSVC without modifying the product pin
+        uses: ilammy/msvc-dev-cmd@v1
+      - name: Build the original header and input contract targets
+        shell: pwsh
+        run: |
+          $ErrorActionPreference = 'Stop'
+          Write-Host 'Focused hosted QA only; product MSVC 14.51.36231 and cl.exe 19.51.36260.0 remain unchanged.'
+          Get-Command cl, cmake, ninja | Select-Object Name, Source | Format-Table | Out-Host
+          $qaInputBuild = Join-Path $env:RUNNER_TEMP 'lgaed-input-decisions-qa'
+          cmake -S cmake/HostedCourseEditionQA -B $qaInputBuild -G Ninja -DCMAKE_BUILD_TYPE=Debug
+          if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
+          cmake --build $qaInputBuild --target lgaed_inline_feedback_view_tests lgaed_input_dependency_state_tests lgaed_input_probe_tests lgaed_local_dependency_view_tests --parallel 3
+          if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
+      - name: Verify the header, preserved input contract and eight decision editors
+        shell: pwsh
+        run: |
+          $qaInputBuild = Join-Path $env:RUNNER_TEMP 'lgaed-input-decisions-qa'
+          ctest --test-dir $qaInputBuild -R '^native[.](lesson_header|input_probe|input_dependency_(state|authoring)|input_decision_authoring|input_decisions_view_(u3l[3-8]|u4l[1-2]))$' --verbose --output-on-failure --no-tests=error --output-junit (Join-Path $qaInputBuild 'input-decisions-focal.xml')
+          if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
+      - name: Preserve focused native test and compile evidence
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: hosted-win32-input-decisions-${{ github.sha }}
+          retention-days: 7
+          if-no-files-found: warn
+          path: |
+            ${{ runner.temp }}/lgaed-input-decisions-qa/input-decisions-focal.xml
+            ${{ runner.temp }}/lgaed-input-decisions-qa/Testing/Temporary/*.log
+            ${{ runner.temp }}/lgaed-input-decisions-qa/CMakeFiles/CMakeConfigureLog.yaml
+            ${{ runner.temp }}/lgaed-input-decisions-qa/test-fixtures/input-decisions/**
+            ${{ runner.temp }}/lgaed-input-decisions-qa/test-fixtures/u2l9-input/**
   run-format-fixture-history:
     name: Build authenticated format fixtures and verify original MSVC diagnostics
+    if: ${{ github.event_name != 'push' || !startsWith(github.event.head_commit.message, 'qa-input-decisions:') }}
     runs-on: windows-2025-vs2026
     timeout-minutes: 25
     steps:
@@ -180,6 +232,7 @@ jobs:
             ${{ runner.temp }}/lgaed-format-fixture-history/test-fixtures/format-history/**
   run-real-course-edition:
     name: Run Win32 edition, simulation and first required C++ case
+    if: ${{ github.event_name != 'push' || !startsWith(github.event.head_commit.message, 'qa-input-decisions:') }}
     runs-on: windows-2025-vs2026
     timeout-minutes: 45
     steps:
@@ -245,6 +298,14 @@ jobs:
           cmake --build $build --target lgaed_inline_feedback_view_tests --parallel 3
           if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
           ctest --test-dir $build -R '^native[.]lesson_header$' --verbose --output-on-failure --no-tests=error --output-junit (Join-Path $build 'lesson-header-win32.xml')
+          if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
+      - name: Verify eight input decision editors and invariant results through real Win32 MSVC
+        shell: pwsh
+        run: |
+          $build = Join-Path $env:RUNNER_TEMP 'lgaed-course-edition-qa'
+          cmake --build $build --target lgaed_local_dependency_view_tests --parallel 3
+          if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
+          ctest --test-dir $build -R '^native[.](input_decisions_view_u[34]l[0-9]+|input_decision_authoring)$' --verbose --output-on-failure --no-tests=error --output-junit (Join-Path $build 'input-decisions-win32.xml')
           if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
       - name: Preserve current reading order after edits and ordinary reopen
         if: startsWith(github.event.head_commit.message, 'qa-reader-order:')
@@ -424,6 +485,8 @@ jobs:
             ${{ runner.temp }}/lgaed-course-edition-qa/reader-revision-runtime-*/transport.jsonl
             ${{ runner.temp }}/lgaed-course-edition-qa/reader-revision-order.xml
             ${{ runner.temp }}/lgaed-course-edition-qa/lesson-header-win32.xml
+            ${{ runner.temp }}/lgaed-course-edition-qa/input-decisions-win32.xml
+            ${{ runner.temp }}/lgaed-course-edition-qa/test-fixtures/input-decisions/**
             ${{ runner.temp }}/lgaed-course-edition-qa/nested-cmake-format.xml
             ${{ runner.temp }}/lgaed-course-edition-qa/test-fixtures/named-rule-feedback/**
             ${{ runner.temp }}/lgaed-course-edition-qa/u2l9-semantic-composition-and-reference.xml

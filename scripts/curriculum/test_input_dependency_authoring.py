@@ -159,6 +159,72 @@ class InputDependencyAuthoringTests(unittest.TestCase):
         document["compilerInputChecks"][0]["probes"][0]["outputs"] = ["x", "x\n", "x\r", " x"]
         self.valid(document)
 
+    def test_same_output_requires_explicit_true_without_changing_the_document(self):
+        document = input_fixture()
+        check = document["compilerInputChecks"][0]
+        check["allowSameOutput"] = True
+        check["probes"][0]["outputs"] = ["Rita: 7", "Rita: 7\r\n"]
+        before = deepcopy(document)
+        self.valid(document)
+        self.assertEqual(before, document)
+        del check["allowSameOutput"]
+        self.rejects(document)
+
+    def test_same_output_option_does_not_require_an_invariant_probe(self):
+        document = input_fixture()
+        document["compilerInputChecks"][0]["allowSameOutput"] = True
+        self.valid(document)  # An explicitly selected mode can contain only contrasts.
+
+    def test_same_output_option_rejects_false_and_non_boolean_values(self):
+        for value in (False, None, 0, 1, "true", "false", [], {}):
+            document = input_fixture()
+            document["compilerInputChecks"][0]["allowSameOutput"] = value
+            with self.subTest(value=value):
+                self.rejects(document)
+
+    def test_same_output_plan_needs_a_wholly_disjoint_probe(self):
+        for alternatives in (["Rita: 7"], ["Rita: 7\r\n"],
+                             ["Rita: 7", "different"], ["different", "Rita: 7\r\n"]):
+            document = input_fixture()
+            check = document["compilerInputChecks"][0]
+            check["allowSameOutput"] = True
+            for probe in check["probes"]:
+                probe["outputs"] = list(alternatives)
+            with self.subTest(alternatives=alternatives):
+                self.rejects(document)
+                check["probes"][-1]["outputs"] = ["different", "different\n"]
+                self.valid(document)
+
+    def test_same_output_mode_preserves_exact_output_and_input_guards(self):
+        for change in (
+            lambda c: c.update(probes=[]),
+            lambda c: c.update(probes=[{"standardInput": f"Probe {i}", "outputs": ["x"]}
+                                       for i in range(9)]),
+            lambda c: c["probes"][0].update(outputs=["Rita: 7\n", "Rita: 7\r\n"]),
+            lambda c: c["probes"][0].update(outputs=["a", "b", "c", "d", "e"]),
+            lambda c: c["probes"][0].update(outputs=["é" * 2049]),
+            lambda c: c["probes"][0].update(outputs=["\x00"]),
+            lambda c: c["probes"][0].update(standardInput="Rita\t4\r\n"),
+            lambda c: c["probes"][1].update(standardInput=c["probes"][0]["standardInput"]),
+            lambda c: c["probes"][0].update(standardInput="é" * 2049),
+        ):
+            document = input_fixture()
+            check = document["compilerInputChecks"][0]
+            check["allowSameOutput"] = True
+            change(check)
+            self.rejects(document)
+
+    def test_same_output_flag_cannot_be_duplicated_in_raw_json(self):
+        document = input_fixture()
+        document["compilerInputChecks"][0]["allowSameOutput"] = True
+        raw = json.dumps(document, ensure_ascii=False, separators=(",", ":"))
+        for duplicate in ("true", "false", "null"):
+            with self.subTest(duplicate=duplicate):
+                invalid = raw.replace('"allowSameOutput":true',
+                                      '"allowSameOutput":' + duplicate + ',"allowSameOutput":true', 1)
+                with self.assertRaises((state.LayoutError, ValueError)):
+                    state.parse_json(invalid)
+
     def test_an_owner_cannot_share_another_private_runtime_goal(self):
         for key in ("compilerLocalIntChecks", "compilerLocalStringChecks", "compilerWorkflowChecks",
                     "compilerRuntimeChecks", "compilerNamedRuleChecks", "compilerOpenBatteryChecks",
@@ -204,6 +270,7 @@ class InputDependencyAuthoringTests(unittest.TestCase):
                        lambda doc: doc.update(compilerInputChecks=[]),
                        lambda doc: doc["compilerInputChecks"].reverse(),
                        lambda doc: doc["compilerInputChecks"][0]["probes"].reverse(),
+                       lambda doc: doc["compilerInputChecks"][0].update(allowSameOutput=True),
                        lambda doc: doc["compilerInputChecks"][0]["probes"][0].update(standardInput="Leo 3"),
                        lambda doc: doc["compilerInputChecks"][0]["probes"][0].update(outputs=["Leo: 6"])):
             altered = deepcopy(after)
@@ -214,6 +281,19 @@ class InputDependencyAuthoringTests(unittest.TestCase):
         partial["compilerInputChecks"] = fixture.declarations()[:1]
         state.validate_transition(before, partial)
         state.validate_transition(partial, after)
+
+    def test_published_same_output_mode_and_probes_are_immutable(self):
+        before, after = fixture.published_pair()
+        after["compilerInputChecks"][0]["allowSameOutput"] = True
+        state.validate_transition(before, after)
+        for change in (lambda c: c.pop("allowSameOutput"),
+                       lambda c: c.update(allowSameOutput=False),
+                       lambda c: c["probes"][0].update(outputs=["Rita: 7"]),
+                       lambda c: c["probes"].append({"standardInput": "Nora 2", "outputs": ["Nora: 5"]})):
+            altered = deepcopy(after)
+            change(altered["compilerInputChecks"][0])
+            with self.assertRaises(state.LayoutError):
+                state.validate_transition(after, altered)
 
     def test_export_is_exact_repeatable_and_refuses_conflicting_files(self):
         authentic = fixture.published_bytes()

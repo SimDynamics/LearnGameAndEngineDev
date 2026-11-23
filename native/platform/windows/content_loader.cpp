@@ -4677,7 +4677,14 @@ void read_compiler_input_checks(const JsonObject& root,Lesson& lesson) {
         const auto raw_item=raw_entries.at(owner_index++);
         (void)original.member(raw_item,"activity");
         (void)original.member(raw_item,"probes");
-        allowed_keys(item,{"activity","probes"},true);
+        const bool allow_same_output=item.HasKey(L"allowSameOutput");
+        if(allow_same_output) {
+            allowed_keys(item,{"activity","probes","allowSameOutput"},true);
+            (void)original.member(raw_item,"allowSameOutput");
+            const auto flag=item.GetNamedValue(L"allowSameOutput");
+            require(flag.ValueType()==JsonValueType::Boolean&&flag.GetBoolean(),
+                "allowSameOutput is either absent or true.");
+        } else allowed_keys(item,{"activity","probes"},true);
         const auto identity=text(item,"activity");
         require(valid_id(identity)&&seen.insert(identity).second,
             "Duplicate or invalid input-check owner.");
@@ -4744,6 +4751,8 @@ void read_compiler_input_checks(const JsonObject& root,Lesson& lesson) {
             "Original private-input count differs from the parsed declaration.");
         std::set<std::string> inputs{cpp_input_case_key(first.standard_input,tokens)};
         CppInputCheck spec;
+        spec.allow_same_output=allow_same_output;
+        bool distinguishes_first=false;
         std::size_t probe_index=0;
         for(const auto& variant:probes) {
             const auto probe=variant.GetObject();
@@ -4756,13 +4765,19 @@ void read_compiler_input_checks(const JsonObject& root,Lesson& lesson) {
             next.outputs=strings(array(probe,"outputs"),true);
             require(inputs.insert(cpp_input_case_key(next.standard_input,tokens)).second,
                 "Private input must differ from the first case and other private inputs.");
-            for(const auto& expected:next.outputs)
-                require(!std::ranges::any_of(first.outputs,[&](const auto& visible) {
+            const bool distinct=std::ranges::none_of(next.outputs,[&](const auto& expected) {
+                return std::ranges::any_of(first.outputs,[&](const auto& visible) {
                     return cpp_input_normalize_newlines(expected)==
                            cpp_input_normalize_newlines(visible);
-                }),"A private input result must distinguish the first public output.");
+                });
+            });
+            require(spec.allow_same_output||distinct,
+                "A private input result must distinguish the first public output.");
+            distinguishes_first=distinguishes_first||distinct;
             spec.probes.push_back(std::move(next));
         }
+        require(distinguishes_first,
+            "At least one whole private input result must distinguish the first public output.");
         require(cpp_input_check_valid(spec),
             "Invalid, repeated or unbounded private input execution.");
         owner->input_check=std::move(spec);

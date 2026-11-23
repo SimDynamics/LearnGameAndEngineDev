@@ -1278,6 +1278,7 @@ void lesson_header_context_is_complete_and_wraps() {
         LessonViewHooks hooks;
         hooks.course_title="Curso completo de programación, videojuegos y motores en C++: fundamentos del lenguaje, herramientas de desarrollo, práctica guiada y proyectos de simulación";
         hooks.course_number=2;hooks.unit_number=2;hooks.unit_count=12;hooks.lesson_number=2;hooks.lesson_count=10;
+        hooks.course_count=45;
         hooks.back_to_catalog=[&](HWND owner){require(owner==fixture.view,"Header Escape lost its lesson owner");++returned;};
         const auto resize=[&](int width) {
             const auto dpi=static_cast<int>(GetDpiForWindow(fixture.view));
@@ -1289,11 +1290,11 @@ void lesson_header_context_is_complete_and_wraps() {
         };
         struct Geometry {RECT title{},progress{};LRESULT lines=0;};
         const auto check=[&](bool context,std::size_t page) {
-            const auto label=context?pick("Curso ","Course ","Cours ")+"2: "+hooks.course_title+" / "
+            const auto label=context?pick("Curso ","Course ","Cours ")+"2"+pick(" de "," of "," sur ")+"45: "+hooks.course_title+" / "
                 +pick("Unidad ","Unit ","Unité ")+"2"+pick(" de "," of "," sur ")+"12 / "
                 +pick("Lección ","Lesson ","Leçon ")+"2"+pick(" de "," of "," sur ")+"10"
                 :pick("Lección","Lesson","Leçon");
-            const auto expected=label+"  "+std::to_string(page+1)+pick(" de "," of "," sur ")+"2";
+            const auto expected=label+" / "+pick("Página ","Page ","Page ")+std::to_string(page+1)+pick(" de "," of "," sur ")+"2";
             const auto detail=std::string(" [locale=")+locale+", page="+std::to_string(page+1)+", context="+std::to_string(context)+"]";
             require(fixture.control(105)==title&&window_text(title)==expected,"The native header lost its complete course/unit/lesson/page context"+detail);
             const auto style=GetWindowLongPtrW(title,GWL_STYLE);
@@ -1362,7 +1363,7 @@ void lesson_header_context_is_complete_and_wraps() {
         require(navigate_lesson_view(fixture.view,0),"The complete header blocked the previous admitted lesson page");pump(fixture.host);check(true,0);
         require(reading_script(fixture.view)==script,"Returning to the first page changed its original narration identity");
     }
-    std::cout<<"PASS complete native course/unit/lesson/page header in es/en/fr: readonly wrapping at 1200/640 logical pixels, final glyph visible, progress/actions/content separated, restored layout, Premium slot removed, retained narration/navigation and Escape\n";
+    std::cout<<"PASS complete native course/unit/lesson totals and explicit page label in es/en/fr: readonly wrapping at 1200/640 logical pixels, final glyph visible, progress/actions/content separated, restored layout, Premium slot removed, retained narration/navigation and Escape\n";
 }
 
 void lesson_menu_retains_import_pages_and_settings_with_hooks() {

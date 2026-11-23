@@ -424,7 +424,8 @@ std::string input_check_fingerprint(const CppRunRequest& request) {
     const auto field=[](std::string_view part) {
         return std::to_string(part.size())+":"+std::string(part);
     };
-    auto frame=std::string("compiler-input-capture-v1/")+
+    auto frame=std::string(request.input_check->allow_same_output?
+        "compiler-input-same-output-capture-v1/":"compiler-input-capture-v1/")+
         field(std::to_string(request.request_id))+field(std::to_string(request.revision))+
         field(request.source_utf8)+field(request.stdin_utf8)+field(request.project_key)+
         field(utf8(request.projects_directory.wstring()))+
