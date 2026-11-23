@@ -4321,8 +4321,9 @@ struct LessonView {
         }
         if (block(index).output_check&&executed&&!initial_defect_observed) {
             if (evaluation.verdict != curriculum::OutputVerdict::unavailable) {
+                std::string source_rejection_reason;
                 const bool preserved_source=windows::compiler_runtime_request_allowed(
-                    block(index),running_program);
+                    block(index),running_program,&source_rejection_reason);
                 const bool independent=(!block(index).abstract_interface_probe||
                     fresh.abstract_interface_probe_correct)&&
                     (!block(index).interface_collection_probe||
@@ -4573,10 +4574,11 @@ struct LessonView {
                             "Change only the indicated expression. Preserve the checker, its expected results, the remaining C++ sources and project paths.",
                             "Modifiez uniquement l’expression indiquée. Conservez le vérificateur, ses résultats attendus, les autres sources C++ et les chemins du projet.");
                     else if(block(index).named_rule_source_check)
-                        text+='\n'+ui(
-                            "La salida coincide, pero este objetivo también exige declarar constantes locales con nombres de propósito, valores correctos y uso real en el cálculo. Comprueba las dos condiciones antes de continuar.",
+                        text+='\n'+(source_rejection_reason.empty()?ui(
+                            "No se pudo verificar la revisión de esta actividad. Conserva los archivos y la configuración solicitados y vuelve a comprobarla.",
                             "The output matches, but this goal also requires purpose-named local constants with correct values and real use in the calculation.",
-                            "La sortie correspond, mais cet objectif exige aussi des constantes locales bien nommées, des valeurs correctes et une utilisation réelle dans le calcul.");
+                            "La sortie correspond, mais cet objectif exige aussi des constantes locales bien nommées, des valeurs correctes et une utilisation réelle dans le calcul."):
+                            source_rejection_reason);
                     else
                         text+='\n'+ui(
                             "Este objetivo exige conservar todos los archivos originales, la entrada y las opciones CMake.",

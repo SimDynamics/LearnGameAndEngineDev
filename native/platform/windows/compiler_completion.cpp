@@ -540,7 +540,9 @@ void validate_receipts(const state::StateData& data,const curriculum::Lesson& le
 bool compiler_selective_history_required(const curriculum::Lesson& lesson,const curriculum::Block& block) {
     return selective_history_owner(lesson,block);
 }
-bool compiler_runtime_request_allowed(const curriculum::Block& block,const CppRunRequest& request) {
+bool compiler_runtime_request_allowed(const curriculum::Block& block,const CppRunRequest& request,
+        std::string* rejection_reason) {
+    if(rejection_reason)rejection_reason->clear();
     if(request.local_role_check!=block.local_role_check)return false;
     if(block.local_role_check) {
         if(block.type!=curriculum::BlockType::cpp_compiler||!block.output_check||
@@ -1052,7 +1054,12 @@ bool compiler_runtime_request_allowed(const curriculum::Block& block,const CppRu
     }
     if(block.named_rule_source_check) {
         const auto& named=*block.named_rule_source_check;
-        if(request.named_rule_probe!=named.execution_probe)return false;
+        const auto reject=[&](std::string_view reason) {
+            if(rejection_reason)*rejection_reason=reason;
+            return false;
+        };
+        if(request.named_rule_probe!=named.execution_probe)
+            return reject("La comprobación no corresponde a las reglas de este ejercicio. Vuelve a ejecutar el programa actual.");
         if(named.execution_probe&&named.execution_probe->battery_check) {
             const auto& battery=*named.execution_probe->battery_check;
             if(!curriculum::named_rule_battery_spec_valid(battery)||
@@ -1062,7 +1069,8 @@ bool compiler_runtime_request_allowed(const curriculum::Block& block,const CppRu
                request.reduction_probe||request.integer_battery_probe||
                request.adjustment_project_probe||request.rejection_probe||
                request.observation_probe||request.assertion_mode||
-               request.cmake_graph_check||request.capture_cmake_graph)return false;
+               request.cmake_graph_check||request.capture_cmake_graph)
+                return reject("No se pudo verificar la batería con la entrada y la configuración de este ejercicio.");
         }
         if(named.execution_probe&&named.execution_probe->constant_variations) {
             const auto& variations=*named.execution_probe->constant_variations;
@@ -1074,52 +1082,61 @@ bool compiler_runtime_request_allowed(const curriculum::Block& block,const CppRu
                request.reduction_probe||request.integer_battery_probe||
                request.adjustment_project_probe||request.rejection_probe||
                request.observation_probe||request.assertion_mode||
-               request.cmake_graph_check||request.capture_cmake_graph)return false;
+               request.cmake_graph_check||request.capture_cmake_graph)
+                return reject("No se pudo verificar la variación de las reglas con la configuración de este ejercicio.");
         }
         if(!named.execution_probe&&std::ranges::any_of(named.editable_paths,
                 [](std::string_view path) {
                     return curriculum::is_cpp_source_file(path);
-                }))return false;
+                }))return reject("La actividad no declara una comprobación independiente para las fuentes editables.");
         if(request.action!=CppRunRequest::Action::compile_run||request.diagnostic||
            request.cmake!=block.cmake||request.source_files!=block.source_files)
-            return false;
+            return reject("Conserva el modo de ejecución, las fuentes y la configuración CMake de este ejercicio.");
         std::string_view source;
         if(named.path.empty()) {
             if(!block.project_files.empty()||!request.project_files.empty()||
                request.cmake||!named.editable_paths.empty()||request.source_files.size())
-                return false;
+                return reject("Este ejercicio requiere el archivo de código del editor, sin añadir un proyecto ni otras fuentes.");
             source=request.source_utf8;
         }else{
             if(block.project_files.empty()||request.project_files.size()!=block.project_files.size())
-                return false;
+                return reject("Conserva el conjunto de archivos del proyecto; no añadas ni retires archivos.");
             for(std::size_t i=0;i<block.project_files.size();++i) {
                 const auto& original=block.project_files[i];
                 const auto& current=request.project_files[i];
-                if(original.first!=current.first)return false;
+                if(original.first!=current.first)
+                    return reject("Conserva las rutas y la correspondencia de los archivos originales del proyecto.");
                 if(original.first!=named.path&&
                    std::ranges::find(named.editable_paths,original.first)==
                        named.editable_paths.end()&&
-                   original.second!=current.second)return false;
+                   original.second!=current.second)
+                    return reject("Conserva el archivo "+original.first+"; esta actividad no permite modificarlo.");
                 if(std::ranges::find(named.comment_only_paths,original.first)!=
                        named.comment_only_paths.end()&&
                    !curriculum::named_rule_comment_only_edit(
-                       original.second,current.second))return false;
+                       original.second,current.second))
+                    return reject("En "+original.first+" sólo se permite revisar comentarios; conserva su código y sus directivas.");
             }
             const auto found=std::ranges::find_if(request.project_files,
                 [&](const auto& file){return file.first==named.path;});
-            if(found==request.project_files.end())return false;
+            if(found==request.project_files.end())
+                return reject("No se encontró el archivo de código "+named.path+" indicado por la actividad.");
             source=found->second;
         }
         if(named.execution_probe&&
            !curriculum::named_rule_detail::probe_source_no_early_exit(source))
-            return false;
-        if(!curriculum::analyze_named_rule_sources(source,named.requirements).source_evidence)
-            return false;
+            return reject("No se pudo verificar el análisis y la terminación del programa para comprobar sus funciones.");
+        const auto analysis=curriculum::analyze_named_rule_sources(source,named.requirements);
+        if(!analysis.source_evidence)
+            return reject(named.path.empty()?analysis.reason:
+                "Archivo "+named.path+": "+analysis.reason);
         if(named.execution_probe&&named.execution_probe->constant_variations)
             for(std::size_t index=0;
                     index<named.execution_probe->constant_variations->variations.size();++index)
                 if(!curriculum::named_rule_constant_variation_source(
-                        source,*named.execution_probe,index))return false;
+                        source,*named.execution_probe,index))
+                    return reject("No se pudo preparar la comprobación de una variación de la regla en "+
+                        named.execution_probe->constant_variations->variations[index].function+".");
     }
     const auto goal=block.compiler_workflow_check;
     if(goal==curriculum::CompilerWorkflowCheck::assertion_abort_wasi_v1||

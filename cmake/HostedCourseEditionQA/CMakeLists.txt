@@ -296,6 +296,10 @@ add_executable(lgaed_curricular_input_lab_tests
 target_link_libraries(lgaed_curricular_input_lab_tests PRIVATE lgaed_curricular_windows)
 add_test(NAME native.curricular_input_lab COMMAND lgaed_curricular_input_lab_tests)
 set_tests_properties(native.curricular_input_lab PROPERTIES TIMEOUT 240 RUN_SERIAL TRUE)
+add_test(NAME native.named_rule_feedback_view
+    COMMAND lgaed_curricular_input_lab_tests --named-rule-feedback)
+set_tests_properties(native.named_rule_feedback_view
+    PROPERTIES TIMEOUT 300 RUN_SERIAL TRUE)
 add_test(NAME native.curricular_stdout_transport
     COMMAND lgaed_curricular_input_lab_tests --u3-stdout)
 set_tests_properties(native.curricular_stdout_transport

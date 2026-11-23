@@ -5,13 +5,17 @@
 #include "platform/windows/cpp_runner.hpp"
 
 #include <optional>
+#include <string>
 
 namespace lgaed::windows {
 class CmakeSelectiveRecoveryTrace;
 // An execution objective that requires the published project, not merely
 // coincidentally matching stdout/stderr from a changed source.
+// Optional presentation feedback is cleared on entry and filled only by a
+// named-rule rejection. It describes this captured request, never a live
+// editor draft, and is not evidence of correctness or a persisted receipt.
 [[nodiscard]] bool compiler_runtime_request_allowed(const curriculum::Block&,
-    const CppRunRequest&);
+    const CppRunRequest&, std::string* rejection_reason = nullptr);
 // The native evaluator and Win32 reader share the same curricular gate.
 [[nodiscard]] bool compiler_selective_history_required(const curriculum::Lesson&,
     const curriculum::Block&);

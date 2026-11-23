@@ -1739,7 +1739,7 @@ inline NamedRuleAnalysis analyze_named_rule_sources(
         if(rule.function.empty()||rule.purpose_words.empty()||!rule.min_uses)
             return {false,"La declaracion de la regla esta incompleta."};
         const auto bounds=body(t,rule.function);
-        if(!bounds)return {false,"Falta definir la funcion "+rule.function+"."};
+        if(!bounds)return {false,"No se pudo identificar una definicion verificable de la funcion "+rule.function+"."};
         std::vector<LocalRule> candidates;
         std::size_t depth=0;
         for(auto i=bounds->open+1;i<bounds->close;++i) {
@@ -1750,7 +1750,7 @@ inline NamedRuleAnalysis analyze_named_rule_sources(
             if(item&&role(item->name,rule.purpose_words))candidates.push_back(*item);
         }
         if(candidates.size()!=1)
-            return {false,"Falta una constante local de proposito en "+rule.function+"."};
+            return {false,"No se pudo identificar una unica constante local de proposito en "+rule.function+"."};
         const auto& value=candidates.front();
         if(value.value!=rule.value)
             return {false,"La constante de "+rule.function+" no representa el acuerdo."};

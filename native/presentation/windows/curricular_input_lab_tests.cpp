@@ -507,13 +507,15 @@ void inspect_combinations_visual(std::wstring_view token) {
 }
 
 struct View {
+    enum class RunArtifacts { single_public, public_with_private_probes };
     WindowsEnvironment environment;
     const curriculum::Lesson& lesson;
     std::size_t block;
     HWND host = nullptr, view = nullptr;
     std::size_t executions = 0;
 
-    View(const curriculum::Lesson& model, curriculum::StatePosition target, bool finite_reserve = false)
+    View(const curriculum::Lesson& model, curriculum::StatePosition target, bool finite_reserve = false,
+        bool reserve_focal_page_for_qa = false)
         : environment(resolve_windows_environment({ProfileId::Codex,
             L"curricular-input-lab-" + std::to_wstring(GetCurrentProcessId()) + L"-"
                 + std::to_wstring(GetTickCount64()), false})), lesson(model), block(target.block) {
@@ -529,6 +531,11 @@ struct View {
             prepare_u2l9_prior_quizzes(initial, lesson, target, true);
             prepare_u3_archived_state(initial, lesson,
                 lesson.id == "cpp_fundamentals__expresiones_y_decisiones__combinar_condiciones", environment.paths.projects);
+        }
+        if (reserve_focal_page_for_qa) {
+            // Reserve this isolated reader mount only. It neither answers
+            // earlier quizzes nor claims to exercise curricular navigation.
+            (void)state::mark_page_reached(initial, lesson, target.page);
         }
         state::save_current_page(initial, lesson, target.page);
         initial.preferences["native_windows"]["ui_language"] = std::string("es");
@@ -605,25 +612,40 @@ struct View {
         return result;
     }
     std::filesystem::path run(std::string_view source, std::string_view input, std::string_view expected,
-        std::string_view expected_raw = {}) {
+        std::string_view expected_raw = {}, RunArtifacts artifacts = RunArtifacts::single_public,
+        std::uint32_t expected_exit_code = 0) {
         const auto before = run_directories();
         const auto button = control(block, 11);
         check(IsWindowEnabled(button) && window_text(button) == "Compilar, ejecutar y comprobar",
             "The actual input laboratory is busy or has no combined execution action");
         SendMessageW(button, BM_CLICK, 0, 0);
-        const auto deadline = GetTickCount64() + 70000;
+        const auto deadline = GetTickCount64() +
+            (artifacts == RunArtifacts::public_with_private_probes ? 180000 : 70000);
         do { pump(); if (IsWindowEnabled(button)) break;
             MsgWaitForMultipleObjects(0, nullptr, FALSE, 10, QS_ALLINPUT);
         } while (GetTickCount64() < deadline);
         check(IsWindowEnabled(button), "The real input laboratory compilation/execution timed out");
         const auto status = text(34);
-        check(status == "Ejecución terminada (código 0)." || status.starts_with("Caso correcto. Casos comprobados: ")
-            || status.starts_with("Comprobación obligatoria: ") || status.starts_with("Caso ejecutado. "),
-            "The real input laboratory did not complete compilation and execution successfully");
+        check(status == "Ejecución terminada (código " + std::to_string(expected_exit_code) + ")."
+            || (expected_exit_code == 0 && (status.starts_with("Caso correcto. Casos comprobados: ")
+                || status.starts_with("Comprobación obligatoria: ") || status.starts_with("Caso ejecutado. "))),
+            "The real input laboratory did not finish with its expected execution status: " + status);
         const auto after = run_directories();
         std::vector<std::filesystem::path> created;
         for (const auto& directory : after) if (!before.contains(directory)) created.push_back(directory);
-        check(created.size() == 1, "A laboratory action did not create exactly one fresh execution");
+        if (artifacts == RunArtifacts::public_with_private_probes) {
+            // Named-rule functions and constant variations have their own
+            // actual compilations. Identify the submitted public program by
+            // its exact bytes, never by directory order or a private result.
+            std::erase_if(created, [&](const auto& directory) {
+                return !std::filesystem::is_regular_file(directory / L"main.cpp")
+                    || !std::filesystem::is_regular_file(directory / L"stdin.bin")
+                    || bytes(directory / L"main.cpp") != source || bytes(directory / L"stdin.bin") != input;
+            });
+            check(created.size() == 1, "Private probes did not leave exactly one byte-identical public execution");
+        } else {
+            check(created.size() == 1, "A laboratory action did not create exactly one fresh execution");
+        }
         const auto& directory = created.front();
         const auto compiler = std::filesystem::path(build::educational_vc_root) / L"bin/Hostx64/x64/cl.exe";
         const auto toolchain = bytes(directory / L"toolchain.txt");
@@ -1196,15 +1218,224 @@ void current_u3_combinations() {
         "retained achievement after rejection and explicit reset; nine archived observations, "
         "historical drafts and saved reserve preserved under the current Premium policy; no desktop/listening acceptance\n";
 }
+
+void named_rule_feedback_laboratory() {
+    using namespace winrt::Windows::Data::Json;
+    phase = "authenticate the complete published named-rule lesson";
+    const auto path = std::filesystem::path(build::source_root) /
+        "app/src/main/assets/content/es/programming/programming_practice_tools/comprobaciones_repetibles/lesson_nombrar_reglas_y_separar_acuerdos.json";
+    // The complete Git blob at 5ec6d37a657ec31128e899b4b834fedf518fa84c,
+    // authenticated independently through GitHub, not a reconstructed lesson.
+    constexpr std::string_view published_sha = "09fbf7be9c9e236f706a943c694e6644688888b4d7d58e0717c1411dcda4ffc3";
+    const auto published_bytes = bytes(path);
+    auto git_bytes = published_bytes;
+    // Git for Windows may expand LF on checkout. Accept only that transport
+    // conversion; every other byte must still match the complete publication.
+    for (std::size_t at = 0; (at = git_bytes.find("\r\n", at)) != std::string::npos; ++at)
+        git_bytes.erase(at, 1);
+    check(state::sha256(git_bytes) == published_sha,
+        "The named-rule fixture differs from its authenticated complete publication");
+    const auto published = windows::load_lesson(path, "es");
+    check(published.id == "programming_practice_tools__comprobaciones_repetibles__nombrar_reglas_y_separar_acuerdos",
+        "The feedback laboratory loaded another published lesson");
+    const auto& original = active_block(published, "block_0008_0007");
+    const auto original_root = JsonObject::Parse(winrt::to_hstring(published_bytes));
+    auto root = JsonObject::Parse(winrt::to_hstring(published_bytes));
+    check(!root.HasKey(L"compilerNamedRuleChecks"), "The authenticated fixture already has an authored named-rule declaration");
+    // This is the existing prospective block_0008_0007 declaration from
+    // named_rule_runtime_tests::authored_root_roundtrip, isolated in memory.
+    // Work's pages, state layout, explanations and source remain untouched.
+    root.Insert(L"compilerNamedRuleChecks", JsonArray::Parse(LR"json([
+      {"activity":"block_0008_0007","path":"",
+       "executionProbe":{"harness":"","header":"",
+         "cases":[{"function":"precio_total","input":11,"expected":77},
+                  {"function":"precio_total","input":5,"expected":35},
+                  {"function":"alcanza_minimo","input":4,"expected":0},
+                  {"function":"alcanza_minimo","input":5,"expected":1}],
+         "batteryCheck":{"cases":[{"function":"precio_total","input":0,"expected":0},
+                     {"function":"precio_total","input":4,"expected":28},
+                     {"function":"precio_total","input":5,"expected":35},
+                     {"function":"precio_total","input":6,"expected":42},
+                     {"function":"precio_total","input":10,"expected":70},
+                     {"function":"alcanza_minimo","input":0,"expected":0},
+                     {"function":"alcanza_minimo","input":4,"expected":0},
+                     {"function":"alcanza_minimo","input":5,"expected":1},
+                     {"function":"alcanza_minimo","input":6,"expected":1},
+                     {"function":"alcanza_minimo","input":10,"expected":1}],
+           "failureExitCode":1},
+         "constantVariations":[
+           {"function":"precio_total","value":9,"cases":[
+             {"function":"precio_total","input":11,"expected":99},
+             {"function":"precio_total","input":5,"expected":45},
+             {"function":"alcanza_minimo","input":4,"expected":0},
+             {"function":"alcanza_minimo","input":5,"expected":1}]},
+           {"function":"alcanza_minimo","value":6,"cases":[
+             {"function":"precio_total","input":11,"expected":77},
+             {"function":"precio_total","input":5,"expected":35},
+             {"function":"alcanza_minimo","input":4,"expected":0},
+             {"function":"alcanza_minimo","input":5,"expected":0}]}]},
+       "rules":[{"function":"precio_total","value":7,
+                 "purposeWords":["precio","costo","tarifa","credito"],"minUses":1},
+                {"function":"alcanza_minimo","value":5,
+                 "purposeWords":["minimo","umbral","cantidad"],"minUses":1}]}
+    ])json"));
+    check(root.Size() == original_root.Size() + 1, "QA added an unrelated named-rule root field");
+    for (const auto& item : original_root)
+        check(root.GetNamedValue(item.Key()).Stringify() == item.Value().Stringify(),
+            "The QA named-rule declaration changed a published root field");
+    const auto qa_json = winrt::to_string(root.Stringify());
+    auto lesson = windows::parse_lesson_json(qa_json, "es");
+    lesson.source_path = published.source_path;
+    const auto progress = windows::parse_lesson_progress_metadata(qa_json, "es");
+    const auto target = position(lesson, original.stable_id);
+    const auto& compiler = active_block(lesson, original.stable_id);
+    const auto& compact = active_block(progress, original.stable_id);
+    check(lesson.id == published.id && lesson.locale == published.locale
+        && lesson.compiler_puzzles_required == published.compiler_puzzles_required
+        && lesson.state_layout.lineage == published.state_layout.lineage
+        && lesson.state_layout.signatures == published.state_layout.signatures
+        && progress.state_layout.lineage == lesson.state_layout.lineage
+        && progress.state_layout.signatures == lesson.state_layout.signatures
+        && target == position(published, original.stable_id)
+        && compiler.type == curriculum::BlockType::cpp_compiler && compiler.output_check && original.output_check
+        && compiler.output_check->cases.size() == 1 && compiler.output_check->cases.front().standard_input.empty()
+        && compiler.standard_input.value_or("").empty() && compiler.initial_code == original.initial_code
+        && compiler.project_files.empty() && compiler.source_files.empty() && !compiler.cmake
+        && curriculum::same_output_check_runtime_requirements(*compiler.output_check, *original.output_check)
+        && compiler.named_rule_source_check && compiler.named_rule_source_check == compact.named_rule_source_check
+        && compiler.named_rule_source_check->execution_probe
+        && compiler.named_rule_source_check->execution_probe->battery_check
+        && compiler.named_rule_source_check->execution_probe->constant_variations
+        && curriculum::exercise_key(lesson, compiler) == curriculum::exercise_key(published, original)
+        && curriculum::draft_key("programming", lesson, compiler) == curriculum::draft_key("programming", published, original),
+        "The QA loader changed the authentic owner, source, first case, state identity or declared private proofs");
+    const std::string expected =
+        "articulos=0 total=0 esperado=0 minimo=0 esperado_minimo=0 OK\n"
+        "articulos=4 total=28 esperado=28 minimo=0 esperado_minimo=0 OK\n"
+        "articulos=5 total=35 esperado=35 minimo=1 esperado_minimo=1 OK\n"
+        "articulos=6 total=42 esperado=42 minimo=1 esperado_minimo=1 OK\n"
+        "articulos=10 total=70 esperado=70 minimo=1 esperado_minimo=1 OK\n"
+        "Bateria: OK\n";
+    const std::string numeric_output =
+        "articulos=0 total=0 esperado=0 minimo=0 esperado_minimo=0 OK\n"
+        "articulos=4 total=28 esperado=28 minimo=0 esperado_minimo=0 OK\n"
+        "articulos=5 total=35 esperado=35 minimo=0 esperado_minimo=1 FALLO\n"
+        "articulos=6 total=42 esperado=42 minimo=1 esperado_minimo=1 OK\n"
+        "articulos=10 total=70 esperado=70 minimo=1 esperado_minimo=1 OK\n"
+        "Bateria: FALLO\n";
+    check(compiler.output_check->cases.front().outputs == std::vector<std::string>{expected},
+        "The authentic five-comparison report changed its exact public output");
+    const auto replace_once = [](std::string source, std::string_view before, std::string_view after) {
+        const auto at = source.find(before);
+        check(at != std::string::npos && source.find(before, at + before.size()) == std::string::npos,
+            "A reviewed named-rule source edit is missing or ambiguous");
+        source.replace(at, before.size(), after);
+        return source;
+    };
+    auto repaired = replace_once(compiler.initial_code, "const int acuerdo{7};\n\n", "");
+    repaired = replace_once(std::move(repaired), "return articulos * acuerdo;",
+        "const int precio_unitario{7};\n    return articulos * precio_unitario;");
+    repaired = replace_once(std::move(repaired), "return articulos >= acuerdo;",
+        "const int minimo_articulos{5};\n    return articulos >= minimo_articulos;");
+    const auto unused = replace_once(repaired, "return articulos >= minimo_articulos;", "return articulos >= 5;");
+    const auto absent = replace_once(unused, "    const int minimo_articulos{5};\n", "");
+    const auto numeric = replace_once(repaired, "const int minimo_articulos{5};", "const int minimo_articulos{6};");
+    constexpr std::string_view absent_reason =
+        "No se pudo identificar una unica constante local de proposito en alcanza_minimo.";
+    constexpr std::string_view unused_reason =
+        "La constante no interviene suficientemente en el resultado de alcanza_minimo.";
+    constexpr std::string_view numeric_reason = "La constante de alcanza_minimo no representa el acuerdo.";
+
+    phase = "mount the authentic named-rule editor without grading unrelated quizzes";
+    View fixture(lesson, target, false, true);
+    const auto initial = fixture.saved();
+    const auto draft_key = curriculum::draft_key("programming", lesson, compiler);
+    check(lesson_page_state(fixture.view).index == target.page && fixture.text(10) == compiler.initial_code
+        && fixture.text(15).empty() && !windows::compiler_puzzle_completed(initial, lesson, compiler)
+        && windows::compiler_puzzle_case_count(initial, lesson, compiler) == 0,
+        "The named-rule reader began on another page or with an invented first-case receipt");
+    const auto retained = [&](std::string_view source, std::size_t count, bool completed) {
+        const auto saved = fixture.saved();
+        const auto draft = state::get_draft(saved, draft_key, "", "");
+        check(draft.has_saved && draft.source == source && draft.input.empty()
+            && fixture.text(10) == source && fixture.text(15).empty()
+            && windows::compiler_puzzle_case_count(saved, lesson, compiler) == count
+            && windows::compiler_puzzle_completed(saved, lesson, compiler) == completed,
+            "A named-rule run changed its actual draft/input or first-case evidence");
+        preserve_u3_independent_state(initial, saved, lesson, compiler);
+    };
+    const auto reopen_preserving = [&](std::string_view source, std::size_t count, bool completed) {
+        const auto before = fixture.saved();
+        const auto draft = state::get_draft(before, draft_key, "", "");
+        fixture.reopen();
+        retained(source, count, completed);
+        const auto after = fixture.saved();
+        const auto restored = state::get_draft(after, draft_key, "", "");
+        check(lesson_page_state(fixture.view).index == target.page
+            && compiler_receipts(after, lesson, compiler) == compiler_receipts(before, lesson, compiler)
+            && restored.selection_start == draft.selection_start && restored.selection_end == draft.selection_end
+            && restored.indentation_json == draft.indentation_json,
+            "Reopening changed named-rule draft metadata or an authenticated receipt");
+        // Rejection persistence is deliberately not asserted: this regression
+        // checks the reason of the current actual run, not a new history policy.
+    };
+    const auto run = [&](const std::string& source, const std::string& output, std::uint32_t exit_code = 0) {
+        fixture.replace(10, source); fixture.replace(15, "");
+        fixture.run(source, "", output, crt_stdout(output), View::RunArtifacts::public_with_private_probes, exit_code);
+    };
+    const auto reason_visible = [&](std::string_view expected_reason) {
+        const auto feedback = fixture.text(4);
+        check(feedback.starts_with("✗ Incorrecto") && feedback.find(expected_reason) != std::string::npos
+            && feedback.find("este objetivo también exige declarar constantes locales") == std::string::npos,
+            "The actual compiler feedback lost its precise named-rule rejection: " + feedback);
+    };
+
+    phase = "correct stdout with the local minimum absent";
+    run(absent, expected); reason_visible(absent_reason); retained(absent, 0, false);
+    reopen_preserving(absent, 0, false);
+    phase = "correct stdout with a declared but unused local minimum";
+    run(unused, expected); reason_visible(unused_reason); retained(unused, 0, false);
+    check(fixture.text(4).find(absent_reason) == std::string::npos, "The new rejection reused the earlier missing-constant reason");
+    reopen_preserving(unused, 0, false);
+    phase = "wrong numerical output must not be described as matching";
+    run(numeric, numeric_output, 1); reason_visible(numeric_reason); retained(numeric, 0, false);
+    check(fixture.text(4).find("La salida coincide") == std::string::npos
+        && fixture.text(4).find("La salida estándar es correcta") == std::string::npos,
+        "A wrong numerical report was described as correct stdout");
+    reopen_preserving(numeric, 0, false);
+    phase = "the repaired program earns its first public case and private proofs";
+    run(repaired, expected); retained(repaired, 1, true);
+    check(fixture.text(4).starts_with("✓ Correcto") && fixture.text(4).find(unused_reason) == std::string::npos,
+        "The corrected named-rule source retained its old rejection or failed to earn credit");
+    reopen_preserving(repaired, 1, true);
+    const auto achievements = [&](const state::StateData& saved) {
+        auto result = compiler_receipts(saved, lesson, compiler);
+        std::erase_if(result, [](const auto& item) { return item.first.find("/review/") != std::string::npos; });
+        return result;
+    };
+    const auto earned = achievements(fixture.saved());
+    phase = "a later source rejection preserves the genuine first-case achievement";
+    run(unused, expected); reason_visible(unused_reason); retained(unused, 1, true);
+    check(achievements(fixture.saved()) == earned, "A later named-rule rejection changed the earned first-case seal");
+    reopen_preserving(unused, 1, true);
+    check(achievements(fixture.saved()) == earned && fixture.executions == 5
+        && bytes(path) == published_bytes && !IsWindowVisible(fixture.host),
+        "The named-rule laboratory lost an execution, receipt, original publication or hidden host");
+    std::cout << "PASS named-rule feedback block_0008_0007: five actual Win32/MSVC runs, "
+        "missing and unused local constants with matching stdout, a numerical failure without a false stdout claim, "
+        "real correction/private proofs, later rejection with first-case receipt retained, "
+        "exact drafts/input/reopen and unchanged authenticated publication\n";
+}
 }
 
 int main(int argc, char** argv) {
     std::cout << std::unitbuf; std::cerr << std::unitbuf;
     const bool u3_stdout = argc == 2 && std::string_view(argv[1]) == "--u3-stdout";
     const bool u3_combinations = argc == 2 && std::string_view(argv[1]) == "--u3-combinations";
+    const bool named_rule_feedback = argc == 2 && std::string_view(argv[1]) == "--named-rule-feedback";
     const bool u2l9_history = argc == 3 && std::string_view(argv[1]) == "--u2l9-history";
     const bool u2l9_same_page = argc == 3 && std::string_view(argv[1]) == "--u2l9-same-page";
-    if (argc != 1 && !u3_stdout && !u3_combinations && !u2l9_history && !u2l9_same_page) {
+    if (argc != 1 && !u3_stdout && !u3_combinations && !named_rule_feedback && !u2l9_history && !u2l9_same_page) {
         const bool shape = argc == 3 && (std::string_view(argv[1]) == "--prepare-visual"
             || std::string_view(argv[1]) == "--prepare-u3-visual"
             || std::string_view(argv[1]) == "--prepare-u3-combinations-visual"
@@ -1212,7 +1443,7 @@ int main(int argc, char** argv) {
         const auto raw = shape ? std::string_view(argv[2]) : std::string_view{};
         const std::wstring token(raw.begin(), raw.end());
         if (!shape || !is_valid_qa_instance(token)) {
-            std::cerr << "Usage: curricular_input_lab_tests [--u3-stdout | --u3-combinations | --u2l9-history <authentic-json> | --u2l9-same-page <authentic-json> | --prepare-visual <safe-new-QA-token> | --prepare-u3-visual <safe-new-QA-token> | --prepare-u3-combinations-visual <safe-new-QA-token> | --inspect-u3-combinations-visual <safe-QA-token>]\n";
+            std::cerr << "Usage: curricular_input_lab_tests [--u3-stdout | --u3-combinations | --named-rule-feedback | --u2l9-history <authentic-json> | --u2l9-same-page <authentic-json> | --prepare-visual <safe-new-QA-token> | --prepare-u3-visual <safe-new-QA-token> | --prepare-u3-combinations-visual <safe-new-QA-token> | --inspect-u3-combinations-visual <safe-QA-token>]\n";
             return 2;
         }
         // U2L9 preparation executes its preceding boxes program and prepares
@@ -1235,7 +1466,8 @@ int main(int argc, char** argv) {
     try {
         check(rich != nullptr, "Cannot load RichEdit for the current input laboratory");
         reader_theme::prepare_fonts();
-        if (u3_combinations) current_u3_combinations();
+        if (named_rule_feedback) named_rule_feedback_laboratory();
+        else if (u3_combinations) current_u3_combinations();
         else if (u3_stdout) current_u3_stdout_transport();
         else current_three_input_laboratory(u2l9_history || u2l9_same_page
             ? std::filesystem::path(argv[2]) : std::filesystem::path{}, u2l9_same_page);
