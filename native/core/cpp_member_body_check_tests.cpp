@@ -49,6 +49,27 @@ int main() { return 0; }
 )cpp");
         require(cpp_member_body_preserves_source(check,good),
                 "Equivalent structured member body was rejected");
+        for(const std::string number:{"0'4","4'0 / 10","0x0'4","0b0'100",
+                "1'0e-1","0x1'0p-2"}) {
+            require(cpp_member_body_preserves_source(check,update(
+                "\n    const auto value = "+number+";\n"
+                "    const char brace = '}';\n"
+                "    return value > 0 && brace == '}';\n")),
+                "A preprocessing number's separator became a character literal");
+        }
+        require(cpp_member_body_preserves_source(check,update(R"cpp(
+    const auto text8 = u8R"memo(
+        } { bool Deposito::transferir(int origen, int destino) { return false; }
+    )memo";
+    const auto label8 = u8"} {";
+    const char brace = '}';
+    const int value8 = 0'4;
+    return value8 > 0 && brace == '}';
+)cpp")), "A numeric scan consumed a prefixed raw string or character literal");
+        require(!cpp_member_body_preserves_source(check,update(
+            "\n    const int value = 0'4; return false; }\n"
+            "int escaped() { return 0; }\n{\n")),
+            "A digit separator hid a real early closing brace");
         require(cpp_member_body_preserves_source(check,update(
             R"cpp(
  // A quote with braces: "}"; and a raw string R"tag( } { )tag".
@@ -189,6 +210,29 @@ bool Deposito::transferir(int origen, int destino) { return false; }
             documented.original_source.substr(documented_span->end);
         require(cpp_member_body_preserves_source(documented,revised_documented),
                 "A permitted member edit failed when the same signature was documented");
+        auto numbered=check;
+        numbered.original_source=std::string(R"cpp(
+constexpr int public_number = 1'024;
+constexpr auto message8 = u8R"memo(
+} {
+bool Deposito::transferir(int origen, int destino) { return false; }
+)memo";
+constexpr auto label8 = u8"} {";
+constexpr char brace = '}';
+)cpp")+check.original_source;
+        const auto numbered_span=cpp_member_body_span(numbered);
+        require(numbered_span &&
+                cpp_member_body_preserves_source(numbered,numbered.original_source),
+                "A separated number or UTF-8 raw literal hid the authentic definition");
+        const auto revised_numbered=numbered.original_source.substr(0,numbered_span->begin)+
+            std::string("\n    return origen != destino;\n")+
+            numbered.original_source.substr(numbered_span->end);
+        require(cpp_member_body_preserves_source(numbered,revised_numbered),
+                "A body edit after separated numbers or prefixed literals was rejected");
+        auto changed_number=revised_numbered;
+        changed_number.replace(changed_number.find("1'024"),5,"1024");
+        require(!cpp_member_body_preserves_source(numbered,changed_number),
+                "An equivalent numeric spelling outside the body lost byte protection");
         // A C++ block comment is whitespace even on the signature's line.
         // The protected prefix includes its exact bytes.
         const auto signature_at=check.original_source.find(check.signature);

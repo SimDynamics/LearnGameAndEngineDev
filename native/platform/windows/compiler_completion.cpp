@@ -1092,12 +1092,13 @@ bool compiler_runtime_request_allowed(const curriculum::Block& block,const CppRu
         if(request.action!=CppRunRequest::Action::compile_run||request.diagnostic||
            request.cmake!=block.cmake||request.source_files!=block.source_files)
             return reject("Conserva el modo de ejecución, las fuentes y la configuración CMake de este ejercicio.");
-        std::string_view source;
+        std::string_view source,original_source;
         if(named.path.empty()) {
             if(!block.project_files.empty()||!request.project_files.empty()||
                request.cmake||!named.editable_paths.empty()||request.source_files.size())
                 return reject("Este ejercicio requiere el archivo de código del editor, sin añadir un proyecto ni otras fuentes.");
             source=request.source_utf8;
+            original_source=block.initial_code;
         }else{
             if(block.project_files.empty()||request.project_files.size()!=block.project_files.size())
                 return reject("Conserva el conjunto de archivos del proyecto; no añadas ni retires archivos.");
@@ -1106,6 +1107,7 @@ bool compiler_runtime_request_allowed(const curriculum::Block& block,const CppRu
                 const auto& current=request.project_files[i];
                 if(original.first!=current.first)
                     return reject("Conserva las rutas y la correspondencia de los archivos originales del proyecto.");
+                if(original.first==named.path)original_source=original.second;
                 if(original.first!=named.path&&
                    std::ranges::find(named.editable_paths,original.first)==
                        named.editable_paths.end()&&
@@ -1123,6 +1125,12 @@ bool compiler_runtime_request_allowed(const curriculum::Block& block,const CppRu
                 return reject("No se encontró el archivo de código "+named.path+" indicado por la actividad.");
             source=found->second;
         }
+        if(!named.editable_bodies.empty()&&
+           !curriculum::named_rule_body_only_edit(
+                original_source,source,named.editable_bodies))
+            return reject("No se pudo verificar la edición limitada a los cuerpos autorizados en "+
+                (named.path.empty()?std::string("el archivo del editor"):named.path)+
+                ". Conserva las firmas y el código exterior a esos cuerpos.");
         if(named.execution_probe&&
            !curriculum::named_rule_detail::probe_source_no_early_exit(source))
             return reject("No se pudo verificar el análisis y la terminación del programa para comprobar sus funciones.");

@@ -5,6 +5,10 @@ on:
     branches: [Codex]
     paths:
       - native/core/named_rule_check.hpp
+      - native/core/cpp_multi_body_check.hpp
+      - native/core/cpp_member_body_check.hpp
+      - native/core/cpp_multi_body_check_tests.cpp
+      - native/core/cpp_member_body_check_tests.cpp
       - native/core/named_rule_battery_check.hpp
       - native/core/named_rule_constant_variation_check.hpp
       - native/core/named_rule_check_tests.cpp
@@ -56,6 +60,15 @@ jobs:
         shell: cmd
         run: |
           cl /nologo /std:c++latest /EHsc /W4 /WX /permissive- /Zc:__cplusplus /utf-8 /I native native\core\named_rule_check_tests.cpp /Fe:"%RUNNER_TEMP%\lgaed_named_rule_core_tests.exe"
+          if errorlevel 1 exit /b %errorlevel%
+          cl /nologo /std:c++latest /EHsc /W4 /WX /permissive- /Zc:__cplusplus /utf-8 /I native native\core\cpp_member_body_check_tests.cpp /Fe:"%RUNNER_TEMP%\lgaed_member_body_core_tests.exe"
+          if errorlevel 1 exit /b %errorlevel%
+          cl /nologo /std:c++latest /EHsc /W4 /WX /permissive- /Zc:__cplusplus /utf-8 /I native native\core\cpp_multi_body_check_tests.cpp /Fe:"%RUNNER_TEMP%\lgaed_multi_body_core_tests.exe"
       - name: Run MSVC named-rule regressions
         shell: cmd
-        run: '"%RUNNER_TEMP%\lgaed_named_rule_core_tests.exe"'
+        run: |
+          "%RUNNER_TEMP%\lgaed_named_rule_core_tests.exe"
+          if errorlevel 1 exit /b %errorlevel%
+          "%RUNNER_TEMP%\lgaed_member_body_core_tests.exe"
+          if errorlevel 1 exit /b %errorlevel%
+          "%RUNNER_TEMP%\lgaed_multi_body_core_tests.exe"

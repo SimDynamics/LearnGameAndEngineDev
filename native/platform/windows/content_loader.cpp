@@ -5821,7 +5821,7 @@ void read_compiler_named_rule_checks(const JsonObject& root,Lesson& lesson) {
     for(const auto& entry:records) {
         const auto item=entry.GetObject();
         allowed_keys(item,{"activity","path","rules","editablePaths",
-            "commentOnlyPaths","executionProbe"});
+            "commentOnlyPaths","executionProbe","editableBodies"});
         require(item.HasKey(L"activity")&&item.HasKey(L"path")&&item.HasKey(L"rules"),
             "Named-rule source requires activity, path and rules");
         const auto identity=text(item,"activity");
@@ -5911,6 +5911,22 @@ void read_compiler_named_rule_checks(const JsonObject& root,Lesson& lesson) {
                     "Invalid or duplicate named-rule purpose term");
             }
             check.requirements.push_back(std::move(declaration));
+        }
+        if(item.HasKey(L"editableBodies")) {
+            auto signatures=strings(array(item,"editableBodies"),false,false);
+            require(!signatures.empty()&&signatures.size()<=8,
+                "Named-rule body edits require one to eight original signatures");
+            std::string_view original=owner->initial_code;
+            if(!check.path.empty()) {
+                const auto source=std::ranges::find_if(owner->project_files,
+                    [&](const auto& file){return file.first==check.path;});
+                require(source!=owner->project_files.end(),
+                    "Named-rule body edits require their original source");
+                original=source->second;
+            }
+            require(named_rule_body_only_edit(original,original,signatures),
+                "Editable bodies must be unique original definitions in source order");
+            check.editable_bodies=std::move(signatures);
         }
         if(item.HasKey(L"executionProbe")) {
             const bool single_file=owner->project_files.empty();

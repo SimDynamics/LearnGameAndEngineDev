@@ -68,6 +68,8 @@ on:
       - native/platform/windows/u3_runtime_semantics_tests.cpp
       - native/platform/windows/named_rule_runtime_tests.cpp
       - native/core/named_rule_check.hpp
+      - native/core/cpp_multi_body_check.hpp
+      - native/core/cpp_member_body_check.hpp
       - native/core/named_rule_constant_variation_check.hpp
       - native/core/named_rule_battery_check.hpp
       - app/src/main/assets/content/es/programming/programming_practice_tools/comprobaciones_repetibles/lesson_nombrar_reglas_y_separar_acuerdos.json
@@ -180,11 +182,11 @@ jobs:
           $build = Join-Path $env:RUNNER_TEMP 'lgaed-course-edition-qa'
           cmake --build $build --target lgaed_curricular_input_lab_tests lgaed_u3_named_rule_runtime_tests lgaed_code_format_loader_tests lgaed_general_choice_editorial_tests --parallel 3
           if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
-      - name: Preserve named-rule function feedback and receipts through real Win32 attempts
+      - name: Verify full named-rule CMake contracts and Win32 feedback
         shell: pwsh
         run: |
           $build = Join-Path $env:RUNNER_TEMP 'lgaed-course-edition-qa'
-          ctest --test-dir $build -R '^native[.](named_rule_feedback_view|u3_named_rules_single_file)$' --verbose --output-on-failure --no-tests=error --output-junit (Join-Path $build 'u3-named-rules-win32.xml')
+          ctest --test-dir $build -R '^native[.](named_rule_feedback_view|named_rule_runtime)$' --verbose --output-on-failure --no-tests=error --output-junit (Join-Path $build 'u3-named-rules-win32.xml')
           if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
       - name: Preserve composed U2L9 semantics and same-page first-case access
         shell: pwsh
