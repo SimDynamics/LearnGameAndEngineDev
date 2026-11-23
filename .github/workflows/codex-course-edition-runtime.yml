@@ -124,7 +124,7 @@ jobs:
         shell: pwsh
         run: |
           $build = Join-Path $env:RUNNER_TEMP 'lgaed-course-edition-qa'
-          ctest --test-dir $build -R '^native[.]local_dependency_view_u[23]l[0-9]+$' --verbose --output-on-failure --stop-on-failure --no-tests=error --output-junit (Join-Path $build 'local-dependency-view.xml')
+          ctest --test-dir $build -R '^native[.]local_dependency_view_u[23]l[0-9]+$' --verbose --output-on-failure --no-tests=error --output-junit (Join-Path $build 'local-dependency-view.xml')
           if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
       - name: Preserve earlier reading snapshots across an authenticated option review
         shell: pwsh

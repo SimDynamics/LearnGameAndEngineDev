@@ -320,7 +320,7 @@ struct View {
     Lesson lesson;
     std::string activity;
     HWND host=nullptr,view=nullptr;
-    std::size_t executions=0;
+    std::size_t executions=0,finishes=0;
 
     View(const Fixture& fixture,const Plan& plan,std::size_t ordinal)
         :environment(resolve_windows_environment({ProfileId::Codex,
@@ -341,7 +341,11 @@ struct View {
     void open() {
         within_budget();
         check(!view,"A second LessonView would duplicate a running worker");
-        view=create_lesson_view(host,environment,lesson);
+        LessonViewHooks hooks;
+        // Observe the real Finish action without replacing its guards or
+        // closing the host needed for subsequent reopen and Reset checks.
+        hooks.lesson_completed=[this](HWND){++finishes;};
+        view=create_lesson_view(host,environment,lesson,std::move(hooks));
         check(view!=nullptr,"Cannot create the production LessonView");
         MoveWindow(view,0,0,1100,850,TRUE);pump();
         check(!IsWindowVisible(host),"Hidden UI QA exposed a desktop window");
@@ -439,6 +443,23 @@ struct View {
             check(navigate_lesson_view(view,++current),"An earned first case did not release actual page navigation");pump();
         }
         check(lesson_page_state(view).index==destination,"Navigation did not reach its real target page");
+    }
+    bool can_continue() const {
+        const auto page=lesson_page_state(view);
+        if(page.index+1<page.count)return page.can_next;
+        const auto options=lesson_options_snapshot(view);
+        check(!page.can_next&&options.finish_visible,
+            "The final page lost its actual Finish action or invented a next page");
+        return options.finish_enabled;
+    }
+    void finish() {
+        const auto page=lesson_page_state(view);
+        const auto previous=finishes;
+        check(page.index+1==page.count&&can_continue()&&
+                invoke_lesson_option(view,LessonOptionAction::finish),
+            "An earned final objective did not release the real Finish action");
+        pump();
+        check(finishes==previous+1,"The real Finish action did not invoke its observed completion hook once");
     }
     void reset() {
         const auto button=control(12);
@@ -539,13 +560,22 @@ void reference_visible(View& view,const Plan& plan) {
 }
 void blocked(View& view,const Plan& plan,std::size_t bookmark) {
     const auto target=position(view.lesson,plan.activity);
-    check(lesson_page_state(view.view).index==target.page&&!lesson_page_state(view.view).can_next,
+    check(lesson_page_state(view.view).index==target.page&&!view.can_continue(),
         "A legacy or optional-only receipt released the new required objective");
-    check(!navigate_lesson_view(view.view,bookmark)&&lesson_page_state(view.view).index==target.page,
-        "Navigation bypassed an unverified local/input dependency");
     const auto options=lesson_options_snapshot(view.view);
-    check(std::ranges::find(options.available_pages,bookmark)==options.available_pages.end(),
-        "The actual Pages gate admitted the saved later bookmark");
+    if(bookmark>target.page) {
+        check(!navigate_lesson_view(view.view,bookmark)&&lesson_page_state(view.view).index==target.page,
+            "Navigation bypassed an unverified local/input dependency");
+        check(std::ranges::find(options.available_pages,bookmark)==options.available_pages.end(),
+            "The actual Pages gate admitted the saved later bookmark");
+    }else {
+        check(target.page+1==view.lesson.pages.size()&&options.finish_visible&&!options.finish_enabled,
+            "The last page did not preserve its pending Finish gate");
+        const auto previous=view.finishes;
+        check(!invoke_lesson_option(view.view,LessonOptionAction::finish),
+            "The real Finish action accepted an unverified final objective");
+        pump();check(view.finishes==previous,"A blocked Finish action invoked the completion hook");
+    }
     const auto reference=position(view.lesson,plan.reference);
     if(reference.page==target.page) {
         check(!view.maybe_control(reference.block,1),"A same-page reference was exposed before its private objective");
@@ -560,8 +590,10 @@ void run_plan(const Fixture& fixture,const Plan& plan,std::size_t ordinal) {
     phase=fixture.id+"/"+plan.activity+" preparing authentic BEFORE";
     const auto target=position(fixture.before,plan.activity);
     const auto reference=position(fixture.before,plan.reference);
-    const auto bookmark=std::max(reference.page,target.page+1);
-    check(bookmark<fixture.before.pages.size(),"The owner has no real later page for bookmark adoption");
+    const bool final_page=target.page+1==fixture.before.pages.size();
+    const auto bookmark=final_page?target.page:std::max(reference.page,target.page+1);
+    check(bookmark<fixture.before.pages.size()&&(!final_page||reference.page==target.page),
+        "The owner has neither a later bookmark nor an authored final-page reference");
     const auto& old=block_at(fixture.before,plan.activity);
     const auto& current=block_at(fixture.after,plan.activity);
     const auto& first=current.output_check->cases.front();
@@ -591,17 +623,17 @@ void run_plan(const Fixture& fixture,const Plan& plan,std::size_t ordinal) {
     phase=fixture.id+"/"+plan.activity+" earning actual historical UI receipt";
     view.run(plan.fixed_source,first);check_feedback(view,true);
     check(windows::compiler_puzzle_completed(view.saved(),fixture.before,old)&&
-            lesson_page_state(view.view).can_next,"A real historical first stdout failed to earn its old contract");
+            view.can_continue(),"A real historical first stdout failed to earn its old contract");
     view.select_source();
     if(reference.page==target.page)reference_visible(view,plan);
-    view.navigate_to(bookmark);
+    if(final_page)view.finish();else view.navigate_to(bookmark);
     if(reference.page==bookmark)reference_visible(view,plan);
     const auto legacy=view.saved();
     const auto old_receipts=receipts(legacy,prefix);
     const auto old_draft=state::get_draft(legacy,key,old.initial_code,old.standard_input.value_or(""));
     check(!old_receipts.empty()&&windows::compiler_puzzle_case_count(legacy,fixture.before,old)==1&&
             old_draft.source==plan.fixed_source&&old_draft.input==first.standard_input,
-        "The actual BEFORE UI did not persist its fixed source, first case and later bookmark");
+        "The actual BEFORE UI did not persist its fixed source, first case and authored bookmark");
     const bool has_reference=std::ranges::any_of(fixture.before.reference_after,
         [&](const auto& relation){return relation.activity==plan.activity;})||
         std::ranges::any_of(fixture.before.activity_after,[&](const auto& relation){
@@ -699,14 +731,15 @@ void run_plan(const Fixture& fixture,const Plan& plan,std::size_t ordinal) {
     saved=view.saved();preserved(saved);check_feedback(view,true);check_reader_goal(view,true);
     check(windows::compiler_puzzle_completed(saved,fixture.after,current)&&
             windows::compiler_puzzle_case_count(saved,fixture.after,current)==1&&
-            lesson_page_state(view.view).can_next&&
+            view.can_continue()&&
             view.text(34).find("Comprobación obligatoria: 1 de 1.")!=std::string::npos,
         "One real first case did not release the stronger goal or private trials became public cases");
     if(optional)check(view.text(34).find("Pruebas opcionales comprobadas: 0 de "+
         std::to_string(current.output_check->cases.size()-1)+'.')!=std::string::npos,
         "The first-case status treated optional input trials as requirements");
     if(reference.page==target.page)reference_visible(view,plan);
-    view.navigate_to(bookmark);if(reference.page==bookmark)reference_visible(view,plan);
+    if(final_page)view.finish();else view.navigate_to(bookmark);
+    if(reference.page==bookmark)reference_visible(view,plan);
     view.navigate_to(target.page);view.select_source();
     const auto earned=view.saved();preserved(earned);
     const auto earned_draft=state::get_draft(earned,key,current.initial_code,current.standard_input.value_or(""));
@@ -716,7 +749,7 @@ void run_plan(const Fixture& fixture,const Plan& plan,std::size_t ordinal) {
     same_draft(state::get_draft(saved,key,current.initial_code,current.standard_input.value_or("")),earned_draft);
     check(windows::compiler_puzzle_completed(saved,fixture.after,current)&&
             windows::compiler_puzzle_case_count(saved,fixture.after,current)==1&&
-            achievement_seals(saved,prefix)==earned_seals&&lesson_page_state(view.view).can_next,
+            achievement_seals(saved,prefix)==earned_seals&&view.can_continue(),
         "Closing/reopening lost the new first-case achievement or its independently stored historical receipt");
     check_feedback(view,true);
     if(optional) {
@@ -725,7 +758,7 @@ void run_plan(const Fixture& fixture,const Plan& plan,std::size_t ordinal) {
         view.input(trial.standard_input);view.run(source,trial);saved=view.saved();preserved(saved);
         check(windows::compiler_puzzle_completed(saved,fixture.after,current)&&
                 windows::compiler_puzzle_case_count(saved,fixture.after,current)==2&&
-                achievement_seals(saved,prefix)==earned_seals&&lesson_page_state(view.view).can_next,
+                achievement_seals(saved,prefix)==earned_seals&&view.can_continue(),
             "An optional run replaced the first achievement or required its private trials as manual cases");
     }
     phase=fixture.id+"/"+plan.activity+" resetting only the new objective through its real button";
@@ -742,8 +775,9 @@ void run_plan(const Fixture& fixture,const Plan& plan,std::size_t ordinal) {
         "Reopening after Reset resurrected old credit or changed the reset source");
     blocked(view,plan,bookmark);
     std::cout<<"PASS real LessonView "<<fixture.id<<'/'<<plan.activity<<": "<<view.executions
-        <<" actual button runs; historical fixed stdout and later-page reference proof; "
-        "root adoption blocked; private rejection retained; one first case opens reference; "
+        <<" actual button runs; historical fixed stdout and "
+        <<(final_page?"same-page final reference / Finish gate; ":"later-page bookmark and reference proof; ")
+        <<"root adoption blocked; private rejection retained; one first case opens reference; "
         <<(optional?"optional-before-first blocked/reset and optional-after-first retained; ":"")
         <<"separate receipts, draft/stdin/selection, actual reopen and scoped Reset.\n";
 }
