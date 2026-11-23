@@ -24,16 +24,16 @@
         {
           "type": "code",
           "language": "cpp",
-          "code": "#include <iostream>\n\nint main() {\n    int cantidad = 0;\n    std::cin >> cantidad;\n    std::cout << cantidad;\n    return 0;\n}\n"
+          "code": "#include <iostream>\n\nint main() {\n    int cantidad = 0;\n\n    std::cin >> cantidad;\n\n    std::cout << cantidad;\n\n    return 0;\n}\n"
         },
         {
           "type": "paragraph",
-          "text": "std::cout << cantidad;\nCuando se ejecuta esta línea, cantidad ya guarda 8. La consola muestra 8. Si vuelves a ejecutar el mismo código con 12 en «Entrada», la lectura guarda 12 y la consola muestra 12."
+          "text": "std::cout << cantidad;\nDespués de leer 8, cantidad guarda ese valor y la consola muestra 8. Si el programa recibe 12 en otra ejecución, std::cin guarda 12 en cantidad y std::cout muestra 12."
         },
         {
           "type": "fill_code",
           "language": "cpp",
-          "code": "#include <iostream>\n\nint main() {\n    int entradas = 0;\n    std::cin >> ___;\n    std::cout << entradas;\n    return 0;\n}\n",
+          "code": "#include <iostream>\n\nint main() {\n    int entradas = 0;\n\n    std::cin >> ___;\n\n    std::cout << entradas;\n\n    return 0;\n}\n",
           "answers": [
             "entradas"
           ],
@@ -63,7 +63,7 @@
           "type": "output_prediction",
           "language": "cpp",
           "question": "En «Entrada» hay 12. ¿Qué renglón escriben las dos instrucciones con std::cout?",
-          "code": "#include <iostream>\n\nint main() {\n    std::cout << \"Cantidad: \";\n    int cantidad = 0;\n    std::cin >> cantidad;\n    std::cout << cantidad;\n    return 0;\n}\n",
+          "code": "#include <iostream>\n\nint main() {\n    std::cout << \"Cantidad: \";\n\n    int cantidad = 0;\n\n    std::cin >> cantidad;\n\n    std::cout << cantidad;\n\n    return 0;\n}\n",
           "answers": [
             "Cantidad: 12"
           ],
@@ -74,7 +74,7 @@
           "type": "fill_code",
           "language": "cpp",
           "question": "Escribe el operador que falta entre std::cin y la variable cajas para leer una cantidad entera.",
-          "code": "#include <iostream>\n\nint main() {\n    int cajas = 0;\n    std::cin ___ cajas;\n    std::cout << cajas;\n    return 0;\n}\n",
+          "code": "#include <iostream>\n\nint main() {\n    int cajas = 0;\n\n    std::cin ___ cajas;\n\n    std::cout << cajas;\n\n    return 0;\n}\n",
           "answers": [
             ">>"
           ],
@@ -102,7 +102,7 @@
           "type": "output_prediction",
           "language": "cpp",
           "question": "El programa recibe 2.5. ¿Qué renglón muestra después de leer la medida en metros?",
-          "code": "#include <iostream>\n\nint main() {\n    double metros = 0.0;\n    std::cin >> metros;\n    std::cout << \"Metros: \" << metros;\n    return 0;\n}\n",
+          "code": "#include <iostream>\n\nint main() {\n    double metros = 0.0;\n\n    std::cin >> metros;\n\n    std::cout << \"Metros: \" << metros;\n\n    return 0;\n}\n",
           "answers": [
             "Metros: 2.5"
           ],
@@ -126,8 +126,17 @@
           ]
         },
         {
+          "type": "paragraph",
+          "text": "En los editores de esta lección, separa los datos del campo «Entrada» con un espacio o pulsa Enter para ponerlos en dos renglones. Después del último dato, no necesitas pulsar Enter ni añadir un espacio. Pulsa «Compilar, ejecutar y comprobar». La aplicación entrega al programa todo el texto del campo. std::cin puede leer el último dato aunque el texto acabe justo después (Köppe et al., 2023).",
+          "emphasis": [
+            {
+              "text": "no necesitas pulsar Enter ni añadir un espacio"
+            }
+          ]
+        },
+        {
           "type": "inline_fill_code",
-          "template": "#include <iostream>\n#include <string>\n\nint main() {\n    [] codigo;\n    [] cantidad = 0;\n    std::cin >> codigo;\n    std::cin >> cantidad;\n    std::cout << codigo << \" \" << cantidad;\n    return 0;\n}\n",
+          "template": "#include <iostream>\n#include <string>\n\nint main() {\n    [] codigo;\n    [] cantidad = 0;\n\n    std::cin >> codigo;\n    std::cin >> cantidad;\n\n    std::cout << codigo << \" \" << cantidad;\n\n    return 0;\n}\n",
           "answers": [
             "std::string",
             "int"
@@ -136,15 +145,6 @@
           "question": "La entrada es 007 007. El primer dato es el código de una caja y conserva sus tres caracteres. El segundo es una cantidad entera. Completa los tipos para que aparezca 007 7. Escribe el nombre completo del tipo de texto.",
           "reviewFeedback": "¿Qué tipo usaste para conservar un código con ceros iniciales? ¿Qué tipo guarda una cantidad entera?",
           "explanation": "codigo es una std::string y guarda 007. cantidad es un int y guarda el número 7."
-        },
-        {
-          "type": "paragraph",
-          "text": "En el campo «Entrada», pulsa Enter si quieres separar los datos en dos renglones. Al ejecutar, el programa recibe todo lo que escribiste. En las lecturas que siguen, un espacio o un salto de línea puede separar un dato del siguiente. El último dato también puede terminar al final de la entrada (Köppe et al., 2023).",
-          "emphasis": [
-            {
-              "text": "en dos renglones"
-            }
-          ]
         }
       ]
     },
@@ -167,7 +167,7 @@
           "type": "output_prediction",
           "language": "cpp",
           "question": "La entrada contiene Ana Maria. Escribe el renglón completo. Fíjate en qué separador aparece entre las dos palabras.",
-          "code": "#include <iostream>\n#include <string>\n\nint main() {\n    std::string primera;\n    std::string segunda;\n    std::cin >> primera >> segunda;\n    std::cout << primera << \":\" << segunda;\n    return 0;\n}\n",
+          "code": "#include <iostream>\n#include <string>\n\nint main() {\n    std::string primera;\n    std::string segunda;\n\n    std::cin >> primera >> segunda;\n\n    std::cout << primera << \":\" << segunda;\n\n    return 0;\n}\n",
           "answers": [
             "Ana:Maria"
           ],
@@ -178,7 +178,7 @@
           "type": "output_prediction",
           "language": "cpp",
           "question": "La entrada contiene tres espacios, la palabra Norte, dos espacios y el número 6. Escribe el renglón que muestra el programa.",
-          "code": "#include <iostream>\n#include <string>\n\nint main() {\n    std::string zona;\n    int cantidad = 0;\n    std::cin >> zona >> cantidad;\n    std::cout << zona << \" \" << cantidad;\n    return 0;\n}\n",
+          "code": "#include <iostream>\n#include <string>\n\nint main() {\n    std::string zona;\n    int cantidad = 0;\n\n    std::cin >> zona >> cantidad;\n\n    std::cout << zona << \" \" << cantidad;\n\n    return 0;\n}\n",
           "answers": [
             "Norte 6"
           ],
@@ -222,7 +222,7 @@
           "type": "output_prediction",
           "language": "cpp",
           "question": "El programa recibe 4B. Escribe el renglón que muestra. Fíjate en el orden de las variables al leerlas y al mostrarlas.",
-          "code": "#include <iostream>\n\nint main() {\n    int numero = 0;\n    char zona = '?';\n    std::cin >> numero >> zona;\n    std::cout << zona << \"-\" << numero;\n    return 0;\n}\n",
+          "code": "#include <iostream>\n\nint main() {\n    int numero = 0;\n    char zona = '?';\n\n    std::cin >> numero >> zona;\n\n    std::cout << zona << \"-\" << numero;\n\n    return 0;\n}\n",
           "answers": [
             "B-4"
           ],
@@ -233,7 +233,7 @@
           "type": "output_prediction",
           "language": "cpp",
           "question": "El campo «Entrada» contiene Lia en el primer renglón y 5 en el segundo. Después de sumar las dos unidades, ¿qué renglón muestra el programa?",
-          "code": "#include <iostream>\n#include <string>\n\nint main() {\n    std::string nombre;\n    int unidades = 0;\n    std::cin >> nombre >> unidades;\n    unidades += 2;\n    std::cout << nombre << \" \" << unidades;\n    return 0;\n}\n",
+          "code": "#include <iostream>\n#include <string>\n\nint main() {\n    std::string nombre;\n    int unidades = 0;\n\n    std::cin >> nombre >> unidades;\n\n    unidades += 2;\n\n    std::cout << nombre << \" \" << unidades;\n\n    return 0;\n}\n",
           "answers": [
             "Lia 7"
           ],
@@ -250,11 +250,27 @@
         },
         {
           "type": "paragraph",
-          "text": "Imagina que el campo «Entrada» contiene la palabra muchos. Se ejecutan estas dos líneas.\n\nint cajas = 9;\nstd::cin >> cajas;\n\nLa lectura intenta obtener un entero y encuentra la letra eme. En este caso guarda cero en cajas y std::cin registra un fallo. La palabra muchos no dice cuántas cajas llegaron. Para saber si obtuviste una cantidad válida, comprueba si la lectura tuvo éxito antes de usar cajas (Köppe et al., 2023).",
+          "text": "Imagina que el campo «Entrada» contiene la palabra muchos. Se ejecutan estas dos líneas.\n\nint cajas = 9;\nstd::cin >> cajas;\n\nLa instrucción con std::cin intenta leer un entero. Encuentra la letra eme al principio de muchos. En este caso, cajas queda con 0 y std::cin registra un fallo de lectura (Köppe et al., 2023).\n\nSi después ejecutaras cajas += 3;, sumarías tres al cero que dejó el fallo. Al ejecutar std::cout << cajas;, mostrarías 3 sin saber cuántas cajas habían llegado. Comprueba si la lectura tuvo éxito antes de hacer la suma o mostrar la cantidad.\n\nLeer un entero y aceptar la cantidad son dos pasos. Por ejemplo, std::cin >> cajas; puede leer -2. Si la entrega exige una cantidad de cero o más cajas, el programa debe rechazar ese valor.",
           "emphasis": [
             {
-              "text": "std::cin registra un fallo"
+              "text": "std::cin registra un fallo de lectura"
             }
+          ]
+        },
+        {
+          "type": "multiple_choice",
+          "question": "El programa empieza con int cajas = 0;. El campo «Entrada» contiene muchos. Al ejecutar std::cin >> cajas;, el programa intenta leer una cantidad entera. ¿Qué debe comprobar después de la lectura y antes de usar cajas en la suma cajas += 3;?",
+          "options": [
+            "La lectura debe considerarse válida porque la variable tenía un cero inicial.",
+            "No se obtuvo el dato entero esperado; antes de usarlo hay que detectar y manejar el fallo.",
+            "cin convierte cualquier palabra a su cantidad equivalente."
+          ],
+          "correctIndex": 1,
+          "explanation": "std::cin encuentra la eme de muchos y registra un fallo. El 0 que queda en cajas no es una cantidad leída. Antes de ejecutar cajas += 3;, el programa debe comprobar que la lectura tuvo éxito (Köppe et al., 2023).",
+          "reviewFeedback": [
+            "Conocer el valor inicial de cajas y saber si la lectura obtuvo un entero son dos comprobaciones distintas.",
+            "Revisa si la palabra muchos contiene cifras que la lectura pueda interpretar como un entero.",
+            "Para guardar un entero, la instrucción tiene que leer un número. ¿Qué puede leer al llegar a la eme de muchos?"
           ]
         },
         {
@@ -264,22 +280,6 @@
             {
               "text": "deja .5 pendiente en la entrada"
             }
-          ]
-        },
-        {
-          "type": "multiple_choice",
-          "question": "cajas es un int. La instrucción std::cin >> cajas; intenta leer la palabra muchos. ¿Qué debe tener en cuenta el programa antes de usar esa cantidad?",
-          "options": [
-            "La lectura debe considerarse válida porque la variable tenía un cero inicial.",
-            "No se obtuvo el dato entero esperado; antes de usarlo hay que detectar y manejar el fallo.",
-            "cin convierte cualquier palabra a su cantidad equivalente."
-          ],
-          "correctIndex": 1,
-          "explanation": "Al intentar convertir muchos en un entero, la lectura falla. El cero guardado en este caso no representa una cantidad que se haya leído. El programa tendría que detectar el fallo antes de usar cajas (Köppe et al., 2023).",
-          "reviewFeedback": [
-            "Conocer el valor inicial de cajas y saber si la lectura obtuvo un entero son dos comprobaciones distintas.",
-            "Revisa si la palabra muchos contiene cifras que la lectura pueda interpretar como un entero.",
-            "Para guardar un entero, la instrucción tiene que leer un número. ¿Qué puede leer al llegar a la eme de muchos?"
           ]
         },
         {
@@ -315,7 +315,7 @@
           "id": "cpp_fundamentals__objetos_y_estado__leer_una_entrada_conocida__etapas_lectura_y_actualizacion",
           "language": "cpp",
           "question": "La entrada es Rita 4. ¿Qué escribe el programa antes de sumar tres cajas y qué escribe después? Escribe los dos renglones.",
-          "code": "#include <iostream>\n#include <string>\n\nint main() {\n    std::string nombre;\n    int cajas = 0;\n    std::cin >> nombre >> cajas;\n    std::cout << nombre << \" \" << cajas << \"\\n\";\n    cajas += 3;\n    std::cout << nombre << \": \" << cajas;\n    return 0;\n}\n",
+          "code": "#include <iostream>\n#include <string>\n\nint main() {\n    std::string nombre;\n    int cajas = 0;\n\n    std::cin >> nombre >> cajas;\n\n    std::cout << nombre << \" \" << cajas << \"\\n\";\n\n    cajas += 3;\n\n    std::cout << nombre << \": \" << cajas;\n\n    return 0;\n}\n",
           "answers": [
             "Rita 4\nRita: 7"
           ],
@@ -325,11 +325,11 @@
         },
         {
           "type": "paragraph",
-          "text": "Al programa del editor le falta la lectura. Ya crea nombre y cajas, suma tres cajas y muestra el resultado. Escribe la instrucción que recibe del campo «Entrada» el nombre y luego el número de cajas. Colócala antes de la suma. El nombre es una palabra y la cantidad inicial va de cero a veinte cajas.\n\nEntrada\nRita 4\n\nSalida esperada\nRita: 7\n\nPulsa «Compilar, ejecutar y comprobar». Este primer caso permite avanzar. El editor acepta un salto de línea al final."
+          "text": "Al programa del editor le falta la lectura. Ya crea nombre y cajas, suma tres cajas y muestra el resultado. Escribe la instrucción que lee del campo «Entrada» el nombre y luego el número de cajas. Colócala antes de la suma. El nombre es una palabra y la cantidad inicial va de cero a veinte cajas.\n\nEntrada\nRita 4\n\nSalida esperada\nRita: 7\n\nPulsa «Compilar, ejecutar y comprobar». Este primer caso permite avanzar. Puedes añadir un salto de línea al final de la salida."
         },
         {
           "type": "cpp_compiler",
-          "initialCode": "#include <iostream>\n#include <string>\n\nint main() {\n    std::string nombre;\n    int cajas = 0;\n    // Lee aquí el nombre y la cantidad de cajas.\n    cajas += 3;\n    std::cout << nombre << \": \" << cajas;\n    return 0;\n}\n",
+          "initialCode": "#include <iostream>\n#include <string>\n\nint main() {\n    std::string nombre;\n    int cajas = 0;\n\n    // Lee aquí el nombre y la cantidad de cajas.\n\n    cajas += 3;\n\n    std::cout << nombre << \": \" << cajas;\n\n    return 0;\n}\n",
           "initialStandardInput": "Rita 4",
           "outputCheck": {
             "inputComparison": "tokens",
@@ -350,11 +350,7 @@
               }
             ]
           }
-        }
-      ]
-    },
-    {
-      "blocks": [
+        },
         {
           "type": "heading",
           "text": "Revisar dónde se suman las tres cajas"
@@ -362,17 +358,21 @@
         {
           "type": "code",
           "language": "cpp",
-          "code": "#include <iostream>\n#include <string>\n\nint main() {\n    std::string nombre;\n    int cajas = 0;\n    std::cin >> nombre >> cajas;\n    cajas += 3;\n    std::cout << nombre << \": \" << cajas;\n    return 0;\n}\n"
+          "code": "#include <iostream>\n#include <string>\n\nint main() {\n    std::string nombre;\n    int cajas = 0;\n\n    std::cin >> nombre >> cajas;\n\n    cajas += 3;\n\n    std::cout << nombre << \": \" << cajas;\n\n    return 0;\n}\n"
         },
         {
           "type": "paragraph",
-          "text": "Con Rita 4, la lectura guarda Rita en nombre y 4 en cajas. La línea cajas += 3; suma tres al valor que acabas de leer. Al mostrar la cantidad, cajas ya vale 7.\n\nSi quieres probar otra entrega, conserva el programa y cambia el campo «Entrada».\n\nEntrada opcional\nLeo 2\n\nSalida esperada\nLeo: 5",
+          "text": "Con Rita 4 en «Entrada», std::cin >> nombre >> cajas; guarda Rita en nombre y 4 en cajas. Luego cajas += 3; suma tres y guarda 7 en cajas. La instrucción con std::cout muestra Rita: 7.\n\nPuedes probar otra entrega en este mismo editor. Conserva tu código, escribe la entrada opcional en el campo «Entrada» y pulsa «Compilar, ejecutar y comprobar».\n\nEntrada opcional\nLeo 2\n\nSalida esperada\nLeo: 5",
           "emphasis": [
             {
-              "text": "suma tres al valor que acabas de leer"
+              "text": "en este mismo editor"
             }
           ]
-        },
+        }
+      ]
+    },
+    {
+      "blocks": [
         {
           "type": "multiple_choice",
           "question": "Un programa empieza siempre con nombre igual a Rita y cajas igual a 4. Suma tres cajas y muestra el resultado. ¿Qué puedes comprobar al ejecutarlo si el código carece de instrucciones de lectura?",
@@ -393,7 +393,7 @@
           "type": "output_prediction",
           "language": "cpp",
           "question": "El programa recibe 6 y copia la cantidad antes de sumar una caja. ¿Qué dos cantidades aparecen en la consola, en el orden indicado por std::cout?",
-          "code": "#include <iostream>\n\nint main() {\n    int cajas = 0;\n    std::cin >> cajas;\n    int recibidas = cajas;\n    cajas += 1;\n    std::cout << recibidas << \" \" << cajas;\n    return 0;\n}\n",
+          "code": "#include <iostream>\n\nint main() {\n    int cajas = 0;\n\n    std::cin >> cajas;\n\n    int recibidas = cajas;\n    cajas += 1;\n\n    std::cout << recibidas << \" \" << cajas;\n\n    return 0;\n}\n",
           "answers": [
             "6 7"
           ],
@@ -414,17 +414,17 @@
         },
         {
           "type": "paragraph",
-          "text": "Con Leo 2, el programa anterior leería dos cajas, sumaría tres y mostraría Leo: 5. ¿Qué ocurriría con esa entrada si el programa empezara siempre con Rita y cuatro cajas?",
+          "text": "Con Leo 2 en «Entrada», un programa que lee el nombre y la cantidad con std::cin y suma tres cajas mostraría Leo: 5. ¿Qué ocurre si el programa empieza siempre con Rita y cuatro cajas?",
           "emphasis": [
             {
-              "text": "si el programa empezara siempre con Rita y cuatro cajas"
+              "text": "si el programa empieza siempre con Rita y cuatro cajas"
             }
           ]
         },
         {
           "type": "code",
           "language": "cpp",
-          "code": "#include <iostream>\n#include <string>\n\nint main() {\n    std::string nombre{\"Rita\"};\n    int cajas{4};\n    cajas = cajas + 3;\n    std::cout << nombre << \": \" << cajas;\n    return 0;\n}\n"
+          "code": "#include <iostream>\n#include <string>\n\nint main() {\n    std::string nombre{\"Rita\"};\n    int cajas{4};\n\n    cajas = cajas + 3;\n\n    std::cout << nombre << \": \" << cajas;\n\n    return 0;\n}\n"
         },
         {
           "type": "paragraph",
@@ -435,7 +435,7 @@
           "id": "cpp_fundamentals__objetos_y_estado__leer_una_entrada_conocida__funciones_lectura_procesamiento_presentacion",
           "language": "cpp",
           "question": "La entrada es Rita 4. Coloca al lado de cada instrucción el comentario que describe lo que hace con el nombre o con la cantidad de cajas.",
-          "template": "#include <iostream>\n#include <string>\n\nint main() {\n    std::string nombre;\n    int cajas = 0;\n    std::cin >> nombre; // []\n    std::cin >> cajas; // []\n    cajas += 3; // []\n    std::cout << nombre << \": \" << cajas; // []\n    return 0;\n}\n",
+          "template": "#include <iostream>\n#include <string>\n\nint main() {\n    std::string nombre;\n    int cajas = 0;\n\n    std::cin >> nombre; // []\n    std::cin >> cajas; // []\n\n    cajas += 3; // []\n\n    std::cout << nombre << \": \" << cajas; // []\n\n    return 0;\n}\n",
           "choices": [
             "Aumenta la cantidad que ya se ha leído.",
             "Presenta el nombre y la cantidad con su separador.",
@@ -461,7 +461,7 @@
         },
         {
           "type": "inline_fill_code",
-          "template": "#include <iostream>\n\nint main() {\n    int cajas_que_llegan = 0;\n    int cajas_que_salen = 0;\n    std::cin >> [] >> [];\n    std::cout << cajas_que_llegan - cajas_que_salen;\n    return 0;\n}\n",
+          "template": "#include <iostream>\n\nint main() {\n    int cajas_que_llegan = 0;\n    int cajas_que_salen = 0;\n\n    std::cin >> [] >> [];\n\n    std::cout << cajas_que_llegan - cajas_que_salen;\n\n    return 0;\n}\n",
           "answers": [
             "cajas_que_llegan",
             "cajas_que_salen"
@@ -489,6 +489,10 @@
           ]
         },
         {
+          "type": "note",
+          "text": "En este ejercicio la aplicación proporciona los tres datos con el formato indicado. Para trabajar con entregas que puedan tener errores, más adelante aprenderás a detectar una cantidad ausente o escrita con letras."
+        },
+        {
           "type": "paragraph",
           "text": "Escribe el programa dentro de main. Lee los tres datos desde std::cin. Calcula el total y muestra la etiqueta seguida de dos puntos, un espacio y el total. Las cabeceras ya están en el editor.\n\nEntrada\nIris 4 2\n\nSalida esperada\nIris: 22\n\nPulsa «Compilar, ejecutar y comprobar». Con este primer caso puedes avanzar. El salto de línea final es opcional.",
           "emphasis": [
@@ -499,7 +503,7 @@
         },
         {
           "type": "cpp_compiler",
-          "initialCode": "#include <iostream>\n#include <string>\n\nint main() {\n    // Construye la lectura, el cálculo y la presentación desde la consigna.\n    return 0;\n}\n",
+          "initialCode": "#include <iostream>\n#include <string>\n\nint main() {\n    // Construye la lectura, el cálculo y la presentación desde la consigna.\n\n    return 0;\n}\n",
           "initialStandardInput": "Iris 4 2",
           "outputCheck": {
             "inputComparison": "tokens",
@@ -536,34 +540,17 @@
           }
         },
         {
-          "type": "paragraph",
-          "text": "Para probar otras entregas, conserva el código y cambia solo el campo «Entrada». Cada par corresponde a una ejecución opcional.\n\nEntrada\nLeo 0 4\nSalida esperada\nLeo: 4\n\nEntrada\nVera 3 1\nSalida esperada\nVera: 16\n\nEntrada\nSol 20 4\nSalida esperada\nSol: 104\n\nTambién puedes escribir los tres datos en renglones separados. Si ejecutas otra vez sin cambiar la entrada, el programa vuelve a leerlos desde el principio.",
-          "emphasis": [
-            {
-              "text": "cambia solo el campo «Entrada»"
-            }
-          ]
-        },
-        {
-          "type": "note",
-          "text": "En este ejercicio la aplicación proporciona los tres datos con el formato indicado. Para trabajar con entregas que puedan tener errores, más adelante aprenderás a detectar una cantidad ausente o escrita con letras."
-        }
-      ]
-    },
-    {
-      "blocks": [
-        {
           "type": "heading",
           "text": "Revisar cómo se calculó el total"
         },
         {
           "type": "code",
           "language": "cpp",
-          "code": "#include <iostream>\n#include <string>\n\nint main() {\n    std::string nombre;\n    int paquetes{0};\n    int sueltas{0};\n    std::cin >> nombre >> paquetes >> sueltas;\n    int total{(5 * paquetes) + sueltas};\n    std::cout << nombre << \": \" << total;\n    return 0;\n}\n"
+          "code": "#include <iostream>\n#include <string>\n\nint main() {\n    std::string nombre;\n    int paquetes{0};\n    int sueltas{0};\n\n    std::cin >> nombre >> paquetes >> sueltas;\n\n    int total{(5 * paquetes) + sueltas};\n\n    std::cout << nombre << \": \" << total;\n\n    return 0;\n}\n"
         },
         {
           "type": "paragraph",
-          "text": "std::cin >> nombre >> paquetes >> sueltas;\nCada variable recibe el dato que ocupa su posición en la entrada. Para Iris 4 2, corresponden Iris, cuatro paquetes y dos piezas sueltas.\n\nint total{(5 * paquetes) + sueltas};\nCinco piezas por paquete dan veinte piezas en los cuatro paquetes. Las dos sueltas completan las veintidós piezas. La última instrucción escribe Iris: 22.",
+          "text": "std::cin >> nombre >> paquetes >> sueltas;\nCada variable recibe el dato que ocupa su posición en la entrada. Para Iris 4 2, corresponden Iris, cuatro paquetes y dos piezas sueltas.\n\nint total{(5 * paquetes) + sueltas};\nCinco piezas por paquete dan veinte piezas en los cuatro paquetes. Las dos sueltas completan las veintidós piezas. La instrucción con std::cout muestra Iris: 22.",
           "emphasis": [
             {
               "text": "Cada variable recibe el dato que ocupa su posición en la entrada."
@@ -579,6 +566,19 @@
             }
           ]
         },
+        {
+          "type": "paragraph",
+          "text": "Puedes probar otras entregas en este mismo editor. Conserva tu código, cambia solo el campo «Entrada» y pulsa «Compilar, ejecutar y comprobar» para cada ensayo opcional.\n\nEntrada\nLeo 0 4\nSalida esperada\nLeo: 4\n\nEntrada\nVera 3 1\nSalida esperada\nVera: 16\n\nEntrada\nSol 20 4\nSalida esperada\nSol: 104\n\nTambién puedes escribir los tres datos en renglones separados. En cada ejecución, std::cin vuelve a leer desde el comienzo del texto que pusiste en «Entrada».",
+          "emphasis": [
+            {
+              "text": "cambia solo el campo «Entrada»"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "blocks": [
         {
           "type": "multiple_choice",
           "id": "cpp_fundamentals__objetos_y_estado__leer_una_entrada_conocida__regla_y_datos_de_entrada",
@@ -601,7 +601,7 @@
           "id": "cpp_fundamentals__objetos_y_estado__leer_una_entrada_conocida__registrar_tres_datos_y_total",
           "language": "cpp",
           "question": "El programa recibe Iris 4 2. Escribe los cuatro valores que muestra en un solo renglón, con un espacio entre ellos.",
-          "code": "#include <iostream>\n#include <string>\n\nint main() {\n    std::string nombre;\n    int paquetes{0};\n    int sueltas{0};\n    std::cin >> nombre >> paquetes >> sueltas;\n    int total{(5 * paquetes) + sueltas};\n    std::cout << nombre << \" \" << paquetes << \" \" << sueltas << \" \" << total;\n    return 0;\n}\n",
+          "code": "#include <iostream>\n#include <string>\n\nint main() {\n    std::string nombre;\n    int paquetes{0};\n    int sueltas{0};\n\n    std::cin >> nombre >> paquetes >> sueltas;\n\n    int total{(5 * paquetes) + sueltas};\n\n    std::cout << nombre << \" \" << paquetes << \" \" << sueltas << \" \" << total;\n\n    return 0;\n}\n",
           "answers": [
             "Iris 4 2 22"
           ],
@@ -622,7 +622,7 @@
           "id": "cpp_fundamentals__objetos_y_estado__leer_una_entrada_conocida__copia_despues_de_lectura",
           "language": "cpp",
           "question": "El programa recibe Kiro 3 en el primer renglón y 1 en el segundo. ¿Qué escribe después de guardar la cantidad original de paquetes y añadir un paquete?",
-          "code": "#include <iostream>\n#include <string>\n\nint main() {\n    std::string nombre;\n    int paquetes{0};\n    int sueltas{0};\n    std::cin >> nombre >> paquetes >> sueltas;\n    int total{(5 * paquetes) + sueltas};\n    int originales{paquetes};\n    paquetes += 1;\n    std::cout << nombre << ' ' << total << ' ' << originales << ' ' << paquetes;\n    return 0;\n}\n",
+          "code": "#include <iostream>\n#include <string>\n\nint main() {\n    std::string nombre;\n    int paquetes{0};\n    int sueltas{0};\n\n    std::cin >> nombre >> paquetes >> sueltas;\n\n    int total{(5 * paquetes) + sueltas};\n    int originales{paquetes};\n    paquetes += 1;\n\n    std::cout << nombre << ' ' << total << ' ' << originales << ' ' << paquetes;\n\n    return 0;\n}\n",
           "answers": [
             "Kiro 16 3 4"
           ],
@@ -660,7 +660,7 @@
         },
         {
           "type": "inline_fill_code",
-          "template": "#include <iostream>\n\nint main() {\n    int paquetes = 0;\n    int sueltas = 0;\n    std::cin >> paquetes >> sueltas;\n    int total = (4 * []) + [];\n    std::cout << total;\n    return 0;\n}\n",
+          "template": "#include <iostream>\n\nint main() {\n    int paquetes = 0;\n    int sueltas = 0;\n\n    std::cin >> paquetes >> sueltas;\n\n    int total = (4 * []) + [];\n\n    std::cout << total;\n\n    return 0;\n}\n",
           "answers": [
             "paquetes",
             "sueltas"
@@ -687,7 +687,7 @@
           "id": "cpp_fundamentals__objetos_y_estado__leer_una_entrada_conocida__distinguir_regla_cuatro",
           "language": "cpp",
           "question": "La entrada es Nora 2 1. Cada paquete contiene cuatro piezas. ¿Qué renglón aparece en la consola?",
-          "code": "#include <iostream>\n#include <string>\n\nint main() {\n    std::string nombre;\n    int paquetes{0};\n    int sueltas{0};\n    std::cin >> nombre >> paquetes >> sueltas;\n    int total{(4 * paquetes) + sueltas};\n    std::cout << nombre << \": \" << total;\n    return 0;\n}\n",
+          "code": "#include <iostream>\n#include <string>\n\nint main() {\n    std::string nombre;\n    int paquetes{0};\n    int sueltas{0};\n\n    std::cin >> nombre >> paquetes >> sueltas;\n\n    int total{(4 * paquetes) + sueltas};\n\n    std::cout << nombre << \": \" << total;\n\n    return 0;\n}\n",
           "answers": [
             "Nora: 9"
           ],
@@ -700,7 +700,7 @@
           "id": "cpp_fundamentals__objetos_y_estado__leer_una_entrada_conocida__cero_paquetes_regla_cuatro",
           "language": "cpp",
           "question": "La entrada es Vega 0 3. ¿Qué renglón escribe el programa cuando solo llegan piezas sueltas?",
-          "code": "#include <iostream>\n#include <string>\n\nint main() {\n    std::string nombre;\n    int paquetes{0};\n    int sueltas{0};\n    std::cin >> nombre >> paquetes >> sueltas;\n    int total{(4 * paquetes) + sueltas};\n    std::cout << nombre << \": \" << total;\n    return 0;\n}\n",
+          "code": "#include <iostream>\n#include <string>\n\nint main() {\n    std::string nombre;\n    int paquetes{0};\n    int sueltas{0};\n\n    std::cin >> nombre >> paquetes >> sueltas;\n\n    int total{(4 * paquetes) + sueltas};\n\n    std::cout << nombre << \": \" << total;\n\n    return 0;\n}\n",
           "answers": [
             "Vega: 3"
           ],
@@ -713,7 +713,7 @@
           "id": "cpp_fundamentals__objetos_y_estado__leer_una_entrada_conocida__maximo_regla_cuatro",
           "language": "cpp",
           "question": "La entrada es Orion 20 3. Son las mayores cantidades de paquetes y piezas sueltas admitidas en este ejercicio. ¿Qué renglón debe mostrar el programa?",
-          "code": "#include <iostream>\n#include <string>\n\nint main() {\n    std::string nombre;\n    int paquetes{0};\n    int sueltas{0};\n    std::cin >> nombre >> paquetes >> sueltas;\n    int total{(4 * paquetes) + sueltas};\n    std::cout << nombre << \": \" << total;\n    return 0;\n}\n",
+          "code": "#include <iostream>\n#include <string>\n\nint main() {\n    std::string nombre;\n    int paquetes{0};\n    int sueltas{0};\n\n    std::cin >> nombre >> paquetes >> sueltas;\n\n    int total{(4 * paquetes) + sueltas};\n\n    std::cout << nombre << \": \" << total;\n\n    return 0;\n}\n",
           "answers": [
             "Orion: 83"
           ],
@@ -1106,8 +1106,8 @@
           "block_0002_0001",
           "block_0002_0002",
           "block_0002_0003",
-          "p1u2l9_conservar_ceros_del_codigo",
-          "block_0002_0004"
+          "block_0002_0004",
+          "p1u2l9_conservar_ceros_del_codigo"
         ]
       },
       {
@@ -1134,8 +1134,8 @@
         "blocks": [
           "block_0005_0000",
           "block_0005_0001",
-          "block_0005_0002",
           "block_0005_0003",
+          "block_0005_0002",
           "block_0005_0004"
         ]
       },
@@ -1146,15 +1146,15 @@
           "block_0006_0003",
           "block_0006_0004",
           "block_0006_0001",
-          "p1u2l9_reparar_lectura_de_cajas"
+          "p1u2l9_reparar_lectura_de_cajas",
+          "block_0007_0000",
+          "block_0007_0001",
+          "block_0007_0002"
         ]
       },
       {
         "id": "page_0007",
         "blocks": [
-          "block_0007_0000",
-          "block_0007_0001",
-          "block_0007_0002",
           "block_0007_0003",
           "block_0007_0004"
         ]
@@ -1178,19 +1178,19 @@
         "blocks": [
           "block_0009_0000",
           "block_0009_0001",
+          "block_0009_0005",
           "block_0009_0002",
           "block_0009_0003",
-          "block_0009_0004",
-          "block_0009_0005"
+          "block_0010_0000",
+          "block_0010_0001",
+          "block_0010_0002",
+          "block_0010_0003",
+          "block_0009_0004"
         ]
       },
       {
         "id": "page_0010",
         "blocks": [
-          "block_0010_0000",
-          "block_0010_0001",
-          "block_0010_0002",
-          "block_0010_0003",
           "block_0010_0004",
           "block_0010_0005"
         ]
@@ -2637,6 +2637,176 @@
         "reviewPaths": [
           "/reviewFeedback"
         ]
+      },
+      {
+        "id": "block_0000_0003",
+        "beforeSha256": "f520750df7f33ea0dad733776cdb21bcaa3e83dac99e4f25cc1c1871627f334c",
+        "afterSha256": "a3e89f692c43fc60e2212b80e456cc69de55956e355b5e507b3bee83bce42cd3"
+      },
+      {
+        "id": "block_0000_0004",
+        "beforeSha256": "b636955afe66519543c76947b0c217945efcabb4fa6afd16bd5c59d240dc934d",
+        "afterSha256": "40cfb2168651264821b638d9d811eca1b7b4ed96c90a3684091312601843f1d7"
+      },
+      {
+        "id": "p1u2l9_leer_en_la_variable",
+        "beforeSha256": "b4d45dab414d0d7c1859fbe17642bd76778e7b73a615abe0748712b74c2ccdf5",
+        "afterSha256": "de8e501e68eee138382171a05eaae35e7e64894f58cc819cea4b70447ab4d6eb"
+      },
+      {
+        "id": "block_0001_0002",
+        "beforeSha256": "0c8196cbdac3261ea7ba0edda5018c279dc7f15721df7e4e5bc70ff28b89ebdc",
+        "afterSha256": "f2f6055ebaaaf7acfeac2701929eab0f0b9cd46938e52a0e413bf4f179f9c6b5"
+      },
+      {
+        "id": "block_0001_0003",
+        "beforeSha256": "8a9bd1424ae344c81818d721149d4a42a55e30a5054fa9119a8c562cce71773d",
+        "afterSha256": "f9f4f91e7530058fbdc19ab82536cd2d5c780105ae764e8b27f2b5d676149f55"
+      },
+      {
+        "id": "block_0002_0002",
+        "beforeSha256": "e3bef6db11bc503e67cb97601732eee0edd766540e9402aed26302fbc347e0da",
+        "afterSha256": "e5d5029f4120576e3e5d8384ca00ee7926255d87d35c79c1bd4405a49b3d3cbe"
+      },
+      {
+        "id": "p1u2l9_conservar_ceros_del_codigo",
+        "beforeSha256": "53767dd8758f4cc7cbed942feca96eeafdedc66aaff130bd6125a5d4ea407df3",
+        "afterSha256": "b2662b098e8950315aec92e41ac9c6f42020509a321226ceee05f406cbbe2d5b"
+      },
+      {
+        "id": "block_0002_0004",
+        "beforeSha256": "3b2ad4d069a319510e10194ee01428ff619de378e5b5c813ba7c5b083d02b344",
+        "afterSha256": "f1e763021431737e74fe6b38f6111c800663a08aff34a912def20aecc7d85f8b"
+      },
+      {
+        "id": "block_0003_0002",
+        "beforeSha256": "5f730230c3198c8169b1fb4fe0d6e8f4cf48a46db1f0b30f14140603af1845f1",
+        "afterSha256": "251589693fce03b996b84c7f9e92ef21ae8d97eafc3d7733d97391ef7a151afe"
+      },
+      {
+        "id": "block_0003_0003",
+        "beforeSha256": "aabff5c852593b656bfd150c1e5754537ce5a53b48638b1fef8c028c8021f9db",
+        "afterSha256": "49bbc61c9ff7fdfbccee02be9bdf3bcd64e0bf05be143e5fa2c92d4082ca01c1"
+      },
+      {
+        "id": "block_0004_0002",
+        "beforeSha256": "2ec9ff1e997517a5c6667f69e8786c463a6bf4a05d20b85e90ee18494189f138",
+        "afterSha256": "12dfbb4159dc5be4f296d08a4b9595ed3ab559aa139ea85f78f84b3cc45caa52"
+      },
+      {
+        "id": "block_0004_0003",
+        "beforeSha256": "bb6d886fbd829c44929d3bc92660b9d1a79920220d02051bc6c1804a4b447d17",
+        "afterSha256": "a5ed566b449cb02ec31caf476684f2e6f244380bf929122efa98edf621d7aee6"
+      },
+      {
+        "id": "block_0005_0001",
+        "beforeSha256": "1dc9d8980a509d9315ffbf6d00f97c749935fb14e59adf49c04ca76bbe23d191",
+        "afterSha256": "3db5d6fdabc42f0236bf84ed2aaac4be90cbfed61d1605607e9b93f91e9e58a4"
+      },
+      {
+        "id": "block_0006_0004",
+        "beforeSha256": "ecba96abde00f1b23fca88eac1d685a3b8d5859c047bb594fd2c92ec19fe7bac",
+        "afterSha256": "60438a63f96e39c1ab1838748c799aa9586ff8bce233ad4ae477d2029944fdfb"
+      },
+      {
+        "id": "block_0006_0001",
+        "beforeSha256": "86ee27c2b04dd3be51f2259c23b08b948b4ba7dc4f266c97246ee780ec1b26b3",
+        "afterSha256": "80871dc2ee92e1117d40788b72e0056656dbef1d0e3175a258e0305e7f1757aa"
+      },
+      {
+        "id": "p1u2l9_reparar_lectura_de_cajas",
+        "beforeSha256": "de29f03bb38340e9d1dc881f7759747605657ccb4ffce933933e5f362f582fe1",
+        "afterSha256": "da7a39d9f9b5adf0f160b02ae6610d2b55e453cf1516ac254d5248a56f472910"
+      },
+      {
+        "id": "block_0007_0001",
+        "beforeSha256": "ef0e52d407385927525c29ca048b7999431d48843e6df50477db306e2245e33a",
+        "afterSha256": "e4fadc3b92ec7f7673d10a16ccf88b208aec31f52d64755c05b25bc67509720f"
+      },
+      {
+        "id": "block_0007_0002",
+        "beforeSha256": "2d5a58ca94a588b1e2c15dc8a8008b8155b4fdce6ab497970f498b3efc1538d1",
+        "afterSha256": "ab91558e38768d89cf4c27247f355cb1c30b1f40282432bb6dc834f04b20bf2c"
+      },
+      {
+        "id": "block_0007_0004",
+        "beforeSha256": "51987582dc6230aee85e2ffa34bdf239aea3a05013c909f32c674c8774579ec9",
+        "afterSha256": "1956e37abac1e4e646640be8388e3cbf61ee71eb08d24ca6c0314a981aecf393"
+      },
+      {
+        "id": "block_0008_0002",
+        "beforeSha256": "d52a22409f785f12fd851699dd7c11314eac491b80f44501543bb0820bffb8db",
+        "afterSha256": "3ca199b7213a302a743152f476badd83ff296f859ed8f51827e765a228850470"
+      },
+      {
+        "id": "block_0008_0003",
+        "beforeSha256": "ea013cd598d9aabcefcc4dab6b8f3356c791a63e9097336682b88ba2daa31c69",
+        "afterSha256": "d21a3f3a16f5f880ab21692539a952c469706ce2d8bf95d33b53c2aaf22c99b5"
+      },
+      {
+        "id": "block_0008_0005",
+        "beforeSha256": "da8bffbb850b68e63b3b4b8a2ac845424b6211b36cb40042326f1c5540670d00",
+        "afterSha256": "580521e093f87bb6e7163713a65469d10e54044dd06f7719120995f6f0abb901"
+      },
+      {
+        "id": "p1u2l9_orden_de_entrada_y_salida",
+        "beforeSha256": "506353238e95c82f73a262fcff5bebbd840b82a710d634c1bf99d0c376cbd055",
+        "afterSha256": "5459f02aa74f2f7c7014b14e4fe3437bfb53754f1e8e9042949fe169093fab06"
+      },
+      {
+        "id": "block_0009_0003",
+        "beforeSha256": "f1dfbd78fe0bef1eb82b2c9d678564d7b194b2e59a3432aff2920d5791b19dd3",
+        "afterSha256": "6ca39a4006b1be4f71fc02e37fef1efb35f9db68aa7c7a1adda2ce04fdf168d3"
+      },
+      {
+        "id": "block_0009_0004",
+        "beforeSha256": "cab5523eb6f0550f20d97921cfdad04088acaa4ed6c87e2b91619d79e1b01ce4",
+        "afterSha256": "0ccf636cbd26a4d4f36cd56983abe8c87b4a08c10f61cfc820c8ae588d96c68d"
+      },
+      {
+        "id": "block_0010_0001",
+        "beforeSha256": "ba09c8fa88c20880fe8b818244fb5da3ca811f9189e767e56264f10d2eda814b",
+        "afterSha256": "e5bbeef45a5ed1e42318cb6a32808815fd574cfb4519e24c43e77f82ed157e74"
+      },
+      {
+        "id": "block_0010_0002",
+        "beforeSha256": "1185557129fa8cd069783e8ca4b9375268c3bcb9c3319500e819760634daf2bf",
+        "afterSha256": "2821d4fbca200215ae656968393fe80d5a46f29d96dc005b7b01f935cf576bb9"
+      },
+      {
+        "id": "block_0010_0005",
+        "beforeSha256": "fa5b2ea549bbc5949613bc4a71aa6c79000b70a45e3aa8d9ee3963de8d40ff26",
+        "afterSha256": "08ab263ed3f1e1eca5d7c6c97eba03f126476ad43ce7bf179529684d39799c58"
+      },
+      {
+        "id": "block_0011_0001",
+        "beforeSha256": "9571f9992d0c160f7a31a27cdd4de7e84021d0fb684972319e531faf5f339186",
+        "afterSha256": "0465189b2c3dbe835e9f5c175dddec8747c7b0de1e78d0b836cc28210f5246d6"
+      },
+      {
+        "id": "p1u2l9_reparar_total_de_piezas",
+        "beforeSha256": "591d829c1ef95b9d71840c1ddd8c23a2beeb98ae538fe610aaac44437273f037",
+        "afterSha256": "7d29dd480ef03d95a8c39e259b61a7b6c5fccfa3868c1b5923b5658268140689"
+      },
+      {
+        "id": "block_0012_0002",
+        "beforeSha256": "c5d5d2f90183960c4708d7b8693519725c60f4ee662315b02dc7be3cac87f2b1",
+        "afterSha256": "08c18866556fac1e8ee1c611a979f983782cfa4f792673f3e73429d1b7a63b26"
+      },
+      {
+        "id": "block_0012_0003",
+        "beforeSha256": "7e6f63b5666dbb00845fe8a3a912bfd3dae73a0658e3eb832da5ae70a8228876",
+        "afterSha256": "1637bea28ad0d25849d9863d0728fa234b07f6fd56a470a0ecbc7818c4eee345"
+      },
+      {
+        "id": "block_0012_0004",
+        "beforeSha256": "92c5df47e83367089747fab6a780125454b179e447cb160af9b277bc8c9d5056",
+        "afterSha256": "75a1015cb7f95a848cdfea5240b6830ae34b49c82927a2debc43d30284ce62e3"
+      },
+      {
+        "id": "block_0005_0003",
+        "beforeSha256": "b064455d5aab1782789110bfcf682ae69572d217327cf6cbb4acdfce25fab870",
+        "afterSha256": "9d586a4426fc73ba1f5a31329972fbdf51c1d514793d6a4b9ae3239e2e2d5495"
       }
     ],
     "retired": [
@@ -6667,6 +6837,399 @@
           "sha256": "1f3be096df33e5b161bd1e8dcfc63976918713701dedcee31b0c159d3210fecc"
         }
       }
+    ],
+    "sourceFormatRevisions": [
+      {
+        "id": "block_0000_0003",
+        "block": {
+          "type": "code",
+          "language": "cpp",
+          "code": "#include <iostream>\n\nint main() {\n    int cantidad = 0;\n    std::cin >> cantidad;\n    std::cout << cantidad;\n    return 0;\n}\n"
+        }
+      },
+      {
+        "id": "p1u2l9_leer_en_la_variable",
+        "block": {
+          "type": "fill_code",
+          "language": "cpp",
+          "code": "#include <iostream>\n\nint main() {\n    int entradas = 0;\n    std::cin >> ___;\n    std::cout << entradas;\n    return 0;\n}\n",
+          "answers": [
+            "entradas"
+          ],
+          "id": "p1u2l9_leer_en_la_variable",
+          "question": "El campo «Entrada» contiene 14. Completa la instrucción con el nombre de la variable que debe recibir ese número. La consola debe mostrar 14.",
+          "reviewFeedback": "La línea con int crea la variable. Busca su nombre también en la línea que muestra el resultado.",
+          "explanation": "En std::cin >> entradas, la variable entradas recibe 14. Después std::cout escribe 14."
+        }
+      },
+      {
+        "id": "block_0001_0002",
+        "block": {
+          "type": "output_prediction",
+          "language": "cpp",
+          "question": "En «Entrada» hay 12. ¿Qué renglón escriben las dos instrucciones con std::cout?",
+          "code": "#include <iostream>\n\nint main() {\n    std::cout << \"Cantidad: \";\n    int cantidad = 0;\n    std::cin >> cantidad;\n    std::cout << cantidad;\n    return 0;\n}\n",
+          "answers": [
+            "Cantidad: 12"
+          ],
+          "explanation": "La primera instrucción escribe Cantidad:  y deja la consola en el mismo renglón. La lectura guarda 12 en cantidad. La segunda instrucción muestra esa variable y completa Cantidad: 12.",
+          "reviewFeedback": "Localiza el espacio que sigue a los dos puntos en el aviso. Después del espacio se escribe el valor de cantidad."
+        }
+      },
+      {
+        "id": "block_0001_0003",
+        "block": {
+          "type": "fill_code",
+          "language": "cpp",
+          "question": "Escribe el operador que falta entre std::cin y la variable cajas para leer una cantidad entera.",
+          "code": "#include <iostream>\n\nint main() {\n    int cajas = 0;\n    std::cin ___ cajas;\n    std::cout << cajas;\n    return 0;\n}\n",
+          "answers": [
+            ">>"
+          ],
+          "explanation": "En std::cin >> cajas, el operador >> lee de la entrada y guarda el entero en cajas (Stroustrup, 2024).",
+          "reviewFeedback": "Mira hacia dónde apuntan los dos signos en std::cin >> cantidad."
+        }
+      },
+      {
+        "id": "block_0002_0002",
+        "block": {
+          "type": "output_prediction",
+          "language": "cpp",
+          "question": "El programa recibe 2.5. ¿Qué renglón muestra después de leer la medida en metros?",
+          "code": "#include <iostream>\n\nint main() {\n    double metros = 0.0;\n    std::cin >> metros;\n    std::cout << \"Metros: \" << metros;\n    return 0;\n}\n",
+          "answers": [
+            "Metros: 2.5"
+          ],
+          "explanation": "metros es de tipo double y guarda 2.5. El texto que lo precede y el valor de la variable forman el renglón Metros: 2.5.",
+          "reviewFeedback": "Escribe primero el texto del aviso, incluido su espacio final. Después se muestra la medida guardada en metros."
+        }
+      },
+      {
+        "id": "p1u2l9_conservar_ceros_del_codigo",
+        "block": {
+          "type": "inline_fill_code",
+          "template": "#include <iostream>\n#include <string>\n\nint main() {\n    [] codigo;\n    [] cantidad = 0;\n    std::cin >> codigo;\n    std::cin >> cantidad;\n    std::cout << codigo << \" \" << cantidad;\n    return 0;\n}\n",
+          "answers": [
+            "std::string",
+            "int"
+          ],
+          "id": "p1u2l9_conservar_ceros_del_codigo",
+          "question": "La entrada es 007 007. El primer dato es el código de una caja y conserva sus tres caracteres. El segundo es una cantidad entera. Completa los tipos para que aparezca 007 7. Escribe el nombre completo del tipo de texto.",
+          "reviewFeedback": "¿Qué tipo usaste para conservar un código con ceros iniciales? ¿Qué tipo guarda una cantidad entera?",
+          "explanation": "codigo es una std::string y guarda 007. cantidad es un int y guarda el número 7."
+        }
+      },
+      {
+        "id": "block_0003_0002",
+        "block": {
+          "type": "output_prediction",
+          "language": "cpp",
+          "question": "La entrada contiene Ana Maria. Escribe el renglón completo. Fíjate en qué separador aparece entre las dos palabras.",
+          "code": "#include <iostream>\n#include <string>\n\nint main() {\n    std::string primera;\n    std::string segunda;\n    std::cin >> primera >> segunda;\n    std::cout << primera << \":\" << segunda;\n    return 0;\n}\n",
+          "answers": [
+            "Ana:Maria"
+          ],
+          "explanation": "Las variables guardan Ana y Maria. La instrucción de salida escribe dos puntos entre ellas. El renglón completo es Ana:Maria.",
+          "reviewFeedback": "La lectura guarda una palabra en primera y otra en segunda. Busca en std::cout qué separador imprime."
+        }
+      },
+      {
+        "id": "block_0003_0003",
+        "block": {
+          "type": "output_prediction",
+          "language": "cpp",
+          "question": "La entrada contiene tres espacios, la palabra Norte, dos espacios y el número 6. Escribe el renglón que muestra el programa.",
+          "code": "#include <iostream>\n#include <string>\n\nint main() {\n    std::string zona;\n    int cantidad = 0;\n    std::cin >> zona >> cantidad;\n    std::cout << zona << \" \" << cantidad;\n    return 0;\n}\n",
+          "answers": [
+            "Norte 6"
+          ],
+          "explanation": "En zona se guarda Norte y en cantidad, 6. El espacio entre los dos valores lo escribe la instrucción de salida. Por eso aparece Norte 6.",
+          "reviewFeedback": "Las lecturas dejan los espacios fuera de zona y de cantidad. Mira el separador escrito en std::cout."
+        }
+      },
+      {
+        "id": "block_0004_0002",
+        "block": {
+          "type": "output_prediction",
+          "language": "cpp",
+          "question": "El programa recibe 4B. Escribe el renglón que muestra. Fíjate en el orden de las variables al leerlas y al mostrarlas.",
+          "code": "#include <iostream>\n\nint main() {\n    int numero = 0;\n    char zona = '?';\n    std::cin >> numero >> zona;\n    std::cout << zona << \"-\" << numero;\n    return 0;\n}\n",
+          "answers": [
+            "B-4"
+          ],
+          "explanation": "numero recibe 4 y zona recibe B. Al escribirlos, el programa pone primero la letra, después un guion y por último el número. Aparece B-4.",
+          "reviewFeedback": "El entero se lee primero y la letra después. Mira cuál de esas variables aparece a la izquierda del guion en std::cout."
+        }
+      },
+      {
+        "id": "block_0004_0003",
+        "block": {
+          "type": "output_prediction",
+          "language": "cpp",
+          "question": "El campo «Entrada» contiene Lia en el primer renglón y 5 en el segundo. Después de sumar las dos unidades, ¿qué renglón muestra el programa?",
+          "code": "#include <iostream>\n#include <string>\n\nint main() {\n    std::string nombre;\n    int unidades = 0;\n    std::cin >> nombre >> unidades;\n    unidades += 2;\n    std::cout << nombre << \" \" << unidades;\n    return 0;\n}\n",
+          "answers": [
+            "Lia 7"
+          ],
+          "explanation": "nombre guarda Lia y unidades empieza la suma con 5. Al sumar dos, pasa a 7. La instrucción de salida escribe Lia 7 en un renglón.",
+          "reviewFeedback": "La lectura de unidades salta el cambio de renglón. Localiza qué valor tiene esa variable cuando se ejecuta std::cout."
+        }
+      },
+      {
+        "id": "block_0006_0004",
+        "block": {
+          "type": "output_prediction",
+          "id": "cpp_fundamentals__objetos_y_estado__leer_una_entrada_conocida__etapas_lectura_y_actualizacion",
+          "language": "cpp",
+          "question": "La entrada es Rita 4. ¿Qué escribe el programa antes de sumar tres cajas y qué escribe después? Escribe los dos renglones.",
+          "code": "#include <iostream>\n#include <string>\n\nint main() {\n    std::string nombre;\n    int cajas = 0;\n    std::cin >> nombre >> cajas;\n    std::cout << nombre << \" \" << cajas << \"\\n\";\n    cajas += 3;\n    std::cout << nombre << \": \" << cajas;\n    return 0;\n}\n",
+          "answers": [
+            "Rita 4\nRita: 7"
+          ],
+          "outputComparison": "exact",
+          "explanation": "El primer renglón es Rita 4. Luego cajas += 3; cambia la cantidad de cuatro a siete. El segundo renglón es Rita: 7.",
+          "reviewFeedback": "En el primer renglón, std::cout muestra los datos recién leídos. Para el segundo, mira el valor de cajas después de la suma."
+        }
+      },
+      {
+        "id": "p1u2l9_reparar_lectura_de_cajas",
+        "block": {
+          "type": "cpp_compiler",
+          "initialCode": "#include <iostream>\n#include <string>\n\nint main() {\n    std::string nombre;\n    int cajas = 0;\n    // Lee aquí el nombre y la cantidad de cajas.\n    cajas += 3;\n    std::cout << nombre << \": \" << cajas;\n    return 0;\n}\n",
+          "initialStandardInput": "Rita 4",
+          "outputCheck": {
+            "inputComparison": "tokens",
+            "cases": [
+              {
+                "standardInput": "Rita 4",
+                "outputs": [
+                  "Rita: 7",
+                  "Rita: 7\n"
+                ]
+              },
+              {
+                "standardInput": "Leo 2",
+                "outputs": [
+                  "Leo: 5",
+                  "Leo: 5\n"
+                ]
+              }
+            ]
+          }
+        }
+      },
+      {
+        "id": "block_0007_0001",
+        "block": {
+          "type": "code",
+          "language": "cpp",
+          "code": "#include <iostream>\n#include <string>\n\nint main() {\n    std::string nombre;\n    int cajas = 0;\n    std::cin >> nombre >> cajas;\n    cajas += 3;\n    std::cout << nombre << \": \" << cajas;\n    return 0;\n}\n"
+        }
+      },
+      {
+        "id": "block_0007_0004",
+        "block": {
+          "type": "output_prediction",
+          "language": "cpp",
+          "question": "El programa recibe 6 y copia la cantidad antes de sumar una caja. ¿Qué dos cantidades aparecen en la consola, en el orden indicado por std::cout?",
+          "code": "#include <iostream>\n\nint main() {\n    int cajas = 0;\n    std::cin >> cajas;\n    int recibidas = cajas;\n    cajas += 1;\n    std::cout << recibidas << \" \" << cajas;\n    return 0;\n}\n",
+          "answers": [
+            "6 7"
+          ],
+          "explanation": "recibidas guarda la copia de 6. La suma cambia cajas a 7. Al mostrar la copia y luego la cantidad actual, aparece 6 7.",
+          "reviewFeedback": "Revisa cuál de las dos variables aumenta y cuál conserva las cajas que se recibieron al inicio."
+        }
+      },
+      {
+        "id": "block_0008_0003",
+        "block": {
+          "type": "code",
+          "language": "cpp",
+          "code": "#include <iostream>\n#include <string>\n\nint main() {\n    std::string nombre{\"Rita\"};\n    int cajas{4};\n    cajas = cajas + 3;\n    std::cout << nombre << \": \" << cajas;\n    return 0;\n}\n"
+        }
+      },
+      {
+        "id": "block_0008_0005",
+        "block": {
+          "type": "drag_fill_code",
+          "id": "cpp_fundamentals__objetos_y_estado__leer_una_entrada_conocida__funciones_lectura_procesamiento_presentacion",
+          "language": "cpp",
+          "question": "La entrada es Rita 4. Coloca al lado de cada instrucción el comentario que describe lo que hace con el nombre o con la cantidad de cajas.",
+          "template": "#include <iostream>\n#include <string>\n\nint main() {\n    std::string nombre;\n    int cajas = 0;\n    std::cin >> nombre; // []\n    std::cin >> cajas; // []\n    cajas += 3; // []\n    std::cout << nombre << \": \" << cajas; // []\n    return 0;\n}\n",
+          "choices": [
+            "Aumenta la cantidad que ya se ha leído.",
+            "Presenta el nombre y la cantidad con su separador.",
+            "Obtiene el nombre desde la entrada.",
+            "Obtiene la cantidad de cajas desde la entrada."
+          ],
+          "correctOrder": [
+            2,
+            3,
+            0,
+            1
+          ],
+          "explanation": "La primera lectura guarda Rita en nombre y la segunda guarda 4 en cajas. La suma deja siete cajas. La última línea muestra Rita: 7.",
+          "reviewFeedback": "Mira si la instrucción lee de std::cin, cambia cajas o escribe en std::cout."
+        }
+      },
+      {
+        "id": "p1u2l9_orden_de_entrada_y_salida",
+        "block": {
+          "type": "inline_fill_code",
+          "template": "#include <iostream>\n\nint main() {\n    int cajas_que_llegan = 0;\n    int cajas_que_salen = 0;\n    std::cin >> [] >> [];\n    std::cout << cajas_que_llegan - cajas_que_salen;\n    return 0;\n}\n",
+          "answers": [
+            "cajas_que_llegan",
+            "cajas_que_salen"
+          ],
+          "id": "p1u2l9_orden_de_entrada_y_salida",
+          "question": "Llegan nueve cajas y salen cuatro. El campo «Entrada» contiene 9 4, en ese orden. Completa la lectura con los nombres de las variables para que el programa muestre el aumento de 5 cajas.",
+          "reviewFeedback": "La primera variable que sigue a std::cin recibe el nueve. ¿Qué representa ese nueve en la entrega?",
+          "explanation": "Primero se lee 9 en cajas_que_llegan y después 4 en cajas_que_salen. La resta da 5. Con los nombres al revés, la resta sería cuatro menos nueve y aparecería -5."
+        }
+      },
+      {
+        "id": "block_0009_0003",
+        "block": {
+          "type": "cpp_compiler",
+          "initialCode": "#include <iostream>\n#include <string>\n\nint main() {\n    // Construye la lectura, el cálculo y la presentación desde la consigna.\n    return 0;\n}\n",
+          "initialStandardInput": "Iris 4 2",
+          "outputCheck": {
+            "inputComparison": "tokens",
+            "cases": [
+              {
+                "standardInput": "Iris 4 2",
+                "outputs": [
+                  "Iris: 22",
+                  "Iris: 22\n"
+                ]
+              },
+              {
+                "standardInput": "Leo 0 4",
+                "outputs": [
+                  "Leo: 4",
+                  "Leo: 4\n"
+                ]
+              },
+              {
+                "standardInput": "Vera 3 1",
+                "outputs": [
+                  "Vera: 16",
+                  "Vera: 16\n"
+                ]
+              },
+              {
+                "standardInput": "Sol 20 4",
+                "outputs": [
+                  "Sol: 104",
+                  "Sol: 104\n"
+                ]
+              }
+            ]
+          }
+        }
+      },
+      {
+        "id": "block_0010_0001",
+        "block": {
+          "type": "code",
+          "language": "cpp",
+          "code": "#include <iostream>\n#include <string>\n\nint main() {\n    std::string nombre;\n    int paquetes{0};\n    int sueltas{0};\n    std::cin >> nombre >> paquetes >> sueltas;\n    int total{(5 * paquetes) + sueltas};\n    std::cout << nombre << \": \" << total;\n    return 0;\n}\n"
+        }
+      },
+      {
+        "id": "block_0010_0005",
+        "block": {
+          "type": "output_prediction",
+          "id": "cpp_fundamentals__objetos_y_estado__leer_una_entrada_conocida__registrar_tres_datos_y_total",
+          "language": "cpp",
+          "question": "El programa recibe Iris 4 2. Escribe los cuatro valores que muestra en un solo renglón, con un espacio entre ellos.",
+          "code": "#include <iostream>\n#include <string>\n\nint main() {\n    std::string nombre;\n    int paquetes{0};\n    int sueltas{0};\n    std::cin >> nombre >> paquetes >> sueltas;\n    int total{(5 * paquetes) + sueltas};\n    std::cout << nombre << \" \" << paquetes << \" \" << sueltas << \" \" << total;\n    return 0;\n}\n",
+          "answers": [
+            "Iris 4 2 22"
+          ],
+          "outputComparison": "exact",
+          "explanation": "Los tres datos leídos son Iris, 4 y 2. El total de piezas es cinco por cuatro más dos, que da veintidós. La consola muestra Iris 4 2 22.",
+          "reviewFeedback": "La salida muestra nombre, paquetes, sueltas y total. ¿Cuál de esos valores resulta de un cálculo?"
+        }
+      },
+      {
+        "id": "block_0011_0001",
+        "block": {
+          "type": "output_prediction",
+          "id": "cpp_fundamentals__objetos_y_estado__leer_una_entrada_conocida__copia_despues_de_lectura",
+          "language": "cpp",
+          "question": "El programa recibe Kiro 3 en el primer renglón y 1 en el segundo. ¿Qué escribe después de guardar la cantidad original de paquetes y añadir un paquete?",
+          "code": "#include <iostream>\n#include <string>\n\nint main() {\n    std::string nombre;\n    int paquetes{0};\n    int sueltas{0};\n    std::cin >> nombre >> paquetes >> sueltas;\n    int total{(5 * paquetes) + sueltas};\n    int originales{paquetes};\n    paquetes += 1;\n    std::cout << nombre << ' ' << total << ' ' << originales << ' ' << paquetes;\n    return 0;\n}\n",
+          "answers": [
+            "Kiro 16 3 4"
+          ],
+          "explanation": "Con tres paquetes y una pieza suelta, total queda en 16 y originales guarda 3. La suma cambia solo paquetes a 4. El renglón es Kiro 16 3 4.",
+          "reviewFeedback": "El total y la copia se calculan antes de sumar uno a paquetes. Sigue el orden de las cuatro variables en std::cout."
+        }
+      },
+      {
+        "id": "p1u2l9_reparar_total_de_piezas",
+        "block": {
+          "type": "inline_fill_code",
+          "template": "#include <iostream>\n\nint main() {\n    int paquetes = 0;\n    int sueltas = 0;\n    std::cin >> paquetes >> sueltas;\n    int total = (4 * []) + [];\n    std::cout << total;\n    return 0;\n}\n",
+          "answers": [
+            "paquetes",
+            "sueltas"
+          ],
+          "id": "p1u2l9_reparar_total_de_piezas",
+          "question": "Con la entrada 2 1, la fórmula equivocada (paquetes + sueltas) * 4 daría doce. Completa la fórmula corregida con los nombres de las variables. Debe dar 9.",
+          "reviewFeedback": "Hay cuatro piezas por paquete. ¿Qué cantidad multiplicas por cuatro y cuál añades una sola vez?",
+          "explanation": "4 * paquetes cuenta las ocho piezas que están dentro de los paquetes. Al sumar sueltas se añade una sola pieza. Aparece 9."
+        }
+      },
+      {
+        "id": "block_0012_0002",
+        "block": {
+          "type": "output_prediction",
+          "id": "cpp_fundamentals__objetos_y_estado__leer_una_entrada_conocida__distinguir_regla_cuatro",
+          "language": "cpp",
+          "question": "La entrada es Nora 2 1. Cada paquete contiene cuatro piezas. ¿Qué renglón aparece en la consola?",
+          "code": "#include <iostream>\n#include <string>\n\nint main() {\n    std::string nombre;\n    int paquetes{0};\n    int sueltas{0};\n    std::cin >> nombre >> paquetes >> sueltas;\n    int total{(4 * paquetes) + sueltas};\n    std::cout << nombre << \": \" << total;\n    return 0;\n}\n",
+          "answers": [
+            "Nora: 9"
+          ],
+          "outputComparison": "exact",
+          "explanation": "Dos paquetes de cuatro piezas aportan ocho. La suelta completa nueve y aparece Nora: 9. Si el programa todavía usara cinco piezas por paquete, mostraría Nora: 11.",
+          "reviewFeedback": "Calcula lo que aportan los dos paquetes. Añade una pieza suelta y muestra el total junto a Nora."
+        }
+      },
+      {
+        "id": "block_0012_0003",
+        "block": {
+          "type": "output_prediction",
+          "id": "cpp_fundamentals__objetos_y_estado__leer_una_entrada_conocida__cero_paquetes_regla_cuatro",
+          "language": "cpp",
+          "question": "La entrada es Vega 0 3. ¿Qué renglón escribe el programa cuando solo llegan piezas sueltas?",
+          "code": "#include <iostream>\n#include <string>\n\nint main() {\n    std::string nombre;\n    int paquetes{0};\n    int sueltas{0};\n    std::cin >> nombre >> paquetes >> sueltas;\n    int total{(4 * paquetes) + sueltas};\n    std::cout << nombre << \": \" << total;\n    return 0;\n}\n",
+          "answers": [
+            "Vega: 3"
+          ],
+          "outputComparison": "exact",
+          "explanation": "Cero paquetes aportan cero piezas. Quedan las tres sueltas y aparece Vega: 3. Con cero paquetes, la salida sería igual si el programa usara por error cinco piezas por paquete.",
+          "reviewFeedback": "¿Cuántas piezas aportan cero paquetes? Suma después las tres piezas sueltas y conserva la etiqueta Vega."
+        }
+      },
+      {
+        "id": "block_0012_0004",
+        "block": {
+          "type": "output_prediction",
+          "id": "cpp_fundamentals__objetos_y_estado__leer_una_entrada_conocida__maximo_regla_cuatro",
+          "language": "cpp",
+          "question": "La entrada es Orion 20 3. Son las mayores cantidades de paquetes y piezas sueltas admitidas en este ejercicio. ¿Qué renglón debe mostrar el programa?",
+          "code": "#include <iostream>\n#include <string>\n\nint main() {\n    std::string nombre;\n    int paquetes{0};\n    int sueltas{0};\n    std::cin >> nombre >> paquetes >> sueltas;\n    int total{(4 * paquetes) + sueltas};\n    std::cout << nombre << \": \" << total;\n    return 0;\n}\n",
+          "answers": [
+            "Orion: 83"
+          ],
+          "outputComparison": "exact",
+          "explanation": "Veinte paquetes de cuatro piezas aportan ochenta. Con las tres sueltas, el programa debe escribir Orion: 83.",
+          "reviewFeedback": "Calcula cuántas piezas hay en los 20 paquetes. ¿Cuántas piezas sueltas hay que sumar después?"
+        }
+      }
     ]
   },
   "referenceAfter": [
@@ -6813,7 +7376,7 @@
       {
         "block": "block_0000_0004",
         "path": "/text",
-        "sourceSha256": "6df3ac9ee2a37090cc28b675210f5222177e68c80874e4edabaadb638c289e05",
+        "sourceSha256": "1bbe4e7f7f9824c824837b00c54d47b69ed8661f577e19a409a4616fc959af61",
         "spans": [
           {
             "start": 0,
@@ -6823,43 +7386,64 @@
             "reading": "technical"
           },
           {
-            "start": 53,
-            "end": 61,
+            "start": 39,
+            "end": 40,
+            "text": "8",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 42,
+            "end": 50,
             "text": "cantidad",
             "role": "cpp",
             "reading": "technical"
           },
           {
-            "start": 72,
-            "end": 73,
-            "text": "8",
-            "role": "data",
-            "reading": "natural"
-          },
-          {
-            "start": 94,
-            "end": 95,
+            "start": 89,
+            "end": 90,
             "text": "8",
             "role": "output",
             "reading": "natural"
           },
           {
-            "start": 139,
-            "end": 141,
+            "start": 114,
+            "end": 116,
             "text": "12",
             "role": "data",
             "reading": "natural"
           },
           {
-            "start": 174,
-            "end": 176,
+            "start": 136,
+            "end": 144,
+            "text": "std::cin",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 152,
+            "end": 154,
             "text": "12",
             "role": "data",
             "reading": "natural"
           },
           {
-            "start": 198,
-            "end": 200,
+            "start": 158,
+            "end": 166,
+            "text": "cantidad",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 169,
+            "end": 178,
+            "text": "std::cout",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 187,
+            "end": 189,
             "text": "12",
             "role": "output",
             "reading": "natural"
@@ -7378,11 +7962,18 @@
       {
         "block": "block_0002_0004",
         "path": "/text",
-        "sourceSha256": "74c6fce1ece6d47fedad2c2029a15ffee14c2a118cc3634329d38980193ada35",
+        "sourceSha256": "a88b37e6077ac571cd4d0e0498f8c6dfb9713af17383bd1d92beb471b390c1f9",
         "spans": [
           {
-            "start": 295,
-            "end": 315,
+            "start": 303,
+            "end": 311,
+            "text": "std::cin",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 374,
+            "end": 394,
             "text": "(Köppe et al., 2023)",
             "role": "citation",
             "reading": "natural"
@@ -8053,7 +8644,7 @@
       {
         "block": "block_0005_0001",
         "path": "/text",
-        "sourceSha256": "e9345e23a0382e57b3dc3d63d0e0f34e21572b59c3022a04da070c9abe66b022",
+        "sourceSha256": "c0ded1bfb52e181fd3771be153db54137078a9052d049b22bd1a9d5c754c04ee",
         "spans": [
           {
             "start": 51,
@@ -8077,38 +8668,80 @@
             "reading": "technical"
           },
           {
-            "start": 216,
-            "end": 221,
-            "text": "cajas",
-            "role": "cpp",
-            "reading": "technical"
-          },
-          {
-            "start": 224,
-            "end": 232,
+            "start": 144,
+            "end": 152,
             "text": "std::cin",
             "role": "cpp",
             "reading": "technical"
           },
           {
-            "start": 263,
-            "end": 269,
+            "start": 216,
+            "end": 222,
             "text": "muchos",
             "role": "data",
             "reading": "natural"
           },
           {
-            "start": 396,
-            "end": 401,
+            "start": 238,
+            "end": 243,
             "text": "cajas",
             "role": "cpp",
             "reading": "technical"
           },
           {
-            "start": 402,
-            "end": 422,
+            "start": 254,
+            "end": 255,
+            "text": "0",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 258,
+            "end": 266,
+            "text": "std::cin",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 296,
+            "end": 316,
             "text": "(Köppe et al., 2023)",
             "role": "citation",
+            "reading": "natural"
+          },
+          {
+            "start": 341,
+            "end": 352,
+            "text": "cajas += 3;",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 407,
+            "end": 426,
+            "text": "std::cout << cajas;",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 439,
+            "end": 440,
+            "text": "3",
+            "role": "output",
+            "reading": "natural"
+          },
+          {
+            "start": 628,
+            "end": 646,
+            "text": "std::cin >> cajas;",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 658,
+            "end": 660,
+            "text": "-2",
+            "role": "data",
             "reading": "natural"
           }
         ]
@@ -8158,60 +8791,88 @@
       {
         "block": "block_0005_0003",
         "path": "/question",
-        "sourceSha256": "33112b32911bacef27469ceea2e7ab822c77f96c29d51bc7f505203bcfb98891",
+        "sourceSha256": "774b9b15b283685e4769105faa1e78c25b4de6a6c19318840b4c5d0eb11f15bd",
         "spans": [
           {
-            "start": 0,
-            "end": 5,
-            "text": "cajas",
+            "start": 24,
+            "end": 38,
+            "text": "int cajas = 0;",
             "role": "cpp",
             "reading": "technical"
           },
           {
-            "start": 12,
-            "end": 15,
-            "text": "int",
-            "role": "cpp",
-            "reading": "technical"
+            "start": 68,
+            "end": 74,
+            "text": "muchos",
+            "role": "data",
+            "reading": "natural"
           },
           {
-            "start": 32,
-            "end": 50,
+            "start": 88,
+            "end": 106,
             "text": "std::cin >> cajas;",
             "role": "cpp",
             "reading": "technical"
           },
           {
-            "start": 75,
-            "end": 81,
-            "text": "muchos",
-            "role": "data",
-            "reading": "natural"
+            "start": 212,
+            "end": 217,
+            "text": "cajas",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 229,
+            "end": 240,
+            "text": "cajas += 3;",
+            "role": "cpp",
+            "reading": "technical"
           }
         ]
       },
       {
         "block": "block_0005_0003",
         "path": "/explanation",
-        "sourceSha256": "374f897dae514cfc5f81d582d57bc556df2ee77e396d085410c2e569a4da9b7e",
+        "sourceSha256": "91abb86c96a8795b935b1733fc12378d39f1ba81242a44373eac463d724274bd",
         "spans": [
           {
-            "start": 22,
-            "end": 28,
+            "start": 0,
+            "end": 8,
+            "text": "std::cin",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 29,
+            "end": 35,
             "text": "muchos",
             "role": "data",
             "reading": "natural"
           },
           {
-            "start": 193,
-            "end": 198,
+            "start": 60,
+            "end": 61,
+            "text": "0",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 75,
+            "end": 80,
             "text": "cajas",
             "role": "cpp",
             "reading": "technical"
           },
           {
-            "start": 199,
-            "end": 219,
+            "start": 125,
+            "end": 136,
+            "text": "cajas += 3;",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 191,
+            "end": 211,
             "text": "(Köppe et al., 2023)",
             "role": "citation",
             "reading": "natural"
@@ -8511,7 +9172,7 @@
       {
         "block": "block_0006_0001",
         "path": "/text",
-        "sourceSha256": "11311693292d8c1e499cdd1e393c5f7810504c54e72807865016739f70665ee8",
+        "sourceSha256": "1f0d73defa80d1075704425e34c0ba185fc3b020d38203c9b9805f4cdeb2ffab",
         "spans": [
           {
             "start": 52,
@@ -8528,15 +9189,15 @@
             "reading": "technical"
           },
           {
-            "start": 310,
-            "end": 316,
+            "start": 307,
+            "end": 313,
             "text": "Rita 4",
             "role": "data",
             "reading": "natural"
           },
           {
-            "start": 334,
-            "end": 341,
+            "start": 331,
+            "end": 338,
             "text": "Rita: 7",
             "role": "output",
             "reading": "natural"
@@ -8552,7 +9213,7 @@
       {
         "block": "block_0007_0002",
         "path": "/text",
-        "sourceSha256": "2d68796dbd88d42ca6475357d76d484a3777793ce7338e5a8ec2687eb9520b43",
+        "sourceSha256": "f459d27d7e1e7f4afc234a3f849699005c2fc4306900e54745c8291441574459",
         "spans": [
           {
             "start": 4,
@@ -8562,64 +9223,85 @@
             "reading": "natural"
           },
           {
-            "start": 30,
-            "end": 34,
+            "start": 25,
+            "end": 53,
+            "text": "std::cin >> nombre >> cajas;",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 61,
+            "end": 65,
             "text": "Rita",
             "role": "data",
             "reading": "natural"
           },
           {
-            "start": 38,
-            "end": 44,
+            "start": 69,
+            "end": 75,
             "text": "nombre",
             "role": "cpp",
             "reading": "technical"
           },
           {
-            "start": 47,
-            "end": 48,
+            "start": 78,
+            "end": 79,
             "text": "4",
             "role": "data",
             "reading": "natural"
           },
           {
-            "start": 52,
-            "end": 57,
+            "start": 83,
+            "end": 88,
             "text": "cajas",
             "role": "cpp",
             "reading": "technical"
           },
           {
-            "start": 68,
-            "end": 79,
+            "start": 96,
+            "end": 107,
             "text": "cajas += 3;",
             "role": "cpp",
             "reading": "technical"
           },
           {
-            "start": 143,
-            "end": 148,
-            "text": "cajas",
-            "role": "cpp",
-            "reading": "technical"
-          },
-          {
-            "start": 157,
-            "end": 158,
+            "start": 127,
+            "end": 128,
             "text": "7",
             "role": "data",
             "reading": "natural"
           },
           {
-            "start": 261,
-            "end": 266,
+            "start": 132,
+            "end": 137,
+            "text": "cajas",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 158,
+            "end": 167,
+            "text": "std::cout",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 176,
+            "end": 183,
+            "text": "Rita: 7",
+            "role": "output",
+            "reading": "natural"
+          },
+          {
+            "start": 365,
+            "end": 370,
             "text": "Leo 2",
             "role": "data",
             "reading": "natural"
           },
           {
-            "start": 284,
-            "end": 290,
+            "start": 388,
+            "end": 394,
             "text": "Leo: 5",
             "role": "output",
             "reading": "natural"
@@ -8827,7 +9509,7 @@
       {
         "block": "block_0008_0002",
         "path": "/text",
-        "sourceSha256": "0232473c226b475aeb00f0981ecb1cbd5b6d5b55907aea68135c3869ccfa9898",
+        "sourceSha256": "b995f74888a46dc26368318187e347f46b14cbf6e6164d5e27a49eb06d387555",
         "spans": [
           {
             "start": 4,
@@ -8837,15 +9519,22 @@
             "reading": "natural"
           },
           {
-            "start": 75,
-            "end": 81,
+            "start": 72,
+            "end": 80,
+            "text": "std::cin",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 109,
+            "end": 115,
             "text": "Leo: 5",
             "role": "output",
             "reading": "natural"
           },
           {
-            "start": 150,
-            "end": 154,
+            "start": 164,
+            "end": 168,
             "text": "Rita",
             "role": "data",
             "reading": "natural"
@@ -9026,49 +9715,56 @@
       {
         "block": "block_0009_0004",
         "path": "/text",
-        "sourceSha256": "f16e86c81c49c89bf819fbd042382066e258459653c54ece330da3c0705cc366",
+        "sourceSha256": "b3458465ff5e7fa8a313790392a5d8d595d11e188aa79e222f5026ee198aee60",
         "spans": [
           {
-            "start": 137,
-            "end": 144,
+            "start": 179,
+            "end": 186,
             "text": "Leo 0 4",
             "role": "data",
             "reading": "natural"
           },
           {
-            "start": 161,
-            "end": 167,
+            "start": 203,
+            "end": 209,
             "text": "Leo: 4",
             "role": "output",
             "reading": "natural"
           },
           {
-            "start": 177,
-            "end": 185,
+            "start": 219,
+            "end": 227,
             "text": "Vera 3 1",
             "role": "data",
             "reading": "natural"
           },
           {
-            "start": 202,
-            "end": 210,
+            "start": 244,
+            "end": 252,
             "text": "Vera: 16",
             "role": "output",
             "reading": "natural"
           },
           {
-            "start": 220,
-            "end": 228,
+            "start": 262,
+            "end": 270,
             "text": "Sol 20 4",
             "role": "data",
             "reading": "natural"
           },
           {
-            "start": 245,
-            "end": 253,
+            "start": 287,
+            "end": 295,
             "text": "Sol: 104",
             "role": "output",
             "reading": "natural"
+          },
+          {
+            "start": 379,
+            "end": 387,
+            "text": "std::cin",
+            "role": "cpp",
+            "reading": "technical"
           }
         ]
       },
@@ -9087,7 +9783,7 @@
       {
         "block": "block_0010_0002",
         "path": "/text",
-        "sourceSha256": "5790f144280d8ac9c5e894a37f47e961f6d45cac99535222610878d8aa5e73ef",
+        "sourceSha256": "675b36cd0da5bcd55246c2812212998524c282badd3ac8c47dcdba1f5897e8f5",
         "spans": [
           {
             "start": 0,
@@ -9118,8 +9814,15 @@
             "reading": "technical"
           },
           {
-            "start": 364,
-            "end": 372,
+            "start": 353,
+            "end": 362,
+            "text": "std::cout",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 371,
+            "end": 379,
             "text": "Iris: 22",
             "role": "output",
             "reading": "natural"
