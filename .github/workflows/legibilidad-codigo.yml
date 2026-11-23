@@ -11,6 +11,7 @@ on:
       - 'scripts/curriculum/test_for_limites_format_batch.py'
       - 'scripts/curriculum/test_one_line_order_cards.py'
       - 'scripts/curriculum/test_decisiones_compuestas_format_batch.py'
+      - 'scripts/curriculum/test_division_resto_format_batch.py'
       - 'scripts/curriculum/test_single_line_order_puzzles.py'
       - 'scripts/curriculum/test_declaraciones_firmas_format_batch.py'
       - 'scripts/curriculum/test_funciones_nombrar_format_batch.py'
@@ -37,6 +38,30 @@ permissions:
   contents: read
 
 jobs:
+  division-resto:
+    runs-on: windows-2022
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+          persist-credentials: false
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - name: Use MSVC x64 for historical division and remainder sources
+        uses: ilammy/msvc-dev-cmd@v1
+      - name: Identify the actual Windows QA toolchain
+        shell: pwsh
+        run: |
+          Write-Host "VCToolsVersion=$env:VCToolsVersion"
+          Write-Host "WindowsSDKVersion=$env:WindowsSDKVersion"
+          $compiler = (Get-Command cl.exe -ErrorAction Stop).Source
+          Write-Host "Compiler=$compiler"
+          Write-Host "CompilerFileVersion=$((Get-Item -LiteralPath $compiler).VersionInfo.FileVersion)"
+      - name: Verify nine U3L2 owners, archived editors and real C++23 output
+        run: python -B -m unittest discover -s scripts/curriculum -p test_division_resto_format_batch.py -v
+
   auditar:
     runs-on: windows-2022
     timeout-minutes: 45
@@ -64,8 +89,6 @@ jobs:
         run: python -m unittest discover -s scripts/curriculum -p test_validez_cortocircuito_format_batch.py -v
       - name: Acreditar U4L7 decisiones independientes, anidadas y else-if C++23
         run: python -m unittest discover -s scripts/curriculum -p test_decisiones_compuestas_format_batch.py -v
-      - name: Revisar U4L2 division y resto con C++23 y progreso historico
-        run: python -m unittest discover -s scripts/curriculum -p test_division_resto_format_batch.py -v
       - name: Revisar U4L3 comparaciones y condiciones C++23 preservadas
         run: python -m unittest discover -s scripts/curriculum -p test_comparaciones_condiciones_format_batch.py -v
       - name: Comprobar primer recorrido while y formato historico con C++23

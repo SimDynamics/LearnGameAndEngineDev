@@ -8,6 +8,8 @@ on:
       - scripts/curriculum/test_general_choice_revision_live.py
       - scripts/curriculum/test_pending_presentation_contract.py
       - scripts/curriculum/test_choice_retirement_history.py
+      - scripts/curriculum/test_general_choice_prose_history.py
+      - scripts/curriculum/general_choice_prose_fixture_source.py
       - scripts/curriculum/choice_retirement_fixture_source.py
       - scripts/curriculum/test_review_feedback_prose_revision.py
       - scripts/curriculum/test_legacy_review_feedback_adoption.py
@@ -52,6 +54,11 @@ jobs:
         uses: actions/setup-python@v5
         with:
           python-version: '3.12'
+      - name: Compose an authenticated option review with later question and explanation prose
+        run: >-
+          python -B -m unittest discover
+          -s scripts/curriculum
+          -p test_general_choice_prose_history.py -v
       - name: Preserve archived U2L8 explanations and authenticate current prose
         run: >-
           python -B -m unittest discover

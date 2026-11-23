@@ -137,6 +137,16 @@ add_test(NAME native.course_edition
     COMMAND lgaed_course_edition_tests "${_edition_dir}")
 set_tests_properties(native.course_edition PROPERTIES TIMEOUT 120 RUN_SERIAL TRUE)
 
+# Mount both authored U2L10 predictions through their stable identities and
+# reopen the same isolated profile after a real multiline edit.
+add_executable(lgaed_lesson_editor_mount_tests
+    "${_lgaed_root}/native/presentation/windows/lesson_editor_mount_tests.cpp")
+target_link_libraries(lgaed_lesson_editor_mount_tests PRIVATE lgaed_curricular_windows)
+add_test(NAME native.prediction_newline_visible
+    COMMAND lgaed_lesson_editor_mount_tests --prediction-newline)
+set_tests_properties(native.prediction_newline_visible
+    PROPERTIES TIMEOUT 45 RUN_SERIAL TRUE)
+
 # A published retirement can preserve prose older than an option review.
 # Validate both Windows loaders and retained responses against exact Git bytes.
 set(_choice_retirement_dir "${CMAKE_CURRENT_BINARY_DIR}/test-fixtures/choice-retirement")
@@ -168,6 +178,8 @@ add_test(NAME native.general_choice_retirement_history
         --retirement-history "${_choice_retirement_dir}")
 set_tests_properties(native.general_choice_retirement_history
     PROPERTIES TIMEOUT 120 RUN_SERIAL TRUE)
+include("${_lgaed_root}/cmake/GeneralChoiceProseTests.cmake")
+lgaed_add_general_choice_prose_tests("${_lgaed_root}")
 
 # Windows-only integration: the original simulation model, its real RichEdit
 # controls and its authored example in the production LessonView.

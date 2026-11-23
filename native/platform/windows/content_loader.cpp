@@ -595,8 +595,9 @@ std::string state_fingerprint(const JsonObject& original) {
 }
 // A reviewed option is an editorial text revision, not a new answer. Project
 // only that option back to the full archived predecessor before comparing the
-// immutable historical response signature. For the active owner, other option
-// texts, the correct index, question, feedback and unlisted properties stay exact.
+// immutable historical response signature. Later question/explanation prose
+// keeps its own editorial edges and semantic descriptors. Other option texts,
+// the correct index, feedback and unlisted properties stay exact.
 JsonObject general_choice_projection(const JsonObject& current,
         const JsonObject& revision,bool allow_original=false,bool reading_snapshot=false) {
     const auto original=revision.GetNamedObject(L"block");
@@ -642,8 +643,26 @@ JsonObject general_choice_projection(const JsonObject& current,
     const auto projected=JsonObject::Parse(current.Stringify());
     projected.GetNamedArray(L"options").SetAt(static_cast<unsigned>(position),
         earlier.GetAt(static_cast<unsigned>(position)));
-    require(fingerprint(projected)==fingerprint(original),
-        "A general choice revision changed another answer, explanation or field");
+    // An authored question or explanation can follow the option correction
+    // on the same owner. Keep that current prose in the returned projection;
+    // normalize it only for this exact comparison of all protected fields.
+    // Its source descriptors are required separately at the active call site.
+    const auto protected_fields=JsonObject::Parse(projected.Stringify());
+    for(const auto field:{L"question",L"explanation"}) {
+        const bool had=original.HasKey(field),has=projected.HasKey(field);
+        if(had==has&&(!had||original.GetNamedValue(field).Stringify()==
+                projected.GetNamedValue(field).Stringify()))continue;
+        require(has&&projected.GetNamedValue(field).ValueType()==JsonValueType::String&&
+                authored_nonblank(utf8(projected.GetNamedString(field)))&&
+                (had?(original.GetNamedValue(field).ValueType()==JsonValueType::String&&
+                    authored_nonblank(utf8(original.GetNamedString(field)))):
+                    std::wstring_view(field)==L"explanation"),
+            "A later choice-owner prose revision needs complete nonblank wording");
+        if(had)protected_fields.Insert(field,original.GetNamedValue(field));
+        else protected_fields.Remove(field);
+    }
+    require(fingerprint(protected_fields)==fingerprint(original),
+        "A general choice revision changed another answer, guide or field");
     return projected;
 }
 // Authenticate the previous public-text marker, not only the option bytes.
@@ -3513,13 +3532,19 @@ StateLayout read_layout(const JsonObject& metadata, const JsonArray& pages, std:
     for(const auto& [id,reviewed]:revised_choices)
         require(editorial_edges[id].contains({std::string(reviewed->before_full),std::string(reviewed->first_after_full)}),
             "A reviewed option needs its exact first published editorial edge");
-    // The generic edit has no lesson-specific allowlist. It is allowed only
-    // when the editorial chain authenticates this exact complete predecessor.
+    // Authenticate the option-only publication, not a shortcut from its
+    // archive to the latest prose. Later question/explanation edges continue
+    // the same ordered chain and must keep their own exact current head.
     for(const auto& [id,review]:general_choice_revisions) {
         const auto original=review.GetNamedObject(L"block");
+        const auto option_only=JsonObject::Parse(original.Stringify());
+        const auto position=integer(review.GetNamedValue(L"optionIndex"),
+            static_cast<std::size_t>(array(original,"options").Size()-1));
+        option_only.GetNamedArray(L"options").SetAt(static_cast<unsigned>(position),
+            review.GetNamedValue(L"replacement"));
         require(editorial.contains(id)&&
                 editorial_edges[id].contains({fingerprint(original),
-                    editorial.at(id)}),
+                    fingerprint(option_only)}),
             "A general choice revision needs its exact archived editorial edge");
     }
     for(const auto& [id,reviewed]:revised_compilers)
@@ -3571,6 +3596,9 @@ StateLayout read_layout(const JsonObject& metadata, const JsonArray& pages, std:
                 }
             }
             const auto general=general_choice_revisions.find(id);
+            if(general!=general_choice_revisions.end())
+                require_formatted_question_semantics(root,id,
+                    general->second.GetNamedObject(L"block"),projected);
             const auto normalized_choice=general!=general_choice_revisions.end()?
                 general_choice_projection(projected,general->second):projected;
             const auto digest=state_fingerprint(normalized_choice);

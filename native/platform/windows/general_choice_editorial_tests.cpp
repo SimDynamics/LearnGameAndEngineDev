@@ -1,11 +1,15 @@
 #include "platform/windows/content_loader.hpp"
+#include "platform/windows/environment.hpp"
 #include "platform/windows/state_store.hpp"
 #include "core/lesson.hpp"
 #include "core/lesson_state.hpp"
+#include "core/narration_state.hpp"
 
+#include <windows.h>
 #include <winrt/Windows.Data.Json.h>
 #include <winrt/Windows.Foundation.Collections.h>
 #include <winrt/Windows.Foundation.h>
+#include <array>
 #include <cstdint>
 #include <filesystem>
 #include <fstream>
@@ -179,10 +183,223 @@ void verify_retirement_choice_pair(const std::filesystem::path& directory,
     std::cout<<"PASS retirement choice "<<fixture
         <<": original archived prose, full/progress loaders, unchanged answers and response state\n";
 }
+
+constexpr std::string_view prose_owner="block_0006_0002";
+const Block& prose_block(const Lesson& lesson) {
+    const auto at=stable_block_position(lesson,prose_owner);
+    require(at&&at->page==6&&at->block==2,
+        "The U2L10 prose fixture changed the original choice address");
+    return lesson.pages.at(at->page).blocks.at(at->block);
+}
+
+narration::SemanticPlanProof prose_reading_proof(const Block& block) {
+    // This is stored reading provenance, not a simulated audio execution.
+    // Its exact old sources must remain old after the lesson is reopened.
+    narration::SemanticPlanProof result;
+    for(const auto path:{"/question","/explanation"}) {
+        const auto found=block.text_semantics.find(path);
+        require(found!=block.text_semantics.end(),"The choice prose lost its authored reading field");
+        result.regions.push_back({std::string(prose_owner)+path,
+            found->second.source,"auto","text",found->second});
+    }
+    return result;
+}
+
+void verify_prose_saved_state(const std::vector<Lesson>& lessons,
+        const std::vector<Lesson>& metadata,std::int64_t selected) {
+    const auto& original=lessons.front();
+    const auto& before=prose_block(original);
+    const auto environment=resolve_windows_environment({ProfileId::Codex,
+        L"choice-prose-"+std::to_wstring(selected)+L"-"+
+        std::to_wstring(GetCurrentProcessId())+L"-"+std::to_wstring(GetTickCount64()),false});
+    require(environment.options.qa_instance&&!environment.options.qa_instance->empty()&&
+            !std::filesystem::exists(environment.paths.root),
+        "Choice prose QA would open an existing or personal profile");
+    initialize_profile_directories(environment.paths);
+    state::StateData saved;
+    {
+        state::StateStore initial(environment.paths.root);
+        saved=initial.load();
+        require(saved.preferences.empty(),"The isolated choice profile is not empty");
+    }
+    state::prepare_lesson_state(saved,original);
+    state::Response response;
+    response.selected=selected;response.correct=selected==0;
+    response.raw_json=R"({"incorrectAttempts":5,"opaque":{"caret":11,"draft":"keep"}})";
+    if(!response.correct)state::mark_response_reviewed(response,before);
+    state::put_response(saved,original,before,response);
+    const auto receipt_key=state::response_storage_key(original,before);
+    const auto receipt=state::string_value(saved,"learning_progress",receipt_key);
+    saved.preferences["native_windows"]["qa_unrelated_reader_preference"]=std::string("keep");
+    saved.preferences["learning_progress"]["qa_other_course_progress"]=std::int64_t{37};
+
+    const auto compiler_at=stable_block_position(original,"block_0004_0002");
+    require(compiler_at.has_value(),"The unchanged U2L10 compiler draft owner is missing");
+    const auto& compiler=original.pages.at(compiler_at->page).blocks.at(compiler_at->block);
+    const auto compiler_key=draft_key("programming",original,compiler);
+    state::Draft draft;
+    draft.source=compiler.initial_code+"\n// Borrador QA conservado\n";
+    draft.input="entrada guardada";draft.selection_start=2;draft.selection_end=7;draft.has_saved=true;
+    state::put_draft(saved,compiler_key,draft);
+
+    narration::Position position;
+    position.segment=0;position.milliseconds=250;position.heard_through=0;
+    auto history=narration::begin({},"choice-prose-authentic-before","qa-choice-reader",position,
+        original.id+"/es/page_0006",original.id+"/es/page_0006");
+    history.entries.front().semantic_plan=prose_reading_proof(before);
+    narration::write_history(saved,history);
+    const auto original_history=narration::read_history(saved);
+    const auto encoded=state::encode(saved);
+    {
+        state::StateStore writer(environment.paths.root);
+        (void)writer.load();writer.save(saved);
+    }
+
+    for(std::size_t stage=1;stage<lessons.size();++stage) {
+        state::StateStore reopened(environment.paths.root);
+        auto current=reopened.load();
+        require(state::encode(current)==encoded,
+            "Physical reopening changed the published choice receipt or unrelated state");
+        for(const auto* lesson:{&lessons[stage],&metadata[stage]}) {
+            const auto& after=prose_block(*lesson);
+            state::validate_lesson_state(current,*lesson);
+            state::prepare_lesson_state(current,*lesson);
+            const auto retained=state::get_response(current,*lesson,after);
+            require(retained&&retained->selected==selected&&retained->correct==(selected==0)&&
+                    !retained->historical_choice&&
+                    state::response_storage_key(*lesson,after)==receipt_key&&
+                    state::string_value(current,"learning_progress",receipt_key)==receipt&&
+                    state::selected_choice_text(*retained,after)==before.options.at(static_cast<std::size_t>(selected)),
+                "A prose revision changed a saved selection, attempts, correctness or response address");
+            if(retained->correct)
+                require(state::choice_correct_feedback(*retained,after)==after.explanation,
+                    "A retained correct answer displays an explanation from the wrong publication");
+            else require(state::response_reviewed(*retained,after)&&
+                    state::choice_incorrect_feedback(*retained,after)==incorrect_feedback(before,static_cast<std::size_t>(selected)),
+                "A prose revision discarded the old incorrect attempt or reviewed guide");
+            const auto retained_draft=state::get_draft(current,compiler_key,compiler.initial_code);
+            require(retained_draft.source==draft.source&&retained_draft.input==draft.input&&
+                    retained_draft.selection_start==draft.selection_start&&
+                    retained_draft.selection_end==draft.selection_end,
+                "A choice prose revision rewrote an unrelated compiler draft or selection");
+            require(narration::read_history(current)==original_history&&
+                    original_history.entries.front().semantic_plan!=prose_reading_proof(after),
+                "Current prose inherited an old reading plan or rewrote its saved bookmark");
+            require(state::encode(current)==encoded,
+                "Preparing a later prose edition changed historical or unrelated preference bytes");
+        }
+        reopened.save(current);
+    }
+    // Import uses the exact same historical bytes, not a rebuilt response.
+    auto imported=state::decode(encoded);
+    state::prepare_lesson_state(imported,lessons.back());
+    state::validate_lesson_state(imported,metadata.back());
+    require(state::encode(imported)==encoded,
+        "Importing the earlier publication into the final prose changed its historical data");
+    std::cout<<"PASS U2L10 choice prose state selection "<<selected
+        <<": real StateStore reopen, exact attempts/draft/preferences, original reading plan and import\n";
+}
+
+void verify_prose_history(const std::filesystem::path& directory) {
+    winrt::init_apartment();
+    constexpr std::string_view published_sha256=
+        "e0d2ec13f6a72e0f1548017e9f4a175a04a0cbad50021a42eafc0f18eef18aa0";
+    const auto manifest=JsonObject::Parse(winrt::to_hstring(read_file(directory/"manifest.json")));
+    require(manifest.GetNamedString(L"identity")==winrt::to_hstring(prose_owner),
+        "The prose fixture belongs to another activity");
+    for(const auto& entry:manifest.GetNamedObject(L"sha256"))
+        require(state::sha256(read_file(directory/winrt::to_string(entry.Key())))==
+                winrt::to_string(entry.Value().GetString()),
+            "A generated prose fixture differs from its exported bytes");
+    const auto published_bytes=read_file(directory/"published.json");
+    require(state::sha256(published_bytes)==published_sha256,
+        "U2L10 prose QA does not start from the exact authentic main publication");
+    std::vector<Lesson> lessons,metadata;
+    std::vector<JsonObject> documents;
+    for(const auto name:{"published.json","question.json","explanation.json"}) {
+        const auto bytes=read_file(directory/name);
+        lessons.push_back(parse_lesson_json(bytes,"es"));
+        metadata.push_back(parse_lesson_progress_metadata(bytes,"es"));
+        documents.push_back(JsonObject::Parse(winrt::to_hstring(bytes)));
+    }
+    const auto& before=prose_block(lessons.front());
+    const auto original_layout=documents.front().GetNamedObject(L"stateLayout");
+    require(before.choice_revision&&before.choice_revision->general_option_index==0&&
+            before.correct_index==0&&before.options.size()==3,
+        "The authentic publication lost its existing generic option correction");
+    for(std::size_t stage=0;stage<lessons.size();++stage) {
+        const auto& current=prose_block(lessons[stage]);
+        const auto& meta=prose_block(metadata[stage]);
+        const auto layout=documents[stage].GetNamedObject(L"stateLayout");
+        require(current.choice_revision&&meta.choice_revision&&
+                current.options==before.options&&meta.options==before.options&&
+                current.correct_index==before.correct_index&&meta.correct_index==before.correct_index&&
+                current.question==meta.question&&current.explanation==meta.explanation&&
+                current.review_feedback==before.review_feedback&&
+                current.review_feedback_options==before.review_feedback_options&&
+                current.text_semantics==meta.text_semantics&&
+                current.choice_revision->raw_json==before.choice_revision->raw_json&&
+                current.choice_revision->representation_signature==before.choice_revision->representation_signature&&
+                meta.choice_revision->representation_signature==before.choice_revision->representation_signature,
+            "Full/progress prose loading changed the original answer, archive, guide or representation");
+        for(const auto field:{L"origin",L"current",L"family",L"additions",L"retired",
+                L"retirementHistory",L"sourceFormatRevisions",L"choiceRevisions"}) {
+            require(layout.HasKey(field)==original_layout.HasKey(field),
+                "A prose revision added or removed original state metadata");
+            if(layout.HasKey(field))require(layout.GetNamedValue(field).Stringify()==
+                    original_layout.GetNamedValue(field).Stringify(),
+                "A prose revision rewrote original identities, archives or reading snapshots");
+        }
+        require(current.choice_revision->original_question==before.choice_revision->original_question&&
+                current.choice_revision->original_explanation==before.choice_revision->original_explanation,
+            "A current passage was projected backward into the choice archive");
+        for(const auto path:{"/question","/explanation"}) {
+            const auto& semantics=current.text_semantics.at(path);
+            const auto& source=std::string_view(path)=="/question"?current.question:current.explanation;
+            require(semantics.source==source,"A current reading descriptor is bound to another passage");
+            if(stage>0&&std::string_view(path)=="/question")
+                require(source!=before.question&&!semantics.spans.empty(),
+                    "The revised question did not acquire its own authored reading source");
+            if(stage==2&&std::string_view(path)=="/explanation")
+                require(source!=before.explanation&&!semantics.spans.empty(),
+                    "The revised explanation did not acquire its own authored reading source");
+        }
+    }
+    require(prose_block(lessons[1]).explanation==before.explanation&&
+            prose_block(lessons[2]).question==prose_block(lessons[1]).question,
+        "The two independent prose publications were collapsed or reordered");
+    std::cout<<"PASS U2L10 choice prose: authentic option, later question and explanation, full/progress loaders and original reading archives\n";
+    for(const auto selected:{std::int64_t{0},std::int64_t{1},std::int64_t{2}})
+        verify_prose_saved_state(lessons,metadata,selected);
+    const auto rejected=manifest.GetNamedArray(L"rejected");
+    require(rejected.Size()==13,"The prose fixture lost its protected-contract counterexamples");
+    for(const auto& entry:rejected) {
+        const auto row=entry.GetObject();
+        const auto bytes=read_file(directory/winrt::to_string(row.GetNamedString(L"file")));
+        const auto reason=winrt::to_string(row.GetNamedString(L"reason"));
+        const auto expected=winrt::to_string(row.GetNamedString(L"diagnostic"));
+        for(const bool progress:{false,true}) {
+            std::string diagnostic;
+            try {
+                if(progress)(void)parse_lesson_progress_metadata(bytes,"es");
+                else (void)parse_lesson_json(bytes,"es");
+            }catch(const std::exception& error){diagnostic=error.what();}
+            require(!diagnostic.empty(),"A forged choice prose publication was accepted: "+reason);
+            if(!expected.empty())require(diagnostic.find(expected)!=std::string::npos,
+                "A different failure masked the intended choice-history rejection: "+reason+" / "+diagnostic);
+        }
+    }
+    std::cout<<"PASS U2L10 choice prose: "<<rejected.Size()
+        <<" answer/history/projection/semantic counterexamples rejected by both native loaders\n";
+}
 }
 
 int main(int argc,char** argv) {
     try {
+        if(argc==3&&std::string_view(argv[1])=="--prose-history") {
+            verify_prose_history(std::filesystem::path(argv[2]));
+            return 0;
+        }
         if(argc==3&&std::string_view(argv[1])=="--retirement-history") {
             const std::filesystem::path directory(argv[2]);
             verify_retirement_choice_pair(directory,"synthetic");

@@ -366,24 +366,27 @@ void authored_prediction_newline(){
         "app/src/main/assets/content/es/programming/cpp_fundamentals/objetos_y_estado/lesson_representar_procesar_y_recuperar.json";
     const auto source_hash=state::sha256(state::read_bytes(path));
     const auto lesson=windows::load_lesson(path);
-    check(lesson.pages.size()==11,"The reported U2L10 lesson no longer has 11 pages");
-    struct Scenario {std::size_t page;const wchar_t* first;const wchar_t* second;const char* result;};
+    struct Scenario {std::string_view identity;const wchar_t* first;const wchar_t* second;const char* result;};
     // Test the earlier report as well as the user's later U2L10 page 7
-    // screenshot. Both use the same real mounted, autoheight answer field.
+    // screenshot. The same authored owners remain relevant after prose is
+    // inserted before them; their current positions are not answer identities.
+    // Both use the real mounted, autoheight answer field and the original
+    // two-line drafts, including the deliberately unfinished second answer.
     for(const auto& scenario:std::vector<Scenario>{
-            {1,L"Inicio: 8",L"Ahora: 5","Inicio: 8\nAhora: 5"},
-            {6,L"Puesto 03",L"sdf","Puesto 03\nsdf"}}){
-        check(lesson.pages[scenario.page].blocks.size()>1,"The reported output block is missing");
-        const auto& prediction=lesson.pages[scenario.page].blocks[1];
-        check(prediction.type==curriculum::BlockType::output_prediction &&
-            prediction.code.find(scenario.page==1?"al_inicio":"Puesto")!=std::string::npos,
-            "The original multiline prediction is no longer at the reported page");
+            {"block_0001_0001",L"Inicio: 8",L"Ahora: 5","Inicio: 8\nAhora: 5"},
+            {"block_0006_0001",L"Puesto 03",L"sdf","Puesto 03\nsdf"}}){
+        const auto position=curriculum::stable_block_position(lesson,scenario.identity);
+        check(position.has_value(),"The authored multiline prediction identity is missing");
+        const auto& prediction=lesson.pages[position->page].blocks[position->block];
+        check(prediction.type==curriculum::BlockType::output_prediction&&
+            !prediction.code.empty()&&!curriculum::uses_single_line_answer(prediction),
+            "The authored prediction no longer requires its multiline answer control");
         state::StateData data;state::prepare_lesson_state(data,lesson);
         // This temporary Codex QA profile has no student records. Mark only
         // earlier page prerequisites complete so the real page can be mounted;
         // never credit the target response or touch a personal profile.
         seed_other_objectives(data,lesson,prediction.stable_id);
-        for(std::size_t page=0;page<scenario.page;++page){
+        for(std::size_t page=0;page<position->page;++page){
             for(const auto& preceding:lesson.pages[page].blocks){
                 using curriculum::BlockType;
                 if(preceding.type!=BlockType::multiple_choice&&preceding.type!=BlockType::output_prediction
@@ -401,13 +404,13 @@ void authored_prediction_newline(){
             }
             (void)state::mark_page_reached(data,lesson,page);
         }
-        state::save_current_page(data,lesson,scenario.page);
+        state::save_current_page(data,lesson,position->page);
         data.preferences["native_windows"]["ui_language"]=std::string("es");
         data.preferences["lesson_text_size_settings"]["global_scale"]=std::int64_t{150};
         View fixture(lesson,data,true);
-        check(lesson_page_state(fixture.view).index==scenario.page,
+        check(lesson_page_state(fixture.view).index==position->page,
             "QA prerequisites did not open the requested original prediction page");
-        const auto answer=fixture.control(1,2);
+        auto answer=fixture.control(position->block,2);
         check(edit_text(answer).empty(),"The regression must begin with an empty answer");
         fixture.reveal(answer);SetFocus(answer);
         const auto type=[&](const wchar_t* value){
@@ -428,7 +431,8 @@ void authored_prediction_newline(){
             check(second_index>=0,"Enter did not create a second RichEdit line");
             SendMessageW(answer,EM_POSFROMCHAR,reinterpret_cast<WPARAM>(&second),second_index);
             const auto line_height=second.y-first.y;
-            std::cout<<"PREDICTION page="<<scenario.page+1<<" "<<stage
+            std::cout<<"PREDICTION activity="<<scenario.identity
+                <<" page="<<position->page+1<<" block="<<position->block+1<<" "<<stage
                 <<" client="<<client.bottom<<" format="<<format.top<<','<<format.bottom
                 <<" first="<<first.y<<" second="<<second.y<<" line_height="<<line_height
                 <<" scroll="<<scroll.y<<'\n';
@@ -446,12 +450,25 @@ void authored_prediction_newline(){
         pump();visible_lines("after-enter");
         type(scenario.second);visible_lines("after-second-line");
         const auto saved=fixture.saved();const auto response=state::get_response(saved,lesson,prediction);
-        check(response&&response->answer==scenario.result&&!response->correct,
+        check(response&&response->answer==scenario.result&&!response->correct&&
+                !state::response_reviewed(*response,prediction),
             "Enter changed, submitted or corrupted the draft's two-line answer");
+        fixture.reopen();
+        check(lesson_page_state(fixture.view).index==position->page,
+            "Reopening the multiline draft changed its authored page");
+        answer=fixture.control(position->block,2);fixture.reveal(answer);pump();
+        check(edit_text(answer)==scenario.result,
+            "Reopening did not render every character of the saved multiline draft");
+        visible_lines("after-reopen");
+        const auto reopened=fixture.saved();const auto restored=state::get_response(reopened,lesson,prediction);
+        check(restored&&restored->answer==response->answer&&!restored->correct&&
+                !state::response_reviewed(*restored,prediction),
+            "Reopening changed or evaluated the original pending multiline answer");
     }
     check(state::sha256(state::read_bytes(path))==source_hash,
         "The viewport regression changed curricular source data");
-    std::cout<<"PASS U2L10 pages 2 and 7: two visible lines after Enter with exact draft content\n";
+    std::cout<<"PASS current U2L10 block_0001_0001 and block_0006_0001: stable owners, "
+        <<"two visible lines after real Enter, exact pending drafts and reopen, unchanged authored source\n";
 }
 void authored_editor_mount(){
     const auto path=std::filesystem::path(build::source_root)/"app/src/main/assets/content/es/programming/cpp_fundamentals/texto_interpretacion_y_flujos/lesson_un_lector_con_buffer_de_un_token.json";

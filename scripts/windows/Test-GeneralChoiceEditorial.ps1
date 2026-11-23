@@ -44,15 +44,17 @@ try {
         throw 'General-choice editorial QA requires Codex, not main or detached HEAD.'
     }
 
-    # Only the two real native QA hosts and their pinned U9 fixtures.
+    # Only the two real native QA hosts and their pinned U9/U2L10 fixtures.
     & (Join-Path $PSScriptRoot 'Build-Native.ps1') -Preset $Preset -Profile Codex -SkipTests -Fresh:$Fresh -Target lgaed_general_choice_editorial_qa_targets
 
     $expected = @(
         'native.general_choice_editorial_authoring',
         'native.general_choice_editorial',
-        'native.general_choice_editorial_reader'
+        'native.general_choice_editorial_reader',
+        'native.general_choice_prose_authoring',
+        'native.general_choice_prose_history'
     )
-    $regex = '^native[.]general_choice_editorial(_authoring|_reader)?$'
+    $regex = '^native[.]general_choice_(editorial(_authoring|_reader)?|prose_(authoring|history))$'
 
     # CTest resolves presets from the CURRENT working directory. The script
     # also works when called by absolute path from another folder.
@@ -70,7 +72,7 @@ try {
     $inventory = ($json -join [Environment]::NewLine) | ConvertFrom-Json
     $discovered = @($inventory.tests | ForEach-Object { [string] $_.name })
     if ($discovered.Count -ne $expected.Count) {
-        throw "Expected 3 choice editorial tests, got $($discovered.Count): $($discovered -join ', ')"
+        throw "Expected 5 choice editorial tests, got $($discovered.Count): $($discovered -join ', ')"
     }
     foreach ($name in $expected) {
         if ($discovered -cnotcontains $name) {
@@ -114,7 +116,7 @@ try {
     if ($exitCode -ne 0) {
         throw "Choice editorial QA failed ($exitCode). Logs: $stdoutPath and $stderrPath"
     }
-    Write-Host "Local Windows editorial choice QA: 3 focused tests passed ($Preset)."
+    Write-Host "Local Windows editorial choice QA: 5 focused tests passed ($Preset)."
 }
 finally {
     foreach ($name in $environmentNames) {
