@@ -97,8 +97,8 @@ function(lgaed_add_local_role_state_tests source_root)
     set_tests_properties(native.local_role_authoring PROPERTIES TIMEOUT 90)
 endfunction()
 
-# Both current and archived Win32 controls use an authenticated earlier lesson,
-# never a current lesson with its mandatory flag artificially disabled.
+# Current and archived Win32 controls preserve authenticated publications,
+# including the same-page reference, without disabling their mandatory case.
 function(lgaed_add_u2l9_input_view_history_tests source_root)
     if(TARGET lgaed_u2l9_view_history_fixtures)
         return()
@@ -106,6 +106,7 @@ function(lgaed_add_u2l9_input_view_history_tests source_root)
     find_package(Python3 REQUIRED COMPONENTS Interpreter)
     set(_u2l9_history_dir "${CMAKE_CURRENT_BINARY_DIR}/test-fixtures/u2l9-view-history")
     set(_u2l9_history_file "${_u2l9_history_dir}/u2l9-archived.json")
+    set(_u2l9_same_page_file "${_u2l9_history_dir}/u2l9-same-page.json")
     add_custom_command(OUTPUT "${_u2l9_history_file}"
         COMMAND "${Python3_EXECUTABLE}" -B
             "${source_root}/scripts/curriculum/u2l9_history_fixture_source.py"
@@ -113,14 +114,25 @@ function(lgaed_add_u2l9_input_view_history_tests source_root)
         DEPENDS "${source_root}/scripts/curriculum/u2l9_history_fixture_source.py"
             "${source_root}/scripts/curriculum/diagnostic_fixture_source.py"
         VERBATIM)
-    add_custom_target(lgaed_u2l9_view_history_fixtures DEPENDS "${_u2l9_history_file}")
+    add_custom_command(OUTPUT "${_u2l9_same_page_file}"
+        COMMAND "${Python3_EXECUTABLE}" -B
+            "${source_root}/scripts/curriculum/u2l9_history_fixture_source.py"
+            --output-dir "${_u2l9_history_dir}" --same-page
+        DEPENDS "${source_root}/scripts/curriculum/u2l9_history_fixture_source.py"
+            "${source_root}/scripts/curriculum/diagnostic_fixture_source.py"
+        VERBATIM)
+    add_custom_target(lgaed_u2l9_view_history_fixtures
+        DEPENDS "${_u2l9_history_file}" "${_u2l9_same_page_file}")
     add_dependencies(lgaed_curricular_input_lab_tests lgaed_u2l9_view_history_fixtures)
     add_dependencies(lgaed_exact_prediction_view_tests lgaed_u2l9_view_history_fixtures)
     add_test(NAME native.curricular_input_lab_history
         COMMAND lgaed_curricular_input_lab_tests --u2l9-history "${_u2l9_history_file}")
+    add_test(NAME native.curricular_input_lab_same_page
+        COMMAND lgaed_curricular_input_lab_tests --u2l9-same-page "${_u2l9_same_page_file}")
     add_test(NAME native.prepared_input_predictions_history
         COMMAND lgaed_exact_prediction_view_tests --prepared-input-history "${_u2l9_history_file}")
     set_tests_properties(native.curricular_input_lab_history PROPERTIES TIMEOUT 240 RUN_SERIAL TRUE)
+    set_tests_properties(native.curricular_input_lab_same_page PROPERTIES TIMEOUT 240 RUN_SERIAL TRUE)
     set_tests_properties(native.prepared_input_predictions_history PROPERTIES TIMEOUT 300 RUN_SERIAL TRUE)
 endfunction()
 

@@ -5,6 +5,7 @@ ejecutor y los recibos deben ser nativos Windows.
 """
 from __future__ import annotations
 
+import ast
 import json
 from pathlib import Path
 import re
@@ -776,17 +777,136 @@ class WindowsCompilerPolicy(unittest.TestCase):
                 self.assertIn('"cl"', source)
                 self.assertNotRegex(source, r'["\'](?:g\+\+|clang\+\+|c\+\+)["\']')
 
+    @staticmethod
+    def _unittest_source_files(workflow):
+        # A suite can be selected by discovery or by explicit module names.
+        # The latter also occur in folded YAML run blocks. Only inspect real
+        # Python command lines and their module continuations; path filters,
+        # labels and comments are not evidence that a test is executed.
+        commands = re.finditer(
+            r"(?m)^[ \t]*(?:(?:-[ \t]+)?run:[ \t]*)?python(?:\.exe)?[ \t]+"
+            r"(?:-B[ \t]+)?-m[ \t]+unittest\b"
+            r"(?P<arguments>[^\n]*(?:\n[ \t]+test_[a-z0-9_]+"
+            r"(?:\.py)?[ \t]*(?=\n|$))*)", workflow)
+        files = set()
+        for command in commands:
+            arguments = " ".join(
+                WindowsCompilerPolicy._strip_shell_comment(line)
+                for line in command.group("arguments").splitlines())
+            # Selected module and file names never contain shell operators.
+            # A later Write-Host/echo argument is not another unittest input.
+            arguments = re.split(r"[;|&]", arguments, maxsplit=1)[0]
+            if re.match(r"\s*discover\b", arguments):
+                files.update(re.findall(
+                    r"(?:^|\s)-p\s+['\"]?(test_[a-z0-9_]+\.py)"
+                    r"(?:['\"])?(?=\s|$)", arguments))
+            else:
+                files.update(name + ".py" for name in re.findall(
+                    r"(?:^|\s)['\"]?(test_[a-z0-9_]+)(?:\.py)?"
+                    r"(?:['\"])?(?=\s|$)", arguments))
+        return sorted(files)
+
+    def test_unittest_inventory_recognizes_discovery_and_folded_modules(self):
+        workflow = (
+            "      - run: python -B -m unittest discover -s scripts/curriculum "
+            "-p 'test_first.py' -v\n"
+            "      - name: Selected modules\n"
+            "        working-directory: scripts/curriculum\n"
+            "        run: >-\n"
+            "          python -B -m unittest -v\n"
+            "          test_second\n"
+            "          test_third\n"
+            "      - name: Explicit file and duplicate module\n"
+            "        run: python.exe -m unittest test_fourth.py test_second -v\n")
+        self.assertEqual(self._unittest_source_files(workflow), [
+            "test_first.py", "test_fourth.py", "test_second.py", "test_third.py"])
+
+    def test_unittest_inventory_ignores_watched_named_and_commented_tests(self):
+        workflow = (
+            "    paths:\n"
+            "      - scripts/curriculum/test_watched.py\n"
+            "      - name: test_named\n"
+            "        run: echo python -m unittest test_reported\n"
+            "        run: |\n"
+            "          # python -m unittest test_commented\n"
+            "          python -m unittest test_actual # test_not_executed\n"
+            "      - name: test_following\n")
+        self.assertEqual(self._unittest_source_files(workflow), ["test_actual.py"])
+        self.assertEqual(self._unittest_source_files(
+            "run: python -m unittest test_actual; Write-Host test_reported"),
+            ["test_actual.py"])
+
+    @staticmethod
+    def _shared_msvc_call_is_executable(module, helper):
+        def batch_call(node):
+            if not isinstance(node, ast.Call) or not isinstance(node.func, ast.Attribute):
+                return False
+            receiver = node.func.value
+            return (node.func.attr == "assert_msvc_outputs"
+                    and isinstance(receiver, ast.Attribute) and receiver.attr == "batch"
+                    and isinstance(receiver.value, ast.Name) and receiver.value.id == "self")
+
+        invoked = any(
+            isinstance(test, ast.FunctionDef) and test.name.startswith("test_")
+            and any(batch_call(node) for node in ast.walk(test))
+            for test in ast.walk(module))
+        implementations = (
+            method for owner in ast.walk(helper)
+            if isinstance(owner, ast.ClassDef) and owner.name == "FormatBatch"
+            for method in owner.body
+            if isinstance(method, ast.FunctionDef) and method.name == "assert_msvc_outputs")
+        compiles = any(
+            isinstance(node, ast.Call) and isinstance(node.func, ast.Attribute)
+            and isinstance(node.func.value, ast.Name) and node.func.value.id == "subprocess"
+            and node.func.attr == "run" and node.args
+            and isinstance(node.args[0], ast.Call) and isinstance(node.args[0].func, ast.Name)
+            and node.args[0].func.id == "msvc_cpp23_command"
+            for method in implementations for node in ast.walk(method))
+        return invoked and compiles
+
+    def test_shared_msvc_inventory_rejects_commented_calls_and_unused_helpers(self):
+        module = ("class Suite:\n"
+                  "    def test_outputs(self):\n"
+                  "        self.batch.assert_msvc_outputs(self)\n")
+        helper = ("class FormatBatch:\n"
+                  "    def assert_msvc_outputs(self, case):\n"
+                  "        subprocess.run(msvc_cpp23_command(exe, src))\n")
+        inspect = lambda source, implementation: self._shared_msvc_call_is_executable(
+            ast.parse(source), ast.parse(implementation))
+        self.assertTrue(inspect(module, helper))
+        self.assertFalse(inspect(module.replace(
+            "self.batch.assert_msvc_outputs(self)", "pass # self.batch.assert_msvc_outputs(self)"), helper))
+        self.assertFalse(inspect(module.replace("def test_outputs", "def unused_outputs"), helper))
+        self.assertFalse(inspect(module, helper.replace(
+            "subprocess.run(msvc_cpp23_command(exe, src))",
+            "pass # subprocess.run(msvc_cpp23_command(exe, src))")))
+
     def test_legibility_suite_runs_all_originals_on_windows_msvc(self):
         workflow = (WORKFLOWS / "legibilidad-codigo.yml").read_text(encoding="utf-8")
         self.assertIn("runs-on: windows-2022", workflow)
         self.assertIn("ilammy/msvc-dev-cmd@v1", workflow)
         self.assertIn("test_windows_cpp_ci.py", workflow)
-        files = sorted(set(re.findall(r"-p (test_[a-z0-9_]+\.py)", workflow)))
+        files = self._unittest_source_files(workflow)
         self.assertGreaterEqual(len(files), 45)
         validated = 0
         for name in files:
             source = (ROOT / "scripts" / "curriculum" / name).read_text(encoding="utf-8")
             with self.subTest(original_test=name):
+                module = ast.parse(source)
+                shared_msvc = any(
+                    isinstance(node, ast.ImportFrom)
+                    and node.module == "format_batch_history"
+                    and any(alias.name == "FormatBatch" for alias in node.names)
+                    for node in ast.walk(module))
+                if shared_msvc:
+                    # Seven historical suites share the same real MSVC
+                    # execution helper. Require the call as well as its
+                    # implementation instead of treating an import as coverage.
+                    helper = (ROOT / "scripts/curriculum/format_batch_history.py").read_text(
+                        encoding="utf-8")
+                    self.assertTrue(self._shared_msvc_call_is_executable(module, ast.parse(helper)),
+                                    "Shared MSVC coverage needs an executed test call and compiler")
+                    source += "\n" + helper
                 for compiler in ("g++", "clang++", "c++"):
                     self.assertNotIn(f'"{compiler}"', source)
                     self.assertNotIn(f"'{compiler}'", source)

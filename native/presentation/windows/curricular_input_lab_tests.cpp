@@ -7,6 +7,7 @@
 #include "platform/windows/environment.hpp"
 #include "platform/windows/state_store.hpp"
 #include "presentation/windows/lesson_view.hpp"
+#include "presentation/windows/compiler_diagnostic_display.hpp"
 #include "presentation/windows/reader_theme.hpp"
 #include "presentation/windows/rich_text.hpp"
 #include "native_build_config.hpp"
@@ -44,6 +45,19 @@ void pump() {
 std::string bytes(const std::filesystem::path& path) {
     const auto content = state::read_bytes(path);
     return std::string(content.begin(), content.end());
+}
+std::string escaped_diagnostic_text(std::string_view value) {
+    return winrt::to_string(winrt::Windows::Data::Json::JsonValue::CreateStringValue(wide(value)).Stringify());
+}
+std::string display_line_breaks(std::string_view value) {
+    std::string result;
+    for (std::size_t index = 0; index < value.size(); ++index) {
+        if (value[index] == '\r') {
+            result += '\n';
+            if (index + 1 < value.size() && value[index + 1] == '\n') ++index;
+        } else result += value[index];
+    }
+    return result;
 }
 HWND descendant(HWND parent, int id) {
     struct Search { int id; HWND found = nullptr; } search{id};
@@ -619,35 +633,142 @@ struct View {
             "The laboratory did not use the configured MSVC compiler and a real executable");
         check(bytes(directory / L"main.cpp") == source && bytes(directory / L"stdin.bin") == input,
             "The compiler did not capture the exact authored source and current prepared input");
-        check(bytes(directory / L"execution-stdout.bin") == (expected_raw.empty() ? expected : expected_raw) && text(14) == expected
-            && bytes(directory / L"execution-stderr.bin").empty(),
-            "The actual program's binary output or visible console differs from the exact requested output");
+        const auto stdout_bytes = bytes(directory / L"execution-stdout.bin");
+        const auto stderr_bytes = bytes(directory / L"execution-stderr.bin");
+        const auto raw_expected = expected_raw.empty() ? expected : expected_raw;
+        check(stdout_bytes == raw_expected && stderr_bytes.empty(),
+            "Captured program output differs: stdout=" + escaped_diagnostic_text(stdout_bytes) + ", expected=" + escaped_diagnostic_text(raw_expected)
+                + ", stderr=" + escaped_diagnostic_text(stderr_bytes));
+        std::string console_expected(expected);
+        std::string caption_expected = "Salida del programa (stdout)";
+        if (expected.empty()) {
+            // The UI selects the nonempty compiler channel when a correct
+            // native process writes no stdout/stderr. Keep its diagnostic
+            // separate from the exact empty program capture checked above.
+            const auto compiler_bytes = bytes(directory / L"compilation-stdout.bin")
+                + bytes(directory / L"compilation-stderr.bin");
+            if (!compiler_bytes.empty()) {
+                const std::array roots{directory};
+                console_expected = display_line_breaks(utf8(compact_compiler_diagnostic_paths(wide(compiler_bytes), roots)));
+                caption_expected = "Diagnósticos de compilación y enlace";
+            }
+        }
+        check(text(14) == console_expected && text(30) == caption_expected,
+            "Visible console channel differs: caption=" + escaped_diagnostic_text(text(30)) + ", expected_caption=" + escaped_diagnostic_text(caption_expected)
+                + ", text=" + escaped_diagnostic_text(text(14)) + ", expected_text=" + escaped_diagnostic_text(console_expected));
         check(!IsWindowVisible(host), "A laboratory execution exposed the QA host");
         ++executions;
         return directory;
     }
 };
 
-void current_three_input_laboratory(const std::filesystem::path& historical = {}) {
-    phase = historical.empty() ? "load current U2L9 asset and contracts" : "load authentic archived U2L9";
+void verify_u2l9_reference(View& fixture, curriculum::StatePosition target,
+        curriculum::StatePosition reference, bool unlocked) {
+    const auto& lesson = fixture.lesson;
+    const auto& authored = lesson.pages.at(reference.page).blocks.at(reference.block);
+    check(curriculum::reference_activity(lesson, authored) == target,
+        "The U2L9 reference lost its own declared compiler requirement");
+    check(lesson_page_state(fixture.view).index == target.page,
+        "Reference QA left the actual U2L9 editor before inspecting its gate");
+    const bool same_page = target.page == reference.page;
+    if (!unlocked && !same_page) {
+        check(!navigate_lesson_view(fixture.view, reference.page),
+            "An uncredited U2L9 first case opened its later reference page");
+        pump();
+        check(lesson_page_state(fixture.view).index == target.page,
+            "A rejected reference navigation moved the unfinished U2L9 editor");
+    } else if (unlocked && !same_page) {
+        check(navigate_lesson_view(fixture.view, reference.page),
+            "The first Iris observation did not unlock its reference page");
+        pump();
+    }
+    const auto regions = lesson_reading_regions(fixture.view);
+    std::size_t references = 0;
+    for (std::size_t page = 0; page < lesson.pages.size(); ++page)
+        for (std::size_t index = 0; index < lesson.pages[page].blocks.size(); ++index) {
+            const auto& owner = lesson.pages[page].blocks[index];
+            if (curriculum::reference_activity(lesson, owner) != target) continue;
+            ++references;
+            const auto identity = '/' + owner.stable_id + '/';
+            const bool readable = std::ranges::any_of(regions, [&](const auto& region) {
+                return region.key.find(identity) != std::string::npos;
+            });
+            if (!unlocked) {
+                check(!readable, "An unfinished U2L9 compiler exposed a reference to the reader");
+                if (page == lesson_page_state(fixture.view).index) {
+                    // A hidden host intentionally makes IsWindowVisible false
+                    // for every descendant. Check actual HWND existence, not
+                    // that inherited desktop visibility, to detect a leak.
+                    struct Search { int first; HWND found = nullptr; } search{1000 + static_cast<int>(index) * 100};
+                    EnumChildWindows(fixture.view, [](HWND item, LPARAM raw) -> BOOL {
+                        auto& search = *reinterpret_cast<Search*>(raw);
+                        const int id = GetDlgCtrlID(item);
+                        if (id < search.first || id >= search.first + 100) return TRUE;
+                        search.found = item; return FALSE;
+                    }, reinterpret_cast<LPARAM>(&search));
+                    check(search.found == nullptr,
+                        "An unfinished U2L9 compiler created a source, label or text control for its reference");
+                }
+            } else if (page == reference.page) {
+                check(readable, "An earned U2L9 reference did not enter the actual reader script");
+            }
+        }
+    check(references == 4, "The U2L9 reference group lost an authored source or explanation");
+    if (!unlocked) return;
+
+    const auto source = fixture.control(reference.block, 1);
+    check((GetWindowLongPtrW(source, GWL_STYLE) & WS_VISIBLE) != 0 && IsWindowEnabled(source)
+        && edit_text(source) == authored.code,
+        "The earned U2L9 reference is hidden, disabled or differs from its authored source");
+    if (same_page) {
+        bool earned_compiler = false, reference_seen = false;
+        for (const auto& region : regions) {
+            if (region.block_index == target.block) {
+                check(!reference_seen, "A same-page U2L9 reference was narrated before its compiler");
+                earned_compiler = earned_compiler || (region.required_compiler && region.correct);
+            }
+            if (region.block_index == reference.block) {
+                check(earned_compiler, "The same-page U2L9 reference has no preceding completed compiler reading gate");
+                reference_seen = true;
+            }
+        }
+        check(earned_compiler && reference_seen,
+            "The same-page U2L9 reference or its earned compiler disappeared from the reader");
+    } else {
+        check(navigate_lesson_view(fixture.view, target.page),
+            "Cannot return from the earned U2L9 reference to its editor");
+        pump();
+    }
+}
+
+void current_three_input_laboratory(const std::filesystem::path& historical = {},
+        bool same_page_publication = false) {
+    phase = historical.empty() ? "load current U2L9 asset and contracts"
+        : same_page_publication ? "load authentic same-page U2L9" : "load authentic archived U2L9";
     const auto path = historical.empty() ? std::filesystem::path(build::source_root) /
         "app/src/main/assets/content/es/programming/cpp_fundamentals/objetos_y_estado/lesson_leer_una_entrada_conocida.json"
         : historical;
     const auto asset_hash = state::sha256(state::read_bytes(path));
     if (!historical.empty())
-        check(asset_hash == "61ff67f148ad78c31036763889ebdb85e31ce315cb1103de516ee975819fd0e1",
-            "The historical U2L9 fixture is not the exact published d90d3156 source");
+        check(asset_hash == (same_page_publication
+                ? "7a5eaa190463976dc686e288abe5f61eed0574849ca51e33a0bc5a762c569208"
+                : "61ff67f148ad78c31036763889ebdb85e31ce315cb1103de516ee975819fd0e1"),
+            "The U2L9 fixture differs from its exact independently authenticated publication");
     const auto lesson = windows::load_lesson(path);
     const auto target = position(lesson, "block_0009_0003");
     const auto reference = position(lesson, "block_0010_0001");
     const auto& compiler = lesson.pages[target.page].blocks[target.block];
     const auto& authored_reference = lesson.pages[reference.page].blocks[reference.block];
+    if (same_page_publication)
+        check(!historical.empty() && reference.page == target.page && reference.block > target.block,
+            "The authenticated a658efea U2L9 fixture lost its reference after the editor on the same page");
     check(compiler.stable_id == "block_0009_0003" && authored_reference.stable_id == "block_0010_0001"
         && compiler.type == curriculum::BlockType::cpp_compiler && compiler.output_check
         && compiler.output_check->input_comparison == curriculum::TextComparison::tokens
         && compiler.output_check->cases.size() == 4 && compiler.standard_input == "Iris 4 2"
         && authored_reference.type == curriculum::BlockType::code && authored_reference.language == "cpp"
-        && !authored_reference.code.empty() && lesson.compiler_puzzles_required,
+        && !authored_reference.code.empty() && compiler.initial_code != authored_reference.code
+        && lesson.compiler_puzzles_required,
         "The actual required U2L9 laboratory/reference lost its first case or three optional trials");
     struct Case { std::string_view canonical, input, output; };
     constexpr std::array<Case, 4> cases{{
@@ -673,15 +794,14 @@ void current_three_input_laboratory(const std::filesystem::path& historical = {}
         && !windows::compiler_puzzle_completed(initial, lesson, compiler),
         "The isolated actual input laboratory began on another page or with invented credit");
     phase = "enter the authored reference through the real source editor";
-    check(!navigate_lesson_view(fixture.view, reference.page),
-        "An uncredited U2L9 first case opened its later reference");
+    verify_u2l9_reference(fixture, target, reference, false);
     fixture.replace(10, authored_reference.code);
-    const auto retained = [&](std::size_t count) {
+    const auto retained = [&](std::size_t count, bool completed = true) {
         const auto saved = fixture.saved();
         check(saved.preferences.at("input_lab_qa_unrelated") == unrelated,
             "Input laboratory operations changed an unrelated QA preference");
         check(windows::compiler_puzzle_case_count(saved, lesson, compiler) == count
-            && windows::compiler_puzzle_completed(saved, lesson, compiler) == (count >= 1),
+            && windows::compiler_puzzle_completed(saved, lesson, compiler) == completed,
             "Real input executions did not preserve the exact number of independently checked cases");
         for (const auto& page : lesson.pages) for (const auto& other : page.blocks)
             if (other.type == curriculum::BlockType::cpp_compiler && other.stable_id != compiler.stable_id)
@@ -693,6 +813,24 @@ void current_three_input_laboratory(const std::filesystem::path& historical = {}
                     "The focal laboratory changed another compiler's independent receipt");
         check(lesson.compiler_puzzles_required, "QA changed the published required compiler policy");
     };
+    phase = "optional Leo before Iris cannot reveal the same-page or later reference";
+    fixture.replace(15, cases[1].input);
+    fixture.run(authored_reference.code, cases[1].input, cases[1].output);
+    retained(1, false);
+    verify_u2l9_reference(fixture, target, reference, false);
+    fixture.reopen();
+    retained(1, false);
+    const auto partial_draft = state::get_draft(fixture.saved(), draft_key, "");
+    check(fixture.text(10) == authored_reference.code && fixture.text(15) == cases[1].input
+        && partial_draft.has_saved && partial_draft.source == authored_reference.code
+        && partial_draft.input == cases[1].input,
+        "Reopening an optional-only U2L9 attempt lost its exact source/input draft");
+    verify_u2l9_reference(fixture, target, reference, false);
+    // An edit invalidates an unfinished proof. Restoring the program must
+    // not resurrect that optional result or invent a mandatory Iris receipt.
+    fixture.replace(10, compiler.initial_code); retained(0, false);
+    fixture.replace(10, authored_reference.code); retained(0, false);
+    verify_u2l9_reference(fixture, target, reference, false);
     for (std::size_t index = 0; index < cases.size(); ++index) {
         phase = "case " + std::to_string(index + 1) + ": " + std::string(cases[index].canonical);
         fixture.replace(15, cases[index].input);
@@ -705,14 +843,7 @@ void current_three_input_laboratory(const std::filesystem::path& historical = {}
                 && fixture.text(34).find("Pruebas opcionales comprobadas: 0 de 3.") != std::string::npos,
                 "The first Iris result did not distinguish its three optional trials");
             phase = "open the actual reference after only Iris";
-            check(navigate_lesson_view(fixture.view, reference.page),
-                "The first Iris observation did not unlock its own reference");
-            pump();
-            check(edit_text(fixture.control(reference.block, 1)) == authored_reference.code,
-                "The first-case reference differs from its authored source");
-            check(navigate_lesson_view(fixture.view, target.page),
-                "Cannot return from the first-case reference to its editor");
-            pump();
+            verify_u2l9_reference(fixture, target, reference, true);
             const auto first_receipts = compiler_receipts(fixture.saved(), lesson, compiler);
             fixture.reopen();
             check(fixture.text(10) == authored_reference.code && fixture.text(15) == cases[0].input
@@ -720,6 +851,7 @@ void current_three_input_laboratory(const std::filesystem::path& historical = {}
                 && compiler_receipts(fixture.saved(), lesson, compiler) == first_receipts,
                 "Reopening after Iris lost the one-case achievement, source or input");
             retained(1);
+            verify_u2l9_reference(fixture, target, reference, true);
         }
     }
     phase = "repeat the actual Sol execution without editing";
@@ -747,21 +879,20 @@ void current_three_input_laboratory(const std::filesystem::path& historical = {}
     phase = "fresh Iris execution after reopening";
     fixture.run(authored_reference.code, mixed_input, cases.front().output);
     retained(cases.size());
-    phase = "open and verify the actual p11 reference";
-    check(navigate_lesson_view(fixture.view, reference.page), "Cannot reach the published reference after completing the laboratory"); pump();
-    check(edit_text(fixture.control(reference.block, 1)) == authored_reference.code,
-        "The actual unlocked reference differs from the source exercised through the editor");
-    phase = "return to p10 and verify retained state and asset";
-    check(navigate_lesson_view(fixture.view, target.page), "Cannot return to the completed input laboratory"); pump();
+    phase = "verify actual same-page or later reference after optional runs and reopening";
+    verify_u2l9_reference(fixture, target, reference, true);
+    phase = "verify retained editor state and asset after reference inspection";
     check(fixture.text(10) == authored_reference.code && fixture.text(15) == mixed_input,
         "Reference navigation changed the laboratory's independent source/input draft");
     retained(cases.size());
-    check(fixture.executions == 7 && state::sha256(state::read_bytes(path)) == asset_hash && !IsWindowVisible(fixture.host),
+    check(fixture.executions == 8 && state::sha256(state::read_bytes(path)) == asset_hash && !IsWindowVisible(fixture.host),
         "The focal input QA lost a fresh execution, changed authored bytes or exposed the desktop");
-    std::cout << "PASS " << (historical.empty() ? "current" : "authenticated archived")
+    std::cout << "PASS " << (historical.empty() ? "current"
+            : same_page_publication ? "authenticated same-page" : "authenticated archived")
         << " U2L9 block_0009_0003: real independent preceding compiler evidence; "
-        << "Iris alone opens its reference and survives reopen; three optional cases, "
-        << "seven focal MSVC runs, exact source/input/receipts, repeated token-whitespace input, "
+        << "optional Leo cannot reveal its reference or reader script, including after reopen; "
+        << "Iris alone opens real reference controls and preserves reading order; three optional cases, "
+        << "eight focal MSVC runs, exact source/input/receipts, repeated token-whitespace input, "
         << "and unchanged historical/publication bytes\n";
 }
 
@@ -972,8 +1103,16 @@ void current_u3_combinations() {
     complete_u3_prerequisite(fixture, target, true);
     const auto initial = fixture.saved();
     const auto draft_key = curriculum::draft_key("programming", lesson, compiler);
-    check(fixture.text(10) == compiler.initial_code && fixture.text(15) == *compiler.standard_input && !attempts::premium(initial),
-        "U3L5 construction lost its unfinished draft/first input or bypassed the finite reserve");
+    check(fixture.text(10) == compiler.initial_code && fixture.text(15) == *compiler.standard_input,
+        "U3L5 construction lost its unfinished draft or first input: input=" + escaped_diagnostic_text(fixture.text(15))
+            + ", expected=" + escaped_diagnostic_text(*compiler.standard_input));
+    check(attempts::number(initial, "reserve_programming", -1.) == 3.
+        && state::integer_value(initial, "attempt_reserve_seconds_test", "recovery_interval_programming") == attempts::recovery_millis
+        && state::find(initial, "premium_state", "state") == nullptr,
+        "U3L5 QA lost its saved reserve or fabricated a Premium entitlement");
+    std::cout << "U3L5 reserve policy: personal_premium_enabled=" << attempts::personal_premium_enabled
+        << " effective_premium=" << attempts::premium(initial)
+        << "; saved reserve preservation is checked under the unchanged product policy\n";
     const auto retained = [&](std::size_t count, bool completed, std::string_view code, std::string_view input) {
         const auto saved = fixture.saved();
         const auto draft = state::get_draft(saved, draft_key, compiler.initial_code, *compiler.standard_input);
@@ -1055,7 +1194,7 @@ void current_u3_combinations() {
         "eight inputs with only 1 0 0 mandatory; thirteen fresh UI MSVC runs, wrong grouping, "
         "optional-before-first negative, partial-program invalidation, first-case continuation/reopen, "
         "retained achievement after rejection and explicit reset; nine archived observations, "
-        "historical drafts and finite reserve preserved; no desktop/listening acceptance\n";
+        "historical drafts and saved reserve preserved under the current Premium policy; no desktop/listening acceptance\n";
 }
 }
 
@@ -1064,7 +1203,8 @@ int main(int argc, char** argv) {
     const bool u3_stdout = argc == 2 && std::string_view(argv[1]) == "--u3-stdout";
     const bool u3_combinations = argc == 2 && std::string_view(argv[1]) == "--u3-combinations";
     const bool u2l9_history = argc == 3 && std::string_view(argv[1]) == "--u2l9-history";
-    if (argc != 1 && !u3_stdout && !u3_combinations && !u2l9_history) {
+    const bool u2l9_same_page = argc == 3 && std::string_view(argv[1]) == "--u2l9-same-page";
+    if (argc != 1 && !u3_stdout && !u3_combinations && !u2l9_history && !u2l9_same_page) {
         const bool shape = argc == 3 && (std::string_view(argv[1]) == "--prepare-visual"
             || std::string_view(argv[1]) == "--prepare-u3-visual"
             || std::string_view(argv[1]) == "--prepare-u3-combinations-visual"
@@ -1072,7 +1212,7 @@ int main(int argc, char** argv) {
         const auto raw = shape ? std::string_view(argv[2]) : std::string_view{};
         const std::wstring token(raw.begin(), raw.end());
         if (!shape || !is_valid_qa_instance(token)) {
-            std::cerr << "Usage: curricular_input_lab_tests [--u3-stdout | --u3-combinations | --u2l9-history <authentic-json> | --prepare-visual <safe-new-QA-token> | --prepare-u3-visual <safe-new-QA-token> | --prepare-u3-combinations-visual <safe-new-QA-token> | --inspect-u3-combinations-visual <safe-QA-token>]\n";
+            std::cerr << "Usage: curricular_input_lab_tests [--u3-stdout | --u3-combinations | --u2l9-history <authentic-json> | --u2l9-same-page <authentic-json> | --prepare-visual <safe-new-QA-token> | --prepare-u3-visual <safe-new-QA-token> | --prepare-u3-combinations-visual <safe-new-QA-token> | --inspect-u3-combinations-visual <safe-QA-token>]\n";
             return 2;
         }
         // U2L9 preparation executes its preceding boxes program and prepares
@@ -1097,7 +1237,8 @@ int main(int argc, char** argv) {
         reader_theme::prepare_fonts();
         if (u3_combinations) current_u3_combinations();
         else if (u3_stdout) current_u3_stdout_transport();
-        else current_three_input_laboratory(u2l9_history ? std::filesystem::path(argv[2]) : std::filesystem::path{});
+        else current_three_input_laboratory(u2l9_history || u2l9_same_page
+            ? std::filesystem::path(argv[2]) : std::filesystem::path{}, u2l9_same_page);
     } catch (const std::exception& error) { std::cerr << "FAIL current input laboratory: " << error.what() << '\n'; result = 1; }
     if (rich) FreeLibrary(rich);
     OleUninitialize(); return result;

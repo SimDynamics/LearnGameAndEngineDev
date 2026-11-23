@@ -7267,10 +7267,15 @@ def _compose_ordinary_editorial_semantics(previous: dict, current: dict,
     A changed answer-option marker is handled by its own archived choice
     proof. For that SAME owner, compare the current block against the exact
     predecessor plus only its authenticated option replacement. All other
-    fields remain protected. Both documents and the append-only editorial
-    chain have already been checked by the full transition validator.
+    fields remain protected. Independently revised presentation text also
+    owns its new descriptor; an unchanged source cannot be repainted merely
+    because another block has a choice revision. The full transition checks
+    every complete before/after block against its own ordered editorial proof.
     """
     before, after = _blocks(previous), _blocks(current)
+    presentation_markers = {(field["block"], field["path"])
+                            for document in (previous, current)
+                            for field in document.get(text_semantics.ROOT_FIELD, {}).get("fields", [])}
     allowed = set()
     for identity, block in before.items():
         predecessor = block
@@ -7280,6 +7285,19 @@ def _compose_ordinary_editorial_semantics(previous: dict, current: dict,
             predecessor["options"][choice["optionIndex"]] = choice["replacement"]
         allowed.update((identity, path)
                        for path in ordinary_editorial_paths(predecessor, after.get(identity)))
+        updated = after.get(identity)
+        if (block.get("type") in {"heading", "paragraph", "note", "image"}
+                and type(updated) is dict
+                and state_fingerprint(block) == state_fingerprint(updated)):
+            # These existing presentation contracts exclude only their prose
+            # (and paragraph emphasis) from the response payload. Permit marks
+            # only for an existing field whose actual source text changed;
+            # additions, other owners, root marks and unchanged text stay exact.
+            old_fields = text_semantics.public_text_fields(block)
+            new_fields = text_semantics.public_text_fields(updated)
+            allowed.update((identity, path) for path in old_fields.keys() & new_fields.keys()
+                           if old_fields[path] != new_fields[path]
+                           and (identity, path) in presentation_markers)
     if not allowed:
         return expected
     overlay = current.get(text_semantics.ROOT_FIELD)

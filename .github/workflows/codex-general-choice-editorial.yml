@@ -10,6 +10,8 @@ on:
       - scripts/curriculum/test_choice_retirement_history.py
       - scripts/curriculum/test_general_choice_prose_history.py
       - scripts/curriculum/general_choice_prose_fixture_source.py
+      - scripts/curriculum/general_choice_semantic_composition_fixture_source.py
+      - scripts/curriculum/test_general_choice_semantic_composition.py
       - scripts/curriculum/choice_retirement_fixture_source.py
       - scripts/curriculum/test_review_feedback_prose_revision.py
       - scripts/curriculum/test_legacy_review_feedback_adoption.py
@@ -27,6 +29,7 @@ on:
       - app/src/main/assets/content/es/programming/cpp_fundamentals/objetos_y_estado/lesson_conversiones_y_deduccion.json
       - app/src/main/assets/content/es/programming/cpp_fundamentals/objetos_y_estado/lesson_caracteres_y_valores_logicos.json
       - app/src/main/assets/content/es/programming/cpp_fundamentals/objetos_y_estado/lesson_cadenas_y_texto.json
+      - app/src/main/assets/content/es/programming/cpp_fundamentals/objetos_y_estado/lesson_leer_una_entrada_conocida.json
       - app/src/main/assets/content/es/programming/cpp_fundamentals/datos_propios_y_estado_valido/lesson_construir_y_comprobar_un_modelo_de_pedidos.json
       - app/src/main/assets/content/es/programming/cpp_fundamentals/archivos_y_programa_completo/lesson_leer_un_grupo_con_cierre_propio.json
       - app/src/main/assets/content/es/programming/cpp_fundamentals/archivos_y_programa_completo/lesson_estado_del_formato_y_flujos_independientes.json
@@ -54,6 +57,11 @@ jobs:
         uses: actions/setup-python@v5
         with:
           python-version: '3.12'
+      - name: Compose both U2L9 publications and independently revised prose with one option review
+        run: >-
+          python -B -m unittest discover
+          -s scripts/curriculum
+          -p test_general_choice_semantic_composition.py -v
       - name: Compose an authenticated option review with later question and explanation prose
         run: >-
           python -B -m unittest discover
