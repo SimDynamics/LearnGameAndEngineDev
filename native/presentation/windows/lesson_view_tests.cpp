@@ -5688,14 +5688,29 @@ void puzzle_hover_wheel_reaches_lesson_without_click(){
         },true);
         const auto original_json=f.lesson.raw_json,original_template=f.lesson.pages[0].blocks[0].code_template;
         const auto answer_key=state::response_storage_key(f.lesson,f.lesson.pages[0].blocks[0]);
+        const auto puzzle_control=[&](int part){
+            // CppFillView's nested source pieces also use IDs 1000 onward.
+            // Resolve this bounded fixture's controls in their direct owner,
+            // never by an arbitrary matching descendant; reopen replaces it.
+            const auto pane=descendant_class(f.view,L"LearnGameAndEngineDev.LessonPane");
+            const auto item=pane?GetDlgItem(pane,id(0,part)):nullptr;
+            require(item&&GetParent(item)==pane,
+                "Puzzle wheel cannot locate its directly owned lesson control "+std::to_string(part));
+            return item;
+        };
+        const auto puzzle_click=[&](int part){
+            const auto item=puzzle_control(part);
+            require(IsWindowEnabled(item),"Puzzle wheel cannot click its disabled lesson action");
+            SendMessageW(item,BM_CLICK,0,0);pump(f.host);
+        };
         for(const auto& [number,text]:std::array<std::pair<int,const wchar_t*>,2>{{{100,L"/"},{101,L"%"}}}){
-            const auto field=GetDlgItem(f.control(0,5),number);
+            const auto field=GetDlgItem(puzzle_control(5),number);
             require(field&&IsWindowEnabled(field),"Puzzle wheel cannot prepare its unsubmitted inline draft");
             SendMessageW(field,EM_SETSEL,0,-1);SendMessageW(field,EM_REPLACESEL,TRUE,reinterpret_cast<LPARAM>(text));pump(f.host);
         }
         const auto phase=[&](std::string_view stage,bool completed){
-            if(full){f.click(0,13);require(f.fullscreen(),"Puzzle wheel cannot enter the existing fullscreen mode");}
-            const auto composition=f.control(0,5),pane=descendant_class(f.view,L"LearnGameAndEngineDev.LessonPane");
+            if(full){puzzle_click(13);require(f.fullscreen(),"Puzzle wheel cannot enter the existing fullscreen mode");}
+            const auto composition=puzzle_control(5),pane=descendant_class(f.view,L"LearnGameAndEngineDev.LessonPane");
             require(composition&&pane,"Puzzle wheel cannot locate its native composition and viewport");
             const auto piece=[&](std::string_view fragment){
                 for(auto item=GetWindow(composition,GW_CHILD);item;item=GetWindow(item,GW_HWNDNEXT))
@@ -5736,7 +5751,7 @@ void puzzle_hover_wheel_reaches_lesson_without_click(){
                         "Puzzle wheel changed source, answers, selection, zoom or a child viewport");
                 }
                 const auto data=read_lesson_state(f.view);
-                require(GetFocus()==f.view&&GetCapture()==captured&&f.control(0,5)==composition&&f.page()==0&&f.fullscreen()==full&&
+                require(GetFocus()==f.view&&GetCapture()==captured&&puzzle_control(5)==composition&&f.page()==0&&f.fullscreen()==full&&
                     reading_script(f.view)==script&&f.lesson.raw_json==original_json&&f.lesson.pages[0].blocks[0].code_template==original_template&&
                     state::string_value(data,"learning_progress",answer_key)==state::string_value(baseline,"learning_progress",answer_key)&&
                     data.preferences.at("puzzle_wheel_qa")==baseline.preferences.at("puzzle_wheel_qa"),
@@ -5768,11 +5783,11 @@ void puzzle_hover_wheel_reaches_lesson_without_click(){
                 <<": background, both fixed source pieces and both inline holes; two directions without clicking/focusing the puzzle, retained response/draft/selection/narration\n";
         };
         phase("unsubmitted draft",false);
-        // BM_CLICK needs the real button on an available native surface.
+        // Prepare completion through the visible native Check button.
         // Only this setup action shows the isolated QA host, without activation;
         // every no-click hover regression above/below uses the hidden host.
         ShowWindow(f.host,SW_SHOWNOACTIVATE);pump(f.host);
-        const auto check=f.control(0,3),pane=descendant_class(f.view,L"LearnGameAndEngineDev.LessonPane");
+        const auto check=puzzle_control(3),pane=descendant_class(f.view,L"LearnGameAndEngineDev.LessonPane");
         RECT check_bounds{},viewport{};GetWindowRect(check,&check_bounds);GetWindowRect(pane,&viewport);
         for(int move=0;move<200&&(check_bounds.top<viewport.top||check_bounds.bottom>viewport.bottom);++move){
             const auto before=check_bounds;
@@ -5782,15 +5797,15 @@ void puzzle_hover_wheel_reaches_lesson_without_click(){
         }
         require(IsWindowVisible(check)&&check_bounds.top>=viewport.top&&check_bounds.bottom<=viewport.bottom,
             "Puzzle wheel cannot reach the actual Check button while preparing its completed state");
-        f.click(0,3);
+        puzzle_click(3);
         const auto checked_data=f.saved();const auto accepted=state::get_response(checked_data,f.lesson,f.lesson.pages[0].blocks[0]);
-        const auto feedback=f.text(0,4);
+        const auto feedback=edit_text(puzzle_control(4));
         ShowWindow(f.host,SW_HIDE);pump(f.host);
         require(accepted&&accepted->correct&&feedback.starts_with("✓ Correcto"),
             "Puzzle wheel did not accept its operator answers through the actual Check button; response exists="+
                 std::to_string(static_cast<bool>(accepted))+", correct="+std::to_string(accepted&&accepted->correct)+
-                ", feedback=["+feedback+"], division=["+edit_text(GetDlgItem(f.control(0,5),100))+
-                "], remainder=["+edit_text(GetDlgItem(f.control(0,5),101))+"], stored response=["+
+                ", feedback=["+feedback+"], division=["+edit_text(GetDlgItem(puzzle_control(5),100))+
+                "], remainder=["+edit_text(GetDlgItem(puzzle_control(5),101))+"], stored response=["+
                 state::string_value(checked_data,"learning_progress",answer_key)+"], raw answers=["+
                 (accepted?accepted->raw_json:std::string{})+"]");
         phase("completed",true);
