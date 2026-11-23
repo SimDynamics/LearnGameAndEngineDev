@@ -2,6 +2,7 @@
 // This models receipt compatibility; the independent C++ compiler probe
 // is run separately and never replaced by the modeled public output.
 #include "core/cpp_array_copy_move_check.hpp"
+#include "core/cpp_multi_body_check.hpp"
 #include "core/lesson.hpp"
 #include "platform/windows/compiler_completion.hpp"
 #include "platform/windows/content_loader.hpp"
@@ -95,32 +96,29 @@ int array_copy_move_state_windows(const std::filesystem::path& content,
         "Additional policy changed published U6L11 source, answers or owners");
 
     constexpr std::string_view copy_signature=
-        "Tramo& Tramo::operator=(const Tramo& otra) {";
+        "Tramo& Tramo::operator=(const Tramo& otra)";
     constexpr std::string_view move_signature=
-        "Tramo& Tramo::operator=(Tramo&& otra) noexcept {";
+        "Tramo& Tramo::operator=(Tramo&& otra) noexcept";
     auto program=before.initial_code;
-    const auto copy_at=program.find(copy_signature);
-    require(copy_at!=program.npos,"Original U6L11 copy assignment missing");
-    const auto copy_end=program.find("\n}\nTramo& Tramo::operator=(Tramo&&",
-        copy_at+copy_signature.size());
-    require(copy_end!=program.npos,"Original U6L11 copy body not delimited");
-    program.replace(copy_at+copy_signature.size(),
-        copy_end-copy_at-copy_signature.size(),R"cpp(
+    // Published whitespace between functions is outside the editable bodies.
+    const auto copy_body=cpp_multi_body_detail::find_body(
+        program,CppEditableBody{std::string(copy_signature),true});
+    require(copy_body.has_value(),"Original U6L11 copy body not delimited");
+    program.replace(copy_body->begin,copy_body->end-copy_body->begin,R"cpp(
     if(this==&otra)return *this;
     Tramo candidate(otra);
     intercambiar(candidate);
-    return *this;)cpp");
-    const auto move_at=program.find(move_signature);
-    require(move_at!=program.npos,"Original U6L11 move assignment missing");
-    const auto move_end=program.find("\n}\nbool Tramo::configurar",
-        move_at+move_signature.size());
-    require(move_end!=program.npos,"Original U6L11 move body not delimited");
-    program.replace(move_at+move_signature.size(),
-        move_end-move_at-move_signature.size(),R"cpp(
+    return *this;
+)cpp");
+    const auto move_body=cpp_multi_body_detail::find_body(
+        program,CppEditableBody{std::string(move_signature),true});
+    require(move_body.has_value(),"Original U6L11 move body not delimited");
+    program.replace(move_body->begin,move_body->end-move_body->begin,R"cpp(
     if(this==&otra)return *this;
     datos_=std::move(otra.datos_);
     cantidad_=std::exchange(otra.cantidad_,0);
-    return *this;)cpp");
+    return *this;
+)cpp");
     require(cpp_array_copy_move_matches(
                 *editor.array_copy_move_probe,program)&&
             cpp_array_copy_move_private_driver(

@@ -2,6 +2,7 @@
 // This models receipt compatibility; the independent C++ compiler probe
 // is run separately and never replaced by the modeled public output.
 #include "core/cpp_independent_copy_assignment_check.hpp"
+#include "core/cpp_member_body_check.hpp"
 #include "core/lesson.hpp"
 #include "platform/windows/compiler_completion.hpp"
 #include "platform/windows/content_loader.hpp"
@@ -92,18 +93,20 @@ int independent_copy_assignment_state_windows(const std::filesystem::path& conte
         "Additional policy changed published U6L7 source, answers or owners");
 
     constexpr std::string_view signature=
-        "Celda& Celda::operator=(const Celda& otra) {";
+        "Celda& Celda::operator=(const Celda& otra)";
     auto program=before.initial_code;
-    const auto start=program.find(signature);
-    require(start!=program.npos,"Original U6L7 copy assignment missing");
-    const auto end=program.find("\n}\nbool Celda::poner",start+signature.size());
-    require(end!=program.npos,"Original U6L7 copy-assignment body not delimited");
-    program.replace(start+signature.size(),end-start-signature.size(),R"cpp(
+    const CppMemberBodyCheck edit_check{program,std::string(signature)};
+    const auto body=cpp_member_body_span(edit_check);
+    require(body.has_value(),"Original U6L7 copy-assignment body not delimited");
+    program.replace(body->begin,body->end-body->begin,R"cpp(
     if (this == &otra) return *this;
     std::unique_ptr<int> candidata;
     if (otra.dato_) candidata = std::make_unique<int>(*otra.dato_);
     dato_.swap(candidata);
-    return *this;)cpp");
+    return *this;
+)cpp");
+    require(cpp_member_body_preserves_source(edit_check,program),
+        "U6L7 QA changed source outside its copy-assignment body");
     require(cpp_independent_copy_matches(
                 *editor.independent_copy_assignment_probe,program)&&
             cpp_independent_copy_probe_source(

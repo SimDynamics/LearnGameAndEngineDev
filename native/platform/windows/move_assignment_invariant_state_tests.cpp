@@ -2,6 +2,7 @@
 // This models receipt compatibility; the independent C++ compiler probe
 // is run separately and never replaced by the modeled public output.
 #include "core/cpp_move_assignment_invariant_check.hpp"
+#include "core/cpp_member_body_check.hpp"
 #include "core/lesson.hpp"
 #include "platform/windows/compiler_completion.hpp"
 #include "platform/windows/content_loader.hpp"
@@ -96,17 +97,19 @@ int move_assignment_invariant_state_windows(const std::filesystem::path& content
         "Additional policy changed published U6L8 source, answers or owners");
 
     constexpr std::string_view signature=
-        "Muestra& Muestra::operator=(Muestra&& otra) {";
+        "Muestra& Muestra::operator=(Muestra&& otra)";
     auto program=before.initial_code;
-    const auto start=program.find(signature);
-    require(start!=program.npos,"Original U6L8 assignment missing");
-    const auto end=program.find("\n}\nbool Muestra::poner",start+signature.size());
-    require(end!=program.npos,"Original U6L8 move body not delimited");
-    program.replace(start+signature.size(),end-start-signature.size(),R"cpp(
+    const CppMemberBodyCheck edit_check{program,std::string(signature)};
+    const auto body=cpp_member_body_span(edit_check);
+    require(body.has_value(),"Original U6L8 move body not delimited");
+    program.replace(body->begin,body->end-body->begin,R"cpp(
     if (this == &otra) return *this;
     dato_ = std::move(otra.dato_);
     etiqueta_ = std::exchange(otra.etiqueta_, 0);
-    return *this;)cpp");
+    return *this;
+)cpp");
+    require(cpp_member_body_preserves_source(edit_check,program),
+        "U6L8 QA changed source outside its move-assignment body");
     require(cpp_move_invariant_matches(
                 *editor.move_assignment_invariant_probe,program)&&
             cpp_move_invariant_private_driver(

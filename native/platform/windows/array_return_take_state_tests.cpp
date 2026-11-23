@@ -2,6 +2,7 @@
 // This models receipt compatibility; the independent C++ compiler probe
 // is run separately and never replaced by the modeled public output.
 #include "core/cpp_array_return_take_check.hpp"
+#include "core/cpp_multi_body_check.hpp"
 #include "core/lesson.hpp"
 #include "platform/windows/compiler_completion.hpp"
 #include "platform/windows/content_loader.hpp"
@@ -100,30 +101,27 @@ int array_return_take_state_windows(const std::filesystem::path& content,
         "Additional policy changed published U6L12 source, answers or owners");
 
     constexpr std::string_view copy_signature=
-        "Tramo copia_modificada(const Tramo& origen, int indice, int valor) {";
+        "Tramo copia_modificada(const Tramo& origen, int indice, int valor)";
     constexpr std::string_view take_signature=
-        "bool tomar_si_cabe(Tramo& destino, Tramo&& origen, int limite) noexcept {";
+        "bool tomar_si_cabe(Tramo& destino, Tramo&& origen, int limite) noexcept";
     auto program=before.initial_code;
-    const auto copy_at=program.find(copy_signature);
-    require(copy_at!=program.npos,"Original U6L12 copy function missing");
-    const auto copy_end=program.find("\n}\nbool tomar_si_cabe",
-        copy_at+copy_signature.size());
-    require(copy_end!=program.npos,"Original U6L12 copy function body not delimited");
-    program.replace(copy_at+copy_signature.size(),
-        copy_end-copy_at-copy_signature.size(),R"cpp(
+    // Published whitespace between functions is outside the editable bodies.
+    const auto copy_body=cpp_multi_body_detail::find_body(
+        program,CppEditableBody{std::string(copy_signature),false});
+    require(copy_body.has_value(),"Original U6L12 copy function body not delimited");
+    program.replace(copy_body->begin,copy_body->end-copy_body->begin,R"cpp(
     Tramo copia(origen);
     copia.escribir(indice,valor);
-    return copia;)cpp");
-    const auto take_at=program.find(take_signature);
-    require(take_at!=program.npos,"Original U6L12 take function missing");
-    const auto take_end=program.find("\n}\nvoid mostrar",
-        take_at+take_signature.size());
-    require(take_end!=program.npos,"Original U6L12 take function body not delimited");
-    program.replace(take_at+take_signature.size(),
-        take_end-take_at-take_signature.size(),R"cpp(
+    return copia;
+)cpp");
+    const auto take_body=cpp_multi_body_detail::find_body(
+        program,CppEditableBody{std::string(take_signature),false});
+    require(take_body.has_value(),"Original U6L12 take function body not delimited");
+    program.replace(take_body->begin,take_body->end-take_body->begin,R"cpp(
     if(limite<0||limite>4||origen.cantidad()>limite)return false;
     destino=std::move(origen);
-    return true;)cpp");
+    return true;
+)cpp");
     require(cpp_array_return_take_matches(
                 *editor.array_return_take_probe,program)&&
             cpp_array_return_take_private_driver(

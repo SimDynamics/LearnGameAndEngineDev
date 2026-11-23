@@ -148,6 +148,14 @@ void sole_output_sequence(const Lesson& actual,std::string_view id,const std::fi
     // accesses a learner profile, and cannot certify a student's real program.
     const auto original=guidance(actual,id,"");const auto& old=editor(original,id);
     require(old.output_check&&old.output_check->cases.size()==1,"QA requires one actual authored output case");
+    if(old.source_format_original_initial_code){
+        // The loader must reject a physical edit that disagrees with its
+        // authenticated canonical source, before any model is queried.
+        const auto forged=JsonObject::Parse(winrt::to_hstring(actual.raw_json));
+        editor(forged,actual,id).Insert(L"initialCode",JsonValue::CreateStringValue(
+            winrt::to_hstring(old.initial_code+"\n// changed authored source")));
+        rejects_both(forged,"Source formatting modified tokens, literals, comments or preprocessor lines");
+    }
     auto revised=guidance(original,id,"QA current guide N=1");auto& current=editor(revised,id);
     current.text_semantics[std::string(explanation_path)]={"QA current guide N=1",{{0,20,"QA current guide N=1",SemanticRole::output}}};
     // Correct UTF-16 descriptor text, without guessing an origin from wording.
@@ -205,7 +213,12 @@ void sole_output_sequence(const Lesson& actual,std::string_view id,const std::fi
         // Contract changes cannot reuse the earned proof. Each mutation is of
         // the actual current model rather than a disconnected Block copy.
         for(unsigned change=0;change<7;++change){auto hostile=second;auto& bad=editor(hostile,id);
-            if(change==0)bad.initial_code+="\n// changed authored source";
+            if(change==0){bad.initial_code+="\n// changed authored source";
+                // A validated format archive owns the original objective.
+                // Mutate that contract too, not only its visible formatting.
+                if(bad.source_format_original_initial_code)
+                    *bad.source_format_original_initial_code+="\n// changed authored source";
+            }
             if(change==1)bad.output_check->cases.front().outputs.front()+='x';
             if(change==2)bad.output_check->cases.front().standard_input+='x';
             if(change==3)bad.output_check->cases.push_back(bad.output_check->cases.front());
@@ -213,6 +226,8 @@ void sole_output_sequence(const Lesson& actual,std::string_view id,const std::fi
             if(change==5)bad.output_check->cases.front().executable="another-target";
             if(change==6)bad.output_check->cases.front().standard_error=bad.output_check->cases.front().standard_error==StandardErrorExpectation::ignored?
                 StandardErrorExpectation::non_blank:StandardErrorExpectation::ignored;
+            require(reference_objective_frame(hostile,bad)!=reference_objective_frame(second,latest),
+                "Contract mutation "+std::to_string(change)+" did not change the earned objective frame");
             require(!compiler_puzzle_completed(data,hostile,bad)&&!compiler_puzzle_current_feedback(data,hostile,bad,captured),
                 "A changed source/input/output/count/status/target/stderr borrowed an old success");
         }
