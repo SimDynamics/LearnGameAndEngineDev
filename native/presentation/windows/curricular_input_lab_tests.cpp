@@ -7,6 +7,7 @@
 #include "platform/windows/environment.hpp"
 #include "platform/windows/state_store.hpp"
 #include "presentation/windows/lesson_view.hpp"
+#include "presentation/windows/compiler_diagnostic_display.hpp"
 #include "presentation/windows/reader_theme.hpp"
 #include "presentation/windows/rich_text.hpp"
 #include "native_build_config.hpp"
@@ -44,6 +45,19 @@ void pump() {
 std::string bytes(const std::filesystem::path& path) {
     const auto content = state::read_bytes(path);
     return std::string(content.begin(), content.end());
+}
+std::string escaped_diagnostic_text(std::string_view value) {
+    return winrt::to_string(winrt::Windows::Data::Json::JsonValue::CreateStringValue(wide(value)).Stringify());
+}
+std::string display_line_breaks(std::string_view value) {
+    std::string result;
+    for (std::size_t index = 0; index < value.size(); ++index) {
+        if (value[index] == '\r') {
+            result += '\n';
+            if (index + 1 < value.size() && value[index + 1] == '\n') ++index;
+        } else result += value[index];
+    }
+    return result;
 }
 HWND descendant(HWND parent, int id) {
     struct Search { int id; HWND found = nullptr; } search{id};
@@ -619,9 +633,29 @@ struct View {
             "The laboratory did not use the configured MSVC compiler and a real executable");
         check(bytes(directory / L"main.cpp") == source && bytes(directory / L"stdin.bin") == input,
             "The compiler did not capture the exact authored source and current prepared input");
-        check(bytes(directory / L"execution-stdout.bin") == (expected_raw.empty() ? expected : expected_raw) && text(14) == expected
-            && bytes(directory / L"execution-stderr.bin").empty(),
-            "The actual program's binary output or visible console differs from the exact requested output");
+        const auto stdout_bytes = bytes(directory / L"execution-stdout.bin");
+        const auto stderr_bytes = bytes(directory / L"execution-stderr.bin");
+        const auto raw_expected = expected_raw.empty() ? expected : expected_raw;
+        check(stdout_bytes == raw_expected && stderr_bytes.empty(),
+            "Captured program output differs: stdout=" + escaped_diagnostic_text(stdout_bytes) + ", expected=" + escaped_diagnostic_text(raw_expected)
+                + ", stderr=" + escaped_diagnostic_text(stderr_bytes));
+        std::string console_expected(expected);
+        std::string caption_expected = "Salida del programa (stdout)";
+        if (expected.empty()) {
+            // The UI selects the nonempty compiler channel when a correct
+            // native process writes no stdout/stderr. Keep its diagnostic
+            // separate from the exact empty program capture checked above.
+            const auto compiler_bytes = bytes(directory / L"compilation-stdout.bin")
+                + bytes(directory / L"compilation-stderr.bin");
+            if (!compiler_bytes.empty()) {
+                const std::array roots{directory};
+                console_expected = display_line_breaks(utf8(compact_compiler_diagnostic_paths(wide(compiler_bytes), roots)));
+                caption_expected = "Diagnósticos de compilación y enlace";
+            }
+        }
+        check(text(14) == console_expected && text(30) == caption_expected,
+            "Visible console channel differs: caption=" + escaped_diagnostic_text(text(30)) + ", expected_caption=" + escaped_diagnostic_text(caption_expected)
+                + ", text=" + escaped_diagnostic_text(text(14)) + ", expected_text=" + escaped_diagnostic_text(console_expected));
         check(!IsWindowVisible(host), "A laboratory execution exposed the QA host");
         ++executions;
         return directory;
@@ -972,8 +1006,16 @@ void current_u3_combinations() {
     complete_u3_prerequisite(fixture, target, true);
     const auto initial = fixture.saved();
     const auto draft_key = curriculum::draft_key("programming", lesson, compiler);
-    check(fixture.text(10) == compiler.initial_code && fixture.text(15) == *compiler.standard_input && !attempts::premium(initial),
-        "U3L5 construction lost its unfinished draft/first input or bypassed the finite reserve");
+    check(fixture.text(10) == compiler.initial_code && fixture.text(15) == *compiler.standard_input,
+        "U3L5 construction lost its unfinished draft or first input: input=" + escaped_diagnostic_text(fixture.text(15))
+            + ", expected=" + escaped_diagnostic_text(*compiler.standard_input));
+    check(attempts::number(initial, "reserve_programming", -1.) == 3.
+        && state::integer_value(initial, "attempt_reserve_seconds_test", "recovery_interval_programming") == attempts::recovery_millis
+        && state::find(initial, "premium_state", "state") == nullptr,
+        "U3L5 QA lost its saved reserve or fabricated a Premium entitlement");
+    std::cout << "U3L5 reserve policy: personal_premium_enabled=" << attempts::personal_premium_enabled
+        << " effective_premium=" << attempts::premium(initial)
+        << "; saved reserve preservation is checked under the unchanged product policy\n";
     const auto retained = [&](std::size_t count, bool completed, std::string_view code, std::string_view input) {
         const auto saved = fixture.saved();
         const auto draft = state::get_draft(saved, draft_key, compiler.initial_code, *compiler.standard_input);
@@ -1055,7 +1097,7 @@ void current_u3_combinations() {
         "eight inputs with only 1 0 0 mandatory; thirteen fresh UI MSVC runs, wrong grouping, "
         "optional-before-first negative, partial-program invalidation, first-case continuation/reopen, "
         "retained achievement after rejection and explicit reset; nine archived observations, "
-        "historical drafts and finite reserve preserved; no desktop/listening acceptance\n";
+        "historical drafts and saved reserve preserved under the current Premium policy; no desktop/listening acceptance\n";
 }
 }
 
