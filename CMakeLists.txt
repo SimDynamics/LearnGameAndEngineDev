@@ -723,6 +723,8 @@ function(lgaed_add_general_choice_editorial_tests)
     set_tests_properties(native.general_choice_editorial PROPERTIES TIMEOUT 100)
     include("${CMAKE_SOURCE_DIR}/cmake/GeneralChoiceProseTests.cmake")
     lgaed_add_general_choice_prose_tests("${CMAKE_SOURCE_DIR}")
+    include("${CMAKE_SOURCE_DIR}/cmake/ReaderRevisionTests.cmake")
+    lgaed_add_reader_revision_tests("${CMAKE_SOURCE_DIR}")
     add_executable(lgaed_general_choice_editorial_view_tests
         native/presentation/windows/general_choice_editorial_view_tests.cpp)
     target_link_libraries(lgaed_general_choice_editorial_view_tests

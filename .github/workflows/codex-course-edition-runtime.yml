@@ -8,6 +8,16 @@ on:
       - cmake/HostedCourseEditionQA/**
       - cmake/InputDependencyTests.cmake
       - cmake/GeneralChoiceProseTests.cmake
+      - cmake/ReaderRevisionTests.cmake
+      - scripts/curriculum/reader_revision_fixture_source.py
+      - scripts/curriculum/stable_state_layout.py
+      - app/src/main/java/com/learngraphicsprogramming/app/narration/KokoroVoiceCatalog.kt
+      - native/presentation/windows/lesson_reader.cpp
+      - native/presentation/windows/lesson_reader.hpp
+      - native/presentation/windows/lesson_reader_edit_order_tests.cpp
+      - native/presentation/windows/lesson_reader_edit_order_fixture.py
+      - native/core/narration_state.cpp
+      - native/core/narration_state.hpp
       - native/platform/windows/local_dependency_receipt_tests.cpp
       - native/presentation/windows/local_dependency_view_tests.cpp
       - scripts/curriculum/local_dependency_view_fixture_source.py
@@ -116,7 +126,15 @@ jobs:
           $build = Join-Path $env:RUNNER_TEMP 'lgaed-course-edition-qa'
           cmake -S cmake/HostedCourseEditionQA -B $build -G Ninja -DCMAKE_BUILD_TYPE=Debug
           if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
-          cmake --build $build --target lgaed_general_choice_editorial_tests lgaed_lesson_editor_mount_tests lgaed_course_edition_tests lgaed_simulation_tests lgaed_simulation_view_tests lgaed_simulation_lesson_tests lgaed_compiler_first_case_view_tests lgaed_technical_context_view_tests lgaed_reading_gate_policy_tests lgaed_local_int_state_tests lgaed_local_string_state_tests lgaed_input_dependency_state_tests lgaed_input_probe_tests lgaed_local_role_state_tests lgaed_local_role_probe_tests lgaed_local_dependency_receipt_tests lgaed_local_dependency_view_tests lgaed_curricular_input_lab_tests lgaed_exact_prediction_view_tests lgaed_inline_feedback_view_tests lgaed_u6l19_case_split_state_tests lgaed_u3_runtime_semantics_tests lgaed_u3_named_rule_runtime_tests --parallel 3
+          cmake --build $build --target lgaed_lesson_reader_edit_order_tests lgaed_general_choice_editorial_tests lgaed_lesson_editor_mount_tests lgaed_course_edition_tests lgaed_simulation_tests lgaed_simulation_view_tests lgaed_simulation_lesson_tests lgaed_compiler_first_case_view_tests lgaed_technical_context_view_tests lgaed_reading_gate_policy_tests lgaed_local_int_state_tests lgaed_local_string_state_tests lgaed_input_dependency_state_tests lgaed_input_probe_tests lgaed_local_role_state_tests lgaed_local_role_probe_tests lgaed_local_dependency_receipt_tests lgaed_local_dependency_view_tests lgaed_curricular_input_lab_tests lgaed_exact_prediction_view_tests lgaed_inline_feedback_view_tests lgaed_u6l19_case_split_state_tests lgaed_u3_runtime_semantics_tests lgaed_u3_named_rule_runtime_tests --parallel 3
+          if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
+      - name: Preserve current reading order after edits and ordinary reopen
+        shell: pwsh
+        run: |
+          $build = Join-Path $env:RUNNER_TEMP 'lgaed-course-edition-qa'
+          python -B native/presentation/windows/lesson_reader_edit_order_fixture.py --prepare-catalog .
+          if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
+          ctest --test-dir $build -R '^native[.]reader_revision_' --verbose --output-on-failure --no-tests=error --output-junit (Join-Path $build 'reader-revision-order.xml')
           if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
       - name: Preserve choice prose history and both U2L10 multiline answers
         shell: pwsh
@@ -246,6 +264,7 @@ jobs:
           retention-days: 7
           if-no-files-found: warn
           path: |
+            ${{ runner.temp }}/lgaed-course-edition-qa/reader-revision-order.xml
             ${{ runner.temp }}/lgaed-course-edition-qa/choice-prose-and-prediction.xml
             ${{ runner.temp }}/lgaed-course-edition-qa/local-dependency-receipts.xml
             ${{ runner.temp }}/lgaed-course-edition-qa/local-dependency-view.xml

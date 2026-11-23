@@ -180,6 +180,8 @@ set_tests_properties(native.general_choice_retirement_history
     PROPERTIES TIMEOUT 120 RUN_SERIAL TRUE)
 include("${_lgaed_root}/cmake/GeneralChoiceProseTests.cmake")
 lgaed_add_general_choice_prose_tests("${_lgaed_root}")
+include("${_lgaed_root}/cmake/ReaderRevisionTests.cmake")
+lgaed_add_reader_revision_tests("${_lgaed_root}")
 
 # Windows-only integration: the original simulation model, its real RichEdit
 # controls and its authored example in the production LessonView.
