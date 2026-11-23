@@ -118,17 +118,11 @@ jobs:
           if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
           cmake --build $build --target lgaed_general_choice_editorial_tests lgaed_lesson_editor_mount_tests lgaed_course_edition_tests lgaed_simulation_tests lgaed_simulation_view_tests lgaed_simulation_lesson_tests lgaed_compiler_first_case_view_tests lgaed_technical_context_view_tests lgaed_reading_gate_policy_tests lgaed_local_int_state_tests lgaed_local_string_state_tests lgaed_input_dependency_state_tests lgaed_input_probe_tests lgaed_local_role_state_tests lgaed_local_role_probe_tests lgaed_local_dependency_receipt_tests lgaed_local_dependency_view_tests lgaed_curricular_input_lab_tests lgaed_exact_prediction_view_tests lgaed_inline_feedback_view_tests lgaed_u6l19_case_split_state_tests lgaed_u3_runtime_semantics_tests lgaed_u3_named_rule_runtime_tests --parallel 3
           if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
-      - name: Preserve reviewed options across later question and explanation publications
+      - name: Preserve choice prose history and both U2L10 multiline answers
         shell: pwsh
         run: |
           $build = Join-Path $env:RUNNER_TEMP 'lgaed-course-edition-qa'
-          ctest --test-dir $build -R '^native[.]general_choice_prose_history$' --verbose --output-on-failure --no-tests=error --output-junit (Join-Path $build 'choice-prose-history.xml')
-          if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
-      - name: Preserve both U2L10 multiline answers after real Enter and reopen
-        shell: pwsh
-        run: |
-          $build = Join-Path $env:RUNNER_TEMP 'lgaed-course-edition-qa'
-          ctest --test-dir $build -R '^native[.]prediction_newline_visible$' --verbose --output-on-failure --no-tests=error --output-junit (Join-Path $build 'prediction-newline.xml')
+          ctest --test-dir $build -R '^native[.](general_choice_prose_history|prediction_newline_visible)$' --verbose --output-on-failure --no-tests=error --output-junit (Join-Path $build 'choice-prose-and-prediction.xml')
           if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
       - name: Preserve historical receipts and private feedback across new attempts and reset
         shell: pwsh
@@ -252,8 +246,7 @@ jobs:
           retention-days: 7
           if-no-files-found: warn
           path: |
-            ${{ runner.temp }}/lgaed-course-edition-qa/choice-prose-history.xml
-            ${{ runner.temp }}/lgaed-course-edition-qa/prediction-newline.xml
+            ${{ runner.temp }}/lgaed-course-edition-qa/choice-prose-and-prediction.xml
             ${{ runner.temp }}/lgaed-course-edition-qa/local-dependency-receipts.xml
             ${{ runner.temp }}/lgaed-course-edition-qa/local-dependency-view.xml
             ${{ runner.temp }}/lgaed-course-edition-qa/u2l10-local-roles.xml

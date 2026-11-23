@@ -261,32 +261,55 @@ void verify_prose_saved_state(const std::vector<Lesson>& lessons,
         require(state::encode(current)==encoded,
             "Physical reopening changed the published choice receipt or unrelated state");
         for(const auto* lesson:{&lessons[stage],&metadata[stage]}) {
+            const bool full=lesson==&lessons[stage];
+            const auto context="U2L10 choice prose stage "+std::to_string(stage)+
+                (full?" full":" metadata")+" selection "+std::to_string(selected)+": ";
+            const auto check=[&](bool valid,std::string_view field) {
+                require(valid,context+std::string(field));
+            };
             const auto& after=prose_block(*lesson);
-            state::validate_lesson_state(current,*lesson);
-            state::prepare_lesson_state(current,*lesson);
+            try {
+                state::validate_lesson_state(current,*lesson);
+                state::prepare_lesson_state(current,*lesson);
+            }catch(const std::exception& error){throw std::runtime_error(context+error.what());}
             const auto retained=state::get_response(current,*lesson,after);
-            require(retained&&retained->selected==selected&&retained->correct==(selected==0)&&
-                    !retained->historical_choice&&
-                    state::response_storage_key(*lesson,after)==receipt_key&&
-                    state::string_value(current,"learning_progress",receipt_key)==receipt&&
-                    state::selected_choice_text(*retained,after)==before.options.at(static_cast<std::size_t>(selected)),
-                "A prose revision changed a saved selection, attempts, correctness or response address");
-            if(retained->correct)
-                require(state::choice_correct_feedback(*retained,after)==after.explanation,
-                    "A retained correct answer displays an explanation from the wrong publication");
-            else require(state::response_reviewed(*retained,after)&&
-                    state::choice_incorrect_feedback(*retained,after)==incorrect_feedback(before,static_cast<std::size_t>(selected)),
-                "A prose revision discarded the old incorrect attempt or reviewed guide");
+            check(retained.has_value(),"saved response missing");
+            check(retained->selected==selected,"saved selected index changed");
+            check(retained->correct==(selected==0),"saved correctness changed");
+            check(!retained->historical_choice,"compatible response became historical-only");
+            check(state::response_storage_key(*lesson,after)==receipt_key,"response address changed");
+            check(state::string_value(current,"learning_progress",receipt_key)==receipt,
+                "serialized receipt or attempts changed");
+            check(state::selected_choice_text(*retained,after)==before.options.at(static_cast<std::size_t>(selected)),
+                "selected option text changed");
+            if(!retained->correct)
+                check(state::response_reviewed(*retained,after),"reviewed incorrect attempt was lost");
+            // The compact progress model deliberately omits explanation and
+            // reviewFeedback. It authenticates their raw source and semantic
+            // markers, but visible feedback belongs to the full reader model.
+            if(full) {
+                if(retained->correct)
+                    check(state::choice_correct_feedback(*retained,after)==after.explanation,
+                        "visible success explanation belongs to another publication");
+                else check(state::choice_incorrect_feedback(*retained,after)==
+                        incorrect_feedback(before,static_cast<std::size_t>(selected)),
+                    "visible incorrect guide changed");
+            }else{
+                check(after.explanation.empty(),"metadata unexpectedly materialized explanation");
+                check(after.review_feedback.empty(),"metadata unexpectedly materialized scalar feedback");
+                check(after.review_feedback_options.empty(),"metadata unexpectedly materialized indexed feedback");
+                check(after.raw_json==prose_block(lessons[stage]).raw_json,
+                    "metadata lost exact authored prose in raw_json");
+            }
             const auto retained_draft=state::get_draft(current,compiler_key,compiler.initial_code);
-            require(retained_draft.source==draft.source&&retained_draft.input==draft.input&&
-                    retained_draft.selection_start==draft.selection_start&&
-                    retained_draft.selection_end==draft.selection_end,
-                "A choice prose revision rewrote an unrelated compiler draft or selection");
-            require(narration::read_history(current)==original_history&&
-                    original_history.entries.front().semantic_plan!=prose_reading_proof(after),
-                "Current prose inherited an old reading plan or rewrote its saved bookmark");
-            require(state::encode(current)==encoded,
-                "Preparing a later prose edition changed historical or unrelated preference bytes");
+            check(retained_draft.source==draft.source,"unrelated draft source changed");
+            check(retained_draft.input==draft.input,"unrelated draft input changed");
+            check(retained_draft.selection_start==draft.selection_start,"draft selection start changed");
+            check(retained_draft.selection_end==draft.selection_end,"draft selection end changed");
+            check(narration::read_history(current)==original_history,"historical reading bookmark changed");
+            check(original_history.entries.front().semantic_plan!=prose_reading_proof(after),
+                "current prose reused the old semantic reading plan");
+            check(state::encode(current)==encoded,"historical or unrelated preference bytes changed");
         }
         reopened.save(current);
     }
@@ -331,17 +354,37 @@ void verify_prose_history(const std::filesystem::path& directory) {
         const auto& current=prose_block(lessons[stage]);
         const auto& meta=prose_block(metadata[stage]);
         const auto layout=documents[stage].GetNamedObject(L"stateLayout");
-        require(current.choice_revision&&meta.choice_revision&&
-                current.options==before.options&&meta.options==before.options&&
-                current.correct_index==before.correct_index&&meta.correct_index==before.correct_index&&
-                current.question==meta.question&&current.explanation==meta.explanation&&
-                current.review_feedback==before.review_feedback&&
-                current.review_feedback_options==before.review_feedback_options&&
-                current.text_semantics==meta.text_semantics&&
-                current.choice_revision->raw_json==before.choice_revision->raw_json&&
-                current.choice_revision->representation_signature==before.choice_revision->representation_signature&&
-                meta.choice_revision->representation_signature==before.choice_revision->representation_signature,
-            "Full/progress prose loading changed the original answer, archive, guide or representation");
+        const auto context="U2L10 choice prose stage "+std::to_string(stage)+": ";
+        const auto check=[&](bool valid,std::string_view field) {
+            require(valid,context+std::string(field));
+        };
+        check(current.choice_revision.has_value(),"full choice archive missing");
+        check(meta.choice_revision.has_value(),"metadata choice archive missing");
+        check(current.options==before.options,"full options differ from publication");
+        check(meta.options==before.options,"metadata options differ from publication");
+        check(current.correct_index==before.correct_index,"full correct index changed");
+        check(meta.correct_index==before.correct_index,"metadata correct index changed");
+        check(current.question==meta.question,"full/metadata question differs");
+        check(current.raw_json==meta.raw_json,"metadata raw_json differs from exact authored block");
+        const auto authored=JsonObject::Parse(winrt::to_hstring(meta.raw_json));
+        check(current.explanation==winrt::to_string(authored.GetNamedString(L"explanation")),
+            "full explanation differs from authenticated raw source");
+        // parse_lesson_progress_metadata intentionally projects these visible
+        // fields out before read_block; raw_json and textSemantics stay exact.
+        check(meta.explanation.empty(),"metadata unexpectedly materialized explanation");
+        check(meta.review_feedback.empty(),"metadata unexpectedly materialized scalar feedback");
+        check(meta.review_feedback_options.empty(),"metadata unexpectedly materialized indexed feedback");
+        check(current.review_feedback==before.review_feedback,"full scalar guide changed");
+        check(current.review_feedback_options==before.review_feedback_options,"full indexed guides changed");
+        check(current.text_semantics==meta.text_semantics,"full/metadata authored semantics differ");
+        check(current.choice_revision->raw_json==before.choice_revision->raw_json,
+            "full original choice archive changed");
+        check(meta.choice_revision->raw_json==before.choice_revision->raw_json,
+            "metadata original choice archive changed");
+        check(current.choice_revision->representation_signature==before.choice_revision->representation_signature,
+            "full answer representation signature changed");
+        check(meta.choice_revision->representation_signature==before.choice_revision->representation_signature,
+            "metadata answer representation signature changed");
         for(const auto field:{L"origin",L"current",L"family",L"additions",L"retired",
                 L"retirementHistory",L"sourceFormatRevisions",L"choiceRevisions"}) {
             require(layout.HasKey(field)==original_layout.HasKey(field),
