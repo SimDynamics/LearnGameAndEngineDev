@@ -24,6 +24,7 @@ def main() -> None:
     args = parser.parse_args()
 
     lesson = json.loads(qa.LESSON.read_text(encoding="utf-8"))
+    qa.layout.validate(lesson)
     locations = [(i, j) for i, page in enumerate(lesson["stateLayout"]["current"])
                  for j, owner in enumerate(page["blocks"]) if owner == qa.OWNER]
     assert len(locations) == 1
@@ -41,8 +42,7 @@ def main() -> None:
                 type(case.get("exitCode", 0)) is not int):
             raise AssertionError(f"Invalid original U6L7 public case {number}")
     signature = "Celda& Celda::operator=(const Celda& otra) {"
-    opening = original.index(signature) + len(signature)
-    closing = original.index("\n}\nbool Celda::poner(int valor)", opening) + 1
+    opening, closing = qa.body_span(original)
     prefix = original[:opening]
     suffix = original[closing:]
 

@@ -14,6 +14,8 @@ import subprocess
 import sys
 import tempfile
 
+import stable_state_layout as layout
+
 ROOT=Path(__file__).resolve().parents[2]
 LESSON=ROOT / (
     "app/src/main/assets/content/es/programming/cpp_language_memory_oop/"
@@ -262,6 +264,7 @@ def compile_cpp(compiler: str,path: Path,binary: Path,windows: bool):
 
 def original_block():
     lesson=json.loads(LESSON.read_text(encoding="utf-8"))
+    layout.validate(lesson)
     found=[(p,b) for p,entry in enumerate(lesson["stateLayout"]["current"])
            for b,identity in enumerate(entry["blocks"]) if identity==OWNER]
     assert len(found)==1, "Published U6L8 historical block must be unique"
@@ -271,6 +274,10 @@ def original_block():
     assert len(block["outputCheck"]["cases"])==3
     return block
 
+def body_span(original: str) -> tuple[int, int]:
+    return layout._named_rule_body_span(
+        original, "Muestra& Muestra::operator=(Muestra&& otra)")
+
 def main():
     parser=argparse.ArgumentParser()
     parser.add_argument("--compiler",required=True)
@@ -278,8 +285,7 @@ def main():
     args=parser.parse_args()
     original=original_block()["initialCode"]
     signature="Muestra& Muestra::operator=(Muestra&& otra) {"
-    opening=original.index(signature)+len(signature)
-    end=original.index("\n}\nbool Muestra::poner(int valor, int etiqueta)",opening)+1
+    opening,end=body_span(original)
     prefix,suffix=original[:opening],original[end:]
     assert original.count(signature)==1 and suffix.startswith("}")
     assert "int etiqueta_ = 0;" in prefix

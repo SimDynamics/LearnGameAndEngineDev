@@ -33,8 +33,7 @@ def main():
             type(case.get("exitCode",0)) is not int):
             raise AssertionError(f"Invalid authentic U6L8 public case {index}")
     sig="Muestra& Muestra::operator=(Muestra&& otra) {"
-    first=original.index(sig)+len(sig)
-    final=original.index("\n}\nbool Muestra::poner(int valor, int etiqueta)",first)+1
+    first,final=qa.body_span(original)
     prefix,suffix=original[:first],original[final:]
     assert suffix.startswith("}") and "int main()" in suffix
     with tempfile.TemporaryDirectory(prefix="lgaed-u6l8-core-") as directory:
