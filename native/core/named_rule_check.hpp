@@ -1,6 +1,7 @@
 #pragma once
 
 #include "core/code_format_compat.hpp"
+#include "core/cpp_multi_body_check.hpp"
 
 #include <algorithm>
 #include <charconv>
@@ -87,8 +88,40 @@ struct NamedRuleSourceCheck {
     // Optional trusted CMake verification. A passing stdout from the edited
     // harness alone never proves the project functions calculate these cases.
     std::optional<NamedRuleExecutionProbe> execution_probe;
+    // Explicit full signatures protect every byte outside these function
+    // bodies. Absence preserves the historical source-editing scope.
+    std::vector<std::string> editable_bodies = {};
     bool operator==(const NamedRuleSourceCheck&) const = default;
 };
+
+// This optional boundary check is independent of named-rule meaning and
+// runtime evidence. Only the declared bodies may change; no owner identifier
+// or function name implies permission to edit the surrounding source.
+inline bool named_rule_body_only_edit(std::string_view original,
+        std::string_view candidate,std::span<const std::string> signatures) {
+    if(signatures.empty())return true;
+    if(signatures.size()>cpp_multi_body_detail::maximum_bodies)return false;
+    CppMultiBodyPolicy policy{std::string(original),{}};
+    policy.bodies.reserve(signatures.size());
+    for(const auto& signature:signatures) {
+        if(signature.empty()||signature.size()>512||
+           signature.find_first_of("\r\n")!=signature.npos||
+           signature.find('\0')!=signature.npos||
+           code_format::physical_splice(signature))return false;
+        const auto tokens=code_format::cpp_tokens(signature);
+        if(!tokens)return false;
+        // A signature cannot consume a declaration terminator or an opening
+        // body and bind a nested branch instead. Quoted/commented punctuation
+        // stays opaque; the original bytes remain protected by the matcher.
+        for(const auto& token:*tokens)
+            if(token.starts_with("directive:")||token=="op:{"||token=="op:}"||
+               token=="op:<%"||token=="op:%>"||token=="op:;"||
+               token=="op:#"||token=="op:##"||token=="op:%:"||
+               token=="op:%:%:")return false;
+        policy.bodies.push_back({signature,false});
+    }
+    return cpp_multi_body_matches(policy,candidate);
+}
 
 namespace named_rule_detail {
 using Tokens = std::vector<std::string>;
@@ -1739,7 +1772,7 @@ inline NamedRuleAnalysis analyze_named_rule_sources(
         if(rule.function.empty()||rule.purpose_words.empty()||!rule.min_uses)
             return {false,"La declaracion de la regla esta incompleta."};
         const auto bounds=body(t,rule.function);
-        if(!bounds)return {false,"Falta definir la funcion "+rule.function+"."};
+        if(!bounds)return {false,"No se pudo identificar una definicion verificable de la funcion "+rule.function+"."};
         std::vector<LocalRule> candidates;
         std::size_t depth=0;
         for(auto i=bounds->open+1;i<bounds->close;++i) {
@@ -1750,7 +1783,7 @@ inline NamedRuleAnalysis analyze_named_rule_sources(
             if(item&&role(item->name,rule.purpose_words))candidates.push_back(*item);
         }
         if(candidates.size()!=1)
-            return {false,"Falta una constante local de proposito en "+rule.function+"."};
+            return {false,"No se pudo identificar una unica constante local de proposito en "+rule.function+"."};
         const auto& value=candidates.front();
         if(value.value!=rule.value)
             return {false,"La constante de "+rule.function+" no representa el acuerdo."};

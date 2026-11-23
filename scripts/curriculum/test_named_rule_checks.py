@@ -145,6 +145,172 @@ class NamedRuleAuthoringTest(unittest.TestCase):
             state.validate(forged)
 
 
+class NamedRuleEditableBodiesAuthoringTest(unittest.TestCase):
+    def setUp(self) -> None:
+        self.before = original()
+        self.after = deepcopy(self.before)
+        self.after["compilerNamedRuleChecks"] = declaration()
+        self.after["compilerNamedRuleChecks"][0]["editableBodies"] = [
+            "int cajas_para(int piezas)"]
+        self.after["compilerNamedRuleChecks"][2]["editableBodies"] = [
+            "int precio_total(int articulos)", "bool alcanza_minimo(int articulos)",
+            "int main()"]
+
+    def test_root_body_policy_preserves_the_complete_authentic_publication(self):
+        preserved = deepcopy(self.after)
+        state.validate(self.after)
+        state.validate_transition(self.before, self.after)
+        self.assertEqual(preserved, self.after)
+        for key in self.before:
+            self.assertEqual(self.before[key], self.after[key])
+        # main is deliberately not one of rules: the author may authorize
+        # another existing body without giving it a named-constant contract.
+        record = self.after["compilerNamedRuleChecks"][2]
+        self.assertIn("int main()", record["editableBodies"])
+        self.assertNotIn("main", {rule["function"] for rule in record["rules"]})
+
+    def test_absence_keeps_all_legacy_declarations_valid_and_unchanged(self):
+        for declarations in (declaration(), declaration_with_batteries(),
+                             declaration_with_variations()):
+            current = deepcopy(self.before)
+            current["compilerNamedRuleChecks"] = declarations
+            preserved = deepcopy(current)
+            state.validate(current)
+            state.validate_transition(self.before, current)
+            self.assertEqual(preserved, current)
+            self.assertTrue(all("editableBodies" not in entry for entry in declarations))
+
+    def test_published_body_policy_cannot_be_added_removed_or_rewritten(self):
+        removed = deepcopy(self.after)
+        removed["compilerNamedRuleChecks"][0].pop("editableBodies")
+        rewritten = deepcopy(self.after)
+        rewritten["compilerNamedRuleChecks"][2]["editableBodies"] = ["int main()"]
+        legacy = deepcopy(self.before)
+        legacy["compilerNamedRuleChecks"] = declaration()
+        for before, after in ((self.after, removed), (self.after, rewritten),
+                              (legacy, self.after)):
+            state.validate(before)
+            state.validate(after)
+            with self.subTest(after=after["compilerNamedRuleChecks"]), \
+                    self.assertRaises(state.LayoutError):
+                state.validate_transition(before, after)
+
+    def test_lists_signatures_and_physical_order_are_strict(self):
+        signature = "int cajas_para(int piezas)"
+        invalid = ([], None, True, 1, {}, signature, (signature,),
+                   [None], [True], [7], [[]], [{}], [""], ["int cajas_para"],
+                   [signature, signature], [signature] * 9, ["int absent(int value)"],
+                   ["int main()"], [signature + "\n"], [signature + "\r"],
+                   [signature + "\x00"], ["x" * 513])
+        for signatures in invalid:
+            changed = deepcopy(self.after)
+            changed["compilerNamedRuleChecks"][0]["editableBodies"] = signatures
+            with self.subTest(signatures=signatures), self.assertRaises(state.LayoutError):
+                state._validate_compiler_named_rule_checks(changed)
+        changed = deepcopy(self.after)
+        changed["compilerNamedRuleChecks"][2]["editableBodies"].reverse()
+        with self.assertRaises(state.LayoutError):
+            state.validate(changed)
+        # Both strings locate the same body despite being distinct spellings.
+        with self.assertRaises(state.LayoutError):
+            state._validate_named_rule_editable_bodies(
+                signature + " { return 0; }\n", [signature, signature + " "])
+
+    def test_only_real_unique_definitions_bind_bodies(self):
+        signature = "int sample(int value)"
+        definition = signature + " { return value; }\n"
+        decoys = (
+            "// " + definition,
+            "/* " + definition + " */\n",
+            'const char* text = "int sample(int value) { return 0; }";\n',
+            'const char* text = R"qa(\n' + definition + ')qa";\n',
+            signature + ";\n",
+        )
+        for decoy in decoys:
+            with self.subTest(decoy=decoy), self.assertRaises(state.LayoutError):
+                state._validate_named_rule_editable_bodies(decoy, [signature])
+            state._validate_named_rule_editable_bodies(decoy + definition, [signature])
+        with self.assertRaises(state.LayoutError):
+            state._validate_named_rule_editable_bodies(definition + definition, [signature])
+        with self.assertRaises(state.LayoutError):
+            state._validate_named_rule_editable_bodies(
+                "int other() {\n" + definition + "}\n",
+                ["int other()", signature])
+
+    def test_signature_cannot_capture_a_statement_or_an_inner_body(self):
+        invalid = (
+            ("int sample(int value) { if (value)",
+             "int sample(int value) { if (value) { return 1; } return 0; }\n"),
+            ("int sample(int value) <% if (value)",
+             "int sample(int value) <% if (value) <% return 1; %> return 0; %>\n"),
+            ("int sample(); int other()", "int sample(); int other() { return 0; }\n"),
+            ("int sample(int value) #", "int sample(int value) # { return 0; }\n"),
+        )
+        for signature, source in invalid:
+            with self.subTest(signature=signature), self.assertRaises(state.LayoutError):
+                state._validate_named_rule_editable_bodies(source, [signature])
+        # Tokens inside comments/literals cannot masquerade as delimiters.
+        for signature in ('int sample(int value) /* {}; <% %> # */',
+                          'int sample(const char* value = "{;#<%%>}")'):
+            state._validate_named_rule_editable_bodies(
+                signature + " { return 0; }\n", [signature])
+
+    def test_original_body_uses_the_same_native_lexical_safety_guards(self):
+        signature = "int sample(int value)"
+        invalid = (
+            "#define PRIVATE 1\nreturn value;",
+            "%:define PRIVATE 1\nreturn value;",
+            "return __LINE__;", "return __builtin_COLUMN();",
+            "auto stop = &std::exit; return value;", "std::abort(); return value;",
+            "std::raise(0); return value;",
+        )
+        for body in invalid:
+            with self.subTest(body=body), self.assertRaises(state.LayoutError):
+                state._validate_named_rule_editable_bodies(
+                    signature + " {\n" + body + "\n}\n", [signature])
+        for source in (signature + " { return value; }\n\x00",
+                       "// continued\\\n" + signature + " { return value; }\n",
+                       "// continued\\\r\n" + signature + " { return value; }\n",
+                       signature + " { return value;\n",
+                       signature + " { return value; }\n/* unclosed"):
+            with self.subTest(source=source), self.assertRaises(state.LayoutError):
+                state._validate_named_rule_editable_bodies(source, [signature])
+        state._validate_named_rule_editable_bodies(
+            '/* heading */\n' + signature + ' /* original */ <%\n'
+            '// __LINE__, exit and %> are only documentation.\n'
+            'const char* label = R"qa(}; # __LINE__ exit(0))qa";\n'
+            'const auto unicode_label = u8R"qa(\n{ %> __LINE__ exit(0)\n)qa";\n'
+            'const auto simple_label = u8"{};";\n'
+            'const int item8{value};\n'
+            "const int capacity{0'4}; return value * capacity + 4'0 / 10;\n"
+            "%>\n", [signature])
+
+    def test_utf8_byte_source_and_signature_limits_and_eight_body_boundary(self):
+        signature = "int sample(int value) /*" + "ñ" * 243 + "*/"
+        self.assertEqual(512, len(signature.encode("utf-8")))
+        state._validate_named_rule_editable_bodies(
+            signature + " { return value; }\n", [signature])
+        too_long = signature.replace("*/", "a*/")
+        with self.assertRaises(state.LayoutError):
+            state._validate_named_rule_editable_bodies(
+                too_long + " { return value; }\n", [too_long])
+        for source, signatures in (("\ud800", ["int sample()"]),
+                                   ("int sample() { return 0; }", ["\ud800()"])):
+            with self.subTest(source=repr(source)), self.assertRaises(state.LayoutError):
+                state._validate_named_rule_editable_bodies(source, signatures)
+        signatures = [f"int body_{index}()" for index in range(8)]
+        source = "\n".join(signature + " { return 0; }" for signature in signatures)
+        state._validate_named_rule_editable_bodies(source, signatures)
+        with self.assertRaises(state.LayoutError):
+            state._validate_named_rule_editable_bodies(
+                source + "\nint body_8() { return 0; }", signatures + ["int body_8()"])
+        tail = "\nint sample() { return 0; }\n"
+        source = "//" + "x" * (4 * 1024 * 1024 - 2 - len(tail)) + tail
+        state._validate_named_rule_editable_bodies(source, ["int sample()"])
+        with self.assertRaises(state.LayoutError):
+            state._validate_named_rule_editable_bodies(source + " ", ["int sample()"])
+
+
 def declaration_with_batteries() -> list[dict]:
     checks = declaration()
     checks[1]["executionProbe"]["batteryCheck"] = {

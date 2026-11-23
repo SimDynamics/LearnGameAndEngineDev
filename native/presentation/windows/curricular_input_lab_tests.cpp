@@ -171,7 +171,8 @@ void combinations_contract(const curriculum::Lesson& lesson) {
 
 
 // Quizzes are prepared from their authored answers to isolate compiler UI.
-// U2L9 prepares earlier pages; U3 also prepares the focal page's quizzes.
+// U2L9 and named-rule feedback prepare earlier pages; U3 also prepares
+// the focal page's quizzes.
 // This is explicit QA setup, not evidence of quiz interaction. Compiler
 // prerequisites are observed separately through actual native executions.
 void prepare_u2l9_prior_quizzes(state::StateData& data,const curriculum::Lesson& lesson,
@@ -201,9 +202,13 @@ void prepare_u2l9_prior_quizzes(state::StateData& data,const curriculum::Lesson&
                 JsonObject raw;raw.Insert(L"slots",slots);
                 response.raw_json=winrt::to_string(raw.Stringify());
                 response.correct=curriculum::evaluate_drag_answers(block,block.correct_order).correct;
+            } else if(block.type==BlockType::order_code) {
+                check(!block.correct_order.empty(),"An earlier QA ordering has no authored answer");
+                for(const auto index:block.correct_order)response.order.push_back(static_cast<std::int64_t>(index));
+                response.correct=curriculum::evaluate_order(block,block.correct_order).correct;
             } else {
-                check(block.type!=BlockType::order_code&&block.type!=BlockType::math_puzzle,
-                    "A new earlier U2L9 exercise needs an explicitly audited QA preparation");
+                check(block.type!=BlockType::math_puzzle,
+                    "A new earlier exercise needs an explicitly audited QA preparation");
                 continue;
             }
             check(response.correct,"An authored earlier-page QA response is invalid");
@@ -275,6 +280,137 @@ void prepare_u2l9_prerequisites(state::StateData& data,const curriculum::Lesson&
                   windows::compiler_puzzle_case_count(data,lesson,owner)==1,
                 "A U2L9 prerequisite required or credited more than its first manual case");
         }
+}
+
+// The full authentic lesson cannot open its last editor until all earlier
+// activities are complete. Observe these four published compiler objectives
+// with real MSVC/CMake work; only the focal editor has a QA named-rule contract.
+void prepare_named_rule_prerequisites(state::StateData& data, const curriculum::Lesson& lesson,
+        curriculum::StatePosition target, const std::filesystem::path& projects) {
+    check(lesson.id == "programming_practice_tools__comprobaciones_repetibles__nombrar_reglas_y_separar_acuerdos"
+        && lesson.pages.at(target.page).blocks.at(target.block).stable_id == "block_0008_0007",
+        "Named-rule entry preparation requires its authenticated focal owner");
+    struct Prior { std::string_view owner, source; };
+    constexpr std::array<Prior, 4> prior{{
+        {"block_0002_0004", "block_0003_0002"},
+        {"block_0005_0006", "block_0006_0001"},
+        {"block_0006_0009", "block_0006_0001"},
+        {"block_0007_0004", "block_0008_0001"}
+    }};
+    std::vector<std::string> preceding;
+    for (std::size_t p = 0; p <= target.page; ++p)
+        for (std::size_t b = 0; b < lesson.pages[p].blocks.size(); ++b) {
+            if (p == target.page && b >= target.block) break;
+            const auto& owner = lesson.pages[p].blocks[b];
+            if (owner.type == curriculum::BlockType::cpp_compiler) preceding.push_back(owner.stable_id);
+        }
+    check(preceding.size() == prior.size(), "A new preceding named-rule editor needs an audited real observation");
+    const auto published_source = [&](std::string_view identity) -> const std::string& {
+        const auto& source = active_block(lesson, identity);
+        check(source.type == curriculum::BlockType::code && source.language == "cpp" && !source.code.empty(),
+            "An authenticated named-rule prerequisite reference is missing or not C++");
+        return source.code;
+    };
+    const auto& focal = lesson.pages[target.page].blocks[target.block];
+    check(windows::compiler_puzzle_case_count(data, lesson, focal) == 0
+        && !windows::compiler_puzzle_completed(data, lesson, focal),
+        "The focal named-rule owner already had a receipt before prerequisite observations");
+    static std::uint64_t request_id = 92000;
+    std::set<std::string> project_keys;
+    for (std::size_t index = 0; index < prior.size(); ++index) {
+        const auto& plan = prior[index];
+        check(preceding[index] == plan.owner, "The authenticated prerequisite order or identity changed");
+        const auto& owner = active_block(lesson, plan.owner);
+        phase = "observe actual named-rule prerequisite " + owner.stable_id;
+        check(owner.type == curriculum::BlockType::cpp_compiler && owner.output_check
+            && !owner.output_check->cases.empty() && !owner.named_rule_source_check
+            && windows::compiler_puzzle_case_count(data, lesson, owner) == 0
+            && !windows::compiler_puzzle_completed(data, lesson, owner),
+            "A fresh prerequisite lost its own output contract or gained invented source credit");
+        const auto& first = owner.output_check->cases.front();
+        windows::CppRunRequest request;
+        request.request_id = ++request_id; request.revision = request_id;
+        request.action = windows::CppRunRequest::Action::compile_run;
+        request.backend = windows::CppRunRequest::Backend::native_msvc;
+        request.project_key = curriculum::draft_key("programming", lesson, owner);
+        check(project_keys.insert(request.project_key).second, "Two prerequisite owners share a QA project identity");
+        request.projects_directory = projects;
+        request.source_utf8 = owner.initial_code;
+        request.stdin_utf8 = first.standard_input;
+        request.project_files = owner.project_files;
+        request.source_files = owner.source_files;
+        request.cmake = owner.cmake;
+        request.compile_timeout = std::chrono::seconds(90);
+        request.execution_timeout = std::chrono::seconds(8);
+        std::set<std::string> edited_paths;
+        const auto replace_project = [&](std::string_view path, const std::string& source) {
+            const auto found = std::ranges::find_if(request.project_files,
+                [&](const auto& item) { return item.first == path; });
+            check(found != request.project_files.end()
+                && std::ranges::count_if(request.project_files, [&](const auto& item) { return item.first == path; }) == 1,
+                "An authentic prerequisite project path is missing or duplicated");
+            found->second = source; edited_paths.insert(std::string(path));
+        };
+        if (index < 3) {
+            check(request.cmake && request.cmake->target == "comprobar_cajas" && !request.project_files.empty(),
+                "A published CMake prerequisite lost its genuine checker target");
+            replace_project("componente/src/cajas.cpp", published_source(plan.source));
+            if (plan.owner == "block_0005_0006") {
+                replace_project("pruebas/cajas_casos.cpp", published_source("block_0006_0003"));
+                const auto header = std::ranges::find_if(owner.project_files,
+                    [](const auto& item) { return item.first == "componente/publico/envio/cajas.h"; });
+                check(header != owner.project_files.end(), "The original public header is missing");
+                auto updated = header->second;
+                constexpr std::string_view before = "cajas de 4 plazas", after = "cajas de 6 plazas";
+                const auto at = updated.find(before);
+                check(at != std::string::npos && updated.find(before, at + before.size()) == std::string::npos,
+                    "The published capacity comment is missing or ambiguous");
+                updated.replace(at, before.size(), after);
+                replace_project(header->first, updated);
+            }
+        } else {
+            check(!request.cmake && request.project_files.empty() && request.source_files.empty(),
+                "The published single-file prerequisite changed its source contract");
+            request.source_utf8 = published_source(plan.source);
+        }
+        check(request.cmake == owner.cmake && request.source_files == owner.source_files
+            && request.project_files.size() == owner.project_files.size(),
+            "Prerequisite preparation changed the published project configuration");
+        for (std::size_t file = 0; file < owner.project_files.size(); ++file)
+            check(request.project_files[file].first == owner.project_files[file].first
+                && (edited_paths.contains(owner.project_files[file].first)
+                    || request.project_files[file].second == owner.project_files[file].second),
+                "Prerequisite preparation changed an unrelated authenticated project file");
+        check(windows::compiler_runtime_request_allowed(owner, request),
+            "The real prerequisite request does not match its published runtime objective");
+        const auto result = windows::run_cpp(request);
+        const auto captured = windows::capture_cpp_execution(request, result);
+        const auto evaluation = windows::evaluate_cpp_output_check(*owner.output_check, captured, request.revision);
+        check(result.error_utf8.empty() && (!request.cmake || result.configuration.succeeded())
+            && result.compilation.succeeded() && result.execution.succeeded()
+            && result.execution.stderr_bytes.empty() && evaluation.verdict == curriculum::OutputVerdict::correct,
+            "A real prerequisite did not compile/run its first authored case: " + result.error_utf8
+                + result.configuration.stderr_bytes + result.compilation.stderr_bytes + result.execution.stderr_bytes
+                + " stdout=" + escaped_diagnostic_text(result.execution.stdout_bytes));
+        const auto toolchain = bytes(result.run_directory / L"toolchain.txt");
+        const auto compiler = std::filesystem::path(build::educational_vc_root) / L"bin/Hostx64/x64/cl.exe";
+        check(toolchain.starts_with("MSVC=") && toolchain.find("compiler=" + utf8(compiler.wstring()) + '\n') != std::string::npos
+            && bytes(result.run_directory / L"stdin.bin") == first.standard_input,
+            "A prerequisite did not use the configured real MSVC and exact public input");
+        check(windows::record_compiler_puzzle_case(data, lesson, owner, request, captured,
+                "Real named-rule lesson prerequisite execution")
+            && windows::compiler_puzzle_case_count(data, lesson, owner) == 1
+            && windows::compiler_puzzle_completed(data, lesson, owner),
+            "A genuine prerequisite first case did not earn exactly its own receipt");
+        check(windows::compiler_puzzle_case_count(data, lesson, focal) == 0
+            && !windows::compiler_puzzle_completed(data, lesson, focal),
+            "A prerequisite observation incorrectly credited the focal named-rule editor");
+        std::cout << "PASS named-rule prerequisite " << owner.stable_id
+            << ": real " << (request.cmake ? "CMake/MSVC" : "MSVC")
+            << " first-case execution and one sealed receipt; focal remains uncredited\n";
+    }
+    std::cout << "PASS named-rule entry preparation: four real prerequisite executions; "
+        "published prior quizzes evaluated as QA setup, no synthetic compiler seals or navigation claim\n";
 }
 
 void observe_u3_compiler(state::StateData& data, const curriculum::Lesson& lesson,
@@ -507,13 +643,15 @@ void inspect_combinations_visual(std::wstring_view token) {
 }
 
 struct View {
+    enum class RunArtifacts { single_public, public_with_private_probes };
     WindowsEnvironment environment;
     const curriculum::Lesson& lesson;
     std::size_t block;
     HWND host = nullptr, view = nullptr;
     std::size_t executions = 0;
 
-    View(const curriculum::Lesson& model, curriculum::StatePosition target, bool finite_reserve = false)
+    View(const curriculum::Lesson& model, curriculum::StatePosition target, bool finite_reserve = false,
+        bool prepare_named_rule_entry_for_qa = false)
         : environment(resolve_windows_environment({ProfileId::Codex,
             L"curricular-input-lab-" + std::to_wstring(GetCurrentProcessId()) + L"-"
                 + std::to_wstring(GetTickCount64()), false})), lesson(model), block(target.block) {
@@ -529,6 +667,11 @@ struct View {
             prepare_u2l9_prior_quizzes(initial, lesson, target, true);
             prepare_u3_archived_state(initial, lesson,
                 lesson.id == "cpp_fundamentals__expresiones_y_decisiones__combinar_condiciones", environment.paths.projects);
+        }
+        if (prepare_named_rule_entry_for_qa) {
+            prepare_u2l9_prior_quizzes(initial, lesson, target);
+            prepare_named_rule_prerequisites(initial, lesson, target, environment.paths.projects);
+            phase = "mount the named-rule editor after genuine prerequisite executions";
         }
         state::save_current_page(initial, lesson, target.page);
         initial.preferences["native_windows"]["ui_language"] = std::string("es");
@@ -605,25 +748,40 @@ struct View {
         return result;
     }
     std::filesystem::path run(std::string_view source, std::string_view input, std::string_view expected,
-        std::string_view expected_raw = {}) {
+        std::string_view expected_raw = {}, RunArtifacts artifacts = RunArtifacts::single_public,
+        std::uint32_t expected_exit_code = 0) {
         const auto before = run_directories();
         const auto button = control(block, 11);
         check(IsWindowEnabled(button) && window_text(button) == "Compilar, ejecutar y comprobar",
             "The actual input laboratory is busy or has no combined execution action");
         SendMessageW(button, BM_CLICK, 0, 0);
-        const auto deadline = GetTickCount64() + 70000;
+        const auto deadline = GetTickCount64() +
+            (artifacts == RunArtifacts::public_with_private_probes ? 180000 : 70000);
         do { pump(); if (IsWindowEnabled(button)) break;
             MsgWaitForMultipleObjects(0, nullptr, FALSE, 10, QS_ALLINPUT);
         } while (GetTickCount64() < deadline);
         check(IsWindowEnabled(button), "The real input laboratory compilation/execution timed out");
         const auto status = text(34);
-        check(status == "Ejecución terminada (código 0)." || status.starts_with("Caso correcto. Casos comprobados: ")
-            || status.starts_with("Comprobación obligatoria: ") || status.starts_with("Caso ejecutado. "),
-            "The real input laboratory did not complete compilation and execution successfully");
+        check(status == "Ejecución terminada (código " + std::to_string(expected_exit_code) + ")."
+            || (expected_exit_code == 0 && (status.starts_with("Caso correcto. Casos comprobados: ")
+                || status.starts_with("Comprobación obligatoria: ") || status.starts_with("Caso ejecutado. "))),
+            "The real input laboratory did not finish with its expected execution status: " + status);
         const auto after = run_directories();
         std::vector<std::filesystem::path> created;
         for (const auto& directory : after) if (!before.contains(directory)) created.push_back(directory);
-        check(created.size() == 1, "A laboratory action did not create exactly one fresh execution");
+        if (artifacts == RunArtifacts::public_with_private_probes) {
+            // Named-rule functions and constant variations have their own
+            // actual compilations. Identify the submitted public program by
+            // its exact bytes, never by directory order or a private result.
+            std::erase_if(created, [&](const auto& directory) {
+                return !std::filesystem::is_regular_file(directory / L"main.cpp")
+                    || !std::filesystem::is_regular_file(directory / L"stdin.bin")
+                    || bytes(directory / L"main.cpp") != source || bytes(directory / L"stdin.bin") != input;
+            });
+            check(created.size() == 1, "Private probes did not leave exactly one byte-identical public execution");
+        } else {
+            check(created.size() == 1, "A laboratory action did not create exactly one fresh execution");
+        }
         const auto& directory = created.front();
         const auto compiler = std::filesystem::path(build::educational_vc_root) / L"bin/Hostx64/x64/cl.exe";
         const auto toolchain = bytes(directory / L"toolchain.txt");
@@ -1196,15 +1354,249 @@ void current_u3_combinations() {
         "retained achievement after rejection and explicit reset; nine archived observations, "
         "historical drafts and saved reserve preserved under the current Premium policy; no desktop/listening acceptance\n";
 }
+
+void named_rule_feedback_laboratory() {
+    using namespace winrt::Windows::Data::Json;
+    phase = "authenticate the complete published named-rule lesson";
+    const auto path = std::filesystem::path(build::source_root) /
+        "app/src/main/assets/content/es/programming/programming_practice_tools/comprobaciones_repetibles/lesson_nombrar_reglas_y_separar_acuerdos.json";
+    // The complete Git blob at 5ec6d37a657ec31128e899b4b834fedf518fa84c,
+    // authenticated independently through GitHub, not a reconstructed lesson.
+    constexpr std::string_view published_sha = "09fbf7be9c9e236f706a943c694e6644688888b4d7d58e0717c1411dcda4ffc3";
+    const auto published_bytes = bytes(path);
+    auto git_bytes = published_bytes;
+    // Git for Windows may expand LF on checkout. Accept only that transport
+    // conversion; every other byte must still match the complete publication.
+    for (std::size_t at = 0; (at = git_bytes.find("\r\n", at)) != std::string::npos; ++at)
+        git_bytes.erase(at, 1);
+    check(state::sha256(git_bytes) == published_sha,
+        "The named-rule fixture differs from its authenticated complete publication");
+    const auto published = windows::load_lesson(path, "es");
+    check(published.id == "programming_practice_tools__comprobaciones_repetibles__nombrar_reglas_y_separar_acuerdos",
+        "The feedback laboratory loaded another published lesson");
+    const auto& original = active_block(published, "block_0008_0007");
+    const auto original_root = JsonObject::Parse(winrt::to_hstring(published_bytes));
+    auto root = JsonObject::Parse(winrt::to_hstring(published_bytes));
+    check(!root.HasKey(L"compilerNamedRuleChecks"), "The authenticated fixture already has an authored named-rule declaration");
+    // This is the existing prospective block_0008_0007 declaration from
+    // named_rule_runtime_tests::authored_root_roundtrip, isolated in memory.
+    // Work's pages, state layout, explanations and source remain untouched.
+    root.Insert(L"compilerNamedRuleChecks", JsonArray::Parse(LR"json([
+      {"activity":"block_0008_0007","path":"",
+       "executionProbe":{"harness":"","header":"",
+         "cases":[{"function":"precio_total","input":11,"expected":77},
+                  {"function":"precio_total","input":5,"expected":35},
+                  {"function":"alcanza_minimo","input":4,"expected":0},
+                  {"function":"alcanza_minimo","input":5,"expected":1}],
+         "batteryCheck":{"cases":[{"function":"precio_total","input":0,"expected":0},
+                     {"function":"precio_total","input":4,"expected":28},
+                     {"function":"precio_total","input":5,"expected":35},
+                     {"function":"precio_total","input":6,"expected":42},
+                     {"function":"precio_total","input":10,"expected":70},
+                     {"function":"alcanza_minimo","input":0,"expected":0},
+                     {"function":"alcanza_minimo","input":4,"expected":0},
+                     {"function":"alcanza_minimo","input":5,"expected":1},
+                     {"function":"alcanza_minimo","input":6,"expected":1},
+                     {"function":"alcanza_minimo","input":10,"expected":1}],
+           "failureExitCode":1},
+         "constantVariations":[
+           {"function":"precio_total","value":9,"cases":[
+             {"function":"precio_total","input":11,"expected":99},
+             {"function":"precio_total","input":5,"expected":45},
+             {"function":"alcanza_minimo","input":4,"expected":0},
+             {"function":"alcanza_minimo","input":5,"expected":1}]},
+           {"function":"alcanza_minimo","value":6,"cases":[
+             {"function":"precio_total","input":11,"expected":77},
+             {"function":"precio_total","input":5,"expected":35},
+             {"function":"alcanza_minimo","input":4,"expected":0},
+             {"function":"alcanza_minimo","input":5,"expected":0}]}]},
+       "rules":[{"function":"precio_total","value":7,
+                 "purposeWords":["precio","costo","tarifa","credito"],"minUses":1},
+                {"function":"alcanza_minimo","value":5,
+                 "purposeWords":["minimo","umbral","cantidad"],"minUses":1}]}
+    ])json"));
+    check(root.Size() == original_root.Size() + 1, "QA added an unrelated named-rule root field");
+    for (const auto& item : original_root)
+        check(root.GetNamedValue(item.Key()).Stringify() == item.Value().Stringify(),
+            "The QA named-rule declaration changed a published root field");
+    const auto qa_json = winrt::to_string(root.Stringify());
+    auto lesson = windows::parse_lesson_json(qa_json, "es");
+    lesson.source_path = published.source_path;
+    const auto progress = windows::parse_lesson_progress_metadata(qa_json, "es");
+    const auto target = position(lesson, original.stable_id);
+    const auto& compiler = active_block(lesson, original.stable_id);
+    const auto& compact = active_block(progress, original.stable_id);
+    check(lesson.id == published.id && lesson.locale == published.locale
+        && lesson.compiler_puzzles_required == published.compiler_puzzles_required
+        && lesson.state_layout.lineage == published.state_layout.lineage
+        && lesson.state_layout.signatures == published.state_layout.signatures
+        && progress.state_layout.lineage == lesson.state_layout.lineage
+        && progress.state_layout.signatures == lesson.state_layout.signatures
+        && target == position(published, original.stable_id)
+        && compiler.type == curriculum::BlockType::cpp_compiler && compiler.output_check && original.output_check
+        && compiler.output_check->cases.size() == 1 && compiler.output_check->cases.front().standard_input.empty()
+        && !compiler.standard_input && !original.standard_input && compiler.initial_code == original.initial_code
+        && compiler.project_files.empty() && compiler.source_files.empty() && !compiler.cmake
+        && curriculum::same_output_check_runtime_requirements(*compiler.output_check, *original.output_check)
+        && compiler.named_rule_source_check && compiler.named_rule_source_check == compact.named_rule_source_check
+        && compiler.named_rule_source_check->execution_probe
+        && compiler.named_rule_source_check->execution_probe->battery_check
+        && compiler.named_rule_source_check->execution_probe->constant_variations
+        && curriculum::exercise_key(lesson, compiler) == curriculum::exercise_key(published, original)
+        && curriculum::draft_key("programming", lesson, compiler) == curriculum::draft_key("programming", published, original),
+        "The QA loader changed the authentic owner, source, first case, state identity or declared private proofs");
+    const std::string expected =
+        "articulos=0 total=0 esperado=0 minimo=0 esperado_minimo=0 OK\n"
+        "articulos=4 total=28 esperado=28 minimo=0 esperado_minimo=0 OK\n"
+        "articulos=5 total=35 esperado=35 minimo=1 esperado_minimo=1 OK\n"
+        "articulos=6 total=42 esperado=42 minimo=1 esperado_minimo=1 OK\n"
+        "articulos=10 total=70 esperado=70 minimo=1 esperado_minimo=1 OK\n"
+        "Bateria: OK\n";
+    const std::string numeric_output =
+        "articulos=0 total=0 esperado=0 minimo=0 esperado_minimo=0 OK\n"
+        "articulos=4 total=28 esperado=28 minimo=0 esperado_minimo=0 OK\n"
+        "articulos=5 total=35 esperado=35 minimo=0 esperado_minimo=1 FALLO\n"
+        "articulos=6 total=42 esperado=42 minimo=1 esperado_minimo=1 OK\n"
+        "articulos=10 total=70 esperado=70 minimo=1 esperado_minimo=1 OK\n"
+        "Bateria: FALLO\n";
+    check(compiler.output_check->cases.front().outputs == std::vector<std::string>{expected},
+        "The authentic five-comparison report changed its exact public output");
+    const auto replace_once = [](std::string source, std::string_view before, std::string_view after) {
+        const auto at = source.find(before);
+        check(at != std::string::npos && source.find(before, at + before.size()) == std::string::npos,
+            "A reviewed named-rule source edit is missing or ambiguous");
+        source.replace(at, before.size(), after);
+        return source;
+    };
+    auto repaired = replace_once(compiler.initial_code, "const int acuerdo{7};\n\n", "");
+    repaired = replace_once(std::move(repaired), "return articulos * acuerdo;",
+        "const int precio_unitario{7};\n    return articulos * precio_unitario;");
+    repaired = replace_once(std::move(repaired), "return articulos >= acuerdo;",
+        "const int minimo_articulos{5};\n    return articulos >= minimo_articulos;");
+    const auto unused = replace_once(repaired, "return articulos >= minimo_articulos;", "return articulos >= 5;");
+    const auto absent = replace_once(unused, "    const int minimo_articulos{5};\n", "");
+    const auto numeric = replace_once(repaired, "const int minimo_articulos{5};", "const int minimo_articulos{6};");
+    // A wrong program can falsely return 0. Exercise that evaluable domain
+    // by changing only its failure return, never the published oracle or engine.
+    const auto numeric_exit0 = replace_once(numeric,
+        R"cpp(if (!correcto) { std::cout << "Bateria: FALLO\n"; return 1; })cpp",
+        R"cpp(if (!correcto) { std::cout << "Bateria: FALLO\n"; return 0; })cpp");
+    constexpr std::string_view absent_reason =
+        "No se pudo identificar una unica constante local de proposito en alcanza_minimo.";
+    constexpr std::string_view unused_reason =
+        "La constante no interviene suficientemente en el resultado de alcanza_minimo.";
+    constexpr std::string_view numeric_reason = "La constante de alcanza_minimo no representa el acuerdo.";
+
+    phase = "prepare published prior answers and real compiler prerequisites";
+    View fixture(lesson, target, false, true);
+    const auto initial = fixture.saved();
+    const auto draft_key = curriculum::draft_key("programming", lesson, compiler);
+    const auto mounted_page = lesson_page_state(fixture.view).index;
+    check(mounted_page == target.page,
+        "The named-rule reader mounted page " + std::to_string(mounted_page)
+            + " instead of its authenticated page " + std::to_string(target.page));
+    const auto initial_source = fixture.text(10);
+    check(initial_source == compiler.initial_code,
+        "The initial named-rule source differs: actual SHA=" + state::sha256(initial_source)
+            + ", authored SHA=" + state::sha256(compiler.initial_code));
+    const auto input_id = 1000 + static_cast<int>(target.block) * 100 + 15;
+    check(descendant(fixture.view, input_id) == nullptr,
+        "The no-input named-rule editor unexpectedly created a standard-input control");
+    check(!windows::compiler_puzzle_completed(initial, lesson, compiler),
+        "The focal named-rule editor inherited an invented first-case achievement");
+    check(windows::compiler_puzzle_case_count(initial, lesson, compiler) == 0,
+        "The focal named-rule editor inherited " + std::to_string(windows::compiler_puzzle_case_count(initial, lesson, compiler))
+            + " invented checked cases");
+    const auto retained = [&](std::string_view source, std::size_t count, bool completed) {
+        const auto saved = fixture.saved();
+        const auto draft = state::get_draft(saved, draft_key, "", "");
+        check(draft.has_saved && draft.source == source && draft.input.empty()
+            && fixture.text(10) == source && descendant(fixture.view, input_id) == nullptr
+            && windows::compiler_puzzle_case_count(saved, lesson, compiler) == count
+            && windows::compiler_puzzle_completed(saved, lesson, compiler) == completed,
+            "A named-rule run changed its actual draft/input or first-case evidence");
+        preserve_u3_independent_state(initial, saved, lesson, compiler);
+    };
+    const auto reopen_preserving = [&](std::string_view source, std::size_t count, bool completed) {
+        const auto before = fixture.saved();
+        const auto draft = state::get_draft(before, draft_key, "", "");
+        fixture.reopen();
+        retained(source, count, completed);
+        const auto after = fixture.saved();
+        const auto restored = state::get_draft(after, draft_key, "", "");
+        check(lesson_page_state(fixture.view).index == target.page
+            && compiler_receipts(after, lesson, compiler) == compiler_receipts(before, lesson, compiler)
+            && restored.selection_start == draft.selection_start && restored.selection_end == draft.selection_end
+            && restored.indentation_json == draft.indentation_json,
+            "Reopening changed named-rule draft metadata or an authenticated receipt");
+        // Rejection persistence is deliberately not asserted: this regression
+        // checks the reason of the current actual run, not a new history policy.
+    };
+    const auto run = [&](const std::string& source, const std::string& output, std::uint32_t exit_code = 0) {
+        fixture.replace(10, source);
+        fixture.run(source, "", output, crt_stdout(output), View::RunArtifacts::public_with_private_probes, exit_code);
+    };
+    const auto reason_visible = [&](std::string_view expected_reason) {
+        const auto feedback = fixture.text(4);
+        check(feedback.starts_with("✗ Incorrecto") && feedback.find(expected_reason) != std::string::npos
+            && feedback.find("este objetivo también exige declarar constantes locales") == std::string::npos,
+            "The actual compiler feedback lost its precise named-rule rejection: " + feedback);
+    };
+
+    phase = "correct stdout with the local minimum absent";
+    run(absent, expected); reason_visible(absent_reason); retained(absent, 0, false);
+    reopen_preserving(absent, 0, false);
+    phase = "correct stdout with a declared but unused local minimum";
+    run(unused, expected); reason_visible(unused_reason); retained(unused, 0, false);
+    check(fixture.text(4).find(absent_reason) == std::string::npos, "The new rejection reused the earlier missing-constant reason");
+    reopen_preserving(unused, 0, false);
+    phase = "wrong numerical output with exit one stays unavailable";
+    const auto before_unavailable = compiler_receipts(fixture.saved(), lesson, compiler);
+    run(numeric, numeric_output, 1); retained(numeric, 0, false);
+    check(fixture.text(4).empty()
+        && compiler_receipts(fixture.saved(), lesson, compiler) == before_unavailable,
+        "An unavailable nonzero execution acquired an invented named-rule verdict or receipt");
+    reopen_preserving(numeric, 0, false);
+    phase = "wrong numerical output with false exit zero must not be described as matching";
+    run(numeric_exit0, numeric_output); reason_visible(numeric_reason); retained(numeric_exit0, 0, false);
+    check(fixture.text(4).find("La salida coincide") == std::string::npos
+        && fixture.text(4).find("La salida estándar es correcta") == std::string::npos,
+        "A wrong numerical report was described as correct stdout");
+    reopen_preserving(numeric_exit0, 0, false);
+    phase = "the repaired program earns its first public case and private proofs";
+    run(repaired, expected); retained(repaired, 1, true);
+    check(fixture.text(4).starts_with("✓ Correcto") && fixture.text(4).find(unused_reason) == std::string::npos,
+        "The corrected named-rule source retained its old rejection or failed to earn credit");
+    reopen_preserving(repaired, 1, true);
+    const auto achievements = [&](const state::StateData& saved) {
+        auto result = compiler_receipts(saved, lesson, compiler);
+        std::erase_if(result, [](const auto& item) { return item.first.find("/review/") != std::string::npos; });
+        return result;
+    };
+    const auto earned = achievements(fixture.saved());
+    phase = "a later source rejection preserves the genuine first-case achievement";
+    run(unused, expected); reason_visible(unused_reason); retained(unused, 1, true);
+    check(achievements(fixture.saved()) == earned, "A later named-rule rejection changed the earned first-case seal");
+    reopen_preserving(unused, 1, true);
+    check(achievements(fixture.saved()) == earned && fixture.executions == 6
+        && bytes(path) == published_bytes && !IsWindowVisible(fixture.host),
+        "The named-rule laboratory lost an execution, receipt, original publication or hidden host");
+    std::cout << "PASS named-rule feedback block_0008_0007: six actual Win32/MSVC runs, "
+        "missing and unused local constants with matching stdout, numerical exit one unavailable, "
+        "false exit zero rejected without a false stdout claim, "
+        "real correction/private proofs, later rejection with first-case receipt retained, "
+        "exact drafts/input/reopen and unchanged authenticated publication\n";
+}
 }
 
 int main(int argc, char** argv) {
     std::cout << std::unitbuf; std::cerr << std::unitbuf;
     const bool u3_stdout = argc == 2 && std::string_view(argv[1]) == "--u3-stdout";
     const bool u3_combinations = argc == 2 && std::string_view(argv[1]) == "--u3-combinations";
+    const bool named_rule_feedback = argc == 2 && std::string_view(argv[1]) == "--named-rule-feedback";
     const bool u2l9_history = argc == 3 && std::string_view(argv[1]) == "--u2l9-history";
     const bool u2l9_same_page = argc == 3 && std::string_view(argv[1]) == "--u2l9-same-page";
-    if (argc != 1 && !u3_stdout && !u3_combinations && !u2l9_history && !u2l9_same_page) {
+    if (argc != 1 && !u3_stdout && !u3_combinations && !named_rule_feedback && !u2l9_history && !u2l9_same_page) {
         const bool shape = argc == 3 && (std::string_view(argv[1]) == "--prepare-visual"
             || std::string_view(argv[1]) == "--prepare-u3-visual"
             || std::string_view(argv[1]) == "--prepare-u3-combinations-visual"
@@ -1212,7 +1604,7 @@ int main(int argc, char** argv) {
         const auto raw = shape ? std::string_view(argv[2]) : std::string_view{};
         const std::wstring token(raw.begin(), raw.end());
         if (!shape || !is_valid_qa_instance(token)) {
-            std::cerr << "Usage: curricular_input_lab_tests [--u3-stdout | --u3-combinations | --u2l9-history <authentic-json> | --u2l9-same-page <authentic-json> | --prepare-visual <safe-new-QA-token> | --prepare-u3-visual <safe-new-QA-token> | --prepare-u3-combinations-visual <safe-new-QA-token> | --inspect-u3-combinations-visual <safe-QA-token>]\n";
+            std::cerr << "Usage: curricular_input_lab_tests [--u3-stdout | --u3-combinations | --named-rule-feedback | --u2l9-history <authentic-json> | --u2l9-same-page <authentic-json> | --prepare-visual <safe-new-QA-token> | --prepare-u3-visual <safe-new-QA-token> | --prepare-u3-combinations-visual <safe-new-QA-token> | --inspect-u3-combinations-visual <safe-QA-token>]\n";
             return 2;
         }
         // U2L9 preparation executes its preceding boxes program and prepares
@@ -1235,7 +1627,8 @@ int main(int argc, char** argv) {
     try {
         check(rich != nullptr, "Cannot load RichEdit for the current input laboratory");
         reader_theme::prepare_fonts();
-        if (u3_combinations) current_u3_combinations();
+        if (named_rule_feedback) named_rule_feedback_laboratory();
+        else if (u3_combinations) current_u3_combinations();
         else if (u3_stdout) current_u3_stdout_transport();
         else current_three_input_laboratory(u2l9_history || u2l9_same_page
             ? std::filesystem::path(argv[2]) : std::filesystem::path{}, u2l9_same_page);

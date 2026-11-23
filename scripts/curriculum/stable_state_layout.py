@@ -3702,6 +3702,176 @@ def _validate_named_rule_constant_variations(source: str, rules: list[dict],
                 "Each non-target function needs a preserved shared input in every variation")
 
 
+def _named_rule_body_trivia(source: str, position: int) -> tuple[int, bool]:
+    """Skip preprocessing whitespace, preserving physical line boundaries."""
+    beginning = position
+    while position < len(source):
+        if source[position] in " \t\v\f\r\n":
+            position += 1
+        elif source.startswith("//", position):
+            endings = [source.find(mark, position + 2) for mark in "\r\n"]
+            position = min((end for end in endings if end >= 0), default=len(source))
+        elif source.startswith("/*", position):
+            ending = source.find("*/", position + 2)
+            require(ending >= 0, "Editable body source has an unterminated comment")
+            position = ending + 2
+        else:
+            break
+    skipped = source[beginning:position]
+    return position, "\r" in skipped or "\n" in skipped
+
+
+def _named_rule_body_quoted_end(source: str, position: int) -> int:
+    """Mirror the native boundary scanner; quoted braces are never code."""
+    if source.startswith('R"', position):
+        opening = source.find("(", position + 2)
+        delimiter = source[position + 2:opening] if opening >= 0 else ""
+        require(opening >= 0 and len(delimiter.encode("utf-8")) <= 16 and
+                not any(mark in delimiter for mark in " \t\r\n\\()"),
+                "Editable body source has a malformed raw literal")
+        closing = ")" + delimiter + '"'
+        ending = source.find(closing, opening + 1)
+        require(ending >= 0, "Editable body source has an unterminated raw literal")
+        return ending + len(closing)
+    quote = source[position]
+    position += 1
+    while position < len(source):
+        require(source[position] not in "\r\n", "Editable body source has a multiline quoted literal")
+        if source[position] == "\\":
+            position += 2
+        elif source[position] == quote:
+            return position + 1
+        else:
+            position += 1
+    raise LayoutError("Editable body source has an unterminated quoted literal")
+
+
+def _named_rule_body_number_end(source: str, position: int) -> int | None:
+    """Keep C++ digit separators inside one preprocessing number."""
+    def identifier_part(value: str) -> bool:
+        return (value.isascii() and value.isalnum()) or value == "_" or ord(value) >= 128
+
+    if position > 0 and identifier_part(source[position - 1]):
+        return None
+    if not (source[position] in "0123456789" or
+            (source[position] == "." and position + 1 < len(source) and
+             source[position + 1] in "0123456789")):
+        return None
+    end = position + 1
+    while end < len(source):
+        value = source[end]
+        if identifier_part(value) or value in ".'":
+            end += 1
+        elif value in "+-" and source[end - 1] in "eEpP":
+            end += 1
+        else:
+            break
+    return end
+
+
+def _named_rule_body_opening(source: str, position: int) -> tuple[int, int] | None:
+    position, _ = _named_rule_body_trivia(source, position)
+    if source.startswith("{", position):
+        return position, 1
+    if source.startswith("<%", position):
+        return position, 2
+    return None
+
+
+def _named_rule_body_span(source: str, signature: str) -> tuple[int, int]:
+    """Bind one real line-leading definition as cpp_multi_body_matches does."""
+    found = None
+    position, line_leading = 0, True
+    while position < len(source):
+        position, new_line = _named_rule_body_trivia(source, position)
+        line_leading = line_leading or new_line
+        if position == len(source):
+            break
+        value = source[position]
+        if source.startswith('R"', position) or value in "\"'":
+            position = _named_rule_body_quoted_end(source, position)
+        elif (number_end := _named_rule_body_number_end(source, position)) is not None:
+            position = number_end
+        else:
+            if line_leading and source.startswith(signature, position):
+                opening = _named_rule_body_opening(source, position + len(signature))
+                if opening is not None:
+                    require(found is None, "Editable body signature has multiple original definitions")
+                    found = opening
+            position += 1
+        line_leading = False
+    require(found is not None, "Editable body signature has no original definition")
+    opening, width = found
+    position, depth, line_leading = opening, 0, False
+    while position < len(source):
+        position, new_line = _named_rule_body_trivia(source, position)
+        line_leading = line_leading or new_line
+        if position == len(source):
+            break
+        value = source[position]
+        require(value != "#" or not line_leading, "Editable body cannot contain preprocessor directives")
+        line_leading = False
+        if source.startswith('R"', position) or value in "\"'":
+            position = _named_rule_body_quoted_end(source, position)
+        elif (number_end := _named_rule_body_number_end(source, position)) is not None:
+            position = number_end
+        elif value == "{" or source.startswith("<%", position):
+            depth += 1
+            position += 1 if value == "{" else 2
+        elif value == "}" or source.startswith("%>", position):
+            depth -= 1
+            if depth == 0:
+                return opening + width, position
+            position += 1 if value == "}" else 2
+        else:
+            position += 1
+    raise LayoutError("Editable body source has an unclosed body")
+
+
+def _validate_named_rule_editable_bodies(source: str, signatures: object) -> None:
+    """Opt-in source bounds; behavior still needs the existing execution proofs."""
+    require(type(signatures) is list and 1 <= len(signatures) <= 8 and
+            all(type(signature) is str for signature in signatures),
+            "Editable bodies require 1..8 signature strings")
+    require(len(set(signatures)) == len(signatures), "Editable body signatures must be unique")
+    try:
+        source_size = len(source.encode("utf-8")) if type(source) is str else 0
+        signature_sizes = [len(signature.encode("utf-8")) for signature in signatures]
+    except UnicodeError as exc:
+        raise LayoutError("Editable body source and signatures must be valid UTF-8") from exc
+    require(0 < source_size <= 4 * 1024 * 1024 and "\x00" not in source and
+            "\\\n" not in source and "\\\r\n" not in source,
+            "Editable body source is empty, excessive or contains a physical splice")
+    forbidden = {"op:{", "op:}", "op:<%", "op:%>", "op:;",
+                 "op:#", "op:##", "op:%:", "op:%:%:"}
+    terminating = {"exit", "_Exit", "_exit", "quick_exit", "ExitProcess",
+                   "TerminateProcess", "TerminateJobObject", "ExitThread", "_endthread",
+                   "_endthreadex", "_c_exit", "abort", "terminate", "raise"}
+    previous_end = 0
+    for signature, size in zip(signatures, signature_sizes):
+        require(0 < size <= 512 and not any(mark in signature for mark in "\x00\r\n") and
+                "(" in signature and ")" in signature,
+                "Editable body signatures must be complete single lines of at most 512 UTF-8 bytes")
+        try:
+            tokens = code_format._cpp_tokens(signature)
+        except code_format.SourceFormatError as exc:
+            raise LayoutError("Editable body signature cannot be tokenized: " + str(exc)) from exc
+        require(not any(token in forbidden or token.startswith("directive:") for token in tokens),
+                "Editable body signatures cannot contain bodies, statements or directives")
+        beginning, ending = _named_rule_body_span(source, signature)
+        require(beginning >= previous_end, "Editable bodies must be disjoint and in original physical order")
+        previous_end = ending
+        try:
+            tokens = code_format._cpp_tokens(source[beginning:ending])
+        except code_format.SourceFormatError as exc:
+            raise LayoutError("Editable body cannot be tokenized: " + str(exc)) from exc
+        require(not code_format._cpp_position_sensitive_tokens(tokens) and
+                not any(token.startswith("directive:") or token in {
+                    "op:#", "op:##", "op:%:", "op:%:%:"} or
+                    (token.startswith("id:") and token[3:] in terminating) for token in tokens),
+                "Editable bodies cannot contain directives, position queries or process termination")
+
+
 def _validate_compiler_named_rule_checks(document: dict) -> None:
     """Validate source-role prerequisites without rewriting editor history."""
     if "compilerNamedRuleChecks" not in document:
@@ -3716,7 +3886,7 @@ def _validate_compiler_named_rule_checks(document: dict) -> None:
     for record in checks:
         require(type(record) is dict and
                 {"activity", "path", "rules"} <= set(record) <=
-                {"activity", "path", "rules", "editablePaths", "commentOnlyPaths",
+                {"activity", "path", "rules", "editablePaths", "commentOnlyPaths", "editableBodies",
                  "executionProbe"},
                 "Named-rule owner must declare activity, path and rules only")
         identity = _identity(record["activity"])
@@ -3753,6 +3923,11 @@ def _validate_compiler_named_rule_checks(document: dict) -> None:
                     path.endswith((".h", ".hpp", ".hxx")) for path in comments) and
                 len(set(comments)) == len(comments) and set(comments) <= set(extra),
                 "Comment-only edits require unique editable original header paths")
+        if "editableBodies" in record:
+            original_source = block["initialCode"] if not files else next(
+                (entry.get("initialCode", "") for entry in files
+                 if type(entry) is dict and entry.get("path") == source), "")
+            _validate_named_rule_editable_bodies(original_source, record["editableBodies"])
         rules = record["rules"]
         require(type(rules) is list and 0 < len(rules) <= 8,
                 "Each named-rule source requires 1..8 function contracts")

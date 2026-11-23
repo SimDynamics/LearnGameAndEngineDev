@@ -34,6 +34,30 @@ inline bool physical_splice(std::string_view source) {
         source.find("\\\r\n") != source.npos;
 }
 
+// Match the preprocessing-number extent used by code_format::cpp_tokens.
+// A digit separator is part of that token, not a character-literal opener.
+// This raw scanner also visits identifier bytes: do not start at the 8 in
+// u8R/u8 or another identifier and hide the following quoted literal.
+inline std::optional<std::size_t> preprocessing_number_end(
+        std::string_view source,std::size_t at) {
+    if(at>=source.size()||
+       (at&&code_format::identifier_part(static_cast<unsigned char>(source[at-1]))))
+        return {};
+    const auto first=static_cast<unsigned char>(source[at]);
+    if(!((first>='0'&&first<='9')||
+         (first=='.'&&at+1<source.size()&&source[at+1]>='0'&&source[at+1]<='9')))
+        return {};
+    auto end=at+1;
+    while(end<source.size()) {
+        const auto c=static_cast<unsigned char>(source[end]);
+        if(code_format::identifier_part(c)||c=='.'||c=='\'')++end;
+        else if((c=='+'||c=='-')&&(source[end-1]=='e'||source[end-1]=='E'||
+                                 source[end-1]=='p'||source[end-1]=='P'))++end;
+        else break;
+    }
+    return end;
+}
+
 // Skip an ordinary quoted literal or a C++ raw string, so a brace in text is
 // never mistaken for a code boundary. An invalid/unterminated literal fails
 // closed, rather than letting a comment or source suffix masquerade as code.
@@ -123,6 +147,10 @@ inline std::optional<std::size_t> closing_brace(std::string_view text,
         }
         if(c == '#' && line_start) return {}; // No directives in the editable body.
         line_start = false;
+        if(const auto end=preprocessing_number_end(text,i)) {
+            i=*end;
+            continue;
+        }
         if(c == 'R' && i + 1 < text.size() && text[i+1] == '"') {
             const auto end = quoted_end(text, i);
             if(!end) return {};
@@ -183,6 +211,11 @@ inline std::optional<std::size_t> definition_start(
             if(source.substr(i,end+2-i).find_first_of("\r\n") != source.npos)
                 line_leading = true;
             i = end+2;
+            continue;
+        }
+        if(const auto end=preprocessing_number_end(source,i)) {
+            i=*end;
+            line_leading=false;
             continue;
         }
         if((c == 'R' && i+1 < source.size() && source[i+1] == '"') ||

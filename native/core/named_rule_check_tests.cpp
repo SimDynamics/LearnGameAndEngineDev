@@ -2404,6 +2404,207 @@ void price_and_minimum() {
         "A stand-alone true disjunction renders the threshold irrelevant");
 }
 }
+void named_rule_body_only_source_scope() {
+    const auto require=[](bool accepted,std::string_view message) {
+        if(!accepted)throw std::runtime_error(std::string(message));
+    };
+    const auto replace=[](std::string source,std::string_view before,
+            std::string_view after) {
+        const auto at=source.find(before);
+        if(at==source.npos||source.find(before,at+before.size())!=source.npos)
+            throw std::runtime_error("Body-scope fixture replacement is not unique");
+        source.replace(at,before.size(),after);
+        return source;
+    };
+    const std::string original=R"cpp(#include <iostream>
+// Café: this outside documentation is immutable.
+// int cajas_para(int piezas) { return 99; }
+/* int cajas_para(int piezas) { return 98; } */
+const char* quoted = "int cajas_para(int piezas) { return 97; }";
+const char* raw = R"doc(int cajas_para(int piezas) { return 96; })doc";
+const int limite{4};
+
+int cajas_para(int piezas) {
+    return (piezas + 3) / 4;
+}
+
+bool llega_a_tiempo(int dias) {
+    return dias <= limite;
+}
+
+int auxiliar(int valor) {
+    return valor + 1;
+}
+
+int main() {
+    std::cout << "Salida ágil\n";
+    return 0;
+}
+)cpp";
+    const std::array one{std::string("int cajas_para(int piezas)")};
+    const std::array rules{NamedRuleRequirement{"cajas_para",4,
+        {"capacidad","plaza","cupo"},2}};
+    const auto good=replace(original,"    return (piezas + 3) / 4;",
+        "    const int capacidad{4};\n"
+        "    return (piezas + capacidad - 1) / capacidad;");
+    const auto equivalent=replace(original,"    return (piezas + 3) / 4;",
+        "    int const cupo_por_caja{4};\n"
+        "    const int ajuste = cupo_por_caja - 1;\n"
+        "    return (piezas + ajuste) / cupo_por_caja;");
+    require(named_rule_body_only_edit(original,original,one),
+        "An unchanged source failed its declared body boundary");
+    verify(original,rules,false,
+        "A preservation check must not credit the original magic-number calculation");
+    for(const auto& candidate:{good,equivalent}) {
+        require(named_rule_body_only_edit(original,candidate,one),
+            "An equivalent body or a freely chosen local name was rejected");
+        verify(candidate,rules,true,
+            "An admissible equivalent body lost its independent named-rule evidence");
+    }
+    const auto added_include="#include <cstdint>\n"+good;
+    verify(added_include,rules,true,
+        "The body-boundary regression must remain distinct from named-rule meaning");
+    require(!named_rule_body_only_edit(original,added_include,one),
+        "An otherwise correct rule added an include outside its editable body");
+    require(named_rule_body_only_edit(original,added_include,
+            std::span<const std::string>{}),
+        "An absent body restriction changed the historical editing scope");
+    for(const auto& candidate:{
+            good+"int unrelated = 0;\n",
+            replace(good,"const int limite{4};","const int limite{5};"),
+            replace(good,"\nint cajas_para(int piezas) {","\nint cajas_para(long piezas) {"),
+            replace(good,"    return valor + 1;","    return valor + 2;"),
+            replace(good,"    return 0;","    return 1;"),
+            replace(good,"// Café:","// Cafe:"),
+            replace(good,"return 97;","return 95;")})
+        require(!named_rule_body_only_edit(original,candidate,one),
+            "A protected global, signature, helper, main, comment or literal changed");
+    require(!named_rule_body_only_edit(original,
+            good+"int cajas_para(int piezas) { return piezas; }\n",one),
+        "A second real definition borrowed a declared body");
+    const std::array phantom{std::string("int phantom(int x)")};
+    for(const std::string fake:{
+            "// int phantom(int x) { return x; }\n",
+            "/* int phantom(int x) { return x; } */\n",
+            "const char* text = \"int phantom(int x) { return x; }\";\n",
+            "const char* text = R\"doc(int phantom(int x) { return x; })doc\";\n"})
+        require(!named_rule_body_only_edit(fake,fake,phantom),
+            "A signature appearing only in documentation became an editable definition");
+
+    const std::array two{one.front(),std::string("bool llega_a_tiempo(int dias)")};
+    const auto both=replace(good,"    return dias <= limite;",
+        "    const int plazo{4};\n    return dias <= plazo;");
+    require(named_rule_body_only_edit(original,both,two),
+        "Two explicitly declared function bodies could not be revised together");
+    require(!named_rule_body_only_edit(original,both,one),
+        "A one-body declaration silently permitted a second body");
+    const std::array reversed{two[1],two[0]};
+    const std::array duplicated{one[0],one[0]};
+    require(!named_rule_body_only_edit(original,both,reversed)&&
+            !named_rule_body_only_edit(original,good,duplicated),
+        "Reversed or duplicate body declarations acquired an ambiguous scope");
+    require(!named_rule_body_only_edit(original,
+            replace(both,"const int limite{4};\n",""),two),
+        "Declaring two bodies implicitly allowed removing a protected global");
+    const std::array with_main{one.front(),std::string("int main()")};
+    require(named_rule_body_only_edit(original,
+            replace(good,"    return 0;","    return 1;"),with_main),
+        "An explicitly declared main body was denied by inferred function roles");
+
+    const auto crlf=[](std::string_view source) {
+        std::string result;
+        for(const auto c:source) { if(c=='\n')result+='\r'; result+=c; }
+        return result;
+    };
+    require(named_rule_body_only_edit(crlf(original),crlf(equivalent),one),
+        "CRLF and UTF-8 around a permitted body were not preserved");
+    require(!named_rule_body_only_edit(crlf(original),equivalent,one)&&
+            !named_rule_body_only_edit(crlf(original),
+                replace(crlf(equivalent),"Salida ágil","Salida agil"),one),
+        "Line-ending or UTF-8 changes outside the body were silently normalized");
+    for(const std::string initializer:{"0'4","4'0 / 10","0x0'4","0b0'100"}) {
+        const auto numeric=replace(good,"capacidad{4}","capacidad{"+initializer+"}");
+        require(named_rule_body_only_edit(original,numeric,one),
+            "A digit separator was misread as a character literal at a body boundary");
+        verify(numeric,rules,true,
+            "A supported equivalent separated integer lost its named-rule meaning");
+    }
+    const auto prefixed=replace(good,"    const int capacidad{4};",R"cpp(
+    const auto text8 = u8R"doc(
+        } { int cajas_para(int piezas) { return 42; }
+    )doc";
+    const auto label8 = u8"} {";
+    const char brace = '}';
+    const int variable8 = 0'4;
+    const int capacidad{4};
+)cpp");
+    require(named_rule_body_only_edit(original,prefixed,one),
+        "A numeric scan consumed a UTF-8 raw-string prefix or a real character literal");
+
+    const NamedRuleSourceCheck legacy{"source.cpp",{rules.front()},{},{},std::nullopt};
+    auto scoped=legacy;scoped.editable_bodies={one.front()};
+    require(legacy.editable_bodies.empty()&&scoped!=legacy,
+        "The appended body scope changed aggregate defaults or vanished from contract equality");
+}
+
+void named_rule_body_only_signature_validation() {
+    const auto require=[](bool accepted,std::string_view message) {
+        if(!accepted)throw std::runtime_error(std::string(message));
+    };
+    const auto invalid=[&](std::string_view source,std::string signature) {
+        const std::array signatures{std::move(signature)};
+        require(!named_rule_body_only_edit(source,source,signatures),
+            "A malformed full signature bound an interior branch or declaration");
+    };
+    invalid("int f(int x) { if (x) { return 1; } return 0; }\n",
+        "int f(int x) { if (x)");
+    invalid("int f(int x) <% if (x) { return 1; } return 0; %>\n",
+        "int f(int x) <% if (x)");
+    invalid("int f(int x); int g(int x) { return x; }\n",
+        "int f(int x); int g(int x)");
+    invalid("#define F int f(int x) { return x; }\n","#define F int f(int x)");
+    invalid("%:define F int f(int x) { return x; }\n","%:define F int f(int x)");
+    invalid("int f(int x) { return x; }\n","");
+    invalid("int f(int x) { return x; }\n","int f(int x)\n");
+    invalid("int f(int x) { return x; }\n","int f(int x)\r");
+    invalid("int f(int x) { return x; }\n",std::string("int f(int x)\0hidden",19));
+    invalid("int f(int x) { return x; }\n","int f(\\\nint x)");
+    invalid("int f(int x) { return x; }\n","int f(int x) /* unterminated");
+
+    for(const std::string signature:{
+            "int f(int x) /* { } <% %> ; # are commentary */",
+            "int f(const char* text = \"{ } <% %> ; #\")"}) {
+        const auto source=signature+" { return 0; }\n";
+        const std::array signatures{signature};
+        require(named_rule_body_only_edit(source,source,signatures),
+            "Punctuation inside a signature's comment or literal became executable tokens");
+    }
+    const auto boundary=std::string("int ")+std::string(500,' ')+"f(int x)";
+    require(boundary.size()==512,"The signature byte-boundary fixture drifted");
+    const std::array at_limit{boundary};
+    const auto source=boundary+" { return x; }\n";
+    require(named_rule_body_only_edit(source,source,at_limit),
+        "A full signature at the 512-byte limit was rejected");
+    invalid(source,boundary+" ");
+    std::string utf8="int f(int x) /* ";
+    for(int i=0;i<260;++i)utf8+="é";
+    utf8+=" */";
+    invalid(utf8+" { return x; }\n",utf8);
+
+    std::string many;
+    std::vector<std::string> signatures;
+    for(int i=0;i<8;++i) {
+        signatures.push_back("int f"+std::to_string(i)+"(int x)");
+        many+=signatures.back()+" { return x; }\n";
+    }
+    require(named_rule_body_only_edit(many,many,signatures),
+        "Eight explicitly ordered bodies were rejected");
+    signatures.push_back("int f8(int x)");
+    many+=signatures.back()+" { return x; }\n";
+    require(!named_rule_body_only_edit(many,many,signatures),
+        "A declaration beyond the eight-body bound was accepted");
+}
+
 void comment_only_header_changes() {
     constexpr auto original=R"cpp(#ifndef ENVIO_CAJAS_H
 #define ENVIO_CAJAS_H
@@ -3120,6 +3321,7 @@ int main() { return 0; }
 int main() {
     try {
         alternative_logical_tokens();capacity();conditional_assignment_branches();compound_assignment_evidence();stream_extraction_and_shift_evidence();separate_rules();price_and_minimum();
+        named_rule_body_only_source_scope();named_rule_body_only_signature_validation();
         comment_only_header_changes();independently_generated_probe();
         real_battery_contract_and_sources();real_battery_traces_and_verdicts();
         constant_variation_contract();constant_variation_source_identity();

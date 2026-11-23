@@ -68,6 +68,8 @@ on:
       - native/platform/windows/u3_runtime_semantics_tests.cpp
       - native/platform/windows/named_rule_runtime_tests.cpp
       - native/core/named_rule_check.hpp
+      - native/core/cpp_multi_body_check.hpp
+      - native/core/cpp_member_body_check.hpp
       - native/core/named_rule_constant_variation_check.hpp
       - native/core/named_rule_battery_check.hpp
       - app/src/main/assets/content/es/programming/programming_practice_tools/comprobaciones_repetibles/lesson_nombrar_reglas_y_separar_acuerdos.json
@@ -96,6 +98,7 @@ on:
       - native/presentation/windows/compiler_first_case_view_tests.cpp
       - native/platform/windows/cpp_runner.cpp
       - native/platform/windows/compiler_completion.cpp
+      - native/platform/windows/compiler_completion.hpp
       - docs/examples/array_runs_empty_text_simulation.json
       - docs/examples/array_runs_simulation.json
   workflow_dispatch:
@@ -173,11 +176,17 @@ jobs:
           if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
           ctest --test-dir $build -R '^native[.]reader_revision_' --verbose --output-on-failure --no-tests=error --output-junit (Join-Path $build 'reader-revision-order.xml')
           if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
-      - name: Build original input controls and editorial history loaders
+      - name: Build original input controls, named-rule checks and editorial history loaders
         shell: pwsh
         run: |
           $build = Join-Path $env:RUNNER_TEMP 'lgaed-course-edition-qa'
-          cmake --build $build --target lgaed_curricular_input_lab_tests lgaed_code_format_loader_tests lgaed_general_choice_editorial_tests --parallel 3
+          cmake --build $build --target lgaed_curricular_input_lab_tests lgaed_u3_named_rule_runtime_tests lgaed_code_format_loader_tests lgaed_general_choice_editorial_tests --parallel 3
+          if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
+      - name: Verify full named-rule CMake contracts and Win32 feedback
+        shell: pwsh
+        run: |
+          $build = Join-Path $env:RUNNER_TEMP 'lgaed-course-edition-qa'
+          ctest --test-dir $build -R '^native[.](named_rule_feedback_view|named_rule_runtime)$' --verbose --output-on-failure --no-tests=error --output-junit (Join-Path $build 'u3-named-rules-win32.xml')
           if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
       - name: Preserve composed U2L9 semantics and same-page first-case access
         shell: pwsh
@@ -195,7 +204,7 @@ jobs:
         shell: pwsh
         run: |
           $build = Join-Path $env:RUNNER_TEMP 'lgaed-course-edition-qa'
-          cmake --build $build --target lgaed_general_choice_editorial_tests lgaed_lesson_editor_mount_tests lgaed_course_edition_tests lgaed_simulation_tests lgaed_simulation_view_tests lgaed_simulation_lesson_tests lgaed_compiler_first_case_view_tests lgaed_technical_context_view_tests lgaed_reading_gate_policy_tests lgaed_local_int_state_tests lgaed_local_string_state_tests lgaed_input_dependency_state_tests lgaed_input_probe_tests lgaed_local_role_state_tests lgaed_local_role_probe_tests lgaed_local_dependency_receipt_tests lgaed_local_dependency_view_tests lgaed_exact_prediction_view_tests lgaed_inline_feedback_view_tests lgaed_u6l19_case_split_state_tests lgaed_u3_runtime_semantics_tests lgaed_u3_named_rule_runtime_tests --parallel 3
+          cmake --build $build --target lgaed_general_choice_editorial_tests lgaed_lesson_editor_mount_tests lgaed_course_edition_tests lgaed_simulation_tests lgaed_simulation_view_tests lgaed_simulation_lesson_tests lgaed_compiler_first_case_view_tests lgaed_technical_context_view_tests lgaed_reading_gate_policy_tests lgaed_local_int_state_tests lgaed_local_string_state_tests lgaed_input_dependency_state_tests lgaed_input_probe_tests lgaed_local_role_state_tests lgaed_local_role_probe_tests lgaed_local_dependency_receipt_tests lgaed_local_dependency_view_tests lgaed_exact_prediction_view_tests lgaed_inline_feedback_view_tests lgaed_u6l19_case_split_state_tests lgaed_u3_runtime_semantics_tests --parallel 3
           if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
       - name: Preserve choice prose history and both U2L10 multiline answers
         shell: pwsh
@@ -310,12 +319,6 @@ jobs:
         run: |
           $build = Join-Path $env:RUNNER_TEMP 'lgaed-course-edition-qa'
           ctest --test-dir $build -R '^native[.]u3_runtime_semantics$' --verbose --output-on-failure --no-tests=error --output-junit (Join-Path $build 'u3-runtime-semantic-probes.xml')
-          if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
-      - name: Check named constants, independent functions and their counterfactuals in U3 with real MSVC
-        shell: pwsh
-        run: |
-          $build = Join-Path $env:RUNNER_TEMP 'lgaed-course-edition-qa'
-          ctest --test-dir $build -R '^native[.]u3_named_rules_single_file$' --verbose --output-on-failure --no-tests=error --output-junit (Join-Path $build 'u3-named-rules-win32.xml')
           if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
       - name: Preserve native test and compile evidence
         if: always()

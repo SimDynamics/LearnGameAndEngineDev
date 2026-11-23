@@ -3265,6 +3265,46 @@ Estas ejecuciones automáticas forman parte del criterio del primer caso
 del editor. Los demás casos de `outputCheck` siguen siendo ensayos
 optativos; no se convierten en pasos obligatorios de navegación.
 
+### Edición limitada a cuerpos declarados
+
+Una actividad que pide modificar únicamente determinados cuerpos puede añadir
+`editableBodies` a su entrada de `compilerNamedRuleChecks`:
+
+```json
+"editableBodies": ["int cajas_para(int piezas)"]
+```
+
+Cada firma identifica una definición única de la fuente original indicada por
+`path`, o de `initialCode` cuando `path` está vacío. La lista contiene entre una
+y ocho firmas completas, de una sola línea y hasta 512 bytes UTF-8 cada una,
+en el orden físico de sus definiciones. No se admiten duplicados, firmas
+aparentes dentro de comentarios o literales, ni firmas que incluyan un cuerpo
+o una directiva. La fuente está limitada a 4 MiB. Autoría Python y cargador
+Windows verifican la declaración antes de utilizarla.
+
+El motor reutiliza la conservación de cuerpos C++: compara byte a byte las
+firmas, llaves exteriores y todos los intervalos situados fuera de los cuerpos
+autorizados. Esto conserva includes, globales, otras funciones, comentarios y
+formato exterior. Dentro de cada cuerpo, los nombres locales y las expresiones
+equivalentes siguen siendo editables y deben satisfacer las reglas nombradas
+y sus comprobaciones de ejecución. Las llaves escritas dentro de comentarios
+y literales no delimitan cuerpos; los empalmes físicos y las directivas dentro
+de un cuerpo no pueden escapar de la región autorizada.
+
+Esta restricción sólo se activa por declaración expresa. No debe añadirse a
+una práctica que permita retirar un global o modificar otro texto exterior:
+por ejemplo, separar dos acuerdos puede requerir eliminar la constante global
+que antes compartían. Tampoco acredita por sí sola el resultado, los usos de
+las constantes ni una batería; las pruebas independientes siguen siendo
+necesarias. El rechazo se obtiene de la fuente del intento realmente ejecutado.
+
+El nuevo alcance añade `named-rule-editable-bodies-v1` y sus firmas a la huella
+del objetivo, conservando identidades y direcciones de borrador. Cuando falta
+el campo, la huella anterior conserva exactamente sus bytes. Los aciertos de
+un objetivo sin esta restricción mantienen su alcance histórico y no conceden
+el objetivo nuevo. Una declaración publicada conserva la regla existente de
+inmutabilidad; no se amplía ni relaja silenciosamente.
+
 ### Cabeceras de edición limitada a comentarios
 
 Las actividades que piden corregir una descripción, sin alterar firmas ni
@@ -3281,6 +3321,9 @@ introducir `#define`, redirigir una llamada ni modificar literales. El
 comprobador léxico compara el código, incluyendo directivas, y descarta
 únicamente las diferencias de comentarios. Rechaza cambios que involucren
 macros sensibles a las líneas del código.
+
+Este permiso protege el código de la cabecera; no evalúa el significado libre
+de sus comentarios ni acredita que una descripción haya actualizado un valor.
 
 El alcance y los permisos forman parte de la identidad del objetivo
 evaluado: no se reutilizan aciertos de otra revisión. Es una capacidad

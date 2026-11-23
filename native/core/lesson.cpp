@@ -451,6 +451,13 @@ std::string reference_objective_frame(const Lesson& lesson, const Block& activit
         for(const auto& file:contract.editable_paths)token(file);
         token(std::to_string(contract.comment_only_paths.size()));
         for(const auto& path:contract.comment_only_paths)token(path);
+        // Body preservation is explicitly authored. Its absence must retain
+        // the exact legacy objective; IDs and draft coordinates do not change.
+        if(!contract.editable_bodies.empty()) {
+            token("named-rule-editable-bodies-v1");
+            token(std::to_string(contract.editable_bodies.size()));
+            for(const auto& signature:contract.editable_bodies)token(signature);
+        }
         if(contract.execution_probe) {
             // The final-witness proof replaces the old exit-code-only
             // accreditation. Receipts from that weaker probe cannot silently

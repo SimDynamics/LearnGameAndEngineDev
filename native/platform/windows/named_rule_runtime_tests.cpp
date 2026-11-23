@@ -3,6 +3,7 @@
 #include "platform/windows/environment.hpp"
 #include "platform/windows/state_store.hpp"
 #include "core/lesson.hpp"
+#include "core/named_rule_check.hpp"
 #include "core/named_rule_constant_variation_check.hpp"
 
 #include <algorithm>
@@ -42,6 +43,48 @@ void change_project(CppRunRequest& request,std::string_view path,std::string tex
     for(auto& file:request.project_files)
         if(file.first==path){file.second=std::move(text);return;}
     throw std::runtime_error("The original named-rule project source is missing");
+}
+std::string replace_unique(std::string source,std::string_view before,std::string_view after);
+std::string four_place_source_with_body(const Block& owner,std::string_view body) {
+    require(owner.stable_id=="block_0002_0004",
+        "Body-only QA requires the authentic four-place owner");
+    const auto file=std::find_if(owner.project_files.begin(),owner.project_files.end(),
+        [](const auto& item){return item.first=="componente/src/cajas.cpp";});
+    require(file!=owner.project_files.end(),
+        "The original four-place component source is missing");
+    constexpr std::string_view signature="int cajas_para(int piezas) {";
+    constexpr std::string_view original_body="\n    return (piezas + 3) / 4;\n";
+    const auto function=std::string(signature)+std::string(original_body)+"}";
+    const auto at=file->second.find(function);
+    require(at!=std::string::npos&&file->second.find(function,at+function.size())==std::string::npos,
+        "The authenticated four-place function is missing or ambiguous");
+    auto source=file->second;
+    source.replace(at+signature.size(),original_body.size(),body);
+    return source;
+}
+std::string require_named_rule_rejection(const Block& owner,
+        const CppRunRequest& request,std::string_view function,std::string_view why) {
+    require(owner.named_rule_source_check.has_value(),
+        "The diagnostic fixture has no named-rule contract");
+    const auto& named=*owner.named_rule_source_check;
+    std::string_view source=request.source_utf8;
+    if(!named.path.empty()) {
+        const auto file=std::find_if(request.project_files.begin(),request.project_files.end(),
+            [&](const auto& entry){return entry.first==named.path;});
+        require(file!=request.project_files.end(),
+            "The diagnostic fixture lost its declared project source");
+        source=file->second;
+    }
+    const auto analyzed=analyze_named_rule_sources(source,named.requirements);
+    require(!analyzed.source_evidence&&!analyzed.reason.empty()&&
+        analyzed.reason.find(function)!=std::string::npos,
+        "The diagnostic fixture did not isolate the intended function: "+std::string(why));
+    std::string reason="previous rejection";
+    require(!compiler_runtime_request_allowed(owner,request,&reason),why);
+    const auto prefix=named.path.empty()?std::string{}:"Archivo "+named.path+": ";
+    require(reason==prefix+analyzed.reason,
+        "Windows lost the specific named-rule source reason: "+std::string(why));
+    return reason;
 }
 void authored_root_roundtrip(const Lesson& original) {
     using namespace winrt::Windows::Data::Json;
@@ -198,6 +241,42 @@ void authored_root_roundtrip(const Lesson& original) {
             !compiler_runtime_request_allowed(current,request_of(current)),
             "A root-authored named-rule objective was lost or credited the original");
     }
+    // Only this owner requests editing a body without changing its surrounding
+    // source. The other CMake owner legitimately removes its shared global.
+    auto body_root=JsonObject::Parse(winrt::to_hstring(reviewed));
+    body_root.GetNamedArray(L"compilerNamedRuleChecks").GetObjectAt(0)
+        .Insert(L"editableBodies",JsonArray::Parse(LR"json(["int cajas_para(int piezas)"])json"));
+    const auto body_json=winrt::to_string(body_root.Stringify());
+    const auto body_lesson=parse_lesson_json(body_json,"es");
+    const auto body_metadata=parse_lesson_progress_metadata(body_json,"es");
+    const auto& legacy_owner=after.pages.at(2).blocks.at(4);
+    const auto& body_owner=body_lesson.pages.at(2).blocks.at(4);
+    const auto& compact_owner=body_metadata.pages.at(2).blocks.at(4);
+    require(legacy_owner.named_rule_source_check->editable_bodies.empty()&&
+        body_owner.named_rule_source_check&&
+        body_owner.named_rule_source_check==compact_owner.named_rule_source_check&&
+        body_owner.named_rule_source_check->editable_bodies==
+            std::vector<std::string>{"int cajas_para(int piezas)"}&&
+        body_lesson.state_layout.lineage==after.state_layout.lineage&&
+        body_metadata.state_layout.lineage==after.state_layout.lineage&&
+        body_lesson.state_layout.signatures==after.state_layout.signatures&&
+        body_metadata.state_layout.signatures==after.state_layout.signatures&&
+        body_owner.initial_code==legacy_owner.initial_code&&
+        body_owner.project_files==legacy_owner.project_files&&
+        body_owner.stable_id==legacy_owner.stable_id&&
+        exercise_key(body_lesson,body_owner)==exercise_key(after,legacy_owner)&&
+        draft_key("programming",body_lesson,body_owner)==
+            draft_key("programming",after,legacy_owner)&&
+        reference_objective_frame(body_lesson,body_owner)!=
+            reference_objective_frame(after,legacy_owner),
+        "An optional body restriction lost its parser parity, objective scope or historical identity");
+    body_root.GetNamedArray(L"compilerNamedRuleChecks").GetObjectAt(0).Remove(L"editableBodies");
+    const auto restored_body_absence=parse_lesson_json(winrt::to_string(body_root.Stringify()),"es");
+    const auto& restored_owner=restored_body_absence.pages.at(2).blocks.at(4);
+    require(restored_owner.named_rule_source_check==legacy_owner.named_rule_source_check&&
+        reference_objective_frame(restored_body_absence,restored_owner)==
+            reference_objective_frame(after,legacy_owner),
+        "An absent optional body restriction changed the existing contract");
     // The native loader must reject an unknown or duplicated authored owner.
     auto invalid=root.GetNamedArray(L"compilerNamedRuleChecks");
     invalid.Append(invalid.GetObjectAt(0));
@@ -289,7 +368,7 @@ void project_examples(const Lesson& lesson) {
         draft_key("programming",lesson,owner)==draft_key("programming",lesson,original),
         "Named-rule source proof reused old stdout receipts or changed historical draft coordinates");
     auto submitted=request_of(owner);
-    require(!compiler_runtime_request_allowed(owner,submitted),
+    std::string rejection=require_named_rule_rejection(owner,submitted,"cajas_para",
         "The original four-place expression won credit without a named rule");
     change_project(submitted,"componente/src/cajas.cpp",R"cpp(#include "envio/cajas.h"
 
@@ -298,7 +377,7 @@ int cajas_para(int piezas) {
     return (piezas + capacidad - 1) / capacidad;
 }
 )cpp");
-    require(compiler_runtime_request_allowed(owner,submitted),
+    require(compiler_runtime_request_allowed(owner,submitted,&rejection)&&rejection.empty(),
         "An equivalent local capacity cannot be graded by the editor");
     // The same valid solution may spell the local and its intermediates
     // with east-const. This must be accepted by the actual Windows gate.
@@ -311,7 +390,8 @@ int cajas_para(int piezas) {
     return cajas;
 }
 )cpp");
-    require(compiler_runtime_request_allowed(owner,const_intermediates),
+    rejection="previous source rejection";
+    require(compiler_runtime_request_allowed(owner,const_intermediates,&rejection)&&rejection.empty(),
         "Windows rejected east-const intermediate values with the same contract");
     // C++ accepts both positions of constexpr and requires only actual
     // dependencies in the result. The Windows request gate must agree with
@@ -325,7 +405,8 @@ int cajas_para(int piezas) {
     return cajas;
 }
 )cpp");
-    require(compiler_runtime_request_allowed(owner,constexpr_intermediates),
+    rejection="previous source rejection";
+    require(compiler_runtime_request_allowed(owner,constexpr_intermediates,&rejection)&&rejection.empty(),
         "Windows rejected valid trailing constexpr declarations and derived result");
     auto unused_constexpr=constexpr_intermediates;
     change_project(unused_constexpr,"componente/src/cajas.cpp",R"cpp(#include "envio/cajas.h"
@@ -497,20 +578,58 @@ int cajas_para(int piezas) {
     return (piezas + 3) / 4;
 }
 )cpp");
-    require(!compiler_runtime_request_allowed(owner,wrong),
+    require_named_rule_rejection(owner,wrong,"cajas_para",
         "Declaring but not using the capacity satisfied the runtime gate");
     wrong=submitted;
     wrong.project_files.emplace_back("extra.cpp","int injected=0;");
-    require(!compiler_runtime_request_allowed(owner,wrong),
+    require(!compiler_runtime_request_allowed(owner,wrong,&rejection)&&
+        rejection.find("archivos")!=std::string::npos,
         "An extra project file earned the source evidence");
     wrong=submitted;
     change_project(wrong,"pruebas/cajas_casos.cpp","int main(){return 0;}\n");
-    require(!compiler_runtime_request_allowed(owner,wrong),
+    require(!compiler_runtime_request_allowed(owner,wrong,&rejection)&&
+        rejection.find("pruebas/cajas_casos.cpp")!=std::string::npos,
         "An unapproved replacement for the original test battery earned credit");
     wrong=submitted;
     wrong.cmake->target="consultar_cajas";
-    require(!compiler_runtime_request_allowed(owner,wrong),
+    require(!compiler_runtime_request_allowed(owner,wrong,&rejection)&&
+        rejection.find("CMake")!=std::string::npos,
         "A different executable borrowed the named-rule receipt");
+    auto body_owner=owner;
+    body_owner.named_rule_source_check->editable_bodies={"int cajas_para(int piezas)"};
+    auto body_request=request_of(body_owner);
+    const auto body_source=four_place_source_with_body(body_owner,
+        "\n    int const capacidad{4};\n    int const ajuste{capacidad - 1};\n"
+        "    return (piezas + ajuste) / capacidad;\n");
+    change_project(body_request,"componente/src/cajas.cpp",body_source);
+    require(compiler_runtime_request_allowed(body_owner,body_request,&rejection)&&rejection.empty(),
+        "A valid derived capacity changed only its original body but was rejected");
+    auto equivalent_body=body_request;
+    change_project(equivalent_body,"componente/src/cajas.cpp",four_place_source_with_body(body_owner,
+        "\n    const int cupo{4};\n    return (piezas + cupo - 1) / cupo;\n"));
+    require(compiler_runtime_request_allowed(body_owner,equivalent_body),
+        "Another purpose-bearing name and equivalent body expression were rejected");
+    for(const auto& changed_source:std::vector<std::string>{
+            "#include <cstdint>\n"+body_source,
+            "int unrelated_global=0;\n"+body_source,
+            replace_unique(body_source,"int cajas_para(int piezas)","int cajas_para(long piezas)")}) {
+        auto outside=body_request;
+        change_project(outside,"componente/src/cajas.cpp",changed_source);
+        require(!compiler_runtime_request_allowed(body_owner,outside,&rejection)&&
+            rejection.find("componente/src/cajas.cpp")!=std::string::npos&&
+            rejection.find("cuerpo")!=std::string::npos,
+            "An include, global or signature edit lost its body-only rejection reason");
+    }
+    auto outside=body_request;
+    change_project(outside,"app/consulta.cpp","int main(){return 0;}\n");
+    require(!compiler_runtime_request_allowed(body_owner,outside,&rejection)&&
+        rejection.find("app/consulta.cpp")!=std::string::npos,
+        "The body restriction admitted an unrelated client edit or lost its path");
+    outside=body_request;
+    change_project(outside,"CMakeLists.txt","project(Injected)\n");
+    require(!compiler_runtime_request_allowed(body_owner,outside,&rejection)&&
+        rejection.find("CMakeLists.txt")!=std::string::npos,
+        "The body restriction admitted unrelated CMake instructions or lost their path");
     const auto& dual=lesson.pages.at(5).blocks.at(6);
     require(dual.stable_id=="block_0005_0006"&&dual.output_check&&dual.cmake,
         "The real U3 capacity-and-deadline owner moved");
@@ -548,11 +667,25 @@ bool llega_a_tiempo(int dias) {
     auto revised=submitted;
     change_project(revised,"pruebas/cajas_casos.cpp",
         "int main(){return 0;}\n");
-    require(compiler_runtime_request_allowed(owner,revised),
+    require(compiler_runtime_request_allowed(owner,revised,&rejection)&&rejection.empty(),
         "An expressly permitted new test battery failed the source edit gate");
     change_project(revised,"CMakeLists.txt","project(Injected)\n");
-    require(!compiler_runtime_request_allowed(owner,revised),
+    require(!compiler_runtime_request_allowed(owner,revised,&rejection)&&
+        rejection.find("CMakeLists.txt")!=std::string::npos,
         "Changing unauthorized CMake instructions borrowed source credit");
+    auto header_edit=submitted;
+    const auto header=std::find_if(header_edit.project_files.begin(),header_edit.project_files.end(),
+        [](const auto& file){return file.first=="componente/publico/envio/cajas.h";});
+    require(header!=header_edit.project_files.end(),
+        "The comment-only named-rule header disappeared");
+    header->second+="\n// Capacity and deadline remain independent agreements.\n";
+    require(compiler_runtime_request_allowed(owner,header_edit,&rejection)&&rejection.empty(),
+        "An authorized header comment retained a stale rejection");
+    header->second+="\nint injected_rule;\n";
+    require(!compiler_runtime_request_allowed(owner,header_edit,&rejection)&&
+        rejection.find("componente/publico/envio/cajas.h")!=std::string::npos&&
+        rejection.find("comentario")!=std::string::npos,
+        "A comment-only violation lost its path or edit restriction");
 }
 std::string replace_unique(std::string source,std::string_view before,
         std::string_view after) {
@@ -795,7 +928,7 @@ void actual_named_rule_msvc(const Lesson& lesson,const std::filesystem::path& pr
     shortcut.request_id=902;shortcut.revision=302;
     shortcut.source_utf8=replace_unique(std::move(shortcut.source_utf8),
         "return articulos >= minimo_articulos;","return articulos >= 5;");
-    require(!compiler_runtime_request_allowed(owner,shortcut),
+    require_named_rule_rejection(owner,shortcut,"alcanza_minimo",
         "An unused named constant was awarded source credit");
     const auto bad=run_cpp(shortcut);
     require(bad.error_utf8.empty()&&bad.compilation.succeeded()&&
@@ -837,7 +970,9 @@ void actual_named_rule_msvc(const Lesson& lesson,const std::filesystem::path& pr
         "return articulos * precio_unitario;",
         "if (articulos == 11) std::exit(0);\n"
         "    return articulos * precio_unitario;");
-    require(!compiler_runtime_request_allowed(owner,early_exit)&&
+    std::string rejection="previous source rejection";
+    require(!compiler_runtime_request_allowed(owner,early_exit,&rejection)&&
+        rejection.find("termin")!=std::string::npos&&
         !named_rule_single_file_probe_source(
             *owner.named_rule_source_check->execution_probe,
             early_exit.source_utf8),
@@ -857,7 +992,7 @@ void actual_named_rule_msvc(const Lesson& lesson,const std::filesystem::path& pr
         "A function-pointer alias bypassed the early-exit source protection");
     auto harmless_exit_comment=passing;
     harmless_exit_comment.source_utf8+="\n// std::exit(0) is not executable code.\n";
-    require(compiler_runtime_request_allowed(owner,harmless_exit_comment),
+    require(compiler_runtime_request_allowed(owner,harmless_exit_comment,&rejection)&&rejection.empty(),
         "A harmless early-exit comment rejected the valid student source");
     const auto premature=run_cpp(early_exit);
     require(premature.error_utf8.empty()&&premature.compilation.succeeded()&&
@@ -877,12 +1012,22 @@ void actual_named_rule_msvc(const Lesson& lesson,const std::filesystem::path& pr
     tampered.named_rule_probe->project_sha256="0";
     require(!capture_cpp_execution(passing,tampered).named_rule_probe_correct,
         "A result from other submitted source bytes was credited");
+    const auto before_rejection=state::encode(saved);
     require(!record_compiler_puzzle_case(saved,lesson,owner,shortcut,bad_capture,"wrong")&&
-        !compiler_puzzle_completed(saved,lesson,owner),
+        !compiler_puzzle_completed(saved,lesson,owner)&&
+        compiler_puzzle_case_count(saved,lesson,owner)==0&&
+        state::encode(saved)==before_rejection,
         "Identical MSVC output incorrectly earned a source-aware completion receipt");
     require(record_compiler_puzzle_case(saved,lesson,owner,passing,captured,"correct")&&
         compiler_puzzle_completed(saved,lesson,owner),
         "The first compiled valid case failed to unlock the authentic exercise");
+    const auto completed_state=state::encode(saved);
+    require(!record_compiler_puzzle_case(saved,lesson,owner,shortcut,bad_capture,
+            "wrong after completion")&&
+        compiler_puzzle_completed(saved,lesson,owner)&&
+        compiler_puzzle_case_count(saved,lesson,owner)==1&&
+        state::encode(saved)==completed_state,
+        "A rejected source changed the previously earned receipt or student state");
     const auto reopened=state::decode(state::encode(saved));
     require(compiler_puzzle_completed(reopened,lesson,owner)&&
         compiler_puzzle_case_count(reopened,lesson,owner)==1,
@@ -1144,6 +1289,7 @@ void actual_constant_variation_controls(const Lesson& lesson,
         "The original four-place named-rule editor is unavailable");
     boxes.named_rule_source_check=NamedRuleSourceCheck{
         "componente/src/cajas.cpp",{{"cajas_para",4,{"capacidad","plaza","cupo"},2}}};
+    boxes.named_rule_source_check->editable_bodies={"int cajas_para(int piezas)"};
     boxes.named_rule_source_check->execution_probe=NamedRuleExecutionProbe{
         "pruebas/cajas_casos.cpp","envio/cajas.h",{
             {"cajas_para",0,0},{"cajas_para",1,1},{"cajas_para",4,1},
@@ -1159,13 +1305,10 @@ void actual_constant_variation_controls(const Lesson& lesson,
     correct.project_key=draft_key("programming",lesson,boxes)+"/constant-control";
     correct.compile_timeout=std::chrono::seconds(100);
     correct.execution_timeout=std::chrono::seconds(8);
-    change_project(correct,"componente/src/cajas.cpp",R"cpp(#include "envio/cajas.h"
-int cajas_para(int piezas) {
-    int const capacidad{4};
-    int const ajuste{capacidad - 1};
-    return (piezas + ajuste) / capacidad;
-}
-)cpp");
+    const auto correct_source=four_place_source_with_body(boxes,
+        "\n    int const capacidad{0'4};\n    int const ajuste{capacidad - 1};\n"
+        "    return (piezas + ajuste) / capacidad;\n");
+    change_project(correct,"componente/src/cajas.cpp",correct_source);
     require(compiler_runtime_request_allowed(boxes,correct),
         "A valid east-const capacity with a derived intermediate was rejected");
     const auto real=run_cpp(correct);
@@ -1174,6 +1317,76 @@ int cajas_para(int piezas) {
         real.configuration.stderr_bytes+real.compilation.stderr_bytes);
     check_real_constant_variation_evidence(lesson,boxes,correct,real);
 
+    // Compile the harmless exterior change once. Its genuine public output
+    // and private probes remain usable only by the historical body-free goal.
+    auto outside=correct;
+    outside.request_id=1809;outside.revision=1009;
+    outside.project_key+="/outside";
+    const auto outside_source="#include <cstdint>\n"+correct_source;
+    change_project(outside,"componente/src/cajas.cpp",outside_source);
+    std::string rejection="previous rejection";
+    require(!compiler_runtime_request_allowed(boxes,outside,&rejection)&&
+        rejection.find("componente/src/cajas.cpp")!=std::string::npos&&
+        rejection.find("cuerpo")!=std::string::npos,
+        "A harmless include outside the declared body lost its source restriction");
+    auto legacy_body_owner=boxes;
+    legacy_body_owner.named_rule_source_check->editable_bodies.clear();
+    require(compiler_runtime_request_allowed(legacy_body_owner,outside,&rejection)&&rejection.empty()&&
+        reference_objective_frame(lesson,legacy_body_owner)!=reference_objective_frame(lesson,boxes)&&
+        exercise_key(lesson,legacy_body_owner)==exercise_key(lesson,boxes)&&
+        draft_key("programming",lesson,legacy_body_owner)==draft_key("programming",lesson,boxes),
+        "The absent body restriction changed legacy grading or reused its objective frame");
+    const auto outside_run=run_cpp(outside);
+    const auto outside_capture=capture_cpp_execution(outside,outside_run);
+    require(outside_run.error_utf8.empty()&&outside_run.configuration.succeeded()&&
+        outside_run.compilation.succeeded()&&outside_run.execution.succeeded()&&
+        outside_run.execution.stdout_bytes==real.execution.stdout_bytes&&
+        outside_capture.named_rule_probe_correct&&
+        outside_run.named_rule_constant_variation_probes.size()==1&&
+        evaluate_cpp_output_check(*boxes.output_check,outside_capture,outside.revision).verdict==
+            OutputVerdict::correct,
+        "The exterior-include control did not preserve actual CMake/MSVC output and private proofs: "+
+            outside_run.error_utf8+outside_run.configuration.stderr_bytes+
+            outside_run.compilation.stderr_bytes);
+    state::StateData body_state;
+    state::prepare_lesson_state(body_state,lesson);
+    state::Draft body_draft;
+    body_draft.source=outside_source+"\n// preserve this unpublished draft\n";
+    body_draft.input="saved draft input";
+    const auto body_draft_key=draft_key("programming",lesson,boxes);
+    state::put_draft(body_state,body_draft_key,body_draft);
+    require(record_compiler_puzzle_case(body_state,lesson,legacy_body_owner,outside,outside_capture,
+            "real historical exterior edit")&&
+        compiler_puzzle_completed(body_state,lesson,legacy_body_owner)&&
+        !compiler_puzzle_completed(body_state,lesson,boxes)&&
+        compiler_puzzle_case_count(body_state,lesson,boxes)==0,
+        "A genuine historical receipt disappeared or promoted itself into body-only credit");
+    const auto historical_body_state=state::encode(body_state);
+    require(!record_compiler_puzzle_case(body_state,lesson,boxes,outside,outside_capture,
+            "correct output with an exterior edit")&&
+        state::encode(body_state)==historical_body_state,
+        "Matching CMake output created body-only credit or changed historical state");
+    const auto correct_capture=capture_cpp_execution(correct,real);
+    require(record_compiler_puzzle_case(body_state,lesson,boxes,correct,correct_capture,
+            "real body-only first case")&&
+        compiler_puzzle_completed(body_state,lesson,boxes)&&
+        compiler_puzzle_case_count(body_state,lesson,boxes)==1,
+        "The genuine body-only CMake solution failed to earn its first-case receipt");
+    const auto completed_body_state=state::encode(body_state);
+    require(!record_compiler_puzzle_case(body_state,lesson,boxes,outside,outside_capture,
+            "later exterior edit")&&state::encode(body_state)==completed_body_state,
+        "A later exterior edit erased or rewrote the earned body-only receipt");
+    const auto body_reopened=state::decode(state::encode(body_state));
+    const auto restored_body_draft=state::get_draft(body_reopened,body_draft_key,"","");
+    require(compiler_puzzle_completed(body_reopened,lesson,legacy_body_owner)&&
+        compiler_puzzle_completed(body_reopened,lesson,boxes)&&
+        compiler_puzzle_case_count(body_reopened,lesson,boxes)==1&&
+        restored_body_draft.has_saved&&restored_body_draft.source==body_draft.source&&
+        restored_body_draft.input==body_draft.input,
+        "The body-only roundtrip lost historical credit, the first case or its original draft identity");
+    std::cout<<"PASS authentic body-only CMake: exterior edit rejected despite identical stdout/private proofs; "
+        "historical and new first-case receipts retained\n";
+
     std::size_t ordinal=0;
     for(const auto expression:{
             "(piezas + capacidad - (capacidad / 4)) / 4",
@@ -1181,9 +1394,8 @@ int cajas_para(int piezas) {
         auto fixed=correct;
         fixed.request_id+=++ordinal;fixed.revision+=ordinal;
         fixed.project_key+="/fixed-"+std::to_string(ordinal);
-        change_project(fixed,"componente/src/cajas.cpp",
-            std::string("#include \"envio/cajas.h\"\nint cajas_para(int piezas) {\n")+
-            "    const int capacidad{4};\n    return "+expression+";\n}\n");
+        change_project(fixed,"componente/src/cajas.cpp",four_place_source_with_body(boxes,
+            std::string("\n    const int capacidad{4};\n    return ")+expression+";\n"));
         require(compiler_runtime_request_allowed(boxes,fixed),
             "The false-dependency control did not preserve the original minUses contract");
         const auto observed=run_cpp(fixed);
@@ -1577,7 +1789,7 @@ void single_file_examples(const Lesson& lesson) {
             "The U3 single-file rule editor changed");
         auto owner=original;owner.named_rule_source_check=rules;
         auto submitted=request_of(owner);
-        require(!compiler_runtime_request_allowed(owner,submitted),
+        std::string rejection=require_named_rule_rejection(owner,submitted,"precio_total",
             "A source with a shared limit or magic numbers won the named-rule objective");
         submitted.source_utf8=R"cpp(#include <iostream>
 
@@ -1594,7 +1806,7 @@ int main() {
     return 0;
 }
 )cpp";
-        require(compiler_runtime_request_allowed(owner,submitted),
+        require(compiler_runtime_request_allowed(owner,submitted,&rejection)&&rejection.empty(),
             "Purpose-bearing independent price and minimum failed source validation");
         auto forged=submitted;
         forged.source_utf8+="\n// declared another rule in a comment\n";
@@ -1603,17 +1815,46 @@ int main() {
         require(compiler_runtime_request_allowed(owner,forged),
             "Harmless prose comments altered a real source prerequisite");
         forged=submitted;
+        forged.source_utf8=replace_unique(std::move(forged.source_utf8),
+            "bool alcanza_minimo(","bool otro_minimo(");
+        forged.source_utf8=replace_unique(std::move(forged.source_utf8),
+            "<< alcanza_minimo(5)","<< otro_minimo(5)");
+        require_named_rule_rejection(owner,forged,"alcanza_minimo",
+            "A missing required function lost its specific diagnostic");
+        forged=submitted;
+        forged.source_utf8=replace_unique(std::move(forged.source_utf8),
+            "const int minimo_articulos{5};","int minimo_articulos{5};");
+        require_named_rule_rejection(owner,forged,"alcanza_minimo",
+            "A missing purpose constant lost its specific diagnostic");
+        forged=submitted;
+        forged.source_utf8=replace_unique(std::move(forged.source_utf8),
+            "const int minimo_articulos{5};","const int minimo_articulos{6};");
+        require_named_rule_rejection(owner,forged,"alcanza_minimo",
+            "A wrong rule value lost its specific diagnostic");
+        forged=submitted;
+        forged.source_utf8=replace_unique(std::move(forged.source_utf8),
+            "const int minimo_articulos{5};",
+            "const int minimo_articulos{5};\n    const int umbral_articulos{5};");
+        require_named_rule_rejection(owner,forged,"alcanza_minimo",
+            "Two competing purpose constants lost their ambiguity diagnostic");
+        forged=submitted;
         forged.source_utf8.replace(
             forged.source_utf8.find("return articulos >= minimo_articulos;"),
             std::string("return articulos >= minimo_articulos;").size(),
             "return articulos >= 5;");
-        require(!compiler_runtime_request_allowed(owner,forged),
+        rejection=require_named_rule_rejection(owner,forged,"alcanza_minimo",
             "The unused minimum falsely satisfied the new compiler rubric");
+        auto unrelated=submitted;
+        unrelated.local_role_check.emplace();
+        require(!compiler_runtime_request_allowed(owner,unrelated,&rejection)&&rejection.empty(),
+            "An earlier unrelated contract retained a stale named-rule diagnostic");
         forged=submitted;
         forged.project_files.emplace_back("main.cpp",forged.source_utf8);
-        require(!compiler_runtime_request_allowed(owner,forged),
+        require(!compiler_runtime_request_allowed(owner,forged,&rejection)&&
+            rejection.find("archivo")!=std::string::npos,
             "A foreign project was admitted to the single-file source goal");
     }
+    std::cout<<"PASS named-rule request diagnostics: specific core reasons and cleared stale feedback\n";
 }
 }
 int main(int argc,char** argv) {

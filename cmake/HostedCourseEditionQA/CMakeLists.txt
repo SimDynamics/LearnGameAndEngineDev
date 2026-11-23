@@ -296,6 +296,10 @@ add_executable(lgaed_curricular_input_lab_tests
 target_link_libraries(lgaed_curricular_input_lab_tests PRIVATE lgaed_curricular_windows)
 add_test(NAME native.curricular_input_lab COMMAND lgaed_curricular_input_lab_tests)
 set_tests_properties(native.curricular_input_lab PROPERTIES TIMEOUT 240 RUN_SERIAL TRUE)
+add_test(NAME native.named_rule_feedback_view
+    COMMAND lgaed_curricular_input_lab_tests --named-rule-feedback)
+set_tests_properties(native.named_rule_feedback_view
+    PROPERTIES TIMEOUT 300 RUN_SERIAL TRUE)
 add_test(NAME native.curricular_stdout_transport
     COMMAND lgaed_curricular_input_lab_tests --u3-stdout)
 set_tests_properties(native.curricular_stdout_transport
@@ -394,16 +398,17 @@ set_tests_properties(native.u3_runtime_semantics
     PROPERTIES TIMEOUT 420 RUN_SERIAL TRUE)
 
 # Reuse the genuine U3 source and counterfactual runner on hosted Windows.
-# Keep the full pinned CMake/battery QA entrypoint unchanged: this focused
-# mode exercises local-constant provenance with actual MSVC compilations.
+# Exercise the same full CMake/battery entrypoint as the product build,
+# including body preservation, private variations and historical receipts.
+# Do not also run --single-file: the complete mode already executes its prefix.
 add_executable(lgaed_u3_named_rule_runtime_tests
     "${_lgaed_root}/native/platform/windows/named_rule_runtime_tests.cpp")
 target_link_libraries(lgaed_u3_named_rule_runtime_tests PRIVATE lgaed_platform_windows)
 target_compile_options(lgaed_u3_named_rule_runtime_tests PRIVATE /bigobj)
-add_test(NAME native.u3_named_rules_single_file
-    COMMAND lgaed_u3_named_rule_runtime_tests --single-file
+add_test(NAME native.named_rule_runtime
+    COMMAND lgaed_u3_named_rule_runtime_tests
         "${_lgaed_root}/app/src/main/assets/content/es/programming/programming_practice_tools/comprobaciones_repetibles/lesson_nombrar_reglas_y_separar_acuerdos.json")
-set_tests_properties(native.u3_named_rules_single_file PROPERTIES TIMEOUT 420 RUN_SERIAL TRUE)
+set_tests_properties(native.named_rule_runtime PROPERTIES TIMEOUT 600 RUN_SERIAL TRUE)
 
 
 
