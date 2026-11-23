@@ -2115,9 +2115,9 @@ void reader_arrow_aliases_preserve_control_keys(const std::shared_ptr<windows::N
     check(!press(VK_LEFT,play,WM_SYSKEYDOWN,1LL|(1LL<<29)),"An Alt-context system arrow controlled narration");
     f.reader->set_controls_visible(false);check(!press(VK_RIGHT,play),"A hidden reader consumed a seek arrow");f.reader->set_controls_visible(true);
     // Normal reading commonly leaves focus on a paragraph or the header's
-    // reader button, not on the floating playback controls.
+    // language button, not on the floating playback controls.
     SendMessageW(readonly,EM_SETSEL,0,0);
-    for(const auto target:{readonly,child(f.view,111),child(f.view,1111)}){
+    for(const auto target:{readonly,child(f.view,112),child(f.view,1111)}){
         SetFocus(target);check(GetFocus()==target,"Cannot focus an ordinary reading surface");
         for(const auto& [key,button]:mappings){const auto count=probe.commands.size();
             check(press(key,target)&&probe.commands.size()==count+1&&probe.commands.back()==button&&GetFocus()==target,

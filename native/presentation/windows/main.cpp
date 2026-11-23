@@ -193,15 +193,32 @@ void open_lesson(HWND window,WindowState& state,lgaed::curriculum::Lesson lesson
     using namespace lgaed::presentation;
     const auto ui_locale=interface_language(preferences(state));
     const auto tr=[&](const char* es,const char* en,const char* fr){return std::string(ui_locale=="fr"?fr:ui_locale=="en"?en:es);};
-    std::string lesson_label=tr("Lección","Lesson","Leçon");
+    LessonViewHooks hooks;hooks.lesson_label=tr("Lección","Lesson","Leçon");
     const auto context=catalog_location(state.catalog);
-    if(!context.unit.empty()){
-        const auto page=lgaed::windows::load_catalog(std::filesystem::path(lgaed::build::source_root)/L"app/src/main/assets/content",context);
-        for(const auto& entry:page.entries)if(entry.id==lesson.id){lesson_label+=' '+std::to_string(entry.number);break;}
+    if(lesson.id!="native_cpp_laboratory"&&!context.unit.empty()){
+        const auto content_root=std::filesystem::path(lgaed::build::source_root)/L"app/src/main/assets/content";
+        auto unit_location=context;unit_location.lesson.clear();
+        const auto unit_page=lgaed::windows::load_catalog(content_root,unit_location);
+        const auto lesson_entry=std::ranges::find(unit_page.entries,lesson.id,&lgaed::curriculum::CatalogEntry::id);
+        if(lesson_entry!=unit_page.entries.end()){
+            hooks.lesson_label+=' '+std::to_string(lesson_entry->number);
+            auto course_location=unit_location;course_location.unit.clear();
+            const auto course_page=lgaed::windows::load_catalog(content_root,course_location);
+            const auto unit_entry=std::ranges::find(course_page.entries,context.unit,&lgaed::curriculum::CatalogEntry::id);
+            if(unit_entry!=course_page.entries.end()){
+                hooks.course_title=course_page.title;
+                hooks.unit_number=unit_entry->number;hooks.unit_count=course_page.entries.size();
+                hooks.lesson_number=lesson_entry->number;hooks.lesson_count=unit_page.entries.size();
+                auto route_location=course_location;route_location.course.clear();
+                const auto route_page=lgaed::windows::load_catalog(content_root,route_location);
+                const auto course_entry=std::ranges::find(route_page.entries,context.course,&lgaed::curriculum::CatalogEntry::id);
+                if(course_entry!=route_page.entries.end())hooks.course_number=course_entry->number;
+            }
+        }
     }
     if(state.lesson){state.reader.reset();if(!flush_lesson_view(state.lesson))return;DestroyWindow(state.lesson);state.lesson=nullptr;}
     remember_open_lesson(state,lesson.id);
-    LessonViewHooks hooks;hooks.lesson_label=lesson_label;hooks.back_to_catalog=[window](HWND){PostMessageW(window,return_message,0,0);};
+    hooks.back_to_catalog=[window](HWND){PostMessageW(window,return_message,0,0);};
     hooks.validate_math=[backend=state.narrator](std::string_view block,std::string_view answers,std::string_view locale,std::stop_token stop){
         return backend->validate_math(block,answers,locale,stop);};
     hooks.content_changed=[&state](HWND){if(state.reader)state.reader->content_changed();update_audio_context(state);};
@@ -211,7 +228,6 @@ void open_lesson(HWND window,WindowState& state,lgaed::curriculum::Lesson lesson
     hooks.before_page_change=[&state](HWND){if(state.reader)state.reader->pause();};
     hooks.before_destroy=[&state](HWND){if(state.reader)state.reader->pause();};
     hooks.lesson_completed=[window](HWND){PostMessageW(window,lesson_finished_message,0,0);};
-    hooks.reader_requested=[&state](HWND){if(state.reader)state.reader->toggle_controls();};
     hooks.settings_requested=[window,&state](HWND){state.pending_action=CatalogAction::settings;state.context=lgaed::presentation::catalog_location(state.catalog);const auto current=lgaed::presentation::lesson_page_state(state.lesson);
         if(current.lesson_id=="native_cpp_laboratory")state.context={current.locale};else state.context.lesson=current.lesson_id;PostMessageW(window,settings_message,0,0);};
     hooks.language_requested=[&state](HWND owner){
@@ -248,6 +264,9 @@ void open_lesson(HWND window,WindowState& state,lgaed::curriculum::Lesson lesson
     state.lesson=create_lesson_view(window,state.environment,std::move(lesson),std::move(hooks));ShowWindow(state.catalog,SW_HIDE);
     if(!laboratory)state.reader=std::make_unique<LessonReader>(state.lesson,state.environment,state.narrator,[window,&state]{
         state.pending_action=CatalogAction::audio;state.context=catalog_location(state.catalog);PostMessageW(window,settings_message,0,0);});
+    // The floating reader is the visible playback surface now that the
+    // redundant header toggle is gone. Showing it never starts playback.
+    if(state.reader)state.reader->set_controls_visible(true);
     if(state.settings&&IsWindow(state.settings)){
         state.settings_lesson=state.lesson;ShowWindow(state.lesson,SW_HIDE);
         if(state.reader)state.reader->suspend_preparation(true);
@@ -265,7 +284,7 @@ void open_settings(HWND window,WindowState& state){
     access.profile_root=state.environment.paths.root;access.qa_profile=state.environment.options.qa_instance.has_value();
     const auto initial_preferences=preferences(state);
     access.changed=[window,&state,previous_ui=interface_language(initial_preferences),previous_content=lgaed::state::string_value(initial_preferences,"native_windows","content_language","es")]()mutable{
-        update_audio_context(state,true);if(state.reader)state.reader->settings_changed();
+        update_audio_context(state,true);if(state.reader){state.reader->settings_changed();state.reader->set_controls_visible(true);}
         const auto data=preferences(state);const auto ui=interface_language(data),content=lgaed::state::string_value(data,"native_windows","content_language","es");
         if(ui!=previous_ui||content!=previous_content){previous_ui=ui;previous_content=content;PostMessageW(window,application_language_message,0,0);}
     };access.close=[window]{PostMessageW(window,close_settings_message,0,0);};
@@ -524,7 +543,7 @@ LRESULT CALLBACK window_procedure(HWND window, UINT message, WPARAM wparam, LPAR
         PostMessageW(state->settings,WM_CLOSE,0,0);return 0;
     }
     case close_settings_message:{if(state->settings){DestroyWindow(state->settings);state->settings=nullptr;}
-        if(state->lesson){ShowWindow(state->lesson,SW_SHOW);if(state->reader){state->reader->settings_changed();state->reader->suspend_preparation(false);}}
+        if(state->lesson){ShowWindow(state->lesson,SW_SHOW);if(state->reader){state->reader->settings_changed();state->reader->set_controls_visible(true);state->reader->suspend_preparation(false);}}
         else if(state->tool)ShowWindow(state->tool,SW_SHOW);
         else{auto where=lgaed::presentation::catalog_location(state->catalog);const auto data=preferences(*state);where.locale=lgaed::state::string_value(data,"native_windows","content_language",where.locale);lgaed::presentation::navigate_catalog(state->catalog,where);ShowWindow(state->catalog,SW_SHOW);}
         layout_controls(window,*state);

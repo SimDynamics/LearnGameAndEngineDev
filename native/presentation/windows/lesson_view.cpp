@@ -311,13 +311,14 @@ struct LessonView {
     state::StateData data;
     HWND window = nullptr, pane = nullptr, fullscreen_header = nullptr, title = nullptr;
     HWND menu = nullptr, page_status = nullptr;
-    HWND back = nullptr, reader = nullptr, language = nullptr, attempts = nullptr, settings = nullptr, reader_bar = nullptr;
+    HWND language = nullptr, attempts = nullptr, settings = nullptr, reader_bar = nullptr;
     HWND fullscreen_palette = nullptr;
     std::optional<std::size_t> fullscreen_palette_block;
     int fullscreen_palette_height=0,fullscreen_palette_max_height=0;
     AttemptsState attempt_state;
     lgaed::attempts::ExerciseAttemptLedger attempt_ledger;
     int reader_height = 0;
+    int header_height = 0, header_requested_height = 0;
     LessonViewHooks hooks;
     bool notifying = false, destroy_notified = false;
     HWND import_prompt = nullptr, import_path = nullptr, import_browse = nullptr;
@@ -556,8 +557,10 @@ struct LessonView {
         const AttemptsState next{balance.available,balance.maximum,balance.progress,balance.unlimited};
         const bool changed=next.available!=attempt_state.available||next.maximum!=attempt_state.maximum||next.premium!=attempt_state.premium
             ||static_cast<int>(next.progress*next.maximum*60)!=static_cast<int>(attempt_state.progress*attempt_state.maximum*60);
+        const bool visibility_changed=next.premium!=attempt_state.premium;
         attempt_state=next;
         if(attempts&&changed)InvalidateRect(attempts,nullptr,FALSE);
+        if(ready&&visibility_changed)resize();
     }
     bool may_evaluate() {
         lgaed::attempts::initialize(data,route,now_ms());refresh_attempts();
@@ -1478,10 +1481,9 @@ struct LessonView {
             SelectObject(item.hDC,old);DeleteObject(badge);return true;
         }
         const bool header=GetParent(item.hwndItem)==window;
-        const int inset=header?(item.hwndItem==reader?9:item.hwndItem==language?5:4):10;
+        const int inset=header?(item.hwndItem==language?5:4):10;
         InflateRect(&bounds,-px(inset),-px(inset));
-        auto ink=colors.high_contrast?colors.text:item.hwndItem==reader?colors.accent:
-            item.hwndItem==back?RGB(255,255,255):RGB(170,174,183);
+        auto ink=colors.high_contrast?colors.text:RGB(170,174,183);
         if(item.itemState&ODS_DISABLED){
             if(icon->second==Icon::reset&&!colors.high_contrast){
                 const auto bg=reader_theme::background(item.hwndItem);
@@ -2123,7 +2125,7 @@ struct LessonView {
             FW_NORMAL,FALSE,FALSE,FALSE,DEFAULT_CHARSET,OUT_DEFAULT_PRECIS,CLIP_DEFAULT_PRECIS,CLEARTYPE_QUALITY,DEFAULT_PITCH,L"Roboto");
         if(!content_font){DeleteObject(font);return;}
         const auto compact_font=laboratory()?CreateFontW(-MulDiv(13,static_cast<int>(GetDpiForWindow(window)),96),0,0,0,FW_NORMAL,FALSE,FALSE,FALSE,DEFAULT_CHARSET,OUT_DEFAULT_PRECIS,CLIP_DEFAULT_PRECIS,CLEARTYPE_QUALITY,DEFAULT_PITCH,L"Roboto"):nullptr;
-        for (auto item : {menu, page_status, back, reader, language, attempts, settings}) if (item) SendMessageW(item, WM_SETFONT, reinterpret_cast<WPARAM>(font), TRUE);
+        for (auto item : {menu, page_status, language, attempts, settings}) if (item) SendMessageW(item, WM_SETFONT, reinterpret_cast<WPARAM>(font), TRUE);
         for (auto item : {import_label, import_path, import_browse, import_review, import_commit, import_cancel})
             if (item) SendMessageW(item, WM_SETFONT, reinterpret_cast<WPARAM>(font), TRUE);
         for (const auto& row : rows) for (auto item : row.cells) {
@@ -2145,6 +2147,7 @@ struct LessonView {
         reader_theme::set_accent(window,reader_theme::appearance_accent(data,laboratory()?std::string_view{}:std::string_view(route)));
         reader_theme::apply(window,laboratory()?reader_theme::Surface::screen:reader_theme::Surface::canvas);
         title = control(MSFTEDIT_CLASS, "", ES_READONLY | ES_MULTILINE, 105, window);
+        SendMessageW(title,EM_SETEVENTMASK,0,ENM_REQUESTRESIZE);
         set_rich_text(title,ui("Lección","Lesson","Leçon"),{},false,RichTextRole::lesson_title);
         CHARFORMAT2W heading{}; heading.cbSize = sizeof(heading); heading.dwMask = CFM_SIZE | CFM_BOLD;
         heading.yHeight = rich_text_height(); heading.dwEffects = CFE_BOLD;
@@ -2155,13 +2158,10 @@ struct LessonView {
         SendMessageW(page_status,PBM_SETRANGE32,0,static_cast<LPARAM>(lesson.pages.size()));
         SendMessageW(page_status,PBM_SETBARCOLOR,0,reader_theme::palette(window).accent);
         SendMessageW(page_status,PBM_SETBKCOLOR,0,reader_theme::palette(window).header);
-        back = control(L"BUTTON",ui("Atrás","Back","Retour"),WS_TABSTOP | BS_PUSHBUTTON,back_id,window);
-        reader = control(L"BUTTON",ui("Lector","Reader","Lecteur"),WS_TABSTOP | BS_PUSHBUTTON,reader_id,window);
         language = control(L"BUTTON",ui("Idioma","Language","Langue"),WS_TABSTOP | BS_PUSHBUTTON,language_id,window);
         attempts = control(L"BUTTON",ui("Intentos disponibles","Available attempts","Essais disponibles"),WS_TABSTOP | BS_PUSHBUTTON,attempts_id,window);
         settings = control(L"BUTTON",ui("Ajustes de la lección","Lesson Settings","Paramètres de la leçon"),WS_TABSTOP | BS_PUSHBUTTON,menu_id,window);
         menu = settings;
-        decorate_icon(back,Icon::back,ui("Volver","Back","Retour")); decorate_icon(reader,Icon::speaker,ui("Lector","Reader","Lecteur"));
         decorate_icon(language,Icon::language,ui("Idioma","Language","Langue"));
         decorate_icon(attempts,Icon::terminal,ui("Intentos disponibles","Available attempts","Essais disponibles"));
         if(!laboratory()){
@@ -2208,7 +2208,6 @@ struct LessonView {
         struct NotificationGuard { bool& value; bool previous; ~NotificationGuard() { value = previous; } } guard{notifying,was_notifying};
         SetWindowTextW(window,wide(ui("Lección","Lesson","Leçon")).c_str());
         SetWindowTextW(pane,wide(ui("Contenido de la lección","Lesson content","Contenu de la leçon")).c_str());
-        label_radio(back,ui("Volver","Back","Retour")); label_radio(reader,ui("Lector","Reader","Lecteur"));
         label_radio(language,ui("Idioma","Language","Langue"));
         label_radio(attempts,ui("Intentos disponibles","Available attempts","Essais disponibles"));
         label_radio(settings,ui("Ajustes de la lección","Lesson Settings","Paramètres de la leçon"));
@@ -2882,7 +2881,6 @@ struct LessonView {
         return true;
     }
     void update_navigation() {
-        if(reader)EnableWindow(reader,!deferred_entry.waiting());
         if (page_status && title) {
             auto label = hooks.lesson_label.empty() || hooks.lesson_label == "Lección"
                 ? ui("Lección","Lesson","Leçon") : hooks.lesson_label;
@@ -2893,7 +2891,16 @@ struct LessonView {
                     label = ui("Lección ","Lesson ","Leçon ") + std::string(ordinal);
                 break;
             }
+            if(!hooks.course_title.empty()&&hooks.unit_number>0&&hooks.unit_number<=hooks.unit_count
+                &&hooks.lesson_number>0&&hooks.lesson_number<=hooks.lesson_count){
+                label=hooks.course_title+" / "+ui("Unidad ","Unit ","Unité ")+std::to_string(hooks.unit_number)
+                    +ui(" de "," of "," sur ")+std::to_string(hooks.unit_count)
+                    +" / "+ui("Lección ","Lesson ","Leçon ")+std::to_string(hooks.lesson_number)
+                    +ui(" de "," of "," sur ")+std::to_string(hooks.lesson_count);
+                if(hooks.course_number>0)label=ui("Curso ","Course ","Cours ")+std::to_string(hooks.course_number)+": "+label;
+            }
             const auto caption = label + "  " + std::to_string(page + 1) + ui(" de "," of "," sur ") + std::to_string(lesson.pages.size());
+            const bool caption_changed=control_text(title)!=caption;
             set_rich_text(title,caption,{},false,RichTextRole::lesson_title);
             SendMessageW(title,EM_SETSEL,0,-1);
             PARAFORMAT2 paragraph{};paragraph.cbSize=sizeof(paragraph);paragraph.dwMask=PFM_LINESPACING;
@@ -2906,6 +2913,7 @@ struct LessonView {
             format.dwEffects=0;format.yHeight=15*15;format.crTextColor=colors.high_contrast?colors.text:RGB(174,180,190);
             SendMessageW(title,EM_SETSEL,wide(label).size(),-1);SendMessageW(title,EM_SETCHARFORMAT,SCF_SELECTION,reinterpret_cast<LPARAM>(&format));SendMessageW(title,EM_SETSEL,0,0);
             SendMessageW(page_status,PBM_SETPOS,page + 1,0);
+            if(ready&&caption_changed)resize();
         }
         if(const auto next=find_item(continue_id)){
             SetWindowTextW(next,wide(page+1==lesson.pages.size()?ui("Finalizar lección","Finish lesson","Terminer la leçon"):ui("Continuar","Continue","Continuer")).c_str());
@@ -3465,18 +3473,34 @@ struct LessonView {
         const auto focused=GetFocus();const bool palette_reparented=sync_fullscreen_palette();
         RECT area{}; GetClientRect(window, &area);
         const int margin = px(4), available = static_cast<int>(area.right) - margin * 2;
-        MoveWindow(back,margin,px(12),px(48),px(48),TRUE);
-        int header_right = static_cast<int>(area.right) - margin - px(48);
-        for (const auto item : {settings,attempts,language,reader}) {
+        int header_right = static_cast<int>(area.right) - margin;
+        for (const auto item : {settings,attempts,language}) {
+            if(item==attempts&&attempt_state.premium)continue;
             const int width=item==attempts?px(69):px(48);
-            header_right-=width-px(48);
-            MoveWindow(item,header_right,px(4),width,item==attempts?px(64):px(56),TRUE); header_right -= px(48);
+            header_right-=width;
+            MoveWindow(item,header_right,px(4),width,item==attempts?px(64):px(56),TRUE);
         }
-        MoveWindow(title,margin + px(58),px(4),std::max(px(60),header_right - margin - px(54)),px(64),TRUE);
+        // Measure the complete breadcrumb at its real wrapped width. Narrow
+        // windows give it a full row below the actions instead of clipping it.
+        const bool stacked=header_right-px(28)<px(440);
+        const int title_left=px(16);
+        const int title_top=stacked?px(68):px(4);
+        const int title_width=std::max(px(60),stacked?static_cast<int>(area.right)-px(32):header_right-px(28));
+        SetWindowPos(title,nullptr,title_left,title_top,title_width,px(64),SWP_NOZORDER|SWP_NOACTIVATE|SWP_NOREDRAW);
         RECT title_content{};GetClientRect(title,&title_content);
-        title_content.top=std::max(0L,(title_content.bottom-edit_line_height(title,100))/2);
         SendMessageW(title,EM_SETRECTNP,0,reinterpret_cast<LPARAM>(&title_content));
-        MoveWindow(page_status,0,px(72),static_cast<int>(area.right),px(5),TRUE);
+        header_requested_height=0;
+        SendMessageW(title,EM_REQUESTRESIZE,0,0);
+        const int text_height=std::max(edit_line_height(title,100),header_requested_height);
+        const int title_height=std::max(stacked?px(24):px(64),text_height);
+        MoveWindow(title,title_left,title_top,title_width,title_height,TRUE);
+        GetClientRect(title,&title_content);
+        title_content.top=std::max(0L,(title_content.bottom-text_height)/2);
+        SendMessageW(title,EM_SETRECTNP,0,reinterpret_cast<LPARAM>(&title_content));
+        InvalidateRect(title,nullptr,FALSE);
+        const int next_header_height=std::max(px(lesson_header_height),title_top+title_height+px(12));
+        if(header_height!=next_header_height){header_height=next_header_height;InvalidateRect(window,nullptr,TRUE);}
+        MoveWindow(page_status,0,header_height-px(8),static_cast<int>(area.right),px(5),TRUE);
         auto fixed_header=fixed_header_row();
         int fixed_header_height=0;
         if(fixed_header){
@@ -3486,9 +3510,9 @@ struct LessonView {
             if(focus&&IsWindow(focus))SetFocus(focus);
             SetWindowPos(fullscreen_header,HWND_TOP,0,0,area.right,fixed_header_height,SWP_NOACTIVATE|SWP_SHOWWINDOW);
         }else restore_fullscreen_header();
-        const int viewport_top=fullscreen_block?fixed_header_height:px(laboratory()?48:lesson_header_height);
-        for(const auto item:{back,title,page_status,settings,attempts,language,reader})ShowWindow(item,fullscreen_block||(laboratory()&&item!=back)?SW_HIDE:SW_SHOWNOACTIVATE);
-        if(laboratory())MoveWindow(back,px(4),0,px(48),px(48),TRUE);
+        const int viewport_top=fullscreen_block?fixed_header_height:laboratory()?0:header_height;
+        for(const auto item:{title,page_status,settings,language})ShowWindow(item,fullscreen_block||laboratory()?SW_HIDE:SW_SHOWNOACTIVATE);
+        ShowWindow(attempts,fullscreen_block||laboratory()||attempt_state.premium?SW_HIDE:SW_SHOWNOACTIVATE);
         int nav_top = static_cast<int>(area.bottom);
         const bool assisted = editing_bar && editing_bar->visible() && !import_open;
         const int bar_height = editing_bar ? editing_bar->logical_height() : 0;
@@ -5136,7 +5160,12 @@ LRESULT CALLBACK view_proc(HWND window, UINT message, WPARAM wparam, LPARAM lpar
         case lesson_state_read_message:
             if (lparam) *reinterpret_cast<state::StateData*>(lparam) = view->data; return 1;
         case attempts_state_message:
-            if(lparam){view->attempt_state=*reinterpret_cast<const AttemptsState*>(lparam);InvalidateRect(view->attempts,nullptr,FALSE);}return 1;
+            if(lparam){
+                const auto next=*reinterpret_cast<const AttemptsState*>(lparam);
+                const bool visibility_changed=next.premium!=view->attempt_state.premium;
+                view->attempt_state=next;InvalidateRect(view->attempts,nullptr,FALSE);
+                if(visibility_changed)view->resize();
+            }return 1;
         case lesson_preferences_update_message: {
             auto& request = *reinterpret_cast<PreferenceUpdateRequest*>(lparam);
             try { view->update_preferences(*request.update); }
@@ -5169,7 +5198,7 @@ LRESULT CALLBACK view_proc(HWND window, UINT message, WPARAM wparam, LPARAM lpar
         case WM_ERASEBKGND: {
             const auto dc = reinterpret_cast<HDC>(wparam); RECT area{}; GetClientRect(window,&area);
             FillRect(dc,&area,reader_theme::brush(reader_theme::Surface::canvas));
-            auto header = area; header.bottom = view->px(lesson_header_height);
+            auto header = area; header.bottom = std::max(view->px(lesson_header_height),view->header_height);
             FillRect(dc,&header,reader_theme::brush(reader_theme::Surface::header));
             return TRUE;
         }
@@ -5179,6 +5208,10 @@ LRESULT CALLBACK view_proc(HWND window, UINT message, WPARAM wparam, LPARAM lpar
             if(header->code==EN_SELCHANGE)view->queue_answer_viewport(header->hwndFrom);
             if (header->code == EN_REQUESTRESIZE) {
                 const auto* request = reinterpret_cast<REQRESIZE*>(lparam);
+                if(header->hwndFrom==view->title){
+                    view->header_requested_height=std::max(view->px(2),static_cast<int>(request->rc.bottom-request->rc.top)+view->px(4));
+                    return 0;
+                }
                 for (auto& row : view->rows) if (std::ranges::find(row.cells, header->hwndFrom) != row.cells.end()) {
                     row.requested_height = std::max(view->px(2), static_cast<int>(request->rc.bottom - request->rc.top) + view->px(4));
                     break;

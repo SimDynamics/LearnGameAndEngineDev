@@ -106,6 +106,8 @@ on:
       - native/presentation/windows/reading_gate_policy_tests.cpp
       - native/presentation/windows/technical_context_view_tests.cpp
       - native/presentation/windows/lesson_view.cpp
+      - native/presentation/windows/lesson_view.hpp
+      - native/presentation/windows/main.cpp
       - native/presentation/windows/lesson_view_tests.cpp
       - native/presentation/windows/lesson_editor_mount_tests.cpp
       - native/presentation/windows/rich_text.cpp
@@ -235,6 +237,14 @@ jobs:
           cmake -S cmake/HostedCourseEditionQA -B $build -G Ninja -DCMAKE_BUILD_TYPE=Debug
           if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
           cmake --build $build --target lgaed_lesson_reader_edit_order_tests --parallel 3
+          if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
+      - name: Verify the complete lesson header and native application wiring
+        shell: pwsh
+        run: |
+          $build = Join-Path $env:RUNNER_TEMP 'lgaed-course-edition-qa'
+          cmake --build $build --target lgaed_inline_feedback_view_tests --parallel 3
+          if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
+          ctest --test-dir $build -R '^native[.]lesson_header$' --verbose --output-on-failure --no-tests=error --output-junit (Join-Path $build 'lesson-header-win32.xml')
           if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
       - name: Preserve current reading order after edits and ordinary reopen
         if: startsWith(github.event.head_commit.message, 'qa-reader-order:')
@@ -413,6 +423,7 @@ jobs:
             ${{ github.workspace }}/out/qa/reader-revision-audio-${{ github.run_id }}-${{ github.run_attempt }}/*.log
             ${{ runner.temp }}/lgaed-course-edition-qa/reader-revision-runtime-*/transport.jsonl
             ${{ runner.temp }}/lgaed-course-edition-qa/reader-revision-order.xml
+            ${{ runner.temp }}/lgaed-course-edition-qa/lesson-header-win32.xml
             ${{ runner.temp }}/lgaed-course-edition-qa/nested-cmake-format.xml
             ${{ runner.temp }}/lgaed-course-edition-qa/test-fixtures/named-rule-feedback/**
             ${{ runner.temp }}/lgaed-course-edition-qa/u2l9-semantic-composition-and-reference.xml

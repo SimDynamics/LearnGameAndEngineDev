@@ -199,8 +199,8 @@ struct Fixture {
         // Fixed-coordinate regressions describe the verified published UI.
         // Integrated-asset cases below supply their current model explicitly.
 #ifdef LGAED_INLINE_FEEDBACK_ONLY
-        // Hosted test loads the ACTUAL active edition; the archived fixture is
-        // only present in the full historical Windows build.
+        // Hosted focused tests supply the actual active edition or an explicit
+        // synthetic UI model; only the full build loads the archived fixture.
         require(static_cast<bool>(load_model),
             "Inline-feedback QA needs an actual published lesson loader");
         lesson=load_model({});
@@ -250,7 +250,16 @@ struct Fixture {
         SendMessageW(item, BM_CLICK, 0, 0); pump(host);
     }
     void click(std::size_t block, int part) { click(id(block,part)); }
-    bool fullscreen() const { return !(GetWindowLongPtrW(control(110),GWL_STYLE)&WS_VISIBLE); }
+    bool fullscreen() const {
+        // The lesson no longer has a Back icon. Observe the retained lesson
+        // title and the actual fixed fullscreen band, including the laboratory.
+        for(auto child=GetWindow(view,GW_CHILD);child;child=GetWindow(child,GW_HWNDNEXT)) {
+            wchar_t name[128]{};GetClassNameW(child,name,128);
+            if(std::wstring_view(name)==L"LearnGameAndEngineDev.LessonPane"&&GetWindowTextLengthW(child)==0
+                &&(GetWindowLongPtrW(child,GWL_STYLE)&WS_VISIBLE))return true;
+        }
+        return lesson.id!="native_cpp_laboratory"&&!(GetWindowLongPtrW(control(105),GWL_STYLE)&WS_VISIBLE);
+    }
     void escape() {
         PostMessageW(view,WM_KEYDOWN,VK_ESCAPE,1);pump(host);
     }
@@ -1243,7 +1252,121 @@ void console_queued_mouse_focus_and_hit_regions() {
     std::cout<<"PASS queued native mouse DOWN/UP/DBLCLK/UP without zoom: glyph halves, line/document ends, native trailing/below blank selection, line-number gutters; Ctrl+wheel normal/fullscreen to 150 percent, focus/capture/one Escape, readonly/output/CPP/CMake sources and Undo; no desktop-global input injection\n";
 }
 
+void lesson_header_context_is_complete_and_wraps() {
+    struct DpiScope {
+        DPI_AWARENESS_CONTEXT previous=SetThreadDpiAwarenessContext(DPI_AWARENESS_CONTEXT_PER_MONITOR_AWARE_V2);
+        ~DpiScope(){if(previous)SetThreadDpiAwarenessContext(previous);}
+    } dpi_scope;
+    for(const auto locale:{"es","en","fr"}) {
+        Fixture fixture([locale](state::StateData& data,const curriculum::Lesson&) {
+            data.preferences["native_windows"]["ui_language"]=std::string(locale);
+        },[](const curriculum::Lesson&) {
+            return windows::parse_lesson_json(R"json({"id":"qa_lesson_header","title":"Título curricular conservado","pages":[
+                {"blocks":[{"type":"paragraph","text":"Primera página del encabezado."}]},
+                {"blocks":[{"type":"paragraph","text":"Segunda página del encabezado."}]}]})json");
+        },true);
+        // This presentation-only scenario supplies both entitlement views.
+        // Stop the periodic real-profile refresh from replacing that explicit
+        // state during resize; balance, charging and gate tests stay separate.
+        require(KillTimer(fixture.view,94),"Cannot isolate the header's explicit free/Premium presentation states");
+        set_lesson_attempts_state(fixture.view,4,8,.5,false);
+        const auto pick=[locale](const char* es,const char* en,const char* fr) {
+            return std::string(std::string_view(locale)=="fr"?fr:std::string_view(locale)=="en"?en:es);
+        };
+        const auto before=fixture.saved();const auto script=reading_script(fixture.view);
+        const auto title=fixture.control(105);int returned=0;
+        LessonViewHooks hooks;
+        hooks.course_title="Curso completo de programación, videojuegos y motores en C++: fundamentos del lenguaje, herramientas de desarrollo, práctica guiada y proyectos de simulación";
+        hooks.course_number=2;hooks.unit_number=2;hooks.unit_count=12;hooks.lesson_number=2;hooks.lesson_count=10;
+        hooks.back_to_catalog=[&](HWND owner){require(owner==fixture.view,"Header Escape lost its lesson owner");++returned;};
+        const auto resize=[&](int width) {
+            const auto dpi=static_cast<int>(GetDpiForWindow(fixture.view));
+            RECT outer{0,0,MulDiv(width,dpi,96),MulDiv(650,dpi,96)};
+            require(AdjustWindowRectExForDpi(&outer,static_cast<DWORD>(GetWindowLongPtrW(fixture.host,GWL_STYLE)),FALSE,
+                static_cast<DWORD>(GetWindowLongPtrW(fixture.host,GWL_EXSTYLE)),dpi),"Cannot size the header QA host at its actual DPI");
+            SetWindowPos(fixture.host,nullptr,0,0,outer.right-outer.left,outer.bottom-outer.top,SWP_NOMOVE|SWP_NOZORDER|SWP_NOACTIVATE);
+            MoveWindow(fixture.view,0,0,MulDiv(width,dpi,96),MulDiv(650,dpi,96),TRUE);pump(fixture.host);
+        };
+        struct Geometry {RECT title{},progress{};LRESULT lines=0;};
+        const auto check=[&](bool context,std::size_t page) {
+            const auto label=context?pick("Curso ","Course ","Cours ")+"2: "+hooks.course_title+" / "
+                +pick("Unidad ","Unit ","Unité ")+"2"+pick(" de "," of "," sur ")+"12 / "
+                +pick("Lección ","Lesson ","Leçon ")+"2"+pick(" de "," of "," sur ")+"10"
+                :pick("Lección","Lesson","Leçon");
+            const auto expected=label+"  "+std::to_string(page+1)+pick(" de "," of "," sur ")+"2";
+            const auto detail=std::string(" [locale=")+locale+", page="+std::to_string(page+1)+", context="+std::to_string(context)+"]";
+            require(fixture.control(105)==title&&window_text(title)==expected,"The native header lost its complete course/unit/lesson/page context"+detail);
+            const auto style=GetWindowLongPtrW(title,GWL_STYLE);
+            require((style&ES_READONLY)&&(style&ES_MULTILINE)&&!(style&ES_AUTOHSCROLL),"The header cannot wrap its complete readonly text"+detail);
+            for(const auto removed:{110,111}) {
+                const auto item=descendant(fixture.view,removed);
+                require(!item||!(GetWindowLongPtrW(item,GWL_STYLE)&WS_VISIBLE),"A removed Back/reader icon remains visible in the lesson header"+detail);
+            }
+            const auto text_view=rich_edit_viewport(title);POINTL first{};
+            SendMessageW(title,EM_POSFROMCHAR,reinterpret_cast<WPARAM>(&first),0);
+            Microsoft::WRL::ComPtr<IRichEditOle> rich;
+            SendMessageW(title,EM_GETOLEINTERFACE,0,reinterpret_cast<LPARAM>(rich.GetAddressOf()));
+            Microsoft::WRL::ComPtr<ITextDocument> document;Microsoft::WRL::ComPtr<ITextRange> range;
+            const auto last=GetWindowTextLengthW(title)-1;LONG last_right=0,last_bottom=0;
+            require(last>=0&&rich&&SUCCEEDED(rich.As(&document))&&document->Range(last,last,&range)==S_OK&&range&&
+                range->GetPoint(tomStart|tomClientCoord|tomAllowOffClient|TA_BOTTOM|TA_RIGHT,&last_right,&last_bottom)==S_OK,
+                "Cannot measure the final native header glyph"+detail);
+            require(first.x>=text_view.left&&first.y>=text_view.top&&last_right<=text_view.right&&last_bottom<=text_view.bottom,
+                "The full native header text is clipped before its last glyph"+detail+": viewport="
+                +std::to_string(text_view.left)+","+std::to_string(text_view.top)+","+std::to_string(text_view.right)+","+std::to_string(text_view.bottom)
+                +", first="+std::to_string(first.x)+","+std::to_string(first.y)+", last="+std::to_string(last_right)+","+std::to_string(last_bottom));
+            Geometry geometry;GetWindowRect(title,&geometry.title);GetWindowRect(fixture.control(106),&geometry.progress);
+            geometry.lines=SendMessageW(title,EM_GETLINECOUNT,0,0);
+            require(geometry.title.bottom<=geometry.progress.top,"The wrapped header intersects page progress"+detail);
+            for(const auto action:{107,112,113}) {
+                const auto button=fixture.control(action);
+                if(!(GetWindowLongPtrW(button,GWL_STYLE)&WS_VISIBLE))continue;
+                RECT bounds{},overlap{};GetWindowRect(button,&bounds);
+                require(!IntersectRect(&overlap,&geometry.title,&bounds),"The complete header overlaps a retained action"+detail);
+            }
+            fixture.viewport_layout();
+            const auto current=lesson_page_state(fixture.view);
+            require(current.index==page&&current.count==2&&current.lesson_title==fixture.lesson.title,
+                "Displaying catalog context changed the curricular lesson identity"+detail);
+            return geometry;
+        };
+        resize(1200);check(false,0);
+        set_lesson_view_hooks(fixture.view,hooks);pump(fixture.host);const auto wide=check(true,0);
+        RECT free_language{},free_attempts{},settings{};
+        GetWindowRect(fixture.control(112),&free_language);GetWindowRect(fixture.control(113),&free_attempts);GetWindowRect(fixture.control(107),&settings);
+        require(GetWindowLongPtrW(fixture.control(113),GWL_STYLE)&WS_VISIBLE,"Free lessons lost their available-attempts action");
+        set_lesson_attempts_state(fixture.view,4,8,.5,true);
+        require(!(GetWindowLongPtrW(fixture.control(113),GWL_STYLE)&WS_VISIBLE),"Premium retained the attempts console icon");
+        RECT premium_language{};GetWindowRect(fixture.control(112),&premium_language);check(true,0);
+        require(premium_language.left>free_language.left&&settings.left-premium_language.right==settings.left-free_attempts.right,
+            "Hiding Premium attempts left its empty toolbar slot instead of returning the space");
+        set_lesson_attempts_state(fixture.view,4,8,.5,false);
+        RECT restored_language{};GetWindowRect(fixture.control(112),&restored_language);
+        require((GetWindowLongPtrW(fixture.control(113),GWL_STYLE)&WS_VISIBLE)&&EqualRect(&restored_language,&free_language),
+            "Returning to free mode did not restore the attempts action and original toolbar layout");
+        resize(640);const auto narrow=check(true,0);
+        require(narrow.lines>1&&narrow.progress.top>wide.progress.top,"A narrow window did not make room for the complete wrapped course header: lines="
+            +std::to_string(narrow.lines)+", progress="+std::to_string(wide.progress.top)+"->"+std::to_string(narrow.progress.top));
+        set_lesson_view_hooks(fixture.view,{});pump(fixture.host);check(false,0);
+        set_lesson_view_hooks(fixture.view,hooks);pump(fixture.host);check(true,0);
+        require(reading_script(fixture.view)==script&&fixture.saved()==before,
+            "Header context, wrapping or Premium presentation changed narration sources or untouched student state");
+        const auto initial=lesson_options_snapshot(fixture.view);
+        require(initial.current_page==0&&initial.page_count==2&&initial.available_pages==std::vector<std::size_t>{0,1}
+            &&!initial.finish_visible&&!initial.finish_enabled,"Header presentation changed the original navigation/completion gates");
+        resize(1200);const auto restored=check(true,0);
+        require(EqualRect(&restored.title,&wide.title)&&EqualRect(&restored.progress,&wide.progress),
+            "Widening the lesson retained unnecessary header height or stale progress geometry");
+        resize(640);require(navigate_lesson_view(fixture.view,1),"The complete header blocked an admitted lesson page");pump(fixture.host);check(true,1);
+        fixture.escape();require(returned==1&&fixture.page()==1,"Escape no longer returns through the original catalog callback without a Back icon");
+        require(navigate_lesson_view(fixture.view,0),"The complete header blocked the previous admitted lesson page");pump(fixture.host);check(true,0);
+        require(reading_script(fixture.view)==script,"Returning to the first page changed its original narration identity");
+    }
+    std::cout<<"PASS complete native course/unit/lesson/page header in es/en/fr: readonly wrapping at 1200/640 logical pixels, final glyph visible, progress/actions/content separated, restored layout, Premium slot removed, retained narration/navigation and Escape\n";
+}
+
 void lesson_menu_retains_import_pages_and_settings_with_hooks() {
+    lesson_header_context_is_complete_and_wraps();
     std::vector<std::string> console_failures;
     const auto console_case=[&](std::string_view name,const auto& run) {
         std::cout<<"BEGIN independent console regression "<<name<<"\n";
@@ -1367,11 +1490,14 @@ void lesson_interface_languages() {
             return std::string(std::string_view(locale)=="fr"?fr:std::string_view(locale)=="en"?en:es);
         };
         ShowWindow(fixture.host,SW_SHOWNOACTIVATE); pump(fixture.host);
-        require(accessible_name(fixture.control(111)) == pick("Lector","Reader","Lecteur") &&
-                accessible_name(fixture.control(112)) == pick("Idioma","Language","Langue") &&
+        require(accessible_name(fixture.control(112)) == pick("Idioma","Language","Langue") &&
                 accessible_name(fixture.control(107)) == pick("Ajustes de la lección","Lesson Settings","Paramètres de la leçon") &&
                 accessible_name(fixture.control(113)) == pick("Intentos disponibles","Available attempts","Essais disponibles"),
                 "Lesson header labels ignored the independent interface language");
+        for(const auto removed:{110,111}) {
+            const auto item=descendant(fixture.view,removed);
+            require(!item||!(GetWindowLongPtrW(item,GWL_STYLE)&WS_VISIBLE),"An obsolete Back/reader action remains in the localized lesson header");
+        }
         require(window_text(fixture.control(2,11)) == pick("Compilar, ejecutar y comprobar","Compile, run and check","Compiler, exécuter et vérifier") &&
                 window_text(fixture.control(3,11)) == pick("Compilar y ejecutar","Compile and run","Compiler et exécuter") &&
                 fixture.text(2,17) == pick("Entrada","Input","Entrée") && fixture.text(2,30) == pick("Salida del programa (stdout)","Program output (stdout)","Sortie du programme (stdout)"),
@@ -1448,7 +1574,11 @@ void laboratory_interface_parity(){
         ShowWindow(fixture.host,SW_SHOWNOACTIVATE);pump(fixture.host);
         require(window_text(fixture.control(990))==pick("Prototipo del motor C++","C++ Engine Prototype","Prototype du moteur C++")&&character_format(fixture.control(990)).yHeight==420,"The native laboratory lost Android's original localized28sp title");
         require(window_text(fixture.control(991)).find("MSVC")!=std::string::npos&&window_text(fixture.control(991)).find("x64")!=std::string::npos&&character_format(fixture.control(991)).yHeight==270,"The native laboratory description is absent, untruthful or has the wrong18sp size");
-        for(const auto control:{106,111,112,113,107})require(!(GetWindowLongPtrW(fixture.control(control),GWL_STYLE)&WS_VISIBLE),"A synthetic lesson control leaked into the standalone C++ laboratory");
+        for(const auto control:{106,112,113,107})require(!(GetWindowLongPtrW(fixture.control(control),GWL_STYLE)&WS_VISIBLE),"A synthetic lesson control leaked into the standalone C++ laboratory");
+        for(const auto removed:{110,111}) {
+            const auto item=descendant(fixture.view,removed);
+            require(!item||!(GetWindowLongPtrW(item,GWL_STYLE)&WS_VISIBLE),"An obsolete Back/reader icon leaked into the standalone laboratory");
+        }
         for(const auto part:{4,15,17,19,23,24,25,30,31})require(!descendant(fixture.view,id(0,part)),"The standalone laboratory gained a lesson feedback/input/console toolbar not present in Android");
         require(window_text(fixture.control(0,34))==pick("Listo para ejecutar.","Ready to Run.","Prêt pour l’exécution.")&&character_format(fixture.control(0,34)).yHeight==240,"The native laboratory lost its localized16sp status line");
         require(reader_theme::palette().high_contrast||reader_theme::background(fixture.control(0,14))==RGB(5,6,7),"The standalone output no longer has Android's black console surface");
@@ -3116,10 +3246,11 @@ void physical_enter_and_attempt_fill(){
     require(f.page()==1&&up(f.view)&&f.lesson.raw_json==raw,"The next physical Enter failed to advance once or changed authored content");
     // Render the actual life icon independently of desktop occlusion. Only
     // glyph pixels are inspected; labels/counts do not affect the assertion.
+    set_lesson_attempts_state(f.view,4,8,.5,false);
     const auto button=f.control(113);RECT bounds{};GetClientRect(button,&bounds);
     const auto screen=GetDC(button),dc=CreateCompatibleDC(screen);const auto bitmap=CreateCompatibleBitmap(screen,bounds.right,bounds.bottom);ReleaseDC(button,screen);
     const auto previous=SelectObject(dc,bitmap);DRAWITEMSTRUCT draw{};draw.CtlType=ODT_BUTTON;draw.CtlID=113;draw.hwndItem=button;draw.hDC=dc;draw.rcItem=bounds;
-    set_lesson_attempts_state(f.view,4,8,.5,false);SendMessageW(f.view,WM_DRAWITEM,113,reinterpret_cast<LPARAM>(&draw));GdiFlush();
+    SendMessageW(f.view,WM_DRAWITEM,113,reinterpret_cast<LPARAM>(&draw));GdiFlush();
     const auto colors=reader_theme::palette(button);if(!colors.high_contrast){
         const auto scale=[&](int n){return MulDiv(n,static_cast<int>(GetDpiForWindow(button)),96);};
         const int side=MulDiv(scale(43),4,5),left=(bounds.right-side)/2,top=scale(12);
@@ -3160,6 +3291,9 @@ void premium_attempt_indicator(){
             Fixture f({},[&](const curriculum::Lesson&){auto model=windows::parse_lesson_json(R"json({"id":"qa_premium_indicator","title":"Intentos","pages":[{"blocks":[{"type":"paragraph","text":"Indicador de intentos."}]}]})json");
                 model.source_path=std::filesystem::path(build::source_root)/"app/src/main/assets/content/es"/route/"qa_premium_indicator.json";return model;});
             int opened=0;LessonViewHooks hooks;hooks.attempts_requested=[&](HWND){++opened;};set_lesson_view_hooks(f.view,std::move(hooks));
+            // Premium starts hidden and has no reserved slot; establish the
+            // actual free layout before sizing the independent raster target.
+            set_lesson_attempts_state(f.view,4,8,.5,false);
             const auto before=read_lesson_state(f.view);const auto button=f.control(113);RECT bounds{};GetClientRect(button,&bounds);
             const auto scale=[&](int n){return MulDiv(n,static_cast<int>(GetDpiForWindow(button)),96);};
             Raster raster(button,bounds.right,bounds.bottom);DRAWITEMSTRUCT draw{};draw.CtlType=ODT_BUTTON;draw.CtlID=113;
@@ -3167,6 +3301,7 @@ void premium_attempt_indicator(){
             const auto paint=[&](double progress,bool premium){set_lesson_attempts_state(f.view,4,8,progress,premium);
                 SendMessageW(f.view,WM_DRAWITEM,113,reinterpret_cast<LPARAM>(&draw));return raster.snapshot();};
             const auto free_half=paint(.5,false),free_full=paint(1.,false),premium=paint(.25,true);
+            require(!(GetWindowLongPtrW(button,GWL_STYLE)&WS_VISIBLE),"Premium still displays the attempts action in the lesson header");
             const auto colors=reader_theme::palette(button);
             const int side=MulDiv(scale(43),4,5),left=(bounds.right-side)/2,top=scale(12);
             const RECT route_glyph{left,top,left+side,top+side};
@@ -3190,6 +3325,7 @@ void premium_attempt_indicator(){
             }
             require(free_percentage>0,"The free indicator lost its visible recovery percentage");
             require(paint(.5,false)==free_half,"Returning to free mode changed the original count, percentage or refill drawing");
+            require(GetWindowLongPtrW(button,GWL_STYLE)&WS_VISIBLE,"Returning to free mode did not restore its attempts action");
 
             // Read the original vector through the production renderer at
             // 100% and 225% raster sizes; sample interiors of its actual path.
@@ -3216,7 +3352,8 @@ void premium_attempt_indicator(){
                         "Premium infinity differs from the original six-stop Android gold gradient");
                 }
             }
-            (void)paint(.25,true);f.click(113);require(opened==0,"Premium still opens the free-life recovery panel");
+            (void)paint(.25,true);SendMessageW(f.view,WM_COMMAND,MAKEWPARAM(113,BN_CLICKED),0);pump(f.host);
+            require(opened==0,"The hidden Premium action still dispatches a free-life recovery command");
             (void)paint(.5,false);f.click(113);require(opened==1,"The free-life recovery panel no longer opens");
             require(read_lesson_state(f.view)==before,"Rendering Premium through the existing indicator API persisted an entitlement or changed student data");
         }
@@ -5589,10 +5726,10 @@ void narration_checkpoints_do_not_reformat_or_reflow_the_page() {
     update_lesson_preferences(f.view,[](state::StateData& data){data.preferences["appearance_settings"]["route_accent_blue_programming"]=std::int64_t{123};});pump(f.host);
     const auto colors=reader_theme::palette(f.view);require(colors.high_contrast||colors.accent==RGB(228,50,123),"A real route accent preference no longer repaints its current controls");
     update_lesson_preferences(f.view,[](state::StateData& data){data.preferences["native_windows"]["ui_language"]=std::string("en");});pump(f.host);
-    require(accessible_name(f.control(110))=="Back"&&f.text(2,10)==source&&f.text(1,1)==example_source,
+    require(accessible_name(f.control(107))=="Lesson Settings"&&f.text(2,10)==source&&f.text(1,1)==example_source,
         "Refreshing the interface language lost labels or changed authored code");
     update_lesson_preferences(f.view,[](state::StateData& data){data.preferences["native_windows"]["ui_language"]=std::string("es");});pump(f.host);
-    require(accessible_name(f.control(110))=="Volver","Returning to Spanish did not refresh the live interface");
+    require(accessible_name(f.control(107))=="Ajustes de la lección","Returning to Spanish did not refresh the live interface");
     require(f.text(2,10)==source&&SendMessageW(editor,WM_UNDO,0,0)&&f.text(2,10)==initial,
         "Quiet checkpoint persistence or later real view updates discarded source Undo");
     require(SendMessageW(editor,EM_REDO,0,0)&&f.text(2,10)==source,"Checkpoint persistence discarded source Redo");
@@ -5814,7 +5951,8 @@ void current_inline_feedback_uses_authored_controls_and_restores_each_attempt() 
 
 #ifdef LGAED_INLINE_FEEDBACK_ONLY
 int main(int argc,char* argv[]) {
-    if(argc!=2||std::string_view(argv[1])!="--inline-feedback")return 2;
+    const bool lesson_header_only=argc==2&&std::string_view(argv[1])=="--lesson-header";
+    if(argc!=2||(!lesson_header_only&&std::string_view(argv[1])!="--inline-feedback"))return 2;
     std::cout<<std::unitbuf;std::cerr<<std::unitbuf;
     const auto ole=OleInitialize(nullptr);
     if(FAILED(ole))return 2;
@@ -5826,10 +5964,11 @@ int main(int argc,char* argv[]) {
     host.lpszClassName=L"LgaedLessonViewTests";
     if(!RegisterClassW(&host))return 2;
     try {
-        current_inline_feedback_uses_authored_controls_and_restores_each_attempt();
+        if(lesson_header_only)lesson_header_context_is_complete_and_wraps();
+        else current_inline_feedback_uses_authored_controls_and_restores_each_attempt();
         return 0;
     }catch(const std::exception& error){
-        std::cerr<<"FAIL real active inline-feedback QA: "<<error.what()<<'\n';
+        std::cerr<<(lesson_header_only?"FAIL real native lesson-header QA: ":"FAIL real active inline-feedback QA: ")<<error.what()<<'\n';
         return 1;
     }
 }
@@ -5872,12 +6011,13 @@ int main(int argc,char* argv[]) {
     const bool compiler_height_only=argc==2&&std::string_view(argv[1])=="--compiler-height";
     const bool navigation_geometry_only=argc==2&&std::string_view(argv[1])=="--navigation-geometry";
     const bool inline_feedback_only=argc==2&&std::string_view(argv[1])=="--inline-feedback";
+    const bool lesson_header_only=argc==2&&std::string_view(argv[1])=="--lesson-header";
     const bool lesson_menu_only=argc==2&&std::string_view(argv[1])=="--lesson-menu";
     const bool order_help_only=argc==2&&std::string_view(argv[1])=="--order-help";
     const bool feedback_font_only=argc==2&&std::string_view(argv[1])=="--feedback-font";
     const bool u1_editor_only=argc==2&&std::string_view(argv[1])=="--u1-compiler-edition";
     const bool main_u1_editor_only=argc==2&&std::string_view(argv[1])=="--u1-main-compiler-edition";
-    if(argc>1&&!scroll_repaint_only&&!scroll_motion_only&&!compiler_scroll_only&&!u12_file_roundtrip_only&&!u12_file_append_only&&!u12_file_repairs_only&&!u12_composed_feedback_only&&!caret_only&&!text_sequence_only&&!restoration_only&&!compiler_puzzles_only&&!u11_editorial_only&&!stderr_objective_only&&!dependent_puzzles_only&&!current_dependent_puzzles_only&&!editor_overflow_only&&!answer_overflow_only&&!narration_repaint_only&&!compiler_height_only&&!navigation_geometry_only&&!inline_feedback_only&&!lesson_menu_only&&!order_help_only&&!feedback_font_only&&!u1_editor_only&&!main_u1_editor_only)return 2;
+    if(argc>1&&!scroll_repaint_only&&!scroll_motion_only&&!compiler_scroll_only&&!u12_file_roundtrip_only&&!u12_file_append_only&&!u12_file_repairs_only&&!u12_composed_feedback_only&&!caret_only&&!text_sequence_only&&!restoration_only&&!compiler_puzzles_only&&!u11_editorial_only&&!stderr_objective_only&&!dependent_puzzles_only&&!current_dependent_puzzles_only&&!editor_overflow_only&&!answer_overflow_only&&!narration_repaint_only&&!compiler_height_only&&!navigation_geometry_only&&!inline_feedback_only&&!lesson_header_only&&!lesson_menu_only&&!order_help_only&&!feedback_font_only&&!u1_editor_only&&!main_u1_editor_only)return 2;
     std::cout << std::unitbuf; std::cerr << std::unitbuf;
     const auto ole=OleInitialize(nullptr);if(FAILED(ole))return 2;
     struct OleScope{~OleScope(){OleUninitialize();}} apartment;
@@ -5885,6 +6025,7 @@ int main(int argc,char* argv[]) {
     WNDCLASSW host{}; host.lpfnWndProc = host_proc; host.hInstance = GetModuleHandleW(nullptr); host.lpszClassName = L"LgaedLessonViewTests";
     if (!RegisterClassW(&host)) return 2;
     try {
+        if(lesson_header_only){lesson_header_context_is_complete_and_wraps();return 0;}
         if(lesson_menu_only){lesson_menu_retains_import_pages_and_settings_with_hooks();return 0;}
         if(order_help_only){optional_separator_help_matches_screen_reader_and_grading();desktop_drag_instructions_match_visible_and_spoken_text_in_all_languages();return 0;}
         if(feedback_font_only){exercise_feedback_matches_curricular_body_font();return 0;}

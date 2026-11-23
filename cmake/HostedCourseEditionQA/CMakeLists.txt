@@ -370,6 +370,17 @@ add_test(NAME native.current_inline_feedback
 set_tests_properties(native.current_inline_feedback
     PROPERTIES TIMEOUT 240 RUN_SERIAL TRUE)
 
+# Compile the real application-to-catalog wiring as well as the shared view.
+# This is an object check; it does not replace the pinned product build/link.
+add_library(lgaed_lesson_header_shell_compile OBJECT
+    "${_lgaed_root}/native/presentation/windows/main.cpp")
+target_link_libraries(lgaed_lesson_header_shell_compile
+    PRIVATE lgaed_curricular_windows)
+add_dependencies(lgaed_inline_feedback_view_tests lgaed_lesson_header_shell_compile)
+add_test(NAME native.lesson_header
+    COMMAND lgaed_inline_feedback_view_tests --lesson-header)
+set_tests_properties(native.lesson_header PROPERTIES TIMEOUT 90 RUN_SERIAL TRUE)
+
 # Native Windows case revision StateStore and preserved aggregate QA.
 set(_u6l19_dir "${CMAKE_CURRENT_BINARY_DIR}/test-fixtures/u6l19-case-split")
 add_custom_command(OUTPUT "${_u6l19_dir}/before.json" "${_u6l19_dir}/after.json"

@@ -73,6 +73,11 @@ struct LessonViewHooks {
     std::function<std::string(std::string_view,std::string_view,std::string_view,std::stop_token)> validate_math;
     std::function<std::string(std::string_view)> math_editor_request;
     std::function<void(HWND,HWND)> calculator_requested;
+    // Catalog identity and ordinals are supplied together by the navigation
+    // owner. Standalone lessons keep the existing label without invented totals.
+    std::string course_title;
+    std::size_t course_number = 0;
+    std::size_t unit_number = 0, unit_count = 0, lesson_number = 0, lesson_count = 0;
 };
 // Page actions share exactly the gates used by gestures and the native Pages
 // menu. These messages carry no fake/hidden navigation controls.
