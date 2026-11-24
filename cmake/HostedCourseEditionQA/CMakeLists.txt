@@ -452,5 +452,15 @@ add_test(NAME native.named_rule_runtime
         "${_lgaed_root}/app/src/main/assets/content/es/programming/programming_practice_tools/comprobaciones_repetibles/lesson_nombrar_reglas_y_separar_acuerdos.json")
 set_tests_properties(native.named_rule_runtime PROPERTIES TIMEOUT 600 RUN_SERIAL TRUE)
 
+# Original editor interaction regressions, independent of the product toolchain pin.
+add_executable(lgaed_code_gutter_wheel_tests
+    "${_lgaed_root}/native/presentation/windows/code_gutter_tests.cpp")
+target_link_libraries(lgaed_code_gutter_wheel_tests PRIVATE lgaed_curricular_windows)
+add_test(NAME native.code_gutter_wheel COMMAND lgaed_code_gutter_wheel_tests --wheel-zoom)
+set_tests_properties(native.code_gutter_wheel PROPERTIES TIMEOUT 60 RUN_SERIAL TRUE)
 
-
+add_executable(lgaed_code_editor_viewport_tests
+    "${_lgaed_root}/native/presentation/windows/code_editor_viewport_tests.cpp")
+target_link_libraries(lgaed_code_editor_viewport_tests PRIVATE lgaed_curricular_windows)
+add_test(NAME native.code_editor_viewport COMMAND lgaed_code_editor_viewport_tests)
+set_tests_properties(native.code_editor_viewport PROPERTIES TIMEOUT 120 RUN_SERIAL TRUE)
