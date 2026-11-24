@@ -33,9 +33,16 @@ std::string active_case,active_step;
 
 void check(bool value,std::string_view message){if(!value)throw std::runtime_error(std::string(message));}
 int control_id(std::size_t block,int part){return 1000+static_cast<int>(block)*100+part;}
-HWND descendant(HWND parent,int id){struct Search{int id;HWND found=nullptr;} search{id};
+HWND lesson_control(HWND parent,int id){struct Search{int id;HWND found=nullptr;std::size_t matches=0;} search{id};
     EnumChildWindows(parent,[](HWND item,LPARAM raw)->BOOL{auto& current=*reinterpret_cast<Search*>(raw);
-        if(GetDlgCtrlID(item)!=current.id)return TRUE;current.found=item;return FALSE;},reinterpret_cast<LPARAM>(&search));
+        if(GetDlgCtrlID(item)!=current.id)return TRUE;
+        // Match LessonView's direct pane children, including overflow and
+        // fullscreen hosts. Nested puzzle cards reuse these numeric IDs.
+        wchar_t owner_class[96]{};GetClassNameW(GetParent(item),owner_class,96);
+        if(std::wstring_view(owner_class)!=L"LearnGameAndEngineDev.LessonPane")return TRUE;
+        current.found=item;++current.matches;return TRUE;},reinterpret_cast<LPARAM>(&search));
+    check(search.matches<=1,"Ambiguous native lesson control: id="+std::to_string(id)+
+        ", LessonPane matches="+std::to_string(search.matches));
     return search.found;
 }
 void pump(){MSG message{};while(PeekMessageW(&message,nullptr,0,0,PM_REMOVE))
@@ -803,11 +810,11 @@ struct View {
             const auto all=(std::size_t{1}<<archived_math.size())-1;
             const auto deadline=GetTickCount64()+10000;
             while((verified->load()!=all||lesson_page_state(view).index!=position.page||
-                !descendant(view,control_id(position.block,2)))&&GetTickCount64()<deadline){
+                !lesson_control(view,control_id(position.block,2)))&&GetTickCount64()<deadline){
                 MsgWaitForMultipleObjects(0,nullptr,FALSE,10,QS_ALLINPUT);pump();
             }
             if(verified->load()!=all||lesson_page_state(view).index!=position.page||
-                    !descendant(view,control_id(position.block,2))){
+                    !lesson_control(view,control_id(position.block,2))){
                 std::string unresolved;
                 for(std::size_t i=0;i<archived_math.size();++i)if(!(verified->load()&(std::size_t{1}<<i)))
                     unresolved+=' '+std::string(archived_math[i].plan->identity);
@@ -824,7 +831,7 @@ struct View {
     }
     void reopen(){check(flush_lesson_view(view),"Cannot save prediction QA");DestroyWindow(view);view=nullptr;open();}
     state::StateData saved(){check(flush_lesson_view(view),"Cannot flush prediction QA");return read_lesson_state(view);}
-    HWND control(int part)const{const auto result=descendant(view,control_id(position.block,part));
+    HWND control(int part)const{const auto result=lesson_control(view,control_id(position.block,part));
         check(result!=nullptr,"The authored prediction control is missing");return result;}
     std::string text(int part)const{return edit_text(control(part));}
     void verify_feedback(bool correct)const{
