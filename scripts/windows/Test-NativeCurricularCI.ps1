@@ -35,6 +35,12 @@ if ($MsvcPreflightOnly -and $Suite -notin @('StateImport', 'ReaderBuild')) {
 $qaRoot = [System.IO.Path]::GetFullPath((Join-Path $PSScriptRoot '..\..'))
 $qaManifest = Get-Content -LiteralPath (Join-Path $qaRoot 'toolchains\windows.versions.json') -Raw |
     ConvertFrom-Json
+$qaHostedMsvc = Get-Content -LiteralPath (Join-Path $qaRoot 'toolchains\windows.hosted-msvc.json') -Raw |
+    ConvertFrom-Json
+# Select only the explicitly reviewed hosted compiler; all other pins stay unchanged.
+$qaManifest.visualStudio.msvcToolset = $qaHostedMsvc.msvcToolset
+$qaManifest.visualStudio.compilerVersion = $qaHostedMsvc.compilerVersion
+$env:LGAED_HOSTED_MSVC_QA = '1'
 $qaSuiteConfig = switch ($Suite) {
     'StateImport' {
         @{

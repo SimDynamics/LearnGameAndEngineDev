@@ -4,7 +4,8 @@ if(NOT CMAKE_HOST_WIN32)
     message(FATAL_ERROR "This base targets native Windows x64.")
 endif()
 
-set(_lgaed_toolset "14.51.36231")
+include("${CMAKE_CURRENT_LIST_DIR}/WindowsMsvcProfile.cmake")
+lgaed_read_msvc_profile(_lgaed_toolset _lgaed_compiler_version)
 # Windows Kits uses this directory for the 10.0.28000 SDK family.
 # Servicing releases (latest stable 10.0.28000.2957) retain this folder name.
 set(_lgaed_sdk "10.0.28000.0")
