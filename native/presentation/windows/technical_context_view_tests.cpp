@@ -740,11 +740,8 @@ void current_u2l5_native_reader_gates(){
 // The published U2L6 has TWO independent compiler gates on one page. Exercise
 // production LessonView, its real reader regions and on-disk QA StateStore;
 // fabricated receipts below are navigation fixtures, never compiler evidence.
-void current_u2l6_native_reader_gates() {
-    const auto relative="objetos_y_estado/lesson_conversiones_y_deduccion.json";
-    const auto lesson=load(relative);
-    const auto file=std::filesystem::path(build::source_root)/
-        "app/src/main/assets/content/es/programming/cpp_fundamentals"/relative;
+void u2l6_native_reader_gates_at(const std::filesystem::path& file,bool selected_edition) {
+    const auto lesson=windows::load_lesson(file);
     const auto original=state::sha256(state::read_bytes(file));
     const auto first_at=curriculum::stable_block_position(lesson,"block_0006_0002");
     check(first_at&&first_at->page==6&&first_at->block==2&&
@@ -753,7 +750,7 @@ void current_u2l6_native_reader_gates() {
     const auto& first=lesson.pages[6].blocks[first_at->block];
     const auto& second=lesson.pages[6].blocks[6];
     check(second.type==curriculum::BlockType::cpp_compiler&&
-        second.stable_id=="p1u2l6_reparar_conversion"&&
+        second.stable_id==(selected_edition?"block_0006_0006":"p1u2l6_reparar_conversion")&&
         first.output_check&&second.output_check&&
         !first.output_check->cases.empty()&&!second.output_check->cases.empty()&&
         std::ranges::any_of(lesson.activity_after,[&](const auto& relation){
@@ -780,7 +777,7 @@ void current_u2l6_native_reader_gates() {
     };
     const auto first_reference=reference(first.stable_id,"block_0007_0001");
     const auto second_reference=reference(
-        second.stable_id,"p1u2l6_referencia_reparada");
+        second.stable_id,selected_edition?"block_0008_0007":"p1u2l6_referencia_reparada");
     check(first_reference&&second_reference&&
         first_reference->page>first_at->page&&
         second_reference->page>=first_reference->page,
@@ -924,6 +921,26 @@ void current_u2l6_native_reader_gates() {
         "completion, manual navigation, unchanged drafts, independent stored "
         "pauses, reference release and reopen. Model receipts only, no MSVC "
         "execution, PCM synthesis or human listening claimed.\n";
+}
+
+void current_u2l6_native_reader_gates(){
+    const auto root=std::filesystem::path(build::source_root)/"app/src/main/assets/content";
+    const curriculum::CatalogLocation course{"es","programming","cpp_fundamentals",{},{}};
+    const auto units=windows::load_catalog(root,course);
+    const auto unit=std::ranges::find_if(units.entries,[](const auto& entry){
+        return entry.id.ends_with("__objetos_y_estado");
+    });
+    check(unit!=units.entries.end()&&unit->available,"Selected U2 is unavailable for U2L6 gates");
+    const auto lessons=windows::load_catalog(root,curriculum::catalog_child(course,unit->id));
+    const auto entry=std::ranges::find_if(lessons.entries,[](const auto& item){
+        return item.id.ends_with("__conversiones_y_deduccion");
+    });
+    check(entry!=lessons.entries.end()&&entry->available,"Selected U2L6 is unavailable for native gates");
+    const auto selected=windows::load_lesson(entry->asset);
+    check(selected.id==entry->id&&selected.course_edition.has_value(),
+        "U2L6 native gates did not select the active edition");
+    u2l6_native_reader_gates_at(entry->asset,true);
+    u2l6_native_reader_gates_at(root/"es/programming/cpp_fundamentals/objetos_y_estado/lesson_conversiones_y_deduccion.json",false);
 }
 
 void u2_roles_at(const std::filesystem::path& source){
