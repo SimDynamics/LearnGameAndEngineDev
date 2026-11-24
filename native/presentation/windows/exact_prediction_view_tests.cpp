@@ -482,7 +482,9 @@ void seed_compiler_prerequisites(state::StateData& data,const curriculum::Lesson
         if(block.type!=curriculum::BlockType::cpp_compiler||!block.output_check)continue;
         windows::CppRunRequest request;request.revision=1;request.source_utf8=block.initial_code;
         request.project_files=block.project_files;request.source_files=block.source_files;request.cmake=block.cmake;
-        for(const auto& item:block.output_check->cases){
+        check(!block.output_check->cases.empty(),"A prerequisite compiler has no first case");
+        {
+            const auto& item=block.output_check->cases.front();
             check(!item.outputs.empty(),"A prerequisite compiler has no authored stdout oracle");
             request.stdin_utf8=item.standard_input;
             curriculum::FreshExecution execution{1,true,true,0,item.standard_input,item.outputs.front()};
@@ -490,8 +492,9 @@ void seed_compiler_prerequisites(state::StateData& data,const curriculum::Lesson
             if(item.standard_error==curriculum::StandardErrorExpectation::non_blank)execution.standard_error="QA prerequisite diagnostic";
             (void)windows::record_compiler_puzzle_case(data,lesson,block,request,execution,"Synthetic QA prerequisite only");
         }
-        check(windows::compiler_puzzle_completed(data,lesson,block),
-            "Cannot isolate prediction from its compiler prerequisite: "+block.stable_id);
+        check(windows::compiler_puzzle_completed(data,lesson,block)&&
+            windows::compiler_puzzle_case_count(data,lesson,block)==1,
+            "Synthetic QA must credit only the first prerequisite case: "+block.stable_id);
     }
     for(std::size_t p=target.page;p<lesson.pages.size();++p)
         for(std::size_t b=p==target.page?target.block:0;b<lesson.pages[p].blocks.size();++b){
