@@ -10,8 +10,23 @@ import unittest
 import stable_state_layout as state
 from code_format_compat import require_source_format
 
+from format_batch_history import (
+    Publication, assert_format_history, assert_stable_storage, load_publication,
+)
+
 ROOT=Path(__file__).resolve().parents[2]
 LESSON=ROOT/"app/src/main/assets/content/es/programming/cpp_fundamentals/funciones_y_contratos/lesson_conversion_comprobada_sin_perdida.json"
+RELATIVE = LESSON.relative_to(ROOT).as_posix()
+PUBLICATIONS = {
+    "before": Publication(
+        "223387d7520ceb070f3a17db755fa40943990f09",
+        "1a19eab0826217cef939ed380bedb686b995985d799468df5d73a1c59c1eadb9",
+    ),
+    "formatted": Publication(
+        "3d7caba61676749a37e951b2256b5e6e0b5557c0",
+        "7ab33ec4e6ad3a9a203af0ba44b8082d2233f71e81a1c2932af5695fd54c731d",
+    ),
+}
 POSITIONS=((0,3),(1,3),(1,4),(2,5),(3,2),(3,7),(4,2),(4,4),(5,5),(6,2),(6,4),(6,9),(6,12))
 PROSE=((3,6),(6,8),(6,11))
 OLD_TEXT=json.loads(r'''{"block_0003_0006":"El programa lee un origen finito y un destino entero previo. Comprueba estas parejas: `-100.0 42`, `-100.5 42`, `1.0 42`, `0.5 42`, `-0.5 42`, `99.75 42` y `6.5 -8`. Se muestran aceptación, destino posterior, origen y si el origen se conserva. Un rechazo debe conservar el destino recibido y no una constante interna.\n\nPulsa «Compilar, ejecutar y comprobar». Conserva el programa al variar sólo Entrada entre los casos declarados. El salto después del último mensaje es opcional.","block_0006_0008":"Construye desde el esqueleto `convertir_entero` y un cliente que lea primero la cantidad de valores y después esos `double`. Usa como máximo ocho valores finitos de menos ciento dos a ciento dos. Conserva una copia del vector, prepara destino diecisiete para cada llamada y presenta las cuatro líneas del informe: `Enteros:`, `Rechazados: N`, `Ceros aceptados: N` y `Datos conservados: B`. Cada entero aceptado termina en punto y coma.\n\nComprueba `0`; `1 0.0`; `1 0.5`; `1 -0.5`; `2 -100.0 100.0`; `2 -100.5 100.5`; y `4 0.0 0.5 0.0 -0.5`. Pulsa «Compilar, ejecutar y comprobar» conservando las funciones entre casos; el salto final es opcional.","block_0006_0011":"Este programa de referencia lee cantidad, valores y destino previo para cada llamada. Comprueba `4 0.0 0.5 0.0 -0.5 17` y la misma colección con destino `-8`. Ambos informes deben ser `Enteros:0;0;`, dos rechazos, dos ceros aceptados y conservación verdadera. El bool decide la pertenencia de cada resultado.\n\nPulsa «Compilar, ejecutar y comprobar». Conserva el programa al variar sólo Entrada entre los casos declarados. El salto después del último mensaje es opcional."}''')
@@ -29,6 +44,16 @@ class VerifiedConversionFormatBatch(unittest.TestCase):
         self.old={x["id"]:x["block"] for x in self.meta["sourceFormatRevisions"]}
 
     def test_immutable_state_and_editorial_transitions(self):
+        current = self.doc
+        current_sources = self.old
+        publication_before = load_publication(ROOT, RELATIVE, PUBLICATIONS["before"])
+        formatted = load_publication(ROOT, RELATIVE, PUBLICATIONS["formatted"])
+        # The batch assertions describe this authenticated publication,
+        # while later compatible revisions remain in the current lesson.
+        self.doc = formatted
+        self.meta = formatted["stateLayout"]
+        self.old = {row["id"]: row["block"] for row in
+                          formatted["stateLayout"]["sourceFormatRevisions"]}
         state.validate(self.doc)
         self.assertEqual(13,len(POSITIONS))
         self.assertEqual(13,len(self.old))
@@ -66,6 +91,24 @@ class VerifiedConversionFormatBatch(unittest.TestCase):
         self.assertEqual(state.validate(previous),state.validate(self.doc))
         for k in ("origin","family","current","additions"):
             self.assertEqual(previous["stateLayout"][k],self.meta[k])
+
+        self.assertEqual(previous, publication_before)
+        state.validate(publication_before)
+        state.validate_transition(publication_before, formatted)
+        state.validate_transition(formatted, current)
+        for metadata_key in ("editorial", "sourceFormatRevisions"):
+            published = formatted["stateLayout"][metadata_key]
+            self.assertEqual(current["stateLayout"][metadata_key][:len(published)], published)
+        assert_format_history(self, publication_before, formatted, current, self.old)
+        assert_stable_storage(self, publication_before, current, self.old)
+        self.doc = current
+        self.old = current_sources
+        self.meta = current["stateLayout"]
+        for p,b in PROSE:
+            text = current["pages"][p]["blocks"][b]["text"]
+            self.assertIn("primera entrada", text)
+            self.assertIn("pruebas opcionales", text)
+            self.assertNotIn("\n- ", text)
 
     def test_cpp23_original_and_formatted_executions(self):
         with tempfile.TemporaryDirectory(prefix="u6l10-conversion-") as folder:

@@ -10,8 +10,23 @@ import unittest
 import stable_state_layout as state
 from code_format_compat import require_source_format
 
+from format_batch_history import (
+    Publication, assert_format_history, assert_stable_storage, load_publication,
+)
+
 ROOT = Path(__file__).resolve().parents[2]
 PATH = ROOT / "app/src/main/assets/content/es/programming/cpp_fundamentals/funciones_y_contratos/lesson_declaraciones_y_firmas.json"
+RELATIVE = PATH.relative_to(ROOT).as_posix()
+PUBLICATIONS = {
+    "before": Publication(
+        "94e6d9685ad7403aada42717dd4ee41da7baa157",
+        "92ca7596b32d35d17b9361879045f103cc41a8e9ac1b1822f8b8cb61307917fb",
+    ),
+    "formatted": Publication(
+        "700b4e16720d8c942a5bc95f0a2c1f3d1e6e88f4",
+        "eaae140880a99040e71462b4989890c9944b42cc555cd7b729d91262ece6054e",
+    ),
+}
 POSITIONS = ((0,2),(1,2),(2,2),(3,2),(3,4),(4,2),(4,7),(5,3),(6,9),(7,5),(8,2),(8,8),(9,1),(9,7),(9,10),(10,4),(11,2),(11,5),(11,9),(11,12),(12,2),(13,2),(16,2))
 FILL_BLANKS = {(1,2)}
 UNSOLVED_STARTERS = {(7,5), (9,7), (10,4), (11,9), (13,2)}
@@ -28,10 +43,23 @@ class DeclarationsFormatBatch(unittest.TestCase):
     def setUp(self):
         self.lesson = json.loads(PATH.read_text(encoding="utf-8"))
         self.meta = self.lesson["stateLayout"]
+        # This batch has 23 owners; later diagnostic formatting is
+        # validated below and still compiles from the current lesson.
+        batch = load_publication(ROOT, RELATIVE, PUBLICATIONS["formatted"])
         self.originals = {entry["id"]: entry["block"]
-                          for entry in self.meta["sourceFormatRevisions"]}
+                          for entry in batch["stateLayout"]["sourceFormatRevisions"]}
 
     def test_preserve_originals_answers_and_progress(self):
+        current = self.lesson
+        current_sources = self.originals
+        publication_before = load_publication(ROOT, RELATIVE, PUBLICATIONS["before"])
+        formatted = load_publication(ROOT, RELATIVE, PUBLICATIONS["formatted"])
+        # The batch assertions describe this authenticated publication,
+        # while later compatible revisions remain in the current lesson.
+        self.lesson = formatted
+        self.meta = formatted["stateLayout"]
+        self.originals = {row["id"]: row["block"] for row in
+                          formatted["stateLayout"]["sourceFormatRevisions"]}
         state.validate(self.lesson)
         self.assertEqual(23, len(POSITIONS))
         self.assertEqual(len(POSITIONS), len(self.originals))
@@ -70,6 +98,19 @@ class DeclarationsFormatBatch(unittest.TestCase):
             self.assertEqual(previous["stateLayout"][key],self.meta[key])
         self.assertEqual(previous["orderVisualSeparators"],
                          self.lesson["orderVisualSeparators"])
+
+        self.assertEqual(previous, publication_before)
+        state.validate(publication_before)
+        state.validate_transition(publication_before, formatted)
+        state.validate_transition(formatted, current)
+        for metadata_key in ("editorial", "sourceFormatRevisions"):
+            published = formatted["stateLayout"][metadata_key]
+            self.assertEqual(current["stateLayout"][metadata_key][:len(published)], published)
+        assert_format_history(self, publication_before, formatted, current, self.originals)
+        assert_stable_storage(self, publication_before, current, self.originals)
+        self.lesson = current
+        self.originals = current_sources
+        self.meta = current["stateLayout"]
 
     def test_cpp23_originals_and_formatted_programs(self):
         with tempfile.TemporaryDirectory(prefix="declarations-u6l2-format-") as directory:

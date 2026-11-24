@@ -11,8 +11,23 @@ import unittest
 import stable_state_layout as state
 from code_format_compat import require_source_format
 
+from format_batch_history import (
+    Publication, assert_format_history, assert_stable_storage, load_publication,
+)
+
 ROOT=Path(__file__).resolve().parents[2]
 PATH=ROOT/"app/src/main/assets/content/es/programming/cpp_fundamentals/funciones_y_contratos/lesson_tipo_de_retorno_explicito_y_deducido.json"
+RELATIVE = PATH.relative_to(ROOT).as_posix()
+PUBLICATIONS = {
+    "before": Publication(
+        "1a93e8c8a0871274f9df6e058514bfcb23a6aac0",
+        "49989decde068df62d1f02a045ef35e54cf6424fea53f224e114e037bd6bf28e",
+    ),
+    "formatted": Publication(
+        "b584b45696bfd2aff3954a0cae623cef7a5363ec",
+        "69dc8002cdfec8317aaf028c78bfe057444a89e7c36508368cb844165e7113bd",
+    ),
+}
 INTENTIONALLY_INVALID={(4,2),(5,2)}
 
 class ReturnTypeFormatBatch(unittest.TestCase):
@@ -21,6 +36,15 @@ class ReturnTypeFormatBatch(unittest.TestCase):
         self.revisions={x["id"]:x["block"] for x in self.doc["stateLayout"]["sourceFormatRevisions"]}
 
     def test_immutable_contracts_and_source_tokens(self):
+        current = self.doc
+        current_sources = self.revisions
+        publication_before = load_publication(ROOT, RELATIVE, PUBLICATIONS["before"])
+        formatted = load_publication(ROOT, RELATIVE, PUBLICATIONS["formatted"])
+        # The batch assertions describe this authenticated publication,
+        # while later compatible revisions remain in the current lesson.
+        self.doc = formatted
+        self.revisions = {row["id"]: row["block"] for row in
+                          formatted["stateLayout"]["sourceFormatRevisions"]}
         state.validate(self.doc)
         self.assertGreaterEqual(len(self.revisions),10)
         self.assertEqual(len(self.revisions),len(self.doc["stateLayout"]["sourceFormatRevisions"]))
@@ -36,6 +60,17 @@ class ReturnTypeFormatBatch(unittest.TestCase):
                 self.assertGreater(block[field].count("\n\n"),old[field].count("\n\n"),identity)
                 for key in ("outputCheck","compileCheck","answers"):
                     self.assertEqual(old.get(key),block.get(key),identity)
+
+        state.validate(publication_before)
+        state.validate_transition(publication_before, formatted)
+        state.validate_transition(formatted, current)
+        for metadata_key in ("editorial", "sourceFormatRevisions"):
+            published = formatted["stateLayout"][metadata_key]
+            self.assertEqual(current["stateLayout"][metadata_key][:len(published)], published)
+        assert_format_history(self, publication_before, formatted, current, self.revisions)
+        assert_stable_storage(self, publication_before, current, self.revisions)
+        self.doc = current
+        self.revisions = current_sources
         self.assertEqual(11,len(self.doc["pages"]))
         self.assertTrue(self.doc["compilerPuzzlesRequired"])
 

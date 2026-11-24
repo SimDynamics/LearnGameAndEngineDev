@@ -12,8 +12,23 @@ import unittest
 import stable_state_layout as state
 from code_format_compat import require_source_format
 
+from format_batch_history import (
+    Publication, assert_format_history, assert_stable_storage, load_publication,
+)
+
 ROOT=Path(__file__).resolve().parents[2]
 PATH=ROOT/"app/src/main/assets/content/es/programming/cpp_fundamentals/funciones_y_contratos/lesson_construir_funciones_desde_un_contrato.json"
+RELATIVE = PATH.relative_to(ROOT).as_posix()
+PUBLICATIONS = {
+    "before": Publication(
+        "750a990b8aa85cb38ac4848106ef2265ec9ca287",
+        "c5b8b0dd87afbd07d0e433e1d2220edcc0cb429a64c761c99a8115e119dc7b0a",
+    ),
+    "formatted": Publication(
+        "a77f8bc8660a1aba63ce263992f45dd8925e5af0",
+        "7d114987931b2dd3e2f582710a3d7a34dcf13ee5249ecad701faabd1dc12ec4d",
+    ),
+}
 EDITORIAL_BASE=5
 SUFFIXES={
     "block_0004_0005": "\n\nEl primer caso de comprobación, Entrada «4 -10 0 6 10», debe mostrar estas dos líneas:\nNiveles: 0 0 6 6\nAl limite: 2\n\nSu comprobación correcta habilita «Continuar». Los siguientes casos son pruebas opcionales y no bloquean el paso; conserva el mismo programa y cambia únicamente Entrada.\n\nEntrada «0». Salida:\nNiveles:\nAl limite: 0\n\nEntrada «3 1 4 5». Salida:\nNiveles: 1 4 5\nAl limite: 0\n\nEntrada «1 -11». Salida:\nLecturas invalidas\n\nEntrada «1 11». Salida:\nLecturas invalidas\n\nEntrada «9 0 0 0 0 0 0 0 0 0». Salida:\nLecturas invalidas\n\nEntrada «1 6». Salida:\nNiveles: 6\nAl limite: 1",
@@ -30,6 +45,16 @@ class FunctionsFromContractFormatBatch(unittest.TestCase):
         self.before={entry["id"]:entry["block"] for entry in self.meta["sourceFormatRevisions"]}
 
     def test_historical_owners_and_lexical_format(self):
+        current = self.doc
+        current_sources = self.before
+        publication_before = load_publication(ROOT, RELATIVE, PUBLICATIONS["before"])
+        formatted = load_publication(ROOT, RELATIVE, PUBLICATIONS["formatted"])
+        # The batch assertions describe this authenticated publication,
+        # while later compatible revisions remain in the current lesson.
+        self.doc = formatted
+        self.meta = formatted["stateLayout"]
+        self.before = {row["id"]: row["block"] for row in
+                          formatted["stateLayout"]["sourceFormatRevisions"]}
         state.validate(self.doc)
         self.assertEqual(4,len(self.before))
         previous=deepcopy(self.doc)
@@ -70,6 +95,19 @@ class FunctionsFromContractFormatBatch(unittest.TestCase):
         state.validate_transition(previous,self.doc)
         for key in ("origin","current","family","additions"):
             self.assertEqual(previous["stateLayout"][key],self.meta[key])
+
+        self.assertEqual(previous, publication_before)
+        state.validate(publication_before)
+        state.validate_transition(publication_before, formatted)
+        state.validate_transition(formatted, current)
+        for metadata_key in ("editorial", "sourceFormatRevisions"):
+            published = formatted["stateLayout"][metadata_key]
+            self.assertEqual(current["stateLayout"][metadata_key][:len(published)], published)
+        assert_format_history(self, publication_before, formatted, current, self.before)
+        assert_stable_storage(self, publication_before, current, self.before)
+        self.doc = current
+        self.before = current_sources
+        self.meta = current["stateLayout"]
 
     def test_required_first_case_and_optional_outputs(self):
         first=self.doc["pages"][4]["blocks"][5]["text"]

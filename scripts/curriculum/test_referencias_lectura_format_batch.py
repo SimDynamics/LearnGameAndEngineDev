@@ -10,8 +10,23 @@ import unittest
 import stable_state_layout as state
 from code_format_compat import require_source_format
 
+from format_batch_history import (
+    Publication, assert_format_history, assert_stable_storage, load_publication,
+)
+
 ROOT = Path(__file__).resolve().parents[2]
 PATH = ROOT / "app/src/main/assets/content/es/programming/cpp_fundamentals/funciones_y_contratos/lesson_referencias_para_leer.json"
+RELATIVE = PATH.relative_to(ROOT).as_posix()
+PUBLICATIONS = {
+    "before": Publication(
+        "64d06e8184cc1d7f336718ded7d9c06ea6edb4cb",
+        "4fb4c385e65fe140c3240f33b2444e03f59b7aa68634b5c9810bfa694f889a12",
+    ),
+    "formatted": Publication(
+        "4c2749ccd3ec49f88dc789d50d1e25ee93c59e52",
+        "1ac58cc11d185f44062b5d8f4ec4c1983daf8eb72d1696e0b9122ac9dcfb2267",
+    ),
+}
 POSITIONS = ((0,2),(0,4),(1,2),(1,4),(2,2),(3,3),(4,2),(5,3),(5,7))
 
 def source_slot(block):
@@ -38,6 +53,16 @@ class ConstReferenceFormatBatch(unittest.TestCase):
                           for entry in self.meta["sourceFormatRevisions"]}
 
     def test_state_and_source_preservation(self):
+        current = self.document
+        current_sources = self.originals
+        publication_before = load_publication(ROOT, RELATIVE, PUBLICATIONS["before"])
+        formatted = load_publication(ROOT, RELATIVE, PUBLICATIONS["formatted"])
+        # The batch assertions describe this authenticated publication,
+        # while later compatible revisions remain in the current lesson.
+        self.document = formatted
+        self.meta = formatted["stateLayout"]
+        self.originals = {row["id"]: row["block"] for row in
+                          formatted["stateLayout"]["sourceFormatRevisions"]}
         state.validate(self.document)
         self.assertEqual(9, len(POSITIONS))
         self.assertEqual(len(POSITIONS), len(self.originals))
@@ -68,6 +93,19 @@ class ConstReferenceFormatBatch(unittest.TestCase):
         self.assertEqual(state.validate(previous),state.validate(self.document))
         for key in ("origin","current","family","additions"):
             self.assertEqual(previous["stateLayout"][key],self.meta[key])
+
+        self.assertEqual(previous, publication_before)
+        state.validate(publication_before)
+        state.validate_transition(publication_before, formatted)
+        state.validate_transition(formatted, current)
+        for metadata_key in ("editorial", "sourceFormatRevisions"):
+            published = formatted["stateLayout"][metadata_key]
+            self.assertEqual(current["stateLayout"][metadata_key][:len(published)], published)
+        assert_format_history(self, publication_before, formatted, current, self.originals)
+        assert_stable_storage(self, publication_before, current, self.originals)
+        self.document = current
+        self.originals = current_sources
+        self.meta = current["stateLayout"]
 
     def test_cpp23_behavior_and_optional_inputs(self):
         with tempfile.TemporaryDirectory(prefix="u6l5-const-reference-") as folder:

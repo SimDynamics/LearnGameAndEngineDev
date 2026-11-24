@@ -9,9 +9,19 @@ import unittest
 
 import stable_state_layout as state
 from code_format_compat import require_source_format
+from format_batch_history import (
+    Publication, all_owners, assert_format_history, assert_stable_storage,
+    load_publication,
+)
 
 ROOT=Path(__file__).resolve().parents[2]
 PATH=ROOT/"app/src/main/assets/content/es/programming/cpp_fundamentals/colecciones_y_recorridos/lesson_acumular_contar_y_seleccionar.json"
+PUBLICATIONS={
+    "before": Publication("3060547d2d96c6006486a05dd701b5f6e03299ff",
+        "56c445644d4e6150a9e15c47f657679b12656e405a3adf0c4bf1e5a5b2f6c512"),
+    "formatted": Publication("c0f6f8fdf4ccf43704deeb9ce6f6388e4cb0ffc7",
+        "e3200e0365662455ab6c025177905fad370b884329c3c245f8453c121081b755"),
+}
 POSITIONS=((0,2),(1,1),(1,2),(2,1),(2,2),(3,2),(4,2),(4,3),
            (5,2),(6,2),(7,1),(7,2),(7,7))
 ORDER=(5,4)
@@ -43,35 +53,50 @@ class AccumulateAndSelectFormat(unittest.TestCase):
         self.originals={x["id"]:x["block"] for x in self.meta["sourceFormatRevisions"]}
 
     def test_historical_responses_drafts_and_order_remain_valid(self):
-        state.validate(self.doc)
-        self.assertEqual(len(POSITIONS),len(self.originals))
-        self.assertEqual(1,len(self.meta["orderRefinements"]))
-        order=self.doc["pages"][ORDER[0]]["blocks"][ORDER[1]]
+        relative=PATH.relative_to(ROOT).as_posix()
+        previous_publication=load_publication(ROOT,relative,PUBLICATIONS["before"])
+        formatted=load_publication(ROOT,relative,PUBLICATIONS["formatted"])
+        for document in (previous_publication,formatted,self.doc):
+            state.validate(document)
+        published=formatted["stateLayout"]
+        ids=[published["current"][p]["blocks"][b] for p,b in POSITIONS]
+        archives=published["sourceFormatRevisions"]
+        self.assertEqual(len(POSITIONS),len(archives))
+        self.assertEqual(ids,[entry["id"] for entry in archives])
+        prefix=previous_publication["stateLayout"]["editorial"]
+        self.assertEqual(published["editorial"][:len(prefix)],prefix)
+        self.assertEqual(ids,[entry["id"] for entry in published["editorial"][len(prefix):]])
+        # Pin this batch to its complete publication; later compatible edits append history.
+        self.assertEqual(self.meta["editorial"][:len(published["editorial"])],
+                         published["editorial"])
+        self.assertEqual(self.meta["sourceFormatRevisions"][:len(archives)],archives)
+        self.assertEqual(1,len(published["orderRefinements"]))
+        order=formatted["pages"][ORDER[0]]["blocks"][ORDER[1]]
         self.assertEqual("order_code",order["type"])
         self.assertEqual(11,len(order["fragments"]))
         self.assertTrue(all("\n" not in part and "\r" not in part
                             for part in order["fragments"]))
-        self.assertEqual([self.meta["current"][p]["blocks"][b] for p,b in POSITIONS],
-                         [e["id"] for e in self.meta["editorial"][-len(POSITIONS):]])
-        before=deepcopy(self.doc)
-        before["stateLayout"].pop("sourceFormatRevisions")
-        before["stateLayout"]["editorial"]=before["stateLayout"]["editorial"][:-len(POSITIONS)]
+        before_blocks=all_owners(previous_publication)
         for p,b in POSITIONS:
-            identity=self.meta["current"][p]["blocks"][b]
-            original,updated=self.originals[identity],self.doc["pages"][p]["blocks"][b]
+            identity=published["current"][p]["blocks"][b]
+            original,updated=before_blocks[identity],formatted["pages"][p]["blocks"][b]
             self.assertTrue(require_source_format(original,updated),identity)
             key=field(original)
             self.assertEqual([line for line in original[key].splitlines() if line.strip()],
                              [line for line in updated[key].splitlines() if line.strip()],identity)
-            before["pages"][p]["blocks"][b]=deepcopy(original)
-        self.assertEqual(before["stateLayout"]["orderRefinements"],self.meta["orderRefinements"])
-        self.assertEqual(before["orderVisualSeparators"],self.doc["orderVisualSeparators"])
-        self.assertEqual(before["pages"][ORDER[0]]["blocks"][ORDER[1]],order)
-        state.validate(before)
-        state.validate_transition(before,self.doc)
-        self.assertEqual(state.validate(before),state.validate(self.doc))
-        for k in ("origin","family","current","additions"):
-            self.assertEqual(before["stateLayout"][k],self.meta[k])
+        self.assertEqual(previous_publication["stateLayout"]["orderRefinements"],
+                         published["orderRefinements"])
+        self.assertEqual(previous_publication["orderVisualSeparators"],
+                         formatted["orderVisualSeparators"])
+        self.assertEqual(previous_publication["pages"][ORDER[0]]["blocks"][ORDER[1]],order)
+        state.validate_transition(previous_publication,formatted)
+        state.validate_transition(formatted,self.doc)
+        self.assertEqual(state.validate(previous_publication),state.validate(formatted))
+        for metadata_key in ("origin","family","current","additions"):
+            self.assertEqual(previous_publication["stateLayout"][metadata_key],
+                             published[metadata_key])
+        assert_format_history(self,previous_publication,formatted,self.doc,ids)
+        assert_stable_storage(self,previous_publication,self.doc,ids)
 
     def test_old_and_new_cpp23_match_all_declared_inputs(self):
         with tempfile.TemporaryDirectory(prefix="u5l6-accumulate-") as folder:

@@ -14,8 +14,23 @@ import unittest
 import stable_state_layout as state
 from code_format_compat import require_source_format
 
+from format_batch_history import (
+    Publication, assert_format_history, assert_stable_storage, load_publication,
+)
+
 ROOT = Path(__file__).resolve().parents[2]
 PATH = ROOT / "app/src/main/assets/content/es/programming/cpp_fundamentals/funciones_y_contratos/lesson_referencias_para_modificar.json"
+RELATIVE = PATH.relative_to(ROOT).as_posix()
+PUBLICATIONS = {
+    "before": Publication(
+        "4c2749ccd3ec49f88dc789d50d1e25ee93c59e52",
+        "17c13c66bef9a48fd71043c35493eccc31f200b6e7cbc272eae65530b61fb10c",
+    ),
+    "formatted": Publication(
+        "061b94195dd7ed42496af4080fbb860dcc3e5a03",
+        "d5e9059019903d6c243feb432ccfcbfc4e92b6de27376eddd045cf53f21452fe",
+    ),
+}
 POSITIONS = ((0,2),(0,4),(1,3),(2,2),(2,4),(3,2),(4,2),(5,3),(5,7),(5,10),(6,3),(7,5),(8,2),(8,8),(9,2),(10,2),(11,2),(11,5),(12,4),(13,2),(13,7),(14,7),(15,2))
 UNSOLVED = {(7,5),(12,4),(14,7)}
 FILL_BLANKS = {(1,3)}
@@ -39,6 +54,16 @@ class MutatingReferenceSourceFormatBatch(unittest.TestCase):
                         for e in self.meta["sourceFormatRevisions"]}
 
     def test_source_format_only_and_historical_state(self):
+        current = self.document
+        current_sources = self.originals
+        publication_before = load_publication(ROOT, RELATIVE, PUBLICATIONS["before"])
+        formatted = load_publication(ROOT, RELATIVE, PUBLICATIONS["formatted"])
+        # The batch assertions describe this authenticated publication,
+        # while later compatible revisions remain in the current lesson.
+        self.document = formatted
+        self.meta = formatted["stateLayout"]
+        self.originals = {row["id"]: row["block"] for row in
+                          formatted["stateLayout"]["sourceFormatRevisions"]}
         state.validate(self.document)
         self.assertEqual(23,len(POSITIONS))
         self.assertEqual(len(POSITIONS),len(self.originals))
@@ -63,6 +88,19 @@ class MutatingReferenceSourceFormatBatch(unittest.TestCase):
         self.assertEqual(state.validate(previous),state.validate(self.document))
         for field in ("origin","family","current","additions"):
             self.assertEqual(previous["stateLayout"][field],self.meta[field])
+
+        self.assertEqual(previous, publication_before)
+        state.validate(publication_before)
+        state.validate_transition(publication_before, formatted)
+        state.validate_transition(formatted, current)
+        for metadata_key in ("editorial", "sourceFormatRevisions"):
+            published = formatted["stateLayout"][metadata_key]
+            self.assertEqual(current["stateLayout"][metadata_key][:len(published)], published)
+        assert_format_history(self, publication_before, formatted, current, self.originals)
+        assert_stable_storage(self, publication_before, current, self.originals)
+        self.document = current
+        self.originals = current_sources
+        self.meta = current["stateLayout"]
         self.assertTrue(self.document["compilerPuzzlesRequired"])
 
     def test_tampering_with_original_source_history_fails(self):

@@ -8,9 +8,25 @@ import tempfile
 import unittest
 
 import stable_state_layout as state
+from format_batch_history import Publication, all_owners, assert_stable_storage, load_publication
 
 ROOT = Path(__file__).resolve().parents[2]
-LESSONS = ROOT / "app/src/main/assets/content/es/programming/cpp_fundamentals/funciones_y_contratos"
+RELATIVE = "app/src/main/assets/content/es/programming/cpp_fundamentals/funciones_y_contratos"
+LESSONS = ROOT / RELATIVE
+PUBLICATIONS = {
+    'lesson_declaraciones_y_firmas.json': Publication(
+        'e51667e50a0e2dfa0a79c3af344f71385b912a40',
+        '92ca7596b32d35d17b9361879045f103cc41a8e9ac1b1822f8b8cb61307917fb',
+    ),
+    'lesson_hacer_explicito_el_orden_de_las_operaciones.json': Publication(
+        'e51667e50a0e2dfa0a79c3af344f71385b912a40',
+        '0fe8e4c57028632c729375d494fefe16fd3b9e728f935b384d0daaa8c5c5ce78',
+    ),
+    'lesson_nombrar_calculos_y_llamar.json': Publication(
+        'e51667e50a0e2dfa0a79c3af344f71385b912a40',
+        'e512bbaf994d81bcf0bcac029c96406a30a884cce775e100063c59c2c1c62287',
+    ),
+}
 CASES = json.loads(r'''[["lesson_declaraciones_y_firmas.json",4,8,"dias_completos_definicion_anterior_orden",3,9,"","6",2],["lesson_hacer_explicito_el_orden_de_las_operaciones.json",3,19,"registro_orden_propio_orden",4,19,"2 7\n","9:27",3],["lesson_nombrar_calculos_y_llamar.json",5,8,"construccion_lotes_y_sueltas_orden",4,12,"2 4\n","Fichas: 10\n",2]]''')
 
 
@@ -39,53 +55,20 @@ class RealFunctionOrderCards(unittest.TestCase):
             with self.subTest(lesson=name):
                 published = json.loads((LESSONS / name).read_text(encoding="utf-8"))
                 state.validate(published)
-                # Rewind later, independent source-spacing revisions before
-                # reconstructing the two earlier order-card editorial proofs.
-                # These proofs are no longer necessarily the last two entries.
-                after = deepcopy(published)
-                revisions = after["stateLayout"].get("sourceFormatRevisions", [])
-                prose_suffixes = {}
-                if name == "lesson_hacer_explicito_el_orden_de_las_operaciones.json":
-                    from test_orden_operaciones_format_batch import SUFFIXES
-                    prose_suffixes = SUFFIXES
-                # Reconstruct the published state before both independent prose
-                # and source-spacing edits. Neither may alter the order-card
-                # answer or its earlier two editorial proofs.
-                if revisions or prose_suffixes:
-                    from code_format_compat import require_source_format
-                    meta = after["stateLayout"]
-                    appended = [item["id"] for item in revisions] + list(prose_suffixes)
-                    self.assertEqual(
-                        appended,
-                        [item["id"] for item in meta["editorial"][-len(appended):]],
-                    )
-                    coordinates = {
-                        identity: (page_index, block_index)
-                        for page_index, page in enumerate(meta["current"])
-                        for block_index, identity in enumerate(page["blocks"])
-                    }
-                    for item in revisions:
-                        page_index, block_index = coordinates[item["id"]]
-                        formatted = after["pages"][page_index]["blocks"][block_index]
-                        self.assertTrue(require_source_format(item["block"], formatted))
-                        after["pages"][page_index]["blocks"][block_index] = deepcopy(item["block"])
-                    for prose_id, suffix in prose_suffixes.items():
-                        page_index, block_index = coordinates[prose_id]
-                        block = after["pages"][page_index]["blocks"][block_index]
-                        self.assertTrue(block["text"].endswith(suffix), prose_id)
-                        block["text"] = block["text"][:-len(suffix)]
-                        descriptor = next(field for field in after["textSemantics"]["fields"]
-                                          if field["block"] == prose_id and field["path"] == "/text")
-                        descriptor["sourceSha256"] = hashlib.sha256(
-                            block["text"].encode("utf-8")
-                        ).hexdigest()
-                        self.assertTrue(all(block["text"][span["start"]:span["end"]]
-                                            == span["text"] for span in descriptor["spans"]))
-                    if revisions:
-                        del meta["sourceFormatRevisions"]
-                    del meta["editorial"][-len(appended):]
-                    state.validate(after)
-                    state.validate_transition(after, published)
+                # Authenticate the complete publication containing both order-card
+                # proofs. Later independent edits can append history and new
+                # formatting archives; they do not move these earlier proofs.
+                after = load_publication(ROOT, f"{RELATIVE}/{name}", PUBLICATIONS[name])
+                state.validate(after)
+                state.validate_transition(after, published)
+                history = after["stateLayout"]["editorial"]
+                self.assertEqual(history, published["stateLayout"]["editorial"][:len(history)])
+                self.assertEqual(after["stateLayout"]["orderRefinements"],
+                                 published["stateLayout"]["orderRefinements"])
+                old_card, current_card = all_owners(after)[identity], all_owners(published)[identity]
+                for field in ("fragments", "correctOrder"):
+                    self.assertEqual(old_card[field], current_card[field], identity)
+                assert_stable_storage(self, after, published, [identity])
                 meta = after["stateLayout"]
                 current = after["pages"][p]["blocks"][b]
                 history = meta["orderRefinements"]

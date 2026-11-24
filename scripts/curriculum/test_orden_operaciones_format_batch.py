@@ -12,8 +12,23 @@ import unittest
 import stable_state_layout as state
 from code_format_compat import require_source_format
 
+from format_batch_history import (
+    Publication, assert_format_history, assert_stable_storage, load_publication,
+)
+
 ROOT=Path(__file__).resolve().parents[2]
 PATH=ROOT/"app/src/main/assets/content/es/programming/cpp_fundamentals/funciones_y_contratos/lesson_hacer_explicito_el_orden_de_las_operaciones.json"
+RELATIVE = PATH.relative_to(ROOT).as_posix()
+PUBLICATIONS = {
+    "before": Publication(
+        "0e500ad7f6a00532c45e0095fd2adc7a61e00829",
+        "0fe8e4c57028632c729375d494fefe16fd3b9e728f935b384d0daaa8c5c5ce78",
+    ),
+    "formatted": Publication(
+        "750a990b8aa85cb38ac4848106ef2265ec9ca287",
+        "59960af21d9a916c506fc9e6f9e774ab58ebc799966efbf279c13ac21f75f193",
+    ),
+}
 EDITORIAL_BASE=14
 SUFFIXES={
     "registro_orden_propio_consigna": "\n\nLa comprobación correcta del primer caso, Entrada «2 7» con salida «9:27», habilita inmediatamente «Continuar». Las otras cuatro entradas y salidas indicadas a continuación son pruebas opcionales: puedes ejecutarlas para investigar, pero no bloquean el paso.",
@@ -28,6 +43,16 @@ class OrderOfOperationsFormatBatch(unittest.TestCase):
         self.before={item["id"]:item["block"] for item in self.meta["sourceFormatRevisions"]}
 
     def test_historical_layout_and_lexical_equivalence(self):
+        current = self.doc
+        current_sources = self.before
+        publication_before = load_publication(ROOT, RELATIVE, PUBLICATIONS["before"])
+        formatted = load_publication(ROOT, RELATIVE, PUBLICATIONS["formatted"])
+        # The batch assertions describe this authenticated publication,
+        # while later compatible revisions remain in the current lesson.
+        self.doc = formatted
+        self.meta = formatted["stateLayout"]
+        self.before = {row["id"]: row["block"] for row in
+                          formatted["stateLayout"]["sourceFormatRevisions"]}
         state.validate(self.doc)
         self.assertEqual(7,len(self.before))
         previous=deepcopy(self.doc)
@@ -58,6 +83,19 @@ class OrderOfOperationsFormatBatch(unittest.TestCase):
         state.validate_transition(previous,self.doc)
         for key in ("origin","current","family","additions","orderRefinements"):
             self.assertEqual(previous["stateLayout"].get(key),self.meta.get(key))
+
+        self.assertEqual(previous, publication_before)
+        state.validate(publication_before)
+        state.validate_transition(publication_before, formatted)
+        state.validate_transition(formatted, current)
+        for metadata_key in ("editorial", "sourceFormatRevisions"):
+            published = formatted["stateLayout"][metadata_key]
+            self.assertEqual(current["stateLayout"][metadata_key][:len(published)], published)
+        assert_format_history(self, publication_before, formatted, current, self.before)
+        assert_stable_storage(self, publication_before, current, self.before)
+        self.doc = current
+        self.before = current_sources
+        self.meta = current["stateLayout"]
 
     def test_first_case_only_and_single_line_order_cards(self):
         lesson=self.doc["pages"][3]["blocks"]

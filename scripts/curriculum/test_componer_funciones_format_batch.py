@@ -10,8 +10,23 @@ import unittest
 import stable_state_layout as state
 from code_format_compat import require_source_format
 
+from format_batch_history import (
+    Publication, assert_format_history, assert_stable_storage, load_publication,
+)
+
 ROOT=Path(__file__).resolve().parents[2]
 PATH=ROOT/"app/src/main/assets/content/es/programming/cpp_fundamentals/funciones_y_contratos/lesson_componer_funciones_pequenas.json"
+RELATIVE = PATH.relative_to(ROOT).as_posix()
+PUBLICATIONS = {
+    "before": Publication(
+        "2be21bc645d04006da66f2f0b759400bfa25c122",
+        "17cbac49f210a437149bdf9ae03f9649380a297cfa31c9344fb5e6fbb5453029",
+    ),
+    "formatted": Publication(
+        "28aaacca5b23fbdaee93396795696e21c57ed802",
+        "f4d1eea957845c6909167d3be336945116a896c7cb8978688aa78409e8d328db",
+    ),
+}
 POSITIONS=((0,2),(1,2),(2,2),(3,4),(4,1),(6,3),(6,7),(6,28))
 PROSE_POSITIONS={"plan_reserva_construccion_entrada":(6,14),
                  "plan_reserva_casos_de_rechazo":(6,21)}
@@ -40,6 +55,16 @@ class CompositionFunctionsFormatBatch(unittest.TestCase):
         self.original={e["id"]:e["block"] for e in self.meta["sourceFormatRevisions"]}
 
     def test_original_state_and_optional_first_case_wording(self):
+        current = self.doc
+        current_sources = self.original
+        publication_before = load_publication(ROOT, RELATIVE, PUBLICATIONS["before"])
+        formatted = load_publication(ROOT, RELATIVE, PUBLICATIONS["formatted"])
+        # The batch assertions describe this authenticated publication,
+        # while later compatible revisions remain in the current lesson.
+        self.doc = formatted
+        self.meta = formatted["stateLayout"]
+        self.original = {row["id"]: row["block"] for row in
+                          formatted["stateLayout"]["sourceFormatRevisions"]}
         state.validate(self.doc)
         self.assertEqual(8,len(POSITIONS))
         self.assertEqual(8,len(self.original))
@@ -74,6 +99,19 @@ class CompositionFunctionsFormatBatch(unittest.TestCase):
         self.assertEqual(state.validate(previous),state.validate(self.doc))
         for f in ("origin","family","current","additions"):
             self.assertEqual(previous["stateLayout"][f],self.meta[f])
+
+        self.assertEqual(previous, publication_before)
+        state.validate(publication_before)
+        state.validate_transition(publication_before, formatted)
+        state.validate_transition(formatted, current)
+        for metadata_key in ("editorial", "sourceFormatRevisions"):
+            published = formatted["stateLayout"][metadata_key]
+            self.assertEqual(current["stateLayout"][metadata_key][:len(published)], published)
+        assert_format_history(self, publication_before, formatted, current, self.original)
+        assert_stable_storage(self, publication_before, current, self.original)
+        self.doc = current
+        self.original = current_sources
+        self.meta = current["stateLayout"]
         text=self.doc["pages"][6]["blocks"][14]["text"]
         self.assertIn("el primero de los catorce casos",text)
         self.assertIn("pruebas opcionales y no bloquean el avance",text)
