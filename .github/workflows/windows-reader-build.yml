@@ -65,12 +65,17 @@ permissions:
   contents: read
 
 concurrency:
-  group: windows-reader-build-${{ github.ref }}${{ github.event_name == 'push' && startsWith(github.event.head_commit.message, 'qa-native-catalog-u1:') && '-catalog-u1' || '' }}
+  # Keep the explicitly excluded archive evaluation out of the normal pending
+  # queue as well; it must not replace a waiting full ReaderBuild execution.
+  group: windows-reader-build-${{ github.ref }}${{ github.event_name == 'push' && startsWith(github.event.head_commit.message, 'qa-native-catalog-u1:') && '-catalog-u1' || github.event_name == 'push' && startsWith(github.event.head_commit.message, 'qa-curricular-u2l5-archive:') && '-u2l5-archive' || '' }}
   cancel-in-progress: false
 
 jobs:
   build:
     name: ${{ github.event_name == 'push' && startsWith(github.event.head_commit.message, 'qa-native-catalog-u1:') && 'Verify the complete native catalog and four U1 editor regressions' || 'Compile original readers and verify catalog, choice revisions and project history' }}
+    # This one opt-in runs the original archived reader in its dedicated suite.
+    # All ordinary pushes and manual dispatch keep their complete build.
+    if: ${{ github.event_name != 'push' || !startsWith(github.event.head_commit.message, 'qa-curricular-u2l5-archive:') }}
     runs-on: windows-2025-vs2026
     # A verified full reader build already needs about 39 minutes on the
     # hosted runner. U1 now also builds the separate historical-contract

@@ -7,6 +7,8 @@ param(
     [string] $CompilerHistoryGroup = 'All',
     [ValidateSet('All', 'Remainder', 'AssignmentP3')]
     [string] $EditorialGroup = 'All',
+    [ValidateSet('All', 'ArchivedCompiler')]
+    [string] $CurrentReaderGroup = 'All',
     [switch] $VirtualAudio,
     [switch] $MsvcPreflightOnly
 )
@@ -27,6 +29,9 @@ if ($CompilerHistoryGroup -ne 'All' -and $Suite -ne 'CompilerHistoricalReader') 
 }
 if ($EditorialGroup -ne 'All' -and $Suite -ne 'U11EditorialReader') {
     throw 'An editorial selection requires the U11EditorialReader suite.'
+}
+if ($CurrentReaderGroup -ne 'All' -and $Suite -ne 'CurrentReaders') {
+    throw 'A current-reader selection requires the CurrentReaders suite.'
 }
 if ($MsvcPreflightOnly -and $Suite -notin @('StateImport', 'CatalogU1', 'ReaderBuild')) {
     throw 'The early MSVC preflight is available only for hosted StateImport, CatalogU1 and ReaderBuild suites.'
@@ -239,7 +244,8 @@ $qaSuiteConfig = switch ($Suite) {
             Results = 'current-readers'
             Tests = @(
                 'native.curricular_color_reader',
-                'native.required_compiler_reader'
+                'native.required_compiler_reader',
+                'native.archived_required_compiler_reader'
             )
         }
     }
@@ -741,8 +747,11 @@ if ($qaActualTests.Count -ne $qaExpected.Count -or
 # Keep the complete suite registration intact. An explicit focal run
 # validates its exact original names before using the same CTest filter.
 $qaCTestSelection = @()
-if ($CompilerHistoryGroup -ne 'All' -or $EditorialGroup -ne 'All') {
-    if ($CompilerHistoryGroup -ne 'All') {
+if ($CompilerHistoryGroup -ne 'All' -or $EditorialGroup -ne 'All' -or $CurrentReaderGroup -ne 'All') {
+    if ($CurrentReaderGroup -ne 'All') {
+        $qaSelectionLabel = "current-reader $CurrentReaderGroup"
+        $qaSelectedExpected = @('native.archived_required_compiler_reader')
+    } elseif ($CompilerHistoryGroup -ne 'All') {
         $qaSelectionLabel = "compiler-history $CompilerHistoryGroup"
         $qaSelectedExpected = if ($CompilerHistoryGroup -eq 'DeclarationsAssignments') {
             @('native.u11_declarations_historical_reader_0', 'native.u11_declarations_historical_reader_1',

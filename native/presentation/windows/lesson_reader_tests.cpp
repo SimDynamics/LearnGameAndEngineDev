@@ -912,6 +912,194 @@ void current_required_compiler_reader(const std::shared_ptr<windows::NarrationWo
     required_compiler_reader_at(backend,root/"es/programming/cpp_fundamentals/objetos_y_estado/lesson_enteros_y_aproximaciones.json",false);
 }
 
+// Preserve the original required-reader regression against the complete Git
+// publication, not a lesson reconstructed from current retirement metadata.
+void archived_required_compiler_reader(const std::shared_ptr<windows::NarrationWorker>& backend,
+        const std::filesystem::path& path){
+    constexpr std::string_view fixture_sha256="95a745294c792de7206360adecfb3b5e3b75e1a0db099ce6ba77fa5193c83826";
+    const auto asset_hash=state::sha256(state::read_bytes(path));
+    check(asset_hash==fixture_sha256,
+        "Archived U2L5 requires the complete pinned Git bytes from 1c6d202f/6d0de470");
+    const auto lesson=windows::load_lesson(path,"es");
+    const auto first=identity_position(lesson,"block_0006_0002");
+    const auto second=identity_position(lesson,"block_0006_0006");
+    const auto third=identity_position(lesson,"block_0007_0009");
+    check(first.page==6&&first.block==2&&second.page==6&&second.block==6&&third.page==7&&third.block==9,
+        "The reported U2L5 compiler chain moved from its authored identities");
+    const auto& goal=lesson.pages[first.page].blocks[first.block];
+    const auto& next_goal=lesson.pages[second.page].blocks[second.block];
+    const auto& third_goal=lesson.pages[third.page].blocks[third.block];
+    check(goal.question.empty()&&goal.output_check&&lesson.compiler_puzzles_required
+        &&next_goal.question.empty()&&next_goal.output_check,
+        "The archived compiler regression lost its original questionless required objectives");
+    // Current admission also applies to this authentic old publication. Seed
+    // only its twelve ordinary prefix answers in a new private QA store, using
+    // their authored evaluators and sequential page visits. No compiler or
+    // listening receipt is fabricated by this setup.
+    constexpr std::size_t prior_ordinary=12;
+    Fixture f(backend,false,true,true,"es",lesson,false,0,false,true,{},
+        [&](state::StateData& data){
+            data.preferences["native_windows"]["ui_language"]=std::string("es");
+            using namespace winrt::Windows::Data::Json;
+            std::size_t solved=0;
+            for(std::size_t page=0;page<first.page;++page){
+                check(state::can_reach_page(data,lesson,page),
+                    "Archived U2L5 QA skipped an unreached prefix page");
+                for(const auto& block:lesson.pages[page].blocks){
+                    state::Response response;curriculum::AnswerEvaluation result;
+                    if(block.type==curriculum::BlockType::multiple_choice){
+                        check(block.correct_index&&*block.correct_index<block.options.size(),
+                            "An archived U2L5 prefix choice lost its authored answer");
+                        response.selected=static_cast<std::int64_t>(*block.correct_index);
+                        response.answer=block.options[*block.correct_index];
+                        result=curriculum::evaluate_choice(block,*block.correct_index);
+                    }else if(block.type==curriculum::BlockType::inline_fill_code){
+                        JsonObject record;JsonArray fields;
+                        result=curriculum::evaluate_hole_answers(block,block.answers);
+                        for(const auto& answer:block.answers)
+                            fields.Append(JsonValue::CreateStringValue(winrt::to_hstring(answer)));
+                        record.Insert(L"answers",fields);response.raw_json=winrt::to_string(record.Stringify());
+                    }else if(block.type==curriculum::BlockType::fill_code||block.type==curriculum::BlockType::output_prediction){
+                        check(!block.answers.empty(),"An archived U2L5 text prerequisite lost its answer");
+                        response.answer=block.answers.front();result=curriculum::evaluate_text_answer(block,response.answer);
+                    }else{
+                        check(block.type==curriculum::BlockType::paragraph||block.type==curriculum::BlockType::heading||
+                              block.type==curriculum::BlockType::code,
+                            "The archived U2L5 prefix acquired an unaudited prerequisite");
+                        continue;
+                    }
+                    check(result.correct&&!state::get_response(data,lesson,block),
+                        "An archived U2L5 prefix answer was already stored or cannot be evaluated");
+                    response.correct=true;state::mark_response_reviewed(response,block);
+                    state::put_response(data,lesson,block,response);++solved;
+                }
+                check(state::mark_page_reached(data,lesson,page),
+                    "Archived U2L5 QA lost a sequential page visit");
+            }
+            check(solved==prior_ordinary&&state::can_reach_page(data,lesson,first.page),
+                "The archived U2L5 prefix no longer has twelve ordinary prerequisites");
+            state::save_current_page(data,lesson,first.page);
+            check(state::current_page(data,lesson)==first.page&&
+                  state::page_reachability(data,lesson).first_unreached==first.page+1,
+                "Archived U2L5 QA did not reach its first compiler sequentially");
+            state::validate_lesson_state(data,lesson);
+            data.preferences["u2l5_archived_reader_qa"]["synthetic_ordinary_prefix"]=static_cast<std::int64_t>(solved);
+        });
+    const auto prefix_before=read_lesson_state(f.view);
+    check(!windows::compiler_puzzle_completed(prefix_before,lesson,goal)&&
+          !windows::compiler_puzzle_completed(prefix_before,lesson,next_goal)&&
+          !windows::compiler_puzzle_completed(prefix_before,lesson,third_goal),
+        "The archived reader setup fabricated a compiler completion");
+    std::cout<<"QA setup only: 12 canonical ordinary prerequisites and six sequential prefix pages in an isolated archived profile; no compiler executions or prior listening claimed.\n";
+    check(lesson_page_state(f.view).index==first.page,"The reported compiler page was not reached in its isolated profile");
+    check(!windows::compiler_puzzle_completed(read_lesson_state(f.view),lesson,goal),
+        "The untouched reported compiler already has execution credit");
+    const auto no_later_regions=[&](std::size_t boundary){
+        const auto regions=lesson_reading_regions(f.view);
+        check(std::ranges::any_of(regions,[&](const auto& region){
+            return region.block_index==boundary&&region.required_compiler&&region.is_exercise&&!region.solved;
+        }),"The actual U2L5 p7 compiler objective has no pending reader boundary");
+        check(std::ranges::none_of(regions,[&](const auto& region){
+            return region.block_index!=std::numeric_limits<std::size_t>::max()&&region.block_index>boundary;
+        }),"An unchecked actual compiler exposed following prose or editor narration");
+        check(!lesson_page_state(f.view).can_next&&!navigate_lesson_view(f.view,third.page),
+            "The pending compiler allowed page navigation");
+    };
+    const auto wait_at_gate=[&](std::size_t boundary){
+        wait([&]{const auto value=f.snapshot();
+            check(value.segments[value.index].block==std::numeric_limits<std::size_t>::max()
+                ||value.segments[value.index].block<=boundary,"The reader played beyond an unchecked actual compiler");
+            return value.waiting_gate&&!value.playing&&!value.allocated&&value.segments[value.index].block==boundary;
+        },"actual required compiler reader waits for its own check");
+        check(!f.snapshot().finished,"A required compiler prompt falsely finished the page");
+    };
+    no_later_regions(first.block);
+    f.reader->restart();f.reader->pause();f.reader->seek_seconds(100000);
+    const auto sought=f.snapshot();
+    check(sought.segments[sought.index].block==first.block&&!sought.finished&&!sought.allocated,
+        "Forward seek bypassed the untouched actual required compiler");
+    f.reader->seek_seconds(-1);f.reader->toggle();wait_at_gate(first.block);
+    f.reader->seek_seconds(100000);check(f.snapshot().segments[f.snapshot().index].block==first.block,
+        "A seek while waiting bypassed the actual compiler");
+    f.reader->seek_seconds(-1);f.reader->toggle();wait_at_gate(first.block);
+    // The untouched authored template compiles but prints nothing. Its actual
+    // execution, not a synthetic receipt, must produce the ordinary retry stop.
+    f.run_program(first.block,false);
+    wait([&]{const auto value=f.snapshot();return !value.playing&&!value.allocated&&!value.preparing
+        &&value.segments[value.index].block==first.block&&value.segments[value.index].feedback;},
+        "the actual required compiler's incorrect verdict finishes and stops");
+    const auto rejected=f.snapshot();
+    check(!rejected.finished&&!rejected.segments[rejected.index].correct
+        &&!windows::compiler_puzzle_completed(read_lesson_state(f.view),lesson,goal),
+        "An incorrect actual compiler attempt granted completion");
+    const auto wrong_audio=verify_feedback_recording(rejected.segments[rejected.index]);
+    no_later_regions(first.block);
+    f.reader->seek_seconds(-1);f.reader->toggle();
+    wait([&]{const auto value=f.snapshot();return value.playing&&value.segments[value.index].feedback;},
+        "the actual rejected compiler verdict replays after rewind");
+    f.reader->pause();
+    // The second authored program performs exactly the first task's nine-metre
+    // division. Enter it through the first real editor; do not award it a proof.
+    f.edit_program(next_goal.initial_code,first.block);f.ready();f.run_program(first.block,false);
+    const auto accepted=f.snapshot();const auto accepted_part=accepted.segments[accepted.index];
+    check(accepted_part.block==first.block&&accepted_part.feedback&&accepted_part.correct&&accepted.offset==0
+        &&!accepted.playing&&!accepted.allocated&&!accepted.finished
+        &&windows::compiler_puzzle_completed(read_lesson_state(f.view),lesson,goal)
+        &&!windows::compiler_puzzle_completed(read_lesson_state(f.view),lesson,next_goal)
+        &&!windows::compiler_puzzle_completed(read_lesson_state(f.view),lesson,third_goal),
+        "The actual success ignored manual pause, lost feedback priority or credited a later compiler");
+    const auto accepted_audio=verify_feedback_recording(accepted_part);
+    no_later_regions(second.block);
+    // Close and reopen the whole lesson against only its new private QA profile.
+    // Preserve the real source, selected correct explanation and exact offset.
+    f.reader.reset();check(flush_lesson_view(f.view),"Cannot flush the isolated actual compiler lesson");
+    DestroyWindow(f.view);f.view=create_lesson_view(f.host,f.environment,lesson);
+    check(f.view!=nullptr,"Cannot reopen the isolated actual compiler lesson");MoveWindow(f.view,0,0,980,720,TRUE);
+    LessonViewHooks hooks;hooks.before_page_change=[&](HWND){if(f.reader)f.reader->pause();};
+    hooks.content_changed=[&](HWND){if(f.reader)f.reader->content_changed();};
+    hooks.feedback_changed=[&](HWND,std::size_t block,bool correct){if(f.reader)f.reader->feedback(block,correct);};
+    set_lesson_view_hooks(f.view,std::move(hooks));
+    f.reader=std::make_unique<LessonReader>(f.view,f.environment,backend,[]{});f.ready();
+    const auto restored=f.snapshot();
+    check(restored.key==accepted.key&&restored.index==accepted.index&&restored.offset==accepted.offset
+        &&restored.heard_through==accepted.heard_through&&!restored.playing&&!restored.allocated
+        &&edit_text(child(f.view,1010+static_cast<int>(first.block)*100))==next_goal.initial_code
+        &&state::sha256(state::read_bytes(accepted_part.recording))==accepted_audio
+        &&state::sha256(state::read_bytes(rejected.segments[rejected.index].recording))==wrong_audio,
+        "Reopening lost the exact approved-feedback bookmark, source or compatible recording");
+    f.reader->toggle();
+    wait([&]{const auto value=f.snapshot();return value.playing&&value.segments[value.index].block==first.block+1;},
+        "the fully heard actual correct feedback continues into the following curricular paragraph");
+    wait_at_gate(second.block);no_later_regions(second.block);
+    f.reader->seek_seconds(100000);check(f.snapshot().segments[f.snapshot().index].block==second.block,
+        "Completing the first compiler allowed seeking past the second pending objective");
+    f.reader->restart();f.reader->pause();f.reader->seek_seconds(100000);
+    check(f.snapshot().segments[f.snapshot().index].feedback&&f.snapshot().segments[f.snapshot().index].correct
+        &&f.snapshot().heard_through==0&&!f.snapshot().finished,
+        "Restart retained listening credit or bypassed the ordinary unheard correct-feedback gate");
+    f.reader->pause();SendMessageW(child(f.view,1012+static_cast<int>(first.block)*100),BM_CLICK,0,0);f.ready();
+    no_later_regions(first.block);
+    check(!windows::compiler_puzzle_completed(read_lesson_state(f.view),lesson,goal)
+        &&!windows::compiler_puzzle_completed(read_lesson_state(f.view),lesson,next_goal)
+        &&!windows::compiler_puzzle_completed(read_lesson_state(f.view),lesson,third_goal)
+        &&edit_text(child(f.view,1010+static_cast<int>(first.block)*100))==goal.initial_code
+        &&state::sha256(state::read_bytes(path))==asset_hash,
+        "Reset failed to restore the actual pending goal, invented another achievement or modified the asset");
+    const auto saved=read_lesson_state(f.view);std::size_t preserved=0;
+    for(std::size_t page=0;page<first.page;++page)for(const auto& block:lesson.pages[page].blocks){
+        const auto earlier=state::get_response(prefix_before,lesson,block);if(!earlier)continue;
+        const auto now=state::get_response(saved,lesson,block);
+        check(now&&now->correct==earlier->correct&&now->answer==earlier->answer&&now->raw_json==earlier->raw_json&&
+            now->selected==earlier->selected&&now->order==earlier->order&&
+            now->reviewed_answer_identity==earlier->reviewed_answer_identity,
+            "The archived compiler/reset changed an ordinary prefix answer");++preserved;
+    }
+    check(preserved==prior_ordinary&&saved.preferences.at("u2l5_archived_reader_qa")==prefix_before.preferences.at("u2l5_archived_reader_qa"),
+        "The archived compiler/reset changed its isolated preparation scope");
+    std::cout<<"PASS archived U2L5: only the first editor executed (rejected starter and accepted authored program); real reader/PCM, paused reopen, heard-feedback continuation, independent second-editor barrier, blocked navigation to the third, rewind/restart and Reset; not three compiler executions\n"
+        <<"Archived fixture intact: commit=1c6d202f98b13fdebcb3a0b80dbfef4432ce97e5 blob=6d0de470fd51b92d4ab3f82d706d7586b052a123 sha256="<<asset_hash<<'\n';
+}
+
 void integrated_u1_reader_flow(const std::shared_ptr<windows::NarrationWorker>& backend){
     auto lesson=windows::load_lesson(std::filesystem::path(build::source_root)/
         "app/src/main/assets/content/es/programming/cpp_fundamentals/programas_y_ejecucion/lesson_primer_programa_y_salida.json");
@@ -3031,6 +3219,7 @@ int main(int argc,char** argv){const bool stderr_only=argc==2&&std::string_view(
     const bool rates_only=argc==2&&std::string_view(argv[1])=="--rates";
     const bool compiler_focus_only=argc==2&&std::string_view(argv[1])=="--compiler-focus";
     const bool required_compiler_only=argc==2&&std::string_view(argv[1])=="--required-compiler";
+    const bool archived_required_compiler_only=argc==3&&std::string_view(argv[1])=="--archived-required-compiler";
     const bool seek_keys_only=argc==2&&std::string_view(argv[1])=="--seek-keys";
     const bool missing_recording_only=argc==2&&std::string_view(argv[1])=="--missing-recording";
     const bool changed_recording_only=argc==2&&std::string_view(argv[1])=="--changed-recording";
@@ -3038,13 +3227,14 @@ int main(int argc,char** argv){const bool stderr_only=argc==2&&std::string_view(
     const bool cpp_numeric_context_only=argc==2&&std::string_view(argv[1])=="--cpp-numeric-context";
     const bool cpp_parenthesis_context_only=argc==2&&std::string_view(argv[1])=="--cpp-parenthesis-context";
     const bool state_compatibility_only=argc==2&&std::string_view(argv[1])=="--state-compatibility";
-    if(argc>1&&!suspend_only&&!stderr_only&&!dependencies_only&&!integrated_only&&!integrated_order_only&&!integrated_matching_only&&!u11_domain_revision_only&&!u11_domain_race_only&&!u11_consult_revision_only&&!u11_assignment_revision_only&&!u11_remainder_published&&!u11_literal_spacing_only&&!u12_file_format_only&&!u12_file_roundtrip_only&&!u12_file_append_only&&!u12_file_repairs_only&&!u12_append_hypothesis_only&&!u12_composed_output_only&&!u12_composed_feedback_only&&!u12_composed_question_only&&!current_inline_only&&!rates_only&&!compiler_focus_only&&!required_compiler_only&&!seek_keys_only&&!missing_recording_only&&!changed_recording_only&&!curricular_colors_only&&!cpp_numeric_context_only&&!cpp_parenthesis_context_only&&!state_compatibility_only)return 2;
+    if(argc>1&&!suspend_only&&!stderr_only&&!dependencies_only&&!integrated_only&&!integrated_order_only&&!integrated_matching_only&&!u11_domain_revision_only&&!u11_domain_race_only&&!u11_consult_revision_only&&!u11_assignment_revision_only&&!u11_remainder_published&&!u11_literal_spacing_only&&!u12_file_format_only&&!u12_file_roundtrip_only&&!u12_file_append_only&&!u12_file_repairs_only&&!u12_append_hypothesis_only&&!u12_composed_output_only&&!u12_composed_feedback_only&&!u12_composed_question_only&&!current_inline_only&&!rates_only&&!compiler_focus_only&&!required_compiler_only&&!archived_required_compiler_only&&!seek_keys_only&&!missing_recording_only&&!changed_recording_only&&!curricular_colors_only&&!cpp_numeric_context_only&&!cpp_parenthesis_context_only&&!state_compatibility_only)return 2;
     std::cout<<std::unitbuf;const auto rich=LoadLibraryW(L"Msftedit.dll");if(!rich)return 2;
     try{
         INITCOMMONCONTROLSEX controls{sizeof(controls),ICC_STANDARD_CLASSES};InitCommonControlsEx(&controls);
         if(suspend_only){reader_preparation_suspension(std::filesystem::path(argv[2]),std::filesystem::path(argv[3]));return 0;}
         auto backend=std::make_shared<windows::NarrationWorker>(std::filesystem::path(build::source_root)/"out/narration/runtime.json");
         if(required_compiler_only){current_required_compiler_reader(backend);return 0;}
+        if(archived_required_compiler_only){archived_required_compiler_reader(backend,std::filesystem::path(argv[2]));return 0;}
         if(curricular_colors_only){current_curricular_colors_reader(backend);return 0;}
         if(cpp_numeric_context_only){current_cpp_numeric_context_reader(backend);return 0;}
         if(cpp_parenthesis_context_only){current_cpp_parenthesis_context_reader(backend);return 0;}

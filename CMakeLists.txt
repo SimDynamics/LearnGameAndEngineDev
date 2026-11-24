@@ -24,7 +24,7 @@ endif()
 option(LGAED_NARRATION_WORKER_QA_ONLY
     "Build and test real Spanish Kokoro synthesis and playback failure diagnostics without a reader or audio endpoint" OFF)
 option(LGAED_CURRENT_READERS_QA_ONLY
-    "Build and run the two current U2L3/U2L5 reader regressions with real Kokoro playback" OFF)
+    "Build and run the current U2L3/U2L5 readers and archived U2L5 scenario with real Kokoro playback" OFF)
 option(LGAED_U12_READER_QA_ONLY
     "Build and run the three original U12L4 published-seventeen reader regressions with real Kokoro playback" OFF)
 option(LGAED_U11_EDITORIAL_READER_QA_ONLY
@@ -490,6 +490,29 @@ function(lgaed_add_math_prompt_editorial_test)
     set_tests_properties(native.assetcheck_prompt_editorial PROPERTIES TIMEOUT 240 RUN_SERIAL TRUE)
 endfunction()
 
+# Keep the original three-editor reader regression on its immutable publication.
+# The current two-editor flows retain their own registration and learner state.
+function(lgaed_add_archived_required_compiler_reader_test)
+    set(_u2l5_archive_dir "${CMAKE_CURRENT_BINARY_DIR}/test-fixtures/u2l5-archived-reader")
+    set(_u2l5_archive "${_u2l5_archive_dir}/lesson_enteros_y_aproximaciones.json")
+    set(_u2l5_archive_manifest "${_u2l5_archive_dir}/manifest.json")
+    add_custom_command(OUTPUT "${_u2l5_archive}" "${_u2l5_archive_manifest}"
+        COMMAND "${Python3_EXECUTABLE}" -B
+            "${CMAKE_SOURCE_DIR}/scripts/curriculum/u2l5_archived_reader_fixture_source.py"
+            --output-dir "${_u2l5_archive_dir}"
+        DEPENDS "${CMAKE_SOURCE_DIR}/scripts/curriculum/u2l5_archived_reader_fixture_source.py"
+        COMMENT "Authenticating the original U2L5 reader publication from local Git history"
+        VERBATIM)
+    add_custom_target(lgaed_u2l5_archived_reader_fixture
+        DEPENDS "${_u2l5_archive}" "${_u2l5_archive_manifest}")
+    add_dependencies(lgaed_lesson_reader_tests lgaed_u2l5_archived_reader_fixture)
+    add_test(NAME native.archived_required_compiler_reader
+        COMMAND lgaed_lesson_reader_tests --archived-required-compiler "${_u2l5_archive}")
+    # Restore the original reader scenario's bounded budget; phase idle guards
+    # remain inside the test. This is separate from the two-publication case.
+    set_tests_properties(native.archived_required_compiler_reader PROPERTIES TIMEOUT 420 RUN_SERIAL TRUE)
+endfunction()
+
 if(LGAED_CURRENT_READERS_QA_ONLY OR LGAED_U12_READER_QA_ONLY OR LGAED_U11_EDITORIAL_READER_QA_ONLY
         OR LGAED_COMPILER_HISTORICAL_READER_QA_ONLY OR LGAED_U6_DIAGNOSTIC_READER_QA_ONLY)
     include(CTest)
@@ -511,7 +534,8 @@ if(LGAED_CURRENT_READERS_QA_ONLY OR LGAED_U12_READER_QA_ONLY OR LGAED_U11_EDITOR
         # Both publications execute their two editors and replay real narration.
         # The observed first editor alone took 184 s; per-phase idle guards remain.
         set_tests_properties(native.required_compiler_reader PROPERTIES TIMEOUT 900 RUN_SERIAL TRUE)
-        message(STATUS "Focused current reader QA: two original U2L3/U2L5 flows, selected and historical editions, real Kokoro playback and MSVC execution.")
+        lgaed_add_archived_required_compiler_reader_test()
+        message(STATUS "Focused current reader QA: both original U2L3/U2L5 flows plus the archived U2L5 reader scenario, real Kokoro playback and MSVC execution.")
     elseif(LGAED_U12_READER_QA_ONLY)
         add_dependencies(lgaed_lesson_reader_tests lgaed_narration_runtime lgaed_cpp_tool_host)
         include(cmake/U12PublishedReaderTests.cmake)
@@ -2188,7 +2212,8 @@ if(BUILD_TESTING)
     add_test(NAME native.compiler_reader_focus COMMAND lgaed_lesson_reader_tests --compiler-focus)
     set_tests_properties(native.compiler_reader_focus PROPERTIES TIMEOUT 90)
     add_test(NAME native.required_compiler_reader COMMAND lgaed_lesson_reader_tests --required-compiler)
-    set_tests_properties(native.required_compiler_reader PROPERTIES TIMEOUT 420 RUN_SERIAL TRUE)
+    set_tests_properties(native.required_compiler_reader PROPERTIES TIMEOUT 900 RUN_SERIAL TRUE)
+    lgaed_add_archived_required_compiler_reader_test()
     add_test(NAME native.cpp_numeric_reader COMMAND lgaed_lesson_reader_tests --cpp-numeric-context)
     set_tests_properties(native.cpp_numeric_reader PROPERTIES TIMEOUT 240 RUN_SERIAL TRUE)
     add_test(NAME native.cpp_parenthesis_reader COMMAND lgaed_lesson_reader_tests --cpp-parenthesis-context)
