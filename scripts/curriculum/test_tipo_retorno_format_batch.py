@@ -12,7 +12,7 @@ import stable_state_layout as state
 from code_format_compat import require_source_format
 
 from format_batch_history import (
-    Publication, assert_format_history, assert_stable_storage, load_publication,
+    Publication, assert_format_history, assert_stable_storage, compilable_source, load_publication,
 )
 
 ROOT=Path(__file__).resolve().parents[2]
@@ -100,17 +100,17 @@ class ReturnTypeFormatBatch(unittest.TestCase):
                     identity=self.doc["stateLayout"]["current"][p]["blocks"][b]
                     old=self.revisions.get(identity)
                     if old is None: continue
-                    key="initialCode" if block["type"]=="cpp_compiler" else "code"
                     variants=[]
                     cases=block.get("outputCheck",{}).get("cases",[])
                     inputs=[c["standardInput"] for c in cases] or [""]
                     for label,item in (("before",old),("after",block)):
                         source=Path(folder)/f"{p}-{b}-{label}.cpp"
                         exe=Path(folder)/f"{p}-{b}-{label}"
-                        source.write_text(item[key],encoding="utf-8")
+                        source.write_text(compilable_source(item),encoding="utf-8")
                         compile_result=subprocess.run(msvc_cpp23_command(exe, source),
                                                       capture_output=True,text=True,timeout=90)
-                        self.assertEqual(0,compile_result.returncode,identity+compile_result.stderr)
+                        self.assertEqual(0,compile_result.returncode,
+                                         f"{identity} ({label})\n{compile_result.stdout}{compile_result.stderr}")
                         runs=[]
                         for data in inputs:
                             run=subprocess.run([str(windows_executable(exe))],input=data,capture_output=True,text=True,timeout=15)

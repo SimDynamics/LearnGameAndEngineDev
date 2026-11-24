@@ -61,6 +61,7 @@ permissions:
 
 jobs:
   division-resto:
+    if: ${{ github.event_name != 'push' || !startsWith(github.event.head_commit.message, 'qa-return-history:') }}
     runs-on: windows-2022
     timeout-minutes: 15
     steps:
@@ -85,6 +86,7 @@ jobs:
         run: python -B -m unittest discover -s scripts/curriculum -p test_division_resto_format_batch.py -v
 
   source-history:
+    if: ${{ github.event_name != 'push' || !startsWith(github.event.head_commit.message, 'qa-return-history:') }}
     name: Published U3 and U4 sources, order and retired contracts
     runs-on: windows-2022
     timeout-minutes: 20
@@ -126,6 +128,7 @@ jobs:
           test_secuencia_preservacion
 
   auditar:
+    if: ${{ github.event_name != 'push' || !startsWith(github.event.head_commit.message, 'qa-return-history:') }}
     runs-on: windows-2022
     timeout-minutes: 45
     steps:
@@ -226,6 +229,58 @@ jobs:
         uses: actions/upload-artifact@v4
         with:
           name: legibilidad-codigo
+          path: |
+            legibilidad-codigo.json
+            tarjetas-orden.json
+          retention-days: 14
+
+  # This explicit follow-up resumes the failed U6L12 check and every later
+  # step. Earlier unchanged groups passed in run45503638081. A scope guard
+  # rejects unrelated changes; normal pushes/manual dispatch keep all jobs.
+  return-history:
+    name: Verify return-type sources and remaining historical checks
+    if: ${{ github.event_name == 'push' && startsWith(github.event.head_commit.message, 'qa-return-history:') }}
+    runs-on: windows-2022
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+          persist-credentials: false
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - name: Use MSVC x64 compiler for original C++ curricular tests
+        uses: ilammy/msvc-dev-cmd@v1
+      - name: Verify only the test and workflow differ from the authenticated run
+        shell: pwsh
+        run: |
+          $ErrorActionPreference = 'Stop'
+          $qaAllowed = @('.github/workflows/legibilidad-codigo.yml', 'scripts/curriculum/test_tipo_retorno_format_batch.py')
+          $qaChanged = @(git diff --name-only --no-renames 'ca01d645b0cc55859215c807070a272a5e0a153b' HEAD)
+          if ($LASTEXITCODE -ne 0) { throw 'Cannot inspect the exact focal revision.' }
+          $qaUnexpected = @($qaChanged | Where-Object { $_ -notin $qaAllowed })
+          if ($qaChanged.Count -eq 0 -or $qaUnexpected.Count -ne 0) {
+            throw ('Return-history QA requires its narrow test/workflow diff: ' + ($qaUnexpected -join ', '))
+          }
+      - name: Test MSVC compiler command and intentional failure
+        run: python -B -m unittest discover -s scripts/curriculum -p test_windows_cpp_ci.py -v
+      - name: Acreditar U6L12 retorno, historial y casos opcionales C++23
+        run: python -m unittest discover -s scripts/curriculum -p test_tipo_retorno_format_batch.py -v
+      - name: Acreditar U6L13 orden de evaluacion, tarjetas e historial C++23
+        run: python -m unittest discover -s scripts/curriculum -p test_orden_operaciones_format_batch.py -v
+      - name: Acreditar U6L14 contratos, entradas, salida e historial C++23
+        run: python -m unittest discover -s scripts/curriculum -p test_contrato_funciones_format_batch.py -v
+      - name: Preservar formato, editores y contratos de AssetCheck U4L7
+        run: python -m unittest discover -s scripts/curriculum -p test_assetcheck_u4l7_source_format.py -v
+      - name: Inventariar todas las tarjetas order_code sin cambiar su contenido
+        run: python scripts/curriculum/auditar_tarjetas_orden_codigo.py --output-json tarjetas-orden.json
+      - name: Revisar todas las lecciones y fuentes
+        run: python scripts/curriculum/auditar_legibilidad_codigo.py --limit 30 --output-json legibilidad-codigo.json
+      - name: Conservar reporte de ubicaciones para Work
+        uses: actions/upload-artifact@v4
+        with:
+          name: legibilidad-codigo-return-history
           path: |
             legibilidad-codigo.json
             tarjetas-orden.json
