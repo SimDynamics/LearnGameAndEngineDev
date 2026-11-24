@@ -1,6 +1,7 @@
 #include "core/lesson.hpp"
 #include "core/narration_state.hpp"
 #include "platform/windows/content_loader.hpp"
+#include "platform/windows/catalog_loader.hpp"
 #include "platform/windows/compiler_completion.hpp"
 #include "platform/windows/environment.hpp"
 #include "platform/windows/state_store.hpp"
@@ -925,9 +926,8 @@ void current_u2l6_native_reader_gates() {
         "execution, PCM synthesis or human listening claimed.\n";
 }
 
-void current_u2_roles(){
-    const auto relative="objetos_y_estado/lesson_estado_asignacion_y_copia.json";const auto lesson=load(relative);
-    const auto source=std::filesystem::path(build::source_root)/"app/src/main/assets/content/es/programming/cpp_fundamentals"/relative;
+void u2_roles_at(const std::filesystem::path& source){
+    const auto lesson=windows::load_lesson(source);
     const auto hash=state::sha256(state::read_bytes(source));
     const auto block_at=[&](std::string_view id,std::size_t page){const auto at=curriculum::stable_block_position(lesson,id);
         check(at&&at->page==page,"A registered U2 stable identity moved to another page");return at->block;};
@@ -1132,6 +1132,27 @@ void current_u2_roles(){
     check(actual_native==expected_native,"Actual answer/reopen actions changed compiler receipts or native settings beyond their real page scroll");
     check(hash==state::sha256(state::read_bytes(source)),"Color/background QA changed the current U2 asset");
     std::cout<<"PASS actual U2 trace, operands/result, current choices/created feedback, Before/After outputs, bibliography, neutral backgrounds without underlines, source/partial emphasis, original narration, exact state and reopen; synthetic compiler prerequisites are formatting-only, not execution evidence\n";
+}
+void current_u2_roles(){
+    const auto root=std::filesystem::path(build::source_root)/"app/src/main/assets/content";
+    const curriculum::CatalogLocation course{"es","programming","cpp_fundamentals",{},{}};
+    const auto units=windows::load_catalog(root,course);
+    const auto unit=std::ranges::find_if(units.entries,[](const auto& entry){
+        return entry.id.ends_with("__objetos_y_estado");
+    });
+    check(unit!=units.entries.end()&&unit->available,"Selected U2 is unavailable for color QA");
+    const auto lessons=windows::load_catalog(root,curriculum::catalog_child(course,unit->id));
+    const auto entry=std::ranges::find_if(lessons.entries,[](const auto& item){
+        return item.id.ends_with("__estado_asignacion_y_copia");
+    });
+    check(entry!=lessons.entries.end()&&entry->available,"Selected U2L3 is unavailable for color QA");
+    const auto selected=windows::load_lesson(entry->asset);
+    check(selected.id==entry->id&&selected.course_edition.has_value(),
+        "U2L3 color QA did not select the active edition");
+    u2_roles_at(entry->asset);
+    // Keep the previous path's complete regression independently of the
+    // selected catalog; the two lessons have distinct progress identities.
+    u2_roles_at(root/"es/programming/cpp_fundamentals/objetos_y_estado/lesson_estado_asignacion_y_copia.json");
 }
 void exact_editorial_view(const std::filesystem::path& before_path,const std::filesystem::path& after_path,bool duplication){
     const auto before_bytes=state::read_bytes(before_path),after_bytes=state::read_bytes(after_path);
