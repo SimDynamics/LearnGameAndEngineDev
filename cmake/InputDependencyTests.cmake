@@ -198,7 +198,24 @@ function(lgaed_add_local_dependency_view_tests source_root presentation_target)
 
     # Separate complete U3 publications exercise append-only joint observations
     # without changing the nine historical manifests or their sixteen owners.
-    set(_joint_fixture_dir "${CMAKE_CURRENT_BINARY_DIR}/test-fixtures/joint-local-int")
+    # Derive an immutable output namespace from the exporter contract. A new
+    # contract must coexist with earlier fixtures, never overwrite their bytes.
+    # Reconfigure when any of the same declared inputs changes so Ninja also
+    # receives the new output paths before attempting fixture generation.
+    set(_joint_fixture_dependencies
+        "${source_root}/scripts/curriculum/joint_local_int_fixture_source.py"
+        "${source_root}/scripts/curriculum/diagnostic_fixture_source.py"
+        "${source_root}/scripts/curriculum/stable_state_layout.py")
+    set_property(DIRECTORY APPEND PROPERTY CMAKE_CONFIGURE_DEPENDS
+        ${_joint_fixture_dependencies})
+    set(_joint_fixture_contract "joint-local-int/v2\n")
+    foreach(_joint_fixture_dependency IN LISTS _joint_fixture_dependencies)
+        file(SHA256 "${_joint_fixture_dependency}" _joint_fixture_dependency_sha256)
+        string(APPEND _joint_fixture_contract "${_joint_fixture_dependency_sha256}\n")
+    endforeach()
+    string(SHA256 _joint_fixture_contract_sha256 "${_joint_fixture_contract}")
+    set(_joint_fixture_dir
+        "${CMAKE_CURRENT_BINARY_DIR}/test-fixtures/joint-local-int-${_joint_fixture_contract_sha256}")
     set(_joint_fixture_files "${_joint_fixture_dir}/manifest.json")
     foreach(_lesson IN ITEMS u3l5 u3l7 u3l8)
         foreach(_file IN ITEMS before.json after.json)
@@ -209,9 +226,7 @@ function(lgaed_add_local_dependency_view_tests source_root presentation_target)
         COMMAND "${Python3_EXECUTABLE}" -B
             "${source_root}/scripts/curriculum/joint_local_int_fixture_source.py"
             --output-dir "${_joint_fixture_dir}"
-        DEPENDS "${source_root}/scripts/curriculum/joint_local_int_fixture_source.py"
-            "${source_root}/scripts/curriculum/diagnostic_fixture_source.py"
-            "${source_root}/scripts/curriculum/stable_state_layout.py"
+        DEPENDS ${_joint_fixture_dependencies}
         VERBATIM)
     add_custom_target(lgaed_joint_local_int_fixtures DEPENDS ${_joint_fixture_files})
     add_dependencies(lgaed_local_dependency_view_tests lgaed_joint_local_int_fixtures)
