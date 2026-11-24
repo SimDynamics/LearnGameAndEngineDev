@@ -21,6 +21,8 @@ if(LGAED_MATH_EDITORIAL_QA_ONLY AND NOT LGAED_READER_BUILD_QA_ONLY)
 endif()
 option(LGAED_NARRATION_WORKER_QA_ONLY
     "Build and test real Spanish Kokoro synthesis and playback failure diagnostics without a reader or audio endpoint" OFF)
+option(LGAED_CURRENT_READERS_QA_ONLY
+    "Build and run the two current U2L3/U2L5 reader regressions with real Kokoro playback" OFF)
 option(LGAED_U12_READER_QA_ONLY
     "Build and run the three original U12L4 published-seventeen reader regressions with real Kokoro playback" OFF)
 option(LGAED_U11_EDITORIAL_READER_QA_ONLY
@@ -33,7 +35,7 @@ set(_lgaed_qa_mode_count 0)
 foreach(_mode LGAED_STATE_IMPORT_QA_ONLY LGAED_NARRATION_PLAYER_QA_ONLY
         LGAED_READER_BUILD_QA_ONLY LGAED_NARRATION_WORKER_QA_ONLY LGAED_U12_READER_QA_ONLY
         LGAED_U11_EDITORIAL_READER_QA_ONLY LGAED_COMPILER_HISTORICAL_READER_QA_ONLY
-        LGAED_U6_DIAGNOSTIC_READER_QA_ONLY)
+        LGAED_U6_DIAGNOSTIC_READER_QA_ONLY LGAED_CURRENT_READERS_QA_ONLY)
     if(${_mode})
         math(EXPR _lgaed_qa_mode_count "${_lgaed_qa_mode_count} + 1")
     endif()
@@ -485,7 +487,7 @@ function(lgaed_add_math_prompt_editorial_test)
     set_tests_properties(native.assetcheck_prompt_editorial PROPERTIES TIMEOUT 240 RUN_SERIAL TRUE)
 endfunction()
 
-if(LGAED_U12_READER_QA_ONLY OR LGAED_U11_EDITORIAL_READER_QA_ONLY
+if(LGAED_CURRENT_READERS_QA_ONLY OR LGAED_U12_READER_QA_ONLY OR LGAED_U11_EDITORIAL_READER_QA_ONLY
         OR LGAED_COMPILER_HISTORICAL_READER_QA_ONLY OR LGAED_U6_DIAGNOSTIC_READER_QA_ONLY)
     include(CTest)
     if(NOT BUILD_TESTING)
@@ -498,7 +500,14 @@ if(LGAED_U12_READER_QA_ONLY OR LGAED_U11_EDITORIAL_READER_QA_ONLY
     include(cmake/NarrationRuntime.cmake)
     lgaed_add_narration_runtime(NarrationHost)
     lgaed_add_curricular_reader_test_targets()
-    if(LGAED_U12_READER_QA_ONLY)
+    if(LGAED_CURRENT_READERS_QA_ONLY)
+        add_dependencies(lgaed_lesson_reader_tests lgaed_narration_runtime lgaed_cpp_tool_host)
+        add_test(NAME native.curricular_color_reader COMMAND lgaed_lesson_reader_tests --curricular-colors)
+        set_tests_properties(native.curricular_color_reader PROPERTIES TIMEOUT 240 RUN_SERIAL TRUE)
+        add_test(NAME native.required_compiler_reader COMMAND lgaed_lesson_reader_tests --required-compiler)
+        set_tests_properties(native.required_compiler_reader PROPERTIES TIMEOUT 420 RUN_SERIAL TRUE)
+        message(STATUS "Focused current reader QA: two original U2L3/U2L5 flows, selected and historical editions, real Kokoro playback and MSVC execution.")
+    elseif(LGAED_U12_READER_QA_ONLY)
         add_dependencies(lgaed_lesson_reader_tests lgaed_narration_runtime lgaed_cpp_tool_host)
         include(cmake/U12PublishedReaderTests.cmake)
         lgaed_add_u12_published_reader_tests()

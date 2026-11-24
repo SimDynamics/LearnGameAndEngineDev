@@ -2292,6 +2292,15 @@ conservan; el lector utiliza exclusivamente MSVC C++23 en Windows. Los recibos
 de ejecución se autentican con un nuevo contrato `windows-msvc-assertion-*-v2`,
 sin heredar aprobaciones antiguas de WASI.
 
+**Borradores anteriores al cambio de formato:** el cargador autentica el
+antecedente de la fuente mediante la revisión de formato publicada. La
+selección del modo de aserción en el editor y la validación del intento
+aplican el mismo contrato sobre la fuente vigente o ese antecedente
+autenticado. Así, un borrador correcto con el formato anterior puede obtener
+su recibo MSVC conservando literalmente su fuente y su entrada. La actividad
+de reparación mantiene el límite de edición descrito abajo; la compatibilidad
+de formato conserva las mismas condiciones de evaluación.
+
 **Aserción activa:** se compila y ejecuta la fuente original, sin editar.
 La captura del ejecutor Win32 exige el rechazo público anterior en stderr,
 el mensaje real del CRT de MSVC con la expresión `cajas * piezas_por_caja >=
@@ -2318,12 +2327,22 @@ una expresión literal que sólo acierte el primer caso.
 
 Work integró las tres declaraciones en la raíz del JSON español y conservó
 los editores, las entradas, las referencias y las direcciones históricas.
-La prueba nativa dedicada compila las mismas tres fuentes y pasa por el
-cargador, el trabajador Win32, el verificador de entradas y la evaluación
-curricular. Las ejecuciones adicionales y los contraejemplos se verifican sin
-exigir casos manuales distintos del primero ni revelar respuestas antes del
-intento. La aceptación completa de la aplicación instalada sigue separada
-de las pruebas automáticas en el runner de GitHub.
+La prueba `native.u3l9_assertion_contracts` compila las tres fuentes vigentes
+y sus antecedentes autenticados, y pasa por el cargador completo y el de
+progreso, el trabajador Win32, el verificador de entradas y la evaluación
+curricular. La prueba `native.u3l9_assertion_view` utiliza los botones reales
+de los tres editores en un perfil QA aislado: comprueba el primer caso
+obligatorio, las referencias, los borradores, la entrada y la reapertura
+desde disco. También rechaza una alteración de la fuente de observación, la
+retirada de `NDEBUG`, la fórmula sin reparar y una constante que sólo coincide
+con el resultado público.
+
+Los recibos antiguos y las respuestas ordinarias previas de esa prueba son
+datos preparados para comprobar compatibilidad. Los recibos MSVC nuevos
+proceden de las ejecuciones nativas del intento. Se conservan por separado
+los datos históricos y los ajenos a la actividad. Estas comprobaciones de
+ejecución, interfaz y persistencia son automáticas en Windows; la revisión
+visual y auditiva habitual corresponde al usuario durante el estudio.
 
 ## Entrada del laboratorio
 

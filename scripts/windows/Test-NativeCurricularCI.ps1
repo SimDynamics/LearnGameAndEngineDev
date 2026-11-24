@@ -1,7 +1,7 @@
 [CmdletBinding()]
 param(
     [ValidateSet('StateImport', 'NarrationPlayer', 'ReaderBuild', 'MathEditorial', 'NarrationWorker', 'U12Reader',
-        'U11EditorialReader', 'CompilerHistoricalReader', 'U6DiagnosticReader')]
+        'U11EditorialReader', 'CompilerHistoricalReader', 'U6DiagnosticReader', 'CurrentReaders')]
     [string] $Suite = 'StateImport',
     [ValidateSet('All', 'DeclarationsAssignments', 'Characters')]
     [string] $CompilerHistoryGroup = 'All',
@@ -216,6 +216,18 @@ $qaSuiteConfig = switch ($Suite) {
             )
         }
     }
+    'CurrentReaders' {
+        @{
+            Directory = 'current-readers-ci'
+            CMakeOption = 'LGAED_CURRENT_READERS_QA_ONLY'
+            Targets = @('lgaed_lesson_reader_tests')
+            Results = 'current-readers'
+            Tests = @(
+                'native.curricular_color_reader',
+                'native.required_compiler_reader'
+            )
+        }
+    }
     'CompilerHistoricalReader' {
         @{
             Directory = 'compiler-historical-reader-ci'
@@ -390,7 +402,7 @@ $qaGit = (Get-Command git.exe -CommandType Application -ErrorAction Stop | Selec
 $qaRuntimeOptions = ''
 $qaRuntimePaths = @()
 if ($Suite -in @('MathEditorial', 'NarrationWorker', 'U12Reader', 'U11EditorialReader',
-    'CompilerHistoricalReader', 'U6DiagnosticReader')) {
+    'CompilerHistoricalReader', 'U6DiagnosticReader', 'CurrentReaders')) {
     # This job uses a new checkout with no restored runtime or audio caches.
     # Existing QA/user data is never removed to manufacture a first generation.
     $qaResourceRoot = Join-Path $qaRoot 'out\qa\narration-ci-resources'
@@ -468,7 +480,7 @@ New-Item -ItemType Directory -Path $qaBuild -Force | Out-Null
 if ($LASTEXITCODE -ne 0) { throw "The verified Windows $Suite build or early regression checks failed." }
 
 if ($Suite -in @('NarrationPlayer', 'ReaderBuild', 'U12Reader', 'U11EditorialReader',
-    'CompilerHistoricalReader', 'U6DiagnosticReader')) {
+    'CompilerHistoricalReader', 'U6DiagnosticReader', 'CurrentReaders')) {
     # Observe the actual ephemeral machine. Starting an existing, enabled audio
     # service is preparation; the opt-in endpoint evaluation is a separate step.
     & {
