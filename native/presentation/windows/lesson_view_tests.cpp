@@ -4404,6 +4404,289 @@ void prepare_stderr_visual_profile(std::string_view scenario, std::wstring_view 
         << "\nquiz_responses=none\ncompiler_receipts=none\ncompiler_achievements=none\nwindows_created=0\n";
 }
 
+void native_assertion_editors_preserve_historical_drafts_and_state() {
+    const auto path=std::filesystem::path(build::source_root)/
+        "app/src/main/assets/content/es/programming/programming_practice_tools/"
+        "comprobaciones_repetibles/lesson_comprobar_acuerdos_internos_con_aserciones.json";
+    const auto asset_hash=state::sha256(state::read_bytes(path));
+    const auto lesson=windows::load_lesson(path);
+    using Mode=curriculum::AssertionMode;
+    constexpr std::array<std::string_view,3> identities{
+        "block_0002_0003","block_0003_0007","block_0004_0007"};
+    constexpr std::array<Mode,3> modes{Mode::enabled_abort,Mode::disabled,Mode::repaired};
+    constexpr std::array<std::string_view,3> source_pins{
+        "5a6740bc63eec4ab3ce410cc2f5524d85e732d6e6dd7915bc7822eff8b5772a8",
+        "b1cce15a90f626f5940e5d7a40a2cf525a5bb47611e58c316ad589fb40fbb892",
+        "5a6740bc63eec4ab3ce410cc2f5524d85e732d6e6dd7915bc7822eff8b5772a8"};
+    constexpr std::array<std::string_view,3> native_domains{
+        "windows-msvc-assertion-abort-v2","windows-msvc-assertion-suppressed-v2",
+        "windows-msvc-assertion-repair-v2"};
+    constexpr std::array<std::string_view,3> legacy_domains{
+        "wasm-assertion-abort-v1","wasm-assertion-suppressed-v1","wasm-assertion-repair-v1"};
+    constexpr std::string_view input="-1 5\n";
+    constexpr std::string_view rejection=
+        "Cajas: peticion 1, piezas=-1. Se admite un entero de 0 a 20. Revise la cantidad.\n";
+    const auto token=[](std::string_view text){return std::to_string(text.size())+':'+std::string(text);};
+    const auto replace_once=[](std::string source,std::string_view before,std::string_view after){
+        const auto at=source.find(before);
+        require(at!=source.npos&&source.find(before,at+before.size())==source.npos,
+            "The authenticated assertion source lost its unique intended variation");
+        source.replace(at,before.size(),after);return source;
+    };
+    std::array<curriculum::StatePosition,3> positions{};
+    std::array<std::string,3> originals,sources,draft_keys,current_keys;
+    state::Preferences legacy_records;
+    require(lesson.pages.size()==6&&lesson.state_layout.version==2,
+        "U3L9 assertion UI QA lost its complete authenticated publication");
+    for(std::size_t i=0;i<identities.size();++i) {
+        const auto at=curriculum::stable_block_position(lesson,identities[i]);
+        require(at&&at->page==i+2&&at->block==(i==1?7u:3u),
+            "The three assertion owners changed their stable identities or actual display positions");
+        positions[i]=*at;
+        const auto& owner=lesson.pages[at->page].blocks[at->block];
+        require(owner.type==BlockType::cpp_compiler&&owner.output_check&&
+                owner.output_check->assertion_check==modes[i]&&
+                owner.output_check->cases.size()==1&&owner.standard_input==input&&
+                owner.output_check->cases.front().standard_input==input&&
+                owner.source_format_original_initial_code,
+            "An assertion editor lost its single public case or authenticated source-format archive");
+        originals[i]=*owner.source_format_original_initial_code;
+        require(state::sha256(originals[i])==source_pins[i]&&originals[i]!=owner.initial_code,
+            "The assertion UI regression must start with the exact pre-formatting source");
+        sources[i]=i==2?replace_once(originals[i],
+            "const int cajas = piezas / piezas_por_caja;",
+            "const int cajas = (piezas + piezas_por_caja - 1) / piezas_por_caja;"):originals[i];
+        draft_keys[i]=curriculum::draft_key("programming",lesson,owner);
+        const auto frame=curriculum::reference_objective_frame(lesson,owner);
+        const auto old_frame=replace_once(frame,token(native_domains[i]),token(legacy_domains[i]));
+        const auto root="compiler-puzzle/v1/"+lesson.locale+'/'+lesson.id+'/'+
+            curriculum::exercise_key(lesson,owner)+'/';
+        current_keys[i]=root+state::sha256(frame)+'/';
+        const auto previous=root+state::sha256(old_frame)+'/';
+        require(previous!=current_keys[i],"Native assertion evidence reused the historical WASM namespace");
+        // Controlled compatibility data using the published pre-migration
+        // receipt framing from f76a4ebe. These are NOT claimed WASI executions.
+        windows::CppRunRequest old_request;old_request.source_utf8=sources[i];
+        const auto program=windows::compiler_program_frame(old_request);
+        const auto proof=state::sha256("compiler-case-v1/"+token(previous)+token(program)+
+            token("0")+token(input)+token(""));
+        legacy_records[previous+"program"]=program;
+        legacy_records[previous+"cases"]=std::vector<std::string>{proof};
+        legacy_records[previous+"completed"]=state::sha256("compiler-complete-v1/"+
+            token(previous)+token(program)+token(proof));
+        legacy_records[previous+"feedback"]=std::string("Synthetic historical WASI compatibility receipt; no execution claimed.");
+        legacy_records["reference-proof/v1/"+lesson.locale+'/'+draft_keys[i]]=state::sha256(
+            old_frame+"/source/"+token(sources[i])+"/input/"+token(input));
+    }
+    const auto disabled_reference=curriculum::stable_block_position(lesson,"block_0003_0002");
+    const auto repaired_reference=curriculum::stable_block_position(lesson,"block_0004_0002");
+    require(disabled_reference&&disabled_reference->page==3&&disabled_reference->block==2&&
+            repaired_reference&&repaired_reference->page==5&&repaired_reference->block==1,
+        "The authenticated assertion references moved outside their actual page gates");
+    const std::string unrelated_key="programming/qa_other_course/0/0";
+    const std::string unrelated_source="int unrelated = 17;\n// Preserve this other-course draft.\n";
+    const std::string unrelated_input=" \t preserved input\n";
+    std::size_t ordinary=0;
+    Fixture f([&](state::StateData& data,const curriculum::Lesson& current){
+        state::prepare_lesson_state(data,current);
+        // Only ordinary authored choices are QA prerequisites. All three
+        // compiler objectives must earn NEW receipts through their real buttons.
+        for(const auto& page:current.pages)for(const auto& block:page.blocks) {
+            if(block.type!=BlockType::multiple_choice)continue;
+            require(block.correct_index.has_value(),"An ordinary U3L9 prerequisite has no authored answer");
+            state::Response response;response.selected=static_cast<std::int64_t>(*block.correct_index);
+            response.correct=curriculum::evaluate_choice(block,*block.correct_index).correct;
+            require(response.correct,"An authored U3L9 prerequisite is not accepted by the real evaluator");
+            state::put_response(data,curriculum::exercise_key(current,block),response);++ordinary;
+        }
+        // Admit only the ordinary prefix in sequence. A later historical
+        // bookmark is arrival data, never evidence for any compiler owner.
+        for(std::size_t page=0;page<positions.front().page;++page) {
+            require(state::can_reach_page(data,current,page),
+                "Assertion QA attempted to skip an unreached ordinary prerequisite page");
+            for(const auto& block:current.pages[page].blocks) {
+                require(!curriculum::compiler_requires_completion(block)&&block.type!=BlockType::math_puzzle,
+                    "Assertion QA acquired a new prerequisite needing real execution");
+                if(block.type==BlockType::multiple_choice) {
+                    const auto response=state::get_response(data,current,block);
+                    require(response&&response->correct,"An ordinary assertion prerequisite was not prepared");
+                }
+            }
+            (void)state::mark_page_reached(data,current,page);
+        }
+        for(std::size_t i=0;i<sources.size();++i) {
+            state::Draft draft;draft.source=sources[i];draft.input=std::string(input);
+            draft.selection_start=2;draft.selection_end=8;
+            state::put_draft(data,draft_keys[i],draft);
+        }
+        for(const auto& [key,value]:legacy_records)data.preferences["native_windows"][key]=value;
+        data.preferences["assertion_view_qa"]["legacy_kind"]=std::string("synthetic compatibility state; no WASI execution");
+        data.preferences["assertion_view_qa"]["unrelated"]=std::string(" \t conservar\n");
+        state::Draft unrelated;unrelated.source=unrelated_source;unrelated.input=unrelated_input;
+        state::put_draft(data,unrelated_key,unrelated);
+        state::save_current_page(data,current,5);
+    },[&](const curriculum::Lesson&){return lesson;},true);
+    require(ordinary==5&&f.page()==2,
+        "A restored later bookmark or synthetic WASI receipt bypassed the first native assertion objective");
+    std::array<std::string,3> expected_drafts=sources;
+    state::Preferences earned_records;
+    const auto preserved=[&]{
+        const auto saved=f.saved();
+        for(const auto& [key,value]:legacy_records) {
+            const auto found=state::find(saved,"native_windows",key);
+            require(found&&*found==value,"Native assertion UI rewrote controlled historical WASI state");
+        }
+        for(const auto& [key,value]:earned_records) {
+            const auto found=state::find(saved,"native_windows",key);
+            require(found&&*found==value,"A later assertion editor rewrote an earlier native receipt");
+        }
+        require(saved.preferences.at("assertion_view_qa")==f.initial_data.preferences.at("assertion_view_qa"),
+            "Assertion UI changed unrelated preserved preferences");
+        const auto unrelated=state::get_draft(saved,unrelated_key,"","");
+        require(unrelated.source==unrelated_source&&unrelated.input==unrelated_input,
+            "Assertion UI changed another course's draft or input");
+        for(std::size_t i=0;i<sources.size();++i) {
+            const auto draft=state::get_draft(saved,draft_keys[i],"","");
+            require(draft.source==expected_drafts[i]&&draft.input==input,
+                "An assertion attempt, navigation or reopen rewrote a historical draft or its exact stdin");
+        }
+        return saved;
+    };
+    const auto readonly_reference=[&](curriculum::StatePosition at){
+        require(f.page()==at.page,"An assertion reference appeared outside its admitted page");
+        const auto& expected=lesson.pages[at.page].blocks[at.block].code;
+        const auto control=f.control(at.block,1);
+        require(f.text(at.block,1)==expected&&(GetWindowLongPtrW(control,GWL_STYLE)&ES_READONLY),
+            "An assertion reference changed its authored bytes or became editable");
+        SendMessageW(control,WM_CHAR,L'X',0);pump(f.host);
+        require(f.text(at.block,1)==expected,
+            "An ordinary character edited the read-only assertion reference");
+    };
+    const auto pending=[&](std::size_t i){
+        const auto saved=preserved();
+        for(std::size_t j=0;j<positions.size();++j) {
+            const auto& owner=lesson.pages[positions[j].page].blocks[positions[j].block];
+            require(windows::compiler_puzzle_completed(saved,lesson,owner)==(j<i)&&
+                    windows::compiler_puzzle_case_count(saved,lesson,owner)==(j<i?1u:0u),
+                "An assertion owner inherited another editor's success or promoted controlled WASI history");
+        }
+        require(f.page()==positions[i].page&&!lesson_page_state(f.view).can_next&&
+                !navigate_lesson_view(f.view,positions[i].page+1),
+            "An unverified assertion editor released its actual next page");
+        const auto regions=lesson_reading_regions(f.view);
+        require(std::ranges::any_of(regions,[&](const auto& region){
+            return region.block_index==positions[i].block&&region.required_compiler&&!region.solved;
+        }),"The pending assertion editor lost its real reader barrier");
+        if(i==0)require(!descendant(f.view,id(4,0)),
+            "Controlled historical history revealed the explanation before a native assertion run");
+    };
+    pending(0);f.reopen();pending(0);
+    for(std::size_t i=0;i<positions.size();++i) {
+        const auto at=positions[i];const auto& owner=lesson.pages[at.page].blocks[at.block];
+        require(f.page()==at.page&&f.text(at.block,10)==sources[i],
+            "An assertion editor did not restore its authentic historical source");
+        pending(i);
+        const auto rejected=[&](std::string source,std::string_view label,
+                std::optional<std::string_view> public_output={}){
+            expected_drafts[i]=source;f.replace(at.block,10,source);f.run(at.block);
+            pending(i);
+            require(!f.text(at.block,4).starts_with("✓ Correcto"),
+                "An assertion source guard or incorrect repair acquired a native success");
+            if(public_output) {
+                SendMessageW(f.view,WM_COMMAND,MAKEWPARAM(id(at.block,78),BN_CLICKED),0);pump(f.host);
+                require(curriculum::assertion_native_lines(*public_output,f.text(at.block,14)),
+                    "The constant repair did not execute its matching public stdout");
+                SendMessageW(f.view,WM_COMMAND,MAKEWPARAM(id(at.block,79),BN_CLICKED),0);pump(f.host);
+                require(curriculum::assertion_native_lines(rejection,f.text(at.block,14)),
+                    "The constant repair did not preserve the real public rejection channel");
+            }
+            f.reopen();pending(i);
+            require(f.text(at.block,10)==source,
+                "Reopening a rejected assertion attempt lost the learner's exact draft");
+            std::cout<<"PASS assertion UI rejection "<<identities[i]<<'/'<<label
+                <<": no current receipt; earlier proofs and exact rejected draft survive reopen\n";
+        };
+        if(i==0)rejected(originals[i]+"// Unauthorised observation-source change.\n","immutable-source");
+        if(i==1)rejected(replace_once(originals[i],"#define NDEBUG\n",""),"removed-ndebug");
+        if(i==2) {
+            rejected(originals[i],"unrepaired-formula");
+            rejected(replace_once(originals[i],"const int cajas = piezas / piezas_por_caja;",
+                "const int cajas = 2;"),"hardcoded-two","Cajas=2\n");
+        }
+        expected_drafts[i]=sources[i];f.replace(at.block,10,sources[i]);
+        // This call must fail the regression before the source-archive fix:
+        // neither the test nor the editor substitutes today's formatted starter.
+        f.run(at.block);
+        auto saved=preserved();
+        require(windows::compiler_puzzle_completed(saved,lesson,owner)&&
+                windows::compiler_puzzle_case_count(saved,lesson,owner)==1&&
+                f.text(at.block,4).starts_with("✓ Correcto")&&
+                f.text(at.block,34).find("Comprobación obligatoria: 1 de 1.")!=std::string::npos&&
+                lesson_page_state(f.view).can_next,
+            std::string("One real MSVC button run did not credit the historical draft: ")+
+                std::string(identities[i])+" feedback="+f.text(at.block,4)+
+                " console="+f.text(at.block,14));
+        windows::CppRunRequest expected;expected.source_utf8=sources[i];
+        require(state::string_value(saved,"native_windows",current_keys[i]+"program")==
+                    windows::compiler_program_frame(expected)&&
+                !state::string_value(saved,"native_windows",current_keys[i]+"completed").empty(),
+            "An assertion success lacks a new MSVC v2 receipt for the exact historical source");
+        for(const auto& [key,value]:saved.preferences.at("native_windows"))
+            if(key.starts_with(current_keys[i]))earned_records.emplace(key,value);
+        const auto feedback=f.text(at.block,4);
+        SendMessageW(f.view,WM_COMMAND,MAKEWPARAM(id(at.block,78),BN_CLICKED),0);pump(f.host);
+        require(curriculum::assertion_native_lines(i==0?"":i==1?"Cajas=1\n":"Cajas=2\n",f.text(at.block,14)),
+            "The real assertion UI lost its expected stdout channel");
+        SendMessageW(f.view,WM_COMMAND,MAKEWPARAM(id(at.block,79),BN_CLICKED),0);pump(f.host);
+        const auto stderr_text=f.text(at.block,14);
+        auto normalized_stderr=stderr_text;
+        std::erase(normalized_stderr,'\r');
+        require(i==0?(normalized_stderr.find(rejection)!=std::string::npos&&
+                    normalized_stderr.find("Assertion failed: cajas * piezas_por_caja >= piezas")!=std::string::npos):
+                curriculum::assertion_native_lines(rejection,stderr_text),
+            "The real assertion UI lost its CRT/public-rejection stderr channel");
+        f.reopen();saved=preserved();
+        require(f.text(at.block,10)==sources[i]&&f.text(at.block,4)==feedback&&
+                windows::compiler_puzzle_completed(saved,lesson,owner)&&
+                windows::compiler_puzzle_case_count(saved,lesson,owner)==1&&
+                lesson_page_state(f.view).can_next,
+            "Ordinary reopen lost an assertion's native receipt, historical draft or navigation");
+        if(i==0)require(descendant(f.view,id(4,0)),
+            "The verified assertion did not reveal its actual same-page explanation");
+        f.next();
+        if(i==0)readonly_reference(*disabled_reference);
+        if(i==2)readonly_reference(*repaired_reference);
+        std::cout<<"PASS native assertion LessonView "<<identities[i]
+            <<": real MSVC button run, one required case, separate new receipt, original draft/stdin, references and disk reopen\n";
+    }
+    f.reopen();const auto final=preserved();
+    readonly_reference(*repaired_reference);
+    std::array<bool,3> native_sources{};
+    for(const auto& entry:std::filesystem::recursive_directory_iterator(f.environment.paths.projects)) {
+        if(!entry.is_regular_file()||entry.path().filename()!=L"main.cpp")continue;
+        const auto folder=entry.path().parent_path();
+        if(!std::filesystem::is_regular_file(folder/L"program.exe")||
+                !std::filesystem::is_regular_file(folder/L"toolchain.txt"))continue;
+        const auto bytes=state::read_bytes(entry.path());
+        const auto toolchain=state::read_bytes(folder/L"toolchain.txt");
+        require(toolchain.starts_with("MSVC=")&&toolchain.find("compiler=")!=std::string::npos&&
+                toolchain.find("cl.exe")!=std::string::npos,
+            "An assertion UI execution has no actual native MSVC toolchain provenance");
+        for(std::size_t i=0;i<sources.size();++i)if(bytes==sources[i])native_sources[i]=true;
+    }
+    require(std::ranges::all_of(native_sources,[](bool found){return found;}),
+        "The three real assertion buttons did not leave native executables for their exact historical sources");
+    for(std::size_t i=0;i<positions.size();++i)
+        require(windows::compiler_puzzle_completed(final,lesson,
+                lesson.pages[positions[i].page].blocks[positions[i].block]),
+            "The final reference lost an earlier independent assertion achievement");
+    require(state::sha256(state::read_bytes(path))==asset_hash,
+        "Assertion UI QA changed the published curricular JSON");
+    std::cout<<"PASS U3L9 native assertion UI/state: three pre-format drafts, four actual rejected attempts, "
+        "controlled WASI history retained without promotion, three new MSVC receipts, exact source/input and unrelated data. "
+        "Five ordinary choices and legacy receipts were synthetic compatibility setup; no WASI execution, audio or visual acceptance claimed.\n";
+}
+
 void runtime_stderr_objective_keeps_legacy_history_and_requires_both_current_channels() {
     Fixture f({},[](const curriculum::Lesson&){auto model=windows::parse_lesson_json(R"json({
       "id":"qa_runtime_stderr","title":"Dos canales","compilerPuzzlesRequired":true,
@@ -6104,7 +6387,8 @@ void current_inline_feedback_uses_authored_controls_and_restores_each_attempt() 
 int main(int argc,char* argv[]) {
     const bool lesson_header_only=argc==2&&std::string_view(argv[1])=="--lesson-header";
     const bool puzzle_wheel_only=argc==2&&std::string_view(argv[1])=="--puzzle-wheel";
-    if(argc!=2||(!lesson_header_only&&!puzzle_wheel_only&&std::string_view(argv[1])!="--inline-feedback"))return 2;
+    const bool native_assertions_only=argc==2&&std::string_view(argv[1])=="--native-assertions";
+    if(argc!=2||(!lesson_header_only&&!puzzle_wheel_only&&!native_assertions_only&&std::string_view(argv[1])!="--inline-feedback"))return 2;
     std::cout<<std::unitbuf;std::cerr<<std::unitbuf;
     const auto ole=OleInitialize(nullptr);
     if(FAILED(ole))return 2;
@@ -6116,12 +6400,13 @@ int main(int argc,char* argv[]) {
     host.lpszClassName=L"LgaedLessonViewTests";
     if(!RegisterClassW(&host))return 2;
     try {
-        if(puzzle_wheel_only){puzzle_hover_wheel_reaches_lesson_without_click();compiler_pointer_scroll_ownership();console_fullscreen_zoom_escape();}
+        if(native_assertions_only)native_assertion_editors_preserve_historical_drafts_and_state();
+        else if(puzzle_wheel_only){puzzle_hover_wheel_reaches_lesson_without_click();compiler_pointer_scroll_ownership();console_fullscreen_zoom_escape();}
         else if(lesson_header_only)lesson_header_context_is_complete_and_wraps();
         else current_inline_feedback_uses_authored_controls_and_restores_each_attempt();
         return 0;
     }catch(const std::exception& error){
-        std::cerr<<(puzzle_wheel_only?"FAIL real native puzzle-wheel QA: ":lesson_header_only?"FAIL real native lesson-header QA: ":"FAIL real active inline-feedback QA: ")<<error.what()<<'\n';
+        std::cerr<<(native_assertions_only?"FAIL real native assertion-view QA: ":puzzle_wheel_only?"FAIL real native puzzle-wheel QA: ":lesson_header_only?"FAIL real native lesson-header QA: ":"FAIL real active inline-feedback QA: ")<<error.what()<<'\n';
         return 1;
     }
 }
@@ -6156,6 +6441,7 @@ int main(int argc,char* argv[]) {
     const bool compiler_puzzles_only=argc==2&&std::string_view(argv[1])=="--compiler-puzzles";
     const bool u11_editorial_only=argc==2&&std::string_view(argv[1])=="--u11-editorial";
     const bool stderr_objective_only=argc==2&&std::string_view(argv[1])=="--stderr-objective";
+    const bool native_assertions_only=argc==2&&std::string_view(argv[1])=="--native-assertions";
     const bool dependent_puzzles_only=argc==2&&std::string_view(argv[1])=="--dependent-puzzles";
     const bool current_dependent_puzzles_only=(argc==2||argc==4)&&std::string_view(argv[1])=="--current-dependent-puzzles";
     const bool editor_overflow_only=argc==2&&std::string_view(argv[1])=="--editor-overflow";
@@ -6171,7 +6457,7 @@ int main(int argc,char* argv[]) {
     const bool feedback_font_only=argc==2&&std::string_view(argv[1])=="--feedback-font";
     const bool u1_editor_only=argc==2&&std::string_view(argv[1])=="--u1-compiler-edition";
     const bool main_u1_editor_only=argc==2&&std::string_view(argv[1])=="--u1-main-compiler-edition";
-    if(argc>1&&!scroll_repaint_only&&!scroll_motion_only&&!compiler_scroll_only&&!u12_file_roundtrip_only&&!u12_file_append_only&&!u12_file_repairs_only&&!u12_composed_feedback_only&&!caret_only&&!text_sequence_only&&!restoration_only&&!compiler_puzzles_only&&!u11_editorial_only&&!stderr_objective_only&&!dependent_puzzles_only&&!current_dependent_puzzles_only&&!editor_overflow_only&&!answer_overflow_only&&!narration_repaint_only&&!compiler_height_only&&!navigation_geometry_only&&!inline_feedback_only&&!lesson_header_only&&!puzzle_wheel_only&&!lesson_menu_only&&!order_help_only&&!feedback_font_only&&!u1_editor_only&&!main_u1_editor_only)return 2;
+    if(argc>1&&!scroll_repaint_only&&!scroll_motion_only&&!compiler_scroll_only&&!u12_file_roundtrip_only&&!u12_file_append_only&&!u12_file_repairs_only&&!u12_composed_feedback_only&&!caret_only&&!text_sequence_only&&!restoration_only&&!compiler_puzzles_only&&!u11_editorial_only&&!stderr_objective_only&&!native_assertions_only&&!dependent_puzzles_only&&!current_dependent_puzzles_only&&!editor_overflow_only&&!answer_overflow_only&&!narration_repaint_only&&!compiler_height_only&&!navigation_geometry_only&&!inline_feedback_only&&!lesson_header_only&&!puzzle_wheel_only&&!lesson_menu_only&&!order_help_only&&!feedback_font_only&&!u1_editor_only&&!main_u1_editor_only)return 2;
     std::cout << std::unitbuf; std::cerr << std::unitbuf;
     const auto ole=OleInitialize(nullptr);if(FAILED(ole))return 2;
     struct OleScope{~OleScope(){OleUninitialize();}} apartment;
@@ -6179,6 +6465,7 @@ int main(int argc,char* argv[]) {
     WNDCLASSW host{}; host.lpfnWndProc = host_proc; host.hInstance = GetModuleHandleW(nullptr); host.lpszClassName = L"LgaedLessonViewTests";
     if (!RegisterClassW(&host)) return 2;
     try {
+        if(native_assertions_only){native_assertion_editors_preserve_historical_drafts_and_state();return 0;}
         if(puzzle_wheel_only){puzzle_hover_wheel_reaches_lesson_without_click();compiler_pointer_scroll_ownership();console_fullscreen_zoom_escape();return 0;}
         if(lesson_header_only){lesson_header_context_is_complete_and_wraps();return 0;}
         if(lesson_menu_only){lesson_menu_retains_import_pages_and_settings_with_hooks();return 0;}

@@ -396,6 +396,15 @@ struct Block {
     // Authored semantic roles select student locals without prescribing names.
     std::optional<CppLocalRoleCheck> local_role_check;
 };
+// Both templates come from the authenticated loader. Admit a saved pre-format
+// source without rewriting its bytes or relaxing the permitted repair.
+[[nodiscard]] inline bool assertion_source_allowed(const Block& block,
+        AssertionMode mode,std::string_view candidate) {
+    if(!block.output_check||block.output_check->assertion_check!=mode)return false;
+    return assertion_source_allowed(mode,block.initial_code,candidate)||
+        (block.source_format_original_initial_code&&
+         assertion_source_allowed(mode,*block.source_format_original_initial_code,candidate));
+}
 struct Page {
     std::string stable_id;
     std::vector<Block> blocks;

@@ -2354,7 +2354,7 @@ struct LessonView {
                     ?curriculum::AssertionMode::disabled:curriculum::AssertionMode::repaired;
             // Preserve source and NDEBUG exactly; the runner proves an MSVC
             // abort from its CRT diagnostic, not a guessed nonzero exit code.
-            if(curriculum::assertion_source_allowed(mode,block(index).initial_code,request.source_utf8))
+            if(curriculum::assertion_source_allowed(block(index),mode,request.source_utf8))
                 request.assertion_mode=mode;
         }
         if(workflow==curriculum::CompilerWorkflowCheck::observation_complete_v1||

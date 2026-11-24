@@ -1163,7 +1163,7 @@ bool compiler_runtime_request_allowed(const curriculum::Block& block,const CppRu
             request.assertion_mode==mode&&
             (mode==curriculum::AssertionMode::repaired||
                 request.stdin_utf8==block.standard_input.value_or(""))&&
-            curriculum::assertion_source_allowed(mode,block.initial_code,request.source_utf8);
+            curriculum::assertion_source_allowed(block,mode,request.source_utf8);
     }
     if(goal==curriculum::CompilerWorkflowCheck::observation_complete_v1||
        goal==curriculum::CompilerWorkflowCheck::observation_differences_v1) {

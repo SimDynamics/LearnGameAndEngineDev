@@ -7,6 +7,7 @@ on:
       - .github/workflows/codex-native-assertion-migration.yml
       - scripts/curriculum/test_native_assertions_msvc.py
       - native/core/assertion_runtime_check.hpp
+      - native/core/lesson.hpp
       - native/core/assertion_native_check_tests.cpp
       - native/platform/windows/native_assertion_runner_tests.cpp
       - cmake/PortableCompilerGuidanceQA/CMakeLists.txt
@@ -15,6 +16,7 @@ on:
       - native/platform/windows/compiler_completion.cpp
       - native/platform/windows/content_loader.cpp
       - native/presentation/windows/lesson_view.cpp
+      - native/presentation/windows/lesson_view_tests.cpp
       - app/src/main/assets/content/es/programming/programming_practice_tools/comprobaciones_repetibles/lesson_comprobar_acuerdos_internos_con_aserciones.json
   workflow_dispatch:
 
@@ -24,7 +26,7 @@ permissions:
 jobs:
   native-assertions:
     name: Three authentic U3L9 assertions with native MSVC C++23
-    runs-on: windows-2022
+    runs-on: windows-2025-vs2026
     timeout-minutes: 25
     steps:
       - uses: actions/checkout@v4
@@ -40,16 +42,25 @@ jobs:
       - name: Validate native CRT assertion proof on MSVC C++23
         shell: cmd
         run: |
-          cl /nologo /std:c++latest /EHsc /W4 /WX /permissive- /Zc:__cplusplus /utf-8 /I native native\core\assertion_native_check_tests.cpp /Fe:"%RUNNER_TEMP%\lgaed_assertion_native_qa.exe"
+          cl /nologo /std:c++23 /EHsc /W4 /WX /permissive- /Zc:__cplusplus /utf-8 /I native native\core\assertion_native_check_tests.cpp /Fe:"%RUNNER_TEMP%\lgaed_assertion_native_qa.exe"
           if errorlevel 1 exit /b 1
           "%RUNNER_TEMP%\lgaed_assertion_native_qa.exe"
-      - name: Verify the real bounded Win32 runner and the three curricular objectives
+      - name: Verify the Win32 runner, historical drafts and actual assertion editors
         shell: pwsh
         run: |
           $build = Join-Path $env:RUNNER_TEMP 'native-assertion-runner-qa'
-          cmake -S cmake/PortableCompilerGuidanceQA -B "$build" -G Ninja
+          cmake -S cmake/PortableCompilerGuidanceQA -B "$build" -G Ninja -DLGAED_HOSTED_FEEDBACK_FONT_QA=ON -DLGAED_CPP_STANDARD_OPTION=/std:c++23
           if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
-          cmake --build "$build" --target lgaed_native_assertion_runner_tests --parallel 3
+          cmake --build "$build" --target lgaed_native_assertion_runner_tests lgaed_inline_feedback_portable_qa --parallel 3
           if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
-          ctest --test-dir "$build" -R "^native[.]u3l9_assertion_contracts$" --output-on-failure
+          ctest --test-dir "$build" -R "^native[.]u3l9_assertion_(contracts|view)$" --verbose --output-on-failure --no-tests=error --output-junit (Join-Path $build 'native-assertion-results.xml')
           if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
+      - name: Preserve native assertion and editor evidence
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: native-assertion-editors-${{ github.sha }}
+          path: |
+            ${{ runner.temp }}/native-assertion-runner-qa/native-assertion-results.xml
+            ${{ runner.temp }}/native-assertion-runner-qa/Testing/Temporary/*.log
+            ${{ runner.temp }}/native-assertion-runner-qa/CMakeCache.txt

@@ -13,7 +13,8 @@ endif()
 # dependencies and build tree are not changed or bypassed.
 get_filename_component(LGAED_ROOT "${CMAKE_CURRENT_LIST_DIR}/../.." ABSOLUTE)
 set(LGAED_CPP_STANDARD 23)
-set(LGAED_CPP_STANDARD_OPTION "/std:c++latest")
+set(LGAED_CPP_STANDARD_OPTION "/std:c++latest" CACHE STRING
+    "MSVC language option for isolated QA and its educational child programs")
 set(LGAED_DEFAULT_PROFILE "Codex")
 set(LGAED_DEP_ROOT "")
 # Hosted Win32 execution needs the *disposable runner's* compiler and
@@ -54,7 +55,7 @@ target_compile_definitions(lgaed_guidance_qa_options INTERFACE
     UNICODE _UNICODE WIN32_LEAN_AND_MEAN NOMINMAX
     _WIN32_WINNT=0x0A00 WINVER=0x0A00)
 target_compile_options(lgaed_guidance_qa_options INTERFACE
-    /std:c++latest /EHsc /W4 /permissive- /Zc:__cplusplus /utf-8 /Gy)
+    "${LGAED_CPP_STANDARD_OPTION}" /EHsc /W4 /permissive- /Zc:__cplusplus /utf-8 /Gy)
 target_include_directories(lgaed_guidance_qa_options INTERFACE
     "${LGAED_ROOT}/native" "${CMAKE_CURRENT_BINARY_DIR}/generated")
 
@@ -379,8 +380,9 @@ if(LGAED_HOSTED_FEEDBACK_FONT_QA)
         TIMEOUT 180 RUN_SERIAL TRUE)
     # Reuse the exact original nine-inline regression (including active U2L5)
     # with real production LessonView, CppFillView and StateStore. This
-    # standalone hosted fixture does not run student code or synthesize audio;
+    # inline-feedback selection does not run student code or synthesize audio;
     # its compiler prerequisite receipts are explicitly synthetic QA data.
+    # The separate assertion selection below executes real MSVC child programs.
     add_executable(lgaed_inline_feedback_portable_qa
         "${LGAED_ROOT}/native/presentation/windows/lesson_view_tests.cpp")
     target_compile_definitions(lgaed_inline_feedback_portable_qa PRIVATE
@@ -389,8 +391,13 @@ if(LGAED_HOSTED_FEEDBACK_FONT_QA)
     target_link_libraries(lgaed_inline_feedback_portable_qa PRIVATE
         lgaed_curricular_windows lgaed_guidance_qa_options)
     target_link_options(lgaed_inline_feedback_portable_qa PRIVATE /OPT:REF)
+    add_dependencies(lgaed_inline_feedback_portable_qa lgaed_cpp_tool_host)
     add_test(NAME native.inline_feedback_u2l5_portable
         COMMAND lgaed_inline_feedback_portable_qa --inline-feedback)
     set_tests_properties(native.inline_feedback_u2l5_portable PROPERTIES
         TIMEOUT 300 RUN_SERIAL TRUE)
+    add_test(NAME native.u3l9_assertion_view
+        COMMAND lgaed_inline_feedback_portable_qa --native-assertions)
+    set_tests_properties(native.u3l9_assertion_view PROPERTIES
+        TIMEOUT 180 RUN_SERIAL TRUE)
 endif()
