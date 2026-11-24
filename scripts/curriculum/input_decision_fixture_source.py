@@ -341,9 +341,82 @@ def export_payloads():
     return payloads
 
 
-def export(output_dir):
+
+# The active edition has different activity identities. Keep its QA export
+# separate so existing historical fixture bytes never need replacement.
+ACTIVE_COMMIT = "2fcfad809e6a854dc35f4ce6c19fc1f1ab3e9c5b"
+ACTIVE_LOOPS = {
+    "u4l1": ("block_0006_0002", "block_0005_0002", "block_0006_0006",
+             "block_0005_0004", "13b99776f21822f97d25ecb5682bbc2ed71dd13d"),
+    "u4l2": ("block_0006_0005", "block_0005_0003", "block_0007_0002",
+             "block_0005_0004", "0d89c13d179f0b9aa48006e3e873841f5e6822f8"),
+}
+
+
+def active_loop_payloads():
+    payloads, lessons = {}, []
+    for name, (activity, repair, reference, repair_reference, blob_sha) in ACTIVE_LOOPS.items():
+        path = PUBLICATIONS[name]["path"].replace(
+            "/repeticion_y_terminacion/", "/edition_es_1__repeticion_y_terminacion/")
+        environment = dict(os.environ, GIT_NO_LAZY_FETCH="1",
+                           GIT_NO_REPLACE_OBJECTS="1", GIT_TERMINAL_PROMPT="0")
+        original = subprocess.check_output(
+            ["git", "--no-optional-locks", "-c", f"safe.directory={ROOT}", "show",
+             f"{ACTIVE_COMMIT}:{path}"], cwd=ROOT, env=environment, stderr=subprocess.PIPE)
+        actual_blob = hashlib.sha1(b"blob " + str(len(original)).encode("ascii") +
+                                   b"\0" + original).hexdigest()
+        if actual_blob != blob_sha:
+            raise ValueError(f"Active input fixture differs from its pinned blob: {name}")
+        before = state.parse_json(original.decode("utf-8"))
+        state.validate(before)
+        blocks = state._blocks(before)
+        cases = public_cases(name)
+        if (before["courseEdition"]["generation"] != 1 or
+                "compilerInputChecks" in before or not before.get("compilerPuzzlesRequired") or
+                blocks[activity].get("outputCheck") != {"inputComparison": "tokens", "cases": cases} or
+                blocks[activity].get("initialStandardInput") != cases[0]["standardInput"] or
+                {k for k, v in blocks.items() if v.get("type") == "cpp_compiler"} != {activity, repair} or
+                {x["activity"] for x in before["compilerLocalIntChecks"]} != {repair}):
+            raise ValueError(f"Active loop fixture changed its editor contracts: {name}")
+        authored = {x["activity"]: x["blocks"] for x in before["referenceAfter"]}
+        solutions = []
+        for owner, ref in ((repair, repair_reference), (activity, reference)):
+            block = blocks[ref]
+            if ref not in authored[owner] or block.get("type") != "code" or block.get("language") != "cpp":
+                raise ValueError(f"Active loop fixture lost an authored reference: {name}/{owner}")
+            source = block["code"]
+            solutions.append({"activity": owner, "source": source,
+                              "sourceSha256": sha256(source.encode("utf-8"))})
+        after = deepcopy(before)
+        check = deepcopy(declarations(name)[0])
+        check["activity"] = activity
+        after["compilerInputChecks"] = [check]
+        state.validate_transition(before, after)
+        preserved = deepcopy(after)
+        del preserved["compilerInputChecks"]
+        if preserved != before:
+            raise ValueError(f"Active loop fixture changed an existing field: {name}")
+        fixed = fixed_output_source(cases[0]["outputs"][0])
+        plan = {"activity": activity, "reference": reference,
+                "fixedSource": fixed, "fixedSourceSha256": sha256(fixed.encode("utf-8")),
+                "inputComparison": "tokens", "publicCases": deepcopy(cases),
+                "publicCasesSha256": sha256(json_bytes(cases)), "invariantCounterexamples": []}
+        before_name, after_name = f"{name}/before.json", f"{name}/after.json"
+        revised = json_bytes(after)
+        payloads.update({before_name: original, after_name: revised})
+        lessons.append({"id": name, "before": before_name, "after": after_name,
+                        "beforeSha256": sha256(original), "afterSha256": sha256(revised),
+                        "solutions": solutions, "plans": [plan]})
+    payloads["manifest.json"] = json_bytes({
+        "version": 1, "kind": "active-loop-input-decision",
+        "publishedCommit": ACTIVE_COMMIT, "lessons": lessons,
+    })
+    return payloads
+
+
+def export(output_dir, *, active_loops=False):
     output = checked_output(output_dir)
-    payloads = export_payloads()
+    payloads = active_loop_payloads() if active_loops else export_payloads()
     # Authenticate every publication and inspect every destination before writes.
     for name, payload in payloads.items():
         existing_matches(output / name, payload)
@@ -365,5 +438,6 @@ def export(output_dir):
 if __name__ == "__main__":
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("--output-dir", type=Path, required=True)
+    parser.add_argument("--active-loops", action="store_true")
     arguments = parser.parse_args()
-    print(export(arguments.output_dir))
+    print(export(arguments.output_dir, active_loops=arguments.active_loops))

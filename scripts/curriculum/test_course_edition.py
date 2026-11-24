@@ -784,6 +784,82 @@ class CourseEditionAuthoringTest(unittest.TestCase):
             state.validate(foreign)
 
 
+    def test_published_u6_diagnostics_copy(self):
+        # Exercise the real published contract, not a synthetic diagnostic hash.
+        root = SCRIPT.parents[2]
+        relative = (f"{CONTENT}/es/programming/cpp_fundamentals/"
+                    "funciones_y_contratos/lesson_declaraciones_y_firmas.json")
+        original = edition._load(root / relative)
+        value = {"version": 1, "courseId": "cpp_fundamentals", "locale": "es",
+                 "generation": 1, "id": "cpp_desde_cero_2026"}
+        source = deepcopy(original)
+        del source["stateLayout"]
+        source["id"] = edition.unit_prefix(value) + "funciones_y_contratos__declaraciones_y_firmas"
+        prepared = edition.prepare_edition_lesson(
+            source, value, source_document=original, source_path=relative)
+        state.validate(prepared)
+        self.assertEqual(original["pages"], prepared["pages"])
+        self.assertEqual(original["stateLayout"]["current"], prepared["stateLayout"]["current"])
+        self.assertEqual([], prepared["stateLayout"]["editorial"])
+        self.assertEqual([], prepared["stateLayout"]["additions"])
+        self.assertNotEqual(original["id"], prepared["id"])
+        diagnostics = [(p, b) for p, page in enumerate(original["pages"])
+                       for b, block in enumerate(page["blocks"]) if "compileCheck" in block]
+        self.assertEqual(3, len(diagnostics))
+        for p, b in diagnostics:
+            with self.subTest(page=p, block=b):
+                changed = deepcopy(prepared)
+                changed["pages"][p]["blocks"][b]["compileCheck"]["explanation"] += " Alterado."
+                with self.assertRaises(ValueError):
+                    edition.validate_source_copy(changed)
+        self.assertEqual(original, edition._load(root / relative))
+
+
+
+    def test_eighteen_published_lessons_keep_exact_contracts_in_new_edition(self):
+        root = SCRIPT.parents[2]
+        course_root = f"{CONTENT}/es/programming/cpp_fundamentals"
+        value = {"version": 1, "courseId": "cpp_fundamentals", "locale": "es",
+                 "generation": 1, "id": "cpp_desde_cero_2026"}
+        affected = {
+            "funciones_y_contratos": (2, 19, 20),
+            "datos_propios_y_estado_valido": (6, 10, 11, 13),
+            "texto_interpretacion_y_flujos": (5, 6, 7, 8, 14, 15, 16, 18),
+            "archivos_y_programa_completo": (13, 20, 26),
+        }
+        self.assertEqual(18, sum(map(len, affected.values())))
+        for unit, numbers in affected.items():
+            index = edition._load(root / course_root / unit / f"unit_{unit}.json")
+            entries = {entry["number"]: entry for entry in index["lessons"]}
+            for number in numbers:
+                with self.subTest(unit=unit, lesson=number):
+                    old_id = entries[number]["id"]
+                    slug = old_id.rsplit("__", 1)[1]
+                    relative = f"{course_root}/{unit}/lesson_{slug}.json"
+                    original = edition._load(root / relative)
+                    self.assertEqual(old_id, original["id"])
+                    source = deepcopy(original)
+                    del source["stateLayout"]
+                    source["id"] = edition.unit_prefix(value) + unit + "__" + slug
+                    prepared = edition.prepare_edition_lesson(
+                        source, value, source_document=original, source_path=relative)
+                    state.validate(prepared)
+                    excluded = {"id", "courseEdition", "courseEditionSource", "stateLayout"}
+                    self.assertEqual(
+                        {k: v for k, v in original.items() if k not in excluded},
+                        {k: v for k, v in prepared.items() if k not in excluded})
+                    self.assertEqual(original["stateLayout"]["current"],
+                                     prepared["stateLayout"]["current"])
+                    self.assertEqual([], prepared["stateLayout"]["editorial"])
+                    self.assertEqual([], prepared["stateLayout"]["additions"])
+                    self.assertNotEqual(old_id, prepared["id"])
+                    changed = deepcopy(prepared)
+                    changed["title"] += " Alterado"
+                    with self.assertRaises(ValueError):
+                        edition.validate_source_copy(changed)
+                    self.assertEqual(original, edition._load(root / relative))
+
+
 class CourseEditionFixtureTreeTest(unittest.TestCase):
     """The CMake/Ninja fixture generator must not mistake empty output
     directories for foreign files, or overwrite any unrecognized QA data.

@@ -82,6 +82,7 @@ target_link_libraries(lgaed_guidance_core PUBLIC lgaed_guidance_qa_options)
 add_library(lgaed_guidance_platform STATIC
     "${LGAED_ROOT}/native/platform/windows/environment.cpp"
     "${LGAED_ROOT}/native/platform/windows/content_loader.cpp"
+    "${LGAED_ROOT}/native/platform/windows/catalog_loader.cpp"
     "${LGAED_ROOT}/native/platform/windows/bibliography_revision.cpp"
     "${LGAED_ROOT}/native/platform/windows/state_store.cpp"
     "${LGAED_ROOT}/native/platform/windows/compiler_completion.cpp"
@@ -315,7 +316,6 @@ set_tests_properties(native.reading_gate_u2l5_bookmarks
 if(LGAED_HOSTED_FEEDBACK_FONT_QA)
     target_sources(lgaed_guidance_platform PRIVATE
         "${LGAED_ROOT}/native/platform/windows/narration_preferences.cpp"
-        "${LGAED_ROOT}/native/platform/windows/catalog_loader.cpp"
         "${LGAED_ROOT}/native/platform/windows/audio_generation.cpp"
         "${LGAED_ROOT}/native/platform/windows/narration_worker.cpp"
         "${LGAED_ROOT}/native/platform/windows/narration_cpu_policy.cpp"

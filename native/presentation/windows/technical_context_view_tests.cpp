@@ -1,6 +1,7 @@
 #include "core/lesson.hpp"
 #include "core/narration_state.hpp"
 #include "platform/windows/content_loader.hpp"
+#include "platform/windows/catalog_loader.hpp"
 #include "platform/windows/compiler_completion.hpp"
 #include "platform/windows/environment.hpp"
 #include "platform/windows/state_store.hpp"
@@ -581,16 +582,13 @@ void prepare_u2_visual_prefix(state::StateData& data,
 // Read the real U2L5 Windows UI, not a synthetic list of abstract reading
 // regions. The separate MSVC execution workflow verifies the source/probes;
 // these state-only QA receipts NEVER claim an execution or generated audio.
-void current_u2l5_native_reader_gates(){
-    const auto relative="objetos_y_estado/lesson_enteros_y_aproximaciones.json";
-    const auto lesson=load(relative);
-    const auto file=std::filesystem::path(build::source_root)/
-        "app/src/main/assets/content/es/programming/cpp_fundamentals"/relative;
+void u2l5_native_reader_gates_at(const std::filesystem::path& file,bool selected_edition){
+    const auto lesson=windows::load_lesson(file);
     const auto original=state::sha256(state::read_bytes(file));
     const auto first_at=curriculum::stable_block_position(lesson,"block_0006_0002");
-    const auto second_at=curriculum::stable_block_position(lesson,"p1u2l5_reparar_agrupacion");
+    const auto second_at=curriculum::stable_block_position(lesson,selected_edition?"block_0007_0009":"p1u2l5_reparar_agrupacion");
     const auto first_ref=curriculum::stable_block_position(lesson,"block_0007_0001");
-    const auto second_ref=curriculum::stable_block_position(lesson,"p1u2l5_referencia_agrupacion");
+    const auto second_ref=curriculum::stable_block_position(lesson,selected_edition?"block_0008_0007":"p1u2l5_referencia_agrupacion");
     check(first_at&&second_at&&first_ref&&second_ref&&
         first_at->page==6&&first_at->block==2&&
         second_at->page==7&&second_at->block==9&&
@@ -736,14 +734,31 @@ void current_u2l5_native_reader_gates(){
         "after reopen; model receipts only, no generated PCM or child execution\n";
 }
 
+void current_u2l5_native_reader_gates(){
+    const auto root=std::filesystem::path(build::source_root)/"app/src/main/assets/content";
+    const curriculum::CatalogLocation course{"es","programming","cpp_fundamentals",{},{}};
+    const auto units=windows::load_catalog(root,course);
+    const auto unit=std::ranges::find_if(units.entries,[](const auto& entry){
+        return entry.id.ends_with("__objetos_y_estado");
+    });
+    check(unit!=units.entries.end()&&unit->available,"Selected U2 is unavailable for U2L5 gates");
+    const auto lessons=windows::load_catalog(root,curriculum::catalog_child(course,unit->id));
+    const auto entry=std::ranges::find_if(lessons.entries,[](const auto& item){
+        return item.id.ends_with("__enteros_y_aproximaciones");
+    });
+    check(entry!=lessons.entries.end()&&entry->available,"Selected U2L5 is unavailable for native gates");
+    const auto selected=windows::load_lesson(entry->asset);
+    check(selected.id==entry->id&&selected.course_edition.has_value(),
+        "U2L5 native gates did not select the active edition");
+    u2l5_native_reader_gates_at(entry->asset,true);
+    u2l5_native_reader_gates_at(root/"es/programming/cpp_fundamentals/objetos_y_estado/lesson_enteros_y_aproximaciones.json",false);
+}
+
 // The published U2L6 has TWO independent compiler gates on one page. Exercise
 // production LessonView, its real reader regions and on-disk QA StateStore;
 // fabricated receipts below are navigation fixtures, never compiler evidence.
-void current_u2l6_native_reader_gates() {
-    const auto relative="objetos_y_estado/lesson_conversiones_y_deduccion.json";
-    const auto lesson=load(relative);
-    const auto file=std::filesystem::path(build::source_root)/
-        "app/src/main/assets/content/es/programming/cpp_fundamentals"/relative;
+void u2l6_native_reader_gates_at(const std::filesystem::path& file,bool selected_edition) {
+    const auto lesson=windows::load_lesson(file);
     const auto original=state::sha256(state::read_bytes(file));
     const auto first_at=curriculum::stable_block_position(lesson,"block_0006_0002");
     check(first_at&&first_at->page==6&&first_at->block==2&&
@@ -752,7 +767,7 @@ void current_u2l6_native_reader_gates() {
     const auto& first=lesson.pages[6].blocks[first_at->block];
     const auto& second=lesson.pages[6].blocks[6];
     check(second.type==curriculum::BlockType::cpp_compiler&&
-        second.stable_id=="p1u2l6_reparar_conversion"&&
+        second.stable_id==(selected_edition?"block_0006_0006":"p1u2l6_reparar_conversion")&&
         first.output_check&&second.output_check&&
         !first.output_check->cases.empty()&&!second.output_check->cases.empty()&&
         std::ranges::any_of(lesson.activity_after,[&](const auto& relation){
@@ -779,7 +794,7 @@ void current_u2l6_native_reader_gates() {
     };
     const auto first_reference=reference(first.stable_id,"block_0007_0001");
     const auto second_reference=reference(
-        second.stable_id,"p1u2l6_referencia_reparada");
+        second.stable_id,selected_edition?"block_0008_0007":"p1u2l6_referencia_reparada");
     check(first_reference&&second_reference&&
         first_reference->page>first_at->page&&
         second_reference->page>=first_reference->page,
@@ -925,9 +940,28 @@ void current_u2l6_native_reader_gates() {
         "execution, PCM synthesis or human listening claimed.\n";
 }
 
-void current_u2_roles(){
-    const auto relative="objetos_y_estado/lesson_estado_asignacion_y_copia.json";const auto lesson=load(relative);
-    const auto source=std::filesystem::path(build::source_root)/"app/src/main/assets/content/es/programming/cpp_fundamentals"/relative;
+void current_u2l6_native_reader_gates(){
+    const auto root=std::filesystem::path(build::source_root)/"app/src/main/assets/content";
+    const curriculum::CatalogLocation course{"es","programming","cpp_fundamentals",{},{}};
+    const auto units=windows::load_catalog(root,course);
+    const auto unit=std::ranges::find_if(units.entries,[](const auto& entry){
+        return entry.id.ends_with("__objetos_y_estado");
+    });
+    check(unit!=units.entries.end()&&unit->available,"Selected U2 is unavailable for U2L6 gates");
+    const auto lessons=windows::load_catalog(root,curriculum::catalog_child(course,unit->id));
+    const auto entry=std::ranges::find_if(lessons.entries,[](const auto& item){
+        return item.id.ends_with("__conversiones_y_deduccion");
+    });
+    check(entry!=lessons.entries.end()&&entry->available,"Selected U2L6 is unavailable for native gates");
+    const auto selected=windows::load_lesson(entry->asset);
+    check(selected.id==entry->id&&selected.course_edition.has_value(),
+        "U2L6 native gates did not select the active edition");
+    u2l6_native_reader_gates_at(entry->asset,true);
+    u2l6_native_reader_gates_at(root/"es/programming/cpp_fundamentals/objetos_y_estado/lesson_conversiones_y_deduccion.json",false);
+}
+
+void u2_roles_at(const std::filesystem::path& source){
+    const auto lesson=windows::load_lesson(source);
     const auto hash=state::sha256(state::read_bytes(source));
     const auto block_at=[&](std::string_view id,std::size_t page){const auto at=curriculum::stable_block_position(lesson,id);
         check(at&&at->page==page,"A registered U2 stable identity moved to another page");return at->block;};
@@ -1132,6 +1166,27 @@ void current_u2_roles(){
     check(actual_native==expected_native,"Actual answer/reopen actions changed compiler receipts or native settings beyond their real page scroll");
     check(hash==state::sha256(state::read_bytes(source)),"Color/background QA changed the current U2 asset");
     std::cout<<"PASS actual U2 trace, operands/result, current choices/created feedback, Before/After outputs, bibliography, neutral backgrounds without underlines, source/partial emphasis, original narration, exact state and reopen; synthetic compiler prerequisites are formatting-only, not execution evidence\n";
+}
+void current_u2_roles(){
+    const auto root=std::filesystem::path(build::source_root)/"app/src/main/assets/content";
+    const curriculum::CatalogLocation course{"es","programming","cpp_fundamentals",{},{}};
+    const auto units=windows::load_catalog(root,course);
+    const auto unit=std::ranges::find_if(units.entries,[](const auto& entry){
+        return entry.id.ends_with("__objetos_y_estado");
+    });
+    check(unit!=units.entries.end()&&unit->available,"Selected U2 is unavailable for color QA");
+    const auto lessons=windows::load_catalog(root,curriculum::catalog_child(course,unit->id));
+    const auto entry=std::ranges::find_if(lessons.entries,[](const auto& item){
+        return item.id.ends_with("__estado_asignacion_y_copia");
+    });
+    check(entry!=lessons.entries.end()&&entry->available,"Selected U2L3 is unavailable for color QA");
+    const auto selected=windows::load_lesson(entry->asset);
+    check(selected.id==entry->id&&selected.course_edition.has_value(),
+        "U2L3 color QA did not select the active edition");
+    u2_roles_at(entry->asset);
+    // Keep the previous path's complete regression independently of the
+    // selected catalog; the two lessons have distinct progress identities.
+    u2_roles_at(root/"es/programming/cpp_fundamentals/objetos_y_estado/lesson_estado_asignacion_y_copia.json");
 }
 void exact_editorial_view(const std::filesystem::path& before_path,const std::filesystem::path& after_path,bool duplication){
     const auto before_bytes=state::read_bytes(before_path),after_bytes=state::read_bytes(after_path);

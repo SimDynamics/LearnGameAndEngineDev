@@ -273,6 +273,32 @@ function(lgaed_add_local_dependency_view_tests source_root presentation_target)
             -s "${source_root}/scripts/curriculum" -p test_input_decision_authoring.py -v)
     set_tests_properties(native.input_decision_authoring PROPERTIES TIMEOUT 120)
 
+    # The active Spanish edition uses distinct owners and its own immutable export.
+    set(_active_loop_dir "${CMAKE_CURRENT_BINARY_DIR}/test-fixtures/active-loop-input")
+    set(_active_loop_files "${_active_loop_dir}/manifest.json")
+    foreach(_lesson IN ITEMS u4l1 u4l2)
+        foreach(_file IN ITEMS before.json after.json)
+            list(APPEND _active_loop_files "${_active_loop_dir}/${_lesson}/${_file}")
+        endforeach()
+    endforeach()
+    add_custom_command(OUTPUT ${_active_loop_files}
+        COMMAND "${Python3_EXECUTABLE}" -B
+            "${source_root}/scripts/curriculum/input_decision_fixture_source.py"
+            --active-loops --output-dir "${_active_loop_dir}"
+        DEPENDS "${source_root}/scripts/curriculum/input_decision_fixture_source.py"
+            "${source_root}/scripts/curriculum/diagnostic_fixture_source.py"
+            "${source_root}/scripts/curriculum/stable_state_layout.py"
+        VERBATIM)
+    add_custom_target(lgaed_active_loop_fixtures DEPENDS ${_active_loop_files})
+    add_dependencies(lgaed_local_dependency_view_tests lgaed_active_loop_fixtures)
+    foreach(_lesson IN ITEMS u4l1 u4l2)
+        add_test(NAME native.active_loop_input_view_${_lesson}
+            COMMAND lgaed_local_dependency_view_tests --active-loops
+                "${_active_loop_dir}/manifest.json" "${_lesson}")
+        set_tests_properties(native.active_loop_input_view_${_lesson}
+            PROPERTIES TIMEOUT 600 RUN_SERIAL TRUE)
+    endforeach()
+
     # A new omission witness extends one authenticated repair without changing
     # its three published probes or any of the older fixture exports.
     set(_arithmetic_fixture_dir "${CMAKE_CURRENT_BINARY_DIR}/test-fixtures/guarded-arithmetic")

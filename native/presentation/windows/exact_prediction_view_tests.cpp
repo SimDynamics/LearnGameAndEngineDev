@@ -5,6 +5,7 @@
 #include "platform/windows/content_loader.hpp"
 #include "platform/windows/environment.hpp"
 #include "platform/windows/state_store.hpp"
+#include "platform/windows/winrt_apartment.hpp"
 #include "presentation/windows/code_editor.hpp"
 #include "presentation/windows/lesson_view.hpp"
 #include "presentation/windows/rich_text.hpp"
@@ -16,9 +17,11 @@
 #include <winrt/Windows.Data.Json.h>
 #include <algorithm>
 #include <array>
+#include <atomic>
 #include <chrono>
 #include <cstdint>
 #include <iostream>
+#include <memory>
 #include <stdexcept>
 #include <string_view>
 #include <vector>
@@ -30,9 +33,16 @@ std::string active_case,active_step;
 
 void check(bool value,std::string_view message){if(!value)throw std::runtime_error(std::string(message));}
 int control_id(std::size_t block,int part){return 1000+static_cast<int>(block)*100+part;}
-HWND descendant(HWND parent,int id){struct Search{int id;HWND found=nullptr;} search{id};
+HWND lesson_control(HWND parent,int id){struct Search{int id;HWND found=nullptr;std::size_t matches=0;} search{id};
     EnumChildWindows(parent,[](HWND item,LPARAM raw)->BOOL{auto& current=*reinterpret_cast<Search*>(raw);
-        if(GetDlgCtrlID(item)!=current.id)return TRUE;current.found=item;return FALSE;},reinterpret_cast<LPARAM>(&search));
+        if(GetDlgCtrlID(item)!=current.id)return TRUE;
+        // Match LessonView's direct pane children, including overflow and
+        // fullscreen hosts. Nested puzzle cards reuse these numeric IDs.
+        wchar_t owner_class[96]{};GetClassNameW(GetParent(item),owner_class,96);
+        if(std::wstring_view(owner_class)!=L"LearnGameAndEngineDev.LessonPane")return TRUE;
+        current.found=item;++current.matches;return TRUE;},reinterpret_cast<LPARAM>(&search));
+    check(search.matches<=1,"Ambiguous native lesson control: id="+std::to_string(id)+
+        ", LessonPane matches="+std::to_string(search.matches));
     return search.found;
 }
 void pump(){MSG message{};while(PeekMessageW(&message,nullptr,0,0,PM_REMOVE))
@@ -78,7 +88,7 @@ const std::array plans{
     Plan{"datos_propios_y_estado_valido/lesson_transferir_invariantes_a_un_deposito.json","block_0014_0002",
         "cpp_fundamentals__datos_propios_y_estado_valido__transferir_invariantes_a_un_deposito__alias_copia_vista_y_otra_via",true,nullptr},
     Plan{"programas_y_ejecucion/lesson_texto_secuencia_y_formato.json","block_0001_0004","dos_lineas",false,"Entrada Salida"},
-    Plan{"archivos_y_programa_completo/lesson_ancho_relleno_y_alineacion_de_campos.json","block_1_1","",false,"[ 8]|[9]"},
+    Plan{"archivos_y_programa_completo/lesson_ancho_relleno_y_alineacion_de_campos.json","block_0001_0001","",false,"[ 8]|[9]"},
     Plan{"programas_y_ejecucion/lesson_primer_programa_y_salida.json","block_0004_0003",
         "prediccion_zona_inicial",true,"Zonainicial"},
     Plan{"programas_y_ejecucion/lesson_texto_secuencia_y_formato.json","block_0006_0003",
@@ -118,6 +128,7 @@ struct MultilinePlan {
     std::size_t earlier_compilers;
     bool completes_page;
     bool editorial_feedback;
+    const char* next_page_compiler=nullptr;
 };
 constexpr std::array multiline_plans{
     MultilinePlan{"edition_es_1__programas_y_ejecucion/lesson_texto_secuencia_y_formato.json",
@@ -125,7 +136,7 @@ constexpr std::array multiline_plans{
         "block_0002_0013","p1u1l3_linea_vacia","Rojo\n\nVerde","Rojo\n \nVerde",0,true,false},
     MultilinePlan{"edition_es_1__programas_y_ejecucion/lesson_texto_secuencia_y_formato.json",
         "cpp_fundamentals__edition_es_1__programas_y_ejecucion__texto_secuencia_y_formato",
-        "block_0005_0007","prediccion_informe_inicial","Resumen\nZona Oeste","Resumen\nZona  Oeste",0,true,true},
+        "block_0005_0007","prediccion_informe_inicial","Resumen\nZona Oeste","Resumen\nZona  Oeste",0,true,true,"block_0006_0005"},
     MultilinePlan{"edition_es_1__objetos_y_estado/lesson_leer_una_entrada_conocida.json",
         "cpp_fundamentals__edition_es_1__objetos_y_estado__leer_una_entrada_conocida",
         "block_0006_0002","cpp_fundamentals__objetos_y_estado__leer_una_entrada_conocida__etapas_lectura_y_actualizacion",
@@ -183,11 +194,143 @@ void require_active_u2l9_reference_layout(const curriculum::Lesson& lesson,const
     }
 }
 
+struct ArchivedMathPlan {
+    const char* lesson;
+    const char* identity;
+    const char* response;
+    bool matching;
+    const char* expected;
+};
+constexpr const char* archived_deposit_lesson=
+    "cpp_fundamentals__datos_propios_y_estado_valido__transferir_invariantes_a_un_deposito";
+constexpr const char* archived_diagnostic_lesson=
+    "cpp_fundamentals__programas_y_ejecucion__fuente_compilacion_y_diagnostico";
+constexpr std::array archived_math_plans{
+    ArchivedMathPlan{archived_deposit_lesson,"block_0000_0004","estados",false,
+        R"({"agregar_tres":"1","tras_tres":"5","agregar_una":"0","tras_una":"5","retirar_cinco":"1","tras_cinco":"0","retirar_una":"0","tras_retirar_una":"0"})"},
+    ArchivedMathPlan{archived_deposit_lesson,"block_0005_0004","estados",false,
+        R"({"primero":"5","segundo":"3","tercero":"3","cuarto":"6","quinto":"6"})"},
+    ArchivedMathPlan{archived_deposit_lesson,"block_0009_0005","estados",false,
+        R"({"d_retiro":"1","d_ingreso":"0","d_a":"1","d_b":"3","d_foto":"3","d_vista":"1","m_retiro":"1","m_ingreso":"1","m_a":"5","m_b":"5","m_foto":"3","m_vista":"5"})"},
+    ArchivedMathPlan{archived_deposit_lesson,"block_0012_0003","estados",false,
+        R"({"a1":"1","b1":"3","a2":"2","b2":"3","a3":"0","b3":"5","a4":"1","b4":"5","a5":"1","b5":"5","retiros":"2","ingresos":"3","foto":"3","vista":"1"})"},
+    ArchivedMathPlan{archived_diagnostic_lesson,"p1u1l4_p0_relacionar_herramientas","relaciones",true,
+        R"({"editar":"editor","traducir":"compilador","reunir":"enlazador","ejecutar":"ejecucion"})"},
+    ArchivedMathPlan{archived_diagnostic_lesson,"p1u1l4_p4_elegir_siguiente_accion","relaciones",true,
+        R"({"salida_distinta":"comprobar_comportamiento","solo_fuente":"preparar_ejecucion","construccion_rechazada":"revisar_diagnostico"})"},
+};
+struct ArchivedMathPrerequisite {
+    const ArchivedMathPlan* plan=nullptr;
+    std::string source,fingerprint,responses;
+};
+
+ArchivedMathPrerequisite archived_math_prerequisite(const curriculum::Lesson& lesson,const curriculum::Block& block){
+    using namespace winrt::Windows::Data::Json;
+    const auto plan=std::ranges::find_if(archived_math_plans,[&](const auto& item){
+        return lesson.id==item.lesson&&block.stable_id==item.identity;
+    });
+    check(!lesson.course_edition&&lesson.locale=="es"&&block.type==curriculum::BlockType::math_puzzle&&
+        plan!=archived_math_plans.end(),"An unaudited mathematical prerequisite entered archived prediction QA: "+block.stable_id);
+    ArchivedMathPrerequisite result;result.plan=&*plan;result.source=curriculum::math_evaluation_source(block);
+    result.fingerprint=state::sha256(result.source);
+    const auto original=JsonObject::Parse(wide(result.source));const auto declarations=original.GetNamedArray(L"responses");
+    check(original.GetNamedNumber(L"schemaVersion")==1&&declarations.Size()==1,
+        "The archived mathematical prerequisite changed its audited schema: "+block.stable_id);
+    const auto specification=declarations.GetObjectAt(0),validator=specification.GetNamedObject(L"validator");
+    const auto expected=JsonObject::Parse(wide(plan->expected));
+    check(specification.GetNamedString(L"id")==wide(plan->response)&&
+        specification.GetNamedString(L"type")== (plan->matching?L"math_matching_drag":L"math_multi_input")&&
+        validator.GetNamedString(L"type")== (plan->matching?L"matching":L"fields")&&validator.Size()==2,
+        "The archived mathematical prerequisite changed its response or validator type: "+block.stable_id);
+    const auto authored=validator.GetNamedObject(plan->matching?L"expected":L"fields");
+    check(authored.Size()==expected.Size(),"The archived mathematical oracle acquired another pair/field: "+block.stable_id);
+    for(const auto& value:expected){
+        check(authored.HasKey(value.Key()),"An archived mathematical oracle lost a registered pair/field: "+block.stable_id);
+        if(plan->matching)check(authored.GetNamedString(value.Key())==value.Value().GetString(),
+            "The archived matching oracle changed: "+block.stable_id);
+        else{
+            const auto field=authored.GetNamedObject(value.Key());
+            check(field.Size()==2&&field.GetNamedString(L"type")==L"numeric"&&
+                field.GetNamedString(L"expected")==value.Value().GetString(),
+                "The archived numeric oracle changed: "+block.stable_id);
+        }
+    }
+    const auto definitions=specification.GetNamedArray(plan->matching?L"sources":L"fields");
+    check(definitions.Size()==expected.Size(),"The archived mathematical control changed its fields: "+block.stable_id);
+    for(const auto& value:expected){
+        std::size_t matches=0;
+        for(const auto& item:definitions){const auto definition=item.GetObject();
+            if(definition.GetNamedString(L"id")==value.Key()&&
+                (plan->matching||definition.GetNamedString(L"type")==L"numeric"))++matches;
+        }
+        check(matches==1,"The archived mathematical control lost a unique field identity: "+block.stable_id);
+    }
+    if(plan->matching){
+        const auto targets=specification.GetNamedArray(L"targets");
+        check(targets.Size()==expected.Size(),"The archived matching control changed its destinations");
+        for(const auto& value:expected){
+            std::size_t matches=0;
+            for(const auto& item:targets)if(item.GetObject().GetNamedString(L"id")==value.Value().GetString())++matches;
+            check(matches==1,"The archived matching control lost a unique destination identity");
+        }
+    }
+    JsonObject answer,responses;answer.Insert(L"type",JsonValue::CreateStringValue(plan->matching?L"matching":L"fields"));
+    answer.Insert(plan->matching?L"pairs":L"values",expected);responses.Insert(wide(plan->response),answer);
+    result.responses=winrt::to_string(responses.Stringify());return result;
+}
+
+// Restricted preparation of earlier archived fixtures, not a mathematics
+// worker test. Only these six independently pinned maps and their original
+// evaluation sources are admitted; no other type or answer receives credit.
+winrt::Windows::Data::Json::JsonObject archived_math_reply(const ArchivedMathPrerequisite& prerequisite,
+        std::string_view original,std::string_view answers){
+    using namespace winrt::Windows::Data::Json;
+    const auto& plan=*prerequisite.plan;
+    check(original==prerequisite.source&&state::sha256(original)==prerequisite.fingerprint,
+        "Archived QA mathematical validation changed its exact source/fingerprint: "+std::string(plan.identity));
+    const auto submitted=JsonObject::Parse(wide(answers));const auto identifier=wide(plan.response);
+    const auto expected=JsonObject::Parse(wide(plan.expected));
+    bool correct=submitted.Size()==1&&submitted.HasKey(identifier);
+    if(correct){
+        const auto candidate=submitted.GetNamedObject(identifier);
+        const auto member=plan.matching?L"pairs":L"values";
+        correct=candidate.Size()==2&&candidate.GetNamedString(L"type",L"")== (plan.matching?L"matching":L"fields")&&
+            candidate.HasKey(member);
+        if(correct){
+            const auto values=candidate.GetNamedObject(member);correct=values.Size()==expected.Size();
+            for(const auto& value:expected)if(!values.HasKey(value.Key())||
+                values.GetNamedString(value.Key(),L"")!=value.Value().GetString())correct=false;
+        }
+    }
+    JsonObject result;result.Insert(L"evaluable",JsonValue::CreateBooleanValue(true));
+    result.Insert(L"correct",JsonValue::CreateBooleanValue(correct));
+    result.Insert(L"contentFingerprint",JsonValue::CreateStringValue(wide(prerequisite.fingerprint)));
+    result.Insert(L"feedback",JsonValue::CreateStringValue(correct?L"Prerrequisito de fixture verificado.":L"Prerrequisito de fixture incorrecto."));
+    return result;
+}
+
+LessonViewHooks archived_math_hooks(const std::vector<ArchivedMathPrerequisite>& prerequisites,
+        std::shared_ptr<std::atomic<std::size_t>> verified){
+    LessonViewHooks hooks;
+    hooks.validate_math=[prerequisites,verified](std::string_view original,std::string_view answers,
+            std::string_view language,std::stop_token stop){
+        windows::ensure_winrt_apartment();
+        check(language=="es"&&!stop.stop_requested(),"Archived QA prerequisite validation changed locale or was cancelled");
+        const auto found=std::ranges::find_if(prerequisites,[&](const auto& item){return item.source==original;});
+        check(found!=prerequisites.end(),"Archived QA refuses an unregistered mathematical validation source");
+        const auto reply=archived_math_reply(*found,original,answers);
+        if(reply.GetNamedBoolean(L"correct"))verified->fetch_or(std::size_t{1}<<static_cast<std::size_t>(found-prerequisites.begin()));
+        return winrt::to_string(reply.Stringify());
+    };
+    return hooks;
+}
+
 // Only earlier-page quizzes are prepared from their authored answers to
 // isolate this UI scenario. This is QA setup, not evidence of quiz interaction.
-// Compiler prerequisites are observed separately through the real runner.
+// Each scenario prepares compiler evidence separately. The optional archived
+// math maps belong only to the legacy baseline, never the active-newline mode.
 void prepare_u2l9_prior_quizzes(state::StateData& data,const curriculum::Lesson& lesson,
-        curriculum::StatePosition target) {
+        curriculum::StatePosition target,std::vector<ArchivedMathPrerequisite>* archived_math=nullptr) {
     using curriculum::BlockType;
     using namespace winrt::Windows::Data::Json;
     for(std::size_t p=0;p<target.page;++p) {
@@ -213,6 +356,25 @@ void prepare_u2l9_prior_quizzes(state::StateData& data,const curriculum::Lesson&
                 JsonObject raw;raw.Insert(L"slots",slots);
                 response.raw_json=winrt::to_string(raw.Stringify());
                 response.correct=curriculum::evaluate_drag_answers(block,block.correct_order).correct;
+            } else if(block.type==BlockType::order_code&&archived_math) {
+                for(const auto index:block.correct_order)response.order.push_back(static_cast<std::int64_t>(index));
+                response.correct=curriculum::evaluate_order(block,block.correct_order).correct;
+            } else if(block.type==BlockType::math_puzzle&&archived_math) {
+                auto prerequisite=archived_math_prerequisite(lesson,block);
+                const auto reply=archived_math_reply(prerequisite,prerequisite.source,prerequisite.responses);
+                auto wrong=JsonObject::Parse(wide(prerequisite.responses));
+                const auto changed=wrong.GetNamedObject(wide(prerequisite.plan->response)).GetNamedObject(
+                    prerequisite.plan->matching?L"pairs":L"values");
+                const auto first=changed.First().Current().Key();changed.Insert(first,JsonValue::CreateStringValue(L"unaudited-fixture-answer"));
+                check(!archived_math_reply(prerequisite,prerequisite.source,winrt::to_string(wrong.Stringify())).GetNamedBoolean(L"correct"),
+                    "The archived prerequisite hook accepted a changed pair/value: "+block.stable_id);
+                JsonObject raw;raw.Insert(L"responses",JsonObject::Parse(wide(prerequisite.responses)));
+                raw.Insert(L"correct",reply.GetNamedValue(L"correct"));raw.Insert(L"contentFingerprint",reply.GetNamedValue(L"contentFingerprint"));
+                response.correct=reply.GetNamedBoolean(L"correct");response.raw_json=winrt::to_string(raw.Stringify());
+                std::cout<<"ARCHIVED_QA prerequisite="<<block.stable_id<<" fixture_math="
+                    <<(prerequisite.plan->matching?"exact-pairs":"exact-numeric-fields")
+                    <<" fingerprint="<<prerequisite.fingerprint<<" worker_execution=0\n";
+                archived_math->push_back(std::move(prerequisite));
             } else {
                 check(block.type!=BlockType::order_code&&block.type!=BlockType::math_puzzle,
                     "A new earlier U2L9 exercise needs an explicitly audited QA preparation");
@@ -309,23 +471,39 @@ state::Preferences u2l9_compiler_receipts(const state::StateData& data) {
     return receipts;
 }
 
-void seed_compiler_prerequisites(state::StateData& data,const curriculum::Lesson& lesson){
+void seed_compiler_prerequisites(state::StateData& data,const curriculum::Lesson& lesson,
+        curriculum::StatePosition target){
     // Synthetic receipts isolate the prediction controls on their actual later
     // pages. They are QA prerequisites only, and do not claim any compilation.
     // The target prediction never receives a synthetic response or verdict.
-    for(const auto& page:lesson.pages)for(const auto& block:page.blocks){
+    for(std::size_t p=0;p<=target.page;++p)for(std::size_t b=0;b<lesson.pages.at(p).blocks.size();++b){
+        if(p==target.page&&b>=target.block)break;
+        const auto& block=lesson.pages[p].blocks[b];
         if(block.type!=curriculum::BlockType::cpp_compiler||!block.output_check)continue;
         windows::CppRunRequest request;request.revision=1;request.source_utf8=block.initial_code;
         request.project_files=block.project_files;request.source_files=block.source_files;request.cmake=block.cmake;
-        for(const auto& item:block.output_check->cases){
+        check(!block.output_check->cases.empty(),"A prerequisite compiler has no first case");
+        {
+            const auto& item=block.output_check->cases.front();
             check(!item.outputs.empty(),"A prerequisite compiler has no authored stdout oracle");
+            request.stdin_utf8=item.standard_input;
             curriculum::FreshExecution execution{1,true,true,0,item.standard_input,item.outputs.front()};
             execution.executable=item.executable;
             if(item.standard_error==curriculum::StandardErrorExpectation::non_blank)execution.standard_error="QA prerequisite diagnostic";
             (void)windows::record_compiler_puzzle_case(data,lesson,block,request,execution,"Synthetic QA prerequisite only");
         }
-        check(windows::compiler_puzzle_completed(data,lesson,block),"Cannot isolate prediction from its compiler prerequisites");
+        check(windows::compiler_puzzle_completed(data,lesson,block)&&
+            windows::compiler_puzzle_case_count(data,lesson,block)==1,
+            "Synthetic QA must credit only the first prerequisite case: "+block.stable_id);
     }
+    for(std::size_t p=target.page;p<lesson.pages.size();++p)
+        for(std::size_t b=p==target.page?target.block:0;b<lesson.pages[p].blocks.size();++b){
+            const auto& block=lesson.pages[p].blocks[b];
+            if(block.type==curriculum::BlockType::cpp_compiler&&block.output_check)
+                check(!windows::compiler_puzzle_completed(data,lesson,block)&&
+                    windows::compiler_puzzle_case_count(data,lesson,block)==0,
+                    "Synthetic prediction setup credited a later compiler");
+        }
 }
 void require_prepared_compiler_credit(const state::StateData& data,const curriculum::Lesson& lesson,
         curriculum::StatePosition target){
@@ -340,16 +518,19 @@ void require_prepared_compiler_credit(const state::StateData& data,const curricu
         }
 }
 
+constexpr std::string_view decimal_prediction_lesson="cpp_fundamentals__objetos_y_estado__enteros_y_aproximaciones";
+
 void execute_multiline_prerequisite(state::StateData& data,const curriculum::Lesson& lesson,
         const curriculum::Block& owner,const std::filesystem::path& projects){
-    struct Prior {const char* identity;const char* reference;const char* output;};
+    struct Prior {std::string_view lesson;const char* identity;const char* reference;const char* output;};
+    constexpr std::string_view multiline_lesson="cpp_fundamentals__edition_es_1__objetos_y_estado__representar_procesar_y_recuperar";
     constexpr std::array prior{
-        Prior{"block_0004_0005","block_0004_0007","Puesto 03\nMesas: 6\nCable: 3.75 m"},
-        Prior{"block_0007_0004","block_0007_0006","Modulo 02\nInicio: 7\nAhora: 10"},
+        Prior{multiline_lesson,"block_0004_0005","block_0004_0007","Puesto 03\nMesas: 6\nCable: 3.75 m"},
+        Prior{multiline_lesson,"block_0007_0004","block_0007_0006","Modulo 02\nInicio: 7\nAhora: 10"},
+        Prior{decimal_prediction_lesson,"block_0006_0002","block_0007_0001","Parte: 4.5 m"},
     };
-    const auto selected=std::ranges::find_if(prior,[&](const auto& item){return owner.stable_id==item.identity;});
-    check(lesson.id=="cpp_fundamentals__edition_es_1__objetos_y_estado__representar_procesar_y_recuperar"&&
-        selected!=prior.end()&&owner.type==curriculum::BlockType::cpp_compiler&&owner.output_check&&
+    const auto selected=std::ranges::find_if(prior,[&](const auto& item){return lesson.id==item.lesson&&owner.stable_id==item.identity;});
+    check(selected!=prior.end()&&owner.type==curriculum::BlockType::cpp_compiler&&owner.output_check&&
         owner.output_check->input_comparison==curriculum::TextComparison::exact&&owner.output_check->cases.size()==1,
         "A new multiline prerequisite needs an explicitly audited real execution");
     const auto reference=curriculum::stable_block_position(lesson,selected->reference);
@@ -436,6 +617,32 @@ std::size_t prepare_multiline_prior_state(state::StateData& data,const curriculu
         }
         if(p<target.page)(void)state::mark_page_reached(data,lesson,p);
     }
+    if(plan.next_page_compiler){
+        // The continuation visits this editor before returning. Prepare an
+        // existing draft so navigation tests preservation, not first creation.
+        const auto next=curriculum::stable_block_position(lesson,plan.next_page_compiler);
+        check(plan.completes_page&&next&&next->page==target.page+1,
+            "The independently saved continuation draft moved to another page");
+        const auto& editor=lesson.pages.at(next->page).blocks.at(next->block);
+        check(editor.type==BlockType::cpp_compiler&&!editor.initial_code.empty(),
+            "The continuation draft no longer belongs to its authored compiler");
+        const auto key=curriculum::draft_key("programming",lesson,editor);
+        const auto input=editor.standard_input.value_or("");
+        const auto existing=state::get_draft(data,key,editor.initial_code,input);
+        if(existing.has_saved)check(existing.source==editor.initial_code&&existing.input==input,
+            "The continuation fixture already has a different draft; refusing to overwrite it");
+        else{
+            const auto document=windows::predefined_code_document(editor.initial_code);
+            check(document.text==editor.initial_code,"Preparing the continuation editor rewrote its authored source");
+            state::Draft draft;draft.source=document.text;draft.input=input;draft.has_saved=true;
+            draft.indentation_json=state::make_indentation_metadata(draft.source,document.indentation_starts);
+            draft.selection_start=document.selection_start;draft.selection_end=document.selection_end;
+            state::put_draft(data,key,draft);
+        }
+        check(!state::get_response(data,lesson,editor)&&!windows::compiler_puzzle_completed(data,lesson,editor)&&
+            windows::compiler_puzzle_case_count(data,lesson,editor)==0,
+            "Preparing a continuation draft credited a future compiler");
+    }
     check(executions==plan.earlier_compilers&&!state::get_response(data,lesson,lesson.pages[target.page].blocks[target.block]),
         "Multiline QA invented a target answer or lost a required genuine compiler observation");
     require_prepared_compiler_credit(data,lesson,target);
@@ -462,7 +669,13 @@ void preserve_multiline_other_state(const state::StateData& before,const state::
         check(current_draft.has_saved==prior_draft.has_saved&&current_draft.source==prior_draft.source&&
             current_draft.input==prior_draft.input&&current_draft.indentation_json==prior_draft.indentation_json&&
             current_draft.selection_start==prior_draft.selection_start&&current_draft.selection_end==prior_draft.selection_end,
-            "Multiline editing changed an independent compiler source/input draft");
+            "Multiline editing changed independent compiler draft "+block.stable_id+
+            ": has_saved="+std::to_string(current_draft.has_saved)+" expected="+std::to_string(prior_draft.has_saved)+
+            "; source_equal="+std::to_string(current_draft.source==prior_draft.source)+
+            "; input_equal="+std::to_string(current_draft.input==prior_draft.input)+
+            "; indentation_equal="+std::to_string(current_draft.indentation_json==prior_draft.indentation_json)+
+            "; selection_equal="+std::to_string(current_draft.selection_start==prior_draft.selection_start&&
+                current_draft.selection_end==prior_draft.selection_end));
     }
 }
 
@@ -530,7 +743,7 @@ void prepare_visual_profile(std::string_view scenario,std::wstring_view token){
                 check(block.stable_id=="block_0004_0003","The isolated U11L11 QA acquired an unrelated compiler objective");++compilers;
             }
         check(compilers==1,"The isolated U11L11 QA requires exactly its audited compiler prerequisite");
-        seed_compiler_prerequisites(data,lesson);
+        seed_compiler_prerequisites(data,lesson,*position);
     }
     if(prepared){
         prepare_u2l9_prior_quizzes(data,lesson,*position);
@@ -566,6 +779,7 @@ struct View {
     curriculum::StatePosition position;
     bool editorial_feedback = false;
     std::size_t real_compiler_runs = 0;
+    std::vector<ArchivedMathPrerequisite> archived_math;
     HWND host=nullptr,view=nullptr;
     View(curriculum::Lesson model,curriculum::StatePosition target,bool verify_editorial=false,bool seed_prerequisites=true,
         const MultilinePlan* multiline=nullptr)
@@ -576,7 +790,18 @@ struct View {
         initialize_profile_directories(environment.paths);
         state::StateData data;state::prepare_lesson_state(data,lesson);
         if(multiline)real_compiler_runs=prepare_multiline_prior_state(data,lesson,target,*multiline,environment.paths.projects);
-        else if(seed_prerequisites)seed_compiler_prerequisites(data,lesson);
+        else if(seed_prerequisites){
+            if(lesson.id==decimal_prediction_lesson){
+                const auto owner=curriculum::stable_block_position(lesson,"block_0006_0002");
+                check(owner&&owner->page<target.page,"The decimal prediction lost its earlier compiler");
+                execute_multiline_prerequisite(data,lesson,lesson.pages.at(owner->page).blocks.at(owner->block),environment.paths.projects);
+                ++real_compiler_runs;
+                require_prepared_compiler_credit(data,lesson,target);
+            }else seed_compiler_prerequisites(data,lesson,target);
+            prepare_u2l9_prior_quizzes(data,lesson,target,&archived_math);
+            check(!state::get_response(data,lesson,this->target()),
+                "Preparing archived prerequisites answered the focal prediction");
+        }
         else{
             check(lesson.compiler_puzzles_required&&curriculum::activity_prerequisites(lesson,this->target()).empty(),
                 "The prepared-input prediction acquired an unaudited compiler prerequisite");
@@ -597,16 +822,39 @@ struct View {
     }
     ~View(){if(view){(void)flush_lesson_view(view);DestroyWindow(view);}if(host)DestroyWindow(host);}
     const curriculum::Block& target()const{return lesson.pages.at(position.page).blocks.at(position.block);}
-    void open(){active_step="open/reopen the authored page";view=create_lesson_view(host,environment,lesson);check(view!=nullptr,"Cannot create the actual prediction lesson view");
+    void open(){active_step="open/reopen the authored page";
+        const auto verified=std::make_shared<std::atomic<std::size_t>>(0);
+        check(archived_math.size()<=archived_math_plans.size(),"The archived QA hook acquired an unbounded prerequisite set");
+        view=archived_math.empty()?create_lesson_view(host,environment,lesson):
+            create_lesson_view(host,environment,lesson,archived_math_hooks(archived_math,verified));
+        check(view!=nullptr,"Cannot create the actual prediction lesson view");
         MoveWindow(view,0,0,1100,850,TRUE);pump();
+        if(!archived_math.empty()){
+            const auto all=(std::size_t{1}<<archived_math.size())-1;
+            const auto deadline=GetTickCount64()+10000;
+            while((verified->load()!=all||lesson_page_state(view).index!=position.page||
+                !lesson_control(view,control_id(position.block,2)))&&GetTickCount64()<deadline){
+                MsgWaitForMultipleObjects(0,nullptr,FALSE,10,QS_ALLINPUT);pump();
+            }
+            if(verified->load()!=all||lesson_page_state(view).index!=position.page||
+                    !lesson_control(view,control_id(position.block,2))){
+                std::string unresolved;
+                for(std::size_t i=0;i<archived_math.size();++i)if(!(verified->load()&(std::size_t{1}<<i)))
+                    unresolved+=' '+std::string(archived_math[i].plan->identity);
+                check(false,"Archived prediction entry remains unresolved: expected page="+std::to_string(position.page)+
+                    ", actual page="+std::to_string(lesson_page_state(view).index)+", pending math="+
+                    (unresolved.empty()?std::string("none; inspect the preceding quiz/compiler gate"):unresolved));
+            }
+        }
         check(!IsWindowVisible(host),"Prediction QA exposed a desktop window");
-        check(lesson_page_state(view).index==position.page,"The prediction did not restore its actual authored page");
+        check(lesson_page_state(view).index==position.page,"The prediction did not restore its actual authored page: expected="+
+            std::to_string(position.page)+", actual="+std::to_string(lesson_page_state(view).index));
         if(editorial_feedback){auto question=target().question;std::erase(question,'`');
             check(text(0)==question&&text(1)==target().code,"The current editorial question or displayed program changed on open/reopen");}
     }
     void reopen(){check(flush_lesson_view(view),"Cannot save prediction QA");DestroyWindow(view);view=nullptr;open();}
     state::StateData saved(){check(flush_lesson_view(view),"Cannot flush prediction QA");return read_lesson_state(view);}
-    HWND control(int part)const{const auto result=descendant(view,control_id(position.block,part));
+    HWND control(int part)const{const auto result=lesson_control(view,control_id(position.block,part));
         check(result!=nullptr,"The authored prediction control is missing");return result;}
     std::string text(int part)const{return edit_text(control(part));}
     void verify_feedback(bool correct)const{
@@ -762,11 +1010,17 @@ void optional_final_newline_predictions(){
         View fixture(lesson,*position,plan.editorial_feedback,false,&plan);
         real_prerequisites+=fixture.real_compiler_runs;
         const auto before=fixture.saved();
-        const auto progress=[&](bool correct,bool reviewed){
+        const auto progress=[&](bool correct,bool reviewed_rejection){
             const auto current=fixture.saved();const auto response=state::get_response(current,lesson,block);
-            check((response&&response->correct)==correct&&
-                (response&&state::response_reviewed(*response,block))==reviewed,
-                "The multiline response acquired or lost progress before its actual Check action");
+            // The persisted review identity records an evaluated rejection.
+            // A correct response stores its verdict and clears that identity.
+            const bool actual_correct=response&&response->correct;
+            const bool actual_reviewed_rejection=response&&state::response_reviewed(*response,block);
+            check(actual_correct==correct&&actual_reviewed_rejection==reviewed_rejection,
+                "The multiline response acquired or lost progress before its actual Check action: correct="+
+                std::to_string(actual_correct)+" expected="+std::to_string(correct)+
+                "; reviewed_rejection="+std::to_string(actual_reviewed_rejection)+
+                " expected="+std::to_string(reviewed_rejection));
             const auto page=lesson_page_state(fixture.view);
             check(page.index==position->page&&page.can_next==(correct&&plan.completes_page),
                 "The multiline verdict lost its next-page gate or bypassed a still-pending activity");
@@ -813,19 +1067,19 @@ void optional_final_newline_predictions(){
             if(!first){fixture.reset();progress(false,false);}first=false;
             check(curriculum::evaluate_text_answer(block,value).correct,
                 "The exact multiline evaluator rejected LF/CRLF or its single optional terminator");
-            fixture.accepted(value);progress(true,true);++accepted;
+            fixture.accepted(value);progress(true,false);++accepted;
         }
         fixture.reset();progress(false,false);
         fixture.replace(expected);fixture.append_final_enter();progress(false,false);++physical_enters;
         // Check the actual Enter-created draft without replacing it first.
-        fixture.accepted_current(expected+'\n');progress(true,true);++accepted;
+        fixture.accepted_current(expected+'\n');progress(true,false);++accepted;
         if(plan.completes_page){
             check(navigate_lesson_view(fixture.view,position->page+1),
                 "An actually completed multiline page did not allow continuation");pump();
             check(lesson_page_state(fixture.view).index==position->page+1&&
                 navigate_lesson_view(fixture.view,position->page),
                 "The multiline continuation lost its destination or return route");pump();
-            fixture.reopen();progress(true,true);
+            fixture.reopen();progress(true,false);
         }
         fixture.reset();fixture.incomplete();progress(false,false);
         check(state::read_bytes(path)==original,"Final-newline QA changed authored content or its state layout");
@@ -978,7 +1232,10 @@ void current_literal_predictions(PredictionGroup group,const std::filesystem::pa
         std::cout<<"RUN "<<active_case<<" ["<<(single_line?"single-line":"multiline")<<"]\n"<<std::flush;
         View fixture(lesson,*position,plan.editorial_feedback,group!=PredictionGroup::prepared_input);const auto before=fixture.saved();
         const auto compiler_receipts=u2l9_compiler_receipts(before);
-        if(group==PredictionGroup::prepared_input)require_prepared_compiler_credit(before,lesson,*position);
+        const bool real_prerequisites=group==PredictionGroup::prepared_input||lesson.id==decimal_prediction_lesson;
+        if(real_prerequisites)require_prepared_compiler_credit(before,lesson,*position);
+        if(lesson.id==decimal_prediction_lesson)check(fixture.real_compiler_runs==1,
+            "The decimal prediction requires exactly one genuine first-case execution");
         const auto unrelated=before.preferences.at("exact_prediction_qa_unrelated");fixture.incomplete();
         fixture.draft(plan.internal_error?std::string(plan.internal_error):expected+' ');
         if(plan.exact){
@@ -1022,21 +1279,22 @@ void current_literal_predictions(PredictionGroup group,const std::filesystem::pa
         }
         const auto saved=fixture.saved();
         check(saved.preferences.at("exact_prediction_qa_unrelated")==unrelated,"Prediction QA altered an unrelated preference");
-        if(group==PredictionGroup::prepared_input){
+        if(real_prerequisites){
             require_prepared_compiler_credit(saved,lesson,*position);
             check(u2l9_compiler_receipts(saved)==compiler_receipts,
                 "Answering a prediction rewrote a real prerequisite receipt");
         }
-        else for(const auto& page:lesson.pages)for(const auto& item:page.blocks)
-                if(item.type==curriculum::BlockType::cpp_compiler&&item.output_check)
-                    check(windows::compiler_puzzle_completed(saved,lesson,item),"Answering a prediction changed a compiler prerequisite receipt");
+        else check(u2l9_compiler_receipts(saved)==compiler_receipts,
+            "Answering a prediction changed its synthetic prerequisite receipts");
         fixture.reset();fixture.incomplete();
-        if(group==PredictionGroup::prepared_input){
+        if(real_prerequisites){
             const auto reset=fixture.saved();
             require_prepared_compiler_credit(reset,lesson,*position);
             check(u2l9_compiler_receipts(reset)==compiler_receipts,
                 "Resetting a prediction changed its independent compiler receipts");
         }
+        else check(u2l9_compiler_receipts(fixture.saved())==compiler_receipts,
+            "Resetting a prediction changed its synthetic prerequisite receipts");
         check(state::sha256(state::read_bytes(path))==digest,"Prediction QA changed authored lesson bytes or stateLayout");
         std::cout<<"PASS "<<(plan.exact?"exact ":"trimmed ")<<lesson.id<<" / "<<block.stable_id<<"\n";
     }
@@ -1052,7 +1310,7 @@ void current_literal_predictions(PredictionGroup group,const std::filesystem::pa
     }else{
         check(exact==9&&trimmed==4&&rejected==62&&native_rejected==54&&core_only_rejected==8&&multiline_forms==20,
             "The registered nine-plus-four literal prediction matrix is incomplete");
-        std::cout<<"PASS nine current exact predictions and four current trimmed predictions: 54 native character mutations plus 8 exact evaluator newline checks, 20 accepted LF/CRLF multiline forms with optional final newline, current U11L2/U11L11 question/source/full guide/success reading regions, unreviewed draft/reopen, single-line Enter preservation, retry/correct/reopen/Reset, significant internal formatting, response payload preservation, incomplete/draft/correct heart conservation and untouched assets; compiler prerequisites explicitly synthetic\n";
+        std::cout<<"PASS nine current exact predictions and four current trimmed predictions: 54 native character mutations plus 8 exact evaluator newline checks, 20 accepted LF/CRLF multiline forms with optional final newline, current U11L2/U11L11 question/source/full guide/success reading regions, unreviewed draft/reopen, single-line Enter preservation, retry/correct/reopen/Reset, significant internal formatting, response payload preservation, incomplete/draft/correct heart conservation and untouched assets; decimal prerequisite genuinely executed, other baseline compiler prerequisites explicitly synthetic\n";
     }
 }
 }

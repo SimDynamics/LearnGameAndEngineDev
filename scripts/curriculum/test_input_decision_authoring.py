@@ -2,6 +2,7 @@
 from copy import deepcopy
 import hashlib
 import json
+import os
 from pathlib import Path
 import subprocess
 import tempfile
@@ -225,6 +226,64 @@ class InputDecisionAuthoringTests(unittest.TestCase):
         remainder = self.lessons["u3l6"]["plans"][0]["invariantCounterexamples"][0]["source"]
         self.assertEqual(remainder.count("capacidad != 0"), 2)
         self.assertNotIn("capacidad > 0", remainder)
+
+
+    def test_active_edition_loop_input_contracts(self):
+        # Exercise the actual new-edition identities without editing curriculum
+        # or relying on whichever version happens to be checked out.
+        revision = "2fcfad809e6a854dc35f4ce6c19fc1f1ab3e9c5b"
+        active_owners = {
+            "u4l1": ("block_0006_0002", "block_0005_0002",
+                     "13b99776f21822f97d25ecb5682bbc2ed71dd13d"),
+            "u4l2": ("block_0006_0005", "block_0005_0003",
+                     "0d89c13d179f0b9aa48006e3e873841f5e6822f8"),
+        }
+        for name, (identity, repair, blob_sha) in active_owners.items():
+            with self.subTest(lesson=name):
+                path = fixture.PUBLICATIONS[name]["path"].replace(
+                    "/repeticion_y_terminacion/", "/edition_es_1__repeticion_y_terminacion/")
+                raw = subprocess.check_output(
+                    ["git", "--no-optional-locks", "-c", f"safe.directory={fixture.ROOT}",
+                     "show", f"{revision}:{path}"], cwd=fixture.ROOT,
+                    env=dict(os.environ, GIT_NO_LAZY_FETCH="1",
+                             GIT_NO_REPLACE_OBJECTS="1", GIT_TERMINAL_PROMPT="0"))
+                self.assertEqual(hashlib.sha1(b"blob " + str(len(raw)).encode("ascii") +
+                                             b"\0" + raw).hexdigest(), blob_sha)
+                before = state.parse_json(raw.decode("utf-8"))
+                self.assertEqual(before["courseEdition"]["generation"], 1)
+                self.assertNotIn("compilerInputChecks", before)
+                owner = state._blocks(before)[identity]
+                self.assertEqual(owner["type"], "cpp_compiler")
+                self.assertEqual(owner["outputCheck"]["cases"], fixture.public_cases(name))
+                self.assertTrue(before["compilerPuzzlesRequired"])
+                after = deepcopy(before)
+                check = deepcopy(fixture.declarations(name)[0])
+                check["activity"] = identity
+                after["compilerInputChecks"] = [check]
+                state.validate_transition(before, after)
+                self.assertEqual(state._blocks(before), state._blocks(after))
+                self.assertEqual(before["stateLayout"], after["stateLayout"])
+                self.assertEqual(before["referenceAfter"], after["referenceAfter"])
+                self.assertEqual(before["compilerLocalIntChecks"], after["compilerLocalIntChecks"])
+                self.assertEqual({item["activity"] for item in before["compilerLocalIntChecks"]},
+                                 {repair})
+                self.assertEqual({item["activity"] for item in before["referenceAfter"]},
+                                 {repair, identity})
+                self.assertEqual(check["probes"], owner["outputCheck"]["cases"][1:])
+                self.assertEqual(owner["initialStandardInput"],
+                                 owner["outputCheck"]["cases"][0]["standardInput"])
+                for probe in check["probes"]:
+                    self.assertTrue(set(probe["outputs"]).isdisjoint(
+                        owner["outputCheck"]["cases"][0]["outputs"]))
+                rewritten = deepcopy(after)
+                rewritten["compilerInputChecks"][0]["probes"][0]["outputs"] = ["rewritten result"]
+                with self.assertRaises(state.LayoutError):
+                    state.validate_transition(after, rewritten)
+                with self.assertRaises(state.LayoutError):
+                    state.validate_transition(after, before)
+                del after["compilerInputChecks"]
+                self.assertEqual(after, before)
+
 
     def test_export_is_idempotent_and_preserves_exact_bytes_and_mtimes(self):
         with tempfile.TemporaryDirectory() as directory:

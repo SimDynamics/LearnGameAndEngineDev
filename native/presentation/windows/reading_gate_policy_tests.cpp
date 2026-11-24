@@ -1,6 +1,7 @@
 #include "presentation/windows/reading_gate_policy.hpp"
 #include "core/narration_state.hpp"
 #include "platform/windows/content_loader.hpp"
+#include "platform/windows/catalog_loader.hpp"
 #include "native_build_config.hpp"
 
 #include <iostream>
@@ -99,6 +100,68 @@ std::vector<LessonReadingRegion> current_page() {
         regions.push_back(std::move(region));
     }
     return regions;
+}
+// Use the application's selected catalog, independently of the legacy tests.
+void selected_edition_reader_gates() {
+    const auto root=std::filesystem::path(build::source_root)/"app/src/main/assets/content";
+    const curriculum::CatalogLocation course{"es","programming","cpp_fundamentals",{},{}};
+    const auto units=windows::load_catalog(root,course);
+    const auto unit=std::ranges::find_if(units.entries,[](const auto& entry){
+        return entry.id.ends_with("__objetos_y_estado");
+    });
+    require(unit!=units.entries.end()&&unit->available,"Selected U2 is unavailable");
+    const auto lessons=windows::load_catalog(root,curriculum::catalog_child(course,unit->id));
+    const auto verify=[&](std::string_view suffix,std::string_view second_id,
+                          std::string_view first_output,std::string_view second_output) {
+        const auto entry=std::ranges::find_if(lessons.entries,[&](const auto& item){
+            return item.id.ends_with(suffix);
+        });
+        require(entry!=lessons.entries.end()&&entry->available,"Selected lesson is unavailable");
+        const auto lesson=windows::load_lesson(entry->asset);
+        require(lesson.id==entry->id&&lesson.course_edition.has_value(),
+            "Selected lesson is not the active course edition");
+        const auto first=curriculum::stable_block_position(lesson,"block_0006_0002");
+        const auto second=curriculum::stable_block_position(lesson,second_id);
+        require(first&&second,"Selected edition lost a compiler owner");
+        const auto& a=lesson.pages.at(first->page).blocks.at(first->block);
+        const auto& b=lesson.pages.at(second->page).blocks.at(second->block);
+        const auto has_output=[](const auto& block,std::string_view expected){
+            return block.output_check&&!block.output_check->cases.empty()&&
+                std::ranges::any_of(block.output_check->cases.front().outputs,
+                    [&](const auto& output){return output==expected;});
+        };
+        require(has_output(a,first_output)&&has_output(b,second_output),
+            "Selected edition changed an independently audited output");
+        require(std::ranges::any_of(lesson.activity_after,[&](const auto& edge){
+            return edge.activity==b.stable_id&&edge.prerequisites.size()==1&&
+                edge.prerequisites.front()==a.stable_id;
+        }),"Selected second editor lost its own prerequisite");
+        std::vector<LessonReadingRegion> regions;
+        for(const auto* owner:{&a,&b}) {
+            LessonReadingRegion region;
+            region.block_index=regions.size();
+            region.key=lesson.id+'/'+owner->stable_id;
+            region.required_compiler=reading_gate::compiler_objective(*owner);
+            region.is_exercise=true;
+            region.solved=false;
+            regions.push_back(std::move(region));
+        }
+        require(regions[0].required_compiler&&regions[1].required_compiler,
+            "Selected compiler objectives are not mandatory");
+        require(reading_gate::compiler_rewind_target(regions,1,true)==0&&
+            !reading_gate::prefix_admitted(regions,2,0,{},true),
+            "Manual navigation bypassed the selected first editor");
+        regions[0].solved=true;
+        require(reading_gate::compiler_rewind_target(regions,1,true)==1&&
+            !reading_gate::prefix_admitted(regions,2,0,{},true),
+            "Selected second editor inherited completion of the first");
+        regions[1].solved=true;
+        require(reading_gate::prefix_admitted(regions,2,0),
+            "Independent completion did not release both selected gates");
+    };
+    verify("__enteros_y_aproximaciones","block_0007_0009","Parte: 4.5 m","Parte: 2.75 m");
+    verify("__conversiones_y_deduccion","block_0006_0006","Entero: 7\nDecimal: 7.5","Entero: 4\nDecimal: 4.25");
+    std::cout<<"PASS selected U2L5/U2L6 catalog owners and independent policy gates; no execution claimed\n";
 }
 void current_objectives() {
     auto regions=current_page();
@@ -487,7 +550,11 @@ int main(int argc,char** argv) {
             std::cout<<"PASS active U2L6 two independent compiler gates, archived historical gate, manual advance and restored bookmark\n";
             return 0;
         }
+        if(argc==2&&std::string_view(argv[1])=="--selected-edition") {
+            selected_edition_reader_gates();return 0;
+        }
         require(argc==1,"Unknown reading gate QA arguments");
+        selected_edition_reader_gates();
         current_objectives();current_u2l6_reopened_pause();grouped_feedback();asynchronous_metadata();preview_from_later_feedback();ordinary_and_mixed_requirements();cadenas_three_puzzle_flow();current_u2l5_reader_pauses_and_gates();
         std::cout<<"PASS current U2L6 objectives and restored pauses, actual U2L7 three-puzzle prompt/feedback gates, ordinary/mixed groups, late/finished bookmarks, local feedback permission and asynchronous same-script invalidation; pure gates only\n";
         return 0;
