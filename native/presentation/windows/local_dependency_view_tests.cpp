@@ -88,10 +88,16 @@ struct InputCounterexample {
     std::string label,source;
     std::set<std::string> failed_inputs;
 };
+struct GuardedArithmeticSource {
+    std::string label,source;
+    bool accepted=false;
+    std::optional<std::uint32_t> guard_exit;
+};
 struct Plan {
     std::string activity,reference,fixed_source;
     std::optional<std::string> no_plan_source;
     std::vector<InputCounterexample> input_counterexamples;
+    std::vector<GuardedArithmeticSource> arithmetic_sources{};
 };
 struct Fixture {
     std::string id;
@@ -102,6 +108,7 @@ struct Fixture {
     std::vector<Plan> plans;
     bool joint_local_int=false;
     bool input_decisions=false;
+    bool guarded_arithmetic=false;
 };
 const std::string& solution_for(const Fixture& fixture,std::string_view identity) {
     const auto found=std::ranges::find(fixture.solutions,identity,&Solution::activity);
@@ -395,15 +402,119 @@ void verify_input_decision_adoption(const Fixture& fixture) {
             "Input-decision QA changed an authentic solution, local repair, address or progress-loader contract");
     }
 }
-std::vector<Fixture> load_manifest(const std::filesystem::path& manifest,bool joint=false,bool input_decisions=false) {
+void verify_only_guarded_append(const Fixture& fixture) {
+    constexpr std::string_view identity="p1u3l6_reparar_resto";
+    constexpr std::string_view reference="p1u3l6_ejemplo_resto";
+    constexpr std::string_view digest="9d7ca6b5d82b2dac1809ab01b8b308f9e81027c4c4c6ce796502b42cda7ca8ea";
+    check(fixture.id=="u3l6"&&fixture.before_sha256==digest&&
+            state::sha256(fixture.before.raw_json)==digest&&fixture.plans.size()==1&&
+            fixture.solutions.size()==2,"Arithmetic QA lost its authentic U3L6 publication or editor census");
+    const auto& plan=fixture.plans.front();
+    check(plan.activity==identity&&plan.reference==reference&&!plan.no_plan_source&&
+            plan.arithmetic_sources.size()==10,"Arithmetic QA changed its exact owner or source matrix");
+    const auto& old=block_at(fixture.before,identity);
+    const auto& current=block_at(fixture.after,identity);
+    const auto before_metadata=windows::parse_lesson_progress_metadata(fixture.before.raw_json,"es");
+    const auto after_metadata=windows::parse_lesson_progress_metadata(fixture.after.raw_json,"es");
+    check(old.local_int_check&&current.local_int_check&&private_contracts(old)==1&&
+            private_contracts(current)==1&&old.local_int_check->probes.size()==3&&
+            current.local_int_check->probes.size()==5&&
+            std::equal(old.local_int_check->probes.begin(),old.local_int_check->probes.end(),
+                current.local_int_check->probes.begin())&&
+            block_at(before_metadata,identity).local_int_check==old.local_int_check&&
+            block_at(after_metadata,identity).local_int_check==current.local_int_check,
+        "Both loaders must preserve the three original probes and append the same arithmetic witnesses");
+    for(std::size_t index=0;index<5;++index) {
+        const auto& probe=current.local_int_check->probes[index];
+        check(probe.forbid_arithmetic==(index>=3),"The arithmetic policy changed a published observation");
+        if(index<3)continue;
+        check(probe.variable=="capacidad"&&probe.replacement==(index==3?0:-2)&&
+                probe.value_type==curriculum::CppLocalValueType::integer&&!probe.after_update&&
+                !probe.expected_increase&&probe.additional_replacements.empty()&&
+                probe.expected_stdout==std::vector<std::string>{"0\nCapacidad invalida","0\nCapacidad invalida\n"},
+            "A safe omission scenario differs from the independently specified invalid-capacity oracle");
+    }
+    auto restored=JsonObject::Parse(wide(fixture.after.raw_json));
+    std::size_t changed=0;
+    for(const auto& raw:restored.GetNamedArray(L"compilerLocalIntChecks")) {
+        const auto entry=raw.GetObject();
+        if(json_string(entry,L"activity")!=identity)continue;
+        auto probes=entry.GetNamedArray(L"probes");
+        check(probes.Size()==5,"The raw arithmetic suffix differs from the parsed model");
+        probes.RemoveAtEnd();probes.RemoveAtEnd();++changed;
+    }
+    check(changed==1&&winrt::to_string(restored.Stringify())==canonical(fixture.before.raw_json)&&
+            fixture.before.compiler_puzzles_required&&fixture.after.compiler_puzzles_required&&
+            old.output_check&&current.output_check&&old.output_check->cases.size()==1&&
+            current.output_check->cases.size()==1&&current.output_check->cases.front().standard_input.empty(),
+        "The arithmetic fixture altered a public case, prior field, archive or required-editor policy");
+    for(const auto& [activity,example]:std::array{
+            std::pair{identity,reference},
+            std::pair{std::string_view("p1u3l6_construir_reparto"),std::string_view("p1u3l6_ejemplo_reparto")}}) {
+        const auto& before=block_at(fixture.before,activity);
+        const auto& after=block_at(fixture.after,activity);
+        const auto& projection=block_at(after_metadata,activity);
+        check(canonical(before.raw_json)==canonical(after.raw_json)&&
+                before.address.page==after.address.page&&before.address.block==after.address.block&&
+                after.initial_code==projection.initial_code&&after.standard_input==projection.standard_input&&
+                after.local_int_check==projection.local_int_check&&
+                curriculum::draft_key("programming",fixture.before,before)==
+                    curriculum::draft_key("programming",fixture.after,after)&&
+                solution_for(fixture,activity)==block_at(fixture.before,example).code&&
+                curriculum::reference_activity(fixture.after,block_at(fixture.after,example))==
+                    std::optional(position(fixture.after,activity)),
+            "The arithmetic fixture changed an authentic source, draft address, reference or progress projection");
+    }
+    auto reversed=solution_for(fixture,identity);
+    const std::string from="(capacidad > 0) && (total % capacidad == 0)";
+    const auto at=reversed.find(from);
+    check(at!=std::string::npos&&reversed.find(from,at+from.size())==std::string::npos,
+        "The pinned reference lost its unique short-circuit expression");
+    reversed.replace(at,from.size(),"(total % capacidad == 0) && (capacidad > 0)");
+    check(plan.fixed_source==reversed,"The UI counterexample no longer inverts the actual authored condition");
+}
+void read_guarded_arithmetic_plan(const Fixture& fixture,const JsonObject& entry,Plan& plan) {
+    check(entry.GetNamedNumber(L"originalProbeCount")==3,"Arithmetic QA changed the original observation count");
+    const std::map<std::string,bool> expected{{"reference",true},{"initial",false},
+        {"reversed_and",false},{"eager_and",false},{"precomputed",false},
+        {"guarded_if",true},{"guarded_ternary",true},{"negated_or",true},{"keyword_and",true},
+        {"primitive_casts",true}};
+    std::set<std::string> seen;
+    for(const auto& value:entry.GetNamedArray(L"sources")) {
+        const auto item=value.GetObject();
+        GuardedArithmeticSource source{json_string(item,L"label"),json_string(item,L"source"),
+            item.GetNamedBoolean(L"accepted"),{}};
+        check(expected.contains(source.label)&&seen.insert(source.label).second&&
+                source.accepted==expected.at(source.label)&&!source.source.empty()&&
+                state::sha256(source.source)==json_string(item,L"sourceSha256"),
+            "An arithmetic example changed its label, expected verdict or source bytes");
+        const bool traps=source.label=="reversed_and"||source.label=="eager_and"||source.label=="precomputed";
+        check(item.HasKey(L"guardExit")==traps,"Arithmetic rejection lacks its exact safe-stop oracle");
+        if(traps) {
+            check(item.GetNamedNumber(L"guardExit")==91,"A safe arithmetic stop is not exit 91");
+            source.guard_exit=91;
+        }
+        if(source.label=="reference")check(source.source==solution_for(fixture,plan.activity),
+            "The positive arithmetic reference differs from the authentic publication");
+        if(source.label=="initial")check(source.source==block_at(fixture.before,plan.activity).initial_code,
+            "The initial arithmetic failure is not the real learner source");
+        if(source.label=="reversed_and")check(source.source==plan.fixed_source,
+            "The UI and direct arithmetic counterexamples diverge");
+        plan.arithmetic_sources.push_back(std::move(source));
+    }
+    check(seen.size()==expected.size(),"The arithmetic source matrix is incomplete");
+}
+std::vector<Fixture> load_manifest(const std::filesystem::path& manifest,bool joint=false,bool input_decisions=false,
+        bool guarded_arithmetic=false) {
     windows::ensure_winrt_apartment();
     const auto document=JsonObject::Parse(wide(bytes(manifest)));
     check(document.GetNamedNumber(L"version")==1&&
             json_string(document,L"publishedCommit")==
-                (input_decisions?"08a11877a2d2c0bf96a846660e3baea69e53f758":
+                ((input_decisions||guarded_arithmetic)?"08a11877a2d2c0bf96a846660e3baea69e53f758":
                     joint?"a92895f2b00242dbd338ab0a386ea8ceeda9edf8":"2ca32b2337178d1effa3a2c81759e2493cd746d0")&&
             (!joint||json_string(document,L"kind")=="joint-local-int")&&
-            (!input_decisions||(!joint&&json_string(document,L"kind")=="input-decision")),
+            (!input_decisions||(!joint&&!guarded_arithmetic&&json_string(document,L"kind")=="input-decision"))&&
+            (!guarded_arithmetic||(!joint&&!input_decisions&&json_string(document,L"kind")=="guarded-local-arithmetic")),
         "The UI manifest is not the audited main publication and schema");
     std::vector<Fixture> result;
     std::set<std::string> names;
@@ -413,6 +524,7 @@ std::vector<Fixture> load_manifest(const std::filesystem::path& manifest,bool jo
         Fixture fixture;
         fixture.joint_local_int=joint;
         fixture.input_decisions=input_decisions;
+        fixture.guarded_arithmetic=guarded_arithmetic;
         fixture.id=json_string(item,L"id");
         check(names.insert(fixture.id).second,"Repeated lesson manifest entry");
         fixture.before_path=fixture_path(manifest.parent_path(),json_string(item,L"before"));
@@ -443,13 +555,17 @@ std::vector<Fixture> load_manifest(const std::filesystem::path& manifest,bool jo
                     "The no-plan counterexample differs from its pinned source");
             }
             if(input_decisions)read_input_decision_plan(fixture,entry,plan);
+            if(guarded_arithmetic)read_guarded_arithmetic_plan(fixture,entry,plan);
             fixture.plans.push_back(std::move(plan));++owner_count;
         }
-        if(input_decisions)verify_input_decision_adoption(fixture);
+        if(guarded_arithmetic)verify_only_guarded_append(fixture);
+        else if(input_decisions)verify_input_decision_adoption(fixture);
         else if(joint)verify_only_joint_append(fixture);else verify_only_root_adoption(fixture);
         result.push_back(std::move(fixture));
     }
-    if(input_decisions)check(result.size()==8&&owner_count==8&&
+    if(guarded_arithmetic)check(result.size()==1&&owner_count==1&&names==std::set<std::string>{"u3l6"},
+        "The arithmetic UI manifest must retain exactly its one authenticated repair owner");
+    else if(input_decisions)check(result.size()==8&&owner_count==8&&
             names==std::set<std::string>{"u3l3","u3l4","u3l5","u3l6","u3l7","u3l8","u4l1","u4l2"},
         "The input-decision manifest must contain exactly eight independent owners and forty private observations");
     else if(joint)check(result.size()==2&&owner_count==2&&names==std::set<std::string>{"u3l7","u3l8"},
@@ -575,6 +691,76 @@ void verify_input_decision_counterexamples(const Fixture& fixture,const Plan& pl
         std::cout<<"PASS input invariant "<<fixture.id<<'/'<<plan.activity<<'/'<<example.label
             <<": public first case and every distinct-output contrast pass; only "<<failed.size()
             <<" selected invariant input(s) reject, with exact source/executable/request evidence and restored public files.\n";
+    }
+}
+void verify_guarded_arithmetic_sources(const Fixture& fixture,const Plan& plan,std::size_t ordinal) {
+    const auto& owner=block_at(fixture.after,plan.activity);
+    check(fixture.guarded_arithmetic&&owner.local_int_check&&owner.local_int_check->probes.size()==5,
+        "Arithmetic captures need the exact extended local contract");
+    const auto& first=owner.output_check->cases.front();
+    const auto environment=resolve_windows_environment({ProfileId::Codex,
+        L"guarded-arithmetic-capture-"+std::to_wstring(GetCurrentProcessId())+L"-"+
+            std::to_wstring(GetTickCount64())+L"-"+std::to_wstring(ordinal),false});
+    check(environment.options.qa_instance&&!environment.options.qa_instance->empty()&&
+            !std::filesystem::exists(environment.paths.root),"Arithmetic QA would reuse an existing profile");
+    initialize_profile_directories(environment.paths);
+    for(const auto& example:plan.arithmetic_sources) {
+        phase=fixture.id+"/"+plan.activity+" observing real arithmetic source "+example.label;
+        within_budget();
+        const auto request=request_for(environment,fixture.after,owner,example.source,first.standard_input);
+        check(windows::compiler_runtime_request_allowed(owner,request),
+            "An arithmetic example lacks a safe plan; the regression must reach the actual worker");
+        const auto result=windows::run_cpp(request);
+        const auto captured=windows::capture_cpp_execution(request,result);
+        const auto fingerprint=windows::cpp_local_int_request_fingerprint(request);
+        check(result.error_utf8.empty()&&result.compilation.succeeded()&&result.execution.succeeded()&&
+                result.execution.stderr_bytes.empty()&&!fingerprint.empty()&&
+                captured.source_revision==request.revision&&
+                result.local_int_request_fingerprint==fingerprint&&
+                captured.local_int_request_fingerprint==fingerprint&&result.local_int_evidence.size()==5,
+            "Arithmetic QA did not capture the original program and all five real private phases");
+        const bool public_correct=windows::evaluate_cpp_output_check(*owner.output_check,captured,
+            request.revision).verdict==curriculum::OutputVerdict::correct;
+        check(public_correct==(example.label!="initial")&&
+                (public_correct&&captured.local_int_check_correct)==example.accepted,
+            "The actual arithmetic source verdict differs from the independent acceptance matrix");
+        auto legacy=request;legacy.local_int_check=block_at(fixture.before,plan.activity).local_int_check;
+        check(!windows::cpp_local_int_request_fingerprint(legacy).empty()&&
+                windows::cpp_local_int_request_fingerprint(legacy)!=fingerprint,
+            "The forbidden-arithmetic objective reused the historical observation domain");
+        std::size_t safe_stops=0;
+        for(std::size_t index=0;index<owner.local_int_check->probes.size();++index) {
+            const auto& probe=owner.local_int_check->probes[index];
+            const auto& evidence=result.local_int_evidence[index];
+            const auto instrumented=curriculum::cpp_local_int_override(request.source_utf8,probe);
+            check(instrumented&&evidence.instrumented_source_sha256==state::sha256(*instrumented)&&
+                    evidence.compilation.succeeded()&&
+                    evidence.execution.status==windows::CppPhaseStatus::completed&&
+                    evidence.execution.exit_code&&evidence.execution.stderr_bytes.empty(),
+                "An arithmetic phase failed compilation, borrowed source bytes or ended abnormally");
+            if(index>=3&&example.guard_exit) {
+                check(*evidence.execution.exit_code==*example.guard_exit&&!evidence.execution.succeeded(),
+                    "Forbidden arithmetic did not stop at exit 91 before the operator; a divide exception is not evidence");
+                ++safe_stops;
+            }else {
+                check(evidence.execution.succeeded(),"An admissible arithmetic phase unexpectedly failed to run");
+                if(example.label!="initial"||index>=3)
+                    check(curriculum::cpp_local_int_expected_output(probe,evidence.execution.stdout_bytes),
+                        "A valid arithmetic form or prior contrast changed its independently authored output");
+            }
+        }
+        check(safe_stops==(example.guard_exit?2u:0u),
+            "Arithmetic QA must demonstrate both zero and negative safe-stop observations");
+        check(bytes(result.run_directory/L"main.cpp")==request.source_utf8&&
+                bytes(result.run_directory/L"stdin.bin")==first.standard_input&&
+                bytes(result.run_directory/L"execution-stdout.bin")==result.execution.stdout_bytes&&
+                bytes(result.run_directory/L"execution-stderr.bin")==result.execution.stderr_bytes,
+            "Arithmetic instrumentation changed the learner source, input or public execution artifacts");
+        std::cout<<"PASS guarded arithmetic source "<<example.label<<": original public result and three legacy probes; "
+            <<(example.guard_exit?"both forbidden scenarios stop at 91 before / or %":
+                example.accepted?"both forbidden scenarios skip arithmetic and retain exact output":
+                    "authentic initial code remains rejected by its public/legacy expectations")
+            <<"; five exact variant hashes and real MSVC captures, restored public files.\n";
     }
 }
 void verify_joint_counterexample(const Fixture& fixture,const Plan& plan,
@@ -943,6 +1129,7 @@ void blocked(View& view,const Plan& plan,std::size_t bookmark) {
 }
 
 void run_plan(const Fixture& fixture,const Plan& plan,std::size_t ordinal) {
+    const bool local_extension=fixture.joint_local_int||fixture.guarded_arithmetic;
     phase=fixture.id+"/"+plan.activity+" preparing authentic BEFORE";
     const auto target=position(fixture.before,plan.activity);
     const auto reference=position(fixture.before,plan.reference);
@@ -999,7 +1186,7 @@ void run_plan(const Fixture& fixture,const Plan& plan,std::size_t ordinal) {
     const auto reference_key="reference-proof/v1/"+fixture.before.locale+'/'+key;
     const auto old_reference_proof=state::string_value(legacy,"native_windows",reference_key);
     if(has_reference) {
-        if(fixture.joint_local_int)
+        if(local_extension)
             check(old.local_int_check&&old_reference_proof.empty()&&
                     windows::compiler_puzzle_completed(legacy,fixture.before,old)&&
                     windows::compiler_puzzle_case_count(legacy,fixture.before,old)==1,
@@ -1027,7 +1214,7 @@ void run_plan(const Fixture& fixture,const Plan& plan,std::size_t ordinal) {
                 initial.preferences.at("local_dependency_view_unrelated"),"An unrelated preference changed");
         check(windows::compiler_puzzle_completed(saved,fixture.before,old)&&
                 windows::compiler_puzzle_case_count(saved,fixture.before,old)==1,
-            fixture.joint_local_int?"The genuine historical single-variable receipt disappeared":
+            local_extension?"The genuine historical single-variable receipt disappeared":
                 "The genuine historical stdout receipt disappeared");
         for(const auto& [draft_key,expected]:other_drafts)
             same_draft(state::get_draft(saved,draft_key,""),expected);
@@ -1039,7 +1226,8 @@ void run_plan(const Fixture& fixture,const Plan& plan,std::size_t ordinal) {
             !view.text(4).starts_with("✓ Correcto"),"Old stdout was promoted to the new private objective");
     blocked(view,plan,bookmark);
 
-    phase=fixture.id+"/"+plan.activity+(fixture.joint_local_int?
+    phase=fixture.id+"/"+plan.activity+(fixture.guarded_arithmetic?
+        " rejecting arithmetic before its guard through the actual worker":fixture.joint_local_int?
         " rejecting the joint counterexample through the actual worker":
         " rejecting fixed stdout through the actual worker");
     const auto fixed_request=request_for(view.environment,fixture.after,current,plan.fixed_source,first.standard_input);
@@ -1121,6 +1309,14 @@ void run_plan(const Fixture& fixture,const Plan& plan,std::size_t ordinal) {
                 !windows::compiler_puzzle_completed(earned,fixture.after,altered_alternative),
             "An actual opt-in receipt was reused under another mode or a changed accepted-output alternative");
     }
+    if(fixture.guarded_arithmetic) {
+        auto ordinary=current;
+        for(auto& probe:ordinary.local_int_check->probes)probe.forbid_arithmetic=false;
+        auto changed=current;changed.local_int_check->probes.back().replacement=-3;
+        check(!windows::compiler_puzzle_completed(earned,fixture.after,ordinary)&&
+                !windows::compiler_puzzle_completed(earned,fixture.after,changed),
+            "The actual arithmetic receipt was reused under another policy or scenario");
+    }
     view.reopen();saved=view.saved();preserved(saved);
     same_draft(state::get_draft(saved,key,current.initial_code,current.standard_input.value_or("")),earned_draft);
     check(windows::compiler_puzzle_completed(saved,fixture.after,current)&&
@@ -1150,14 +1346,15 @@ void run_plan(const Fixture& fixture,const Plan& plan,std::size_t ordinal) {
             view.text(10)==current.initial_code&&view.text(4).empty(),
         "Reopening after Reset resurrected old credit or changed the reset source");
     blocked(view,plan,bookmark);
-    if(fixture.joint_local_int)check(view.executions==3,
+    if(local_extension)check(view.executions==3,
         "Each joint-variable owner requires exactly three actual button runs");
     std::cout<<"PASS real LessonView "<<fixture.id<<'/'<<plan.activity<<": "<<view.executions
         <<" actual button runs; "
-        <<(fixture.joint_local_int?"historical single-variable receipt and ":"historical fixed stdout and ")
-        <<(fixture.joint_local_int?"same-page reference authorized by that receipt, later-page bookmark; ":
+        <<(local_extension?"historical single-variable receipt and ":"historical fixed stdout and ")
+        <<(local_extension?"reference authorized by that receipt, later-page bookmark; ":
             (final_page?"same-page final reference / Finish gate; ":"later-page bookmark and reference proof; "))
-        <<(fixture.joint_local_int?"joint extension blocks inherited credit; ":"root adoption blocked; ")
+        <<(fixture.guarded_arithmetic?"arithmetic extension blocks inherited credit; ":
+            fixture.joint_local_int?"joint extension blocks inherited credit; ":"root adoption blocked; ")
         <<"private rejection retained; one first case opens reference; "
         <<(optional?"optional-before-first blocked/reset and optional-after-first retained; ":"")
         <<"separate receipts, draft/stdin/selection, actual reopen and scoped Reset.\n";
@@ -1165,6 +1362,10 @@ void run_plan(const Fixture& fixture,const Plan& plan,std::size_t ordinal) {
         <<": original single-variable receipt retained; combined counterexample rejected; "
         <<"authentic solution earns one public case, separate current seal survives disk reopen, "
         <<"same-page reference and scoped Reset preserved; 3 real buttons plus 1 direct capture.\n";
+    if(fixture.guarded_arithmetic)std::cout<<"PASS guarded arithmetic LessonView "<<fixture.id<<'/'<<plan.activity
+        <<": old three-probe receipt remains valid only for the old objective; inverted condition rejected; "
+        <<"one actual first-case click with the authentic repair opens its reference; new policy/scenario seal, "
+        <<"draft/input/selection and other receipts survive reopen and scoped Reset; three real button runs.\n";
 }
 } // namespace
 
@@ -1172,8 +1373,9 @@ int main(int argc,char** argv) {
     std::cout<<std::unitbuf;std::cerr<<std::unitbuf;
     started=GetTickCount64();
     const bool input_decisions=argc>1&&std::string_view(argv[1])=="--input-decisions";
+    const bool guarded_arithmetic=argc==3&&std::string_view(argv[1])=="--guarded-arithmetic";
     if(input_decisions?(argc!=3&&argc!=4):(argc!=2&&argc!=3)) {
-        std::cerr<<"Usage: local_dependency_view_tests <manifest.json> [lesson-id] | --joint-local-int <manifest.json> | --input-decisions <manifest.json> [lesson-id]\n";return 2;
+        std::cerr<<"Usage: local_dependency_view_tests <manifest.json> [lesson-id] | --joint-local-int <manifest.json> | --guarded-arithmetic <manifest.json> | --input-decisions <manifest.json> [lesson-id]\n";return 2;
     }
     const auto apartment=OleInitialize(nullptr);
     if(FAILED(apartment))return 2;
@@ -1183,11 +1385,11 @@ int main(int argc,char** argv) {
     try {
         check(rich!=nullptr,"Cannot load actual RichEdit controls");reader_theme::prepare_fonts();
         const bool joint=argc==3&&std::string_view(argv[1])=="--joint-local-int";
-        const auto manifest=std::filesystem::path(argv[joint||input_decisions?2:1]);
+        const auto manifest=std::filesystem::path(argv[joint||input_decisions||guarded_arithmetic?2:1]);
         const auto manifest_bytes=state::read_bytes(manifest);
-        const auto fixtures=load_manifest(manifest,joint,input_decisions);
+        const auto fixtures=load_manifest(manifest,joint,input_decisions,guarded_arithmetic);
         const auto filter=input_decisions?(argc==4?std::string_view(argv[3]):std::string_view{}):
-            argc==3&&!joint?std::string_view(argv[2]):std::string_view{};
+            argc==3&&!joint&&!guarded_arithmetic?std::string_view(argv[2]):std::string_view{};
         std::size_t completed=0,ordinal=0;
         for(const auto& fixture:fixtures) {
             if(!filter.empty()&&fixture.id!=filter)continue;
@@ -1196,10 +1398,11 @@ int main(int argc,char** argv) {
             for(const auto& plan:fixture.plans){
                 ++ordinal;
                 if(input_decisions)verify_input_decision_counterexamples(fixture,plan,ordinal);
+                if(guarded_arithmetic)verify_guarded_arithmetic_sources(fixture,plan,ordinal);
                 run_plan(fixture,plan,ordinal);++completed;
             }
         }
-        check(completed>0&&(filter.empty()?completed==(input_decisions?8u:joint?2u:16u):true),
+        check(completed>0&&(filter.empty()?completed==(guarded_arithmetic?1u:input_decisions?8u:joint?2u:16u):true),
             "The requested UI group is missing or incomplete");
         for(const auto& fixture:fixtures)
             check(state::sha256(state::read_bytes(fixture.before_path))==fixture.before_sha256&&

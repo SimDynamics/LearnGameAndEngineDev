@@ -1235,6 +1235,186 @@ void joint_limits_preserve_all_eight_original_single_probes() {
         "A joint scenario exceeded its eight-local bound");
 }
 
+CppLocalIntProbe forbidden_probe(std::int32_t replacement=0) {
+    CppLocalIntProbe probe{"capacidad",replacement,{"0\nCapacidad invalida"}};
+    probe.forbid_arithmetic=true;
+    return probe;
+}
+
+std::string forbidden_program(std::string_view statements) {
+    return "#include <iostream>\nint main(){int total=28;int capacidad=6;"+
+        std::string(statements)+"return 0;}";
+}
+
+void forbidden_arithmetic_requires_an_explicit_compatible_probe() {
+    using lgaed::curriculum::cpp_local_int_check_valid;
+    const auto source=forbidden_program("std::cout<<total/capacidad;");
+    const CppLocalIntProbe legacy{"capacidad",0,{"0"}};
+    auto explicit_false=legacy;explicit_false.forbid_arithmetic=false;
+    const auto old_variant=cpp_local_int_override(source,legacy);
+    require(!legacy.forbid_arithmetic&&old_variant&&
+            old_variant==cpp_local_int_override(source,explicit_false)&&
+            old_variant->find("lgaed_forbidden_")==std::string::npos&&
+            old_variant->find("int capacidad=6;\n    capacidad = 0;\n")!=std::string::npos,
+        "The default flag changed a historical aggregate or emitted source");
+    const auto valid=forbidden_probe();
+    require(cpp_local_int_check_valid({{valid,forbidden_probe(-2)}})&&
+            cpp_local_int_override(source,valid).has_value(),
+        "An explicit independent integer omission observation was rejected");
+    for(int kind=0;kind<5;++kind) {
+        auto invalid=valid;
+        if(kind==0)invalid.after_update=true;
+        if(kind==1)invalid.expected_increase=1;
+        if(kind==2)invalid.value_type=CppLocalValueType::character;
+        if(kind==3)invalid.value_type=CppLocalValueType::boolean;
+        if(kind==4)invalid.additional_replacements.push_back({"total",30});
+        require(!cpp_local_int_check_valid({{invalid}})&&
+                !cpp_local_int_override(source,invalid),
+            "An omission observation combined incompatible local-probe modes");
+    }
+    require(!cpp_local_int_override("int main(){int capacidad;capacidad=6;return 0;}",valid),
+        "An omission observation accepted an originally uninitialized target");
+}
+
+void forbidden_arithmetic_keeps_native_guards_and_covers_every_operator() {
+    using namespace lgaed::curriculum::cpp_forbidden_arithmetic_detail;
+    const char* conditions[]{
+        "(capacidad > 0) && (total % capacidad == 0)",
+        "(capacidad > 0) and (total % capacidad == 0)",
+        "(capacidad > 0) ? (total % capacidad == 0) : false",
+        "!((capacidad <= 0) || (total % capacidad != 0))",
+        "not ((capacidad <= 0) or (total % capacidad != 0))",
+        "(static_cast<int>(capacidad) > 0) && (static_cast<int>(total % capacidad) == 0)",
+        "bool(capacidad > 0) && (int(total) % int(capacidad) == 0)",
+        "(total % capacidad == 0) && (capacidad > 0)",
+        "(capacidad > 0) & (total % capacidad == 0)",
+        "(((total) % (capacidad)) == 0) && (capacidad > 0)"
+    };
+    for(const auto* condition:conditions)for(const auto replacement:{0,-2}) {
+        const auto source=forbidden_program(std::string("const bool valido=")+condition+
+            ";std::cout<<valido<<'\\n';if(capacidad>0)std::cout<<total/capacidad;"
+            "else std::cout<<\"Capacidad invalida\"<<std::endl;");
+        const auto original=source;
+        const auto variant=cpp_local_int_override(source,forbidden_probe(replacement));
+        require(variant&&source==original&&
+                variant->find("::std::_Exit(91);")!=std::string::npos&&
+                variant->find("-> decltype(lhs / rhs)")!=std::string::npos&&
+                variant->find("-> decltype(lhs % rhs)")!=std::string::npos,
+            "An equivalent guard or a reachable invalid arithmetic site was not instrumentable");
+        const auto code=lgaed::curriculum::cpp_expression_repair_detail::tokens(*variant);
+        require(code.has_value(),"The instrumented variant did not tokenize");
+        std::size_t division=0,remainder=0,division_names=0,remainder_names=0;
+        for(const auto& token:*code) {
+            division+=token.value=="op:/";remainder+=token.value=="op:%";
+            division_names+=token.value=="id:"+std::string(divide_name);
+            remainder_names+=token.value=="id:"+std::string(remainder_name);
+        }
+        require(division==1&&remainder==1&&division_names==2&&remainder_names==2,
+            "An admitted arithmetic site escaped its observer or was evaluated twice");
+        // Only the two unevaluated helper signatures retain primitive / or %.
+        // Logical and conditional syntax belongs to the candidate unchanged.
+        for(const auto guard:{"&&"," and "," ? ","||"," or "," & "})
+            if(std::string_view(condition).find(guard)!=std::string_view::npos)
+                require(variant->find(guard)!=std::string::npos,
+                    "The observer replaced native logical or conditional semantics");
+    }
+    const auto early=cpp_local_int_override(forbidden_program(
+        "const int grupos=total/capacidad;const int resto=total%capacidad;"
+        "const bool valido=(capacidad>0)&&(resto==0);std::cout<<valido;"
+        "if(capacidad>0)std::cout<<grupos;"),forbidden_probe());
+    require(early&&early->find(std::string(divide_name)+"((total),(capacidad))")!=std::string::npos&&
+            early->find(std::string(remainder_name)+"((total),(capacidad))")!=std::string::npos,
+        "Arithmetic calculated before its guard was hidden from observation");
+    const auto nested=cpp_local_int_override(forbidden_program(
+        "std::cout<<(total/(capacidad+1))%(capacidad/2);"),forbidden_probe());
+    require(nested&&nested->find("total/(capacidad+1)")==std::string::npos&&
+            nested->find("capacidad/2")==std::string::npos,
+        "A nested arithmetic operand escaped the complete expression rewrite");
+    const auto casted=cpp_local_int_override(forbidden_program(
+        "std::cout<<static_cast<long long>(total/capacidad)%int(capacidad/2);"),forbidden_probe());
+    require(casted&&casted->find("static_cast<long long>(lgaed_forbidden_division_")!=std::string::npos&&
+            casted->find("int(lgaed_forbidden_division_")!=std::string::npos,
+        "Primitive casts hid an inner operator or lost native conversions");
+}
+
+void forbidden_arithmetic_accepts_elementary_initializers_scopes_and_limits() {
+    const char* initializers[]{"int capacidad=6;","int capacidad(6);",
+        "int capacidad{6};","int capacidad={6};","signed int capacidad=6;",
+        "int signed capacidad{6};","signed capacidad(6);"};
+    for(const auto* initializer:initializers) {
+        const auto source=std::string("#include <iostream>\nusing std::cout;using std::endl;"
+            "int main(){int total=28;")+initializer+
+            "bool valido=false;if(capacidad>0){valido=(total%capacidad==0);}"
+            "cout<<valido<<endl;return 0;}";
+        require(cpp_local_int_override(source,forbidden_probe()).has_value(),
+            "An elementary initializer, if guard or standard manipulator was rejected");
+    }
+    require(cpp_local_int_override(forbidden_program(
+        "if(capacidad>0)int propio=1;else int distinto=2;"
+        "bool valido;if(capacidad>0)valido=(total%capacidad==0);else valido=false;"
+        "std::cout<<valido;"),forbidden_probe()).has_value(),
+        "Unbraced branch scopes threw or lost definite initialization");
+    require(!cpp_local_int_override(forbidden_program(
+        "if(capacidad>0)int propio=1;else int distinto=2;std::cout<<propio;"),forbidden_probe())&&
+            !cpp_local_int_override(forbidden_program(
+        "{int total=total;std::cout<<total;}"),forbidden_probe())&&
+            !cpp_local_int_override(forbidden_program(
+        "bool valido;if(capacidad>0)valido=true;std::cout<<valido;"),forbidden_probe()),
+        "A branch-local name or uninitialized read escaped the bounded grammar");
+    const auto limits=cpp_local_int_override(
+        "#include <iostream>\nint main(){int capacidad=-1;"
+        "int minimo=-2147483647-1;std::cout<<minimo/capacidad<<minimo%capacidad;}",
+        forbidden_probe(-1));
+    require(limits&&limits->find("((minimo),(capacidad))")!=std::string::npos,
+        "The signed integer overflow boundary was not protected before arithmetic");
+    const auto inert=cpp_local_int_override(forbidden_program(
+        "// / and % in this comment are inert\n"
+        "std::cout<<R\"raw(/ % division)raw\"<<\"/ %\"<<'%';"),forbidden_probe());
+    require(inert&&inert->find("::std::_Exit")==std::string::npos,
+        "Inert comment/string operators fabricated an arithmetic observation");
+}
+
+void forbidden_arithmetic_fails_closed_on_unobserved_cpp() {
+    const char* unsupported[]{
+        "int helper(int);int x=helper(total)/capacidad;",
+        "int x=f(total)/capacidad;",
+        "int x=(f)(total)/capacidad;",
+        "int x=total/capacidad;std::cout<<unknown();",
+        "int x=total[0]/capacidad;",
+        "int x=total.member/capacidad;",
+        "auto f=[](){return 1;};std::cout<<f();",
+        "total/=capacidad;",
+        "total%=capacidad;",
+        "int x=total++/capacidad;",
+        "int x=static_cast<custom>(total)/capacidad;",
+        "int x=static_cast<int&>(total)/capacidad;",
+        "int x=static_cast<int*>(total)/capacidad;",
+        "int x=static_cast<decltype(total)>(total)/capacidad;",
+        "int x=int(total,capacidad)/capacidad;",
+        "std::cout<<\"literal\"_suffix;",
+        "std::cout<<R\"raw(literal)raw\"_suffix;",
+        "std::cout<<1_suffix;",
+        "std::cout<<'x'_suffix;",
+        "for(int i=0;i<1;i=i+1)std::cout<<total/capacidad;",
+        "int lgaed_forbidden_division_2f8ad109=0;",
+        "int lgaed_forbidden_remainder_2f8ad109=0;"
+    };
+    for(const auto* statements:unsupported)
+        require(!cpp_local_int_override(forbidden_program(statements),forbidden_probe()),
+            "A partly recognized call, operator, literal or statement became executable");
+    const char* prefixes[]{
+        "#include \"private.hpp\"\n",
+        "#include \"private.hpp\" // <iostream>\n",
+        "#include <private.hpp>\n",
+        "#define HIDDEN (1/0)\n",
+        "int helper(){return 1/0;}\n",
+        "int global=1/0;\n"
+    };
+    for(const auto* prefix:prefixes)
+        require(!cpp_local_int_override(std::string(prefix)+forbidden_program(""),forbidden_probe()),
+            "An opaque include, macro or translation-unit initializer escaped instrumentation");
+}
+
 } // namespace
 
 int main() {
@@ -1271,12 +1451,18 @@ int main() {
         joint_contracts_reject_duplicate_names_and_incompatible_modes();
         joint_scenario_identity_includes_every_value_but_not_primary_order();
         joint_limits_preserve_all_eight_original_single_probes();
+        forbidden_arithmetic_requires_an_explicit_compatible_probe();
+        forbidden_arithmetic_keeps_native_guards_and_covers_every_operator();
+        forbidden_arithmetic_accepts_elementary_initializers_scopes_and_limits();
+        forbidden_arithmetic_fails_closed_on_unobserved_cpp();
         std::cout << "PASS local int probes: equivalent initialization, independent "
                      "variables, copy state, safe token positions.\n"
                      "PASS typed local probes: char/bool initialization, independent "
                      "values, strict types and preserved int contracts.\n"
                      "PASS joint local probes: simultaneous values, strict complete "
-                     "scenarios, independent bounds and preserved scalar probes.\n";
+                     "scenarios, independent bounds and preserved scalar probes.\n"
+                     "PASS arithmetic omission probes: native guards, all primitive "
+                     "division/remainder sites, strict bounded grammar and preserved legacy variants.\n";
         return 0;
     } catch (const std::exception& error) {
         std::cerr << "FAIL local int probes: " << error.what() << '\n';

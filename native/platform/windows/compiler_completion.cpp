@@ -1382,12 +1382,16 @@ std::string local_int_completion_seal(std::string_view key,
         std::string_view program,const curriculum::CppLocalIntCheck& spec) {
     const bool joint=std::ranges::any_of(spec.probes,
         [](const auto& probe){return !probe.additional_replacements.empty();});
-    const auto domain=joint?"compiler-local-int-joint-complete-v1/":
-        "compiler-local-int-complete-v1/";
+    const bool forbidden=std::ranges::any_of(spec.probes,
+        [](const auto& probe){return probe.forbid_arithmetic;});
+    const auto domain=forbidden?"compiler-local-int-forbid-arithmetic-complete-v1/":
+        joint?"compiler-local-int-joint-complete-v1/":"compiler-local-int-complete-v1/";
     auto frame=std::string(domain)+
         token(key)+token(program);
-    if(joint)frame+=token(std::to_string(spec.probes.size()));
+    if(joint||forbidden)frame+=token(std::to_string(spec.probes.size()));
     for(const auto& item:spec.probes) {
+        if(forbidden)frame+=token("forbid-arithmetic-v1")+
+            token(item.forbid_arithmetic?"true":"false");
         // The int receipt is already published; only new types extend it.
         if(item.value_type!=curriculum::CppLocalValueType::integer)
             frame+=token("value-type-v1")+token(
@@ -1397,7 +1401,7 @@ std::string local_int_completion_seal(std::string_view key,
         if(item.expected_increase)
             frame+=token("exact-increase-v1")+
                 token(std::to_string(*item.expected_increase));
-        if(joint) {
+        if(joint||forbidden) {
             frame+=token("additional-replacements-v1")+
                 token(std::to_string(item.additional_replacements.size()));
             for(const auto& replacement:item.additional_replacements)

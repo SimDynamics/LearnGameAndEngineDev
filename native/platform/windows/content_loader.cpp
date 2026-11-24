@@ -5039,8 +5039,11 @@ void read_compiler_local_int_checks(const JsonObject& root,Lesson& lesson) {
                 (void)original.member(raw_probe,"expectedIncrease");
             if(probe.HasKey(L"valueType"))
                 (void)original.member(raw_probe,"valueType");
+            if(probe.HasKey(L"forbidArithmetic"))
+                (void)original.member(raw_probe,"forbidArithmetic");
             allowed_keys(probe,{"variable","replacement","outputs","afterUpdate",
-                               "expectedIncrease","valueType","additionalReplacements"});
+                               "expectedIncrease","valueType","additionalReplacements",
+                               "forbidArithmetic"});
             CppLocalIntProbe next;
             next.variable=text(probe,"variable");
             const auto value_type=probe.HasKey(L"valueType")?text(probe,"valueType"):"int";
@@ -5072,6 +5075,16 @@ void read_compiler_local_int_checks(const JsonObject& root,Lesson& lesson) {
             require(next.value_type==CppLocalValueType::integer||
                     (!probe.HasKey(L"afterUpdate")&&!probe.HasKey(L"expectedIncrease")),
                 "Local char/bool probes only vary the initialized value.");
+            if(probe.HasKey(L"forbidArithmetic")) {
+                const auto flag=probe.GetNamedValue(L"forbidArithmetic");
+                require(flag.ValueType()==JsonValueType::Boolean&&flag.GetBoolean(),
+                    "forbidArithmetic must be the explicit true option.");
+                require(next.value_type==CppLocalValueType::integer&&
+                        !probe.HasKey(L"afterUpdate")&&!probe.HasKey(L"expectedIncrease")&&
+                        !probe.HasKey(L"additionalReplacements"),
+                    "Forbidden arithmetic probes only replace one initialized int value.");
+                next.forbid_arithmetic=true;
+            }
             next.expected_stdout=strings(array(probe,"outputs"),true);
             if(probe.HasKey(L"afterUpdate")) {
                 const auto flag=probe.GetNamedValue(L"afterUpdate");

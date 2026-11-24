@@ -4363,6 +4363,82 @@ incorporan esta capacidad conservan su representación y sus recibos; un
 recibo anterior no acredita automáticamente el nuevo plan ampliado. El
 borrador visible y la salida pública no se reescriben por estas variaciones.
 
+### Omisión de división y resto en un escenario privado
+
+Una sonda simple de `compilerLocalIntChecks` puede añadir
+`"forbidArithmetic": true`. Declara una obligación concreta: en **ese
+escenario no debe evaluarse ningún operador `/` ni `%` del programa**. No
+significa solamente que el divisor sea distinto de cero. Por ejemplo, una
+capacidad negativa puede hacer que el resto esté definido en C++, pero el
+objetivo puede exigir que el programa omita el cálculo hasta validar los datos.
+Esta modalidad es explícita y general; el motor no la deduce del identificador
+de una lección ni del nombre de una variable.
+
+```json
+{
+  "variable": "capacidad",
+  "replacement": 0,
+  "outputs": ["0\nCapacidad invalida", "0\nCapacidad invalida\n"],
+  "forbidArithmetic": true
+}
+```
+
+El campo sólo admite el booleano JSON `true`; se omite para conservar la
+sonda anterior. Se aplica a un `int` local inicializado y no se combina en
+la misma sonda con `afterUpdate`, `expectedIncrease`, `additionalReplacements`
+ni tipos `char` o `bool`. Cuenta dentro del límite existente de ocho sondas
+simples. Repetir la misma variable y sustitución con otra bandera no crea
+una observación independiente.
+
+La comprobación compila una copia privada del fuente: conserva la sustitución
+local y transforma cada nodo de división/resto en un observador. El observador
+mantiene el tipo de resultado mediante `decltype` sin evaluar la operación,
+y termina con el código privado `91` si se llega a ese nodo. Por ello el
+contrafactual no ejecuta una división o un resto con divisor cero. También
+rechaza el cálculo anticipado con un divisor negativo. Los operadores
+`&&`, `||`, sus palabras alternativas y `?:` conservan su evaluación nativa;
+una solución puede proteger el cálculo con una condición equivalente o con
+`if`, sin copiar una expresión literal de referencia.
+
+Esta instrumentación admite programas elementales completos con un solo
+`main`, declaraciones escalares, inicializaciones `=`, `()` o `{}`, asignaciones,
+`if`/`else`, expresiones escalares, `static_cast` a tipos primitivos y conversiones
+funcionales primitivas de un argumento, además de la salida estándar. Antes de ejecutar exige
+reconocer **todos** los operadores `/` y `%`. Las llamadas opacas, funciones
+auxiliares, indexación, macros locales, cabeceras propias y asignaciones
+`/=` o `%=` quedan fuera de este perfil: si el fuente no puede instrumentarse
+completo, no se ejecuta el contrafactual ni se inventa evidencia de omisión.
+El borrador del estudiante, la entrada y los archivos de su ejecución pública
+se conservan. La salida pública no presenta los valores ni las respuestas de
+estas observaciones privadas.
+
+Para extender un propietario publicado sin modalidad conjunta se conserva
+todo el prefijo de sondas y se añade un sufijo formado **sólo** por observaciones
+con `forbidArithmetic: true`. No autoriza cambiar una observación anterior ni
+anexar una sonda ordinaria aprovechando la bandera de otra. Los planes sin
+esta modalidad mantienen sus fuentes instrumentadas y huellas anteriores;
+el nuevo dominio vincula el plan entero, cada bandera y el hash de cada
+variante. El recibo previo permanece válido para su objetivo anterior y no
+acredita la obligación ampliada. El objetivo actual sigue necesitando una
+sola comprobación pública correcta.
+
+`scripts/curriculum/short_circuit_fixture_source.py` exporta U3L6 desde la
+publicación autenticada `08a11877a2d2c0bf96a846660e3baea69e53f758`, conservando
+sus dos editores y las tres sondas publicadas del editor de reparación. Añade
+capacidad `0` y `-2` con esta modalidad y genera diez fuentes independientes:
+inicial, referencia, inversión de `&&`, `&` ansioso, cálculo anticipado,
+`if`, ternario, negación de `||`, `and` y conversiones primitivas equivalentes.
+Es una fixture técnica; la incorporación
+de la declaración a los contenidos activos pertenece a Work.
+
+Las pruebas `native.guarded_arithmetic_core`, `native.guarded_arithmetic_authoring`
+y `native.guarded_arithmetic_state` cubren instrumentación, autoría, ambos
+cargadores y recibos. El test de estado identifica expresamente sus capturas
+simuladas. `native.guarded_arithmetic_view` compila y ejecuta realmente las
+diez fuentes con MSVC, exige final `91` para los dos escenarios de cada
+contraejemplo y recorre los controles Win32: crédito anterior, rechazo nuevo,
+referencia, primera comprobación suficiente, reapertura y Reset acotado.
+
 ### Tipos explícitos para caracteres y valores lógicos
 
 Cada sonda puede declarar `valueType`. Si se omite, mantiene exactamente

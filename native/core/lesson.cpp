@@ -435,16 +435,23 @@ std::string reference_objective_frame(const Lesson& lesson, const Block& activit
             ? "windows-msvc-assertion-abort-v2"
             : *activity.output_check->assertion_check==AssertionMode::disabled
                 ? "windows-msvc-assertion-suppressed-v2" : "windows-msvc-assertion-repair-v2");
-    if(activity.local_int_check&&std::ranges::any_of(
-            activity.local_int_check->probes,[](const auto& probe) {
-                return !probe.additional_replacements.empty();
-            })) {
+    const bool forbidden_arithmetic=activity.local_int_check&&std::ranges::any_of(
+        activity.local_int_check->probes,[](const auto& probe) {
+            return probe.forbid_arithmetic;
+        });
+    const bool joint_local_int=activity.local_int_check&&std::ranges::any_of(
+        activity.local_int_check->probes,[](const auto& probe) {
+            return !probe.additional_replacements.empty();
+        });
+    if(joint_local_int||forbidden_arithmetic) {
         // Existing scalar plans keep their exact objective and receipt keys.
-        // A joint plan owns its complete contract, including later appended
-        // scalar probes, in a separate epoch without moving the saved draft.
-        token("local-int-joint-probes-v1");
+        // Joint and guarded plans each own their complete contract, including
+        // ordinary probes, in a separate epoch without moving the saved draft.
+        token(forbidden_arithmetic?"local-int-forbid-arithmetic-probes-v1":
+            "local-int-joint-probes-v1");
         token(std::to_string(activity.local_int_check->probes.size()));
         for(const auto& probe:activity.local_int_check->probes) {
+            if(forbidden_arithmetic)token(probe.forbid_arithmetic?"forbid-arithmetic":"ordinary-arithmetic");
             token(probe.variable);token(std::to_string(probe.replacement));
             token(probe.value_type==CppLocalValueType::integer?"int":
                 probe.value_type==CppLocalValueType::character?"char":"bool");

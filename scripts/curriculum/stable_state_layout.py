@@ -6991,13 +6991,16 @@ def _validate_compiler_input_checks(document: dict) -> None:
 
 
 def _preserves_compiler_local_int_checks(previous: dict, current: dict) -> bool:
-    """Keep every published owner and probe; only extend a joint-check epoch.
+    """Keep every published owner and probe; extend only explicit new witnesses.
 
     Legacy scalar-only receipts retain their exact objective representation.
-    The first extension of an existing scalar-only owner must therefore add a
-    joint probe, whose independent objective binds the complete appended plan.
+    An ordinary extension of an existing scalar-only owner must therefore add
+    a joint probe, whose independent objective binds the complete appended plan.
     Once present, that epoch may acquire any valid suffix without rewriting
     the exact authored prefix, including its additional-replacement order.
+    A scalar-only owner may also append arithmetic-forbidden observations;
+    this explicit witness binds its own new objective without authorizing an
+    unrelated ordinary suffix or changing an already published observation.
     """
     old = previous.get("compilerLocalIntChecks")
     if not old:
@@ -7014,10 +7017,13 @@ def _preserves_compiler_local_int_checks(previous: dict, current: dict) -> bool:
                 {key: value for key, value in before.items() if key != "probes"} !=
                 {key: value for key, value in after.items() if key != "probes"}):
             return False
-        if len(probes) > len(prior) and not any(
-                type(probe) is dict and bool(probe.get("additionalReplacements"))
-                for probe in probes):
-            return False
+        if len(probes) > len(prior):
+            joint_epoch = any(type(probe) is dict and bool(probe.get("additionalReplacements"))
+                              for probe in probes)
+            guarded_suffix = all(type(probe) is dict and probe.get("forbidArithmetic") is True
+                                 for probe in probes[len(prior):])
+            if not joint_epoch and not guarded_suffix:
+                return False
     return True
 
 
@@ -7096,13 +7102,19 @@ def _validate_compiler_local_int_checks(document: dict) -> None:
             require(type(probe) is dict and
                     {"variable", "replacement", "outputs"} <= set(probe) <=
                     {"variable", "replacement", "outputs", "afterUpdate", "expectedIncrease",
-                     "valueType", "additionalReplacements"},
+                     "valueType", "additionalReplacements", "forbidArithmetic"},
                     "Local-int variation requires variable, replacement and outputs")
             variable, replacement, outputs = (
                 variable_name(probe["variable"]), probe["replacement"], probe["outputs"])
             value_type = probe.get("valueType", "int")
             require(type(value_type) is str and value_type in {"int", "char", "bool"},
                     "Local valueType must be int, char or bool")
+            if "forbidArithmetic" in probe:
+                require(probe["forbidArithmetic"] is True,
+                        "Local-int forbidArithmetic is either absent or boolean true")
+                require(value_type == "int" and not (
+                        {"afterUpdate", "expectedIncrease", "additionalReplacements"} & set(probe)),
+                        "Arithmetic-forbidden probes only replace one initialized int")
             require(variable not in variable_types or variable_types[variable] == value_type,
                     "A local variable cannot have conflicting authored types")
             variable_types[variable] = value_type

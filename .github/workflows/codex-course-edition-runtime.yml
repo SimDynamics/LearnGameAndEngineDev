@@ -46,6 +46,11 @@ on:
       - scripts/curriculum/test_local_dependency_view_authoring.py
       - scripts/curriculum/joint_local_int_fixture_source.py
       - scripts/curriculum/test_joint_local_int_fixture_source.py
+      - scripts/curriculum/short_circuit_fixture_source.py
+      - scripts/curriculum/test_local_arithmetic_authoring.py
+      - native/core/cpp_forbidden_arithmetic_probe.hpp
+      - native/core/cpp_local_int_probe_tests.cpp
+      - native/platform/windows/guarded_arithmetic_state_tests.cpp
       - cmake/CurricularWindows.cmake
       - cmake/native_build_config.hpp.in
       - native/platform/windows/course_edition_tests.cpp
@@ -88,6 +93,7 @@ on:
       - native/platform/windows/local_string_state_tests.cpp
       - native/core/cpp_local_string_probe.hpp
       - native/core/lesson.hpp
+      - native/core/lesson.cpp
       - native/platform/windows/cpp_runner.hpp
       - scripts/curriculum/test_local_string_probe_authoring.py
       - native/platform/windows/u6l19_case_split_state_tests.cpp
@@ -245,9 +251,55 @@ jobs:
             ${{ runner.temp }}/lgaed-input-decisions-qa/CMakeFiles/CMakeConfigureLog.yaml
             ${{ runner.temp }}/lgaed-input-decisions-qa/test-fixtures/input-decisions/**
             ${{ runner.temp }}/lgaed-input-decisions-qa/test-fixtures/u2l9-input/**
+  run-guarded-arithmetic:
+    name: Verify safe short-circuit observations and preserved Win32 receipts
+    if: ${{ github.event_name == 'push' && startsWith(github.event.head_commit.message, 'qa-guarded-arithmetic:') }}
+    runs-on: windows-2025-vs2026
+    timeout-minutes: 25
+    steps:
+      - name: Read exact Codex revision and authenticated U3L6 publication
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+          persist-credentials: false
+      - name: Select Python for unchanged and extended authoring contracts
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - name: Activate hosted MSVC without modifying the product pin
+        uses: ilammy/msvc-dev-cmd@v1
+      - name: Build core, receipt and actual lesson worker checks
+        shell: pwsh
+        run: |
+          $ErrorActionPreference = 'Stop'
+          Write-Host 'Focused hosted Windows QA; the product toolchain pin is retained.'
+          Get-Command cl, cmake, ninja | Select-Object Name, Source | Format-Table | Out-Host
+          $qaArithmeticBuild = Join-Path $env:RUNNER_TEMP 'lgaed-guarded-arithmetic-qa'
+          cmake -S cmake/HostedCourseEditionQA -B $qaArithmeticBuild -G Ninja -DCMAKE_BUILD_TYPE=Debug
+          if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
+          cmake --build $qaArithmeticBuild --target lgaed_guarded_arithmetic_core_tests lgaed_guarded_arithmetic_state_tests lgaed_local_dependency_view_tests --parallel 3
+          if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
+      - name: Verify safe omission, equivalent solutions, historical credit and first-case UI
+        shell: pwsh
+        run: |
+          $qaArithmeticBuild = Join-Path $env:RUNNER_TEMP 'lgaed-guarded-arithmetic-qa'
+          ctest --test-dir $qaArithmeticBuild -R '^native[.](guarded_arithmetic_(core|authoring|state|view)|joint_local_int_authoring)$' --verbose --output-on-failure --no-tests=error --output-junit (Join-Path $qaArithmeticBuild 'guarded-arithmetic.xml')
+          if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
+      - name: Preserve focused arithmetic and state evidence
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: hosted-win32-guarded-arithmetic-${{ github.sha }}
+          retention-days: 7
+          if-no-files-found: warn
+          path: |
+            ${{ runner.temp }}/lgaed-guarded-arithmetic-qa/guarded-arithmetic.xml
+            ${{ runner.temp }}/lgaed-guarded-arithmetic-qa/Testing/Temporary/*.log
+            ${{ runner.temp }}/lgaed-guarded-arithmetic-qa/CMakeFiles/CMakeConfigureLog.yaml
+            ${{ runner.temp }}/lgaed-guarded-arithmetic-qa/test-fixtures/guarded-arithmetic/**
   run-format-fixture-history:
     name: Build authenticated format fixtures and verify original MSVC diagnostics
-    if: ${{ github.event_name != 'push' || (!startsWith(github.event.head_commit.message, 'qa-input-decisions:') && !startsWith(github.event.head_commit.message, 'qa-puzzle-wheel:')) }}
+    if: ${{ github.event_name != 'push' || (!startsWith(github.event.head_commit.message, 'qa-input-decisions:') && !startsWith(github.event.head_commit.message, 'qa-puzzle-wheel:') && !startsWith(github.event.head_commit.message, 'qa-guarded-arithmetic:')) }}
     runs-on: windows-2025-vs2026
     timeout-minutes: 25
     steps:
@@ -293,7 +345,7 @@ jobs:
             ${{ runner.temp }}/lgaed-format-fixture-history/test-fixtures/format-history/**
   run-real-course-edition:
     name: Run Win32 edition, simulation and first required C++ case
-    if: ${{ github.event_name != 'push' || (!startsWith(github.event.head_commit.message, 'qa-input-decisions:') && !startsWith(github.event.head_commit.message, 'qa-puzzle-wheel:')) }}
+    if: ${{ github.event_name != 'push' || (!startsWith(github.event.head_commit.message, 'qa-input-decisions:') && !startsWith(github.event.head_commit.message, 'qa-puzzle-wheel:') && !startsWith(github.event.head_commit.message, 'qa-guarded-arithmetic:')) }}
     runs-on: windows-2025-vs2026
     timeout-minutes: 45
     steps:
@@ -411,7 +463,7 @@ jobs:
         shell: pwsh
         run: |
           $build = Join-Path $env:RUNNER_TEMP 'lgaed-course-edition-qa'
-          cmake --build $build --target lgaed_general_choice_editorial_tests lgaed_lesson_editor_mount_tests lgaed_course_edition_tests lgaed_simulation_tests lgaed_simulation_view_tests lgaed_simulation_lesson_tests lgaed_compiler_first_case_view_tests lgaed_technical_context_view_tests lgaed_reading_gate_policy_tests lgaed_local_int_state_tests lgaed_local_string_state_tests lgaed_input_dependency_state_tests lgaed_input_probe_tests lgaed_local_role_state_tests lgaed_local_role_probe_tests lgaed_local_dependency_receipt_tests lgaed_local_dependency_view_tests lgaed_exact_prediction_view_tests lgaed_inline_feedback_view_tests lgaed_u6l19_case_split_state_tests lgaed_u3_runtime_semantics_tests --parallel 3
+          cmake --build $build --target lgaed_general_choice_editorial_tests lgaed_lesson_editor_mount_tests lgaed_course_edition_tests lgaed_simulation_tests lgaed_simulation_view_tests lgaed_simulation_lesson_tests lgaed_compiler_first_case_view_tests lgaed_technical_context_view_tests lgaed_reading_gate_policy_tests lgaed_local_int_state_tests lgaed_local_string_state_tests lgaed_input_dependency_state_tests lgaed_input_probe_tests lgaed_local_role_state_tests lgaed_local_role_probe_tests lgaed_local_dependency_receipt_tests lgaed_local_dependency_view_tests lgaed_guarded_arithmetic_core_tests lgaed_guarded_arithmetic_state_tests lgaed_exact_prediction_view_tests lgaed_inline_feedback_view_tests lgaed_u6l19_case_split_state_tests lgaed_u3_runtime_semantics_tests --parallel 3
           if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
       - name: Preserve choice prose history and both U2L10 multiline answers
         shell: pwsh
@@ -436,6 +488,12 @@ jobs:
         run: |
           $build = Join-Path $env:RUNNER_TEMP 'lgaed-course-edition-qa'
           ctest --test-dir $build -R '^native[.]joint_local_int_(authoring|view)$' --verbose --output-on-failure --no-tests=error --output-junit (Join-Path $build 'joint-local-int.xml')
+          if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
+      - name: Verify guarded arithmetic omission and its actual U3L6 repair controls
+        shell: pwsh
+        run: |
+          $build = Join-Path $env:RUNNER_TEMP 'lgaed-course-edition-qa'
+          ctest --test-dir $build -R '^native[.]guarded_arithmetic_(core|authoring|state|view)$' --verbose --output-on-failure --no-tests=error --output-junit (Join-Path $build 'guarded-arithmetic.xml')
           if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
       - name: Preserve earlier reading snapshots across an authenticated option review
         shell: pwsh
@@ -557,6 +615,8 @@ jobs:
             ${{ runner.temp }}/lgaed-course-edition-qa/local-dependency-view.xml
             ${{ runner.temp }}/lgaed-course-edition-qa/joint-local-int.xml
             ${{ runner.temp }}/lgaed-course-edition-qa/test-fixtures/joint-local-int/**
+            ${{ runner.temp }}/lgaed-course-edition-qa/guarded-arithmetic.xml
+            ${{ runner.temp }}/lgaed-course-edition-qa/test-fixtures/guarded-arithmetic/**
             ${{ runner.temp }}/lgaed-course-edition-qa/u2l10-local-roles.xml
             ${{ runner.temp }}/lgaed-course-edition-qa/continued-input-dependency.xml
             ${{ runner.temp }}/lgaed-course-edition-qa/u2l9-input-dependency.xml

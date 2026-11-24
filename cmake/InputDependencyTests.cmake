@@ -253,4 +253,42 @@ function(lgaed_add_local_dependency_view_tests source_root presentation_target)
         COMMAND "${Python3_EXECUTABLE}" -B -m unittest discover
             -s "${source_root}/scripts/curriculum" -p test_input_decision_authoring.py -v)
     set_tests_properties(native.input_decision_authoring PROPERTIES TIMEOUT 120)
+
+    # A new omission witness extends one authenticated repair without changing
+    # its three published probes or any of the older fixture exports.
+    set(_arithmetic_fixture_dir "${CMAKE_CURRENT_BINARY_DIR}/test-fixtures/guarded-arithmetic")
+    set(_arithmetic_fixture_files "${_arithmetic_fixture_dir}/manifest.json"
+        "${_arithmetic_fixture_dir}/u3l6/before.json" "${_arithmetic_fixture_dir}/u3l6/after.json")
+    add_custom_command(OUTPUT ${_arithmetic_fixture_files}
+        COMMAND "${Python3_EXECUTABLE}" -B
+            "${source_root}/scripts/curriculum/short_circuit_fixture_source.py"
+            --output-dir "${_arithmetic_fixture_dir}"
+        DEPENDS "${source_root}/scripts/curriculum/short_circuit_fixture_source.py"
+            "${source_root}/scripts/curriculum/diagnostic_fixture_source.py"
+            "${source_root}/scripts/curriculum/stable_state_layout.py"
+        VERBATIM)
+    add_custom_target(lgaed_guarded_arithmetic_fixtures DEPENDS ${_arithmetic_fixture_files})
+    add_dependencies(lgaed_local_dependency_view_tests lgaed_guarded_arithmetic_fixtures)
+    add_executable(lgaed_guarded_arithmetic_core_tests
+        "${source_root}/native/core/cpp_local_int_probe_tests.cpp")
+    target_include_directories(lgaed_guarded_arithmetic_core_tests PRIVATE "${source_root}/native")
+    target_link_libraries(lgaed_guarded_arithmetic_core_tests PRIVATE lgaed_host_options)
+    add_test(NAME native.guarded_arithmetic_core COMMAND lgaed_guarded_arithmetic_core_tests)
+    set_tests_properties(native.guarded_arithmetic_core PROPERTIES TIMEOUT 30)
+    add_executable(lgaed_guarded_arithmetic_state_tests
+        "${source_root}/native/platform/windows/guarded_arithmetic_state_tests.cpp")
+    target_link_libraries(lgaed_guarded_arithmetic_state_tests
+        PRIVATE lgaed_platform_windows lgaed_host_options)
+    add_dependencies(lgaed_guarded_arithmetic_state_tests lgaed_guarded_arithmetic_fixtures)
+    add_test(NAME native.guarded_arithmetic_state
+        COMMAND lgaed_guarded_arithmetic_state_tests "${_arithmetic_fixture_dir}/manifest.json")
+    set_tests_properties(native.guarded_arithmetic_state PROPERTIES TIMEOUT 60 RUN_SERIAL TRUE)
+    add_test(NAME native.guarded_arithmetic_authoring
+        COMMAND "${Python3_EXECUTABLE}" -B -m unittest discover
+            -s "${source_root}/scripts/curriculum" -p test_local_arithmetic_authoring.py -v)
+    set_tests_properties(native.guarded_arithmetic_authoring PROPERTIES TIMEOUT 120)
+    add_test(NAME native.guarded_arithmetic_view
+        COMMAND lgaed_local_dependency_view_tests --guarded-arithmetic
+            "${_arithmetic_fixture_dir}/manifest.json")
+    set_tests_properties(native.guarded_arithmetic_view PROPERTIES TIMEOUT 600 RUN_SERIAL TRUE)
 endfunction()
