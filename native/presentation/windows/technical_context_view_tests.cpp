@@ -582,16 +582,13 @@ void prepare_u2_visual_prefix(state::StateData& data,
 // Read the real U2L5 Windows UI, not a synthetic list of abstract reading
 // regions. The separate MSVC execution workflow verifies the source/probes;
 // these state-only QA receipts NEVER claim an execution or generated audio.
-void current_u2l5_native_reader_gates(){
-    const auto relative="objetos_y_estado/lesson_enteros_y_aproximaciones.json";
-    const auto lesson=load(relative);
-    const auto file=std::filesystem::path(build::source_root)/
-        "app/src/main/assets/content/es/programming/cpp_fundamentals"/relative;
+void u2l5_native_reader_gates_at(const std::filesystem::path& file,bool selected_edition){
+    const auto lesson=windows::load_lesson(file);
     const auto original=state::sha256(state::read_bytes(file));
     const auto first_at=curriculum::stable_block_position(lesson,"block_0006_0002");
-    const auto second_at=curriculum::stable_block_position(lesson,"p1u2l5_reparar_agrupacion");
+    const auto second_at=curriculum::stable_block_position(lesson,selected_edition?"block_0007_0009":"p1u2l5_reparar_agrupacion");
     const auto first_ref=curriculum::stable_block_position(lesson,"block_0007_0001");
-    const auto second_ref=curriculum::stable_block_position(lesson,"p1u2l5_referencia_agrupacion");
+    const auto second_ref=curriculum::stable_block_position(lesson,selected_edition?"block_0008_0007":"p1u2l5_referencia_agrupacion");
     check(first_at&&second_at&&first_ref&&second_ref&&
         first_at->page==6&&first_at->block==2&&
         second_at->page==7&&second_at->block==9&&
@@ -735,6 +732,26 @@ void current_u2l5_native_reader_gates(){
         "required editors, hidden future prose, references released only by "
         "source-owned model receipts, separate drafts and unchanged pause slots "
         "after reopen; model receipts only, no generated PCM or child execution\n";
+}
+
+void current_u2l5_native_reader_gates(){
+    const auto root=std::filesystem::path(build::source_root)/"app/src/main/assets/content";
+    const curriculum::CatalogLocation course{"es","programming","cpp_fundamentals",{},{}};
+    const auto units=windows::load_catalog(root,course);
+    const auto unit=std::ranges::find_if(units.entries,[](const auto& entry){
+        return entry.id.ends_with("__objetos_y_estado");
+    });
+    check(unit!=units.entries.end()&&unit->available,"Selected U2 is unavailable for U2L5 gates");
+    const auto lessons=windows::load_catalog(root,curriculum::catalog_child(course,unit->id));
+    const auto entry=std::ranges::find_if(lessons.entries,[](const auto& item){
+        return item.id.ends_with("__enteros_y_aproximaciones");
+    });
+    check(entry!=lessons.entries.end()&&entry->available,"Selected U2L5 is unavailable for native gates");
+    const auto selected=windows::load_lesson(entry->asset);
+    check(selected.id==entry->id&&selected.course_edition.has_value(),
+        "U2L5 native gates did not select the active edition");
+    u2l5_native_reader_gates_at(entry->asset,true);
+    u2l5_native_reader_gates_at(root/"es/programming/cpp_fundamentals/objetos_y_estado/lesson_enteros_y_aproximaciones.json",false);
 }
 
 // The published U2L6 has TWO independent compiler gates on one page. Exercise
