@@ -217,7 +217,7 @@ void run(const std::shared_ptr<windows::NarrationWorker>& backend,const std::fil
             check(IsWindowEnabled(prerequisite_check),"The actual first-page choice did not enable Check");
             SendMessageW(prerequisite_check,BM_CLICK,0,0);pump();
             const auto response=state::get_response(read_lesson_state(view),lesson,prerequisite);
-            check(response&&response->correct&&state::response_reviewed(*response,prerequisite),
+            check(response&&response->correct&&response->selected==static_cast<std::int64_t>(*prerequisite.correct_index),
                 "The authentic first-page choice was not checked through its native controls");
             check(navigate_lesson_view(view,displayed.page)&&lesson_page_state(view).index==displayed.page,
                 "The checked first-page choice did not unlock the authentic code-scope page");
@@ -233,8 +233,13 @@ void run(const std::shared_ptr<windows::NarrationWorker>& backend,const std::fil
         reader=std::make_unique<LessonReader>(view,environment,backend,[]{});ready();
     };
     const auto close=[&]{reader.reset();check(flush_lesson_view(view),"Cannot persist actual code-scope state");DestroyWindow(view);view=nullptr;};
-    const auto selected=[&]{const auto response=state::get_response(read_lesson_state(view),current,goal);
-        check(response&&response->correct&&state::response_reviewed(*response,goal),"The actual before-return answer is absent or unverified");return *response;};
+    const auto selected=[&](const curriculum::Lesson& lesson){
+        const auto displayed=identity_position(lesson,owner);const auto& item=lesson.pages[displayed.page].blocks[displayed.block];
+        const auto response=state::get_response(read_lesson_state(view),lesson,item);
+        const auto visible=lesson_reading_regions(view);
+        check(response&&response->correct&&std::ranges::any_of(visible,[&](const auto& region){
+            return region.block_index==displayed.block&&region.feedback&&region.correct&&region.solved;
+        }),"The actual before-return answer lacks its canonically verified native feedback");return *response;};
     open(baseline,true);check(canvases(child(view,1005+static_cast<int>(old_position.block)*100))==1,
         "An ordinary Euclidean diagram without an overlay stopped using its existing renderer");
     auto regions=lesson_reading_regions(view);const auto option=std::ranges::find_if(regions,[&](const auto& item){return item.block_index==old_position.block&&item.key.ends_with("/posicion/option/antes_de_return");});
@@ -243,15 +248,15 @@ void run(const std::shared_ptr<windows::NarrationWorker>& backend,const std::fil
     const auto action=child(view,1003+static_cast<int>(old_position.block)*100);check(IsWindowEnabled(action),"The real complete choice did not enable Check");
     SendMessageW(action,BM_CLICK,0,0);reader->pause();
     wait([&]{const auto response=state::get_response(read_lesson_state(view),baseline,old_goal);const auto value=snapshot();return response&&response->correct
-        &&state::response_reviewed(*response,old_goal)&&value.planned&&!value.segments.empty()&&value.segments[value.index].feedback
+        &&value.planned&&!value.segments.empty()&&value.segments[value.index].feedback
         &&value.segments[value.index].block==old_position.block&&value.segments[value.index].available;},"canonical validation of the original Euclidean answer",180000);
-    const auto saved_response=selected();reader->toggle();wait([&]{const auto value=snapshot();return value.playing&&value.segments[value.index].feedback&&value.offset>180;},"real original-scope bookmark");
+    const auto saved_response=selected(baseline);reader->toggle();wait([&]{const auto value=snapshot();return value.playing&&value.segments[value.index].feedback&&value.offset>180;},"real original-scope bookmark");
     reader->pause();const auto historical=snapshot();(void)verify_feedback_recording(historical.segments[historical.index]);
     const auto old_history=narration::read_history(read_lesson_state(view));const auto old_slot=std::ranges::find(old_history.entries,historical.key,&narration::Bookmark::key);
     check(old_slot!=old_history.entries.end()&&old_slot->semantic_plan&&old_slot->position.milliseconds==historical.offset,"Original code-scope playback did not persist its genuine bookmark");
     const auto page_slot=old_slot->page;close();open(current);
     wait([&]{const auto current_regions=scope_regions(view,position.block);return std::ranges::all_of(current_regions,[](const auto& item){return item.solved;});},"canonical verification of the pre-existing answer after adopting code scopes",180000);ready();
-    const auto restored_answer=selected();check(restored_answer.raw_json==saved_response.raw_json&&restored_answer.reviewed_answer_identity==saved_response.reviewed_answer_identity,
+    const auto restored_answer=selected(current);check(restored_answer.raw_json==saved_response.raw_json&&restored_answer.reviewed_answer_identity==saved_response.reviewed_answer_identity,
         "Adding a presentation rewrote the user's existing answer or its reviewed identity");
     const auto migrated=snapshot();const auto adopted_history=narration::read_history(read_lesson_state(view));
     check(!migrated.playing&&!migrated.allocated&&!migrated.finished&&adopted_history.entries.size()==old_history.entries.size()
@@ -282,7 +287,7 @@ void run(const std::shared_ptr<windows::NarrationWorker>& backend,const std::fil
     const auto paused=snapshot();(void)verify_feedback_recording(paused.segments[paused.index]);const auto history=narration::read_history(read_lesson_state(view));
     close();open(current);wait([&]{const auto value=snapshot();return value.key==paused.key&&value.index==paused.index&&value.offset==paused.offset;},"exact current code-scope bookmark restoration",180000);
     const auto reopened=snapshot();check(!reopened.playing&&!reopened.allocated&&reopened.heard_through==paused.heard_through
-        &&narration::read_history(read_lesson_state(view))==history&&selected().raw_json==saved_response.raw_json,
+        &&narration::read_history(read_lesson_state(view))==history&&selected(current).raw_json==saved_response.raw_json,
         "Current code-scope reopen lost the exact pause, listening boundary or preserved answer");
     const auto until=GetTickCount64()+150;wait([&]{const auto value=snapshot();check(!value.playing&&!value.allocated&&value.offset==paused.offset,"Code-scope reopen autoplays");return GetTickCount64()>=until;},"code-scope reopen remains paused",2000);
     check(state::string_value(read_lesson_state(view),"code_scope_qa","opaque")=="Keep this unrelated value exactly.\n"
