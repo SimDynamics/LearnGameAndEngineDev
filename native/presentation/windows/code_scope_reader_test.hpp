@@ -94,23 +94,35 @@ void inspect_layout(HWND view,HWND host,const curriculum::Lesson& lesson,std::si
                     int width_dip,int height_dip,int scale,const std::filesystem::path& png){
     const auto dpi=GetDpiForWindow(host);check(dpi>0,"Windows returned no native DPI");
     const auto px=[&](int dip){return MulDiv(dip,static_cast<int>(dpi),96);};
-    RECT outer{0,0,px(width_dip),px(height_dip)};
-    check(AdjustWindowRectExForDpi(&outer,static_cast<DWORD>(GetWindowLongPtrW(host,GWL_STYLE)),FALSE,
-        static_cast<DWORD>(GetWindowLongPtrW(host,GWL_EXSTYLE)),dpi)!=0,"Cannot size the hidden native QA window");
-    check(SetWindowPos(host,nullptr,0,0,outer.right-outer.left,outer.bottom-outer.top,SWP_NOMOVE|SWP_NOZORDER|SWP_NOACTIVATE)!=0,
+    // The hidden QA host has no window chrome or overlapped tracking limits.
+    // Size its actual client directly; the lesson and its child controls are real HWNDs.
+    check(SetWindowPos(host,nullptr,0,0,px(width_dip),px(height_dip),SWP_NOMOVE|SWP_NOZORDER|SWP_NOACTIVATE)!=0,
         "Cannot resize the native QA window");
-    RECT client{};GetClientRect(host,&client);check(client.right==px(width_dip)&&client.bottom==px(height_dip),"Native QA client has unexpected physical dimensions");
+    RECT client{};check(GetClientRect(host,&client)!=0,"Cannot read the native QA client");
+    std::cout<<"CODE_SCOPE_VIEWPORT requested_logical="<<width_dip<<'x'<<height_dip
+        <<" requested_pixels="<<px(width_dip)<<'x'<<px(height_dip)<<" actual_client="<<client.right<<'x'<<client.bottom
+        <<" measured_dpi="<<dpi<<" style="<<static_cast<DWORD>(GetWindowLongPtrW(host,GWL_STYLE))
+        <<" ex_style="<<static_cast<DWORD>(GetWindowLongPtrW(host,GWL_EXSTYLE))<<'\n';
+    check(client.right==px(width_dip)&&client.bottom==px(height_dip),"Native QA client has unexpected physical dimensions");
     const auto course=lesson.id.substr(0,lesson.id.find("__"));
     update_lesson_preferences(view,[&](state::StateData& data){appearance::save_course_text_scale(data,course,false,scale);});
     MoveWindow(view,0,0,client.right,client.bottom,TRUE);pump();
     const auto regions=scope_regions(view,block);const auto root=GetParent(regions[1].target),inner=GetParent(regions[3].target);
+    RECT root_area{};check(IsWindow(root)&&GetClientRect(root,&root_area)!=0&&root_area.right>0&&root_area.bottom>0,
+        "Cannot capture an empty or detached native code scope");
+    std::cout<<"CODE_SCOPE_LAYOUT logical="<<width_dip<<'x'<<height_dip<<" text_scale="<<scale<<" measured_dpi="<<dpi
+        <<" client_pixels="<<client.right<<'x'<<client.bottom<<" scope_pixels="<<root_area.right<<'x'<<root_area.bottom
+        <<" reference_4k_250_equivalent="<<(width_dip==1536)<<" physical_240dpi_observed="<<(dpi==240)
+        <<" screenshot="<<png.string()<<" human_visual_acceptance=false\n";
+    // Preserve the actual pixels before asserting layout, font or border details.
+    capture_png(root,png);
     check(window_class(root)==L"LearnGameAndEngineDev.MathContent"&&window_class(inner)==L"LearnGameAndEngineDev.MathContent"
         &&GetParent(inner)==root&&GetParent(regions[2].target)==root&&GetParent(regions[6].target)==root
         &&GetParent(regions[4].target)==inner&&GetParent(regions[5].target)==inner,
         "Native code HWNDs no longer express main/if containment without color");
     check(regions.front().target==root&&canvases(child(view,1005+static_cast<int>(block)*100))==0,
         "The explicit code scope retained a geometric canvas or detached its description");
-    RECT root_area{};GetClientRect(root,&root_area);const auto in_view=bounds_in(root,view),inner_area=bounds_in(inner,root);
+    const auto in_view=bounds_in(root,view),inner_area=bounds_in(inner,root);
     check(in_view.left>=0&&in_view.right<=client.right,"The code scope extends beyond the minimum reader width");
     const auto first_outer=bounds_in(regions[2].target,root),last_outer=bounds_in(regions[6].target,root);
     check(first_outer.left==last_outer.left,"The instructions before and after if lost their common main-body alignment");
@@ -147,11 +159,6 @@ void inspect_layout(HWND view,HWND host,const curriculum::Lesson& lesson,std::si
         const auto border=GetPixel(dc,area.right/2,0);SelectObject(dc,old);DeleteObject(bitmap);DeleteDC(dc);
         check(border==reader_theme::palette(container).outline,"Nested scope border no longer uses neutral reader outline ink");
     }
-    capture_png(root,png);
-    std::cout<<"CODE_SCOPE_LAYOUT logical="<<width_dip<<'x'<<height_dip<<" text_scale="<<scale<<" measured_dpi="<<dpi
-        <<" client_pixels="<<client.right<<'x'<<client.bottom<<" scope_pixels="<<root_area.right<<'x'<<root_area.bottom
-        <<" reference_4k_250_equivalent="<<(width_dip==1536)<<" physical_240dpi_observed="<<(dpi==240)
-        <<" screenshot="<<png.string()<<" human_visual_acceptance=false\n";
 }
 
 void run(const std::shared_ptr<windows::NarrationWorker>& backend,const std::filesystem::path& baseline_path,
@@ -184,7 +191,7 @@ void run(const std::shared_ptr<windows::NarrationWorker>& backend,const std::fil
     auto& settings=initial.preferences["lesson_narration_settings"];settings["engine"]=std::string("KOKORO");settings["language"]=std::string("es");
     settings["kokoro_voice:es"]=std::string("ef_dora");settings["rate"]=3.;settings["kokoro_advance_generation"]=false;store.save(initial);
     const auto host=CreateWindowExW(WS_EX_CONTROLPARENT|WS_EX_NOACTIVATE,L"STATIC",L"Hidden native code-scope QA",
-        WS_OVERLAPPEDWINDOW,0,0,1000,780,nullptr,nullptr,GetModuleHandleW(nullptr),nullptr);
+        WS_POPUP,0,0,1000,780,nullptr,nullptr,GetModuleHandleW(nullptr),nullptr);
     check(host&&!IsWindowVisible(host),"Cannot create a hidden native code-scope host");HWND view=nullptr;std::unique_ptr<LessonReader> reader;
     struct Cleanup{HWND host;HWND& view;std::unique_ptr<LessonReader>& reader;
         ~Cleanup(){reader.reset();if(view){(void)flush_lesson_view(view);DestroyWindow(view);}DestroyWindow(host);}} cleanup{host,view,reader};
