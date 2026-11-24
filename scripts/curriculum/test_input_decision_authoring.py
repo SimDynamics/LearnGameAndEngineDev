@@ -226,6 +226,42 @@ class InputDecisionAuthoringTests(unittest.TestCase):
         self.assertEqual(remainder.count("capacidad != 0"), 2)
         self.assertNotIn("capacidad > 0", remainder)
 
+
+    def test_active_edition_loop_input_contracts(self):
+        # Exercise the actual new-edition identities without editing curriculum
+        # or relying on whichever version happens to be checked out.
+        revision = "2fcfad809e6a854dc35f4ce6c19fc1f1ab3e9c5b"
+        active_owners = {"u4l1": "block_0006_0002", "u4l2": "block_0006_0005"}
+        for name, identity in active_owners.items():
+            with self.subTest(lesson=name):
+                path = fixture.PUBLICATIONS[name]["path"].replace(
+                    "/repeticion_y_terminacion/", "/edition_es_1__repeticion_y_terminacion/")
+                raw = subprocess.check_output(
+                    ["git", "--no-optional-locks", "-c", f"safe.directory={fixture.ROOT}",
+                     "show", f"{revision}:{path}"], cwd=fixture.ROOT)
+                before = state.parse_json(raw.decode("utf-8"))
+                self.assertEqual(before["courseEdition"]["generation"], 1)
+                self.assertNotIn("compilerInputChecks", before)
+                owner = state._blocks(before)[identity]
+                self.assertEqual(owner["type"], "cpp_compiler")
+                self.assertEqual(owner["outputCheck"]["cases"], fixture.public_cases(name))
+                self.assertTrue(before["compilerPuzzlesRequired"])
+                after = deepcopy(before)
+                check = deepcopy(fixture.declarations(name)[0])
+                check["activity"] = identity
+                after["compilerInputChecks"] = [check]
+                state.validate_transition(before, after)
+                self.assertEqual(state._blocks(before), state._blocks(after))
+                self.assertEqual(before["stateLayout"], after["stateLayout"])
+                self.assertEqual(before["referenceAfter"], after["referenceAfter"])
+                self.assertEqual(before["compilerLocalIntChecks"], after["compilerLocalIntChecks"])
+                self.assertNotIn(identity, {item["activity"] for item in before["compilerLocalIntChecks"]})
+                with self.assertRaises(state.LayoutError):
+                    state.validate_transition(after, before)
+                del after["compilerInputChecks"]
+                self.assertEqual(after, before)
+
+
     def test_export_is_idempotent_and_preserves_exact_bytes_and_mtimes(self):
         with tempfile.TemporaryDirectory() as directory:
             output = Path(directory) / "inputs"
