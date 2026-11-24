@@ -14,8 +14,15 @@ function(lgaed_verify_native_toolchain)
     if(NOT CMAKE_GENERATOR STREQUAL "Ninja")
         message(FATAL_ERROR "Use the Ninja presets for this native base.")
     endif()
-    if(NOT CMAKE_VERSION STREQUAL "4.4.5")
-        message(FATAL_ERROR "Use stable CMake 4.4.5 selected by the Windows tools manifest; selected ${CMAKE_VERSION}.")
+    file(READ "${CMAKE_CURRENT_FUNCTION_LIST_DIR}/../toolchains/windows.versions.json" _windows_tools)
+    string(JSON _required_cmake GET "${_windows_tools}" cmake version)
+    # The hosted profile has already passed the runner guard above.
+    if("$ENV{LGAED_HOSTED_MSVC_QA}" STREQUAL "1")
+        file(READ "${CMAKE_CURRENT_FUNCTION_LIST_DIR}/../toolchains/windows.hosted-msvc.json" _hosted_tools)
+        string(JSON _required_cmake GET "${_hosted_tools}" cmakeVersion)
+    endif()
+    if(NOT CMAKE_VERSION STREQUAL _required_cmake)
+        message(FATAL_ERROR "CMake ${_required_cmake} required by the selected Windows tools profile; actual ${CMAKE_VERSION}.")
     endif()
     execute_process(COMMAND "${CMAKE_MAKE_PROGRAM}" --version
         RESULT_VARIABLE _lgaed_ninja_result OUTPUT_VARIABLE _lgaed_ninja_version
@@ -25,7 +32,6 @@ function(lgaed_verify_native_toolchain)
     endif()
     # The family folder and uninstall bundle labels do not prove which payload
     # is installed. Check actual tool resources, including direct IDE builds.
-    file(READ "${CMAKE_SOURCE_DIR}/toolchains/windows.versions.json" _windows_tools)
     string(JSON _sdk_minimum GET "${_windows_tools}" visualStudio windowsSdkServicing)
     set(_sdk_probe "${CMAKE_BINARY_DIR}/CMakeFiles/VerifySdkFileVersion.ps1")
     file(WRITE "${_sdk_probe}" [=[
