@@ -3371,7 +3371,7 @@ struct LessonView {
                         reset_answer(index);
                     },[this,index]{
                         composition_draft_changed(index);
-                    }},current.text_semantics);
+                    }},current.text_semantics,current.code_scope_presentations);
             vm.math_semantic_identity=math_answer_identity(winrt::Windows::Data::Json::JsonObject::Parse(winrt::to_hstring(vm.math->answer_identity_json())));
             SetWindowLongPtrW(vm.math->window(),GWLP_ID,control_id(index,5));
             SetWindowSubclass(vm.math->fullscreen_button(),console_icon_proc,21,reinterpret_cast<DWORD_PTR>(this));

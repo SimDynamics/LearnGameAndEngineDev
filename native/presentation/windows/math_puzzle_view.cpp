@@ -712,7 +712,7 @@ struct Canvas {
 struct MathPuzzleView::Impl {
     struct Cell { HWND window; int width = 0; bool text = false;int inset_x=0,inset_y=0; };
     struct Row { std::vector<Cell> cells; int height = 42; int gap_after=8; int indent=0; };
-    struct Content {HWND window=nullptr;std::vector<Row> rows;bool horizontal=false,natural_columns=false;int padding_x=0,padding_y=0,gap=0,minimum_column=0,scroll=0,extent=0;POINT drag_origin{};int drag_scroll=0;bool dragging=false,moved=false;};
+    struct Content {HWND window=nullptr;std::vector<Row> rows;bool horizontal=false,natural_columns=false,code_scope=false;int padding_x=0,padding_y=0,gap=0,minimum_column=0,scroll=0,extent=0;POINT drag_origin{};int drag_scroll=0;bool dragging=false,moved=false;};
     HWND host = nullptr,parent = nullptr;
     std::string locale; JsonObject block,answers,initial;
     MathPuzzleCallbacks callbacks;
@@ -756,6 +756,7 @@ struct MathPuzzleView::Impl {
     std::map<Canvas*,std::vector<std::pair<HWND,HWND>>> graph_fields;
     std::map<HWND,int> requested_heights;
     std::map<std::string,curriculum::TextSemantics> text_semantics;
+    std::vector<curriculum::CodeScopePresentation> code_scopes;
     std::map<const void*,std::string> source_paths;
     std::vector<winrt::com_ptr<::IUnknown>> source_objects;
     static std::string pointer_token(std::string_view token){std::string result;for(const auto c:token)result+=c=='~'?"~0":c=='/'?"~1":std::string(1,c);return result;}
@@ -789,8 +790,9 @@ struct MathPuzzleView::Impl {
     int px(int value) const { return MulDiv(value,static_cast<int>(GetDpiForWindow(host)),96); }
     std::string tr(std::string es,std::string en,std::string fr) const { return locale.starts_with("fr") ? fr : locale.starts_with("en") ? en : es; }
     Impl(HWND owner,std::string raw,std::string lang,std::string saved,MathPuzzleCallbacks events,
-        std::map<std::string,curriculum::TextSemantics> semantics)
-        : parent(owner),locale(std::move(lang)),callbacks(std::move(events)),text_semantics(std::move(semantics)) {
+        std::map<std::string,curriculum::TextSemantics> semantics,
+        std::vector<curriculum::CodeScopePresentation> scopes)
+        : parent(owner),locale(std::move(lang)),callbacks(std::move(events)),text_semantics(std::move(semantics)),code_scopes(std::move(scopes)) {
         windows::ensure_winrt_apartment(); block = JsonObject::Parse(winrt::to_hstring(raw));
         // MathPuzzleParser gives legacy standalone interactions the same stable
         // response ID. Normalize presentation only; never rewrite the lesson.
@@ -800,6 +802,12 @@ struct MathPuzzleView::Impl {
             JsonArray responses;responses.Append(response);block.SetNamedValue(L"responses",responses);
         }
         index_source(block,"",standalone);
+        std::set<std::size_t> scope_indices;
+        const auto representation_count=array(block,L"representations").Size();
+        for(const auto& scope:code_scopes)
+            if(scope.representation_index>=representation_count||scope.root.children.empty()
+                ||!scope_indices.insert(scope.representation_index).second)
+                throw std::invalid_argument("A code-scope presentation requires one existing representation and a container root");
         if (!saved.empty()) { JsonObject restored; if (JsonObject::TryParse(winrt::to_hstring(saved),restored)) answers = restored.HasKey(L"answers") ? object(restored,L"answers") : restored; }
         rich = LoadLibraryW(L"Msftedit.dll"); if (!rich) throw std::runtime_error("RichEdit is unavailable");
         (void)CoCreateInstance(CLSID_AccPropServices,nullptr,CLSCTX_INPROC_SERVER,IID_PPV_ARGS(accessibility.GetAddressOf()));
@@ -940,6 +948,53 @@ struct MathPuzzleView::Impl {
         for(const auto& row:content->rows)for(const auto& cell:row.cells){SetParent(cell.window,content->window);if(horizontal)SetWindowSubclass(cell.window,scroll_child_proc,19,reinterpret_cast<DWORD_PTR>(this));}
         const auto result=content->window;contents.emplace(result,std::move(content));rows.push_back({{{result}},0});return result;
     }
+    HWND code_scope_node(const curriculum::CodeScopeNode& node,std::string_view prefix){
+        // The loader has already authenticated each exact source label. Code
+        // remains a native RichEdit document, never a geometric point or a
+        // mathematical expression inferred from its characters.
+        if(node.key.empty()||node.text.empty()||(node.children.empty()&&!node.code))
+            throw std::invalid_argument("A code-scope node requires a stable key and its resolved text");
+        const auto first=rows.size();
+        curriculum::TextSemantics semantics{node.text,{}};
+        if(node.code)semantics.spans.push_back({0,wide(node.text).size(),node.text,
+            curriculum::SemanticRole::cpp,curriculum::SemanticReading::technical});
+        const auto item=make(MSFTEDIT_CLASS,"",ES_MULTILINE|ES_READONLY);
+        if(!reader_theme::palette(item).high_contrast)reader_theme::set_text_color(item,RGB(235,239,245));
+        if(node.code)reader_theme::set_reference_mathematics(item,false);
+        set_rich_text(item,node.text,{},node.code,node.code?RichTextRole::body:RichTextRole::prompt,
+            locale,{}, {},&semantics);
+        PARAFORMAT2 paragraph{};paragraph.cbSize=sizeof(paragraph);paragraph.dwMask=PFM_LINESPACING;
+        paragraph.bLineSpacingRule=5;paragraph.dyLineSpacing=20;
+        SendMessageW(item,EM_SETPARAFORMAT,0,reinterpret_cast<LPARAM>(&paragraph));
+        SendMessageW(item,EM_SETEVENTMASK,0,ENM_REQUESTRESIZE);
+        SetWindowSubclass(item,text_wheel_proc,14,reinterpret_cast<DWORD_PTR>(&callbacks));
+        regions.push_back({std::string(prefix)+node.key,node.text,item,std::move(semantics),std::string("text")});
+        // These literal source fields intentionally stay outside label_formats:
+        // installing the mathematical layout service must not rewrite them.
+        rows.push_back({{{item,0,true,0,2}},0,node.children.empty()?4:8});
+        if(node.children.empty())return item;
+        for(const auto& child:node.children)code_scope_node(child,prefix);
+        rows.back().gap_after=0;
+        const auto container=group_content(first,false,false,12,12);
+        contents.at(container)->code_scope=true;
+        SetWindowTextW(container,wide(node.text).c_str());
+        return container;
+    }
+    void code_scope_representation(const curriculum::CodeScopePresentation& presentation,const JsonObject& source){
+        const auto prefix="code-scope/"+std::to_string(presentation.representation_index)+'/';
+        const auto config=source.HasKey(L"config")?object(source,L"config"):source;
+        const auto description=text(config,L"description");
+        const auto description_index=regions.size();
+        if(!description.empty()){
+            std::optional<curriculum::TextSemantics> semantics;
+            if(const auto original=semantics_for(config,L"description"))semantics=*original;
+            // This authored description explicitly conveys scope endings to
+            // narration; it is neither another visible line nor an answer.
+            regions.push_back({prefix+"description/source",description,nullptr,std::move(semantics),std::string("text")});
+        }
+        const auto container=code_scope_node(presentation.root,prefix);
+        if(!description.empty())regions[description_index].target=container;
+    }
     void bind_card_children(HWND card){
         const auto found=contents.find(card);if(found==contents.end())return;
         visit_cells(found->second->rows,[&](const Cell& cell){wchar_t type[40]{};GetClassNameW(cell.window,type,40);if(_wcsicmp(type,L"BUTTON")==0)return;card_children[cell.window]=card;SetWindowSubclass(cell.window,card_child_proc,18,reinterpret_cast<DWORD_PTR>(this));});
@@ -961,6 +1016,32 @@ struct MathPuzzleView::Impl {
         // including fractions, styled glyphs and the selected text scale.
         for(LRESULT at=0;at<=count;++at){POINT edge{};SendMessageW(item,EM_POSFROMCHAR,reinterpret_cast<WPARAM>(&edge),at);width=std::max(width,static_cast<int>(edge.x+scroll.x-format.left));}
         intrinsic_widths[item]=width;return width;
+    }
+    int code_scope_intrinsic_width(const Content& content){
+        int widest=0;
+        for(const auto& row:content.rows){
+            int width=px(row.indent+content.gap*std::max(0,static_cast<int>(row.cells.size())-1));
+            for(const auto& cell:row.cells){
+                if(const auto nested=contents.find(cell.window);nested!=contents.end()&&nested->second->code_scope)
+                    width+=code_scope_intrinsic_width(*nested->second);
+                else if(cell.text){
+                    int measured=0;
+                    if(const auto cached=intrinsic_widths.find(cell.window);cached!=intrinsic_widths.end())measured=cached->second;
+                    else{
+                        const auto options=SendMessageW(cell.window,EM_GETOPTIONS,0,0);
+                        measured=intrinsic_text_width(cell.window);
+                        // Intrinsic measurement temporarily disables wrapping.
+                        // Constrained scopes must still expose every character
+                        // by growing vertically in a narrow reader viewport.
+                        SendMessageW(cell.window,EM_SETOPTIONS,ECOOP_SET,options);
+                        SendMessageW(cell.window,EM_SETTARGETDEVICE,0,0);
+                    }
+                    width+=measured+px(cell.inset_x*2+2);
+                }else width+=px(cell.width);
+            }
+            widest=std::max(widest,width);
+        }
+        return widest+px(content.padding_x*2);
     }
     int content_layout(Content& content,int width,bool move){
         if(content.natural_columns){std::vector<int> columns;
@@ -1456,7 +1537,13 @@ struct MathPuzzleView::Impl {
         // Weight is selected BEFORE native math is built and aligned: TOM
         // may encode bold numerals with supplementary mathematical digits.
         add_text(text(block,L"prompt",text(block,L"question")),"prompt",RichTextRole::prompt,selected_semantics(block,{L"prompt",L"question"}));
-        for (const auto& value : array(block,L"representations")) representation(value.GetObject());
+        const auto representations=array(block,L"representations");
+        for(unsigned index=0;index<representations.Size();++index){
+            const auto source=representations.GetObjectAt(index);
+            const auto scoped=std::ranges::find_if(code_scopes,[index](const auto& value){return value.representation_index==index;});
+            if(scoped!=code_scopes.end())code_scope_representation(*scoped,source);
+            else representation(source);
+        }
         for (const auto& value : array(block,L"tools")) representation(value.GetObject());
         for (const auto& value : array(block,L"responses")) response_controls(value.GetObject());
         initial = JsonObject::Parse(answers.Stringify()); initializing = false;
@@ -1469,13 +1556,19 @@ struct MathPuzzleView::Impl {
             if(!row.cells.empty()&&std::ranges::all_of(row.cells,[](const auto& cell){return !(GetWindowLongPtrW(cell.window,GWL_STYLE)&WS_VISIBLE);}))continue;
             int fixed = 0,flex = 0; for (const auto& cell : row.cells) if (cell.width) fixed += px(cell.width); else ++flex;
             const auto flexible = std::max(px(30),(width-px(padding_x*2)-px(row.indent)-fixed-gap*(static_cast<int>(row.cells.size())-1))/std::max(1,flex));
+            const auto cell_width_for=[&](const Cell& cell){
+                const auto available=cell.width?px(cell.width):flexible;
+                const auto content=contents.find(cell.window);
+                return content!=contents.end()&&content->second->code_scope
+                    ?std::min(available,code_scope_intrinsic_width(*content->second)):available;
+            };
             int height=px(row.height),x=px(padding_x+row.indent)+offset_x;
-            for(const auto& cell:row.cells)if(const auto found=contents.find(cell.window);found!=contents.end())height=std::max(height,content_layout(*found->second,cell.width?px(cell.width):flexible,move));
+            for(const auto& cell:row.cells)if(const auto found=contents.find(cell.window);found!=contents.end())height=std::max(height,content_layout(*found->second,cell_width_for(cell),move));
             for(const auto& cell:row.cells)if(std::ranges::any_of(expression_editors,[&](const auto& value){return value->window==cell.window;}))height=std::max(height,math_expression_editor_height(cell.window));
             for(const auto& cell:row.cells)if(const auto canvas=std::ranges::find_if(canvases,[&](const auto& value){return value->window==cell.window;});canvas!=canvases.end())
                 height=std::max(height,std::max(px(48),static_cast<int>(std::lround((cell.width?px(cell.width):flexible)/(*canvas)->aspect_ratio()))-((*canvas)->type=="rigid_angle"?px(96):0)));
             for (const auto& cell : row.cells) if (cell.text || (GetWindowLongPtrW(cell.window,GWL_STYLE) & BS_MULTILINE) || editors.contains(cell.window)) {
-                const auto cell_width = cell.width ? px(cell.width) : flexible;
+                const auto cell_width = cell_width_for(cell);
                 if (cell.text) {
                     // With a 1px measuring viewport RichEdit can retain the
                     // previous width's wrapped height until the real placement.
@@ -1493,7 +1586,7 @@ struct MathPuzzleView::Impl {
                 DrawTextW(dc,value.c_str(),static_cast<int>(value.size()),&text_rect,DT_CALCRECT | DT_WORDBREAK | DT_NOPREFIX);
                 height = std::max(height,static_cast<int>(text_rect.bottom) + px(8)); SelectObject(dc,old); ReleaseDC(cell.window,dc);
             }
-            if (move) for (const auto& cell : row.cells) { const auto cell_width = cell.width ? px(cell.width) : flexible;
+            if (move) for (const auto& cell : row.cells) { const auto cell_width = cell_width_for(cell);
                 for(const auto& plot:canvases)if(plot->fullscreen&&plot->inline_parent==container){
                     if(cell.window==plot->window)plot->inline_rectangle={x,y,x+cell_width,y+height};
                     else if(const auto at=std::ranges::find(plot->auxiliary_controls,cell.window);at!=plot->auxiliary_controls.end()){const auto index=static_cast<std::size_t>(at-plot->auxiliary_controls.begin());if(index<plot->auxiliary_rectangles.size())plot->auxiliary_rectangles[index]={x,y,x+cell_width,y+height};}}
@@ -1676,14 +1769,27 @@ struct MathPuzzleView::Impl {
         if(found!=self->card_children.end()&&message==WM_MOUSEWHEEL)return SendMessageW(found->second,message,wparam,lparam);
         return DefSubclassProc(item,message,wparam,lparam);
     }
+    void paint_content(HWND window,HDC dc)const{
+        RECT area{};GetClientRect(window,&area);
+        FillRect(dc,&area,reader_theme::brush(reader_theme::Surface::card));
+        const auto found=contents.find(window);
+        if(found==contents.end()||!found->second->code_scope)return;
+        // Nesting and margins carry the relationship without relying on hue.
+        // Geometry canvases retain their own point/segment/accent policy.
+        const auto pen=CreatePen(PS_SOLID,std::max(1,px(1)),reader_theme::palette(window).outline);
+        const auto previous_pen=SelectObject(dc,pen),previous_brush=SelectObject(dc,GetStockObject(NULL_BRUSH));
+        Rectangle(dc,area.left,area.top,area.right,area.bottom);
+        SelectObject(dc,previous_brush);SelectObject(dc,previous_pen);DeleteObject(pen);
+    }
     static LRESULT CALLBACK content_proc(HWND window,UINT message,WPARAM wparam,LPARAM lparam){
         auto* self=reinterpret_cast<Impl*>(GetWindowLongPtrW(window,GWLP_USERDATA));
         if(message==WM_NCCREATE){self=static_cast<Impl*>(reinterpret_cast<CREATESTRUCTW*>(lparam)->lpCreateParams);SetWindowLongPtrW(window,GWLP_USERDATA,reinterpret_cast<LONG_PTR>(self));}
         if(!self)return DefWindowProcW(window,message,wparam,lparam);
         LRESULT themed{};if(reader_theme::control_color(message,wparam,lparam,themed))return themed;
-        if(message==WM_PRINTCLIENT){RECT area{};GetClientRect(window,&area);FillRect(reinterpret_cast<HDC>(wparam),&area,reader_theme::brush(reader_theme::Surface::card));return 0;}
+        if(message==WM_PAINT){PAINTSTRUCT paint{};const auto dc=BeginPaint(window,&paint);self->paint_content(window,dc);EndPaint(window,&paint);return 0;}
+        if(message==WM_PRINTCLIENT){self->paint_content(window,reinterpret_cast<HDC>(wparam));return 0;}
         if(message==WM_COMMAND||message==WM_NOTIFY||message==WM_DRAWITEM||message==WM_MEASUREITEM||message==WM_MENUCHAR||(message==WM_HSCROLL&&lparam))return SendMessageW(self->host,message,wparam,lparam);
-        if(message==WM_ERASEBKGND){RECT area{};GetClientRect(window,&area);FillRect(reinterpret_cast<HDC>(wparam),&area,reader_theme::brush(reader_theme::Surface::card));return TRUE;}
+        if(message==WM_ERASEBKGND){self->paint_content(window,reinterpret_cast<HDC>(wparam));return TRUE;}
         const auto found=self->contents.find(window);if(found!=self->contents.end()){
             auto& content=*found->second;RECT area{};GetClientRect(window,&area);
             const auto scroll=[&](int position){content.scroll=std::clamp(position,0,std::max(0,content.extent-static_cast<int>(area.right)));self->content_layout(content,area.right,true);};
@@ -1749,8 +1855,8 @@ struct MathPuzzleView::Impl {
 };
 
 MathPuzzleView::MathPuzzleView(HWND parent,std::string raw,std::string locale,std::string saved,MathPuzzleCallbacks callbacks,
-    std::map<std::string,curriculum::TextSemantics> semantics)
-    : impl_(std::make_unique<Impl>(parent,std::move(raw),std::move(locale),std::move(saved),std::move(callbacks),std::move(semantics))) { impl_->initialize(); }
+    std::map<std::string,curriculum::TextSemantics> semantics,std::vector<curriculum::CodeScopePresentation> code_scopes)
+    : impl_(std::make_unique<Impl>(parent,std::move(raw),std::move(locale),std::move(saved),std::move(callbacks),std::move(semantics),std::move(code_scopes))) { impl_->initialize(); }
 std::string math_field_keyboard_context(HWND field){const auto value=static_cast<const std::string*>(GetPropW(field,keyboard_context_property));return value?*value:std::string{};}
 bool apply_math_calculator_result(HWND field,std::string_view latex){
     if(!IsWindow(field)||!IsWindowEnabled(field)||math_field_keyboard_context(field).empty())return false;

@@ -25,6 +25,8 @@ if(LGAED_MATH_EDITORIAL_QA_ONLY AND NOT LGAED_READER_BUILD_QA_ONLY)
 endif()
 option(LGAED_NARRATION_WORKER_QA_ONLY
     "Build and test real Spanish Kokoro synthesis and playback failure diagnostics without a reader or audio endpoint" OFF)
+option(LGAED_CODE_SCOPE_QA_ONLY
+    "Build only authenticated nested-code presentation and retirement contracts with the real Windows reader" OFF)
 option(LGAED_CURRENT_READERS_QA_ONLY
     "Build and run the current U2L3/U2L5 readers and archived U2L5 scenario with real Kokoro playback" OFF)
 option(LGAED_U12_READER_QA_ONLY
@@ -40,7 +42,7 @@ foreach(_mode LGAED_STATE_IMPORT_QA_ONLY LGAED_NARRATION_PLAYER_QA_ONLY
         LGAED_READER_BUILD_QA_ONLY LGAED_CATALOG_U1_QA_ONLY LGAED_READER_REVISION_QA_ONLY
         LGAED_NARRATION_WORKER_QA_ONLY LGAED_U12_READER_QA_ONLY
         LGAED_U11_EDITORIAL_READER_QA_ONLY LGAED_COMPILER_HISTORICAL_READER_QA_ONLY
-        LGAED_U6_DIAGNOSTIC_READER_QA_ONLY LGAED_CURRENT_READERS_QA_ONLY)
+        LGAED_U6_DIAGNOSTIC_READER_QA_ONLY LGAED_CURRENT_READERS_QA_ONLY LGAED_CODE_SCOPE_QA_ONLY)
     if(${_mode})
         math(EXPR _lgaed_qa_mode_count "${_lgaed_qa_mode_count} + 1")
     endif()
@@ -526,7 +528,7 @@ function(lgaed_add_archived_required_compiler_reader_test)
     set_tests_properties(native.archived_required_compiler_reader PROPERTIES TIMEOUT 420 RUN_SERIAL TRUE)
 endfunction()
 
-if(LGAED_CURRENT_READERS_QA_ONLY OR LGAED_U12_READER_QA_ONLY OR LGAED_U11_EDITORIAL_READER_QA_ONLY
+if(LGAED_CODE_SCOPE_QA_ONLY OR LGAED_CURRENT_READERS_QA_ONLY OR LGAED_U12_READER_QA_ONLY OR LGAED_U11_EDITORIAL_READER_QA_ONLY
         OR LGAED_COMPILER_HISTORICAL_READER_QA_ONLY OR LGAED_U6_DIAGNOSTIC_READER_QA_ONLY)
     include(CTest)
     if(NOT BUILD_TESTING)
@@ -538,8 +540,14 @@ if(LGAED_CURRENT_READERS_QA_ONLY OR LGAED_U12_READER_QA_ONLY OR LGAED_U11_EDITOR
     find_package(Python3 REQUIRED COMPONENTS Interpreter)
     include(cmake/NarrationRuntime.cmake)
     lgaed_add_narration_runtime(NarrationHost)
-    lgaed_add_curricular_reader_test_targets()
-    if(LGAED_CURRENT_READERS_QA_ONLY)
+    if(NOT LGAED_CODE_SCOPE_QA_ONLY)
+        lgaed_add_curricular_reader_test_targets()
+    endif()
+    if(LGAED_CODE_SCOPE_QA_ONLY)
+        include(cmake/CodeScopeTests.cmake)
+        lgaed_add_code_scope_tests()
+        message(STATUS "Focused code-scope QA: exact baseline and original owner, nested native controls, source-preserving authoring/retirement contracts and real mathematical validation/Kokoro playback.")
+    elseif(LGAED_CURRENT_READERS_QA_ONLY)
         add_dependencies(lgaed_lesson_reader_tests lgaed_narration_runtime lgaed_cpp_tool_host)
         add_test(NAME native.curricular_color_reader COMMAND lgaed_lesson_reader_tests --curricular-colors)
         set_tests_properties(native.curricular_color_reader PROPERTIES TIMEOUT 240 RUN_SERIAL TRUE)

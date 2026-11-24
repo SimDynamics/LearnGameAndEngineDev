@@ -1,5 +1,6 @@
 #pragma once
 
+#include "core/code_scope_presentation.hpp"
 #include "core/text_semantics.hpp"
 #include "presentation/windows/text_semantic_projection.hpp"
 #include <windows.h>
@@ -49,9 +50,12 @@ struct MathPuzzleCallbacks {
 // or exposes their expected answers; the host owns evaluation and feedback.
 class MathPuzzleView {
 public:
+    // Optional authenticated read-only presentations leave original_block_json
+    // and its answer/evaluation identity untouched.
     MathPuzzleView(HWND parent,std::string original_block_json,std::string locale,
         std::string saved_answers_json,MathPuzzleCallbacks callbacks = {},
-        std::map<std::string,curriculum::TextSemantics> text_semantics = {});
+        std::map<std::string,curriculum::TextSemantics> text_semantics = {},
+        std::vector<curriculum::CodeScopePresentation> code_scopes = {});
     ~MathPuzzleView();
     MathPuzzleView(const MathPuzzleView&) = delete;
     MathPuzzleView& operator=(const MathPuzzleView&) = delete;
