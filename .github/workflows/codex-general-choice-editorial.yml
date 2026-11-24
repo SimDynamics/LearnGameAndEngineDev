@@ -7,6 +7,8 @@ on:
       - .github/workflows/codex-general-choice-editorial.yml
       - scripts/curriculum/test_general_choice_revision_live.py
       - scripts/curriculum/test_pending_presentation_contract.py
+      - native/narration/worker/test_spanish_prose_boundaries.py
+      - scripts/curriculum/course_edition.py
       - scripts/curriculum/test_choice_retirement_history.py
       - scripts/curriculum/test_general_choice_prose_history.py
       - scripts/curriculum/general_choice_prose_fixture_source.py
@@ -24,6 +26,11 @@ on:
       - scripts/curriculum/stable_state_layout.py
       - scripts/curriculum/validar_json_programacion.py
       - scripts/curriculum/text_semantics.py
+      # Selected edition references for the U2L8/U2L9 portable source checks.
+      - app/src/main/assets/content/es/programming/cpp_fundamentals/course_cpp_fundamentals.json
+      - app/src/main/assets/content/es/programming/cpp_fundamentals/edition_es_*__objetos_y_estado/unit_*.json
+      - app/src/main/assets/content/es/programming/cpp_fundamentals/edition_es_*__objetos_y_estado/lesson_caracteres_y_valores_logicos.json
+      - app/src/main/assets/content/es/programming/cpp_fundamentals/edition_es_*__objetos_y_estado/lesson_leer_una_entrada_conocida.json
       # Live U1/U2 sources covered by the same authenticated authoring tests.
       - app/src/main/assets/content/es/programming/cpp_fundamentals/programas_y_ejecucion/lesson_fuente_compilacion_y_diagnostico.json
       - app/src/main/assets/content/es/programming/cpp_fundamentals/objetos_y_estado/lesson_conversiones_y_deduccion.json
@@ -72,6 +79,10 @@ jobs:
           python -B -m unittest discover
           -s scripts/curriculum
           -p test_pending_presentation_contract.py -v
+      - name: Verify the selected U2L9 prompt and preserved historical source
+        run: >-
+          python -B native/narration/worker/test_spanish_prose_boundaries.py
+          PromptEditionSourceTest -v
       - name: Keep authenticated historical prose while revising one option
         run: >-
           python -B -m unittest discover

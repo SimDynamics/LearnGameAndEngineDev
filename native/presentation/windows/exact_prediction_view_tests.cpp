@@ -5,6 +5,7 @@
 #include "platform/windows/content_loader.hpp"
 #include "platform/windows/environment.hpp"
 #include "platform/windows/state_store.hpp"
+#include "presentation/windows/code_editor.hpp"
 #include "presentation/windows/lesson_view.hpp"
 #include "presentation/windows/rich_text.hpp"
 #include "native_build_config.hpp"
@@ -13,6 +14,7 @@
 #include <ole2.h>
 #include <richedit.h>
 #include <winrt/Windows.Data.Json.h>
+#include <algorithm>
 #include <array>
 #include <chrono>
 #include <cstdint>
@@ -42,6 +44,12 @@ std::string native_newlines(std::string_view value){std::string result;
         if(value[index]=='\r'){result+='\n';if(index+1<value.size()&&value[index+1]=='\n')++index;}
         else result+=value[index];
     }
+    return result;
+}
+std::string crlf_lines(std::string_view value){
+    check(value.find('\r')==value.npos,"The LF fixture unexpectedly contains a carriage return");
+    std::string result;
+    for(const auto character:value){if(character=='\n')result+='\r';result+=character;}
     return result;
 }
 state::Preferences attempt_preferences(const state::StateData& data){
@@ -98,6 +106,34 @@ const std::array plans{
     Plan{"objetos_y_estado/lesson_leer_una_entrada_conocida.json","block_0012_0004",
         "cpp_fundamentals__objetos_y_estado__leer_una_entrada_conocida__maximo_regla_cuatro",true,"Orion: 103",true,PredictionGroup::prepared_input,
         "block_0012_0004","Orion: 83"},
+};
+
+struct MultilinePlan {
+    const char* filename;
+    const char* lesson_id;
+    const char* identity;
+    const char* activity;
+    const char* answer;
+    const char* wrong_internal_space;
+    std::size_t earlier_compilers;
+    bool completes_page;
+    bool editorial_feedback;
+};
+constexpr std::array multiline_plans{
+    MultilinePlan{"edition_es_1__programas_y_ejecucion/lesson_texto_secuencia_y_formato.json",
+        "cpp_fundamentals__edition_es_1__programas_y_ejecucion__texto_secuencia_y_formato",
+        "block_0002_0013","p1u1l3_linea_vacia","Rojo\n\nVerde","Rojo\n \nVerde",0,true,false},
+    MultilinePlan{"edition_es_1__programas_y_ejecucion/lesson_texto_secuencia_y_formato.json",
+        "cpp_fundamentals__edition_es_1__programas_y_ejecucion__texto_secuencia_y_formato",
+        "block_0005_0007","prediccion_informe_inicial","Resumen\nZona Oeste","Resumen\nZona  Oeste",0,true,true},
+    MultilinePlan{"edition_es_1__objetos_y_estado/lesson_leer_una_entrada_conocida.json",
+        "cpp_fundamentals__edition_es_1__objetos_y_estado__leer_una_entrada_conocida",
+        "block_0006_0002","cpp_fundamentals__objetos_y_estado__leer_una_entrada_conocida__etapas_lectura_y_actualizacion",
+        "Rita 4\nRita: 7","Rita 4\nRita:7",0,false,true},
+    MultilinePlan{"edition_es_1__objetos_y_estado/lesson_representar_procesar_y_recuperar.json",
+        "cpp_fundamentals__edition_es_1__objetos_y_estado__representar_procesar_y_recuperar",
+        "block_0008_0000","cpp_fundamentals__objetos_y_estado__representar_procesar_y_recuperar__recuperar_registro_con_otra_devolucion",
+        "Modulo 02\nInicio: 4\nAhora: 9","Modulo 02\nInicio:4\nAhora: 9",2,false,true},
 };
 
 struct U2L9Publication {
@@ -304,6 +340,132 @@ void require_prepared_compiler_credit(const state::StateData& data,const curricu
         }
 }
 
+void execute_multiline_prerequisite(state::StateData& data,const curriculum::Lesson& lesson,
+        const curriculum::Block& owner,const std::filesystem::path& projects){
+    struct Prior {const char* identity;const char* reference;const char* output;};
+    constexpr std::array prior{
+        Prior{"block_0004_0005","block_0004_0007","Puesto 03\nMesas: 6\nCable: 3.75 m"},
+        Prior{"block_0007_0004","block_0007_0006","Modulo 02\nInicio: 7\nAhora: 10"},
+    };
+    const auto selected=std::ranges::find_if(prior,[&](const auto& item){return owner.stable_id==item.identity;});
+    check(lesson.id=="cpp_fundamentals__edition_es_1__objetos_y_estado__representar_procesar_y_recuperar"&&
+        selected!=prior.end()&&owner.type==curriculum::BlockType::cpp_compiler&&owner.output_check&&
+        owner.output_check->input_comparison==curriculum::TextComparison::exact&&owner.output_check->cases.size()==1,
+        "A new multiline prerequisite needs an explicitly audited real execution");
+    const auto reference=curriculum::stable_block_position(lesson,selected->reference);
+    check(reference.has_value(),"The multiline prerequisite lost its own reference");
+    const auto& source=lesson.pages.at(reference->page).blocks.at(reference->block);
+    const auto& first=owner.output_check->cases.front();
+    check(source.type==curriculum::BlockType::code&&!source.code.empty()&&first.standard_input.empty()&&
+        first.outputs==std::vector<std::string>{selected->output,std::string(selected->output)+'\n'}&&
+        curriculum::reference_activity(lesson,source)==curriculum::stable_block_position(lesson,owner.stable_id),
+        "The multiline prerequisite changed its reference or independent output contract");
+    static std::uint64_t request_id=120000;
+    windows::CppRunRequest request;request.request_id=++request_id;request.revision=request_id;
+    request.project_key=curriculum::draft_key("programming",lesson,owner);
+    request.projects_directory=projects;request.source_utf8=source.code;request.stdin_utf8=first.standard_input;
+    request.project_files=owner.project_files;request.source_files=owner.source_files;request.cmake=owner.cmake;
+    request.local_int_check=owner.local_int_check;request.local_string_check=owner.local_string_check;
+    request.input_check=owner.input_check;request.local_role_check=owner.local_role_check;
+    request.compile_timeout=std::chrono::seconds(60);request.execution_timeout=std::chrono::seconds(8);
+    check(!windows::compiler_puzzle_completed(data,lesson,owner)&&
+        windows::compiler_puzzle_case_count(data,lesson,owner)==0&&
+        windows::compiler_runtime_request_allowed(owner,request),
+        "The multiline prerequisite already has credit or its source/input is not allowed");
+    const auto result=windows::run_cpp(request);
+    const auto captured=windows::capture_cpp_execution(request,result);
+    check(result.error_utf8.empty()&&result.compilation.succeeded()&&result.execution.succeeded()&&
+        result.execution.stderr_bytes.empty()&&
+        (!owner.local_int_check||captured.local_int_check_correct)&&
+        (!owner.local_string_check||captured.local_string_check_correct)&&
+        (!owner.input_check||captured.input_check_correct)&&(!owner.local_role_check||captured.local_role_check_correct)&&
+        windows::evaluate_cpp_output_check(*owner.output_check,captured,request.revision).verdict==curriculum::OutputVerdict::correct,
+        "The genuine multiline prerequisite failed: "+result.error_utf8+result.compilation.stderr_bytes);
+    check(windows::record_compiler_puzzle_case(data,lesson,owner,request,captured,
+        "Multiline QA prerequisite: actual execution of its own published reference")&&
+        windows::compiler_puzzle_completed(data,lesson,owner)&&windows::compiler_puzzle_case_count(data,lesson,owner)==1,
+        "The actual first multiline prerequisite case did not earn its own receipt");
+    state::Draft draft;draft.source=request.source_utf8;draft.input=request.stdin_utf8;draft.has_saved=true;
+    state::put_draft(data,request.project_key,draft);
+    std::cout<<"MULTILINE prerequisite="<<owner.stable_id<<" real_cases=1 reference="<<source.stable_id<<'\n';
+}
+
+std::size_t prepare_multiline_prior_state(state::StateData& data,const curriculum::Lesson& lesson,
+        curriculum::StatePosition target,const MultilinePlan& plan,const std::filesystem::path& projects){
+    using curriculum::BlockType;
+    using namespace winrt::Windows::Data::Json;
+    check(lesson.id==plan.lesson_id&&lesson.pages.at(target.page).blocks.at(target.block).stable_id==plan.identity&&
+        lesson.compiler_puzzles_required,"Multiline QA preparation loaded another authored owner");
+    std::size_t executions=0;
+    // Earlier quizzes, including those before the focal field on its page,
+    // are evaluated QA setup. No focal/later answer or compiler is credited.
+    for(std::size_t p=0;p<=target.page;++p){
+        for(std::size_t b=0;b<lesson.pages[p].blocks.size();++b){
+            if(p==target.page&&b>=target.block)break;
+            const auto& block=lesson.pages[p].blocks[b];state::Response response;
+            switch(block.type){
+            case BlockType::heading:case BlockType::paragraph:case BlockType::note:
+            case BlockType::code:case BlockType::image:continue;
+            case BlockType::cpp_compiler:
+                execute_multiline_prerequisite(data,lesson,block,projects);++executions;continue;
+            case BlockType::multiple_choice:
+                check(block.correct_index.has_value(),"A prior multiline QA choice has no answer");
+                response.selected=static_cast<std::int64_t>(*block.correct_index);
+                response.correct=curriculum::evaluate_choice(block,*block.correct_index).correct;break;
+            case BlockType::fill_code:case BlockType::output_prediction:
+                check(!block.answers.empty(),"A prior multiline QA text exercise has no answer");
+                response.answer=block.answers.front();
+                response.correct=curriculum::evaluate_text_answer(block,response.answer).correct;break;
+            case BlockType::order_code:
+                for(const auto index:block.correct_order)response.order.push_back(static_cast<std::int64_t>(index));
+                response.correct=curriculum::evaluate_order(block,block.correct_order).correct;break;
+            case BlockType::inline_fill_code:{
+                JsonArray answers;for(const auto& answer:block.answers)answers.Append(JsonValue::CreateStringValue(wide(answer)));
+                JsonObject raw;raw.Insert(L"answers",answers);response.raw_json=winrt::to_string(raw.Stringify());
+                response.correct=curriculum::evaluate_hole_answers(block,block.answers).correct;break;
+            }
+            case BlockType::drag_fill_code:{
+                JsonArray slots;for(const auto index:block.correct_order)slots.Append(JsonValue::CreateNumberValue(static_cast<double>(index)));
+                JsonObject raw;raw.Insert(L"slots",slots);response.raw_json=winrt::to_string(raw.Stringify());
+                response.correct=curriculum::evaluate_drag_answers(block,block.correct_order).correct;break;
+            }
+            default:check(false,"A prior multiline QA activity needs an explicitly audited preparation");
+            }
+            check(response.correct,"A prior multiline QA answer failed its real evaluator");
+            state::put_response(data,lesson,block,response);
+        }
+        if(p<target.page)(void)state::mark_page_reached(data,lesson,p);
+    }
+    check(executions==plan.earlier_compilers&&!state::get_response(data,lesson,lesson.pages[target.page].blocks[target.block]),
+        "Multiline QA invented a target answer or lost a required genuine compiler observation");
+    require_prepared_compiler_credit(data,lesson,target);
+    state::validate_lesson_state(data,lesson);
+    return executions;
+}
+
+void preserve_multiline_other_state(const state::StateData& before,const state::StateData& after,
+        const curriculum::Lesson& lesson,const curriculum::Block& target){
+    check(u2l9_compiler_receipts(after)==u2l9_compiler_receipts(before)&&
+        after.preferences.at("exact_prediction_qa_unrelated")==before.preferences.at("exact_prediction_qa_unrelated"),
+        "Multiline editing changed a real compiler receipt or an unrelated preference");
+    for(const auto& page:lesson.pages)for(const auto& block:page.blocks){
+        if(block.stable_id==target.stable_id)continue;
+        const auto old=state::get_response(before,lesson,block),current=state::get_response(after,lesson,block);
+        check(old.has_value()==current.has_value(),"Multiline editing added or removed another exercise's progress");
+        if(old)check(current->raw_json==old->raw_json&&current->correct==old->correct&&current->answer==old->answer&&
+            current->selected==old->selected&&current->order==old->order,
+            "Multiline editing changed another exercise's saved response or progress");
+        if(block.type!=curriculum::BlockType::cpp_compiler)continue;
+        const auto key=curriculum::draft_key("programming",lesson,block);
+        const auto prior_draft=state::get_draft(before,key,block.initial_code,block.standard_input.value_or(""));
+        const auto current_draft=state::get_draft(after,key,block.initial_code,block.standard_input.value_or(""));
+        check(current_draft.has_saved==prior_draft.has_saved&&current_draft.source==prior_draft.source&&
+            current_draft.input==prior_draft.input&&current_draft.indentation_json==prior_draft.indentation_json&&
+            current_draft.selection_start==prior_draft.selection_start&&current_draft.selection_end==prior_draft.selection_end,
+            "Multiline editing changed an independent compiler source/input draft");
+    }
+}
+
 void prepare_visual_profile(std::string_view scenario,std::wstring_view token){
     const bool choice=scenario=="u11l11-choice";
     const bool active_edition=scenario=="u2l9-stages-active-edition"||scenario=="u2l9-variants-active-edition";
@@ -403,15 +565,18 @@ struct View {
     curriculum::Lesson lesson;
     curriculum::StatePosition position;
     bool editorial_feedback = false;
+    std::size_t real_compiler_runs = 0;
     HWND host=nullptr,view=nullptr;
-    View(curriculum::Lesson model,curriculum::StatePosition target,bool verify_editorial=false,bool seed_prerequisites=true)
+    View(curriculum::Lesson model,curriculum::StatePosition target,bool verify_editorial=false,bool seed_prerequisites=true,
+        const MultilinePlan* multiline=nullptr)
         :environment(resolve_windows_environment({ProfileId::Codex,
             L"exact-prediction-view-"+std::to_wstring(GetCurrentProcessId())+L"-"+std::to_wstring(GetTickCount64()),false})),
          lesson(std::move(model)),position(target),editorial_feedback(verify_editorial){
         check(!std::filesystem::exists(environment.paths.root),"Literal prediction QA requires a fresh private profile");
         initialize_profile_directories(environment.paths);
         state::StateData data;state::prepare_lesson_state(data,lesson);
-        if(seed_prerequisites)seed_compiler_prerequisites(data,lesson);
+        if(multiline)real_compiler_runs=prepare_multiline_prior_state(data,lesson,target,*multiline,environment.paths.projects);
+        else if(seed_prerequisites)seed_compiler_prerequisites(data,lesson);
         else{
             check(lesson.compiler_puzzles_required&&curriculum::activity_prerequisites(lesson,this->target()).empty(),
                 "The prepared-input prediction acquired an unaudited compiler prerequisite");
@@ -461,8 +626,8 @@ struct View {
         const auto answer=control(2);check(IsWindowEnabled(answer),"Prediction answer is unexpectedly locked");
         CHARRANGE all{0,-1};SendMessageW(answer,EM_EXSETSEL,0,reinterpret_cast<LPARAM>(&all));const auto source=wide(value);
         SendMessageW(answer,EM_REPLACESEL,TRUE,reinterpret_cast<LPARAM>(source.c_str()));pump();
-        // RichEdit presents CRLF paragraph breaks as LF. Both incoming forms
-        // still add a real final break and must fail an exact no-break answer.
+        // RichEdit presents CRLF paragraph breaks as LF while preserving
+        // every paragraph, including a final break, in the actual UI draft.
         check(text(2)==native_newlines(value),"RichEdit changed significant answer characters");
     }
     void submit(){active_step="submit the native answer";check(IsWindowEnabled(control(3)),"A complete authored prediction could not be submitted");
@@ -515,8 +680,8 @@ struct View {
             check(restored_response&&restored_response->raw_json==response->raw_json,"Reopening rewrote a reviewed rejected prediction payload");
             verify_feedback(false);}
     }
-    void accepted(std::string_view answer){
-        replace(answer);check(text(4).empty(),"The corrected draft still shows the rejected verdict");
+    void accepted_current(std::string_view answer){
+        check(text(2)==native_newlines(answer)&&text(4).empty(),"The pending answer changed or retained a previous verdict");
         const auto before=saved();submit();const auto feedback=text(4);
         check(feedback.starts_with("✓ Correcto")&&!IsWindowEnabled(control(2))&&!IsWindowEnabled(control(3)),"A valid literal prediction was rejected or did not lock");
         const auto after=saved();const auto response=state::get_response(after,lesson,target());
@@ -527,6 +692,26 @@ struct View {
         check(text(4)==feedback&&text(2)==native_newlines(answer)&&!IsWindowEnabled(control(2))
             &&restored_answer&&restored_answer->correct,"A correct prediction did not retain its answer, lock and feedback on reopen");
         check(restored_answer->raw_json==response->raw_json,"Reopening rewrote a correct prediction payload");verify_feedback(true);
+    }
+    void accepted(std::string_view answer){replace(answer);accepted_current(answer);}
+    void append_final_enter(){
+        check(!curriculum::uses_single_line_answer(target()),"The final-Enter probe requires an actual multiline control");
+        const auto initial=text(2);const auto before=saved();const auto answer=control(2);
+        check(!initial.empty()&&initial.back()!='\n'&&text(4).empty(),"The final-Enter probe must start with an unreviewed complete draft");
+        CHARRANGE end{-1,-1};SendMessageW(answer,EM_EXSETSEL,0,reinterpret_cast<LPARAM>(&end));SetFocus(answer);
+        MSG enter{};enter.hwnd=answer;enter.message=WM_KEYDOWN;enter.wParam=VK_RETURN;enter.lParam=1;
+        check(windows::CodeEditor::handle_key_message(enter),"The actual multiline editor did not handle final Enter");
+        enter.message=WM_KEYUP;(void)windows::CodeEditor::handle_key_message(enter);pump();
+        const auto after=saved();const auto response=state::get_response(after,lesson,target());
+        check(text(2)==initial+'\n'&&text(4).empty()&&response&&response->answer==initial+'\n'&&
+            !response->correct&&!state::response_reviewed(*response,target())&&
+            attempt_preferences(after)==attempt_preferences(before),
+            "Final Enter changed the interior payload, submitted the answer or consumed an attempt");
+        reopen();const auto restored=saved();const auto pending=state::get_response(restored,lesson,target());
+        check(text(2)==initial+'\n'&&text(4).empty()&&pending&&pending->raw_json==response->raw_json&&
+            !pending->correct&&!state::response_reviewed(*pending,target())&&
+            attempt_preferences(restored)==attempt_preferences(after),
+            "Reopening lost or evaluated the exact pending final-Enter draft");
     }
     void single_line_breaks(std::string_view incorrect){
         check(curriculum::uses_single_line_answer(target())&&!curriculum::evaluate_text_answer(target(),incorrect).correct,
@@ -551,6 +736,110 @@ struct View {
         SendMessageW(control(12),BM_CLICK,0,0);pump();reopen();
         check(text(2).empty()&&text(4).empty()&&IsWindowEnabled(control(2))&&!IsWindowEnabled(control(3)),"Explicit Reset failed to restore an unanswered prediction");}
 };
+
+void optional_final_newline_predictions(){
+    const auto content=std::filesystem::path(build::source_root)/"app/src/main/assets/content/es/programming/cpp_fundamentals";
+    std::size_t targets=0,accepted=0,rejected=0,physical_enters=0,raw_cr_rejections=0,real_prerequisites=0;
+    for(const auto& plan:multiline_plans){
+        active_case=std::string(plan.filename)+" / "+plan.identity;
+        active_step="load the exact authored multiline prediction";
+        const auto path=content/plan.filename;const auto original=state::read_bytes(path);
+        const auto lesson=windows::load_lesson(path);
+        check(lesson.id==plan.lesson_id&&lesson.locale=="es"&&lesson.course_edition&&*lesson.course_edition==
+            curriculum::CourseEdition{"cpp_fundamentals","es","cpp_desde_cero_2026",1},
+            "The final-newline regression did not load its explicit active publication");
+        const auto position=curriculum::stable_block_position(lesson,plan.identity);
+        check(position.has_value(),"The final-newline prediction lost its stable identity");
+        const auto& block=lesson.pages.at(position->page).blocks.at(position->block);
+        const std::string expected=plan.answer;
+        check(block.type==curriculum::BlockType::output_prediction&&block.id==plan.activity&&!block.code.empty()&&
+            block.output_comparison==curriculum::TextComparison::exact&&!curriculum::uses_single_line_answer(block)&&
+            block.answers==std::vector<std::string>{expected}&&expected.find('\n')!=expected.npos&&expected.back()!='\n',
+            "The audited exact multiline answer, program or input shape changed");
+        check(curriculum::activity_prerequisites(lesson,block).empty(),
+            "A new explicit prerequisite needs an audited final-newline preparation");
+        std::cout<<"RUN optional final newline "<<lesson.id<<" / "<<block.stable_id<<'\n'<<std::flush;
+        View fixture(lesson,*position,plan.editorial_feedback,false,&plan);
+        real_prerequisites+=fixture.real_compiler_runs;
+        const auto before=fixture.saved();
+        const auto progress=[&](bool correct,bool reviewed){
+            const auto current=fixture.saved();const auto response=state::get_response(current,lesson,block);
+            check((response&&response->correct)==correct&&
+                (response&&state::response_reviewed(*response,block))==reviewed,
+                "The multiline response acquired or lost progress before its actual Check action");
+            const auto page=lesson_page_state(fixture.view);
+            check(page.index==position->page&&page.can_next==(correct&&plan.completes_page),
+                "The multiline verdict lost its next-page gate or bypassed a still-pending activity");
+            preserve_multiline_other_state(before,current,lesson,block);
+            require_prepared_compiler_credit(current,lesson,*position);
+            auto question=block.question;std::erase(question,'`');
+            check(fixture.text(0)==question&&fixture.text(1)==block.code,
+                "The multiline control changed its authored question or displayed program");
+            if(correct){
+                const auto feedback=std::string("✓ Correcto")+(block.explanation.empty()?"":"\n\n"+block.explanation);
+                check(fixture.text(4)==feedback,"The multiline success lost its complete authored explanation");
+                const auto regions=lesson_reading_regions(fixture.view);
+                check(std::ranges::any_of(regions,[&](const auto& region){return region.target==fixture.control(4)&&
+                    region.feedback&&region.correct&&region.source_text==feedback;}),
+                    "The multiline success lost its exact feedback reading region");
+            }
+        };
+        fixture.incomplete();progress(false,false);
+        // A semantically acceptable trailing LF remains an unreviewed draft
+        // until the native Check button is used, including after reopening.
+        fixture.draft(expected+'\n');progress(false,false);
+        auto missing_interior=expected;missing_interior.erase(missing_interior.find('\n'),1);
+        auto extra_interior=expected;extra_interior.insert(extra_interior.find('\n'),1,'\n');
+        const std::array<std::string,7> wrong{
+            expected+"\n\n",crlf_lines(expected)+"\r\n\r\n",' '+expected,expected+' ',
+            plan.wrong_internal_space,missing_interior,extra_interior,
+        };
+        for(const auto& value:wrong){
+            check(!curriculum::evaluate_text_answer(block,value).correct,
+                "A significant multiline space, interior row or second final line was accepted");
+            fixture.rejected(value,true);progress(false,true);++rejected;
+        }
+        // RichEdit represents a pasted bare CR as a paragraph. Test its raw
+        // evaluator contract separately instead of claiming those bytes survive UI input.
+        auto bare_cr=expected;bare_cr[bare_cr.rfind('\n')]='\r';
+        check(!curriculum::evaluate_text_answer(block,bare_cr).correct,
+            "The exact multiline evaluator erased a significant bare carriage return");
+        ++raw_cr_rejections;
+        const std::array<std::string,4> accepted_forms{
+            expected,expected+'\n',crlf_lines(expected),crlf_lines(expected)+"\r\n",
+        };
+        bool first=true;
+        for(const auto& value:accepted_forms){
+            if(!first){fixture.reset();progress(false,false);}first=false;
+            check(curriculum::evaluate_text_answer(block,value).correct,
+                "The exact multiline evaluator rejected LF/CRLF or its single optional terminator");
+            fixture.accepted(value);progress(true,true);++accepted;
+        }
+        fixture.reset();progress(false,false);
+        fixture.replace(expected);fixture.append_final_enter();progress(false,false);++physical_enters;
+        // Check the actual Enter-created draft without replacing it first.
+        fixture.accepted_current(expected+'\n');progress(true,true);++accepted;
+        if(plan.completes_page){
+            check(navigate_lesson_view(fixture.view,position->page+1),
+                "An actually completed multiline page did not allow continuation");pump();
+            check(lesson_page_state(fixture.view).index==position->page+1&&
+                navigate_lesson_view(fixture.view,position->page),
+                "The multiline continuation lost its destination or return route");pump();
+            fixture.reopen();progress(true,true);
+        }
+        fixture.reset();fixture.incomplete();progress(false,false);
+        check(state::read_bytes(path)==original,"Final-newline QA changed authored content or its state layout");
+        ++targets;
+        std::cout<<"PASS optional final newline "<<block.stable_id
+            <<": 5 native accepted forms including physical Enter, 7 native rejections, exact drafts/reopen, "
+            <<"progress and independent real receipts preserved\n";
+    }
+    check(targets==4&&accepted==20&&rejected==28&&physical_enters==4&&raw_cr_rejections==4&&real_prerequisites==2,
+        "The four authored final-newline controls or their real prerequisite executions are incomplete");
+    std::cout<<"PASS four authored exact multiline predictions: 20 native acceptances, 28 native rejections, "
+        <<"4 real Enter insertions, 4 raw bare-CR evaluator rejections, 2 genuine MSVC prerequisite runs; "
+        <<"significant spaces/interior rows, unreviewed drafts, reopen, scoped Reset, next-page gates and unchanged source assets\n";
+}
 
 constexpr std::string_view recovery_before_full="c646f1115a768fe8c66e97960f30082e01f3f656e1b393a7463697aba151612a";
 constexpr std::string_view recovery_after_full="874ca9f94a235149ee8e93866c35cf7daed4aba3d0ad97adce4fcccfd1bce4a6";
@@ -657,7 +946,7 @@ void current_literal_predictions(PredictionGroup group,const std::filesystem::pa
         "Active-edition predictions cannot substitute another group or historical fixture");
     const auto& publication=active_edition?active_u2l9_publication:archived_u2l9_publication;
     const auto content=std::filesystem::path(build::source_root)/"app/src/main/assets/content/es/programming/cpp_fundamentals";
-    std::size_t exact=0,trimmed=0,rejected=0,native_rejected=0,core_only_rejected=0;
+    std::size_t exact=0,trimmed=0,rejected=0,native_rejected=0,core_only_rejected=0,multiline_forms=0;
     for(const auto& plan:plans){
         if(plan.group!=group)continue;
         check(!active_edition||(plan.edition_identity&&plan.edition_answer),
@@ -693,7 +982,10 @@ void current_literal_predictions(PredictionGroup group,const std::filesystem::pa
         const auto unrelated=before.preferences.at("exact_prediction_qa_unrelated");fixture.incomplete();
         fixture.draft(plan.internal_error?std::string(plan.internal_error):expected+' ');
         if(plan.exact){
-            const std::vector<std::string> variants{expected+'\n',expected+"\r\n",expected+' ',expected+'\t',' '+expected,'\t'+expected};
+            const std::vector<std::string> variants{
+                expected+(single_line?"\n":"\n\n"),
+                single_line?expected+"\r\n":crlf_lines(expected)+"\r\n\r\n",
+                expected+' ',expected+'\t',' '+expected,'\t'+expected};
             bool first=true;for(const auto& answer:variants){
                 if(single_line&&answer.find_first_of("\r\n")!=answer.npos){
                     active_step="evaluate an exact boundary newline outside the single-line input contract";
@@ -707,8 +999,17 @@ void current_literal_predictions(PredictionGroup group,const std::filesystem::pa
                     "The independently chosen internal mutation is no longer incorrect in the current lesson");
                 fixture.rejected(plan.internal_error,true);++rejected;++native_rejected;
             }
-            if(single_line)fixture.single_line_breaks(expected+' ');
-            fixture.accepted(expected);++exact;
+            if(single_line){fixture.single_line_breaks(expected+' ');fixture.accepted(expected);}
+            else{
+                const std::array forms{expected,expected+'\n',crlf_lines(expected),crlf_lines(expected)+"\r\n"};
+                bool first_form=true;for(const auto& form:forms){
+                    if(!first_form)fixture.reset();first_form=false;
+                    check(curriculum::evaluate_text_answer(block,form).correct,
+                        "An authored multiline prediction rejected its optional LF/CRLF ending");
+                    fixture.accepted(form);++multiline_forms;
+                }
+            }
+            ++exact;
         }else{
             check(plan.internal_error!=nullptr,"Trimmed regression has no independently authored internal mutation");
             fixture.rejected(plan.internal_error,true);++rejected;++native_rejected;
@@ -740,17 +1041,18 @@ void current_literal_predictions(PredictionGroup group,const std::filesystem::pa
         std::cout<<"PASS "<<(plan.exact?"exact ":"trimmed ")<<lesson.id<<" / "<<block.stable_id<<"\n";
     }
     if(group==PredictionGroup::prepared_input){
-        check(exact==5&&trimmed==0&&rejected==35&&native_rejected==27&&core_only_rejected==8,
+        check(exact==5&&trimmed==0&&rejected==35&&native_rejected==27&&core_only_rejected==8&&multiline_forms==4,
             "The registered five prepared-input exact predictions are incomplete");
         std::cout<<"PASS five "<<(historical.empty()?publication.label:"authenticated archived")
             <<" U2L9 exact predictions: 27 native character mutations plus 8 exact evaluator newline checks, "
             <<"authored question/source/full guide/success reading regions, unreviewed draft/reopen, "
-            <<"single-line Enter preservation, retry/correct/reopen/Reset, response payload and heart conservation; "
+            <<"single-line Enter preservation, 4 accepted LF/CRLF multiline forms with optional final newline, "
+            <<"retry/correct/reopen/Reset, response payload and heart conservation; "
             <<"real preceding compiler receipts remain byte-for-byte intact; no synthetic U2L9 credit or asset edits\n";
     }else{
-        check(exact==9&&trimmed==4&&rejected==62&&native_rejected==54&&core_only_rejected==8,
+        check(exact==9&&trimmed==4&&rejected==62&&native_rejected==54&&core_only_rejected==8&&multiline_forms==20,
             "The registered nine-plus-four literal prediction matrix is incomplete");
-        std::cout<<"PASS nine current exact predictions and four current trimmed predictions: 54 native character mutations plus 8 exact evaluator newline checks, current U11L2/U11L11 question/source/full guide/success reading regions, unreviewed draft/reopen, single-line Enter preservation, retry/correct/reopen/Reset, significant internal formatting, response payload preservation, incomplete/draft/correct heart conservation and untouched assets; compiler prerequisites explicitly synthetic\n";
+        std::cout<<"PASS nine current exact predictions and four current trimmed predictions: 54 native character mutations plus 8 exact evaluator newline checks, 20 accepted LF/CRLF multiline forms with optional final newline, current U11L2/U11L11 question/source/full guide/success reading regions, unreviewed draft/reopen, single-line Enter preservation, retry/correct/reopen/Reset, significant internal formatting, response payload preservation, incomplete/draft/correct heart conservation and untouched assets; compiler prerequisites explicitly synthetic\n";
     }
 }
 }
@@ -759,13 +1061,14 @@ int main(int argc,char** argv){
     const bool prepared_input=argc==2&&std::string_view(argv[1])=="--prepared-input";
     const bool prepared_history=argc==3&&std::string_view(argv[1])=="--prepared-input-history";
     const bool prepared_active=argc==2&&std::string_view(argv[1])=="--prepared-input-active-edition";
+    const bool optional_final_newline=argc==2&&std::string_view(argv[1])=="--optional-final-newline";
     const bool u11_precision=argc==2&&std::string_view(argv[1])=="--u11-precision";
-    if(argc!=1&&!prepared_input&&!prepared_history&&!prepared_active&&!u11_precision){const bool shape=argc==4&&std::string_view(argv[1])=="--prepare-visual"
+    if(argc!=1&&!prepared_input&&!prepared_history&&!prepared_active&&!optional_final_newline&&!u11_precision){const bool shape=argc==4&&std::string_view(argv[1])=="--prepare-visual"
             &&(std::string_view(argv[2])=="u11l2"||std::string_view(argv[2])=="u11l11"||std::string_view(argv[2])=="u11l11-choice"||std::string_view(argv[2])=="u2l9-stages"||std::string_view(argv[2])=="u2l9-variants"
                 ||std::string_view(argv[2])=="u2l9-stages-active-edition"||std::string_view(argv[2])=="u2l9-variants-active-edition");
         const auto raw=shape?std::string_view(argv[3]):std::string_view{};const std::wstring token(raw.begin(),raw.end());
         if(!shape||!is_valid_qa_instance(token)){
-            std::cerr<<"Usage: exact_prediction_view_tests [--prepared-input | --prepared-input-history <authentic-json> | --prepared-input-active-edition | --u11-precision | --prepare-visual <u11l2|u11l11|u11l11-choice|u2l9-stages|u2l9-variants|u2l9-stages-active-edition|u2l9-variants-active-edition> <safe-new-QA-token>]\n";return 2;}
+            std::cerr<<"Usage: exact_prediction_view_tests [--prepared-input | --prepared-input-history <authentic-json> | --prepared-input-active-edition | --optional-final-newline | --u11-precision | --prepare-visual <u11l2|u11l11|u11l11-choice|u2l9-stages|u2l9-variants|u2l9-stages-active-edition|u2l9-variants-active-edition> <safe-new-QA-token>]\n";return 2;}
         // U2L9 prepares real preceding compiler evidence, without answering
         // the selected prediction or creating a visible lesson view.
         try{winrt::init_apartment();prepare_visual_profile(argv[2],token);return 0;}
@@ -773,7 +1076,7 @@ int main(int argc,char** argv){
     }
     const auto apartment=OleInitialize(nullptr);if(FAILED(apartment))return 2;
     INITCOMMONCONTROLSEX common{sizeof(common),ICC_STANDARD_CLASSES};InitCommonControlsEx(&common);int result=0;
-    try{if(u11_precision)proposed_u11_recovery_explanation();
+    try{if(optional_final_newline)optional_final_newline_predictions();else if(u11_precision)proposed_u11_recovery_explanation();
         else current_literal_predictions(prepared_input||prepared_history||prepared_active?PredictionGroup::prepared_input:PredictionGroup::baseline,
             prepared_history?std::filesystem::path(argv[2]):std::filesystem::path{},prepared_active);}
     catch(const std::exception& error){std::cerr<<active_case<<" ["<<active_step<<"]: "<<error.what()<<'\n';result=1;}

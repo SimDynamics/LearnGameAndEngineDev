@@ -22,6 +22,17 @@ std::string_view trimmed(std::string_view value) {
     while (!value.empty() && whitespace(value.back())) value.remove_suffix(1);
     return value;
 }
+std::string prediction_output_lines(std::string_view value) {
+    std::string result;
+    result.reserve(value.size());
+    for (std::size_t at = 0; at < value.size(); ++at) {
+        // Only the native CRLF spelling denotes the same line break as LF.
+        // A lone CR, spaces and every other output byte remain significant.
+        if (value[at] == '\r' && at + 1 < value.size() && value[at + 1] == '\n') ++at;
+        result += value[at];
+    }
+    return result;
+}
 std::size_t quoted_end(std::string_view text, std::size_t start) {
     const char quote = text[start];
     for (auto index = start + 1; index < text.size(); ++index) {
@@ -740,13 +751,25 @@ AnswerEvaluation evaluate_text_answer(const Block& block, std::string_view answe
     }
     const auto holes = block.type == BlockType::fill_code ? literal_holes(block.code,"___") : std::vector<bool>{};
     const bool literal_hole = std::ranges::any_of(holes,[](bool literal) { return literal; });
+    const bool multiline_exact_output = block.type == BlockType::output_prediction &&
+        block.output_comparison == TextComparison::exact && !uses_single_line_answer(block);
     const auto normalize = [&](std::string_view value) -> std::string {
+        if (multiline_exact_output) return prediction_output_lines(value);
         if (block.type == BlockType::output_prediction)
             return std::string(block.output_comparison == TextComparison::exact ? value : trimmed(value));
         return literal_hole ? std::string(value) : normalize_cpp_answer(value);
     };
     const auto actual = normalize(answer);
-    const auto correct = std::ranges::any_of(block.answers, [&](const auto& candidate) { return normalize(candidate) == actual; });
+    const auto correct = std::ranges::any_of(block.answers, [&](const auto& candidate) {
+        auto expected = normalize(candidate);
+        if (!multiline_exact_output) return expected == actual;
+        // The authored final terminator is optional in a multiline answer.
+        // Derive its payload once: trimming both sides would lose the valid
+        // no-terminator form when an authored blank final line is significant.
+        if (!expected.empty() && expected.back() == '\n') expected.pop_back();
+        return actual == expected || (!actual.empty() && actual.back() == '\n' &&
+            std::string_view(actual).substr(0,actual.size() - 1) == expected);
+    });
     return verdict(block, correct);
 }
 std::string incorrect_feedback(const Block& block,std::optional<std::size_t> selected) {

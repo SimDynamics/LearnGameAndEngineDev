@@ -133,6 +133,11 @@ target_link_libraries(lgaed_course_edition_tests PRIVATE lgaed_curricular_window
 add_dependencies(lgaed_course_edition_tests lgaed_course_edition_fixtures)
 
 enable_testing()
+add_executable(lgaed_prediction_output_tests
+    "${_lgaed_root}/native/core/prediction_output_tests.cpp")
+target_link_libraries(lgaed_prediction_output_tests PRIVATE lgaed_core)
+add_test(NAME native.prediction_output_endings COMMAND lgaed_prediction_output_tests)
+set_tests_properties(native.prediction_output_endings PROPERTIES TIMEOUT 20)
 add_test(NAME native.course_edition
     COMMAND lgaed_course_edition_tests "${_edition_dir}")
 set_tests_properties(native.course_edition PROPERTIES TIMEOUT 120 RUN_SERIAL TRUE)
@@ -358,6 +363,11 @@ lgaed_add_nested_cmake_format_tests("${_lgaed_root}")
 add_executable(lgaed_exact_prediction_view_tests
     "${_lgaed_root}/native/presentation/windows/exact_prediction_view_tests.cpp")
 target_link_libraries(lgaed_exact_prediction_view_tests PRIVATE lgaed_curricular_windows)
+add_test(NAME native.exact_prediction_view COMMAND lgaed_exact_prediction_view_tests)
+set_tests_properties(native.exact_prediction_view PROPERTIES TIMEOUT 90 RUN_SERIAL TRUE)
+add_test(NAME native.prediction_final_newline
+    COMMAND lgaed_exact_prediction_view_tests --optional-final-newline)
+set_tests_properties(native.prediction_final_newline PROPERTIES TIMEOUT 240 RUN_SERIAL TRUE)
 add_test(NAME native.prepared_input_predictions
     COMMAND lgaed_exact_prediction_view_tests --prepared-input)
 add_test(NAME native.active_edition_prepared_input_predictions
