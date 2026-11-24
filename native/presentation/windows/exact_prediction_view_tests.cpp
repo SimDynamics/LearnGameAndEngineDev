@@ -504,16 +504,19 @@ void require_prepared_compiler_credit(const state::StateData& data,const curricu
         }
 }
 
+constexpr std::string_view decimal_prediction_lesson="cpp_fundamentals__objetos_y_estado__enteros_y_aproximaciones";
+
 void execute_multiline_prerequisite(state::StateData& data,const curriculum::Lesson& lesson,
         const curriculum::Block& owner,const std::filesystem::path& projects){
-    struct Prior {const char* identity;const char* reference;const char* output;};
+    struct Prior {std::string_view lesson;const char* identity;const char* reference;const char* output;};
+    constexpr std::string_view multiline_lesson="cpp_fundamentals__edition_es_1__objetos_y_estado__representar_procesar_y_recuperar";
     constexpr std::array prior{
-        Prior{"block_0004_0005","block_0004_0007","Puesto 03\nMesas: 6\nCable: 3.75 m"},
-        Prior{"block_0007_0004","block_0007_0006","Modulo 02\nInicio: 7\nAhora: 10"},
+        Prior{multiline_lesson,"block_0004_0005","block_0004_0007","Puesto 03\nMesas: 6\nCable: 3.75 m"},
+        Prior{multiline_lesson,"block_0007_0004","block_0007_0006","Modulo 02\nInicio: 7\nAhora: 10"},
+        Prior{decimal_prediction_lesson,"block_0006_0002","block_0007_0001","Parte: 4.5 m"},
     };
-    const auto selected=std::ranges::find_if(prior,[&](const auto& item){return owner.stable_id==item.identity;});
-    check(lesson.id=="cpp_fundamentals__edition_es_1__objetos_y_estado__representar_procesar_y_recuperar"&&
-        selected!=prior.end()&&owner.type==curriculum::BlockType::cpp_compiler&&owner.output_check&&
+    const auto selected=std::ranges::find_if(prior,[&](const auto& item){return lesson.id==item.lesson&&owner.stable_id==item.identity;});
+    check(selected!=prior.end()&&owner.type==curriculum::BlockType::cpp_compiler&&owner.output_check&&
         owner.output_check->input_comparison==curriculum::TextComparison::exact&&owner.output_check->cases.size()==1,
         "A new multiline prerequisite needs an explicitly audited real execution");
     const auto reference=curriculum::stable_block_position(lesson,selected->reference);
@@ -774,7 +777,13 @@ struct View {
         state::StateData data;state::prepare_lesson_state(data,lesson);
         if(multiline)real_compiler_runs=prepare_multiline_prior_state(data,lesson,target,*multiline,environment.paths.projects);
         else if(seed_prerequisites){
-            seed_compiler_prerequisites(data,lesson);
+            if(lesson.id==decimal_prediction_lesson){
+                const auto owner=curriculum::stable_block_position(lesson,"block_0006_0002");
+                check(owner&&owner->page<target.page,"The decimal prediction lost its earlier compiler");
+                execute_multiline_prerequisite(data,lesson,lesson.pages.at(owner->page).blocks.at(owner->block),environment.paths.projects);
+                ++real_compiler_runs;
+                require_prepared_compiler_credit(data,lesson,target);
+            }else seed_compiler_prerequisites(data,lesson);
             prepare_u2l9_prior_quizzes(data,lesson,target,&archived_math);
             check(!state::get_response(data,lesson,this->target()),
                 "Preparing archived prerequisites answered the focal prediction");
@@ -1209,7 +1218,10 @@ void current_literal_predictions(PredictionGroup group,const std::filesystem::pa
         std::cout<<"RUN "<<active_case<<" ["<<(single_line?"single-line":"multiline")<<"]\n"<<std::flush;
         View fixture(lesson,*position,plan.editorial_feedback,group!=PredictionGroup::prepared_input);const auto before=fixture.saved();
         const auto compiler_receipts=u2l9_compiler_receipts(before);
-        if(group==PredictionGroup::prepared_input)require_prepared_compiler_credit(before,lesson,*position);
+        const bool real_prerequisites=group==PredictionGroup::prepared_input||lesson.id==decimal_prediction_lesson;
+        if(real_prerequisites)require_prepared_compiler_credit(before,lesson,*position);
+        if(lesson.id==decimal_prediction_lesson)check(fixture.real_compiler_runs==1,
+            "The decimal prediction requires exactly one genuine first-case execution");
         const auto unrelated=before.preferences.at("exact_prediction_qa_unrelated");fixture.incomplete();
         fixture.draft(plan.internal_error?std::string(plan.internal_error):expected+' ');
         if(plan.exact){
@@ -1253,7 +1265,7 @@ void current_literal_predictions(PredictionGroup group,const std::filesystem::pa
         }
         const auto saved=fixture.saved();
         check(saved.preferences.at("exact_prediction_qa_unrelated")==unrelated,"Prediction QA altered an unrelated preference");
-        if(group==PredictionGroup::prepared_input){
+        if(real_prerequisites){
             require_prepared_compiler_credit(saved,lesson,*position);
             check(u2l9_compiler_receipts(saved)==compiler_receipts,
                 "Answering a prediction rewrote a real prerequisite receipt");
@@ -1262,7 +1274,7 @@ void current_literal_predictions(PredictionGroup group,const std::filesystem::pa
                 if(item.type==curriculum::BlockType::cpp_compiler&&item.output_check)
                     check(windows::compiler_puzzle_completed(saved,lesson,item),"Answering a prediction changed a compiler prerequisite receipt");
         fixture.reset();fixture.incomplete();
-        if(group==PredictionGroup::prepared_input){
+        if(real_prerequisites){
             const auto reset=fixture.saved();
             require_prepared_compiler_credit(reset,lesson,*position);
             check(u2l9_compiler_receipts(reset)==compiler_receipts,
@@ -1283,7 +1295,7 @@ void current_literal_predictions(PredictionGroup group,const std::filesystem::pa
     }else{
         check(exact==9&&trimmed==4&&rejected==62&&native_rejected==54&&core_only_rejected==8&&multiline_forms==20,
             "The registered nine-plus-four literal prediction matrix is incomplete");
-        std::cout<<"PASS nine current exact predictions and four current trimmed predictions: 54 native character mutations plus 8 exact evaluator newline checks, 20 accepted LF/CRLF multiline forms with optional final newline, current U11L2/U11L11 question/source/full guide/success reading regions, unreviewed draft/reopen, single-line Enter preservation, retry/correct/reopen/Reset, significant internal formatting, response payload preservation, incomplete/draft/correct heart conservation and untouched assets; compiler prerequisites explicitly synthetic\n";
+        std::cout<<"PASS nine current exact predictions and four current trimmed predictions: 54 native character mutations plus 8 exact evaluator newline checks, 20 accepted LF/CRLF multiline forms with optional final newline, current U11L2/U11L11 question/source/full guide/success reading regions, unreviewed draft/reopen, single-line Enter preservation, retry/correct/reopen/Reset, significant internal formatting, response payload preservation, incomplete/draft/correct heart conservation and untouched assets; decimal prerequisite genuinely executed, other baseline compiler prerequisites explicitly synthetic\n";
     }
 }
 }
