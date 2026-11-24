@@ -784,6 +784,38 @@ class CourseEditionAuthoringTest(unittest.TestCase):
             state.validate(foreign)
 
 
+    def test_published_u6_diagnostics_copy(self):
+        # Exercise the real published contract, not a synthetic diagnostic hash.
+        root = SCRIPT.parents[2]
+        relative = (f"{CONTENT}/es/programming/cpp_fundamentals/"
+                    "funciones_y_contratos/lesson_declaraciones_y_firmas.json")
+        original = edition._load(root / relative)
+        value = {"version": 1, "courseId": "cpp_fundamentals", "locale": "es",
+                 "generation": 1, "id": "cpp_desde_cero_2026"}
+        source = deepcopy(original)
+        del source["stateLayout"]
+        source["id"] = edition.unit_prefix(value) + "funciones_y_contratos__declaraciones_y_firmas"
+        prepared = edition.prepare_edition_lesson(
+            source, value, source_document=original, source_path=relative)
+        state.validate(prepared)
+        self.assertEqual(original["pages"], prepared["pages"])
+        self.assertEqual(original["stateLayout"]["current"], prepared["stateLayout"]["current"])
+        self.assertEqual([], prepared["stateLayout"]["editorial"])
+        self.assertEqual([], prepared["stateLayout"]["additions"])
+        self.assertNotEqual(original["id"], prepared["id"])
+        diagnostics = [(p, b) for p, page in enumerate(original["pages"])
+                       for b, block in enumerate(page["blocks"]) if "compileCheck" in block]
+        self.assertEqual(3, len(diagnostics))
+        for p, b in diagnostics:
+            with self.subTest(page=p, block=b):
+                changed = deepcopy(prepared)
+                changed["pages"][p]["blocks"][b]["compileCheck"]["explanation"] += " Alterado."
+                with self.assertRaises(ValueError):
+                    edition.validate_source_copy(changed)
+        self.assertEqual(original, edition._load(root / relative))
+
+
+
 class CourseEditionFixtureTreeTest(unittest.TestCase):
     """The CMake/Ninja fixture generator must not mistake empty output
     directories for foreign files, or overwrite any unrecognized QA data.
