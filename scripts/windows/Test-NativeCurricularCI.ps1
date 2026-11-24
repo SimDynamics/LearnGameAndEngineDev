@@ -46,7 +46,7 @@ $qaSuiteConfig = switch ($Suite) {
         @{
             Directory = 'state-import-ci'
             CMakeOption = 'LGAED_STATE_IMPORT_QA_ONLY'
-            Targets = @('lgaed_state_tests', 'lgaed_stderr_exact_tests', 'lgaed_cpp_project_history_tests', 'lgaed_cpp_history_training_tests', 'lgaed_code_format_loader_tests', 'lgaed_u6_compilecheck_format_runner_tests', 'lgaed_compiler_case_order_state_tests', 'lgaed_compiler_case_revision_state_tests', 'lgaed_compiler_guidance_state_tests')
+            Targets = @('lgaed_state_tests', 'lgaed_stderr_exact_tests', 'lgaed_cpp_project_history_tests', 'lgaed_cpp_history_training_tests', 'lgaed_code_format_loader_tests', 'lgaed_u6_compilecheck_format_runner_tests', 'lgaed_compiler_case_order_state_tests', 'lgaed_compiler_case_revision_state_tests', 'lgaed_compiler_guidance_state_tests', 'lgaed_p3_ownership_authoring_state_tests', 'lgaed_local_variable_state_qa_targets')
             Results = 'state-import'
             Tests = @(
                 'native.cpp_project_history',
@@ -76,7 +76,18 @@ $qaSuiteConfig = switch ($Suite) {
                 'native.abstract_interface_state_live',
                 'native.interface_collection_state_live',
                 'native.polymorphic_clone_state_live',
-                'native.dual_interface_state_live'
+                'native.dual_interface_state_live',
+                'native.p3_ownership_shared_state',
+                'native.local_int_state',
+                'native.local_string_state',
+                'native.input_dependency_state',
+                'native.continued_input_dependency_state',
+                'native.input_probe',
+                'native.input_dependency_authoring',
+                'native.current_u2l10_local_role_state',
+                'native.local_role_probe',
+                'native.local_role_authoring',
+                'native.local_dependency_receipts'
             )
         }
     }
@@ -102,6 +113,7 @@ $qaSuiteConfig = switch ($Suite) {
                 'lgaed_lesson_view_tests',
                 'lgaed_lesson_tests',
                 'lgaed_compiler_guidance_state_tests',
+                'lgaed_p3_ownership_authoring_state_tests',
                 'lgaed_code_gutter_wheel_tests',
                 'lgaed_lesson_scroll_tests',
                 'lgaed_diagnostic_path_tests',
@@ -550,6 +562,7 @@ if ($Suite -eq 'ReaderBuild') {
         'native.math_matching_text_live',
         'native.general_choice_live',
         'native.identifier_rename_live',
+        'native.p3_ownership_shared_state',
         'native.indexed_unique_transfer_state_live',
         'native.defaulted_move_policy_state_live',
                 'native.independent_copy_assignment_state_live',
@@ -629,6 +642,10 @@ $qaExpected = $qaSuiteConfig.Tests
 $qaActualTests = @($qaListing.tests | ForEach-Object { $_.name })
 if ($qaActualTests.Count -ne $qaExpected.Count -or
     (Compare-Object -ReferenceObject $qaExpected -DifferenceObject $qaActualTests)) {
+    $qaMissing = @($qaExpected | Where-Object { $_ -notin $qaActualTests })
+    $qaUnexpected = @($qaActualTests | Where-Object { $_ -notin $qaExpected })
+    Write-Host ("${Suite} missing CTest registrations: " + ($qaMissing -join ', '))
+    Write-Host ("${Suite} unexpected CTest registrations: " + ($qaUnexpected -join ', '))
     throw "The focused $Suite configuration must register exactly its $($qaExpected.Count) declared tests."
 }
 
