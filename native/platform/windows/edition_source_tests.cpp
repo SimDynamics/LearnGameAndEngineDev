@@ -46,6 +46,7 @@ namespace fs=std::filesystem;
 std::string phase="setup";
 std::uint64_t sequence=1100000;
 unsigned compiler_attempts=0,diagnostic_attempts=0,executed_programs=0,math_requests=0,mounted_lessons=0,rejections=0;
+unsigned opened_references=0,pending_references=0;
 
 void require(bool value,std::string_view message) {
     if(!value)throw std::runtime_error(phase+": "+std::string(message));
@@ -141,6 +142,18 @@ void same_contract(const Fixture& fixture,const Lesson& current) {
         "A fresh edition inherited historical state adapters");
     require(current.pages.size()==before.pages.size()&&layout.current.size()==before.pages.size(),
         "An exact copy changed the page inventory");
+    require(current.compiler_puzzles_required==before.compiler_puzzles_required&&
+            current.reference_after.size()==before.reference_after.size()&&
+            current.activity_after.size()==before.activity_after.size(),
+        "An exact copy changed its required activities or dependency inventory");
+    for(std::size_t i=0;i<before.reference_after.size();++i)
+        require(current.reference_after[i].activity==before.reference_after[i].activity&&
+                current.reference_after[i].blocks==before.reference_after[i].blocks,
+            "An exact copy changed a reference owner or its presentation blocks");
+    for(std::size_t i=0;i<before.activity_after.size();++i)
+        require(current.activity_after[i].activity==before.activity_after[i].activity&&
+                current.activity_after[i].prerequisites==before.activity_after[i].prerequisites,
+            "An exact copy changed an activity prerequisite");
     for(std::size_t p=0;p<current.pages.size();++p) {
         const auto& old_page=before.pages[p];const auto& page=current.pages[p];
         require(page.stable_id==old_page.stable_id&&page.blocks.size()==old_page.blocks.size(),
@@ -483,9 +496,34 @@ void exercise_copies(const Input& input,const WindowsEnvironment& environment,Na
         }
         for(const auto& raw:f.entry.GetNamedArray(L"blocks")) {
             const auto row=raw.GetObject();if(text(row,L"kind")!="reference")continue;
-            require(compiler_puzzle_completed(data,f.after,owner(f.after,text(row,L"relatedOwner")))&&
-                    reference_available(data,f.after,owner(f.after,text(row,L"owner"))),
-                "A copied reviewed reference stayed blocked after its own first-case success");
+            const auto id=text(row,L"owner"),related=text(row,L"relatedOwner");
+            phase=text(f.entry,L"id")+'/'+id+"/authentic reference dependency";
+            const auto& previous=owner(f.before,id);const auto& reference=owner(f.after,id);
+            const auto old_position=reference_activity(f.before,previous),position=reference_activity(f.after,reference);
+            require(old_position&&position&&*old_position==*position,
+                "A copied reference changed or lost its authenticated activity");
+            const auto& old_gate=f.before.pages[old_position->page].blocks[old_position->block];
+            const auto& gate=f.after.pages[position->page].blocks[position->block];
+            require(old_gate.stable_id==gate.stable_id&&
+                    activity_prerequisites(f.before,old_gate)==activity_prerequisites(f.after,gate),
+                "A copied reference changed its activity or prerequisite chain");
+            const auto old_proofs=compiler_completion_snapshot(f.before,[&](const Block& item){return compiler_puzzle_completed(data,f.before,item);});
+            const auto proofs=compiler_completion_snapshot(f.after,[&](const Block& item){return compiler_puzzle_completed(data,f.after,item);});
+            require(compiler_puzzle_completed(data,f.before,owner(f.before,related))&&
+                    compiler_puzzle_completed(data,f.after,owner(f.after,related))&&
+                    compiler_activity_available(f.before,old_gate,old_proofs)&&
+                    compiler_activity_available(f.after,gate,proofs),
+                "The real first-case receipts did not enable the reference's activity");
+            // relatedOwner identifies the editor solved by this reference's code.
+            // Four publications require a later check before showing that code.
+            const bool direct=text(f.entry,L"id")=="u11l15"&&id=="block_0009_0001";
+            require((gate.stable_id==related)==direct&&
+                    compiler_puzzle_completed(data,f.before,old_gate)==direct&&
+                    compiler_puzzle_completed(data,f.after,gate)==direct&&
+                    reference_available(data,f.before,previous)==direct&&
+                    reference_available(data,f.after,reference)==direct,
+                "An exact copy changed a pending reference gate or its independently earned access");
+            if(direct)++opened_references;else ++pending_references;
         }
         std::cout<<"PASS edition-source copied goals "<<text(f.entry,L"id")<<": exact evaluations, first-case receipts, references and separate drafts.\n";
     }
@@ -568,14 +606,16 @@ int wmain(int argc,wchar_t** argv)try {
     for(const auto& f:input.lessons){phase=text(f.entry,L"id")+"/actual hidden LessonView";mount_pending(environment,f,current);}
     preserved(original,current);exercise_copies(input,environment,worker,current);preserved(original,current);
     phase="durable reopen and scoped reset";verify_reopen_and_reset(input,environment,original,current);
-    require(compiler_attempts==78&&diagnostic_attempts==51&&executed_programs==27&&math_requests==8&&mounted_lessons==18,
+    require(compiler_attempts==78&&diagnostic_attempts==51&&executed_programs==27&&math_requests==8&&mounted_lessons==18&&
+            opened_references==1&&pending_references==4,
         "The native QA omitted or repeated a required compiler, worker or real-window scenario");
     for(const auto& [name,bytes]:input.files)require(read(inside(input.directory,name))==bytes,"Native QA changed an authenticated fixture file");
     require(read(fs::path(argv[1]))==input.manifest_bytes,"Native QA changed its publication manifest");
     std::cout<<"PASS edition-source: 18 authenticated lessons, 41 reviewed blocks, 36 evaluated goals; "<<compiler_attempts
         <<" actual MSVC requests ("<<diagnostic_attempts<<" diagnostics, "<<executed_programs<<" executions), "<<math_requests
         <<" real math-worker replies, "<<mounted_lessons<<" hidden LessonView mounts; "<<rejections
-        <<" tampering cases rejected by both loaders; fresh catalog/state, real original receipts, import, reopen and scoped reset. No audio acceptance claimed.\n";
+        <<" tampering cases rejected by both loaders; "<<opened_references<<" earned reference and "<<pending_references
+        <<" references retain their additional pending checks; fresh catalog/state, real original receipts, import, reopen and scoped reset. No audio acceptance claimed.\n";
     return 0;
 }catch(const std::exception& error){std::cerr<<"FAIL edition-source: "<<error.what()<<'\n';return 1;}
 catch(const winrt::hresult_error& error){std::cerr<<"FAIL edition-source Windows "<<phase<<": "<<winrt::to_string(error.message())<<'\n';return 1;}
