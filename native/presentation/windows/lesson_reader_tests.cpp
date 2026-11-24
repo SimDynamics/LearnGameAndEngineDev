@@ -512,15 +512,14 @@ void independent_feedback_does_not_complete_a_pending_compiler(const std::shared
         "Completing the compiler failed to reveal its own protected puzzle");
     std::cout<<"PASS independent real feedback: complete incorrect/correct explanations, manual pause and no false page completion across a required compiler\n";
 }
-void current_required_compiler_reader(const std::shared_ptr<windows::NarrationWorker>& backend){
-    const auto path=std::filesystem::path(build::source_root)/
-        "app/src/main/assets/content/es/programming/cpp_fundamentals/objetos_y_estado/lesson_enteros_y_aproximaciones.json";
+void required_compiler_reader_at(const std::shared_ptr<windows::NarrationWorker>& backend,
+        const std::filesystem::path& path,bool selected_edition){
     const auto asset_hash=state::sha256(state::read_bytes(path));
     const auto lesson=windows::load_lesson(path);
     const auto first=identity_position(lesson,"block_0006_0002");
-    const auto second=identity_position(lesson,"p1u2l5_reparar_agrupacion");
+    const auto second=identity_position(lesson,selected_edition?"block_0007_0009":"p1u2l5_reparar_agrupacion");
     const auto first_reference=identity_position(lesson,"block_0007_0001");
-    const auto second_reference=identity_position(lesson,"p1u2l5_referencia_agrupacion");
+    const auto second_reference=identity_position(lesson,selected_edition?"block_0008_0007":"p1u2l5_referencia_agrupacion");
     check(first.page==6&&first.block==2&&second.page==7&&second.block==9&&
         first_reference.page==7&&first_reference.block==1&&second_reference.page==8,
         "The active U2L5 compiler chain or its solution identities moved");
@@ -532,6 +531,7 @@ void current_required_compiler_reader(const std::shared_ptr<windows::NarrationWo
         second_goal.output_check&&lesson.compiler_puzzles_required&&
         !first_source.empty()&&!second_source.empty(),
         "The current U2L5 regression no longer owns two required executable objectives");
+    if(!selected_edition){
     // The previous U2L5 publication genuinely had THREE independent editors.
     // Preserve its protected reading/layout snapshot separately from today's
     // two-editor chain; never replace that archive with the current page or
@@ -585,6 +585,13 @@ void current_required_compiler_reader(const std::shared_ptr<windows::NarrationWo
                      block.stable_id=="block_0007_0009");
             });
         }),"The historic U2L5 compiler dependencies leaked into the active edition");
+    }else{
+        check(lesson.course_edition.has_value()&&std::ranges::none_of(lesson.pages,[](const auto& page){
+            return std::ranges::any_of(page.blocks,[](const auto& block){
+                return block.type==curriculum::BlockType::cpp_compiler&&block.stable_id=="block_0006_0006";
+            });
+        }),"The selected U2L5 contains the retired third compiler");
+    }
     // A fresh QA bookmark at page six is not enough for forward navigation:
     // the current lesson requires the first six pages and their ordinary
     // activities. Start on page zero, evaluate the authored answers and record
@@ -880,6 +887,26 @@ void current_required_compiler_reader(const std::shared_ptr<windows::NarrationWo
     prefix_preserved();
     std::cout<<"PASS current U2L5: two active required editors, separate pages and stable IDs; real initial/fixed/accepted executions, private local-int probes, reader gate, pause/reopen/PCM, independent drafts and Reset\n";
 }
+void current_required_compiler_reader(const std::shared_ptr<windows::NarrationWorker>& backend){
+    const auto root=std::filesystem::path(build::source_root)/"app/src/main/assets/content";
+    const curriculum::CatalogLocation course{"es","programming","cpp_fundamentals",{},{}};
+    const auto units=windows::load_catalog(root,course);
+    const auto unit=std::ranges::find_if(units.entries,[](const auto& entry){
+        return entry.id.ends_with("__objetos_y_estado");
+    });
+    check(unit!=units.entries.end()&&unit->available,"Selected U2 is unavailable for compiler reader QA");
+    const auto lessons=windows::load_catalog(root,curriculum::catalog_child(course,unit->id));
+    const auto entry=std::ranges::find_if(lessons.entries,[](const auto& item){
+        return item.id.ends_with("__enteros_y_aproximaciones");
+    });
+    check(entry!=lessons.entries.end()&&entry->available,"Selected U2L5 is unavailable for compiler reader QA");
+    const auto selected=windows::load_lesson(entry->asset);
+    check(selected.id==entry->id&&selected.course_edition.has_value(),
+        "Compiler reader QA did not select the active edition");
+    required_compiler_reader_at(backend,entry->asset,true);
+    required_compiler_reader_at(backend,root/"es/programming/cpp_fundamentals/objetos_y_estado/lesson_enteros_y_aproximaciones.json",false);
+}
+
 void integrated_u1_reader_flow(const std::shared_ptr<windows::NarrationWorker>& backend){
     auto lesson=windows::load_lesson(std::filesystem::path(build::source_root)/
         "app/src/main/assets/content/es/programming/cpp_fundamentals/programas_y_ejecucion/lesson_primer_programa_y_salida.json");
