@@ -471,11 +471,14 @@ state::Preferences u2l9_compiler_receipts(const state::StateData& data) {
     return receipts;
 }
 
-void seed_compiler_prerequisites(state::StateData& data,const curriculum::Lesson& lesson){
+void seed_compiler_prerequisites(state::StateData& data,const curriculum::Lesson& lesson,
+        curriculum::StatePosition target){
     // Synthetic receipts isolate the prediction controls on their actual later
     // pages. They are QA prerequisites only, and do not claim any compilation.
     // The target prediction never receives a synthetic response or verdict.
-    for(const auto& page:lesson.pages)for(const auto& block:page.blocks){
+    for(std::size_t p=0;p<=target.page;++p)for(std::size_t b=0;b<lesson.pages.at(p).blocks.size();++b){
+        if(p==target.page&&b>=target.block)break;
+        const auto& block=lesson.pages[p].blocks[b];
         if(block.type!=curriculum::BlockType::cpp_compiler||!block.output_check)continue;
         windows::CppRunRequest request;request.revision=1;request.source_utf8=block.initial_code;
         request.project_files=block.project_files;request.source_files=block.source_files;request.cmake=block.cmake;
@@ -490,6 +493,14 @@ void seed_compiler_prerequisites(state::StateData& data,const curriculum::Lesson
         check(windows::compiler_puzzle_completed(data,lesson,block),
             "Cannot isolate prediction from its compiler prerequisite: "+block.stable_id);
     }
+    for(std::size_t p=target.page;p<lesson.pages.size();++p)
+        for(std::size_t b=p==target.page?target.block:0;b<lesson.pages[p].blocks.size();++b){
+            const auto& block=lesson.pages[p].blocks[b];
+            if(block.type==curriculum::BlockType::cpp_compiler&&block.output_check)
+                check(!windows::compiler_puzzle_completed(data,lesson,block)&&
+                    windows::compiler_puzzle_case_count(data,lesson,block)==0,
+                    "Synthetic prediction setup credited a later compiler");
+        }
 }
 void require_prepared_compiler_credit(const state::StateData& data,const curriculum::Lesson& lesson,
         curriculum::StatePosition target){
@@ -729,7 +740,7 @@ void prepare_visual_profile(std::string_view scenario,std::wstring_view token){
                 check(block.stable_id=="block_0004_0003","The isolated U11L11 QA acquired an unrelated compiler objective");++compilers;
             }
         check(compilers==1,"The isolated U11L11 QA requires exactly its audited compiler prerequisite");
-        seed_compiler_prerequisites(data,lesson);
+        seed_compiler_prerequisites(data,lesson,*position);
     }
     if(prepared){
         prepare_u2l9_prior_quizzes(data,lesson,*position);
@@ -783,7 +794,7 @@ struct View {
                 execute_multiline_prerequisite(data,lesson,lesson.pages.at(owner->page).blocks.at(owner->block),environment.paths.projects);
                 ++real_compiler_runs;
                 require_prepared_compiler_credit(data,lesson,target);
-            }else seed_compiler_prerequisites(data,lesson);
+            }else seed_compiler_prerequisites(data,lesson,target);
             prepare_u2l9_prior_quizzes(data,lesson,target,&archived_math);
             check(!state::get_response(data,lesson,this->target()),
                 "Preparing archived prerequisites answered the focal prediction");
@@ -1270,9 +1281,8 @@ void current_literal_predictions(PredictionGroup group,const std::filesystem::pa
             check(u2l9_compiler_receipts(saved)==compiler_receipts,
                 "Answering a prediction rewrote a real prerequisite receipt");
         }
-        else for(const auto& page:lesson.pages)for(const auto& item:page.blocks)
-                if(item.type==curriculum::BlockType::cpp_compiler&&item.output_check)
-                    check(windows::compiler_puzzle_completed(saved,lesson,item),"Answering a prediction changed a compiler prerequisite receipt");
+        else check(u2l9_compiler_receipts(saved)==compiler_receipts,
+            "Answering a prediction changed its synthetic prerequisite receipts");
         fixture.reset();fixture.incomplete();
         if(real_prerequisites){
             const auto reset=fixture.saved();
@@ -1280,6 +1290,8 @@ void current_literal_predictions(PredictionGroup group,const std::filesystem::pa
             check(u2l9_compiler_receipts(reset)==compiler_receipts,
                 "Resetting a prediction changed its independent compiler receipts");
         }
+        else check(u2l9_compiler_receipts(fixture.saved())==compiler_receipts,
+            "Resetting a prediction changed its synthetic prerequisite receipts");
         check(state::sha256(state::read_bytes(path))==digest,"Prediction QA changed authored lesson bytes or stateLayout");
         std::cout<<"PASS "<<(plan.exact?"exact ":"trimmed ")<<lesson.id<<" / "<<block.stable_id<<"\n";
     }
