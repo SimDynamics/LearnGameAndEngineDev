@@ -14,17 +14,22 @@ LESSON = ("app/src/main/assets/content/es/programming/cpp_fundamentals/"
           "edition_es_1__expresiones_y_decisiones/lesson_alternativas_y_fronteras.json")
 BASE = "e338c6de2ac3479b44d67a95a57cb8bf734312d5"
 BASE_BLOB = "e17824cda99abb7b863fc08ad60eb0d172e2b03b"
+PRESENTED = "53578555e9a291dfe653cc0456fa535661df7ed3"
+PRESENTED_BLOB = "32d94f9e25014791557e9b3ccb0c899ba4f6f0d7"
 OWNER = "u3l4_alcance_codigo_en_recuadros"
 
 
 class CodeScopePresentationTest(unittest.TestCase):
     @classmethod
     def setUpClass(cls):
-        raw = subprocess.check_output(["git", "show", BASE + ":" + LESSON], cwd=ROOT)
-        frame = b"blob " + str(len(raw)).encode() + b"\0" + raw
-        if hashlib.sha1(frame).hexdigest() != BASE_BLOB:
-            raise AssertionError("The historical scope exercise is not the authenticated publication")
-        cls.before = json.loads(raw)
+        def published(commit, expected_blob):
+            raw = subprocess.check_output(["git", "show", commit + ":" + LESSON], cwd=ROOT)
+            frame = b"blob " + str(len(raw)).encode() + b"\0" + raw
+            if hashlib.sha1(frame).hexdigest() != expected_blob:
+                raise AssertionError("The historical scope exercise is not the authenticated publication")
+            return json.loads(raw)
+        cls.before = published(BASE, BASE_BLOB)
+        cls.presented = published(PRESENTED, PRESENTED_BLOB)
         cls.current = json.loads((ROOT / LESSON).read_text(encoding="utf-8"))
 
     @staticmethod
@@ -34,12 +39,17 @@ class CodeScopePresentationTest(unittest.TestCase):
             yield from CodeScopePresentationTest.flatten(child)
 
     def test_authentic_overlay_changes_no_exercise_or_history_field(self):
-        restored = deepcopy(self.current)
+        # Prove the exact visual-only publication using its immutable bytes.
+        # Later authored explanations may move this owner within its page;
+        # they do not need to match an old document's presentation positions.
+        restored = deepcopy(self.presented)
         metadata = restored.pop(scopes.ROOT_FIELD)
         self.assertEqual(restored, self.before)
         self.assertEqual(metadata["version"], 1)
-        self.assertEqual(layout.validate(self.current), layout.validate(self.before))
-        layout.validate_publication_transition(self.before, self.current)
+        self.assertEqual(layout.validate(self.presented), layout.validate(self.before))
+        layout.validate_publication_transition(self.before, self.presented)
+        layout.validate(self.current)
+        layout.validate_publication_transition(self.presented, self.current)
         blocks = layout._blocks(self.current)
         resolved = scopes.validate(self.current, blocks=blocks)
         tree = resolved[(OWNER, 0)]

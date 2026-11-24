@@ -164,7 +164,7 @@ void run(const std::shared_ptr<windows::NarrationWorker>& backend,const std::fil
     const auto current=windows::load_lesson(asset),baseline=windows::load_lesson(baseline_path);
     const auto position=identity_position(current,owner),old_position=identity_position(baseline,owner);
     const auto& goal=current.pages[position.page].blocks[position.block];const auto& old_goal=baseline.pages[old_position.page].blocks[old_position.block];
-    check(current.id==baseline.id&&position==old_position&&position.page==1&&position.block==13
+    check(current.id==baseline.id&&position.page==1&&old_position.page==1&&old_position.block==13
         &&goal.address.page==7&&goal.address.block==30&&goal.address.page==old_goal.address.page&&goal.address.block==old_goal.address.block
         &&goal.address.addition_namespace==old_goal.address.addition_namespace&&goal.address.progress_page==old_goal.address.progress_page
         &&goal.raw_json==old_goal.raw_json&&curriculum::math_evaluation_source(goal)==curriculum::math_evaluation_source(old_goal)
@@ -191,7 +191,10 @@ void run(const std::shared_ptr<windows::NarrationWorker>& backend,const std::fil
     const auto snapshot=[&]{auto result=reader->snapshot();check(result.error.empty(),"Real code-scope reader error: "+result.error);return result;};
     const auto ready=[&]{wait([&]{const auto value=snapshot();return value.planned&&!value.segments.empty()&&value.segments[value.index].available;},"actual code-scope current recording",180000);};
     const auto open=[&](const curriculum::Lesson& lesson){
-        check(!view&&!reader,"A code-scope reopen must use a new ordinary view lifetime");LessonViewHooks hooks;
+        check(!view&&!reader,"A code-scope reopen must use a new ordinary view lifetime");
+        const auto displayed=identity_position(lesson,owner);
+        const auto& entry_goal=lesson.pages[displayed.page].blocks[displayed.block];
+        LessonViewHooks hooks;
         hooks.before_page_change=[&](HWND){if(reader)reader->pause();};hooks.content_changed=[&](HWND){if(reader)reader->content_changed();};
         hooks.feedback_changed=[&](HWND,std::size_t block,bool correct){if(reader)reader->feedback(block,correct);};
         hooks.validate_math=[&](std::string_view raw,std::string_view answer,std::string_view locale,std::stop_token stop){return backend->validate_math(raw,answer,locale,stop);};
@@ -201,25 +204,25 @@ void run(const std::shared_ptr<windows::NarrationWorker>& backend,const std::fil
         // Restored mathematics is canonically checked before the deferred
         // page entry is complete. Wait for that real UI state before starting
         // its reader, rather than planning a temporary page/feedback snapshot.
-        wait([&]{if(lesson_page_state(view).index!=position.page)return false;
-            const auto response=state::get_response(read_lesson_state(view),lesson,goal);if(!response||!response->correct)return true;
-            const auto visible=lesson_reading_regions(view);return std::ranges::any_of(visible,[&](const auto& item){return item.block_index==position.block&&item.solved;});
+        wait([&]{if(lesson_page_state(view).index!=displayed.page)return false;
+            const auto response=state::get_response(read_lesson_state(view),lesson,entry_goal);if(!response||!response->correct)return true;
+            const auto visible=lesson_reading_regions(view);return std::ranges::any_of(visible,[&](const auto& item){return item.block_index==displayed.block&&item.solved;});
         },"canonical page entry for the complete code-scope lesson",180000);
         reader=std::make_unique<LessonReader>(view,environment,backend,[]{});ready();
     };
     const auto close=[&]{reader.reset();check(flush_lesson_view(view),"Cannot persist actual code-scope state");DestroyWindow(view);view=nullptr;};
     const auto selected=[&]{const auto response=state::get_response(read_lesson_state(view),current,goal);
         check(response&&response->correct&&state::response_reviewed(*response,goal),"The actual before-return answer is absent or unverified");return *response;};
-    open(baseline);check(canvases(child(view,1005+static_cast<int>(position.block)*100))==1,
+    open(baseline);check(canvases(child(view,1005+static_cast<int>(old_position.block)*100))==1,
         "An ordinary Euclidean diagram without an overlay stopped using its existing renderer");
-    auto regions=lesson_reading_regions(view);const auto option=std::ranges::find_if(regions,[&](const auto& item){return item.block_index==position.block&&item.key.ends_with("/posicion/option/antes_de_return");});
+    auto regions=lesson_reading_regions(view);const auto option=std::ranges::find_if(regions,[&](const auto& item){return item.block_index==old_position.block&&item.key.ends_with("/posicion/option/antes_de_return");});
     check(option!=regions.end(),"The authentic before-return response option is absent");
     SendMessageW(option->target,WM_LBUTTONDOWN,MK_LBUTTON,MAKELPARAM(4,4));SendMessageW(option->target,WM_LBUTTONUP,0,MAKELPARAM(4,4));pump();
-    const auto action=child(view,1003+static_cast<int>(position.block)*100);check(IsWindowEnabled(action),"The real complete choice did not enable Check");
+    const auto action=child(view,1003+static_cast<int>(old_position.block)*100);check(IsWindowEnabled(action),"The real complete choice did not enable Check");
     SendMessageW(action,BM_CLICK,0,0);reader->pause();
     wait([&]{const auto response=state::get_response(read_lesson_state(view),baseline,old_goal);const auto value=snapshot();return response&&response->correct
         &&state::response_reviewed(*response,old_goal)&&value.planned&&!value.segments.empty()&&value.segments[value.index].feedback
-        &&value.segments[value.index].block==position.block&&value.segments[value.index].available;},"canonical validation of the original Euclidean answer",180000);
+        &&value.segments[value.index].block==old_position.block&&value.segments[value.index].available;},"canonical validation of the original Euclidean answer",180000);
     const auto saved_response=selected();reader->toggle();wait([&]{const auto value=snapshot();return value.playing&&value.segments[value.index].feedback&&value.offset>180;},"real original-scope bookmark");
     reader->pause();const auto historical=snapshot();(void)verify_feedback_recording(historical.segments[historical.index]);
     const auto old_history=narration::read_history(read_lesson_state(view));const auto old_slot=std::ranges::find(old_history.entries,historical.key,&narration::Bookmark::key);
