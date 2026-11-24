@@ -629,8 +629,21 @@ std::vector<Fixture> load_manifest(const std::filesystem::path& manifest,bool jo
         check(state::sha256(state::read_bytes(fixture.before_path))==fixture.before_sha256&&
                 state::sha256(state::read_bytes(fixture.after_path))==fixture.after_sha256,
             "A lesson fixture differs from its pinned manifest bytes");
-        fixture.before=windows::load_lesson(fixture.before_path);
-        fixture.after=windows::load_lesson(fixture.after_path);
+        if(active_loops) {
+            // These authenticated snapshots are exported as before/after.json,
+            // not as a physical catalog. Exercise the complete production JSON
+            // parser without pretending they are installed curriculum files.
+            // The production file loader retains its separate path/index checks.
+            fixture.before=windows::parse_lesson_json(bytes(fixture.before_path),"es");
+            fixture.after=windows::parse_lesson_json(bytes(fixture.after_path),"es");
+            check(fixture.before.course_edition&&fixture.after.course_edition&&
+                    fixture.before.course_edition->generation==1&&
+                    fixture.after.course_edition->generation==1,
+                "Active loop snapshots must retain their declared edition");
+        } else {
+            fixture.before=windows::load_lesson(fixture.before_path);
+            fixture.after=windows::load_lesson(fixture.after_path);
+        }
         for(const auto& value:item.GetNamedArray(L"solutions")) {
             const auto entry=value.GetObject();
             Solution solution{json_string(entry,L"activity"),json_string(entry,L"source")};
