@@ -7,7 +7,7 @@ param(
     [string] $CompilerHistoryGroup = 'All',
     [ValidateSet('All', 'Remainder', 'AssignmentP3')]
     [string] $EditorialGroup = 'All',
-    [ValidateSet('All', 'ArchivedCompiler')]
+    [ValidateSet('All', 'ArchivedCompiler', 'Colors')]
     [string] $CurrentReaderGroup = 'All',
     [switch] $VirtualAudio,
     [switch] $MsvcPreflightOnly
@@ -494,6 +494,14 @@ $qaCommands = @(
     "`"$qaCMake`" -S `"$qaRoot`" -B `"$qaBuild`" -G Ninja -DCMAKE_TOOLCHAIN_FILE=cmake/WindowsToolchain.cmake -DCMAKE_BUILD_TYPE=Debug -DLGAED_DEFAULT_PROFILE=Codex -D$($qaSuiteConfig.CMakeOption)=ON `"-DPython3_EXECUTABLE=$qaPython`" `"-DGIT_EXECUTABLE=$qaGit`" $qaRuntimeOptions",
     'if errorlevel 1 exit /b %errorlevel%'
 )
+if ($Suite -in @('ReaderRevision', 'ReaderBuild')) {
+    # Reuse this exact MSVC session and the tools verified in CMakeCache.
+    # Only the harness's new disposable fixture changes dependency metadata.
+    $qaCommands += @(
+        "`"$qaPython`" -B `"$qaRoot\scripts\windows\test_native_header_dependencies.py`" --cmake `"$qaCMake`" --configured-build `"$qaBuild`" --qa-root `"$qaBuild\native-header-dependencies`"",
+        'if errorlevel 1 exit /b %errorlevel%'
+    )
+}
 if ($Suite -eq 'ReaderBuild') {
     # Check simulations and real code gestures before compiling the other
     # historical test translation units. Failed UI iterations retain their
@@ -776,7 +784,11 @@ $qaCTestSelection = @()
 if ($CompilerHistoryGroup -ne 'All' -or $EditorialGroup -ne 'All' -or $CurrentReaderGroup -ne 'All') {
     if ($CurrentReaderGroup -ne 'All') {
         $qaSelectionLabel = "current-reader $CurrentReaderGroup"
-        $qaSelectedExpected = @('native.archived_required_compiler_reader')
+        $qaSelectedExpected = if ($CurrentReaderGroup -eq 'Colors') {
+            @('native.curricular_color_reader')
+        } else {
+            @('native.archived_required_compiler_reader')
+        }
     } elseif ($CompilerHistoryGroup -ne 'All') {
         $qaSelectionLabel = "compiler-history $CompilerHistoryGroup"
         $qaSelectedExpected = if ($CompilerHistoryGroup -eq 'DeclarationsAssignments') {

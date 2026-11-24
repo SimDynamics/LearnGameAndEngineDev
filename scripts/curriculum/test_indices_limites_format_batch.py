@@ -9,9 +9,19 @@ import unittest
 
 import stable_state_layout as state
 from code_format_compat import require_source_format
+from format_batch_history import (
+    Publication, all_owners, assert_format_history, assert_stable_storage,
+    load_publication,
+)
 
 ROOT=Path(__file__).resolve().parents[2]
 PATH=ROOT/"app/src/main/assets/content/es/programming/cpp_fundamentals/colecciones_y_recorridos/lesson_indices_y_limites_de_acceso.json"
+PUBLICATIONS={
+    "before": Publication("c20db82ddb28f5040e63707c6eec54044f8fc38c",
+        "67d2581bfc49678c0f1334a4b225f1e19eccb6693caf0efbee7ba5cf34b7fc23"),
+    "formatted": Publication("19d4f7a9ac4d775b7641ef5cccdf62818bb79447",
+        "9ee9f6df206ba1551775cb02887ed49c884c1d78db2d54c57ea967b76ebf6b51"),
+}
 POSITIONS=((0,2),(0,4),(2,2),(2,3),(3,2),(4,1),(4,2),(4,3),
            (5,2),(6,2),(7,1),(7,2),(7,7))
 INCOMPLETE={(6,2)}
@@ -36,28 +46,41 @@ class IndicesLimitesFormat(unittest.TestCase):
         self.previous={item["id"]:item["block"] for item in self.meta["sourceFormatRevisions"]}
 
     def test_history_and_protected_conditions_preserved(self):
-        state.validate(self.doc)
-        self.assertEqual(len(POSITIONS),len(self.previous))
-        ids=[self.meta["current"][p]["blocks"][b] for p,b in POSITIONS]
-        self.assertEqual(ids,[item["id"] for item in self.meta["editorial"][-len(POSITIONS):]])
-        original=deepcopy(self.doc)
-        original["stateLayout"].pop("sourceFormatRevisions")
-        original["stateLayout"]["editorial"]=original["stateLayout"]["editorial"][:-len(POSITIONS)]
+        relative=PATH.relative_to(ROOT).as_posix()
+        previous_publication=load_publication(ROOT,relative,PUBLICATIONS["before"])
+        formatted=load_publication(ROOT,relative,PUBLICATIONS["formatted"])
+        for document in (previous_publication,formatted,self.doc):
+            state.validate(document)
+        published=formatted["stateLayout"]
+        ids=[published["current"][p]["blocks"][b] for p,b in POSITIONS]
+        archives=published["sourceFormatRevisions"]
+        self.assertEqual(len(POSITIONS),len(archives))
+        self.assertEqual(ids,[entry["id"] for entry in archives])
+        prefix=previous_publication["stateLayout"]["editorial"]
+        self.assertEqual(published["editorial"][:len(prefix)],prefix)
+        self.assertEqual(ids,[entry["id"] for entry in published["editorial"][len(prefix):]])
+        # Pin this batch to its complete publication; later compatible edits append history.
+        self.assertEqual(self.meta["editorial"][:len(published["editorial"])],
+                         published["editorial"])
+        self.assertEqual(self.meta["sourceFormatRevisions"][:len(archives)],archives)
+        before_blocks=all_owners(previous_publication)
         for p,b in POSITIONS:
-            identity=self.meta["current"][p]["blocks"][b]
-            before,after=self.previous[identity],self.doc["pages"][p]["blocks"][b]
+            identity=published["current"][p]["blocks"][b]
+            before,after=before_blocks[identity],formatted["pages"][p]["blocks"][b]
             self.assertTrue(require_source_format(before,after),identity)
             key=field(before)
             self.assertEqual([line for line in before[key].splitlines() if line.strip()],
                              [line for line in after[key].splitlines() if line.strip()],identity)
             self.assertEqual(before[key].count("} else {"),after[key].count("} else {"),identity)
             self.assertEqual(before[key].count(".at("),after[key].count(".at("),identity)
-            original["pages"][p]["blocks"][b]=deepcopy(before)
-        state.validate(original)
-        state.validate_transition(original,self.doc)
-        self.assertEqual(state.validate(original),state.validate(self.doc))
-        for key in ("origin","family","current","additions"):
-            self.assertEqual(original["stateLayout"][key],self.meta[key])
+        state.validate_transition(previous_publication,formatted)
+        state.validate_transition(formatted,self.doc)
+        self.assertEqual(state.validate(previous_publication),state.validate(formatted))
+        for metadata_key in ("origin","family","current","additions"):
+            self.assertEqual(previous_publication["stateLayout"][metadata_key],
+                             published[metadata_key])
+        assert_format_history(self,previous_publication,formatted,self.doc,ids)
+        assert_stable_storage(self,previous_publication,self.doc,ids)
 
     def test_all_optional_cpp23_inputs_and_outcomes_stay_identical(self):
         with tempfile.TemporaryDirectory(prefix="indices-format-") as folder:

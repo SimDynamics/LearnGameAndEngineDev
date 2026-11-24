@@ -10,8 +10,23 @@ import unittest
 import stable_state_layout as state
 from code_format_compat import require_source_format
 
+from format_batch_history import (
+    Publication, assert_format_history, assert_stable_storage, load_publication,
+)
+
 ROOT=Path(__file__).resolve().parents[2]
 PATH=ROOT/"app/src/main/assets/content/es/programming/cpp_fundamentals/funciones_y_contratos/lesson_raiz_cuadrada_dominio_y_resultado_aproximado.json"
+RELATIVE = PATH.relative_to(ROOT).as_posix()
+PUBLICATIONS = {
+    "before": Publication(
+        "28aaacca5b23fbdaee93396795696e21c57ed802",
+        "e62ab976801c4b981700bd81d38bdeb558d494ba5e8f0da8f3190b3af39f15cc",
+    ),
+    "formatted": Publication(
+        "8e547df8893f5777d488b246526e43caaee66a72",
+        "a0a1945fab009ac32177be100ae3660175f96ee6198eb82fb2d43b346d030e4d",
+    ),
+}
 POSITIONS=((0,4),(0,5),(1,3),(2,3),(2,5),(3,5),(4,2),(4,7),(4,10),(5,2),(5,4),(6,5),(6,16),(7,2),(7,4),(7,8))
 PROSE=((4,6),(6,15),(7,7))
 OLD_PARAGRAPHS=json.loads(r'''{"block_0004_0006":"Este programa lee un área finita y prepara destino menos tres. Comprueba `0.0` → `1:0`, `100.0` → `1:10`, `16.0` → `1:4`, `0.25` → `1:0.5`; `-1.0` y `100.5` → `0:-3`. El cero aceptado reemplaza el destino; los rechazos lo conservan.\n\nPulsa «Compilar, ejecutar y comprobar». Conserva el programa al variar sólo Entrada entre los casos declarados. El salto después del último mensaje es opcional.","raiz_coleccion_propia_accion":"Conserva las mismas funciones y cambia sólo Entrada entre las seis pruebas. Pulsa «Compilar, ejecutar y comprobar» para cada caso y compara las cuatro líneas completas. Los resultados deben proceder de las llamadas y de la colección examinada.","block_0007_0007":"El programa lee primero una cantidad no negativa y después ese número de valores escritos válidamente. Algunos casos incumplen deliberadamente el dominio de la función y deben rechazarse antes del cálculo. El bucle de preparación construye la colección; las funciones conservan sus contratos. Comprueba estas entradas: `0`; `1 0.0`; `1 -1.0`; `1 101.0`; `3 100.0 6.25 9.0`; `3 2.0 -2.0 102.0`. Conserva hasta ocho áreas finitas de menos dos a ciento dos. Un rechazo no participa en el conteo de lados y la frontera seis con veinticinco debe incluirse.\n\nPulsa «Compilar, ejecutar y comprobar». Conserva el programa al variar sólo Entrada entre los casos declarados. El salto después del último mensaje es opcional."}''')
@@ -29,6 +44,16 @@ class SquareRootContractFormatBatch(unittest.TestCase):
         self.originals={x["id"]:x["block"] for x in self.meta["sourceFormatRevisions"]}
 
     def test_state_provenance_and_reading_overlays(self):
+        current = self.doc
+        current_sources = self.originals
+        publication_before = load_publication(ROOT, RELATIVE, PUBLICATIONS["before"])
+        formatted = load_publication(ROOT, RELATIVE, PUBLICATIONS["formatted"])
+        # The batch assertions describe this authenticated publication,
+        # while later compatible revisions remain in the current lesson.
+        self.doc = formatted
+        self.meta = formatted["stateLayout"]
+        self.originals = {row["id"]: row["block"] for row in
+                          formatted["stateLayout"]["sourceFormatRevisions"]}
         state.validate(self.doc)
         self.assertEqual(16,len(POSITIONS))
         self.assertEqual(16,len(self.originals))
@@ -66,6 +91,19 @@ class SquareRootContractFormatBatch(unittest.TestCase):
         self.assertEqual(state.validate(prior),state.validate(self.doc))
         for key in ("origin","current","family","additions"):
             self.assertEqual(prior["stateLayout"][key],self.meta[key])
+
+        self.assertEqual(prior, publication_before)
+        state.validate(publication_before)
+        state.validate_transition(publication_before, formatted)
+        state.validate_transition(formatted, current)
+        for metadata_key in ("editorial", "sourceFormatRevisions"):
+            published = formatted["stateLayout"][metadata_key]
+            self.assertEqual(current["stateLayout"][metadata_key][:len(published)], published)
+        assert_format_history(self, publication_before, formatted, current, self.originals)
+        assert_stable_storage(self, publication_before, current, self.originals)
+        self.doc = current
+        self.originals = current_sources
+        self.meta = current["stateLayout"]
         for p,b in PROSE:
             self.assertIn("primer",self.doc["pages"][p]["blocks"][b]["text"])
             self.assertIn("opcional",self.doc["pages"][p]["blocks"][b]["text"])

@@ -180,6 +180,35 @@ def verified_active_u2l8_explanations(historical, active):
     return reviewed
 
 
+def resealed_edition_fixture(document):
+    """Forge a fresh origin for QA without renumbering the visible owners.
+
+    Published additions/reorders retain their identities in textSemantics and
+    presentation links. Positional bootstrapping would corrupt those bindings
+    before the independent historical oracle can inspect a forged payload.
+    This is an adversarial fixture, never an operation on published history.
+    """
+    result = copy.deepcopy(document)
+    current = result.pop("stateLayout")["current"]
+    origin = [
+        {"id": record["id"], "blocks": [
+            {"id": identity, "sha256": layout.state_fingerprint(block)}
+            for identity, block in zip(record["blocks"], page["blocks"], strict=True)]}
+        for record, page in zip(current, result["pages"], strict=True)
+    ]
+    locale = edition.descriptor(result)["locale"]
+    source = {key: value for key, value in result.items()
+              if key not in layout.TEXT_PRESENTATION_FIELDS}
+    result["stateLayout"] = {
+        "version": 2, "locale": locale, "origin": origin, "current": current,
+        "family": {locale: {"sha256": layout.fingerprint(source), "origin": copy.deepcopy(origin)}},
+        "additions": [], "editorial": [],
+    }
+    layout.validate(result)
+    edition.validate_lesson(result, require_layout=True)
+    return result
+
+
 class PendingPresentationContractTest(unittest.TestCase):
     def setUp(self):
         contract.ERRORS.clear()
@@ -290,6 +319,10 @@ class PendingPresentationContractTest(unittest.TestCase):
 
     def test_selected_edition_rejects_resealed_prose_answers_programs_and_meaning(self):
         _, active, historical, _ = self.active_u2l8()
+        control = resealed_edition_fixture(active)
+        self.assertEqual(active["stateLayout"]["current"], control["stateLayout"]["current"])
+        self.assertEqual(verified_active_u2l8_explanations(historical, active),
+                         verified_active_u2l8_explanations(historical, control))
         identity = "block_0000_0004"
         original = layout._blocks(active)[identity]
         for field, value in (("explanation", original["explanation"] + " Texto sin procedencia."),
@@ -300,19 +333,20 @@ class PendingPresentationContractTest(unittest.TestCase):
             for marker in changed["textSemantics"]["fields"]:
                 if (marker["block"], marker["path"]) == (identity, "/" + field):
                     marker["sourceSha256"] = hashlib.sha256(value.encode("utf-8")).hexdigest()
-            del changed["stateLayout"]
-            changed = edition.prepare_edition_lesson(changed, active["courseEdition"])
+            changed = resealed_edition_fixture(changed)
             # The forged fresh edition is internally consistent. It must still
             # fail the independent comparison with the authenticated old source.
             layout.text_semantics.validate(changed)
-            with self.subTest(field=field), self.assertRaises(ValueError):
+            with self.subTest(field=field), self.assertRaisesRegex(
+                    ValueError, "An active U2L8 block differs from its authenticated complete source"):
                 verified_active_u2l8_explanations(historical, changed)
         changed = copy.deepcopy(active)
         marker = next(field for field in changed["textSemantics"]["fields"]
                       if (field["block"], field["path"]) == (identity, "/explanation"))
         marker["spans"][0].update(role="prose", reading="natural")
         layout.text_semantics.validate(changed)
-        with self.assertRaises(ValueError):
+        with self.assertRaisesRegex(
+                ValueError, "An active U2L8 reading descriptor differs from its authenticated source"):
             verified_active_u2l8_explanations(historical, changed)
 
     def test_selected_edition_does_not_replace_the_archived_explanation_oracle(self):

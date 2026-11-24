@@ -514,8 +514,77 @@ void verify_unrelated_state(const state::StateData& current,const state::StateDa
         expect(actual&&*actual==value,"Live source reload changed unrelated QA state "+domain+"/"+key);
     }
 }
+void verify_initial_source(const std::shared_ptr<windows::NarrationWorker>& backend,const Variant& baseline,
+        const Variant& inserted,const std::filesystem::path& build_directory,bool delayed_source) {
+    phase=delayed_source?"live-file / initially unavailable source with an explicit model":
+        "live-file / unchanged source with an explicit in-memory model";
+    const auto directory=build_directory/(L"reader-revision-initial-source-"+std::to_wstring(GetCurrentProcessId())+L"-"+
+        std::to_wstring(GetTickCount64()));
+    check(std::filesystem::create_directory(directory),"Initial-source QA directory must be new");
+    const auto source_path=directory/L"active-lesson.json";
+    const auto baseline_bytes=bytes(baseline.path),inserted_bytes=bytes(inserted.path);
+    if(!delayed_source)write_live_source(source_path,baseline_bytes);
+    auto prepared=JsonObject::Parse(wide(baseline_bytes));
+    constexpr std::string_view preview_title="READER_REVISION_PREPARED_TITLE";
+    prepared.Insert(L"title",JsonValue::CreateStringValue(wide(preview_title)));
+    Variant preview=baseline;preview.path=source_path;
+    preview.lesson=windows::parse_lesson_json(winrt::to_string(prepared.Stringify()));
+    preview.lesson.source_path=source_path;
+    check(preview.lesson.title==preview_title&&preview.lesson.raw_json!=baseline.lesson.raw_json,
+        "The initial-source regression needs an explicit model distinct from its unchanged resource file");
+    Fixture fixture(backend,preview);
+    const auto mounted_view=fixture.view;const auto* mounted_reader=fixture.reader.get();
+    const auto edit=answer_edit(fixture,"b");
+    const std::string draft="prepared-model draft";fixture.edit("b",draft);
+    SetFocus(nullptr);
+    const auto verify_prepared=[&] {
+        const auto value=fixture.snapshot();
+        check(fixture.view==mounted_view&&fixture.reader.get()==mounted_reader&&IsWindow(edit)&&
+            answer_edit(fixture,"b")==edit&&edit_text(edit)==draft&&
+            lesson_page_state(fixture.view).content_revision==0&&value.planned&&!value.segments.empty()&&
+            value.segments.front().source==preview_title&&!value.playing&&!value.allocated,
+            "An unchanged source replaced the explicit model, its control, draft or paused reader");
+    };
+    const auto observe_prepared=[&] {
+        const auto until=GetTickCount64()+2200;
+        wait([&]{verify_prepared();return GetTickCount64()>=until;},
+            "two source-watch intervals preserving the explicit initial model",5000);
+    };
+    if(delayed_source) {
+        check(!std::filesystem::exists(source_path),"The delayed initial resource already existed");
+        observe_prepared();
+        write_live_source(source_path,baseline_bytes);
+    }
+    observe_prepared();
+    check(bytes(source_path)==baseline_bytes,"Opening the prepared model changed its resource file");
+    phase="live-file / identical source bytes keep the explicit model";
+    write_live_source(source_path,baseline_bytes);observe_prepared();
+    phase="live-file / a rejected source does not replace the accepted file baseline";
+    auto rejected=JsonObject::Parse(wide(baseline_bytes));
+    rejected.Insert(L"id",JsonValue::CreateStringValue(L"cpp_fundamentals__qa__foreign_reader_revision"));
+    const auto rejected_bytes=winrt::to_string(rejected.Stringify());
+    check(windows::parse_lesson_json(rejected_bytes).id!=preview.lesson.id,
+        "The initial-source negative must parse before its foreign identity is rejected");
+    write_live_source(source_path,rejected_bytes);observe_prepared();
+    write_live_source(source_path,baseline_bytes);observe_prepared();
+    phase="live-file / a later real edit replaces the explicit model";
+    write_live_source(source_path,inserted_bytes);
+    wait([&]{return lesson_page_state(fixture.view).content_revision==1;},
+        "a genuine edit after the initial source baseline",15000);
+    Variant revised=inserted;revised.path=source_path;revised.lesson.source_path=source_path;
+    fixture.active=&revised;fixture.ready();verify_plan(fixture,{});
+    check(fixture.view==mounted_view&&fixture.reader.get()==mounted_reader&&
+        edit_text(answer_edit(fixture,"b"))==draft&&!fixture.snapshot().playing&&!fixture.snapshot().allocated&&
+        bytes(source_path)==inserted_bytes,
+        "A later real source edit failed to retain the view, draft or explicit pause");
+    std::cout<<"PASS reader initial source delayed="<<delayed_source
+        <<": explicit model and HWND retained across idle/timestamp-only polling; "
+        "a later authored edit still reloads automatically with its draft and pause preserved\n";
+}
 void run_live_file(const std::shared_ptr<windows::NarrationWorker>& backend,const Variant& baseline,
         const Variant& inserted,const std::filesystem::path& build_directory) {
+    verify_initial_source(backend,baseline,inserted,build_directory,false);
+    verify_initial_source(backend,baseline,inserted,build_directory,true);
     phase="live-file / baseline";
     const auto directory=build_directory/(L"reader-revision-live-file-"+std::to_wstring(GetCurrentProcessId())+L"-"+
         std::to_wstring(GetTickCount64()));

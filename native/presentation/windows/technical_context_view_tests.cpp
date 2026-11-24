@@ -488,7 +488,7 @@ U2SemanticRoles verify_u2_semantic_ranges(View& fixture,HWND target,
 void verify_u2_text_semantic_ranges(View& fixture,HWND target,
         const curriculum::Block& block,bool require_data_and_output){
     const auto roles=verify_u2_semantic_ranges(fixture,target,block,"/text",block.text);
-    // The active numbered steps and multiplication explanation use words
+    // The historical steps, active conclusion and multiplication explanation use words
     // for quantities. The already-mounted comparison paragraph owns the
     // independent data/output ranges; do not invent them in ordinary prose.
     check(roles.code>=2&&roles.citations==1&&
@@ -960,6 +960,88 @@ void current_u2l6_native_reader_gates(){
     u2l6_native_reader_gates_at(root/"es/programming/cpp_fundamentals/objetos_y_estado/lesson_conversiones_y_deduccion.json",false);
 }
 
+void verify_split_u2_trace(View& fixture,std::size_t page){
+    using Type=curriculum::BlockType;
+    struct Step{std::string_view owner;Type type;std::string_view code;};
+    const std::array<Step,8> steps{{
+        {"block_0003_0001",Type::paragraph,{}},
+        {"p1u2l3_ejemplo_0003_0001_1",Type::code,
+            "int boletos_disponibles = 2;\nint boletos_registrados = boletos_disponibles;"},
+        {"p1u2l3_ejemplo_0003_0001_2",Type::paragraph,{}},
+        {"p1u2l3_ejemplo_0003_0001_3",Type::code,
+            "boletos_disponibles = boletos_disponibles + 3;"},
+        {"p1u2l3_ejemplo_0003_0001_4",Type::multiple_choice,{}},
+        {"p1u2l3_ejemplo_0003_0001_5",Type::paragraph,{}},
+        {"p1u2l3_ejemplo_0003_0001_6",Type::code,
+            "boletos_registrados = boletos_disponibles;"},
+        {"p1u2l3_ejemplo_0003_0001_7",Type::paragraph,{}}
+    }};
+    const auto plain=[&](HWND target,const curriculum::Block& block,
+            const std::string& field,const std::string& source){
+        const auto descriptor=block.text_semantics.find(field);
+        check(descriptor!=block.text_semantics.end()&&descriptor->second.source==source&&
+              descriptor->second.spans.empty(),
+            "The split U2 example lost its explicitly ordinary authored prose");
+        const auto text=wide(visible_prose(source));ordinary_span(target,text,text);
+        source_and_shading(fixture,target,source);
+    };
+    std::optional<std::size_t> previous;
+    for(const auto& step:steps){
+        const auto at=curriculum::stable_block_position(fixture.lesson,step.owner);
+        check(at&&at->page==page&&(!previous||at->block==*previous+1),
+            "The authored split U2 example lost an owner or its explicit order");
+        previous=at->block;const auto& block=fixture.lesson.pages.at(page).blocks.at(at->block);
+        check(block.type==step.type,"A split U2 prose/code/question owner changed type");
+        if(step.type==Type::code){
+            check(block.language=="cpp"&&block.code==step.code,
+                "An authored split U2 C++ instruction changed");
+            const auto target=fixture.item(at->block,1);
+            auto source=edit_text(target);std::erase(source,'\r');
+            check(source==block.code&&(GetWindowLongPtrW(target,GWL_STYLE)&ES_READONLY)&&
+                  rich_text_reference_ranges(target).empty(),
+                "A split U2 code card lost its exact read-only source");
+            const auto reference=CreateWindowExW(0,MSFTEDIT_CLASS,L"",WS_CHILD|ES_MULTILINE,
+                0,0,500,100,fixture.host,nullptr,GetModuleHandleW(nullptr),nullptr);
+            check(reference,"Cannot create the independent split U2 code color reference");
+            struct Reference{HWND value;~Reference(){DestroyWindow(value);}} cleanup{reference};
+            reader_theme::apply(reference,reader_theme::Surface::card);
+            set_rich_text(reference,block.code,{},true);
+            const auto shown=wide(edit_text(target));
+            check(shown==wide(edit_text(reference)),"The split U2 code projection changed its source");
+            for(std::size_t glyph=0;glyph<shown.size();++glyph){
+                if(shown[glyph]==L'\r'||shown[glyph]==L'\n'||shown[glyph]==L' '||shown[glyph]==L'\t')continue;
+                const auto actual=character(target,static_cast<LONG>(glyph));
+                check(actual.crTextColor==character(reference,static_cast<LONG>(glyph)).crTextColor&&
+                      !(actual.dwEffects&CFE_UNDERLINE),
+                    "A split U2 code card differs from native C++ ink or acquired an underline");
+            }
+            // Read-only code bodies remain outside narration; the authored
+            // prose and passive code caption keep their existing reader role.
+            for(const auto& region:lesson_reading_regions(fixture.view))
+                check(region.target!=target,"A split U2 code body unexpectedly entered prose narration");
+        }else if(step.type==Type::multiple_choice){
+            plain(fixture.item(at->block,0),block,"/question",block.question);
+            check(block.options.size()==3,"The split U2 question lost an authored option");
+            for(std::size_t option=0;option<block.options.size();++option)
+                plain(fixture.item(at->block,21+static_cast<int>(option)*2),block,
+                    "/options/"+std::to_string(option),block.options[option]);
+            check(edit_text(fixture.item(at->block,4)).empty(),
+                "Inspecting the split U2 question exposed unsubmitted feedback");
+        }else if(step.owner==steps.back().owner){
+            const auto target=fixture.item(at->block,0);
+            verify_u2_text_semantic_ranges(fixture,target,block,false);
+            const auto& spans=block.text_semantics.at("/text").spans;
+            check(spans.size()==3,"The split U2 conclusion lost its two names and citation");
+            for(const std::string_view name:{"boletos_disponibles","boletos_registrados"})
+                check(std::ranges::any_of(spans,[&](const auto& span){
+                    return span.role==curriculum::SemanticRole::cpp&&
+                        span.reading==curriculum::SemanticReading::technical&&span.text==name;
+                }),"The split U2 conclusion lost an explicitly authored C++ name");
+            source_and_shading(fixture,target,block.text,block.emphasis);
+        }else plain(fixture.item(at->block,0),block,"/text",block.text);
+    }
+}
+
 void u2_roles_at(const std::filesystem::path& source){
     const auto lesson=windows::load_lesson(source);
     const auto hash=state::sha256(state::read_bytes(source));
@@ -971,7 +1053,9 @@ void u2_roles_at(const std::filesystem::path& source){
             "U2 color QA opened a different curricular page");
         check(flush_lesson_view(fixture.view),"Cannot snapshot actual color QA");const auto initial=read_lesson_state(fixture.view);
         const auto verify=[&]{
-            if(page==3){const auto index=block_at("block_0003_0001",page);const auto target=fixture.item(index,0);
+            if(page==3){
+                if(lesson.course_edition)verify_split_u2_trace(fixture,page);
+                else{const auto index=block_at("block_0003_0001",page);const auto target=fixture.item(index,0);
                 const auto& paragraph=lesson.pages[page].blocks[index];
                 verify_u2_text_semantic_ranges(fixture,target,paragraph,false);
                 const auto semantic=paragraph.text_semantics.find("/text");
@@ -1015,6 +1099,7 @@ void u2_roles_at(const std::filesystem::path& source){
                         "An unmarked list numeral acquired technical background");
                 }
                 source_and_shading(fixture,target,paragraph.text,paragraph.emphasis);
+                }
                 const auto order=block_at("block_0003_0002",page);const auto prompt=fixture.item(order,0);
                 const auto& goal=lesson.pages[page].blocks[order];
                 const auto roles=verify_u2_semantic_ranges(fixture,prompt,goal,"/question",goal.question);

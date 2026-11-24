@@ -10,8 +10,23 @@ import unittest
 import stable_state_layout as state
 from code_format_compat import require_source_format
 
+from format_batch_history import (
+    Publication, assert_format_history, assert_stable_storage, load_publication,
+)
+
 ROOT=Path(__file__).resolve().parents[2]
 PATH=ROOT/"app/src/main/assets/content/es/programming/cpp_fundamentals/funciones_y_contratos/lesson_redondeo_deliberado_y_conversion_segura.json"
+RELATIVE = PATH.relative_to(ROOT).as_posix()
+PUBLICATIONS = {
+    "before": Publication(
+        "3d7caba61676749a37e951b2256b5e6e0b5557c0",
+        "684c9b759105dc39bd635bd32972f4738dc63f17ce6b717cee2d2bc57fe1cde4",
+    ),
+    "formatted": Publication(
+        "1a93e8c8a0871274f9df6e058514bfcb23a6aac0",
+        "11ef201042ae570ae19534c7c3629ea2c597c37cf32ebdcb785babf64518d798",
+    ),
+}
 POSITIONS=((1,2),(1,4),(2,5),(3,2),(3,9),(4,2),(4,3),(5,5),(5,17),(6,2),(6,9),(7,1),(7,4))
 PROSE=((3,8),(5,16),(6,8))
 OLD_TEXT=json.loads(r'''{"block_0003_0008":"El programa lee origen finito y destino entero previo. Comprueba `0.5 37`, `-0.5 37`, `99.5 37`, `-99.5 37`, `100.0 37`, `100.25 37` y `-100.25 -8`. La salida muestra bool y destino, seguido de origen y conservación. Un rechazo debe mantener el destino que se entregó.\n\nPulsa «Compilar, ejecutar y comprobar». Conserva el programa al variar sólo Entrada entre los casos declarados. El salto después del último mensaje es opcional.","marcas_redondeadas_construccion_multicaso_comprobacion":"Escribe también la lectura de Entrada, las llamadas y la presentación. Pulsa «Compilar, ejecutar y comprobar» y conserva las mismas funciones y el mismo recorrido al cambiar Entrada entre los seis casos. Si un caso difiere, comprueba primero qué observaciones se aceptan, qué marcas ya estaban presentes y qué elementos deben conservarse.","block_0006_0008":"El programa lee primero una cantidad no negativa y después ese número de valores escritos válidamente. Algunos casos incumplen deliberadamente el dominio de la función y deben rechazarse antes del cálculo. El bucle de preparación construye la colección; las funciones conservan sus contratos. Comprueba estas entradas: `0`; `1 0.0`; `2 101.0 -101.0`; `2 0.25 -0.25`; `3 3.0 3.0 3.0`; `4 -100.0 100.0 99.5 -99.5`. El dominio de preparación conserva hasta ocho valores finitos de menos ciento dos a ciento dos.\n\nPulsa «Compilar, ejecutar y comprobar». Conserva el programa al variar sólo Entrada entre los casos declarados. El salto después del último mensaje es opcional."}''')
@@ -28,6 +43,16 @@ class RoundingSourceFormatBatch(unittest.TestCase):
         self.original={item["id"]:item["block"] for item in self.meta["sourceFormatRevisions"]}
 
     def test_historical_layout_and_reading_overlays(self):
+        current = self.doc
+        current_sources = self.original
+        publication_before = load_publication(ROOT, RELATIVE, PUBLICATIONS["before"])
+        formatted = load_publication(ROOT, RELATIVE, PUBLICATIONS["formatted"])
+        # The batch assertions describe this authenticated publication,
+        # while later compatible revisions remain in the current lesson.
+        self.doc = formatted
+        self.meta = formatted["stateLayout"]
+        self.original = {row["id"]: row["block"] for row in
+                          formatted["stateLayout"]["sourceFormatRevisions"]}
         state.validate(self.doc)
         self.assertEqual(13,len(POSITIONS))
         self.assertEqual(13,len(self.original))
@@ -63,6 +88,23 @@ class RoundingSourceFormatBatch(unittest.TestCase):
         self.assertEqual(state.validate(previous),state.validate(self.doc))
         for key in ("origin","current","family","additions"):
             self.assertEqual(previous["stateLayout"][key],self.meta[key])
+
+        self.assertEqual(previous, publication_before)
+        state.validate(publication_before)
+        state.validate_transition(publication_before, formatted)
+        state.validate_transition(formatted, current)
+        for metadata_key in ("editorial", "sourceFormatRevisions"):
+            published = formatted["stateLayout"][metadata_key]
+            self.assertEqual(current["stateLayout"][metadata_key][:len(published)], published)
+        assert_format_history(self, publication_before, formatted, current, self.original)
+        assert_stable_storage(self, publication_before, current, self.original)
+        self.doc = current
+        self.original = current_sources
+        self.meta = current["stateLayout"]
+        for p,b in PROSE:
+            text = current["pages"][p]["blocks"][b]["text"]
+            self.assertIn("primer caso", text)
+            self.assertIn("pruebas opcionales", text)
 
     def test_cpp23_before_and_after_outputs_and_all_optional_cases(self):
         with tempfile.TemporaryDirectory(prefix="u6l11-rounding-") as folder:

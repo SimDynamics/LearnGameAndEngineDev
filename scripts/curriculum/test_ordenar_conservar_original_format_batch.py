@@ -9,9 +9,19 @@ import unittest
 
 import stable_state_layout as state
 from code_format_compat import require_source_format
+from format_batch_history import (
+    Publication, all_owners, assert_format_history, assert_stable_storage,
+    load_publication,
+)
 
 ROOT=Path(__file__).resolve().parents[2]
 LESSON=ROOT/"app/src/main/assets/content/es/programming/cpp_fundamentals/colecciones_y_recorridos/lesson_ordenar_y_conservar_el_original.json"
+PUBLICATIONS={
+    "before": Publication("8d1f9da5f1f3dd19a542c6eaad5ccd876deae545",
+        "de55b28d70acc7e685f866e0c88a5d4a93b1e1ba815c05c921ca25dcb2f62666"),
+    "formatted": Publication("d7ee91c7f3138dbbe690aa557473f93e04134a6a",
+        "dc83d15848931a88ae20584b632660d0240154c99c067c7306ce30714d1d8983"),
+}
 POSITIONS=((0,3),(1,1),(1,3),(2,1),(2,2),(3,2),(4,2),(5,2),(6,1),(6,3),
            (7,2),(7,5),(8,1),(8,2),(8,7),(8,10),(8,13),(8,16),(8,19))
 UNSOLVED={(7,2),(7,5),(8,10),(8,13)}
@@ -38,28 +48,41 @@ class SortingFormatBatch(unittest.TestCase):
         self.originals={x["id"]:x["block"] for x in self.meta["sourceFormatRevisions"]}
 
     def test_authenticated_historical_state_and_answers(self):
-        state.validate(self.current)
-        self.assertEqual(len(POSITIONS),len(self.originals))
-        ids=[self.meta["current"][p]["blocks"][b] for p,b in POSITIONS]
-        self.assertEqual(ids,[x["id"] for x in self.meta["editorial"][-len(POSITIONS):]])
-        old=deepcopy(self.current)
-        old["stateLayout"].pop("sourceFormatRevisions")
-        old["stateLayout"]["editorial"]=old["stateLayout"]["editorial"][:-len(POSITIONS)]
+        relative=LESSON.relative_to(ROOT).as_posix()
+        previous_publication=load_publication(ROOT,relative,PUBLICATIONS["before"])
+        formatted=load_publication(ROOT,relative,PUBLICATIONS["formatted"])
+        for document in (previous_publication,formatted,self.current):
+            state.validate(document)
+        published=formatted["stateLayout"]
+        ids=[published["current"][p]["blocks"][b] for p,b in POSITIONS]
+        archives=published["sourceFormatRevisions"]
+        self.assertEqual(len(POSITIONS),len(archives))
+        self.assertEqual(ids,[entry["id"] for entry in archives])
+        prefix=previous_publication["stateLayout"]["editorial"]
+        self.assertEqual(published["editorial"][:len(prefix)],prefix)
+        self.assertEqual(ids,[entry["id"] for entry in published["editorial"][len(prefix):]])
+        # Pin this batch to its complete publication; later compatible edits append history.
+        self.assertEqual(self.meta["editorial"][:len(published["editorial"])],
+                         published["editorial"])
+        self.assertEqual(self.meta["sourceFormatRevisions"][:len(archives)],archives)
+        before_blocks=all_owners(previous_publication)
         for p,b in POSITIONS:
-            ident=self.meta["current"][p]["blocks"][b]
-            original,current=self.originals[ident],self.current["pages"][p]["blocks"][b]
+            ident=published["current"][p]["blocks"][b]
+            original,current=before_blocks[ident],formatted["pages"][p]["blocks"][b]
             self.assertTrue(require_source_format(original,current),ident)
             field=source_field(original)
             self.assertEqual([line for line in original[field].splitlines() if line.strip()],
                              [line for line in current[field].splitlines() if line.strip()],ident)
             self.assertEqual(original[field].count("std::sort("),
                              current[field].count("std::sort("),ident)
-            old["pages"][p]["blocks"][b]=deepcopy(original)
-        state.validate(old)
-        state.validate_transition(old,self.current)
-        self.assertEqual(state.validate(old),state.validate(self.current))
-        for key in ("origin","family","current","additions"):
-            self.assertEqual(old["stateLayout"][key],self.meta[key])
+        state.validate_transition(previous_publication,formatted)
+        state.validate_transition(formatted,self.current)
+        self.assertEqual(state.validate(previous_publication),state.validate(formatted))
+        for metadata_key in ("origin","family","current","additions"):
+            self.assertEqual(previous_publication["stateLayout"][metadata_key],
+                             published[metadata_key])
+        assert_format_history(self,previous_publication,formatted,self.current,ids)
+        assert_stable_storage(self,previous_publication,self.current,ids)
 
     def test_cpp23_equivalent_outputs_and_unsolved_editors(self):
         with tempfile.TemporaryDirectory(prefix="u5l10-sort-") as folder:

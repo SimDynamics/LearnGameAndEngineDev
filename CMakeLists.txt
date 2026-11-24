@@ -7,6 +7,7 @@ endif()
 include(cmake/WindowsCxxStandard.cmake)
 set(CMAKE_USER_MAKE_RULES_OVERRIDE_CXX "${CMAKE_CURRENT_SOURCE_DIR}/cmake/WindowsCxxStandard.cmake")
 project(LearnGameAndEngineDev VERSION 0.1.0 LANGUAGES CXX RC)
+include(cmake/NativeHeaderDependencies.cmake)
 
 option(LGAED_STATE_IMPORT_QA_ONLY
     "Build only the four published native state-import regressions with the official Windows toolchain" OFF)
