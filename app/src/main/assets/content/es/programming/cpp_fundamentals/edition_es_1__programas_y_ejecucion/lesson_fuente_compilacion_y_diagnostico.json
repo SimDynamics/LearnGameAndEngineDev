@@ -1,0 +1,3437 @@
+{
+  "id": "cpp_fundamentals__edition_es_1__programas_y_ejecucion__fuente_compilacion_y_diagnostico",
+  "title": "Del código fuente a la ejecución",
+  "pages": [
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "Del código escrito al resultado observado"
+        },
+        {
+          "type": "paragraph",
+          "text": "Para mostrar un mensaje escribimos código, pero el texto escrito todavía debe prepararse antes de ejecutarse. Vamos a seguir ese recorrido con una instrucción conocida. La tarea será mostrar Puesto disponible, con un espacio entre las palabras."
+        },
+        {
+          "type": "code",
+          "language": "cpp",
+          "code": "std::cout << \"Puesto disponible\";"
+        },
+        {
+          "type": "paragraph",
+          "text": "Este fragmento es código fuente: el texto C++ que escribimos. El editor permite cambiarlo. Por ejemplo, ahí podemos sustituir el contenido del literal sin cambiar el nombre std::cout. Los colores del editor ayudan a leer las piezas, pero todavía hay que comprobar el programa con las herramientas (Stroustrup, 2024)."
+        },
+        {
+          "type": "paragraph",
+          "text": "Cuando compilamos, el compilador analiza el código fuente según las reglas de C++ y lo traduce. En el modelo que estamos siguiendo, esa traducción produce código objeto: una parte ya traducida que servirá para construir el programa. Todavía hay que reunirla con las demás partes necesarias (Stroustrup, 2024)."
+        },
+        {
+          "type": "paragraph",
+          "text": "Al compilar la instrucción de salida, el compilador necesita reconocer el nombre std::cout. La línea #include <iostream> le proporciona la declaración de ese nombre. El código que produce el compilador también necesita operaciones de la biblioteca estándar para escribir el mensaje. Otra herramienta, el enlazador, une el código que se acaba de compilar con los componentes que necesita de la biblioteca. Así se obtiene el programa que luego podremos ejecutar (Stroustrup, 2024)."
+        },
+        {
+          "type": "paragraph",
+          "text": "El resultado preparado para ponerse en marcha se llama ejecutable. Construir el programa incluye la compilación y el enlace. Compilar nombra la traducción del código fuente; enlazar nombra la reunión de las partes. Obtener ese ejecutable permite pasar a la ejecución (Stroustrup, 2024)."
+        },
+        {
+          "type": "paragraph",
+          "text": "Al ejecutar se llevan a cabo las instrucciones del programa construido. Si esta instrucción se ejecuta dentro del programa preparado, std::cout escribe Puesto disponible. Ese mensaje es su salida de texto. El código fuente es lo que escribimos; la salida es lo que observamos al realizarse la instrucción (Stroustrup, 2024)."
+        },
+        {
+          "type": "paragraph",
+          "text": "Después comparamos lo observado con el requisito fijado antes de ejecutar. En esta tarea debemos comprobar las dos palabras y su espacio. Haber obtenido un programa ejecutable permite hacer la prueba; observar su salida permite comprobar si esa ejecución cumple el requisito (Stroustrup, 2024)."
+        },
+        {
+          "type": "paragraph",
+          "text": "Podemos seguir el recorrido así:\n\nEditar: preparar el texto fuente.\nCompilar: analizarlo y traducirlo a código objeto.\nEnlazar: reunir las partes y obtener el ejecutable.\nEjecutar: realizar las instrucciones del programa construido.\nComparar: revisar lo producido frente al resultado requerido."
+        },
+        {
+          "type": "paragraph",
+          "text": "Cuando pulsas «Compilar, ejecutar y comprobar», la app intenta construir el programa con el código que está en el editor. Si la construcción termina correctamente, la app ejecuta el programa y compara su salida con la que pide el ejercicio. Si un error impide construir el programa, la app muestra el diagnóstico y esa versión del código no llega a ejecutarse."
+        },
+        {
+          "type": "math_puzzle",
+          "schemaVersion": 1,
+          "id": "p1u1l4_relacionar_acciones_y_etapas",
+          "prompt": "Cada tarjeta describe una acción del trabajo con un programa. Relaciona cada acción con la herramienta o etapa que cumple ese papel.",
+          "representations": [],
+          "tools": [],
+          "responses": [
+            {
+              "id": "relaciones",
+              "type": "math_matching_drag",
+              "label": "Relaciona cada tarjeta con su destino. Usa cada destino una sola vez.",
+              "sources": [
+                {
+                  "id": "reunir",
+                  "label": "Reunir una parte ya traducida con los componentes de biblioteca necesarios para formar el programa.",
+                  "content": [
+                    {
+                      "type": "text",
+                      "text": "Reunir una parte ya traducida con los componentes de biblioteca necesarios para formar el programa.",
+                      "mathMode": "text"
+                    }
+                  ]
+                },
+                {
+                  "id": "editar",
+                  "label": "Cambiar las palabras que hemos escrito en el texto fuente.",
+                  "content": [
+                    {
+                      "type": "text",
+                      "text": "Cambiar las palabras que hemos escrito en el texto fuente.",
+                      "mathMode": "text"
+                    }
+                  ]
+                },
+                {
+                  "id": "ejecutar",
+                  "label": "Llevar a cabo las instrucciones del programa que ya se ha construido.",
+                  "content": [
+                    {
+                      "type": "text",
+                      "text": "Llevar a cabo las instrucciones del programa que ya se ha construido.",
+                      "mathMode": "text"
+                    }
+                  ]
+                },
+                {
+                  "id": "traducir",
+                  "label": "Analizar el texto C++ y traducirlo a código objeto.",
+                  "content": [
+                    {
+                      "type": "text",
+                      "text": "Analizar el texto C++ y traducirlo a código objeto.",
+                      "mathMode": "text"
+                    }
+                  ]
+                }
+              ],
+              "targets": [
+                {
+                  "id": "ejecucion",
+                  "label": "Ejecución del programa."
+                },
+                {
+                  "id": "compilador",
+                  "label": "Compilador."
+                },
+                {
+                  "id": "editor",
+                  "label": "Editor de texto o código."
+                },
+                {
+                  "id": "enlazador",
+                  "label": "Enlazador."
+                }
+              ],
+              "validator": {
+                "type": "matching",
+                "expected": {
+                  "editar": "editor",
+                  "traducir": "compilador",
+                  "reunir": "enlazador",
+                  "ejecutar": "ejecucion"
+                }
+              }
+            }
+          ],
+          "feedback": {
+            "correct": "El editor permite cambiar el texto fuente. El compilador analiza ese texto y lo traduce. El enlazador reúne las partes necesarias para formar el ejecutable. En la ejecución se realizan las instrucciones de ese resultado ya construido. Son acciones distintas aunque una aplicación las coordine.",
+            "incorrect": "Mira qué recibe cada acción: texto que se edita, texto que se traduce, partes que se reúnen o un programa construido cuyas instrucciones se realizan."
+          }
+        },
+        {
+          "type": "multiple_choice",
+          "id": "editor_compilador",
+          "question": "Has escrito una instrucción de C++ en un archivo del editor. Todavía no has compilado el archivo ni ejecutado el programa. ¿Qué contiene el archivo en ese momento?",
+          "options": [
+            "El código fuente que escribiste en el editor.",
+            "La salida final del programa.",
+            "Una prueba de que todos los resultados son correctos."
+          ],
+          "correctIndex": 0,
+          "explanation": "El archivo contiene el texto C++ que escribimos. Todavía no hemos construido esa versión ni la hemos ejecutado. Conocer el texto permite analizarlo, pero no equivale a observar su resultado."
+        },
+        {
+          "type": "multiple_choice",
+          "id": "funcion_enlazador",
+          "question": "¿Qué tarea corresponde al enlazador en el modelo estudiado?",
+          "options": [
+            "Combinar las partes necesarias para formar el ejecutable.",
+            "Traducir cada archivo fuente a una parte del programa.",
+            "Ejecutar el programa y recoger su salida de texto."
+          ],
+          "correctIndex": 0,
+          "explanation": "El enlazador reúne las partes traducidas y los componentes necesarios para obtener el programa completo. Traducir un archivo y ejecutar el resultado son tareas distintas. Completar el enlace todavía no demuestra que la salida cumpla el requisito."
+        }
+      ]
+    },
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "Revisar nombres, comillas y terminadores"
+        },
+        {
+          "type": "paragraph",
+          "text": "Las reglas para escribir las instrucciones forman parte de la sintaxis de C++. Por ejemplo, el punto y coma termina nuestras instrucciones de salida y las comillas delimitan sus literales. Si falta uno de esos signos, la herramienta puede rechazar el código antes de ejecutarlo (Stroustrup, 2024).",
+          "emphasis": [
+            {
+              "text": "sintaxis"
+            }
+          ]
+        },
+        {
+          "type": "code",
+          "language": "cpp",
+          "code": "std::Cout << \"Puesto abierto\";"
+        },
+        {
+          "type": "paragraph",
+          "text": "La instrucción intenta escribir en std::Cout, con la C mayúscula. C++ distingue mayúsculas y minúsculas. La biblioteca estándar proporciona std::cout, con la c minúscula. Al buscar el nombre escrito con mayúscula, el compilador no encuentra la declaración de la salida que queremos usar y señala un error (Stroustrup, 2024)."
+        },
+        {
+          "type": "fill_code",
+          "id": "p1u1l4_recuperar_nombre",
+          "question": "En esta instrucción ya está escrito el prefijo std::. Completa el nombre para que la instrucción escriba el mensaje en la consola.",
+          "language": "cpp",
+          "code": "std::___ << \"Acceso listo\";",
+          "answers": [
+            "cout"
+          ],
+          "explanation": "El nombre completo es std::cout. El prefijo ya está en el código, por lo que el hueco pide cout. Sus letras minúsculas son parte de su escritura; cambiar el mensaje no corrige ese nombre."
+        },
+        {
+          "type": "multiple_choice",
+          "id": "mayuscula_nombre",
+          "question": "La instrucción de salida contiene std::Cout. El compilador informa que no reconoce ese nombre. ¿Qué debes cambiar en el código para que reconozca el nombre de la biblioteca estándar?",
+          "options": [
+            "Mantener el cambio: la computadora interpreta ambos nombres igual.",
+            "Cambiar las palabras del mensaje.",
+            "Recuperar la escritura exacta std::cout."
+          ],
+          "correctIndex": 2,
+          "explanation": "El compilador distingue la letra mayúscula de la minúscula. Al cambiar la C mayúscula de std::Cout por la c minúscula de std::cout, la instrucción vuelve a usar el nombre que declara la cabecera iostream. Las palabras del mensaje están dentro del literal y no intervienen en la búsqueda de ese nombre."
+        },
+        {
+          "type": "paragraph",
+          "text": "En la instrucción que muestra un mensaje, localiza primero la comilla doble que abre el literal y después la comilla doble que lo cierra. El texto que hay entre ambas comillas es el mensaje. Después de la comilla de cierre va el punto y coma que termina la instrucción de salida."
+        },
+        {
+          "type": "fill_code",
+          "id": "p1u1l4_cerrar_literal",
+          "question": "Falta la comilla que cierra el literal antes del punto y coma. Completa únicamente ese signo; el mensaje debe ser Anden abierto.",
+          "language": "cpp",
+          "code": "std::cout << \"Anden abierto___;",
+          "answers": [
+            "\""
+          ],
+          "explanation": "La comilla doble cierra el literal después de abierto. El punto y coma que ya está escrito queda fuera del literal y termina la instrucción. Son dos signos con tareas distintas."
+        },
+        {
+          "type": "fill_code",
+          "id": "p1u1l4_terminar_instruccion",
+          "question": "El literal está completo. Añade únicamente el signo que termina la instrucción de salida.",
+          "language": "cpp",
+          "code": "std::cout << \"Control listo\"___",
+          "answers": [
+            ";"
+          ],
+          "explanation": "Las dos comillas ya delimitan el literal. El signo que falta es el punto y coma, situado después de la comilla de cierre. Así termina la instrucción sin añadir ningún carácter al mensaje."
+        },
+        {
+          "type": "fill_code",
+          "id": "reparar_operador",
+          "question": "La siguiente instrucción debe mostrar Puesto 4. Sustituye el hueco por el operador de inserción correcto.",
+          "language": "cpp",
+          "code": "#include <iostream>\n\nint main() {\n    std::cout ___ \"Puesto 4\";\n\n    return 0;\n}\n",
+          "answers": [
+            "<<"
+          ],
+          "explanation": "El operador completo es <<. Envía el literal que ya está escrito a std::cout. El hueco no pide cambiar el mensaje ni repetir las comillas; pide recuperar la operación que falta."
+        },
+        {
+          "type": "code",
+          "language": "cpp",
+          "code": "int main() {\n    std::cout << \"Marco completo\";\n\n    return 0;"
+        },
+        {
+          "type": "paragraph",
+          "text": "La llave que abre el cuerpo de main necesita otra que lo cierre. Esa llave final es distinta del punto y coma de la última instrucción. Revisa cada pareja de signos por su función: comillas para el literal y llaves para el cuerpo de la función."
+        },
+        {
+          "type": "fill_code",
+          "id": "p1u1l4_cerrar_cuerpo",
+          "question": "Completa el signo que falta para cerrar el cuerpo de main. Las instrucciones interiores ya están completas.",
+          "language": "cpp",
+          "code": "int main() {\n    std::cout << \"Marco completo\";\n\n    return 0;\n___",
+          "answers": [
+            "}"
+          ],
+          "explanation": "La llave final cierra el cuerpo que abrió la primera llave. Escribir otro punto y coma no cerraría ese cuerpo. Las instrucciones interiores ya terminan cada una con su propio punto y coma."
+        }
+      ]
+    },
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "Leer el diagnóstico y buscar la causa"
+        },
+        {
+          "type": "paragraph",
+          "text": "Un diagnóstico es un mensaje de una herramienta sobre el código que está analizando. Aquí examinaremos diagnósticos de error: la herramienta rechazó esa versión y no obtuvo el programa listo para ejecutar. Otros mensajes pueden ser avisos o información; para saber qué ocurrió hay que mirar también si la construcción terminó correctamente (Stroustrup, 2024).",
+          "emphasis": [
+            {
+              "text": "diagnósticos de error"
+            }
+          ]
+        },
+        {
+          "type": "paragraph",
+          "text": "MSVC es un compilador de C++ de Microsoft. Este programa se comprobó con él en Windows. Contiene un error y no se ejecutó. Observa sus líneas y después el fragmento del diagnóstico real. Para facilitar la lectura se ha omitido sólo la ruta de la carpeta; se conservan el nombre del archivo, la línea y el mensaje."
+        },
+        {
+          "type": "code",
+          "language": "cpp",
+          "code": "#include <iostream>\n\nint main() {\n    std::cout << \"Listo\"\n    return 0;\n}\n"
+        },
+        {
+          "type": "code",
+          "language": "text",
+          "code": "main.cpp(5): error C2143: error de sintaxis: falta ';' delante de 'return'"
+        },
+        {
+          "type": "paragraph",
+          "text": "El mensaje permite localizar y estudiar el problema:\n\nmain.cpp es el archivo examinado.\nEl 5 entre paréntesis señala la línea donde se detectó el problema.\nC2143 identifica este diagnóstico de MSVC.\nLa descripción indica que falta un punto y coma antes de return."
+        },
+        {
+          "type": "paragraph",
+          "text": "Para localizar esa línea, se cuentan todos los renglones del archivo, incluidos los vacíos. En el código mostrado, la línea dos está vacía y la línea cinco contiene return 0;. El número del diagnóstico se refiere al archivo completo, no al número de instrucciones ejecutadas."
+        },
+        {
+          "type": "paragraph",
+          "text": "La línea señalada contiene return, pero la instrucción anterior todavía no tiene su terminador. Al llegar a return, la herramienta detecta que el código no continúa como esperaba. Por eso hay que revisar el contexto, en lugar de borrar automáticamente la línea señalada (Stroustrup, 2024).",
+          "emphasis": [
+            {
+              "text": "hay que revisar el contexto"
+            }
+          ]
+        },
+        {
+          "type": "multiple_choice",
+          "id": "falta_terminador",
+          "question": "En el ejemplo mostrado, el diagnóstico señala return. Antes de borrar o cambiar esa instrucción, ¿qué conviene revisar primero?",
+          "options": [
+            "Revisar si la instrucción de salida que está justo antes de return termina con un punto y coma.",
+            "Cambiar el mensaje del literal porque precede al diagnóstico.",
+            "Eliminar return porque el diagnóstico señala esa línea."
+          ],
+          "correctIndex": 0,
+          "explanation": "La instrucción anterior no terminó: falta su punto y coma. La herramienta detectó el problema al leer return. El lugar señalado orienta la búsqueda, pero también hay que revisar lo que venía antes. Después de corregir el terminador, se reconstruye esa versión."
+        },
+        {
+          "type": "paragraph",
+          "text": "En este ejemplo, el diagnóstico C2143 de MSVC señala return. Otro compilador puede describir con otras palabras el mismo error. Busca la línea que menciona el mensaje y lee también la instrucción inmediatamente anterior. En este código, la instrucción de salida justo antes de return necesita un punto y coma al final. Después de añadirlo, vuelve a compilar para comprobar si se corrigió el error (Stroustrup, 2024)."
+        },
+        {
+          "type": "paragraph",
+          "text": "Un error puede dificultar que la herramienta interprete las líneas siguientes y provocar varios diagnósticos. Examina primero el problema inicial que puedas relacionar con el código. Después de corregirlo, vuelve a construir y mira qué mensajes permanecen (Stroustrup, 2024)."
+        },
+        {
+          "type": "code",
+          "language": "cpp",
+          "code": "#include <iostream>\n\nint main() {\n    std::cout << \"Listo;\n    return 0;\n}\n"
+        },
+        {
+          "type": "code",
+          "language": "text",
+          "code": "main.cpp(4): error C2001: nueva línea en literal de cadena\nmain.cpp(5): error C2143: error de sintaxis: falta ';' delante de 'return'"
+        },
+        {
+          "type": "paragraph",
+          "text": "Aquí el primer mensaje señala la línea del literal. Lo llama literal de cadena: es el texto que estamos escribiendo entre comillas dobles. El mensaje posterior menciona return, pero eso no demuestra que haya que cambiar return. Una causa anterior puede afectar a lo que la herramienta entiende después."
+        },
+        {
+          "type": "multiple_choice",
+          "id": "p1u1l4_elegir_reparacion_inicial",
+          "question": "En este segundo programa aparecen dos diagnósticos. ¿Qué revisión concreta corresponde al primer mensaje y al código mostrado?",
+          "options": [
+            "Cambiar el contenido Listo por otra palabra.",
+            "Revisar el cierre del literal de la instrucción de salida.",
+            "Eliminar return porque también aparece en un diagnóstico."
+          ],
+          "correctIndex": 1,
+          "explanation": "En la línea del literal falta su comilla de cierre. Al colocarla antes del punto y coma, ese signo vuelve a quedar fuera del texto y la instrucción puede terminar. Después se reconstruye: no se supone que cada mensaje exigía un cambio distinto."
+        },
+        {
+          "type": "heading",
+          "text": "Cuando se señala la apertura de un cuerpo"
+        },
+        {
+          "type": "code",
+          "language": "cpp",
+          "code": "#include <iostream>\n\nint main() {\n    std::cout << \"Listo\";\n\n    return 0;\n"
+        },
+        {
+          "type": "code",
+          "language": "text",
+          "code": "main.cpp(3): fatal error C1075: \"{\": no se encontró ningún token coincidente"
+        },
+        {
+          "type": "paragraph",
+          "text": "En este diagnóstico, el compilador señala la línea que contiene la llave de apertura de main. Las palabras token coincidente se refieren aquí a la llave de cierre que el compilador esperaba encontrar antes del final del archivo. La palabra fatal indica que el compilador interrumpió la traducción. Localiza la llave de apertura y comprueba dónde debe terminar el cuerpo de main.",
+          "emphasis": [
+            {
+              "text": "la llave de cierre que el compilador esperaba encontrar"
+            }
+          ]
+        },
+        {
+          "type": "multiple_choice",
+          "id": "p1u1l4_revisar_pareja",
+          "question": "El código mostrado abre el cuerpo de main y no lo cierra. El diagnóstico señala la apertura. ¿Qué reparación recupera la estructura estudiada?",
+          "options": [
+            "Quitar la llave de apertura que señala el mensaje.",
+            "Cambiar el nombre de std::cout por otro.",
+            "Añadir la llave de cierre después de la última instrucción."
+          ],
+          "correctIndex": 2,
+          "explanation": "La llave de apertura es necesaria para comenzar el cuerpo. Lo que falta es su pareja de cierre al final. El mensaje señala la apertura que quedó sin pareja; eso no convierte esa apertura en un signo que debamos borrar."
+        }
+      ]
+    },
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "Reparar un error que impide construir"
+        },
+        {
+          "type": "paragraph",
+          "text": "El mensaje ya está escrito entre comillas en el código. El programa debe mostrarlo sin pedirle datos al usuario. Hay un error en el nombre que aparece a la izquierda de <<. Revisa sus mayúsculas y minúsculas y corrige la letra que impide compilar el programa."
+        },
+        {
+          "type": "paragraph",
+          "text": "Zona habilitada"
+        },
+        {
+          "type": "paragraph",
+          "text": "Pulsa «Compilar, ejecutar y comprobar». Si el programa no compila, lee el diagnóstico del compilador y revisa el nombre que corregiste. Si se ejecuta, busca el texto en «Salida del programa (stdout)». Debe aparecer Zona habilitada, con un espacio entre las palabras y sin salto de línea al final."
+        },
+        {
+          "type": "cpp_compiler",
+          "initialCode": "#include <iostream>\n\nint main() {\n    std::Cout << \"Zona habilitada\";\n    return 0;\n}\n",
+          "outputCheck": {
+            "inputComparison": "exact",
+            "cases": [
+              {
+                "standardInput": "",
+                "outputs": [
+                  "Zona habilitada"
+                ],
+                "explanation": "La reparación debe permitir construir y ejecutar el programa, que mostrará Zona habilitada sin un salto final. La comprobación acredita esa versión reparada y su salida."
+              }
+            ]
+          }
+        },
+        {
+          "type": "heading",
+          "text": "Qué permitió construir la versión corregida"
+        },
+        {
+          "type": "code",
+          "language": "cpp",
+          "code": "#include <iostream>\n\nint main() {\n    std::cout << \"Zona habilitada\";\n\n    return 0;\n}\n"
+        },
+        {
+          "type": "paragraph",
+          "text": "El programa ahora usa std::cout, el nombre de la biblioteca estándar para la salida de texto. Una vez compilado y enlazado, el programa puede ejecutar la instrucción que muestra el literal. En la consola aparece Zona habilitada. El espacio entre las palabras procede del literal."
+        }
+      ]
+    },
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "Distinguir una ejecución de una solución correcta"
+        },
+        {
+          "type": "paragraph",
+          "text": "Ahora el requisito es mostrar Sala disponible. El programa conserva la cabecera y el cuerpo de main que ya conocemos, pero dentro ejecuta esta instrucción:"
+        },
+        {
+          "type": "code",
+          "language": "cpp",
+          "code": "std::cout << \"Sala ocupada\";"
+        },
+        {
+          "type": "paragraph",
+          "text": "La instrucción usa std::cout y el operador << para escribir el texto del literal en la consola. El programa compila. Al ejecutarlo ves Sala ocupada. El ejercicio pide Sala disponible. Para averiguar por qué el mensaje es distinto, lee las palabras que el programa tiene entre comillas (Stroustrup, 2024)."
+        },
+        {
+          "type": "paragraph",
+          "text": "En este caso el defecto está en el comportamiento del programa: la instrucción está bien escrita, pero envía otro mensaje. Lo llamamos error lógico. Para corregirlo hay que volver al requisito y cambiar la instrucción que produce la diferencia; el compilador no adivina qué mensaje necesitábamos (Stroustrup, 2024)."
+        },
+        {
+          "type": "paragraph",
+          "text": "Considera otra situación: las herramientas encuentran un error que impide construir la nueva versión. Esa versión no llega a ejecutarse. Primero hay que leer el diagnóstico y revisar el código relacionado. Si quedó visible una salida anterior, esa salida no demuestra qué haría el código que acabamos de intentar construir."
+        },
+        {
+          "type": "paragraph",
+          "text": "Por eso, mirar sólo la consola no basta para saber qué ocurrió. Revisa primero si la construcción terminó y si hubo una ejecución de esa versión. Cuando se ejecuta un programa, la ausencia de texto también puede deberse a que sus instrucciones no escribieron ningún mensaje. Necesitamos relacionar la salida con lo que informan las herramientas."
+        },
+        {
+          "type": "multiple_choice",
+          "id": "p1u1l4_distinguir_ejecucion_y_cumplimiento",
+          "question": "Las herramientas informan que el programa se construyó y su ejecución terminó correctamente. La consola está vacía, pero el requisito exige mostrar Listo. ¿Qué conclusión corresponde a lo observado?",
+          "options": [
+            "La consola vacía demuestra un fallo de construcción, aunque las herramientas hayan informado que se construyó.",
+            "El requisito ya está cumplido, porque el programa se construyó y terminó correctamente.",
+            "La ejecución terminó, pero falta el mensaje requerido; hay que revisar las instrucciones que se ejecutaron."
+          ],
+          "correctIndex": 2,
+          "explanation": "La construcción correcta permitió ejecutar el programa. Eso no demuestra que sus instrucciones escribieran el mensaje. La consola vacía no contiene Listo, de modo que el requisito sigue sin cumplirse. Hay que revisar el código que debería mostrarlo, sin convertir la ausencia de texto en una prueba de que la construcción falló."
+        },
+        {
+          "type": "math_puzzle",
+          "schemaVersion": 1,
+          "id": "p1u1l4_relacionar_observacion_y_siguiente_accion",
+          "prompt": "Estas tarjetas describen tres situaciones diferentes. Relaciona cada una con la siguiente acción que permite avanzar sin confundir las etapas.",
+          "representations": [],
+          "tools": [],
+          "responses": [
+            {
+              "id": "relaciones",
+              "type": "math_matching_drag",
+              "label": "Relaciona cada tarjeta con su destino. Usa cada destino una sola vez.",
+              "sources": [
+                {
+                  "id": "salida_distinta",
+                  "label": "El programa se construyó y se ejecutó, pero el texto obtenido es diferente del solicitado.",
+                  "content": [
+                    {
+                      "type": "text",
+                      "text": "El programa se construyó y se ejecutó, pero el texto obtenido es diferente del solicitado.",
+                      "mathMode": "text"
+                    }
+                  ]
+                },
+                {
+                  "id": "solo_fuente",
+                  "label": "Sólo se ha editado el texto; todavía no se ha intentado construir ni ejecutar esa versión.",
+                  "content": [
+                    {
+                      "type": "text",
+                      "text": "Sólo se ha editado el texto; todavía no se ha intentado construir ni ejecutar esa versión.",
+                      "mathMode": "text"
+                    }
+                  ]
+                },
+                {
+                  "id": "construccion_rechazada",
+                  "label": "Las herramientas rechazaron la construcción e informaron de un error; esa versión no llegó a ejecutarse.",
+                  "content": [
+                    {
+                      "type": "text",
+                      "text": "Las herramientas rechazaron la construcción e informaron de un error; esa versión no llegó a ejecutarse.",
+                      "mathMode": "text"
+                    }
+                  ]
+                }
+              ],
+              "targets": [
+                {
+                  "id": "revisar_diagnostico",
+                  "label": "Leer el diagnóstico de error y revisar el código relacionado para reparar la construcción."
+                },
+                {
+                  "id": "comprobar_comportamiento",
+                  "label": "Comparar el texto con el requisito y corregir las instrucciones que producen la diferencia."
+                },
+                {
+                  "id": "preparar_ejecucion",
+                  "label": "Intentar construir el programa y, si se consigue, ejecutarlo para observar su resultado."
+                }
+              ],
+              "validator": {
+                "type": "matching",
+                "expected": {
+                  "salida_distinta": "comprobar_comportamiento",
+                  "solo_fuente": "preparar_ejecucion",
+                  "construccion_rechazada": "revisar_diagnostico"
+                }
+              }
+            }
+          ],
+          "feedback": {
+            "correct": "Un texto recién editado todavía necesita pasar por las herramientas de construcción. Si la construcción se rechaza, hay que interpretar el diagnóstico y reparar el código antes de obtener una ejecución de esa versión. Si ya se ejecutó y produjo otro mensaje, tenemos una salida concreta que comparar con el requisito. Cambiar el requisito para aceptar esa salida no corrige el programa.",
+            "incorrect": "Distingue qué evidencia hay: sólo texto editado, un error que impide construir o una salida obtenida al ejecutar. Elige la acción que responde a esa situación."
+          }
+        },
+        {
+          "type": "paragraph",
+          "text": "La construcción responde si hemos conseguido preparar esa versión para ejecutarla. La ejecución muestra qué hacen sus instrucciones. La comparación permite decidir si lo observado cumple el requisito de la tarea. Después de una reparación, volvemos a construir y comprobar la versión corregida."
+        },
+        {
+          "type": "multiple_choice",
+          "id": "mensaje_equivocado",
+          "question": "El programa debe mostrar Pedido recibido. Compila correctamente, pero al ejecutarlo aparece Pedido cancelado en la consola. ¿Qué cambio en el código hará que muestre el mensaje solicitado?",
+          "options": [
+            "Cambiar sólo el comentario que describe el mensaje esperado.",
+            "Cambiar las palabras dentro del literal que la instrucción de salida envía a la consola.",
+            "Aceptar el resultado porque la compilación tuvo éxito."
+          ],
+          "correctIndex": 1,
+          "explanation": "La instrucción se ejecuta y escribe el contenido de su literal. Si el literal contiene Pedido cancelado, esas son las palabras que se muestran. Sustituye el texto entre comillas por Pedido recibido, vuelve a compilar y ejecuta el programa. Compara el mensaje de esta ejecución con el que pide el ejercicio."
+        }
+      ]
+    },
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "Cambiar una causa y volver a comprobar"
+        },
+        {
+          "type": "paragraph",
+          "text": "Si cambiamos varias partes a la vez y aparece un error nuevo, cuesta saber qué modificación lo produjo. Cuando queremos investigar una causa concreta, conviene hacer un cambio relacionado con ella, volver a construir y observar su efecto. Eso ayuda a razonar; no es una regla de sintaxis de C++ (Stroustrup, 2024)."
+        },
+        {
+          "type": "code",
+          "language": "cpp",
+          "code": "#include <iostream>\n\nint main() {\n    std::cout << \"Registro cerrado\";\n\n    return 0;\n}\n"
+        },
+        {
+          "type": "paragraph",
+          "text": "Este programa muestra Registro cerrado. Supón que el requisito cambia y ahora debe mostrar Registro abierto. Basta cambiar el contenido del literal; cambiar el nombre de main o quitar una comilla introduciría otros problemas sin ayudar a obtener el texto solicitado."
+        },
+        {
+          "type": "fill_code",
+          "id": "p1u1l4_modificar_con_criterio",
+          "question": "Completa sólo el literal para cumplir el requisito nuevo Registro abierto. La estructura del programa ya está preparada.",
+          "language": "cpp",
+          "code": "std::cout << ___;",
+          "answers": [
+            "\"Registro abierto\""
+          ],
+          "explanation": "El literal \"Registro abierto\" cambia el mensaje sin alterar las comillas delimitadoras, el operador ni el terminador. El código sigue teniendo la misma estructura. Después de un cambio real en el editor hay que volver a construir y ejecutar para comprobarlo."
+        },
+        {
+          "type": "multiple_choice",
+          "id": "prueba_controlada",
+          "question": "Un programa que mostraba Registro cerrado compilaba correctamente. Cambias el nombre main, quitas una comilla del literal y cambias las palabras del mensaje. Al intentar construir el programa otra vez aparece un error. ¿Por qué hace falta revisar el código para saber cuál de los cambios causó ese error?",
+          "options": [
+            "Porque el nuevo texto del mensaje explica cualquier diagnóstico.",
+            "Porque tanto quitar la comilla como cambiar el nombre de main pueden impedir que se construya el programa. Hay que leer el diagnóstico para distinguir las causas.",
+            "Porque basta atribuir el fallo al último cambio que recuerdas."
+          ],
+          "correctIndex": 1,
+          "explanation": "Si quitas la comilla de cierre, el compilador puede señalar un error al leer el literal. Si cambias el nombre de main, el enlazador puede informar que falta la función donde debe empezar la ejecución. El diagnóstico ayuda a identificar qué cambio impidió construir el programa. Tras corregir esa causa, vuelve a construirlo para averiguar si queda otro error."
+        },
+        {
+          "type": "paragraph",
+          "text": "Un resultado pertenece al código que realmente se construyó y ejecutó. Si después editas el texto, la salida anterior no demuestra qué hará la nueva versión. Si esa revisión falla al construirse, no ha producido una ejecución nueva que pueda validar el cambio (Stroustrup, 2024).",
+          "emphasis": [
+            {
+              "text": "Un resultado pertenece al código que realmente se construyó y ejecutó."
+            }
+          ]
+        },
+        {
+          "type": "multiple_choice",
+          "id": "p1u1l4_resultado_anterior",
+          "question": "Una versión mostró Puerta abierta. Después se editó el código y la nueva construcción falló. ¿Qué permite afirmar la salida anterior?",
+          "options": [
+            "Que la versión anterior produjo ese mensaje; falta reparar y ejecutar la nueva.",
+            "Que la nueva versión también produjo Puerta abierta.",
+            "Que basta conservar la salida anterior y aceptar el cambio."
+          ],
+          "correctIndex": 0,
+          "explanation": "La salida observada procede de la versión anterior. La revisión que falló no llegó a ejecutarse. Hay que corregir la construcción y ejecutar la versión nueva antes de comparar su resultado."
+        },
+        {
+          "type": "drag_fill_code",
+          "id": "piezas_estructura",
+          "question": "Completa el programa que debe mostrar Revision lista. Cada ficha se usa como máximo una vez.",
+          "template": "#include <iostream>\n\nint []() {\n    std::cout [] \"Revision lista\"[]\n    return 0;\n}",
+          "choices": [
+            "main",
+            "<<",
+            ";",
+            "Main",
+            "<"
+          ],
+          "correctOrder": [
+            0,
+            1,
+            2
+          ]
+        },
+        {
+          "type": "paragraph",
+          "text": "Para entender la construcción anterior, recupera las funciones de las piezas que ya estudiaste:\n\nmain identifica el punto donde comienzan nuestras instrucciones.\n<< envía el literal a la salida de texto.\nEl punto y coma termina esa instrucción.\n\nCambiar el nombre no repara un terminador ausente. Añadir un terminador tampoco recupera un nombre equivocado. La corrección debe responder al problema concreto."
+        },
+        {
+          "type": "output_prediction",
+          "id": "prediccion_revision_inicial",
+          "question": "Lee el programa mostrado y predice exactamente su mensaje. Conserva el espacio y no añadas comillas ni un salto final.",
+          "language": "cpp",
+          "code": "#include <iostream>\n\nint main() {\n    std::cout << \"Revision inicial\";\n\n    return 0;\n}\n",
+          "answers": [
+            "Revision inicial"
+          ],
+          "outputComparison": "exact",
+          "explanation": "La instrucción con std::cout escribe Revision inicial en la consola. Ambas palabras y el espacio entre ellas están dentro de las comillas del literal. La instrucción return 0; termina el programa y no añade ningún carácter al mensaje.",
+          "reviewFeedback": "Lee el texto que aparece entre las comillas del literal que se envía a std::cout. ¿Qué palabras contiene? ¿Hay un espacio entre ellas? Las comillas y el punto y coma forman parte del código."
+        }
+      ]
+    },
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "Reparar una salida que no cumple el objetivo"
+        },
+        {
+          "type": "paragraph",
+          "text": "Las palabras Entrada y Salida ya están escritas en el código. El programa las muestra sin pedirle datos al usuario, pero las muestra en el orden equivocado. Lee el comentario para saber qué palabra debe aparecer primero. Luego mira las instrucciones que escriben esas palabras en la consola."
+        },
+        {
+          "type": "paragraph",
+          "text": "Entrada\nSalida"
+        },
+        {
+          "type": "paragraph",
+          "text": "Deben aparecer esas dos palabras en líneas distintas y en ese orden. Conserva las palabras exactas. Puedes terminar con o sin un salto después de Salida. Modifica el código que produce el texto, ejecuta de nuevo y compara la salida actual con el objetivo."
+        },
+        {
+          "type": "cpp_compiler",
+          "initialCode": "#include <iostream>\n\nint main() {\n    // Mostrar primero Entrada y después Salida.\n    std::cout << \"Salida\\n\";\n    std::cout << \"Entrada\";\n\n    return 0;\n}\n",
+          "outputCheck": {
+            "inputComparison": "exact",
+            "cases": [
+              {
+                "standardInput": "",
+                "outputs": [
+                  "Entrada\nSalida",
+                  "Entrada\nSalida\n"
+                ],
+                "explanation": "El resultado debe mostrar Entrada primero y Salida en la línea siguiente. Se acepta un salto final opcional. Que la construcción termine no basta si el orden sigue equivocado."
+              }
+            ]
+          }
+        },
+        {
+          "type": "heading",
+          "text": "Comparar la reparación del resultado"
+        },
+        {
+          "type": "code",
+          "language": "cpp",
+          "code": "#include <iostream>\n\nint main() {\n    // Mostrar primero Entrada y después Salida.\n    std::cout << \"Entrada\\n\";\n    std::cout << \"Salida\";\n\n    return 0;\n}\n"
+        },
+        {
+          "type": "paragraph",
+          "text": "La primera instrucción escribe Entrada y envía un salto. La siguiente escribe Salida en la línea nueva. Cambiar sólo el comentario no habría cambiado ese orden. La referencia muestra una implementación; otras formas con las piezas estudiadas pueden producir el mismo resultado."
+        },
+        {
+          "type": "paragraph",
+          "text": "Para comprobar un programa distinguimos lo que escribió el autor, lo que aceptaron las herramientas y lo que ocurrió al ejecutarlo. Un diagnóstico orienta una revisión; una ejecución permite observar un resultado. Después comparamos ese resultado con el requisito. En la siguiente lección reuniremos estas acciones al resolver una tarea pequeña."
+        }
+      ]
+    }
+  ],
+  "activityAfter": [
+    {
+      "activity": "block_0006_0004",
+      "requires": [
+        "block_0003_0004"
+      ]
+    }
+  ],
+  "referenceAfter": [
+    {
+      "activity": "block_0003_0004",
+      "blocks": [
+        "block_0003_0005",
+        "block_0003_0006",
+        "block_0003_0007"
+      ]
+    },
+    {
+      "activity": "block_0006_0004",
+      "blocks": [
+        "block_0006_0005",
+        "block_0006_0006",
+        "block_0006_0007"
+      ]
+    }
+  ],
+  "compilerPuzzlesRequired": true,
+  "textSemantics": {
+    "version": 1,
+    "fields": [
+      {
+        "block": "block_0000_0000",
+        "path": "/text",
+        "sourceSha256": "3cc9219b5b5fb49e1427258b80ae6b18eb2422c20106820424c8c762fa23dfc8",
+        "spans": []
+      },
+      {
+        "block": "block_0000_0012",
+        "path": "/question",
+        "sourceSha256": "4b57427f5cb1d57aa3a51fc8e56ff1cf1dc386e269fc13d8eed5105f99708fbd",
+        "spans": []
+      },
+      {
+        "block": "block_0000_0012",
+        "path": "/explanation",
+        "sourceSha256": "762da3b16b89c3a088fa19d4c08209b51c4b748bab4fde44202a342b9604cd14",
+        "spans": [
+          {
+            "start": 29,
+            "end": 32,
+            "text": "C++",
+            "role": "cpp",
+            "reading": "technical"
+          }
+        ]
+      },
+      {
+        "block": "block_0000_0012",
+        "path": "/options/0",
+        "sourceSha256": "775078400cb6f0ba5a37a4023fe503218e92030ad0a999318d82c41d498b7b1f",
+        "spans": []
+      },
+      {
+        "block": "block_0000_0012",
+        "path": "/options/1",
+        "sourceSha256": "f051572803f19308ab9f48e30222f9cd40a7ed3a10ad61fa597e88cb9d03f45a",
+        "spans": []
+      },
+      {
+        "block": "block_0000_0012",
+        "path": "/options/2",
+        "sourceSha256": "3f731007d49a3c577e069db80cf03919338a9c5aff22d0e13ac61f5278c62708",
+        "spans": []
+      },
+      {
+        "block": "block_0000_0013",
+        "path": "/question",
+        "sourceSha256": "b3c19f2eb2b91b09d2277e6a10b8694593c6f1e98791480580b31577e3900139",
+        "spans": []
+      },
+      {
+        "block": "block_0000_0013",
+        "path": "/explanation",
+        "sourceSha256": "20da6dbc2fe7eba2b63399fc959ed3041196499a919b3962949808d06f100fa7",
+        "spans": []
+      },
+      {
+        "block": "block_0000_0013",
+        "path": "/options/0",
+        "sourceSha256": "481fd988b2e407b47bb0e59c9ff237ca0a3468913e71ee959006049cd8a8a972",
+        "spans": []
+      },
+      {
+        "block": "block_0000_0013",
+        "path": "/options/1",
+        "sourceSha256": "352d0821675838e4912f9ebe2e63fdcfb54f830c6cd48a9b47270dcf2b8ed9bf",
+        "spans": []
+      },
+      {
+        "block": "block_0000_0013",
+        "path": "/options/2",
+        "sourceSha256": "d10f0e124c8442d43046c04f1cfce4b041b3400509d028fd7e49a4fc22bcfe13",
+        "spans": []
+      },
+      {
+        "block": "block_0001_0000",
+        "path": "/text",
+        "sourceSha256": "5795dd626117cd0dfad11d792e985c3cc37c5e0ae2f74a499caac08cef5a4a63",
+        "spans": []
+      },
+      {
+        "block": "block_0002_0008",
+        "path": "/question",
+        "sourceSha256": "554905db1b36a5a30051c9043cf04674c30a67a5355cdcd5746192dffc6ef335",
+        "spans": [
+          {
+            "start": 46,
+            "end": 52,
+            "text": "return",
+            "role": "cpp",
+            "reading": "technical"
+          }
+        ]
+      },
+      {
+        "block": "block_0002_0008",
+        "path": "/explanation",
+        "sourceSha256": "06774d90b368b0c5eaa273ab944a08be32bac6bc0d39c1b8eb4962a045af6559",
+        "spans": [
+          {
+            "start": 102,
+            "end": 108,
+            "text": "return",
+            "role": "cpp",
+            "reading": "technical"
+          }
+        ]
+      },
+      {
+        "block": "block_0002_0008",
+        "path": "/options/0",
+        "sourceSha256": "506adb19e06d846a08958339d29f99cd4dc8b4e5c360a9c559e25712cb7f1910",
+        "spans": [
+          {
+            "start": 60,
+            "end": 66,
+            "text": "return",
+            "role": "cpp",
+            "reading": "technical"
+          }
+        ]
+      },
+      {
+        "block": "block_0002_0008",
+        "path": "/options/1",
+        "sourceSha256": "32eeffccb515f0dfb498bf1a7930c3315d653691b8db073317a44b75f48f1bf0",
+        "spans": []
+      },
+      {
+        "block": "block_0002_0008",
+        "path": "/options/2",
+        "sourceSha256": "db62db67a78e0a0270c8a79c786ff5a02e4c30b1b431b72d700b855b8553f0b0",
+        "spans": [
+          {
+            "start": 9,
+            "end": 15,
+            "text": "return",
+            "role": "cpp",
+            "reading": "technical"
+          }
+        ]
+      },
+      {
+        "block": "block_0001_0009",
+        "path": "/question",
+        "sourceSha256": "7f54fbbc146083780f250161434eed7b96a48d33335b3c99549d2e76fca6006f",
+        "spans": [
+          {
+            "start": 38,
+            "end": 46,
+            "text": "Puesto 4",
+            "role": "output",
+            "reading": "natural"
+          }
+        ]
+      },
+      {
+        "block": "block_0001_0009",
+        "path": "/explanation",
+        "sourceSha256": "350b4fbb2985e418e51c24bc4daae97649add4f83851d177f8176c72a0c6c7fd",
+        "spans": [
+          {
+            "start": 24,
+            "end": 26,
+            "text": "<<",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 67,
+            "end": 76,
+            "text": "std::cout",
+            "role": "cpp",
+            "reading": "technical"
+          }
+        ]
+      },
+      {
+        "block": "block_0002_0000",
+        "path": "/text",
+        "sourceSha256": "3d6f0e3f8a591fec48c494add9cf91d7a3c8aa307080f437e05f443a65b98302",
+        "spans": []
+      },
+      {
+        "block": "block_0004_0010",
+        "path": "/question",
+        "sourceSha256": "ae864ef15ead981c108bbd7c6e758f346afe97935763017d9d3cebe6b5d1f176",
+        "spans": [
+          {
+            "start": 25,
+            "end": 40,
+            "text": "Pedido recibido",
+            "role": "output",
+            "reading": "natural"
+          },
+          {
+            "start": 92,
+            "end": 108,
+            "text": "Pedido cancelado",
+            "role": "output",
+            "reading": "natural"
+          }
+        ]
+      },
+      {
+        "block": "block_0004_0010",
+        "path": "/explanation",
+        "sourceSha256": "3c7da012f3e568feea9d1914e13aaad4c76a017b29e103871044a0493ce82127",
+        "spans": [
+          {
+            "start": 87,
+            "end": 103,
+            "text": "Pedido cancelado",
+            "role": "output",
+            "reading": "natural"
+          },
+          {
+            "start": 182,
+            "end": 197,
+            "text": "Pedido recibido",
+            "role": "output",
+            "reading": "natural"
+          }
+        ]
+      },
+      {
+        "block": "block_0004_0010",
+        "path": "/options/0",
+        "sourceSha256": "185fa30395ff659f1a02d914e34ea2b36d5b8cdc60335150400bcb5ae5166522",
+        "spans": []
+      },
+      {
+        "block": "block_0004_0010",
+        "path": "/options/1",
+        "sourceSha256": "302efea7ae4552b07263a97a4d8f29d01540e9965f51e0fda33c2f600a0bd3e3",
+        "spans": []
+      },
+      {
+        "block": "block_0004_0010",
+        "path": "/options/2",
+        "sourceSha256": "0cdfdf43d550090b345e1fa13db9b413a8db15709c444dcd1238bfb7fc6a54f0",
+        "spans": []
+      },
+      {
+        "block": "block_0001_0005",
+        "path": "/question",
+        "sourceSha256": "938a770447b028946aa6e74a9d1c06b51265ea8580eca6e3768e52ee2dc94d6b",
+        "spans": [
+          {
+            "start": 34,
+            "end": 43,
+            "text": "std::Cout",
+            "role": "cpp",
+            "reading": "technical"
+          }
+        ]
+      },
+      {
+        "block": "block_0001_0005",
+        "path": "/explanation",
+        "sourceSha256": "b9a495bacd0f47c4681c4ef4fcbd15431a9bdffa39674d9ad3408e7f6d5f892a",
+        "spans": [
+          {
+            "start": 89,
+            "end": 98,
+            "text": "std::Cout",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 121,
+            "end": 130,
+            "text": "std::cout",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 195,
+            "end": 203,
+            "text": "iostream",
+            "role": "cpp",
+            "reading": "technical"
+          }
+        ]
+      },
+      {
+        "block": "block_0001_0005",
+        "path": "/options/0",
+        "sourceSha256": "f6f2018d592faf65cf49e008c8a06f7b42f0d0563af2002efa8956e96cb7afc7",
+        "spans": []
+      },
+      {
+        "block": "block_0001_0005",
+        "path": "/options/1",
+        "sourceSha256": "f55b3b36a9612782a3a64a14321f0089d475807b2d05a7302853e866bb966f2b",
+        "spans": []
+      },
+      {
+        "block": "block_0001_0005",
+        "path": "/options/2",
+        "sourceSha256": "d5459032a506e2174368a0e575cf9c5ded71ce133fb422829bd052193522039b",
+        "spans": [
+          {
+            "start": 30,
+            "end": 39,
+            "text": "std::cout",
+            "role": "cpp",
+            "reading": "technical"
+          }
+        ]
+      },
+      {
+        "block": "block_0003_0000",
+        "path": "/text",
+        "sourceSha256": "2455adf3e237f3712c672bf6a3a31724ae5d1b919b9b0f5ca3329181fba47997",
+        "spans": []
+      },
+      {
+        "block": "block_0005_0010",
+        "path": "/question",
+        "sourceSha256": "cb36f39faab36ecb05dcf50b3f0a7a2509e1d541caa43a812a7bc5174bb80d00",
+        "spans": []
+      },
+      {
+        "block": "block_0005_0010",
+        "path": "/explanation",
+        "sourceSha256": "6d9b933d3ac4c2cab8a6fde4ab208649ef446866961dd7209ee2b3872d610d05",
+        "spans": [
+          {
+            "start": 19,
+            "end": 28,
+            "text": "std::cout",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 37,
+            "end": 53,
+            "text": "Revision inicial",
+            "role": "output",
+            "reading": "natural"
+          },
+          {
+            "start": 166,
+            "end": 175,
+            "text": "return 0;",
+            "role": "cpp",
+            "reading": "technical"
+          }
+        ]
+      },
+      {
+        "block": "block_0005_0010",
+        "path": "/reviewFeedback",
+        "sourceSha256": "765ea1d71287ab9ed7d94ee419bb3308f7b274aaf7cbfbd7326be11c3446dc1d",
+        "spans": [
+          {
+            "start": 71,
+            "end": 80,
+            "text": "std::cout",
+            "role": "cpp",
+            "reading": "technical"
+          }
+        ]
+      },
+      {
+        "block": "block_0005_0005",
+        "path": "/question",
+        "sourceSha256": "fc1a57827a6d54e10758a7e9bc10570430ec9ee166cece39e5d0c6ca64de06f4",
+        "spans": [
+          {
+            "start": 25,
+            "end": 41,
+            "text": "Registro cerrado",
+            "role": "output",
+            "reading": "natural"
+          },
+          {
+            "start": 85,
+            "end": 89,
+            "text": "main",
+            "role": "cpp",
+            "reading": "technical"
+          }
+        ]
+      },
+      {
+        "block": "block_0005_0005",
+        "path": "/explanation",
+        "sourceSha256": "2a140d62d3240f921b2eeabd7a62e7e3549f865eaee19954305f0c5e4fcf890c",
+        "spans": [
+          {
+            "start": 113,
+            "end": 117,
+            "text": "main",
+            "role": "cpp",
+            "reading": "technical"
+          }
+        ]
+      },
+      {
+        "block": "block_0005_0005",
+        "path": "/options/0",
+        "sourceSha256": "e4dc1388a351f9231a7ccb6899543ee478283e917d82afcbf0df1a20128019e0",
+        "spans": []
+      },
+      {
+        "block": "block_0005_0005",
+        "path": "/options/1",
+        "sourceSha256": "606bcfa9e3800b42716494eb4513eda5a6bfbf4d25462e3e0c0e83702980529a",
+        "spans": [
+          {
+            "start": 57,
+            "end": 61,
+            "text": "main",
+            "role": "cpp",
+            "reading": "technical"
+          }
+        ]
+      },
+      {
+        "block": "block_0005_0005",
+        "path": "/options/2",
+        "sourceSha256": "f88e4bbac9acb69f2155acce9f791509e9bdb1120193b2a203d5b915f299b7ad",
+        "spans": []
+      },
+      {
+        "block": "block_0004_0000",
+        "path": "/text",
+        "sourceSha256": "9bd74112bc85969d7bbeae63d485479b845464efd45deca3fe405ae6782bbfc9",
+        "spans": []
+      },
+      {
+        "block": "block_0005_0008",
+        "path": "/question",
+        "sourceSha256": "7b403b9c3f17275e1120dcd6dd48acf0e2722960d949954958c0cd08eb94b27f",
+        "spans": [
+          {
+            "start": 38,
+            "end": 52,
+            "text": "Revision lista",
+            "role": "output",
+            "reading": "natural"
+          },
+          {
+            "start": 84,
+            "end": 91,
+            "text": "una vez",
+            "role": "data",
+            "reading": "natural"
+          }
+        ]
+      },
+      {
+        "block": "block_0005_0000",
+        "path": "/text",
+        "sourceSha256": "46beefd5d2e06a6d54e2ad71c8a5ede047243475b6ee4d59e114ddb869741904",
+        "spans": []
+      },
+      {
+        "block": "block_0006_0000",
+        "path": "/text",
+        "sourceSha256": "92d47f914d316b5c34e21d0c2c284fd1af92745acb74869e0e17c3eeb60b2e21",
+        "spans": []
+      },
+      {
+        "block": "block_0000_0001",
+        "path": "/text",
+        "sourceSha256": "82950d038c725865e44a0c14f7dc52b98cff698e2f62c988d2c3305f83e8674d",
+        "spans": [
+          {
+            "start": 191,
+            "end": 208,
+            "text": "Puesto disponible",
+            "role": "output",
+            "reading": "natural"
+          }
+        ]
+      },
+      {
+        "block": "block_0000_0003",
+        "path": "/text",
+        "sourceSha256": "6fa7c81d500d4ea31911be8aacad21a35fdb42128e77437fe1f876bb0204949b",
+        "spans": [
+          {
+            "start": 42,
+            "end": 45,
+            "text": "C++",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 173,
+            "end": 182,
+            "text": "std::cout",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 297,
+            "end": 315,
+            "text": "(Stroustrup, 2024)",
+            "role": "citation",
+            "reading": "natural"
+          }
+        ]
+      },
+      {
+        "block": "block_0000_0004",
+        "path": "/text",
+        "sourceSha256": "b2f66fe98e6dbfc3377624b97c7f9647b5dc6cde52137589635341d87435ac54",
+        "spans": [
+          {
+            "start": 78,
+            "end": 81,
+            "text": "C++",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 290,
+            "end": 308,
+            "text": "(Stroustrup, 2024)",
+            "role": "citation",
+            "reading": "natural"
+          }
+        ]
+      },
+      {
+        "block": "block_0000_0005",
+        "path": "/text",
+        "sourceSha256": "d045b5d57b8f33f7c0ed4cb114662839c1ece347baca158a110038a7c80bb6b5",
+        "spans": [
+          {
+            "start": 81,
+            "end": 90,
+            "text": "std::cout",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 101,
+            "end": 120,
+            "text": "#include <iostream>",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 460,
+            "end": 478,
+            "text": "(Stroustrup, 2024)",
+            "role": "citation",
+            "reading": "natural"
+          }
+        ]
+      },
+      {
+        "block": "block_0000_0006",
+        "path": "/text",
+        "sourceSha256": "c43d21198e65f76db78fad52f9b9c2228fa2e73ecc4df5d314b845dd5ad91614",
+        "spans": [
+          {
+            "start": 267,
+            "end": 285,
+            "text": "(Stroustrup, 2024)",
+            "role": "citation",
+            "reading": "natural"
+          }
+        ]
+      },
+      {
+        "block": "block_0000_0007",
+        "path": "/text",
+        "sourceSha256": "625c3e0637fb69df17ae6a49a8644fe83e018be7a9b3efbd9b4daddaebabe837",
+        "spans": [
+          {
+            "start": 134,
+            "end": 143,
+            "text": "std::cout",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 152,
+            "end": 169,
+            "text": "Puesto disponible",
+            "role": "output",
+            "reading": "natural"
+          },
+          {
+            "start": 305,
+            "end": 323,
+            "text": "(Stroustrup, 2024)",
+            "role": "citation",
+            "reading": "natural"
+          }
+        ]
+      },
+      {
+        "block": "block_0000_0008",
+        "path": "/text",
+        "sourceSha256": "67f64554051ce85fa294185e966008dfeb9e74d5e4b54263750b31c5a6d8fa1f",
+        "spans": [
+          {
+            "start": 275,
+            "end": 293,
+            "text": "(Stroustrup, 2024)",
+            "role": "citation",
+            "reading": "natural"
+          }
+        ]
+      },
+      {
+        "block": "block_0000_0009",
+        "path": "/text",
+        "sourceSha256": "45447035b380a108a714cb10532e96cd26203ddc26fe13185728d9bf39072f57",
+        "spans": []
+      },
+      {
+        "block": "block_0000_0010",
+        "path": "/text",
+        "sourceSha256": "7edac4c6fbf62a933d11df47469dff0551c6c63086a19e401b8d1e20ee1e88ee",
+        "spans": []
+      },
+      {
+        "block": "block_0000_0011",
+        "path": "/prompt",
+        "sourceSha256": "b0cca11ef2122e550484dea3af903b28a0b006aff7faee41f4c03a85a040df70",
+        "spans": []
+      },
+      {
+        "block": "block_0000_0011",
+        "path": "/feedback/correct",
+        "sourceSha256": "50e9143ec1c4b95a5055744b230b2194e283b13a3fd051afb1208da54d96e02a",
+        "spans": []
+      },
+      {
+        "block": "block_0000_0011",
+        "path": "/feedback/incorrect",
+        "sourceSha256": "877defc5fd9b083c566db51e882499f0611a25a0bf1b9e35fae41dd6047baf57",
+        "spans": []
+      },
+      {
+        "block": "block_0000_0011",
+        "path": "/responses/0/label",
+        "sourceSha256": "7e0dc4e060bfead322416e75a0af874fe8bc7b4ff8c7e6c706fde264612860ff",
+        "spans": []
+      },
+      {
+        "block": "block_0000_0011",
+        "path": "/responses/0/sources/0/content/0/text",
+        "sourceSha256": "a23b168de081d7a22303c52928ec7d55104a9282d5b080c991a2ab63df3435ae",
+        "spans": []
+      },
+      {
+        "block": "block_0000_0011",
+        "path": "/responses/0/sources/1/content/0/text",
+        "sourceSha256": "71f1c902dbfb09b6924d1311d61f4f6e8fbdc3aa2d71bae9d5d1b4891ce7713f",
+        "spans": []
+      },
+      {
+        "block": "block_0000_0011",
+        "path": "/responses/0/sources/2/content/0/text",
+        "sourceSha256": "c9ce0b0b538c44abe9a2b26422381e1ad9d1a3414d9c9dedb3f0eae0e07581d0",
+        "spans": []
+      },
+      {
+        "block": "block_0000_0011",
+        "path": "/responses/0/sources/3/content/0/text",
+        "sourceSha256": "6a170f35d5b49bce9b24925f1aee304a9935930dba14eabc9f98cd94c7b4d4e1",
+        "spans": [
+          {
+            "start": 18,
+            "end": 21,
+            "text": "C++",
+            "role": "cpp",
+            "reading": "technical"
+          }
+        ]
+      },
+      {
+        "block": "block_0000_0011",
+        "path": "/responses/0/targets/0/label",
+        "sourceSha256": "40692665d56bff1f6d3749491b7559ff7ea523032bf58aadbcac8a8c812c6278",
+        "spans": []
+      },
+      {
+        "block": "block_0000_0011",
+        "path": "/responses/0/targets/1/label",
+        "sourceSha256": "7e36097a7ad31e3b1026e3b5c68da9012aad49478cb2c55f40dc629d343d7376",
+        "spans": []
+      },
+      {
+        "block": "block_0000_0011",
+        "path": "/responses/0/targets/2/label",
+        "sourceSha256": "f868a22eee215317a4b41541df92a03cc561102a67846dee67514744d77c0185",
+        "spans": []
+      },
+      {
+        "block": "block_0000_0011",
+        "path": "/responses/0/targets/3/label",
+        "sourceSha256": "9d20f192705f38a231be7fb24a0811bc22b590f0048d19f65a852fb41b8802de",
+        "spans": []
+      },
+      {
+        "block": "block_0001_0001",
+        "path": "/text",
+        "sourceSha256": "c8ca3148790efbd45f42fbf98035af13d4703e679a19ab8c3408a73f1efa7d00",
+        "spans": [
+          {
+            "start": 74,
+            "end": 77,
+            "text": "C++",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 278,
+            "end": 296,
+            "text": "(Stroustrup, 2024)",
+            "role": "citation",
+            "reading": "natural"
+          }
+        ]
+      },
+      {
+        "block": "block_0001_0003",
+        "path": "/text",
+        "sourceSha256": "d82135dd0f91636f69423ff1af56ae42903ad40c769275d610e3af6fdf663309",
+        "spans": [
+          {
+            "start": 35,
+            "end": 44,
+            "text": "std::Cout",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 140,
+            "end": 149,
+            "text": "std::cout",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 305,
+            "end": 323,
+            "text": "(Stroustrup, 2024)",
+            "role": "citation",
+            "reading": "natural"
+          }
+        ]
+      },
+      {
+        "block": "block_0001_0004",
+        "path": "/question",
+        "sourceSha256": "58ea5f14bb91f04f62bfa5953c84442021bca7068868dc8c49a401b49e5e1cfd",
+        "spans": [
+          {
+            "start": 47,
+            "end": 52,
+            "text": "std::",
+            "role": "cpp",
+            "reading": "technical"
+          }
+        ]
+      },
+      {
+        "block": "block_0001_0004",
+        "path": "/explanation",
+        "sourceSha256": "88197e27fe074033e492457dd7fb3639de06595ad803beaea5b3447c3409e83c",
+        "spans": [
+          {
+            "start": 22,
+            "end": 31,
+            "text": "std::cout",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 91,
+            "end": 95,
+            "text": "cout",
+            "role": "cpp",
+            "reading": "technical"
+          }
+        ]
+      },
+      {
+        "block": "block_0001_0006",
+        "path": "/text",
+        "sourceSha256": "e91840262fda910fbd2301270d121849ddf3cf5f71064134a7362aaadb1f077f",
+        "spans": []
+      },
+      {
+        "block": "block_0001_0007",
+        "path": "/question",
+        "sourceSha256": "a2a2aa68219c7b5462e8383efce38909778d24d53bac357b6f387922b3f5bc64",
+        "spans": [
+          {
+            "start": 114,
+            "end": 127,
+            "text": "Anden abierto",
+            "role": "output",
+            "reading": "natural"
+          }
+        ]
+      },
+      {
+        "block": "block_0001_0007",
+        "path": "/explanation",
+        "sourceSha256": "9a5d05c72563ce7d6cf6438a91e10ca10bc4995fbfe7dbb1fefac21cf1ef8de4",
+        "spans": [
+          {
+            "start": 46,
+            "end": 53,
+            "text": "abierto",
+            "role": "string",
+            "reading": "natural"
+          }
+        ]
+      },
+      {
+        "block": "block_0001_0008",
+        "path": "/question",
+        "sourceSha256": "58aab4826708c24e1319a307f28b846d283d847c311b4bbada9a31973b31270e",
+        "spans": []
+      },
+      {
+        "block": "block_0001_0008",
+        "path": "/explanation",
+        "sourceSha256": "7b5107a889a8aa9aae70d9b9c3bd953eedd91d667b2c717ab03d09517ad4fdca",
+        "spans": []
+      },
+      {
+        "block": "block_0001_0011",
+        "path": "/text",
+        "sourceSha256": "23c9db5495a6d8f072b3578755190d9993e22becd7c3c90b0aaa99d8feba91dd",
+        "spans": [
+          {
+            "start": 31,
+            "end": 35,
+            "text": "main",
+            "role": "cpp",
+            "reading": "technical"
+          }
+        ]
+      },
+      {
+        "block": "block_0001_0012",
+        "path": "/question",
+        "sourceSha256": "15608a4d5507b737ef42e750d12c08355c36cd8237690f4920913d36461e56f3",
+        "spans": [
+          {
+            "start": 53,
+            "end": 57,
+            "text": "main",
+            "role": "cpp",
+            "reading": "technical"
+          }
+        ]
+      },
+      {
+        "block": "block_0001_0012",
+        "path": "/explanation",
+        "sourceSha256": "111303c5f64d78fb91e7731edbfd488d60d83ec64ea84c471ea399e74331c64b",
+        "spans": []
+      },
+      {
+        "block": "block_0002_0001",
+        "path": "/text",
+        "sourceSha256": "a675db66e7068956e97f4ab2edb5f0c96949659a560f2c437563c307a8669cb6",
+        "spans": [
+          {
+            "start": 340,
+            "end": 358,
+            "text": "(Stroustrup, 2024)",
+            "role": "citation",
+            "reading": "natural"
+          }
+        ]
+      },
+      {
+        "block": "block_0002_0002",
+        "path": "/text",
+        "sourceSha256": "b67962b41745946f90bd13c3e3bd17122ad5578a1a4d043615e537fbf83777a2",
+        "spans": [
+          {
+            "start": 0,
+            "end": 4,
+            "text": "MSVC",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 25,
+            "end": 28,
+            "text": "C++",
+            "role": "cpp",
+            "reading": "technical"
+          }
+        ]
+      },
+      {
+        "block": "block_0002_0005",
+        "path": "/text",
+        "sourceSha256": "bb2ba27ced0b3e8386f786e693bfd1dc1e5c4416f2cf1f76bc594bb885ff0ad5",
+        "spans": [
+          {
+            "start": 54,
+            "end": 62,
+            "text": "main.cpp",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 91,
+            "end": 92,
+            "text": "5",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 156,
+            "end": 161,
+            "text": "C2143",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 193,
+            "end": 197,
+            "text": "MSVC",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 256,
+            "end": 262,
+            "text": "return",
+            "role": "cpp",
+            "reading": "technical"
+          }
+        ]
+      },
+      {
+        "block": "block_0002_0006",
+        "path": "/text",
+        "sourceSha256": "9e03eb4c7f9dcad7f3146fb39ee5a201a7916c6d89da544ef77261e5abbcd46a",
+        "spans": [
+          {
+            "start": 124,
+            "end": 127,
+            "text": "dos",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 150,
+            "end": 155,
+            "text": "cinco",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 165,
+            "end": 174,
+            "text": "return 0;",
+            "role": "cpp",
+            "reading": "technical"
+          }
+        ]
+      },
+      {
+        "block": "block_0002_0007",
+        "path": "/text",
+        "sourceSha256": "533d7417c2548f85a03b0edae36a71997bf80b4f9f29420d6ea9ff238a728d85",
+        "spans": [
+          {
+            "start": 27,
+            "end": 33,
+            "text": "return",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 108,
+            "end": 114,
+            "text": "return",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 270,
+            "end": 288,
+            "text": "(Stroustrup, 2024)",
+            "role": "citation",
+            "reading": "natural"
+          }
+        ]
+      },
+      {
+        "block": "block_0002_0009",
+        "path": "/text",
+        "sourceSha256": "e6ddf3115c7a76767aabdce9ff524553cbd92300ad79aa8df9c984ef89f132f1",
+        "spans": [
+          {
+            "start": 32,
+            "end": 37,
+            "text": "C2143",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 53,
+            "end": 59,
+            "text": "return",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 277,
+            "end": 283,
+            "text": "return",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 397,
+            "end": 415,
+            "text": "(Stroustrup, 2024)",
+            "role": "citation",
+            "reading": "natural"
+          }
+        ]
+      },
+      {
+        "block": "block_0002_0010",
+        "path": "/text",
+        "sourceSha256": "15fcde2c0b9c80ee3c0cef67501b546bcde7836fe7161760ef26fc4bde1b2260",
+        "spans": [
+          {
+            "start": 256,
+            "end": 274,
+            "text": "(Stroustrup, 2024)",
+            "role": "citation",
+            "reading": "natural"
+          }
+        ]
+      },
+      {
+        "block": "block_0002_0013",
+        "path": "/text",
+        "sourceSha256": "e394a68cc42ae1652c75c3ae5db4f135f8e739baa6874bfc7ef60a9dbf0d50b3",
+        "spans": [
+          {
+            "start": 169,
+            "end": 175,
+            "text": "return",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 220,
+            "end": 226,
+            "text": "return",
+            "role": "cpp",
+            "reading": "technical"
+          }
+        ]
+      },
+      {
+        "block": "block_0002_0014",
+        "path": "/question",
+        "sourceSha256": "72fd24cb6f6e8337cea011023feb19f963714d08b31d429566431449b30c6478",
+        "spans": []
+      },
+      {
+        "block": "block_0002_0014",
+        "path": "/explanation",
+        "sourceSha256": "d4f21c18ed630ea35dbc51594b2ee78bb6e20c3f3188e30e47052dc2257f1ac2",
+        "spans": []
+      },
+      {
+        "block": "block_0002_0014",
+        "path": "/options/0",
+        "sourceSha256": "7c11bd5f4442453cd47e7c15abf2362a8cd1246f954e835ccaa8f542f6a9fddd",
+        "spans": [
+          {
+            "start": 21,
+            "end": 26,
+            "text": "Listo",
+            "role": "string",
+            "reading": "natural"
+          }
+        ]
+      },
+      {
+        "block": "block_0002_0014",
+        "path": "/options/1",
+        "sourceSha256": "540241fc3620643b46fb93cb4dd07aecbc07c55fa86c833042e8fa0a1b05098e",
+        "spans": []
+      },
+      {
+        "block": "block_0002_0014",
+        "path": "/options/2",
+        "sourceSha256": "fc7cf158fe60af9e477e8783fafb7a6d46840eb5acdf7da59d205100f907982e",
+        "spans": [
+          {
+            "start": 9,
+            "end": 15,
+            "text": "return",
+            "role": "cpp",
+            "reading": "technical"
+          }
+        ]
+      },
+      {
+        "block": "block_0002_0015",
+        "path": "/text",
+        "sourceSha256": "9a9ed9e87cc2611fed5b95a86dacfa937e40ed97bce55744f55349428d59507e",
+        "spans": []
+      },
+      {
+        "block": "block_0002_0018",
+        "path": "/text",
+        "sourceSha256": "eb518450539934d68cb279faddaabb0c7094d7815e511d0b8b41f3d856ab28ec",
+        "spans": [
+          {
+            "start": 88,
+            "end": 92,
+            "text": "main",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 107,
+            "end": 124,
+            "text": "token coincidente",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 240,
+            "end": 245,
+            "text": "fatal",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 373,
+            "end": 377,
+            "text": "main",
+            "role": "cpp",
+            "reading": "technical"
+          }
+        ]
+      },
+      {
+        "block": "block_0002_0019",
+        "path": "/question",
+        "sourceSha256": "7c7ce2a0963409ea50085c3216ee4408cbeb2a4528e61f9b7ebddb39bbccf80e",
+        "spans": [
+          {
+            "start": 37,
+            "end": 41,
+            "text": "main",
+            "role": "cpp",
+            "reading": "technical"
+          }
+        ]
+      },
+      {
+        "block": "block_0002_0019",
+        "path": "/explanation",
+        "sourceSha256": "49ea3270c68279508665a6192bb0dbde84fbc468fb871e80f096e73bd1d00d30",
+        "spans": []
+      },
+      {
+        "block": "block_0002_0019",
+        "path": "/options/0",
+        "sourceSha256": "5da25ac320074016f775edbe5b52209fbedd85b94dd80cf4cdb074ac4898fea6",
+        "spans": []
+      },
+      {
+        "block": "block_0002_0019",
+        "path": "/options/1",
+        "sourceSha256": "c687766df4c86578092df406e0d47459125bf96ed89d9c4e7b6083cb03a1b93e",
+        "spans": [
+          {
+            "start": 21,
+            "end": 30,
+            "text": "std::cout",
+            "role": "cpp",
+            "reading": "technical"
+          }
+        ]
+      },
+      {
+        "block": "block_0002_0019",
+        "path": "/options/2",
+        "sourceSha256": "470042c4ba940fbc27b1b54077f3dc46448b2f7d357fd337a9cf5faeb5f91d81",
+        "spans": []
+      },
+      {
+        "block": "block_0003_0001",
+        "path": "/text",
+        "sourceSha256": "05e412bde185b3491b6d54372e7e298826d7051a55c650bb8481b4bae4528c82",
+        "spans": [
+          {
+            "start": 169,
+            "end": 171,
+            "text": "<<",
+            "role": "cpp",
+            "reading": "technical"
+          }
+        ]
+      },
+      {
+        "block": "block_0003_0002",
+        "path": "/text",
+        "sourceSha256": "d8047de8dcee9b796f1693f9928bbfa63db95a6fbe856eca4c881da7a6a184b4",
+        "spans": [
+          {
+            "start": 0,
+            "end": 15,
+            "text": "Zona habilitada",
+            "role": "output",
+            "reading": "natural"
+          }
+        ]
+      },
+      {
+        "block": "block_0003_0003",
+        "path": "/text",
+        "sourceSha256": "cc5b2a9470a66bef1bb9965f0f4974841565ca6b3dfa07f2bd2f768f5b912be1",
+        "spans": [
+          {
+            "start": 215,
+            "end": 230,
+            "text": "Zona habilitada",
+            "role": "output",
+            "reading": "natural"
+          }
+        ]
+      },
+      {
+        "block": "block_0003_0004",
+        "path": "/outputCheck/cases/0/explanation",
+        "sourceSha256": "ab69afe4e71c4bfe4465f1013c31de26eefc659c544b31dc9d3f3ff5752c7317",
+        "spans": [
+          {
+            "start": 75,
+            "end": 90,
+            "text": "Zona habilitada",
+            "role": "output",
+            "reading": "natural"
+          }
+        ]
+      },
+      {
+        "block": "block_0003_0005",
+        "path": "/text",
+        "sourceSha256": "29295394f93ec79a2263724cfe02d4aa8bcd137679ba470fea25e67861585da8",
+        "spans": []
+      },
+      {
+        "block": "block_0003_0007",
+        "path": "/text",
+        "sourceSha256": "7cd28997c39ae85e2aec2206630ba8cac621daf064430bd1b0f29f63a6f6b456",
+        "spans": [
+          {
+            "start": 22,
+            "end": 31,
+            "text": "std::cout",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 212,
+            "end": 227,
+            "text": "Zona habilitada",
+            "role": "output",
+            "reading": "natural"
+          }
+        ]
+      },
+      {
+        "block": "block_0004_0001",
+        "path": "/text",
+        "sourceSha256": "4078e146c7b10071da1fb3d1977d8653b9214ca0e59a8ac215a635456fb672d0",
+        "spans": [
+          {
+            "start": 30,
+            "end": 45,
+            "text": "Sala disponible",
+            "role": "output",
+            "reading": "natural"
+          },
+          {
+            "start": 95,
+            "end": 99,
+            "text": "main",
+            "role": "cpp",
+            "reading": "technical"
+          }
+        ]
+      },
+      {
+        "block": "block_0004_0003",
+        "path": "/text",
+        "sourceSha256": "a39f8e7897827166d42d2d232bc7b2ee34be9b3475da655194261fb96f12d637",
+        "spans": [
+          {
+            "start": 19,
+            "end": 28,
+            "text": "std::cout",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 43,
+            "end": 45,
+            "text": "<<",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 135,
+            "end": 147,
+            "text": "Sala ocupada",
+            "role": "output",
+            "reading": "natural"
+          },
+          {
+            "start": 167,
+            "end": 182,
+            "text": "Sala disponible",
+            "role": "output",
+            "reading": "natural"
+          },
+          {
+            "start": 285,
+            "end": 303,
+            "text": "(Stroustrup, 2024)",
+            "role": "citation",
+            "reading": "natural"
+          }
+        ]
+      },
+      {
+        "block": "block_0004_0004",
+        "path": "/text",
+        "sourceSha256": "cbb08e84ab94ed8f28a741d957b01f0b1df4f27bb92ef9fc29a31f2693064ed1",
+        "spans": [
+          {
+            "start": 296,
+            "end": 314,
+            "text": "(Stroustrup, 2024)",
+            "role": "citation",
+            "reading": "natural"
+          }
+        ]
+      },
+      {
+        "block": "block_0004_0005",
+        "path": "/text",
+        "sourceSha256": "16c194b1ced18329d268ff630ee842b744b4de609d6b0e1f0e31ed31610c67af",
+        "spans": []
+      },
+      {
+        "block": "block_0004_0006",
+        "path": "/text",
+        "sourceSha256": "501152d18e27530c4af9add081d488e6f0b20df4e5cc347f96916327b3837177",
+        "spans": []
+      },
+      {
+        "block": "block_0004_0007",
+        "path": "/question",
+        "sourceSha256": "1149e9ba69102197b94da7de5ff3c43728f4dd577f3340f28159ee27f056e0d5",
+        "spans": [
+          {
+            "start": 148,
+            "end": 153,
+            "text": "Listo",
+            "role": "output",
+            "reading": "natural"
+          }
+        ]
+      },
+      {
+        "block": "block_0004_0007",
+        "path": "/explanation",
+        "sourceSha256": "fad8edef33575a54f2fc188f31a2bca6c94d3357a05211c6faf2ad3d4fa968ed",
+        "spans": [
+          {
+            "start": 148,
+            "end": 153,
+            "text": "Listo",
+            "role": "output",
+            "reading": "natural"
+          }
+        ]
+      },
+      {
+        "block": "block_0004_0007",
+        "path": "/options/0",
+        "sourceSha256": "264c1986ff6989133876d397a67cd0bcb3cc43aba0ba1f83676335539e4e8444",
+        "spans": []
+      },
+      {
+        "block": "block_0004_0007",
+        "path": "/options/1",
+        "sourceSha256": "b9a1d4220e8f83b3ef35703502a802419a858455f165518ec38f9a147fafb763",
+        "spans": []
+      },
+      {
+        "block": "block_0004_0007",
+        "path": "/options/2",
+        "sourceSha256": "7eb0b363fecff57b39fec601d657253f694d3b7c466cb886ee2f0c8e59c2a4ff",
+        "spans": []
+      },
+      {
+        "block": "block_0004_0008",
+        "path": "/prompt",
+        "sourceSha256": "f105c217eb141b7aa2cb8b28b27e1d604bf89ddf147cdfa60540d28d54d69169",
+        "spans": []
+      },
+      {
+        "block": "block_0004_0008",
+        "path": "/feedback/correct",
+        "sourceSha256": "0be3c37b71c6a7e9218e6c26d5e4c8b134567342cfbf6e3e0f80e231654a2e62",
+        "spans": []
+      },
+      {
+        "block": "block_0004_0008",
+        "path": "/feedback/incorrect",
+        "sourceSha256": "81aa8c682061c2c4919fda38a550ecacd1006f747d955a37f8f2ce1dfe8c374b",
+        "spans": []
+      },
+      {
+        "block": "block_0004_0008",
+        "path": "/responses/0/label",
+        "sourceSha256": "7e0dc4e060bfead322416e75a0af874fe8bc7b4ff8c7e6c706fde264612860ff",
+        "spans": []
+      },
+      {
+        "block": "block_0004_0008",
+        "path": "/responses/0/sources/0/content/0/text",
+        "sourceSha256": "fca92cfaeb1a2e28d41d65e7bb9d93f1635cd748ebecf84113a7d85a1a5a5a78",
+        "spans": []
+      },
+      {
+        "block": "block_0004_0008",
+        "path": "/responses/0/sources/1/content/0/text",
+        "sourceSha256": "eac75e8979187abb56e24ba2eb98ccd6cca1f775021db2a70c2f70ed8a70deb5",
+        "spans": []
+      },
+      {
+        "block": "block_0004_0008",
+        "path": "/responses/0/sources/2/content/0/text",
+        "sourceSha256": "5f5787a917084da3e7292de3ebc1ef9941489f3c4920589ce67db961ea07bec6",
+        "spans": []
+      },
+      {
+        "block": "block_0004_0008",
+        "path": "/responses/0/targets/0/label",
+        "sourceSha256": "a31b4c1a1f6950e7db9e9df968b88f74cdfd106cb514db9aa35fb7d8483b2be7",
+        "spans": []
+      },
+      {
+        "block": "block_0004_0008",
+        "path": "/responses/0/targets/1/label",
+        "sourceSha256": "1e8aed318f5fa88605af2308267ed40bc22e82288e219f4ceeed0735d416616d",
+        "spans": []
+      },
+      {
+        "block": "block_0004_0008",
+        "path": "/responses/0/targets/2/label",
+        "sourceSha256": "fa98c4e089b8b541387e48ae3435788ba8260e4bac7d91d18f5fe99bba4feb43",
+        "spans": []
+      },
+      {
+        "block": "block_0004_0009",
+        "path": "/text",
+        "sourceSha256": "00a6ef49609470bcbb5915853d810c5b10d675b141db9f275829c873928182b7",
+        "spans": []
+      },
+      {
+        "block": "block_0005_0001",
+        "path": "/text",
+        "sourceSha256": "88f117a32e387b6807d5d45f9559732751cf75151a8fd528e5b03ab7725aef07",
+        "spans": [
+          {
+            "start": 291,
+            "end": 294,
+            "text": "C++",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 295,
+            "end": 313,
+            "text": "(Stroustrup, 2024)",
+            "role": "citation",
+            "reading": "natural"
+          }
+        ]
+      },
+      {
+        "block": "block_0005_0003",
+        "path": "/text",
+        "sourceSha256": "45941c7b3ba9382d1db5935243fbe302856c818780ef72d352ca813ba3b6b949",
+        "spans": [
+          {
+            "start": 22,
+            "end": 38,
+            "text": "Registro cerrado",
+            "role": "output",
+            "reading": "natural"
+          },
+          {
+            "start": 91,
+            "end": 107,
+            "text": "Registro abierto",
+            "role": "output",
+            "reading": "natural"
+          },
+          {
+            "start": 170,
+            "end": 174,
+            "text": "main",
+            "role": "cpp",
+            "reading": "technical"
+          }
+        ]
+      },
+      {
+        "block": "block_0005_0004",
+        "path": "/question",
+        "sourceSha256": "1ccfdfc71329b91b6a73562c8a257a96552e6304b4e2fcdcb6c3f7d502960196",
+        "spans": [
+          {
+            "start": 57,
+            "end": 73,
+            "text": "Registro abierto",
+            "role": "output",
+            "reading": "natural"
+          }
+        ]
+      },
+      {
+        "block": "block_0005_0004",
+        "path": "/explanation",
+        "sourceSha256": "adec494e8d12f67c59464d65b91158ce157295c163bdfea3a7ee12711892472f",
+        "spans": [
+          {
+            "start": 11,
+            "end": 29,
+            "text": "\"Registro abierto\"",
+            "role": "string",
+            "reading": "natural"
+          }
+        ]
+      },
+      {
+        "block": "block_0005_0006",
+        "path": "/text",
+        "sourceSha256": "ab0b0f4e03bffbdc9918a44d72ac4e7fefdb332ab7ed2cb9ce8cd617dd3ea74d",
+        "spans": [
+          {
+            "start": 260,
+            "end": 278,
+            "text": "(Stroustrup, 2024)",
+            "role": "citation",
+            "reading": "natural"
+          }
+        ]
+      },
+      {
+        "block": "block_0005_0007",
+        "path": "/question",
+        "sourceSha256": "3f80f8f6fa240bca8ca115006ae4f7259d5a6fbbc23772a3870e3afcfe4a26e9",
+        "spans": [
+          {
+            "start": 19,
+            "end": 33,
+            "text": "Puerta abierta",
+            "role": "output",
+            "reading": "natural"
+          }
+        ]
+      },
+      {
+        "block": "block_0005_0007",
+        "path": "/explanation",
+        "sourceSha256": "cd6b475bb81fbfd858db273e6208b9ea6e369db678ca0ff5d6c333e672b12394",
+        "spans": []
+      },
+      {
+        "block": "block_0005_0007",
+        "path": "/options/0",
+        "sourceSha256": "3a5c26ae45ea4d9d6259788c5b6a20644d6544f6e34e363bea298ee87baf9d1c",
+        "spans": []
+      },
+      {
+        "block": "block_0005_0007",
+        "path": "/options/1",
+        "sourceSha256": "728830069882408e276177c98d2c1a79edc4ab76832b60df11fdddeb09120df3",
+        "spans": [
+          {
+            "start": 37,
+            "end": 51,
+            "text": "Puerta abierta",
+            "role": "output",
+            "reading": "natural"
+          }
+        ]
+      },
+      {
+        "block": "block_0005_0007",
+        "path": "/options/2",
+        "sourceSha256": "e457ecf10ad407c295db9d41e71d679d801da2516391f7d934b83303c791a5c3",
+        "spans": []
+      },
+      {
+        "block": "block_0005_0009",
+        "path": "/text",
+        "sourceSha256": "904a1e59b7eab18adc83c12f5287ad9616681d950fc5cad9f69ed74e20ec5292",
+        "spans": [
+          {
+            "start": 97,
+            "end": 101,
+            "text": "main",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 162,
+            "end": 164,
+            "text": "<<",
+            "role": "cpp",
+            "reading": "technical"
+          }
+        ]
+      },
+      {
+        "block": "block_0006_0001",
+        "path": "/text",
+        "sourceSha256": "ea0005f458f68f63bfa59f7716223ebef4830f5eabf198a9be7f86fb8a661933",
+        "spans": [
+          {
+            "start": 13,
+            "end": 20,
+            "text": "Entrada",
+            "role": "output",
+            "reading": "natural"
+          },
+          {
+            "start": 23,
+            "end": 29,
+            "text": "Salida",
+            "role": "output",
+            "reading": "natural"
+          }
+        ]
+      },
+      {
+        "block": "block_0006_0002",
+        "path": "/text",
+        "sourceSha256": "ea79c58d01786c6bf1d4fb41a2e3c986db54eed9b982d22632597985e0fc629c",
+        "spans": [
+          {
+            "start": 0,
+            "end": 14,
+            "text": "Entrada\nSalida",
+            "role": "output",
+            "reading": "natural"
+          }
+        ]
+      },
+      {
+        "block": "block_0006_0003",
+        "path": "/text",
+        "sourceSha256": "5193f508354dd1df857ff7b5a934212bb795c7df2c74c76abe9826825398801a",
+        "spans": [
+          {
+            "start": 146,
+            "end": 152,
+            "text": "Salida",
+            "role": "output",
+            "reading": "natural"
+          }
+        ]
+      },
+      {
+        "block": "block_0006_0004",
+        "path": "/outputCheck/cases/0/explanation",
+        "sourceSha256": "6aab95fbef6f5f41d3265069c6264ff77ad9276a94a68578dfcc7bc90b25b61c",
+        "spans": [
+          {
+            "start": 26,
+            "end": 33,
+            "text": "Entrada",
+            "role": "output",
+            "reading": "natural"
+          },
+          {
+            "start": 44,
+            "end": 50,
+            "text": "Salida",
+            "role": "output",
+            "reading": "natural"
+          }
+        ]
+      },
+      {
+        "block": "block_0006_0005",
+        "path": "/text",
+        "sourceSha256": "6a7d0512bbb81267673abd34d75615014d1e7552b57392f9eef8709d84b0f76f",
+        "spans": []
+      },
+      {
+        "block": "block_0006_0007",
+        "path": "/text",
+        "sourceSha256": "35cc8334b5f7cca6d4dbf104b2c9f9d13bcec8ffb8fa5de74c6fc3264b34da55",
+        "spans": [
+          {
+            "start": 31,
+            "end": 38,
+            "text": "Entrada",
+            "role": "output",
+            "reading": "natural"
+          },
+          {
+            "start": 78,
+            "end": 84,
+            "text": "Salida",
+            "role": "output",
+            "reading": "natural"
+          }
+        ]
+      },
+      {
+        "block": "block_0006_0008",
+        "path": "/text",
+        "sourceSha256": "c44b3e2235a9154b6a59f0c1689ce2254c7e1c649b2c939f943e3550877a37c5",
+        "spans": []
+      }
+    ],
+    "rootFields": [
+      {
+        "path": "/title",
+        "sourceSha256": "9a973b4d4e1a9823c0f05ceb5b3b1f60fcae3cf48205bafe51b6e946b5bc473d",
+        "spans": []
+      }
+    ]
+  },
+  "courseEdition": {
+    "version": 1,
+    "courseId": "cpp_fundamentals",
+    "locale": "es",
+    "generation": 1,
+    "id": "cpp_desde_cero_2026"
+  },
+  "stateLayout": {
+    "version": 2,
+    "locale": "es",
+    "origin": [
+      {
+        "id": "page_0000",
+        "blocks": [
+          {
+            "id": "block_0000_0000",
+            "sha256": "a30d0555835b703d0dd5a90aabb0134813afd11904b5364f69f03b01695f6d7a"
+          },
+          {
+            "id": "block_0000_0001",
+            "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+          },
+          {
+            "id": "block_0000_0002",
+            "sha256": "e20757c09771465b42e98593803b110ba9a085fda77c0a98c41cc752adc1daf0"
+          },
+          {
+            "id": "block_0000_0003",
+            "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+          },
+          {
+            "id": "block_0000_0004",
+            "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+          },
+          {
+            "id": "block_0000_0005",
+            "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+          },
+          {
+            "id": "block_0000_0006",
+            "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+          },
+          {
+            "id": "block_0000_0007",
+            "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+          },
+          {
+            "id": "block_0000_0008",
+            "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+          },
+          {
+            "id": "block_0000_0009",
+            "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+          },
+          {
+            "id": "block_0000_0010",
+            "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+          },
+          {
+            "id": "block_0000_0011",
+            "sha256": "dc2376074992243e354edabc7d30997ac638544f6fbc4309c0e8bbca49be8cba"
+          },
+          {
+            "id": "block_0000_0012",
+            "sha256": "5887709f497080b24d8658038ed5221bcca8d172c84181865a1c95259371c20d"
+          },
+          {
+            "id": "block_0000_0013",
+            "sha256": "7c65366be2cb0ac6d929f4cfb4d6fa04527bf54f16812134a255ed1eb866c4b0"
+          }
+        ]
+      },
+      {
+        "id": "page_0001",
+        "blocks": [
+          {
+            "id": "block_0001_0000",
+            "sha256": "a30d0555835b703d0dd5a90aabb0134813afd11904b5364f69f03b01695f6d7a"
+          },
+          {
+            "id": "block_0001_0001",
+            "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+          },
+          {
+            "id": "block_0001_0002",
+            "sha256": "ed81d68d099f51e2ed4cdc5bf33e9717e8d0226c8aae5c623cc87bb3e49e784c"
+          },
+          {
+            "id": "block_0001_0003",
+            "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+          },
+          {
+            "id": "block_0001_0004",
+            "sha256": "d0d905cbf80bbbc2e1d0af8008ab066135ab9fdd65e1e23946721b8792760b0e"
+          },
+          {
+            "id": "block_0001_0005",
+            "sha256": "e5caf8f4f3d72f6abe07784391a729df377ad27a13ea6da46736a42ef54c4208"
+          },
+          {
+            "id": "block_0001_0006",
+            "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+          },
+          {
+            "id": "block_0001_0007",
+            "sha256": "4daa8b0ac273b4d59d1f309dfb34ee7cc779c769936b574d712a004d938470df"
+          },
+          {
+            "id": "block_0001_0008",
+            "sha256": "c48031037ca8f0e3e2537843c188a45a6a944c51c5f3f816ed7bcca200893252"
+          },
+          {
+            "id": "block_0001_0009",
+            "sha256": "86546880e82e8f32b6be83cbfc824af4e0000adc5e2a374a79b469eb243e300b"
+          },
+          {
+            "id": "block_0001_0010",
+            "sha256": "965d45612ff464c3b798f6e554f876b1ac3ad92fb026199cb704c7b5d5267c3f"
+          },
+          {
+            "id": "block_0001_0011",
+            "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+          },
+          {
+            "id": "block_0001_0012",
+            "sha256": "c9192161705c31eb3514b8f1badc3335c2cdd50e8513b8d27ff1e208825d9d27"
+          }
+        ]
+      },
+      {
+        "id": "page_0002",
+        "blocks": [
+          {
+            "id": "block_0002_0000",
+            "sha256": "a30d0555835b703d0dd5a90aabb0134813afd11904b5364f69f03b01695f6d7a"
+          },
+          {
+            "id": "block_0002_0001",
+            "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+          },
+          {
+            "id": "block_0002_0002",
+            "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+          },
+          {
+            "id": "block_0002_0003",
+            "sha256": "6df5624e0f742eeeacc5569e7ed7f9e54e1504532f6336c0a3bfdbd7ef57eabc"
+          },
+          {
+            "id": "block_0002_0004",
+            "sha256": "342ce0f289060c5f5b6f402681ce57914c98d22c42817ac1a0d56190f2bfad3e"
+          },
+          {
+            "id": "block_0002_0005",
+            "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+          },
+          {
+            "id": "block_0002_0006",
+            "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+          },
+          {
+            "id": "block_0002_0007",
+            "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+          },
+          {
+            "id": "block_0002_0008",
+            "sha256": "e2f43502a5e329d51f3529a90e812a9c12e72b52f05851af2795a8df27bbcd28"
+          },
+          {
+            "id": "block_0002_0009",
+            "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+          },
+          {
+            "id": "block_0002_0010",
+            "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+          },
+          {
+            "id": "block_0002_0011",
+            "sha256": "0ab6970f945685277fa4e81dc8f7ea67df1b037691cf96a9b93dbe8b1c2062cd"
+          },
+          {
+            "id": "block_0002_0012",
+            "sha256": "00cc4a0c35f148f24902e72867da800da10eef83a5f7fcf48799a21390e311b0"
+          },
+          {
+            "id": "block_0002_0013",
+            "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+          },
+          {
+            "id": "block_0002_0014",
+            "sha256": "a088060c5ef13010372c015c21cecd9f73321c8a32fa6d4818e9bd6857fd33bb"
+          },
+          {
+            "id": "block_0002_0015",
+            "sha256": "a30d0555835b703d0dd5a90aabb0134813afd11904b5364f69f03b01695f6d7a"
+          },
+          {
+            "id": "block_0002_0016",
+            "sha256": "44f78094c50d3be683c4d402b3918096712574db089f8a3e55d91711667ec453"
+          },
+          {
+            "id": "block_0002_0017",
+            "sha256": "1906f45858c03f7b61e4139fba4ba48edc0f8a3565d4f4d309472dc537a2cd4d"
+          },
+          {
+            "id": "block_0002_0018",
+            "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+          },
+          {
+            "id": "block_0002_0019",
+            "sha256": "196901de858adeadfa65ba59f883666731df66f1072f8233bc515637734d9a86"
+          }
+        ]
+      },
+      {
+        "id": "page_0003",
+        "blocks": [
+          {
+            "id": "block_0003_0000",
+            "sha256": "a30d0555835b703d0dd5a90aabb0134813afd11904b5364f69f03b01695f6d7a"
+          },
+          {
+            "id": "block_0003_0001",
+            "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+          },
+          {
+            "id": "block_0003_0002",
+            "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+          },
+          {
+            "id": "block_0003_0003",
+            "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+          },
+          {
+            "id": "block_0003_0004",
+            "sha256": "d6cb1e0a144f1415b0a1a15fee158020d91d7d9cffa0410ed8d3a0ca6f329d02"
+          },
+          {
+            "id": "block_0003_0005",
+            "sha256": "a30d0555835b703d0dd5a90aabb0134813afd11904b5364f69f03b01695f6d7a"
+          },
+          {
+            "id": "block_0003_0006",
+            "sha256": "359b0d1d28e4bc172a18e7a194d5f4928afca6573bafcd192215cec66a3a5efd"
+          },
+          {
+            "id": "block_0003_0007",
+            "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+          }
+        ]
+      },
+      {
+        "id": "page_0004",
+        "blocks": [
+          {
+            "id": "block_0004_0000",
+            "sha256": "a30d0555835b703d0dd5a90aabb0134813afd11904b5364f69f03b01695f6d7a"
+          },
+          {
+            "id": "block_0004_0001",
+            "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+          },
+          {
+            "id": "block_0004_0002",
+            "sha256": "5ba0944f2e418031d820380efa0a80ac449e54fc9732d4685caf7cb87a1abb25"
+          },
+          {
+            "id": "block_0004_0003",
+            "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+          },
+          {
+            "id": "block_0004_0004",
+            "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+          },
+          {
+            "id": "block_0004_0005",
+            "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+          },
+          {
+            "id": "block_0004_0006",
+            "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+          },
+          {
+            "id": "block_0004_0007",
+            "sha256": "66537edd42ecaec7a8b9c3974813045e2099167657a9c9c4eb914aadc6845287"
+          },
+          {
+            "id": "block_0004_0008",
+            "sha256": "54aad8e221453fa7e046d975bf97bbeb6142d08c040865fe269189c0b3378d27"
+          },
+          {
+            "id": "block_0004_0009",
+            "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+          },
+          {
+            "id": "block_0004_0010",
+            "sha256": "935ba1ea2b16cef160749faada24b8c00dad783b3b90bef2a31bb16a80f1bca4"
+          }
+        ]
+      },
+      {
+        "id": "page_0005",
+        "blocks": [
+          {
+            "id": "block_0005_0000",
+            "sha256": "a30d0555835b703d0dd5a90aabb0134813afd11904b5364f69f03b01695f6d7a"
+          },
+          {
+            "id": "block_0005_0001",
+            "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+          },
+          {
+            "id": "block_0005_0002",
+            "sha256": "befef5aebd541d3152b3ab980e683886968842e8a90718522210469b7f4e8094"
+          },
+          {
+            "id": "block_0005_0003",
+            "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+          },
+          {
+            "id": "block_0005_0004",
+            "sha256": "dad22042767df934f658abfded51963768bf0f9801009db3ce183e0878815e6b"
+          },
+          {
+            "id": "block_0005_0005",
+            "sha256": "c66f4c658c1af9209d8066b6ad99790cef36e04b16a0dbcd86088ea3c8c64e06"
+          },
+          {
+            "id": "block_0005_0006",
+            "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+          },
+          {
+            "id": "block_0005_0007",
+            "sha256": "8d901f9d3831cab3a2a5be2b789496845b056d28af3fe5c2a64c7ab43ce696c2"
+          },
+          {
+            "id": "block_0005_0008",
+            "sha256": "4915a96a8657edc2ee83b2df2ec646b43ef8f486bdd22b4a35983fc2f49afc00"
+          },
+          {
+            "id": "block_0005_0009",
+            "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+          },
+          {
+            "id": "block_0005_0010",
+            "sha256": "e314ec4fbd67578e0e7fbfbd316b40ba5a3bef2c309f31bbda9080d06cc6d3f0"
+          }
+        ]
+      },
+      {
+        "id": "page_0006",
+        "blocks": [
+          {
+            "id": "block_0006_0000",
+            "sha256": "a30d0555835b703d0dd5a90aabb0134813afd11904b5364f69f03b01695f6d7a"
+          },
+          {
+            "id": "block_0006_0001",
+            "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+          },
+          {
+            "id": "block_0006_0002",
+            "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+          },
+          {
+            "id": "block_0006_0003",
+            "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+          },
+          {
+            "id": "block_0006_0004",
+            "sha256": "7411847cb8755537688939da6775066a12bdf8a221f528602494a8ab6f9383ef"
+          },
+          {
+            "id": "block_0006_0005",
+            "sha256": "a30d0555835b703d0dd5a90aabb0134813afd11904b5364f69f03b01695f6d7a"
+          },
+          {
+            "id": "block_0006_0006",
+            "sha256": "4ed82caa7691dae163220b4b511f5c58f3814c52c1bf0bb67e4a614e3f4c5d2e"
+          },
+          {
+            "id": "block_0006_0007",
+            "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+          },
+          {
+            "id": "block_0006_0008",
+            "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+          }
+        ]
+      }
+    ],
+    "current": [
+      {
+        "id": "page_0000",
+        "blocks": [
+          "block_0000_0000",
+          "block_0000_0001",
+          "block_0000_0002",
+          "block_0000_0003",
+          "block_0000_0004",
+          "block_0000_0005",
+          "block_0000_0006",
+          "block_0000_0007",
+          "block_0000_0008",
+          "block_0000_0009",
+          "block_0000_0010",
+          "block_0000_0011",
+          "block_0000_0012",
+          "block_0000_0013"
+        ]
+      },
+      {
+        "id": "page_0001",
+        "blocks": [
+          "block_0001_0000",
+          "block_0001_0001",
+          "block_0001_0002",
+          "block_0001_0003",
+          "block_0001_0004",
+          "block_0001_0005",
+          "block_0001_0006",
+          "block_0001_0007",
+          "block_0001_0008",
+          "block_0001_0009",
+          "block_0001_0010",
+          "block_0001_0011",
+          "block_0001_0012"
+        ]
+      },
+      {
+        "id": "page_0002",
+        "blocks": [
+          "block_0002_0000",
+          "block_0002_0001",
+          "block_0002_0002",
+          "block_0002_0003",
+          "block_0002_0004",
+          "block_0002_0005",
+          "block_0002_0006",
+          "block_0002_0007",
+          "block_0002_0008",
+          "block_0002_0009",
+          "block_0002_0010",
+          "block_0002_0011",
+          "block_0002_0012",
+          "block_0002_0013",
+          "block_0002_0014",
+          "block_0002_0015",
+          "block_0002_0016",
+          "block_0002_0017",
+          "block_0002_0018",
+          "block_0002_0019"
+        ]
+      },
+      {
+        "id": "page_0003",
+        "blocks": [
+          "block_0003_0000",
+          "block_0003_0001",
+          "block_0003_0002",
+          "block_0003_0003",
+          "block_0003_0004",
+          "block_0003_0005",
+          "block_0003_0006",
+          "block_0003_0007"
+        ]
+      },
+      {
+        "id": "page_0004",
+        "blocks": [
+          "block_0004_0000",
+          "block_0004_0001",
+          "block_0004_0002",
+          "block_0004_0003",
+          "block_0004_0004",
+          "block_0004_0005",
+          "block_0004_0006",
+          "block_0004_0007",
+          "block_0004_0008",
+          "block_0004_0009",
+          "block_0004_0010"
+        ]
+      },
+      {
+        "id": "page_0005",
+        "blocks": [
+          "block_0005_0000",
+          "block_0005_0001",
+          "block_0005_0002",
+          "block_0005_0003",
+          "block_0005_0004",
+          "block_0005_0005",
+          "block_0005_0006",
+          "block_0005_0007",
+          "block_0005_0008",
+          "block_0005_0009",
+          "block_0005_0010"
+        ]
+      },
+      {
+        "id": "page_0006",
+        "blocks": [
+          "block_0006_0000",
+          "block_0006_0001",
+          "block_0006_0002",
+          "block_0006_0003",
+          "block_0006_0004",
+          "block_0006_0005",
+          "block_0006_0006",
+          "block_0006_0007",
+          "block_0006_0008"
+        ]
+      }
+    ],
+    "family": {
+      "es": {
+        "sha256": "db64b35605bfac37a26c7ca08d759eb0ab0ec7471866523d34e24599445f8507",
+        "origin": [
+          {
+            "id": "page_0000",
+            "blocks": [
+              {
+                "id": "block_0000_0000",
+                "sha256": "a30d0555835b703d0dd5a90aabb0134813afd11904b5364f69f03b01695f6d7a"
+              },
+              {
+                "id": "block_0000_0001",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              },
+              {
+                "id": "block_0000_0002",
+                "sha256": "e20757c09771465b42e98593803b110ba9a085fda77c0a98c41cc752adc1daf0"
+              },
+              {
+                "id": "block_0000_0003",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              },
+              {
+                "id": "block_0000_0004",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              },
+              {
+                "id": "block_0000_0005",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              },
+              {
+                "id": "block_0000_0006",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              },
+              {
+                "id": "block_0000_0007",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              },
+              {
+                "id": "block_0000_0008",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              },
+              {
+                "id": "block_0000_0009",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              },
+              {
+                "id": "block_0000_0010",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              },
+              {
+                "id": "block_0000_0011",
+                "sha256": "dc2376074992243e354edabc7d30997ac638544f6fbc4309c0e8bbca49be8cba"
+              },
+              {
+                "id": "block_0000_0012",
+                "sha256": "5887709f497080b24d8658038ed5221bcca8d172c84181865a1c95259371c20d"
+              },
+              {
+                "id": "block_0000_0013",
+                "sha256": "7c65366be2cb0ac6d929f4cfb4d6fa04527bf54f16812134a255ed1eb866c4b0"
+              }
+            ]
+          },
+          {
+            "id": "page_0001",
+            "blocks": [
+              {
+                "id": "block_0001_0000",
+                "sha256": "a30d0555835b703d0dd5a90aabb0134813afd11904b5364f69f03b01695f6d7a"
+              },
+              {
+                "id": "block_0001_0001",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              },
+              {
+                "id": "block_0001_0002",
+                "sha256": "ed81d68d099f51e2ed4cdc5bf33e9717e8d0226c8aae5c623cc87bb3e49e784c"
+              },
+              {
+                "id": "block_0001_0003",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              },
+              {
+                "id": "block_0001_0004",
+                "sha256": "d0d905cbf80bbbc2e1d0af8008ab066135ab9fdd65e1e23946721b8792760b0e"
+              },
+              {
+                "id": "block_0001_0005",
+                "sha256": "e5caf8f4f3d72f6abe07784391a729df377ad27a13ea6da46736a42ef54c4208"
+              },
+              {
+                "id": "block_0001_0006",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              },
+              {
+                "id": "block_0001_0007",
+                "sha256": "4daa8b0ac273b4d59d1f309dfb34ee7cc779c769936b574d712a004d938470df"
+              },
+              {
+                "id": "block_0001_0008",
+                "sha256": "c48031037ca8f0e3e2537843c188a45a6a944c51c5f3f816ed7bcca200893252"
+              },
+              {
+                "id": "block_0001_0009",
+                "sha256": "86546880e82e8f32b6be83cbfc824af4e0000adc5e2a374a79b469eb243e300b"
+              },
+              {
+                "id": "block_0001_0010",
+                "sha256": "965d45612ff464c3b798f6e554f876b1ac3ad92fb026199cb704c7b5d5267c3f"
+              },
+              {
+                "id": "block_0001_0011",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              },
+              {
+                "id": "block_0001_0012",
+                "sha256": "c9192161705c31eb3514b8f1badc3335c2cdd50e8513b8d27ff1e208825d9d27"
+              }
+            ]
+          },
+          {
+            "id": "page_0002",
+            "blocks": [
+              {
+                "id": "block_0002_0000",
+                "sha256": "a30d0555835b703d0dd5a90aabb0134813afd11904b5364f69f03b01695f6d7a"
+              },
+              {
+                "id": "block_0002_0001",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              },
+              {
+                "id": "block_0002_0002",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              },
+              {
+                "id": "block_0002_0003",
+                "sha256": "6df5624e0f742eeeacc5569e7ed7f9e54e1504532f6336c0a3bfdbd7ef57eabc"
+              },
+              {
+                "id": "block_0002_0004",
+                "sha256": "342ce0f289060c5f5b6f402681ce57914c98d22c42817ac1a0d56190f2bfad3e"
+              },
+              {
+                "id": "block_0002_0005",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              },
+              {
+                "id": "block_0002_0006",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              },
+              {
+                "id": "block_0002_0007",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              },
+              {
+                "id": "block_0002_0008",
+                "sha256": "e2f43502a5e329d51f3529a90e812a9c12e72b52f05851af2795a8df27bbcd28"
+              },
+              {
+                "id": "block_0002_0009",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              },
+              {
+                "id": "block_0002_0010",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              },
+              {
+                "id": "block_0002_0011",
+                "sha256": "0ab6970f945685277fa4e81dc8f7ea67df1b037691cf96a9b93dbe8b1c2062cd"
+              },
+              {
+                "id": "block_0002_0012",
+                "sha256": "00cc4a0c35f148f24902e72867da800da10eef83a5f7fcf48799a21390e311b0"
+              },
+              {
+                "id": "block_0002_0013",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              },
+              {
+                "id": "block_0002_0014",
+                "sha256": "a088060c5ef13010372c015c21cecd9f73321c8a32fa6d4818e9bd6857fd33bb"
+              },
+              {
+                "id": "block_0002_0015",
+                "sha256": "a30d0555835b703d0dd5a90aabb0134813afd11904b5364f69f03b01695f6d7a"
+              },
+              {
+                "id": "block_0002_0016",
+                "sha256": "44f78094c50d3be683c4d402b3918096712574db089f8a3e55d91711667ec453"
+              },
+              {
+                "id": "block_0002_0017",
+                "sha256": "1906f45858c03f7b61e4139fba4ba48edc0f8a3565d4f4d309472dc537a2cd4d"
+              },
+              {
+                "id": "block_0002_0018",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              },
+              {
+                "id": "block_0002_0019",
+                "sha256": "196901de858adeadfa65ba59f883666731df66f1072f8233bc515637734d9a86"
+              }
+            ]
+          },
+          {
+            "id": "page_0003",
+            "blocks": [
+              {
+                "id": "block_0003_0000",
+                "sha256": "a30d0555835b703d0dd5a90aabb0134813afd11904b5364f69f03b01695f6d7a"
+              },
+              {
+                "id": "block_0003_0001",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              },
+              {
+                "id": "block_0003_0002",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              },
+              {
+                "id": "block_0003_0003",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              },
+              {
+                "id": "block_0003_0004",
+                "sha256": "d6cb1e0a144f1415b0a1a15fee158020d91d7d9cffa0410ed8d3a0ca6f329d02"
+              },
+              {
+                "id": "block_0003_0005",
+                "sha256": "a30d0555835b703d0dd5a90aabb0134813afd11904b5364f69f03b01695f6d7a"
+              },
+              {
+                "id": "block_0003_0006",
+                "sha256": "359b0d1d28e4bc172a18e7a194d5f4928afca6573bafcd192215cec66a3a5efd"
+              },
+              {
+                "id": "block_0003_0007",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              }
+            ]
+          },
+          {
+            "id": "page_0004",
+            "blocks": [
+              {
+                "id": "block_0004_0000",
+                "sha256": "a30d0555835b703d0dd5a90aabb0134813afd11904b5364f69f03b01695f6d7a"
+              },
+              {
+                "id": "block_0004_0001",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              },
+              {
+                "id": "block_0004_0002",
+                "sha256": "5ba0944f2e418031d820380efa0a80ac449e54fc9732d4685caf7cb87a1abb25"
+              },
+              {
+                "id": "block_0004_0003",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              },
+              {
+                "id": "block_0004_0004",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              },
+              {
+                "id": "block_0004_0005",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              },
+              {
+                "id": "block_0004_0006",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              },
+              {
+                "id": "block_0004_0007",
+                "sha256": "66537edd42ecaec7a8b9c3974813045e2099167657a9c9c4eb914aadc6845287"
+              },
+              {
+                "id": "block_0004_0008",
+                "sha256": "54aad8e221453fa7e046d975bf97bbeb6142d08c040865fe269189c0b3378d27"
+              },
+              {
+                "id": "block_0004_0009",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              },
+              {
+                "id": "block_0004_0010",
+                "sha256": "935ba1ea2b16cef160749faada24b8c00dad783b3b90bef2a31bb16a80f1bca4"
+              }
+            ]
+          },
+          {
+            "id": "page_0005",
+            "blocks": [
+              {
+                "id": "block_0005_0000",
+                "sha256": "a30d0555835b703d0dd5a90aabb0134813afd11904b5364f69f03b01695f6d7a"
+              },
+              {
+                "id": "block_0005_0001",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              },
+              {
+                "id": "block_0005_0002",
+                "sha256": "befef5aebd541d3152b3ab980e683886968842e8a90718522210469b7f4e8094"
+              },
+              {
+                "id": "block_0005_0003",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              },
+              {
+                "id": "block_0005_0004",
+                "sha256": "dad22042767df934f658abfded51963768bf0f9801009db3ce183e0878815e6b"
+              },
+              {
+                "id": "block_0005_0005",
+                "sha256": "c66f4c658c1af9209d8066b6ad99790cef36e04b16a0dbcd86088ea3c8c64e06"
+              },
+              {
+                "id": "block_0005_0006",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              },
+              {
+                "id": "block_0005_0007",
+                "sha256": "8d901f9d3831cab3a2a5be2b789496845b056d28af3fe5c2a64c7ab43ce696c2"
+              },
+              {
+                "id": "block_0005_0008",
+                "sha256": "4915a96a8657edc2ee83b2df2ec646b43ef8f486bdd22b4a35983fc2f49afc00"
+              },
+              {
+                "id": "block_0005_0009",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              },
+              {
+                "id": "block_0005_0010",
+                "sha256": "e314ec4fbd67578e0e7fbfbd316b40ba5a3bef2c309f31bbda9080d06cc6d3f0"
+              }
+            ]
+          },
+          {
+            "id": "page_0006",
+            "blocks": [
+              {
+                "id": "block_0006_0000",
+                "sha256": "a30d0555835b703d0dd5a90aabb0134813afd11904b5364f69f03b01695f6d7a"
+              },
+              {
+                "id": "block_0006_0001",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              },
+              {
+                "id": "block_0006_0002",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              },
+              {
+                "id": "block_0006_0003",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              },
+              {
+                "id": "block_0006_0004",
+                "sha256": "7411847cb8755537688939da6775066a12bdf8a221f528602494a8ab6f9383ef"
+              },
+              {
+                "id": "block_0006_0005",
+                "sha256": "a30d0555835b703d0dd5a90aabb0134813afd11904b5364f69f03b01695f6d7a"
+              },
+              {
+                "id": "block_0006_0006",
+                "sha256": "4ed82caa7691dae163220b4b511f5c58f3814c52c1bf0bb67e4a614e3f4c5d2e"
+              },
+              {
+                "id": "block_0006_0007",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              },
+              {
+                "id": "block_0006_0008",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              }
+            ]
+          }
+        ]
+      }
+    },
+    "additions": [],
+    "editorial": []
+  }
+}

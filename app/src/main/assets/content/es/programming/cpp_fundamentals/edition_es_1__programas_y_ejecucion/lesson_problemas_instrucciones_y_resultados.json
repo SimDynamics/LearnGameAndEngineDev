@@ -1,0 +1,2355 @@
+{
+  "id": "cpp_fundamentals__edition_es_1__programas_y_ejecucion__problemas_instrucciones_y_resultados",
+  "title": "Problemas, instrucciones y resultados",
+  "pages": [
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "Empezar por un problema"
+        },
+        {
+          "type": "paragraph",
+          "text": "Programar consiste en expresar una solución mediante instrucciones que una computadora pueda seguir. Cuando la computadora lleva a cabo esas instrucciones, decimos que ejecuta el programa. También necesitamos comprobar qué ocurre al ejecutarlo: el resultado debe resolver la tarea que nos propusimos (Stroustrup, 2024).",
+          "emphasis": [
+            {
+              "text": "ejecuta el programa"
+            }
+          ]
+        },
+        {
+          "type": "paragraph",
+          "text": "El texto que escribimos para expresar esas instrucciones se llama código fuente. En este curso utilizaremos el lenguaje C++, que tiene reglas para escribir las instrucciones y darles significado. Primero vamos a precisar qué queremos conseguir; en la siguiente lección empezaremos a escribir esas instrucciones.",
+          "emphasis": [
+            {
+              "text": "código fuente"
+            }
+          ]
+        },
+        {
+          "type": "paragraph",
+          "text": "Antes de escribir el programa, separa estas preguntas:\n\n¿Qué resultado necesitamos?\n¿Qué información tenemos para obtenerlo?\n¿Qué condiciones debe cumplir ese resultado?"
+        },
+        {
+          "type": "paragraph",
+          "text": "Las condiciones que fijan lo que debe conseguir la solución se llaman requisitos. Por ejemplo, pedir que dos cajas puedan distinguirse exige algo más que pedir que aparezca cualquier texto en una etiqueta. Un programa puede terminar su ejecución y aun así no cumplir el requisito (Stroustrup, 2024).",
+          "emphasis": [
+            {
+              "text": "requisitos"
+            }
+          ]
+        },
+        {
+          "type": "paragraph",
+          "text": "Imagina una oficina con dos cajas rojas. Se necesita reconocer cada caja por separado. Si el programa imprime Caja roja para las dos, ha producido texto, pero las dos etiquetas siguen siendo iguales. El color no permite decidir cuál es cada caja.",
+          "emphasis": [
+            {
+              "text": "Se necesita reconocer cada caja por separado."
+            }
+          ]
+        },
+        {
+          "type": "paragraph",
+          "text": "Para distinguirlas, se podría utilizar una identificación diferente para cada una, como Caja 01 y Caja 02. Lo importante no es elegir precisamente esos textos: es que la información utilizada permita reconocer cada caja sin confundirla con la otra."
+        },
+        {
+          "type": "paragraph",
+          "text": "En este ejemplo podemos separar el trabajo:\n\nResultado necesario: una identificación diferente para cada caja.\nInformación necesaria: un dato que distinga una caja de la otra.\nComprobación: comparar las identificaciones de las dos cajas y revisar que no sean iguales."
+        },
+        {
+          "type": "paragraph",
+          "text": "Así, imprimir alguna etiqueta no basta para dar la tarea por resuelta. Hay que observar si la etiqueta cumple el propósito para el que se pidió."
+        },
+        {
+          "type": "multiple_choice",
+          "id": "objetivo_etiqueta",
+          "question": "Las cajas deben distinguirse aunque dos tengan el mismo color. ¿Qué requisito debe quedar fijado antes de programar?",
+          "options": [
+            "Qué orden de impresión usar, aunque se repitan las etiquetas.",
+            "Qué dato identifica cada caja de forma inequívoca.",
+            "Qué color usar como único dato de cada etiqueta."
+          ],
+          "correctIndex": 1,
+          "explanation": "Dos cajas diferentes pueden tener el mismo color. Si las dos reciben la etiqueta Caja roja, quien las lea no podrá saber cuál es cada caja. Por eso necesitamos un dato que permita distinguirlas. Elegir el orden de impresión no resuelve el problema si el texto de las dos etiquetas sigue siendo igual."
+        },
+        {
+          "type": "note",
+          "text": "Este curso comienza desde cero. Aprenderás a expresar tareas en C++, leer las instrucciones que has escrito y comprobar sus resultados. Empezaremos con mensajes sencillos. Después incorporaremos datos que cambian, decisiones, repeticiones y colecciones de datos."
+        },
+        {
+          "type": "paragraph",
+          "text": "Cada pieza se explicará y se practicará antes de combinarla con otras. También aprenderás a localizar errores y a conservar datos correctos cuando una operación no pueda realizarse. Más adelante organizarás los programas en partes encargadas de tareas concretas."
+        },
+        {
+          "type": "paragraph",
+          "text": "Estos fundamentos preparan el estudio posterior de motores y gráficos. En esta primera lección el objetivo es reconocer el problema, la información disponible, las instrucciones y el resultado que habrá que comprobar."
+        }
+      ]
+    },
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "Datos de entrada y resultados de salida"
+        },
+        {
+          "type": "paragraph",
+          "text": "Cuando hablamos del programa completo, los datos de entrada son los que recibe desde fuera al ejecutarse. La salida es la información que el programa entrega. Por ejemplo, puede mostrar un resultado en la pantalla (Stroustrup, 2024).",
+          "emphasis": [
+            {
+              "text": "datos de entrada"
+            },
+            {
+              "text": "salida"
+            }
+          ]
+        },
+        {
+          "type": "paragraph",
+          "text": "Imagina que usas un programa para convertir metros en centímetros. Escribes dos metros. Esa longitud es la entrada. El programa multiplica la cantidad de metros por cien y te muestra el resultado. En este caso, la salida es doscientos centímetros.",
+          "emphasis": [
+            {
+              "text": "la entrada"
+            }
+          ]
+        },
+        {
+          "type": "paragraph",
+          "text": "¿Qué pasa si escribes tres metros la próxima vez? El programa recibe esa nueva longitud y aplica la misma regla. Multiplica tres por cien y muestra trescientos centímetros."
+        },
+        {
+          "type": "math_puzzle",
+          "schemaVersion": 1,
+          "id": "p1u1l1_distinguir_dato_instruccion_y_resultado",
+          "prompt": "Un programa recibe el nombre Mara y debe producir una etiqueta que diga Participante: Mara. Para hacerlo, coloca el texto Participante: antes del nombre recibido. Relaciona los tres elementos con el papel que cumplen en esta tarea.",
+          "representations": [],
+          "tools": [],
+          "responses": [
+            {
+              "id": "relaciones",
+              "type": "math_matching_drag",
+              "label": "Relaciona cada elemento con su papel. Usa cada destino una sola vez.",
+              "sources": [
+                {
+                  "id": "mensaje_producido",
+                  "label": "Participante: Mara",
+                  "content": [
+                    {
+                      "type": "text",
+                      "text": "Participante: Mara",
+                      "mathMode": "text"
+                    }
+                  ]
+                },
+                {
+                  "id": "dato_recibido",
+                  "label": "El nombre Mara recibido por el programa.",
+                  "content": [
+                    {
+                      "type": "text",
+                      "text": "El nombre Mara recibido por el programa.",
+                      "mathMode": "text"
+                    }
+                  ]
+                },
+                {
+                  "id": "paso_del_procedimiento",
+                  "label": "Colocar Participante: antes del nombre recibido.",
+                  "content": [
+                    {
+                      "type": "text",
+                      "text": "Colocar Participante: antes del nombre recibido.",
+                      "mathMode": "text"
+                    }
+                  ]
+                }
+              ],
+              "targets": [
+                {
+                  "id": "instruccion",
+                  "label": "Instrucción que indica una acción del procedimiento."
+                },
+                {
+                  "id": "entrada",
+                  "label": "Dato de entrada que recibe el programa."
+                },
+                {
+                  "id": "salida",
+                  "label": "Resultado de salida que debe producir."
+                }
+              ],
+              "validator": {
+                "type": "matching",
+                "expected": {
+                  "mensaje_producido": "salida",
+                  "dato_recibido": "entrada",
+                  "paso_del_procedimiento": "instruccion"
+                }
+              }
+            }
+          ],
+          "feedback": {
+            "correct": "Mara es el dato que se recibe. Colocar el texto Participante: antes de ese nombre describe qué se hace con el dato. Participante: Mara es el resultado que debe producirse. Dato, instrucción y resultado no cumplen el mismo papel aunque estén relacionados.",
+            "incorrect": "Busca qué información está disponible antes de realizar la tarea, qué elemento describe una acción y qué texto debe quedar como resultado."
+          }
+        },
+        {
+          "type": "paragraph",
+          "text": "Un programa también puede leer datos de un archivo o recibirlos de otro programa. Dentro del programa, una operación puede usar el resultado de la anterior. Por ejemplo, después de multiplicar los metros por cien, la operación que muestra el resultado recibe el valor calculado (Stroustrup, 2024)."
+        },
+        {
+          "type": "paragraph",
+          "text": "En los primeros programas del curso escribirás un mensaje fijo en el código. Tú eliges el mensaje al preparar el programa. Cuando alguien lo ejecuta, la instrucción que muestra el texto usa el mensaje que dejaste escrito. La persona ve el mensaje sin tener que teclearlo (Stroustrup, 2024).",
+          "emphasis": [
+            {
+              "text": "un mensaje fijo"
+            }
+          ]
+        },
+        {
+          "type": "multiple_choice",
+          "id": "entrada_distancia",
+          "question": "Un programa calculará cuánto dura un viaje. Recibe la distancia y la velocidad, que será la misma durante todo el viaje. ¿Qué son la distancia y la velocidad para esa tarea?",
+          "options": [
+            "El resultado que todavía hay que calcular.",
+            "Las instrucciones que indican cómo calcular el tiempo.",
+            "Datos de entrada."
+          ],
+          "correctIndex": 2,
+          "explanation": "El programa ya recibe la distancia y la velocidad; no tiene que obtenerlas como resultado de esta tarea. Utilizará esos datos para calcular cuánto dura el viaje. Por eso la distancia y la velocidad son entradas, y el tiempo calculado será la salida. Las instrucciones son las acciones que realizará con los datos; no son los datos mismos."
+        },
+        {
+          "type": "paragraph",
+          "text": "Imagina ahora una tarea de reparto: hay que imprimir la dirección de entrega de un paquete, pero sólo conocemos cuántos paquetes hay. Esa cantidad no dice en qué calle ni en qué casa debe entregarse el paquete. Necesitamos recibir su dirección o disponer de información que permita obtenerla. Contar los paquetes no basta para resolver esta tarea."
+        },
+        {
+          "type": "paragraph",
+          "text": "Al estudiar cada tarea, identifica primero qué información se recibe y qué resultado se solicita. En estas actividades sólo tendrás que distinguir esos papeles; todavía no se pide calcular el tiempo de un viaje ni escribir código."
+        },
+        {
+          "type": "multiple_choice",
+          "id": "dato_insuficiente",
+          "question": "Una aplicación debe mostrar el nombre de la persona inscrita, pero sólo recibe el número de personas. ¿Qué problema aparece?",
+          "options": [
+            "El número de personas basta como nombre de la persona inscrita.",
+            "Una lista de nombres sin relación con la inscripción basta.",
+            "Falta información para obtener el nombre solicitado."
+          ],
+          "correctIndex": 2,
+          "explanation": "El número de personas indica una cantidad, pero no dice cómo se llama la persona cuya inscripción queremos consultar. Tampoco sirve una lista de nombres si no sabemos cuál corresponde a esa inscripción. Hace falta recibir el nombre o disponer de datos que permitan encontrar el que corresponde."
+        }
+      ]
+    },
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "Instrucciones precisas y orden"
+        },
+        {
+          "type": "paragraph",
+          "text": "Una computadora necesita instrucciones expresadas con las operaciones que sabe realizar. Un lenguaje de programación define cómo escribir esas operaciones y qué significado tienen. La computadora no completa una instrucción recurriendo al sentido común de una persona (Stroustrup, 2024)."
+        },
+        {
+          "type": "paragraph",
+          "text": "Imagina que alguien pide un informe sobre los libros de una biblioteca. Decir «prepara correctamente el informe» no permite saber qué debe calcular el programa. Si el informe debe indicar cuántos libros hay entre dos estantes, ya podemos describir las acciones. El programa recibe la cantidad de libros de cada estante, suma esas dos cantidades y muestra el total (Stroustrup, 2024)."
+        },
+        {
+          "type": "paragraph",
+          "text": "La precisión necesaria depende de las acciones que el sistema ya reconoce. Si ya dispone de una acción para mostrar un mensaje, podemos utilizarla sin explicar cómo funciona la pantalla. Si sólo reconoce avanzar un paso y girar a la derecha, no podemos suponer que también acepta directamente otra orden.",
+          "emphasis": [
+            {
+              "text": "las acciones que el sistema ya reconoce"
+            }
+          ]
+        },
+        {
+          "type": "paragraph",
+          "text": "En un sistema que sólo admite avanzar un paso como orden de movimiento, avanzar dos pasos requiere escribir esa orden dos veces. Otro sistema podría admitir directamente avanzar dos pasos. Para elegir las instrucciones necesitamos conocer las acciones disponibles, no sólo imaginar lo que queremos que ocurra."
+        },
+        {
+          "type": "multiple_choice",
+          "id": "precision_mover",
+          "question": "En este ejercicio, cada instrucción debe ser una de estas dos órdenes completas y fijas: «avanzar un paso» o «girar a la derecha». No se puede cambiar la cantidad de pasos dentro de una orden. ¿Cuál puede ejecutar el sistema directamente como una sola instrucción?",
+          "options": [
+            "Girar a la izquierda en una sola instrucción.",
+            "Avanzar dos pasos en una sola instrucción.",
+            "Avanzar un paso."
+          ],
+          "correctIndex": 2,
+          "explanation": "El sistema admite directamente avanzar un paso y girar a la derecha. Avanzar un paso es una de esas órdenes completas. Para avanzar dos pasos aquí habría que dar dos órdenes de avanzar un paso, una después de la otra. Girar a la izquierda tampoco es una orden directa de este sistema. Otro sistema podría admitirla; aquí sólo se pueden usar las órdenes indicadas."
+        },
+        {
+          "type": "paragraph",
+          "text": "También importa el orden de las acciones. Imagina un archivo cuyo título todavía es provisional. Se realizan dos acciones: primero se imprime el documento y después se corrige el título en el archivo. La copia de papel ya impresa conserva el título anterior: cambiar el archivo no cambia ese papel."
+        },
+        {
+          "type": "paragraph",
+          "text": "Si necesitamos entregar una copia con el título corregido, hay que corregir el archivo antes de imprimir la copia que se entregará. Hacer las dos acciones no basta si se realizan en un orden que deja sin cumplir el requisito.",
+          "emphasis": [
+            {
+              "text": "antes de imprimir"
+            }
+          ]
+        },
+        {
+          "type": "multiple_choice",
+          "id": "orden_revision",
+          "question": "Debes imprimir una tarjeta con el nombre corregido. ¿Qué secuencia cumple ese requisito?",
+          "options": [
+            "Corregir el nombre; imprimir la tarjeta corregida; entregar esa copia.",
+            "Imprimir la tarjeta; corregir el nombre; entregar la copia anterior.",
+            "Entregar una tarjeta vacía; elegir después el nombre."
+          ],
+          "correctIndex": 0,
+          "explanation": "Primero se corrige el nombre guardado. Después se imprime la tarjeta, por lo que esa copia ya contiene el nombre corregido. Finalmente se entrega esa copia. Si se imprime antes de corregir el archivo, la copia impresa conserva el nombre anterior. La corrección posterior del archivo no cambia esa copia."
+        },
+        {
+          "type": "paragraph",
+          "text": "Para entregar una etiqueta con el nombre correcto, hay que comprobar qué nombre quedó en el papel. En el ejercicio siguiente, el archivo contiene Rosa y en la etiqueta debe aparecer Rosa Luna. La impresora usa el nombre guardado en el archivo en el momento de imprimir. Para comprobar el resultado, lee el nombre en la etiqueta que salió de la impresora y compáralo con Rosa Luna. Una vez que el nombre impreso sea el solicitado, ya puedes entregar esa etiqueta."
+        },
+        {
+          "type": "math_puzzle",
+          "schemaVersion": 1,
+          "id": "p1u1l1_construir_orden_de_preparacion_y_comprobacion",
+          "prompt": "En un archivo quedó escrito Rosa, pero la etiqueta solicitada debe decir Rosa Luna. La etiqueta debe imprimirse desde el archivo corregido y su nombre debe comprobarse antes de entregarla. Construye el orden relacionando cada acción con su posición: primer paso, segundo paso, tercer paso o cuarto paso. Usa cada posición una sola vez.",
+          "representations": [],
+          "tools": [],
+          "responses": [
+            {
+              "id": "relaciones",
+              "type": "math_matching_drag",
+              "label": "Relaciona cada acción con su posición. Usa cada posición una sola vez.",
+              "sources": [
+                {
+                  "id": "entregar",
+                  "label": "Entregar la etiqueta ya comprobada.",
+                  "content": [
+                    {
+                      "type": "text",
+                      "text": "Entregar la etiqueta ya comprobada.",
+                      "mathMode": "text"
+                    }
+                  ]
+                },
+                {
+                  "id": "imprimir",
+                  "label": "Imprimir la etiqueta usando el archivo.",
+                  "content": [
+                    {
+                      "type": "text",
+                      "text": "Imprimir la etiqueta usando el archivo.",
+                      "mathMode": "text"
+                    }
+                  ]
+                },
+                {
+                  "id": "corregir",
+                  "label": "Corregir el nombre guardado en el archivo para que diga Rosa Luna.",
+                  "content": [
+                    {
+                      "type": "text",
+                      "text": "Corregir el nombre guardado en el archivo para que diga Rosa Luna.",
+                      "mathMode": "text"
+                    }
+                  ]
+                },
+                {
+                  "id": "comprobar",
+                  "label": "Comparar el nombre impreso con Rosa Luna.",
+                  "content": [
+                    {
+                      "type": "text",
+                      "text": "Comparar el nombre impreso con Rosa Luna.",
+                      "mathMode": "text"
+                    }
+                  ]
+                }
+              ],
+              "targets": [
+                {
+                  "id": "tercer_paso",
+                  "label": "Tercer paso."
+                },
+                {
+                  "id": "primer_paso",
+                  "label": "Primer paso."
+                },
+                {
+                  "id": "cuarto_paso",
+                  "label": "Cuarto paso."
+                },
+                {
+                  "id": "segundo_paso",
+                  "label": "Segundo paso."
+                }
+              ],
+              "validator": {
+                "type": "matching",
+                "expected": {
+                  "corregir": "primer_paso",
+                  "imprimir": "segundo_paso",
+                  "comprobar": "tercer_paso",
+                  "entregar": "cuarto_paso"
+                }
+              }
+            }
+          ],
+          "feedback": {
+            "correct": "La corrección prepara el nombre que utilizará la impresión. Después se compara la copia ya impresa con el nombre requerido. Sólo entonces se entrega esa etiqueta comprobada. Cambiar el archivo después de imprimir no corregiría por sí solo el papel.",
+            "incorrect": "Sigue qué resultado necesita cada paso: imprimir necesita el nombre corregido; comparar necesita la etiqueta impresa; entregar necesita que esa etiqueta ya haya sido comprobada."
+          }
+        }
+      ]
+    },
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "Algoritmo, programa y prueba"
+        },
+        {
+          "type": "paragraph",
+          "text": "Un algoritmo es un procedimiento formado por pasos que pueden realizarse para obtener un resultado buscado (Black, 2020). Describe cómo conseguirlo; no se limita a nombrar el resultado deseado.",
+          "emphasis": [
+            {
+              "text": "Un algoritmo es un procedimiento"
+            }
+          ]
+        },
+        {
+          "type": "paragraph",
+          "text": "Ya hemos descrito un procedimiento para preparar una tarjeta: corregir el nombre guardado, imprimir una copia con ese nombre y entregar esa copia. Una persona puede seguir estos pasos sin conocer C++. Al programar, expresamos las operaciones que hará la computadora mediante las reglas del lenguaje (Stroustrup, 2024)."
+        },
+        {
+          "type": "paragraph",
+          "text": "Hay que revisar dos cuestiones por separado:\n\nEl plan: si se siguieran los pasos previstos, ¿se resolvería la tarea?\nEl programa escrito: ¿sus instrucciones realizan realmente esos pasos?"
+        },
+        {
+          "type": "paragraph",
+          "text": "Supón que el plan es identificar cada caja por su color. Si hay dos cajas rojas, seguir ese plan al pie de la letra daría la misma etiqueta a las dos. Habría que cambiar el plan y elegir un dato distinto para cada caja. En el ejemplo de la tarjeta, el plan sí permite imprimir el nombre correcto. Si el programa imprime antes de corregir el nombre, la tarjeta muestra el nombre anterior. En ese caso hay que cambiar el orden de las instrucciones del programa para que haga lo que indica el plan."
+        },
+        {
+          "type": "paragraph",
+          "text": "Probar un programa consiste en ejecutarlo en una situación concreta y comparar lo que produce con lo que debería producir. Antes de ejecutar, precisa qué resultado esperas con los datos de esa prueba. Después de ejecutar, observa el resultado y compáralo con el que esperabas. Si se pedía un mensaje exacto, comprueba qué palabras aparecieron y cómo están separadas (Stroustrup, 2024).",
+          "emphasis": [
+            {
+              "text": "comparar lo que produce con lo que debería producir"
+            }
+          ]
+        },
+        {
+          "type": "paragraph",
+          "text": "Por ejemplo, necesitamos que aparezca Listo. Ejecutamos el programa y observamos Pendiente. Tenemos una diferencia concreta: el mensaje producido no es el solicitado. Que ambas palabras sean mensajes de texto no hace que cumplan el mismo requisito."
+        },
+        {
+          "type": "paragraph",
+          "text": "Un caso de prueba reúne la situación que se va a comprobar y el resultado que se espera para ella. Después de ejecutar, se compara lo observado con ese resultado (Stroustrup, 2024). Si se exige un mensaje exacto, importa tanto elegir las palabras correctas como separarlas de la forma solicitada. Tarea lista y Tarealista no son el mismo texto: al segundo le falta el espacio entre las palabras."
+        },
+        {
+          "type": "math_puzzle",
+          "schemaVersion": 1,
+          "id": "p1u1l1_comparar_resultado_esperado_y_observado",
+          "prompt": "El requisito es mostrar exactamente Entrega lista, con un espacio entre las dos palabras. Cada tarjeta muestra lo observado en una ejecución diferente. Relaciona cada resultado con la comparación que corresponde.",
+          "representations": [],
+          "tools": [],
+          "responses": [
+            {
+              "id": "relaciones",
+              "type": "math_matching_drag",
+              "label": "Relaciona cada resultado con la diferencia o coincidencia que presenta. Usa cada destino una sola vez.",
+              "sources": [
+                {
+                  "id": "palabra_distinta",
+                  "label": "Entrega pendiente",
+                  "content": [
+                    {
+                      "type": "text",
+                      "text": "Entrega pendiente",
+                      "mathMode": "text"
+                    }
+                  ]
+                },
+                {
+                  "id": "sin_separacion",
+                  "label": "Entregalista",
+                  "content": [
+                    {
+                      "type": "text",
+                      "text": "Entregalista",
+                      "mathMode": "text"
+                    }
+                  ]
+                },
+                {
+                  "id": "coincidencia_exacta",
+                  "label": "Entrega lista",
+                  "content": [
+                    {
+                      "type": "text",
+                      "text": "Entrega lista",
+                      "mathMode": "text"
+                    }
+                  ]
+                }
+              ],
+              "targets": [
+                {
+                  "id": "coincide",
+                  "label": "Coincide con las palabras y el espacio requeridos."
+                },
+                {
+                  "id": "falta_espacio",
+                  "label": "Une las palabras sin el espacio solicitado."
+                },
+                {
+                  "id": "cambia_palabra",
+                  "label": "Sustituye lista por otra palabra."
+                }
+              ],
+              "validator": {
+                "type": "matching",
+                "expected": {
+                  "palabra_distinta": "cambia_palabra",
+                  "sin_separacion": "falta_espacio",
+                  "coincidencia_exacta": "coincide"
+                }
+              }
+            }
+          ],
+          "feedback": {
+            "correct": "Entrega lista coincide con el requisito. Entrega pendiente cambia una palabra. Entregalista conserva las letras de las dos palabras, pero omite el espacio pedido. Comprobar el resultado exige compararlo con lo solicitado, no limitarse a ver que apareció algún texto.",
+            "incorrect": "Lee primero el resultado requerido. Después compara cada tarjeta con él: revisa las palabras y la separación, sin cambiar el requisito para aceptar lo que apareció."
+          }
+        },
+        {
+          "type": "multiple_choice",
+          "id": "prueba_mensaje",
+          "question": "El programa debe mostrar exactamente Caja preparada al ejecutarse. ¿Qué observarías para comprobar que muestra el mensaje solicitado?",
+          "options": [
+            "Se muestra alguna palabra, sin comprobar cuál es.",
+            "Aparece exactamente el mensaje requerido al ejecutar.",
+            "Se ha elegido ese mensaje, aunque todavía no se haya observado el resultado."
+          ],
+          "correctIndex": 1,
+          "explanation": "El resultado exigido es Caja preparada. Para comprobarlo hay que ejecutar el programa y observar si aparece ese mensaje exacto. Ver cualquier palabra no basta, porque podría ser otra. Haber decidido qué mensaje queremos tampoco comprueba que las instrucciones escritas lo produzcan."
+        },
+        {
+          "type": "paragraph",
+          "text": "Imagina que pruebas el programa que convierte metros en centímetros. Escribes dos metros y el programa muestra doscientos centímetros. Conoces ahora el resultado que produjo con dos metros. Para saber qué hace con tres metros, calcula primero que debería mostrar trescientos centímetros. Después ejecuta el programa con tres metros y compara la salida con esa cantidad (Stroustrup, 2024).",
+          "emphasis": [
+            {
+              "text": "ejecuta el programa con tres metros"
+            }
+          ]
+        },
+        {
+          "type": "multiple_choice",
+          "id": "caso_no_generaliza",
+          "question": "Hasta ahora sólo has probado el programa con dos metros. Al ejecutarlo con esa distancia, muestra los doscientos centímetros que esperabas. ¿Qué sabes sobre su funcionamiento con dos metros y qué queda por comprobar si recibe otra distancia?",
+          "options": [
+            "Todos los casos con otros datos deben dar el mismo resultado.",
+            "Repetir ese mismo caso basta para validar los demás casos.",
+            "Cuando el programa recibió dos metros, mostró doscientos centímetros. Queda por comprobar qué muestra con otras distancias."
+          ],
+          "correctIndex": 2,
+          "explanation": "Has comprobado que el programa muestra doscientos centímetros cuando recibe dos metros. Para saber qué muestra con tres metros, necesitas ejecutarlo con tres metros y comparar su salida con los trescientos centímetros esperados. Si vuelves a introducir dos metros, vuelves a probar la misma distancia."
+        }
+      ]
+    }
+  ],
+  "textSemantics": {
+    "version": 1,
+    "fields": [
+      {
+        "block": "block_0000_0000",
+        "path": "/text",
+        "sourceSha256": "59c548d6d9d81e9de1bebcb71787c3b27d9b4bcf2bc5be66a48c8ac8eaf317a2",
+        "spans": []
+      },
+      {
+        "block": "block_0000_0001",
+        "path": "/text",
+        "sourceSha256": "fabc6991d5c5fa1b3bc4c51e4ed123e57819f15fa045195b3ec4b611b7fc47c3",
+        "spans": [
+          {
+            "start": 300,
+            "end": 318,
+            "text": "(Stroustrup, 2024)",
+            "role": "citation",
+            "reading": "natural"
+          }
+        ]
+      },
+      {
+        "block": "block_0000_0005",
+        "path": "/text",
+        "sourceSha256": "7f0f68f0bd1b97aef7ea3260f54e4e704755e1fe3548a1be3d959cb4a070fe31",
+        "spans": [
+          {
+            "start": 24,
+            "end": 27,
+            "text": "dos",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 110,
+            "end": 119,
+            "text": "Caja roja",
+            "role": "output",
+            "reading": "natural"
+          },
+          {
+            "start": 129,
+            "end": 132,
+            "text": "dos",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 163,
+            "end": 166,
+            "text": "dos",
+            "role": "data",
+            "reading": "natural"
+          }
+        ]
+      },
+      {
+        "block": "block_0000_0009",
+        "path": "/question",
+        "sourceSha256": "68359bf85ce5eb30dc879f912d3983f0c7c47151e61a1eeee584aeb38153e82f",
+        "spans": [
+          {
+            "start": 36,
+            "end": 39,
+            "text": "dos",
+            "role": "data",
+            "reading": "natural"
+          }
+        ]
+      },
+      {
+        "block": "block_0000_0009",
+        "path": "/explanation",
+        "sourceSha256": "f6bbe5071f4e6549a87efba64ce0809b433023fe3f5c6f32ea9505de69e6f563",
+        "spans": [
+          {
+            "start": 0,
+            "end": 3,
+            "text": "Dos",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 57,
+            "end": 60,
+            "text": "dos",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 81,
+            "end": 90,
+            "text": "Caja roja",
+            "role": "output",
+            "reading": "natural"
+          },
+          {
+            "start": 267,
+            "end": 270,
+            "text": "dos",
+            "role": "data",
+            "reading": "natural"
+          }
+        ]
+      },
+      {
+        "block": "block_0000_0009",
+        "path": "/options/0",
+        "sourceSha256": "ffe32d1ade88f6b3198c987d334a53426ab20e5fb4531e8901f6b2cd0a76cc17",
+        "spans": []
+      },
+      {
+        "block": "block_0000_0009",
+        "path": "/options/1",
+        "sourceSha256": "40ada0d297ec5473d290cbd7d156d108234450d1ba371fe5dd097a78f321a044",
+        "spans": []
+      },
+      {
+        "block": "block_0000_0009",
+        "path": "/options/2",
+        "sourceSha256": "caf0a9d96ade91a603eccd034f73cf087db3db72b7dc1b079f3fb50da543adf0",
+        "spans": []
+      },
+      {
+        "block": "block_0000_0010",
+        "path": "/text",
+        "sourceSha256": "7ae2b35e470cfce9f626e87b8b25eeb035d2f5d13e6f4f5a833d81727c56e6e5",
+        "spans": [
+          {
+            "start": 64,
+            "end": 67,
+            "text": "C++",
+            "role": "cpp",
+            "reading": "technical"
+          }
+        ]
+      },
+      {
+        "block": "block_0001_0000",
+        "path": "/text",
+        "sourceSha256": "f7acace8d7db8bcbd4a5edcb8bb00e3fa8f4b66d16ef73018fedad1d846a8a50",
+        "spans": []
+      },
+      {
+        "block": "block_0001_0001",
+        "path": "/text",
+        "sourceSha256": "3c73e31cd88282cc55900eb6edbd28d17b31cf1c17332bde6874bb66955b502b",
+        "spans": [
+          {
+            "start": 214,
+            "end": 232,
+            "text": "(Stroustrup, 2024)",
+            "role": "citation",
+            "reading": "natural"
+          }
+        ]
+      },
+      {
+        "block": "block_0001_0006",
+        "path": "/text",
+        "sourceSha256": "1cb3e953c34be870522bfdb8ba806865299a42dfe01f95386b7822c8e1214695",
+        "spans": [
+          {
+            "start": 271,
+            "end": 289,
+            "text": "(Stroustrup, 2024)",
+            "role": "citation",
+            "reading": "natural"
+          }
+        ]
+      },
+      {
+        "block": "block_0001_0007",
+        "path": "/question",
+        "sourceSha256": "7f8b6b8d7cfe68c0523bcf9f8450a83c4479567f632c2aee50319a5cd9d15e79",
+        "spans": []
+      },
+      {
+        "block": "block_0001_0007",
+        "path": "/explanation",
+        "sourceSha256": "d3d9c02f0dcf4181b31b851330e77fcaa52fae966341328238db12184830d2ec",
+        "spans": []
+      },
+      {
+        "block": "block_0001_0007",
+        "path": "/options/0",
+        "sourceSha256": "8348139a700d463e1d6baae5f4c5b35f3b33437b3961405e12b2c4ec44767304",
+        "spans": []
+      },
+      {
+        "block": "block_0001_0007",
+        "path": "/options/1",
+        "sourceSha256": "0d0c2c83a49668f9382c81c8c693b74ee6907241cb01d3a7a032840e2966e873",
+        "spans": []
+      },
+      {
+        "block": "block_0001_0007",
+        "path": "/options/2",
+        "sourceSha256": "43cbe3ec164dcc887886c672d2fcfd253c4bd5e1334daf4d14bb98f2593e901d",
+        "spans": []
+      },
+      {
+        "block": "block_0001_0010",
+        "path": "/question",
+        "sourceSha256": "96b926930236ce169c1a3af33525f512d44cca778ee02bda97ef2e78cad29d8e",
+        "spans": []
+      },
+      {
+        "block": "block_0001_0010",
+        "path": "/explanation",
+        "sourceSha256": "f2bf68e7ccb705f2bb3b30a349f3b3fef354bb707804274d0d80bc5a672261df",
+        "spans": []
+      },
+      {
+        "block": "block_0001_0010",
+        "path": "/options/0",
+        "sourceSha256": "0bbdbceaded176c669077dda685634e677ba72d4e4e5855e8f728d6b7207568c",
+        "spans": []
+      },
+      {
+        "block": "block_0001_0010",
+        "path": "/options/1",
+        "sourceSha256": "a785cef6a2e77754e9661b6dd944b1545a06dc73ac3f35dd984287270fc4019f",
+        "spans": []
+      },
+      {
+        "block": "block_0001_0010",
+        "path": "/options/2",
+        "sourceSha256": "92b5005cbf4cbe281154bc99aee8d726f2bf61601c26ff084b83ec09b28eda51",
+        "spans": []
+      },
+      {
+        "block": "block_0002_0000",
+        "path": "/text",
+        "sourceSha256": "b6b88cdc3591969010262ad47fa8a9ec322926c4c7b130656031de88ea1bf1f9",
+        "spans": []
+      },
+      {
+        "block": "block_0002_0001",
+        "path": "/text",
+        "sourceSha256": "1ee6c6bd3d6e7395f4ea2b659400952c9ecc275109159141e43007c92232cca1",
+        "spans": [
+          {
+            "start": 268,
+            "end": 286,
+            "text": "(Stroustrup, 2024)",
+            "role": "citation",
+            "reading": "natural"
+          }
+        ]
+      },
+      {
+        "block": "block_0002_0006",
+        "path": "/text",
+        "sourceSha256": "507bf64e9d293442438113b170958a52a885e340a840c947fc0fb0eff531d6be",
+        "spans": [
+          {
+            "start": 109,
+            "end": 112,
+            "text": "dos",
+            "role": "data",
+            "reading": "natural"
+          }
+        ]
+      },
+      {
+        "block": "block_0002_0008",
+        "path": "/question",
+        "sourceSha256": "442b08c43d3558c591daf9bf1bb791d9fc11770f5957966728614e9655b487bb",
+        "spans": []
+      },
+      {
+        "block": "block_0002_0008",
+        "path": "/explanation",
+        "sourceSha256": "0bc51173dfba602403acea1694e77aff421b54272cf329db7ffee2b8239e0415",
+        "spans": []
+      },
+      {
+        "block": "block_0002_0008",
+        "path": "/options/0",
+        "sourceSha256": "4dbec62e472aedd93f8955cb613456713d7cf02948bdee17f318ae86b3460a57",
+        "spans": []
+      },
+      {
+        "block": "block_0002_0008",
+        "path": "/options/1",
+        "sourceSha256": "c93f8245ff30faae425e8038e5a085c21e320f62b5d4e8ba5947763e4d53ae14",
+        "spans": []
+      },
+      {
+        "block": "block_0002_0008",
+        "path": "/options/2",
+        "sourceSha256": "c15f7c49b57d5f52fbf58bfd35bde3713f727276ebcaf3ae92132e5a98bc393a",
+        "spans": []
+      },
+      {
+        "block": "block_0002_0005",
+        "path": "/question",
+        "sourceSha256": "c5a928207f62d63717cadc51adf75f0a07cd620028fd88f6dc52d567c568d27b",
+        "spans": [
+          {
+            "start": 58,
+            "end": 61,
+            "text": "dos",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 98,
+            "end": 105,
+            "text": "un paso",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 243,
+            "end": 251,
+            "text": "una sola",
+            "role": "data",
+            "reading": "natural"
+          }
+        ]
+      },
+      {
+        "block": "block_0002_0005",
+        "path": "/explanation",
+        "sourceSha256": "43f0a621cd4a0a1e1dcd3aa654a07405e41fec2a74bd5ec62fd8143ab4daebcf",
+        "spans": [
+          {
+            "start": 39,
+            "end": 46,
+            "text": "un paso",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 77,
+            "end": 84,
+            "text": "un paso",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 132,
+            "end": 141,
+            "text": "dos pasos",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 162,
+            "end": 173,
+            "text": "dos órdenes",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 185,
+            "end": 192,
+            "text": "un paso",
+            "role": "data",
+            "reading": "natural"
+          }
+        ]
+      },
+      {
+        "block": "block_0002_0005",
+        "path": "/options/0",
+        "sourceSha256": "3f9fbb17a6d1dd5561d4a1c5a5f5cb35f40d1a7e458a328c48bc06ecaaf37fd6",
+        "spans": [
+          {
+            "start": 24,
+            "end": 32,
+            "text": "una sola",
+            "role": "data",
+            "reading": "natural"
+          }
+        ]
+      },
+      {
+        "block": "block_0002_0005",
+        "path": "/options/1",
+        "sourceSha256": "7e316c3e1ef6620cc3b45dd3b61ee1cfcc426878d6834e726ddd9da5e7c3c690",
+        "spans": [
+          {
+            "start": 8,
+            "end": 11,
+            "text": "dos",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 21,
+            "end": 29,
+            "text": "una sola",
+            "role": "data",
+            "reading": "natural"
+          }
+        ]
+      },
+      {
+        "block": "block_0002_0005",
+        "path": "/options/2",
+        "sourceSha256": "aec43b6d185339410576b6445a2ae9de43eda03e6c51cec3664ca9d1dfc06e00",
+        "spans": [
+          {
+            "start": 8,
+            "end": 15,
+            "text": "un paso",
+            "role": "data",
+            "reading": "natural"
+          }
+        ]
+      },
+      {
+        "block": "block_0003_0000",
+        "path": "/text",
+        "sourceSha256": "9b6d864727f73024b31e3030488a11a4e877218097862fd184ea873b4a5ee2a8",
+        "spans": []
+      },
+      {
+        "block": "block_0003_0001",
+        "path": "/text",
+        "sourceSha256": "142972896f3fa2696301aa10b3f8beb26a83b896183152570e1c5d67f8da3059",
+        "spans": [
+          {
+            "start": 107,
+            "end": 120,
+            "text": "(Black, 2020)",
+            "role": "citation",
+            "reading": "natural"
+          }
+        ]
+      },
+      {
+        "block": "block_0003_0005",
+        "path": "/text",
+        "sourceSha256": "b8269be4f05fd691a45cd3ac32d0735b7d5f613961bf0e55a1f70247deea4d6e",
+        "spans": [
+          {
+            "start": 366,
+            "end": 384,
+            "text": "(Stroustrup, 2024)",
+            "role": "citation",
+            "reading": "natural"
+          }
+        ]
+      },
+      {
+        "block": "block_0003_0009",
+        "path": "/question",
+        "sourceSha256": "94711554e381f16731c1d2bfa6a0faf7b53d034b78934ccd3a031d74132fdad1",
+        "spans": [
+          {
+            "start": 37,
+            "end": 51,
+            "text": "Caja preparada",
+            "role": "output",
+            "reading": "natural"
+          }
+        ]
+      },
+      {
+        "block": "block_0003_0009",
+        "path": "/explanation",
+        "sourceSha256": "45c7ca48ce58976f15b89a7f4b12bb1ccf94dbaac7c23d62a1865d6f903834cc",
+        "spans": [
+          {
+            "start": 24,
+            "end": 38,
+            "text": "Caja preparada",
+            "role": "output",
+            "reading": "natural"
+          }
+        ]
+      },
+      {
+        "block": "block_0003_0009",
+        "path": "/options/0",
+        "sourceSha256": "3ec5a0f5f308824b20765d2e23eb245eb562b78ca641fc3f7b3f9f0b0222c2a5",
+        "spans": []
+      },
+      {
+        "block": "block_0003_0009",
+        "path": "/options/1",
+        "sourceSha256": "365214533148648f8146ba86104799dc75e48dea3f950218d090a88a0db03f22",
+        "spans": []
+      },
+      {
+        "block": "block_0003_0009",
+        "path": "/options/2",
+        "sourceSha256": "b92467764dcfc862a86ce603d0f14c9468744bf24d253c18e658dc9f0e2e8650",
+        "spans": []
+      },
+      {
+        "block": "block_0003_0011",
+        "path": "/question",
+        "sourceSha256": "a233e5846b5286719cf52f7bcddf68cbd459a8440f3676e470b8312e2819d7c6",
+        "spans": []
+      },
+      {
+        "block": "block_0003_0011",
+        "path": "/explanation",
+        "sourceSha256": "39c97900431417e428a677aca3296e741152375f8c786194a9d91b042adbe2b2",
+        "spans": []
+      },
+      {
+        "block": "block_0003_0011",
+        "path": "/options/0",
+        "sourceSha256": "9a5dc2edb0b9fc16ec4f77c94270b04a8358623128576189bdc77fd615cc7f9d",
+        "spans": []
+      },
+      {
+        "block": "block_0003_0011",
+        "path": "/options/1",
+        "sourceSha256": "48afeb308270c5de05065d4e9229635fc12962965d3145d5d41e8d675f180cb4",
+        "spans": []
+      },
+      {
+        "block": "block_0003_0011",
+        "path": "/options/2",
+        "sourceSha256": "03311e4be508b293f0d6fafe7524ae5a2eecda25ce543f4ea0f85db737da6dbe",
+        "spans": []
+      },
+      {
+        "block": "block_0000_0002",
+        "path": "/text",
+        "sourceSha256": "8cf45233508777198b7f334360e3475a31383c1c1e934e65000bc5aa83d76ef2",
+        "spans": [
+          {
+            "start": 120,
+            "end": 123,
+            "text": "C++",
+            "role": "cpp",
+            "reading": "technical"
+          }
+        ]
+      },
+      {
+        "block": "block_0000_0003",
+        "path": "/text",
+        "sourceSha256": "afda63452f6e85d7d21681050b94ecbf19ac29fb16697eb89ae20674be530ef9",
+        "spans": []
+      },
+      {
+        "block": "block_0000_0004",
+        "path": "/text",
+        "sourceSha256": "74e95343c4378abae602ef1774c5fe6d7589dad96d3eb4fb79e00bbb3703a4a0",
+        "spans": [
+          {
+            "start": 105,
+            "end": 108,
+            "text": "dos",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 280,
+            "end": 298,
+            "text": "(Stroustrup, 2024)",
+            "role": "citation",
+            "reading": "natural"
+          }
+        ]
+      },
+      {
+        "block": "block_0000_0006",
+        "path": "/text",
+        "sourceSha256": "cce204740228c0a66ff7421ff11a03238e99efea8a220e1efb9e6b65c5377d25",
+        "spans": [
+          {
+            "start": 88,
+            "end": 95,
+            "text": "Caja 01",
+            "role": "output",
+            "reading": "natural"
+          },
+          {
+            "start": 98,
+            "end": 105,
+            "text": "Caja 02",
+            "role": "output",
+            "reading": "natural"
+          }
+        ]
+      },
+      {
+        "block": "block_0000_0007",
+        "path": "/text",
+        "sourceSha256": "b6f836ca171bd4adffbe3809facee93c7908cec53c33d4fe39643464d63bbf2e",
+        "spans": [
+          {
+            "start": 227,
+            "end": 230,
+            "text": "dos",
+            "role": "data",
+            "reading": "natural"
+          }
+        ]
+      },
+      {
+        "block": "block_0000_0008",
+        "path": "/text",
+        "sourceSha256": "5a1bb51e7cbae12b8d9a242971389406b8b33cde5878102ff5f9e2e7fb42932d",
+        "spans": []
+      },
+      {
+        "block": "block_0000_0011",
+        "path": "/text",
+        "sourceSha256": "44740dff7383bf7489bc58a11c6a2d6d07fe574befbdd17ef8520d98164cf47e",
+        "spans": []
+      },
+      {
+        "block": "block_0000_0012",
+        "path": "/text",
+        "sourceSha256": "0c87e09b24f86bfc5fbae8d2909215325adf396076a8270b1f0f56a51f6cb21f",
+        "spans": []
+      },
+      {
+        "block": "block_0001_0002",
+        "path": "/text",
+        "sourceSha256": "0fedd46437cf9f3cc0661a3009a58289dcfcee33ee059d58d8f11b203354e133",
+        "spans": [
+          {
+            "start": 76,
+            "end": 86,
+            "text": "dos metros",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 165,
+            "end": 169,
+            "text": "cien",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 224,
+            "end": 246,
+            "text": "doscientos centímetros",
+            "role": "output",
+            "reading": "natural"
+          }
+        ]
+      },
+      {
+        "block": "block_0001_0003",
+        "path": "/text",
+        "sourceSha256": "5060266499babef53e2a2363351ee0b13116705bd581df28861b4f7f927437ae",
+        "spans": [
+          {
+            "start": 22,
+            "end": 33,
+            "text": "tres metros",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 124,
+            "end": 128,
+            "text": "tres",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 133,
+            "end": 137,
+            "text": "cien",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 148,
+            "end": 171,
+            "text": "trescientos centímetros",
+            "role": "output",
+            "reading": "natural"
+          }
+        ]
+      },
+      {
+        "block": "block_0001_0005",
+        "path": "/text",
+        "sourceSha256": "f6c9d45a06e95211c6ba317c39338dd12e195c6ea9c07ad6218bd93f77491630",
+        "spans": [
+          {
+            "start": 208,
+            "end": 212,
+            "text": "cien",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 278,
+            "end": 296,
+            "text": "(Stroustrup, 2024)",
+            "role": "citation",
+            "reading": "natural"
+          }
+        ]
+      },
+      {
+        "block": "block_0001_0008",
+        "path": "/text",
+        "sourceSha256": "6e0b54fe62c9911c3f3cdf8219dfdf9c0bab11877f987d596c517c050bd82261",
+        "spans": []
+      },
+      {
+        "block": "block_0001_0009",
+        "path": "/text",
+        "sourceSha256": "3ac8a6a6dcfaac81c3e234d864727b059e8f7f8f0d215bd269543f5ab8d9ae76",
+        "spans": []
+      },
+      {
+        "block": "block_0002_0002",
+        "path": "/text",
+        "sourceSha256": "d83a0b6bfd2baee6ca4d97006ab3b135de8a5d91fdf4cde59eef997fcdd84e39",
+        "spans": [
+          {
+            "start": 364,
+            "end": 382,
+            "text": "(Stroustrup, 2024)",
+            "role": "citation",
+            "reading": "natural"
+          }
+        ]
+      },
+      {
+        "block": "block_0002_0003",
+        "path": "/text",
+        "sourceSha256": "cd184105d1ccbea6d6fbdd256fe19f79091f2c5fa1214b43e525e3e1f17f3250",
+        "spans": [
+          {
+            "start": 212,
+            "end": 219,
+            "text": "un paso",
+            "role": "data",
+            "reading": "natural"
+          }
+        ]
+      },
+      {
+        "block": "block_0002_0004",
+        "path": "/text",
+        "sourceSha256": "db30b21d169e386e30fcaea7554a277c806ae05b6218ff80cdd359d4ca7c3cf7",
+        "spans": [
+          {
+            "start": 38,
+            "end": 45,
+            "text": "un paso",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 80,
+            "end": 89,
+            "text": "dos pasos",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 118,
+            "end": 127,
+            "text": "dos veces",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 178,
+            "end": 187,
+            "text": "dos pasos",
+            "role": "data",
+            "reading": "natural"
+          }
+        ]
+      },
+      {
+        "block": "block_0002_0007",
+        "path": "/text",
+        "sourceSha256": "5e3abc556160490f8ee650b5a4f88c9892ec8c8822129f57be66ad0987ff8ee3",
+        "spans": [
+          {
+            "start": 142,
+            "end": 145,
+            "text": "dos",
+            "role": "data",
+            "reading": "natural"
+          }
+        ]
+      },
+      {
+        "block": "block_0002_0009",
+        "path": "/text",
+        "sourceSha256": "c95a2f28d5a4ee77102ca528a60db586ae6328aa3ba41984fbe582a3fc7691a0",
+        "spans": [
+          {
+            "start": 146,
+            "end": 150,
+            "text": "Rosa",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 182,
+            "end": 191,
+            "text": "Rosa Luna",
+            "role": "output",
+            "reading": "natural"
+          },
+          {
+            "start": 370,
+            "end": 379,
+            "text": "Rosa Luna",
+            "role": "output",
+            "reading": "natural"
+          }
+        ]
+      },
+      {
+        "block": "block_0003_0002",
+        "path": "/text",
+        "sourceSha256": "62a8a4c6023055227aee51c3ff236c2026ff6a88b95f171206c2e955e140b970",
+        "spans": [
+          {
+            "start": 196,
+            "end": 199,
+            "text": "C++",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 299,
+            "end": 317,
+            "text": "(Stroustrup, 2024)",
+            "role": "citation",
+            "reading": "natural"
+          }
+        ]
+      },
+      {
+        "block": "block_0003_0003",
+        "path": "/text",
+        "sourceSha256": "93de571cb616110adb38d981a3622be7e8cd9950bb745cf4bc1241f233bfcd65",
+        "spans": [
+          {
+            "start": 16,
+            "end": 19,
+            "text": "dos",
+            "role": "data",
+            "reading": "natural"
+          }
+        ]
+      },
+      {
+        "block": "block_0003_0004",
+        "path": "/text",
+        "sourceSha256": "f72c099df9e7b723dba5a806a8799edd4bedf3140f6d478294deafa80bb4d3fe",
+        "spans": []
+      },
+      {
+        "block": "block_0003_0006",
+        "path": "/text",
+        "sourceSha256": "477b565b97828c3ef77577b9021f95f167a4c2910ea3984a2329ce1e854a185b",
+        "spans": [
+          {
+            "start": 38,
+            "end": 43,
+            "text": "Listo",
+            "role": "output",
+            "reading": "natural"
+          },
+          {
+            "start": 81,
+            "end": 90,
+            "text": "Pendiente",
+            "role": "output",
+            "reading": "natural"
+          }
+        ]
+      },
+      {
+        "block": "block_0003_0007",
+        "path": "/text",
+        "sourceSha256": "c76234880b2a6e2458ab92c90ca8c0f5bd9b6db1c063951c2b6f175c9ea903fb",
+        "spans": [
+          {
+            "start": 162,
+            "end": 180,
+            "text": "(Stroustrup, 2024)",
+            "role": "citation",
+            "reading": "natural"
+          },
+          {
+            "start": 297,
+            "end": 308,
+            "text": "Tarea lista",
+            "role": "output",
+            "reading": "natural"
+          },
+          {
+            "start": 311,
+            "end": 321,
+            "text": "Tarealista",
+            "role": "output",
+            "reading": "natural"
+          }
+        ]
+      },
+      {
+        "block": "block_0003_0010",
+        "path": "/text",
+        "sourceSha256": "495ce4c8918c00a2c6550e958f1a2aa87266ad1eab047810d05aaa5b760fa342",
+        "spans": [
+          {
+            "start": 369,
+            "end": 387,
+            "text": "(Stroustrup, 2024)",
+            "role": "citation",
+            "reading": "natural"
+          }
+        ]
+      },
+      {
+        "block": "block_0001_0004",
+        "path": "/prompt",
+        "sourceSha256": "6ea3c7c22dd7ff5a9e9fe2e08e23c6e7c6ec0b6df6558c1f2c5cde02c6b00150",
+        "spans": [
+          {
+            "start": 29,
+            "end": 33,
+            "text": "Mara",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 72,
+            "end": 90,
+            "text": "Participante: Mara",
+            "role": "output",
+            "reading": "natural"
+          },
+          {
+            "start": 122,
+            "end": 135,
+            "text": "Participante:",
+            "role": "output",
+            "reading": "natural"
+          }
+        ]
+      },
+      {
+        "block": "block_0001_0004",
+        "path": "/feedback/correct",
+        "sourceSha256": "b7deb306fc72aca61bbe3e54696c73816cac6c543aea912a429005af81a958f2",
+        "spans": [
+          {
+            "start": 0,
+            "end": 4,
+            "text": "Mara",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 48,
+            "end": 61,
+            "text": "Participante:",
+            "role": "output",
+            "reading": "natural"
+          },
+          {
+            "start": 116,
+            "end": 134,
+            "text": "Participante: Mara",
+            "role": "output",
+            "reading": "natural"
+          }
+        ]
+      },
+      {
+        "block": "block_0001_0004",
+        "path": "/feedback/incorrect",
+        "sourceSha256": "e0acff911302eb4b76751e868cd08883e242029f15efff4e3147c389fd25c8d5",
+        "spans": []
+      },
+      {
+        "block": "block_0001_0004",
+        "path": "/responses/0/label",
+        "sourceSha256": "f446ee1dd59c14c46ff60b4653616362fd217d2d16907c809d4490b37fd08c3c",
+        "spans": []
+      },
+      {
+        "block": "block_0001_0004",
+        "path": "/responses/0/sources/0/content/0/text",
+        "sourceSha256": "c8c8d66e55e5324edbb4f5fc47e1183205513658796c0e7dbe37c191a6c32da5",
+        "spans": [
+          {
+            "start": 0,
+            "end": 18,
+            "text": "Participante: Mara",
+            "role": "output",
+            "reading": "natural"
+          }
+        ]
+      },
+      {
+        "block": "block_0001_0004",
+        "path": "/responses/0/sources/1/content/0/text",
+        "sourceSha256": "04be924f05007879db19d92e77c3d99d03a4aae8d10236e37106a002ec7dd9dd",
+        "spans": [
+          {
+            "start": 10,
+            "end": 14,
+            "text": "Mara",
+            "role": "data",
+            "reading": "natural"
+          }
+        ]
+      },
+      {
+        "block": "block_0001_0004",
+        "path": "/responses/0/sources/2/content/0/text",
+        "sourceSha256": "3d73d00eeb898c3fe5ea625b863979eaaeb414ff671fd1fd962c64b063b631ae",
+        "spans": [
+          {
+            "start": 8,
+            "end": 21,
+            "text": "Participante:",
+            "role": "output",
+            "reading": "natural"
+          }
+        ]
+      },
+      {
+        "block": "block_0001_0004",
+        "path": "/responses/0/targets/0/label",
+        "sourceSha256": "e23ae5758a6b2b2a1ff6e241a56f1a89e636a53c2cfe51d6ed17cbb88ee564eb",
+        "spans": []
+      },
+      {
+        "block": "block_0001_0004",
+        "path": "/responses/0/targets/1/label",
+        "sourceSha256": "63a4eb6f1c0b5dfeb78f8b3583391fa55fadb77c1323e45ef8d240258c4729f8",
+        "spans": []
+      },
+      {
+        "block": "block_0001_0004",
+        "path": "/responses/0/targets/2/label",
+        "sourceSha256": "98e741fa5c3d2b7d42241d75bd06576b84ab13980aae16bcd2d69dd3b00e589f",
+        "spans": []
+      },
+      {
+        "block": "block_0002_0010",
+        "path": "/prompt",
+        "sourceSha256": "d020221a9defa3a626600f0fdb884a4a3c8be882b269004ac2dd33c7d8e07a8c",
+        "spans": [
+          {
+            "start": 28,
+            "end": 32,
+            "text": "Rosa",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 73,
+            "end": 82,
+            "text": "Rosa Luna",
+            "role": "output",
+            "reading": "natural"
+          }
+        ]
+      },
+      {
+        "block": "block_0002_0010",
+        "path": "/feedback/correct",
+        "sourceSha256": "9be23e14c89fba4f35e8d8d776c1b21842bf4e8d17094fbe998d44020fefd2bc",
+        "spans": []
+      },
+      {
+        "block": "block_0002_0010",
+        "path": "/feedback/incorrect",
+        "sourceSha256": "3ea929aeafce2ae5ed40e0054973645857e0204920f25ae5e9fbd0014053884c",
+        "spans": []
+      },
+      {
+        "block": "block_0002_0010",
+        "path": "/responses/0/label",
+        "sourceSha256": "01272337f48e47630d49d91d5fa8653bddd65dd57a500e833ba0087496d4bcc2",
+        "spans": []
+      },
+      {
+        "block": "block_0002_0010",
+        "path": "/responses/0/sources/0/content/0/text",
+        "sourceSha256": "aad285187fc53dd3c17833c63f98f1469376442478dc6997403a0e1412034792",
+        "spans": []
+      },
+      {
+        "block": "block_0002_0010",
+        "path": "/responses/0/sources/1/content/0/text",
+        "sourceSha256": "c8dcf8f1e4d49614af921b31b11f497c60ad0d4a705ae72cf93fa938d44cebd3",
+        "spans": []
+      },
+      {
+        "block": "block_0002_0010",
+        "path": "/responses/0/sources/2/content/0/text",
+        "sourceSha256": "44e0a2d37dd2c07687ebcb0c44673e256aa925aa15069c7a158bf2e7d74c205a",
+        "spans": [
+          {
+            "start": 56,
+            "end": 65,
+            "text": "Rosa Luna",
+            "role": "data",
+            "reading": "natural"
+          }
+        ]
+      },
+      {
+        "block": "block_0002_0010",
+        "path": "/responses/0/sources/3/content/0/text",
+        "sourceSha256": "6b2edda60f308ed5345769cda38c4041ba117bc21a0931a65ccd68e5adad0982",
+        "spans": [
+          {
+            "start": 31,
+            "end": 40,
+            "text": "Rosa Luna",
+            "role": "output",
+            "reading": "natural"
+          }
+        ]
+      },
+      {
+        "block": "block_0002_0010",
+        "path": "/responses/0/targets/0/label",
+        "sourceSha256": "20c980856c8aca76d2d594ac2689b38742a16594d6dfb96e3e1c660d247dc5b0",
+        "spans": []
+      },
+      {
+        "block": "block_0002_0010",
+        "path": "/responses/0/targets/1/label",
+        "sourceSha256": "51b33a305e69168ff2ae5e4da330b687752dc2abc59119bcb6ebbf898cac8c23",
+        "spans": []
+      },
+      {
+        "block": "block_0002_0010",
+        "path": "/responses/0/targets/2/label",
+        "sourceSha256": "ce98bf9d4a160dc1c4fc1d40110a6f543acb23881dc799faa41d1711bad68faf",
+        "spans": []
+      },
+      {
+        "block": "block_0002_0010",
+        "path": "/responses/0/targets/3/label",
+        "sourceSha256": "945c445572a9b74e8eca1096ee0fccf3206b37ba2961056ae73c2aa8a6c0c813",
+        "spans": []
+      },
+      {
+        "block": "block_0003_0008",
+        "path": "/prompt",
+        "sourceSha256": "87a13bf938f770d0cb36ee88396749e543f986b2c7b4c31d04054e2f59782bdc",
+        "spans": [
+          {
+            "start": 36,
+            "end": 49,
+            "text": "Entrega lista",
+            "role": "output",
+            "reading": "natural"
+          }
+        ]
+      },
+      {
+        "block": "block_0003_0008",
+        "path": "/feedback/correct",
+        "sourceSha256": "c4c61b44f4df73c79a54ccc72940bb34924be637f97e562f5fa3fa8debd5ec2f",
+        "spans": [
+          {
+            "start": 0,
+            "end": 13,
+            "text": "Entrega lista",
+            "role": "output",
+            "reading": "natural"
+          },
+          {
+            "start": 41,
+            "end": 58,
+            "text": "Entrega pendiente",
+            "role": "output",
+            "reading": "natural"
+          },
+          {
+            "start": 79,
+            "end": 91,
+            "text": "Entregalista",
+            "role": "output",
+            "reading": "natural"
+          }
+        ]
+      },
+      {
+        "block": "block_0003_0008",
+        "path": "/feedback/incorrect",
+        "sourceSha256": "d4688f6415dcc200d07f80c4c3c15926d8f883c37882edb054e756252d746eb5",
+        "spans": []
+      },
+      {
+        "block": "block_0003_0008",
+        "path": "/responses/0/label",
+        "sourceSha256": "6a03de644063321e5b73d5d8b30a7c6511a6a7b9dd956917d0aa1ea18d9cfd3b",
+        "spans": []
+      },
+      {
+        "block": "block_0003_0008",
+        "path": "/responses/0/sources/0/content/0/text",
+        "sourceSha256": "8e03fa379bc3125391d46f460c2d2727b75b3f12994877ea95ff8a08f962b51e",
+        "spans": [
+          {
+            "start": 0,
+            "end": 17,
+            "text": "Entrega pendiente",
+            "role": "output",
+            "reading": "natural"
+          }
+        ]
+      },
+      {
+        "block": "block_0003_0008",
+        "path": "/responses/0/sources/1/content/0/text",
+        "sourceSha256": "1b80c1acd06bc2c1fb0eeb49571633abcb500ff58aa34744fa1af23dceab8890",
+        "spans": [
+          {
+            "start": 0,
+            "end": 12,
+            "text": "Entregalista",
+            "role": "output",
+            "reading": "natural"
+          }
+        ]
+      },
+      {
+        "block": "block_0003_0008",
+        "path": "/responses/0/sources/2/content/0/text",
+        "sourceSha256": "eaf9b74eb22e01d9c1944a33165bd3c2bbf9989f2f0aa513b549f336f51d7266",
+        "spans": [
+          {
+            "start": 0,
+            "end": 13,
+            "text": "Entrega lista",
+            "role": "output",
+            "reading": "natural"
+          }
+        ]
+      },
+      {
+        "block": "block_0003_0008",
+        "path": "/responses/0/targets/0/label",
+        "sourceSha256": "ff545a550b69fd5cf084b072cc4edc9b9f06991ba54b9d0f886509e1ed63c198",
+        "spans": []
+      },
+      {
+        "block": "block_0003_0008",
+        "path": "/responses/0/targets/1/label",
+        "sourceSha256": "5182fd83b4e8b5fee5be38d7ffd1cb0df8178fc5c183822e19043105fd6e0a28",
+        "spans": []
+      },
+      {
+        "block": "block_0003_0008",
+        "path": "/responses/0/targets/2/label",
+        "sourceSha256": "1a6e7187d9673bd24ae6d67bb94459480be297d548700f1004187f5d2374a865",
+        "spans": [
+          {
+            "start": 10,
+            "end": 15,
+            "text": "lista",
+            "role": "output",
+            "reading": "natural"
+          }
+        ]
+      }
+    ],
+    "rootFields": [
+      {
+        "path": "/title",
+        "sourceSha256": "b230744d9afb62d7148e9cc78cad0065d1e1d3efc91dc813fd9b26a7348d5cdf",
+        "spans": []
+      }
+    ]
+  },
+  "courseEdition": {
+    "version": 1,
+    "courseId": "cpp_fundamentals",
+    "locale": "es",
+    "generation": 1,
+    "id": "cpp_desde_cero_2026"
+  },
+  "stateLayout": {
+    "version": 2,
+    "locale": "es",
+    "origin": [
+      {
+        "id": "page_0000",
+        "blocks": [
+          {
+            "id": "block_0000_0000",
+            "sha256": "a30d0555835b703d0dd5a90aabb0134813afd11904b5364f69f03b01695f6d7a"
+          },
+          {
+            "id": "block_0000_0001",
+            "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+          },
+          {
+            "id": "block_0000_0002",
+            "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+          },
+          {
+            "id": "block_0000_0003",
+            "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+          },
+          {
+            "id": "block_0000_0004",
+            "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+          },
+          {
+            "id": "block_0000_0005",
+            "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+          },
+          {
+            "id": "block_0000_0006",
+            "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+          },
+          {
+            "id": "block_0000_0007",
+            "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+          },
+          {
+            "id": "block_0000_0008",
+            "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+          },
+          {
+            "id": "block_0000_0009",
+            "sha256": "b1fc4628aefe2a15d55a2818ad484a0a8bf100634785a6178bfa8adc8d32522a"
+          },
+          {
+            "id": "block_0000_0010",
+            "sha256": "5a25f39deebfacf70f31e9ed31d9496f83df3471d72bfcca57fec1493aee69a1"
+          },
+          {
+            "id": "block_0000_0011",
+            "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+          },
+          {
+            "id": "block_0000_0012",
+            "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+          }
+        ]
+      },
+      {
+        "id": "page_0001",
+        "blocks": [
+          {
+            "id": "block_0001_0000",
+            "sha256": "a30d0555835b703d0dd5a90aabb0134813afd11904b5364f69f03b01695f6d7a"
+          },
+          {
+            "id": "block_0001_0001",
+            "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+          },
+          {
+            "id": "block_0001_0002",
+            "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+          },
+          {
+            "id": "block_0001_0003",
+            "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+          },
+          {
+            "id": "block_0001_0004",
+            "sha256": "b3bea02d3322623a7f745ebeba05ebd8831db8dea8b030d89f85ecf4b194d586"
+          },
+          {
+            "id": "block_0001_0005",
+            "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+          },
+          {
+            "id": "block_0001_0006",
+            "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+          },
+          {
+            "id": "block_0001_0007",
+            "sha256": "acc75fa794b6074a1c406bd587b206f4710b02083e45a69ed5904143c6f7415f"
+          },
+          {
+            "id": "block_0001_0008",
+            "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+          },
+          {
+            "id": "block_0001_0009",
+            "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+          },
+          {
+            "id": "block_0001_0010",
+            "sha256": "3b8e7e3c359f011092ef92b6c535e56525771e6ae5b2b6b238a36a46827fdff4"
+          }
+        ]
+      },
+      {
+        "id": "page_0002",
+        "blocks": [
+          {
+            "id": "block_0002_0000",
+            "sha256": "a30d0555835b703d0dd5a90aabb0134813afd11904b5364f69f03b01695f6d7a"
+          },
+          {
+            "id": "block_0002_0001",
+            "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+          },
+          {
+            "id": "block_0002_0002",
+            "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+          },
+          {
+            "id": "block_0002_0003",
+            "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+          },
+          {
+            "id": "block_0002_0004",
+            "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+          },
+          {
+            "id": "block_0002_0005",
+            "sha256": "c6ddd6856e93c647bda50d1427ffedd622f4f63b7f6187130f1028d1de03c57a"
+          },
+          {
+            "id": "block_0002_0006",
+            "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+          },
+          {
+            "id": "block_0002_0007",
+            "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+          },
+          {
+            "id": "block_0002_0008",
+            "sha256": "960a441afba0fbb07369982f00afeefc407897380963245bdbab38ca4256c624"
+          },
+          {
+            "id": "block_0002_0009",
+            "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+          },
+          {
+            "id": "block_0002_0010",
+            "sha256": "e78b47595bb2db0219462b6d3c95377f0bed673f11d45434329fa0a97ad31102"
+          }
+        ]
+      },
+      {
+        "id": "page_0003",
+        "blocks": [
+          {
+            "id": "block_0003_0000",
+            "sha256": "a30d0555835b703d0dd5a90aabb0134813afd11904b5364f69f03b01695f6d7a"
+          },
+          {
+            "id": "block_0003_0001",
+            "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+          },
+          {
+            "id": "block_0003_0002",
+            "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+          },
+          {
+            "id": "block_0003_0003",
+            "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+          },
+          {
+            "id": "block_0003_0004",
+            "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+          },
+          {
+            "id": "block_0003_0005",
+            "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+          },
+          {
+            "id": "block_0003_0006",
+            "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+          },
+          {
+            "id": "block_0003_0007",
+            "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+          },
+          {
+            "id": "block_0003_0008",
+            "sha256": "d16dae7fafc4e2b664c9b2e619ab7423487b2b03bfc1148bf1ccd8138e0339eb"
+          },
+          {
+            "id": "block_0003_0009",
+            "sha256": "bb4dba4d2d672ca65ba44660a08ba2544e1ea05507e539f728f1d1c8d61fac89"
+          },
+          {
+            "id": "block_0003_0010",
+            "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+          },
+          {
+            "id": "block_0003_0011",
+            "sha256": "fde910752c06fc13c00c1100386d7116df43af57ee3b91bdf6869a25ff676753"
+          }
+        ]
+      }
+    ],
+    "current": [
+      {
+        "id": "page_0000",
+        "blocks": [
+          "block_0000_0000",
+          "block_0000_0001",
+          "block_0000_0002",
+          "block_0000_0003",
+          "block_0000_0004",
+          "block_0000_0005",
+          "block_0000_0006",
+          "block_0000_0007",
+          "block_0000_0008",
+          "block_0000_0009",
+          "block_0000_0010",
+          "block_0000_0011",
+          "block_0000_0012"
+        ]
+      },
+      {
+        "id": "page_0001",
+        "blocks": [
+          "block_0001_0000",
+          "block_0001_0001",
+          "block_0001_0002",
+          "block_0001_0003",
+          "block_0001_0004",
+          "block_0001_0005",
+          "block_0001_0006",
+          "block_0001_0007",
+          "block_0001_0008",
+          "block_0001_0009",
+          "block_0001_0010"
+        ]
+      },
+      {
+        "id": "page_0002",
+        "blocks": [
+          "block_0002_0000",
+          "block_0002_0001",
+          "block_0002_0002",
+          "block_0002_0003",
+          "block_0002_0004",
+          "block_0002_0005",
+          "block_0002_0006",
+          "block_0002_0007",
+          "block_0002_0008",
+          "block_0002_0009",
+          "block_0002_0010"
+        ]
+      },
+      {
+        "id": "page_0003",
+        "blocks": [
+          "block_0003_0000",
+          "block_0003_0001",
+          "block_0003_0002",
+          "block_0003_0003",
+          "block_0003_0004",
+          "block_0003_0005",
+          "block_0003_0006",
+          "block_0003_0007",
+          "block_0003_0008",
+          "block_0003_0009",
+          "block_0003_0010",
+          "block_0003_0011"
+        ]
+      }
+    ],
+    "family": {
+      "es": {
+        "sha256": "44ce541a160abea6bd41834ad27a15006dc9872a4b3cf27257dcc5befc6c1826",
+        "origin": [
+          {
+            "id": "page_0000",
+            "blocks": [
+              {
+                "id": "block_0000_0000",
+                "sha256": "a30d0555835b703d0dd5a90aabb0134813afd11904b5364f69f03b01695f6d7a"
+              },
+              {
+                "id": "block_0000_0001",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              },
+              {
+                "id": "block_0000_0002",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              },
+              {
+                "id": "block_0000_0003",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              },
+              {
+                "id": "block_0000_0004",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              },
+              {
+                "id": "block_0000_0005",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              },
+              {
+                "id": "block_0000_0006",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              },
+              {
+                "id": "block_0000_0007",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              },
+              {
+                "id": "block_0000_0008",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              },
+              {
+                "id": "block_0000_0009",
+                "sha256": "b1fc4628aefe2a15d55a2818ad484a0a8bf100634785a6178bfa8adc8d32522a"
+              },
+              {
+                "id": "block_0000_0010",
+                "sha256": "5a25f39deebfacf70f31e9ed31d9496f83df3471d72bfcca57fec1493aee69a1"
+              },
+              {
+                "id": "block_0000_0011",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              },
+              {
+                "id": "block_0000_0012",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              }
+            ]
+          },
+          {
+            "id": "page_0001",
+            "blocks": [
+              {
+                "id": "block_0001_0000",
+                "sha256": "a30d0555835b703d0dd5a90aabb0134813afd11904b5364f69f03b01695f6d7a"
+              },
+              {
+                "id": "block_0001_0001",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              },
+              {
+                "id": "block_0001_0002",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              },
+              {
+                "id": "block_0001_0003",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              },
+              {
+                "id": "block_0001_0004",
+                "sha256": "b3bea02d3322623a7f745ebeba05ebd8831db8dea8b030d89f85ecf4b194d586"
+              },
+              {
+                "id": "block_0001_0005",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              },
+              {
+                "id": "block_0001_0006",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              },
+              {
+                "id": "block_0001_0007",
+                "sha256": "acc75fa794b6074a1c406bd587b206f4710b02083e45a69ed5904143c6f7415f"
+              },
+              {
+                "id": "block_0001_0008",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              },
+              {
+                "id": "block_0001_0009",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              },
+              {
+                "id": "block_0001_0010",
+                "sha256": "3b8e7e3c359f011092ef92b6c535e56525771e6ae5b2b6b238a36a46827fdff4"
+              }
+            ]
+          },
+          {
+            "id": "page_0002",
+            "blocks": [
+              {
+                "id": "block_0002_0000",
+                "sha256": "a30d0555835b703d0dd5a90aabb0134813afd11904b5364f69f03b01695f6d7a"
+              },
+              {
+                "id": "block_0002_0001",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              },
+              {
+                "id": "block_0002_0002",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              },
+              {
+                "id": "block_0002_0003",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              },
+              {
+                "id": "block_0002_0004",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              },
+              {
+                "id": "block_0002_0005",
+                "sha256": "c6ddd6856e93c647bda50d1427ffedd622f4f63b7f6187130f1028d1de03c57a"
+              },
+              {
+                "id": "block_0002_0006",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              },
+              {
+                "id": "block_0002_0007",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              },
+              {
+                "id": "block_0002_0008",
+                "sha256": "960a441afba0fbb07369982f00afeefc407897380963245bdbab38ca4256c624"
+              },
+              {
+                "id": "block_0002_0009",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              },
+              {
+                "id": "block_0002_0010",
+                "sha256": "e78b47595bb2db0219462b6d3c95377f0bed673f11d45434329fa0a97ad31102"
+              }
+            ]
+          },
+          {
+            "id": "page_0003",
+            "blocks": [
+              {
+                "id": "block_0003_0000",
+                "sha256": "a30d0555835b703d0dd5a90aabb0134813afd11904b5364f69f03b01695f6d7a"
+              },
+              {
+                "id": "block_0003_0001",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              },
+              {
+                "id": "block_0003_0002",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              },
+              {
+                "id": "block_0003_0003",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              },
+              {
+                "id": "block_0003_0004",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              },
+              {
+                "id": "block_0003_0005",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              },
+              {
+                "id": "block_0003_0006",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              },
+              {
+                "id": "block_0003_0007",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              },
+              {
+                "id": "block_0003_0008",
+                "sha256": "d16dae7fafc4e2b664c9b2e619ab7423487b2b03bfc1148bf1ccd8138e0339eb"
+              },
+              {
+                "id": "block_0003_0009",
+                "sha256": "bb4dba4d2d672ca65ba44660a08ba2544e1ea05507e539f728f1d1c8d61fac89"
+              },
+              {
+                "id": "block_0003_0010",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              },
+              {
+                "id": "block_0003_0011",
+                "sha256": "fde910752c06fc13c00c1100386d7116df43af57ee3b91bdf6869a25ff676753"
+              }
+            ]
+          }
+        ]
+      }
+    },
+    "additions": [],
+    "editorial": []
+  }
+}

@@ -1,0 +1,4131 @@
+{
+  "id": "cpp_fundamentals__edition_es_1__objetos_y_estado__enteros_y_aproximaciones",
+  "title": "Enteros y números con parte fraccionaria",
+  "compilerPuzzlesRequired": true,
+  "pages": [
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "Contar piezas y medir longitudes"
+        },
+        {
+          "type": "paragraph",
+          "text": "En una caja hay siete piezas completas. La variable piezas puede guardar ese recuento como int, el tipo entero que ya usaste.\n\nAhora mide una barra de dos metros y medio. Para guardar también ese medio metro, escribe double como tipo de la variable longitud. En el código escribe 2.5 con punto decimal. El nombre «coma flotante» se refiere a la forma de representar el número. En los literales de C++ como 2.5 se escribe un punto (Köppe et al., 2023; Stroustrup, 2024)."
+        },
+        {
+          "type": "code",
+          "language": "cpp",
+          "code": "#include <iostream>\n\nint main() {\n    int piezas = 7;\n    double longitud = 2.5;\n\n    std::cout << piezas << \" \" << longitud;\n\n    return 0;\n}\n"
+        },
+        {
+          "type": "paragraph",
+          "text": "En el ejemplo de arriba, piezas guarda 7. longitud guarda 2.5. La instrucción de std::cout muestra primero el recuento, después un espacio y al final la medida. En la consola verás 7 2.5."
+        },
+        {
+          "type": "multiple_choice",
+          "question": "Una barra mide 1.75 metros. Entre los dos tipos numéricos que acabas de usar, ¿cuál permite guardar también los tres cuartos de metro?",
+          "options": [
+            "int",
+            "double",
+            "bool"
+          ],
+          "correctIndex": 1,
+          "explanation": "double permite valores con parte fraccionaria; int representa enteros."
+        }
+      ]
+    },
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "Leer el número escrito y el tipo de la variable"
+        },
+        {
+          "type": "paragraph",
+          "text": "Un literal escribe un valor directamente en el código. 7 tiene tipo int y 7.0 tiene tipo double. Los dos representan siete unidades (Köppe et al., 2023).\n\nEn double longitud_metros = 7;, la palabra double indica el tipo de la variable. El literal 7 tiene tipo int. Cuando se crea longitud_metros, el programa convierte el siete a double para guardarlo en ella. Obtener un valor de otro tipo a partir del primero se llama conversión (Stroustrup, 2024).\n\nCon el formato de salida que usamos aquí, std::cout muestra 7 tanto al escribir el entero siete como al escribir el siete guardado en longitud_metros. Para saber el tipo de una variable, mira su declaración en el código."
+        },
+        {
+          "type": "output_prediction",
+          "language": "cpp",
+          "question": "Predice la salida exacta, sin escribir las comillas del código.",
+          "code": "#include <iostream>\n\nint main() {\n    int entero = 6;\n    double decimal = 6.0;\n\n    std::cout << entero << \" \" << decimal;\n\n    return 0;\n}\n",
+          "answers": [
+            "6 6"
+          ],
+          "explanation": "La primera consulta de std::cout lee el valor de entero, declarado como int con el literal 6. La segunda consulta lee el valor de decimal, declarado como double con el literal 6.0. Los dos valores representan seis unidades. Con el formato inicial de std::cout, el renglón de la salida es 6 6."
+        },
+        {
+          "type": "multiple_choice",
+          "question": "Se imprime 7 a partir de una variable double. ¿Qué sabemos de su tipo?",
+          "options": [
+            "Sigue siendo double aunque la salida no muestre punto decimal.",
+            "Se convirtió en int porque la salida no incluye parte fraccionaria.",
+            "La inserción en cout cambió el objeto a un valor de texto."
+          ],
+          "correctIndex": 0,
+          "explanation": "La variable se declaró como double. std::cout lee su valor y escribe 7 con el formato que usamos."
+        },
+        {
+          "type": "fill_code",
+          "language": "cpp",
+          "question": "Entre los dos tipos numéricos estudiados hasta aquí, completa el que conserva 3.5 litros sin convertirlo a entero.",
+          "code": "#include <iostream>\n\nint main() {\n    ___ litros = 3.5;\n    std::cout << litros;\n\n    return 0;\n}\n",
+          "answers": [
+            "double"
+          ],
+          "explanation": "Al escribir double en el hueco, litros conserva tres litros y medio. std::cout lee ese valor y muestra 3.5."
+        }
+      ]
+    },
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "Qué ocurre al dividir dos enteros"
+        },
+        {
+          "type": "paragraph",
+          "text": "El signo / divide la cantidad de la izquierda entre la de la derecha. A cada cantidad que interviene en el cálculo se le llama operando. En 7 / 2, el divisor es 2 y el resultado se llama cociente. En los ejercicios de división de esta lección usamos divisores mayores que cero. Por ejemplo, al dividir una barra en dos partes iguales, el divisor es dos porque esa es la cantidad de partes que queremos obtener.\n\nImagina una barra de siete metros que se corta en dos partes iguales. La mitad mide tres metros y medio. Si escribes 7 / 2 en C++, los operandos son enteros. La operación conserva los tres metros completos y descarta el medio metro. El cociente entero es 3 (Köppe et al., 2023; Stroustrup, 2024)."
+        },
+        {
+          "type": "paragraph",
+          "text": "Para conservar medio metro, escribe 7.0 / 2. 7.0 aporta un valor de tipo double. Antes de dividir, el valor del 2 se convierte al mismo tipo para hacer el cálculo. El cociente es 3.5. También puedes escribir 7 / 2.0 (Köppe et al., 2023; Stroustrup, 2024)."
+        },
+        {
+          "type": "code",
+          "language": "cpp",
+          "code": "#include <iostream>\n\nint main() {\n    std::cout << 7 / 2 << \"\\n\";\n    std::cout << 7.0 / 2;\n\n    return 0;\n}\n"
+        },
+        {
+          "type": "paragraph",
+          "text": "La instrucción std::cout << 7 / 2 << \"\\n\"; divide dos números enteros. La consola muestra 3 y el salto de línea deja preparado el segundo renglón. La instrucción std::cout << 7.0 / 2; usa un double en la división. Por eso aparece 3.5 en el segundo renglón de la salida."
+        },
+        {
+          "type": "output_prediction",
+          "language": "cpp",
+          "question": "Predice la salida exacta, sin escribir las comillas del código.",
+          "code": "#include <iostream>\n\nint main() {\n    int total = 9;\n    int grupos = 4;\n\n    std::cout << total / grupos << \" \" << total / 4.0;\n\n    return 0;\n}\n",
+          "answers": [
+            "2 2.25"
+          ],
+          "explanation": "La primera división usa los enteros 9 y 4. Da 2. La segunda usa 4.0 como divisor y conserva el cuarto de unidad. La consola muestra 2 2.25."
+        },
+        {
+          "type": "multiple_choice",
+          "question": "Necesitas repartir una longitud de 7 metros entre dos partes y conservar la mitad de metro. ¿Qué cálculo cumple esa intención?",
+          "options": [
+            "Mostrar el texto \"7 / 2\"",
+            "7 / 2",
+            "7.0 / 2"
+          ],
+          "correctIndex": 2,
+          "explanation": "7.0 participa como double y la división conserva 3.5. El literal entre comillas sólo sería texto."
+        }
+      ]
+    },
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "Seguir el resultado desde la división hasta la consola"
+        },
+        {
+          "type": "paragraph",
+          "text": "Sigue la instrucción double mitad = 7 / 2; en dos pasos.\n\n1. A la derecha del signo igual se divide 7 entre 2. Como los dos son enteros, la división da 3.\n2. A la izquierda, double mitad guarda ese tres como double. Si std::cout lee la variable, muestra 3.\n\nPara guardar tres y medio, conserva la fracción desde la división. Puedes escribir double mitad = 7.0 / 2;. El operando 7.0 ya tiene tipo double al dividir. El cociente que llega a mitad es 3.5 (Stroustrup, 2024)."
+        },
+        {
+          "type": "output_prediction",
+          "language": "cpp",
+          "question": "Predice la salida exacta, sin escribir las comillas del código.",
+          "code": "#include <iostream>\n\nint main() {\n    double primera = 13 / 2;\n    double segunda = 13.0 / 2;\n\n    std::cout << primera << \" \" << segunda;\n\n    return 0;\n}\n",
+          "answers": [
+            "6 6.5"
+          ],
+          "explanation": "13 / 2 da el entero 6 y primera guarda ese valor como double. 13.0 / 2 da 6.5 y segunda lo guarda. La consola muestra 6 6.5."
+        },
+        {
+          "type": "inline_fill_code",
+          "question": "Escribe el tipo de cada variable en su declaración. La variable cajas debe contar ocho cajas completas. La variable metros debe guardar una longitud de un metro y medio.",
+          "template": "#include <iostream>\n\nint main() {\n    [] cajas = 8;\n    [] metros = 1.5;\n    std::cout << cajas << \" \" << metros;\n\n    return 0;\n}\n",
+          "answers": [
+            "int",
+            "double"
+          ],
+          "answerAlternatives": [
+            [
+              "int",
+              "signed",
+              "signed int",
+              "int signed"
+            ],
+            [
+              "double"
+            ]
+          ],
+          "reviewFeedback": "Mira los nombres cajas y metros en las dos declaraciones. Una variable cuenta objetos completos. ¿Cuál debe guardar además el medio metro de la longitud?",
+          "explanation": "Escribimos int en la línea de cajas porque contamos ocho cajas enteras. Escribimos double en la línea de metros porque queremos guardar un metro y medio. La consola muestra 8 1.5. El espacio sale del texto entre comillas en la línea de std::cout (Stroustrup, 2024).\n\nSi escribiste signed int, int signed o signed en el primer hueco, las tres formas nombran el mismo tipo que int. En el resto de la lección usaremos int (Köppe et al., 2023)."
+        },
+        {
+          "type": "fill_code",
+          "language": "cpp",
+          "code": "#include <iostream>\n\nint main() {\n    int cinta_metros = 11;\n\n    double longitud_por_parte = cinta_metros / ___;\n\n    std::cout << longitud_por_parte;\n\n    return 0;\n}\n",
+          "answers": [
+            "2.0",
+            "2."
+          ],
+          "id": "p1u2l5_reparar_divisor_literal",
+          "question": "Quieres repartir once metros de cinta en dos partes iguales. En el hueco después de /, escribe el número dos como double. Escribe el dos con punto decimal. Puedes poner un cero después del punto. Cada parte debe medir 5.5 metros.",
+          "reviewFeedback": "Mira el tipo de cinta_metros a la izquierda de la división. El hueco debe aportar un dos de tipo double.",
+          "explanation": "Al escribir 2.0 después de /, el divisor tiene tipo double. Para dividir, el programa convierte a double el once que lee de cinta_metros. Once entre dos da cinco y medio, y la consola muestra 5.5. También puedes escribir 2. como divisor. En esa forma el punto pertenece al literal y puedes omitir el cero que iría después."
+        }
+      ]
+    },
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "Calcular sin cambiar las cantidades de partida"
+        },
+        {
+          "type": "paragraph",
+          "text": "Cuando un programa hace un cálculo, puedes necesitar tanto el resultado como las cantidades que usaste para obtenerlo. Por ejemplo, si ancho y largo guardan las medidas de una mesa, puedes guardar su área en otra variable llamada area. Así podrás mostrar cuánto mide el área y consultar después el ancho que usaste para calcularla."
+        },
+        {
+          "type": "paragraph",
+          "text": "En el siguiente programa, el rectángulo mide un metro y medio de ancho y dos metros de largo. La expresión ancho * largo multiplica esas longitudes. Su resultado es un área de tres metros cuadrados. La declaración de area guarda ese resultado. Como la multiplicación sólo lee ancho, esa variable conserva el metro y medio inicial (Stroustrup, 2024)."
+        },
+        {
+          "type": "output_prediction",
+          "language": "cpp",
+          "question": "Predice la salida exacta, sin escribir las comillas del código.",
+          "code": "#include <iostream>\n\nint main() {\n    double ancho = 1.5;\n    double largo = 2.0;\n\n    double area = ancho * largo;\n\n    std::cout << area << \" \" << ancho;\n\n    return 0;\n}\n",
+          "answers": [
+            "3 1.5"
+          ],
+          "explanation": "La multiplicación da 3. La declaración de area guarda ese valor. ancho conserva 1.5. Al leer ambas variables, std::cout muestra 3 1.5."
+        },
+        {
+          "type": "fill_code",
+          "language": "cpp",
+          "question": "Completa sólo el dígito de la parte entera del literal que permite conservar 4.5 al dividir nueve entre dos.",
+          "code": "#include <iostream>\n\nint main() {\n    double cociente = ___.0 / 2;\n\n    std::cout << cociente;\n\n    return 0;\n}\n",
+          "answers": [
+            "9"
+          ],
+          "explanation": "Con el dígito 9 antes del punto, el literal completo es 9.0 y tiene tipo double. La división de nueve entre dos da cuatro y medio. La variable cociente guarda ese resultado y std::cout muestra 4.5."
+        },
+        {
+          "type": "heading",
+          "text": "Sumar la longitud antes de repartirla"
+        },
+        {
+          "type": "paragraph",
+          "text": "Hay cinco metros de cinta. Añades un metro y luego repartes toda la cinta en dos partes iguales. Para saber cuánto mide cada parte, primero necesitas sumar las dos longitudes. En el programa de abajo, los paréntesis de (longitud_metros + 1.0) / 2 indican que se calcula la suma antes de dividirla entre dos. Observa también qué parte de la cinta se divide en la expresión escrita sin paréntesis (Stroustrup, 2024)."
+        },
+        {
+          "type": "code",
+          "language": "cpp",
+          "code": "#include <iostream>\n\nint main() {\n    double longitud_metros = 5.0;\n\n    double parte_del_total = (longitud_metros + 1.0) / 2;\n    double longitud_con_media_adicional = longitud_metros + 1.0 / 2;\n\n    std::cout << parte_del_total << \" \" << longitud_con_media_adicional;\n\n    return 0;\n}\n"
+        },
+        {
+          "type": "paragraph",
+          "text": "Con los paréntesis sumas 5 + 1 para obtener seis metros. Después divides esos seis metros entre dos. parte_del_total guarda 3.\n\nEn la otra expresión, la división se aplica solo a 1.0 / 2. Ese cálculo da medio metro. Se suma a los cinco metros y longitud_con_media_adicional guarda 5.5. La consola muestra 3 5.5."
+        },
+        {
+          "type": "fill_code",
+          "language": "cpp",
+          "code": "#include <iostream>\n\nint main() {\n    double largo_metros = 4.0;\n    double extension_metros = 1.5;\n\n    double longitud_por_parte = ___ / 2;\n\n    std::cout << longitud_por_parte;\n\n    return 0;\n}\n",
+          "answers": [
+            "(largo_metros + extension_metros)",
+            "(extension_metros + largo_metros)"
+          ],
+          "id": "p1u2l5_escribir_agrupacion",
+          "question": "Un tramo mide cuatro metros y su extensión mide uno y medio. En el hueco, escribe la suma de las dos variables entre paréntesis. Debe aparecer 2.75 al dividir la suma.",
+          "reviewFeedback": "Fíjate en qué cantidad quedará justo a la izquierda de /. La división debe aplicarse al resultado de la suma.",
+          "explanation": "Los paréntesis agrupan la suma de los dos tramos. La suma da 5.5. Dividir esos cinco metros y medio entre dos produce 2.75 y la consola muestra 2.75."
+        }
+      ]
+    },
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "Expresar la unidad y reconocer los límites de un tipo"
+        },
+        {
+          "type": "paragraph",
+          "text": "Una distancia de dos y medio puede estar en metros o en kilómetros. En double distancia_metros = 2.5;, el nombre dice que el dato está en metros. Incluye la unidad también en la consola. Así, quien lea Distancia: 2.5 m sabrá qué mide ese número.\n\nImagina una cinta métrica que va de cero a diez metros. El rango te dice hasta dónde puedes medir con la cinta. Si solo tiene marcas cada centímetro, puedes leer los centímetros, pero tendrás que estimar cualquier medida que caiga entre dos marcas. Esa separación da una idea de la precisión. Al guardar números, el tipo también tiene límites de tamaño y puede distinguir números cercanos hasta cierto punto (Stroustrup, 2024)."
+        },
+        {
+          "type": "paragraph",
+          "text": "Una cinta de 2.5 metros mide dos metros enteros más medio metro. El double que usamos en Windows puede guardar ese medio metro exactamente.\n\nPara entender por qué, imagina que divides un metro en dos. Cada pieza mide medio metro. Si divides esas dos piezas otra vez, tienes cuatro cuartos de metro. Después tendrías ocho octavos. De ahí viene la palabra «binaria». Cada paso divide las piezas en dos. Puedes sumar piezas de estos tamaños para formar una medida. Por ejemplo, una mitad más un cuarto son tres cuartos (Stroustrup, 2024).\n\nUna décima es una de diez partes iguales. Para formar un décimo exacto con piezas del mismo tamaño, tendrías que poder repartir todas las piezas en diez grupos iguales. Al partir siempre en dos obtienes dos, cuatro, ocho, dieciséis y así sucesivamente. Para obtener un múltiplo de diez también haría falta un factor de cinco. Al escribir 0.1, double guarda un número muy cercano a un décimo. A eso le llamamos una aproximación (Köppe et al., 2023)."
+        },
+        {
+          "type": "paragraph",
+          "text": "Un int tiene un entero mínimo y otro máximo. Si una suma matemática supera ese máximo, el resultado queda fuera del rango. Ese problema se llama desbordamiento. Si el resultado queda fuera del rango de int, C++ no garantiza qué hará el programa al llegar a esa operación aunque el código compile. Los recuentos que vas a usar aquí son pequeños y caben en el tipo (Köppe et al., 2023)."
+        },
+        {
+          "type": "multiple_choice",
+          "question": "La consola dice Longitud: 2.5 m. ¿Qué te aclara la letra m que aparece después del número?",
+          "options": [
+            "Que cualquier cálculo con ese número será exacto.",
+            "Que la longitud que muestra la consola es de 2.5 metros.",
+            "Que el valor dejó de ser double."
+          ],
+          "correctIndex": 1,
+          "explanation": "La letra m indica que 2.5 es una medida en metros."
+        },
+        {
+          "type": "multiple_choice",
+          "question": "Quieres guardar una medida de dos metros y medio y otra de una décima de metro. ¿Qué afirmación describe con qué precisión puede representarlas una variable double en este equipo?",
+          "options": [
+            "Representa exactamente todo decimal que podamos escribir.",
+            "double guarda exactamente dos metros y medio. Para una décima de metro guarda un número muy cercano al valor de la medida.",
+            "Admite fracciones y puede guardar magnitudes sin ningún límite."
+          ],
+          "correctIndex": 1,
+          "explanation": "double guarda ciertos valores exactamente, como 2.5 en este equipo. Otros, como una décima, se representan con un valor cercano. Además hay límites para la magnitud que se puede guardar."
+        }
+      ]
+    },
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "Construir el cálculo de un reparto"
+        },
+        {
+          "type": "paragraph",
+          "text": "Una barra de nueve metros se corta en dos partes del mismo tamaño. Escribe en el editor un programa que calcule la longitud de una parte.\n\n1. Guarda los nueve metros en una variable llamada longitud_metros. Elige el tipo pensando en la división que harás después.\n2. Guarda el recuento de dos partes en la variable int partes.\n3. Divide la longitud entre el número de partes y guarda el cociente en longitud_por_parte. Elige un tipo que conserve el medio metro.\n4. Usa std::cout para mostrar el rótulo, la longitud calculada y la unidad.\n\nPulsa «Compilar, ejecutar y comprobar». La consola debe mostrar Parte: 4.5 m. Puedes añadir un salto de línea al final. La app también comprueba que el resultado cambia al variar partes."
+        },
+        {
+          "type": "cpp_compiler",
+          "initialCode": "#include <iostream>\n\nint main() {\n    // Escribe aqui tu programa.\n    \n    return 0;\n}\n",
+          "outputCheck": {
+            "inputComparison": "exact",
+            "cases": [
+              {
+                "standardInput": "",
+                "outputs": [
+                  "Parte: 4.5 m",
+                  "Parte: 4.5 m\n"
+                ],
+                "explanation": "La mitad de nueve metros conserva la fracción necesaria: dos partes de 4.5 metros reúnen la longitud inicial."
+              }
+            ]
+          }
+        },
+        {
+          "type": "paragraph",
+          "text": "Si obtienes Parte: 4 m, mira la división. Comprueba el tipo de longitud_metros y el de partes. Con dos enteros, el medio metro se pierde en esa línea. Al calcular con nueve metros, el resultado te ayuda a reconocer ese error."
+        },
+        {
+          "type": "multiple_choice",
+          "correctIndex": 1,
+          "id": "p1u2l5_elegir_prueba",
+          "question": "Dos programas cortan una cinta en dos partes iguales. Para una cinta de ocho metros, el primero calcula 8 / 2 y el segundo calcula 8.0 / 2. Los dos muestran Parte: 4 m.\n\nVas a probar otra longitud. Usa esa misma longitud en los dos programas y sigue dividiendo entre dos. ¿Con qué longitud verás un número distinto en cada consola?",
+          "options": [
+            "Diez metros",
+            "Nueve metros",
+            "Seis metros"
+          ],
+          "explanation": "Prueba con nueve metros. 9 / 2 da 4 porque divide dos enteros. 9.0 / 2 da 4.5 porque el primer número es double. Así puedes ver si el programa conserva el medio metro.\n\nCon diez metros, los dos mostrarían Parte: 5 m. Con seis, los dos mostrarían Parte: 3 m."
+        }
+      ]
+    },
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "Seguir tu solución con nueve metros"
+        },
+        {
+          "type": "code",
+          "language": "cpp",
+          "code": "#include <iostream>\n\nint main() {\n    double longitud_metros = 9.0;\n    int partes = 2;\n\n    double longitud_por_parte = longitud_metros / partes;\n\n    std::cout << \"Parte: \" << longitud_por_parte << \" m\";\n\n    return 0;\n}\n"
+        },
+        {
+          "type": "paragraph",
+          "text": "Mira la declaración de longitud_por_parte. A la derecha del signo igual, longitud_metros aporta nueve metros como double y partes aporta el recuento de dos. La división calcula 4.5. A la izquierda, longitud_por_parte guarda ese valor. En la línea de std::cout, el rótulo y la unidad rodean ese valor para mostrar Parte: 4.5 m.\n\nEn la siguiente predicción hay dos variables. Una copia la lectura inicial. Después cambia la lectura original. Sigue qué guarda cada variable antes y después del cambio."
+        },
+        {
+          "type": "output_prediction",
+          "language": "cpp",
+          "question": "Predice la salida exacta, sin escribir las comillas del código.",
+          "code": "#include <iostream>\n\nint main() {\n    double lectura = 1.5;\n\n    double anterior = lectura;\n\n    lectura += 2.0;\n\n    std::cout << anterior << \" \" << lectura;\n\n    return 0;\n}\n",
+          "answers": [
+            "1.5 3.5"
+          ],
+          "explanation": "anterior guarda una copia de 1.5. Después, lectura += 2.0; cambia solo lectura, que pasa a 3.5. La consola muestra 1.5 3.5."
+        },
+        {
+          "type": "multiple_choice",
+          "question": "Al evaluar 9 / 2, el programa obtiene cuatro. Necesitas que calcule cuatro y medio. ¿Qué debes revisar en la división para saber por qué se perdió el medio?",
+          "options": [
+            "Si basta añadir .0 al mensaje impreso sin cambiar el cálculo.",
+            "Si el destino double garantiza conservar la fracción ya descartada.",
+            "Revisar los tipos de los números a la izquierda y a la derecha de /. Si ambos son enteros, la división descarta la parte fraccionaria."
+          ],
+          "correctIndex": 2,
+          "explanation": "Mira primero 9 / 2. La expresión usa dos enteros y da 4. Ese es el valor que recibe la variable donde guardas la división, incluso si es de tipo double."
+        },
+        {
+          "type": "output_prediction",
+          "language": "cpp",
+          "question": "Lee este programa y predice la salida de la variante con operandos enteros. Escribe el mensaje de la consola con sus espacios y sin añadir un salto de línea. La variable que recibe el cociente es double: distingue su tipo del tipo de los operandos de la división.",
+          "code": "#include <iostream>\n\nint main() {\n    int longitud_metros = 9;\n    int partes = 2;\n\n    double longitud_por_parte = longitud_metros / partes;\n\n    std::cout << \"Parte: \" << longitud_por_parte << \" m\";\n\n    return 0;\n}\n",
+          "answers": [
+            "Parte: 4 m"
+          ],
+          "explanation": "La división utiliza dos valores int y produce el cociente entero 4. Ese resultado se guarda después en longitud_por_parte, de tipo double. El almacenamiento posterior no reconstruye la fracción descartada, y la salida es Parte: 4 m.",
+          "outputComparison": "exact",
+          "reviewFeedback": "Identifica el tipo de los dos operandos que aparecen a ambos lados de /. Calcula la expresión antes de considerar el tipo de la variable que recibe su resultado. Conserva también el rótulo, los espacios y la unidad del mensaje.",
+          "id": "cpp_fundamentals__objetos_y_estado__enteros_y_aproximaciones__prediccion_reparto_entero"
+        },
+        {
+          "type": "inline_fill_code",
+          "question": "El programa debe repartir nueve metros en dos partes iguales y mostrar Parte: 4.5 m. En el hueco de la declaración de longitud_metros, escribe int o double. El valor inicial está escrito como 9 y la variable partes ya es de tipo int. Elige el tipo de longitud_metros que permita conservar el medio metro al dividir.\n\nEn los dos huecos de la división escribe los nombres de las variables. A la izquierda de / va la longitud que se reparte. A la derecha va el número de partes.",
+          "language": "cpp",
+          "template": "#include <iostream>\n\nint main() {\n    [] longitud_metros = 9;\n    int partes = 2;\n\n    double longitud_por_parte = [] / [];\n\n    std::cout << \"Parte: \" << longitud_por_parte << \" m\";\n\n    return 0;\n}\n",
+          "answers": [
+            "double",
+            "longitud_metros",
+            "partes"
+          ],
+          "id": "cpp_fundamentals__objetos_y_estado__enteros_y_aproximaciones__tipo_y_operandos_reparto",
+          "reviewFeedback": "Mira la expresión a la derecha del signo igual cuando el programa calcula la longitud de una parte. ¿Qué variable guarda la longitud total y cuál guarda el número de partes? Para saber si la división descarta el medio metro, revisa el tipo de longitud_metros y el de partes.",
+          "explanation": "Los huecos se completan con double, longitud_metros y partes, en ese orden. La primera definición hace que longitud_metros sea double, aunque su inicializador se escriba como el literal entero 9. El valor se convierte al tipo de la variable al inicializarla; esa variable ya aporta un operando de coma flotante cuando se realiza la división (Stroustrup, 2024).\n\nSe divide la longitud disponible entre el número de partes. Para nueve metros y dos partes iguales, el resultado es 4.5 metros. Si ambos operandos fueran enteros, 9 / 2 produciría 4; guardarlo después en un double no recuperaría la media unidad descartada. Dos partes de cuatro metros sumarían ocho, de modo que ese cálculo no cumpliría el reparto solicitado (Stroustrup, 2024).\n\nLa salida Parte: 4.5 m combina el resultado calculado con el rótulo, los espacios y la unidad que ya están escritos. Así se comprueban dos aspectos distintos: el cálculo conserva la fracción necesaria y el mensaje comunica qué longitud representa. Cambiar sólo el tipo que recibe el cociente, sin revisar los operandos, no garantiza esas dos condiciones."
+        },
+        {
+          "type": "heading",
+          "text": "Reparar un reparto que deja fuera parte de la longitud"
+        },
+        {
+          "type": "paragraph",
+          "text": "Tienes cuatro metros y medio de cable. Añades un metro y cortas el total en dos partes iguales. El editor ya tiene las tres cantidades guardadas. Tal como está escrita la expresión, solo se divide el tramo adicional.\n\nCambia la expresión que guarda el valor inicial de longitud_por_parte. Agrupa los dos tramos con paréntesis y divide el total entre partes. Usa los tres nombres del editor.\n\nPulsa «Compilar, ejecutar y comprobar». La consola debe mostrar Parte: 2.75 m. Puedes añadir un salto de línea al final."
+        },
+        {
+          "type": "cpp_compiler",
+          "initialCode": "#include <iostream>\n\nint main() {\n    double longitud_metros = 4.5;\n    int tramo_adicional_metros = 1;\n    int partes = 2;\n\n    double longitud_por_parte = longitud_metros + tramo_adicional_metros / partes;\n\n    std::cout << \"Parte: \" << longitud_por_parte << \" m\";\n\n    return 0;\n}\n",
+          "outputCheck": {
+            "inputComparison": "exact",
+            "cases": [
+              {
+                "standardInput": "",
+                "outputs": [
+                  "Parte: 2.75 m",
+                  "Parte: 2.75 m\n"
+                ]
+              }
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "Soluciones del reparto y del tramo adicional"
+        },
+        {
+          "type": "note",
+          "text": "Localiza la expresión que se calcula en cada solución. Después busca qué variable recibe ese resultado y en qué línea std::cout lo muestra."
+        },
+        {
+          "type": "paragraph",
+          "text": "Para repartir nueve metros, el siguiente programa guarda la longitud como double. Divide nueve entre dos y guarda 4.5 en parte. El texto visible es Parte: 4.5 m."
+        },
+        {
+          "type": "code",
+          "language": "cpp",
+          "code": "#include <iostream>\n\nint main() {\n    double longitud{9.0};\n\n    double parte{longitud / 2.0};\n\n    std::cout << \"Parte: \" << parte << \" m\";\n\n    return 0;\n}\n"
+        },
+        {
+          "type": "paragraph",
+          "text": "Las llaves de double longitud{9.0}; y double parte{longitud / 2.0}; proporcionan los valores iniciales. Aquí se usan dos operandos de tipo double en la división. En tu primer editor la longitud era double y el número de partes era int. Con los dos valores de este ejemplo, basta con que uno sea double para obtener un cociente de 4.5 (Stroustrup, 2024)."
+        },
+        {
+          "type": "heading",
+          "text": "Repartir la longitud total del cable"
+        },
+        {
+          "type": "paragraph",
+          "text": "En la línea de longitud_por_parte, los paréntesis agrupan longitud_metros + tramo_adicional_metros. Esa suma da cinco metros y medio. Al dividir el total entre dos, obtienes dos metros y tres cuartos por parte."
+        },
+        {
+          "type": "code",
+          "language": "cpp",
+          "code": "#include <iostream>\n\nint main() {\n    double longitud_metros = 4.5;\n    int tramo_adicional_metros = 1;\n    int partes = 2;\n\n    double longitud_por_parte = (longitud_metros + tramo_adicional_metros) / partes;\n\n    std::cout << \"Parte: \" << longitud_por_parte << \" m\";\n\n    return 0;\n}\n"
+        },
+        {
+          "type": "paragraph",
+          "text": "En el programa inicial, tramo_adicional_metros / partes divide dos enteros. Uno entre dos produce 0. Al sumarlo a la longitud, la consola muestra Parte: 4.5 m. En la reparación, la suma de los dos tramos ya aporta un valor de tipo double a la división. Al mostrar el resultado, la consola dice Parte: 2.75 m."
+        }
+      ]
+    }
+  ],
+  "activityAfter": [
+    {
+      "activity": "block_0007_0009",
+      "requires": [
+        "block_0006_0002"
+      ]
+    }
+  ],
+  "referenceAfter": [
+    {
+      "activity": "block_0006_0002",
+      "blocks": [
+        "block_0007_0000",
+        "block_0007_0001",
+        "block_0007_0002"
+      ]
+    },
+    {
+      "activity": "block_0007_0009",
+      "blocks": [
+        "block_0008_0000",
+        "block_0008_0001",
+        "block_0008_0002",
+        "block_0008_0003",
+        "block_0008_0004",
+        "block_0008_0005",
+        "block_0008_0006",
+        "block_0008_0007",
+        "block_0008_0008"
+      ]
+    }
+  ],
+  "textSemantics": {
+    "version": 1,
+    "fields": [
+      {
+        "block": "block_0000_0003",
+        "path": "/text",
+        "sourceSha256": "85825e63bdc4425607999c09e787a29a86de53d7b094e95bc20531c1800403ca",
+        "spans": [
+          {
+            "start": 25,
+            "end": 31,
+            "text": "piezas",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 39,
+            "end": 40,
+            "text": "7",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 42,
+            "end": 50,
+            "text": "longitud",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 58,
+            "end": 61,
+            "text": "2.5",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 81,
+            "end": 90,
+            "text": "std::cout",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 181,
+            "end": 186,
+            "text": "7 2.5",
+            "role": "output",
+            "reading": "natural"
+          }
+        ]
+      },
+      {
+        "block": "block_0005_0001",
+        "path": "/text",
+        "sourceSha256": "2709a8001996b106d869ed2711e81b1bfb41677495bc02a18d247dedbbcdb95b",
+        "spans": [
+          {
+            "start": 71,
+            "end": 101,
+            "text": "double distancia_metros = 2.5;",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 202,
+            "end": 218,
+            "text": "Distancia: 2.5 m",
+            "role": "output",
+            "reading": "natural"
+          },
+          {
+            "start": 655,
+            "end": 673,
+            "text": "(Stroustrup, 2024)",
+            "role": "citation",
+            "reading": "natural"
+          }
+        ]
+      },
+      {
+        "block": "block_0003_0003",
+        "path": "/explanation",
+        "sourceSha256": "ce330860e0889c5ce3129130ee97b2fb11923806c2b4bff58e559d63b3f26f1a",
+        "spans": [
+          {
+            "start": 11,
+            "end": 14,
+            "text": "int",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 30,
+            "end": 35,
+            "text": "cajas",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 83,
+            "end": 89,
+            "text": "double",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 105,
+            "end": 111,
+            "text": "metros",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 173,
+            "end": 178,
+            "text": "8 1.5",
+            "role": "output",
+            "reading": "natural"
+          },
+          {
+            "start": 236,
+            "end": 245,
+            "text": "std::cout",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 246,
+            "end": 264,
+            "text": "(Stroustrup, 2024)",
+            "role": "citation",
+            "reading": "natural"
+          },
+          {
+            "start": 281,
+            "end": 291,
+            "text": "signed int",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 293,
+            "end": 303,
+            "text": "int signed",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 306,
+            "end": 312,
+            "text": "signed",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 375,
+            "end": 378,
+            "text": "int",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 415,
+            "end": 418,
+            "text": "int",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 419,
+            "end": 439,
+            "text": "(Köppe et al., 2023)",
+            "role": "citation",
+            "reading": "natural"
+          }
+        ]
+      },
+      {
+        "block": "block_0000_0000",
+        "path": "/text",
+        "sourceSha256": "e654cc8158a954f967f0404ca296cc43ed65edae821881694c8b4a19961c3316",
+        "spans": []
+      },
+      {
+        "block": "block_0000_0001",
+        "path": "/text",
+        "sourceSha256": "b6819c650ddeaed7fe2817146064e43a5ab2531f4e1fab7603b62c210a0055a9",
+        "spans": [
+          {
+            "start": 52,
+            "end": 58,
+            "text": "piezas",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 91,
+            "end": 94,
+            "text": "int",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 217,
+            "end": 223,
+            "text": "double",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 249,
+            "end": 257,
+            "text": "longitud",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 280,
+            "end": 283,
+            "text": "2.5",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 406,
+            "end": 409,
+            "text": "2.5",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 430,
+            "end": 468,
+            "text": "(Köppe et al., 2023; Stroustrup, 2024)",
+            "role": "citation",
+            "reading": "natural"
+          }
+        ]
+      },
+      {
+        "block": "block_0000_0004",
+        "path": "/question",
+        "sourceSha256": "dbdbca98b11a75d9ebe42ce266437cb34a07431329f3179b63efb39343c29bd4",
+        "spans": [
+          {
+            "start": 15,
+            "end": 19,
+            "text": "1.75",
+            "role": "data",
+            "reading": "natural"
+          }
+        ]
+      },
+      {
+        "block": "block_0000_0004",
+        "path": "/explanation",
+        "sourceSha256": "4b0623592a902269dad74dbed64760958f6ac34b8298a2502372284c3b995b39",
+        "spans": [
+          {
+            "start": 0,
+            "end": 6,
+            "text": "double",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 47,
+            "end": 50,
+            "text": "int",
+            "role": "cpp",
+            "reading": "technical"
+          }
+        ]
+      },
+      {
+        "block": "block_0000_0004",
+        "path": "/options/0",
+        "sourceSha256": "6da88c34ba124c41f977db66a4fc5c1a951708d285c81bb0d47c3206f4c27ca8",
+        "spans": [
+          {
+            "start": 0,
+            "end": 3,
+            "text": "int",
+            "role": "cpp",
+            "reading": "technical"
+          }
+        ]
+      },
+      {
+        "block": "block_0000_0004",
+        "path": "/options/1",
+        "sourceSha256": "2ce06a9e7f8c3e6bf85a6067d0b220fb0ad03de983053942a90c43e73ec76f89",
+        "spans": [
+          {
+            "start": 0,
+            "end": 6,
+            "text": "double",
+            "role": "cpp",
+            "reading": "technical"
+          }
+        ]
+      },
+      {
+        "block": "block_0000_0004",
+        "path": "/options/2",
+        "sourceSha256": "b760f44fa5965c2474a3b471467a22c43185152129295af588b022ae50b50903",
+        "spans": [
+          {
+            "start": 0,
+            "end": 4,
+            "text": "bool",
+            "role": "cpp",
+            "reading": "technical"
+          }
+        ]
+      },
+      {
+        "block": "block_0001_0000",
+        "path": "/text",
+        "sourceSha256": "b0dfa896f8f58b38a1c124287316b82b711d1ce3eeafc1a8f7c39d03dda3449f",
+        "spans": []
+      },
+      {
+        "block": "block_0001_0001",
+        "path": "/text",
+        "sourceSha256": "e76bb045df612ed6a303b4410fa24e61c498ae807fdc88472f6f4021e2dc6bf0",
+        "spans": [
+          {
+            "start": 55,
+            "end": 56,
+            "text": "7",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 68,
+            "end": 71,
+            "text": "int",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 74,
+            "end": 77,
+            "text": "7.0",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 89,
+            "end": 95,
+            "text": "double",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 132,
+            "end": 152,
+            "text": "(Köppe et al., 2023)",
+            "role": "citation",
+            "reading": "natural"
+          },
+          {
+            "start": 158,
+            "end": 185,
+            "text": "double longitud_metros = 7;",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 198,
+            "end": 204,
+            "text": "double",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 247,
+            "end": 248,
+            "text": "7",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 260,
+            "end": 263,
+            "text": "int",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 280,
+            "end": 295,
+            "text": "longitud_metros",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 330,
+            "end": 336,
+            "text": "double",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 432,
+            "end": 450,
+            "text": "(Stroustrup, 2024)",
+            "role": "citation",
+            "reading": "natural"
+          },
+          {
+            "start": 495,
+            "end": 504,
+            "text": "std::cout",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 513,
+            "end": 514,
+            "text": "7",
+            "role": "output",
+            "reading": "natural"
+          },
+          {
+            "start": 587,
+            "end": 602,
+            "text": "longitud_metros",
+            "role": "cpp",
+            "reading": "technical"
+          }
+        ]
+      },
+      {
+        "block": "block_0001_0002",
+        "path": "/question",
+        "sourceSha256": "d0f4d249fc7c7c003e9cd6b940b13325752db34a99ec5132a834a79ef1ed2e7b",
+        "spans": []
+      },
+      {
+        "block": "block_0001_0002",
+        "path": "/explanation",
+        "sourceSha256": "f1ae3af47bb95d59d37cb999e51a6db2e0b85155c7a7f2e7797678c5d6560c6f",
+        "spans": [
+          {
+            "start": 23,
+            "end": 32,
+            "text": "std::cout",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 49,
+            "end": 55,
+            "text": "entero",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 72,
+            "end": 75,
+            "text": "int",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 91,
+            "end": 92,
+            "text": "6",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 130,
+            "end": 137,
+            "text": "decimal",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 154,
+            "end": 160,
+            "text": "double",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 176,
+            "end": 179,
+            "text": "6.0",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 250,
+            "end": 259,
+            "text": "std::cout",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 288,
+            "end": 291,
+            "text": "6 6",
+            "role": "output",
+            "reading": "natural"
+          }
+        ]
+      },
+      {
+        "block": "block_0001_0003",
+        "path": "/question",
+        "sourceSha256": "7b50f0a52786dd8a7f558f945d8eb6d8020b2d15dc92b053288d44732a819b84",
+        "spans": [
+          {
+            "start": 11,
+            "end": 12,
+            "text": "7",
+            "role": "output",
+            "reading": "natural"
+          },
+          {
+            "start": 38,
+            "end": 44,
+            "text": "double",
+            "role": "cpp",
+            "reading": "technical"
+          }
+        ]
+      },
+      {
+        "block": "block_0001_0003",
+        "path": "/explanation",
+        "sourceSha256": "f8e2172134f56801c77a92fb5a938e9399924a49d1fe5f85a51a273aa9e3b2ec",
+        "spans": [
+          {
+            "start": 28,
+            "end": 34,
+            "text": "double",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 36,
+            "end": 45,
+            "text": "std::cout",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 69,
+            "end": 70,
+            "text": "7",
+            "role": "output",
+            "reading": "natural"
+          }
+        ]
+      },
+      {
+        "block": "block_0001_0003",
+        "path": "/options/0",
+        "sourceSha256": "030958a05e385fa2409f34f17ab897ca3fcf62e38c6ad5a9c128a503b92487cb",
+        "spans": [
+          {
+            "start": 13,
+            "end": 19,
+            "text": "double",
+            "role": "cpp",
+            "reading": "technical"
+          }
+        ]
+      },
+      {
+        "block": "block_0001_0003",
+        "path": "/options/1",
+        "sourceSha256": "d5147001f809b9c831f332c5928444a48401d1a5949dc1cbbf2f75d6a06acb7d",
+        "spans": [
+          {
+            "start": 16,
+            "end": 19,
+            "text": "int",
+            "role": "cpp",
+            "reading": "technical"
+          }
+        ]
+      },
+      {
+        "block": "block_0001_0003",
+        "path": "/options/2",
+        "sourceSha256": "3784940f64402af3c8c9dce2f9755d1f40a9e4dfd53d236f64d330258bf1f92c",
+        "spans": [
+          {
+            "start": 16,
+            "end": 20,
+            "text": "cout",
+            "role": "cpp",
+            "reading": "technical"
+          }
+        ]
+      },
+      {
+        "block": "block_0001_0004",
+        "path": "/question",
+        "sourceSha256": "4eac25ec816923a6ce4325573c3adc0a19ae5eab4126372433eeec738b9c5287",
+        "spans": [
+          {
+            "start": 10,
+            "end": 13,
+            "text": "dos",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 78,
+            "end": 81,
+            "text": "3.5",
+            "role": "data",
+            "reading": "natural"
+          }
+        ]
+      },
+      {
+        "block": "block_0001_0004",
+        "path": "/explanation",
+        "sourceSha256": "7690f5d9ed4f8e53a3391b1d56e5ae33c0d59d95cffd470b1efcc0d8d45f4e47",
+        "spans": [
+          {
+            "start": 12,
+            "end": 18,
+            "text": "double",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 32,
+            "end": 38,
+            "text": "litros",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 69,
+            "end": 78,
+            "text": "std::cout",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 103,
+            "end": 106,
+            "text": "3.5",
+            "role": "output",
+            "reading": "natural"
+          }
+        ]
+      },
+      {
+        "block": "block_0002_0000",
+        "path": "/text",
+        "sourceSha256": "34f6202f024fdc1081990b318eb888b7e9c61a79adeeaaf72858384c2ccfa024",
+        "spans": []
+      },
+      {
+        "block": "block_0002_0001",
+        "path": "/text",
+        "sourceSha256": "c320f549d61c96fb26708a3c1bc99d25fc0397ae0f9f82a77bc7692748bd1a6c",
+        "spans": [
+          {
+            "start": 9,
+            "end": 10,
+            "text": "/",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 140,
+            "end": 145,
+            "text": "7 / 2",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 161,
+            "end": 162,
+            "text": "2",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 315,
+            "end": 318,
+            "text": "dos",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 349,
+            "end": 352,
+            "text": "dos",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 529,
+            "end": 534,
+            "text": "7 / 2",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 667,
+            "end": 668,
+            "text": "3",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 669,
+            "end": 707,
+            "text": "(Köppe et al., 2023; Stroustrup, 2024)",
+            "role": "citation",
+            "reading": "natural"
+          }
+        ]
+      },
+      {
+        "block": "block_0002_0005",
+        "path": "/question",
+        "sourceSha256": "d0f4d249fc7c7c003e9cd6b940b13325752db34a99ec5132a834a79ef1ed2e7b",
+        "spans": []
+      },
+      {
+        "block": "block_0002_0005",
+        "path": "/explanation",
+        "sourceSha256": "889f4f33aa4760c68190837fa442a779acf6d53aac908c5727ede2a80f0a16e5",
+        "spans": [
+          {
+            "start": 36,
+            "end": 37,
+            "text": "9",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 40,
+            "end": 41,
+            "text": "4",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 46,
+            "end": 47,
+            "text": "2",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 64,
+            "end": 67,
+            "text": "4.0",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 132,
+            "end": 138,
+            "text": "2 2.25",
+            "role": "output",
+            "reading": "natural"
+          }
+        ]
+      },
+      {
+        "block": "block_0002_0006",
+        "path": "/question",
+        "sourceSha256": "084b8d92420c84aafbfd5c251ceed63f6e5b6782275ec822235ce519107a3fe2",
+        "spans": [
+          {
+            "start": 35,
+            "end": 36,
+            "text": "7",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 50,
+            "end": 53,
+            "text": "dos",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 76,
+            "end": 90,
+            "text": "mitad de metro",
+            "role": "data",
+            "reading": "natural"
+          }
+        ]
+      },
+      {
+        "block": "block_0002_0006",
+        "path": "/explanation",
+        "sourceSha256": "13221a4d52c6f7750e76abccbde4c4f2ea5a4d805b75f46950f6eba9d460b0d3",
+        "spans": [
+          {
+            "start": 0,
+            "end": 3,
+            "text": "7.0",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 19,
+            "end": 25,
+            "text": "double",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 49,
+            "end": 52,
+            "text": "3.5",
+            "role": "output",
+            "reading": "natural"
+          }
+        ]
+      },
+      {
+        "block": "block_0002_0006",
+        "path": "/options/0",
+        "sourceSha256": "7e8f003daee2af87a678f3191a072c6773a3c915a78abd6e29ff7b930cbc62b7",
+        "spans": [
+          {
+            "start": 18,
+            "end": 23,
+            "text": "7 / 2",
+            "role": "output",
+            "reading": "natural"
+          }
+        ]
+      },
+      {
+        "block": "block_0002_0006",
+        "path": "/options/1",
+        "sourceSha256": "8949e0f5f22e591edf1c81b65b45a0007aba65a0b0338d36e38c02a4cfc69ee1",
+        "spans": [
+          {
+            "start": 0,
+            "end": 5,
+            "text": "7 / 2",
+            "role": "cpp",
+            "reading": "technical"
+          }
+        ]
+      },
+      {
+        "block": "block_0002_0006",
+        "path": "/options/2",
+        "sourceSha256": "5a9072b136514cab1b0b64301469b701f9bc10cd0ed47713ef5bb31d9a1b2e42",
+        "spans": [
+          {
+            "start": 0,
+            "end": 7,
+            "text": "7.0 / 2",
+            "role": "cpp",
+            "reading": "technical"
+          }
+        ]
+      },
+      {
+        "block": "block_0003_0000",
+        "path": "/text",
+        "sourceSha256": "18935d2dbedebce62aea751ecad4268838dfd2d831656dccb027dbd675092f3f",
+        "spans": []
+      },
+      {
+        "block": "block_0003_0001",
+        "path": "/text",
+        "sourceSha256": "c4c5911d4739fdbc1ceb5b0101c39ca184bb9e2be10ee62ba08d0ddf173d2d56",
+        "spans": [
+          {
+            "start": 21,
+            "end": 42,
+            "text": "double mitad = 7 / 2;",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 100,
+            "end": 101,
+            "text": "7",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 108,
+            "end": 109,
+            "text": "2",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 152,
+            "end": 153,
+            "text": "3",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 174,
+            "end": 186,
+            "text": "double mitad",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 208,
+            "end": 214,
+            "text": "double",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 219,
+            "end": 228,
+            "text": "std::cout",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 254,
+            "end": 255,
+            "text": "3",
+            "role": "output",
+            "reading": "natural"
+          },
+          {
+            "start": 341,
+            "end": 364,
+            "text": "double mitad = 7.0 / 2;",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 378,
+            "end": 381,
+            "text": "7.0",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 396,
+            "end": 402,
+            "text": "double",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 439,
+            "end": 444,
+            "text": "mitad",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 448,
+            "end": 451,
+            "text": "3.5",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 452,
+            "end": 470,
+            "text": "(Stroustrup, 2024)",
+            "role": "citation",
+            "reading": "natural"
+          }
+        ]
+      },
+      {
+        "block": "block_0003_0002",
+        "path": "/question",
+        "sourceSha256": "d0f4d249fc7c7c003e9cd6b940b13325752db34a99ec5132a834a79ef1ed2e7b",
+        "spans": []
+      },
+      {
+        "block": "block_0003_0002",
+        "path": "/explanation",
+        "sourceSha256": "9ce4cc99d315fc6ba7477ddb0dc91ef19b11c1d8f96586a8dfb7bbf2b62bf8db",
+        "spans": [
+          {
+            "start": 0,
+            "end": 6,
+            "text": "13 / 2",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 20,
+            "end": 21,
+            "text": "6",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 24,
+            "end": 31,
+            "text": "primera",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 54,
+            "end": 60,
+            "text": "double",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 62,
+            "end": 70,
+            "text": "13.0 / 2",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 74,
+            "end": 77,
+            "text": "6.5",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 80,
+            "end": 87,
+            "text": "segunda",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 118,
+            "end": 123,
+            "text": "6 6.5",
+            "role": "output",
+            "reading": "natural"
+          }
+        ]
+      },
+      {
+        "block": "block_0003_0003",
+        "path": "/question",
+        "sourceSha256": "a7367a75336f8b0f627188c8e182e434b2183909a424c49ba97538c25e263c84",
+        "spans": [
+          {
+            "start": 64,
+            "end": 69,
+            "text": "cajas",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 116,
+            "end": 122,
+            "text": "metros",
+            "role": "cpp",
+            "reading": "technical"
+          }
+        ]
+      },
+      {
+        "block": "block_0003_0003",
+        "path": "/reviewFeedback",
+        "sourceSha256": "81fbcdf8d5d88a33a100fc1441e4bc79cd561e5be347a2ebd99ec9a9c57887e9",
+        "spans": [
+          {
+            "start": 17,
+            "end": 22,
+            "text": "cajas",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 25,
+            "end": 31,
+            "text": "metros",
+            "role": "cpp",
+            "reading": "technical"
+          }
+        ]
+      },
+      {
+        "block": "block_0004_0000",
+        "path": "/text",
+        "sourceSha256": "fb3a83f228b28290cfdc71c4c1cbfe5b1221b2baf70151fd0a5d39ee07755c34",
+        "spans": []
+      },
+      {
+        "block": "block_0004_0001",
+        "path": "/text",
+        "sourceSha256": "f74e1c909b78e6ecf780f9336cc882fdfaad6198027d2a98eb6800bf530695cf",
+        "spans": [
+          {
+            "start": 135,
+            "end": 140,
+            "text": "ancho",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 143,
+            "end": 148,
+            "text": "largo",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 230,
+            "end": 234,
+            "text": "area",
+            "role": "cpp",
+            "reading": "technical"
+          }
+        ]
+      },
+      {
+        "block": "block_0004_0002",
+        "path": "/text",
+        "sourceSha256": "ffb24a812d2a3519e4f8b6c40511d44e64b0a6991982c5373f5278559708f0dc",
+        "spans": [
+          {
+            "start": 107,
+            "end": 120,
+            "text": "ancho * largo",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 217,
+            "end": 221,
+            "text": "area",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 276,
+            "end": 281,
+            "text": "ancho",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 330,
+            "end": 348,
+            "text": "(Stroustrup, 2024)",
+            "role": "citation",
+            "reading": "natural"
+          }
+        ]
+      },
+      {
+        "block": "block_0004_0003",
+        "path": "/question",
+        "sourceSha256": "d0f4d249fc7c7c003e9cd6b940b13325752db34a99ec5132a834a79ef1ed2e7b",
+        "spans": []
+      },
+      {
+        "block": "block_0004_0003",
+        "path": "/explanation",
+        "sourceSha256": "af169738e852cb0161daa21e75f7db9196417de4322852b45ad007b3bb6b2a55",
+        "spans": [
+          {
+            "start": 21,
+            "end": 22,
+            "text": "3",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 42,
+            "end": 46,
+            "text": "area",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 65,
+            "end": 70,
+            "text": "ancho",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 80,
+            "end": 83,
+            "text": "1.5",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 110,
+            "end": 119,
+            "text": "std::cout",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 128,
+            "end": 133,
+            "text": "3 1.5",
+            "role": "output",
+            "reading": "natural"
+          }
+        ]
+      },
+      {
+        "block": "block_0004_0004",
+        "path": "/question",
+        "sourceSha256": "74b892c503ecb5978dca6549e2f6489802769f5b277712e8cb9fb037597aa341",
+        "spans": [
+          {
+            "start": 77,
+            "end": 80,
+            "text": "4.5",
+            "role": "output",
+            "reading": "natural"
+          },
+          {
+            "start": 92,
+            "end": 97,
+            "text": "nueve",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 104,
+            "end": 107,
+            "text": "dos",
+            "role": "data",
+            "reading": "natural"
+          }
+        ]
+      },
+      {
+        "block": "block_0004_0004",
+        "path": "/explanation",
+        "sourceSha256": "993671d9a86bc38a6d2e7e588d30d6d2e0081890ce4d2e5d070633e6af74cd2b",
+        "spans": [
+          {
+            "start": 14,
+            "end": 15,
+            "text": "9",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 56,
+            "end": 59,
+            "text": "9.0",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 73,
+            "end": 79,
+            "text": "double",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 143,
+            "end": 151,
+            "text": "cociente",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 175,
+            "end": 184,
+            "text": "std::cout",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 193,
+            "end": 196,
+            "text": "4.5",
+            "role": "output",
+            "reading": "natural"
+          }
+        ]
+      },
+      {
+        "block": "block_0005_0000",
+        "path": "/text",
+        "sourceSha256": "80bbbe52772a757a29563edae187cc824fa593d2f4a2baa6a49e8ce03d862668",
+        "spans": []
+      },
+      {
+        "block": "block_0005_0004",
+        "path": "/question",
+        "sourceSha256": "aa8f4e95cf1df668cd196ec8f938c6b28dca97a5b74aa758987a01037829c4d3",
+        "spans": [
+          {
+            "start": 16,
+            "end": 31,
+            "text": "Longitud: 2.5 m",
+            "role": "output",
+            "reading": "natural"
+          },
+          {
+            "start": 57,
+            "end": 58,
+            "text": "m",
+            "role": "output",
+            "reading": "natural"
+          }
+        ]
+      },
+      {
+        "block": "block_0005_0004",
+        "path": "/explanation",
+        "sourceSha256": "23fdf9ad2f5c01a1814c753b6391aa9f7d2fc3e3c494b93beed2a3910528894f",
+        "spans": [
+          {
+            "start": 9,
+            "end": 10,
+            "text": "m",
+            "role": "output",
+            "reading": "natural"
+          },
+          {
+            "start": 22,
+            "end": 25,
+            "text": "2.5",
+            "role": "output",
+            "reading": "natural"
+          }
+        ]
+      },
+      {
+        "block": "block_0005_0004",
+        "path": "/options/0",
+        "sourceSha256": "bc4588de48ca6f3027efa77bea14b632b7cf4707ad06082bd60cd56ff2f5405a",
+        "spans": []
+      },
+      {
+        "block": "block_0005_0004",
+        "path": "/options/1",
+        "sourceSha256": "4013d6322ea88d5de5d5e10eaf0b664ec1f0090d1c71606913bd3f165314d2c7",
+        "spans": [
+          {
+            "start": 45,
+            "end": 48,
+            "text": "2.5",
+            "role": "data",
+            "reading": "natural"
+          }
+        ]
+      },
+      {
+        "block": "block_0005_0004",
+        "path": "/options/2",
+        "sourceSha256": "f1a4e1ce2569d8baddc798af247a10f204d57d48f4a7567302605bd25713f9d1",
+        "spans": [
+          {
+            "start": 25,
+            "end": 31,
+            "text": "double",
+            "role": "cpp",
+            "reading": "technical"
+          }
+        ]
+      },
+      {
+        "block": "block_0005_0005",
+        "path": "/question",
+        "sourceSha256": "7e268199cf03067751a98bd51000ab8bb3836b2b4e07ed5b4f97550d52b04181",
+        "spans": [
+          {
+            "start": 157,
+            "end": 163,
+            "text": "double",
+            "role": "cpp",
+            "reading": "technical"
+          }
+        ]
+      },
+      {
+        "block": "block_0005_0005",
+        "path": "/explanation",
+        "sourceSha256": "195156c717871eb13ef39b56d09af78874cbf63d2f7d6ac9a2aa8eb12ba5d780",
+        "spans": [
+          {
+            "start": 0,
+            "end": 6,
+            "text": "double",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 48,
+            "end": 51,
+            "text": "2.5",
+            "role": "data",
+            "reading": "natural"
+          }
+        ]
+      },
+      {
+        "block": "block_0005_0005",
+        "path": "/options/0",
+        "sourceSha256": "b6445e7f933ead64b7a9528136c9814b38765693cd03be78280a43a9fb35a40a",
+        "spans": []
+      },
+      {
+        "block": "block_0005_0005",
+        "path": "/options/1",
+        "sourceSha256": "9b8e16a544802f1bc01e77aa20d04e539934e6c288b6ded0a960c8e75d62558d",
+        "spans": [
+          {
+            "start": 0,
+            "end": 6,
+            "text": "double",
+            "role": "cpp",
+            "reading": "technical"
+          }
+        ]
+      },
+      {
+        "block": "block_0005_0005",
+        "path": "/options/2",
+        "sourceSha256": "27477d1a8c94d2b2ebf76cc3fd1a101422005cc7abd579cee204f08ec310870e",
+        "spans": []
+      },
+      {
+        "block": "block_0006_0000",
+        "path": "/text",
+        "sourceSha256": "e3de4ef48a0b5d25ef1cb3668e342770d1fde9a5c46751ea097021c339d06291",
+        "spans": []
+      },
+      {
+        "block": "block_0006_0001",
+        "path": "/text",
+        "sourceSha256": "c561ccad8f4c7f39fd7af32f9a106827b7f25fa0056ecd13064f3f3ce2ead0b8",
+        "spans": [
+          {
+            "start": 190,
+            "end": 205,
+            "text": "longitud_metros",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 315,
+            "end": 325,
+            "text": "int partes",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 399,
+            "end": 417,
+            "text": "longitud_por_parte",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 469,
+            "end": 478,
+            "text": "std::cout",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 603,
+            "end": 615,
+            "text": "Parte: 4.5 m",
+            "role": "output",
+            "reading": "natural"
+          },
+          {
+            "start": 718,
+            "end": 724,
+            "text": "partes",
+            "role": "cpp",
+            "reading": "technical"
+          }
+        ]
+      },
+      {
+        "block": "block_0006_0002",
+        "path": "/outputCheck/cases/0/explanation",
+        "sourceSha256": "6f874f2e38c9351b332ffd17bfb6cbdfa9de77e4169d5cd49cbc68c51c87c07d",
+        "spans": [
+          {
+            "start": 3,
+            "end": 8,
+            "text": "mitad",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 12,
+            "end": 17,
+            "text": "nueve",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 57,
+            "end": 60,
+            "text": "dos",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 71,
+            "end": 74,
+            "text": "4.5",
+            "role": "output",
+            "reading": "natural"
+          }
+        ]
+      },
+      {
+        "block": "block_0006_0003",
+        "path": "/text",
+        "sourceSha256": "fa74e220eb515707d5bde5758f1e050da752a98cd7b5e702b98271cd15738db6",
+        "spans": [
+          {
+            "start": 12,
+            "end": 22,
+            "text": "Parte: 4 m",
+            "role": "output",
+            "reading": "natural"
+          },
+          {
+            "start": 63,
+            "end": 78,
+            "text": "longitud_metros",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 87,
+            "end": 93,
+            "text": "partes",
+            "role": "cpp",
+            "reading": "technical"
+          }
+        ]
+      },
+      {
+        "block": "block_0007_0000",
+        "path": "/text",
+        "sourceSha256": "359caa14d70e9829db21ee659a64b04d9ec98f9e87fd5da4c5c4e4c4d44ba1f0",
+        "spans": []
+      },
+      {
+        "block": "block_0007_0002",
+        "path": "/text",
+        "sourceSha256": "7cc40a031902486478d54c6453343ba82d6879328d5532bfb0b7de4c2cb0309f",
+        "spans": [
+          {
+            "start": 23,
+            "end": 41,
+            "text": "longitud_por_parte",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 73,
+            "end": 88,
+            "text": "longitud_metros",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 114,
+            "end": 120,
+            "text": "double",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 123,
+            "end": 129,
+            "text": "partes",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 177,
+            "end": 180,
+            "text": "4.5",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 198,
+            "end": 216,
+            "text": "longitud_por_parte",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 250,
+            "end": 259,
+            "text": "std::cout",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 313,
+            "end": 325,
+            "text": "Parte: 4.5 m",
+            "role": "output",
+            "reading": "natural"
+          }
+        ]
+      },
+      {
+        "block": "block_0007_0003",
+        "path": "/question",
+        "sourceSha256": "d0f4d249fc7c7c003e9cd6b940b13325752db34a99ec5132a834a79ef1ed2e7b",
+        "spans": []
+      },
+      {
+        "block": "block_0007_0003",
+        "path": "/explanation",
+        "sourceSha256": "896c08edcf6f51c05777b7ef5a3467895ca0a463cf8028c8b8f2e9ea7843cba9",
+        "spans": [
+          {
+            "start": 0,
+            "end": 8,
+            "text": "anterior",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 29,
+            "end": 32,
+            "text": "1.5",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 43,
+            "end": 58,
+            "text": "lectura += 2.0;",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 71,
+            "end": 78,
+            "text": "lectura",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 91,
+            "end": 94,
+            "text": "3.5",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 115,
+            "end": 122,
+            "text": "1.5 3.5",
+            "role": "output",
+            "reading": "natural"
+          }
+        ]
+      },
+      {
+        "block": "block_0007_0004",
+        "path": "/question",
+        "sourceSha256": "d906bb28cc9c4d81ed4e28f1b3e8624ac46bd795c8c7c3189e8ea6637923e1a5",
+        "spans": [
+          {
+            "start": 11,
+            "end": 16,
+            "text": "9 / 2",
+            "role": "cpp",
+            "reading": "technical"
+          }
+        ]
+      },
+      {
+        "block": "block_0007_0004",
+        "path": "/explanation",
+        "sourceSha256": "41ce684f79d4c4a66e658ae7f2180d2c2f8b4ecb5f81062cc00945890b1e3667",
+        "spans": [
+          {
+            "start": 13,
+            "end": 18,
+            "text": "9 / 2",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 54,
+            "end": 55,
+            "text": "4",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 145,
+            "end": 151,
+            "text": "double",
+            "role": "cpp",
+            "reading": "technical"
+          }
+        ]
+      },
+      {
+        "block": "block_0007_0004",
+        "path": "/options/0",
+        "sourceSha256": "b39ba6f789e36d9a5bdec3035bfecdde50d3e4f340d696f99a08d319c3310977",
+        "spans": [
+          {
+            "start": 16,
+            "end": 18,
+            "text": ".0",
+            "role": "output",
+            "reading": "natural"
+          }
+        ]
+      },
+      {
+        "block": "block_0007_0004",
+        "path": "/options/1",
+        "sourceSha256": "c3068e7847f339d48d96106f6649baa110f56ef8cbf346e2d60b167772a3d728",
+        "spans": [
+          {
+            "start": 14,
+            "end": 20,
+            "text": "double",
+            "role": "cpp",
+            "reading": "technical"
+          }
+        ]
+      },
+      {
+        "block": "block_0007_0004",
+        "path": "/options/2",
+        "sourceSha256": "b8f7dbc7df42402c25352495b7c187c54d232479e97305779a1a3440be769108",
+        "spans": [
+          {
+            "start": 66,
+            "end": 67,
+            "text": "/",
+            "role": "cpp",
+            "reading": "technical"
+          }
+        ]
+      },
+      {
+        "block": "block_0007_0005",
+        "path": "/question",
+        "sourceSha256": "cb57217b66e47ab26d44f2054bda9c44eec1340f9f402a9ab377d16a4299d890",
+        "spans": [
+          {
+            "start": 196,
+            "end": 202,
+            "text": "double",
+            "role": "cpp",
+            "reading": "technical"
+          }
+        ]
+      },
+      {
+        "block": "block_0007_0005",
+        "path": "/explanation",
+        "sourceSha256": "317213cdd140ae6393c83fa07b4a6c67274c1ccceb707f8785e5fc089b7475ba",
+        "spans": [
+          {
+            "start": 20,
+            "end": 23,
+            "text": "dos",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 32,
+            "end": 35,
+            "text": "int",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 65,
+            "end": 66,
+            "text": "4",
+            "role": "output",
+            "reading": "natural"
+          },
+          {
+            "start": 103,
+            "end": 121,
+            "text": "longitud_por_parte",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 131,
+            "end": 137,
+            "text": "double",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 221,
+            "end": 231,
+            "text": "Parte: 4 m",
+            "role": "output",
+            "reading": "natural"
+          }
+        ]
+      },
+      {
+        "block": "block_0007_0005",
+        "path": "/reviewFeedback",
+        "sourceSha256": "4293f12d8becbb2b84efd6e31893aa23da92f2bedc031d2f496f3472b49c56c2",
+        "spans": [
+          {
+            "start": 26,
+            "end": 29,
+            "text": "dos",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 70,
+            "end": 71,
+            "text": "/",
+            "role": "cpp",
+            "reading": "technical"
+          }
+        ]
+      },
+      {
+        "block": "block_0007_0006",
+        "path": "/question",
+        "sourceSha256": "41634e8621ba966604bbfb327cc9f8672c29ea28c6b6ee6f81ce0b37f801a459",
+        "spans": [
+          {
+            "start": 71,
+            "end": 83,
+            "text": "Parte: 4.5 m",
+            "role": "output",
+            "reading": "natural"
+          },
+          {
+            "start": 118,
+            "end": 133,
+            "text": "longitud_metros",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 143,
+            "end": 146,
+            "text": "int",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 149,
+            "end": 155,
+            "text": "double",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 192,
+            "end": 193,
+            "text": "9",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 208,
+            "end": 214,
+            "text": "partes",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 229,
+            "end": 232,
+            "text": "int",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 251,
+            "end": 266,
+            "text": "longitud_metros",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 406,
+            "end": 407,
+            "text": "/",
+            "role": "cpp",
+            "reading": "technical"
+          }
+        ]
+      },
+      {
+        "block": "block_0007_0006",
+        "path": "/explanation",
+        "sourceSha256": "a9d3465943dd97701672d0164fd8005f7255824249176acc63d6df33583486eb",
+        "spans": [
+          {
+            "start": 28,
+            "end": 34,
+            "text": "double",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 36,
+            "end": 51,
+            "text": "longitud_metros",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 54,
+            "end": 60,
+            "text": "partes",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 107,
+            "end": 122,
+            "text": "longitud_metros",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 127,
+            "end": 133,
+            "text": "double",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 193,
+            "end": 194,
+            "text": "9",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 341,
+            "end": 359,
+            "text": "(Stroustrup, 2024)",
+            "role": "citation",
+            "reading": "natural"
+          },
+          {
+            "start": 427,
+            "end": 432,
+            "text": "nueve",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 442,
+            "end": 445,
+            "text": "dos",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 478,
+            "end": 481,
+            "text": "4.5",
+            "role": "output",
+            "reading": "natural"
+          },
+          {
+            "start": 525,
+            "end": 530,
+            "text": "9 / 2",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 542,
+            "end": 543,
+            "text": "4",
+            "role": "output",
+            "reading": "natural"
+          },
+          {
+            "start": 569,
+            "end": 575,
+            "text": "double",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 594,
+            "end": 606,
+            "text": "media unidad",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 619,
+            "end": 622,
+            "text": "Dos",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 633,
+            "end": 639,
+            "text": "cuatro",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 656,
+            "end": 660,
+            "text": "ocho",
+            "role": "output",
+            "reading": "natural"
+          },
+          {
+            "start": 721,
+            "end": 739,
+            "text": "(Stroustrup, 2024)",
+            "role": "citation",
+            "reading": "natural"
+          },
+          {
+            "start": 752,
+            "end": 764,
+            "text": "Parte: 4.5 m",
+            "role": "output",
+            "reading": "natural"
+          },
+          {
+            "start": 877,
+            "end": 880,
+            "text": "dos",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 1080,
+            "end": 1083,
+            "text": "dos",
+            "role": "data",
+            "reading": "natural"
+          }
+        ]
+      },
+      {
+        "block": "block_0007_0006",
+        "path": "/reviewFeedback",
+        "sourceSha256": "2669f4a4d6ece6d2fa5e226021f2de4fb5155033e2419dc04dbac4417ba5a196",
+        "spans": [
+          {
+            "start": 243,
+            "end": 258,
+            "text": "longitud_metros",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 267,
+            "end": 273,
+            "text": "partes",
+            "role": "cpp",
+            "reading": "technical"
+          }
+        ]
+      },
+      {
+        "block": "block_0008_0000",
+        "path": "/text",
+        "sourceSha256": "cd48acc001bbb58cca93306c145735daffc2a77adb4fdf9ef51f20a4bf1085fb",
+        "spans": []
+      },
+      {
+        "block": "block_0008_0001",
+        "path": "/text",
+        "sourceSha256": "acf8056fd57eff728494043d9f725339c84b3f9d67576222da80d32c40d754aa",
+        "spans": [
+          {
+            "start": 118,
+            "end": 127,
+            "text": "std::cout",
+            "role": "cpp",
+            "reading": "technical"
+          }
+        ]
+      },
+      {
+        "block": "block_0008_0002",
+        "path": "/text",
+        "sourceSha256": "2cfb30c803531f2e5f35bc4dcadccbf1d0225d9f0a42587ac2db75a63eb43db4",
+        "spans": [
+          {
+            "start": 74,
+            "end": 80,
+            "text": "double",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 114,
+            "end": 117,
+            "text": "4.5",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 121,
+            "end": 126,
+            "text": "parte",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 148,
+            "end": 160,
+            "text": "Parte: 4.5 m",
+            "role": "output",
+            "reading": "natural"
+          }
+        ]
+      },
+      {
+        "block": "block_0008_0004",
+        "path": "/text",
+        "sourceSha256": "32f83c97aaf4372119ec26e097c6ae0c8eb0e43e127ffa9e7b8bb85c74140815",
+        "spans": [
+          {
+            "start": 14,
+            "end": 35,
+            "text": "double longitud{9.0};",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 38,
+            "end": 67,
+            "text": "double parte{longitud / 2.0};",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 139,
+            "end": 145,
+            "text": "double",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 198,
+            "end": 204,
+            "text": "double",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 231,
+            "end": 234,
+            "text": "int",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 295,
+            "end": 301,
+            "text": "double",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 330,
+            "end": 333,
+            "text": "4.5",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 334,
+            "end": 352,
+            "text": "(Stroustrup, 2024)",
+            "role": "citation",
+            "reading": "natural"
+          }
+        ]
+      },
+      {
+        "block": "block_0002_0002",
+        "path": "/text",
+        "sourceSha256": "f986d264dd4037f8ddf67ca343284d312d00eb98bbf184990bd1d180dc628c61",
+        "spans": [
+          {
+            "start": 36,
+            "end": 43,
+            "text": "7.0 / 2",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 45,
+            "end": 48,
+            "text": "7.0",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 73,
+            "end": 79,
+            "text": "double",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 112,
+            "end": 113,
+            "text": "2",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 179,
+            "end": 182,
+            "text": "3.5",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 208,
+            "end": 215,
+            "text": "7 / 2.0",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 216,
+            "end": 254,
+            "text": "(Köppe et al., 2023; Stroustrup, 2024)",
+            "role": "citation",
+            "reading": "natural"
+          }
+        ]
+      },
+      {
+        "block": "block_0002_0004",
+        "path": "/text",
+        "sourceSha256": "a7730f6eb6e2275121220336ae91502a8b371945a90752ff4e2ba0d18f4c3084",
+        "spans": [
+          {
+            "start": 15,
+            "end": 42,
+            "text": "std::cout << 7 / 2 << \"\\n\";",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 90,
+            "end": 91,
+            "text": "3",
+            "role": "output",
+            "reading": "natural"
+          },
+          {
+            "start": 162,
+            "end": 183,
+            "text": "std::cout << 7.0 / 2;",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 191,
+            "end": 197,
+            "text": "double",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 230,
+            "end": 233,
+            "text": "3.5",
+            "role": "output",
+            "reading": "natural"
+          }
+        ]
+      },
+      {
+        "block": "block_0003_0004",
+        "path": "/question",
+        "sourceSha256": "56380c43c48f1c7ed3230f9afd802988235ffb68883d8f03e3f9af5999501211",
+        "spans": [
+          {
+            "start": 84,
+            "end": 85,
+            "text": "/",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 114,
+            "end": 120,
+            "text": "double",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 218,
+            "end": 221,
+            "text": "5.5",
+            "role": "output",
+            "reading": "natural"
+          }
+        ]
+      },
+      {
+        "block": "block_0003_0004",
+        "path": "/explanation",
+        "sourceSha256": "f01776f047bffc84d1bb4d46e689cee7f940d665cbf99d3e1170c22ee07a4966",
+        "spans": [
+          {
+            "start": 12,
+            "end": 15,
+            "text": "2.0",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 27,
+            "end": 28,
+            "text": "/",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 52,
+            "end": 58,
+            "text": "double",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 98,
+            "end": 104,
+            "text": "double",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 124,
+            "end": 136,
+            "text": "cinta_metros",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 192,
+            "end": 195,
+            "text": "5.5",
+            "role": "output",
+            "reading": "natural"
+          },
+          {
+            "start": 221,
+            "end": 223,
+            "text": "2.",
+            "role": "cpp",
+            "reading": "technical"
+          }
+        ]
+      },
+      {
+        "block": "block_0003_0004",
+        "path": "/reviewFeedback",
+        "sourceSha256": "aaa4c877d163da47dc3ffea793b5dc4659242b05f9b03b9f510b3ca64db66d29",
+        "spans": [
+          {
+            "start": 16,
+            "end": 28,
+            "text": "cinta_metros",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 97,
+            "end": 103,
+            "text": "double",
+            "role": "cpp",
+            "reading": "technical"
+          }
+        ]
+      },
+      {
+        "block": "block_0004_0005",
+        "path": "/text",
+        "sourceSha256": "f6510153453132fcfe83db7be5e071860a8de6e175a9f349f3c46dc03ec8c616",
+        "spans": []
+      },
+      {
+        "block": "block_0004_0006",
+        "path": "/text",
+        "sourceSha256": "e7975b97fc90241cf46ffe6eeea5dfcc8660646cff845a1c830ae47fc358be82",
+        "spans": [
+          {
+            "start": 219,
+            "end": 246,
+            "text": "(longitud_metros + 1.0) / 2",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 395,
+            "end": 413,
+            "text": "(Stroustrup, 2024)",
+            "role": "citation",
+            "reading": "natural"
+          }
+        ]
+      },
+      {
+        "block": "block_0004_0008",
+        "path": "/text",
+        "sourceSha256": "6510053c02f48fe8ecffe3b2a5f3becce6f11704bcb591d9ed321aefa0178e6f",
+        "spans": [
+          {
+            "start": 25,
+            "end": 30,
+            "text": "5 + 1",
+            "role": "math",
+            "reading": "natural"
+          },
+          {
+            "start": 101,
+            "end": 116,
+            "text": "parte_del_total",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 124,
+            "end": 125,
+            "text": "3",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 179,
+            "end": 186,
+            "text": "1.0 / 2",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 245,
+            "end": 273,
+            "text": "longitud_con_media_adicional",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 281,
+            "end": 284,
+            "text": "5.5",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 305,
+            "end": 310,
+            "text": "3 5.5",
+            "role": "output",
+            "reading": "natural"
+          }
+        ]
+      },
+      {
+        "block": "block_0004_0009",
+        "path": "/question",
+        "sourceSha256": "b32520ce86fad418f1e7b75396c8d2dc3e64a296e2e7dda25956c89308106739",
+        "spans": [
+          {
+            "start": 143,
+            "end": 147,
+            "text": "2.75",
+            "role": "output",
+            "reading": "natural"
+          }
+        ]
+      },
+      {
+        "block": "block_0004_0009",
+        "path": "/explanation",
+        "sourceSha256": "2b2d5075059cf95f4d41dc1ca7bf5ea30a6c943512feed75763598a3dc242c7e",
+        "spans": [
+          {
+            "start": 61,
+            "end": 64,
+            "text": "5.5",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 118,
+            "end": 122,
+            "text": "2.75",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 144,
+            "end": 148,
+            "text": "2.75",
+            "role": "output",
+            "reading": "natural"
+          }
+        ]
+      },
+      {
+        "block": "block_0004_0009",
+        "path": "/reviewFeedback",
+        "sourceSha256": "5bfa04809ce5d694d55b48718b575d44503b456c62c214c50d645099631c4a3a",
+        "spans": [
+          {
+            "start": 55,
+            "end": 56,
+            "text": "/",
+            "role": "cpp",
+            "reading": "technical"
+          }
+        ]
+      },
+      {
+        "block": "block_0005_0002",
+        "path": "/text",
+        "sourceSha256": "2d1f7ab83bb077c22d348af9614519e1e67b12163c7985f00e58cbcfa1f274dd",
+        "spans": [
+          {
+            "start": 13,
+            "end": 16,
+            "text": "2.5",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 68,
+            "end": 74,
+            "text": "double",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 516,
+            "end": 534,
+            "text": "(Stroustrup, 2024)",
+            "role": "citation",
+            "reading": "natural"
+          },
+          {
+            "start": 875,
+            "end": 878,
+            "text": "0.1",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 880,
+            "end": 886,
+            "text": "double",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 964,
+            "end": 984,
+            "text": "(Köppe et al., 2023)",
+            "role": "citation",
+            "reading": "natural"
+          }
+        ]
+      },
+      {
+        "block": "block_0005_0003",
+        "path": "/text",
+        "sourceSha256": "492e77d3d10a834186cb44e78a9377be85393641fc754060a86857a60c1d0c28",
+        "spans": [
+          {
+            "start": 3,
+            "end": 6,
+            "text": "int",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 202,
+            "end": 205,
+            "text": "int",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 363,
+            "end": 383,
+            "text": "(Köppe et al., 2023)",
+            "role": "citation",
+            "reading": "natural"
+          }
+        ]
+      },
+      {
+        "block": "block_0006_0004",
+        "path": "/question",
+        "sourceSha256": "90ad6205029b8f5c791a5b798e346bf95d29c62eaa79c4b38e815fc79f26d0d7",
+        "spans": [
+          {
+            "start": 104,
+            "end": 109,
+            "text": "8 / 2",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 131,
+            "end": 138,
+            "text": "8.0 / 2",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 157,
+            "end": 167,
+            "text": "Parte: 4 m",
+            "role": "output",
+            "reading": "natural"
+          }
+        ]
+      },
+      {
+        "block": "block_0006_0004",
+        "path": "/explanation",
+        "sourceSha256": "fa32f932af0a879be651322dbfb7560872132da0e8a5983856071bf6c8c0609e",
+        "spans": [
+          {
+            "start": 25,
+            "end": 30,
+            "text": "9 / 2",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 34,
+            "end": 35,
+            "text": "4",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 63,
+            "end": 70,
+            "text": "9.0 / 2",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 74,
+            "end": 77,
+            "text": "4.5",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 105,
+            "end": 111,
+            "text": "double",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 205,
+            "end": 215,
+            "text": "Parte: 5 m",
+            "role": "output",
+            "reading": "natural"
+          },
+          {
+            "start": 246,
+            "end": 256,
+            "text": "Parte: 3 m",
+            "role": "output",
+            "reading": "natural"
+          }
+        ]
+      },
+      {
+        "block": "block_0006_0004",
+        "path": "/options/0",
+        "sourceSha256": "3dc4c523a3ff646a95091a53e210b8b8a46a797f026c04b4387acb0279658cb4",
+        "spans": [
+          {
+            "start": 0,
+            "end": 11,
+            "text": "Diez metros",
+            "role": "data",
+            "reading": "natural"
+          }
+        ]
+      },
+      {
+        "block": "block_0006_0004",
+        "path": "/options/1",
+        "sourceSha256": "82fcf6eb69ac012bcf266c4d043cae9883e9f297ecdd229cb6e063e1ec100e4a",
+        "spans": [
+          {
+            "start": 0,
+            "end": 12,
+            "text": "Nueve metros",
+            "role": "data",
+            "reading": "natural"
+          }
+        ]
+      },
+      {
+        "block": "block_0006_0004",
+        "path": "/options/2",
+        "sourceSha256": "504fd0a4c2cb26de69242e23fda6f75ef154b91863577b4a31b71c6f70dce054",
+        "spans": [
+          {
+            "start": 0,
+            "end": 11,
+            "text": "Seis metros",
+            "role": "data",
+            "reading": "natural"
+          }
+        ]
+      },
+      {
+        "block": "block_0007_0007",
+        "path": "/text",
+        "sourceSha256": "fa1ccab988d0ca579052d1b84a20803b97c5e04cff7d7f32f2c9adaf8b804c3b",
+        "spans": []
+      },
+      {
+        "block": "block_0007_0008",
+        "path": "/text",
+        "sourceSha256": "e716a7ea278c81ead08ed5a119f078e9b9bfcec0a4ebf0b8418f7faef3d25207",
+        "spans": [
+          {
+            "start": 269,
+            "end": 287,
+            "text": "longitud_por_parte",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 350,
+            "end": 356,
+            "text": "partes",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 456,
+            "end": 469,
+            "text": "Parte: 2.75 m",
+            "role": "output",
+            "reading": "natural"
+          }
+        ]
+      },
+      {
+        "block": "block_0008_0005",
+        "path": "/text",
+        "sourceSha256": "98d9d56e58f54666ffda096c8d170399fedd0ebb27f31d0f31188305727a89d6",
+        "spans": []
+      },
+      {
+        "block": "block_0008_0006",
+        "path": "/text",
+        "sourceSha256": "da7dfd5b529b2c789ee3f32256df7e98457a324a79319c414035e6e67d83d44a",
+        "spans": [
+          {
+            "start": 15,
+            "end": 33,
+            "text": "longitud_por_parte",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 58,
+            "end": 98,
+            "text": "longitud_metros + tramo_adicional_metros",
+            "role": "cpp",
+            "reading": "technical"
+          }
+        ]
+      },
+      {
+        "block": "block_0008_0008",
+        "path": "/text",
+        "sourceSha256": "3a7fd90290fb829f5dad02cdac8d3fcdaa05c6a10002dbbc4e11627477a87b3f",
+        "spans": [
+          {
+            "start": 24,
+            "end": 55,
+            "text": "tramo_adicional_metros / partes",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 98,
+            "end": 99,
+            "text": "0",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 146,
+            "end": 158,
+            "text": "Parte: 4.5 m",
+            "role": "output",
+            "reading": "natural"
+          },
+          {
+            "start": 231,
+            "end": 237,
+            "text": "double",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 294,
+            "end": 307,
+            "text": "Parte: 2.75 m",
+            "role": "output",
+            "reading": "natural"
+          }
+        ]
+      }
+    ],
+    "rootFields": [
+      {
+        "path": "/title",
+        "sourceSha256": "180983d1eb623b00e1737a6ffc90da7abe141cd8a1c2e1cebfe4cf4c79930ef9",
+        "spans": []
+      }
+    ]
+  },
+  "compilerLocalIntChecks": [
+    {
+      "activity": "block_0006_0002",
+      "probes": [
+        {
+          "variable": "partes",
+          "replacement": 4,
+          "outputs": [
+            "Parte: 2.25 m",
+            "Parte: 2.25 m\n"
+          ]
+        },
+        {
+          "variable": "partes",
+          "replacement": 8,
+          "outputs": [
+            "Parte: 1.125 m",
+            "Parte: 1.125 m\n"
+          ]
+        }
+      ]
+    },
+    {
+      "activity": "block_0007_0009",
+      "probes": [
+        {
+          "variable": "tramo_adicional_metros",
+          "replacement": 3,
+          "outputs": [
+            "Parte: 3.75 m",
+            "Parte: 3.75 m\n"
+          ]
+        },
+        {
+          "variable": "partes",
+          "replacement": 4,
+          "outputs": [
+            "Parte: 1.375 m",
+            "Parte: 1.375 m\n"
+          ]
+        }
+      ]
+    }
+  ],
+  "courseEdition": {
+    "version": 1,
+    "courseId": "cpp_fundamentals",
+    "locale": "es",
+    "generation": 1,
+    "id": "cpp_desde_cero_2026"
+  },
+  "stateLayout": {
+    "version": 2,
+    "locale": "es",
+    "origin": [
+      {
+        "id": "page_0000",
+        "blocks": [
+          {
+            "id": "block_0000_0000",
+            "sha256": "a30d0555835b703d0dd5a90aabb0134813afd11904b5364f69f03b01695f6d7a"
+          },
+          {
+            "id": "block_0000_0001",
+            "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+          },
+          {
+            "id": "block_0000_0002",
+            "sha256": "a1156b63154ecd75f206440628d7d9ea41ab7e13e189c3ab4cd3892860cde451"
+          },
+          {
+            "id": "block_0000_0003",
+            "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+          },
+          {
+            "id": "block_0000_0004",
+            "sha256": "1a4479820d15a302446a7b2b95304a727b9595736ff3187cd4dcab3282c0bb13"
+          }
+        ]
+      },
+      {
+        "id": "page_0001",
+        "blocks": [
+          {
+            "id": "block_0001_0000",
+            "sha256": "a30d0555835b703d0dd5a90aabb0134813afd11904b5364f69f03b01695f6d7a"
+          },
+          {
+            "id": "block_0001_0001",
+            "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+          },
+          {
+            "id": "block_0001_0002",
+            "sha256": "e2f862e07c0e240cfa08339598f710fbd8d6dcb635e94bbbe4164cc17da114e1"
+          },
+          {
+            "id": "block_0001_0003",
+            "sha256": "b03acfe2357feea524bce3d8130b4f028940f859b070aa2a42ccf6b9d0a04af3"
+          },
+          {
+            "id": "block_0001_0004",
+            "sha256": "e0575ab6b1cfe5098d7ce8a599f23c721037f9f26a295a9274596df6e1a043bc"
+          }
+        ]
+      },
+      {
+        "id": "page_0002",
+        "blocks": [
+          {
+            "id": "block_0002_0000",
+            "sha256": "a30d0555835b703d0dd5a90aabb0134813afd11904b5364f69f03b01695f6d7a"
+          },
+          {
+            "id": "block_0002_0001",
+            "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+          },
+          {
+            "id": "block_0002_0002",
+            "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+          },
+          {
+            "id": "block_0002_0003",
+            "sha256": "f37adb812d0a6d9889643d18d4fb83c66289bb00f084ecdf464b652175708a8a"
+          },
+          {
+            "id": "block_0002_0004",
+            "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+          },
+          {
+            "id": "block_0002_0005",
+            "sha256": "63dd180e80720591806a37548fc7d8ba614905f792b3aa232bf8de54a2d6363c"
+          },
+          {
+            "id": "block_0002_0006",
+            "sha256": "2140211a0978549f09c88f28ecc33073ae6cd7819119dd2e3e1ac2fa3d0a9527"
+          }
+        ]
+      },
+      {
+        "id": "page_0003",
+        "blocks": [
+          {
+            "id": "block_0003_0000",
+            "sha256": "a30d0555835b703d0dd5a90aabb0134813afd11904b5364f69f03b01695f6d7a"
+          },
+          {
+            "id": "block_0003_0001",
+            "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+          },
+          {
+            "id": "block_0003_0002",
+            "sha256": "ca7d3d7c6ca503547c5c32c85fcc7baad9eeab115d155cc5fc40dfe4d7324f0d"
+          },
+          {
+            "id": "block_0003_0003",
+            "sha256": "348ce0d1a5887215ae615c9e79e41ce4abed756c80d17a1dd13fe2ea1b701470"
+          },
+          {
+            "id": "block_0003_0004",
+            "sha256": "4d90fa23ceccd4ed6065d633b75c091bfb2d10ddf8fdb7126825cd6e8abc8b3d"
+          }
+        ]
+      },
+      {
+        "id": "page_0004",
+        "blocks": [
+          {
+            "id": "block_0004_0000",
+            "sha256": "a30d0555835b703d0dd5a90aabb0134813afd11904b5364f69f03b01695f6d7a"
+          },
+          {
+            "id": "block_0004_0001",
+            "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+          },
+          {
+            "id": "block_0004_0002",
+            "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+          },
+          {
+            "id": "block_0004_0003",
+            "sha256": "11ccd0cfb212824b6ab687b7f1dc39416acfc987698205a8eb6abec612584e7d"
+          },
+          {
+            "id": "block_0004_0004",
+            "sha256": "121f160c2e4ef7566b201450a20d78b602f14c7de1ff2e0bb30fc8ec1a5791d5"
+          },
+          {
+            "id": "block_0004_0005",
+            "sha256": "a30d0555835b703d0dd5a90aabb0134813afd11904b5364f69f03b01695f6d7a"
+          },
+          {
+            "id": "block_0004_0006",
+            "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+          },
+          {
+            "id": "block_0004_0007",
+            "sha256": "be35de8a8a41901967185911183919fe5524b5faf7059676299062a674cf57e3"
+          },
+          {
+            "id": "block_0004_0008",
+            "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+          },
+          {
+            "id": "block_0004_0009",
+            "sha256": "1a50ddf4f7f43655270219d43a162c0a2a46bfab4da33f31e15378865dc9f963"
+          }
+        ]
+      },
+      {
+        "id": "page_0005",
+        "blocks": [
+          {
+            "id": "block_0005_0000",
+            "sha256": "a30d0555835b703d0dd5a90aabb0134813afd11904b5364f69f03b01695f6d7a"
+          },
+          {
+            "id": "block_0005_0001",
+            "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+          },
+          {
+            "id": "block_0005_0002",
+            "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+          },
+          {
+            "id": "block_0005_0003",
+            "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+          },
+          {
+            "id": "block_0005_0004",
+            "sha256": "b5717d1a1d093541c479315585820f02d849fa5d3d91e24a7a2f7da82d1145b0"
+          },
+          {
+            "id": "block_0005_0005",
+            "sha256": "f7efff6db957ce4e51d46d81e2f6ab4e3ea3ac3031d3f06bba83eba892cdb3f9"
+          }
+        ]
+      },
+      {
+        "id": "page_0006",
+        "blocks": [
+          {
+            "id": "block_0006_0000",
+            "sha256": "a30d0555835b703d0dd5a90aabb0134813afd11904b5364f69f03b01695f6d7a"
+          },
+          {
+            "id": "block_0006_0001",
+            "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+          },
+          {
+            "id": "block_0006_0002",
+            "sha256": "e23829be1be04ea89f9012d7f7af75946d941dc05ad860e57939007426c25be2"
+          },
+          {
+            "id": "block_0006_0003",
+            "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+          },
+          {
+            "id": "block_0006_0004",
+            "sha256": "198f09d47f19c248800b4bfa975a6b419e29b8958d4b9283a1dcd88e8b2eef52"
+          }
+        ]
+      },
+      {
+        "id": "page_0007",
+        "blocks": [
+          {
+            "id": "block_0007_0000",
+            "sha256": "a30d0555835b703d0dd5a90aabb0134813afd11904b5364f69f03b01695f6d7a"
+          },
+          {
+            "id": "block_0007_0001",
+            "sha256": "6463066eaa05a4c5b1ff18ce365d8e7ddc740b91015a2d5925743ad4e9e21e68"
+          },
+          {
+            "id": "block_0007_0002",
+            "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+          },
+          {
+            "id": "block_0007_0003",
+            "sha256": "aec5e523f83b2eac61794ad7b5ca8ac7321665a7a5bda105e66a0cd5fa8a230a"
+          },
+          {
+            "id": "block_0007_0004",
+            "sha256": "162dc68f4fc650770436a77dce232a3133288b2386f487b7379b14f7c5d91e2e"
+          },
+          {
+            "id": "block_0007_0005",
+            "sha256": "72345626de4f5af7dc30d004db9792843d4b15d4d21b266a6b2ea969b1f5c133"
+          },
+          {
+            "id": "block_0007_0006",
+            "sha256": "5b13f60f01622564b84c6078c36037796e904dc90382015563b710c48109eb05"
+          },
+          {
+            "id": "block_0007_0007",
+            "sha256": "a30d0555835b703d0dd5a90aabb0134813afd11904b5364f69f03b01695f6d7a"
+          },
+          {
+            "id": "block_0007_0008",
+            "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+          },
+          {
+            "id": "block_0007_0009",
+            "sha256": "a1b0104d8ed3fdbfbd777af5e37ef596f98667a269c007a1b8da2c1be3bd6e9f"
+          }
+        ]
+      },
+      {
+        "id": "page_0008",
+        "blocks": [
+          {
+            "id": "block_0008_0000",
+            "sha256": "a30d0555835b703d0dd5a90aabb0134813afd11904b5364f69f03b01695f6d7a"
+          },
+          {
+            "id": "block_0008_0001",
+            "sha256": "5a25f39deebfacf70f31e9ed31d9496f83df3471d72bfcca57fec1493aee69a1"
+          },
+          {
+            "id": "block_0008_0002",
+            "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+          },
+          {
+            "id": "block_0008_0003",
+            "sha256": "74a0f9004db152c63396760d06b8f60f07a57937160f0d05753a8034bdce9fea"
+          },
+          {
+            "id": "block_0008_0004",
+            "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+          },
+          {
+            "id": "block_0008_0005",
+            "sha256": "a30d0555835b703d0dd5a90aabb0134813afd11904b5364f69f03b01695f6d7a"
+          },
+          {
+            "id": "block_0008_0006",
+            "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+          },
+          {
+            "id": "block_0008_0007",
+            "sha256": "cb66b8e14275e82c7216e5e3f21fad041a2648dcf1ced2755bbab0347aa1b476"
+          },
+          {
+            "id": "block_0008_0008",
+            "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+          }
+        ]
+      }
+    ],
+    "current": [
+      {
+        "id": "page_0000",
+        "blocks": [
+          "block_0000_0000",
+          "block_0000_0001",
+          "block_0000_0002",
+          "block_0000_0003",
+          "block_0000_0004"
+        ]
+      },
+      {
+        "id": "page_0001",
+        "blocks": [
+          "block_0001_0000",
+          "block_0001_0001",
+          "block_0001_0002",
+          "block_0001_0003",
+          "block_0001_0004"
+        ]
+      },
+      {
+        "id": "page_0002",
+        "blocks": [
+          "block_0002_0000",
+          "block_0002_0001",
+          "block_0002_0002",
+          "block_0002_0003",
+          "block_0002_0004",
+          "block_0002_0005",
+          "block_0002_0006"
+        ]
+      },
+      {
+        "id": "page_0003",
+        "blocks": [
+          "block_0003_0000",
+          "block_0003_0001",
+          "block_0003_0002",
+          "block_0003_0003",
+          "block_0003_0004"
+        ]
+      },
+      {
+        "id": "page_0004",
+        "blocks": [
+          "block_0004_0000",
+          "block_0004_0001",
+          "block_0004_0002",
+          "block_0004_0003",
+          "block_0004_0004",
+          "block_0004_0005",
+          "block_0004_0006",
+          "block_0004_0007",
+          "block_0004_0008",
+          "block_0004_0009"
+        ]
+      },
+      {
+        "id": "page_0005",
+        "blocks": [
+          "block_0005_0000",
+          "block_0005_0001",
+          "block_0005_0002",
+          "block_0005_0003",
+          "block_0005_0004",
+          "block_0005_0005"
+        ]
+      },
+      {
+        "id": "page_0006",
+        "blocks": [
+          "block_0006_0000",
+          "block_0006_0001",
+          "block_0006_0002",
+          "block_0006_0003",
+          "block_0006_0004"
+        ]
+      },
+      {
+        "id": "page_0007",
+        "blocks": [
+          "block_0007_0000",
+          "block_0007_0001",
+          "block_0007_0002",
+          "block_0007_0003",
+          "block_0007_0004",
+          "block_0007_0005",
+          "block_0007_0006",
+          "block_0007_0007",
+          "block_0007_0008",
+          "block_0007_0009"
+        ]
+      },
+      {
+        "id": "page_0008",
+        "blocks": [
+          "block_0008_0000",
+          "block_0008_0001",
+          "block_0008_0002",
+          "block_0008_0003",
+          "block_0008_0004",
+          "block_0008_0005",
+          "block_0008_0006",
+          "block_0008_0007",
+          "block_0008_0008"
+        ]
+      }
+    ],
+    "family": {
+      "es": {
+        "sha256": "1eed49afacf71828aee38758cae2226220abe9a6b7c9ab9ad077f047f22d111a",
+        "origin": [
+          {
+            "id": "page_0000",
+            "blocks": [
+              {
+                "id": "block_0000_0000",
+                "sha256": "a30d0555835b703d0dd5a90aabb0134813afd11904b5364f69f03b01695f6d7a"
+              },
+              {
+                "id": "block_0000_0001",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              },
+              {
+                "id": "block_0000_0002",
+                "sha256": "a1156b63154ecd75f206440628d7d9ea41ab7e13e189c3ab4cd3892860cde451"
+              },
+              {
+                "id": "block_0000_0003",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              },
+              {
+                "id": "block_0000_0004",
+                "sha256": "1a4479820d15a302446a7b2b95304a727b9595736ff3187cd4dcab3282c0bb13"
+              }
+            ]
+          },
+          {
+            "id": "page_0001",
+            "blocks": [
+              {
+                "id": "block_0001_0000",
+                "sha256": "a30d0555835b703d0dd5a90aabb0134813afd11904b5364f69f03b01695f6d7a"
+              },
+              {
+                "id": "block_0001_0001",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              },
+              {
+                "id": "block_0001_0002",
+                "sha256": "e2f862e07c0e240cfa08339598f710fbd8d6dcb635e94bbbe4164cc17da114e1"
+              },
+              {
+                "id": "block_0001_0003",
+                "sha256": "b03acfe2357feea524bce3d8130b4f028940f859b070aa2a42ccf6b9d0a04af3"
+              },
+              {
+                "id": "block_0001_0004",
+                "sha256": "e0575ab6b1cfe5098d7ce8a599f23c721037f9f26a295a9274596df6e1a043bc"
+              }
+            ]
+          },
+          {
+            "id": "page_0002",
+            "blocks": [
+              {
+                "id": "block_0002_0000",
+                "sha256": "a30d0555835b703d0dd5a90aabb0134813afd11904b5364f69f03b01695f6d7a"
+              },
+              {
+                "id": "block_0002_0001",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              },
+              {
+                "id": "block_0002_0002",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              },
+              {
+                "id": "block_0002_0003",
+                "sha256": "f37adb812d0a6d9889643d18d4fb83c66289bb00f084ecdf464b652175708a8a"
+              },
+              {
+                "id": "block_0002_0004",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              },
+              {
+                "id": "block_0002_0005",
+                "sha256": "63dd180e80720591806a37548fc7d8ba614905f792b3aa232bf8de54a2d6363c"
+              },
+              {
+                "id": "block_0002_0006",
+                "sha256": "2140211a0978549f09c88f28ecc33073ae6cd7819119dd2e3e1ac2fa3d0a9527"
+              }
+            ]
+          },
+          {
+            "id": "page_0003",
+            "blocks": [
+              {
+                "id": "block_0003_0000",
+                "sha256": "a30d0555835b703d0dd5a90aabb0134813afd11904b5364f69f03b01695f6d7a"
+              },
+              {
+                "id": "block_0003_0001",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              },
+              {
+                "id": "block_0003_0002",
+                "sha256": "ca7d3d7c6ca503547c5c32c85fcc7baad9eeab115d155cc5fc40dfe4d7324f0d"
+              },
+              {
+                "id": "block_0003_0003",
+                "sha256": "348ce0d1a5887215ae615c9e79e41ce4abed756c80d17a1dd13fe2ea1b701470"
+              },
+              {
+                "id": "block_0003_0004",
+                "sha256": "4d90fa23ceccd4ed6065d633b75c091bfb2d10ddf8fdb7126825cd6e8abc8b3d"
+              }
+            ]
+          },
+          {
+            "id": "page_0004",
+            "blocks": [
+              {
+                "id": "block_0004_0000",
+                "sha256": "a30d0555835b703d0dd5a90aabb0134813afd11904b5364f69f03b01695f6d7a"
+              },
+              {
+                "id": "block_0004_0001",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              },
+              {
+                "id": "block_0004_0002",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              },
+              {
+                "id": "block_0004_0003",
+                "sha256": "11ccd0cfb212824b6ab687b7f1dc39416acfc987698205a8eb6abec612584e7d"
+              },
+              {
+                "id": "block_0004_0004",
+                "sha256": "121f160c2e4ef7566b201450a20d78b602f14c7de1ff2e0bb30fc8ec1a5791d5"
+              },
+              {
+                "id": "block_0004_0005",
+                "sha256": "a30d0555835b703d0dd5a90aabb0134813afd11904b5364f69f03b01695f6d7a"
+              },
+              {
+                "id": "block_0004_0006",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              },
+              {
+                "id": "block_0004_0007",
+                "sha256": "be35de8a8a41901967185911183919fe5524b5faf7059676299062a674cf57e3"
+              },
+              {
+                "id": "block_0004_0008",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              },
+              {
+                "id": "block_0004_0009",
+                "sha256": "1a50ddf4f7f43655270219d43a162c0a2a46bfab4da33f31e15378865dc9f963"
+              }
+            ]
+          },
+          {
+            "id": "page_0005",
+            "blocks": [
+              {
+                "id": "block_0005_0000",
+                "sha256": "a30d0555835b703d0dd5a90aabb0134813afd11904b5364f69f03b01695f6d7a"
+              },
+              {
+                "id": "block_0005_0001",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              },
+              {
+                "id": "block_0005_0002",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              },
+              {
+                "id": "block_0005_0003",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              },
+              {
+                "id": "block_0005_0004",
+                "sha256": "b5717d1a1d093541c479315585820f02d849fa5d3d91e24a7a2f7da82d1145b0"
+              },
+              {
+                "id": "block_0005_0005",
+                "sha256": "f7efff6db957ce4e51d46d81e2f6ab4e3ea3ac3031d3f06bba83eba892cdb3f9"
+              }
+            ]
+          },
+          {
+            "id": "page_0006",
+            "blocks": [
+              {
+                "id": "block_0006_0000",
+                "sha256": "a30d0555835b703d0dd5a90aabb0134813afd11904b5364f69f03b01695f6d7a"
+              },
+              {
+                "id": "block_0006_0001",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              },
+              {
+                "id": "block_0006_0002",
+                "sha256": "e23829be1be04ea89f9012d7f7af75946d941dc05ad860e57939007426c25be2"
+              },
+              {
+                "id": "block_0006_0003",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              },
+              {
+                "id": "block_0006_0004",
+                "sha256": "198f09d47f19c248800b4bfa975a6b419e29b8958d4b9283a1dcd88e8b2eef52"
+              }
+            ]
+          },
+          {
+            "id": "page_0007",
+            "blocks": [
+              {
+                "id": "block_0007_0000",
+                "sha256": "a30d0555835b703d0dd5a90aabb0134813afd11904b5364f69f03b01695f6d7a"
+              },
+              {
+                "id": "block_0007_0001",
+                "sha256": "6463066eaa05a4c5b1ff18ce365d8e7ddc740b91015a2d5925743ad4e9e21e68"
+              },
+              {
+                "id": "block_0007_0002",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              },
+              {
+                "id": "block_0007_0003",
+                "sha256": "aec5e523f83b2eac61794ad7b5ca8ac7321665a7a5bda105e66a0cd5fa8a230a"
+              },
+              {
+                "id": "block_0007_0004",
+                "sha256": "162dc68f4fc650770436a77dce232a3133288b2386f487b7379b14f7c5d91e2e"
+              },
+              {
+                "id": "block_0007_0005",
+                "sha256": "72345626de4f5af7dc30d004db9792843d4b15d4d21b266a6b2ea969b1f5c133"
+              },
+              {
+                "id": "block_0007_0006",
+                "sha256": "5b13f60f01622564b84c6078c36037796e904dc90382015563b710c48109eb05"
+              },
+              {
+                "id": "block_0007_0007",
+                "sha256": "a30d0555835b703d0dd5a90aabb0134813afd11904b5364f69f03b01695f6d7a"
+              },
+              {
+                "id": "block_0007_0008",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              },
+              {
+                "id": "block_0007_0009",
+                "sha256": "a1b0104d8ed3fdbfbd777af5e37ef596f98667a269c007a1b8da2c1be3bd6e9f"
+              }
+            ]
+          },
+          {
+            "id": "page_0008",
+            "blocks": [
+              {
+                "id": "block_0008_0000",
+                "sha256": "a30d0555835b703d0dd5a90aabb0134813afd11904b5364f69f03b01695f6d7a"
+              },
+              {
+                "id": "block_0008_0001",
+                "sha256": "5a25f39deebfacf70f31e9ed31d9496f83df3471d72bfcca57fec1493aee69a1"
+              },
+              {
+                "id": "block_0008_0002",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              },
+              {
+                "id": "block_0008_0003",
+                "sha256": "74a0f9004db152c63396760d06b8f60f07a57937160f0d05753a8034bdce9fea"
+              },
+              {
+                "id": "block_0008_0004",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              },
+              {
+                "id": "block_0008_0005",
+                "sha256": "a30d0555835b703d0dd5a90aabb0134813afd11904b5364f69f03b01695f6d7a"
+              },
+              {
+                "id": "block_0008_0006",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              },
+              {
+                "id": "block_0008_0007",
+                "sha256": "cb66b8e14275e82c7216e5e3f21fad041a2648dcf1ced2755bbab0347aa1b476"
+              },
+              {
+                "id": "block_0008_0008",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              }
+            ]
+          }
+        ]
+      }
+    },
+    "additions": [],
+    "editorial": []
+  }
+}

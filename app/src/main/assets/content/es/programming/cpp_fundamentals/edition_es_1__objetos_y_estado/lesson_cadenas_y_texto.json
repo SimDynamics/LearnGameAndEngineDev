@@ -1,0 +1,4387 @@
+{
+  "id": "cpp_fundamentals__edition_es_1__objetos_y_estado__cadenas_y_texto",
+  "title": "Conservar y construir texto",
+  "pages": [
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "Guardar una palabra en una variable"
+        },
+        {
+          "type": "paragraph",
+          "text": "Quieres guardar el nombre de una zona, por ejemplo Norte. En C++ puedes guardarlo en una variable de tipo std::string. Al leerla obtienes las cinco letras en el mismo orden en que las escribiste. A una secuencia de caracteres como esta la llamamos cadena. Una cadena también puede contener dígitos y espacios, como en Zona 2 (Stroustrup, 2024).\n\nFíjate en las dos primeras líneas del siguiente programa.\n\n#include <iostream> permite usar std::cout para mostrar texto.\n#include <string> permite usar std::string para guardarlo.\n\nLa parte std:: indica que esos nombres pertenecen a la biblioteca estándar de C++ (Köppe et al., 2023; Stroustrup, 2024)."
+        },
+        {
+          "type": "paragraph",
+          "text": "std::string zona = \"Norte\";\nLa variable se llama zona. Las comillas delimitan el texto en el código. La variable guarda las cinco letras de Norte (Stroustrup, 2024)."
+        },
+        {
+          "type": "code",
+          "language": "cpp",
+          "code": "#include <iostream>\n#include <string>\n\nint main() {\n    std::string zona = \"Norte\";\n\n    std::cout << zona;\n\n    return 0;\n}\n"
+        },
+        {
+          "type": "paragraph",
+          "text": "std::cout << zona; muestra lo que guarda la variable. En este programa aparece Norte.\n\n¿Qué pasaría si pusieras el nombre entre comillas? Con std::cout << \"zona\"; le das a std::cout un texto escrito en el código. Aparece la palabra zona."
+        },
+        {
+          "type": "fill_code",
+          "language": "cpp",
+          "question": "En el hueco, escribe el tipo que permite guardar el texto Puerta A.",
+          "code": "#include <iostream>\n#include <string>\n\nint main() {\n    ___ etiqueta = \"Puerta A\";\n    std::cout << etiqueta;\n\n    return 0;\n}\n",
+          "answers": [
+            "std::string"
+          ],
+          "explanation": "std::string permite guardar Puerta A en etiqueta. Al leer la variable, la consola muestra Puerta A.",
+          "reviewFeedback": "El hueco ocupa el lugar del tipo en la definición. Relaciona el dato que debe conservar la variable con el tipo de la biblioteca que acabas de utilizar; no escribas allí el nombre ni el valor inicial."
+        }
+      ]
+    },
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "Una cadena puede empezar vacía"
+        },
+        {
+          "type": "paragraph",
+          "text": "std::string etiqueta; crea una variable que empieza con un texto vacío. También puedes escribir std::string etiqueta = \"\";. Mira las dos comillas juntas. Entre ellas hay cero caracteres. Cualquiera de las dos líneas crea etiqueta con ese valor (Köppe et al., 2023; Stroustrup, 2024).\n\nEn el siguiente ejercicio, std::cout escribe un corchete, lee etiqueta y escribe el otro corchete. Usa esos signos para ver si la variable aporta algún texto entre ellos."
+        },
+        {
+          "type": "output_prediction",
+          "language": "cpp",
+          "question": "etiqueta es una cadena que acaba de crearse. ¿Qué texto muestra std::cout cuando escribe el corchete de apertura, luego etiqueta y por último el corchete de cierre? Escribe los caracteres de la salida.",
+          "code": "#include <iostream>\n#include <string>\n\nint main() {\n    std::string etiqueta;\n\n    std::cout << \"[\" << etiqueta << \"]\";\n\n    return 0;\n}\n",
+          "answers": [
+            "[]"
+          ],
+          "explanation": "La consola muestra []. Se escribe cada corchete y la cadena vacía deja los dos signos juntos.",
+          "reviewFeedback": "Busca la declaración de etiqueta. ¿Cuántos caracteres guarda esa cadena antes de que std::cout consulte su valor entre los dos corchetes?"
+        },
+        {
+          "type": "multiple_choice",
+          "question": "En la declaración std::string mensaje = \"\";, ¿qué caracteres quedan guardados en mensaje?",
+          "options": [
+            "Existe una variable de texto cuyo valor tiene cero caracteres.",
+            "El nombre mensaje no se ha definido.",
+            "Su valor contiene las dos comillas escritas en el inicializador."
+          ],
+          "correctIndex": 0,
+          "explanation": "mensaje existe. Empieza con un texto de cero caracteres.",
+          "reviewFeedback": [
+            "Mira los caracteres que hay entre las comillas del literal \"\". ¿Cuántos recibe mensaje?",
+            "std::string mensaje declara la variable. Las comillas indican qué texto recibe al crearse. ¿Cuántos caracteres hay entre ellas?",
+            "Separa las comillas que delimitan un literal de los caracteres escritos entre ellas. Revisa qué parte del código aporta realmente el contenido del texto."
+          ]
+        },
+        {
+          "type": "note",
+          "text": "El primer corchete sale del texto \"[\". El segundo sale de \"]\". Entre los dos se escribe lo que guarda etiqueta. Como empieza vacía, los corchetes aparecen juntos en la consola."
+        }
+      ]
+    },
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "Asignación y copia de texto"
+        },
+        {
+          "type": "paragraph",
+          "text": "En el programa de abajo, sigue las primeras tres líneas dentro de main.\n\n1. zona empieza guardando Norte.\n2. std::string registro = zona; copia ese texto en registro.\n3. zona = \"Sur\"; cambia solo la variable a la izquierda del signo igual. Ahora zona guarda Sur y registro sigue guardando Norte (Stroustrup, 2024)."
+        },
+        {
+          "type": "output_prediction",
+          "language": "cpp",
+          "question": "Al crear registro, el programa copia la palabra que guarda zona. Después asigna otra palabra a zona. Escribe el renglón de la salida con las dos palabras y el separador que escribe std::cout.",
+          "code": "#include <iostream>\n#include <string>\n\nint main() {\n    std::string zona = \"Norte\";\n\n    std::string registro = zona;\n\n    zona = \"Sur\";\n\n    std::cout << registro << \" / \" << zona;\n\n    return 0;\n}\n",
+          "answers": [
+            "Norte / Sur"
+          ],
+          "explanation": "Cuando se crea registro, recibe el texto Norte. La asignación cambia zona a Sur. Al mostrar las dos variables, la consola escribe Norte / Sur.",
+          "reviewFeedback": "Lee qué palabra guarda zona cuando se crea registro. Después mira qué nombre aparece a la izquierda de = en la instrucción que guarda \"Sur\". ¿Cuál de las dos variables cambia?"
+        },
+        {
+          "type": "fill_code",
+          "language": "cpp",
+          "question": "Escribe sólo un literal para asignar la palabra Cerrado a la variable estado.",
+          "code": "#include <iostream>\n#include <string>\n\nint main() {\n    std::string estado = \"Abierto\";\n\n    estado = ___;\n\n    std::cout << estado;\n\n    return 0;\n}\n",
+          "answers": [
+            "\"Cerrado\""
+          ],
+          "explanation": "El literal \"Cerrado\" aporta las letras que ahora guarda estado. La consola muestra Cerrado.",
+          "reviewFeedback": "El hueco debe proporcionar un valor de texto. Distingue el nombre de la variable de un literal y conserva las marcas que C++ necesita para delimitar ese texto."
+        },
+        {
+          "type": "multiple_choice",
+          "question": "La cadena zona guarda la palabra Norte. Al ejecutar zona = \"Sur\";, ¿qué cambia en la variable zona?",
+          "options": [
+            "Se añade Sur al final del texto que ya tenía.",
+            "Se conserva el texto anterior porque el tipo sigue siendo std::string.",
+            "Cambia el texto guardado en la variable. Antes contenía Norte y ahora contiene Sur."
+          ],
+          "correctIndex": 2,
+          "explanation": "zona = \"Sur\"; reemplaza las cinco letras de Norte por las tres de Sur en la misma variable. zona sigue siendo de tipo std::string.",
+          "reviewFeedback": [
+            "Revisa qué hace el operador = con el valor anterior. Distingue reemplazar un texto de añadir caracteres al final del que ya existe.",
+            "Distingue el tipo de un objeto del valor que conserva. Tener un tipo fijo no significa que ninguna instrucción pueda asignarle otro valor de ese mismo tipo.",
+            "Localiza la variable que recibe la asignación y sigue qué dato conserva después."
+          ]
+        }
+      ]
+    },
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "Usar el signo más para unir textos"
+        },
+        {
+          "type": "paragraph",
+          "text": "Supón que sala guarda la palabra Sala y numero guarda el texto 2. Si escribes sala + numero, quedan juntos en ese orden y se forma Sala2. A esta forma de unir textos le llamamos concatenar.\n\nSi quieres un espacio entre la palabra y el número, añádelo como parte del texto. En sala + \" \" + numero, las comillas del centro contienen un espacio. Se une primero la palabra con el espacio, y a ese texto se añade el 2 (Stroustrup, 2024)."
+        },
+        {
+          "type": "code",
+          "language": "cpp",
+          "code": "#include <iostream>\n#include <string>\n\nint main() {\n    std::string sala = \"Sala\";\n    std::string numero = \"2\";\n\n    std::string nombre = sala + \" \" + numero;\n\n    std::cout << nombre;\n\n    return 0;\n}\n"
+        },
+        {
+          "type": "paragraph",
+          "text": "sala + \" \" + numero une, en orden, la palabra Sala, un espacio y el dígito 2. La variable nombre guarda el resultado y std::cout << nombre; muestra Sala 2. Después de la unión, sala sigue guardando Sala y numero sigue guardando 2."
+        },
+        {
+          "type": "output_prediction",
+          "language": "cpp",
+          "question": "Predice la salida exacta, sin escribir las comillas del código.",
+          "code": "#include <iostream>\n#include <string>\n\nint main() {\n    std::string a = \"Puerta\";\n    std::string b = \"B\";\n\n    std::cout << a + b << \"\\n\" << a + \" \" + b;\n\n    return 0;\n}\n",
+          "answers": [
+            "PuertaB\nPuerta B"
+          ],
+          "explanation": "a + b une las letras de Puerta con la B y forma PuertaB. A continuación, std::cout escribe un salto de línea. En a + \" \" + b, el literal \" \" añade un espacio entre las dos cadenas y el segundo renglón de la salida dice Puerta B.",
+          "reviewFeedback": "a guarda Puerta y b guarda B. Mira qué caracteres se añaden entre esas dos cadenas en cada expresión y dónde envía std::cout el salto de línea."
+        },
+        {
+          "type": "inline_fill_code",
+          "question": "Rellena las dos variables con los literales de texto de una palabra cada uno. El espacio ya está escrito en la línea de std::cout. La consola debe mostrar Sector Oeste.",
+          "template": "#include <iostream>\n#include <string>\n\nint main() {\n    std::string primera = [];\n    std::string segunda = [];\n\n    std::cout << primera + \" \" + segunda;\n\n    return 0;\n}\n",
+          "answers": [
+            "\"Sector\"",
+            "\"Oeste\""
+          ],
+          "reviewFeedback": "Revisa qué texto debe aportar cada variable y cómo se delimita un literal para inicializar una cadena. Localiza el separador que ya proporciona la expresión de salida; comprueba si tus datos repiten u omiten caracteres del mensaje solicitado.",
+          "explanation": "\"Sector\" da la primera palabra y \"Oeste\" da la segunda. El texto entre comillas de la línea de salida pone el espacio en medio. La consola muestra Sector Oeste (Stroustrup, 2024)."
+        },
+        {
+          "type": "fill_code",
+          "language": "cpp",
+          "code": "#include <iostream>\n#include <string>\n\nint main() {\n    std::string sede = \"Norte\";\n    std::string codigo = \"03\";\n\n    std::string etiqueta = sede + ___ + codigo;\n\n    std::cout << etiqueta;\n\n    return 0;\n}\n",
+          "answers": [
+            "\"-\""
+          ],
+          "id": "p1u2l7_poner_el_separador",
+          "question": "La etiqueta tiene que salir como Norte-03. Escribe el literal de texto que va entre sede y codigo.",
+          "reviewFeedback": "Busca qué signo separa la palabra del código. En el hueco debe ir como texto entre comillas dobles.",
+          "explanation": "\"-\" aporta un guion. sede aporta Norte y codigo aporta 03. La consola muestra Norte-03."
+        }
+      ]
+    },
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "Sumar números y unir textos con dígitos"
+        },
+        {
+          "type": "paragraph",
+          "text": "2 es un número de tipo int. En cambio, las comillas de \"2\" indican que escribiste texto. Una variable de tipo std::string puede guardar ese texto, que aquí tiene un solo carácter (Stroustrup, 2024).\n\nEn el siguiente programa hay una sola instrucción con std::cout. Sigue lo que escribe de izquierda a derecha.\n\n1. a + b une los textos guardados en las dos cadenas.\n2. \"\\n\" hace que el siguiente resultado aparezca en otro renglón.\n3. x + y suma las cantidades guardadas en los dos enteros."
+        },
+        {
+          "type": "output_prediction",
+          "language": "cpp",
+          "question": "Escribe los dos renglones que muestra std::cout. En el primero se unen los textos y en el segundo se suman los números.",
+          "code": "#include <iostream>\n#include <string>\n\nint main() {\n    std::string a = \"12\";\n    std::string b = \"3\";\n    int x = 12;\n    int y = 3;\n\n    std::cout << a + b << \"\\n\" << x + y;\n\n    return 0;\n}\n",
+          "answers": [
+            "123\n15"
+          ],
+          "explanation": "a guarda 12 como texto y b guarda 3 como texto. Al unirlos aparece 123 en el primer renglón. Después del salto de línea, se muestra la suma de los enteros doce y tres. Aparece 15 en el segundo renglón.",
+          "reviewFeedback": "En a + b, lee los caracteres de la primera cadena y luego los de la segunda. En x + y, calcula la suma."
+        },
+        {
+          "type": "multiple_choice",
+          "question": "Dos etiquetas de texto contienen \"04\" y \"2\". ¿Qué produce concatenarlas en ese orden?",
+          "options": [
+            "\"042\"",
+            "Una cantidad entera de valor 42",
+            "\"6\""
+          ],
+          "correctIndex": 0,
+          "explanation": "La primera etiqueta aporta los caracteres 0 y 4, en ese orden. La segunda aporta 2. Al concatenarlas, la cadena resultante contiene los tres caracteres 042, incluido el cero inicial.",
+          "reviewFeedback": [
+            "Lee primero los dos caracteres de \"04\" y después el carácter de \"2\". ¿En qué posición queda el cero?",
+            "Las etiquetas contienen texto. ¿Qué caracteres quedan juntos al colocar la segunda etiqueta después de la primera?",
+            "Mira las comillas de \"04\" y \"2\". Aquí se pide unir esos textos. ¿Qué tres caracteres forman el resultado?"
+          ]
+        },
+        {
+          "type": "fill_code",
+          "language": "cpp",
+          "question": "Completa la línea de std::cout con el nombre de la variable que guarda Entrada.",
+          "code": "#include <iostream>\n#include <string>\n\nint main() {\n    std::string cartel = \"Entrada\";\n\n    std::cout << ___;\n\n    return 0;\n}\n",
+          "answers": [
+            "cartel"
+          ],
+          "explanation": "En std::cout << cartel; se lee el texto guardado en cartel. Por eso aparece Entrada en la consola.",
+          "reviewFeedback": "Busca la declaración que contiene el literal \"Entrada\". ¿Cómo se llama la variable que guarda ese texto?"
+        }
+      ]
+    },
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "Añadir texto a una variable que ya existe"
+        },
+        {
+          "type": "paragraph",
+          "text": "Imagina que cartel es una variable std::string que guarda Taller. Puedes unir su texto con otro en el orden que necesites.\n\ncartel + \" abierto\" forma Taller abierto. El espacio está al principio de \" abierto\".\n\"Zona: \" + cartel forma Zona: Taller. Esta vez el texto fijo va primero y el espacio está después de los dos puntos.\n\nCada expresión forma un texto nuevo. En ambos ejemplos cartel sigue guardando Taller. En cambio, con dos literales como \"Taller\" + \" abierto\" el programa da un error de compilación. El operador + que usamos en estos ejemplos para unir textos necesita que al menos uno de los dos sea de tipo std::string (Köppe et al., 2023).\n\nPara cambiar lo que guarda la propia variable, escribe cartel += \" abierto\";. Esta instrucción añade el espacio y la palabra al final de cartel. Ahora la variable guarda Taller abierto. También puedes escribir esa actualización como cartel = cartel + \" abierto\"; (Köppe et al., 2023; Stroustrup, 2024)."
+        },
+        {
+          "type": "output_prediction",
+          "language": "cpp",
+          "question": "Predice la salida exacta, sin escribir las comillas del código.",
+          "code": "#include <iostream>\n#include <string>\n\nint main() {\n    std::string cartel = \"Taller\";\n\n    std::string anterior = cartel;\n\n    cartel += \" abierto\";\n\n    std::cout << anterior << \"\\n\" << cartel;\n\n    return 0;\n}\n",
+          "answers": [
+            "Taller\nTaller abierto"
+          ],
+          "explanation": "anterior copia el texto Taller. Después, += añade un espacio y abierto a cartel. Salen Taller en el primer renglón y Taller abierto en el segundo.",
+          "reviewFeedback": "Primero localiza la copia y después la actualización. Sigue qué variable modifica += y conserva los espacios que realmente contiene el texto añadido."
+        },
+        {
+          "type": "multiple_choice",
+          "question": "El texto \" abierto\" empieza con un espacio. Al añadirlo a Taller, ¿dónde se ve ese espacio?",
+          "options": [
+            "El espacio que cout inserta siempre entre dos cadenas.",
+            "La separación visible entre Taller y abierto.",
+            "La separación entre instrucciones del archivo fuente."
+          ],
+          "correctIndex": 1,
+          "explanation": "El primer carácter de \" abierto\" es un espacio. Al añadir ese texto a Taller, el espacio queda justo después de la última letra de Taller. Por eso ves Taller abierto.",
+          "reviewFeedback": [
+            "Fíjate en el primer carácter entre las comillas de \" abierto\". ¿Quién puso ahí el espacio?",
+            "Localiza el espacio dentro del texto añadido y relaciona su posición con la unión de las dos palabras.",
+            "Busca el espacio dentro de \" abierto\". ¿Dónde aparecerá al unir las dos palabras?"
+          ]
+        },
+        {
+          "type": "fill_code",
+          "language": "cpp",
+          "code": "#include <iostream>\n#include <string>\n\nint main() {\n    std::string cartel = \"Material\";\n    cartel ___ \" listo\";\n    std::cout << cartel;\n\n    return 0;\n}\n",
+          "answers": [
+            "+="
+          ],
+          "id": "p1u2l7_agregar_con_espacio",
+          "question": "El cartel ya guarda Material. En el hueco, escribe el operador que añade el texto de la derecha al cartel. La consola debe mostrar Material listo.",
+          "reviewFeedback": "Busca el operador que une los dos textos y guarda el resultado en la variable de la izquierda.",
+          "explanation": "+= añade el espacio y la palabra listo al texto guardado en cartel. Por eso la consola muestra Material listo."
+        },
+        {
+          "type": "output_prediction",
+          "language": "cpp",
+          "code": "#include <iostream>\n#include <string>\n\nint main() {\n    std::string zona{\"Norte\"};\n\n    auto aviso{\"Zona: \" + zona};\n\n    zona += \" A\";\n\n    std::cout << aviso << \"\\n\" << zona;\n\n    return 0;\n}\n",
+          "answers": [
+            "Zona: Norte\nNorte A"
+          ],
+          "question": "El programa prepara un aviso con el nombre de la zona. Después añade una letra al nombre. Escribe qué muestra la consola en cada renglón. Primero muestra aviso y después zona.",
+          "reviewFeedback": "Busca el texto que guarda zona cuando se crea aviso. Luego mira en qué variable se añade \" A\".",
+          "explanation": "Al declarar aviso, \"Zona: \" + zona une el texto fijo con Norte. El resultado es una cadena std::string. Ese es el tipo que el compilador deduce para aviso.\n\nzona += \" A\"; añade un espacio y la letra A a zona. El aviso conserva el texto que ya tenía. Por eso ves estos dos renglones.\n\nZona: Norte\nNorte A",
+          "id": "p1u2l7_predecir_aviso_y_zona"
+        }
+      ]
+    },
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "Construir la etiqueta de un aula"
+        },
+        {
+          "type": "paragraph",
+          "text": "Escribe un programa que construya la etiqueta de un aula con el nombre del edificio y un código.\n\n1. Guarda \"Aula\" en una variable std::string llamada edificio.\n2. Guarda \"04\" en otra cadena llamada codigo. Conserva el cero.\n3. Une los dos textos con un guion en medio. Guarda el resultado en etiqueta y usa std::cout para mostrar esa variable.\n\nPulsa «Compilar, ejecutar y comprobar». La consola debe mostrar Aula-04. Puedes añadir un salto de línea al final."
+        },
+        {
+          "type": "cpp_compiler",
+          "initialCode": "#include <iostream>\n#include <string>\n\nint main() {\n    // Escribe aqui tu programa.\n    \n    return 0;\n}\n",
+          "outputCheck": {
+            "inputComparison": "exact",
+            "cases": [
+              {
+                "standardInput": "",
+                "outputs": [
+                  "Aula-04",
+                  "Aula-04\n"
+                ]
+              }
+            ]
+          }
+        },
+        {
+          "type": "paragraph",
+          "text": "Si aparece Aula04, busca qué texto va en medio de edificio y codigo. Si falta el cero, revisa cómo guardaste el código."
+        }
+      ]
+    },
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "Leer la etiqueta y seguir un cambio de código"
+        },
+        {
+          "type": "code",
+          "language": "cpp",
+          "code": "#include <iostream>\n#include <string>\n\nint main() {\n    std::string edificio = \"Aula\";\n    std::string codigo = \"04\";\n\n    std::string etiqueta = edificio + \"-\" + codigo;\n\n    std::cout << etiqueta;\n\n    return 0;\n}\n"
+        },
+        {
+          "type": "paragraph",
+          "text": "En edificio + \"-\" + codigo, la variable edificio aporta Aula, el literal \"-\" aporta el guion y la variable codigo aporta 04. La variable etiqueta guarda el texto completo. Al ejecutar std::cout << etiqueta;, la consola muestra Aula-04.\n\nEn los siguientes ejercicios cambiará el código del aula. Mira cuándo se forma el texto de la etiqueta, en qué variable se guarda el nuevo código y qué variable consulta std::cout al escribir cada texto."
+        },
+        {
+          "type": "output_prediction",
+          "language": "cpp",
+          "question": "etiqueta se forma con el nombre y el código de un área. Después de codigo = \"2\";, ¿qué renglón muestra std::cout al leer etiqueta y luego codigo?",
+          "code": "#include <iostream>\n#include <string>\n\nint main() {\n    std::string nombre = \"Area\";\n    std::string codigo = \"1\";\n\n    std::string etiqueta = nombre + codigo;\n\n    codigo = \"2\";\n\n    std::cout << etiqueta << \" \" << codigo;\n\n    return 0;\n}\n",
+          "answers": [
+            "Area1 2"
+          ],
+          "explanation": "etiqueta ya guarda Area1 cuando codigo cambia a 2. La consola lee ambas variables y muestra Area1 2.",
+          "reviewFeedback": "Cuando el programa une nombre y codigo para guardar la etiqueta, ¿qué dígito contiene codigo? Después de la asignación, ¿cuál de las dos variables contiene el dígito nuevo?"
+        },
+        {
+          "type": "multiple_choice",
+          "question": "El código de una caja es 0015. Quieres imprimirlo con los dos ceros iniciales tal como lo guardaste. ¿Qué declaración usarías?",
+          "options": [
+            "std::string codigo = \"0015\";",
+            "int codigo = 15;",
+            "double codigo = 15.0;"
+          ],
+          "correctIndex": 0,
+          "explanation": "std::string guarda los cuatro caracteres de 0015. Así la consola puede mostrar el código con los dos ceros al principio.",
+          "reviewFeedback": [
+            "Cuenta los caracteres entre las comillas de \"0015\".",
+            "Si guardas el número 15, ¿queda guardado cuántos ceros llevaba delante el código de la caja?",
+            "El punto de 15.0 permite escribir un número de tipo double. Fíjate en cuáles son los cuatro caracteres que necesitas conservar."
+          ]
+        },
+        {
+          "type": "output_prediction",
+          "id": "u2_texto_etiqueta_antes_del_cambio",
+          "language": "cpp",
+          "question": "El programa crea una etiqueta y después cambia el código. Escribe la línea que muestra la consola. Respeta los caracteres del texto guardado en etiqueta.",
+          "code": "#include <iostream>\n#include <string>\n\nint main() {\n    std::string edificio = \"Aula\";\n    std::string codigo = \"04\";\n\n    std::string etiqueta = edificio + \"-\" + codigo;\n\n    codigo = \"07\";\n\n    std::cout << etiqueta;\n\n    return 0;\n}\n",
+          "answers": [
+            "Aula-04"
+          ],
+          "explanation": "Cuando se crea etiqueta, codigo guarda 04. Después solo cambia codigo. Al leer etiqueta, la consola muestra Aula-04.",
+          "reviewFeedback": "Localiza cuándo recibe su valor cada variable. Sigue las instrucciones en orden y distingue una asignación a codigo de una instrucción que cambie etiqueta; mostrar una variable consulta el valor que ya conserva."
+        },
+        {
+          "type": "multiple_choice",
+          "id": "u2_texto_justificacion_actualizar_etiqueta",
+          "question": "codigo ya cambió a 07. ¿Qué tiene que hacer el programa para que etiqueta guarde Aula-07?",
+          "options": [
+            "Cambiar sólo el literal de una salida modifica también el texto que etiqueta tiene guardado.",
+            "Mostrar otra vez etiqueta hace que recupere automáticamente el valor más reciente de codigo.",
+            "Volver a unir el nombre del edificio, el guion y el nuevo código \"07\". Guardar el texto resultante en etiqueta."
+          ],
+          "correctIndex": 2,
+          "explanation": "Después de codigo = \"07\";, la variable etiqueta todavía guarda Aula-04. La expresión edificio + \"-\" + codigo usa el nuevo código y forma Aula-07. Al asignar esa cadena a etiqueta, el programa reemplaza el texto anterior por la nueva etiqueta.",
+          "reviewFeedback": [
+            "Distingue los caracteres enviados a la consola del valor guardado en una variable. Revisa si modificar una instrucción de salida escribe en etiqueta.",
+            "Una salida consulta el valor de la variable que lee. Busca qué instrucciones cambian los objetos y cuáles sólo los muestran.",
+            "Sigue el momento en que se obtiene cada resultado y el objeto que lo recibe. Compara calcular una combinación con conservarla en una variable."
+          ]
+        },
+        {
+          "type": "inline_fill_code",
+          "template": "#include <iostream>\n#include <string>\n\nint main() {\n    std::string sala = \"Sala\";\n    std::string turno = \"A\";\n\n    std::string cartel = sala + \" \" + turno;\n\n    turno = \"B\";\n    [] = sala + \" \" + [];\n    std::cout << cartel;\n\n    return 0;\n}\n",
+          "answers": [
+            "cartel",
+            "turno"
+          ],
+          "id": "p1u2l7_recalcular_el_cartel",
+          "question": "El cartel decía Sala A y el turno pasó a B. Completa la línea que deja guardado Sala B en el cartel. Escribe primero el nombre de la variable que quieres cambiar y después el de la variable que trae el turno nuevo.",
+          "reviewFeedback": "A la izquierda del signo igual debe estar la variable que va a guardar todo el texto. En el segundo hueco, lee la variable que ya guarda B.",
+          "explanation": "turno ya guarda B. La suma de los textos forma Sala B y el signo igual guarda el resultado en cartel. La consola muestra Sala B."
+        }
+      ]
+    },
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "Reconstruir una etiqueta después de cambiar el código"
+        },
+        {
+          "type": "note",
+          "text": "La primera solución también se puede escribir con llaves. Al inicializar etiqueta, las llaves rodean la expresión que une los tres textos."
+        },
+        {
+          "type": "paragraph",
+          "text": "Mira el valor que ya está guardado en codigo cuando el programa crea etiqueta. En el ejemplo de abajo guarda 04. La consola mostrará Aula-04."
+        },
+        {
+          "type": "code",
+          "language": "cpp",
+          "code": "#include <iostream>\n#include <string>\n\nint main() {\n    std::string edificio{\"Aula\"};\n    std::string codigo{\"04\"};\n\n    std::string etiqueta{edificio + \"-\" + codigo};\n\n    std::cout << etiqueta;\n\n    return 0;\n}\n"
+        },
+        {
+          "type": "heading",
+          "text": "Escribir la línea que actualiza la etiqueta"
+        },
+        {
+          "type": "paragraph",
+          "text": "El código del aula acaba de cambiar de 04 a 07. El programa inicial todavía muestra Aula-04 porque etiqueta se construyó antes del cambio.\n\nAñade una línea después de codigo = \"07\";. En esa línea, vuelve a unir el edificio, el guion y el código actual. Guarda el resultado en etiqueta.\n\nPulsa «Compilar, ejecutar y comprobar». La consola debe mostrar Aula-07. Puedes añadir un salto de línea al final."
+        },
+        {
+          "type": "cpp_compiler",
+          "initialCode": "#include <iostream>\n#include <string>\n\nint main() {\n    std::string edificio = \"Aula\";\n    std::string codigo = \"04\";\n\n    std::string etiqueta = edificio + \"-\" + codigo;\n\n    codigo = \"07\";\n\n    std::cout << etiqueta;\n\n    return 0;\n}\n",
+          "outputCheck": {
+            "inputComparison": "exact",
+            "cases": [
+              {
+                "standardInput": "",
+                "outputs": [
+                  "Aula-07",
+                  "Aula-07\n"
+                ]
+              }
+            ]
+          }
+        },
+        {
+          "type": "paragraph",
+          "text": "Sigue lo que hay en las dos variables.\n\nCuando se construye la primera etiqueta, codigo guarda 04 y etiqueta guarda Aula-04.\nDespués de codigo = \"07\";, codigo guarda 07 y etiqueta sigue guardando Aula-04.\nDespués de etiqueta = edificio + \"-\" + codigo;, etiqueta guarda Aula-07. Ese es el texto que lee std::cout."
+        },
+        {
+          "type": "code",
+          "language": "cpp",
+          "code": "#include <iostream>\n#include <string>\n\nint main() {\n    std::string edificio = \"Aula\";\n    std::string codigo = \"04\";\n\n    std::string etiqueta = edificio + \"-\" + codigo;\n\n    codigo = \"07\";\n    etiqueta = edificio + \"-\" + codigo;\n\n    std::cout << etiqueta;\n\n    return 0;\n}\n"
+        },
+        {
+          "type": "paragraph",
+          "text": "La línea que actualiza la etiqueta se ejecuta después del cambio de código. Por eso la consola muestra Aula-07."
+        }
+      ]
+    }
+  ],
+  "activityAfter": [
+    {
+      "activity": "block_0008_0006",
+      "requires": [
+        "block_0006_0002"
+      ]
+    }
+  ],
+  "referenceAfter": [
+    {
+      "activity": "block_0006_0002",
+      "blocks": [
+        "block_0007_0000",
+        "block_0007_0001",
+        "block_0007_0002",
+        "block_0008_0000",
+        "block_0008_0001",
+        "block_0008_0002",
+        "block_0008_0003"
+      ]
+    },
+    {
+      "activity": "block_0008_0006",
+      "blocks": [
+        "block_0008_0007",
+        "block_0008_0008",
+        "block_0008_0009"
+      ]
+    }
+  ],
+  "compilerPuzzlesRequired": true,
+  "textSemantics": {
+    "version": 1,
+    "fields": [
+      {
+        "block": "block_0000_0000",
+        "path": "/text",
+        "sourceSha256": "a4f39eeeb16c1b907d5dca355f085be9395dd13d03e2397d4d487b2142229953",
+        "spans": []
+      },
+      {
+        "block": "block_0000_0001",
+        "path": "/text",
+        "sourceSha256": "f48fbc4d8d2d5935d354473bc3565c9dc9bf8d731ad86f99c2bdc4871bba1dda",
+        "spans": [
+          {
+            "start": 51,
+            "end": 56,
+            "text": "Norte",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 106,
+            "end": 117,
+            "text": "std::string",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 318,
+            "end": 324,
+            "text": "Zona 2",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 325,
+            "end": 343,
+            "text": "(Stroustrup, 2024)",
+            "role": "citation",
+            "reading": "natural"
+          },
+          {
+            "start": 405,
+            "end": 424,
+            "text": "#include <iostream>",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 438,
+            "end": 447,
+            "text": "std::cout",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 468,
+            "end": 485,
+            "text": "#include <string>",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 499,
+            "end": 510,
+            "text": "std::string",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 537,
+            "end": 542,
+            "text": "std::",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 610,
+            "end": 648,
+            "text": "(Köppe et al., 2023; Stroustrup, 2024)",
+            "role": "citation",
+            "reading": "natural"
+          }
+        ]
+      },
+      {
+        "block": "block_0000_0002",
+        "path": "/text",
+        "sourceSha256": "baa70c998a62ae7fb41541eba046dcbd192d8201212db65bddf8ad7b94c52782",
+        "spans": [
+          {
+            "start": 0,
+            "end": 27,
+            "text": "std::string zona = \"Norte\";",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 49,
+            "end": 53,
+            "text": "zona",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 140,
+            "end": 145,
+            "text": "Norte",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 146,
+            "end": 164,
+            "text": "(Stroustrup, 2024)",
+            "role": "citation",
+            "reading": "natural"
+          }
+        ]
+      },
+      {
+        "block": "block_0000_0005",
+        "path": "/question",
+        "sourceSha256": "39eb176c699497d64d433935762e34d216a05b710e88cc63c6aa3bf715d86638",
+        "spans": [
+          {
+            "start": 58,
+            "end": 66,
+            "text": "Puerta A",
+            "role": "data",
+            "reading": "natural"
+          }
+        ]
+      },
+      {
+        "block": "block_0000_0005",
+        "path": "/explanation",
+        "sourceSha256": "fc2046929a3676758bfe9711de9064334a4a7ad7ae3b90cf8b400612a93f96af",
+        "spans": [
+          {
+            "start": 0,
+            "end": 11,
+            "text": "std::string",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 28,
+            "end": 36,
+            "text": "Puerta A",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 40,
+            "end": 48,
+            "text": "etiqueta",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 90,
+            "end": 98,
+            "text": "Puerta A",
+            "role": "output",
+            "reading": "natural"
+          }
+        ]
+      },
+      {
+        "block": "block_0000_0005",
+        "path": "/reviewFeedback",
+        "sourceSha256": "5cc910fac7220c31d721d222d45eae5a4a7f80c5e37579993e3ee1ffe882a400",
+        "spans": []
+      },
+      {
+        "block": "block_0001_0000",
+        "path": "/text",
+        "sourceSha256": "c0a8200511f160b02f3790f715deed4d084e18295e30c661e1b5fb17be5b7867",
+        "spans": []
+      },
+      {
+        "block": "block_0001_0001",
+        "path": "/text",
+        "sourceSha256": "e2f93c5e63f56d77e1f22613e62ef23b0462b0f881dfd7dc73807da0d7396bb4",
+        "spans": [
+          {
+            "start": 0,
+            "end": 21,
+            "text": "std::string etiqueta;",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 96,
+            "end": 122,
+            "text": "std::string etiqueta = \"\";",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 221,
+            "end": 229,
+            "text": "etiqueta",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 244,
+            "end": 282,
+            "text": "(Köppe et al., 2023; Stroustrup, 2024)",
+            "role": "citation",
+            "reading": "natural"
+          },
+          {
+            "start": 312,
+            "end": 321,
+            "text": "std::cout",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 347,
+            "end": 355,
+            "text": "etiqueta",
+            "role": "cpp",
+            "reading": "technical"
+          }
+        ]
+      },
+      {
+        "block": "block_0001_0002",
+        "path": "/question",
+        "sourceSha256": "52c22238cb5a3dd90238fa48c6a9cb3328267361cb706ad74b104b8b52b93baf",
+        "spans": [
+          {
+            "start": 0,
+            "end": 8,
+            "text": "etiqueta",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 64,
+            "end": 73,
+            "text": "std::cout",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 120,
+            "end": 128,
+            "text": "etiqueta",
+            "role": "cpp",
+            "reading": "technical"
+          }
+        ]
+      },
+      {
+        "block": "block_0001_0002",
+        "path": "/explanation",
+        "sourceSha256": "09867d43764b808ea20c8ab2fa23b5bab40584a310e9e8103761af4e992f4a1a",
+        "spans": [
+          {
+            "start": 19,
+            "end": 21,
+            "text": "[]",
+            "role": "output",
+            "reading": "natural"
+          }
+        ]
+      },
+      {
+        "block": "block_0001_0002",
+        "path": "/reviewFeedback",
+        "sourceSha256": "5972f6ac30f649fa38e4bf527ab8059a60630c6bd38094a89acdebcc2535bbeb",
+        "spans": [
+          {
+            "start": 24,
+            "end": 32,
+            "text": "etiqueta",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 85,
+            "end": 94,
+            "text": "std::cout",
+            "role": "cpp",
+            "reading": "technical"
+          }
+        ]
+      },
+      {
+        "block": "block_0001_0003",
+        "path": "/question",
+        "sourceSha256": "deec7bb359679f5d8fa6596635028bd65dd3884f1b1b4082719298ec79eec2c5",
+        "spans": [
+          {
+            "start": 18,
+            "end": 43,
+            "text": "std::string mensaje = \"\";",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 81,
+            "end": 88,
+            "text": "mensaje",
+            "role": "cpp",
+            "reading": "technical"
+          }
+        ]
+      },
+      {
+        "block": "block_0001_0003",
+        "path": "/explanation",
+        "sourceSha256": "df148b3264ba139c471965a3f14b2f21b217a725be7b73e049f620c3ea32843f",
+        "spans": [
+          {
+            "start": 0,
+            "end": 7,
+            "text": "mensaje",
+            "role": "cpp",
+            "reading": "technical"
+          }
+        ]
+      },
+      {
+        "block": "block_0001_0003",
+        "path": "/options/0",
+        "sourceSha256": "628bc747a3bd6374ee9af544637c33ac528be246eda9b9385f00db2775ea6b0c",
+        "spans": [
+          {
+            "start": 46,
+            "end": 50,
+            "text": "cero",
+            "role": "data",
+            "reading": "natural"
+          }
+        ]
+      },
+      {
+        "block": "block_0001_0003",
+        "path": "/options/1",
+        "sourceSha256": "d757aec5062b452a56bd47293a9b2055e670c8cd6f7dd3edb3a8b8d998228ed1",
+        "spans": [
+          {
+            "start": 10,
+            "end": 17,
+            "text": "mensaje",
+            "role": "cpp",
+            "reading": "technical"
+          }
+        ]
+      },
+      {
+        "block": "block_0001_0003",
+        "path": "/options/2",
+        "sourceSha256": "836e82c9f503c7e2e77a805671c9fa410d1a49ef0a80d7f2285ec313def932a4",
+        "spans": [
+          {
+            "start": 22,
+            "end": 25,
+            "text": "dos",
+            "role": "data",
+            "reading": "natural"
+          }
+        ]
+      },
+      {
+        "block": "block_0001_0003",
+        "path": "/reviewFeedback/0",
+        "sourceSha256": "a2e7a675cc0214c481bb8dbd7e1cf8c853c9861a7d597e98353b36b880e7dfb5",
+        "spans": [
+          {
+            "start": 59,
+            "end": 61,
+            "text": "\"\"",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 79,
+            "end": 86,
+            "text": "mensaje",
+            "role": "cpp",
+            "reading": "technical"
+          }
+        ]
+      },
+      {
+        "block": "block_0001_0003",
+        "path": "/reviewFeedback/1",
+        "sourceSha256": "058ada1d675e038b65daa1cc5065a54fc5763ede9a3e144d57fe4ff0bb0b9a16",
+        "spans": [
+          {
+            "start": 0,
+            "end": 19,
+            "text": "std::string mensaje",
+            "role": "cpp",
+            "reading": "technical"
+          }
+        ]
+      },
+      {
+        "block": "block_0001_0003",
+        "path": "/reviewFeedback/2",
+        "sourceSha256": "e5fa6a002362564680519f6a6c2cf3947de0189dcc894e14d977bb80bc28fbc8",
+        "spans": []
+      },
+      {
+        "block": "block_0001_0004",
+        "path": "/text",
+        "sourceSha256": "d9d7ab5e70a09ec0ad812d7654af325ce75fec5f09d8328fbe6fedb5d949e3d1",
+        "spans": [
+          {
+            "start": 34,
+            "end": 37,
+            "text": "\"[\"",
+            "role": "string",
+            "reading": "natural"
+          },
+          {
+            "start": 58,
+            "end": 61,
+            "text": "\"]\"",
+            "role": "string",
+            "reading": "natural"
+          },
+          {
+            "start": 102,
+            "end": 110,
+            "text": "etiqueta",
+            "role": "cpp",
+            "reading": "technical"
+          }
+        ]
+      },
+      {
+        "block": "block_0002_0000",
+        "path": "/text",
+        "sourceSha256": "a0f55886331d7ef6035234db83e050c7bb3977f1adac953299bb7305b432a57a",
+        "spans": []
+      },
+      {
+        "block": "block_0002_0001",
+        "path": "/text",
+        "sourceSha256": "87102c35eee7874aca0cd65b2dc8578a0edc03692643c36628639175cb662509",
+        "spans": [
+          {
+            "start": 66,
+            "end": 70,
+            "text": "main",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 76,
+            "end": 80,
+            "text": "zona",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 99,
+            "end": 104,
+            "text": "Norte",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 109,
+            "end": 137,
+            "text": "std::string registro = zona;",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 157,
+            "end": 165,
+            "text": "registro",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 170,
+            "end": 183,
+            "text": "zona = \"Sur\";",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 246,
+            "end": 250,
+            "text": "zona",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 258,
+            "end": 261,
+            "text": "Sur",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 264,
+            "end": 272,
+            "text": "registro",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 289,
+            "end": 294,
+            "text": "Norte",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 295,
+            "end": 313,
+            "text": "(Stroustrup, 2024)",
+            "role": "citation",
+            "reading": "natural"
+          }
+        ]
+      },
+      {
+        "block": "block_0002_0002",
+        "path": "/question",
+        "sourceSha256": "b461f93aa34becf75a4a268cf601eda5af95371b8d33801bdcc89f111d294c3d",
+        "spans": [
+          {
+            "start": 9,
+            "end": 17,
+            "text": "registro",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 59,
+            "end": 63,
+            "text": "zona",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 95,
+            "end": 99,
+            "text": "zona",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 181,
+            "end": 190,
+            "text": "std::cout",
+            "role": "cpp",
+            "reading": "technical"
+          }
+        ]
+      },
+      {
+        "block": "block_0002_0002",
+        "path": "/explanation",
+        "sourceSha256": "2742eacdee1bdbc450c914e54bbd2522ed09aff384f60d031aa5b4c8a85489bb",
+        "spans": [
+          {
+            "start": 15,
+            "end": 23,
+            "text": "registro",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 41,
+            "end": 46,
+            "text": "Norte",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 69,
+            "end": 73,
+            "text": "zona",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 76,
+            "end": 79,
+            "text": "Sur",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 130,
+            "end": 141,
+            "text": "Norte / Sur",
+            "role": "output",
+            "reading": "natural"
+          }
+        ]
+      },
+      {
+        "block": "block_0002_0002",
+        "path": "/reviewFeedback",
+        "sourceSha256": "7eac4426078b561a033cf4c234b7841a0c75e43a3bfe0016c1a915c5d3342c54",
+        "spans": [
+          {
+            "start": 23,
+            "end": 27,
+            "text": "zona",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 43,
+            "end": 51,
+            "text": "registro",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 103,
+            "end": 104,
+            "text": "=",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 134,
+            "end": 139,
+            "text": "\"Sur\"",
+            "role": "cpp",
+            "reading": "technical"
+          }
+        ]
+      },
+      {
+        "block": "block_0002_0003",
+        "path": "/question",
+        "sourceSha256": "7e44dd4e333a22a1fd92d4f8fcdd921aec013cc3c6f390c4b9573ebb3b973c17",
+        "spans": [
+          {
+            "start": 48,
+            "end": 55,
+            "text": "Cerrado",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 70,
+            "end": 76,
+            "text": "estado",
+            "role": "cpp",
+            "reading": "technical"
+          }
+        ]
+      },
+      {
+        "block": "block_0002_0003",
+        "path": "/explanation",
+        "sourceSha256": "6b4fa9f6b6b1186fca0db8e6d4b30a9d08642a05ecb2706981397515df24b27f",
+        "spans": [
+          {
+            "start": 11,
+            "end": 20,
+            "text": "\"Cerrado\"",
+            "role": "string",
+            "reading": "natural"
+          },
+          {
+            "start": 56,
+            "end": 62,
+            "text": "estado",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 83,
+            "end": 90,
+            "text": "Cerrado",
+            "role": "output",
+            "reading": "natural"
+          }
+        ]
+      },
+      {
+        "block": "block_0002_0003",
+        "path": "/reviewFeedback",
+        "sourceSha256": "fd1e3874c1db48d4f932d2ca1987338e0f6af844ce7a4d86dab1f23a171dae8b",
+        "spans": []
+      },
+      {
+        "block": "block_0002_0004",
+        "path": "/question",
+        "sourceSha256": "017d0b457095da12f6cecb5f1892813867c403c71738160dd3777c9b23716688",
+        "spans": [
+          {
+            "start": 10,
+            "end": 14,
+            "text": "zona",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 33,
+            "end": 38,
+            "text": "Norte",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 52,
+            "end": 65,
+            "text": "zona = \"Sur\";",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 94,
+            "end": 98,
+            "text": "zona",
+            "role": "cpp",
+            "reading": "technical"
+          }
+        ]
+      },
+      {
+        "block": "block_0002_0004",
+        "path": "/explanation",
+        "sourceSha256": "73522c2cb0dfa141af45cfbe7a220b9ae8c0cf000c55bbd2145db541546de457",
+        "spans": [
+          {
+            "start": 0,
+            "end": 13,
+            "text": "zona = \"Sur\";",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 44,
+            "end": 49,
+            "text": "Norte",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 66,
+            "end": 69,
+            "text": "Sur",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 92,
+            "end": 96,
+            "text": "zona",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 118,
+            "end": 129,
+            "text": "std::string",
+            "role": "cpp",
+            "reading": "technical"
+          }
+        ]
+      },
+      {
+        "block": "block_0002_0004",
+        "path": "/options/0",
+        "sourceSha256": "6e4b7cd2a8d36c3edaefb4961fce34dccc32378455fe1f53d4ec36e1a0a64f89",
+        "spans": [
+          {
+            "start": 9,
+            "end": 12,
+            "text": "Sur",
+            "role": "data",
+            "reading": "natural"
+          }
+        ]
+      },
+      {
+        "block": "block_0002_0004",
+        "path": "/options/1",
+        "sourceSha256": "fe5190950566075acad724a9ea934ed86ff6d1a92c8a61a36d45b57c8824636c",
+        "spans": [
+          {
+            "start": 58,
+            "end": 69,
+            "text": "std::string",
+            "role": "cpp",
+            "reading": "technical"
+          }
+        ]
+      },
+      {
+        "block": "block_0002_0004",
+        "path": "/options/2",
+        "sourceSha256": "f11b410653ea472712dc17260591b8bd72b7a06f6f60b182aeda4408cbb4578c",
+        "spans": [
+          {
+            "start": 56,
+            "end": 61,
+            "text": "Norte",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 79,
+            "end": 82,
+            "text": "Sur",
+            "role": "data",
+            "reading": "natural"
+          }
+        ]
+      },
+      {
+        "block": "block_0002_0004",
+        "path": "/reviewFeedback/0",
+        "sourceSha256": "83330a1764f86957fb5a5dbd3de64f17ee00091ff4b8f4da727135a8cfb08c1d",
+        "spans": [
+          {
+            "start": 28,
+            "end": 29,
+            "text": "=",
+            "role": "cpp",
+            "reading": "technical"
+          }
+        ]
+      },
+      {
+        "block": "block_0002_0004",
+        "path": "/reviewFeedback/1",
+        "sourceSha256": "b105641d5e21db2b33b371a76ea9e601ae4d180f29da1b0e9c32d200c4331adb",
+        "spans": []
+      },
+      {
+        "block": "block_0002_0004",
+        "path": "/reviewFeedback/2",
+        "sourceSha256": "0e1d70736b3ef83513b14d6945186662f1fe5f648926a89d05032683834ea266",
+        "spans": []
+      },
+      {
+        "block": "block_0003_0000",
+        "path": "/text",
+        "sourceSha256": "fca3b0d60e3fedaac33e1c05eec9070ce25bbf3c23a3f6815616b77e51e267e6",
+        "spans": []
+      },
+      {
+        "block": "block_0003_0001",
+        "path": "/text",
+        "sourceSha256": "1e73467c953a5c9cad868c586cee5d769af9eb978896790c5efc542e3096e6b6",
+        "spans": [
+          {
+            "start": 10,
+            "end": 14,
+            "text": "sala",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 33,
+            "end": 37,
+            "text": "Sala",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 40,
+            "end": 46,
+            "text": "numero",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 63,
+            "end": 64,
+            "text": "2",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 78,
+            "end": 91,
+            "text": "sala + numero",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 131,
+            "end": 136,
+            "text": "Sala2",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 276,
+            "end": 295,
+            "text": "sala + \" \" + numero",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 411,
+            "end": 412,
+            "text": "2",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 413,
+            "end": 431,
+            "text": "(Stroustrup, 2024)",
+            "role": "citation",
+            "reading": "natural"
+          }
+        ]
+      },
+      {
+        "block": "block_0003_0004",
+        "path": "/question",
+        "sourceSha256": "d0f4d249fc7c7c003e9cd6b940b13325752db34a99ec5132a834a79ef1ed2e7b",
+        "spans": []
+      },
+      {
+        "block": "block_0003_0004",
+        "path": "/explanation",
+        "sourceSha256": "44e3766b836eec4eb39f2df34ca459607f9a9557435bf8b0e0054c7765f14187",
+        "spans": [
+          {
+            "start": 0,
+            "end": 5,
+            "text": "a + b",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 24,
+            "end": 30,
+            "text": "Puerta",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 38,
+            "end": 39,
+            "text": "B",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 48,
+            "end": 55,
+            "text": "PuertaB",
+            "role": "output",
+            "reading": "natural"
+          },
+          {
+            "start": 73,
+            "end": 82,
+            "text": "std::cout",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 113,
+            "end": 124,
+            "text": "a + \" \" + b",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 137,
+            "end": 140,
+            "text": "\" \"",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 219,
+            "end": 227,
+            "text": "Puerta B",
+            "role": "output",
+            "reading": "natural"
+          }
+        ]
+      },
+      {
+        "block": "block_0003_0004",
+        "path": "/reviewFeedback",
+        "sourceSha256": "f2b49e1c8b57f0a63b2cb7a863d08f14fbd132f6c73dc1a1e24aa1120e464fcf",
+        "spans": [
+          {
+            "start": 0,
+            "end": 1,
+            "text": "a",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 9,
+            "end": 15,
+            "text": "Puerta",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 18,
+            "end": 19,
+            "text": "b",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 27,
+            "end": 28,
+            "text": "B",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 115,
+            "end": 124,
+            "text": "std::cout",
+            "role": "cpp",
+            "reading": "technical"
+          }
+        ]
+      },
+      {
+        "block": "block_0003_0005",
+        "path": "/question",
+        "sourceSha256": "1b0eab4fb057da0142d4dde5c2c48de76e7344f5f4b849cb050711a045016b04",
+        "spans": [
+          {
+            "start": 120,
+            "end": 129,
+            "text": "std::cout",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 155,
+            "end": 167,
+            "text": "Sector Oeste",
+            "role": "output",
+            "reading": "natural"
+          }
+        ]
+      },
+      {
+        "block": "block_0003_0005",
+        "path": "/explanation",
+        "sourceSha256": "e99a466288f9b49608bbc8a06b0955e7560694871f236314d6548bdce85f0bcd",
+        "spans": [
+          {
+            "start": 0,
+            "end": 8,
+            "text": "\"Sector\"",
+            "role": "string",
+            "reading": "natural"
+          },
+          {
+            "start": 33,
+            "end": 40,
+            "text": "\"Oeste\"",
+            "role": "string",
+            "reading": "natural"
+          },
+          {
+            "start": 147,
+            "end": 159,
+            "text": "Sector Oeste",
+            "role": "output",
+            "reading": "natural"
+          },
+          {
+            "start": 160,
+            "end": 178,
+            "text": "(Stroustrup, 2024)",
+            "role": "citation",
+            "reading": "natural"
+          }
+        ]
+      },
+      {
+        "block": "block_0003_0005",
+        "path": "/reviewFeedback",
+        "sourceSha256": "4700bddab9debf7030b080c340ae9195d3dd7a2f56ca6f4110539f12f7fd3268",
+        "spans": []
+      },
+      {
+        "block": "block_0004_0000",
+        "path": "/text",
+        "sourceSha256": "d961e16b626428b30a39af12032de77a2d5a0a7be88e1f3f9843727267a2bd7f",
+        "spans": []
+      },
+      {
+        "block": "block_0004_0001",
+        "path": "/text",
+        "sourceSha256": "0322f1e83a137579743a67fb48a82292fe7c1b331ce8143b50d21a7750270e6e",
+        "spans": [
+          {
+            "start": 0,
+            "end": 1,
+            "text": "2",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 23,
+            "end": 26,
+            "text": "int",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 55,
+            "end": 58,
+            "text": "\"2\"",
+            "role": "string",
+            "reading": "natural"
+          },
+          {
+            "start": 110,
+            "end": 121,
+            "text": "std::string",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 179,
+            "end": 197,
+            "text": "(Stroustrup, 2024)",
+            "role": "citation",
+            "reading": "natural"
+          },
+          {
+            "start": 254,
+            "end": 263,
+            "text": "std::cout",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 314,
+            "end": 319,
+            "text": "a + b",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 368,
+            "end": 372,
+            "text": "\"\\n\"",
+            "role": "string",
+            "reading": "natural"
+          },
+          {
+            "start": 434,
+            "end": 439,
+            "text": "x + y",
+            "role": "cpp",
+            "reading": "technical"
+          }
+        ]
+      },
+      {
+        "block": "block_0004_0002",
+        "path": "/question",
+        "sourceSha256": "7e9c91a6feff5ae05700d3c3c8efaa52e1db42700e060453b2e8277e2ccf3355",
+        "spans": [
+          {
+            "start": 38,
+            "end": 47,
+            "text": "std::cout",
+            "role": "cpp",
+            "reading": "technical"
+          }
+        ]
+      },
+      {
+        "block": "block_0004_0002",
+        "path": "/explanation",
+        "sourceSha256": "78bee9c9b2e77c4fa267c1a9333492b6026e546e562e994e3d2642e8f894e269",
+        "spans": [
+          {
+            "start": 0,
+            "end": 1,
+            "text": "a",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 9,
+            "end": 11,
+            "text": "12",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 25,
+            "end": 26,
+            "text": "b",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 34,
+            "end": 35,
+            "text": "3",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 67,
+            "end": 70,
+            "text": "123",
+            "role": "output",
+            "reading": "natural"
+          },
+          {
+            "start": 176,
+            "end": 178,
+            "text": "15",
+            "role": "output",
+            "reading": "natural"
+          }
+        ]
+      },
+      {
+        "block": "block_0004_0002",
+        "path": "/reviewFeedback",
+        "sourceSha256": "b00f90286273579b09958fa04045fd1255a55a95bc6763ff49cba2e835a16a5d",
+        "spans": [
+          {
+            "start": 3,
+            "end": 8,
+            "text": "a + b",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 80,
+            "end": 85,
+            "text": "x + y",
+            "role": "cpp",
+            "reading": "technical"
+          }
+        ]
+      },
+      {
+        "block": "block_0004_0003",
+        "path": "/question",
+        "sourceSha256": "be2626a4ff403b61e7816ced9b943ab3035b1a58c4eac91bf498c50252dfeb14",
+        "spans": [
+          {
+            "start": 0,
+            "end": 3,
+            "text": "Dos",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 33,
+            "end": 37,
+            "text": "\"04\"",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 40,
+            "end": 43,
+            "text": "\"2\"",
+            "role": "data",
+            "reading": "natural"
+          }
+        ]
+      },
+      {
+        "block": "block_0004_0003",
+        "path": "/explanation",
+        "sourceSha256": "48148b0f0f85a8d005db4407f180dd0323bd3545f6179d6005fc42ec58d413da",
+        "spans": [
+          {
+            "start": 42,
+            "end": 43,
+            "text": "0",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 46,
+            "end": 47,
+            "text": "4",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 81,
+            "end": 82,
+            "text": "2",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 152,
+            "end": 155,
+            "text": "042",
+            "role": "data",
+            "reading": "natural"
+          }
+        ]
+      },
+      {
+        "block": "block_0004_0003",
+        "path": "/options/0",
+        "sourceSha256": "b7569e74017109930c9264e3faaf508c89b82a1c933b10c82a983968292cee2c",
+        "spans": [
+          {
+            "start": 0,
+            "end": 5,
+            "text": "\"042\"",
+            "role": "output",
+            "reading": "natural"
+          }
+        ]
+      },
+      {
+        "block": "block_0004_0003",
+        "path": "/options/1",
+        "sourceSha256": "d09d0d78459e8f088d7db2b161dc38d583060070f5c2d1d889e1e81b8d0ee9cf",
+        "spans": [
+          {
+            "start": 29,
+            "end": 31,
+            "text": "42",
+            "role": "output",
+            "reading": "natural"
+          }
+        ]
+      },
+      {
+        "block": "block_0004_0003",
+        "path": "/options/2",
+        "sourceSha256": "92e9e7e5922d26e17e48f0869ab25cc99499fdab722c065de8e0965c96c68e86",
+        "spans": [
+          {
+            "start": 0,
+            "end": 3,
+            "text": "\"6\"",
+            "role": "output",
+            "reading": "natural"
+          }
+        ]
+      },
+      {
+        "block": "block_0004_0003",
+        "path": "/reviewFeedback/0",
+        "sourceSha256": "6b6739dae02c560bcc3b5d16b2bc2ddc4171df78f02bc6f5b4a0aab61124c4e2",
+        "spans": [
+          {
+            "start": 34,
+            "end": 38,
+            "text": "\"04\"",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 64,
+            "end": 67,
+            "text": "\"2\"",
+            "role": "cpp",
+            "reading": "technical"
+          }
+        ]
+      },
+      {
+        "block": "block_0004_0003",
+        "path": "/reviewFeedback/1",
+        "sourceSha256": "34bee92a02163eb19a75f7008782dfb10d6cfc30be57a969a27a997259fbac79",
+        "spans": []
+      },
+      {
+        "block": "block_0004_0003",
+        "path": "/reviewFeedback/2",
+        "sourceSha256": "8155df6b538547f2929f21e8b9ab695413ce98a1ff4c0051352177b44a132065",
+        "spans": [
+          {
+            "start": 21,
+            "end": 25,
+            "text": "\"04\"",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 28,
+            "end": 31,
+            "text": "\"2\"",
+            "role": "cpp",
+            "reading": "technical"
+          }
+        ]
+      },
+      {
+        "block": "block_0004_0004",
+        "path": "/question",
+        "sourceSha256": "0e9eed994b0d57eeda4f2d2d6284e819b88eda6b806ff76d54fdf3acfdee57cb",
+        "spans": [
+          {
+            "start": 21,
+            "end": 30,
+            "text": "std::cout",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 71,
+            "end": 78,
+            "text": "Entrada",
+            "role": "data",
+            "reading": "natural"
+          }
+        ]
+      },
+      {
+        "block": "block_0004_0004",
+        "path": "/explanation",
+        "sourceSha256": "cb6159a32b5c0f73689bc2833300786a4dd1a0b68d72c6a526af156f2804e5d6",
+        "spans": [
+          {
+            "start": 3,
+            "end": 23,
+            "text": "std::cout << cartel;",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 52,
+            "end": 58,
+            "text": "cartel",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 76,
+            "end": 83,
+            "text": "Entrada",
+            "role": "output",
+            "reading": "natural"
+          }
+        ]
+      },
+      {
+        "block": "block_0004_0004",
+        "path": "/reviewFeedback",
+        "sourceSha256": "15c4dd589245dc6299df2e33f6fcf5bd61d71fed971882a05ae910a565bda453",
+        "spans": [
+          {
+            "start": 45,
+            "end": 54,
+            "text": "\"Entrada\"",
+            "role": "string",
+            "reading": "natural"
+          }
+        ]
+      },
+      {
+        "block": "block_0005_0000",
+        "path": "/text",
+        "sourceSha256": "652aa3c437611c33f9adfaf56aab03d56361489ae1a0806e31c90dc5dcea6e93",
+        "spans": []
+      },
+      {
+        "block": "block_0005_0001",
+        "path": "/text",
+        "sourceSha256": "c0ae4d8222fcc72c7ea38f8608e763dc37bad5ba15df8bbb1415fe890dce71ba",
+        "spans": [
+          {
+            "start": 12,
+            "end": 18,
+            "text": "cartel",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 35,
+            "end": 46,
+            "text": "std::string",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 58,
+            "end": 64,
+            "text": "Taller",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 124,
+            "end": 143,
+            "text": "cartel + \" abierto\"",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 150,
+            "end": 164,
+            "text": "Taller abierto",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 198,
+            "end": 208,
+            "text": "\" abierto\"",
+            "role": "string",
+            "reading": "natural"
+          },
+          {
+            "start": 210,
+            "end": 227,
+            "text": "\"Zona: \" + cartel",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 234,
+            "end": 246,
+            "text": "Zona: Taller",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 383,
+            "end": 389,
+            "text": "cartel",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 406,
+            "end": 412,
+            "text": "Taller",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 448,
+            "end": 469,
+            "text": "\"Taller\" + \" abierto\"",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 522,
+            "end": 523,
+            "text": "+",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 619,
+            "end": 630,
+            "text": "std::string",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 631,
+            "end": 651,
+            "text": "(Köppe et al., 2023)",
+            "role": "citation",
+            "reading": "natural"
+          },
+          {
+            "start": 709,
+            "end": 730,
+            "text": "cartel += \" abierto\";",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 791,
+            "end": 797,
+            "text": "cartel",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 824,
+            "end": 838,
+            "text": "Taller abierto",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 887,
+            "end": 916,
+            "text": "cartel = cartel + \" abierto\";",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 917,
+            "end": 955,
+            "text": "(Köppe et al., 2023; Stroustrup, 2024)",
+            "role": "citation",
+            "reading": "natural"
+          }
+        ]
+      },
+      {
+        "block": "block_0005_0002",
+        "path": "/question",
+        "sourceSha256": "d0f4d249fc7c7c003e9cd6b940b13325752db34a99ec5132a834a79ef1ed2e7b",
+        "spans": []
+      },
+      {
+        "block": "block_0005_0002",
+        "path": "/explanation",
+        "sourceSha256": "8fbcf47180f0a68b4b2a7f7995f6258f70e6457d5ce7a63444be1377ee0311c2",
+        "spans": [
+          {
+            "start": 0,
+            "end": 8,
+            "text": "anterior",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 24,
+            "end": 30,
+            "text": "Taller",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 41,
+            "end": 43,
+            "text": "+=",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 63,
+            "end": 70,
+            "text": "abierto",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 73,
+            "end": 79,
+            "text": "cartel",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 87,
+            "end": 93,
+            "text": "Taller",
+            "role": "output",
+            "reading": "natural"
+          },
+          {
+            "start": 117,
+            "end": 131,
+            "text": "Taller abierto",
+            "role": "output",
+            "reading": "natural"
+          }
+        ]
+      },
+      {
+        "block": "block_0005_0002",
+        "path": "/reviewFeedback",
+        "sourceSha256": "034dd8c08e2b316729ebcd674ab81048922bfb2d0d9f3b4d2dacd58ae54dda6f",
+        "spans": [
+          {
+            "start": 82,
+            "end": 84,
+            "text": "+=",
+            "role": "cpp",
+            "reading": "technical"
+          }
+        ]
+      },
+      {
+        "block": "block_0005_0003",
+        "path": "/question",
+        "sourceSha256": "aabe0b433f4874db429a91402cbd12109031419d153aa618cae157efb68e6947",
+        "spans": [
+          {
+            "start": 9,
+            "end": 19,
+            "text": "\" abierto\"",
+            "role": "string",
+            "reading": "natural"
+          },
+          {
+            "start": 58,
+            "end": 64,
+            "text": "Taller",
+            "role": "data",
+            "reading": "natural"
+          }
+        ]
+      },
+      {
+        "block": "block_0005_0003",
+        "path": "/explanation",
+        "sourceSha256": "a4f511fddee65b909e9e175ebe89b75f556f5954286df42928439ffff657b8d6",
+        "spans": [
+          {
+            "start": 22,
+            "end": 32,
+            "text": "\" abierto\"",
+            "role": "string",
+            "reading": "natural"
+          },
+          {
+            "start": 70,
+            "end": 76,
+            "text": "Taller",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 131,
+            "end": 137,
+            "text": "Taller",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 151,
+            "end": 165,
+            "text": "Taller abierto",
+            "role": "output",
+            "reading": "natural"
+          }
+        ]
+      },
+      {
+        "block": "block_0005_0003",
+        "path": "/options/0",
+        "sourceSha256": "88ae76370acdf499bfd1db3d421b52c4111ba2d93012d91e0b04b8e1bace09d7",
+        "spans": [
+          {
+            "start": 15,
+            "end": 19,
+            "text": "cout",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 42,
+            "end": 45,
+            "text": "dos",
+            "role": "data",
+            "reading": "natural"
+          }
+        ]
+      },
+      {
+        "block": "block_0005_0003",
+        "path": "/options/1",
+        "sourceSha256": "9f835219fea408d9696fde032aedbafe7f9cfd30e75a0e59bae3b44012987398",
+        "spans": [
+          {
+            "start": 28,
+            "end": 34,
+            "text": "Taller",
+            "role": "output",
+            "reading": "natural"
+          },
+          {
+            "start": 37,
+            "end": 44,
+            "text": "abierto",
+            "role": "output",
+            "reading": "natural"
+          }
+        ]
+      },
+      {
+        "block": "block_0005_0003",
+        "path": "/options/2",
+        "sourceSha256": "ea3d55b43f6c488d3e640ad8c914f4c12dd4679900a51cf0ae5c485a9acf28d1",
+        "spans": []
+      },
+      {
+        "block": "block_0005_0003",
+        "path": "/reviewFeedback/0",
+        "sourceSha256": "85e4abc9526e519f6a12108b85e02b5bca6174abe684cc66dfa2319d6b39ac66",
+        "spans": [
+          {
+            "start": 51,
+            "end": 61,
+            "text": "\" abierto\"",
+            "role": "string",
+            "reading": "natural"
+          }
+        ]
+      },
+      {
+        "block": "block_0005_0003",
+        "path": "/reviewFeedback/1",
+        "sourceSha256": "cbb4d2b39307c24a2cace9272a313e66e8b4732b43fc89c57c8d2a5d523de3a4",
+        "spans": [
+          {
+            "start": 89,
+            "end": 92,
+            "text": "dos",
+            "role": "data",
+            "reading": "natural"
+          }
+        ]
+      },
+      {
+        "block": "block_0005_0003",
+        "path": "/reviewFeedback/2",
+        "sourceSha256": "a4fa51081f5056cea1e27c9b5a98a0f09531f9ba0eff1c245ba771d6c936204c",
+        "spans": [
+          {
+            "start": 27,
+            "end": 37,
+            "text": "\" abierto\"",
+            "role": "string",
+            "reading": "natural"
+          }
+        ]
+      },
+      {
+        "block": "block_0006_0000",
+        "path": "/text",
+        "sourceSha256": "e60a9b8bd0743dcdfb4aa148c134623a5be3647b6c3a2834b09cd02af511b31c",
+        "spans": []
+      },
+      {
+        "block": "block_0006_0001",
+        "path": "/text",
+        "sourceSha256": "61fac8f6d0cc00fbfee272eb332d21a264ccca3b4543f326e99cd2122f8a422d",
+        "spans": [
+          {
+            "start": 108,
+            "end": 114,
+            "text": "\"Aula\"",
+            "role": "string",
+            "reading": "natural"
+          },
+          {
+            "start": 131,
+            "end": 142,
+            "text": "std::string",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 151,
+            "end": 159,
+            "text": "edificio",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 171,
+            "end": 175,
+            "text": "\"04\"",
+            "role": "string",
+            "reading": "natural"
+          },
+          {
+            "start": 199,
+            "end": 205,
+            "text": "codigo",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 293,
+            "end": 301,
+            "text": "etiqueta",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 308,
+            "end": 317,
+            "text": "std::cout",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 410,
+            "end": 417,
+            "text": "Aula-04",
+            "role": "output",
+            "reading": "natural"
+          }
+        ]
+      },
+      {
+        "block": "block_0006_0003",
+        "path": "/text",
+        "sourceSha256": "70b50376fd1f65579063298864bd9915d17192425daa8dbccf9d7dff3bc69756",
+        "spans": [
+          {
+            "start": 11,
+            "end": 17,
+            "text": "Aula04",
+            "role": "output",
+            "reading": "natural"
+          },
+          {
+            "start": 50,
+            "end": 58,
+            "text": "edificio",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 61,
+            "end": 67,
+            "text": "codigo",
+            "role": "cpp",
+            "reading": "technical"
+          }
+        ]
+      },
+      {
+        "block": "block_0007_0000",
+        "path": "/text",
+        "sourceSha256": "db839bfa6346cab6c7a4c99829e6f55cc80ed83634c1ddd51487d8ee5cd2df12",
+        "spans": []
+      },
+      {
+        "block": "block_0007_0002",
+        "path": "/text",
+        "sourceSha256": "b11db8877f3b6c2c56196cb0c8f33180ed4f8725dec9efe2c737224c538f164e",
+        "spans": [
+          {
+            "start": 3,
+            "end": 26,
+            "text": "edificio + \"-\" + codigo",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 40,
+            "end": 48,
+            "text": "edificio",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 56,
+            "end": 60,
+            "text": "Aula",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 73,
+            "end": 76,
+            "text": "\"-\"",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 107,
+            "end": 113,
+            "text": "codigo",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 121,
+            "end": 123,
+            "text": "04",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 137,
+            "end": 145,
+            "text": "etiqueta",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 184,
+            "end": 206,
+            "text": "std::cout << etiqueta;",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 227,
+            "end": 234,
+            "text": "Aula-04",
+            "role": "output",
+            "reading": "natural"
+          },
+          {
+            "start": 407,
+            "end": 416,
+            "text": "std::cout",
+            "role": "cpp",
+            "reading": "technical"
+          }
+        ]
+      },
+      {
+        "block": "block_0007_0003",
+        "path": "/question",
+        "sourceSha256": "4803dbd096b5bf1e1bb68af107d71c7b1f6b20fbb289c5b23e617bf0e0fc324a",
+        "spans": [
+          {
+            "start": 0,
+            "end": 8,
+            "text": "etiqueta",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 67,
+            "end": 80,
+            "text": "codigo = \"2\";",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 103,
+            "end": 112,
+            "text": "std::cout",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 121,
+            "end": 129,
+            "text": "etiqueta",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 138,
+            "end": 144,
+            "text": "codigo",
+            "role": "cpp",
+            "reading": "technical"
+          }
+        ]
+      },
+      {
+        "block": "block_0007_0003",
+        "path": "/explanation",
+        "sourceSha256": "70a68bc61564af9cf2b091c84ec0ecd48ad2d2a369447ccf379889f718cc81a6",
+        "spans": [
+          {
+            "start": 0,
+            "end": 8,
+            "text": "etiqueta",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 19,
+            "end": 24,
+            "text": "Area1",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 32,
+            "end": 38,
+            "text": "codigo",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 48,
+            "end": 49,
+            "text": "2",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 92,
+            "end": 99,
+            "text": "Area1 2",
+            "role": "output",
+            "reading": "natural"
+          }
+        ]
+      },
+      {
+        "block": "block_0007_0003",
+        "path": "/reviewFeedback",
+        "sourceSha256": "5adc87a5461ef57f1f8985f7ca3a8315f718a4d498240b03922c9ec902082e8e",
+        "spans": [
+          {
+            "start": 23,
+            "end": 29,
+            "text": "nombre",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 32,
+            "end": 38,
+            "text": "codigo",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 86,
+            "end": 92,
+            "text": "codigo",
+            "role": "cpp",
+            "reading": "technical"
+          }
+        ]
+      },
+      {
+        "block": "block_0007_0004",
+        "path": "/question",
+        "sourceSha256": "266b49f2e8459c427179823c8abef3768a4093548fdf44e079e203623ed11093",
+        "spans": [
+          {
+            "start": 25,
+            "end": 29,
+            "text": "0015",
+            "role": "data",
+            "reading": "natural"
+          }
+        ]
+      },
+      {
+        "block": "block_0007_0004",
+        "path": "/explanation",
+        "sourceSha256": "06b6f02d03d122eca5b573d9cedc7d5bbc6942ab3735dcb9d880ce9bdbb2ee6a",
+        "spans": [
+          {
+            "start": 0,
+            "end": 11,
+            "text": "std::string",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 44,
+            "end": 48,
+            "text": "0015",
+            "role": "data",
+            "reading": "natural"
+          }
+        ]
+      },
+      {
+        "block": "block_0007_0004",
+        "path": "/options/0",
+        "sourceSha256": "285241f3ac4cf7c3d780f960aad1e51f7f98a53958713a804d9b27e163477746",
+        "spans": [
+          {
+            "start": 0,
+            "end": 28,
+            "text": "std::string codigo = \"0015\";",
+            "role": "cpp",
+            "reading": "technical"
+          }
+        ]
+      },
+      {
+        "block": "block_0007_0004",
+        "path": "/options/1",
+        "sourceSha256": "49f0f6a8bbb4bf5af1f985694d966691c6024a01d1951d04335adc94de54424b",
+        "spans": [
+          {
+            "start": 0,
+            "end": 16,
+            "text": "int codigo = 15;",
+            "role": "cpp",
+            "reading": "technical"
+          }
+        ]
+      },
+      {
+        "block": "block_0007_0004",
+        "path": "/options/2",
+        "sourceSha256": "f6a6f19dca4664be05461b6e65aa50f5f512b89d02f51dbcb78ade2823b33482",
+        "spans": [
+          {
+            "start": 0,
+            "end": 21,
+            "text": "double codigo = 15.0;",
+            "role": "cpp",
+            "reading": "technical"
+          }
+        ]
+      },
+      {
+        "block": "block_0007_0004",
+        "path": "/reviewFeedback/0",
+        "sourceSha256": "41d5042c589c388207cf3c182a5c9b5e913c47744e84fb0c65ba42056eb0c760",
+        "spans": [
+          {
+            "start": 44,
+            "end": 50,
+            "text": "\"0015\"",
+            "role": "string",
+            "reading": "natural"
+          }
+        ]
+      },
+      {
+        "block": "block_0007_0004",
+        "path": "/reviewFeedback/1",
+        "sourceSha256": "54495ef994714ebc4e2adda8fdbbd612cc6ce012b7698acf4d60ea6fc3036fb9",
+        "spans": [
+          {
+            "start": 21,
+            "end": 23,
+            "text": "15",
+            "role": "data",
+            "reading": "natural"
+          }
+        ]
+      },
+      {
+        "block": "block_0007_0004",
+        "path": "/reviewFeedback/2",
+        "sourceSha256": "804d7166b15fb7ba9dca52b190ec0feca6057f71605e6f249aa9b9d3ac818341",
+        "spans": [
+          {
+            "start": 12,
+            "end": 16,
+            "text": "15.0",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 52,
+            "end": 58,
+            "text": "double",
+            "role": "cpp",
+            "reading": "technical"
+          }
+        ]
+      },
+      {
+        "block": "block_0007_0005",
+        "path": "/question",
+        "sourceSha256": "a320be9a0fefb8c60bcc12be01d9db61d885fc0db8707ddd98bc02dccc233045",
+        "spans": [
+          {
+            "start": 144,
+            "end": 152,
+            "text": "etiqueta",
+            "role": "cpp",
+            "reading": "technical"
+          }
+        ]
+      },
+      {
+        "block": "block_0007_0005",
+        "path": "/explanation",
+        "sourceSha256": "65ade324372668412e84677302791bd871cebc6962ead3507709ebdaa8a998ca",
+        "spans": [
+          {
+            "start": 15,
+            "end": 23,
+            "text": "etiqueta",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 25,
+            "end": 31,
+            "text": "codigo",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 39,
+            "end": 41,
+            "text": "04",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 63,
+            "end": 69,
+            "text": "codigo",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 79,
+            "end": 87,
+            "text": "etiqueta",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 108,
+            "end": 115,
+            "text": "Aula-04",
+            "role": "output",
+            "reading": "natural"
+          }
+        ]
+      },
+      {
+        "block": "block_0007_0005",
+        "path": "/reviewFeedback",
+        "sourceSha256": "f325e3134ec05ef4002b421958b22a903fb9b12d047733a1f6be3baf32427def",
+        "spans": [
+          {
+            "start": 109,
+            "end": 115,
+            "text": "codigo",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 146,
+            "end": 154,
+            "text": "etiqueta",
+            "role": "cpp",
+            "reading": "technical"
+          }
+        ]
+      },
+      {
+        "block": "block_0007_0006",
+        "path": "/question",
+        "sourceSha256": "658c02db10464f430e2a1b14d1b16c1133009c2d87aca55358b1a61c3c16a08c",
+        "spans": [
+          {
+            "start": 0,
+            "end": 6,
+            "text": "codigo",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 19,
+            "end": 21,
+            "text": "07",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 65,
+            "end": 73,
+            "text": "etiqueta",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 81,
+            "end": 88,
+            "text": "Aula-07",
+            "role": "data",
+            "reading": "natural"
+          }
+        ]
+      },
+      {
+        "block": "block_0007_0006",
+        "path": "/explanation",
+        "sourceSha256": "5b0e8b93293879210365e658388397f08f3ffd06a81ea55d917f780576fee563",
+        "spans": [
+          {
+            "start": 11,
+            "end": 25,
+            "text": "codigo = \"07\";",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 39,
+            "end": 47,
+            "text": "etiqueta",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 63,
+            "end": 70,
+            "text": "Aula-04",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 85,
+            "end": 108,
+            "text": "edificio + \"-\" + codigo",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 137,
+            "end": 144,
+            "text": "Aula-07",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 170,
+            "end": 178,
+            "text": "etiqueta",
+            "role": "cpp",
+            "reading": "technical"
+          }
+        ]
+      },
+      {
+        "block": "block_0007_0006",
+        "path": "/options/0",
+        "sourceSha256": "ccdbd1275ea892dccebcc2f8a0d6360e7b69f9ef22e79b451b03fd915427d603",
+        "spans": [
+          {
+            "start": 68,
+            "end": 76,
+            "text": "etiqueta",
+            "role": "cpp",
+            "reading": "technical"
+          }
+        ]
+      },
+      {
+        "block": "block_0007_0006",
+        "path": "/options/1",
+        "sourceSha256": "901c56587b32f81811272bf8b4806f1c8c53417e70f8df7bade55d6eec103939",
+        "spans": [
+          {
+            "start": 17,
+            "end": 25,
+            "text": "etiqueta",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 85,
+            "end": 91,
+            "text": "codigo",
+            "role": "cpp",
+            "reading": "technical"
+          }
+        ]
+      },
+      {
+        "block": "block_0007_0006",
+        "path": "/options/2",
+        "sourceSha256": "6aa1c67aa6995bc07bfa0a15b8a5fc5ab1365563ef7f36aabae621be353616b8",
+        "spans": [
+          {
+            "start": 65,
+            "end": 69,
+            "text": "\"07\"",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 102,
+            "end": 110,
+            "text": "etiqueta",
+            "role": "cpp",
+            "reading": "technical"
+          }
+        ]
+      },
+      {
+        "block": "block_0007_0006",
+        "path": "/reviewFeedback/0",
+        "sourceSha256": "d506a9210faf68956b1196727e0661b0a06c9d8a45c39a27fe816f114ffb526c",
+        "spans": [
+          {
+            "start": 140,
+            "end": 148,
+            "text": "etiqueta",
+            "role": "cpp",
+            "reading": "technical"
+          }
+        ]
+      },
+      {
+        "block": "block_0007_0006",
+        "path": "/reviewFeedback/1",
+        "sourceSha256": "ce5b28140d9c6acbe0c4d6ba2f5519cd3fbacb37f3c3daa12dab1b4e7f063db7",
+        "spans": []
+      },
+      {
+        "block": "block_0007_0006",
+        "path": "/reviewFeedback/2",
+        "sourceSha256": "c1ef96a2f54cd921bee3b81af9000d6c42640b8969fd8cdb86b931b3afd64f56",
+        "spans": []
+      },
+      {
+        "block": "block_0008_0000",
+        "path": "/text",
+        "sourceSha256": "a1b49ee9f59d5ecd86d05b9cc6b57767145bd1f478ff692100976361da913427",
+        "spans": []
+      },
+      {
+        "block": "block_0008_0001",
+        "path": "/text",
+        "sourceSha256": "fa69dd92a16659c110852c524fcc1e6783270d2d1f3f0ad1f766f8cb06f45890",
+        "spans": [
+          {
+            "start": 73,
+            "end": 81,
+            "text": "etiqueta",
+            "role": "cpp",
+            "reading": "technical"
+          }
+        ]
+      },
+      {
+        "block": "block_0008_0002",
+        "path": "/text",
+        "sourceSha256": "da6ebb30c74fb71e814d397d27b626d3f6f895d0320e6bb733e588e7d936d3aa",
+        "spans": [
+          {
+            "start": 38,
+            "end": 44,
+            "text": "codigo",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 69,
+            "end": 77,
+            "text": "etiqueta",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 109,
+            "end": 111,
+            "text": "04",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 133,
+            "end": 140,
+            "text": "Aula-04",
+            "role": "output",
+            "reading": "natural"
+          }
+        ]
+      },
+      {
+        "block": "block_0008_0004",
+        "path": "/text",
+        "sourceSha256": "4e21996e2992d03a176ebfe8e8c6f368b6f1ad238daf073a0c9c4770a79b0035",
+        "spans": []
+      },
+      {
+        "block": "block_0008_0005",
+        "path": "/text",
+        "sourceSha256": "98e26b286347d55f9f58805a1fa033885ca1b5351bd4cb27fd48e1167776ff9f",
+        "spans": [
+          {
+            "start": 39,
+            "end": 41,
+            "text": "04",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 44,
+            "end": 46,
+            "text": "07",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 84,
+            "end": 91,
+            "text": "Aula-04",
+            "role": "output",
+            "reading": "natural"
+          },
+          {
+            "start": 99,
+            "end": 107,
+            "text": "etiqueta",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 167,
+            "end": 181,
+            "text": "codigo = \"07\";",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 276,
+            "end": 284,
+            "text": "etiqueta",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 351,
+            "end": 358,
+            "text": "Aula-07",
+            "role": "output",
+            "reading": "natural"
+          }
+        ]
+      },
+      {
+        "block": "block_0008_0007",
+        "path": "/text",
+        "sourceSha256": "76267030305dbbb6885e1d467cf7ecdf656448d8a7c6eb8bf9b9cb190a869f54",
+        "spans": [
+          {
+            "start": 81,
+            "end": 87,
+            "text": "codigo",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 95,
+            "end": 97,
+            "text": "04",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 100,
+            "end": 108,
+            "text": "etiqueta",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 116,
+            "end": 123,
+            "text": "Aula-04",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 136,
+            "end": 150,
+            "text": "codigo = \"07\";",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 152,
+            "end": 158,
+            "text": "codigo",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 166,
+            "end": 168,
+            "text": "07",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 171,
+            "end": 179,
+            "text": "etiqueta",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 196,
+            "end": 203,
+            "text": "Aula-04",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 216,
+            "end": 251,
+            "text": "etiqueta = edificio + \"-\" + codigo;",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 253,
+            "end": 261,
+            "text": "etiqueta",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 269,
+            "end": 276,
+            "text": "Aula-07",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 302,
+            "end": 311,
+            "text": "std::cout",
+            "role": "cpp",
+            "reading": "technical"
+          }
+        ]
+      },
+      {
+        "block": "block_0000_0004",
+        "path": "/text",
+        "sourceSha256": "068e124ee74845be5bcbfae89e544ad908c9bb149a290cc650437f73d31dcde7",
+        "spans": [
+          {
+            "start": 0,
+            "end": 18,
+            "text": "std::cout << zona;",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 79,
+            "end": 84,
+            "text": "Norte",
+            "role": "output",
+            "reading": "natural"
+          },
+          {
+            "start": 142,
+            "end": 162,
+            "text": "std::cout << \"zona\";",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 172,
+            "end": 181,
+            "text": "std::cout",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 232,
+            "end": 236,
+            "text": "zona",
+            "role": "output",
+            "reading": "natural"
+          }
+        ]
+      },
+      {
+        "block": "block_0003_0003",
+        "path": "/text",
+        "sourceSha256": "642f95bd7ef5af39ae286d2b080451f04a86431dea3864bf8ba33562db22dba3",
+        "spans": [
+          {
+            "start": 0,
+            "end": 19,
+            "text": "sala + \" \" + numero",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 46,
+            "end": 50,
+            "text": "Sala",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 75,
+            "end": 76,
+            "text": "2",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 90,
+            "end": 96,
+            "text": "nombre",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 119,
+            "end": 139,
+            "text": "std::cout << nombre;",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 148,
+            "end": 154,
+            "text": "Sala 2",
+            "role": "output",
+            "reading": "natural"
+          },
+          {
+            "start": 177,
+            "end": 181,
+            "text": "sala",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 198,
+            "end": 202,
+            "text": "Sala",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 205,
+            "end": 211,
+            "text": "numero",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 228,
+            "end": 229,
+            "text": "2",
+            "role": "data",
+            "reading": "natural"
+          }
+        ]
+      },
+      {
+        "block": "block_0003_0006",
+        "path": "/question",
+        "sourceSha256": "c2e63de5d658617f6c4f3d0441f684085422a18ef96a9c86362c2490a51060c4",
+        "spans": [
+          {
+            "start": 33,
+            "end": 41,
+            "text": "Norte-03",
+            "role": "output",
+            "reading": "natural"
+          },
+          {
+            "start": 84,
+            "end": 88,
+            "text": "sede",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 91,
+            "end": 97,
+            "text": "codigo",
+            "role": "cpp",
+            "reading": "technical"
+          }
+        ]
+      },
+      {
+        "block": "block_0003_0006",
+        "path": "/explanation",
+        "sourceSha256": "7be9a6027b6681d6c4d05f44252d383da49195db0e4d01e34a7578529ed81eeb",
+        "spans": [
+          {
+            "start": 0,
+            "end": 3,
+            "text": "\"-\"",
+            "role": "string",
+            "reading": "natural"
+          },
+          {
+            "start": 21,
+            "end": 25,
+            "text": "sede",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 33,
+            "end": 38,
+            "text": "Norte",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 41,
+            "end": 47,
+            "text": "codigo",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 55,
+            "end": 57,
+            "text": "03",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 78,
+            "end": 86,
+            "text": "Norte-03",
+            "role": "output",
+            "reading": "natural"
+          }
+        ]
+      },
+      {
+        "block": "block_0003_0006",
+        "path": "/reviewFeedback",
+        "sourceSha256": "5fc4906a63e3a08d75b2d396057ea97f7efcb917ddd73bf9de2009a53add5207",
+        "spans": []
+      },
+      {
+        "block": "block_0005_0004",
+        "path": "/question",
+        "sourceSha256": "e3de4fd1d20234aaeddb87cf8b688bc3687fae0d3e949ba2d56f817982d178b5",
+        "spans": [
+          {
+            "start": 20,
+            "end": 28,
+            "text": "Material",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 131,
+            "end": 145,
+            "text": "Material listo",
+            "role": "output",
+            "reading": "natural"
+          }
+        ]
+      },
+      {
+        "block": "block_0005_0004",
+        "path": "/explanation",
+        "sourceSha256": "ecf07d6244ffa8254ad8a20e9b030b395192ea9c3c6a0cc3a9728657ddb9dc98",
+        "spans": [
+          {
+            "start": 0,
+            "end": 2,
+            "text": "+=",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 33,
+            "end": 38,
+            "text": "listo",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 60,
+            "end": 66,
+            "text": "cartel",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 95,
+            "end": 109,
+            "text": "Material listo",
+            "role": "output",
+            "reading": "natural"
+          }
+        ]
+      },
+      {
+        "block": "block_0005_0004",
+        "path": "/reviewFeedback",
+        "sourceSha256": "405e2e3d429e640520035a75b0a77248596ec2a149a954aa8ec056be14a4daad",
+        "spans": []
+      },
+      {
+        "block": "block_0007_0007",
+        "path": "/question",
+        "sourceSha256": "c5e5835f47765ea4011f5b49511b410a8198e6f9365bee8e1c291876bd96cbbb",
+        "spans": [
+          {
+            "start": 16,
+            "end": 22,
+            "text": "Sala A",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 41,
+            "end": 42,
+            "text": "B",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 80,
+            "end": 86,
+            "text": "Sala B",
+            "role": "data",
+            "reading": "natural"
+          }
+        ]
+      },
+      {
+        "block": "block_0007_0007",
+        "path": "/explanation",
+        "sourceSha256": "91f30a298270e6ce6e1df7683138ef6b55c951eeb0f1a81d26f8f930df4f5f17",
+        "spans": [
+          {
+            "start": 0,
+            "end": 5,
+            "text": "turno",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 16,
+            "end": 17,
+            "text": "B",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 47,
+            "end": 53,
+            "text": "Sala B",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 94,
+            "end": 100,
+            "text": "cartel",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 121,
+            "end": 127,
+            "text": "Sala B",
+            "role": "output",
+            "reading": "natural"
+          }
+        ]
+      },
+      {
+        "block": "block_0007_0007",
+        "path": "/reviewFeedback",
+        "sourceSha256": "0c880eda94ebd4e743ac4e254e5e4e8b8526fcd4e49d83657b6319dce80be2e0",
+        "spans": [
+          {
+            "start": 137,
+            "end": 138,
+            "text": "B",
+            "role": "data",
+            "reading": "natural"
+          }
+        ]
+      },
+      {
+        "block": "block_0008_0009",
+        "path": "/text",
+        "sourceSha256": "ffaf1e46707c85d110c11dae7a114d0fba57583e3c678a222fe0b1570a5c2b3a",
+        "spans": [
+          {
+            "start": 103,
+            "end": 110,
+            "text": "Aula-07",
+            "role": "output",
+            "reading": "natural"
+          }
+        ]
+      },
+      {
+        "block": "block_0005_0005",
+        "path": "/question",
+        "sourceSha256": "1b39b43f955a88784c1bc5fcc1b90e2a9a302b6e42adf0ee7d9f8d05496fe36b",
+        "spans": [
+          {
+            "start": 154,
+            "end": 159,
+            "text": "aviso",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 170,
+            "end": 174,
+            "text": "zona",
+            "role": "cpp",
+            "reading": "technical"
+          }
+        ]
+      },
+      {
+        "block": "block_0005_0005",
+        "path": "/explanation",
+        "sourceSha256": "3256c7774015f8f2f9a1b261ca65c9378993cc9323db762ef59591e629cc98e3",
+        "spans": [
+          {
+            "start": 12,
+            "end": 17,
+            "text": "aviso",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 19,
+            "end": 34,
+            "text": "\"Zona: \" + zona",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 57,
+            "end": 62,
+            "text": "Norte",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 91,
+            "end": 102,
+            "text": "std::string",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 149,
+            "end": 154,
+            "text": "aviso",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 157,
+            "end": 170,
+            "text": "zona += \" A\";",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 203,
+            "end": 207,
+            "text": "zona",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 284,
+            "end": 295,
+            "text": "Zona: Norte",
+            "role": "output",
+            "reading": "natural"
+          },
+          {
+            "start": 296,
+            "end": 303,
+            "text": "Norte A",
+            "role": "output",
+            "reading": "natural"
+          }
+        ]
+      },
+      {
+        "block": "block_0005_0005",
+        "path": "/reviewFeedback",
+        "sourceSha256": "030a561fceffb2513e2a807048ebe740d0903caecc32ed4fb30bcb0ece575232",
+        "spans": [
+          {
+            "start": 26,
+            "end": 30,
+            "text": "zona",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 46,
+            "end": 51,
+            "text": "aviso",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 89,
+            "end": 93,
+            "text": "\" A\"",
+            "role": "string",
+            "reading": "natural"
+          }
+        ]
+      }
+    ],
+    "rootFields": [
+      {
+        "path": "/title",
+        "sourceSha256": "ee4cb35769e789b91fff9ceda126a5c6a4bf30c6fc4a0cf55f58a3c8e0457e6c",
+        "spans": []
+      }
+    ]
+  },
+  "courseEdition": {
+    "version": 1,
+    "courseId": "cpp_fundamentals",
+    "locale": "es",
+    "generation": 1,
+    "id": "cpp_desde_cero_2026"
+  },
+  "stateLayout": {
+    "version": 2,
+    "locale": "es",
+    "origin": [
+      {
+        "id": "page_0000",
+        "blocks": [
+          {
+            "id": "block_0000_0000",
+            "sha256": "a30d0555835b703d0dd5a90aabb0134813afd11904b5364f69f03b01695f6d7a"
+          },
+          {
+            "id": "block_0000_0001",
+            "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+          },
+          {
+            "id": "block_0000_0002",
+            "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+          },
+          {
+            "id": "block_0000_0003",
+            "sha256": "fc75e7d997deb14858df8595ce146f7177058127811fb91d1a678043f0f3d30a"
+          },
+          {
+            "id": "block_0000_0004",
+            "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+          },
+          {
+            "id": "block_0000_0005",
+            "sha256": "46784e780c86f36005bc75514dbb71d48d67ba5f1caf5b15dcb710e3f8811e0f"
+          }
+        ]
+      },
+      {
+        "id": "page_0001",
+        "blocks": [
+          {
+            "id": "block_0001_0000",
+            "sha256": "a30d0555835b703d0dd5a90aabb0134813afd11904b5364f69f03b01695f6d7a"
+          },
+          {
+            "id": "block_0001_0001",
+            "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+          },
+          {
+            "id": "block_0001_0002",
+            "sha256": "90b3773e77255a470bd02d4ff5e078025b7404015feece21522bd3b360e10469"
+          },
+          {
+            "id": "block_0001_0003",
+            "sha256": "1d3e29b8f27906156a8b9baf23445c62d00425e631528eb14c0b23a62b4669fa"
+          },
+          {
+            "id": "block_0001_0004",
+            "sha256": "5a25f39deebfacf70f31e9ed31d9496f83df3471d72bfcca57fec1493aee69a1"
+          }
+        ]
+      },
+      {
+        "id": "page_0002",
+        "blocks": [
+          {
+            "id": "block_0002_0000",
+            "sha256": "a30d0555835b703d0dd5a90aabb0134813afd11904b5364f69f03b01695f6d7a"
+          },
+          {
+            "id": "block_0002_0001",
+            "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+          },
+          {
+            "id": "block_0002_0002",
+            "sha256": "ac932193b1031ec49d9cdbad5ce51e93e2b4e6a55dcfb86911d701f91bdbdf29"
+          },
+          {
+            "id": "block_0002_0003",
+            "sha256": "de249817dbbe573477c3ced0c10b17e5a883f49354b26e282656cd7b0747fc74"
+          },
+          {
+            "id": "block_0002_0004",
+            "sha256": "3cf2827c55e9044fd54264f2e2766264ed5b9a45fbb831555d8152e767ea7529"
+          }
+        ]
+      },
+      {
+        "id": "page_0003",
+        "blocks": [
+          {
+            "id": "block_0003_0000",
+            "sha256": "a30d0555835b703d0dd5a90aabb0134813afd11904b5364f69f03b01695f6d7a"
+          },
+          {
+            "id": "block_0003_0001",
+            "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+          },
+          {
+            "id": "block_0003_0002",
+            "sha256": "49721ad11e5c7366150173c6f3c3b3813cf368f01b2a8155865f57ca5e641e2f"
+          },
+          {
+            "id": "block_0003_0003",
+            "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+          },
+          {
+            "id": "block_0003_0004",
+            "sha256": "903cf39c158fe1810681f34ae14bb04725193ccb21ec44d8564af8826ca7fd96"
+          },
+          {
+            "id": "block_0003_0005",
+            "sha256": "d20b6959ad000b8986bf638b2512a2b75fabb4f145af91b5d2ccd84a07e706bd"
+          },
+          {
+            "id": "block_0003_0006",
+            "sha256": "3f749eea2456657ef838fcbbfd09afe56b9545396f93cd7c0d9f2246238fbb26"
+          }
+        ]
+      },
+      {
+        "id": "page_0004",
+        "blocks": [
+          {
+            "id": "block_0004_0000",
+            "sha256": "a30d0555835b703d0dd5a90aabb0134813afd11904b5364f69f03b01695f6d7a"
+          },
+          {
+            "id": "block_0004_0001",
+            "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+          },
+          {
+            "id": "block_0004_0002",
+            "sha256": "0bcaf1281a8d8ca5200d684710f7221ac7b2fe4d2273d2face866cfd4fb4b2ee"
+          },
+          {
+            "id": "block_0004_0003",
+            "sha256": "08fef35686011e1143ce8af41afbd31f945b3c6645df64bc6c26f040939cf00a"
+          },
+          {
+            "id": "block_0004_0004",
+            "sha256": "774fef64c2e1aba8c46f42a9a185a6fd2dc4a0c15d08606334f9e5693c4c35c9"
+          }
+        ]
+      },
+      {
+        "id": "page_0005",
+        "blocks": [
+          {
+            "id": "block_0005_0000",
+            "sha256": "a30d0555835b703d0dd5a90aabb0134813afd11904b5364f69f03b01695f6d7a"
+          },
+          {
+            "id": "block_0005_0001",
+            "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+          },
+          {
+            "id": "block_0005_0002",
+            "sha256": "5c929d39549b6fedda7951fd62a26ca528546d0745e61b0d3ee0948f00e75131"
+          },
+          {
+            "id": "block_0005_0003",
+            "sha256": "8879b6a0637e2d78bf82d3d110b0fcb65f7f23fa50f287bd6ca1eb53b268f47f"
+          },
+          {
+            "id": "block_0005_0004",
+            "sha256": "1b00f1a6aefba4320159d35a0c698e474460a02c84105b27c6a83229820523de"
+          },
+          {
+            "id": "block_0005_0005",
+            "sha256": "51c4d6fb8c52e1fa9becaf4fb7c5cb2bd9138162e0237e5f546f753c35542338"
+          }
+        ]
+      },
+      {
+        "id": "page_0006",
+        "blocks": [
+          {
+            "id": "block_0006_0000",
+            "sha256": "a30d0555835b703d0dd5a90aabb0134813afd11904b5364f69f03b01695f6d7a"
+          },
+          {
+            "id": "block_0006_0001",
+            "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+          },
+          {
+            "id": "block_0006_0002",
+            "sha256": "d8fcf6f8ea0cb74ffae59de5424960a8b320bef7011f44ce0ea6c0ec6c5f39e8"
+          },
+          {
+            "id": "block_0006_0003",
+            "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+          }
+        ]
+      },
+      {
+        "id": "page_0007",
+        "blocks": [
+          {
+            "id": "block_0007_0000",
+            "sha256": "a30d0555835b703d0dd5a90aabb0134813afd11904b5364f69f03b01695f6d7a"
+          },
+          {
+            "id": "block_0007_0001",
+            "sha256": "4978d1bdca3fe9c860a7c502a9b1d31748b2b8557d2aa728e10079642c76295c"
+          },
+          {
+            "id": "block_0007_0002",
+            "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+          },
+          {
+            "id": "block_0007_0003",
+            "sha256": "89a1061ae91f114b66cd4524ba092d277eac282662b1be85c7f1190253abfa32"
+          },
+          {
+            "id": "block_0007_0004",
+            "sha256": "c0a9255cc501165438ca973a5b89c4f98b556934fb96507c8897e5f4e3481c8d"
+          },
+          {
+            "id": "block_0007_0005",
+            "sha256": "851a57dcd18532271adfb4c0fb11640c43a5ebd4403a86833d33d0210027d5f9"
+          },
+          {
+            "id": "block_0007_0006",
+            "sha256": "1d1ce477c105f39e90193a93ec263494d9f2a9eaf927fbefced153e23307e073"
+          },
+          {
+            "id": "block_0007_0007",
+            "sha256": "76034b5ecd1ee4a15fd42c81f5a5033ab32a367546dc708cfbe81c73c972b57b"
+          }
+        ]
+      },
+      {
+        "id": "page_0008",
+        "blocks": [
+          {
+            "id": "block_0008_0000",
+            "sha256": "a30d0555835b703d0dd5a90aabb0134813afd11904b5364f69f03b01695f6d7a"
+          },
+          {
+            "id": "block_0008_0001",
+            "sha256": "5a25f39deebfacf70f31e9ed31d9496f83df3471d72bfcca57fec1493aee69a1"
+          },
+          {
+            "id": "block_0008_0002",
+            "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+          },
+          {
+            "id": "block_0008_0003",
+            "sha256": "2be2e638a6252907085b8d6f5dd551c8d9cba95aeb546ebfe2d08e2f19f9cdfd"
+          },
+          {
+            "id": "block_0008_0004",
+            "sha256": "a30d0555835b703d0dd5a90aabb0134813afd11904b5364f69f03b01695f6d7a"
+          },
+          {
+            "id": "block_0008_0005",
+            "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+          },
+          {
+            "id": "block_0008_0006",
+            "sha256": "5ce71a6bec92f9df51f3a429e7b8b9192f886af0f1235f02211c0ddfb200a953"
+          },
+          {
+            "id": "block_0008_0007",
+            "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+          },
+          {
+            "id": "block_0008_0008",
+            "sha256": "367449a00a0145b23762503658ed489009022a97b9e2f9affeb78f211fcd6c3a"
+          },
+          {
+            "id": "block_0008_0009",
+            "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+          }
+        ]
+      }
+    ],
+    "current": [
+      {
+        "id": "page_0000",
+        "blocks": [
+          "block_0000_0000",
+          "block_0000_0001",
+          "block_0000_0002",
+          "block_0000_0003",
+          "block_0000_0004",
+          "block_0000_0005"
+        ]
+      },
+      {
+        "id": "page_0001",
+        "blocks": [
+          "block_0001_0000",
+          "block_0001_0001",
+          "block_0001_0002",
+          "block_0001_0003",
+          "block_0001_0004"
+        ]
+      },
+      {
+        "id": "page_0002",
+        "blocks": [
+          "block_0002_0000",
+          "block_0002_0001",
+          "block_0002_0002",
+          "block_0002_0003",
+          "block_0002_0004"
+        ]
+      },
+      {
+        "id": "page_0003",
+        "blocks": [
+          "block_0003_0000",
+          "block_0003_0001",
+          "block_0003_0002",
+          "block_0003_0003",
+          "block_0003_0004",
+          "block_0003_0005",
+          "block_0003_0006"
+        ]
+      },
+      {
+        "id": "page_0004",
+        "blocks": [
+          "block_0004_0000",
+          "block_0004_0001",
+          "block_0004_0002",
+          "block_0004_0003",
+          "block_0004_0004"
+        ]
+      },
+      {
+        "id": "page_0005",
+        "blocks": [
+          "block_0005_0000",
+          "block_0005_0001",
+          "block_0005_0002",
+          "block_0005_0003",
+          "block_0005_0004",
+          "block_0005_0005"
+        ]
+      },
+      {
+        "id": "page_0006",
+        "blocks": [
+          "block_0006_0000",
+          "block_0006_0001",
+          "block_0006_0002",
+          "block_0006_0003"
+        ]
+      },
+      {
+        "id": "page_0007",
+        "blocks": [
+          "block_0007_0000",
+          "block_0007_0001",
+          "block_0007_0002",
+          "block_0007_0003",
+          "block_0007_0004",
+          "block_0007_0005",
+          "block_0007_0006",
+          "block_0007_0007"
+        ]
+      },
+      {
+        "id": "page_0008",
+        "blocks": [
+          "block_0008_0000",
+          "block_0008_0001",
+          "block_0008_0002",
+          "block_0008_0003",
+          "block_0008_0004",
+          "block_0008_0005",
+          "block_0008_0006",
+          "block_0008_0007",
+          "block_0008_0008",
+          "block_0008_0009"
+        ]
+      }
+    ],
+    "family": {
+      "es": {
+        "sha256": "84698d1e4779e2f05038aac70a15f333fa456f40b0c87956004f832c5651ad40",
+        "origin": [
+          {
+            "id": "page_0000",
+            "blocks": [
+              {
+                "id": "block_0000_0000",
+                "sha256": "a30d0555835b703d0dd5a90aabb0134813afd11904b5364f69f03b01695f6d7a"
+              },
+              {
+                "id": "block_0000_0001",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              },
+              {
+                "id": "block_0000_0002",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              },
+              {
+                "id": "block_0000_0003",
+                "sha256": "fc75e7d997deb14858df8595ce146f7177058127811fb91d1a678043f0f3d30a"
+              },
+              {
+                "id": "block_0000_0004",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              },
+              {
+                "id": "block_0000_0005",
+                "sha256": "46784e780c86f36005bc75514dbb71d48d67ba5f1caf5b15dcb710e3f8811e0f"
+              }
+            ]
+          },
+          {
+            "id": "page_0001",
+            "blocks": [
+              {
+                "id": "block_0001_0000",
+                "sha256": "a30d0555835b703d0dd5a90aabb0134813afd11904b5364f69f03b01695f6d7a"
+              },
+              {
+                "id": "block_0001_0001",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              },
+              {
+                "id": "block_0001_0002",
+                "sha256": "90b3773e77255a470bd02d4ff5e078025b7404015feece21522bd3b360e10469"
+              },
+              {
+                "id": "block_0001_0003",
+                "sha256": "1d3e29b8f27906156a8b9baf23445c62d00425e631528eb14c0b23a62b4669fa"
+              },
+              {
+                "id": "block_0001_0004",
+                "sha256": "5a25f39deebfacf70f31e9ed31d9496f83df3471d72bfcca57fec1493aee69a1"
+              }
+            ]
+          },
+          {
+            "id": "page_0002",
+            "blocks": [
+              {
+                "id": "block_0002_0000",
+                "sha256": "a30d0555835b703d0dd5a90aabb0134813afd11904b5364f69f03b01695f6d7a"
+              },
+              {
+                "id": "block_0002_0001",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              },
+              {
+                "id": "block_0002_0002",
+                "sha256": "ac932193b1031ec49d9cdbad5ce51e93e2b4e6a55dcfb86911d701f91bdbdf29"
+              },
+              {
+                "id": "block_0002_0003",
+                "sha256": "de249817dbbe573477c3ced0c10b17e5a883f49354b26e282656cd7b0747fc74"
+              },
+              {
+                "id": "block_0002_0004",
+                "sha256": "3cf2827c55e9044fd54264f2e2766264ed5b9a45fbb831555d8152e767ea7529"
+              }
+            ]
+          },
+          {
+            "id": "page_0003",
+            "blocks": [
+              {
+                "id": "block_0003_0000",
+                "sha256": "a30d0555835b703d0dd5a90aabb0134813afd11904b5364f69f03b01695f6d7a"
+              },
+              {
+                "id": "block_0003_0001",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              },
+              {
+                "id": "block_0003_0002",
+                "sha256": "49721ad11e5c7366150173c6f3c3b3813cf368f01b2a8155865f57ca5e641e2f"
+              },
+              {
+                "id": "block_0003_0003",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              },
+              {
+                "id": "block_0003_0004",
+                "sha256": "903cf39c158fe1810681f34ae14bb04725193ccb21ec44d8564af8826ca7fd96"
+              },
+              {
+                "id": "block_0003_0005",
+                "sha256": "d20b6959ad000b8986bf638b2512a2b75fabb4f145af91b5d2ccd84a07e706bd"
+              },
+              {
+                "id": "block_0003_0006",
+                "sha256": "3f749eea2456657ef838fcbbfd09afe56b9545396f93cd7c0d9f2246238fbb26"
+              }
+            ]
+          },
+          {
+            "id": "page_0004",
+            "blocks": [
+              {
+                "id": "block_0004_0000",
+                "sha256": "a30d0555835b703d0dd5a90aabb0134813afd11904b5364f69f03b01695f6d7a"
+              },
+              {
+                "id": "block_0004_0001",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              },
+              {
+                "id": "block_0004_0002",
+                "sha256": "0bcaf1281a8d8ca5200d684710f7221ac7b2fe4d2273d2face866cfd4fb4b2ee"
+              },
+              {
+                "id": "block_0004_0003",
+                "sha256": "08fef35686011e1143ce8af41afbd31f945b3c6645df64bc6c26f040939cf00a"
+              },
+              {
+                "id": "block_0004_0004",
+                "sha256": "774fef64c2e1aba8c46f42a9a185a6fd2dc4a0c15d08606334f9e5693c4c35c9"
+              }
+            ]
+          },
+          {
+            "id": "page_0005",
+            "blocks": [
+              {
+                "id": "block_0005_0000",
+                "sha256": "a30d0555835b703d0dd5a90aabb0134813afd11904b5364f69f03b01695f6d7a"
+              },
+              {
+                "id": "block_0005_0001",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              },
+              {
+                "id": "block_0005_0002",
+                "sha256": "5c929d39549b6fedda7951fd62a26ca528546d0745e61b0d3ee0948f00e75131"
+              },
+              {
+                "id": "block_0005_0003",
+                "sha256": "8879b6a0637e2d78bf82d3d110b0fcb65f7f23fa50f287bd6ca1eb53b268f47f"
+              },
+              {
+                "id": "block_0005_0004",
+                "sha256": "1b00f1a6aefba4320159d35a0c698e474460a02c84105b27c6a83229820523de"
+              },
+              {
+                "id": "block_0005_0005",
+                "sha256": "51c4d6fb8c52e1fa9becaf4fb7c5cb2bd9138162e0237e5f546f753c35542338"
+              }
+            ]
+          },
+          {
+            "id": "page_0006",
+            "blocks": [
+              {
+                "id": "block_0006_0000",
+                "sha256": "a30d0555835b703d0dd5a90aabb0134813afd11904b5364f69f03b01695f6d7a"
+              },
+              {
+                "id": "block_0006_0001",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              },
+              {
+                "id": "block_0006_0002",
+                "sha256": "d8fcf6f8ea0cb74ffae59de5424960a8b320bef7011f44ce0ea6c0ec6c5f39e8"
+              },
+              {
+                "id": "block_0006_0003",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              }
+            ]
+          },
+          {
+            "id": "page_0007",
+            "blocks": [
+              {
+                "id": "block_0007_0000",
+                "sha256": "a30d0555835b703d0dd5a90aabb0134813afd11904b5364f69f03b01695f6d7a"
+              },
+              {
+                "id": "block_0007_0001",
+                "sha256": "4978d1bdca3fe9c860a7c502a9b1d31748b2b8557d2aa728e10079642c76295c"
+              },
+              {
+                "id": "block_0007_0002",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              },
+              {
+                "id": "block_0007_0003",
+                "sha256": "89a1061ae91f114b66cd4524ba092d277eac282662b1be85c7f1190253abfa32"
+              },
+              {
+                "id": "block_0007_0004",
+                "sha256": "c0a9255cc501165438ca973a5b89c4f98b556934fb96507c8897e5f4e3481c8d"
+              },
+              {
+                "id": "block_0007_0005",
+                "sha256": "851a57dcd18532271adfb4c0fb11640c43a5ebd4403a86833d33d0210027d5f9"
+              },
+              {
+                "id": "block_0007_0006",
+                "sha256": "1d1ce477c105f39e90193a93ec263494d9f2a9eaf927fbefced153e23307e073"
+              },
+              {
+                "id": "block_0007_0007",
+                "sha256": "76034b5ecd1ee4a15fd42c81f5a5033ab32a367546dc708cfbe81c73c972b57b"
+              }
+            ]
+          },
+          {
+            "id": "page_0008",
+            "blocks": [
+              {
+                "id": "block_0008_0000",
+                "sha256": "a30d0555835b703d0dd5a90aabb0134813afd11904b5364f69f03b01695f6d7a"
+              },
+              {
+                "id": "block_0008_0001",
+                "sha256": "5a25f39deebfacf70f31e9ed31d9496f83df3471d72bfcca57fec1493aee69a1"
+              },
+              {
+                "id": "block_0008_0002",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              },
+              {
+                "id": "block_0008_0003",
+                "sha256": "2be2e638a6252907085b8d6f5dd551c8d9cba95aeb546ebfe2d08e2f19f9cdfd"
+              },
+              {
+                "id": "block_0008_0004",
+                "sha256": "a30d0555835b703d0dd5a90aabb0134813afd11904b5364f69f03b01695f6d7a"
+              },
+              {
+                "id": "block_0008_0005",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              },
+              {
+                "id": "block_0008_0006",
+                "sha256": "5ce71a6bec92f9df51f3a429e7b8b9192f886af0f1235f02211c0ddfb200a953"
+              },
+              {
+                "id": "block_0008_0007",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              },
+              {
+                "id": "block_0008_0008",
+                "sha256": "367449a00a0145b23762503658ed489009022a97b9e2f9affeb78f211fcd6c3a"
+              },
+              {
+                "id": "block_0008_0009",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              }
+            ]
+          }
+        ]
+      }
+    },
+    "additions": [],
+    "editorial": []
+  }
+}

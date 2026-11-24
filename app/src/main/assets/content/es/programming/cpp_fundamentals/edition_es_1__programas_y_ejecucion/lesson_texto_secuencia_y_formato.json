@@ -1,0 +1,4110 @@
+{
+  "id": "cpp_fundamentals__edition_es_1__programas_y_ejecucion__texto_secuencia_y_formato",
+  "title": "Texto, secuencia y formato de salida",
+  "orderVisualSeparators": [
+    {
+      "activity": "block_0005_0002",
+      "count": 1
+    }
+  ],
+  "pages": [
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "Seguir dos instrucciones y colocar un espacio"
+        },
+        {
+          "type": "paragraph",
+          "text": "Ya sabes mostrar un mensaje con una instrucción. Ahora construirás mensajes por partes. Empezarás con dos palabras escritas en el código. Al leer cada instrucción, fíjate en qué palabra añade al texto que ya aparece en la consola."
+        },
+        {
+          "type": "code",
+          "language": "cpp",
+          "code": "std::cout << \"Lado\";\nstd::cout << \"Norte\";"
+        },
+        {
+          "type": "paragraph",
+          "text": "Este fragmento contiene dos instrucciones, cada una terminada en punto y coma. Se ejecuta primero la que muestra Lado. Después se ejecuta la que muestra Norte. La segunda continúa justo después del texto que ya se había escrito (Stroustrup, 2024)."
+        },
+        {
+          "type": "paragraph",
+          "text": "Así cambia el texto de la consola al ejecutar las dos instrucciones.\n\nAntes de ejecutar la primera instrucción, la consola está vacía.\nDespués de ejecutar la instrucción que escribe Lado, se lee Lado.\nDespués de ejecutar la instrucción que añade Norte, se lee LadoNorte."
+        },
+        {
+          "type": "paragraph",
+          "text": "Pusimos cada instrucción en un renglón del código para leerlas mejor. Eso no añade un espacio ni hace empezar otra línea en la consola. Para separar las palabras, una de las instrucciones debe escribir esa separación.",
+          "emphasis": [
+            {
+              "text": "Eso no añade un espacio"
+            }
+          ]
+        },
+        {
+          "type": "output_prediction",
+          "id": "sin_espacio",
+          "question": "¿Qué texto verás en la consola cuando se ejecuten las dos instrucciones? Escribe el mensaje tal como aparecerá. Fíjate en qué caracteres hay entre las comillas de cada literal.",
+          "language": "cpp",
+          "code": "#include <iostream>\n\nint main() {\n    std::cout << \"Roca\";\n    std::cout << \"Azul\";\n\n    return 0;\n}\n",
+          "answers": [
+            "RocaAzul"
+          ],
+          "explanation": "La primera instrucción escribe Roca. La segunda añade Azul inmediatamente después. Ninguno de los dos literales aporta un espacio ni un salto; por eso se obtiene RocaAzul."
+        },
+        {
+          "type": "code",
+          "language": "cpp",
+          "code": "std::cout << \"Lado\";\nstd::cout << \" Norte\";"
+        },
+        {
+          "type": "paragraph",
+          "text": "Ahora hay un espacio después de la comilla que abre el segundo literal, antes de Norte. La primera instrucción escribe Lado. La segunda añade primero el espacio y después Norte. El resultado completo es Lado Norte."
+        },
+        {
+          "type": "fill_code",
+          "id": "p1u1l3_completar_separacion",
+          "question": "Completa el segundo literal para mostrar Anden Este. La primera instrucción ya escribe Anden, sin espacio al final. Escribe el literal completo, incluidas sus comillas.",
+          "language": "cpp",
+          "code": "std::cout << \"Anden\";\nstd::cout << ___;",
+          "answers": [
+            "\" Este\""
+          ],
+          "explanation": "El segundo literal es \" Este\". Dentro de las comillas hay un espacio antes de Este. Por eso, cuando std::cout escribe ese texto después de Anden, ves Anden Este en la consola."
+        },
+        {
+          "type": "output_prediction",
+          "id": "p1u1l3_invertir_orden",
+          "language": "cpp",
+          "question": "Predice el texto de este fragmento ejecutado dentro de main. No añadas espacios ni saltos que las instrucciones no escriben.",
+          "code": "std::cout << \"Norte\";\nstd::cout << \"Lado\";",
+          "answers": [
+            "NorteLado"
+          ],
+          "outputComparison": "exact",
+          "explanation": "Primero se escribe Norte y después se añade Lado. Al intercambiar las instrucciones también cambia el orden de los textos: queda NorteLado."
+        },
+        {
+          "type": "paragraph",
+          "text": "El espacio también podría quedar al final del primer literal o en una instrucción intermedia. Importa el orden de los caracteres escritos, no cuántas instrucciones utilizamos (Stroustrup, 2024)."
+        },
+        {
+          "type": "multiple_choice",
+          "id": "p1u1l3_situar_espacio",
+          "question": "Se ejecutan std::cout << \"Casa \"; y después std::cout << \"Verde\";. ¿Qué texto se obtiene?",
+          "options": [
+            "CasaVerde (sin espacio)",
+            "Casa Verde (un espacio)",
+            "Casa  Verde (dos espacios)"
+          ],
+          "correctIndex": 1,
+          "explanation": "El primer literal ya termina con un espacio. La segunda instrucción añade Verde inmediatamente después. Se obtiene Casa Verde, con un único espacio; no hace falta añadir otro."
+        }
+      ]
+    },
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "Construir una instrucción con varias partes"
+        },
+        {
+          "type": "code",
+          "language": "cpp",
+          "code": "std::cout << \"Sala\" << \" \" << \"Central\";"
+        },
+        {
+          "type": "paragraph",
+          "text": "Lee la instrucción de izquierda a derecha. Con el primer <<, std::cout escribe el texto del primer literal en la consola. Cada vez que aparece otro <<, std::cout escribe el texto del literal siguiente justo después del texto anterior (Stroustrup, 2024)."
+        },
+        {
+          "type": "paragraph",
+          "text": "Primero, con el literal \"Sala\" el programa escribe Sala.\nLuego con el literal \" \" añade un espacio después de Sala.\nPor último, con el literal \"Central\" escribe Central después del espacio.\nEn la consola ves Sala Central."
+        },
+        {
+          "type": "paragraph",
+          "text": "Cada vez que escribes un valor en std::cout con << haces una inserción. Usar << varias veces en la misma instrucción para escribir los valores uno tras otro se llama encadenar inserciones. El punto y coma indica dónde termina la instrucción (Stroustrup, 2024).",
+          "emphasis": [
+            {
+              "text": "encadenar inserciones"
+            }
+          ]
+        },
+        {
+          "type": "inline_fill_code",
+          "id": "p1u1l3_completar_cadena",
+          "question": "Completa la operación que falta y el último literal para mostrar Puerto Norte con un espacio. Escribe sólo la pieza de cada hueco.",
+          "template": "std::cout << \"Puerto\" [] \" \" << [];",
+          "answers": [
+            "<<",
+            "\"Norte\""
+          ],
+          "explanation": "El primer hueco necesita << para enviar el literal que contiene el espacio. El segundo necesita \"Norte\". Se escribe Puerto, luego el espacio y al final Norte; el resultado es Puerto Norte."
+        },
+        {
+          "type": "output_prediction",
+          "id": "espacio_interno",
+          "question": "Predice la salida. Escribe el texto producido y conserva los espacios que el programa inserta dentro del mensaje.",
+          "language": "cpp",
+          "code": "#include <iostream>\n\nint main() {\n    std::cout << \"Ruta\" << \" \" << \"Sur\";\n\n    return 0;\n}\n",
+          "answers": [
+            "Ruta Sur"
+          ],
+          "explanation": "La instrucción envía tres partes: Ruta, un espacio y Sur. Las tres quedan en una sola línea. Los espacios situados fuera de los literales separan piezas del código, pero no se añaden al mensaje."
+        },
+        {
+          "type": "output_prediction",
+          "id": "signo_interno",
+          "question": "Predice la salida. Escribe las partes del mensaje en el orden de ejecución y conserva el signo insertado entre ellas.",
+          "language": "cpp",
+          "code": "#include <iostream>\n\nint main() {\n    std::cout << \"A\" << \":\" << \"B\";\n\n    return 0;\n}\n",
+          "answers": [
+            "A:B"
+          ],
+          "explanation": "Se envía A, después el signo de dos puntos y al final B. El signo está dentro de un literal y forma parte del mensaje A:B. No se ha enviado ningún espacio ni salto."
+        },
+        {
+          "type": "inline_fill_code",
+          "id": "literal_y_operador",
+          "question": "Escribe el operador de inserción en el primer hueco y el literal exacto \"Carga lista\" en el segundo.",
+          "template": "#include <iostream>\n\nint main() {\n    std::cout [] [];\n\n    return 0;\n}",
+          "answers": [
+            "<<",
+            "\"Carga lista\""
+          ],
+          "reviewFeedback": "En la instrucción de salida, localiza dónde va el operador que envía el mensaje a std::cout y dónde van las palabras del mensaje. ¿Qué signos necesitas en el código para indicar dónde empieza y termina el texto del literal?",
+          "explanation": "En el primer hueco va el operador <<, que envía el contenido del literal a std::cout. En el segundo hueco va el literal \"Carga lista\". Las comillas marcan el principio y el final del literal en el código. La consola muestra Carga lista, con el espacio entre las palabras y sin salto de línea al final (Stroustrup, 2024)."
+        },
+        {
+          "type": "paragraph",
+          "text": "Si una instrucción escribe Sala, otra escribe un espacio y otra escribe Central, en la consola aparece Sala Central. Una sola instrucción con varios operadores << puede escribir esos mismos tres textos en el mismo orden. Para comprobar si la salida coincide, compara los caracteres que se escriben en la consola, incluido el espacio."
+        }
+      ]
+    },
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "Elegir dónde empieza la siguiente línea"
+        },
+        {
+          "type": "code",
+          "language": "cpp",
+          "code": "std::cout << \"Planta baja\\nPlanta alta\";"
+        },
+        {
+          "type": "paragraph",
+          "text": "Queremos que Planta baja aparezca en una línea y Planta alta en la siguiente. Dentro del literal escribimos \\n en el lugar donde debe terminar la primera línea. Son una barra inversa y una n en el código; juntas representan el salto de línea que recibe la salida (Stroustrup, 2024).",
+          "emphasis": [
+            {
+              "text": "representan el salto de línea"
+            }
+          ]
+        },
+        {
+          "type": "paragraph",
+          "text": "A esta forma de representar un carácter mediante una barra inversa y otros signos la llamamos secuencia de escape. En \\n, esos signos son la barra inversa y la letra n. El carácter representado es el salto de línea (Stroustrup, 2024).",
+          "emphasis": [
+            {
+              "text": "secuencia de escape"
+            }
+          ]
+        },
+        {
+          "type": "paragraph",
+          "text": "La instrucción realiza estas acciones en este orden:\n\nEscribe Planta baja.\nEnvía el salto de línea.\nEscribe Planta alta al comienzo de la línea nueva."
+        },
+        {
+          "type": "paragraph",
+          "text": "En una predicción, escribe el texto que produce el programa. Para separar sus líneas usa Enter en el campo de respuesta. No escribas la barra inversa y la n cuando el programa envía un salto. Aquí practicaremos los saltos interiores; cuando importe el salto final, el enunciado lo indicará."
+        },
+        {
+          "type": "fill_code",
+          "id": "p1u1l3_construir_salto",
+          "question": "Completa un único literal para mostrar Inicio en la primera línea y Fin en la segunda, sin un salto al final. Escribe el literal completo en una sola línea del código, usando el escape estudiado.",
+          "language": "cpp",
+          "code": "std::cout << ___;",
+          "answers": [
+            "\"Inicio\\nFin\""
+          ],
+          "explanation": "El literal \"Inicio\\nFin\" sitúa \\n entre las dos palabras. Primero se escribe Inicio, después comienza una nueva línea y allí se escribe Fin. En el código escribimos el escape; en la salida obtenemos la separación."
+        },
+        {
+          "type": "output_prediction",
+          "id": "dos_lineas",
+          "question": "Predice la salida. Escribe lo que aparece, sin las comillas del código; conserva los espacios y saltos entre partes del mensaje.",
+          "language": "cpp",
+          "code": "#include <iostream>\n\nint main() {\n    std::cout << \"Entrada\\nSalida\";\n\n    return 0;\n}\n",
+          "answers": [
+            "Entrada\nSalida"
+          ],
+          "explanation": "Primero se escribe Entrada. El escape situado a continuación hace comenzar otra línea y allí se escribe Salida. En la respuesta se utiliza Enter entre las palabras para reproducir esa separación."
+        },
+        {
+          "type": "output_prediction",
+          "id": "salto_en_otra_instruccion",
+          "question": "Predice la salida. Escribe lo que aparece, sin las comillas del código; conserva los espacios y saltos entre partes del mensaje.",
+          "language": "cpp",
+          "code": "#include <iostream>\n\nint main() {\n    std::cout << \"Rojo\";\n    std::cout << \"\\nVerde\";\n\n    return 0;\n}\n",
+          "answers": [
+            "Rojo\nVerde"
+          ],
+          "explanation": "La primera instrucción escribe Rojo sin un salto al final. La segunda empieza enviando el salto y después escribe Verde en la línea nueva. La separación puede pertenecer al final del primer literal o al comienzo del segundo: aquí está en el segundo."
+        },
+        {
+          "type": "multiple_choice",
+          "id": "fuente_vs_salida",
+          "question": "Las dos instrucciones de salida están en renglones distintos del código. Ninguno de sus literales contiene \\n. ¿El cambio de renglón entre las instrucciones hace que el segundo mensaje empiece en una línea nueva de la consola?",
+          "options": [
+            "El segundo mensaje sigue en el mismo renglón de la consola. Para empezar otro renglón, el programa tendría que escribir un salto de línea.",
+            "Que cada texto aparecerá en una línea diferente.",
+            "Que el programa no puede compilar."
+          ],
+          "correctIndex": 0,
+          "explanation": "Poner las instrucciones en renglones distintos sólo organiza el archivo. Las instrucciones de salida envían los caracteres de sus literales. Para obtener líneas diferentes en la consola, alguna de ellas debe enviar el salto correspondiente."
+        },
+        {
+          "type": "multiple_choice",
+          "id": "escape_no_literal",
+          "question": "En un literal válido, ¿qué representa \\n?",
+          "options": [
+            "Un salto de línea.",
+            "Un espacio que separa las dos palabras de la salida.",
+            "Los dos caracteres visibles barra invertida y n."
+          ],
+          "correctIndex": 0,
+          "explanation": "El escape \\n representa el salto de línea. Sus dos signos son la forma de escribirlo dentro del literal; no se envían como una barra visible y una n. Para mostrar una barra visible habría que escribir \\\\."
+        },
+        {
+          "type": "fill_code",
+          "id": "p1u1l3_reparar_barra_salto",
+          "question": "Se escribió \"Arranque/nParada\" y apareció Arranque/nParada en una sola línea. Repara el literal para mostrar Arranque y Parada en líneas distintas, sin un salto final. Escribe el literal completo.",
+          "language": "cpp",
+          "code": "std::cout << ___;",
+          "answers": [
+            "\"Arranque\\nParada\""
+          ],
+          "explanation": "La barra / no inicia el escape estudiado: por eso /n apareció como texto. El literal corregido es \"Arranque\\nParada\", con barra inversa antes de n. Ahora se envía un salto entre Arranque y Parada."
+        },
+        {
+          "type": "paragraph",
+          "text": "Cada salto hace avanzar otra línea. Si una instrucción termina enviando un salto y la siguiente comienza con otro, se producen dos avances seguidos: queda una línea vacía entre los textos. Para averiguar el resultado, cuenta los saltos enviados; no basta contar las instrucciones."
+        },
+        {
+          "type": "output_prediction",
+          "id": "p1u1l3_linea_vacia",
+          "language": "cpp",
+          "question": "Predice la salida del fragmento. Conserva la línea vacía interior; no añadas un salto después de Verde.",
+          "code": "std::cout << \"Rojo\\n\";\nstd::cout << \"\\nVerde\";",
+          "answers": [
+            "Rojo\n\nVerde"
+          ],
+          "outputComparison": "exact",
+          "explanation": "La primera instrucción escribe Rojo y pasa a la línea siguiente. La segunda empieza enviando otro salto antes de escribir Verde. Esa línea intermedia queda vacía. En la respuesta se necesitan dos pulsaciones de Enter entre las palabras."
+        }
+      ]
+    },
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "Mostrar comillas y barras inversas"
+        },
+        {
+          "type": "paragraph",
+          "text": "Hasta ahora las comillas delimitaban el literal y no se mostraban. Si queremos que el propio mensaje tenga comillas, necesitamos escribirlas de otra manera dentro de ese literal."
+        },
+        {
+          "type": "code",
+          "language": "cpp",
+          "code": "std::cout << \"Nombre: \\\"Luna\\\"\";"
+        },
+        {
+          "type": "paragraph",
+          "text": "Las comillas de los extremos delimitan todo el literal. Cada \\\" interior representa una comilla que sí forma parte del mensaje. Por eso la salida es Nombre: \"Luna\", con unas comillas alrededor del nombre. La barra inversa indica cómo interpretar la comilla siguiente; no aparece en la salida (Köppe et al., 2023)."
+        },
+        {
+          "type": "paragraph",
+          "text": "Una escritura que comienza con barra inversa y representa un carácter se llama secuencia de escape. Ya usamos \\n para un salto. Ahora usamos \\\" para una comilla doble. Las comillas que delimitan el literal conservan su función: no se muestran (Köppe et al., 2023).",
+          "emphasis": [
+            {
+              "text": "secuencia de escape"
+            }
+          ]
+        },
+        {
+          "type": "fill_code",
+          "id": "p1u1l3_escribir_comillas",
+          "question": "Completa el literal para mostrar \"Abierto\", incluidas las dos comillas visibles. El hueco pide el literal entero, con sus propias comillas delimitadoras.",
+          "language": "cpp",
+          "code": "std::cout << ___;",
+          "answers": [
+            "\"\\\"Abierto\\\"\""
+          ],
+          "explanation": "El literal completo es \"\\\"Abierto\\\"\". Las comillas exteriores delimitan el literal; los dos escapes \\\" proporcionan las comillas que rodean Abierto en la salida."
+        },
+        {
+          "type": "output_prediction",
+          "id": "comillas_en_mensaje",
+          "question": "Predice la salida. Omite las comillas que delimitan el literal, pero conserva las que el programa produce dentro del mensaje.",
+          "language": "cpp",
+          "code": "#include <iostream>\n\nint main() {\n    std::cout << \"Estado: \\\"Listo\\\"\";\n\n    return 0;\n}\n",
+          "answers": [
+            "Estado: \"Listo\""
+          ],
+          "explanation": "Las comillas de los extremos delimitan el literal. Las que se escriben con barra inversa dentro de él sí se envían como parte del mensaje. Por eso se muestra Estado: \"Listo\", con comillas alrededor de Listo."
+        },
+        {
+          "type": "code",
+          "language": "cpp",
+          "code": "std::cout << \"Zona\\\\B\";"
+        },
+        {
+          "type": "paragraph",
+          "text": "Para mostrar una barra inversa, escribimos \\\\ dentro del literal. Las dos barras del código representan una barra en la salida. El fragmento mostrado produce Zona\\B. Así evitamos que esa barra empiece a interpretarse como otro escape (Köppe et al., 2023)."
+        },
+        {
+          "type": "fill_code",
+          "id": "p1u1l3_escribir_barra",
+          "question": "Completa el literal para mostrar Nivel\\Dos, con una sola barra inversa entre las palabras. Escribe el literal completo.",
+          "language": "cpp",
+          "code": "std::cout << ___;",
+          "answers": [
+            "\"Nivel\\\\Dos\""
+          ],
+          "explanation": "El literal \"Nivel\\\\Dos\" contiene dos barras inversas en el código para producir una en el mensaje. La salida es Nivel\\Dos; no contiene las comillas delimitadoras."
+        },
+        {
+          "type": "output_prediction",
+          "id": "barra_en_mensaje",
+          "question": "Predice la salida. Escribe los caracteres del mensaje después de interpretar el escape de barra inversa del literal.",
+          "language": "cpp",
+          "code": "#include <iostream>\n\nint main() {\n    std::cout << \"Nivel\\\\Uno\";\n\n    return 0;\n}\n",
+          "answers": [
+            "Nivel\\Uno"
+          ],
+          "explanation": "El par de barras inversas del código representa una sola barra en el mensaje. La salida es Nivel\\Uno, con una barra visible y sin comillas delimitadoras."
+        },
+        {
+          "type": "code",
+          "language": "cpp",
+          "code": "std::cout << \"A\\\\nB\";"
+        },
+        {
+          "type": "paragraph",
+          "text": "Aquí \\\\ proporciona una barra visible. La n que viene después queda como una letra del mensaje: la salida es A\\nB en una sola línea. En cambio, \"A\\nB\" escribiría A y B en líneas distintas. Cambiar las barras cambia el contenido del literal, no sólo su aspecto en el editor."
+        },
+        {
+          "type": "output_prediction",
+          "id": "p1u1l3_salto_o_barra",
+          "language": "cpp",
+          "question": "Predice la salida del fragmento. Decide si hay un salto real o una barra visible seguida de la letra n.",
+          "code": "std::cout << \"C\\\\nD\";",
+          "answers": [
+            "C\\nD"
+          ],
+          "outputComparison": "exact",
+          "explanation": "El escape \\\\ produce una barra inversa. Después se escriben la n y la D como texto normal. El mensaje C\\nD ocupa una sola línea."
+        }
+      ]
+    },
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "Distinguir un comentario de una instrucción"
+        },
+        {
+          "type": "code",
+          "language": "cpp",
+          "code": "// No se envía este texto.\nstd::cout << \"Enviado\";"
+        },
+        {
+          "type": "paragraph",
+          "text": "Fuera de un literal, // inicia un comentario que termina al acabar ese renglón del código. Es una nota para quien lee el programa. En el ejemplo, sólo la segunda línea contiene una instrucción que escribe en la consola; su salida es Enviado (Stroustrup, 2024).",
+          "emphasis": [
+            {
+              "text": "Es una nota para quien lee el programa."
+            }
+          ]
+        },
+        {
+          "type": "output_prediction",
+          "id": "comentario_no_salida",
+          "question": "Predice la salida. Escribe sólo el texto que el programa muestra y conserva el espacio dentro del literal; distingue ese contenido del comentario.",
+          "language": "cpp",
+          "code": "#include <iostream>\n\nint main() {\n    // El mensaje identifica la segunda zona.\n    std::cout << \"Zona B\";\n\n    return 0;\n}\n",
+          "answers": [
+            "Zona B"
+          ],
+          "explanation": "Dentro de main, el renglón que empieza con // contiene un comentario. El programa empieza a escribir en la consola cuando ejecuta la instrucción con std::cout en el renglón siguiente. Esa instrucción muestra Zona B con el espacio que contiene el literal."
+        },
+        {
+          "type": "paragraph",
+          "text": "Dentro de un literal, las barras son parte del texto. En \"A//B\", los signos // no comienzan un comentario: están entre las comillas que delimitan el mensaje. Hay que mirar dónde están escritos los signos antes de decidir qué hacen (Stroustrup, 2024)."
+        },
+        {
+          "type": "output_prediction",
+          "id": "barras_en_literal",
+          "question": "Predice la salida. Escribe los caracteres que se muestran; interpreta los signos según su posición dentro o fuera del literal.",
+          "language": "cpp",
+          "code": "#include <iostream>\n\nint main() {\n    std::cout << \"A//B\";\n\n    return 0;\n}\n",
+          "answers": [
+            "A//B"
+          ],
+          "explanation": "Los signos // están dentro del literal \"A//B\". Por eso se envían junto con A y B; la salida es A//B. Esos signos sólo iniciarían un comentario si estuvieran fuera del literal."
+        },
+        {
+          "type": "code",
+          "language": "cpp",
+          "code": "// std::cout << \"No enviado\";\nstd::cout << \"Listo\";"
+        },
+        {
+          "type": "paragraph",
+          "text": "Aquí el comentario contiene algo que parece una instrucción de salida. Sin embargo, el // está antes: el resto de ese renglón sigue siendo un comentario. Sólo se ejecuta la instrucción de la segunda línea. Por eso aparece Listo y no se muestra No enviado."
+        },
+        {
+          "type": "multiple_choice",
+          "id": "p1u1l3_reparar_comentario",
+          "question": "Se escribió // std::cout << \"Preparado\"; como una sola línea del cuerpo de main. Queremos que se muestre Preparado. ¿Qué corrección recupera esa instrucción?",
+          "options": [
+            "// std::cout << \"Preparado\";",
+            "std::cout << \"Preparado\"; // Mensaje de estado.",
+            "std::cout << \"// Preparado\";"
+          ],
+          "correctIndex": 1,
+          "explanation": "En la segunda opción, std::cout está antes de // y escribe Preparado. El comentario queda después de la instrucción. La primera opción mantiene toda la impresión comentada y no muestra nada. En la tercera, las barras están dentro del literal: se mostraría // Preparado, que no es el mensaje solicitado."
+        },
+        {
+          "type": "code",
+          "language": "cpp",
+          "code": "std::cout << \"Listo\"; // Identifica el estado actual."
+        },
+        {
+          "type": "paragraph",
+          "text": "Un comentario puede empezar después de una instrucción en el mismo renglón. En este caso, la impresión ya está escrita antes de // y se conserva como código. El comentario sólo ocupa el texto que viene después. El cambio de renglón del archivo termina ese comentario; por eso la siguiente línea puede contener otra instrucción (Stroustrup, 2024)."
+        },
+        {
+          "type": "output_prediction",
+          "id": "p1u1l3_comentario_entre_instrucciones",
+          "language": "cpp",
+          "question": "Predice la salida del fragmento. Revisa qué quedó antes de los signos de comentario y qué continúa dentro de ese comentario.",
+          "code": "std::cout << \"Uno\"; // std::cout << \"Dos\";\nstd::cout << \"Tres\";",
+          "answers": [
+            "UnoTres"
+          ],
+          "outputComparison": "exact",
+          "explanation": "La primera instrucción está antes de // y escribe Uno. La impresión que parece escribir Dos está dentro del comentario y no se ejecuta. El comentario termina al acabar el renglón del archivo; la siguiente instrucción añade Tres. No se enviaron espacios ni saltos a la consola."
+        },
+        {
+          "type": "paragraph",
+          "text": "Una nota útil explica para qué sirve una parte o por qué elegimos una solución. Si cambiamos la instrucción, también hay que revisar la nota que la describe. El compilador no comprueba que la promesa del comentario coincida con lo que hace el código (Stroustrup, 2024)."
+        },
+        {
+          "type": "multiple_choice",
+          "id": "comentario_contradictorio",
+          "question": "El comentario dice «Muestra Norte», pero la instrucción envía \"Sur\" a std::cout. ¿Qué se muestra?",
+          "options": [
+            "NorteSur",
+            "Sur",
+            "Norte"
+          ],
+          "correctIndex": 1,
+          "explanation": "La instrucción escribe Sur. El comentario promete Norte, pero esa nota no cambia lo que contiene el literal. Hay que corregir la nota o la instrucción según el requisito real, en lugar de esperar que el comentario controle la salida."
+        }
+      ]
+    },
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "Combinar las piezas y ordenar mensajes"
+        },
+        {
+          "type": "paragraph",
+          "text": "Para construir varias líneas de salida, decide qué texto debe ir primero y qué instrucción envía la separación. Una instrucción que termina con un salto deja preparada la línea donde escribirá la siguiente. Comprueba también que todas las instrucciones de salida queden antes de return 0; dentro de main."
+        },
+        {
+          "type": "order_code",
+          "id": "orden_mensajes",
+          "question": "Ordena estas piezas para mostrar Paso uno y después Paso dos en líneas distintas.",
+          "fragments": [
+            "    std::cout << \"Paso dos\";",
+            "    return 0;",
+            "}",
+            "#include <iostream>",
+            "int main() {",
+            "    std::cout << \"Paso uno\\n\";"
+          ],
+          "correctOrder": [
+            3,
+            4,
+            5,
+            0,
+            1,
+            2
+          ],
+          "explanation": "La instrucción de Paso uno va primero y su literal termina con \\n. La de Paso dos escribe después, en la línea que dejó preparada ese salto. return 0; debe quedar después de las dos impresiones, dentro del cuerpo de main."
+        },
+        {
+          "type": "paragraph",
+          "text": "Ahora combinaremos un nombre rodeado por comillas, un salto y una ruta que contiene una barra inversa. Los rótulos y el salto ya estarán escritos en el código. Cada hueco pide un literal completo que aporte la parte que falta."
+        },
+        {
+          "type": "paragraph",
+          "text": "Nombre: \"Luz\"\nRuta: Sector\\Sur"
+        },
+        {
+          "type": "inline_fill_code",
+          "id": "p1u1l3_combinar_escapes",
+          "question": "Completa los dos literales para producir las dos líneas mostradas. El primero aporta \"Luz\" con comillas visibles; el segundo aporta Sector\\Sur con una barra visible. No añadas otro salto.",
+          "template": "std::cout << \"Nombre: \" << [] << \"\\n\" << \"Ruta: \" << [];",
+          "answers": [
+            "\"\\\"Luz\\\"\"",
+            "\"Sector\\\\Sur\""
+          ],
+          "explanation": "El primer literal, \"\\\"Luz\\\"\", envía las comillas que rodean el nombre. El segundo, \"Sector\\\\Sur\", envía una barra inversa. El \\n intermedio ya estaba en el código y coloca Ruta: Sector\\Sur en la segunda línea."
+        },
+        {
+          "type": "paragraph",
+          "text": "En la siguiente predicción, sigue el contenido del literal hasta encontrar el escape. Conserva las palabras y sus espacios. El número de instrucciones y el número de líneas producidas pueden ser distintos."
+        },
+        {
+          "type": "output_prediction",
+          "id": "prediccion_informe_inicial",
+          "question": "Escribe las dos líneas de la salida del programa en el campo de respuesta. Conserva el espacio entre las dos palabras de la segunda línea de la salida. Termina la respuesta después de la última palabra.",
+          "language": "cpp",
+          "code": "#include <iostream>\n\nint main() {\n    std::cout << \"Resumen\\nZona Oeste\";\n\n    return 0;\n}\n",
+          "answers": [
+            "Resumen\nZona Oeste"
+          ],
+          "outputComparison": "exact",
+          "explanation": "La instrucción escribe Resumen, envía el salto indicado por \\n y escribe Zona Oeste en la segunda línea. Un solo literal puede contener varias líneas de salida. El espacio entre Zona y Oeste también pertenece a ese literal.",
+          "reviewFeedback": "Observa dónde aparece \\n dentro del literal. Al llegar a ese punto del mensaje, pulsa Enter en el campo de respuesta. Revisa qué palabras del literal tienen un espacio entre ellas."
+        }
+      ]
+    },
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "Construir un informe desde el cuerpo vacío"
+        },
+        {
+          "type": "paragraph",
+          "text": "El editor ya contiene la cabecera y el cuerpo de main. Antes de return 0; hay una línea en blanco. Escribe ahí las instrucciones que muestran el informe. El programa debe mostrar el texto que dejes escrito en el código, sin pedirle datos al usuario al ejecutarse."
+        },
+        {
+          "type": "paragraph",
+          "text": "Informe\nZona Este\nFin"
+        },
+        {
+          "type": "paragraph",
+          "text": "Escribe un salto de línea después de Informe y otro después de Zona Este. Deja un espacio entre las dos palabras de la segunda línea. Después de Fin, el salto de línea es opcional. Puedes escribir el informe con un solo literal, encadenar varios con << o usar una instrucción para cada línea."
+        },
+        {
+          "type": "paragraph",
+          "text": "Pulsa «Compilar, ejecutar y comprobar». Si aparece un error de compilación, lee su mensaje y revisa el código. Si el programa se ejecuta, compara el texto de la consola con las tres líneas del ejemplo. Busca la primera diferencia en las palabras, los espacios o los saltos de línea. Corrígela y vuelve a comprobar."
+        },
+        {
+          "type": "cpp_compiler",
+          "initialCode": "#include <iostream>\n\nint main() {\n\n    return 0;\n}\n",
+          "outputCheck": {
+            "inputComparison": "exact",
+            "cases": [
+              {
+                "standardInput": "",
+                "outputs": [
+                  "Informe\nZona Este\nFin",
+                  "Informe\nZona Este\nFin\n"
+                ],
+                "explanation": "Informe termina con un salto de línea. Zona Este termina con otro. Fin ocupa la tercera línea y puede llevar un salto de línea al final."
+              }
+            ]
+          }
+        },
+        {
+          "type": "heading",
+          "text": "Seguir una implementación del informe"
+        },
+        {
+          "type": "code",
+          "language": "cpp",
+          "code": "#include <iostream>\n\nint main() {\n    std::cout << \"Informe\\nZona Este\\nFin\";\n\n    return 0;\n}\n"
+        },
+        {
+          "type": "paragraph",
+          "text": "Esta implementación utiliza un literal que contiene Informe, un salto, Zona Este, otro salto y Fin. La instrucción envía todo ese contenido. Si elegiste varias instrucciones, sigue lo que aporta cada una: el resultado completo debe ser el mismo."
+        }
+      ]
+    },
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "Reparar el orden y recuperar una instrucción"
+        },
+        {
+          "type": "paragraph",
+          "text": "Este programa compila, pero la salida no cumple lo pedido. Las dos instrucciones activas están en un orden equivocado. Además, la impresión de la carpeta quedó dentro de un comentario. Repara esos dos problemas conservando las palabras, las comillas y la barra inversa de los literales."
+        },
+        {
+          "type": "paragraph",
+          "text": "Ficha\nNombre: \"Mara\"\nCarpeta: Zona\\A"
+        },
+        {
+          "type": "paragraph",
+          "text": "Los textos del informe ya están en el código. El programa debe mostrarlos sin pedirle datos al usuario. Lee las instrucciones en orden y fíjate en cuál quedó comentada. Corrige el código para que las tres líneas aparezcan en el orden del ejemplo. El salto de línea después de la última es opcional."
+        },
+        {
+          "type": "cpp_compiler",
+          "initialCode": "#include <iostream>\n\nint main() {\n    // La primera línea debe ser Ficha.\n    std::cout << \"Nombre: \\\"Mara\\\"\\n\";\n    std::cout << \"Ficha\\n\";\n    // std::cout << \"Carpeta: Zona\\\\A\";\n    return 0;\n}\n",
+          "outputCheck": {
+            "inputComparison": "exact",
+            "cases": [
+              {
+                "standardInput": "",
+                "outputs": [
+                  "Ficha\nNombre: \"Mara\"\nCarpeta: Zona\\A",
+                  "Ficha\nNombre: \"Mara\"\nCarpeta: Zona\\A\n"
+                ],
+                "explanation": "La primera línea debe ser Ficha. Después se muestra Nombre: \"Mara\" y por último Carpeta: Zona\\A. Los saltos interiores, las comillas y la barra visible forman parte del resultado solicitado."
+              }
+            ]
+          }
+        },
+        {
+          "type": "heading",
+          "text": "Cómo se corrigió el orden de los mensajes y se volvió a mostrar la carpeta"
+        },
+        {
+          "type": "code",
+          "language": "cpp",
+          "code": "#include <iostream>\n\nint main() {\n    // La primera línea debe ser Ficha.\n    std::cout << \"Ficha\\n\";\n    std::cout << \"Nombre: \\\"Mara\\\"\\n\";\n    std::cout << \"Carpeta: Zona\\\\A\";\n\n    return 0;\n}\n"
+        },
+        {
+          "type": "paragraph",
+          "text": "Al ejecutar la primera instrucción con std::cout, aparece Ficha en la consola. El \\n que sigue a esa palabra hace que el nombre aparezca en la línea siguiente. En la instrucción del nombre, cada \\\" representa una comilla visible. Después del nombre, otro \\n inicia la línea de la carpeta. Al quitar // del comienzo de la instrucción que muestra la carpeta, esa instrucción vuelve a ejecutarse. Dentro de su literal, \\\\ representa la barra visible de Zona\\A."
+        },
+        {
+          "type": "paragraph",
+          "text": "Has practicado cómo se construye una salida por partes y cómo cambia al mover una instrucción, un espacio, un salto o un comentario. En la próxima lección veremos con más detalle cómo detectar y corregir errores al construir el programa."
+        }
+      ]
+    }
+  ],
+  "activityAfter": [
+    {
+      "activity": "block_0007_0004",
+      "requires": [
+        "block_0006_0005"
+      ]
+    }
+  ],
+  "referenceAfter": [
+    {
+      "activity": "block_0006_0005",
+      "blocks": [
+        "block_0006_0006",
+        "block_0006_0007",
+        "block_0006_0008"
+      ]
+    },
+    {
+      "activity": "block_0007_0004",
+      "blocks": [
+        "block_0007_0005",
+        "block_0007_0006",
+        "block_0007_0007"
+      ]
+    }
+  ],
+  "compilerPuzzlesRequired": true,
+  "textSemantics": {
+    "version": 1,
+    "fields": [
+      {
+        "block": "block_0000_0000",
+        "path": "/text",
+        "sourceSha256": "229404b15d561e443c3a35ce9248022e5073bbaf3e2bb6da662f95054cbd2c75",
+        "spans": []
+      },
+      {
+        "block": "block_0000_0006",
+        "path": "/question",
+        "sourceSha256": "2ef8c7f087a6ec2b13047448a1f4e6345942a3496acd4ab04fee3673bf5b7a67",
+        "spans": []
+      },
+      {
+        "block": "block_0000_0006",
+        "path": "/explanation",
+        "sourceSha256": "19a9f84a5bfeb2541dc223dd3b03ec47026f5cb91a7bf6de080896f5169cb365",
+        "spans": [
+          {
+            "start": 31,
+            "end": 35,
+            "text": "Roca",
+            "role": "output",
+            "reading": "natural"
+          },
+          {
+            "start": 54,
+            "end": 58,
+            "text": "Azul",
+            "role": "output",
+            "reading": "natural"
+          },
+          {
+            "start": 162,
+            "end": 170,
+            "text": "RocaAzul",
+            "role": "output",
+            "reading": "natural"
+          }
+        ]
+      },
+      {
+        "block": "block_0001_0006",
+        "path": "/question",
+        "sourceSha256": "cad4ea05f678dc1826581b2dfad2c1da1743e1022555eb3102ccd217dced8d30",
+        "spans": []
+      },
+      {
+        "block": "block_0001_0006",
+        "path": "/explanation",
+        "sourceSha256": "0c2ceb81055591213c5b0cb1185ef50ecd0a9c1faf6b512cdcc9cb3260fabea1",
+        "spans": [
+          {
+            "start": 34,
+            "end": 38,
+            "text": "Ruta",
+            "role": "output",
+            "reading": "natural"
+          },
+          {
+            "start": 53,
+            "end": 56,
+            "text": "Sur",
+            "role": "output",
+            "reading": "natural"
+          }
+        ]
+      },
+      {
+        "block": "block_0001_0007",
+        "path": "/question",
+        "sourceSha256": "d2a56c56a301b29f63553e70d5686a1f9e1e6ca10fb2d971fff96bbcb160162d",
+        "spans": []
+      },
+      {
+        "block": "block_0001_0007",
+        "path": "/explanation",
+        "sourceSha256": "a4a3b0b439a101eaff102449c7be04245eac7038de8bff01f5a23e91948d2476",
+        "spans": [
+          {
+            "start": 9,
+            "end": 10,
+            "text": "A",
+            "role": "output",
+            "reading": "natural"
+          },
+          {
+            "start": 54,
+            "end": 55,
+            "text": "B",
+            "role": "output",
+            "reading": "natural"
+          },
+          {
+            "start": 118,
+            "end": 121,
+            "text": "A:B",
+            "role": "output",
+            "reading": "natural"
+          }
+        ]
+      },
+      {
+        "block": "block_0001_0000",
+        "path": "/text",
+        "sourceSha256": "fbda880514bea356f19040fed6d9d5cfac1fc3dfa6db05fa40b35a565ddca008",
+        "spans": []
+      },
+      {
+        "block": "block_0002_0007",
+        "path": "/question",
+        "sourceSha256": "0cc694a70174b7e6f73a67399850bc25aafd2eedf0d08795168e50490f29dc3c",
+        "spans": []
+      },
+      {
+        "block": "block_0002_0007",
+        "path": "/explanation",
+        "sourceSha256": "4c8b4bd7a214629a2fc8f47971df5ed73f9b5d5d647de5d568001a9613a4a42e",
+        "spans": [
+          {
+            "start": 19,
+            "end": 26,
+            "text": "Entrada",
+            "role": "output",
+            "reading": "natural"
+          },
+          {
+            "start": 104,
+            "end": 110,
+            "text": "Salida",
+            "role": "output",
+            "reading": "natural"
+          }
+        ]
+      },
+      {
+        "block": "block_0002_0008",
+        "path": "/question",
+        "sourceSha256": "0cc694a70174b7e6f73a67399850bc25aafd2eedf0d08795168e50490f29dc3c",
+        "spans": []
+      },
+      {
+        "block": "block_0002_0008",
+        "path": "/explanation",
+        "sourceSha256": "a7c73d67d482ec85d6d75bfc042e7b792e5069223b5c18b2ecd3ec61d0719ec5",
+        "spans": [
+          {
+            "start": 31,
+            "end": 35,
+            "text": "Rojo",
+            "role": "output",
+            "reading": "natural"
+          },
+          {
+            "start": 114,
+            "end": 119,
+            "text": "Verde",
+            "role": "output",
+            "reading": "natural"
+          }
+        ]
+      },
+      {
+        "block": "block_0002_0009",
+        "path": "/question",
+        "sourceSha256": "ae9127702d8e713c1eab646ee7074de4274b38b9f7b4941824175257e2a8e2ee",
+        "spans": [
+          {
+            "start": 107,
+            "end": 109,
+            "text": "\\n",
+            "role": "cpp",
+            "reading": "technical"
+          }
+        ]
+      },
+      {
+        "block": "block_0002_0009",
+        "path": "/explanation",
+        "sourceSha256": "0f1f030f11fb45ea4117ae627948b3c9b49d699ee0bcc048a0fe7d1c5ebad475",
+        "spans": []
+      },
+      {
+        "block": "block_0002_0009",
+        "path": "/options/0",
+        "sourceSha256": "b146785a0998031d1e765acc186107dbea676ae081fbc20f2c6e4b36f9b26d00",
+        "spans": []
+      },
+      {
+        "block": "block_0002_0009",
+        "path": "/options/1",
+        "sourceSha256": "062a03826732981401964a8539567b635a216d0286a9aaa9daef8a9ed2c18e2a",
+        "spans": []
+      },
+      {
+        "block": "block_0002_0009",
+        "path": "/options/2",
+        "sourceSha256": "46c0edeea6f3f7d90d643bdd64b34615835b7c36b2f993fbb33d13d3dc940087",
+        "spans": []
+      },
+      {
+        "block": "block_0002_0000",
+        "path": "/text",
+        "sourceSha256": "a537e758cb993d050fbe77739064c1314411d018b6b4f740a4a37071f8a07fe9",
+        "spans": []
+      },
+      {
+        "block": "block_0003_0006",
+        "path": "/question",
+        "sourceSha256": "ebdffdbcfdc6dd9123cd79e78e91bd46c61421055207a94f0a9ded6827feba1b",
+        "spans": []
+      },
+      {
+        "block": "block_0003_0006",
+        "path": "/explanation",
+        "sourceSha256": "223febe79933e3714db512f146e1dcfc765db0d0ce39f4f2b24909ba307c0441",
+        "spans": [
+          {
+            "start": 158,
+            "end": 173,
+            "text": "Estado: \"Listo\"",
+            "role": "output",
+            "reading": "natural"
+          },
+          {
+            "start": 201,
+            "end": 206,
+            "text": "Listo",
+            "role": "output",
+            "reading": "natural"
+          }
+        ]
+      },
+      {
+        "block": "block_0003_0010",
+        "path": "/question",
+        "sourceSha256": "b387d809252b43170e6c58b8e791531fb186fbec385a0716767f88707599d3c0",
+        "spans": []
+      },
+      {
+        "block": "block_0003_0010",
+        "path": "/explanation",
+        "sourceSha256": "8245caa198b40d3e9934c992abfd72f7b8c22db496a1083b6acca843260e9131",
+        "spans": [
+          {
+            "start": 91,
+            "end": 100,
+            "text": "Nivel\\Uno",
+            "role": "output",
+            "reading": "natural"
+          }
+        ]
+      },
+      {
+        "block": "block_0002_0010",
+        "path": "/question",
+        "sourceSha256": "00714c893fb3271a46342d4b1b4e1593488b15bbd7318737dc32cfa2f8ddb576",
+        "spans": [
+          {
+            "start": 38,
+            "end": 40,
+            "text": "\\n",
+            "role": "cpp",
+            "reading": "technical"
+          }
+        ]
+      },
+      {
+        "block": "block_0002_0010",
+        "path": "/explanation",
+        "sourceSha256": "68a8ad84778f3ec96633ce4d6a5dfe25af237183a6d6748d14abfde5466ca50c",
+        "spans": [
+          {
+            "start": 10,
+            "end": 12,
+            "text": "\\n",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 201,
+            "end": 203,
+            "text": "\\\\",
+            "role": "cpp",
+            "reading": "technical"
+          }
+        ]
+      },
+      {
+        "block": "block_0002_0010",
+        "path": "/options/0",
+        "sourceSha256": "5129cc0978e615159b1a4aa9126f9b7593cbaf3165271cb772c1b229db239216",
+        "spans": []
+      },
+      {
+        "block": "block_0002_0010",
+        "path": "/options/1",
+        "sourceSha256": "d85a0cb8c79f250b1594c5c719bdf4956689513b7a7fc14172d4f924bdd23350",
+        "spans": [
+          {
+            "start": 26,
+            "end": 29,
+            "text": "dos",
+            "role": "data",
+            "reading": "natural"
+          }
+        ]
+      },
+      {
+        "block": "block_0002_0010",
+        "path": "/options/2",
+        "sourceSha256": "feb6e024687b5e2b2890b7082f8b91fd08399c2461aae3c3e13f2311874ee95e",
+        "spans": [
+          {
+            "start": 4,
+            "end": 7,
+            "text": "dos",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 28,
+            "end": 43,
+            "text": "barra invertida",
+            "role": "output",
+            "reading": "natural"
+          },
+          {
+            "start": 46,
+            "end": 47,
+            "text": "n",
+            "role": "output",
+            "reading": "characters"
+          }
+        ]
+      },
+      {
+        "block": "block_0003_0000",
+        "path": "/text",
+        "sourceSha256": "a75a93a1ccd1e11b49f604ce8e24068595275034899a15d5370750c3aa872cdd",
+        "spans": []
+      },
+      {
+        "block": "block_0004_0003",
+        "path": "/question",
+        "sourceSha256": "b8e73654469bf34b00f18395abafb9dc4a1e68a4471b072ee8fc57a466d6c2e9",
+        "spans": []
+      },
+      {
+        "block": "block_0004_0003",
+        "path": "/explanation",
+        "sourceSha256": "512d070ebad4932bc82db53c5bf36943c93fb3591cff76ca651119bfe269dd15",
+        "spans": [
+          {
+            "start": 10,
+            "end": 14,
+            "text": "main",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 43,
+            "end": 45,
+            "text": "//",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 149,
+            "end": 158,
+            "text": "std::cout",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 208,
+            "end": 214,
+            "text": "Zona B",
+            "role": "output",
+            "reading": "natural"
+          }
+        ]
+      },
+      {
+        "block": "block_0004_0005",
+        "path": "/question",
+        "sourceSha256": "7c863f8473a78b9af833661afb19e3571ef52769db05d76e444bf9babd19e09a",
+        "spans": []
+      },
+      {
+        "block": "block_0004_0005",
+        "path": "/explanation",
+        "sourceSha256": "de7c7c275fe691f264f4122151f5c9534de39e09597459486dc78f22ec2eedc1",
+        "spans": [
+          {
+            "start": 11,
+            "end": 13,
+            "text": "//",
+            "role": "string",
+            "reading": "natural"
+          },
+          {
+            "start": 39,
+            "end": 45,
+            "text": "\"A//B\"",
+            "role": "string",
+            "reading": "natural"
+          },
+          {
+            "start": 75,
+            "end": 76,
+            "text": "A",
+            "role": "output",
+            "reading": "natural"
+          },
+          {
+            "start": 79,
+            "end": 80,
+            "text": "B",
+            "role": "output",
+            "reading": "natural"
+          },
+          {
+            "start": 95,
+            "end": 99,
+            "text": "A//B",
+            "role": "output",
+            "reading": "natural"
+          }
+        ]
+      },
+      {
+        "block": "block_0004_0013",
+        "path": "/question",
+        "sourceSha256": "7bdf18b8b16af797826a367ca29decd9da7242179155db9beb3df0e984754c06",
+        "spans": [
+          {
+            "start": 20,
+            "end": 33,
+            "text": "Muestra Norte",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 63,
+            "end": 66,
+            "text": "Sur",
+            "role": "output",
+            "reading": "natural"
+          },
+          {
+            "start": 70,
+            "end": 79,
+            "text": "std::cout",
+            "role": "cpp",
+            "reading": "technical"
+          }
+        ]
+      },
+      {
+        "block": "block_0004_0013",
+        "path": "/explanation",
+        "sourceSha256": "9d27ec94a9d38e18a0d2e309fd04845753497f65d632eef3b5e430af99da5559",
+        "spans": [
+          {
+            "start": 23,
+            "end": 26,
+            "text": "Sur",
+            "role": "output",
+            "reading": "natural"
+          },
+          {
+            "start": 50,
+            "end": 55,
+            "text": "Norte",
+            "role": "output",
+            "reading": "natural"
+          }
+        ]
+      },
+      {
+        "block": "block_0004_0013",
+        "path": "/options/0",
+        "sourceSha256": "a88ac9709178dbe4f8d46396094ca8ecb66763e1c0a4c943a95495393bd963dd",
+        "spans": [
+          {
+            "start": 0,
+            "end": 8,
+            "text": "NorteSur",
+            "role": "output",
+            "reading": "natural"
+          }
+        ]
+      },
+      {
+        "block": "block_0004_0013",
+        "path": "/options/1",
+        "sourceSha256": "eb5d6ff7db3e43341f371e480b9db34c5178dad17d4141cf9aca050a188a8f2c",
+        "spans": [
+          {
+            "start": 0,
+            "end": 3,
+            "text": "Sur",
+            "role": "output",
+            "reading": "natural"
+          }
+        ]
+      },
+      {
+        "block": "block_0004_0013",
+        "path": "/options/2",
+        "sourceSha256": "6f9f01a63d42c99d94a4a14ac7fa7e7b1bedb667525c0defa86b56329189b1f3",
+        "spans": [
+          {
+            "start": 0,
+            "end": 5,
+            "text": "Norte",
+            "role": "output",
+            "reading": "natural"
+          }
+        ]
+      },
+      {
+        "block": "block_0004_0000",
+        "path": "/text",
+        "sourceSha256": "bb762526b15232e7e994c30215daabfbf5351bcc477da1ed4b6affb0d1be2c1e",
+        "spans": []
+      },
+      {
+        "block": "block_0001_0008",
+        "path": "/question",
+        "sourceSha256": "d80fff665d49973c5131ac0d7448a1de2d3a9bd1804523bd01ca9d3b7e5750ad",
+        "spans": [
+          {
+            "start": 72,
+            "end": 85,
+            "text": "\"Carga lista\"",
+            "role": "string",
+            "reading": "natural"
+          }
+        ]
+      },
+      {
+        "block": "block_0001_0008",
+        "path": "/explanation",
+        "sourceSha256": "4f537ad0049813c8c5e1ccf07534b2e6b350ec3a3b8cc1bd096bbc0ae3182b2b",
+        "spans": [
+          {
+            "start": 34,
+            "end": 36,
+            "text": "<<",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 75,
+            "end": 84,
+            "text": "std::cout",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 120,
+            "end": 133,
+            "text": "\"Carga lista\"",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 224,
+            "end": 235,
+            "text": "Carga lista",
+            "role": "output",
+            "reading": "natural"
+          },
+          {
+            "start": 301,
+            "end": 319,
+            "text": "(Stroustrup, 2024)",
+            "role": "citation",
+            "reading": "natural"
+          }
+        ]
+      },
+      {
+        "block": "block_0001_0008",
+        "path": "/reviewFeedback",
+        "sourceSha256": "0b05cc1b0ed6b57157e0d32ea37daf4ec212bb4bbf1ba40d6c1a5d9742ee68a2",
+        "spans": [
+          {
+            "start": 82,
+            "end": 91,
+            "text": "std::cout",
+            "role": "cpp",
+            "reading": "technical"
+          }
+        ]
+      },
+      {
+        "block": "block_0005_0002",
+        "path": "/question",
+        "sourceSha256": "253328de9ca829adb13bcd878d9530a1a57d17499f80a79614ad98dfce1f12c0",
+        "spans": [
+          {
+            "start": 33,
+            "end": 41,
+            "text": "Paso uno",
+            "role": "output",
+            "reading": "natural"
+          },
+          {
+            "start": 52,
+            "end": 60,
+            "text": "Paso dos",
+            "role": "output",
+            "reading": "natural"
+          }
+        ]
+      },
+      {
+        "block": "block_0005_0002",
+        "path": "/explanation",
+        "sourceSha256": "00e47efa6ea4755650b53f4f3cb30a64e7375d2f10b6355b183cde6d7cca2d5c",
+        "spans": [
+          {
+            "start": 18,
+            "end": 26,
+            "text": "Paso uno",
+            "role": "output",
+            "reading": "natural"
+          },
+          {
+            "start": 63,
+            "end": 65,
+            "text": "\\n",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 73,
+            "end": 81,
+            "text": "Paso dos",
+            "role": "output",
+            "reading": "natural"
+          },
+          {
+            "start": 141,
+            "end": 150,
+            "text": "return 0;",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 216,
+            "end": 220,
+            "text": "main",
+            "role": "cpp",
+            "reading": "technical"
+          }
+        ]
+      },
+      {
+        "block": "block_0005_0000",
+        "path": "/text",
+        "sourceSha256": "e82b8586fa2fc51cf29755cd229581397125227ad578628b605b4c2af17d7b1b",
+        "spans": []
+      },
+      {
+        "block": "block_0006_0000",
+        "path": "/text",
+        "sourceSha256": "797cda1377aaecca7ba0268d78ab4bcde6242b9088dbaef6a15b8b59d7457ed6",
+        "spans": []
+      },
+      {
+        "block": "block_0005_0007",
+        "path": "/question",
+        "sourceSha256": "8f4efdc2ce966980b92b958123ba11759097d418066447a77361ffc928082ab2",
+        "spans": [
+          {
+            "start": 12,
+            "end": 15,
+            "text": "dos",
+            "role": "data",
+            "reading": "natural"
+          }
+        ]
+      },
+      {
+        "block": "block_0005_0007",
+        "path": "/explanation",
+        "sourceSha256": "045b88b2cdcf347f37f6722cd3554ddd13dac537e8bd6a7d8b4fc6f009d8d28d",
+        "spans": [
+          {
+            "start": 23,
+            "end": 30,
+            "text": "Resumen",
+            "role": "output",
+            "reading": "natural"
+          },
+          {
+            "start": 60,
+            "end": 62,
+            "text": "\\n",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 73,
+            "end": 83,
+            "text": "Zona Oeste",
+            "role": "output",
+            "reading": "natural"
+          },
+          {
+            "start": 178,
+            "end": 182,
+            "text": "Zona",
+            "role": "output",
+            "reading": "natural"
+          },
+          {
+            "start": 185,
+            "end": 190,
+            "text": "Oeste",
+            "role": "output",
+            "reading": "natural"
+          }
+        ]
+      },
+      {
+        "block": "block_0005_0007",
+        "path": "/reviewFeedback",
+        "sourceSha256": "4475a4ebbcf24843f0b499b1731d8b9e5062be06a723b458f7992cdb8a2df753",
+        "spans": [
+          {
+            "start": 22,
+            "end": 24,
+            "text": "\\n",
+            "role": "cpp",
+            "reading": "technical"
+          }
+        ]
+      },
+      {
+        "block": "block_0007_0000",
+        "path": "/text",
+        "sourceSha256": "a54379b84171c97ee2a0f433573490c924ec91c66bc35aa59415ddf4b540e0eb",
+        "spans": []
+      },
+      {
+        "block": "block_0000_0001",
+        "path": "/text",
+        "sourceSha256": "1a756763c6b99a378dd930480092b8273ef658330cb5003eae0b00205642c8de",
+        "spans": []
+      },
+      {
+        "block": "block_0000_0003",
+        "path": "/text",
+        "sourceSha256": "3a47f080784deb62c201a4878fea5b9d18c88faa4ed723d90f55a54868d4c6dd",
+        "spans": [
+          {
+            "start": 113,
+            "end": 117,
+            "text": "Lado",
+            "role": "output",
+            "reading": "natural"
+          },
+          {
+            "start": 153,
+            "end": 158,
+            "text": "Norte",
+            "role": "output",
+            "reading": "natural"
+          },
+          {
+            "start": 228,
+            "end": 246,
+            "text": "(Stroustrup, 2024)",
+            "role": "citation",
+            "reading": "natural"
+          }
+        ]
+      },
+      {
+        "block": "block_0000_0004",
+        "path": "/text",
+        "sourceSha256": "8b60b4b7b96930aec09dcbb03162594f9abb2af832bf44f271b0cb7a41d3aabe",
+        "spans": [
+          {
+            "start": 182,
+            "end": 186,
+            "text": "Lado",
+            "role": "output",
+            "reading": "natural"
+          },
+          {
+            "start": 195,
+            "end": 199,
+            "text": "Lado",
+            "role": "output",
+            "reading": "natural"
+          },
+          {
+            "start": 246,
+            "end": 251,
+            "text": "Norte",
+            "role": "output",
+            "reading": "natural"
+          },
+          {
+            "start": 260,
+            "end": 269,
+            "text": "LadoNorte",
+            "role": "output",
+            "reading": "natural"
+          }
+        ]
+      },
+      {
+        "block": "block_0000_0005",
+        "path": "/text",
+        "sourceSha256": "0e88bc3cb91f0c32b888465a79506e36190affbb776de76fabae5ec033c837b8",
+        "spans": []
+      },
+      {
+        "block": "block_0000_0008",
+        "path": "/text",
+        "sourceSha256": "4600998e22cafb89de3eda54da8644c94e79150aa0304ff938d85fa72ff31dea",
+        "spans": [
+          {
+            "start": 81,
+            "end": 86,
+            "text": "Norte",
+            "role": "string",
+            "reading": "natural"
+          },
+          {
+            "start": 119,
+            "end": 123,
+            "text": "Lado",
+            "role": "output",
+            "reading": "natural"
+          },
+          {
+            "start": 171,
+            "end": 176,
+            "text": "Norte",
+            "role": "output",
+            "reading": "natural"
+          },
+          {
+            "start": 203,
+            "end": 213,
+            "text": "Lado Norte",
+            "role": "output",
+            "reading": "natural"
+          }
+        ]
+      },
+      {
+        "block": "block_0000_0009",
+        "path": "/question",
+        "sourceSha256": "15c348f46e67b7097a724528684fd809714bc7a8b830bc56f760d6fe1948d66e",
+        "spans": [
+          {
+            "start": 41,
+            "end": 51,
+            "text": "Anden Este",
+            "role": "output",
+            "reading": "natural"
+          },
+          {
+            "start": 87,
+            "end": 92,
+            "text": "Anden",
+            "role": "output",
+            "reading": "natural"
+          }
+        ]
+      },
+      {
+        "block": "block_0000_0009",
+        "path": "/explanation",
+        "sourceSha256": "1ce98364e9143124f51a1c263b11e3211a9336c95852126a1b457273ca51ac17",
+        "spans": [
+          {
+            "start": 22,
+            "end": 29,
+            "text": "\" Este\"",
+            "role": "string",
+            "reading": "natural"
+          },
+          {
+            "start": 78,
+            "end": 82,
+            "text": "Este",
+            "role": "output",
+            "reading": "natural"
+          },
+          {
+            "start": 100,
+            "end": 109,
+            "text": "std::cout",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 139,
+            "end": 144,
+            "text": "Anden",
+            "role": "output",
+            "reading": "natural"
+          },
+          {
+            "start": 150,
+            "end": 160,
+            "text": "Anden Este",
+            "role": "output",
+            "reading": "natural"
+          }
+        ]
+      },
+      {
+        "block": "block_0000_0010",
+        "path": "/question",
+        "sourceSha256": "3489437d82454cdd826c97f23f5ae8cb496de30d6fd62d5e194bfb064bf0df32",
+        "spans": [
+          {
+            "start": 55,
+            "end": 59,
+            "text": "main",
+            "role": "cpp",
+            "reading": "technical"
+          }
+        ]
+      },
+      {
+        "block": "block_0000_0010",
+        "path": "/explanation",
+        "sourceSha256": "c5916abeaa68d9cef99142657e1d38eee1c3d26b65d6752216459e3cc60924ee",
+        "spans": [
+          {
+            "start": 19,
+            "end": 24,
+            "text": "Norte",
+            "role": "output",
+            "reading": "natural"
+          },
+          {
+            "start": 44,
+            "end": 48,
+            "text": "Lado",
+            "role": "output",
+            "reading": "natural"
+          },
+          {
+            "start": 129,
+            "end": 138,
+            "text": "NorteLado",
+            "role": "output",
+            "reading": "natural"
+          }
+        ]
+      },
+      {
+        "block": "block_0000_0011",
+        "path": "/text",
+        "sourceSha256": "2cfcd716d0d4a00f4b6d6f70e7bee5fbf0548f3eab19f5f002cf67945133b26b",
+        "spans": [
+          {
+            "start": 175,
+            "end": 193,
+            "text": "(Stroustrup, 2024)",
+            "role": "citation",
+            "reading": "natural"
+          }
+        ]
+      },
+      {
+        "block": "block_0000_0012",
+        "path": "/question",
+        "sourceSha256": "3eab9adbbf362138a2fbc5d08d3a9716892a380b57e4757933da2370c47b0a37",
+        "spans": [
+          {
+            "start": 12,
+            "end": 33,
+            "text": "std::cout << \"Casa \";",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 44,
+            "end": 65,
+            "text": "std::cout << \"Verde\";",
+            "role": "cpp",
+            "reading": "technical"
+          }
+        ]
+      },
+      {
+        "block": "block_0000_0012",
+        "path": "/explanation",
+        "sourceSha256": "f59cb968ae3d5f8640899a1837350f3e3ae91a4917b56929c7b0bb2536b68d4a",
+        "spans": [
+          {
+            "start": 74,
+            "end": 79,
+            "text": "Verde",
+            "role": "output",
+            "reading": "natural"
+          },
+          {
+            "start": 115,
+            "end": 125,
+            "text": "Casa Verde",
+            "role": "output",
+            "reading": "natural"
+          }
+        ]
+      },
+      {
+        "block": "block_0000_0012",
+        "path": "/options/0",
+        "sourceSha256": "fe8fb45e261c1a8b7630ce54bf081c6a11c81dab1dd80249b561f9f47743d2d9",
+        "spans": [
+          {
+            "start": 0,
+            "end": 9,
+            "text": "CasaVerde",
+            "role": "output",
+            "reading": "natural"
+          }
+        ]
+      },
+      {
+        "block": "block_0000_0012",
+        "path": "/options/1",
+        "sourceSha256": "e0dd761c0f3db9f0a718ba91beb06899c03c3ff44c51095bcbd43ae94653b32f",
+        "spans": [
+          {
+            "start": 0,
+            "end": 10,
+            "text": "Casa Verde",
+            "role": "output",
+            "reading": "natural"
+          }
+        ]
+      },
+      {
+        "block": "block_0000_0012",
+        "path": "/options/2",
+        "sourceSha256": "05055596ba0cba789dbe6570c0ec84dab532b5fbf065acbd6b2144bef57d86ac",
+        "spans": [
+          {
+            "start": 0,
+            "end": 11,
+            "text": "Casa  Verde",
+            "role": "output",
+            "reading": "natural"
+          }
+        ]
+      },
+      {
+        "block": "block_0001_0002",
+        "path": "/text",
+        "sourceSha256": "3279438235b9d0b9ea3d85b7cb1e2409f44e99c28214d1e7e444a05993f81939",
+        "spans": [
+          {
+            "start": 57,
+            "end": 59,
+            "text": "<<",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 61,
+            "end": 70,
+            "text": "std::cout",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 148,
+            "end": 150,
+            "text": "<<",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 152,
+            "end": 161,
+            "text": "std::cout",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 234,
+            "end": 252,
+            "text": "(Stroustrup, 2024)",
+            "role": "citation",
+            "reading": "natural"
+          }
+        ]
+      },
+      {
+        "block": "block_0001_0003",
+        "path": "/text",
+        "sourceSha256": "3ac051b06509c4492d9ea761897e437f051b8edde21170ecf76e969dfdd15ae1",
+        "spans": [
+          {
+            "start": 24,
+            "end": 30,
+            "text": "\"Sala\"",
+            "role": "string",
+            "reading": "natural"
+          },
+          {
+            "start": 51,
+            "end": 55,
+            "text": "Sala",
+            "role": "output",
+            "reading": "natural"
+          },
+          {
+            "start": 78,
+            "end": 81,
+            "text": "\" \"",
+            "role": "string",
+            "reading": "natural"
+          },
+          {
+            "start": 110,
+            "end": 114,
+            "text": "Sala",
+            "role": "output",
+            "reading": "natural"
+          },
+          {
+            "start": 143,
+            "end": 152,
+            "text": "\"Central\"",
+            "role": "string",
+            "reading": "natural"
+          },
+          {
+            "start": 161,
+            "end": 168,
+            "text": "Central",
+            "role": "output",
+            "reading": "natural"
+          },
+          {
+            "start": 208,
+            "end": 220,
+            "text": "Sala Central",
+            "role": "output",
+            "reading": "natural"
+          }
+        ]
+      },
+      {
+        "block": "block_0001_0004",
+        "path": "/text",
+        "sourceSha256": "28b21c3805079ec9f02bfb3a6b8ca05cbf1a4d1a967147108241010c5f1f1683",
+        "spans": [
+          {
+            "start": 34,
+            "end": 43,
+            "text": "std::cout",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 48,
+            "end": 50,
+            "text": "<<",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 77,
+            "end": 79,
+            "text": "<<",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 241,
+            "end": 259,
+            "text": "(Stroustrup, 2024)",
+            "role": "citation",
+            "reading": "natural"
+          }
+        ]
+      },
+      {
+        "block": "block_0001_0005",
+        "path": "/question",
+        "sourceSha256": "d5765498900a4d9bf9d171838ec850d6655c8b732b88f8712d00e9f81e2354db",
+        "spans": [
+          {
+            "start": 65,
+            "end": 77,
+            "text": "Puerto Norte",
+            "role": "output",
+            "reading": "natural"
+          }
+        ]
+      },
+      {
+        "block": "block_0001_0005",
+        "path": "/explanation",
+        "sourceSha256": "ac5d920405b2e2601bb576891cda235b6e8b144d90c9520396c3140127a4eb96",
+        "spans": [
+          {
+            "start": 25,
+            "end": 27,
+            "text": "<<",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 96,
+            "end": 103,
+            "text": "\"Norte\"",
+            "role": "string",
+            "reading": "natural"
+          },
+          {
+            "start": 116,
+            "end": 122,
+            "text": "Puerto",
+            "role": "output",
+            "reading": "natural"
+          },
+          {
+            "start": 152,
+            "end": 157,
+            "text": "Norte",
+            "role": "output",
+            "reading": "natural"
+          },
+          {
+            "start": 175,
+            "end": 187,
+            "text": "Puerto Norte",
+            "role": "output",
+            "reading": "natural"
+          }
+        ]
+      },
+      {
+        "block": "block_0001_0009",
+        "path": "/text",
+        "sourceSha256": "8a666eb234d90edb5be1e6057725d09427db22c3afbe004e7c7dd764a50c1747",
+        "spans": [
+          {
+            "start": 27,
+            "end": 31,
+            "text": "Sala",
+            "role": "output",
+            "reading": "natural"
+          },
+          {
+            "start": 72,
+            "end": 79,
+            "text": "Central",
+            "role": "output",
+            "reading": "natural"
+          },
+          {
+            "start": 103,
+            "end": 115,
+            "text": "Sala Central",
+            "role": "output",
+            "reading": "natural"
+          },
+          {
+            "start": 160,
+            "end": 162,
+            "text": "<<",
+            "role": "cpp",
+            "reading": "technical"
+          }
+        ]
+      },
+      {
+        "block": "block_0002_0002",
+        "path": "/text",
+        "sourceSha256": "a5792fc7be79273d7329f33bd010849fd4e0ba4e61d9de893528f8e40a6926d5",
+        "spans": [
+          {
+            "start": 13,
+            "end": 24,
+            "text": "Planta baja",
+            "role": "output",
+            "reading": "natural"
+          },
+          {
+            "start": 49,
+            "end": 60,
+            "text": "Planta alta",
+            "role": "output",
+            "reading": "natural"
+          },
+          {
+            "start": 108,
+            "end": 110,
+            "text": "\\n",
+            "role": "cpp",
+            "reading": "characters"
+          },
+          {
+            "start": 263,
+            "end": 281,
+            "text": "(Stroustrup, 2024)",
+            "role": "citation",
+            "reading": "natural"
+          }
+        ]
+      },
+      {
+        "block": "block_0002_0003",
+        "path": "/text",
+        "sourceSha256": "0dcd49a601a55a8e1a69e35b0fe1d247440bed156440c7babe97d61c1e1629a1",
+        "spans": [
+          {
+            "start": 118,
+            "end": 120,
+            "text": "\\n",
+            "role": "cpp",
+            "reading": "characters"
+          },
+          {
+            "start": 215,
+            "end": 233,
+            "text": "(Stroustrup, 2024)",
+            "role": "citation",
+            "reading": "natural"
+          }
+        ]
+      },
+      {
+        "block": "block_0002_0004",
+        "path": "/text",
+        "sourceSha256": "109d6a9955be61ef16c3ae064fb33e9760c269e30565dd16552f69124eee02f6",
+        "spans": [
+          {
+            "start": 62,
+            "end": 73,
+            "text": "Planta baja",
+            "role": "output",
+            "reading": "natural"
+          },
+          {
+            "start": 108,
+            "end": 119,
+            "text": "Planta alta",
+            "role": "output",
+            "reading": "natural"
+          }
+        ]
+      },
+      {
+        "block": "block_0002_0005",
+        "path": "/text",
+        "sourceSha256": "0776d9eab767a68bc0c8d13ab3c7b93d1eafc9003e78b50bfc31dda4432a238a",
+        "spans": []
+      },
+      {
+        "block": "block_0002_0006",
+        "path": "/question",
+        "sourceSha256": "3cc54615f76b8920d197c77e881dce07fe62c8479a454fe575e1af39f40456f6",
+        "spans": [
+          {
+            "start": 39,
+            "end": 45,
+            "text": "Inicio",
+            "role": "output",
+            "reading": "natural"
+          },
+          {
+            "start": 68,
+            "end": 71,
+            "text": "Fin",
+            "role": "output",
+            "reading": "natural"
+          }
+        ]
+      },
+      {
+        "block": "block_0002_0006",
+        "path": "/explanation",
+        "sourceSha256": "b7567a54d7717efb5d7b7d40491f3023e6830ef4628400fd39115142a74e70c6",
+        "spans": [
+          {
+            "start": 11,
+            "end": 24,
+            "text": "\"Inicio\\nFin\"",
+            "role": "string",
+            "reading": "natural"
+          },
+          {
+            "start": 31,
+            "end": 33,
+            "text": "\\n",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 77,
+            "end": 83,
+            "text": "Inicio",
+            "role": "output",
+            "reading": "natural"
+          },
+          {
+            "start": 136,
+            "end": 139,
+            "text": "Fin",
+            "role": "output",
+            "reading": "natural"
+          }
+        ]
+      },
+      {
+        "block": "block_0002_0011",
+        "path": "/question",
+        "sourceSha256": "5722c7070b10bf42cac2890f753f9a376fa8832177890e3db7f1c8a34e085f42",
+        "spans": [
+          {
+            "start": 12,
+            "end": 30,
+            "text": "\"Arranque/nParada\"",
+            "role": "string",
+            "reading": "natural"
+          },
+          {
+            "start": 42,
+            "end": 58,
+            "text": "Arranque/nParada",
+            "role": "output",
+            "reading": "natural"
+          },
+          {
+            "start": 109,
+            "end": 117,
+            "text": "Arranque",
+            "role": "output",
+            "reading": "natural"
+          },
+          {
+            "start": 120,
+            "end": 126,
+            "text": "Parada",
+            "role": "output",
+            "reading": "natural"
+          }
+        ]
+      },
+      {
+        "block": "block_0002_0011",
+        "path": "/explanation",
+        "sourceSha256": "df0ffdbd7a48a066ae50e54ef05c0bde81d324ecebd50b4aef3fbee25cdf3191",
+        "spans": [
+          {
+            "start": 9,
+            "end": 10,
+            "text": "/",
+            "role": "string",
+            "reading": "natural"
+          },
+          {
+            "start": 50,
+            "end": 52,
+            "text": "/n",
+            "role": "output",
+            "reading": "natural"
+          },
+          {
+            "start": 98,
+            "end": 116,
+            "text": "\"Arranque\\nParada\"",
+            "role": "string",
+            "reading": "natural"
+          },
+          {
+            "start": 178,
+            "end": 186,
+            "text": "Arranque",
+            "role": "output",
+            "reading": "natural"
+          },
+          {
+            "start": 189,
+            "end": 195,
+            "text": "Parada",
+            "role": "output",
+            "reading": "natural"
+          }
+        ]
+      },
+      {
+        "block": "block_0002_0012",
+        "path": "/text",
+        "sourceSha256": "46b58b6790b28012af87cd3f19fca62360086410acdd1f36c62f8f91f90c4b4b",
+        "spans": []
+      },
+      {
+        "block": "block_0002_0013",
+        "path": "/question",
+        "sourceSha256": "e011bd7225af8199fbcfa856b43ec4c7e28809f3dd58a86c7a768354aaf7c37b",
+        "spans": [
+          {
+            "start": 97,
+            "end": 102,
+            "text": "Verde",
+            "role": "output",
+            "reading": "natural"
+          }
+        ]
+      },
+      {
+        "block": "block_0002_0013",
+        "path": "/explanation",
+        "sourceSha256": "5d948d08f6d18acbcbb575e70ee9638174c79428513d06a7fbed1138d2c07bdd",
+        "spans": [
+          {
+            "start": 31,
+            "end": 35,
+            "text": "Rojo",
+            "role": "output",
+            "reading": "natural"
+          },
+          {
+            "start": 122,
+            "end": 127,
+            "text": "Verde",
+            "role": "output",
+            "reading": "natural"
+          }
+        ]
+      },
+      {
+        "block": "block_0003_0001",
+        "path": "/text",
+        "sourceSha256": "a3a0324ae296b16c200dd7ea70c16a14ebe78167f7b17149f2321cb01e8a3f2f",
+        "spans": []
+      },
+      {
+        "block": "block_0003_0003",
+        "path": "/text",
+        "sourceSha256": "5873de8af47a7ee9a977642af47c4a78e99fa8131fcf146ef86e7eca1a76e54b",
+        "spans": [
+          {
+            "start": 61,
+            "end": 63,
+            "text": "\\\"",
+            "role": "cpp",
+            "reading": "characters"
+          },
+          {
+            "start": 149,
+            "end": 163,
+            "text": "Nombre: \"Luna\"",
+            "role": "output",
+            "reading": "natural"
+          },
+          {
+            "start": 292,
+            "end": 312,
+            "text": "(Köppe et al., 2023)",
+            "role": "citation",
+            "reading": "natural"
+          }
+        ]
+      },
+      {
+        "block": "block_0003_0004",
+        "path": "/text",
+        "sourceSha256": "db28e859d6177c0e0fb7eece12b6a139cc60929dd0b9a51d12442dc0c9d5fbe4",
+        "spans": [
+          {
+            "start": 110,
+            "end": 112,
+            "text": "\\n",
+            "role": "cpp",
+            "reading": "characters"
+          },
+          {
+            "start": 141,
+            "end": 143,
+            "text": "\\\"",
+            "role": "cpp",
+            "reading": "characters"
+          },
+          {
+            "start": 243,
+            "end": 263,
+            "text": "(Köppe et al., 2023)",
+            "role": "citation",
+            "reading": "natural"
+          }
+        ]
+      },
+      {
+        "block": "block_0003_0005",
+        "path": "/question",
+        "sourceSha256": "207401f0ec4ea47ef16aea6cbfb502f8302fd4125b42df5455495a8445043405",
+        "spans": [
+          {
+            "start": 33,
+            "end": 42,
+            "text": "\"Abierto\"",
+            "role": "output",
+            "reading": "natural"
+          }
+        ]
+      },
+      {
+        "block": "block_0003_0005",
+        "path": "/explanation",
+        "sourceSha256": "139988035c91d3e6c55cbbd1f3b18394421e5b7b495e07217d66d95f5d80da28",
+        "spans": [
+          {
+            "start": 23,
+            "end": 36,
+            "text": "\"\\\"Abierto\\\"\"",
+            "role": "string",
+            "reading": "natural"
+          },
+          {
+            "start": 100,
+            "end": 102,
+            "text": "\\\"",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 140,
+            "end": 147,
+            "text": "Abierto",
+            "role": "output",
+            "reading": "natural"
+          }
+        ]
+      },
+      {
+        "block": "block_0003_0008",
+        "path": "/text",
+        "sourceSha256": "c05e32ecc038ad6449526794e2d86ae9c095fccdeea06cbb1f18beb21146c496",
+        "spans": [
+          {
+            "start": 43,
+            "end": 45,
+            "text": "\\\\",
+            "role": "cpp",
+            "reading": "characters"
+          },
+          {
+            "start": 158,
+            "end": 164,
+            "text": "Zona\\B",
+            "role": "output",
+            "reading": "natural"
+          },
+          {
+            "start": 234,
+            "end": 254,
+            "text": "(Köppe et al., 2023)",
+            "role": "citation",
+            "reading": "natural"
+          }
+        ]
+      },
+      {
+        "block": "block_0003_0009",
+        "path": "/question",
+        "sourceSha256": "37c10d7c2aa892a82f3b6f558584c72cbb235fc46dd053384a4b84f0c908522a",
+        "spans": [
+          {
+            "start": 33,
+            "end": 42,
+            "text": "Nivel\\Dos",
+            "role": "output",
+            "reading": "natural"
+          }
+        ]
+      },
+      {
+        "block": "block_0003_0009",
+        "path": "/explanation",
+        "sourceSha256": "0588f5b228e031deec99a254c95237f8553e025e0f79e320588f160b84a3b167",
+        "spans": [
+          {
+            "start": 11,
+            "end": 23,
+            "text": "\"Nivel\\\\Dos\"",
+            "role": "string",
+            "reading": "natural"
+          },
+          {
+            "start": 112,
+            "end": 121,
+            "text": "Nivel\\Dos",
+            "role": "output",
+            "reading": "natural"
+          }
+        ]
+      },
+      {
+        "block": "block_0003_0012",
+        "path": "/text",
+        "sourceSha256": "f0712a1d7b1c4e332390ddc01a7427b1502d957c7ec7c223cdc931af58f24021",
+        "spans": [
+          {
+            "start": 5,
+            "end": 7,
+            "text": "\\\\",
+            "role": "cpp",
+            "reading": "characters"
+          },
+          {
+            "start": 109,
+            "end": 113,
+            "text": "A\\nB",
+            "role": "output",
+            "reading": "characters"
+          },
+          {
+            "start": 144,
+            "end": 150,
+            "text": "\"A\\nB\"",
+            "role": "string",
+            "reading": "natural"
+          },
+          {
+            "start": 162,
+            "end": 163,
+            "text": "A",
+            "role": "output",
+            "reading": "natural"
+          },
+          {
+            "start": 166,
+            "end": 167,
+            "text": "B",
+            "role": "output",
+            "reading": "natural"
+          }
+        ]
+      },
+      {
+        "block": "block_0003_0013",
+        "path": "/question",
+        "sourceSha256": "3b3775cb1d7fd471c53c43c0d5422669f15235f5b6afd3c77fdd9033fb5e0801",
+        "spans": []
+      },
+      {
+        "block": "block_0003_0013",
+        "path": "/explanation",
+        "sourceSha256": "abfd1e325c1225610cfae1c6247e5f3b1848ca4409f610adb9ba2109f32d5dd5",
+        "spans": [
+          {
+            "start": 10,
+            "end": 12,
+            "text": "\\\\",
+            "role": "cpp",
+            "reading": "characters"
+          },
+          {
+            "start": 102,
+            "end": 106,
+            "text": "C\\nD",
+            "role": "output",
+            "reading": "characters"
+          }
+        ]
+      },
+      {
+        "block": "block_0004_0002",
+        "path": "/text",
+        "sourceSha256": "a68a105c959e449319dca261d2fc7204e10ff58167267024ebb52ad9bb7758fe",
+        "spans": [
+          {
+            "start": 21,
+            "end": 23,
+            "text": "//",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 233,
+            "end": 240,
+            "text": "Enviado",
+            "role": "output",
+            "reading": "natural"
+          },
+          {
+            "start": 241,
+            "end": 259,
+            "text": "(Stroustrup, 2024)",
+            "role": "citation",
+            "reading": "natural"
+          }
+        ]
+      },
+      {
+        "block": "block_0004_0004",
+        "path": "/text",
+        "sourceSha256": "94a1aff91315ebdd4c04fe9f5c54a8e6005af2537c3fbd63255c1dbec66e1d7c",
+        "spans": [
+          {
+            "start": 57,
+            "end": 63,
+            "text": "\"A//B\"",
+            "role": "string",
+            "reading": "natural"
+          },
+          {
+            "start": 76,
+            "end": 78,
+            "text": "//",
+            "role": "string",
+            "reading": "natural"
+          },
+          {
+            "start": 231,
+            "end": 249,
+            "text": "(Stroustrup, 2024)",
+            "role": "citation",
+            "reading": "natural"
+          }
+        ]
+      },
+      {
+        "block": "block_0004_0007",
+        "path": "/text",
+        "sourceSha256": "18d3e4853484ebc949f1b3979965e2a21fe18a82423aed2533803aea1ff57768",
+        "spans": [
+          {
+            "start": 87,
+            "end": 89,
+            "text": "//",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 222,
+            "end": 227,
+            "text": "Listo",
+            "role": "output",
+            "reading": "natural"
+          },
+          {
+            "start": 244,
+            "end": 254,
+            "text": "No enviado",
+            "role": "output",
+            "reading": "natural"
+          }
+        ]
+      },
+      {
+        "block": "block_0004_0008",
+        "path": "/question",
+        "sourceSha256": "52aea1c778d6dddbd0c1da160ef8518e4c8f6d9c7b557b0edb5ac5ac62a26301",
+        "spans": [
+          {
+            "start": 12,
+            "end": 40,
+            "text": "// std::cout << \"Preparado\";",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 75,
+            "end": 79,
+            "text": "main",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 105,
+            "end": 114,
+            "text": "Preparado",
+            "role": "output",
+            "reading": "natural"
+          }
+        ]
+      },
+      {
+        "block": "block_0004_0008",
+        "path": "/explanation",
+        "sourceSha256": "caaf010adf46254e4cb2371bf6ea7aaf762af055debfb74f518d0793a68cb35a",
+        "spans": [
+          {
+            "start": 22,
+            "end": 31,
+            "text": "std::cout",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 46,
+            "end": 48,
+            "text": "//",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 59,
+            "end": 68,
+            "text": "Preparado",
+            "role": "output",
+            "reading": "natural"
+          },
+          {
+            "start": 256,
+            "end": 268,
+            "text": "// Preparado",
+            "role": "output",
+            "reading": "natural"
+          }
+        ]
+      },
+      {
+        "block": "block_0004_0008",
+        "path": "/options/0",
+        "sourceSha256": "2abf55ea944ff648e521de1e0fc5f24eb03caab7428626ffb1233bf055b6fbb0",
+        "spans": [
+          {
+            "start": 0,
+            "end": 28,
+            "text": "// std::cout << \"Preparado\";",
+            "role": "cpp",
+            "reading": "technical"
+          }
+        ]
+      },
+      {
+        "block": "block_0004_0008",
+        "path": "/options/1",
+        "sourceSha256": "892158dcd0dabd8a194dacba38aab5b5f1dc0463f711a2c2b4f1f4c5ee137042",
+        "spans": [
+          {
+            "start": 0,
+            "end": 47,
+            "text": "std::cout << \"Preparado\"; // Mensaje de estado.",
+            "role": "cpp",
+            "reading": "technical"
+          }
+        ]
+      },
+      {
+        "block": "block_0004_0008",
+        "path": "/options/2",
+        "sourceSha256": "98804c4962b933c648ec2be31aaae1cd051bb6bad45584aaaa42d9400f8db174",
+        "spans": [
+          {
+            "start": 0,
+            "end": 28,
+            "text": "std::cout << \"// Preparado\";",
+            "role": "cpp",
+            "reading": "technical"
+          }
+        ]
+      },
+      {
+        "block": "block_0004_0010",
+        "path": "/text",
+        "sourceSha256": "edc253a437029d9fc34399b860694c37688a94d1f879d2513a963f0c991dd82a",
+        "spans": [
+          {
+            "start": 128,
+            "end": 130,
+            "text": "//",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 327,
+            "end": 345,
+            "text": "(Stroustrup, 2024)",
+            "role": "citation",
+            "reading": "natural"
+          }
+        ]
+      },
+      {
+        "block": "block_0004_0011",
+        "path": "/question",
+        "sourceSha256": "92821b585fb1a4e07f9cce580992493c8985846acdc013cb4491d243f4da5d71",
+        "spans": []
+      },
+      {
+        "block": "block_0004_0011",
+        "path": "/explanation",
+        "sourceSha256": "0ee73bddc22c18eace10e524f9144a1498bf895edcbe8b43943e92e67fc9fb33",
+        "spans": [
+          {
+            "start": 37,
+            "end": 39,
+            "text": "//",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 50,
+            "end": 53,
+            "text": "Uno",
+            "role": "output",
+            "reading": "natural"
+          },
+          {
+            "start": 88,
+            "end": 91,
+            "text": "Dos",
+            "role": "string",
+            "reading": "natural"
+          },
+          {
+            "start": 223,
+            "end": 227,
+            "text": "Tres",
+            "role": "output",
+            "reading": "natural"
+          }
+        ]
+      },
+      {
+        "block": "block_0004_0012",
+        "path": "/text",
+        "sourceSha256": "b9527044f009468e0f9ff7d0921fdbf7559b5f26b53ae8ae05e53f89c640dd01",
+        "spans": [
+          {
+            "start": 250,
+            "end": 268,
+            "text": "(Stroustrup, 2024)",
+            "role": "citation",
+            "reading": "natural"
+          }
+        ]
+      },
+      {
+        "block": "block_0005_0001",
+        "path": "/text",
+        "sourceSha256": "8d165c90a2a30dbc0e8388f7ea8742d0bce24f5ab66b5861118dbe248fabeb29",
+        "spans": [
+          {
+            "start": 279,
+            "end": 288,
+            "text": "return 0;",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 299,
+            "end": 303,
+            "text": "main",
+            "role": "cpp",
+            "reading": "technical"
+          }
+        ]
+      },
+      {
+        "block": "block_0005_0003",
+        "path": "/text",
+        "sourceSha256": "f856c6cf39b49beac8e4f44d1243d06e2105cf3c8c33d7d404153e82dc876b6b",
+        "spans": []
+      },
+      {
+        "block": "block_0005_0004",
+        "path": "/text",
+        "sourceSha256": "0d796c9ad673a570d28b9e097ea25ea686b7169b170f196740bb6a1445bd31c1",
+        "spans": [
+          {
+            "start": 0,
+            "end": 30,
+            "text": "Nombre: \"Luz\"\nRuta: Sector\\Sur",
+            "role": "output",
+            "reading": "natural"
+          }
+        ]
+      },
+      {
+        "block": "block_0005_0005",
+        "path": "/question",
+        "sourceSha256": "8d258161e02f0931056b813b69aff27090eec9c52e10275c051bb9cde7c11688",
+        "spans": [
+          {
+            "start": 85,
+            "end": 90,
+            "text": "\"Luz\"",
+            "role": "output",
+            "reading": "natural"
+          },
+          {
+            "start": 132,
+            "end": 142,
+            "text": "Sector\\Sur",
+            "role": "output",
+            "reading": "natural"
+          }
+        ]
+      },
+      {
+        "block": "block_0005_0005",
+        "path": "/explanation",
+        "sourceSha256": "0060ed23866ce6ef619264d2315bd4210a76822c640f69768e1741e65ade4a9b",
+        "spans": [
+          {
+            "start": 19,
+            "end": 28,
+            "text": "\"\\\"Luz\\\"\"",
+            "role": "string",
+            "reading": "natural"
+          },
+          {
+            "start": 83,
+            "end": 96,
+            "text": "\"Sector\\\\Sur\"",
+            "role": "string",
+            "reading": "natural"
+          },
+          {
+            "start": 126,
+            "end": 128,
+            "text": "\\n",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 172,
+            "end": 188,
+            "text": "Ruta: Sector\\Sur",
+            "role": "output",
+            "reading": "natural"
+          }
+        ]
+      },
+      {
+        "block": "block_0005_0006",
+        "path": "/text",
+        "sourceSha256": "8f70b57f326063f57b9c80724cb81786cb083c8015d091e2ed96f669523af023",
+        "spans": []
+      },
+      {
+        "block": "block_0006_0001",
+        "path": "/text",
+        "sourceSha256": "27156c2004f33108609154102070f7374cc6e94e151004ecbcdcf02f29db943b",
+        "spans": [
+          {
+            "start": 49,
+            "end": 53,
+            "text": "main",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 64,
+            "end": 73,
+            "text": "return 0;",
+            "role": "cpp",
+            "reading": "technical"
+          }
+        ]
+      },
+      {
+        "block": "block_0006_0002",
+        "path": "/text",
+        "sourceSha256": "2eb2bcdf3a22bc6578f245157f0ca7cbd751ad828e71ebd911ad9ede90e1e8bb",
+        "spans": [
+          {
+            "start": 0,
+            "end": 21,
+            "text": "Informe\nZona Este\nFin",
+            "role": "output",
+            "reading": "natural"
+          }
+        ]
+      },
+      {
+        "block": "block_0006_0003",
+        "path": "/text",
+        "sourceSha256": "4c8a2047baf6e84b2fe21f5e160f51a7e9693afddb4fed66e5a8eb3186481706",
+        "spans": [
+          {
+            "start": 37,
+            "end": 44,
+            "text": "Informe",
+            "role": "output",
+            "reading": "natural"
+          },
+          {
+            "start": 63,
+            "end": 72,
+            "text": "Zona Este",
+            "role": "output",
+            "reading": "natural"
+          },
+          {
+            "start": 145,
+            "end": 148,
+            "text": "Fin",
+            "role": "output",
+            "reading": "natural"
+          },
+          {
+            "start": 250,
+            "end": 252,
+            "text": "<<",
+            "role": "cpp",
+            "reading": "technical"
+          }
+        ]
+      },
+      {
+        "block": "block_0006_0004",
+        "path": "/text",
+        "sourceSha256": "bd5a89153fd2a1073767ff9947022e41e04e50a6aca14a563e158eaa11a07d36",
+        "spans": []
+      },
+      {
+        "block": "block_0006_0005",
+        "path": "/outputCheck/cases/0/explanation",
+        "sourceSha256": "c7c2ee0ccb182c0310c51369f18a48ef86c68f46941546c90039ac23fafc227f",
+        "spans": [
+          {
+            "start": 0,
+            "end": 7,
+            "text": "Informe",
+            "role": "output",
+            "reading": "natural"
+          },
+          {
+            "start": 39,
+            "end": 48,
+            "text": "Zona Este",
+            "role": "output",
+            "reading": "natural"
+          },
+          {
+            "start": 67,
+            "end": 70,
+            "text": "Fin",
+            "role": "output",
+            "reading": "natural"
+          }
+        ]
+      },
+      {
+        "block": "block_0006_0006",
+        "path": "/text",
+        "sourceSha256": "ebe53367d91667f4094f009c6bcad60e35d27286c934a16149fab84b9f07dced",
+        "spans": []
+      },
+      {
+        "block": "block_0006_0008",
+        "path": "/text",
+        "sourceSha256": "4a288d2aad093f04307f2636a87770a323dc9e8034e1d39bc4317ff5195d4be8",
+        "spans": [
+          {
+            "start": 52,
+            "end": 59,
+            "text": "Informe",
+            "role": "output",
+            "reading": "natural"
+          },
+          {
+            "start": 71,
+            "end": 80,
+            "text": "Zona Este",
+            "role": "output",
+            "reading": "natural"
+          },
+          {
+            "start": 95,
+            "end": 98,
+            "text": "Fin",
+            "role": "output",
+            "reading": "natural"
+          }
+        ]
+      },
+      {
+        "block": "block_0007_0001",
+        "path": "/text",
+        "sourceSha256": "778b3584aa2005cc1d376f2fde6d9e0a5c5fbab8526e8c583dbc711885bc4137",
+        "spans": []
+      },
+      {
+        "block": "block_0007_0002",
+        "path": "/text",
+        "sourceSha256": "93006832aea14446d5cbe056420c13997d8b887649acdc0d4f0ca6d6c7e1eb52",
+        "spans": [
+          {
+            "start": 0,
+            "end": 36,
+            "text": "Ficha\nNombre: \"Mara\"\nCarpeta: Zona\\A",
+            "role": "output",
+            "reading": "natural"
+          }
+        ]
+      },
+      {
+        "block": "block_0007_0003",
+        "path": "/text",
+        "sourceSha256": "8acbeac78e9eccc52994996a3fb29bb329fa0effd10f0874086720dfec1dd012",
+        "spans": []
+      },
+      {
+        "block": "block_0007_0004",
+        "path": "/outputCheck/cases/0/explanation",
+        "sourceSha256": "1a766deb467fa221af6a730ed6c31d14ad5cb2d307ca114f9ce69747372df7fb",
+        "spans": [
+          {
+            "start": 26,
+            "end": 31,
+            "text": "Ficha",
+            "role": "output",
+            "reading": "natural"
+          },
+          {
+            "start": 52,
+            "end": 66,
+            "text": "Nombre: \"Mara\"",
+            "role": "output",
+            "reading": "natural"
+          },
+          {
+            "start": 80,
+            "end": 95,
+            "text": "Carpeta: Zona\\A",
+            "role": "output",
+            "reading": "natural"
+          }
+        ]
+      },
+      {
+        "block": "block_0007_0005",
+        "path": "/text",
+        "sourceSha256": "328f9bedef4f661fc46cb7842606eeb90f82d8d899d34cd9f4f10db79da8bc45",
+        "spans": []
+      },
+      {
+        "block": "block_0007_0007",
+        "path": "/text",
+        "sourceSha256": "bade081f1a991f6dd6b963cea2e58ffe2d9b74357e4ef6f57b28f6c0d58b65d0",
+        "spans": [
+          {
+            "start": 39,
+            "end": 48,
+            "text": "std::cout",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 58,
+            "end": 63,
+            "text": "Ficha",
+            "role": "output",
+            "reading": "natural"
+          },
+          {
+            "start": 82,
+            "end": 84,
+            "text": "\\n",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 195,
+            "end": 197,
+            "text": "\\\"",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 255,
+            "end": 257,
+            "text": "\\n",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 299,
+            "end": 301,
+            "text": "//",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 416,
+            "end": 418,
+            "text": "\\\\",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 450,
+            "end": 456,
+            "text": "Zona\\A",
+            "role": "output",
+            "reading": "natural"
+          }
+        ]
+      },
+      {
+        "block": "block_0007_0008",
+        "path": "/text",
+        "sourceSha256": "fd6503b6261521301769ed713d479c0a30d70b0726fe683c48dad3a8fb5c0a89",
+        "spans": []
+      }
+    ],
+    "rootFields": [
+      {
+        "path": "/title",
+        "sourceSha256": "443956090810d96034453a1f5d56d0e7171d0fb4f581fd2ed980206cb72ea16a",
+        "spans": []
+      }
+    ]
+  },
+  "courseEdition": {
+    "version": 1,
+    "courseId": "cpp_fundamentals",
+    "locale": "es",
+    "generation": 1,
+    "id": "cpp_desde_cero_2026"
+  },
+  "stateLayout": {
+    "version": 2,
+    "locale": "es",
+    "origin": [
+      {
+        "id": "page_0000",
+        "blocks": [
+          {
+            "id": "block_0000_0000",
+            "sha256": "a30d0555835b703d0dd5a90aabb0134813afd11904b5364f69f03b01695f6d7a"
+          },
+          {
+            "id": "block_0000_0001",
+            "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+          },
+          {
+            "id": "block_0000_0002",
+            "sha256": "5887283aee65cd244727a9134028fa0cefd54be59ffa251bdb856dfb09b8a6c6"
+          },
+          {
+            "id": "block_0000_0003",
+            "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+          },
+          {
+            "id": "block_0000_0004",
+            "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+          },
+          {
+            "id": "block_0000_0005",
+            "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+          },
+          {
+            "id": "block_0000_0006",
+            "sha256": "bf87df8d70adad313d350154c39d13c58929f0991a60dff1e35878514bc15fa0"
+          },
+          {
+            "id": "block_0000_0007",
+            "sha256": "59f4fa50ca59679ab81a3e8bacef3e72c74f73ec04d35c08dd2e431728503ae2"
+          },
+          {
+            "id": "block_0000_0008",
+            "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+          },
+          {
+            "id": "block_0000_0009",
+            "sha256": "6eba61a6509f7b5414de647af02d1bd3fb2a23d2ecca19344d65bb23053cfbd3"
+          },
+          {
+            "id": "block_0000_0010",
+            "sha256": "2b8368defc12d19a7536b59e9192ffe4d153389ec00ecdeaab54acd71a9fb0be"
+          },
+          {
+            "id": "block_0000_0011",
+            "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+          },
+          {
+            "id": "block_0000_0012",
+            "sha256": "fff133dbd3490ae95cd618ba2a858ba4bb8984c452c890f77b279453ece9eb7f"
+          }
+        ]
+      },
+      {
+        "id": "page_0001",
+        "blocks": [
+          {
+            "id": "block_0001_0000",
+            "sha256": "a30d0555835b703d0dd5a90aabb0134813afd11904b5364f69f03b01695f6d7a"
+          },
+          {
+            "id": "block_0001_0001",
+            "sha256": "3bf6fbbefa15fa4dee05b589c845813a7b01deab3266fdedc1a96df2f8570a3f"
+          },
+          {
+            "id": "block_0001_0002",
+            "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+          },
+          {
+            "id": "block_0001_0003",
+            "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+          },
+          {
+            "id": "block_0001_0004",
+            "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+          },
+          {
+            "id": "block_0001_0005",
+            "sha256": "1c6166b8af210414a6beabd520ad9d3602bd07d193a02da413ad046375c56243"
+          },
+          {
+            "id": "block_0001_0006",
+            "sha256": "62282c76c5a7b2629760c7e7cf1d3c39f09f016c537fb8228031c9358ee5c932"
+          },
+          {
+            "id": "block_0001_0007",
+            "sha256": "668a82ec35590591515fd91e29da9ce2607a0434a520399f305de36a8462f6da"
+          },
+          {
+            "id": "block_0001_0008",
+            "sha256": "7272cf0d2552e992aa0748e1a0152f72eceb196c988cde8c6cf517f4805677d7"
+          },
+          {
+            "id": "block_0001_0009",
+            "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+          }
+        ]
+      },
+      {
+        "id": "page_0002",
+        "blocks": [
+          {
+            "id": "block_0002_0000",
+            "sha256": "a30d0555835b703d0dd5a90aabb0134813afd11904b5364f69f03b01695f6d7a"
+          },
+          {
+            "id": "block_0002_0001",
+            "sha256": "bda2c1d32b77cbb6fc7cf87d15a2ce7f71496767dd003234c3262286ccfde3fd"
+          },
+          {
+            "id": "block_0002_0002",
+            "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+          },
+          {
+            "id": "block_0002_0003",
+            "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+          },
+          {
+            "id": "block_0002_0004",
+            "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+          },
+          {
+            "id": "block_0002_0005",
+            "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+          },
+          {
+            "id": "block_0002_0006",
+            "sha256": "8299cd02db49cd5f4be5e2ecafa7ebf5f4c39618164727c50bc661334516e0cb"
+          },
+          {
+            "id": "block_0002_0007",
+            "sha256": "44ce4183a1797a9eebe6443729e7ee9454a82222ca48bf418a0f86465af603bc"
+          },
+          {
+            "id": "block_0002_0008",
+            "sha256": "4fd2b55190fee498131d2c628b9874744f6439b58433f6378463178ba41eb99d"
+          },
+          {
+            "id": "block_0002_0009",
+            "sha256": "b22913e0d4fefd9abe52166deb52304ba23bd615cb6e8ca497c09d2df41354b1"
+          },
+          {
+            "id": "block_0002_0010",
+            "sha256": "88ffc5be981d735a8bb7464b864719894cde6935602b23b11a80fa833c2e697e"
+          },
+          {
+            "id": "block_0002_0011",
+            "sha256": "5bbf62b9255805606fb4fa4debeeca7bf3a9d0d521aabf481fa65f7d17add114"
+          },
+          {
+            "id": "block_0002_0012",
+            "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+          },
+          {
+            "id": "block_0002_0013",
+            "sha256": "92f74bae031a6c7f27c7cac87f5e9bb594cd80ba58a8e7e865219a7b65e89444"
+          }
+        ]
+      },
+      {
+        "id": "page_0003",
+        "blocks": [
+          {
+            "id": "block_0003_0000",
+            "sha256": "a30d0555835b703d0dd5a90aabb0134813afd11904b5364f69f03b01695f6d7a"
+          },
+          {
+            "id": "block_0003_0001",
+            "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+          },
+          {
+            "id": "block_0003_0002",
+            "sha256": "78ac478ea9cb96f823b93e097bb62977f8c82a69bf1d98f273893fac2000fe0a"
+          },
+          {
+            "id": "block_0003_0003",
+            "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+          },
+          {
+            "id": "block_0003_0004",
+            "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+          },
+          {
+            "id": "block_0003_0005",
+            "sha256": "a2428c85b2b511615aef83dcee42c83364fd4086a7975046e367500e2f453065"
+          },
+          {
+            "id": "block_0003_0006",
+            "sha256": "1576dd79d2b9aec4be2a6d91ae684951c4f95102bc7fdf4aae632df01ba20109"
+          },
+          {
+            "id": "block_0003_0007",
+            "sha256": "6970bd4331eb0236e67f35e66e147521c3a103dfa52be114b8d9d9f1aa4ee9b7"
+          },
+          {
+            "id": "block_0003_0008",
+            "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+          },
+          {
+            "id": "block_0003_0009",
+            "sha256": "c62da72b53b4795f6ef5157ce9da24072148f8a62dd4c416e54f1b3463ffcd89"
+          },
+          {
+            "id": "block_0003_0010",
+            "sha256": "f98ba568083f96ca7cf4f08703b3adecf37243fc8b1d794f058c94b78ae41494"
+          },
+          {
+            "id": "block_0003_0011",
+            "sha256": "9eebe27bfc913ed8bb7a95cdd0740da96d1a520cc78ede8ab4ebde8e6afd4d47"
+          },
+          {
+            "id": "block_0003_0012",
+            "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+          },
+          {
+            "id": "block_0003_0013",
+            "sha256": "d770eda2fd5e2e18ef3ddd1db5db0175dee68072f4665b2963bba8bf168cfa31"
+          }
+        ]
+      },
+      {
+        "id": "page_0004",
+        "blocks": [
+          {
+            "id": "block_0004_0000",
+            "sha256": "a30d0555835b703d0dd5a90aabb0134813afd11904b5364f69f03b01695f6d7a"
+          },
+          {
+            "id": "block_0004_0001",
+            "sha256": "5c1d50ff98dcc8806ebf2e617a0f30c05460c9245b0a0744b660033a9788fd61"
+          },
+          {
+            "id": "block_0004_0002",
+            "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+          },
+          {
+            "id": "block_0004_0003",
+            "sha256": "657060724340a9812e8ef5a6d8159ea396b1a2190c92f3b88c09cd012c195ac5"
+          },
+          {
+            "id": "block_0004_0004",
+            "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+          },
+          {
+            "id": "block_0004_0005",
+            "sha256": "fe593133b17e98c5be4c0ae785b811ebb0533c995f6c3e54399436bfc6a7134c"
+          },
+          {
+            "id": "block_0004_0006",
+            "sha256": "4fd4dab37a84a9c2d84ecd52c3ff69598d71904c69bb45b1aa6fdf4c43aa935a"
+          },
+          {
+            "id": "block_0004_0007",
+            "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+          },
+          {
+            "id": "block_0004_0008",
+            "sha256": "8ad42da1f2f09c513214f1e38016a2e0beaf8eb41b84726a2aed338cddcbc13d"
+          },
+          {
+            "id": "block_0004_0009",
+            "sha256": "16881e25be69b41fd100c9df3f593a92b8e021a268ad6a67cb7226ae32926324"
+          },
+          {
+            "id": "block_0004_0010",
+            "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+          },
+          {
+            "id": "block_0004_0011",
+            "sha256": "2a6891f0f03779ad20995fad0e6e8f21c7ed42f64f78f209ac4f0aae57244778"
+          },
+          {
+            "id": "block_0004_0012",
+            "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+          },
+          {
+            "id": "block_0004_0013",
+            "sha256": "53d78199cd0ef53e155bc59dfe30611052a77602f2cc0eb6cc704012a298a234"
+          }
+        ]
+      },
+      {
+        "id": "page_0005",
+        "blocks": [
+          {
+            "id": "block_0005_0000",
+            "sha256": "a30d0555835b703d0dd5a90aabb0134813afd11904b5364f69f03b01695f6d7a"
+          },
+          {
+            "id": "block_0005_0001",
+            "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+          },
+          {
+            "id": "block_0005_0002",
+            "sha256": "527c2afcdda8eb8c019f3926e02345ea7b0f9b8ecf230e431c6d542dbbb3e3c8"
+          },
+          {
+            "id": "block_0005_0003",
+            "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+          },
+          {
+            "id": "block_0005_0004",
+            "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+          },
+          {
+            "id": "block_0005_0005",
+            "sha256": "9b1e83ad235de4cd54eba683c5cec5e8dda94f33b0db225f4b412c5b3a237941"
+          },
+          {
+            "id": "block_0005_0006",
+            "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+          },
+          {
+            "id": "block_0005_0007",
+            "sha256": "06ee1e9173958bbd11c0c521eeb30ec14a2bb4480ffaebcc5c00b57ad33727ba"
+          }
+        ]
+      },
+      {
+        "id": "page_0006",
+        "blocks": [
+          {
+            "id": "block_0006_0000",
+            "sha256": "a30d0555835b703d0dd5a90aabb0134813afd11904b5364f69f03b01695f6d7a"
+          },
+          {
+            "id": "block_0006_0001",
+            "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+          },
+          {
+            "id": "block_0006_0002",
+            "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+          },
+          {
+            "id": "block_0006_0003",
+            "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+          },
+          {
+            "id": "block_0006_0004",
+            "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+          },
+          {
+            "id": "block_0006_0005",
+            "sha256": "b2dab3ad316d3b4f7d67f5d9eb54c736967579f12d7fe0a9733bdd10fadd79f7"
+          },
+          {
+            "id": "block_0006_0006",
+            "sha256": "a30d0555835b703d0dd5a90aabb0134813afd11904b5364f69f03b01695f6d7a"
+          },
+          {
+            "id": "block_0006_0007",
+            "sha256": "0032f06d59ab92c2b1710fdbd4372863e5cdc923f8ad69b6896d0fd162169cc5"
+          },
+          {
+            "id": "block_0006_0008",
+            "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+          }
+        ]
+      },
+      {
+        "id": "page_0007",
+        "blocks": [
+          {
+            "id": "block_0007_0000",
+            "sha256": "a30d0555835b703d0dd5a90aabb0134813afd11904b5364f69f03b01695f6d7a"
+          },
+          {
+            "id": "block_0007_0001",
+            "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+          },
+          {
+            "id": "block_0007_0002",
+            "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+          },
+          {
+            "id": "block_0007_0003",
+            "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+          },
+          {
+            "id": "block_0007_0004",
+            "sha256": "6dc5d93aefe033058f14c3c8b7381407d1bde797c37fa3490a17bb5576054fee"
+          },
+          {
+            "id": "block_0007_0005",
+            "sha256": "a30d0555835b703d0dd5a90aabb0134813afd11904b5364f69f03b01695f6d7a"
+          },
+          {
+            "id": "block_0007_0006",
+            "sha256": "6aab0e0f1bec892372983d74c01322ca1bfaf6d76d19db5782b8b939e12a5e5c"
+          },
+          {
+            "id": "block_0007_0007",
+            "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+          },
+          {
+            "id": "block_0007_0008",
+            "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+          }
+        ]
+      }
+    ],
+    "current": [
+      {
+        "id": "page_0000",
+        "blocks": [
+          "block_0000_0000",
+          "block_0000_0001",
+          "block_0000_0002",
+          "block_0000_0003",
+          "block_0000_0004",
+          "block_0000_0005",
+          "block_0000_0006",
+          "block_0000_0007",
+          "block_0000_0008",
+          "block_0000_0009",
+          "block_0000_0010",
+          "block_0000_0011",
+          "block_0000_0012"
+        ]
+      },
+      {
+        "id": "page_0001",
+        "blocks": [
+          "block_0001_0000",
+          "block_0001_0001",
+          "block_0001_0002",
+          "block_0001_0003",
+          "block_0001_0004",
+          "block_0001_0005",
+          "block_0001_0006",
+          "block_0001_0007",
+          "block_0001_0008",
+          "block_0001_0009"
+        ]
+      },
+      {
+        "id": "page_0002",
+        "blocks": [
+          "block_0002_0000",
+          "block_0002_0001",
+          "block_0002_0002",
+          "block_0002_0003",
+          "block_0002_0004",
+          "block_0002_0005",
+          "block_0002_0006",
+          "block_0002_0007",
+          "block_0002_0008",
+          "block_0002_0009",
+          "block_0002_0010",
+          "block_0002_0011",
+          "block_0002_0012",
+          "block_0002_0013"
+        ]
+      },
+      {
+        "id": "page_0003",
+        "blocks": [
+          "block_0003_0000",
+          "block_0003_0001",
+          "block_0003_0002",
+          "block_0003_0003",
+          "block_0003_0004",
+          "block_0003_0005",
+          "block_0003_0006",
+          "block_0003_0007",
+          "block_0003_0008",
+          "block_0003_0009",
+          "block_0003_0010",
+          "block_0003_0011",
+          "block_0003_0012",
+          "block_0003_0013"
+        ]
+      },
+      {
+        "id": "page_0004",
+        "blocks": [
+          "block_0004_0000",
+          "block_0004_0001",
+          "block_0004_0002",
+          "block_0004_0003",
+          "block_0004_0004",
+          "block_0004_0005",
+          "block_0004_0006",
+          "block_0004_0007",
+          "block_0004_0008",
+          "block_0004_0009",
+          "block_0004_0010",
+          "block_0004_0011",
+          "block_0004_0012",
+          "block_0004_0013"
+        ]
+      },
+      {
+        "id": "page_0005",
+        "blocks": [
+          "block_0005_0000",
+          "block_0005_0001",
+          "block_0005_0002",
+          "block_0005_0003",
+          "block_0005_0004",
+          "block_0005_0005",
+          "block_0005_0006",
+          "block_0005_0007"
+        ]
+      },
+      {
+        "id": "page_0006",
+        "blocks": [
+          "block_0006_0000",
+          "block_0006_0001",
+          "block_0006_0002",
+          "block_0006_0003",
+          "block_0006_0004",
+          "block_0006_0005",
+          "block_0006_0006",
+          "block_0006_0007",
+          "block_0006_0008"
+        ]
+      },
+      {
+        "id": "page_0007",
+        "blocks": [
+          "block_0007_0000",
+          "block_0007_0001",
+          "block_0007_0002",
+          "block_0007_0003",
+          "block_0007_0004",
+          "block_0007_0005",
+          "block_0007_0006",
+          "block_0007_0007",
+          "block_0007_0008"
+        ]
+      }
+    ],
+    "family": {
+      "es": {
+        "sha256": "0910dde88233f1348f555ecdde8a03362f7482a771b21a462e873d54819606ab",
+        "origin": [
+          {
+            "id": "page_0000",
+            "blocks": [
+              {
+                "id": "block_0000_0000",
+                "sha256": "a30d0555835b703d0dd5a90aabb0134813afd11904b5364f69f03b01695f6d7a"
+              },
+              {
+                "id": "block_0000_0001",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              },
+              {
+                "id": "block_0000_0002",
+                "sha256": "5887283aee65cd244727a9134028fa0cefd54be59ffa251bdb856dfb09b8a6c6"
+              },
+              {
+                "id": "block_0000_0003",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              },
+              {
+                "id": "block_0000_0004",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              },
+              {
+                "id": "block_0000_0005",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              },
+              {
+                "id": "block_0000_0006",
+                "sha256": "bf87df8d70adad313d350154c39d13c58929f0991a60dff1e35878514bc15fa0"
+              },
+              {
+                "id": "block_0000_0007",
+                "sha256": "59f4fa50ca59679ab81a3e8bacef3e72c74f73ec04d35c08dd2e431728503ae2"
+              },
+              {
+                "id": "block_0000_0008",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              },
+              {
+                "id": "block_0000_0009",
+                "sha256": "6eba61a6509f7b5414de647af02d1bd3fb2a23d2ecca19344d65bb23053cfbd3"
+              },
+              {
+                "id": "block_0000_0010",
+                "sha256": "2b8368defc12d19a7536b59e9192ffe4d153389ec00ecdeaab54acd71a9fb0be"
+              },
+              {
+                "id": "block_0000_0011",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              },
+              {
+                "id": "block_0000_0012",
+                "sha256": "fff133dbd3490ae95cd618ba2a858ba4bb8984c452c890f77b279453ece9eb7f"
+              }
+            ]
+          },
+          {
+            "id": "page_0001",
+            "blocks": [
+              {
+                "id": "block_0001_0000",
+                "sha256": "a30d0555835b703d0dd5a90aabb0134813afd11904b5364f69f03b01695f6d7a"
+              },
+              {
+                "id": "block_0001_0001",
+                "sha256": "3bf6fbbefa15fa4dee05b589c845813a7b01deab3266fdedc1a96df2f8570a3f"
+              },
+              {
+                "id": "block_0001_0002",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              },
+              {
+                "id": "block_0001_0003",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              },
+              {
+                "id": "block_0001_0004",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              },
+              {
+                "id": "block_0001_0005",
+                "sha256": "1c6166b8af210414a6beabd520ad9d3602bd07d193a02da413ad046375c56243"
+              },
+              {
+                "id": "block_0001_0006",
+                "sha256": "62282c76c5a7b2629760c7e7cf1d3c39f09f016c537fb8228031c9358ee5c932"
+              },
+              {
+                "id": "block_0001_0007",
+                "sha256": "668a82ec35590591515fd91e29da9ce2607a0434a520399f305de36a8462f6da"
+              },
+              {
+                "id": "block_0001_0008",
+                "sha256": "7272cf0d2552e992aa0748e1a0152f72eceb196c988cde8c6cf517f4805677d7"
+              },
+              {
+                "id": "block_0001_0009",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              }
+            ]
+          },
+          {
+            "id": "page_0002",
+            "blocks": [
+              {
+                "id": "block_0002_0000",
+                "sha256": "a30d0555835b703d0dd5a90aabb0134813afd11904b5364f69f03b01695f6d7a"
+              },
+              {
+                "id": "block_0002_0001",
+                "sha256": "bda2c1d32b77cbb6fc7cf87d15a2ce7f71496767dd003234c3262286ccfde3fd"
+              },
+              {
+                "id": "block_0002_0002",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              },
+              {
+                "id": "block_0002_0003",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              },
+              {
+                "id": "block_0002_0004",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              },
+              {
+                "id": "block_0002_0005",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              },
+              {
+                "id": "block_0002_0006",
+                "sha256": "8299cd02db49cd5f4be5e2ecafa7ebf5f4c39618164727c50bc661334516e0cb"
+              },
+              {
+                "id": "block_0002_0007",
+                "sha256": "44ce4183a1797a9eebe6443729e7ee9454a82222ca48bf418a0f86465af603bc"
+              },
+              {
+                "id": "block_0002_0008",
+                "sha256": "4fd2b55190fee498131d2c628b9874744f6439b58433f6378463178ba41eb99d"
+              },
+              {
+                "id": "block_0002_0009",
+                "sha256": "b22913e0d4fefd9abe52166deb52304ba23bd615cb6e8ca497c09d2df41354b1"
+              },
+              {
+                "id": "block_0002_0010",
+                "sha256": "88ffc5be981d735a8bb7464b864719894cde6935602b23b11a80fa833c2e697e"
+              },
+              {
+                "id": "block_0002_0011",
+                "sha256": "5bbf62b9255805606fb4fa4debeeca7bf3a9d0d521aabf481fa65f7d17add114"
+              },
+              {
+                "id": "block_0002_0012",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              },
+              {
+                "id": "block_0002_0013",
+                "sha256": "92f74bae031a6c7f27c7cac87f5e9bb594cd80ba58a8e7e865219a7b65e89444"
+              }
+            ]
+          },
+          {
+            "id": "page_0003",
+            "blocks": [
+              {
+                "id": "block_0003_0000",
+                "sha256": "a30d0555835b703d0dd5a90aabb0134813afd11904b5364f69f03b01695f6d7a"
+              },
+              {
+                "id": "block_0003_0001",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              },
+              {
+                "id": "block_0003_0002",
+                "sha256": "78ac478ea9cb96f823b93e097bb62977f8c82a69bf1d98f273893fac2000fe0a"
+              },
+              {
+                "id": "block_0003_0003",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              },
+              {
+                "id": "block_0003_0004",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              },
+              {
+                "id": "block_0003_0005",
+                "sha256": "a2428c85b2b511615aef83dcee42c83364fd4086a7975046e367500e2f453065"
+              },
+              {
+                "id": "block_0003_0006",
+                "sha256": "1576dd79d2b9aec4be2a6d91ae684951c4f95102bc7fdf4aae632df01ba20109"
+              },
+              {
+                "id": "block_0003_0007",
+                "sha256": "6970bd4331eb0236e67f35e66e147521c3a103dfa52be114b8d9d9f1aa4ee9b7"
+              },
+              {
+                "id": "block_0003_0008",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              },
+              {
+                "id": "block_0003_0009",
+                "sha256": "c62da72b53b4795f6ef5157ce9da24072148f8a62dd4c416e54f1b3463ffcd89"
+              },
+              {
+                "id": "block_0003_0010",
+                "sha256": "f98ba568083f96ca7cf4f08703b3adecf37243fc8b1d794f058c94b78ae41494"
+              },
+              {
+                "id": "block_0003_0011",
+                "sha256": "9eebe27bfc913ed8bb7a95cdd0740da96d1a520cc78ede8ab4ebde8e6afd4d47"
+              },
+              {
+                "id": "block_0003_0012",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              },
+              {
+                "id": "block_0003_0013",
+                "sha256": "d770eda2fd5e2e18ef3ddd1db5db0175dee68072f4665b2963bba8bf168cfa31"
+              }
+            ]
+          },
+          {
+            "id": "page_0004",
+            "blocks": [
+              {
+                "id": "block_0004_0000",
+                "sha256": "a30d0555835b703d0dd5a90aabb0134813afd11904b5364f69f03b01695f6d7a"
+              },
+              {
+                "id": "block_0004_0001",
+                "sha256": "5c1d50ff98dcc8806ebf2e617a0f30c05460c9245b0a0744b660033a9788fd61"
+              },
+              {
+                "id": "block_0004_0002",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              },
+              {
+                "id": "block_0004_0003",
+                "sha256": "657060724340a9812e8ef5a6d8159ea396b1a2190c92f3b88c09cd012c195ac5"
+              },
+              {
+                "id": "block_0004_0004",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              },
+              {
+                "id": "block_0004_0005",
+                "sha256": "fe593133b17e98c5be4c0ae785b811ebb0533c995f6c3e54399436bfc6a7134c"
+              },
+              {
+                "id": "block_0004_0006",
+                "sha256": "4fd4dab37a84a9c2d84ecd52c3ff69598d71904c69bb45b1aa6fdf4c43aa935a"
+              },
+              {
+                "id": "block_0004_0007",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              },
+              {
+                "id": "block_0004_0008",
+                "sha256": "8ad42da1f2f09c513214f1e38016a2e0beaf8eb41b84726a2aed338cddcbc13d"
+              },
+              {
+                "id": "block_0004_0009",
+                "sha256": "16881e25be69b41fd100c9df3f593a92b8e021a268ad6a67cb7226ae32926324"
+              },
+              {
+                "id": "block_0004_0010",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              },
+              {
+                "id": "block_0004_0011",
+                "sha256": "2a6891f0f03779ad20995fad0e6e8f21c7ed42f64f78f209ac4f0aae57244778"
+              },
+              {
+                "id": "block_0004_0012",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              },
+              {
+                "id": "block_0004_0013",
+                "sha256": "53d78199cd0ef53e155bc59dfe30611052a77602f2cc0eb6cc704012a298a234"
+              }
+            ]
+          },
+          {
+            "id": "page_0005",
+            "blocks": [
+              {
+                "id": "block_0005_0000",
+                "sha256": "a30d0555835b703d0dd5a90aabb0134813afd11904b5364f69f03b01695f6d7a"
+              },
+              {
+                "id": "block_0005_0001",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              },
+              {
+                "id": "block_0005_0002",
+                "sha256": "527c2afcdda8eb8c019f3926e02345ea7b0f9b8ecf230e431c6d542dbbb3e3c8"
+              },
+              {
+                "id": "block_0005_0003",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              },
+              {
+                "id": "block_0005_0004",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              },
+              {
+                "id": "block_0005_0005",
+                "sha256": "9b1e83ad235de4cd54eba683c5cec5e8dda94f33b0db225f4b412c5b3a237941"
+              },
+              {
+                "id": "block_0005_0006",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              },
+              {
+                "id": "block_0005_0007",
+                "sha256": "06ee1e9173958bbd11c0c521eeb30ec14a2bb4480ffaebcc5c00b57ad33727ba"
+              }
+            ]
+          },
+          {
+            "id": "page_0006",
+            "blocks": [
+              {
+                "id": "block_0006_0000",
+                "sha256": "a30d0555835b703d0dd5a90aabb0134813afd11904b5364f69f03b01695f6d7a"
+              },
+              {
+                "id": "block_0006_0001",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              },
+              {
+                "id": "block_0006_0002",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              },
+              {
+                "id": "block_0006_0003",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              },
+              {
+                "id": "block_0006_0004",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              },
+              {
+                "id": "block_0006_0005",
+                "sha256": "b2dab3ad316d3b4f7d67f5d9eb54c736967579f12d7fe0a9733bdd10fadd79f7"
+              },
+              {
+                "id": "block_0006_0006",
+                "sha256": "a30d0555835b703d0dd5a90aabb0134813afd11904b5364f69f03b01695f6d7a"
+              },
+              {
+                "id": "block_0006_0007",
+                "sha256": "0032f06d59ab92c2b1710fdbd4372863e5cdc923f8ad69b6896d0fd162169cc5"
+              },
+              {
+                "id": "block_0006_0008",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              }
+            ]
+          },
+          {
+            "id": "page_0007",
+            "blocks": [
+              {
+                "id": "block_0007_0000",
+                "sha256": "a30d0555835b703d0dd5a90aabb0134813afd11904b5364f69f03b01695f6d7a"
+              },
+              {
+                "id": "block_0007_0001",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              },
+              {
+                "id": "block_0007_0002",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              },
+              {
+                "id": "block_0007_0003",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              },
+              {
+                "id": "block_0007_0004",
+                "sha256": "6dc5d93aefe033058f14c3c8b7381407d1bde797c37fa3490a17bb5576054fee"
+              },
+              {
+                "id": "block_0007_0005",
+                "sha256": "a30d0555835b703d0dd5a90aabb0134813afd11904b5364f69f03b01695f6d7a"
+              },
+              {
+                "id": "block_0007_0006",
+                "sha256": "6aab0e0f1bec892372983d74c01322ca1bfaf6d76d19db5782b8b939e12a5e5c"
+              },
+              {
+                "id": "block_0007_0007",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              },
+              {
+                "id": "block_0007_0008",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              }
+            ]
+          }
+        ]
+      }
+    },
+    "additions": [],
+    "editorial": []
+  }
+}

@@ -1,0 +1,2663 @@
+{
+  "id": "cpp_fundamentals__edition_es_1__expresiones_y_decisiones__alternativas_y_fronteras",
+  "title": "Elegir alternativas y probar fronteras",
+  "orderVisualSeparators": [
+    {
+      "activity": "block_0004_0001",
+      "count": 2
+    }
+  ],
+  "pages": [
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "Elegir qué instrucciones se ejecutan"
+        },
+        {
+          "type": "paragraph",
+          "text": "Para decidir si queda sitio, compara la cantidad de plazas libres con cero. En el código, plazas_libres > 0 da true si queda alguna plaza y false si no queda ninguna.\n\nEscribe if y pon la comparación entre paréntesis. Esa comparación es la condición que examina el programa. Las instrucciones que siguen a la condición van entre dos llaves y forman un bloque. El programa ejecuta ese bloque cuando la condición vale true.\n\nPuedes escribir else y otro bloque para indicar qué hacer cuando la condición vale false. En el siguiente programa, cada bloque es una alternativa. A cada una se le llama rama (Köppe et al., 2023; Stroustrup, 2024)."
+        },
+        {
+          "type": "code",
+          "language": "cpp",
+          "code": "#include <iostream>\n\nint main() {\n    const int plazas_libres = 2;\n\n    if (plazas_libres > 0) {\n        std::cout << \"Hay sitio\\n\";\n    } else {\n        std::cout << \"Completo\\n\";\n    }\n\n    std::cout << \"Revision terminada\";\n\n    return 0;\n}\n"
+        },
+        {
+          "type": "paragraph",
+          "text": "El programa empieza con dos plazas libres. La condición da true, así que ejecuta la instrucción que muestra Hay sitio y omite la rama de else.\n\nDespués de la llave que cierra el bloque de else, la instrucción que muestra Revision terminada queda fuera de las dos ramas. Al terminar cualquiera de ellas, el programa llega a esa instrucción.\n\nSalida con dos plazas libres\nHay sitio\nRevision terminada\n\nCon cero plazas libres, la condición daría false y la primera línea sería Completo. La segunda seguiría siendo Revision terminada."
+        },
+        {
+          "type": "multiple_choice",
+          "question": "Supón que la sala tiene cero plazas libres. En el programa de las plazas, plazas_libres > 0 da false. ¿Qué rama ejecuta el programa y qué ocurre con la instrucción que muestra Revision terminada después de las llaves?",
+          "options": [
+            "Ejecuta la rama de else, que muestra Completo. Después muestra Revision terminada.",
+            "Ejecutar ambas ramas y después continuar.",
+            "Omitir todo lo que queda del programa."
+          ],
+          "correctIndex": 0,
+          "explanation": "Con cero plazas libres, plazas_libres > 0 da false. La rama de else muestra Completo. Después, el programa llega a la instrucción de fuera de las ramas y muestra Revision terminada."
+        }
+      ]
+    },
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "Agrupar instrucciones con llaves"
+        },
+        {
+          "type": "paragraph",
+          "text": "Un if puede aparecer sin else. En el siguiente programa, si pendientes > 0 vale true, el bloque muestra primero un aviso de inspección adicional y después la cantidad de pendientes. Si la condición vale false, se omiten ambas instrucciones. La salida Fin está después de la llave de cierre y se muestra en ambos casos (Köppe et al., 2023).\n\nLos espacios al comienzo de una línea forman la sangría. Ayudan a reconocer las instrucciones de un bloque. En esta forma de escribir if, las llaves indican dónde empieza y termina el bloque. Usa llaves aunque el bloque tenga una sola instrucción.\n\nLas instrucciones que siguen a una declaración dentro del bloque pueden usar el nombre que acabas de declarar. Después de la llave de cierre, ese nombre queda fuera de alcance. Si vas a consultar una variable después de la decisión, declárala antes del if y asígnale un valor dentro de la rama que corresponda. El programa de la alerta usa esta forma (Köppe et al., 2023)."
+        },
+        {
+          "type": "output_prediction",
+          "question": "¿Qué líneas muestra el programa con cero inspecciones pendientes? Escribe la salida completa.",
+          "language": "cpp",
+          "code": "#include <iostream>\n\nint main() {\n    const int pendientes = 0;\n\n    std::cout << \"Inicio\\n\";\n\n    if (pendientes > 0) {\n        std::cout << \"Inspeccion adicional\\n\";\n        std::cout << pendientes << \"\\n\";\n    }\n\n    std::cout << \"Fin\";\n\n    return 0;\n}\n",
+          "answers": [
+            "Inicio\nFin"
+          ],
+          "explanation": "pendientes > 0 da false, así que se omiten el aviso de inspección adicional y el recuento. Las instrucciones de fuera del bloque muestran Inicio y Fin, en ese orden y en líneas separadas."
+        },
+        {
+          "type": "fill_code",
+          "question": "La señal debe aparecer si nivel es mayor que siete. Escribe la palabra que va antes de la condición.",
+          "language": "cpp",
+          "code": "#include <iostream>\n\nint main() {\n    const int nivel = 9;\n    ___ (nivel > 7) {\n        std::cout << \"Senal\";\n    }\n\n    return 0;\n}\n",
+          "answers": [
+            "if"
+          ],
+          "explanation": "if indica que se ejecuta el bloque si la condición da true. Aquí nivel vale nueve, así que la consola muestra Senal."
+        }
+      ]
+    },
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "Probar por debajo, en el límite y por encima"
+        },
+        {
+          "type": "paragraph",
+          "text": "Si un lote está listo con seis piezas o más, usa una comparación que incluya seis. Con exactamente seis piezas, piezas >= 6 vale true y piezas > 6 vale false. Ese valor que separa las dos alternativas es el límite o frontera de la decisión."
+        },
+        {
+          "type": "output_prediction",
+          "question": "El programa revisa un lote de cinco piezas. El lote se considera listo con seis piezas o más. ¿Qué mensaje aparece?",
+          "language": "cpp",
+          "code": "#include <iostream>\n\nint main() {\n    const int piezas = 5;\n\n    if (piezas >= 6) {\n        std::cout << \"Listo\";\n    } else {\n        std::cout << \"Pendiente\";\n    }\n\n    return 0;\n}\n",
+          "answers": [
+            "Pendiente"
+          ],
+          "explanation": "piezas >= 6 da false porque cinco es menor que seis. La rama de else muestra Pendiente."
+        },
+        {
+          "type": "multiple_choice",
+          "question": "Un programa compara cantidades enteras con el límite 10. ¿Qué datos permiten probar el valor justo por debajo, el límite y el valor justo por encima, en ese orden?",
+          "options": [
+            "0, 5 y 20",
+            "10, 10 y 10",
+            "9, 10 y 11"
+          ],
+          "correctIndex": 2,
+          "explanation": "Los enteros inmediatamente anterior y posterior a diez son 9 y 11. La prueba con 10 comprueba qué hace el programa si los valores son iguales."
+        },
+        {
+          "type": "paragraph",
+          "text": "Las comparaciones piezas >= 6 y piezas > 6 dan false con 5 piezas y true con 8. Probar esas dos cantidades permite ver las dos ramas, pero las dos versiones dan las mismas respuestas. Con 6, en cambio, solo >= lleva a la rama que muestra Listo.\n\nAl elegir pruebas para un límite entero, escribe el resultado esperado justo por debajo, en el límite y justo por encima. Para cinco piezas se espera Pendiente. Para seis y para siete se espera Listo. El requisito permite decidir qué mensaje esperas para cada cantidad antes de ejecutar el programa."
+        }
+      ]
+    },
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "Predecir el mensaje y la marca de alerta"
+        },
+        {
+          "type": "paragraph",
+          "text": "Un sensor mide el nivel del agua en una escala de cero a ocho. En esta prueba, el nivel y el límite valen cuatro. El programa debe mostrar Alerta desde el límite, incluso si el nivel es igual a él. Por debajo del límite, debe mostrar Normal.\n\nLa variable marca_alerta empieza en cero antes de la decisión. La rama que muestra Alerta cambia la marca a uno. Después de ejecutar la rama que corresponda, el programa muestra la marca que quedó guardada."
+        },
+        {
+          "type": "multiple_choice",
+          "question": "El nivel del agua y el límite valen 4. ¿Qué aviso debe aparecer en el primer renglón de la salida y qué marca debe aparecer en el segundo?",
+          "options": [
+            "Normal\nMarca: 0",
+            "Alerta\nNormal\nMarca: 1",
+            "Alerta\nMarca: 1"
+          ],
+          "correctIndex": 2,
+          "explanation": "Como el nivel alcanza el límite, se ejecuta la rama que guarda uno en marca_alerta y muestra Alerta. Después de la decisión, la consola muestra Marca: 1."
+        },
+        {
+          "type": "paragraph",
+          "text": "Mostrar la marca después de las llaves permite consultar el valor que quedó en ambos casos. Si solo la declararas dentro de la rama de alerta, su nombre no estaría disponible fuera de esa rama."
+        },
+        {
+          "type": "heading",
+          "text": "Reparar la comparación que excluye el límite"
+        },
+        {
+          "type": "paragraph",
+          "text": "El editor tiene nivel y limite iguales a cuatro. Su condición usa >. El último renglón de la salida muestra el nivel usado en la decisión. Con estos datos, la consola muestra lo siguiente.\n\nNormal\nMarca: 0\nNivel: 4\n\nCorrige únicamente la comparación para que el programa emita la alerta cuando el nivel sea igual o mayor que el límite. Conserva las declaraciones, las asignaciones y los mensajes.\n\nSalida esperada\nAlerta\nMarca: 1\nNivel: 4\n\nPulsa «Compilar, ejecutar y comprobar». Puedes añadir un salto de línea después del tercer renglón de la salida."
+        },
+        {
+          "type": "cpp_compiler",
+          "initialCode": "#include <iostream>\n\nint main() {\n    int nivel = 4;\n    int limite = 4;\n\n    int marca_alerta = 0;\n\n    if (nivel > limite) {\n        marca_alerta = 1;\n\n        std::cout << \"Alerta\\n\";\n    } else {\n        std::cout << \"Normal\\n\";\n    }\n\n    std::cout << \"Marca: \" << marca_alerta;\n    std::cout << \"\\nNivel: \" << nivel;\n\n    return 0;\n}\n",
+          "outputCheck": {
+            "cases": [
+              {
+                "standardInput": "",
+                "outputs": [
+                  "Alerta\nMarca: 1\nNivel: 4",
+                  "Alerta\nMarca: 1\nNivel: 4\n"
+                ]
+              }
+            ]
+          }
+        },
+        {
+          "type": "note",
+          "text": "En el programa del sensor de agua, el límite es cuatro. Si el nivel también vale cuatro, el aviso esperado es Alerta. Si aparece Normal, revisa si la comparación incluye la igualdad. Si aparece Alerta seguido de Marca: 0, el programa eligió la rama correcta. Revisa si esa rama cambia marca_alerta de cero a uno antes de que std::cout muestre la marca. Si el aviso y la marca son correctos, compara también los espacios y los saltos de línea con la salida esperada."
+        },
+        {
+          "type": "heading",
+          "text": "Revisar la reparación de la alerta"
+        },
+        {
+          "type": "paragraph",
+          "text": "Con nivel y límite iguales a cuatro, la condición de la referencia vale true. La rama de alerta guarda uno en marca_alerta y muestra el aviso. Una vez fuera de las llaves de la decisión, el programa muestra la marca guardada y el nivel que comparó."
+        },
+        {
+          "type": "code",
+          "language": "cpp",
+          "code": "#include <iostream>\n\nint main() {\n    int nivel = 4;\n    int limite = 4;\n\n    int marca_alerta = 0;\n\n    if (nivel >= limite) {\n        marca_alerta = 1;\n\n        std::cout << \"Alerta\\n\";\n    } else {\n        std::cout << \"Normal\\n\";\n    }\n\n    std::cout << \"Marca: \" << marca_alerta;\n    std::cout << \"\\nNivel: \" << nivel;\n\n    return 0;\n}\n"
+        },
+        {
+          "type": "paragraph",
+          "text": "Supón que el nivel de agua es tres y el límite de alerta es cuatro. Como tres es menor que cuatro, nivel >= limite da false. El bloque de else muestra Normal. La variable marca_alerta conserva su valor inicial, cero. El segundo renglón de la salida muestra Marca: 0 y el tercero muestra Nivel: 3.\n\nSi el nivel sube a cinco y el límite sigue en cuatro, se supera el límite y debe aparecer Alerta. Si la condición solo comprobara si el nivel es igual al límite, la alerta aparecería con cuatro, pero se perdería con cinco."
+        }
+      ]
+    },
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "Ordenar las instrucciones de una decisión"
+        },
+        {
+          "type": "order_code",
+          "question": "Ordena las líneas para declarar cantidad, aplicar la regla que permite retirar hasta cuatro elementos y mostrar el mensaje correspondiente.",
+          "fragments": [
+            "    if (cantidad <= 4) {",
+            "        std::cout << \"Permitido\";",
+            "    } else {",
+            "        std::cout << \"Excede el limite\";",
+            "    }",
+            "    return 0;",
+            "}",
+            "    const int cantidad = 4;",
+            "#include <iostream>",
+            "int main() {"
+          ],
+          "correctOrder": [
+            8,
+            9,
+            7,
+            0,
+            1,
+            2,
+            3,
+            4,
+            5,
+            6
+          ],
+          "explanation": "Declara cantidad antes de usarla en la condición. cantidad <= 4 vale true cuando cantidad vale cuatro, así que se muestra Permitido."
+        },
+        {
+          "type": "multiple_choice",
+          "question": "El programa permite retirar hasta cuatro elementos. Ya comprobaste que con tres muestra Permitido. ¿Qué prueba distingue una comparación que usa <= 4 de otra que usa < 4?",
+          "options": [
+            "Cantidad 5, que debe producir el rechazo.",
+            "Cantidad 4, que debe producir Permitido.",
+            "Cantidad 3, que debe producir Permitido."
+          ],
+          "correctIndex": 1,
+          "explanation": "Con cuatro, <= da true y < da false. Con tres ambas dan true. Con cinco ambas dan false."
+        }
+      ]
+    },
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "Programar el aviso con los datos de entrada"
+        },
+        {
+          "type": "paragraph",
+          "text": "Escribe un programa que lea dos enteros del campo «Entrada». Los dos valores pertenecen a la escala de cero a ocho.\n\nPrimero, el nivel de agua que mide el sensor.\nDespués, el límite a partir del cual debe emitir una alerta.\n\nInicializa en cero una variable para la marca de alerta. Usa if y else para mostrar el mensaje que corresponde al nivel. Si alcanza o supera el límite, cambia la marca a uno dentro de la rama que muestra Alerta. Si queda por debajo, muestra Normal y conserva la marca en cero. Coloca después de la llave que cierra el bloque de else la instrucción con std::cout que muestra la marca. Así el segundo renglón de la salida aparecerá tanto si el aviso fue Alerta como si fue Normal.\n\nEntrada\n3 4\n\nSalida esperada\nNormal\nMarca: 0\n\nPara completar el ejercicio, deja 3 4 en el campo «Entrada» y pulsa «Compilar, ejecutar y comprobar». El programa debe producir la salida esperada para esos datos. Puedes añadir un salto de línea después del segundo renglón de la salida."
+        },
+        {
+          "type": "cpp_compiler",
+          "initialCode": "#include <iostream>\n\nint main() {\n    return 0;\n}\n",
+          "initialStandardInput": "3 4",
+          "outputCheck": {
+            "inputComparison": "tokens",
+            "cases": [
+              {
+                "standardInput": "3 4",
+                "outputs": [
+                  "Normal\nMarca: 0",
+                  "Normal\nMarca: 0\n"
+                ]
+              },
+              {
+                "standardInput": "4 4",
+                "outputs": [
+                  "Alerta\nMarca: 1",
+                  "Alerta\nMarca: 1\n"
+                ]
+              },
+              {
+                "standardInput": "5 4",
+                "outputs": [
+                  "Alerta\nMarca: 1",
+                  "Alerta\nMarca: 1\n"
+                ]
+              },
+              {
+                "standardInput": "3 3",
+                "outputs": [
+                  "Alerta\nMarca: 1",
+                  "Alerta\nMarca: 1\n"
+                ]
+              }
+            ]
+          }
+        },
+        {
+          "type": "paragraph",
+          "text": "Pruebas opcionales en este editor\nEscribe primero el nivel de agua que mide el sensor y después el nivel a partir del cual debe avisar. Para cada prueba que quieras hacer, sustituye los datos del campo «Entrada» por los de esa prueba. Pulsa «Compilar, ejecutar y comprobar» y compara lo que muestra la consola con la salida esperada.\n\nEl sensor mide un nivel de cuatro y el límite es cuatro. El agua acaba de alcanzar el límite. El programa debe mostrar la alerta y poner la marca en uno.\n\nEntrada\n4 4\n\nSalida esperada\nAlerta\nMarca: 1\n\nEl sensor mide un nivel de cinco y el límite es cuatro. El agua supera el límite. El programa debe mostrar la alerta y poner la marca en uno.\n\nEntrada\n5 4\n\nSalida esperada\nAlerta\nMarca: 1\n\nEl sensor mide un nivel de tres. En la prueba inicial, 3 4, el límite era cuatro. El agua estaba por debajo del límite y la marca valía cero. En esta prueba, 3 3, el nivel de agua sigue en tres y el límite baja a tres. Ahora el agua alcanza el límite. El programa debe mostrar la alerta y poner la marca en uno.\n\nEntrada\n3 3\n\nSalida esperada\nAlerta\nMarca: 1"
+        },
+        {
+          "type": "note",
+          "text": "Si con las entradas 3 4 y 3 3 obtienes el mismo aviso, revisa la comparación del programa. El sensor mide un nivel de tres en las dos pruebas. Con un límite de cuatro debe aparecer Normal y con un límite de tres debe aparecer Alerta. Si el programa compara el nivel con un cuatro escrito en el código, el aviso seguirá siendo el mismo aunque cambies el límite en el campo «Entrada»."
+        },
+        {
+          "type": "heading",
+          "text": "Revisar el programa que lee el nivel y el límite"
+        },
+        {
+          "type": "code",
+          "language": "cpp",
+          "code": "#include <iostream>\n\nint main() {\n    int nivel = 0;\n    int limite = 0;\n\n    std::cin >> nivel >> limite;\n\n    int marca_alerta = 0;\n\n    if (nivel >= limite) {\n        marca_alerta = 1;\n\n        std::cout << \"Alerta\\n\";\n    } else {\n        std::cout << \"Normal\\n\";\n    }\n\n    std::cout << \"Marca: \" << marca_alerta;\n\n    return 0;\n}\n"
+        }
+      ]
+    },
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "Comprobar el divisor antes de calcular"
+        },
+        {
+          "type": "paragraph",
+          "text": "Para repartir dieciocho fichas por igual, usa la división de enteros solo cuando la cantidad de grupos sea positiva. El programa prueba primero grupos > 0. Si esa condición vale true, ejecuta el bloque del if, donde está fichas / grupos. Si la condición vale false, ejecuta el bloque de else y muestra un aviso.\n\nSi grupos vale cero, la comparación da false y el programa omite la instrucción que divide. C++ no define qué hace un programa que ejecuta una división entera por cero (Köppe et al., 2023)."
+        },
+        {
+          "type": "output_prediction",
+          "question": "El programa tiene dieciocho fichas y cero grupos. ¿Qué texto aparece en la consola?",
+          "language": "cpp",
+          "code": "#include <iostream>\n\nint main() {\n    const int fichas = 18;\n    int grupos = 0;\n\n    if (grupos > 0) {\n        std::cout << fichas / grupos;\n    } else {\n        std::cout << \"Dato invalido\";\n    }\n\n    return 0;\n}\n",
+          "answers": [
+            "Dato invalido"
+          ],
+          "explanation": "grupos > 0 da false. La división está en el bloque que se omite. La rama de else muestra Dato invalido."
+        },
+        {
+          "type": "multiple_choice",
+          "question": "¿Dónde debe estar fichas / grupos para que se ejecute solo con un número positivo de grupos?",
+          "options": [
+            "Dentro de la rama que sólo se ejecuta con grupos > 0.",
+            "En ambas ramas para obtener siempre un número.",
+            "Antes del if, aunque grupos todavía no se haya validado."
+          ],
+          "correctIndex": 0,
+          "explanation": "Pon fichas / grupos dentro del bloque de if. La condición grupos > 0 debe dar true antes de que el programa llegue a la división."
+        },
+        {
+          "type": "note",
+          "text": "Con tres grupos, grupos > 0 da true. Se ejecuta la división de dieciocho entre tres y la consola muestra 6, la cantidad de fichas por grupo. Con cero grupos, de las dos ramas se ejecuta la que muestra el aviso."
+        }
+      ]
+    }
+  ],
+  "compilerPuzzlesRequired": true,
+  "textSemantics": {
+    "version": 1,
+    "fields": [
+      {
+        "block": "block_0000_0000",
+        "path": "/text",
+        "sourceSha256": "474c3f94a0cefd895dfbd9a8915e43b6e8d37d37b98c71950778d4bb75d95940",
+        "spans": []
+      },
+      {
+        "block": "block_0000_0001",
+        "path": "/text",
+        "sourceSha256": "1694f9198a0ee2960c2aef8adb2da112f246a6747771caca8fe1d8f851ea576f",
+        "spans": [
+          {
+            "start": 90,
+            "end": 107,
+            "text": "plazas_libres > 0",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 111,
+            "end": 115,
+            "text": "true",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 140,
+            "end": 145,
+            "text": "false",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 176,
+            "end": 178,
+            "text": "if",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 416,
+            "end": 420,
+            "text": "true",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 439,
+            "end": 443,
+            "text": "else",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 506,
+            "end": 511,
+            "text": "false",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 599,
+            "end": 637,
+            "text": "(Köppe et al., 2023; Stroustrup, 2024)",
+            "role": "citation",
+            "reading": "natural"
+          }
+        ]
+      },
+      {
+        "block": "block_0000_0003",
+        "path": "/text",
+        "sourceSha256": "17a5fa2a0db5dc6a656723c61c987a4709b181e27679f18fe8584684f4775192",
+        "spans": [
+          {
+            "start": 59,
+            "end": 63,
+            "text": "true",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 108,
+            "end": 117,
+            "text": "Hay sitio",
+            "role": "output",
+            "reading": "natural"
+          },
+          {
+            "start": 137,
+            "end": 141,
+            "text": "else",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 188,
+            "end": 192,
+            "text": "else",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 221,
+            "end": 239,
+            "text": "Revision terminada",
+            "role": "output",
+            "reading": "natural"
+          },
+          {
+            "start": 370,
+            "end": 379,
+            "text": "Hay sitio",
+            "role": "output",
+            "reading": "natural"
+          },
+          {
+            "start": 380,
+            "end": 398,
+            "text": "Revision terminada",
+            "role": "output",
+            "reading": "natural"
+          },
+          {
+            "start": 443,
+            "end": 448,
+            "text": "false",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 474,
+            "end": 482,
+            "text": "Completo",
+            "role": "output",
+            "reading": "natural"
+          },
+          {
+            "start": 511,
+            "end": 529,
+            "text": "Revision terminada",
+            "role": "output",
+            "reading": "natural"
+          }
+        ]
+      },
+      {
+        "block": "block_0000_0004",
+        "path": "/question",
+        "sourceSha256": "edbee15c325b55e1780b13dfce59807d5844998742ea6c2882617b719b15699f",
+        "spans": [
+          {
+            "start": 74,
+            "end": 91,
+            "text": "plazas_libres > 0",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 95,
+            "end": 100,
+            "text": "false",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 176,
+            "end": 194,
+            "text": "Revision terminada",
+            "role": "output",
+            "reading": "natural"
+          }
+        ]
+      },
+      {
+        "block": "block_0000_0004",
+        "path": "/explanation",
+        "sourceSha256": "03743a09f78b505db9068251c8ca0804dc8db5d8f0fa9d7aca45c7c9e26920ba",
+        "spans": [
+          {
+            "start": 24,
+            "end": 41,
+            "text": "plazas_libres > 0",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 45,
+            "end": 50,
+            "text": "false",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 63,
+            "end": 67,
+            "text": "else",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 76,
+            "end": 84,
+            "text": "Completo",
+            "role": "output",
+            "reading": "natural"
+          },
+          {
+            "start": 162,
+            "end": 180,
+            "text": "Revision terminada",
+            "role": "output",
+            "reading": "natural"
+          }
+        ]
+      },
+      {
+        "block": "block_0000_0004",
+        "path": "/options/0",
+        "sourceSha256": "2c7f3327e6e97cfa7d7d5f783a95b0a40c4748e27fa106974c383da7a8158ab0",
+        "spans": [
+          {
+            "start": 19,
+            "end": 23,
+            "text": "else",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 37,
+            "end": 45,
+            "text": "Completo",
+            "role": "output",
+            "reading": "natural"
+          },
+          {
+            "start": 63,
+            "end": 81,
+            "text": "Revision terminada",
+            "role": "output",
+            "reading": "natural"
+          }
+        ]
+      },
+      {
+        "block": "block_0000_0004",
+        "path": "/options/1",
+        "sourceSha256": "9d24c64b58a505570d8b697edc2acfd26ec82e420a140fd666e7d33c8e4941dd",
+        "spans": []
+      },
+      {
+        "block": "block_0000_0004",
+        "path": "/options/2",
+        "sourceSha256": "4b2ffad4182842e5a22aae9af49205e240e9c4f3e0d35b078594dc643135bda3",
+        "spans": []
+      },
+      {
+        "block": "block_0001_0000",
+        "path": "/text",
+        "sourceSha256": "b6856ad242208b61d70a4d763ab9297a3e3954d748e62362a20029f28c9235b9",
+        "spans": []
+      },
+      {
+        "block": "block_0001_0001",
+        "path": "/text",
+        "sourceSha256": "a13a033002e030c95bcdcbbaa900e493e84b08738f6913a3e042c702f5365666",
+        "spans": [
+          {
+            "start": 3,
+            "end": 5,
+            "text": "if",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 25,
+            "end": 29,
+            "text": "else",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 60,
+            "end": 74,
+            "text": "pendientes > 0",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 80,
+            "end": 84,
+            "text": "true",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 203,
+            "end": 208,
+            "text": "false",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 251,
+            "end": 254,
+            "text": "Fin",
+            "role": "output",
+            "reading": "natural"
+          },
+          {
+            "start": 318,
+            "end": 338,
+            "text": "(Köppe et al., 2023)",
+            "role": "citation",
+            "reading": "natural"
+          },
+          {
+            "start": 475,
+            "end": 477,
+            "text": "if",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 843,
+            "end": 845,
+            "text": "if",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 941,
+            "end": 961,
+            "text": "(Köppe et al., 2023)",
+            "role": "citation",
+            "reading": "natural"
+          }
+        ]
+      },
+      {
+        "block": "block_0001_0002",
+        "path": "/question",
+        "sourceSha256": "830c347ba59aec3dc453547ed549e66b01758570e8d7ad16f31c2b8e73cb9181",
+        "spans": [
+          {
+            "start": 36,
+            "end": 40,
+            "text": "cero",
+            "role": "data",
+            "reading": "natural"
+          }
+        ]
+      },
+      {
+        "block": "block_0001_0002",
+        "path": "/explanation",
+        "sourceSha256": "1fb847cdc940ac1a341160e8e74385055416f1d1c7c6a631342980b770ceb40c",
+        "spans": [
+          {
+            "start": 0,
+            "end": 14,
+            "text": "pendientes > 0",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 18,
+            "end": 23,
+            "text": "false",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 138,
+            "end": 144,
+            "text": "Inicio",
+            "role": "output",
+            "reading": "natural"
+          },
+          {
+            "start": 147,
+            "end": 150,
+            "text": "Fin",
+            "role": "output",
+            "reading": "natural"
+          }
+        ]
+      },
+      {
+        "block": "block_0001_0003",
+        "path": "/question",
+        "sourceSha256": "8b25dfc4f9b23e09938fd9573d25133f48c27a2d980019ba55d4cb771172be6e",
+        "spans": [
+          {
+            "start": 26,
+            "end": 31,
+            "text": "nivel",
+            "role": "cpp",
+            "reading": "technical"
+          }
+        ]
+      },
+      {
+        "block": "block_0001_0003",
+        "path": "/explanation",
+        "sourceSha256": "8dc28723b12c10bba38f05a6c38dd3ef85410ab49f8be70c3599ca3c39a34040",
+        "spans": [
+          {
+            "start": 0,
+            "end": 2,
+            "text": "if",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 54,
+            "end": 58,
+            "text": "true",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 65,
+            "end": 70,
+            "text": "nivel",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 110,
+            "end": 115,
+            "text": "Senal",
+            "role": "output",
+            "reading": "natural"
+          }
+        ]
+      },
+      {
+        "block": "block_0002_0000",
+        "path": "/text",
+        "sourceSha256": "6bba38fe2c2085d3f933b66e8bd5f4e948829608838d3cecfd334dafd6f9a37b",
+        "spans": []
+      },
+      {
+        "block": "block_0002_0001",
+        "path": "/text",
+        "sourceSha256": "0188f217e2f6df4ad8598b360ecf6a00cd4c5d4e8122c54b4079dc2a93af7a34",
+        "spans": [
+          {
+            "start": 112,
+            "end": 123,
+            "text": "piezas >= 6",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 129,
+            "end": 133,
+            "text": "true",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 136,
+            "end": 146,
+            "text": "piezas > 6",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 152,
+            "end": 157,
+            "text": "false",
+            "role": "cpp",
+            "reading": "technical"
+          }
+        ]
+      },
+      {
+        "block": "block_0002_0002",
+        "path": "/question",
+        "sourceSha256": "d315aef17b9e119c797851581ee7be5e9292ef8139fad692a40247b63b8201d0",
+        "spans": [
+          {
+            "start": 30,
+            "end": 35,
+            "text": "cinco",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 75,
+            "end": 79,
+            "text": "seis",
+            "role": "data",
+            "reading": "natural"
+          }
+        ]
+      },
+      {
+        "block": "block_0002_0002",
+        "path": "/explanation",
+        "sourceSha256": "356d2500407aa1e4196e2d0703c62f052ebf375c8ed928e6bc18faca8f173f5d",
+        "spans": [
+          {
+            "start": 0,
+            "end": 11,
+            "text": "piezas >= 6",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 15,
+            "end": 20,
+            "text": "false",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 64,
+            "end": 68,
+            "text": "else",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 77,
+            "end": 86,
+            "text": "Pendiente",
+            "role": "output",
+            "reading": "natural"
+          }
+        ]
+      },
+      {
+        "block": "block_0002_0003",
+        "path": "/question",
+        "sourceSha256": "b59505942ddf8f8ce6af4512cb9b9ef0c6a3336925d691dedcf0a5aa3f81dc28",
+        "spans": [
+          {
+            "start": 53,
+            "end": 55,
+            "text": "10",
+            "role": "data",
+            "reading": "natural"
+          }
+        ]
+      },
+      {
+        "block": "block_0002_0003",
+        "path": "/explanation",
+        "sourceSha256": "f1f5f9f3a05f172a9026c07ea7322ba58ac4c8a997dcf31591059b1b7a8728de",
+        "spans": [
+          {
+            "start": 59,
+            "end": 60,
+            "text": "9",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 63,
+            "end": 65,
+            "text": "11",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 81,
+            "end": 83,
+            "text": "10",
+            "role": "data",
+            "reading": "natural"
+          }
+        ]
+      },
+      {
+        "block": "block_0002_0003",
+        "path": "/options/0",
+        "sourceSha256": "284c3880e7ed69f63f5edd86a792502c52a6610c0fcdab57dbaa53400c93ad42",
+        "spans": [
+          {
+            "start": 0,
+            "end": 1,
+            "text": "0",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 3,
+            "end": 4,
+            "text": "5",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 7,
+            "end": 9,
+            "text": "20",
+            "role": "data",
+            "reading": "natural"
+          }
+        ]
+      },
+      {
+        "block": "block_0002_0003",
+        "path": "/options/1",
+        "sourceSha256": "31b26db5e3fad773cc8bb1b91a2f76dbec46dab79cdb3f486559bd9131d73f45",
+        "spans": [
+          {
+            "start": 0,
+            "end": 2,
+            "text": "10",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 4,
+            "end": 6,
+            "text": "10",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 9,
+            "end": 11,
+            "text": "10",
+            "role": "data",
+            "reading": "natural"
+          }
+        ]
+      },
+      {
+        "block": "block_0002_0003",
+        "path": "/options/2",
+        "sourceSha256": "2f9ea1dc45048f801e15b7f5882849c9981aebe339f5810143668c51761c830a",
+        "spans": [
+          {
+            "start": 0,
+            "end": 1,
+            "text": "9",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 3,
+            "end": 5,
+            "text": "10",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 8,
+            "end": 10,
+            "text": "11",
+            "role": "data",
+            "reading": "natural"
+          }
+        ]
+      },
+      {
+        "block": "block_0002_0004",
+        "path": "/text",
+        "sourceSha256": "4d7aa7be928f2e6f764ed6744b1d089e463784958ea715115fa24dbea6f42670",
+        "spans": [
+          {
+            "start": 18,
+            "end": 29,
+            "text": "piezas >= 6",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 32,
+            "end": 42,
+            "text": "piezas > 6",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 47,
+            "end": 52,
+            "text": "false",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 57,
+            "end": 58,
+            "text": "5",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 68,
+            "end": 72,
+            "text": "true",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 77,
+            "end": 78,
+            "text": "8",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 188,
+            "end": 189,
+            "text": "6",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 207,
+            "end": 209,
+            "text": ">=",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 238,
+            "end": 243,
+            "text": "Listo",
+            "role": "output",
+            "reading": "natural"
+          },
+          {
+            "start": 396,
+            "end": 405,
+            "text": "Pendiente",
+            "role": "output",
+            "reading": "natural"
+          },
+          {
+            "start": 440,
+            "end": 445,
+            "text": "Listo",
+            "role": "output",
+            "reading": "natural"
+          }
+        ]
+      },
+      {
+        "block": "block_0003_0000",
+        "path": "/text",
+        "sourceSha256": "dee87daf8fd89083d69d5e1be5618b1d590d9c04eef6c837821383b8cd0e77b0",
+        "spans": []
+      },
+      {
+        "block": "block_0003_0001",
+        "path": "/text",
+        "sourceSha256": "66dcf14bcd59244e544f76b5870c62b23195e335c674199a019b9c33201e0c10",
+        "spans": [
+          {
+            "start": 139,
+            "end": 145,
+            "text": "Alerta",
+            "role": "output",
+            "reading": "natural"
+          },
+          {
+            "start": 234,
+            "end": 240,
+            "text": "Normal",
+            "role": "output",
+            "reading": "natural"
+          },
+          {
+            "start": 255,
+            "end": 267,
+            "text": "marca_alerta",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 326,
+            "end": 332,
+            "text": "Alerta",
+            "role": "output",
+            "reading": "natural"
+          }
+        ]
+      },
+      {
+        "block": "block_0003_0002",
+        "path": "/question",
+        "sourceSha256": "a51480367ae61408d86f4e6b799cdc8c27531787629979a4719d62825d647bf5",
+        "spans": [
+          {
+            "start": 36,
+            "end": 37,
+            "text": "4",
+            "role": "data",
+            "reading": "natural"
+          }
+        ]
+      },
+      {
+        "block": "block_0003_0002",
+        "path": "/explanation",
+        "sourceSha256": "8d1340334294a1e394d1629a2b22c6bd967b2b64600184d704cbcf741c4a587c",
+        "spans": [
+          {
+            "start": 70,
+            "end": 82,
+            "text": "marca_alerta",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 93,
+            "end": 99,
+            "text": "Alerta",
+            "role": "output",
+            "reading": "natural"
+          },
+          {
+            "start": 144,
+            "end": 152,
+            "text": "Marca: 1",
+            "role": "output",
+            "reading": "natural"
+          }
+        ]
+      },
+      {
+        "block": "block_0003_0002",
+        "path": "/options/0",
+        "sourceSha256": "2de5fdcd08c7f697d2de8243924b70a5bc02e2f6dc295cb1f9ff976d4fc80d9f",
+        "spans": [
+          {
+            "start": 0,
+            "end": 15,
+            "text": "Normal\nMarca: 0",
+            "role": "output",
+            "reading": "natural"
+          }
+        ]
+      },
+      {
+        "block": "block_0003_0002",
+        "path": "/options/1",
+        "sourceSha256": "6161b72a279b66108598beb9a052205c7f518f8a595d8a02467889f2f19e5b3a",
+        "spans": [
+          {
+            "start": 0,
+            "end": 22,
+            "text": "Alerta\nNormal\nMarca: 1",
+            "role": "output",
+            "reading": "natural"
+          }
+        ]
+      },
+      {
+        "block": "block_0003_0002",
+        "path": "/options/2",
+        "sourceSha256": "2425356d8bb9ee1cd873a6e240fffe8ea6a33372d3746d6f569691b87f72feec",
+        "spans": [
+          {
+            "start": 0,
+            "end": 15,
+            "text": "Alerta\nMarca: 1",
+            "role": "output",
+            "reading": "natural"
+          }
+        ]
+      },
+      {
+        "block": "block_0003_0003",
+        "path": "/text",
+        "sourceSha256": "814332da9d275b46c2201655a57396ffe63975c7a9705f26389ed29b7fa26716",
+        "spans": []
+      },
+      {
+        "block": "block_0005_0000",
+        "path": "/text",
+        "sourceSha256": "5a02531f0d25c7f6412d20095ca16bfc01b868fafeb590a0395a4e5d2427d47b",
+        "spans": []
+      },
+      {
+        "block": "block_0005_0001",
+        "path": "/text",
+        "sourceSha256": "7e31e71ac998a4ee1dfa1644b193180cd340b56fb08160687dcc36e94e64adc7",
+        "spans": [
+          {
+            "start": 286,
+            "end": 288,
+            "text": "if",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 291,
+            "end": 295,
+            "text": "else",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 429,
+            "end": 435,
+            "text": "Alerta",
+            "role": "output",
+            "reading": "natural"
+          },
+          {
+            "start": 466,
+            "end": 472,
+            "text": "Normal",
+            "role": "output",
+            "reading": "natural"
+          },
+          {
+            "start": 553,
+            "end": 557,
+            "text": "else",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 577,
+            "end": 586,
+            "text": "std::cout",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 677,
+            "end": 683,
+            "text": "Alerta",
+            "role": "output",
+            "reading": "natural"
+          },
+          {
+            "start": 696,
+            "end": 702,
+            "text": "Normal",
+            "role": "output",
+            "reading": "natural"
+          },
+          {
+            "start": 713,
+            "end": 716,
+            "text": "3 4",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 734,
+            "end": 740,
+            "text": "Normal",
+            "role": "output",
+            "reading": "natural"
+          },
+          {
+            "start": 741,
+            "end": 749,
+            "text": "Marca: 0",
+            "role": "output",
+            "reading": "natural"
+          },
+          {
+            "start": 785,
+            "end": 788,
+            "text": "3 4",
+            "role": "data",
+            "reading": "natural"
+          }
+        ]
+      },
+      {
+        "block": "block_0003_0004",
+        "path": "/text",
+        "sourceSha256": "8ea4a8842719d92105881a88741e8b3e97b3dfbf407e109dff8ecf95222c5b3f",
+        "spans": []
+      },
+      {
+        "block": "block_0003_0005",
+        "path": "/text",
+        "sourceSha256": "5d1e23ff5e900c64371f51c03c4e4646f9e545a74da7f4e7318ea2467ff044ca",
+        "spans": [
+          {
+            "start": 16,
+            "end": 21,
+            "text": "nivel",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 24,
+            "end": 30,
+            "text": "limite",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 66,
+            "end": 67,
+            "text": ">",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 190,
+            "end": 196,
+            "text": "Normal",
+            "role": "output",
+            "reading": "natural"
+          },
+          {
+            "start": 197,
+            "end": 205,
+            "text": "Marca: 0",
+            "role": "output",
+            "reading": "natural"
+          },
+          {
+            "start": 206,
+            "end": 214,
+            "text": "Nivel: 4",
+            "role": "output",
+            "reading": "natural"
+          },
+          {
+            "start": 414,
+            "end": 420,
+            "text": "Alerta",
+            "role": "output",
+            "reading": "natural"
+          },
+          {
+            "start": 421,
+            "end": 429,
+            "text": "Marca: 1",
+            "role": "output",
+            "reading": "natural"
+          },
+          {
+            "start": 430,
+            "end": 438,
+            "text": "Nivel: 4",
+            "role": "output",
+            "reading": "natural"
+          }
+        ]
+      },
+      {
+        "block": "block_0004_0000",
+        "path": "/text",
+        "sourceSha256": "c9e4c6ae3d6f85ffcbbca950095d10fb7782663d258dd53f889eff9c5fbd4db3",
+        "spans": []
+      },
+      {
+        "block": "block_0004_0001",
+        "path": "/question",
+        "sourceSha256": "42383f92d0ffb503bb26c7f730f99c56e564798bfcd7e10227a1915108bf8cb2",
+        "spans": [
+          {
+            "start": 32,
+            "end": 40,
+            "text": "cantidad",
+            "role": "cpp",
+            "reading": "technical"
+          }
+        ]
+      },
+      {
+        "block": "block_0004_0001",
+        "path": "/explanation",
+        "sourceSha256": "5a81f7e9c9ac4ddee58b058fed4cb3fc052f4fab29dcb1739b88af0a7dab07e1",
+        "spans": [
+          {
+            "start": 8,
+            "end": 16,
+            "text": "cantidad",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 50,
+            "end": 63,
+            "text": "cantidad <= 4",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 69,
+            "end": 73,
+            "text": "true",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 81,
+            "end": 89,
+            "text": "cantidad",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 122,
+            "end": 131,
+            "text": "Permitido",
+            "role": "output",
+            "reading": "natural"
+          }
+        ]
+      },
+      {
+        "block": "block_0004_0002",
+        "path": "/question",
+        "sourceSha256": "4f8d0491cd5e7df68b9431b03695d420414c26b5fcf0924fc1a5613f919cb43e",
+        "spans": [
+          {
+            "start": 88,
+            "end": 97,
+            "text": "Permitido",
+            "role": "output",
+            "reading": "natural"
+          },
+          {
+            "start": 145,
+            "end": 149,
+            "text": "<= 4",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 166,
+            "end": 169,
+            "text": "< 4",
+            "role": "cpp",
+            "reading": "technical"
+          }
+        ]
+      },
+      {
+        "block": "block_0004_0002",
+        "path": "/explanation",
+        "sourceSha256": "9e628d3063b88f8c8d66a44577f789ad16454a434f2a8584b90c1c3bdf9ff5d1",
+        "spans": [
+          {
+            "start": 12,
+            "end": 14,
+            "text": "<=",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 18,
+            "end": 22,
+            "text": "true",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 25,
+            "end": 26,
+            "text": "<",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 30,
+            "end": 35,
+            "text": "false",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 56,
+            "end": 60,
+            "text": "true",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 82,
+            "end": 87,
+            "text": "false",
+            "role": "cpp",
+            "reading": "technical"
+          }
+        ]
+      },
+      {
+        "block": "block_0004_0002",
+        "path": "/options/0",
+        "sourceSha256": "99301107f66fbc1e0020fcf85c1c9054efee5ae94b99fa3d24265e81bd55e8cd",
+        "spans": [
+          {
+            "start": 9,
+            "end": 10,
+            "text": "5",
+            "role": "data",
+            "reading": "natural"
+          }
+        ]
+      },
+      {
+        "block": "block_0004_0002",
+        "path": "/options/1",
+        "sourceSha256": "4e7080742a88408457613d61bf652acc637e55f66623baf7ef5ae22499a2170c",
+        "spans": [
+          {
+            "start": 9,
+            "end": 10,
+            "text": "4",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 30,
+            "end": 39,
+            "text": "Permitido",
+            "role": "output",
+            "reading": "natural"
+          }
+        ]
+      },
+      {
+        "block": "block_0004_0002",
+        "path": "/options/2",
+        "sourceSha256": "301516a023b42b31cea0f9bcbae37a9f492ed765b59640fd22218fa44325fb4e",
+        "spans": [
+          {
+            "start": 9,
+            "end": 10,
+            "text": "3",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 30,
+            "end": 39,
+            "text": "Permitido",
+            "role": "output",
+            "reading": "natural"
+          }
+        ]
+      },
+      {
+        "block": "block_0003_0007",
+        "path": "/text",
+        "sourceSha256": "1f7c2b18bd5d7a9bc7f13e43699837c4ce463151129c43e094d2e82e453889b3",
+        "spans": [
+          {
+            "start": 110,
+            "end": 116,
+            "text": "Alerta",
+            "role": "output",
+            "reading": "natural"
+          },
+          {
+            "start": 129,
+            "end": 135,
+            "text": "Normal",
+            "role": "output",
+            "reading": "natural"
+          },
+          {
+            "start": 194,
+            "end": 200,
+            "text": "Alerta",
+            "role": "output",
+            "reading": "natural"
+          },
+          {
+            "start": 212,
+            "end": 220,
+            "text": "Marca: 0",
+            "role": "output",
+            "reading": "natural"
+          },
+          {
+            "start": 285,
+            "end": 297,
+            "text": "marca_alerta",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 325,
+            "end": 334,
+            "text": "std::cout",
+            "role": "cpp",
+            "reading": "technical"
+          }
+        ]
+      },
+      {
+        "block": "block_0006_0000",
+        "path": "/text",
+        "sourceSha256": "e03f19f772236ec2571907bf955738e88b1b33effecac1888a966b7d65b18eb9",
+        "spans": []
+      },
+      {
+        "block": "block_0006_0001",
+        "path": "/text",
+        "sourceSha256": "a8242fa8c8da211104d27210e28546f429365fd5ce1def656ee7cff631d0496d",
+        "spans": [
+          {
+            "start": 144,
+            "end": 154,
+            "text": "grupos > 0",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 178,
+            "end": 182,
+            "text": "true",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 206,
+            "end": 208,
+            "text": "if",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 221,
+            "end": 236,
+            "text": "fichas / grupos",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 259,
+            "end": 264,
+            "text": "false",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 287,
+            "end": 291,
+            "text": "else",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 316,
+            "end": 322,
+            "text": "grupos",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 352,
+            "end": 357,
+            "text": "false",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 481,
+            "end": 501,
+            "text": "(Köppe et al., 2023)",
+            "role": "citation",
+            "reading": "natural"
+          }
+        ]
+      },
+      {
+        "block": "block_0006_0002",
+        "path": "/question",
+        "sourceSha256": "fcb8cd0dfbe420b2771f55eecaad3676ca8d385112b2e16f0a9233d4aceb620d",
+        "spans": [
+          {
+            "start": 18,
+            "end": 27,
+            "text": "dieciocho",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 37,
+            "end": 41,
+            "text": "cero",
+            "role": "data",
+            "reading": "natural"
+          }
+        ]
+      },
+      {
+        "block": "block_0006_0002",
+        "path": "/explanation",
+        "sourceSha256": "4024c3e61833ab20d5bdf5bacad66b98fb3da8731d748f101821c3300a852d17",
+        "spans": [
+          {
+            "start": 0,
+            "end": 10,
+            "text": "grupos > 0",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 14,
+            "end": 19,
+            "text": "false",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 76,
+            "end": 80,
+            "text": "else",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 89,
+            "end": 102,
+            "text": "Dato invalido",
+            "role": "output",
+            "reading": "natural"
+          }
+        ]
+      },
+      {
+        "block": "block_0006_0003",
+        "path": "/question",
+        "sourceSha256": "25ec1149c0b0a8b07f3b14643d4307449ef60de9c7fa6c7812f0f0ffaa0b879f",
+        "spans": [
+          {
+            "start": 18,
+            "end": 33,
+            "text": "fichas / grupos",
+            "role": "cpp",
+            "reading": "technical"
+          }
+        ]
+      },
+      {
+        "block": "block_0006_0003",
+        "path": "/explanation",
+        "sourceSha256": "65729c57e4cf7cecc90551dde97180a15603f387759d2f1e659145b0cd29bf8c",
+        "spans": [
+          {
+            "start": 4,
+            "end": 19,
+            "text": "fichas / grupos",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 41,
+            "end": 43,
+            "text": "if",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 58,
+            "end": 68,
+            "text": "grupos > 0",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 78,
+            "end": 82,
+            "text": "true",
+            "role": "cpp",
+            "reading": "technical"
+          }
+        ]
+      },
+      {
+        "block": "block_0006_0003",
+        "path": "/options/0",
+        "sourceSha256": "19a34e7a10750f07fead8b37d5119fd0988d6a88c75d8763a397f7ca40dda13d",
+        "spans": [
+          {
+            "start": 42,
+            "end": 52,
+            "text": "grupos > 0",
+            "role": "cpp",
+            "reading": "technical"
+          }
+        ]
+      },
+      {
+        "block": "block_0006_0003",
+        "path": "/options/1",
+        "sourceSha256": "47497c4702b6703509443eb3b3ab9dfd3ab04ce786f98773a9269374f2ae7e01",
+        "spans": []
+      },
+      {
+        "block": "block_0006_0003",
+        "path": "/options/2",
+        "sourceSha256": "1cd862aed57adb94535c4cfe8170659fd06a6f6a704968b751cd1c9b5fe688ba",
+        "spans": [
+          {
+            "start": 10,
+            "end": 12,
+            "text": "if",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 21,
+            "end": 27,
+            "text": "grupos",
+            "role": "cpp",
+            "reading": "technical"
+          }
+        ]
+      },
+      {
+        "block": "block_0006_0004",
+        "path": "/text",
+        "sourceSha256": "d6f9f7f8830e4519d8b89cea0b77dac83c0c568bdf7b2aa6fc7fba301cab5360",
+        "spans": [
+          {
+            "start": 17,
+            "end": 27,
+            "text": "grupos > 0",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 31,
+            "end": 35,
+            "text": "true",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 105,
+            "end": 106,
+            "text": "6",
+            "role": "output",
+            "reading": "natural"
+          }
+        ]
+      },
+      {
+        "block": "block_0003_0008",
+        "path": "/text",
+        "sourceSha256": "48794f8dcd387155c24b0dfd9d88291fa4bfb3f74c4ad8d61ffe6d685e5d2b95",
+        "spans": []
+      },
+      {
+        "block": "block_0003_0009",
+        "path": "/text",
+        "sourceSha256": "f214eeaa0d6e90ebddd9c454fa3240c2c4c9cc213bc2afa815022aa23db630f4",
+        "spans": [
+          {
+            "start": 72,
+            "end": 76,
+            "text": "true",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 110,
+            "end": 122,
+            "text": "marca_alerta",
+            "role": "cpp",
+            "reading": "technical"
+          }
+        ]
+      },
+      {
+        "block": "block_0003_0011",
+        "path": "/text",
+        "sourceSha256": "23e753d19343b2cbf571556b4b5224c8ba92b8f9b246a85e7b07c3076c5ab006",
+        "spans": [
+          {
+            "start": 99,
+            "end": 114,
+            "text": "nivel >= limite",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 118,
+            "end": 123,
+            "text": "false",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 138,
+            "end": 142,
+            "text": "else",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 151,
+            "end": 157,
+            "text": "Normal",
+            "role": "output",
+            "reading": "natural"
+          },
+          {
+            "start": 171,
+            "end": 183,
+            "text": "marca_alerta",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 257,
+            "end": 265,
+            "text": "Marca: 0",
+            "role": "output",
+            "reading": "natural"
+          },
+          {
+            "start": 287,
+            "end": 295,
+            "text": "Nivel: 3",
+            "role": "output",
+            "reading": "natural"
+          },
+          {
+            "start": 388,
+            "end": 394,
+            "text": "Alerta",
+            "role": "output",
+            "reading": "natural"
+          }
+        ]
+      },
+      {
+        "block": "block_0005_0004",
+        "path": "/text",
+        "sourceSha256": "b05563584c25717b406b8e0db734b2de9624c09fe3a05332208d80e546d239e4",
+        "spans": [
+          {
+            "start": 20,
+            "end": 23,
+            "text": "3 4",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 26,
+            "end": 29,
+            "text": "3 3",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 181,
+            "end": 187,
+            "text": "Normal",
+            "role": "output",
+            "reading": "natural"
+          },
+          {
+            "start": 226,
+            "end": 232,
+            "text": "Alerta",
+            "role": "output",
+            "reading": "natural"
+          }
+        ]
+      },
+      {
+        "block": "block_0005_0005",
+        "path": "/text",
+        "sourceSha256": "009f351a694ef55341a534d1f3a0a6959197cbae45fc9a85d3c2e40c7bcb1c6a",
+        "spans": []
+      },
+      {
+        "block": "block_0005_0003",
+        "path": "/text",
+        "sourceSha256": "ba5641bddb2e0d55f22789a82cbba281cd675a2903b4bd832ee96a8add4c9173",
+        "spans": [
+          {
+            "start": 498,
+            "end": 501,
+            "text": "4 4",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 519,
+            "end": 525,
+            "text": "Alerta",
+            "role": "output",
+            "reading": "natural"
+          },
+          {
+            "start": 526,
+            "end": 534,
+            "text": "Marca: 1",
+            "role": "output",
+            "reading": "natural"
+          },
+          {
+            "start": 687,
+            "end": 690,
+            "text": "5 4",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 708,
+            "end": 714,
+            "text": "Alerta",
+            "role": "output",
+            "reading": "natural"
+          },
+          {
+            "start": 715,
+            "end": 723,
+            "text": "Marca: 1",
+            "role": "output",
+            "reading": "natural"
+          },
+          {
+            "start": 780,
+            "end": 783,
+            "text": "3 4",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 883,
+            "end": 886,
+            "text": "3 3",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 1046,
+            "end": 1049,
+            "text": "3 3",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 1067,
+            "end": 1073,
+            "text": "Alerta",
+            "role": "output",
+            "reading": "natural"
+          },
+          {
+            "start": 1074,
+            "end": 1082,
+            "text": "Marca: 1",
+            "role": "output",
+            "reading": "natural"
+          }
+        ]
+      }
+    ],
+    "rootFields": [
+      {
+        "path": "/title",
+        "sourceSha256": "137a96e7fbf60af92047dfdb154b7f58c960b58ca026c46237c4d7e29055e307",
+        "spans": []
+      }
+    ]
+  },
+  "compilerLocalIntChecks": [
+    {
+      "activity": "block_0003_0006",
+      "probes": [
+        {
+          "variable": "nivel",
+          "replacement": 3,
+          "outputs": [
+            "Normal\nMarca: 0\nNivel: 3",
+            "Normal\nMarca: 0\nNivel: 3\n"
+          ]
+        },
+        {
+          "variable": "limite",
+          "replacement": 5,
+          "outputs": [
+            "Normal\nMarca: 0\nNivel: 4",
+            "Normal\nMarca: 0\nNivel: 4\n"
+          ]
+        },
+        {
+          "variable": "nivel",
+          "replacement": 5,
+          "outputs": [
+            "Alerta\nMarca: 1\nNivel: 5",
+            "Alerta\nMarca: 1\nNivel: 5\n"
+          ]
+        }
+      ]
+    }
+  ],
+  "activityAfter": [
+    {
+      "activity": "block_0005_0002",
+      "requires": [
+        "block_0003_0006"
+      ]
+    }
+  ],
+  "referenceAfter": [
+    {
+      "activity": "block_0003_0006",
+      "blocks": [
+        "block_0003_0008",
+        "block_0003_0009",
+        "block_0003_0010",
+        "block_0003_0011"
+      ]
+    },
+    {
+      "activity": "block_0005_0002",
+      "blocks": [
+        "block_0005_0005",
+        "block_0005_0006",
+        "block_0005_0003",
+        "block_0005_0004"
+      ]
+    }
+  ],
+  "courseEdition": {
+    "version": 1,
+    "courseId": "cpp_fundamentals",
+    "locale": "es",
+    "generation": 1,
+    "id": "cpp_desde_cero_2026"
+  },
+  "stateLayout": {
+    "version": 2,
+    "locale": "es",
+    "origin": [
+      {
+        "id": "page_0000",
+        "blocks": [
+          {
+            "id": "block_0000_0000",
+            "sha256": "a30d0555835b703d0dd5a90aabb0134813afd11904b5364f69f03b01695f6d7a"
+          },
+          {
+            "id": "block_0000_0001",
+            "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+          },
+          {
+            "id": "block_0000_0002",
+            "sha256": "1f2c0a2de18a16f93fc51bf6cf051d8ee57397e042aa41b6c0fd3d4ef13e1b36"
+          },
+          {
+            "id": "block_0000_0003",
+            "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+          },
+          {
+            "id": "block_0000_0004",
+            "sha256": "61a828c642fb477d8956828445e36b411c081d7560fb368f6b2d1d88f27d701c"
+          }
+        ]
+      },
+      {
+        "id": "page_0001",
+        "blocks": [
+          {
+            "id": "block_0001_0000",
+            "sha256": "a30d0555835b703d0dd5a90aabb0134813afd11904b5364f69f03b01695f6d7a"
+          },
+          {
+            "id": "block_0001_0001",
+            "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+          },
+          {
+            "id": "block_0001_0002",
+            "sha256": "90a0172eaffa068243e04f30f82f3730c2fda6c6e85b182d9c6770f3422deba1"
+          },
+          {
+            "id": "block_0001_0003",
+            "sha256": "3e0db95fde1e7a8cd24f3acc2f64b98ac5c6ee53003e56f9b04607b0a15bdb53"
+          }
+        ]
+      },
+      {
+        "id": "page_0002",
+        "blocks": [
+          {
+            "id": "block_0002_0000",
+            "sha256": "a30d0555835b703d0dd5a90aabb0134813afd11904b5364f69f03b01695f6d7a"
+          },
+          {
+            "id": "block_0002_0001",
+            "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+          },
+          {
+            "id": "block_0002_0002",
+            "sha256": "7f5522ef6dc8e2287e8c4cb0c9846bb2e5095b73df24f51812df7021ca48b37b"
+          },
+          {
+            "id": "block_0002_0003",
+            "sha256": "e2038ddc0b08ec93f55a5cd8ade04381777a4a4ef43e2ed7696357b752cc7b6e"
+          },
+          {
+            "id": "block_0002_0004",
+            "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+          }
+        ]
+      },
+      {
+        "id": "page_0003",
+        "blocks": [
+          {
+            "id": "block_0003_0000",
+            "sha256": "a30d0555835b703d0dd5a90aabb0134813afd11904b5364f69f03b01695f6d7a"
+          },
+          {
+            "id": "block_0003_0001",
+            "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+          },
+          {
+            "id": "block_0003_0002",
+            "sha256": "0be789e030cb25b91f4579269c64d6010e4e09d601856cc07616aec05a9a2fed"
+          },
+          {
+            "id": "block_0003_0003",
+            "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+          },
+          {
+            "id": "block_0003_0004",
+            "sha256": "a30d0555835b703d0dd5a90aabb0134813afd11904b5364f69f03b01695f6d7a"
+          },
+          {
+            "id": "block_0003_0005",
+            "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+          },
+          {
+            "id": "block_0003_0006",
+            "sha256": "2044cef5b883a5c1783b1d1d0cc04e1229089b63c48defdda060a326cb07dae8"
+          },
+          {
+            "id": "block_0003_0007",
+            "sha256": "5a25f39deebfacf70f31e9ed31d9496f83df3471d72bfcca57fec1493aee69a1"
+          },
+          {
+            "id": "block_0003_0008",
+            "sha256": "a30d0555835b703d0dd5a90aabb0134813afd11904b5364f69f03b01695f6d7a"
+          },
+          {
+            "id": "block_0003_0009",
+            "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+          },
+          {
+            "id": "block_0003_0010",
+            "sha256": "fe95ed952a90a91f7a075e3a883af605c70dcaa940e0207527d0096813e62b6e"
+          },
+          {
+            "id": "block_0003_0011",
+            "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+          }
+        ]
+      },
+      {
+        "id": "page_0004",
+        "blocks": [
+          {
+            "id": "block_0004_0000",
+            "sha256": "a30d0555835b703d0dd5a90aabb0134813afd11904b5364f69f03b01695f6d7a"
+          },
+          {
+            "id": "block_0004_0001",
+            "sha256": "1935a425a00d1582b2b1f21b072779067a937029fca38ab2f860a9be67efe92e"
+          },
+          {
+            "id": "block_0004_0002",
+            "sha256": "4814376713bdb457acd6e5ad651f9210249c0aecfdf1eaac09c6777c904ce560"
+          }
+        ]
+      },
+      {
+        "id": "page_0005",
+        "blocks": [
+          {
+            "id": "block_0005_0000",
+            "sha256": "a30d0555835b703d0dd5a90aabb0134813afd11904b5364f69f03b01695f6d7a"
+          },
+          {
+            "id": "block_0005_0001",
+            "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+          },
+          {
+            "id": "block_0005_0002",
+            "sha256": "a1cd45527851842aef32e3702fdf83562378c8131bb7b241ef9388a6b2ee9c18"
+          },
+          {
+            "id": "block_0005_0003",
+            "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+          },
+          {
+            "id": "block_0005_0004",
+            "sha256": "5a25f39deebfacf70f31e9ed31d9496f83df3471d72bfcca57fec1493aee69a1"
+          },
+          {
+            "id": "block_0005_0005",
+            "sha256": "a30d0555835b703d0dd5a90aabb0134813afd11904b5364f69f03b01695f6d7a"
+          },
+          {
+            "id": "block_0005_0006",
+            "sha256": "a78de1492e49852a62599c1ef5502317e764d72d149303dc4138409e276f7c53"
+          }
+        ]
+      },
+      {
+        "id": "page_0006",
+        "blocks": [
+          {
+            "id": "block_0006_0000",
+            "sha256": "a30d0555835b703d0dd5a90aabb0134813afd11904b5364f69f03b01695f6d7a"
+          },
+          {
+            "id": "block_0006_0001",
+            "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+          },
+          {
+            "id": "block_0006_0002",
+            "sha256": "ae4989ac30b46a4eb1d12b39a05d05618bf40210bad4065122df036008864087"
+          },
+          {
+            "id": "block_0006_0003",
+            "sha256": "a2bfec324002197a5aa7d68140684d27524a8177a40822428c096e1196babf9a"
+          },
+          {
+            "id": "block_0006_0004",
+            "sha256": "5a25f39deebfacf70f31e9ed31d9496f83df3471d72bfcca57fec1493aee69a1"
+          }
+        ]
+      }
+    ],
+    "current": [
+      {
+        "id": "page_0000",
+        "blocks": [
+          "block_0000_0000",
+          "block_0000_0001",
+          "block_0000_0002",
+          "block_0000_0003",
+          "block_0000_0004"
+        ]
+      },
+      {
+        "id": "page_0001",
+        "blocks": [
+          "block_0001_0000",
+          "block_0001_0001",
+          "block_0001_0002",
+          "block_0001_0003"
+        ]
+      },
+      {
+        "id": "page_0002",
+        "blocks": [
+          "block_0002_0000",
+          "block_0002_0001",
+          "block_0002_0002",
+          "block_0002_0003",
+          "block_0002_0004"
+        ]
+      },
+      {
+        "id": "page_0003",
+        "blocks": [
+          "block_0003_0000",
+          "block_0003_0001",
+          "block_0003_0002",
+          "block_0003_0003",
+          "block_0003_0004",
+          "block_0003_0005",
+          "block_0003_0006",
+          "block_0003_0007",
+          "block_0003_0008",
+          "block_0003_0009",
+          "block_0003_0010",
+          "block_0003_0011"
+        ]
+      },
+      {
+        "id": "page_0004",
+        "blocks": [
+          "block_0004_0000",
+          "block_0004_0001",
+          "block_0004_0002"
+        ]
+      },
+      {
+        "id": "page_0005",
+        "blocks": [
+          "block_0005_0000",
+          "block_0005_0001",
+          "block_0005_0002",
+          "block_0005_0003",
+          "block_0005_0004",
+          "block_0005_0005",
+          "block_0005_0006"
+        ]
+      },
+      {
+        "id": "page_0006",
+        "blocks": [
+          "block_0006_0000",
+          "block_0006_0001",
+          "block_0006_0002",
+          "block_0006_0003",
+          "block_0006_0004"
+        ]
+      }
+    ],
+    "family": {
+      "es": {
+        "sha256": "68d0bbb6d9f3f0d1f8d97c7dd8f5784afa9387d3c3abb3d5ed48376b9bc587a1",
+        "origin": [
+          {
+            "id": "page_0000",
+            "blocks": [
+              {
+                "id": "block_0000_0000",
+                "sha256": "a30d0555835b703d0dd5a90aabb0134813afd11904b5364f69f03b01695f6d7a"
+              },
+              {
+                "id": "block_0000_0001",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              },
+              {
+                "id": "block_0000_0002",
+                "sha256": "1f2c0a2de18a16f93fc51bf6cf051d8ee57397e042aa41b6c0fd3d4ef13e1b36"
+              },
+              {
+                "id": "block_0000_0003",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              },
+              {
+                "id": "block_0000_0004",
+                "sha256": "61a828c642fb477d8956828445e36b411c081d7560fb368f6b2d1d88f27d701c"
+              }
+            ]
+          },
+          {
+            "id": "page_0001",
+            "blocks": [
+              {
+                "id": "block_0001_0000",
+                "sha256": "a30d0555835b703d0dd5a90aabb0134813afd11904b5364f69f03b01695f6d7a"
+              },
+              {
+                "id": "block_0001_0001",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              },
+              {
+                "id": "block_0001_0002",
+                "sha256": "90a0172eaffa068243e04f30f82f3730c2fda6c6e85b182d9c6770f3422deba1"
+              },
+              {
+                "id": "block_0001_0003",
+                "sha256": "3e0db95fde1e7a8cd24f3acc2f64b98ac5c6ee53003e56f9b04607b0a15bdb53"
+              }
+            ]
+          },
+          {
+            "id": "page_0002",
+            "blocks": [
+              {
+                "id": "block_0002_0000",
+                "sha256": "a30d0555835b703d0dd5a90aabb0134813afd11904b5364f69f03b01695f6d7a"
+              },
+              {
+                "id": "block_0002_0001",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              },
+              {
+                "id": "block_0002_0002",
+                "sha256": "7f5522ef6dc8e2287e8c4cb0c9846bb2e5095b73df24f51812df7021ca48b37b"
+              },
+              {
+                "id": "block_0002_0003",
+                "sha256": "e2038ddc0b08ec93f55a5cd8ade04381777a4a4ef43e2ed7696357b752cc7b6e"
+              },
+              {
+                "id": "block_0002_0004",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              }
+            ]
+          },
+          {
+            "id": "page_0003",
+            "blocks": [
+              {
+                "id": "block_0003_0000",
+                "sha256": "a30d0555835b703d0dd5a90aabb0134813afd11904b5364f69f03b01695f6d7a"
+              },
+              {
+                "id": "block_0003_0001",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              },
+              {
+                "id": "block_0003_0002",
+                "sha256": "0be789e030cb25b91f4579269c64d6010e4e09d601856cc07616aec05a9a2fed"
+              },
+              {
+                "id": "block_0003_0003",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              },
+              {
+                "id": "block_0003_0004",
+                "sha256": "a30d0555835b703d0dd5a90aabb0134813afd11904b5364f69f03b01695f6d7a"
+              },
+              {
+                "id": "block_0003_0005",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              },
+              {
+                "id": "block_0003_0006",
+                "sha256": "2044cef5b883a5c1783b1d1d0cc04e1229089b63c48defdda060a326cb07dae8"
+              },
+              {
+                "id": "block_0003_0007",
+                "sha256": "5a25f39deebfacf70f31e9ed31d9496f83df3471d72bfcca57fec1493aee69a1"
+              },
+              {
+                "id": "block_0003_0008",
+                "sha256": "a30d0555835b703d0dd5a90aabb0134813afd11904b5364f69f03b01695f6d7a"
+              },
+              {
+                "id": "block_0003_0009",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              },
+              {
+                "id": "block_0003_0010",
+                "sha256": "fe95ed952a90a91f7a075e3a883af605c70dcaa940e0207527d0096813e62b6e"
+              },
+              {
+                "id": "block_0003_0011",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              }
+            ]
+          },
+          {
+            "id": "page_0004",
+            "blocks": [
+              {
+                "id": "block_0004_0000",
+                "sha256": "a30d0555835b703d0dd5a90aabb0134813afd11904b5364f69f03b01695f6d7a"
+              },
+              {
+                "id": "block_0004_0001",
+                "sha256": "1935a425a00d1582b2b1f21b072779067a937029fca38ab2f860a9be67efe92e"
+              },
+              {
+                "id": "block_0004_0002",
+                "sha256": "4814376713bdb457acd6e5ad651f9210249c0aecfdf1eaac09c6777c904ce560"
+              }
+            ]
+          },
+          {
+            "id": "page_0005",
+            "blocks": [
+              {
+                "id": "block_0005_0000",
+                "sha256": "a30d0555835b703d0dd5a90aabb0134813afd11904b5364f69f03b01695f6d7a"
+              },
+              {
+                "id": "block_0005_0001",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              },
+              {
+                "id": "block_0005_0002",
+                "sha256": "a1cd45527851842aef32e3702fdf83562378c8131bb7b241ef9388a6b2ee9c18"
+              },
+              {
+                "id": "block_0005_0003",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              },
+              {
+                "id": "block_0005_0004",
+                "sha256": "5a25f39deebfacf70f31e9ed31d9496f83df3471d72bfcca57fec1493aee69a1"
+              },
+              {
+                "id": "block_0005_0005",
+                "sha256": "a30d0555835b703d0dd5a90aabb0134813afd11904b5364f69f03b01695f6d7a"
+              },
+              {
+                "id": "block_0005_0006",
+                "sha256": "a78de1492e49852a62599c1ef5502317e764d72d149303dc4138409e276f7c53"
+              }
+            ]
+          },
+          {
+            "id": "page_0006",
+            "blocks": [
+              {
+                "id": "block_0006_0000",
+                "sha256": "a30d0555835b703d0dd5a90aabb0134813afd11904b5364f69f03b01695f6d7a"
+              },
+              {
+                "id": "block_0006_0001",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              },
+              {
+                "id": "block_0006_0002",
+                "sha256": "ae4989ac30b46a4eb1d12b39a05d05618bf40210bad4065122df036008864087"
+              },
+              {
+                "id": "block_0006_0003",
+                "sha256": "a2bfec324002197a5aa7d68140684d27524a8177a40822428c096e1196babf9a"
+              },
+              {
+                "id": "block_0006_0004",
+                "sha256": "5a25f39deebfacf70f31e9ed31d9496f83df3471d72bfcca57fec1493aee69a1"
+              }
+            ]
+          }
+        ]
+      }
+    },
+    "additions": [],
+    "editorial": []
+  }
+}

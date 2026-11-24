@@ -8,6 +8,8 @@ Avance real: Programación 1 ya contiene U12L27–L36 y referencias L37; su úni
 
 Punto de continuación: Programación 1 U4L3, «Acumuladores, contadores y trazas». Se revisaron U1L1–L5, U2L1–L10, U3L1–L8 y U4L1–L2. En U4L2 el estudiante incluye el último puesto en un for, ordena el while equivalente y construye un recorrido descendente. Comprobaciones locales en Windows en C:\LGAED-QA\work-p1-u4l2-20261122. El usuario revisa presentación y audio durante el estudio.
 
+La edición española activa de Programación 1 muestra las 25 lecciones revisadas hasta U4L2. Revisa la siguiente lección en orden y añádela al índice de esta edición cuando esté lista, para que el estudiante pueda probarla y dar sus observaciones. El resto del curso está guardado en los archivos de la edición anterior. La revisión de redacción comienza en U1. Las convenciones nuevas de C++ se enseñan desde U4L1 y se aplican en las lecciones posteriores a medida que se incorporan.
+
 La simulación arrayRunsV1 está integrada en Work/main; guía de autoría en docs/SIMULATIONS.md. Incorporarla al explicar agrupaciones y frecuencias, sin presentarla como ejecución del código C++ del alumno. Todavía no representa etiquetas vacías: el caso curricular se conserva y la capacidad está registrada en SIMULACION_ARRAY_RUNS_ETIQUETAS_VACIAS. El nuevo zoom de código no exige modificar las lecciones.
 
 La prioridad anterior de dos pasadas queda sustituida por la revisión integral de Programación 1. No continuar cursos posteriores mientras se rehace este curso. Conservar la planificación de Ruta Amazon, los libros, proyectos y contenidos posteriores; su existencia no acredita el dominio del estudiante.

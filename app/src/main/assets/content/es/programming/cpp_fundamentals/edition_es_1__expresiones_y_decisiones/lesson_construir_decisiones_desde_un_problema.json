@@ -1,0 +1,2114 @@
+{
+  "id": "cpp_fundamentals__edition_es_1__expresiones_y_decisiones__construir_decisiones_desde_un_problema",
+  "title": "Construir decisiones desde un problema",
+  "pages": [
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "Preparar grupos de fichas"
+        },
+        {
+          "type": "paragraph",
+          "text": "Construye un programa para un taller que quiere repartir fichas. Guarda la cantidad en fichas y el número de fichas que caben en cada grupo en capacidad. Los dos datos son enteros.\n\nLa cantidad admitida va de 0 a 30. La capacidad admitida va de 1 a 6. Ambos intervalos incluyen sus extremos.\n\nEl entero codigo_sobrantes vale 1 si el taller acepta fichas sueltas y 0 si no las acepta. Puedes usar codigo_sobrantes != 0 para obtener el valor bool que guarda acepta_sobrantes. En la primera construcción, escribe los tres enteros en el código."
+        },
+        {
+          "type": "paragraph",
+          "text": "Aplica estas reglas en orden. Usa solo el mensaje o los renglones que pide la regla elegida.\n\nSi la cantidad o la capacidad queda fuera de su intervalo, muestra Datos invalidos.\nSi ambos datos son válidos y hay cero fichas, muestra Sin trabajo.\nSi puedes repartir todas las fichas en grupos completos, muestra Grupos: seguido de un espacio y el número de grupos.\nSi quedan fichas sueltas y el taller las acepta, muestra el renglón de grupos y, en el segundo renglón de la salida, Sobrantes: seguido de un espacio y la cantidad suelta.\nSi quedan fichas sueltas y el taller no las acepta, muestra Reparto pendiente."
+        },
+        {
+          "type": "paragraph",
+          "text": "Comprueba los datos antes de calcular. Cuando la cantidad o la capacidad sea inválida, muestra el aviso y omite los cálculos del reparto. Así se evita intentar dividir entre cero."
+        },
+        {
+          "type": "note",
+          "text": "Al diseñar la decisión del taller, coloca los cálculos del reparto en la rama que recibe una cantidad válida de fichas y una capacidad válida. Dentro de esa rama, usa el resto de la división para distinguir si todas las fichas forman grupos completos o si quedan fichas sueltas."
+        }
+      ]
+    },
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "Predecir qué debe mostrar el programa"
+        },
+        {
+          "type": "paragraph",
+          "text": "Con 14 fichas y capacidad de 4, puedes llenar tres grupos y quedan dos fichas sueltas. Si el taller las acepta, la consola debe mostrar estos dos renglones.\n\nGrupos: 3\nSobrantes: 2\n\nSi el taller cambia su decisión y deja de aceptar sobrantes, el mismo reparto debe mostrar Reparto pendiente. Con 12 fichas y la misma capacidad salen tres grupos exactos. En ese caso, la aceptación de sobrantes no cambia el resultado Grupos: 3."
+        },
+        {
+          "type": "paragraph",
+          "text": "Algunas pruebas permiten distinguir qué comprobación va primero.\n\nCero fichas y capacidad cuatro. Ambos datos son válidos. Debe aparecer Sin trabajo.\nCero fichas y capacidad cero. La capacidad es inválida. Debe aparecer Datos invalidos.\n\nEl segundo caso verifica que el rechazo se compruebe antes de decidir si hay trabajo."
+        },
+        {
+          "type": "multiple_choice",
+          "question": "El taller tiene 10 fichas y caben 3 por grupo. El taller rechaza las fichas sueltas. ¿Qué debe mostrar el programa?",
+          "options": [
+            "Datos invalidos",
+            "Grupos: 3",
+            "Reparto pendiente"
+          ],
+          "correctIndex": 2,
+          "explanation": "Con diez fichas se llenan tres grupos y queda una ficha suelta. Como el taller rechaza sobrantes, se muestra solo Reparto pendiente."
+        },
+        {
+          "type": "paragraph",
+          "text": "Con 1 ficha y capacidad de 4, hay una ficha para repartir, aunque no alcance para llenar un grupo. Si se aceptan sobrantes, deben aparecer estos renglones.\n\nGrupos: 0\nSobrantes: 1"
+        }
+      ]
+    },
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "Construir con datos declarados en el programa"
+        },
+        {
+          "type": "paragraph",
+          "text": "El editor contiene la estructura de main. Escribe una declaración int para cada dato al comienzo del programa. Usa estos nombres y declara las variables sin const. El comprobador probará otros valores.\n\nfichas vale 14.\ncapacidad vale 4.\ncodigo_sobrantes vale 1.\n\nEscribe las decisiones dentro de main en este orden.\n\n1. Si la cantidad de fichas queda fuera de cero a treinta o la capacidad queda fuera de uno a seis, muestra Datos invalidos. Ambos intervalos incluyen sus extremos.\n2. Con datos válidos y cero fichas, muestra Sin trabajo.\n3. Con datos válidos y una o más fichas, calcula cuántos grupos completos se forman y cuántas fichas sobran. Si sobran cero, muestra Grupos: seguido de un espacio y el número de grupos.\n4. Si sobran fichas y el taller las acepta, muestra el mismo renglón de grupos. En un segundo renglón muestra Sobrantes: seguido de un espacio y la cantidad de fichas sueltas. Si el taller rechaza los sobrantes, muestra solo Reparto pendiente.\n\nAntes de ejecutar, comprueba que el programa solo llegue a / y % cuando la cantidad y la capacidad estén dentro de sus intervalos.\n\nSalida esperada\nGrupos: 3\nSobrantes: 2\n\nPulsa «Compilar, ejecutar y comprobar». Puedes terminar con un salto de línea."
+        },
+        {
+          "type": "cpp_compiler",
+          "initialCode": "#include <iostream>\n\nint main() {\n    return 0;\n}\n",
+          "outputCheck": {
+            "cases": [
+              {
+                "standardInput": "",
+                "outputs": [
+                  "Grupos: 3\nSobrantes: 2",
+                  "Grupos: 3\nSobrantes: 2\n"
+                ]
+              }
+            ]
+          }
+        },
+        {
+          "type": "paragraph",
+          "text": "Si la consola muestra otra salida, sigue las condiciones desde el primer dato y revisa qué rama se ejecuta. Corrige el primer paso que difiere de la regla y vuelve a comprobar."
+        },
+        {
+          "type": "heading",
+          "text": "Mostrar el renglón de grupos una sola vez"
+        },
+        {
+          "type": "paragraph",
+          "text": "Esta solución usa los tres enteros del editor y obtiene acepta_sobrantes de codigo_sobrantes. Después de calcular el resto, comprueba si el taller debe dejar pendiente el reparto. Si puede repartir, escribe el número de grupos y solo añade un segundo renglón cuando sobran fichas."
+        },
+        {
+          "type": "code",
+          "language": "cpp",
+          "code": "#include <iostream>\n\nint main() {\n    int fichas = 14;\n    int capacidad = 4;\n    int codigo_sobrantes = 1;\n\n    const bool acepta_sobrantes = codigo_sobrantes != 0;\n\n    if ((fichas < 0) || (fichas > 30) || (capacidad < 1) || (capacidad > 6)) {\n        std::cout << \"Datos invalidos\";\n    } else if (fichas == 0) {\n        std::cout << \"Sin trabajo\";\n    } else {\n        const int grupos = fichas / capacidad;\n        const int sobrantes = fichas % capacidad;\n\n        if (sobrantes != 0 && !acepta_sobrantes) {\n            std::cout << \"Reparto pendiente\";\n        } else {\n            std::cout << \"Grupos: \" << grupos;\n\n            if (sobrantes != 0) {\n                std::cout << \"\\nSobrantes: \" << sobrantes;\n            }\n        }\n    }\n\n    return 0;\n}\n"
+        }
+      ]
+    },
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "Seguir el camino para un reparto con sobrantes"
+        },
+        {
+          "type": "paragraph",
+          "text": "La referencia usa 18 fichas y capacidad de 5. Primero comprueba los intervalos y la cantidad cero. Como hay fichas y la capacidad es válida, la división entera cuenta tres grupos completos y el resto cuenta tres fichas sueltas (Stroustrup, 2024). El valor true de acepta_sobrantes permite mostrar los dos renglones."
+        },
+        {
+          "type": "code",
+          "language": "cpp",
+          "code": "#include <iostream>\n\nint main() {\n    const int fichas = 18;\n    int capacidad = 5;\n    const bool acepta_sobrantes = true;\n\n    if ((fichas < 0) || (fichas > 30) || (capacidad < 1) || (capacidad > 6)) {\n        std::cout << \"Datos invalidos\";\n    } else if (fichas == 0) {\n        std::cout << \"Sin trabajo\";\n    } else {\n        const int grupos = fichas / capacidad;\n        const int sobrantes = fichas % capacidad;\n\n        if (sobrantes == 0) {\n            std::cout << \"Grupos: \" << grupos;\n        } else if (acepta_sobrantes) {\n            std::cout << \"Grupos: \" << grupos << \"\\n\";\n            std::cout << \"Sobrantes: \" << sobrantes;\n        } else {\n            std::cout << \"Reparto pendiente\";\n        }\n    }\n\n    return 0;\n}\n"
+        },
+        {
+          "type": "output_prediction",
+          "question": "El código usa 20 fichas y capacidad de 6. El taller rechaza los sobrantes. Sigue las decisiones y escribe el renglón que muestra el programa.",
+          "language": "cpp",
+          "code": "#include <iostream>\n\nint main() {\n    const int fichas = 20;\n    int capacidad = 6;\n    const bool acepta_sobrantes = false;\n\n    if ((fichas < 0) || (fichas > 30) || (capacidad < 1) || (capacidad > 6)) {\n        std::cout << \"Datos invalidos\";\n    } else if (fichas == 0) {\n        std::cout << \"Sin trabajo\";\n    } else {\n        const int grupos = fichas / capacidad;\n        const int sobrantes = fichas % capacidad;\n\n        if (sobrantes == 0) {\n            std::cout << \"Grupos: \" << grupos;\n        } else if (acepta_sobrantes) {\n            std::cout << \"Grupos: \" << grupos << \"\\n\";\n            std::cout << \"Sobrantes: \" << sobrantes;\n        } else {\n            std::cout << \"Reparto pendiente\";\n        }\n    }\n\n    return 0;\n}\n",
+          "answers": [
+            "Reparto pendiente"
+          ],
+          "explanation": "Veinte fichas permiten llenar tres grupos y sobran dos. La condición sobrantes == 0 da false y acepta_sobrantes vale false. Se ejecuta el último else y aparece solo Reparto pendiente."
+        }
+      ]
+    },
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "Adaptar el programa a un mínimo de una ficha"
+        },
+        {
+          "type": "paragraph",
+          "text": "El taller cambia una regla. Antes aceptaba cantidades de cero a treinta. Ahora exige de una a treinta fichas. Con capacidad válida, un pedido de cero fichas debe pasar de Sin trabajo a Datos invalidos."
+        },
+        {
+          "type": "multiple_choice",
+          "question": "El taller antes admitía de 0 a 30 fichas y ahora admite de 1 a 30. En las dos versiones, cada grupo debe tener capacidad para entre una y seis fichas. ¿Con qué datos cambia el mensaje que muestra el programa al aplicar el nuevo mínimo de fichas?",
+          "options": [
+            "31 fichas con capacidad 4.",
+            "Cero fichas con capacidad 4.",
+            "Cero fichas con capacidad 0."
+          ],
+          "correctIndex": 1,
+          "explanation": "Cero fichas con capacidad cuatro daba Sin trabajo. Ahora da Datos invalidos. En los otros dos casos ya había un dato fuera de su intervalo."
+        },
+        {
+          "type": "multiple_choice",
+          "question": "Con la regla que admite de cero a treinta fichas, todo grupo debe tener capacidad para al menos una ficha. El programa recibe cero fichas y una capacidad de cero. Muestra Sin trabajo. ¿Qué comprobación debió hacer antes de elegir ese mensaje?",
+          "options": [
+            "Todo bool debe mostrarse como texto.",
+            "Primero debe comprobar si la capacidad es válida. Con una capacidad de cero debe mostrar Datos invalidos.",
+            "Siempre debe haber al menos un grupo completo."
+          ],
+          "correctIndex": 1,
+          "explanation": "La capacidad de cada grupo debe ser al menos uno. El programa debe rechazar una capacidad cero y mostrar Datos invalidos antes de comprobar si hay fichas para repartir."
+        },
+        {
+          "type": "note",
+          "text": "Supón que en cada grupo caben cuatro fichas. Según la nueva regla, un pedido de una ficha está justo en el mínimo y uno de treinta está justo en el máximo. Los dos pedidos cumplen la regla de cantidad. Si el programa exigiera más de una ficha, rechazaría el pedido de una. Si exigiera menos de treinta, rechazaría el pedido de treinta."
+        }
+      ]
+    },
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "Cambiar la comprobación de la cantidad"
+        },
+        {
+          "type": "paragraph",
+          "text": "El editor ya contiene un programa que aplica la regla anterior. Lee tres enteros del campo «Entrada», en este orden.\n\nCantidad de fichas.\nCapacidad por grupo.\nCódigo de sobrantes, 1 si se aceptan o 0 si se rechazan.\n\nLos datos ya vienen escritos como enteros. Cambia el mínimo admitido de fichas a uno. La comprobación de la cantidad debe rechazar cero fichas y admitir de una a treinta, incluidos ambos extremos. Una vez descartadas las cantidades inválidas, ninguna ejecución puede llegar a esa parte del programa con cero fichas. Retira la rama que mostraba Sin trabajo para esa cantidad. Conserva el rechazo de capacidades inválidas y las reglas de reparto y sobrantes.\n\nEntrada\n0 4 1\n\nSalida esperada\nDatos invalidos\n\nPara completar el ejercicio, deja 0 4 1 en el campo «Entrada» y pulsa «Compilar, ejecutar y comprobar». El programa debe producir la salida esperada para esos datos. Puedes terminar con un salto de línea."
+        },
+        {
+          "type": "cpp_compiler",
+          "initialCode": "#include <iostream>\n\nint main() {\n    int fichas{0};\n    int capacidad{0};\n    int codigo_sobrantes{0};\n\n    std::cin >> fichas >> capacidad >> codigo_sobrantes;\n\n    const bool acepta_sobrantes = codigo_sobrantes != 0;\n\n    if ((fichas < 0) || (fichas > 30) || (capacidad < 1) || (capacidad > 6)) {\n        std::cout << \"Datos invalidos\";\n    } else if (fichas == 0) {\n        std::cout << \"Sin trabajo\";\n    } else {\n        const int grupos = fichas / capacidad;\n        const int sobrantes = fichas % capacidad;\n\n        if (sobrantes == 0) {\n            std::cout << \"Grupos: \" << grupos;\n        } else if (acepta_sobrantes) {\n            std::cout << \"Grupos: \" << grupos << \"\\n\";\n            std::cout << \"Sobrantes: \" << sobrantes;\n        } else {\n            std::cout << \"Reparto pendiente\";\n        }\n    }\n\n    return 0;\n}\n",
+          "initialStandardInput": "0 4 1",
+          "outputCheck": {
+            "inputComparison": "tokens",
+            "cases": [
+              {
+                "standardInput": "0 4 1",
+                "outputs": [
+                  "Datos invalidos",
+                  "Datos invalidos\n"
+                ]
+              },
+              {
+                "standardInput": "14 4 1",
+                "outputs": [
+                  "Grupos: 3\nSobrantes: 2",
+                  "Grupos: 3\nSobrantes: 2\n"
+                ]
+              },
+              {
+                "standardInput": "14 4 0",
+                "outputs": [
+                  "Reparto pendiente",
+                  "Reparto pendiente\n"
+                ]
+              },
+              {
+                "standardInput": "12 4 1",
+                "outputs": [
+                  "Grupos: 3",
+                  "Grupos: 3\n"
+                ]
+              },
+              {
+                "standardInput": "12 4 0",
+                "outputs": [
+                  "Grupos: 3",
+                  "Grupos: 3\n"
+                ]
+              },
+              {
+                "standardInput": "30 6 1",
+                "outputs": [
+                  "Grupos: 5",
+                  "Grupos: 5\n"
+                ]
+              },
+              {
+                "standardInput": "-1 4 1",
+                "outputs": [
+                  "Datos invalidos",
+                  "Datos invalidos\n"
+                ]
+              },
+              {
+                "standardInput": "31 4 1",
+                "outputs": [
+                  "Datos invalidos",
+                  "Datos invalidos\n"
+                ]
+              },
+              {
+                "standardInput": "12 0 1",
+                "outputs": [
+                  "Datos invalidos",
+                  "Datos invalidos\n"
+                ]
+              },
+              {
+                "standardInput": "12 7 1",
+                "outputs": [
+                  "Datos invalidos",
+                  "Datos invalidos\n"
+                ]
+              },
+              {
+                "standardInput": "0 0 1",
+                "outputs": [
+                  "Datos invalidos",
+                  "Datos invalidos\n"
+                ]
+              },
+              {
+                "standardInput": "1 4 1",
+                "outputs": [
+                  "Grupos: 0\nSobrantes: 1",
+                  "Grupos: 0\nSobrantes: 1\n"
+                ]
+              },
+              {
+                "standardInput": "1 4 0",
+                "outputs": [
+                  "Reparto pendiente",
+                  "Reparto pendiente\n"
+                ]
+              }
+            ]
+          }
+        },
+        {
+          "type": "paragraph",
+          "text": "Pruebas opcionales en este editor\nEscribe primero la cantidad de fichas, después la capacidad de cada grupo y por último el código que indica si se aceptan fichas sobrantes. Usa uno si se aceptan y cero si se rechazan. La nueva regla admite de una a treinta fichas y una capacidad de una a seis fichas por grupo. Para cada prueba que quieras hacer, sustituye los datos del campo «Entrada» por los de esa prueba. Pulsa «Compilar, ejecutar y comprobar» y compara lo que muestra la consola con la salida esperada.\n\nCon catorce fichas se llenan tres grupos de cuatro y quedan dos fichas sueltas. Como se aceptan sobrantes, se muestran las dos cantidades.\n\nEntrada\n14 4 1\n\nSalida esperada\nGrupos: 3\nSobrantes: 2\n\nSe llenan tres grupos de cuatro y sobran dos de las catorce fichas. Como se rechazan los sobrantes, el reparto queda pendiente.\n\nEntrada\n14 4 0\n\nSalida esperada\nReparto pendiente\n\nDoce fichas llenan tres grupos de cuatro. Se aceptan sobrantes, pero no hay ninguno. Solo aparece el renglón con la cantidad de grupos.\n\nEntrada\n12 4 1\n\nSalida esperada\nGrupos: 3\n\nDoce fichas llenan tres grupos de cuatro. Aunque se rechacen los sobrantes, el reparto se puede hacer porque no sobra ninguna ficha.\n\nEntrada\n12 4 0\n\nSalida esperada\nGrupos: 3\n\nTreinta fichas es la mayor cantidad admitida y seis es la mayor capacidad admitida. Se llenan cinco grupos de seis sin dejar fichas sueltas.\n\nEntrada\n30 6 1\n\nSalida esperada\nGrupos: 5\n\nLa cantidad indicada es menos una ficha y el mínimo es una. El programa debe rechazar esos datos antes de repartir.\n\nEntrada\n-1 4 1\n\nSalida esperada\nDatos invalidos\n\nLa cantidad indicada es treinta y una fichas. Supera el máximo de treinta, así que el programa debe rechazar los datos.\n\nEntrada\n31 4 1\n\nSalida esperada\nDatos invalidos\n\nHay doce fichas, pero la capacidad indicada es cero. Como cada grupo debe tener espacio para al menos una ficha, se rechazan los datos.\n\nEntrada\n12 0 1\n\nSalida esperada\nDatos invalidos\n\nHay doce fichas y la capacidad indicada es siete. Supera la capacidad máxima de seis, así que se rechazan los datos.\n\nEntrada\n12 7 1\n\nSalida esperada\nDatos invalidos\n\nHay cero fichas y la capacidad también es cero. Ambos datos quedan por debajo de sus mínimos y se rechazan.\n\nEntrada\n0 0 1\n\nSalida esperada\nDatos invalidos\n\nUna ficha cumple el mínimo, pero no llena un grupo de cuatro. Como se aceptan sobrantes, se muestran cero grupos y una ficha suelta.\n\nEntrada\n1 4 1\n\nSalida esperada\nGrupos: 0\nSobrantes: 1\n\nHay una ficha suelta y hacen falta cuatro para llenar un grupo. Como se rechazan los sobrantes, el reparto queda pendiente.\n\nEntrada\n1 4 0\n\nSalida esperada\nReparto pendiente"
+        },
+        {
+          "type": "heading",
+          "text": "Comparar el programa tras cambiar el mínimo"
+        },
+        {
+          "type": "paragraph",
+          "text": "Esta versión vuelve a usar 18 fichas y capacidad de 5. Sigue dando tres grupos y tres sobrantes, porque la cantidad de dieciocho fichas está permitida tanto con el mínimo anterior de cero como con el nuevo mínimo de una ficha. La capacidad de cinco fichas por grupo también es válida."
+        },
+        {
+          "type": "code",
+          "language": "cpp",
+          "code": "#include <iostream>\n\nint main() {\n    const int fichas = 18;\n    int capacidad = 5;\n    const bool acepta_sobrantes = true;\n\n    if ((fichas < 1) || (fichas > 30) || (capacidad < 1) || (capacidad > 6)) {\n        std::cout << \"Datos invalidos\";\n    } else {\n        const int grupos = fichas / capacidad;\n        const int sobrantes = fichas % capacidad;\n\n        if (sobrantes == 0) {\n            std::cout << \"Grupos: \" << grupos;\n        } else if (acepta_sobrantes) {\n            std::cout << \"Grupos: \" << grupos << \"\\n\";\n            std::cout << \"Sobrantes: \" << sobrantes;\n        } else {\n            std::cout << \"Reparto pendiente\";\n        }\n    }\n\n    return 0;\n}\n"
+        },
+        {
+          "type": "paragraph",
+          "text": "La primera condición rechaza cualquier cantidad menor que uno. Por eso los casos que alcanzan else ya tienen al menos una ficha y la rama que mostraba Sin trabajo deja de ser necesaria. En la condición de rechazo, la capacidad cero sigue excluida. Las instrucciones con / y % quedan en el bloque que solo se ejecuta con datos válidos (Köppe et al., 2023)."
+        },
+        {
+          "type": "heading",
+          "text": "Comprobar el programa que lee los tres enteros"
+        },
+        {
+          "type": "paragraph",
+          "text": "El programa lee primero la cantidad de fichas, después la capacidad de cada grupo y por último el código que indica si el taller acepta sobrantes. Con 1 4 1 hay una ficha, caben cuatro por grupo y se aceptan los sobrantes. La cantidad mínima ya es válida. Quedan cero grupos completos y una ficha suelta. Con 30 6 1 se alcanzan los máximos permitidos de treinta fichas y seis por grupo. Se llenan cinco grupos de seis fichas y quedan cero fichas sueltas."
+        },
+        {
+          "type": "code",
+          "language": "cpp",
+          "code": "#include <iostream>\n\nint main() {\n    int fichas{0};\n    int capacidad{0};\n    int codigo_sobrantes{0};\n\n    std::cin >> fichas >> capacidad >> codigo_sobrantes;\n\n    const bool acepta_sobrantes = codigo_sobrantes != 0;\n\n    if ((fichas < 1) || (fichas > 30) || (capacidad < 1) || (capacidad > 6)) {\n        std::cout << \"Datos invalidos\";\n    } else {\n        const int grupos = fichas / capacidad;\n        const int sobrantes = fichas % capacidad;\n\n        if (sobrantes == 0) {\n            std::cout << \"Grupos: \" << grupos;\n        } else if (acepta_sobrantes) {\n            std::cout << \"Grupos: \" << grupos << \"\\n\";\n            std::cout << \"Sobrantes: \" << sobrantes;\n        } else {\n            std::cout << \"Reparto pendiente\";\n        }\n    }\n\n    return 0;\n}\n"
+        }
+      ]
+    }
+  ],
+  "activityAfter": [
+    {
+      "activity": "block_0003_0003",
+      "requires": [
+        "block_0002_0002"
+      ]
+    },
+    {
+      "activity": "block_0005_0002",
+      "requires": [
+        "block_0002_0002"
+      ]
+    }
+  ],
+  "referenceAfter": [
+    {
+      "activity": "block_0002_0002",
+      "blocks": [
+        "block_0003_0000",
+        "block_0003_0001",
+        "block_0003_0002",
+        "block_0002_0004",
+        "block_0002_0005",
+        "block_0002_0006"
+      ]
+    },
+    {
+      "activity": "block_0005_0002",
+      "blocks": [
+        "block_0005_0004",
+        "block_0005_0005",
+        "block_0005_0006",
+        "block_0005_0007",
+        "block_0005_0008",
+        "block_0005_0009",
+        "block_0005_0010",
+        "block_0005_0003"
+      ]
+    }
+  ],
+  "compilerPuzzlesRequired": true,
+  "textSemantics": {
+    "version": 1,
+    "fields": [
+      {
+        "block": "block_0000_0000",
+        "path": "/text",
+        "sourceSha256": "3cadd5fa28947660fcb5023df064f37e237c311ef83cc24bd10c0330bb4dbfcf",
+        "spans": []
+      },
+      {
+        "block": "block_0000_0001",
+        "path": "/text",
+        "sourceSha256": "488be4d773e0a025cecb9d6773f1fb0d6ebb1c8df8520e7f563993f9a57cdb15",
+        "spans": [
+          {
+            "start": 87,
+            "end": 93,
+            "text": "fichas",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 143,
+            "end": 152,
+            "text": "capacidad",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 209,
+            "end": 210,
+            "text": "0",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 213,
+            "end": 215,
+            "text": "30",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 245,
+            "end": 246,
+            "text": "1",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 249,
+            "end": 250,
+            "text": "6",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 303,
+            "end": 319,
+            "text": "codigo_sobrantes",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 325,
+            "end": 326,
+            "text": "1",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 364,
+            "end": 365,
+            "text": "0",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 396,
+            "end": 417,
+            "text": "codigo_sobrantes != 0",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 440,
+            "end": 444,
+            "text": "bool",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 456,
+            "end": 472,
+            "text": "acepta_sobrantes",
+            "role": "cpp",
+            "reading": "technical"
+          }
+        ]
+      },
+      {
+        "block": "block_0000_0002",
+        "path": "/text",
+        "sourceSha256": "c5c6c22f033f2e1136f08b55d99b7c454ac80cce9ecc44173c15c3b90bca59fa",
+        "spans": [
+          {
+            "start": 161,
+            "end": 176,
+            "text": "Datos invalidos",
+            "role": "output",
+            "reading": "natural"
+          },
+          {
+            "start": 232,
+            "end": 243,
+            "text": "Sin trabajo",
+            "role": "output",
+            "reading": "natural"
+          },
+          {
+            "start": 310,
+            "end": 317,
+            "text": "Grupos:",
+            "role": "output",
+            "reading": "natural"
+          },
+          {
+            "start": 480,
+            "end": 490,
+            "text": "Sobrantes:",
+            "role": "output",
+            "reading": "natural"
+          },
+          {
+            "start": 595,
+            "end": 612,
+            "text": "Reparto pendiente",
+            "role": "output",
+            "reading": "natural"
+          }
+        ]
+      },
+      {
+        "block": "block_0000_0003",
+        "path": "/text",
+        "sourceSha256": "5c5d8a037bd8de3c3e90200666470b8c32bd29a08631ace314b3b072a62aa724",
+        "spans": []
+      },
+      {
+        "block": "block_0000_0004",
+        "path": "/text",
+        "sourceSha256": "44824d95b0a70a0a453a62a7b68fc697dad2b6ef753e702df4145b02705f191d",
+        "spans": []
+      },
+      {
+        "block": "block_0001_0000",
+        "path": "/text",
+        "sourceSha256": "b9460c142f5f58d97c355123adbc9877422a98f68bfcd03e38bf29961e4d2871",
+        "spans": []
+      },
+      {
+        "block": "block_0001_0001",
+        "path": "/text",
+        "sourceSha256": "656f6c812e2a27f21df794813d792274d882f51f458d9c2db705988784601807",
+        "spans": [
+          {
+            "start": 4,
+            "end": 6,
+            "text": "14",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 29,
+            "end": 30,
+            "text": "4",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 158,
+            "end": 167,
+            "text": "Grupos: 3",
+            "role": "output",
+            "reading": "natural"
+          },
+          {
+            "start": 168,
+            "end": 180,
+            "text": "Sobrantes: 2",
+            "role": "output",
+            "reading": "natural"
+          },
+          {
+            "start": 273,
+            "end": 290,
+            "text": "Reparto pendiente",
+            "role": "output",
+            "reading": "natural"
+          },
+          {
+            "start": 296,
+            "end": 298,
+            "text": "12",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 417,
+            "end": 426,
+            "text": "Grupos: 3",
+            "role": "output",
+            "reading": "natural"
+          }
+        ]
+      },
+      {
+        "block": "block_0001_0002",
+        "path": "/text",
+        "sourceSha256": "e8d7800384a63b0a46d355749b8ed0d663f56c637c194e97a4b824df14b9d790",
+        "spans": [
+          {
+            "start": 137,
+            "end": 148,
+            "text": "Sin trabajo",
+            "role": "output",
+            "reading": "natural"
+          },
+          {
+            "start": 220,
+            "end": 235,
+            "text": "Datos invalidos",
+            "role": "output",
+            "reading": "natural"
+          }
+        ]
+      },
+      {
+        "block": "block_0001_0003",
+        "path": "/question",
+        "sourceSha256": "1148f94781da7774d7f9c9ad08bf70a260f7062f61dec5f8681f984ee082160a",
+        "spans": [
+          {
+            "start": 16,
+            "end": 18,
+            "text": "10",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 34,
+            "end": 35,
+            "text": "3",
+            "role": "data",
+            "reading": "natural"
+          }
+        ]
+      },
+      {
+        "block": "block_0001_0003",
+        "path": "/explanation",
+        "sourceSha256": "7467fc681a1f01dfa567395ec9a4860a4f6d53fcaebe41b4c55abd6706bc8022",
+        "spans": [
+          {
+            "start": 114,
+            "end": 131,
+            "text": "Reparto pendiente",
+            "role": "output",
+            "reading": "natural"
+          }
+        ]
+      },
+      {
+        "block": "block_0001_0003",
+        "path": "/options/0",
+        "sourceSha256": "5cb68768a1886a3133b018b4682f0060a1e6c2627a1aec5717a7e86221b8c570",
+        "spans": [
+          {
+            "start": 0,
+            "end": 15,
+            "text": "Datos invalidos",
+            "role": "output",
+            "reading": "natural"
+          }
+        ]
+      },
+      {
+        "block": "block_0001_0003",
+        "path": "/options/1",
+        "sourceSha256": "a30e31a6745a29384b2360f9605d4466e19f3eb3a22f8fb62afe5253b11a2c3f",
+        "spans": [
+          {
+            "start": 0,
+            "end": 9,
+            "text": "Grupos: 3",
+            "role": "output",
+            "reading": "natural"
+          }
+        ]
+      },
+      {
+        "block": "block_0001_0003",
+        "path": "/options/2",
+        "sourceSha256": "4e5429c7cd35c38177a85bad9665917b1bac4fe7c7b77d41a68f6dcba26b524c",
+        "spans": [
+          {
+            "start": 0,
+            "end": 17,
+            "text": "Reparto pendiente",
+            "role": "output",
+            "reading": "natural"
+          }
+        ]
+      },
+      {
+        "block": "block_0001_0004",
+        "path": "/text",
+        "sourceSha256": "e2fee400812058c063636fb0900e48eda41dd907829f28a2c8443493fae7f1b0",
+        "spans": [
+          {
+            "start": 4,
+            "end": 5,
+            "text": "1",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 27,
+            "end": 28,
+            "text": "4",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 157,
+            "end": 166,
+            "text": "Grupos: 0",
+            "role": "output",
+            "reading": "natural"
+          },
+          {
+            "start": 167,
+            "end": 179,
+            "text": "Sobrantes: 1",
+            "role": "output",
+            "reading": "natural"
+          }
+        ]
+      },
+      {
+        "block": "block_0002_0000",
+        "path": "/text",
+        "sourceSha256": "4aee0234b7410ee45a4d212aafd592377ac123c39c905f84d5bd7f1fc6f8d200",
+        "spans": []
+      },
+      {
+        "block": "block_0002_0001",
+        "path": "/text",
+        "sourceSha256": "2bc7f62a6411822c3887ef94d9513c3d07eee456db26fa4c26f1f52ae9beb629",
+        "spans": [
+          {
+            "start": 36,
+            "end": 40,
+            "text": "main",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 66,
+            "end": 69,
+            "text": "int",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 157,
+            "end": 162,
+            "text": "const",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 203,
+            "end": 209,
+            "text": "fichas",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 215,
+            "end": 217,
+            "text": "14",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 219,
+            "end": 228,
+            "text": "capacidad",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 234,
+            "end": 235,
+            "text": "4",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 237,
+            "end": 253,
+            "text": "codigo_sobrantes",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 259,
+            "end": 260,
+            "text": "1",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 296,
+            "end": 300,
+            "text": "main",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 425,
+            "end": 440,
+            "text": "Datos invalidos",
+            "role": "output",
+            "reading": "natural"
+          },
+          {
+            "start": 526,
+            "end": 537,
+            "text": "Sin trabajo",
+            "role": "output",
+            "reading": "natural"
+          },
+          {
+            "start": 672,
+            "end": 679,
+            "text": "Grupos:",
+            "role": "output",
+            "reading": "natural"
+          },
+          {
+            "start": 835,
+            "end": 845,
+            "text": "Sobrantes:",
+            "role": "output",
+            "reading": "natural"
+          },
+          {
+            "start": 950,
+            "end": 967,
+            "text": "Reparto pendiente",
+            "role": "output",
+            "reading": "natural"
+          },
+          {
+            "start": 1029,
+            "end": 1030,
+            "text": "/",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 1033,
+            "end": 1034,
+            "text": "%",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 1118,
+            "end": 1127,
+            "text": "Grupos: 3",
+            "role": "output",
+            "reading": "natural"
+          },
+          {
+            "start": 1128,
+            "end": 1140,
+            "text": "Sobrantes: 2",
+            "role": "output",
+            "reading": "natural"
+          }
+        ]
+      },
+      {
+        "block": "block_0002_0003",
+        "path": "/text",
+        "sourceSha256": "bb22f53d69a14599d0b356b01b7b5542cf882ebbadce37e8427e3a763df44f37",
+        "spans": []
+      },
+      {
+        "block": "block_0003_0000",
+        "path": "/text",
+        "sourceSha256": "7224ca745cdb336149c4aef29a1add578b831698c3c6d3b2fe754ece429d8b00",
+        "spans": []
+      },
+      {
+        "block": "block_0003_0001",
+        "path": "/text",
+        "sourceSha256": "ea5669036d170a8bda45b3e882d5dfb7648d846164bc2cb10899357bdbdfdc23",
+        "spans": [
+          {
+            "start": 18,
+            "end": 20,
+            "text": "18",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 43,
+            "end": 44,
+            "text": "5",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 227,
+            "end": 245,
+            "text": "(Stroustrup, 2024)",
+            "role": "citation",
+            "reading": "natural"
+          },
+          {
+            "start": 256,
+            "end": 260,
+            "text": "true",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 264,
+            "end": 280,
+            "text": "acepta_sobrantes",
+            "role": "cpp",
+            "reading": "technical"
+          }
+        ]
+      },
+      {
+        "block": "block_0003_0003",
+        "path": "/question",
+        "sourceSha256": "44cbb07486a8f107391a9c8429d8a64cb3672fbe135ef2572105198bf5ca524a",
+        "spans": [
+          {
+            "start": 14,
+            "end": 16,
+            "text": "20",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 39,
+            "end": 40,
+            "text": "6",
+            "role": "data",
+            "reading": "natural"
+          }
+        ]
+      },
+      {
+        "block": "block_0003_0003",
+        "path": "/explanation",
+        "sourceSha256": "5642e35ff916d3ae6124fbc7581102f7cc5e8b0f548ca3794a0a54811927160b",
+        "spans": [
+          {
+            "start": 69,
+            "end": 83,
+            "text": "sobrantes == 0",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 87,
+            "end": 92,
+            "text": "false",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 95,
+            "end": 111,
+            "text": "acepta_sobrantes",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 117,
+            "end": 122,
+            "text": "false",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 145,
+            "end": 149,
+            "text": "else",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 165,
+            "end": 182,
+            "text": "Reparto pendiente",
+            "role": "output",
+            "reading": "natural"
+          }
+        ]
+      },
+      {
+        "block": "block_0002_0004",
+        "path": "/text",
+        "sourceSha256": "4109d5a8662b0fd400bb52bf8173bd877bf2498cdec5ab014377d48691364408",
+        "spans": []
+      },
+      {
+        "block": "block_0002_0005",
+        "path": "/text",
+        "sourceSha256": "e6c8fb6553f9ac9b22c789406d15adbd5da5c6b84deef3938d32095d60f9eb73",
+        "spans": [
+          {
+            "start": 56,
+            "end": 72,
+            "text": "acepta_sobrantes",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 76,
+            "end": 92,
+            "text": "codigo_sobrantes",
+            "role": "cpp",
+            "reading": "technical"
+          }
+        ]
+      },
+      {
+        "block": "block_0004_0000",
+        "path": "/text",
+        "sourceSha256": "606e5401a697486b6b541a88e1314d6c6390ea8a403e286e4feb42249e16c35d",
+        "spans": []
+      },
+      {
+        "block": "block_0004_0001",
+        "path": "/text",
+        "sourceSha256": "7bf628f0bdfff6cc76a1fa6de2e887e820341b1828fc5aba0407500e61cb2885",
+        "spans": [
+          {
+            "start": 171,
+            "end": 182,
+            "text": "Sin trabajo",
+            "role": "output",
+            "reading": "natural"
+          },
+          {
+            "start": 185,
+            "end": 200,
+            "text": "Datos invalidos",
+            "role": "output",
+            "reading": "natural"
+          }
+        ]
+      },
+      {
+        "block": "block_0004_0002",
+        "path": "/question",
+        "sourceSha256": "65cef9875a247fe3a2f71df7cfb82492bf9ff24051d72ec7778c29f9b5a28420",
+        "spans": [
+          {
+            "start": 27,
+            "end": 28,
+            "text": "0",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 31,
+            "end": 33,
+            "text": "30",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 59,
+            "end": 60,
+            "text": "1",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 63,
+            "end": 65,
+            "text": "30",
+            "role": "data",
+            "reading": "natural"
+          }
+        ]
+      },
+      {
+        "block": "block_0004_0002",
+        "path": "/explanation",
+        "sourceSha256": "69fdc854ea8d8a9aca20124f21bab5f1c7dddda27db92796b769e30cdcfb3fa4",
+        "spans": [
+          {
+            "start": 38,
+            "end": 49,
+            "text": "Sin trabajo",
+            "role": "output",
+            "reading": "natural"
+          },
+          {
+            "start": 60,
+            "end": 75,
+            "text": "Datos invalidos",
+            "role": "output",
+            "reading": "natural"
+          }
+        ]
+      },
+      {
+        "block": "block_0004_0002",
+        "path": "/options/0",
+        "sourceSha256": "aef2bdeae9eba88e531c7245fa2712f891523c2f9351e10e141aa2201db3c260",
+        "spans": [
+          {
+            "start": 0,
+            "end": 2,
+            "text": "31",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 14,
+            "end": 23,
+            "text": "capacidad",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 24,
+            "end": 25,
+            "text": "4",
+            "role": "data",
+            "reading": "natural"
+          }
+        ]
+      },
+      {
+        "block": "block_0004_0002",
+        "path": "/options/1",
+        "sourceSha256": "d655af71538f859896e07429aaa27fcdbfd3255a48b3a31cf35eeaf07bafb923",
+        "spans": [
+          {
+            "start": 0,
+            "end": 4,
+            "text": "Cero",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 16,
+            "end": 25,
+            "text": "capacidad",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 26,
+            "end": 27,
+            "text": "4",
+            "role": "data",
+            "reading": "natural"
+          }
+        ]
+      },
+      {
+        "block": "block_0004_0002",
+        "path": "/options/2",
+        "sourceSha256": "02a1ad83a87ab27bd59249612ba01166321e28962a68f99774bf673fdb0cc0c7",
+        "spans": [
+          {
+            "start": 0,
+            "end": 4,
+            "text": "Cero",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 16,
+            "end": 25,
+            "text": "capacidad",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 26,
+            "end": 27,
+            "text": "0",
+            "role": "data",
+            "reading": "natural"
+          }
+        ]
+      },
+      {
+        "block": "block_0004_0003",
+        "path": "/question",
+        "sourceSha256": "3d84bd9799bd67623263cff20dead4e03e0de636a2b4a2e0f51a4ae4205fd997",
+        "spans": [
+          {
+            "start": 171,
+            "end": 182,
+            "text": "Sin trabajo",
+            "role": "output",
+            "reading": "natural"
+          }
+        ]
+      },
+      {
+        "block": "block_0004_0003",
+        "path": "/explanation",
+        "sourceSha256": "91dc96d714a336412c51ca2ff5cb58453b175fb648fb35a0ad0ad23b9f761674",
+        "spans": [
+          {
+            "start": 105,
+            "end": 120,
+            "text": "Datos invalidos",
+            "role": "output",
+            "reading": "natural"
+          }
+        ]
+      },
+      {
+        "block": "block_0004_0003",
+        "path": "/options/0",
+        "sourceSha256": "d77eee8a60c61ff18c557770b218bd5fae1b00decf1398b4d3a5c9533dfa0d14",
+        "spans": [
+          {
+            "start": 5,
+            "end": 9,
+            "text": "bool",
+            "role": "cpp",
+            "reading": "technical"
+          }
+        ]
+      },
+      {
+        "block": "block_0004_0003",
+        "path": "/options/1",
+        "sourceSha256": "0ac87f7416b84a1be70c98fad3e3833ec815f5b98c2ae486b2de40f465f90f81",
+        "spans": [
+          {
+            "start": 89,
+            "end": 104,
+            "text": "Datos invalidos",
+            "role": "output",
+            "reading": "natural"
+          }
+        ]
+      },
+      {
+        "block": "block_0004_0003",
+        "path": "/options/2",
+        "sourceSha256": "c18e58f2d5fdc1dfc642121093b8a431125e95713df38b33d93836e37b696922",
+        "spans": [
+          {
+            "start": 28,
+            "end": 30,
+            "text": "un",
+            "role": "data",
+            "reading": "natural"
+          }
+        ]
+      },
+      {
+        "block": "block_0004_0004",
+        "path": "/text",
+        "sourceSha256": "e7cc4acd0dc43de58a18fd5e4d3dfebffba0bfdb56384524c7f4867126b1a241",
+        "spans": []
+      },
+      {
+        "block": "block_0005_0000",
+        "path": "/text",
+        "sourceSha256": "0fdb33e7a87f2a6aebb40afafc11052a69975b2e1d28c162632845a4e4d6396c",
+        "spans": []
+      },
+      {
+        "block": "block_0005_0001",
+        "path": "/text",
+        "sourceSha256": "6b7a1540cfdeff64ceec33fd02c5b5d543443d62c5d7bfb95df20206a23908ca",
+        "spans": [
+          {
+            "start": 180,
+            "end": 181,
+            "text": "1",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 198,
+            "end": 199,
+            "text": "0",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 561,
+            "end": 572,
+            "text": "Sin trabajo",
+            "role": "output",
+            "reading": "natural"
+          },
+          {
+            "start": 683,
+            "end": 688,
+            "text": "0 4 1",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 706,
+            "end": 721,
+            "text": "Datos invalidos",
+            "role": "output",
+            "reading": "natural"
+          },
+          {
+            "start": 757,
+            "end": 762,
+            "text": "0 4 1",
+            "role": "data",
+            "reading": "natural"
+          }
+        ]
+      },
+      {
+        "block": "block_0005_0004",
+        "path": "/text",
+        "sourceSha256": "473c1ae7a6d1962e1262a61d459eda462da1393a89838568b0447ce78184ac98",
+        "spans": []
+      },
+      {
+        "block": "block_0005_0005",
+        "path": "/text",
+        "sourceSha256": "b8aabb652005d95ea127414514ba31fb5a0880216234e0b76655d2570d270d22",
+        "spans": [
+          {
+            "start": 27,
+            "end": 29,
+            "text": "18",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 52,
+            "end": 53,
+            "text": "5",
+            "role": "data",
+            "reading": "natural"
+          }
+        ]
+      },
+      {
+        "block": "block_0005_0007",
+        "path": "/text",
+        "sourceSha256": "b7be81b62894a33d9bf5ab915a089a82e5a2dffe5c6550e3e56e92aeac2d9377",
+        "spans": [
+          {
+            "start": 94,
+            "end": 98,
+            "text": "else",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 151,
+            "end": 162,
+            "text": "Sin trabajo",
+            "role": "output",
+            "reading": "natural"
+          },
+          {
+            "start": 270,
+            "end": 271,
+            "text": "/",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 274,
+            "end": 275,
+            "text": "%",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 334,
+            "end": 354,
+            "text": "(Köppe et al., 2023)",
+            "role": "citation",
+            "reading": "natural"
+          }
+        ]
+      },
+      {
+        "block": "block_0005_0008",
+        "path": "/text",
+        "sourceSha256": "fcc575e0452d46075e5419cfe2a04a27a75b38ae98ba57c61a13e13c95f7910b",
+        "spans": []
+      },
+      {
+        "block": "block_0005_0009",
+        "path": "/text",
+        "sourceSha256": "3b1663f989470fda5d2230ef2f02d9ea01cdd8c949fe0ef15fef8e34cbde034c",
+        "spans": [
+          {
+            "start": 151,
+            "end": 156,
+            "text": "1 4 1",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 309,
+            "end": 315,
+            "text": "30 6 1",
+            "role": "data",
+            "reading": "natural"
+          }
+        ]
+      },
+      {
+        "block": "block_0005_0003",
+        "path": "/text",
+        "sourceSha256": "f0b815ccc352108da4e170bd5cf643438fcd7295f666aa03554ef2585d57fd64",
+        "spans": [
+          {
+            "start": 660,
+            "end": 666,
+            "text": "14 4 1",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 684,
+            "end": 693,
+            "text": "Grupos: 3",
+            "role": "output",
+            "reading": "natural"
+          },
+          {
+            "start": 694,
+            "end": 706,
+            "text": "Sobrantes: 2",
+            "role": "output",
+            "reading": "natural"
+          },
+          {
+            "start": 845,
+            "end": 851,
+            "text": "14 4 0",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 869,
+            "end": 886,
+            "text": "Reparto pendiente",
+            "role": "output",
+            "reading": "natural"
+          },
+          {
+            "start": 1033,
+            "end": 1039,
+            "text": "12 4 1",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 1057,
+            "end": 1066,
+            "text": "Grupos: 3",
+            "role": "output",
+            "reading": "natural"
+          },
+          {
+            "start": 1210,
+            "end": 1216,
+            "text": "12 4 0",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 1234,
+            "end": 1243,
+            "text": "Grupos: 3",
+            "role": "output",
+            "reading": "natural"
+          },
+          {
+            "start": 1395,
+            "end": 1401,
+            "text": "30 6 1",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 1419,
+            "end": 1428,
+            "text": "Grupos: 5",
+            "role": "output",
+            "reading": "natural"
+          },
+          {
+            "start": 1555,
+            "end": 1561,
+            "text": "-1 4 1",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 1579,
+            "end": 1594,
+            "text": "Datos invalidos",
+            "role": "output",
+            "reading": "natural"
+          },
+          {
+            "start": 1725,
+            "end": 1731,
+            "text": "31 4 1",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 1749,
+            "end": 1764,
+            "text": "Datos invalidos",
+            "role": "output",
+            "reading": "natural"
+          },
+          {
+            "start": 1911,
+            "end": 1917,
+            "text": "12 0 1",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 1935,
+            "end": 1950,
+            "text": "Datos invalidos",
+            "role": "output",
+            "reading": "natural"
+          },
+          {
+            "start": 2078,
+            "end": 2084,
+            "text": "12 7 1",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 2102,
+            "end": 2117,
+            "text": "Datos invalidos",
+            "role": "output",
+            "reading": "natural"
+          },
+          {
+            "start": 2236,
+            "end": 2241,
+            "text": "0 0 1",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 2259,
+            "end": 2274,
+            "text": "Datos invalidos",
+            "role": "output",
+            "reading": "natural"
+          },
+          {
+            "start": 2418,
+            "end": 2423,
+            "text": "1 4 1",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 2441,
+            "end": 2450,
+            "text": "Grupos: 0",
+            "role": "output",
+            "reading": "natural"
+          },
+          {
+            "start": 2451,
+            "end": 2463,
+            "text": "Sobrantes: 1",
+            "role": "output",
+            "reading": "natural"
+          },
+          {
+            "start": 2598,
+            "end": 2603,
+            "text": "1 4 0",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 2621,
+            "end": 2638,
+            "text": "Reparto pendiente",
+            "role": "output",
+            "reading": "natural"
+          }
+        ]
+      }
+    ],
+    "rootFields": [
+      {
+        "path": "/title",
+        "sourceSha256": "bb45cd438fda5d7e4c0d3968d861a3ade9297259341c5bb9202b7cbef74d8285",
+        "spans": []
+      }
+    ]
+  },
+  "compilerLocalIntChecks": [
+    {
+      "activity": "block_0002_0002",
+      "probes": [
+        {
+          "variable": "fichas",
+          "replacement": 0,
+          "outputs": [
+            "Sin trabajo",
+            "Sin trabajo\n"
+          ]
+        },
+        {
+          "variable": "fichas",
+          "replacement": 12,
+          "outputs": [
+            "Grupos: 3",
+            "Grupos: 3\n"
+          ]
+        },
+        {
+          "variable": "capacidad",
+          "replacement": -1,
+          "outputs": [
+            "Datos invalidos",
+            "Datos invalidos\n"
+          ]
+        },
+        {
+          "variable": "fichas",
+          "replacement": -1,
+          "outputs": [
+            "Datos invalidos",
+            "Datos invalidos\n"
+          ]
+        },
+        {
+          "variable": "fichas",
+          "replacement": 31,
+          "outputs": [
+            "Datos invalidos",
+            "Datos invalidos\n"
+          ]
+        },
+        {
+          "variable": "capacidad",
+          "replacement": 6,
+          "outputs": [
+            "Grupos: 2\nSobrantes: 2",
+            "Grupos: 2\nSobrantes: 2\n"
+          ]
+        },
+        {
+          "variable": "capacidad",
+          "replacement": 7,
+          "outputs": [
+            "Datos invalidos",
+            "Datos invalidos\n"
+          ]
+        },
+        {
+          "variable": "codigo_sobrantes",
+          "replacement": 0,
+          "outputs": [
+            "Reparto pendiente",
+            "Reparto pendiente\n"
+          ]
+        }
+      ]
+    }
+  ],
+  "courseEdition": {
+    "version": 1,
+    "courseId": "cpp_fundamentals",
+    "locale": "es",
+    "generation": 1,
+    "id": "cpp_desde_cero_2026"
+  },
+  "stateLayout": {
+    "version": 2,
+    "locale": "es",
+    "origin": [
+      {
+        "id": "page_0000",
+        "blocks": [
+          {
+            "id": "block_0000_0000",
+            "sha256": "a30d0555835b703d0dd5a90aabb0134813afd11904b5364f69f03b01695f6d7a"
+          },
+          {
+            "id": "block_0000_0001",
+            "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+          },
+          {
+            "id": "block_0000_0002",
+            "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+          },
+          {
+            "id": "block_0000_0003",
+            "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+          },
+          {
+            "id": "block_0000_0004",
+            "sha256": "5a25f39deebfacf70f31e9ed31d9496f83df3471d72bfcca57fec1493aee69a1"
+          }
+        ]
+      },
+      {
+        "id": "page_0001",
+        "blocks": [
+          {
+            "id": "block_0001_0000",
+            "sha256": "a30d0555835b703d0dd5a90aabb0134813afd11904b5364f69f03b01695f6d7a"
+          },
+          {
+            "id": "block_0001_0001",
+            "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+          },
+          {
+            "id": "block_0001_0002",
+            "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+          },
+          {
+            "id": "block_0001_0003",
+            "sha256": "f62f2f18c4c0a7e550b9f4c7147121901cb19665c8139a67cf1cd7869ddacce8"
+          },
+          {
+            "id": "block_0001_0004",
+            "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+          }
+        ]
+      },
+      {
+        "id": "page_0002",
+        "blocks": [
+          {
+            "id": "block_0002_0000",
+            "sha256": "a30d0555835b703d0dd5a90aabb0134813afd11904b5364f69f03b01695f6d7a"
+          },
+          {
+            "id": "block_0002_0001",
+            "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+          },
+          {
+            "id": "block_0002_0002",
+            "sha256": "8736a310f5f5e9495486b1f164ed2fdcd10c9bb55b5fc306cd942d71bc0c09e9"
+          },
+          {
+            "id": "block_0002_0003",
+            "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+          },
+          {
+            "id": "block_0002_0004",
+            "sha256": "a30d0555835b703d0dd5a90aabb0134813afd11904b5364f69f03b01695f6d7a"
+          },
+          {
+            "id": "block_0002_0005",
+            "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+          },
+          {
+            "id": "block_0002_0006",
+            "sha256": "27abd34bdd27c5ebf8e6ab39a684808773ae36dac7e51938b63154a83bbecaff"
+          }
+        ]
+      },
+      {
+        "id": "page_0003",
+        "blocks": [
+          {
+            "id": "block_0003_0000",
+            "sha256": "a30d0555835b703d0dd5a90aabb0134813afd11904b5364f69f03b01695f6d7a"
+          },
+          {
+            "id": "block_0003_0001",
+            "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+          },
+          {
+            "id": "block_0003_0002",
+            "sha256": "ef00568582a4d6be1ea57ab95e2bf8360bbef98dca9eebfb37ace52e0e90650d"
+          },
+          {
+            "id": "block_0003_0003",
+            "sha256": "4fb2b89bb1cf94b561c9689e03c50e7422efed6ea56c44504e90bd2f6cd23c48"
+          }
+        ]
+      },
+      {
+        "id": "page_0004",
+        "blocks": [
+          {
+            "id": "block_0004_0000",
+            "sha256": "a30d0555835b703d0dd5a90aabb0134813afd11904b5364f69f03b01695f6d7a"
+          },
+          {
+            "id": "block_0004_0001",
+            "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+          },
+          {
+            "id": "block_0004_0002",
+            "sha256": "c8fc671f0b54067bc248abebf5960c80bec130b4f7a40fdd385493dd656db028"
+          },
+          {
+            "id": "block_0004_0003",
+            "sha256": "1ffec2a398cf0ac30654ca193b1d7e719f10f60448fa13434c7d34249e8a6b3e"
+          },
+          {
+            "id": "block_0004_0004",
+            "sha256": "5a25f39deebfacf70f31e9ed31d9496f83df3471d72bfcca57fec1493aee69a1"
+          }
+        ]
+      },
+      {
+        "id": "page_0005",
+        "blocks": [
+          {
+            "id": "block_0005_0000",
+            "sha256": "a30d0555835b703d0dd5a90aabb0134813afd11904b5364f69f03b01695f6d7a"
+          },
+          {
+            "id": "block_0005_0001",
+            "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+          },
+          {
+            "id": "block_0005_0002",
+            "sha256": "1e0c4c3b229b1b3d1dbe2424b838254e7576c4cdfa642e92179994d0e059163e"
+          },
+          {
+            "id": "block_0005_0003",
+            "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+          },
+          {
+            "id": "block_0005_0004",
+            "sha256": "a30d0555835b703d0dd5a90aabb0134813afd11904b5364f69f03b01695f6d7a"
+          },
+          {
+            "id": "block_0005_0005",
+            "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+          },
+          {
+            "id": "block_0005_0006",
+            "sha256": "69d565177305e5bda58d2ea3ea21e93449b045338b2b3b55ac4520eb03459936"
+          },
+          {
+            "id": "block_0005_0007",
+            "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+          },
+          {
+            "id": "block_0005_0008",
+            "sha256": "a30d0555835b703d0dd5a90aabb0134813afd11904b5364f69f03b01695f6d7a"
+          },
+          {
+            "id": "block_0005_0009",
+            "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+          },
+          {
+            "id": "block_0005_0010",
+            "sha256": "c0333a9effda0ba6e3272830b958c895eee4fdaaad984bdfd926bf2e1dfa03cd"
+          }
+        ]
+      }
+    ],
+    "current": [
+      {
+        "id": "page_0000",
+        "blocks": [
+          "block_0000_0000",
+          "block_0000_0001",
+          "block_0000_0002",
+          "block_0000_0003",
+          "block_0000_0004"
+        ]
+      },
+      {
+        "id": "page_0001",
+        "blocks": [
+          "block_0001_0000",
+          "block_0001_0001",
+          "block_0001_0002",
+          "block_0001_0003",
+          "block_0001_0004"
+        ]
+      },
+      {
+        "id": "page_0002",
+        "blocks": [
+          "block_0002_0000",
+          "block_0002_0001",
+          "block_0002_0002",
+          "block_0002_0003",
+          "block_0002_0004",
+          "block_0002_0005",
+          "block_0002_0006"
+        ]
+      },
+      {
+        "id": "page_0003",
+        "blocks": [
+          "block_0003_0000",
+          "block_0003_0001",
+          "block_0003_0002",
+          "block_0003_0003"
+        ]
+      },
+      {
+        "id": "page_0004",
+        "blocks": [
+          "block_0004_0000",
+          "block_0004_0001",
+          "block_0004_0002",
+          "block_0004_0003",
+          "block_0004_0004"
+        ]
+      },
+      {
+        "id": "page_0005",
+        "blocks": [
+          "block_0005_0000",
+          "block_0005_0001",
+          "block_0005_0002",
+          "block_0005_0003",
+          "block_0005_0004",
+          "block_0005_0005",
+          "block_0005_0006",
+          "block_0005_0007",
+          "block_0005_0008",
+          "block_0005_0009",
+          "block_0005_0010"
+        ]
+      }
+    ],
+    "family": {
+      "es": {
+        "sha256": "33df9f4918d232df5f4462d775ac10855755d1f01b3714f985812fda36cd0840",
+        "origin": [
+          {
+            "id": "page_0000",
+            "blocks": [
+              {
+                "id": "block_0000_0000",
+                "sha256": "a30d0555835b703d0dd5a90aabb0134813afd11904b5364f69f03b01695f6d7a"
+              },
+              {
+                "id": "block_0000_0001",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              },
+              {
+                "id": "block_0000_0002",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              },
+              {
+                "id": "block_0000_0003",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              },
+              {
+                "id": "block_0000_0004",
+                "sha256": "5a25f39deebfacf70f31e9ed31d9496f83df3471d72bfcca57fec1493aee69a1"
+              }
+            ]
+          },
+          {
+            "id": "page_0001",
+            "blocks": [
+              {
+                "id": "block_0001_0000",
+                "sha256": "a30d0555835b703d0dd5a90aabb0134813afd11904b5364f69f03b01695f6d7a"
+              },
+              {
+                "id": "block_0001_0001",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              },
+              {
+                "id": "block_0001_0002",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              },
+              {
+                "id": "block_0001_0003",
+                "sha256": "f62f2f18c4c0a7e550b9f4c7147121901cb19665c8139a67cf1cd7869ddacce8"
+              },
+              {
+                "id": "block_0001_0004",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              }
+            ]
+          },
+          {
+            "id": "page_0002",
+            "blocks": [
+              {
+                "id": "block_0002_0000",
+                "sha256": "a30d0555835b703d0dd5a90aabb0134813afd11904b5364f69f03b01695f6d7a"
+              },
+              {
+                "id": "block_0002_0001",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              },
+              {
+                "id": "block_0002_0002",
+                "sha256": "8736a310f5f5e9495486b1f164ed2fdcd10c9bb55b5fc306cd942d71bc0c09e9"
+              },
+              {
+                "id": "block_0002_0003",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              },
+              {
+                "id": "block_0002_0004",
+                "sha256": "a30d0555835b703d0dd5a90aabb0134813afd11904b5364f69f03b01695f6d7a"
+              },
+              {
+                "id": "block_0002_0005",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              },
+              {
+                "id": "block_0002_0006",
+                "sha256": "27abd34bdd27c5ebf8e6ab39a684808773ae36dac7e51938b63154a83bbecaff"
+              }
+            ]
+          },
+          {
+            "id": "page_0003",
+            "blocks": [
+              {
+                "id": "block_0003_0000",
+                "sha256": "a30d0555835b703d0dd5a90aabb0134813afd11904b5364f69f03b01695f6d7a"
+              },
+              {
+                "id": "block_0003_0001",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              },
+              {
+                "id": "block_0003_0002",
+                "sha256": "ef00568582a4d6be1ea57ab95e2bf8360bbef98dca9eebfb37ace52e0e90650d"
+              },
+              {
+                "id": "block_0003_0003",
+                "sha256": "4fb2b89bb1cf94b561c9689e03c50e7422efed6ea56c44504e90bd2f6cd23c48"
+              }
+            ]
+          },
+          {
+            "id": "page_0004",
+            "blocks": [
+              {
+                "id": "block_0004_0000",
+                "sha256": "a30d0555835b703d0dd5a90aabb0134813afd11904b5364f69f03b01695f6d7a"
+              },
+              {
+                "id": "block_0004_0001",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              },
+              {
+                "id": "block_0004_0002",
+                "sha256": "c8fc671f0b54067bc248abebf5960c80bec130b4f7a40fdd385493dd656db028"
+              },
+              {
+                "id": "block_0004_0003",
+                "sha256": "1ffec2a398cf0ac30654ca193b1d7e719f10f60448fa13434c7d34249e8a6b3e"
+              },
+              {
+                "id": "block_0004_0004",
+                "sha256": "5a25f39deebfacf70f31e9ed31d9496f83df3471d72bfcca57fec1493aee69a1"
+              }
+            ]
+          },
+          {
+            "id": "page_0005",
+            "blocks": [
+              {
+                "id": "block_0005_0000",
+                "sha256": "a30d0555835b703d0dd5a90aabb0134813afd11904b5364f69f03b01695f6d7a"
+              },
+              {
+                "id": "block_0005_0001",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              },
+              {
+                "id": "block_0005_0002",
+                "sha256": "1e0c4c3b229b1b3d1dbe2424b838254e7576c4cdfa642e92179994d0e059163e"
+              },
+              {
+                "id": "block_0005_0003",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              },
+              {
+                "id": "block_0005_0004",
+                "sha256": "a30d0555835b703d0dd5a90aabb0134813afd11904b5364f69f03b01695f6d7a"
+              },
+              {
+                "id": "block_0005_0005",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              },
+              {
+                "id": "block_0005_0006",
+                "sha256": "69d565177305e5bda58d2ea3ea21e93449b045338b2b3b55ac4520eb03459936"
+              },
+              {
+                "id": "block_0005_0007",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              },
+              {
+                "id": "block_0005_0008",
+                "sha256": "a30d0555835b703d0dd5a90aabb0134813afd11904b5364f69f03b01695f6d7a"
+              },
+              {
+                "id": "block_0005_0009",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              },
+              {
+                "id": "block_0005_0010",
+                "sha256": "c0333a9effda0ba6e3272830b958c895eee4fdaaad984bdfd926bf2e1dfa03cd"
+              }
+            ]
+          }
+        ]
+      }
+    },
+    "additions": [],
+    "editorial": []
+  }
+}
