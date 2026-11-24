@@ -179,7 +179,7 @@ void run(const std::shared_ptr<windows::NarrationWorker>& backend,const std::fil
     check(!std::filesystem::exists(environment.paths.root),"Nested-code QA requires its own new profile");
     environment.paths.cache=std::filesystem::path(build::source_root)/"out/qa/lesson-reader-audio";initialize_profile_directories(environment.paths);
     state::StateStore store(environment.paths.root);auto initial=store.load();state::prepare_lesson_state(initial,baseline);
-    state::save_current_page(initial,baseline,old_position.page);initial.preferences["native_windows"]["ui_language"]=std::string("es");
+    state::save_current_page(initial,baseline,0);initial.preferences["native_windows"]["ui_language"]=std::string("es");
     initial.preferences["code_scope_qa"]["opaque"]=std::string("Keep this unrelated value exactly.\n");
     auto& settings=initial.preferences["lesson_narration_settings"];settings["engine"]=std::string("KOKORO");settings["language"]=std::string("es");
     settings["kokoro_voice:es"]=std::string("ef_dora");settings["rate"]=3.;settings["kokoro_advance_generation"]=false;store.save(initial);
@@ -190,7 +190,7 @@ void run(const std::shared_ptr<windows::NarrationWorker>& backend,const std::fil
         ~Cleanup(){reader.reset();if(view){(void)flush_lesson_view(view);DestroyWindow(view);}DestroyWindow(host);}} cleanup{host,view,reader};
     const auto snapshot=[&]{auto result=reader->snapshot();check(result.error.empty(),"Real code-scope reader error: "+result.error);return result;};
     const auto ready=[&]{wait([&]{const auto value=snapshot();return value.planned&&!value.segments.empty()&&value.segments[value.index].available;},"actual code-scope current recording",180000);};
-    const auto open=[&](const curriculum::Lesson& lesson){
+    const auto open=[&](const curriculum::Lesson& lesson,bool prepare_initial_entry=false){
         check(!view&&!reader,"A code-scope reopen must use a new ordinary view lifetime");
         const auto displayed=identity_position(lesson,owner);
         const auto& entry_goal=lesson.pages[displayed.page].blocks[displayed.block];
@@ -201,6 +201,28 @@ void run(const std::shared_ptr<windows::NarrationWorker>& backend,const std::fil
         hooks.math_editor_request=[&](std::string_view request){return backend->math_editor(request);};
         view=create_lesson_view(host,environment,lesson,std::move(hooks));check(view!=nullptr,"Cannot mount the complete authentic code-scope lesson");
         MoveWindow(view,0,0,980,720,TRUE);
+        if(prepare_initial_entry){
+            // Reach the target through the authentic first-page prerequisite.
+            // Reopens never run this setup: their saved answer must suffice.
+            const auto prerequisite_position=identity_position(lesson,"block_0000_0004");
+            const auto& prerequisite=lesson.pages[prerequisite_position.page].blocks[prerequisite_position.block];
+            check(prerequisite_position.page==0&&prerequisite_position.block==4
+                &&prerequisite.type==curriculum::BlockType::multiple_choice&&prerequisite.correct_index
+                &&*prerequisite.correct_index==0&&lesson_page_state(view).index==0
+                &&!state::get_response(read_lesson_state(view),lesson,prerequisite),
+                "The authentic initial code-scope prerequisite is absent, already answered or not on the first page");
+            SendMessageW(child(view,1020+static_cast<int>(prerequisite_position.block)*100+
+                static_cast<int>(*prerequisite.correct_index)*2),BM_CLICK,0,0);
+            const auto prerequisite_check=child(view,1003+static_cast<int>(prerequisite_position.block)*100);
+            check(IsWindowEnabled(prerequisite_check),"The actual first-page choice did not enable Check");
+            SendMessageW(prerequisite_check,BM_CLICK,0,0);pump();
+            const auto response=state::get_response(read_lesson_state(view),lesson,prerequisite);
+            check(response&&response->correct&&state::response_reviewed(*response,prerequisite),
+                "The authentic first-page choice was not checked through its native controls");
+            check(navigate_lesson_view(view,displayed.page)&&lesson_page_state(view).index==displayed.page,
+                "The checked first-page choice did not unlock the authentic code-scope page");
+            std::cout<<"PASS code-scope initial prerequisite: native choice/Check and ordinary page navigation\n";
+        }
         // Restored mathematics is canonically checked before the deferred
         // page entry is complete. Wait for that real UI state before starting
         // its reader, rather than planning a temporary page/feedback snapshot.
@@ -213,7 +235,7 @@ void run(const std::shared_ptr<windows::NarrationWorker>& backend,const std::fil
     const auto close=[&]{reader.reset();check(flush_lesson_view(view),"Cannot persist actual code-scope state");DestroyWindow(view);view=nullptr;};
     const auto selected=[&]{const auto response=state::get_response(read_lesson_state(view),current,goal);
         check(response&&response->correct&&state::response_reviewed(*response,goal),"The actual before-return answer is absent or unverified");return *response;};
-    open(baseline);check(canvases(child(view,1005+static_cast<int>(old_position.block)*100))==1,
+    open(baseline,true);check(canvases(child(view,1005+static_cast<int>(old_position.block)*100))==1,
         "An ordinary Euclidean diagram without an overlay stopped using its existing renderer");
     auto regions=lesson_reading_regions(view);const auto option=std::ranges::find_if(regions,[&](const auto& item){return item.block_index==old_position.block&&item.key.ends_with("/posicion/option/antes_de_return");});
     check(option!=regions.end(),"The authentic before-return response option is absent");
