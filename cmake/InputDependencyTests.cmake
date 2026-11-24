@@ -200,7 +200,7 @@ function(lgaed_add_local_dependency_view_tests source_root presentation_target)
     # without changing the nine historical manifests or their sixteen owners.
     set(_joint_fixture_dir "${CMAKE_CURRENT_BINARY_DIR}/test-fixtures/joint-local-int")
     set(_joint_fixture_files "${_joint_fixture_dir}/manifest.json")
-    foreach(_lesson IN ITEMS u3l7 u3l8)
+    foreach(_lesson IN ITEMS u3l5 u3l7 u3l8)
         foreach(_file IN ITEMS before.json after.json)
             list(APPEND _joint_fixture_files "${_joint_fixture_dir}/${_lesson}/${_file}")
         endforeach()
@@ -222,4 +222,77 @@ function(lgaed_add_local_dependency_view_tests source_root presentation_target)
     add_test(NAME native.joint_local_int_view
         COMMAND lgaed_local_dependency_view_tests --joint-local-int "${_joint_fixture_dir}/manifest.json")
     set_tests_properties(native.joint_local_int_view PROPERTIES TIMEOUT 600 RUN_SERIAL TRUE)
+    add_test(NAME native.joint_local_int_admission_view
+        COMMAND lgaed_local_dependency_view_tests --joint-local-int
+            "${_joint_fixture_dir}/manifest.json" u3l5)
+    set_tests_properties(native.joint_local_int_admission_view PROPERTIES TIMEOUT 600 RUN_SERIAL TRUE)
+
+    # Eight independently pinned current input owners adopt their own private
+    # plans. Keep both earlier exports and all eighteen historical owners intact.
+    set(_decision_fixture_dir "${CMAKE_CURRENT_BINARY_DIR}/test-fixtures/input-decisions")
+    set(_decision_fixture_files "${_decision_fixture_dir}/manifest.json")
+    foreach(_lesson IN ITEMS u3l3 u3l4 u3l5 u3l6 u3l7 u3l8 u4l1 u4l2)
+        foreach(_file IN ITEMS before.json after.json)
+            list(APPEND _decision_fixture_files "${_decision_fixture_dir}/${_lesson}/${_file}")
+        endforeach()
+    endforeach()
+    add_custom_command(OUTPUT ${_decision_fixture_files}
+        COMMAND "${Python3_EXECUTABLE}" -B
+            "${source_root}/scripts/curriculum/input_decision_fixture_source.py"
+            --output-dir "${_decision_fixture_dir}"
+        DEPENDS "${source_root}/scripts/curriculum/input_decision_fixture_source.py"
+            "${source_root}/scripts/curriculum/diagnostic_fixture_source.py"
+            "${source_root}/scripts/curriculum/stable_state_layout.py"
+        VERBATIM)
+    add_custom_target(lgaed_input_decision_fixtures DEPENDS ${_decision_fixture_files})
+    add_dependencies(lgaed_local_dependency_view_tests lgaed_input_decision_fixtures)
+    foreach(_lesson IN ITEMS u3l3 u3l4 u3l5 u3l6 u3l7 u3l8 u4l1 u4l2)
+        add_test(NAME native.input_decisions_view_${_lesson}
+            COMMAND lgaed_local_dependency_view_tests --input-decisions
+                "${_decision_fixture_dir}/manifest.json" "${_lesson}")
+        set_tests_properties(native.input_decisions_view_${_lesson}
+            PROPERTIES TIMEOUT 600 RUN_SERIAL TRUE)
+    endforeach()
+    add_test(NAME native.input_decision_authoring
+        COMMAND "${Python3_EXECUTABLE}" -B -m unittest discover
+            -s "${source_root}/scripts/curriculum" -p test_input_decision_authoring.py -v)
+    set_tests_properties(native.input_decision_authoring PROPERTIES TIMEOUT 120)
+
+    # A new omission witness extends one authenticated repair without changing
+    # its three published probes or any of the older fixture exports.
+    set(_arithmetic_fixture_dir "${CMAKE_CURRENT_BINARY_DIR}/test-fixtures/guarded-arithmetic")
+    set(_arithmetic_fixture_files "${_arithmetic_fixture_dir}/manifest.json"
+        "${_arithmetic_fixture_dir}/u3l6/before.json" "${_arithmetic_fixture_dir}/u3l6/after.json")
+    add_custom_command(OUTPUT ${_arithmetic_fixture_files}
+        COMMAND "${Python3_EXECUTABLE}" -B
+            "${source_root}/scripts/curriculum/short_circuit_fixture_source.py"
+            --output-dir "${_arithmetic_fixture_dir}"
+        DEPENDS "${source_root}/scripts/curriculum/short_circuit_fixture_source.py"
+            "${source_root}/scripts/curriculum/diagnostic_fixture_source.py"
+            "${source_root}/scripts/curriculum/stable_state_layout.py"
+        VERBATIM)
+    add_custom_target(lgaed_guarded_arithmetic_fixtures DEPENDS ${_arithmetic_fixture_files})
+    add_dependencies(lgaed_local_dependency_view_tests lgaed_guarded_arithmetic_fixtures)
+    add_executable(lgaed_guarded_arithmetic_core_tests
+        "${source_root}/native/core/cpp_local_int_probe_tests.cpp")
+    target_include_directories(lgaed_guarded_arithmetic_core_tests PRIVATE "${source_root}/native")
+    target_link_libraries(lgaed_guarded_arithmetic_core_tests PRIVATE lgaed_host_options)
+    add_test(NAME native.guarded_arithmetic_core COMMAND lgaed_guarded_arithmetic_core_tests)
+    set_tests_properties(native.guarded_arithmetic_core PROPERTIES TIMEOUT 30)
+    add_executable(lgaed_guarded_arithmetic_state_tests
+        "${source_root}/native/platform/windows/guarded_arithmetic_state_tests.cpp")
+    target_link_libraries(lgaed_guarded_arithmetic_state_tests
+        PRIVATE lgaed_platform_windows lgaed_host_options)
+    add_dependencies(lgaed_guarded_arithmetic_state_tests lgaed_guarded_arithmetic_fixtures)
+    add_test(NAME native.guarded_arithmetic_state
+        COMMAND lgaed_guarded_arithmetic_state_tests "${_arithmetic_fixture_dir}/manifest.json")
+    set_tests_properties(native.guarded_arithmetic_state PROPERTIES TIMEOUT 60 RUN_SERIAL TRUE)
+    add_test(NAME native.guarded_arithmetic_authoring
+        COMMAND "${Python3_EXECUTABLE}" -B -m unittest discover
+            -s "${source_root}/scripts/curriculum" -p test_local_arithmetic_authoring.py -v)
+    set_tests_properties(native.guarded_arithmetic_authoring PROPERTIES TIMEOUT 120)
+    add_test(NAME native.guarded_arithmetic_view
+        COMMAND lgaed_local_dependency_view_tests --guarded-arithmetic
+            "${_arithmetic_fixture_dir}/manifest.json")
+    set_tests_properties(native.guarded_arithmetic_view PROPERTIES TIMEOUT 600 RUN_SERIAL TRUE)
 endfunction()

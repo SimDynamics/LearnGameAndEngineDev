@@ -290,6 +290,8 @@ lgaed_add_input_dependency_state_tests("${_lgaed_root}")
 lgaed_add_local_role_state_tests("${_lgaed_root}")
 lgaed_add_local_dependency_receipt_tests("${_lgaed_root}")
 lgaed_add_local_dependency_view_tests("${_lgaed_root}" lgaed_curricular_windows)
+include("${_lgaed_root}/cmake/SpecialSourceFormatTests.cmake")
+lgaed_add_special_source_format_tests("${_lgaed_root}")
 
 add_executable(lgaed_curricular_input_lab_tests
     "${_lgaed_root}/native/presentation/windows/curricular_input_lab_tests.cpp")
@@ -380,6 +382,9 @@ add_dependencies(lgaed_inline_feedback_view_tests lgaed_lesson_header_shell_comp
 add_test(NAME native.lesson_header
     COMMAND lgaed_inline_feedback_view_tests --lesson-header)
 set_tests_properties(native.lesson_header PROPERTIES TIMEOUT 90 RUN_SERIAL TRUE)
+add_test(NAME native.puzzle_wheel
+    COMMAND lgaed_inline_feedback_view_tests --puzzle-wheel)
+set_tests_properties(native.puzzle_wheel PROPERTIES TIMEOUT 180 RUN_SERIAL TRUE)
 
 # Native Windows case revision StateStore and preserved aggregate QA.
 set(_u6l19_dir "${CMAKE_CURRENT_BINARY_DIR}/test-fixtures/u6l19-case-split")

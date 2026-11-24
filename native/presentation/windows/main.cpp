@@ -212,7 +212,9 @@ void open_lesson(HWND window,WindowState& state,lgaed::curriculum::Lesson lesson
                 auto route_location=course_location;route_location.course.clear();
                 const auto route_page=lgaed::windows::load_catalog(content_root,route_location);
                 const auto course_entry=std::ranges::find(route_page.entries,context.course,&lgaed::curriculum::CatalogEntry::id);
-                if(course_entry!=route_page.entries.end())hooks.course_number=course_entry->number;
+                if(course_entry!=route_page.entries.end()){
+                    hooks.course_number=course_entry->number;hooks.course_count=route_page.entries.size();
+                }
             }
         }
     }

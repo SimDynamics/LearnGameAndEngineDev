@@ -424,7 +424,8 @@ std::string input_check_fingerprint(const CppRunRequest& request) {
     const auto field=[](std::string_view part) {
         return std::to_string(part.size())+":"+std::string(part);
     };
-    auto frame=std::string("compiler-input-capture-v1/")+
+    auto frame=std::string(request.input_check->allow_same_output?
+        "compiler-input-same-output-capture-v1/":"compiler-input-capture-v1/")+
         field(std::to_string(request.request_id))+field(std::to_string(request.revision))+
         field(request.source_utf8)+field(request.stdin_utf8)+field(request.project_key)+
         field(utf8(request.projects_directory.wstring()))+
@@ -545,14 +546,20 @@ std::string local_int_fingerprint(const CppRunRequest& request) {
     };
     const bool joint=std::ranges::any_of(request.local_int_check->probes,
         [](const auto& probe){return !probe.additional_replacements.empty();});
-    const auto domain=joint?"compiler-local-int-joint-dependency-v1/":
-        "compiler-local-int-dependency-v1/";
+    const bool forbidden=std::ranges::any_of(request.local_int_check->probes,
+        [](const auto& probe){return probe.forbid_arithmetic;});
+    const auto domain=forbidden?"compiler-local-int-forbid-arithmetic-dependency-v1/":
+        joint?"compiler-local-int-joint-dependency-v1/":"compiler-local-int-dependency-v1/";
     std::string frame=std::string(domain)+field(request.project_key)+
         field(request.source_utf8)+field(request.stdin_utf8);
-    if(joint)frame+=field(std::to_string(request.local_int_check->probes.size()));
+    if(joint||forbidden)frame+=field(std::to_string(request.local_int_check->probes.size()));
     for(const auto& probe:request.local_int_check->probes) {
         const auto variant=curriculum::cpp_local_int_override(request.source_utf8,probe);
         if(!variant)return {};
+        // The guarded domain binds every flag, including ordinary probes in
+        // a mixed plan. Published plans without the option keep their bytes.
+        if(forbidden)frame+=field("forbid-arithmetic-v1")+
+            field(probe.forbid_arithmetic?"true":"false");
         // Keep every published int preimage byte-for-byte. New value types
         // add an explicit domain token before the existing probe fields.
         if(probe.value_type!=curriculum::CppLocalValueType::integer)
@@ -564,7 +571,7 @@ std::string local_int_fingerprint(const CppRunRequest& request) {
         if(probe.expected_increase)
             frame+=field("exact-increase-v1")+
                 field(std::to_string(*probe.expected_increase));
-        if(joint) {
+        if(joint||forbidden) {
             frame+=field("additional-replacements-v1")+
                 field(std::to_string(probe.additional_replacements.size()));
             for(const auto& replacement:probe.additional_replacements)
@@ -3705,7 +3712,11 @@ curriculum::FreshExecution capture_cpp_execution(const CppRunRequest& request,co
     if(request.local_int_check) {
         const auto frame=local_int_fingerprint(request);
         fresh.local_int_request_fingerprint=frame;
-        fresh.local_int_check_feedback=std::ranges::all_of(
+        const bool forbidden=std::ranges::any_of(request.local_int_check->probes,
+            [](const auto& probe){return probe.forbid_arithmetic;});
+        fresh.local_int_check_feedback=forbidden?
+            "La salida coincide, pero aún no se comprobó que la condición protectora omita la división y el resto cuando no corresponde evaluarlos.":
+            std::ranges::all_of(
             request.local_int_check->probes,[](const auto& probe) {
                 return probe.value_type==curriculum::CppLocalValueType::integer;
             })?"La salida coincide, pero no se acreditó que dependa de las variables int declaradas.":
@@ -3727,7 +3738,10 @@ curriculum::FreshExecution capture_cpp_execution(const CppRunRequest& request,co
                         probe,captured.execution.stdout_bytes);
                 if(!exact) {
                     passed=false;
-                    if(!probe.additional_replacements.empty()) {
+                    if(probe.forbid_arithmetic) {
+                        fresh.local_int_check_feedback=
+                            "Comprueba que la condición protectora se evalúe antes de dividir o calcular el resto. Cuando es falsa, esas operaciones deben omitirse.";
+                    }else if(!probe.additional_replacements.empty()) {
                         fresh.local_int_check_feedback=
                             "Comprueba cómo se combinan los valores de las variables '"+probe.variable+"'";
                         for(const auto& replacement:probe.additional_replacements)

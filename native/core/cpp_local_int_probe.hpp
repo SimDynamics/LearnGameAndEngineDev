@@ -1,6 +1,7 @@
 #pragma once
 
 #include "core/cpp_expression_repair.hpp"
+#include "core/cpp_forbidden_arithmetic_probe.hpp"
 
 #include <algorithm>
 #include <charconv>
@@ -51,6 +52,10 @@ struct CppLocalIntProbe {
     // combine after-update witnesses or character/boolean conversions.
     // Appended so every historical aggregate keeps its original meaning.
     std::vector<CppLocalIntReplacement> additional_replacements{};
+    // Opt-in observation of omission, not an alternate arithmetic result.
+    // This private execution must evaluate neither division nor remainder.
+    // Default false preserves every previously published probe and variant.
+    bool forbid_arithmetic = false;
     bool operator==(const CppLocalIntProbe&) const = default;
 };
 
@@ -60,6 +65,9 @@ struct CppLocalIntCheck {
 };
 
 inline bool cpp_local_int_probe_value_valid(const CppLocalIntProbe& probe) {
+    if(probe.forbid_arithmetic&&
+       (probe.value_type!=CppLocalValueType::integer||probe.after_update||
+        probe.expected_increase||!probe.additional_replacements.empty()))return false;
     if(!probe.additional_replacements.empty()&&
        (probe.additional_replacements.size()>7||
         probe.value_type!=CppLocalValueType::integer||probe.after_update||
@@ -816,6 +824,7 @@ inline std::optional<std::pair<std::size_t,std::size_t>> first_state_update(
     const auto declaration = cpp_local_int_probe_detail::local_declaration(
         *code, body->first, body->second, probe.variable, probe.value_type);
     if (!declaration) return {};
+    if(probe.forbid_arithmetic&&!declaration->initialized)return {};
     auto end = declaration->end;
     if (!declaration->initialized) {
         const auto assignment = cpp_local_int_probe_detail::first_assignment(
@@ -921,6 +930,7 @@ inline std::optional<std::pair<std::size_t,std::size_t>> first_state_update(
         variant += std::to_string(probe.replacement);
     variant += ";\n";
     variant += source.substr(offset);
+    if(probe.forbid_arithmetic)return cpp_forbid_arithmetic(variant);
     return variant;
 }
 

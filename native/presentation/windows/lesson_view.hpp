@@ -78,6 +78,7 @@ struct LessonViewHooks {
     std::string course_title;
     std::size_t course_number = 0;
     std::size_t unit_number = 0, unit_count = 0, lesson_number = 0, lesson_count = 0;
+    std::size_t course_count = 0;
 };
 // Page actions share exactly the gates used by gestures and the native Pages
 // menu. These messages carry no fake/hidden navigation controls.

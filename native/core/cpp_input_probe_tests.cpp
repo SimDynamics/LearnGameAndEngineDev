@@ -19,6 +19,7 @@ CppInputCheck check() {
 int main() {
     try {
         const auto original=check();
+        require(!original.allow_same_output,"Legacy aggregate opted into same-output probes");
         require(cpp_input_check_valid(original),"Independent input alternatives rejected");
         require(cpp_input_expected_output("Leo: 5",original.probes[0]),"Exact output rejected");
         require(cpp_input_expected_output("Leo: 5\r\n",original.probes[0]),"CRLF not normalized");
@@ -31,6 +32,13 @@ int main() {
         require(changed!=original,"Changed input omitted from equality");
         changed=original;changed.probes[0].outputs[0]="Leo: 6";
         require(changed!=original,"Changed expectation omitted from equality");
+        changed=original;changed.allow_same_output=true;
+        require(cpp_input_check_valid(changed)&&changed!=original,
+                "Explicit same-output mode is invalid or omitted from equality");
+        changed.probes[0].outputs={"x\n","x\r\n"};
+        require(!cpp_input_check_valid(changed),"Same-output mode accepts duplicate alternatives");
+        changed=original;changed.allow_same_output=true;changed.probes.resize(9);
+        require(!cpp_input_check_valid(changed),"Same-output mode removes the private execution limit");
         require(!cpp_input_check_valid({}),"Empty checks accepted");
         changed=original;changed.probes.resize(9);
         require(!cpp_input_check_valid(changed),"Unbounded probe count accepted");

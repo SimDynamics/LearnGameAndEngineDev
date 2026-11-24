@@ -18,6 +18,9 @@ struct CppInputProbe {
 };
 struct CppInputCheck {
     std::vector<CppInputProbe> probes;
+    // The loader still requires a whole probe to distinguish the first case.
+    // An absent option retains the historical per-probe requirement.
+    bool allow_same_output = false;
     bool operator==(const CppInputCheck&) const = default;
 };
 

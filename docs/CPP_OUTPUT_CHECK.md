@@ -2479,6 +2479,19 @@ Windows y todos sus controles literales. Es una revisión cerrada de ese objetiv
 no una normalización general: los demás stdout siguen comparándose byte a byte.
 La guía pública y su marcado pueden editarse sin cambiar esos bytes ejecutables.
 
+Estos tres objetivos admiten las revisiones de formato autenticadas mediante
+`sourceFormatRevisions`. Después de validar el archivo de fuentes y su cadena
+editorial, el reconocimiento del objetivo restaura únicamente los campos de
+fuente; conserva el `outputCheck` vigente, su entrada, salida, código de retorno
+y guía. Así, añadir un separador vacío no elimina el retorno intencional ni la
+alternativa CRT, y tampoco permite cambiar sus condiciones ejecutables.
+
+La misma comprobación protege los propietarios activos y retirados, las
+instantáneas históricas y los retornos a una edición anterior. Un retorno no
+puede eliminar un objetivo ya incorporado. El formato compatible conserva la
+identidad del objetivo, sus recibos nativos acreditados y los borradores; la
+importación de datos antiguos sigue sin fabricar ejecuciones Windows.
+
 ## Autoría y recuperación de guías públicas
 
 `outputCheck.cases[i].explanation`,
@@ -4139,7 +4152,41 @@ con la comparación `exact` o `tokens` ya declarada. En `tokens`, sólo se
 separan espacio, tabulador, CR, LF, tabulación vertical y salto de página,
 igual que en el evaluador nativo. Un espacio Unicode no se transforma
 silenciosamente en un separador ASCII. Las salidas privadas deben diferir
-de las alternativas del primer resultado público.
+de las alternativas del primer resultado público, salvo la opción explícita
+descrita a continuación.
+
+### Entradas distintas que deben conservar el resultado
+
+Una decisión puede producir la misma respuesta para varias entradas correctas:
+por ejemplo, distintas combinaciones de permisos pueden exigir `Entrada denegada`.
+Para comprobarlas, una nueva declaración puede incluir `allowSameOutput: true`
+junto a `activity` y `probes`. Este ejemplo mínimo combina una denegación y
+una admisión del editor U3L5, cuyo primer caso público es `1 0 0`:
+
+```json
+{
+  "activity": "p1u3l5_construir_acceso",
+  "allowSameOutput": true,
+  "probes": [
+    {"standardInput": "0 0 1", "outputs": ["Entrada denegada", "Entrada denegada\n"]},
+    {"standardInput": "1 0 1", "outputs": ["Entrada permitida", "Entrada permitida\n"]}
+  ]
+}
+```
+
+La opción sólo admite el booleano `true`; para el contrato anterior se omite
+el campo. `false`, números, cadenas, valores nulos y miembros duplicados son
+inválidos. Sin el campo, cada sonda sigue teniendo que diferir del primer
+resultado público. Con él, al menos una sonda debe tener **todas** sus
+alternativas disjuntas de las del primer caso, después de normalizar CRLF.
+Una sonda con una alternativa igual y otra diferente no satisface ese requisito.
+Así, imprimir siempre el primer resultado nunca acredita el plan. El modo
+también admite planes en los que todas las sondas son contrastantes.
+
+Los límites, la unicidad de las entradas y los demás contratos se mantienen.
+No se pueden cambiar la opción ni las sondas de un propietario ya publicado;
+la ampliación permite añadir propietarios nuevos conservando exactamente el
+prefijo de declaraciones previo.
 
 Una entrada privada sí puede coincidir con un caso público opcional: su
 ejecución interna no acredita ese caso ni lo convierte en otra tarea manual.
@@ -4164,6 +4211,13 @@ Las evidencias incluyen el hash de la fuente y del ejecutable, la entrada
 exacta y el resultado real del proceso. Una evidencia incompleta, cancelada,
 de otro binario o perteneciente a otra solicitud no concede el objetivo.
 
+El modo forma parte de la captura y del sello. Las declaraciones sin la
+opción conservan exactamente sus dominios `compiler-input-capture-v1/` y
+`compiler-input-complete-v1/`, sin añadir tokens al formato anterior.
+`allowSameOutput: true` usa `compiler-input-same-output-capture-v1/` y
+`compiler-input-same-output-complete-v1/`. Una captura o un sello de un modo
+no acredita una solicitud del otro.
+
 El nuevo ámbito de recibos `input/v1/` conserva por separado programa, casos,
 finalización y sello de las comprobaciones privadas. El recibo stdout
 anterior permanece intacto aunque el alumno cambie una impresión fija por
@@ -4185,6 +4239,24 @@ públicos y reabre perfiles QA con recibos, borradores, entrada y selección.
 `input_dependency_fixture_source.py` autentica la publicación y exporta
 `before.json`, `after.json` y su manifiesto sin sobrescribir otros datos.
 Esta propuesta QA no publica la declaración en el currículo.
+
+`input_decision_fixture_source.py` autentica las ocho lecciones U3L3–U3L8 y
+U4L1–U4L2 en `08a11877a2d2c0bf96a846660e3baea69e53f758`. Conserva sus 53 casos
+públicos y sus dos editores por lección; el único cambio de cada propuesta
+es añadir `compilerInputChecks` para el editor de construcción. Los planes
+reúnen 40 sondas: 33 contrastantes y siete que deben conservar el primer
+resultado. Sólo U3L5, U3L6 y U3L7 requieren la opción nueva; U3L8 conserva
+el límite de ocho sondas usando sus siete entradas válidas seleccionadas.
+
+Los ocho tests `native.input_decisions_view_u*` usan un modo independiente
+de `local_dependency_view_tests.cpp`. Ejercitan los botones Win32, los dos
+cargadores, un caso opcional antes del obligatorio, las impresiones fijas,
+la reapertura y el reinicio con sus recibos y borradores. Cinco programas
+incorrectos adicionales pasan el primer caso y las sondas contrastantes,
+pero fallan las denegaciones o los límites que deben permanecer iguales.
+La autoría comprueba sus fuentes, casos y hashes en
+`native.input_decision_authoring`. Estas fixtures técnicas no modifican los
+JSON curriculares ni acreditan por sí mismas ejecución nativa de Windows.
 
 Las pruebas Win32 `native.curricular_input_lab` y
 `native.prepared_input_predictions` ejercitan la edición actual. Sus modos
@@ -4303,6 +4375,82 @@ conjuntas dentro de sus respectivos límites. Los planes anteriores que no
 incorporan esta capacidad conservan su representación y sus recibos; un
 recibo anterior no acredita automáticamente el nuevo plan ampliado. El
 borrador visible y la salida pública no se reescriben por estas variaciones.
+
+### Omisión de división y resto en un escenario privado
+
+Una sonda simple de `compilerLocalIntChecks` puede añadir
+`"forbidArithmetic": true`. Declara una obligación concreta: en **ese
+escenario no debe evaluarse ningún operador `/` ni `%` del programa**. No
+significa solamente que el divisor sea distinto de cero. Por ejemplo, una
+capacidad negativa puede hacer que el resto esté definido en C++, pero el
+objetivo puede exigir que el programa omita el cálculo hasta validar los datos.
+Esta modalidad es explícita y general; el motor no la deduce del identificador
+de una lección ni del nombre de una variable.
+
+```json
+{
+  "variable": "capacidad",
+  "replacement": 0,
+  "outputs": ["0\nCapacidad invalida", "0\nCapacidad invalida\n"],
+  "forbidArithmetic": true
+}
+```
+
+El campo sólo admite el booleano JSON `true`; se omite para conservar la
+sonda anterior. Se aplica a un `int` local inicializado y no se combina en
+la misma sonda con `afterUpdate`, `expectedIncrease`, `additionalReplacements`
+ni tipos `char` o `bool`. Cuenta dentro del límite existente de ocho sondas
+simples. Repetir la misma variable y sustitución con otra bandera no crea
+una observación independiente.
+
+La comprobación compila una copia privada del fuente: conserva la sustitución
+local y transforma cada nodo de división/resto en un observador. El observador
+mantiene el tipo de resultado mediante `decltype` sin evaluar la operación,
+y termina con el código privado `91` si se llega a ese nodo. Por ello el
+contrafactual no ejecuta una división o un resto con divisor cero. También
+rechaza el cálculo anticipado con un divisor negativo. Los operadores
+`&&`, `||`, sus palabras alternativas y `?:` conservan su evaluación nativa;
+una solución puede proteger el cálculo con una condición equivalente o con
+`if`, sin copiar una expresión literal de referencia.
+
+Esta instrumentación admite programas elementales completos con un solo
+`main`, declaraciones escalares, inicializaciones `=`, `()` o `{}`, asignaciones,
+`if`/`else`, expresiones escalares, `static_cast` a tipos primitivos y conversiones
+funcionales primitivas de un argumento, además de la salida estándar. Antes de ejecutar exige
+reconocer **todos** los operadores `/` y `%`. Las llamadas opacas, funciones
+auxiliares, indexación, macros locales, cabeceras propias y asignaciones
+`/=` o `%=` quedan fuera de este perfil: si el fuente no puede instrumentarse
+completo, no se ejecuta el contrafactual ni se inventa evidencia de omisión.
+El borrador del estudiante, la entrada y los archivos de su ejecución pública
+se conservan. La salida pública no presenta los valores ni las respuestas de
+estas observaciones privadas.
+
+Para extender un propietario publicado sin modalidad conjunta se conserva
+todo el prefijo de sondas y se añade un sufijo formado **sólo** por observaciones
+con `forbidArithmetic: true`. No autoriza cambiar una observación anterior ni
+anexar una sonda ordinaria aprovechando la bandera de otra. Los planes sin
+esta modalidad mantienen sus fuentes instrumentadas y huellas anteriores;
+el nuevo dominio vincula el plan entero, cada bandera y el hash de cada
+variante. El recibo previo permanece válido para su objetivo anterior y no
+acredita la obligación ampliada. El objetivo actual sigue necesitando una
+sola comprobación pública correcta.
+
+`scripts/curriculum/short_circuit_fixture_source.py` exporta U3L6 desde la
+publicación autenticada `08a11877a2d2c0bf96a846660e3baea69e53f758`, conservando
+sus dos editores y las tres sondas publicadas del editor de reparación. Añade
+capacidad `0` y `-2` con esta modalidad y genera diez fuentes independientes:
+inicial, referencia, inversión de `&&`, `&` ansioso, cálculo anticipado,
+`if`, ternario, negación de `||`, `and` y conversiones primitivas equivalentes.
+Es una fixture técnica; la incorporación
+de la declaración a los contenidos activos pertenece a Work.
+
+Las pruebas `native.guarded_arithmetic_core`, `native.guarded_arithmetic_authoring`
+y `native.guarded_arithmetic_state` cubren instrumentación, autoría, ambos
+cargadores y recibos. El test de estado identifica expresamente sus capturas
+simuladas. `native.guarded_arithmetic_view` compila y ejecuta realmente las
+diez fuentes con MSVC, exige final `91` para los dos escenarios de cada
+contraejemplo y recorre los controles Win32: crédito anterior, rechazo nuevo,
+referencia, primera comprobación suficiente, reapertura y Reset acotado.
 
 ### Tipos explícitos para caracteres y valores lógicos
 

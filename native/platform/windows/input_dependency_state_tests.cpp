@@ -166,6 +166,110 @@ void validate_schema(const Lesson& original,const Lesson& reviewed) {
         "empty strings, 4096-byte UTF-8 and ASCII-only token comparison preserved.\n";
 }
 
+void validate_same_output_schema(const Lesson& original,const Lesson& reviewed) {
+    const auto root=JsonObject::Parse(winrt::to_hstring(reviewed.raw_json));
+    const auto declarations=root.GetNamedArray(L"compilerInputChecks");
+    const auto first=declarations.GetObjectAt(0);
+    first.Insert(L"allowSameOutput",JsonValue::CreateBooleanValue(true));
+    const auto opt_in=winrt::to_string(declarations.Stringify());
+    const auto opted_raw=contract_document(original,opt_in);
+    accepts_raw(opted_raw,"explicit mode with all probes distinguishing");
+    for(const auto& parsed:{parse_lesson_json(opted_raw,"es"),
+                           parse_lesson_progress_metadata(opted_raw,"es")})
+        require(block_at(parsed,identities[0]).input_check->allow_same_output&&
+                !block_at(parsed,identities[1]).input_check->allow_same_output,
+            "An explicit input mode was lost or applied to another owner");
+
+    for(const std::string_view value:{"false","null","0","1","\"true\"","[]","{}"})
+        rejects_raw(contract_document(original,replace_once(opt_in,"\"allowSameOutput\":true",
+            "\"allowSameOutput\":"+std::string(value))),"non-true same-output option");
+    for(const std::string_view duplicate:{
+            "\"allowSameOutput\":false,\"allowSameOutput\":true",
+            "\"allowSameOutput\":true,\"allowSameOutput\":true",
+            "\"allowSameOut\\u0070ut\":true,\"allowSameOutput\":true"})
+        rejects_raw(contract_document(original,replace_once(opt_in,"\"allowSameOutput\":true",duplicate)),
+            "raw duplicate same-output option");
+
+    const auto& visible=block_at(reviewed,identities[0]).output_check->cases.front().outputs;
+    JsonArray visible_outputs;
+    for(const auto& output:visible)visible_outputs.Append(JsonValue::CreateStringValue(winrt::to_hstring(output)));
+    first.GetNamedArray(L"probes").GetObjectAt(0).Insert(L"outputs",visible_outputs);
+    const auto mixed=winrt::to_string(declarations.Stringify());
+    accepts_raw(contract_document(original,mixed),"explicit mixed plan with a whole distinguishing probe");
+    const auto legacy_mixed=JsonArray::Parse(winrt::to_hstring(mixed));
+    legacy_mixed.GetObjectAt(0).Remove(L"allowSameOutput");
+    rejects_raw(contract_document(original,winrt::to_string(legacy_mixed.Stringify())),
+        "same mixed plan without the explicit owner option");
+
+    // One different alternative cannot rescue a probe that also accepts the
+    // public answer. A separate whole probe must exclude every public answer.
+    const auto overlapping=JsonArray::Parse(winrt::to_hstring(mixed));
+    JsonArray partial_outputs;
+    partial_outputs.Append(JsonValue::CreateStringValue(winrt::to_hstring(visible.front())));
+    partial_outputs.Append(JsonValue::CreateStringValue(L"a distinct alternative"));
+    overlapping.GetObjectAt(0).GetNamedArray(L"probes").GetObjectAt(0).Insert(L"outputs",partial_outputs);
+    accepts_raw(contract_document(original,winrt::to_string(overlapping.Stringify())),
+        "overlapping alternatives with another wholly distinguishing probe");
+    JsonArray crlf_output;
+    std::string crlf;
+    for(const char character:visible.back()) {
+        if(character=='\n')crlf+='\r';
+        crlf+=character;
+    }
+    crlf_output.Append(JsonValue::CreateStringValue(winrt::to_hstring(crlf)));
+    for(const auto& outputs:{visible_outputs,partial_outputs,crlf_output}) {
+        const auto invariant=JsonArray::Parse(winrt::to_hstring(mixed));
+        for(const auto& probe:invariant.GetObjectAt(0).GetNamedArray(L"probes"))
+            probe.GetObject().Insert(L"outputs",outputs);
+        rejects_raw(contract_document(original,winrt::to_string(invariant.Stringify())),
+            "no whole probe excludes the first public output");
+    }
+    for(unsigned scenario=0;scenario<7;++scenario) {
+        const auto changed=JsonArray::Parse(winrt::to_hstring(mixed));
+        const auto entry=changed.GetObjectAt(0);
+        const auto probes=entry.GetNamedArray(L"probes");
+        switch(scenario) {
+        case 0:probes.GetObjectAt(0).Insert(L"allowSameOutput",JsonValue::CreateBooleanValue(true));break;
+        case 1:probes.GetObjectAt(0).Insert(L"outputs",JsonArray::Parse(L"[\"x\\n\",\"x\\r\\n\"]"));break;
+        case 2:probes.GetObjectAt(1).Insert(L"standardInput",probes.GetObjectAt(0).GetNamedValue(L"standardInput"));break;
+        case 3:entry.Remove(L"activity");break;
+        case 4:entry.Remove(L"probes");break;
+        case 5:
+            while(probes.Size()<9) {
+                const auto extra=JsonObject::Parse(probes.GetObjectAt(1).Stringify());
+                extra.Insert(L"standardInput",JsonValue::CreateStringValue(
+                    winrt::to_hstring("private "+std::to_string(probes.Size()))));
+                probes.Append(extra);
+            }
+            break;
+        case 6:probes.GetObjectAt(0).Insert(L"outputs",JsonArray::Parse(L"[\"a\",\"b\",\"c\",\"d\",\"e\"]"));break;
+        }
+        rejects_raw(contract_document(original,winrt::to_string(changed.Stringify())),
+            "same-output contract scenario "+std::to_string(scenario));
+    }
+    std::cout<<"PASS explicit same-output authoring: full/progress agree, true-only owner option, "
+        "raw duplicates and all-invariant alternatives rejected, legacy per-probe discrimination retained.\n";
+}
+
+void validate_legacy_input_fingerprint() {
+    CppRunRequest request;
+    request.request_id=17;request.revision=29;
+    request.source_utf8="int main(){}\n";request.stdin_utf8="first\n";
+    request.project_key="input-mode-compat";
+    request.projects_directory=L"C:\\input-mode-compat";
+    request.compile_timeout=std::chrono::milliseconds(60000);
+    request.execution_timeout=std::chrono::milliseconds(5000);
+    request.output_limit_bytes=1048576;
+    request.input_check=CppInputCheck{{{"other\n",{"result","result\n"}}}};
+    // Frozen from the pre-option capture-v1 bytes; no compilation is needed.
+    const auto legacy=cpp_input_request_fingerprint(request);
+    require(legacy=="49763b068fd57e857fb23687ad749f79617cdf0341f68123a195becf5bdc080c",
+        "The absent-option input capture no longer has its exact historical preimage");
+    request.input_check->allow_same_output=true;
+    require(!cpp_input_request_fingerprint(request).empty()&&cpp_input_request_fingerprint(request)!=legacy,
+        "The explicit input mode shares the historical capture domain");
+}
+
 void validate_fixture(const Lesson& original,const Lesson& reviewed,const Lesson& metadata) {
     require(state::sha256(original.raw_json)==
         "37b473d7e9b66ab8232812e4e2c9a25e0aaa207bcfc92059fcd6fc675401d94f",
@@ -241,6 +345,78 @@ void preserves_old_preferences(const state::StateData& after,const state::StateD
         for(const auto& [key,value]:values)
             require(after.preferences.at(domain).at(key)==value,
                 "A new input proof changed an old preference or historical receipt");
+}
+
+void validate_same_output_binding(const Lesson& original,const Lesson& reviewed,std::size_t index,
+        const CppRunRequest& request,const CppRunResult& result,const FreshExecution& proof,
+        const state::StateData& earned) {
+    // An isolated negative fixture, not an allowed transition of a published owner.
+    const auto root=JsonObject::Parse(winrt::to_hstring(reviewed.raw_json));
+    const auto declarations=root.GetNamedArray(L"compilerInputChecks");
+    declarations.GetObjectAt(static_cast<std::uint32_t>(index)).Insert(
+        L"allowSameOutput",JsonValue::CreateBooleanValue(true));
+    const auto raw=contract_document(original,winrt::to_string(declarations.Stringify()));
+    const auto opted=parse_lesson_json(raw,"es");
+    const auto metadata=parse_lesson_progress_metadata(raw,"es");
+    const auto& current=block_at(reviewed,identities[index]);
+    const auto& changed=block_at(opted,identities[index]);
+    auto mode_request=request;
+    mode_request.input_check=changed.input_check;
+    const auto legacy_fingerprint=cpp_input_request_fingerprint(request);
+    const auto mode_fingerprint=cpp_input_request_fingerprint(mode_request);
+    require(proof.input_check_correct&&proof.input_request_fingerprint==legacy_fingerprint&&
+            !mode_fingerprint.empty()&&mode_fingerprint!=legacy_fingerprint&&
+            compiler_runtime_request_allowed(changed,mode_request)&&
+            !compiler_runtime_request_allowed(current,mode_request)&&
+            !compiler_runtime_request_allowed(changed,request)&&
+            reference_objective_frame(reviewed,current)==reference_objective_frame(opted,changed)&&
+            draft_key("programming",reviewed,current)==draft_key("programming",opted,changed),
+        "An explicit input mode changed a draft/objective or shared the old runtime request");
+
+    // Reuse the actual successful native result; never relabel its evidence as
+    // an observation of a different mode. Capture and completion must reject it.
+    const auto recaptured=capture_cpp_execution(mode_request,result);
+    require(!recaptured.input_check_correct&&recaptured.input_request_fingerprint==mode_fingerprint,
+        "A real legacy execution was recaptured as explicit same-output evidence");
+    for(const Lesson* lesson:{&opted,&metadata}) {
+        const auto& owner=block_at(*lesson,identities[index]);
+        auto attempt=earned;
+        require(!compiler_puzzle_completed(earned,*lesson,owner)&&
+                !record_compiler_puzzle_case(attempt,*lesson,owner,mode_request,proof,
+                    "A legacy capture cannot serve another input mode")&&
+                !record_compiler_puzzle_case(attempt,*lesson,owner,mode_request,recaptured,
+                    "A relabelled request cannot invent private observations")&&attempt==earned,
+            "A legacy input capture or completion seal crossed into the explicit mode");
+        bool rejected=false;
+        try {validate_compiler_puzzle_state(earned,*lesson,owner);}
+        catch(const std::exception&) {rejected=true;}
+        require(rejected,"An earned legacy input witness was accepted under a different mode");
+    }
+    require(compiler_puzzle_completed(earned,reviewed,current),
+        "Rejecting a different mode invalidated the actual historical achievement");
+
+    // All inputs and alternatives remain fingerprinted, including probes that
+    // a future explicit plan may legitimately give the same public output.
+    for(std::size_t probe=0;probe<mode_request.input_check->probes.size();++probe) {
+        auto altered=mode_request;
+        altered.input_check->probes[probe].standard_input+='\n';
+        require(!cpp_input_request_fingerprint(altered).empty()&&
+                cpp_input_request_fingerprint(altered)!=mode_fingerprint,
+            "An explicit-mode private input was omitted from the capture");
+        for(std::size_t output=0;output<mode_request.input_check->probes[probe].outputs.size();++output) {
+            altered=mode_request;
+            altered.input_check->probes[probe].outputs[output]+=' ';
+            require(!cpp_input_request_fingerprint(altered).empty()&&
+                    cpp_input_request_fingerprint(altered)!=mode_fingerprint,
+                "An explicit-mode output alternative was omitted from the capture");
+        }
+    }
+    auto reordered=mode_request;
+    std::reverse(reordered.input_check->probes.begin(),reordered.input_check->probes.end());
+    require(cpp_input_request_fingerprint(reordered)!=mode_fingerprint,
+        "An explicit-mode private execution order was omitted from the capture");
+    std::cout<<"PASS U2L9 input-mode isolation "<<identities[index]<<": real legacy capture and seal "
+        "rejected in full/progress, complete ordered plan bound, old objective and draft unchanged.\n";
 }
 
 void run_owner(const Lesson& original,const Lesson& reviewed,const Lesson& metadata,std::size_t index) {
@@ -394,6 +570,8 @@ void run_owner(const Lesson& original,const Lesson& reviewed,const Lesson& metad
             compiler_puzzle_case_count(saved,original,former)==1,
         "One genuine public check did not earn the separate input receipt");
     preserves_old_preferences(saved,legacy);
+
+    validate_same_output_binding(original,reviewed,index,checked_request,checked_result,checked_capture,saved);
 
     // Optional inputs remain voluntary. Their private reuse does not earn a
     // visible case, and an optional public run cannot stand in for case zero.
@@ -1156,6 +1334,8 @@ int main(int argc,char** argv) {
         const auto metadata=parse_lesson_progress_metadata(reviewed.raw_json,"es");
         validate_fixture(original,reviewed,metadata);
         validate_schema(original,reviewed);
+        validate_same_output_schema(original,reviewed);
+        validate_legacy_input_fingerprint();
         for(std::size_t index=0;index<identities.size();++index)
             run_owner(original,reviewed,metadata,index);
         return 0;
