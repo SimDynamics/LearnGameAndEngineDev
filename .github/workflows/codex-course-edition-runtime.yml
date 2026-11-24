@@ -422,11 +422,11 @@ jobs:
           if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
           cmake --build $qaInputBuild --target lgaed_inline_feedback_view_tests lgaed_input_dependency_state_tests lgaed_input_probe_tests lgaed_local_dependency_view_tests --parallel 3
           if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
-      - name: Verify the header, preserved input contract and eight decision editors
+      - name: Verify the header, preserved input contract and historical and active decision editors
         shell: pwsh
         run: |
           $qaInputBuild = Join-Path $env:RUNNER_TEMP 'lgaed-input-decisions-qa'
-          ctest --test-dir $qaInputBuild -R '^native[.](lesson_header|input_probe|input_dependency_(state|authoring)|input_decision_authoring|input_decisions_view_(u3l[3-8]|u4l[1-2]))$' --verbose --output-on-failure --no-tests=error --output-junit (Join-Path $qaInputBuild 'input-decisions-focal.xml')
+          ctest --test-dir $qaInputBuild -R '^native[.](lesson_header|input_probe|input_dependency_(state|authoring)|input_decision_authoring|input_decisions_view_(u3l[3-8]|u4l[1-2])|active_loop_input_view_u4l[1-2])$' --verbose --output-on-failure --no-tests=error --output-junit (Join-Path $qaInputBuild 'input-decisions-focal.xml')
           if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
       - name: Preserve focused native test and compile evidence
         if: always()
@@ -440,6 +440,7 @@ jobs:
             ${{ runner.temp }}/lgaed-input-decisions-qa/Testing/Temporary/*.log
             ${{ runner.temp }}/lgaed-input-decisions-qa/CMakeFiles/CMakeConfigureLog.yaml
             ${{ runner.temp }}/lgaed-input-decisions-qa/test-fixtures/input-decisions/**
+            ${{ runner.temp }}/lgaed-input-decisions-qa/test-fixtures/active-loop-input/**
             ${{ runner.temp }}/lgaed-input-decisions-qa/test-fixtures/u2l9-input/**
   run-guarded-arithmetic:
     name: Verify safe short-circuit observations and preserved Win32 receipts
@@ -753,13 +754,13 @@ jobs:
           if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
           ctest --test-dir $build -R '^native[.]lesson_header$' --verbose --output-on-failure --no-tests=error --output-junit (Join-Path $build 'lesson-header-win32.xml')
           if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
-      - name: Verify eight input decision editors and invariant results through real Win32 MSVC
+      - name: Verify historical and active input decision editors through real Win32 MSVC
         shell: pwsh
         run: |
           $build = Join-Path $env:RUNNER_TEMP 'lgaed-course-edition-qa'
           cmake --build $build --target lgaed_local_dependency_view_tests --parallel 3
           if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
-          ctest --test-dir $build -R '^native[.](input_decisions_view_u[34]l[0-9]+|input_decision_authoring)$' --verbose --output-on-failure --no-tests=error --output-junit (Join-Path $build 'input-decisions-win32.xml')
+          ctest --test-dir $build -R '^native[.](input_decisions_view_u[34]l[0-9]+|active_loop_input_view_u4l[1-2]|input_decision_authoring)$' --verbose --output-on-failure --no-tests=error --output-junit (Join-Path $build 'input-decisions-win32.xml')
           if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
       - name: Preserve current reading order after edits and ordinary reopen
         if: startsWith(github.event.head_commit.message, 'qa-reader-order:')
@@ -953,6 +954,7 @@ jobs:
             ${{ runner.temp }}/lgaed-course-edition-qa/lesson-header-win32.xml
             ${{ runner.temp }}/lgaed-course-edition-qa/input-decisions-win32.xml
             ${{ runner.temp }}/lgaed-course-edition-qa/test-fixtures/input-decisions/**
+            ${{ runner.temp }}/lgaed-course-edition-qa/test-fixtures/active-loop-input/**
             ${{ runner.temp }}/lgaed-course-edition-qa/nested-cmake-format.xml
             ${{ runner.temp }}/lgaed-course-edition-qa/test-fixtures/named-rule-feedback/**
             ${{ runner.temp }}/lgaed-course-edition-qa/u2l9-semantic-composition-and-reference.xml
