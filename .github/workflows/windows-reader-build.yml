@@ -72,15 +72,55 @@ permissions:
 concurrency:
   # Explicit focal evaluations use separate queues and cannot replace a
   # waiting full ReaderBuild execution.
-  group: windows-reader-build-${{ github.ref }}${{ github.event_name == 'push' && startsWith(github.event.head_commit.message, 'qa-code-scope:') && '-code-scope' || github.event_name == 'push' && (startsWith(github.event.head_commit.message, 'qa-reader-revision:') || startsWith(github.event.head_commit.message, 'qa-native-headers:')) && '-reader-revision' || github.event_name == 'push' && startsWith(github.event.head_commit.message, 'qa-native-catalog-u1:') && '-catalog-u1' || github.event_name == 'push' && startsWith(github.event.head_commit.message, 'qa-curricular-u2l5-archive:') && '-u2l5-archive' || '' }}
+  group: windows-reader-build-${{ github.ref }}${{ github.event_name == 'push' && startsWith(github.event.head_commit.message, 'qa-code-scope-history:') && '-code-scope-history' || github.event_name == 'push' && startsWith(github.event.head_commit.message, 'qa-code-scope:') && '-code-scope' || github.event_name == 'push' && (startsWith(github.event.head_commit.message, 'qa-reader-revision:') || startsWith(github.event.head_commit.message, 'qa-native-headers:')) && '-reader-revision' || github.event_name == 'push' && startsWith(github.event.head_commit.message, 'qa-native-catalog-u1:') && '-catalog-u1' || github.event_name == 'push' && startsWith(github.event.head_commit.message, 'qa-curricular-u2l5-archive:') && '-u2l5-archive' || '' }}
   cancel-in-progress: false
 
 jobs:
+  # The authoring-only follow-up reuses both original CodeScope Python tests.
+  # Its scope guard preserves the native reader evidence for unchanged code.
+  code-scope-history:
+    name: Verify published code-scope editorial history
+    if: ${{ github.event_name == 'push' && startsWith(github.event.head_commit.message, 'qa-code-scope-history:') }}
+    runs-on: windows-2025-vs2026
+    timeout-minutes: 10
+    defaults:
+      run:
+        shell: pwsh
+    steps:
+      - name: Read the complete publication history
+        uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262
+        with:
+          fetch-depth: 0
+          persist-credentials: false
+      - name: Verify this follow-up only changes its test and workflow
+        run: |
+          $ErrorActionPreference = 'Stop'
+          $qaBase = '39ba3cb196e196bac99c2d891b488f765679ad6d'
+          git merge-base --is-ancestor $qaBase HEAD
+          if ($LASTEXITCODE -ne 0) { throw 'The authenticated source revision must be an ancestor of this follow-up.' }
+          $qaAllowed = @('scripts/curriculum/test_code_scope_presentations.py', '.github/workflows/windows-reader-build.yml')
+          $qaChanged = @(git diff --name-only --no-renames $qaBase HEAD)
+          if ($LASTEXITCODE -ne 0) { throw 'Cannot inspect the exact code-scope history revision.' }
+          $qaUnexpected = @($qaChanged | Where-Object { $_ -notin $qaAllowed })
+          if ($qaChanged.Count -eq 0 -or $qaUnexpected.Count -ne 0) {
+            throw ('Code-scope history QA requires its narrow test/workflow diff: ' + ($qaUnexpected -join ', '))
+          }
+      - name: Select the declared Python version
+        uses: actions/setup-python@ece7cb06caefa5fff74198d8649806c4678c61a1
+        with:
+          python-version: '3.15.2'
+      - name: Verify code scopes against each authenticated editorial publication
+        working-directory: scripts/curriculum
+        run: python -B -m unittest -v test_code_scope_presentations.CodeScopePresentationTest
+      - name: Verify existing publication-chain rejection controls
+        working-directory: scripts/curriculum
+        run: python -B -m unittest -v test_retired_state_layout.RetirementPublicationChainTest
+
   build:
     name: ${{ github.event_name == 'push' && startsWith(github.event.head_commit.message, 'qa-code-scope:') && 'Verify nested code scopes and authentic publication retirement chains' || github.event_name == 'push' && (startsWith(github.event.head_commit.message, 'qa-reader-revision:') || startsWith(github.event.head_commit.message, 'qa-native-headers:')) && 'Verify automatic reading order after a live content edit' || github.event_name == 'push' && startsWith(github.event.head_commit.message, 'qa-native-catalog-u1:') && 'Verify the complete native catalog and four U1 editor regressions' || 'Compile original readers and verify catalog, choice revisions and project history' }}
-    # This one opt-in runs the original archived reader in its dedicated suite.
+    # Archived-reader and Python-only history checks have dedicated jobs.
     # All ordinary pushes and manual dispatch keep their complete build.
-    if: ${{ github.event_name != 'push' || !startsWith(github.event.head_commit.message, 'qa-curricular-u2l5-archive:') }}
+    if: ${{ github.event_name != 'push' || (!startsWith(github.event.head_commit.message, 'qa-curricular-u2l5-archive:') && !startsWith(github.event.head_commit.message, 'qa-code-scope-history:')) }}
     runs-on: windows-2025-vs2026
     # A verified full reader build already needs about 39 minutes on the
     # hosted runner. U1 now also builds the separate historical-contract
