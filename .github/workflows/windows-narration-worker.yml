@@ -14,6 +14,7 @@ on:
       - CMakeLists.txt
       - cmake/**
       - toolchains/windows.versions.json
+      - toolchains/windows.hosted-msvc.json
       - native/core/**
       - native/platform/windows/**
       # Test-only source is exercised by codex-compiler-guidance-source.yml.
@@ -51,6 +52,8 @@ jobs:
         uses: actions/setup-python@ece7cb06caefa5fff74198d8649806c4678c61a1
         with:
           python-version: '3.15.2'
+      - name: Verify local and hosted narration tool selection
+        run: python -B native/narration/worker/test_worker_dependencies.py -v
       - name: Prepare authentic tools and resources and execute the real worker
         run: .\scripts\windows\Test-NativeCurricularCI.ps1 -Suite NarrationWorker
       - name: Preserve synthesis and failure diagnostic results

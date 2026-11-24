@@ -1234,6 +1234,25 @@ def launcher_cpp_profile(versions: dict) -> dict:
     return {"standard": profile["standard"], "msvcStandardOption": profile["msvcStandardOption"]}
 
 
+def launcher_tool_versions(manifest: Path) -> dict:
+    """Read the local profile or the explicitly guarded hosted QA overlay."""
+    versions = json.loads(manifest.read_text(encoding="utf-8"))
+    if versions.get("schemaVersion") != 1:
+        raise RuntimeError("Unsupported Windows toolchain manifest")
+    if os.environ.get("LGAED_HOSTED_MSVC_QA") == "1":
+        if (os.environ.get("GITHUB_ACTIONS") != "true" or
+                os.environ.get("RUNNER_ENVIRONMENT") != "github-hosted"):
+            raise RuntimeError("Hosted MSVC QA profile requires a GitHub-hosted runner")
+        hosted = json.loads(manifest.with_name("windows.hosted-msvc.json").read_text(encoding="utf-8"))
+        # Match Resolve-NativeTools.ps1 without rewriting either manifest or
+        # changing SDK, Python, Java, FFmpeg, paths or the C++ language contract.
+        versions["visualStudio"]["msvcToolset"] = hosted["msvcToolset"]
+        versions["visualStudio"]["compilerVersion"] = hosted["compilerVersion"]
+        versions["cmake"]["version"] = hosted["cmakeVersion"]
+        versions["git"]["version"] = hosted["gitVersion"]
+    return versions
+
+
 def launcher_native_tools(*, scope: str = "Application", cmake: Path | None = None,
                           python: Path | None = None, git: Path | None = None,
                           java_home: Path | None = None, ffmpeg: Path | None = None) -> dict:
@@ -1241,9 +1260,7 @@ def launcher_native_tools(*, scope: str = "Application", cmake: Path | None = No
     if scope not in ("Application", "NarrationHost"):
         raise ValueError("Unsupported Windows native tool scope")
     manifest = ROOT / "toolchains/windows.versions.json"
-    versions = json.loads(manifest.read_text(encoding="utf-8"))
-    if versions.get("schemaVersion") != 1:
-        raise RuntimeError("Unsupported Windows toolchain manifest")
+    versions = launcher_tool_versions(manifest)
     cpp = launcher_cpp_profile(versions)
     native = versions["visualStudio"]
     for key in ("msvcToolset", "windowsSdk"):

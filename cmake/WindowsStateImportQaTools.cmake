@@ -1,6 +1,6 @@
-# Focused native QA uses the same native toolchain as the application.
-# Only Python/Git discovery differs: an ephemeral Windows runner has no
-# personal runtime installation paths. Import/player/reader-build modes do not
+# Focused native QA uses the verified Windows toolchain profile.
+# Python/Git discovery uses the runner's executable paths because an
+# ephemeral Windows runner has no personal runtime installations. Import/player/reader-build modes do not
 # load models or JVM; the worker mode additionally selects its full narration
 # tool closure through Resolve-NativeTools.ps1 before building the runtime.
 # The normal application selector is unchanged.
@@ -18,7 +18,8 @@ function(lgaed_select_windows_state_import_qa_tools)
 
     set_property(DIRECTORY APPEND PROPERTY CMAKE_CONFIGURE_DEPENDS "${CMAKE_SOURCE_DIR}/toolchains/windows.versions.json")
     file(READ "${CMAKE_SOURCE_DIR}/toolchains/windows.versions.json" _tools)
-    string(JSON _compiler_version GET "${_tools}" visualStudio compilerVersion)
+    include("${CMAKE_CURRENT_FUNCTION_LIST_DIR}/WindowsMsvcProfile.cmake")
+    lgaed_read_msvc_profile(_qa_toolset _compiler_version)
     if(NOT CMAKE_CXX_COMPILER_VERSION STREQUAL _compiler_version)
         message(FATAL_ERROR "Focused Windows QA requires compiler ${_compiler_version}; selected ${CMAKE_CXX_COMPILER_VERSION}.")
     endif()
@@ -38,6 +39,13 @@ function(lgaed_select_windows_state_import_qa_tools)
     set(Python3_EXECUTABLE "${Python3_EXECUTABLE}" CACHE FILEPATH "Verified Windows QA Python" FORCE)
 
     string(JSON _git_version GET "${_tools}" git version)
+    # The shared MSVC selector above has already verified the hosted-runner guard.
+    if("$ENV{LGAED_HOSTED_MSVC_QA}" STREQUAL "1")
+        set(_hosted_manifest "${CMAKE_CURRENT_FUNCTION_LIST_DIR}/../toolchains/windows.hosted-msvc.json")
+        set_property(DIRECTORY APPEND PROPERTY CMAKE_CONFIGURE_DEPENDS "${_hosted_manifest}")
+        file(READ "${_hosted_manifest}" _hosted_tools)
+        string(JSON _git_version GET "${_hosted_tools}" gitVersion)
+    endif()
     find_program(GIT_EXECUTABLE NAMES git.exe git REQUIRED)
     if(NOT EXISTS "${GIT_EXECUTABLE}" OR IS_DIRECTORY "${GIT_EXECUTABLE}")
         message(FATAL_ERROR "The selected QA Git is not an executable file: ${GIT_EXECUTABLE}")

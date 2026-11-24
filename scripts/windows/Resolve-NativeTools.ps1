@@ -19,6 +19,24 @@ if (-not (Test-Path -LiteralPath $manifestPath -PathType Leaf)) {
 $versions = Get-Content -LiteralPath $manifestPath -Raw -Encoding UTF8 | ConvertFrom-Json
 if ($versions.schemaVersion -ne 1) { throw 'Version del manifiesto Windows no compatible.' }
 
+# Hosted QA keeps its exact verified versions separate from the product manifest.
+# Select only in memory: local paths, SDK, Python, Java and all other requirements
+# remain unchanged, as do the physical-tool and exact-version checks below.
+if ($env:LGAED_HOSTED_MSVC_QA -eq '1') {
+    if ($env:GITHUB_ACTIONS -cne 'true' -or $env:RUNNER_ENVIRONMENT -cne 'github-hosted') {
+        throw 'El perfil MSVC de QA requiere un runner hospedado de GitHub.'
+    }
+    $hostedManifestPath = Join-Path $sourceRoot 'toolchains\windows.hosted-msvc.json'
+    if (-not (Test-Path -LiteralPath $hostedManifestPath -PathType Leaf)) {
+        throw "Falta el manifiesto de herramientas para QA hospedada: $hostedManifestPath."
+    }
+    $hostedVersions = Get-Content -LiteralPath $hostedManifestPath -Raw -Encoding UTF8 | ConvertFrom-Json
+    $versions.visualStudio.msvcToolset = [string]$hostedVersions.msvcToolset
+    $versions.visualStudio.compilerVersion = [string]$hostedVersions.compilerVersion
+    $versions.cmake.version = [string]$hostedVersions.cmakeVersion
+    $versions.git.version = [string]$hostedVersions.gitVersion
+}
+
 function Expand-ToolPath([string] $Path) {
     $expanded = [Environment]::ExpandEnvironmentVariables($Path)
     if ($expanded -match '%[^%]+%') { throw "No se pudo resolver la ruta de herramienta: $Path" }

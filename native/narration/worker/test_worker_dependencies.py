@@ -42,6 +42,12 @@ class WorkerDependenciesTest(unittest.TestCase):
     def setUp(self):
         self.temporary = tempfile.TemporaryDirectory(prefix="lgaed-windows-deps-")
         self.folder = Path(self.temporary.name)
+        # Selection cases control their own runner flags, including when this
+        # suite is launched from an already selected hosted QA process.
+        environment = patch.dict(build.os.environ, {
+            "LGAED_HOSTED_MSVC_QA": "", "GITHUB_ACTIONS": "", "RUNNER_ENVIRONMENT": ""})
+        environment.start()
+        self.addCleanup(environment.stop)
 
     def tearDown(self):
         self.temporary.cleanup()
@@ -204,6 +210,107 @@ class WorkerDependenciesTest(unittest.TestCase):
         with patch.object(build, "ROOT", root), patch.object(build.subprocess, "check_output", return_value=json.dumps(payload)):
             tools = build.launcher_native_tools()
         return root, payload, tools
+
+    def hosted_native_fixture(self):
+        root, payload, local_tools = self.native_fixture()
+        # Deliberately distinct fixture versions prove that selection follows
+        # the reviewed file instead of baking the current runner into code.
+        hosted = {"msvcToolset": "14.99.12345", "compilerVersion": "19.99.12345.0",
+                  "cmakeVersion": "4.99.1", "gitVersion": "2.99.0.windows.1"}
+        manifest = root / "toolchains/windows.hosted-msvc.json"
+        manifest.write_text(json.dumps(hosted), encoding="utf-8")
+        compiler = (Path(payload["tools"]["VsRoot"]) /
+                    f"VC/Tools/MSVC/{hosted['msvcToolset']}/bin/Hostx64/x64/cl.exe")
+        compiler.parent.mkdir(parents=True, exist_ok=True)
+        compiler.write_bytes(b"hosted-fixture-only-not-an-executable")
+        payload["tools"]["MSVCToolset"] = hosted["msvcToolset"]
+        return root, payload, local_tools, hosted, compiler
+
+    def test_launcher_local_profile_does_not_consume_hosted_versions_without_selection(self):
+        root, payload, expected = self.native_fixture()
+        hosted_path = root / "toolchains/windows.hosted-msvc.json"
+        hosted_path.write_text("invalid JSON must not be read for local builds", encoding="utf-8")
+        before = expected["manifest"].read_bytes()
+        for flag in ("", "0"):
+            with self.subTest(flag=flag), patch.dict(build.os.environ, {
+                    "LGAED_HOSTED_MSVC_QA": flag, "GITHUB_ACTIONS": "true",
+                    "RUNNER_ENVIRONMENT": "github-hosted"}), patch.object(build, "ROOT", root), \
+                 patch.object(build.subprocess, "check_output", return_value=json.dumps(payload)):
+                tools = build.launcher_native_tools()
+                self.assertEqual(tools["versions"], expected["versions"])
+                self.assertEqual(tools["compiler"], expected["compiler"])
+        self.assertEqual(expected["manifest"].read_bytes(), before)
+
+    def test_launcher_hosted_profile_requires_both_runner_markers_before_selection(self):
+        root, _, _ = self.native_fixture()
+        for actions, runner in (("", ""), ("true", ""), ("", "github-hosted"),
+                                ("true", "self-hosted"), ("True", "github-hosted")):
+            with self.subTest(actions=actions, runner=runner), patch.dict(build.os.environ, {
+                    "LGAED_HOSTED_MSVC_QA": "1", "GITHUB_ACTIONS": actions,
+                    "RUNNER_ENVIRONMENT": runner}), patch.object(build, "ROOT", root), \
+                 patch.object(build.subprocess, "check_output", side_effect=AssertionError("reject before invoking PowerShell")):
+                with self.assertRaisesRegex(RuntimeError, "GitHub-hosted runner"):
+                    build.launcher_native_tools()
+
+    def test_launcher_hosted_profile_preserves_manifests_and_unrelated_requirements(self):
+        _, _, local, hosted, _ = self.hosted_native_fixture()
+        manifest = local["manifest"]
+        hosted_manifest = manifest.with_name("windows.hosted-msvc.json")
+        before = manifest.read_bytes(), hosted_manifest.read_bytes()
+        original = json.loads(before[0])
+        with patch.dict(build.os.environ, {"LGAED_HOSTED_MSVC_QA": "1",
+                "GITHUB_ACTIONS": "true", "RUNNER_ENVIRONMENT": "github-hosted"}):
+            selected = build.launcher_tool_versions(manifest)
+        self.assertEqual(selected["visualStudio"]["msvcToolset"], hosted["msvcToolset"])
+        self.assertEqual(selected["visualStudio"]["compilerVersion"], hosted["compilerVersion"])
+        self.assertEqual(selected["cmake"]["version"], hosted["cmakeVersion"])
+        self.assertEqual(selected["git"]["version"], hosted["gitVersion"])
+        # Restore the four selected values in memory and require every other
+        # field, including runtime paths and the language contract, to match.
+        for key in ("msvcToolset", "compilerVersion"):
+            selected["visualStudio"][key] = original["visualStudio"][key]
+        for tool in ("cmake", "git"):
+            selected[tool]["version"] = original[tool]["version"]
+        self.assertEqual(selected, original)
+        self.assertEqual((manifest.read_bytes(), hosted_manifest.read_bytes()), before)
+
+    def test_launcher_hosted_profile_selects_exact_compiler_and_rejects_other_toolsets(self):
+        root, payload, local, hosted, compiler = self.hosted_native_fixture()
+        environment = {"LGAED_HOSTED_MSVC_QA": "1", "GITHUB_ACTIONS": "true",
+                       "RUNNER_ENVIRONMENT": "github-hosted"}
+        with patch.dict(build.os.environ, environment), patch.object(build, "ROOT", root), \
+             patch.object(build.subprocess, "check_output", return_value=json.dumps(payload)):
+            tools = build.launcher_native_tools()
+        self.assertEqual(tools["compiler"], compiler)
+        self.assertEqual(tools["versions"]["msvcToolset"], hosted["msvcToolset"])
+        self.assertEqual(tools["versions"]["compilerVersion"], hosted["compilerVersion"])
+        self.assertEqual(tools["versions"]["windowsSdk"], local["versions"]["windowsSdk"])
+        self.assertEqual(tools["cpp"], local["cpp"])
+        for wrong_toolset in (local["versions"]["msvcToolset"], "14.99.12346"):
+            rejected = {**payload, "tools": {**payload["tools"], "MSVCToolset": wrong_toolset}}
+            with self.subTest(toolset=wrong_toolset), patch.dict(build.os.environ, environment), \
+                 patch.object(build, "ROOT", root), \
+                 patch.object(build.subprocess, "check_output", return_value=json.dumps(rejected)):
+                with self.assertRaisesRegex(RuntimeError, "does not match"):
+                    build.launcher_native_tools()
+
+    def test_launcher_hosted_profile_never_falls_back_for_missing_or_invalid_manifest(self):
+        root, _, local = self.native_fixture()
+        manifest = root / "toolchains/windows.hosted-msvc.json"
+        before = local["manifest"].read_bytes()
+        with patch.dict(build.os.environ, {"LGAED_HOSTED_MSVC_QA": "1",
+                "GITHUB_ACTIONS": "true", "RUNNER_ENVIRONMENT": "github-hosted"}), \
+             patch.object(build, "ROOT", root), \
+             patch.object(build.subprocess, "check_output", side_effect=AssertionError("reject before invoking PowerShell")):
+            with self.assertRaises(FileNotFoundError):
+                build.launcher_native_tools()
+            manifest.write_text("not JSON", encoding="utf-8")
+            with self.assertRaises(json.JSONDecodeError):
+                build.launcher_native_tools()
+            manifest.write_text("{}", encoding="utf-8")
+            with self.assertRaises(KeyError):
+                build.launcher_native_tools()
+        self.assertEqual(local["manifest"].read_bytes(), before)
 
     def test_launcher_shares_manifest_selector_without_legacy_vs_paths(self):
         root, payload, expected = self.native_fixture()
