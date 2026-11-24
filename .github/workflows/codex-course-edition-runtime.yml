@@ -191,7 +191,20 @@ jobs:
         shell: pwsh
         run: |
           $build = Join-Path $env:RUNNER_TEMP 'lgaed-editor-viewport-qa'
-          ctest --test-dir $build -R '^native[.](code_gutter_wheel|code_editor_viewport)  run-prediction-final-newline:
+          ctest --test-dir $build -R '^native[.](code_gutter_wheel|code_editor_viewport)$' --verbose --output-on-failure --no-tests=error --output-junit (Join-Path $build 'editor-viewport.xml')
+          if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
+      - name: Preserve native test evidence
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: hosted-editor-viewport-${{ github.sha }}
+          retention-days: 7
+          if-no-files-found: warn
+          path: |
+            ${{ runner.temp }}/lgaed-editor-viewport-qa/editor-viewport.xml
+            ${{ runner.temp }}/lgaed-editor-viewport-qa/Testing/Temporary/*.log
+            ${{ runner.temp }}/lgaed-editor-viewport-qa/CMakeFiles/CMakeConfigureLog.yaml
+  run-prediction-final-newline:
     name: Verify optional final newlines without changing exact interior output
     if: ${{ github.event_name == 'push' && (startsWith(github.event.head_commit.message, 'qa-prediction-newline:') || startsWith(github.event.head_commit.message, 'qa-prediction:')) }}
     runs-on: windows-2025-vs2026
