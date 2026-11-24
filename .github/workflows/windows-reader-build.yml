@@ -116,12 +116,13 @@ jobs:
       - name: Verify every programming course uses the complete indexed contract
         run: python -B -m unittest discover -s scripts/curriculum -p test_programming_multicourse_validation.py -v
       # Endpoint evaluation is opt-in for this disposable hosted run only:
-      # select the dispatch input or publish with qa-reader-build-audio:.
+      # select the dispatch input, qa-reader-build-audio:, or the focused
+      # qa-curricular-current-readers: evaluation that also needs this suite.
       # This is no permanent driver deployment and downloads no TTS models.
       # All 97 tests still run; a missing playback endpoint remains a failure.
       - name: Compile readers and execute all native Win32 regressions
         env:
-          LGAED_EVALUATE_VIRTUAL_AUDIO: ${{ (github.event_name == 'workflow_dispatch' && inputs.evaluate_virtual_audio) || (github.event_name == 'push' && startsWith(github.event.head_commit.message, 'qa-reader-build-audio:')) }}
+          LGAED_EVALUATE_VIRTUAL_AUDIO: ${{ (github.event_name == 'workflow_dispatch' && inputs.evaluate_virtual_audio) || (github.event_name == 'push' && startsWith(github.event.head_commit.message, 'qa-reader-build-audio:')) || (github.event_name == 'push' && startsWith(github.event.head_commit.message, 'qa-curricular-current-readers:')) }}
         run: |
           $qaEvaluateAudio = $env:LGAED_EVALUATE_VIRTUAL_AUDIO -eq 'true'
           .\scripts\windows\Test-NativeCurricularCI.ps1 -Suite ReaderBuild -VirtualAudio:$qaEvaluateAudio

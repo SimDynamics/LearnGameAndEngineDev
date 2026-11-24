@@ -7,6 +7,7 @@
 #include "core/exit_code_test_fixture.hpp"
 #include "core/math_label_test_fixture.hpp"
 #include "platform/windows/content_loader.hpp"
+#include "platform/windows/catalog_loader.hpp"
 #include "platform/windows/compiler_completion.hpp"
 #include "native_build_config.hpp"
 
@@ -1733,6 +1734,79 @@ void inline_feedback_optional_contract_tests() {
     }
     std::cout<<"PASS optional inline feedback rejects only present Kotlin-blank fields before evaluation\n";
 }
+void selected_u1_editor_contracts() {
+    const auto root=std::filesystem::path(lgaed::build::source_root)/"app/src/main/assets/content";
+    const CatalogLocation course{"es","programming","cpp_fundamentals",{},{}};
+    const auto units=lgaed::windows::load_catalog(root,course);
+    const auto unit=std::ranges::find_if(units.entries,[](const auto& item){
+        return item.id.ends_with("__programas_y_ejecucion");
+    });
+    check(unit!=units.entries.end()&&unit->available,"Selected U1 is unavailable for native contracts");
+    const auto lessons=lgaed::windows::load_catalog(root,catalog_child(course,unit->id));
+    struct Plan {const char* name;std::vector<std::string_view> editors;};
+    const std::array<Plan,4> plans{{
+        {"primer_programa_y_salida",{"block_0004_0010","block_0005_0005"}},
+        {"texto_secuencia_y_formato",{"block_0006_0005","block_0007_0004"}},
+        {"fuente_compilacion_y_diagnostico",{"block_0003_0004","block_0006_0004"}},
+        {"resolver_probar_y_recuperar",{"block_0002_0010","block_0003_0003","block_0005_0002"}}
+    }};
+    std::set<std::string> response_owners,draft_owners;
+    std::size_t count=0,expected=0;
+    for(const auto& plan:plans){
+        const auto entry=std::ranges::find_if(lessons.entries,[&](const auto& item){
+            return item.id.ends_with(std::string("__")+plan.name);
+        });
+        check(entry!=lessons.entries.end()&&entry->available,"An audited selected U1 lesson is unavailable");
+        const auto original=lgaed::state::sha256(lgaed::state::read_bytes(entry->asset));
+        const auto lesson=lgaed::windows::load_lesson(entry->asset);
+        const auto metadata=lgaed::windows::load_lesson_progress_metadata(entry->asset);
+        check(lesson.id==entry->id&&metadata.id==lesson.id&&lesson.course_edition.has_value()
+            &&metadata.course_edition.has_value()&&lesson.compiler_puzzles_required
+            &&metadata.pages.size()==lesson.pages.size(),
+            "The U1 full/progress contracts did not load the selected course edition");
+        lgaed::state::StateData fresh;
+        lgaed::state::prepare_lesson_state(fresh,lesson);
+        std::set<std::string> found;
+        for(const auto& page:lesson.pages)for(const auto& block:page.blocks){
+            if(block.type!=BlockType::cpp_compiler)continue;
+            check(std::ranges::find(plan.editors,block.stable_id)!=plan.editors.end()
+                &&found.insert(block.stable_id).second,
+                "A selected U1 editor is missing, duplicated or absent from its own inventory");
+            const auto position=stable_block_position(metadata,block.stable_id);
+            check(position&&metadata.pages[position->page].blocks[position->block].type==BlockType::cpp_compiler,
+                "The selected U1 progress projection lost a compiler owner");
+            const auto& projected=metadata.pages[position->page].blocks[position->block];
+            check(compiler_requires_completion(block)&&compiler_requires_completion(projected)
+                &&block.output_check&&!block.output_check->cases.empty(),
+                "A selected U1 editor lost its required first-case objective");
+            const auto response=exercise_key(lesson,block);
+            const auto draft=draft_key("programming",lesson,block);
+            check(response==exercise_key(metadata,projected)&&draft==draft_key("programming",metadata,projected)
+                &&response_owners.insert(response).second&&draft_owners.insert(draft).second
+                &&!lgaed::windows::compiler_puzzle_completed(fresh,lesson,block),
+                "Selected U1 loaders share an editor slot or invented an initial achievement");
+            ++count;
+        }
+        check(found.size()==plan.editors.size(),"The selected U1 lesson omitted an audited editor");
+        expected+=plan.editors.size();
+        if(std::string_view(plan.name)=="resolver_probar_y_recuperar"){
+            const auto position=stable_block_position(lesson,"block_0002_0010");
+            check(position&&position->page==2,"The selected intermediate-line editor moved from its authored page");
+            const auto& compiler=lesson.pages[position->page].blocks[position->block];
+            check(compiler.initial_code.find("std::cout << \"Puesto\\n\";")!=std::string::npos
+                &&compiler.initial_code.find("std::cout << \"Fin\";")!=std::string::npos
+                &&compiler.output_check->cases.front().outputs==std::vector<std::string>{"Puesto\nMesa B\nFin"},
+                "The selected intermediate-line editor lost its original start or three-line objective");
+        }
+        check(lgaed::state::sha256(lgaed::state::read_bytes(entry->asset))==original,
+            "The selected U1 native contract changed an authored source");
+    }
+    check(count==expected&&response_owners.size()==expected&&draft_owners.size()==expected,
+        "Selected U1 compiler contracts do not match their own complete inventory");
+    std::cout<<"PASS selected U1 catalog: "<<count<<" independently owned editors, full/progress agreement, "
+             <<"fresh pending state and the current intermediate-line objective; no execution claimed\n";
+}
+
 void pinned_main_u1_editor_contracts() {
     // Read original Work assets only from the authenticated Git-object fixture.
     std::array<wchar_t,32768> executable{};
@@ -1804,6 +1878,7 @@ int main(int argc,char** argv) {
                 "lesson_primer_programa_y_salida.json");
             retirement_contract_tests(first);
             integrated_retirement_contract_tests();
+            selected_u1_editor_contracts();
             return 0;
         }
         if(argc==2&&std::string_view(argv[1])=="--compiler-recheck"){
@@ -1852,6 +1927,7 @@ int main(int argc,char** argv) {
         reviewed_u11_domain_label_preserves_historical_contract();
         retirement_contract_tests(lesson);
         integrated_retirement_contract_tests();
+        selected_u1_editor_contracts();
         standard_error_objective_tests(lesson);
         rejection_semantic_contract_tests();
         {

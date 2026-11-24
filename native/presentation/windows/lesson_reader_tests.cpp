@@ -600,6 +600,9 @@ void required_compiler_reader_at(const std::shared_ptr<windows::NarrationWorker>
     constexpr std::size_t prior_ordinary=14;
     Fixture f(backend,false,true,true,"es",lesson,false,0,false,true,{},
         [&](state::StateData& data){
+            // The spoken code-label assertions own Spanish UI independently
+            // of the hosted Windows locale and the narration preference.
+            data.preferences["native_windows"]["ui_language"]=std::string("es");
             using namespace winrt::Windows::Data::Json;
             std::size_t solved=0;
             for(std::size_t page=0;page<first.page;++page){
@@ -782,11 +785,12 @@ void required_compiler_reader_at(const std::shared_ptr<windows::NarrationWorker>
     check(lesson_page_state(f.view).index==second.page,"The first editor and choice failed to unlock page seven");
     const auto first_regions=lesson_reading_regions(f.view);
     const auto first_code=child(f.view,1001+static_cast<int>(first_reference.block)*100);
-    check(first_code&&edit_text(first_code)==first_source&&
-        std::ranges::any_of(first_regions,[&](const auto& region){
+    check(first_code&&edit_text(first_code)==first_source,
+        "The first accepted editor did not expose its exact read-only example");
+    check(std::ranges::any_of(first_regions,[&](const auto& region){
             return region.block_index==first_reference.block&&region.passive_label&&
                 region.source_text.find("Ejemplo de código")!=std::string::npos;
-        }),"The first accepted editor did not expose its exact read-only example and spoken code label");
+        }),"The first accepted editor did not expose its spoken Spanish code label");
     // Earlier authored exercises on page seven are independent requirements;
     // solve them through their controls before checking the second editor.
     for(std::size_t index=0;index<second.block;++index){
@@ -864,11 +868,12 @@ void required_compiler_reader_at(const std::shared_ptr<windows::NarrationWorker>
         navigate_lesson_view(f.view,second_reference.page),
         "The accepted second compiler did not unlock its own reference page");
     const auto second_code=child(f.view,1001+static_cast<int>(second_reference.block)*100);
-    check(second_code&&edit_text(second_code)==second_source&&
-        std::ranges::any_of(lesson_reading_regions(f.view),[&](const auto& region){
+    check(second_code&&edit_text(second_code)==second_source,
+        "The accepted second editor did not expose its exact read-only example");
+    check(std::ranges::any_of(lesson_reading_regions(f.view),[&](const auto& region){
             return region.block_index==second_reference.block&&region.passive_label&&
                 region.source_text.find("Ejemplo de código")!=std::string::npos;
-        }),"The accepted second editor did not expose its exact read-only example and spoken code label");
+        }),"The accepted second editor did not expose its spoken Spanish code label");
     check(navigate_lesson_view(f.view,second.page),
         "The current U2L5 QA could not return to reset the accepted editor");
     SendMessageW(child(f.view,1012+static_cast<int>(second.block)*100),BM_CLICK,0,0);f.ready();
@@ -2193,11 +2198,10 @@ void curricular_colors_reader_at(const std::shared_ptr<windows::NarrationWorker>
           first_cpp->text.find("boletos_disponibles")!=std::string::npos&&
           copied_cpp!=descriptor->second.spans.end(),
         "U2L3 reading regression needs both active boletos declarations");
-    const auto ordinary=paragraph.text.substr(0,paragraph.text.find(' '));
     const std::array<Case,4> cases{{
-        {first.page,first.block,false,first_cpp->text,4,ordinary},
-        {first.page,first.block,false,copied_cpp->text,4,ordinary},
-        {multiplication.page,multiplication.block,false,"total = total * 3;",0,"El signo"},
+        {first.page,first.block,false,first_cpp->text,4,"crea la variable"},
+        {first.page,first.block,false,copied_cpp->text,4,"copia el dos"},
+        {multiplication.page,multiplication.block,false,"total = total * 3;",0,"lee ese cinco"},
         {decision.page,decision.block,true,"++turnos;",2,"aumenta"}
     }};
     const auto style=[](HWND target,LONG at){
@@ -2227,20 +2231,26 @@ void curricular_colors_reader_at(const std::shared_ptr<windows::NarrationWorker>
         check(!body.text.empty(),"The exact current curricular color source is missing");page.blocks.push_back(body);lesson.pages.push_back(page);
         // Exact current text/emphasis in a plain QA page isolates reader ink.
         // This does not claim to activate the original choice's feedback.
-        const auto raw=wide(body.text);const auto anchor=raw.find(wide(item.anchor));
+        const auto raw=wide(body.text),raw_anchor=wide(item.anchor);const auto anchor=raw.find(raw_anchor),raw_plain=raw.find(wide(item.ordinary));
         check(anchor!=raw.npos,"The current selected technical/numeric reference changed");const auto raw_glyph=anchor+item.letter;
+        // Earlier prose can already have its original ink in a positional-only
+        // preview. Both pending samples must follow that preview's boundary.
+        check(raw_plain!=raw.npos&&raw_plain>=anchor+raw_anchor.size(),
+            "The pending prose sample must follow the complete authored reference");
         struct Frame{HWND target=nullptr;LONG glyph=0,ordinary=0;CHARFORMAT2W ink{},plain{};std::string text;int zoom_n=0,zoom_d=0;LRESULT undo=0,modified=0;} frame;
         std::optional<Frame> first_frame;
         const auto before_reader=[&](HWND view){
             frame.target=child(view,1000);frame.text=edit_text(frame.target);const auto displayed=wide(frame.text);
             const auto at=displayed.find(wide(item.anchor)),plain=displayed.find(wide(item.ordinary));
-            check(at!=displayed.npos&&plain!=displayed.npos,"The displayed reference/prose mapping is absent");
+            check(at!=displayed.npos&&plain!=displayed.npos&&plain>=at+raw_anchor.size(),
+                "The displayed pending prose does not follow the exact reference");
             frame.glyph=static_cast<LONG>(at+item.letter);frame.ordinary=static_cast<LONG>(plain);
             frame.ink=style(frame.target,frame.glyph);frame.plain=style(frame.target,frame.ordinary);
             const auto references=rich_text_reference_ranges(frame.target);
             check(std::ranges::any_of(references,[&](const auto& range){return range.first<=frame.glyph&&frame.glyph<range.second;})
+                &&std::ranges::none_of(references,[&](const auto& range){return range.first<=frame.ordinary&&frame.ordinary<range.second;})
                 &&!(frame.ink.dwEffects&CFE_UNDERLINE)&&!(frame.plain.dwEffects&CFE_UNDERLINE),
-                "The actual reference lacks background ownership or acquired an unwanted underline");
+                "The reference/prose samples lost their distinct ownership or acquired an unwanted underline");
             if(!reader_theme::palette(frame.target).high_contrast)check(!(frame.ink.dwEffects&CFE_AUTOBACKCOLOR)
                 &&frame.ink.crBackColor==reader_theme::reference_background(frame.target),"A reference lacks its exact migrated Android background");
             SendMessageW(frame.target,EM_GETZOOM,reinterpret_cast<WPARAM>(&frame.zoom_n),reinterpret_cast<LPARAM>(&frame.zoom_d));
@@ -2300,12 +2310,30 @@ void curricular_colors_reader_at(const std::shared_ptr<windows::NarrationWorker>
         // read. Preview the preceding part in that case; no heard evidence is
         // inferred, and real playback must enter the selected word's WAV.
         if(word->start_ms==0){check(index>0,"A zero-timed reference needs an earlier real part for a pending preview");reopen(index-1);}
+        const auto pending_preview=f.snapshot();
+        check(pending_preview.index<=index&&pending_preview.offset==0&&!pending_preview.playing&&!pending_preview.allocated
+            &&pending_preview.heard_through==preview.heard_through,
+            "A pending-color preview moved, autoplayed or gained heard evidence");
+        std::size_t preview_boundary=0;
+        for(std::size_t prior=0;prior<pending_preview.index;++prior){const auto& segment=pending_preview.segments[prior];
+            if(segment.target==frame.target)preview_boundary=std::max(preview_boundary,segment.end);}
+        const auto& pending_part=pending_preview.segments[pending_preview.index];
+        if(pending_part.target==frame.target){preview_boundary=std::max(preview_boundary,pending_part.start);
+            for(const auto& timing:pending_part.timings)if(timing.start_ms<=pending_preview.offset)
+                preview_boundary=std::max(preview_boundary,pending_part.start+timing.end);}
+        check(preview_boundary<=raw_glyph&&preview_boundary<=raw_plain,
+            "Both pending color samples must follow the actual positional preview boundary");
         const auto base_background=background(frame.target,frame.ink);
         const auto pending_colors=reader_theme::unread_colors(reader_theme::background(frame.target),base_background);
         const auto pending=pending_colors.second;
-        check(style(frame.target,frame.glyph).crTextColor==pending
-            &&style(frame.target,frame.ordinary).crTextColor==pending_colors.first,
-            "Pending technical/numeric references and prose do not use neutral gray ink");invariant();
+        const auto pending_context=std::string(edition_tag)+"/case "+std::to_string(number+1)
+            +" preview="+std::to_string(pending_preview.index)+" reference_part="+std::to_string(index)
+            +" boundary="+std::to_string(preview_boundary)+" glyph="+std::to_string(raw_glyph)+" prose="+std::to_string(raw_plain);
+        const auto reference_color=style(frame.target,frame.glyph).crTextColor,prose_color=style(frame.target,frame.ordinary).crTextColor;
+        check(reference_color==pending,"Pending reference gray mismatch ("+pending_context+"): actual="
+            +std::to_string(reference_color)+" expected="+std::to_string(pending));
+        check(prose_color==pending_colors.first,"Pending prose gray mismatch ("+pending_context+"): actual="
+            +std::to_string(prose_color)+" expected="+std::to_string(pending_colors.first));invariant();
         f.reader->toggle();wait([&]{const auto value=f.snapshot();check(value.index<=index,"Actual color-reader playback passed the selected part");
             return value.playing&&value.index==index&&value.playback_rate==.5&&value.offset>=word->start_ms+std::min(40.,(word->end_ms-word->start_ms)/3.)
                 &&style(frame.target,frame.glyph).crTextColor==frame.ink.crTextColor;},"actual ef_dora word playback restores the reference's original ink");

@@ -505,7 +505,9 @@ if(LGAED_CURRENT_READERS_QA_ONLY OR LGAED_U12_READER_QA_ONLY OR LGAED_U11_EDITOR
         add_test(NAME native.curricular_color_reader COMMAND lgaed_lesson_reader_tests --curricular-colors)
         set_tests_properties(native.curricular_color_reader PROPERTIES TIMEOUT 240 RUN_SERIAL TRUE)
         add_test(NAME native.required_compiler_reader COMMAND lgaed_lesson_reader_tests --required-compiler)
-        set_tests_properties(native.required_compiler_reader PROPERTIES TIMEOUT 420 RUN_SERIAL TRUE)
+        # Both publications execute their two editors and replay real narration.
+        # The observed first editor alone took 184 s; per-phase idle guards remain.
+        set_tests_properties(native.required_compiler_reader PROPERTIES TIMEOUT 900 RUN_SERIAL TRUE)
         message(STATUS "Focused current reader QA: two original U2L3/U2L5 flows, selected and historical editions, real Kokoro playback and MSVC execution.")
     elseif(LGAED_U12_READER_QA_ONLY)
         add_dependencies(lgaed_lesson_reader_tests lgaed_narration_runtime lgaed_cpp_tool_host)

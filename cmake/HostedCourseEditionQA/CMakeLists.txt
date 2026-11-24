@@ -376,8 +376,8 @@ set_tests_properties(native.prepared_input_predictions native.active_edition_pre
     PROPERTIES TIMEOUT 300 RUN_SERIAL TRUE)
 lgaed_add_u2l9_input_view_history_tests("${_lgaed_root}")
 
-# Test the nine current inline-answer Win32 controls through the original
-# production LessonView translation unit (no copied mock implementation).
+# Test the two selected U2L5 and nine historical inline-answer Win32 controls
+# through the production LessonView translation unit.
 # The fixture's prior completions are modelled, NOT student executions or
 # proof of narration playback. This is hosted UI/StateStore QA only.
 add_executable(lgaed_inline_feedback_view_tests

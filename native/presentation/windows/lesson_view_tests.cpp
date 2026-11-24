@@ -8,6 +8,7 @@
 #include "presentation/windows/reader_theme.hpp"
 #include "presentation/windows/icons.hpp"
 #include "platform/windows/content_loader.hpp"
+#include "platform/windows/catalog_loader.hpp"
 #include "platform/windows/state_store.hpp"
 #include "platform/windows/winrt_apartment.hpp"
 #include "platform/windows/compiler_completion.hpp"
@@ -3661,9 +3662,11 @@ void text_sequence_application_restoration() {
         std::cout << "PASS actual executable automatic restoration page " << page + 1 << "/8: responsive >2s, normal close, exit 0, no smoke-test\n";
     }
 }
-bool u1l5_revised_compiler_present(const curriculum::Lesson& lesson) {
-    const bool new_edition=curriculum::stable_block_position(lesson,"p1u1l5_un_salto_en_el_codigo").has_value();
-    const auto editor=curriculum::stable_block_position(lesson,"p1u1l5_escribir_linea_intermedia");
+bool u1l5_revised_compiler_present(const curriculum::Lesson& lesson,bool selected_edition=false) {
+    const bool new_edition=selected_edition?lesson.course_edition.has_value():
+        curriculum::stable_block_position(lesson,"p1u1l5_un_salto_en_el_codigo").has_value();
+    const auto editor=curriculum::stable_block_position(lesson,selected_edition?
+        "block_0002_0010":"p1u1l5_escribir_linea_intermedia");
     // This fixture loads the active Windows edition. Historical versions with
     // eight compilers are verified by archived retirement fixtures, not as a
     // passing fallback if the newly published ninth activity disappears.
@@ -3677,10 +3680,11 @@ bool u1l5_revised_compiler_present(const curriculum::Lesson& lesson) {
     return true;
 }
 std::string u1l5_intermediate_line_solution(const curriculum::Lesson& lesson,
-    const curriculum::Block& compiler) {
-    require(compiler.stable_id=="p1u1l5_escribir_linea_intermedia",
+    const curriculum::Block& compiler,bool selected_edition=false) {
+    require(compiler.stable_id==(selected_edition?"block_0002_0010":"p1u1l5_escribir_linea_intermedia"),
         "An unrelated compiler requested the intermediate-line solution");
-    const auto reference=curriculum::stable_block_position(lesson,"p1u1l5_referencia_linea_intermedia");
+    const auto reference=curriculum::stable_block_position(lesson,selected_edition?
+        "block_0002_0012":"p1u1l5_referencia_linea_intermedia");
     require(reference.has_value(),"The intermediate-line editor lost its authored source example");
     const auto& sample=lesson.pages[reference->page].blocks[reference->block];
     require(sample.type==BlockType::code&&sample.code=="std::cout << \"Mesa B\\n\";",
@@ -3953,8 +3957,19 @@ LessonViewHooks u1_matching_qa_hooks() {
     };
     return hooks;
 }
-void integrated_u1_compilers_require_all_nine_real_executions() {
-    const auto folder=std::filesystem::path(build::source_root)/"app/src/main/assets/content/es/programming/cpp_fundamentals/programas_y_ejecucion";
+void integrated_u1_compilers_require_all_nine_real_executions_at(bool selected_edition) {
+    const auto root=std::filesystem::path(build::source_root)/"app/src/main/assets/content";
+    const auto folder=root/"es/programming/cpp_fundamentals/programas_y_ejecucion";
+    std::optional<curriculum::CatalogPage> selected_lessons;
+    if(selected_edition){
+        const curriculum::CatalogLocation course{"es","programming","cpp_fundamentals",{},{}};
+        const auto units=windows::load_catalog(root,course);
+        const auto unit=std::ranges::find_if(units.entries,[](const auto& entry){
+            return entry.id.ends_with("__programas_y_ejecucion");
+        });
+        require(unit!=units.entries.end()&&unit->available,"Selected U1 is unavailable for compiler QA");
+        selected_lessons=windows::load_catalog(root,curriculum::catalog_child(course,unit->id));
+    }
     struct VerifiedSolution { std::string_view filename,editor,reference; };
     // Work may archive a displayed reference without changing the exercise.
     // Keep this QA plan explicit: a stored expected output is not a program.
@@ -3978,10 +3993,39 @@ void integrated_u1_compilers_require_all_nine_real_executions() {
         {"lesson_resolver_probar_y_recuperar.json","block_0003_0002","block_0005_0002"},
         {"lesson_resolver_probar_y_recuperar.json","block_0005_0006","block_0005_0008"}
     }};
+    constexpr std::array<VerifiedSolution,9> selected_solutions{{
+        {"lesson_primer_programa_y_salida.json","block_0004_0010","block_0004_0012"},
+        {"lesson_primer_programa_y_salida.json","block_0005_0005","block_0005_0007"},
+        {"lesson_texto_secuencia_y_formato.json","block_0006_0005","block_0006_0007"},
+        {"lesson_texto_secuencia_y_formato.json","block_0007_0004","block_0007_0006"},
+        {"lesson_fuente_compilacion_y_diagnostico.json","block_0003_0004","block_0003_0006"},
+        {"lesson_fuente_compilacion_y_diagnostico.json","block_0006_0004","block_0006_0006"},
+        {"lesson_resolver_probar_y_recuperar.json","block_0002_0010","block_0002_0012"},
+        {"lesson_resolver_probar_y_recuperar.json","block_0003_0003","block_0003_0006"},
+        {"lesson_resolver_probar_y_recuperar.json","block_0005_0002","block_0005_0004"}
+    }};
+    const auto* plans_begin=selected_edition?selected_solutions.data():solutions.data();
+    const auto* plans_end=plans_begin+(selected_edition?selected_solutions.size():solutions.size());
+    std::set<std::string> response_owners,draft_owners;
     std::size_t completed=0;
-    constexpr std::size_t expected=9;
+    const std::size_t expected=selected_edition?selected_solutions.size():9;
     for(const auto filename:{"lesson_primer_programa_y_salida.json","lesson_texto_secuencia_y_formato.json",
             "lesson_fuente_compilacion_y_diagnostico.json","lesson_resolver_probar_y_recuperar.json"}){
+        auto source=folder/filename;
+        std::string selected_identity;
+        if(selected_edition){
+            auto lesson_name=std::filesystem::path(filename).stem().string();
+            require(lesson_name.starts_with("lesson_"),"An audited U1 source lost its lesson filename");
+            lesson_name.erase(0,7);
+            const auto entry=std::ranges::find_if(selected_lessons->entries,[&](const auto& item){
+                return item.id.ends_with("__"+lesson_name);
+            });
+            require(entry!=selected_lessons->entries.end()&&entry->available,
+                "A selected U1 lesson is unavailable for compiler QA");
+            source=entry->asset;selected_identity=entry->id;
+        }
+        const auto source_hash=state::sha256(state::read_bytes(source));
+        const auto metadata=windows::load_lesson_progress_metadata(source);
         Fixture f([](state::StateData& data,const curriculum::Lesson& lesson){
             state::prepare_lesson_state(data,lesson);bool marked=false;
             // Submitted prior quiz progress isolates the compiler requirement;
@@ -4011,7 +4055,7 @@ void integrated_u1_compilers_require_all_nine_real_executions() {
                 }
                 state::put_response(data,lesson,block,old);
             }
-        },[&](const curriculum::Lesson&){return windows::load_lesson(folder/filename);},
+        },[&](const curriculum::Lesson&){return windows::load_lesson(source);},
         false,
         // The restored math answers may be checked as soon as the native
         // view is created. Install the actual source-bound oracle before
@@ -4019,13 +4063,19 @@ void integrated_u1_compilers_require_all_nine_real_executions() {
         std::string_view(filename)=="lesson_fuente_compilacion_y_diagnostico.json"
             ? u1_matching_qa_hooks() : LessonViewHooks{});
         require(f.lesson.compiler_puzzles_required,"An integrated U1 lesson stopped requiring its useful compilers");
+        require(metadata.id==f.lesson.id&&metadata.pages.size()==f.lesson.pages.size(),
+            "U1 full and progress loaders selected different lessons");
+        if(selected_edition)require(f.lesson.id==selected_identity&&f.lesson.course_edition.has_value()
+            &&metadata.course_edition.has_value(),"U1 compiler QA did not load the selected course edition");
         const bool last_lesson=std::string_view(filename)=="lesson_resolver_probar_y_recuperar.json";
-        const bool new_edition=last_lesson&&u1l5_revised_compiler_present(f.lesson);
+        const bool new_edition=last_lesson&&u1l5_revised_compiler_present(f.lesson,selected_edition);
         std::vector<curriculum::StatePosition> compilers;
         for(std::size_t p=0;p<f.lesson.pages.size();++p)for(std::size_t b=0;b<f.lesson.pages[p].blocks.size();++b)
             if(f.lesson.pages[p].blocks[b].type==BlockType::cpp_compiler)compilers.push_back({p,b});
-        require(compilers.size()==(new_edition?3u:2u),
-            "Integrated U1 lost a useful historical compiler or its new intermediate-line editor");
+        const auto selected_count=static_cast<std::size_t>(std::ranges::count_if(selected_solutions,
+            [&](const auto& item){return item.filename==filename;}));
+        require(compilers.size()==(selected_edition?selected_count:(new_edition?3u:2u)),
+            "Integrated U1 lost an editor from its own selected or historical inventory");
         const bool authentic_matching=std::string_view(filename)==
             "lesson_fuente_compilacion_y_diagnostico.json";
         if(authentic_matching){
@@ -4042,8 +4092,13 @@ void integrated_u1_compilers_require_all_nine_real_executions() {
             const auto& compiler=f.lesson.pages[position.page].blocks[position.block];
             require(compiler.output_check&&
                 owners.insert(curriculum::exercise_key(f.lesson,compiler)).second&&
+                response_owners.insert(curriculum::exercise_key(f.lesson,compiler)).second&&
+                draft_owners.insert(curriculum::draft_key("programming",f.lesson,compiler)).second&&
                 !windows::compiler_puzzle_completed(f.saved(),f.lesson,compiler),
                 "An integrated compiler has no independent goal or inherited an earlier achievement");
+            const auto projected=curriculum::stable_block_position(metadata,compiler.stable_id);
+            require(projected&&metadata.pages[projected->page].blocks[projected->block].type==BlockType::cpp_compiler,
+                "The U1 progress projection lost an independently evaluated editor");
             require(f.page()<=position.page,"An integrated compiler appeared behind the current test position");
             // New editions can place the second editor several pages later.
             // Visit every intervening page so the test cannot bypass page
@@ -4060,7 +4115,8 @@ void integrated_u1_compilers_require_all_nine_real_executions() {
                 "A current useful compiler was hidden or its own pending goal did not block advancement");
             f.run(position.block);
             require(!windows::compiler_puzzle_completed(f.saved(),f.lesson,compiler),"An unchanged initial program falsely completed the requested construction/repair");
-            const bool intermediate=compiler.stable_id=="p1u1l5_escribir_linea_intermedia";
+            const bool intermediate=last_lesson&&compiler.stable_id==(selected_edition?
+                "block_0002_0010":"p1u1l5_escribir_linea_intermedia");
             if(intermediate) {
                 auto output=f.text(position.block,14);
                 output.erase(std::remove(output.begin(),output.end(),'\r'),output.end());
@@ -4076,11 +4132,11 @@ void integrated_u1_compilers_require_all_nine_real_executions() {
                     !windows::compiler_puzzle_completed(f.saved(),f.lesson,compiler),
                     "Reopening lost the unsolved intermediate-line draft or granted completion");
             }
-            const auto plan=std::ranges::find_if(solutions,[&](const auto& item){return item.filename==filename&&item.editor==compiler.stable_id;});
-            require(plan!=solutions.end(),"No verified solution plan for "+f.lesson.id+" / "+compiler.stable_id);
+            const auto plan=std::find_if(plans_begin,plans_end,[&](const auto& item){return item.filename==filename&&item.editor==compiler.stable_id;});
+            require(plan!=plans_end,"No verified solution plan for "+f.lesson.id+" / "+compiler.stable_id);
             std::string solution;
             if(intermediate) {
-                solution=u1l5_intermediate_line_solution(f.lesson,compiler);
+                solution=u1l5_intermediate_line_solution(f.lesson,compiler,selected_edition);
             } else if(plan->reference.empty()){
                 solution=compiler.initial_code;const std::string line="std::cout << \"Revision inicial\"\n";
                 const auto missing=solution.find(line);require(missing!=solution.npos,"The independent repair no longer contains its intended missing semicolon");
@@ -4124,10 +4180,18 @@ void integrated_u1_compilers_require_all_nine_real_executions() {
         require(!windows::compiler_puzzle_completed(f.saved(),f.lesson,f.lesson.pages[first.page].blocks[first.block])
             &&windows::compiler_puzzle_completed(f.saved(),f.lesson,f.lesson.pages[last.page].blocks[last.block])
             &&!lesson_page_state(f.view).can_next,"Reset erased another useful objective or failed to restore the first requirement");
+        require(state::sha256(state::read_bytes(source))==source_hash,
+            "The integrated U1 compiler run changed an authored lesson");
     }
-    require(completed==expected,"The U1 compiler acceptance did not execute all current independent objectives");
-    std::cout<<"PASS "<<completed<<" integrated useful U1 compilers: mandatory gates, independent real execution, "
+    require(completed==expected&&response_owners.size()==expected&&draft_owners.size()==expected,
+        "The U1 compiler acceptance did not execute all current independent objectives");
+    std::cout<<"PASS "<<(selected_edition?"selected edition ":"historical publication ")<<completed
+             <<" integrated useful U1 compilers: mandatory gates, independent real execution, "
              <<"two-line attempt and three-line repair where authored, restored draft, opaque history, reopen and scoped Reset\n";
+}
+void integrated_u1_compilers_require_all_nine_real_executions() {
+    integrated_u1_compilers_require_all_nine_real_executions_at(false);
+    integrated_u1_compilers_require_all_nine_real_executions_at(true);
 }
 void completed_compilers_keep_navigation_after_active_content() {
     const auto path=std::filesystem::path(build::source_root)/"app/src/main/assets/content/es/programming/cpp_fundamentals/programas_y_ejecucion/lesson_resolver_probar_y_recuperar.json";
@@ -6175,7 +6239,7 @@ void narration_checkpoints_do_not_reformat_or_reflow_the_page() {
 
 void current_inline_feedback_uses_authored_controls_and_restores_each_attempt() {
     struct Plan { const char* filename; const char* owner; std::vector<std::string> incorrect;
-        std::size_t ordinary_prefix,compiler_prefix=0; };
+        std::size_t ordinary_prefix,compiler_prefix=0; bool selected_edition=false; };
     const Plan plans[]{
         {"objetos_y_estado/lesson_enteros_y_aproximaciones.json","block_0007_0006",{"int","longitud_metros","partes"},15,1},
         {"objetos_y_estado/lesson_enteros_y_aproximaciones.json","block_0003_0003",{"double","int"},6},
@@ -6186,7 +6250,24 @@ void current_inline_feedback_uses_authored_controls_and_restores_each_attempt() 
         {"objetos_y_estado/lesson_cadenas_y_texto.json","block_0003_0004",{"\"Sector\"","\"Este\""},6},
         {"objetos_y_estado/lesson_caracteres_y_valores_logicos.json","block_0002_0003",{"'Y'","'Y'"},4},
         {"programas_y_ejecucion/lesson_texto_secuencia_y_formato.json","block_0004_0001",{"<<","\"Carga\""},4},
+        // These are the two retained U2L5 fill activities requested for the
+        // selected edition. The other seven historical controls keep their
+        // published identities; revised lessons can replace their activities.
+        {"objetos_y_estado/lesson_enteros_y_aproximaciones.json","block_0007_0006",{"int","longitud_metros","partes"},15,1,true},
+        {"objetos_y_estado/lesson_enteros_y_aproximaciones.json","block_0003_0003",{"double","int"},6,0,true},
     };
+    const auto root=std::filesystem::path(build::source_root)/"app/src/main/assets/content";
+    const curriculum::CatalogLocation course{"es","programming","cpp_fundamentals",{},{}};
+    const auto units=windows::load_catalog(root,course);
+    const auto unit=std::ranges::find_if(units.entries,[](const auto& item){
+        return item.id.ends_with("__objetos_y_estado");
+    });
+    require(unit!=units.entries.end()&&unit->available,"The selected U2 is unavailable for inline feedback QA");
+    const auto lessons=windows::load_catalog(root,curriculum::catalog_child(course,unit->id));
+    const auto selected=std::ranges::find_if(lessons.entries,[](const auto& item){
+        return item.id.ends_with("__enteros_y_aproximaciones");
+    });
+    require(selected!=lessons.entries.end()&&selected->available,"The selected U2L5 is unavailable for inline feedback QA");
     const auto ordinary=[](BlockType type){return type==BlockType::multiple_choice||type==BlockType::output_prediction||
         type==BlockType::fill_code||type==BlockType::order_code||type==BlockType::inline_fill_code||type==BlockType::drag_fill_code;};
     const auto entry=[&](const state::StateData& data,const curriculum::Lesson& lesson,std::size_t requested){
@@ -6200,17 +6281,19 @@ void current_inline_feedback_uses_authored_controls_and_restores_each_attempt() 
                 const auto response=state::get_response(data,lesson,block);
                 requirements.push_back({page,response&&response->correct?curriculum::EntryCompletion::complete:curriculum::EntryCompletion::incomplete});
             }else if(page<requested)require(block.type!=BlockType::math_puzzle,
-                "The nine audited inline prefixes acquired an unreviewed mathematical prerequisite");
+                "The audited inline prefixes acquired an unreviewed mathematical prerequisite");
         }
         return curriculum::lesson_entry_decision(state::clamp_reachable_page(data,lesson,requested),lesson.pages.size(),requirements);
     };
-    std::size_t alternatives=0,synthetic_ordinary=0,synthetic_compilers=0;
+    std::size_t alternatives=0,synthetic_ordinary=0,synthetic_compilers=0,selected_controls=0,previous_controls=0;
     for(const auto& plan:plans){
-        const auto path=std::filesystem::path(build::source_root)/"app/src/main/assets/content/es/programming/cpp_fundamentals"/plan.filename;
+        const auto path=plan.selected_edition?selected->asset:root/"es/programming/cpp_fundamentals"/plan.filename;
         const auto hash=state::sha256(state::read_bytes(path));
         const auto authored=windows::load_lesson(path);
+        require(plan.selected_edition?(authored.id==selected->id&&authored.course_edition.has_value()):!authored.course_edition.has_value(),
+            "Inline feedback QA confused the selected course edition with its previous publication");
         const auto at=curriculum::stable_block_position(authored,plan.owner);
-        require(at.has_value(),"The registered inline owner was retired or moved out of the active edition");
+        require(at.has_value(),"The registered inline owner is missing from its selected publication");
         Fixture f([&](state::StateData& data,const curriculum::Lesson& lesson){
             using namespace winrt::Windows::Data::Json;
             state::prepare_lesson_state(data,lesson);const auto empty=data;
@@ -6377,12 +6460,16 @@ void current_inline_feedback_uses_authored_controls_and_restores_each_attempt() 
                 "Inline control QA rewrote one of its disclosed model compiler receipts");
         require(!IsWindowVisible(f.host)&&GetAncestor(GetForegroundWindow(),GA_ROOT)!=f.host&&final.preferences.at("inline_feedback_qa")==unchanged
             &&hash==state::sha256(state::read_bytes(path)),"Inline QA changed a curricular asset, unrelated state or the user's desktop");
-        std::cout<<"PASS actual inline feedback "<<plan.filename<<" p"<<at->page+1<<" b"<<at->block+1
+        if(plan.selected_edition)++selected_controls;else ++previous_controls;
+        std::cout<<"PASS actual inline feedback "<<(plan.selected_edition?"selected ":"previous ")<<f.lesson.id
+            <<" p"<<at->page+1<<" b"<<at->block+1
             <<": draft/rejection/correction/success/Reset/reopen and exact feedback narration sources\n";
     }
-    require(synthetic_ordinary==59&&synthetic_compilers==1,"The nine inline controls used another synthetic prerequisite scope");
-    std::cout<<"QA setup only: 59 canonical ordinary prerequisites and one synthetic compiler objective, with sequential admitted arrivals; no compiler executions or prior listening claimed.\n";
-    std::cout<<"PASS nine registered inline controls and "<<alternatives<<" additional authored alternatives; no synthesis or human listening claimed\n";
+    require(selected_controls==2&&previous_controls==9&&synthetic_ordinary==80&&synthetic_compilers==2,
+        "The selected and previous inline controls used another audited prerequisite scope");
+    std::cout<<"QA setup only: 80 canonical ordinary prerequisites and two synthetic compiler objectives in isolated selected/previous profiles, with sequential admitted arrivals; no compiler executions or prior listening claimed.\n";
+    std::cout<<"PASS two selected U2L5 controls, nine previous registered controls and "<<alternatives
+        <<" additional authored alternatives; no synthesis or human listening claimed\n";
 }
 
 #ifdef LGAED_INLINE_FEEDBACK_ONLY
