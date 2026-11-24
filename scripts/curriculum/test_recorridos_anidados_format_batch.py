@@ -9,9 +9,27 @@ import unittest
 
 import stable_state_layout as state
 from code_format_compat import require_source_format, SourceFormatError
+from format_batch_history import (
+    Publication, all_owners, assert_format_history, assert_stable_storage,
+    load_publication,
+)
 
 ROOT = Path(__file__).resolve().parents[2]
-PATH = ROOT / "app/src/main/assets/content/es/programming/cpp_fundamentals/repeticion_y_terminacion/lesson_recorridos_anidados.json"
+RELATIVE = (
+    "app/src/main/assets/content/es/programming/cpp_fundamentals/"
+    "repeticion_y_terminacion/lesson_recorridos_anidados.json"
+)
+PATH = ROOT / RELATIVE
+PUBLICATIONS = {
+    "before": Publication(
+        "695d580ce966267bf2ab62560e609a4e4dff5c6a",
+        "2ff953394fb1ff7e535ca5e69b82920232670faf780f51160bad109bb54f4a60",
+    ),
+    "formatted": Publication(
+        "711b1e60a384f4267755b87168f1bf00f0c98032",
+        "f11fc3334b7552bca7de377e5a08a4ffb6eb51057c4cb4112936689b682d07ad",
+    ),
+}
 POSITIONS = (
     (0,2),(0,4),(1,2),(1,3),(2,1),(2,2),(2,3),(3,2),
     (4,1),(4,2),(5,2),(6,2),(6,6),(7,4),(8,2),(8,8),
@@ -45,27 +63,38 @@ class NestedLoopFormatBatch(unittest.TestCase):
                          self.meta["sourceFormatRevisions"]}
 
     def test_authenticated_revision_retains_identifiers_answers_and_drafts(self):
-        state.validate(self.current)
-        self.assertEqual(len(POSITIONS), len(self.archived))
-        ids = [self.meta["current"][p]["blocks"][b] for p,b in POSITIONS]
-        self.assertEqual(ids, [r["id"] for r in self.meta["editorial"][-len(POSITIONS):]])
-        original = deepcopy(self.current)
-        original["stateLayout"].pop("sourceFormatRevisions")
-        original["stateLayout"]["editorial"] = original["stateLayout"]["editorial"][:-len(POSITIONS)]
-        for p,b in POSITIONS:
-            identity = self.meta["current"][p]["blocks"][b]
-            before, after = self.archived[identity], self.current["pages"][p]["blocks"][b]
+        original = load_publication(ROOT, RELATIVE, PUBLICATIONS["before"])
+        formatted = load_publication(ROOT, RELATIVE, PUBLICATIONS["formatted"])
+        for document in (original, formatted, self.current):
+            state.validate(document)
+        published = formatted["stateLayout"]
+        ids = [published["current"][p]["blocks"][b] for p,b in POSITIONS]
+        archives = published["sourceFormatRevisions"]
+        self.assertEqual(len(POSITIONS), len(archives))
+        self.assertEqual(ids, [row["id"] for row in archives])
+        prefix = original["stateLayout"]["editorial"]
+        self.assertEqual(published["editorial"][:len(prefix)], prefix)
+        self.assertEqual(ids, [row["id"] for row in published["editorial"][len(prefix):]])
+        # Later compatible edits may append edges. The exact Git publication
+        # proves this batch; its authenticated history remains a prefix.
+        self.assertEqual(self.meta["editorial"][:len(published["editorial"])],
+                         published["editorial"])
+        self.assertEqual(self.meta["sourceFormatRevisions"][:len(archives)], archives)
+        before_blocks, after_blocks = all_owners(original), all_owners(formatted)
+        for identity in ids:
+            before, after = before_blocks[identity], after_blocks[identity]
             self.assertTrue(require_source_format(before, after), identity)
             key = source_field(before)
             self.assertEqual(
                 [line for line in before[key].splitlines() if line.strip()],
                 [line for line in after[key].splitlines() if line.strip()], identity)
-            original["pages"][p]["blocks"][b] = deepcopy(before)
-        state.validate(original)
-        state.validate_transition(original, self.current)
-        self.assertEqual(state.validate(original), state.validate(self.current))
+        state.validate_transition(original, formatted)
+        state.validate_transition(formatted, self.current)
+        self.assertEqual(state.validate(original), state.validate(formatted))
         for field in ("origin","family","current","additions"):
-            self.assertEqual(original["stateLayout"][field], self.meta[field])
+            self.assertEqual(original["stateLayout"][field], published[field])
+        assert_format_history(self, original, formatted, self.current, ids)
+        assert_stable_storage(self, original, self.current, ids)
 
     def test_cpp23_executes_before_and_after_with_same_outputs(self):
         with tempfile.TemporaryDirectory(prefix="nested-loop-format-") as folder:

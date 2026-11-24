@@ -327,6 +327,7 @@ struct LessonView {
     WindowsEnvironment environment;
     curriculum::Lesson lesson;
     std::optional<LessonSourceStamp> content_source_stamp;
+    std::string content_source_digest;
     bool content_source_unavailable = false;
     std::uint64_t content_revision = 0;
     std::map<ReloadControlIdentity,ReloadEditorSession> reload_editor_sessions;
@@ -429,6 +430,13 @@ struct LessonView {
     LessonView(const WindowsEnvironment& env, curriculum::Lesson model)
         : environment(env), lesson(std::move(model)),
           store(env.paths.root), data(store.load()) {
+        // A resource path can also belong to a deliberately prepared in-memory
+        // model. Watch the file from this point; opening is not a file edit.
+        if(!lesson.source_path.empty())try {
+            const auto stamp=source_stamp();
+            const auto digest=state::sha256(state::read_bytes(lesson.source_path));
+            if(source_stamp()==stamp){content_source_stamp=stamp;content_source_digest=digest;}
+        } catch(const std::exception&) {content_source_unavailable=true;}
         const bool no_student_state = state::can_import_android_profile(data);
         for (const auto& component : lesson.source_path)
             if (component == L"math_physics") { route = "math_physics"; break; }
@@ -2572,10 +2580,19 @@ struct LessonView {
         // replacement retries them; the same broken bytes never open a modal.
         content_source_stamp=stamp;
         try {
+            const auto digest=state::sha256(state::read_bytes(lesson.source_path));
+            if(source_stamp()!=stamp)return;
+            // An initially unavailable resource has no observed earlier bytes.
+            // Its first stable read establishes the baseline, not a revision.
+            if(content_source_digest.empty()){content_source_digest=digest;return;}
+            // A timestamp-only change must preserve the mounted model too,
+            // even when its explicit presentation differs from the file.
+            if(digest==content_source_digest)return;
             auto candidate=windows::load_lesson(lesson.source_path,lesson.locale);
             if(source_stamp()!=stamp)return;
-            if(candidate.raw_json==lesson.raw_json)return;
+            if(candidate.raw_json==lesson.raw_json){content_source_digest=digest;return;}
             adopt_source_revision(std::move(candidate));
+            content_source_digest=digest;
         } catch(const std::exception& error) {
             OutputDebugStringW(wide(std::string("Lesson source refresh failed: ")+error.what()+"\n").c_str());
         }

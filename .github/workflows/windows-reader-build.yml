@@ -6,6 +6,7 @@ on:
     paths:
       - .github/workflows/windows-reader-build.yml
       - scripts/windows/Test-NativeCurricularCI.ps1
+      - scripts/windows/test_native_header_dependencies.py
       - scripts/windows/Prepare-VirtualAudioCI.ps1
       - scripts/windows/install_ci_audio_device.py
       - app/src/main/java/com/learngraphicsprogramming/app/narration/KokoroVoiceCatalog.kt
@@ -200,6 +201,17 @@ jobs:
           path: |
             out/qa/reader-revision-ci/CMakeFiles/CMakeConfigureLog.yaml
             out/qa/reader-revision-ci/native-build.log
+            out/qa/reader-revision-ci/native-header-dependencies/**/*.json
+            out/qa/reader-revision-ci/native-header-dependencies/**/*.log
+            out/qa/reader-revision-ci/native-header-dependencies/**/CMakeCache.txt
+            out/qa/reader-revision-ci/native-header-dependencies/**/build.ninja
+            out/qa/reader-revision-ci/native-header-dependencies/**/rules.ninja
+            out/qa/reader-revision-ci/native-header-dependencies/**/CMakeConfigureLog.yaml
+            out/qa/reader-revision-ci/native-header-dependencies/**/src/CMakeLists.txt
+            out/qa/reader-revision-ci/native-header-dependencies/**/src/*.cpp
+            out/qa/reader-revision-ci/native-header-dependencies/**/src/*.hpp
+            out/qa/reader-revision-ci/native-header-dependencies/**/src/policy-mode.txt
+            out/qa/reader-revision-ci/native-header-dependencies/**/evidence/scan-*-graph.txt
             out/qa/reader-revision-ci/audio-environment.log
             out/qa/reader-revision-ci/virtual-audio/*.log
             out/qa/reader-revision-ci/virtual-audio/*.json

@@ -2372,7 +2372,11 @@ void curricular_colors_reader_at(const std::shared_ptr<windows::NarrationWorker>
         check(at.has_value(),"The current curricular color owner was removed");
         return *at;
     };
-    const auto first=locate("block_0003_0001");
+    // The active author split the four numbered instructions into prose,
+    // read-only code cards and a question. Only the closing paragraph owns
+    // these narrated C++ references; keep the original historical declarations.
+    const bool split_trace=authored.course_edition.has_value();
+    const auto first=locate(split_trace?"p1u2l3_ejemplo_0003_0001_7":"block_0003_0001");
     const auto multiplication=locate("block_0005_0001");
     const auto decision=locate("block_0005_0003");
     const auto& paragraph=authored.pages.at(first.page).blocks.at(first.block);
@@ -2380,20 +2384,26 @@ void curricular_colors_reader_at(const std::shared_ptr<windows::NarrationWorker>
     check(descriptor!=paragraph.text_semantics.end()&&
           descriptor->second.source==paragraph.text,
         "U2L3 reading regression lost its authored text semantics");
-    const auto first_cpp=std::ranges::find_if(descriptor->second.spans,[](const auto& span){
-        return span.role==curriculum::SemanticRole::cpp;
+    const auto first_cpp=std::ranges::find_if(descriptor->second.spans,[&](const auto& span){
+        return span.role==curriculum::SemanticRole::cpp&&
+            (!split_trace||(span.reading==curriculum::SemanticReading::technical&&
+                span.text=="boletos_disponibles"));
     });
-    const auto copied_cpp=std::ranges::find_if(descriptor->second.spans,[](const auto& span){
-        return span.role==curriculum::SemanticRole::cpp&&span.text.starts_with("int ")&&
-            span.text.find("boletos_registrados")!=std::string::npos;
+    const auto copied_cpp=std::ranges::find_if(descriptor->second.spans,[&](const auto& span){
+        return span.role==curriculum::SemanticRole::cpp&&
+            (split_trace?(span.reading==curriculum::SemanticReading::technical&&
+                span.text=="boletos_registrados"):
+                (span.text.starts_with("int ")&&span.text.find("boletos_registrados")!=std::string::npos));
     });
-    check(first_cpp!=descriptor->second.spans.end()&&first_cpp->text.starts_with("int ")&&
-          first_cpp->text.find("boletos_disponibles")!=std::string::npos&&
-          copied_cpp!=descriptor->second.spans.end(),
-        "U2L3 reading regression needs both active boletos declarations");
+    check(first_cpp!=descriptor->second.spans.end()&&copied_cpp!=descriptor->second.spans.end()&&
+          (split_trace||(first_cpp->text.starts_with("int ")&&
+              first_cpp->text.find("boletos_disponibles")!=std::string::npos)),
+        "U2L3 reading regression needs both exact authored boletos references");
     const std::array<Case,4> cases{{
-        {first.page,first.block,false,first_cpp->text,4,"crea la variable"},
-        {first.page,first.block,false,copied_cpp->text,4,"copia el dos"},
+        {first.page,first.block,false,first_cpp->text,split_trace?0u:4u,
+            split_trace?"y se guarda en":"crea la variable"},
+        {first.page,first.block,false,copied_cpp->text,split_trace?0u:4u,
+            split_trace?"Ahora el registro":"copia el dos"},
         {multiplication.page,multiplication.block,false,"total = total * 3;",0,"lee ese cinco"},
         {decision.page,decision.block,true,"++turnos;",2,"aumenta"}
     }};
