@@ -16,7 +16,7 @@
         },
         {
           "type": "paragraph",
-          "text": "En el siguiente programa, las instrucciones que hay entre una llave de apertura { y su llave de cierre } forman un bloque. Busca la { de if (plazas_libres > 0). La } justo antes de else cierra ese bloque. A continuación, else abre otro bloque con sus propias llaves. La sala tiene dos plazas libres. ¿Qué mensaje mostrará el programa?"
+          "text": "En este programa de C++, una llave de apertura { y su llave de cierre } delimitan un bloque de instrucciones. La { que sigue a if (plazas_libres > 0) abre el bloque de la primera alternativa. La } justo antes de else lo cierra. La { que sigue a else abre el bloque de la segunda alternativa. Con dos plazas libres, ¿qué dos renglones muestra el programa y en qué orden?"
         },
         {
           "type": "code",
@@ -48,7 +48,7 @@
         },
         {
           "type": "paragraph",
-          "text": "En programación, un bloque agrupa instrucciones para que se puedan tratar como una unidad. En el siguiente programa de C++, cada bloque empieza con una llave de apertura { y termina con la llave de cierre } que le corresponde.\n\nBusca la { que sigue a int main(). Abre el bloque que contiene las instrucciones de la función. Ese bloque se llama cuerpo de main. Dentro de él, la { que sigue a if (pedidos > 0) abre un segundo bloque. Cuando un bloque contiene otro, decimos que están anidados. Al leer de arriba abajo, la primera } cierra el cuerpo del if. La última } cierra el de main."
+          "text": "En programación, un bloque agrupa instrucciones que el programa trata como una unidad. En este ejemplo de C++, cada bloque empieza con una llave de apertura { y termina con la llave de cierre } que le corresponde.\n\nLa { que sigue a int main() abre el cuerpo de la función main. Dentro de ese cuerpo, la { que sigue a if (pedidos > 0) abre otro bloque. El bloque del if está anidado dentro del de main. La primera } cierra el cuerpo del if. La última } cierra el cuerpo de main."
         },
         {
           "type": "code",
@@ -57,7 +57,7 @@
         },
         {
           "type": "paragraph",
-          "text": "La condición pedidos > 0 se evalúa antes de entrar en el cuerpo del if. Con dos pedidos vale true. Por eso se ejecutan las dos instrucciones situadas entre las llaves de ese if. La primera muestra Por enviar y la segunda muestra el número de pedidos.\n\nLa llave inmediatamente anterior a la línea que muestra Fin del turno cierra el bloque del if. Esa línea de salida pertenece directamente a main y se ejecuta tanto si se entra en el bloque interior como si se salta. La última llave del programa cierra main. Los espacios que desplazan las líneas hacia la derecha forman la sangría y ayudan a distinguir los dos niveles (Köppe et al., 2023)."
+          "text": "Al ejecutar if (pedidos > 0), el programa compara el número de pedidos con cero. Como pedidos vale 2, la condición da true. El programa entra en el bloque del if y muestra dos renglones, primero Por enviar y luego 2.\n\nLa } que aparece después de esas dos instrucciones marca el final del bloque del if. La instrucción siguiente, std::cout << \"Fin del turno\";, está fuera de ese bloque y dentro del cuerpo de main. Con dos pedidos, el programa muestra Fin del turno después de los dos renglones anteriores. Con cero pedidos, el programa salta las dos instrucciones del if y pasa directamente a std::cout << \"Fin del turno\";. En ese caso, ese es el único mensaje.\n\nLos espacios al comienzo de cada línea forman la sangría. En este ejemplo, las dos salidas del if tienen más sangría que la salida que muestra Fin del turno. Así se distinguen los bloques que delimitan las llaves (Köppe et al., 2023)."
         },
         {
           "type": "paragraph",
@@ -71,7 +71,7 @@
           "answers": [
             "Inicio\nFin"
           ],
-          "explanation": "pendientes > 0 da false, así que se omiten el aviso de inspección adicional y el recuento. Las instrucciones de fuera del bloque muestran Inicio y Fin, en ese orden y en líneas separadas."
+          "explanation": "Antes del if, el programa muestra Inicio. Como pendientes > 0 da false, el programa salta las dos instrucciones del cuerpo del if. A continuación, std::cout << \"Fin\"; muestra Fin en el segundo renglón."
         },
         {
           "type": "fill_code",
@@ -81,7 +81,7 @@
           "answers": [
             "if"
           ],
-          "explanation": "if indica que se ejecuta el bloque si la condición da true. Aquí nivel vale nueve, así que la consola muestra Senal."
+          "explanation": "La palabra if introduce la condición nivel > 7. Como nivel vale nueve, la condición da true. El programa entra en el cuerpo del if y muestra Senal."
         },
         {
           "type": "heading",
@@ -89,7 +89,7 @@
         },
         {
           "type": "paragraph",
-          "text": "En el programa siguiente, sigue las llaves antes de fijarte en los nombres. En la línea 3, la { de main abre el bloque exterior. En la línea 6, la { del if abre el interior. La } de la línea 9 cierra el if. La } de la línea 12 cierra main."
+          "text": "En C++, el cuerpo de una función como main tiene su propio ámbito (scope en inglés). Cuando se declara una variable local directamente en el cuerpo de main, el alcance de su nombre se extiende desde la declaración hasta el final de ese cuerpo. Incluye los bloques anidados que aparecen después de la declaración, porque esos bloques también forman parte del cuerpo de main.\n\nEl cuerpo de un if establece su propio ámbito dentro de main. La misma regla se aplica a una variable declarada directamente en el if. El alcance de su nombre llega hasta la llave que cierra el cuerpo del if."
         },
         {
           "type": "code",
@@ -98,7 +98,7 @@
         },
         {
           "type": "paragraph",
-          "text": "Una declaración de variable introduce un nombre e indica su tipo. La línea 4 declara fichas. El tipo const int indica que guarda un número entero cuyo valor inicial se conserva. En esa línea, la única llave abierta es la de main. Así sabemos que la declaración está directamente en el cuerpo de main."
+          "text": "La declaración const int fichas = 8; introduce el nombre fichas para un entero constante. Está escrita después de la { de main y antes de if (fichas >= 4). Por eso, el bloque que contiene directamente esta declaración es el cuerpo de main."
         },
         {
           "type": "code",
@@ -107,7 +107,7 @@
         },
         {
           "type": "paragraph",
-          "text": "Pon el dedo justo después del nombre fichas en la declaración de la línea 4. Desde ese punto hasta la } que cierra main en la línea 12, el nombre identifica al entero declarado en la línea 4. Ese tramo es el alcance del nombre fichas (scope en inglés). El cuerpo del if queda dentro de ese tramo.\n\nAhora localiza la segunda declaración en estas cuatro líneas del mismo programa."
+          "text": "La declaración de fichas está en main, antes del if. Por eso el mismo nombre sirve tanto para comprobar fichas >= 4 en la condición como para calcular fichas / 4 dentro del bloque anidado. La llave que cierra el if termina el ámbito interior. El alcance de fichas se extiende hasta la llave que cierra main, después de return 0;.\n\nEl siguiente fragmento reproduce el if del programa anterior."
         },
         {
           "type": "code",
@@ -116,7 +116,7 @@
         },
         {
           "type": "paragraph",
-          "text": "La línea 7 declara bolsas. La encierran dos pares de llaves. La { de main se abrió primero y la { del if se abrió después. Esta última es la más interna que sigue abierta en la línea 7. Por eso la declaración está directamente en el cuerpo del if.\n\nEl alcance de bolsas empieza justo después de ese nombre en la declaración de la línea 7 y termina en la } del if en la línea 9. En el programa completo, señala la llave donde termina el alcance de bolsas y luego la llave donde termina el de fichas."
+          "text": "En la línea 2 del fragmento, const int bolsas = fichas / 4; declara bolsas directamente en el cuerpo del if. La salida std::cout << bolsas; de la línea 3 puede usar el nombre porque está después de la declaración y dentro del mismo bloque. La } de la línea 4 del fragmento cierra ese bloque. A partir de ahí, una instrucción escrita en main queda fuera del ámbito en el que se declaró bolsas."
         },
         {
           "type": "heading",
@@ -124,7 +124,7 @@
         },
         {
           "type": "paragraph",
-          "text": "Antes de que el programa se ponga en marcha, el compilador analiza el código. En la línea 4 registra la declaración de fichas en main. Cuando analiza if (fichas >= 4) en la línea 6, encuentra otra vez el nombre fichas. Aquí se usa para comparar su valor con 4. La condición está escrita antes de la { que abre el cuerpo del if. El compilador identifica ese uso con la declaración de la línea 4, en main.\n\nLa línea siguiente contiene una declaración y un uso. Fíjate en los nombres a ambos lados del signo =."
+          "text": "Durante la compilación, el compilador registra la declaración const int fichas = 8; en el cuerpo de main. Al analizar la condición fichas >= 4, necesita identificar la variable cuyo valor se comparará con 4. La condición aparece antes de la llave que abre el cuerpo del if. El compilador encuentra la declaración de fichas en main.\n\nDentro del if, una misma instrucción introduce un nombre y usa otro para calcular el valor inicial."
         },
         {
           "type": "code",
@@ -133,7 +133,7 @@
         },
         {
           "type": "paragraph",
-          "text": "A la izquierda de =, el compilador registra el nombre nuevo bolsas en el cuerpo del if. A la derecha, la división usa el nombre fichas. Para saber a qué variable se refiere, el compilador busca primero una declaración anterior de fichas en el cuerpo del if. Allí no hay ninguna. Pasa al bloque que lo contiene directamente, main, y encuentra la declaración de la línea 4.\n\nSi hay varios niveles, el compilador consulta uno por uno desde el lugar del uso hacia fuera. Se detiene al encontrar una declaración visible de ese nombre. Los bloques interiores que no contienen el uso quedan fuera de ese recorrido."
+          "text": "A la izquierda de =, el compilador registra el nombre bolsas en el cuerpo del if. A la derecha, la expresión fichas / 4 usa el nombre fichas. El compilador busca primero una declaración anterior de fichas en el cuerpo del if. Como allí no encuentra ninguna, pasa al bloque exterior inmediato, el cuerpo de main. Allí encuentra const int fichas = 8;.\n\nCon más bloques anidados, el compilador repite la búsqueda un nivel a la vez, desde el lugar del uso hacia fuera. La primera declaración visible con ese nombre determina qué variable corresponde al uso. Los bloques que no contienen el uso quedan fuera de esa búsqueda."
         },
         {
           "type": "code",
@@ -142,7 +142,7 @@
         },
         {
           "type": "paragraph",
-          "text": "Al analizar la salida de la línea 8, el compilador busca la declaración de bolsas. Empieza en el cuerpo del if, donde está escrita la salida. Allí encuentra la declaración de la línea 7 y termina la búsqueda en ese primer nivel. Así queda determinado qué variable designa bolsas en esa instrucción (Köppe et al., 2023)."
+          "text": "En std::cout << bolsas;, el compilador busca la declaración de bolsas. La búsqueda empieza en el cuerpo del if porque allí está escrita la instrucción de salida. El compilador encuentra const int bolsas = fichas / 4; en ese mismo bloque y termina la búsqueda (Köppe et al., 2023)."
         },
         {
           "type": "heading",
@@ -163,18 +163,18 @@
         },
         {
           "type": "multiple_choice",
-          "question": "En el programa completo anterior, sitúate en la línea 10, entre la } del if y return 0;. Si añadieras una salida en esa línea, ¿qué nombres podrías usar para mostrar sus valores?",
+          "question": "En el programa anterior que declara fichas y bolsas, ¿qué nombres podrías usar en una nueva instrucción de salida escrita después de la } del if y justo antes de return 0;?",
           "options": [
             "fichas y bolsas.",
             "Solo fichas.",
             "Solo bolsas."
           ],
           "correctIndex": 1,
-          "explanation": "En la línea 10, el par de llaves del if ya se cerró en la línea 9. Ahí acabó el alcance de bolsas. El par de llaves de main sigue abierto hasta la línea 12. Por eso, en la línea 10 el compilador encuentra fichas, declarada en la línea 4. Una salida que intentara usar bolsas allí daría un error al compilar, incluso con ocho fichas.",
+          "explanation": "La } que sigue a std::cout << bolsas; cierra el bloque donde se declaró bolsas. Por eso, si la nueva instrucción usara bolsas después de esa llave, el compilador indicaría un error. El nombre fichas se declaró directamente en main. Su alcance incluye la posición anterior a return 0;, así que allí se puede escribir std::cout << fichas;.",
           "reviewFeedback": [
-            "Compara la posición de la línea 10 con la } del if en la línea 9.",
-            "Sigue el par de llaves de main desde la línea 3 hasta la 12. Localiza en qué línea se declaró fichas.",
-            "La declaración de bolsas está en la línea 7. Localiza la } del if entre esa declaración y la línea 10."
+            "Compara la posición de la nueva salida con la llave que cierra el cuerpo del if.",
+            "¿Qué par de llaves contiene directamente const int fichas = 8;? ¿Dónde termina ese bloque?",
+            "Localiza const int bolsas = fichas / 4; y la llave que cierra el bloque donde se declara bolsas."
           ]
         },
         {
@@ -409,7 +409,7 @@
         },
         {
           "type": "paragraph",
-          "text": "En el programa anterior, bolsas es el nombre. El objeto es el entero que guarda el resultado de fichas / 4 al ejecutar el programa. El tiempo de vida (lifetime en inglés) de ese objeto empieza cuando termina su inicialización y acaba cuando el programa sale del cuerpo del if. Si se salta ese cuerpo, el objeto nunca llega a existir en esa ejecución.\n\nEn el siguiente programa, una cámara frigorífica admite hasta seis grados. La variable exceso guarda cuántos grados se supera ese límite. Observa dónde se declara y qué condición permite que se ejecute esa declaración."
+          "text": "En const int bolsas = fichas / 4;, bolsas es el nombre del entero que guarda el resultado. El tiempo de vida (lifetime en inglés) de ese objeto empieza cuando el programa termina de inicializarlo y acaba cuando el programa sale del cuerpo del if. Si el programa salta ese cuerpo, el objeto nunca llega a existir en esa ejecución.\n\nEn el siguiente programa, una cámara frigorífica admite hasta seis grados. La variable exceso guarda cuántos grados se supera ese límite. ¿En qué bloque se declara exceso y con qué condición entra el programa en ese bloque?"
         },
         {
           "type": "code",
@@ -434,39 +434,26 @@
         },
         {
           "type": "paragraph",
-          "text": "Las ramas del if y del else ocupan bloques distintos. Son bloques hermanos porque ninguno contiene al otro. Cuando el compilador busca un nombre desde una rama, puede seguir hacia fuera. Una declaración de la rama hermana queda fuera de ese recorrido, aunque aparezca antes en el código."
-        },
-        {
-          "type": "output_prediction",
-          "question": "¿Qué dos números aparecen en la consola y en qué orden? Escribe cada uno en su renglón.",
-          "language": "cpp",
-          "code": "#include <iostream>\n\nint main() {\n    const int turno = 7;\n\n    if (turno > 0) {\n        const int turno = 2;\n        std::cout << turno << '\\n';\n    } else {\n        std::cout << turno << '\\n';\n    }\n    std::cout << turno;\n\n    return 0;\n}\n",
-          "answers": [
-            "2\n7"
-          ],
-          "explanation": "En la condición, turno se refiere al siete declarado en main. La condición vale true. En la primera rama, la declaración interior const int turno = 2; oculta la declaración exterior de turno desde ese punto hasta la llave que cierra la rama. Por eso la salida de esa rama usa la variable interior y muestra 2. La última salida está directamente en main y muestra 7. La variable exterior conservó su valor.\n\nSi el turno exterior valiera cero, se ejecutaría el else. Desde ese bloque hermano, la búsqueda pasaría directamente a main. Esa rama y la última instrucción mostrarían cero.",
-          "reviewFeedback": "Determina primero con qué declaración se evalúa la condición. Luego, en cada línea de salida que se ejecute, localiza la declaración más cercana que pueda ver desde allí."
-        },
-        {
-          "type": "paragraph",
-          "text": "Un par de llaves también puede formar un bloque por sí solo. El siguiente programa tiene tres niveles. La primera salida está en el bloque más interno, una línea antes de la declaración interior de tarifa. Una declaración que aparece más adelante no sirve para un uso anterior. Si el compilador tampoco encuentra ese nombre en los niveles exteriores, indica un error de compilación."
+          "text": "Las ramas de un if y de su else son bloques hermanos. Ambos están dentro del mismo bloque exterior, y cada uno tiene sus propias declaraciones. En este ejemplo, ¿por qué el else puede usar plazas aunque la variable libres solo pueda usarse en el cuerpo del if?"
         },
         {
           "type": "code",
           "language": "cpp",
-          "code": "#include <iostream>\n\nint main() {\n    const int tarifa = 10;\n    {\n        const int tarifa = 8;\n        {\n            std::cout << tarifa << '\\n';\n            const int tarifa = 6;\n            std::cout << tarifa;\n        }\n    }\n\n    return 0;\n}\n"
+          "code": "#include <iostream>\n\nint main() {\n    const int plazas = 0;\n    if (plazas > 0) {\n        const int libres = plazas;\n        std::cout << libres;\n    } else {\n        std::cout << plazas;\n    }\n\n    return 0;\n}\n"
         },
         {
-          "type": "multiple_choice",
-          "question": "¿Qué valores muestran las dos salidas, en orden? Cuando se ejecuta la segunda, ¿cuántos objetos llamados tarifa existen a la vez?",
-          "options": [
-            "Ocho y seis. En la segunda salida existen tres objetos.",
-            "Diez y seis. En la segunda salida existen tres objetos.",
-            "Ocho y seis. En la segunda salida existe un solo objeto.",
-            "Seis y seis. En la segunda salida existe un solo objeto."
+          "type": "paragraph",
+          "text": "En std::cout << plazas;, el compilador busca plazas primero en el else y luego en main, donde encuentra const int plazas = 0;. Si esa salida usara libres, el compilador indicaría un error. La declaración de libres está en la otra rama, fuera de ese recorrido. Al ejecutar el programa tal como está, plazas > 0 da false y el programa muestra 0."
+        },
+        {
+          "type": "fill_code",
+          "language": "cpp",
+          "question": "Completa la salida del else con el nombre de la única variable del programa que se puede usar en esa posición.",
+          "code": "#include <iostream>\n\nint main() {\n    const int saldo = 0;\n    if (saldo > 0) {\n        const int bono = 2;\n        std::cout << bono;\n    } else {\n        std::cout << ___;\n    }\n\n    return 0;\n}\n",
+          "answers": [
+            "saldo"
           ],
-          "correctIndex": 0,
-          "explanation": "En la primera salida, la declaración interior de tarifa está escrita más adelante. El compilador pasa al bloque inmediatamente exterior, encuentra const int tarifa = 8; y se detiene allí. Por eso esa salida muestra ocho. En la segunda salida ya encuentra const int tarifa = 6; en el mismo bloque y esa salida muestra seis.\n\nEn ese momento, el programa ha inicializado los tres enteros y todavía no ha salido de ninguno de sus bloques. Los tres objetos existen. El nombre tarifa de la segunda salida designa al más interno. Al salir de ese bloque, termina la vida de ese entero y el del bloque intermedio conserva su valor."
+          "explanation": "La declaración de saldo está en main antes de las dos ramas. Su alcance incluye el else. La declaración de bono está dentro del if y su alcance termina al cerrar ese bloque."
         },
         {
           "type": "heading",
@@ -483,7 +470,7 @@
         },
         {
           "type": "paragraph",
-          "text": "En la declaración int puntos = 3;, la variable se inicializa con tres. La declaración pertenece directamente al bloque de main. Al leer puntos += compras;, el compilador busca puntos en el bloque del if y encuentra su declaración un nivel más afuera, en main. En std::cout << puntos;, la búsqueda empieza directamente en main y encuentra la misma declaración.\n\nCon dos compras, compras >= 3 vale false. El programa omite la suma y muestra tres."
+          "text": "La declaración int puntos = 3; aparece en el cuerpo de main antes del if. El nombre puntos se puede usar tanto en puntos += compras;, dentro del if, como en std::cout << puntos;, después de la llave que cierra el if. El alcance termina en la llave que cierra main.\n\nCuando el programa se ejecuta con dos compras, compras >= 3 da false. El programa salta la suma y ejecuta std::cout << puntos;. Esa instrucción muestra el valor inicial, 3."
         },
         {
           "type": "output_prediction",
@@ -541,12 +528,70 @@
         },
         {
           "type": "paragraph",
-          "text": "En la solución, int restantes = tareas; está directamente en el bloque de main, después de leer tareas. Tanto restantes -= 1;, dentro del if, como la instrucción de salida que sigue a su llave de cierre pueden usar restantes. La condición decide si se descuenta una tarea. Con cero tareas, la resta se omite y la salida muestra el cero con el que se inicializó la variable."
+          "text": "En la solución, la declaración int restantes = tareas; aparece en main, entre std::cin >> tareas; y el if. El alcance de restantes incluye la resta restantes -= 1; dentro del if y la salida std::cout << \"Quedan: \" << restantes; después del if. Con cero tareas, el programa inicializa restantes con cero, salta la resta y muestra Quedan: 0."
         },
         {
           "type": "code",
           "language": "cpp",
           "code": "#include <iostream>\n\nint main() {\n    int tareas = 0;\n    std::cin >> tareas;\n\n    int restantes = tareas;\n    if (tareas > 0) {\n        restantes -= 1;\n    }\n    std::cout << \"Quedan: \" << restantes;\n\n    return 0;\n}\n"
+        },
+        {
+          "type": "heading",
+          "text": "Dos variables con el mismo nombre"
+        },
+        {
+          "type": "paragraph",
+          "text": "Un bloque interior puede declarar una segunda variable con el mismo nombre que una del bloque exterior. Cuando analiza un uso posterior de ese nombre dentro del bloque interior, el compilador encuentra primero la declaración interior. Por eso el nombre designa la segunda variable en ese punto. Decimos que la declaración interior oculta la exterior (name hiding en inglés).\n\nEn este programa, main declara el brillo habitual y el cuerpo del if declara un brillo más bajo. Las dos declaraciones usan el nombre brillo."
+        },
+        {
+          "type": "code",
+          "language": "cpp",
+          "code": "#include <iostream>\n\nint main() {\n    const int brillo = 8;\n    if (brillo > 5) {\n        const int brillo = 3;\n        std::cout << brillo << '\\n';\n    }\n    std::cout << brillo;\n\n    return 0;\n}\n"
+        },
+        {
+          "type": "paragraph",
+          "text": "La condición brillo > 5 usa el brillo de main, que vale 8. El programa entra en el if e inicializa una segunda variable con 3. La salida dentro del if muestra 3 porque allí brillo identifica esa variable interior.\n\nLa instrucción std::cout << brillo; está después del if. En ese punto, el nombre vuelve a identificar la variable de main. Su valor se conservó mientras estuvo oculto, así que la segunda salida muestra 8."
+        },
+        {
+          "type": "output_prediction",
+          "question": "¿Qué dos números aparecen en la consola y en qué orden? Escribe cada uno en su renglón.",
+          "language": "cpp",
+          "code": "#include <iostream>\n\nint main() {\n    const int turno = 7;\n\n    if (turno > 0) {\n        const int turno = 2;\n        std::cout << turno << '\\n';\n    } else {\n        std::cout << turno << '\\n';\n    }\n    std::cout << turno;\n\n    return 0;\n}\n",
+          "answers": [
+            "2\n7"
+          ],
+          "explanation": "En la condición turno > 0, el nombre turno corresponde a la declaración const int turno = 7; de main. Al ejecutar el programa, la comparación de siete con cero da true. Dentro del cuerpo del if, const int turno = 2; introduce otra variable con el mismo nombre. Desde esa declaración hasta la llave que cierra ese bloque, turno identifica la variable interior. Por eso la primera salida muestra 2. La instrucción std::cout << turno; escrita después de las dos ramas usa la variable de main y muestra 7.\n\nSi el valor inicial del turno de main fuera cero, el programa entraría en el else. Tanto la salida del else como la salida posterior a las dos ramas usarían la variable declarada en main. Cada una mostraría 0.",
+          "reviewFeedback": "Localiza qué declaración de turno encuentra el compilador en la condición y en cada instrucción de salida. Después, sigue la rama que toma el programa con ese valor inicial."
+        },
+        {
+          "type": "paragraph",
+          "text": "¿Qué ocurre si una instrucción usa el nombre antes de la declaración interior? La posición del uso determina qué declaraciones puede encontrar el compilador. En esta variante del ejemplo del brillo, la salida está antes de const int brillo = 3;. La declaración exterior sigue siendo const int brillo = 8;."
+        },
+        {
+          "type": "code",
+          "language": "cpp",
+          "code": "#include <iostream>\n\nint main() {\n    const int brillo = 8;\n    if (brillo > 5) {\n        std::cout << brillo;\n        const int brillo = 3;\n    }\n\n    return 0;\n}\n"
+        },
+        {
+          "type": "paragraph",
+          "text": "Cuando el compilador analiza std::cout << brillo;, la declaración interior todavía queda más abajo en el código. El compilador encuentra la declaración exterior y la salida muestra 8. La declaración que viene después introduce otra variable para el resto del bloque.\n\nEn el siguiente programa, un par de llaves por sí solo delimita un bloque. El cuerpo de main contiene dos bloques anidados, uno dentro del otro. Sigue las dos salidas en el bloque más interno."
+        },
+        {
+          "type": "code",
+          "language": "cpp",
+          "code": "#include <iostream>\n\nint main() {\n    const int tarifa = 10;\n    {\n        const int tarifa = 8;\n        {\n            std::cout << tarifa << '\\n';\n            const int tarifa = 6;\n            std::cout << tarifa;\n        }\n    }\n\n    return 0;\n}\n"
+        },
+        {
+          "type": "multiple_choice",
+          "question": "¿Qué valores muestran las dos salidas, en orden? Cuando se ejecuta la segunda, ¿cuántos objetos llamados tarifa existen a la vez?",
+          "options": [
+            "Ocho y seis. En la segunda salida existen tres objetos.",
+            "Diez y seis. En la segunda salida existen tres objetos.",
+            "Ocho y seis. En la segunda salida existe un solo objeto.",
+            "Seis y seis. En la segunda salida existe un solo objeto."
+          ],
+          "correctIndex": 0,
+          "explanation": "En la primera salida, la declaración interior de tarifa está escrita más adelante. El compilador pasa al bloque inmediatamente exterior, encuentra const int tarifa = 8; y se detiene allí. Por eso esa salida muestra ocho. En la segunda salida ya encuentra const int tarifa = 6; en el mismo bloque y esa salida muestra seis.\n\nEn ese momento, el programa ha inicializado los tres enteros y todavía no ha salido de ninguno de sus bloques. Los tres objetos existen. El nombre tarifa de la segunda salida designa al más interno. Al salir de ese bloque, termina la vida de ese entero y el del bloque intermedio conserva su valor."
         }
       ]
     },
@@ -558,7 +603,7 @@
         },
         {
           "type": "paragraph",
-          "text": "Si un lote está listo con seis piezas o más, usa una comparación que incluya seis. Con exactamente seis piezas, piezas >= 6 vale true y piezas > 6 vale false. Ese valor que separa las dos alternativas es el límite o frontera de la decisión."
+          "text": "Un lote está listo cuando tiene seis piezas o más. El límite o frontera de esa decisión es seis piezas. Con exactamente seis, la comparación piezas >= 6 da true y la comparación piezas > 6 da false. La primera incluye el límite."
         },
         {
           "type": "output_prediction",
@@ -604,18 +649,28 @@
         },
         {
           "type": "paragraph",
-          "text": "En el programa anterior, int marca_alerta = 0; está directamente en el bloque de main. La rama de else puede usar marca_alerta para cambiar su valor. La instrucción de salida que sigue a la llave que cierra esa rama también puede usar el nombre.\n\nCon un nivel de dos y un límite de cinco, nivel < limite vale true. El programa muestra Normal, omite la rama que cambia la marca y finalmente muestra Marca: 0."
+          "text": "En el programa anterior, int marca_alerta = 0; declara la variable directamente en main antes del if. El alcance de marca_alerta incluye la asignación marca_alerta = 1; del else y la salida std::cout << \"Marca: \" << marca_alerta; que aparece después de la llave que cierra el else.\n\nCon un nivel de dos y un límite de cinco, nivel < limite da true. El programa muestra Normal y salta la rama que cambia la marca. A continuación, la salida que está fuera de las dos ramas muestra Marca: 0."
         },
         {
           "type": "multiple_choice",
-          "question": "El nivel del agua y el límite valen 4. ¿Qué aviso debe aparecer en el primer renglón de la salida y qué marca debe aparecer en el segundo?",
+          "question": "Supón que en el programa anterior nivel y limite valen 4. ¿Qué aviso muestra el programa en el primer renglón y qué marca muestra en el segundo?",
           "options": [
             "Normal\nMarca: 0",
             "Alerta\nNormal\nMarca: 1",
             "Alerta\nMarca: 1"
           ],
           "correctIndex": 2,
-          "explanation": "Como el nivel alcanza el límite, el programa entra en la rama que guarda uno en marca_alerta y muestra Alerta. La instrucción situada después de la llave que cierra el bloque de else muestra Marca: 1."
+          "explanation": "Con ambos valores iguales a cuatro, nivel < limite da false. El programa entra en el else, asigna uno a marca_alerta y muestra Alerta. Después, std::cout << \"Marca: \" << marca_alerta; muestra Marca: 1."
+        },
+        {
+          "type": "output_prediction",
+          "language": "cpp",
+          "question": "¿Qué dos números muestra esta versión del programa del sensor? Escribe cada uno en su renglón.",
+          "code": "#include <iostream>\n\nint main() {\n    const int nivel = 4;\n    const int limite = 4;\n    int marca_alerta = 0;\n\n    if (nivel >= limite) {\n        int marca_alerta = 1;\n        std::cout << marca_alerta << '\\n';\n    }\n    std::cout << marca_alerta;\n\n    return 0;\n}\n",
+          "answers": [
+            "1\n0"
+          ],
+          "explanation": "La condición nivel >= limite da true. Dentro del if, int marca_alerta = 1; declara una segunda variable y la primera salida muestra 1. Después del if, la última salida lee la variable de main, que conserva su valor inicial, y muestra 0. En el programa anterior, marca_alerta = 1; asignaba un valor a la variable de main. La palabra int explica la diferencia entre las dos versiones."
         },
         {
           "type": "heading",
@@ -650,7 +705,7 @@
         },
         {
           "type": "paragraph",
-          "text": "Con nivel y límite iguales a cuatro, la condición de la referencia vale true. La rama de alerta guarda uno en marca_alerta y muestra el aviso. Las dos instrucciones de salida situadas después de la llave que cierra el bloque de else muestran la marca guardada y el nivel que se comparó."
+          "text": "En el programa corregido que aparece a continuación, nivel >= limite da true cuando ambos valores son cuatro. El programa guarda uno en marca_alerta y muestra Alerta. Después de las dos ramas, std::cout << \"Marca: \" << marca_alerta; muestra la marca guardada y std::cout << \"\\nNivel: \" << nivel; muestra el nivel en el renglón siguiente."
         },
         {
           "type": "code",
@@ -700,7 +755,7 @@
         },
         {
           "type": "multiple_choice",
-          "question": "El programa permite retirar hasta cuatro elementos. Ya comprobaste que con tres muestra Permitido. ¿Qué prueba distingue una comparación que usa <= 4 de otra que usa < 4?",
+          "question": "El programa permite retirar hasta cuatro elementos. Con tres elementos, tanto cantidad <= 4 como cantidad < 4 dan true. ¿Qué prueba permite distinguir las dos comparaciones?",
           "options": [
             "Cantidad 5, que debe producir el rechazo.",
             "Cantidad 4, que debe producir Permitido.",
@@ -719,7 +774,7 @@
         },
         {
           "type": "paragraph",
-          "text": "Escribe el programa del sensor.\n\n1. Lee dos enteros de cero a ocho. El primero es el nivel del agua y el segundo es el límite.\n2. Usa if y else. Muestra Alerta cuando el agua alcance o supere el límite y Normal cuando quede por debajo.\n3. La marca empieza en cero y pasa a uno si hay alerta. Muestra la marca en el segundo renglón, fuera de ambas ramas.\n\nEntrada inicial\n3 4\n\nSalida esperada\nNormal\nMarca: 0"
+          "text": "Escribe el programa del sensor.\n\n1. El programa debe leer dos enteros de cero a ocho. El primero indica el nivel del agua y el segundo, el límite de alerta.\n2. Usa if y else. El programa debe mostrar Alerta cuando el agua alcance o supere el límite y Normal cuando quede por debajo.\n3. La marca empieza en cero y cambia a uno si hay alerta. Escribe la instrucción que muestra la marca después de la llave que cierra el bloque del else. Su resultado debe aparecer en el segundo renglón de la consola.\n\nEntrada inicial\n3 4\n\nSalida esperada\nNormal\nMarca: 0"
         },
         {
           "type": "cpp_compiler",
@@ -800,14 +855,14 @@
         },
         {
           "type": "multiple_choice",
-          "question": "¿Dónde debe estar fichas / grupos para que se ejecute solo con un número positivo de grupos?",
+          "question": "¿Dónde debe aparecer fichas / grupos para que el programa solo evalúe la división cuando el número de grupos sea positivo?",
           "options": [
             "Dentro de la rama que sólo se ejecuta con grupos > 0.",
             "En ambas ramas para obtener siempre un número.",
             "Antes del if, aunque grupos todavía no se haya validado."
           ],
           "correctIndex": 0,
-          "explanation": "Pon fichas / grupos dentro del bloque de if. La condición grupos > 0 debe dar true antes de que el programa llegue a la división."
+          "explanation": "En el programa anterior, std::cout << fichas / grupos; está dentro del bloque de if (grupos > 0). Cuando la condición da true, el programa entra en ese bloque y divide. Con cero grupos, el programa pasa al else y muestra Dato invalido."
         },
         {
           "type": "note",
@@ -829,53 +884,60 @@
       {
         "block": "block_0000_0001",
         "path": "/text",
-        "sourceSha256": "e9958a11d7ab2f68085d90c7b7dcda916740db09f0e9f6f2b8c5bcd98ab148f5",
+        "sourceSha256": "c10884407e7aff811aca72489b1b93f586cf5b18514981295734e2506976f609",
         "spans": [
           {
-            "start": 80,
-            "end": 81,
+            "start": 47,
+            "end": 48,
             "text": "{",
             "role": "cpp",
             "reading": "technical"
           },
           {
-            "start": 103,
-            "end": 104,
+            "start": 70,
+            "end": 71,
             "text": "}",
             "role": "cpp",
             "reading": "technical"
           },
           {
-            "start": 132,
-            "end": 133,
+            "start": 113,
+            "end": 114,
             "text": "{",
             "role": "cpp",
             "reading": "technical"
           },
           {
-            "start": 137,
-            "end": 159,
+            "start": 127,
+            "end": 149,
             "text": "if (plazas_libres > 0)",
             "role": "cpp",
             "reading": "technical"
           },
           {
-            "start": 164,
-            "end": 165,
+            "start": 195,
+            "end": 196,
             "text": "}",
             "role": "cpp",
             "reading": "technical"
           },
           {
-            "start": 181,
-            "end": 185,
+            "start": 212,
+            "end": 216,
             "text": "else",
             "role": "cpp",
             "reading": "technical"
           },
           {
-            "start": 221,
-            "end": 225,
+            "start": 231,
+            "end": 232,
+            "text": "{",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 245,
+            "end": 249,
             "text": "else",
             "role": "cpp",
             "reading": "technical"
@@ -1071,81 +1133,95 @@
       {
         "block": "block_0001_0001",
         "path": "/text",
-        "sourceSha256": "3f5ef83c2f3e767ac76afe45379df9ecf74431412325435c2d8843cbdbe171c8",
+        "sourceSha256": "84e8256c038c26064447b5c45beef95b48fe345f43c61b386a9ad49012f911ce",
         "spans": [
           {
-            "start": 170,
-            "end": 171,
+            "start": 157,
+            "end": 158,
             "text": "{",
             "role": "cpp",
             "reading": "technical"
           },
           {
-            "start": 205,
-            "end": 206,
+            "start": 192,
+            "end": 193,
             "text": "}",
             "role": "cpp",
             "reading": "technical"
           },
           {
-            "start": 237,
-            "end": 238,
+            "start": 218,
+            "end": 219,
             "text": "{",
             "role": "cpp",
             "reading": "technical"
           },
           {
-            "start": 251,
-            "end": 261,
+            "start": 232,
+            "end": 242,
             "text": "int main()",
             "role": "cpp",
             "reading": "technical"
           },
           {
-            "start": 354,
-            "end": 358,
+            "start": 272,
+            "end": 276,
             "text": "main",
             "role": "cpp",
             "reading": "technical"
           },
           {
-            "start": 377,
-            "end": 378,
+            "start": 303,
+            "end": 304,
             "text": "{",
             "role": "cpp",
             "reading": "technical"
           },
           {
-            "start": 391,
-            "end": 407,
+            "start": 317,
+            "end": 333,
             "text": "if (pedidos > 0)",
             "role": "cpp",
             "reading": "technical"
           },
           {
-            "start": 528,
-            "end": 529,
-            "text": "}",
-            "role": "cpp",
-            "reading": "technical"
-          },
-          {
-            "start": 551,
-            "end": 553,
+            "start": 366,
+            "end": 368,
             "text": "if",
             "role": "cpp",
             "reading": "technical"
           },
           {
-            "start": 565,
-            "end": 566,
+            "start": 396,
+            "end": 400,
+            "text": "main",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 413,
+            "end": 414,
             "text": "}",
             "role": "cpp",
             "reading": "technical"
           },
           {
-            "start": 580,
-            "end": 584,
+            "start": 436,
+            "end": 438,
+            "text": "if",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 450,
+            "end": 451,
+            "text": "}",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 472,
+            "end": 476,
             "text": "main",
             "role": "cpp",
             "reading": "technical"
@@ -1169,32 +1245,53 @@
       {
         "block": "block_0001_0002",
         "path": "/explanation",
-        "sourceSha256": "1fb847cdc940ac1a341160e8e74385055416f1d1c7c6a631342980b770ceb40c",
+        "sourceSha256": "166cda5cfec1e5ec668fff0c4ba41664dc027f0fd01033385ede636d2991e2b6",
         "spans": [
           {
-            "start": 0,
-            "end": 14,
-            "text": "pendientes > 0",
+            "start": 10,
+            "end": 12,
+            "text": "if",
             "role": "cpp",
             "reading": "technical"
           },
           {
-            "start": 18,
-            "end": 23,
-            "text": "false",
-            "role": "cpp",
-            "reading": "technical"
-          },
-          {
-            "start": 138,
-            "end": 144,
+            "start": 34,
+            "end": 40,
             "text": "Inicio",
             "role": "output",
             "reading": "natural"
           },
           {
+            "start": 47,
+            "end": 61,
+            "text": "pendientes > 0",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 65,
+            "end": 70,
+            "text": "false",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 127,
+            "end": 129,
+            "text": "if",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
             "start": 147,
-            "end": 150,
+            "end": 166,
+            "text": "std::cout << \"Fin\";",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 175,
+            "end": 178,
             "text": "Fin",
             "role": "output",
             "reading": "natural"
@@ -1218,32 +1315,46 @@
       {
         "block": "block_0001_0003",
         "path": "/explanation",
-        "sourceSha256": "8dc28723b12c10bba38f05a6c38dd3ef85410ab49f8be70c3599ca3c39a34040",
+        "sourceSha256": "7f3bf3ed451ba68480198bfd0baf0cb17081b071e672ed8156cbefaae73ef52c",
         "spans": [
           {
-            "start": 0,
-            "end": 2,
+            "start": 11,
+            "end": 13,
             "text": "if",
             "role": "cpp",
             "reading": "technical"
           },
           {
-            "start": 54,
-            "end": 58,
-            "text": "true",
+            "start": 37,
+            "end": 46,
+            "text": "nivel > 7",
             "role": "cpp",
             "reading": "technical"
           },
           {
-            "start": 65,
-            "end": 70,
+            "start": 53,
+            "end": 58,
             "text": "nivel",
             "role": "cpp",
             "reading": "technical"
           },
           {
-            "start": 110,
-            "end": 115,
+            "start": 87,
+            "end": 91,
+            "text": "true",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 128,
+            "end": 130,
+            "text": "if",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 141,
+            "end": 146,
             "text": "Senal",
             "role": "output",
             "reading": "natural"
@@ -1259,32 +1370,32 @@
       {
         "block": "block_0002_0001",
         "path": "/text",
-        "sourceSha256": "0188f217e2f6df4ad8598b360ecf6a00cd4c5d4e8122c54b4079dc2a93af7a34",
+        "sourceSha256": "349f7dc22bacae495eacc019f593ed43861135c02e200be07007b487e70be9d1",
         "spans": [
           {
-            "start": 112,
-            "end": 123,
+            "start": 141,
+            "end": 152,
             "text": "piezas >= 6",
             "role": "cpp",
             "reading": "technical"
           },
           {
-            "start": 129,
-            "end": 133,
+            "start": 156,
+            "end": 160,
             "text": "true",
             "role": "cpp",
             "reading": "technical"
           },
           {
-            "start": 136,
-            "end": 146,
+            "start": 178,
+            "end": 188,
             "text": "piezas > 6",
             "role": "cpp",
             "reading": "technical"
           },
           {
-            "start": 152,
-            "end": 157,
+            "start": 192,
+            "end": 197,
             "text": "false",
             "role": "cpp",
             "reading": "technical"
@@ -1545,46 +1656,81 @@
       {
         "block": "block_0003_0002",
         "path": "/question",
-        "sourceSha256": "a51480367ae61408d86f4e6b799cdc8c27531787629979a4719d62825d647bf5",
+        "sourceSha256": "ba65e87566fe211d52b3fee6c24f98edbd4fd78a63137a68fdc990277c474c63",
         "spans": [
           {
-            "start": 36,
-            "end": 37,
+            "start": 34,
+            "end": 39,
+            "text": "nivel",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 42,
+            "end": 48,
+            "text": "limite",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 55,
+            "end": 56,
             "text": "4",
-            "role": "data",
-            "reading": "natural"
+            "role": "cpp",
+            "reading": "technical"
           }
         ]
       },
       {
         "block": "block_0003_0002",
         "path": "/explanation",
-        "sourceSha256": "507163b93c80b36ed6d077cca03b2e15763b99d4d59b3f463c42603a59d0e07a",
+        "sourceSha256": "78bb77f41e531f34b1aa0fb456edffe95f68f9ee97f6ce817a34241e0f4645ff",
         "spans": [
           {
-            "start": 80,
-            "end": 92,
-            "text": "marca_alerta",
+            "start": 36,
+            "end": 50,
+            "text": "nivel < limite",
             "role": "cpp",
             "reading": "technical"
           },
           {
-            "start": 103,
-            "end": 109,
-            "text": "Alerta",
-            "role": "output",
-            "reading": "natural"
+            "start": 54,
+            "end": 59,
+            "text": "false",
+            "role": "cpp",
+            "reading": "technical"
           },
           {
-            "start": 178,
-            "end": 182,
+            "start": 85,
+            "end": 89,
             "text": "else",
             "role": "cpp",
             "reading": "technical"
           },
           {
-            "start": 191,
-            "end": 199,
+            "start": 104,
+            "end": 116,
+            "text": "marca_alerta",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 127,
+            "end": 133,
+            "text": "Alerta",
+            "role": "output",
+            "reading": "natural"
+          },
+          {
+            "start": 144,
+            "end": 183,
+            "text": "std::cout << \"Marca: \" << marca_alerta;",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 192,
+            "end": 200,
             "text": "Marca: 1",
             "role": "output",
             "reading": "natural"
@@ -1636,7 +1782,7 @@
       {
         "block": "block_0003_0003",
         "path": "/text",
-        "sourceSha256": "e498952d6a07b582d787e2b5cdaddfc25442b01d46287ca129d5340585c0e773",
+        "sourceSha256": "7b02077b00bd8a4ea057a873687c1a818222cee77ca0a75a09825f948ae635f9",
         "spans": [
           {
             "start": 25,
@@ -1646,50 +1792,78 @@
             "reading": "technical"
           },
           {
-            "start": 81,
-            "end": 85,
+            "start": 83,
+            "end": 87,
             "text": "main",
             "role": "cpp",
             "reading": "technical"
           },
           {
             "start": 98,
-            "end": 102,
-            "text": "else",
+            "end": 100,
+            "text": "if",
             "role": "cpp",
             "reading": "technical"
           },
           {
-            "start": 114,
-            "end": 126,
+            "start": 116,
+            "end": 128,
             "text": "marca_alerta",
             "role": "cpp",
             "reading": "technical"
           },
           {
-            "start": 289,
-            "end": 303,
+            "start": 151,
+            "end": 168,
+            "text": "marca_alerta = 1;",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 173,
+            "end": 177,
+            "text": "else",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 190,
+            "end": 229,
+            "text": "std::cout << \"Marca: \" << marca_alerta;",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 276,
+            "end": 280,
+            "text": "else",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 325,
+            "end": 339,
             "text": "nivel < limite",
             "role": "cpp",
             "reading": "technical"
           },
           {
-            "start": 309,
-            "end": 313,
+            "start": 343,
+            "end": 347,
             "text": "true",
             "role": "cpp",
             "reading": "technical"
           },
           {
-            "start": 335,
-            "end": 341,
+            "start": 369,
+            "end": 375,
             "text": "Normal",
             "role": "output",
             "reading": "natural"
           },
           {
-            "start": 398,
-            "end": 406,
+            "start": 479,
+            "end": 487,
             "text": "Marca: 0",
             "role": "output",
             "reading": "natural"
@@ -1705,53 +1879,60 @@
       {
         "block": "block_0005_0001",
         "path": "/text",
-        "sourceSha256": "81895ea31fe44a682d3a91c5871fd98b3480fc90f3213fc19c0aae854fa3fe54",
+        "sourceSha256": "06ce9eb2d325eb5af51feb050d8b9b7aec6bf8fe95c2b4d09cccbd67dc8a9230",
         "spans": [
           {
-            "start": 134,
-            "end": 136,
+            "start": 164,
+            "end": 166,
             "text": "if",
             "role": "cpp",
             "reading": "technical"
           },
           {
-            "start": 139,
-            "end": 143,
+            "start": 169,
+            "end": 173,
             "text": "else",
             "role": "cpp",
             "reading": "technical"
           },
           {
-            "start": 153,
-            "end": 159,
+            "start": 200,
+            "end": 206,
             "text": "Alerta",
             "role": "output",
             "reading": "natural"
           },
           {
-            "start": 204,
-            "end": 210,
+            "start": 251,
+            "end": 257,
             "text": "Normal",
             "role": "output",
             "reading": "natural"
           },
           {
-            "start": 371,
-            "end": 374,
+            "start": 430,
+            "end": 434,
+            "text": "else",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 517,
+            "end": 520,
             "text": "3 4",
             "role": "data",
             "reading": "natural"
           },
           {
-            "start": 392,
-            "end": 398,
+            "start": 538,
+            "end": 544,
             "text": "Normal",
             "role": "output",
             "reading": "natural"
           },
           {
-            "start": 399,
-            "end": 407,
+            "start": 545,
+            "end": 553,
             "text": "Marca: 0",
             "role": "output",
             "reading": "natural"
@@ -1878,26 +2059,26 @@
       {
         "block": "block_0004_0002",
         "path": "/question",
-        "sourceSha256": "4f8d0491cd5e7df68b9431b03695d420414c26b5fcf0924fc1a5613f919cb43e",
+        "sourceSha256": "3c3b18de65a159862560d5d53e579d092a0d5d102a39a07b5cea8ac89c16b16e",
         "spans": [
           {
-            "start": 88,
-            "end": 97,
-            "text": "Permitido",
-            "role": "output",
-            "reading": "natural"
-          },
-          {
-            "start": 145,
-            "end": 149,
-            "text": "<= 4",
+            "start": 78,
+            "end": 91,
+            "text": "cantidad <= 4",
             "role": "cpp",
             "reading": "technical"
           },
           {
-            "start": 166,
-            "end": 169,
-            "text": "< 4",
+            "start": 97,
+            "end": 109,
+            "text": "cantidad < 4",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 114,
+            "end": 118,
+            "text": "true",
             "role": "cpp",
             "reading": "technical"
           }
@@ -2136,11 +2317,11 @@
       {
         "block": "block_0006_0003",
         "path": "/question",
-        "sourceSha256": "25ec1149c0b0a8b07f3b14643d4307449ef60de9c7fa6c7812f0f0ffaa0b879f",
+        "sourceSha256": "e56029a1e41fd8338371495dbe867be929637b06a8d12e40fec80e42e13dcc48",
         "spans": [
           {
-            "start": 18,
-            "end": 33,
+            "start": 21,
+            "end": 36,
             "text": "fichas / grupos",
             "role": "cpp",
             "reading": "technical"
@@ -2150,35 +2331,42 @@
       {
         "block": "block_0006_0003",
         "path": "/explanation",
-        "sourceSha256": "65729c57e4cf7cecc90551dde97180a15603f387759d2f1e659145b0cd29bf8c",
+        "sourceSha256": "0f7d0b64a2d8c73535241b5d88fe8739a18a8acbcafa5a89aaac5bb53f1ce18e",
         "spans": [
           {
-            "start": 4,
-            "end": 19,
-            "text": "fichas / grupos",
+            "start": 25,
+            "end": 54,
+            "text": "std::cout << fichas / grupos;",
             "role": "cpp",
             "reading": "technical"
           },
           {
-            "start": 41,
-            "end": 43,
-            "text": "if",
+            "start": 81,
+            "end": 96,
+            "text": "if (grupos > 0)",
             "role": "cpp",
             "reading": "technical"
           },
           {
-            "start": 58,
-            "end": 68,
-            "text": "grupos > 0",
-            "role": "cpp",
-            "reading": "technical"
-          },
-          {
-            "start": 78,
-            "end": 82,
+            "start": 121,
+            "end": 125,
             "text": "true",
             "role": "cpp",
             "reading": "technical"
+          },
+          {
+            "start": 206,
+            "end": 210,
+            "text": "else",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 221,
+            "end": 234,
+            "text": "Dato invalido",
+            "role": "output",
+            "reading": "natural"
           }
         ]
       },
@@ -2260,8 +2448,15 @@
       {
         "block": "block_0003_0009",
         "path": "/text",
-        "sourceSha256": "227b159cfbb944973161ae28845905f59347e87742615d3f4e4139f1acf38095",
+        "sourceSha256": "1f72d1ad04e31ec5ecf6f606b602764d8f0fe7478c171ae86a7767125f0a7b59",
         "spans": [
+          {
+            "start": 53,
+            "end": 68,
+            "text": "nivel >= limite",
+            "role": "cpp",
+            "reading": "technical"
+          },
           {
             "start": 72,
             "end": 76,
@@ -2270,16 +2465,30 @@
             "reading": "technical"
           },
           {
-            "start": 110,
-            "end": 122,
+            "start": 136,
+            "end": 148,
             "text": "marca_alerta",
             "role": "cpp",
             "reading": "technical"
           },
           {
-            "start": 228,
+            "start": 159,
+            "end": 165,
+            "text": "Alerta",
+            "role": "output",
+            "reading": "natural"
+          },
+          {
+            "start": 193,
             "end": 232,
-            "text": "else",
+            "text": "std::cout << \"Marca: \" << marca_alerta;",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 261,
+            "end": 295,
+            "text": "std::cout << \"\\nNivel: \" << nivel;",
             "role": "cpp",
             "reading": "technical"
           }
@@ -2476,74 +2685,123 @@
       {
         "block": "u3l4_alcance_sangria",
         "path": "/text",
-        "sourceSha256": "846f6b5ce51762085363aecb36821a5b1d1e76d05066977b19076d507bdc00b4",
+        "sourceSha256": "0733da602fa1a78d55309a407a92f03490e89d925447b106aa56e88bc899e593",
         "spans": [
           {
-            "start": 13,
-            "end": 24,
-            "text": "pedidos > 0",
+            "start": 12,
+            "end": 28,
+            "text": "if (pedidos > 0)",
             "role": "cpp",
             "reading": "technical"
           },
           {
-            "start": 68,
-            "end": 70,
-            "text": "if",
+            "start": 86,
+            "end": 93,
+            "text": "pedidos",
             "role": "cpp",
             "reading": "technical"
           },
           {
-            "start": 93,
-            "end": 97,
+            "start": 99,
+            "end": 100,
+            "text": "2",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 118,
+            "end": 122,
             "text": "true",
             "role": "cpp",
             "reading": "technical"
           },
           {
-            "start": 174,
-            "end": 176,
+            "start": 159,
+            "end": 161,
             "text": "if",
             "role": "cpp",
             "reading": "technical"
           },
           {
-            "start": 197,
-            "end": 207,
+            "start": 195,
+            "end": 205,
             "text": "Por enviar",
             "role": "output",
             "reading": "natural"
           },
           {
-            "start": 308,
-            "end": 321,
-            "text": "Fin del turno",
+            "start": 214,
+            "end": 215,
+            "text": "2",
             "role": "output",
             "reading": "natural"
           },
           {
-            "start": 343,
-            "end": 345,
+            "start": 221,
+            "end": 222,
+            "text": "}",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 299,
+            "end": 301,
             "text": "if",
             "role": "cpp",
             "reading": "technical"
           },
           {
-            "start": 392,
-            "end": 396,
+            "start": 329,
+            "end": 358,
+            "text": "std::cout << \"Fin del turno\";",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 408,
+            "end": 412,
             "text": "main",
             "role": "cpp",
             "reading": "technical"
           },
           {
-            "start": 504,
-            "end": 508,
-            "text": "main",
+            "start": 451,
+            "end": 464,
+            "text": "Fin del turno",
+            "role": "output",
+            "reading": "natural"
+          },
+          {
+            "start": 568,
+            "end": 570,
+            "text": "if",
             "role": "cpp",
             "reading": "technical"
           },
           {
-            "start": 621,
-            "end": 641,
+            "start": 593,
+            "end": 622,
+            "text": "std::cout << \"Fin del turno\";",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 758,
+            "end": 760,
+            "text": "if",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 806,
+            "end": 819,
+            "text": "Fin del turno",
+            "role": "output",
+            "reading": "natural"
+          },
+          {
+            "start": 876,
+            "end": 896,
             "text": "(Köppe et al., 2023)",
             "role": "citation",
             "reading": "natural"
@@ -2559,61 +2817,54 @@
       {
         "block": "u3l4_alcance_presentar_bolsas",
         "path": "/text",
-        "sourceSha256": "4d43d9abee6c7401c4bbd13b5aa438c103b5712092e8f739a24212df0cf60029",
+        "sourceSha256": "b835806d27e424ab3b28272aedc37eee101e79270c1c8618dbb1804408d0ebf4",
         "spans": [
           {
-            "start": 94,
-            "end": 95,
-            "text": "{",
-            "role": "cpp",
-            "reading": "technical"
-          },
-          {
-            "start": 99,
-            "end": 103,
+            "start": 38,
+            "end": 42,
             "text": "main",
             "role": "cpp",
             "reading": "technical"
           },
           {
-            "start": 147,
-            "end": 148,
-            "text": "{",
-            "role": "cpp",
-            "reading": "technical"
-          },
-          {
-            "start": 153,
+            "start": 151,
             "end": 155,
-            "text": "if",
-            "role": "cpp",
-            "reading": "technical"
-          },
-          {
-            "start": 177,
-            "end": 178,
-            "text": "}",
-            "role": "cpp",
-            "reading": "technical"
-          },
-          {
-            "start": 203,
-            "end": 205,
-            "text": "if",
-            "role": "cpp",
-            "reading": "technical"
-          },
-          {
-            "start": 210,
-            "end": 211,
-            "text": "}",
-            "role": "cpp",
-            "reading": "technical"
-          },
-          {
-            "start": 234,
-            "end": 238,
             "text": "main",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 368,
+            "end": 372,
+            "text": "main",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 391,
+            "end": 393,
+            "text": "if",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 431,
+            "end": 435,
+            "text": "main",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 506,
+            "end": 508,
+            "text": "if",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 580,
+            "end": 582,
+            "text": "if",
             "role": "cpp",
             "reading": "technical"
           }
@@ -2622,25 +2873,39 @@
       {
         "block": "u3l4_alcance_consultar_nombre",
         "path": "/question",
-        "sourceSha256": "e72f2eee31977e2d16a41053d7b2a98731bf5d0c6b4f96270981bc552b7a7477",
+        "sourceSha256": "fd9a5e75d030e2f2fdd8d6cf4855f04aa73336bbead2385c312d90ebcde4dd20",
         "spans": [
           {
-            "start": 67,
-            "end": 68,
+            "start": 36,
+            "end": 42,
+            "text": "fichas",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 45,
+            "end": 51,
+            "text": "bolsas",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 136,
+            "end": 137,
             "text": "}",
             "role": "cpp",
             "reading": "technical"
           },
           {
-            "start": 73,
-            "end": 75,
+            "start": 142,
+            "end": 144,
             "text": "if",
             "role": "cpp",
             "reading": "technical"
           },
           {
-            "start": 78,
-            "end": 87,
+            "start": 162,
+            "end": 171,
             "text": "return 0;",
             "role": "cpp",
             "reading": "technical"
@@ -2650,40 +2915,61 @@
       {
         "block": "u3l4_alcance_consultar_nombre",
         "path": "/explanation",
-        "sourceSha256": "f2d03b7c74d223bed3fc624b9e1adaed6eaa829ff9f99032ed5631e5322d3e9a",
+        "sourceSha256": "cfb987a18448261d3f00f5c89b76a883b40c7d8e74eafbd1e2ab8356af653a48",
         "spans": [
           {
-            "start": 37,
-            "end": 39,
-            "text": "if",
+            "start": 3,
+            "end": 4,
+            "text": "}",
             "role": "cpp",
             "reading": "technical"
           },
           {
-            "start": 91,
-            "end": 97,
+            "start": 17,
+            "end": 37,
+            "text": "std::cout << bolsas;",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 72,
+            "end": 78,
             "text": "bolsas",
             "role": "cpp",
             "reading": "technical"
           },
           {
             "start": 119,
-            "end": 123,
-            "text": "main",
+            "end": 125,
+            "text": "bolsas",
             "role": "cpp",
             "reading": "technical"
           },
           {
-            "start": 205,
-            "end": 211,
+            "start": 192,
+            "end": 198,
             "text": "fichas",
             "role": "cpp",
             "reading": "technical"
           },
           {
-            "start": 268,
-            "end": 274,
-            "text": "bolsas",
+            "start": 226,
+            "end": 230,
+            "text": "main",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 274,
+            "end": 283,
+            "text": "return 0;",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 316,
+            "end": 336,
+            "text": "std::cout << fichas;",
             "role": "cpp",
             "reading": "technical"
           }
@@ -2741,18 +3027,11 @@
       {
         "block": "u3l4_alcance_consultar_nombre",
         "path": "/reviewFeedback/0",
-        "sourceSha256": "a0dfd52281b2e4a87a2165a625cbb0bf939ee26f292b147718bb216e44025f5c",
+        "sourceSha256": "6071ea8697c1f5b6d4c465673e89c5428d8fd3bd1a8004704921a27eafd6c411",
         "spans": [
           {
-            "start": 42,
-            "end": 43,
-            "text": "}",
-            "role": "cpp",
-            "reading": "technical"
-          },
-          {
-            "start": 48,
-            "end": 50,
+            "start": 77,
+            "end": 79,
             "text": "if",
             "role": "cpp",
             "reading": "technical"
@@ -2762,19 +3041,12 @@
       {
         "block": "u3l4_alcance_consultar_nombre",
         "path": "/reviewFeedback/1",
-        "sourceSha256": "92408b20028220bcac53ebd344f8476b0aedbe9e1286700a7b46ebd8c43910fa",
+        "sourceSha256": "c8b279fd5ae78cee24696cee5c1b9b33045e76ea397030fc3370b08e7da79f60",
         "spans": [
           {
-            "start": 26,
-            "end": 30,
-            "text": "main",
-            "role": "cpp",
-            "reading": "technical"
-          },
-          {
-            "start": 94,
-            "end": 100,
-            "text": "fichas",
+            "start": 41,
+            "end": 62,
+            "text": "const int fichas = 8;",
             "role": "cpp",
             "reading": "technical"
           }
@@ -2783,26 +3055,19 @@
       {
         "block": "u3l4_alcance_consultar_nombre",
         "path": "/reviewFeedback/2",
-        "sourceSha256": "661fc67f0f2ebf8da8135d47096cc2c9e437f74f67cfc39a2a3fd7fce4d94fc0",
+        "sourceSha256": "d6730694f263423e52ecc4bbfcb3ff2cdeae9930d19b284bb41ff7eacd28a3a7",
         "spans": [
           {
-            "start": 18,
-            "end": 24,
+            "start": 9,
+            "end": 39,
+            "text": "const int bolsas = fichas / 4;",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 89,
+            "end": 95,
             "text": "bolsas",
-            "role": "cpp",
-            "reading": "technical"
-          },
-          {
-            "start": 57,
-            "end": 58,
-            "text": "}",
-            "role": "cpp",
-            "reading": "technical"
-          },
-          {
-            "start": 63,
-            "end": 65,
-            "text": "if",
             "role": "cpp",
             "reading": "technical"
           }
@@ -2831,77 +3096,98 @@
       {
         "block": "u3l4_alcance_leer_puntos",
         "path": "/text",
-        "sourceSha256": "46fafd1f0c6088535a69306a4182677ce6369e0e0205ba8b1333e35b7bbd8eff",
+        "sourceSha256": "31c8a046929f014feaa87924f3b3b5c0a51a0612723fa122446d087743d7c080",
         "spans": [
           {
-            "start": 18,
-            "end": 33,
+            "start": 15,
+            "end": 30,
             "text": "int puntos = 3;",
             "role": "cpp",
             "reading": "technical"
           },
           {
-            "start": 122,
-            "end": 126,
+            "start": 55,
+            "end": 59,
             "text": "main",
             "role": "cpp",
             "reading": "technical"
           },
           {
-            "start": 136,
-            "end": 154,
-            "text": "puntos += compras;",
-            "role": "cpp",
-            "reading": "technical"
-          },
-          {
-            "start": 176,
-            "end": 182,
-            "text": "puntos",
-            "role": "cpp",
-            "reading": "technical"
-          },
-          {
-            "start": 200,
-            "end": 202,
+            "start": 70,
+            "end": 72,
             "text": "if",
             "role": "cpp",
             "reading": "technical"
           },
           {
-            "start": 254,
-            "end": 258,
-            "text": "main",
+            "start": 84,
+            "end": 90,
+            "text": "puntos",
             "role": "cpp",
             "reading": "technical"
           },
           {
-            "start": 263,
-            "end": 283,
+            "start": 114,
+            "end": 132,
+            "text": "puntos += compras;",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 145,
+            "end": 147,
+            "text": "if",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 157,
+            "end": 177,
             "text": "std::cout << puntos;",
             "role": "cpp",
             "reading": "technical"
           },
           {
-            "start": 321,
-            "end": 325,
+            "start": 213,
+            "end": 215,
+            "text": "if",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 259,
+            "end": 263,
             "text": "main",
             "role": "cpp",
             "reading": "technical"
           },
           {
-            "start": 378,
-            "end": 390,
+            "start": 313,
+            "end": 325,
             "text": "compras >= 3",
             "role": "cpp",
             "reading": "technical"
           },
           {
-            "start": 396,
-            "end": 401,
+            "start": 329,
+            "end": 334,
             "text": "false",
             "role": "cpp",
             "reading": "technical"
+          },
+          {
+            "start": 372,
+            "end": 392,
+            "text": "std::cout << puntos;",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 436,
+            "end": 437,
+            "text": "3",
+            "role": "output",
+            "reading": "natural"
           }
         ]
       },
@@ -3032,49 +3318,84 @@
       {
         "block": "u3l4_alcance_explicacion",
         "path": "/text",
-        "sourceSha256": "b1f519352bf033cd01f0b41c6b150a53563c148bdc908b11ee315b6b8f5513e1",
+        "sourceSha256": "1f569ce027499870eed2294c80c08ea867d3b269ab390baa5208acc151c75123",
         "spans": [
           {
-            "start": 16,
-            "end": 39,
+            "start": 31,
+            "end": 54,
             "text": "int restantes = tareas;",
             "role": "cpp",
             "reading": "technical"
           },
           {
-            "start": 74,
-            "end": 78,
+            "start": 66,
+            "end": 70,
             "text": "main",
             "role": "cpp",
             "reading": "technical"
           },
           {
-            "start": 96,
-            "end": 102,
-            "text": "tareas",
+            "start": 78,
+            "end": 97,
+            "text": "std::cin >> tareas;",
             "role": "cpp",
             "reading": "technical"
           },
           {
-            "start": 110,
-            "end": 125,
-            "text": "restantes -= 1;",
-            "role": "cpp",
-            "reading": "technical"
-          },
-          {
-            "start": 138,
-            "end": 140,
+            "start": 103,
+            "end": 105,
             "text": "if",
             "role": "cpp",
             "reading": "technical"
           },
           {
-            "start": 215,
-            "end": 224,
+            "start": 121,
+            "end": 130,
             "text": "restantes",
             "role": "cpp",
             "reading": "technical"
+          },
+          {
+            "start": 148,
+            "end": 163,
+            "text": "restantes -= 1;",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 175,
+            "end": 177,
+            "text": "if",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 190,
+            "end": 227,
+            "text": "std::cout << \"Quedan: \" << restantes;",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 240,
+            "end": 242,
+            "text": "if",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 284,
+            "end": 293,
+            "text": "restantes",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 329,
+            "end": 338,
+            "text": "Quedan: 0",
+            "role": "output",
+            "reading": "natural"
           }
         ]
       },
@@ -3109,32 +3430,39 @@
       {
         "block": "u3l4_camara_presentar",
         "path": "/text",
-        "sourceSha256": "54239a8f3236e7099e045e38f2782514c8e9c2fb1e5122d2e18482bc8c793428",
+        "sourceSha256": "00427dcb7d60e922c5235a5e1b839c64945d1391c76795ae4ee547ac55fff127",
         "spans": [
           {
-            "start": 25,
-            "end": 31,
+            "start": 3,
+            "end": 33,
+            "text": "const int bolsas = fichas / 4;",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 35,
+            "end": 41,
             "text": "bolsas",
             "role": "cpp",
             "reading": "technical"
           },
           {
-            "start": 96,
-            "end": 106,
-            "text": "fichas / 4",
-            "role": "cpp",
-            "reading": "technical"
-          },
-          {
-            "start": 273,
-            "end": 275,
+            "start": 243,
+            "end": 245,
             "text": "if",
             "role": "cpp",
             "reading": "technical"
           },
           {
-            "start": 439,
-            "end": 445,
+            "start": 418,
+            "end": 424,
+            "text": "exceso",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 495,
+            "end": 501,
             "text": "exceso",
             "role": "cpp",
             "reading": "technical"
@@ -3250,19 +3578,47 @@
       {
         "block": "u3l4_turno_introducir",
         "path": "/text",
-        "sourceSha256": "7f57586bb6d9ae5db7eb410e2aa538307dcd34c893b82828d58afd153dbb4ec3",
+        "sourceSha256": "abd0b2a4661c538b5ecdc3dc6316c4f130be54a7c0d7b3b4fc5427322fadf981",
         "spans": [
           {
-            "start": 14,
-            "end": 16,
+            "start": 16,
+            "end": 18,
             "text": "if",
             "role": "cpp",
             "reading": "technical"
           },
           {
-            "start": 23,
-            "end": 27,
+            "start": 27,
+            "end": 31,
             "text": "else",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 173,
+            "end": 177,
+            "text": "else",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 189,
+            "end": 195,
+            "text": "plazas",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 215,
+            "end": 221,
+            "text": "libres",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 257,
+            "end": 259,
+            "text": "if",
             "role": "cpp",
             "reading": "technical"
           }
@@ -3277,90 +3633,154 @@
       {
         "block": "u3l4_turno_nombres_anidados",
         "path": "/explanation",
-        "sourceSha256": "1bd710aa0ec8b5024e8f3017cb7a3a6b096894e59a542cc41d051cab2f6531b0",
+        "sourceSha256": "42ce12cc64796787ea27de98121249aa15cde44010e7342f2bab424e8ba87cf3",
         "spans": [
           {
-            "start": 17,
-            "end": 22,
+            "start": 16,
+            "end": 25,
+            "text": "turno > 0",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 37,
+            "end": 42,
             "text": "turno",
             "role": "cpp",
             "reading": "technical"
           },
           {
-            "start": 56,
-            "end": 60,
+            "start": 72,
+            "end": 92,
+            "text": "const int turno = 7;",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 96,
+            "end": 100,
             "text": "main",
             "role": "cpp",
             "reading": "technical"
           },
           {
-            "start": 80,
-            "end": 84,
+            "start": 163,
+            "end": 167,
             "text": "true",
             "role": "cpp",
             "reading": "technical"
           },
           {
-            "start": 130,
-            "end": 150,
+            "start": 191,
+            "end": 193,
+            "text": "if",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 195,
+            "end": 215,
             "text": "const int turno = 2;",
             "role": "cpp",
             "reading": "technical"
           },
           {
-            "start": 185,
-            "end": 190,
+            "start": 321,
+            "end": 326,
             "text": "turno",
             "role": "cpp",
             "reading": "technical"
           },
           {
-            "start": 307,
-            "end": 308,
+            "start": 394,
+            "end": 395,
             "text": "2",
             "role": "output",
             "reading": "natural"
           },
           {
-            "start": 348,
-            "end": 352,
+            "start": 412,
+            "end": 431,
+            "text": "std::cout << turno;",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 484,
+            "end": 488,
             "text": "main",
             "role": "cpp",
             "reading": "technical"
           },
           {
-            "start": 363,
-            "end": 364,
+            "start": 499,
+            "end": 500,
             "text": "7",
             "role": "output",
             "reading": "natural"
           },
           {
-            "start": 459,
-            "end": 463,
+            "start": 527,
+            "end": 532,
+            "text": "turno",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 536,
+            "end": 540,
+            "text": "main",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 580,
+            "end": 584,
             "text": "else",
             "role": "cpp",
             "reading": "technical"
           },
           {
-            "start": 526,
-            "end": 530,
+            "start": 606,
+            "end": 610,
+            "text": "else",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 685,
+            "end": 689,
             "text": "main",
             "role": "cpp",
             "reading": "technical"
+          },
+          {
+            "start": 710,
+            "end": 711,
+            "text": "0",
+            "role": "output",
+            "reading": "natural"
           }
         ]
       },
       {
         "block": "u3l4_turno_nombres_anidados",
         "path": "/reviewFeedback",
-        "sourceSha256": "1ee00a92f6bf4858c7d6ea4f7b551d629d0cb37f990dd2f674259d9cf7aace5a",
-        "spans": []
+        "sourceSha256": "e6c02ab1667f0ee9ed11378eab9b4ca642aa5ee7612adf1beba16992b504cee9",
+        "spans": [
+          {
+            "start": 28,
+            "end": 33,
+            "text": "turno",
+            "role": "cpp",
+            "reading": "technical"
+          }
+        ]
       },
       {
         "block": "u3l4_busqueda_recorrido",
         "path": "/text",
-        "sourceSha256": "4dd17c77e23b895d4738a8a7e4c6b852d2cce715f2cfe1a4fd980dd400bb7064",
+        "sourceSha256": "2a894428c4f1ff487fa66c1d9d2a24ec10ab8f324a39b232beae421040796f28",
         "spans": [
           {
             "start": 18,
@@ -3370,44 +3790,58 @@
             "reading": "technical"
           },
           {
-            "start": 60,
-            "end": 66,
+            "start": 54,
+            "end": 60,
             "text": "bolsas",
             "role": "cpp",
             "reading": "technical"
           },
           {
-            "start": 84,
-            "end": 86,
+            "start": 78,
+            "end": 80,
             "text": "if",
             "role": "cpp",
             "reading": "technical"
           },
           {
-            "start": 128,
-            "end": 134,
+            "start": 109,
+            "end": 119,
+            "text": "fichas / 4",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 134,
+            "end": 140,
             "text": "fichas",
             "role": "cpp",
             "reading": "technical"
           },
           {
-            "start": 230,
-            "end": 236,
+            "start": 198,
+            "end": 204,
             "text": "fichas",
             "role": "cpp",
             "reading": "technical"
           },
           {
-            "start": 254,
-            "end": 256,
+            "start": 222,
+            "end": 224,
             "text": "if",
             "role": "cpp",
             "reading": "technical"
           },
           {
-            "start": 324,
-            "end": 328,
+            "start": 306,
+            "end": 310,
             "text": "main",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 327,
+            "end": 348,
+            "text": "const int fichas = 8;",
             "role": "cpp",
             "reading": "technical"
           }
@@ -3416,12 +3850,19 @@
       {
         "block": "u3l4_tarifa_presentacion",
         "path": "/text",
-        "sourceSha256": "780b8aa59aa7d413ea82aa8c08d6be9ac513975c86d6aad1fe21e4ed7b2c5cc3",
+        "sourceSha256": "956a0b31a7d4fbbb71162cd4366e66d7ad6ce83fe1bc18a49b3d7faf9f1efa19",
         "spans": [
           {
-            "start": 198,
-            "end": 204,
-            "text": "tarifa",
+            "start": 223,
+            "end": 244,
+            "text": "const int brillo = 3;",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 283,
+            "end": 304,
+            "text": "const int brillo = 8;",
             "role": "cpp",
             "reading": "technical"
           }
@@ -3626,32 +4067,46 @@
       {
         "block": "u3l4_registro_de_fichas",
         "path": "/text",
-        "sourceSha256": "b4c51d7ac346eadfd21daedd3f13661a0825e9007f8b5ca18455933513f6baba",
+        "sourceSha256": "d04fc9514226a8b54b16fe63ffee49f62aaf7fc13255f2bab714619c3f78e9a9",
         "spans": [
           {
-            "start": 85,
-            "end": 91,
+            "start": 15,
+            "end": 36,
+            "text": "const int fichas = 8;",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 57,
+            "end": 63,
             "text": "fichas",
             "role": "cpp",
             "reading": "technical"
           },
           {
-            "start": 101,
-            "end": 110,
-            "text": "const int",
+            "start": 117,
+            "end": 118,
+            "text": "{",
             "role": "cpp",
             "reading": "technical"
           },
           {
-            "start": 224,
-            "end": 228,
+            "start": 122,
+            "end": 126,
             "text": "main",
             "role": "cpp",
             "reading": "technical"
           },
           {
-            "start": 295,
-            "end": 299,
+            "start": 138,
+            "end": 154,
+            "text": "if (fichas >= 4)",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 234,
+            "end": 238,
             "text": "main",
             "role": "cpp",
             "reading": "technical"
@@ -3779,39 +4234,74 @@
       {
         "block": "u3l4_limites_nombre_exterior",
         "path": "/text",
-        "sourceSha256": "2e875179a65ea30cbc4fb671ce1df0f31f54b866022e91f1ee36c74d7fdd07c3",
+        "sourceSha256": "ef46460a284a7b818995653524ca2527fe0e7fd4800d7e1a718620832df014c4",
         "spans": [
           {
-            "start": 37,
-            "end": 43,
+            "start": 18,
+            "end": 24,
             "text": "fichas",
             "role": "cpp",
             "reading": "technical"
           },
           {
-            "start": 102,
-            "end": 103,
-            "text": "}",
-            "role": "cpp",
-            "reading": "technical"
-          },
-          {
-            "start": 115,
-            "end": 119,
+            "start": 33,
+            "end": 37,
             "text": "main",
             "role": "cpp",
             "reading": "technical"
           },
           {
-            "start": 227,
-            "end": 233,
+            "start": 49,
+            "end": 51,
+            "text": "if",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 104,
+            "end": 115,
+            "text": "fichas >= 4",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 151,
+            "end": 161,
+            "text": "fichas / 4",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 212,
+            "end": 214,
+            "text": "if",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 257,
+            "end": 263,
             "text": "fichas",
             "role": "cpp",
             "reading": "technical"
           },
           {
-            "start": 267,
-            "end": 269,
+            "start": 302,
+            "end": 306,
+            "text": "main",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 319,
+            "end": 328,
+            "text": "return 0;",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 367,
+            "end": 369,
             "text": "if",
             "role": "cpp",
             "reading": "technical"
@@ -3821,82 +4311,54 @@
       {
         "block": "u3l4_limites_nombre_bolsas",
         "path": "/text",
-        "sourceSha256": "55dfb857429f488e68c3a7fd53da0ad4e5688e4ae2554630af1736f04e47b17d",
+        "sourceSha256": "46bd667e2b4af16b1619e61ed197f057ef9a135d99e5f826ee1a3fd7ef7c3175",
         "spans": [
           {
-            "start": 19,
-            "end": 25,
+            "start": 29,
+            "end": 59,
+            "text": "const int bolsas = fichas / 4;",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 68,
+            "end": 74,
             "text": "bolsas",
             "role": "cpp",
             "reading": "technical"
           },
           {
-            "start": 64,
-            "end": 65,
-            "text": "{",
-            "role": "cpp",
-            "reading": "technical"
-          },
-          {
-            "start": 69,
-            "end": 73,
-            "text": "main",
-            "role": "cpp",
-            "reading": "technical"
-          },
-          {
-            "start": 96,
-            "end": 97,
-            "text": "{",
-            "role": "cpp",
-            "reading": "technical"
-          },
-          {
-            "start": 102,
-            "end": 104,
+            "start": 105,
+            "end": 107,
             "text": "if",
             "role": "cpp",
             "reading": "technical"
           },
           {
-            "start": 244,
-            "end": 246,
-            "text": "if",
+            "start": 119,
+            "end": 139,
+            "text": "std::cout << bolsas;",
             "role": "cpp",
             "reading": "technical"
           },
           {
-            "start": 263,
-            "end": 269,
-            "text": "bolsas",
-            "role": "cpp",
-            "reading": "technical"
-          },
-          {
-            "start": 354,
-            "end": 355,
+            "start": 243,
+            "end": 244,
             "text": "}",
             "role": "cpp",
             "reading": "technical"
           },
           {
-            "start": 360,
-            "end": 362,
-            "text": "if",
+            "start": 336,
+            "end": 340,
+            "text": "main",
             "role": "cpp",
             "reading": "technical"
           },
           {
-            "start": 447,
-            "end": 453,
+            "start": 385,
+            "end": 391,
             "text": "bolsas",
-            "role": "cpp",
-            "reading": "technical"
-          },
-          {
-            "start": 491,
-            "end": 497,
-            "text": "fichas",
             "role": "cpp",
             "reading": "technical"
           }
@@ -3911,68 +4373,61 @@
       {
         "block": "u3l4_uso_en_condicion",
         "path": "/text",
-        "sourceSha256": "c8c381da818253c176d045f1868592e36c205de67e045209ed8b7615e0d4499e",
+        "sourceSha256": "0e46c32f387d0c96e18439f4141f5358983c882019e3487641f8721799642bf4",
         "spans": [
           {
-            "start": 119,
-            "end": 125,
-            "text": "fichas",
+            "start": 62,
+            "end": 83,
+            "text": "const int fichas = 8;",
             "role": "cpp",
             "reading": "technical"
           },
           {
-            "start": 129,
-            "end": 133,
+            "start": 100,
+            "end": 104,
             "text": "main",
             "role": "cpp",
             "reading": "technical"
           },
           {
-            "start": 150,
-            "end": 166,
-            "text": "if (fichas >= 4)",
+            "start": 131,
+            "end": 142,
+            "text": "fichas >= 4",
             "role": "cpp",
             "reading": "technical"
           },
           {
-            "start": 211,
-            "end": 217,
-            "text": "fichas",
-            "role": "cpp",
-            "reading": "technical"
-          },
-          {
-            "start": 258,
-            "end": 259,
+            "start": 205,
+            "end": 206,
             "text": "4",
             "role": "cpp",
             "reading": "technical"
           },
           {
-            "start": 299,
-            "end": 300,
-            "text": "{",
-            "role": "cpp",
-            "reading": "technical"
-          },
-          {
-            "start": 324,
-            "end": 326,
+            "start": 270,
+            "end": 272,
             "text": "if",
             "role": "cpp",
             "reading": "technical"
           },
           {
-            "start": 398,
-            "end": 402,
+            "start": 316,
+            "end": 322,
+            "text": "fichas",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 326,
+            "end": 330,
             "text": "main",
             "role": "cpp",
             "reading": "technical"
           },
           {
-            "start": 505,
-            "end": 506,
-            "text": "=",
+            "start": 344,
+            "end": 346,
+            "text": "if",
             "role": "cpp",
             "reading": "technical"
           }
@@ -3981,11 +4436,18 @@
       {
         "block": "u3l4_uso_en_salida",
         "path": "/text",
-        "sourceSha256": "1373db601c8bec8ef03a80085406fade3eacfcce884a4ba14348396b5f70112e",
+        "sourceSha256": "eedc93b41c8f6b001acd7e3cd8a98d2671bc6e506b7ad3b3aee5177b8c954370",
         "spans": [
           {
-            "start": 75,
-            "end": 81,
+            "start": 3,
+            "end": 23,
+            "text": "std::cout << bolsas;",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 63,
+            "end": 69,
             "text": "bolsas",
             "role": "cpp",
             "reading": "technical"
@@ -3998,18 +4460,401 @@
             "reading": "technical"
           },
           {
-            "start": 272,
-            "end": 278,
-            "text": "bolsas",
+            "start": 186,
+            "end": 216,
+            "text": "const int bolsas = fichas / 4;",
             "role": "cpp",
             "reading": "technical"
           },
           {
-            "start": 298,
-            "end": 318,
+            "start": 259,
+            "end": 279,
             "text": "(Köppe et al., 2023)",
             "role": "citation",
             "reading": "natural"
+          }
+        ]
+      },
+      {
+        "block": "u3l4_ramas_hermanas_resultado",
+        "path": "/text",
+        "sourceSha256": "d0e7172b94cc4d8c572664c70e9a4a25988f9244bf7aa26d9077f9c984a1cef1",
+        "spans": [
+          {
+            "start": 3,
+            "end": 23,
+            "text": "std::cout << plazas;",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 45,
+            "end": 51,
+            "text": "plazas",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 66,
+            "end": 70,
+            "text": "else",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 82,
+            "end": 86,
+            "text": "main",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 104,
+            "end": 125,
+            "text": "const int plazas = 0;",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 147,
+            "end": 153,
+            "text": "libres",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 207,
+            "end": 213,
+            "text": "libres",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 299,
+            "end": 309,
+            "text": "plazas > 0",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 313,
+            "end": 318,
+            "text": "false",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 341,
+            "end": 342,
+            "text": "0",
+            "role": "output",
+            "reading": "natural"
+          }
+        ]
+      },
+      {
+        "block": "u3l4_ramas_hermanas_saldo",
+        "path": "/question",
+        "sourceSha256": "9c4a68d9ddeeb698f560321340a6cea01a2fc8376606625785382149ecae62a3",
+        "spans": [
+          {
+            "start": 23,
+            "end": 27,
+            "text": "else",
+            "role": "cpp",
+            "reading": "technical"
+          }
+        ]
+      },
+      {
+        "block": "u3l4_ramas_hermanas_saldo",
+        "path": "/explanation",
+        "sourceSha256": "8856e7eaf1f47df38c2b1f30bbbfe3459105f6f6fd52c64eeef21f30dc103097",
+        "spans": [
+          {
+            "start": 18,
+            "end": 23,
+            "text": "saldo",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 32,
+            "end": 36,
+            "text": "main",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 83,
+            "end": 87,
+            "text": "else",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 107,
+            "end": 111,
+            "text": "bono",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 128,
+            "end": 130,
+            "text": "if",
+            "role": "cpp",
+            "reading": "technical"
+          }
+        ]
+      },
+      {
+        "block": "u3l4_ocultacion_titulo",
+        "path": "/text",
+        "sourceSha256": "8d4d71c98ed8714be2910fd41a3948856ef0cff2ba58faa02c84f2f13e8ce2bf",
+        "spans": []
+      },
+      {
+        "block": "u3l4_ocultacion_regla",
+        "path": "/text",
+        "sourceSha256": "90300f667ea6e7a069823fdee02561b27185d25acc5932588e407e9c20613879",
+        "spans": [
+          {
+            "start": 394,
+            "end": 398,
+            "text": "main",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 442,
+            "end": 444,
+            "text": "if",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 510,
+            "end": 516,
+            "text": "brillo",
+            "role": "cpp",
+            "reading": "technical"
+          }
+        ]
+      },
+      {
+        "block": "u3l4_ocultacion_resultado_brillo",
+        "path": "/text",
+        "sourceSha256": "81cd270c0389f7b8de7c66284c35c1e958e27a610a3628ebca6444ad254da8dd",
+        "spans": [
+          {
+            "start": 13,
+            "end": 23,
+            "text": "brillo > 5",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 31,
+            "end": 37,
+            "text": "brillo",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 41,
+            "end": 45,
+            "text": "main",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 56,
+            "end": 57,
+            "text": "8",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 83,
+            "end": 85,
+            "text": "if",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 124,
+            "end": 125,
+            "text": "3",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 148,
+            "end": 150,
+            "text": "if",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 159,
+            "end": 160,
+            "text": "3",
+            "role": "output",
+            "reading": "natural"
+          },
+          {
+            "start": 173,
+            "end": 179,
+            "text": "brillo",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 230,
+            "end": 250,
+            "text": "std::cout << brillo;",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 268,
+            "end": 270,
+            "text": "if",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 332,
+            "end": 336,
+            "text": "main",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 417,
+            "end": 418,
+            "text": "8",
+            "role": "output",
+            "reading": "natural"
+          }
+        ]
+      },
+      {
+        "block": "u3l4_ocultacion_antes_resultado",
+        "path": "/text",
+        "sourceSha256": "95208c3207f7ab1cdf80bd20a9cf681da40114db7d30e42c0b46175d6d27f10b",
+        "spans": [
+          {
+            "start": 29,
+            "end": 49,
+            "text": "std::cout << brillo;",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 181,
+            "end": 182,
+            "text": "8",
+            "role": "output",
+            "reading": "natural"
+          },
+          {
+            "start": 356,
+            "end": 360,
+            "text": "main",
+            "role": "cpp",
+            "reading": "technical"
+          }
+        ]
+      },
+      {
+        "block": "u3l4_recuperacion_marca_interior",
+        "path": "/question",
+        "sourceSha256": "f239168e84da1d26dfca4c71d22c2560f32bd45ae01f27a60738d19d02a4b7f2",
+        "spans": []
+      },
+      {
+        "block": "u3l4_recuperacion_marca_interior",
+        "path": "/explanation",
+        "sourceSha256": "3f8bf37ec85d85babb5ec9d68b1ec4c4338041a23bf8715c66821664a18e16ff",
+        "spans": [
+          {
+            "start": 13,
+            "end": 28,
+            "text": "nivel >= limite",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 32,
+            "end": 36,
+            "text": "true",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 49,
+            "end": 51,
+            "text": "if",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 53,
+            "end": 74,
+            "text": "int marca_alerta = 1;",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 132,
+            "end": 133,
+            "text": "1",
+            "role": "output",
+            "reading": "natural"
+          },
+          {
+            "start": 147,
+            "end": 149,
+            "text": "if",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 187,
+            "end": 191,
+            "text": "main",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 234,
+            "end": 235,
+            "text": "0",
+            "role": "output",
+            "reading": "natural"
+          },
+          {
+            "start": 262,
+            "end": 279,
+            "text": "marca_alerta = 1;",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 315,
+            "end": 319,
+            "text": "main",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 332,
+            "end": 335,
+            "text": "int",
+            "role": "cpp",
+            "reading": "technical"
           }
         ]
       }
@@ -4345,10 +5190,9 @@
           "u3l4_camara_temperatura",
           "u3l4_camara_compilar_ejecutar",
           "u3l4_turno_introducir",
-          "u3l4_turno_nombres_anidados",
-          "u3l4_tarifa_presentacion",
-          "u3l4_tarifa_tres_bloques",
-          "u3l4_tarifa_declaraciones_y_vida",
+          "u3l4_ramas_hermanas_plazas",
+          "u3l4_ramas_hermanas_resultado",
+          "u3l4_ramas_hermanas_saldo",
           "u3l4_alcance_guardar",
           "u3l4_alcance_presentar_puntos",
           "u3l4_alcance_puntos",
@@ -4359,7 +5203,17 @@
           "u3l4_alcance_editor",
           "u3l4_alcance_pruebas",
           "u3l4_alcance_explicacion",
-          "u3l4_alcance_solucion"
+          "u3l4_alcance_solucion",
+          "u3l4_ocultacion_titulo",
+          "u3l4_ocultacion_regla",
+          "u3l4_ocultacion_ejemplo_brillo",
+          "u3l4_ocultacion_resultado_brillo",
+          "u3l4_turno_nombres_anidados",
+          "u3l4_tarifa_presentacion",
+          "u3l4_ocultacion_antes_brillo",
+          "u3l4_ocultacion_antes_resultado",
+          "u3l4_tarifa_tres_bloques",
+          "u3l4_tarifa_declaraciones_y_vida"
         ]
       },
       {
@@ -4380,6 +5234,7 @@
           "u3l4_alcance_sensor",
           "block_0003_0003",
           "block_0003_0002",
+          "u3l4_recuperacion_marca_interior",
           "block_0003_0004",
           "block_0003_0005",
           "block_0003_0006",
@@ -5023,6 +5878,96 @@
           "block": 43
         },
         "progressPage": "page_0001"
+      },
+      {
+        "id": "u3l4_ramas_hermanas_plazas",
+        "sha256": "6eaf4064ea277a14bccd6238d19ff12b3d34cd4da65676874ba98ba694a19dd8",
+        "storage": {
+          "page": 7,
+          "block": 44
+        },
+        "progressPage": "page_0001"
+      },
+      {
+        "id": "u3l4_ramas_hermanas_resultado",
+        "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5",
+        "storage": {
+          "page": 7,
+          "block": 45
+        },
+        "progressPage": "page_0001"
+      },
+      {
+        "id": "u3l4_ramas_hermanas_saldo",
+        "sha256": "4793fb3c57e437dfd0998812ab37beb582ea3b530fd6d213dd49fa196e3f65a1",
+        "storage": {
+          "page": 7,
+          "block": 46
+        },
+        "progressPage": "page_0001"
+      },
+      {
+        "id": "u3l4_ocultacion_titulo",
+        "sha256": "a30d0555835b703d0dd5a90aabb0134813afd11904b5364f69f03b01695f6d7a",
+        "storage": {
+          "page": 7,
+          "block": 47
+        },
+        "progressPage": "page_0001"
+      },
+      {
+        "id": "u3l4_ocultacion_regla",
+        "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5",
+        "storage": {
+          "page": 7,
+          "block": 48
+        },
+        "progressPage": "page_0001"
+      },
+      {
+        "id": "u3l4_ocultacion_ejemplo_brillo",
+        "sha256": "800a2bd5dd26edf7b2be7a2d5eb53aeb3dc673ccb0c8f86471620bb8a49bb43c",
+        "storage": {
+          "page": 7,
+          "block": 49
+        },
+        "progressPage": "page_0001"
+      },
+      {
+        "id": "u3l4_ocultacion_resultado_brillo",
+        "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5",
+        "storage": {
+          "page": 7,
+          "block": 50
+        },
+        "progressPage": "page_0001"
+      },
+      {
+        "id": "u3l4_ocultacion_antes_brillo",
+        "sha256": "a76217e1deeb327ee27e46cb786a0d1f234707a1dc655681c41441615c5a8271",
+        "storage": {
+          "page": 7,
+          "block": 51
+        },
+        "progressPage": "page_0001"
+      },
+      {
+        "id": "u3l4_ocultacion_antes_resultado",
+        "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5",
+        "storage": {
+          "page": 7,
+          "block": 52
+        },
+        "progressPage": "page_0001"
+      },
+      {
+        "id": "u3l4_recuperacion_marca_interior",
+        "sha256": "f59137f9386f8bc18458170c2d0ee6bbe4c96ac6c64b770abf8914906ace62c3",
+        "storage": {
+          "page": 7,
+          "block": 53
+        },
+        "progressPage": "page_0003"
       }
     ],
     "editorial": [
@@ -5250,6 +6195,164 @@
         "id": "u3l4_busqueda_recorrido",
         "beforeSha256": "d7c834db0366f091a38b2742e3acc6f98513507745faed06009d3d693f047dae",
         "afterSha256": "3c76f8763408b0665af1734d7572e756b986786ec39416512009623bfa7f1627"
+      },
+      {
+        "id": "block_0000_0001",
+        "beforeSha256": "3779d08722ae02cf86a415105c7b117aee672d47572efc16d50763d5e34f327e",
+        "afterSha256": "2695caabd8e9b47cc3f2382ed75fd668e1b72f9f134c7db06635cd05a82b6310"
+      },
+      {
+        "id": "block_0001_0001",
+        "beforeSha256": "357568560a52df158ae0c5dfa6086166966eb8283d99c7374c5eac24a323fd7f",
+        "afterSha256": "2063636caeddbfd78624a4d7244a767995d92235ed5af6273c9f4c97dea4bb72"
+      },
+      {
+        "id": "u3l4_alcance_sangria",
+        "beforeSha256": "4f7a1798920b911350115a5c11a50324b5b4310fcd4e7e78399e09165ac4fbc0",
+        "afterSha256": "cf82142ffe31035d3ecfb751a813920a77edc2581210a5103c29aa999f6bdc23"
+      },
+      {
+        "id": "u3l4_alcance_presentar_bolsas",
+        "beforeSha256": "af3c5e05588f9e11c01c5ef54358391155061ad210b5e6be6870a8ecd317b466",
+        "afterSha256": "8f4290e0913e02a555e77a2fbaf4b1f37d7eea00b99d416b66c178f42e005eec"
+      },
+      {
+        "id": "u3l4_registro_de_fichas",
+        "beforeSha256": "19d38c4d0ef9054668a2eb733394423281f05aaf58e6b4fdb698ac9ccbe16102",
+        "afterSha256": "844831b59ffda6b7b0485e5969713596b4338e8832d11c8e94cad1fde2b01e71"
+      },
+      {
+        "id": "u3l4_limites_nombre_exterior",
+        "beforeSha256": "6f73579aabc85d1d73fdd22aa3325cf0358404970b6ff3230243e40101ead31a",
+        "afterSha256": "bfd981bd00eb920964e8c1a3bf9a776a3a24f89de97a2089a47cf3005bcedda2"
+      },
+      {
+        "id": "u3l4_limites_nombre_bolsas",
+        "beforeSha256": "87a5e72c3c225a0b23c86794cd34a8715cc9082e510a14b4741e2b44e9f2aaca",
+        "afterSha256": "b77fef2a036a978e6227481db5c0a587c4f817ebf84fb91cd363639b8902013a"
+      },
+      {
+        "id": "u3l4_uso_en_condicion",
+        "beforeSha256": "20048c87274dcc3b1784d15baf321816b79ecb80bdf7baa1235cb7e27f966b41",
+        "afterSha256": "80f668dbb774d201b91a8b0129499d0e38232183fc2a80580517164b3c4f4316"
+      },
+      {
+        "id": "u3l4_busqueda_recorrido",
+        "beforeSha256": "3c76f8763408b0665af1734d7572e756b986786ec39416512009623bfa7f1627",
+        "afterSha256": "441649fb2eb54801f9ce2ba1b1d8f36c03f24da135873057e70163c9a735f26e"
+      },
+      {
+        "id": "u3l4_uso_en_salida",
+        "beforeSha256": "6a6a17541c475c9b50bc78e4fa125c82d8155c26164e5f428c6976da4da58146",
+        "afterSha256": "7da4e13d34af1c8363a451a332e65e27fc150faab3b0a9e82dc17fb0fe77629e"
+      },
+      {
+        "id": "u3l4_alcance_consultar_nombre",
+        "beforeSha256": "162ef7c3b48dd3acf660325b0d6a4ca71d2a4c81d02f8f9d5c013723ef00f433",
+        "afterSha256": "8668447fc073a6e13daf5bfc7e7089ca2f8d43b0c8470a21074bf28c5d606ea7",
+        "reviewPaths": [
+          "/reviewFeedback/0",
+          "/reviewFeedback/1",
+          "/reviewFeedback/2"
+        ]
+      },
+      {
+        "id": "u3l4_camara_presentar",
+        "beforeSha256": "c5bae089b51a4288ad0fa0111d95d4d7a2555e98ac30d28b5bf3f2493aad251b",
+        "afterSha256": "c5a6319fe15050efefb80a69ccaa618917b8ce8f5f7eb6c0ba0f35f118d96bf3"
+      },
+      {
+        "id": "u3l4_alcance_leer_puntos",
+        "beforeSha256": "0e31ecca4a477fc29711be7f342173a89216b52e90c861a7713ccdd05909d4c0",
+        "afterSha256": "5d1c5121bee475d13ea49e0ee39298ec34eba7e2c0a90584d0f9f856f9bc010a"
+      },
+      {
+        "id": "u3l4_alcance_explicacion",
+        "beforeSha256": "10dbe43719a79cb3887a645ccbfe09482e5fe669ee9df44eef44d27868c395cb",
+        "afterSha256": "4cf2d52929dd77c8c20ef1b74fd6714e8714c88ce8930809a5a1d3202b731cc4"
+      },
+      {
+        "id": "block_0002_0001",
+        "beforeSha256": "885c67c5d69e8db34b071c479c3331cc2f9b3360726230aabb9648bd93460c9c",
+        "afterSha256": "36fc1351b7ccb1ba08b5c726717df05f18e2b7a62c85260fdb54bbde4cc1b1be"
+      },
+      {
+        "id": "block_0003_0003",
+        "beforeSha256": "ebaae2c5058f2e23a27db6fc3b67d2df498941d96b8c880afc040327a1c65296",
+        "afterSha256": "8502b80d9a32005993eb245177a57e66a5905c2792873dc1daa5ed2c05638151"
+      },
+      {
+        "id": "block_0003_0002",
+        "beforeSha256": "c80ed651d100fb41259f6401af29b66adc86602d822e447ed3d6f7dcc43b8809",
+        "afterSha256": "bbda933d4c4b6e856d295c0c96f105fe802a81061e6e3327dd223ca29514ca77"
+      },
+      {
+        "id": "block_0003_0009",
+        "beforeSha256": "9a71a981b6a9563ced0a29e97157911dd7098e24d4ef11c61a3d9d7b1e57f9e6",
+        "afterSha256": "e8f2402ee0b4c1c63660e8918229513565ebecde4eb7c229b56c4c631fc4f8a0"
+      },
+      {
+        "id": "block_0004_0002",
+        "beforeSha256": "acc8b73507595674d75d66c0d8d0ac95e66b587607976d0ce57c9cbe3a7644f4",
+        "afterSha256": "48de8bec6f757acc29a447a43b4778077d7a8607fbeaac10afc9d9133edb6808"
+      },
+      {
+        "id": "block_0005_0001",
+        "beforeSha256": "9f2e57f3f6b962827a8c42e68d5f8be52b6184fb02f0eaaf167e3f5e18791bbe",
+        "afterSha256": "05bd1415089500934ee99ffe46a062334c003dddb9c4d3aeba81afffe34ecc57"
+      },
+      {
+        "id": "block_0006_0003",
+        "beforeSha256": "e86426bc9b5545705d146477ceaf254419a6df43195d081cb297c62cf3bfa1d4",
+        "afterSha256": "4124e2b89c33ea192e4189d40349673cde86c50b00ac0df676db06f921a8737e"
+      },
+      {
+        "id": "u3l4_turno_nombres_anidados",
+        "beforeSha256": "6fe4e526e108a4c0ba0468137c0d60ae1cf40a9b5fff24c64b35de0a445bd2b6",
+        "afterSha256": "b380ad2fb88672d40fdba09544b462f204d361751c36d8b5fc65189eb874097c",
+        "reviewPaths": [
+          "/reviewFeedback"
+        ]
+      },
+      {
+        "id": "block_0001_0002",
+        "beforeSha256": "489104b402167160469abd0895d1a143c64f5e82e1f60b56f6da57750ae7017b",
+        "afterSha256": "50fa328c99b8a94ae03f34db6d6dfed43f917de7dc462c63dc0074d18fdaf8db"
+      },
+      {
+        "id": "block_0001_0003",
+        "beforeSha256": "047ba2fc6050c7c8a7758debaba152d16c622803a0797deea14d1c314d4b445e",
+        "afterSha256": "9164bd603c17f4bece429166875989ba5d6d4a9455a1350c49792af75a7a48b6"
+      },
+      {
+        "id": "u3l4_alcance_presentar_bolsas",
+        "beforeSha256": "8f4290e0913e02a555e77a2fbaf4b1f37d7eea00b99d416b66c178f42e005eec",
+        "afterSha256": "f475e5330b4f760eb5954ce1ffe0e4fb6962b207df747c9f6f47cd012c9db624"
+      },
+      {
+        "id": "u3l4_limites_nombre_exterior",
+        "beforeSha256": "bfd981bd00eb920964e8c1a3bf9a776a3a24f89de97a2089a47cf3005bcedda2",
+        "afterSha256": "bc26c9bee96c9adad69c94223c803df4e28be60e0351450de25ef2bef4e8e332"
+      },
+      {
+        "id": "u3l4_limites_nombre_bolsas",
+        "beforeSha256": "b77fef2a036a978e6227481db5c0a587c4f817ebf84fb91cd363639b8902013a",
+        "afterSha256": "532fcc71a9b86a37ec7595a9662e98014b856134c8bc57d254c566db1ab38552"
+      },
+      {
+        "id": "u3l4_alcance_presentar_bolsas",
+        "beforeSha256": "f475e5330b4f760eb5954ce1ffe0e4fb6962b207df747c9f6f47cd012c9db624",
+        "afterSha256": "3211e732de1cfbc64865f2ad11b5d6224af271b1438cae98659273e97df830b0"
+      },
+      {
+        "id": "u3l4_turno_introducir",
+        "beforeSha256": "ae96de3e753ce3fb6c1ebb383f94fc510b3b7a03329f4ab4724866adc9be893a",
+        "afterSha256": "7962339bb3355ce1323dba2f90232a784cccde3971047a7c5ac63237a5a1317d"
+      },
+      {
+        "id": "u3l4_tarifa_presentacion",
+        "beforeSha256": "1f908ae631b773f094381ef4cdfb07a1622ad81b1165119f0478305eed5e9482",
+        "afterSha256": "10aaba393da28bd970021f3804d41def2b73596e0c1dd431cdb66b7ab4fe172d"
       }
     ],
     "retired": [

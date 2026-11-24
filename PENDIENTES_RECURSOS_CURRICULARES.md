@@ -10,16 +10,11 @@ Sin pendientes.
 
 ## CAPACIDADES POR IMPLEMENTAR E INTEGRAR
 
-### Recuadros de código anidados en el lector de Windows
+### Comprobar los recuadros después de editar explicaciones incorporadas en otra publicación
 
-- **Ubicación.** Programación 1, unidad 3, lección 4, página 2 de `lesson_alternativas_y_fronteras.json`. El ejercicio `u3l4_alcance_codigo_en_recuadros` usa un diagrama euclidiano. El lector pinta un punto junto a cada instrucción y en cada vértice, aplica el color de acento a los segmentos y reserva la altura del lienzo incluso para seis líneas. El estudiante pidió recuadros de lectura como los de su ejemplo.
-- **Presentación.** Usar contenedores de lectura anidados con altura según el contenido, borde discreto, márgenes interiores y líneas de C++ alineadas con la tipografía del lector de código. El exterior lleva el título «Cuerpo de main» y la línea `const int fichas = 8;`. El interior se identifica con `if (fichas >= 4)` y contiene en dos líneas `const int bolsas = fichas / 4;` y `std::cout << bolsas;`. Debajo de ese recuadro y todavía en el exterior va `return 0;`. La agrupación debe entenderse también sin color y al recorrer el contenido con narración. Conservar el contenido y la respuesta del ejercicio. El trazado de los diagramas de geometría mantiene sus propias reglas.
-- **Comprobación.** Leer las cuatro instrucciones completas, en orden, con la ventana habitual de Work a 3840 × 2160 y escala de Windows del 250 %, y también con la ventana mínima y el tamaño de lectura al 150 %. Comprobar el marcador y una respuesta existente al volver a abrir la página.
+En la página 2 de «Elegir alternativas y probar fronteras», la prueba de autoría de los recuadros compara directamente la lección de la revisión 53578555 con el texto actual. Esa comparación omite la publicación de párrafos que Work corrigió después, como «u3l4_limites_nombre_bolsas». El resultado es «New activities cannot claim historical editorial provenance» aunque la actividad de los recuadros conserva su contenido y su respuesta.
 
-### Validar el retiro de un recurso usado en Work entre dos publicaciones
-
-- **Ubicación.** En la misma lección, el perfil de Work ya había registrado la imagen histórica `u3l4_alcance_esquema_de_bloques` en la dirección 7,29. La sustitución conserva su registro, archiva la presentación anterior en `retirementHistory` y asigna al ejercicio nativo la dirección 7,30. El catálogo y el lector instalados admiten ambas etapas y recuperan el marcador de la página 2.
-- **Pendiente de publicación.** La última revisión de Git anterior al retiro aún desconocía la imagen. La comprobación directa contra esa revisión falla con `Retirement reading snapshot does not match the complete previous published presentation`. Habilitar la verificación encadenada de la base publicada a la presentación intermedia acreditada y de ésta al contenido final. Reutilizar las comprobaciones de cada transición y rechazar alteraciones de las identidades, direcciones, respuestas, procedencia y presentación archivada. Verificar también los rechazos con una instantánea alterada y un propietario distinto en una dirección ya usada.
+Ajustar la prueba en «scripts/curriculum/test_code_scope_presentations.py» para que compruebe las revisiones intermedias publicadas cuando se corrige texto añadido después de la presentación original. El caso se reproduce con la secuencia 53578555, ee940eb0 y la corrección curricular de Work. Comprobar cada transición con su base acreditada y conservar los rechazos de alteraciones del ejercicio, de su propietario y de la presentación. La prueba debe seguir detectando una dirección reutilizada o una modificación de la respuesta.
 
 ### WINDOWS_SIMPLIFICAR_COMPILADORES_Y_PRUEBAS
 
