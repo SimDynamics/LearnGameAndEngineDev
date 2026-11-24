@@ -803,6 +803,16 @@ int main() {
     using namespace lgaed;
     using namespace curriculum;
     try {
+        // CTest can terminate a slow traversal before buffered PASS lines reach
+        // its log. Flush progress and retain the last entered phase and timing.
+        std::cout << std::unitbuf;
+        const auto qa_started = std::chrono::steady_clock::now();
+        const auto mark_phase = [&](std::string_view phase) {
+            std::cout << "CATALOG_PHASE " << phase << " elapsed_ms="
+                << std::chrono::duration_cast<std::chrono::milliseconds>(
+                    std::chrono::steady_clock::now() - qa_started).count() << '\n';
+        };
+        mark_phase("progress_state_fixtures");
         page_progress_matches_android_without_crediting_unanswered_puzzles();
         a_missing_compiler_evaluator_never_completes_a_curricular_page();
         dependent_puzzles_keep_historical_progress_without_granting_execution_proofs();
@@ -814,6 +824,7 @@ int main() {
         choice_revision_reset_keeps_exact_scope_and_provenance();
         reached_page_reset_removes_only_selected_legacy_frontiers();
         invalid_scoped_coverage_cannot_partially_reset_student_progress();
+        mark_phase("published_indices");
         const auto root = std::filesystem::path(build::source_root) / "app/src/main/assets/content";
         CatalogLocation location;
         const auto routes = windows::load_catalog(root,location);
@@ -821,7 +832,9 @@ int main() {
         location = catalog_child(location,"programming"); const auto courses = windows::load_catalog(root,location);
         programming_catalog_preserves_published_ids(root,courses);
         catalog_rejects_duplicate_and_unsafe_ids_without_inventing_availability();
+        mark_phase("expanded_course");
         inserted_course_resolves_real_content_and_keeps_id_owned_state(root,courses);
+        mark_phase("active_edition_metadata");
         location = catalog_child(location,"cpp_fundamentals"); const auto units = windows::load_catalog(root,location);
         catalog_matches_its_published_index(root,units);
         check(units.entries.size() >= 2 && units.entries.front().available,
@@ -848,6 +861,7 @@ int main() {
         check(empty_unit.total==lessons.entries.size() && empty_unit.completed==0 && empty_unit.percentage()==0 &&
             warm_unit.total==empty_unit.total && warm_unit.percentage()==empty_unit.percentage() && pristine==pristine_before,
             "A real unit's cached metadata changed its lesson weighting, counts or empty student state");
+        mark_phase("preserved_u11_metadata");
         {
             // U11L7: its compiler was legitimately expanded before a later
             // physical source-format revision. The formatting predecessor
@@ -895,6 +909,7 @@ int main() {
         std::cout<<"Catalog empty-unit metadata cold/warm: "
             <<std::chrono::duration_cast<std::chrono::milliseconds>(cold_finished-cold_started).count()<<"/"
             <<std::chrono::duration_cast<std::chrono::milliseconds>(warm_finished-cold_finished).count()<<" ms\n";
+        mark_phase("navigation");
         auto false_owner=lessons.entries[1];false_owner.id=lessons.entries[0].id;
         rejects([&] { (void)windows::catalog_entry_progress(root,location,false_owner,pristine); },
             "A cached metadata asset was attached to another published lesson");
@@ -960,6 +975,7 @@ int main() {
             "A preserved historical unit became part of the active Spanish edition");
         check(!windows::active_catalog_lesson(root,location,historical_lesson),
             "An old lesson ID was silently redirected to the new edition");
+        mark_phase("language_editions");
         for (const auto locale : {"es","en","fr"}) {
             auto course = catalog_parent(location); course.locale = locale;
             const auto translated_units = windows::load_catalog(root,course);
@@ -979,6 +995,7 @@ int main() {
                 check(!windows::active_catalog_lesson(root,translated,lessons.entries[1].id),
                     "A language borrowed an active lesson from another edition");
         }
+        mark_phase("math_progress");
         auto math = catalog_child(CatalogLocation{},"math_physics");
         const auto math_courses = windows::load_catalog(root,math);
         check(math_courses.entries.front().id == "math_course_01","Mathematics route missing");
@@ -1012,6 +1029,7 @@ int main() {
             });
         check(validations>0 && !rejected_math.pending_validation && rejected_math.completed==0 && unverified_math==math_before,
             "Math validation failures were hidden, counted as correct, or changed student data");
+        mark_phase("path_rejection_and_reset");
         for (const auto id : {"..","a/b","a\\b","C:bad","a.json","","x y"})
             rejects([&] { (void)catalog_child(CatalogLocation{"es","programming",{},{}},id); },"Unsafe course path accepted");
         rejects([&] { (void)catalog_child(CatalogLocation{},"unknown"); },"Unknown route accepted");
@@ -1054,6 +1072,7 @@ int main() {
             state::find(progress,"learning_progress","lesson_math_course_01__numeros_y_operaciones__otra_completed") != nullptr,"Reset crossed its exact lesson/route boundary");
         check(progress.preferences.at("cpp_lesson_drafts") == original_progress.preferences.at("cpp_lesson_drafts") &&
             progress.preferences.at("narration_settings") == original_progress.preferences.at("narration_settings"),"Reset altered personal drafts or voice preferences");
+        mark_phase("complete");
         std::cout << "Catalog real indices, both routes, three language editions, preserved historical paths, safe parents and read-only progress: PASS\n";
         return 0;
     } catch (const std::exception& error) { std::cerr << error.what() << '\n'; return 1; }

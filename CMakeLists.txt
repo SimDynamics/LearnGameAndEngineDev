@@ -14,6 +14,8 @@ option(LGAED_NARRATION_PLAYER_QA_ONLY
     "Build only the three real Windows narration-player probes with the official Windows toolchain" OFF)
 option(LGAED_READER_BUILD_QA_ONLY
     "Build the original curricular readers and run focused catalog, compiler and Win32 regressions without audio playback" OFF)
+option(LGAED_CATALOG_U1_QA_ONLY
+    "Build only the complete native catalog and four U1 editor regressions with the official Windows toolchain" OFF)
 option(LGAED_MATH_EDITORIAL_QA_ONLY
     "Within ReaderBuild, run only the real math-worker prompt revision and native/imported reader preservation test" OFF)
 if(LGAED_MATH_EDITORIAL_QA_ONLY AND NOT LGAED_READER_BUILD_QA_ONLY)
@@ -33,7 +35,8 @@ option(LGAED_U6_DIAGNOSTIC_READER_QA_ONLY
     "Build and run the three original U6 diagnostic reader flows with real Kokoro playback" OFF)
 set(_lgaed_qa_mode_count 0)
 foreach(_mode LGAED_STATE_IMPORT_QA_ONLY LGAED_NARRATION_PLAYER_QA_ONLY
-        LGAED_READER_BUILD_QA_ONLY LGAED_NARRATION_WORKER_QA_ONLY LGAED_U12_READER_QA_ONLY
+        LGAED_READER_BUILD_QA_ONLY LGAED_CATALOG_U1_QA_ONLY
+        LGAED_NARRATION_WORKER_QA_ONLY LGAED_U12_READER_QA_ONLY
         LGAED_U11_EDITORIAL_READER_QA_ONLY LGAED_COMPILER_HISTORICAL_READER_QA_ONLY
         LGAED_U6_DIAGNOSTIC_READER_QA_ONLY LGAED_CURRENT_READERS_QA_ONLY)
     if(${_mode})
@@ -586,8 +589,51 @@ function(lgaed_add_catalog_test)
     target_link_libraries(lgaed_catalog_tests PRIVATE lgaed_platform_windows)
     add_dependencies(lgaed_catalog_tests lgaed_retirement_fixtures lgaed_diagnostic_fixtures)
     add_test(NAME native.catalog COMMAND lgaed_catalog_tests)
-    set_tests_properties(native.catalog PROPERTIES TIMEOUT 30)
+    # Full/progress loading of the expanded real catalog precedes the active
+    # edition, three-language navigation and scoped reset checks. Keep a bounded
+    # budget; the executable flushes phase timings to diagnose any stalled run.
+    set_tests_properties(native.catalog PROPERTIES TIMEOUT 90)
 endfunction()
+
+# Reuse the exact U1 editor targets, fixtures and regression modes in
+# ReaderBuild and the focused catalog/U1 profile. ReaderBuild keeps its
+# separate gesture registrations.
+function(lgaed_add_u1_editor_tests)
+    add_executable(lgaed_lesson_view_tests
+        native/presentation/windows/lesson_view_tests.cpp)
+    target_link_libraries(lgaed_lesson_view_tests PRIVATE lgaed_curricular_windows)
+    add_dependencies(lgaed_lesson_view_tests lgaed_retirement_fixtures lgaed_main_u1_fixtures)
+    # The core U1 tests verify that every active editor has independent
+    # response and draft storage, including Work's new edition additions.
+    add_executable(lgaed_lesson_tests native/core/lesson_tests.cpp)
+    target_link_libraries(lgaed_lesson_tests PRIVATE lgaed_platform_windows lgaed_host_options)
+    add_dependencies(lgaed_lesson_tests lgaed_retirement_fixtures lgaed_main_u1_fixtures)
+    add_test(NAME native.u1_editor_contracts COMMAND lgaed_lesson_tests --u1-editor-contracts)
+    set_tests_properties(native.u1_editor_contracts PROPERTIES TIMEOUT 90 RUN_SERIAL TRUE)
+    add_test(NAME native.u1_main_editor_contracts
+        COMMAND lgaed_lesson_tests --u1-main-editor-contracts)
+    set_tests_properties(native.u1_main_editor_contracts PROPERTIES TIMEOUT 120 RUN_SERIAL TRUE)
+    # Retain every original compiler and activate the ninth on Work's edition.
+    add_test(NAME native.u1_editor_edition
+        COMMAND lgaed_lesson_view_tests --u1-compiler-edition)
+    set_tests_properties(native.u1_editor_edition PROPERTIES TIMEOUT 480 RUN_SERIAL TRUE)
+    add_test(NAME native.u1_main_editor_execution
+        COMMAND lgaed_lesson_view_tests --u1-main-compiler-edition)
+    set_tests_properties(native.u1_main_editor_execution PROPERTIES TIMEOUT 240 RUN_SERIAL TRUE)
+endfunction()
+
+if(LGAED_CATALOG_U1_QA_ONLY)
+    include(CTest)
+    if(NOT BUILD_TESTING)
+        message(FATAL_ERROR "LGAED_CATALOG_U1_QA_ONLY requires BUILD_TESTING=ON.")
+    endif()
+    find_package(Python3 REQUIRED COMPONENTS Interpreter)
+    lgaed_add_catalog_history_fixtures()
+    lgaed_add_catalog_test()
+    lgaed_add_u1_editor_tests()
+    message(STATUS "Focused catalog/U1 QA: complete published catalog and all four original U1 editor regressions; no audio playback.")
+    return()
+endif()
 
 # Course editions use new curricular owners; the same production controls
 # verify isolation in the full application build and focused ReaderBuild.
@@ -862,36 +908,16 @@ if(LGAED_READER_BUILD_QA_ONLY)
     lgaed_add_order_editorial_authoring_tests()
     include(cmake/StateImportTests.cmake)
     lgaed_add_catalog_history_fixtures()
+    lgaed_add_u1_editor_tests()
     # Run the real-control menu/scroll cases before costly compiler probes.
     # A failing gesture must report its native diagnostics immediately.
     # These modes do not launch the app or synthesize/play narration.
-    add_executable(lgaed_lesson_view_tests
-        native/presentation/windows/lesson_view_tests.cpp)
-    target_link_libraries(lgaed_lesson_view_tests PRIVATE lgaed_curricular_windows)
-    add_dependencies(lgaed_lesson_view_tests lgaed_retirement_fixtures lgaed_main_u1_fixtures)
-    # The core U1 tests verify that every active editor has independent
-    # response and draft storage, including Work's new edition additions.
-    add_executable(lgaed_lesson_tests native/core/lesson_tests.cpp)
-    target_link_libraries(lgaed_lesson_tests PRIVATE lgaed_platform_windows lgaed_host_options)
-    add_dependencies(lgaed_lesson_tests lgaed_retirement_fixtures lgaed_main_u1_fixtures)
-    add_test(NAME native.u1_editor_contracts COMMAND lgaed_lesson_tests --u1-editor-contracts)
-    set_tests_properties(native.u1_editor_contracts PROPERTIES TIMEOUT 90 RUN_SERIAL TRUE)
-    add_test(NAME native.u1_main_editor_contracts
-        COMMAND lgaed_lesson_tests --u1-main-editor-contracts)
-    set_tests_properties(native.u1_main_editor_contracts PROPERTIES TIMEOUT 120 RUN_SERIAL TRUE)
     add_test(NAME native.lesson_scroll_render COMMAND lgaed_lesson_view_tests --scroll-repaint)
     add_test(NAME native.lesson_menu COMMAND lgaed_lesson_view_tests --lesson-menu)
     add_test(NAME native.lesson_optional_order_help
         COMMAND lgaed_lesson_view_tests --order-help)
     set_tests_properties(native.lesson_menu native.lesson_scroll_render
         native.lesson_optional_order_help PROPERTIES TIMEOUT 45 RUN_SERIAL TRUE)
-    # Retain every original compiler and activate the ninth on Work's edition.
-    add_test(NAME native.u1_editor_edition
-        COMMAND lgaed_lesson_view_tests --u1-compiler-edition)
-    set_tests_properties(native.u1_editor_edition PROPERTIES TIMEOUT 480 RUN_SERIAL TRUE)
-    add_test(NAME native.u1_main_editor_execution
-        COMMAND lgaed_lesson_view_tests --u1-main-compiler-edition)
-    set_tests_properties(native.u1_main_editor_execution PROPERTIES TIMEOUT 240 RUN_SERIAL TRUE)
     lgaed_add_catalog_test()
     lgaed_add_course_edition_tests()
     lgaed_add_general_choice_editorial_tests()

@@ -1,6 +1,6 @@
 [CmdletBinding()]
 param(
-    [ValidateSet('StateImport', 'NarrationPlayer', 'ReaderBuild', 'MathEditorial', 'NarrationWorker', 'U12Reader',
+    [ValidateSet('StateImport', 'CatalogU1', 'NarrationPlayer', 'ReaderBuild', 'MathEditorial', 'NarrationWorker', 'U12Reader',
         'U11EditorialReader', 'CompilerHistoricalReader', 'U6DiagnosticReader', 'CurrentReaders')]
     [string] $Suite = 'StateImport',
     [ValidateSet('All', 'DeclarationsAssignments', 'Characters')]
@@ -28,8 +28,8 @@ if ($CompilerHistoryGroup -ne 'All' -and $Suite -ne 'CompilerHistoricalReader') 
 if ($EditorialGroup -ne 'All' -and $Suite -ne 'U11EditorialReader') {
     throw 'An editorial selection requires the U11EditorialReader suite.'
 }
-if ($MsvcPreflightOnly -and $Suite -notin @('StateImport', 'ReaderBuild')) {
-    throw 'The early MSVC preflight is available only for hosted StateImport and ReaderBuild suites.'
+if ($MsvcPreflightOnly -and $Suite -notin @('StateImport', 'CatalogU1', 'ReaderBuild')) {
+    throw 'The early MSVC preflight is available only for hosted StateImport, CatalogU1 and ReaderBuild suites.'
 }
 
 $qaRoot = [System.IO.Path]::GetFullPath((Join-Path $PSScriptRoot '..\..'))
@@ -88,6 +88,21 @@ $qaSuiteConfig = switch ($Suite) {
                 'native.local_role_probe',
                 'native.local_role_authoring',
                 'native.local_dependency_receipts'
+            )
+        }
+    }
+    'CatalogU1' {
+        @{
+            Directory = 'catalog-u1-ci'
+            CMakeOption = 'LGAED_CATALOG_U1_QA_ONLY'
+            Targets = @('lgaed_catalog_tests', 'lgaed_lesson_tests', 'lgaed_lesson_view_tests')
+            Results = 'catalog-u1'
+            Tests = @(
+                'native.catalog',
+                'native.u1_editor_contracts',
+                'native.u1_main_editor_contracts',
+                'native.u1_editor_edition',
+                'native.u1_main_editor_execution'
             )
         }
     }

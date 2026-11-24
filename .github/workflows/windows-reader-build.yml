@@ -65,12 +65,12 @@ permissions:
   contents: read
 
 concurrency:
-  group: windows-reader-build-${{ github.ref }}
+  group: windows-reader-build-${{ github.ref }}${{ github.event_name == 'push' && startsWith(github.event.head_commit.message, 'qa-native-catalog-u1:') && '-catalog-u1' || '' }}
   cancel-in-progress: false
 
 jobs:
   build:
-    name: Compile original readers and verify catalog, choice revisions and project history
+    name: ${{ github.event_name == 'push' && startsWith(github.event.head_commit.message, 'qa-native-catalog-u1:') && 'Verify the complete native catalog and four U1 editor regressions' || 'Compile original readers and verify catalog, choice revisions and project history' }}
     runs-on: windows-2025-vs2026
     # A verified full reader build already needs about 39 minutes on the
     # hosted runner. U1 now also builds the separate historical-contract
@@ -78,6 +78,11 @@ jobs:
     # Preserve the exact pinned MSVC and every per-test CTest timeout while
     # allowing the additional work to finish on a busy Windows runner.
     timeout-minutes: 60
+    env:
+      # This explicit push prefix selects the complete catalog and four U1 tests
+      # in their own queue. Normal pushes and manual dispatch retain ReaderBuild
+      # and all of its 97 cases.
+      LGAED_NATIVE_QA_SUITE: ${{ github.event_name == 'push' && startsWith(github.event.head_commit.message, 'qa-native-catalog-u1:') && 'CatalogU1' || 'ReaderBuild' }}
     defaults:
       run:
         shell: pwsh
@@ -88,7 +93,7 @@ jobs:
           fetch-depth: 0
           persist-credentials: false
       - name: Fail early if hosted Windows lacks the exact declared MSVC
-        run: .\scripts\windows\Test-NativeCurricularCI.ps1 -Suite ReaderBuild -MsvcPreflightOnly
+        run: .\scripts\windows\Test-NativeCurricularCI.ps1 -Suite $env:LGAED_NATIVE_QA_SUITE -MsvcPreflightOnly
       - name: Select the declared Python version
         uses: actions/setup-python@ece7cb06caefa5fff74198d8649806c4678c61a1
         with:
@@ -119,15 +124,15 @@ jobs:
       # select the dispatch input, qa-reader-build-audio:, or the focused
       # qa-curricular-current-readers: evaluation that also needs this suite.
       # This is no permanent driver deployment and downloads no TTS models.
-      # All 97 tests still run; a missing playback endpoint remains a failure.
-      - name: Compile readers and execute all native Win32 regressions
+      # ReaderBuild retains all 97 tests; a missing playback endpoint remains a failure.
+      - name: Compile the selected Windows QA suite and execute its complete tests
         env:
           LGAED_EVALUATE_VIRTUAL_AUDIO: ${{ (github.event_name == 'workflow_dispatch' && inputs.evaluate_virtual_audio) || (github.event_name == 'push' && startsWith(github.event.head_commit.message, 'qa-reader-build-audio:')) || (github.event_name == 'push' && startsWith(github.event.head_commit.message, 'qa-curricular-current-readers:')) }}
         run: |
-          $qaEvaluateAudio = $env:LGAED_EVALUATE_VIRTUAL_AUDIO -eq 'true'
-          .\scripts\windows\Test-NativeCurricularCI.ps1 -Suite ReaderBuild -VirtualAudio:$qaEvaluateAudio
+          $qaEvaluateAudio = $env:LGAED_NATIVE_QA_SUITE -eq 'ReaderBuild' -and $env:LGAED_EVALUATE_VIRTUAL_AUDIO -eq 'true'
+          .\scripts\windows\Test-NativeCurricularCI.ps1 -Suite $env:LGAED_NATIVE_QA_SUITE -VirtualAudio:$qaEvaluateAudio
       - name: Preserve configure and compilation results
-        if: always()
+        if: always() && env.LGAED_NATIVE_QA_SUITE == 'ReaderBuild'
         uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02
         with:
           name: windows-reader-build-${{ github.sha }}
@@ -153,3 +158,17 @@ jobs:
             out/qa/reader-build-ci/CTestTestfile.cmake
             out/qa/reader-build-ci/Testing/Temporary/*.log
             out/qa/reader-build-ci/simulation-captures/**
+      - name: Preserve the complete catalog and U1 regression evidence
+        if: always() && env.LGAED_NATIVE_QA_SUITE == 'CatalogU1'
+        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02
+        with:
+          name: windows-catalog-u1-${{ github.sha }}
+          retention-days: 14
+          if-no-files-found: warn
+          path: |
+            out/qa/catalog-u1-ci/CMakeFiles/CMakeConfigureLog.yaml
+            out/qa/catalog-u1-ci/native-build.log
+            out/qa/catalog-u1-ci/catalog-u1-results.xml
+            out/qa/catalog-u1-ci/catalog-u1-results.log
+            out/qa/catalog-u1-ci/CTestTestfile.cmake
+            out/qa/catalog-u1-ci/Testing/Temporary/*.log

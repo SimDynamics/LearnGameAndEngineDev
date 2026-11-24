@@ -1,4 +1,5 @@
 #include "core/lesson.hpp"
+#include "core/compiler_flow.hpp"
 #include "core/rejection_diagnostic_facts.hpp"
 #include "core/retirement_test_fixture.hpp"
 #include "core/choice_revision_test_fixture.hpp"
