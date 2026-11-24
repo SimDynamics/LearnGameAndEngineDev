@@ -91,8 +91,8 @@ cargador, estado histórico y recibo independiente. La ejecución
 `scripts/curriculum/test_cpp_indexed_unique_transfer_runtime.py` compila
 y ejecuta tres soluciones equivalentes y siete variantes rechazadas (una
 por contaminar stdout y otra por copiar un entero cuando los valores de ambos
-propietarios coinciden) con GCC, Clang
-y MSVC disponible en CI. El comprobador privado exige stdout vacío y que stderr sea exactamente
+propietarios coinciden) con MSVC en Windows.
+El comprobador privado exige stdout vacío y que stderr sea exactamente
 el marcador final emitido tras todas las verificaciones; una coincidencia
 parcial del marcador no demuestra éxito. El ejecutor de QA compila además cada una de las tres soluciones correctas
 con el `main` original y las contrasta con **todos** los casos públicos
@@ -915,7 +915,7 @@ python -B -m unittest discover -s scripts/curriculum -p test_cpp_dual_interface_
 ```
 
 El workflow `.github/workflows/codex-dual-interface.yml`
-compila el núcleo semántico con GCC, Clang y MSVC desechables.
+compila el núcleo semántico con MSVC en un ejecutor Windows desechable.
 `native.dual_interface_state_live` comprueba además
 el lector completo y ligero, los tres casos originales y la
 persistencia de recibos válidos, ausentes y adulterados en StateStore
@@ -1007,8 +1007,8 @@ python -B -m unittest discover -s scripts/curriculum -p test_cpp_polymorphic_clo
 ```
 
 El workflow `.github/workflows/codex-polymorphic-clone.yml`
-contrasta la fuente y los escenarios de clonación con GCC, Clang
-y MSVC sobre ejecutores desechables. La prueba Win32
+contrasta la fuente y los escenarios de clonación con MSVC
+en ejecutores Windows desechables. La prueba Win32
 `native.polymorphic_clone_state_live` comprueba el
 cargador completo y de progreso, el recibo independiente, los
 casos históricos y el rechazo de recibos alterados en un perfil QA
@@ -1110,7 +1110,7 @@ python -B -m unittest discover -s scripts/curriculum -p test_cpp_interface_colle
 ```
 
 El flujo `.github/workflows/codex-interface-collection.yml` comprueba
-la sonda portátil en GCC, Clang y MSVC con programas de prueba
+la sonda portátil con MSVC en Windows y programas de prueba
 desechables. La prueba nativa
 `native.interface_collection_state_live` de StateStore verifica la
 importación completa y ligera, conserva los cinco casos y las identidades,
@@ -2241,7 +2241,7 @@ CRT de `LF` a `CRLF`; no se recortan caracteres ni se ignora el diagnóstico.
 
 La regresión independiente `native/core/report_observation_check_tests.cpp`,
 ejecutada por `.github/workflows/codex-u3-report-observations.yml`,
-contrasta con GCC, Clang y MSVC las dos entradas históricas, sus informes
+contrasta con MSVC en Windows las dos entradas históricas, sus informes
 completos y filtrados, los duplicados, las líneas con errores, el final sin
 salto, el archivo vacío, los límites de `int` y la frontera de doce líneas.
 En la frontera comprueba un lote de doce líneas con etiquetas repetidas, tres
