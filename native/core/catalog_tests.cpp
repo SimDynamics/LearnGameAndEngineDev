@@ -536,6 +536,57 @@ void programming_catalog_preserves_published_ids(const std::filesystem::path& ro
     }
 }
 
+// Compare the reader with the authored index and physical resources. A new
+// course edition may replace its unit IDs/count without deleting the preserved
+// historical assets, and each language can publish a different active edition.
+void catalog_matches_its_published_index(
+        const std::filesystem::path& root, const lgaed::curriculum::CatalogPage& page) {
+    using namespace lgaed; using namespace curriculum;
+    const auto level = catalog_level(page.location);
+    check(level == CatalogLevel::units || level == CatalogLevel::lessons,
+        "The published-index fixture needs a course or unit");
+    const auto relative = catalog_index_path(page.location);
+    auto index_locale = page.location.locale;
+    if (!std::filesystem::is_regular_file(state::native_io_path(root / index_locale / relative)))
+        index_locale = "es";
+    const auto bytes = state::read_bytes(root / index_locale / relative);
+    const std::string source(bytes.begin(),bytes.end());
+    std::string_view json = source;
+    if (json.starts_with("\xEF\xBB\xBF")) json.remove_prefix(3);
+    const auto document = winrt::Windows::Data::Json::JsonObject::Parse(winrt::to_hstring(json));
+    const auto published = document.GetNamedArray(level == CatalogLevel::units ? L"units" : L"lessons");
+    check(page.entries.size() == published.Size() &&
+        page.title == winrt::to_string(document.GetNamedString(L"title")),
+        "The native catalog hid rows or changed the published index title");
+    const bool edition = document.HasKey(L"courseEdition");
+    const auto resource_locale = edition
+        ? winrt::to_string(document.GetNamedObject(L"courseEdition").GetNamedString(L"locale"))
+        : page.location.locale;
+    for (std::size_t index = 0; index < page.entries.size(); ++index) {
+        const auto& entry = page.entries[index];
+        const auto declared = published.GetObjectAt(static_cast<unsigned>(index));
+        const auto id = winrt::to_string(declared.GetNamedString(L"id"));
+        check(entry.id == id && entry.number == index + 1 &&
+            static_cast<double>(entry.number) == declared.GetNamedNumber(L"number") &&
+            entry.title == winrt::to_string(declared.GetNamedString(L"title")),
+            "The native catalog changed a published ID, title or row order");
+        const auto child = level == CatalogLevel::units
+            ? catalog_index_path(catalog_child(page.location,id))
+            : catalog_lesson_path(page.location,id);
+        auto locale = resource_locale;
+        auto expected = root / locale / child;
+        if (!edition && !std::filesystem::is_regular_file(state::native_io_path(expected))) {
+            locale = "es";
+            expected = root / locale / child;
+        }
+        const auto installed = std::filesystem::is_regular_file(state::native_io_path(expected));
+        check(entry.available == installed && (installed
+            ? entry.asset == expected && entry.asset_locale == locale
+            : entry.asset.empty() && entry.asset_locale.empty()),
+            "An indexed row was redirected or acquired availability without its real resource");
+    }
+}
+
 void catalog_rejects_duplicate_and_unsafe_ids_without_inventing_availability() {
     using namespace lgaed; using namespace curriculum;
     using namespace winrt::Windows::Data::Json;
@@ -632,6 +683,7 @@ void catalog_rejects_duplicate_and_unsafe_ids_without_inventing_availability() {
     const auto units=windows::load_catalog(fixture.root,announced);
     check(units.entries.size()==2&&units.entries[0].number==1&&units.entries[1].number==2,
         "Contiguous unit ordinals were incorrectly rejected");
+    catalog_matches_its_published_index(fixture.root,units);
     const auto lesson_index=[&](int second) {
         JsonArray items;items.Append(row("qa_planned__start__first",1));
         items.Append(row("qa_planned__start__second",second));
@@ -649,6 +701,7 @@ void catalog_rejects_duplicate_and_unsafe_ids_without_inventing_availability() {
     const auto lessons=windows::load_catalog(fixture.root,start);
     check(lessons.entries.size()==2&&lessons.entries[0].number==1&&lessons.entries[1].number==2,
         "Contiguous lesson ordinals were incorrectly rejected");
+    catalog_matches_its_published_index(fixture.root,lessons);
 }
 
 void inserted_course_resolves_real_content_and_keeps_id_owned_state(
@@ -770,16 +823,21 @@ int main() {
         catalog_rejects_duplicate_and_unsafe_ids_without_inventing_availability();
         inserted_course_resolves_real_content_and_keeps_id_owned_state(root,courses);
         location = catalog_child(location,"cpp_fundamentals"); const auto units = windows::load_catalog(root,location);
-        check(units.entries.size() == 12 && units.entries[0].id == "cpp_fundamentals__programas_y_ejecucion","Native course lost its indexed units");
-        location = catalog_child(location,units.entries[0].id); const auto lessons = windows::load_catalog(root,location);
-        check(lessons.entries.size() == 5 && lessons.entries[1].id == "cpp_fundamentals__programas_y_ejecucion__primer_programa_y_salida","Lesson order differs from unit index");
-        check(lessons.entries[1].available && lessons.entries[1].asset.filename() == "lesson_primer_programa_y_salida.json","An indexed lesson points to another source");
+        catalog_matches_its_published_index(root,units);
+        check(units.entries.size() >= 2 && units.entries.front().available,
+            "The real navigation fixture needs an installed first unit and a following unit");
+        location = catalog_child(location,units.entries.front().id); const auto lessons = windows::load_catalog(root,location);
+        catalog_matches_its_published_index(root,lessons);
+        check(lessons.entries.size() >= 2 && lessons.entries.front().available &&
+            lessons.entries[1].available && lessons.entries.back().available,
+            "The real navigation fixture needs installed first, second and final lessons");
         state::StateData pristine;
         const auto pristine_before=pristine;
         const auto lesson_metadata=windows::load_lesson_progress_metadata(lessons.entries[1].asset,lessons.entries[1].asset_locale);
         const auto lesson_card=windows::catalog_entry_progress(root,location,lessons.entries[1],pristine);
         const auto lesson_card_cached=windows::catalog_entry_progress(root,location,lessons.entries[1],pristine);
-        check(lesson_card.total==lesson_metadata.pages.size() && lesson_card.completed==0 &&
+        check(lesson_metadata.id==lessons.entries[1].id &&
+            lesson_card.total==lesson_metadata.pages.size() && lesson_card.completed==0 &&
             lesson_card_cached.total==lesson_card.total && lesson_card_cached.completed==0 && pristine==pristine_before,
             "Loading/caching catalog metadata invented progress or modified the student's profile");
         const auto cold_started=std::chrono::steady_clock::now();
@@ -794,23 +852,29 @@ int main() {
             // U11L7: its compiler was legitimately expanded before a later
             // physical source-format revision. The formatting predecessor
             // is the expanded contract, not the first-published compiler.
-            const auto u11=catalog_child(catalog_parent(location),units.entries[10].id);
-            const auto indexed=windows::load_catalog(root,u11);
-            const auto found=std::ranges::find_if(indexed.entries,[](const auto& item){
-                return item.id=="cpp_fundamentals__texto_interpretacion_y_flujos__construir_un_lector_de_entrada_preparada";
-            });
-            check(found!=indexed.entries.end()&&found->available,
-                "The U11L7 format/expansion regression lost its indexed owner");
-            const auto metadata=windows::load_lesson_progress_metadata(found->asset,found->asset_locale);
-            const auto opened=windows::load_lesson(found->asset,found->asset_locale);
-            check(metadata.id==found->id&&opened.id==metadata.id&&opened.pages.size()==metadata.pages.size()&&
+            // The Spanish edition no longer publishes historical U11. Its
+            // preserved source still proves the formatting/expansion contract,
+            // but must not be treated as an entry of the active course.
+            const CatalogLocation u11{"es","programming","cpp_fundamentals",
+                "cpp_fundamentals__texto_interpretacion_y_flujos"};
+            CatalogEntry archived;
+            archived.id="cpp_fundamentals__texto_interpretacion_y_flujos__construir_un_lector_de_entrada_preparada";
+            archived.asset=root/"es"/catalog_lesson_path(u11,archived.id);
+            archived.asset_locale="es";archived.available=true;
+            const auto metadata=windows::load_lesson_progress_metadata(archived.asset,archived.asset_locale);
+            const auto opened=windows::load_lesson(archived.asset,archived.asset_locale);
+            check(metadata.id==archived.id&&opened.id==metadata.id&&opened.pages.size()==metadata.pages.size()&&
+                metadata.pages.size()>3&&metadata.pages[3].blocks.size()>5&&
                 metadata.pages[3].blocks[5].output_check&&
                 metadata.pages[3].blocks[5].output_check->cases.size()==21&&
                 metadata.pages[3].blocks[5].source_format_original_initial_code.has_value(),
                 "U11L7 lost its original source, expanded 21-case objective or progress metadata");
-            const auto card=windows::catalog_entry_progress(root,u11,*found,pristine);
+            rejects([&]{
+                (void)windows::catalog_entry_progress(root,u11,archived,pristine);
+            },"A preserved historical resource borrowed membership in the active Spanish edition");
+            const auto card=catalog_lesson_page_progress(pristine,metadata,[](const Block&){return false;});
             check(card.total==opened.pages.size()&&card.completed==0&&pristine==pristine_before,
-                "U11L7 could not report its progress without altering the user's state");
+                "U11L7's preserved metadata manufactured progress or altered the user's state");
             // The earlier one-case compiler is not an acceptable source-format
             // predecessor once the expansion has been authenticated.
             auto forged=winrt::Windows::Data::Json::JsonObject::Parse(winrt::to_hstring(opened.raw_json));
@@ -842,10 +906,21 @@ int main() {
         check(!windows::next_catalog_lesson(root,unit_end,false,false) && !windows::next_catalog_lesson(root,unit_end,false,true),
             "Automatic continuation crossed an unapproved unit or skipped it to another course");
         const auto next_unit = windows::next_catalog_lesson(root,unit_end,true,false);
-        check(next_unit && next_unit->course == location.course && next_unit->unit == units.entries[1].id && next_unit->route == location.route,
+        const auto following_unit = std::find_if(std::next(units.entries.begin()),units.entries.end(),
+            [](const auto& entry){ return entry.available; });
+        check(following_unit != units.entries.end() && next_unit && next_unit->course == location.course &&
+            next_unit->unit == following_unit->id && next_unit->route == location.route,
             "Unit continuation skipped its indexed parent or changed routes");
-        auto course_end = catalog_parent(location); course_end = catalog_child(course_end,units.entries.back().id);
-        const auto final_lessons = windows::load_catalog(root,course_end); course_end.lesson = final_lessons.entries.back().id;
+        const auto final_unit = std::find_if(units.entries.rbegin(),units.entries.rend(),
+            [](const auto& entry){ return entry.available; });
+        check(final_unit != units.entries.rend(),"The active course has no installed final unit");
+        auto course_end = catalog_child(catalog_parent(location),final_unit->id);
+        const auto final_lessons = windows::load_catalog(root,course_end);
+        catalog_matches_its_published_index(root,final_lessons);
+        const auto final_lesson = std::find_if(final_lessons.entries.rbegin(),final_lessons.entries.rend(),
+            [](const auto& entry){ return entry.available; });
+        check(final_lesson != final_lessons.entries.rend(),"The final installed unit has no available lesson");
+        course_end.lesson = final_lesson->id;
         check(!windows::next_catalog_lesson(root,course_end,true,false),"Course continuation ignored its disabled setting");
         const auto next_course = windows::next_catalog_lesson(root,course_end,true,true);
         check(next_course && next_course->route == location.route && next_course->course == courses.entries[1].id && next_course->locale == location.locale,
@@ -875,14 +950,34 @@ int main() {
         rejects([&] { (void)windows::next_catalog_lesson(root,unpublished,true,true); },"Automatic continuation activated an unindexed lesson");
         check(catalog_parent(location).course == "cpp_fundamentals" && catalog_parent(catalog_parent(location)).route == "programming","Back navigation lost real parents");
         check(catalog_parent(catalog_parent(catalog_parent(location))) == CatalogLocation{},"Home does not preserve the route stack");
-        check(catalog_lesson_path(location,lessons.entries[1].id).generic_string() == "programming/cpp_fundamentals/programas_y_ejecucion/lesson_primer_programa_y_salida.json","Historical lesson path was renamed");
+        const CatalogLocation historical{"es","programming","cpp_fundamentals",
+            "cpp_fundamentals__programas_y_ejecucion"};
+        const auto historical_lesson = historical.unit + "__primer_programa_y_salida";
+        check(catalog_lesson_path(historical,historical_lesson).generic_string() ==
+            "programming/cpp_fundamentals/programas_y_ejecucion/lesson_primer_programa_y_salida.json",
+            "Historical lesson path was renamed");
+        rejects([&]{ (void)windows::load_catalog(root,historical); },
+            "A preserved historical unit became part of the active Spanish edition");
+        check(!windows::active_catalog_lesson(root,location,historical_lesson),
+            "An old lesson ID was silently redirected to the new edition");
         for (const auto locale : {"es","en","fr"}) {
-            auto translated = location; translated.locale = locale;
+            auto course = catalog_parent(location); course.locale = locale;
+            const auto translated_units = windows::load_catalog(root,course);
+            catalog_matches_its_published_index(root,translated_units);
+            check(!translated_units.entries.empty() && translated_units.entries.front().available,
+                "A language lost its own published first unit");
+            const auto translated = catalog_child(course,translated_units.entries.front().id);
             const auto page = windows::load_catalog(root,translated);
-            check(!page.entries.empty() && page.entries[1].id == lessons.entries[1].id,"Translation changed lesson ownership");
-            const auto restored = windows::active_catalog_lesson(root,translated,lessons.entries[1].id);
-            check(restored && restored->asset == page.entries[1].asset && restored->asset_locale == page.entries[1].asset_locale &&
-                translated.locale == locale,"Restoring active navigation substituted another content language");
+            catalog_matches_its_published_index(root,page);
+            check(page.entries.size() >= 2 && page.entries[1].available,
+                "The language fixture lost its published second lesson");
+            const auto restored = windows::active_catalog_lesson(root,translated,page.entries[1].id);
+            check(restored && restored->id == page.entries[1].id &&
+                restored->asset == page.entries[1].asset && restored->asset_locale == page.entries[1].asset_locale &&
+                translated.locale == locale,"Restoring active navigation substituted another identity or content language");
+            if (translated.unit != location.unit)
+                check(!windows::active_catalog_lesson(root,translated,lessons.entries[1].id),
+                    "A language borrowed an active lesson from another edition");
         }
         auto math = catalog_child(CatalogLocation{},"math_physics");
         const auto math_courses = windows::load_catalog(root,math);
@@ -932,7 +1027,10 @@ int main() {
         progress.preferences["learning_progress"]["lesson_" + lessons.entries[1].id + "_completed"] = true;
         check(catalog_lesson_completed(progress,lessons.entries[1].id),"Original imported completion identity was ignored");
         const auto scope = windows::catalog_scope(root,location);
-        check(scope.lessons.size() == 5 && scope.courses == std::vector<std::string>{"cpp_fundamentals"} && scope.units.size() == 1,"Reset scope differs from published index");
+        std::vector<std::string> indexed_lessons;
+        for (const auto& entry : lessons.entries) indexed_lessons.push_back(entry.id);
+        check(scope.lessons == indexed_lessons && scope.courses == std::vector<std::string>{"cpp_fundamentals"} &&
+            scope.units == std::vector<std::string>{location.unit},"Reset scope differs from the exact published index");
         const auto lesson_id = lessons.entries[1].id;
         progress.preferences["learning_progress"]["exercise_" + lesson_id + "_page_4_block_2"] = std::string("saved answer");
         progress.preferences["learning_progress"]["exercise_" + lesson_id + "_state_v2_" + std::string(64,'a') + "_page_6_block_1"] = std::string("added answer");
@@ -956,7 +1054,7 @@ int main() {
             state::find(progress,"learning_progress","lesson_math_course_01__numeros_y_operaciones__otra_completed") != nullptr,"Reset crossed its exact lesson/route boundary");
         check(progress.preferences.at("cpp_lesson_drafts") == original_progress.preferences.at("cpp_lesson_drafts") &&
             progress.preferences.at("narration_settings") == original_progress.preferences.at("narration_settings"),"Reset altered personal drafts or voice preferences");
-        std::cout << "Catalog real indices, both routes, three languages, historical paths/order, safe parents and read-only progress: PASS\n";
+        std::cout << "Catalog real indices, both routes, three language editions, preserved historical paths, safe parents and read-only progress: PASS\n";
         return 0;
     } catch (const std::exception& error) { std::cerr << error.what() << '\n'; return 1; }
 }

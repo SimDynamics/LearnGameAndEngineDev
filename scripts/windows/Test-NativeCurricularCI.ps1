@@ -19,8 +19,8 @@ $PSNativeCommandUseErrorActionPreference = $false
 if ($env:GITHUB_ACTIONS -ne 'true' -or $env:RUNNER_ENVIRONMENT -ne 'github-hosted') {
     throw 'Run this provisioning script only on a disposable GitHub-hosted Windows runner.'
 }
-if ($VirtualAudio -and $Suite -ne 'NarrationPlayer') {
-    throw 'Evaluate the virtual audio endpoint with the real NarrationPlayer tests first.'
+if ($VirtualAudio -and $Suite -notin @('NarrationPlayer', 'ReaderBuild')) {
+    throw 'Evaluate the virtual audio endpoint only with the real NarrationPlayer or ReaderBuild tests.'
 }
 if ($CompilerHistoryGroup -ne 'All' -and $Suite -ne 'CompilerHistoricalReader') {
     throw 'A compiler-history selection requires the CompilerHistoricalReader suite.'
@@ -467,10 +467,57 @@ New-Item -ItemType Directory -Path $qaBuild -Force | Out-Null
     Tee-Object -FilePath (Join-Path $qaBuild 'native-build.log') | Write-Host
 if ($LASTEXITCODE -ne 0) { throw "The verified Windows $Suite build or early regression checks failed." }
 
+if ($Suite -in @('NarrationPlayer', 'ReaderBuild', 'U12Reader', 'U11EditorialReader',
+    'CompilerHistoricalReader', 'U6DiagnosticReader')) {
+    # Observe the actual ephemeral machine. Starting an existing, enabled audio
+    # service is preparation; the opt-in endpoint evaluation is a separate step.
+    & {
+        Write-Output "Windows audio environment: $([DateTime]::UtcNow.ToString('O'))"
+        foreach ($qaServiceName in @('AudioEndpointBuilder', 'Audiosrv')) {
+            $qaService = Get-Service -Name $qaServiceName -ErrorAction SilentlyContinue
+            if ($null -eq $qaService) {
+                Write-Output "Audio service absent: $qaServiceName"
+                continue
+            }
+            $qaService | Select-Object Name, Status, StartType | Format-Table -AutoSize | Out-String
+            if ($qaService.Status -eq 'Stopped' -and $qaService.StartType -ne 'Disabled') {
+                Write-Output "Starting existing enabled service: $qaServiceName"
+                $qaService.Start()
+                $qaService.WaitForStatus('Running', [TimeSpan]::FromSeconds(15))
+                $qaService.Refresh()
+                $qaService | Select-Object Name, Status, StartType | Format-Table -AutoSize | Out-String
+            }
+        }
+        try {
+            $qaDevices = @(Get-CimInstance -ClassName Win32_SoundDevice -ErrorAction Stop)
+            Write-Output "Win32_SoundDevice count: $($qaDevices.Count)"
+            $qaDevices | Select-Object Name, Status, PNPDeviceID | Format-Table -AutoSize | Out-String
+            $qaEndpoints = @(Get-PnpDevice -Class AudioEndpoint -PresentOnly -ErrorAction Stop)
+            Write-Output "Present AudioEndpoint device count: $($qaEndpoints.Count)"
+            $qaEndpoints | Select-Object FriendlyName, Status, InstanceId | Format-Table -AutoSize | Out-String
+        } catch {
+            # Inventory is diagnostic, not a replacement for the real player.
+            Write-Output "Audio device inventory unavailable: $($_.Exception.Message)"
+        }
+    } | Tee-Object -FilePath (Join-Path $qaBuild 'audio-environment.log') | Write-Host
+}
+
+if ($VirtualAudio) {
+    $qaSignTool = Join-Path $qaSdkRoot "bin\$qaSdkVersion\x64\signtool.exe"
+    & (Join-Path $PSScriptRoot 'Prepare-VirtualAudioCI.ps1') -PythonPath $qaPython `
+        -SignToolPath $qaSignTool -LogDirectory (Join-Path $qaBuild 'virtual-audio')
+}
+
 if ($Suite -eq 'ReaderBuild') {
     # The original reader/U6 executables are compiled for coverage. Focused
     # regressions use isolated QA state and exact authored/historical inputs.
     # Reader revision cases exercise real MediaPlayer with controlled PCM only.
+    # The real reader still validates its voice preference against the original
+    # catalogue. Prepare metadata only; never fetch models or replace a runtime.
+    & $qaPython -B (Join-Path $qaRoot 'native\presentation\windows\lesson_reader_edit_order_fixture.py') `
+        --prepare-catalog $qaRoot 2>&1 |
+        Tee-Object -FilePath (Join-Path $qaBuild 'reader-revision-catalog.log') | Write-Host
+    if ($LASTEXITCODE -ne 0) { throw 'The original voice catalogue metadata could not be prepared for reader revision tests.' }
     $qaBuiltTargets = foreach ($qaTarget in $qaSuiteConfig.Targets) {
         $qaExecutable = Join-Path $qaBuild "$qaTarget.exe"
         if (-not (Test-Path -LiteralPath $qaExecutable -PathType Leaf)) {
@@ -697,47 +744,6 @@ if ($CompilerHistoryGroup -ne 'All' -or $EditorialGroup -ne 'All') {
         throw "The $qaSelectionLabel selection must contain exactly its $($qaSelectedExpected.Count) original tests."
     }
     Write-Host "Original reader selection: $qaSelectionLabel ($($qaSelectedActual -join ', '))"
-}
-
-if ($Suite -in @('NarrationPlayer', 'U12Reader', 'U11EditorialReader',
-    'CompilerHistoricalReader', 'U6DiagnosticReader')) {
-    # Observe the actual ephemeral machine. Starting an existing, enabled audio
-    # service is preparation; the opt-in endpoint evaluation is a separate step.
-    & {
-        Write-Output "Windows audio environment: $([DateTime]::UtcNow.ToString('O'))"
-        foreach ($qaServiceName in @('AudioEndpointBuilder', 'Audiosrv')) {
-            $qaService = Get-Service -Name $qaServiceName -ErrorAction SilentlyContinue
-            if ($null -eq $qaService) {
-                Write-Output "Audio service absent: $qaServiceName"
-                continue
-            }
-            $qaService | Select-Object Name, Status, StartType | Format-Table -AutoSize | Out-String
-            if ($qaService.Status -eq 'Stopped' -and $qaService.StartType -ne 'Disabled') {
-                Write-Output "Starting existing enabled service: $qaServiceName"
-                $qaService.Start()
-                $qaService.WaitForStatus('Running', [TimeSpan]::FromSeconds(15))
-                $qaService.Refresh()
-                $qaService | Select-Object Name, Status, StartType | Format-Table -AutoSize | Out-String
-            }
-        }
-        try {
-            $qaDevices = @(Get-CimInstance -ClassName Win32_SoundDevice -ErrorAction Stop)
-            Write-Output "Win32_SoundDevice count: $($qaDevices.Count)"
-            $qaDevices | Select-Object Name, Status, PNPDeviceID | Format-Table -AutoSize | Out-String
-            $qaEndpoints = @(Get-PnpDevice -Class AudioEndpoint -PresentOnly -ErrorAction Stop)
-            Write-Output "Present AudioEndpoint device count: $($qaEndpoints.Count)"
-            $qaEndpoints | Select-Object FriendlyName, Status, InstanceId | Format-Table -AutoSize | Out-String
-        } catch {
-            # Inventory is diagnostic, not a replacement for the real player.
-            Write-Output "Audio device inventory unavailable: $($_.Exception.Message)"
-        }
-    } | Tee-Object -FilePath (Join-Path $qaBuild 'audio-environment.log') | Write-Host
-}
-
-if ($VirtualAudio) {
-    $qaSignTool = Join-Path $qaSdkRoot "bin\$qaSdkVersion\x64\signtool.exe"
-    & (Join-Path $PSScriptRoot 'Prepare-VirtualAudioCI.ps1') -PythonPath $qaPython `
-        -SignToolPath $qaSignTool -LogDirectory (Join-Path $qaBuild 'virtual-audio')
 }
 
 & $qaCTest --test-dir $qaBuild @qaCTestSelection --parallel 1 --verbose --output-on-failure --no-tests=error `

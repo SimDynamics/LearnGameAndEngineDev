@@ -4667,8 +4667,10 @@ void native_assertion_editors_preserve_historical_drafts_and_state() {
         const auto folder=entry.path().parent_path();
         if(!std::filesystem::is_regular_file(folder/L"program.exe")||
                 !std::filesystem::is_regular_file(folder/L"toolchain.txt"))continue;
-        const auto bytes=state::read_bytes(entry.path());
-        const auto toolchain=state::read_bytes(folder/L"toolchain.txt");
+        const auto source_bytes=state::read_bytes(entry.path());
+        const std::string bytes(source_bytes.begin(),source_bytes.end());
+        const auto toolchain_bytes=state::read_bytes(folder/L"toolchain.txt");
+        const std::string toolchain(toolchain_bytes.begin(),toolchain_bytes.end());
         require(toolchain.starts_with("MSVC=")&&toolchain.find("compiler=")!=std::string::npos&&
                 toolchain.find("cl.exe")!=std::string::npos,
             "An assertion UI execution has no actual native MSVC toolchain provenance");

@@ -6,6 +6,9 @@ on:
     paths:
       - .github/workflows/windows-reader-build.yml
       - scripts/windows/Test-NativeCurricularCI.ps1
+      - scripts/windows/Prepare-VirtualAudioCI.ps1
+      - scripts/windows/install_ci_audio_device.py
+      - app/src/main/java/com/learngraphicsprogramming/app/narration/KokoroVoiceCatalog.kt
       - CMakeLists.txt
       - cmake/**
       - toolchains/windows.versions.json
@@ -52,6 +55,11 @@ on:
       - scripts/curriculum/validar_json_programacion.py
       - scripts/curriculum/validate_programming_practice_tools.py
   workflow_dispatch:
+    inputs:
+      evaluate_virtual_audio:
+        description: 'Evaluate the signed audio endpoint on this disposable hosted runner'
+        type: boolean
+        default: false
 
 permissions:
   contents: read
@@ -107,8 +115,16 @@ jobs:
         run: python -B -m unittest discover -s scripts/curriculum -p test_ordinary_explanation_revision.py -v
       - name: Verify every programming course uses the complete indexed contract
         run: python -B -m unittest discover -s scripts/curriculum -p test_programming_multicourse_validation.py -v
-      - name: Compile readers and execute catalog and actual Win32 regressions
-        run: .\scripts\windows\Test-NativeCurricularCI.ps1 -Suite ReaderBuild
+      # Endpoint evaluation is opt-in for this disposable hosted run only:
+      # select the dispatch input or publish with qa-reader-build-audio:.
+      # This is no permanent driver deployment and downloads no TTS models.
+      # All 97 tests still run; a missing playback endpoint remains a failure.
+      - name: Compile readers and execute all native Win32 regressions
+        env:
+          LGAED_EVALUATE_VIRTUAL_AUDIO: ${{ (github.event_name == 'workflow_dispatch' && inputs.evaluate_virtual_audio) || (github.event_name == 'push' && startsWith(github.event.head_commit.message, 'qa-reader-build-audio:')) }}
+        run: |
+          $qaEvaluateAudio = $env:LGAED_EVALUATE_VIRTUAL_AUDIO -eq 'true'
+          .\scripts\windows\Test-NativeCurricularCI.ps1 -Suite ReaderBuild -VirtualAudio:$qaEvaluateAudio
       - name: Preserve configure and compilation results
         if: always()
         uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02
@@ -119,6 +135,13 @@ jobs:
           path: |
             out/qa/reader-build-ci/CMakeFiles/CMakeConfigureLog.yaml
             out/qa/reader-build-ci/native-build.log
+            out/qa/reader-build-ci/audio-environment.log
+            out/qa/reader-build-ci/virtual-audio/*.log
+            out/qa/reader-build-ci/virtual-audio/*.json
+            out/qa/reader-build-ci/reader-revision-catalog.log
+            out/qa/reader-build-ci/reader-revision-runtime-*/transport.jsonl
+            out/qa/reader-build-ci/test-fixtures/reader-revision/*.json
+            out/narration/runtime.json
             out/qa/reader-build-ci/reader-build-results.json
             out/qa/reader-build-ci/reader-build-focal.xml
             out/qa/reader-build-ci/reader-build-focal.log
