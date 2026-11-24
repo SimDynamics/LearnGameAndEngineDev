@@ -11,6 +11,10 @@ namespace lgaed::presentation {
 // dragged position is retained and only clamped when the available area shrinks.
 // This changes geometry only; it never updates playback or narration history.
 void layout_lesson_reader_bar(HWND bar,const RECT& available);
+// Call while the old lesson controls still exist. Saves/pauses playback and
+// releases their highlights before a validated source revision rebuilds them.
+// The authenticated old script remains available for bookmark migration.
+void prepare_lesson_reader_content_reload(HWND bar);
 struct LessonReaderSegmentSnapshot {
     std::string region,source,spoken;
     HWND target = nullptr;

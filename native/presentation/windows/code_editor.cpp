@@ -319,7 +319,7 @@ EditorDocument predefined_code_document(std::string_view source) {
     return document;
 }
 
-struct CodeEditor::Impl {
+struct EditorSession::State {
     struct OriginalRepresentation {
         std::wstring text;
         std::vector<std::int64_t> units;
@@ -334,6 +334,14 @@ struct CodeEditor::Impl {
         std::optional<OriginalRepresentation> original;
         std::array<LONG,8> viewport{};
     };
+    std::vector<Snapshot> history;
+    std::size_t current = 0;
+    bool multiline = false, code_assistance = false, auto_indent = false, display_multiline = false;
+};
+
+struct CodeEditor::Impl {
+    using OriginalRepresentation = EditorSession::State::OriginalRepresentation;
+    using Snapshot = EditorSession::State::Snapshot;
     HWND window;
     bool multiline;
     bool code_assistance;
@@ -1078,6 +1086,55 @@ EditorDocument CodeEditor::document() const {
             unchanged_selection ? original.cursor.cpMax : original_offset(original.text, current.cursor.cpMax)};
     }
     return {utf8(current.text), current.units, current.cursor.cpMin, current.cursor.cpMax};
+}
+EditorSession CodeEditor::session() const {
+    return capture_session(*impl_);
+}
+std::optional<EditorSession> CodeEditor::session(HWND rich_edit) {
+    DWORD_PTR data=0;
+    if(!rich_edit||!GetWindowSubclass(rich_edit,Impl::subclass,1,&data)||!data)return {};
+    return capture_session(*reinterpret_cast<Impl*>(data));
+}
+EditorSession CodeEditor::capture_session(Impl& editor) {
+    editor.capture();
+    editor.cursor_snapshot();
+    auto state = std::make_shared<EditorSession::State>();
+    state->history = editor.history;
+    state->current = editor.current;
+    state->multiline = editor.multiline;
+    state->code_assistance = editor.code_assistance;
+    state->auto_indent = editor.auto_indent;
+    state->display_multiline = (GetWindowLongPtrW(editor.window,GWL_STYLE)&ES_MULTILINE)!=0;
+    EditorSession result;
+    result.state_ = std::move(state);
+    return result;
+}
+void CodeEditor::restore_session(EditorSession session) {
+    restore_session(*impl_,std::move(session));
+}
+bool CodeEditor::restore_session(HWND rich_edit, EditorSession session) {
+    DWORD_PTR data=0;
+    if(!rich_edit||!GetWindowSubclass(rich_edit,Impl::subclass,1,&data)||!data)return false;
+    restore_session(*reinterpret_cast<Impl*>(data),std::move(session));
+    return true;
+}
+void CodeEditor::restore_session(Impl& editor, EditorSession session) {
+    const auto& saved = session.state_;
+    if(!saved||saved->history.empty()||saved->history.size()>256||saved->current>=saved->history.size())
+        throw std::invalid_argument("Editor session has no complete history");
+    if(saved->multiline!=editor.multiline||saved->code_assistance!=editor.code_assistance||
+            saved->auto_indent!=editor.auto_indent||saved->display_multiline!=
+                ((GetWindowLongPtrW(editor.window,GWL_STYLE)&ES_MULTILINE)!=0))
+        throw std::invalid_argument("Editor session belongs to a different field configuration");
+    auto history = saved->history;
+    editor.history = std::move(history);
+    editor.current = saved->current;
+    editor.suppress_tab_char=false;editor.suppress_backspace_char=false;editor.suppress_enter_char=false;
+    editor.literal_quote_key.reset();editor.pending_edit.reset();editor.pending_backspace=false;
+    // No commit: both earlier Undo and later Redo snapshots keep their original
+    // source, indentation identities, selection, CRLF representation and scroll.
+    // Incremental apply also retains syntax already formatted by the new owner.
+    editor.apply(editor.now(),false,false,false,true);
 }
 void CodeEditor::reset(EditorDocument document) {
     const auto original = wide(document.text);

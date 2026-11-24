@@ -1,6 +1,6 @@
 [CmdletBinding()]
 param(
-    [ValidateSet('StateImport', 'CatalogU1', 'NarrationPlayer', 'ReaderBuild', 'MathEditorial', 'NarrationWorker', 'U12Reader',
+    [ValidateSet('StateImport', 'CatalogU1', 'ReaderRevision', 'NarrationPlayer', 'ReaderBuild', 'MathEditorial', 'NarrationWorker', 'U12Reader',
         'U11EditorialReader', 'CompilerHistoricalReader', 'U6DiagnosticReader', 'CurrentReaders')]
     [string] $Suite = 'StateImport',
     [ValidateSet('All', 'DeclarationsAssignments', 'Characters')]
@@ -21,8 +21,8 @@ $PSNativeCommandUseErrorActionPreference = $false
 if ($env:GITHUB_ACTIONS -ne 'true' -or $env:RUNNER_ENVIRONMENT -ne 'github-hosted') {
     throw 'Run this provisioning script only on a disposable GitHub-hosted Windows runner.'
 }
-if ($VirtualAudio -and $Suite -notin @('NarrationPlayer', 'ReaderBuild')) {
-    throw 'Evaluate the virtual audio endpoint only with the real NarrationPlayer or ReaderBuild tests.'
+if ($VirtualAudio -and $Suite -notin @('NarrationPlayer', 'ReaderBuild', 'ReaderRevision')) {
+    throw 'Evaluate the virtual audio endpoint only with the real NarrationPlayer, ReaderBuild or ReaderRevision tests.'
 }
 if ($CompilerHistoryGroup -ne 'All' -and $Suite -ne 'CompilerHistoricalReader') {
     throw 'A compiler-history selection requires the CompilerHistoricalReader suite.'
@@ -33,8 +33,8 @@ if ($EditorialGroup -ne 'All' -and $Suite -ne 'U11EditorialReader') {
 if ($CurrentReaderGroup -ne 'All' -and $Suite -ne 'CurrentReaders') {
     throw 'A current-reader selection requires the CurrentReaders suite.'
 }
-if ($MsvcPreflightOnly -and $Suite -notin @('StateImport', 'CatalogU1', 'ReaderBuild')) {
-    throw 'The early MSVC preflight is available only for hosted StateImport, CatalogU1 and ReaderBuild suites.'
+if ($MsvcPreflightOnly -and $Suite -notin @('StateImport', 'CatalogU1', 'ReaderBuild', 'ReaderRevision')) {
+    throw 'The early MSVC preflight is available only for hosted StateImport, CatalogU1, ReaderBuild and ReaderRevision suites.'
 }
 
 $qaRoot = [System.IO.Path]::GetFullPath((Join-Path $PSScriptRoot '..\..'))
@@ -94,6 +94,15 @@ $qaSuiteConfig = switch ($Suite) {
                 'native.local_role_authoring',
                 'native.local_dependency_receipts'
             )
+        }
+    }
+    'ReaderRevision' {
+        @{
+            Directory = 'reader-revision-ci'
+            CMakeOption = 'LGAED_READER_REVISION_QA_ONLY'
+            Targets = @('lgaed_lesson_reader_edit_order_tests')
+            Results = 'reader-revision'
+            Tests = @('native.reader_revision_live_file')
         }
     }
     'CatalogU1' {
@@ -500,7 +509,7 @@ New-Item -ItemType Directory -Path $qaBuild -Force | Out-Null
     Tee-Object -FilePath (Join-Path $qaBuild 'native-build.log') | Write-Host
 if ($LASTEXITCODE -ne 0) { throw "The verified Windows $Suite build or early regression checks failed." }
 
-if ($Suite -in @('NarrationPlayer', 'ReaderBuild', 'U12Reader', 'U11EditorialReader',
+if ($Suite -in @('NarrationPlayer', 'ReaderBuild', 'ReaderRevision', 'U12Reader', 'U11EditorialReader',
     'CompilerHistoricalReader', 'U6DiagnosticReader', 'CurrentReaders')) {
     # Observe the actual ephemeral machine. Starting an existing, enabled audio
     # service is preparation; the opt-in endpoint evaluation is a separate step.
@@ -541,7 +550,7 @@ if ($VirtualAudio) {
         -SignToolPath $qaSignTool -LogDirectory (Join-Path $qaBuild 'virtual-audio')
 }
 
-if ($Suite -eq 'ReaderBuild') {
+if ($Suite -in @('ReaderBuild', 'ReaderRevision')) {
     # The original reader/U6 executables are compiled for coverage. Focused
     # regressions use isolated QA state and exact authored/historical inputs.
     # Reader revision cases exercise real MediaPlayer with controlled PCM only.
@@ -551,6 +560,9 @@ if ($Suite -eq 'ReaderBuild') {
         --prepare-catalog $qaRoot 2>&1 |
         Tee-Object -FilePath (Join-Path $qaBuild 'reader-revision-catalog.log') | Write-Host
     if ($LASTEXITCODE -ne 0) { throw 'The original voice catalogue metadata could not be prepared for reader revision tests.' }
+}
+
+if ($Suite -eq 'ReaderBuild') {
     $qaBuiltTargets = foreach ($qaTarget in $qaSuiteConfig.Targets) {
         $qaExecutable = Join-Path $qaBuild "$qaTarget.exe"
         if (-not (Test-Path -LiteralPath $qaExecutable -PathType Leaf)) {
@@ -677,6 +689,7 @@ if ($Suite -eq 'ReaderBuild') {
         'native.reader_revision_prose',
         'native.reader_revision_other_page',
         'native.reader_revision_unheard_negative',
+        'native.reader_revision_live_file',
         'native.general_choice_editorial_reader',
         'native.boolean_battery',
         'native.boolean_battery_runtime',

@@ -34,6 +34,7 @@
 #include "core/attempts.hpp"
 #include "core/attempt_ledger.hpp"
 #include "platform/windows/content_loader.hpp"
+#include "platform/windows/catalog_resource_version.hpp"
 #include "platform/windows/cpp_runner.hpp"
 #include "platform/windows/compiler_completion.hpp"
 #include "platform/windows/state_store.hpp"
@@ -87,6 +88,7 @@ constexpr UINT math_restore_message = WM_APP + 78;
 constexpr UINT answer_viewport_message = WM_APP + 79;
 constexpr UINT_PTR save_timer = 73;
 constexpr UINT_PTR attempts_timer = 94;
+constexpr UINT_PTR content_source_timer = 95;
 constexpr int import_id = 104;
 constexpr int page_status_id = 106, menu_id = 107, page_top_id = 108, page_bottom_id = 109;
 constexpr int back_id = 110, reader_id = 111, language_id = 112, attempts_id = 113, settings_id = 114;
@@ -97,6 +99,24 @@ constexpr int fullscreen_palette_id=118;
 constexpr UINT attempts_state_message=WM_APP+187;
 constexpr UINT enter_key_message=WM_APP+188;
 struct AttemptsState { int available=8, maximum=8; double progress=1; bool premium=false; };
+struct LessonSourceStamp {
+    std::filesystem::file_time_type written;
+    std::uintmax_t size = 0;
+    std::int64_t changed = 0;
+    bool operator==(const LessonSourceStamp&) const = default;
+};
+struct ReloadControlIdentity {
+    std::string owner;
+    std::vector<int> path;
+    bool operator<(const ReloadControlIdentity& other) const {
+        return owner == other.owner ? path < other.path : owner < other.owner;
+    }
+};
+struct ReloadEditorSession {
+    windows::EditorSession session;
+    std::string visible_text;
+    BlockType type;
+};
 constexpr int pages_menu_base = 40000;
 constexpr int lesson_heading_id = 990;
 constexpr int lesson_header_height = 80;
@@ -306,6 +326,10 @@ std::string control_text(HWND window) {
 struct LessonView {
     WindowsEnvironment environment;
     curriculum::Lesson lesson;
+    std::optional<LessonSourceStamp> content_source_stamp;
+    bool content_source_unavailable = false;
+    std::uint64_t content_revision = 0;
+    std::map<ReloadControlIdentity,ReloadEditorSession> reload_editor_sessions;
     std::string route = "programming";
     state::StateStore store;
     state::StateData data;
@@ -387,6 +411,7 @@ struct LessonView {
     std::set<std::string> verified_math;
     std::set<std::string> rejected_math;
     std::uint64_t restore_generation=0;
+    std::size_t pending_math_restorations=0;
     curriculum::DeferredLessonEntry deferred_entry;
     // Stable exercise keys survive page/view recreation. Only a real answer
     // change, explicit check or reset can invalidate its pending restoration.
@@ -2200,7 +2225,11 @@ struct LessonView {
             return nullptr;
         },[this] { if (ready) resize(); });
         if(editing_bar)editing_bar->set_shortcuts(parse_state_shortcuts(data));
-        render_page(); ready = true; resize();if(!laboratory())SetTimer(window,attempts_timer,1000,nullptr);
+        render_page(); ready = true; resize();
+        if(!laboratory()) {
+            SetTimer(window,attempts_timer,1000,nullptr);
+            if(!lesson.source_path.empty())SetTimer(window,content_source_timer,1000,nullptr);
+        }
         verify_saved_math();
     }
     void refresh_interface_labels() {
@@ -2403,6 +2432,154 @@ struct LessonView {
             "Le projet a changé. Construisez la version actuelle ; reconfigurez si sa description ou ses options ont changé."));
         style_cpp(vm.source);apply_wrap(vm.source);refresh_project_actions(index);mark_dirty();reflow();
     }
+    static std::vector<HWND> descendant_windows(HWND parent) {
+        std::vector<HWND> result;
+        EnumChildWindows(parent,[](HWND child,LPARAM context)->BOOL {
+            reinterpret_cast<std::vector<HWND>*>(context)->push_back(child);return TRUE;
+        },reinterpret_cast<LPARAM>(&result));
+        return result;
+    }
+    std::optional<ReloadControlIdentity> reload_control_identity(HWND target) const {
+        std::vector<int> nested;
+        for(auto item=target;item&&item!=window;item=GetParent(item)) {
+            const bool row_control=std::ranges::any_of(rows,[&](const auto& row) {
+                return std::ranges::find(row.cells,item)!=row.cells.end();
+            });
+            if(row_control) {
+                const auto id=GetDlgCtrlID(item);
+                if(id<1000)return {};
+                const auto index=static_cast<std::size_t>((id-1000)/100);
+                if(index>=controls.size())return {};
+                ReloadControlIdentity result{block(index).stable_id,{(id-1000)%100}};
+                result.path.insert(result.path.end(),nested.rbegin(),nested.rend());return result;
+            }
+            nested.push_back(GetDlgCtrlID(item));
+        }
+        return {};
+    }
+    void capture_reload_editors() {
+        for(const auto item:descendant_windows(pane)) {
+            const auto identity=reload_control_identity(item);if(!identity)continue;
+            const auto session=CodeEditor::session(item);if(!session)continue;
+            const auto owner=std::ranges::find(lesson.pages[page].blocks,identity->owner,&curriculum::Block::stable_id);
+            if(owner==lesson.pages[page].blocks.end())continue;
+            reload_editor_sessions.insert_or_assign(*identity,
+                ReloadEditorSession{*session,edit_text(item),owner->type});
+        }
+    }
+    void restore_reload_editors() {
+        if(reload_editor_sessions.empty())return;
+        for(const auto item:descendant_windows(pane)) {
+            const auto identity=reload_control_identity(item);if(!identity)continue;
+            const auto saved=reload_editor_sessions.find(*identity);if(saved==reload_editor_sessions.end())continue;
+            const auto owner=std::ranges::find(lesson.pages[page].blocks,identity->owner,&curriculum::Block::stable_id);
+            if(owner==lesson.pages[page].blocks.end())continue;
+            // A new field or a different restored answer cannot borrow another
+            // field's journal merely because its native control ID was reused.
+            if(owner->type!=saved->second.type||edit_text(item)!=saved->second.visible_text) {
+                reload_editor_sessions.erase(saved);continue;
+            }
+            try {
+                if(CodeEditor::restore_session(item,saved->second.session))reload_editor_sessions.erase(saved);
+            } catch(const std::invalid_argument&) {
+                // A changed editing configuration has a new native journal;
+                // its authored/restored document remains the source of truth.
+                reload_editor_sessions.erase(saved);
+            }
+        }
+    }
+    bool content_reload_busy() const {
+        if(!ready||updating||notifying||laying_out||import_open||running_block||checking_math||
+            pending_math_restorations||deferred_entry.waiting()||drag.origin||fullscreen_block||GetCapture())return true;
+        if(!(GetWindowLongPtrW(window,GWL_STYLE)&WS_VISIBLE)||!IsWindowEnabled(window))return true;
+        const auto root=GetAncestor(window,GA_ROOT);
+        if(!IsWindowEnabled(root)||active_internal_window(root))return true;
+        GUITHREADINFO info{sizeof(info)};
+        if(GetGUIThreadInfo(GetCurrentThreadId(),&info)&&
+            (info.flags&(GUI_INMENUMODE|GUI_POPUPMENUMODE|GUI_SYSTEMMENUMODE|GUI_INMOVESIZE)))return true;
+        if(const auto keyboard=math_keyboard_window(root);keyboard&&IsWindowVisible(keyboard))return true;
+        const auto focus=GetFocus();if(!focus||!IsChild(window,focus))return false;
+        for(const auto& control:controls)
+            if(control.math&&(focus==control.math->window()||IsChild(control.math->window(),focus)))return true;
+        wchar_t name[96]{};GetClassNameW(focus,name,96);
+        const std::wstring_view type(name);
+        const bool edit=type==L"EDIT"||type==L"Edit"||type==L"RICHEDIT50W"||type==L"RichEdit20W";
+        return edit&&!(GetWindowLongPtrW(focus,GWL_STYLE)&ES_READONLY);
+    }
+    LessonSourceStamp source_stamp() const {
+        const auto path=state::native_io_path(lesson.source_path);
+        return {std::filesystem::last_write_time(path),std::filesystem::file_size(path),
+            windows::catalog_resource_change_time(path)};
+    }
+    void adopt_source_revision(curriculum::Lesson candidate) {
+        if(candidate.id!=lesson.id||candidate.locale!=lesson.locale||candidate.course_edition!=lesson.course_edition||
+            candidate.state_layout.version!=lesson.state_layout.version||candidate.state_layout.lineage!=lesson.state_layout.lineage)
+            throw std::runtime_error("La revisión no pertenece a la lección y edición abiertas.");
+        auto prepared=data;
+        state::validate_lesson_state(prepared,candidate,route);state::prepare_lesson_state(prepared,candidate);
+        // Save the old reader's actual pause and clear its shades while their
+        // original HWNDs still exist. This can update data, so prepare it again.
+        if(hooks.before_page_change)hooks.before_page_change(window);
+        prepare_lesson_reader_content_reload(reader_bar);
+        flush_selection();
+        prepared=data;
+        state::validate_lesson_state(prepared,candidate,route);state::prepare_lesson_state(prepared,candidate);
+        capture_reload_editors();
+        const auto focus=reload_control_identity(GetFocus());
+        const auto old_page=page;
+        const auto page_id=lesson.pages.at(page).stable_id;
+        const auto next_page=std::ranges::find(candidate.pages,page_id,&curriculum::Page::stable_id);
+        const auto requested=next_page==candidate.pages.end()?state::current_page(prepared,candidate):
+            static_cast<std::size_t>(next_page-candidate.pages.begin());
+        auto previous_lesson=lesson;auto previous_data=data;
+        auto previous_verified=verified_math;auto previous_rejected=rejected_math;
+        const auto previous_sessions=reload_editor_sessions;
+        const auto was_notifying=notifying;notifying=true;
+        try {
+            cancel_restore();deferred_entry.cancel();
+            lesson=std::move(candidate);data=std::move(prepared);
+            verified_math.clear();rejected_math.clear();
+            begin_entry(requested);render_page();verify_saved_math();
+            dirty=true;flush();
+            ++content_revision;
+        } catch(...) {
+            const auto failure=std::current_exception();
+            cancel_restore();deferred_entry.cancel();
+            lesson=std::move(previous_lesson);data=std::move(previous_data);page=old_page;
+            verified_math=std::move(previous_verified);rejected_math=std::move(previous_rejected);
+            reload_editor_sessions=previous_sessions;dirty=false;
+            try {render_page();}catch(...) {notifying=was_notifying;throw;}
+            notifying=was_notifying;notify_content();std::rethrow_exception(failure);
+        }
+        notifying=was_notifying;
+        if(focus)for(const auto item:descendant_windows(pane)) {
+            const auto restored=reload_control_identity(item);
+            if(restored&&restored->owner==focus->owner&&restored->path==focus->path&&
+                IsWindowEnabled(item)&&(GetWindowLongPtrW(item,GWL_STYLE)&WS_VISIBLE)) {SetFocus(item);break;}
+        }
+        notify_content();
+    }
+    void refresh_content_source() {
+        if(lesson.source_path.empty()||laboratory()||content_reload_busy())return;
+        LessonSourceStamp stamp;
+        try {stamp=source_stamp();content_source_unavailable=false;}
+        catch(const std::exception& error) {
+            if(!content_source_unavailable)OutputDebugStringW(wide(std::string("Lesson source remains open: ")+error.what()+"\n").c_str());
+            content_source_unavailable=true;return;
+        }
+        if(content_source_stamp&&*content_source_stamp==stamp)return;
+        // Remember invalid/incomplete revisions too. Another write or atomic
+        // replacement retries them; the same broken bytes never open a modal.
+        content_source_stamp=stamp;
+        try {
+            auto candidate=windows::load_lesson(lesson.source_path,lesson.locale);
+            if(source_stamp()!=stamp)return;
+            if(candidate.raw_json==lesson.raw_json)return;
+            adopt_source_revision(std::move(candidate));
+        } catch(const std::exception& error) {
+            OutputDebugStringW(wide(std::string("Lesson source refresh failed: ")+error.what()+"\n").c_str());
+        }
+    }
     void capture_page() {
         if(deferred_entry.waiting())return;
         for (std::size_t i = 0; i < controls.size(); ++i) if (controls[i].source_editor) capture_draft(i);
@@ -2561,7 +2738,7 @@ struct LessonView {
         }
         checking_math.reset();std::lock_guard lock(math_mutex);math_result.reset();
     }
-    void cancel_restore(){++restore_generation;if(restore_worker.joinable()){restore_worker.request_stop();restore_worker.join();}}
+    void cancel_restore(){++restore_generation;if(restore_worker.joinable()){restore_worker.request_stop();restore_worker.join();}pending_math_restorations=0;}
     void verify_saved_math(){
         if(!hooks.validate_math)return;
         cancel_restore();std::vector<RestoredMath> pending;
@@ -2581,6 +2758,7 @@ struct LessonView {
         }
         if(pending.empty()){(void)finish_entry(deferred_entry.generation());return;}
         auto evaluate=hooks.validate_math;const auto locale=lesson.locale;
+        const auto restore_count=pending.size();
         restore_worker=std::jthread([this,pending=std::move(pending),originals=std::move(originals),evaluate,locale](std::stop_token stop)mutable{
             using namespace winrt::Windows::Data::Json;
             for(std::size_t i=0;i<pending.size()&&!stop.stop_requested();++i){
@@ -2599,6 +2777,7 @@ struct LessonView {
                 PostMessageW(window,math_restore_message,0,0);
             }
         });
+        pending_math_restorations=restore_count;
     }
     std::optional<curriculum::TextSemantics> math_feedback_semantics(std::size_t index,
             const winrt::Windows::Data::Json::JsonObject& reply) const {
@@ -2622,6 +2801,7 @@ struct LessonView {
         bool accepted=false;std::optional<std::uint64_t> entry_generation;
         for(const auto& result:restored){
             if(result.restore_generation!=restore_generation)continue;
+            if(pending_math_restorations)--pending_math_restorations;
             const auto current=state::get_response(data,result.key);
             if(!current||math_answer_generations[result.key]!=result.generation||result.answer_identity.empty()||
                 saved_math_answer_identity(current->raw_json)!=result.answer_identity||
@@ -2941,6 +3121,7 @@ struct LessonView {
             lesson.id,lesson.pages.at(page).stable_id,lesson.locale};
         result.narration_language=lesson.pages.at(page).narration_language.value_or(lesson.narration_language.value_or(""));
         result.lesson_title=lesson.title;
+        result.content_revision=content_revision;
         const auto base=route+'/'+lesson.id;
         result.narration_page_identity=base+'/'+std::to_string(page);
         if(lesson.state_layout.version){
@@ -3456,6 +3637,7 @@ struct LessonView {
         scroll = px(static_cast<int>(state::integer_value(data, "native_windows", scroll_key())));
         updating = false; update_fonts(); update_navigation(); reflow();
         if (editing_bar) editing_bar->refresh();
+        restore_reload_editors();
         notify_content();
     }
     void place_reader_bar() {
@@ -5243,6 +5425,7 @@ LRESULT CALLBACK view_proc(HWND window, UINT message, WPARAM wparam, LPARAM lpar
             if (!view->import_open) view->scroll_to(view->scroll - MulDiv(GET_WHEEL_DELTA_WPARAM(wparam), view->px(100), WHEEL_DELTA));
             return 0;
         case WM_TIMER: if (wparam == save_timer) { view->flush(); return 0; }
+            if(wparam==content_source_timer){view->refresh_content_source();return 0;}
             if(wparam==attempts_timer){view->refresh_attempts();return 0;} break;
         case result_message: view->finish_run(); return 0;
         case math_result_message: view->finish_math(); return 0;
@@ -5254,7 +5437,7 @@ LRESULT CALLBACK view_proc(HWND window, UINT message, WPARAM wparam, LPARAM lpar
             if (!view->destroy_notified && view->hooks.before_destroy) {
                 view->destroy_notified = true; view->hooks.before_destroy(window);
             }
-            view->clear_accessible_names(); view->cancel_restore(); view->cancel_math(); view->cancel_run(); KillTimer(window, save_timer);KillTimer(window,attempts_timer); return 0;
+            view->clear_accessible_names(); view->cancel_restore(); view->cancel_math(); view->cancel_run(); KillTimer(window, save_timer);KillTimer(window,attempts_timer);KillTimer(window,content_source_timer); return 0;
         case WM_NCDESTROY:
             SetWindowLongPtrW(window, GWLP_USERDATA, 0); delete view; return DefWindowProcW(window, message, wparam, lparam);
         }

@@ -14,6 +14,8 @@ option(LGAED_NARRATION_PLAYER_QA_ONLY
     "Build only the three real Windows narration-player probes with the official Windows toolchain" OFF)
 option(LGAED_READER_BUILD_QA_ONLY
     "Build the original curricular readers and run focused catalog, compiler and Win32 regressions without audio playback" OFF)
+option(LGAED_READER_REVISION_QA_ONLY
+    "Build only the live-file reader reload regression with real Windows controls and controlled PCM" OFF)
 option(LGAED_CATALOG_U1_QA_ONLY
     "Build only the complete native catalog and four U1 editor regressions with the official Windows toolchain" OFF)
 option(LGAED_MATH_EDITORIAL_QA_ONLY
@@ -35,7 +37,7 @@ option(LGAED_U6_DIAGNOSTIC_READER_QA_ONLY
     "Build and run the three original U6 diagnostic reader flows with real Kokoro playback" OFF)
 set(_lgaed_qa_mode_count 0)
 foreach(_mode LGAED_STATE_IMPORT_QA_ONLY LGAED_NARRATION_PLAYER_QA_ONLY
-        LGAED_READER_BUILD_QA_ONLY LGAED_CATALOG_U1_QA_ONLY
+        LGAED_READER_BUILD_QA_ONLY LGAED_CATALOG_U1_QA_ONLY LGAED_READER_REVISION_QA_ONLY
         LGAED_NARRATION_WORKER_QA_ONLY LGAED_U12_READER_QA_ONLY
         LGAED_U11_EDITORIAL_READER_QA_ONLY LGAED_COMPILER_HISTORICAL_READER_QA_ONLY
         LGAED_U6_DIAGNOSTIC_READER_QA_ONLY LGAED_CURRENT_READERS_QA_ONLY)
@@ -372,6 +374,17 @@ if(LGAED_NARRATION_WORKER_QA_ONLY)
 endif()
 
 include(cmake/CurricularWindows.cmake)
+
+if(LGAED_READER_REVISION_QA_ONLY)
+    include(CTest)
+    if(NOT BUILD_TESTING)
+        message(FATAL_ERROR "LGAED_READER_REVISION_QA_ONLY requires BUILD_TESTING=ON.")
+    endif()
+    include(cmake/ReaderRevisionTests.cmake)
+    lgaed_add_reader_revision_tests("${CMAKE_SOURCE_DIR}" live-file)
+    message(STATUS "Focused reader revision QA: automatic live-file reload, first pending passage, real editor history and Windows PCM playback; no neural voice quality claim.")
+    return()
+endif()
 
 # One production model and native control, shared by ReaderBuild and the app.
 function(lgaed_add_simulation_tests)

@@ -5,6 +5,7 @@
 #include <cstdint>
 #include <functional>
 #include <memory>
+#include <optional>
 #include <string>
 #include <string_view>
 #include <vector>
@@ -18,6 +19,18 @@ struct EditorDocument {
     std::vector<std::int64_t> indentation_starts;
     std::int64_t selection_start = 0;
     std::int64_t selection_end = 0;
+};
+
+// In-memory transfer between compatible controls for the same owned field.
+// Carries the complete editor journal, including Redo, without serializing it
+// or retaining a window/callback. Only CodeEditor can create its contents.
+class EditorSession {
+public:
+    EditorSession() = default;
+private:
+    struct State;
+    std::shared_ptr<const State> state_;
+    friend class CodeEditor;
 };
 
 // Call only for the original source or an explicit Reset, never on a draft.
@@ -42,6 +55,14 @@ public:
     // RichEdit's formatting rectangle; never changes source or saved grades.
     void normalize_viewport();
     [[nodiscard]] EditorDocument document() const;
+    [[nodiscard]] EditorSession session() const;
+    // Restore after the replacement control's layout is ready. Reuses the
+    // existing journal without creating an edit or notifying the parent.
+    void restore_session(EditorSession session);
+    // The same transfer for owned descendant controls whose adapter is private
+    // to a composite view. An ordinary/non-editor HWND has no session.
+    [[nodiscard]] static std::optional<EditorSession> session(HWND rich_edit);
+    [[nodiscard]] static bool restore_session(HWND rich_edit, EditorSession session);
     // Replaces the document/history without EN_CHANGE; the owner handles reset.
     void reset(EditorDocument document);
     void insert_tab();
@@ -57,6 +78,8 @@ public:
     void redo();
 private:
     struct Impl;
+    [[nodiscard]] static EditorSession capture_session(Impl& editor);
+    static void restore_session(Impl& editor, EditorSession session);
     std::unique_ptr<Impl> impl_;
 };
 

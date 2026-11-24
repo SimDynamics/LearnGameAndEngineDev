@@ -45,6 +45,7 @@ namespace {
 constexpr wchar_t bar_class[]=L"LearnGameAndEngineDev.ReaderBar";
 constexpr UINT tick_timer=901;
 constexpr UINT layout_message=WM_APP+0x172;
+constexpr UINT content_reload_message=WM_APP+0x173;
 constexpr int button_base=6500;
 constexpr int bar_width=344,bar_height=56;
 bool promoted_pointer_mouse(){
@@ -96,7 +97,7 @@ struct LessonReader::Impl {
     narration::Position position;windows::NarrationPlayer player;bool enabled=true,wanted=false,planning=false,has_plan=false,finished=false,waiting_gate=false,visible=true;
     bool manually_paused=true;
     bool restored_bookmark=false,resume_needs_replay=false,explicit_resume_requested=false;
-    double rate=1;std::uint64_t epoch=0;std::atomic<std::size_t> priority{0};std::jthread generation;
+    double rate=1;std::uint64_t epoch=0,content_revision=0;std::atomic<std::size_t> priority{0};std::jthread generation;
     std::atomic<bool> advance_generation{true};std::condition_variable generation_changed;std::mutex generation_mutex;
     bool preparation_suspended=false;
     std::unique_ptr<PreparationRetirement> retiring_preparation;
@@ -176,6 +177,16 @@ struct LessonReader::Impl {
         try{(void)player.release();}catch(...){}cancel_playback_verification();
         wanted=false;cancel_generation();retiring_preparation.reset();}
     void pause(){release_player();wanted=false;manually_paused=true;save(finished);paint_progress();update_buttons();}
+    void prepare_content_reload(){
+        pause();
+        // HWND values can be reused by the replacement controls. Restore the
+        // original surface now, while it still belongs to this shade, rather
+        // than matching a new lifetime merely by its equal text and ranges.
+        shades.clear();shaded_ends.clear();shaded_part.clear();shaded_offset=0;
+        // A failed view rebuild can restore the same source. Its replacement
+        // HWNDs still need new shades, even though no revision was adopted.
+        signature.clear();
+    }
     void set_controls_visible(bool show){
         if(!enabled||visible==show)return;
         // Match the Android header action. Visibility does not select a new
@@ -457,6 +468,18 @@ struct LessonReader::Impl {
             &&old.positions[before.sentence.end]==now.positions[after.sentence.end];
     }
     void changed(){if(!IsWindow(view))return;const auto page=lesson_page_state(view);const auto next_page=page.lesson_id+'/'+page.locale+'/'+page.page_id;
+        const bool revised_source=page.content_revision!=content_revision;
+        if(revised_source){
+            // A validated file revision replaces the visible source, unlike a
+            // learner answer that merely reveals feedback. Save the old script
+            // before rebuilding and let its authenticated revision mapping find
+            // the first new/unheard passage in today's order. The answer-only
+            // anchors below must not overwrite that earlier pending position.
+            release_player();wanted=false;manually_paused=true;save(finished);
+            previous_part.clear();previous_key.clear();previous_positions.clear();previously_heard.clear();
+            previous_offset=0;previous_priority.reset();answer_priority.reset();feedback_target.reset();
+            content_revision=page.content_revision;signature.clear();
+        }
         const auto next_regions=lesson_reading_regions(view);std::string next_signature=next_page;
         for(const auto& region:next_regions)next_signature+='\0'+region.key+'\0'+region.source_text
             +'\0'+region.reading_context+'\0'+region.math_mode+semantic_signature(region.text_semantics);
@@ -473,10 +496,10 @@ struct LessonReader::Impl {
         // An automatic partial plan during asynchronous answer restoration has
         // no user-owned position. It must not supersede the stored full-page
         // bookmark when the verified feedback finishes restoring.
-        if(has_plan&&(!owner.empty()||restored_bookmark||position.finished)&&static_cast<std::size_t>(position.segment)<parts.size()){previous_part=part_id(parts[static_cast<std::size_t>(position.segment)]);release_player();paint_progress();previous_offset=static_cast<double>(position.milliseconds);save(finished);previous_key=key;
+        if(!revised_source&&has_plan&&(!owner.empty()||restored_bookmark||position.finished)&&static_cast<std::size_t>(position.segment)<parts.size()){previous_part=part_id(parts[static_cast<std::size_t>(position.segment)]);release_player();paint_progress();previous_offset=static_cast<double>(position.milliseconds);save(finished);previous_key=key;
             previous_positions.clear();for(std::size_t i=0;i<=current();++i)previous_positions.emplace_back(part_id(parts[i]),i==current()?previous_offset:parts[i].audio?parts[i].audio->duration_ms:0.);
             previously_heard.clear();for(std::size_t i=0;i<parts.size()&&i<static_cast<std::size_t>(position.heard_through);++i)if(parts[i].region.feedback&&parts[i].region.correct)previously_heard.push_back(part_id(parts[i]));}
-        if(has_plan&&answer_priority&&!parts.empty()){
+        if(!revised_source&&has_plan&&answer_priority&&!parts.empty()){
             const auto boundary=std::min(answer_priority->allowed_through,parts.size()-1);
             previous_priority=PriorityBoundary{answer_priority->block,part_id(parts[boundary]),answer_priority->allowed_through>=parts.size()};
         }
@@ -1154,6 +1177,7 @@ struct LessonReader::Impl {
         try{switch(message){
         case WM_SIZE:case WM_DPICHANGED_AFTERPARENT:self->layout();return 0;
         case layout_message:if(lp)self->place(*reinterpret_cast<const RECT*>(lp));return 0;
+        case content_reload_message:self->prepare_content_reload();return 0;
         case WM_TIMER:if(wp==tick_timer)self->tick();return 0;
         case WM_ERASEBKGND:return 1;
         case WM_PAINT:self->paint();return 0;
@@ -1188,6 +1212,7 @@ struct LessonReader::Impl {
     }
 };
 void layout_lesson_reader_bar(HWND bar,const RECT& available){if(IsWindow(bar))SendMessageW(bar,layout_message,0,reinterpret_cast<LPARAM>(&available));}
+void prepare_lesson_reader_content_reload(HWND bar){if(IsWindow(bar))SendMessageW(bar,content_reload_message,0,0);}
 LessonReader::LessonReader(HWND view,const WindowsEnvironment& env,std::shared_ptr<windows::NarrationWorker> worker,std::function<void()> settings):impl_(std::make_unique<Impl>(view,env,std::move(worker),std::move(settings))){impl_->initialize();}
 LessonReader::~LessonReader()=default;
 void LessonReader::content_changed(){impl_->changed();}

@@ -1,6 +1,6 @@
 include_guard(GLOBAL)
 
-# Exercise ordinary reader close/reopen against authenticated synthetic edits.
+# Exercise reader close/reopen and live-file reload against authenticated edits.
 # Windows controls, persistence and MediaPlayer are real; the protocol fixture
 # supplies controlled PCM solely to verify sequence, never neural voice quality.
 function(lgaed_add_reader_revision_tests source_root)
@@ -29,7 +29,11 @@ function(lgaed_add_reader_revision_tests source_root)
         "${source_root}/native/presentation/windows/lesson_reader_edit_order_tests.cpp")
     target_link_libraries(lgaed_lesson_reader_edit_order_tests PRIVATE lgaed_curricular_windows)
     add_dependencies(lgaed_lesson_reader_edit_order_tests lgaed_reader_revision_fixtures)
-    foreach(_scenario insert insert-forward retire-insert reorder prose other-page unheard-negative)
+    set(_reader_revision_scenarios insert insert-forward retire-insert reorder prose other-page unheard-negative live-file)
+    if(ARGN)
+        set(_reader_revision_scenarios ${ARGN})
+    endif()
+    foreach(_scenario IN LISTS _reader_revision_scenarios)
         string(REPLACE "-" "_" _test_suffix "${_scenario}")
         add_test(NAME "native.reader_revision_${_test_suffix}"
             COMMAND lgaed_lesson_reader_edit_order_tests
@@ -38,4 +42,7 @@ function(lgaed_add_reader_revision_tests source_root)
         set_tests_properties("native.reader_revision_${_test_suffix}"
             PROPERTIES TIMEOUT 120 RUN_SERIAL TRUE)
     endforeach()
+    if("live-file" IN_LIST _reader_revision_scenarios)
+        set_tests_properties(native.reader_revision_live_file PROPERTIES TIMEOUT 180)
+    endif()
 endfunction()

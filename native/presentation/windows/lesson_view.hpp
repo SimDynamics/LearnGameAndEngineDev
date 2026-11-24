@@ -3,6 +3,7 @@
 #include "platform/windows/environment.hpp"
 #include "core/text_semantics.hpp"
 #include <windows.h>
+#include <cstdint>
 #include <filesystem>
 #include <functional>
 #include <limits>
@@ -22,6 +23,8 @@ struct LessonPageState {
     std::string lesson_id, page_id, locale;
     std::string narration_scope,narration_page_identity,narration_language;
     std::string lesson_title;
+    // Advances only after this live view adopts another validated source file.
+    std::uint64_t content_revision = 0;
 };
 struct LessonOptionsSnapshot {
     std::size_t current_page = 0,page_count = 0;

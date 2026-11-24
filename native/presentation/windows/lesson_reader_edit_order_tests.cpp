@@ -20,6 +20,7 @@
 #include <winrt/Windows.Data.Json.h>
 #include <winrt/Windows.Foundation.Collections.h>
 #include <algorithm>
+#include <chrono>
 #include <cstdint>
 #include <filesystem>
 #include <fstream>
@@ -194,7 +195,8 @@ struct Fixture {
     std::unique_ptr<LessonReader> reader;
     const Variant* active=nullptr;
 
-    Fixture(std::shared_ptr<windows::NarrationWorker> worker,const Variant& before):
+    Fixture(std::shared_ptr<windows::NarrationWorker> worker,const Variant& before,
+            const std::function<void(state::StateData&)>& initialize={}):
         environment(resolve_windows_environment({ProfileId::Codex,L"reader-revision-"+
             std::to_wstring(GetCurrentProcessId())+L"-"+std::to_wstring(GetTickCount64())+L"-"+
             std::to_wstring(++profile_sequence),false})),backend(std::move(worker)) {
@@ -209,6 +211,7 @@ struct Fixture {
         prefs["engine"]=std::string("KOKORO");prefs["language"]=std::string("es");
         prefs["kokoro_voice:es"]=std::string("ef_dora");prefs["rate"]=1.;prefs["kokoro_advance_generation"]=true;
         data.preferences["reader_revision_qa_sentinel"]["opaque"]=std::string("Keep this private QA preference byte-for-byte.\n");
+        if(initialize)initialize(data);
         store.save(data);
         host=CreateWindowExW(WS_EX_CONTROLPARENT|WS_EX_NOACTIVATE,L"STATIC",L"Reader revision sequencing QA",
             WS_OVERLAPPEDWINDOW,40,40,1000,780,nullptr,nullptr,GetModuleHandleW(nullptr),nullptr);
@@ -480,6 +483,233 @@ void run_revision(const std::shared_ptr<windows::NarrationWorker>& backend,const
     std::cout<<"REVISION_SCENARIO_COMPLETE name="<<quoted(scenario)<<" controlled_pcm=true neural_audio_evidence=false\n";
 }
 
+std::string edit_text(HWND edit) {
+    const auto size=GetWindowTextLengthW(edit);std::wstring value(static_cast<std::size_t>(size)+1,L'\0');
+    check(GetWindowTextW(edit,value.data(),size+1)==size,"Cannot read the actual answer editor");
+    value.resize(static_cast<std::size_t>(size));return utf8(value);
+}
+HWND answer_edit(Fixture& fixture,std::string_view role) {
+    return child(fixture.view,1002+static_cast<int>(fixture.display_index(role))*100);
+}
+void write_live_source(const std::filesystem::path& path,std::string_view source) {
+    const bool existed=std::filesystem::exists(path);
+    const auto previous=existed?std::filesystem::last_write_time(path):std::filesystem::file_time_type{};
+    {
+        std::ofstream output(path,std::ios::binary|std::ios::trunc);
+        check(static_cast<bool>(output),"Cannot open the owned mutable QA source");
+        output.write(source.data(),static_cast<std::streamsize>(source.size()));output.flush();
+        check(static_cast<bool>(output),"Cannot write the owned mutable QA source");
+    }
+    // Even two deliberate QA writes in the same filesystem clock tick must be
+    // observable. The payload remains the exact authenticated exported bytes.
+    if(existed&&std::filesystem::last_write_time(path)<=previous)
+        std::filesystem::last_write_time(path,previous+std::chrono::seconds(1));
+    check(bytes(path)==source,"The owned source write was not complete");
+    std::cout<<"REVISION_LIVE_WRITE stage="<<quoted(phase)<<" path="<<quoted(utf8(path.native()))
+        <<" sha256="<<quoted(state::sha256(source))<<'\n';
+}
+void verify_unrelated_state(const state::StateData& current,const state::StateData& unrelated) {
+    for(const auto& [domain,entries]:unrelated.preferences)for(const auto& [key,value]:entries) {
+        const auto* actual=state::find(current,domain,key);
+        expect(actual&&*actual==value,"Live source reload changed unrelated QA state "+domain+"/"+key);
+    }
+}
+void run_live_file(const std::shared_ptr<windows::NarrationWorker>& backend,const Variant& baseline,
+        const Variant& inserted,const std::filesystem::path& build_directory) {
+    phase="live-file / baseline";
+    const auto directory=build_directory/(L"reader-revision-live-file-"+std::to_wstring(GetCurrentProcessId())+L"-"+
+        std::to_wstring(GetTickCount64()));
+    check(std::filesystem::create_directory(directory),"Live-file QA source directory must be new");
+    const auto source_path=directory/L"active-lesson.json";
+    const auto baseline_bytes=bytes(baseline.path),inserted_bytes=bytes(inserted.path);
+    write_live_source(source_path,baseline_bytes);
+    Variant active=baseline;active.path=source_path;active.lesson=windows::load_lesson(source_path);
+    check(active.lesson.source_path==source_path,"The mounted lesson must retain the actual QA source path");
+
+    // Controlled compatibility data for a different lesson, never a claim of
+    // having completed another course. The reload may not rewrite these keys.
+    state::StateData unrelated;
+    const std::string unrelated_id="cpp_memory_ownership__qa__reader_reload_sentinel";
+    state::set_saved_page(unrelated,unrelated_id,3);
+    state::Response response;response.answer="opaque unrelated answer";response.correct=true;
+    response.raw_json=R"({"qa":"synthetic-compatibility"})";
+    state::put_response(unrelated,unrelated_id+"/0/0",response);
+    state::Draft draft;draft.source="    int unrelated = 17;\n";draft.input="17\n";
+    draft.selection_start=4;draft.selection_end=7;draft.has_saved=true;
+    draft.indentation_json=state::make_indentation_metadata(draft.source,{0});
+    state::put_draft(unrelated,"programming/"+unrelated_id+"/0/0",draft);
+    Fixture fixture(backend,active,[&](state::StateData& data) {
+        for(const auto& [domain,entries]:unrelated.preferences)
+            for(const auto& [key,value]:entries)data.preferences[domain][key]=value;
+    });
+    const auto mounted_view=fixture.view;const auto* mounted_reader=fixture.reader.get();
+    const auto mounted_bar=fixture.reader->bar();
+    const auto same_lifetime=[&] {
+        check(fixture.view==mounted_view&&IsWindow(mounted_view)&&fixture.reader.get()==mounted_reader&&
+            fixture.reader->bar()==mounted_bar&&IsWindow(mounted_bar),
+            "Live reload replaced the LessonView HWND or the existing LessonReader");
+    };
+    verify_plan(fixture,{});
+    const std::string first_draft="unfinished QA draft",second_draft="replacement QA draft";
+    const auto initial_edit=answer_edit(fixture,"b");const auto empty_draft=edit_text(initial_edit);
+    check(empty_draft.empty(),"The isolated B answer should begin empty");
+    fixture.edit("b",first_draft);fixture.edit("b",second_draft);
+    SendMessageW(initial_edit,EM_UNDO,0,0);
+    check(edit_text(initial_edit)==first_draft&&SendMessageW(initial_edit,EM_CANUNDO,0,0)&&
+        SendMessageW(initial_edit,EM_CANREDO,0,0),"The real editor did not retain both Undo and Redo branches");
+    CHARRANGE selection{3,12};
+    SendMessageW(initial_edit,EM_EXSETSEL,0,reinterpret_cast<LPARAM>(&selection));
+    POINT scroll{};SendMessageW(initial_edit,EM_GETSCROLLPOS,0,reinterpret_cast<LPARAM>(&scroll));
+    fixture.answer("a");
+    auto old_rows=verify_plan(fixture,{"a"});
+    const auto old_feedback=source_index(old_rows,"✓ Correcto\n\nA_FEEDBACK");
+    fixture.reader->toggle();
+    wait([&] {
+        const auto value=fixture.snapshot();
+        return value.playing&&value.index==source_index(old_rows,"P_BETWEEN")&&value.offset>=100;
+    },"real old A feedback followed by partial P_BETWEEN PCM");
+    fixture.reader->pause();
+    const auto paused=fixture.snapshot();
+    check(paused.segments[old_feedback].feedback_fully_played&&
+        paused.heard_through>static_cast<std::int64_t>(old_feedback),
+        "Live-file baseline lacks actual completed A feedback playback");
+    const auto cached=seal_cache(paused);
+    check(flush_lesson_view(fixture.view),"Cannot persist the live-file baseline");
+    const auto original=read_lesson_state(fixture.view);
+    const auto history=narration::read_history(original);
+    const auto bookmark=std::ranges::find(history.entries,paused.key,&narration::Bookmark::key);
+    check(bookmark!=history.entries.end()&&bookmark->semantic_plan&&
+        bookmark->position.segment==static_cast<std::int64_t>(paused.index)&&
+        bookmark->position.milliseconds==paused.offset,"Live-file baseline has no reader-generated semantic bookmark");
+    const auto original_revision=lesson_page_state(fixture.view).content_revision;
+    const auto verify_editor=[&](bool same_control) {
+        const auto edit=answer_edit(fixture,"b");
+        if(same_control)expect(edit==initial_edit,"An unchanged or rejected source rebuilt the answer control");
+        CHARRANGE actual{};SendMessageW(edit,EM_EXGETSEL,0,reinterpret_cast<LPARAM>(&actual));
+        POINT actual_scroll{};SendMessageW(edit,EM_GETSCROLLPOS,0,reinterpret_cast<LPARAM>(&actual_scroll));
+        expect(edit_text(edit)==first_draft&&actual.cpMin==selection.cpMin&&actual.cpMax==selection.cpMax&&
+            actual_scroll.x==scroll.x&&actual_scroll.y==scroll.y,
+            "Live source reload lost the exact compatible draft, selection or editor viewport");
+        expect(SendMessageW(edit,EM_CANUNDO,0,0)&&SendMessageW(edit,EM_CANREDO,0,0),
+            "Live source reload lost an existing Undo or Redo branch");
+    };
+    verify_editor(true);
+    // No user editing is in flight. This releases focus only; it neither sends
+    // content_changed nor invokes any reload, navigation or reader action.
+    SetFocus(nullptr);
+    const auto observe_unchanged=[&] {
+        const auto until=GetTickCount64()+2200;
+        wait([&] {
+            same_lifetime();const auto value=fixture.snapshot();
+            check(lesson_page_state(fixture.view).content_revision==original_revision&&value.key==paused.key&&
+                value.index==paused.index&&value.offset==paused.offset&&!value.playing&&!value.allocated,
+                "An unchanged or rejected file replaced the paused current lesson");
+            return GetTickCount64()>=until;
+        },"two automatic source-watch intervals",5000);
+        verify_plan(fixture,{"a"});verify_editor(true);verify_existing_state(fixture,original,true);
+        verify_unrelated_state(read_lesson_state(fixture.view),unrelated);verify_cache(cached);
+    };
+    phase="live-file / identical bytes with changed file timestamp";
+    write_live_source(source_path,baseline_bytes);observe_unchanged();
+    phase="live-file / incomplete JSON";
+    write_live_source(source_path,baseline_bytes.substr(0,baseline_bytes.size()/2));observe_unchanged();
+    phase="live-file / rejected complete document";
+    auto rejected=JsonObject::Parse(wide(baseline_bytes));
+    rejected.Insert(L"id",JsonValue::CreateStringValue(L"cpp_fundamentals__qa__foreign_reader_revision"));
+    write_live_source(source_path,winrt::to_string(rejected.Stringify()));observe_unchanged();
+
+    phase="live-file / automatic authenticated insertion";
+    write_live_source(source_path,inserted_bytes);
+    wait([&] {
+        same_lifetime();const auto revision=lesson_page_state(fixture.view).content_revision;
+        check(revision<=original_revision+1,"One authored source edit was adopted more than once");
+        return revision==original_revision+1;
+    },"automatic adoption of the changed open file",15000);
+    check(!fixture.snapshot().playing&&!fixture.snapshot().allocated,
+        "Automatic file adoption started playback without a user request");
+    Variant revised=inserted;revised.path=source_path;revised.lesson.source_path=source_path;
+    // Only the independent test oracle changes here. The actual View and Reader
+    // have already adopted the on-disk source through the production timer.
+    fixture.active=&revised;fixture.ready();
+    auto rows=verify_plan(fixture,{"a"});verify_editor(false);verify_existing_state(fixture,original,true);
+    verify_unrelated_state(read_lesson_state(fixture.view),unrelated);verify_cache(cached);
+    const auto first_new=source_index(rows,"P_NEW"),new_question=source_index(rows,"X_QUESTION");
+    check(first_new<new_question,"The authored new prose must precede its new exercise");
+    const auto verify_pending=[&] {
+        same_lifetime();const auto value=fixture.snapshot();
+        expect(value.index==first_new&&value.offset==0&&!value.playing&&!value.allocated&&!value.finished,
+            "Automatic reload did not pause on the first newly pending prose before the new gate");
+        expect(value.heard_through>static_cast<std::int64_t>(source_index(rows,"✓ Correcto\n\nA_FEEDBACK")),
+            "Automatic reload discarded actually heard compatible A feedback");
+        expect(!lesson_page_state(fixture.view).can_next,"A new unsolved gate became optional during live reload");
+    };
+    verify_pending();
+    const auto new_response=state::get_response(read_lesson_state(fixture.view),revised.lesson,fixture.block("x"));
+    expect(!new_response||!new_response->correct,"New X inherited another owner's answer or completion");
+
+    phase="live-file / retained editor transactions";
+    const auto restored_edit=answer_edit(fixture,"b");
+    SendMessageW(restored_edit,EM_REDO,0,0);
+    check(edit_text(restored_edit)==second_draft&&!SendMessageW(restored_edit,EM_CANREDO,0,0),
+        "Redo did not recover the actual pre-reload second transaction");
+    SendMessageW(restored_edit,WM_UNDO,0,0);
+    check(edit_text(restored_edit)==first_draft,"Undo did not return to the pre-reload current draft");
+    SendMessageW(restored_edit,WM_UNDO,0,0);
+    check(edit_text(restored_edit)==empty_draft&&!SendMessageW(restored_edit,EM_CANUNDO,0,0),
+        "Reload inserted a fictitious transaction or lost the original editor state");
+    SendMessageW(restored_edit,EM_REDO,0,0);
+    check(edit_text(restored_edit)==first_draft&&SendMessageW(restored_edit,EM_CANUNDO,0,0)&&
+        SendMessageW(restored_edit,EM_CANREDO,0,0),"Redo did not restore both original history branches");
+    SendMessageW(restored_edit,EM_EXSETSEL,0,reinterpret_cast<LPARAM>(&selection));
+    verify_existing_state(fixture,original,true);verify_pending();
+    const auto quiet_until=GetTickCount64()+2200;
+    wait([&] {
+        const auto value=fixture.snapshot();same_lifetime();
+        check(!value.playing&&!value.allocated&&value.index==first_new&&value.offset==0&&
+            lesson_page_state(fixture.view).content_revision==original_revision+1,
+            "The adopted source autoplays, shifts its pending passage or reloads repeatedly");
+        return GetTickCount64()>=quiet_until;
+    },"settled generation and repeated source-watch ticks without autoplay",5000);
+
+    phase="live-file / explicit playback of newly pending prose";
+    const auto prefix=trace_playback(fixture,rows,[](const auto& value){return value.waiting_gate;});
+    compare_trace(prefix,interval(first_new,new_question+1),rows);
+    expect(fixture.snapshot().index==new_question+1&&!fixture.snapshot().finished,
+        "New prose did not reach and stop at its actual new X gate");
+    phase="live-file / new feedback before the unchanged pending B";
+    fixture.answer("x");rows=verify_plan(fixture,{"a","x"});
+    const auto x_feedback=source_index(rows,"✓ Correcto\n\nX_FEEDBACK");
+    check(fixture.snapshot().index==x_feedback,"The actual new answer did not select X feedback");
+    const auto pending_b=source_index(rows,"B_QUESTION");
+    const auto continued=trace_playback(fixture,rows,[](const auto& value){return value.waiting_gate;});
+    compare_trace(continued,interval(x_feedback,pending_b+1),rows);
+    expect(fixture.snapshot().index==pending_b+1&&!fixture.snapshot().finished,
+        "Compatible old A feedback or a stale index diverted X away from pending B");
+    verify_existing_state(fixture,original,true);verify_cache(cached);
+    verify_unrelated_state(read_lesson_state(fixture.view),unrelated);
+    check(bytes(source_path)==inserted_bytes,"The live application rewrote the QA lesson source");
+    const auto before_reopen=fixture.snapshot();
+
+    // Reopening is deliberately last. It cannot make any of the live reload,
+    // no-autoplay, pending-prefix or editor-history assertions pass.
+    phase="live-file / final ordinary reopen";
+    fixture.close();Variant reopened=revised;reopened.lesson=windows::load_lesson(source_path);fixture.open(reopened);
+    rows=verify_plan(fixture,{"a","x"});
+    const auto resumed=fixture.snapshot();
+    expect(resumed.index==before_reopen.index&&resumed.offset==before_reopen.offset&&
+        resumed.key==before_reopen.key&&!resumed.playing&&!resumed.allocated&&!resumed.finished,
+        "Final reopen reverted to the old order or lost the actual pending-B bookmark");
+    expect(edit_text(answer_edit(fixture,"b"))==first_draft,"Final reopen lost the compatible B draft");
+    verify_existing_state(fixture,original,true);verify_cache(cached);
+    check(flush_lesson_view(fixture.view),"Cannot persist the final live-file QA profile");
+    verify_unrelated_state(read_lesson_state(fixture.view),unrelated);
+    state::StateStore disk(fixture.environment.paths.root);verify_unrelated_state(disk.load(),unrelated);
+    check(bytes(source_path)==inserted_bytes,"Final reopen changed the authored current source");
+    std::cout<<"REVISION_SCENARIO_COMPLETE name=\"live-file\" source_path="<<quoted(utf8(source_path.native()))
+        <<" same_view_and_reader=true automatic_reload=true editor_undo_redo=true"
+        <<" unrelated_state=synthetic_compatibility controlled_pcm=true neural_audio_evidence=false\n";
+}
+
 std::shared_ptr<windows::NarrationWorker> controlled_worker(const std::filesystem::path& python,
         const std::filesystem::path& build_directory) {
     check(std::filesystem::is_regular_file(python)&&std::filesystem::is_directory(build_directory),
@@ -513,10 +743,13 @@ int main(int argc,char** argv) {
         const auto variants=load_manifest(manifest_path);const auto backend=controlled_worker(argv[2],argv[3]);
         struct Shutdown { std::shared_ptr<windows::NarrationWorker> worker;~Shutdown(){worker->shutdown();} } shutdown{backend};
         const std::string filter=argc==5?argv[4]:"";std::size_t executed=0;
-        for(const std::string scenario:{"insert","insert-forward","reorder","prose","other-page","unheard-negative","retire-insert"}) {
+        for(const std::string scenario:{"insert","insert-forward","reorder","prose","other-page","unheard-negative","retire-insert","live-file"}) {
             if(!filter.empty()&&filter!=scenario)continue;++executed;
-            try {run_revision(backend,variants.at("baseline"),variants.at(scenario=="unheard-negative"||scenario=="insert-forward"?"insert":scenario),
-                scenario=="unheard-negative",scenario=="insert-forward");}
+            try {
+                if(scenario=="live-file")run_live_file(backend,variants.at("baseline"),variants.at("insert"),argv[3]);
+                else run_revision(backend,variants.at("baseline"),variants.at(scenario=="unheard-negative"||scenario=="insert-forward"?"insert":scenario),
+                    scenario=="unheard-negative",scenario=="insert-forward");
+            }
             catch(const std::exception& error) {++failures;std::cerr<<"REVISION_SCENARIO_ERROR stage="<<quoted(phase)<<" reason="<<quoted(error.what())<<'\n';}
         }
         check(executed>0,"Unknown requested reader revision scenario");
