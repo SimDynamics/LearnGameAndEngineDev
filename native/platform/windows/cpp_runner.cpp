@@ -6225,7 +6225,11 @@ CppRunResult run_cpp(const CppRunRequest& request, std::stop_token stop) {
         write_exact(compiler_input, "");
         if (!std::filesystem::is_regular_file(compiler))
             throw std::runtime_error("Pinned educational MSVC compiler is unavailable");
-        const auto initial_toolchain=std::string("MSVC=14.51.36231\nSDK=")+
+        auto toolset_directory=vc.lexically_normal();
+        if(toolset_directory.filename().empty())
+            toolset_directory=toolset_directory.parent_path();
+        const auto initial_toolchain=std::string("MSVC=")+
+            utf8(toolset_directory.filename().wstring())+"\nSDK="+
             utf8(build::educational_sdk_version)+"\ncompiler="+utf8(compiler.wstring())+"\n";
         write_exact(result.run_directory/L"toolchain.txt",initial_toolchain);
         if(request.diagnostic){

@@ -69,6 +69,22 @@ void successful(const CppRunResult& result) {
     require(result.compilation.succeeded(), "Compilation: " +
         result.compilation.stdout_bytes + result.compilation.stderr_bytes);
     require(result.execution.succeeded(), "Execution failed");
+    const auto toolchain = read(result.run_directory / L"toolchain.txt");
+    const auto toolset_end = toolchain.find('\n');
+    require(toolchain.starts_with("MSVC=") && toolset_end != std::string::npos &&
+        toolset_end > 5, "The run must record its MSVC toolset");
+    const auto toolset = toolchain.substr(5, toolset_end - 5);
+    require(toolset.find_first_not_of("0123456789.") == std::string::npos,
+        "The recorded MSVC toolset must name a version directory");
+    const std::filesystem::path vc{lgaed::build::educational_vc_root};
+    require(std::filesystem::equivalent(vc / L".." / toolset, vc),
+        "Recorded MSVC toolset differs from the configured compiler directory");
+    require(toolchain.find("\nSDK=" +
+        std::filesystem::path(lgaed::build::educational_sdk_version).string() + "\n") !=
+        std::string::npos, "Pinned Windows SDK provenance");
+    const auto compiler = vc / L"bin/Hostx64/x64/cl.exe";
+    require(toolchain.find("\ncompiler=" + winrt::to_string(compiler.wstring()) + "\n") !=
+        std::string::npos, "Recorded compiler differs from the configured executable");
 }
 
 std::string program(std::string_view message) {
@@ -383,8 +399,6 @@ int main() {
         require(read(first.run_directory / L"main.cpp") == first_request.source_utf8,
             "Exact source including indent and LF final");
         require(std::filesystem::is_regular_file(second.run_directory / L"program.exe"), "Real PE executable");
-        require(read(second.run_directory / L"toolchain.txt").find("SDK=" + std::filesystem::path(lgaed::build::educational_sdk_version).string()) != std::string::npos,
-            "Pinned Windows SDK provenance");
     });
 
     test("The current successful execution proves stderr independently of stable stdout", [&] {

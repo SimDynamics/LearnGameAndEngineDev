@@ -110,6 +110,7 @@ $qaSuiteConfig = switch ($Suite) {
             CMakeOption = 'LGAED_READER_BUILD_QA_ONLY'
             Targets = @(
                 'lgaed_lesson_reader_tests',
+                'lgaed_lesson_reader_edit_order_tests',
                 'lgaed_lesson_view_tests',
                 'lgaed_lesson_tests',
                 'lgaed_compiler_guidance_state_tests',
@@ -141,6 +142,7 @@ $qaSuiteConfig = switch ($Suite) {
                 'lgaed_cpp_history_training_tests',
                 'lgaed_course_edition_tests',
                 'lgaed_optional_prose_format_tests',
+                'lgaed_nested_cmake_format_tests',
                 'lgaed_semantic_retirement_view_tests',
                 'lgaed_compiler_case_order_view_tests',
                 'lgaed_catalog_tests',
@@ -466,9 +468,9 @@ New-Item -ItemType Directory -Path $qaBuild -Force | Out-Null
 if ($LASTEXITCODE -ne 0) { throw "The verified Windows $Suite build or early regression checks failed." }
 
 if ($Suite -eq 'ReaderBuild') {
-    # The original reader/U6 executables are only compiled. The focused
-    # catalog, compiler and Win32 regressions use isolated QA state and the
-    # exact authored/historical inputs; no reader/audio playback runs here.
+    # The original reader/U6 executables are compiled for coverage. Focused
+    # regressions use isolated QA state and exact authored/historical inputs.
+    # Reader revision cases exercise real MediaPlayer with controlled PCM only.
     $qaBuiltTargets = foreach ($qaTarget in $qaSuiteConfig.Targets) {
         $qaExecutable = Join-Path $qaBuild "$qaTarget.exe"
         if (-not (Test-Path -LiteralPath $qaExecutable -PathType Leaf)) {
@@ -580,8 +582,21 @@ if ($Suite -eq 'ReaderBuild') {
         'native.course_edition',
         'native.course_edition_authoring',
         'native.optional_prose_format',
+        'native.nested_cmake_format',
+        'native.nested_cmake_format_authoring',
         'native.general_choice_editorial_authoring',
         'native.general_choice_editorial',
+        'native.general_choice_prose_history',
+        'native.general_choice_prose_authoring',
+        'native.general_choice_semantic_composition',
+        'native.general_choice_semantic_authoring',
+        'native.reader_revision_insert',
+        'native.reader_revision_insert_forward',
+        'native.reader_revision_retire_insert',
+        'native.reader_revision_reorder',
+        'native.reader_revision_prose',
+        'native.reader_revision_other_page',
+        'native.reader_revision_unheard_negative',
         'native.general_choice_editorial_reader',
         'native.boolean_battery',
         'native.boolean_battery_runtime',
@@ -631,7 +646,7 @@ if ($Suite -eq 'ReaderBuild') {
     if ($qaFocalExit -ne 0 -or $qaRemainingExit -ne 0) {
         throw "ReaderBuild native regressions failed: focal exit=$qaFocalExit, remaining exit=$qaRemainingExit. See reader-build-focal.xml/log and reader-build-regressions.xml/log."
     }
-    Write-Host 'PASS original reader/U6 executables compiled and linked; catalog, general-choice reading preservation, boolean battery execution/provenance, console fullscreen/zoom and Escape, actual Win32 History dialogs and focused published lesson execution/reopen/reset tested. No reader/audio playback executed.'
+    Write-Host 'PASS original reader/U6 executables compiled and linked; catalog, general-choice reading preservation, boolean battery execution/provenance, console fullscreen/zoom and Escape, actual Win32 History dialogs and focused published lesson execution/reopen/reset tested. Reader revisions use controlled PCM; no neural voice quality or human listening evaluated.'
     return
 }
 
