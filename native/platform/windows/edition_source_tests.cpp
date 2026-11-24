@@ -364,7 +364,9 @@ bool accepted(const Block& block,const Capture& capture) {
         evaluate_cpp_output_check(*block.output_check,capture.execution,capture.request.revision).verdict==OutputVerdict::correct;
 }
 bool record(state::StateData& data,const Lesson& lesson,const Block& block,const Capture& capture) {
-    const auto feedback=std::string("Correcto\n")+(block.compile_check?block.compile_check->explanation:block.output_check->cases.front().explanation);
+    const auto& explanation=block.compile_check?block.compile_check->explanation:block.output_check->cases.front().explanation;
+    std::string feedback="Correcto";
+    if(!explanation.empty()){feedback+='\n';feedback+=explanation;}
     return block.compile_check?record_compiler_diagnostic_case(data,lesson,block,capture.request,capture.result,feedback):
         record_compiler_puzzle_case(data,lesson,block,capture.request,capture.execution,feedback);
 }
@@ -430,6 +432,7 @@ void exercise_copies(const Input& input,const WindowsEnvironment& environment,Na
         phase=text(f.entry,L"id")+"/independent copied attempts";
         for(const auto& raw:f.entry.GetNamedArray(L"blocks")) {
             const auto row=raw.GetObject();const auto id=text(row,L"owner");const auto kind=text(row,L"kind");
+            phase=text(f.entry,L"id")+'/'+id+"/independent copied attempts";
             const auto& old=owner(f.before,id);const auto& block=owner(f.after,id);const auto& compact=owner(f.metadata,id);
             if(row.HasKey(L"attempts")) {
                 const auto attempts=row.GetNamedArray(L"attempts");
@@ -443,9 +446,15 @@ void exercise_copies(const Input& input,const WindowsEnvironment& environment,Na
                         compiler_puzzle_case_count(data,f.after,block)==1&&compiler_puzzle_completed(data,f.before,old),
                     "The copied first case did not earn an independent native achievement");
                 const auto feedback=compiler_puzzle_success_feedback(data,f.after,block);
-                require(feedback&&feedback->correct,"The copied success lost its authored feedback");
-                const auto expected=std::string("Correcto\n")+(block.compile_check?block.compile_check->explanation:block.output_check->cases.front().explanation);
-                require(feedback->text==expected,"The copied success changed its exact authored explanation");
+                const auto original_feedback=compiler_puzzle_success_feedback(data,f.before,old);
+                require(feedback&&feedback->correct&&original_feedback&&original_feedback->correct,
+                    "The original or copied success lost its authored feedback");
+                const auto& explanation=block.compile_check?block.compile_check->explanation:block.output_check->cases.front().explanation;
+                const auto expected=explanation.empty()?std::string("Correcto"):"Correcto\n"+explanation;
+                const auto expected_path=explanation.empty()?"":block.compile_check?"/compileCheck/explanation":"/outputCheck/cases/0/explanation";
+                require(feedback->text==expected&&feedback->source_path==expected_path&&
+                        feedback->text==original_feedback->text&&feedback->source_path==original_feedback->source_path,
+                    "The copied success changed its exact original explanation or authored origin");
                 state::Draft draft;draft.source=text(attempts.GetObjectAt(0),L"source")+"\n// New edition QA draft\n";
                 draft.input="new input\r\n";draft.selection_start=1;draft.selection_end=6;
                 draft.indentation_json=state::make_indentation_metadata(draft.source,{});
