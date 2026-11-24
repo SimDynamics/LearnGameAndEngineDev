@@ -44,8 +44,29 @@
           "text": "La etiqueta de un contenedor vacío indica que tiene espacio para 20 piezas. Cuentas las piezas de un pedido y guardas ese número en la variable cantidad. Quieres saber si todas las piezas del pedido caben en el contenedor.\n\nEn C++, cantidad <= 20 pregunta si el número de piezas del pedido es menor o igual que la capacidad del contenedor. A la izquierda está cantidad, que depende del pedido. A la derecha está 20, el número de piezas que caben en el contenedor vacío.\n\nPrueba tres pedidos por separado, cada vez con el contenedor vacío.\nCon 19 piezas, 19 <= 20 da true. Caben todas y queda un espacio libre.\nCon 20 piezas, 20 <= 20 da true. Caben todas y el contenedor queda lleno.\nCon 21 piezas, 21 <= 20 da false. Una pieza quedaría fuera.\n\n¿Qué cambiaría si escribieras cantidad < 20? Con 19 piezas seguirías obteniendo true y con 21 seguirías obteniendo false. La diferencia aparece justo en el límite. Con 20 piezas, 20 < 20 da false porque los dos números son iguales. La expresión cantidad <= 20 incluye ese pedido que cabe exactamente."
         },
         {
+          "type": "code",
+          "language": "cpp",
+          "code": "#include <iostream>\n\nint main() {\n    const int cantidad = 20;\n\n    const bool cabe = cantidad <= 20;\n    const bool queda_espacio = cantidad < 20;\n\n    std::cout << cabe << \" \" << queda_espacio;\n\n    return 0;\n}\n"
+        },
+        {
+          "type": "fill_code",
+          "language": "cpp",
+          "code": "#include <iostream>\n\nint main() {\n    const int peso = 6;\n    const int maximo = 6;\n\n    const bool admitido = peso ___ maximo;\n\n    std::cout << admitido;\n\n    return 0;\n}\n",
+          "id": "u3l3_permitir_alcanzar_el_tope",
+          "question": "Una balanza acepta paquetes que pesen como máximo seis kilos, incluido un paquete de seis kilos exactos. Escribe el operador de comparación que falta.",
+          "explanation": "Con peso <= maximo, seis kilos cumplen el límite y cualquier peso superior queda fuera. Aquí admitido vale true y la salida es 1.",
+          "answers": [
+            "<="
+          ]
+        },
+        {
           "type": "paragraph",
           "text": "Si el requisito cambia, lee qué pide la regla y qué debe ocurrir cuando los valores coinciden.\n\n«Menos de veinte» pide < 20.\n«Como máximo veinte» pide <= 20.\n«Más de veinte» pide > 20.\n«Al menos veinte» pide >= 20.\n\n>= significa «mayor o igual que». Si una revisión exige al menos veinte registros, puedes hacerla con veinte. Con diecinueve te falta un registro (Stroustrup, 2024)."
+        },
+        {
+          "type": "code",
+          "language": "cpp",
+          "code": "#include <iostream>\n\nint main() {\n    const int registros = 19;\n\n    std::cout << (registros >= 20) << \" \" << (registros < 20);\n\n    return 0;\n}\n"
         },
         {
           "type": "multiple_choice",
@@ -2172,6 +2193,47 @@
             "reading": "natural"
           }
         ]
+      },
+      {
+        "block": "u3l3_permitir_alcanzar_el_tope",
+        "path": "/question",
+        "sourceSha256": "c4d53d9a9022e08eb3734d49298bd286f3c0da2bd9af75aea6b1f10b6ee5ffb0",
+        "spans": []
+      },
+      {
+        "block": "u3l3_permitir_alcanzar_el_tope",
+        "path": "/explanation",
+        "sourceSha256": "139a0eb471b4747ccdbf313813f32a2a88aef41cf6d005cb583fe9a4aebf63ba",
+        "spans": [
+          {
+            "start": 4,
+            "end": 18,
+            "text": "peso <= maximo",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 93,
+            "end": 101,
+            "text": "admitido",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 107,
+            "end": 111,
+            "text": "true",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 127,
+            "end": 128,
+            "text": "1",
+            "role": "output",
+            "reading": "natural"
+          }
+        ]
       }
     ],
     "rootFields": [
@@ -2467,7 +2529,10 @@
         "blocks": [
           "block_0001_0000",
           "block_0001_0001",
+          "u3l3_pedido_en_el_limite",
+          "u3l3_permitir_alcanzar_el_tope",
           "block_0001_0002",
+          "u3l3_umbral_de_registros",
           "block_0001_0003",
           "block_0001_0004",
           "block_0001_0005"
@@ -2710,7 +2775,35 @@
         ]
       }
     },
-    "additions": [],
+    "additions": [
+      {
+        "id": "u3l3_pedido_en_el_limite",
+        "sha256": "c56439c721016810dcfdbe8447d4d8a8c0710d0d2980e52bb02f4169763302f1",
+        "storage": {
+          "page": 6,
+          "block": 0
+        },
+        "progressPage": "page_0001"
+      },
+      {
+        "id": "u3l3_umbral_de_registros",
+        "sha256": "df94f799494abd17cfc9d1efaee25747ebfb217b97226be47b8cce8ab591cae2",
+        "storage": {
+          "page": 6,
+          "block": 1
+        },
+        "progressPage": "page_0001"
+      },
+      {
+        "id": "u3l3_permitir_alcanzar_el_tope",
+        "sha256": "bf09bb531da679d8b2e371425bb532455d2ca818944dd529c77c506008ed4a86",
+        "storage": {
+          "page": 6,
+          "block": 2
+        },
+        "progressPage": "page_0001"
+      }
+    ],
     "editorial": [
       {
         "id": "block_0001_0001",

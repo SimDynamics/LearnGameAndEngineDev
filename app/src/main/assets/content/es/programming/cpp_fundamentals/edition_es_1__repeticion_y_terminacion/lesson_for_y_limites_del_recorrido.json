@@ -56,12 +56,17 @@
         },
         {
           "type": "paragraph",
-          "text": "Supón que i empieza en 1 y aumenta de uno en uno. Tanto i < 3 como i <= 3 permiten entrar al cuerpo con 1 y con 2. Cuando i llega a 3, la igualdad marca la diferencia.\n\nCon i < 3, el programa pregunta si tres es menor que tres. La respuesta es falsa. La última vuelta fue la que se ejecutó con i igual a 2.\n\nCon i <= 3, el programa pregunta si tres es menor o igual que tres. La respuesta es verdadera porque son iguales. El cuerpo se ejecuta con i igual a 3. Después, el incremento guarda 4 en i. Cuatro es mayor que tres, así que la siguiente comprobación da falso y termina el bucle (Stroustrup, 2024).",
+          "text": "Los dos bucles del ejemplo empiezan con i igual a cuatro. Observa qué ocurre al llegar a seis. En el primer bucle, i < 6 da falso cuando i vale seis. La última vuelta es la que muestra cinco. En el segundo bucle, i <= 6 incluye la igualdad. El cuerpo muestra seis y el incremento lleva i a siete. La siguiente comprobación termina el recorrido (Stroustrup, 2024).",
           "emphasis": [
             {
-              "text": "la igualdad marca la diferencia"
+              "text": "incluye la igualdad"
             }
           ]
+        },
+        {
+          "type": "code",
+          "language": "cpp",
+          "code": "#include <iostream>\n\nint main() {\n    using namespace std;\n\n    for (int i{4}; i < 6; ++i) {\n        cout << i;\n    }\n\n    cout << '\\n';\n\n    for (int i{4}; i <= 6; ++i) {\n        cout << i;\n    }\n}\n"
         },
         {
           "type": "paragraph",
@@ -156,16 +161,17 @@
         },
         {
           "type": "paragraph",
-          "text": "Si i guarda el número de un puesto y quieres visitar un puesto de cada dos, puedes escribir i += 2 en la última parte del encabezado del for. Al terminar cada vuelta, el programa suma dos a i y guarda el resultado en i. En este ejemplo, escribir i = i + 2 produciría el mismo cambio.\n\nSi i empieza en 1 y la condición es i < 8, el cuerpo se ejecuta con 1, 3, 5 y 7. Al terminar la vuelta en la que i vale 7, i += 2 guarda 9 en i. La siguiente comparación pregunta si nueve es menor que ocho. La respuesta es falsa y el bucle termina (Stroustrup, 2024).",
+          "text": "Para visitar un puesto de cada dos, puedes escribir puesto += 2 en la última parte del encabezado del for. Aquí hace lo mismo que puesto = puesto + 2. El ejemplo empieza en dos. Tras mostrar dos, el avance guarda cuatro. Tras mostrar cuatro, guarda seis. El cuerpo muestra seis y el avance guarda ocho. En ese momento puesto < 8 da falso y el bucle termina (Stroustrup, 2024).",
           "emphasis": [
             {
-              "text": "La siguiente comparación"
+              "text": "el avance guarda ocho"
             }
           ]
         },
         {
-          "type": "paragraph",
-          "text": "Para visitar los puestos del 5 al 2 en orden descendente, da a i el valor inicial 5. Con --i en el encabezado, el programa resta uno a i al terminar cada vuelta. Cuando i vale 2, i >= 2 todavía es verdadera y el cuerpo se ejecuta con ese puesto. Después, --i guarda 1 en i. Como uno es menor que dos, la condición es falsa y termina el bucle."
+          "type": "code",
+          "language": "cpp",
+          "code": "#include <iostream>\n\nint main() {\n    using namespace std;\n\n    for (int puesto{2}; puesto < 8; puesto += 2) {\n        cout << puesto << '\\n';\n    }\n}\n"
         },
         {
           "type": "output_prediction",
@@ -177,6 +183,15 @@
             "1;3;5;7;Fin"
           ],
           "explanation": "El cuerpo muestra i seguido de un punto y coma. El avance i += 2 cambia i de 1 a 3, luego a 5 y después a 7. Esos cuatro valores cumplen i < 8. Después de mostrar 7;, el avance guarda 9 en i. Como nueve es mayor que ocho, el programa sale del bucle y escribe Fin. La salida es 1;3;5;7;Fin."
+        },
+        {
+          "type": "paragraph",
+          "text": "Para visitar los puestos del siete al cuatro, el ejemplo empieza con puesto igual a siete. Después de cada vuelta, --puesto le resta uno. Con puesto igual a cuatro, puesto >= 4 todavía da verdadero. Tras mostrar ese puesto, el avance guarda tres y la siguiente comprobación termina el bucle."
+        },
+        {
+          "type": "code",
+          "language": "cpp",
+          "code": "#include <iostream>\n\nint main() {\n    using namespace std;\n\n    for (int puesto{7}; puesto >= 4; --puesto) {\n        cout << \"Puesto \" << puesto << '\\n';\n    }\n}\n"
         },
         {
           "type": "output_prediction",
@@ -214,13 +229,9 @@
           "text": "Si declaras i en el encabezado de for, puedes usar ese nombre en la condición, en el avance y en el cuerpo. Al salir del bucle termina el ámbito de ese nombre. Llamamos ámbito a la región del código donde se puede usar un nombre declarado (Köppe et al., 2023).\n\nPara mostrar el valor final, declara i antes del for en el mismo bloque que la instrucción de salida. En for (; i < 5; ++i), el primer punto y coma marca el final de la parte inicial. Como está vacía, la primera comparación usa el valor que i ya tenía. Tras el bucle, la salida puede usar ese mismo nombre."
         },
         {
-          "type": "paragraph",
-          "text": "En un recorrido que suma uno por vuelta, basta con ++i en el encabezado. Si también escribes ++i dentro del cuerpo después de la salida, sumas uno allí y vuelves a sumar uno al ejecutar el avance del encabezado.\n\nSi el programa empieza en 0, el cuerpo muestra 0: y suma uno. Luego el encabezado suma otro, así que la comprobación siguiente usa 2. Si necesitas ese salto, i += 2 en el encabezado deja el cambio en un solo lugar (Stroustrup, 2024).",
-          "emphasis": [
-            {
-              "text": "sumas uno allí y vuelves a sumar uno"
-            }
-          ]
+          "type": "code",
+          "language": "cpp",
+          "code": "#include <iostream>\n\nint main() {\n    using namespace std;\n\n    int i{3};\n\n    for (; i < 5; ++i) {\n        cout << i << ' ';\n    }\n\n    cout << \"Al salir: \" << i;\n}\n"
         },
         {
           "type": "output_prediction",
@@ -232,6 +243,15 @@
             "2:3:4:Final=5"
           ],
           "explanation": "Primero aparecen 2:3:4:. Tras mostrar 4:, ++i guarda 5. La declaración anterior al for permite mostrar ese valor al salir, con el rótulo Final=."
+        },
+        {
+          "type": "paragraph",
+          "text": "En un recorrido que suma uno por vuelta, basta con ++i en el encabezado. Si también escribes ++i dentro del cuerpo después de la salida, sumas uno allí y vuelves a sumar uno al ejecutar el avance del encabezado.\n\nSi el programa empieza en 0, el cuerpo muestra 0: y suma uno. Luego el encabezado suma otro, así que la comprobación siguiente usa 2. Si necesitas ese salto, i += 2 en el encabezado deja el cambio en un solo lugar (Stroustrup, 2024).",
+          "emphasis": [
+            {
+              "text": "sumas uno allí y vuelves a sumar uno"
+            }
+          ]
         },
         {
           "type": "output_prediction",
@@ -892,123 +912,46 @@
       {
         "block": "block_0001_0001",
         "path": "/text",
-        "sourceSha256": "ca62b7fb555766a55aac1325ac4e49c20007f07242cfd57ef8517b2b7f8eeca0",
+        "sourceSha256": "ab4e91cbec14b5c115b2d04eb8f5059d6604189bb5e2071bb4c274ad97844e23",
         "spans": [
           {
-            "start": 10,
-            "end": 11,
+            "start": 40,
+            "end": 41,
             "text": "i",
             "role": "cpp",
             "reading": "technical"
           },
           {
-            "start": 23,
-            "end": 24,
-            "text": "1",
-            "role": "data",
-            "reading": "natural"
-          },
-          {
-            "start": 56,
-            "end": 61,
-            "text": "i < 3",
+            "start": 115,
+            "end": 120,
+            "text": "i < 6",
             "role": "cpp",
             "reading": "technical"
           },
           {
-            "start": 67,
-            "end": 73,
-            "text": "i <= 3",
-            "role": "cpp",
-            "reading": "technical"
-          },
-          {
-            "start": 104,
-            "end": 105,
-            "text": "1",
-            "role": "data",
-            "reading": "natural"
-          },
-          {
-            "start": 112,
-            "end": 113,
-            "text": "2",
-            "role": "data",
-            "reading": "natural"
-          },
-          {
-            "start": 122,
-            "end": 123,
+            "start": 137,
+            "end": 138,
             "text": "i",
             "role": "cpp",
             "reading": "technical"
           },
           {
-            "start": 132,
-            "end": 133,
-            "text": "3",
-            "role": "data",
-            "reading": "natural"
-          },
-          {
-            "start": 173,
-            "end": 178,
-            "text": "i < 3",
+            "start": 213,
+            "end": 219,
+            "text": "i <= 6",
             "role": "cpp",
             "reading": "technical"
           },
           {
-            "start": 294,
-            "end": 295,
+            "start": 286,
+            "end": 287,
             "text": "i",
             "role": "cpp",
             "reading": "technical"
           },
           {
-            "start": 304,
-            "end": 305,
-            "text": "2",
-            "role": "data",
-            "reading": "natural"
-          },
-          {
-            "start": 312,
-            "end": 318,
-            "text": "i <= 3",
-            "role": "cpp",
-            "reading": "technical"
-          },
-          {
-            "start": 447,
-            "end": 448,
-            "text": "i",
-            "role": "cpp",
-            "reading": "technical"
-          },
-          {
-            "start": 457,
-            "end": 458,
-            "text": "3",
-            "role": "data",
-            "reading": "natural"
-          },
-          {
-            "start": 490,
-            "end": 491,
-            "text": "4",
-            "role": "data",
-            "reading": "natural"
-          },
-          {
-            "start": 495,
-            "end": 496,
-            "text": "i",
-            "role": "cpp",
-            "reading": "technical"
-          },
-          {
-            "start": 586,
-            "end": 604,
+            "start": 344,
+            "end": 362,
             "text": "(Stroustrup, 2024)",
             "role": "citation",
             "reading": "natural"
@@ -1639,137 +1582,39 @@
       {
         "block": "block_0003_0001",
         "path": "/text",
-        "sourceSha256": "f79cc1dab912b0558f0e1031740371eea18896cc552dc804f59f53a74a93ce30",
+        "sourceSha256": "c8a3fa7ae65a53621afdfd1045d0f5c5ff100eecad25ef03316fded11d5a44b7",
         "spans": [
           {
-            "start": 3,
-            "end": 4,
-            "text": "i",
+            "start": 52,
+            "end": 63,
+            "text": "puesto += 2",
             "role": "cpp",
             "reading": "technical"
           },
           {
-            "start": 92,
-            "end": 98,
-            "text": "i += 2",
-            "role": "cpp",
-            "reading": "technical"
-          },
-          {
-            "start": 137,
-            "end": 140,
+            "start": 102,
+            "end": 105,
             "text": "for",
             "role": "cpp",
             "reading": "technical"
           },
           {
-            "start": 190,
-            "end": 191,
-            "text": "i",
+            "start": 130,
+            "end": 149,
+            "text": "puesto = puesto + 2",
             "role": "cpp",
             "reading": "technical"
           },
           {
-            "start": 217,
-            "end": 218,
-            "text": "i",
+            "start": 318,
+            "end": 328,
+            "text": "puesto < 8",
             "role": "cpp",
             "reading": "technical"
           },
           {
-            "start": 246,
-            "end": 255,
-            "text": "i = i + 2",
-            "role": "cpp",
-            "reading": "technical"
-          },
-          {
-            "start": 288,
-            "end": 289,
-            "text": "i",
-            "role": "cpp",
-            "reading": "technical"
-          },
-          {
-            "start": 301,
-            "end": 302,
-            "text": "1",
-            "role": "data",
-            "reading": "natural"
-          },
-          {
-            "start": 321,
-            "end": 326,
-            "text": "i < 8",
-            "role": "cpp",
-            "reading": "technical"
-          },
-          {
-            "start": 353,
-            "end": 354,
-            "text": "1",
-            "role": "data",
-            "reading": "natural"
-          },
-          {
-            "start": 356,
-            "end": 357,
-            "text": "3",
-            "role": "data",
-            "reading": "natural"
-          },
-          {
-            "start": 359,
-            "end": 360,
-            "text": "5",
-            "role": "data",
-            "reading": "natural"
-          },
-          {
-            "start": 363,
-            "end": 364,
-            "text": "7",
-            "role": "data",
-            "reading": "natural"
-          },
-          {
-            "start": 398,
-            "end": 399,
-            "text": "i",
-            "role": "cpp",
-            "reading": "technical"
-          },
-          {
-            "start": 405,
-            "end": 406,
-            "text": "7",
-            "role": "data",
-            "reading": "natural"
-          },
-          {
-            "start": 408,
-            "end": 414,
-            "text": "i += 2",
-            "role": "cpp",
-            "reading": "technical"
-          },
-          {
-            "start": 422,
-            "end": 423,
-            "text": "9",
-            "role": "data",
-            "reading": "natural"
-          },
-          {
-            "start": 427,
-            "end": 428,
-            "text": "i",
-            "role": "cpp",
-            "reading": "technical"
-          },
-          {
-            "start": 533,
-            "end": 551,
+            "start": 357,
+            "end": 375,
             "text": "(Stroustrup, 2024)",
             "role": "citation",
             "reading": "natural"
@@ -1779,89 +1624,33 @@
       {
         "block": "block_0003_0002",
         "path": "/text",
-        "sourceSha256": "9764652c02baaeb10545b849bddd412f36363793ec811a4b0aa6c77fce257d2d",
+        "sourceSha256": "75aa378a474373aa04392a6f1d6c4e0776c9da05695217e1868a1678ef9fa9f6",
         "spans": [
           {
-            "start": 29,
-            "end": 30,
-            "text": "5",
-            "role": "data",
-            "reading": "natural"
-          },
-          {
-            "start": 34,
-            "end": 35,
-            "text": "2",
-            "role": "data",
-            "reading": "natural"
-          },
-          {
-            "start": 63,
-            "end": 64,
-            "text": "i",
+            "start": 69,
+            "end": 75,
+            "text": "puesto",
             "role": "cpp",
             "reading": "technical"
           },
           {
-            "start": 82,
-            "end": 83,
-            "text": "5",
-            "role": "data",
-            "reading": "natural"
-          },
-          {
-            "start": 89,
-            "end": 92,
-            "text": "--i",
+            "start": 115,
+            "end": 123,
+            "text": "--puesto",
             "role": "cpp",
             "reading": "technical"
           },
           {
-            "start": 135,
-            "end": 136,
-            "text": "i",
+            "start": 142,
+            "end": 148,
+            "text": "puesto",
             "role": "cpp",
             "reading": "technical"
           },
           {
-            "start": 169,
-            "end": 170,
-            "text": "i",
-            "role": "cpp",
-            "reading": "technical"
-          },
-          {
-            "start": 176,
-            "end": 177,
-            "text": "2",
-            "role": "data",
-            "reading": "natural"
-          },
-          {
-            "start": 179,
-            "end": 185,
-            "text": "i >= 2",
-            "role": "cpp",
-            "reading": "technical"
-          },
-          {
-            "start": 255,
-            "end": 258,
-            "text": "--i",
-            "role": "cpp",
-            "reading": "technical"
-          },
-          {
-            "start": 266,
-            "end": 267,
-            "text": "1",
-            "role": "data",
-            "reading": "natural"
-          },
-          {
-            "start": 271,
-            "end": 272,
-            "text": "i",
+            "start": 165,
+            "end": 176,
+            "text": "puesto >= 4",
             "role": "cpp",
             "reading": "technical"
           }
@@ -4042,6 +3831,7 @@
         "blocks": [
           "block_0001_0000",
           "block_0001_0001",
+          "u4l2_probar_ambos_limites",
           "block_0001_0002",
           "block_0001_0003",
           "block_0001_0004",
@@ -4063,8 +3853,10 @@
         "blocks": [
           "block_0003_0000",
           "block_0003_0001",
-          "block_0003_0002",
+          "u4l2_puestos_alternos",
           "block_0003_0003",
+          "block_0003_0002",
+          "u4l2_descenso_inclusivo",
           "block_0003_0004",
           "block_0003_0005"
         ]
@@ -4074,8 +3866,9 @@
         "blocks": [
           "block_0004_0000",
           "block_0004_0001",
-          "block_0004_0002",
+          "u4l2_contador_visible_al_salir",
           "block_0004_0003",
+          "block_0004_0002",
           "block_0004_0004",
           "block_0004_0005"
         ]
@@ -4360,7 +4153,44 @@
         ]
       }
     },
-    "additions": [],
+    "additions": [
+      {
+        "id": "u4l2_probar_ambos_limites",
+        "sha256": "6acce49e55167a292c1e645b3cf9ae191310dcdbaae61813c3f45908d1f603fc",
+        "storage": {
+          "page": 8,
+          "block": 0
+        },
+        "progressPage": "page_0001"
+      },
+      {
+        "id": "u4l2_puestos_alternos",
+        "sha256": "b44df58df75ffd1b23185c42d385fa0a45c13792fbbcd8d88d409952d1cbac46",
+        "storage": {
+          "page": 8,
+          "block": 1
+        },
+        "progressPage": "page_0003"
+      },
+      {
+        "id": "u4l2_descenso_inclusivo",
+        "sha256": "f081e47022cbe12f8bfb29d74cd79c8a65d5a9571783b110bbe27c88f4ea645d",
+        "storage": {
+          "page": 8,
+          "block": 2
+        },
+        "progressPage": "page_0003"
+      },
+      {
+        "id": "u4l2_contador_visible_al_salir",
+        "sha256": "6f5e849e51ace15699ef5fe603d4aee248daed99e1e6f5c0928104b3057d6b8f",
+        "storage": {
+          "page": 8,
+          "block": 3
+        },
+        "progressPage": "page_0004"
+      }
+    ],
     "editorial": [
       {
         "id": "block_0005_0002",
@@ -4376,6 +4206,21 @@
         "id": "block_0006_0007",
         "beforeSha256": "b8e1aa3a051fd41a4e98149030e46255f5e9798714d874c8863c2d25bb600948",
         "afterSha256": "f719bce205738cda6914d9aa5a21643d860f3221cb83e8e0c1a40c4823e52394"
+      },
+      {
+        "id": "block_0001_0001",
+        "beforeSha256": "71dae3aa6276eda4da22545080b714b6f4d3352b0384eae7142700c9fbb045c6",
+        "afterSha256": "551850394d976ec7c00e208d9e19785a01d3721370523ed63cc140d239394bcc"
+      },
+      {
+        "id": "block_0003_0001",
+        "beforeSha256": "e1837943a4a1aab474020a751e18ef9a92363ac3b58e5236fb3e2a9187d08f7b",
+        "afterSha256": "3d754e9b147f0057292e9da81e0fb4715163071f1018d8805a17c504922921e3"
+      },
+      {
+        "id": "block_0003_0002",
+        "beforeSha256": "ff7952a3d6b417a92d47083eb6f6f540d23569064e5cabd5c893d2f49c42335a",
+        "afterSha256": "07f9ddbe2363e85df61093c131d2a43f36370cb0c9ce7eee3a4a4687c23c0430"
       }
     ]
   }

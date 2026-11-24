@@ -13,12 +13,33 @@
           "text": "Construye un programa para un taller que quiere repartir fichas. Guarda la cantidad en fichas y el número de fichas que caben en cada grupo en capacidad. Los dos datos son enteros.\n\nLa cantidad admitida va de 0 a 30. La capacidad admitida va de 1 a 6. Ambos intervalos incluyen sus extremos.\n\nEl entero codigo_sobrantes vale 1 si el taller acepta fichas sueltas y 0 si no las acepta. Puedes usar codigo_sobrantes != 0 para obtener el valor bool que guarda acepta_sobrantes. En la primera construcción, escribe los tres enteros en el código."
         },
         {
+          "type": "code",
+          "language": "cpp",
+          "code": "#include <iostream>\n\nint main() {\n    const int codigo_sobrantes = 1;\n    const bool acepta_sobrantes = codigo_sobrantes != 0;\n\n    std::cout << acepta_sobrantes;\n\n    return 0;\n}\n"
+        },
+        {
           "type": "paragraph",
           "text": "Aplica estas reglas en orden. Usa solo el mensaje o los renglones que pide la regla elegida.\n\nSi la cantidad o la capacidad queda fuera de su intervalo, muestra Datos invalidos.\nSi ambos datos son válidos y hay cero fichas, muestra Sin trabajo.\nSi puedes repartir todas las fichas en grupos completos, muestra Grupos: seguido de un espacio y el número de grupos.\nSi quedan fichas sueltas y el taller las acepta, muestra el renglón de grupos y, en el segundo renglón de la salida, Sobrantes: seguido de un espacio y la cantidad suelta.\nSi quedan fichas sueltas y el taller no las acepta, muestra Reparto pendiente."
         },
         {
+          "type": "output_prediction",
+          "language": "cpp",
+          "code": "#include <iostream>\n\nint main() {\n    const int fichas = 0;\n    const int capacidad = 3;\n\n    if (fichas < 0 || fichas > 30 || capacidad < 1 || capacidad > 6) {\n        std::cout << \"Datos invalidos\";\n    } else if (fichas == 0) {\n        std::cout << \"Sin trabajo\";\n    }\n\n    return 0;\n}\n",
+          "id": "u3l8_pedido_sin_fichas",
+          "question": "Para revisar los dos primeros pasos del encargo, este programa comprueba la cantidad de fichas y la capacidad. ¿Qué mensaje escribe para la entrada que ya está declarada en el código?",
+          "explanation": "La cantidad 0 y la capacidad 3 están dentro de los intervalos admitidos. El primer bloque se omite. La comparación fichas == 0 da true y el programa escribe Sin trabajo.",
+          "answers": [
+            "Sin trabajo"
+          ]
+        },
+        {
           "type": "paragraph",
-          "text": "Comprueba los datos antes de calcular. Cuando la cantidad o la capacidad sea inválida, muestra el aviso y omite los cálculos del reparto. Así se evita intentar dividir entre cero."
+          "text": "Comprueba los datos antes de calcular. En el programa corto de abajo, las once fichas ya están dentro del intervalo del taller. Fíjate en el lugar que ocupan / y %. Las dos operaciones están entre las llaves del if y solo se ejecutan cuando la capacidad es positiva. Con grupos de cuatro, la consola muestra 2 3 porque se llenan dos grupos y sobran tres fichas. En el programa completo comprobarás también los límites de ambos datos."
+        },
+        {
+          "type": "code",
+          "language": "cpp",
+          "code": "#include <iostream>\n\nint main() {\n    const int capacidad = 4;\n    const int fichas = 11;\n\n    if (capacidad > 0) {\n        const int grupos = fichas / capacidad;\n        const int sueltas = fichas % capacidad;\n\n        std::cout << grupos << \" \" << sueltas;\n    }\n\n    return 0;\n}\n"
         },
         {
           "type": "note",
@@ -500,8 +521,37 @@
       {
         "block": "block_0000_0003",
         "path": "/text",
-        "sourceSha256": "5c5d8a037bd8de3c3e90200666470b8c32bd29a08631ace314b3b072a62aa724",
-        "spans": []
+        "sourceSha256": "4422591d28f4c17309243fce750abae1c54b3b75fe4892b38e87ce6852073c6c",
+        "spans": [
+          {
+            "start": 158,
+            "end": 159,
+            "text": "/",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 162,
+            "end": 163,
+            "text": "%",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 212,
+            "end": 214,
+            "text": "if",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 308,
+            "end": 311,
+            "text": "2 3",
+            "role": "output",
+            "reading": "natural"
+          }
+        ]
       },
       {
         "block": "block_0000_0004",
@@ -1611,6 +1661,54 @@
             "reading": "natural"
           }
         ]
+      },
+      {
+        "block": "u3l8_pedido_sin_fichas",
+        "path": "/question",
+        "sourceSha256": "1f19a1e58976ba40b154c8a9543d3f46ecc6f859ad713a309756b03da2c7d4d3",
+        "spans": []
+      },
+      {
+        "block": "u3l8_pedido_sin_fichas",
+        "path": "/explanation",
+        "sourceSha256": "89e432bb6f34d7127d5f41c03b5762f37cdd114a255b4f999665ec129ba6ca6e",
+        "spans": [
+          {
+            "start": 12,
+            "end": 13,
+            "text": "0",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 29,
+            "end": 30,
+            "text": "3",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 115,
+            "end": 126,
+            "text": "fichas == 0",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 130,
+            "end": 134,
+            "text": "true",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 157,
+            "end": 168,
+            "text": "Sin trabajo",
+            "role": "output",
+            "reading": "natural"
+          }
+        ]
       }
     ],
     "rootFields": [
@@ -1888,8 +1986,11 @@
         "blocks": [
           "block_0000_0000",
           "block_0000_0001",
+          "u3l8_leer_la_politica",
           "block_0000_0002",
+          "u3l8_pedido_sin_fichas",
           "block_0000_0003",
+          "u3l8_dividir_en_una_rama",
           "block_0000_0004"
         ]
       },
@@ -2136,7 +2237,35 @@
         ]
       }
     },
-    "additions": [],
+    "additions": [
+      {
+        "id": "u3l8_leer_la_politica",
+        "sha256": "9cd7f59ddd63bca21bf37ece575296ae5c469785a1eff3c9a4fb3acbfc03540f",
+        "storage": {
+          "page": 6,
+          "block": 0
+        },
+        "progressPage": "page_0000"
+      },
+      {
+        "id": "u3l8_pedido_sin_fichas",
+        "sha256": "91ad577e5f87e328b7da85a13481cf991075a15d5e8ad335cc36f6e7a4211805",
+        "storage": {
+          "page": 6,
+          "block": 1
+        },
+        "progressPage": "page_0000"
+      },
+      {
+        "id": "u3l8_dividir_en_una_rama",
+        "sha256": "7e5b67f08277b35b16cbad7e9602b2c702e33cf6aa9ee7492361654f7d792ab6",
+        "storage": {
+          "page": 6,
+          "block": 2
+        },
+        "progressPage": "page_0000"
+      }
+    ],
     "editorial": [
       {
         "id": "block_0002_0001",
@@ -2157,6 +2286,11 @@
         "id": "block_0005_0003",
         "beforeSha256": "d4869c40e5b4f706a2eab927a6c24c6e0110c6ca3fea3d220d9eca5ce92136c9",
         "afterSha256": "a4a7b8043585d291ea1e01f5880c94cebb400dc7ae760eedd29134efce47ca6e"
+      },
+      {
+        "id": "block_0000_0003",
+        "beforeSha256": "8a22e057c98386a7fb77075c78fba615e553494e5239e02495af4c1cd31b1482",
+        "afterSha256": "f9bfb373637617051bf9ca9db693fd94f36604bba114153ed6592ba4fce08983"
       }
     ]
   }

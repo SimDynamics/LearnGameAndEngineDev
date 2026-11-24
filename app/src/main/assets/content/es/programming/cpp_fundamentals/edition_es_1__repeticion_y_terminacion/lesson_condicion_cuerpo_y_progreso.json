@@ -13,21 +13,31 @@
           "text": "En los primeros programas escribiste std::cout para mostrar texto en la consola. El nombre cout pertenece a std, el espacio de nombres de la biblioteca estándar de C++. Un espacio de nombres reúne nombres relacionados. Dentro de main, la línea using namespace std; permite usar los nombres de ese espacio desde esa línea hasta el final del bloque. Así puedes escribir cout para mostrar datos y cin para leerlos. En estos programas de consola colocaremos esa línea dentro de main. El archivo sigue necesitando #include <iostream> para usar la entrada y la salida (Köppe et al., 2023)."
         },
         {
+          "type": "code",
+          "language": "cpp",
+          "code": "#include <iostream>\n\nint main() {\n    using namespace std;\n\n    cout << \"Listo\";\n}\n"
+        },
+        {
           "type": "paragraph",
           "text": "En una partida, el jugador empieza con dos puntos. La variable puntosIniciales guarda esa cantidad. Lee su nombre en dos partes. La palabra «puntos» empieza con minúscula y la mayúscula de «Iniciales» señala dónde empieza la segunda palabra. Llamaremos así a nuestras variables cuando su nombre necesite varias palabras. Desde C++11 puedes escribir int puntosIniciales{2}; para darle el valor entero dos al crearla. Con int puntosIniciales{}; empezaría en cero (Stroustrup, 2024)."
+        },
+        {
+          "type": "code",
+          "language": "cpp",
+          "code": "#include <iostream>\n\nint main() {\n    using namespace std;\n\n    int puntosIniciales{2};\n    int puntosExtra{};\n\n    cout << puntosIniciales << \" \" << puntosExtra;\n}\n"
         },
         {
           "type": "paragraph",
           "text": "El programa de abajo saluda al jugador en un renglón y muestra sus puntos en el siguiente. El texto \"Hola\\n\" incluye el saludo y un salto de línea. Puedes continuar la misma instrucción de cout en la siguiente línea del código. Escribe << delante de cada texto o valor que quieras añadir. Pon el punto y coma después del último valor."
         },
         {
-          "type": "paragraph",
-          "text": "Al llegar a la última llave de main, el programa termina y devuelve cero al sistema. Ese cero indica que terminó correctamente. Desde el primer estándar de C++ (C++98), llegar al final de main tiene el mismo efecto que ejecutar return 0;. Puedes escribir esa instrucción si quieres indicar el final de manera explícita. En los programas de esta unidad dejaremos que main llegue a su última llave. Esta regla pertenece al lenguaje (Köppe et al., 2023). En el curso usamos Microsoft Visual C++ (MSVC) para Windows de 64 bits (x64). En esta versión del compilador, la opción /std:c++23preview activa el modo C++23."
-        },
-        {
           "type": "code",
           "language": "cpp",
           "code": "#include <iostream>\n\nint main() {\n    using namespace std;\n\n    int puntosIniciales{2};\n\n    cout << \"Hola\\n\"\n         << \"Puntos: \" << puntosIniciales;\n}\n"
+        },
+        {
+          "type": "paragraph",
+          "text": "Al llegar a la última llave de main, el programa termina y devuelve cero al sistema. Ese cero indica que terminó correctamente. Desde el primer estándar de C++ (C++98), llegar al final de main tiene el mismo efecto que ejecutar return 0;. Puedes escribir esa instrucción si quieres indicar el final de manera explícita. En los programas de esta unidad dejaremos que main llegue a su última llave. Esta regla pertenece al lenguaje (Köppe et al., 2023). En el curso usamos Microsoft Visual C++ (MSVC) para Windows de 64 bits (x64). En esta versión del compilador, la opción /std:c++23preview activa el modo C++23."
         },
         {
           "type": "inline_fill_code",
@@ -57,16 +67,18 @@
           "text": "Qué comprueba el compilador al usar llaves"
         },
         {
-          "type": "paragraph",
-          "text": "Imagina que alguien escribe int fichas{2.5}; en la línea dos de un archivo llamado estrecha.cpp. Al compilarlo, MSVC muestra este mensaje en español.\n\nestrecha.cpp(2): error C2397: la conversión de 'double' en 'int' requiere una conversión de restricción\n\nEl número 2.5 es de tipo double. Un int solo admite números enteros. Las llaves hacen que el compilador rechace la conversión de double a int. Para contar dos fichas, escribe int fichas{2};. Si necesitas guardar una medida de dos metros y medio, usa double metros{2.5}; (Köppe et al., 2023)."
+          "type": "code",
+          "language": "cpp",
+          "code": "int main() {\n    int fichas{2.5};\n}\n"
         },
         {
           "type": "paragraph",
-          "text": "Crear una variable y cambiar su valor son dos acciones distintas. Después de declarar int fichas{2};, puedes escribir fichas = 5; para guardar cinco en la misma variable. El signo = indica la asignación. Si escribieras int fichas = 2.5;, la conversión a entero descartaría la parte decimal y guardaría dos. El compilador puede avisarte de esa pérdida. Si quieres conservar solo la parte entera de un valor de entrada, comprueba primero que el valor sea finito y que su parte entera quepa en int. Por ejemplo, la parte entera de 2.5 es 2, que cabe en int. Una vez hecha la comprobación, static_cast<int>(2.5) expresa esa conversión y da 2 (Stroustrup, 2024)."
+          "text": "La segunda línea del archivo estrecha.cpp intenta guardar dos y medio en una variable entera. Al compilar el ejemplo de arriba, MSVC muestra este mensaje en español.\n\nestrecha.cpp(2): error C2397: la conversión de 'double' en 'int' requiere una conversión de restricción\n\nEl número 2.5 es de tipo double. Un int solo admite enteros. Las llaves hacen que el compilador rechace la conversión. Para contar dos fichas, escribe int fichas{2};. Si quieres conservar una medida de dos metros y medio, usa double metros{2.5}; (Köppe et al., 2023)."
         },
         {
-          "type": "paragraph",
-          "text": "Las llaves protegen la inicialización frente a ciertas conversiones que pueden perder información. Una suma tiene otro riesgo. Si una variable int ya guarda el mayor entero que admite su tipo y le sumas uno, el resultado queda fuera de ese intervalo. Eso es un desbordamiento y C++ no define qué resultado dará esa suma con enteros con signo. Las llaves usadas al crear la variable no comprueban las sumas posteriores. En los recorridos de esta lección, los valores que vas a sumar se mantienen dentro del intervalo de int (Köppe et al., 2023)."
+          "type": "code",
+          "language": "cpp",
+          "code": "#include <iostream>\n\nint main() {\n    using namespace std;\n\n    int estrellas{3};\n    double distancia{3.5};\n\n    cout << estrellas << \" \" << distancia;\n}\n"
         },
         {
           "type": "multiple_choice",
@@ -79,6 +91,25 @@
           ],
           "correctIndex": 1,
           "explanation": "La bolsa tiene cinco fichas. En int fichas{5};, 5 es un entero y cabe en int. Las llaves vacías darían el valor cero. 5.0 es un double y las llaves rechazan su conversión a int incluso si su parte decimal es cero."
+        },
+        {
+          "type": "paragraph",
+          "text": "Crear una variable y cambiar su valor son dos acciones distintas. Después de declarar int fichas{2};, puedes escribir fichas = 5; para guardar cinco en la misma variable. El signo = indica la asignación. Si escribieras int fichas = 2.5;, la conversión a entero descartaría la parte decimal y guardaría dos. El compilador puede avisarte de esa pérdida. Si quieres conservar solo la parte entera de un valor de entrada, comprueba primero que el valor sea finito y que su parte entera quepa en int. Por ejemplo, la parte entera de 2.5 es 2, que cabe en int. Una vez hecha la comprobación, static_cast<int>(2.5) expresa esa conversión y da 2 (Stroustrup, 2024)."
+        },
+        {
+          "type": "output_prediction",
+          "language": "cpp",
+          "code": "#include <iostream>\n\nint main() {\n    using namespace std;\n\n    int fichas{4};\n    const int alAbrir{fichas};\n\n    fichas = 7;\n\n    cout << alAbrir << \" \" << fichas;\n}\n",
+          "id": "u4l1_asignar_despues_de_crear",
+          "question": "Una caja empieza con cuatro fichas y después pasa a tener siete. ¿Qué dos valores muestra el programa? Sepáralos con un espacio.",
+          "explanation": "alAbrir recibe una copia de 4 antes de la asignación. La instrucción fichas = 7; cambia el valor de fichas. Al leer ambos nombres, cout muestra 4 7.",
+          "answers": [
+            "4 7"
+          ]
+        },
+        {
+          "type": "paragraph",
+          "text": "Las llaves protegen la inicialización frente a ciertas conversiones que pueden perder información. Una suma tiene otro riesgo. Si una variable int ya guarda el mayor entero que admite su tipo y le sumas uno, el resultado queda fuera de ese intervalo. Eso es un desbordamiento y C++ no define qué resultado dará esa suma con enteros con signo. Las llaves usadas al crear la variable no comprueban las sumas posteriores. En los recorridos de esta lección, los valores que vas a sumar se mantienen dentro del intervalo de int (Köppe et al., 2023)."
         }
       ]
     },
@@ -143,6 +174,11 @@
               "text": "cero veces"
             }
           ]
+        },
+        {
+          "type": "code",
+          "language": "cpp",
+          "code": "#include <iostream>\n\nint main() {\n    using namespace std;\n\n    int puesto{5};\n\n    while (puesto < 5) {\n        cout << puesto;\n        ++puesto;\n    }\n\n    cout << \"Fin\";\n}\n"
         },
         {
           "type": "paragraph",
@@ -214,7 +250,12 @@
         },
         {
           "type": "paragraph",
-          "text": "Con la condición puesto < 5, el bucle continúa mientras puesto sea menor que 5. Si puesto empieza en 4 y el cuerpo le suma uno, al terminar esa vuelta puesto vale 5. La siguiente comprobación da falso y el programa sale del bucle.\n\nEn otro bucle, quedan guarda cuántos elementos faltan. La condición quedan > 1 permite entrar al cuerpo mientras falte más de un elemento. Si quedan empieza en 4 y le restas uno al final de cada vuelta, pasa a valer 3, luego 2 y por último 1. Al comprobar quedan > 1 con 1, la condición es falsa y el bucle termina."
+          "text": "Con la condición puesto < 5, el bucle continúa mientras puesto sea menor que cinco. En el ejemplo, puesto empieza en cuatro y el cuerpo le suma uno. Al terminar esa vuelta, puesto vale cinco. La siguiente comprobación da falso y el programa continúa en la instrucción que muestra Fuera."
+        },
+        {
+          "type": "code",
+          "language": "cpp",
+          "code": "#include <iostream>\n\nint main() {\n    using namespace std;\n\n    int puesto{4};\n\n    while (puesto < 5) {\n        cout << puesto << ' ';\n        puesto = puesto + 1;\n    }\n\n    cout << \"Fuera\";\n}\n"
         },
         {
           "type": "paragraph",
@@ -278,6 +319,11 @@
               "text": "la única instrucción"
             }
           ]
+        },
+        {
+          "type": "code",
+          "language": "cpp",
+          "code": "#include <iostream>\n\nint main() {\n    using namespace std;\n\n    int plazas{1};\n\n    while (plazas < 3) {\n        cout << plazas;\n        ++plazas;\n    }\n\n    cout << \" Fin\";\n}\n"
         },
         {
           "type": "paragraph",
@@ -1361,7 +1407,7 @@
       {
         "block": "block_0003_0001",
         "path": "/text",
-        "sourceSha256": "85b324f6489968b98d494d37d97a534a980f702a78a531a4cff8d5455bec85bd",
+        "sourceSha256": "e291b72a93125f1c171968d6811327cfed855ff77d0525bfb49d46239c16b6c6",
         "spans": [
           {
             "start": 17,
@@ -1378,101 +1424,24 @@
             "reading": "technical"
           },
           {
-            "start": 77,
-            "end": 78,
-            "text": "5",
-            "role": "data",
-            "reading": "natural"
-          },
-          {
-            "start": 83,
-            "end": 89,
+            "start": 99,
+            "end": 105,
             "text": "puesto",
             "role": "cpp",
             "reading": "technical"
           },
           {
-            "start": 101,
-            "end": 102,
-            "text": "4",
-            "role": "data",
-            "reading": "natural"
-          },
-          {
-            "start": 151,
-            "end": 157,
+            "start": 173,
+            "end": 179,
             "text": "puesto",
             "role": "cpp",
             "reading": "technical"
           },
           {
-            "start": 163,
-            "end": 164,
-            "text": "5",
-            "role": "data",
-            "reading": "natural"
-          },
-          {
-            "start": 247,
-            "end": 253,
-            "text": "quedan",
-            "role": "cpp",
-            "reading": "technical"
-          },
-          {
-            "start": 300,
-            "end": 310,
-            "text": "quedan > 1",
-            "role": "cpp",
-            "reading": "technical"
-          },
-          {
-            "start": 374,
-            "end": 380,
-            "text": "quedan",
-            "role": "cpp",
-            "reading": "technical"
-          },
-          {
-            "start": 392,
-            "end": 393,
-            "text": "4",
-            "role": "data",
-            "reading": "natural"
-          },
-          {
-            "start": 448,
-            "end": 449,
-            "text": "3",
-            "role": "data",
-            "reading": "natural"
-          },
-          {
-            "start": 457,
-            "end": 458,
-            "text": "2",
-            "role": "data",
-            "reading": "natural"
-          },
-          {
-            "start": 472,
-            "end": 473,
-            "text": "1",
-            "role": "data",
-            "reading": "natural"
-          },
-          {
-            "start": 488,
-            "end": 498,
-            "text": "quedan > 1",
-            "role": "cpp",
-            "reading": "technical"
-          },
-          {
-            "start": 503,
-            "end": 504,
-            "text": "1",
-            "role": "data",
+            "start": 280,
+            "end": 285,
+            "text": "Fuera",
+            "role": "output",
             "reading": "natural"
           }
         ]
@@ -2802,81 +2771,60 @@
       {
         "block": "block_0000_0009",
         "path": "/text",
-        "sourceSha256": "fe652ad058125f70bd3a345b8d3896bf9b2c4d170f1b8c3681e8d4ff3abf022f",
+        "sourceSha256": "c5c911466e020443bda2c697ad00b323eccade4131c95508064e2249968a5017",
         "spans": [
           {
-            "start": 28,
-            "end": 44,
-            "text": "int fichas{2.5};",
-            "role": "cpp",
-            "reading": "technical"
-          },
-          {
-            "start": 83,
-            "end": 95,
+            "start": 29,
+            "end": 41,
             "text": "estrecha.cpp",
             "role": "data",
             "reading": "natural"
           },
           {
-            "start": 151,
-            "end": 254,
+            "start": 167,
+            "end": 270,
             "text": "estrecha.cpp(2): error C2397: la conversión de 'double' en 'int' requiere una conversión de restricción",
             "role": "output",
             "reading": "natural"
           },
           {
-            "start": 266,
-            "end": 269,
+            "start": 282,
+            "end": 285,
             "text": "2.5",
             "role": "cpp",
             "reading": "technical"
           },
           {
-            "start": 281,
-            "end": 287,
+            "start": 297,
+            "end": 303,
             "text": "double",
             "role": "cpp",
             "reading": "technical"
           },
           {
-            "start": 292,
-            "end": 295,
+            "start": 308,
+            "end": 311,
             "text": "int",
             "role": "cpp",
             "reading": "technical"
           },
           {
-            "start": 385,
-            "end": 391,
-            "text": "double",
-            "role": "cpp",
-            "reading": "technical"
-          },
-          {
-            "start": 394,
-            "end": 397,
-            "text": "int",
-            "role": "cpp",
-            "reading": "technical"
-          },
-          {
-            "start": 431,
-            "end": 445,
+            "start": 423,
+            "end": 437,
             "text": "int fichas{2};",
             "role": "cpp",
             "reading": "technical"
           },
           {
-            "start": 506,
-            "end": 525,
+            "start": 498,
+            "end": 517,
             "text": "double metros{2.5};",
             "role": "cpp",
             "reading": "technical"
           },
           {
-            "start": 526,
-            "end": 546,
+            "start": 518,
+            "end": 538,
             "text": "(Köppe et al., 2023)",
             "role": "citation",
             "reading": "natural"
@@ -3097,6 +3045,61 @@
             "text": "int",
             "role": "cpp",
             "reading": "technical"
+          }
+        ]
+      },
+      {
+        "block": "u4l1_asignar_despues_de_crear",
+        "path": "/question",
+        "sourceSha256": "3f542b8ceef5c991815e6a918e555cab618f86de7e9489ada6181ac312f52663",
+        "spans": []
+      },
+      {
+        "block": "u4l1_asignar_despues_de_crear",
+        "path": "/explanation",
+        "sourceSha256": "0de335b4218ab59574c0290f056967d8dfa94ede3dacbcfb0f1290690b855707",
+        "spans": [
+          {
+            "start": 0,
+            "end": 7,
+            "text": "alAbrir",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 28,
+            "end": 29,
+            "text": "4",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 69,
+            "end": 80,
+            "text": "fichas = 7;",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 100,
+            "end": 106,
+            "text": "fichas",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 131,
+            "end": 135,
+            "text": "cout",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 144,
+            "end": 147,
+            "text": "4 7",
+            "role": "output",
+            "reading": "natural"
           }
         ]
       }
@@ -3370,17 +3373,22 @@
         "blocks": [
           "block_0000_0000",
           "block_0000_0001",
+          "u4l1_saludo_sin_prefijo",
           "block_0000_0002",
+          "u4l1_contador_con_llaves",
           "block_0000_0003",
-          "block_0000_0004",
           "block_0000_0005",
+          "block_0000_0004",
           "block_0000_0006",
           "block_0000_0007",
           "block_0000_0008",
+          "u4l1_archivo_con_estrechamiento",
           "block_0000_0009",
+          "u4l1_estrellas_y_medidas",
+          "block_0000_0012",
           "block_0000_0010",
-          "block_0000_0011",
-          "block_0000_0012"
+          "u4l1_asignar_despues_de_crear",
+          "block_0000_0011"
         ]
       },
       {
@@ -3399,6 +3407,7 @@
         "blocks": [
           "block_0002_0000",
           "block_0002_0001",
+          "u4l1_saltar_el_cuerpo",
           "block_0002_0002",
           "block_0002_0003",
           "block_0002_0004",
@@ -3411,6 +3420,7 @@
         "blocks": [
           "block_0003_0000",
           "block_0003_0001",
+          "u4l1_avanzar_y_salir",
           "block_0003_0002",
           "block_0003_0003",
           "block_0003_0004",
@@ -3422,6 +3432,7 @@
         "blocks": [
           "block_0004_0000",
           "block_0004_0001",
+          "u4l1_dos_instrucciones_juntas",
           "block_0004_0002",
           "block_0004_0003",
           "block_0004_0004"
@@ -3703,7 +3714,80 @@
         ]
       }
     },
-    "additions": [],
+    "additions": [
+      {
+        "id": "u4l1_saludo_sin_prefijo",
+        "sha256": "dcfa0f050b556a9ca1f110af07270629228627cb8b1e46e00c248bfb819d6e05",
+        "storage": {
+          "page": 7,
+          "block": 0
+        },
+        "progressPage": "page_0000"
+      },
+      {
+        "id": "u4l1_contador_con_llaves",
+        "sha256": "e0d91c831f6d1fe5ce7ca7cd3b4a8376ee0b0c3f37290613912e10d72c0383fb",
+        "storage": {
+          "page": 7,
+          "block": 1
+        },
+        "progressPage": "page_0000"
+      },
+      {
+        "id": "u4l1_estrellas_y_medidas",
+        "sha256": "1592045b1c5762ddd3e0d3a89909fabb1e5ecfad5e7659abcd22fdd1a3688c14",
+        "storage": {
+          "page": 7,
+          "block": 2
+        },
+        "progressPage": "page_0000"
+      },
+      {
+        "id": "u4l1_asignar_despues_de_crear",
+        "sha256": "9fc6b743b339849124b86b2791b5258d97bc5d58105c901c4d9a0bb2091d9954",
+        "storage": {
+          "page": 7,
+          "block": 3
+        },
+        "progressPage": "page_0000"
+      },
+      {
+        "id": "u4l1_saltar_el_cuerpo",
+        "sha256": "e43fb9d3b4d5e0a9c2dc9d7c998a4493f81c085975b491bc9c0b82bd6b2a2da5",
+        "storage": {
+          "page": 7,
+          "block": 4
+        },
+        "progressPage": "page_0002"
+      },
+      {
+        "id": "u4l1_avanzar_y_salir",
+        "sha256": "c074ad5c103827ee043c4ad366d6e959c998e8b270ccfc86365cd20154e78a99",
+        "storage": {
+          "page": 7,
+          "block": 5
+        },
+        "progressPage": "page_0003"
+      },
+      {
+        "id": "u4l1_dos_instrucciones_juntas",
+        "sha256": "6c1f8d5b8a2c8d4eb897b7ed154863806166887cda70c02d7763e32c9ce6868b",
+        "storage": {
+          "page": 7,
+          "block": 6
+        },
+        "progressPage": "page_0004"
+      },
+      {
+        "id": "u4l1_archivo_con_estrechamiento",
+        "sha256": "3cac6ab2695f31c3076dc29babfde90fe3ff09c4ef6b1d850cf6ab6a3d9cfd81",
+        "storage": {
+          "page": 7,
+          "block": 7
+        },
+        "progressPage": "page_0000"
+      }
+    ],
     "editorial": [
       {
         "id": "block_0004_0002",
@@ -3724,6 +3808,16 @@
         "id": "block_0006_0004",
         "beforeSha256": "0186607613444dec29bd7cf48315fc466e160b1656bf724891ed341788f089e8",
         "afterSha256": "c05e58c87a7396b170bfd2581ac32da8eaa7412407921658e2e627e54c7d1471"
+      },
+      {
+        "id": "block_0000_0009",
+        "beforeSha256": "587bfd2631ae0ffd00c8b96fc46a45930594c528552377cd59ff61db13fec5e7",
+        "afterSha256": "21a68ce29ceb49ab39c0a70650efc45d8b08ee040e273dc30b531b5025753657"
+      },
+      {
+        "id": "block_0003_0001",
+        "beforeSha256": "4d20b6db138c59d2357e907718f3e0d7e36f0d1b7baa0a9f8f987aaacaf8c8fc",
+        "afterSha256": "9d0a9c48fdafd822487de9f329aa9fd0b02989d680e89b3eebd2ba1e38e7ba86"
       }
     ]
   }

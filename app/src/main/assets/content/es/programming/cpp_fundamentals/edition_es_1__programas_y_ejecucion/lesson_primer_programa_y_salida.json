@@ -45,15 +45,11 @@
         {
           "type": "code",
           "language": "cpp",
-          "code": "std::cout << \"Ruta disponible\";"
+          "code": "std::cout << \"Ruta al muelle\";"
         },
         {
           "type": "paragraph",
           "text": "En esta instrucción, std::cout es el nombre que usamos en C++ para escribir en la salida estándar del programa. En esta app puedes leer el texto de esa salida en el recuadro «Salida del programa (stdout)». Un operador es un signo o un conjunto de signos que indica una operación. Aquí el operador << envía el contenido del literal que está a su derecha a std::cout. El punto y coma termina la instrucción (Stroustrup, 2024)."
-        },
-        {
-          "type": "paragraph",
-          "text": "El ejemplo muestra una sola instrucción, la que escribe el mensaje. Cuando la coloquemos en un programa completo, veremos dónde empiezan las instrucciones del programa y qué línea permite usar el nombre std::cout. Primero practicarás cómo escribir la instrucción de salida."
         },
         {
           "type": "output_prediction",
@@ -66,6 +62,15 @@
           ],
           "outputComparison": "exact",
           "explanation": "Al ejecutarse la instrucción, std::cout escribe Ruta disponible en la consola. Las comillas delimitan el texto en el código y el punto y coma termina la instrucción. El último carácter que se muestra es la letra final de disponible."
+        },
+        {
+          "type": "code",
+          "language": "cpp",
+          "code": "std::cout << \"Ruta disponible\";"
+        },
+        {
+          "type": "paragraph",
+          "text": "El ejemplo muestra una sola instrucción, la que escribe el mensaje. Cuando la coloquemos en un programa completo, veremos dónde empiezan las instrucciones del programa y qué línea permite usar el nombre std::cout. Primero practicarás cómo escribir la instrucción de salida."
         }
       ]
     },
@@ -85,10 +90,6 @@
           "text": "Lee la instrucción de izquierda a derecha.\n\nstd::cout indica dónde se escribirá el mensaje.\nEl operador << envía el texto a std::cout.\nEl literal \"Equipo preparado\" contiene el mensaje.\nEl punto y coma (;) indica dónde termina esta instrucción."
         },
         {
-          "type": "paragraph",
-          "text": "Entre std::cout y el literal hay dos signos de menor que, uno junto al otro. Juntos forman el operador << que envía el texto a la salida. Puedes poner un espacio antes del operador y otro después para leer mejor el código. Si separas los dos signos o escribes uno solo, el compilador ya no los lee como el operador <<."
-        },
-        {
           "type": "fill_code",
           "id": "p1u1l2_construir_operador_fragmento",
           "question": "Completa únicamente el operador que envía el literal a la salida de texto.",
@@ -98,6 +99,15 @@
             "<<"
           ],
           "explanation": "Se necesitan los dos signos juntos: <<. El literal ya está escrito, de modo que el hueco no pide repetir las comillas ni el mensaje."
+        },
+        {
+          "type": "paragraph",
+          "text": "Entre std::cout y el literal hay dos signos de menor que, uno junto al otro. Juntos forman el operador << que envía el texto a la salida. Puedes poner un espacio antes del operador y otro después para leer mejor el código. Si separas los dos signos o escribes uno solo, el compilador ya no los lee como el operador <<."
+        },
+        {
+          "type": "code",
+          "language": "cpp",
+          "code": "std::cout<<\"Zona tranquila\";"
         },
         {
           "type": "code",
@@ -157,6 +167,17 @@
           "text": "Conservaremos el nombre completo std::cout. La parte std:: indica que utilizamos un nombre de la biblioteca estándar. No hace falta inventar ese nombre ni sustituirlo por el mensaje que queremos mostrar."
         },
         {
+          "type": "fill_code",
+          "language": "cpp",
+          "code": "#include <___>",
+          "question": "Completa el nombre de la cabecera que proporciona la salida estándar.",
+          "answers": [
+            "iostream"
+          ],
+          "explanation": "La cabecera de entrada y salida permite usar la consola en el programa.",
+          "id": "p1u1l2_usar_cabecera"
+        },
+        {
           "type": "code",
           "language": "cpp",
           "code": "int main() {\n\n}"
@@ -187,8 +208,25 @@
           "text": "int indica aquí que main devuelve un número entero para comunicar cómo terminó el programa. return 0; termina la función y comunica una terminación correcta. Ese cero no se envía a la consola: devolver un resultado de terminación y mostrar texto son acciones diferentes (Stroustrup, 2024)."
         },
         {
+          "type": "multiple_choice",
+          "id": "return_no_imprime",
+          "question": "Un programa ejecuta std::cout << \"Listo\"; y después return 0;. ¿Qué salida de texto produce?",
+          "options": [
+            "0",
+            "Listo0",
+            "Listo"
+          ],
+          "correctIndex": 2,
+          "explanation": "La instrucción de salida escribe Listo. Después return 0; termina main con un resultado correcto, pero no envía ese cero a la consola. Por eso no se añade ningún dígito al mensaje."
+        },
+        {
           "type": "paragraph",
           "text": "En nuestros primeros programas escribiremos return 0; para hacer visible esa terminación. C++ también permite llegar al final de main sin escribirla; en ese caso se obtiene el mismo resultado de terminación correcto. No significa que haya aparecido un cero en la salida de texto (Stroustrup, 2024)."
+        },
+        {
+          "type": "code",
+          "language": "cpp",
+          "code": "int main() {\n}"
         },
         {
           "type": "code",
@@ -198,10 +236,6 @@
         {
           "type": "paragraph",
           "text": "Ya podemos reunir las piezas. La cabecera prepara el uso de la salida de texto. Dentro de main, la primera instrucción escribe Inicio confirmado. Después return 0; termina la función. La última llave cierra el cuerpo."
-        },
-        {
-          "type": "paragraph",
-          "text": "Observa dónde aparece el punto y coma: al final de la instrucción de salida y de return 0;. No se añade al final de #include <iostream>, después de la llave que abre main ni después de la llave que cierra este cuerpo. Tampoco los saltos de línea del código se convierten por sí solos en saltos de línea del mensaje."
         },
         {
           "type": "multiple_choice",
@@ -216,16 +250,8 @@
           "explanation": "std::cout recibe el contenido del literal y lo escribe en la consola. La cabecera proporciona al compilador la información necesaria para reconocer esa salida. return 0; termina main y comunica un resultado de terminación; no imprime el cero."
         },
         {
-          "type": "multiple_choice",
-          "id": "return_no_imprime",
-          "question": "Un programa ejecuta std::cout << \"Listo\"; y después return 0;. ¿Qué salida de texto produce?",
-          "options": [
-            "0",
-            "Listo0",
-            "Listo"
-          ],
-          "correctIndex": 2,
-          "explanation": "La instrucción de salida escribe Listo. Después return 0; termina main con un resultado correcto, pero no envía ese cero a la consola. Por eso no se añade ningún dígito al mensaje."
+          "type": "paragraph",
+          "text": "Observa dónde aparece el punto y coma: al final de la instrucción de salida y de return 0;. No se añade al final de #include <iostream>, después de la llave que abre main ni después de la llave que cierra este cuerpo. Tampoco los saltos de línea del código se convierten por sí solos en saltos de línea del mensaje."
         }
       ]
     },
@@ -367,14 +393,6 @@
           "text": "Escribe la instrucción que muestra el mensaje. Empieza con std::cout, añade el operador que practicaste y el literal con el mensaje, y termina la instrucción con un punto y coma."
         },
         {
-          "type": "paragraph",
-          "text": "El recuadro «Salida del programa (stdout)» muestra lo que escribió tu programa. Allí puedes revisar las letras y los espacios del mensaje."
-        },
-        {
-          "type": "paragraph",
-          "text": "Si la app informa que la compilación falló, lee el mensaje del compilador. Revisa los signos de la instrucción que añadiste y comprueba que esté dentro de las llaves de main, antes de return 0;. Si el programa se ejecuta, compara el texto que ves en la salida con Acceso preparado, incluido el espacio entre las palabras. Si encuentras una diferencia, corrige el código."
-        },
-        {
           "type": "cpp_compiler",
           "initialCode": "#include <iostream>\n\nint main() {\n\n    return 0;\n}\n",
           "outputCheck": {
@@ -383,12 +401,21 @@
               {
                 "standardInput": "",
                 "outputs": [
-                  "Acceso preparado"
+                  "Acceso preparado",
+                  "Acceso preparado\n"
                 ],
                 "explanation": "Al ejecutar tu programa, la consola muestra Acceso preparado. El mensaje procede del literal que escribiste en el código."
               }
             ]
           }
+        },
+        {
+          "type": "paragraph",
+          "text": "El recuadro «Salida del programa (stdout)» muestra lo que escribió tu programa. Allí puedes revisar las letras y los espacios del mensaje."
+        },
+        {
+          "type": "paragraph",
+          "text": "Si la app informa que la compilación falló, lee el mensaje del compilador. Revisa los signos de la instrucción que añadiste y comprueba que esté dentro de las llaves de main, antes de return 0;. Si el programa se ejecuta, compara el texto que ves en la salida con Acceso preparado, incluido el espacio entre las palabras. Si encuentras una diferencia, corrige el código."
         },
         {
           "type": "heading",
@@ -417,10 +444,6 @@
         },
         {
           "type": "paragraph",
-          "text": "Localiza std::cout y el literal \"Registro completo\" en la línea que escribe el mensaje. Revisa el signo que hay entre ambos y recuerda qué operador usaste para enviar texto a std::cout. Después revisa el signo que viene justo después de la comilla de cierre. Corrige los dos signos. Si el compilador indica que queda un error, lee su diagnóstico y vuelve a revisar esa línea."
-        },
-        {
-          "type": "paragraph",
           "text": "El mensaje ya está escrito en el código. Una vez corregida la instrucción, el programa debe mostrar el siguiente texto sin pedir datos al usuario."
         },
         {
@@ -436,12 +459,17 @@
               {
                 "standardInput": "",
                 "outputs": [
-                  "Registro completo"
+                  "Registro completo",
+                  "Registro completo\n"
                 ],
                 "explanation": "Después de corregir los dos signos, se muestra Registro completo. No se cambia el literal ni se añade una segunda impresión."
               }
             ]
           }
+        },
+        {
+          "type": "paragraph",
+          "text": "Localiza std::cout y el literal \"Registro completo\" en la línea que escribe el mensaje. Revisa el signo que hay entre ambos y recuerda qué operador usaste para enviar texto a std::cout. Después revisa el signo que viene justo después de la comilla de cierre. Corrige los dos signos. Si el compilador indica que queda un error, lee su diagnóstico y vuelve a revisar esa línea."
         },
         {
           "type": "heading",
@@ -2312,10 +2340,11 @@
           "block_0000_0003",
           "block_0000_0004",
           "block_0000_0005",
-          "block_0000_0006",
+          "p1u1l2_modelo_escribir_un_literal",
           "block_0000_0007",
-          "block_0000_0008",
-          "block_0000_0009"
+          "block_0000_0009",
+          "block_0000_0006",
+          "block_0000_0008"
         ]
       },
       {
@@ -2324,8 +2353,9 @@
           "block_0001_0000",
           "block_0001_0001",
           "block_0001_0002",
-          "block_0001_0003",
           "block_0001_0004",
+          "block_0001_0003",
+          "p1u1l2_signos_juntos",
           "block_0001_0005",
           "block_0001_0006",
           "block_0001_0007",
@@ -2340,17 +2370,19 @@
           "block_0002_0002",
           "block_0002_0003",
           "block_0002_0004",
+          "p1u1l2_usar_cabecera",
           "block_0002_0005",
           "block_0002_0006",
           "block_0002_0007",
           "block_0002_0008",
           "block_0002_0009",
+          "block_0002_0015",
           "block_0002_0010",
+          "p1u1l2_fin_implicito",
           "block_0002_0011",
           "block_0002_0012",
-          "block_0002_0013",
           "block_0002_0014",
-          "block_0002_0015"
+          "block_0002_0013"
         ]
       },
       {
@@ -2378,9 +2410,9 @@
           "block_0004_0005",
           "block_0004_0006",
           "block_0004_0007",
+          "block_0004_0010",
           "block_0004_0008",
           "block_0004_0009",
-          "block_0004_0010",
           "block_0004_0011",
           "block_0004_0012",
           "block_0004_0013"
@@ -2391,10 +2423,10 @@
         "blocks": [
           "block_0005_0000",
           "block_0005_0001",
-          "block_0005_0002",
           "block_0005_0003",
           "block_0005_0004",
           "block_0005_0005",
+          "block_0005_0002",
           "block_0005_0006",
           "block_0005_0007",
           "block_0005_0008",
@@ -2711,7 +2743,44 @@
         ]
       }
     },
-    "additions": [],
+    "additions": [
+      {
+        "id": "p1u1l2_modelo_escribir_un_literal",
+        "sha256": "f35fb68b6ba05f739af0ed4acc1d7b0d22d284dbcf01a93044d67ee57ca6e609",
+        "storage": {
+          "page": 6,
+          "block": 0
+        },
+        "progressPage": "page_0000"
+      },
+      {
+        "id": "p1u1l2_signos_juntos",
+        "sha256": "1821c942fdf3060851cd464e9d3a9ccce9a0b724c7be1711f4159e1279978d74",
+        "storage": {
+          "page": 6,
+          "block": 1
+        },
+        "progressPage": "page_0001"
+      },
+      {
+        "id": "p1u1l2_usar_cabecera",
+        "sha256": "818fbe50602bb4afa0b1ffb7f8114844f5092fb5fc4489c51d0ee58bcf33ed4e",
+        "storage": {
+          "page": 6,
+          "block": 2
+        },
+        "progressPage": "page_0002"
+      },
+      {
+        "id": "p1u1l2_fin_implicito",
+        "sha256": "5f7450c33683cd410e583a78b5cc088e6d23ca6f253c5fc219c09bae2eb2c111",
+        "storage": {
+          "page": 6,
+          "block": 3
+        },
+        "progressPage": "page_0002"
+      }
+    ],
     "editorial": [
       {
         "id": "block_0000_0007",
@@ -2777,6 +2846,144 @@
         "id": "block_0004_0010",
         "beforeSha256": "0f1715d394699dc954349aed92f246599be07c26539ed097fd4a0356f19303ce",
         "afterSha256": "b887526a7ebcfe934c91d8ec2dbb5575dce425214951e4be64feb4ce74a37e03"
+      },
+      {
+        "id": "block_0004_0010",
+        "beforeSha256": "b887526a7ebcfe934c91d8ec2dbb5575dce425214951e4be64feb4ce74a37e03",
+        "afterSha256": "13c6ec9d8a40498cbadff42b6b372717f673125a8976dd8d07f5d8c376b62f59"
+      },
+      {
+        "id": "block_0005_0005",
+        "beforeSha256": "715d0be5362163bd7efea2e639ca7840822932afa1f678d0fc44773849d58584",
+        "afterSha256": "1dcadc712c9d84d3eaa27f1fff011834bbfe4283328f8f70ac0ccab1ae2718d3"
+      }
+    ],
+    "compilerCaseRevisions": [
+      {
+        "id": "block_0004_0010",
+        "block": {
+          "type": "cpp_compiler",
+          "initialCode": "#include <iostream>\n\nint main() {\n\n    return 0;\n}\n",
+          "outputCheck": {
+            "inputComparison": "exact",
+            "cases": [
+              {
+                "standardInput": "",
+                "outputs": [
+                  "Acceso preparado"
+                ],
+                "explanation": "Al ejecutar tu programa, la consola muestra Acceso preparado. El mensaje procede del literal que escribiste en el código."
+              }
+            ]
+          }
+        },
+        "cases": [
+          {
+            "standardInput": "",
+            "outputs": [
+              "Acceso preparado",
+              "Acceso preparado\n"
+            ],
+            "explanation": "Al ejecutar tu programa, la consola muestra Acceso preparado. El mensaje procede del literal que escribiste en el código."
+          }
+        ],
+        "editorialIndex": 13,
+        "historySha256": "caefbf68b953e6f543523e46f3b8262560310d770f530539ebaa93a9a953d128",
+        "semanticBefore": [
+          {
+            "block": "block_0004_0010",
+            "path": "/outputCheck/cases/0/explanation",
+            "sourceSha256": "6309e6b487858ac080de498f51dcaf6794e5e8936ab030c0eb18d85ce9f3e67c",
+            "spans": [
+              {
+                "start": 44,
+                "end": 60,
+                "text": "Acceso preparado",
+                "role": "output",
+                "reading": "natural"
+              }
+            ]
+          }
+        ],
+        "semanticAfter": [
+          {
+            "block": "block_0004_0010",
+            "path": "/outputCheck/cases/0/explanation",
+            "sourceSha256": "6309e6b487858ac080de498f51dcaf6794e5e8936ab030c0eb18d85ce9f3e67c",
+            "spans": [
+              {
+                "start": 44,
+                "end": 60,
+                "text": "Acceso preparado",
+                "role": "output",
+                "reading": "natural"
+              }
+            ]
+          }
+        ]
+      },
+      {
+        "id": "block_0005_0005",
+        "block": {
+          "type": "cpp_compiler",
+          "initialCode": "#include <iostream>\n\nint main() {\n    std::cout < \"Registro completo\":\n    return 0;\n}\n",
+          "outputCheck": {
+            "inputComparison": "exact",
+            "cases": [
+              {
+                "standardInput": "",
+                "outputs": [
+                  "Registro completo"
+                ],
+                "explanation": "Después de corregir los dos signos, se muestra Registro completo. No se cambia el literal ni se añade una segunda impresión."
+              }
+            ]
+          }
+        },
+        "cases": [
+          {
+            "standardInput": "",
+            "outputs": [
+              "Registro completo",
+              "Registro completo\n"
+            ],
+            "explanation": "Después de corregir los dos signos, se muestra Registro completo. No se cambia el literal ni se añade una segunda impresión."
+          }
+        ],
+        "editorialIndex": 14,
+        "historySha256": "c6cab7650498c10fc1443a9c5934dfefd5708b1b760d88c7d7f440b5b5fb8b83",
+        "semanticBefore": [
+          {
+            "block": "block_0005_0005",
+            "path": "/outputCheck/cases/0/explanation",
+            "sourceSha256": "b300e5f557b457347befc6ac28c2c364cea38d9b04e04aaa134679d72902e914",
+            "spans": [
+              {
+                "start": 47,
+                "end": 64,
+                "text": "Registro completo",
+                "role": "output",
+                "reading": "natural"
+              }
+            ]
+          }
+        ],
+        "semanticAfter": [
+          {
+            "block": "block_0005_0005",
+            "path": "/outputCheck/cases/0/explanation",
+            "sourceSha256": "b300e5f557b457347befc6ac28c2c364cea38d9b04e04aaa134679d72902e914",
+            "spans": [
+              {
+                "start": 47,
+                "end": 64,
+                "text": "Registro completo",
+                "role": "output",
+                "reading": "natural"
+              }
+            ]
+          }
+        ]
       }
     ]
   }

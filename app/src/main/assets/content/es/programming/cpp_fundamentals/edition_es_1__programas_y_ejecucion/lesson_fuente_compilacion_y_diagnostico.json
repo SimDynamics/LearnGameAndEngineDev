@@ -22,6 +22,18 @@
           "text": "Este fragmento es código fuente: el texto C++ que escribimos. El editor permite cambiarlo. Por ejemplo, ahí podemos sustituir el contenido del literal sin cambiar el nombre std::cout. Los colores del editor ayudan a leer las piezas, pero todavía hay que comprobar el programa con las herramientas (Stroustrup, 2024)."
         },
         {
+          "type": "multiple_choice",
+          "id": "editor_compilador",
+          "question": "Has escrito una instrucción de C++ en un archivo del editor. Todavía no has compilado el archivo ni ejecutado el programa. ¿Qué contiene el archivo en ese momento?",
+          "options": [
+            "El código fuente que escribiste en el editor.",
+            "La salida final del programa.",
+            "Una prueba de que todos los resultados son correctos."
+          ],
+          "correctIndex": 0,
+          "explanation": "El archivo contiene el texto C++ que escribimos. Todavía no hemos construido esa versión ni la hemos ejecutado. Conocer el texto permite analizarlo, pero no equivale a observar su resultado."
+        },
+        {
           "type": "paragraph",
           "text": "Cuando compilamos, el compilador analiza el código fuente según las reglas de C++ y lo traduce. En el modelo que estamos siguiendo, esa traducción produce código objeto: una parte ya traducida que servirá para construir el programa. Todavía hay que reunirla con las demás partes necesarias (Stroustrup, 2024)."
         },
@@ -30,24 +42,38 @@
           "text": "Al compilar la instrucción de salida, el compilador necesita reconocer el nombre std::cout. La línea #include <iostream> le proporciona la declaración de ese nombre. El código que produce el compilador también necesita operaciones de la biblioteca estándar para escribir el mensaje. Otra herramienta, el enlazador, une el código que se acaba de compilar con los componentes que necesita de la biblioteca. Así se obtiene el programa que luego podremos ejecutar (Stroustrup, 2024)."
         },
         {
+          "type": "code",
+          "language": "cpp",
+          "code": "#include <iostream>\n\nint main() {\n    std::cout << \"Puesto disponible\";\n    return 0;\n}"
+        },
+        {
           "type": "paragraph",
           "text": "El resultado preparado para ponerse en marcha se llama ejecutable. Construir el programa incluye la compilación y el enlace. Compilar nombra la traducción del código fuente; enlazar nombra la reunión de las partes. Obtener ese ejecutable permite pasar a la ejecución (Stroustrup, 2024)."
+        },
+        {
+          "type": "multiple_choice",
+          "id": "funcion_enlazador",
+          "question": "¿Qué tarea corresponde al enlazador en el modelo estudiado?",
+          "options": [
+            "Combinar las partes necesarias para formar el ejecutable.",
+            "Traducir cada archivo fuente a una parte del programa.",
+            "Ejecutar el programa y recoger su salida de texto."
+          ],
+          "correctIndex": 0,
+          "explanation": "El enlazador reúne las partes traducidas y los componentes necesarios para obtener el programa completo. Traducir un archivo y ejecutar el resultado son tareas distintas. Completar el enlace todavía no demuestra que la salida cumpla el requisito."
         },
         {
           "type": "paragraph",
           "text": "Al ejecutar se llevan a cabo las instrucciones del programa construido. Si esta instrucción se ejecuta dentro del programa preparado, std::cout escribe Puesto disponible. Ese mensaje es su salida de texto. El código fuente es lo que escribimos; la salida es lo que observamos al realizarse la instrucción (Stroustrup, 2024)."
         },
         {
+          "type": "code",
+          "language": "text",
+          "code": "Puesto disponible"
+        },
+        {
           "type": "paragraph",
           "text": "Después comparamos lo observado con el requisito fijado antes de ejecutar. En esta tarea debemos comprobar las dos palabras y su espacio. Haber obtenido un programa ejecutable permite hacer la prueba; observar su salida permite comprobar si esa ejecución cumple el requisito (Stroustrup, 2024)."
-        },
-        {
-          "type": "paragraph",
-          "text": "Podemos seguir el recorrido así:\n\nEditar: preparar el texto fuente.\nCompilar: analizarlo y traducirlo a código objeto.\nEnlazar: reunir las partes y obtener el ejecutable.\nEjecutar: realizar las instrucciones del programa construido.\nComparar: revisar lo producido frente al resultado requerido."
-        },
-        {
-          "type": "paragraph",
-          "text": "Si un error de C++ impide construir el programa, el compilador muestra un diagnóstico que ayuda a localizarlo. Si el programa se construye y se ejecuta, puedes comparar la salida observada con la esperada para comprobar si cumple el requisito."
         },
         {
           "type": "math_puzzle",
@@ -142,28 +168,12 @@
           }
         },
         {
-          "type": "multiple_choice",
-          "id": "editor_compilador",
-          "question": "Has escrito una instrucción de C++ en un archivo del editor. Todavía no has compilado el archivo ni ejecutado el programa. ¿Qué contiene el archivo en ese momento?",
-          "options": [
-            "El código fuente que escribiste en el editor.",
-            "La salida final del programa.",
-            "Una prueba de que todos los resultados son correctos."
-          ],
-          "correctIndex": 0,
-          "explanation": "El archivo contiene el texto C++ que escribimos. Todavía no hemos construido esa versión ni la hemos ejecutado. Conocer el texto permite analizarlo, pero no equivale a observar su resultado."
+          "type": "paragraph",
+          "text": "Podemos seguir el recorrido así:\n\nEditar: preparar el texto fuente.\nCompilar: analizarlo y traducirlo a código objeto.\nEnlazar: reunir las partes y obtener el ejecutable.\nEjecutar: realizar las instrucciones del programa construido.\nComparar: revisar lo producido frente al resultado requerido."
         },
         {
-          "type": "multiple_choice",
-          "id": "funcion_enlazador",
-          "question": "¿Qué tarea corresponde al enlazador en el modelo estudiado?",
-          "options": [
-            "Combinar las partes necesarias para formar el ejecutable.",
-            "Traducir cada archivo fuente a una parte del programa.",
-            "Ejecutar el programa y recoger su salida de texto."
-          ],
-          "correctIndex": 0,
-          "explanation": "El enlazador reúne las partes traducidas y los componentes necesarios para obtener el programa completo. Traducir un archivo y ejecutar el resultado son tareas distintas. Completar el enlace todavía no demuestra que la salida cumpla el requisito."
+          "type": "paragraph",
+          "text": "Si un error de C++ impide construir el programa, el compilador muestra un diagnóstico que ayuda a localizarlo. Si el programa se construye y se ejecuta, puedes comparar la salida observada con la esperada para comprobar si cumple el requisito."
         }
       ]
     },
@@ -311,15 +321,6 @@
           "text": "Para localizar esa línea, se cuentan todos los renglones del archivo, incluidos los vacíos. En el código mostrado, la línea dos está vacía y la línea cinco contiene return 0;. El número del diagnóstico se refiere al archivo completo, no al número de instrucciones ejecutadas."
         },
         {
-          "type": "paragraph",
-          "text": "La línea señalada contiene return, pero la instrucción anterior todavía no tiene su terminador. Al llegar a return, la herramienta detecta que el código no continúa como esperaba. Por eso hay que revisar el contexto, en lugar de borrar automáticamente la línea señalada (Stroustrup, 2024).",
-          "emphasis": [
-            {
-              "text": "hay que revisar el contexto"
-            }
-          ]
-        },
-        {
           "type": "multiple_choice",
           "id": "falta_terminador",
           "question": "En el ejemplo mostrado, el diagnóstico señala return. Antes de borrar o cambiar esa instrucción, ¿qué conviene revisar primero?",
@@ -330,6 +331,15 @@
           ],
           "correctIndex": 0,
           "explanation": "La instrucción anterior no terminó: falta su punto y coma. La herramienta detectó el problema al leer return. El lugar señalado orienta la búsqueda, pero también hay que revisar lo que venía antes. Después de corregir el terminador, se reconstruye esa versión."
+        },
+        {
+          "type": "paragraph",
+          "text": "La línea señalada contiene return, pero la instrucción anterior todavía no tiene su terminador. Al llegar a return, la herramienta detecta que el código no continúa como esperaba. Por eso hay que revisar el contexto, en lugar de borrar automáticamente la línea señalada (Stroustrup, 2024).",
+          "emphasis": [
+            {
+              "text": "hay que revisar el contexto"
+            }
+          ]
         },
         {
           "type": "paragraph",
@@ -351,7 +361,7 @@
         },
         {
           "type": "paragraph",
-          "text": "Aquí el primer mensaje señala la línea del literal. Lo llama literal de cadena: es el texto que estamos escribiendo entre comillas dobles. El mensaje posterior menciona return, pero eso no demuestra que haya que cambiar return. Una causa anterior puede afectar a lo que la herramienta entiende después."
+          "text": "En este mensaje, un literal de cadena es el texto que el programador escribe entre comillas dobles. Localiza el renglón que menciona el primer mensaje."
         },
         {
           "type": "multiple_choice",
@@ -364,6 +374,10 @@
           ],
           "correctIndex": 1,
           "explanation": "En la línea del literal falta su comilla de cierre. Al colocarla antes del punto y coma, ese signo vuelve a quedar fuera del texto y la instrucción puede terminar. Después se reconstruye: no se supone que cada mensaje exigía un cambio distinto."
+        },
+        {
+          "type": "paragraph",
+          "text": "Aquí el primer mensaje señala la línea del literal. Lo llama literal de cadena: es el texto que estamos escribiendo entre comillas dobles. El mensaje posterior menciona return, pero eso no demuestra que haya que cambiar return. Una causa anterior puede afectar a lo que la herramienta entiende después."
         },
         {
           "type": "heading",
@@ -381,12 +395,7 @@
         },
         {
           "type": "paragraph",
-          "text": "En este diagnóstico, el compilador señala la línea que contiene la llave de apertura de main. Las palabras token coincidente se refieren aquí a la llave de cierre que el compilador esperaba encontrar antes del final del archivo. La palabra fatal indica que el compilador interrumpió la traducción. Localiza la llave de apertura y comprueba dónde debe terminar el cuerpo de main.",
-          "emphasis": [
-            {
-              "text": "la llave de cierre que el compilador esperaba encontrar"
-            }
-          ]
+          "text": "Un token es una pieza de código que el compilador reconoce. En este mensaje, busca en la línea señalada el signo que necesita una pareja."
         },
         {
           "type": "multiple_choice",
@@ -399,6 +408,15 @@
           ],
           "correctIndex": 2,
           "explanation": "La llave de apertura es necesaria para comenzar el cuerpo. Lo que falta es su pareja de cierre al final. El mensaje señala la apertura que quedó sin pareja; eso no convierte esa apertura en un signo que debamos borrar."
+        },
+        {
+          "type": "paragraph",
+          "text": "En este diagnóstico, el compilador señala la línea que contiene la llave de apertura de main. Las palabras token coincidente se refieren aquí a la llave de cierre que el compilador esperaba encontrar antes del final del archivo. La palabra fatal indica que el compilador interrumpió la traducción. Localiza la llave de apertura y comprueba dónde debe terminar el cuerpo de main.",
+          "emphasis": [
+            {
+              "text": "la llave de cierre que el compilador esperaba encontrar"
+            }
+          ]
         }
       ]
     },
@@ -417,10 +435,6 @@
           "text": "Zona habilitada"
         },
         {
-          "type": "paragraph",
-          "text": "Si el programa no compila, lee el diagnóstico del compilador y revisa el nombre que corregiste. Si se ejecuta, busca el texto en «Salida del programa (stdout)». Debe aparecer Zona habilitada, con un espacio entre las palabras."
-        },
-        {
           "type": "cpp_compiler",
           "initialCode": "#include <iostream>\n\nint main() {\n    std::Cout << \"Zona habilitada\";\n    return 0;\n}\n",
           "outputCheck": {
@@ -429,12 +443,17 @@
               {
                 "standardInput": "",
                 "outputs": [
-                  "Zona habilitada"
+                  "Zona habilitada",
+                  "Zona habilitada\n"
                 ],
                 "explanation": "Con el nombre corregido, el compilador reconoce la instrucción de salida. Al ejecutar el programa, la consola muestra Zona habilitada."
               }
             ]
           }
+        },
+        {
+          "type": "paragraph",
+          "text": "Si el programa no compila, lee el diagnóstico del compilador y revisa el nombre que corregiste. Si se ejecuta, busca el texto en «Salida del programa (stdout)». Debe aparecer Zona habilitada, con un espacio entre las palabras."
         },
         {
           "type": "heading",
@@ -471,18 +490,6 @@
           "text": "La instrucción usa std::cout y el operador << para escribir el texto del literal en la consola. El programa compila. Al ejecutarlo ves Sala ocupada. El ejercicio pide Sala disponible. Para averiguar por qué el mensaje es distinto, lee las palabras que el programa tiene entre comillas (Stroustrup, 2024)."
         },
         {
-          "type": "paragraph",
-          "text": "En este caso el defecto está en el comportamiento del programa: la instrucción está bien escrita, pero envía otro mensaje. Lo llamamos error lógico. Para corregirlo hay que volver al requisito y cambiar la instrucción que produce la diferencia; el compilador no adivina qué mensaje necesitábamos (Stroustrup, 2024)."
-        },
-        {
-          "type": "paragraph",
-          "text": "Considera otra situación: las herramientas encuentran un error que impide construir la nueva versión. Esa versión no llega a ejecutarse. Primero hay que leer el diagnóstico y revisar el código relacionado. Si quedó visible una salida anterior, esa salida no demuestra qué haría el código que acabamos de intentar construir."
-        },
-        {
-          "type": "paragraph",
-          "text": "Por eso, mirar sólo la consola no basta para saber qué ocurrió. Revisa primero si la construcción terminó y si hubo una ejecución de esa versión. Cuando se ejecuta un programa, la ausencia de texto también puede deberse a que sus instrucciones no escribieron ningún mensaje. Necesitamos relacionar la salida con lo que informan las herramientas."
-        },
-        {
           "type": "multiple_choice",
           "id": "p1u1l4_distinguir_ejecucion_y_cumplimiento",
           "question": "Las herramientas informan que el programa se construyó y su ejecución terminó correctamente. La consola está vacía, pero el requisito exige mostrar Listo. ¿Qué conclusión corresponde a lo observado?",
@@ -493,6 +500,30 @@
           ],
           "correctIndex": 2,
           "explanation": "La construcción correcta permitió ejecutar el programa. Eso no demuestra que sus instrucciones escribieran el mensaje. La consola vacía no contiene Listo, de modo que el requisito sigue sin cumplirse. Hay que revisar el código que debería mostrarlo, sin convertir la ausencia de texto en una prueba de que la construcción falló."
+        },
+        {
+          "type": "paragraph",
+          "text": "En este caso el defecto está en el comportamiento del programa: la instrucción está bien escrita, pero envía otro mensaje. Lo llamamos error lógico. Para corregirlo hay que volver al requisito y cambiar la instrucción que produce la diferencia; el compilador no adivina qué mensaje necesitábamos (Stroustrup, 2024)."
+        },
+        {
+          "type": "multiple_choice",
+          "id": "mensaje_equivocado",
+          "question": "El programa debe mostrar Pedido recibido. Compila correctamente, pero al ejecutarlo aparece Pedido cancelado en la consola. ¿Qué cambio en el código hará que muestre el mensaje solicitado?",
+          "options": [
+            "Cambiar sólo el comentario que describe el mensaje esperado.",
+            "Cambiar las palabras dentro del literal que la instrucción de salida envía a la consola.",
+            "Aceptar el resultado porque la compilación tuvo éxito."
+          ],
+          "correctIndex": 1,
+          "explanation": "La instrucción se ejecuta y escribe el contenido de su literal. Si el literal contiene Pedido cancelado, esas son las palabras que se muestran. Sustituye el texto entre comillas por Pedido recibido. Compara el mensaje de esta ejecución con el que pide el ejercicio."
+        },
+        {
+          "type": "paragraph",
+          "text": "Considera otra situación: las herramientas encuentran un error que impide construir la nueva versión. Esa versión no llega a ejecutarse. Primero hay que leer el diagnóstico y revisar el código relacionado. Si quedó visible una salida anterior, esa salida no demuestra qué haría el código que acabamos de intentar construir."
+        },
+        {
+          "type": "paragraph",
+          "text": "Por eso, mirar sólo la consola no basta para saber qué ocurrió. Revisa primero si la construcción terminó y si hubo una ejecución de esa versión. Cuando se ejecuta un programa, la ausencia de texto también puede deberse a que sus instrucciones no escribieron ningún mensaje. Necesitamos relacionar la salida con lo que informan las herramientas."
         },
         {
           "type": "math_puzzle",
@@ -573,18 +604,6 @@
         {
           "type": "paragraph",
           "text": "La construcción responde si hemos conseguido preparar esa versión para ejecutarla. La ejecución muestra qué hacen sus instrucciones. La comparación permite decidir si lo observado cumple el requisito de la tarea. Después de una reparación, volvemos a construir y comprobar la versión corregida."
-        },
-        {
-          "type": "multiple_choice",
-          "id": "mensaje_equivocado",
-          "question": "El programa debe mostrar Pedido recibido. Compila correctamente, pero al ejecutarlo aparece Pedido cancelado en la consola. ¿Qué cambio en el código hará que muestre el mensaje solicitado?",
-          "options": [
-            "Cambiar sólo el comentario que describe el mensaje esperado.",
-            "Cambiar las palabras dentro del literal que la instrucción de salida envía a la consola.",
-            "Aceptar el resultado porque la compilación tuvo éxito."
-          ],
-          "correctIndex": 1,
-          "explanation": "La instrucción se ejecuta y escribe el contenido de su literal. Si el literal contiene Pedido cancelado, esas son las palabras que se muestran. Sustituye el texto entre comillas por Pedido recibido. Compara el mensaje de esta ejecución con el que pide el ejercicio."
         }
       ]
     },
@@ -703,10 +722,6 @@
           "text": "Entrada\nSalida"
         },
         {
-          "type": "paragraph",
-          "text": "Deben aparecer esas dos palabras en líneas distintas y en ese orden. Conserva las palabras exactas. Revisa la instrucción que coloca cada palabra en su renglón."
-        },
-        {
           "type": "cpp_compiler",
           "initialCode": "#include <iostream>\n\nint main() {\n    // Mostrar primero Entrada y después Salida.\n    std::cout << \"Salida\\n\";\n    std::cout << \"Entrada\";\n\n    return 0;\n}\n",
           "outputCheck": {
@@ -722,6 +737,10 @@
               }
             ]
           }
+        },
+        {
+          "type": "paragraph",
+          "text": "Deben aparecer esas dos palabras en líneas distintas y en ese orden. Conserva las palabras exactas. Revisa la instrucción que coloca cada palabra en su renglón."
         },
         {
           "type": "heading",
@@ -2915,16 +2934,18 @@
           "block_0000_0001",
           "block_0000_0002",
           "block_0000_0003",
+          "block_0000_0012",
           "block_0000_0004",
           "block_0000_0005",
+          "p1u1l4_programa_que_se_enlaza",
           "block_0000_0006",
+          "block_0000_0013",
           "block_0000_0007",
+          "p1u1l4_resultado_puesto",
           "block_0000_0008",
-          "block_0000_0009",
-          "block_0000_0010",
           "block_0000_0011",
-          "block_0000_0012",
-          "block_0000_0013"
+          "block_0000_0009",
+          "block_0000_0010"
         ]
       },
       {
@@ -2955,19 +2976,21 @@
           "block_0002_0004",
           "block_0002_0005",
           "block_0002_0006",
-          "block_0002_0007",
           "block_0002_0008",
+          "block_0002_0007",
           "block_0002_0009",
           "block_0002_0010",
           "block_0002_0011",
           "block_0002_0012",
-          "block_0002_0013",
+          "p1u1l4_leer_nombre_del_literal",
           "block_0002_0014",
+          "block_0002_0013",
           "block_0002_0015",
           "block_0002_0016",
           "block_0002_0017",
-          "block_0002_0018",
-          "block_0002_0019"
+          "p1u1l4_leer_signo_en_pareja",
+          "block_0002_0019",
+          "block_0002_0018"
         ]
       },
       {
@@ -2976,8 +2999,8 @@
           "block_0003_0000",
           "block_0003_0001",
           "block_0003_0002",
-          "block_0003_0003",
           "block_0003_0004",
+          "block_0003_0003",
           "block_0003_0005",
           "block_0003_0006",
           "block_0003_0007"
@@ -2990,13 +3013,13 @@
           "block_0004_0001",
           "block_0004_0002",
           "block_0004_0003",
+          "block_0004_0007",
           "block_0004_0004",
+          "block_0004_0010",
           "block_0004_0005",
           "block_0004_0006",
-          "block_0004_0007",
           "block_0004_0008",
-          "block_0004_0009",
-          "block_0004_0010"
+          "block_0004_0009"
         ]
       },
       {
@@ -3021,8 +3044,8 @@
           "block_0006_0000",
           "block_0006_0001",
           "block_0006_0002",
-          "block_0006_0003",
           "block_0006_0004",
+          "block_0006_0003",
           "block_0006_0005",
           "block_0006_0006",
           "block_0006_0007",
@@ -3416,7 +3439,44 @@
         ]
       }
     },
-    "additions": [],
+    "additions": [
+      {
+        "id": "p1u1l4_programa_que_se_enlaza",
+        "sha256": "55b2d2de38de5ac138548c608ca650ce0ac96b87c860c7bc3ea18ac219a433a7",
+        "storage": {
+          "page": 7,
+          "block": 0
+        },
+        "progressPage": "page_0000"
+      },
+      {
+        "id": "p1u1l4_resultado_puesto",
+        "sha256": "40b86232c43b79c106dd01a015a3b2ce2c6f1c20abad4f9f387b9dc1b1cc4eb8",
+        "storage": {
+          "page": 7,
+          "block": 1
+        },
+        "progressPage": "page_0000"
+      },
+      {
+        "id": "p1u1l4_leer_nombre_del_literal",
+        "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5",
+        "storage": {
+          "page": 7,
+          "block": 2
+        },
+        "progressPage": "page_0002"
+      },
+      {
+        "id": "p1u1l4_leer_signo_en_pareja",
+        "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5",
+        "storage": {
+          "page": 7,
+          "block": 3
+        },
+        "progressPage": "page_0002"
+      }
+    ],
     "editorial": [
       {
         "id": "block_0000_0010",
@@ -3472,6 +3532,76 @@
         "id": "block_0003_0004",
         "beforeSha256": "c5902e8a4fab2af71f21f97a7b2560d8c5f4d1dab99f7ffc5e63fc3c14505e15",
         "afterSha256": "b414abbc5f98530325c88bb87acde7830182155935ea102a28b25eb9f0d336cb"
+      },
+      {
+        "id": "block_0003_0004",
+        "beforeSha256": "b414abbc5f98530325c88bb87acde7830182155935ea102a28b25eb9f0d336cb",
+        "afterSha256": "d464b93932c27351128518045572bd500164d1f594d94e7ea2e72b309c297d66"
+      }
+    ],
+    "compilerCaseRevisions": [
+      {
+        "id": "block_0003_0004",
+        "block": {
+          "type": "cpp_compiler",
+          "initialCode": "#include <iostream>\n\nint main() {\n    std::Cout << \"Zona habilitada\";\n    return 0;\n}\n",
+          "outputCheck": {
+            "inputComparison": "exact",
+            "cases": [
+              {
+                "standardInput": "",
+                "outputs": [
+                  "Zona habilitada"
+                ],
+                "explanation": "Con el nombre corregido, el compilador reconoce la instrucción de salida. Al ejecutar el programa, la consola muestra Zona habilitada."
+              }
+            ]
+          }
+        },
+        "cases": [
+          {
+            "standardInput": "",
+            "outputs": [
+              "Zona habilitada",
+              "Zona habilitada\n"
+            ],
+            "explanation": "Con el nombre corregido, el compilador reconoce la instrucción de salida. Al ejecutar el programa, la consola muestra Zona habilitada."
+          }
+        ],
+        "editorialIndex": 11,
+        "historySha256": "cee150f0e7fd621ca4b860d8a2f06396799b8e3f681e0c84ae93cde56f938a2b",
+        "semanticBefore": [
+          {
+            "block": "block_0003_0004",
+            "path": "/outputCheck/cases/0/explanation",
+            "sourceSha256": "b0da7a045c5b791447945c0661342ac65ba7729e6af71d556ed4a31234a4bc6b",
+            "spans": [
+              {
+                "start": 118,
+                "end": 133,
+                "text": "Zona habilitada",
+                "role": "output",
+                "reading": "natural"
+              }
+            ]
+          }
+        ],
+        "semanticAfter": [
+          {
+            "block": "block_0003_0004",
+            "path": "/outputCheck/cases/0/explanation",
+            "sourceSha256": "b0da7a045c5b791447945c0661342ac65ba7729e6af71d556ed4a31234a4bc6b",
+            "spans": [
+              {
+                "start": 118,
+                "end": 133,
+                "text": "Zona habilitada",
+                "role": "output",
+                "reading": "natural"
+              }
+            ]
+          }
+        ]
       }
     ]
   }

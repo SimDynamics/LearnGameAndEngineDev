@@ -16,7 +16,7 @@
         },
         {
           "type": "paragraph",
-          "text": "Para decidir si queda sitio, el programa compara la cantidad de plazas libres con cero. La expresión plazas_libres > 0 pregunta si queda al menos una plaza.\n\nEscribe if y pon la comparación entre paréntesis. Esa comparación es la condición que examina el programa. Las instrucciones que siguen a la condición van entre dos llaves y forman un bloque. El programa ejecuta ese bloque cuando la condición vale true.\n\nPuedes escribir else y otro bloque para indicar qué hacer cuando la condición vale false. En el siguiente programa, cada bloque es una alternativa. A cada una se le llama rama (Köppe et al., 2023; Stroustrup, 2024)."
+          "text": "La sala tiene dos plazas libres. En el programa, la condición plazas_libres > 0 decide cuál de dos bloques se ejecutará. Localiza las palabras if y else junto a esos bloques."
         },
         {
           "type": "code",
@@ -25,7 +25,7 @@
         },
         {
           "type": "paragraph",
-          "text": "El programa empieza con dos plazas libres. La condición da true, así que ejecuta la instrucción que muestra Hay sitio y omite la rama de else.\n\nDespués de la llave que cierra el bloque de else, la instrucción que muestra Revision terminada queda fuera de las dos ramas. Al terminar cualquiera de ellas, el programa llega a esa instrucción.\n\nSalida con dos plazas libres\nHay sitio\nRevision terminada"
+          "text": "Cada alternativa se llama rama. La condición va entre paréntesis después de if. Con dos plazas libres vale true, así que la primera rama muestra Hay sitio. La rama de else se reserva para cuando la condición vale false (Köppe et al., 2023; Stroustrup, 2024).\n\nLa instrucción que muestra Revision terminada aparece después de la llave que cierra el bloque de else. Está fuera de ambas ramas.\n\nSalida con dos plazas libres\nHay sitio\nRevision terminada"
         },
         {
           "type": "multiple_choice",
@@ -48,7 +48,20 @@
         },
         {
           "type": "paragraph",
-          "text": "Un if puede aparecer sin else. En el programa de las inspecciones, busca la llave { que abre el bloque del if y la llave } que lo cierra. Entre esas dos llaves hay dos instrucciones de salida. La condición decide si el programa ejecuta ambas o las omite. La primera instrucción que sigue a esa } está fuera del bloque del if y todavía dentro del bloque de main (Köppe et al., 2023).\n\nLos espacios al comienzo de una línea forman la sangría. Ayudan a reconocer las instrucciones de un bloque. Las llaves indican dónde empieza y termina. En estos ejercicios usaremos llaves incluso cuando el bloque contenga una sola instrucción.\n\nEl alcance de un nombre es la parte del programa en la que puedes usarlo. En este ejemplo, la declaración const int pendientes = 0; aparece dentro de main y antes del if. Desde esa declaración hasta la llave que cierra main, puedes usar pendientes. Eso incluye la condición, las líneas entre las llaves del if y la línea que sigue a su llave de cierre.\n\nImagina otra versión del ejemplo. Añades const int revisadas = 1; justo después de la { del if. En la línea siguiente, dentro del mismo bloque, podrías escribir std::cout << revisadas;. Si pusieras esa instrucción de salida después de la } del if, el compilador indicaría que allí ya no reconoce el nombre revisadas (Köppe et al., 2023)."
+          "text": "Un if puede aparecer sin else. Primero se evalúa la condición entre paréntesis. Cuando vale true, se ejecutan las instrucciones entre la llave { del if y su llave }. Observa dónde termina ese bloque en este programa de pedidos."
+        },
+        {
+          "type": "code",
+          "language": "cpp",
+          "code": "#include <iostream>\n\nint main() {\n    const int pedidos = 2;\n\n    if (pedidos > 0) {\n        std::cout << \"Por enviar\\n\";\n        std::cout << pedidos << '\\n';\n    }\n    std::cout << \"Fin del turno\";\n\n    return 0;\n}\n"
+        },
+        {
+          "type": "paragraph",
+          "text": "Con dos pedidos, pedidos > 0 vale true. El programa entra en el bloque, muestra Por enviar y después el número de pedidos. Los espacios a la izquierda de esas dos instrucciones forman la sangría. Las llaves delimitan el bloque. La línea que muestra Fin del turno está fuera de esas llaves y sigue dentro de main (Köppe et al., 2023)."
+        },
+        {
+          "type": "paragraph",
+          "text": "En el programa de las inspecciones, pendientes está declarado dentro de main, antes del if. Localiza la condición que lee ese nombre y las dos instrucciones de salida que están entre las llaves del if. Luego busca la primera instrucción que aparece después de su llave de cierre."
         },
         {
           "type": "output_prediction",
@@ -69,6 +82,115 @@
             "if"
           ],
           "explanation": "if indica que se ejecuta el bloque si la condición da true. Aquí nivel vale nueve, así que la consola muestra Senal."
+        },
+        {
+          "type": "heading",
+          "text": "¿Hasta dónde puedes usar una variable?"
+        },
+        {
+          "type": "paragraph",
+          "text": "El alcance de un nombre es la parte del programa en la que puedes usarlo. Busca las declaraciones de fichas y bolsas. Desde cada declaración, sigue las llaves hasta encontrar la que cierra su bloque (Köppe et al., 2023)."
+        },
+        {
+          "type": "code",
+          "language": "cpp",
+          "code": "#include <iostream>\n\nint main() {\n    const int fichas = 8;\n\n    if (fichas >= 4) {\n        const int bolsas = fichas / 4;\n        std::cout << bolsas;\n    }\n\n    return 0;\n}\n"
+        },
+        {
+          "type": "multiple_choice",
+          "question": "Quieres añadir otra instrucción de salida justo antes de return 0; en el programa de las bolsas. ¿Qué variables podrías mostrar desde esa línea?",
+          "options": [
+            "fichas y bolsas.",
+            "Solo fichas.",
+            "Solo bolsas."
+          ],
+          "correctIndex": 1,
+          "explanation": "La nueva línea sigue dentro de main, donde declaraste fichas. La declaración de bolsas está entre las llaves del if. Allí puedes usarla en std::cout << bolsas;. Al llegar a return 0;, ya atravesaste la llave que termina su alcance.",
+          "reviewFeedback": [
+            "Busca dónde termina el bloque al que pertenece cada declaración.",
+            "Localiza la llave que cierra el bloque en que se declaró cada nombre.",
+            "Comprueba cuál de las dos declaraciones está directamente dentro de main."
+          ]
+        },
+        {
+          "type": "heading",
+          "text": "Usar el valor después del bloque"
+        },
+        {
+          "type": "paragraph",
+          "text": "Una tienda da puntos extra a partir de tres compras. Para poder mostrar los puntos con cualquier cantidad de compras, el programa declara puntos antes del if. Busca dónde se le asigna el valor inicial y en qué línea puede cambiar."
+        },
+        {
+          "type": "code",
+          "language": "cpp",
+          "code": "#include <iostream>\n\nint main() {\n    const int compras = 2;\n    int puntos = 3;\n\n    if (compras >= 3) {\n        puntos += compras;\n    }\n    std::cout << puntos;\n\n    return 0;\n}\n"
+        },
+        {
+          "type": "paragraph",
+          "text": "Con dos compras, compras >= 3 vale false. La línea puntos += compras; se omite. La instrucción que sigue a la llave de cierre del if puede leer puntos porque sigue dentro del bloque de main. Muestra el valor inicial, tres."
+        },
+        {
+          "type": "output_prediction",
+          "question": "En este otro programa, el cliente presenta un cupón. ¿Qué número muestra la consola?",
+          "language": "cpp",
+          "code": "#include <iostream>\n\nint main() {\n    const bool tiene_cupon = true;\n    int puntos = 4;\n\n    if (tiene_cupon) {\n        puntos += 2;\n    }\n    std::cout << puntos;\n\n    return 0;\n}\n",
+          "answers": [
+            "6"
+          ],
+          "explanation": "tiene_cupon vale true. La instrucción puntos += 2; cambia los cuatro puntos iniciales a seis. Al llegar a std::cout << puntos;, la variable conserva ese valor.",
+          "reviewFeedback": "Localiza el valor inicial de puntos y decide si se ejecuta la instrucción que lo cambia."
+        },
+        {
+          "type": "heading",
+          "text": "Reparar un contador de tareas"
+        },
+        {
+          "type": "paragraph",
+          "text": "Al comenzar un turno hay entre cero y diez tareas. Si queda alguna, se completa una. El programa debe mostrar cuántas quedan en ambos casos.\n\nEl editor contiene un programa que falla al compilar. Cambia de sitio una sola declaración para que el recuento funcione y la última instrucción de salida pueda leer restantes.\n\nEntrada\n4\n\nSalida esperada\nQuedan: 3"
+        },
+        {
+          "type": "cpp_compiler",
+          "initialCode": "#include <iostream>\n\nint main() {\n    int tareas = 0;\n    std::cin >> tareas;\n\n    if (tareas > 0) {\n        int restantes = tareas;\n        restantes -= 1;\n    }\n    std::cout << \"Quedan: \" << restantes;\n\n    return 0;\n}\n",
+          "initialStandardInput": "4",
+          "outputCheck": {
+            "inputComparison": "tokens",
+            "cases": [
+              {
+                "standardInput": "4",
+                "outputs": [
+                  "Quedan: 3",
+                  "Quedan: 3\n"
+                ]
+              },
+              {
+                "standardInput": "0",
+                "outputs": [
+                  "Quedan: 0",
+                  "Quedan: 0\n"
+                ]
+              },
+              {
+                "standardInput": "1",
+                "outputs": [
+                  "Quedan: 0",
+                  "Quedan: 0\n"
+                ]
+              }
+            ]
+          }
+        },
+        {
+          "type": "paragraph",
+          "text": "Pruebas opcionales en este editor\nCon cero tareas al inicio, nadie completa una tarea y el recuento se mantiene en cero.\n\nEntrada\n0\n\nSalida esperada\nQuedan: 0\n\nCon una tarea al inicio, se completa la única que había.\n\nEntrada\n1\n\nSalida esperada\nQuedan: 0"
+        },
+        {
+          "type": "paragraph",
+          "text": "La declaración int restantes = tareas; va después de leer tareas y antes del if. Así empieza con la cantidad recibida y puede usarse a ambos lados de la llave que cierra el bloque del if. La resta se queda dentro para descontar una tarea solo cuando hay alguna."
+        },
+        {
+          "type": "code",
+          "language": "cpp",
+          "code": "#include <iostream>\n\nint main() {\n    int tareas = 0;\n    std::cin >> tareas;\n\n    int restantes = tareas;\n    if (tareas > 0) {\n        restantes -= 1;\n    }\n    std::cout << \"Quedan: \" << restantes;\n\n    return 0;\n}\n"
         }
       ]
     },
@@ -117,7 +239,16 @@
         },
         {
           "type": "paragraph",
-          "text": "Un sensor mide el nivel del agua en una escala de cero a ocho. Si el agua alcanza o supera el límite, el aviso es Alerta. Por debajo del límite, el aviso es Normal.\n\nLa variable marca_alerta empieza en cero. Solo la rama de alerta la cambia a uno. La consola muestra primero el aviso y, en el siguiente renglón, la marca guardada."
+          "text": "Un sensor mide el nivel del agua en una escala de cero a ocho. Debe avisar si el agua alcanza o supera el límite. En este ejemplo, el nivel es dos y el límite es cinco. Sigue la variable marca_alerta desde su declaración hasta la última instrucción de salida."
+        },
+        {
+          "type": "code",
+          "language": "cpp",
+          "code": "#include <iostream>\n\nint main() {\n    const int nivel = 2;\n    const int limite = 5;\n    int marca_alerta = 0;\n\n    if (nivel < limite) {\n        std::cout << \"Normal\\n\";\n    } else {\n        marca_alerta = 1;\n        std::cout << \"Alerta\\n\";\n    }\n    std::cout << \"Marca: \" << marca_alerta;\n\n    return 0;\n}\n"
+        },
+        {
+          "type": "paragraph",
+          "text": "En el ejemplo, nivel < limite vale true porque dos es menor que cinco. La consola muestra Normal. La marca conserva el cero inicial y la instrucción situada después de la llave de cierre de else muestra Marca: 0."
         },
         {
           "type": "multiple_choice",
@@ -129,10 +260,6 @@
           ],
           "correctIndex": 2,
           "explanation": "Como el nivel alcanza el límite, el programa entra en la rama que guarda uno en marca_alerta y muestra Alerta. La instrucción situada después de la llave que cierra el bloque de else muestra Marca: 1."
-        },
-        {
-          "type": "paragraph",
-          "text": "En el programa del sensor que vas a reparar, marca_alerta se declara dentro de main, antes del if. La rama de alerta puede cambiar su valor. La instrucción de salida situada después de la llave que cierra el bloque de else sigue dentro de main y puede mostrar el valor que haya quedado guardado."
         },
         {
           "type": "heading",
@@ -236,7 +363,7 @@
         },
         {
           "type": "paragraph",
-          "text": "Escribe un programa que lea dos enteros del campo «Entrada». Los dos valores pertenecen a la escala de cero a ocho.\n\nPrimero, el nivel de agua que mide el sensor.\nDespués, el límite a partir del cual debe emitir una alerta.\n\nInicializa en cero una variable para la marca de alerta. Usa if y else para mostrar el mensaje que corresponde al nivel. Si alcanza o supera el límite, cambia la marca a uno dentro de la rama que muestra Alerta. Si queda por debajo, muestra Normal y conserva la marca en cero. Coloca después de la llave que cierra el bloque de else la instrucción con std::cout que muestra la marca. Así el segundo renglón de la salida aparecerá tanto si el aviso fue Alerta como si fue Normal.\n\nEl campo «Entrada» ya contiene los datos del primer caso.\n\nEntrada\n3 4\n\nSalida esperada\nNormal\nMarca: 0"
+          "text": "Escribe el programa del sensor.\n\n1. Lee dos enteros de cero a ocho. El primero es el nivel del agua y el segundo es el límite.\n2. Usa if y else. Muestra Alerta cuando el agua alcance o supere el límite y Normal cuando quede por debajo.\n3. La marca empieza en cero y pasa a uno si hay alerta. Muestra la marca en el segundo renglón, fuera de ambas ramas.\n\nEntrada inicial\n3 4\n\nSalida esperada\nNormal\nMarca: 0"
         },
         {
           "type": "cpp_compiler",
@@ -303,7 +430,7 @@
         },
         {
           "type": "paragraph",
-          "text": "Para repartir dieciocho fichas entre tres grupos por igual, divide el total de fichas entre el número de grupos. Si el número de grupos puede variar, primero hay que comprobar que haya al menos un grupo para hacer ese reparto.\n\nEn C++, dividir un entero por cero produce un comportamiento indefinido. El lenguaje no garantiza un resultado ni un aviso. Antes de calcular el reparto, el programa debe decidir con qué datos puede realizar la división (Köppe et al., 2023)."
+          "text": "Para repartir dieciocho fichas en grupos iguales hace falta al menos un grupo. En C++, dividir un entero por cero tiene un comportamiento indefinido. El lenguaje no garantiza un resultado ni un aviso. Localiza en el programa la condición que se comprueba antes de dividir (Köppe et al., 2023)."
         },
         {
           "type": "output_prediction",
@@ -346,102 +473,102 @@
       {
         "block": "block_0000_0001",
         "path": "/text",
-        "sourceSha256": "6fac241f946c1231f9c5c83af734a8aaa51901b599403437fc3c41ef147a1215",
+        "sourceSha256": "d4015f91d1f4a3f538d2adfa08e2d92ba2c7bc5b4b5fb371d56411a556c4bcf7",
         "spans": [
           {
-            "start": 101,
-            "end": 118,
+            "start": 62,
+            "end": 79,
             "text": "plazas_libres > 0",
             "role": "cpp",
             "reading": "technical"
           },
           {
-            "start": 166,
-            "end": 168,
+            "start": 143,
+            "end": 145,
             "text": "if",
             "role": "cpp",
             "reading": "technical"
           },
           {
-            "start": 406,
-            "end": 410,
-            "text": "true",
-            "role": "cpp",
-            "reading": "technical"
-          },
-          {
-            "start": 429,
-            "end": 433,
+            "start": 148,
+            "end": 152,
             "text": "else",
             "role": "cpp",
             "reading": "technical"
-          },
-          {
-            "start": 496,
-            "end": 501,
-            "text": "false",
-            "role": "cpp",
-            "reading": "technical"
-          },
-          {
-            "start": 589,
-            "end": 627,
-            "text": "(Köppe et al., 2023; Stroustrup, 2024)",
-            "role": "citation",
-            "reading": "natural"
           }
         ]
       },
       {
         "block": "block_0000_0003",
         "path": "/text",
-        "sourceSha256": "2903d801f98db034e7a4727b48ce20aad237b4932bbc30cfbdb0ea4ae1980132",
+        "sourceSha256": "40cbda7909ece6300891a816f42f86b11bb4ec69a0fac4d66e867f85bf98cc29",
         "spans": [
           {
-            "start": 59,
-            "end": 63,
+            "start": 76,
+            "end": 78,
+            "text": "if",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 107,
+            "end": 111,
             "text": "true",
             "role": "cpp",
             "reading": "technical"
           },
           {
-            "start": 108,
-            "end": 117,
+            "start": 145,
+            "end": 154,
             "text": "Hay sitio",
             "role": "output",
             "reading": "natural"
           },
           {
-            "start": 137,
-            "end": 141,
+            "start": 167,
+            "end": 171,
             "text": "else",
             "role": "cpp",
             "reading": "technical"
           },
           {
-            "start": 188,
-            "end": 192,
-            "text": "else",
+            "start": 213,
+            "end": 218,
+            "text": "false",
             "role": "cpp",
             "reading": "technical"
           },
           {
-            "start": 221,
-            "end": 239,
+            "start": 219,
+            "end": 257,
+            "text": "(Köppe et al., 2023; Stroustrup, 2024)",
+            "role": "citation",
+            "reading": "natural"
+          },
+          {
+            "start": 287,
+            "end": 305,
             "text": "Revision terminada",
             "role": "output",
             "reading": "natural"
           },
           {
-            "start": 370,
-            "end": 379,
+            "start": 358,
+            "end": 362,
+            "text": "else",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 421,
+            "end": 430,
             "text": "Hay sitio",
             "role": "output",
             "reading": "natural"
           },
           {
-            "start": 380,
-            "end": 398,
+            "start": 431,
+            "end": 449,
             "text": "Revision terminada",
             "role": "output",
             "reading": "natural"
@@ -560,7 +687,7 @@
       {
         "block": "block_0001_0001",
         "path": "/text",
-        "sourceSha256": "d1207f492c3c033494c3bfcc2ace92ad86cf63532e752ef43706d51d7d3b86f4",
+        "sourceSha256": "aeb6a6287e1f01ef080866789731a85171d440138d762cbe73c41c6c9ea16745",
         "spans": [
           {
             "start": 3,
@@ -577,151 +704,32 @@
             "reading": "technical"
           },
           {
-            "start": 82,
-            "end": 83,
+            "start": 92,
+            "end": 96,
+            "text": "true",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 143,
+            "end": 144,
             "text": "{",
             "role": "cpp",
             "reading": "technical"
           },
           {
-            "start": 107,
-            "end": 109,
+            "start": 149,
+            "end": 151,
             "text": "if",
             "role": "cpp",
             "reading": "technical"
           },
           {
-            "start": 121,
-            "end": 122,
+            "start": 163,
+            "end": 164,
             "text": "}",
             "role": "cpp",
             "reading": "technical"
-          },
-          {
-            "start": 294,
-            "end": 295,
-            "text": "}",
-            "role": "cpp",
-            "reading": "technical"
-          },
-          {
-            "start": 322,
-            "end": 324,
-            "text": "if",
-            "role": "cpp",
-            "reading": "technical"
-          },
-          {
-            "start": 356,
-            "end": 360,
-            "text": "main",
-            "role": "cpp",
-            "reading": "technical"
-          },
-          {
-            "start": 361,
-            "end": 381,
-            "text": "(Köppe et al., 2023)",
-            "role": "citation",
-            "reading": "natural"
-          },
-          {
-            "start": 735,
-            "end": 760,
-            "text": "const int pendientes = 0;",
-            "role": "cpp",
-            "reading": "technical"
-          },
-          {
-            "start": 779,
-            "end": 783,
-            "text": "main",
-            "role": "cpp",
-            "reading": "technical"
-          },
-          {
-            "start": 796,
-            "end": 798,
-            "text": "if",
-            "role": "cpp",
-            "reading": "technical"
-          },
-          {
-            "start": 848,
-            "end": 852,
-            "text": "main",
-            "role": "cpp",
-            "reading": "technical"
-          },
-          {
-            "start": 866,
-            "end": 876,
-            "text": "pendientes",
-            "role": "cpp",
-            "reading": "technical"
-          },
-          {
-            "start": 936,
-            "end": 938,
-            "text": "if",
-            "role": "cpp",
-            "reading": "technical"
-          },
-          {
-            "start": 1024,
-            "end": 1048,
-            "text": "const int revisadas = 1;",
-            "role": "cpp",
-            "reading": "technical"
-          },
-          {
-            "start": 1069,
-            "end": 1070,
-            "text": "{",
-            "role": "cpp",
-            "reading": "technical"
-          },
-          {
-            "start": 1075,
-            "end": 1077,
-            "text": "if",
-            "role": "cpp",
-            "reading": "technical"
-          },
-          {
-            "start": 1144,
-            "end": 1167,
-            "text": "std::cout << revisadas;",
-            "role": "cpp",
-            "reading": "technical"
-          },
-          {
-            "start": 1221,
-            "end": 1222,
-            "text": "}",
-            "role": "cpp",
-            "reading": "technical"
-          },
-          {
-            "start": 1227,
-            "end": 1229,
-            "text": "if",
-            "role": "cpp",
-            "reading": "technical"
-          },
-          {
-            "start": 1289,
-            "end": 1298,
-            "text": "revisadas",
-            "role": "cpp",
-            "reading": "technical"
-          },
-          {
-            "start": 1299,
-            "end": 1319,
-            "text": "(Köppe et al., 2023)",
-            "role": "citation",
-            "reading": "natural"
           }
         ]
       },
@@ -1104,25 +1112,11 @@
       {
         "block": "block_0003_0001",
         "path": "/text",
-        "sourceSha256": "c1313e0a576b64121c358b6fb0082f2093a82721e63a1fd06790949bfeb3b0e5",
+        "sourceSha256": "8b4da840314e8ff5c261b4a9f0c905c92558f834d82138a420eccc3ff31b754d",
         "spans": [
           {
-            "start": 114,
-            "end": 120,
-            "text": "Alerta",
-            "role": "output",
-            "reading": "natural"
-          },
-          {
-            "start": 157,
-            "end": 163,
-            "text": "Normal",
-            "role": "output",
-            "reading": "natural"
-          },
-          {
-            "start": 178,
-            "end": 190,
+            "start": 187,
+            "end": 199,
             "text": "marca_alerta",
             "role": "cpp",
             "reading": "technical"
@@ -1223,42 +1217,42 @@
       {
         "block": "block_0003_0003",
         "path": "/text",
-        "sourceSha256": "f652b657e6ac498ceec0bce91308b5a898095435c5ef478ce02edac0de040ff3",
+        "sourceSha256": "20f45ac03de8e03b59d147dcc78261b336af0ad455e06cc3359068852a515ca0",
         "spans": [
           {
-            "start": 45,
-            "end": 57,
-            "text": "marca_alerta",
+            "start": 15,
+            "end": 29,
+            "text": "nivel < limite",
             "role": "cpp",
             "reading": "technical"
           },
           {
-            "start": 79,
-            "end": 83,
-            "text": "main",
+            "start": 35,
+            "end": 39,
+            "text": "true",
             "role": "cpp",
             "reading": "technical"
           },
           {
-            "start": 95,
-            "end": 97,
-            "text": "if",
-            "role": "cpp",
-            "reading": "technical"
+            "start": 90,
+            "end": 96,
+            "text": "Normal",
+            "role": "output",
+            "reading": "natural"
           },
           {
-            "start": 218,
-            "end": 222,
+            "start": 190,
+            "end": 194,
             "text": "else",
             "role": "cpp",
             "reading": "technical"
           },
           {
-            "start": 239,
-            "end": 243,
-            "text": "main",
-            "role": "cpp",
-            "reading": "technical"
+            "start": 203,
+            "end": 211,
+            "text": "Marca: 0",
+            "role": "output",
+            "reading": "natural"
           }
         ]
       },
@@ -1271,81 +1265,53 @@
       {
         "block": "block_0005_0001",
         "path": "/text",
-        "sourceSha256": "94cc2f8632d1ece8cceaae65abe71cfc0f8fac0586cb5210c39d09021842a4db",
+        "sourceSha256": "81895ea31fe44a682d3a91c5871fd98b3480fc90f3213fc19c0aae854fa3fe54",
         "spans": [
           {
-            "start": 286,
-            "end": 288,
+            "start": 134,
+            "end": 136,
             "text": "if",
             "role": "cpp",
             "reading": "technical"
           },
           {
-            "start": 291,
-            "end": 295,
+            "start": 139,
+            "end": 143,
             "text": "else",
             "role": "cpp",
             "reading": "technical"
           },
           {
-            "start": 429,
-            "end": 435,
+            "start": 153,
+            "end": 159,
             "text": "Alerta",
             "role": "output",
             "reading": "natural"
           },
           {
-            "start": 466,
-            "end": 472,
+            "start": 204,
+            "end": 210,
             "text": "Normal",
             "role": "output",
             "reading": "natural"
           },
           {
-            "start": 553,
-            "end": 557,
-            "text": "else",
-            "role": "cpp",
-            "reading": "technical"
-          },
-          {
-            "start": 577,
-            "end": 586,
-            "text": "std::cout",
-            "role": "cpp",
-            "reading": "technical"
-          },
-          {
-            "start": 677,
-            "end": 683,
-            "text": "Alerta",
-            "role": "output",
-            "reading": "natural"
-          },
-          {
-            "start": 696,
-            "end": 702,
-            "text": "Normal",
-            "role": "output",
-            "reading": "natural"
-          },
-          {
-            "start": 772,
-            "end": 775,
+            "start": 371,
+            "end": 374,
             "text": "3 4",
             "role": "data",
             "reading": "natural"
           },
           {
-            "start": 793,
-            "end": 799,
+            "start": 392,
+            "end": 398,
             "text": "Normal",
             "role": "output",
             "reading": "natural"
           },
           {
-            "start": 800,
-            "end": 808,
+            "start": 399,
+            "end": 407,
             "text": "Marca: 0",
             "role": "output",
             "reading": "natural"
@@ -1660,11 +1626,11 @@
       {
         "block": "block_0006_0001",
         "path": "/text",
-        "sourceSha256": "d6ff752c76b2c4f4c0e9cebdbb805c1778997dbb347454b977d68e441ca2a5b8",
+        "sourceSha256": "043c432e61d5537b365a95de35a2cde6fd02b28b804f8f4d38fba551bb8fd77d",
         "spans": [
           {
-            "start": 448,
-            "end": 468,
+            "start": 272,
+            "end": 292,
             "text": "(Köppe et al., 2023)",
             "role": "citation",
             "reading": "natural"
@@ -2066,6 +2032,497 @@
             "reading": "natural"
           }
         ]
+      },
+      {
+        "block": "u3l4_alcance_sangria",
+        "path": "/text",
+        "sourceSha256": "7a2a2a3ac37fc4291349840f74eff2d8a27beae35448632126622c652ab3c2a5",
+        "spans": [
+          {
+            "start": 17,
+            "end": 28,
+            "text": "pedidos > 0",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 34,
+            "end": 38,
+            "text": "true",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 80,
+            "end": 90,
+            "text": "Por enviar",
+            "role": "output",
+            "reading": "natural"
+          },
+          {
+            "start": 249,
+            "end": 262,
+            "text": "Fin del turno",
+            "role": "output",
+            "reading": "natural"
+          },
+          {
+            "start": 307,
+            "end": 311,
+            "text": "main",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 312,
+            "end": 332,
+            "text": "(Köppe et al., 2023)",
+            "role": "citation",
+            "reading": "natural"
+          }
+        ]
+      },
+      {
+        "block": "u3l4_alcance_alcance",
+        "path": "/text",
+        "sourceSha256": "b3fb18170343226cf7ac9e3778c61da712a187358bd4de793d9061482bb98e99",
+        "spans": []
+      },
+      {
+        "block": "u3l4_alcance_presentar_bolsas",
+        "path": "/text",
+        "sourceSha256": "3a1da395b5916e8c2f295358068f9591a722fec8948ebe44c791e7a26b753b4d",
+        "spans": [
+          {
+            "start": 101,
+            "end": 107,
+            "text": "fichas",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 110,
+            "end": 116,
+            "text": "bolsas",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 199,
+            "end": 219,
+            "text": "(Köppe et al., 2023)",
+            "role": "citation",
+            "reading": "natural"
+          }
+        ]
+      },
+      {
+        "block": "u3l4_alcance_consultar_nombre",
+        "path": "/question",
+        "sourceSha256": "e759d6b40966c2f14a96471e5e31aac56a79edccc136e8b14f87ecf7f4b962d3",
+        "spans": [
+          {
+            "start": 57,
+            "end": 66,
+            "text": "return 0;",
+            "role": "cpp",
+            "reading": "technical"
+          }
+        ]
+      },
+      {
+        "block": "u3l4_alcance_consultar_nombre",
+        "path": "/explanation",
+        "sourceSha256": "fddc14282e39c8304f2dff458b4756c54782be0727222808e38f97595e673421",
+        "spans": [
+          {
+            "start": 31,
+            "end": 35,
+            "text": "main",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 54,
+            "end": 60,
+            "text": "fichas",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 80,
+            "end": 86,
+            "text": "bolsas",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 113,
+            "end": 115,
+            "text": "if",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 139,
+            "end": 159,
+            "text": "std::cout << bolsas;",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 173,
+            "end": 182,
+            "text": "return 0;",
+            "role": "cpp",
+            "reading": "technical"
+          }
+        ]
+      },
+      {
+        "block": "u3l4_alcance_consultar_nombre",
+        "path": "/options/0",
+        "sourceSha256": "a2827c6519be37994da08d76e64fb6b16fc3ba9e014c96b338c86fabbe9e2bec",
+        "spans": [
+          {
+            "start": 0,
+            "end": 6,
+            "text": "fichas",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 9,
+            "end": 15,
+            "text": "bolsas",
+            "role": "cpp",
+            "reading": "technical"
+          }
+        ]
+      },
+      {
+        "block": "u3l4_alcance_consultar_nombre",
+        "path": "/options/1",
+        "sourceSha256": "eca1919f9cacdc3ca384425ed7e37c26994cacf2939f812ec8698877e9be3446",
+        "spans": [
+          {
+            "start": 5,
+            "end": 11,
+            "text": "fichas",
+            "role": "cpp",
+            "reading": "technical"
+          }
+        ]
+      },
+      {
+        "block": "u3l4_alcance_consultar_nombre",
+        "path": "/options/2",
+        "sourceSha256": "ffb3054522551ab8b034996dd8e784433fd7d5f7a18fc29b76ab0504cc720d13",
+        "spans": [
+          {
+            "start": 5,
+            "end": 11,
+            "text": "bolsas",
+            "role": "cpp",
+            "reading": "technical"
+          }
+        ]
+      },
+      {
+        "block": "u3l4_alcance_consultar_nombre",
+        "path": "/reviewFeedback/0",
+        "sourceSha256": "f54bf4c5aeb84540b1b8c2e425b01ed41124805b3e443a860696ed9ff51221e0",
+        "spans": []
+      },
+      {
+        "block": "u3l4_alcance_consultar_nombre",
+        "path": "/reviewFeedback/1",
+        "sourceSha256": "abc3c3d167bc5d06a0775fd47a66fb0218bf50695758664ee1ac877ef9c5090f",
+        "spans": []
+      },
+      {
+        "block": "u3l4_alcance_consultar_nombre",
+        "path": "/reviewFeedback/2",
+        "sourceSha256": "f8ef380995d3d8efc637aa39add3ff546dc8e422187c7f4db2ff23ab25e7da28",
+        "spans": [
+          {
+            "start": 68,
+            "end": 72,
+            "text": "main",
+            "role": "cpp",
+            "reading": "technical"
+          }
+        ]
+      },
+      {
+        "block": "u3l4_alcance_guardar",
+        "path": "/text",
+        "sourceSha256": "07c70267e459bf7b80348276319ad5a31941131b27a1220e06711a2fbadf11c9",
+        "spans": []
+      },
+      {
+        "block": "u3l4_alcance_presentar_puntos",
+        "path": "/text",
+        "sourceSha256": "c75d6ccadeb848b6e85a1a669f5cb186fd76d15b8c16417fe04a485a0f1998c8",
+        "spans": [
+          {
+            "start": 138,
+            "end": 144,
+            "text": "puntos",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 155,
+            "end": 157,
+            "text": "if",
+            "role": "cpp",
+            "reading": "technical"
+          }
+        ]
+      },
+      {
+        "block": "u3l4_alcance_leer_puntos",
+        "path": "/text",
+        "sourceSha256": "7fe64b88e6e19ca37a30d2491393cfba6ccb313384439cd1443b1b8ee1f2ae7d",
+        "spans": [
+          {
+            "start": 17,
+            "end": 29,
+            "text": "compras >= 3",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 35,
+            "end": 40,
+            "text": "false",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 51,
+            "end": 69,
+            "text": "puntos += compras;",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 130,
+            "end": 132,
+            "text": "if",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 144,
+            "end": 150,
+            "text": "puntos",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 185,
+            "end": 189,
+            "text": "main",
+            "role": "cpp",
+            "reading": "technical"
+          }
+        ]
+      },
+      {
+        "block": "u3l4_alcance_predecir_cupon",
+        "path": "/question",
+        "sourceSha256": "bf6767a9499c841b5e0038d87732cd904c5bfb7984b0d2a753a93306273f5fd7",
+        "spans": []
+      },
+      {
+        "block": "u3l4_alcance_predecir_cupon",
+        "path": "/explanation",
+        "sourceSha256": "acbb83500be7696a45129b7eaa1886e8918f8767090f0987cbff0cc69a1a173c",
+        "spans": [
+          {
+            "start": 0,
+            "end": 11,
+            "text": "tiene_cupon",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 17,
+            "end": 21,
+            "text": "true",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 38,
+            "end": 50,
+            "text": "puntos += 2;",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 106,
+            "end": 126,
+            "text": "std::cout << puntos;",
+            "role": "cpp",
+            "reading": "technical"
+          }
+        ]
+      },
+      {
+        "block": "u3l4_alcance_predecir_cupon",
+        "path": "/reviewFeedback",
+        "sourceSha256": "7738124fdf1a1d99aaad3e66b42ea66c6e68bbcce96022444cfc45cbd8146dce",
+        "spans": [
+          {
+            "start": 29,
+            "end": 35,
+            "text": "puntos",
+            "role": "cpp",
+            "reading": "technical"
+          }
+        ]
+      },
+      {
+        "block": "u3l4_alcance_reparar",
+        "path": "/text",
+        "sourceSha256": "0696a7fbc4bdb81eb6b092db80027f889cd8524ffc59b7558716f6552317e85d",
+        "spans": []
+      },
+      {
+        "block": "u3l4_alcance_consigna",
+        "path": "/text",
+        "sourceSha256": "862f5facf18227a9f7ccb98636210edfe5409a8b4d0fbb68e9a55d99458bbd74",
+        "spans": [
+          {
+            "start": 308,
+            "end": 317,
+            "text": "restantes",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 328,
+            "end": 329,
+            "text": "4",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 347,
+            "end": 356,
+            "text": "Quedan: 3",
+            "role": "output",
+            "reading": "natural"
+          }
+        ]
+      },
+      {
+        "block": "u3l4_alcance_pruebas",
+        "path": "/text",
+        "sourceSha256": "cb93a1f26fece4df618e97c6afd345835e4fd291c5315262983e184a7fbf3785",
+        "spans": [
+          {
+            "start": 130,
+            "end": 131,
+            "text": "0",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 149,
+            "end": 158,
+            "text": "Quedan: 0",
+            "role": "output",
+            "reading": "natural"
+          },
+          {
+            "start": 226,
+            "end": 227,
+            "text": "1",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 245,
+            "end": 254,
+            "text": "Quedan: 0",
+            "role": "output",
+            "reading": "natural"
+          }
+        ]
+      },
+      {
+        "block": "u3l4_alcance_explicacion",
+        "path": "/text",
+        "sourceSha256": "1a7c1772ab8486aa55a24a1eea7a05728218c7cb11d2c4085ce5ed0a0f991f31",
+        "spans": [
+          {
+            "start": 15,
+            "end": 38,
+            "text": "int restantes = tareas;",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 58,
+            "end": 64,
+            "text": "tareas",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 77,
+            "end": 79,
+            "text": "if",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 184,
+            "end": 186,
+            "text": "if",
+            "role": "cpp",
+            "reading": "technical"
+          }
+        ]
+      },
+      {
+        "block": "u3l4_alcance_inspecciones",
+        "path": "/text",
+        "sourceSha256": "8470a9ec569e1bd1a6c5d61f3f2eb9c5fff52398c7e80761d854e8e0653307d1",
+        "spans": [
+          {
+            "start": 36,
+            "end": 46,
+            "text": "pendientes",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 72,
+            "end": 76,
+            "text": "main",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 88,
+            "end": 90,
+            "text": "if",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 198,
+            "end": 200,
+            "text": "if",
+            "role": "cpp",
+            "reading": "technical"
+          }
+        ]
       }
     ],
     "rootFields": [
@@ -2132,6 +2589,14 @@
         "block_0005_0006",
         "block_0005_0003",
         "block_0005_0004"
+      ]
+    },
+    {
+      "activity": "u3l4_alcance_editor",
+      "blocks": [
+        "u3l4_alcance_pruebas",
+        "u3l4_alcance_explicacion",
+        "u3l4_alcance_solucion"
       ]
     }
   ],
@@ -2362,8 +2827,26 @@
         "blocks": [
           "block_0001_0000",
           "block_0001_0001",
+          "u3l4_alcance_pedidos",
+          "u3l4_alcance_sangria",
+          "u3l4_alcance_inspecciones",
           "block_0001_0002",
-          "block_0001_0003"
+          "block_0001_0003",
+          "u3l4_alcance_alcance",
+          "u3l4_alcance_presentar_bolsas",
+          "u3l4_alcance_bolsas",
+          "u3l4_alcance_consultar_nombre",
+          "u3l4_alcance_guardar",
+          "u3l4_alcance_presentar_puntos",
+          "u3l4_alcance_puntos",
+          "u3l4_alcance_leer_puntos",
+          "u3l4_alcance_predecir_cupon",
+          "u3l4_alcance_reparar",
+          "u3l4_alcance_consigna",
+          "u3l4_alcance_editor",
+          "u3l4_alcance_pruebas",
+          "u3l4_alcance_explicacion",
+          "u3l4_alcance_solucion"
         ]
       },
       {
@@ -2381,8 +2864,9 @@
         "blocks": [
           "block_0003_0000",
           "block_0003_0001",
-          "block_0003_0002",
+          "u3l4_alcance_sensor",
           "block_0003_0003",
+          "block_0003_0002",
           "block_0003_0004",
           "block_0003_0005",
           "block_0003_0006",
@@ -2630,7 +3114,179 @@
         ]
       }
     },
-    "additions": [],
+    "additions": [
+      {
+        "id": "u3l4_alcance_pedidos",
+        "sha256": "c13bcd2f2a08cd19e0fab87ccd9c9b165614396ccad63e08846b49a67bd96690",
+        "storage": {
+          "page": 7,
+          "block": 0
+        },
+        "progressPage": "page_0001"
+      },
+      {
+        "id": "u3l4_alcance_sangria",
+        "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5",
+        "storage": {
+          "page": 7,
+          "block": 1
+        },
+        "progressPage": "page_0001"
+      },
+      {
+        "id": "u3l4_alcance_alcance",
+        "sha256": "a30d0555835b703d0dd5a90aabb0134813afd11904b5364f69f03b01695f6d7a",
+        "storage": {
+          "page": 7,
+          "block": 2
+        },
+        "progressPage": "page_0001"
+      },
+      {
+        "id": "u3l4_alcance_presentar_bolsas",
+        "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5",
+        "storage": {
+          "page": 7,
+          "block": 3
+        },
+        "progressPage": "page_0001"
+      },
+      {
+        "id": "u3l4_alcance_bolsas",
+        "sha256": "da68dc43bd30582927b7b8b95c31cdf9dc090467ba23bdb65c788a73df15c70d",
+        "storage": {
+          "page": 7,
+          "block": 4
+        },
+        "progressPage": "page_0001"
+      },
+      {
+        "id": "u3l4_alcance_consultar_nombre",
+        "sha256": "7173efd14cdb7ffe324ab5a5a4799a9ca1a5fa8dc2c8f8a5210c8c9a244194db",
+        "storage": {
+          "page": 7,
+          "block": 5
+        },
+        "progressPage": "page_0001"
+      },
+      {
+        "id": "u3l4_alcance_guardar",
+        "sha256": "a30d0555835b703d0dd5a90aabb0134813afd11904b5364f69f03b01695f6d7a",
+        "storage": {
+          "page": 7,
+          "block": 6
+        },
+        "progressPage": "page_0001"
+      },
+      {
+        "id": "u3l4_alcance_presentar_puntos",
+        "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5",
+        "storage": {
+          "page": 7,
+          "block": 7
+        },
+        "progressPage": "page_0001"
+      },
+      {
+        "id": "u3l4_alcance_puntos",
+        "sha256": "827b21562903b5b0e8abdd9383f443f2a261d24e83910d266bed5b38ad1cf430",
+        "storage": {
+          "page": 7,
+          "block": 8
+        },
+        "progressPage": "page_0001"
+      },
+      {
+        "id": "u3l4_alcance_leer_puntos",
+        "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5",
+        "storage": {
+          "page": 7,
+          "block": 9
+        },
+        "progressPage": "page_0001"
+      },
+      {
+        "id": "u3l4_alcance_predecir_cupon",
+        "sha256": "d48f77a398db8a84c9bfcf0d8eaf1c0dd79c9b8899b368973c7a7059fbcf29e9",
+        "storage": {
+          "page": 7,
+          "block": 10
+        },
+        "progressPage": "page_0001"
+      },
+      {
+        "id": "u3l4_alcance_reparar",
+        "sha256": "a30d0555835b703d0dd5a90aabb0134813afd11904b5364f69f03b01695f6d7a",
+        "storage": {
+          "page": 7,
+          "block": 11
+        },
+        "progressPage": "page_0001"
+      },
+      {
+        "id": "u3l4_alcance_consigna",
+        "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5",
+        "storage": {
+          "page": 7,
+          "block": 12
+        },
+        "progressPage": "page_0001"
+      },
+      {
+        "id": "u3l4_alcance_editor",
+        "sha256": "7e55a766847088b335cf7d496b35e264ce862e612f1c194809f1b8fa7c561deb",
+        "storage": {
+          "page": 7,
+          "block": 13
+        },
+        "progressPage": "page_0001"
+      },
+      {
+        "id": "u3l4_alcance_pruebas",
+        "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5",
+        "storage": {
+          "page": 7,
+          "block": 14
+        },
+        "progressPage": "page_0001"
+      },
+      {
+        "id": "u3l4_alcance_explicacion",
+        "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5",
+        "storage": {
+          "page": 7,
+          "block": 15
+        },
+        "progressPage": "page_0001"
+      },
+      {
+        "id": "u3l4_alcance_solucion",
+        "sha256": "fac6eb8f85a10320875c1a6d9a06fcaffd24f724da659cda0745eea988859d3a",
+        "storage": {
+          "page": 7,
+          "block": 16
+        },
+        "progressPage": "page_0001"
+      },
+      {
+        "id": "u3l4_alcance_sensor",
+        "sha256": "ac5863149e228c50ce19e96122e611bca1f51de0885eda11e406a0a54f4e2d0f",
+        "storage": {
+          "page": 7,
+          "block": 17
+        },
+        "progressPage": "page_0003"
+      },
+      {
+        "id": "u3l4_alcance_inspecciones",
+        "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5",
+        "storage": {
+          "page": 7,
+          "block": 18
+        },
+        "progressPage": "page_0001"
+      }
+    ],
     "editorial": [
       {
         "id": "block_0000_0001",
@@ -2706,7 +3362,63 @@
         "id": "block_0006_0004",
         "beforeSha256": "38f86a0e3f70f28b70842f1c43cbb60857b3712773d0c2a91360a2a9aae4874c",
         "afterSha256": "dd9b50e1e43e1c9e24034b7c8b6381a3ddbf4b895192ffda596a5f71cd2850cb"
+      },
+      {
+        "id": "block_0000_0001",
+        "beforeSha256": "9ad6b239a2ba6ab7945046efdbb3686355cf6f23e4d0c17cdb5c0080fb75add6",
+        "afterSha256": "4b2bb7bd9fd4644a962f2ab6e42641fb16700b4ee302a7ef9846c38366e20e19"
+      },
+      {
+        "id": "block_0000_0003",
+        "beforeSha256": "df098e79795ab19b75d85889e9845d46b6ce9f80fe0f723c45e7894ee1b8661e",
+        "afterSha256": "8295d34ee388f6000c6d2d18aa19764c89da06aa37453da3065adec67cd0b73e"
+      },
+      {
+        "id": "block_0001_0001",
+        "beforeSha256": "3ca593bc77ae373b98bb5b9f80ba55b3e1414d267335227e06050589f15c1ae4",
+        "afterSha256": "12a7ec2c3bdeb008f89046d15b7569a5ef5a737726b2e1c7d6e74d8b479a6f29"
+      },
+      {
+        "id": "block_0003_0001",
+        "beforeSha256": "da0fa12243c4a681c336954308a185a1c1b0c3340836b30ad80e16f74f82f988",
+        "afterSha256": "a42a041e7843b8008c1062a7a2cacf2574946c1ec8d64bfb898d14f452423049"
+      },
+      {
+        "id": "block_0003_0003",
+        "beforeSha256": "db2a5ed2a1f4212d916d070cb1222b5bbd88c6edf13c90a1b6dc6be682a5d389",
+        "afterSha256": "cd9e2772dc1fd01af3a06bda24ca9951c89de7b3bdf2aac81b12dafd3ef8360e"
+      },
+      {
+        "id": "block_0005_0001",
+        "beforeSha256": "645ad5f4004442295db2a55903bbf10d8925c65d17b69b5881e7fc481acad8b0",
+        "afterSha256": "9f2e57f3f6b962827a8c42e68d5f8be52b6184fb02f0eaaf167e3f5e18791bbe"
+      },
+      {
+        "id": "block_0006_0001",
+        "beforeSha256": "8960bc245eee504e27870fe61a0f55a563a5e91e6b3c8b59a10129879a9845a1",
+        "afterSha256": "779a495d7eece64f9ef91f09fab36bc7274472e89112419f0bc1276f50ca8c58"
       }
     ]
-  }
+  },
+  "compilerInputChecks": [
+    {
+      "activity": "u3l4_alcance_editor",
+      "probes": [
+        {
+          "standardInput": "0",
+          "outputs": [
+            "Quedan: 0",
+            "Quedan: 0\n"
+          ]
+        },
+        {
+          "standardInput": "8",
+          "outputs": [
+            "Quedan: 7",
+            "Quedan: 7\n"
+          ]
+        }
+      ]
+    }
+  ]
 }

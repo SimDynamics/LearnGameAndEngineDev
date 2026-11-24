@@ -108,8 +108,29 @@
           "text": "El operador ! invierte un valor lógico. !true da false y !false da true. Si silenciado indica que el panel tiene el sonido apagado, !silenciado indica que el sonido está habilitado.\n\nPuedes negar el resultado de una comparación completa con !(cantidad < minimo). Los paréntesis hacen que ! se aplique a la comparación y que la expresión sea verdadera cuando la cantidad alcanza o supera el mínimo (Köppe et al., 2023)."
         },
         {
+          "type": "code",
+          "language": "cpp",
+          "code": "#include <iostream>\n\nint main() {\n    const int cantidad = 8;\n    const int minimo = 8;\n\n    const bool falta = cantidad < minimo;\n    const bool alcanza = !falta;\n\n    std::cout << falta << \" \" << alcanza;\n\n    return 0;\n}\n"
+        },
+        {
+          "type": "fill_code",
+          "language": "cpp",
+          "code": "#include <iostream>\n\nint main() {\n    const bool apagado = false;\n    const bool encendido = ___apagado;\n\n    std::cout << encendido;\n\n    return 0;\n}\n",
+          "id": "u3l5_invertir_un_aviso",
+          "question": "La lámpara guarda en apagado si está apagada. Escribe el operador que invierte ese valor para saber si está encendida.",
+          "explanation": "El operador ! invierte el valor lógico. Como apagado vale false, encendido recibe true y la consola muestra 1.",
+          "answers": [
+            "!"
+          ]
+        },
+        {
           "type": "paragraph",
           "text": "Al agrupar una expresión, ! tiene prioridad sobre &&, y && sobre ||. En el panel, sensor_a y sensor_b indican qué sensores piden una señal. Para exigir que el sonido esté habilitado en los dos casos, reúne las solicitudes en una condición con paréntesis y combina ese resultado con !silenciado.\n\nSupón que ambos sensores piden una señal y el panel está silenciado. (sensor_a || sensor_b) && !silenciado da false. Si quitas los paréntesis, C++ agrupa sensor_b && !silenciado y la solicitud del sensor A basta para que la expresión dé true. Los paréntesis determinan a qué alternativas se aplica el requisito común (Köppe et al., 2023)."
+        },
+        {
+          "type": "code",
+          "language": "cpp",
+          "code": "#include <iostream>\n\nint main() {\n    const bool sensor_a = true;\n    const bool sensor_b = true;\n    const bool silenciado = true;\n\n    const bool con_parentesis = (sensor_a || sensor_b) && !silenciado;\n    const bool sin_parentesis = sensor_a || sensor_b && !silenciado;\n\n    std::cout << con_parentesis << \" \" << sin_parentesis;\n\n    return 0;\n}\n"
         },
         {
           "type": "output_prediction",
@@ -2299,6 +2320,69 @@
             "reading": "natural"
           }
         ]
+      },
+      {
+        "block": "u3l5_invertir_un_aviso",
+        "path": "/question",
+        "sourceSha256": "0f977dc5b469eb7607bc943e9d4f82f9a8814558d21cd060e6c022e545629fa8",
+        "spans": [
+          {
+            "start": 21,
+            "end": 28,
+            "text": "apagado",
+            "role": "cpp",
+            "reading": "technical"
+          }
+        ]
+      },
+      {
+        "block": "u3l5_invertir_un_aviso",
+        "path": "/explanation",
+        "sourceSha256": "089e9e80c94fb3d59e431224cf5f855f8695c0b0b304eb75a078da01ac15f183",
+        "spans": [
+          {
+            "start": 12,
+            "end": 13,
+            "text": "!",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 45,
+            "end": 52,
+            "text": "apagado",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 58,
+            "end": 63,
+            "text": "false",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 65,
+            "end": 74,
+            "text": "encendido",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 82,
+            "end": 86,
+            "text": "true",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 108,
+            "end": 109,
+            "text": "1",
+            "role": "output",
+            "reading": "natural"
+          }
+        ]
       }
     ],
     "rootFields": [
@@ -2598,7 +2682,10 @@
         "blocks": [
           "block_0002_0000",
           "block_0002_0001",
+          "u3l5_negar_un_comparador",
+          "u3l5_invertir_un_aviso",
           "block_0002_0002",
+          "u3l5_agrupar_solicitudes",
           "block_0002_0003",
           "block_0002_0004"
         ]
@@ -2839,7 +2926,35 @@
         ]
       }
     },
-    "additions": [],
+    "additions": [
+      {
+        "id": "u3l5_negar_un_comparador",
+        "sha256": "973bd9853e02cd6f7e16bb4cdb05c38825a0a30e5f347078a67f7bb9bb373bab",
+        "storage": {
+          "page": 6,
+          "block": 0
+        },
+        "progressPage": "page_0002"
+      },
+      {
+        "id": "u3l5_agrupar_solicitudes",
+        "sha256": "16c09e65713d974e1db7f9c98b8239e5d704f2052b121e1cabcf73cc0a517435",
+        "storage": {
+          "page": 6,
+          "block": 1
+        },
+        "progressPage": "page_0002"
+      },
+      {
+        "id": "u3l5_invertir_un_aviso",
+        "sha256": "d2fe947b7708658079773f05974b97a176b899c35885ae624527f2b14fbf25a4",
+        "storage": {
+          "page": 6,
+          "block": 2
+        },
+        "progressPage": "page_0002"
+      }
+    ],
     "editorial": [
       {
         "id": "block_0003_0001",

@@ -10,12 +10,30 @@
         },
         {
           "type": "paragraph",
-          "text": "Un almacén quiere contar cajas. En una entrega llegan ocho y en otra, doce. Puedes usar el mismo programa para las dos entregas si le das la cantidad al ejecutarlo.\n\nint cantidad = 0;\nEsta línea crea la variable entera cantidad y guarda en ella su primer valor, 0.\n\nstd::cin >> cantidad;\nLa aplicación envía los datos del campo «Entrada» a la entrada estándar del programa. En C++ usas std::cin para leerlos. Si le entregas 8, el operador >> lee esa cifra como un entero y guarda 8 en cantidad. Leer un dato de esta manera se llama extraerlo. La cabecera <iostream> permite usar std::cin y std::cout (Stroustrup, 2024).",
+          "text": "Un almacén quiere contar cajas. En una entrega llegan ocho y en otra, doce. Puedes usar el mismo programa para las dos entregas si le das la cantidad al ejecutarlo."
+        },
+        {
+          "type": "code",
+          "language": "cpp",
+          "code": "int cantidad = 0;"
+        },
+        {
+          "type": "paragraph",
+          "text": "Esta línea crea la variable entera cantidad y guarda en ella su primer valor, 0.",
           "emphasis": [
             {
               "text": "Esta línea crea la variable entera cantidad"
             }
           ]
+        },
+        {
+          "type": "code",
+          "language": "cpp",
+          "code": "std::cin >> cantidad;"
+        },
+        {
+          "type": "paragraph",
+          "text": "La aplicación envía los datos del campo «Entrada» a la entrada estándar del programa. En C++ usas std::cin para leerlos. Si le entregas 8, el operador >> lee esa cifra como un entero y guarda 8 en cantidad. Leer un dato de esta manera se llama extraerlo. La cabecera <iostream> permite usar std::cin y std::cout (Stroustrup, 2024)."
         },
         {
           "type": "note",
@@ -28,7 +46,16 @@
         },
         {
           "type": "paragraph",
-          "text": "std::cout << cantidad;\nDespués de leer 8, cantidad guarda ese valor y la consola muestra 8. Si el programa recibe 12 en otra ejecución, std::cin guarda 12 en cantidad y std::cout muestra 12."
+          "text": "La siguiente instrucción permite ver el dato que acabas de leer."
+        },
+        {
+          "type": "code",
+          "language": "cpp",
+          "code": "std::cout << cantidad;"
+        },
+        {
+          "type": "paragraph",
+          "text": "Después de leer 8, cantidad guarda ese valor y la consola muestra 8. Si el programa recibe 12 en otra ejecución, std::cin guarda 12 en cantidad y std::cout muestra 12."
         },
         {
           "type": "fill_code",
@@ -52,7 +79,25 @@
         },
         {
           "type": "paragraph",
-          "text": "std::cout << \"Cantidad: \";\nEsta instrucción escribe Cantidad: y deja un espacio después de los dos puntos. Un mensaje que indica qué dato espera el programa se llama aviso de entrada, o prompt. En el editor, la aplicación ya dispone del dato que escribiste en «Entrada».\n\nstd::cin >> cantidad;\nEsta instrucción lee el entero y lo guarda en cantidad. Para que aparezca también en la consola hace falta una instrucción de salida, como std::cout << cantidad; (Stroustrup, 2024).",
+          "text": "Un programa puede mostrar qué dato necesita antes de leerlo. Observa dónde termina el mensaje que se envía a la consola."
+        },
+        {
+          "type": "code",
+          "language": "cpp",
+          "code": "std::cout << \"Cantidad: \";"
+        },
+        {
+          "type": "paragraph",
+          "text": "Esta instrucción escribe Cantidad: y deja un espacio después de los dos puntos. Un mensaje que indica qué dato espera el programa se llama aviso de entrada, o prompt. En el editor, la aplicación ya dispone del dato que escribiste en «Entrada»."
+        },
+        {
+          "type": "code",
+          "language": "cpp",
+          "code": "std::cin >> cantidad;"
+        },
+        {
+          "type": "paragraph",
+          "text": "Esta instrucción lee el entero y lo guarda en cantidad. Para que aparezca también en la consola hace falta una instrucción de salida, como std::cout << cantidad; (Stroustrup, 2024).",
           "emphasis": [
             {
               "text": "una instrucción de salida"
@@ -156,7 +201,25 @@
         },
         {
           "type": "paragraph",
-          "text": "std::string zona;\nEsta línea crea una cadena vacía. Supón que la entrada contiene Costa Azul.\n\nstd::cin >> zona;\nLa lectura salta los espacios iniciales, si los hay. Guarda las letras de la primera palabra y se detiene al llegar al espacio que la separa de la segunda. Ahora zona contiene Costa.\n\nSi lees otra cadena, la siguiente lectura salta el espacio y recoge Azul. También pueden separar las palabras una tabulación o un salto de línea. Para mostrar un separador entre las dos palabras, escríbelo en la instrucción con std::cout (Stroustrup, 2024).",
+          "text": "La entrada contiene dos palabras, Costa Azul. Prepara una variable de texto para recoger la primera."
+        },
+        {
+          "type": "code",
+          "language": "cpp",
+          "code": "std::string zona;"
+        },
+        {
+          "type": "paragraph",
+          "text": "Esta línea crea una cadena vacía. Supón que la entrada contiene Costa Azul."
+        },
+        {
+          "type": "code",
+          "language": "cpp",
+          "code": "std::cin >> zona;"
+        },
+        {
+          "type": "paragraph",
+          "text": "La lectura salta los espacios iniciales, si los hay. Guarda las letras de la primera palabra y se detiene al llegar al espacio que la separa de la segunda. Ahora zona contiene Costa.\n\nSi lees otra cadena, la siguiente lectura salta el espacio y recoge Azul. También pueden separar las palabras una tabulación o un salto de línea. Para mostrar un separador entre las dos palabras, escríbelo en la instrucción con std::cout (Stroustrup, 2024).",
           "emphasis": [
             {
               "text": "las letras de la primera palabra"
@@ -211,7 +274,16 @@
         },
         {
           "type": "paragraph",
-          "text": "int numero = 0;\nchar letra = '?';\nstd::cin >> numero >> letra;\n\nCon la entrada 6C, la primera lectura reconoce el entero 6 y se detiene delante de la letra. La segunda lectura continúa ahí y guarda C en letra. Con 6 C también obtienes esos valores porque la lectura de un char con >> salta los espacios iniciales con el formato usado aquí (Köppe et al., 2023).\n\nSi lees 6C de una sola vez en una std::string, guardas los dos caracteres juntos. La cadena recoge toda la palabra hasta un espacio en blanco o el final de la entrada (Köppe et al., 2023).",
+          "text": "El envío lleva una cantidad y una letra. Estas líneas preparan una variable para cada dato y los leen en ese orden."
+        },
+        {
+          "type": "code",
+          "language": "cpp",
+          "code": "int numero = 0;\nchar letra = '?';\nstd::cin >> numero >> letra;"
+        },
+        {
+          "type": "paragraph",
+          "text": "Con la entrada 6C, la primera lectura reconoce el entero 6 y se detiene delante de la letra. La segunda lectura continúa ahí y guarda C en letra. Con 6 C también obtienes esos valores porque la lectura de un char con >> salta los espacios iniciales con el formato usado aquí (Köppe et al., 2023).\n\nSi lees 6C de una sola vez en una std::string, guardas los dos caracteres juntos. La cadena recoge toda la palabra hasta un espacio en blanco o el final de la entrada (Köppe et al., 2023).",
           "emphasis": [
             {
               "text": "La segunda lectura continúa ahí"
@@ -250,7 +322,16 @@
         },
         {
           "type": "paragraph",
-          "text": "Imagina que el campo «Entrada» contiene la palabra muchos. Se ejecutan estas dos líneas.\n\nint cajas = 9;\nstd::cin >> cajas;\n\nLa instrucción con std::cin intenta leer un entero. Encuentra la letra eme al principio de muchos. En este caso, cajas queda con 0 y std::cin registra un fallo de lectura (Köppe et al., 2023).\n\nSi después ejecutaras cajas += 3;, sumarías tres al cero que dejó el fallo. Al ejecutar std::cout << cajas;, mostrarías 3 sin saber cuántas cajas habían llegado. Comprueba si la lectura tuvo éxito antes de hacer la suma o mostrar la cantidad.\n\nLeer un entero y aceptar la cantidad son dos pasos. Por ejemplo, std::cin >> cajas; puede leer -2. Si la entrega exige una cantidad de cero o más cajas, el programa debe rechazar ese valor.",
+          "text": "Imagina que el campo «Entrada» contiene la palabra muchos. Se ejecutan estas dos líneas."
+        },
+        {
+          "type": "code",
+          "language": "cpp",
+          "code": "int cajas = 9;\nstd::cin >> cajas;"
+        },
+        {
+          "type": "paragraph",
+          "text": "La instrucción con std::cin intenta leer un entero. Encuentra la letra eme al principio de muchos. En este caso, cajas queda con 0 y std::cin registra un fallo de lectura (Köppe et al., 2023).\n\nSi después ejecutaras cajas += 3;, sumarías tres al cero que dejó el fallo. Al ejecutar std::cout << cajas;, mostrarías 3 sin saber cuántas cajas habían llegado. Comprueba si la lectura tuvo éxito antes de hacer la suma o mostrar la cantidad.\n\nLeer un entero y aceptar la cantidad son dos pasos. Por ejemplo, std::cin >> cajas; puede leer -2. Si la entrega exige una cantidad de cero o más cajas, el programa debe rechazar ese valor.",
           "emphasis": [
             {
               "text": "std::cin registra un fallo de lectura"
@@ -764,100 +845,8 @@
       {
         "block": "block_0000_0001",
         "path": "/text",
-        "sourceSha256": "009e7421f73e5b41aeea9aa821a58785ce22ff51ec8ed499dd8335fd287dcd1e",
-        "spans": [
-          {
-            "start": 166,
-            "end": 183,
-            "text": "int cantidad = 0;",
-            "role": "cpp",
-            "reading": "technical"
-          },
-          {
-            "start": 219,
-            "end": 227,
-            "text": "cantidad",
-            "role": "cpp",
-            "reading": "technical"
-          },
-          {
-            "start": 262,
-            "end": 263,
-            "text": "0",
-            "role": "data",
-            "reading": "natural"
-          },
-          {
-            "start": 266,
-            "end": 287,
-            "text": "std::cin >> cantidad;",
-            "role": "cpp",
-            "reading": "technical"
-          },
-          {
-            "start": 386,
-            "end": 394,
-            "text": "std::cin",
-            "role": "cpp",
-            "reading": "technical"
-          },
-          {
-            "start": 424,
-            "end": 425,
-            "text": "8",
-            "role": "data",
-            "reading": "natural"
-          },
-          {
-            "start": 439,
-            "end": 441,
-            "text": ">>",
-            "role": "cpp",
-            "reading": "technical"
-          },
-          {
-            "start": 480,
-            "end": 481,
-            "text": "8",
-            "role": "data",
-            "reading": "natural"
-          },
-          {
-            "start": 485,
-            "end": 493,
-            "text": "cantidad",
-            "role": "cpp",
-            "reading": "technical"
-          },
-          {
-            "start": 555,
-            "end": 565,
-            "text": "<iostream>",
-            "role": "cpp",
-            "reading": "technical"
-          },
-          {
-            "start": 579,
-            "end": 587,
-            "text": "std::cin",
-            "role": "cpp",
-            "reading": "technical"
-          },
-          {
-            "start": 590,
-            "end": 599,
-            "text": "std::cout",
-            "role": "cpp",
-            "reading": "technical"
-          },
-          {
-            "start": 600,
-            "end": 618,
-            "text": "(Stroustrup, 2024)",
-            "role": "citation",
-            "reading": "natural"
-          }
-        ]
+        "sourceSha256": "b6e7376ef364ebef153edeb980301f8fb667649846f3aafd2cba6cb1f7af8282",
+        "spans": []
       },
       {
         "block": "block_0000_0002",
@@ -868,79 +857,8 @@
       {
         "block": "block_0000_0004",
         "path": "/text",
-        "sourceSha256": "1bbe4e7f7f9824c824837b00c54d47b69ed8661f577e19a409a4616fc959af61",
-        "spans": [
-          {
-            "start": 0,
-            "end": 22,
-            "text": "std::cout << cantidad;",
-            "role": "cpp",
-            "reading": "technical"
-          },
-          {
-            "start": 39,
-            "end": 40,
-            "text": "8",
-            "role": "data",
-            "reading": "natural"
-          },
-          {
-            "start": 42,
-            "end": 50,
-            "text": "cantidad",
-            "role": "cpp",
-            "reading": "technical"
-          },
-          {
-            "start": 89,
-            "end": 90,
-            "text": "8",
-            "role": "output",
-            "reading": "natural"
-          },
-          {
-            "start": 114,
-            "end": 116,
-            "text": "12",
-            "role": "data",
-            "reading": "natural"
-          },
-          {
-            "start": 136,
-            "end": 144,
-            "text": "std::cin",
-            "role": "cpp",
-            "reading": "technical"
-          },
-          {
-            "start": 152,
-            "end": 154,
-            "text": "12",
-            "role": "data",
-            "reading": "natural"
-          },
-          {
-            "start": 158,
-            "end": 166,
-            "text": "cantidad",
-            "role": "cpp",
-            "reading": "technical"
-          },
-          {
-            "start": 169,
-            "end": 178,
-            "text": "std::cout",
-            "role": "cpp",
-            "reading": "technical"
-          },
-          {
-            "start": 187,
-            "end": 189,
-            "text": "12",
-            "role": "output",
-            "reading": "natural"
-          }
-        ]
+        "sourceSha256": "d1ff92c501f87e133378803f06dc1ad353b2cdcbfec84e2ddf2973e1df5f590b",
+        "spans": []
       },
       {
         "block": "block_0001_0000",
@@ -951,58 +869,8 @@
       {
         "block": "block_0001_0001",
         "path": "/text",
-        "sourceSha256": "3b2bc8b870eab792b32356191e568592758d9ca007a135860e4704363099fff7",
-        "spans": [
-          {
-            "start": 0,
-            "end": 26,
-            "text": "std::cout << \"Cantidad: \";",
-            "role": "cpp",
-            "reading": "technical"
-          },
-          {
-            "start": 52,
-            "end": 61,
-            "text": "Cantidad:",
-            "role": "output",
-            "reading": "natural"
-          },
-          {
-            "start": 186,
-            "end": 192,
-            "text": "prompt",
-            "role": "prose",
-            "reading": "natural"
-          },
-          {
-            "start": 272,
-            "end": 293,
-            "text": "std::cin >> cantidad;",
-            "role": "cpp",
-            "reading": "technical"
-          },
-          {
-            "start": 340,
-            "end": 348,
-            "text": "cantidad",
-            "role": "cpp",
-            "reading": "technical"
-          },
-          {
-            "start": 433,
-            "end": 455,
-            "text": "std::cout << cantidad;",
-            "role": "cpp",
-            "reading": "technical"
-          },
-          {
-            "start": 456,
-            "end": 474,
-            "text": "(Stroustrup, 2024)",
-            "role": "citation",
-            "reading": "natural"
-          }
-        ]
+        "sourceSha256": "2ac6601112f36bc5f4246107c9b88e86ac064d05f8ae5f6244329ff6b7aff4de",
+        "spans": []
       },
       {
         "block": "block_0001_0002",
@@ -1516,65 +1384,8 @@
       {
         "block": "block_0003_0001",
         "path": "/text",
-        "sourceSha256": "cff61b88ee846b3175b57159c47dcf3a0ca58fe2308eba4a70afdf939200092a",
-        "spans": [
-          {
-            "start": 0,
-            "end": 17,
-            "text": "std::string zona;",
-            "role": "cpp",
-            "reading": "technical"
-          },
-          {
-            "start": 82,
-            "end": 92,
-            "text": "Costa Azul",
-            "role": "data",
-            "reading": "natural"
-          },
-          {
-            "start": 95,
-            "end": 112,
-            "text": "std::cin >> zona;",
-            "role": "cpp",
-            "reading": "technical"
-          },
-          {
-            "start": 275,
-            "end": 279,
-            "text": "zona",
-            "role": "cpp",
-            "reading": "technical"
-          },
-          {
-            "start": 289,
-            "end": 294,
-            "text": "Costa",
-            "role": "data",
-            "reading": "natural"
-          },
-          {
-            "start": 365,
-            "end": 369,
-            "text": "Azul",
-            "role": "data",
-            "reading": "natural"
-          },
-          {
-            "start": 525,
-            "end": 534,
-            "text": "std::cout",
-            "role": "cpp",
-            "reading": "technical"
-          },
-          {
-            "start": 535,
-            "end": 553,
-            "text": "(Stroustrup, 2024)",
-            "role": "citation",
-            "reading": "natural"
-          }
-        ]
+        "sourceSha256": "5ea851a8223afe2a69b3842bf819d522b2f7645f0fa2fdfa2c99370746b02cc5",
+        "spans": []
       },
       {
         "block": "block_0003_0002",
@@ -1906,107 +1717,8 @@
       {
         "block": "block_0004_0001",
         "path": "/text",
-        "sourceSha256": "531fbf679977ae674995ac0821066db70ff502ba1d79395504f547fd38dc8ba9",
-        "spans": [
-          {
-            "start": 0,
-            "end": 15,
-            "text": "int numero = 0;",
-            "role": "cpp",
-            "reading": "technical"
-          },
-          {
-            "start": 16,
-            "end": 33,
-            "text": "char letra = '?';",
-            "role": "cpp",
-            "reading": "technical"
-          },
-          {
-            "start": 34,
-            "end": 62,
-            "text": "std::cin >> numero >> letra;",
-            "role": "cpp",
-            "reading": "technical"
-          },
-          {
-            "start": 79,
-            "end": 81,
-            "text": "6C",
-            "role": "data",
-            "reading": "natural"
-          },
-          {
-            "start": 121,
-            "end": 122,
-            "text": "6",
-            "role": "data",
-            "reading": "natural"
-          },
-          {
-            "start": 198,
-            "end": 199,
-            "text": "C",
-            "role": "data",
-            "reading": "natural"
-          },
-          {
-            "start": 203,
-            "end": 208,
-            "text": "letra",
-            "role": "cpp",
-            "reading": "technical"
-          },
-          {
-            "start": 214,
-            "end": 217,
-            "text": "6 C",
-            "role": "data",
-            "reading": "natural"
-          },
-          {
-            "start": 272,
-            "end": 276,
-            "text": "char",
-            "role": "cpp",
-            "reading": "technical"
-          },
-          {
-            "start": 281,
-            "end": 283,
-            "text": ">>",
-            "role": "cpp",
-            "reading": "technical"
-          },
-          {
-            "start": 339,
-            "end": 359,
-            "text": "(Köppe et al., 2023)",
-            "role": "citation",
-            "reading": "natural"
-          },
-          {
-            "start": 370,
-            "end": 372,
-            "text": "6C",
-            "role": "data",
-            "reading": "natural"
-          },
-          {
-            "start": 396,
-            "end": 407,
-            "text": "std::string",
-            "role": "cpp",
-            "reading": "technical"
-          },
-          {
-            "start": 529,
-            "end": 549,
-            "text": "(Köppe et al., 2023)",
-            "role": "citation",
-            "reading": "natural"
-          }
-        ]
+        "sourceSha256": "619c6fc6a4f447bac41b76904e6bc2cf46f20cb4a175fd07fe4214ba01db4c22",
+        "spans": []
       },
       {
         "block": "block_0004_0002",
@@ -2178,103 +1890,12 @@
       {
         "block": "block_0005_0001",
         "path": "/text",
-        "sourceSha256": "c0ded1bfb52e181fd3771be153db54137078a9052d049b22bd1a9d5c754c04ee",
+        "sourceSha256": "a0617597772318f0f4550179ce7dc16fb9479268768267e38a286135c38371cc",
         "spans": [
           {
             "start": 51,
             "end": 57,
             "text": "muchos",
-            "role": "data",
-            "reading": "natural"
-          },
-          {
-            "start": 90,
-            "end": 104,
-            "text": "int cajas = 9;",
-            "role": "cpp",
-            "reading": "technical"
-          },
-          {
-            "start": 105,
-            "end": 123,
-            "text": "std::cin >> cajas;",
-            "role": "cpp",
-            "reading": "technical"
-          },
-          {
-            "start": 144,
-            "end": 152,
-            "text": "std::cin",
-            "role": "cpp",
-            "reading": "technical"
-          },
-          {
-            "start": 216,
-            "end": 222,
-            "text": "muchos",
-            "role": "data",
-            "reading": "natural"
-          },
-          {
-            "start": 238,
-            "end": 243,
-            "text": "cajas",
-            "role": "cpp",
-            "reading": "technical"
-          },
-          {
-            "start": 254,
-            "end": 255,
-            "text": "0",
-            "role": "data",
-            "reading": "natural"
-          },
-          {
-            "start": 258,
-            "end": 266,
-            "text": "std::cin",
-            "role": "cpp",
-            "reading": "technical"
-          },
-          {
-            "start": 296,
-            "end": 316,
-            "text": "(Köppe et al., 2023)",
-            "role": "citation",
-            "reading": "natural"
-          },
-          {
-            "start": 341,
-            "end": 352,
-            "text": "cajas += 3;",
-            "role": "cpp",
-            "reading": "technical"
-          },
-          {
-            "start": 407,
-            "end": 426,
-            "text": "std::cout << cajas;",
-            "role": "cpp",
-            "reading": "technical"
-          },
-          {
-            "start": 439,
-            "end": 440,
-            "text": "3",
-            "role": "output",
-            "reading": "natural"
-          },
-          {
-            "start": 628,
-            "end": 646,
-            "text": "std::cin >> cajas;",
-            "role": "cpp",
-            "reading": "technical"
-          },
-          {
-            "start": 658,
-            "end": 660,
-            "text": "-2",
             "role": "data",
             "reading": "natural"
           }
@@ -4395,6 +4016,440 @@
         "path": "/reviewFeedback",
         "sourceSha256": "13e9e695bdb64c6edd3e7f70b1f0f8b474946611ac7b5f55db0f7816cfafb496",
         "spans": []
+      },
+      {
+        "block": "p1u2l9_ejemplo_0000_0001_2",
+        "path": "/text",
+        "sourceSha256": "b26b68f469cb3a91871a54ea7a449592ea6ac34322c3d544598e1480185be329",
+        "spans": [
+          {
+            "start": 35,
+            "end": 43,
+            "text": "cantidad",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 78,
+            "end": 79,
+            "text": "0",
+            "role": "data",
+            "reading": "natural"
+          }
+        ]
+      },
+      {
+        "block": "p1u2l9_ejemplo_0000_0001_4",
+        "path": "/text",
+        "sourceSha256": "fbe769dbe56b1c6d5c35fc9da081b5b746083bc6ca6c1ed92203baa85bd3b99f",
+        "spans": [
+          {
+            "start": 98,
+            "end": 106,
+            "text": "std::cin",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 136,
+            "end": 137,
+            "text": "8",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 151,
+            "end": 153,
+            "text": ">>",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 192,
+            "end": 193,
+            "text": "8",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 197,
+            "end": 205,
+            "text": "cantidad",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 267,
+            "end": 277,
+            "text": "<iostream>",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 291,
+            "end": 299,
+            "text": "std::cin",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 302,
+            "end": 311,
+            "text": "std::cout",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 312,
+            "end": 330,
+            "text": "(Stroustrup, 2024)",
+            "role": "citation",
+            "reading": "natural"
+          }
+        ]
+      },
+      {
+        "block": "p1u2l9_ejemplo_0000_0004_2",
+        "path": "/text",
+        "sourceSha256": "8b99bc6f23a0fe652e6b00a0fc206d6d0af3599854e6cdf24262c61e93c1c28f",
+        "spans": [
+          {
+            "start": 16,
+            "end": 17,
+            "text": "8",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 19,
+            "end": 27,
+            "text": "cantidad",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 66,
+            "end": 67,
+            "text": "8",
+            "role": "output",
+            "reading": "natural"
+          },
+          {
+            "start": 91,
+            "end": 93,
+            "text": "12",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 113,
+            "end": 121,
+            "text": "std::cin",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 129,
+            "end": 131,
+            "text": "12",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 135,
+            "end": 143,
+            "text": "cantidad",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 146,
+            "end": 155,
+            "text": "std::cout",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 164,
+            "end": 166,
+            "text": "12",
+            "role": "output",
+            "reading": "natural"
+          }
+        ]
+      },
+      {
+        "block": "p1u2l9_ejemplo_0001_0001_2",
+        "path": "/text",
+        "sourceSha256": "70d6b34bec0c6c49c37bab1451b0992d7396e902fc0265e3fe33cc7827c7db7d",
+        "spans": [
+          {
+            "start": 25,
+            "end": 34,
+            "text": "Cantidad:",
+            "role": "output",
+            "reading": "natural"
+          },
+          {
+            "start": 159,
+            "end": 165,
+            "text": "prompt",
+            "role": "prose",
+            "reading": "natural"
+          }
+        ]
+      },
+      {
+        "block": "p1u2l9_ejemplo_0001_0001_4",
+        "path": "/text",
+        "sourceSha256": "bd1da8ae52270d918cfa7ffa5b60d72f9dbaddcf27ebc4b70ddfbcb1200d0d22",
+        "spans": [
+          {
+            "start": 46,
+            "end": 54,
+            "text": "cantidad",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 139,
+            "end": 161,
+            "text": "std::cout << cantidad;",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 162,
+            "end": 180,
+            "text": "(Stroustrup, 2024)",
+            "role": "citation",
+            "reading": "natural"
+          }
+        ]
+      },
+      {
+        "block": "p1u2l9_ejemplo_0003_0001_2",
+        "path": "/text",
+        "sourceSha256": "eac553b3b90c7fec50624872915ef468bfd9ebc5898da07fecf6e8e2be087585",
+        "spans": [
+          {
+            "start": 64,
+            "end": 74,
+            "text": "Costa Azul",
+            "role": "data",
+            "reading": "natural"
+          }
+        ]
+      },
+      {
+        "block": "p1u2l9_ejemplo_0003_0001_4",
+        "path": "/text",
+        "sourceSha256": "0a72694a91e0fbf03a6a237580e6c8af7f8cd774ce7bfde7bb5c1b0333284f16",
+        "spans": [
+          {
+            "start": 162,
+            "end": 166,
+            "text": "zona",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 176,
+            "end": 181,
+            "text": "Costa",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 252,
+            "end": 256,
+            "text": "Azul",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 412,
+            "end": 421,
+            "text": "std::cout",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 422,
+            "end": 440,
+            "text": "(Stroustrup, 2024)",
+            "role": "citation",
+            "reading": "natural"
+          }
+        ]
+      },
+      {
+        "block": "p1u2l9_ejemplo_0004_0001_2",
+        "path": "/text",
+        "sourceSha256": "e3c9570cb700f865d630a3dd3e5c98bd99b3a49124469384350ecfd9f803d284",
+        "spans": [
+          {
+            "start": 15,
+            "end": 17,
+            "text": "6C",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 57,
+            "end": 58,
+            "text": "6",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 134,
+            "end": 135,
+            "text": "C",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 139,
+            "end": 144,
+            "text": "letra",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 150,
+            "end": 153,
+            "text": "6 C",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 208,
+            "end": 212,
+            "text": "char",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 217,
+            "end": 219,
+            "text": ">>",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 275,
+            "end": 295,
+            "text": "(Köppe et al., 2023)",
+            "role": "citation",
+            "reading": "natural"
+          },
+          {
+            "start": 306,
+            "end": 308,
+            "text": "6C",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 332,
+            "end": 343,
+            "text": "std::string",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 465,
+            "end": 485,
+            "text": "(Köppe et al., 2023)",
+            "role": "citation",
+            "reading": "natural"
+          }
+        ]
+      },
+      {
+        "block": "p1u2l9_ejemplo_0005_0001_2",
+        "path": "/text",
+        "sourceSha256": "8dcc96b2c21d88dd46f101c513f9bbe62b94af82810ce55bb79052eeab652ba4",
+        "spans": [
+          {
+            "start": 19,
+            "end": 27,
+            "text": "std::cin",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 91,
+            "end": 97,
+            "text": "muchos",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 113,
+            "end": 118,
+            "text": "cajas",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 129,
+            "end": 130,
+            "text": "0",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 133,
+            "end": 141,
+            "text": "std::cin",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 171,
+            "end": 191,
+            "text": "(Köppe et al., 2023)",
+            "role": "citation",
+            "reading": "natural"
+          },
+          {
+            "start": 216,
+            "end": 227,
+            "text": "cajas += 3;",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 282,
+            "end": 301,
+            "text": "std::cout << cajas;",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 314,
+            "end": 315,
+            "text": "3",
+            "role": "output",
+            "reading": "natural"
+          },
+          {
+            "start": 503,
+            "end": 521,
+            "text": "std::cin >> cajas;",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 533,
+            "end": 535,
+            "text": "-2",
+            "role": "data",
+            "reading": "natural"
+          }
+        ]
       }
     ],
     "rootFields": [
@@ -4780,9 +4835,15 @@
         "blocks": [
           "block_0000_0000",
           "block_0000_0001",
+          "p1u2l9_ejemplo_0000_0001_1",
+          "p1u2l9_ejemplo_0000_0001_2",
+          "p1u2l9_ejemplo_0000_0001_3",
+          "p1u2l9_ejemplo_0000_0001_4",
           "block_0000_0002",
           "block_0000_0003",
           "block_0000_0004",
+          "p1u2l9_ejemplo_0000_0004_1",
+          "p1u2l9_ejemplo_0000_0004_2",
           "block_0000_0005"
         ]
       },
@@ -4791,6 +4852,10 @@
         "blocks": [
           "block_0001_0000",
           "block_0001_0001",
+          "p1u2l9_ejemplo_0001_0001_1",
+          "p1u2l9_ejemplo_0001_0001_2",
+          "p1u2l9_ejemplo_0001_0001_3",
+          "p1u2l9_ejemplo_0001_0001_4",
           "block_0001_0002",
           "block_0001_0003"
         ]
@@ -4811,6 +4876,10 @@
         "blocks": [
           "block_0003_0000",
           "block_0003_0001",
+          "p1u2l9_ejemplo_0003_0001_1",
+          "p1u2l9_ejemplo_0003_0001_2",
+          "p1u2l9_ejemplo_0003_0001_3",
+          "p1u2l9_ejemplo_0003_0001_4",
           "block_0003_0002",
           "block_0003_0003",
           "block_0003_0004"
@@ -4821,6 +4890,8 @@
         "blocks": [
           "block_0004_0000",
           "block_0004_0001",
+          "p1u2l9_ejemplo_0004_0001_1",
+          "p1u2l9_ejemplo_0004_0001_2",
           "block_0004_0002",
           "block_0004_0003"
         ]
@@ -4830,6 +4901,8 @@
         "blocks": [
           "block_0005_0000",
           "block_0005_0001",
+          "p1u2l9_ejemplo_0005_0001_1",
+          "p1u2l9_ejemplo_0005_0001_2",
           "block_0005_0002",
           "block_0005_0003",
           "block_0005_0004"
@@ -5278,7 +5351,170 @@
         ]
       }
     },
-    "additions": [],
+    "additions": [
+      {
+        "id": "p1u2l9_ejemplo_0000_0001_1",
+        "sha256": "b717482c66774f84d6f6c8184bc63bd62a8612017643007350367be79669a0a3",
+        "storage": {
+          "page": 13,
+          "block": 0
+        },
+        "progressPage": "page_0000"
+      },
+      {
+        "id": "p1u2l9_ejemplo_0000_0001_2",
+        "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5",
+        "storage": {
+          "page": 13,
+          "block": 1
+        },
+        "progressPage": "page_0000"
+      },
+      {
+        "id": "p1u2l9_ejemplo_0000_0001_3",
+        "sha256": "61ca8325933b97f4576cbec90b07ee1ad151724a2be285b0214f3fa3355428b0",
+        "storage": {
+          "page": 13,
+          "block": 2
+        },
+        "progressPage": "page_0000"
+      },
+      {
+        "id": "p1u2l9_ejemplo_0000_0001_4",
+        "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5",
+        "storage": {
+          "page": 13,
+          "block": 3
+        },
+        "progressPage": "page_0000"
+      },
+      {
+        "id": "p1u2l9_ejemplo_0000_0004_1",
+        "sha256": "395c10a4f00cbb2535ca846f0e0dc873100526a1d888ea8731ed7efb59965bdc",
+        "storage": {
+          "page": 13,
+          "block": 4
+        },
+        "progressPage": "page_0000"
+      },
+      {
+        "id": "p1u2l9_ejemplo_0000_0004_2",
+        "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5",
+        "storage": {
+          "page": 13,
+          "block": 5
+        },
+        "progressPage": "page_0000"
+      },
+      {
+        "id": "p1u2l9_ejemplo_0001_0001_1",
+        "sha256": "fb02cbf47b2b494c81a4928381e2e2c9c3c48029e74c0c01c99999c260a5f220",
+        "storage": {
+          "page": 13,
+          "block": 6
+        },
+        "progressPage": "page_0001"
+      },
+      {
+        "id": "p1u2l9_ejemplo_0001_0001_2",
+        "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5",
+        "storage": {
+          "page": 13,
+          "block": 7
+        },
+        "progressPage": "page_0001"
+      },
+      {
+        "id": "p1u2l9_ejemplo_0001_0001_3",
+        "sha256": "61ca8325933b97f4576cbec90b07ee1ad151724a2be285b0214f3fa3355428b0",
+        "storage": {
+          "page": 13,
+          "block": 8
+        },
+        "progressPage": "page_0001"
+      },
+      {
+        "id": "p1u2l9_ejemplo_0001_0001_4",
+        "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5",
+        "storage": {
+          "page": 13,
+          "block": 9
+        },
+        "progressPage": "page_0001"
+      },
+      {
+        "id": "p1u2l9_ejemplo_0003_0001_1",
+        "sha256": "670fba2389a078c60cec4b8e360b938136f21a23e6c4488fc6a560c7e20d439b",
+        "storage": {
+          "page": 13,
+          "block": 10
+        },
+        "progressPage": "page_0003"
+      },
+      {
+        "id": "p1u2l9_ejemplo_0003_0001_2",
+        "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5",
+        "storage": {
+          "page": 13,
+          "block": 11
+        },
+        "progressPage": "page_0003"
+      },
+      {
+        "id": "p1u2l9_ejemplo_0003_0001_3",
+        "sha256": "976b006f9ff22b5b335c325202d2ab59b3a2c9cc9ed186dbb5c6d2b282da7fa5",
+        "storage": {
+          "page": 13,
+          "block": 12
+        },
+        "progressPage": "page_0003"
+      },
+      {
+        "id": "p1u2l9_ejemplo_0003_0001_4",
+        "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5",
+        "storage": {
+          "page": 13,
+          "block": 13
+        },
+        "progressPage": "page_0003"
+      },
+      {
+        "id": "p1u2l9_ejemplo_0004_0001_1",
+        "sha256": "a8c643ac5500798869251cec54ffbdaffda46708346f636c470cc8938abb709f",
+        "storage": {
+          "page": 13,
+          "block": 14
+        },
+        "progressPage": "page_0004"
+      },
+      {
+        "id": "p1u2l9_ejemplo_0004_0001_2",
+        "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5",
+        "storage": {
+          "page": 13,
+          "block": 15
+        },
+        "progressPage": "page_0004"
+      },
+      {
+        "id": "p1u2l9_ejemplo_0005_0001_1",
+        "sha256": "a33ad890e1827a99bf0a6442420d34caf08bc1c25f34145ca253df5a076f600e",
+        "storage": {
+          "page": 13,
+          "block": 16
+        },
+        "progressPage": "page_0005"
+      },
+      {
+        "id": "p1u2l9_ejemplo_0005_0001_2",
+        "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5",
+        "storage": {
+          "page": 13,
+          "block": 17
+        },
+        "progressPage": "page_0005"
+      }
+    ],
     "editorial": [
       {
         "id": "block_0000_0002",
@@ -5314,6 +5550,36 @@
         "id": "block_0011_0005",
         "beforeSha256": "b7521892ca34cc6cd7e92c984e102d7c1bda485ddc8e0709dc61d86bb2e705cf",
         "afterSha256": "92db13e072990eb772b45d67b7a93456fa633b26b0751387f126ae8fd5051ee1"
+      },
+      {
+        "id": "block_0000_0001",
+        "beforeSha256": "35bf37b05e9706657cfe8625d793ec1a2c32886df5ef9281460b4a4e4c7a5121",
+        "afterSha256": "811ebcb76c38babf6d89deec8c1baf78d80a5f05a73b57fa9174a3712758149d"
+      },
+      {
+        "id": "block_0000_0004",
+        "beforeSha256": "40cfb2168651264821b638d9d811eca1b7b4ed96c90a3684091312601843f1d7",
+        "afterSha256": "2b381973d29c951498e7895984c09eada3f5d2ffca10f5ca9914dc3a47abc4b2"
+      },
+      {
+        "id": "block_0001_0001",
+        "beforeSha256": "7f69464733147f016afbdbff30d852e1f54f12553cb8e46eda3dd50c5d6814ce",
+        "afterSha256": "acaca95d298dcd37b545f77bc8cef74acf94fd79cea6416da4e690ba9dca8bbd"
+      },
+      {
+        "id": "block_0003_0001",
+        "beforeSha256": "99fe571204f24e70d3acf0d9c07098f70828897766975aad7e4fd872f9ca44ef",
+        "afterSha256": "93bb65ce9c27985aa64ae0b5d3a96085dded53e4927ebe5440b4fbde0e207d94"
+      },
+      {
+        "id": "block_0004_0001",
+        "beforeSha256": "7215db7231fb05ae2da92135fd036c7bd1aa6a9ae52c31cbabba17640130b182",
+        "afterSha256": "1bb28fd0a3cd373c5363e7af6f6cf867bf1b8759ab7922a0c001ef1dde24c50b"
+      },
+      {
+        "id": "block_0005_0001",
+        "beforeSha256": "3db5d6fdabc42f0236bf84ed2aaac4be90cbfed61d1605607e9b93f91e9e58a4",
+        "afterSha256": "060cb7972c38ba8e5bcee9ebb53457b9f317a6fae2d6898dc7beded19da6f11b"
       }
     ]
   }

@@ -17,6 +17,11 @@
           "text": "Dentro de un literal de texto, la barra invertida seguida de la letra n se escribe \\n. Esos dos signos representan un solo salto de línea. Cuando el programa muestra el texto, la palabra que viene después empieza en la línea siguiente (Stroustrup, 2024)."
         },
         {
+          "type": "code",
+          "language": "cpp",
+          "code": "std::cout << \"Ventanilla\\nCerrada\";"
+        },
+        {
           "type": "fill_code",
           "id": "p1u1l5_escribir_salto",
           "question": "Completa el hueco dentro de las comillas. El programa debe mostrar Anden en la primera línea y Norte en la segunda. Escribe los dos signos de C++ que producen ese salto de línea.",
@@ -181,6 +186,11 @@
           "text": "En el editor, la primera instrucción con std::cout escribe Puesto y un salto de línea en la consola. La última escribe Fin. Entre ambas encontrarás un comentario y, justo debajo, una línea en blanco con sangría. Escribe en esa línea una instrucción que muestre Mesa B y añada un salto de línea. Así, Fin aparecerá debajo de Mesa B."
         },
         {
+          "type": "code",
+          "language": "cpp",
+          "code": "std::cout << \"Puesto\\n\";\n// Escribe aqui la instruccion que falta.\n\nstd::cout << \"Fin\";"
+        },
+        {
           "type": "paragraph",
           "text": "La salida debe mostrar estas tres líneas. El mensaje termina con la palabra Fin.\n\nPuesto\nMesa B\nFin"
         },
@@ -193,7 +203,8 @@
               {
                 "standardInput": "",
                 "outputs": [
-                  "Puesto\nMesa B\nFin"
+                  "Puesto\nMesa B\nFin",
+                  "Puesto\nMesa B\nFin\n"
                 ],
                 "explanation": "La primera línea dice Puesto, la segunda dice Mesa B y la tercera dice Fin. El salto de línea después de Mesa B dejó Fin en su propia línea."
               }
@@ -2485,6 +2496,7 @@
           "block_0000_0000",
           "block_0000_0001",
           "block_0000_0002",
+          "p1u1l5_aviso_lectura",
           "block_0000_0003",
           "block_0000_0004",
           "block_0000_0005",
@@ -2516,6 +2528,7 @@
           "block_0002_0006",
           "block_0002_0007",
           "block_0002_0008",
+          "p1u1l5_ubicar_linea",
           "block_0002_0009",
           "block_0002_0010",
           "block_0002_0011",
@@ -2812,7 +2825,26 @@
         ]
       }
     },
-    "additions": [],
+    "additions": [
+      {
+        "id": "p1u1l5_aviso_lectura",
+        "sha256": "f7fa61e69f98725761c132e05ddff366fa46e7f184fe8e946addc3f88831cd5b",
+        "storage": {
+          "page": 6,
+          "block": 0
+        },
+        "progressPage": "page_0000"
+      },
+      {
+        "id": "p1u1l5_ubicar_linea",
+        "sha256": "bf6a3ea50fbcfee2796388f91f450dc1cea39ec8800c6d2a2bcd48a39e02fb90",
+        "storage": {
+          "page": 6,
+          "block": 1
+        },
+        "progressPage": "page_0002"
+      }
+    ],
     "editorial": [
       {
         "id": "block_0002_0009",
@@ -2843,6 +2875,132 @@
         "id": "block_0004_0010",
         "beforeSha256": "e6e1c66ebe1ac052817e724417b99a214ab79cc88df2ab0aeda8e3535d40a2f0",
         "afterSha256": "2dc8b7ed8184679f2e37bfc665e4da5fa28365ad1657ff51635d8e700df102ae"
+      },
+      {
+        "id": "block_0002_0010",
+        "beforeSha256": "fa12ffd7b40245abaa1d315f22c19fa13de9175b36fe1e208aa22de8068fda45",
+        "afterSha256": "7f146f8d1d6b575ad098423ea9865dfe989f593008514d609669864c83232830"
+      }
+    ],
+    "compilerCaseRevisions": [
+      {
+        "id": "block_0002_0010",
+        "block": {
+          "type": "cpp_compiler",
+          "initialCode": "#include <iostream>\n\nint main() {\n    std::cout << \"Puesto\\n\";\n    // Escribe aqui la instruccion que falta.\n    \n    std::cout << \"Fin\";\n\n    return 0;\n}\n",
+          "outputCheck": {
+            "inputComparison": "exact",
+            "cases": [
+              {
+                "standardInput": "",
+                "outputs": [
+                  "Puesto\nMesa B\nFin"
+                ],
+                "explanation": "La primera línea dice Puesto, la segunda dice Mesa B y la tercera dice Fin. El salto de línea después de Mesa B dejó Fin en su propia línea."
+              }
+            ]
+          }
+        },
+        "cases": [
+          {
+            "standardInput": "",
+            "outputs": [
+              "Puesto\nMesa B\nFin",
+              "Puesto\nMesa B\nFin\n"
+            ],
+            "explanation": "La primera línea dice Puesto, la segunda dice Mesa B y la tercera dice Fin. El salto de línea después de Mesa B dejó Fin en su propia línea."
+          }
+        ],
+        "editorialIndex": 6,
+        "historySha256": "f65fbb6df7af2c60d0689dfd630e72ab501aed2a5da26ce0f0612da5f2024c81",
+        "semanticBefore": [
+          {
+            "block": "block_0002_0010",
+            "path": "/outputCheck/cases/0/explanation",
+            "sourceSha256": "b48797ec1cb70e0b9bcfc711800f6e18b2e1cef4cda8fbfd99c6e8f394815bf3",
+            "spans": [
+              {
+                "start": 22,
+                "end": 28,
+                "text": "Puesto",
+                "role": "output",
+                "reading": "natural"
+              },
+              {
+                "start": 46,
+                "end": 52,
+                "text": "Mesa B",
+                "role": "output",
+                "reading": "natural"
+              },
+              {
+                "start": 71,
+                "end": 74,
+                "text": "Fin",
+                "role": "output",
+                "reading": "natural"
+              },
+              {
+                "start": 105,
+                "end": 111,
+                "text": "Mesa B",
+                "role": "output",
+                "reading": "natural"
+              },
+              {
+                "start": 117,
+                "end": 120,
+                "text": "Fin",
+                "role": "output",
+                "reading": "natural"
+              }
+            ]
+          }
+        ],
+        "semanticAfter": [
+          {
+            "block": "block_0002_0010",
+            "path": "/outputCheck/cases/0/explanation",
+            "sourceSha256": "b48797ec1cb70e0b9bcfc711800f6e18b2e1cef4cda8fbfd99c6e8f394815bf3",
+            "spans": [
+              {
+                "start": 22,
+                "end": 28,
+                "text": "Puesto",
+                "role": "output",
+                "reading": "natural"
+              },
+              {
+                "start": 46,
+                "end": 52,
+                "text": "Mesa B",
+                "role": "output",
+                "reading": "natural"
+              },
+              {
+                "start": 71,
+                "end": 74,
+                "text": "Fin",
+                "role": "output",
+                "reading": "natural"
+              },
+              {
+                "start": 105,
+                "end": 111,
+                "text": "Mesa B",
+                "role": "output",
+                "reading": "natural"
+              },
+              {
+                "start": 117,
+                "end": 120,
+                "text": "Fin",
+                "role": "output",
+                "reading": "natural"
+              }
+            ]
+          }
+        ]
       }
     ]
   }

@@ -28,6 +28,17 @@
           "text": "Este fragmento contiene dos instrucciones, cada una terminada en punto y coma. Se ejecuta primero la que muestra Lado. Después se ejecuta la que muestra Norte. La segunda continúa justo después del texto que ya se había escrito (Stroustrup, 2024)."
         },
         {
+          "type": "output_prediction",
+          "id": "sin_espacio",
+          "question": "¿Qué texto verás en la consola cuando se ejecuten las dos instrucciones? Escribe el mensaje tal como aparecerá. Fíjate en qué caracteres hay entre las comillas de cada literal.",
+          "language": "cpp",
+          "code": "#include <iostream>\n\nint main() {\n    std::cout << \"Roca\";\n    std::cout << \"Azul\";\n\n    return 0;\n}\n",
+          "answers": [
+            "RocaAzul"
+          ],
+          "explanation": "La primera instrucción escribe Roca. La segunda añade Azul inmediatamente después. Ninguno de los dos literales aporta un espacio ni un salto; por eso se obtiene RocaAzul."
+        },
+        {
           "type": "paragraph",
           "text": "Así cambia el texto de la consola al ejecutar las dos instrucciones.\n\nAntes de ejecutar la primera instrucción, la consola está vacía.\nDespués de ejecutar la instrucción que escribe Lado, se lee Lado.\nDespués de ejecutar la instrucción que añade Norte, se lee LadoNorte."
         },
@@ -39,17 +50,6 @@
               "text": "Eso no añade un espacio"
             }
           ]
-        },
-        {
-          "type": "output_prediction",
-          "id": "sin_espacio",
-          "question": "¿Qué texto verás en la consola cuando se ejecuten las dos instrucciones? Escribe el mensaje tal como aparecerá. Fíjate en qué caracteres hay entre las comillas de cada literal.",
-          "language": "cpp",
-          "code": "#include <iostream>\n\nint main() {\n    std::cout << \"Roca\";\n    std::cout << \"Azul\";\n\n    return 0;\n}\n",
-          "answers": [
-            "RocaAzul"
-          ],
-          "explanation": "La primera instrucción escribe Roca. La segunda añade Azul inmediatamente después. Ninguno de los dos literales aporta un espacio ni un salto; por eso se obtiene RocaAzul."
         },
         {
           "type": "code",
@@ -88,6 +88,11 @@
           "text": "El espacio también podría quedar al final del primer literal o en una instrucción intermedia. Importa el orden de los caracteres escritos, no cuántas instrucciones utilizamos (Stroustrup, 2024)."
         },
         {
+          "type": "code",
+          "language": "cpp",
+          "code": "std::cout << \"Luz \";\nstd::cout << \"verde\";"
+        },
+        {
           "type": "multiple_choice",
           "id": "p1u1l3_situar_espacio",
           "question": "Se ejecutan std::cout << \"Casa \"; y después std::cout << \"Verde\";. ¿Qué texto se obtiene?",
@@ -117,6 +122,17 @@
           "text": "Lee la instrucción de izquierda a derecha. Con el primer <<, std::cout escribe el texto del primer literal en la consola. Cada vez que aparece otro <<, std::cout escribe el texto del literal siguiente justo después del texto anterior (Stroustrup, 2024)."
         },
         {
+          "type": "output_prediction",
+          "id": "espacio_interno",
+          "question": "Predice la salida. Escribe el texto producido y conserva los espacios que el programa inserta dentro del mensaje.",
+          "language": "cpp",
+          "code": "#include <iostream>\n\nint main() {\n    std::cout << \"Ruta\" << \" \" << \"Sur\";\n\n    return 0;\n}\n",
+          "answers": [
+            "Ruta Sur"
+          ],
+          "explanation": "La instrucción envía tres partes: Ruta, un espacio y Sur. Las tres quedan en una sola línea. Los espacios situados fuera de los literales separan piezas del código, pero no se añaden al mensaje."
+        },
+        {
           "type": "paragraph",
           "text": "Primero, con el literal \"Sala\" el programa escribe Sala.\nLuego con el literal \" \" añade un espacio después de Sala.\nPor último, con el literal \"Central\" escribe Central después del espacio.\nEn la consola ves Sala Central."
         },
@@ -139,17 +155,6 @@
             "\"Norte\""
           ],
           "explanation": "El primer hueco necesita << para enviar el literal que contiene el espacio. El segundo necesita \"Norte\". Se escribe Puerto, luego el espacio y al final Norte; el resultado es Puerto Norte."
-        },
-        {
-          "type": "output_prediction",
-          "id": "espacio_interno",
-          "question": "Predice la salida. Escribe el texto producido y conserva los espacios que el programa inserta dentro del mensaje.",
-          "language": "cpp",
-          "code": "#include <iostream>\n\nint main() {\n    std::cout << \"Ruta\" << \" \" << \"Sur\";\n\n    return 0;\n}\n",
-          "answers": [
-            "Ruta Sur"
-          ],
-          "explanation": "La instrucción envía tres partes: Ruta, un espacio y Sur. Las tres quedan en una sola línea. Los espacios situados fuera de los literales separan piezas del código, pero no se añaden al mensaje."
         },
         {
           "type": "output_prediction",
@@ -177,6 +182,11 @@
         {
           "type": "paragraph",
           "text": "Si una instrucción escribe Sala, otra escribe un espacio y otra escribe Central, en la consola aparece Sala Central. Una sola instrucción con varios operadores << puede escribir esos mismos tres textos en el mismo orden. Para comprobar si la salida coincide, compara los caracteres que se escriben en la consola, incluido el espacio."
+        },
+        {
+          "type": "code",
+          "language": "cpp",
+          "code": "std::cout << \"Sala\";\nstd::cout << \" \";\nstd::cout << \"Central\";"
         }
       ]
     },
@@ -210,14 +220,6 @@
           ]
         },
         {
-          "type": "paragraph",
-          "text": "La instrucción realiza estas acciones en este orden:\n\nEscribe Planta baja.\nEnvía el salto de línea.\nEscribe Planta alta al comienzo de la línea nueva."
-        },
-        {
-          "type": "paragraph",
-          "text": "En una predicción, escribe el texto que produce el programa. Para separar sus líneas usa Enter en el campo de respuesta. No escribas la barra inversa y la n cuando el programa envía un salto."
-        },
-        {
           "type": "fill_code",
           "id": "p1u1l3_construir_salto",
           "question": "Completa un único literal para mostrar Inicio en la primera línea y Fin en la segunda, sin un salto al final. Escribe el literal completo en una sola línea del código, usando el escape estudiado.",
@@ -227,6 +229,14 @@
             "\"Inicio\\nFin\""
           ],
           "explanation": "El literal \"Inicio\\nFin\" sitúa \\n entre las dos palabras. Primero se escribe Inicio, después comienza una nueva línea y allí se escribe Fin. En el código escribimos el escape; en la salida obtenemos la separación."
+        },
+        {
+          "type": "paragraph",
+          "text": "La instrucción realiza estas acciones en este orden:\n\nEscribe Planta baja.\nEnvía el salto de línea.\nEscribe Planta alta al comienzo de la línea nueva."
+        },
+        {
+          "type": "paragraph",
+          "text": "En una predicción, escribe el texto que produce el programa. Para separar sus líneas usa Enter en el campo de respuesta. No escribas la barra inversa y la n cuando el programa envía un salto."
         },
         {
           "type": "output_prediction",
@@ -290,6 +300,11 @@
           "text": "Cada salto hace avanzar otra línea. Si una instrucción termina enviando un salto y la siguiente comienza con otro, se producen dos avances seguidos: queda una línea vacía entre los textos. Para averiguar el resultado, cuenta los saltos enviados; no basta contar las instrucciones."
         },
         {
+          "type": "code",
+          "language": "cpp",
+          "code": "std::cout << \"Sol\\n\";\nstd::cout << \"\\nMar\";"
+        },
+        {
           "type": "output_prediction",
           "id": "p1u1l3_linea_vacia",
           "language": "cpp",
@@ -323,15 +338,6 @@
           "text": "Las comillas de los extremos delimitan todo el literal. Cada \\\" interior representa una comilla que sí forma parte del mensaje. Por eso la salida es Nombre: \"Luna\", con unas comillas alrededor del nombre. La barra inversa indica cómo interpretar la comilla siguiente; no aparece en la salida (Köppe et al., 2023)."
         },
         {
-          "type": "paragraph",
-          "text": "Una escritura que comienza con barra inversa y representa un carácter se llama secuencia de escape. Ya usamos \\n para un salto. Ahora usamos \\\" para una comilla doble. Las comillas que delimitan el literal conservan su función: no se muestran (Köppe et al., 2023).",
-          "emphasis": [
-            {
-              "text": "secuencia de escape"
-            }
-          ]
-        },
-        {
           "type": "fill_code",
           "id": "p1u1l3_escribir_comillas",
           "question": "Completa el literal para mostrar \"Abierto\", incluidas las dos comillas visibles. El hueco pide el literal entero, con sus propias comillas delimitadoras.",
@@ -341,6 +347,15 @@
             "\"\\\"Abierto\\\"\""
           ],
           "explanation": "El literal completo es \"\\\"Abierto\\\"\". Las comillas exteriores delimitan el literal; los dos escapes \\\" proporcionan las comillas que rodean Abierto en la salida."
+        },
+        {
+          "type": "paragraph",
+          "text": "Una escritura que comienza con barra inversa y representa un carácter se llama secuencia de escape. Ya usamos \\n para un salto. Ahora usamos \\\" para una comilla doble. Las comillas que delimitan el literal conservan su función: no se muestran (Köppe et al., 2023).",
+          "emphasis": [
+            {
+              "text": "secuencia de escape"
+            }
+          ]
         },
         {
           "type": "output_prediction",
@@ -443,6 +458,11 @@
           "text": "Dentro de un literal, las barras son parte del texto. En \"Norte//Sur\", las barras se encuentran entre las comillas del mensaje. Para decidir si // inicia un comentario, fíjate en dónde empieza y termina el literal (Stroustrup, 2024)."
         },
         {
+          "type": "code",
+          "language": "cpp",
+          "code": "std::cout << \"Norte//Sur\";"
+        },
+        {
           "type": "output_prediction",
           "id": "barras_en_literal",
           "question": "Predice la salida. Escribe los caracteres que se muestran; interpreta los signos según su posición dentro o fuera del literal.",
@@ -498,6 +518,11 @@
         {
           "type": "paragraph",
           "text": "Una nota útil explica para qué sirve una parte o por qué elegimos una solución. Si cambiamos la instrucción, también hay que revisar la nota que la describe. El compilador no comprueba que la promesa del comentario coincida con lo que hace el código (Stroustrup, 2024)."
+        },
+        {
+          "type": "code",
+          "language": "cpp",
+          "code": "// Muestra Norte.\nstd::cout << \"Sur\";"
         },
         {
           "type": "multiple_choice",
@@ -602,10 +627,6 @@
           "text": "Escribe un salto de línea después de Informe y otro después de Zona Este. Deja un espacio entre las dos palabras de la segunda línea. Puedes escribir el informe con un solo literal, encadenar varios con << o usar una instrucción para cada línea."
         },
         {
-          "type": "paragraph",
-          "text": "Si aparece un error de compilación, lee su mensaje y revisa el código. Si el programa se ejecuta, compara el texto de la consola con las tres líneas del ejemplo. Busca la primera diferencia en las palabras, los espacios o los saltos de línea. Revisa la instrucción que produce esa parte de la salida."
-        },
-        {
           "type": "cpp_compiler",
           "initialCode": "#include <iostream>\n\nint main() {\n\n    return 0;\n}\n",
           "outputCheck": {
@@ -623,6 +644,10 @@
           }
         },
         {
+          "type": "paragraph",
+          "text": "Si aparece un error de compilación, lee su mensaje y revisa el código. Si el programa se ejecuta, compara el texto de la consola con las tres líneas del ejemplo. Busca la primera diferencia en las palabras, los espacios o los saltos de línea. Revisa la instrucción que produce esa parte de la salida."
+        },
+        {
           "type": "heading",
           "text": "Seguir una implementación del informe"
         },
@@ -634,6 +659,15 @@
         {
           "type": "paragraph",
           "text": "Esta implementación utiliza un literal que contiene Informe, un salto, Zona Este, otro salto y Fin. La instrucción envía todo ese contenido. Si elegiste varias instrucciones, sigue lo que aporta cada una: el resultado completo debe ser el mismo."
+        },
+        {
+          "type": "paragraph",
+          "text": "Puedes aplicar la misma técnica a un aviso de dos líneas. Esta versión encadena las dos partes del aviso en una sola instrucción."
+        },
+        {
+          "type": "code",
+          "language": "cpp",
+          "code": "std::cout << \"Entrada\\n\"\n          << \"Abierta\";"
         }
       ]
     },
@@ -652,10 +686,6 @@
           "text": "Ficha\nNombre: \"Mara\"\nCarpeta: Zona\\A"
         },
         {
-          "type": "paragraph",
-          "text": "Los textos del informe ya están en el código. El programa debe mostrarlos sin pedirle datos al usuario. Lee las instrucciones en orden y fíjate en cuál quedó comentada. Corrige el código para que las tres líneas aparezcan en el orden del ejemplo."
-        },
-        {
           "type": "cpp_compiler",
           "initialCode": "#include <iostream>\n\nint main() {\n    // La primera línea debe ser Ficha.\n    std::cout << \"Nombre: \\\"Mara\\\"\\n\";\n    std::cout << \"Ficha\\n\";\n    // std::cout << \"Carpeta: Zona\\\\A\";\n    return 0;\n}\n",
           "outputCheck": {
@@ -671,6 +701,10 @@
               }
             ]
           }
+        },
+        {
+          "type": "paragraph",
+          "text": "Los textos del informe ya están en el código. El programa debe mostrarlos sin pedirle datos al usuario. Lee las instrucciones en orden y fíjate en cuál quedó comentada. Corrige el código para que las tres líneas aparezcan en el orden del ejemplo."
         },
         {
           "type": "heading",
@@ -3568,14 +3602,15 @@
           "block_0000_0001",
           "block_0000_0002",
           "block_0000_0003",
+          "block_0000_0006",
           "block_0000_0004",
           "block_0000_0005",
-          "block_0000_0006",
           "block_0000_0007",
           "block_0000_0008",
           "block_0000_0009",
           "block_0000_0010",
           "block_0000_0011",
+          "p1u1l3_espacio_primera_instruccion",
           "block_0000_0012"
         ]
       },
@@ -3585,13 +3620,14 @@
           "block_0001_0000",
           "block_0001_0001",
           "block_0001_0002",
+          "block_0001_0006",
           "block_0001_0003",
           "block_0001_0004",
           "block_0001_0005",
-          "block_0001_0006",
           "block_0001_0007",
           "block_0001_0008",
-          "block_0001_0009"
+          "block_0001_0009",
+          "p1u1l3_tres_instrucciones"
         ]
       },
       {
@@ -3601,15 +3637,16 @@
           "block_0002_0001",
           "block_0002_0002",
           "block_0002_0003",
+          "block_0002_0006",
           "block_0002_0004",
           "block_0002_0005",
-          "block_0002_0006",
           "block_0002_0007",
           "block_0002_0008",
           "block_0002_0009",
           "block_0002_0010",
           "block_0002_0011",
           "block_0002_0012",
+          "p1u1l3_dos_saltos_visibles",
           "block_0002_0013"
         ]
       },
@@ -3620,8 +3657,8 @@
           "block_0003_0001",
           "block_0003_0002",
           "block_0003_0003",
-          "block_0003_0004",
           "block_0003_0005",
+          "block_0003_0004",
           "block_0003_0006",
           "block_0003_0007",
           "block_0003_0008",
@@ -3640,6 +3677,7 @@
           "block_0004_0002",
           "block_0004_0003",
           "block_0004_0004",
+          "p1u1l3_barras_en_un_literal",
           "block_0004_0005",
           "block_0004_0006",
           "block_0004_0007",
@@ -3648,6 +3686,7 @@
           "block_0004_0010",
           "block_0004_0011",
           "block_0004_0012",
+          "p1u1l3_comparar_comentario",
           "block_0004_0013"
         ]
       },
@@ -3671,11 +3710,13 @@
           "block_0006_0001",
           "block_0006_0002",
           "block_0006_0003",
-          "block_0006_0004",
           "block_0006_0005",
+          "block_0006_0004",
           "block_0006_0006",
           "block_0006_0007",
-          "block_0006_0008"
+          "block_0006_0008",
+          "p1u1l3_otra_salida",
+          "p1u1l3_informe_por_inserciones"
         ]
       },
       {
@@ -3684,8 +3725,8 @@
           "block_0007_0000",
           "block_0007_0001",
           "block_0007_0002",
-          "block_0007_0003",
           "block_0007_0004",
+          "block_0007_0003",
           "block_0007_0005",
           "block_0007_0006",
           "block_0007_0007",
@@ -4104,7 +4145,71 @@
         ]
       }
     },
-    "additions": [],
+    "additions": [
+      {
+        "id": "p1u1l3_espacio_primera_instruccion",
+        "sha256": "497b59531fd3a9b9f8528967989eefe56dd80b0a9461f7a344c26c524ade3fd1",
+        "storage": {
+          "page": 8,
+          "block": 0
+        },
+        "progressPage": "page_0000"
+      },
+      {
+        "id": "p1u1l3_tres_instrucciones",
+        "sha256": "718e3b8d8409fa3dfc1c528bf2a67d57e9553a98e420d71651a6b275a4432afe",
+        "storage": {
+          "page": 8,
+          "block": 1
+        },
+        "progressPage": "page_0001"
+      },
+      {
+        "id": "p1u1l3_dos_saltos_visibles",
+        "sha256": "87980177af5e1a73bf05d3e44e04932234f7033753cb3cdd9115429b03453220",
+        "storage": {
+          "page": 8,
+          "block": 2
+        },
+        "progressPage": "page_0002"
+      },
+      {
+        "id": "p1u1l3_barras_en_un_literal",
+        "sha256": "11cea02ce5ffdab3bef7daafa59ef485f69178df9a1dcce1b2e2f05fb5a597d6",
+        "storage": {
+          "page": 8,
+          "block": 3
+        },
+        "progressPage": "page_0004"
+      },
+      {
+        "id": "p1u1l3_comparar_comentario",
+        "sha256": "9b40704128fa38187f543b5dda4fa50bc11a09d25cf8752502f884b9dcdecf8b",
+        "storage": {
+          "page": 8,
+          "block": 4
+        },
+        "progressPage": "page_0004"
+      },
+      {
+        "id": "p1u1l3_otra_salida",
+        "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5",
+        "storage": {
+          "page": 8,
+          "block": 5
+        },
+        "progressPage": "page_0006"
+      },
+      {
+        "id": "p1u1l3_informe_por_inserciones",
+        "sha256": "efb93ba790898a590bae0cf177badf92dde074fccf1e26360af4eb120b944ce3",
+        "storage": {
+          "page": 8,
+          "block": 6
+        },
+        "progressPage": "page_0006"
+      }
+    ],
     "editorial": [
       {
         "id": "block_0002_0005",
