@@ -84,6 +84,56 @@ const curriculum::Block& active_block(const curriculum::Lesson& lesson, std::str
     const auto at = position(lesson, identity);
     return lesson.pages.at(at.page).blocks.at(at.block);
 }
+
+struct U2L9Publication {
+    const char* label;
+    const char* filename;
+    const char* lesson_id;
+    const char* laboratory;
+    const char* reference;
+    const char* boxes;
+    const char* boxes_reference;
+    bool active_edition;
+};
+constexpr U2L9Publication archived_u2l9_publication{
+    "archived publication", "objetos_y_estado/lesson_leer_una_entrada_conocida.json",
+    "cpp_fundamentals__objetos_y_estado__leer_una_entrada_conocida",
+    "block_0009_0003", "block_0010_0001", "p1u2l9_reparar_lectura_de_cajas", "block_0007_0001", false};
+constexpr U2L9Publication active_u2l9_publication{
+    "active edition", "edition_es_1__objetos_y_estado/lesson_leer_una_entrada_conocida.json",
+    "cpp_fundamentals__edition_es_1__objetos_y_estado__leer_una_entrada_conocida",
+    "block_0009_0004", "block_0009_0006", "block_0006_0004", "block_0006_0006", true};
+
+const U2L9Publication& u2l9_publication(const curriculum::Lesson& lesson) {
+    const auto& publication = lesson.id == active_u2l9_publication.lesson_id
+        ? active_u2l9_publication : archived_u2l9_publication;
+    check(lesson.id == publication.lesson_id && lesson.locale == "es" && lesson.compiler_puzzles_required,
+        "U2L9 QA loaded another publication or changed its mandatory compiler policy");
+    if (publication.active_edition) {
+        check(lesson.course_edition && *lesson.course_edition ==
+            curriculum::CourseEdition{"cpp_fundamentals", "es", "cpp_desde_cero_2026", 1},
+            "U2L9 QA did not load the authored active Spanish course edition");
+    } else check(!lesson.course_edition, "The archived U2L9 publication unexpectedly became a new edition");
+    return publication;
+}
+
+void require_active_u2l9_reference_layout(const curriculum::Lesson& lesson, const U2L9Publication& publication) {
+    if (!publication.active_edition) return;
+    const auto target = position(lesson, publication.laboratory);
+    const auto reference = position(lesson, publication.reference);
+    const auto& source = lesson.pages.at(reference.page).blocks.at(reference.block);
+    check(target.page == reference.page && target.block < reference.block
+        && curriculum::reference_activity(lesson, source) == target,
+        "The active U2L9 reference must follow its own editor on the same page");
+    for (std::size_t index = target.block + 1; index < reference.block; ++index) {
+        const auto type = lesson.pages.at(target.page).blocks.at(index).type;
+        check(type == curriculum::BlockType::heading || type == curriculum::BlockType::paragraph
+            || type == curriculum::BlockType::note || type == curriculum::BlockType::code
+            || type == curriculum::BlockType::image,
+            "An intervening exercise separated the active U2L9 editor from its reference");
+    }
+}
+
 const curriculum::Block& archived_compiler(const curriculum::Lesson& lesson, std::string_view identity) {
     check(!curriculum::stable_block_position(lesson, identity) && curriculum::retired_block(lesson, identity),
         "A historical compiler was restored to the active lesson or lost its retirement");
@@ -224,8 +274,7 @@ void prepare_u2l9_prior_quizzes(state::StateData& data,const curriculum::Lesson&
 // boxes input is observed without turning it into another required case.
 void prepare_u2l9_prerequisites(state::StateData& data,const curriculum::Lesson& lesson,
         curriculum::StatePosition target,const std::filesystem::path& projects) {
-    check(lesson.id=="cpp_fundamentals__objetos_y_estado__leer_una_entrada_conocida"&&
-          lesson.compiler_puzzles_required,"U2L9 prerequisite QA requires its actual published policy");
+    const auto& publication=u2l9_publication(lesson);
     const auto source_at=[&](std::string_view identity)->std::string {
         const auto at=curriculum::stable_block_position(lesson,identity);
         check(at.has_value(),"An authored U2L9 prerequisite reference is missing");
@@ -241,14 +290,25 @@ void prepare_u2l9_prerequisites(state::StateData& data,const curriculum::Lesson&
             if(owner.type!=curriculum::BlockType::cpp_compiler)continue;
             check(owner.output_check&&!owner.output_check->cases.empty(),
                 "A preceding U2L9 compiler has no independent output contract");
-            const bool boxes=owner.stable_id=="p1u2l9_reparar_lectura_de_cajas"||
-                owner.stable_id=="block_0006_0002";
+            const bool boxes=owner.stable_id==publication.boxes||
+                (!publication.active_edition&&owner.stable_id=="block_0006_0002");
             std::string source;
-            if(boxes)source=source_at("block_0007_0001");
-            else if(owner.stable_id=="block_0008_0008")source=owner.initial_code;
-            else if(owner.stable_id=="block_0009_0003")source=source_at("block_0010_0001");
-            else if(owner.stable_id=="block_0011_0006")source=source_at("block_0012_0002");
+            if(boxes)source=source_at(publication.boxes_reference);
+            else if(!publication.active_edition&&owner.stable_id=="block_0008_0008")source=owner.initial_code;
+            else if(owner.stable_id==publication.laboratory)source=source_at(publication.reference);
+            else if(!publication.active_edition&&owner.stable_id=="block_0011_0006")source=source_at("block_0012_0002");
             else check(false,"U2L9 QA must explicitly audit a newly added prerequisite");
+            if(publication.active_edition&&boxes){
+                const auto& reference=active_block(lesson,publication.boxes_reference);
+                check(owner.standard_input=="Rita 4"&&owner.output_check->input_comparison==curriculum::TextComparison::tokens&&
+                    owner.output_check->cases.size()==2&&
+                    owner.output_check->cases[0].standard_input=="Rita 4"&&
+                    owner.output_check->cases[0].outputs==std::vector<std::string>{"Rita: 7","Rita: 7\n"}&&
+                    owner.output_check->cases[1].standard_input=="Leo 2"&&
+                    owner.output_check->cases[1].outputs==std::vector<std::string>{"Leo: 5","Leo: 5\n"}&&
+                    curriculum::reference_activity(lesson,reference)==position(lesson,publication.boxes),
+                    "The active boxes prerequisite lost its independent input/output or own reference");
+            }
             check(windows::compiler_puzzle_case_count(data,lesson,owner)==0&&
                 !windows::compiler_puzzle_completed(data,lesson,owner),
                 "A supposedly fresh U2L9 prerequisite already has credit");
@@ -464,20 +524,29 @@ void prepare_u3_archived_state(state::StateData& data, const curriculum::Lesson&
         << " archives: nine real MSVC observations of three retired contracts; independent receipts and QA drafts retained\n";
 }
 
-void prepare_visual_profile(std::wstring_view token, bool u3 = false, bool combinations = false) {
+void prepare_visual_profile(std::wstring_view token, bool u3 = false, bool combinations = false,
+        bool active_edition = false) {
+    check(!active_edition || (!u3 && !combinations), "Active-edition visual QA is scoped to U2L9");
+    const auto& publication = active_edition ? active_u2l9_publication : archived_u2l9_publication;
     phase = combinations ? "prepare new isolated U3 combinations visual QA"
-        : u3 ? "prepare new isolated U3 stdout visual QA" : "prepare new isolated U2L9 visual QA";
+        : u3 ? "prepare new isolated U3 stdout visual QA"
+        : active_edition ? "prepare new isolated active-edition U2L9 visual QA" : "prepare new isolated archived U2L9 visual QA";
     check(is_valid_qa_instance(token), "Unsafe visual QA instance token");
     const auto path = combinations ? combinations_asset() : std::filesystem::path(build::source_root) /
         "app/src/main/assets/content/es/programming/cpp_fundamentals" /
         (u3 ? "expresiones_y_decisiones/lesson_validez_y_cortocircuito.json"
-            : "objetos_y_estado/lesson_leer_una_entrada_conocida.json");
+            : publication.filename);
     const auto asset_hash = state::sha256(state::read_bytes(path));
     const auto lesson = windows::load_lesson(path);
     if (u3 || combinations) u3_contract(lesson, combinations);
+    else {
+        check(lesson.id == publication.lesson_id, "Visual QA loaded another U2L9 publication");
+        (void)u2l9_publication(lesson);
+        require_active_u2l9_reference_layout(lesson, publication);
+    }
     const auto target = position(lesson, combinations ? "p1u3l5_construir_acceso"
-        : u3 ? "p1u3l6_construir_reparto" : "block_0009_0003");
-    const auto reference = (u3 || combinations) ? target : position(lesson, "block_0010_0001");
+        : u3 ? "p1u3l6_construir_reparto" : publication.laboratory);
+    const auto reference = (u3 || combinations) ? target : position(lesson, publication.reference);
     const auto& compiler = lesson.pages[target.page].blocks[target.block];
     const auto& authored_reference = lesson.pages[reference.page].blocks[reference.block];
     check(compiler.type == curriculum::BlockType::cpp_compiler && compiler.output_check
@@ -488,7 +557,7 @@ void prepare_visual_profile(std::wstring_view token, bool u3 = false, bool combi
         "The visual QA target lost its actual first-case compiler contract");
     check(combinations ? compiler.standard_input == "1 0 0"
         : u3 ? compiler.standard_input == "28 0" && !compiler.initial_code.empty()
-        : compiler.stable_id == "block_0009_0003" && authored_reference.stable_id == "block_0010_0001"
+        : compiler.stable_id == publication.laboratory && authored_reference.stable_id == publication.reference
             && compiler.standard_input == "Iris 4 2" && authored_reference.type == curriculum::BlockType::code
             && authored_reference.language == "cpp" && !authored_reference.code.empty(),
         "The selected visual QA source, input or audited position changed");
@@ -660,7 +729,7 @@ struct View {
         initialize_profile_directories(environment.paths);
         state::StateData initial;
         state::prepare_lesson_state(initial, lesson);
-        if (lesson.id == "cpp_fundamentals__objetos_y_estado__leer_una_entrada_conocida") {
+        if (lesson.id == archived_u2l9_publication.lesson_id || lesson.id == active_u2l9_publication.lesson_id) {
             prepare_u2l9_prior_quizzes(initial, lesson, target);
             prepare_u2l9_prerequisites(initial, lesson, target, environment.paths.projects);
         } else if (lesson.id == "cpp_fundamentals__expresiones_y_decisiones__combinar_condiciones"
@@ -901,11 +970,15 @@ void verify_compiler_reference_gate(View& fixture, curriculum::StatePosition tar
 }
 
 void current_three_input_laboratory(const std::filesystem::path& historical = {},
-        bool same_page_publication = false) {
-    phase = historical.empty() ? "load current U2L9 asset and contracts"
+        bool same_page_publication = false, bool active_edition = false) {
+    check(!active_edition || (historical.empty() && !same_page_publication),
+        "Active-edition QA cannot substitute a historical U2L9 fixture");
+    const auto& publication = active_edition ? active_u2l9_publication : archived_u2l9_publication;
+    phase = active_edition ? "load active-edition U2L9 asset and contracts"
+        : historical.empty() ? "load archived U2L9 asset and contracts"
         : same_page_publication ? "load authentic same-page U2L9" : "load authentic archived U2L9";
     const auto path = historical.empty() ? std::filesystem::path(build::source_root) /
-        "app/src/main/assets/content/es/programming/cpp_fundamentals/objetos_y_estado/lesson_leer_una_entrada_conocida.json"
+        "app/src/main/assets/content/es/programming/cpp_fundamentals" / publication.filename
         : historical;
     const auto asset_hash = state::sha256(state::read_bytes(path));
     if (!historical.empty())
@@ -914,14 +987,17 @@ void current_three_input_laboratory(const std::filesystem::path& historical = {}
                 : "61ff67f148ad78c31036763889ebdb85e31ce315cb1103de516ee975819fd0e1"),
             "The U2L9 fixture differs from its exact independently authenticated publication");
     const auto lesson = windows::load_lesson(path);
-    const auto target = position(lesson, "block_0009_0003");
-    const auto reference = position(lesson, "block_0010_0001");
+    check(lesson.id == publication.lesson_id, "The input laboratory loaded another U2L9 publication");
+    (void)u2l9_publication(lesson);
+    require_active_u2l9_reference_layout(lesson, publication);
+    const auto target = position(lesson, publication.laboratory);
+    const auto reference = position(lesson, publication.reference);
     const auto& compiler = lesson.pages[target.page].blocks[target.block];
     const auto& authored_reference = lesson.pages[reference.page].blocks[reference.block];
     if (same_page_publication)
         check(!historical.empty() && reference.page == target.page && reference.block > target.block,
             "The authenticated a658efea U2L9 fixture lost its reference after the editor on the same page");
-    check(compiler.stable_id == "block_0009_0003" && authored_reference.stable_id == "block_0010_0001"
+    check(compiler.stable_id == publication.laboratory && authored_reference.stable_id == publication.reference
         && compiler.type == curriculum::BlockType::cpp_compiler && compiler.output_check
         && compiler.output_check->input_comparison == curriculum::TextComparison::tokens
         && compiler.output_check->cases.size() == 4 && compiler.standard_input == "Iris 4 2"
@@ -1046,9 +1122,9 @@ void current_three_input_laboratory(const std::filesystem::path& historical = {}
     retained(cases.size());
     check(fixture.executions == 8 && state::sha256(state::read_bytes(path)) == asset_hash && !IsWindowVisible(fixture.host),
         "The focal input QA lost a fresh execution, changed authored bytes or exposed the desktop");
-    std::cout << "PASS " << (historical.empty() ? "current"
+    std::cout << "PASS " << (historical.empty() ? publication.label
             : same_page_publication ? "authenticated same-page" : "authenticated archived")
-        << " U2L9 block_0009_0003: real independent preceding compiler evidence; "
+        << " U2L9 " << publication.laboratory << ": real independent preceding compiler evidence; "
         << "optional Leo cannot reveal its reference or reader script, including after reopen; "
         << "Iris alone opens real reference controls and preserves reading order; three optional cases, "
         << "eight focal MSVC runs, exact source/input/receipts, repeated token-whitespace input, "
@@ -1735,15 +1811,17 @@ int main(int argc, char** argv) {
     const bool named_rule_feedback = argc == 3 && std::string_view(argv[1]) == "--named-rule-feedback";
     const bool u2l9_history = argc == 3 && std::string_view(argv[1]) == "--u2l9-history";
     const bool u2l9_same_page = argc == 3 && std::string_view(argv[1]) == "--u2l9-same-page";
-    if (argc != 1 && !u3_stdout && !u3_combinations && !named_rule_feedback && !u2l9_history && !u2l9_same_page) {
+    const bool active_edition = argc == 2 && std::string_view(argv[1]) == "--active-edition";
+    if (argc != 1 && !u3_stdout && !u3_combinations && !named_rule_feedback && !u2l9_history && !u2l9_same_page && !active_edition) {
         const bool shape = argc == 3 && (std::string_view(argv[1]) == "--prepare-visual"
+            || std::string_view(argv[1]) == "--prepare-active-edition-visual"
             || std::string_view(argv[1]) == "--prepare-u3-visual"
             || std::string_view(argv[1]) == "--prepare-u3-combinations-visual"
             || std::string_view(argv[1]) == "--inspect-u3-combinations-visual");
         const auto raw = shape ? std::string_view(argv[2]) : std::string_view{};
         const std::wstring token(raw.begin(), raw.end());
         if (!shape || !is_valid_qa_instance(token)) {
-            std::cerr << "Usage: curricular_input_lab_tests [--u3-stdout | --u3-combinations | --named-rule-feedback <fixture-dir> | --u2l9-history <authentic-json> | --u2l9-same-page <authentic-json> | --prepare-visual <safe-new-QA-token> | --prepare-u3-visual <safe-new-QA-token> | --prepare-u3-combinations-visual <safe-new-QA-token> | --inspect-u3-combinations-visual <safe-QA-token>]\n";
+            std::cerr << "Usage: curricular_input_lab_tests [--active-edition | --u3-stdout | --u3-combinations | --named-rule-feedback <fixture-dir> | --u2l9-history <authentic-json> | --u2l9-same-page <authentic-json> | --prepare-visual <safe-new-QA-token> | --prepare-active-edition-visual <safe-new-QA-token> | --prepare-u3-visual <safe-new-QA-token> | --prepare-u3-combinations-visual <safe-new-QA-token> | --inspect-u3-combinations-visual <safe-QA-token>]\n";
             return 2;
         }
         // U2L9 preparation executes its preceding boxes program and prepares
@@ -1753,7 +1831,8 @@ int main(int argc, char** argv) {
             winrt::init_apartment();
             if (std::string_view(argv[1]) == "--inspect-u3-combinations-visual") inspect_combinations_visual(token);
             else prepare_visual_profile(token, std::string_view(argv[1]) == "--prepare-u3-visual",
-                std::string_view(argv[1]) == "--prepare-u3-combinations-visual");
+                std::string_view(argv[1]) == "--prepare-u3-combinations-visual",
+                std::string_view(argv[1]) == "--prepare-active-edition-visual");
             return 0;
         }
         catch (const std::exception& error) { std::cerr << "Visual QA preparation failed: " << error.what() << '\n'; return 1; }
@@ -1770,7 +1849,7 @@ int main(int argc, char** argv) {
         else if (u3_combinations) current_u3_combinations();
         else if (u3_stdout) current_u3_stdout_transport();
         else current_three_input_laboratory(u2l9_history || u2l9_same_page
-            ? std::filesystem::path(argv[2]) : std::filesystem::path{}, u2l9_same_page);
+            ? std::filesystem::path(argv[2]) : std::filesystem::path{}, u2l9_same_page, active_edition);
     } catch (const std::exception& error) { std::cerr << "FAIL current input laboratory: " << error.what() << '\n'; result = 1; }
     if (rich) FreeLibrary(rich);
     OleUninitialize(); return result;

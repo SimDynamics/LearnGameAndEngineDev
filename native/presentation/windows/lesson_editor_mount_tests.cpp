@@ -371,11 +371,44 @@ void authored_caption_first(){
     check(failures==0,"The reported first-frame caption differs from its identical peer or changes after unrelated input; inspect the recorded native metrics and pixel bounds");
     std::cout<<"PASS current U1L3 first captions: identical native glyphs before/after answer EN_CHANGE, raw metrics and offscreen paint; no desktop acceptance\n";
 }
+struct PredictionPublication {
+    const char* label;
+    const char* filename;
+    const char* lesson_id;
+    const char* first_prediction;
+    const char* second_prediction;
+    const char* prerequisite;
+    const char* reference;
+    bool active_edition;
+};
+constexpr PredictionPublication archived_prediction_publication{
+    "archived publication", "objetos_y_estado/lesson_representar_procesar_y_recuperar.json",
+    "cpp_fundamentals__objetos_y_estado__representar_procesar_y_recuperar",
+    "block_0001_0001", "block_0006_0001", "block_0004_0002", "p1u2l10_ejemplo_informe", false};
+constexpr PredictionPublication active_prediction_publication{
+    "active edition", "edition_es_1__objetos_y_estado/lesson_representar_procesar_y_recuperar.json",
+    "cpp_fundamentals__edition_es_1__objetos_y_estado__representar_procesar_y_recuperar",
+    "block_0001_0002", "block_0006_0001", "block_0004_0005", "block_0004_0007", true};
+
+void require_prediction_publication(const curriculum::Lesson& lesson,const PredictionPublication& publication){
+    check(lesson.id==publication.lesson_id&&lesson.locale=="es"&&lesson.compiler_puzzles_required,
+        "Multiline QA loaded another publication or changed its mandatory compiler policy");
+    if(publication.active_edition){
+        check(lesson.course_edition&&*lesson.course_edition==
+            curriculum::CourseEdition{"cpp_fundamentals","es","cpp_desde_cero_2026",1},
+            "Multiline QA did not load the authored active Spanish course edition");
+    }else check(!lesson.course_edition,"The archived multiline publication unexpectedly became a new edition");
+}
+
 void execute_prediction_prerequisite(state::StateData& data,const curriculum::Lesson& lesson,
-        const curriculum::Block& owner){
-    check(owner.stable_id=="block_0004_0002"&&owner.output_check&&
-        !owner.output_check->cases.empty(),"A new prediction compiler prerequisite needs an audited solution");
-    const auto reference_at=curriculum::stable_block_position(lesson,"p1u2l10_ejemplo_informe");
+        const curriculum::Block& owner,const PredictionPublication& publication){
+    check(owner.stable_id==publication.prerequisite&&owner.output_check&&
+        owner.output_check->input_comparison==curriculum::TextComparison::exact&&
+        owner.output_check->cases.size()==1&&owner.output_check->cases.front().standard_input.empty()&&
+        owner.output_check->cases.front().outputs==std::vector<std::string>{
+            "Puesto 03\nMesas: 6\nCable: 3.75 m","Puesto 03\nMesas: 6\nCable: 3.75 m\n"},
+        "A new prediction compiler prerequisite needs an audited solution or output contract");
+    const auto reference_at=curriculum::stable_block_position(lesson,publication.reference);
     check(reference_at.has_value(),"The active station report reference is missing");
     const auto& reference=lesson.pages.at(reference_at->page).blocks.at(reference_at->block);
     const auto reference_owner=curriculum::reference_activity(lesson,reference);
@@ -420,7 +453,7 @@ void execute_prediction_prerequisite(state::StateData& data,const curriculum::Le
         <<" reference="<<reference.stable_id<<" cases=1 source_sha256="<<state::sha256(reference.code)<<'\n';
 }
 void prepare_prediction_prerequisites(state::StateData& data,const curriculum::Lesson& lesson,
-        curriculum::StatePosition target){
+        curriculum::StatePosition target,const PredictionPublication& publication){
     using curriculum::BlockType;
     using namespace winrt::Windows::Data::Json;
     windows::ensure_winrt_apartment();
@@ -435,7 +468,7 @@ void prepare_prediction_prerequisites(state::StateData& data,const curriculum::L
             case BlockType::heading:case BlockType::paragraph:case BlockType::note:
             case BlockType::code:case BlockType::image:continue;
             case BlockType::cpp_compiler:
-                execute_prediction_prerequisite(data,lesson,block);
+                execute_prediction_prerequisite(data,lesson,block,publication);
                 requirements.push_back({page,windows::compiler_puzzle_completed(data,lesson,block)?
                     curriculum::EntryCompletion::complete:curriculum::EntryCompletion::incomplete});
                 continue;
@@ -496,28 +529,31 @@ void prepare_prediction_prerequisites(state::StateData& data,const curriculum::L
     check(!state::get_response(data,lesson,lesson.pages.at(target.page).blocks.at(target.block)),
         "Preparing earlier prerequisites credited or drafted the target prediction");
 }
-void authored_prediction_newline(){
+void authored_prediction_newline(bool active_edition=false){
+    const auto& publication=active_edition?active_prediction_publication:archived_prediction_publication;
     const auto path=std::filesystem::path(build::source_root)/
-        "app/src/main/assets/content/es/programming/cpp_fundamentals/objetos_y_estado/lesson_representar_procesar_y_recuperar.json";
+        "app/src/main/assets/content/es/programming/cpp_fundamentals"/publication.filename;
     const auto source_hash=state::sha256(state::read_bytes(path));
     const auto lesson=windows::load_lesson(path);
-    struct Scenario {std::string_view identity;const wchar_t* first;const wchar_t* second;const char* result;};
+    require_prediction_publication(lesson,publication);
+    struct Scenario {std::string_view identity;const wchar_t* first;const wchar_t* second;const char* result;const char* answer;};
     // Test the earlier report as well as the user's later U2L10 page 7
-    // screenshot. The same authored owners remain relevant after prose is
-    // inserted before them; their current positions are not answer identities.
+    // screenshot. Each publication has its own explicitly mapped owners;
+    // their current positions are not answer identities.
     // Both use the real mounted, autoheight answer field and the original
     // two-line drafts, including the deliberately unfinished second answer.
     for(const auto& scenario:std::vector<Scenario>{
-            {"block_0001_0001",L"Inicio: 8",L"Ahora: 5","Inicio: 8\nAhora: 5"},
-            {"block_0006_0001",L"Puesto 03",L"sdf","Puesto 03\nsdf"}}){
+            {publication.first_prediction,L"Inicio: 8",L"Ahora: 5","Inicio: 8\nAhora: 5","Inicio: 8\nAhora: 5"},
+            {publication.second_prediction,L"Puesto 03",L"sdf","Puesto 03\nsdf","Puesto 03\n4 6"}}){
         const auto position=curriculum::stable_block_position(lesson,scenario.identity);
         check(position.has_value(),"The authored multiline prediction identity is missing");
         const auto& prediction=lesson.pages[position->page].blocks[position->block];
         check(prediction.type==curriculum::BlockType::output_prediction&&
-            !prediction.code.empty()&&!curriculum::uses_single_line_answer(prediction),
+            !prediction.code.empty()&&!curriculum::uses_single_line_answer(prediction)&&
+            prediction.answers==std::vector<std::string>{scenario.answer},
             "The authored prediction no longer requires its multiline answer control");
         state::StateData data;state::prepare_lesson_state(data,lesson);
-        prepare_prediction_prerequisites(data,lesson,*position);
+        prepare_prediction_prerequisites(data,lesson,*position,publication);
         state::save_current_page(data,lesson,position->page);
         data.preferences["native_windows"]["ui_language"]=std::string("es");
         data.preferences["lesson_text_size_settings"]["global_scale"]=std::int64_t{150};
@@ -581,7 +617,8 @@ void authored_prediction_newline(){
     }
     check(state::sha256(state::read_bytes(path))==source_hash,
         "The viewport regression changed curricular source data");
-    std::cout<<"PASS current U2L10 block_0001_0001 and block_0006_0001: stable owners, "
+    std::cout<<"PASS "<<publication.label<<" U2L10 "<<publication.first_prediction<<" and "
+        <<publication.second_prediction<<": stable owners, "
         <<"two visible lines after real Enter, exact pending drafts and reopen, unchanged authored source\n";
 }
 void authored_editor_mount(){
@@ -661,13 +698,14 @@ int main(int argc,char** argv){
     std::cout<<std::unitbuf;
     const bool caption_first=argc==2&&std::string_view(argv[1])=="--caption-first";
     const bool prediction_newline=argc==2&&std::string_view(argv[1])=="--prediction-newline";
-    if(argc!=1&&!caption_first&&!prediction_newline){
+    const bool prediction_newline_active=argc==2&&std::string_view(argv[1])=="--prediction-newline-active-edition";
+    if(argc!=1&&!caption_first&&!prediction_newline&&!prediction_newline_active){
         const bool shape=argc==4&&std::string_view(argv[1])=="--prepare-visual"
             &&(std::string_view(argv[2])=="u1"||std::string_view(argv[2])=="u11");
         const auto raw=shape?std::string_view(argv[3]):std::string_view{};
         const std::wstring token(raw.begin(),raw.end());
         if(!shape||!is_valid_qa_instance(token)){
-            std::cerr<<"Usage: lesson_editor_mount_tests [--caption-first | --prediction-newline | --prepare-visual <u1|u11> <safe-new-QA-token>]\n";return 2;
+            std::cerr<<"Usage: lesson_editor_mount_tests [--caption-first | --prediction-newline | --prediction-newline-active-edition | --prepare-visual <u1|u11> <safe-new-QA-token>]\n";return 2;
         }
         // This branch performs JSON/state/file operations only. The original
         // no-argument regression owns every HWND/DPI/control initialization.
@@ -677,7 +715,8 @@ int main(int argc,char** argv){
     const auto previous_dpi=SetThreadDpiAwarenessContext(DPI_AWARENESS_CONTEXT_PER_MONITOR_AWARE_V2);
     const auto apartment=OleInitialize(nullptr);if(FAILED(apartment))return 2;
     INITCOMMONCONTROLSEX common{sizeof(common),ICC_STANDARD_CLASSES};InitCommonControlsEx(&common);int result=0;
-    try{if(caption_first)authored_caption_first();else if(prediction_newline)authored_prediction_newline();else authored_editor_mount();}
+    try{if(caption_first)authored_caption_first();else if(prediction_newline||prediction_newline_active)
+        authored_prediction_newline(prediction_newline_active);else authored_editor_mount();}
     catch(const std::exception& error){std::cerr<<error.what()<<'\n';result=1;}
     OleUninitialize();if(previous_dpi)SetThreadDpiAwarenessContext(previous_dpi);return result;
 }

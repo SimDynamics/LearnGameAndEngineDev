@@ -1736,7 +1736,10 @@ if(BUILD_TESTING)
     add_test(NAME native.u11_precision_prediction COMMAND lgaed_exact_prediction_view_tests --u11-precision)
     set_tests_properties(native.u11_precision_prediction PROPERTIES TIMEOUT 60)
     add_test(NAME native.prepared_input_predictions COMMAND lgaed_exact_prediction_view_tests --prepared-input)
-    set_tests_properties(native.prepared_input_predictions PROPERTIES TIMEOUT 300)
+    add_test(NAME native.active_edition_prepared_input_predictions
+        COMMAND lgaed_exact_prediction_view_tests --prepared-input-active-edition)
+    set_tests_properties(native.prepared_input_predictions native.active_edition_prepared_input_predictions
+        PROPERTIES TIMEOUT 300 RUN_SERIAL TRUE)
     add_executable(lgaed_u11_names_integration_view_tests native/presentation/windows/u11_names_integration_view_tests.cpp)
     target_link_libraries(lgaed_u11_names_integration_view_tests PRIVATE lgaed_presentation_windows)
     add_dependencies(lgaed_u11_names_integration_view_tests lgaed_cpp_tool_host)
@@ -1955,11 +1958,17 @@ if(BUILD_TESTING)
     add_test(NAME native.lesson_caption_initial COMMAND lgaed_lesson_editor_mount_tests --caption-first)
     set_tests_properties(native.lesson_caption_initial PROPERTIES TIMEOUT 45)
     add_test(NAME native.prediction_newline_visible COMMAND lgaed_lesson_editor_mount_tests --prediction-newline)
-    set_tests_properties(native.prediction_newline_visible PROPERTIES TIMEOUT 45)
+    add_test(NAME native.active_edition_prediction_newline_visible
+        COMMAND lgaed_lesson_editor_mount_tests --prediction-newline-active-edition)
+    set_tests_properties(native.prediction_newline_visible native.active_edition_prediction_newline_visible
+        PROPERTIES TIMEOUT 45 RUN_SERIAL TRUE)
     add_executable(lgaed_curricular_input_lab_tests native/presentation/windows/curricular_input_lab_tests.cpp)
     target_link_libraries(lgaed_curricular_input_lab_tests PRIVATE lgaed_presentation_windows)
     add_test(NAME native.curricular_input_lab COMMAND lgaed_curricular_input_lab_tests)
-    set_tests_properties(native.curricular_input_lab PROPERTIES TIMEOUT 240)
+    add_test(NAME native.active_edition_curricular_input_lab
+        COMMAND lgaed_curricular_input_lab_tests --active-edition)
+    set_tests_properties(native.curricular_input_lab native.active_edition_curricular_input_lab
+        PROPERTIES TIMEOUT 240 RUN_SERIAL TRUE)
     include("${CMAKE_SOURCE_DIR}/cmake/NamedRuleFeedbackTests.cmake")
     lgaed_add_named_rule_feedback_tests("${CMAKE_SOURCE_DIR}")
     include("${CMAKE_SOURCE_DIR}/cmake/InputDependencyTests.cmake")

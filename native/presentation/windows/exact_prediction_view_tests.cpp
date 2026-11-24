@@ -58,6 +58,8 @@ struct Plan {
     const char* internal_error;
     bool editorial_feedback = false;
     PredictionGroup group = PredictionGroup::baseline;
+    const char* edition_identity = nullptr;
+    const char* edition_answer = nullptr;
 };
 const std::array plans{
     Plan{"programas_y_ejecucion/lesson_primer_programa_y_salida.json","block_0001_0003","literal_independiente",true,nullptr},
@@ -82,18 +84,68 @@ const std::array plans{
     Plan{"texto_interpretacion_y_flujos/lesson_una_gramatica_para_sumar_y_restar.json","block_0006_0002",
         "",false,"Error: Se esperaba ;",true},
     Plan{"objetos_y_estado/lesson_leer_una_entrada_conocida.json","block_0006_0004",
-        "cpp_fundamentals__objetos_y_estado__leer_una_entrada_conocida__etapas_lectura_y_actualizacion",true,"Rita 4\nRita: 4",true,PredictionGroup::prepared_input},
+        "cpp_fundamentals__objetos_y_estado__leer_una_entrada_conocida__etapas_lectura_y_actualizacion",true,"Rita 4\nRita: 4",true,PredictionGroup::prepared_input,
+        "block_0006_0002","Rita 4\nRita: 7"},
     Plan{"objetos_y_estado/lesson_leer_una_entrada_conocida.json","block_0010_0005",
-        "cpp_fundamentals__objetos_y_estado__leer_una_entrada_conocida__registrar_tres_datos_y_total",true,"Iris 4 2 6",true,PredictionGroup::prepared_input},
+        "cpp_fundamentals__objetos_y_estado__leer_una_entrada_conocida__registrar_tres_datos_y_total",true,"Iris 4 2 6",true,PredictionGroup::prepared_input,
+        "block_0010_0001","Iris 4 2 22"},
     Plan{"objetos_y_estado/lesson_leer_una_entrada_conocida.json","block_0012_0002",
-        "cpp_fundamentals__objetos_y_estado__leer_una_entrada_conocida__distinguir_regla_cuatro",true,"Nora: 11",true,PredictionGroup::prepared_input},
+        "cpp_fundamentals__objetos_y_estado__leer_una_entrada_conocida__distinguir_regla_cuatro",true,"Nora: 11",true,PredictionGroup::prepared_input,
+        "block_0012_0002","Nora: 9"},
     Plan{"objetos_y_estado/lesson_leer_una_entrada_conocida.json","block_0012_0003",
-        "cpp_fundamentals__objetos_y_estado__leer_una_entrada_conocida__cero_paquetes_regla_cuatro",true,"Vega: 0",true,PredictionGroup::prepared_input},
+        "cpp_fundamentals__objetos_y_estado__leer_una_entrada_conocida__cero_paquetes_regla_cuatro",true,"Vega: 0",true,PredictionGroup::prepared_input,
+        "block_0012_0003","Vega: 3"},
     Plan{"objetos_y_estado/lesson_leer_una_entrada_conocida.json","block_0012_0004",
-        "cpp_fundamentals__objetos_y_estado__leer_una_entrada_conocida__maximo_regla_cuatro",true,"Orion: 103",true,PredictionGroup::prepared_input},
+        "cpp_fundamentals__objetos_y_estado__leer_una_entrada_conocida__maximo_regla_cuatro",true,"Orion: 103",true,PredictionGroup::prepared_input,
+        "block_0012_0004","Orion: 83"},
 };
 
+struct U2L9Publication {
+    const char* label;
+    const char* filename;
+    const char* lesson_id;
+    const char* laboratory;
+    const char* reference;
+    const char* boxes;
+    const char* boxes_reference;
+    bool active_edition;
+};
+constexpr U2L9Publication archived_u2l9_publication{
+    "archived publication", "objetos_y_estado/lesson_leer_una_entrada_conocida.json",
+    "cpp_fundamentals__objetos_y_estado__leer_una_entrada_conocida",
+    "block_0009_0003", "block_0010_0001", "p1u2l9_reparar_lectura_de_cajas", "block_0007_0001", false};
+constexpr U2L9Publication active_u2l9_publication{
+    "active edition", "edition_es_1__objetos_y_estado/lesson_leer_una_entrada_conocida.json",
+    "cpp_fundamentals__edition_es_1__objetos_y_estado__leer_una_entrada_conocida",
+    "block_0009_0004", "block_0009_0006", "block_0006_0004", "block_0006_0006", true};
 
+const U2L9Publication& u2l9_publication(const curriculum::Lesson& lesson){
+    const auto& publication=lesson.id==active_u2l9_publication.lesson_id
+        ?active_u2l9_publication:archived_u2l9_publication;
+    check(lesson.id==publication.lesson_id&&lesson.locale=="es"&&lesson.compiler_puzzles_required,
+        "U2L9 QA loaded another publication or changed its mandatory compiler policy");
+    if(publication.active_edition){
+        check(lesson.course_edition&&*lesson.course_edition==
+            curriculum::CourseEdition{"cpp_fundamentals","es","cpp_desde_cero_2026",1},
+            "U2L9 QA did not load the authored active Spanish course edition");
+    }else check(!lesson.course_edition,"The archived U2L9 publication unexpectedly became a new edition");
+    return publication;
+}
+
+void require_active_u2l9_reference_layout(const curriculum::Lesson& lesson,const U2L9Publication& publication){
+    if(!publication.active_edition)return;
+    const auto target=curriculum::stable_block_position(lesson,publication.laboratory);
+    const auto reference=curriculum::stable_block_position(lesson,publication.reference);
+    check(target&&reference&&target->page==reference->page&&target->block<reference->block&&
+        curriculum::reference_activity(lesson,lesson.pages.at(reference->page).blocks.at(reference->block))==target,
+        "The active U2L9 reference must follow its own editor on the same page");
+    for(std::size_t index=target->block+1;index<reference->block;++index){
+        const auto type=lesson.pages.at(target->page).blocks.at(index).type;
+        check(type==curriculum::BlockType::heading||type==curriculum::BlockType::paragraph||
+            type==curriculum::BlockType::note||type==curriculum::BlockType::code||type==curriculum::BlockType::image,
+            "An intervening exercise separated the active U2L9 editor from its reference");
+    }
+}
 
 // Only earlier-page quizzes are prepared from their authored answers to
 // isolate this UI scenario. This is QA setup, not evidence of quiz interaction.
@@ -142,8 +194,7 @@ void prepare_u2l9_prior_quizzes(state::StateData& data,const curriculum::Lesson&
 // boxes input is observed without turning it into another required case.
 void prepare_u2l9_prerequisites(state::StateData& data,const curriculum::Lesson& lesson,
         curriculum::StatePosition target,const std::filesystem::path& projects) {
-    check(lesson.id=="cpp_fundamentals__objetos_y_estado__leer_una_entrada_conocida"&&
-          lesson.compiler_puzzles_required,"U2L9 prerequisite QA requires its actual published policy");
+    const auto& publication=u2l9_publication(lesson);
     const auto source_at=[&](std::string_view identity)->std::string {
         const auto at=curriculum::stable_block_position(lesson,identity);
         check(at.has_value(),"An authored U2L9 prerequisite reference is missing");
@@ -159,14 +210,27 @@ void prepare_u2l9_prerequisites(state::StateData& data,const curriculum::Lesson&
             if(owner.type!=curriculum::BlockType::cpp_compiler)continue;
             check(owner.output_check&&!owner.output_check->cases.empty(),
                 "A preceding U2L9 compiler has no independent output contract");
-            const bool boxes=owner.stable_id=="p1u2l9_reparar_lectura_de_cajas"||
-                owner.stable_id=="block_0006_0002";
+            const bool boxes=owner.stable_id==publication.boxes||
+                (!publication.active_edition&&owner.stable_id=="block_0006_0002");
             std::string source;
-            if(boxes)source=source_at("block_0007_0001");
-            else if(owner.stable_id=="block_0008_0008")source=owner.initial_code;
-            else if(owner.stable_id=="block_0009_0003")source=source_at("block_0010_0001");
-            else if(owner.stable_id=="block_0011_0006")source=source_at("block_0012_0002");
+            if(boxes)source=source_at(publication.boxes_reference);
+            else if(!publication.active_edition&&owner.stable_id=="block_0008_0008")source=owner.initial_code;
+            else if(owner.stable_id==publication.laboratory)source=source_at(publication.reference);
+            else if(!publication.active_edition&&owner.stable_id=="block_0011_0006")source=source_at("block_0012_0002");
             else check(false,"U2L9 QA must explicitly audit a newly added prerequisite");
+            if(publication.active_edition&&boxes){
+                const auto reference=curriculum::stable_block_position(lesson,publication.boxes_reference);
+                check(reference&&owner.standard_input=="Rita 4"&&
+                    owner.output_check->input_comparison==curriculum::TextComparison::tokens&&
+                    owner.output_check->cases.size()==2&&
+                    owner.output_check->cases[0].standard_input=="Rita 4"&&
+                    owner.output_check->cases[0].outputs==std::vector<std::string>{"Rita: 7","Rita: 7\n"}&&
+                    owner.output_check->cases[1].standard_input=="Leo 2"&&
+                    owner.output_check->cases[1].outputs==std::vector<std::string>{"Leo: 5","Leo: 5\n"}&&
+                    curriculum::reference_activity(lesson,lesson.pages.at(reference->page).blocks.at(reference->block))==
+                        curriculum::stable_block_position(lesson,publication.boxes),
+                    "The active boxes prerequisite lost its independent input/output or own reference");
+            }
             check(windows::compiler_puzzle_case_count(data,lesson,owner)==0&&
                 !windows::compiler_puzzle_completed(data,lesson,owner),
                 "A supposedly fresh U2L9 prerequisite already has credit");
@@ -242,9 +306,11 @@ void require_prepared_compiler_credit(const state::StateData& data,const curricu
 
 void prepare_visual_profile(std::string_view scenario,std::wstring_view token){
     const bool choice=scenario=="u11l11-choice";
-    const bool stages=scenario=="u2l9-stages";
-    const bool variants=scenario=="u2l9-variants";
+    const bool active_edition=scenario=="u2l9-stages-active-edition"||scenario=="u2l9-variants-active-edition";
+    const bool stages=scenario=="u2l9-stages"||scenario=="u2l9-stages-active-edition";
+    const bool variants=scenario=="u2l9-variants"||scenario=="u2l9-variants-active-edition";
     const bool prepared=stages||variants;
+    const auto& publication=active_edition?active_u2l9_publication:archived_u2l9_publication;
     check((scenario=="u11l2"||scenario=="u11l11"||choice||prepared)&&is_valid_qa_instance(token),
         "Invalid editorial visual QA scenario or unsafe instance token");
     const auto filename=prepared?"lesson_leer_una_entrada_conocida.json"
@@ -254,9 +320,16 @@ void prepare_visual_profile(std::string_view scenario,std::wstring_view token){
     for(const auto& plan:plans)if(std::string_view(plan.filename).ends_with(filename)
         &&(!prepared||std::string_view(plan.identity)==(stages?"block_0006_0004":"block_0012_0002")))selected=&plan;
     check(selected&&selected->editorial_feedback,"The visual target has no current editorial regression");
-    const auto path=std::filesystem::path(build::source_root)/"app/src/main/assets/content/es/programming/cpp_fundamentals"/selected->filename;
+    check(!active_edition||(selected->edition_identity&&selected->edition_answer),
+        "The active visual target has no explicitly audited identity and answer");
+    const auto path=std::filesystem::path(build::source_root)/"app/src/main/assets/content/es/programming/cpp_fundamentals"/
+        (active_edition?publication.filename:selected->filename);
     const auto asset_hash=state::sha256(state::read_bytes(path));const auto lesson=windows::load_lesson(path);
-    const std::string_view identity=choice?"block_0002_0002":selected->identity;
+    if(prepared){
+        check(lesson.id==publication.lesson_id,"Visual QA loaded another U2L9 publication");
+        (void)u2l9_publication(lesson);require_active_u2l9_reference_layout(lesson,publication);
+    }
+    const std::string_view identity=choice?"block_0002_0002":active_edition?selected->edition_identity:selected->identity;
     const auto position=curriculum::stable_block_position(lesson,identity);
     check(position&&position->page==(variants?12u:scenario=="u11l2"||choice?2u:6u)&&position->block==(scenario=="u11l2"?1u:2u),
         "The selected visual activity moved outside its audited page");
@@ -265,9 +338,11 @@ void prepare_visual_profile(std::string_view scenario,std::wstring_view token){
         :target.type==curriculum::BlockType::output_prediction
             &&target.output_comparison==(prepared?curriculum::TextComparison::exact:curriculum::TextComparison::trimmed),
         "The selected visual activity lost its published contract");
-    if(prepared)check(target.id==lesson.id+(stages?"__etapas_lectura_y_actualizacion":"__distinguir_regla_cuatro")
+    if(prepared)check(target.id==selected->activity
         &&curriculum::uses_single_line_answer(target)==variants&&lesson.compiler_puzzles_required,
         "The current U2L9 prediction lost its independent exact answer contract");
+    if(active_edition)check(selected->edition_answer&&target.answers==std::vector<std::string>{selected->edition_answer},
+        "The active U2L9 visual prediction lost its independently audited answer");
     const auto prerequisites=curriculum::activity_prerequisites(lesson,target);
     check(scenario=="u11l2"||choice||prepared?prerequisites.empty():prerequisites.size()==1
         &&lesson.pages[prerequisites[0].page].blocks[prerequisites[0].block].stable_id=="block_0004_0003",
@@ -577,24 +652,38 @@ void proposed_u11_recovery_explanation(){
     std::cout<<"PASS exact U11L14 recovery explanation proposal: real draft/retry/success, precise reader source, prior accepted payload preserved, scoped Reset and reopen; no asset edits or audio playback claimed\n";
 }
 
-void current_literal_predictions(PredictionGroup group,const std::filesystem::path& historical={}){
+void current_literal_predictions(PredictionGroup group,const std::filesystem::path& historical={},bool active_edition=false){
+    check(!active_edition||(group==PredictionGroup::prepared_input&&historical.empty()),
+        "Active-edition predictions cannot substitute another group or historical fixture");
+    const auto& publication=active_edition?active_u2l9_publication:archived_u2l9_publication;
     const auto content=std::filesystem::path(build::source_root)/"app/src/main/assets/content/es/programming/cpp_fundamentals";
     std::size_t exact=0,trimmed=0,rejected=0,native_rejected=0,core_only_rejected=0;
     for(const auto& plan:plans){
         if(plan.group!=group)continue;
-        active_case=std::string(plan.filename)+" / "+plan.identity;active_step="load current JSON";
-        const auto path=historical.empty()?content/plan.filename:historical;
+        check(!active_edition||(plan.edition_identity&&plan.edition_answer),
+            "An active U2L9 prediction has no explicitly audited identity and answer");
+        const auto identity=active_edition?plan.edition_identity:plan.identity;
+        const auto filename=active_edition?publication.filename:plan.filename;
+        active_case=std::string(filename)+" / "+identity;active_step="load authored JSON";
+        const auto path=historical.empty()?content/filename:historical;
         const auto original=state::read_bytes(path);const auto digest=state::sha256(original);
         if(!historical.empty())check(group==PredictionGroup::prepared_input&&
             digest=="61ff67f148ad78c31036763889ebdb85e31ce315cb1103de516ee975819fd0e1",
             "The U2L9 history fixture is not the exact published d90d3156 source");
-        const auto lesson=windows::load_lesson(path);const auto position=curriculum::stable_block_position(lesson,plan.identity);
+        const auto lesson=windows::load_lesson(path);
+        if(group==PredictionGroup::prepared_input){
+            check(lesson.id==publication.lesson_id,"Prediction QA loaded another U2L9 publication");
+            (void)u2l9_publication(lesson);require_active_u2l9_reference_layout(lesson,publication);
+        }
+        const auto position=curriculum::stable_block_position(lesson,identity);
         check(position.has_value(),"The current literal prediction's persistent identity is missing");
         const auto& block=lesson.pages.at(position->page).blocks.at(position->block);
         check(block.type==curriculum::BlockType::output_prediction&&block.id==plan.activity&&!block.answers.empty(),"The current target is not the registered authored prediction");
         check(block.output_comparison==(plan.exact?curriculum::TextComparison::exact:curriculum::TextComparison::trimmed),"The published prediction comparison policy changed");
-        // Expected answers come only from the loaded lesson contract. This
-        // test never copies an answer into product code or curricular assets.
+        if(active_edition)check(block.answers==std::vector<std::string>{plan.edition_answer},
+            "The active U2L9 prediction lost its independently audited exact answer");
+        // Native attempts use the loaded answers, independently pinned above
+        // for the active edition. Product code and curricular assets stay untouched.
         const auto expected=block.answers.front();check(!expected.empty()&&expected.back()!='\n',"The no-final-break regression oracle changed");
         const bool single_line=curriculum::uses_single_line_answer(block);
         std::cout<<"RUN "<<active_case<<" ["<<(single_line?"single-line":"multiline")<<"]\n"<<std::flush;
@@ -653,7 +742,7 @@ void current_literal_predictions(PredictionGroup group,const std::filesystem::pa
     if(group==PredictionGroup::prepared_input){
         check(exact==5&&trimmed==0&&rejected==35&&native_rejected==27&&core_only_rejected==8,
             "The registered five prepared-input exact predictions are incomplete");
-        std::cout<<"PASS five "<<(historical.empty()?"current":"authenticated archived")
+        std::cout<<"PASS five "<<(historical.empty()?publication.label:"authenticated archived")
             <<" U2L9 exact predictions: 27 native character mutations plus 8 exact evaluator newline checks, "
             <<"authored question/source/full guide/success reading regions, unreviewed draft/reopen, "
             <<"single-line Enter preservation, retry/correct/reopen/Reset, response payload and heart conservation; "
@@ -669,12 +758,14 @@ void current_literal_predictions(PredictionGroup group,const std::filesystem::pa
 int main(int argc,char** argv){
     const bool prepared_input=argc==2&&std::string_view(argv[1])=="--prepared-input";
     const bool prepared_history=argc==3&&std::string_view(argv[1])=="--prepared-input-history";
+    const bool prepared_active=argc==2&&std::string_view(argv[1])=="--prepared-input-active-edition";
     const bool u11_precision=argc==2&&std::string_view(argv[1])=="--u11-precision";
-    if(argc!=1&&!prepared_input&&!prepared_history&&!u11_precision){const bool shape=argc==4&&std::string_view(argv[1])=="--prepare-visual"
-            &&(std::string_view(argv[2])=="u11l2"||std::string_view(argv[2])=="u11l11"||std::string_view(argv[2])=="u11l11-choice"||std::string_view(argv[2])=="u2l9-stages"||std::string_view(argv[2])=="u2l9-variants");
+    if(argc!=1&&!prepared_input&&!prepared_history&&!prepared_active&&!u11_precision){const bool shape=argc==4&&std::string_view(argv[1])=="--prepare-visual"
+            &&(std::string_view(argv[2])=="u11l2"||std::string_view(argv[2])=="u11l11"||std::string_view(argv[2])=="u11l11-choice"||std::string_view(argv[2])=="u2l9-stages"||std::string_view(argv[2])=="u2l9-variants"
+                ||std::string_view(argv[2])=="u2l9-stages-active-edition"||std::string_view(argv[2])=="u2l9-variants-active-edition");
         const auto raw=shape?std::string_view(argv[3]):std::string_view{};const std::wstring token(raw.begin(),raw.end());
         if(!shape||!is_valid_qa_instance(token)){
-            std::cerr<<"Usage: exact_prediction_view_tests [--prepared-input | --prepared-input-history <authentic-json> | --u11-precision | --prepare-visual <u11l2|u11l11|u11l11-choice|u2l9-stages|u2l9-variants> <safe-new-QA-token>]\n";return 2;}
+            std::cerr<<"Usage: exact_prediction_view_tests [--prepared-input | --prepared-input-history <authentic-json> | --prepared-input-active-edition | --u11-precision | --prepare-visual <u11l2|u11l11|u11l11-choice|u2l9-stages|u2l9-variants|u2l9-stages-active-edition|u2l9-variants-active-edition> <safe-new-QA-token>]\n";return 2;}
         // U2L9 prepares real preceding compiler evidence, without answering
         // the selected prediction or creating a visible lesson view.
         try{winrt::init_apartment();prepare_visual_profile(argv[2],token);return 0;}
@@ -683,8 +774,8 @@ int main(int argc,char** argv){
     const auto apartment=OleInitialize(nullptr);if(FAILED(apartment))return 2;
     INITCOMMONCONTROLSEX common{sizeof(common),ICC_STANDARD_CLASSES};InitCommonControlsEx(&common);int result=0;
     try{if(u11_precision)proposed_u11_recovery_explanation();
-        else current_literal_predictions(prepared_input||prepared_history?PredictionGroup::prepared_input:PredictionGroup::baseline,
-            prepared_history?std::filesystem::path(argv[2]):std::filesystem::path{});}
+        else current_literal_predictions(prepared_input||prepared_history||prepared_active?PredictionGroup::prepared_input:PredictionGroup::baseline,
+            prepared_history?std::filesystem::path(argv[2]):std::filesystem::path{},prepared_active);}
     catch(const std::exception& error){std::cerr<<active_case<<" ["<<active_step<<"]: "<<error.what()<<'\n';result=1;}
     OleUninitialize();return result;
 }

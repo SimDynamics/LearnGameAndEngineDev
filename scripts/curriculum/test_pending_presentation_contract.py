@@ -1,9 +1,12 @@
 """Scoped editorial revisions and optional presentation never relax answer identity."""
 
 import copy
+import hashlib
 import json
 import unittest
+from unittest import mock
 
+import course_edition as edition
 import stable_state_layout as layout
 import validar_json_programacion as contract
 
@@ -11,6 +14,48 @@ import validar_json_programacion as contract
 U2L8_LESSON = "objetos_y_estado/lesson_caracteres_y_valores_logicos.json"
 U2L8_LOCATIONS = ((1, 5), (2, 3), (3, 3), (4, 3), (6, 2), (6, 3), (6, 5), (8, 5))
 U2L8_RETIRED_EDITOR = "block_0006_0006"
+
+
+def selected_u2_edition_lesson(content, lesson_slug, ordinal):
+    """Read one actual course/unit/lesson route, preserving its exact input bytes.
+
+    This QA helper performs no import-time reads and does not load the U2L8
+    oracle. The narration regression can use it for its independent U2L9 owner.
+    """
+    originals = {}
+
+    def read(path):
+        originals[path] = path.read_bytes()
+        return edition._parse(originals[path].decode("utf-8-sig"))
+
+    course = read(content / "course_cpp_fundamentals.json")
+    value = edition.descriptor(course)
+    layout.require(value is not None and course.get("id") == value["courseId"] == "cpp_fundamentals"
+                   and value["locale"] == "es", "The active Spanish C++ course edition is missing")
+    unit_id = edition.unit_prefix(value) + "objetos_y_estado"
+    units = [entry for entry in edition._active_index_entries(course, "units")
+             if entry["id"] == unit_id]
+    layout.require(len(units) == 1 and units[0]["number"] == 2,
+                   "The selected edition does not activate the expected U2 owner")
+    directory = unit_id.removeprefix(course["id"] + "__")
+    unit = read(content / directory / f"unit_{directory}.json")
+    layout.require(unit.get("unitId") == unit_id and unit.get("courseId") == course["id"]
+                   and edition.descriptor(unit) == value and unit.get("title") == units[0]["title"],
+                   "The selected unit disagrees with its course index or edition")
+    identity = unit_id + "__" + lesson_slug
+    lessons = [entry for entry in edition._active_index_entries(unit, "lessons")
+               if entry["id"] == identity]
+    layout.require(len(lessons) == 1 and lessons[0]["number"] == ordinal,
+                   "The selected edition does not activate the expected lesson owner")
+    path = content / directory / f"lesson_{lesson_slug}.json"
+    document = read(path)
+    layout.require(document.get("id") == identity
+                   and edition.validate_lesson(document, require_layout=True) == value
+                   and document.get("title") == lessons[0]["title"],
+                   "The selected lesson disagrees with its unit index or edition")
+    layout.validate(document)
+    layout.text_semantics.validate(document)
+    return path, document, originals
 
 
 def verified_u2l8_explanations(document):
@@ -101,6 +146,40 @@ def verified_u2l8_explanations(document):
     return result
 
 
+def verified_active_u2l8_explanations(historical, active):
+    """Bind this edition's eight copied blocks to the independently checked source.
+
+    A new origin digest alone does not authenticate an altered explanation,
+    answer, program or reading descriptor. Keep the complete old history as the
+    oracle; do not install it into the edition's fresh state namespace.
+    """
+    reviewed = verified_u2l8_explanations(historical)
+    value = edition.validate_lesson(active, require_layout=True)
+    layout.require(value is not None and value["courseId"] == "cpp_fundamentals"
+                   and value["locale"] == "es"
+                   and active["id"] == edition.unit_prefix(value)
+                   + "objetos_y_estado__caracteres_y_valores_logicos",
+                   "The eight explanations must belong to the selected U2L8 edition")
+    layout.require(historical.get("id") == "cpp_fundamentals__objetos_y_estado__caracteres_y_valores_logicos"
+                   and edition.descriptor(historical) is None,
+                   "The U2L8 provenance must remain its separate published legacy lesson")
+    layout.validate(active)
+    layout.text_semantics.validate(active)
+    blocks = layout._blocks(active)
+    for location, _, _, _, _, previous in reviewed:
+        _, page, block_index = location
+        identity = f"block_{page - 1:04d}_{block_index - 1:04d}"
+        layout.require(identity in blocks and blocks[identity] == previous,
+                       "An active U2L8 block differs from its authenticated complete source")
+        source_fields = {field["path"]: field for field in historical["textSemantics"]["fields"]
+                         if field["block"] == identity}
+        active_fields = {field["path"]: field for field in active["textSemantics"]["fields"]
+                         if field["block"] == identity}
+        layout.require(bool(source_fields) and active_fields == source_fields,
+                       "An active U2L8 reading descriptor differs from its authenticated source")
+    return reviewed
+
+
 class PendingPresentationContractTest(unittest.TestCase):
     def setUp(self):
         contract.ERRORS.clear()
@@ -159,6 +238,89 @@ class PendingPresentationContractTest(unittest.TestCase):
                 with self.subTest(page=page, block=block, changed=key):
                     self.assertFalse(contract.preserves_previous_exercise(relative, page - 1, block - 1, old, changed))
             self.assertFalse(contract.preserves_previous_exercise(relative, page - 1, block, old, current))
+
+    def active_u2l8(self):
+        path, active, originals = selected_u2_edition_lesson(
+            contract.CONTENT, "caracteres_y_valores_logicos", 8)
+        historical_path = contract.CONTENT / U2L8_LESSON
+        originals[historical_path] = historical_path.read_bytes()
+        historical = edition._parse(originals[historical_path].decode("utf-8-sig"))
+        return path, active, historical, originals
+
+    def test_selected_edition_keeps_all_eight_complete_blocks_and_their_reading_sources(self):
+        path, active, historical, originals = self.active_u2l8()
+        before = copy.deepcopy((active, historical))
+        self.assertNotEqual(path, contract.CONTENT / U2L8_LESSON)
+        self.assertNotEqual(active["id"], historical["id"])
+        self.assertEqual(len(verified_active_u2l8_explanations(historical, active)), 8)
+        self.assertEqual((active, historical), before)
+        for source, original in originals.items():
+            self.assertEqual(source.read_bytes(), original)
+
+    def test_selected_course_route_rejects_detached_or_mislabelled_edition_sources(self):
+        path, _, _, originals = self.active_u2l8()
+        course_path = contract.CONTENT / "course_cpp_fundamentals.json"
+        unit_path = next(source for source in originals if source.name.startswith("unit_"))
+        variants = []
+        course = edition._parse(originals[course_path].decode("utf-8-sig"))
+        course["courseEdition"]["generation"] += 1
+        variants.append(("different-generation", course_path, course))
+        course = edition._parse(originals[course_path].decode("utf-8-sig"))
+        course["units"][1]["title"] += " Alterado"
+        variants.append(("different-unit-title", course_path, course))
+        unit = edition._parse(originals[unit_path].decode("utf-8-sig"))
+        unit["lessons"][7]["id"] = "cpp_fundamentals__objetos_y_estado__caracteres_y_valores_logicos"
+        variants.append(("inactive-legacy-lesson", unit_path, unit))
+        unit = edition._parse(originals[unit_path].decode("utf-8-sig"))
+        unit["lessons"][7]["title"] += " Alterado"
+        variants.append(("different-lesson-title", unit_path, unit))
+        active = edition._parse(originals[path].decode("utf-8-sig"))
+        active["courseEdition"]["id"] += "_other"
+        variants.append(("different-lesson-edition", path, active))
+        read_bytes = type(path).read_bytes
+        for name, altered_path, document in variants:
+            encoded = json.dumps(document, ensure_ascii=False).encode("utf-8")
+
+            def read_variant(source):
+                return encoded if source == altered_path else read_bytes(source)
+
+            with self.subTest(case=name), mock.patch.object(type(path), "read_bytes", read_variant):
+                with self.assertRaises(ValueError):
+                    selected_u2_edition_lesson(contract.CONTENT, "caracteres_y_valores_logicos", 8)
+
+    def test_selected_edition_rejects_resealed_prose_answers_programs_and_meaning(self):
+        _, active, historical, _ = self.active_u2l8()
+        identity = "block_0000_0004"
+        original = layout._blocks(active)[identity]
+        for field, value in (("explanation", original["explanation"] + " Texto sin procedencia."),
+                             ("reviewFeedback", original["reviewFeedback"] + " Pista sin procedencia."),
+                             ("answers", ["'Z'"]), ("code", original["code"] + "\n// Alterado")):
+            changed = copy.deepcopy(active)
+            layout._blocks(changed)[identity][field] = value
+            for marker in changed["textSemantics"]["fields"]:
+                if (marker["block"], marker["path"]) == (identity, "/" + field):
+                    marker["sourceSha256"] = hashlib.sha256(value.encode("utf-8")).hexdigest()
+            del changed["stateLayout"]
+            changed = edition.prepare_edition_lesson(changed, active["courseEdition"])
+            # The forged fresh edition is internally consistent. It must still
+            # fail the independent comparison with the authenticated old source.
+            layout.text_semantics.validate(changed)
+            with self.subTest(field=field), self.assertRaises(ValueError):
+                verified_active_u2l8_explanations(historical, changed)
+        changed = copy.deepcopy(active)
+        marker = next(field for field in changed["textSemantics"]["fields"]
+                      if (field["block"], field["path"]) == (identity, "/explanation"))
+        marker["spans"][0].update(role="prose", reading="natural")
+        layout.text_semantics.validate(changed)
+        with self.assertRaises(ValueError):
+            verified_active_u2l8_explanations(historical, changed)
+
+    def test_selected_edition_does_not_replace_the_archived_explanation_oracle(self):
+        _, active, historical, _ = self.active_u2l8()
+        changed = copy.deepcopy(historical)
+        changed["stateLayout"]["editorial"][-1]["afterSha256"] = "0" * 64
+        with self.assertRaises(ValueError):
+            verified_active_u2l8_explanations(changed, active)
 
     def test_u2l8_later_source_formats_preserve_real_blocks_archives_and_editorial_proofs(self):
         source = json.loads((contract.CONTENT / U2L8_LESSON).read_text(encoding="utf-8-sig"))

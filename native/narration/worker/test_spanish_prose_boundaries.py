@@ -5,16 +5,23 @@ kept for human listening; PCM/timing checks do not assert pronunciation quality.
 """
 from __future__ import annotations
 
+import copy
 import hashlib
 import json
 from pathlib import Path
 import re
 import struct
+import sys
 import time
 import unittest
 import wave
 
 from test_worker import ROOT, Worker
+
+sys.path.insert(0, str(ROOT / "scripts/curriculum"))
+import course_edition as edition
+import stable_state_layout as layout
+from test_pending_presentation_contract import selected_u2_edition_lesson
 
 
 ASSET = ROOT / "app/src/main/assets/content/es/programming/cpp_fundamentals/objetos_y_estado/lesson_estado_asignacion_y_copia.json"
@@ -77,9 +84,33 @@ def prompt_fragment(source, field, first, last):
     return {"text": slice_units(source, first, last), "textSemantics": {"spans": spans}}
 
 
-def prompt_fixtures(lesson):
-    meta = lesson["stateLayout"]
-    source, field = authored_prompt_field(lesson["pages"], meta["current"], lesson["textSemantics"])
+def selected_prompt_documents():
+    content = ROOT / "app/src/main/assets/content/es/programming/cpp_fundamentals"
+    path, active, originals = selected_u2_edition_lesson(content, "leer_una_entrada_conocida", 9)
+    historical_path = content / "objetos_y_estado/lesson_leer_una_entrada_conocida.json"
+    originals[historical_path] = historical_path.read_bytes()
+    historical = edition._parse(originals[historical_path].decode("utf-8-sig"))
+    return path, active, historical_path, historical, originals
+
+
+def prompt_fixtures(lesson, historical_lesson):
+    value = edition.validate_lesson(lesson, require_layout=True)
+    if value is None or value["courseId"] != "cpp_fundamentals" or value["locale"] != "es" or \
+            lesson["id"] != edition.unit_prefix(value) + "objetos_y_estado__leer_una_entrada_conocida":
+        raise AssertionError("The prompt must come from the selected Spanish U2L9 edition")
+    if historical_lesson.get("id") != "cpp_fundamentals__objetos_y_estado__leer_una_entrada_conocida" or \
+            edition.descriptor(historical_lesson) is not None:
+        raise AssertionError("The archived prompt must remain its separate legacy publication")
+    for document in (lesson, historical_lesson):
+        layout.validate(document)
+        layout.text_semantics.validate(document)
+    source, field = authored_prompt_field(
+        lesson["pages"], lesson["stateLayout"]["current"], lesson["textSemantics"])
+    meta = historical_lesson["stateLayout"]
+    retained_source, retained_field = authored_prompt_field(
+        historical_lesson["pages"], meta["current"], historical_lesson["textSemantics"])
+    if (source, field) != (retained_source, retained_field):
+        raise AssertionError("The active prompt text or UTF-16 meaning differs from its authenticated source")
     result = {}
     for name, text, role, reading in (
             ("current-instruction", 'std::cout << "Cantidad: ";', "cpp", "technical"),
@@ -108,6 +139,63 @@ def prompt_fixtures(lesson):
     # Preserve the original unmarked-prose regression in both auto/cpp contexts.
     result["conjunction"] = {"text": "El texto contiene letras y palabras.", "textSemantics": None}
     return result
+
+
+class PromptEditionSourceTest(unittest.TestCase):
+    """Portable source checks; no worker process or audio is substituted."""
+
+    def test_selected_edition_and_archived_prompt_keep_independent_exact_owners(self):
+        path, active, historical_path, historical, originals = selected_prompt_documents()
+        before = copy.deepcopy((active, historical))
+        self.assertNotEqual(path, historical_path)
+        self.assertNotEqual(active["id"], historical["id"])
+        fixtures = prompt_fixtures(active, historical)
+        self.assertEqual(set(fixtures), {"current-instruction", "current-output", "historical-prompt", "conjunction"})
+        self.assertEqual(fixtures["current-instruction"]["text"], 'std::cout << "Cantidad: ";')
+        self.assertEqual(fixtures["current-output"]["text"], "Cantidad:")
+        for name, fixture in fixtures.items():
+            if name == "conjunction":
+                self.assertIsNone(fixture["textSemantics"])
+                continue
+            for span in fixture["textSemantics"]["spans"]:
+                self.assertEqual(slice_units(fixture["text"], span["start"], span["end"]), span["text"])
+        self.assertEqual((active, historical), before)
+        for source, original in originals.items():
+            self.assertEqual(source.read_bytes(), original)
+
+    def test_active_prompt_cannot_reseal_changed_text_or_reading_as_its_source(self):
+        _, active, _, historical, _ = selected_prompt_documents()
+        changed = copy.deepcopy(active)
+        owner = layout._blocks(changed)["block_0001_0001"]
+        owner["text"] += " Texto sin procedencia."
+        marker = next(field for field in changed["textSemantics"]["fields"]
+                      if (field["block"], field["path"]) == ("block_0001_0001", "/text"))
+        marker["sourceSha256"] = hashlib.sha256(owner["text"].encode("utf-8")).hexdigest()
+        del changed["stateLayout"]
+        changed = edition.prepare_edition_lesson(changed, active["courseEdition"])
+        layout.text_semantics.validate(changed)
+        with self.assertRaises(AssertionError):
+            prompt_fixtures(changed, historical)
+        changed = copy.deepcopy(active)
+        marker = next(field for field in changed["textSemantics"]["fields"]
+                      if (field["block"], field["path"]) == ("block_0001_0001", "/text"))
+        marker["spans"][0].update(role="prose", reading="natural")
+        layout.text_semantics.validate(changed)
+        with self.assertRaises(AssertionError):
+            prompt_fixtures(changed, historical)
+
+    def test_active_prompt_rejects_broken_utf16_and_cannot_replace_the_archive(self):
+        _, active, _, historical, _ = selected_prompt_documents()
+        changed = copy.deepcopy(active)
+        marker = next(field for field in changed["textSemantics"]["fields"]
+                      if (field["block"], field["path"]) == ("block_0001_0001", "/text"))
+        marker["spans"][0]["start"] += 1
+        with self.assertRaises((AssertionError, ValueError)):
+            prompt_fixtures(changed, historical)
+        changed = copy.deepcopy(historical)
+        changed["stateLayout"]["retirementHistory"] = []
+        with self.assertRaises((AssertionError, ValueError)):
+            prompt_fixtures(active, changed)
 
 
 class SpanishProseBoundariesTest(unittest.TestCase):
@@ -335,17 +423,20 @@ class SpanishProseBoundariesTest(unittest.TestCase):
         print("PASS current U11L14 original conjunction: actual three-voice PCM, UTF-16 word timing and cache reuse; listening remains separate")
 
     def test_05_current_output_prompt_colon_and_conjunction_pcm_context_and_cache(self):
-        asset = ROOT / "app/src/main/assets/content/es/programming/cpp_fundamentals/objetos_y_estado/lesson_leer_una_entrada_conocida.json"
-        original = asset.read_bytes()
-        lesson = json.loads(original.decode("utf-8-sig"))
+        asset, lesson, historical_asset, historical_lesson, originals = selected_prompt_documents()
         # Select by immutable owner and authenticated meaning, then translate
         # every UTF-16 span with its excerpt. The current C++ instruction and
         # the console text have separate reading contracts; keep the archived
         # sentence as an independent fixture instead of imposing it on today.
-        sources = prompt_fixtures(lesson)
+        sources = prompt_fixtures(lesson, historical_lesson)
         folder = OUT / f"output-colon-conjunction-{time.time_ns()}"
         folder.mkdir(parents=True, exist_ok=False)
-        evidence = {"asset": str(asset), "assetSha256": hashlib.sha256(original).hexdigest(), "sources": sources, "voices": {}}
+        evidence = {"asset": str(asset), "assetSha256": hashlib.sha256(originals[asset]).hexdigest(),
+                    "courseEdition": lesson["courseEdition"],
+                    "historicalAsset": str(historical_asset),
+                    "historicalAssetSha256": hashlib.sha256(originals[historical_asset]).hexdigest(),
+                    "inputDocuments": {str(path): hashlib.sha256(data).hexdigest() for path, data in originals.items()},
+                    "sources": sources, "voices": {}}
         retained = []
         try:
             for voice in VOICES:
@@ -416,7 +507,8 @@ class SpanishProseBoundariesTest(unittest.TestCase):
                 audio = Path(result["wav"])
                 self.assertEqual(stamp, (audio.stat().st_mtime_ns, hashlib.sha256(audio.read_bytes()).hexdigest()))
         finally:
-            self.assertEqual(original, asset.read_bytes(), "Narration QA changed the current curricular prompt")
+            for path, original in originals.items():
+                self.assertEqual(original, path.read_bytes(), "Narration QA changed a selected or historical source")
             (folder / "recordings.json").write_text(json.dumps(evidence, ensure_ascii=False, indent=2), encoding="utf-8")
         print(f"PASS current prompt/output colon and conjunctive y: three-voice real PCM, auto/cpp parity, exact UTF-16 owners, cache reuse/reopen; evidence {folder / 'recordings.json'}; human listening remains separate")
 
