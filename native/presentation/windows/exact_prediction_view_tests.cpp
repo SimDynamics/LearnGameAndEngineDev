@@ -121,6 +121,7 @@ struct MultilinePlan {
     std::size_t earlier_compilers;
     bool completes_page;
     bool editorial_feedback;
+    const char* next_page_compiler=nullptr;
 };
 constexpr std::array multiline_plans{
     MultilinePlan{"edition_es_1__programas_y_ejecucion/lesson_texto_secuencia_y_formato.json",
@@ -128,7 +129,7 @@ constexpr std::array multiline_plans{
         "block_0002_0013","p1u1l3_linea_vacia","Rojo\n\nVerde","Rojo\n \nVerde",0,true,false},
     MultilinePlan{"edition_es_1__programas_y_ejecucion/lesson_texto_secuencia_y_formato.json",
         "cpp_fundamentals__edition_es_1__programas_y_ejecucion__texto_secuencia_y_formato",
-        "block_0005_0007","prediccion_informe_inicial","Resumen\nZona Oeste","Resumen\nZona  Oeste",0,true,true},
+        "block_0005_0007","prediccion_informe_inicial","Resumen\nZona Oeste","Resumen\nZona  Oeste",0,true,true,"block_0006_0005"},
     MultilinePlan{"edition_es_1__objetos_y_estado/lesson_leer_una_entrada_conocida.json",
         "cpp_fundamentals__edition_es_1__objetos_y_estado__leer_una_entrada_conocida",
         "block_0006_0002","cpp_fundamentals__objetos_y_estado__leer_una_entrada_conocida__etapas_lectura_y_actualizacion",
@@ -473,12 +474,14 @@ void seed_compiler_prerequisites(state::StateData& data,const curriculum::Lesson
         request.project_files=block.project_files;request.source_files=block.source_files;request.cmake=block.cmake;
         for(const auto& item:block.output_check->cases){
             check(!item.outputs.empty(),"A prerequisite compiler has no authored stdout oracle");
+            request.stdin_utf8=item.standard_input;
             curriculum::FreshExecution execution{1,true,true,0,item.standard_input,item.outputs.front()};
             execution.executable=item.executable;
             if(item.standard_error==curriculum::StandardErrorExpectation::non_blank)execution.standard_error="QA prerequisite diagnostic";
             (void)windows::record_compiler_puzzle_case(data,lesson,block,request,execution,"Synthetic QA prerequisite only");
         }
-        check(windows::compiler_puzzle_completed(data,lesson,block),"Cannot isolate prediction from its compiler prerequisites");
+        check(windows::compiler_puzzle_completed(data,lesson,block),
+            "Cannot isolate prediction from its compiler prerequisite: "+block.stable_id);
     }
 }
 void require_prepared_compiler_credit(const state::StateData& data,const curriculum::Lesson& lesson,
@@ -590,6 +593,32 @@ std::size_t prepare_multiline_prior_state(state::StateData& data,const curriculu
         }
         if(p<target.page)(void)state::mark_page_reached(data,lesson,p);
     }
+    if(plan.next_page_compiler){
+        // The continuation visits this editor before returning. Prepare an
+        // existing draft so navigation tests preservation, not first creation.
+        const auto next=curriculum::stable_block_position(lesson,plan.next_page_compiler);
+        check(plan.completes_page&&next&&next->page==target.page+1,
+            "The independently saved continuation draft moved to another page");
+        const auto& editor=lesson.pages.at(next->page).blocks.at(next->block);
+        check(editor.type==BlockType::cpp_compiler&&!editor.initial_code.empty(),
+            "The continuation draft no longer belongs to its authored compiler");
+        const auto key=curriculum::draft_key("programming",lesson,editor);
+        const auto input=editor.standard_input.value_or("");
+        const auto existing=state::get_draft(data,key,editor.initial_code,input);
+        if(existing.has_saved)check(existing.source==editor.initial_code&&existing.input==input,
+            "The continuation fixture already has a different draft; refusing to overwrite it");
+        else{
+            const auto document=windows::predefined_code_document(editor.initial_code);
+            check(document.text==editor.initial_code,"Preparing the continuation editor rewrote its authored source");
+            state::Draft draft;draft.source=document.text;draft.input=input;draft.has_saved=true;
+            draft.indentation_json=state::make_indentation_metadata(draft.source,document.indentation_starts);
+            draft.selection_start=document.selection_start;draft.selection_end=document.selection_end;
+            state::put_draft(data,key,draft);
+        }
+        check(!state::get_response(data,lesson,editor)&&!windows::compiler_puzzle_completed(data,lesson,editor)&&
+            windows::compiler_puzzle_case_count(data,lesson,editor)==0,
+            "Preparing a continuation draft credited a future compiler");
+    }
     check(executions==plan.earlier_compilers&&!state::get_response(data,lesson,lesson.pages[target.page].blocks[target.block]),
         "Multiline QA invented a target answer or lost a required genuine compiler observation");
     require_prepared_compiler_credit(data,lesson,target);
@@ -616,7 +645,13 @@ void preserve_multiline_other_state(const state::StateData& before,const state::
         check(current_draft.has_saved==prior_draft.has_saved&&current_draft.source==prior_draft.source&&
             current_draft.input==prior_draft.input&&current_draft.indentation_json==prior_draft.indentation_json&&
             current_draft.selection_start==prior_draft.selection_start&&current_draft.selection_end==prior_draft.selection_end,
-            "Multiline editing changed an independent compiler source/input draft");
+            "Multiline editing changed independent compiler draft "+block.stable_id+
+            ": has_saved="+std::to_string(current_draft.has_saved)+" expected="+std::to_string(prior_draft.has_saved)+
+            "; source_equal="+std::to_string(current_draft.source==prior_draft.source)+
+            "; input_equal="+std::to_string(current_draft.input==prior_draft.input)+
+            "; indentation_equal="+std::to_string(current_draft.indentation_json==prior_draft.indentation_json)+
+            "; selection_equal="+std::to_string(current_draft.selection_start==prior_draft.selection_start&&
+                current_draft.selection_end==prior_draft.selection_end));
     }
 }
 
