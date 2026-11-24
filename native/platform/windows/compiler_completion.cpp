@@ -494,8 +494,9 @@ const curriculum::OutputCase* current_crt_feedback_case(const curriculum::Lesson
     // editorial proof. Its sole case keeps the same authenticated objective;
     // current guide wording is presentation, not another execution receipt.
     if(!block.crt_output_original||lesson.locale!="es"||lesson.state_layout.version!=2||
-        lesson.id!="cpp_fundamentals__archivos_y_programa_completo__clasificar_caracteres_y_normalizar_una_copia"||
-        block.stable_id!="block_0005_0004"||!block.output_check||block.output_check->cases.size()!=1)return nullptr;
+        !curriculum::reviewed_source_owner(lesson,block,
+            "cpp_fundamentals__archivos_y_programa_completo__clasificar_caracteres_y_normalizar_una_copia",
+            "block_0005_0004")||!block.output_check||block.output_check->cases.size()!=1)return nullptr;
     const auto& item=block.output_check->cases.front();
     if(item.outputs.size()!=2||item.outputs.front()!=*block.crt_output_original)return nullptr;
     std::string expanded;for(const char value:*block.crt_output_original){if(value=='\n')expanded+='\r';expanded+=value;}

@@ -1281,6 +1281,11 @@ void validate_course_edition_file(const std::filesystem::path& path, const Lesso
         require(lesson.id.starts_with(unit_id + "__") &&
                 path.filename().string() == "lesson_" + lesson.id.substr(unit_id.size() + 2) + ".json",
             "Course-edition lesson file does not match its published identity");
+        if(lesson.course_edition_source)
+            require(lesson.course_edition_source->path.starts_with(
+                "app/src/main/assets/content/"+edition.locale+'/'+
+                course_folder.parent_path().filename().string()+'/'+edition.course_id+'/'),
+                "A copied course-edition source belongs to another physical curriculum route");
         const auto root = course_folder.parent_path().parent_path().parent_path();
         const auto course_path = course_folder / ("course_" + edition.course_id + ".json");
         const auto unit_path = unit_folder / ("unit_" + unit_slug + ".json");
@@ -7784,6 +7789,136 @@ std::optional<JsonObject> authenticated_compiler_source(
             return JsonObject::Parse(key(archive.raw_json));
     return {};
 }
+namespace {
+Lesson read_course_edition_source_copy(const JsonObject& root,std::string_view source,
+        std::string_view expected_locale) {
+    const OriginalJson original(source);
+    (void)original.ordered_frame(original.root()); // Do not collapse duplicate authored keys.
+    const auto edition=read_course_edition(root,expected_locale,source);
+    require(edition.has_value(),"courseEditionSource requires an explicit course edition");
+    const auto proof_slice=original.member(original.root(),"courseEditionSource");
+    const auto proof=root.GetNamedObject(L"courseEditionSource");
+    allowed_keys(proof,{"version","sourcePath","sourceDocumentSha256","document"},true);
+    for(const auto field:{"version","sourcePath","sourceDocumentSha256","document"})
+        (void)original.member(proof_slice,field);
+    require_integer_json_numbers(original.text(original.member(proof_slice,"version")));
+    require(integer(proof.GetNamedValue(L"version"),1)==1,
+        "Unsupported courseEditionSource version");
+    const auto document=proof.GetNamedObject(L"document");
+    require(!document.HasKey(L"courseEdition")&&!document.HasKey(L"courseEditionSource"),
+        "A course-edition source must be a legacy document without nested provenance");
+    const auto source_id=text(document,"id"),path=text(proof,"sourcePath");
+    const auto prefix=edition->course_id+"__";
+    require(source_id.starts_with(prefix)&&!uses_course_edition_namespace(source_id),
+        "A course-edition source belongs to another course or edition");
+    const auto suffix=source_id.substr(prefix.size());
+    const auto separator=suffix.find("__");
+    require(separator!=std::string::npos&&
+            course_edition_slug(std::string_view(suffix).substr(0,separator))&&
+            course_edition_slug(std::string_view(suffix).substr(separator+2)),
+        "A course-edition source needs its exact legacy unit and lesson identity");
+    const auto relative=edition->course_id+'/'+suffix.substr(0,separator)+
+        "/lesson_"+suffix.substr(separator+2)+".json";
+    const auto content="app/src/main/assets/content/"+edition->locale+'/';
+    require(path==content+"programming/"+relative||path==content+"math_physics/"+relative,
+        "A course-edition source path differs from its exact course, language or owner");
+    const auto digest=text(proof,"sourceDocumentSha256");
+    require(valid_hash(digest)&&digest==fingerprint(document),
+        "A course-edition source differs from its complete document fingerprint");
+
+    // Validate the exact original slice through the unchanged ordinary loader.
+    // Stringify would lose lexical evidence such as fractional JSON indices.
+    // An embedded checksum binds the copy; publication separately verifies this
+    // document against its retained Git resource, not against its own claim.
+    auto result=parse_lesson_json(original.text(original.member(proof_slice,"document")),expected_locale);
+    require(result.id==source_id&&result.state_layout.version==2&&
+            result.state_layout.locale==edition->locale&&!result.course_edition&&
+            !result.course_edition_source,
+        "A course-edition source requires its ordinary authenticated legacy v2 lesson");
+    auto copied=JsonObject::Parse(root.Stringify());
+    auto baseline=JsonObject::Parse(document.Stringify());
+    for(const auto name:{L"id",L"courseEdition",L"courseEditionSource",L"stateLayout"}) {
+        if(copied.HasKey(name))copied.Remove(name);
+        if(baseline.HasKey(name))baseline.Remove(name);
+    }
+    require(fingerprint(copied)==fingerprint(baseline),
+        "courseEditionSource v1 requires an exact content copy; later revisions need their own supported provenance");
+    require(root.HasKey(L"stateLayout"),"A copied course-edition lesson requires its fresh state layout");
+    require_layout_json_numbers(root,source);
+
+    // Local labels preserve authored relationships, while every address and
+    // signature belongs to the newly delivered publication. No original
+    // addition, revision, retirement or compatibility history is transplanted.
+    const auto pages=array(root,"pages");
+    JsonArray origin,current;
+    for(unsigned p=0;p<pages.Size();++p) {
+        const auto& labels=result.state_layout.current.at(p);
+        const auto blocks=array(pages.GetAt(p).GetObject(),"blocks");
+        require(blocks.Size()==labels.blocks.size(),"A copied page changed its source owner map");
+        JsonArray origin_blocks,current_blocks;
+        for(unsigned b=0;b<blocks.Size();++b) {
+            JsonObject entry;
+            entry.Insert(L"id",JsonValue::CreateStringValue(key(labels.blocks[b])));
+            entry.Insert(L"sha256",JsonValue::CreateStringValue(key(fingerprint(blocks.GetAt(b).GetObject()))));
+            origin_blocks.Append(entry);
+            current_blocks.Append(JsonValue::CreateStringValue(key(labels.blocks[b])));
+        }
+        JsonObject origin_page,current_page;
+        origin_page.Insert(L"id",JsonValue::CreateStringValue(key(labels.id)));
+        origin_page.Insert(L"blocks",origin_blocks);
+        current_page.Insert(L"id",JsonValue::CreateStringValue(key(labels.id)));
+        current_page.Insert(L"blocks",current_blocks);
+        origin.Append(origin_page);current.Append(current_page);
+    }
+    auto delivered=JsonObject::Parse(root.Stringify());
+    delivered.Remove(L"stateLayout");
+    if(delivered.HasKey(L"textSemantics"))delivered.Remove(L"textSemantics");
+    JsonObject family,member,expected;
+    const auto family_digest=fingerprint(delivered);
+    member.Insert(L"sha256",JsonValue::CreateStringValue(key(family_digest)));
+    member.Insert(L"origin",origin);family.Insert(key(edition->locale),member);
+    expected.Insert(L"version",JsonValue::CreateNumberValue(2));
+    expected.Insert(L"locale",JsonValue::CreateStringValue(key(edition->locale)));
+    expected.Insert(L"origin",origin);expected.Insert(L"current",current);
+    expected.Insert(L"family",family);
+    expected.Insert(L"additions",JsonArray{});expected.Insert(L"editorial",JsonArray{});
+    const auto metadata=root.GetNamedObject(L"stateLayout");
+    require(fingerprint(metadata)==fingerprint(expected),
+        "courseEditionSource v1 requires its exact fresh map without inherited or later histories");
+
+    StateLayout fresh;
+    fresh.version=2;fresh.locale=edition->locale;fresh.raw_json=utf8(metadata.Stringify());
+    fresh.origin=read_pages(origin,&fresh.signatures);fresh.current=read_pages(current,nullptr);
+    fresh.legacy_lineage=sha256(framing(fresh.origin));
+    fresh.family.emplace(fresh.locale,StateFamily{family_digest,fresh.origin,fresh.signatures});
+    std::string lineage="v2/"+fresh.locale+'/'+fresh.locale+':'+family_digest+':'+framing(fresh.origin)+':';
+    bool first=true;
+    for(const auto& [id,hash]:fresh.signatures) {
+        if(!first)lineage+=',';first=false;lineage+=id+'='+hash;
+    }
+    fresh.lineage=sha256(lineage);
+    result.id=text(root,"id");result.raw_json=source;result.source_path.clear();
+    result.course_edition=edition;
+    result.course_edition_source=Lesson::AuthenticatedSource{source_id,path,digest};
+    result.state_layout=std::move(fresh);result.retired_blocks.clear();
+    bind_course_edition(result);
+    for(std::size_t p=0;p<result.pages.size();++p) {
+        auto& page=result.pages[p];page.stable_id=result.state_layout.current[p].id;
+        for(std::size_t b=0;b<page.blocks.size();++b) {
+            auto& block=page.blocks[b];block.stable_id=result.state_layout.current[p].blocks[b];
+            block.address={p,b,{},page.stable_id};
+            // Retain current evaluation and authenticated source derivations,
+            // but never expose a prior answer/receipt as an edition fallback.
+            block.order_refinement.reset();block.choice_revision.reset();
+            block.compiler_revision.reset();block.compiler_case_order_revisions.clear();
+            block.compiler_case_revisions.clear();block.compiler_client_epoch.clear();
+            block.math_label_revision.reset();
+        }
+    }
+    validate_reference_relationships(result);validate_activity_relationships(result);
+    return result;
+}
+} // namespace
 curriculum::Lesson parse_lesson_json(std::string_view source, std::string_view expected_locale) {
     require(known_locale(expected_locale), "Unsupported asset language");
     ensure_winrt_apartment();
@@ -7791,6 +7926,8 @@ curriculum::Lesson parse_lesson_json(std::string_view source, std::string_view e
         if (source.starts_with("\xEF\xBB\xBF")) source.remove_prefix(3);
         require(source.size() <= 32 * 1024 * 1024, "Lesson file too large");
         const auto root = JsonObject::Parse(winrt::to_hstring(source));
+        if(root.HasKey(L"courseEditionSource"))
+            return read_course_edition_source_copy(root,source,expected_locale);
         Lesson lesson; lesson.id = text(root, "id"); lesson.title = text(root, "title"); lesson.locale = expected_locale;
         lesson.course_edition = read_course_edition(root, expected_locale, source);
         if (root.HasKey(L"compilerPuzzlesRequired")) {
@@ -7876,6 +8013,8 @@ curriculum::Lesson parse_lesson_progress_metadata(std::string_view source, std::
         if (source.starts_with("\xEF\xBB\xBF")) source.remove_prefix(3);
         require(source.size() <= 32 * 1024 * 1024,"Lesson file too large");
         const auto root = JsonObject::Parse(winrt::to_hstring(source));
+        if(root.HasKey(L"courseEditionSource"))
+            return read_course_edition_source_copy(root,source,expected_locale);
         Lesson lesson; lesson.id = text(root,"id"); lesson.title = text(root,"title");
         lesson.locale = expected_locale; lesson.raw_json = source;
         lesson.course_edition = read_course_edition(root, expected_locale, source);

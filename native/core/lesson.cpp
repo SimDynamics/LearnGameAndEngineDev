@@ -649,8 +649,9 @@ std::string reference_objective_frame(const Lesson& lesson, const Block& activit
         token(item.standard_input); token(item.executable.value_or(""));
         bool equivalent_crt=false;
         if(activity.crt_output_original&&lesson.locale=="es"
-            &&lesson.id=="cpp_fundamentals__archivos_y_programa_completo__clasificar_caracteres_y_normalizar_una_copia"
-            &&activity.stable_id=="block_0005_0004"&&activity.output_check->cases.size()==1
+            &&reviewed_source_owner(lesson,activity,
+                "cpp_fundamentals__archivos_y_programa_completo__clasificar_caracteres_y_normalizar_una_copia",
+                "block_0005_0004")&&activity.output_check->cases.size()==1
             &&item.outputs.size()==2&&item.outputs.front()==*activity.crt_output_original){
             std::string expanded;
             for(const char value:*activity.crt_output_original){if(value=='\n')expanded+='\r';expanded+=value;}

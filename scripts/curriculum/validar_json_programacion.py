@@ -987,6 +987,10 @@ def validate_cpp_compile_check_contract(block, where, *, document=None, position
                                   "Diagnostic block is detached from its validated owner")
             metadata = document["stateLayout"]
             identity = metadata["current"][page]["blocks"][index]
+            if _state_layout.course_edition.SOURCE_FIELD in document:
+                # Whole-copy validation above binds this exact visible owner
+                # to its complete legacy contract without borrowing its state.
+                metadata = document[_state_layout.course_edition.SOURCE_FIELD]["document"]["stateLayout"]
             archive = next((entry["block"] for entry in
                             metadata.get("sourceFormatRevisions", [])
                             if entry["id"] == identity), None)

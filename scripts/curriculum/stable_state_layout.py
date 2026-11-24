@@ -2776,6 +2776,11 @@ def prepare_v2(document: dict, locale: str, family_documents: dict[str, dict],
                        "origin": deepcopy(prepare(source)["stateLayout"]["origin"])}
             for language, source in sorted(family_documents.items())}
     if type(previous.get("stateLayout")) is dict and previous["stateLayout"].get("version") == 2:
+        if course_edition.SOURCE_FIELD in previous or course_edition.SOURCE_FIELD in document:
+            require(not requested_returns,
+                    "courseEditionSource v1 does not support own editorial returns")
+            validate_transition(previous, document)
+            return deepcopy(document)
         require(type(document.get("stateLayout")) is dict and document["stateLayout"].get("version") == 2,
                 "Published v2 metadata cannot be removed or regenerated")
         result = deepcopy(document)
@@ -2856,6 +2861,9 @@ def prepare_v2(document: dict, locale: str, family_documents: dict[str, dict],
 
 
 def _validate_state_layout(document: dict) -> dict[tuple[int, int], tuple[int, int]]:
+    if course_edition.SOURCE_FIELD in document:
+        return course_edition.validate_source_copy(
+            document, validate_source=validate, canonical_fingerprint=fingerprint)
     pages = _pages(document)
     meta = document.get("stateLayout")
     if type(meta) is not dict or meta.get("version") != 2:
@@ -7327,6 +7335,9 @@ def _validate_compiler_local_string_checks(document: dict) -> None:
 def validate(document: dict) -> dict[tuple[int, int], tuple[int, int]]:
     """Return immutable storage coordinates after validating state and links."""
     course_edition.validate_lesson(document, require_layout=True)
+    if course_edition.SOURCE_FIELD in document:
+        return course_edition.validate_source_copy(
+            document, validate_source=validate, canonical_fingerprint=fingerprint)
     if "compilerPuzzlesRequired" in document:
         require(type(document["compilerPuzzlesRequired"]) is bool, "compilerPuzzlesRequired must be boolean")
     mapping = _validate_state_layout(document)
@@ -8701,6 +8712,14 @@ def _is_exact_assetcheck_initial_origin_repair(previous: dict, current: dict) ->
 
 def validate_transition(previous: dict, current: dict) -> None:
     """Never authorize a renamed origin or changed answer while allowing a reorder."""
+    if course_edition.SOURCE_FIELD in previous or course_edition.SOURCE_FIELD in current:
+        require(course_edition.SOURCE_FIELD in previous and course_edition.SOURCE_FIELD in current,
+                "A published courseEditionSource cannot be added, removed or substituted")
+        validate(previous)
+        validate(current)
+        require(fingerprint(previous) == fingerprint(current),
+                "courseEditionSource v1 supports only an exact copy; own revisions are not supported")
+        return
     require("stateLayout" in current, "A reordered lesson needs an identity manifest")
     if type(current["stateLayout"]) is dict and current["stateLayout"].get("version") == 2:
         if _is_exact_assetcheck_initial_origin_repair(previous, current):
@@ -8816,6 +8835,8 @@ def align_for_previous_validation(previous: dict, current: dict) -> dict:
         validate(current)
         return current
     validate_transition(previous, current)
+    if course_edition.SOURCE_FIELD in current:
+        return deepcopy(current)
     old = prepare(previous)
     blocks = _all_blocks(current)
     old_refinements = _order_refinements(old)
@@ -8896,6 +8917,8 @@ def original_projection(document: dict) -> dict:
     if "stateLayout" not in document:
         return document
     validate(document)
+    if course_edition.SOURCE_FIELD in document:
+        return deepcopy(_without_layout(document))
     blocks = _all_blocks(document)
     math_match_before = {
         item["id"]: parse_json(item["rawJson"])
@@ -9091,8 +9114,15 @@ def _validate_family_baseline(repository: Path, commit: str, family: str, member
                     "A first language delivery cannot claim earlier additions, retirements or revisions")
             source = {key: value for key, value in document.items()
                       if key != "stateLayout" and key not in TEXT_PRESENTATION_FIELDS}
-            literal = (course_edition.literal_layout(source, pages=_pages, state_fingerprint=state_fingerprint)
-                       if "courseEdition" in source else prepare(source)["stateLayout"])
+            if course_edition.SOURCE_FIELD in source:
+                # The complete source proof was validated above. Its current
+                # labels receive new literal positions and full block hashes.
+                literal = course_edition._source_copy_layout(
+                    document, source[course_edition.SOURCE_FIELD]["document"],
+                    course_edition.descriptor(document), fingerprint)
+            else:
+                literal = (course_edition.literal_layout(source, pages=_pages, state_fingerprint=state_fingerprint)
+                           if "courseEdition" in source else prepare(source)["stateLayout"])
             require(meta["origin"] == literal["origin"] and meta["current"] == literal["current"],
                     "A first language delivery must retain its literal original page and block identities")
             require(manifest[locale] == {"sha256": fingerprint(source), "origin": literal["origin"]},
@@ -9136,7 +9166,8 @@ def check_repository(repository: Path, base_ref: str | None) -> dict:
             except (ValueError, KeyError, TypeError) as exc:
                 raise LayoutError(f"Invalid presentation relationships in {path}: {exc}") from exc
     mapped = {path for path, document in documents.items() if "stateLayout" in document}
-    editions = (any("courseEdition" in document or "__edition_" in str(document.get("id", ""))
+    editions = (any("courseEdition" in document or course_edition.SOURCE_FIELD in document
+                    or "__edition_" in str(document.get("id", ""))
                     for document in documents.values())
                 or any("courseEdition" in load(path)
                        for path in content.glob("*/*/*/course_*.json"))

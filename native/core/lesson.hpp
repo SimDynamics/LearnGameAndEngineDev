@@ -515,7 +515,24 @@ struct Lesson {
     // have no invented block identity or effect on stored exercise addresses.
     std::map<std::string,TextSemantics> text_semantics;
     std::optional<CourseEdition> course_edition;
+    // Runtime-only result of validating an exact courseEditionSource copy.
+    // This identifies reviewed content, never a response/draft/receipt owner.
+    struct AuthenticatedSource {
+        std::string lesson_id, path, document_sha256;
+        bool operator==(const AuthenticatedSource&) const = default;
+    };
+    std::optional<AuthenticatedSource> course_edition_source;
 };
+
+// Only explicit, fully validated source provenance can carry a closed review
+// into a new edition. All progress identities continue to use lesson.id.
+[[nodiscard]] inline bool reviewed_source_owner(const Lesson& lesson,const Block& block,
+        std::string_view source_lesson,std::string_view source_owner) {
+    return block.stable_id==source_owner&&
+        (lesson.id==source_lesson||
+         (lesson.course_edition&&lesson.course_edition_source&&
+          lesson.course_edition_source->lesson_id==source_lesson));
+}
 
 // Preserves the identities of existing stdout objectives while allowing the
 // separately authored compile-time diagnostic contract to gate the same flow.

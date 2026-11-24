@@ -2349,6 +2349,54 @@ retiros ni adiciones anteriores. Después de publicar esa fuente se aplican las
 reglas ordinarias de autenticación, revisión y conservación de su propia
 edición. `prepare-edition` rechaza volver a preparar una ruta ya publicada.
 
+### Copias exactas con objetivos ya revisados
+
+Las lecciones históricas que contienen diagnósticos, opciones, etiquetas
+matemáticas o comprobaciones revisadas pueden conservar esos objetivos bajo
+una identidad nueva. Para preparar esta copia, se entrega a
+`course_edition.prepare_edition_lesson(document, descriptor,
+source_document=original, source_path=published_path)` el documento candidato
+sin `stateLayout`, con su ID nuevo, y la lección histórica completa, incluido
+su mapa v2. `published_path` es la ruta relativa de ese recurso en Git.
+
+El resultado incorpora `courseEditionSource` con `version: 1`, `sourcePath`,
+`sourceDocumentSha256` y `document`. La huella SHA-256 corresponde a la
+representación canónica del documento completo; `document` conserva el original
+que la produjo. La fuente debe ser una lección histórica válida, sin edición
+ni procedencia anidada. La copia conserva todo su contenido salvo `id`,
+`courseEdition`, `courseEditionSource` y `stateLayout`.
+
+En estas copias se conservan las etiquetas locales de páginas y bloques de
+`stateLayout.current` del original, incluidas las usadas en `referenceAfter`
+y otras relaciones. Se reconstruyen las coordenadas actuales, las huellas de
+los bloques completos y una familia propia. El mapa nuevo no incorpora las
+adiciones, revisiones ni archivos de estado históricos. Las claves efectivas
+incluyen el ID nuevo de la lección: respuestas, entradas, borradores, logros,
+pausas y referencias comienzan pendientes aunque el original esté completado.
+
+La publicación autentica la prueba contra el recurso real de la base Git y
+exige conservar sus bytes históricos en una ruta física. Origen y destino
+deben pertenecer al mismo idioma, categoría y curso. Un documento y un checksum
+coherentes entre sí no sustituyen ese cotejo. La CLI `prepare-edition` admite
+un candidato con esta prueba completa y realiza la misma autenticación.
+El cargador Windows valida el original con sus contratos vigentes y compara
+el contenido copiado; no relaja los reconocedores de las lecciones históricas.
+
+**Límite de la versión 1:** admite la copia exacta y su republicación sin
+cambios. Una revisión propia de contenido, formato, orden, retiradas o historial
+de esta copia se rechaza; requiere una capacidad posterior de revisión
+compatible. Esta restricción se refiere a `courseEditionSource`, no a las
+lecciones de nueva autoría preparadas sin esa prueba.
+
+La regresión `native.edition_source` prepara un catálogo QA con las 18
+lecciones afectadas y 41 propietarios, monta las copias con sus identidades
+nuevas y compara evaluaciones reales, persistencia y rechazo de alteraciones.
+El proveedor conserva los originales autenticados por commit, blob y SHA-256.
+`native.edition_source_authoring` comprueba preparación y procedencia, y
+`native.edition_source_legacy` mantiene las regresiones de edición y contratos
+especiales. El worker matemático QA usa el protocolo y las fuentes reales,
+con dependencias aisladas y sin cambiar el runtime ni los modelos del producto.
+
 ### Publicación y comprobación
 
 Publicar conjuntamente el índice de curso, los índices de unidad y todas las
@@ -2413,3 +2461,4 @@ archivos de procedencia ni se normalizan otros hashes para hacerlos pasar por
 nuevas fuentes. Si la nueva enseñanza necesita una capacidad general adicional,
 corresponde implementarla expresamente. Las pruebas de autoría incluyen el
 rechazo de este intento de eludir una protección histórica.
+

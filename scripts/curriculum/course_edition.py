@@ -15,6 +15,8 @@ import subprocess
 CONTENT_DIRECTORY = "app/src/main/assets/content"
 FIELD = "courseEdition"
 FIELDS = {"version", "courseId", "locale", "id", "generation"}
+SOURCE_FIELD = "courseEditionSource"
+SOURCE_FIELDS = {"version", "sourcePath", "sourceDocumentSha256", "document"}
 LOCALES = frozenset({"es", "en", "fr"})
 
 
@@ -87,6 +89,7 @@ def validate_lesson(document, *, require_layout=False):
     """Validate edition identity independently of a file's publication context."""
     value = descriptor(document)
     if value is None:
+        require(SOURCE_FIELD not in document, "courseEditionSource requires courseEdition")
         require("__edition_" not in str(document.get("id", "")),
                 "The edition namespace requires courseEdition")
         return None
@@ -155,6 +158,8 @@ def _active_index_entries(document, field):
 
 def validate_active_course(course, units, lessons):
     """Check active references; inactive historical resources stay outside this walk."""
+    require(SOURCE_FIELD not in course and all(SOURCE_FIELD not in unit for unit in units.values()),
+            "courseEditionSource belongs only to an authored edition lesson")
     value = descriptor(course)
     if value is None:
         for unit_id in _entries(course, "units"):
@@ -212,7 +217,92 @@ def literal_layout(document, *, pages, state_fingerprint):
     return {"origin": origin, "current": current}
 
 
-def prepare_edition_lesson(document, value):
+def _source_copy_proof(document, value, *, validate_source, canonical_fingerprint):
+    """Authenticate a legacy contract without giving it the edition's state ID.
+
+    The repository check additionally binds the embedded document to the exact
+    published resource. Its self-contained digest alone is not a publication
+    signature, and never replaces that Git comparison.
+    """
+    require(value is not None and SOURCE_FIELD in document,
+            "courseEditionSource requires its explicit courseEdition")
+    proof = document[SOURCE_FIELD]
+    require(type(proof) is dict and set(proof) == SOURCE_FIELDS
+            and type(proof["version"]) is int and proof["version"] == 1,
+            "Unsupported or malformed courseEditionSource")
+    original = proof["document"]
+    require(type(original) is dict and FIELD not in original and SOURCE_FIELD not in original
+            and "__edition_" not in str(original.get("id", "")),
+            "courseEditionSource v1 requires a legacy source without nested edition provenance")
+    meta = original.get("stateLayout")
+    require(type(meta) is dict and meta.get("version") == 2
+            and meta.get("locale") == value["locale"],
+            "courseEditionSource requires its original legacy v2 locale")
+    relative = proof["sourcePath"]
+    require(type(relative) is str and "\\" not in relative,
+            "courseEditionSource needs a canonical published sourcePath")
+    path = PurePosixPath(relative)
+    try:
+        parts = path.relative_to(CONTENT_DIRECTORY).parts
+    except ValueError as error:
+        raise CourseEditionError("courseEditionSource is outside published content") from error
+    require(path.as_posix() == relative and len(parts) == 5
+            and parts[0] == value["locale"] and parts[1] in {"programming", "math_physics"}
+            and parts[2] == value["courseId"] and _slug(parts[3])
+            and parts[4].startswith("lesson_") and parts[4].endswith(".json")
+            and _slug(parts[4][7:-5])
+            and original.get("id") == f"{parts[2]}__{parts[3]}__{parts[4][7:-5]}",
+            "courseEditionSource path must name its exact legacy course and lesson")
+    digest = proof["sourceDocumentSha256"]
+    require(type(digest) is str and re.fullmatch(r"[0-9a-f]{64}", digest) is not None
+            and canonical_fingerprint(original) == digest,
+            "courseEditionSource document differs from its complete source digest")
+    validate_source(original)
+    return original
+
+
+def _source_copy_layout(document, original, value, canonical_fingerprint):
+    """Keep local owner labels, but assign only the delivered positions and bytes."""
+    current = deepcopy(original["stateLayout"]["current"])
+    origin = [{"id": record["id"], "blocks": [
+        {"id": identity, "sha256": canonical_fingerprint(block)}
+        for identity, block in zip(record["blocks"], page["blocks"])]}
+        for record, page in zip(current, original["pages"])]
+    source = {key: val for key, val in document.items() if key not in {"stateLayout", "textSemantics"}}
+    return {
+        "version": 2, "locale": value["locale"], "origin": origin, "current": current,
+        "family": {value["locale"]: {"sha256": canonical_fingerprint(source), "origin": deepcopy(origin)}},
+        "additions": [], "editorial": [],
+    }
+
+
+def validate_source_copy(document, *, validate_source=None, canonical_fingerprint=None):
+    """Validate the deliberately exact-copy v1 context and return fresh addresses.
+
+    Legacy validators receive the complete legacy lesson, never an aliased
+    edition ID. This version has no own revisions, formatting, reorder or
+    retirement history. Such operations need a later authenticated capability.
+    """
+    if validate_source is None or canonical_fingerprint is None:
+        state = _state_module()
+        validate_source, canonical_fingerprint = state.validate, state.fingerprint
+    value = validate_lesson(document, require_layout=True)
+    original = _source_copy_proof(document, value, validate_source=validate_source,
+                                  canonical_fingerprint=canonical_fingerprint)
+    excluded = {"id", FIELD, SOURCE_FIELD, "stateLayout"}
+    current_payload = {key: val for key, val in document.items() if key not in excluded}
+    original_payload = {key: val for key, val in original.items() if key not in excluded}
+    require(canonical_fingerprint(current_payload) == canonical_fingerprint(original_payload),
+            "courseEditionSource v1 supports only an exact copy; own curricular revisions are not supported")
+    expected = _source_copy_layout(document, original, value, canonical_fingerprint)
+    require(canonical_fingerprint(document["stateLayout"]) == canonical_fingerprint(expected),
+            "courseEditionSource v1 requires a fresh exact map; own state revisions and inherited history are not supported")
+    return {(page, block): (page, block)
+            for page, source in enumerate(document["pages"])
+            for block in range(len(source["blocks"]))}
+
+
+def prepare_edition_lesson(document, value, *, source_document=None, source_path=None):
     """Return a fresh, validated v2 lesson. Never edit an old map or an input."""
     value = deepcopy(descriptor({FIELD: value}))
     require(type(document) is dict and "stateLayout" not in document,
@@ -223,6 +313,22 @@ def prepare_edition_lesson(document, value):
     result[FIELD] = value
     validate_lesson(result)
     state = _state_module()
+    if source_document is not None or source_path is not None:
+        require(type(source_document) is dict and type(source_path) is str,
+                "A copied edition source needs both source_document and source_path")
+        proof = {"version": 1, "sourcePath": source_path,
+                 "sourceDocumentSha256": state.fingerprint(source_document),
+                 "document": deepcopy(source_document)}
+        require(SOURCE_FIELD not in result or state.fingerprint(result[SOURCE_FIELD]) == state.fingerprint(proof),
+                "The authored edition source differs from its explicit provenance")
+        result[SOURCE_FIELD] = proof
+        original = _source_copy_proof(result, value, validate_source=state.validate,
+                                      canonical_fingerprint=state.fingerprint)
+        result["stateLayout"] = _source_copy_layout(result, original, value, state.fingerprint)
+        validate_source_copy(result, validate_source=state.validate, canonical_fingerprint=state.fingerprint)
+        return result
+    require(SOURCE_FIELD not in result,
+            "Preparing courseEditionSource requires explicit source_document and source_path")
     literal = literal_layout(result, pages=state._pages, state_fingerprint=state.state_fingerprint)
     source = {key: val for key, val in result.items() if key not in state.TEXT_PRESENTATION_FIELDS}
     result["stateLayout"] = {
@@ -266,6 +372,33 @@ def _paths_at(repository, commit):
                             capture_output=True, text=True, encoding="utf-8")
     require(result.returncode == 0, "Cannot list the published edition resources")
     return {item for item in result.stdout.split("\0") if item}
+
+
+def authenticate_source_publication(repository, commit, document, *, previous_paths=None, target_path=None):
+    """Bind a copy proof to real Git bytes and the retained physical resource."""
+    state = _state_module()
+    validate_source_copy(document, validate_source=state.validate, canonical_fingerprint=state.fingerprint)
+    proof = document[SOURCE_FIELD]
+    relative = proof["sourcePath"]
+    if target_path is not None:
+        target = PurePosixPath(target_path)
+        try:
+            target_parts = target.relative_to(CONTENT_DIRECTORY).parts
+        except ValueError as error:
+            raise CourseEditionError("Copied edition destination is outside published content") from error
+        source_parts = PurePosixPath(relative).relative_to(CONTENT_DIRECTORY).parts
+        require(target.as_posix() == target_path and len(target_parts) == 5
+                and target_parts[:3] == source_parts[:3],
+                "A copied edition source and destination must share their exact locale, category and course")
+    paths = _paths_at(repository, commit) if previous_paths is None else previous_paths
+    require(relative in paths, "courseEditionSource must name an already published legacy resource")
+    published = _git_bytes(repository, commit, relative)
+    original = _parse(published.decode("utf-8-sig"))
+    require(state.fingerprint(original) == proof["sourceDocumentSha256"],
+            "courseEditionSource does not match the complete source at the verified Git base")
+    retained = _edition_file(repository, relative, "copied legacy source")
+    require(retained.read_bytes() == published,
+            "courseEditionSource must retain its exact published legacy resource")
 
 
 def _course_path_parts(relative):
@@ -378,7 +511,7 @@ def check_repository(repository, commit, *, documents=None):
                      for path in content.rglob("unit_*.json")}
     declared = any(FIELD in document for document in [*current_courses.values(), *previous_courses.values()])
     if not declared:
-        require(not any(FIELD in document or "__edition_" in str(document.get("id", ""))
+        require(not any(FIELD in document or SOURCE_FIELD in document or "__edition_" in str(document.get("id", ""))
                         for document in documents.values())
                 and not any(FIELD in document or "__edition_" in str(document.get("unitId", ""))
                             for document in current_units.values()),
@@ -432,6 +565,10 @@ def check_repository(repository, commit, *, documents=None):
 
         advanced = validate_transition(previous, current)
         units, lessons, paths = _active_documents(repository, relative, current)
+        for lesson in lessons.values():
+            if SOURCE_FIELD in lesson:
+                authenticate_source_publication(repository, commit, lesson, previous_paths=previous_paths,
+                                                target_path=paths[lesson["id"]])
         # An unindexed Lesson_x.json may alias an active lesson_x.json.
         # Scan the actual course folder as well as the indexed and archived
         # names, without reading or modifying the unindexed file.
@@ -513,7 +650,16 @@ def prepare_from_repository(source, base_ref, *, locale=None):
     require(value is not None, "The course index must declare courseEdition before preparation")
     document = _load(source)
     require("stateLayout" not in document, "A new edition source must not recycle an earlier stateLayout")
-    prepared = prepare_edition_lesson(document, value)
+    if SOURCE_FIELD in document:
+        proof = document[SOURCE_FIELD]
+        require(type(proof) is dict and set(proof) == SOURCE_FIELDS,
+                "Preparing courseEditionSource needs its complete explicit proof")
+        prepared = prepare_edition_lesson(document, value,
+            source_document=proof["document"], source_path=proof["sourcePath"])
+        authenticate_source_publication(repository, commit, prepared, previous_paths=previous_paths,
+                                        target_path=relative)
+    else:
+        prepared = prepare_edition_lesson(document, value)
     # Preparation accepts a partially authored tree. Authentication of this one
     # new source does not claim that the remaining edition is ready to publish.
     require(course_relative in previous_paths, "An edition needs its existing published course index")
