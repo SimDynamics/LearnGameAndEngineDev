@@ -87,6 +87,7 @@ struct Solution { std::string activity,source; };
 struct InputCounterexample {
     std::string label,source;
     std::set<std::string> failed_inputs;
+    bool same_output_only=true;
 };
 struct GuardedArithmeticSource {
     std::string label,source;
@@ -744,24 +745,44 @@ windows::CppRunRequest request_for(const WindowsEnvironment& environment,const L
     return request;
 }
 void verify_input_decision_counterexamples(const Fixture& fixture,const Plan& plan,std::size_t ordinal) {
-    if(plan.input_counterexamples.empty())return;
-    phase=fixture.id+"/"+plan.activity+" preparing independent invariant captures";
+    auto counterexamples=plan.input_counterexamples;
+    if(fixture.id=="u4l1") {
+        // Reuse each authenticated publication's own solution. This negative
+        // passes public input 0 but crosses the boundary for private 1 and 5.
+        auto source=solution_for(fixture,plan.activity);
+        constexpr std::string_view previous="while (puesto < 5)";
+        constexpr std::string_view revised="while (puesto <= 5)";
+        const auto at=source.find(previous);
+        check(at!=std::string::npos&&source.find(previous,at+previous.size())==std::string::npos,
+            "The U4L1 boundary counterexample lost its unique authenticated condition");
+        source.replace(at,previous.size(),revised);
+        const auto expected=fixture.active_loops?
+            "e42dcbe0ee220b5ba3ae054712c0f027a666019885df56dfc26accddf85c6d97":
+            "0635ce8867d3a793e88001970d1487ba172379fc472358a273f3f54ecbbc626a";
+        check(state::sha256(source)==expected,
+            "The U4L1 boundary counterexample differs from its independent source pin");
+        counterexamples.push_back({"inclusive_upper_bound",std::move(source),{"1","5"},false});
+    }
+    if(counterexamples.empty())return;
+    phase=fixture.id+"/"+plan.activity+" preparing independent input captures";
     const auto& owner=block_at(fixture.after,plan.activity);
-    check(fixture.input_decisions&&owner.input_check&&owner.input_check->allow_same_output,
-        "Invariant counterexamples require their exact opt-in input owner");
+    check(fixture.input_decisions&&owner.input_check,
+        "Input counterexamples require their exact input owner");
     const auto& first=owner.output_check->cases.front();
     const auto environment=resolve_windows_environment({ProfileId::Codex,
         L"input-decision-capture-"+std::to_wstring(GetCurrentProcessId())+L"-"+
             std::to_wstring(GetTickCount64())+L"-"+std::to_wstring(ordinal),false});
     check(environment.options.qa_instance&&!environment.options.qa_instance->empty()&&
-            !std::filesystem::exists(environment.paths.root),"Invariant QA would reuse an existing profile");
+            !std::filesystem::exists(environment.paths.root),"Input QA would reuse an existing profile");
     initialize_profile_directories(environment.paths);
-    for(const auto& example:plan.input_counterexamples) {
-        phase=fixture.id+"/"+plan.activity+" executing invariant counterexample "+example.label;
+    for(const auto& example:counterexamples) {
+        phase=fixture.id+"/"+plan.activity+" executing input counterexample "+example.label;
+        check(owner.input_check->allow_same_output==example.same_output_only,
+            "An input counterexample changed its independently selected observation policy");
         within_budget();
         const auto request=request_for(environment,fixture.after,owner,example.source,first.standard_input);
         check(windows::compiler_runtime_request_allowed(owner,request),
-            "An invariant counterexample was rejected by request shape instead of its native execution");
+            "An input counterexample was rejected by request shape instead of its native execution");
         const auto result=windows::run_cpp(request);
         const auto captured=windows::capture_cpp_execution(request,result);
         const auto fingerprint=windows::cpp_input_request_fingerprint(request);
@@ -773,11 +794,23 @@ void verify_input_decision_counterexamples(const Fixture& fixture,const Plan& pl
                     curriculum::OutputVerdict::correct&&
                 result.input_evidence.size()==owner.input_check->probes.size()&&
                 state::sha256(state::read_bytes(result.run_directory/L"program.exe"))==result.input_executable_sha256,
-            "The invariant negative needs a real public success and complete private captures from the same executable");
-        auto legacy_policy=request;legacy_policy.input_check->allow_same_output=false;
-        check(!windows::cpp_input_request_fingerprint(legacy_policy).empty()&&
-                windows::cpp_input_request_fingerprint(legacy_policy)!=fingerprint,
-            "Opt-in input evidence reused the legacy request domain");
+            "The input negative needs a real public success and complete private captures from the same executable");
+        if(example.same_output_only) {
+            auto legacy_policy=request;legacy_policy.input_check->allow_same_output=false;
+            check(!windows::cpp_input_request_fingerprint(legacy_policy).empty()&&
+                    windows::cpp_input_request_fingerprint(legacy_policy)!=fingerprint,
+                "Opt-in input evidence reused the legacy request domain");
+        } else {
+            check(first.standard_input=="0"&&result.execution.stdout_bytes=="0:2:4:Fin"&&
+                    result.input_evidence.size()==3,
+                "The U4L1 boundary negative must pass the unchanged public input 0");
+            constexpr std::array<std::pair<std::string_view,std::string_view>,3> expected{{
+                {"1","1:3:5:Fin"},{"4","4:Fin"},{"5","5:Fin"}}};
+            for(std::size_t index=0;index<expected.size();++index)
+                check(result.input_evidence[index].standard_input==expected[index].first&&
+                        result.input_evidence[index].execution.stdout_bytes==expected[index].second,
+                    "The U4L1 boundary negative changed its exact private execution matrix");
+        }
         std::set<std::string> failed;
         for(std::size_t index=0;index<owner.input_check->probes.size();++index) {
             const auto& probe=owner.input_check->probes[index];const auto& evidence=result.input_evidence[index];
@@ -785,23 +818,30 @@ void verify_input_decision_counterexamples(const Fixture& fixture,const Plan& pl
                     evidence.standard_input==probe.standard_input&&
                     evidence.executable_sha256==result.input_executable_sha256&&
                     evidence.execution.succeeded()&&evidence.execution.stderr_bytes.empty(),
-                "An invariant observation borrowed another source/input/executable or failed to execute normally");
+                "An input observation borrowed another source/input/executable or failed to execute normally");
             if(!curriculum::cpp_input_expected_output(evidence.execution.stdout_bytes,probe)) {
-                check(shares_first_output(probe,first),
-                    "An invariant negative failed a distinct-output contrast instead of its missing boundary or condition");
+                check(shares_first_output(probe,first)==example.same_output_only,
+                    "An input negative failed outside its independently selected observation policy");
                 failed.insert(probe.standard_input);
             }
         }
         check(failed==example.failed_inputs,
-            "The actual invariant failure matrix differs from its independently pinned oracle");
+            "The actual input failure matrix differs from its independently pinned oracle");
         check(bytes(result.run_directory/L"main.cpp")==request.source_utf8&&
                 bytes(result.run_directory/L"stdin.bin")==first.standard_input&&
                 bytes(result.run_directory/L"execution-stdout.bin")==result.execution.stdout_bytes&&
                 bytes(result.run_directory/L"execution-stderr.bin")==result.execution.stderr_bytes,
-            "Private invariant observations changed the original public source, input or console files");
-        std::cout<<"PASS input invariant "<<fixture.id<<'/'<<plan.activity<<'/'<<example.label
-            <<": public first case and every distinct-output contrast pass; only "<<failed.size()
-            <<" selected invariant input(s) reject, with exact source/executable/request evidence and restored public files.\n";
+            "Private input observations changed the original public source, input or console files");
+        if(example.same_output_only)
+            std::cout<<"PASS input invariant "<<fixture.id<<'/'<<plan.activity<<'/'<<example.label
+                <<": public first case and every distinct-output contrast pass; only "<<failed.size()
+                <<" selected invariant input(s) reject, with exact source/executable/request evidence and restored public files.\n";
+        else {
+            std::cout<<"PASS input boundary "<<fixture.id<<'/'<<plan.activity<<'/'<<example.label
+                <<": public 0 and private 4 pass; private 1 and 5 reject, with exact source/executable/request evidence and restored public files.\n";
+            std::cout<<"Input boundary toolchain "<<fixture.id<<'/'<<plan.activity<<":\n"
+                <<bytes(result.run_directory/L"toolchain.txt");
+        }
     }
 }
 void verify_guarded_arithmetic_sources(const Fixture& fixture,const Plan& plan,std::size_t ordinal) {
