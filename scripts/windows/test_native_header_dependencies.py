@@ -38,13 +38,17 @@ def snapshot(paths: list[Path]) -> dict[str, tuple[str, int, int]]:
             for path in paths}
 
 
-def cache_values(path: Path) -> dict[str, str]:
+def cache_entries(path: Path) -> dict[str, tuple[str, str]]:
     result = {}
     for line in path.read_text(encoding="utf-8-sig").splitlines():
-        match = re.match(r"^([^#/:][^:]*):[^=]*=(.*)$", line)
+        match = re.match(r"^([^#/:][^:]*):([^=]*)=(.*)$", line)
         if match:
-            result[match[1]] = match[2]
+            result[match[1]] = (match[2], match[3])
     return result
+
+
+def cache_values(path: Path) -> dict[str, str]:
+    return {key: value for key, (_, value) in cache_entries(path).items()}
 
 
 def executable(value: str, label: str) -> Path:
@@ -262,10 +266,11 @@ message(STATUS "Header QA cache sentinel: ${LGAED_NATIVE_HEADER_QA_SENTINEL}")
         cache = build / "CMakeCache.txt"
         deps = build / ".ninja_deps"
         require(deps.is_file(), "The seed build did not create Ninja's real dependency log.")
-        preserved = [cache, *obj.values(), program]
-        tracked = [*preserved, deps]
+        preserved = [*obj.values(), program]
+        tracked = [cache, *preserved, deps]
         before_reconfigure = snapshot(tracked)
         before_cache = cache_values(cache)
+        before_types = {key: kind for key, (kind, _) in cache_entries(cache).items()}
         for phase in ("scan-on", "scan-off"):
             (evidence / phase).mkdir()
         shutil.copyfile(cache, evidence / "scan-on" / "CMakeCache.txt")
@@ -277,6 +282,7 @@ message(STATUS "Header QA cache sentinel: ${LGAED_NATIVE_HEADER_QA_SENTINEL}")
         after_reconfigure = {str(path): snapshot([path])[str(path)] if path.is_file() else None
                              for path in tracked}
         after_cache = cache_values(cache) if cache.is_file() else {}
+        after_types = {key: kind for key, (kind, _) in cache_entries(cache).items()} if cache.is_file() else {}
         if cache.is_file():
             shutil.copyfile(cache, evidence / "scan-off" / "CMakeCache.txt")
         off_graph = graph()
@@ -286,14 +292,25 @@ message(STATUS "Header QA cache sentinel: ${LGAED_NATIVE_HEADER_QA_SENTINEL}")
         cache_changes = {key: {"before": before_cache.get(key), "after": after_cache.get(key)}
                          for key in before_cache.keys() | after_cache.keys()
                          if before_cache.get(key) != after_cache.get(key)}
-        regeneration.update(after=after_reconfigure, file_changes=changes, cache_value_changes=cache_changes)
+        type_changes = {key: {"before": before_types.get(key), "after": after_types.get(key)}
+                        for key in before_types.keys() | after_types.keys()
+                        if before_types.get(key) != after_types.get(key)}
+        regeneration.update(after=after_reconfigure, file_changes=changes,
+                            cache_value_changes=cache_changes, cache_type_changes=type_changes)
         regeneration_path.write_text(json.dumps(regeneration, indent=2) + "\n", encoding="utf-8")
         print("NATIVE_HEADER_QA regeneration changes: " + json.dumps(changes, sort_keys=True), flush=True)
         altered = [str(path) for path in preserved
                    if after_reconfigure[str(path)] is None or
                    after_reconfigure[str(path)][0] != before_reconfigure[str(path)][0]]
-        require(not altered, "Regeneration discarded or altered cache/object/executable bytes: " +
+        require(not altered, "Regeneration discarded or altered object/executable bytes: " +
                 "; ".join(altered) + f"; hashes and cache deltas: {regeneration_path}")
+        require(not cache_changes, f"Regeneration changed cache values: {cache_changes}; see {regeneration_path}")
+        # Initial compiler detection stores CACHE STRING; the same explicit
+        # -D...:FILEPATH argument may normalize that type on regeneration.
+        # Accept only this observed metadata change, with every value intact.
+        require(not type_changes or type_changes == {
+                    "CMAKE_CXX_COMPILER": {"before": "STRING", "after": "FILEPATH"}},
+                f"Regeneration changed an unexpected cache type: {type_changes}; see {regeneration_path}")
         require(cache_values(cache).get("LGAED_NATIVE_HEADER_QA_SENTINEL") == sentinel,
                 "Regeneration replaced the configured cache.")
         require(objects() == obj, "The policy transition replaced the configured object paths.")
@@ -319,7 +336,8 @@ message(STATUS "Header QA cache sentinel: ${LGAED_NATIVE_HEADER_QA_SENTINEL}")
                               [ninja, "-C", build, "-t", "commands", "native_header_probe"], echo=False)
         require(re.search(r"(?i)scanDependencies|cmake_ninja_dyndep|\.modmap\b", active_commands) is None,
                 "The production target still invokes module scanning or dyndep commands.")
-        print("PASS ON-to-OFF regeneration: cache/objects/executable bytes and live object dependencies retained; "
+        print("PASS ON-to-OFF regeneration: all cache values retained; cache types unchanged except compiler normalization; "
+              "object/executable bytes and live object dependencies retained; "
               "C++23 retained; no active dyndep.", flush=True)
 
         # Removing @modmap legitimately changes compile commands. Objects may
@@ -366,7 +384,8 @@ message(STATUS "Header QA cache sentinel: ${LGAED_NATIVE_HEADER_QA_SENTINEL}")
                   "configured_build": str(configured_build), "cmake": str(cmake),
                   "ninja": str(ninja), "compiler": str(compiler),
                   "standard_option": expected_standard, "production_sha256": production_hashes,
-                  "checks": ["scan ON seed", "same-tree OFF regeneration preserves cache/object/executable bytes",
+                  "checks": ["scan ON seed", "same-tree OFF regeneration preserves all cache values and object/executable bytes",
+                             "cache types unchanged except CMAKE_CXX_COMPILER STRING-to-FILEPATH normalization",
                              "live object dependencies preserved across metadata compaction",
                              "no active module dyndep; real MSVC include deps", "C++23 real compilation",
                              "executable/no-op", "transitive header update; unrelated unchanged",
