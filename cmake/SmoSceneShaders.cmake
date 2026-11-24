@@ -107,9 +107,9 @@ function(lgaed_compile_smo_hlsl_family target family definition entry count macr
     target_compile_definitions("${target}" PRIVATE "${macro}=\"${_root_definition}\"")
 endfunction()
 
-# Reuse an already installed Vulkan SDK or Android NDK. Only its Vulkan headers
-# enter the build cache; the NDK's Bionic sysroot must never enter MSVC's search
-# path. This helper does not install/download SDKs or change their contents.
+# Reuse the selected Windows Vulkan SDK. Only its Vulkan headers enter the
+# build cache. This helper does not install/download SDKs or change their
+# contents.
 function(lgaed_prepare_smo_shaders target)
     if(NOT TARGET "${target}")
         message(FATAL_ERROR "SMO shader preparation requires an existing target: ${target}")

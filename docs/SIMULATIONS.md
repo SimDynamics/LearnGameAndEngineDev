@@ -1083,8 +1083,10 @@ clic, retroceder, cambiar de escenario, editar datos y restablecerlos.
 Restablecer recupera los datos del escenario seleccionado; regresar a los
 datos iniciales requiere elegir el escenario inicial. La regresión también
 cubre una cadena vacía, repeticiones y una colección sin elementos. Estos
-controles están incorporados a `native.simulation_view` y todavía requieren
-ejecución local Windows para acreditar su resultado.
+controles están incorporados a `native.simulation_view`. La comprobación
+independiente en Windows los ejecuta también mediante
+`native.simulation_view_full`, con las mismas fuentes de producción y de
+prueba, como se detalla al final de este documento.
 
 La regresión `processed_remaining_progress_in_reader` comprueba también
 el recuento acumulado y pendiente en el lector Win32, sus regiones narrables
@@ -1243,34 +1245,38 @@ mismo entorno declaró MSVC `14.51.36231` con
 La integración comprobada utiliza lecciones y perfiles aislados de QA;
 no modifica el progreso del usuario.
 
-La batería ReaderBuild general terminó fallida después de estas
-pruebas, al encontrar cuatro registros CTest válidos que faltaban
-en su inventario estricto. Esa discrepancia de registro está corregida
-en `db8ad3f0`, con una nueva ejecución de la batería general aún
-por confirmar. La aceptación visual y auditiva humana en el PC del
-usuario sigue siendo una comprobación distinta.
+La ejecución posterior de ReaderBuild
+[`44557576767`](https://github.com/SimDynamics/LearnGameAndEngineDev/actions/runs/44557576767)
+terminó correctamente y volvió a aprobar esas cuatro pruebas de simulación
+con MSVC `14.51.36231` y `cl.exe 19.51.36260.0`. Es evidencia de esa revisión
+en un entorno Windows de integración; la aceptación visual y auditiva humana
+en el PC del usuario sigue siendo una comprobación distinta.
 
-### Batería de núcleo independiente cuando falta el toolset Win32
+### Comprobación independiente en Windows con MSVC
 
-El flujo `.github/workflows/simulation-core-codex.yml` ejecuta
-`native/core/simulation.cpp` junto con `native/core/simulation_tests.cpp`
-sin la interfaz gráfica ni dependencias del cargador Windows. Compila en
-GCC y Clang con C++23 sobre Ubuntu y en MSVC sobre un ejecutor Windows 2022
-con la opción C++ más reciente. Ejecuta además
-`scripts/curriculum/test_simulation.py`. Así se pueden detectar errores
-de sintaxis, contratos y trazas del **modelo portable** sin atribuir al
-núcleo una validación de interfaz que todavía no ha ocurrido.
+El flujo `.github/workflows/simulation-core-codex.yml` tiene cuatro trabajos,
+todos en Windows 2022:
 
-La primera ejecución de este flujo identificó una llave ausente en el
-inicializador de una batería de JSON inválidos. La reparación
-`647b89a5` conservó los cuatro datos rechazados. La nueva ejecución
-`44349891943` terminó correctamente en sus cuatro trabajos: Python,
-GCC, Clang y MSVC portable.
+- Autoría y parser: ejecuta `scripts/curriculum/test_simulation.py` con Python.
+- Modelo C++: compila y ejecuta `native/core/simulation.cpp` junto con
+  `native/core/simulation_tests.cpp` mediante MSVC.
+- Compilación Win32: compila la vista real y sus pruebas de interacción.
+- Controles Win32: construye el ejecutor aislado de
+  `cmake/PortableSimulationViewQA` y ejecuta `native.simulation_blank_button`
+  y `native.simulation_view_full`, incluidos la edición de cadenas vacías
+  y los recorridos con los controles reales.
 
-**Separación obligatoria:** este flujo no selecciona el MSVC
-14.51.36231 ni el SDK 10.0.28000.0 declarados para la compilación
-integral en `toolchains/windows.versions.json`. La ejecución de la
-batería portable en un ejecutor Windows 2022 **no acredita**
-`native.simulation_view`, `native.simulation_lesson`, la narración
-RichEdit ni las demás pruebas Win32. Éstas siguen sujetas al conjunto
-local `Test-Simulation.ps1` y a su toolchain autorizado.
+La ejecución
+[`45365936311`](https://github.com/SimDynamics/LearnGameAndEngineDev/actions/runs/45365936311),
+de la revisión `ab3a87f3`, completó correctamente los cuatro trabajos:
+**34 de 34** pruebas de autoría, el modelo C++ y **2 de 2** pruebas de controles
+Win32. El ejecutor de controles declaró MSVC `19.44.35230.0`, toolset
+`14.44.35207`; el flujo utiliza `/std:c++latest`.
+
+Este conjunto usa las herramientas alojadas y las fuentes reales del modelo
+y de la vista, con datos y ventanas aislados de QA. El perfil local de la
+aplicación conserva las versiones de `toolchains/windows.versions.json`.
+La integración del lector completo, incluido `native.simulation_lesson`,
+se comprueba por separado mediante `Test-Simulation.ps1` o la batería
+ReaderBuild con su toolchain declarado. La ejecución de estos controles
+no supone una compilación integral de la aplicación ni una escucha humana.
