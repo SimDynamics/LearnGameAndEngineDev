@@ -1716,6 +1716,26 @@ también fija estas capturas completas de forma acumulativa. Los retiros antiguo
 sin `retirementHistory` siguen siendo válidos; su ausencia no permite inventar
 una presentación anterior ni omitir la captura de un lote nuevo.
 
+### Verificación de presentaciones intermedias
+
+`validate_publication_transition(anterior, actual)` compara publicaciones v2
+sin exigir un commit separado para cada presentación intermedia archivada.
+Primero aplica `validate_transition`, que conserva su contrato estricto de un
+salto. Si el historial se amplía y conserva exactamente las capturas anteriores,
+reconstruye cada predecesor mediante su presentación completa y sus prefijos
+acreditados de adiciones, revisiones editoriales y retiros.
+
+Cada etapa parte del último documento verificado: no toma de la entrega final
+metadatos contractuales ni presentaciones que todavía no existían. Valida el
+documento reconstruido y cada enlace con las mismas guardas de una transición
+ordinaria. Si falta el prefijo editorial autenticado, una captura está alterada
+o una identidad ocupa una dirección ajena, la comparación se rechaza. Una
+captura internamente consistente no sustituye la prueba de ambos enlaces.
+
+`check_repository` y `align_for_previous_validation` usan esta comprobación
+encadenada. Las operaciones de autoría mantienen `validate_transition` para
+cada salto; no se modifican documentos ni datos del estudiante al verificarlos.
+
 La API de autoría no escribe archivos ni deduce qué dependencias deben desaparecer:
 
 ```python

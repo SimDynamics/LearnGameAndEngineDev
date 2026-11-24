@@ -615,6 +615,208 @@ class RetiredStateLayoutTest(unittest.TestCase):
             layout.validate(damaged)
 
 
+class RetirementPublicationChainTest(unittest.TestCase):
+    """Uncommitted intermediate presentations need every ordinary edge checked."""
+
+    @staticmethod
+    def stages():
+        source = {
+            "id": "cpp_fundamentals__qa__retirement_publication_chain",
+            "title": "Cadena de publicaciones QA",
+            "pages": [
+                {"blocks": [
+                    {"type": "paragraph", "text": "Presentación original conservada."},
+                    {"type": "fill_code", "question": "Respuesta original",
+                     "code": "___", "answers": ["ok"]},
+                ]},
+                {"blocks": [{"type": "paragraph", "text": "Otra página intacta."}]},
+            ],
+        }
+        before = layout.prepare_v2(source, "es", {"es": source})
+        image = "qa_image_between_publications"
+        plan = deepcopy(before["stateLayout"]["current"])
+        plan[0]["blocks"].insert(1, image)
+        intermediate = layout.reorder(before, plan, [{
+            "id": image, "storage": {"page": 2, "block": 0},
+            "progressPage": plan[0]["id"], "block": {
+                "type": "image", "imageId": image, "src": "images/qa/" + image + ".png",
+                "alt": "Imagen usada antes del retiro.", "caption": "Imagen histórica.",
+            },
+        }])
+        retired_image = layout.retire(intermediate, [image])
+        plan = deepcopy(retired_image["stateLayout"]["current"])
+        plan[0]["blocks"].insert(1, "qa_replacement_activity")
+        final = layout.reorder(retired_image, plan, [{
+            "id": "qa_replacement_activity", "storage": {"page": 2, "block": 1},
+            "progressPage": plan[0]["id"], "block": {
+                "type": "fill_code", "question": "Actividad que reemplaza la imagen",
+                "code": "replacement ___", "answers": ["nuevo"],
+            },
+        }])
+        return before, intermediate, final
+
+    def test_every_link_uses_the_unchanged_single_transition_guard(self):
+        before, intermediate, final = self.stages()
+        originals = deepcopy((before, intermediate, final))
+        with self.assertRaisesRegex(
+                layout.LayoutError,
+                "Retirement reading snapshot does not match the complete previous published presentation"):
+            layout.validate_transition(before, final)
+        accepted = []
+        strict = layout.validate_transition
+
+        def verify(left, right):
+            strict(left, right)
+            accepted.append((deepcopy(left), deepcopy(right)))
+
+        with patch.object(layout, "validate_transition", side_effect=verify):
+            layout.validate_publication_transition(before, final)
+        self.assertEqual(len(accepted), 2)
+        self.assertEqual(accepted[0][0], before)
+        rebuilt = accepted[0][1]
+        self.assertEqual(rebuilt["pages"], intermediate["pages"])
+        self.assertEqual(rebuilt["stateLayout"], intermediate["stateLayout"])
+        self.assertEqual(accepted[1], (rebuilt, final))
+        self.assertNotIn("qa_replacement_activity", layout._blocks(rebuilt))
+        self.assertEqual(originals, (before, intermediate, final))
+
+    def test_projection_for_existing_curricular_validation_uses_the_verified_chain(self):
+        before, _, final = self.stages()
+        aligned = layout.align_for_previous_validation(before, final)
+        self.assertEqual(aligned["pages"], before["pages"])
+        # This is the existing positional contract projection, not a newly
+        # published document: its metadata deliberately retains final lineage.
+        self.assertEqual(aligned["stateLayout"], final["stateLayout"])
+
+    def test_self_consistent_snapshot_text_does_not_authorize_an_unproved_past(self):
+        before, _, final = self.stages()
+        altered = deepcopy(final)
+        altered["stateLayout"]["retirementHistory"][0]["pages"][0]["blocks"][0]["text"] += " Inventado."
+        # This reading-only text does not alter a response contract. A final
+        # document's internal consistency therefore cannot prove publication.
+        layout.validate(altered)
+        with self.assertRaises(layout.LayoutError):
+            layout.validate_publication_transition(before, altered)
+
+    def test_new_owner_cannot_reuse_a_retired_or_original_storage_address(self):
+        before, _, final = self.stages()
+        for storage in ({"page": 2, "block": 0}, {"page": 0, "block": 1}):
+            altered = deepcopy(final)
+            altered["stateLayout"]["additions"][-1]["storage"] = storage
+            with self.subTest(storage=storage), self.assertRaises(layout.LayoutError):
+                layout.validate_publication_transition(before, altered)
+
+    def test_chain_cannot_change_identity_answers_provenance_or_retired_payload(self):
+        before, _, final = self.stages()
+        for mutation in ("lesson", "family", "answer", "editorial-prefix", "retired-payload"):
+            altered = deepcopy(final)
+            meta = altered["stateLayout"]
+            if mutation == "lesson":
+                altered["id"] += "_foreign"
+            elif mutation == "family":
+                meta["family"]["es"]["sha256"] = "0" * 64
+            elif mutation == "answer":
+                layout._blocks(altered)["block_0000_0001"]["answers"] = ["otra"]
+            elif mutation == "editorial-prefix":
+                meta["retirementHistory"][0]["editorialPrefix"]["sha256"] = "0" * 64
+            else:
+                meta["retired"][0]["block"]["caption"] += " Otra imagen."
+            with self.subTest(mutation=mutation), self.assertRaises(layout.LayoutError):
+                layout.validate_publication_transition(before, altered)
+
+    def test_missing_editorial_prefix_is_not_reconstructed_as_evidence(self):
+        before, _, final = self.stages()
+        legacy = deepcopy(final)
+        del legacy["stateLayout"]["retirementHistory"][0]["editorialPrefix"]
+        layout.validate(legacy)  # Read compatibility does not grant a publication proof.
+        with self.assertRaisesRegex(layout.LayoutError, "authenticated retirement editorial prefix"):
+            layout.validate_publication_transition(before, legacy)
+
+    def test_multiple_retirements_validate_each_actual_intermediate_presentation(self):
+        before, _, first = self.stages()
+        plan = deepcopy(first["stateLayout"]["current"])
+        plan[1]["blocks"].append("qa_later_note")
+        second = layout.reorder(first, plan, [{
+            "id": "qa_later_note", "storage": {"page": 2, "block": 2},
+            "progressPage": plan[1]["id"],
+            "block": {"type": "note", "text": "Presentación intermedia posterior."},
+        }])
+        final = layout.retire(second, ["qa_later_note"])
+        with self.assertRaisesRegex(layout.LayoutError, "One transition can archive only"):
+            layout.validate_transition(before, final)
+        layout.validate_publication_transition(before, final)
+        original = deepcopy(final)
+        # An already-published history prefix is immutable even when its
+        # altered prose could still pass the isolated document validator.
+        final["stateLayout"]["retirementHistory"][0]["pages"][0]["blocks"][0]["text"] += " Alterado."
+        layout.validate(final)
+        with self.assertRaisesRegex(layout.LayoutError, "snapshots are append-only"):
+            layout.validate_publication_transition(first, final)
+        self.assertNotEqual(original, final)
+
+    def test_unrecorded_intermediate_addition_cannot_be_skipped(self):
+        before, _, final = self.stages()
+        altered = deepcopy(final)
+        # Both slots remain unique, but their declaration order would claim
+        # the final exercise already existed before the archived image.
+        altered["stateLayout"]["additions"].reverse()
+        layout.validate(altered)
+        with self.assertRaisesRegex(layout.LayoutError, "cannot skip an earlier addition"):
+            layout.validate_publication_transition(before, altered)
+
+    def test_real_work_scope_retirement_uses_the_pinned_previous_and_final_publications(self):
+        relative = ("app/src/main/assets/content/es/programming/cpp_fundamentals/"
+                    "edition_es_1__expresiones_y_decisiones/lesson_alternativas_y_fronteras.json")
+        sources = (
+            ("9aebd308b44dc930b8dedc765f96bcd170f502d8",
+             "805698c3785afffb892521a1cd66d6994fd1ae43a15e81661d6735b224448f99"),
+            ("8562de531765842e21932e1b78bb15f54ddebc20",
+             "5fc581a2a302af14c2ba2c03790e16891ab4a98c0e2cc3ff6974cff0a9642f9a"),
+        )
+        documents = []
+        for commit, expected in sources:
+            payload = subprocess.check_output(["git", "show", commit + ":" + relative], cwd=ROOT)
+            self.assertEqual(hashlib.sha256(payload).hexdigest(), expected)
+            documents.append(layout.parse_json(payload.decode("utf-8")))
+        before, final = documents
+        original = deepcopy(documents)
+        image = "u3l4_alcance_esquema_de_bloques"
+        replacement = "u3l4_alcance_codigo_en_recuadros"
+        self.assertNotIn(image, layout._all_blocks(before))
+        self.assertEqual(final["stateLayout"]["retirementHistory"][0]["retired"], [image])
+        with self.assertRaisesRegex(layout.LayoutError, "complete previous published presentation"):
+            layout.validate_transition(before, final)
+        layout.validate_publication_transition(before, final)
+        aligned = layout.align_for_previous_validation(before, final)
+        self.assertEqual([len(page["blocks"]) for page in aligned["pages"]],
+                         [len(page["blocks"]) for page in before["pages"]])
+        self.assertEqual(aligned["stateLayout"], final["stateLayout"])
+        owner_slots = []
+        for document in (before, final):
+            mapping = layout.validate(document)
+            owner_slots.append({identity: mapping[(p, b)]
+                                for p, row in enumerate(document["stateLayout"]["current"])
+                                for b, identity in enumerate(row["blocks"])})
+        for identity, storage in owner_slots[0].items():
+            self.assertEqual(owner_slots[1][identity], storage)
+        declarations = {entry["id"]: entry for entry in final["stateLayout"]["additions"]}
+        self.assertEqual(declarations[image]["storage"], {"page": 7, "block": 29})
+        self.assertEqual(declarations[replacement]["storage"], {"page": 7, "block": 30})
+        for mutation in ("snapshot", "occupied-storage"):
+            altered = deepcopy(final)
+            if mutation == "snapshot":
+                snap = altered["stateLayout"]["retirementHistory"][0]
+                location = next((p, b) for p, row in enumerate(snap["current"])
+                                for b, identity in enumerate(row["blocks"]) if identity == image)
+                snap["pages"][location[0]]["blocks"][location[1]]["caption"] += " Alterada."
+            else:
+                next(entry for entry in altered["stateLayout"]["additions"]
+                     if entry["id"] == replacement)["storage"] = {"page": 7, "block": 29}
+            with self.subTest(mutation=mutation), self.assertRaises(layout.LayoutError):
+                layout.validate_publication_transition(before, altered)
+        self.assertEqual(original, documents)
+
+
 if __name__ == "__main__":
     unittest.main()
 

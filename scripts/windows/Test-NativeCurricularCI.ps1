@@ -1,6 +1,6 @@
 [CmdletBinding()]
 param(
-    [ValidateSet('StateImport', 'CatalogU1', 'ReaderRevision', 'NarrationPlayer', 'ReaderBuild', 'MathEditorial', 'NarrationWorker', 'U12Reader',
+    [ValidateSet('StateImport', 'CatalogU1', 'ReaderRevision', 'CodeScope', 'NarrationPlayer', 'ReaderBuild', 'MathEditorial', 'NarrationWorker', 'U12Reader',
         'U11EditorialReader', 'CompilerHistoricalReader', 'U6DiagnosticReader', 'CurrentReaders')]
     [string] $Suite = 'StateImport',
     [ValidateSet('All', 'DeclarationsAssignments', 'Characters')]
@@ -21,8 +21,8 @@ $PSNativeCommandUseErrorActionPreference = $false
 if ($env:GITHUB_ACTIONS -ne 'true' -or $env:RUNNER_ENVIRONMENT -ne 'github-hosted') {
     throw 'Run this provisioning script only on a disposable GitHub-hosted Windows runner.'
 }
-if ($VirtualAudio -and $Suite -notin @('NarrationPlayer', 'ReaderBuild', 'ReaderRevision')) {
-    throw 'Evaluate the virtual audio endpoint only with the real NarrationPlayer, ReaderBuild or ReaderRevision tests.'
+if ($VirtualAudio -and $Suite -notin @('NarrationPlayer', 'ReaderBuild', 'ReaderRevision', 'CodeScope')) {
+    throw 'Evaluate the virtual audio endpoint only with the real NarrationPlayer, ReaderBuild, ReaderRevision or CodeScope tests.'
 }
 if ($CompilerHistoryGroup -ne 'All' -and $Suite -ne 'CompilerHistoricalReader') {
     throw 'A compiler-history selection requires the CompilerHistoricalReader suite.'
@@ -33,8 +33,8 @@ if ($EditorialGroup -ne 'All' -and $Suite -ne 'U11EditorialReader') {
 if ($CurrentReaderGroup -ne 'All' -and $Suite -ne 'CurrentReaders') {
     throw 'A current-reader selection requires the CurrentReaders suite.'
 }
-if ($MsvcPreflightOnly -and $Suite -notin @('StateImport', 'CatalogU1', 'ReaderBuild', 'ReaderRevision')) {
-    throw 'The early MSVC preflight is available only for hosted StateImport, CatalogU1, ReaderBuild and ReaderRevision suites.'
+if ($MsvcPreflightOnly -and $Suite -notin @('StateImport', 'CatalogU1', 'ReaderBuild', 'ReaderRevision', 'CodeScope')) {
+    throw 'The early MSVC preflight is available only for hosted StateImport, CatalogU1, ReaderBuild, ReaderRevision and CodeScope suites.'
 }
 
 $qaRoot = [System.IO.Path]::GetFullPath((Join-Path $PSScriptRoot '..\..'))
@@ -245,6 +245,19 @@ $qaSuiteConfig = switch ($Suite) {
             )
         }
     }
+    'CodeScope' {
+        @{
+            Directory = 'code-scope-ci'
+            CMakeOption = 'LGAED_CODE_SCOPE_QA_ONLY'
+            Targets = @('lgaed_lesson_reader_tests')
+            Results = 'code-scope'
+            Tests = @(
+                'native.code_scope_authoring',
+                'native.retirement_publication_chain_authoring',
+                'native.code_scope_reader'
+            )
+        }
+    }
     'CurrentReaders' {
         @{
             Directory = 'current-readers-ci'
@@ -432,7 +445,7 @@ $qaGit = (Get-Command git.exe -CommandType Application -ErrorAction Stop | Selec
 $qaRuntimeOptions = ''
 $qaRuntimePaths = @()
 if ($Suite -in @('MathEditorial', 'NarrationWorker', 'U12Reader', 'U11EditorialReader',
-    'CompilerHistoricalReader', 'U6DiagnosticReader', 'CurrentReaders')) {
+    'CompilerHistoricalReader', 'U6DiagnosticReader', 'CurrentReaders', 'CodeScope')) {
     # This job uses a new checkout with no restored runtime or audio caches.
     # Existing QA/user data is never removed to manufacture a first generation.
     $qaResourceRoot = Join-Path $qaRoot 'out\qa\narration-ci-resources'
@@ -510,7 +523,7 @@ New-Item -ItemType Directory -Path $qaBuild -Force | Out-Null
 if ($LASTEXITCODE -ne 0) { throw "The verified Windows $Suite build or early regression checks failed." }
 
 if ($Suite -in @('NarrationPlayer', 'ReaderBuild', 'ReaderRevision', 'U12Reader', 'U11EditorialReader',
-    'CompilerHistoricalReader', 'U6DiagnosticReader', 'CurrentReaders')) {
+    'CompilerHistoricalReader', 'U6DiagnosticReader', 'CurrentReaders', 'CodeScope')) {
     # Observe the actual ephemeral machine. Starting an existing, enabled audio
     # service is preparation; the opt-in endpoint evaluation is a separate step.
     & {

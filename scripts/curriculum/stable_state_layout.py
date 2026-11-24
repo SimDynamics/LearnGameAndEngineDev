@@ -38,6 +38,9 @@ _format_spec.loader.exec_module(code_format)
 _edition_spec = import_util.spec_from_file_location("lgaed_course_edition", Path(__file__).with_name("course_edition.py"))
 course_edition = import_util.module_from_spec(_edition_spec)
 _edition_spec.loader.exec_module(course_edition)
+_scope_spec = import_util.spec_from_file_location("lgaed_code_scope_presentations", Path(__file__).with_name("code_scope_presentations.py"))
+code_scope_presentations = import_util.module_from_spec(_scope_spec)
+_scope_spec.loader.exec_module(code_scope_presentations)
 
 
 class LayoutError(ValueError):
@@ -49,7 +52,7 @@ V2_FIELDS = {"version", "locale", "origin", "current", "family", "additions", "e
 V2_OPTIONAL_FIELDS = frozenset({"retired", "retirementHistory", "orderRefinements", "choiceRevisions", "compilerRevisions", "sourceFormatRevisions", "mathTextRevisions", "compilerCaseOrderRevisions", "compilerCaseRevisions", "identifierRenameRevisions", "mathMatchingTextRevisions"})
 RETIRABLE_TYPES = frozenset({"heading", "paragraph", "note", "code", "cpp_compiler", "image", "simulation"})
 PRESENTATION_FIELDS = frozenset({"referenceAfter", "activityAfter"})
-VISUAL_PRESENTATION_FIELDS = frozenset({"orderVisualSeparators"})
+VISUAL_PRESENTATION_FIELDS = frozenset({"orderVisualSeparators", code_scope_presentations.ROOT_FIELD})
 FLOW_FIELDS = frozenset({"compilerLocalRoleChecks", "compilerInputChecks", "compilerLocalIntChecks", "compilerLocalStringChecks", "compilerDualInterfaceChecks", "compilerPolymorphicCloneChecks", "compilerInterfaceCollectionChecks", "compilerPolymorphicDestructionChecks", "compilerVirtualLifetimeDispatchChecks", "compilerDerivedPreparationChecks", "compilerAbstractInterfaceChecks", "compilerPuzzlesRequired", "compilerWorkflowChecks", "compilerRuntimeChecks", "compilerNamedRuleChecks", "compilerIndexedUniqueTransferChecks", "compilerDefaultedMovePolicyChecks", "compilerIndependentCopyAssignmentChecks", "compilerMoveAssignmentInvariantChecks", "compilerArrayOwnerReadChecks", "compilerArrayCopyMoveChecks", "compilerArrayReturnTakeChecks", "compilerOpenBatteryChecks", "compilerReductionChecks", "compilerCmakeGraphChecks", "orderEquivalenceGroups"})
 TEXT_PRESENTATION_FIELDS = frozenset({text_semantics.ROOT_FIELD})
 ORDINARY_EDITORIAL_TYPES = frozenset({"multiple_choice", "fill_code", "output_prediction",
@@ -7387,6 +7390,11 @@ def validate(document: dict) -> dict[tuple[int, int], tuple[int, int]]:
         text_semantics.validate(document)
     except (ValueError, KeyError, TypeError) as error:
         raise LayoutError(f"Invalid explicit text semantics: {error}") from error
+    try:
+        code_scope_presentations.validate(
+            document, blocks=_blocks(document) if "stateLayout" in document else {})
+    except (ValueError, KeyError, TypeError) as error:
+        raise LayoutError(f"Invalid code scope presentation: {error}") from error
     return mapping
 
 
@@ -8824,6 +8832,87 @@ def validate_transition(previous: dict, current: dict) -> None:
                     "Published content was assigned to another identity without a verified move")
 
 
+def _retirement_publication_predecessor(previous: dict, current: dict, index: int) -> dict:
+    """Reconstruct only the prior presentation and its authenticated prefixes.
+
+    A reading snapshot does not describe arbitrary contract metadata. Keep
+    that metadata from the last verified predecessor, never borrow it from a
+    later publication. The ordinary validator must accept the reconstructed
+    stage and each adjoining transition before it can serve as evidence.
+    """
+    current_meta = current["stateLayout"]
+    snapshot = current_meta["retirementHistory"][index]
+    editorial_count = _validate_retirement_editorial_prefix(current, snapshot)
+    require(editorial_count is not None,
+            "A publication chain requires an authenticated retirement editorial prefix")
+    retired = current_meta.get("retired", [])
+    retired_ids = [entry["id"] for entry in retired]
+    start = retired_ids.index(snapshot["retired"][0])
+    require(retired_ids[start:start + len(snapshot["retired"])] == snapshot["retired"],
+            "A publication chain must retain each exact ordered retirement batch")
+
+    result = deepcopy(previous)
+    meta = result["stateLayout"]
+    result["pages"] = deepcopy(snapshot["pages"])
+    meta["current"] = deepcopy(snapshot["current"])
+    meta["editorial"] = deepcopy(current_meta["editorial"][:editorial_count])
+    for field in ("compilerPuzzlesRequired", "referenceAfter", "activityAfter"):
+        result[field] = deepcopy(snapshot[field])
+    if snapshot.get(text_semantics.ROOT_FIELD) is None:
+        result.pop(text_semantics.ROOT_FIELD, None)
+    else:
+        result[text_semantics.ROOT_FIELD] = deepcopy(snapshot[text_semantics.ROOT_FIELD])
+    for field, prefix in (("retired", retired[:start]),
+                          ("retirementHistory", current_meta["retirementHistory"][:index])):
+        if prefix:
+            meta[field] = deepcopy(prefix)
+        else:
+            meta.pop(field, None)
+    known = {identity for record in meta["current"] for identity in record["blocks"]}
+    known.update(entry["id"] for entry in meta.get("retired", []))
+    additions = [entry for entry in current_meta["additions"] if entry["id"] in known]
+    require(additions == current_meta["additions"][:len(additions)],
+            "A publication chain cannot skip an earlier addition or recycle its storage")
+    meta["additions"] = deepcopy(additions)
+    validate(result)
+    return result
+
+
+def validate_publication_transition(previous: dict, current: dict) -> None:
+    """Verify one publication edge or every evidenced intervening retirement.
+
+    validate_transition remains the strict one-edge authoring guard. A valid
+    final document alone is not a chain: every reconstructed predecessor must
+    itself validate and every adjacent pair must pass that unchanged guard.
+    No file, curriculum object or student state is modified.
+    """
+    try:
+        validate_transition(previous, current)
+        return
+    except LayoutError:
+        before_meta = previous.get("stateLayout", {})
+        after_meta = current.get("stateLayout", {})
+        if (type(before_meta) is not dict or type(after_meta) is not dict
+                or before_meta.get("version") != 2 or after_meta.get("version") != 2
+                or course_edition.SOURCE_FIELD in previous
+                or course_edition.SOURCE_FIELD in current):
+            raise
+        old_history = before_meta.get("retirementHistory", [])
+        history = after_meta.get("retirementHistory", [])
+        if (type(old_history) is not list or type(history) is not list
+                or len(history) <= len(old_history)
+                or history[:len(old_history)] != old_history):
+            raise
+    validate(previous)
+    validate(current)
+    predecessor = previous
+    for index in range(len(old_history), len(history)):
+        intermediate = _retirement_publication_predecessor(predecessor, current, index)
+        validate_transition(predecessor, intermediate)
+        predecessor = intermediate
+    validate_transition(predecessor, current)
+
+
 def align_for_previous_validation(previous: dict, current: dict) -> dict:
     """Project new blocks onto HEAD's positions only AFTER validating the whole move.
 
@@ -8834,7 +8923,7 @@ def align_for_previous_validation(previous: dict, current: dict) -> dict:
         validate(previous)
         validate(current)
         return current
-    validate_transition(previous, current)
+    validate_publication_transition(previous, current)
     if course_edition.SOURCE_FIELD in current:
         return deepcopy(current)
     old = prepare(previous)
@@ -9202,7 +9291,7 @@ def check_repository(repository: Path, base_ref: str | None) -> dict:
                 if previous is None:
                     previous = _git_document(repository, commit, path)
                     prior_documents[path] = previous
-                validate_transition(previous, current)
+                validate_publication_transition(previous, current)
             else:
                 # A new lesson has no positional state in the published app.
                 validate(current)

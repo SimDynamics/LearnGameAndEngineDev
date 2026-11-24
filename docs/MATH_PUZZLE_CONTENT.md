@@ -415,3 +415,67 @@ Revisar una respuesta incorrecta y otra correcta, una entrada parcial, reinicio,
 - Las plantillas `error_analysis`, `missing_step_analysis`, `word_problem` y `multiple_representation` se expresan con enunciados, representaciones y respuestas. No necesitan motores temáticos propios.
 
 El resultado del build y el siguiente paso de desarrollo se registran en `MATH_PUZZLE_WORK_STATUS.md`, en la raíz del repositorio.
+
+## Recuadros de código anidados en Windows
+
+`codeScopePresentations` es una declaración de presentación en la raíz de la lección. Proyecta textos ya publicados de una representación de lectura en contenedores anidados, con borde neutro, márgenes interiores y altura calculada según el texto. Se aplica únicamente al propietario estable y al índice declarados. Las representaciones que no tienen esta declaración conservan su trazado geométrico habitual.
+
+El bloque `math_puzzle`, sus respuestas, validadores y huella de evaluación permanecen intactos. La declaración no acredita respuestas ni equivalencia matemática. El cargador completo, el de progreso y el validador de publicación verifican las referencias antes de suministrar el árbol a la interfaz.
+
+Ejemplo publicado para los ámbitos de `main` e `if`:
+
+```json
+{
+  "codeScopePresentations": {
+    "version": 1,
+    "entries": [
+      {
+        "block": "u3l4_alcance_codigo_en_recuadros",
+        "representation": 0,
+        "language": "cpp",
+        "root": {
+          "id": "main",
+          "title": "Cuerpo de main",
+          "children": [
+            {
+              "id": "fichas",
+              "source": "/points/9/labels/0",
+              "sourceSha256": "ac94066b451c3deaceab04d95782027598259875f0e00e7b51ed525d07accc08"
+            },
+            {
+              "id": "if",
+              "source": "/points/10/labels/0",
+              "sourceSha256": "1849f2397ec5b99549c0daacdbabfb3a23006bc7567fc7936b69555715bc8f3b",
+              "children": [
+                {
+                  "id": "bolsas",
+                  "source": "/points/11/labels/0",
+                  "sourceSha256": "207feadec68e2487d59af3ed54e2f035a8ee990f4cf51f4cd97bc17a7e155f02"
+                },
+                {
+                  "id": "salida",
+                  "source": "/points/12/labels/0",
+                  "sourceSha256": "e14d5aa48f7777382b498b015ad8f7c5076a5a7ced1f667e1a638ebde8922e48"
+                }
+              ]
+            },
+            {
+              "id": "return",
+              "source": "/points/13/labels/0",
+              "sourceSha256": "6be2e46a3d0765fd4d08def164c35b75afcc481db6fd11cc5118c4e2c20b634d"
+            }
+          ]
+        }
+      }
+    ]
+  }
+}
+```
+
+Cada entrada declara `language: "cpp"`, el propietario estable en `block`, el índice de `representations` y un contenedor raíz. Un nodo con `title` es un título de prosa. Un nodo con `source` referencia una cadena dentro de esa representación mediante un JSON Pointer, relativo a ella; su texto se presenta y narra explícitamente como C++. El SHA-256 de los bytes UTF-8 de esa cadena completa se declara en `sourceSha256`, igual que en los descriptores de texto. El hash no depende de los espacios de serialización del JSON ni de las coordenadas de geometría. La representación matemática sigue conservando su propia identidad y reglas de validación.
+
+`children` es una lista no vacía y ordenada: define un contenedor y su jerarquía visible. Una hoja contiene una instrucción completa en una sola línea física de su campo de origen. Los identificadores de nodo deben ser únicos y estables; una misma referencia no puede aparecer dos veces en la presentación. No se reconocen ámbitos mediante palabras, coordenadas, nombres de lección o fragmentos de código: la estructura está declarada expresamente. Se admiten hasta 64 presentaciones por lección, 256 nodos por árbol y 12 niveles de profundidad.
+
+La lectura conserva primero la descripción auténtica de la representación, una sola vez, para explicar la agrupación también sin color. Después recorre títulos e instrucciones en preorden, cada uno asociado a su control real. Las claves `code-scope/<índice>/<id>` permanecen estables. Una modificación de presentación no atribuye escucha previa al texto nuevo ni inicia audio automáticamente; se aplican los controles normales de procedencia del lector.
+
+En el ejemplo, `fichas` y `return` son hijos directos de `main`; `bolsas` y `salida` son hijos del `if`. Por eso `return 0;` queda debajo del recuadro interior y alineado con `const int fichas = 8;`. El tamaño de lectura y el DPI se aplican al texto medido; no se reserva la altura de un lienzo de geometría.

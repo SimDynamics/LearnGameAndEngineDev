@@ -2,6 +2,7 @@
 
 #include "core/course_edition.hpp"
 #include "core/text_semantics.hpp"
+#include "core/code_scope_presentation.hpp"
 #include "core/rejection_diagnostic_facts.hpp"
 #include "core/report_observation_check.hpp"
 #include "core/assertion_runtime_check.hpp"
@@ -304,6 +305,9 @@ struct Block {
     std::optional<ImageResource> image;
     std::vector<Emphasis> emphasis;
     std::map<std::string,TextSemantics> text_semantics;
+    // Explicit lesson-level reading containers. They never change the original
+    // mathematical source, response identity, validators or stored fingerprint.
+    std::vector<CodeScopePresentation> code_scope_presentations;
     std::vector<std::string> options, answers, fragments;
     std::vector<std::string> choices;
     std::vector<std::string> review_feedback_options;

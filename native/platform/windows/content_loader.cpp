@@ -4169,6 +4169,107 @@ struct SemanticPublicFields {
         else labels(block,"");return result;
     }
 };
+std::string code_scope_line(std::string source) {
+    require(authored_nonblank(source)&&source.size()<=8192&&
+        source.find('\0')==source.npos&&source.find('\r')==source.npos&&source.find('\n')==source.npos&&
+        source.find("\xE2\x80\xA8")==source.npos&&source.find("\xE2\x80\xA9")==source.npos,
+        "Code scope titles and instructions must be complete nonblank physical lines");
+    return source;
+}
+std::string code_scope_source(const JsonObject& representation,std::string_view pointer) {
+    require(!pointer.empty()&&pointer.front()=='/'&&pointer.size()<=512,
+        "Code scope source must be a bounded representation-relative JSON pointer");
+    IJsonValue value=representation;
+    for(std::size_t start=1;start<=pointer.size();) {
+        const auto end=pointer.find('/',start);
+        const auto raw=pointer.substr(start,end==pointer.npos?pointer.size()-start:end-start);
+        require(!raw.empty(),"Code scope source has an empty pointer token");
+        std::string token;
+        for(std::size_t at=0;at<raw.size();++at) {
+            if(raw[at]!='~'){token+=raw[at];continue;}
+            require(at+1<raw.size()&&(raw[at+1]=='0'||raw[at+1]=='1'),
+                "Code scope source has a noncanonical pointer escape");
+            token+=raw[++at]=='0'?'~':'/';
+        }
+        if(value.ValueType()==JsonValueType::Object) {
+            const auto object=value.GetObject();
+            require(object.HasKey(key(token)),"Code scope source field does not exist");
+            value=object.GetNamedValue(key(token));
+        } else if(value.ValueType()==JsonValueType::Array) {
+            require(!token.empty()&&token.size()<=7&&(token.size()==1||token.front()!='0')&&
+                std::ranges::all_of(token,[](char c){return c>='0'&&c<='9';}),
+                "Code scope source array index must be canonical");
+            std::size_t index=0;
+            const auto parsed=std::from_chars(token.data(),token.data()+token.size(),index);
+            const auto values=value.GetArray();
+            require(parsed.ec==std::errc{}&&parsed.ptr==token.data()+token.size()&&index<values.Size(),
+                "Code scope source array index is outside the representation");
+            value=values.GetAt(static_cast<unsigned>(index));
+        } else invalid("Code scope source pointer traverses a scalar");
+        if(end==pointer.npos)break;
+        start=end+1;
+    }
+    require(value.ValueType()==JsonValueType::String,"Code scope source must select text");
+    return code_scope_line(utf8(value.GetString()));
+}
+CodeScopeNode read_code_scope_node(const JsonObject& authored,const JsonObject& representation,
+        std::set<std::string>& ids,std::set<std::string>& references,unsigned depth=0) {
+    require(depth<=12&&ids.size()<256,"Code scope tree exceeds supported bounds");
+    allowed_keys(authored,{"id","title","source","sourceSha256","children"});
+    CodeScopeNode node;node.key=text(authored,"id");
+    require(valid_id(node.key)&&ids.insert(node.key).second,"Code scope node IDs must be unique stable identifiers");
+    node.code=authored.HasKey(L"source");
+    require(node.code!=authored.HasKey(L"title"),"Code scope needs exactly one prose title or C++ source reference");
+    if(node.code) {
+        const auto pointer=text(authored,"source");
+        node.text=code_scope_source(representation,pointer);
+        const auto digest=text(authored,"sourceSha256");
+        require(valid_hash(digest)&&digest==sha256(node.text),"Code scope source text fingerprint is stale");
+        require(references.insert(pointer).second,"Code scope source field is projected more than once");
+    } else {
+        require(!authored.HasKey(L"sourceSha256"),"A code scope prose title has no source reference");
+        node.text=code_scope_line(text(authored,"title"));
+    }
+    if(authored.HasKey(L"children")) {
+        const auto children=array(authored,"children");
+        require(children.Size()>0&&children.Size()<=128,"Code scope container needs a nonempty ordered child list");
+        for(const auto& child:children)
+            node.children.push_back(read_code_scope_node(child.GetObject(),representation,ids,references,depth+1));
+    } else require(node.code,"A code scope leaf must reference a complete C++ instruction");
+    return node;
+}
+void read_code_scope_presentations(const JsonObject& root,Lesson& lesson) {
+    if(!root.HasKey(L"codeScopePresentations"))return;
+    require(lesson.state_layout.version!=0,"Code scope presentation requires stable block ownership");
+    const auto metadata=root.GetNamedObject(L"codeScopePresentations");
+    allowed_keys(metadata,{"version","entries"},true);
+    require(integer(metadata.GetNamedValue(L"version"),1)==1,"Unsupported code scope presentation version");
+    const auto entries=array(metadata,"entries");
+    require(entries.Size()>0&&entries.Size()<=64,"Invalid code scope presentation count");
+    std::map<std::string,Block*> blocks;
+    for(auto& page:lesson.pages)for(auto& block:page.blocks)blocks.emplace(block.stable_id,&block);
+    std::set<std::pair<std::string,std::size_t>> used;
+    for(const auto& value:entries) {
+        const auto entry=value.GetObject();
+        allowed_keys(entry,{"block","representation","language","root"},true);
+        const auto owner=text(entry,"block");
+        const auto found=blocks.find(owner);
+        require(found!=blocks.end()&&found->second->type==BlockType::math_puzzle,
+            "Code scope presentation requires an active composed puzzle owner");
+        require(text(entry,"language")=="cpp","Code scope presentation requires explicitly declared C++");
+        auto& block=*found->second;
+        const auto raw=JsonObject::Parse(key(block.raw_json));
+        const auto representations=array(raw,"representations");
+        const auto index=integer(entry.GetNamedValue(L"representation"));
+        require(index<representations.Size()&&used.emplace(owner,index).second,
+            "Invalid or duplicate code scope representation index");
+        std::set<std::string> ids,references;
+        auto node=read_code_scope_node(entry.GetNamedObject(L"root"),
+            representations.GetAt(static_cast<unsigned>(index)).GetObject(),ids,references);
+        require(!node.children.empty(),"Code scope root must be a reading container");
+        block.code_scope_presentations.push_back({index,std::move(node)});
+    }
+}
 void read_text_semantics(const JsonObject& root,Lesson& lesson) {
     if(!root.HasKey(L"textSemantics"))return;
     const OriginalJson original(lesson.raw_json);
@@ -7991,6 +8092,7 @@ curriculum::Lesson parse_lesson_json(std::string_view source, std::string_view e
         read_compiler_cmake_graph_checks(root,lesson);
         validate_compiler_recipe_objectives(root,lesson);
         read_text_semantics(root,lesson);
+        read_code_scope_presentations(root,lesson);
         validate_reference_relationships(lesson);
         validate_activity_relationships(lesson);
         return lesson;
@@ -8137,6 +8239,7 @@ curriculum::Lesson parse_lesson_progress_metadata(std::string_view source, std::
         read_compiler_cmake_graph_checks(root,lesson);
         validate_compiler_recipe_objectives(root,lesson);
         read_text_semantics(root,lesson);
+        read_code_scope_presentations(root,lesson);
         validate_reference_relationships(lesson);
         validate_activity_relationships(lesson);
         return lesson;
