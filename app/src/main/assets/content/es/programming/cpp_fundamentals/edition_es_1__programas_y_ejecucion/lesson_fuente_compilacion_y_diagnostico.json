@@ -47,7 +47,7 @@
         },
         {
           "type": "paragraph",
-          "text": "Cuando pulsas «Compilar, ejecutar y comprobar», la app intenta construir el programa con el código que está en el editor. Si la construcción termina correctamente, la app ejecuta el programa y compara su salida con la que pide el ejercicio. Si un error impide construir el programa, la app muestra el diagnóstico y esa versión del código no llega a ejecutarse."
+          "text": "Si un error de C++ impide construir el programa, el compilador muestra un diagnóstico que ayuda a localizarlo. Si el programa se construye y se ejecuta, puedes comparar la salida observada con la esperada para comprobar si cumple el requisito."
         },
         {
           "type": "math_puzzle",
@@ -189,7 +189,7 @@
         },
         {
           "type": "paragraph",
-          "text": "La instrucción intenta escribir en std::Cout, con la C mayúscula. C++ distingue mayúsculas y minúsculas. La biblioteca estándar proporciona std::cout, con la c minúscula. Al buscar el nombre escrito con mayúscula, el compilador no encuentra la declaración de la salida que queremos usar y señala un error (Stroustrup, 2024)."
+          "text": "La instrucción intenta escribir en std::Cout, con la ce mayúscula. C++ distingue mayúsculas y minúsculas. Si una letra difiere de la que se usó al declarar un nombre, el compilador busca un nombre distinto. Revisa la escritura del identificador de salida que usaste en las lecciones anteriores (Stroustrup, 2024)."
         },
         {
           "type": "fill_code",
@@ -333,11 +333,11 @@
         },
         {
           "type": "paragraph",
-          "text": "En este ejemplo, el diagnóstico C2143 de MSVC señala return. Otro compilador puede describir con otras palabras el mismo error. Busca la línea que menciona el mensaje y lee también la instrucción inmediatamente anterior. En este código, la instrucción de salida justo antes de return necesita un punto y coma al final. Después de añadirlo, vuelve a compilar para comprobar si se corrigió el error (Stroustrup, 2024)."
+          "text": "En este ejemplo, el diagnóstico C2143 de MSVC señala return. Otro compilador puede describir con otras palabras el mismo error. Busca la línea que menciona el mensaje y lee también la instrucción inmediatamente anterior. En este código, la instrucción de salida justo antes de return necesita un punto y coma al final. Al completar la instrucción, el compilador puede reconocer dónde empieza la siguiente (Stroustrup, 2024)."
         },
         {
           "type": "paragraph",
-          "text": "Un error puede dificultar que la herramienta interprete las líneas siguientes y provocar varios diagnósticos. Examina primero el problema inicial que puedas relacionar con el código. Después de corregirlo, vuelve a construir y mira qué mensajes permanecen (Stroustrup, 2024)."
+          "text": "Un error puede dificultar que la herramienta interprete las líneas siguientes y provocar varios diagnósticos. Examina primero el problema inicial que puedas relacionar con el código. Tras corregir el primer error, pueden desaparecer varios diagnósticos que tenían la misma causa (Stroustrup, 2024)."
         },
         {
           "type": "code",
@@ -418,7 +418,7 @@
         },
         {
           "type": "paragraph",
-          "text": "Pulsa «Compilar, ejecutar y comprobar». Si el programa no compila, lee el diagnóstico del compilador y revisa el nombre que corregiste. Si se ejecuta, busca el texto en «Salida del programa (stdout)». Debe aparecer Zona habilitada, con un espacio entre las palabras y sin salto de línea al final."
+          "text": "Si el programa no compila, lee el diagnóstico del compilador y revisa el nombre que corregiste. Si se ejecuta, busca el texto en «Salida del programa (stdout)». Debe aparecer Zona habilitada, con un espacio entre las palabras."
         },
         {
           "type": "cpp_compiler",
@@ -431,7 +431,7 @@
                 "outputs": [
                   "Zona habilitada"
                 ],
-                "explanation": "La reparación debe permitir construir y ejecutar el programa, que mostrará Zona habilitada sin un salto final. La comprobación acredita esa versión reparada y su salida."
+                "explanation": "Con el nombre corregido, el compilador reconoce la instrucción de salida. Al ejecutar el programa, la consola muestra Zona habilitada."
               }
             ]
           }
@@ -584,7 +584,7 @@
             "Aceptar el resultado porque la compilación tuvo éxito."
           ],
           "correctIndex": 1,
-          "explanation": "La instrucción se ejecuta y escribe el contenido de su literal. Si el literal contiene Pedido cancelado, esas son las palabras que se muestran. Sustituye el texto entre comillas por Pedido recibido, vuelve a compilar y ejecuta el programa. Compara el mensaje de esta ejecución con el que pide el ejercicio."
+          "explanation": "La instrucción se ejecuta y escribe el contenido de su literal. Si el literal contiene Pedido cancelado, esas son las palabras que se muestran. Sustituye el texto entre comillas por Pedido recibido. Compara el mensaje de esta ejecución con el que pide el ejercicio."
         }
       ]
     },
@@ -628,7 +628,7 @@
             "Porque basta atribuir el fallo al último cambio que recuerdas."
           ],
           "correctIndex": 1,
-          "explanation": "Si quitas la comilla de cierre, el compilador puede señalar un error al leer el literal. Si cambias el nombre de main, el enlazador puede informar que falta la función donde debe empezar la ejecución. El diagnóstico ayuda a identificar qué cambio impidió construir el programa. Tras corregir esa causa, vuelve a construirlo para averiguar si queda otro error."
+          "explanation": "Si quitas la comilla de cierre, el compilador puede señalar un error al leer el literal. Si cambias el nombre de main, el enlazador puede informar que falta la función donde debe empezar la ejecución. El diagnóstico ayuda a identificar qué cambio impidió construir el programa. Comprueba qué diagnósticos permanecen después de corregir esa causa."
         },
         {
           "type": "paragraph",
@@ -676,7 +676,7 @@
         {
           "type": "output_prediction",
           "id": "prediccion_revision_inicial",
-          "question": "Lee el programa mostrado y predice exactamente su mensaje. Conserva el espacio y no añadas comillas ni un salto final.",
+          "question": "Lee el programa mostrado y predice exactamente su mensaje. Conserva el espacio y omite las comillas del código.",
           "language": "cpp",
           "code": "#include <iostream>\n\nint main() {\n    std::cout << \"Revision inicial\";\n\n    return 0;\n}\n",
           "answers": [
@@ -704,7 +704,7 @@
         },
         {
           "type": "paragraph",
-          "text": "Deben aparecer esas dos palabras en líneas distintas y en ese orden. Conserva las palabras exactas. Puedes terminar con o sin un salto después de Salida. Modifica el código que produce el texto, ejecuta de nuevo y compara la salida actual con el objetivo."
+          "text": "Deben aparecer esas dos palabras en líneas distintas y en ese orden. Conserva las palabras exactas. Revisa la instrucción que coloca cada palabra en su renglón."
         },
         {
           "type": "cpp_compiler",
@@ -718,7 +718,7 @@
                   "Entrada\nSalida",
                   "Entrada\nSalida\n"
                 ],
-                "explanation": "El resultado debe mostrar Entrada primero y Salida en la línea siguiente. Se acepta un salto final opcional. Que la construcción termine no basta si el orden sigue equivocado."
+                "explanation": "El resultado debe mostrar Entrada primero y Salida en la línea siguiente. Compara el orden de las dos palabras con el requisito del ejercicio."
               }
             ]
           }
@@ -980,7 +980,7 @@
       {
         "block": "block_0004_0010",
         "path": "/explanation",
-        "sourceSha256": "3c7da012f3e568feea9d1914e13aaad4c76a017b29e103871044a0493ce82127",
+        "sourceSha256": "4bd04a1c16fc94b47d5e40d7a0ddcfd08f38a25a8114e0a973f2416c07e74242",
         "spans": [
           {
             "start": 87,
@@ -1093,7 +1093,7 @@
       {
         "block": "block_0005_0010",
         "path": "/question",
-        "sourceSha256": "cb36f39faab36ecb05dcf50b3f0a7a2509e1d541caa43a812a7bc5174bb80d00",
+        "sourceSha256": "6ab438249a16a49d87fe7d98a86d80ac9f68fb9b6f2c2428862874b9582d90e8",
         "spans": []
       },
       {
@@ -1162,7 +1162,7 @@
       {
         "block": "block_0005_0005",
         "path": "/explanation",
-        "sourceSha256": "2a140d62d3240f921b2eeabd7a62e7e3549f865eaee19954305f0c5e4fcf890c",
+        "sourceSha256": "caac3cfcda8bad234f55e4c9dc33d3be2f726a7aa44ebd8df5c000b4ef9423c7",
         "spans": [
           {
             "start": 113,
@@ -1394,7 +1394,7 @@
       {
         "block": "block_0000_0010",
         "path": "/text",
-        "sourceSha256": "7edac4c6fbf62a933d11df47469dff0551c6c63086a19e401b8d1e20ee1e88ee",
+        "sourceSha256": "f7216dee59714c3aae52571ddaceacf270e2c25941c81b9852aa7a58b650ae35",
         "spans": []
       },
       {
@@ -1501,7 +1501,7 @@
       {
         "block": "block_0001_0003",
         "path": "/text",
-        "sourceSha256": "d82135dd0f91636f69423ff1af56ae42903ad40c769275d610e3af6fdf663309",
+        "sourceSha256": "932fe03a9373fb57c51d8105a9f0d567cccd13b922a4b40bc1f361d1e96fd28f",
         "spans": [
           {
             "start": 35,
@@ -1511,15 +1511,8 @@
             "reading": "technical"
           },
           {
-            "start": 140,
-            "end": 149,
-            "text": "std::cout",
-            "role": "cpp",
-            "reading": "technical"
-          },
-          {
-            "start": 305,
-            "end": 323,
+            "start": 294,
+            "end": 312,
             "text": "(Stroustrup, 2024)",
             "role": "citation",
             "reading": "natural"
@@ -1777,7 +1770,7 @@
       {
         "block": "block_0002_0009",
         "path": "/text",
-        "sourceSha256": "e6ddf3115c7a76767aabdce9ff524553cbd92300ad79aa8df9c984ef89f132f1",
+        "sourceSha256": "9c54e56f54dfa26ad668e0f88d6259d498f44cfe68bb103c00226ec0facf8bee",
         "spans": [
           {
             "start": 32,
@@ -1801,8 +1794,8 @@
             "reading": "technical"
           },
           {
-            "start": 397,
-            "end": 415,
+            "start": 405,
+            "end": 423,
             "text": "(Stroustrup, 2024)",
             "role": "citation",
             "reading": "natural"
@@ -1812,11 +1805,11 @@
       {
         "block": "block_0002_0010",
         "path": "/text",
-        "sourceSha256": "15fcde2c0b9c80ee3c0cef67501b546bcde7836fe7161760ef26fc4bde1b2260",
+        "sourceSha256": "64bfab1e95c02dd50bbcffb0ae99d24aca8deff8901a248e92d06876b5492e05",
         "spans": [
           {
-            "start": 256,
-            "end": 274,
+            "start": 279,
+            "end": 297,
             "text": "(Stroustrup, 2024)",
             "role": "citation",
             "reading": "natural"
@@ -2008,11 +2001,11 @@
       {
         "block": "block_0003_0003",
         "path": "/text",
-        "sourceSha256": "cc5b2a9470a66bef1bb9965f0f4974841565ca6b3dfa07f2bd2f768f5b912be1",
+        "sourceSha256": "a1ffe0f04ff9db318b93b4ed72b7bc20a94efbd79b00c3b45e87491c683d7ca0",
         "spans": [
           {
-            "start": 215,
-            "end": 230,
+            "start": 175,
+            "end": 190,
             "text": "Zona habilitada",
             "role": "output",
             "reading": "natural"
@@ -2022,11 +2015,11 @@
       {
         "block": "block_0003_0004",
         "path": "/outputCheck/cases/0/explanation",
-        "sourceSha256": "ab69afe4e71c4bfe4465f1013c31de26eefc659c544b31dc9d3f3ff5752c7317",
+        "sourceSha256": "b0da7a045c5b791447945c0661342ac65ba7729e6af71d556ed4a31234a4bc6b",
         "spans": [
           {
-            "start": 75,
-            "end": 90,
+            "start": 118,
+            "end": 133,
             "text": "Zona habilitada",
             "role": "output",
             "reading": "natural"
@@ -2457,21 +2450,13 @@
       {
         "block": "block_0006_0003",
         "path": "/text",
-        "sourceSha256": "5193f508354dd1df857ff7b5a934212bb795c7df2c74c76abe9826825398801a",
-        "spans": [
-          {
-            "start": 146,
-            "end": 152,
-            "text": "Salida",
-            "role": "output",
-            "reading": "natural"
-          }
-        ]
+        "sourceSha256": "78b45d41e654aeb1494d370eb6954bb094b4545b07cbcd00a7e9bb83a3f40f73",
+        "spans": []
       },
       {
         "block": "block_0006_0004",
         "path": "/outputCheck/cases/0/explanation",
-        "sourceSha256": "6aab95fbef6f5f41d3265069c6264ff77ad9276a94a68578dfcc7bc90b25b61c",
+        "sourceSha256": "44032558c70e706a2e86df15224244b1aa1b639fa961aaf88d049c11cfdb5142",
         "spans": [
           {
             "start": 26,
@@ -3432,6 +3417,62 @@
       }
     },
     "additions": [],
-    "editorial": []
+    "editorial": [
+      {
+        "id": "block_0000_0010",
+        "beforeSha256": "3e750f0f5c69c73fef259be8959bcd52df137cf235a296f013ae3c0673ddee3a",
+        "afterSha256": "17d68ac86602ac1b037ea72534bf7659c57e6a066f7e0b2de33d2b8554b3c3b8"
+      },
+      {
+        "id": "block_0001_0003",
+        "beforeSha256": "d3e77719b079f42830616f1cb1c0ec6e325f75caac8807fd9dead360827540a5",
+        "afterSha256": "51bb6e7a376cc2232884c54630fef5e26b991c4922c4d11a00440d1b9990ea3e"
+      },
+      {
+        "id": "block_0002_0009",
+        "beforeSha256": "a0cc75727828ed063ad761ddab57aeb97e3041f28a7d4fab8aca92ea5f9d30a7",
+        "afterSha256": "ad123ab2632f4441708f44255f0388669e20b318d1054531b379dbdb8392e106"
+      },
+      {
+        "id": "block_0002_0010",
+        "beforeSha256": "06de84fe55d2cb3b9147e944a4eb5cc87b19a4783fbf7e3756ee8664479bc365",
+        "afterSha256": "52454104c39ae692cd4fd7d464152b3700f9c1027fd2ffcc2a5d06418a72dc95"
+      },
+      {
+        "id": "block_0003_0003",
+        "beforeSha256": "1d43b6217f4429fbde1ec554e6872e0e568bb5a1f969da651b012b6e55bdf780",
+        "afterSha256": "ee99276e232d38707a47b20325bf759611fba662699c63968551e6e9fcc7fbdc"
+      },
+      {
+        "id": "block_0006_0003",
+        "beforeSha256": "5b814f0c2cd76551812b043557216e338fb996b2b91b99f11903ca21c5a67afa",
+        "afterSha256": "1e0f8d764d8addf21a9868cdd304b378772a6bab08c3c0b59cb7b94fe322ce1f"
+      },
+      {
+        "id": "block_0006_0004",
+        "beforeSha256": "fe81c41292fa31086c12c1cc2c2e0ea54d73e405ca6b8439e7b69d43ab162f90",
+        "afterSha256": "f54a43b835da2bba30a72aa8970408c5f2e0035901f190ed07470dd97ba933df"
+      },
+      {
+        "id": "block_0004_0010",
+        "beforeSha256": "6a2d99f91587b3a380ab7a42266675619e92052612d682fde8b7a64f862a524b",
+        "afterSha256": "8b3f882f281f2dd91e1f87854b0e190687f6d4585f54a6497fee8645389e8bdf"
+      },
+      {
+        "id": "block_0005_0005",
+        "beforeSha256": "9dafc7d2aa4d763f3aaadec635491785687849bef35feacda8cfd75a2c254658",
+        "afterSha256": "735411d7edcfea4b427807f888da6a505538a60f735e0be891799fe74ff83e5e"
+      },
+      {
+        "id": "block_0005_0010",
+        "beforeSha256": "753abd3b23fa946a21c1617f01d6ad1b115dc116c06caa95ef8e3d779711158e",
+        "afterSha256": "5183415e872ece7244447cdd818944b493472bcb3c2efca533f5c71d92a7bd3c"
+      },
+      {
+        "id": "block_0003_0004",
+        "beforeSha256": "c5902e8a4fab2af71f21f97a7b2560d8c5f4d1dab99f7ffc5e63fc3c14505e15",
+        "afterSha256": "b414abbc5f98530325c88bb87acde7830182155935ea102a28b25eb9f0d336cb"
+      }
+    ]
   }
 }

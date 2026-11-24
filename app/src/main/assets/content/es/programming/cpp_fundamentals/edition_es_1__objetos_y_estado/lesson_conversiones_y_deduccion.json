@@ -300,7 +300,7 @@
         },
         {
           "type": "paragraph",
-          "text": "Una división también puede dar el valor inicial de una variable. Al compilar, los tipos de los números que se dividen permiten saber de qué tipo será el resultado.\n\nauto mitad = 9 / 2;\nLos dos números son int. La división de dos enteros da un int, así que ese es el tipo de mitad. Al ejecutar la línea, se guarda 4.\n\nauto mitad = 9.0 / 2;\nEl literal 9.0 es double. En esta división el dos también se convierte a double. El resultado tiene tipo double, así que mitad queda con ese tipo y guarda 4.5 (Stroustrup, 2024)."
+          "text": "Una división puede dar el valor inicial de una variable declarada con auto. El compilador deduce su tipo a partir de la expresión.\n\nEn auto mitad = 15 / 2;, los dos operandos son enteros. La división entera da 7 y el tipo de mitad es int.\n\nEn auto mitad = 15.0 / 2;, el primer operando tiene tipo double. El segundo se convierte a ese tipo antes de dividir. Esta vez mitad tiene tipo double y guarda 7.5 (Stroustrup, 2024)."
         },
         {
           "type": "output_prediction",
@@ -346,7 +346,7 @@
         },
         {
           "type": "paragraph",
-          "text": "auto pisos{2};\nEsta declaración crea una variable de tipo int porque 2 es un literal entero.\n\npisos = 3.5;\nAquí pisos ya existe y sigue siendo int. Para guardar el nuevo valor, C++ convierte 3.5 a int. Descarta el medio y guarda 3.\n\nEn el siguiente programa, las dos variables empiezan con el mismo número. Una se declara con 6 y la otra con 6.0. La primera queda como int y la segunda como double. Esos tipos siguen siendo los mismos cuando más adelante se asigna 7.5 a las dos variables (Köppe et al., 2023)."
+          "text": "auto pisos{2};\nEsta declaración crea una variable de tipo int porque 2 es un literal entero.\n\npisos = 3.5;\nAquí pisos ya existe y sigue siendo int. Para guardar el nuevo valor, C++ convierte 3.5 a int. Descarta el medio y guarda 3.\n\nEn el siguiente programa, compara las dos declaraciones. Distingue el tipo que se deduce al crear cada variable del valor que recibe después con la asignación (Köppe et al., 2023)."
         },
         {
           "type": "output_prediction",
@@ -370,7 +370,7 @@
         },
         {
           "type": "paragraph",
-          "text": "Hay quince unidades para repartir en dos partes iguales. En el primer renglón de la salida muestra cuántas unidades completas le tocan a cada parte. En el segundo renglón muestra cuánto le toca a cada parte si también cuentas la fracción.\n\n1. Declara dos variables de tipo int. Guarda quince en total y dos en partes.\n2. Divide total entre partes y guarda el cociente de esa división entre enteros.\n3. Vuelve a dividir total entre partes. En esta segunda división, usa static_cast para convertir a double el valor de una de esas variables antes de dividir. Guarda el resultado en otra variable.\n4. Con std::cout, muestra el primer cociente junto a su rótulo, escribe un salto de línea y muestra el segundo cociente junto al suyo.\n\nEntero: 7\nDecimal: 7.5\n\nPulsa «Compilar, ejecutar y comprobar». El salto de línea al final de la salida es opcional. La app también comprueba que ambos resultados cambian al variar total o partes."
+          "text": "Hay quince unidades para repartir en dos partes iguales. En el primer renglón de la salida muestra cuántas unidades completas le tocan a cada parte. En el segundo renglón muestra cuánto le toca a cada parte si también cuentas la fracción.\n\n1. Declara dos variables de tipo int. Guarda quince en total y dos en partes.\n2. Divide total entre partes y guarda el cociente de esa división entre enteros.\n3. Vuelve a dividir total entre partes. En esta segunda división, usa static_cast para convertir a double el valor de una de esas variables antes de dividir. Guarda el resultado en otra variable.\n4. Con std::cout, muestra el primer cociente junto a su rótulo, escribe un salto de línea y muestra el segundo cociente junto al suyo.\n\nEntero: 7\nDecimal: 7.5\n\nLa app también comprueba que ambos resultados cambian al variar total o partes."
         },
         {
           "type": "cpp_compiler",
@@ -398,7 +398,7 @@
         },
         {
           "type": "paragraph",
-          "text": "El programa reparte diecisiete unidades en cuatro partes iguales. En el primer renglón de la salida ya muestra Entero: 4. En el segundo muestra Decimal: 4 y debería mostrar las cuatro unidades y el cuarto de unidad que le corresponde a cada parte.\n\n1. En el editor, busca la declaración de unidades_por_parte.\n2. Cambia la expresión que da su valor inicial. Coloca static_cast<double> de modo que convierta el valor de uno de los dos operandos antes de dividir. Escribe la división usando total y partes.\n3. Pulsa «Compilar, ejecutar y comprobar». Compara los dos renglones de la salida con los que aparecen debajo. El salto de línea al final de la salida es opcional.\n\nEntero: 4\nDecimal: 4.25"
+          "text": "El programa reparte diecisiete unidades en cuatro partes iguales. En el primer renglón de la salida ya muestra Entero: 4. En el segundo muestra Decimal: 4 y debería mostrar las cuatro unidades y el cuarto de unidad que le corresponde a cada parte.\n\n1. En el editor, busca la declaración de unidades_por_parte.\n2. Cambia la expresión que da su valor inicial. Coloca static_cast<double> de modo que convierta el valor de uno de los dos operandos antes de dividir. Escribe la división usando total y partes.\n3. Compara los dos renglones de la salida con los que aparecen debajo.\n\nEntero: 4\nDecimal: 4.25"
         },
         {
           "type": "cpp_compiler",
@@ -2422,95 +2422,81 @@
       {
         "block": "block_0005_0001",
         "path": "/text",
-        "sourceSha256": "222e6cacc91b3d8e9156036073dacb20608ecf6021007d69323c2dc3060c6b59",
+        "sourceSha256": "d756636ca26c672274f66fb0db93c2a748e0dfabf17ce66d1b5bc2b2c8d67c50",
         "spans": [
           {
-            "start": 165,
-            "end": 184,
-            "text": "auto mitad = 9 / 2;",
+            "start": 70,
+            "end": 74,
+            "text": "auto",
             "role": "cpp",
             "reading": "technical"
           },
           {
-            "start": 205,
-            "end": 208,
+            "start": 135,
+            "end": 155,
+            "text": "auto mitad = 15 / 2;",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 210,
+            "end": 211,
+            "text": "7",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 225,
+            "end": 230,
+            "text": "mitad",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 234,
+            "end": 237,
             "text": "int",
             "role": "cpp",
             "reading": "technical"
           },
           {
             "start": 243,
-            "end": 246,
-            "text": "int",
+            "end": 265,
+            "text": "auto mitad = 15.0 / 2;",
             "role": "cpp",
             "reading": "technical"
           },
           {
-            "start": 274,
-            "end": 279,
+            "start": 297,
+            "end": 303,
+            "text": "double",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 367,
+            "end": 372,
             "text": "mitad",
             "role": "cpp",
             "reading": "technical"
           },
           {
-            "start": 313,
-            "end": 314,
-            "text": "4",
+            "start": 384,
+            "end": 390,
+            "text": "double",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 400,
+            "end": 403,
+            "text": "7.5",
             "role": "data",
             "reading": "natural"
           },
           {
-            "start": 317,
-            "end": 338,
-            "text": "auto mitad = 9.0 / 2;",
-            "role": "cpp",
-            "reading": "technical"
-          },
-          {
-            "start": 350,
-            "end": 353,
-            "text": "9.0",
-            "role": "cpp",
-            "reading": "technical"
-          },
-          {
-            "start": 357,
-            "end": 363,
-            "text": "double",
-            "role": "cpp",
-            "reading": "technical"
-          },
-          {
-            "start": 412,
-            "end": 418,
-            "text": "double",
-            "role": "cpp",
-            "reading": "technical"
-          },
-          {
-            "start": 444,
-            "end": 450,
-            "text": "double",
-            "role": "cpp",
-            "reading": "technical"
-          },
-          {
-            "start": 460,
-            "end": 465,
-            "text": "mitad",
-            "role": "cpp",
-            "reading": "technical"
-          },
-          {
-            "start": 494,
-            "end": 497,
-            "text": "4.5",
-            "role": "data",
-            "reading": "natural"
-          },
-          {
-            "start": 498,
-            "end": 516,
+            "start": 404,
+            "end": 422,
             "text": "(Stroustrup, 2024)",
             "role": "citation",
             "reading": "natural"
@@ -2925,7 +2911,7 @@
       {
         "block": "block_0006_0001",
         "path": "/text",
-        "sourceSha256": "91cda92215b0a970873768c5c298718b55699d3bf90d60417d9e84dd6e49f181",
+        "sourceSha256": "af37e2fea2314455d50ca1444f83a945563c140667ceefd3056527ce1ab4d91e",
         "spans": [
           {
             "start": 273,
@@ -3012,15 +2998,15 @@
             "reading": "natural"
           },
           {
-            "start": 912,
-            "end": 917,
+            "start": 819,
+            "end": 824,
             "text": "total",
             "role": "cpp",
             "reading": "technical"
           },
           {
-            "start": 920,
-            "end": 926,
+            "start": 827,
+            "end": 833,
             "text": "partes",
             "role": "cpp",
             "reading": "technical"
@@ -3993,7 +3979,7 @@
       {
         "block": "block_0005_0006",
         "path": "/text",
-        "sourceSha256": "c273ef5de7e18ea49c24fb2d87896ea2c41dee7bf945df863b8befb138104e4a",
+        "sourceSha256": "0d2d7b605ac2671b71b792ea438340dc68ffeb2eb6fd66640582410f855de8aa",
         "spans": [
           {
             "start": 0,
@@ -4059,43 +4045,8 @@
             "reading": "natural"
           },
           {
-            "start": 326,
-            "end": 327,
-            "text": "6",
-            "role": "cpp",
-            "reading": "technical"
-          },
-          {
-            "start": 342,
-            "end": 345,
-            "text": "6.0",
-            "role": "cpp",
-            "reading": "technical"
-          },
-          {
-            "start": 369,
-            "end": 372,
-            "text": "int",
-            "role": "cpp",
-            "reading": "technical"
-          },
-          {
-            "start": 391,
-            "end": 397,
-            "text": "double",
-            "role": "cpp",
-            "reading": "technical"
-          },
-          {
-            "start": 465,
-            "end": 468,
-            "text": "7.5",
-            "role": "cpp",
-            "reading": "technical"
-          },
-          {
-            "start": 489,
-            "end": 509,
+            "start": 392,
+            "end": 412,
             "text": "(Köppe et al., 2023)",
             "role": "citation",
             "reading": "natural"
@@ -4215,7 +4166,7 @@
       {
         "block": "block_0006_0005",
         "path": "/text",
-        "sourceSha256": "de6e5af666fb19a8916216379ff230aabc249648716723ffbc6f10842e9a9fb4",
+        "sourceSha256": "4a3a8350d8fcc9bfa37f379ee4b9f2c9e7b4650ba6225d4baa30ad72618e86b2",
         "spans": [
           {
             "start": 111,
@@ -4260,15 +4211,15 @@
             "reading": "technical"
           },
           {
-            "start": 670,
-            "end": 679,
+            "start": 577,
+            "end": 586,
             "text": "Entero: 4",
             "role": "output",
             "reading": "natural"
           },
           {
-            "start": 680,
-            "end": 693,
+            "start": 587,
+            "end": 600,
             "text": "Decimal: 4.25",
             "role": "output",
             "reading": "natural"
@@ -5288,6 +5239,27 @@
       }
     },
     "additions": [],
-    "editorial": []
+    "editorial": [
+      {
+        "id": "block_0005_0001",
+        "beforeSha256": "86aace1bcc662e1befa683dcf55c05ea6d8ab2daab380f43f3c0926b57aeb8cb",
+        "afterSha256": "d3922b20104982242981dbeeca6f565e919e89a099c731d3a229a332ef8004ba"
+      },
+      {
+        "id": "block_0005_0006",
+        "beforeSha256": "5757a41dc2ed70a67e44368ca51dcaebc05fb9d9b2ecc92607ca439d7f8e7ccd",
+        "afterSha256": "abcb51d05719986617d2f00f11d3f7927316b7c6fe2be586671dd765f6b5aeb0"
+      },
+      {
+        "id": "block_0006_0001",
+        "beforeSha256": "3ba6a270bc24ce901ca6733cf12c4cb82dd52700c6af36cabe21be4eabdaf62e",
+        "afterSha256": "f7be489748af2fff579ea495262c3d683abcb80a66e0c5624c1958cd5d27ef30"
+      },
+      {
+        "id": "block_0006_0005",
+        "beforeSha256": "c5c534ccda68e11d865ae8a47618a0a41c4a59957516753ef871ff426428289b",
+        "afterSha256": "792439828c76ccf2113fd681cc2c3a7f3209adfcac0d2c0b32a6ff62b8e5bf54"
+      }
+    ]
   }
 }
