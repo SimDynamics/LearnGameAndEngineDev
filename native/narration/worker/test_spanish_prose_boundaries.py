@@ -21,7 +21,7 @@ from test_worker import ROOT, Worker
 sys.path.insert(0, str(ROOT / "scripts/curriculum"))
 import course_edition as edition
 import stable_state_layout as layout
-from test_pending_presentation_contract import selected_u2_edition_lesson
+from test_pending_presentation_contract import resealed_edition_fixture, selected_u2_edition_lesson
 
 
 ASSET = ROOT / "app/src/main/assets/content/es/programming/cpp_fundamentals/objetos_y_estado/lesson_estado_asignacion_y_copia.json"
@@ -36,6 +36,12 @@ CURRENT_PREPARED = (
     "\ue002turnos asigna uno punto y coma lo reemplaza por uno.",
     "\ue002\ue000int\ue001 turnos asigna uno punto y coma es una definición, no una actualización del objeto existente.",
 )
+# The selected U2L9 publication separates the old mixed paragraph into authored
+# prose and read-only code. Pin the new introductory prose independently of a
+# candidate's freshly resealed stateLayout (publication blob ec4f24abaa63a14699f7e51e65003b472c7aacf4).
+PROMPT_INTRODUCTION_SHA = "2ac6601112f36bc5f4246107c9b88e86ac064d05f8ae5f6244329ff6b7aff4de"
+PROMPT_INSTRUCTION_OWNER = "p1u2l9_ejemplo_0001_0001_1"
+PROMPT_OUTPUT_OWNER = "p1u2l9_ejemplo_0001_0001_2"
 
 
 def units(text):
@@ -55,15 +61,15 @@ def owns_word(text, owner, first, last):
     return all(not character.isalnum() and character != "_" for character in extra)
 
 
-def authored_prompt_field(pages, current, semantics):
+def authored_prompt_field(pages, current, semantics, owner="block_0001_0001"):
     matches = [block for page, row in zip(pages, current)
                for identity, block in zip(row["blocks"], page["blocks"])
-               if identity == "block_0001_0001"]
+               if identity == owner]
     if len(matches) != 1 or matches[0].get("type") != "paragraph":
         raise AssertionError("The U2L9 prompt owner is missing or ambiguous")
     source = matches[0]["text"]
     fields = [field for field in semantics["fields"]
-              if field["block"] == "block_0001_0001" and field["path"] == "/text"]
+              if field["block"] == owner and field["path"] == "/text"]
     if len(fields) != 1 or fields[0]["sourceSha256"] != hashlib.sha256(source.encode("utf-8")).hexdigest():
         raise AssertionError("The prompt semantic field is not bound to its exact source")
     for span in fields[0]["spans"]:
@@ -109,18 +115,40 @@ def prompt_fixtures(lesson, historical_lesson):
     meta = historical_lesson["stateLayout"]
     retained_source, retained_field = authored_prompt_field(
         historical_lesson["pages"], meta["current"], historical_lesson["textSemantics"])
-    if (source, field) != (retained_source, retained_field):
-        raise AssertionError("The active prompt text or UTF-16 meaning differs from its authenticated source")
+    instruction_source, instruction_field = retained_source, retained_field
+    blocks = layout._blocks(lesson)
+    if not {PROMPT_INSTRUCTION_OWNER, PROMPT_OUTPUT_OWNER} <= blocks.keys():
+        raise AssertionError("The current prompt must retain both authored split owners")
+    if field["sourceSha256"] != PROMPT_INTRODUCTION_SHA or field["spans"] != []:
+        raise AssertionError("The current prompt introduction lost its authenticated explicit prose")
+    instruction = blocks[PROMPT_INSTRUCTION_OWNER]
+    if instruction.get("type") != "code" or instruction.get("language") != "cpp" or \
+            instruction.get("code") != 'std::cout << "Cantidad: ";':
+        raise AssertionError("The current read-only instruction differs from its authenticated source")
+    source, field = authored_prompt_field(
+        lesson["pages"], lesson["stateLayout"]["current"], lesson["textSemantics"], PROMPT_OUTPUT_OWNER)
+    first = retained_source.index("\n") + 1
+    last = retained_source.index("\n\n", first)
+    expected = prompt_fragment(retained_source, retained_field,
+                               units(retained_source[:first]), units(retained_source[:last]))
+    if source != expected["text"] or field["spans"] != expected["textSemantics"]["spans"]:
+        raise AssertionError("The current output paragraph differs from its authenticated fragment or UTF-16 meaning")
     result = {}
     for name, text, role, reading in (
             ("current-instruction", 'std::cout << "Cantidad: ";', "cpp", "technical"),
             ("current-output", "Cantidad:", "output", "natural")):
-        selected = [span for span in field["spans"]
+        # The instruction is an isolated worker sample, authenticated against
+        # the actual code card and the retained technical span. Read-only code
+        # cards are not automatically narrated by LessonReader. The output
+        # remains the real authored natural-reading span of today's paragraph.
+        sample_source, sample_field = ((instruction_source, instruction_field)
+                                       if name == "current-instruction" else (source, field))
+        selected = [span for span in sample_field["spans"]
                     if (span["text"], span["role"], span["reading"]) == (text, role, reading)]
         if len(selected) != 1:
             raise AssertionError(f"Missing exact current prompt meaning: {name}")
         span = selected[0]
-        result[name] = prompt_fragment(source, field, span["start"], span["end"])
+        result[name] = prompt_fragment(sample_source, sample_field, span["start"], span["end"])
     historical = []
     for snapshot in meta.get("retirementHistory", []):
         old_source, old_field = authored_prompt_field(
@@ -165,30 +193,74 @@ class PromptEditionSourceTest(unittest.TestCase):
 
     def test_active_prompt_cannot_reseal_changed_text_or_reading_as_its_source(self):
         _, active, _, historical, _ = selected_prompt_documents()
+        self.assertEqual(prompt_fixtures(resealed_edition_fixture(active), historical),
+                         prompt_fixtures(active, historical))
+        for identity, path, message in (
+                ("block_0001_0001", "text", "authenticated explicit prose"),
+                (PROMPT_OUTPUT_OWNER, "text", "authenticated fragment"),
+                (PROMPT_INSTRUCTION_OWNER, "code", "read-only instruction")):
+            with self.subTest(owner=identity):
+                changed = copy.deepcopy(active)
+                owner = layout._blocks(changed)[identity]
+                owner[path] += " Texto sin procedencia."
+                if path == "text":
+                    marker = next(field for field in changed["textSemantics"]["fields"]
+                                  if (field["block"], field["path"]) == (identity, "/text"))
+                    marker["sourceSha256"] = hashlib.sha256(owner[path].encode("utf-8")).hexdigest()
+                changed = resealed_edition_fixture(changed)
+                layout.text_semantics.validate(changed)
+                with self.assertRaisesRegex(AssertionError, message):
+                    prompt_fixtures(changed, historical)
         changed = copy.deepcopy(active)
-        owner = layout._blocks(changed)["block_0001_0001"]
-        owner["text"] += " Texto sin procedencia."
         marker = next(field for field in changed["textSemantics"]["fields"]
-                      if (field["block"], field["path"]) == ("block_0001_0001", "/text"))
-        marker["sourceSha256"] = hashlib.sha256(owner["text"].encode("utf-8")).hexdigest()
-        del changed["stateLayout"]
-        changed = edition.prepare_edition_lesson(changed, active["courseEdition"])
-        layout.text_semantics.validate(changed)
-        with self.assertRaises(AssertionError):
-            prompt_fixtures(changed, historical)
-        changed = copy.deepcopy(active)
-        marker = next(field for field in changed["textSemantics"]["fields"]
-                      if (field["block"], field["path"]) == ("block_0001_0001", "/text"))
+                      if (field["block"], field["path"]) == (PROMPT_OUTPUT_OWNER, "/text"))
         marker["spans"][0].update(role="prose", reading="natural")
         layout.text_semantics.validate(changed)
-        with self.assertRaises(AssertionError):
+        with self.assertRaisesRegex(AssertionError, "authenticated fragment"):
             prompt_fixtures(changed, historical)
+        changed = copy.deepcopy(active)
+        source = layout._blocks(changed)["block_0001_0001"]["text"]
+        marker = next(field for field in changed["textSemantics"]["fields"]
+                      if (field["block"], field["path"]) == ("block_0001_0001", "/text"))
+        first = source.index("programa")
+        marker["spans"].append({"start": units(source[:first]), "end": units(source[:first + len("programa")]),
+                                "text": "programa", "role": "cpp", "reading": "technical"})
+        layout.text_semantics.validate(changed)
+        with self.assertRaisesRegex(AssertionError, "authenticated explicit prose"):
+            prompt_fixtures(changed, historical)
+        # Restoring the complete old prose/descriptor must not select a legacy
+        # branch that overlooks a changed code card still owned by this edition.
+        changed = copy.deepcopy(active)
+        layout._blocks(changed)["block_0001_0001"]["text"] = layout._blocks(historical)["block_0001_0001"]["text"]
+        marker = next(field for field in changed["textSemantics"]["fields"]
+                      if (field["block"], field["path"]) == ("block_0001_0001", "/text"))
+        original_marker = next(field for field in historical["textSemantics"]["fields"]
+                               if (field["block"], field["path"]) == ("block_0001_0001", "/text"))
+        marker.clear()
+        marker.update(copy.deepcopy(original_marker))
+        layout._blocks(changed)[PROMPT_INSTRUCTION_OWNER]["code"] = 'std::cout << "Cantidad falsa: ";'
+        changed = resealed_edition_fixture(changed)
+        with self.assertRaisesRegex(AssertionError, "authenticated explicit prose"):
+            prompt_fixtures(changed, historical)
+        for identity in (PROMPT_INSTRUCTION_OWNER, PROMPT_OUTPUT_OWNER):
+            with self.subTest(missing_owner=identity):
+                changed = copy.deepcopy(active)
+                for page, row in zip(changed["pages"], changed["stateLayout"]["current"], strict=True):
+                    if identity in row["blocks"]:
+                        index = row["blocks"].index(identity)
+                        del page["blocks"][index]
+                        del row["blocks"][index]
+                changed["textSemantics"]["fields"] = [field for field in changed["textSemantics"]["fields"]
+                                                       if field["block"] != identity]
+                changed = resealed_edition_fixture(changed)
+                with self.assertRaisesRegex(AssertionError, "both authored split owners"):
+                    prompt_fixtures(changed, historical)
 
     def test_active_prompt_rejects_broken_utf16_and_cannot_replace_the_archive(self):
         _, active, _, historical, _ = selected_prompt_documents()
         changed = copy.deepcopy(active)
         marker = next(field for field in changed["textSemantics"]["fields"]
-                      if (field["block"], field["path"]) == ("block_0001_0001", "/text"))
+                      if (field["block"], field["path"]) == (PROMPT_OUTPUT_OWNER, "/text"))
         marker["spans"][0]["start"] += 1
         with self.assertRaises((AssertionError, ValueError)):
             prompt_fixtures(changed, historical)

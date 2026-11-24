@@ -224,8 +224,10 @@ message(STATUS "Header QA cache sentinel: ${LGAED_NATIVE_HEADER_QA_SENTINEL}")
             require("no work to do" in output.lower(), f"{label} scheduled work instead of remaining incremental.")
             require(snapshot([*obj.values(), program]) == before, f"{label} changed an object or executable.")
 
-        def verify_header_deps(label: str, obj: Path) -> None:
+        def object_dependencies(label: str, obj: Path) -> dict[str, object]:
             output = run(label, [ninja, "-C", build, "-t", "deps", obj.relative_to(build)], echo=False)
+            entries = re.findall(r"(?m)^\S.*: #deps (\d+), deps mtime (\d+) \(VALID\)$", output)
+            require(len(entries) == 1, f"{label} lost its valid object dependency entry: {output.strip()}")
             recorded = set()
             for line in output.splitlines():
                 if not line.startswith("    "):
@@ -234,9 +236,16 @@ message(STATUS "Header QA cache sentinel: ${LGAED_NATIVE_HEADER_QA_SENTINEL}")
                 if not dependency.is_absolute():
                     dependency = build / dependency
                 recorded.add(os.path.normcase(str(dependency.resolve())))
+            count, mtime = entries[0]
+            require(len(recorded) == int(count), f"{label} could not account for every recorded dependency.")
+            return {"mtime": int(mtime), "dependencies": sorted(recorded)}
+
+        def verify_header_deps(label: str, obj: Path) -> dict[str, object]:
+            entry = object_dependencies(label, obj)
             for included in (source / "bridge.hpp", header):
-                require(os.path.normcase(str(included.resolve())) in recorded,
+                require(os.path.normcase(str(included.resolve())) in entry["dependencies"],
                         f"{label} did not record the real include dependency {included.name}.")
+            return entry
 
         run("configure-scan-on", configure)
         on_graph = graph()
@@ -246,25 +255,72 @@ message(STATUS "Header QA cache sentinel: ${LGAED_NATIVE_HEADER_QA_SENTINEL}")
         build_probe("build-scan-on")
         result("run-scan-on", 1)
         obj = objects()
-        verify_header_deps("deps-scan-on", obj["main.cpp"])
+        before_dependencies = {
+            "main.cpp": verify_header_deps("deps-scan-on", obj["main.cpp"]),
+            "unrelated.cpp": object_dependencies("deps-scan-on-unrelated", obj["unrelated.cpp"]),
+        }
         cache = build / "CMakeCache.txt"
         deps = build / ".ninja_deps"
         require(deps.is_file(), "The seed build did not create Ninja's real dependency log.")
-        preserved = [cache, deps, *obj.values(), program]
-        before_reconfigure = {str(path): digest(path) for path in preserved}
+        preserved = [cache, *obj.values(), program]
+        tracked = [*preserved, deps]
+        before_reconfigure = snapshot(tracked)
+        before_cache = cache_values(cache)
+        for phase in ("scan-on", "scan-off"):
+            (evidence / phase).mkdir()
+        shutil.copyfile(cache, evidence / "scan-on" / "CMakeCache.txt")
+        regeneration = {"before": before_reconfigure, "before_dependencies": before_dependencies}
+        regeneration_path = evidence / "regeneration.json"
+        regeneration_path.write_text(json.dumps(regeneration, indent=2) + "\n", encoding="utf-8")
         mode.write_text("OFF\n", encoding="utf-8")
         run("configure-production-policy", configure)
-        require(all(path.is_file() and digest(path) == before_reconfigure[str(path)] for path in preserved),
-                "Regeneration discarded or altered the existing cache, deps, objects or executable before building.")
+        after_reconfigure = {str(path): snapshot([path])[str(path)] if path.is_file() else None
+                             for path in tracked}
+        after_cache = cache_values(cache) if cache.is_file() else {}
+        if cache.is_file():
+            shutil.copyfile(cache, evidence / "scan-off" / "CMakeCache.txt")
+        off_graph = graph()
+        (evidence / "scan-off-graph.txt").write_text(off_graph, encoding="utf-8")
+        changes = {name: {"before": before_reconfigure[name], "after": after_reconfigure[name]}
+                   for name in before_reconfigure if before_reconfigure[name] != after_reconfigure[name]}
+        cache_changes = {key: {"before": before_cache.get(key), "after": after_cache.get(key)}
+                         for key in before_cache.keys() | after_cache.keys()
+                         if before_cache.get(key) != after_cache.get(key)}
+        regeneration.update(after=after_reconfigure, file_changes=changes, cache_value_changes=cache_changes)
+        regeneration_path.write_text(json.dumps(regeneration, indent=2) + "\n", encoding="utf-8")
+        print("NATIVE_HEADER_QA regeneration changes: " + json.dumps(changes, sort_keys=True), flush=True)
+        altered = [str(path) for path in preserved
+                   if after_reconfigure[str(path)] is None or
+                   after_reconfigure[str(path)][0] != before_reconfigure[str(path)][0]]
+        require(not altered, "Regeneration discarded or altered cache/object/executable bytes: " +
+                "; ".join(altered) + f"; hashes and cache deltas: {regeneration_path}")
         require(cache_values(cache).get("LGAED_NATIVE_HEADER_QA_SENTINEL") == sentinel,
                 "Regeneration replaced the configured cache.")
         require(objects() == obj, "The policy transition replaced the configured object paths.")
-        off_graph = graph()
-        require(re.search(r"(?m)^\s*dyndep\s*=", off_graph) is None and
-                "cmake_ninja_dyndep" not in off_graph and "CXX_SCAN__" not in off_graph,
-                "The production native policy still generates C++ module dyndep/scanning rules.")
-        (evidence / "scan-off-graph.txt").write_text(off_graph, encoding="utf-8")
-        print("PASS ON-to-OFF regeneration: cache/deps/objects/executable bytes retained; C++23 retained; no dyndep.", flush=True)
+        # CMake runs `ninja -t recompact` after explicit generation. Retired
+        # .ddi entries may disappear from .ninja_deps; live object entries must
+        # retain their complete dependency sets and recorded output mtimes.
+        require(deps.is_file(), "Regeneration removed the real dependency log.")
+        after_dependencies = {
+            "main.cpp": verify_header_deps("deps-regenerated", obj["main.cpp"]),
+            "unrelated.cpp": object_dependencies("deps-regenerated-unrelated", obj["unrelated.cpp"]),
+        }
+        regeneration["after_dependencies"] = after_dependencies
+        regeneration_path.write_text(json.dumps(regeneration, indent=2) + "\n", encoding="utf-8")
+        require(after_dependencies == before_dependencies,
+                f"Regeneration changed a live object's dependencies or recorded mtime; see {regeneration_path}")
+        # CMake may retain unused SCAN/DYNDEP rule definitions. Check active
+        # build edges and the commands reachable from our actual target.
+        off_manifest = (build / "build.ninja").read_text(encoding="utf-8-sig")
+        require(re.search(r"(?m)^\s*dyndep\s*=", off_manifest) is None and
+                re.search(r"(?m)^build .*: CXX_(?:SCAN|DYNDEP)__", off_manifest) is None,
+                "The production native policy still has active module scanning/dyndep edges.")
+        active_commands = run("commands-production-policy",
+                              [ninja, "-C", build, "-t", "commands", "native_header_probe"], echo=False)
+        require(re.search(r"(?i)scanDependencies|cmake_ninja_dyndep|\.modmap\b", active_commands) is None,
+                "The production target still invokes module scanning or dyndep commands.")
+        print("PASS ON-to-OFF regeneration: cache/objects/executable bytes and live object dependencies retained; "
+              "C++23 retained; no active dyndep.", flush=True)
 
         # Removing @modmap legitimately changes compile commands. Objects may
         # rebuild once here; only the subsequent invocation must be a no-op.
@@ -310,8 +366,9 @@ message(STATUS "Header QA cache sentinel: ${LGAED_NATIVE_HEADER_QA_SENTINEL}")
                   "configured_build": str(configured_build), "cmake": str(cmake),
                   "ninja": str(ninja), "compiler": str(compiler),
                   "standard_option": expected_standard, "production_sha256": production_hashes,
-                  "checks": ["scan ON seed", "same-tree OFF regeneration preserves artifact bytes",
-                             "no module dyndep; real MSVC include deps", "C++23 real compilation",
+                  "checks": ["scan ON seed", "same-tree OFF regeneration preserves cache/object/executable bytes",
+                             "live object dependencies preserved across metadata compaction",
+                             "no active module dyndep; real MSVC include deps", "C++23 real compilation",
                              "executable/no-op", "transitive header update; unrelated unchanged",
                              "QA-only missing deps recovery/executable/no-op"],
                   "commands": commands}

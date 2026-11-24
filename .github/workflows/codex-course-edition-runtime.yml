@@ -743,9 +743,12 @@ jobs:
             ${{ runner.temp }}/lgaed-special-source-format-qa/Testing/Temporary/*.log
             ${{ runner.temp }}/lgaed-special-source-format-qa/CMakeFiles/CMakeConfigureLog.yaml
             ${{ runner.temp }}/lgaed-special-source-format-qa/test-fixtures/special-source-format/**
+  # Header-policy follow-ups run ReaderRevision in windows-reader-build.
+  # Their prompt-source contracts run in codex-general-choice-editorial;
+  # unchanged native edition coverage already passed the reader-revision push.
   run-format-fixture-history:
     name: Build authenticated format fixtures and verify original MSVC diagnostics
-    if: ${{ github.event_name != 'push' || (!startsWith(github.event.head_commit.message, 'qa-reader-revision:') && !startsWith(github.event.head_commit.message, 'qa-input-decisions:') && !startsWith(github.event.head_commit.message, 'qa-puzzle-wheel:') && !startsWith(github.event.head_commit.message, 'qa-guarded-arithmetic:') && !startsWith(github.event.head_commit.message, 'qa-joint-admission:') && !startsWith(github.event.head_commit.message, 'qa-special-source-format:') && !startsWith(github.event.head_commit.message, 'qa-edition-source:') && !startsWith(github.event.head_commit.message, 'qa-active-edition:') && !startsWith(github.event.head_commit.message, 'qa-prediction-newline:') && !startsWith(github.event.head_commit.message, 'qa-prediction:') && !startsWith(github.event.head_commit.message, 'qa-editor-viewport:')) }}
+    if: ${{ github.event_name != 'push' || (!startsWith(github.event.head_commit.message, 'qa-native-headers:') && !startsWith(github.event.head_commit.message, 'qa-reader-revision:') && !startsWith(github.event.head_commit.message, 'qa-input-decisions:') && !startsWith(github.event.head_commit.message, 'qa-puzzle-wheel:') && !startsWith(github.event.head_commit.message, 'qa-guarded-arithmetic:') && !startsWith(github.event.head_commit.message, 'qa-joint-admission:') && !startsWith(github.event.head_commit.message, 'qa-special-source-format:') && !startsWith(github.event.head_commit.message, 'qa-edition-source:') && !startsWith(github.event.head_commit.message, 'qa-active-edition:') && !startsWith(github.event.head_commit.message, 'qa-prediction-newline:') && !startsWith(github.event.head_commit.message, 'qa-prediction:') && !startsWith(github.event.head_commit.message, 'qa-editor-viewport:')) }}
     runs-on: windows-2025-vs2026
     timeout-minutes: 25
     steps:
@@ -791,7 +794,7 @@ jobs:
             ${{ runner.temp }}/lgaed-format-fixture-history/test-fixtures/format-history/**
   run-real-course-edition:
     name: Run Win32 edition, simulation and first required C++ case
-    if: ${{ github.event_name != 'push' || (!startsWith(github.event.head_commit.message, 'qa-reader-revision:') && !startsWith(github.event.head_commit.message, 'qa-input-decisions:') && !startsWith(github.event.head_commit.message, 'qa-puzzle-wheel:') && !startsWith(github.event.head_commit.message, 'qa-guarded-arithmetic:') && !startsWith(github.event.head_commit.message, 'qa-joint-admission:') && !startsWith(github.event.head_commit.message, 'qa-special-source-format:') && !startsWith(github.event.head_commit.message, 'qa-edition-source:') && !startsWith(github.event.head_commit.message, 'qa-active-edition:') && !startsWith(github.event.head_commit.message, 'qa-prediction-newline:') && !startsWith(github.event.head_commit.message, 'qa-prediction:') && !startsWith(github.event.head_commit.message, 'qa-editor-viewport:')) }}
+    if: ${{ github.event_name != 'push' || (!startsWith(github.event.head_commit.message, 'qa-native-headers:') && !startsWith(github.event.head_commit.message, 'qa-reader-revision:') && !startsWith(github.event.head_commit.message, 'qa-input-decisions:') && !startsWith(github.event.head_commit.message, 'qa-puzzle-wheel:') && !startsWith(github.event.head_commit.message, 'qa-guarded-arithmetic:') && !startsWith(github.event.head_commit.message, 'qa-joint-admission:') && !startsWith(github.event.head_commit.message, 'qa-special-source-format:') && !startsWith(github.event.head_commit.message, 'qa-edition-source:') && !startsWith(github.event.head_commit.message, 'qa-active-edition:') && !startsWith(github.event.head_commit.message, 'qa-prediction-newline:') && !startsWith(github.event.head_commit.message, 'qa-prediction:') && !startsWith(github.event.head_commit.message, 'qa-editor-viewport:')) }}
     runs-on: windows-2025-vs2026
     timeout-minutes: 45
     steps:
