@@ -1924,6 +1924,19 @@ def _historical_compiler_contract(document: dict, identity: str, block: dict) ->
     return historical_compiler_reference_payload(block) if identity in _compiler_references(document) else block
 
 
+def _compiler_channel_contract(document: dict, identity: str, block: dict) -> dict:
+    """Project a validated owner's source without revisiting other source epochs."""
+    result = _compiler_case_order_projection(document, identity, block)
+    archive = next((entry["block"] for entry in document.get("stateLayout", {}).get(
+        "sourceFormatRevisions", []) if entry["id"] == identity), None)
+    if archive is not None and block.get("type") == "cpp_compiler":
+        # Callers already validated formatting and any later identifier rename.
+        # Re-lexing the current source against an earlier archive would reject
+        # that separately authenticated rename. Keep current output metadata.
+        result = code_format.source_projection(result, _compiler_case_format_origin(document, identity, archive))
+    return result
+
+
 def _preserve_compiler_channel_requirements(before: dict, after: dict) -> None:
     """A runtime-channel objective may be added, never silently removed."""
     for identity, block in before.items():
@@ -2630,6 +2643,12 @@ def _validate_v2(document: dict) -> dict[tuple[int, int], tuple[int, int]]:
                         and without_compiler_guidance(previous_block)["compileCheck"]
                         == without_compiler_guidance(actual[identity])["compileCheck"],
                         "A published compiler diagnostic cannot be removed or replaced by an editorial return")
+            if (spec := reviewed_intentional_exit_spec(protected_previous)) is not None:
+                require(reviewed_intentional_exit_spec(protected_current) == spec,
+                        "A published intentional-exit objective cannot be removed or replaced by an editorial return")
+            if reviewed_crt_output_variant(protected_previous):
+                require(reviewed_crt_output_variant(protected_current),
+                        "A published reviewed CRT spelling cannot be removed or replaced by an editorial return")
         else:
             require("returnTo" not in proof, "A new editorial payload cannot claim a return")
         if "bibliography" in proof:
@@ -3224,6 +3243,14 @@ def _validate_intentional_exit_goals(document: dict) -> None:
     available = (_all_blocks(document) if type(meta) is dict and "current" in meta else
                  {f"block_{p:04d}_{b:04d}": block for p, page in enumerate(_pages(document))
                   for b, block in enumerate(page.get("blocks", []))})
+    # Layout validation has already authenticated this archive and its complete
+    # editorial chain. Restore only source bytes; the current oracle is exact.
+    format_sources = ({entry["id"]: entry["block"]
+                       for entry in meta.get("sourceFormatRevisions", [])}
+                      if type(meta) is dict else {})
+    protected = {identity: code_format.source_projection(block, format_sources[identity])
+                 if identity in format_sources and block.get("type") == "cpp_compiler" else block
+                 for identity, block in available.items()}
 
     def owner(identity: str, block: dict) -> None:
         spec = reviewed_intentional_exit_spec(block)
@@ -3236,14 +3263,24 @@ def _validate_intentional_exit_goals(document: dict) -> None:
         require(proofs and any(proof["beforeSha256"] == spec["before"] for proof in proofs),
                 "The intentional-exit goal requires its exact complete original/editorial provenance")
 
-    for identity, block in available.items():
+    for identity, block in protected.items():
+        if identity in format_sources:
+            archived_spec = reviewed_intentional_exit_spec(format_sources[identity])
+            if archived_spec is not None:
+                require(reviewed_intentional_exit_spec(block) == archived_spec,
+                        "A formatted intentional-exit objective must retain its authenticated archived goal")
         owner(identity, block)
     for snapshot in meta.get("retirementHistory", []) if type(meta) is dict else []:
+        prefix = _validate_retirement_editorial_prefix(document, snapshot)
         for page, record in zip(snapshot["pages"], snapshot["current"]):
             for identity, block in zip(record["blocks"], page.get("blocks", [])):
-                owner(identity, block)
-                if (spec := reviewed_intentional_exit_spec(block)) is not None:
-                    require(reviewed_intentional_exit_spec(available[identity]) == spec,
+                if block.get("type") != "cpp_compiler":
+                    continue
+                original = _historical_source_format_contract(
+                    document, identity, block, editorial_prefix=prefix)
+                owner(identity, original)
+                if (spec := reviewed_intentional_exit_spec(original)) is not None:
+                    require(reviewed_intentional_exit_spec(protected[identity]) == spec,
                             "A historical intentional-exit objective must retain its current archived or active goal")
 
 
@@ -3252,6 +3289,12 @@ def _validate_crt_output_variants(document: dict) -> None:
     available = (_all_blocks(document) if type(meta) is dict and "current" in meta else
                  {f"block_{p:04d}_{b:04d}": block for p, page in enumerate(_pages(document))
                   for b, block in enumerate(page.get("blocks", []))})
+    format_sources = ({entry["id"]: entry["block"]
+                       for entry in meta.get("sourceFormatRevisions", [])}
+                      if type(meta) is dict else {})
+    protected = {identity: code_format.source_projection(block, format_sources[identity])
+                 if identity in format_sources and block.get("type") == "cpp_compiler" else block
+                 for identity, block in available.items()}
 
     def owner(identity: str, block: dict) -> None:
         if not reviewed_crt_output_variant(block):
@@ -3264,14 +3307,22 @@ def _validate_crt_output_variants(document: dict) -> None:
                     and proof["afterSha256"] == CRT_OUTPUT_REVISION["after"] for proof in meta["editorial"]),
                 "The reviewed CRT output spelling requires its exact original-to-reviewed editorial edge")
 
-    for identity, block in available.items():
+    for identity, block in protected.items():
+        if identity in format_sources and reviewed_crt_output_variant(format_sources[identity]):
+            require(reviewed_crt_output_variant(block),
+                    "A formatted reviewed CRT spelling must retain its authenticated archived contract")
         owner(identity, block)
     for snapshot in meta.get("retirementHistory", []) if type(meta) is dict else []:
+        prefix = _validate_retirement_editorial_prefix(document, snapshot)
         for page, record in zip(snapshot["pages"], snapshot["current"]):
             for identity, block in zip(record["blocks"], page.get("blocks", [])):
-                owner(identity, block)
-                if reviewed_crt_output_variant(block):
-                    require(reviewed_crt_output_variant(available[identity]),
+                if block.get("type") != "cpp_compiler":
+                    continue
+                original = _historical_source_format_contract(
+                    document, identity, block, editorial_prefix=prefix)
+                owner(identity, original)
+                if reviewed_crt_output_variant(original):
+                    require(reviewed_crt_output_variant(protected[identity]),
                             "A historical reviewed CRT spelling must retain its current archived or active contract")
 
 
@@ -8296,8 +8347,8 @@ def _validate_transition_v2(previous: dict, current: dict) -> None:
     new_closed_sources = _new_closed_compiler_sources(baseline, current)
     new_case_orders = _validate_compiler_case_order_transition(baseline, current)
     _preserve_compiler_channel_requirements(
-        {identity: _compiler_case_order_projection(baseline, identity, block) for identity, block in before.items()},
-        {identity: _compiler_case_order_projection(current, identity, block) for identity, block in after.items()})
+        {identity: _compiler_channel_contract(baseline, identity, block) for identity, block in before.items()},
+        {identity: _compiler_channel_contract(current, identity, block) for identity, block in after.items()})
     old_formats = old_meta.get("sourceFormatRevisions", []) if old_v2 else []
     current_formats = meta.get("sourceFormatRevisions", [])
     require(current_formats[:len(old_formats)] == old_formats,

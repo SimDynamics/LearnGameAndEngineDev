@@ -10,6 +10,11 @@ on:
       - cmake/GeneralChoiceProseTests.cmake
       - cmake/ReaderRevisionTests.cmake
       - cmake/NestedCmakeFormatTests.cmake
+      - cmake/SpecialSourceFormatTests.cmake
+      - native/platform/windows/special_source_format_tests.cpp
+      - scripts/curriculum/special_source_format_fixture_source.py
+      - scripts/curriculum/special_source_format_cases.py
+      - scripts/curriculum/test_special_source_format.py
       - cmake/FormatFixtureHistoryTests.cmake
       - cmake/NamedRuleFeedbackTests.cmake
       - cmake/StateImportTests.cmake
@@ -343,9 +348,55 @@ jobs:
             ${{ runner.temp }}/lgaed-joint-admission-qa/Testing/Temporary/*.log
             ${{ runner.temp }}/lgaed-joint-admission-qa/CMakeFiles/CMakeConfigureLog.yaml
             ${{ runner.temp }}/lgaed-joint-admission-qa/test-fixtures/joint-local-int/**
+  run-special-source-format:
+    name: Verify authenticated CRT and intentional-exit source formatting
+    if: ${{ github.event_name == 'push' && startsWith(github.event.head_commit.message, 'qa-special-source-format:') }}
+    runs-on: windows-2025-vs2026
+    timeout-minutes: 25
+    steps:
+      - name: Read exact Codex revision and authenticated special publications
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+          persist-credentials: false
+      - name: Select Python for format provenance and closed contracts
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - name: Activate hosted MSVC without modifying the product pin
+        uses: ilammy/msvc-dev-cmd@v1
+      - name: Build original loaders, state and real compiler execution
+        shell: pwsh
+        run: |
+          $ErrorActionPreference = 'Stop'
+          Write-Host 'Focused hosted Windows QA; the product toolchain pin is retained.'
+          Get-Command cl, cmake, ninja | Select-Object Name, Source | Format-Table | Out-Host
+          $qaSpecialBuild = Join-Path $env:RUNNER_TEMP 'lgaed-special-source-format-qa'
+          cmake -S cmake/HostedCourseEditionQA -B $qaSpecialBuild -G Ninja -DCMAKE_BUILD_TYPE=Debug
+          if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
+          cmake --build $qaSpecialBuild --target lgaed_special_source_format_tests --parallel 3
+          if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
+      - name: Verify exact special contracts, native runs and preserved achievements
+        shell: pwsh
+        run: |
+          $qaSpecialBuild = Join-Path $env:RUNNER_TEMP 'lgaed-special-source-format-qa'
+          ctest --test-dir $qaSpecialBuild -R '^native[.]special_source_format(_(authoring|legacy))?$' --verbose --output-on-failure --no-tests=error --output-junit (Join-Path $qaSpecialBuild 'special-source-format.xml')
+          if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
+      - name: Preserve special-source format and native execution evidence
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: hosted-win32-special-source-format-${{ github.sha }}
+          retention-days: 7
+          if-no-files-found: warn
+          path: |
+            ${{ runner.temp }}/lgaed-special-source-format-qa/special-source-format.xml
+            ${{ runner.temp }}/lgaed-special-source-format-qa/Testing/Temporary/*.log
+            ${{ runner.temp }}/lgaed-special-source-format-qa/CMakeFiles/CMakeConfigureLog.yaml
+            ${{ runner.temp }}/lgaed-special-source-format-qa/test-fixtures/special-source-format/**
   run-format-fixture-history:
     name: Build authenticated format fixtures and verify original MSVC diagnostics
-    if: ${{ github.event_name != 'push' || (!startsWith(github.event.head_commit.message, 'qa-input-decisions:') && !startsWith(github.event.head_commit.message, 'qa-puzzle-wheel:') && !startsWith(github.event.head_commit.message, 'qa-guarded-arithmetic:') && !startsWith(github.event.head_commit.message, 'qa-joint-admission:')) }}
+    if: ${{ github.event_name != 'push' || (!startsWith(github.event.head_commit.message, 'qa-input-decisions:') && !startsWith(github.event.head_commit.message, 'qa-puzzle-wheel:') && !startsWith(github.event.head_commit.message, 'qa-guarded-arithmetic:') && !startsWith(github.event.head_commit.message, 'qa-joint-admission:') && !startsWith(github.event.head_commit.message, 'qa-special-source-format:')) }}
     runs-on: windows-2025-vs2026
     timeout-minutes: 25
     steps:
@@ -391,7 +442,7 @@ jobs:
             ${{ runner.temp }}/lgaed-format-fixture-history/test-fixtures/format-history/**
   run-real-course-edition:
     name: Run Win32 edition, simulation and first required C++ case
-    if: ${{ github.event_name != 'push' || (!startsWith(github.event.head_commit.message, 'qa-input-decisions:') && !startsWith(github.event.head_commit.message, 'qa-puzzle-wheel:') && !startsWith(github.event.head_commit.message, 'qa-guarded-arithmetic:') && !startsWith(github.event.head_commit.message, 'qa-joint-admission:')) }}
+    if: ${{ github.event_name != 'push' || (!startsWith(github.event.head_commit.message, 'qa-input-decisions:') && !startsWith(github.event.head_commit.message, 'qa-puzzle-wheel:') && !startsWith(github.event.head_commit.message, 'qa-guarded-arithmetic:') && !startsWith(github.event.head_commit.message, 'qa-joint-admission:') && !startsWith(github.event.head_commit.message, 'qa-special-source-format:')) }}
     runs-on: windows-2025-vs2026
     timeout-minutes: 45
     steps:
@@ -509,7 +560,7 @@ jobs:
         shell: pwsh
         run: |
           $build = Join-Path $env:RUNNER_TEMP 'lgaed-course-edition-qa'
-          cmake --build $build --target lgaed_general_choice_editorial_tests lgaed_lesson_editor_mount_tests lgaed_course_edition_tests lgaed_simulation_tests lgaed_simulation_view_tests lgaed_simulation_lesson_tests lgaed_compiler_first_case_view_tests lgaed_technical_context_view_tests lgaed_reading_gate_policy_tests lgaed_local_int_state_tests lgaed_local_string_state_tests lgaed_input_dependency_state_tests lgaed_input_probe_tests lgaed_local_role_state_tests lgaed_local_role_probe_tests lgaed_local_dependency_receipt_tests lgaed_local_dependency_view_tests lgaed_guarded_arithmetic_core_tests lgaed_guarded_arithmetic_state_tests lgaed_exact_prediction_view_tests lgaed_inline_feedback_view_tests lgaed_u6l19_case_split_state_tests lgaed_u3_runtime_semantics_tests --parallel 3
+          cmake --build $build --target lgaed_general_choice_editorial_tests lgaed_lesson_editor_mount_tests lgaed_course_edition_tests lgaed_simulation_tests lgaed_simulation_view_tests lgaed_simulation_lesson_tests lgaed_compiler_first_case_view_tests lgaed_technical_context_view_tests lgaed_reading_gate_policy_tests lgaed_local_int_state_tests lgaed_local_string_state_tests lgaed_input_dependency_state_tests lgaed_input_probe_tests lgaed_local_role_state_tests lgaed_local_role_probe_tests lgaed_local_dependency_receipt_tests lgaed_local_dependency_view_tests lgaed_guarded_arithmetic_core_tests lgaed_guarded_arithmetic_state_tests lgaed_exact_prediction_view_tests lgaed_inline_feedback_view_tests lgaed_u6l19_case_split_state_tests lgaed_u3_runtime_semantics_tests lgaed_special_source_format_tests --parallel 3
           if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
       - name: Preserve choice prose history and both U2L10 multiline answers
         shell: pwsh
@@ -570,6 +621,12 @@ jobs:
         run: |
           $build = Join-Path $env:RUNNER_TEMP 'lgaed-course-edition-qa'
           ctest --test-dir $build -R '^native[.]input_(probe|dependency_state)$' --verbose --output-on-failure --no-tests=error --output-junit (Join-Path $build 'u2l9-input-dependency.xml')
+          if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
+      - name: Verify authenticated special-source formatting and preserved native achievements
+        shell: pwsh
+        run: |
+          $build = Join-Path $env:RUNNER_TEMP 'lgaed-course-edition-qa'
+          ctest --test-dir $build -R '^native[.]special_source_format(_(authoring|legacy))?$' --verbose --output-on-failure --no-tests=error --output-junit (Join-Path $build 'special-source-format.xml')
           if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
       - name: Verify current and archived U2L9 input controls and first-case access
         shell: pwsh
@@ -662,6 +719,8 @@ jobs:
             ${{ runner.temp }}/lgaed-course-edition-qa/joint-local-int.xml
             ${{ runner.temp }}/lgaed-course-edition-qa/test-fixtures/joint-local-int/**
             ${{ runner.temp }}/lgaed-course-edition-qa/guarded-arithmetic.xml
+            ${{ runner.temp }}/lgaed-course-edition-qa/special-source-format.xml
+            ${{ runner.temp }}/lgaed-course-edition-qa/test-fixtures/special-source-format/**
             ${{ runner.temp }}/lgaed-course-edition-qa/test-fixtures/guarded-arithmetic/**
             ${{ runner.temp }}/lgaed-course-edition-qa/u2l10-local-roles.xml
             ${{ runner.temp }}/lgaed-course-edition-qa/continued-input-dependency.xml

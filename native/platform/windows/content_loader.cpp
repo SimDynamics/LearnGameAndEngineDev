@@ -3497,13 +3497,15 @@ StateLayout read_layout(const JsonObject& metadata, const JsonArray& pages, std:
                 require(active!=return_actual_blocks.end()&&text(previous,"type")==text(active->second,"type")
                     &&state_fingerprint(protected_source(id,previous,true))==state_fingerprint(protected_source(id,active->second)),
                     "Editorial return archive changed the current owner's protected contract");
-                if(reviewed_intentional_exit_goal(previous))require(reviewed_intentional_exit_goal(active->second),
+                if(reviewed_intentional_exit_goal(protected_source(id,previous,true)))
+                    require(reviewed_intentional_exit_goal(protected_source(id,active->second)),
                     "A published intentional-exit objective cannot be removed by an editorial return");
                 if(previous.HasKey(L"compileCheck"))require(active->second.HasKey(L"compileCheck")
                     &&fingerprint(without_compiler_guidance(previous).GetNamedObject(L"compileCheck"))==
                         fingerprint(without_compiler_guidance(active->second).GetNamedObject(L"compileCheck")),
                     "A published compilation diagnostic cannot be removed or replaced by an editorial return");
-                if(reviewed_crt_output_original(previous))require(reviewed_crt_output_original(active->second).has_value(),
+                if(reviewed_crt_output_original(protected_source(id,previous,true)))
+                    require(reviewed_crt_output_original(protected_source(id,active->second)).has_value(),
                     "A published reviewed CRT spelling cannot be removed by an editorial return");
                 if(math_text_originals.contains(id)){
                     const auto raw_target=original_document.member(original_editorial.at(prefix.Size()),"returnTo");
@@ -4284,9 +4286,9 @@ void apply_reviewed_order_equivalences(const Lesson& lesson,Block& block) {
 }
 void resolve_addresses(Lesson& lesson) {
     auto& layout = lesson.state_layout;
-    const auto intentional_exit_owner=[&](const Block& block) {
+    const auto intentional_exit_owner=[&](const Block& block,const JsonObject& source) {
         if(block.type!=BlockType::cpp_compiler||block.raw_json.empty())return;
-        const auto spec=reviewed_intentional_exit_spec(JsonObject::Parse(key(block.raw_json)));
+        const auto spec=reviewed_intentional_exit_spec(source);
         if(!spec)return;
         require(layout.version==2&&lesson.locale=="es"&&lesson.id==spec->lesson&&block.stable_id==spec->identity,
             "The reviewed intentional-exit goal belongs to its original Spanish v2 editor");
@@ -4298,9 +4300,9 @@ void resolve_addresses(Lesson& lesson) {
         }
         require(original_edge,"The intentional-exit goal requires its exact complete original/editorial provenance");
     };
-    const auto crt_output_owner=[&](Block& block) {
+    const auto crt_output_owner=[&](Block& block,const JsonObject& source) {
         if(block.type!=BlockType::cpp_compiler||block.raw_json.empty())return;
-        const auto original=reviewed_crt_output_original(JsonObject::Parse(key(block.raw_json)));
+        const auto original=reviewed_crt_output_original(source);
         if(!original)return;
         require(layout.version==2&&lesson.locale=="es"&&lesson.id==crt_output_lesson&&block.stable_id==crt_output_identity,
             "The reviewed CRT spelling belongs to its exact Spanish v2 editor");
@@ -4369,6 +4371,24 @@ void resolve_addresses(Lesson& lesson) {
                 block.source_format_original_project_files=original.project_files;
         } else if(block.type==BlockType::order_code)
             block.source_format_original_fragments=original.fragments;
+    };
+    const auto reviewed_compiler_source=[&](const Block& block,bool historical=false) {
+        const auto current=JsonObject::Parse(key(block.raw_json));
+        const auto original=historical_format_source(block.stable_id,current,historical);
+        // read_layout already authenticated the archive and the full current
+        // contract. Restore only its source slots, keeping the actual output
+        // cases, termination and guidance. This also composes with separately
+        // authenticated identifier changes without treating them as spacing.
+        const auto projected=original?identifier_restore_source(current,*original):current;
+        if(original) {
+            if(const auto spec=reviewed_intentional_exit_spec(*original))
+                require(reviewed_intentional_exit_spec(projected)==spec,
+                    "A formatted intentional-exit objective must retain its published goal");
+            if(reviewed_crt_output_original(*original))
+                require(reviewed_crt_output_original(projected).has_value(),
+                    "A formatted reviewed CRT spelling must retain its published contract");
+        }
+        return projected;
     };
     std::map<std::string,const MathTextRevision*> math_texts;
     for(const auto& revision:layout.math_text_revisions)math_texts.emplace(revision.id,&revision);
@@ -4504,8 +4524,11 @@ void resolve_addresses(Lesson& lesson) {
                 require(spec&&lesson.locale=="es"&&layout.version==2&&lesson.id==spec->lesson&&block.stable_id==spec->identity,
                     "A reviewed compilation diagnostic belongs to its original Spanish v2 editor");
             }
-            intentional_exit_owner(block);
-            crt_output_owner(block);
+            if(block.type==BlockType::cpp_compiler) {
+                const auto source=reviewed_compiler_source(block);
+                intentional_exit_owner(block,source);
+                crt_output_owner(block,source);
+            }
         }
     }
     for (const auto& retired : layout.retired) {
@@ -4515,8 +4538,11 @@ void resolve_addresses(Lesson& lesson) {
         block.stable_id = retired.id; block.address = addresses.at(retired.id);
         if(format)apply_source_format(block,*format);
         apply_math_text(block,true);
-        intentional_exit_owner(block);
-        crt_output_owner(block);
+        if(block.type==BlockType::cpp_compiler) {
+            const auto reviewed_source=reviewed_compiler_source(block,true);
+            intentional_exit_owner(block,reviewed_source);
+            crt_output_owner(block,reviewed_source);
+        }
         if(block.compile_check) {
             const auto spec=reviewed_compile_check(block.compile_check->diagnostic);
             require(spec&&lesson.locale=="es"&&layout.version==2&&lesson.id==spec->lesson&&block.stable_id==spec->identity,
@@ -4561,8 +4587,8 @@ void resolve_addresses(Lesson& lesson) {
                 const auto protected_source=format_source?
                     source_format_projection(ordered_source,original_format_source(identity)):ordered_source;
                 apply_math_text(block,true);
-                intentional_exit_owner(block);
-                crt_output_owner(block);
+                intentional_exit_owner(block,protected_source);
+                crt_output_owner(block,protected_source);
                 if(block.crt_output_original) {
                     const auto active=stable_block_position(lesson,block.stable_id);
                     const auto archived_editor=std::ranges::find(lesson.retired_blocks,block.stable_id,&Block::stable_id);
@@ -4571,12 +4597,12 @@ void resolve_addresses(Lesson& lesson) {
                     require(current&&current->crt_output_original==block.crt_output_original,
                         "A historical reviewed CRT spelling must retain its current archived or active contract");
                 }
-                if(reviewed_intentional_exit_goal(source)) {
+                if(reviewed_intentional_exit_goal(protected_source)) {
                     const auto active=stable_block_position(lesson,block.stable_id);
                     const auto archived_goal=std::ranges::find(lesson.retired_blocks,block.stable_id,&Block::stable_id);
                     const auto* current=active?&lesson.pages[active->page].blocks[active->block]:
                         archived_goal!=lesson.retired_blocks.end()?&*archived_goal:nullptr;
-                    require(current&&reviewed_intentional_exit_goal(JsonObject::Parse(key(current->raw_json))),
+                    require(current&&reviewed_intentional_exit_goal(reviewed_compiler_source(*current,!active)),
                         "A historical intentional-exit objective must retain its current archived or active goal");
                 }
                 if(block.compile_check) {

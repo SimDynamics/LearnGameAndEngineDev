@@ -2479,6 +2479,19 @@ Windows y todos sus controles literales. Es una revisión cerrada de ese objetiv
 no una normalización general: los demás stdout siguen comparándose byte a byte.
 La guía pública y su marcado pueden editarse sin cambiar esos bytes ejecutables.
 
+Estos tres objetivos admiten las revisiones de formato autenticadas mediante
+`sourceFormatRevisions`. Después de validar el archivo de fuentes y su cadena
+editorial, el reconocimiento del objetivo restaura únicamente los campos de
+fuente; conserva el `outputCheck` vigente, su entrada, salida, código de retorno
+y guía. Así, añadir un separador vacío no elimina el retorno intencional ni la
+alternativa CRT, y tampoco permite cambiar sus condiciones ejecutables.
+
+La misma comprobación protege los propietarios activos y retirados, las
+instantáneas históricas y los retornos a una edición anterior. Un retorno no
+puede eliminar un objetivo ya incorporado. El formato compatible conserva la
+identidad del objetivo, sus recibos nativos acreditados y los borradores; la
+importación de datos antiguos sigue sin fabricar ejecuciones Windows.
+
 ## Autoría y recuperación de guías públicas
 
 `outputCheck.cases[i].explanation`,

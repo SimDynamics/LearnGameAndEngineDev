@@ -290,6 +290,8 @@ lgaed_add_input_dependency_state_tests("${_lgaed_root}")
 lgaed_add_local_role_state_tests("${_lgaed_root}")
 lgaed_add_local_dependency_receipt_tests("${_lgaed_root}")
 lgaed_add_local_dependency_view_tests("${_lgaed_root}" lgaed_curricular_windows)
+include("${_lgaed_root}/cmake/SpecialSourceFormatTests.cmake")
+lgaed_add_special_source_format_tests("${_lgaed_root}")
 
 add_executable(lgaed_curricular_input_lab_tests
     "${_lgaed_root}/native/presentation/windows/curricular_input_lab_tests.cpp")
