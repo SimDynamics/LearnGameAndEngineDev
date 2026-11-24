@@ -6,6 +6,7 @@
 #include "presentation/windows/math_puzzle_view.hpp"
 #include "presentation/windows/card_list.hpp"
 #include "platform/windows/content_loader.hpp"
+#include "platform/windows/catalog_loader.hpp"
 #include "platform/windows/compiler_completion.hpp"
 #include "platform/windows/environment.hpp"
 #include "platform/windows/state_store.hpp"
@@ -2131,9 +2132,8 @@ void reader_arrow_aliases_preserve_control_keys(const std::shared_ptr<windows::N
     DestroyWindow(list);DestroyWindow(math);
     std::cout<<"PASS F5/Left -3, F6/Up -5, F7/Down +5, F8/Right +3: root/bar normal/SYS once, editor/readonly/math/card-list arrows preserve documents/cursors/selection and paused playback\n";
 }
-void current_curricular_colors_reader(const std::shared_ptr<windows::NarrationWorker>& backend) {
-    const auto asset=std::filesystem::path(build::source_root)/
-        "app/src/main/assets/content/es/programming/cpp_fundamentals/objetos_y_estado/lesson_estado_asignacion_y_copia.json";
+void curricular_colors_reader_at(const std::shared_ptr<windows::NarrationWorker>& backend,
+        const std::filesystem::path& asset,std::string_view edition_tag) {
     const auto original=state::read_bytes(asset);const auto authored=windows::load_lesson(asset);
     struct Case{
         std::size_t page,block;
@@ -2170,7 +2170,7 @@ void current_curricular_colors_reader(const std::shared_ptr<windows::NarrationWo
     const std::array<Case,4> cases{{
         {first.page,first.block,false,first_cpp->text,4,ordinary},
         {first.page,first.block,false,copied_cpp->text,4,ordinary},
-        {multiplication.page,multiplication.block,false,"produce 15",8,"Una asignación como"},
+        {multiplication.page,multiplication.block,false,"total = total * 3;",0,"El signo"},
         {decision.page,decision.block,true,"++turnos;",2,"aumenta"}
     }};
     const auto style=[](HWND target,LONG at){
@@ -2187,7 +2187,7 @@ void current_curricular_colors_reader(const std::shared_ptr<windows::NarrationWo
             &&one.yHeight==two.yHeight&&std::wstring_view(one.szFaceName)==std::wstring_view(two.szFaceName);
     };
     for(std::size_t number=0;number<cases.size();++number){const auto& item=cases[number];const auto& source=authored.pages.at(item.page).blocks.at(item.block);
-        curriculum::Lesson lesson;lesson.id="qa_current_curricular_colors_"+std::to_string(number);lesson.title="Prueba de referencias curriculares.";lesson.locale="es";
+        curriculum::Lesson lesson;lesson.id="qa_current_curricular_colors_"+std::string(edition_tag)+"_"+std::to_string(number);lesson.title="Prueba de referencias curriculares.";lesson.locale="es";
         curriculum::Page page;page.stable_id="qa_colors_page";curriculum::Block body;body.type=curriculum::BlockType::paragraph;
         body.stable_id="qa_colors_body";body.text=item.explanation?source.explanation:source.text;
         if(!item.explanation)body.emphasis=source.emphasis;
@@ -2301,6 +2301,25 @@ void current_curricular_colors_reader(const std::shared_ptr<windows::NarrationWo
             &&state::read_bytes(asset)==original,"Color-reader playback/reopen rewrote actual audio or the curricular asset");
         std::cout<<"PASS current curricular source "<<number+1<<": actual ef_dora/.5 PCM and word timing, pending gray/read original ink, unchanged neutral backgrounds without underline, pause/reopen/resume/rewind/stop, exact QA text/emphasis/zoom/selection; explanation is a plain QA copy, not activated original feedback\n";
     }
+}
+void current_curricular_colors_reader(const std::shared_ptr<windows::NarrationWorker>& backend) {
+    const auto root=std::filesystem::path(build::source_root)/"app/src/main/assets/content";
+    const curriculum::CatalogLocation course{"es","programming","cpp_fundamentals",{},{}};
+    const auto units=windows::load_catalog(root,course);
+    const auto unit=std::ranges::find_if(units.entries,[](const auto& entry){
+        return entry.id.ends_with("__objetos_y_estado");
+    });
+    check(unit!=units.entries.end()&&unit->available,"Selected U2 is unavailable for reader color QA");
+    const auto lessons=windows::load_catalog(root,curriculum::catalog_child(course,unit->id));
+    const auto entry=std::ranges::find_if(lessons.entries,[](const auto& item){
+        return item.id.ends_with("__estado_asignacion_y_copia");
+    });
+    check(entry!=lessons.entries.end()&&entry->available,"Selected U2L3 is unavailable for reader color QA");
+    const auto selected=windows::load_lesson(entry->asset);
+    check(selected.id==entry->id&&selected.course_edition.has_value(),
+        "Reader color QA did not select the active edition");
+    curricular_colors_reader_at(backend,entry->asset,"selected");
+    curricular_colors_reader_at(backend,root/"es/programming/cpp_fundamentals/objetos_y_estado/lesson_estado_asignacion_y_copia.json","previous");
 }
 struct LegacyAutoReadingProbe {
     HWND view=nullptr;
