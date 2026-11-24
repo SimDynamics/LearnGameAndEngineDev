@@ -297,9 +297,55 @@ jobs:
             ${{ runner.temp }}/lgaed-guarded-arithmetic-qa/Testing/Temporary/*.log
             ${{ runner.temp }}/lgaed-guarded-arithmetic-qa/CMakeFiles/CMakeConfigureLog.yaml
             ${{ runner.temp }}/lgaed-guarded-arithmetic-qa/test-fixtures/guarded-arithmetic/**
+  run-joint-admission:
+    name: Verify joint U3L5 admission decisions and preserved Win32 receipts
+    if: ${{ github.event_name == 'push' && startsWith(github.event.head_commit.message, 'qa-joint-admission:') }}
+    runs-on: windows-2025-vs2026
+    timeout-minutes: 25
+    steps:
+      - name: Read exact Codex revision and authenticated joint publications
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+          persist-credentials: false
+      - name: Select Python for joint authoring contracts and fixtures
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - name: Activate hosted MSVC without modifying the product pin
+        uses: ilammy/msvc-dev-cmd@v1
+      - name: Build the original Windows local dependency controls
+        shell: pwsh
+        run: |
+          $ErrorActionPreference = 'Stop'
+          Write-Host 'Focused hosted Windows QA; the product toolchain pin is retained.'
+          Get-Command cl, cmake, ninja | Select-Object Name, Source | Format-Table | Out-Host
+          $qaAdmissionBuild = Join-Path $env:RUNNER_TEMP 'lgaed-joint-admission-qa'
+          cmake -S cmake/HostedCourseEditionQA -B $qaAdmissionBuild -G Ninja -DCMAKE_BUILD_TYPE=Debug
+          if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
+          cmake --build $qaAdmissionBuild --target lgaed_local_dependency_view_tests --parallel 3
+          if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
+      - name: Verify joint admission observations and historical first-case access
+        shell: pwsh
+        run: |
+          $qaAdmissionBuild = Join-Path $env:RUNNER_TEMP 'lgaed-joint-admission-qa'
+          ctest --test-dir $qaAdmissionBuild -R '^native[.]joint_local_int_(authoring|admission_view)$' --verbose --output-on-failure --no-tests=error --output-junit (Join-Path $qaAdmissionBuild 'joint-admission.xml')
+          if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
+      - name: Preserve focused joint admission and fixture evidence
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: hosted-win32-joint-admission-${{ github.sha }}
+          retention-days: 7
+          if-no-files-found: warn
+          path: |
+            ${{ runner.temp }}/lgaed-joint-admission-qa/joint-admission.xml
+            ${{ runner.temp }}/lgaed-joint-admission-qa/Testing/Temporary/*.log
+            ${{ runner.temp }}/lgaed-joint-admission-qa/CMakeFiles/CMakeConfigureLog.yaml
+            ${{ runner.temp }}/lgaed-joint-admission-qa/test-fixtures/joint-local-int/**
   run-format-fixture-history:
     name: Build authenticated format fixtures and verify original MSVC diagnostics
-    if: ${{ github.event_name != 'push' || (!startsWith(github.event.head_commit.message, 'qa-input-decisions:') && !startsWith(github.event.head_commit.message, 'qa-puzzle-wheel:') && !startsWith(github.event.head_commit.message, 'qa-guarded-arithmetic:')) }}
+    if: ${{ github.event_name != 'push' || (!startsWith(github.event.head_commit.message, 'qa-input-decisions:') && !startsWith(github.event.head_commit.message, 'qa-puzzle-wheel:') && !startsWith(github.event.head_commit.message, 'qa-guarded-arithmetic:') && !startsWith(github.event.head_commit.message, 'qa-joint-admission:')) }}
     runs-on: windows-2025-vs2026
     timeout-minutes: 25
     steps:
@@ -345,7 +391,7 @@ jobs:
             ${{ runner.temp }}/lgaed-format-fixture-history/test-fixtures/format-history/**
   run-real-course-edition:
     name: Run Win32 edition, simulation and first required C++ case
-    if: ${{ github.event_name != 'push' || (!startsWith(github.event.head_commit.message, 'qa-input-decisions:') && !startsWith(github.event.head_commit.message, 'qa-puzzle-wheel:') && !startsWith(github.event.head_commit.message, 'qa-guarded-arithmetic:')) }}
+    if: ${{ github.event_name != 'push' || (!startsWith(github.event.head_commit.message, 'qa-input-decisions:') && !startsWith(github.event.head_commit.message, 'qa-puzzle-wheel:') && !startsWith(github.event.head_commit.message, 'qa-guarded-arithmetic:') && !startsWith(github.event.head_commit.message, 'qa-joint-admission:')) }}
     runs-on: windows-2025-vs2026
     timeout-minutes: 45
     steps:
@@ -483,7 +529,7 @@ jobs:
           $build = Join-Path $env:RUNNER_TEMP 'lgaed-course-edition-qa'
           ctest --test-dir $build -R '^native[.]local_dependency_view_u[23]l[0-9]+$' --verbose --output-on-failure --no-tests=error --output-junit (Join-Path $build 'local-dependency-view.xml')
           if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
-      - name: Verify joint U3L7 and U3L8 observations through real Win32 MSVC
+      - name: Verify joint U3L5, U3L7 and U3L8 observations through real Win32 MSVC
         shell: pwsh
         run: |
           $build = Join-Path $env:RUNNER_TEMP 'lgaed-course-edition-qa'

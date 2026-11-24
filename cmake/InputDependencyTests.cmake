@@ -200,7 +200,7 @@ function(lgaed_add_local_dependency_view_tests source_root presentation_target)
     # without changing the nine historical manifests or their sixteen owners.
     set(_joint_fixture_dir "${CMAKE_CURRENT_BINARY_DIR}/test-fixtures/joint-local-int")
     set(_joint_fixture_files "${_joint_fixture_dir}/manifest.json")
-    foreach(_lesson IN ITEMS u3l7 u3l8)
+    foreach(_lesson IN ITEMS u3l5 u3l7 u3l8)
         foreach(_file IN ITEMS before.json after.json)
             list(APPEND _joint_fixture_files "${_joint_fixture_dir}/${_lesson}/${_file}")
         endforeach()
@@ -222,6 +222,10 @@ function(lgaed_add_local_dependency_view_tests source_root presentation_target)
     add_test(NAME native.joint_local_int_view
         COMMAND lgaed_local_dependency_view_tests --joint-local-int "${_joint_fixture_dir}/manifest.json")
     set_tests_properties(native.joint_local_int_view PROPERTIES TIMEOUT 600 RUN_SERIAL TRUE)
+    add_test(NAME native.joint_local_int_admission_view
+        COMMAND lgaed_local_dependency_view_tests --joint-local-int
+            "${_joint_fixture_dir}/manifest.json" u3l5)
+    set_tests_properties(native.joint_local_int_admission_view PROPERTIES TIMEOUT 600 RUN_SERIAL TRUE)
 
     # Eight independently pinned current input owners adopt their own private
     # plans. Keep both earlier exports and all eighteen historical owners intact.

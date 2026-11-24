@@ -1,4 +1,7 @@
-"""Full-publication guards for the two joint-variable Win32 scenarios."""
+"""Full-publication and decision-oracle guards for joint-variable Win32 QA.
+
+These are authoring/transport tests, not executions of the C++ examples.
+"""
 from copy import deepcopy
 import hashlib
 from pathlib import Path
@@ -22,6 +25,7 @@ class JointLocalIntFixtureTests(unittest.TestCase):
 
     def test_full_git_publications_have_independent_pins_and_reject_changed_bytes(self):
         self.assertEqual(fixture.PUBLISHED_COMMIT, "a92895f2b00242dbd338ab0a386ea8ceeda9edf8")
+        self.assertEqual(fixture.publication_commit("u3l5"), "08a11877a2d2c0bf96a846660e3baea69e53f758")
         for name, publication in fixture.PUBLICATIONS.items():
             with self.subTest(lesson=name):
                 original = self.payloads[f"{name}/before.json"]
@@ -35,13 +39,17 @@ class JointLocalIntFixtureTests(unittest.TestCase):
                 args, kwargs = read.call_args
                 self.assertEqual(args[0], ["git", "--no-optional-locks", "-c",
                     f"safe.directory={fixture.ROOT}", "show",
-                    f"{fixture.PUBLISHED_COMMIT}:{publication['path']}"])
+                    f"{fixture.publication_commit(name)}:{publication['path']}"])
                 self.assertEqual(kwargs["cwd"], fixture.ROOT)
                 self.assertEqual(kwargs["env"]["GIT_NO_LAZY_FETCH"], "1")
                 self.assertEqual(kwargs["env"]["GIT_NO_REPLACE_OBJECTS"], "1")
                 self.assertEqual(kwargs["env"]["GIT_TERMINAL_PROMPT"], "0")
+                if name == "u3l5":
+                    self.assertEqual(hashlib.sha1(b"blob " + str(len(original)).encode("ascii") +
+                                                 b"\0" + original).hexdigest(),
+                                     "c0e67f1c87127e974decb0396bc3adfe33526a9a")
 
-    def test_both_real_transitions_append_one_pair_and_preserve_every_old_field(self):
+    def test_three_real_transitions_append_only_joint_scenarios_and_preserve_every_old_field(self):
         for name, publication in fixture.PUBLICATIONS.items():
             with self.subTest(lesson=name):
                 before, after = self.document(name, "before"), self.document(name, "after")
@@ -51,12 +59,14 @@ class JointLocalIntFixtureTests(unittest.TestCase):
                                 if item["activity"] == activity)["probes"]
                 current = next(item for item in after["compilerLocalIntChecks"]
                                if item["activity"] == activity)["probes"]
-                self.assertEqual(len(previous), {"u3l7": 3, "u3l8": 8}[name])
-                self.assertEqual(current[:-1], previous)
-                self.assertEqual(current[-1], publication["probe"])
+                self.assertEqual(len(previous), {"u3l7": 3, "u3l8": 8, "u3l5": 3}[name])
+                additions = list(publication["probes"]) if "probes" in publication else [publication["probe"]]
+                self.assertEqual(current[:len(previous)], previous)
+                self.assertEqual(current[len(previous):], additions)
                 preserved = deepcopy(after)
-                next(item for item in preserved["compilerLocalIntChecks"]
-                     if item["activity"] == activity)["probes"].pop()
+                remaining = next(item for item in preserved["compilerLocalIntChecks"]
+                                 if item["activity"] == activity)["probes"]
+                del remaining[len(previous):]
                 self.assertEqual(preserved, before)
                 self.assertEqual(before["stateLayout"], after["stateLayout"])
                 self.assertEqual(state._blocks(before), state._blocks(after))
@@ -69,13 +79,13 @@ class JointLocalIntFixtureTests(unittest.TestCase):
                 with self.assertRaises(state.LayoutError):
                     state.validate_transition(before, rewritten)
 
-    def test_manifest_authenticates_both_owners_four_references_and_precise_negatives(self):
+    def test_manifest_authenticates_three_owners_six_references_and_precise_negatives(self):
         self.assertEqual(set(self.manifest), {"version", "kind", "publishedCommit", "lessons"})
         self.assertEqual(self.manifest["kind"], "joint-local-int")
         self.assertEqual(self.manifest["version"], 1)
         self.assertEqual(self.manifest["publishedCommit"], fixture.PUBLISHED_COMMIT)
-        self.assertEqual(tuple(self.lessons), ("u3l7", "u3l8"))
-        self.assertEqual(len(self.payloads), 5)
+        self.assertEqual(tuple(self.lessons), ("u3l7", "u3l8", "u3l5"))
+        self.assertEqual(len(self.payloads), 7)
         solutions = 0
         for name, lesson in self.lessons.items():
             with self.subTest(lesson=name):
@@ -87,6 +97,10 @@ class JointLocalIntFixtureTests(unittest.TestCase):
                                      hashlib.sha256(self.payloads[lesson[version]]).hexdigest())
                 self.assertEqual({item["activity"] for item in lesson["solutions"]},
                                  set(publication["references"]))
+                if name == "u3l5":
+                    self.assertEqual(lesson["publishedCommit"], fixture.publication_commit(name))
+                else:
+                    self.assertNotIn("publishedCommit", lesson)
                 for solution in lesson["solutions"]:
                     reference = publication["references"][solution["activity"]]
                     self.assertEqual(solution["source"], blocks[reference]["code"])
@@ -110,7 +124,125 @@ class JointLocalIntFixtureTests(unittest.TestCase):
                 self.assertEqual(len(first), 1)
                 self.assertEqual(first[0]["standardInput"], "")
                 self.assertEqual(first[0]["outputs"][1], first[0]["outputs"][0] + "\n")
-        self.assertEqual(solutions, 4)
+        self.assertEqual(solutions, 6)
+
+    def test_historical_exports_and_manifest_entries_remain_byte_equivalent(self):
+        # Frozen before extending this exporter: not recalculated from the
+        # new declarations. Both old AFTER fixtures and their metadata stay
+        # usable with the exact native pins already verified for U3L7/U3L8.
+        expected_payloads = {
+            "u3l7/before.json": "132e947149b4388fcb0881792dc4054e2592f1a15c64a5c0f491d0f570ad541f",
+            "u3l7/after.json": "b4a05a8ddd852b7015d132237d1f2a185b745b139269e543822466480047dce3",
+            "u3l8/before.json": "faf26c9f5443a650c06fd5b73c882de3ba7cf03885cb0758202cd58257ec98a1",
+            "u3l8/after.json": "e90ebf9f573981bf1045ddebc7f6130d6f3eceb65b29b1f1290355b677ddbe5b",
+        }
+        for path, digest in expected_payloads.items():
+            self.assertEqual(hashlib.sha256(self.payloads[path]).hexdigest(), digest, path)
+        expected_entries = {
+            "u3l7": "d86bb97bc74532fc47d430851525ff03b830b0b6ee865d76e99ef4e6af04607b",
+            "u3l8": "03d81bad99ebd8a791788c6ffc86ff837768eb70843b4d70e7989c0dc00c2b27",
+        }
+        for name, digest in expected_entries.items():
+            self.assertEqual(hashlib.sha256(fixture.json_bytes(self.lessons[name])).hexdigest(), digest)
+        historical = deepcopy(self.manifest)
+        historical["lessons"] = historical["lessons"][:2]
+        self.assertEqual(hashlib.sha256(fixture.json_bytes(historical)).hexdigest(),
+                         "9d724b101145207611de9e06181c44d0c2122e077a36ab5bcebc07e83937b28f")
+
+    def test_u3l5_scenarios_reject_distinct_false_positives_with_exact_full_sources(self):
+        before, after = self.document("u3l5", "before"), self.document("u3l5", "after")
+        lesson = self.lessons["u3l5"]
+        plan = lesson["plans"][0]
+        self.assertEqual(plan["originalProbeCount"], 3)
+        activity = "p1u3l5_reparar_parentesis"
+        self.assertEqual(plan["activity"], activity)
+        self.assertEqual(plan["reference"], "p1u3l5_ejemplo_reparacion")
+        checks = next(item for item in after["compilerLocalIntChecks"] if item["activity"] == activity)["probes"]
+        self.assertEqual(checks[3:], [
+            {"variable": "pase", "replacement": 0,
+             "additionalReplacements": [{"variable": "invitacion", "replacement": 1},
+                                        {"variable": "apertura", "replacement": 1}],
+             "outputs": ["Entrada permitida\nDatos: 0 1 1", "Entrada permitida\nDatos: 0 1 1\n"]},
+            {"variable": "pase", "replacement": 0,
+             "additionalReplacements": [{"variable": "apertura", "replacement": 1}],
+             "outputs": ["Entrada denegada\nDatos: 0 0 1", "Entrada denegada\nDatos: 0 0 1\n"]},
+        ])
+        blocks = state._blocks(before)
+        source = blocks[plan["reference"]]["code"]
+        self.assertEqual(hashlib.sha256(source.encode("utf-8")).hexdigest(),
+                         "f26acbb7524bf3761fd46912e517228359308ce4c50946a783f291db2d772d45")
+        declaration = "    const bool permitido = (tiene_pase || tiene_invitacion) && sala_abierta;"
+        self.assertEqual(source.count(declaration), 1)
+        expected = {
+            "omits_invitation": ("tiene_pase && sala_abierta", 3,
+                "f7496334ce93aa0daf943cd962a11659b50df77f3d231aea7e3742fc9ae8ae1a"),
+            "open_only": ("sala_abierta", 4,
+                "66951ed1a36227f4723585864efb290d2c35a8576db57d124bc3f05a97f7b8f1"),
+        }
+        examples = plan["counterexamples"]
+        self.assertEqual([item["label"] for item in examples], list(expected))
+        baseline = {"pase": 1, "invitacion": 0, "apertura": 0}
+
+        def reported(values, mode):
+            # Independent truth-table oracle for the fixture; no C++ process
+            # or native proof is fabricated by this authoring test.
+            pase, invitacion, apertura = (values[key] != 0 for key in baseline)
+            permitted = ((pase or invitacion) and apertura if mode == "reference" else
+                         pase and apertura if mode == "omits_invitation" else apertura)
+            decision = "Entrada permitida" if permitted else "Entrada denegada"
+            return decision + "\nDatos: " + " ".join(str(values[key]) for key in baseline)
+
+        public = blocks[activity]["outputCheck"]["cases"]
+        self.assertEqual(public, [{"standardInput": "", "outputs": [
+            "Entrada denegada\nDatos: 1 0 0", "Entrada denegada\nDatos: 1 0 0\n"]}])
+        variants = []
+        for probe in checks:
+            values = dict(baseline)
+            values[probe["variable"]] = probe["replacement"]
+            for additional in probe.get("additionalReplacements", ()):
+                values[additional["variable"]] = additional["replacement"]
+            variants.append(values)
+            result = reported(values, "reference")
+            self.assertEqual(probe["outputs"], [result, result + "\n"])
+        for example in examples:
+            label = example["label"]
+            expression, failed_probe, digest = expected[label]
+            self.assertEqual(set(example), {"label", "source", "sourceSha256", "failedProbeIndex"})
+            self.assertEqual(example["source"], source.replace(declaration,
+                "    const bool permitido = " + expression + ";", 1))
+            self.assertEqual(example["sourceSha256"], digest)
+            self.assertEqual(hashlib.sha256(example["source"].encode("utf-8")).hexdigest(), digest)
+            self.assertEqual(example["failedProbeIndex"], failed_probe)
+            self.assertEqual(reported(baseline, label), public[0]["outputs"][0])
+            self.assertEqual([index for index, values in enumerate(variants)
+                              if reported(values, label) not in checks[index]["outputs"]], [failed_probe])
+        self.assertEqual(plan["fixedSource"], examples[1]["source"])
+        self.assertEqual(plan["fixedSourceSha256"], examples[1]["sourceSha256"])
+
+    def test_u3l5_changed_reference_missing_commit_and_wrong_blob_fail_closed(self):
+        lesson = self.lessons["u3l5"]
+        source = next(solution["source"] for solution in lesson["solutions"]
+                      if solution["activity"] == "p1u3l5_reparar_parentesis")
+        for changed in (source + "\n", source + source, "int main() {}\n"):
+            with self.assertRaises(ValueError):
+                fixture.u3l5_counterexamples(changed)
+        publication = fixture.PUBLICATIONS["u3l5"]
+        with mock.patch.dict(publication, {"blobSha": "0" * 40}):
+            with self.assertRaisesRegex(ValueError, "Git blob"):
+                fixture.verify_published_bytes("u3l5", self.payloads["u3l5/before.json"])
+        without_commit = {key: value for key, value in publication.items() if key != "publishedCommit"}
+        with mock.patch.dict(publication, without_commit, clear=True):
+            with self.assertRaises(KeyError):
+                fixture.publication_commit("u3l5")
+
+    def test_u3l5_unavailable_pinned_git_source_has_no_fetch_or_asset_fallback(self):
+        failure = fixture.subprocess.CalledProcessError(1, ["git", "show"])
+        with mock.patch.object(fixture.subprocess, "check_output", side_effect=failure) as read:
+            with self.assertRaises(fixture.subprocess.CalledProcessError):
+                fixture.published_bytes("u3l5")
+        read.assert_called_once()
+        self.assertEqual(read.call_args.args[0][-1],
+            "08a11877a2d2c0bf96a846660e3baea69e53f758:" + fixture.PUBLICATIONS["u3l5"]["path"])
 
     def test_export_preserves_exact_bytes_and_existing_mtimes(self):
         with tempfile.TemporaryDirectory() as directory:
@@ -128,28 +260,31 @@ class JointLocalIntFixtureTests(unittest.TestCase):
     def test_last_destination_conflict_is_rejected_before_writing_other_files(self):
         with tempfile.TemporaryDirectory() as directory:
             output = Path(directory) / "joint"
-            conflict = output / "u3l8/after.json"
+            conflict = output / "u3l5/after.json"
             conflict.parent.mkdir(parents=True)
             conflict.write_bytes(b"keep these existing bytes")
             with mock.patch.object(fixture, "export_payloads", return_value=self.payloads):
                 with self.assertRaises(FileExistsError):
                     fixture.export(output)
             self.assertEqual({path.relative_to(output).as_posix() for path in output.rglob("*")
-                              if path.is_file()}, {"u3l8/after.json"})
+                              if path.is_file()}, {"u3l5/after.json"})
             self.assertEqual(conflict.read_bytes(), b"keep these existing bytes")
 
-    def test_corrupt_second_publication_cannot_leave_partial_outputs(self):
-        by_ref = {fixture.PUBLISHED_COMMIT + ":" + publication["path"]:
-                  self.payloads[f"{name}/before.json"]
-                  for name, publication in fixture.PUBLICATIONS.items()}
-        by_ref[fixture.PUBLISHED_COMMIT + ":" + fixture.PUBLICATIONS["u3l8"]["path"]] += b" "
-        with tempfile.TemporaryDirectory() as directory:
-            output = Path(directory) / "joint"
-            with mock.patch.object(fixture.subprocess, "check_output",
-                                   side_effect=lambda command, **_kwargs: by_ref[command[-1]]):
-                with self.assertRaisesRegex(ValueError, "u3l8"):
-                    fixture.export(output)
-            self.assertFalse(output.exists())
+    def test_corrupt_later_publication_cannot_leave_partial_outputs(self):
+        for corrupted in ("u3l8", "u3l5"):
+            with self.subTest(lesson=corrupted):
+                by_ref = {fixture.publication_commit(name) + ":" + publication["path"]:
+                          self.payloads[f"{name}/before.json"]
+                          for name, publication in fixture.PUBLICATIONS.items()}
+                by_ref[fixture.publication_commit(corrupted) + ":" +
+                       fixture.PUBLICATIONS[corrupted]["path"]] += b" "
+                with tempfile.TemporaryDirectory() as directory:
+                    output = Path(directory) / "joint"
+                    with mock.patch.object(fixture.subprocess, "check_output",
+                                           side_effect=lambda command, **_kwargs: by_ref[command[-1]]):
+                        with self.assertRaisesRegex(ValueError, corrupted):
+                            fixture.export(output)
+                    self.assertFalse(output.exists())
 
 
 if __name__ == "__main__":

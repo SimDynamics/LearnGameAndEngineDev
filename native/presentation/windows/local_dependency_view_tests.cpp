@@ -93,11 +93,16 @@ struct GuardedArithmeticSource {
     bool accepted=false;
     std::optional<std::uint32_t> guard_exit;
 };
+struct JointCounterexampleSource {
+    std::string label,source;
+    std::size_t failed_probe=0;
+};
 struct Plan {
     std::string activity,reference,fixed_source;
     std::optional<std::string> no_plan_source;
     std::vector<InputCounterexample> input_counterexamples;
     std::vector<GuardedArithmeticSource> arithmetic_sources{};
+    std::vector<JointCounterexampleSource> joint_counterexamples{};
 };
 struct Fixture {
     std::string id;
@@ -171,30 +176,92 @@ void verify_only_root_adoption(const Fixture& fixture) {
         check(compiler_ids.erase(solution.activity)==1,"Repeated or unrelated prerequisite solution");
     check(compiler_ids.empty(),"An authentic compiler lacks its solution");
 }
+struct JointReplacementOracle { std::string_view variable;std::int32_t replacement; };
+struct JointProbeOracle {
+    std::string_view variable;
+    std::int32_t replacement;
+    std::vector<JointReplacementOracle> additional;
+    std::string_view expected;
+};
+struct JointCounterexampleOracle {
+    std::string_view label,sha256;
+    std::size_t failed_probe;
+    std::string_view negative_output;
+};
 struct JointPublication {
     std::string_view id,activity,reference,other_activity,other_reference;
-    std::string_view publication_sha256,negative_sha256;
+    std::string_view publication_sha256,published_commit;
     std::size_t original_probes;
-    std::string_view variable,additional_variable;
-    std::int32_t replacement,additional_replacement;
-    std::string_view expected,negative_output;
+    std::vector<JointProbeOracle> additions;
+    std::vector<JointCounterexampleOracle> counterexamples;
+    std::string_view primary_counterexample;
 };
 const JointPublication& joint_publication(std::string_view id) {
-    static constexpr std::array<JointPublication,2> publications{{
+    static const std::array<JointPublication,3> publications{{
         {"u3l7","p1u3l7_reparar_prioridad","p1u3l7_ejemplo_prioridad",
          "p1u3l7_construir_despacho","p1u3l7_ejemplo_despacho",
          "132e947149b4388fcb0881792dc4054e2592f1a15c64a5c0f491d0f570ad541f",
-         "1c58b10a3c7a7f1a4f30f2b9e47d5efdb348bdd4c5f8a85c4b9117121056e25a",
-         3,"solicitadas","codigo_permiso",6,1,"Pendiente: 2","Completo"},
+         "a92895f2b00242dbd338ab0a386ea8ceeda9edf8",3,
+         {{"solicitadas",6,{{"codigo_permiso",1}},"Pendiente: 2"}},
+         {{"missing_pending","1c58b10a3c7a7f1a4f30f2b9e47d5efdb348bdd4c5f8a85c4b9117121056e25a",3,"Completo"}},
+         "missing_pending"},
         {"u3l8","block_0002_0002","p1u3l8_ejemplo_original",
          "p1u3l8_cambiar_minimo","p1u3l8_ejemplo_minimo",
          "faf26c9f5443a650c06fd5b73c882de3ba7cf03885cb0758202cd58257ec98a1",
-         "488bd22b229fd020fdfd307d13c5d08f719f27faed1ab9a319a5faa809b3f4b8",
-         8,"fichas","capacidad",0,0,"Datos invalidos","Sin trabajo"},
+         "a92895f2b00242dbd338ab0a386ea8ceeda9edf8",8,
+         {{"fichas",0,{{"capacidad",0}},"Datos invalidos"}},
+         {{"zero_before_invalid","488bd22b229fd020fdfd307d13c5d08f719f27faed1ab9a319a5faa809b3f4b8",8,"Sin trabajo"}},
+         "zero_before_invalid"},
+        {"u3l5","p1u3l5_reparar_parentesis","p1u3l5_ejemplo_reparacion",
+         "p1u3l5_construir_acceso","p1u3l5_ejemplo_acceso",
+         "d5d696e9f88ccdaa9b997d00bcd93c677f8e6af861eaef82e9409d3374725c67",
+         "08a11877a2d2c0bf96a846660e3baea69e53f758",3,
+         {{"pase",0,{{"invitacion",1},{"apertura",1}},"Entrada permitida\nDatos: 0 1 1"},
+          {"pase",0,{{"apertura",1}},"Entrada denegada\nDatos: 0 0 1"}},
+         {{"omits_invitation","f7496334ce93aa0daf943cd962a11659b50df77f3d231aea7e3742fc9ae8ae1a",3,"Entrada denegada\nDatos: 0 1 1"},
+          {"open_only","66951ed1a36227f4723585864efb290d2c35a8576db57d124bc3f05a97f7b8f1",4,"Entrada permitida\nDatos: 0 0 1"}},
+         "open_only"},
     }};
     const auto found=std::ranges::find(publications,id,&JointPublication::id);
     check(found!=publications.end(),"Unknown joint-variable publication");
     return *found;
+}
+const JointCounterexampleOracle& joint_counterexample_oracle(const JointPublication& publication,
+        std::string_view label) {
+    const auto found=std::ranges::find(publication.counterexamples,label,&JointCounterexampleOracle::label);
+    check(found!=publication.counterexamples.end(),"Unknown joint-variable counterexample");
+    return *found;
+}
+void read_joint_plan(const Fixture& fixture,const JsonObject& entry,Plan& plan) {
+    const auto& pin=joint_publication(fixture.id);
+    if(fixture.id=="u3l5") {
+        check(entry.GetNamedNumber(L"originalProbeCount")==static_cast<double>(pin.original_probes),
+            "The admission plan changed its three historical observations");
+        std::set<std::string> labels;
+        for(const auto& raw:entry.GetNamedArray(L"counterexamples")) {
+            const auto value=raw.GetObject();
+            JointCounterexampleSource example{json_string(value,L"label"),json_string(value,L"source")};
+            const auto& expected=joint_counterexample_oracle(pin,example.label);
+            check(labels.insert(example.label).second,"Repeated admission counterexample");
+            example.failed_probe=expected.failed_probe;
+            check(value.GetNamedNumber(L"failedProbeIndex")==static_cast<double>(expected.failed_probe)&&
+                    state::sha256(example.source)==expected.sha256&&
+                    json_string(value,L"sourceSha256")==expected.sha256,
+                "An admission counterexample changed its independently pinned source or failure index");
+            plan.joint_counterexamples.push_back(std::move(example));
+        }
+    } else {
+        const auto& expected=joint_counterexample_oracle(pin,pin.primary_counterexample);
+        plan.joint_counterexamples.push_back({std::string(expected.label),plan.fixed_source,expected.failed_probe});
+    }
+    check(plan.joint_counterexamples.size()==pin.counterexamples.size(),
+        "The joint plan lost a required independent counterexample");
+    for(const auto& example:plan.joint_counterexamples) {
+        const auto& expected=joint_counterexample_oracle(pin,example.label);
+        check(state::sha256(example.source)==expected.sha256&&
+                (example.label!=pin.primary_counterexample||example.source==plan.fixed_source),
+            "The joint UI source differs from its independently pinned primary counterexample");
+    }
 }
 void verify_only_joint_append(const Fixture& fixture) {
     const auto& pin=joint_publication(fixture.id);
@@ -204,7 +271,7 @@ void verify_only_joint_append(const Fixture& fixture) {
         "Joint-variable QA lost its independent complete-publication pin or owner census");
     const auto& plan=fixture.plans.front();
     check(plan.activity==pin.activity&&plan.reference==pin.reference&&!plan.no_plan_source&&
-            state::sha256(plan.fixed_source)==pin.negative_sha256,
+            state::sha256(plan.fixed_source)==joint_counterexample_oracle(pin,pin.primary_counterexample).sha256,
         "The joint-variable counterexample or owner differs from the independently pinned scenario");
     const auto& old=block_at(fixture.before,pin.activity);
     const auto& current=block_at(fixture.after,pin.activity);
@@ -213,30 +280,37 @@ void verify_only_joint_append(const Fixture& fixture) {
     check(old.local_int_check&&current.local_int_check&&
             private_contracts(old)==1&&private_contracts(current)==1&&
             old.local_int_check->probes.size()==pin.original_probes&&
-            current.local_int_check->probes.size()==pin.original_probes+1&&
+            current.local_int_check->probes.size()==pin.original_probes+pin.additions.size()&&
             std::equal(old.local_int_check->probes.begin(),old.local_int_check->probes.end(),
                        current.local_int_check->probes.begin())&&
             std::ranges::all_of(old.local_int_check->probes,
                 [](const auto& probe){return probe.additional_replacements.empty();})&&
             block_at(before_metadata,pin.activity).local_int_check==old.local_int_check&&
             block_at(after_metadata,pin.activity).local_int_check==current.local_int_check,
-        "Both loaders must preserve every old probe and append exactly one joint observation");
-    const auto& added=current.local_int_check->probes.back();
-    check(added.variable==pin.variable&&added.replacement==pin.replacement&&
-            added.value_type==curriculum::CppLocalValueType::integer&&!added.after_update&&
-            !added.expected_increase&&added.additional_replacements.size()==1&&
-            added.additional_replacements[0].variable==pin.additional_variable&&
-            added.additional_replacements[0].replacement==pin.additional_replacement&&
-            added.expected_stdout==std::vector<std::string>{std::string(pin.expected),std::string(pin.expected)+'\n'},
-        "The appended joint observation differs from its independent two-variable oracle");
+        "Both loaders must preserve every old probe and append exactly the independent joint observations");
+    for(std::size_t index=0;index<pin.additions.size();++index) {
+        const auto& added=current.local_int_check->probes.at(pin.original_probes+index);
+        const auto& expected=pin.additions[index];
+        check(added.variable==expected.variable&&added.replacement==expected.replacement&&
+                added.value_type==curriculum::CppLocalValueType::integer&&!added.after_update&&
+                !added.expected_increase&&!added.forbid_arithmetic&&
+                added.additional_replacements.size()==expected.additional.size()&&
+                added.expected_stdout==std::vector<std::string>{std::string(expected.expected),std::string(expected.expected)+'\n'},
+            "An appended joint observation differs from its independent oracle");
+        for(std::size_t item=0;item<expected.additional.size();++item)
+            check(added.additional_replacements[item].variable==expected.additional[item].variable&&
+                    added.additional_replacements[item].replacement==expected.additional[item].replacement,
+                "A jointly replaced variable or its value differs from its independent oracle");
+    }
     auto restored=JsonObject::Parse(wide(fixture.after.raw_json));
     std::size_t found_owner=0;
     for(const auto& value:restored.GetNamedArray(L"compilerLocalIntChecks")) {
         const auto entry=value.GetObject();
         if(json_string(entry,L"activity")!=pin.activity)continue;
         auto probes=entry.GetNamedArray(L"probes");
-        check(probes.Size()==pin.original_probes+1,"The JSON probe suffix differs from the parsed contract");
-        probes.RemoveAt(probes.Size()-1);++found_owner;
+        check(probes.Size()==pin.original_probes+pin.additions.size(),"The JSON probe suffix differs from the parsed contract");
+        for(std::size_t index=0;index<pin.additions.size();++index)probes.RemoveAt(probes.Size()-1);
+        ++found_owner;
     }
     check(found_owner==1&&winrt::to_string(restored.Stringify())==canonical(fixture.before.raw_json)&&
             fixture.before.compiler_puzzles_required&&fixture.after.compiler_puzzles_required&&
@@ -527,6 +601,11 @@ std::vector<Fixture> load_manifest(const std::filesystem::path& manifest,bool jo
         fixture.guarded_arithmetic=guarded_arithmetic;
         fixture.id=json_string(item,L"id");
         check(names.insert(fixture.id).second,"Repeated lesson manifest entry");
+        if(joint) {
+            const auto& pin=joint_publication(fixture.id);
+            check(json_string(item.HasKey(L"publishedCommit")?item:document,L"publishedCommit")==pin.published_commit,
+                "The joint lesson differs from its independently pinned publication commit");
+        }
         fixture.before_path=fixture_path(manifest.parent_path(),json_string(item,L"before"));
         fixture.after_path=fixture_path(manifest.parent_path(),json_string(item,L"after"));
         fixture.before_sha256=json_string(item,L"beforeSha256");
@@ -556,6 +635,7 @@ std::vector<Fixture> load_manifest(const std::filesystem::path& manifest,bool jo
             }
             if(input_decisions)read_input_decision_plan(fixture,entry,plan);
             if(guarded_arithmetic)read_guarded_arithmetic_plan(fixture,entry,plan);
+            if(joint)read_joint_plan(fixture,entry,plan);
             fixture.plans.push_back(std::move(plan));++owner_count;
         }
         if(guarded_arithmetic)verify_only_guarded_append(fixture);
@@ -568,8 +648,8 @@ std::vector<Fixture> load_manifest(const std::filesystem::path& manifest,bool jo
     else if(input_decisions)check(result.size()==8&&owner_count==8&&
             names==std::set<std::string>{"u3l3","u3l4","u3l5","u3l6","u3l7","u3l8","u4l1","u4l2"},
         "The input-decision manifest must contain exactly eight independent owners and forty private observations");
-    else if(joint)check(result.size()==2&&owner_count==2&&names==std::set<std::string>{"u3l7","u3l8"},
-        "The joint UI manifest must preserve both authenticated lessons and both owners");
+    else if(joint)check(result.size()==3&&owner_count==3&&names==std::set<std::string>{"u3l5","u3l7","u3l8"},
+        "The joint UI manifest must preserve all three authenticated lessons and owners");
     else check(result.size()==9&&owner_count==16,"The UI manifest must cover nine lessons and sixteen focal owners");
     return result;
 }
@@ -763,49 +843,52 @@ void verify_guarded_arithmetic_sources(const Fixture& fixture,const Plan& plan,s
             <<"; five exact variant hashes and real MSVC captures, restored public files.\n";
     }
 }
-void verify_joint_counterexample(const Fixture& fixture,const Plan& plan,
+void verify_joint_counterexamples(const Fixture& fixture,const Plan& plan,
         const WindowsEnvironment& environment) {
-    phase=fixture.id+"/"+plan.activity+" isolating the real joint counterexample";
     const auto& pin=joint_publication(fixture.id);
     const auto& block=block_at(fixture.after,plan.activity);
     const auto& first=block.output_check->cases.front();
-    const auto request=request_for(environment,fixture.after,block,plan.fixed_source,first.standard_input);
-    check(windows::compiler_runtime_request_allowed(block,request),
-        "The joint counterexample was rejected by request shape instead of its real execution");
-    const auto result=windows::run_cpp(request);
-    const auto captured=windows::capture_cpp_execution(request,result);
-    check(result.error_utf8.empty()&&result.compilation.succeeded()&&result.execution.succeeded()&&
-            result.execution.stderr_bytes.empty()&&
-            windows::evaluate_cpp_output_check(*block.output_check,captured,request.revision).verdict==
-                curriculum::OutputVerdict::correct&&
-            captured.source_revision==request.revision&&!captured.local_int_check_correct&&
-            !captured.local_int_request_fingerprint.empty()&&
-            captured.local_int_request_fingerprint==windows::cpp_local_int_request_fingerprint(request)&&
-            result.local_int_request_fingerprint==captured.local_int_request_fingerprint&&
-            result.local_int_evidence.size()==pin.original_probes+1,
-        "The joint counterexample needs a real public success and complete private captures from this request");
-    for(std::size_t index=0;index<block.local_int_check->probes.size();++index) {
-        const auto& probe=block.local_int_check->probes[index];
-        const auto& evidence=result.local_int_evidence[index];
-        const auto instrumented=curriculum::cpp_local_int_override(request.source_utf8,probe);
-        check(instrumented&&evidence.instrumented_source_sha256==state::sha256(*instrumented)&&
-                evidence.compilation.succeeded()&&evidence.execution.succeeded()&&
-                evidence.execution.stderr_bytes.empty()&&
-                curriculum::cpp_local_int_expected_output(probe,evidence.execution.stdout_bytes)==
-                    (index<pin.original_probes),
-            "A joint counterexample failed an old single-variable observation or borrowed another source");
-        if(index==pin.original_probes)
-            check(normalized(evidence.execution.stdout_bytes)==pin.negative_output,
-                "The pair did not produce the independently expected incorrect observation");
+    for(const auto& example:plan.joint_counterexamples) {
+        phase=fixture.id+"/"+plan.activity+" isolating the real joint counterexample "+example.label;
+        const auto& expected=joint_counterexample_oracle(pin,example.label);
+        const auto request=request_for(environment,fixture.after,block,example.source,first.standard_input);
+        check(windows::compiler_runtime_request_allowed(block,request),
+            "The joint counterexample was rejected by request shape instead of its real execution");
+        const auto result=windows::run_cpp(request);
+        const auto captured=windows::capture_cpp_execution(request,result);
+        check(result.error_utf8.empty()&&result.compilation.succeeded()&&result.execution.succeeded()&&
+                result.execution.stderr_bytes.empty()&&
+                windows::evaluate_cpp_output_check(*block.output_check,captured,request.revision).verdict==
+                    curriculum::OutputVerdict::correct&&
+                captured.source_revision==request.revision&&!captured.local_int_check_correct&&
+                !captured.local_int_request_fingerprint.empty()&&
+                captured.local_int_request_fingerprint==windows::cpp_local_int_request_fingerprint(request)&&
+                result.local_int_request_fingerprint==captured.local_int_request_fingerprint&&
+                result.local_int_evidence.size()==pin.original_probes+pin.additions.size(),
+            "The joint counterexample needs a real public success and complete private captures from this request");
+        for(std::size_t index=0;index<block.local_int_check->probes.size();++index) {
+            const auto& probe=block.local_int_check->probes[index];
+            const auto& evidence=result.local_int_evidence[index];
+            const auto instrumented=curriculum::cpp_local_int_override(request.source_utf8,probe);
+            check(instrumented&&evidence.instrumented_source_sha256==state::sha256(*instrumented)&&
+                    evidence.compilation.succeeded()&&evidence.execution.succeeded()&&
+                    evidence.execution.stderr_bytes.empty()&&
+                    curriculum::cpp_local_int_expected_output(probe,evidence.execution.stdout_bytes)==
+                        (index!=example.failed_probe),
+                "A joint counterexample failed a different observation or borrowed another source");
+            if(index==example.failed_probe)
+                check(normalized(evidence.execution.stdout_bytes)==expected.negative_output,
+                    "The joint scenario did not produce the independently expected incorrect observation");
+        }
+        check(bytes(result.run_directory/L"main.cpp")==request.source_utf8&&
+                bytes(result.run_directory/L"stdin.bin")==first.standard_input&&
+                bytes(result.run_directory/L"execution-stdout.bin")==result.execution.stdout_bytes&&
+                bytes(result.run_directory/L"execution-stderr.bin")==result.execution.stderr_bytes,
+            "The joint observations changed the public source, stdin or saved console");
+        std::cout<<"PASS joint capture "<<fixture.id<<'/'<<plan.activity<<'/'<<example.label<<": "
+            <<pin.original_probes<<" original single-variable probes and public output pass; only appended probe "
+            <<example.failed_probe<<" rejects; all source hashes and real MSVC phases verified, public files restored.\n";
     }
-    check(bytes(result.run_directory/L"main.cpp")==request.source_utf8&&
-            bytes(result.run_directory/L"stdin.bin")==first.standard_input&&
-            bytes(result.run_directory/L"execution-stdout.bin")==result.execution.stdout_bytes&&
-            bytes(result.run_directory/L"execution-stderr.bin")==result.execution.stderr_bytes,
-        "The joint observations changed the public source, stdin or saved console");
-    std::cout<<"PASS joint capture "<<fixture.id<<'/'<<plan.activity<<": "<<pin.original_probes
-        <<" original single-variable probes and public output pass; only the appended pair rejects; "
-        <<"all source hashes and real MSVC phases verified, public files restored.\n";
 }
 void prepare_compilers(state::StateData& data,const Fixture& fixture,const Lesson& lesson,
         const Plan& plan,std::size_t through,const WindowsEnvironment& environment) {
@@ -1144,7 +1227,7 @@ void run_plan(const Fixture& fixture,const Plan& plan,std::size_t ordinal) {
     const auto key=curriculum::draft_key("programming",fixture.before,old);
     const auto prefix=receipt_prefix(fixture.before,old);
     View view(fixture,plan,ordinal);
-    if(fixture.joint_local_int)verify_joint_counterexample(fixture,plan,view.environment);
+    if(fixture.joint_local_int)verify_joint_counterexamples(fixture,plan,view.environment);
     state::StateData initial;state::prepare_lesson_state(initial,fixture.before);
     prepare_quizzes(initial,fixture.before,bookmark);
     prepare_compilers(initial,fixture,fixture.before,plan,bookmark,view.environment);
@@ -1317,6 +1400,15 @@ void run_plan(const Fixture& fixture,const Plan& plan,std::size_t ordinal) {
                 !windows::compiler_puzzle_completed(earned,fixture.after,changed),
             "The actual arithmetic receipt was reused under another policy or scenario");
     }
+    if(fixture.joint_local_int&&fixture.id=="u3l5") {
+        auto omitted=current;omitted.local_int_check->probes.pop_back();
+        auto changed=current;
+        changed.local_int_check->probes.at(joint_publication(fixture.id).original_probes)
+            .additional_replacements.back().replacement=0;
+        check(!windows::compiler_puzzle_completed(earned,fixture.after,omitted)&&
+                !windows::compiler_puzzle_completed(earned,fixture.after,changed),
+            "The admission receipt was reused with a missing scenario or a changed third variable");
+    }
     view.reopen();saved=view.saved();preserved(saved);
     same_draft(state::get_draft(saved,key,current.initial_code,current.standard_input.value_or("")),earned_draft);
     check(windows::compiler_puzzle_completed(saved,fixture.after,current)&&
@@ -1361,7 +1453,8 @@ void run_plan(const Fixture& fixture,const Plan& plan,std::size_t ordinal) {
     if(fixture.joint_local_int)std::cout<<"PASS joint LessonView "<<fixture.id<<'/'<<plan.activity
         <<": original single-variable receipt retained; combined counterexample rejected; "
         <<"authentic solution earns one public case, separate current seal survives disk reopen, "
-        <<"same-page reference and scoped Reset preserved; 3 real buttons plus 1 direct capture.\n";
+        <<"same-page reference and scoped Reset preserved; 3 real buttons plus "
+        <<plan.joint_counterexamples.size()<<" direct counterexample captures.\n";
     if(fixture.guarded_arithmetic)std::cout<<"PASS guarded arithmetic LessonView "<<fixture.id<<'/'<<plan.activity
         <<": old three-probe receipt remains valid only for the old objective; inverted condition rejected; "
         <<"one actual first-case click with the authentic repair opens its reference; new policy/scenario seal, "
@@ -1373,9 +1466,10 @@ int main(int argc,char** argv) {
     std::cout<<std::unitbuf;std::cerr<<std::unitbuf;
     started=GetTickCount64();
     const bool input_decisions=argc>1&&std::string_view(argv[1])=="--input-decisions";
+    const bool joint=argc>1&&std::string_view(argv[1])=="--joint-local-int";
     const bool guarded_arithmetic=argc==3&&std::string_view(argv[1])=="--guarded-arithmetic";
-    if(input_decisions?(argc!=3&&argc!=4):(argc!=2&&argc!=3)) {
-        std::cerr<<"Usage: local_dependency_view_tests <manifest.json> [lesson-id] | --joint-local-int <manifest.json> | --guarded-arithmetic <manifest.json> | --input-decisions <manifest.json> [lesson-id]\n";return 2;
+    if((input_decisions||joint)?(argc!=3&&argc!=4):(argc!=2&&argc!=3)) {
+        std::cerr<<"Usage: local_dependency_view_tests <manifest.json> [lesson-id] | --joint-local-int <manifest.json> [lesson-id] | --guarded-arithmetic <manifest.json> | --input-decisions <manifest.json> [lesson-id]\n";return 2;
     }
     const auto apartment=OleInitialize(nullptr);
     if(FAILED(apartment))return 2;
@@ -1384,11 +1478,10 @@ int main(int argc,char** argv) {
     int result=0;
     try {
         check(rich!=nullptr,"Cannot load actual RichEdit controls");reader_theme::prepare_fonts();
-        const bool joint=argc==3&&std::string_view(argv[1])=="--joint-local-int";
         const auto manifest=std::filesystem::path(argv[joint||input_decisions||guarded_arithmetic?2:1]);
         const auto manifest_bytes=state::read_bytes(manifest);
         const auto fixtures=load_manifest(manifest,joint,input_decisions,guarded_arithmetic);
-        const auto filter=input_decisions?(argc==4?std::string_view(argv[3]):std::string_view{}):
+        const auto filter=(input_decisions||joint)?(argc==4?std::string_view(argv[3]):std::string_view{}):
             argc==3&&!joint&&!guarded_arithmetic?std::string_view(argv[2]):std::string_view{};
         std::size_t completed=0,ordinal=0;
         for(const auto& fixture:fixtures) {
@@ -1402,7 +1495,7 @@ int main(int argc,char** argv) {
                 run_plan(fixture,plan,ordinal);++completed;
             }
         }
-        check(completed>0&&(filter.empty()?completed==(guarded_arithmetic?1u:input_decisions?8u:joint?2u:16u):true),
+        check(completed>0&&(filter.empty()?completed==(guarded_arithmetic?1u:input_decisions?8u:joint?3u:16u):true),
             "The requested UI group is missing or incomplete");
         for(const auto& fixture:fixtures)
             check(state::sha256(state::read_bytes(fixture.before_path))==fixture.before_sha256&&
