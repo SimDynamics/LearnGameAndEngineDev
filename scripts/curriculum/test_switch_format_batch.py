@@ -37,6 +37,19 @@ class SwitchHistoryFormatBatch(unittest.TestCase):
         self.old={e["id"]:e["block"] for e in self.meta["sourceFormatRevisions"]}
 
     def test_originals_preserve_switch_semantics_answers_and_state(self):
+        # Reconstruct the exact published format batch, not the tail of a
+        # lesson that can legitimately receive subsequent source revisions.
+        live = self.doc
+        published = json.loads(subprocess.check_output(
+            ["git", "show", "4c7a80cabba4a8753a4eaf4ccddc04fefac9ef5b:" +
+             PATH.relative_to(ROOT).as_posix()], cwd=ROOT))
+        state.validate(live)
+        state.validate_transition(published, live)
+        self.assertEqual(published["stateLayout"]["sourceFormatRevisions"],
+                         live["stateLayout"]["sourceFormatRevisions"])
+        self.doc = published
+        self.meta = published["stateLayout"]
+        self.old = {e["id"]: e["block"] for e in self.meta["sourceFormatRevisions"]}
         state.validate(self.doc)
         self.assertEqual(len(POSITIONS),len(self.old))
         ids=[self.meta["current"][p]["blocks"][b] for p,b in POSITIONS]
