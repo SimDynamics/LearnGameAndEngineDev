@@ -32,6 +32,11 @@
           "text": "Una constante también puede guardar un valor que el programa acaba de leer. Imagina que al abrir una sala alguien escribe cuántas mesas hay libres. La variable mesas_libres recibe ese número. Si escribe seis, const int mesas_al_abrir = mesas_libres; guarda una copia del seis. Después puede llegar una reserva y cambiar la cantidad de mesas libres. La constante mesas_al_abrir sigue guardando las seis mesas que había cuando se abrió la sala. Puedes consultar la copia tantas veces como quieras.\n\nTambién puedes usar const double para conservar una medida o const bool para conservar un valor que indica si algo es verdadero o falso. En los dos casos, la constante conserva el valor que recibe cuando se crea (Stroustrup, 2024)."
         },
         {
+          "type": "code",
+          "language": "cpp",
+          "code": "#include <iostream>\n\nint main() {\n    int mesas_libres = 0;\n    std::cin >> mesas_libres;\n\n    const int mesas_al_abrir = mesas_libres;\n    mesas_libres -= 1;\n\n    std::cout << mesas_al_abrir << \" \" << mesas_libres;\n\n    return 0;\n}\n"
+        },
+        {
           "type": "inline_fill_code",
           "template": "#include <iostream>\n\nint main() {\n    int puntos = 0;\n\n    std::cin >> puntos;\n\n    const int puntos_iniciales = [];\n\n    puntos += 2;\n\n    std::cout << puntos_iniciales << \" \" << puntos;\n\n    return 0;\n}\n",
           "answers": [
@@ -76,8 +81,29 @@
           "text": "Tienes dos fichas sueltas y cinco sobres con tres fichas cada uno. Para contar todas, puedes escribir 2 + 5 * 3. En C++, la multiplicación tiene mayor prioridad que la suma. Eso quiere decir que la expresión agrupa el cinco con el tres. Los sobres contienen quince fichas. Al añadir las dos sueltas, obtienes diecisiete.\n\nAhora imagina que tanto el dos como el cinco cuentan sobres. Cada uno de los siete sobres contiene tres fichas. Escribe (2 + 5) * 3 para multiplicar la cantidad total de sobres por tres. Los paréntesis agrupan la suma y el resultado es veintiuno (Köppe et al., 2023)."
         },
         {
+          "type": "code",
+          "language": "cpp",
+          "code": "#include <iostream>\n\nint main() {\n    const int sueltas = 2;\n    const int sobres = 5;\n    const int por_sobre = 3;\n    const int sobres_extra = 2;\n\n    std::cout << sueltas + sobres * por_sobre << \"\\n\";\n    std::cout << (sobres_extra + sobres) * por_sobre;\n\n    return 0;\n}\n"
+        },
+        {
+          "type": "fill_code",
+          "language": "cpp",
+          "code": "#include <iostream>\n\nint main() {\n    const int cajas = 3;\n    const int unidades = 5;\n    const int sueltas = 2;\n\n    const int total = cajas * ___ + sueltas;\n\n    std::cout << total;\n\n    return 0;\n}\n",
+          "id": "u3l1_escoger_el_factor",
+          "question": "Hay tres cajas con cinco piezas en cada una y dos piezas sueltas. ¿Qué nombre va en el hueco para que la multiplicación cuente todas las piezas dentro de las cajas?",
+          "explanation": "En cada caja caben cinco piezas. El nombre unidades guarda esas cinco. cajas * unidades cuenta quince y + sueltas añade las dos que están fuera. La salida es 17.",
+          "answers": [
+            "unidades"
+          ]
+        },
+        {
           "type": "paragraph",
           "text": "En estos cálculos, * y / tienen la misma prioridad. Ambos tienen mayor prioridad que + y -. En 12 / 3 * 2, la división y la multiplicación se agrupan de izquierda a derecha. El resultado es ocho porque multiplicas por dos el resultado de dividir doce entre tres. Cuando aparecen dos restas seguidas, como en 18 - 5 - 4, C++ las agrupa de izquierda a derecha. Para calcular el resultado, resta cinco de dieciocho y luego cuatro de trece. Quedan nueve.\n\nCon 18 - (5 - 4), la resta interior da uno. Al restar ese uno de dieciocho quedan diecisiete. La regla que indica cómo se agrupan los operadores de igual prioridad se llama asociatividad. Sirve para determinar qué valores intervienen en cada operación. Por ejemplo, en 2 * 3 + 4 * 5, se suman los resultados de dos multiplicaciones. El resultado es el mismo si calculas primero seis o primero veinte. La prioridad agrupa los números de cada producto. C++ permite calcular cualquiera de esos dos productos primero (Köppe et al., 2023)."
+        },
+        {
+          "type": "code",
+          "language": "cpp",
+          "code": "#include <iostream>\n\nint main() {\n    const int sin_parentesis = 18 - 5 - 4;\n    const int con_parentesis = 18 - (5 - 4);\n\n    std::cout << sin_parentesis << \" \" << con_parentesis;\n\n    return 0;\n}\n"
         },
         {
           "type": "output_prediction",
@@ -1855,6 +1881,47 @@
             "reading": "natural"
           }
         ]
+      },
+      {
+        "block": "u3l1_escoger_el_factor",
+        "path": "/question",
+        "sourceSha256": "25e37c067edb2f2545ea670f629a4ff7e8321007e5920155a833e0c207e575d4",
+        "spans": []
+      },
+      {
+        "block": "u3l1_escoger_el_factor",
+        "path": "/explanation",
+        "sourceSha256": "9d4677d34105ce6441f9072033ef14eb0d6a1f0d9ba7f1b45301bc619c96b072",
+        "spans": [
+          {
+            "start": 43,
+            "end": 51,
+            "text": "unidades",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 71,
+            "end": 87,
+            "text": "cajas * unidades",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 104,
+            "end": 113,
+            "text": "+ sueltas",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 158,
+            "end": 160,
+            "text": "17",
+            "role": "output",
+            "reading": "natural"
+          }
+        ]
       }
     ],
     "rootFields": [
@@ -2148,6 +2215,7 @@
           "block_0000_0002",
           "block_0000_0003",
           "block_0000_0004",
+          "u3l1_copia_de_mesas",
           "block_0000_0005",
           "block_0000_0006",
           "block_0000_0007"
@@ -2158,7 +2226,10 @@
         "blocks": [
           "block_0001_0000",
           "block_0001_0001",
+          "u3l1_contar_dos_repartos",
+          "u3l1_escoger_el_factor",
           "block_0001_0002",
+          "u3l1_restas_agrupadas",
           "block_0001_0003",
           "block_0001_0004",
           "block_0001_0005",
@@ -2423,7 +2494,44 @@
         ]
       }
     },
-    "additions": [],
+    "additions": [
+      {
+        "id": "u3l1_copia_de_mesas",
+        "sha256": "4c8e22d22832ec0eb24281ecca4bb43e648aa632b266b7a79ccd0d0caa5ec573",
+        "storage": {
+          "page": 6,
+          "block": 0
+        },
+        "progressPage": "page_0000"
+      },
+      {
+        "id": "u3l1_contar_dos_repartos",
+        "sha256": "9d3d6ff3eb2146d66c3e7f9dfa5db32e1e8910fa2ff8887830bcce6f3ac625c6",
+        "storage": {
+          "page": 6,
+          "block": 1
+        },
+        "progressPage": "page_0001"
+      },
+      {
+        "id": "u3l1_restas_agrupadas",
+        "sha256": "2a08b3fdadf610801e936c1e2fbccc403a6614f2f182896ddd78b7da12c4d3b1",
+        "storage": {
+          "page": 6,
+          "block": 2
+        },
+        "progressPage": "page_0001"
+      },
+      {
+        "id": "u3l1_escoger_el_factor",
+        "sha256": "ffac9cd25810b935309849995871f1c463a434c9833308db47376a9acb8948c9",
+        "storage": {
+          "page": 6,
+          "block": 3
+        },
+        "progressPage": "page_0001"
+      }
+    ],
     "editorial": [
       {
         "id": "block_0003_0001",

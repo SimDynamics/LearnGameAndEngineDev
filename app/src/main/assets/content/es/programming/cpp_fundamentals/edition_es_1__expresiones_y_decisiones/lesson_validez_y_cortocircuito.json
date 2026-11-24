@@ -45,6 +45,11 @@
           "text": "En este reparto se usan cantidades de fichas que pueden ser cero o positivas. La capacidad de un grupo debe ser mayor que cero. Un requisito que los datos deben cumplir antes de realizar una operación se llama precondición (Stroustrup, 2024).\n\nEn (capacidad > 0) && (cantidad % capacidad == 0), la comparación de la izquierda comprueba esa capacidad. Si la capacidad vale cero o es negativa, el resultado es false y se omite todo el lado derecho. Si es positiva, % calcula cuántas fichas sobran y la comparación con cero indica si el reparto es exacto (Köppe et al., 2023)."
         },
         {
+          "type": "code",
+          "language": "cpp",
+          "code": "#include <iostream>\n\nint main() {\n    const int cantidad = 18;\n    const int capacidad = 6;\n\n    const bool reparto_exacto = (capacidad > 0) && (cantidad % capacidad == 0);\n\n    std::cout << reparto_exacto;\n\n    return 0;\n}\n"
+        },
+        {
           "type": "fill_code",
           "question": "El reparto admite solo divisores positivos. Escribe un operador de comparación en el hueco para comprobar el divisor antes de calcular el resto.",
           "language": "cpp",
@@ -91,6 +96,11 @@
         {
           "type": "paragraph",
           "text": "También puedes empezar por buscar un motivo de rechazo. En (capacidad <= 0) || (cantidad % capacidad != 0), la comparación de la izquierda pregunta si la capacidad es inválida. Si da true, el programa marca el reparto para revisión y omite el lado derecho. Si da false, el programa calcula el resto y revisa si sobran fichas. Con ||, el segundo operando solo se evalúa si el primero da false (Köppe et al., 2023)."
+        },
+        {
+          "type": "code",
+          "language": "cpp",
+          "code": "#include <iostream>\n\nint main() {\n    const int cantidad = 17;\n    const int capacidad = 4;\n\n    const bool revisar = (capacidad <= 0) || (cantidad % capacidad != 0);\n\n    std::cout << revisar;\n\n    return 0;\n}\n"
         },
         {
           "type": "output_prediction",
@@ -231,6 +241,17 @@
         {
           "type": "paragraph",
           "text": "En el informe de reparto, el primer renglón de la salida indica con 1 que la capacidad es positiva y todas las fichas caben en grupos completos. Con 28 fichas y capacidad de 6, quedan cuatro fichas sueltas. El programa muestra 0 en el primer renglón y Grupos: 4 en el segundo. Con 28 fichas y capacidad de 0, el primer renglón también muestra 0. Esta vez el segundo renglón muestra Capacidad invalida porque no se puede hacer el reparto."
+        },
+        {
+          "type": "output_prediction",
+          "language": "cpp",
+          "code": "#include <iostream>\n\nint main() {\n    const int fichas = 15;\n    const int por_grupo = 4;\n\n    const bool exacto = (por_grupo > 0) && (fichas % por_grupo == 0);\n    std::cout << exacto << \"\\n\";\n\n    if (por_grupo > 0) {\n        std::cout << \"Grupos: \" << fichas / por_grupo;\n    } else {\n        std::cout << \"Capacidad invalida\";\n    }\n\n    return 0;\n}\n",
+          "id": "u3l6_segundo_renglon_del_informe",
+          "question": "Una caja trae quince fichas y quieres formar grupos de cuatro. ¿Qué indica cada uno de los dos renglones? Escribe la salida completa.",
+          "explanation": "Quedan tres fichas fuera de los grupos completos. El reparto no es exacto y exacto vale false, así que el primer renglón muestra 0. La capacidad es positiva y puedes formar tres grupos. El segundo renglón muestra Grupos: 3.",
+          "answers": [
+            "0\nGrupos: 3"
+          ]
         },
         {
           "type": "note",
@@ -2184,6 +2205,47 @@
             "reading": "natural"
           }
         ]
+      },
+      {
+        "block": "u3l6_segundo_renglon_del_informe",
+        "path": "/question",
+        "sourceSha256": "4b35d95b316e52c9e7ae3bf0ac0b9b92c469ab2e62eba249413e0bd95fcc67a8",
+        "spans": []
+      },
+      {
+        "block": "u3l6_segundo_renglon_del_informe",
+        "path": "/explanation",
+        "sourceSha256": "98633f88478a416fe726d3444db4265c57fff149f9839086545a25e7f1b58a0a",
+        "spans": [
+          {
+            "start": 76,
+            "end": 82,
+            "text": "exacto",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 88,
+            "end": 93,
+            "text": "false",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 129,
+            "end": 130,
+            "text": "0",
+            "role": "output",
+            "reading": "natural"
+          },
+          {
+            "start": 213,
+            "end": 222,
+            "text": "Grupos: 3",
+            "role": "output",
+            "reading": "natural"
+          }
+        ]
       }
     ],
     "rootFields": [
@@ -2480,6 +2542,7 @@
         "blocks": [
           "block_0001_0000",
           "block_0001_0001",
+          "u3l6_resto_protegido",
           "block_0001_0002",
           "block_0001_0003",
           "block_0001_0004",
@@ -2491,6 +2554,7 @@
         "blocks": [
           "block_0002_0000",
           "block_0002_0001",
+          "u3l6_rechazo_con_resto",
           "block_0002_0002",
           "block_0002_0003",
           "block_0002_0004"
@@ -2525,6 +2589,7 @@
           "block_0005_0000",
           "block_0005_0001",
           "block_0005_0002",
+          "u3l6_segundo_renglon_del_informe",
           "block_0005_0003"
         ]
       },
@@ -2748,7 +2813,35 @@
         ]
       }
     },
-    "additions": [],
+    "additions": [
+      {
+        "id": "u3l6_resto_protegido",
+        "sha256": "f40a85729e8403b83bd61bb421ee3d53726226de38822637fa7ec932fb4b36ad",
+        "storage": {
+          "page": 7,
+          "block": 0
+        },
+        "progressPage": "page_0001"
+      },
+      {
+        "id": "u3l6_rechazo_con_resto",
+        "sha256": "0580f5d01b3ee94eab526d93d8a6edaededa44fcdf597d3e49ca2e41cb8b41fd",
+        "storage": {
+          "page": 7,
+          "block": 1
+        },
+        "progressPage": "page_0002"
+      },
+      {
+        "id": "u3l6_segundo_renglon_del_informe",
+        "sha256": "acda9b8c299db5374ae91a85dcc15670d1a9e50f2a464e29da98c062d7e5f8a0",
+        "storage": {
+          "page": 7,
+          "block": 2
+        },
+        "progressPage": "page_0005"
+      }
+    ],
     "editorial": [
       {
         "id": "block_0003_0001",

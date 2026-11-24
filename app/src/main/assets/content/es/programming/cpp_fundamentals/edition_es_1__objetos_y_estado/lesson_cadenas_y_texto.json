@@ -10,11 +10,29 @@
         },
         {
           "type": "paragraph",
-          "text": "Quieres guardar el nombre de una zona, por ejemplo Norte. En C++ puedes guardarlo en una variable de tipo std::string. Al leerla obtienes las cinco letras en el mismo orden en que las escribiste. A una secuencia de caracteres como esta la llamamos cadena. Una cadena también puede contener dígitos y espacios, como en Zona 2 (Stroustrup, 2024).\n\nFíjate en las dos primeras líneas del siguiente programa.\n\n#include <iostream> permite usar std::cout para mostrar texto.\n#include <string> permite usar std::string para guardarlo.\n\nLa parte std:: indica que esos nombres pertenecen a la biblioteca estándar de C++ (Köppe et al., 2023; Stroustrup, 2024)."
+          "text": "Para guardar el nombre de una zona necesitas conservar sus letras en orden. Una secuencia de caracteres se llama cadena. Puede incluir espacios y dígitos, como en Zona 2. Este programa necesita guardar una cadena y mostrarla en la consola (Stroustrup, 2024)."
+        },
+        {
+          "type": "code",
+          "language": "cpp",
+          "code": "#include <iostream>\n#include <string>"
         },
         {
           "type": "paragraph",
-          "text": "std::string zona = \"Norte\";\nLa variable se llama zona. Las comillas delimitan el texto en el código. La variable guarda las cinco letras de Norte (Stroustrup, 2024)."
+          "text": "La primera cabecera permite usar std::cout y la segunda permite usar std::string. El prefijo std:: indica que ambos nombres pertenecen a la biblioteca estándar (Köppe et al., 2023; Stroustrup, 2024)."
+        },
+        {
+          "type": "paragraph",
+          "text": "Dentro de main puedes crear la cadena y darle su primer valor en una sola línea."
+        },
+        {
+          "type": "code",
+          "language": "cpp",
+          "code": "std::string zona = \"Norte\";"
+        },
+        {
+          "type": "paragraph",
+          "text": "La variable se llama zona. Las comillas delimitan el texto en el código. La variable guarda las cinco letras de Norte (Stroustrup, 2024)."
         },
         {
           "type": "code",
@@ -244,7 +262,25 @@
         },
         {
           "type": "paragraph",
-          "text": "Imagina que cartel es una variable std::string que guarda Taller. Puedes unir su texto con otro en el orden que necesites.\n\ncartel + \" abierto\" forma Taller abierto. El espacio está al principio de \" abierto\".\n\"Zona: \" + cartel forma Zona: Taller. Esta vez el texto fijo va primero y el espacio está después de los dos puntos.\n\nCada expresión forma un texto nuevo. En ambos ejemplos cartel sigue guardando Taller. En cambio, con dos literales como \"Taller\" + \" abierto\" el programa da un error de compilación. El operador + que usamos en estos ejemplos para unir textos necesita que al menos uno de los dos sea de tipo std::string (Köppe et al., 2023).\n\nPara cambiar lo que guarda la propia variable, escribe cartel += \" abierto\";. Esta instrucción añade el espacio y la palabra al final de cartel. Ahora la variable guarda Taller abierto. También puedes escribir esa actualización como cartel = cartel + \" abierto\"; (Köppe et al., 2023; Stroustrup, 2024)."
+          "text": "El cartel guarda el nombre de una biblioteca. Prepara un aviso con ese nombre y mira en cuál de las dos variables se guarda el texto nuevo."
+        },
+        {
+          "type": "code",
+          "language": "cpp",
+          "code": "std::string cartel = \"Biblioteca\";\nstd::string aviso = \"Lugar: \" + cartel;"
+        },
+        {
+          "type": "paragraph",
+          "text": "aviso contiene Lugar: Biblioteca. El espacio está al final de \"Lugar: \". La variable cartel conserva su texto. Ahora añade una palabra al propio cartel."
+        },
+        {
+          "type": "code",
+          "language": "cpp",
+          "code": "cartel += \" central\";"
+        },
+        {
+          "type": "paragraph",
+          "text": "El espacio inicial de \" central\" separa las palabras. cartel pasa a guardar Biblioteca central. También puedes escribir cartel = cartel + \" central\";. En estas sumas de texto al menos uno de los operandos es una std::string. Escribir \"Biblioteca\" + \" central\" con dos literales directamente produce un error de compilación (Köppe et al., 2023; Stroustrup, 2024)."
         },
         {
           "type": "output_prediction",
@@ -518,75 +554,19 @@
       {
         "block": "block_0000_0001",
         "path": "/text",
-        "sourceSha256": "f48fbc4d8d2d5935d354473bc3565c9dc9bf8d731ad86f99c2bdc4871bba1dda",
+        "sourceSha256": "3b8bf4271f4d95ea65875822ada65b450e9018a5bc202590bef3a9121be4abb2",
         "spans": [
           {
-            "start": 51,
-            "end": 56,
-            "text": "Norte",
-            "role": "data",
-            "reading": "natural"
-          },
-          {
-            "start": 106,
-            "end": 117,
-            "text": "std::string",
-            "role": "cpp",
-            "reading": "technical"
-          },
-          {
-            "start": 318,
-            "end": 324,
+            "start": 163,
+            "end": 169,
             "text": "Zona 2",
             "role": "data",
             "reading": "natural"
           },
           {
-            "start": 325,
-            "end": 343,
+            "start": 239,
+            "end": 257,
             "text": "(Stroustrup, 2024)",
-            "role": "citation",
-            "reading": "natural"
-          },
-          {
-            "start": 405,
-            "end": 424,
-            "text": "#include <iostream>",
-            "role": "cpp",
-            "reading": "technical"
-          },
-          {
-            "start": 438,
-            "end": 447,
-            "text": "std::cout",
-            "role": "cpp",
-            "reading": "technical"
-          },
-          {
-            "start": 468,
-            "end": 485,
-            "text": "#include <string>",
-            "role": "cpp",
-            "reading": "technical"
-          },
-          {
-            "start": 499,
-            "end": 510,
-            "text": "std::string",
-            "role": "cpp",
-            "reading": "technical"
-          },
-          {
-            "start": 537,
-            "end": 542,
-            "text": "std::",
-            "role": "cpp",
-            "reading": "technical"
-          },
-          {
-            "start": 610,
-            "end": 648,
-            "text": "(Köppe et al., 2023; Stroustrup, 2024)",
             "role": "citation",
             "reading": "natural"
           }
@@ -595,35 +575,14 @@
       {
         "block": "block_0000_0002",
         "path": "/text",
-        "sourceSha256": "baa70c998a62ae7fb41541eba046dcbd192d8201212db65bddf8ad7b94c52782",
+        "sourceSha256": "7a8803e5fd0fb6dea6261efd594af028c398b33bac2ed0b1799a29bee06c36cb",
         "spans": [
           {
-            "start": 0,
-            "end": 27,
-            "text": "std::string zona = \"Norte\";",
+            "start": 10,
+            "end": 14,
+            "text": "main",
             "role": "cpp",
             "reading": "technical"
-          },
-          {
-            "start": 49,
-            "end": 53,
-            "text": "zona",
-            "role": "cpp",
-            "reading": "technical"
-          },
-          {
-            "start": 140,
-            "end": 145,
-            "text": "Norte",
-            "role": "data",
-            "reading": "natural"
-          },
-          {
-            "start": 146,
-            "end": 164,
-            "text": "(Stroustrup, 2024)",
-            "role": "citation",
-            "reading": "natural"
           }
         ]
       },
@@ -1989,142 +1948,8 @@
       {
         "block": "block_0005_0001",
         "path": "/text",
-        "sourceSha256": "c0ae4d8222fcc72c7ea38f8608e763dc37bad5ba15df8bbb1415fe890dce71ba",
-        "spans": [
-          {
-            "start": 12,
-            "end": 18,
-            "text": "cartel",
-            "role": "cpp",
-            "reading": "technical"
-          },
-          {
-            "start": 35,
-            "end": 46,
-            "text": "std::string",
-            "role": "cpp",
-            "reading": "technical"
-          },
-          {
-            "start": 58,
-            "end": 64,
-            "text": "Taller",
-            "role": "data",
-            "reading": "natural"
-          },
-          {
-            "start": 124,
-            "end": 143,
-            "text": "cartel + \" abierto\"",
-            "role": "cpp",
-            "reading": "technical"
-          },
-          {
-            "start": 150,
-            "end": 164,
-            "text": "Taller abierto",
-            "role": "data",
-            "reading": "natural"
-          },
-          {
-            "start": 198,
-            "end": 208,
-            "text": "\" abierto\"",
-            "role": "string",
-            "reading": "natural"
-          },
-          {
-            "start": 210,
-            "end": 227,
-            "text": "\"Zona: \" + cartel",
-            "role": "cpp",
-            "reading": "technical"
-          },
-          {
-            "start": 234,
-            "end": 246,
-            "text": "Zona: Taller",
-            "role": "data",
-            "reading": "natural"
-          },
-          {
-            "start": 383,
-            "end": 389,
-            "text": "cartel",
-            "role": "cpp",
-            "reading": "technical"
-          },
-          {
-            "start": 406,
-            "end": 412,
-            "text": "Taller",
-            "role": "data",
-            "reading": "natural"
-          },
-          {
-            "start": 448,
-            "end": 469,
-            "text": "\"Taller\" + \" abierto\"",
-            "role": "cpp",
-            "reading": "technical"
-          },
-          {
-            "start": 522,
-            "end": 523,
-            "text": "+",
-            "role": "cpp",
-            "reading": "technical"
-          },
-          {
-            "start": 619,
-            "end": 630,
-            "text": "std::string",
-            "role": "cpp",
-            "reading": "technical"
-          },
-          {
-            "start": 631,
-            "end": 651,
-            "text": "(Köppe et al., 2023)",
-            "role": "citation",
-            "reading": "natural"
-          },
-          {
-            "start": 709,
-            "end": 730,
-            "text": "cartel += \" abierto\";",
-            "role": "cpp",
-            "reading": "technical"
-          },
-          {
-            "start": 791,
-            "end": 797,
-            "text": "cartel",
-            "role": "cpp",
-            "reading": "technical"
-          },
-          {
-            "start": 824,
-            "end": 838,
-            "text": "Taller abierto",
-            "role": "data",
-            "reading": "natural"
-          },
-          {
-            "start": 887,
-            "end": 916,
-            "text": "cartel = cartel + \" abierto\";",
-            "role": "cpp",
-            "reading": "technical"
-          },
-          {
-            "start": 917,
-            "end": 955,
-            "text": "(Köppe et al., 2023; Stroustrup, 2024)",
-            "role": "citation",
-            "reading": "natural"
-          }
-        ]
+        "sourceSha256": "cfa3da674627ea5c1fbec47fd2650c940a70f634bbe213f2fdf788b8106f3902",
+        "spans": []
       },
       {
         "block": "block_0005_0002",
@@ -3697,6 +3522,160 @@
             "reading": "natural"
           }
         ]
+      },
+      {
+        "block": "p1u2l7_ejemplo_0000_0001_2",
+        "path": "/text",
+        "sourceSha256": "bca388a4af310beae622603b8b735d7d9c876f32a296f5385c3230afe3c47f80",
+        "spans": [
+          {
+            "start": 33,
+            "end": 42,
+            "text": "std::cout",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 69,
+            "end": 80,
+            "text": "std::string",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 93,
+            "end": 98,
+            "text": "std::",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 160,
+            "end": 198,
+            "text": "(Köppe et al., 2023; Stroustrup, 2024)",
+            "role": "citation",
+            "reading": "natural"
+          }
+        ]
+      },
+      {
+        "block": "p1u2l7_ejemplo_0000_0002_2",
+        "path": "/text",
+        "sourceSha256": "7a69292eb628175c6e59e23ca1956690847e1e9a023a7995fd95ad62ba217bef",
+        "spans": [
+          {
+            "start": 21,
+            "end": 25,
+            "text": "zona",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 112,
+            "end": 117,
+            "text": "Norte",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 118,
+            "end": 136,
+            "text": "(Stroustrup, 2024)",
+            "role": "citation",
+            "reading": "natural"
+          }
+        ]
+      },
+      {
+        "block": "p1u2l7_ejemplo_0005_0001_2",
+        "path": "/text",
+        "sourceSha256": "634535463468a6b37dde7951bc44ecc797d3aa79f1fb5d6809b3decdd8dabaed",
+        "spans": [
+          {
+            "start": 0,
+            "end": 5,
+            "text": "aviso",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 15,
+            "end": 32,
+            "text": "Lugar: Biblioteca",
+            "role": "output",
+            "reading": "natural"
+          },
+          {
+            "start": 62,
+            "end": 71,
+            "text": "\"Lugar: \"",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 85,
+            "end": 91,
+            "text": "cartel",
+            "role": "cpp",
+            "reading": "technical"
+          }
+        ]
+      },
+      {
+        "block": "p1u2l7_ejemplo_0005_0001_4",
+        "path": "/text",
+        "sourceSha256": "fb5a2999dce7ea54ec351668c612895cca6880438d87035fa9d41294ec521659",
+        "spans": [
+          {
+            "start": 22,
+            "end": 32,
+            "text": "\" central\"",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 54,
+            "end": 60,
+            "text": "cartel",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 76,
+            "end": 94,
+            "text": "Biblioteca central",
+            "role": "output",
+            "reading": "natural"
+          },
+          {
+            "start": 120,
+            "end": 149,
+            "text": "cartel = cartel + \" central\";",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 212,
+            "end": 223,
+            "text": "std::string",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 234,
+            "end": 259,
+            "text": "\"Biblioteca\" + \" central\"",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 323,
+            "end": 361,
+            "text": "(Köppe et al., 2023; Stroustrup, 2024)",
+            "role": "citation",
+            "reading": "natural"
+          }
+        ]
       }
     ],
     "rootFields": [
@@ -3994,7 +3973,11 @@
         "blocks": [
           "block_0000_0000",
           "block_0000_0001",
+          "p1u2l7_ejemplo_0000_0001_1",
+          "p1u2l7_ejemplo_0000_0001_2",
           "block_0000_0002",
+          "p1u2l7_ejemplo_0000_0002_1",
+          "p1u2l7_ejemplo_0000_0002_2",
           "block_0000_0003",
           "block_0000_0004",
           "block_0000_0005"
@@ -4047,6 +4030,10 @@
         "blocks": [
           "block_0005_0000",
           "block_0005_0001",
+          "p1u2l7_ejemplo_0005_0001_1",
+          "p1u2l7_ejemplo_0005_0001_2",
+          "p1u2l7_ejemplo_0005_0001_3",
+          "p1u2l7_ejemplo_0005_0001_4",
           "block_0005_0002",
           "block_0005_0003",
           "block_0005_0004",
@@ -4367,7 +4354,80 @@
         ]
       }
     },
-    "additions": [],
+    "additions": [
+      {
+        "id": "p1u2l7_ejemplo_0000_0001_1",
+        "sha256": "3b8d1edfed36dd86f5dd1b4a509460c0670d7b7fe3a372b61a2f6f46ada4027b",
+        "storage": {
+          "page": 9,
+          "block": 0
+        },
+        "progressPage": "page_0000"
+      },
+      {
+        "id": "p1u2l7_ejemplo_0000_0001_2",
+        "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5",
+        "storage": {
+          "page": 9,
+          "block": 1
+        },
+        "progressPage": "page_0000"
+      },
+      {
+        "id": "p1u2l7_ejemplo_0000_0002_1",
+        "sha256": "62718cf81c1cd225e174f2134f892eb352c21d9a532d427ccfa7ea02a5f7c4fb",
+        "storage": {
+          "page": 9,
+          "block": 2
+        },
+        "progressPage": "page_0000"
+      },
+      {
+        "id": "p1u2l7_ejemplo_0000_0002_2",
+        "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5",
+        "storage": {
+          "page": 9,
+          "block": 3
+        },
+        "progressPage": "page_0000"
+      },
+      {
+        "id": "p1u2l7_ejemplo_0005_0001_1",
+        "sha256": "4c10f9e7344e4a7d615181beff419dad13db0246f5ab67afb2ad585733aff57f",
+        "storage": {
+          "page": 9,
+          "block": 4
+        },
+        "progressPage": "page_0005"
+      },
+      {
+        "id": "p1u2l7_ejemplo_0005_0001_2",
+        "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5",
+        "storage": {
+          "page": 9,
+          "block": 5
+        },
+        "progressPage": "page_0005"
+      },
+      {
+        "id": "p1u2l7_ejemplo_0005_0001_3",
+        "sha256": "a0a0c0ad24154cd3a8bf448e8e8ef6b3cbec48f02fe7518b83791559f109e165",
+        "storage": {
+          "page": 9,
+          "block": 6
+        },
+        "progressPage": "page_0005"
+      },
+      {
+        "id": "p1u2l7_ejemplo_0005_0001_4",
+        "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5",
+        "storage": {
+          "page": 9,
+          "block": 7
+        },
+        "progressPage": "page_0005"
+      }
+    ],
     "editorial": [
       {
         "id": "block_0006_0001",
@@ -4383,6 +4443,21 @@
         "id": "block_0008_0005",
         "beforeSha256": "a8c88b379caee869ea332528e15c6c5e0e06b42ee096fe785e2332b1cea08f4e",
         "afterSha256": "91a3e16926c8a7b9a0b7f99e1734baf741634c47cc37a58907428d34b72e8f52"
+      },
+      {
+        "id": "block_0000_0001",
+        "beforeSha256": "15f8e9c3325d453833aaece478e9bf0ac3bf8cbe0d9253837c519e2e8c5f4b3e",
+        "afterSha256": "a0d7fe05524882e030c24312bb0c3d01f0d7808fcfe6d7a3cf80f6b486390570"
+      },
+      {
+        "id": "block_0000_0002",
+        "beforeSha256": "16d5749174b42e62811cd8dca69f0797046d7976e349883ffac3fcc01d888f36",
+        "afterSha256": "5b3f9b9dcbaaeec0bcb0651164ca168a3f7a988cdabeea5dfe8cb834c9602c29"
+      },
+      {
+        "id": "block_0005_0001",
+        "beforeSha256": "49c68de28ca03d8129ce4a816df32c2c0dc3270acec3f082f8362020f9b7101c",
+        "afterSha256": "61508bdc9471812c1e0cad23d321de5045964e832e9a89ccba5103700f8ec16e"
       }
     ]
   }

@@ -44,8 +44,24 @@
           "text": "Tienes 17 tornillos y necesitas 5 para llenar cada bolsa. Llenas tres bolsas con un total de quince tornillos. Quedan dos tornillos sueltos.\n\nEn 17 / 5, el valor a la derecha de / es el número por el que divides. Se llama divisor. Aquí es el tamaño de cada grupo. La división entera da el cociente 3, que cuenta las bolsas completas. El operador % usa los mismos dos números para calcular el resto. La expresión 17 % 5 da 2, que cuenta los tornillos sueltos. Usa dos valores int con % en estos cálculos. Este operador tiene la misma prioridad que * y / (Köppe et al., 2023).\n\nPuedes recuperar el total con 3 × 5 + 2 = 17. Multiplicas las tres bolsas completas por cinco tornillos por bolsa y luego sumas los dos sueltos."
         },
         {
+          "type": "code",
+          "language": "cpp",
+          "code": "#include <iostream>\n\nint main() {\n    const int tornillos = 17;\n    const int por_bolsa = 5;\n\n    const int bolsas = tornillos / por_bolsa;\n    const int sueltos = tornillos % por_bolsa;\n\n    std::cout << bolsas << \" \" << sueltos;\n\n    return 0;\n}\n"
+        },
+        {
           "type": "paragraph",
           "text": "En un reparto, la cantidad de elementos es un entero mayor o igual a cero y el tamaño del grupo es un entero mayor que cero. Si tienes 15 tornillos y caben 5 en cada bolsa, llenas tres bolsas y sobran 0 tornillos. Con 3 tornillos, llenas 0 bolsas y sobran 3 tornillos.\n\nUn grupo de cinco admite restos de cero a cuatro. Si quedaran cinco tornillos, podrías llenar otra bolsa. Por eso, con estos datos, el resto siempre es menor que el tamaño del grupo (Köppe et al., 2023)."
+        },
+        {
+          "type": "output_prediction",
+          "language": "cpp",
+          "code": "#include <iostream>\n\nint main() {\n    const int botones = 4;\n    const int por_bolsa = 6;\n\n    std::cout << botones / por_bolsa << \" \" << botones % por_bolsa;\n\n    return 0;\n}\n",
+          "id": "u3l2_una_bolsa_incompleta",
+          "question": "Tienes cuatro botones y en cada bolsa caben seis. ¿Qué dos números escribe el programa? Sepáralos con un espacio.",
+          "explanation": "Con cuatro botones todavía no llenas una bolsa de seis. Por eso botones / por_bolsa da 0. Los cuatro botones quedan sueltos y botones % por_bolsa da 4. La salida es 0 4.",
+          "answers": [
+            "0 4"
+          ]
         },
         {
           "type": "output_prediction",
@@ -1918,6 +1934,54 @@
             "reading": "natural"
           }
         ]
+      },
+      {
+        "block": "u3l2_una_bolsa_incompleta",
+        "path": "/question",
+        "sourceSha256": "e56dd562d1a1fd219193463ea9987f28de4a549a1193e2b38f2be7de4eb1182f",
+        "spans": []
+      },
+      {
+        "block": "u3l2_una_bolsa_incompleta",
+        "path": "/explanation",
+        "sourceSha256": "1f79653e5005621b94436b2869d886f93e7b69bc571aa3a5a0c0a6a5dfc409bb",
+        "spans": [
+          {
+            "start": 64,
+            "end": 83,
+            "text": "botones / por_bolsa",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 87,
+            "end": 88,
+            "text": "0",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 126,
+            "end": 145,
+            "text": "botones % por_bolsa",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 149,
+            "end": 150,
+            "text": "4",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 165,
+            "end": 168,
+            "text": "0 4",
+            "role": "output",
+            "reading": "natural"
+          }
+        ]
       }
     ],
     "rootFields": [
@@ -2205,7 +2269,9 @@
         "blocks": [
           "block_0001_0000",
           "block_0001_0001",
+          "u3l2_bolsas_y_tornillos",
           "block_0001_0002",
+          "u3l2_una_bolsa_incompleta",
           "block_0001_0003",
           "block_0001_0004"
         ]
@@ -2448,7 +2514,26 @@
         ]
       }
     },
-    "additions": [],
+    "additions": [
+      {
+        "id": "u3l2_bolsas_y_tornillos",
+        "sha256": "71e195fa6919787385b284e370c687bcdc249c143b4c3fa19a030e8732a8d78a",
+        "storage": {
+          "page": 6,
+          "block": 0
+        },
+        "progressPage": "page_0001"
+      },
+      {
+        "id": "u3l2_una_bolsa_incompleta",
+        "sha256": "e433e1469dd2d3ceb788d207d592c79e6ee9ab79d113eb00128d58a16e7848c1",
+        "storage": {
+          "page": 6,
+          "block": 1
+        },
+        "progressPage": "page_0001"
+      }
+    ],
     "editorial": [
       {
         "id": "block_0005_0006",

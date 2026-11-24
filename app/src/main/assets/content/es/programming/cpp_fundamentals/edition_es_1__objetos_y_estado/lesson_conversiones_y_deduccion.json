@@ -23,7 +23,16 @@
         },
         {
           "type": "paragraph",
-          "text": "Imagina ahora que medida guarda 3.75 y escribes int unidades = medida;.\n\n1. La línea de unidades lee 3.75 de medida.\n2. Para guardarlo en un int, C++ quita la parte que está después del punto. Queda 3.\n3. unidades guarda ese tres. medida sigue guardando 3.75.\n\nA esto le llamamos conversión implícita. El cambio de tipo ocurre porque escribiste int en la declaración de unidades (Stroustrup, 2024)."
+          "text": "En este otro fragmento la longitud incluye tres unidades completas y tres cuartos de otra. Observa de qué tipo es la variable que recibe la copia."
+        },
+        {
+          "type": "code",
+          "language": "cpp",
+          "code": "double distancia = 3.75;\nint completos = distancia;"
+        },
+        {
+          "type": "paragraph",
+          "text": "La conversión descarta la parte fraccionaria para guardar 3 en completos. La variable distancia conserva 3.75. La conversión es implícita porque se produce al inicializar una variable de tipo int con un valor de tipo double (Stroustrup, 2024)."
         },
         {
           "type": "output_prediction",
@@ -246,7 +255,25 @@
         },
         {
           "type": "paragraph",
-          "text": "auto cantidad = 6;\nAquí 6 da el valor inicial de cantidad. Como escribiste auto, el compilador determina el tipo de la variable a partir de la expresión que le da ese primer valor. En esta línea, la expresión es el literal 6. Su tipo es int, así que cantidad queda declarada como int. A esto le llamamos deducir el tipo.\n\nTambién puedes darle el valor inicial entre llaves. Si escribes auto cantidad{6}; en lugar de la primera línea, el compilador vuelve a deducir int. Con paréntesis, auto cantidad(6); también declara una variable de tipo int.\n\n¿Qué cambia si escribes auto medida{6.5};? Ahora el literal que da el valor inicial es 6.5. Su tipo es double, así que medida queda declarada como double (Köppe et al., 2023; Stroustrup, 2024)."
+          "text": "Si escribes auto, el compilador usa la expresión que da el valor inicial para determinar el tipo de la variable. Compara estos dos literales."
+        },
+        {
+          "type": "code",
+          "language": "cpp",
+          "code": "auto libros = 8;\nauto largo = 8.25;"
+        },
+        {
+          "type": "paragraph",
+          "text": "El literal 8 es de tipo int. Por eso libros queda declarado como entero. El literal 8.25 es de tipo double y da ese tipo a largo. A esto se le llama deducir el tipo. También puedes dar el valor inicial entre llaves o entre paréntesis."
+        },
+        {
+          "type": "code",
+          "language": "cpp",
+          "code": "auto cajas{3};\nauto peso(3.5);"
+        },
+        {
+          "type": "paragraph",
+          "text": "El compilador sigue mirando el valor inicial. Deduce int para cajas y double para peso (Köppe et al., 2023; Stroustrup, 2024)."
         },
         {
           "type": "code",
@@ -300,7 +327,16 @@
         },
         {
           "type": "paragraph",
-          "text": "Una división puede dar el valor inicial de una variable declarada con auto. El compilador deduce su tipo a partir de la expresión.\n\nEn auto mitad = 15 / 2;, los dos operandos son enteros. La división entera da 7 y el tipo de mitad es int.\n\nEn auto mitad = 15.0 / 2;, el primer operando tiene tipo double. El segundo se convierte a ese tipo antes de dividir. Esta vez mitad tiene tipo double y guarda 7.5 (Stroustrup, 2024)."
+          "text": "Una división también puede dar el primer valor de una variable declarada con auto. Compara los operandos antes de deducir el tipo de cada resultado."
+        },
+        {
+          "type": "code",
+          "language": "cpp",
+          "code": "auto partes_enteras = 15 / 2;\nauto medida = 15.0 / 2;"
+        },
+        {
+          "type": "paragraph",
+          "text": "La primera división usa dos enteros, así que partes_enteras tiene tipo int y guarda siete. En la segunda, 15.0 es un double. C++ convierte el divisor al mismo tipo antes de dividir y medida guarda 7.5 (Stroustrup, 2024)."
         },
         {
           "type": "output_prediction",
@@ -346,7 +382,25 @@
         },
         {
           "type": "paragraph",
-          "text": "auto pisos{2};\nEsta declaración crea una variable de tipo int porque 2 es un literal entero.\n\npisos = 3.5;\nAquí pisos ya existe y sigue siendo int. Para guardar el nuevo valor, C++ convierte 3.5 a int. Descarta el medio y guarda 3.\n\nEn el siguiente programa, compara las dos declaraciones. Distingue el tipo que se deduce al crear cada variable del valor que recibe después con la asignación (Köppe et al., 2023)."
+          "text": "Observa qué valor se usa para crear la variable y qué valor recibe cuando ya existe."
+        },
+        {
+          "type": "code",
+          "language": "cpp",
+          "code": "auto pisos{2};"
+        },
+        {
+          "type": "paragraph",
+          "text": "Esta declaración crea una variable de tipo int porque 2 es un literal entero."
+        },
+        {
+          "type": "code",
+          "language": "cpp",
+          "code": "pisos = 3.5;"
+        },
+        {
+          "type": "paragraph",
+          "text": "Aquí pisos ya existe y sigue siendo int. Para guardar el nuevo valor, C++ convierte 3.5 a int. Descarta el medio y guarda 3.\n\nEn el siguiente programa, compara las dos declaraciones. Distingue el tipo que se deduce al crear cada variable del valor que recibe después con la asignación (Köppe et al., 2023)."
         },
         {
           "type": "output_prediction",
@@ -1113,107 +1167,8 @@
       {
         "block": "block_0000_0004",
         "path": "/text",
-        "sourceSha256": "c6421ef0373ec859a66caa4f6183c95bc47c50928515ceeb86454e08dca7a550",
-        "spans": [
-          {
-            "start": 18,
-            "end": 24,
-            "text": "medida",
-            "role": "cpp",
-            "reading": "technical"
-          },
-          {
-            "start": 32,
-            "end": 36,
-            "text": "3.75",
-            "role": "data",
-            "reading": "natural"
-          },
-          {
-            "start": 48,
-            "end": 70,
-            "text": "int unidades = medida;",
-            "role": "cpp",
-            "reading": "technical"
-          },
-          {
-            "start": 88,
-            "end": 96,
-            "text": "unidades",
-            "role": "cpp",
-            "reading": "technical"
-          },
-          {
-            "start": 101,
-            "end": 105,
-            "text": "3.75",
-            "role": "data",
-            "reading": "natural"
-          },
-          {
-            "start": 109,
-            "end": 115,
-            "text": "medida",
-            "role": "cpp",
-            "reading": "technical"
-          },
-          {
-            "start": 141,
-            "end": 144,
-            "text": "int",
-            "role": "cpp",
-            "reading": "technical"
-          },
-          {
-            "start": 199,
-            "end": 200,
-            "text": "3",
-            "role": "data",
-            "reading": "natural"
-          },
-          {
-            "start": 205,
-            "end": 213,
-            "text": "unidades",
-            "role": "cpp",
-            "reading": "technical"
-          },
-          {
-            "start": 231,
-            "end": 237,
-            "text": "medida",
-            "role": "cpp",
-            "reading": "technical"
-          },
-          {
-            "start": 254,
-            "end": 258,
-            "text": "3.75",
-            "role": "data",
-            "reading": "natural"
-          },
-          {
-            "start": 345,
-            "end": 348,
-            "text": "int",
-            "role": "cpp",
-            "reading": "technical"
-          },
-          {
-            "start": 370,
-            "end": 378,
-            "text": "unidades",
-            "role": "cpp",
-            "reading": "technical"
-          },
-          {
-            "start": 379,
-            "end": 397,
-            "text": "(Stroustrup, 2024)",
-            "role": "citation",
-            "reading": "natural"
-          }
-        ]
+        "sourceSha256": "021e67a08405c4993f3f8ad118ff40e6bf8726e84f9653cf1f1f20ac26eadc17",
+        "spans": []
       },
       {
         "block": "block_0000_0005",
@@ -2160,133 +2115,14 @@
       {
         "block": "block_0004_0004",
         "path": "/text",
-        "sourceSha256": "a1ce6a046b095f9fb39bed134997dacf938582618af4d80cfc8271c466a6dbfb",
+        "sourceSha256": "41f68aa726deb10774845ac1541d6bef0a3c70801e6b1efbd47d69b67e0c09a2",
         "spans": [
           {
-            "start": 0,
-            "end": 18,
-            "text": "auto cantidad = 6;",
-            "role": "cpp",
-            "reading": "technical"
-          },
-          {
-            "start": 24,
-            "end": 25,
-            "text": "6",
-            "role": "cpp",
-            "reading": "technical"
-          },
-          {
-            "start": 49,
-            "end": 57,
-            "text": "cantidad",
-            "role": "cpp",
-            "reading": "technical"
-          },
-          {
-            "start": 75,
-            "end": 79,
+            "start": 12,
+            "end": 16,
             "text": "auto",
             "role": "cpp",
             "reading": "technical"
-          },
-          {
-            "start": 223,
-            "end": 224,
-            "text": "6",
-            "role": "cpp",
-            "reading": "technical"
-          },
-          {
-            "start": 237,
-            "end": 240,
-            "text": "int",
-            "role": "cpp",
-            "reading": "technical"
-          },
-          {
-            "start": 250,
-            "end": 258,
-            "text": "cantidad",
-            "role": "cpp",
-            "reading": "technical"
-          },
-          {
-            "start": 280,
-            "end": 283,
-            "text": "int",
-            "role": "cpp",
-            "reading": "technical"
-          },
-          {
-            "start": 386,
-            "end": 403,
-            "text": "auto cantidad{6};",
-            "role": "cpp",
-            "reading": "technical"
-          },
-          {
-            "start": 465,
-            "end": 468,
-            "text": "int",
-            "role": "cpp",
-            "reading": "technical"
-          },
-          {
-            "start": 486,
-            "end": 503,
-            "text": "auto cantidad(6);",
-            "role": "cpp",
-            "reading": "technical"
-          },
-          {
-            "start": 541,
-            "end": 544,
-            "text": "int",
-            "role": "cpp",
-            "reading": "technical"
-          },
-          {
-            "start": 571,
-            "end": 588,
-            "text": "auto medida{6.5};",
-            "role": "cpp",
-            "reading": "technical"
-          },
-          {
-            "start": 634,
-            "end": 637,
-            "text": "6.5",
-            "role": "cpp",
-            "reading": "technical"
-          },
-          {
-            "start": 650,
-            "end": 656,
-            "text": "double",
-            "role": "cpp",
-            "reading": "technical"
-          },
-          {
-            "start": 666,
-            "end": 672,
-            "text": "medida",
-            "role": "cpp",
-            "reading": "technical"
-          },
-          {
-            "start": 694,
-            "end": 700,
-            "text": "double",
-            "role": "cpp",
-            "reading": "technical"
-          },
-          {
-            "start": 701,
-            "end": 739,
-            "text": "(Köppe et al., 2023; Stroustrup, 2024)",
-            "role": "citation",
-            "reading": "natural"
           }
         ]
       },
@@ -2422,84 +2258,14 @@
       {
         "block": "block_0005_0001",
         "path": "/text",
-        "sourceSha256": "d756636ca26c672274f66fb0db93c2a748e0dfabf17ce66d1b5bc2b2c8d67c50",
+        "sourceSha256": "05c1bd746febc5d33ddef9c864e07645b4d26aa853a79c739e75d001c07af125",
         "spans": [
           {
-            "start": 70,
-            "end": 74,
+            "start": 77,
+            "end": 81,
             "text": "auto",
             "role": "cpp",
             "reading": "technical"
-          },
-          {
-            "start": 135,
-            "end": 155,
-            "text": "auto mitad = 15 / 2;",
-            "role": "cpp",
-            "reading": "technical"
-          },
-          {
-            "start": 210,
-            "end": 211,
-            "text": "7",
-            "role": "data",
-            "reading": "natural"
-          },
-          {
-            "start": 225,
-            "end": 230,
-            "text": "mitad",
-            "role": "cpp",
-            "reading": "technical"
-          },
-          {
-            "start": 234,
-            "end": 237,
-            "text": "int",
-            "role": "cpp",
-            "reading": "technical"
-          },
-          {
-            "start": 243,
-            "end": 265,
-            "text": "auto mitad = 15.0 / 2;",
-            "role": "cpp",
-            "reading": "technical"
-          },
-          {
-            "start": 297,
-            "end": 303,
-            "text": "double",
-            "role": "cpp",
-            "reading": "technical"
-          },
-          {
-            "start": 367,
-            "end": 372,
-            "text": "mitad",
-            "role": "cpp",
-            "reading": "technical"
-          },
-          {
-            "start": 384,
-            "end": 390,
-            "text": "double",
-            "role": "cpp",
-            "reading": "technical"
-          },
-          {
-            "start": 400,
-            "end": 403,
-            "text": "7.5",
-            "role": "data",
-            "reading": "natural"
-          },
-          {
-            "start": 404,
-            "end": 422,
-            "text": "(Stroustrup, 2024)",
-            "role": "citation",
-            "reading": "natural"
           }
         ]
       },
@@ -3979,79 +3745,8 @@
       {
         "block": "block_0005_0006",
         "path": "/text",
-        "sourceSha256": "0d2d7b605ac2671b71b792ea438340dc68ffeb2eb6fd66640582410f855de8aa",
-        "spans": [
-          {
-            "start": 0,
-            "end": 14,
-            "text": "auto pisos{2};",
-            "role": "cpp",
-            "reading": "technical"
-          },
-          {
-            "start": 58,
-            "end": 61,
-            "text": "int",
-            "role": "cpp",
-            "reading": "technical"
-          },
-          {
-            "start": 69,
-            "end": 70,
-            "text": "2",
-            "role": "cpp",
-            "reading": "technical"
-          },
-          {
-            "start": 94,
-            "end": 106,
-            "text": "pisos = 3.5;",
-            "role": "cpp",
-            "reading": "technical"
-          },
-          {
-            "start": 112,
-            "end": 117,
-            "text": "pisos",
-            "role": "cpp",
-            "reading": "technical"
-          },
-          {
-            "start": 143,
-            "end": 146,
-            "text": "int",
-            "role": "cpp",
-            "reading": "technical"
-          },
-          {
-            "start": 191,
-            "end": 194,
-            "text": "3.5",
-            "role": "data",
-            "reading": "natural"
-          },
-          {
-            "start": 197,
-            "end": 200,
-            "text": "int",
-            "role": "cpp",
-            "reading": "technical"
-          },
-          {
-            "start": 229,
-            "end": 230,
-            "text": "3",
-            "role": "data",
-            "reading": "natural"
-          },
-          {
-            "start": 392,
-            "end": 412,
-            "text": "(Köppe et al., 2023)",
-            "role": "citation",
-            "reading": "natural"
-          }
-        ]
+        "sourceSha256": "928dddd8f2714d97efadb9d78e9615047db22cca58c41ab09325d6e60b0b005a",
+        "spans": []
       },
       {
         "block": "block_0005_0007",
@@ -4461,6 +4156,279 @@
             "reading": "technical"
           }
         ]
+      },
+      {
+        "block": "p1u2l6_ejemplo_0000_0004_2",
+        "path": "/text",
+        "sourceSha256": "abcaa360cd291b4e2a930b30ef54db8f3f8dca9db889ee84c20fbc047d2a0bdf",
+        "spans": [
+          {
+            "start": 58,
+            "end": 59,
+            "text": "3",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 63,
+            "end": 72,
+            "text": "completos",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 86,
+            "end": 95,
+            "text": "distancia",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 105,
+            "end": 109,
+            "text": "3.75",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 192,
+            "end": 195,
+            "text": "int",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 217,
+            "end": 223,
+            "text": "double",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 224,
+            "end": 242,
+            "text": "(Stroustrup, 2024)",
+            "role": "citation",
+            "reading": "natural"
+          }
+        ]
+      },
+      {
+        "block": "p1u2l6_ejemplo_0004_0004_2",
+        "path": "/text",
+        "sourceSha256": "89ae70e13b66ed77a7d337d8f213de956f396e18e2620c81f6f1b0235e37475b",
+        "spans": [
+          {
+            "start": 11,
+            "end": 12,
+            "text": "8",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 24,
+            "end": 27,
+            "text": "int",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 37,
+            "end": 43,
+            "text": "libros",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 84,
+            "end": 88,
+            "text": "8.25",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 100,
+            "end": 106,
+            "text": "double",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 123,
+            "end": 128,
+            "text": "largo",
+            "role": "cpp",
+            "reading": "technical"
+          }
+        ]
+      },
+      {
+        "block": "p1u2l6_ejemplo_0004_0004_4",
+        "path": "/text",
+        "sourceSha256": "17347d4de7776a6dfebd643b5b2e8170b77863c7ba0a95a19c46e97ce6389bfa",
+        "spans": [
+          {
+            "start": 53,
+            "end": 56,
+            "text": "int",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 62,
+            "end": 67,
+            "text": "cajas",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 70,
+            "end": 76,
+            "text": "double",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 82,
+            "end": 86,
+            "text": "peso",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 87,
+            "end": 125,
+            "text": "(Köppe et al., 2023; Stroustrup, 2024)",
+            "role": "citation",
+            "reading": "natural"
+          }
+        ]
+      },
+      {
+        "block": "p1u2l6_ejemplo_0005_0001_2",
+        "path": "/text",
+        "sourceSha256": "dee1a0bd7f5c20ea1ee86bb650496687d9b34a2db41d7df87ab4de6f96723b80",
+        "spans": [
+          {
+            "start": 45,
+            "end": 59,
+            "text": "partes_enteras",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 71,
+            "end": 74,
+            "text": "int",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 106,
+            "end": 110,
+            "text": "15.0",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 117,
+            "end": 123,
+            "text": "double",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 183,
+            "end": 189,
+            "text": "medida",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 197,
+            "end": 200,
+            "text": "7.5",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 201,
+            "end": 219,
+            "text": "(Stroustrup, 2024)",
+            "role": "citation",
+            "reading": "natural"
+          }
+        ]
+      },
+      {
+        "block": "p1u2l6_ejemplo_0005_0006_2",
+        "path": "/text",
+        "sourceSha256": "58def829b19521f14628eba605abe1daee066a807dee77ae8b416c12ea9a7bbc",
+        "spans": [
+          {
+            "start": 43,
+            "end": 46,
+            "text": "int",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 54,
+            "end": 55,
+            "text": "2",
+            "role": "cpp",
+            "reading": "technical"
+          }
+        ]
+      },
+      {
+        "block": "p1u2l6_ejemplo_0005_0006_4",
+        "path": "/text",
+        "sourceSha256": "00f143a8f63cf9be6eb456de1e7bb3ddc20c981de8796fc6954a55dbb9782c97",
+        "spans": [
+          {
+            "start": 5,
+            "end": 10,
+            "text": "pisos",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 36,
+            "end": 39,
+            "text": "int",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 84,
+            "end": 87,
+            "text": "3.5",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 90,
+            "end": 93,
+            "text": "int",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 122,
+            "end": 123,
+            "text": "3",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 285,
+            "end": 305,
+            "text": "(Köppe et al., 2023)",
+            "role": "citation",
+            "reading": "natural"
+          }
+        ]
       }
     ],
     "rootFields": [
@@ -4833,6 +4801,8 @@
           "block_0000_0002",
           "block_0000_0003",
           "block_0000_0004",
+          "p1u2l6_ejemplo_0000_0004_1",
+          "p1u2l6_ejemplo_0000_0004_2",
           "block_0000_0005"
         ]
       },
@@ -4877,6 +4847,10 @@
           "block_0004_0002",
           "block_0004_0003",
           "block_0004_0004",
+          "p1u2l6_ejemplo_0004_0004_1",
+          "p1u2l6_ejemplo_0004_0004_2",
+          "p1u2l6_ejemplo_0004_0004_3",
+          "p1u2l6_ejemplo_0004_0004_4",
           "block_0004_0005",
           "block_0004_0006",
           "block_0004_0007",
@@ -4888,11 +4862,17 @@
         "blocks": [
           "block_0005_0000",
           "block_0005_0001",
+          "p1u2l6_ejemplo_0005_0001_1",
+          "p1u2l6_ejemplo_0005_0001_2",
           "block_0005_0002",
           "block_0005_0003",
           "block_0005_0004",
           "block_0005_0005",
           "block_0005_0006",
+          "p1u2l6_ejemplo_0005_0006_1",
+          "p1u2l6_ejemplo_0005_0006_2",
+          "p1u2l6_ejemplo_0005_0006_3",
+          "p1u2l6_ejemplo_0005_0006_4",
           "block_0005_0007"
         ]
       },
@@ -5238,7 +5218,116 @@
         ]
       }
     },
-    "additions": [],
+    "additions": [
+      {
+        "id": "p1u2l6_ejemplo_0000_0004_1",
+        "sha256": "e9ebd4b58d29b7121915bff8ed537891915ba1ce0ec24b9bb3ada36e3eb278e1",
+        "storage": {
+          "page": 9,
+          "block": 0
+        },
+        "progressPage": "page_0000"
+      },
+      {
+        "id": "p1u2l6_ejemplo_0000_0004_2",
+        "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5",
+        "storage": {
+          "page": 9,
+          "block": 1
+        },
+        "progressPage": "page_0000"
+      },
+      {
+        "id": "p1u2l6_ejemplo_0004_0004_1",
+        "sha256": "54729e2306e8e793f7b10d5da918e3256180ff0b375afc7dade899c249c2cf89",
+        "storage": {
+          "page": 9,
+          "block": 2
+        },
+        "progressPage": "page_0004"
+      },
+      {
+        "id": "p1u2l6_ejemplo_0004_0004_2",
+        "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5",
+        "storage": {
+          "page": 9,
+          "block": 3
+        },
+        "progressPage": "page_0004"
+      },
+      {
+        "id": "p1u2l6_ejemplo_0004_0004_3",
+        "sha256": "fb39786e18af7bc20f4661966d08a92fbca6597ae68d2095d59f4547103f99e2",
+        "storage": {
+          "page": 9,
+          "block": 4
+        },
+        "progressPage": "page_0004"
+      },
+      {
+        "id": "p1u2l6_ejemplo_0004_0004_4",
+        "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5",
+        "storage": {
+          "page": 9,
+          "block": 5
+        },
+        "progressPage": "page_0004"
+      },
+      {
+        "id": "p1u2l6_ejemplo_0005_0001_1",
+        "sha256": "7a054c7aa2a148401151aa3ee54646968c734e6ec2b73efcb82fe934221f6d39",
+        "storage": {
+          "page": 9,
+          "block": 6
+        },
+        "progressPage": "page_0005"
+      },
+      {
+        "id": "p1u2l6_ejemplo_0005_0001_2",
+        "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5",
+        "storage": {
+          "page": 9,
+          "block": 7
+        },
+        "progressPage": "page_0005"
+      },
+      {
+        "id": "p1u2l6_ejemplo_0005_0006_1",
+        "sha256": "4d18ff10de31f3c2145905d9c789f8a699c8e375d160d50d1588b278dc77f4a9",
+        "storage": {
+          "page": 9,
+          "block": 8
+        },
+        "progressPage": "page_0005"
+      },
+      {
+        "id": "p1u2l6_ejemplo_0005_0006_2",
+        "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5",
+        "storage": {
+          "page": 9,
+          "block": 9
+        },
+        "progressPage": "page_0005"
+      },
+      {
+        "id": "p1u2l6_ejemplo_0005_0006_3",
+        "sha256": "88adea7db961dbd99df3e6a089cf4a1c5c18dbb334e821d2ff6bb96b70f2b419",
+        "storage": {
+          "page": 9,
+          "block": 10
+        },
+        "progressPage": "page_0005"
+      },
+      {
+        "id": "p1u2l6_ejemplo_0005_0006_4",
+        "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5",
+        "storage": {
+          "page": 9,
+          "block": 11
+        },
+        "progressPage": "page_0005"
+      }
+    ],
     "editorial": [
       {
         "id": "block_0005_0001",
@@ -5259,6 +5348,26 @@
         "id": "block_0006_0005",
         "beforeSha256": "c5c534ccda68e11d865ae8a47618a0a41c4a59957516753ef871ff426428289b",
         "afterSha256": "792439828c76ccf2113fd681cc2c3a7f3209adfcac0d2c0b32a6ff62b8e5bf54"
+      },
+      {
+        "id": "block_0000_0004",
+        "beforeSha256": "d0f751d837c34f271977181e864ff26d27fabf375108c7f6ae7b07033f688677",
+        "afterSha256": "6b706c3230feb8008f3c4c02329f9a5a58e7ea40117bbd060d243b0174bc276b"
+      },
+      {
+        "id": "block_0004_0004",
+        "beforeSha256": "905694c23eb8083c3b9cd222f22f666b63ed96632e9333906d01e99bfdad2c97",
+        "afterSha256": "ee252389c8a8ac989f8a6e43ba595609a7be465f3f49de31350a60761c79e7bf"
+      },
+      {
+        "id": "block_0005_0001",
+        "beforeSha256": "d3922b20104982242981dbeeca6f565e919e89a099c731d3a229a332ef8004ba",
+        "afterSha256": "7a8d869b8cc77d7233ca92865f64f29351c5f04abe99ab4a272f2fb44ddc91eb"
+      },
+      {
+        "id": "block_0005_0006",
+        "beforeSha256": "abcb51d05719986617d2f00f11d3f7927316b7c6fe2be586671dd765f6b5aeb0",
+        "afterSha256": "862307c688723dbbd000e6dc295acbd95965900b45146dc5891a3687065feadc"
       }
     ]
   }
