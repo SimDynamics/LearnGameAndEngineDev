@@ -113,6 +113,7 @@ struct Fixture {
     std::vector<Plan> plans;
     bool joint_local_int=false;
     bool input_decisions=false;
+    bool active_loops=false;
     bool guarded_arithmetic=false;
 };
 const std::string& solution_for(const Fixture& fixture,std::string_view identity) {
@@ -340,7 +341,20 @@ struct InputDecisionPublication {
     std::size_t public_cases,private_probes,same_output_probes,counterexamples;
     std::array<std::size_t,8> private_indices;
 };
-const InputDecisionPublication& input_decision_publication(std::string_view id) {
+const InputDecisionPublication& input_decision_publication(std::string_view id, bool active_loops=false) {
+    if(active_loops) {
+        static constexpr std::array<InputDecisionPublication,2> active{{
+            {"u4l1","block_0006_0002","block_0006_0006",
+             "b03928e0df3ee47371acb6b9c27560986d0be3b9b000d28ec9aa89494b65202b",
+             "aa62f480ddcb8ced4b0c6377a99e0ac0451d4fe91b5ec6b413b53cd038aed00d",4,3,0,0,{1,2,3}},
+            {"u4l2","block_0006_0005","block_0007_0002",
+             "1df1821c5413cb148af787147b55b81a8580d567e7d71cf3ebbadcc8c2a219b9",
+             "70a0adf8ba5e11cc67d993e8608a9921c4674f31bab6a16f9ed42879a97e79bf",4,3,0,0,{1,2,3}},
+        }};
+        const auto found=std::ranges::find(active,id,&InputDecisionPublication::id);
+        check(found!=active.end(),"Unknown active loop publication");
+        return *found;
+    }
     static constexpr std::array<InputDecisionPublication,8> publications{{
         {"u3l3","p1u3l3_construir_limite_peso","p1u3l3_ejemplo_limite_peso",
          "9c43940696d0fda803f49378e93250d0746c5009bde1050d119e37487c9ab308",
@@ -395,7 +409,7 @@ bool shares_first_output(const curriculum::CppInputProbe& probe,const curriculum
     });
 }
 void read_input_decision_plan(const Fixture& fixture,const JsonObject& entry,Plan& plan) {
-    const auto& pin=input_decision_publication(fixture.id);
+    const auto& pin=input_decision_publication(fixture.id,fixture.active_loops);
     const auto& owner=block_at(fixture.before,plan.activity);
     const auto public_cases=entry.GetNamedArray(L"publicCases");
     // This pin hashes the author's deterministic JSON export. The following
@@ -434,7 +448,7 @@ void read_input_decision_plan(const Fixture& fixture,const JsonObject& entry,Pla
         "The input-decision manifest omitted an independently falsifiable invariant");
 }
 void verify_input_decision_adoption(const Fixture& fixture) {
-    const auto& pin=input_decision_publication(fixture.id);
+    const auto& pin=input_decision_publication(fixture.id,fixture.active_loops);
     check(fixture.before_sha256==pin.sha256&&state::sha256(fixture.before.raw_json)==pin.sha256&&
             fixture.plans.size()==1&&fixture.solutions.size()==2,
         "Input-decision QA lost its complete publication pin or two authentic editors");
@@ -579,15 +593,16 @@ void read_guarded_arithmetic_plan(const Fixture& fixture,const JsonObject& entry
     check(seen.size()==expected.size(),"The arithmetic source matrix is incomplete");
 }
 std::vector<Fixture> load_manifest(const std::filesystem::path& manifest,bool joint=false,bool input_decisions=false,
-        bool guarded_arithmetic=false) {
+        bool guarded_arithmetic=false, bool active_loops=false) {
     windows::ensure_winrt_apartment();
     const auto document=JsonObject::Parse(wide(bytes(manifest)));
     check(document.GetNamedNumber(L"version")==1&&
             json_string(document,L"publishedCommit")==
-                ((input_decisions||guarded_arithmetic)?"08a11877a2d2c0bf96a846660e3baea69e53f758":
+                (active_loops?"2fcfad809e6a854dc35f4ce6c19fc1f1ab3e9c5b":
+                     (input_decisions||guarded_arithmetic)?"08a11877a2d2c0bf96a846660e3baea69e53f758":
                     joint?"a92895f2b00242dbd338ab0a386ea8ceeda9edf8":"2ca32b2337178d1effa3a2c81759e2493cd746d0")&&
             (!joint||json_string(document,L"kind")=="joint-local-int")&&
-            (!input_decisions||(!joint&&!guarded_arithmetic&&json_string(document,L"kind")=="input-decision"))&&
+            (!input_decisions||(!joint&&!guarded_arithmetic&&json_string(document,L"kind")== (active_loops?"active-loop-input-decision":"input-decision")))&&
             (!guarded_arithmetic||(!joint&&!input_decisions&&json_string(document,L"kind")=="guarded-local-arithmetic")),
         "The UI manifest is not the audited main publication and schema");
     std::vector<Fixture> result;
@@ -598,6 +613,7 @@ std::vector<Fixture> load_manifest(const std::filesystem::path& manifest,bool jo
         Fixture fixture;
         fixture.joint_local_int=joint;
         fixture.input_decisions=input_decisions;
+        fixture.active_loops=active_loops;
         fixture.guarded_arithmetic=guarded_arithmetic;
         fixture.id=json_string(item,L"id");
         check(names.insert(fixture.id).second,"Repeated lesson manifest entry");
@@ -645,6 +661,8 @@ std::vector<Fixture> load_manifest(const std::filesystem::path& manifest,bool jo
     }
     if(guarded_arithmetic)check(result.size()==1&&owner_count==1&&names==std::set<std::string>{"u3l6"},
         "The arithmetic UI manifest must retain exactly its one authenticated repair owner");
+    else if(active_loops)check(result.size()==2&&owner_count==2&&names==std::set<std::string>{"u4l1","u4l2"},
+        "Active loop QA must cover both independent owners and six private observations");
     else if(input_decisions)check(result.size()==8&&owner_count==8&&
             names==std::set<std::string>{"u3l3","u3l4","u3l5","u3l6","u3l7","u3l8","u4l1","u4l2"},
         "The input-decision manifest must contain exactly eight independent owners and forty private observations");
@@ -1465,11 +1483,12 @@ void run_plan(const Fixture& fixture,const Plan& plan,std::size_t ordinal) {
 int main(int argc,char** argv) {
     std::cout<<std::unitbuf;std::cerr<<std::unitbuf;
     started=GetTickCount64();
-    const bool input_decisions=argc>1&&std::string_view(argv[1])=="--input-decisions";
+    const bool active_loops=argc>1&&std::string_view(argv[1])=="--active-loops";
+    const bool input_decisions=active_loops||(argc>1&&std::string_view(argv[1])=="--input-decisions");
     const bool joint=argc>1&&std::string_view(argv[1])=="--joint-local-int";
     const bool guarded_arithmetic=argc==3&&std::string_view(argv[1])=="--guarded-arithmetic";
     if((input_decisions||joint)?(argc!=3&&argc!=4):(argc!=2&&argc!=3)) {
-        std::cerr<<"Usage: local_dependency_view_tests <manifest.json> [lesson-id] | --joint-local-int <manifest.json> [lesson-id] | --guarded-arithmetic <manifest.json> | --input-decisions <manifest.json> [lesson-id]\n";return 2;
+        std::cerr<<"Usage: local_dependency_view_tests <manifest.json> [lesson-id] | --joint-local-int <manifest.json> [lesson-id] | --guarded-arithmetic <manifest.json> | --input-decisions <manifest.json> [lesson-id] | --active-loops <manifest.json> [lesson-id]\n";return 2;
     }
     const auto apartment=OleInitialize(nullptr);
     if(FAILED(apartment))return 2;
@@ -1480,7 +1499,7 @@ int main(int argc,char** argv) {
         check(rich!=nullptr,"Cannot load actual RichEdit controls");reader_theme::prepare_fonts();
         const auto manifest=std::filesystem::path(argv[joint||input_decisions||guarded_arithmetic?2:1]);
         const auto manifest_bytes=state::read_bytes(manifest);
-        const auto fixtures=load_manifest(manifest,joint,input_decisions,guarded_arithmetic);
+        const auto fixtures=load_manifest(manifest,joint,input_decisions,guarded_arithmetic,active_loops);
         const auto filter=(input_decisions||joint)?(argc==4?std::string_view(argv[3]):std::string_view{}):
             argc==3&&!joint&&!guarded_arithmetic?std::string_view(argv[2]):std::string_view{};
         std::size_t completed=0,ordinal=0;
@@ -1495,7 +1514,7 @@ int main(int argc,char** argv) {
                 run_plan(fixture,plan,ordinal);++completed;
             }
         }
-        check(completed>0&&(filter.empty()?completed==(guarded_arithmetic?1u:input_decisions?8u:joint?3u:16u):true),
+        check(completed>0&&(filter.empty()?completed==(guarded_arithmetic?1u:active_loops?2u:input_decisions?8u:joint?3u:16u):true),
             "The requested UI group is missing or incomplete");
         for(const auto& fixture:fixtures)
             check(state::sha256(state::read_bytes(fixture.before_path))==fixture.before_sha256&&
