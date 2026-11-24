@@ -162,7 +162,7 @@ permissions:
 jobs:
   run-prediction-final-newline:
     name: Verify optional final newlines without changing exact interior output
-    if: ${{ github.event_name == 'push' && startsWith(github.event.head_commit.message, 'qa-prediction-newline:') }}
+    if: ${{ github.event_name == 'push' && (startsWith(github.event.head_commit.message, 'qa-prediction-newline:') || startsWith(github.event.head_commit.message, 'qa-prediction:')) }}
     runs-on: windows-2025-vs2026
     timeout-minutes: 25
     steps:
@@ -177,13 +177,18 @@ jobs:
           python-version: '3.12'
       - name: Activate hosted MSVC without modifying the product pin
         uses: ilammy/msvc-dev-cmd@v1
+      - name: Configure focused prediction QA
+        shell: pwsh
+        run: |
+          $qaNewlineBuild = Join-Path $env:RUNNER_TEMP 'lgaed-prediction-newline-qa'
+          cmake -S cmake/HostedCourseEditionQA -B $qaNewlineBuild -G Ninja -DCMAKE_BUILD_TYPE=Debug
+          if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
       - name: Reproduce the exact final-newline rejection on the original evaluator
+        if: ${{ startsWith(github.event.head_commit.message, 'qa-prediction-newline:') }}
         shell: pwsh
         run: |
           $ErrorActionPreference = 'Stop'
           $qaNewlineBuild = Join-Path $env:RUNNER_TEMP 'lgaed-prediction-newline-qa'
-          cmake -S cmake/HostedCourseEditionQA -B $qaNewlineBuild -G Ninja -DCMAKE_BUILD_TYPE=Debug
-          if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
           try {
             git restore --source=bc710464beebd40447e58521e7b1988179ed326f --worktree -- native/core/lesson.cpp
             if ($LASTEXITCODE -ne 0) { throw 'Cannot select the authenticated original prediction evaluator.' }
@@ -635,7 +640,7 @@ jobs:
             ${{ runner.temp }}/lgaed-special-source-format-qa/test-fixtures/special-source-format/**
   run-format-fixture-history:
     name: Build authenticated format fixtures and verify original MSVC diagnostics
-    if: ${{ github.event_name != 'push' || (!startsWith(github.event.head_commit.message, 'qa-input-decisions:') && !startsWith(github.event.head_commit.message, 'qa-puzzle-wheel:') && !startsWith(github.event.head_commit.message, 'qa-guarded-arithmetic:') && !startsWith(github.event.head_commit.message, 'qa-joint-admission:') && !startsWith(github.event.head_commit.message, 'qa-special-source-format:') && !startsWith(github.event.head_commit.message, 'qa-edition-source:') && !startsWith(github.event.head_commit.message, 'qa-active-edition:') && !startsWith(github.event.head_commit.message, 'qa-prediction-newline:')) }}
+    if: ${{ github.event_name != 'push' || (!startsWith(github.event.head_commit.message, 'qa-input-decisions:') && !startsWith(github.event.head_commit.message, 'qa-puzzle-wheel:') && !startsWith(github.event.head_commit.message, 'qa-guarded-arithmetic:') && !startsWith(github.event.head_commit.message, 'qa-joint-admission:') && !startsWith(github.event.head_commit.message, 'qa-special-source-format:') && !startsWith(github.event.head_commit.message, 'qa-edition-source:') && !startsWith(github.event.head_commit.message, 'qa-active-edition:') && !startsWith(github.event.head_commit.message, 'qa-prediction-newline:') && !startsWith(github.event.head_commit.message, 'qa-prediction:')) }}
     runs-on: windows-2025-vs2026
     timeout-minutes: 25
     steps:
@@ -681,7 +686,7 @@ jobs:
             ${{ runner.temp }}/lgaed-format-fixture-history/test-fixtures/format-history/**
   run-real-course-edition:
     name: Run Win32 edition, simulation and first required C++ case
-    if: ${{ github.event_name != 'push' || (!startsWith(github.event.head_commit.message, 'qa-input-decisions:') && !startsWith(github.event.head_commit.message, 'qa-puzzle-wheel:') && !startsWith(github.event.head_commit.message, 'qa-guarded-arithmetic:') && !startsWith(github.event.head_commit.message, 'qa-joint-admission:') && !startsWith(github.event.head_commit.message, 'qa-special-source-format:') && !startsWith(github.event.head_commit.message, 'qa-edition-source:') && !startsWith(github.event.head_commit.message, 'qa-active-edition:') && !startsWith(github.event.head_commit.message, 'qa-prediction-newline:')) }}
+    if: ${{ github.event_name != 'push' || (!startsWith(github.event.head_commit.message, 'qa-input-decisions:') && !startsWith(github.event.head_commit.message, 'qa-puzzle-wheel:') && !startsWith(github.event.head_commit.message, 'qa-guarded-arithmetic:') && !startsWith(github.event.head_commit.message, 'qa-joint-admission:') && !startsWith(github.event.head_commit.message, 'qa-special-source-format:') && !startsWith(github.event.head_commit.message, 'qa-edition-source:') && !startsWith(github.event.head_commit.message, 'qa-active-edition:') && !startsWith(github.event.head_commit.message, 'qa-prediction-newline:') && !startsWith(github.event.head_commit.message, 'qa-prediction:')) }}
     runs-on: windows-2025-vs2026
     timeout-minutes: 45
     steps:
