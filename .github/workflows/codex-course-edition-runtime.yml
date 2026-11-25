@@ -383,7 +383,7 @@ jobs:
             ${{ runner.temp }}/lgaed-active-edition-narration/worker/build-evidence.json
             ${{ runner.temp }}/lgaed-active-edition-narration/samples/**
   run-active-edition-controls:
-    name: Verify the selected edition and preserved historical editors
+    name: Verify edition authoring, four output answers and preserved input editors
     if: ${{ github.event_name == 'push' && startsWith(github.event.head_commit.message, 'qa-active-edition:') }}
     runs-on: windows-2025-vs2026
     timeout-minutes: 25
@@ -416,13 +416,13 @@ jobs:
           $qaActiveEditionBuild = Join-Path $env:RUNNER_TEMP 'lgaed-active-edition-controls'
           cmake -S cmake/HostedCourseEditionQA -B $qaActiveEditionBuild -G Ninja -DCMAKE_BUILD_TYPE=Debug
           if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
-          cmake --build $qaActiveEditionBuild --target lgaed_lesson_editor_mount_tests lgaed_curricular_input_lab_tests lgaed_exact_prediction_view_tests --parallel 3
+          cmake --build $qaActiveEditionBuild --target lgaed_lesson_editor_mount_tests lgaed_curricular_input_lab_tests lgaed_exact_prediction_view_tests lgaed_prediction_output_tests --parallel 3
           if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
-      - name: Verify multiline drafts, the first required input case and optional cases
+      - name: Verify multiline drafts, optional final endings and the first required input case
         shell: pwsh
         run: |
           $qaActiveEditionBuild = Join-Path $env:RUNNER_TEMP 'lgaed-active-edition-controls'
-          ctest --test-dir $qaActiveEditionBuild -R '^native[.](active_edition_)?(prediction_newline_visible|curricular_input_lab(_(history|same_page))?|prepared_input_predictions(_history)?)$' --verbose --output-on-failure --no-tests=error --output-junit (Join-Path $qaActiveEditionBuild 'active-edition-controls.xml')
+          ctest --test-dir $qaActiveEditionBuild -R '^native[.](prediction_(output_endings|final_newline)|(active_edition_)?(prediction_newline_visible|curricular_input_lab(_(history|same_page))?|prepared_input_predictions(_history)?))$' --verbose --output-on-failure --no-tests=error --output-junit (Join-Path $qaActiveEditionBuild 'active-edition-controls.xml')
           if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
       - name: Preserve selected-edition and historical control evidence
         if: always()
