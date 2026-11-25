@@ -89,7 +89,8 @@ void cold_play(const std::shared_ptr<windows::NarrationWorker>& backend,double r
     std::cout<<"PASS published cold playback "<<rate<<"X voice="<<voice<<": seven actual semantic sentences in order, passive code caption then following prose while canonical tail was incomplete; first_available_ms="
         <<first_available_ms<<" caption_ms="<<caption_ms<<" prose_ms="<<prose_ms<<"; exact early resume, no whole-page readiness barrier, real instance-muted Kokoro/Windows playback\n";
 }
-void published_page(const std::shared_ptr<windows::NarrationWorker>& backend,double rate) {
+void published_page(const std::shared_ptr<windows::NarrationWorker>& backend,double rate,
+                    std::string_view voice="ef_dora",bool streaming=false,bool live_revision=false) {
     const auto original=state::read_bytes(published_asset);
     const auto root=std::filesystem::path(L"C:/LGAED-QA")/(L"saldo-published-"+std::to_wstring(GetCurrentProcessId())+L"-"+std::to_wstring(GetTickCount64()));
     const auto content=std::filesystem::path(build::source_root)/"app/src/main/assets/content";
@@ -120,11 +121,15 @@ void published_page(const std::shared_ptr<windows::NarrationWorker>& backend,dou
         check(state::mark_page_reached(data,lesson,0),"Cannot visit the isolated preceding page");state::save_current_page(data,lesson,1);
     };
     Fixture f(backend,false,true,true,"es",lesson,true,0,true,false,[&](HWND view){
-        update_lesson_preferences(view,[&](state::StateData& data){data.preferences["lesson_narration_settings"]["rate"]=rate;});
+        update_lesson_preferences(view,[&](state::StateData& data){data.preferences["lesson_narration_settings"]["rate"]=rate;
+            data.preferences["lesson_narration_settings"]["kokoro_voice:es"]=std::string(voice);});
     },prefix,root/L"audio",true);
     f.reader->set_qa_playback_muted(true);
     wait([&]{const auto value=f.snapshot();return lesson_page_state(f.view).index==1&&value.planned&&!value.page_audio_revision.empty();},"complete authentic page plan",180000);
-    wait([&]{return f.snapshot().page_audio_complete;},"fully generated authentic page before its real answers",900000);
+    if(!streaming)wait([&]{return f.snapshot().page_audio_complete;},"fully generated authentic page before its real answers",900000);
+    else check(!f.snapshot().page_audio_complete,"Streaming published regression accidentally waited for complete page audio before answering");
+    check(windows::selected_kokoro_voice(read_lesson_state(f.view),"es",std::filesystem::path(build::source_root)/"out/narration/runtime.json")==voice,
+        "Published feedback regression selected a different installed voice");
     std::size_t answered=0;bool math_answered=false;
     const auto submit=[&](std::size_t index){const auto& block=page.blocks[index];
         if(block.type==curriculum::BlockType::fill_code||block.type==curriculum::BlockType::output_prediction){
@@ -151,22 +156,108 @@ void published_page(const std::shared_ptr<windows::NarrationWorker>& backend,dou
         if(type!=curriculum::BlockType::fill_code&&type!=curriculum::BlockType::output_prediction&&type!=curriculum::BlockType::multiple_choice&&type!=curriculum::BlockType::math_puzzle)continue;
         f.reader->pause();submit(index);
         wait([&]{const auto value=f.snapshot();return value.planned&&value.segments[value.index].block==index&&value.segments[value.index].feedback&&value.segments[value.index].correct;},"real published correct answer",180000);
-        f.reader->toggle();bool actually_played=false;
+        f.reader->toggle();bool actually_played=false;std::optional<std::size_t> observed_index;
         wait([&]{const auto value=f.snapshot();if(value.playing&&value.segments[value.index].block==index&&value.segments[value.index].feedback)actually_played=true;
+            if(streaming&&(!observed_index||*observed_index!=value.index)){
+                observed_index=value.index;const auto& part=value.segments[value.index];
+                std::cout<<"SALDO_STREAM phase=feedback goal="<<index<<" index="<<value.index<<" block="<<part.block
+                    <<" playing="<<value.playing<<" waiting="<<value.waiting_gate<<" preparing="<<value.preparing
+                    <<" complete="<<value.page_audio_complete<<" heard="<<value.heard_through<<" source="<<part.source<<'\n';}
             if(!actually_played||!value.playing||value.segments[value.index].block<=index)return false;
             for(const auto& part:value.segments)if(part.block==index&&part.feedback&&part.correct)
                 check(part.feedback_fully_played,"Published feedback continued without hearing every actual PCM sentence");
             check(value.playback_rate==rate,"Published feedback continuation changed speed");return true;
         },"published correct feedback automatically enters its next actual content",240000);
+        if(streaming&&index==saldo){const auto heading=f.snapshot();
+            check(heading.segments[heading.index].block==saldo+1&&heading.segments[heading.index].source=="Usar el valor después del bloque",
+                "Streaming saldo feedback skipped its immediate authentic heading");
+            std::cout<<"SALDO_STREAM phase=heading complete="<<heading.page_audio_complete<<" index="<<heading.index<<'\n';
+            wait([&]{const auto value=f.snapshot();if(!value.playing||value.segments[value.index].block!=saldo+2||value.offset<80)return false;
+                check(value.segments[value.index].source.starts_with("Una tienda da puntos extra"),"Saldo continuation reached the wrong prose");
+                std::cout<<"SALDO_STREAM phase=following-prose complete="<<value.page_audio_complete<<" index="<<value.index<<" offset="<<value.offset<<'\n';
+                (void)verify_feedback_recording(value.segments[value.index]);return true;
+            },"streaming authentic heading continues to its immediately following prose",180000);
+        }
         f.reader->pause();const auto value=f.snapshot();
         for(const auto& part:value.segments)if(part.block==index&&part.feedback&&part.correct)(void)verify_feedback_recording(part);
         ++answered;
         std::cout<<"SALDO_PUBLISHED_FEEDBACK rate="<<rate<<" block="<<index<<" next_block="<<value.segments[value.index].block<<" heard_through="<<value.heard_through<<'\n';
-        if(index==saldo)check(value.segments[value.index].block==saldo+1&&value.segments[value.index].source=="Usar el valor después del bloque",
+        if(index==saldo&&!streaming)check(value.segments[value.index].block==saldo+1&&value.segments[value.index].source=="Usar el valor después del bloque",
             "Published saldo feedback failed to play its immediate authentic heading");
     }
     check(math_answered&&answered>=6&&state::read_bytes(published_asset)==original&&state::read_bytes(copy)==original,
         "The authentic regression skipped a prerequisite/math or altered curriculum");
+    if(live_revision){
+        using namespace winrt::Windows::Data::Json;
+        check(streaming,"Live published regression requires immediate streaming actions");
+        const auto before=f.snapshot();const auto before_state=read_lesson_state(f.view);
+        const auto before_revision=lesson_page_state(f.view).content_revision;
+        std::map<std::filesystem::path,std::string> recordings;
+        for(const auto& part:before.segments)if(part.available&&!part.recording.empty())recordings.try_emplace(part.recording,state::sha256(state::read_bytes(part.recording)));
+        // The QA author revises the next prose and places it before the title.
+        // Both physical blocks and the explicit ID plan receive that same move;
+        // all original contracts, answers, metadata and semantic spans remain.
+        auto source=JsonObject::Parse(wide(lesson.raw_json));
+        auto blocks=source.GetNamedArray(L"pages").GetObjectAt(1).GetNamedArray(L"blocks");
+        auto layout=source.GetNamedObject(L"stateLayout");auto ids=layout.GetNamedArray(L"current").GetObjectAt(1).GetNamedArray(L"blocks");
+        const auto title=blocks.GetAt(static_cast<unsigned>(saldo+1));
+        const auto body=blocks.GetObjectAt(static_cast<unsigned>(saldo+2));
+        const auto title_id=ids.GetAt(static_cast<unsigned>(saldo+1));const auto body_id=ids.GetAt(static_cast<unsigned>(saldo+2));
+        const auto earlier=test::compile_check_test_fingerprint(body);
+        const std::string added_sentence="Esta frase nueva pertenece únicamente a la revisión local de prueba.";
+        const auto revised_text=utf8(body.GetNamedString(L"text"))+" "+added_sentence;
+        body.Insert(L"text",JsonValue::CreateStringValue(wide(revised_text)));
+        JsonObject proof;proof.Insert(L"id",body_id);
+        proof.Insert(L"beforeSha256",JsonValue::CreateStringValue(wide(earlier)));
+        proof.Insert(L"afterSha256",JsonValue::CreateStringValue(wide(test::compile_check_test_fingerprint(body))));
+        layout.GetNamedArray(L"editorial").Append(proof);
+        for(const auto& value:source.GetNamedObject(L"textSemantics").GetNamedArray(L"fields")){
+            auto field=value.GetObject();if(field.GetNamedString(L"block")==body_id.GetString()&&field.GetNamedString(L"path")==L"/text")
+                field.Insert(L"sourceSha256",JsonValue::CreateStringValue(wide(state::sha256(revised_text))));}
+        blocks.SetAt(static_cast<unsigned>(saldo+1),body);blocks.SetAt(static_cast<unsigned>(saldo+2),title);
+        ids.SetAt(static_cast<unsigned>(saldo+1),body_id);ids.SetAt(static_cast<unsigned>(saldo+2),title_id);
+        const auto bytes=utf8(source.Stringify());const auto revised=windows::parse_lesson_json(bytes);
+        check(revised.pages[1].blocks[saldo+1].stable_id==page.blocks[saldo+2].stable_id&&
+            revised.pages[1].blocks[saldo+2].stable_id==page.blocks[saldo+1].stable_id,
+            "The authored live publication did not preserve the moved block identities");
+        const auto pending=root/L"live-publication.json";
+        {std::ofstream stream(pending,std::ios::binary);stream<<bytes;check(static_cast<bool>(stream),"Cannot stage the isolated live publication");}
+        check(MoveFileExW(pending.c_str(),copy.c_str(),MOVEFILE_REPLACE_EXISTING|MOVEFILE_WRITE_THROUGH)!=FALSE,
+            "Cannot publish the isolated live revision atomically");
+        wait([&]{const auto value=f.snapshot();check(!value.playing&&!value.allocated,"Live publication overrode the explicit pause");
+            return lesson_page_state(f.view).content_revision>before_revision&&value.planned&&!value.waiting_verification&&value.key!=before.key;
+        },"same hidden view automatically adopts the authenticated prose revision and order",180000);
+        const auto adopted=f.snapshot();
+        check(adopted.segments[adopted.index].block==saldo+1&&!adopted.segments[adopted.index].feedback&&adopted.offset==0&&
+            adopted.segments[adopted.index].source.starts_with("Una tienda da puntos extra")&&adopted.heard_through<=static_cast<std::int64_t>(adopted.index),
+            "Live revision retained the old order or marked the new prose as already heard");
+        for(const auto& block:page.blocks)if(const auto saved=state::get_response(before_state,lesson,block);saved&&saved->correct){
+            const auto current=state::get_response(read_lesson_state(f.view),lesson,block);
+            check(current&&current->correct&&current->answer==saved->answer&&current->selected==saved->selected&&current->raw_json==saved->raw_json,
+                "Live prose/order publication changed a previously checked response");}
+        std::vector<std::size_t> expected_prose,played_prose;
+        for(std::size_t n=0;n<adopted.segments.size();++n)if(adopted.segments[n].block==saldo+1&&!adopted.segments[n].feedback)
+            expected_prose.push_back(n);
+        check(!expected_prose.empty()&&std::ranges::any_of(expected_prose,[&](auto n){return adopted.segments[n].source==added_sentence;}),
+            "The revised live plan omitted the newly authored sentence");
+        f.reader->toggle();bool added_sentence_played=false;
+        wait([&]{const auto value=f.snapshot();if(!value.playing)return false;
+            const auto& part=value.segments[value.index];
+            if(part.block==saldo+1&&value.offset>80&&(played_prose.empty()||played_prose.back()!=value.index)){
+                played_prose.push_back(value.index);(void)verify_feedback_recording(part);
+                added_sentence_played=added_sentence_played||part.source==added_sentence;
+                std::cout<<"SALDO_LIVE_PLAYED index="<<value.index<<" offset="<<value.offset<<" source="<<part.source<<'\n';
+            }
+            if(part.block!=saldo+2)return false;
+            check(played_prose==expected_prose&&added_sentence_played&&part.source=="Usar el valor después del bloque",
+                "Explicit Play skipped a revised/new sentence, repeated prose or retained the obsolete title position");
+            (void)verify_feedback_recording(part);return value.offset>80;
+        },"explicit Play reads the revised prose followed by the title in the actual new order",240000);
+        f.reader->pause();for(const auto& [file,checksum]:recordings)check(std::filesystem::is_regular_file(file)&&state::sha256(state::read_bytes(file))==checksum,
+            "Live publication deleted or overwrote a previous actual recording");
+        check(state::read_bytes(published_asset)==original,"Live QA changed the original published curriculum");
+        std::cout<<"PASS published live prose/order revision: same view timer, intact IDs/responses/old PCM, honest pending prose, preserved pause and explicit Play in the new order\n";
+    }
     auto paused=f.snapshot();const auto saved=read_lesson_state(f.view);
     for(const bool manual_pause:{false,true}){
         f.reader.reset();check(flush_lesson_view(f.view),"Cannot flush authentic QA state");
@@ -204,7 +295,7 @@ void published_page(const std::shared_ptr<windows::NarrationWorker>& backend,dou
             "Reopening authentic page changed a correctly checked answer");}
     f.reader->toggle();wait([&]{const auto value=f.snapshot();check(!value.planned||value.index>=paused.index,"Reopening repeated previously heard feedback before saldo's heading");
         return value.waiting_gate&&!value.playing;},"reopened authentic heading/prose reaches its next legitimate pending exercise",180000);f.reader->pause();
-    std::cout<<"PASS complete published saldo page "<<rate<<"X: exact QA source/IDs/semantics, "<<answered<<" real answers including math, non-silent Kokoro PCM, instance-muted Windows playback and automatic immediate heading; root="<<root.string()<<'\n';
+    std::cout<<"PASS "<<(streaming?"streaming ":"complete ")<<"published saldo page "<<rate<<"X voice="<<voice<<": exact QA source/IDs/semantics, "<<answered<<" real answers including math, non-silent Kokoro PCM, instance-muted Windows playback and automatic immediate heading"<<(streaming?"/prose without a whole-page readiness barrier":"")<<"; root="<<root.string()<<'\n';
 }
 void run(const std::shared_ptr<windows::NarrationWorker>& backend,double rate) {
     const auto asset=std::filesystem::path(build::source_root)/

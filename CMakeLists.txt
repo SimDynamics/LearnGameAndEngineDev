@@ -2271,6 +2271,10 @@ if(BUILD_TESTING)
         set_tests_properties(native.reader_saldo_feedback_${_rate}x native.reader_saldo_published_${_rate}x
             PROPERTIES TIMEOUT 1800 RUN_SERIAL TRUE LABELS "real_audio;reader_revision")
     endforeach()
+    add_test(NAME native.reader_saldo_published_live_3x
+        COMMAND lgaed_lesson_reader_tests --saldo-published-live 3 em_santa)
+    set_tests_properties(native.reader_saldo_published_live_3x
+        PROPERTIES TIMEOUT 1800 RUN_SERIAL TRUE LABELS "real_audio;streaming;reader_revision")
     # Includes full real playback for the added prerequisite/bookmark cases.
     # Its foreground-focus scenario also owns the desktop during this test.
     set_tests_properties(native.lesson_reader PROPERTIES TIMEOUT 480 RUN_SERIAL TRUE)

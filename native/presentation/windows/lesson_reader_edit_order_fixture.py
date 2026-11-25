@@ -63,6 +63,44 @@ def digest(value: object) -> str:
                                      separators=(",", ":")).encode("utf-8")).hexdigest()
 
 
+def recording_key(request: dict, text: str) -> str:
+    # A controlled identity, not the Kokoro pronunciation/cache recipe. Both
+    # planning paths and preparation must describe the same fixture recording.
+    return digest(dict(text=text, preparedText=text,
+                       language=request["language"], voice=request.get("voice", "ef_dora")))
+
+
+def curriculum_plan(request: dict) -> dict:
+    lesson = json.loads(request["lessonJson"])
+    index = request["page"]
+    page = lesson["pages"][index]
+    owners = lesson.get("stateLayout", {}).get("current", [])
+    owner = owners[index] if index < len(owners) else {}
+    stable = owner.get("id") or page.get("id") or str(index)
+    language = request.get("contentLanguage", request["language"])
+    texts = [lesson["title"]] if index == 0 else []
+    for block in page["blocks"]:
+        if block["type"] == "paragraph":
+            texts.append(block["text"])
+        elif block["type"] == "fill_code":
+            texts.extend((block["question"], "Ejercicio de código C más más."))
+            if block.get("explanation"):
+                texts.append("✓ Correcto\n\n" + block["explanation"])
+        else:
+            raise ValueError("Review the controlled reader fixture for this new block type")
+    # Bind the strict native page session to the current authored source and
+    # selection. The production revision/hash algorithm remains independently
+    # exercised by the real-worker acceptance tests.
+    proof = dict(page=page, owner=owner, contentLanguage=language,
+                 language=request["language"], voice=request["voice"],
+                 uiLanguage=request["uiLanguage"], readingContext=request.get("readingContext", "auto"))
+    if index == 0:
+        proof["title"] = lesson["title"]
+    return dict(pageId=f"{lesson['id']}/{language}/{stable}", revision=digest(proof),
+                segments=[dict(text=text, preparedText=text, spokenText=text,
+                               key=recording_key(request, text)) for text in texts if text])
+
+
 def run(log_path: Path, cache_path: Path) -> None:
     cache_path.mkdir(exist_ok=True)
     sys.stdin.reconfigure(encoding="utf-8")
@@ -79,15 +117,23 @@ def run(log_path: Path, cache_path: Path) -> None:
                 fields["segments"] = [] if not text else [{
                     "text": text, "preparedText": text, "spokenText": text,
                     "sourceStart": 0, "sourceEnd": len(text.encode("utf-16-le")) // 2,
+                    "key": recording_key(request, text),
                 }]
             elif command == "identity":
                 fields["key"] = digest({key: value for key, value in request.items()
                                         if key not in {"id", "command"}})
             elif command == "prepare":
                 text = request["text"]
-                key = digest({name: request[name] for name in
-                              ("text", "preparedText", "language", "voice")})
-                wav = cache_path / (key + ".wav")
+                base_key = recording_key(request, text)
+                namespace = request.get("cacheNamespace", "")
+                if namespace and not re.fullmatch(r"[0-9a-f]{64}", namespace):
+                    raise ValueError("Invalid controlled page cache namespace")
+                key = digest(dict(recording=base_key, namespace=namespace)) if namespace else base_key
+                output_directory = Path(request["outputDirectory"])
+                if not output_directory.is_absolute():
+                    raise ValueError("Controlled playback needs an absolute owned cache")
+                output_directory.mkdir(parents=True, exist_ok=True)
+                wav = output_directory / (key + ".wav")
                 cache_hit = wav.is_file()
                 if not cache_hit:
                     # Exclusive creation: existing cached evidence is never
@@ -100,14 +146,14 @@ def run(log_path: Path, cache_path: Path) -> None:
                 fields.update(
                     key=key, sourceText=text, spokenText=text,
                     provider="deterministic-reader-revision-fixture", wav=str(wav),
-                    durationMs=DURATION_MS, cacheHit=cache_hit,
+                    durationMs=DURATION_MS, cacheHit=cache_hit, cacheNamespace=namespace,
                     timings=[{"start": 0, "end": len(text.encode("utf-16-le")) // 2,
                               "startMs": 0, "endMs": DURATION_MS}],
                 )
                 log.write(json.dumps({"command": "fixture_prepared", "targetId": request["id"],
                                       "key": key, "cacheHit": cache_hit}) + "\n")
             elif command == "curriculum_plan":
-                fields["segments"] = []
+                fields = curriculum_plan(request)
             elif command == "cancel":
                 # Requests complete synchronously. There is no held inference
                 # operation to cancel or acknowledge in this fixture.
