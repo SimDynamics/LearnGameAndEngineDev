@@ -178,6 +178,9 @@ void verify_editorial_feedback_origins(){
             result.origins.front().start==wide(prefix).size()&&result.origins.front().end==wide(result.text).size(),
             "Editorial feedback changed an unowned repeated phrase or lost exact UTF-16 origins");
     }
+    const auto generated=present_editorial_feedback("Incorrecto original.",{},fields);
+    check(generated.text=="Incorrecto original."&&generated.origins.empty(),
+        "A global editorial field replaced generated guidance without any authenticated source origin");
     const auto rejects=[&](std::string_view source,const SemanticFieldOrigin& origin){
         bool rejected=false;const std::array<SemanticFieldOrigin,1> origins{{origin}};
         try{(void)present_editorial_feedback(source,origins,fields);}
@@ -320,6 +323,24 @@ std::vector<std::string> inspect_reading_scope(HWND view,const curriculum::Lesso
     return voice_signature;
 }
 
+// The original published block retains pretty JSON while its authenticated
+// editorial archive uses compact JSON. Ignore only RFC JSON whitespace outside
+// strings: key order, number tokens, escapes and every source character remain.
+std::string evaluation_tokens(const curriculum::Block& block){
+    std::string result;bool quoted=false,escaped=false;
+    for(const auto value:curriculum::math_evaluation_source(block)){
+        if(quoted){
+            result+=value;
+            if(escaped)escaped=false;
+            else if(value=='\\')escaped=true;
+            else if(value=='"')quoted=false;
+        }else if(value=='"'){result+=value;quoted=true;}
+        else if(value!=' '&&value!='\t'&&value!='\r'&&value!='\n')result+=value;
+    }
+    check(!quoted&&!escaped,"The authenticated evaluation source contains an unterminated JSON string");
+    return result;
+}
+
 void run(const std::shared_ptr<windows::NarrationWorker>& backend,const std::filesystem::path& baseline_path,
          const std::filesystem::path& artifacts){
     using namespace winrt::Windows::Data::Json;
@@ -337,14 +358,18 @@ void run(const std::shared_ptr<windows::NarrationWorker>& backend,const std::fil
     const auto current=windows::load_lesson(published_path),baseline=windows::load_lesson(baseline_path);
     const auto position=identity_position(current,owner),old_position=identity_position(baseline,owner);
     const auto& goal=current.pages[position.page].blocks[position.block];const auto& old_goal=baseline.pages[old_position.page].blocks[old_position.block];
-    check(current.id==baseline.id&&position.page==1&&old_position.page==1&&old_position.block==13
-        &&goal.address.page==7&&goal.address.block==30&&goal.address.page==old_goal.address.page&&goal.address.block==old_goal.address.block
-        &&goal.address.addition_namespace==old_goal.address.addition_namespace&&goal.address.progress_page==old_goal.address.progress_page
-        &&curriculum::math_evaluation_source(goal)==curriculum::math_evaluation_source(old_goal)
-        &&curriculum::exercise_key(current,goal)==curriculum::exercise_key(baseline,old_goal)
-        &&state::response_storage_key(current,goal)==state::response_storage_key(baseline,old_goal)
-        &&old_goal.code_scope_presentations.empty()&&goal.code_scope_presentations.size()==1,
-        "Code-scope presentation changed the authentic owner, storage address, raw math contract or evaluation identity");
+    check(current.id==baseline.id&&position.page==1&&old_position.page==1&&old_position.block==13,
+        "Code-scope presentation changed its authentic lesson or page owner");
+    check(goal.address.page==7&&goal.address.block==30&&goal.address.page==old_goal.address.page&&goal.address.block==old_goal.address.block
+        &&goal.address.addition_namespace==old_goal.address.addition_namespace&&goal.address.progress_page==old_goal.address.progress_page,
+        "Code-scope presentation changed its published storage address or progress page");
+    check(evaluation_tokens(goal)==evaluation_tokens(old_goal),
+        "The authenticated editorial archive changed original evaluation tokens or source text");
+    check(curriculum::exercise_key(current,goal)==curriculum::exercise_key(baseline,old_goal)
+        &&state::response_storage_key(current,goal)==state::response_storage_key(baseline,old_goal),
+        "Code-scope presentation changed the exercise or answer-storage identity");
+    check(old_goal.code_scope_presentations.empty()&&goal.code_scope_presentations.size()==1,
+        "The published code-scope baseline or current presentation count changed");
     const auto source=JsonObject::Parse(wide(goal.raw_json));const auto description=utf8(source.GetNamedArray(L"representations").GetObjectAt(0).GetNamedString(L"description"));
     std::filesystem::create_directories(artifacts);
     auto environment=resolve_windows_environment({ProfileId::Codex,L"code-scope-reader-"+
@@ -483,7 +508,8 @@ void run(const std::shared_ptr<windows::NarrationWorker>& backend,const std::fil
         "Removing a decorative check changed narration or the existing answer");
     close();open(revised_words);
     const auto revised_position=identity_position(revised_words,owner);const auto& revised_goal=revised_words.pages[revised_position.page].blocks[revised_position.block];
-    check(curriculum::math_evaluation_source(revised_goal)==curriculum::math_evaluation_source(old_goal)&&
+    check(curriculum::math_evaluation_source(revised_goal)==curriculum::math_evaluation_source(goal)&&
+        evaluation_tokens(revised_goal)==evaluation_tokens(old_goal)&&
         state::response_storage_key(revised_words,revised_goal)==state::response_storage_key(baseline,old_goal)&&
         selected(revised_words).raw_json==saved_response.raw_json&&saved_response.raw_json.find("antes_de_return")!=std::string::npos,
         "Revising the three position labels and two feedback messages changed evaluation or the saved position");
@@ -511,7 +537,17 @@ void run(const std::shared_ptr<windows::NarrationWorker>& backend,const std::fil
                 region.block_index==revised_position.block&&region.feedback&&region.correct==correct&&
                 region.source_text.find(guide)!=std::string::npos;});
             const auto actual=snapshot();
-            return displayed&&actual.planned&&std::ranges::any_of(actual.segments,[&](const auto& segment){return
+            const auto graded=state::get_response(read_lesson_state(view),revised_words,revised_goal);
+            if(!correct&&displayed)check(std::ranges::any_of(visible,[&](const auto& region){return
+                region.block_index==revised_position.block&&region.feedback&&!region.correct&&
+                region.source_text==std::string("✗ Revisa tu respuesta e inténtalo de nuevo.\nRespuesta 1: ")+std::string(guide);}),
+                "The current incorrect selection changed the evaluator's complete generated guidance");
+            if(!correct&&displayed)check(std::ranges::none_of(visible,[&](const auto& region){return
+                region.block_index==revised_position.block&&region.feedback&&
+                region.source_text.find("Revisa el alcance de fichas antes de volver a elegir.")!=std::string::npos;}),
+                "A global incorrect field replaced selection guidance without an authenticated feedback origin");
+            return graded&&graded->correct==correct&&state::response_reviewed(*graded,revised_goal)&&
+                displayed&&actual.planned&&std::ranges::any_of(actual.segments,[&](const auto& segment){return
                 segment.block==revised_position.block&&segment.feedback&&segment.correct==correct&&
                 segment.source.find(guide)!=std::string::npos;});
         },"current authored feedback in the real native view and voice plan",180000);
@@ -520,17 +556,41 @@ void run(const std::shared_ptr<windows::NarrationWorker>& backend,const std::fil
         const auto visible=lesson_reading_regions(view);
         const auto option=std::ranges::find_if(visible,[&](const auto& region){return region.block_index==revised_position.block&&
             region.key.ends_with("/posicion/option/"+std::string(id));});
-        check(option!=visible.end(),"The current authored position option is missing");
+        check(option!=visible.end()&&IsWindowEnabled(option->target),"The current authored position option is missing or not editable");
         SendMessageW(option->target,WM_LBUTTONDOWN,MK_LBUTTON,MAKELPARAM(4,4));
         SendMessageW(option->target,WM_LBUTTONUP,0,MAKELPARAM(4,4));pump();
         const auto action=child(view,1003+static_cast<int>(revised_position.block)*100);
         check(IsWindowEnabled(action),"The actual revised position selection did not enable Check");
         SendMessageW(action,BM_CLICK,0,0);reader->pause();
     };
+    // The preserved correct answer is intentionally locked. Exercise the
+    // ordinary restart control in this isolated QA profile before a new attempt.
+    HWND restart=nullptr;
+    EnumChildWindows(child(view,1005+static_cast<int>(revised_position.block)*100),[](HWND item,LPARAM data)->BOOL{
+        if(window_class(item)!=L"Button")return TRUE;
+        wchar_t caption[64]{};GetWindowTextW(item,caption,64);
+        if(std::wstring_view(caption)!=L"Reiniciar")return TRUE;
+        *reinterpret_cast<HWND*>(data)=item;return FALSE;
+    },reinterpret_cast<LPARAM>(&restart));
+    check(restart&&IsWindowEnabled(restart),"The completed exercise has no enabled native Restart control");
+    SendMessageW(restart,BM_CLICK,0,0);pump();
     choose_editorial_option("antes");
-    check_editorial_feedback(false,"Revisa el alcance de fichas antes de volver a elegir.");
+    // The unchanged evaluator uses selection-specific guidance here and
+    // intentionally emits no global /feedback/incorrect origin. Its reviewed
+    // verdict, actual guidance and saved wrong answer must survive reopening.
+    constexpr std::string_view selection_guide=
+        "Revisa qué afirma cada opción seleccionada y comprueba tu razonamiento con la definición o los datos del enunciado.";
+    check_editorial_feedback(false,selection_guide);
+    const auto incorrect_saved=state::get_response(read_lesson_state(view),revised_words,revised_goal);
+    check(incorrect_saved&&!incorrect_saved->correct&&incorrect_saved->raw_json.find("\"antes\"")!=std::string::npos&&
+        JsonObject::Parse(wide(incorrect_saved->raw_json)).GetNamedString(L"contentFingerprint")==
+            JsonObject::Parse(wide(saved_response.raw_json)).GetNamedString(L"contentFingerprint"),
+        "The real incorrect position was not persisted with the original evaluation fingerprint");
     close();open(revised_words);
-    check_editorial_feedback(false,"Revisa el alcance de fichas antes de volver a elegir.");
+    check_editorial_feedback(false,selection_guide);
+    const auto incorrect_reopened=state::get_response(read_lesson_state(view),revised_words,revised_goal);
+    check(incorrect_reopened&&incorrect_reopened->raw_json==incorrect_saved->raw_json,
+        "Physical reopen changed the checked incorrect position or its evaluation fingerprint");
     choose_editorial_option("antes_de_return");
     check_editorial_feedback(true,"La posición antes_de_return conserva la respuesta original.");
     check(selected(revised_words).raw_json==saved_response.raw_json,
