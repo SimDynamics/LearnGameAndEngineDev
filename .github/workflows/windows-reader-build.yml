@@ -147,38 +147,40 @@ jobs:
         uses: actions/setup-python@ece7cb06caefa5fff74198d8649806c4678c61a1
         with:
           python-version: '3.15.2'
+      # Focused native suites run their own complete CTest selection. Python
+      # authoring regressions remain enabled for the complete ReaderBuild suite.
       - name: Verify fourteen historical line-order refinements and source-preservation guards
-        if: env.LGAED_NATIVE_QA_SUITE != 'ReaderRevision' && env.LGAED_NATIVE_QA_SUITE != 'CodeScope'
+        if: env.LGAED_NATIVE_QA_SUITE != 'ReaderRevision' && env.LGAED_NATIVE_QA_SUITE != 'CodeScope' && env.LGAED_NATIVE_QA_SUITE != 'CatalogU1'
         run: python -B -m unittest discover -s scripts/curriculum -p test_order_line_refinement.py -v
       - name: Verify CMake graph declarations preserve published lessons
-        if: env.LGAED_NATIVE_QA_SUITE != 'ReaderRevision' && env.LGAED_NATIVE_QA_SUITE != 'CodeScope'
+        if: env.LGAED_NATIVE_QA_SUITE != 'ReaderRevision' && env.LGAED_NATIVE_QA_SUITE != 'CodeScope' && env.LGAED_NATIVE_QA_SUITE != 'CatalogU1'
         run: python -B -m unittest discover -s scripts/curriculum -p test_cmake_graph_checks.py -v
       - name: Verify source-format revisions and matching Python-native line guards
-        if: env.LGAED_NATIVE_QA_SUITE != 'ReaderRevision' && env.LGAED_NATIVE_QA_SUITE != 'CodeScope'
+        if: env.LGAED_NATIVE_QA_SUITE != 'ReaderRevision' && env.LGAED_NATIVE_QA_SUITE != 'CodeScope' && env.LGAED_NATIVE_QA_SUITE != 'CatalogU1'
         run: python -B -m unittest discover -s scripts/curriculum -p test_code_format_compat.py -v
       - name: Verify open battery declarations and stable original owners
-        if: env.LGAED_NATIVE_QA_SUITE != 'ReaderRevision' && env.LGAED_NATIVE_QA_SUITE != 'CodeScope'
+        if: env.LGAED_NATIVE_QA_SUITE != 'ReaderRevision' && env.LGAED_NATIVE_QA_SUITE != 'CodeScope' && env.LGAED_NATIVE_QA_SUITE != 'CatalogU1'
         run: python -B -m unittest discover -s scripts/curriculum -p test_open_battery_contract.py -v
       - name: Verify stateful reduction declarations and original owner preservation
-        if: env.LGAED_NATIVE_QA_SUITE != 'ReaderRevision' && env.LGAED_NATIVE_QA_SUITE != 'CodeScope'
+        if: env.LGAED_NATIVE_QA_SUITE != 'ReaderRevision' && env.LGAED_NATIVE_QA_SUITE != 'CodeScope' && env.LGAED_NATIVE_QA_SUITE != 'CatalogU1'
         run: python -B -m unittest discover -s scripts/curriculum -p test_reduction_contract.py -v
       - name: Verify integer batteries and earlier client preservation
-        if: env.LGAED_NATIVE_QA_SUITE != 'ReaderRevision' && env.LGAED_NATIVE_QA_SUITE != 'CodeScope'
+        if: env.LGAED_NATIVE_QA_SUITE != 'ReaderRevision' && env.LGAED_NATIVE_QA_SUITE != 'CodeScope' && env.LGAED_NATIVE_QA_SUITE != 'CatalogU1'
         run: python -B -m unittest discover -s scripts/curriculum -p test_integer_battery_contract.py -v
       - name: Verify named-rule battery contracts and legacy compatibility
-        if: env.LGAED_NATIVE_QA_SUITE != 'ReaderRevision' && env.LGAED_NATIVE_QA_SUITE != 'CodeScope'
+        if: env.LGAED_NATIVE_QA_SUITE != 'ReaderRevision' && env.LGAED_NATIVE_QA_SUITE != 'CodeScope' && env.LGAED_NATIVE_QA_SUITE != 'CatalogU1'
         run: python -B -m unittest discover -s scripts/curriculum -p test_named_rule_checks.py -v
       - name: Verify course-edition authoring and Ninja fixture tree safety
-        if: env.LGAED_NATIVE_QA_SUITE != 'ReaderRevision' && env.LGAED_NATIVE_QA_SUITE != 'CodeScope'
+        if: env.LGAED_NATIVE_QA_SUITE != 'ReaderRevision' && env.LGAED_NATIVE_QA_SUITE != 'CodeScope' && env.LGAED_NATIVE_QA_SUITE != 'CatalogU1'
         run: python -B -m unittest discover -s scripts/curriculum -p test_course_edition.py -v
       - name: Verify authenticated choice and ordinary editorial revisions
-        if: env.LGAED_NATIVE_QA_SUITE != 'ReaderRevision' && env.LGAED_NATIVE_QA_SUITE != 'CodeScope'
+        if: env.LGAED_NATIVE_QA_SUITE != 'ReaderRevision' && env.LGAED_NATIVE_QA_SUITE != 'CodeScope' && env.LGAED_NATIVE_QA_SUITE != 'CatalogU1'
         run: python -B -m unittest discover -s scripts/curriculum -p test_general_choice_editorial.py -v
       - name: Verify optional explanations against archived U1L4 and unchanged answer contracts
-        if: env.LGAED_NATIVE_QA_SUITE != 'ReaderRevision' && env.LGAED_NATIVE_QA_SUITE != 'CodeScope'
+        if: env.LGAED_NATIVE_QA_SUITE != 'ReaderRevision' && env.LGAED_NATIVE_QA_SUITE != 'CodeScope' && env.LGAED_NATIVE_QA_SUITE != 'CatalogU1'
         run: python -B -m unittest discover -s scripts/curriculum -p test_ordinary_explanation_revision.py -v
       - name: Verify every programming course uses the complete indexed contract
-        if: env.LGAED_NATIVE_QA_SUITE != 'ReaderRevision' && env.LGAED_NATIVE_QA_SUITE != 'CodeScope'
+        if: env.LGAED_NATIVE_QA_SUITE != 'ReaderRevision' && env.LGAED_NATIVE_QA_SUITE != 'CodeScope' && env.LGAED_NATIVE_QA_SUITE != 'CatalogU1'
         run: python -B -m unittest discover -s scripts/curriculum -p test_programming_multicourse_validation.py -v
       # Endpoint evaluation is opt-in for this disposable hosted run only:
       # select the dispatch input or an explicit audio/reader evaluation prefix.
