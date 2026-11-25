@@ -1,0 +1,108 @@
+name: Windows renamed prose and observed compiler rejection continuity
+
+on:
+  push:
+    branches: [Codex]
+    paths:
+      - .github/workflows/codex-review-continuity.yml
+      - cmake/CompilerReviewContinuityTests.cmake
+      - cmake/HostedCourseEditionQA/CMakeLists.txt
+      - native/core/lesson.hpp
+      - native/platform/windows/compiler_completion.*
+      - native/platform/windows/cpp_runner.*
+      - native/platform/windows/content_loader.cpp
+      - native/platform/windows/identifier_rename_prose_tests.cpp
+      - native/platform/windows/private_probe_review_tests.cpp
+      - native/platform/windows/local_dependency_receipt_tests.cpp
+      - native/presentation/windows/lesson_view.cpp
+      - scripts/curriculum/stable_state_layout.py
+      - scripts/curriculum/identifier_rename_compat.py
+      - scripts/curriculum/identifier_rename_archive_preview.py
+      - scripts/curriculum/identifier_rename_prose_fixture_source.py
+      - scripts/curriculum/test_identifier_rename_prose_history.py
+      - scripts/curriculum/test_identifier_rename_archive_preview.py
+      - scripts/curriculum/test_general_choice_prose_history.py
+      - docs/examples/p3_ownership_authoring.json
+      - app/src/main/assets/content/es/programming/cpp_language_memory_oop/composicion_y_herencia_publica/lesson_copiar_objetos_sin_perder_su_clase_concreta.json
+      - app/src/main/assets/content/es/programming/cpp_language_memory_oop/clases_con_varias_bases/lesson_reunir_dos_bases_independientes_en_un_objeto.json
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: review-continuity-${{ github.ref }}
+  cancel-in-progress: false
+
+jobs:
+  windows-review-continuity:
+    name: Authenticate prose history and retain real MSVC semantic rejections
+    runs-on: windows-2025-vs2026
+    timeout-minutes: 30
+    steps:
+      - name: Read exact Codex source and authenticated history
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+          persist-credentials: false
+      - name: Select Python for authoring regressions
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - name: Activate hosted MSVC x64
+        uses: ilammy/msvc-dev-cmd@v1
+        with:
+          arch: x64
+      - name: Preserve previous rename and independent prose behavior
+        working-directory: scripts/curriculum
+        run: python -B -m unittest -v test_identifier_rename_archive_preview test_general_choice_prose_history
+      - name: Build original Windows adapters and focused continuity regressions
+        shell: pwsh
+        run: |
+          $ErrorActionPreference = 'Stop'
+          Get-Command cl, cmake, ninja | Select-Object Name, Source | Format-Table | Out-Host
+          Write-Host "VCToolsVersion=$env:VCToolsVersion"
+          Write-Host "WindowsSDKVersion=$env:WindowsSDKVersion"
+          $qaReviewBuild = Join-Path $env:RUNNER_TEMP 'lgaed-review-continuity-qa'
+          cmake -S cmake/HostedCourseEditionQA -B $qaReviewBuild -G Ninja -DCMAKE_BUILD_TYPE=Debug
+          if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
+          cmake --build $qaReviewBuild --target lgaed_identifier_rename_prose_tests lgaed_private_probe_review_tests lgaed_local_dependency_receipt_tests lgaed_curricular_windows --parallel 3
+          if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
+      - name: Verify exact selection, real private evidence and persisted feedback
+        shell: pwsh
+        run: |
+          $ErrorActionPreference = 'Stop'
+          $qaReviewBuild = Join-Path $env:RUNNER_TEMP 'lgaed-review-continuity-qa'
+          $qaReviewPattern = '^native[.](identifier_rename_prose(_authoring)?|polymorphic_clone_private_review|dual_interface_private_review|local_dependency_receipts)$'
+          $qaReviewExpected = @(
+            'native.identifier_rename_prose',
+            'native.identifier_rename_prose_authoring',
+            'native.polymorphic_clone_private_review',
+            'native.dual_interface_private_review',
+            'native.local_dependency_receipts'
+          )
+          $qaReviewListingText = & ctest --test-dir $qaReviewBuild -R $qaReviewPattern --show-only=json-v1
+          if ($LASTEXITCODE -ne 0) { throw 'Cannot inspect the review-continuity test selection.' }
+          $qaReviewListingJson = $qaReviewListingText -join "`n"
+          $qaReviewListingJson | Set-Content -Encoding utf8 (Join-Path $qaReviewBuild 'review-continuity-selection.json')
+          $qaReviewActual = @(($qaReviewListingJson | ConvertFrom-Json).tests | ForEach-Object { $_.name })
+          if ($qaReviewActual.Count -ne $qaReviewExpected.Count -or
+              (Compare-Object -ReferenceObject $qaReviewExpected -DifferenceObject $qaReviewActual)) {
+            throw 'Review continuity must select exactly five declared regressions.'
+          }
+          ctest --test-dir $qaReviewBuild -R $qaReviewPattern --parallel 1 --verbose --output-on-failure --no-tests=error --output-junit (Join-Path $qaReviewBuild 'review-continuity.xml') --output-log (Join-Path $qaReviewBuild 'review-continuity.log')
+          if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
+      - name: Preserve the Windows source, history and feedback evidence
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: windows-review-continuity-${{ github.sha }}
+          retention-days: 14
+          if-no-files-found: warn
+          path: |
+            ${{ runner.temp }}/lgaed-review-continuity-qa/review-continuity-selection.json
+            ${{ runner.temp }}/lgaed-review-continuity-qa/review-continuity.xml
+            ${{ runner.temp }}/lgaed-review-continuity-qa/review-continuity.log
+            ${{ runner.temp }}/lgaed-review-continuity-qa/test-fixtures/identifier-rename-prose/**
+            ${{ runner.temp }}/lgaed-review-continuity-qa/Testing/Temporary/*.log
+            ${{ runner.temp }}/lgaed-review-continuity-qa/CMakeFiles/CMakeConfigureLog.yaml
