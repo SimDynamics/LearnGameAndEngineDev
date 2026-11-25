@@ -105,7 +105,8 @@ inline bool cpp_import_has_semicolon(std::string_view source,std::size_t after_h
     return true;
 }
 
-inline std::optional<std::vector<std::string>> cpp_tokens(std::string_view source) {
+inline std::optional<std::vector<std::string>> cpp_tokens_impl(std::string_view source,
+        bool preserve_incomplete_literal_tail) {
     std::vector<std::string> result;
     std::optional<std::size_t> pending_import_end;
     constexpr std::string_view raw_prefixes[]={"u8R\"","uR\"","UR\"","LR\"","R\""};
@@ -169,7 +170,15 @@ inline std::optional<std::vector<std::string>> cpp_tokens(std::string_view sourc
         }
         if(matched)continue;
         for(const auto prefix:string_prefixes)if(source.substr(i).starts_with(prefix)) {
-            const auto end=quoted_end(source,i+prefix.size()-1);if(!end)return {};
+            const auto end=quoted_end(source,i+prefix.size()-1);
+            // Only format equivalence opts in. Preserve the complete tail
+            // from the encoding prefix; semantic lexers remain strict, and
+            // incomplete raw literals/comments never reach this branch.
+            if(preserve_incomplete_literal_tail&&(!end||
+                    source.substr(i,*end-i).find_first_of("\r\n")!=source.npos)) {
+                push(result,"incomplete-literal-tail:",source.substr(i));return result;
+            }
+            if(!end)return {};
             const auto suffix=literal_suffix_end(source,*end);
             push(result,"literal:",source.substr(i,suffix-i));i=suffix;matched=true;break;
         }
@@ -199,6 +208,12 @@ inline std::optional<std::vector<std::string>> cpp_tokens(std::string_view sourc
         if(!matched){push(result,"op:",source.substr(i,1));++i;}
     }
     return result;
+}
+inline std::optional<std::vector<std::string>> cpp_tokens(std::string_view source) {
+    return cpp_tokens_impl(source,false);
+}
+inline std::optional<std::vector<std::string>> cpp_format_tokens(std::string_view source) {
+    return cpp_tokens_impl(source,true);
 }
 inline std::optional<std::vector<std::string>> cmake_tokens(std::string_view source) {
     std::vector<std::string> result;
@@ -333,6 +348,13 @@ inline bool cpp_position_sensitive_tokens(const std::vector<std::string>& tokens
         // leading block comments. Never approve formatting it as an operator.
         if(token=="op:#"||token=="op:##"||token=="op:%:"||token=="op:%:%:")
             return true;
+        // A skipped preprocessing branch may hide a malformed quote. Do
+        // not let the opaque suffix conceal directives/token pasting or a
+        // live location query after compiler recovery.
+        if(token.starts_with("incomplete-literal-tail:")&&
+           (token.find('#')!=token.npos||token.find("%:")!=token.npos||
+            std::ranges::any_of(names,[&](std::string_view item){
+                return token.find(item)!=token.npos;})))return true;
         if(token.starts_with("id:")) {
             const auto name=std::string_view(token).substr(3);
             if(std::ranges::any_of(names,[&](std::string_view item){return name==item;}))
@@ -436,8 +458,8 @@ inline bool cmake_position_sensitive_tokens(const std::vector<std::string>& toke
 inline bool equivalent(std::string_view before,std::string_view after,Language language) {
     if(before==after)return true;
     if(language==Language::immutable||physical_splice(before)||physical_splice(after))return false;
-    const auto a=language==Language::cmake?cmake_tokens(before):cpp_tokens(before);
-    const auto b=language==Language::cmake?cmake_tokens(after):cpp_tokens(after);
+    const auto a=language==Language::cmake?cmake_tokens(before):cpp_format_tokens(before);
+    const auto b=language==Language::cmake?cmake_tokens(after):cpp_format_tokens(after);
     if(!a||!b)return false;
     // A live backslash may belong to a universal-character-name identifier.
     // The shared lexer cannot prove those boundaries, so changed source with

@@ -856,6 +856,68 @@ void u3_compiler_core_evaluation() {
     check(evaluate_output_check(report,observed,18).verdict==OutputVerdict::incorrect,
         "U3L8 core accepted extraneous stdout after the summary");
 }
+void incomplete_literal_format_safety() {
+    constexpr std::string_view prefixes[]{
+        "\"","'","u8\"","u\"","U\"","L\"","u8'","u'","U'","L'"};
+    for(const auto prefix:prefixes)for(const auto tail:{
+            "unfinished;\n    return 0;\n}\n","unfinished","unfinished\\"}) {
+        const auto old=std::string("int main(){auto text=")+std::string(prefix)+tail;
+        const auto revised=std::string("int main() {\n    auto text = ")+std::string(prefix)+tail;
+        check(code_format::equivalent(old,revised,Language::cpp)&&
+              code_format::equivalent(revised,old,Language::cpp),
+            "An exact incomplete ordinary-literal tail rejected safe prefix formatting");
+        check(!code_format::cpp_tokens(old)&&code_format::forbidden_preprocessor_in_edit(old),
+            "Format-only recovery leaked into the strict semantic lexer");
+        const auto tokens=code_format::cpp_format_tokens(old);
+        check(tokens&&tokens->back()==std::string("incomplete-literal-tail:")+std::string(prefix)+tail,
+            "Incomplete literal recovery omitted its encoding prefix or suffix bytes");
+        check(!code_format::equivalent(old,revised+" ",Language::cpp),
+            "Formatting changed the opaque suffix after an incomplete literal");
+    }
+    constexpr std::string_view later="int main(){auto text=\"broken\nreturn \"later\";}\n";
+    check(code_format::equivalent(later,
+            "int main() {\n    auto text = \"broken\nreturn \"later\";}\n",Language::cpp),
+        "A later quote hid the first physical-newline boundary");
+    struct Rejected {std::string_view before,after;};
+    constexpr Rejected rejected[]{
+        {"int x=0; L \"broken","int x = 0; L\"broken"},
+        {"int x=0; 1 'broken","int x = 0; 1'broken"},
+        {"int x=0; // note\n\"broken","int x = 0; // note \"broken"},
+        {"int x=0; \"broken","int x = 1; \"broken"},
+        {"int x=0; \"broken","int x = 0; u8\"broken"},
+        {"int main(){std::cout << \"Listo;\n return 0;}",
+         "int main() {\nstd::cout << \"Listo ;\n return 0;}"},
+        {"int main(){std::cout << \"Listo;\n return 0;}",
+         "int main() {\nstd::cout << \"Listo;\n\n return 0;}"},
+        {"int main(){std::cout << \"Listo;\n return 0;}",
+         "int main() {\nstd::cout << \"Listo\";\n return 0;}"},
+        {"int x=0; \"broken\\\nnext","int x = 0; \"broken\\\nnext"},
+        {"int x=0; \"broken\\\r\nnext","int x = 0; \"broken\\\r\nnext"},
+        {"int a\\u03B1=0; \"broken","\nint a\\u03B1=0; \"broken"},
+        {"int x=0; R\"tag(unfinished","int x = 0; R\"tag(unfinished"},
+        {"int x=0; /* unfinished","int x = 0; /* unfinished"},
+        {"int x=0; \"broken\nreturn \"later\";","int x = 0; \"broken\nreturn  \"later\";"},
+    };
+    for(const auto& pair:rejected)
+        check(!code_format::equivalent(pair.before,pair.after,Language::cpp)&&
+              !code_format::equivalent(pair.after,pair.before,Language::cpp),
+            "An incomplete tail weakened a token, prefix, escape, comment or raw-literal guard");
+    for(const auto name:{"__LINE__","source_location","__builtin_LINE","__builtin_COLUMN",
+                        "__builtin_source_location"}) {
+        const auto old=std::string("int x=0; \"broken\nreturn ")+name+';';
+        check(!code_format::equivalent(old,"\n"+old,Language::cpp),
+            "The opaque tail hid a source-position query after compiler recovery");
+    }
+    for(const auto old:{
+            "#if 0\n\"broken\n#endif\n#define X __LI ## NE__\nint main(){return X;}",
+            "%:if 0\n\"broken\n%:endif\nint main(){}",
+            "int x=0; \"broken # token","int x=0; \"broken %: token"})
+        check(!code_format::equivalent(old,"\n"+std::string(old),Language::cpp),
+            "The opaque tail hid preprocessing after a skipped malformed literal");
+    check(!code_format::equivalent("message(\"unfinished","message ( \"unfinished",Language::cmake),
+        "CMake gained ordinary C++ incomplete-literal recovery");
+}
+
 void historical_frames(){
     Lesson lesson;lesson.locale="es";lesson.id="format-compat-native";
     Block compiler;compiler.type=BlockType::cpp_compiler;compiler.stable_id="block_0002_0004";
@@ -899,7 +961,7 @@ void historical_frames(){
 }
 int main(){
     try{
-        lexical_safety();cpp_ucn_format_boundaries();historical_frames();
+        lexical_safety();cpp_ucn_format_boundaries();incomplete_literal_format_safety();historical_frames();
         guarded_open_compiler_edits();bounded_u3_rejection_inputs();
         u3_rejection_diagnostics_contracts();u3_observation_reports_contracts();
         u3_compiler_core_evaluation();

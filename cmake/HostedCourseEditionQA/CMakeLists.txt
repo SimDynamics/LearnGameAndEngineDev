@@ -133,6 +133,14 @@ target_link_libraries(lgaed_course_edition_tests PRIVATE lgaed_curricular_window
 add_dependencies(lgaed_course_edition_tests lgaed_course_edition_fixtures)
 
 enable_testing()
+# Exercise the production format guards, authentic malformed source and both loaders.
+add_executable(lgaed_code_format_compat_tests
+    "${_lgaed_root}/native/core/code_format_compat_tests.cpp")
+target_link_libraries(lgaed_code_format_compat_tests PRIVATE lgaed_core lgaed_host_options)
+add_test(NAME native.code_format_compat COMMAND lgaed_code_format_compat_tests)
+set_tests_properties(native.code_format_compat PROPERTIES TIMEOUT 30)
+include("${_lgaed_root}/cmake/UnterminatedSourceFormatTests.cmake")
+lgaed_add_unterminated_source_format_tests("${_lgaed_root}")
 add_executable(lgaed_prediction_output_tests
     "${_lgaed_root}/native/core/prediction_output_tests.cpp")
 target_link_libraries(lgaed_prediction_output_tests PRIVATE lgaed_core)

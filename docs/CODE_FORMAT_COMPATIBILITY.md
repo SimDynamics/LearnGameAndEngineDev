@@ -181,6 +181,41 @@ de índices, aunque su representación textual pueda mejorar. Los separadores
 `orderVisualSeparators` siguen siendo decorativos; no sustituyen las líneas
 físicas que Work haya incorporado a la fuente.
 
+## Ejemplos con un literal ordinario sin cierre
+
+El comparador Windows y la autoría Python admiten un caso conservador para un
+literal C++ ordinario
+que alcanza un salto físico de línea o el final de la fuente sin su comilla de
+cierre. Puede cambiar el
+espaciado del código anterior al literal si conserva sus tokens. Desde el inicio
+del literal —incluido un prefijo como `u8` o `L`— hasta el final del archivo,
+todos los caracteres deben permanecer idénticos. No se admite insertar una línea
+dentro de ese tramo, añadir la comilla que falta ni cambiar instrucciones
+posteriores mediante una revisión de formato.
+
+Esta ruta se utiliza exclusivamente al comparar formato. Los analizadores
+léxicos que emplean los evaluadores mantienen su rechazo estricto de fuentes
+incompletas. Los literales crudos sin cierre y los comentarios incompletos
+siguen fuera de este permiso. Las continuaciones físicas con barra inversa
+siguen bloqueadas; también se rechaza una cola opaca con marcadores del
+preprocesador o consultas de posición, porque no se puede acreditar que un
+cambio anterior de líneas conserve su interpretación.
+
+La autoría usa el mismo `prepare_v2`, archivo completo en
+`sourceFormatRevisions` y validación de transición. No necesita una propiedad
+JSON nueva ni una excepción por lección. La prueba de U1L4 utiliza
+`p1u1l4_codigo_sin_comilla` desde su publicación autenticada y genera copias
+aisladas: compara ambos cargadores Windows, conservación del estado, rechazos de
+alteraciones e historial, y el error C2001 de MSVC antes y después del formato.
+No modifica el ejemplo curricular ni su diagnóstico contiguo.
+
+Si Work añade renglones antes del error, debe revisar también las coordenadas
+de línea escritas en la explicación del diagnóstico. Conservar la causa y su
+código de error no conserva automáticamente números como `main.cpp(4)`.
+Cambiar únicamente espacios anteriores al literal en la misma línea evita ese
+desplazamiento. Las fuentes malformadas se compilan sólo para comprobar su
+diagnóstico; no se ejecutan como programas correctos.
+
 ## Estado del estudiante
 
 La aplicación conserva las claves históricas de actividad y borrador. El
