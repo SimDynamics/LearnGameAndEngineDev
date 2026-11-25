@@ -182,13 +182,14 @@ jobs:
       - name: Verify every programming course uses the complete indexed contract
         if: env.LGAED_NATIVE_QA_SUITE != 'ReaderRevision' && env.LGAED_NATIVE_QA_SUITE != 'CodeScope' && env.LGAED_NATIVE_QA_SUITE != 'CatalogU1'
         run: python -B -m unittest discover -s scripts/curriculum -p test_programming_multicourse_validation.py -v
-      # Endpoint evaluation is opt-in for this disposable hosted run only:
-      # select the dispatch input or an explicit audio/reader evaluation prefix.
-      # This is no permanent driver deployment and downloads no TTS models.
+      # ReaderBuild includes eight revision tests with real Windows playback,
+      # so its disposable hosted runner requires the verified audio endpoint.
+      # Other suites retain their explicit evaluation prefixes or dispatch input.
+      # This prepares only the hosted QA runner and downloads no TTS models.
       # ReaderBuild retains all 98 tests; a missing playback endpoint remains a failure.
       - name: Compile the selected Windows QA suite and execute its complete tests
         env:
-          LGAED_EVALUATE_VIRTUAL_AUDIO: ${{ (github.event_name == 'workflow_dispatch' && inputs.evaluate_virtual_audio) || (github.event_name == 'push' && startsWith(github.event.head_commit.message, 'qa-reader-build-audio:')) || (github.event_name == 'push' && startsWith(github.event.head_commit.message, 'qa-curricular-current-readers:')) || (github.event_name == 'push' && (startsWith(github.event.head_commit.message, 'qa-reader-revision:') || startsWith(github.event.head_commit.message, 'qa-native-headers:'))) || (github.event_name == 'push' && startsWith(github.event.head_commit.message, 'qa-code-scope:')) }}
+          LGAED_EVALUATE_VIRTUAL_AUDIO: ${{ env.LGAED_NATIVE_QA_SUITE == 'ReaderBuild' || (github.event_name == 'workflow_dispatch' && inputs.evaluate_virtual_audio) || (github.event_name == 'push' && startsWith(github.event.head_commit.message, 'qa-reader-build-audio:')) || (github.event_name == 'push' && startsWith(github.event.head_commit.message, 'qa-curricular-current-readers:')) || (github.event_name == 'push' && (startsWith(github.event.head_commit.message, 'qa-reader-revision:') || startsWith(github.event.head_commit.message, 'qa-native-headers:'))) || (github.event_name == 'push' && startsWith(github.event.head_commit.message, 'qa-code-scope:')) }}
         run: |
           $qaEvaluateAudio = $env:LGAED_NATIVE_QA_SUITE -in @('ReaderBuild', 'ReaderRevision', 'CodeScope') -and $env:LGAED_EVALUATE_VIRTUAL_AUDIO -eq 'true'
           .\scripts\windows\Test-NativeCurricularCI.ps1 -Suite $env:LGAED_NATIVE_QA_SUITE -VirtualAudio:$qaEvaluateAudio
