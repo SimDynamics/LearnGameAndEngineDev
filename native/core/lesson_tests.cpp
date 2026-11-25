@@ -1796,7 +1796,8 @@ void selected_u1_editor_contracts() {
             const auto& compiler=lesson.pages[position->page].blocks[position->block];
             check(compiler.initial_code.find("std::cout << \"Puesto\\n\";")!=std::string::npos
                 &&compiler.initial_code.find("std::cout << \"Fin\";")!=std::string::npos
-                &&compiler.output_check->cases.front().outputs==std::vector<std::string>{"Puesto\nMesa B\nFin"},
+                &&compiler.output_check->cases.front().outputs==
+                    std::vector<std::string>{"Puesto\nMesa B\nFin","Puesto\nMesa B\nFin\n"},
                 "The selected intermediate-line editor lost its original start or three-line objective");
         }
         check(lgaed::state::sha256(lgaed::state::read_bytes(entry->asset))==original,

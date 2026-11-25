@@ -3675,7 +3675,9 @@ bool u1l5_revised_compiler_present(const curriculum::Lesson& lesson,bool selecte
     const auto& block=lesson.pages[editor->page].blocks[editor->block];
     require(editor->page==2&&block.type==BlockType::cpp_compiler&&block.output_check&&
         block.output_check->cases.size()==1&&
-        block.output_check->cases.front().outputs==std::vector<std::string>{"Puesto\nMesa B\nFin"},
+        block.output_check->cases.front().outputs==(selected_edition?
+            std::vector<std::string>{"Puesto\nMesa B\nFin","Puesto\nMesa B\nFin\n"}:
+            std::vector<std::string>{"Puesto\nMesa B\nFin"}),
         "The ninth U1L5 editor lost its independently evaluated three-line outcome");
     return true;
 }
