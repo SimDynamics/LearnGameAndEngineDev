@@ -13,7 +13,7 @@ int main(){try{
         {{"es","math_physics","m1","mu1","ml1"},{},0,"es"},
         {{"es","math_physics","m1","mu1","ml1"},{},1,"es"}};
     auto order=narration::audio_schedule(pages,{"es","programming","p1","u2","l2"},1);
-    check(order==std::vector<std::size_t>{0,1,2,3,4,5,6},"Background generation jumped ahead of a route's first page");
+    check(order==std::vector<std::size_t>{4,0,1,2,5,6},"The next curricular page did not precede the saved route turn or background included the active page");
     order=narration::audio_schedule(pages,{"es","programming","p1","u2"},{});
     check(order==std::vector<std::size_t>{0,1,2,3,4,5,6},"Opening a unit reordered background generation");
     order=narration::audio_schedule(pages,{"es","programming","p2"},{});
@@ -25,10 +25,22 @@ int main(){try{
     order=narration::audio_schedule(pages,{"es","programming","p2"},{},"math_physics");
     check(order==std::vector<std::size_t>{5,6,0,1,2,3,4},"An open course starved the other route's saved turn");
     order=narration::audio_schedule(pages,{"es","math_physics","m1","mu1","ml1"},1,"programming");
-    check(order==std::vector<std::size_t>{0,1,2,3,4,5,6},"The foreground reader's location stole the background turn");
+    check(order==std::vector<std::size_t>{0,1,2,3,4,5},"The active mathematics page was included in background generation");
     const std::vector<narration::CurriculumAudioPage> one_route(pages.begin(),pages.begin()+5);
     check(narration::audio_schedule(one_route,{"es"},{},"math_physics")==std::vector<std::size_t>{0,1,2,3,4},"An exhausted or unavailable route prevented the other route from finishing");
     check(narration::audio_schedule({}, {"es"},{}).empty(),"Empty catalog must terminate");
-    std::cout<<"PASS global background manifest order, navigation-independent route turns, exhausted route and empty catalog\n";
+    const std::vector<narration::CurriculumAudioPage> updated{
+        {{"es","programming","p1","u1","l1"},{},0,"es"},
+        {{"es","programming","p1","u1","l1"},{},1,"es"},
+        {{"es","programming","p1","u1","l1"},{},2,"es"},
+        {{"es","programming","p1","u1","l1"},{},3,"es"},
+        {{"es","programming","p1","u1","l1"},{},4,"es"},
+        {{"es","programming","p1","u1","l1"},{},5,"es"},
+        {{"es","programming","p1","u1","l1"},{},6,"es"},
+        {{"es","programming","p1","u1","l1"},{},7,"es"},
+        {{"es","math_physics","m1","mu1","ml1"},{},0,"es"}};
+    check(narration::audio_schedule(updated,{"es","programming","p1","u1","l1"},1,"math_physics")
+        ==std::vector<std::size_t>{2,3,4,5,6,7,8,0},"Updated future pages did not preserve curricular order ahead of the saved route turn");
+    std::cout<<"PASS studied-page exclusion, following curricular order, saved route turns, exhausted route and empty catalog\n";
     return 0;
 }catch(const std::exception& error){std::cerr<<error.what()<<'\n';return 1;}}
