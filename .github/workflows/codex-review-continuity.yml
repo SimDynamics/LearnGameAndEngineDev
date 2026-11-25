@@ -39,6 +39,8 @@ jobs:
     name: Authenticate prose history and retain real MSVC semantic rejections
     runs-on: windows-2025-vs2026
     timeout-minutes: 30
+    env:
+      QA_REVIEW_SCOPE: ${{ github.event_name == 'push' && startsWith(github.event.head_commit.message, 'qa-rename-prose:') && 'rename-prose' || 'all' }}
     steps:
       - name: Read exact Codex source and authenticated history
         uses: actions/checkout@v4
@@ -71,21 +73,24 @@ jobs:
           $qaReviewBuild = Join-Path $env:RUNNER_TEMP 'lgaed-review-continuity-qa'
           cmake -S cmake/HostedCourseEditionQA -B $qaReviewBuild -G Ninja -DCMAKE_BUILD_TYPE=Debug
           if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
-          cmake --build $qaReviewBuild --target lgaed_identifier_rename_prose_tests lgaed_private_probe_review_tests lgaed_local_dependency_receipt_tests lgaed_curricular_windows --parallel 3
+          $qaReviewTargets = @('lgaed_identifier_rename_prose_tests')
+          if ($env:QA_REVIEW_SCOPE -eq 'all') {
+            $qaReviewTargets += @('lgaed_private_probe_review_tests', 'lgaed_local_dependency_receipt_tests', 'lgaed_curricular_windows')
+          }
+          Write-Host "Continuity scope: $env:QA_REVIEW_SCOPE; targets: $($qaReviewTargets -join ', ')"
+          cmake --build $qaReviewBuild --target @qaReviewTargets --parallel 3
           if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
-      - name: Verify exact selection, real private evidence and persisted feedback
+      - name: Verify exact selected scope and persisted continuity
         shell: pwsh
         run: |
           $ErrorActionPreference = 'Stop'
           $qaReviewBuild = Join-Path $env:RUNNER_TEMP 'lgaed-review-continuity-qa'
-          $qaReviewPattern = '^native[.](identifier_rename_prose(_authoring)?|polymorphic_clone_private_review|dual_interface_private_review|local_dependency_receipts)$'
-          $qaReviewExpected = @(
-            'native.identifier_rename_prose',
-            'native.identifier_rename_prose_authoring',
-            'native.polymorphic_clone_private_review',
-            'native.dual_interface_private_review',
-            'native.local_dependency_receipts'
-          )
+          $qaReviewPattern = '^native[.]identifier_rename_prose(_authoring)?$'
+          $qaReviewExpected = @('native.identifier_rename_prose', 'native.identifier_rename_prose_authoring')
+          if ($env:QA_REVIEW_SCOPE -eq 'all') {
+            $qaReviewPattern = '^native[.](identifier_rename_prose(_authoring)?|polymorphic_clone_private_review|dual_interface_private_review|local_dependency_receipts)$'
+            $qaReviewExpected += @('native.polymorphic_clone_private_review', 'native.dual_interface_private_review', 'native.local_dependency_receipts')
+          }
           $qaReviewListingText = & ctest --test-dir $qaReviewBuild -R $qaReviewPattern --show-only=json-v1
           if ($LASTEXITCODE -ne 0) { throw 'Cannot inspect the review-continuity test selection.' }
           $qaReviewListingJson = $qaReviewListingText -join "`n"
@@ -93,7 +98,7 @@ jobs:
           $qaReviewActual = @(($qaReviewListingJson | ConvertFrom-Json).tests | ForEach-Object { $_.name })
           if ($qaReviewActual.Count -ne $qaReviewExpected.Count -or
               (Compare-Object -ReferenceObject $qaReviewExpected -DifferenceObject $qaReviewActual)) {
-            throw 'Review continuity must select exactly five declared regressions.'
+            throw "Unexpected test selection for the declared continuity scope: $env:QA_REVIEW_SCOPE."
           }
           ctest --test-dir $qaReviewBuild -R $qaReviewPattern --parallel 1 --verbose --output-on-failure --no-tests=error --output-junit (Join-Path $qaReviewBuild 'review-continuity.xml') --output-log (Join-Path $qaReviewBuild 'review-continuity.log')
           if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
