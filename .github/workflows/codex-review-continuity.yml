@@ -55,7 +55,12 @@ jobs:
           arch: x64
       - name: Preserve previous rename and independent prose behavior
         working-directory: scripts/curriculum
-        run: python -B -m unittest -v test_identifier_rename_archive_preview test_general_choice_prose_history
+        shell: pwsh
+        run: |
+          $ErrorActionPreference = 'Stop'
+          $qaReviewAuthoringLog = Join-Path $env:RUNNER_TEMP 'lgaed-review-continuity-authoring.log'
+          python -B -m unittest -v test_identifier_rename_archive_preview test_general_choice_prose_history 2>&1 | Tee-Object -FilePath $qaReviewAuthoringLog
+          if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
       - name: Build original Windows adapters and focused continuity regressions
         shell: pwsh
         run: |
@@ -100,6 +105,7 @@ jobs:
           retention-days: 14
           if-no-files-found: warn
           path: |
+            ${{ runner.temp }}/lgaed-review-continuity-authoring.log
             ${{ runner.temp }}/lgaed-review-continuity-qa/review-continuity-selection.json
             ${{ runner.temp }}/lgaed-review-continuity-qa/review-continuity.xml
             ${{ runner.temp }}/lgaed-review-continuity-qa/review-continuity.log
