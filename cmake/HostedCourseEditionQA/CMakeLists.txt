@@ -141,6 +141,8 @@ add_test(NAME native.code_format_compat COMMAND lgaed_code_format_compat_tests)
 set_tests_properties(native.code_format_compat PROPERTIES TIMEOUT 30)
 include("${_lgaed_root}/cmake/UnterminatedSourceFormatTests.cmake")
 lgaed_add_unterminated_source_format_tests("${_lgaed_root}")
+include("${_lgaed_root}/cmake/CompilerReviewContinuityTests.cmake")
+lgaed_add_compiler_review_continuity_tests("${_lgaed_root}")
 add_executable(lgaed_prediction_output_tests
     "${_lgaed_root}/native/core/prediction_output_tests.cpp")
 target_link_libraries(lgaed_prediction_output_tests PRIVATE lgaed_core)
