@@ -1616,10 +1616,84 @@ void require_matching_text_only(std::string_view active,
     }
 }
 
-void require_math_prompt_contract(std::string_view current,std::string_view previous,bool historical=false) {
+// Explicit public fields of a single-choice response may be clarified while
+// its option IDs, validator, answer and original ordered JSON stay unchanged.
+std::vector<std::string> math_text_segments(std::string_view path) {
+    if(path=="/prompt")return {"prompt"};
+    if(path=="/feedback/correct")return {"feedback","correct"};
+    if(path=="/feedback/incorrect")return {"feedback","incorrect"};
+    static const std::regex option(R"(^/responses/0/options/(0|[1-9][0-9]*)/label$)");
+    std::smatch match;const auto value=std::string(path);
+    require(std::regex_match(value,match,option),
+        "Unsupported mathematical editorial text field");
+    return {"responses","0","options",match[1].str(),"label"};
+}
+std::pair<JsonObject,std::string> math_text_location(
+        const JsonObject& block,std::string_view path) {
+    require(text(block,"type")=="math_puzzle"&&block.HasKey(L"prompt")&&!block.HasKey(L"question"),
+        "A mathematical text archive requires its explicit prompt owner");
+    const auto parts=math_text_segments(path);
+    if(path=="/prompt")return {block,"prompt"};
+    const auto responses=array(block,"responses");
+    require(responses.Size()==1&&text(responses.GetObjectAt(0),"type")=="math_multiple_choice_single",
+        "Math option and feedback revisions require one single-choice response");
+    if(parts.front()=="feedback")return {block.GetNamedObject(L"feedback"),parts.back()};
+    const auto options=array(responses.GetObjectAt(0),"options");
+    const auto index=std::stoull(parts[3]);
+    require(index<options.Size(),"A mathematical text field refers to another option");
+    const auto option=options.GetObjectAt(static_cast<unsigned>(index));
+    require(!option.HasKey(L"content")||array(option,"content").Size()==0,
+        "A revised option label must be its visible text");
+    return {option,"label"};
+}
+std::string math_text_source(const JsonObject& block,std::string_view path) {
+    const auto [parent,name]=math_text_location(block,path);
+    require(parent.HasKey(key(name)),"A revised mathematical text field must already exist");
+    const auto value=parent.GetNamedValue(key(name));
+    require(value.ValueType()==JsonValueType::String,
+        "A mathematical text field must remain a string");
+    const auto authored=value.GetString();
+    for(decltype(authored.size()) at=0;at<authored.size();++at) {
+        const auto unit=authored[at];
+        if(unit>=0xd800&&unit<=0xdbff) {
+            require(at+1<authored.size()&&authored[at+1]>=0xdc00&&authored[at+1]<=0xdfff,
+                "A mathematical text field contains an invalid Unicode scalar");
+            ++at;
+        } else require(unit<0xdc00||unit>0xdfff,
+            "A mathematical text field contains an invalid Unicode scalar");
+    }
+    const auto source=utf8(authored);
+    require(authored_nonblank(source),"A revised mathematical text field cannot be blank");
+    return source;
+}
+OriginalJson::Slice math_text_slice(const OriginalJson& json,
+        OriginalJson::Slice root,std::string_view path) {
+    auto slice=root;
+    for(const auto& part:math_text_segments(path)) {
+        const auto raw=json.text(slice);
+        if(raw.starts_with("{"))slice=json.member(slice,part);
+        else if(raw.starts_with("[")) {
+            const auto entries=json.elements(slice);const auto index=std::stoull(part);
+            require(index<entries.size(),"A mathematical text field changed its option count");
+            slice=entries[static_cast<std::size_t>(index)];
+        } else invalid("A mathematical text field traverses a non-object value");
+    }
+    return slice;
+}
+void require_math_prompt_contract(std::string_view current,std::string_view previous,
+        const std::vector<std::string>& fields,bool historical=false) {
     const OriginalJson live(current),original(previous);
     const auto live_root=live.root(),old_root=original.root();
-    std::vector<OriginalJson::Slice> live_ignored{live.member(live_root,"prompt")},old_ignored{original.member(old_root,"prompt")};
+    const auto before=JsonObject::Parse(key(previous)),after=JsonObject::Parse(key(current));
+    std::vector<OriginalJson::Slice> live_ignored,old_ignored;
+    require(!fields.empty(),"A mathematical text archive needs explicit fields");
+    std::set<std::string> unique;
+    for(const auto& path:fields) {
+        require(unique.insert(path).second,"A mathematical text field is duplicated");
+        (void)math_text_source(before,path);(void)math_text_source(after,path);
+        live_ignored.push_back(math_text_slice(live,live_root,path));
+        old_ignored.push_back(math_text_slice(original,old_root,path));
+    }
     // A snapshot can precede one of the two already published label reviews.
     // Only that exact full before/after pair may omit its reviewed label too;
     // arbitrary historical labels remain part of the ordered contract.
@@ -1749,27 +1823,28 @@ std::optional<TextSemantics> bibliography_semantics(const IJsonValue& value,std:
         if(span.HasKey(L"reading"))selected.reading=parse_semantic_reading(text(span,"reading"));result.spans.push_back(std::move(selected));}
     validate_text_semantics(result);return result;
 }
-JsonObject math_prompt_projection(const JsonObject& current,const JsonObject& previous,bool historical=false) {
-    const auto prompt=[](const JsonObject& block){
-        require(text(block,"type")=="math_puzzle"&&block.HasKey(L"prompt")&&!block.HasKey(L"question"),
-            "A mathematical text archive requires the original explicit prompt field");
-        const auto authored=block.GetNamedValue(L"prompt");require(authored.ValueType()==JsonValueType::String,"A mathematical prompt must be text");
-        const auto value=authored.GetString();require(std::ranges::any_of(value,[](wchar_t c){return !narration_space(c);}),
-            "A mathematical prompt cannot be blank");return value;
-    };
-    (void)prompt(current);const auto before=prompt(previous);
+JsonObject math_prompt_projection(const JsonObject& current,const JsonObject& previous,
+        const std::vector<std::string>& fields,bool historical=false) {
+    (void)math_text_source(current,"/prompt");(void)math_text_source(previous,"/prompt");
     if(historical)if(const auto reviewed=reviewed_math_label(previous);
             reviewed&&fingerprint(current)==reviewed->before)return previous;
     const auto projected=JsonObject::Parse(current.Stringify());
-    projected.Insert(L"prompt",JsonValue::CreateStringValue(before));
-    require(fingerprint(projected)==fingerprint(previous),"A mathematical prompt revision changed another field");
+    for(const auto& path:fields) {
+        const auto before=math_text_source(previous,path);
+        (void)math_text_source(projected,path);
+        const auto [parent,name]=math_text_location(projected,path);
+        parent.Insert(key(name),JsonValue::CreateStringValue(key(before)));
+    }
+    require(fingerprint(projected)==fingerprint(previous),
+        "A mathematical text revision changed an undeclared field");
     return projected;
 }
-std::optional<TextSemantics> math_prompt_semantics(const IJsonValue& value,std::string_view owner,const JsonObject& block) {
+std::optional<TextSemantics> math_prompt_semantics(const IJsonValue& value,std::string_view owner,
+        const JsonObject& block,std::string_view path) {
     if(value.ValueType()==JsonValueType::Null)return {};
     const auto field=value.GetObject();allowed_keys(field,{"block","path","sourceSha256","spans"},true);
-    require(text(field,"block")==owner&&text(field,"path")=="/prompt","Archived mathematical semantics has a different owner or field");
-    TextSemantics result;result.source=bibliography_string(block.GetNamedString(L"prompt"));
+    require(text(field,"block")==owner&&text(field,"path")==path,"Archived mathematical semantics has a different owner or field");
+    TextSemantics result;result.source=math_text_source(block,path);
     const auto digest=text(field,"sourceSha256");require(valid_hash(digest)&&sha256(result.source)==digest,"Stale archived mathematical prompt semantics");
     const auto spans=array(field,"spans");require(spans.Size()<=100000,"Too many archived mathematical semantic spans");
     for(const auto& value:spans){const auto span=value.GetObject();allowed_keys(span,{"start","end","text","role","reading"});
@@ -1807,13 +1882,14 @@ std::optional<TextSemantics> matching_field_semantics(
     validate_text_semantics(result);
     return result;
 }
-void require_math_prompt_semantics(const JsonObject& root,std::string_view owner,const JsonObject& current,bool retain_spans) {
+void require_math_prompt_semantics(const JsonObject& root,std::string_view owner,
+        const JsonObject& current,std::string_view path,bool retain_spans) {
     require(root.HasKey(L"textSemantics"),"A mathematical prompt revision needs explicit current semantics");
     const auto metadata=root.GetNamedObject(L"textSemantics");const auto fields=array(metadata,"fields");
     std::size_t matches=0;
     for(const auto& value:fields){const auto field=value.GetObject();
-        if(text(field,"block")==owner&&text(field,"path")=="/prompt"){
-            const auto descriptor=math_prompt_semantics(value,owner,current);
+        if(text(field,"block")==owner&&text(field,"path")==path){
+            const auto descriptor=math_prompt_semantics(value,owner,current,path);
             require(descriptor.has_value(),"A mathematical prompt descriptor cannot be null");
             require(!retain_spans||!descriptor->spans.empty(),"A mathematical prompt revision cannot discard all existing semantic spans");++matches;}}
     require(matches==1,"A mathematical prompt revision needs exactly one current prompt descriptor");
@@ -3245,31 +3321,41 @@ StateLayout read_layout(const JsonObject& metadata, const JsonArray& pages, std:
     // The full original string preserves the mathematical worker's insertion
     // order and exact numbers. It never substitutes the visible authored block.
     std::map<std::string,JsonObject> math_text_originals;
+    std::map<std::string,std::vector<std::string>> math_text_fields;
+    std::set<std::pair<std::string,std::string>> math_field_owners;
     if(metadata.HasKey(L"mathTextRevisions")) {
         const auto revisions=array(metadata,"mathTextRevisions");
         require(result.version==2&&locale=="es"&&revisions.Size()<=100000,"Mathematical prompt archives require Spanish stateLayout v2");
         for(const auto& value:revisions){
             const auto item=value.GetObject();allowed_keys(item,{"id","field","rawJson","semanticBefore"},true);
             MathTextRevision record;record.id=text(item,"id");record.field=text(item,"field");record.raw_json=text(item,"rawJson");
-            require(valid_id(record.id)&&current_blocks.contains(record.id)&&!math_text_originals.contains(record.id)
-                &&record.field=="/prompt","Unknown, inactive or duplicated mathematical prompt owner");
+            require(valid_id(record.id)&&current_blocks.contains(record.id)
+                &&math_field_owners.emplace(record.id,record.field).second,
+                "Unknown, inactive or duplicated mathematical text field");
             require(!record.raw_json.empty()&&record.raw_json.size()<=32*1024*1024,"Invalid mathematical prompt archive size");
             require_integer_json_numbers(record.raw_json);
             const auto previous=JsonObject::Parse(key(record.raw_json));
-            (void)math_prompt_projection(previous,previous);
-            require_math_prompt_contract(record.raw_json,record.raw_json);
+            const std::vector<std::string> field{record.field};
+            (void)math_prompt_projection(previous,previous,field);
+            require_math_prompt_contract(record.raw_json,record.raw_json,field);
+            if(const auto prior=std::ranges::find_if(result.math_text_revisions,
+                    [&](const auto& item){return item.id==record.id;});prior!=result.math_text_revisions.end())
+                require(record.raw_json==prior->raw_json,
+                    "Every field of a math owner must retain the same original JSON bytes");
             require(state_fingerprint(previous)==result.signatures.at(record.id),"Mathematical prompt archive changed its original state contract");
             (void)read_block(previous,record.raw_json);
             record.sha256=fingerprint(previous);
-            record.semantic_before=math_prompt_semantics(item.GetNamedValue(L"semanticBefore"),record.id,previous);
+            record.semantic_before=math_prompt_semantics(item.GetNamedValue(L"semanticBefore"),record.id,previous,record.field);
+            math_text_fields[record.id].push_back(record.field);
             math_text_originals.emplace(record.id,previous);result.math_text_revisions.push_back(std::move(record));
         }
     }
     std::map<std::string,std::string_view> math_text_raw,math_current_raw;
-    std::set<std::string> math_marked_prompts;
+    std::set<std::pair<std::string,std::string>> math_marked_fields;
     for(const auto& revision:result.math_text_revisions){
         math_text_raw.emplace(revision.id,revision.raw_json);
-        if(revision.semantic_before&&!revision.semantic_before->spans.empty())math_marked_prompts.insert(revision.id);
+        if(revision.semantic_before&&!revision.semantic_before->spans.empty())
+            math_marked_fields.emplace(revision.id,revision.field);
     }
     // A matching-card text review preserves the mathematical evaluation JSON.
     // String-only paths are authenticated against the original ordered bytes,
@@ -3504,7 +3590,7 @@ StateLayout read_layout(const JsonObject& metadata, const JsonArray& pages, std:
                     [&](const auto& item){return item.id==owner;})->after_sha256)
             projected=it->second;
         if(const auto it=math_text_originals.find(owner);it!=math_text_originals.end())
-            projected=math_prompt_projection(projected,it->second,historical);
+            projected=math_prompt_projection(projected,it->second,math_text_fields.at(owner),historical);
         return projected;
     };
     for(const auto& record:result.compiler_case_order_revisions) {
@@ -3679,7 +3765,7 @@ StateLayout read_layout(const JsonObject& metadata, const JsonArray& pages, std:
                     "A published reviewed CRT spelling cannot be removed by an editorial return");
                 if(math_text_originals.contains(id)){
                     const auto raw_target=original_document.member(original_editorial.at(prefix.Size()),"returnTo");
-                    require_math_prompt_contract(original_document.text(original_document.member(raw_target,"previousBlock")),math_text_raw.at(id),true);
+                    require_math_prompt_contract(original_document.text(original_document.member(raw_target,"previousBlock")),math_text_raw.at(id),math_text_fields.at(id),true);
                 }
                 const auto previous_raw=utf8(previous.Stringify());
                 (void)read_block(previous,previous_raw);
@@ -3741,8 +3827,9 @@ StateLayout read_layout(const JsonObject& metadata, const JsonArray& pages, std:
                     "The reviewed mathematical label needs its exact published editorial proof");
             }
             if(math_text_originals.contains(id)){
-                require_math_prompt_contract(math_current_raw.at(id),math_text_raw.at(id));
-                require_math_prompt_semantics(root,id,block,math_marked_prompts.contains(id));
+                require_math_prompt_contract(math_current_raw.at(id),math_text_raw.at(id),math_text_fields.at(id));
+                for(const auto& field:math_text_fields.at(id))
+                    require_math_prompt_semantics(root,id,block,field,math_marked_fields.contains({id,field}));
             }
             if(const auto prior=source_format_originals.find(id);
                     prior!=source_format_originals.end()) {
@@ -3908,11 +3995,11 @@ StateLayout read_layout(const JsonObject& metadata, const JsonArray& pages, std:
                         if(!previous_version||state_fingerprint(source)!=result.signatures.at(id))
                             projected=source_format_projection(projected,format->second);
                     }
-                    if(prompt!=math_text_originals.end())projected=math_prompt_projection(projected,prompt->second,true);
+                    if(prompt!=math_text_originals.end())projected=math_prompt_projection(projected,prompt->second,math_text_fields.at(id),true);
                     if(prompt!=math_text_originals.end()){
                         require(editorial_nodes.contains(id)&&std::ranges::find(editorial_nodes.at(id),fingerprint(source))!=editorial_nodes.at(id).end(),
                             "A historical mathematical prompt needs an exact occurrence in its owner's editorial chain");
-                        require_math_prompt_contract(original_document.text(original_blocks.at(b)),math_text_raw.at(id),true);
+                        require_math_prompt_contract(original_document.text(original_blocks.at(b)),math_text_raw.at(id),math_text_fields.at(id),true);
                     }
                     if(general!=general_choice_revisions.end())
                         require(editorial_nodes.contains(id)&&
@@ -4403,26 +4490,168 @@ CodeScopeNode read_code_scope_node(const JsonObject& authored,const JsonObject& 
     } else require(node.code,"A code scope leaf must reference a complete C++ instruction");
     return node;
 }
+struct CodeScopeReadingContext {
+    std::string owner;
+    const std::map<std::string,Block*>& blocks;
+    const std::map<std::string,std::size_t>& pages;
+    const std::set<std::string>& previous_consumers;
+    std::set<std::string> ids;
+    std::map<std::string,std::vector<std::pair<std::size_t,std::size_t>>> ranges;
+    std::map<std::string,std::string> sources;
+    std::vector<std::string> consumed;
+};
+std::optional<TextSemantics> code_scope_reading_semantics(const Block& source,
+        std::string_view path,std::string_view complete,std::size_t start,
+        std::size_t end,const std::string& selected) {
+    const auto found=source.text_semantics.find(std::string(path));
+    if(found==source.text_semantics.end())return std::nullopt;
+    const auto& original=found->second;
+    require(original.source==complete,"Code scope semantic source is stale");
+    TextSemantics result;result.source=selected;
+    for(const auto& span:original.spans) {
+        if(span.end<=start||span.start>=end)continue;
+        require(start<=span.start&&span.start<span.end&&span.end<=end,
+            "Code scope reading range splits an authored semantic span");
+        auto adjusted=span;adjusted.start-=start;adjusted.end-=start;
+        result.spans.push_back(std::move(adjusted));
+    }
+    validate_text_semantics(result);
+    return result;
+}
+CodeScopeNode read_code_scope_reading_node(const JsonObject& authored,
+        CodeScopeReadingContext& context,unsigned depth=0) {
+    require(depth<=12&&context.ids.size()<256,"Code scope tree exceeds supported bounds");
+    allowed_keys(authored,{"id","title","source","sourceBlock","sourceSha256","range","role","icon","children"});
+    CodeScopeNode node;node.key=text(authored,"id");
+    require(valid_id(node.key)&&context.ids.insert(node.key).second,
+        "Code scope node IDs must be unique stable identifiers");
+    const bool referenced=authored.HasKey(L"source");
+    require(referenced!=authored.HasKey(L"title"),
+        "Code scope needs exactly one prose title or public source reference");
+    if(!referenced) {
+        require(!authored.HasKey(L"sourceBlock")&&!authored.HasKey(L"sourceSha256")&&
+            !authored.HasKey(L"range")&&!authored.HasKey(L"role")&&!authored.HasKey(L"icon"),
+            "A code scope prose title cannot borrow source metadata");
+        node.text=code_scope_line(text(authored,"title"));
+    } else {
+        node.source_block=authored.HasKey(L"sourceBlock")?text(authored,"sourceBlock"):context.owner;
+        const auto found=context.blocks.find(node.source_block);
+        require(found!=context.blocks.end()&&context.pages.at(node.source_block)==context.pages.at(context.owner),
+            "Code scope reading note must belong to this same page");
+        const auto& source_block=*found->second;
+        node.source_path=text(authored,"source");
+        node.code=node.source_block==context.owner;
+        if(node.code) {
+            require(node.source_path=="/code"&&(!authored.HasKey(L"role")||text(authored,"role")=="code")&&
+                !authored.HasKey(L"icon"),"Code scope code nodes require the owner's /code source");
+        } else {
+            require(source_block.type==BlockType::paragraph&&node.source_path=="/text"&&
+                authored.HasKey(L"role")&&text(authored,"role")=="text",
+                "A code scope reading note must reference paragraph /text, never another activity or answer");
+            require(!context.previous_consumers.contains(node.source_block),
+                "A code scope note already belongs to another reading scope");
+            require(!authored.HasKey(L"children"),"Code scope reading notes are source-bound text leaves");
+            if(authored.HasKey(L"icon")) {
+                node.decorative_icon=text(authored,"icon");
+                require(node.decorative_icon=="check","Unknown decorative code scope note icon");
+            }
+            if(std::ranges::find(context.consumed,node.source_block)==context.consumed.end())
+                context.consumed.push_back(node.source_block);
+        }
+        const auto raw=JsonObject::Parse(key(source_block.raw_json));
+        const auto complete=SemanticPublicFields::strict_string(
+            raw.GetNamedString(node.code?L"code":L"text"));
+        require(authored_nonblank(complete)&&complete.size()<=256*1024&&complete.find('\0')==complete.npos,
+            "Code scope reading source must be bounded nonblank public text");
+        const auto digest=text(authored,"sourceSha256");
+        require(valid_hash(digest)&&digest==sha256(complete),"Code scope source text fingerprint is stale");
+        const auto wide=key(complete);
+        std::size_t start=0,end=wide.size();
+        if(authored.HasKey(L"range")) {
+            const auto range=array(authored,"range");
+            require(range.Size()==2,"Code scope reading range requires two UTF-16 boundaries");
+            start=integer(range.GetAt(0),256*1024);end=integer(range.GetAt(1),256*1024);
+        }
+        require(start<end&&end<=wide.size(),"Code scope reading range is outside its complete source");
+        const auto boundary=[&](std::size_t at) {
+            return at==0||at==wide.size()||wide[at]<0xdc00||wide[at]>0xdfff;
+        };
+        require(boundary(start)&&boundary(end),"Code scope reading range splits a Unicode scalar");
+        node.text=utf8(winrt::hstring(std::wstring_view(wide.c_str()+start,end-start)));
+        require(node.code||authored_nonblank(node.text),"A code scope reading note must contain authored text");
+        context.ranges[node.source_block].push_back({start,end});
+        context.sources.insert_or_assign(node.source_block,complete);
+        node.text_semantics=code_scope_reading_semantics(source_block,node.source_path,complete,start,end,node.text);
+    }
+    if(authored.HasKey(L"children")) {
+        const auto children=array(authored,"children");
+        require(children.Size()>0&&children.Size()<=128,"Code scope container needs a nonempty ordered child list");
+        for(const auto& child:children)
+            node.children.push_back(read_code_scope_reading_node(child.GetObject(),context,depth+1));
+    } else require(referenced,"A code scope leaf must reference a complete source selection");
+    return node;
+}
 void read_code_scope_presentations(const JsonObject& root,Lesson& lesson) {
     if(!root.HasKey(L"codeScopePresentations"))return;
     require(lesson.state_layout.version!=0,"Code scope presentation requires stable block ownership");
     const auto metadata=root.GetNamedObject(L"codeScopePresentations");
     allowed_keys(metadata,{"version","entries"},true);
-    require(integer(metadata.GetNamedValue(L"version"),1)==1,"Unsupported code scope presentation version");
+    const auto version=integer(metadata.GetNamedValue(L"version"),2);
+    require(version==1||version==2,"Unsupported code scope presentation version");
+    if(version==2) {
+        const OriginalJson original(lesson.raw_json);
+        require_integer_json_numbers(original.text(original.member(original.root(),"codeScopePresentations")));
+    }
     const auto entries=array(metadata,"entries");
     require(entries.Size()>0&&entries.Size()<=64,"Invalid code scope presentation count");
     std::map<std::string,Block*> blocks;
-    for(auto& page:lesson.pages)for(auto& block:page.blocks)blocks.emplace(block.stable_id,&block);
+    std::map<std::string,std::size_t> pages;
+    for(std::size_t page=0;page<lesson.pages.size();++page)
+        for(auto& block:lesson.pages[page].blocks) {
+            require(blocks.emplace(block.stable_id,&block).second&&pages.emplace(block.stable_id,page).second,
+                "Code scope requires unique stable block owners");
+        }
     std::set<std::pair<std::string,std::size_t>> used;
+    std::set<std::string> consumers;
     for(const auto& value:entries) {
         const auto entry=value.GetObject();
-        allowed_keys(entry,{"block","representation","language","root"},true);
         const auto owner=text(entry,"block");
         const auto found=blocks.find(owner);
-        require(found!=blocks.end()&&found->second->type==BlockType::math_puzzle,
-            "Code scope presentation requires an active composed puzzle owner");
+        require(found!=blocks.end(),"Code scope presentation requires an active block owner");
         require(text(entry,"language")=="cpp","Code scope presentation requires explicitly declared C++");
         auto& block=*found->second;
+        if(version==2&&block.type==BlockType::code) {
+            allowed_keys(entry,{"block","language","root"},true);
+            require(block.language.empty()||block.language=="cpp"||block.language=="c++",
+                "Code scope reading cannot reinterpret another declared language as C++");
+            require(lesson.state_layout.version==2&&used.emplace(owner,0).second,
+                "Code scope reading requires stable v2 ownership and a unique projection");
+            CodeScopeReadingContext context{owner,blocks,pages,consumers};
+            auto node=read_code_scope_reading_node(entry.GetNamedObject(L"root"),context);
+            require(!node.children.empty(),"Code scope root must be a reading container");
+            require(context.ranges.contains(owner),"Code scope reading must retain the complete program");
+            for(const auto& [identity,ranges]:context.ranges) {
+                const auto wide=key(context.sources.at(identity));
+                std::size_t previous=0;
+                for(const auto& [start,end]:ranges) {
+                    require(start>=previous,"Code scope source selections overlap or change source order");
+                    const auto gap=utf8(winrt::hstring(std::wstring_view(wide.c_str()+previous,start-previous)));
+                    require(identity==owner?gap.empty():!authored_nonblank(gap),
+                        "Code scope reading projection omits source content");
+                    previous=end;
+                }
+                const auto tail=utf8(winrt::hstring(std::wstring_view(wide.c_str()+previous,wide.size()-previous)));
+                require(identity==owner?tail.empty():!authored_nonblank(tail),
+                    "Code scope reading projection omits source content");
+            }
+            for(const auto& identity:context.consumed)
+                require(consumers.insert(identity).second,"A code scope note has more than one consuming owner");
+            block.code_scope_presentations.push_back({0,std::move(node),true,std::move(context.consumed)});
+            continue;
+        }
+        allowed_keys(entry,{"block","representation","language","root"},true);
+        require(block.type==BlockType::math_puzzle,
+            "Code scope presentation requires an active composed puzzle owner");
         const auto raw=JsonObject::Parse(key(block.raw_json));
         const auto representations=array(raw,"representations");
         const auto index=integer(entry.GetNamedValue(L"representation"));
@@ -4675,17 +4904,21 @@ void resolve_addresses(Lesson& lesson) {
         }
         return projected;
     };
-    std::map<std::string,const MathTextRevision*> math_texts;
-    for(const auto& revision:layout.math_text_revisions)math_texts.emplace(revision.id,&revision);
+    std::map<std::string,std::vector<const MathTextRevision*>> math_texts;
+    for(const auto& revision:layout.math_text_revisions)math_texts[revision.id].push_back(&revision);
     std::map<std::string,const MathMatchingTextRevision*> matching_texts;
     for(const auto& revision:layout.math_matching_text_revisions)
         matching_texts.emplace(revision.id,&revision);
     const auto apply_math_text=[&](Block& block,bool archived){
         if(const auto found=math_texts.find(block.stable_id);found!=math_texts.end()){
-            const auto& revision=*found->second;require(block.type==BlockType::math_puzzle,"A mathematical prompt archive changed its owner type");
-            block.math_evaluation_raw_json=revision.raw_json;
-            if(archived&&revision.semantic_before&&revision.semantic_before->source==block.prompt)
-                block.text_semantics.emplace("/prompt",*revision.semantic_before);
+            require(block.type==BlockType::math_puzzle,"A mathematical text archive changed its owner type");
+            block.math_evaluation_raw_json=found->second.front()->raw_json;
+            if(archived) {
+                const auto source=JsonObject::Parse(key(block.raw_json));
+                for(const auto* revision:found->second)
+                    if(revision->semantic_before&&revision->semantic_before->source==math_text_source(source,revision->field))
+                        block.text_semantics.emplace(revision->field,*revision->semantic_before);
+            }
         }
     };
     const auto format_precedes=[&](const std::string& owner,std::size_t editorial_index) {

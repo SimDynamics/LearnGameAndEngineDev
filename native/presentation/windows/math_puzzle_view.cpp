@@ -757,6 +757,8 @@ struct MathPuzzleView::Impl {
     std::map<HWND,int> requested_heights;
     std::map<std::string,curriculum::TextSemantics> text_semantics;
     std::vector<curriculum::CodeScopePresentation> code_scopes;
+    bool read_only_scope = false;
+    std::set<HWND> decorative_checks;
     std::map<const void*,std::string> source_paths;
     std::vector<winrt::com_ptr<::IUnknown>> source_objects;
     static std::string pointer_token(std::string_view token){std::string result;for(const auto c:token)result+=c=='~'?"~0":c=='/'?"~1":std::string(1,c);return result;}
@@ -796,7 +798,8 @@ struct MathPuzzleView::Impl {
         windows::ensure_winrt_apartment(); block = JsonObject::Parse(winrt::to_hstring(raw));
         // MathPuzzleParser gives legacy standalone interactions the same stable
         // response ID. Normalize presentation only; never rewrite the lesson.
-        const bool standalone=text(block,L"type")!="math_puzzle";
+        read_only_scope=text(block,L"type")=="code"&&code_scopes.size()==1&&code_scopes.front().read_only;
+        const bool standalone=!read_only_scope&&text(block,L"type")!="math_puzzle";
         if(standalone) {
             auto response=JsonObject::Parse(block.Stringify());response.SetNamedValue(L"id",string_value("response"));
             JsonArray responses;responses.Append(response);block.SetNamedValue(L"responses",responses);
@@ -805,9 +808,9 @@ struct MathPuzzleView::Impl {
         std::set<std::size_t> scope_indices;
         const auto representation_count=array(block,L"representations").Size();
         for(const auto& scope:code_scopes)
-            if(scope.representation_index>=representation_count||scope.root.children.empty()
-                ||!scope_indices.insert(scope.representation_index).second)
-                throw std::invalid_argument("A code-scope presentation requires one existing representation and a container root");
+            if(scope.read_only!=read_only_scope||(!scope.read_only&&scope.representation_index>=representation_count)
+                ||scope.root.children.empty()||!scope_indices.insert(scope.representation_index).second)
+                throw std::invalid_argument("A code-scope presentation requires an authenticated reading owner or one existing representation");
         if (!saved.empty()) { JsonObject restored; if (JsonObject::TryParse(winrt::to_hstring(saved),restored)) answers = restored.HasKey(L"answers") ? object(restored,L"answers") : restored; }
         rich = LoadLibraryW(L"Msftedit.dll"); if (!rich) throw std::runtime_error("RichEdit is unavailable");
         (void)CoCreateInstance(CLSID_AccPropServices,nullptr,CLSCTX_INPROC_SERVER,IID_PPV_ARGS(accessibility.GetAddressOf()));
@@ -949,20 +952,22 @@ struct MathPuzzleView::Impl {
         const auto result=content->window;contents.emplace(result,std::move(content));rows.push_back({{{result}},0});return result;
     }
     HWND code_scope_node(const curriculum::CodeScopeNode& node,std::string_view prefix){
-        // The loader has already authenticated each exact source label. Code
-        // remains a native RichEdit document, never a geometric point or a
-        // mathematical expression inferred from its characters.
-        if(node.key.empty()||node.text.empty()||(node.children.empty()&&!node.code))
+        // Every source slice and its reading role were authenticated by the
+        // loader. Decorative marks never enter this source or its voice plan.
+        if(node.key.empty()||node.text.empty())
             throw std::invalid_argument("A code-scope node requires a stable key and its resolved text");
         const auto first=rows.size();
-        curriculum::TextSemantics semantics{node.text,{}};
-        if(node.code)semantics.spans.push_back({0,wide(node.text).size(),node.text,
-            curriculum::SemanticRole::cpp,curriculum::SemanticReading::technical});
+        curriculum::TextSemantics semantics=node.text_semantics.value_or(curriculum::TextSemantics{node.text,{}});
+        if(node.code){
+            semantics={node.text,{}};
+            semantics.spans.push_back({0,wide(node.text).size(),node.text,
+                curriculum::SemanticRole::cpp,curriculum::SemanticReading::technical});
+        }
         const auto item=make(MSFTEDIT_CLASS,"",ES_MULTILINE|ES_READONLY);
         if(!reader_theme::palette(item).high_contrast)reader_theme::set_text_color(item,RGB(235,239,245));
         if(node.code)reader_theme::set_reference_mathematics(item,false);
-        set_rich_text(item,node.text,{},node.code,node.code?RichTextRole::body:RichTextRole::prompt,
-            locale,{}, {},&semantics);
+        const auto role=!node.code&&!node.children.empty()?RichTextRole::prompt:RichTextRole::body;
+        set_rich_text(item,node.text,{},node.code,role,locale,{}, {},&semantics);
         PARAFORMAT2 paragraph{};paragraph.cbSize=sizeof(paragraph);paragraph.dwMask=PFM_LINESPACING;
         paragraph.bLineSpacingRule=5;paragraph.dyLineSpacing=20;
         SendMessageW(item,EM_SETPARAFORMAT,0,reinterpret_cast<LPARAM>(&paragraph));
@@ -971,7 +976,17 @@ struct MathPuzzleView::Impl {
         regions.push_back({std::string(prefix)+node.key,node.text,item,std::move(semantics),std::string("text")});
         // These literal source fields intentionally stay outside label_formats:
         // installing the mathematical layout service must not rewrite them.
-        rows.push_back({{{item,0,true,0,2}},0,node.children.empty()?4:8});
+        Row row{{{item,0,true,0,2}},0,node.children.empty()?4:8};
+        if(!node.decorative_icon.empty()){
+            if(node.decorative_icon!="check"||node.code||!node.children.empty())
+                throw std::invalid_argument("Only a prose note may carry a decorative check");
+            // Owner-drawn STATIC has no text, name or narration region. Its
+            // visible check does not shift the note's semantic/highlight ranges.
+            const auto mark=make(L"STATIC","",SS_OWNERDRAW);
+            decorative_checks.insert(mark);
+            row.cells.insert(row.cells.begin(),Cell{mark,24});
+        }
+        rows.push_back(std::move(row));
         if(node.children.empty())return item;
         for(const auto& child:node.children)code_scope_node(child,prefix);
         rows.back().gap_after=0;
@@ -982,18 +997,17 @@ struct MathPuzzleView::Impl {
     }
     void code_scope_representation(const curriculum::CodeScopePresentation& presentation,const JsonObject& source){
         const auto prefix="code-scope/"+std::to_string(presentation.representation_index)+'/';
+        const auto container=code_scope_node(presentation.root,prefix);
         const auto config=source.HasKey(L"config")?object(source,L"config"):source;
         const auto description=text(config,L"description");
-        const auto description_index=regions.size();
         if(!description.empty()){
-            std::optional<curriculum::TextSemantics> semantics;
-            if(const auto original=semantics_for(config,L"description"))semantics=*original;
-            // This authored description explicitly conveys scope endings to
-            // narration; it is neither another visible line nor an answer.
-            regions.push_back({prefix+"description/source",description,nullptr,std::move(semantics),std::string("text")});
+            // The alternate description remains available to accessibility,
+            // separately from the visible title/code/notes spoken exactly once.
+            const auto alternate=wide(description);
+            if(!accessibility||FAILED(accessibility->SetHwndPropStr(container,
+                static_cast<DWORD>(OBJID_CLIENT),CHILDID_SELF,PROPID_ACC_DESCRIPTION,alternate.c_str())))
+                SetWindowTextW(container,alternate.c_str());
         }
-        const auto container=code_scope_node(presentation.root,prefix);
-        if(!description.empty())regions[description_index].target=container;
     }
     void bind_card_children(HWND card){
         const auto found=contents.find(card);if(found==contents.end())return;
@@ -1531,8 +1545,14 @@ struct MathPuzzleView::Impl {
         // fullscreen, so feedback, progress and the existing reader stay joined.
         const auto spacer=make(L"STATIC","");
         expand_button=button(tr("Pantalla completa","Full screen","Plein écran"),[this]{if(callbacks.fullscreen_requested)callbacks.fullscreen_requested();});
+        reader_theme::icon_button(expand_button);
+        if(read_only_scope){
+            rows.push_back({{{spacer},{expand_button,48}},48});
+            code_scope_node(code_scopes.front().root,"code-scope/0/");
+            initial=JsonObject{};initializing=false;return;
+        }
         reset_button=button(tr("Reiniciar","Restart","Recommencer"),[this]{if(callbacks.reset_requested)callbacks.reset_requested();});
-        reader_theme::icon_button(expand_button);reader_theme::icon_button(reset_button);
+        reader_theme::icon_button(reset_button);
         rows.push_back({{{spacer},{expand_button,48},{reset_button,48}},48});
         // Weight is selected BEFORE native math is built and aligned: TOM
         // may encode bold numerals with supplementary mathematical digits.
@@ -1811,7 +1831,7 @@ struct MathPuzzleView::Impl {
         cls.lpfnWndProc=content_proc;cls.lpszClassName=content_class;if(!RegisterClassExW(&cls)&&GetLastError()!=ERROR_CLASS_ALREADY_EXISTS)throw std::runtime_error("Cannot register mathematical content containers");
         host = CreateWindowExW(WS_EX_CONTROLPARENT,view_class,L"",WS_CHILD | WS_VISIBLE | WS_CLIPCHILDREN,0,0,1,1,parent,nullptr,GetModuleHandleW(nullptr),this);
         if (!host) throw std::runtime_error("Cannot create native math view");
-        if(!reader_theme::reference_mathematics(parent).has_value())reader_theme::set_reference_mathematics(host,true);
+        if(!reader_theme::reference_mathematics(parent).has_value())reader_theme::set_reference_mathematics(host,!read_only_scope);
         SetWindowSubclass(host,text_wheel_proc,14,reinterpret_cast<DWORD_PTR>(&callbacks));
         font = CreateFontW(-MulDiv(18,static_cast<int>(GetDpiForWindow(host)),96),0,0,0,FW_NORMAL,FALSE,FALSE,FALSE,DEFAULT_CHARSET,OUT_DEFAULT_PRECIS,CLIP_DEFAULT_PRECIS,CLEARTYPE_QUALITY,DEFAULT_PITCH,L"Roboto");
         base_font = CreateFontW(-MulDiv(18,static_cast<int>(GetDpiForWindow(host)),96),0,0,0,FW_NORMAL,FALSE,FALSE,FALSE,DEFAULT_CHARSET,OUT_DEFAULT_PRECIS,CLIP_DEFAULT_PRECIS,CLEARTYPE_QUALITY,DEFAULT_PITCH,L"Roboto");
@@ -1828,6 +1848,14 @@ struct MathPuzzleView::Impl {
         try {
             if (message == WM_MEASUREITEM && measure_native_menu(*reinterpret_cast<MEASUREITEMSTRUCT*>(lparam))) return TRUE;
             if (message == WM_DRAWITEM){const auto& item=*reinterpret_cast<DRAWITEMSTRUCT*>(lparam);
+                if(self->decorative_checks.contains(item.hwndItem)){
+                    const auto colors=reader_theme::palette(window);FillRect(item.hDC,&item.rcItem,reader_theme::brush(reader_theme::Surface::card));
+                    const auto saved=SaveDC(item.hDC);SelectObject(item.hDC,self->font);SetBkMode(item.hDC,TRANSPARENT);
+                    SetTextColor(item.hDC,colors.high_contrast?colors.text:colors.accent);
+                    auto bounds=item.rcItem;bounds.top+=self->px(2);
+                    DrawTextW(item.hDC,L"\u2713",1,&bounds,DT_CENTER|DT_TOP|DT_SINGLELINE|DT_NOPREFIX);
+                    RestoreDC(item.hDC,saved);return TRUE;
+                }
                 if(item.hwndItem==self->expand_button||item.hwndItem==self->reset_button){(void)reader_theme::draw_button(item);auto icon=item.rcItem;InflateRect(&icon,-self->px(12),-self->px(12));const auto colors=reader_theme::palette(window);draw_icon(item.hDC,icon,item.hwndItem==self->expand_button?Icon::expand:Icon::reset,IsWindowEnabled(item.hwndItem)?(item.hwndItem==self->expand_button?colors.text:colors.accent):colors.muted);return TRUE;}
                 for(const auto& canvas:self->canvases)if(canvas->expand_button==item.hwndItem){(void)reader_theme::draw_button(item);auto icon=item.rcItem;InflateRect(&icon,-self->px(12),-self->px(12));draw_icon(item.hDC,icon,Icon::expand,reader_theme::palette(window).high_contrast?GetSysColor(COLOR_WINDOWTEXT):RGB(190,195,205));return TRUE;}
                 if(draw_native_menu(item)||reader_theme::draw_button(item))return TRUE;}
@@ -1850,7 +1878,7 @@ struct MathPuzzleView::Impl {
         initializing = true;
         for(const auto& canvas:canvases)canvas->close_expanded(false);
         for (auto item = GetWindow(host,GW_CHILD); item;) { const auto next = GetWindow(item,GW_HWNDNEXT); DestroyWindow(item); item = next; }
-        canvases.clear();rows.clear();contents.clear();card_children.clear();matching_empty_labels.clear();requested_widths.clear();intrinsic_widths.clear();label_formats.clear();typeset_fragments.clear(); regions.clear(); commands.clear(); editors.clear();expression_editors.clear();keyboard_contexts.clear();calculator_buttons.clear();input_disabled_readonly.clear(); orders.clear(); order_rows.clear(); order_cards.clear(); match_cards.clear(); selected_sources.clear(); choice_buttons.clear(); choice_options.clear();choice_labels.clear();choice_cards.clear();next_tap_positions.clear();matching_layouts.clear();expand_button=reset_button=nullptr;live_visuals.clear(); graph_fields.clear(); requested_heights.clear(); next_id = 100;
+        decorative_checks.clear();canvases.clear();rows.clear();contents.clear();card_children.clear();matching_empty_labels.clear();requested_widths.clear();intrinsic_widths.clear();label_formats.clear();typeset_fragments.clear(); regions.clear(); commands.clear(); editors.clear();expression_editors.clear();keyboard_contexts.clear();calculator_buttons.clear();input_disabled_readonly.clear(); orders.clear(); order_rows.clear(); order_cards.clear(); match_cards.clear(); selected_sources.clear(); choice_buttons.clear(); choice_options.clear();choice_labels.clear();choice_cards.clear();next_tap_positions.clear();matching_layouts.clear();expand_button=reset_button=nullptr;live_visuals.clear(); graph_fields.clear(); requested_heights.clear(); next_id = 100;
     }
 };
 

@@ -699,8 +699,8 @@ declara implementado el color neutro ni el subrayado tipográfico.
 
 ### Revisión general del enunciado matemático en Windows
 
-Work puede aclarar únicamente el campo `/prompt` de un `math_puzzle` español
-con mapa v2 mediante:
+Work puede aclarar el campo `/prompt` de un `math_puzzle` español
+con mapa v2 mediante la API compatible existente:
 
 ```python
 revised = stable_state_layout.revise_math_prompt_editorial(
@@ -724,16 +724,43 @@ en una ruta nueva; repetir el comando sobre un archivo existente falla sin
 sobrescribirlo. Después de integrar la propuesta, se ejecuta el control de
 transición de todo el árbol contra esa misma publicación.
 
-La primera revisión incorpora una entrada en `stateLayout.mathTextRevisions`:
+Para un bloque con **una respuesta `math_multiple_choice_single`**, también
+pueden aclararse las etiquetas visibles existentes
+`/responses/0/options/N/label` y los mensajes existentes
+`/feedback/correct` y `/feedback/incorrect`. No se modifican IDs, orden de
+opciones, tipo de respuesta ni validador. Cada opción conserva su selección
+por ID, por ejemplo `antes_de_return`.
+
+```python
+revised = stable_state_layout.revise_math_text_editorial(
+    published, identity,
+    {path: {"text": authored_text, "spans": authored_spans}
+     for path, authored_text, authored_spans in field_edits})
+```
+
+La función devuelve una copia y deja intacta la publicación recibida.
+`field_edits` procede de la autoría de Work y contiene exclusivamente campos
+existentes; no se inventan textos ni marcas. Permite editar varios campos en
+una publicación o en publicaciones separadas, incluso después de una revisión
+de `/prompt` ya publicada. Cada campo necesita su propio descriptor actual,
+y los marcados anteriores no pueden perder todos sus segmentos de forma
+silenciosa. El comando CLI anterior sigue dedicado a `/prompt`.
+
+La primera revisión de cada campo añade una entrada en
+`stateLayout.mathTextRevisions`:
 
 | Campo | Contenido y protección |
 | --- | --- |
 | `id` | Propietario estable del bloque matemático, sin crear ni renombrar una actividad. |
-| `field` | Exactamente `"/prompt"`. No admite etiquetas, feedback, datos ni otros textos. |
-| `rawJson` | Cadena JSON con el bloque anterior **completo**, incluyendo su orden de claves y sus valores numéricos. La herramienta la crea desde el propietario publicado; no debe editarse ni reconstruirse con el serializador de Windows. |
-| `semanticBefore` | Descriptor anterior completo de `/prompt`, o `null` si no existía. Un descriptor presente con `spans: []` se conserva como tal. |
+| `field` | `"/prompt"`, o uno de los campos de etiqueta/retroalimentación de selección única indicados arriba. El par `id, field` es único. |
+| `rawJson` | Cadena JSON con el bloque original **completo**, incluyendo su orden de claves y sus valores numéricos. La primera revisión la crea desde el propietario publicado; los demás campos reutilizan esos mismos bytes, sin editar ni reconstruir el archivo con el serializador de Windows. |
+| `semanticBefore` | Descriptor anterior completo del campo declarado, o `null` si no existía. Un descriptor presente con `spans: []` se conserva como tal. |
 
-El archivo permanece inmutable en revisiones posteriores. La cadena
+Cada entrada permanece inmutable en revisiones posteriores. Todos los campos
+de un mismo propietario comparten **exactamente los mismos bytes `rawJson`**
+del primer archivo de evaluación; añadir etiquetas después de `/prompt` no
+rearchiva una versión artificial ni modifica la entrada publicada.
+La cadena
 `editorial` añade una prueba de bloque completo por revisión; admite nuevas
 redacciones sin registrar cada frase en el motor. Un retorno a una redacción
 publicada anterior debe declararse mediante `return_to` en la función o
@@ -742,9 +769,10 @@ completa y mantiene la fuente original de evaluación.
 
 Los cargadores completo y de progreso comprueban el propietario, la firma
 histórica, la cadena editorial y el descriptor actual. Para contrastar el
-contrato protegido, restituyen únicamente el enunciado original. Permanecen
-exactos el tipo, `schemaVersion`, ID, representaciones, herramientas, respuestas,
-etiquetas, pares, validadores, esperados y feedback. La transición comprueba
+contrato protegido, restituyen únicamente los campos explícitamente archivados.
+Permanecen exactos el tipo, `schemaVersion`, ID, representaciones, herramientas,
+IDs y orden de respuestas/opciones, pares, validadores, esperados y todos los
+campos no declarados. La transición comprueba
 también el orden de claves y la representación numérica; el hash canónico de
 `stateLayout` no reemplaza esas comprobaciones. No se recalculan `origin`,
 `family`, direcciones ni claves de respuesta para aceptar una revisión.
@@ -753,7 +781,13 @@ El JSON visible y su `prompt` siguen conteniendo la redacción actual. El
 cargador conserva aparte el `rawJson` autenticado de evaluación, que utilizan
 el envío de respuestas, la recuperación de respuestas guardadas y el cálculo
 de progreso del catálogo. Así el puente matemático conserva exactamente su
-algoritmo y la `contentFingerprint` anterior. El archivo no se acepta como una
+algoritmo y la `contentFingerprint` anterior. Al presentar un resultado,
+`LessonView` sustituye únicamente los fragmentos de `feedbackSources`
+cuyo puntero y texto coinciden con el campo archivado. Muestra su redacción
+vigente y recalcula las posiciones UTF-16, conservando los diagnósticos
+dinámicos y todo texto ajeno a esos intervalos. No cambia el veredicto, la
+huella ni los datos guardados de evaluación; la reapertura usa la misma
+presentación. El archivo no se acepta como una
 propiedad arbitraria del bloque ni sirve para aprobar otros cambios
 matemáticos. Esta integración pertenece a Windows y no cambia el contrato de
 la app Android independiente.

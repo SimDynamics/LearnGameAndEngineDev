@@ -26,6 +26,9 @@
 #include <richedit.h>
 #include <wincodec.h>
 #include <wrl/client.h>
+#include <oleacc.h>
+#include "presentation/windows/text_semantic_projection.hpp"
+#pragma comment(lib,"oleacc.lib")
 #pragma comment(lib,"windowscodecs.lib")
 #include <winrt/Windows.Data.Json.h>
 #include <algorithm>
