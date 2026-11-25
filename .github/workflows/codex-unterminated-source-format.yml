@@ -1,0 +1,90 @@
+name: Codex preserved incomplete C++ literal formatting
+
+on:
+  push:
+    branches: [Codex]
+    paths:
+      - .github/workflows/codex-unterminated-source-format.yml
+      - cmake/UnterminatedSourceFormatTests.cmake
+      - native/core/code_format_compat.hpp
+      - native/core/code_format_compat_tests.cpp
+      - native/platform/windows/unterminated_source_format_tests.cpp
+      - scripts/curriculum/code_format_compat.py
+      - scripts/curriculum/test_code_format_compat.py
+      - scripts/curriculum/unterminated_source_format_fixture_source.py
+      - scripts/curriculum/test_unterminated_source_format.py
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: unterminated-source-format-${{ github.ref }}
+  cancel-in-progress: false
+
+jobs:
+  msvc:
+    name: Verify format, authentic U1L4 history and unchanged MSVC error
+    runs-on: windows-2025-vs2026
+    timeout-minutes: 25
+    steps:
+      - name: Read exact Codex revision and authenticated publication history
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+          persist-credentials: false
+      - name: Select Python for authoring and source-format guards
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - name: Activate hosted MSVC x64
+        uses: ilammy/msvc-dev-cmd@v1
+        with:
+          arch: x64
+      - name: Verify complete format and incomplete-literal authoring regressions
+        working-directory: scripts/curriculum
+        run: python -B -m unittest -v test_code_format_compat test_unterminated_source_format
+      - name: Compile original native format guards and actual Windows loaders
+        shell: pwsh
+        run: |
+          $ErrorActionPreference = 'Stop'
+          Get-Command cl, cmake, ninja | Select-Object Name, Source | Format-Table | Out-Host
+          Write-Host "VCToolsVersion=$env:VCToolsVersion"
+          Write-Host "WindowsSDKVersion=$env:WindowsSDKVersion"
+          $qaLiteralBuild = Join-Path $env:RUNNER_TEMP 'lgaed-unterminated-format-qa'
+          cmake -S cmake/HostedCourseEditionQA -B $qaLiteralBuild -G Ninja -DCMAKE_BUILD_TYPE=Debug
+          if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
+          cmake --build $qaLiteralBuild --target lgaed_code_format_compat_tests lgaed_unterminated_source_format_tests --parallel 3
+          if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
+      - name: Verify native parity, authentic state and the preserved intentional diagnostic
+        shell: pwsh
+        run: |
+          $ErrorActionPreference = 'Stop'
+          $qaLiteralBuild = Join-Path $env:RUNNER_TEMP 'lgaed-unterminated-format-qa'
+          $qaLiteralPattern = '^native[.](code_format_compat|unterminated_source_format)$'
+          $qaLiteralExpected = @('native.code_format_compat', 'native.unterminated_source_format')
+          $qaLiteralListingText = & ctest --test-dir $qaLiteralBuild -R $qaLiteralPattern --show-only=json-v1
+          if ($LASTEXITCODE -ne 0) { throw 'Cannot inspect the incomplete-literal test selection.' }
+          $qaLiteralListingJson = $qaLiteralListingText -join "`n"
+          $qaLiteralListingJson | Set-Content -Encoding utf8 (Join-Path $qaLiteralBuild 'literal-format-selection.json')
+          $qaLiteralActual = @(($qaLiteralListingJson | ConvertFrom-Json).tests | ForEach-Object { $_.name })
+          if ($qaLiteralActual.Count -ne $qaLiteralExpected.Count -or
+              (Compare-Object -ReferenceObject $qaLiteralExpected -DifferenceObject $qaLiteralActual)) {
+            throw 'Incomplete-literal QA must select the two exact native regressions.'
+          }
+          ctest --test-dir $qaLiteralBuild -R $qaLiteralPattern --parallel 1 --verbose --output-on-failure --no-tests=error --output-junit (Join-Path $qaLiteralBuild 'literal-format.xml') --output-log (Join-Path $qaLiteralBuild 'literal-format.log')
+          if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
+      - name: Preserve Windows format, loader and intentional-error evidence
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: hosted-win32-unterminated-format-${{ github.sha }}
+          retention-days: 14
+          if-no-files-found: warn
+          path: |
+            ${{ runner.temp }}/lgaed-unterminated-format-qa/literal-format-selection.json
+            ${{ runner.temp }}/lgaed-unterminated-format-qa/literal-format.xml
+            ${{ runner.temp }}/lgaed-unterminated-format-qa/literal-format.log
+            ${{ runner.temp }}/lgaed-unterminated-format-qa/test-fixtures/unterminated-source-format/**
+            ${{ runner.temp }}/lgaed-unterminated-format-qa/Testing/Temporary/*.log
+            ${{ runner.temp }}/lgaed-unterminated-format-qa/CMakeFiles/CMakeConfigureLog.yaml
