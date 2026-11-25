@@ -57,6 +57,80 @@ void malformed(const std::string& example){
     rejects(wrap(decimal));
 }
 
+// Measure the actual native RichEdit ink and the pixels painted by the
+// existing owner-drawn STATIC. Do not toggle machine-wide accessibility or
+// DPI settings; the test observes the palette and DPI of this QA window.
+double contrast(COLORREF foreground,COLORREF background){
+    const auto luminance=[](COLORREF value){
+        const auto channel=[](BYTE byte){const double s=byte/255.;
+            return s<=.04045?s/12.92:std::pow((s+.055)/1.055,2.4);};
+        return .2126*channel(GetRValue(value))+.7152*channel(GetGValue(value))+.0722*channel(GetBValue(value));
+    };
+    const auto a=luminance(foreground),b=luminance(background);
+    return (std::max(a,b)+.05)/(std::min(a,b)+.05);
+}
+
+void verify_text_ink(const MathReadingRegion& region){
+    const auto native=wide(edit_text(region.target));
+    RECT text_area{};SendMessageW(region.target,EM_GETRECT,0,reinterpret_cast<LPARAM>(&text_area));
+    const auto surface=reader_theme::background(region.target);
+    const auto palette=reader_theme::palette(region.target);
+    for(std::size_t i=0;i<native.size();++i){
+        if(std::iswspace(native[i])||IS_LOW_SURROGATE(native[i]))continue;
+        POINTL point{};SendMessageW(region.target,EM_POSFROMCHAR,reinterpret_cast<WPARAM>(&point),i);
+        check(point.x>=text_area.left&&point.x<text_area.right&&
+              point.y>=text_area.top&&point.y<text_area.bottom,
+              "An authored diagram character is outside its RichEdit viewport: "+region.key);
+        const auto format=character_format(region.target,static_cast<LONG>(i));
+        const auto ink=(format.dwEffects&CFE_AUTOCOLOR)?reader_theme::foreground(region.target):format.crTextColor;
+        const auto background=(format.dwEffects&CFE_AUTOBACKCOLOR)?surface:format.crBackColor;
+        if(palette.high_contrast)
+            check(ink==palette.text&&background==surface,"Diagram text overrode system high-contrast ink or surface");
+        else check(contrast(ink,background)>=4.5,"Diagram character lacks 4.5:1 contrast: "+region.key);
+    }
+}
+
+void verify_arrow(HWND arrow,HWND view,bool horizontal){
+    RECT area{};check(GetClientRect(arrow,&area)!=0&&area.right>0&&area.bottom>0,
+                     "Diagram arrow has no drawable surface");
+    const auto screen=GetDC(arrow);check(screen!=nullptr,"Cannot obtain arrow drawing context");
+    const auto dc=CreateCompatibleDC(screen);BITMAPINFO info{};
+    info.bmiHeader.biSize=sizeof(BITMAPINFOHEADER);info.bmiHeader.biWidth=area.right;
+    info.bmiHeader.biHeight=-area.bottom;info.bmiHeader.biPlanes=1;info.bmiHeader.biBitCount=32;
+    info.bmiHeader.biCompression=BI_RGB;void* pixels=nullptr;
+    const auto bitmap=CreateDIBSection(screen,&info,DIB_RGB_COLORS,&pixels,nullptr,0);ReleaseDC(arrow,screen);
+    if(!dc||!bitmap||!pixels){if(dc)DeleteDC(dc);if(bitmap)DeleteObject(bitmap);
+        throw std::runtime_error("Cannot allocate actual diagram arrow capture");}
+    const auto previous=SelectObject(dc,bitmap);
+    struct Cleanup{HDC dc;HBITMAP bitmap;HGDIOBJ previous;
+        ~Cleanup(){SelectObject(dc,previous);DeleteObject(bitmap);DeleteDC(dc);}} cleanup{dc,bitmap,previous};
+    FillRect(dc,&area,static_cast<HBRUSH>(GetStockObject(WHITE_BRUSH)));
+    DRAWITEMSTRUCT draw{};draw.CtlType=ODT_STATIC;draw.CtlID=static_cast<UINT>(GetDlgCtrlID(arrow));
+    draw.itemAction=ODA_DRAWENTIRE;draw.hwndItem=arrow;draw.hDC=dc;draw.rcItem=area;
+    check(SendMessageW(GetParent(arrow),WM_DRAWITEM,draw.CtlID,reinterpret_cast<LPARAM>(&draw))!=0,
+          "Native diagram container did not paint its actual arrow");
+    GdiFlush();
+    const auto palette=reader_theme::palette(view);
+    const auto ink=palette.high_contrast?palette.text:palette.muted;
+    const auto background=palette.card;
+    if(!palette.high_contrast)check(contrast(ink,background)>=3.,"Diagram connection lacks 3:1 contrast");
+    const auto dpi=static_cast<int>(GetDpiForWindow(arrow));
+    const auto wing=std::max(1,MulDiv(2,dpi,96));
+    const auto* colors=static_cast<const DWORD*>(pixels);
+    const auto cx=area.right/2,cy=area.bottom/2;
+    int toward=0,away=0,shaft=0;
+    for(LONG y=0;y<area.bottom;++y)for(LONG x=0;x<area.right;++x){
+        const auto pixel=colors[static_cast<std::size_t>(y)*static_cast<std::size_t>(area.right)+static_cast<std::size_t>(x)];
+        if(RGB((pixel>>16)&255,(pixel>>8)&255,pixel&255)!=ink)continue;
+        const auto along=horizontal?x-cx:y-cy;
+        const auto across=horizontal?y-cy:x-cx;
+        if(std::abs(across)>wing){if(along>0)++toward;else if(along<0)++away;}
+        else if(along<0)++shaft;
+    }
+    check(shaft>0&&toward>0&&away==0,
+          "Diagram arrow lacks its shaft or points away from the next node");
+}
+
 void visual(HWND parent,const curriculum::Block& block,const std::filesystem::path& artifacts,std::string_view name){
     check(block.concept_diagram.has_value(),"The full native loader lost its typed diagram");
     MathPuzzleView view(parent,block.raw_json,"es","{}",{},block.text_semantics,{},block.concept_diagram);
@@ -86,6 +160,7 @@ void visual(HWND parent,const curriculum::Block& block,const std::filesystem::pa
                       area.right>area.left&&area.bottom>area.top,"Diagram text is clipped or lacks a native control");
                 check((GetWindowLongPtrW(region.target,GWL_STYLE)&ES_READONLY)!=0,
                       "A reading-only diagram exposed an editable response");
+                verify_text_ink(region);
             }
             const auto first=code_scope_reader_test::bounds_in(regions[1].target,view.window());
             const auto last_key=block.concept_diagram->node_fields(count-1).front().key;
@@ -106,12 +181,41 @@ void visual(HWND parent,const curriculum::Block& block,const std::filesystem::pa
                           "Diagram node did not use its authored native surface");
                 }
             }
+            std::vector<HWND> arrows;
+            EnumChildWindows(view.window(),[](HWND item,LPARAM data)->BOOL{
+                if(code_scope_reader_test::window_class(item)==L"Static"&&
+                    (GetWindowLongPtrW(item,GWL_STYLE)&SS_TYPEMASK)==SS_OWNERDRAW)
+                    reinterpret_cast<std::vector<HWND>*>(data)->push_back(item);
+                return TRUE;
+            },reinterpret_cast<LPARAM>(&arrows));
+            check(arrows.size()==block.concept_diagram->links.size(),"Missing or duplicate native diagram arrows");
+            const bool horizontal=width==1120;
+            std::ranges::sort(arrows,[&](HWND a,HWND b){
+                const auto first=code_scope_reader_test::bounds_in(a,view.window());
+                const auto second=code_scope_reader_test::bounds_in(b,view.window());
+                return horizontal?first.left<second.left:first.top<second.top;
+            });
+            for(std::size_t i=0;i<arrows.size();++i){
+                const auto source_key=block.concept_diagram->node_fields(i).front().key;
+                const auto next_key=block.concept_diagram->node_fields(i+1).front().key;
+                const auto source=std::ranges::find(regions,source_key,&MathReadingRegion::key);
+                const auto next=std::ranges::find(regions,next_key,&MathReadingRegion::key);
+                check(source!=regions.end()&&next!=regions.end(),"Connection lost an authored endpoint");
+                const auto before=code_scope_reader_test::bounds_in(GetParent(source->target),view.window());
+                const auto after=code_scope_reader_test::bounds_in(GetParent(next->target),view.window());
+                const auto connection=code_scope_reader_test::bounds_in(arrows[i],view.window());
+                check(horizontal?(connection.left>=before.right&&connection.right<=after.left):
+                                 (connection.top>=before.bottom&&connection.bottom<=after.top),
+                      "Native arrow does not lie between its consecutive authored nodes");
+                verify_arrow(arrows[i],view.window(),horizontal);
+            }
             check(JsonObject::Parse(wide(view.answers_json())).Size()==0,"Diagram created a response");
             if(scale==100)code_scope_reader_test::capture_png(view.window(),artifacts/
                 (std::string(name)+"-"+std::to_string(width)+".png"));
         }
     }
-    std::cout<<"PASS real diagram geometry, fields and read-only controls "<<name<<" at 75/100/150 percent\n";
+    std::cout<<"PASS real diagram geometry, character bounds, contrast, directed arrows and read-only controls "
+        <<name<<" at 75/100/150 percent, dpi="<<dpi<<" high_contrast="<<reader_theme::palette(parent).high_contrast<<"\n";
 }
 
 void run(const std::shared_ptr<windows::NarrationWorker>& backend,const std::filesystem::path& fixture_path,
