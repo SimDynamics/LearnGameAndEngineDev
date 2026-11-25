@@ -17,6 +17,11 @@ option(LGAED_READER_BUILD_QA_ONLY
     "Build the original curricular readers and run focused catalog, compiler and Win32 regressions without audio playback" OFF)
 option(LGAED_READER_REVISION_QA_ONLY
     "Build only the live-file reader reload regression with real Windows controls and controlled PCM" OFF)
+option(LGAED_READER_REVISION_REGRESSIONS_ONLY
+    "Within ReaderRevision, run the seven close/reopen regressions without repeating live-file" OFF)
+if(LGAED_READER_REVISION_REGRESSIONS_ONLY AND NOT LGAED_READER_REVISION_QA_ONLY)
+    message(FATAL_ERROR "LGAED_READER_REVISION_REGRESSIONS_ONLY requires the ReaderRevision toolchain profile.")
+endif()
 option(LGAED_CATALOG_U1_QA_ONLY
     "Build only the complete native catalog and four U1 editor regressions with the official Windows toolchain" OFF)
 option(LGAED_MATH_EDITORIAL_QA_ONLY
@@ -384,8 +389,14 @@ if(LGAED_READER_REVISION_QA_ONLY)
         message(FATAL_ERROR "LGAED_READER_REVISION_QA_ONLY requires BUILD_TESTING=ON.")
     endif()
     include(cmake/ReaderRevisionTests.cmake)
-    lgaed_add_reader_revision_tests("${CMAKE_SOURCE_DIR}" live-file)
-    message(STATUS "Focused reader revision QA: automatic live-file reload, first pending passage, real editor history and Windows PCM playback; no neural voice quality claim.")
+    if(LGAED_READER_REVISION_REGRESSIONS_ONLY)
+        lgaed_add_reader_revision_tests("${CMAKE_SOURCE_DIR}"
+            insert insert-forward retire-insert reorder prose other-page unheard-negative)
+        message(STATUS "Focused reader revision regressions: seven close/reopen scenarios with real Windows controls and PCM playback; live-file is verified separately.")
+    else()
+        lgaed_add_reader_revision_tests("${CMAKE_SOURCE_DIR}" live-file)
+        message(STATUS "Focused reader revision QA: automatic live-file reload, first pending passage, real editor history and Windows PCM playback; no neural voice quality claim.")
+    endif()
     return()
 endif()
 

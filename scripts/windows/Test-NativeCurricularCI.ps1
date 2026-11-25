@@ -1,6 +1,6 @@
 [CmdletBinding()]
 param(
-    [ValidateSet('StateImport', 'CatalogU1', 'ReaderRevision', 'CodeScope', 'NarrationPlayer', 'ReaderBuild', 'MathEditorial', 'NarrationWorker', 'U12Reader',
+    [ValidateSet('StateImport', 'CatalogU1', 'ReaderRevision', 'ReaderRevisionRegressions', 'CodeScope', 'NarrationPlayer', 'ReaderBuild', 'MathEditorial', 'NarrationWorker', 'U12Reader',
         'U11EditorialReader', 'CompilerHistoricalReader', 'U6DiagnosticReader', 'CurrentReaders')]
     [string] $Suite = 'StateImport',
     [ValidateSet('All', 'DeclarationsAssignments', 'Characters')]
@@ -21,8 +21,8 @@ $PSNativeCommandUseErrorActionPreference = $false
 if ($env:GITHUB_ACTIONS -ne 'true' -or $env:RUNNER_ENVIRONMENT -ne 'github-hosted') {
     throw 'Run this provisioning script only on a disposable GitHub-hosted Windows runner.'
 }
-if ($VirtualAudio -and $Suite -notin @('NarrationPlayer', 'ReaderBuild', 'ReaderRevision', 'CodeScope')) {
-    throw 'Evaluate the virtual audio endpoint only with the real NarrationPlayer, ReaderBuild, ReaderRevision or CodeScope tests.'
+if ($VirtualAudio -and $Suite -notin @('NarrationPlayer', 'ReaderBuild', 'ReaderRevision', 'ReaderRevisionRegressions', 'CodeScope')) {
+    throw 'Evaluate the virtual audio endpoint only with the real NarrationPlayer, ReaderBuild, ReaderRevision, ReaderRevisionRegressions or CodeScope tests.'
 }
 if ($CompilerHistoryGroup -ne 'All' -and $Suite -ne 'CompilerHistoricalReader') {
     throw 'A compiler-history selection requires the CompilerHistoricalReader suite.'
@@ -33,8 +33,8 @@ if ($EditorialGroup -ne 'All' -and $Suite -ne 'U11EditorialReader') {
 if ($CurrentReaderGroup -ne 'All' -and $Suite -ne 'CurrentReaders') {
     throw 'A current-reader selection requires the CurrentReaders suite.'
 }
-if ($MsvcPreflightOnly -and $Suite -notin @('StateImport', 'CatalogU1', 'ReaderBuild', 'ReaderRevision', 'CodeScope')) {
-    throw 'The early MSVC preflight is available only for hosted StateImport, CatalogU1, ReaderBuild, ReaderRevision and CodeScope suites.'
+if ($MsvcPreflightOnly -and $Suite -notin @('StateImport', 'CatalogU1', 'ReaderBuild', 'ReaderRevision', 'ReaderRevisionRegressions', 'CodeScope')) {
+    throw 'The early MSVC preflight is available only for hosted StateImport, CatalogU1, ReaderBuild, ReaderRevision, ReaderRevisionRegressions and CodeScope suites.'
 }
 
 $qaRoot = [System.IO.Path]::GetFullPath((Join-Path $PSScriptRoot '..\..'))
@@ -103,6 +103,23 @@ $qaSuiteConfig = switch ($Suite) {
             Targets = @('lgaed_lesson_reader_edit_order_tests')
             Results = 'reader-revision'
             Tests = @('native.reader_revision_live_file')
+        }
+    }
+    'ReaderRevisionRegressions' {
+        @{
+            Directory = 'reader-revision-regressions-ci'
+            CMakeOption = 'LGAED_READER_REVISION_QA_ONLY'
+            Targets = @('lgaed_lesson_reader_edit_order_tests')
+            Results = 'reader-revision-regressions'
+            Tests = @(
+                'native.reader_revision_insert',
+                'native.reader_revision_insert_forward',
+                'native.reader_revision_retire_insert',
+                'native.reader_revision_reorder',
+                'native.reader_revision_prose',
+                'native.reader_revision_other_page',
+                'native.reader_revision_unheard_negative'
+            )
         }
     }
     'CatalogU1' {
@@ -479,6 +496,9 @@ if ($Suite -in @('MathEditorial', 'NarrationWorker', 'U12Reader', 'U11EditorialR
 if ($Suite -eq 'MathEditorial') {
     $qaRuntimeOptions += ' -DLGAED_MATH_EDITORIAL_QA_ONLY=ON'
 }
+if ($Suite -eq 'ReaderRevisionRegressions') {
+    $qaRuntimeOptions += ' -DLGAED_READER_REVISION_REGRESSIONS_ONLY=ON'
+}
 foreach ($qaPath in @($qaRoot, $qaBuild, $qaVcVars, $qaCMake, $qaCTest, $qaPython, $qaGit) + $qaRuntimePaths) {
     if ($qaPath -match '["%!?&|<>^;\r\n]') { throw "Unsupported command metacharacter in native QA path: $qaPath" }
 }
@@ -530,7 +550,7 @@ New-Item -ItemType Directory -Path $qaBuild -Force | Out-Null
     Tee-Object -FilePath (Join-Path $qaBuild 'native-build.log') | Write-Host
 if ($LASTEXITCODE -ne 0) { throw "The verified Windows $Suite build or early regression checks failed." }
 
-if ($Suite -in @('NarrationPlayer', 'ReaderBuild', 'ReaderRevision', 'U12Reader', 'U11EditorialReader',
+if ($Suite -in @('NarrationPlayer', 'ReaderBuild', 'ReaderRevision', 'ReaderRevisionRegressions', 'U12Reader', 'U11EditorialReader',
     'CompilerHistoricalReader', 'U6DiagnosticReader', 'CurrentReaders', 'CodeScope')) {
     # Observe the actual ephemeral machine. Starting an existing, enabled audio
     # service is preparation; the opt-in endpoint evaluation is a separate step.
@@ -571,7 +591,7 @@ if ($VirtualAudio) {
         -SignToolPath $qaSignTool -LogDirectory (Join-Path $qaBuild 'virtual-audio')
 }
 
-if ($Suite -in @('ReaderBuild', 'ReaderRevision')) {
+if ($Suite -in @('ReaderBuild', 'ReaderRevision', 'ReaderRevisionRegressions')) {
     # The original reader/U6 executables are compiled for coverage. Focused
     # regressions use isolated QA state and exact authored/historical inputs.
     # Reader revision cases exercise real MediaPlayer with controlled PCM only.
@@ -766,6 +786,9 @@ if ($Suite -eq 'ReaderBuild') {
 
 $qaListingText = & $qaCTest --test-dir $qaBuild --show-only=json-v1
 if ($LASTEXITCODE -ne 0) { throw 'Cannot inspect the focused native test registration.' }
+if ($Suite -eq 'ReaderRevisionRegressions') {
+    $qaListingText | Set-Content -LiteralPath (Join-Path $qaBuild 'reader-revision-regressions-tests.json') -Encoding utf8
+}
 $qaListing = ($qaListingText -join "`n") | ConvertFrom-Json
 $qaExpected = $qaSuiteConfig.Tests
 $qaActualTests = @($qaListing.tests | ForEach-Object { $_.name })
