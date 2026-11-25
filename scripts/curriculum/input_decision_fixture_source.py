@@ -414,9 +414,221 @@ def active_loop_payloads():
     return payloads
 
 
-def export(output_dir, *, active_loops=False):
+
+# Keep current-edition QA separate from the authenticated historical exports.
+# Only disposable AFTER copies receive these additional input checks.
+ACTIVE_INPUT_COMMIT = "39ba3cb196e196bac99c2d891b488f765679ad6d"
+ACTIVE_INPUT_PUBLICATIONS = {
+    "u3l3": {
+        "path": "app/src/main/assets/content/es/programming/cpp_fundamentals/edition_es_1__expresiones_y_decisiones/lesson_comparaciones_y_condiciones.json",
+        "sha256": "35d320c1641cc11b02b8ecfda13ee765571168d01b9b112cf946367a6344f858",
+        "blobSha": "3c13584d3bc85a81b90ba2f895a198cf632bb59a",
+        "activity": "block_0005_0002",
+        "references": {
+            "block_0003_0002": "block_0003_0005",
+            "block_0005_0002": "block_0005_0006"
+        },
+        "referenceSha256": {
+            "block_0003_0002": "6f3512b2c92d8fdf7fc3dbcb7ccb81e4ee4f31e2672e522d80392a0465459a24",
+            "block_0005_0002": "9b7d9e54d0cbe798006d55a485c862230ab3ddce949050b47b9b3522cf021ad2"
+        }
+    },
+    "u3l4": {
+        "path": "app/src/main/assets/content/es/programming/cpp_fundamentals/edition_es_1__expresiones_y_decisiones/lesson_alternativas_y_fronteras.json",
+        "sha256": "cf8e497e174c880f814b825ebd3f5115ca82d64a037daa40c82eaa4daf6a09f0",
+        "blobSha": "820d056b933573cb580554aa25031a3a2154556a",
+        "activity": "block_0005_0002",
+        "references": {
+            "u3l4_alcance_editor": "u3l4_alcance_solucion",
+            "block_0003_0006": "block_0003_0010",
+            "block_0005_0002": "block_0005_0006"
+        },
+        "referenceSha256": {
+            "u3l4_alcance_editor": "5332ea14336a68948fb55c17ee33ff38c54b119330a4a08e863df1dba43e6d56",
+            "block_0003_0006": "1ce44a312c9d4ef078ee90aaa4924991b4f163e0386ea87d75c38ef92020a143",
+            "block_0005_0002": "461c88355bac2a3a0e646f982c14bbb0f1bae406e3c4b0b0df8af69ffc9722d1"
+        }
+    },
+    "u3l5": {
+        "path": "app/src/main/assets/content/es/programming/cpp_fundamentals/edition_es_1__expresiones_y_decisiones/lesson_combinar_condiciones.json",
+        "sha256": "6ce6bbb557ec2180c5b872d8a8b16cc9ed11906f63ec89afc5165263ba56a9b4",
+        "blobSha": "d8fb5d4503abaa6cba5906ca4a2602626dcd1e14",
+        "activity": "block_0005_0002",
+        "references": {
+            "block_0003_0002": "block_0003_0005",
+            "block_0005_0002": "block_0005_0006"
+        },
+        "referenceSha256": {
+            "block_0003_0002": "f26acbb7524bf3761fd46912e517228359308ce4c50946a783f291db2d772d45",
+            "block_0005_0002": "f48459e28178c9d73f92c617a8a637fbe3fe9a1e3805f245ad7978935a6f0e4d"
+        }
+    },
+    "u3l6": {
+        "path": "app/src/main/assets/content/es/programming/cpp_fundamentals/edition_es_1__expresiones_y_decisiones/lesson_validez_y_cortocircuito.json",
+        "sha256": "5c60bcac3bf8fd75ceb379dcce348553d90dbb27373ac5bffb01beea72a4853e",
+        "blobSha": "064ddec6a1b9915b6f3cf2352268a8cf4f50fbd2",
+        "activity": "block_0006_0002",
+        "references": {
+            "block_0003_0002": "block_0003_0005",
+            "block_0006_0002": "block_0006_0006"
+        },
+        "referenceSha256": {
+            "block_0003_0002": "134ba6d6c94ba286a38d7db970af6df951668d3dee629225c977364c9561bbce",
+            "block_0006_0002": "cc7b0a8c1bd48f6066cbbc53077ee5e28a2df63c672f16289a13a4b9422e1224"
+        }
+    },
+    "u3l7": {
+        "path": "app/src/main/assets/content/es/programming/cpp_fundamentals/edition_es_1__expresiones_y_decisiones/lesson_decisiones_compuestas_y_pruebas.json",
+        "sha256": "338242533d1384605ddd9a47f244cbd6efa732b3701aa4f7d2a9d6dc616cd5b3",
+        "blobSha": "67bd6a96aae754657d9788bcfd69f1abc79b3aad",
+        "activity": "block_0007_0002",
+        "references": {
+            "block_0003_0003": "block_0003_0006",
+            "block_0007_0002": "block_0007_0005"
+        },
+        "referenceSha256": {
+            "block_0003_0003": "a85918362e67e3d45a7efefc767903b791f77e5dcd1ecdbe27a37acae5a97582",
+            "block_0007_0002": "3c308f18b52b76c767c984a36517955fbe57e29dd6d83978c18ec622bc4eda58"
+        }
+    },
+    "u3l8": {
+        "path": "app/src/main/assets/content/es/programming/cpp_fundamentals/edition_es_1__expresiones_y_decisiones/lesson_construir_decisiones_desde_un_problema.json",
+        "sha256": "1ff0efacbfd0b9f57e4bae956e17a4e9c76a287505e34e4b82c33db067261bb7",
+        "blobSha": "437370cdb893856ba6c5cce707699c19ea51f000",
+        "activity": "block_0005_0002",
+        "references": {
+            "block_0002_0002": "block_0002_0006",
+            "block_0005_0002": "block_0005_0010"
+        },
+        "referenceSha256": {
+            "block_0002_0002": "c5fd7a64eb3bd0f22483785df935b8de1d29eef4aea650a59747549f22e50432",
+            "block_0005_0002": "54e4a8474a29ec26a6248c754a78e45baba97fb0d7cf71941a7990c12160fd6e"
+        }
+    }
+}
+
+
+def verify_active_bytes(name, payload):
+    publication = ACTIVE_INPUT_PUBLICATIONS[name]
+    blob = hashlib.sha1(b"blob " + str(len(payload)).encode("ascii") + b"\0" + payload).hexdigest()
+    if sha256(payload) != publication["sha256"] or blob != publication["blobSha"]:
+        raise ValueError(f"Active input-decision QA differs from its complete pinned publication: {name}")
+    return payload
+
+
+def active_published_bytes(name):
+    publication = ACTIVE_INPUT_PUBLICATIONS[name]
+    environment = dict(os.environ, GIT_NO_LAZY_FETCH="1",
+                       GIT_NO_REPLACE_OBJECTS="1", GIT_TERMINAL_PROMPT="0")
+    reference = f"{ACTIVE_INPUT_COMMIT}:{publication['path']}"
+    try:
+        payload = subprocess.check_output(
+            ["git", "--no-optional-locks", "-c", f"safe.directory={ROOT}", "show", reference],
+            cwd=ROOT, env=environment, stderr=subprocess.PIPE)
+    except (OSError, subprocess.CalledProcessError) as error:
+        raise RuntimeError(f"Missing local active input-decision publication {reference}; "
+                           "no fetch or current-asset fallback is permitted") from error
+    return verify_active_bytes(name, payload)
+
+
+def active_lesson_payloads(name):
+    publication = ACTIVE_INPUT_PUBLICATIONS[name]
+    original = active_published_bytes(name)
+    before = state.parse_json(original.decode("utf-8"))
+    state.validate(before)
+    blocks = state._blocks(before)
+    references = publication["references"]
+    compilers = {identity for identity, block in blocks.items()
+                 if block.get("type") == "cpp_compiler"}
+    if compilers != set(references):
+        raise ValueError(f"Active input-decision QA omitted an actual compiler: {name}")
+    activity = publication["activity"]
+    owner = blocks[activity]
+    cases = public_cases(name)
+    if (before.get("courseEdition", {}).get("generation") != 1 or
+            not before.get("compilerPuzzlesRequired") or
+            owner.get("initialStandardInput") != cases[0]["standardInput"] or
+            owner.get("outputCheck") != {"inputComparison": "tokens", "cases": cases}):
+        raise ValueError(f"Active input-decision QA changed its edition or public contract: {name}")
+    existing = before.get("compilerInputChecks", [])
+    if any(entry["activity"] == activity for entry in existing):
+        raise ValueError(f"The active input owner already has a private declaration: {name}/{activity}")
+
+    authored = {entry["activity"]: entry["blocks"] for entry in before["referenceAfter"]}
+    solutions = []
+    for identity, reference in references.items():
+        block = blocks[reference]
+        if (reference not in authored.get(identity, ()) or block.get("type") != "code"
+                or block.get("language") != "cpp"):
+            raise ValueError(f"Active input-decision QA lost an authentic reference: {name}/{identity}")
+        source = block["code"]
+        digest = sha256(source.encode("utf-8"))
+        if digest != publication["referenceSha256"][identity]:
+            raise ValueError(f"Active input-decision QA reference bytes changed: {name}/{identity}")
+        solutions.append({"activity": identity, "source": source, "sourceSha256": digest})
+
+    added = deepcopy(declarations(name)[0])
+    added["activity"] = activity
+    after = deepcopy(before)
+    after.setdefault("compilerInputChecks", []).append(added)
+    state.validate_transition(before, after)
+    preserved = deepcopy(after)
+    preserved["compilerInputChecks"].pop()
+    if "compilerInputChecks" not in before:
+        del preserved["compilerInputChecks"]
+    if preserved != before:
+        raise ValueError(f"Active input-decision QA changed an existing field: {name}")
+
+    reference = references[activity]
+    fixed = fixed_output_source(cases[0]["outputs"][0])
+    negatives = invariant_counterexamples(name, blocks[reference]["code"])
+    private = {probe["standardInput"]: probe for probe in added["probes"]}
+    first_outputs = set(cases[0]["outputs"])
+    for negative in negatives:
+        failed_inputs = negative["failedInputs"]
+        if (not failed_inputs or len(failed_inputs) != len(set(failed_inputs)) or
+                any(stdin not in private or not (first_outputs & set(private[stdin]["outputs"]))
+                    for stdin in failed_inputs)):
+            raise ValueError(f"Active invariant lost its equal-output observation: {name}/{negative['label']}")
+    plan = {"activity": activity, "reference": reference,
+            "fixedSource": fixed, "fixedSourceSha256": sha256(fixed.encode("utf-8")),
+            "inputComparison": "tokens", "publicCases": deepcopy(cases),
+            "publicCasesSha256": sha256(json_bytes(cases)),
+            "invariantCounterexamples": negatives}
+    before_name, after_name = f"{name}/before.json", f"{name}/after.json"
+    revised = json_bytes(after)
+    return {before_name: original, after_name: revised}, {
+        "id": name, "before": before_name, "after": after_name,
+        "beforeSha256": sha256(original), "afterSha256": sha256(revised),
+        "solutions": solutions, "plans": [plan],
+    }
+
+
+def active_payloads():
+    payloads, lessons = {}, []
+    for name in ACTIVE_INPUT_PUBLICATIONS:
+        files, lesson = active_lesson_payloads(name)
+        payloads.update(files)
+        lessons.append(lesson)
+    plans = [plan for lesson in lessons for plan in lesson["plans"]]
+    if (len(lessons) != 6 or sum(len(lesson["solutions"]) for lesson in lessons) != 13 or
+            len(plans) != 6 or sum(len(plan["publicCases"]) for plan in plans) != 45 or
+            sum(len(declarations(name)[0]["probes"]) for name in ACTIVE_INPUT_PUBLICATIONS) != 34 or
+            sum(len(plan["invariantCounterexamples"]) for plan in plans) != 5):
+        raise ValueError("Active input-decision QA requires 6 lessons, 13 solutions, 6 owners, "
+                         "45 public cases, 34 private executions and 5 invariant contrasts")
+    payloads["manifest.json"] = json_bytes({
+        "version": 1, "kind": "active-input-decision", "publishedCommit": ACTIVE_INPUT_COMMIT,
+        "lessons": lessons,
+    })
+    return payloads
+
+
+def export(output_dir, *, active=False, active_loops=False):
+    if active and active_loops:
+        raise ValueError("Select either active input decisions or active loops, not both")
     output = checked_output(output_dir)
-    payloads = active_loop_payloads() if active_loops else export_payloads()
+    payloads = active_payloads() if active else active_loop_payloads() if active_loops else export_payloads()
     # Authenticate every publication and inspect every destination before writes.
     for name, payload in payloads.items():
         existing_matches(output / name, payload)
@@ -438,6 +650,8 @@ def export(output_dir, *, active_loops=False):
 if __name__ == "__main__":
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("--output-dir", type=Path, required=True)
-    parser.add_argument("--active-loops", action="store_true")
+    mode = parser.add_mutually_exclusive_group()
+    mode.add_argument("--active", action="store_true")
+    mode.add_argument("--active-loops", action="store_true")
     arguments = parser.parse_args()
-    print(export(arguments.output_dir, active_loops=arguments.active_loops))
+    print(export(arguments.output_dir, active=arguments.active, active_loops=arguments.active_loops))

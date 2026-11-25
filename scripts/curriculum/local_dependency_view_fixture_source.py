@@ -99,6 +99,76 @@ STARTER_REPAIRS = {
 }
 
 
+ACTIVE_PUBLISHED_COMMIT = "39ba3cb196e196bac99c2d891b488f765679ad6d"
+ACTIVE_EDITION = {"version": 1, "courseId": "cpp_fundamentals", "locale": "es",
+                  "generation": 1, "id": "cpp_desde_cero_2026"}
+# Explicit publication maps, never inferred from current physical positions.
+# Each legacy label selects only the reusable QA declaration; the source,
+# reference, saved address and edition always belong to the active document.
+ACTIVE_PUBLICATIONS = {
+    "u2l1": {
+        "path": CONTENT + "edition_es_1__objetos_y_estado/lesson_objetos_valores_y_tipos.json",
+        "sha256": "5e5ac952489a5ad754745cbeeba5e10b388588c925d742fe25900990839dee7c",
+        "owners": {"block_0004_0002": ("block_0004_0002", "block_0005_0001"),
+                   "block_0004_0006": ("block_0004_0006", "block_0006_0003")},
+    },
+    "u2l2": {
+        "path": CONTENT + "edition_es_1__objetos_y_estado/lesson_declarar_e_inicializar.json",
+        "sha256": "81bb8d942357ee473e585297d9b775a522fabc9edbdba376b45976a5257550cc",
+        "owners": {"block_0004_0002": ("block_0004_0003", "block_0005_0001"),
+                   "block_0004_0006": ("block_0004_0006", "block_0006_0003")},
+    },
+    "u2l3": {
+        "path": CONTENT + "edition_es_1__objetos_y_estado/lesson_estado_asignacion_y_copia.json",
+        "sha256": "623acef3aa43c7385e7cbf46bc34799c8be37b6aad3a6271f07ff0b95f6849b9",
+        "owners": {"block_0006_0002": ("block_0006_0002", "block_0007_0001"),
+                   "block_0006_0006": ("block_0006_0006", "block_0008_0003")},
+    },
+    "u2l7": {
+        "path": CONTENT + "edition_es_1__objetos_y_estado/lesson_cadenas_y_texto.json",
+        "sha256": "1c343997748ab89d8f01929109b3940d0c94ee97de547d9f2270090d6a8857de",
+        "owners": {"block_0006_0002": ("block_0006_0002", "block_0007_0001"),
+                   "block_0008_0007": ("block_0008_0006", "block_0008_0008")},
+    },
+    "u2l8": {
+        "path": CONTENT + "edition_es_1__objetos_y_estado/lesson_caracteres_y_valores_logicos.json",
+        "sha256": "cdbeed5a950ee3106912f0b9656a0f9aa7c22d25c440b600b38e36ac82bdd57e",
+        "owners": {"block_0006_0002": ("block_0006_0002", "block_0007_0001")},
+    },
+    "u2l9": {
+        "path": CONTENT + "edition_es_1__objetos_y_estado/lesson_leer_una_entrada_conocida.json",
+        "sha256": "08b1a8f994ccaae36231af6dec48ecc4362c6f902a33e0f718b92a5210436669",
+        "owners": {"p1u2l9_reparar_lectura_de_cajas": ("block_0006_0004", "block_0006_0006"),
+                   "block_0009_0003": ("block_0009_0004", "block_0009_0006")},
+    },
+    "u2l10": {
+        "path": CONTENT + "edition_es_1__objetos_y_estado/lesson_representar_procesar_y_recuperar.json",
+        "sha256": "d216ae0c0fa8c07348b93e7d019168faac93de487a363adc8cf51955ae932437",
+        "owners": {"block_0004_0002": ("block_0004_0005", "block_0004_0007"),
+                   "block_0007_0002": ("block_0007_0004", "block_0007_0006"),
+                   "p1u2l10_reparar_registro": ("block_0010_0002", "block_0010_0006")},
+    },
+    "u3l1": {
+        "path": CONTENT + "edition_es_1__expresiones_y_decisiones/lesson_valores_expresiones_y_prioridad.json",
+        "sha256": "a2f8afaa94fc297774adbc4a84c135dc674723b541fab5c9201a41844f572287",
+        "owners": {"p1u3l1_reparar_fichas": ("block_0003_0002", "block_0003_0006"),
+                   "p1u3l1_construir_puntuacion": ("block_0005_0002", "block_0005_0005")},
+    },
+    "u3l2": {
+        "path": CONTENT + "edition_es_1__expresiones_y_decisiones/lesson_division_y_resto.json",
+        "sha256": "6844d3265b1ea1cbdb692c3b321199baa06416fc58fd5ce11ba4247ec837e5d4",
+        "owners": {"p1u3l2_reparar_conversion_minutos": ("block_0004_0003", "block_0004_0006"),
+                   "p1u3l2_construir_informe_bandejas": ("block_0005_0002", "block_0005_0005")},
+    },
+}
+ACTIVE_STARTER_REPAIRS = {
+    **STARTER_REPAIRS,
+    ("u2l3", "block_0006_0006"): (
+        ("    int anterior = aforo;\n\n    aforo += 3;",
+         "    aforo += 3;\n\n    int anterior = aforo;"),),
+}
+
+
 def alternatives(stdout):
     return [stdout, stdout + "\n"]
 
@@ -191,6 +261,36 @@ def published_bytes(name):
         cwd=ROOT, env=environment, stderr=subprocess.PIPE))
 
 
+def verify_active_published_bytes(name, payload):
+    spec = ACTIVE_PUBLICATIONS[name]
+    if sha256(payload) != spec["sha256"]:
+        raise ValueError(f"Active dependency View QA differs from its exact publication: {name}")
+    document = state.parse_json(payload.decode("utf-8"))
+    source = Path(spec["path"])
+    expected_id = "cpp_fundamentals__" + source.parent.name + "__" + source.stem[7:]
+    if document.get("courseEdition") != ACTIVE_EDITION or document.get("id") != expected_id:
+        raise ValueError(f"Active dependency View QA lost its exact course edition: {name}")
+    return payload
+
+
+def active_published_bytes(name):
+    environment = dict(os.environ, GIT_NO_LAZY_FETCH="1",
+                       GIT_NO_REPLACE_OBJECTS="1", GIT_TERMINAL_PROMPT="0")
+    return verify_active_published_bytes(name, subprocess.check_output(
+        ["git", "--no-optional-locks", "-c", f"safe.directory={ROOT}",
+         "show", f"{ACTIVE_PUBLISHED_COMMIT}:{ACTIVE_PUBLICATIONS[name]['path']}"],
+        cwd=ROOT, env=environment, stderr=subprocess.PIPE))
+
+
+def active_declarations(name):
+    result = deepcopy(declarations(name))
+    owners = ACTIVE_PUBLICATIONS[name]["owners"]
+    for entries in result.values():
+        for entry in entries:
+            entry["activity"] = owners[entry["activity"]][0]
+    return result
+
+
 def solution_source(name, activity, blocks):
     reference = PUBLICATIONS[name]["references"][activity]
     source = blocks[reference]["code"]
@@ -199,6 +299,22 @@ def solution_source(name, activity, blocks):
         for previous, revised in STARTER_REPAIRS[name, activity]:
             if source.count(previous) != 1:
                 raise ValueError(f"Dependency View starter repair is not unique: {name}/{activity}")
+            source = source.replace(previous, revised, 1)
+    return source
+
+
+def active_solution_source(name, activity, blocks):
+    owners = ACTIVE_PUBLICATIONS[name]["owners"]
+    legacy = next((old for old, (current, _) in owners.items() if current == activity), None)
+    if legacy is None:
+        raise ValueError(f"Unknown active dependency View owner: {name}/{activity}")
+    reference = owners[legacy][1]
+    source = blocks[reference]["code"]
+    if (name, legacy) in ACTIVE_STARTER_REPAIRS:
+        source = blocks[activity]["initialCode"]
+        for previous, revised in ACTIVE_STARTER_REPAIRS[name, legacy]:
+            if source.count(previous) != 1:
+                raise ValueError(f"Active dependency View starter repair is not unique: {name}/{activity}")
             source = source.replace(previous, revised, 1)
     return source
 
@@ -273,10 +389,10 @@ def json_bytes(document):
     return (json.dumps(document, ensure_ascii=False, indent=2, allow_nan=False) + "\n").encode("utf-8")
 
 
-def lesson_payloads(name):
-    original = published_bytes(name)
+def lesson_payloads(name, *, active=False):
+    original = active_published_bytes(name) if active else published_bytes(name)
     before = state.parse_json(original.decode("utf-8"))
-    added = declarations(name)
+    added = active_declarations(name) if active else declarations(name)
     if any(root in before for root in added):
         raise ValueError(f"The exact {name} publication already contains an added QA root")
     after = deepcopy(before)
@@ -289,7 +405,9 @@ def lesson_payloads(name):
         raise ValueError(f"Dependency View QA changed an existing field: {name}")
 
     blocks = state._blocks(before)
-    references = PUBLICATIONS[name]["references"]
+    references = ({activity: reference for activity, reference in
+                   ACTIVE_PUBLICATIONS[name]["owners"].values()} if active else
+                  PUBLICATIONS[name]["references"])
     compilers = {identity for identity, block in blocks.items()
                  if block.get("type") == "cpp_compiler"}
     if compilers != set(references):
@@ -303,7 +421,8 @@ def lesson_payloads(name):
         if (reference not in authored_references.get(activity, ()) or
                 block.get("type") != "code" or block.get("language") != "cpp"):
             raise ValueError(f"Dependency View solution lost its authored reference: {name}/{activity}")
-        source = solution_source(name, activity, blocks)
+        source = (active_solution_source(name, activity, blocks) if active else
+                  solution_source(name, activity, blocks))
         sources[activity] = source
         solutions.append({"activity": activity, "source": source,
                           "sourceSha256": sha256(source.encode("utf-8"))})
@@ -319,7 +438,7 @@ def lesson_payloads(name):
             fixed = fixed_output_source(sources[activity], first_case["outputs"][0], output_reads)
             plan = {"activity": activity, "reference": references[activity],
                     "fixedSource": fixed, "fixedSourceSha256": sha256(fixed.encode("utf-8"))}
-            if name == "u2l10" and activity == "block_0004_0002":
+            if name == "u2l10" and activity == ("block_0004_0005" if active else "block_0004_0002"):
                 no_plan = no_plan_source(first_case["outputs"][0])
                 plan.update(noPlanSource=no_plan, noPlanSourceSha256=sha256(no_plan.encode("utf-8")))
             plans.append(plan)
@@ -349,9 +468,27 @@ def export_payloads():
     return payloads
 
 
-def export(output_dir):
+def active_payloads():
+    payloads = {}
+    lessons = []
+    for name in ACTIVE_PUBLICATIONS:
+        files, lesson = lesson_payloads(name, active=True)
+        payloads.update(files)
+        lessons.append(lesson)
+    if (len(lessons) != 9 or
+            sum(len(item["solutions"]) for item in lessons) != 18 or
+            sum(len(item["plans"]) for item in lessons) != 16):
+        raise ValueError("Active dependency View QA requires nine lessons, 18 solutions and 16 focal owners")
+    payloads["manifest.json"] = json_bytes({
+        "version": 1, "publishedCommit": ACTIVE_PUBLISHED_COMMIT,
+        "kind": "active-local-dependency", "lessons": lessons,
+    })
+    return payloads
+
+
+def export(output_dir, *, active=False):
     output = checked_output(output_dir)
-    payloads = export_payloads()
+    payloads = active_payloads() if active else export_payloads()
     # Every source and destination is checked before the first new directory
     # or file, so a late conflict cannot leave earlier lesson copies behind.
     for name, payload in payloads.items():
@@ -369,5 +506,7 @@ def export(output_dir):
 if __name__ == "__main__":
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("--output-dir", type=Path, required=True)
+    parser.add_argument("--active", action="store_true",
+                        help="Use the nine authenticated active-edition publications")
     arguments = parser.parse_args()
-    print(export(arguments.output_dir))
+    print(export(arguments.output_dir, active=arguments.active))

@@ -1,4 +1,4 @@
-// Real LessonView controls for the sixteen authored local/input objectives.
+// Real LessonView controls for current and historical local/input objectives.
 // Each isolated profile earns its historical receipt through the BEFORE UI,
 // then opens the reviewed model without rewriting either curricular file.
 #include "core/compiler_flow.hpp"
@@ -30,6 +30,7 @@
 #include <optional>
 #include <set>
 #include <stdexcept>
+#include <stop_token>
 #include <string>
 #include <string_view>
 #include <utility>
@@ -116,7 +117,11 @@ struct Fixture {
     bool input_decisions=false;
     bool active_loops=false;
     bool guarded_arithmetic=false;
+    bool active=false;
 };
+constexpr std::string_view active_publication_commit="39ba3cb196e196bac99c2d891b488f765679ad6d";
+std::string_view active_publication_digest(std::string_view id);
+void verify_active_publication(const Fixture& fixture);
 const std::string& solution_for(const Fixture& fixture,std::string_view identity) {
     const auto found=std::ranges::find(fixture.solutions,identity,&Solution::activity);
     check(found!=fixture.solutions.end(),"A nonfocal compiler lacks an audited real solution");
@@ -178,6 +183,135 @@ void verify_only_root_adoption(const Fixture& fixture) {
         check(compiler_ids.erase(solution.activity)==1,"Repeated or unrelated prerequisite solution");
     check(compiler_ids.empty(),"An authentic compiler lacks its solution");
 }
+struct ActiveOwnerPin {
+    std::string_view activity,reference,solution_sha256;
+    bool focal;
+};
+struct ActivePublicationPin {
+    std::string_view id,sha256;
+    std::vector<ActiveOwnerPin> local_owners;
+};
+const ActivePublicationPin& active_publication(std::string_view id) {
+    // Independent complete-publication and owner pins, reviewed against main.
+    // Four starter repairs retain the real starter's variable names;
+    // their source digests complement the fourteen unchanged references.
+    static const std::array<ActivePublicationPin,15> publications{{
+        {"u2l1","5e5ac952489a5ad754745cbeeba5e10b388588c925d742fe25900990839dee7c",{
+            {"block_0004_0002","block_0005_0001",
+             "2dc7b7a0e5a1b534c957154c1579fe6dc85fff2004ef3de9d0e67150281d10c6",true},
+            {"block_0004_0006","block_0006_0003",
+             "a5efc547040c588edc6031a0f7701f58c4a6d5e2f3985dbc2610470fab5c92b6",true},
+        }},
+        {"u2l2","81bb8d942357ee473e585297d9b775a522fabc9edbdba376b45976a5257550cc",{
+            {"block_0004_0003","block_0005_0001",
+             "6092e7f836591fc630cd11d507b3c50784b57d345bd9447380eb4657fd625a05",true},
+            {"block_0004_0006","block_0006_0003",
+             "1149912f0e63d7462f0a54be120e86c5e95a539b610c00522b93590d1f6b4a88",true},
+        }},
+        {"u2l3","623acef3aa43c7385e7cbf46bc34799c8be37b6aad3a6271f07ff0b95f6849b9",{
+            {"block_0006_0002","block_0007_0001",
+             "ba81b2e2bc10c7cebb32cb80b1c4311885d012e57b18196c1b700bbf74f38474",true},
+            {"block_0006_0006","block_0008_0003",
+             "0e88cc12122990d7d6ca777eebbbdf33687f788d65f108c02670db9bf6d3c018",true},
+        }},
+        {"u2l7","1c343997748ab89d8f01929109b3940d0c94ee97de547d9f2270090d6a8857de",{
+            {"block_0006_0002","block_0007_0001",
+             "882c1286c63071cf5571f114f5fbd695e21a91288e1c1d6287999d44496613a3",true},
+            {"block_0008_0006","block_0008_0008",
+             "9192a8e0e7b88bb44ab656fae6eb0cd94b62ce1e7abc966afab42d4d4c1b14de",true},
+        }},
+        {"u2l8","cdbeed5a950ee3106912f0b9656a0f9aa7c22d25c440b600b38e36ac82bdd57e",{
+            {"block_0006_0002","block_0007_0001",
+             "51b456a33088d6c93933d299b3e6c2b05c891befce92622b78a805394590b890",true},
+        }},
+        {"u2l9","08b1a8f994ccaae36231af6dec48ecc4362c6f902a33e0f718b92a5210436669",{
+            {"block_0006_0004","block_0006_0006",
+             "e56250dc6d92b6b672bf7ff9bd6cb18caf32eac0537b6693279fa1868b0d16d4",true},
+            {"block_0009_0004","block_0009_0006",
+             "18b833b1def87eaacb27004f1412bd6afcf2839c1f0bc57d57f54fc9326d4244",true},
+        }},
+        {"u2l10","d216ae0c0fa8c07348b93e7d019168faac93de487a363adc8cf51955ae932437",{
+            {"block_0004_0005","block_0004_0007",
+             "a41bf7f422bee6450d86d5cc386895b169858e2632164ba75716d834437e98c7",true},
+            {"block_0007_0004","block_0007_0006",
+             "b9b78e218d58a12813777a474bfc691e32a6170b894b5b908d058028c70cac98",true},
+            {"block_0010_0002","block_0010_0006",
+             "cb6f6229174649fd2cbb9a363c7bf2f35b3e36ce23a13f34e49cf17a9303be6c",true},
+        }},
+        {"u3l1","a2f8afaa94fc297774adbc4a84c135dc674723b541fab5c9201a41844f572287",{
+            {"block_0003_0002","block_0003_0006",
+             "aee7689304c581830526adbbcb397d018e59bd43e56ea5cf53d288ddc0529268",false},
+            {"block_0005_0002","block_0005_0005",
+             "e01aaec39fdcd9e685bed305b80ce33bf94301d0b38ab6ec1afecb9dddf57199",true},
+        }},
+        {"u3l2","6844d3265b1ea1cbdb692c3b321199baa06416fc58fd5ce11ba4247ec837e5d4",{
+            {"block_0004_0003","block_0004_0006",
+             "69222aa139c0cc775c0e3f1aa77efaa9e00b9f8395ff07eb3c7bd9d71f82a141",false},
+            {"block_0005_0002","block_0005_0005",
+             "054a3f162e3be13de8a99f182394477dd628b62b7fe3bc5ca9a0c37159ab7dbb",true},
+        }},
+        {"u3l3","35d320c1641cc11b02b8ecfda13ee765571168d01b9b112cf946367a6344f858",{}},
+        {"u3l4","cf8e497e174c880f814b825ebd3f5115ca82d64a037daa40c82eaa4daf6a09f0",{}},
+        {"u3l5","6ce6bbb557ec2180c5b872d8a8b16cc9ed11906f63ec89afc5165263ba56a9b4",{}},
+        {"u3l6","5c60bcac3bf8fd75ceb379dcce348553d90dbb27373ac5bffb01beea72a4853e",{}},
+        {"u3l7","338242533d1384605ddd9a47f244cbd6efa732b3701aa4f7d2a9d6dc616cd5b3",{}},
+        {"u3l8","1ff0efacbfd0b9f57e4bae956e17a4e9c76a287505e34e4b82c33db067261bb7",{}},
+    }};
+    const auto found=std::ranges::find(publications,id,&ActivePublicationPin::id);
+    check(found!=publications.end(),"Unknown active complete publication");
+    return *found;
+}
+std::string_view active_publication_digest(std::string_view id) {
+    return active_publication(id).sha256;
+}
+void verify_active_publication(const Fixture& fixture) {
+    const auto& pin=active_publication(fixture.id);
+    check(fixture.active&&fixture.before_sha256==pin.sha256&&
+            state::sha256(fixture.before.raw_json)==pin.sha256&&
+            fixture.before.id==fixture.after.id&&fixture.before.locale==fixture.after.locale&&
+            fixture.before.course_edition&&fixture.after.course_edition&&
+            fixture.before.course_edition->generation==1&&fixture.after.course_edition->generation==1,
+        "Active QA lost its complete source pin, lesson identity or edition");
+    for(const auto* lesson:{&fixture.before,&fixture.after}) {
+        const auto metadata=windows::parse_lesson_progress_metadata(lesson->raw_json,"es");
+        check(metadata.id==lesson->id&&metadata.locale==lesson->locale&&metadata.course_edition&&
+                metadata.course_edition->generation==1,
+            "The progress loader changed an active edition or lesson identity");
+        std::size_t compilers=0;
+        for(const auto& page:lesson->pages)for(const auto& owner:page.blocks) {
+            if(owner.type!=BlockType::cpp_compiler)continue;
+            const auto& projection=block_at(metadata,owner.stable_id);
+            check(projection.type==owner.type&&projection.address.page==owner.address.page&&
+                    projection.address.block==owner.address.block&&
+                    projection.initial_code==owner.initial_code&&projection.standard_input==owner.standard_input&&
+                    projection.local_int_check==owner.local_int_check&&
+                    projection.local_string_check==owner.local_string_check&&
+                    projection.input_check==owner.input_check&&projection.local_role_check==owner.local_role_check&&
+                    curriculum::draft_key("programming",metadata,projection)==
+                        curriculum::draft_key("programming",*lesson,owner),
+                "The full and progress loaders disagree on an active compiler or private contract");
+            ++compilers;
+        }
+        check(compilers==fixture.solutions.size(),"An active compiler is absent from the real prerequisite census");
+    }
+    if(fixture.input_decisions||fixture.joint_local_int||fixture.guarded_arithmetic)return;
+    check(!pin.local_owners.empty()&&fixture.solutions.size()==pin.local_owners.size(),
+        "The active local manifest changed its independently reviewed compiler inventory");
+    std::size_t focal=0;
+    for(const auto& owner:pin.local_owners) {
+        check(state::sha256(solution_for(fixture,owner.activity))==owner.solution_sha256&&
+                curriculum::reference_activity(fixture.before,block_at(fixture.before,owner.reference))==
+                    std::optional(position(fixture.before,owner.activity))&&
+                curriculum::reference_activity(fixture.after,block_at(fixture.after,owner.reference))==
+                    std::optional(position(fixture.after,owner.activity)),
+            "An active local source or reference differs from its independent owner pin");
+        const auto plan=std::ranges::find(fixture.plans,owner.activity,&Plan::activity);
+        check(owner.focal?(plan!=fixture.plans.end()&&plan->reference==owner.reference):plan==fixture.plans.end(),
+            "The active local manifest changed its exact focal owner/reference relation");
+        focal+=owner.focal;
+    }
+    check(focal==fixture.plans.size(),"The active local manifest added or omitted a focal plan");
+}
 struct JointReplacementOracle { std::string_view variable;std::int32_t replacement; };
 struct JointProbeOracle {
     std::string_view variable;
@@ -198,7 +332,38 @@ struct JointPublication {
     std::vector<JointCounterexampleOracle> counterexamples;
     std::string_view primary_counterexample;
 };
-const JointPublication& joint_publication(std::string_view id) {
+const JointPublication& joint_publication(std::string_view id,bool active=false) {
+    if(active) {
+        static const std::array<JointPublication,3> selected=[] {
+            std::array<JointPublication,3> result{{
+                joint_publication("u3l7"),joint_publication("u3l8"),joint_publication("u3l5")}};
+            for(auto& publication:result) {
+                publication.publication_sha256=active_publication_digest(publication.id);
+                publication.published_commit=active_publication_commit;
+            }
+            auto& dispatch=result[0];
+            dispatch.activity="block_0003_0003";dispatch.reference="block_0003_0006";
+            dispatch.other_activity="block_0007_0002";dispatch.other_reference="block_0007_0005";
+            auto& validity=result[1];
+            validity.activity="block_0002_0002";validity.reference="block_0002_0006";
+            validity.other_activity="block_0005_0002";validity.other_reference="block_0005_0010";
+            auto& admission=result[2];
+            admission.activity="block_0003_0002";admission.reference="block_0003_0005";
+            admission.other_activity="block_0005_0002";admission.other_reference="block_0005_0006";
+            // Together with the public first case and retained observations,
+            // these two additions complete the eight Boolean combinations.
+            admission.additions.push_back({"pase",0,{{"invitacion",1}},"Entrada denegada\nDatos: 0 1 0"});
+            admission.additions.push_back({"invitacion",1,{{"apertura",1}},"Entrada permitida\nDatos: 1 1 1"});
+            admission.counterexamples.push_back({"xor_invitation",
+                "cc6e31e1aefe0d97befc6beac66193a846dca0c6d2d5feba54db2fe7083897fa",6,"Entrada denegada\nDatos: 1 1 1"});
+            admission.counterexamples.push_back({"invitation_ignores_closure",
+                "6c58f6807b9066b29d9d538905aa02db9a82a6e4570b5038d60adfba0c51f1aa",5,"Entrada permitida\nDatos: 0 1 0"});
+            return result;
+        }();
+        const auto found=std::ranges::find(selected,id,&JointPublication::id);
+        check(found!=selected.end(),"Unknown active joint-variable publication");
+        return *found;
+    }
     static const std::array<JointPublication,3> publications{{
         {"u3l7","p1u3l7_reparar_prioridad","p1u3l7_ejemplo_prioridad",
          "p1u3l7_construir_despacho","p1u3l7_ejemplo_despacho",
@@ -235,7 +400,7 @@ const JointCounterexampleOracle& joint_counterexample_oracle(const JointPublicat
     return *found;
 }
 void read_joint_plan(const Fixture& fixture,const JsonObject& entry,Plan& plan) {
-    const auto& pin=joint_publication(fixture.id);
+    const auto& pin=joint_publication(fixture.id,fixture.active);
     if(fixture.id=="u3l5") {
         check(entry.GetNamedNumber(L"originalProbeCount")==static_cast<double>(pin.original_probes),
             "The admission plan changed its three historical observations");
@@ -266,7 +431,7 @@ void read_joint_plan(const Fixture& fixture,const JsonObject& entry,Plan& plan) 
     }
 }
 void verify_only_joint_append(const Fixture& fixture) {
-    const auto& pin=joint_publication(fixture.id);
+    const auto& pin=joint_publication(fixture.id,fixture.active);
     check(fixture.before_sha256==pin.publication_sha256&&
             state::sha256(fixture.before.raw_json)==pin.publication_sha256&&
             fixture.plans.size()==1&&fixture.solutions.size()==2,
@@ -342,7 +507,32 @@ struct InputDecisionPublication {
     std::size_t public_cases,private_probes,same_output_probes,counterexamples;
     std::array<std::size_t,8> private_indices;
 };
-const InputDecisionPublication& input_decision_publication(std::string_view id, bool active_loops=false) {
+const InputDecisionPublication& input_decision_publication(std::string_view id, bool active_loops=false,bool active=false) {
+    if(active) {
+        static constexpr std::array<InputDecisionPublication,6> selected{{
+            {"u3l3","block_0005_0002","block_0005_0006",
+             "35d320c1641cc11b02b8ecfda13ee765571168d01b9b112cf946367a6344f858",
+             "2792a215ba646efdcb567b9491da7a8492df78b5947caa25b5a9b8e462b72830",4,3,0,0,{1,2,3}},
+            {"u3l4","block_0005_0002","block_0005_0006",
+             "cf8e497e174c880f814b825ebd3f5115ca82d64a037daa40c82eaa4daf6a09f0",
+             "eb0a16c2709de2582fa8977bac6088472dcff31ec2c3b540cea8eb32b07e6498",4,3,0,0,{1,2,3}},
+            {"u3l5","block_0005_0002","block_0005_0006",
+             "6ce6bbb557ec2180c5b872d8a8b16cc9ed11906f63ec89afc5165263ba56a9b4",
+             "469baf3bed39fcd61f54569eb2133a629a0db81a3559e31ac1c8a0caca79e651",8,7,4,2,{1,2,3,4,5,6,7}},
+            {"u3l6","block_0006_0002","block_0006_0006",
+             "5c60bcac3bf8fd75ceb379dcce348553d90dbb27373ac5bffb01beea72a4853e",
+             "8c022a85b982a5ae964d222262b28d93f0eff6f2ce85d96aafc3307e30e73863",7,6,1,1,{1,2,3,4,5,6}},
+            {"u3l7","block_0007_0002","block_0007_0005",
+             "338242533d1384605ddd9a47f244cbd6efa732b3701aa4f7d2a9d6dc616cd5b3",
+             "4f6a28945c17dd6f58ff2c7cf8d1bae17e5280073d19dc86aa1fba3e636c754a",9,8,2,2,{1,2,3,4,5,6,7,8}},
+            {"u3l8","block_0005_0002","block_0005_0010",
+             "1ff0efacbfd0b9f57e4bae956e17a4e9c76a287505e34e4b82c33db067261bb7",
+             "8cce475973ba0bbc20664c6542354f968317087bc1c5e9da6ddd7b78df095c3c",13,7,0,0,{1,2,3,4,5,11,12}},
+        }};
+        const auto found=std::ranges::find(selected,id,&InputDecisionPublication::id);
+        check(found!=selected.end(),"Unknown selected input-decision publication");
+        return *found;
+    }
     if(active_loops) {
         static constexpr std::array<InputDecisionPublication,2> active{{
             {"u4l1","block_0006_0002","block_0006_0006",
@@ -410,7 +600,7 @@ bool shares_first_output(const curriculum::CppInputProbe& probe,const curriculum
     });
 }
 void read_input_decision_plan(const Fixture& fixture,const JsonObject& entry,Plan& plan) {
-    const auto& pin=input_decision_publication(fixture.id,fixture.active_loops);
+    const auto& pin=input_decision_publication(fixture.id,fixture.active_loops,fixture.active);
     const auto& owner=block_at(fixture.before,plan.activity);
     const auto public_cases=entry.GetNamedArray(L"publicCases");
     // This pin hashes the author's deterministic JSON export. The following
@@ -449,10 +639,10 @@ void read_input_decision_plan(const Fixture& fixture,const JsonObject& entry,Pla
         "The input-decision manifest omitted an independently falsifiable invariant");
 }
 void verify_input_decision_adoption(const Fixture& fixture) {
-    const auto& pin=input_decision_publication(fixture.id,fixture.active_loops);
+    const auto& pin=input_decision_publication(fixture.id,fixture.active_loops,fixture.active);
     check(fixture.before_sha256==pin.sha256&&state::sha256(fixture.before.raw_json)==pin.sha256&&
-            fixture.plans.size()==1&&fixture.solutions.size()==2,
-        "Input-decision QA lost its complete publication pin or two authentic editors");
+            fixture.plans.size()==1&&fixture.solutions.size()==(fixture.active&&fixture.id=="u3l4"?3u:2u),
+        "Input-decision QA lost its complete publication pin or exact authentic editor inventory");
     verify_only_root_adoption(fixture);
     const auto& plan=fixture.plans.front();
     const auto& owner=block_at(fixture.after,plan.activity);
@@ -492,9 +682,10 @@ void verify_input_decision_adoption(const Fixture& fixture) {
     }
 }
 void verify_only_guarded_append(const Fixture& fixture) {
-    constexpr std::string_view identity="p1u3l6_reparar_resto";
-    constexpr std::string_view reference="p1u3l6_ejemplo_resto";
-    constexpr std::string_view digest="9d7ca6b5d82b2dac1809ab01b8b308f9e81027c4c4c6ce796502b42cda7ca8ea";
+    const std::string_view identity=fixture.active?"block_0003_0002":"p1u3l6_reparar_resto";
+    const std::string_view reference=fixture.active?"block_0003_0005":"p1u3l6_ejemplo_resto";
+    const auto digest=fixture.active?active_publication_digest(fixture.id):
+        "9d7ca6b5d82b2dac1809ab01b8b308f9e81027c4c4c6ce796502b42cda7ca8ea";
     check(fixture.id=="u3l6"&&fixture.before_sha256==digest&&
             state::sha256(fixture.before.raw_json)==digest&&fixture.plans.size()==1&&
             fixture.solutions.size()==2,"Arithmetic QA lost its authentic U3L6 publication or editor census");
@@ -539,7 +730,8 @@ void verify_only_guarded_append(const Fixture& fixture) {
         "The arithmetic fixture altered a public case, prior field, archive or required-editor policy");
     for(const auto& [activity,example]:std::array{
             std::pair{identity,reference},
-            std::pair{std::string_view("p1u3l6_construir_reparto"),std::string_view("p1u3l6_ejemplo_reparto")}}) {
+            std::pair{std::string_view(fixture.active?"block_0006_0002":"p1u3l6_construir_reparto"),
+                      std::string_view(fixture.active?"block_0006_0006":"p1u3l6_ejemplo_reparto")}}) {
         const auto& before=block_at(fixture.before,activity);
         const auto& after=block_at(fixture.after,activity);
         const auto& projection=block_at(after_metadata,activity);
@@ -594,17 +786,20 @@ void read_guarded_arithmetic_plan(const Fixture& fixture,const JsonObject& entry
     check(seen.size()==expected.size(),"The arithmetic source matrix is incomplete");
 }
 std::vector<Fixture> load_manifest(const std::filesystem::path& manifest,bool joint=false,bool input_decisions=false,
-        bool guarded_arithmetic=false, bool active_loops=false) {
+        bool guarded_arithmetic=false, bool active_loops=false,bool active=false) {
     windows::ensure_winrt_apartment();
     const auto document=JsonObject::Parse(wide(bytes(manifest)));
     check(document.GetNamedNumber(L"version")==1&&
             json_string(document,L"publishedCommit")==
-                (active_loops?"2fcfad809e6a854dc35f4ce6c19fc1f1ab3e9c5b":
+                (active?active_publication_commit:active_loops?"2fcfad809e6a854dc35f4ce6c19fc1f1ab3e9c5b":
                      (input_decisions||guarded_arithmetic)?"08a11877a2d2c0bf96a846660e3baea69e53f758":
                     joint?"a92895f2b00242dbd338ab0a386ea8ceeda9edf8":"2ca32b2337178d1effa3a2c81759e2493cd746d0")&&
-            (!joint||json_string(document,L"kind")=="joint-local-int")&&
-            (!input_decisions||(!joint&&!guarded_arithmetic&&json_string(document,L"kind")== (active_loops?"active-loop-input-decision":"input-decision")))&&
-            (!guarded_arithmetic||(!joint&&!input_decisions&&json_string(document,L"kind")=="guarded-local-arithmetic")),
+            (!joint||json_string(document,L"kind")== (active?"active-joint-local-int":"joint-local-int"))&&
+            (!input_decisions||(!joint&&!guarded_arithmetic&&json_string(document,L"kind")==
+                (active?"active-input-decision":active_loops?"active-loop-input-decision":"input-decision")))&&
+            (!guarded_arithmetic||(!joint&&!input_decisions&&json_string(document,L"kind")==
+                (active?"active-guarded-arithmetic":"guarded-local-arithmetic")))&&
+            (!active||joint||input_decisions||guarded_arithmetic||json_string(document,L"kind")=="active-local-dependency"),
         "The UI manifest is not the audited main publication and schema");
     std::vector<Fixture> result;
     std::set<std::string> names;
@@ -616,10 +811,11 @@ std::vector<Fixture> load_manifest(const std::filesystem::path& manifest,bool jo
         fixture.input_decisions=input_decisions;
         fixture.active_loops=active_loops;
         fixture.guarded_arithmetic=guarded_arithmetic;
+        fixture.active=active;
         fixture.id=json_string(item,L"id");
         check(names.insert(fixture.id).second,"Repeated lesson manifest entry");
         if(joint) {
-            const auto& pin=joint_publication(fixture.id);
+            const auto& pin=joint_publication(fixture.id,fixture.active);
             check(json_string(item.HasKey(L"publishedCommit")?item:document,L"publishedCommit")==pin.published_commit,
                 "The joint lesson differs from its independently pinned publication commit");
         }
@@ -630,7 +826,7 @@ std::vector<Fixture> load_manifest(const std::filesystem::path& manifest,bool jo
         check(state::sha256(state::read_bytes(fixture.before_path))==fixture.before_sha256&&
                 state::sha256(state::read_bytes(fixture.after_path))==fixture.after_sha256,
             "A lesson fixture differs from its pinned manifest bytes");
-        if(active_loops) {
+        if(active_loops||active) {
             // These authenticated snapshots are exported as before/after.json,
             // not as a physical catalog. Exercise the complete production JSON
             // parser without pretending they are installed curriculum files.
@@ -640,7 +836,7 @@ std::vector<Fixture> load_manifest(const std::filesystem::path& manifest,bool jo
             check(fixture.before.course_edition&&fixture.after.course_edition&&
                     fixture.before.course_edition->generation==1&&
                     fixture.after.course_edition->generation==1,
-                "Active loop snapshots must retain their declared edition");
+                "Active snapshots must retain their declared edition");
         } else {
             fixture.before=windows::load_lesson(fixture.before_path);
             fixture.after=windows::load_lesson(fixture.after_path);
@@ -671,24 +867,121 @@ std::vector<Fixture> load_manifest(const std::filesystem::path& manifest,bool jo
         if(guarded_arithmetic)verify_only_guarded_append(fixture);
         else if(input_decisions)verify_input_decision_adoption(fixture);
         else if(joint)verify_only_joint_append(fixture);else verify_only_root_adoption(fixture);
+        if(active)verify_active_publication(fixture);
         result.push_back(std::move(fixture));
     }
     if(guarded_arithmetic)check(result.size()==1&&owner_count==1&&names==std::set<std::string>{"u3l6"},
         "The arithmetic UI manifest must retain exactly its one authenticated repair owner");
     else if(active_loops)check(result.size()==2&&owner_count==2&&names==std::set<std::string>{"u4l1","u4l2"},
         "Active loop QA must cover both independent owners and six private observations");
-    else if(input_decisions)check(result.size()==8&&owner_count==8&&
-            names==std::set<std::string>{"u3l3","u3l4","u3l5","u3l6","u3l7","u3l8","u4l1","u4l2"},
-        "The input-decision manifest must contain exactly eight independent owners and forty private observations");
+    else if(input_decisions)check(result.size()==(active?6u:8u)&&owner_count==(active?6u:8u)&&
+            names==(active?std::set<std::string>{"u3l3","u3l4","u3l5","u3l6","u3l7","u3l8"}:
+                std::set<std::string>{"u3l3","u3l4","u3l5","u3l6","u3l7","u3l8","u4l1","u4l2"}),
+        "The input-decision manifest must contain every independently audited owner");
     else if(joint)check(result.size()==3&&owner_count==3&&names==std::set<std::string>{"u3l5","u3l7","u3l8"},
         "The joint UI manifest must preserve all three authenticated lessons and owners");
     else check(result.size()==9&&owner_count==16,"The UI manifest must cover nine lessons and sixteen focal owners");
     return result;
 }
 
+JsonObject active_scope_choice_spec(std::string_view source) {
+    using namespace winrt::Windows::Data::Json;
+    const auto original=JsonObject::Parse(wide(source));
+    check(json_string(original,L"id")=="u3l4_alcance_codigo_en_recuadros",
+        "Active prerequisite QA received an unaudited mathematical owner");
+    const auto declarations=original.GetNamedArray(L"responses");
+    check(declarations.Size()==1,"The authored scope choice needs one response");
+    const auto specification=declarations.GetObjectAt(0);
+    check(json_string(specification,L"id")=="posicion"&&
+        json_string(specification,L"type")=="math_multiple_choice_single",
+        "The authored scope prerequisite changed response identity or family");
+    const auto validator=specification.GetNamedObject(L"validator");
+    const auto expected=validator.GetNamedArray(L"expected");
+    check(json_string(validator,L"type")=="choice"&&expected.Size()==1&&
+        expected.GetStringAt(0)==L"antes_de_return",
+        "The authored scope choice changed its expected position");
+    std::set<std::string> options;
+    for(const auto& value:specification.GetNamedArray(L"options"))
+        check(options.insert(json_string(value.GetObject(),L"id")).second,
+            "The authored scope choice repeats an option");
+    check(options==std::set<std::string>{"antes","antes_de_return","en_if"},
+        "The authored scope prerequisite changed its option identities");
+    return specification;
+}
+
+std::string active_scope_choice_result(std::string_view source,std::string_view answers,
+    std::string_view language,std::stop_token stop) {
+    using namespace winrt::Windows::Data::Json;
+    windows::ensure_winrt_apartment();
+    check(language=="es"&&!stop.stop_requested(),
+        "Active scope prerequisite validation changed locale or was cancelled");
+    const auto specification=active_scope_choice_spec(source);
+    const auto identifier=specification.GetNamedString(L"id");
+    const auto submitted=JsonObject::Parse(wide(answers));
+    bool correct=submitted.Size()==1&&submitted.HasKey(identifier)&&
+        submitted.GetNamedValue(identifier).ValueType()==JsonValueType::Object;
+    if(correct) {
+        const auto candidate=submitted.GetNamedObject(identifier);
+        correct=candidate.HasKey(L"type")&&
+            candidate.GetNamedValue(L"type").ValueType()==JsonValueType::String&&
+            candidate.GetNamedString(L"type")==L"choice"&&
+            candidate.HasKey(L"selected")&&
+            candidate.GetNamedValue(L"selected").ValueType()==JsonValueType::Array;
+        if(correct) {
+            const auto selected=candidate.GetNamedArray(L"selected");
+            correct=selected.Size()==1&&selected.GetAt(0).ValueType()==JsonValueType::String&&
+                selected.GetStringAt(0)==specification.GetNamedObject(L"validator")
+                    .GetNamedArray(L"expected").GetStringAt(0);
+        }
+    }
+    const auto original=JsonObject::Parse(wide(source));
+    JsonObject result;
+    result.Insert(L"evaluable",JsonValue::CreateBooleanValue(true));
+    result.Insert(L"correct",JsonValue::CreateBooleanValue(correct));
+    result.Insert(L"contentFingerprint",JsonValue::CreateStringValue(wide(state::sha256(source))));
+    result.Insert(L"feedback",JsonValue::CreateStringValue(
+        original.GetNamedObject(L"feedback").GetNamedString(correct?L"correct":L"incorrect")));
+    return winrt::to_string(result.Stringify());
+}
+
+state::Response active_scope_choice_prerequisite(const Block& block) {
+    using namespace winrt::Windows::Data::Json;
+    check(block.type==BlockType::math_puzzle&&
+        block.stable_id=="u3l4_alcance_codigo_en_recuadros",
+        "Active prerequisite preparation received an unaudited mathematical block");
+    const auto source=std::string(curriculum::math_evaluation_source(block));
+    const auto specification=active_scope_choice_spec(source);
+    JsonObject answer,responses,stored;
+    answer.Insert(L"type",JsonValue::CreateStringValue(L"choice"));
+    answer.Insert(L"selected",specification.GetNamedObject(L"validator").GetNamedArray(L"expected"));
+    responses.Insert(specification.GetNamedString(L"id"),answer);
+    const auto evaluated=JsonObject::Parse(wide(active_scope_choice_result(
+        source,winrt::to_string(responses.Stringify()),"es",std::stop_token{})));
+    for(const auto wrong:{L"antes",L"en_if"}) {
+        JsonArray selected;selected.Append(JsonValue::CreateStringValue(wrong));
+        JsonObject wrong_answer,wrong_responses;
+        wrong_answer.Insert(L"type",JsonValue::CreateStringValue(L"choice"));
+        wrong_answer.Insert(L"selected",selected);
+        wrong_responses.Insert(specification.GetNamedString(L"id"),wrong_answer);
+        const auto rejected=JsonObject::Parse(wide(active_scope_choice_result(
+            source,winrt::to_string(wrong_responses.Stringify()),"es",std::stop_token{})));
+        check(!rejected.GetNamedBoolean(L"correct"),
+            "The scope prerequisite evaluator accepted an authored incorrect position");
+    }
+    state::Response response;
+    response.correct=evaluated.GetNamedBoolean(L"correct");
+    check(response.correct,"The authored scope prerequisite failed its audited choice evaluator");
+    stored.Insert(L"responses",responses);
+    stored.Insert(L"correct",JsonValue::CreateBooleanValue(response.correct));
+    stored.Insert(L"contentFingerprint",evaluated.GetNamedValue(L"contentFingerprint"));
+    response.raw_json=winrt::to_string(stored.Stringify());
+    return response;
+}
+
 void prepare_quizzes(state::StateData& data,const Lesson& lesson,std::size_t through) {
-    // Authored answers evaluated by the real core are QA setup only. No claim
-    // is made that these nonfocal quizzes were answered through their controls.
+    // Authored answers evaluated by the real core (or the source-bound scope
+    // choice evaluator above) are QA setup only. These nonfocal quizzes are
+    // not claimed as having been answered through their controls.
     for(std::size_t page=0;page<=through;++page)for(const auto& block:lesson.pages.at(page).blocks) {
         if(const auto old=state::get_response(data,lesson,block);old&&old->correct)continue;
         state::Response response;
@@ -723,7 +1016,7 @@ void prepare_quizzes(state::StateData& data,const Lesson& lesson,std::size_t thr
             break;
         }
         case BlockType::math_puzzle:
-            check(false,"A mathematical prerequisite needs its own explicitly audited preparation");
+            response=active_scope_choice_prerequisite(block);
             break;
         default:continue;
         }
@@ -916,7 +1209,7 @@ void verify_guarded_arithmetic_sources(const Fixture& fixture,const Plan& plan,s
 }
 void verify_joint_counterexamples(const Fixture& fixture,const Plan& plan,
         const WindowsEnvironment& environment) {
-    const auto& pin=joint_publication(fixture.id);
+    const auto& pin=joint_publication(fixture.id,fixture.active);
     const auto& block=block_at(fixture.after,plan.activity);
     const auto& first=block.output_check->cases.front();
     for(const auto& example:plan.joint_counterexamples) {
@@ -1041,9 +1334,33 @@ struct View {
         // Observe the real Finish action without replacing its guards or
         // closing the host needed for subsequent reopen and Reset checks.
         hooks.lesson_completed=[this](HWND){++finishes;};
+        // Reopening revalidates the same authored scope choice. This narrow
+        // prerequisite evaluator neither grants compiler receipts nor skips gates.
+        hooks.validate_math=active_scope_choice_result;
         view=create_lesson_view(host,environment,lesson,std::move(hooks));
         check(view!=nullptr,"Cannot create the production LessonView");
         MoveWindow(view,0,0,1100,850,TRUE);pump();
+        const auto target=position(lesson,activity);
+        bool has_math=false;
+        for(std::size_t page=0;page<=target.page;++page)
+            for(const auto& block:lesson.pages.at(page).blocks)has_math|=block.type==BlockType::math_puzzle;
+        if(has_math) {
+            check(target.page>0,"The audited mathematical prerequisite must precede a later focal editor");
+            const auto deadline=GetTickCount64()+20000;
+            bool restored=false;
+            do {
+                pump();within_budget();
+                const auto current=lesson_page_state(view);
+                const auto editor=descendant(view,1000+static_cast<int>(target.block)*100+10);
+                // can_previous is false while the real deferred entry waits
+                // for asynchronous math revalidation. can_next may correctly
+                // remain false until the focal compiler earns its first case.
+                restored=current.index==target.page&&current.can_previous&&editor&&IsWindowEnabled(editor);
+                if(restored)break;
+                MsgWaitForMultipleObjects(0,nullptr,FALSE,10,QS_ALLINPUT);
+            }while(GetTickCount64()<deadline);
+            check(restored,"The authored mathematical prerequisite did not finish restoring the focal page");
+        }
         check(!IsWindowVisible(host),"Hidden UI QA exposed a desktop window");
     }
     void close() {
@@ -1474,7 +1791,7 @@ void run_plan(const Fixture& fixture,const Plan& plan,std::size_t ordinal) {
     if(fixture.joint_local_int&&fixture.id=="u3l5") {
         auto omitted=current;omitted.local_int_check->probes.pop_back();
         auto changed=current;
-        changed.local_int_check->probes.at(joint_publication(fixture.id).original_probes)
+        changed.local_int_check->probes.at(joint_publication(fixture.id,fixture.active).original_probes)
             .additional_replacements.back().replacement=0;
         check(!windows::compiler_puzzle_completed(earned,fixture.after,omitted)&&
                 !windows::compiler_puzzle_completed(earned,fixture.after,changed),
@@ -1536,12 +1853,19 @@ void run_plan(const Fixture& fixture,const Plan& plan,std::size_t ordinal) {
 int main(int argc,char** argv) {
     std::cout<<std::unitbuf;std::cerr<<std::unitbuf;
     started=GetTickCount64();
-    const bool active_loops=argc>1&&std::string_view(argv[1])=="--active-loops";
-    const bool input_decisions=active_loops||(argc>1&&std::string_view(argv[1])=="--input-decisions");
-    const bool joint=argc>1&&std::string_view(argv[1])=="--joint-local-int";
-    const bool guarded_arithmetic=argc==3&&std::string_view(argv[1])=="--guarded-arithmetic";
-    if((input_decisions||joint)?(argc!=3&&argc!=4):(argc!=2&&argc!=3)) {
-        std::cerr<<"Usage: local_dependency_view_tests <manifest.json> [lesson-id] | --joint-local-int <manifest.json> [lesson-id] | --guarded-arithmetic <manifest.json> | --input-decisions <manifest.json> [lesson-id] | --active-loops <manifest.json> [lesson-id]\n";return 2;
+    const std::string_view mode=argc>1?argv[1]:"";
+    const bool active=mode=="--active-dependencies"||mode=="--active-input-decisions"||
+        mode=="--active-joint-local-int"||mode=="--active-guarded-arithmetic";
+    const bool active_loops=mode=="--active-loops";
+    const bool input_decisions=active_loops||mode=="--input-decisions"||mode=="--active-input-decisions";
+    const bool joint=mode=="--joint-local-int"||mode=="--active-joint-local-int";
+    const bool guarded_arithmetic=mode=="--guarded-arithmetic"||mode=="--active-guarded-arithmetic";
+    const bool has_mode=active||active_loops||input_decisions||joint||guarded_arithmetic;
+    const int manifest_index=has_mode?2:1;
+    const bool allows_filter=!guarded_arithmetic||active;
+    if((mode.starts_with("--")&&!has_mode)||argc<manifest_index+1||
+            argc>manifest_index+(allows_filter?2:1)) {
+        std::cerr<<"Usage: local_dependency_view_tests [--joint-local-int | --guarded-arithmetic | --input-decisions | --active-loops | --active-dependencies | --active-input-decisions | --active-joint-local-int | --active-guarded-arithmetic] <manifest.json> [lesson-id]\n";return 2;
     }
     const auto apartment=OleInitialize(nullptr);
     if(FAILED(apartment))return 2;
@@ -1550,15 +1874,15 @@ int main(int argc,char** argv) {
     int result=0;
     try {
         check(rich!=nullptr,"Cannot load actual RichEdit controls");reader_theme::prepare_fonts();
-        const auto manifest=std::filesystem::path(argv[joint||input_decisions||guarded_arithmetic?2:1]);
+        const auto manifest=std::filesystem::path(argv[manifest_index]);
         const auto manifest_bytes=state::read_bytes(manifest);
-        const auto fixtures=load_manifest(manifest,joint,input_decisions,guarded_arithmetic,active_loops);
-        const auto filter=(input_decisions||joint)?(argc==4?std::string_view(argv[3]):std::string_view{}):
-            argc==3&&!joint&&!guarded_arithmetic?std::string_view(argv[2]):std::string_view{};
+        const auto fixtures=load_manifest(manifest,joint,input_decisions,guarded_arithmetic,active_loops,active);
+        const auto filter=argc==manifest_index+2?std::string_view(argv[manifest_index+1]):std::string_view{};
         std::size_t completed=0,ordinal=0;
         for(const auto& fixture:fixtures) {
             if(!filter.empty()&&fixture.id!=filter)continue;
-            std::cout<<"QA setup "<<fixture.id<<": authored nonfocal quiz answers evaluated by the core; "
+            std::cout<<"QA setup "<<fixture.id<<": authored nonfocal quiz answers evaluated by the core "
+                "or the source-bound scope choice evaluator; "
                 "nonfocal compilers observed by real native runs. These are not claimed as manual learner interactions.\n";
             for(const auto& plan:fixture.plans){
                 ++ordinal;
@@ -1567,7 +1891,7 @@ int main(int argc,char** argv) {
                 run_plan(fixture,plan,ordinal);++completed;
             }
         }
-        check(completed>0&&(filter.empty()?completed==(guarded_arithmetic?1u:active_loops?2u:input_decisions?8u:joint?3u:16u):true),
+        check(completed>0&&(filter.empty()?completed==(guarded_arithmetic?1u:active_loops?2u:input_decisions?(active?6u:8u):joint?3u:16u):true),
             "The requested UI group is missing or incomplete");
         for(const auto& fixture:fixtures)
             check(state::sha256(state::read_bytes(fixture.before_path))==fixture.before_sha256&&

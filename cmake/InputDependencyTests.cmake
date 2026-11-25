@@ -336,4 +336,68 @@ function(lgaed_add_local_dependency_view_tests source_root presentation_target)
         COMMAND lgaed_local_dependency_view_tests --guarded-arithmetic
             "${_arithmetic_fixture_dir}/manifest.json")
     set_tests_properties(native.guarded_arithmetic_view PROPERTIES TIMEOUT 600 RUN_SERIAL TRUE)
+
+    # Active edition QA has four independent, immutable fixture namespaces.
+    # Preserve every historical export and exercise only the selected lesson.
+    _lgaed_add_active_dependency_view_fixture("${source_root}"
+        active-local-dependency local_dependency_view_fixture_source.py
+        --active-dependencies active_local_dependency_view
+        "u2l1;u2l2;u2l3;u2l7;u2l8;u2l9;u2l10;u3l1;u3l2"
+        input_dependency_fixture_source.py local_role_fixture_source.py
+        local_scalar_fixture_source.py)
+    _lgaed_add_active_dependency_view_fixture("${source_root}"
+        active-input-decisions input_decision_fixture_source.py
+        --active-input-decisions active_input_decisions_view
+        "u3l3;u3l4;u3l5;u3l6;u3l7;u3l8")
+    _lgaed_add_active_dependency_view_fixture("${source_root}"
+        active-joint-local-int joint_local_int_fixture_source.py
+        --active-joint-local-int active_joint_local_int_view "u3l5;u3l7;u3l8")
+    _lgaed_add_active_dependency_view_fixture("${source_root}"
+        active-guarded-arithmetic short_circuit_fixture_source.py
+        --active-guarded-arithmetic active_guarded_arithmetic_view "u3l6")
+endfunction()
+
+# Include the full validator import closure, including stable_state_layout's
+# dynamic imports, in reconfiguration, the namespace digest and build inputs.
+# Changing any contract dependency selects new paths instead of overwriting QA.
+function(_lgaed_add_active_dependency_view_fixture source_root fixture_namespace
+        exporter mode test_prefix lessons)
+    set(_active_fixture_dependencies "${source_root}/scripts/curriculum/${exporter}")
+    foreach(_module IN ITEMS stable_state_layout.py diagnostic_fixture_source.py
+            identifier_rename_compat.py code_format_compat.py text_semantics.py
+            image_resources.py simulation.py bibliography_revision.py course_edition.py
+            code_scope_presentations.py math_matching_text_compat.py ${ARGN})
+        list(APPEND _active_fixture_dependencies "${source_root}/scripts/curriculum/${_module}")
+    endforeach()
+    set_property(DIRECTORY APPEND PROPERTY CMAKE_CONFIGURE_DEPENDS
+        ${_active_fixture_dependencies})
+    set(_active_fixture_contract "${fixture_namespace}/v1\n--active\n${mode}\n${test_prefix}\n${lessons}\n")
+    foreach(_dependency IN LISTS _active_fixture_dependencies)
+        file(SHA256 "${_dependency}" _dependency_sha256)
+        get_filename_component(_dependency_name "${_dependency}" NAME)
+        string(APPEND _active_fixture_contract "${_dependency_name}:${_dependency_sha256}\n")
+    endforeach()
+    string(SHA256 _active_fixture_contract_sha256 "${_active_fixture_contract}")
+    set(_active_fixture_dir
+        "${CMAKE_CURRENT_BINARY_DIR}/test-fixtures/${fixture_namespace}-${_active_fixture_contract_sha256}")
+    set(_active_fixture_files "${_active_fixture_dir}/manifest.json")
+    foreach(_lesson IN LISTS lessons)
+        foreach(_file IN ITEMS before.json after.json)
+            list(APPEND _active_fixture_files "${_active_fixture_dir}/${_lesson}/${_file}")
+        endforeach()
+    endforeach()
+    add_custom_command(OUTPUT ${_active_fixture_files}
+        COMMAND "${Python3_EXECUTABLE}" -B "${source_root}/scripts/curriculum/${exporter}"
+            --active --output-dir "${_active_fixture_dir}"
+        DEPENDS ${_active_fixture_dependencies}
+        VERBATIM)
+    add_custom_target(lgaed_${test_prefix}_fixtures DEPENDS ${_active_fixture_files})
+    add_dependencies(lgaed_local_dependency_view_tests lgaed_${test_prefix}_fixtures)
+    foreach(_lesson IN LISTS lessons)
+        add_test(NAME native.${test_prefix}_${_lesson}
+            COMMAND lgaed_local_dependency_view_tests "${mode}"
+                "${_active_fixture_dir}/manifest.json" "${_lesson}")
+        set_tests_properties(native.${test_prefix}_${_lesson}
+            PROPERTIES TIMEOUT 600 RUN_SERIAL TRUE)
+    endforeach()
 endfunction()
