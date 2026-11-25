@@ -184,10 +184,20 @@ def fixture_payloads():
     payloads["published.json"] = published_bytes().decode("utf-8")
     for name, document in rejected_documents(documents).items():
         payloads["negative/" + name + ".json"] = json_bytes(document)
+    # Windows persists this complete editorial proof only when a return exists.
+    # Compute the exact expected receipt independently with the authoring
+    # fingerprint, never from StateStore's migrated output.
+    return_receipts = {
+        name: ([state.fingerprint(edge) for edge in document["stateLayout"]["editorial"]]
+               if any("returnTo" in edge for edge in document["stateLayout"]["editorial"])
+               else None)
+        for name, document in zip(STAGES, documents)
+    }
     manifest = {
         "publishedCommit": PUBLISHED_COMMIT, "publishedPath": PUBLISHED_RELATIVE,
         "publishedSha256": PUBLISHED_SHA256, "owner": OWNER, "otherOwner": OTHER_OWNER,
         "stages": list(STAGES), "negative": ["negative/" + name + ".json" for name in NEGATIVES],
+        "editorialReturnReceipts": return_receipts,
         "sha256": {name: hashlib.sha256(text.encode("utf-8")).hexdigest()
                    for name, text in payloads.items()},
     }

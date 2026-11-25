@@ -60,7 +60,21 @@ narration::SemanticPlanProof reading_proof(const Block& block) {
     return proof;
 }
 
-void verify_state(const std::vector<Lesson>& full,const std::vector<Lesson>& metadata,bool earned) {
+void check_state_bytes(const state::StateData& actual,const state::StateData& expected,
+        std::string_view phase) {
+    if(state::encode(actual)==state::encode(expected))return;
+    for(const auto& [domain,entries]:expected.preferences)for(const auto& [key,value]:entries) {
+        const auto found=state::find(actual,domain,key);
+        check(found&&*found==value,std::string(phase)+": changed saved field "+domain+"/"+key);
+    }
+    for(const auto& [domain,entries]:actual.preferences)for(const auto& entry:entries)
+        check(state::find(expected,domain,entry.first)!=nullptr,
+            std::string(phase)+": unexpected saved field "+domain+"/"+entry.first);
+    check(false,std::string(phase)+": encoded state changed");
+}
+
+void verify_state(const std::vector<Lesson>& full,const std::vector<Lesson>& metadata,
+        const std::vector<std::string>& return_receipts,bool earned) {
     const auto& initial=full.front();const auto& original=owner(initial);
     const auto environment=resolve_windows_environment({ProfileId::Codex,
         L"identifier-prose-"+std::to_wstring(earned?1:0)+L"-"+
@@ -97,13 +111,26 @@ void verify_state(const std::vector<Lesson>& full,const std::vector<Lesson>& met
     narration::write_history(saved,history);
     const auto old_history=narration::read_history(saved);
     const auto encoded=state::encode(saved);
+    const auto return_key="lesson_"+initial.id+"_state_editorial_returns_v1_"+initial.locale;
+    check(return_receipts.size()==full.size()&&return_receipts.front().empty()&&
+            !state::find(saved,"learning_progress",return_key),
+        "The original U2L6 seed unexpectedly contains a later editorial return receipt");
+    auto durable_expected=saved;
     {
         state::StateStore store(environment.paths.root);(void)store.load();store.save(saved);
     }
     for(std::size_t stage=1;stage<full.size();++stage) {
+        const auto stage_context="U2L6 rename/prose correct="+std::to_string(earned)+
+            " stage="+std::to_string(stage);
         state::StateStore store(environment.paths.root);auto current=store.load();
-        check(state::encode(current)==encoded,"Durable reopen changed original rename/prose state");
+        check_state_bytes(current,durable_expected,stage_context+" reopen before adoption");
+        // Only the independently authored return receipt may extend the seed.
+        // Every other domain, key, type and byte remains part of the equality.
+        auto expected=saved;
+        if(!return_receipts[stage].empty())
+            expected.preferences["learning_progress"][return_key]=return_receipts[stage];
         for(const auto* lesson:{&full[stage],&metadata[stage]}) {
+            const auto phase=stage_context+(lesson==&full[stage]?" full":" progress");
             const auto& after=owner(*lesson);
             state::prepare_lesson_state(current,*lesson);state::validate_lesson_state(current,*lesson);
             const auto kept=state::get_response(current,*lesson,after);
@@ -117,8 +144,9 @@ void verify_state(const std::vector<Lesson>& full,const std::vector<Lesson>& met
             check(kept_draft.source==draft.source&&kept_draft.input==draft.input&&
                     kept_draft.selection_start==draft.selection_start&&kept_draft.selection_end==draft.selection_end,
                 "Rename/prose rewrote a learner draft or selection");
-            check(narration::read_history(current)==old_history&&state::encode(current)==encoded,
-                "Rename/prose changed historical reading evidence or foreign preferences");
+            check(narration::read_history(current)==old_history,
+                phase+": historical reading evidence changed");
+            check_state_bytes(current,expected,phase+" after preparation");
             if(lesson==&full[stage]) {
                 const auto evaluated=evaluate_text_answer(after,response.answer);
                 check(evaluated.correct==earned,"Current prose changed the output oracle");
@@ -131,11 +159,20 @@ void verify_state(const std::vector<Lesson>& full,const std::vector<Lesson>& met
                 "The progress loader lost the exact authored current block");
         }
         store.save(current);
+        state::StateStore reopened(environment.paths.root);const auto persisted=reopened.load();
+        check_state_bytes(persisted,expected,stage_context+" reopen after save");
+        check(narration::read_history(persisted)==old_history,
+            stage_context+": durable reopen changed historical reading evidence");
+        durable_expected=expected;
         // Direct import crosses each skipped publication from original bytes.
         auto imported=state::decode(encoded);
         state::prepare_lesson_state(imported,full[stage]);
         state::validate_lesson_state(imported,metadata[stage]);
-        check(state::encode(imported)==encoded,"Direct import changed original rename/prose state");
+        check_state_bytes(imported,expected,stage_context+" direct import");
+        check(narration::read_history(imported)==old_history,
+            stage_context+": direct import changed historical reading evidence");
+        std::cout<<"PASS "<<stage_context
+            <<": full/progress state, exact return receipt, durable reopen and direct import\n";
     }
     std::cout<<"PASS U2L6 rename/prose state correct="<<earned
         <<": actual output evaluation, durable reopen, direct import, attempts, draft and reading provenance\n";
@@ -156,6 +193,9 @@ int main(int argc,char** argv) try {
     const auto stages=manifest.GetNamedArray(L"stages");
     check(stages.Size()==names.size(),"Rename/prose must retain all six publication stages");
     const auto hashes=manifest.GetNamedObject(L"sha256");
+    const auto receipts=manifest.GetNamedObject(L"editorialReturnReceipts");
+    check(receipts.Size()==names.size(),"Rename/prose needs one exact return receipt per stage");
+    std::vector<std::string> return_receipts;
     std::vector<Lesson> full,metadata;
     std::vector<std::string> source;
     for(unsigned i=0;i<stages.Size();++i) {
@@ -166,6 +206,24 @@ int main(int argc,char** argv) try {
         if(i==0)check(state::sha256(bytes)==published_sha,"Published U2L6 input is not authentic");
         full.push_back(parse_lesson_json(bytes,"es"));metadata.push_back(parse_lesson_progress_metadata(bytes,"es"));
         source.push_back(std::move(bytes));
+        const auto receipt=receipts.GetNamedValue(winrt::to_hstring(name));
+        if(i+1<names.size()) {
+            check(receipt.ValueType()==JsonValueType::Null,
+                "A pre-return stage unexpectedly authorizes a saved editorial receipt");
+            return_receipts.emplace_back();
+        }else {
+            const auto expected_hashes=receipt.GetArray();
+            const auto authored=JsonObject::Parse(winrt::to_hstring(source.back()));
+            check(expected_hashes.Size()==authored.GetNamedObject(L"stateLayout").GetNamedArray(L"editorial").Size(),
+                "The return receipt must cover the complete authored editorial history");
+            for(const auto& digest:expected_hashes) {
+                const auto value=winrt::to_string(digest.GetString());
+                check(value.size()==64&&std::all_of(value.begin(),value.end(),[](char c){
+                    return (c>='0'&&c<='9')||(c>='a'&&c<='f');}),
+                    "The independent editorial receipt contains an invalid proof hash");
+            }
+            return_receipts.push_back(winrt::to_string(expected_hashes.Stringify()));
+        }
         const auto& before=full.front();
         for(const auto* model:{&full.back(),&metadata.back()}) {
             check(model->id==before.id&&model->state_layout.signatures==before.state_layout.signatures&&
@@ -194,7 +252,7 @@ int main(int argc,char** argv) try {
         "The current U2L6 prose did not use the newly authored names");
     check(owner(full[5]).raw_json==owner(full[1]).raw_json,
         "The explicit editorial return did not recover the complete renamed endpoint");
-    verify_state(full,metadata,true);verify_state(full,metadata,false);
+    verify_state(full,metadata,return_receipts,true);verify_state(full,metadata,return_receipts,false);
     const auto negatives=manifest.GetNamedArray(L"negative");
     check(negatives.Size()==16,"Rename/prose lost a hostile history fixture");
     for(const auto& item:negatives) {
