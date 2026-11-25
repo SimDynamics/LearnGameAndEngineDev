@@ -19,8 +19,37 @@ permissions:
   contents: read
 
 jobs:
+  authoring-batch-scope:
+    name: Authenticate the authoring-only batch before omitting C++ compilation
+    if: ${{ github.event_name == 'push' && startsWith(github.event.head_commit.message, 'qa-code-scope-history:') }}
+    runs-on: windows-2022
+    timeout-minutes: 5
+    steps:
+      - name: Checkout the complete authenticated source history
+        uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262
+        with:
+          fetch-depth: 0
+          persist-credentials: false
+      - name: Reject source changes outside the authoring batch
+        shell: pwsh
+        run: |
+          $ErrorActionPreference = 'Stop'
+          $qaBase = '863d64d9d68e10bd3e71ce8bdf27bb70c5a0ae61'
+          git merge-base --is-ancestor $qaBase HEAD
+          if ($LASTEXITCODE -ne 0) { throw 'The authenticated source revision must be an ancestor of this follow-up.' }
+          $qaAllowed = @('scripts/curriculum/test_code_scope_presentations.py', '.github/workflows/windows-reader-build.yml', '.github/workflows/codex-batched-client-split.yml')
+          $qaChanged = @(git diff --name-only --no-renames $qaBase HEAD)
+          if ($LASTEXITCODE -ne 0) { throw 'Cannot inspect the exact code-scope history revision.' }
+          $qaUnexpected = @($qaChanged | Where-Object { $_ -notin $qaAllowed })
+          if ($qaChanged.Count -eq 0 -or $qaUnexpected.Count -ne 0) {
+            throw ('Code-scope history QA requires its narrow test/workflow diff: ' + ($qaUnexpected -join ', '))
+          }
+
   authentic-case-split:
     name: Check eight standalone cases with the archived original
+    # This authenticated authoring-only batch preserves the native C++ sources.
+    # windows-reader-build.yml rejects changes outside its declared scope.
+    if: ${{ github.event_name != 'push' || !startsWith(github.event.head_commit.message, 'qa-code-scope-history:') }}
     runs-on: windows-2022
     timeout-minutes: 10
     steps:

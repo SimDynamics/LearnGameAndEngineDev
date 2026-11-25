@@ -77,10 +77,10 @@ concurrency:
   cancel-in-progress: false
 
 jobs:
-  # The authoring-only follow-up reuses both original CodeScope Python tests.
-  # Its scope guard preserves the native reader evidence for unchanged code.
+  # Group complete authoring contracts without recompiling native sources.
+  # The pinned scope guard keeps this batch separate from reader builds.
   code-scope-history:
-    name: Verify published code-scope editorial history
+    name: Verify publication chains and empty-text simulation authoring
     if: ${{ github.event_name == 'push' && startsWith(github.event.head_commit.message, 'qa-code-scope-history:') }}
     runs-on: windows-2025-vs2026
     timeout-minutes: 10
@@ -93,13 +93,13 @@ jobs:
         with:
           fetch-depth: 0
           persist-credentials: false
-      - name: Verify this follow-up only changes its test and workflow
+      - name: Verify the grouped authoring batch has its declared scope
         run: |
           $ErrorActionPreference = 'Stop'
-          $qaBase = '39ba3cb196e196bac99c2d891b488f765679ad6d'
+          $qaBase = '863d64d9d68e10bd3e71ce8bdf27bb70c5a0ae61'
           git merge-base --is-ancestor $qaBase HEAD
           if ($LASTEXITCODE -ne 0) { throw 'The authenticated source revision must be an ancestor of this follow-up.' }
-          $qaAllowed = @('scripts/curriculum/test_code_scope_presentations.py', '.github/workflows/windows-reader-build.yml')
+          $qaAllowed = @('scripts/curriculum/test_code_scope_presentations.py', '.github/workflows/windows-reader-build.yml', '.github/workflows/codex-batched-client-split.yml')
           $qaChanged = @(git diff --name-only --no-renames $qaBase HEAD)
           if ($LASTEXITCODE -ne 0) { throw 'Cannot inspect the exact code-scope history revision.' }
           $qaUnexpected = @($qaChanged | Where-Object { $_ -notin $qaAllowed })
@@ -116,6 +116,8 @@ jobs:
       - name: Verify existing publication-chain rejection controls
         working-directory: scripts/curriculum
         run: python -B -m unittest -v test_retired_state_layout.RetirementPublicationChainTest
+      - name: Verify the complete empty-text simulation authoring contract
+        run: python -B -m unittest discover -s scripts/curriculum -p test_simulation.py -v
 
   build:
     name: ${{ github.event_name == 'push' && startsWith(github.event.head_commit.message, 'qa-reader-revision-regressions:') && 'Verify seven reader revision regressions with real Windows playback' || github.event_name == 'push' && startsWith(github.event.head_commit.message, 'qa-code-scope:') && 'Verify nested code scopes and authentic publication retirement chains' || github.event_name == 'push' && (startsWith(github.event.head_commit.message, 'qa-reader-revision:') || startsWith(github.event.head_commit.message, 'qa-native-headers:')) && 'Verify automatic reading order after a live content edit' || github.event_name == 'push' && startsWith(github.event.head_commit.message, 'qa-native-catalog-u1:') && 'Verify the complete native catalog and four U1 editor regressions' || 'Compile original readers and verify catalog, choice revisions and project history' }}
