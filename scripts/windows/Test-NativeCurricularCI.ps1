@@ -229,6 +229,7 @@ $qaSuiteConfig = switch ($Suite) {
                 'native.narration_worker',
                 'native.narration_spanish_pcm',
                 'native.simulation_narration',
+                'native.concept_diagram_narration',
                 'native.narration_player_failure_diagnostic'
             )
         }
@@ -277,6 +278,7 @@ $qaSuiteConfig = switch ($Suite) {
                 'native.retirement_publication_chain_authoring',
                 'native.code_scope_reader',
                 'native.concept_diagram_authoring',
+                'native.concept_diagram_narration',
                 'native.concept_diagram_reader'
             )
         }

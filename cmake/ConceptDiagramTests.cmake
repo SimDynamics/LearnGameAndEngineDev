@@ -16,6 +16,10 @@ function(lgaed_add_concept_diagram_tests)
         COMMAND "${Python3_EXECUTABLE}" -B -m unittest -v test_concept_diagram)
     set_tests_properties(native.concept_diagram_authoring
         PROPERTIES WORKING_DIRECTORY "${CMAKE_SOURCE_DIR}/scripts/curriculum" TIMEOUT 120 RUN_SERIAL TRUE)
+    if(LGAED_CODE_SCOPE_QA_ONLY)
+        include("${CMAKE_CURRENT_FUNCTION_LIST_DIR}/NarrationWorkerTests.cmake")
+        lgaed_add_concept_diagram_narration_test()
+    endif()
     add_test(NAME native.concept_diagram_reader
         COMMAND lgaed_lesson_reader_tests --concept-diagram "${_diagram_fixture}"
             "${CMAKE_CURRENT_BINARY_DIR}/code-scope-captures/concept-diagram")

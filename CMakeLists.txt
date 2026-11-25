@@ -373,6 +373,7 @@ if(LGAED_NARRATION_WORKER_QA_ONLY)
         "${CMAKE_SOURCE_DIR}/native/narration/worker/test_curriculum_visible_semantics.py"
         CurriculumVisibleSemanticsTest.test_simulation_prepares_only_static_authored_fields_not_future_states)
     set_tests_properties(native.simulation_narration PROPERTIES TIMEOUT 120 RUN_SERIAL TRUE)
+    lgaed_add_concept_diagram_narration_test()
     set_tests_properties(native.narration_spanish_pcm PROPERTIES
         ENVIRONMENT "LGAED_REQUIRE_NEW_SPANISH_SYNTHESIS=1")
     include(cmake/NarrationPlayerTests.cmake)

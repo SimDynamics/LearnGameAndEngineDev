@@ -20,6 +20,10 @@ on:
       # No pinned full-app or narration rebuild is needed for isolated QA edits.
       - '!native/platform/windows/matching_rename_composition_state_tests.cpp'
       - native/presentation/windows/**
+      # The reader prepares concept diagrams through these real worker sources.
+      - native/narration/worker/WindowsSemanticFields.kt
+      - native/narration/worker/build_worker.py
+      - native/narration/worker/test_curriculum_visible_semantics.py
       # Catalog discovery and progress read indexed lessons in every course.
       # Cover future course IDs without triggering on images or audio files.
       - app/src/main/assets/content/**/courses.json
@@ -310,7 +314,8 @@ jobs:
             out/qa/code-scope-ci/virtual-audio/*.json
             out/narration/runtime.json
             out/qa/code-scope-ci/test-fixtures/code-scope/**
-            out/qa/code-scope-ci/code-scope-captures/*.png
+            out/qa/code-scope-ci/test-fixtures/concept-diagram/**
+            out/qa/code-scope-ci/code-scope-captures/**/*.png
             out/qa/code-scope-ci/code-scope-results.xml
             out/qa/code-scope-ci/code-scope-results.log
             out/qa/code-scope-ci/CTestTestfile.cmake

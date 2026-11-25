@@ -1,5 +1,13 @@
 include_guard(GLOBAL)
 
+# Exercise real worker planning without synthesis, audio devices or GUI.
+function(lgaed_add_concept_diagram_narration_test)
+    add_test(NAME native.concept_diagram_narration COMMAND "${Python3_EXECUTABLE}" -B
+        "${CMAKE_SOURCE_DIR}/native/narration/worker/test_curriculum_visible_semantics.py"
+        CurriculumVisibleSemanticsTest.test_concept_diagram_prepares_exact_native_fields_in_authored_order)
+    set_tests_properties(native.concept_diagram_narration PROPERTIES TIMEOUT 120 RUN_SERIAL TRUE)
+endfunction()
+
 function(lgaed_add_narration_worker_tests)
     add_executable(lgaed_narration_worker_tests native/platform/windows/narration_worker_tests.cpp)
     target_link_libraries(lgaed_narration_worker_tests PRIVATE lgaed_platform_windows)
