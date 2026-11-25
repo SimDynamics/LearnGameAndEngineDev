@@ -2030,6 +2030,127 @@ class CompilerCmakeRecipeRevisionTests(unittest.TestCase):
             self.assertEqual(output.read_bytes(), saved)
 
 
+
+class PublishedMsvcRecipeGraphTests(unittest.TestCase):
+    """Exercise the actual three historical warning recipes with root goals.
+
+    The runner already checks these MSVC flags against the real CMake graph.
+    Here the same adaptation must compose with source-bound authoring and
+    immutable publication history, not merely work as an edited student draft.
+    No lesson asset is modified.
+    """
+    BASE = "410326122003b892488e16cb09745ba79ea2171d"
+    DIRECTORY = ("app/src/main/assets/content/es/programming/programming_practice_tools/"
+                 "comprobaciones_repetibles/")
+
+    def test_real_warning_recipes_compose_with_graph_and_open_battery(self):
+        from test_cmake_graph_checks import EXPRESSION_LESSONS, initial_observation_declaration
+        from test_open_battery_contract import authorized, OWNER
+
+        repository = Path(__file__).resolve().parents[2]
+        reviewed_count = 0
+        for case in EXPRESSION_LESSONS:
+            name, repair_owner, _, _, library, checker, _ = case
+            with self.subTest(lesson=name):
+                before = layout._git_document(repository, self.BASE, self.DIRECTORY + name)
+                pristine = deepcopy(before)
+                old_blocks = layout._blocks(before)
+                graph = initial_observation_declaration(case)
+                graph["project"] = ("AvisosYContrato" if library == "cantidades"
+                                    else "AjustesConEvidencia")
+                graph["minimumCmakeVersion"] = "3.20"
+                targets = (library,) if library == "cantidades" else (
+                    library, "consultar_ajustes", checker)
+                for target in graph["targets"]:
+                    if target["name"] in targets:
+                        target["authoredCompileOptions"] = ["/W4", "/permissive-"]
+                    if library == "ajustes":
+                        target.update(explicitCxx20=True, explicitCxxExtensionsOff=True)
+                    if library == "ajustes" and target["name"] == library:
+                        target["publicIncludeRoots"] = ["publico"]
+                if library == "ajustes":
+                    graph["targets"].append({
+                        "name": "consultar_ajustes", "type": "EXECUTABLE",
+                        "sources": ["app/consulta.cpp"], "linksTo": [library],
+                        "exactSources": True, "explicitCxx20": True,
+                        "explicitCxxExtensionsOff": True,
+                        "authoredCompileOptions": ["/W4", "/permissive-"],
+                    })
+                owners = (repair_owner,) if library == "cantidades" else (repair_owner, OWNER)
+
+                def declare(document):
+                    result = deepcopy(document)
+                    # These are the original pinned publications, before the
+                    # new authoring declarations were integrated by Work.
+                    self.assertNotIn("compilerCmakeGraphChecks", result)
+                    result["compilerCmakeGraphChecks"] = [deepcopy(graph)]
+                    if library == "ajustes":
+                        self.assertNotIn("compilerOpenBatteryChecks", result)
+                        result = authorized(result)
+                    layout.validate_transition(document, result)
+                    return result
+
+                def revise(document):
+                    for identity in owners:
+                        prior = document
+                        source = layout._compiler_client_source(
+                            layout._blocks(prior)[identity], "CMakeLists.txt")
+                        revised = source
+                        for target in targets:
+                            legacy = f"target_compile_options({target} PRIVATE -Wall -Wextra -Wpedantic)"
+                            self.assertEqual(revised.count(legacy), 1, identity)
+                            revised = revised.replace(legacy,
+                                f"target_compile_options({target} PRIVATE /W4 /permissive-)", 1)
+                        self.assertNotIn("-Wpedantic", revised)
+                        document = layout.revise_compiler_cmake_recipe(prior, identity,
+                            {"path": "CMakeLists.txt", "source": revised})
+                        layout.validate_transition(prior, document)
+                    return document
+
+                after_graph = revise(declare(before))
+                after_recipe = declare(revise(before))
+                self.assertEqual(after_graph, after_recipe)
+                self.assertEqual(before, pristine)
+                layout.validate_transition(before, after_graph)
+                self.assertEqual(layout.validate(before), layout.validate(after_graph))
+                self.assertEqual(before.get("textSemantics"), after_graph.get("textSemantics"))
+                self.assertEqual(before.get("activityAfter"), after_graph.get("activityAfter"))
+                self.assertEqual(before.get("referenceAfter"), after_graph.get("referenceAfter"))
+                self.assertEqual(layout.original_projection(before)["pages"],
+                                 layout.original_projection(after_graph)["pages"])
+                for field in ("origin", "family", "current", "additions"):
+                    self.assertEqual(before["stateLayout"][field], after_graph["stateLayout"][field])
+                for identity, old in old_blocks.items():
+                    current = layout._blocks(after_graph)[identity]
+                    if identity not in owners:
+                        self.assertEqual(current, old, identity)
+                        continue
+                    restored = deepcopy(current)
+                    for index, entry in enumerate(restored["projectFiles"]):
+                        if entry["path"] == "CMakeLists.txt":
+                            restored["projectFiles"][index] = deepcopy(old["projectFiles"][index])
+                    self.assertEqual(restored, old, identity)
+                    record = next(item for item in after_graph["stateLayout"]["compilerCaseRevisions"]
+                                  if item["id"] == identity)
+                    self.assertEqual(record["block"], old)
+                    self.assertEqual(record["cases"], old.get("outputCheck", {}).get("cases"))
+                    self.assertEqual(record["semanticBefore"], record["semanticAfter"])
+                    reviewed_count += 1
+
+                aligned = layout.align_for_previous_validation(before, after_graph)
+                for identity in owners:
+                    self.assertEqual(layout._blocks(aligned)[identity], old_blocks[identity])
+                forged = deepcopy(after_graph)
+                altered = next(entry for entry in layout._blocks(forged)[repair_owner]["projectFiles"]
+                               if entry["path"] == case[2])
+                altered["initialCode"] = altered["initialCode"].replace(case[3], "0", 1)
+                self.assertNotEqual(altered["initialCode"],
+                    layout._compiler_client_source(old_blocks[repair_owner], case[2]))
+                with self.assertRaises(layout.LayoutError):
+                    layout.validate_transition(before, forged)
+        self.assertEqual(reviewed_count, 3)
+
+
 if __name__ == "__main__":
     unittest.main()
 
