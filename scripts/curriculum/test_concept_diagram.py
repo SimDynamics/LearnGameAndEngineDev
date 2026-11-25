@@ -22,7 +22,7 @@ def alternate():
             "nodes": [
                 {"id": "entrada", "kind": "generic", "label": "Entrada", "value": "12"},
                 {"id": "doble", "kind": "memory", "label": "doble", "value": "24", "caption": "Resultado"},
-                {"id": "salida", "kind": "console", "label": "Salida", "value": "24\nListo"}],
+                {"id": "salida", "kind": "console", "label": "Salida", "value": "24\n`Listo`"}],
             "links": [{"from": "entrada", "to": "doble", "label": "Multiplicar por dos"},
                       {"from": "doble", "to": "salida", "label": "Mostrar"}]}
 
@@ -92,6 +92,8 @@ class ConceptDiagramTests(unittest.TestCase):
                                   "/nodes/1/label": "Consola", "/nodes/1/value": "8"})
         self.assertEqual(text_semantics.public_text_fields(alternate())["/links/0/label"],
                          "Multiplicar por dos")
+        self.assertEqual(text_semantics.public_text_fields(alternate())["/nodes/2/value"],
+                         "24\n`Listo`")
         document = fixture()
         owner = document["stateLayout"]["current"][0]["blocks"][0]
         for path in ("/nodes/0/id", "/nodes/0/kind", "/links/0/from", "/links/0/to"):

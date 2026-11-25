@@ -23,6 +23,9 @@ struct RichTextContext {
     // This adds a backdrop only, without claiming validity or changing ink.
     bool technical_sample = false;
     RichTextReferenceRole reference_role = RichTextReferenceRole::automatic;
+    // Structured data may contain literal inline-markup characters.
+    // Keep them visible without assigning them C++ or prose semantics.
+    bool literal_display = false;
 };
 // Public question and alternatives only; explanatory answer sentences are not
 // name samples. Never accepts or inspects a correct index or hidden feedback.
@@ -68,7 +71,8 @@ void set_edit_hint(HWND edit, std::string_view text, COLORREF color = RGB(140,14
 // Uses the HWND's optional reader_theme surface; untouched controls keep their
 // system palette. Never changes text, selection, scroll or the undo history.
 void style_cpp(HWND edit);
-// Display-only inline delimiters are hidden; original lesson strings remain untouched.
+// Display-only inline delimiters are hidden unless literal_display is requested;
+// original lesson strings remain untouched.
 // Curricular references share the editor's syntax ink and a neutral background.
 // Prose/output numbers use the mathematical foreground; citations retain ordinary
 // styling. No automatic typographic underline is added.

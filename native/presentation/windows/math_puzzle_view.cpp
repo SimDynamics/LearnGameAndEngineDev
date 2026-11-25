@@ -1069,7 +1069,8 @@ struct MathPuzzleView::Impl {
         auto semantics=authored?*authored:curriculum::TextSemantics{field.text,{}};
         const auto item=make(MSFTEDIT_CLASS,"",ES_MULTILINE|ES_READONLY);
         reader_theme::apply(item,surface);
-        set_rich_text(item,field.text,{},false,role,locale,{}, {},&semantics);
+        RichTextContext context;context.literal_display=true;
+        set_rich_text(item,field.text,{},false,role,locale,{},context,&semantics);
         PARAFORMAT2 format{};format.cbSize=sizeof(format);format.dwMask=PFM_ALIGNMENT|PFM_LINESPACING;
         format.wAlignment=centered?PFA_CENTER:PFA_LEFT;format.bLineSpacingRule=5;format.dyLineSpacing=20;
         SendMessageW(item,EM_SETPARAFORMAT,0,reinterpret_cast<LPARAM>(&format));

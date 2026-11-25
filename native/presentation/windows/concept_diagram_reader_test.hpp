@@ -77,6 +77,10 @@ void visual(HWND parent,const curriculum::Block& block,const std::filesystem::pa
                 check(region.key==expected[i].key&&region.source_text==expected[i].text&&
                       region.math_mode=="text"&&region.target&&IsWindow(region.target),
                       "Responsive layout changed the exact authored reading source");
+                check(edit_text(region.target)==expected[i].text,
+                      "Diagram display hid or replaced literal authored characters");
+                check(region.text_semantics&&rich_text_semantics(region.target)==region.text_semantics,
+                      "The visible control lost its explicit semantic source");
                 const auto area=code_scope_reader_test::bounds_in(region.target,view.window());
                 check(area.left>=0&&area.top>=0&&area.right<=bounds.right&&area.bottom<=bounds.bottom&&
                       area.right>area.left&&area.bottom>area.top,"Diagram text is clipped or lacks a native control");
@@ -90,6 +94,18 @@ void visual(HWND parent,const curriculum::Block& block,const std::filesystem::pa
             const auto end=code_scope_reader_test::bounds_in(last->target,view.window());
             if(width==1120)check(end.left>=first.right,"Wide diagram did not arrange its connected nodes horizontally");
             else check(end.top>=first.bottom,"Narrow diagram did not stack its connected nodes vertically");
+            for(std::size_t node=0;node<count;++node){
+                const auto surface=block.concept_diagram->nodes[node].kind=="console"
+                    ?reader_theme::Surface::compiler_output:reader_theme::Surface::card;
+                LOGBRUSH brush{};
+                check(GetObjectW(reader_theme::brush(surface),sizeof(brush),&brush)==sizeof(brush),
+                      "Cannot inspect native diagram surface");
+                for(const auto& field:block.concept_diagram->node_fields(node)){
+                    const auto item=std::ranges::find(regions,field.key,&MathReadingRegion::key);
+                    check(item!=regions.end()&&reader_theme::background(item->target)==brush.lbColor,
+                          "Diagram node did not use its authored native surface");
+                }
+            }
             check(JsonObject::Parse(wide(view.answers_json())).Size()==0,"Diagram created a response");
             if(scale==100)code_scope_reader_test::capture_png(view.window(),artifacts/
                 (std::string(name)+"-"+std::to_string(width)+".png"));

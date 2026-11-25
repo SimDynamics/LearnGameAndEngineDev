@@ -1224,7 +1224,8 @@ void set_rich_text(HWND edit, std::string_view text, std::span<const curriculum:
     std::vector<std::size_t> mapping(text.size() + 1);
     std::vector<std::pair<std::size_t,std::size_t>> fragments;
     const auto original_source=wide(text);
-    const auto trusted=code?technical_prose::InlineCodeSpans{}:technical_prose::inline_code_spans(original_source,mathematics);
+    const auto trusted=(code||context.literal_display)?technical_prose::InlineCodeSpans{}:
+        technical_prose::inline_code_spans(original_source,mathematics);
     std::vector<std::size_t> byte_boundaries(original_source.size()+1,std::string_view::npos);
     for(std::size_t byte=0,unit=0;byte<text.size();){byte_boundaries[unit]=byte;const auto lead=static_cast<unsigned char>(text[byte]);
         const auto count=lead<0x80?1:lead<0xe0?2:lead<0xf0?3:4;byte+=count;unit+=count==4?2:1;byte_boundaries[unit]=byte;}
