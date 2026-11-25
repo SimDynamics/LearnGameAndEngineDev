@@ -229,7 +229,7 @@ struct Fixture {
                 std::ranges::all_of(value.segments,[](const auto& segment){return segment.available;});
         },"actual reader plan and all deterministic recordings");
     }
-    void open(const Variant& model) {
+    void open(const Variant& model,bool wait_for_audio=true) {
         check(!view&&!reader,"A revised view must have its own ordinary reader lifetime");active=&model;
         view=create_lesson_view(host,environment,model.lesson);check(view!=nullptr,"Cannot create actual LessonView");
         MoveWindow(view,0,0,980,720,TRUE);
@@ -238,7 +238,9 @@ struct Fixture {
         hooks.content_changed=[this](HWND){if(reader)reader->content_changed();};
         hooks.feedback_changed=[this](HWND,std::size_t block,bool correct){if(reader)reader->feedback(block,correct);};
         set_lesson_view_hooks(view,std::move(hooks));
-        reader=std::make_unique<LessonReader>(view,environment,backend,[]{});ready();
+        reader=std::make_unique<LessonReader>(view,environment,backend,[]{});
+        reader->set_qa_playback_muted(true);
+        if(wait_for_audio)ready();
     }
     void close() {
         reader.reset();check(flush_lesson_view(view),"Cannot persist owned QA lesson state");DestroyWindow(view);view=nullptr;
@@ -779,18 +781,60 @@ void run_live_file(const std::shared_ptr<windows::NarrationWorker>& backend,cons
         <<" unrelated_state=synthetic_compatibility controlled_pcm=true neural_audio_evidence=false\n";
 }
 
+void check_cached_feedback_priority(const std::shared_ptr<windows::NarrationWorker>& worker,const Variant& baseline,
+        const Variant& revised,const std::filesystem::path& transport_log) {
+    phase="cached feedback after a later edit";Fixture fixture(worker,baseline);fixture.answer("a");
+    wait([&]{return fixture.snapshot().page_audio_complete;},"baseline publication");
+    const auto original=fixture.snapshot();const auto& feedback=original.segments.at(original.index);
+    check(feedback.feedback&&feedback.source=="✓ Correcto\n\nA_FEEDBACK","Expected a genuine bookmark at A feedback");
+    const std::string earlier_source="A_QUESTION";
+    const auto earlier=std::ranges::find(original.segments,earlier_source,&LessonReaderSegmentSnapshot::source);
+    check(earlier!=original.segments.end()&&earlier->available,"Earlier QA recording is missing from baseline");
+    fixture.close();
+    // Keep the earlier recording as evidence, but make its cache lookup miss.
+    std::filesystem::rename(earlier->recording,earlier->recording.wstring()+L".baseline");
+    const auto start=std::filesystem::file_size(transport_log);
+    auto hold=worker->heavy_work_lease();
+    fixture.open(revised,false);
+    wait([&]{const auto view=fixture.snapshot();return view.planned&&view.key!=original.key&&
+        view.segments.at(view.index).source==feedback.source;},"restored unchanged feedback on the edited page");
+    hold={};fixture.ready();wait([&]{return fixture.snapshot().page_audio_complete;},"revised publication");
+
+    // Check actual cache hits/misses in worker response order. This does not
+    // depend on UI sampling fast enough to catch an intermediate snapshot.
+    std::ifstream input(transport_log,std::ios::binary);input.seekg(static_cast<std::streamoff>(start));
+    std::map<std::string,std::string> requests;
+    bool recovered_feedback=false,repaired_earlier=false;
+    for(std::string line;std::getline(input,line);) {
+        const auto event=JsonObject::Parse(wide(line));const auto command=field(event,L"command");
+        if(command=="prepare")requests.emplace(field(event,L"id"),field(event,L"text"));
+        else if(command=="fixture_prepared"){
+            const auto request=requests.find(field(event,L"targetId"));if(request==requests.end())continue;
+            const bool hit=event.GetNamedBoolean(L"cacheHit");
+            if(request->second==feedback.source&&hit)recovered_feedback=true;
+            if(request->second==earlier_source&&!hit){
+                check(recovered_feedback,"An earlier missing recording delayed the cached current feedback");
+                repaired_earlier=true;
+            }
+        }
+    }
+    check(recovered_feedback&&repaired_earlier&&fixture.snapshot().segments.at(original.index).recording==feedback.recording,
+        "Missing evidence of both unchanged feedback recovery and repair of the earlier cache miss");
+    std::cout<<"PASS current feedback cache hit preceded synthesis of the earlier missing question on an unpublished revision\n";
+}
+
 std::shared_ptr<windows::NarrationWorker> controlled_worker(const std::filesystem::path& python,
-        const std::filesystem::path& build_directory) {
+        const std::filesystem::path& build_directory,std::filesystem::path& transport_log) {
     check(std::filesystem::is_regular_file(python)&&std::filesystem::is_directory(build_directory),
         "Controlled runtime needs an existing Python executable and QA build directory");
     const auto directory=build_directory/(L"reader-revision-runtime-"+std::to_wstring(GetCurrentProcessId())+L"-"+
         std::to_wstring(GetTickCount64()));
     check(std::filesystem::create_directory(directory),"Controlled runtime directory must be new");
-    const auto runtime=directory/L"runtime.json";JsonObject config;JsonArray arguments;
+    const auto runtime=directory/L"runtime.json";transport_log=directory/L"transport.jsonl";JsonObject config;JsonArray arguments;
     config.Insert(L"java",JsonValue::CreateStringValue(python.native()));
     for(const auto& value:{std::wstring(L"-u"),(std::filesystem::path(build::source_root)/
             L"native/presentation/windows/lesson_reader_edit_order_fixture.py").native(),
-            (directory/L"transport.jsonl").native(),(directory/L"audio").native()})
+            transport_log.native(),(directory/L"audio").native()})
         arguments.Append(JsonValue::CreateStringValue(value));
     config.Insert(L"arguments",arguments);
     {std::ofstream output(runtime);output<<winrt::to_string(config.Stringify());check(static_cast<bool>(output),"Cannot write owned fixture runtime configuration");}
@@ -809,7 +853,8 @@ int main(int argc,char** argv) {
     try {
         check(rich!=nullptr,"Cannot load RichEdit controls");windows::ensure_winrt_apartment();reader_theme::prepare_fonts();
         const auto manifest_path=std::filesystem::path(argv[1]);const auto manifest_bytes=state::read_bytes(manifest_path);
-        const auto variants=load_manifest(manifest_path);const auto backend=controlled_worker(argv[2],argv[3]);
+        const auto variants=load_manifest(manifest_path);std::filesystem::path transport_log;
+        const auto backend=controlled_worker(argv[2],argv[3],transport_log);
         struct Shutdown { std::shared_ptr<windows::NarrationWorker> worker;~Shutdown(){worker->shutdown();} } shutdown{backend};
         const std::string filter=argc==5?argv[4]:"";std::size_t executed=0;
         for(const std::string scenario:{"insert","insert-forward","reorder","prose","other-page","unheard-negative","retire-insert","live-file"}) {
@@ -818,6 +863,7 @@ int main(int argc,char** argv) {
                 if(scenario=="live-file")run_live_file(backend,variants.at("baseline"),variants.at("insert"),argv[3]);
                 else run_revision(backend,variants.at("baseline"),variants.at(scenario=="unheard-negative"||scenario=="insert-forward"?"insert":scenario),
                     scenario=="unheard-negative",scenario=="insert-forward");
+                if(scenario=="prose")check_cached_feedback_priority(backend,variants.at("baseline"),variants.at("prose"),transport_log);
             }
             catch(const std::exception& error) {++failures;std::cerr<<"REVISION_SCENARIO_ERROR stage="<<quoted(phase)<<" reason="<<quoted(error.what())<<'\n';}
         }

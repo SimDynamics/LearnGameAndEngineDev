@@ -206,6 +206,7 @@ SystemSpeechProcessResult SystemSpeechProcess::prepare(const NarrationSegment& s
     require(reply.GetNamedNumber(L"processId")==process.dwProcessId,"The native speech reply has a different process identity");
     const auto processors=index(reply,L"processors");require(processors&&processors<=2,"The native speech reply did not verify its hard CPU budget");
     auto audio=decoded_audio(reply.GetNamedObject(L"audio"),cache);
+    audio.prepared=source.prepared;
     require(audio.cache_namespace==source.cache_namespace,"Native Windows speech returned another page revision");
     return {std::move(audio),static_cast<unsigned>(processors),process.dwProcessId};
 }

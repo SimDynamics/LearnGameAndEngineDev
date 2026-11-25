@@ -360,7 +360,9 @@ private class Backend(private val resources: File, private val englishResources:
             // It writes audio only. The visible reader retains its own exact
             // source projection and derives timings against that unchanged audio.
             val segment = Segment(ManualEnglishSpeech.strip(prepared),prepared,emptyList(),emptyList())
-            plans[planKey(lang,segment.source,prepared)] = segment
+            // The canonical plan has no display ranges. Never replace a
+            // matching visible plan that already owns the word projection.
+            plans.putIfAbsent(planKey(lang,segment.source,prepared),segment)
             JSONObject().put("text",segment.source).put("preparedText",prepared)
                 .put("spokenText",segment.source)
                 .put("key",KokoroNarrationCache.key(lang.tag,request.getString("voice"),prepared))
@@ -388,18 +390,17 @@ private class Backend(private val resources: File, private val englishResources:
             header.getInt(40).toLong() + 44 != file.length() || header.getInt(40) % 2 != 0) return@runCatching null
         header.getInt(40).toLong() / 2
     }.getOrNull()
-    private fun validTimings(rows: JSONArray, sourceLength: Int, samples: Long): Boolean = runCatching {
-        if (rows.length() !in 1..4096) return@runCatching false
-        var previousStart = -1
+    private fun validTimings(rows: JSONArray, displayed: List<ReadingTextRange>, samples: Long): Boolean = runCatching {
+        if (rows.length() !in 1..4096 || rows.length() != displayed.size) return@runCatching false
         var previousTime = -1.0
         repeat(rows.length()) { index ->
             val row = rows.getJSONObject(index)
             val start = row.getInt("start"); val end = row.getInt("end")
             val from = row.getDouble("startMs"); val to = row.getDouble("endMs")
-            if (start !in 0 until sourceLength || end !in start + 1..sourceLength || start < previousStart ||
+            if (start != displayed[index].start || end != displayed[index].endExclusive ||
                 !from.isFinite() || !to.isFinite() || from < 0 || to <= from || to > samples / 24.0 || from < previousTime)
                 return@runCatching false
-            previousStart = start; previousTime = from
+            previousTime = from
         }
         true
     }.getOrDefault(false)
@@ -414,8 +415,8 @@ private class Backend(private val resources: File, private val englishResources:
     private fun reuse(target: File, key: String, job: Request, compatibleOriginal: Boolean = true): String? {
         if (sampleCount(target) != null) return "cache"
         check(!target.exists()) { "Existing narration cache failed validation; it was left untouched" }
-        // A newly edited page must synthesize its complete script. Historical
-        // sentence/packaged recordings cannot prove the new page generation.
+        // Packaged and imported files use their original, unscoped recording
+        // keys. A page-scoped cache hit was already checked above.
         if (!compatibleOriginal) return null
         val original = originalWavs?.resolve("$key.wav")
         val partial = File(target.parentFile,".${target.name}-${job.id.hashCode()}.part")
@@ -506,12 +507,14 @@ private class Backend(private val resources: File, private val englishResources:
             if (!cacheHit) requireAudioSpace(cache, request, 4L * 1024 * 1024,job)
             val sidecar = File(cache,"$key-${sha256(source.toByteArray(Charsets.UTF_8))}.timings.json")
             val cachedSamples = if (cacheHit) sampleCount(audio) else null
-            val cachedAudioHash = if (cacheHit) sha256(audio) else null
+            // Audio-only callers request neither word ranges nor timings. Their
+            // PCM header is validated, and page publication hashes the WAV.
+            val cachedAudioHash = if (cacheHit && !audioOnly) sha256(audio) else null
             val cachedTimings = if (cachedSamples != null && cachedAudioHash != null) runCatching {
                 if (!sidecar.isFile) return@runCatching null
                 val old = JSONObject(sidecar.readText(Charsets.UTF_8))
                 old.getJSONArray("timings").takeIf { old.optString("audioSha256") == cachedAudioHash
-                    && old.optLong("sampleCount") == cachedSamples && validTimings(it,source.length,cachedSamples) }
+                    && old.optLong("sampleCount") == cachedSamples && validTimings(it,selected.displayed,cachedSamples) }
             }.getOrNull() else null
             // Compatible recordings remain playable without installed synthesis
             // resources. Missing optional alignment never invalidates that audio.
@@ -541,9 +544,9 @@ private class Backend(private val resources: File, private val englishResources:
                 origin = "synthesized"
             }
             val samples = requireNotNull(cachedSamples ?: sampleCount(audio)) { "Narration audio has no valid sample count" }
-            val audioHash = cachedAudioHash ?: sha256(audio)
             val timings = if(audioOnly) JSONArray() else cachedTimings ?: runCatching {
                 if (phone == null || phone.sources.isEmpty() || selected.spoken.isEmpty()) return@runCatching JSONArray()
+                val audioHash = cachedAudioHash ?: sha256(audio)
                 val derived = File(cache,"duration-model")
                 if (duration == null || durationDirectory != derived) {
                     duration?.close(); duration = KokoroDurationModel(resources,derived); durationDirectory = derived

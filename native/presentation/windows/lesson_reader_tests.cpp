@@ -3229,14 +3229,23 @@ void current_page_synthesis_order(const std::shared_ptr<windows::NarrationWorker
             (void)verify_feedback_recording(*found);recordings.push_back(found->recording);times.push_back(creation(found->recording));}
         check(times[0]<times[1]&&times[1]<times[2],"Page synthesis misses did not occur in the independently authored first-to-last order");return recordings;};
     const auto old=evidence(first);const auto before=f.snapshot();
+    const auto seals=[](const auto& files){
+        std::vector<std::pair<std::filesystem::file_time_type,std::string>> result;
+        for(const auto& path:files)result.emplace_back(std::filesystem::last_write_time(path),state::sha256(state::read_bytes(path)));
+        return result;
+    };
+    const auto original_recordings=seals(old);
     f.reader->seek_seconds(600);f.reader->pause();check(f.snapshot().segments[f.snapshot().index].source==first.back(),"QA preview did not request the final paragraph");
     write(publication(second));
     wait([&]{return lesson_page_state(f.view).content_revision>0&&complete()&&f.snapshot().page_audio_revision!=before.page_audio_revision;},
-        "changed page with the same IDs regenerates from its beginning",180000);
+        "changed final paragraph and a complete revised page",180000);
     const auto revised=windows::load_lesson(asset);check(revised.pages[0].stable_id==lesson.pages[0].stable_id&&
         std::ranges::equal(revised.pages[0].blocks,lesson.pages[0].blocks,[](const auto& a,const auto& b){return a.stable_id==b.stable_id;}),"Ordered-generation fixture changed its page/block IDs");
-    const auto fresh=evidence(second);for(std::size_t n=0;n<old.size();++n)check(old[n]!=fresh[n]&&std::filesystem::is_regular_file(old[n]),
-        "A whole-page revision mixed previous audio or deleted preserved evidence");
+    const auto fresh=evidence(second);
+    check(fresh[0]==old[0]&&fresh[1]==old[1]&&fresh[2]!=old[2],
+        "Editing the last paragraph did not reuse the first two recordings and replace only the changed one");
+    check(seals(old)==original_recordings,
+        "Revising the last paragraph replaced, rewrote or removed an existing recording");
     check(!f.snapshot().playing&&!f.snapshot().allocated&&f.snapshot().segments[f.snapshot().index].source==second.back(),
         "Regeneration changed the requested compatible pause or started playback");
     // UI-only code captions must also be prepared for the current page. The
@@ -3274,7 +3283,7 @@ void current_page_synthesis_order(const std::shared_ptr<windows::NarrationWorker
     const auto caption_state=read_lesson_state(captions.view);
     const auto advance=state::find(caption_state,"lesson_narration_settings","kokoro_advance_generation");
     check(advance&&std::holds_alternative<bool>(*advance)&&!std::get<bool>(*advance),"Foreground completion changed the user's advance-generation preference");
-    std::cout<<"PASS current-page synthesis order: two actual Kokoro revisions, identical source IDs, late requested bookmark, independent WAV creation chronology, preserved old audio and no autoplay; root="<<root.string()<<'\n';
+    std::cout<<"PASS current-page audio reuse: the first two Kokoro paragraphs retain their exact WAVs, the edited last paragraph receives a new one, and the revised page keeps the reader paused at that paragraph; root="<<root.string()<<'\n';
     std::cout<<"PASS current-page projections: advance disabled, real code caption PCM ready before page completion without Play or preference changes\n";
 }
 }

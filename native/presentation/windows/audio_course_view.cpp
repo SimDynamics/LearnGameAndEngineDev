@@ -255,10 +255,10 @@ struct CourseAudioWindow {
         status(removal?tr("Identificando los audios exclusivos y los compartidos entre cursos…","Identifying exclusive audio and audio shared between courses…","Identification des audios exclusifs et partagés entre les cours…"):tr("Comprobando los audios guardados para las voces e idiomas actuales…","Checking saved audio for the current voices and languages…","Vérification des audios enregistrés pour les voix et langues actuelles…"));
         const auto callbacks=access;const auto selected_profile=profile;const auto selected_route=route;
         begin(removal?Operation::preview:Operation::report,[callbacks,selected_profile,selected_route,target,removal](std::stop_token stop){Reply reply;reply.operation=removal?Operation::preview:Operation::report;
-            const CourseAudioPlanner planner=[backend=callbacks.worker,content_language=selected_profile.locale](std::string_view raw,std::size_t page,std::string_view language,std::string_view voice,std::string_view ui,std::stop_token cancelled,std::string_view reading_context){
+            const CourseAudioPlanner planner=[backend=callbacks.worker,cache=callbacks.cache,content_language=selected_profile.locale](std::string_view raw,std::size_t page,std::string_view language,std::string_view voice,std::string_view ui,std::stop_token cancelled,std::string_view reading_context){
                 auto reply=JsonObject::Parse(winrt::to_hstring(backend->curriculum_plan(raw,page,language,voice,ui,cancelled,reading_context,content_language)));
                 windows::NarrationPagePlan page_plan;page_plan.page_id=winrt::to_string(reply.GetNamedString(L"pageId"));page_plan.revision=winrt::to_string(reply.GetNamedString(L"revision"));
-                const auto scope=backend->page_cache_namespace(page_plan,language,voice,"KOKORO");JsonArray historical;
+                const auto scope=backend->page_cache_namespace(cache,page_plan,language,voice,"KOKORO");JsonArray historical;
                 for(const auto& value:reply.GetNamedArray(L"segments")){auto segment=value.GetObject();const auto original=winrt::to_string(segment.GetNamedString(L"key"));
                     historical.Append(JsonValue::CreateStringValue(winrt::to_hstring(original)));
                     const auto key=state::sha256(std::string("windows-page-pcm-v1\0",20)+scope+'\0'+original);

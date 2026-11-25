@@ -24,8 +24,8 @@ struct NarrationSegment {
     // to a native system voice. A source token can own several spoken words.
     std::string spoken;
     std::vector<SpeechRange> spoken_ranges,displayed_ranges;
-    // Empty authenticates the historical sentence cache. A whole-page revision
-    // owns a separate PCM/timing identity, even for its unchanged sentences.
+    // Empty selects the historical sentence cache. A curricular page keeps
+    // its PCM scope across edits; the recording key selects the utterance.
     std::string cache_namespace;
     // Exact unsalted PCM identity returned by the selected-voice frontend.
     // Empty is permitted only by older/controlled transports and never proves
@@ -51,6 +51,7 @@ struct NarrationAudio {
     std::string cache_namespace;
     unsigned synthesis_threads=0;
     std::string cpu_class;
+    std::string prepared;
 };
 // One immutable page revision. Cancellation and publication are shared across
 // foreground/background callers of the same app-owned worker. Old sessions can
@@ -135,11 +136,11 @@ public:
     // checks owner/namespace and recorded artifact sizes without rehashing PCM.
     [[nodiscard]] std::optional<std::string> published_page_revision(const std::filesystem::path& cache,
         std::string_view page_id,std::string_view language,std::string_view voice,std::string_view engine)const;
-    [[nodiscard]] std::string page_cache_namespace(const NarrationPagePlan&,std::string_view language,
+    [[nodiscard]] std::string page_cache_namespace(const std::filesystem::path& cache,const NarrationPagePlan&,std::string_view language,
         std::string_view voice,std::string_view engine)const;
     [[nodiscard]] NarrationAudio prepare(const NarrationSegment&,std::string_view language,std::string_view voice,
         const std::filesystem::path& output,unsigned threads,std::stop_token={},
-        NarrationCpuClass work=NarrationCpuClass::current_page);
+        NarrationCpuClass work=NarrationCpuClass::current_page,bool audio_only=false);
     // System speech advance generation shares the same cancellable background
     // reservation as Kokoro, and runs in its own hard-affinity native child.
     [[nodiscard]] NarrationAudio prepare_system(const NarrationSegment&,std::string_view language,std::string_view voice,

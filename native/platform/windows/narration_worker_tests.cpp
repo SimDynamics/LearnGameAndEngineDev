@@ -10,6 +10,8 @@
 #include <iostream>
 #include <future>
 #include <fstream>
+#include <limits>
+#include <map>
 #include <stdexcept>
 
 namespace {
@@ -183,52 +185,120 @@ void page_revision_cache(lgaed::windows::NarrationWorker& worker,const std::file
     check(prose.size()==1&&historical.size()==1&&prose.front().spoken==historical.front().spoken&&
         prose.front().prepared!=historical.front().prepared&&prose.front().recording_key!=historical.front().recording_key,
         "Equal stripped words erased distinct authenticated pronunciation metadata");
-    // A semantic/source revision with unchanged spoken words must still own a
-    // complete new PCM generation. Every waveform below is real Kokoro.
-    const std::string original=R"({"id":"native-page-revision","pages":[{"blocks":[{"type":"paragraph","text":"La página conserva su lectura."}]}]})";
-    const std::string modified=R"({"id":"native-page-revision","pages":[{"blocks":[{"type":"paragraph","text":"La página conserva su lectura.","emphasis":[{"text":"página","style":"bold"}]}]}]})";
-    const auto before=worker.page_plan(original,0,"es","ef_dora","es");
-    const auto after=worker.page_plan(modified,0,"es","ef_dora","es");
-    check(before.page_id==after.page_id&&before.revision!=after.revision&&before.segments.size()==1&&after.segments.size()==1,
-        "A page source revision was reduced to unchanged sentence text or IDs");
-    const auto output=cache/L"page-revision";
-    auto old=worker.begin_page(output,before.page_id,"es","ef_dora","KOKORO",before,NarrationCpuClass::background);
-    check(old.has_value(),"Cannot begin the original page generation");
-    auto sentence=before.segments.front();sentence.cache_namespace=old->cache_namespace();
-    const auto original_audio=worker.prepare(sentence,"es","ef_dora",output,2,old->stop_token());
-    const auto original_bytes=state::read_bytes(original_audio.wav);const auto original_time=std::filesystem::last_write_time(original_audio.wav);
-    const std::vector original_complete{original_audio};check(old->commit(original_complete),"Original complete page was not committed");
-    check(worker.published_page_revision(output,before.page_id,"es","ef_dora","KOKORO")==before.revision,
-        "Read-only inspection did not authenticate the published page owner");
-    check(!worker.published_page_revision(output,before.page_id,"es","em_santa","KOKORO"),
-        "A published page completion leaked into another voice's owner");
-    auto latest=worker.begin_page(output,after.page_id,"es","ef_dora","KOKORO",after,NarrationCpuClass::current_page);
-    check(latest.has_value()&&old->stop_token().stop_requested()&&!old->current(),"A new foreground page did not cancel its obsolete generation");
-    check(!worker.begin_page(output,after.page_id,"es","ef_dora","KOKORO",after,NarrationCpuClass::background),
+    const auto output=cache/(L"page-revision-"+std::to_wstring(GetCurrentProcessId())+L"-"+std::to_wstring(GetTickCount64()));
+    check(!std::filesystem::exists(output),"This regression requires a fresh private QA directory");
+    const auto lesson=[](std::string_view ending,bool move_puzzle,bool revise_choice=false,bool emphasize=false){
+        const std::string intro=emphasize
+            ?R"({"type":"paragraph","text":"La puerta está aquí.","emphasis":[{"text":"puerta","style":"bold"}]})"
+            :R"({"type":"paragraph","text":"La puerta está aquí."})";
+        const std::string option=revise_choice?"Una llave.":"Una caja.";
+        const std::string feedback=revise_choice?"Sigue brillando.":"Conserva ese brillo.";
+        const std::string puzzle=R"({"type":"multiple_choice","question":"¿Qué objeto brilla?","options":["Un aro.",")"+
+            option+R"("],"correctIndex":0,"explanation":"El aro refleja la luz. )"+feedback+R"("})";
+        const std::string tail=R"({"type":"paragraph","text":"El ejemplo termina. )"+std::string(ending)+R"("})";
+        return R"({"id":"native-page-revision","pages":[{"blocks":[)"+intro+","+
+            (move_puzzle?tail+","+puzzle:puzzle+","+tail)+R"(]}],"stateLayout":{"version":2,"current":[{"id":"page","blocks":["intro",)"+
+            (move_puzzle?R"("tail","puzzle")":R"("puzzle","tail")")+R"(]}]}})";
+    };
+    using FileSeal=std::pair<std::string,std::filesystem::file_time_type>;
+    std::map<std::string,NarrationAudio> by_source;
+    std::map<std::filesystem::path,FileSeal> seals;
+    const auto seal=[](const auto& path){return FileSeal{state::sha256(state::read_bytes(path)),std::filesystem::last_write_time(path)};};
+    const auto prepare=[&](NarrationWorker& backend,const auto& plan,const auto& session){
+        std::vector<NarrationAudio> audio;
+        for(auto sentence:plan.segments){
+            sentence.cache_namespace=session.cache_namespace();
+            auto result=backend.prepare(sentence,"es","ef_dora",output,2,session.stop_token());
+            check(result.cache_hit==(result.synthesis_threads==0),"Cache status disagrees with actual Kokoro inference");
+            if(const auto known=by_source.find(sentence.text);known!=by_source.end()){
+                check(result.cache_hit&&result.key==known->second.key&&result.wav==known->second.wav,
+                    "An unchanged sentence was synthesized or copied to a new cache key");
+            }else{
+                check(result.synthesis_threads>0,"A genuinely new sentence did not run Kokoro in the private cache");
+                by_source.emplace(sentence.text,result);seals.emplace(result.wav,seal(result.wav));
+            }
+            audio.push_back(std::move(result));
+        }
+        return audio;
+    };
+    const auto misses=[](const auto& results){return std::ranges::count_if(results,[](const auto& item){return item.synthesis_threads>0;});};
+    const auto before=worker.page_plan(lesson("Guarda el aro.",false),0,"es","ef_dora","es");
+    auto original=worker.begin_page(output,before.page_id,"es","ef_dora","KOKORO",before,NarrationCpuClass::background);
+    check(original.has_value(),"Cannot begin the original page generation");
+    const auto initial=prepare(worker,before,*original);
+    check(initial.size()==10&&misses(initial)==10&&by_source.contains("¿Qué objeto brilla?")&&
+        by_source.contains("Correcto El aro refleja la luz.")&&by_source.contains("Conserva ese brillo.")&&initial.back().source=="Guarda el aro.",
+        "The initial page must narrate the question, options, feedback and final paragraph");
+    check(original->commit(initial),"Original complete page was not committed");
+    original.reset();
+    // Recreate the exact layout of this same page under the previous app:
+    // real recordings in their original namespace, a format-1 completion and
+    // no persisted seed. Only files inside this test's fresh directory change.
+    std::filesystem::path manifest_path;
+    for(const auto& file:std::filesystem::directory_iterator(output/L"page-audio")){
+        if(file.path().extension()==L".json")manifest_path=file.path();
+    }
+    check(!manifest_path.empty(),"Cannot find the private baseline manifest");
+    const auto read_manifest=[&]{
+        const auto bytes=state::read_bytes(manifest_path);
+        return json(std::string_view(reinterpret_cast<const char*>(bytes.data()),bytes.size()));
+    };
+    auto legacy=read_manifest();
+    check(legacy.GetNamedString(L"pcmSeedRevision")==winrt::to_hstring(before.revision),"Unexpected original PCM address");
+    legacy.Insert(L"format",winrt::Windows::Data::Json::JsonValue::CreateNumberValue(1));legacy.Remove(L"pcmSeedRevision");
+    {std::ofstream stream(manifest_path,std::ios::binary|std::ios::trunc);stream<<winrt::to_string(legacy.Stringify());
+        stream.flush();check(static_cast<bool>(stream),"Cannot write the private legacy manifest");}
+    auto seed=manifest_path;seed.replace_extension(L".pcm-seed");
+    check(std::filesystem::remove(seed),"Cannot reproduce an installed cache that predates persisted seeds");
+    // A fresh process requests the edited page directly, as after a software
+    // update and a simultaneous edit by the course author.
+    NarrationWorker reopened(std::filesystem::path(build::source_root)/L"out/narration/runtime.json");
+    const auto after=reopened.page_plan(lesson("Empieza otro turno.",false),0,"es","ef_dora","es");
+    check(before.page_id==after.page_id&&before.revision!=after.revision,"The final edit did not revise the page script");
+    check(reopened.published_page_revision(output,after.page_id,"es","ef_dora","KOKORO")==before.revision&&
+        !reopened.published_page_revision(output,after.page_id,"es","em_santa","KOKORO"),"Legacy publication lost its page or voice owner");
+    auto edited=reopened.begin_page(output,after.page_id,"es","ef_dora","KOKORO",after,NarrationCpuClass::background);
+    check(edited.has_value(),"Cannot begin the edited page generation");
+    const auto changed=prepare(reopened,after,*edited);
+    check(misses(changed)==1&&changed.back().source=="Empieza otro turno."&&!changed.back().cache_hit&&edited->commit(changed),
+        "Editing the final sentence must synthesize precisely that sentence");
+    const auto reordered=reopened.page_plan(lesson("Empieza otro turno.",true),0,"es","ef_dora","es");
+    auto latest=reopened.begin_page(output,reordered.page_id,"es","ef_dora","KOKORO",reordered,NarrationCpuClass::current_page);
+    check(latest&&edited->stop_token().stop_requested()&&!edited->current()&&after.revision!=reordered.revision,
+        "A new foreground order did not supersede the background session");
+    check(!reopened.begin_page(output,after.page_id,"es","ef_dora","KOKORO",after,NarrationCpuClass::background),
         "Foreground and background acquired the same page simultaneously");
-    sentence=after.segments.front();sentence.cache_namespace=latest->cache_namespace();
-    const auto revised=worker.prepare(sentence,"es","ef_dora",output,2,latest->stop_token());
-    check(original_audio.key!=revised.key&&original_audio.wav!=revised.wav&&old->cache_namespace()!=latest->cache_namespace(),
-        "A changed page reused the previous generation's sentence PCM");
-    const std::vector completed{revised};check(latest->commit(completed),"Revised complete page was not committed");
-    check(worker.published_page_revision(output,after.page_id,"es","ef_dora","KOKORO")==after.revision&&latest->current(),
-        "Read-only revision inspection changed the active page session");
-    check(!old->commit(original_complete),"An obsolete completion overwrote the current page manifest");
-    bool manifest_found=false;
-    for(const auto& file:std::filesystem::directory_iterator(output/L"page-audio"))if(file.path().extension()==L".json"){
-        const auto bytes=state::read_bytes(file.path());const auto manifest=json(std::string_view(reinterpret_cast<const char*>(bytes.data()),bytes.size()));
-        if(manifest.GetNamedString(L"page")==winrt::to_hstring(after.page_id)){
-            manifest_found=true;check(manifest.GetNamedString(L"revision")==winrt::to_hstring(after.revision),"An obsolete revision became current on disk");}}
-    check(manifest_found,"No atomic whole-page completion manifest was published");
-    check(state::read_bytes(original_audio.wav)==original_bytes&&std::filesystem::last_write_time(original_audio.wav)==original_time,
-        "Regenerating a changed page modified the preserved earlier waveform");
-    const auto bytes=state::read_bytes(revised.wav);const auto stamp=std::filesystem::last_write_time(revised.wav);
-    const auto again=worker.prepare(sentence,"es","ef_dora",output,2,latest->stop_token());
-    check(again.cache_hit&&again.key==revised.key&&state::read_bytes(again.wav)==bytes&&std::filesystem::last_write_time(again.wav)==stamp,
-        "An unchanged page revision did not preserve its exact PCM and timestamp");
+    reopened.set_storage_budget(0);
+    const auto ordered=prepare(reopened,reordered,*latest);
+    check(ordered.size()==10&&ordered[2].source=="Empieza otro turno."&&ordered.back().source=="Conserva ese brillo."&&misses(ordered)==0,
+        "Moving the puzzle must update the narrated order with zero syntheses");
+    check(latest->commit(ordered)&&!edited->commit(changed),"An obsolete completion overwrote the current ordered script");
+    const auto proof=read_manifest();
+    check(proof.GetNamedNumber(L"format")==2&&proof.GetNamedString(L"revision")==winrt::to_hstring(reordered.revision)&&
+        reopened.published_page_revision(output,reordered.page_id,"es","ef_dora","KOKORO")==reordered.revision,
+        "Cannot authenticate the new ordered completion");
+    const auto entries=proof.GetNamedArray(L"segments");
+    check(entries.Size()==ordered.size(),"The published order is incomplete");
+    for(std::uint32_t i=0;i<entries.Size();++i)check(entries.GetObjectAt(i).GetNamedString(L"key")==winrt::to_hstring(ordered[i].key),
+        "The completion manifest retained the earlier puzzle position");
     bool incomplete_rejected=false;try{(void)latest->commit({});}catch(const std::invalid_argument&){incomplete_rejected=true;}
     check(incomplete_rejected,"An incomplete generation published a complete page manifest");
-    std::cout<<"PASS real Kokoro whole-page source revisions, isolated PCM, foreground takeover, obsolete completion rejection and unchanged revision preservation\n";
+    reopened.set_storage_budget(std::numeric_limits<std::uint64_t>::max());
+    const auto quiz=reopened.page_plan(lesson("Empieza otro turno.",true,true),0,"es","ef_dora","es");
+    auto quiz_session=reopened.begin_page(output,quiz.page_id,"es","ef_dora","KOKORO",quiz,NarrationCpuClass::current_page);
+    check(quiz_session.has_value()&&quiz.revision!=reordered.revision,"The revised option and feedback did not change the script");
+    const auto corrected=prepare(reopened,quiz,*quiz_session);
+    check(corrected.size()==10&&misses(corrected)==2&&by_source.contains("Una llave.")&&by_source.contains("Sigue brillando.")&&quiz_session->commit(corrected),
+        "Editing one option and one feedback sentence must synthesize exactly those two utterances");
+    reopened.set_storage_budget(0);
+    const auto visual=reopened.page_plan(lesson("Empieza otro turno.",true,true,true),0,"es","ef_dora","es");
+    auto visual_session=reopened.begin_page(output,visual.page_id,"es","ef_dora","KOKORO",visual,NarrationCpuClass::current_page);
+    check(visual_session.has_value()&&visual.revision!=quiz.revision,"The visual source change must be detected");
+    const auto emphasized=prepare(reopened,visual,*visual_session);
+    check(emphasized.size()==10&&misses(emphasized)==0&&visual_session->commit(emphasized),
+        "Changing only the paragraph's visual emphasis must not run the synthesizer");
+    for(const auto& [path,original_seal]:seals)check(seal(path)==original_seal,"Editing or reordering rewrote surviving audio");
+    std::cout<<"PASS real Kokoro: 10 baseline syntheses, 1 for an edited final sentence after legacy reopen, 0 after moving the puzzle, 2 for a changed option and feedback, 0 for visual emphasis; WAV hashes, timestamps and ordered manifest verified\n";
 }
 }
 

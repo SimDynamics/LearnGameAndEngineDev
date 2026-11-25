@@ -334,11 +334,11 @@ NarrationAudio synthesize_system_speech_impl(const NarrationSegment& segment,std
 NarrationAudio synthesize_system_speech(const NarrationSegment& segment,std::string_view language,std::string_view voice_id,
     const std::filesystem::path& output_directory,std::stop_token stop){
     auto result=synthesize_system_speech_impl(segment,language,voice_id,output_directory,stop,{});
-    result.cache_namespace=segment.cache_namespace;return result;
+    result.cache_namespace=segment.cache_namespace;result.prepared=segment.prepared;return result;
 }
 NarrationAudio synthesize_system_speech_with_budget(const NarrationSegment& segment,std::string_view language,std::string_view voice_id,
     const std::filesystem::path& output_directory,std::stop_token stop,std::uint64_t budget){
     auto result=synthesize_system_speech_impl(segment,language,voice_id,output_directory,stop,budget);
-    result.cache_namespace=segment.cache_namespace;return result;
+    result.cache_namespace=segment.cache_namespace;result.prepared=segment.prepared;return result;
 }
 } // namespace lgaed::windows

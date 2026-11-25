@@ -606,9 +606,14 @@ def acceptance(executable: Path, root: Path, scenario="full", rate=3, voice=None
             before, after = page_manifest(baseline, index), page_manifest(revised, index)
             require(before["value"]["revision"] != after["value"]["revision"], "Changed page kept old revision")
             old_segments, new_segments = before["value"]["segments"], after["value"]["segments"]
-            old_keys = {segment["key"] for segment in old_segments}
-            require(old_keys.isdisjoint(segment["key"] for segment in new_segments), "A changed page mixed old and new recording generations")
+            original = {segment["preparedSha256"]: segment for segment in old_segments}
+            new_prepared = {segment["preparedSha256"] for segment in new_segments}
+            require(original.keys() < new_prepared, "The appended prose must extend the original spoken script")
             for segment in new_segments:
+                previous = original.get(segment["preparedSha256"])
+                if previous is not None:
+                    require(all(segment[field] == previous[field] for field in ("key", "wav", "audioSha256")),
+                            "Editing the page regenerated or replaced an unchanged sentence")
                 path = (root / "profile/cache/kokoro" / segment["wav"]).resolve()
                 require(path.is_relative_to(root), "A page recording escaped QA storage")
                 pcm(path)

@@ -333,21 +333,18 @@ struct LessonReader::Impl {
             result.audio_fingerprint=recording_fingerprint(page_key,planned[index],audio,state::sha256(state::read_bytes(audio.wav)));
             result.audio=std::move(audio);push(std::move(result));
         };
-        // A changed/missing page is synthesized strictly in curricular order.
-        // A published matching version may warm the requested visible source
-        // first because its canonical PCM already exists in this namespace.
-        const bool published=canonical&&backend->published_page_revision(output,canonical->page_id,lang,selected_voice,
-            system?"WINDOWS":"KOKORO")==std::optional<std::string>{canonical->revision};
+        // The visible sentence can play as soon as its own recording is ready.
+        // Publishing the complete page still follows the current curriculum order.
         const auto requested=std::min(priority.load(),planned.size()-1);
-        if((!canonical||published)&&!ready[requested])prepare_visible(requested);
+        if(!ready[requested])prepare_visible(requested);
         if(canonical&&session&&!stop.stop_requested()){
             std::vector<windows::NarrationAudio> recordings;recordings.reserve(canonical->segments.size());
             for(auto sentence:canonical->segments){if(stop.stop_requested()||!session->current())return;
                 const auto active=std::min(priority.load(),planned.size()-1);
-                if(published&&!ready[active])prepare_visible(active);
+                if(!ready[active])prepare_visible(active);
                 sentence.cache_namespace=session->cache_namespace();
                 recordings.push_back(system?windows::synthesize_system_speech(sentence,lang,selected_voice,output,stop):
-                    backend->prepare(sentence,lang,selected_voice,output,0,stop));
+                    backend->prepare(sentence,lang,selected_voice,output,0,stop,windows::NarrationCpuClass::current_page,true));
                 observe_synthesis(recordings.back());
                 // Canonical and visible sources can have different UTF-16
                 // projections. Reuse their PCM but ask the normal planner for

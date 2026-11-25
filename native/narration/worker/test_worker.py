@@ -527,17 +527,45 @@ class HistoricalDoraPackTest(unittest.TestCase):
                 self.assertFalse(audio["alignmentAvailable"])
                 wav = Path(audio["wav"])
                 audio_hash = hashlib.sha256(wav.read_bytes()).hexdigest()
-                # A bounded alignment fixture checks preservation of an existing valid sidecar.
-                timings = [{"start": 0, "end": len(title), "startMs": 0.0, "endMs": audio["durationMs"]}]
+                # A legacy sidecar needs no migration when its ranges still
+                # match the visible plan. These controlled times are only a fixture.
+                ranges = segment["displayedRanges"]
+                self.assertGreater(len(ranges), 1)
+                times = [audio["durationMs"] * (i / len(ranges)) for i in range(len(ranges) + 1)]
+                timings = [{**span, "startMs": times[i], "endMs": times[i + 1]}
+                           for i, span in enumerate(ranges)]
                 sidecar = wav.with_name(f"{segment['key']}-{hashlib.sha256(title.encode()).hexdigest()}.timings.json")
                 sidecar.write_text(json.dumps({"audioSha256": audio_hash,
                     "sampleCount": audio["sampleCount"], "timings": timings}), encoding="utf-8")
                 snapshot = [(path.stat().st_mtime_ns, path.read_bytes()) for path in (wav, sidecar)]
+                # A simultaneous catalog request plans the very same utterance
+                # for audio-only generation, without any display coordinates.
+                lesson = {"id": "projection-test", "pages": [{"blocks": [{"type": "paragraph", "text": title}]}]}
+                canonical = worker.ask("curriculum_plan", lessonJson=json.dumps(lesson), page=0, language="es",
+                                       voice="ef_dora", uiLanguage="es")["segments"][0]
+                self.assertEqual((segment["text"], segment["preparedText"]),
+                                 (canonical["text"], canonical["preparedText"]))
                 repeated = worker.ask("prepare", **fields)
                 self.assertEqual("cache", repeated["audioOrigin"])
                 self.assertEqual(timings, repeated["timings"])
                 self.assertTrue(repeated["alignmentAvailable"])
                 self.assertEqual(snapshot, [(path.stat().st_mtime_ns, path.read_bytes()) for path in (wav, sidecar)])
+                # Same PCM, visible text and row count. Reassign one word to
+                # another valid visible span as after an authored projection edit.
+                stale = [dict(row) for row in timings]
+                stale[0].update(ranges[1])
+                sidecar.write_text(json.dumps({"audioSha256": audio_hash,
+                    "sampleCount": audio["sampleCount"], "timings": stale}), encoding="utf-8")
+                background = worker.ask("prepare", **fields, audioOnly=True, cpuClass="background")
+                self.assertTrue(background["cacheHit"])
+                self.assertEqual((audio["sampleCount"], 0, []), (
+                    background["sampleCount"], background["synthesisThreads"], background["timings"]))
+                after_edit = worker.ask("prepare", **fields)
+                self.assertTrue(after_edit["cacheHit"])
+                self.assertEqual(0, after_edit["synthesisThreads"])
+                self.assertFalse(after_edit["alignmentAvailable"])
+                self.assertEqual([], after_edit["timings"])
+                self.assertEqual(snapshot[0], (wav.stat().st_mtime_ns, wav.read_bytes()))
             finally:
                 worker.close()
         self.assertEqual(before, self.recording_snapshot())
