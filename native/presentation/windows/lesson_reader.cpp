@@ -76,7 +76,8 @@ public:
 }
 struct LessonReader::Impl {
     struct AudioReadLease{HANDLE file=INVALID_HANDLE_VALUE;std::shared_ptr<void> cache_guard;~AudioReadLease(){if(file!=INVALID_HANDLE_VALUE)CloseHandle(file);}};
-    struct Part{LessonReadingRegion region;windows::NarrationSegment sentence;std::optional<windows::NarrationAudio> audio;std::size_t occurrence=0;std::string audio_fingerprint;std::shared_ptr<AudioReadLease> playback_lease;};
+    struct Part{LessonReadingRegion region;windows::NarrationSegment sentence;std::optional<windows::NarrationAudio> audio;std::size_t occurrence=0;std::string audio_fingerprint;std::shared_ptr<AudioReadLease> playback_lease;
+        std::string feedback_admission_key;bool feedback_admitted=false;};
     struct LegacyPlan{std::string key;std::vector<Part> parts;bool editorial_formatting=false,previous_context_policy=false;std::vector<std::string> revised_regions;bool positional_page_identity=false,bibliography_only=false,general_revision=false;std::vector<Part> revision_proof;};
     struct Result{std::uint64_t epoch=0;std::vector<Part> parts;std::vector<LegacyPlan> legacy;std::optional<windows::NarrationPagePlan> canonical;std::string key,error,audio_fingerprint;std::size_t index=0;std::optional<windows::NarrationAudio> audio;bool planned=false;
         bool playback_validation=false,recording_changed=false,page_completed=false,synthesis_observed=false;unsigned synthesis_threads=0;std::uint64_t validation_serial=0;std::shared_ptr<AudioReadLease> playback_lease;};
@@ -95,6 +96,7 @@ struct LessonReader::Impl {
     std::string page_id,resume_page_id,signature,key,owner,language="es",voice="ef_dora",engine="KOKORO",error,configuration_error,ui_locale="es";
     std::string previous_part,previous_key;std::vector<std::string> previously_heard;double previous_offset=0;std::optional<std::size_t> feedback_target;
     std::vector<std::pair<std::string,double>> previous_positions;
+    std::vector<std::string> previous_feedback_admissions;
     std::optional<AnswerPriority> answer_priority;
     std::optional<PriorityBoundary> previous_priority;
     narration::Position position;windows::NarrationPlayer player;bool enabled=true,wanted=false,planning=false,has_plan=false,finished=false,waiting_gate=false,visible=true;
@@ -176,8 +178,10 @@ struct LessonReader::Impl {
         {const std::lock_guard lock(result_mutex);std::erase_if(results,[](const auto& result){return result.playback_validation;});}
         if(!player.allocated())for(auto& part:parts)part.playback_lease.reset();
     }
-    void release_player(){if(player.allocated()){const auto offset=player.position();if(player.ready())heard_until(offset);
-        position.milliseconds=static_cast<std::int64_t>(std::llround(player.release()));}cancel_playback_verification();}
+    void release_player(){if(player.allocated()){const bool ready=player.ready();const auto offset=player.release();
+        // One final playback clock owns both the real heard prefix and pause.
+        // A second read after accounting must not create an artificial gap.
+        if(ready)heard_until(offset);position.milliseconds=static_cast<std::int64_t>(std::llround(offset));}cancel_playback_verification();}
     void stop(){if(IsWindow(view)&&has_plan){try{release_player();save(finished);}catch(...) {}}
         try{(void)player.release();}catch(...){}cancel_playback_verification();
         wanted=false;cancel_generation();retiring_preparation.reset();}
@@ -487,6 +491,43 @@ struct LessonReader::Impl {
             append(curriculum::semantic_role_name(span.role));append(curriculum::semantic_reading_name(span.reading));}
         return result;
     }
+    void bind_feedback_admission_keys(){
+        // Compute exact source identities once per plan, never in the 30 ms
+        // playback/gate loop. A newly edited field or another configuration
+        // cannot inherit a manual navigation choice merely by sounding alike.
+        std::map<std::string,std::string> contracts;
+        const auto append=[](std::string& target,std::string_view value){target+=std::to_string(value.size())+':';target.append(value);};
+        for(auto& part:parts){part.feedback_admission_key.clear();part.feedback_admitted=false;
+            if(!part.region.feedback||!part.region.correct||!part.region.solved)continue;
+            const auto region_owner=part.region.anchor.empty()?part.region.key:part.region.anchor;
+            auto [contract,inserted]=contracts.try_emplace(region_owner);
+            if(inserted){std::string source="lgaed-feedback-admission-source-v1";
+                for(const std::string_view value:{std::string_view(region_owner),std::string_view(language),std::string_view(voice),
+                    std::string_view(engine=="WINDOWS"||engine=="ANDROID"?"ANDROID":"KOKORO"),std::string_view(part.region.source_text),
+                    std::string_view(part.region.reading_context),std::string_view(part.region.math_mode)})append(source,value);
+                append(source,semantic_signature(part.region.text_semantics));contract->second=state::sha256(source);}
+            std::string source="lgaed-feedback-admission-sentence-v1";append(source,contract->second);
+            append(source,part.sentence.prepared);append(source,part.sentence.text);append(source,part.sentence.spoken);
+            append(source,std::to_string(part.sentence.start));append(source,std::to_string(part.sentence.end));append(source,std::to_string(part.occurrence));
+            part.feedback_admission_key=state::sha256(source);
+        }
+    }
+    void refresh_feedback_admissions(){
+        std::set<std::string> valid;
+        for(const auto& part:parts)if(!part.feedback_admission_key.empty())valid.insert(part.feedback_admission_key);
+        std::erase_if(position.feedback_admissions,[&](const auto& value){return !valid.contains(value);});
+        std::ranges::sort(position.feedback_admissions);
+        position.feedback_admissions.erase(std::unique(position.feedback_admissions.begin(),position.feedback_admissions.end()),position.feedback_admissions.end());
+        if(position.feedback_admissions.size()>1024)position.feedback_admissions.resize(1024);
+        for(auto& part:parts)part.feedback_admitted=!part.feedback_admission_key.empty()&&
+            std::ranges::binary_search(position.feedback_admissions,part.feedback_admission_key);
+    }
+    void admit_feedback(std::size_t index){
+        if(index>=parts.size())return;auto& part=parts[index];
+        if(!part.region.feedback||!part.region.correct||!part.region.solved||part.feedback_admission_key.empty()||part.feedback_admitted)return;
+        if(position.feedback_admissions.size()>=1024)return;
+        position.feedback_admissions.push_back(part.feedback_admission_key);part.feedback_admitted=true;
+    }
     static bool same_previous_context_passage(const Part& before,const Part& after){
         const auto passage=[](const Part& part) {
             return narration_legacy::Passage{part.region.anchor.empty()?part.region.key:part.region.anchor,
@@ -529,7 +570,7 @@ struct LessonReader::Impl {
             // the first new/unheard passage in today's order. The answer-only
             // anchors below must not overwrite that earlier pending position.
             release_player();wanted=false;manually_paused=true;save(finished);
-            previous_part.clear();previous_key.clear();previous_positions.clear();previously_heard.clear();
+            previous_part.clear();previous_key.clear();previous_positions.clear();previously_heard.clear();previous_feedback_admissions.clear();
             previous_offset=0;previous_priority.reset();answer_priority.reset();feedback_target.reset();
             content_revision=page.content_revision;signature.clear();
         }
@@ -553,6 +594,7 @@ struct LessonReader::Impl {
         // no user-owned position. It must not supersede the stored full-page
         // bookmark when the verified feedback finishes restoring.
         if(!revised_source&&has_plan&&(!owner.empty()||restored_bookmark||position.finished)&&static_cast<std::size_t>(position.segment)<parts.size()){previous_part=part_id(parts[static_cast<std::size_t>(position.segment)]);release_player();paint_progress();previous_offset=static_cast<double>(position.milliseconds);save(finished);previous_key=key;
+            previous_feedback_admissions=position.feedback_admissions;
             previous_positions.clear();for(std::size_t i=0;i<=current();++i)previous_positions.emplace_back(part_id(parts[i]),i==current()?previous_offset:parts[i].audio?parts[i].audio->duration_ms:0.);
             previously_heard.clear();for(std::size_t i=0;i<parts.size()&&i<static_cast<std::size_t>(position.heard_through);++i)if(parts[i].region.feedback&&parts[i].region.correct)previously_heard.push_back(part_id(parts[i]));}
         if(!revised_source&&has_plan&&answer_priority&&!parts.empty()){
@@ -560,9 +602,10 @@ struct LessonReader::Impl {
             previous_priority=PriorityBoundary{answer_priority->block,part_id(parts[boundary]),answer_priority->allowed_through>=parts.size()};
         }
         answer_priority.reset();const bool same_page=next_page==page_id;
-        if(!same_page){wanted=false;previous_part.clear();previous_key.clear();previously_heard.clear();previous_positions.clear();previous_priority.reset();previous_offset=0;feedback_target.reset();listened.clear();listened_recordings.clear();shades.clear();shaded_ends.clear();shaded_part.clear();shaded_offset=0;}
+        const bool pending_explicit_resume=explicit_resume_requested&&wanted&&same_page;
+        if(!same_page){wanted=false;previous_part.clear();previous_key.clear();previously_heard.clear();previous_positions.clear();previous_feedback_admissions.clear();previous_priority.reset();previous_offset=0;feedback_target.reset();listened.clear();listened_recordings.clear();shades.clear();shaded_ends.clear();shaded_part.clear();shaded_offset=0;}
         cancel_generation();++epoch;signature=next_signature;page_id=next_page;resume_page_id=page.narration_page_identity.empty()?next_page:page.narration_page_identity;regions=next_regions;parts.clear();key.clear();owner.clear();position={};finished=false;waiting_gate=false;has_plan=false;error.clear();planning=false;
-        restored_bookmark=false;resume_needs_replay=false;explicit_resume_requested=false;canonical_plan.reset();page_audio_complete=false;foreground_synthesis_threads=0;awaiting_verified_plan=false;
+        restored_bookmark=false;resume_needs_replay=false;explicit_resume_requested=pending_explicit_resume;canonical_plan.reset();page_audio_complete=false;foreground_synthesis_threads=0;awaiting_verified_plan=false;
         std::erase_if(shades,[&](const auto& item){return std::ranges::none_of(regions,[&](const auto& region){return item.first==region.key&&item.second->matches(region.target,region.source_text)
                 &&!(feedback_target&&region.feedback&&region.block_index==*feedback_target);});});
         std::erase_if(shaded_ends,[&](const auto& item){return !shades.contains(item.first);});
@@ -802,6 +845,7 @@ struct LessonReader::Impl {
                 signature.clear();changed();continue;
             }
             key=result.key;has_plan=true;planning=false;position={};
+            bind_feedback_admission_keys();
             restored_bookmark=false;resume_needs_replay=false;
             const auto history=narration::read_history(data());if(const auto saved=narration::restore(history,key,parts.size())){
                 position=*saved;restored_bookmark=!position.finished;}
@@ -914,6 +958,10 @@ struct LessonReader::Impl {
                     break;
                 }
             }
+            position.feedback_admissions.insert(position.feedback_admissions.end(),previous_feedback_admissions.begin(),previous_feedback_admissions.end());
+            if(feedback_target)for(const auto& part:parts)if(part.region.feedback&&part.region.block_index==*feedback_target)
+                std::erase(position.feedback_admissions,part.feedback_admission_key);
+            refresh_feedback_admissions();
             if(!previous_key.empty()&&previous_key!=key){
                 position.heard_through=0;for(std::size_t i=0;i<parts.size();++i)if(parts[i].region.feedback&&parts[i].region.correct){if(std::ranges::find(previously_heard,part_id(parts[i]))==previously_heard.end())break;position.heard_through=static_cast<std::int64_t>(i+1);}
                 mutate([&](state::StateData& preferences){auto old=narration::read_history(preferences);const auto existing=std::ranges::find(old.entries,key,&narration::Bookmark::key);
@@ -943,7 +991,7 @@ struct LessonReader::Impl {
                     else if(answer_priority&&answer_priority->block==*feedback_target)answer_priority.reset();
                 }if(!verification_pending())feedback_target.reset();}
             if(!fresh_feedback_selected)constrain_required_exercise_bookmark();
-            previous_part.clear();previous_key.clear();previously_heard.clear();previous_positions.clear();previous_priority.reset();finished=position.finished;prioritize(static_cast<std::size_t>(position.segment));
+            previous_part.clear();previous_key.clear();previously_heard.clear();previous_positions.clear();previous_feedback_admissions.clear();previous_priority.reset();finished=position.finished;prioritize(static_cast<std::size_t>(position.segment));
             // A fresh answer invalidates previous hearing even when the reader
             // stays paused and the learner closes before pressing Play.
             if(fresh_feedback_selected&&!verification_pending()){acquire();save(false);}
@@ -1000,6 +1048,15 @@ struct LessonReader::Impl {
         if(!explicit_resume_requested||parts.empty())return;
         if(!parts[current()].audio||!parts[current()].playback_lease)return;
         explicit_resume_requested=false;
+        const auto& preview=parts[current()];const auto certificate=empty_certificate(current());
+        // Old versions stored honest heard-prefix evidence and a separately
+        // sought visual offset, but lost the permission to continue that
+        // preview after another answer. Only explicit Play of the same actual
+        // verified recording admits that current, already-correct sentence.
+        // Missing/mismatched certificates and mere rounded clock offsets do
+        // not authorize any other passage or manufacture listening credit.
+        if(certificate&&preview.region.feedback&&preview.region.correct&&preview.region.solved&&
+            narration::has_forward_preview_gap(position,certificate->fingerprint,certificate->duration_microseconds)){admit_feedback(current());save(false);}
         if(!resume_needs_replay)return;
         const auto& part=parts[current()];const auto first=correct_feedback_start(part.region.block_index);
         if(first){const auto missing=std::max(*first,static_cast<std::size_t>(std::max<std::int64_t>(0,position.heard_through)));
@@ -1041,7 +1098,7 @@ struct LessonReader::Impl {
             ?std::optional{reading_gate::FeedbackPriority{answer_priority->block,answer_priority->allowed_through}}
             :std::optional<reading_gate::FeedbackPriority>{};
         return reading_gate::prefix_blocker(parts,destination,position.heard_through,feedback_priority,manual_forward,
-            [](const auto& part)->const auto&{return part.region;});
+            [](const auto& part)->const auto&{return part.region;},[](const auto& part){return part.feedback_admitted;});
     }
     bool passes_prefix(std::size_t destination,bool manual_forward=false)const{return !prefix_blocker(destination,manual_forward);}
     bool can_enter(std::size_t destination,bool manual_forward=false)const{
@@ -1106,6 +1163,10 @@ struct LessonReader::Impl {
         if(wanted&&player.ended()){
             const auto at=current();heard_until(parts[at].audio->duration_ms);position.milliseconds=static_cast<std::int64_t>(std::llround(parts[at].audio->duration_ms));(void)player.release();parts[at].playback_lease.reset();
             credit_heard_feedback();
+            // Once a real feedback sentence finishes, retain its navigation
+            // admission even when an earlier manual preview leaves a genuine
+            // hole in the independent contiguous listening boundary.
+            if(parts[at].region.feedback&&parts[at].region.correct&&feedback_fully_heard(at))admit_feedback(at);
             if(answer_priority&&parts[at].region.feedback&&parts[at].region.correct)
                 answer_priority->allowed_through=std::max(answer_priority->allowed_through,at+1);
             const bool wrong=parts[at].region.feedback&&!parts[at].region.correct;
@@ -1147,6 +1208,7 @@ struct LessonReader::Impl {
         if(!error.empty()){signature.clear();changed();if(!error.empty())return;}wanted=true;manually_paused=false;waiting_gate=false;
         explicit_resume_requested=true;if(has_plan&&!verification_pending()){acquire();play_current();}update_buttons();}
     void seek(int seconds){if(!has_plan||parts.empty())return;const bool resume=wanted;release_player();
+        const auto before=current();const auto before_offset=position.milliseconds;
         auto at=current();double offset=static_cast<double>(position.milliseconds)+seconds*1000.;
         auto last=parts.size()-1;
         const bool guide=parts[at].region.feedback&&!parts[at].region.correct;
@@ -1159,12 +1221,14 @@ struct LessonReader::Impl {
             if(!guide&&!can_enter(at+1,true)){offset=std::min(offset,parts[at].audio->duration_ms);break;}offset-=parts[at].audio->duration_ms;++at;}
         if(answer_priority&&seconds>0)answer_priority->allowed_through=std::max(answer_priority->allowed_through,at);
         position=narration::seek(position,static_cast<std::int64_t>(at),static_cast<std::int64_t>(std::max(0.,offset)));finished=false;prioritize(at);wanted=resume;waiting_gate=false;
+        if(seconds>0)for(auto index=before;index<=at;++index)
+            if(index<at||index>before||position.milliseconds>before_offset)admit_feedback(index);
         // Explicit preview cancels legacy recovery. A zero certificate records
         // known identity, never a prefix inferred from the new visual offset.
         restored_bookmark=false;resume_needs_replay=false;explicit_resume_requested=false;bind_preview_certificate();
         if(!parts[current()].region.feedback)constrain_required_exercise_bookmark();
         if(owner.empty())acquire();save();paint_progress();play_current();update_buttons();}
-    void restart(){if(!has_plan)return;release_player();listened.clear();listened_recordings.clear();answer_priority.reset();previous_priority.reset();position={};
+    void restart(){if(!has_plan)return;release_player();listened.clear();listened_recordings.clear();answer_priority.reset();previous_priority.reset();position={};refresh_feedback_admissions();
         restored_bookmark=false;resume_needs_replay=false;explicit_resume_requested=false;bind_preview_certificate();
         finished=false;wanted=true;manually_paused=false;waiting_gate=false;acquire();save();paint_progress();play_current();update_buttons();}
     void feedback(std::size_t block,bool correct){
@@ -1176,7 +1240,7 @@ struct LessonReader::Impl {
         feedback_target=block;wanted=resume;finished=false;signature.clear();changed();}
     void settings_changed(){const auto old_language=language,old_voice=voice,old_engine=engine;const auto old_enabled=enabled;configure();
         if(!enabled){pause();cancel_generation();for(auto& [id,shade]:shades)shade->restore();}
-        else if(language!=old_language||voice!=old_voice||engine!=old_engine||!old_enabled){pause();cancel_generation();has_plan=false;parts.clear();previous_key.clear();previous_part.clear();previously_heard.clear();answer_priority.reset();previous_priority.reset();listened.clear();listened_recordings.clear();signature.clear();changed();}
+        else if(language!=old_language||voice!=old_voice||engine!=old_engine||!old_enabled){pause();cancel_generation();has_plan=false;parts.clear();previous_key.clear();previous_part.clear();previously_heard.clear();previous_feedback_admissions.clear();answer_priority.reset();previous_priority.reset();listened.clear();listened_recordings.clear();signature.clear();changed();}
         else if(player.allocated())player.set_rate(rate);update_buttons();}
     void change_playback_rate(double value){
         value=narration::clamp_playback_rate(value);if(rate==value)return;

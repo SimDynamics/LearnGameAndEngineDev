@@ -11,7 +11,7 @@ namespace {
 using namespace lgaed;
 using namespace lgaed::presentation;
 void require(bool value,std::string_view reason) { if(!value)throw std::runtime_error(std::string(reason)); }
-struct Part { LessonReadingRegion region; };
+struct Part { LessonReadingRegion region; bool navigation_admitted=false; };
 constexpr auto projection=[](auto& part)->auto& { return part.region; };
 std::vector<LessonReadingRegion> current_page() {
     const auto path=std::filesystem::path(build::source_root)/
@@ -244,6 +244,49 @@ void grouped_feedback() {
     require(reading_gate::prefix_admitted(regions,regions.size(),0,priority,true),"Explicit manual advance lost the existing active-feedback behavior");
     require(reading_gate::prefix_admitted(regions,regions.size(),static_cast<std::int64_t>(regions.size())),
         "Heard correct feedback failed to release the completed prefix");
+}
+void source_bound_feedback_admissions() {
+    // Preserve the reported segment numbers while isolating the gate policy
+    // from synthesis, source fingerprinting and the actual playback clock.
+    std::vector<Part> parts(103);
+    for(auto& part:parts){part.region.block_index=0;part.region.solved=true;}
+    const auto feedback=[&](std::size_t at,std::size_t block){auto& region=parts[at].region;
+        region.block_index=block;region.is_exercise=true;region.feedback=true;region.correct=true;region.solved=true;};
+    feedback(97,25);feedback(98,25);feedback(99,38);
+    parts[100].region.block_index=39; // Heading following B's complete feedback.
+    auto& compiler=parts[101].region;compiler.block_index=41;compiler.is_exercise=true;
+    compiler.required_compiler=true;compiler.solved=false;
+    parts[102].region.block_index=42;
+    const reading_gate::FeedbackPriority finished_b{38,100};
+    const auto admitted=[](const Part& part){return part.navigation_admitted;};
+    const auto all_admitted=[](const Part&){return true;};
+    constexpr std::int64_t actually_heard_through=97;
+
+    parts[97].navigation_admitted=true; // Only A's explicitly previewed sentence.
+    auto blocked=reading_gate::prefix_blocker(parts,100,actually_heard_through,finished_b,false,projection,admitted);
+    require(blocked&&blocked->reason==reading_gate::BlockerReason::correct_feedback&&blocked->index==98&&blocked->block==25,
+        "A preview admission for A97 silently admitted its unheard A98 continuation");
+    parts[98].navigation_admitted=true; // Independent source admission after A98 really finished.
+    require(!reading_gate::prefix_blocker(parts,100,actually_heard_through,finished_b,false,projection,admitted),
+        "A real later sentence admission failed to release B's immediate heading across an earlier manual gap");
+    parts[99].navigation_admitted=true;
+    require(!reading_gate::prefix_blocker(parts,100,actually_heard_through,{},false,projection,admitted),
+        "Persisted per-sentence admissions depended on a transient fresh-answer priority");
+    require(!reading_gate::prefix_blocker(parts,101,actually_heard_through,{},false,projection,admitted),
+        "Admitted correct feedback stopped before the next pending compiler's own prompt");
+    blocked=reading_gate::prefix_blocker(parts,102,actually_heard_through,finished_b,true,projection,all_admitted);
+    require(blocked&&blocked->reason==reading_gate::BlockerReason::answer&&blocked->index==101&&blocked->block==41,
+        "A navigation callback or manual advance bypassed an unresolved compiler objective");
+
+    parts[98].region.solved=false;
+    blocked=reading_gate::prefix_blocker(parts,100,actually_heard_through,finished_b,true,projection,all_admitted);
+    require(blocked&&blocked->reason==reading_gate::BlockerReason::answer&&blocked->index==97&&blocked->block==25,
+        "Stale correct-feedback admissions replaced the live pending answer requirement");
+    parts[98].region.solved=true;parts[97].region.solved=false;parts[97].region.correct=false;
+    blocked=reading_gate::prefix_blocker(parts,100,actually_heard_through,finished_b,false,projection,all_admitted);
+    require(blocked&&blocked->reason==reading_gate::BlockerReason::answer&&blocked->index==97&&blocked->block==25,
+        "An incorrect unanswered guide acquired permission through a navigation callback");
+    std::cout<<"PASS feedback navigation admissions: A97 alone cannot admit A98, separately admitted later feedback releases the heading, and pending/incorrect/compiler gates remain mandatory; pure policy only\n";
 }
 void asynchronous_metadata() {
     auto live=current_page();
@@ -553,9 +596,12 @@ int main(int argc,char** argv) {
         if(argc==2&&std::string_view(argv[1])=="--selected-edition") {
             selected_edition_reader_gates();return 0;
         }
+        if(argc==2&&std::string_view(argv[1])=="--feedback-admissions") {
+            source_bound_feedback_admissions();return 0;
+        }
         require(argc==1,"Unknown reading gate QA arguments");
         selected_edition_reader_gates();
-        current_objectives();current_u2l6_reopened_pause();grouped_feedback();asynchronous_metadata();preview_from_later_feedback();ordinary_and_mixed_requirements();cadenas_three_puzzle_flow();current_u2l5_reader_pauses_and_gates();
+        current_objectives();current_u2l6_reopened_pause();grouped_feedback();source_bound_feedback_admissions();asynchronous_metadata();preview_from_later_feedback();ordinary_and_mixed_requirements();cadenas_three_puzzle_flow();current_u2l5_reader_pauses_and_gates();
         std::cout<<"PASS current U2L6 objectives and restored pauses, actual U2L7 three-puzzle prompt/feedback gates, ordinary/mixed groups, late/finished bookmarks, local feedback permission and asynchronous same-script invalidation; pure gates only\n";
         return 0;
     } catch(const std::exception& error) { std::cerr<<error.what()<<'\n';return 1; }

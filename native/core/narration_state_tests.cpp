@@ -85,5 +85,65 @@ int main(){try{
             "evicting certificates removed external data or kept orphaned slot metadata");
         std::cout<<"Narration: exact bounded prefix certificates, zero-credit preview, malformed/mismatched/legacy data, voice keys, stale owners and seeks passed\n";
     }
+    {
+        const auto first=std::string(64,'a'),second=std::string(64,'b');
+        Position preview{5,6690,4,false,HeardPrefix{first,1689854,9575000},{first,second}};
+        History admitted=begin({},"admission-key","owner",{},"","admission-page");
+        admitted=checkpoint(admitted,"admission-key","owner",preview);
+        lgaed::state::StateData stored;stored.preferences[resume_domain]["external_metadata"]=std::string("untouched");
+        write_history(stored,admitted);check(read_history(stored)==admitted,"Feedback admissions failed the existing-slot round trip");
+        const auto restored=restore(read_history(stored),"admission-key",8);
+        check(restored&&restored->heard_prefix==preview.heard_prefix&&restored->heard_through==preview.heard_through,
+            "Navigation admission manufactured contiguous listening evidence");
+        check(has_forward_preview_gap(preview,first,9575000),"The validated legacy five-second preview gap was lost");
+        check(!has_forward_preview_gap(preview,second,9575000)&&!has_forward_preview_gap(preview,first,9575001),
+            "Another actual recording or duration inherited a legacy preview");
+        auto missing=preview;missing.heard_prefix.reset();check(!has_forward_preview_gap(missing,first,9575000),"An absent certificate granted a legacy preview");
+        auto rounded=preview;rounded.milliseconds=1690;check(!has_forward_preview_gap(rounded,first,9575000),"Clock rounding was mistaken for a manual seek");
+        auto clock_gap=preview;clock_gap.heard_prefix->microseconds=1000000;clock_gap.milliseconds=1040;
+        check(!has_forward_preview_gap(clock_gap,first,9575000),"A short legacy pause clock delay granted forward admission");
+        clock_gap.milliseconds=1250;check(has_forward_preview_gap(clock_gap,first,9575000),"The conservative legacy preview threshold was not inclusive");
+        auto outside=preview;outside.milliseconds=9576;check(!has_forward_preview_gap(outside,first,9575000),"A position beyond the actual recording granted a preview");
+        auto zero=preview;zero.heard_prefix->microseconds=0;check(has_forward_preview_gap(zero,first,9575000),"A verified zero-credit explicit preview could not resume");
+        check(seek(preview,6,4000).feedback_admissions==preview.feedback_admissions&&seek(preview,6,4000).heard_through==4,
+            "A visual seek changed navigation permissions or fabricated hearing");
+        const std::vector<lgaed::state::Value> malformed{
+            std::string("wrong type"),std::vector<std::string>{},
+            std::vector<std::string>{"other-key","admission-page",first},
+            std::vector<std::string>{"admission-key","other-page",first},
+            std::vector<std::string>{"admission-key","admission-page",first,first},
+            std::vector<std::string>{"admission-key","admission-page",std::string(64,'Z')},
+            std::vector<std::string>{"admission-key","admission-page",std::string(63,'a')},
+            std::vector<std::string>(1027,first)};
+        for(const auto& value:malformed){auto corrupt=stored;corrupt.preferences[resume_domain]["feedback_admissions_v1_0"]=value;
+            const auto recovered=restore(read_history(corrupt),"admission-key",8);
+            check(recovered&&recovered->feedback_admissions.empty()&&recovered->segment==preview.segment&&recovered->milliseconds==preview.milliseconds&&
+                recovered->heard_prefix==preview.heard_prefix&&recovered->heard_through==preview.heard_through,
+                "Malformed or foreign optional admissions granted passage or moved a real bookmark");}
+        auto old=stored;old.preferences[resume_domain].erase("feedback_admissions_v1_0");
+        check(restore(read_history(old),"admission-key",8)->feedback_admissions.empty(),"An old slot acquired invented admissions");
+        const auto changed=begin(admitted,"another-voice-key","next",preview,"","admission-page");
+        check(changed.entries.size()==1&&changed.entries.front().position.feedback_admissions.empty(),"An unknown recording key inherited another voice's admissions");
+        auto invalid=admitted;invalid.entries.front().position.feedback_admissions.push_back(first);
+        bool rejected=false;try{auto target=stored;write_history(target,invalid);}catch(const std::invalid_argument&){rejected=true;}
+        check(rejected,"The persister accepted duplicate admissions");
+        invalid=admitted;invalid.entries.front().page.clear();rejected=false;
+        try{auto target=stored;write_history(target,invalid);}catch(const std::invalid_argument&){rejected=true;}
+        check(rejected,"The persister accepted orphaned admissions");
+        invalid=admitted;auto& limit=invalid.entries.front().position.feedback_admissions;limit.clear();
+        for(unsigned index=0;index<1024;++index){std::string digest(64,'a');
+            for(unsigned digit=0;digit<4;++digit)digest[63-digit]="0123456789abcdef"[(index>>(digit*4))&15];limit.push_back(std::move(digest));}
+        auto bounded=stored;write_history(bounded,invalid);check(read_history(bounded)==invalid,"The exact bounded admission capacity failed its round trip");
+        limit.push_back(std::string(64,'f'));rejected=false;
+        try{auto target=stored;write_history(target,invalid);}catch(const std::invalid_argument&){rejected=true;}
+        check(rejected,"An admission list exceeded its bounded slot");
+        for(const auto* key:{"next-B","next-C","next-D"})admitted=begin(std::move(admitted),key,key,{});
+        write_history(stored,admitted);check(read_history(stored)==admitted&&admitted.entries.size()==3,
+            "Navigation admissions created parallel/fourth history slots");
+        for(int index=0;index<3;++index)check(!lgaed::state::find(stored,resume_domain,"feedback_admissions_v1_"+std::to_string(index)),
+            "Evicted admissions survived in another page's slot");
+        check(lgaed::state::string_value(stored,resume_domain,"external_metadata")=="untouched","Admission eviction removed unrelated data");
+        std::cout<<"Narration: bounded source admissions, separate genuine heard evidence, strict owners, legacy preview gaps and eviction passed\n";
+    }
     std::cout<<"Narration: bounded completed pages, exact offsets, stale owners and independent seeks passed\n";return 0;
 }catch(const std::exception& error){std::cerr<<error.what()<<'\n';return 1;}}

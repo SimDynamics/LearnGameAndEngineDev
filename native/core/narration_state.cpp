@@ -64,6 +64,22 @@ bool valid_prefix(const HeardPrefix& value) noexcept {
         return(c>='0'&&c<='9')||(c>='a'&&c<='f');})&&value.microseconds>=0
         &&value.duration_microseconds>0&&value.microseconds<=value.duration_microseconds;
 }
+bool valid_admissions(const std::vector<std::string>& values) {
+    if(values.size()>1024)return false;
+    std::set<std::string> unique;
+    for(const auto& value:values)if(value.size()!=64||!std::ranges::all_of(value,[](char c){
+        return(c>='0'&&c<='9')||(c>='a'&&c<='f');})||!unique.insert(value).second)return false;
+    return true;
+}
+std::vector<std::string> read_admissions(const state::StateData& data,const std::string& suffix,const Bookmark& bookmark){
+    const auto* raw=state::find(data,resume_domain,"feedback_admissions_v1_"+suffix);
+    const auto* values=raw?std::get_if<std::vector<std::string>>(raw):nullptr;
+    // Optional metadata fails closed without moving a legacy pause. Its exact
+    // owner prevents a copied slot field from granting another page permission.
+    if(bookmark.key.empty()||bookmark.page.empty()||!values||values->size()<3||values->size()>1026||values->at(0)!=bookmark.key||values->at(1)!=bookmark.page)return {};
+    std::vector<std::string> result(values->begin()+2,values->end());
+    return valid_admissions(result)?result:std::vector<std::string>{};
+}
 std::optional<HeardPrefix> read_prefix(const state::StateData& data,const std::string& suffix){
     const auto* raw=state::find(data,resume_domain,"heard_prefix_v1_"+suffix);
     const auto* values=raw?std::get_if<std::vector<std::string>>(raw):nullptr;
@@ -84,6 +100,13 @@ bool heard_prefix_matches(const Position& position,std::string_view fingerprint,
         &&position.heard_prefix->fingerprint==fingerprint
         &&position.heard_prefix->duration_microseconds==duration_microseconds;
 }
+bool has_forward_preview_gap(const Position& position,std::string_view fingerprint,std::int64_t duration_microseconds) noexcept {
+    // The old UI advanced by whole seconds. Require a substantial gap rather
+    // than mistaking separate clock reads or a rounded pause for that intent.
+    return heard_prefix_matches(position,fingerprint,duration_microseconds)&&position.milliseconds>=0&&
+        position.milliseconds<=duration_microseconds/1000&&
+        position.milliseconds*1000-position.heard_prefix->microseconds>=250000;
+}
 History read_history(const state::StateData& data){
     History history;
     for(int i=0;i<3;++i){const auto suffix=std::to_string(i);const auto key=state::string_value(data,resume_domain,"key_"+suffix);
@@ -96,6 +119,7 @@ History read_history(const state::StateData& data){
             std::max<std::int64_t>(0,state::integer_value(data,resume_domain,"heard_"+suffix)),finish&&std::holds_alternative<bool>(*finish)&&std::get<bool>(*finish)},
             state::string_value(data,resume_domain,"page_"+suffix)});
         history.entries.back().position.heard_prefix=read_prefix(data,suffix);
+        history.entries.back().position.feedback_admissions=read_admissions(data,suffix,history.entries.back());
         history.entries.back().semantic_plan=read_semantic_plan(data,suffix,history.entries.back());
     }
     history.active_key=state::string_value(data,resume_domain,"active_key");history.active_owner=state::string_value(data,resume_domain,"active_owner");return history;
@@ -106,14 +130,21 @@ void write_history(state::StateData& data,const History& history){
         if(entry.key.empty()||entry.page.empty())throw std::invalid_argument("Semantic provenance requires an existing keyed page bookmark");
         validate_semantic_plan(*entry.semantic_plan);
     }
+    for(const auto& entry:history.entries)if(!valid_admissions(entry.position.feedback_admissions)||
+        (!entry.position.feedback_admissions.empty()&&(entry.key.empty()||entry.page.empty())))
+        throw std::invalid_argument("Invalid bounded feedback navigation admissions");
     auto& prefs=data.preferences[resume_domain];prefs["active_key"]=history.active_key;prefs["active_owner"]=history.active_owner;
     for(std::size_t i=0;i<3;++i){const auto suffix=std::to_string(i);
-        if(i>=history.entries.size()){for(const auto prefix:{"key_","segment_","position_","finished_","heard_","stable_","page_","heard_prefix_v1_","semantic_plan_v1_"})prefs.erase(prefix+suffix);continue;}
+        if(i>=history.entries.size()){for(const auto prefix:{"key_","segment_","position_","finished_","heard_","stable_","page_","heard_prefix_v1_","semantic_plan_v1_","feedback_admissions_v1_"})prefs.erase(prefix+suffix);continue;}
         const auto& entry=history.entries[i];prefs["key_"+suffix]=entry.key;prefs["segment_"+suffix]=entry.position.segment;
         prefs["position_"+suffix]=entry.position.milliseconds;prefs["finished_"+suffix]=entry.position.finished;prefs["heard_"+suffix]=entry.position.heard_through;
         if(entry.stable.empty())prefs.erase("stable_"+suffix);else prefs["stable_"+suffix]=entry.stable;
         if(entry.page.empty())prefs.erase("page_"+suffix);else prefs["page_"+suffix]=entry.page;
         if(entry.semantic_plan)prefs["semantic_plan_v1_"+suffix]=semantic_records(entry);else prefs.erase("semantic_plan_v1_"+suffix);
+        if(entry.position.feedback_admissions.empty())prefs.erase("feedback_admissions_v1_"+suffix);
+        else {std::vector<std::string> records{entry.key,entry.page};
+            records.insert(records.end(),entry.position.feedback_admissions.begin(),entry.position.feedback_admissions.end());
+            prefs["feedback_admissions_v1_"+suffix]=std::move(records);}
         if(entry.position.heard_prefix&&valid_prefix(*entry.position.heard_prefix)){
             const auto& prefix=*entry.position.heard_prefix;
             prefs["heard_prefix_v1_"+suffix]=std::vector<std::string>{prefix.fingerprint,
@@ -125,7 +156,8 @@ std::optional<Position> restore(const History& history,std::string_view key,std:
     const auto found=std::ranges::find(history.entries,key,&Bookmark::key);if(found==history.entries.end())return {};
     auto value=found->position;if(value.segment<0||value.milliseconds<0||static_cast<std::size_t>(value.segment)>=segments
         ||(value.finished&&static_cast<std::size_t>(value.segment)+1!=segments))return {};
-    if(value.heard_prefix&&!valid_prefix(*value.heard_prefix))value.heard_prefix.reset();return value;
+    if(value.heard_prefix&&!valid_prefix(*value.heard_prefix))value.heard_prefix.reset();
+    if(!valid_admissions(value.feedback_admissions))value.feedback_admissions.clear();return value;
 }
 History begin(History history,std::string key,std::string owner,Position value,std::string stable,std::string page){
     if(key.empty()||owner.empty()||value.segment<0||value.milliseconds<0)throw std::invalid_argument("Invalid narration owner or position");
@@ -134,7 +166,7 @@ History begin(History history,std::string key,std::string owner,Position value,s
         semantic_plan=known->semantic_plan;
         if(stable.empty())stable=known->stable;
         if(page.empty())page=known->page;
-    }else value.heard_prefix.reset();
+    }else {value.heard_prefix.reset();value.feedback_admissions.clear();}
     // Page identity is additive provenance in this same bounded bookmark.
     // A voice/provider change replaces its page slot without inheriting the old
     // recording's offset. Old entries without proven provenance are not guessed.

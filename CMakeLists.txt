@@ -1996,6 +1996,11 @@ if(BUILD_TESTING)
         "${CMAKE_SOURCE_DIR}/scripts/windows/test_app_audio_revision.py"
         --scenario cold-published --rate 3 --executable $<TARGET_FILE:LearnGameAndEngineDev>)
     set_tests_properties(native.app_published_cold_play PROPERTIES TIMEOUT 600 RUN_SERIAL TRUE LABELS "real_audio;streaming;application")
+    add_test(NAME native.app_manual_feedback_resume COMMAND "${Python3_EXECUTABLE}" -B
+        "${CMAKE_SOURCE_DIR}/scripts/windows/test_app_manual_feedback.py"
+        --executable $<TARGET_FILE:LearnGameAndEngineDev>)
+    set_tests_properties(native.app_manual_feedback_resume
+        PROPERTIES TIMEOUT 600 RUN_SERIAL TRUE LABELS "real_audio;reader_revision;application")
     add_test(NAME native.audio_storage_ledger COMMAND "${Python3_EXECUTABLE}" -B
         "${CMAKE_SOURCE_DIR}/native/narration/worker/test_audio_storage_ledger.py")
     set_tests_properties(native.audio_storage_ledger PROPERTIES TIMEOUT 120 RUN_SERIAL TRUE)
@@ -2275,6 +2280,10 @@ if(BUILD_TESTING)
         COMMAND lgaed_lesson_reader_tests --saldo-published-live 3 em_santa)
     set_tests_properties(native.reader_saldo_published_live_3x
         PROPERTIES TIMEOUT 1800 RUN_SERIAL TRUE LABELS "real_audio;streaming;reader_revision")
+    add_test(NAME native.reader_manual_forward_latest_feedback
+        COMMAND lgaed_lesson_reader_tests --manual-forward-latest-feedback)
+    set_tests_properties(native.reader_manual_forward_latest_feedback
+        PROPERTIES TIMEOUT 360 RUN_SERIAL TRUE LABELS "real_audio;reader_revision")
     # Includes full real playback for the added prerequisite/bookmark cases.
     # Its foreground-focus scenario also owns the desktop during this test.
     set_tests_properties(native.lesson_reader PROPERTIES TIMEOUT 480 RUN_SERIAL TRUE)

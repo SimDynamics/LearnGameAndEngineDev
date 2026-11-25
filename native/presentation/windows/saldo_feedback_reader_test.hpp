@@ -295,6 +295,47 @@ void published_page(const std::shared_ptr<windows::NarrationWorker>& backend,dou
             "Reopening authentic page changed a correctly checked answer");}
     f.reader->toggle();wait([&]{const auto value=f.snapshot();check(!value.planned||value.index>=paused.index,"Reopening repeated previously heard feedback before saldo's heading");
         return value.waiting_gate&&!value.playing;},"reopened authentic heading/prose reaches its next legitimate pending exercise",180000);f.reader->pause();
+    const auto coupon_position=curriculum::stable_block_position(lesson,"u3l4_alcance_predecir_cupon");
+    check(coupon_position&&coupon_position->page==1,"The reported coupon activity lost its published identity");
+    const auto coupon=coupon_position->block;
+    check(page.blocks[coupon].type==curriculum::BlockType::output_prediction&&page.blocks[coupon].answers==std::vector<std::string>{"6"}&&
+        page.blocks[coupon+1].text=="Reparar un contador de tareas"&&page.blocks[coupon+3].type==curriculum::BlockType::cpp_compiler&&lesson.compiler_puzzles_required,
+        "The reported coupon feedback/title/compiler sequence changed");
+    check(f.snapshot().segments[f.snapshot().index].block==coupon,"Published continuation stopped at a different pending exercise before the coupon");
+    submit(coupon);
+    wait([&]{const auto value=f.snapshot();return value.planned&&value.segments[value.index].block==coupon&&
+        value.segments[value.index].feedback&&value.segments[value.index].correct;},"real correct coupon answer selects its complete current feedback",180000);
+    const auto coupon_plan=f.snapshot();std::vector<std::string> expected_instruction;
+    for(const auto& part:coupon_plan.segments)if(part.block==coupon+2&&!part.feedback)expected_instruction.push_back(part.source);
+    check(!expected_instruction.empty(),"The authentic compiler instruction has no reading plan");
+    f.reader->toggle();bool coupon_feedback_played=false,title_played=false;std::optional<std::size_t> observed;
+    std::vector<std::string> played_instruction;
+    wait([&]{const auto value=f.snapshot();const auto& part=value.segments[value.index];
+        if(!observed||*observed!=value.index){observed=value.index;
+            std::cout<<"CUPON_PUBLISHED rate="<<rate<<" index="<<value.index<<" block="<<part.block<<" playing="<<value.playing
+                <<" waiting="<<value.waiting_gate<<" heard="<<value.heard_through<<" complete="<<value.page_audio_complete<<" source="<<part.source<<'\n';}
+        if(value.playing){
+            if(part.block==coupon&&part.feedback&&part.correct)coupon_feedback_played=true;
+            if(part.block==coupon+1){
+                check(coupon_feedback_played&&part.source=="Reparar un contador de tareas","Coupon feedback skipped or failed to enter its immediate authentic title");
+                for(const auto& feedback:value.segments)if(feedback.block==coupon&&feedback.feedback&&feedback.correct){
+                    check(feedback.feedback_fully_played,"The repair title started before all real coupon feedback was heard");
+                    (void)verify_feedback_recording(feedback);}
+                title_played=true;
+            }
+            if(part.block==coupon+2&&(played_instruction.empty()||played_instruction.back()!=part.source)){
+                check(title_played,"The compiler instruction skipped its preceding repair title");played_instruction.push_back(part.source);
+                (void)verify_feedback_recording(part);}
+            check(part.block<=coupon+3,"Unresolved required compiler allowed the reader to enter its following content");
+        }
+        if(!value.waiting_gate||value.playing||part.block!=coupon+3)return false;
+        check(coupon_feedback_played&&title_played&&played_instruction==expected_instruction,
+            "Coupon continuation omitted, repeated or reordered part of its title/compiler instruction");return true;
+    },"complete coupon feedback automatically reads its title/instruction and waits only at the required compiler",240000);
+    const auto coupon_response=state::get_response(read_lesson_state(f.view),lesson,page.blocks[coupon]);
+    check(coupon_response&&coupon_response->correct&&coupon_response->answer=="6","Coupon continuation lost its actual checked answer");
+    ++answered;f.reader->pause();
+    std::cout<<"PASS published coupon feedback→repair title→complete compiler instruction→unresolved required compiler gate; real answer and PCM retained\n";
     std::cout<<"PASS "<<(streaming?"streaming ":"complete ")<<"published saldo page "<<rate<<"X voice="<<voice<<": exact QA source/IDs/semantics, "<<answered<<" real answers including math, non-silent Kokoro PCM, instance-muted Windows playback and automatic immediate heading"<<(streaming?"/prose without a whole-page readiness barrier":"")<<"; root="<<root.string()<<'\n';
 }
 void run(const std::shared_ptr<windows::NarrationWorker>& backend,double rate) {
@@ -344,5 +385,100 @@ void run(const std::shared_ptr<windows::NarrationWorker>& backend,double rate) {
     f.reader->toggle();wait([&]{return f.snapshot().finished;},"explicit resume finishes the final activity");
     check(state::read_bytes(asset)==original,"The regression changed actual curricular content");
     std::cout<<"PASS saldo feedback "<<rate<<"X: real non-silent Kokoro PCM with instance-muted MediaPlayer, automatic next heading/prose, pending gate, voluntary pause and exact reopen; hidden QA cache="<<cache.string()<<'\n';
+}
+void manual_forward_latest_feedback(const std::shared_ptr<windows::NarrationWorker>& backend){
+    const auto original=state::read_bytes(published_asset);const auto published=windows::load_lesson(published_asset);
+    const auto& source=published.pages.at(1).blocks;
+    check(source.at(25).type==curriculum::BlockType::multiple_choice&&source.at(38).answers==std::vector<std::string>{"6"}&&
+        source.at(39).text=="Reparar un contador de tareas","The exact reported feedback sources changed");
+    for(const int variant:{0,1,2}){
+        const bool reopen=variant==1,legacy=variant==2;const double rate=variant==0?1.:3.;
+        auto lesson=model();lesson.id="qa_manual_forward_latest_feedback";lesson.pages.resize(1);lesson.compiler_puzzles_required=true;
+        auto& blocks=lesson.pages.front().blocks;blocks.clear();
+        for(const auto index:{25u,38u,39u,41u}){auto block=source.at(index);block.id=block.stable_id="reported_"+std::to_string(index);
+            block.address={0,blocks.size(),{},{}};blocks.push_back(std::move(block));}
+        const auto root=std::filesystem::path(L"C:/LGAED-QA")/(L"manual-forward-latest-"+std::to_wstring(GetCurrentProcessId())+L"-"+std::to_wstring(GetTickCount64()));
+        Fixture f(backend,false,true,true,"es",lesson,true,0,true,true,[&](HWND view){
+            update_lesson_preferences(view,[&](state::StateData& data){data.preferences["lesson_narration_settings"]["rate"]=rate;
+                data.preferences["lesson_narration_settings"]["kokoro_voice:es"]=std::string("em_santa");});
+        },{},root/L"audio");f.reader->set_qa_playback_muted(true);f.reader->pause();
+        const auto choice=child(f.view,1020+static_cast<int>(*blocks[0].correct_index)*2);
+        SendMessageW(f.view,WM_COMMAND,MAKEWPARAM(GetDlgCtrlID(choice),BN_CLICKED),reinterpret_cast<LPARAM>(choice));
+        SendMessageW(child(f.view,1003),BM_CLICK,0,0);
+        wait([&]{const auto value=f.snapshot();return value.planned&&value.segments[value.index].block==0&&value.segments[value.index].feedback&&value.segments[value.index].correct;},
+            "first actual correct answer selects its original long feedback",120000);
+        if(!f.snapshot().playing)f.reader->toggle();
+        wait([&]{const auto value=f.snapshot();const auto& part=value.segments[value.index];
+            return value.playing&&part.block==0&&part.feedback&&part.duration_ms>7200&&value.offset>=1400&&value.offset<=1900;
+        },"real original feedback supplies a partial heard prefix before the five-second seek",90000);
+        f.reader->pause();const auto heard=f.snapshot();f.reader->seek_seconds(5);f.reader->pause();const auto skipped=f.snapshot();
+        check(skipped.index==heard.index&&skipped.offset==heard.offset+5000&&!skipped.segments[skipped.index].feedback_fully_played,
+            "The manual-forward fixture did not create its real same-segment unheard gap");
+        const auto history=narration::read_history(read_lesson_state(f.view));const auto bookmark=std::ranges::find(history.entries,skipped.key,&narration::Bookmark::key);
+        check(bookmark!=history.entries.end()&&bookmark->position.heard_prefix&&
+            bookmark->position.heard_prefix->microseconds+4000000<bookmark->position.milliseconds*1000,
+            "Seeking forward falsely certified the skipped real PCM as heard");
+        std::cout<<"MANUAL_FORWARD_GAP reopen="<<reopen<<" legacy="<<legacy<<" rate="<<rate<<" index="<<skipped.index<<" offset="<<skipped.offset
+            <<" heard_prefix_us="<<bookmark->position.heard_prefix->microseconds<<" source="<<skipped.segments[skipped.index].source<<'\n';
+        const auto first_feedback=std::ranges::find_if(skipped.segments,[](const auto& part){return part.block==0&&part.feedback&&part.correct;});
+        check(first_feedback!=skipped.segments.end()&&static_cast<std::size_t>(first_feedback-skipped.segments.begin())==skipped.index,
+            "The controlled manual gap is not in the first original feedback sentence");
+        if(legacy){
+            // Emulate only the absent optional field of the older format. The
+            // actual PCM, real partial certificate, source plan and +5s offset
+            // remain unchanged in this private QA profile.
+            f.reader.reset();
+            update_lesson_preferences(f.view,[&](state::StateData& data){auto saved=narration::read_history(data);
+                const auto target=std::ranges::find(saved.entries,skipped.key,&narration::Bookmark::key);
+                check(target!=saved.entries.end()&&target->position.heard_prefix==bookmark->position.heard_prefix&&
+                    target->position.milliseconds==skipped.offset,"Legacy QA lost its actual partial recording evidence");
+                auto expected=saved;std::ranges::find(expected.entries,skipped.key,&narration::Bookmark::key)->position.feedback_admissions.clear();
+                target->position.feedback_admissions.clear();narration::write_history(data,saved);
+                check(narration::read_history(data)==expected,"Legacy QA altered more than the target's optional admission list");
+            });
+            f.reader=std::make_unique<LessonReader>(f.view,f.environment,backend,[]{});f.reader->set_qa_playback_muted(true);f.ready();
+            const auto restored=f.snapshot();check(!restored.playing&&!restored.allocated&&restored.key==skipped.key&&restored.index==skipped.index&&
+                restored.offset==skipped.offset&&restored.heard_through==skipped.heard_through&&!restored.segments[restored.index].feedback_fully_played,
+                "Legacy gap restoration changed its genuine pause or invented hearing credit");
+        }
+        f.reader->toggle();std::optional<std::size_t> remainder_index;
+        wait([&]{const auto value=f.snapshot();const auto& part=value.segments[value.index];
+            if(!remainder_index||*remainder_index!=value.index){remainder_index=value.index;
+                std::cout<<"MANUAL_FORWARD_REMAINDER reopen="<<reopen<<" legacy="<<legacy<<" rate="<<rate<<" index="<<value.index<<" block="<<part.block
+                    <<" offset="<<value.offset<<" playing="<<value.playing<<" waiting="<<value.waiting_gate<<" source="<<part.source<<'\n';}
+            if(!value.waiting_gate||value.playing||part.block!=1)return false;
+            std::size_t played_rest=0;for(std::size_t index=0;index<value.segments.size();++index){const auto& feedback=value.segments[index];
+                if(feedback.block!=0||!feedback.feedback||!feedback.correct)continue;
+                if(index==skipped.index)check(!feedback.feedback_fully_played,"The actual manual gap falsely became contiguous hearing credit");
+                else{check(feedback.feedback_fully_played,"The newer answer was attempted before another original feedback sentence really played");++played_rest;}}
+            check(played_rest>0&&value.heard_through<=static_cast<std::int64_t>(skipped.index),
+                "The real discontiguous feedback fixture has no remaining played sentences or fabricated a global heard prefix");return true;
+        },"after the manual seek, every remaining original feedback sentence really plays before the next unanswered gate",90000);
+        f.reader->pause();const auto before_latest=f.snapshot();
+        if(reopen){f.reader.reset();check(flush_lesson_view(f.view),"Cannot flush the isolated manual-forward pause");
+            f.reader=std::make_unique<LessonReader>(f.view,f.environment,backend,[]{});f.reader->set_qa_playback_muted(true);f.ready();
+            const auto restored=f.snapshot();check(!restored.playing&&!restored.allocated&&restored.key==before_latest.key&&restored.index==before_latest.index&&restored.offset==before_latest.offset,
+                "Reopening forgot the genuine next-exercise pause after manual preview and complete remaining feedback");}
+        const auto edit=child(f.view,1102);const auto answer=wide(blocks[1].answers.front());CHARRANGE all{0,-1};
+        SendMessageW(edit,EM_EXSETSEL,0,reinterpret_cast<LPARAM>(&all));SendMessageW(edit,EM_REPLACESEL,TRUE,reinterpret_cast<LPARAM>(answer.c_str()));
+        SendMessageW(child(f.view,1103),BM_CLICK,0,0);
+        wait([&]{const auto value=f.snapshot();return value.planned&&value.segments[value.index].block==1&&value.segments[value.index].feedback&&value.segments[value.index].correct;},
+            "latest actual coupon answer selects its own complete feedback",120000);
+        f.reader->toggle();bool latest_played=false,title_played=false;
+        wait([&]{const auto value=f.snapshot();const auto& part=value.segments[value.index];
+            check(!value.playing||part.block!=0,"Completing the latest answer replayed older explicitly skipped feedback");
+            if(value.playing&&part.block==1&&part.feedback){check(value.playback_rate==rate,"Latest feedback changed the requested actual Windows playback rate");latest_played=true;}
+            if(value.playing&&part.block==2){check(latest_played&&part.source=="Reparar un contador de tareas","The latest coupon feedback skipped its repair title");
+                for(const auto& feedback:value.segments)if(feedback.block==1&&feedback.feedback&&feedback.correct)
+                    check(feedback.feedback_fully_played,"The repair title bypassed genuinely unheard latest-answer PCM");title_played=true;}
+            if(!value.waiting_gate||value.playing||part.block!=3)return false;
+            check(title_played&&!value.segments[skipped.index].feedback_fully_played,
+                "Manual preview either blocked its later title or forged hearing credit for the old gap");return true;
+        },"latest complete feedback follows explicit manual preview and reaches its title/required compiler",90000);
+        for(std::size_t index=0;index<2;++index){const auto saved=state::get_response(read_lesson_state(f.view),lesson,blocks[index]);
+            check(saved&&saved->correct,"Manual-forward continuation lost an actual checked answer");}
+        check(state::read_bytes(published_asset)==original,"Manual-forward QA changed its real source lesson");
+        std::cout<<"PASS manual-forward +5s: actual partial PCM prefix remains honest, other original sentences really played, newer answer reads completely then its title, unresolved compiler still gates; reopen="<<reopen<<" legacy="<<legacy<<" rate="<<rate<<" root="<<root.string()<<'\n';
+    }
 }
 }

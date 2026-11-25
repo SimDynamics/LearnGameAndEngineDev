@@ -21,6 +21,9 @@ inline bool compiler_objective(const curriculum::Block& block) {
 struct FeedbackPriority { std::size_t block=0,allowed_through=0; };
 enum class BlockerReason { answer, correct_feedback };
 struct PrefixBlocker { std::size_t index=0,block=0;BlockerReason reason=BlockerReason::answer; };
+struct NoFeedbackAdmission {
+    template<class Part>bool operator()(const Part&)const{return false;}
+};
 
 inline bool same_script_region(const LessonReadingRegion& planned,const LessonReadingRegion& live) {
     return planned.key==live.key&&planned.source_text==live.source_text&&
@@ -70,9 +73,9 @@ std::optional<std::size_t> compiler_rewind_target(const Parts& parts,std::size_t
     return exercise_rewind_target(parts,current,finished,region);
 }
 
-template<std::ranges::random_access_range Parts,class Projection=std::identity>
+template<std::ranges::random_access_range Parts,class Projection=std::identity,class Admission=NoFeedbackAdmission>
 std::optional<PrefixBlocker> prefix_blocker(const Parts& parts,std::size_t destination,std::int64_t heard_through,
-        std::optional<FeedbackPriority> priority={},bool manual_forward=false,Projection region={}) {
+        std::optional<FeedbackPriority> priority={},bool manual_forward=false,Projection region={},Admission admitted={}) {
     const auto count=std::ranges::size(parts);
     std::optional<std::size_t> feedback_start;
     if(priority)for(std::size_t n=0;n<count;++n) {
@@ -94,7 +97,7 @@ std::optional<PrefixBlocker> prefix_blocker(const Parts& parts,std::size_t desti
             const bool own_feedback=feedback_start&&item.block_index==priority->block;
             const auto permitted=own_feedback?static_cast<std::int64_t>(priority->allowed_through):heard_through;
             if(item.is_exercise&&item.feedback&&item.correct&&permitted<=static_cast<std::int64_t>(n)&&
-                    !(own_feedback&&manual_forward))return PrefixBlocker{n,item.block_index,BlockerReason::correct_feedback};
+                    !(own_feedback&&manual_forward)&&!std::invoke(admitted,parts[n]))return PrefixBlocker{n,item.block_index,BlockerReason::correct_feedback};
         }
         first=last+1;
     }

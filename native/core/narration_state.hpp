@@ -2,6 +2,7 @@
 #include "core/lesson_state.hpp"
 #include "core/text_semantics.hpp"
 #include <optional>
+#include <vector>
 
 namespace lgaed::narration {
 inline constexpr const char* resume_domain="lesson_narration_resume_bounded_v1";
@@ -16,6 +17,11 @@ struct Position {
     std::int64_t segment=0, milliseconds=0, heard_through=0;
     bool finished=false;
     std::optional<HeardPrefix> heard_prefix;
+    // Source-bound navigation admissions, earned either by an explicit forward
+    // preview or by actually finishing a correct feedback sentence. These do
+    // not claim that manually skipped PCM was heard and never replace the
+    // recording-bound prefix/coarse listening evidence above.
+    std::vector<std::string> feedback_admissions;
     bool operator==(const Position&)const=default;
 };
 struct SemanticRegionProof {
@@ -47,4 +53,9 @@ void write_history(state::StateData&,const History&);
 [[nodiscard]] Position seek(Position,std::int64_t segment,std::int64_t milliseconds);
 [[nodiscard]] bool heard_prefix_matches(const Position&,std::string_view fingerprint,
                                       std::int64_t duration_microseconds) noexcept;
+// A validated legacy certificate can describe an explicit forward preview
+// without claiming that the gap was heard. Calling Play and confirming the
+// current exercise/recording remain the reader's responsibilities.
+[[nodiscard]] bool has_forward_preview_gap(const Position&,std::string_view fingerprint,
+                                         std::int64_t duration_microseconds) noexcept;
 }
