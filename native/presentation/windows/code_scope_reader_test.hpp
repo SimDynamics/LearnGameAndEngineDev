@@ -547,11 +547,12 @@ void run(const std::shared_ptr<windows::NarrationWorker>& backend,const std::fil
         "The preserved selected answer did not show its revised native feedback");
     const auto revised_plan=inspect_reading_scope(view,revised_words,snapshot(),backend,true,artifacts/"code-scope-reading-editorial.png");
     check(revised_plan==note_plan,"Editing exercise labels or feedback changed an unrelated code-and-notes voice plan");
-    const auto check_editorial_feedback=[&](bool correct,std::string_view guide){
+    const auto check_editorial_feedback=[&](bool correct,std::string_view guide,std::string_view phase){
+        std::cout<<"CODE_SCOPE_FEEDBACK phase="<<phase<<" expected_correct="<<correct<<'\n';
         wait([&]{const auto visible=lesson_reading_regions(view);
             const bool displayed=std::ranges::any_of(visible,[&](const auto& region){return
                 region.block_index==revised_position.block&&region.feedback&&region.correct==correct&&
-                region.source_text.find(guide)!=std::string::npos;});
+                (!correct||region.solved)&&region.source_text.find(guide)!=std::string::npos;});
             const auto actual=snapshot();
             const auto graded=state::get_response(read_lesson_state(view),revised_words,revised_goal);
             if(!correct&&displayed)check(std::ranges::any_of(visible,[&](const auto& region){return
@@ -562,11 +563,14 @@ void run(const std::shared_ptr<windows::NarrationWorker>& backend,const std::fil
                 region.block_index==revised_position.block&&region.feedback&&
                 region.source_text.find("Revisa el alcance de fichas antes de volver a elegir.")!=std::string::npos;}),
                 "A global incorrect field replaced selection guidance without an authenticated feedback origin");
-            return graded&&graded->correct==correct&&state::response_reviewed(*graded,revised_goal)&&
+            // The private review seal certifies a checked incorrect attempt.
+            // Correct answers clear that seal and carry their canonical verdict.
+            return graded&&graded->correct==correct&&(correct||state::response_reviewed(*graded,revised_goal))&&
                 displayed&&actual.planned&&std::ranges::any_of(actual.segments,[&](const auto& segment){return
                 segment.block==revised_position.block&&segment.feedback&&segment.correct==correct&&
                 segment.source.find(guide)!=std::string::npos;});
-        },"current authored feedback in the real native view and voice plan",180000);
+        },"native feedback after "+std::string(phase),180000);
+        std::cout<<"PASS native editorial feedback phase="<<phase<<" correct="<<correct<<" visible_and_narrated=true\n";
     };
     const auto choose_editorial_option=[&](std::string_view id){
         const auto visible=lesson_reading_regions(view);
@@ -596,23 +600,23 @@ void run(const std::shared_ptr<windows::NarrationWorker>& backend,const std::fil
     // verdict, actual guidance and saved wrong answer must survive reopening.
     constexpr std::string_view selection_guide=
         "Revisa qué afirma cada opción seleccionada y comprueba tu razonamiento con la definición o los datos del enunciado.";
-    check_editorial_feedback(false,selection_guide);
+    check_editorial_feedback(false,selection_guide,"incorrect Check");
     const auto incorrect_saved=state::get_response(read_lesson_state(view),revised_words,revised_goal);
     check(incorrect_saved&&!incorrect_saved->correct&&incorrect_saved->raw_json.find("\"antes\"")!=std::string::npos&&
         JsonObject::Parse(wide(incorrect_saved->raw_json)).GetNamedString(L"contentFingerprint")==
             JsonObject::Parse(wide(saved_response.raw_json)).GetNamedString(L"contentFingerprint"),
         "The real incorrect position was not persisted with the original evaluation fingerprint");
     close();open(revised_words);
-    check_editorial_feedback(false,selection_guide);
+    check_editorial_feedback(false,selection_guide,"incorrect reopen");
     const auto incorrect_reopened=state::get_response(read_lesson_state(view),revised_words,revised_goal);
     check(incorrect_reopened&&incorrect_reopened->raw_json==incorrect_saved->raw_json,
         "Physical reopen changed the checked incorrect position or its evaluation fingerprint");
     choose_editorial_option("antes_de_return");
-    check_editorial_feedback(true,"La posición antes_de_return conserva la respuesta original.");
+    check_editorial_feedback(true,"La posición antes_de_return conserva la respuesta original.","correct Check");
     check(selected(revised_words).raw_json==saved_response.raw_json,
         "The current labels no longer submit the original before-return answer identity");
     close();open(revised_words);
-    check_editorial_feedback(true,"La posición antes_de_return conserva la respuesta original.");
+    check_editorial_feedback(true,"La posición antes_de_return conserva la respuesta original.","correct reopen");
     check(selected(revised_words).raw_json==saved_response.raw_json&&
         state::string_value(read_lesson_state(view),"code_scope_qa","opaque")=="Keep this unrelated value exactly.\n"&&
         state::read_bytes(asset)==original_bytes&&state::read_bytes(baseline_path)==baseline_bytes&&
