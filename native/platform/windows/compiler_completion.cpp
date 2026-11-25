@@ -2279,7 +2279,12 @@ void prepare_compiler_puzzle_revisions(state::StateData& data,const curriculum::
            block.compiler_revision||!block.compiler_case_order_revisions.empty()||!block.compiler_case_revisions.empty())
             validate_compiler_puzzle_state(data,lesson,block);
     for(const auto& page:lesson.pages)for(const auto& block:page.blocks) {
-        prepare_local_dependency_epoch(data,lesson,block);
+        // Reading a lesson may adopt existing receipts, but does not start a
+        // local dependency epoch for an owner the learner has not attempted.
+        if(scoped_local_owner(block)&&
+           (has_local_scope(data,base(lesson,block))||
+            authenticated_legacy_local_key(data,lesson,block)))
+            prepare_local_dependency_epoch(data,lesson,block);
         const auto stages=compiler_case_stages(block);
         if(stages.empty()) {
             prepare_compiler_expansion(data,lesson,block);continue;
