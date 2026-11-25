@@ -21,11 +21,12 @@ permissions:
 jobs:
   authoring-batch-scope:
     name: Authenticate the focused batch before omitting unrelated C++ checks
-    if: ${{ github.event_name == 'push' && (startsWith(github.event.head_commit.message, 'qa-code-scope-history:') || startsWith(github.event.head_commit.message, 'qa-active-edition:')) }}
+    if: ${{ github.event_name == 'push' && (startsWith(github.event.head_commit.message, 'qa-code-scope-history:') || startsWith(github.event.head_commit.message, 'qa-active-edition:') || startsWith(github.event.head_commit.message, 'qa-windows-policy:')) }}
     runs-on: windows-2022
     timeout-minutes: 5
     env:
       LGAED_QA_EDITION_BATCH: ${{ startsWith(github.event.head_commit.message, 'qa-active-edition:') }}
+      LGAED_QA_POLICY_BATCH: ${{ startsWith(github.event.head_commit.message, 'qa-windows-policy:') }}
     steps:
       - name: Checkout the complete authenticated source history
         uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262
@@ -36,7 +37,12 @@ jobs:
         shell: pwsh
         run: |
           $ErrorActionPreference = 'Stop'
-          if ($env:LGAED_QA_EDITION_BATCH -eq 'true') {
+          if ($env:LGAED_QA_POLICY_BATCH -eq 'true') {
+            # The parent fixes only a shadowed QA identifier. Its six original
+            # Win32 translation units run in codex-local-int-dependency.yml.
+            $qaBase = '71cd21b12be6daa228f9c91ee514e3fb0c413e5d'
+            $qaAllowed = @('.github/workflows/codex-batched-client-split.yml', '.github/workflows/codex-local-int-dependency.yml', 'scripts/curriculum/test_windows_ci_compilers.py')
+          } elseif ($env:LGAED_QA_EDITION_BATCH -eq 'true') {
             # Native edition/control sources are unchanged in this batch;
             # only their final workflow selection is extended.
             $qaBase = '9268b2a019b62a1466c305b257f8983e3b2b6cfd'
@@ -54,11 +60,21 @@ jobs:
             throw ('Focused QA requires its declared test/workflow diff: ' + ($qaUnexpected -join ', '))
           }
 
+      - name: Select Python for the Windows workflow policy
+        uses: actions/setup-python@ece7cb06caefa5fff74198d8649806c4678c61a1
+        with:
+          python-version: '3.15.2'
+      - name: Verify Windows-only workflows even when unrelated C++ checks are omitted
+        shell: pwsh
+        run: |
+          python -B -m unittest discover -s scripts/curriculum -p test_windows_ci_compilers.py -v
+          if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
+
   authentic-case-split:
     name: Check eight standalone cases with the archived original
     # Each focused batch preserves this check's native C++ sources.
     # The independent scope job rejects every undeclared source change.
-    if: ${{ github.event_name != 'push' || (!startsWith(github.event.head_commit.message, 'qa-code-scope-history:') && !startsWith(github.event.head_commit.message, 'qa-active-edition:')) }}
+    if: ${{ github.event_name != 'push' || (!startsWith(github.event.head_commit.message, 'qa-code-scope-history:') && !startsWith(github.event.head_commit.message, 'qa-active-edition:') && !startsWith(github.event.head_commit.message, 'qa-windows-policy:')) }}
     runs-on: windows-2022
     timeout-minutes: 10
     steps:

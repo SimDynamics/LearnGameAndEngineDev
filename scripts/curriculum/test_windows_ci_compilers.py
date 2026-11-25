@@ -694,6 +694,17 @@ class WindowsCompilerPolicy(unittest.TestCase):
         self.assertIn("- .github/workflows/**", fast)
         self.assertIn("- " + policy, fast)
         self.assertIn("test_windows_ci_compilers.py -v", fast)
+        # A focused batch skips authentic-case-split. Its own job must execute
+        # the policy; a command in the skipped job cannot validate the batch.
+        for job in ("authoring-batch-scope", "authentic-case-split"):
+            with self.subTest(policy_job=job):
+                body = re.search(
+                    rf"(?ms)^  {re.escape(job)}:[ \t]*\n(.*?)(?=^  [\w-]+:[ \t]*\n|\Z)",
+                    fast)
+                self.assertIsNotNone(body, "Missing Windows policy job")
+                self.assertIn("test_windows_ci_compilers.py",
+                              self._unittest_source_files(body.group(1)),
+                              "Each execution path needs its own real policy invocation")
         multicourse = (WORKFLOWS / "programming-multicourse-contract.yml").read_text(
             encoding="utf-8")
         self.assertNotIn(policy, multicourse)

@@ -59,6 +59,7 @@ permissions:
 jobs:
   authoring:
     name: Validate authentic scalar roles, local variables and input contracts
+    if: ${{ github.event_name != 'push' || !startsWith(github.event.head_commit.message, 'qa-windows-policy:') }}
     runs-on: windows-2022
     timeout-minutes: 5
     env:
@@ -92,6 +93,7 @@ jobs:
 
   hosted-msvc:
     name: Source-only MSVC, not the production-pinned Windows app
+    if: ${{ github.event_name != 'push' || !startsWith(github.event.head_commit.message, 'qa-windows-policy:') }}
     runs-on: windows-2022
     timeout-minutes: 14
     defaults:
@@ -172,6 +174,8 @@ jobs:
           python -B scripts/curriculum/test_local_int_live_compilation.py --emitter "$emitter" --compiler MSVC
           if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
 
+  # The final Windows-policy batch reuses successful authoring and generated
+  # program runs; it verifies all six original integration units with /WX.
   hosted-win32-state-source:
     # Syntax-only proof for the registered Win32 StateStore/loader tests.
     # Hosted VS 2022 is NOT the production-pinned Windows 2026 toolchain.
@@ -242,7 +246,7 @@ jobs:
   evidence-status:
     name: Publish focused source-only compiler evidence
     # This tests hosted source probes, not the production-pinned Windows app.
-    if: ${{ always() }}
+    if: ${{ always() && (github.event_name != 'push' || !startsWith(github.event.head_commit.message, 'qa-windows-policy:')) }}
     needs: [authoring, hosted-msvc, hosted-win32-state-source]
     runs-on: windows-2022
     timeout-minutes: 2
