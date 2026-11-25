@@ -927,4 +927,155 @@ class ExtendedRepositoryGateTest(unittest.TestCase):
                 redirect_stdout(io.StringIO()):
             contract.main(['--base-ref', published, '--course', 'cpp_fundamentals'])
 
+
+class PublishedSourceProseCompositionTest(unittest.TestCase):
+    """Cover the entire reported source/prose batch on the same publication.
+
+    Use Git's complete immutable Spanish and translated family, not a fabricated
+    exercise or a mutable checkout. All new prose and spacing are QA only.
+    """
+    BASE = "08887bd1495ac745ec77b361b9dd9ac4670c23c5"
+    CASES = (
+        ("errores_y_construccion_gradual/lesson_validar_antes_y_elegir_reporte.json",
+         ("block_0000_0003", "block_0000_0004", "block_0001_0003", "block_0001_0004", "block_0002_0002")),
+        ("datos_propios_y_estado_valido/lesson_nombrar_alternativas_con_enum_class.json",
+         ("block_0001_0002", "block_0002_0002", "block_0004_0003")),
+        ("datos_propios_y_estado_valido/lesson_consultas_const_y_objetos_constantes.json",
+         ("block_0001_0002", "block_0005_0001")),
+        ("datos_propios_y_estado_valido/lesson_invariantes_y_construccion_rechazada.json",
+         ("block_0002_0003", "block_0003_0003")),
+        ("datos_propios_y_estado_valido/lesson_operaciones_y_transiciones_validas.json",
+         ("block_0003_0002",)),
+        ("datos_propios_y_estado_valido/lesson_copias_y_parametros_de_tipos_propios.json",
+         ("block_0003_0002",)),
+        ("datos_propios_y_estado_valido/lesson_valores_por_defecto_con_significado.json",
+         ("block_0001_0003", "block_0002_0001", "block_0002_0003", "block_0004_0001", "block_0004_0004", "block_0006_0003", "block_0008_0002", "block_0010_0004", "block_0011_0002")),
+        ("datos_propios_y_estado_valido/lesson_operaciones_auxiliares_y_significado_de_igualdad.json",
+         ("block_0001_0001", "block_0002_0002", "block_0004_0001", "block_0006_0003")),
+        ("datos_propios_y_estado_valido/lesson_argumentos_con_tipos_que_expresan_su_funcion.json",
+         ("block_0001_0003", "block_0001_0004", "block_0003_0001", "block_0003_0002", "block_0004_0001", "block_0007_0003")),
+        ("datos_propios_y_estado_valido/lesson_construir_y_comprobar_un_modelo_de_pedidos.json",
+         ("block_0002_0004", "block_0006_0002")),
+        ("datos_propios_y_estado_valido/lesson_transferir_invariantes_a_un_deposito.json",
+         ("block_0003_0002", "block_0003_0003", "block_0004_0001", "block_0004_0002", "block_0005_0001", "block_0006_0002", "block_0009_0006", "block_0011_0002", "block_0012_0005", "block_0014_0007")),
+        ("aleatoriedad_y_reproducibilidad/lesson_combinar_ensayos_generados_y_casos_elegidos.json",
+         ("block_0004_0007",)),
+        ("aleatoriedad_y_reproducibilidad/lesson_seleccionar_sin_repetir_candidatos.json",
+         ("block_0005_0005",)),
+        ("texto_interpretacion_y_flujos/lesson_una_gramatica_para_sumar_y_restar.json",
+         ("block_0002_0001",)),
+    )
+
+    def test_all_reported_owners_preserve_source_and_editorial_history(self):
+        import validar_json_programacion as contract
+        from format_batch_history import active_owners
+
+        repository = Path(__file__).resolve().parents[2]
+        suffix = "programming/cpp_fundamentals/"
+        count = 0
+        for relative, identities in self.CASES:
+            with self.subTest(lesson=relative):
+                family = {
+                    locale: m._git_document(repository, self.BASE,
+                        f"app/src/main/assets/content/{locale}/{suffix}{relative}")
+                    for locale in ("es", "en", "fr")
+                }
+                pristine = deepcopy(family)
+                before = family["es"]
+                old, positions = active_owners(before)
+                old_storage = m.validate(before)
+                old_meta = before["stateLayout"]
+                draft = deepcopy(before)
+                changed, _ = active_owners(draft)
+                markers = {(x["block"], x["path"]): x
+                           for x in draft["textSemantics"]["fields"]}
+                changed_paths = {}
+                for identity in identities:
+                    block = changed[identity]
+                    self.assertIn(block["type"], ("fill_code", "output_prediction", "cpp_compiler"))
+                    compiler = block["type"] == "cpp_compiler"
+                    source_field = "initialCode" if compiler else "code"
+                    ending = "\n    return 0;\n}\n"
+                    self.assertTrue(block[source_field].endswith(ending), identity)
+                    # Insert a physical blank at the final return, away from
+                    # directives, literals, continuation lines and comments.
+                    block[source_field] = block[source_field][:-len(ending)] + "\n" + ending
+                    if compiler:
+                        target, key, path = block["outputCheck"]["cases"][0], "explanation", "/outputCheck/cases/0/explanation"
+                    elif relative.endswith("lesson_una_gramatica_para_sumar_y_restar.json"):
+                        target, key, path = block, "reviewFeedback", "/reviewFeedback"
+                    else:
+                        target, key, path = block, "explanation", "/explanation"
+                    target[key] += "\nLa comprobación conserva el resultado de este ejercicio."
+                    marker = markers[identity, path]
+                    marker["sourceSha256"] = hashlib.sha256(target[key].encode("utf-8")).hexdigest()
+                    changed_paths[identity] = (source_field, path)
+                    self.assertTrue(m.code_format.require_source_lexical(old[identity], block))
+                    self.assertTrue(m.require_source_format_with_editorial(old[identity], block))
+
+                reviewed = m.prepare_v2(draft, "es", family, before)
+                m.validate_transition(before, reviewed)
+                self.assertEqual(m.validate(reviewed), old_storage)
+                actual, current_positions = active_owners(reviewed)
+                self.assertEqual(current_positions, positions)
+                meta = reviewed["stateLayout"]
+                for field in ("origin", "current", "family", "additions"):
+                    self.assertEqual(meta[field], old_meta[field])
+                for field in ("sourceFormatRevisions", "editorial"):
+                    prior = old_meta.get(field, [])
+                    self.assertEqual(meta[field][:len(prior)], prior)
+
+                archives = {x["id"]: x["block"] for x in meta["sourceFormatRevisions"]}
+                self.assertEqual(len(archives), len(meta["sourceFormatRevisions"]))
+                prior_archives = {x["id"]: x["block"]
+                                  for x in old_meta.get("sourceFormatRevisions", [])}
+                self.assertEqual(set(archives), set(prior_archives) | set(identities))
+                self.assertEqual(actual.keys(), old.keys())
+                for identity in old.keys() - set(identities):
+                    self.assertEqual(actual[identity], old[identity], identity)
+                for identity in identities:
+                    self.assertEqual(archives[identity],
+                                     prior_archives.get(identity, old[identity]), identity)
+                    self.assertEqual(actual[identity], changed[identity], identity)
+                    position = old_storage[positions[identity]]
+                    path = "app/src/main/assets/content/es/" + suffix + relative
+                    self.assertTrue(contract.preserves_source_format_revision(
+                        path, *position, old[identity], actual[identity],
+                        previous_document=before, current_document=reviewed), identity)
+                    if actual[identity]["type"] != "cpp_compiler":
+                        self.assertEqual(actual[identity]["answers"], old[identity]["answers"])
+                    else:
+                        # Restoring only the authored guide and code must give
+                        # the complete previous executable grading contract.
+                        restored = m.code_format.source_projection(actual[identity], old[identity])
+                        restored["outputCheck"]["cases"][0]["explanation"] = old[identity]["outputCheck"]["cases"][0]["explanation"]
+                        self.assertEqual(restored, old[identity], identity)
+                    count += 1
+
+                # Attack the source despite replacing the last proof digest:
+                # changing the return token is not a formatting operation.
+                identity = identities[0]
+                source_field, guide_path = changed_paths[identity]
+                forged = deepcopy(reviewed)
+                bad = active_owners(forged)[0][identity]
+                ending = "\n    return 0;\n}\n"
+                bad[source_field] = bad[source_field][:-len(ending)] + "\n    return 1;\n}\n"
+                edge = next(x for x in reversed(forged["stateLayout"]["editorial"])
+                            if x["id"] == identity)
+                edge["afterSha256"] = m.fingerprint(bad)
+                with self.assertRaises(m.LayoutError):
+                    m.validate_transition(before, forged)
+
+                stale = deepcopy(reviewed)
+                prior_marker = next(x for x in before["textSemantics"]["fields"]
+                                    if (x["block"], x["path"]) == (identity, guide_path))
+                next(x for x in stale["textSemantics"]["fields"]
+                     if (x["block"], x["path"]) == (identity, guide_path))["sourceSha256"] = prior_marker["sourceSha256"]
+                with self.assertRaises(m.LayoutError):
+                    m.validate_transition(before, stale)
+                self.assertEqual(family, pristine)
+
+        self.assertEqual(count, 48)
+
+
 if __name__ == '__main__': unittest.main(verbosity=2)
