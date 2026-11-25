@@ -534,7 +534,7 @@ const InputDecisionPublication& input_decision_publication(std::string_view id, 
         return *found;
     }
     if(active_loops) {
-        static constexpr std::array<InputDecisionPublication,2> active{{
+        static constexpr std::array<InputDecisionPublication,2> active_loop_publications{{
             {"u4l1","block_0006_0002","block_0006_0006",
              "b03928e0df3ee47371acb6b9c27560986d0be3b9b000d28ec9aa89494b65202b",
              "aa62f480ddcb8ced4b0c6377a99e0ac0451d4fe91b5ec6b413b53cd038aed00d",4,3,0,0,{1,2,3}},
@@ -542,8 +542,8 @@ const InputDecisionPublication& input_decision_publication(std::string_view id, 
              "1df1821c5413cb148af787147b55b81a8580d567e7d71cf3ebbadcc8c2a219b9",
              "70a0adf8ba5e11cc67d993e8608a9921c4674f31bab6a16f9ed42879a97e79bf",4,3,0,0,{1,2,3}},
         }};
-        const auto found=std::ranges::find(active,id,&InputDecisionPublication::id);
-        check(found!=active.end(),"Unknown active loop publication");
+        const auto found=std::ranges::find(active_loop_publications,id,&InputDecisionPublication::id);
+        check(found!=active_loop_publications.end(),"Unknown active loop publication");
         return *found;
     }
     static constexpr std::array<InputDecisionPublication,8> publications{{
