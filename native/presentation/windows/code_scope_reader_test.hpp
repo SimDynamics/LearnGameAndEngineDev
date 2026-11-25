@@ -457,10 +457,26 @@ void run(const std::shared_ptr<windows::NarrationWorker>& backend,const std::fil
     const auto restored_answer=selected(current);check(restored_answer.raw_json==saved_response.raw_json&&restored_answer.reviewed_answer_identity==saved_response.reviewed_answer_identity,
         "Adding a presentation rewrote the user's existing answer or its reviewed identity");
     const auto migrated=snapshot();const auto adopted_history=narration::read_history(read_lesson_state(view));
-    check(!migrated.playing&&!migrated.allocated&&!migrated.finished&&adopted_history.entries.size()==old_history.entries.size()
-        &&std::ranges::count(adopted_history.entries,page_slot,&narration::Bookmark::page)==1
-        &&std::ranges::find(adopted_history.entries,migrated.key,&narration::Bookmark::key)!=adopted_history.entries.end(),
-        "The new presentation lost/duplicated the previous page bookmark or started playback");
+    const auto current_page_slot=lesson_page_state(view).narration_page_identity;
+    check(current_page_slot!=page_slot,
+        "The authenticated publication pair no longer exercises an actual page-layout revision");
+    check(!migrated.playing&&!migrated.allocated&&!migrated.finished,
+        "Adopting the new presentation started playback or marked the unread revision complete");
+    check(adopted_history.entries.size()==old_history.entries.size(),
+        "Adopting the new presentation added or removed a bounded history slot");
+    check(std::ranges::count(adopted_history.entries,current_page_slot,&narration::Bookmark::page)==1&&
+        std::ranges::count(adopted_history.entries,page_slot,&narration::Bookmark::page)==0&&
+        std::ranges::find(adopted_history.entries,migrated.key,&narration::Bookmark::key)!=adopted_history.entries.end()&&
+        std::ranges::find(adopted_history.entries,historical.key,&narration::Bookmark::key)==adopted_history.entries.end(),
+        "The authenticated bookmark was not rekeyed exactly once to the current page and voice plan");
+    for(std::size_t slot=0;slot<old_history.entries.size();++slot){
+        if(old_history.entries[slot].key==historical.key){
+            check(adopted_history.entries[slot].key==migrated.key&&adopted_history.entries[slot].page==current_page_slot,
+                "Migrating the current page changed its bounded history recency");
+        }else check(adopted_history.entries[slot]==old_history.entries[slot],
+            "Migrating the current page changed another saved page slot");
+    }
+    std::cout<<"PASS authenticated reading-page migration: one current slot, no obsolete slot, unchanged history size/recency and no autoplay\n";
     inspect_layout(view,host,current,position.block,1536,864,100,artifacts/"code-scope-4k-250-logical.png");
     inspect_layout(view,host,current,position.block,640,390,150,artifacts/"code-scope-minimum-150.png");
     ready();
