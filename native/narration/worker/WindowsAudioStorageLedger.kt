@@ -31,7 +31,8 @@ internal class WindowsAudioStorageLedger(
     private var watcher: WatchService? = null
     private var registration: WatchKey? = null
     private var identity: DirectoryIdentity? = null
-    private val sizes = HashMap<String,Long>()
+    // Path keys use the native provider's case rules, including Windows aliases.
+    private val sizes = HashMap<Path,Long>()
     private var total = 0L
     private var dirty = true
     private var closed = false
@@ -53,10 +54,11 @@ internal class WindowsAudioStorageLedger(
     }
     private fun update(name: String) {
         if (!audioName(name)) return
-        val previous = sizes[name] ?: 0L
+        val entry = directory.resolve(name)
+        val previous = sizes[entry] ?: 0L
         val current = size(name)
         total = Math.addExact(total - previous,current ?: 0L)
-        if (current == null) sizes.remove(name) else sizes[name] = current
+        if (current == null) sizes.remove(entry) else sizes[entry] = current
     }
     private fun discardWatcher() {
         registration?.cancel();registration=null
@@ -71,14 +73,15 @@ internal class WindowsAudioStorageLedger(
             registration = directory.register(next,ENTRY_CREATE,ENTRY_DELETE,ENTRY_MODIFY)
             if (identity() != before) return
             // Register first: mutations during enumeration are replayed below.
-            val replacement = HashMap<String,Long>();var used=0L
+            val replacement = HashMap<Path,Long>();var used=0L
             Files.newDirectoryStream(directory).use { entries ->
                 scans++
                 var visited=0
                 for (entry in entries) {
                     if(visited++%128==0)checkCancellation()
                     val name=entry.fileName.toString();val bytes=size(name) ?: continue
-                    replacement[name]=bytes;used=Math.addExact(used,bytes)
+                    val previous=replacement.put(directory.resolve(name),bytes) ?: 0L
+                    used=Math.addExact(used-previous,bytes)
                 }
             }
             checkCancellation();if (identity() != before) return

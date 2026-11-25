@@ -25,6 +25,32 @@ fun main(arguments: Array<String>) {
     write("initial.wav",100);write("initial.ogg",40);write("ignore.timings.json",300);write(".ignore.part",400)
     WindowsAudioStorageLedger(cache) { free }.use { ledger ->
         check(ledger.usedBytes()==140L && ledger.scans==1L) { "Initial WAV/Opus inventory counted unrelated files" }
+        // Windows resolves these spellings to one file. A published callback
+        // is synchronous, so this exposes duplicate accounting independently
+        // of when the native rename notifications reach the watcher.
+        val lower=cache.resolve("initial.wav");val upper=cache.resolve("INITIAL.wav")
+        check(Files.isSameFile(lower,upper)) { "This regression needs ordinary Windows case-insensitive paths" }
+        val originalBytes=Files.readAllBytes(lower);val originalTime=Files.getLastModifiedTime(lower)
+        ledger.published(upper)
+        check(ledger.requireSpace(1,141).used==140L) { "A case alias counted one recording twice or rejected its valid budget" }
+        check(Files.readAllBytes(lower).contentEquals(originalBytes) && Files.getLastModifiedTime(lower)==originalTime) {
+            "Accounting for a case alias modified the recording"
+        }
+        // Use an intermediate name so even a provider that short-circuits a
+        // same-file move must actually change the stored spelling.
+        val intermediate=cache.resolve(".case-rename.part")
+        Files.move(lower,intermediate,ATOMIC_MOVE)
+        Files.move(intermediate,upper,ATOMIC_MOVE)
+        ledger.published(upper)
+        check(ledger.usedBytes()==140L) { "A case-only rename duplicated its recording" }
+        write("INITIAL.wav",150)
+        await("case-renamed recording resize") { ledger.usedBytes()==190L }
+        Files.delete(upper)
+        await("case-renamed recording deletion") { ledger.usedBytes()==40L }
+        write("initial.wav",100)
+        await("original spelling restored") { ledger.usedBytes()==140L }
+        check(ledger.scans==1L) { "Case aliases or renames forced a full-bank rescan" }
+
         write("external.wav",70)
         await("external creation") { ledger.usedBytes()==210L }
         write("external.wav",120)
@@ -100,5 +126,5 @@ fun main(arguments: Array<String>) {
             check(ledgers.observedDirectories<=2) { "Alternating cache roots leaked watcher handles" }
         }
     }
-    println("PASS Windows real FS ledger: external create/resize/delete, 50 misses with ONE scan, idempotent publication, controlled overflow recovery, directory replacement, zero/full/low-free budget, cancellable partial scan, cache-hit bypass and watcher close/LRU; QA=$root")
+    println("PASS Windows real FS ledger: case-alias publication/rename/resize/delete, external create/resize/delete, 50 misses with ONE scan, idempotent publication, controlled overflow recovery, directory replacement, zero/full/low-free budget, cancellable partial scan, cache-hit bypass and watcher close/LRU; QA=$root")
 }
