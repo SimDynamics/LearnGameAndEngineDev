@@ -1,4 +1,4 @@
-name: Windows renamed prose and observed compiler rejection continuity
+name: Windows compiler review and editorial continuity
 
 on:
   push:
@@ -8,11 +8,13 @@ on:
       - cmake/CompilerReviewContinuityTests.cmake
       - cmake/HostedCourseEditionQA/CMakeLists.txt
       - native/core/lesson.hpp
+      - native/core/named_rule*.hpp
       - native/platform/windows/compiler_completion.*
       - native/platform/windows/cpp_runner.*
       - native/platform/windows/content_loader.cpp
       - native/platform/windows/identifier_rename_prose_tests.cpp
       - native/platform/windows/private_probe_review_tests.cpp
+      - native/platform/windows/named_rule_runtime_tests.cpp
       - native/platform/windows/local_dependency_receipt_tests.cpp
       - native/presentation/windows/lesson_view.cpp
       - scripts/curriculum/stable_state_layout.py
@@ -23,6 +25,7 @@ on:
       - scripts/curriculum/test_identifier_rename_archive_preview.py
       - scripts/curriculum/test_general_choice_prose_history.py
       - docs/examples/p3_ownership_authoring.json
+      - app/src/main/assets/content/es/programming/programming_practice_tools/comprobaciones_repetibles/lesson_nombrar_reglas_y_separar_acuerdos.json
       - app/src/main/assets/content/es/programming/cpp_language_memory_oop/composicion_y_herencia_publica/lesson_copiar_objetos_sin_perder_su_clase_concreta.json
       - app/src/main/assets/content/es/programming/cpp_language_memory_oop/clases_con_varias_bases/lesson_reunir_dos_bases_independientes_en_un_objeto.json
   workflow_dispatch:
@@ -36,11 +39,11 @@ concurrency:
 
 jobs:
   windows-review-continuity:
-    name: Authenticate prose history and retain real MSVC semantic rejections
+    name: Preserve authenticated history and observed MSVC reviews
     runs-on: windows-2025-vs2026
     timeout-minutes: 30
     env:
-      QA_REVIEW_SCOPE: ${{ github.event_name == 'push' && startsWith(github.event.head_commit.message, 'qa-rename-prose:') && 'rename-prose' || github.event_name == 'push' && startsWith(github.event.head_commit.message, 'qa-rename-local:') && 'rename-local' || 'all' }}
+      QA_REVIEW_SCOPE: ${{ github.event_name == 'push' && startsWith(github.event.head_commit.message, 'qa-rename-prose:') && 'rename-prose' || github.event_name == 'push' && startsWith(github.event.head_commit.message, 'qa-rename-local:') && 'rename-local' || github.event_name == 'push' && startsWith(github.event.head_commit.message, 'qa-named-rule-review:') && 'named-rule' || 'all' }}
     steps:
       - name: Read exact Codex source and authenticated history
         uses: actions/checkout@v4
@@ -56,6 +59,7 @@ jobs:
         with:
           arch: x64
       - name: Preserve previous rename and independent prose behavior
+        if: env.QA_REVIEW_SCOPE != 'named-rule'
         working-directory: scripts/curriculum
         shell: pwsh
         run: |
@@ -74,8 +78,10 @@ jobs:
           cmake -S cmake/HostedCourseEditionQA -B $qaReviewBuild -G Ninja -DCMAKE_BUILD_TYPE=Debug
           if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
           $qaReviewTargets = @('lgaed_identifier_rename_prose_tests')
-          if ($env:QA_REVIEW_SCOPE -eq 'all') {
-            $qaReviewTargets += @('lgaed_private_probe_review_tests', 'lgaed_local_dependency_receipt_tests', 'lgaed_curricular_windows')
+          if ($env:QA_REVIEW_SCOPE -eq 'named-rule') {
+            $qaReviewTargets = @('lgaed_u3_named_rule_runtime_tests')
+          } elseif ($env:QA_REVIEW_SCOPE -eq 'all') {
+            $qaReviewTargets += @('lgaed_private_probe_review_tests', 'lgaed_local_dependency_receipt_tests', 'lgaed_curricular_windows', 'lgaed_u3_named_rule_runtime_tests')
           } elseif ($env:QA_REVIEW_SCOPE -eq 'rename-local') {
             $qaReviewTargets += 'lgaed_local_dependency_receipt_tests'
           }
@@ -89,9 +95,12 @@ jobs:
           $qaReviewBuild = Join-Path $env:RUNNER_TEMP 'lgaed-review-continuity-qa'
           $qaReviewPattern = '^native[.]identifier_rename_prose(_authoring)?$'
           $qaReviewExpected = @('native.identifier_rename_prose', 'native.identifier_rename_prose_authoring')
-          if ($env:QA_REVIEW_SCOPE -eq 'all') {
-            $qaReviewPattern = '^native[.](identifier_rename_prose(_authoring)?|polymorphic_clone_private_review|dual_interface_private_review|local_dependency_receipts)$'
-            $qaReviewExpected += @('native.polymorphic_clone_private_review', 'native.dual_interface_private_review', 'native.local_dependency_receipts')
+          if ($env:QA_REVIEW_SCOPE -eq 'named-rule') {
+            $qaReviewPattern = '^native[.]named_rule_runtime$'
+            $qaReviewExpected = @('native.named_rule_runtime')
+          } elseif ($env:QA_REVIEW_SCOPE -eq 'all') {
+            $qaReviewPattern = '^native[.](identifier_rename_prose(_authoring)?|polymorphic_clone_private_review|dual_interface_private_review|local_dependency_receipts|named_rule_runtime)$'
+            $qaReviewExpected += @('native.polymorphic_clone_private_review', 'native.dual_interface_private_review', 'native.local_dependency_receipts', 'native.named_rule_runtime')
           } elseif ($env:QA_REVIEW_SCOPE -eq 'rename-local') {
             $qaReviewPattern = '^native[.](identifier_rename_prose(_authoring)?|local_dependency_receipts)$'
             $qaReviewExpected += 'native.local_dependency_receipts'
