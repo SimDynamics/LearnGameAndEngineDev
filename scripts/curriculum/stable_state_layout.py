@@ -2232,7 +2232,10 @@ def _authenticated_identifier_renames(
                 "C++ rename belongs to another lesson, family or storage owner")
         # Copy only current source slots into immutable archived metadata;
         # lexical proof and the ORIGINAL endpoint hash authenticate these bytes.
-        endpoint = code_format.source_projection(old, now)
+        try:
+            endpoint = code_format.source_projection(old, now)
+        except code_format.SourceFormatError as exc:
+            raise LayoutError(f"Unsafe C++ rename for {identity}: {exc}") from exc
         before, after = fingerprint(old), fingerprint(endpoint)
         endpoints[identity] = endpoint
         require(record["beforeSha256"] == before and
