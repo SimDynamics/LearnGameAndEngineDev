@@ -1992,6 +1992,16 @@ if(BUILD_TESTING)
         "${CMAKE_SOURCE_DIR}/scripts/windows/test_app_audio_revision.py"
         --executable $<TARGET_FILE:LearnGameAndEngineDev>)
     set_tests_properties(native.app_audio_revision PROPERTIES TIMEOUT 3600 RUN_SERIAL TRUE LABELS "real_audio;application")
+    add_test(NAME native.app_published_cold_play COMMAND "${Python3_EXECUTABLE}" -B
+        "${CMAKE_SOURCE_DIR}/scripts/windows/test_app_audio_revision.py"
+        --scenario cold-published --rate 3 --executable $<TARGET_FILE:LearnGameAndEngineDev>)
+    set_tests_properties(native.app_published_cold_play PROPERTIES TIMEOUT 600 RUN_SERIAL TRUE LABELS "real_audio;streaming;application")
+    add_test(NAME native.audio_storage_ledger COMMAND "${Python3_EXECUTABLE}" -B
+        "${CMAKE_SOURCE_DIR}/native/narration/worker/test_audio_storage_ledger.py")
+    set_tests_properties(native.audio_storage_ledger PROPERTIES TIMEOUT 120 RUN_SERIAL TRUE)
+    add_test(NAME native.app_audio_order_oracle COMMAND "${Python3_EXECUTABLE}" -B
+        "${CMAKE_SOURCE_DIR}/scripts/windows/test_app_audio_order_oracle.py")
+    set_tests_properties(native.app_audio_order_oracle PROPERTIES TIMEOUT 30)
     add_test(NAME native.app_audio_qa_transport COMMAND "${Python3_EXECUTABLE}" -B
         "${CMAKE_SOURCE_DIR}/scripts/windows/test_app_audio_qa_transport.py")
     set_tests_properties(native.app_audio_qa_transport PROPERTIES TIMEOUT 30 RUN_SERIAL TRUE)
@@ -2250,6 +2260,9 @@ if(BUILD_TESTING)
     endforeach()
     add_test(NAME native.lesson_reader COMMAND lgaed_lesson_reader_tests)
     add_test(NAME native.reader_page_synthesis_order COMMAND lgaed_lesson_reader_tests --synthesis-order)
+    add_test(NAME native.reader_published_cold_play COMMAND lgaed_lesson_reader_tests --published-cold-play 3)
+    set_tests_properties(native.reader_published_cold_play
+        PROPERTIES TIMEOUT 300 RUN_SERIAL TRUE LABELS "real_audio;streaming")
     set_tests_properties(native.reader_page_synthesis_order
         PROPERTIES TIMEOUT 300 RUN_SERIAL TRUE LABELS "real_audio;page_revision")
     foreach(_rate IN ITEMS 1 2 3)

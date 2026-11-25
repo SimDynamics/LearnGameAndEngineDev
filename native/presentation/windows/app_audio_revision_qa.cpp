@@ -154,6 +154,14 @@ struct AppAudioRevisionQa::Impl {
             SendMessageW(edit,EM_REPLACESEL,TRUE,reinterpret_cast<LPARAM>(answer.c_str()));
             const auto check=control(lesson,1003+block*100);require(IsWindowEnabled(check),"The ordinary QA check button is not ready for submission");
             SendMessageW(check,BM_CLICK,0,0);
+        }else if(name==L"answer_choice"){
+            require(lesson&&reader,"No QA lesson/reader");const auto block=static_cast<int>(value.GetNamedNumber(L"block"));
+            const auto option=static_cast<int>(value.GetNamedNumber(L"option"));
+            const auto radio=control(lesson,1020+block*100+option*2);
+            require(IsWindowEnabled(radio),"The ordinary QA choice is disabled");
+            SendMessageW(GetParent(radio),WM_COMMAND,MAKEWPARAM(GetDlgCtrlID(radio),BN_CLICKED),reinterpret_cast<LPARAM>(radio));
+            const auto check=control(lesson,1003+block*100);require(IsWindowEnabled(check),"The ordinary QA choice check is not ready");
+            SendMessageW(check,BM_CLICK,0,0);
         }else if(name==L"flush"){require(!lesson||flush_lesson_view(lesson),"Cannot flush the isolated QA lesson");}
         else if(name==L"inspect"){inspect_state();}
         else if(name==L"close"){PostMessageW(access.application,WM_CLOSE,0,0);}
@@ -173,6 +181,7 @@ struct AppAudioRevisionQa::Impl {
             const auto snapshot=reader->snapshot();JsonObject data;
             boolean(data,L"playing",snapshot.playing);boolean(data,L"allocated",snapshot.allocated);boolean(data,L"planned",snapshot.planned);
             boolean(data,L"preparing",snapshot.preparing);boolean(data,L"finished",snapshot.finished);boolean(data,L"waitingGate",snapshot.waiting_gate);
+            boolean(data,L"waitingVerification",snapshot.waiting_verification);boolean(data,L"preparationSuspended",snapshot.preparation_suspended);
             number(data,L"index",snapshot.index);number(data,L"offset",static_cast<double>(snapshot.offset));number(data,L"heardThrough",static_cast<double>(snapshot.heard_through));
             number(data,L"rate",snapshot.rate);number(data,L"playbackRate",snapshot.playback_rate);string(data,L"key",snapshot.key);string(data,L"error",snapshot.error);
             string(data,L"pageAudioRevision",snapshot.page_audio_revision);boolean(data,L"pageAudioComplete",snapshot.page_audio_complete);

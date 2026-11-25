@@ -388,11 +388,12 @@ std::vector<NarrationSegment> NarrationWorker::plan(std::string_view text,std::s
 }
 std::vector<NarrationSegment> NarrationWorker::plan(std::string_view text,std::string_view language,std::stop_token stop,
     std::string_view reading_context,std::string_view math_mode,NarrationOutputDataPolicy output_data_policy,
-    const std::optional<curriculum::TextSemantics>& semantics,NarrationSemanticPolicy semantic_policy,bool previous_prose_inference){
+    const std::optional<curriculum::TextSemantics>& semantics,NarrationSemanticPolicy semantic_policy,bool previous_prose_inference,std::string_view recording_voice){
     if(reading_context!="auto"&&reading_context!="cpp"&&reading_context!="cpp_previous_parentheses")throw std::invalid_argument("Invalid narration reading context");
     if(math_mode!="auto"&&math_mode!="text"&&math_mode!="inline"&&math_mode!="block")throw std::invalid_argument("Invalid narration mathematical mode");
     ensure_winrt_apartment();JsonObject request;put(request,L"command","plan");put(request,L"text",text);put(request,L"language",language);
     put(request,L"readingContext",reading_context);put(request,L"mathMode",math_mode);
+    if(!recording_voice.empty())put(request,L"voice",recording_voice);
     if(semantics){
         curriculum::validate_text_semantics(*semantics);
         if(semantics->source!=text)throw std::invalid_argument("Narration semantics require their exact original source");
@@ -421,6 +422,8 @@ std::vector<NarrationSegment> NarrationWorker::plan(std::string_view text,std::s
     const auto reply=impl_->call(request,stop);std::vector<NarrationSegment> result;
     for(const auto& item:reply.GetNamedArray(L"segments")){const auto object=item.GetObject();NarrationSegment segment{string(object,L"text"),string(object,L"preparedText"),index(object,L"sourceStart"),index(object,L"sourceEnd")};
         segment.spoken=string(object,L"spokenText");
+        segment.recording_key=string(object,L"key");
+        if(object.HasKey(L"key")&&!digest_string(segment.recording_key))throw std::runtime_error("Invalid narration recording key");
         const auto ranges=[&](const wchar_t* key,std::vector<SpeechRange>& target){if(!object.HasKey(key))return;
             for(const auto& value:object.GetNamedArray(key)){const auto range=value.GetObject();target.push_back({index(range,L"start"),index(range,L"end")});}};
         ranges(L"spokenRanges",segment.spoken_ranges);ranges(L"displayedRanges",segment.displayed_ranges);
@@ -486,6 +489,8 @@ NarrationPagePlan NarrationWorker::page_plan(std::string_view raw_lesson,std::si
     if(result.page_id.empty()||!digest_string(result.revision))throw std::runtime_error("Narration worker returned no authenticated page revision");
     for(const auto& item:reply.GetNamedArray(L"segments")){const auto value=item.GetObject();NarrationSegment segment;
         segment.text=string(value,L"text");segment.prepared=string(value,L"preparedText");segment.spoken=string(value,L"spokenText");
+        segment.recording_key=string(value,L"key");
+        if(value.HasKey(L"key")&&!digest_string(segment.recording_key))throw std::runtime_error("Invalid canonical narration recording key");
         if(segment.spoken.empty())segment.spoken=segment.text;
         if(segment.text.empty()||segment.prepared.empty())throw std::runtime_error("Invalid canonical page narration segment");
         result.segments.push_back(std::move(segment));}

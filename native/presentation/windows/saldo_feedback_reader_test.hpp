@@ -4,6 +4,91 @@
 namespace saldo_feedback_reader_test {
 const std::filesystem::path published_asset=std::filesystem::path(build::source_root)/
     "app/src/main/assets/content/es/programming/cpp_fundamentals/edition_es_1__expresiones_y_decisiones/lesson_alternativas_y_fronteras.json";
+void cold_play(const std::shared_ptr<windows::NarrationWorker>& backend,double rate,std::string_view voice="ef_dora"){
+    const auto runtime=std::filesystem::path(build::source_root)/"out/narration/runtime.json";
+    const auto catalog=windows::kokoro_voice_catalog(runtime);
+    check(std::ranges::any_of(catalog,[&](const auto& value){return value.id==voice&&value.language=="es";}),"Cold-play voice is not an installed-catalog Spanish identity");
+    const auto root=std::filesystem::path(L"C:/LGAED-QA")/(L"published-cold-play-"+std::to_wstring(GetCurrentProcessId())+L"-"+std::to_wstring(GetTickCount64()));
+    const auto content=std::filesystem::path(build::source_root)/"app/src/main/assets/content";
+    const auto copy=root/L"content"/published_asset.lexically_relative(content);std::filesystem::create_directories(copy.parent_path());
+    for(const auto& source:{published_asset,published_asset.parent_path().parent_path()/L"course_cpp_fundamentals.json",
+        published_asset.parent_path()/(L"unit_"+published_asset.parent_path().filename().native()+L".json")}){
+        const auto destination=root/L"content"/source.lexically_relative(content);std::filesystem::create_directories(destination.parent_path());
+        std::filesystem::copy_file(source,destination);
+    }
+    const auto original=state::read_bytes(published_asset);const auto lesson=windows::load_lesson(copy);
+    const std::array<std::string,7> sentences{
+        "En programación, un bloque agrupa instrucciones que el programa trata como una unidad.",
+        "En este ejemplo de C++, cada bloque empieza con una llave de apertura { y termina con la llave de cierre } que le corresponde.",
+        "La { que sigue a int main() abre el cuerpo de la función main.",
+        "Dentro de ese cuerpo, la { que sigue a if (pedidos > 0) abre otro bloque.",
+        "El bloque del if está anidado dentro del de main.","La primera } cierra el cuerpo del if.","La última } cierra el cuerpo de main."};
+    const auto initialize=[&](state::StateData& data){data.preferences["native_windows"]["ui_language"]=std::string("es");
+        for(const auto& block:lesson.pages.front().blocks)if(block.type==curriculum::BlockType::multiple_choice){
+            check(block.correct_index&&curriculum::evaluate_choice(block,*block.correct_index).correct,"Invalid prior-page control answer");
+            state::Response response;response.selected=static_cast<std::int64_t>(*block.correct_index);response.answer=block.options[*block.correct_index];response.correct=true;
+            state::mark_response_reviewed(response,block);state::put_response(data,lesson,block,response);}
+        check(state::mark_page_reached(data,lesson,0),"Cannot admit the isolated current page");state::save_current_page(data,lesson,1);
+    };
+    Fixture f(backend,false,true,false,"es",lesson,true,0,true,false,[&](HWND view){
+        update_lesson_preferences(view,[&](state::StateData& data){data.preferences["lesson_narration_settings"]["rate"]=rate;
+            data.preferences["lesson_narration_settings"]["kokoro_voice:es"]=std::string(voice);});
+    },initialize,root/L"audio",true);
+    f.reader->set_qa_playback_muted(true);
+    const auto verify_voice=[&]{const auto data=read_lesson_state(f.view);
+        check(state::string_value(data,"lesson_narration_settings","kokoro_voice:es")==voice&&windows::selected_kokoro_voice(data,"es",runtime)==voice,
+            "Cold reader preferences or the catalog resolver selected a different Spanish voice");};
+    verify_voice();
+    const auto started=GetTickCount64();std::vector<std::size_t> trace;bool first_available=false,caption_played=false,caption_before_complete=false;
+    bool next_prose=false,prose_before_complete=false;ULONGLONG first_available_ms=0,caption_ms=0,prose_ms=0,last_observed=0;
+    std::optional<std::size_t> last_index;std::size_t last_available=std::numeric_limits<std::size_t>::max();
+    std::cout<<"COLD_BEGIN rate="<<rate<<" voice="<<voice<<" root="<<root.string()<<" complete_barrier=false\n";
+    f.reader->toggle(); // Intentionally precedes both planning and complete-page audio.
+    const auto observe=[&](std::string_view phase){const auto value=f.reader->snapshot();const auto now=GetTickCount64();
+        const auto available=std::ranges::count_if(value.segments,[](const auto& part){return part.available;});
+        if(!last_index||*last_index!=value.index||last_available!=static_cast<std::size_t>(available)||now-last_observed>2000){
+            std::cout<<"COLD_STATE phase="<<phase<<" elapsed_ms="<<now-started<<" index="<<value.index<<" offset="<<value.offset
+                <<" planned="<<value.planned<<" preparing="<<value.preparing<<" allocated="<<value.allocated<<" playing="<<value.playing
+                <<" waiting="<<value.waiting_gate<<" suspended="<<value.preparation_suspended<<" verifying="<<value.waiting_verification
+                <<" available="<<available<<'/'<<value.segments.size()<<" complete="<<value.page_audio_complete<<" error="<<value.error;
+            if(value.index<value.segments.size())std::cout<<" current_available="<<value.segments[value.index].available<<" source="<<value.segments[value.index].source;
+            std::cout<<'\n';last_index=value.index;last_available=static_cast<std::size_t>(available);last_observed=now;
+        }
+        check(value.error.empty(),"Cold current-page reader failed: "+value.error);return value;
+    };
+    wait([&]{const auto value=observe("cold");if(!value.planned||value.segments.empty())return false;
+        check(lesson_page_state(f.view).index==1,"Cold playback opened another page");
+        if(!first_available&&value.segments.front().available){first_available=true;first_available_ms=GetTickCount64()-started;
+            check(!value.page_audio_complete,"The cold regression reached an accidental whole-page preparation barrier");}
+        if(value.playing){if(trace.empty()||trace.back()!=value.index)trace.push_back(value.index);
+            const auto& current=value.segments[value.index];check(current.block<5&&!current.feedback,"Cold prefix crossed the first unanswered exercise");
+            if(current.block==2&&current.source=="Ejemplo de código C más más."){caption_played=true;caption_before_complete=!value.page_audio_complete;caption_ms=GetTickCount64()-started;}
+            if(caption_played&&current.block==3&&value.offset>=120){next_prose=true;prose_before_complete=!value.page_audio_complete;prose_ms=GetTickCount64()-started;return true;}
+        }
+        return false;
+    },"cold real paragraph, passive C++ caption and next prose before full generation",240000);
+    f.reader->pause();const auto paused=f.snapshot();check(first_available&&caption_played&&caption_before_complete&&next_prose&&prose_before_complete,
+        "Cold narration waited for the complete canonical tail before its C++ caption and next paragraph");
+    std::vector<std::string> paragraph;for(const auto index:trace)if(paused.segments[index].block==1)paragraph.push_back(paused.segments[index].source);
+    check(std::ranges::equal(paragraph,sentences),"Cold playback skipped or repeated one of the seven actual paragraph sentences");
+    for(const auto& source:sentences){const auto part=std::ranges::find(paused.segments,source,&LessonReaderSegmentSnapshot::source);
+        check(part!=paused.segments.end()&&part->available,"An actual prefix sentence has no available recording");(void)verify_feedback_recording(*part);}
+    f.reader.reset();check(flush_lesson_view(f.view),"Cannot save the early real playback pause");DestroyWindow(f.view);
+    f.view=create_lesson_view(f.host,f.environment,windows::load_lesson(copy));check(f.view!=nullptr,"Cannot reopen the unchanged exact QA source");MoveWindow(f.view,0,0,980,720,TRUE);
+    LessonViewHooks hooks;hooks.before_page_change=[&](HWND){if(f.reader)f.reader->pause();};hooks.content_changed=[&](HWND){if(f.reader)f.reader->content_changed();};
+    hooks.feedback_changed=[&](HWND,std::size_t block,bool correct){if(f.reader)f.reader->feedback(block,correct);};
+    hooks.validate_math=[backend](std::string_view block,std::string_view answers,std::string_view locale,std::stop_token stop){return backend->validate_math(block,answers,locale,stop);};
+    set_lesson_view_hooks(f.view,std::move(hooks));f.reader=std::make_unique<LessonReader>(f.view,f.environment,backend,[]{});f.reader->set_qa_playback_muted(true);
+    verify_voice();last_index.reset();f.reader->toggle();
+    wait([&]{const auto value=observe("reopen");if(!value.planned)return false;
+        check(value.key==paused.key&&value.index>=paused.index,"Immediate reopen replayed earlier content instead of its exact real pause");
+        if(value.index==paused.index)check(value.offset>=paused.offset,"Immediate reopen moved behind its exact saved offset");
+        return value.playing&&value.index>paused.index&&value.segments[value.index].block==3;
+    },"immediate early-bookmark resume without a full-page preparation barrier",240000);
+    f.reader->pause();check(state::read_bytes(copy)==original&&state::read_bytes(published_asset)==original,"Cold playback changed curricular source bytes");
+    std::cout<<"PASS published cold playback "<<rate<<"X voice="<<voice<<": seven actual semantic sentences in order, passive code caption then following prose while canonical tail was incomplete; first_available_ms="
+        <<first_available_ms<<" caption_ms="<<caption_ms<<" prose_ms="<<prose_ms<<"; exact early resume, no whole-page readiness barrier, real instance-muted Kokoro/Windows playback\n";
+}
 void published_page(const std::shared_ptr<windows::NarrationWorker>& backend,double rate) {
     const auto original=state::read_bytes(published_asset);
     const auto root=std::filesystem::path(L"C:/LGAED-QA")/(L"saldo-published-"+std::to_wstring(GetCurrentProcessId())+L"-"+std::to_wstring(GetTickCount64()));

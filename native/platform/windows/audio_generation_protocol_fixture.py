@@ -53,7 +53,7 @@ for line in sys.stdin:
         log.write(json.dumps({"command": command, "text": source, "pageId": page_id,
             "revision": revision, "language": request["language"], "voice": request["voice"]}) + "\n")
         respond(request, pageId=page_id,
-                revision=revision, segments=[{"text": source, "preparedText": source, "key": "controlled-transport-only"}])
+                revision=revision, segments=[{"text": source, "preparedText": source}])
     elif command == "prepare":
         if pending is not None:
             raise RuntimeError("Overlapping synthesis escaped the native serialized lane")

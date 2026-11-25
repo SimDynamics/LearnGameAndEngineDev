@@ -10,6 +10,7 @@
 #include "platform/windows/compiler_completion.hpp"
 #include "platform/windows/environment.hpp"
 #include "platform/windows/state_store.hpp"
+#include "platform/windows/narration_preferences.hpp"
 #include "platform/windows/winrt_apartment.hpp"
 #include "core/lesson.hpp"
 #include "core/retirement_test_fixture.hpp"
@@ -3332,10 +3333,11 @@ int main(int argc,char** argv){const bool stderr_only=argc==2&&std::string_view(
     const bool code_scope_only=argc==4&&std::string_view(argv[1])=="--code-scope-reader";
     const bool saldo_feedback_only=argc==3&&std::string_view(argv[1])=="--saldo-feedback";
     const bool saldo_published_only=argc==3&&std::string_view(argv[1])=="--saldo-published";
+    const bool published_cold_play_only=(argc==3||argc==4)&&std::string_view(argv[1])=="--published-cold-play";
     const bool synthesis_order_only=argc==2&&std::string_view(argv[1])=="--synthesis-order";
-    if((saldo_feedback_only||saldo_published_only)&&(std::string_view(argv[2]).size()!=1||argv[2][0]<'1'||argv[2][0]>'3'))return 2;
+    if((saldo_feedback_only||saldo_published_only||published_cold_play_only)&&(std::string_view(argv[2]).size()!=1||argv[2][0]<'1'||argv[2][0]>'3'))return 2;
     const bool state_compatibility_only=argc==2&&std::string_view(argv[1])=="--state-compatibility";
-    if(argc>1&&!synthesis_order_only&&!saldo_published_only&&!saldo_feedback_only&&!code_scope_only&&!suspend_only&&!stderr_only&&!dependencies_only&&!integrated_only&&!integrated_order_only&&!integrated_matching_only&&!u11_domain_revision_only&&!u11_domain_race_only&&!u11_consult_revision_only&&!u11_assignment_revision_only&&!u11_remainder_published&&!u11_literal_spacing_only&&!u12_file_format_only&&!u12_file_roundtrip_only&&!u12_file_append_only&&!u12_file_repairs_only&&!u12_append_hypothesis_only&&!u12_composed_output_only&&!u12_composed_feedback_only&&!u12_composed_question_only&&!current_inline_only&&!rates_only&&!compiler_focus_only&&!required_compiler_only&&!archived_required_compiler_only&&!seek_keys_only&&!missing_recording_only&&!changed_recording_only&&!curricular_colors_only&&!cpp_numeric_context_only&&!cpp_parenthesis_context_only&&!state_compatibility_only)return 2;
+    if(argc>1&&!published_cold_play_only&&!synthesis_order_only&&!saldo_published_only&&!saldo_feedback_only&&!code_scope_only&&!suspend_only&&!stderr_only&&!dependencies_only&&!integrated_only&&!integrated_order_only&&!integrated_matching_only&&!u11_domain_revision_only&&!u11_domain_race_only&&!u11_consult_revision_only&&!u11_assignment_revision_only&&!u11_remainder_published&&!u11_literal_spacing_only&&!u12_file_format_only&&!u12_file_roundtrip_only&&!u12_file_append_only&&!u12_file_repairs_only&&!u12_append_hypothesis_only&&!u12_composed_output_only&&!u12_composed_feedback_only&&!u12_composed_question_only&&!current_inline_only&&!rates_only&&!compiler_focus_only&&!required_compiler_only&&!archived_required_compiler_only&&!seek_keys_only&&!missing_recording_only&&!changed_recording_only&&!curricular_colors_only&&!cpp_numeric_context_only&&!cpp_parenthesis_context_only&&!state_compatibility_only)return 2;
     std::cout<<std::unitbuf;const auto rich=LoadLibraryW(L"Msftedit.dll");if(!rich)return 2;
     try{
         INITCOMMONCONTROLSEX controls{sizeof(controls),ICC_STANDARD_CLASSES};InitCommonControlsEx(&controls);
@@ -3344,6 +3346,7 @@ int main(int argc,char** argv){const bool stderr_only=argc==2&&std::string_view(
         if(synthesis_order_only){current_page_synthesis_order(backend);return 0;}
         if(saldo_feedback_only){saldo_feedback_reader_test::run(backend,static_cast<double>(argv[2][0]-'0'));return 0;}
         if(saldo_published_only){saldo_feedback_reader_test::published_page(backend,static_cast<double>(argv[2][0]-'0'));return 0;}
+        if(published_cold_play_only){saldo_feedback_reader_test::cold_play(backend,static_cast<double>(argv[2][0]-'0'),argc==4?argv[3]:"ef_dora");return 0;}
         if(code_scope_only){code_scope_reader_test::run(backend,std::filesystem::path(argv[2]),std::filesystem::path(argv[3]));return 0;}
         if(required_compiler_only){current_required_compiler_reader(backend);return 0;}
         if(archived_required_compiler_only){archived_required_compiler_reader(backend,std::filesystem::path(argv[2]));return 0;}

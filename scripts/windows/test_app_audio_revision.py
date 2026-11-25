@@ -57,6 +57,10 @@ def write_json(path: Path, value):
     path.parent.mkdir(parents=True, exist_ok=True)
     temporary = path.with_suffix(path.suffix + ".pending")
     temporary.write_text(json.dumps(value, ensure_ascii=False, indent=2) + "\n", encoding="utf-8")
+    replace_owned_file(temporary, path)
+
+
+def replace_owned_file(temporary, path):
     deadline = time.monotonic() + 1
     while True:
         try:
@@ -115,7 +119,7 @@ def fill(name, answer="ok"):
                 code="___", answers=[answer], explanation=f"Correcto. Terminó {name}.")
 
 
-def fixture(root: Path):
+def fixture(root: Path, *, cold=False):
     require(not root.exists(), "A fresh run must preserve every existing QA directory")
     root.mkdir(parents=True)
     token = "app-audio-revision-" + uuid.uuid4().hex[:20]
@@ -134,11 +138,71 @@ def fixture(root: Path):
     pages = [dict(blocks=[paragraph(f"Página {index + 1}. El círculo azul avanza.")]) for index in range(32)]
     pages[1]["blocks"] = [paragraph("Inicio de la página."), saldo,
                             dict(type="heading", text=HEADING), paragraph("El valor continúa disponible."), fill("ejercicio final")]
+    if cold:
+        # Keep the reported prose, C++ caption/source and the first pending
+        # exercise literal. The extra QA suffix deliberately remains cold
+        # while the first real recording should already be playable.
+        pages = [dict(blocks=deepcopy(blocks[:6]) + [paragraph(
+            f"Apéndice de prueba número {index + 1}. La parte posterior número {index + 1} mantiene su propia frase sin generar mientras empieza la lectura anterior."
+        ) for index in range(249)])]
     raw = dict(id=LESSON, title="Prueba local de narración", pages=pages)
     baseline = layout.prepare_v2(raw, "es", {"es": raw})
+    if cold:
+        owners = dict(zip(source["stateLayout"]["current"][1]["blocks"][:6],
+                          baseline["stateLayout"]["current"][0]["blocks"][:6]))
+        fields = []
+        for field in source.get("textSemantics", {}).get("fields", []):
+            if field["block"] in owners:
+                field = deepcopy(field)
+                field["block"] = owners[field["block"]]
+                fields.append(field)
+        baseline["textSemantics"] = dict(version=1, fields=fields)
+        layout.validate(baseline)
     write_json(content / LESSON_RELATIVE, baseline)
     write_json(root / "baseline-fixture.json", baseline)
     return token, baseline
+
+
+def published_fixture(root):
+    require(not root.exists(), "A fresh published QA must preserve existing directories")
+    root.mkdir(parents=True)
+    token = "app-cold-published-" + uuid.uuid4().hex[:20]
+    write_json(root / "qa-config.json", dict(qaInstance=token))
+    content = ROOT / "app/src/main/assets/content"
+    relative = Path("es/programming/cpp_fundamentals/edition_es_1__expresiones_y_decisiones/lesson_alternativas_y_fronteras.json")
+    course_root = content / "es/programming/cpp_fundamentals"
+    # Opening through the real catalogue validates all active edition entries,
+    # including lessons other than the one exercised below. Keep the complete
+    # original course JSON tree, without borrowing another course's resources.
+    paths = []
+    for source in sorted(course_root.rglob("*.json")):
+        require(source.resolve().is_relative_to(course_root.resolve()),
+                "Published QA source escaped the original C++ course")
+        paths.append(source.relative_to(content))
+    paths.append(Path("es/programming/courses.json"))
+    copies = []
+    for path in paths:
+        source, destination = content / path, root / "content" / path
+        destination.parent.mkdir(parents=True, exist_ok=True)
+        original = source.read_bytes()
+        destination.write_bytes(original)
+        copies.append((source, destination, hashlib.sha256(original).hexdigest()))
+    write_json(root / "content/es/math_physics/courses.json", [])
+    lesson = read_json(content / relative)
+    exercises = [(index, block) for index, block in enumerate(lesson["pages"][0]["blocks"])
+                 if block["type"] in ("multiple_choice", "fill_code", "output_prediction", "math_puzzle", "cpp_compiler")]
+    require(len(exercises) == 1 and exercises[0][1]["type"] == "multiple_choice",
+            "Published preceding-page prefix changed; update its real QA control actions")
+    location = dict(locale="es", route="programming", course="cpp_fundamentals",
+                    unit="cpp_fundamentals__edition_es_1__expresiones_y_decisiones")
+    verify_published_copies(copies)
+    return token, relative, location, exercises[0], copies
+
+
+def verify_published_copies(copies):
+    for source, copy, checksum in copies:
+        require(digest(source) == checksum and digest(copy) == checksum,
+                f"Published cold QA modified its literal curricular source: {source}")
 
 
 class Application:
@@ -171,13 +235,28 @@ class Application:
 
     def wait(self, predicate, description, timeout=180):
         until = time.monotonic() + timeout
+        value = {}
         while time.monotonic() < until:
             require(self.process.poll() is None, f"Actual application exited early: {self.process.returncode}; {description}")
             value = self.snapshot()
             if value and predicate(value):
                 return value
             time.sleep(.025)
-        raise AssertionError(f"Timed out: {description}; snapshot={self.snapshot()}")
+        value = self.snapshot() or value
+        evidence = self.root / f"snapshot-timeout-{self.process.pid}-{time.time_ns()}.json"
+        write_json(evidence, value)
+        reader = value.get("reader", {})
+        segments, index = reader.get("segments", []), reader.get("index", -1)
+        current = segments[index] if isinstance(index, int) and 0 <= index < len(segments) else {}
+        summary = dict(pid=value.get("pid", self.process.pid), task=description,
+                       index=index, currentSource=current.get("source"),
+                       currentAvailable=current.get("available"),
+                       pageAudioComplete=reader.get("pageAudioComplete"),
+                       playing=reader.get("playing"), allocated=reader.get("allocated"),
+                       planned=reader.get("planned"), preparing=reader.get("preparing"),
+                       readySegments=sum(bool(segment.get("available")) for segment in segments),
+                       totalSegments=len(segments), snapshot=str(evidence))
+        raise AssertionError("Timed out: " + json.dumps(summary, ensure_ascii=False))
 
     def command(self, name, **fields):
         self.sequence += 1
@@ -264,18 +343,43 @@ def observations(root):
     return [json.loads(line) for line in payload[:boundary].split(b"\n")]
 
 
-def recorded_generation_order(root, after_tick):
+def recorded_generation_order(root, publication):
     result = []
+    previous = None
     for observation in observations(root):
-        generation = observation.get("generation", {})
-        if observation["tick"] < after_tick or not generation.get("running"):
+        if observation["tick"] < publication["tick"]:
             continue
-        page = generation["page"].split("|", 1)[0].rsplit("/", 1)[-1]
-        if page.isdigit() and int(page) in (1, 2, 4, 7):
-            index = int(page)
-            if not result or result[-1] != index:
-                result.append(index)
+        require(observation["pid"] == publication["pid"], "Generation trace crossed application lifetimes")
+        generation = observation.get("generation", {})
+        if not generation.get("running"):
+            continue
+        page, scan = generation["page"], generation["scans"]
+        require(page and scan >= publication["generation"]["scans"], "Invalid generation identity or regressed scan")
+        identity = (scan, page)
+        if identity != previous:
+            result.append(dict(pid=observation["pid"], scan=scan, page=page, tick=observation["tick"],
+                               obsolete=scan == publication["generation"]["scans"]))
+            previous = identity
     return result
+
+
+def verify_generation_order(trace, publication):
+    old = publication["generation"]
+    for event in trace:
+        if event["obsolete"]:
+            require(event["page"] == old["page"], f"Another old-pass page started after publication:{trace}")
+    fresh = [event for event in trace if not event["obsolete"]]
+    # Adjacent samples/restarts of one page remain one uninterrupted turn.
+    # A later A→B→A return is retained and fails this independent order oracle.
+    turns = []
+    for event in fresh:
+        if not turns or turns[-1] != event["page"]:
+            turns.append(event["page"])
+    page_id = lambda index: f"programming/{LESSON}/{index}|es|ef_dora|KOKORO"
+    expected = [page_id(index) for index in (2, 4, 7)]
+    require(turns[:3] == expected, f"Changed future pages were not the next exact turns3,5,8:{trace}")
+    require(page_id(1) not in turns, f"Background generated the foreground page:{trace}")
+    require(all(turns.count(page) == 1 for page in expected), f"Background returned to an already completed urgent turn:{trace}")
 
 
 def verify_cpu_configuration(root):
@@ -382,12 +486,84 @@ def playback(app: Application, rate: int, block: int, heading: str | None = None
     print(f"PASS actual application Kokoro complete feedback(block{block})→next content{rate}X", flush=True)
 
 
-def acceptance(executable: Path, root: Path):
-    token, current = fixture(root)
+def cold_play(app, rate=3):
+    # Deliberately issue Play before planning/canonical generation finishes.
+    # Waiting for ready() here would conceal the reported streaming failure.
+    app.command("preferences", values=dict(rate=float(rate)))
+    requested = app.command("play")
+    write_json(app.root / "cold-play-request.json", requested)
+    require(not requested.get("reader", {}).get("pageAudioComplete", False),
+            "Cold playback fixture finished before the actual Play request")
+    started = app.wait(lambda value: value.get("reader", {}).get("playing"),
+                       "early Play starts real PCM on the cold semantic/C++ page", 120)
+    reader = started["reader"]
+    write_json(app.root / "cold-play-started.json", started)
+    require(not reader["pageAudioComplete"],
+            "Play waited for the entire canonical page instead of streaming its ready recording")
+    require(reader["segments"][reader["index"]]["available"] and reader["playbackRate"] > 0,
+            "Cold playback has no actual decoded recording/media rate")
+    pcm(Path(reader["segments"][reader["index"]]["recording"]))
+    index, offset = reader["index"], reader["offset"]
+    advanced = app.wait(lambda value: value["reader"]["playing"] and
+                       (value["reader"]["index"] > index or value["reader"]["offset"] > offset + 120),
+                       "cold-page PCM media clock actually advances", 30)
+    write_json(app.root / "cold-play-advanced.json", advanced)
+    def current(value):
+        reader = value.get("reader", {})
+        return reader["segments"][reader["index"]] if reader.get("segments") else {}
+
+    caption = app.wait(lambda value: value["reader"]["playing"] and current(value).get("block") == 2,
+                       "real passive C++ caption playback before the first exercise", 180)
+    require(current(caption)["source"] == "Ejemplo de código C más más.",
+            f"Unexpected literal C++ caption:{current(caption).get('source')!r}")
+    require(not caption["reader"]["pageAudioComplete"], "Cold caption was postponed until the full page completed")
+    pcm(Path(current(caption)["recording"]))
+    caption_index, caption_offset = caption["reader"]["index"], caption["reader"]["offset"]
+    app.wait(lambda value: value["reader"]["playing"] and value["reader"]["index"] == caption_index and
+             value["reader"]["offset"] > caption_offset + 80, "passive C++ caption media clock advances", 30)
+    following = app.wait(lambda value: value["reader"]["playing"] and current(value).get("block") == 3,
+                         "automatic prose immediately after the passive C++ caption", 180)
+    require(current(following)["source"].startswith("Al ejecutar if (pedidos > 0)"),
+            "The first authentic prose after C++ was skipped")
+    require(not following["reader"]["pageAudioComplete"], "Post-C++ prose waited for the complete cold page")
+    pcm(Path(current(following)["recording"]))
+    prose_index, prose_offset = following["reader"]["index"], following["reader"]["offset"]
+    app.wait(lambda value: value["reader"]["playing"] and value["reader"]["index"] == prose_index and
+             value["reader"]["offset"] > prose_offset + 120, "post-C++ prose PCM media clock advances", 30)
+    write_json(app.root / "cold-play-caption.json", caption)
+    write_json(app.root / "cold-play-after-caption.json", following)
+    paused = app.command("pause")["reader"]
+    require(not paused["playing"] and not paused["allocated"], "Cold playback ignored the voluntary pause")
+    print("PASS actual cold early Play, passive C++ caption and immediate following prose before pageAudioComplete", flush=True)
+
+
+def acceptance(executable: Path, root: Path, scenario="full", rate=3, voice=None):
+    require(voice is None or scenario in ("cold-play", "cold-published"),
+            "Explicit voice selection is only supported by cold playback scenarios")
+    require(voice is None or voice in ("ef_dora", "em_alex", "em_santa"),
+            "Select a Spanish voice from the original Kokoro catalogue")
+    if scenario == "cold-published":
+        token, relative, location, prefix, copies = published_fixture(root)
+        current = None
+    else:
+        token, current = fixture(root, cold=scenario == "cold-play")
+        relative, location = LESSON_RELATIVE, LOCATION
     app = Application(executable, root, token)
     try:
         app.start()
-        app.command("open", path=str(LESSON_RELATIVE), location=LOCATION)
+        if scenario in ("cold-play", "cold-published"):
+            app.command("preferences", values={"kokoro_voice:es": voice or "ef_dora"})
+        app.command("open", path=str(relative), location=location)
+        if scenario == "cold-published":
+            # Resolve only the preceding page by its genuine native radio and
+            # check control. No state is fabricated and page two stays cold.
+            app.command("answer_choice", block=prefix[0], option=prefix[1]["correctIndex"])
+            app.command("page", page=1)
+            cold_play(app, rate)
+            return
+        if scenario == "cold-play":
+            cold_play(app, rate)
+            return
         app.command("page", page=1)
         app.ready()
         # Baseline lesson is generated completely before changing any audio.
@@ -408,9 +584,15 @@ def acceptance(executable: Path, root: Path):
                  "actual two-core producer working on page30", 180)
         current = revise_prose(current, [1, 2, 4, 7], "Contenido nuevo de esta página.")
         current = add_puzzles(current)
+        # Prepare outside the watched curriculum. Creation/truncation of an
+        # in-tree .pending file is not the actual publication being tested.
+        staged = root / "publication-stage/live-pages.json"
+        write_json(staged, current)
         before_revision = app.snapshot()["lesson"]["contentRevision"]
-        publication_tick = app.snapshot()["tick"]
-        write_json(root / "content" / LESSON_RELATIVE, current)
+        publication = app.snapshot()
+        require(publication["generation"]["running"] and "/29|" in publication["generation"]["page"],
+                "The old page30 job ended before the curriculum publication precondition")
+        replace_owned_file(staged, root / "content" / LESSON_RELATIVE)
         app.wait(lambda value: value["lesson"]["contentRevision"] > before_revision, "automatic live curriculum adoption", 60)
         revised_reader = app.ready()["reader"]
         new_instruction = next(index for index, segment in enumerate(revised_reader["segments"])
@@ -436,9 +618,9 @@ def acceptance(executable: Path, root: Path):
             path = Path(file)
             require(path.is_file() and digest(path) == sealed["sha256"] and path.stat().st_mtime_ns == sealed["modified"],
                     "Revision replaced an existing recording instead of preserving its generation")
-        order = recorded_generation_order(root, publication_tick)
-        require(1 not in order, "The background producer generated the foreground page simultaneously")
-        require(list(dict.fromkeys(order))[:3] == [2, 4, 7], f"Changed future pages were not reprioritized3,5,8: {order}")
+        order = recorded_generation_order(root, publication)
+        write_json(root / "generation-order.json", order)
+        verify_generation_order(order, publication)
         verify_cpu_configuration(root)
         write_json(root / "revised-manifests.json", revised)
         # Earn each new gate by actual complete feedback playback, in the
@@ -487,12 +669,23 @@ def acceptance(executable: Path, root: Path):
         require(abs(app.snapshot()["reader"]["offset"] - paused["offset"]) <= 1, "Restart lost exact valid paused PCM position")
         print(f"PASS application revision acceptance; raw QA evidence={root}", flush=True)
     finally:
-        app.close()
+        try:
+            app.close()
+        finally:
+            if scenario == "cold-published":
+                verify_published_copies(copies)
 
 
 if __name__ == "__main__":
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("--executable", type=Path, required=True)
     parser.add_argument("--qa-root", type=Path, default=Path("C:/LGAED-QA") / ("app-audio-revision-" + uuid.uuid4().hex))
+    parser.add_argument("--scenario", choices=("full", "cold-play", "cold-published"), default="full")
+    parser.add_argument("--rate", type=int, choices=(1, 2, 3), default=3,
+                        help="Actual playback rate for the cold streaming scenarios")
+    parser.add_argument("--voice", choices=("ef_dora", "em_alex", "em_santa"),
+                        help="Spanish Kokoro voice for cold scenarios only (default: ef_dora)")
     arguments = parser.parse_args()
-    acceptance(arguments.executable, checked_root(arguments.qa_root))
+    if arguments.voice is not None and arguments.scenario == "full":
+        parser.error("--voice is only supported with --scenario cold-play or cold-published")
+    acceptance(arguments.executable, checked_root(arguments.qa_root), arguments.scenario, arguments.rate, arguments.voice)

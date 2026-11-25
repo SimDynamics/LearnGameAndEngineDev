@@ -84,21 +84,6 @@ private object PageNarrationRevision {
             .put("readingContext",request.optString("readingContext","auto"))
             .put("modelRevision",KokoroModelManifest.revision).put("script",JSONArray(texts))).toByteArray(Charsets.UTF_8))
 }
-// Mirrors Android NarrationStorageBudget without evicting valid audio. This
-// runs only for a cache miss; a reduced limit cannot prevent cached playback.
-private fun requireAudioSpace(cache: File, request: JSONObject, nextBytes: Long) {
-    val used = cache.listFiles().orEmpty().asSequence()
-        .filter { it.isFile && (it.extension == "wav" || it.extension == "ogg") }
-        .sumOf { it.length() }
-    val reserve = 1_073_741_824L
-    val free = cache.usableSpace
-    val maximum = (if (Long.MAX_VALUE - used < free) Long.MAX_VALUE else used + free)
-        .minus(reserve).coerceAtLeast(0)
-    val limit = request.optLong("audioBudgetBytes", maximum).coerceAtLeast(0).coerceAtMost(maximum)
-    check(free > reserve && nextBytes.coerceAtLeast(0) <= limit - used && limit > used) {
-        "Narration audio storage limit reached; existing recordings have been preserved"
-    }
-}
 private data class Segment(val source: String, val prepared: String, val spoken: List<ReadingTextRange>,
                            val displayed: List<ReadingTextRange>)
 private class Request(val id: String) {
@@ -153,6 +138,11 @@ private object HistoricalDoraPack {
 private class Backend(private val resources: File, private val englishResources: File,
                       private val assets: File, private val originalWavs: File?, private val ffmpeg: String?,
                       private val profile: String) {
+    private val storage=WindowsAudioStorageLedgers()
+    // Cache hits retain their original storage policy. Only misses reserve
+    // bytes; every check still reads actual free space and the current budget.
+    private fun requireAudioSpace(cache: File,request: JSONObject,nextBytes: Long,job: Request) =
+        storage.requireSpace(cache,nextBytes,if(request.has("audioBudgetBytes"))request.optLong("audioBudgetBytes") else null) { current(job) }
     private val plans = object : LinkedHashMap<String,Segment>() {
         override fun removeEldestEntry(eldest: MutableMap.MutableEntry<String,Segment>?): Boolean = size > 4096
     }
@@ -432,7 +422,7 @@ private class Backend(private val resources: File, private val englishResources:
         try {
             if (original != null && sampleCount(original) != null) {
                 original.inputStream().use { source -> partial.outputStream().use { source.copyTo(it) } }
-                current(job); Files.move(partial.toPath(),target.toPath()); return "existing-recording"
+                current(job); Files.move(partial.toPath(),target.toPath());storage.published(target);return "existing-recording"
             }
             val packaged = File(assets,"narration/prerendered/$key.ogg")
             if (!packaged.isFile || ffmpeg.isNullOrBlank()) return null
@@ -443,7 +433,7 @@ private class Backend(private val resources: File, private val englishResources:
                 if (job.cancelled.get()) { process.destroyForcibly(); current(job) }
             }
             check(process.exitValue() == 0 && sampleCount(partial) != null) { "Cannot decode the compatible bundled Opus recording" }
-            current(job); Files.move(partial.toPath(),target.toPath()); return "packaged-recording"
+            current(job); Files.move(partial.toPath(),target.toPath());storage.published(target);return "packaged-recording"
         } finally { partial.delete() }
     }
     private data class Phones(val text: String, val sources: List<NarrationSourcePhones>)
@@ -513,7 +503,7 @@ private class Backend(private val resources: File, private val englishResources:
             require(cpuClass in setOf("current_page","background")) { "Invalid narration CPU class" }
             var synthesisThreads = 0
             current(job)
-            if (!cacheHit) requireAudioSpace(cache, request, 4L * 1024 * 1024)
+            if (!cacheHit) requireAudioSpace(cache, request, 4L * 1024 * 1024,job)
             val sidecar = File(cache,"$key-${sha256(source.toByteArray(Charsets.UTF_8))}.timings.json")
             val cachedSamples = if (cacheHit) sampleCount(audio) else null
             val cachedAudioHash = if (cacheHit) sha256(audio) else null
@@ -541,12 +531,12 @@ private class Backend(private val resources: File, private val englishResources:
                 }
                 val generated = chunks.map { chunk -> current(job); engine!!.synthesizePhonemes(chunk,voice,1f) { job.cancelled.get() } }
                 current(job)
-                requireAudioSpace(cache, request, 44L + generated.sumOf { it.size.toLong() } * 2L)
+                requireAudioSpace(cache, request, 44L + generated.sumOf { it.size.toLong() } * 2L,job)
                 val partial = File(cache,".$key-${job.id.hashCode()}.part")
                 try {
                     NarrationWavWriter.writeChunks(partial,generated)
                     check(sampleCount(partial) != null) { "Generated Kokoro audio failed PCM validation" }
-                    current(job); Files.move(partial.toPath(),audio.toPath())
+                    current(job); Files.move(partial.toPath(),audio.toPath());storage.published(audio)
                 } finally { partial.delete() }
                 origin = "synthesized"
             }
@@ -589,7 +579,8 @@ private class Backend(private val resources: File, private val englishResources:
                 .put("provider",if (engine?.usesXnnpack == true) "Kokoro/ONNX Runtime XNNPACK Windows" else "Kokoro/ONNX Runtime CPU Windows")
         } finally { active = null }
     }
-    fun close() { engineProfiles.values.forEach { it.close() };engineProfiles.clear();engine=null;duration?.close();english?.close() }
+    fun close() { try { engineProfiles.values.forEach { it.close() };engineProfiles.clear();engine=null;duration?.close();english?.close() }
+        finally { storage.close() } }
 }
 
 fun main(arguments: Array<String>) {

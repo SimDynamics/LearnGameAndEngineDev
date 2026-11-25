@@ -156,8 +156,33 @@ void calculator_heavy_protocol(const std::filesystem::path& build_directory) {
     check(foreground.wait_for(std::chrono::seconds(1))==std::future_status::ready&&foreground.get(),"Resumed synthesis could not be cancelled after mathematical evaluation");
     std::cout<<"PASS controlled IPC calculator exclusion pauses current synthesis, preserves independent expression editing and resumes the same page after evaluation (not an audio benchmark)\n";
 }
+void recording_key_protocol(const std::filesystem::path& build_directory){
+    using namespace lgaed::windows;NarrationWorker worker(build_directory/L"narration-protocol-fixture-runtime.json");
+    const auto missing=worker.plan("controlled-missing-recording-key","es");
+    check(missing.size()==1&&missing.front().recording_key.empty(),"A controlled missing recording key became a fabricated cache identity");
+    bool rejected=false;try{(void)worker.plan("controlled-invalid-recording-key","es");}
+    catch(const std::runtime_error& error){rejected=std::string_view(error.what())=="Invalid narration recording key";}
+    check(rejected,"A descriptive/phony transport key was accepted as a recording identity");
+    check(json(worker.math_editor(R"({"action":"echo","marker":"recording-key-validation"})")).GetNamedString(L"marker")==L"recording-key-validation",
+        "Rejecting an invalid recording key broke following request routing");
+}
 void page_revision_cache(lgaed::windows::NarrationWorker& worker,const std::filesystem::path& cache){
     using namespace lgaed;using namespace windows;
+    const auto plan_voice=[&](std::string_view source,std::string_view voice,bool previous=false){
+        return worker.plan(source,"es",{},"auto","auto",NarrationOutputDataPolicy::current,{},NarrationSemanticPolicy::current,previous,voice);};
+    const auto captions=worker.page_plan(R"({"id":"native-recording-key","pages":[{"blocks":[{"type":"code","language":"cpp","code":"int valor = 1;"}]}]})",0,"es","em_santa","es");
+    const auto caption=std::ranges::find_if(captions.segments,[](const auto& value){return value.text=="Ejemplo de código C más más.";});
+    check(caption!=captions.segments.end()&&caption->recording_key.size()==64,"Canonical planning lost the selected-voice caption recording key");
+    const auto visible_caption=plan_voice(caption->text,"em_santa"),other_voice=plan_voice(caption->text,"ef_dora");
+    check(visible_caption.size()==1&&visible_caption.front().prepared!=caption->prepared&&
+        visible_caption.front().recording_key==caption->recording_key,
+        "Equivalent raw/prepared caption payloads failed to share their exact selected-voice PCM identity");
+    check(other_voice.size()==1&&other_voice.front().recording_key!=caption->recording_key,
+        "Recording identity did not retain the explicitly selected voice");
+    const auto prose=plan_voice("El tipo int conserva una unidad.","ef_dora"),historical=plan_voice("El tipo int conserva una unidad.","ef_dora",true);
+    check(prose.size()==1&&historical.size()==1&&prose.front().spoken==historical.front().spoken&&
+        prose.front().prepared!=historical.front().prepared&&prose.front().recording_key!=historical.front().recording_key,
+        "Equal stripped words erased distinct authenticated pronunciation metadata");
     // A semantic/source revision with unchanged spoken words must still own a
     // complete new PCM generation. Every waveform below is real Kokoro.
     const std::string original=R"({"id":"native-page-revision","pages":[{"blocks":[{"type":"paragraph","text":"La página conserva su lectura."}]}]})";
@@ -227,6 +252,7 @@ int wmain(int argc,wchar_t** argv) {
         priority_protocol(argv[2]);
         heavy_priority_protocol(argv[2]);
         calculator_heavy_protocol(argv[2]);
+        recording_key_protocol(argv[2]);
         windows::NarrationWorker worker(root / "out/narration/runtime.json");
         const std::string source = "La línea #include y std::cout muestran una salida.";
         const auto segments = worker.plan(source,"es");

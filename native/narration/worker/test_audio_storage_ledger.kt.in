@@ -1,0 +1,104 @@
+package lgaed.narration.windows
+
+import java.nio.file.Files
+import java.nio.file.Path
+import java.nio.file.StandardCopyOption.ATOMIC_MOVE
+import java.util.concurrent.TimeUnit
+
+/** Actual Windows filesystem + production ledger. No models, playback, user
+ * profile, large dummy bank or invented synthesis measurements are involved. */
+fun main(arguments: Array<String>) {
+    check(System.getProperty("os.name").startsWith("Windows")) { "This acceptance requires the Windows filesystem provider" }
+    val root=Path.of(arguments.single()).toAbsolutePath().normalize()
+    check(root.startsWith(Path.of("C:\\LGAED-QA"))) { "Ledger acceptance must stay in isolated QA" }
+    Files.createDirectories(root)
+    val cache=Files.createDirectory(root.resolve("cache"))
+    fun write(name: String,bytes: Int)=Files.write(cache.resolve(name),ByteArray(bytes) { (it%127).toByte() })
+    fun await(description: String,predicate: () -> Boolean) {
+        val deadline=System.nanoTime()+TimeUnit.SECONDS.toNanos(5)
+        while(!predicate()) {
+            check(System.nanoTime()<deadline) { "Timed out: $description" }
+            Thread.sleep(10)
+        }
+    }
+    var free=WindowsAudioStorageLedger.RESERVE+64_000_000
+    write("initial.wav",100);write("initial.ogg",40);write("ignore.timings.json",300);write(".ignore.part",400)
+    WindowsAudioStorageLedger(cache) { free }.use { ledger ->
+        check(ledger.usedBytes()==140L && ledger.scans==1L) { "Initial WAV/Opus inventory counted unrelated files" }
+        write("external.wav",70)
+        await("external creation") { ledger.usedBytes()==210L }
+        write("external.wav",120)
+        await("external resize") { ledger.usedBytes()==260L }
+        Files.delete(cache.resolve("external.wav"))
+        await("external deletion") { ledger.usedBytes()==140L }
+        check(ledger.scans==1L) { "Ordinary external events caused a full-bank rescan" }
+
+        var expected=140L
+        repeat(50) { index ->
+            val size=50+index
+            ledger.requireSpace(4_194_304,10_000_000)
+            ledger.requireSpace(size.toLong(),10_000_000)
+            val pending=cache.resolve(".published-$index.part")
+            Files.write(pending,ByteArray(size))
+            val target=cache.resolve("published-$index.wav")
+            Files.move(pending,target,ATOMIC_MOVE)
+            ledger.published(target);expected+=size
+            check(ledger.usedBytes()==expected) { "Own publication was missed or a delayed event counted it twice" }
+        }
+        check(ledger.scans==1L) { "Fifty misses re-enumerated the bank instead of using one initial scan" }
+
+        // OS overflow cannot be forced deterministically with a small fixture.
+        // Trigger its exact production recovery path, then inventory REAL files.
+        write("overflow-recovery.wav",83);expected+=83
+        ledger.invalidateForOverflow()
+        check(ledger.usedBytes()==expected && ledger.scans==2L) { "Overflow recovery trusted a possibly incomplete event inventory" }
+        write("after-rearm.wav",17);expected+=17
+        await("new registration after overflow") { ledger.usedBytes()==expected }
+        check(ledger.scans==2L) { "Overflow recovery did not resume incremental observation" }
+
+        val original=Files.move(cache,root.resolve("previous-cache"),ATOMIC_MOVE)
+        check(Files.isDirectory(original));Files.createDirectory(cache)
+        write("replacement.wav",29)
+        check(ledger.usedBytes()==29L && ledger.scans==3L) { "A recreated directory inherited an obsolete inventory or watcher" }
+        write("replacement-next.ogg",11)
+        await("replacement registration") { ledger.usedBytes()==40L }
+
+        val seal=Files.readAllBytes(cache.resolve("replacement.wav"))
+        fun rejects(description: String,operation: () -> Unit) {
+            var rejected=false
+            try { operation() } catch(_: IllegalStateException) { rejected=true }
+            check(rejected) { description }
+            check(Files.readAllBytes(cache.resolve("replacement.wav")).contentEquals(seal)) { "Budget rejection modified stored audio" }
+        }
+        rejects("Zero budget accepted a cache miss") { ledger.requireSpace(1,0) }
+        rejects("A full configured budget accepted a cache miss") { ledger.requireSpace(1,40) }
+        free=WindowsAudioStorageLedger.RESERVE
+        rejects("The mandatory free-space reserve was ignored") { ledger.requireSpace(1,Long.MAX_VALUE) }
+        free=WindowsAudioStorageLedger.RESERVE+9
+        rejects("A recording larger than actually free storage was accepted") { ledger.requireSpace(10,Long.MAX_VALUE) }
+        free=WindowsAudioStorageLedger.RESERVE+100
+        check(ledger.requireSpace(60,100).used==40L) { "A valid boundary reservation was rejected" }
+        check(ledger.scans==3L) { "Budget checks caused unnecessary rescans" }
+    }
+    // Closing releases the Windows watcher handle; renaming remains possible.
+    Files.move(cache,root.resolve("closed-cache"),ATOMIC_MOVE)
+    val cancelledCache=Files.createDirectory(root.resolve("cancelled-scan"))
+    repeat(130) { index -> Files.write(cancelledCache.resolve("entry-$index.wav"),byteArrayOf(1)) }
+    WindowsAudioStorageLedger(cancelledCache) { free }.use { ledger ->
+        var calls=0;var cancelled=false
+        try { ledger.usedBytes { if(++calls==4)throw InterruptedException("controlled scan cancellation") } }
+        catch(_: InterruptedException) { cancelled=true }
+        check(cancelled && ledger.scans==1L) { "A large-cache scan did not honor cancellation between batches" }
+        check(ledger.usedBytes()==130L && ledger.scans==2L) { "A cancelled scan published a partial inventory or retained its invalid watcher" }
+    }
+    WindowsAudioStorageLedgers(2).use { ledgers ->
+        ledgers.published(root.resolve("closed-cache/replacement.wav").toFile())
+        check(ledgers.observedDirectories==0) { "A compatible recording hit created a storage watcher/inventory" }
+        repeat(4) { index ->
+            val folder=Files.createDirectory(root.resolve("bounded-$index"))
+            ledgers.requireSpace(folder.toFile(),1,Long.MAX_VALUE)
+            check(ledgers.observedDirectories<=2) { "Alternating cache roots leaked watcher handles" }
+        }
+    }
+    println("PASS Windows real FS ledger: external create/resize/delete, 50 misses with ONE scan, idempotent publication, controlled overflow recovery, directory replacement, zero/full/low-free budget, cancellable partial scan, cache-hit bypass and watcher close/LRU; QA=$root")
+}

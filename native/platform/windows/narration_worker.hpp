@@ -27,6 +27,10 @@ struct NarrationSegment {
     // Empty authenticates the historical sentence cache. A whole-page revision
     // owns a separate PCM/timing identity, even for its unchanged sentences.
     std::string cache_namespace;
+    // Exact unsalted PCM identity returned by the selected-voice frontend.
+    // Empty is permitted only by older/controlled transports and never proves
+    // that two different prepared payloads share a recording.
+    std::string recording_key;
 };
 struct NarrationPagePlan {
     std::string page_id,revision;
@@ -113,7 +117,7 @@ public:
     [[nodiscard]] std::vector<NarrationSegment> plan(std::string_view text,std::string_view language,std::stop_token={},
         std::string_view reading_context="auto",std::string_view math_mode="auto",NarrationOutputDataPolicy=NarrationOutputDataPolicy::current,
         const std::optional<curriculum::TextSemantics>& semantics={},NarrationSemanticPolicy=NarrationSemanticPolicy::current,
-        bool previous_prose_inference=false);
+        bool previous_prose_inference=false,std::string_view recording_voice={});
     // Preserve the old bool API exactly: true means pre-B42; false is current.
     [[nodiscard]] std::vector<NarrationSegment> plan(std::string_view text,std::string_view language,std::stop_token,
         std::string_view reading_context,std::string_view math_mode,bool previous_output_data);

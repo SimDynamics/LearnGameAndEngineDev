@@ -64,6 +64,15 @@ for line in sys.stdin:
             respond(request, marker=request["marker"])
         else:
             raise RuntimeError("Unexpected fixture action")
+    elif command == "plan":
+        source = request["text"]
+        if source not in ("controlled-missing-recording-key", "controlled-invalid-recording-key"):
+            raise RuntimeError("Unexpected controlled recording-key request")
+        segment = dict(text=source, preparedText=source, spokenText=source,
+                       sourceStart=0, sourceEnd=len(source), spokenRanges=[], displayedRanges=[])
+        if source == "controlled-invalid-recording-key":
+            segment["key"] = "descriptive-transport-marker-is-not-a-pcm-hash"
+        respond(request, segments=[segment])
     elif command == "curriculum_plan":
         respond(request, segments=[])
     elif command == "shutdown":

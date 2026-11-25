@@ -1,0 +1,31 @@
+package lgaed.narration.windows
+
+import java.nio.file.Files
+import java.nio.file.LinkOption.NOFOLLOW_LINKS
+import java.nio.file.Path
+import java.util.concurrent.TimeUnit
+
+/** Read-only acceptance against an explicitly supplied EXISTING cache.
+ * No create/write/delete/copy/move operation exists in this probe. Logs and
+ * compiled classes are owned by its Python runner's separate QA directory. */
+fun main(arguments: Array<String>) {
+    check(System.getProperty("os.name").startsWith("Windows"))
+    val supplied=Path.of(arguments.single())
+    check(supplied.isAbsolute) { "The read-only cache must be explicit and absolute" }
+    val cache=supplied.normalize()
+    check(Files.isDirectory(cache,NOFOLLOW_LINKS)) { "The read-only cache must already exist" }
+    val started=System.nanoTime()
+    WindowsAudioStorageLedger(cache).use { ledger ->
+        val first=ledger.requireSpace(0,Long.MAX_VALUE)
+        val initialMs=TimeUnit.NANOSECONDS.toMillis(System.nanoTime()-started)
+        val checksStarted=System.nanoTime()
+        var last=first
+        repeat(50) { last=ledger.requireSpace(0,Long.MAX_VALUE) }
+        val checksMs=TimeUnit.NANOSECONDS.toMillis(System.nanoTime()-checksStarted)
+        check(first.used>0 && last.used>0 && last.free>WindowsAudioStorageLedger.RESERVE && last.limit>last.used) {
+            "The existing cache did not produce plausible budget/free-space values"
+        }
+        check(ledger.scans==1L) { "Fifty read-only checks unexpectedly re-enumerated an unchanged cache directory" }
+        println("PASS read-only existing Windows cache: scans=${ledger.scans}; checks=50; firstUsed=${first.used}; lastUsed=${last.used}; free=${last.free}; effectiveLimit=${last.limit}; initialScanMs=$initialMs; fiftyChecksMs=$checksMs; cache=$cache")
+    }
+}

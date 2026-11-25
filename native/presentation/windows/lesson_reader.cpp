@@ -349,7 +349,8 @@ struct LessonReader::Impl {
                 // projections. Reuse their PCM but ask the normal planner for
                 // the visible word map rather than copying canonical timings.
                 for(std::size_t n=0;n<planned.size();++n)
-                    if(!ready[n]&&planned[n].sentence.prepared==sentence.prepared)prepare_visible(n);
+                    if(!ready[n]&&(planned[n].sentence.prepared==sentence.prepared||
+                        (!system&&!sentence.recording_key.empty()&&planned[n].sentence.recording_key==sentence.recording_key)))prepare_visible(n);
             }
             // Current-page completion also owns visible-only UI projections
             // and dynamic guides. The advance preference controls later work;
@@ -589,7 +590,8 @@ struct LessonReader::Impl {
                 if(!source.raw_json.empty())canonical=backend->page_plan(source.raw_json,source.page,lang,selected_voice,selected_ui,stop,
                     source.reading_context,source.content_language,windows::NarrationCpuClass::current_page);
                 std::vector<Part> planned;std::vector<windows::NarrationSegment> sentences;
-                for(const auto& region:snapshot){std::map<std::string,std::size_t> occurrences;for(auto sentence:backend->plan(region.source_text,lang,stop,region.reading_context,region.math_mode,windows::NarrationOutputDataPolicy::current,region.text_semantics)){
+                for(const auto& region:snapshot){std::map<std::string,std::size_t> occurrences;for(auto sentence:backend->plan(region.source_text,lang,stop,region.reading_context,region.math_mode,windows::NarrationOutputDataPolicy::current,region.text_semantics,
+                    windows::NarrationSemanticPolicy::current,false,selected_voice)){
                     const auto occurrence=occurrences[sentence.prepared]++;sentences.push_back(sentence);planned.push_back({region,std::move(sentence),{},occurrence});} }
                 if(planned.empty())throw std::runtime_error("No hay texto narrable en esta página.");const auto resume_key=backend->identity(current_page,lang,selected_voice,sentences,stop,selected_engine=="WINDOWS"||selected_engine=="ANDROID"?"ANDROID":"KOKORO");
                 Result plan;plan.epoch=current_epoch;plan.parts=planned;plan.key=resume_key;plan.planned=true;plan.canonical=canonical;
