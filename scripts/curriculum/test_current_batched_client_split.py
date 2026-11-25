@@ -232,9 +232,11 @@ class CmakeRepairSessionSplit(unittest.TestCase):
     def verify_execution(self, executable, directory, stdin, stdout, code):
         process = subprocess.run([str(executable)], cwd=directory,
             input=stdin.encode("utf-8"), capture_output=True, timeout=20, check=False)
-        self.assertEqual(process.returncode, code, stdin)
-        self.assertEqual(process.stdout.replace(b"\r\n", b"\n"), stdout.encode("utf-8"), stdin)
-        self.assertEqual(process.stderr, b"", stdin)
+        detail = (f"input={stdin!r}; exit={process.returncode}; "
+                  f"stdout={process.stdout!r}; stderr={process.stderr!r}")
+        self.assertEqual(process.returncode, code, detail)
+        self.assertEqual(process.stdout.replace(b"\r\n", b"\n"), stdout.encode("utf-8"), detail)
+        self.assertEqual(process.stderr, b"", detail)
 
     def test_real_cmake_repairs_keep_complete_failure_and_independent_cases(self):
         from test_cmake_graph_checks import EXPRESSION_LESSONS, initial_observation_declaration
@@ -345,9 +347,17 @@ class CmakeRepairSessionSplit(unittest.TestCase):
                     build = directory / "build"
                     self.run_tool(["cmake", "-S", str(directory), "-B", str(build),
                                    "-G", "Ninja", "-DCMAKE_BUILD_TYPE=Debug",
-                                   "-DCMAKE_CXX_COMPILER=cl.exe"], directory)
+                                   "-DCMAKE_CXX_COMPILER=cl.exe",
+                                   # Match the existing native runner's
+                                   # msvc-full-link-v1 Debug linker policy.
+                                   # The default incremental linker can reuse
+                                   # a static-library member edited within
+                                   # the same COFF timestamp second.
+                                   "-DCMAKE_EXE_LINKER_FLAGS_DEBUG:STRING=/DEBUG /INCREMENTAL:NO"], directory)
                     compiled = self.run_tool(["cmake", "--build", str(build),
-                                              "--target", checker], directory)
+                                              "--target", checker, "--verbose"], directory)
+                    self.assertIn(b"/INCREMENTAL:NO",
+                                  (compiled.stdout + compiled.stderr).upper())
                     if library == "cantidades":
                         self.assertIn(b"C4804", compiled.stdout + compiled.stderr)
                     exe = build / (checker + ".exe")
@@ -364,14 +374,26 @@ class CmakeRepairSessionSplit(unittest.TestCase):
                     self.assertEqual(files[implementation].count(defect), 1)
                     corrected = files[implementation].replace(defect, repair, 1)
                     (directory / implementation).write_bytes(corrected.encode("utf-8"))
-                    self.run_tool(["cmake", "--build", str(build), "--target", checker], directory)
+                    defective_artifact = exe.read_bytes()
+                    self.run_tool(["cmake", "--build", str(build), "--target", checker,
+                                   "--verbose"], directory)
+                    self.assertNotEqual(exe.read_bytes(), defective_artifact,
+                                        "The inclusive repair reused the defective executable")
                     for item in individual_cases:
                         self.verify_execution(exe, directory, item["standardInput"],
                             item["outputs"][0], item.get("exitCode", 0))
                     if library == "cantidades":
-                        (directory / implementation).write_bytes(
-                            corrected.replace("dato <= 20", "dato < 20", 1).encode("utf-8"))
-                        self.run_tool(["cmake", "--build", str(build), "--target", checker], directory)
+                        self.assertEqual(corrected.count("dato <= 20"), 1)
+                        exclusive = corrected.replace("dato <= 20", "dato < 20", 1)
+                        source_path = directory / implementation
+                        inclusive_artifact = exe.read_bytes()
+                        source_path.write_bytes(exclusive.encode("utf-8"))
+                        self.assertEqual(source_path.read_bytes(), exclusive.encode("utf-8"))
+                        rebuilt = self.run_tool(["cmake", "--build", str(build),
+                                                 "--target", checker, "--verbose"], directory)
+                        detail = (rebuilt.stdout + rebuilt.stderr).decode(errors="replace")
+                        self.assertIn(Path(implementation).name, detail)
+                        self.assertNotEqual(exe.read_bytes(), inclusive_artifact, detail)
                         self.verify_execution(exe, directory, "20\n",
                             "dato=20 esperado=1 obtenido=0 ERROR\nBateria: ERROR\n", 1)
                 self.assertEqual(path.read_bytes(), original_bytes)
