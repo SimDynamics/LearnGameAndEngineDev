@@ -72,7 +72,7 @@ permissions:
 concurrency:
   # Explicit focal evaluations use separate queues and cannot replace a
   # waiting full ReaderBuild execution.
-  group: windows-reader-build-${{ github.ref }}${{ github.event_name == 'push' && startsWith(github.event.head_commit.message, 'qa-code-scope-history:') && '-code-scope-history' || github.event_name == 'push' && startsWith(github.event.head_commit.message, 'qa-code-scope:') && '-code-scope' || github.event_name == 'push' && (startsWith(github.event.head_commit.message, 'qa-reader-revision:') || startsWith(github.event.head_commit.message, 'qa-native-headers:')) && '-reader-revision' || github.event_name == 'push' && startsWith(github.event.head_commit.message, 'qa-native-catalog-u1:') && '-catalog-u1' || github.event_name == 'push' && startsWith(github.event.head_commit.message, 'qa-curricular-u2l5-archive:') && '-u2l5-archive' || '' }}
+  group: windows-reader-build-${{ github.ref }}${{ github.event_name == 'push' && startsWith(github.event.head_commit.message, 'qa-reader-revision-regressions:') && '-reader-revision-regressions' || github.event_name == 'push' && startsWith(github.event.head_commit.message, 'qa-code-scope-history:') && '-code-scope-history' || github.event_name == 'push' && startsWith(github.event.head_commit.message, 'qa-code-scope:') && '-code-scope' || github.event_name == 'push' && (startsWith(github.event.head_commit.message, 'qa-reader-revision:') || startsWith(github.event.head_commit.message, 'qa-native-headers:')) && '-reader-revision' || github.event_name == 'push' && startsWith(github.event.head_commit.message, 'qa-native-catalog-u1:') && '-catalog-u1' || github.event_name == 'push' && startsWith(github.event.head_commit.message, 'qa-curricular-u2l5-archive:') && '-u2l5-archive' || '' }}
   cancel-in-progress: false
 
 jobs:
@@ -117,7 +117,7 @@ jobs:
         run: python -B -m unittest -v test_retired_state_layout.RetirementPublicationChainTest
 
   build:
-    name: ${{ github.event_name == 'push' && startsWith(github.event.head_commit.message, 'qa-code-scope:') && 'Verify nested code scopes and authentic publication retirement chains' || github.event_name == 'push' && (startsWith(github.event.head_commit.message, 'qa-reader-revision:') || startsWith(github.event.head_commit.message, 'qa-native-headers:')) && 'Verify automatic reading order after a live content edit' || github.event_name == 'push' && startsWith(github.event.head_commit.message, 'qa-native-catalog-u1:') && 'Verify the complete native catalog and four U1 editor regressions' || 'Compile original readers and verify catalog, choice revisions and project history' }}
+    name: ${{ github.event_name == 'push' && startsWith(github.event.head_commit.message, 'qa-reader-revision-regressions:') && 'Verify seven reader revision regressions with real Windows playback' || github.event_name == 'push' && startsWith(github.event.head_commit.message, 'qa-code-scope:') && 'Verify nested code scopes and authentic publication retirement chains' || github.event_name == 'push' && (startsWith(github.event.head_commit.message, 'qa-reader-revision:') || startsWith(github.event.head_commit.message, 'qa-native-headers:')) && 'Verify automatic reading order after a live content edit' || github.event_name == 'push' && startsWith(github.event.head_commit.message, 'qa-native-catalog-u1:') && 'Verify the complete native catalog and four U1 editor regressions' || 'Compile original readers and verify catalog, choice revisions and project history' }}
     # Archived-reader and Python-only history checks have dedicated jobs.
     # All ordinary pushes and manual dispatch keep their complete build.
     if: ${{ github.event_name != 'push' || (!startsWith(github.event.head_commit.message, 'qa-curricular-u2l5-archive:') && !startsWith(github.event.head_commit.message, 'qa-code-scope-history:')) }}
@@ -129,9 +129,9 @@ jobs:
     # allowing the additional work to finish on a busy Windows runner.
     timeout-minutes: 60
     env:
-      # Explicit prefixes select catalog/U1, live reload/header dependencies or code-scope QA.
+      # Explicit prefixes select catalog/U1, live reload, seven reader regressions or code-scope QA.
       # Normal pushes and manual dispatch retain all 98 ReaderBuild cases.
-      LGAED_NATIVE_QA_SUITE: ${{ github.event_name == 'push' && startsWith(github.event.head_commit.message, 'qa-code-scope:') && 'CodeScope' || github.event_name == 'push' && (startsWith(github.event.head_commit.message, 'qa-reader-revision:') || startsWith(github.event.head_commit.message, 'qa-native-headers:')) && 'ReaderRevision' || github.event_name == 'push' && startsWith(github.event.head_commit.message, 'qa-native-catalog-u1:') && 'CatalogU1' || 'ReaderBuild' }}
+      LGAED_NATIVE_QA_SUITE: ${{ github.event_name == 'push' && startsWith(github.event.head_commit.message, 'qa-reader-revision-regressions:') && 'ReaderRevisionRegressions' || github.event_name == 'push' && startsWith(github.event.head_commit.message, 'qa-code-scope:') && 'CodeScope' || github.event_name == 'push' && (startsWith(github.event.head_commit.message, 'qa-reader-revision:') || startsWith(github.event.head_commit.message, 'qa-native-headers:')) && 'ReaderRevision' || github.event_name == 'push' && startsWith(github.event.head_commit.message, 'qa-native-catalog-u1:') && 'CatalogU1' || 'ReaderBuild' }}
     defaults:
       run:
         shell: pwsh
@@ -150,37 +150,37 @@ jobs:
       # Focused native suites run their own complete CTest selection. Python
       # authoring regressions remain enabled for the complete ReaderBuild suite.
       - name: Verify fourteen historical line-order refinements and source-preservation guards
-        if: env.LGAED_NATIVE_QA_SUITE != 'ReaderRevision' && env.LGAED_NATIVE_QA_SUITE != 'CodeScope' && env.LGAED_NATIVE_QA_SUITE != 'CatalogU1'
+        if: env.LGAED_NATIVE_QA_SUITE != 'ReaderRevision' && env.LGAED_NATIVE_QA_SUITE != 'CodeScope' && env.LGAED_NATIVE_QA_SUITE != 'CatalogU1' && env.LGAED_NATIVE_QA_SUITE != 'ReaderRevisionRegressions'
         run: python -B -m unittest discover -s scripts/curriculum -p test_order_line_refinement.py -v
       - name: Verify CMake graph declarations preserve published lessons
-        if: env.LGAED_NATIVE_QA_SUITE != 'ReaderRevision' && env.LGAED_NATIVE_QA_SUITE != 'CodeScope' && env.LGAED_NATIVE_QA_SUITE != 'CatalogU1'
+        if: env.LGAED_NATIVE_QA_SUITE != 'ReaderRevision' && env.LGAED_NATIVE_QA_SUITE != 'CodeScope' && env.LGAED_NATIVE_QA_SUITE != 'CatalogU1' && env.LGAED_NATIVE_QA_SUITE != 'ReaderRevisionRegressions'
         run: python -B -m unittest discover -s scripts/curriculum -p test_cmake_graph_checks.py -v
       - name: Verify source-format revisions and matching Python-native line guards
-        if: env.LGAED_NATIVE_QA_SUITE != 'ReaderRevision' && env.LGAED_NATIVE_QA_SUITE != 'CodeScope' && env.LGAED_NATIVE_QA_SUITE != 'CatalogU1'
+        if: env.LGAED_NATIVE_QA_SUITE != 'ReaderRevision' && env.LGAED_NATIVE_QA_SUITE != 'CodeScope' && env.LGAED_NATIVE_QA_SUITE != 'CatalogU1' && env.LGAED_NATIVE_QA_SUITE != 'ReaderRevisionRegressions'
         run: python -B -m unittest discover -s scripts/curriculum -p test_code_format_compat.py -v
       - name: Verify open battery declarations and stable original owners
-        if: env.LGAED_NATIVE_QA_SUITE != 'ReaderRevision' && env.LGAED_NATIVE_QA_SUITE != 'CodeScope' && env.LGAED_NATIVE_QA_SUITE != 'CatalogU1'
+        if: env.LGAED_NATIVE_QA_SUITE != 'ReaderRevision' && env.LGAED_NATIVE_QA_SUITE != 'CodeScope' && env.LGAED_NATIVE_QA_SUITE != 'CatalogU1' && env.LGAED_NATIVE_QA_SUITE != 'ReaderRevisionRegressions'
         run: python -B -m unittest discover -s scripts/curriculum -p test_open_battery_contract.py -v
       - name: Verify stateful reduction declarations and original owner preservation
-        if: env.LGAED_NATIVE_QA_SUITE != 'ReaderRevision' && env.LGAED_NATIVE_QA_SUITE != 'CodeScope' && env.LGAED_NATIVE_QA_SUITE != 'CatalogU1'
+        if: env.LGAED_NATIVE_QA_SUITE != 'ReaderRevision' && env.LGAED_NATIVE_QA_SUITE != 'CodeScope' && env.LGAED_NATIVE_QA_SUITE != 'CatalogU1' && env.LGAED_NATIVE_QA_SUITE != 'ReaderRevisionRegressions'
         run: python -B -m unittest discover -s scripts/curriculum -p test_reduction_contract.py -v
       - name: Verify integer batteries and earlier client preservation
-        if: env.LGAED_NATIVE_QA_SUITE != 'ReaderRevision' && env.LGAED_NATIVE_QA_SUITE != 'CodeScope' && env.LGAED_NATIVE_QA_SUITE != 'CatalogU1'
+        if: env.LGAED_NATIVE_QA_SUITE != 'ReaderRevision' && env.LGAED_NATIVE_QA_SUITE != 'CodeScope' && env.LGAED_NATIVE_QA_SUITE != 'CatalogU1' && env.LGAED_NATIVE_QA_SUITE != 'ReaderRevisionRegressions'
         run: python -B -m unittest discover -s scripts/curriculum -p test_integer_battery_contract.py -v
       - name: Verify named-rule battery contracts and legacy compatibility
-        if: env.LGAED_NATIVE_QA_SUITE != 'ReaderRevision' && env.LGAED_NATIVE_QA_SUITE != 'CodeScope' && env.LGAED_NATIVE_QA_SUITE != 'CatalogU1'
+        if: env.LGAED_NATIVE_QA_SUITE != 'ReaderRevision' && env.LGAED_NATIVE_QA_SUITE != 'CodeScope' && env.LGAED_NATIVE_QA_SUITE != 'CatalogU1' && env.LGAED_NATIVE_QA_SUITE != 'ReaderRevisionRegressions'
         run: python -B -m unittest discover -s scripts/curriculum -p test_named_rule_checks.py -v
       - name: Verify course-edition authoring and Ninja fixture tree safety
-        if: env.LGAED_NATIVE_QA_SUITE != 'ReaderRevision' && env.LGAED_NATIVE_QA_SUITE != 'CodeScope' && env.LGAED_NATIVE_QA_SUITE != 'CatalogU1'
+        if: env.LGAED_NATIVE_QA_SUITE != 'ReaderRevision' && env.LGAED_NATIVE_QA_SUITE != 'CodeScope' && env.LGAED_NATIVE_QA_SUITE != 'CatalogU1' && env.LGAED_NATIVE_QA_SUITE != 'ReaderRevisionRegressions'
         run: python -B -m unittest discover -s scripts/curriculum -p test_course_edition.py -v
       - name: Verify authenticated choice and ordinary editorial revisions
-        if: env.LGAED_NATIVE_QA_SUITE != 'ReaderRevision' && env.LGAED_NATIVE_QA_SUITE != 'CodeScope' && env.LGAED_NATIVE_QA_SUITE != 'CatalogU1'
+        if: env.LGAED_NATIVE_QA_SUITE != 'ReaderRevision' && env.LGAED_NATIVE_QA_SUITE != 'CodeScope' && env.LGAED_NATIVE_QA_SUITE != 'CatalogU1' && env.LGAED_NATIVE_QA_SUITE != 'ReaderRevisionRegressions'
         run: python -B -m unittest discover -s scripts/curriculum -p test_general_choice_editorial.py -v
       - name: Verify optional explanations against archived U1L4 and unchanged answer contracts
-        if: env.LGAED_NATIVE_QA_SUITE != 'ReaderRevision' && env.LGAED_NATIVE_QA_SUITE != 'CodeScope' && env.LGAED_NATIVE_QA_SUITE != 'CatalogU1'
+        if: env.LGAED_NATIVE_QA_SUITE != 'ReaderRevision' && env.LGAED_NATIVE_QA_SUITE != 'CodeScope' && env.LGAED_NATIVE_QA_SUITE != 'CatalogU1' && env.LGAED_NATIVE_QA_SUITE != 'ReaderRevisionRegressions'
         run: python -B -m unittest discover -s scripts/curriculum -p test_ordinary_explanation_revision.py -v
       - name: Verify every programming course uses the complete indexed contract
-        if: env.LGAED_NATIVE_QA_SUITE != 'ReaderRevision' && env.LGAED_NATIVE_QA_SUITE != 'CodeScope' && env.LGAED_NATIVE_QA_SUITE != 'CatalogU1'
+        if: env.LGAED_NATIVE_QA_SUITE != 'ReaderRevision' && env.LGAED_NATIVE_QA_SUITE != 'CodeScope' && env.LGAED_NATIVE_QA_SUITE != 'CatalogU1' && env.LGAED_NATIVE_QA_SUITE != 'ReaderRevisionRegressions'
         run: python -B -m unittest discover -s scripts/curriculum -p test_programming_multicourse_validation.py -v
       # ReaderBuild includes eight revision tests with real Windows playback,
       # so its disposable hosted runner requires the verified audio endpoint.
@@ -189,9 +189,9 @@ jobs:
       # ReaderBuild retains all 98 tests; a missing playback endpoint remains a failure.
       - name: Compile the selected Windows QA suite and execute its complete tests
         env:
-          LGAED_EVALUATE_VIRTUAL_AUDIO: ${{ env.LGAED_NATIVE_QA_SUITE == 'ReaderBuild' || (github.event_name == 'workflow_dispatch' && inputs.evaluate_virtual_audio) || (github.event_name == 'push' && startsWith(github.event.head_commit.message, 'qa-reader-build-audio:')) || (github.event_name == 'push' && startsWith(github.event.head_commit.message, 'qa-curricular-current-readers:')) || (github.event_name == 'push' && (startsWith(github.event.head_commit.message, 'qa-reader-revision:') || startsWith(github.event.head_commit.message, 'qa-native-headers:'))) || (github.event_name == 'push' && startsWith(github.event.head_commit.message, 'qa-code-scope:')) }}
+          LGAED_EVALUATE_VIRTUAL_AUDIO: ${{ env.LGAED_NATIVE_QA_SUITE == 'ReaderBuild' || env.LGAED_NATIVE_QA_SUITE == 'ReaderRevisionRegressions' || (github.event_name == 'workflow_dispatch' && inputs.evaluate_virtual_audio) || (github.event_name == 'push' && startsWith(github.event.head_commit.message, 'qa-reader-build-audio:')) || (github.event_name == 'push' && startsWith(github.event.head_commit.message, 'qa-curricular-current-readers:')) || (github.event_name == 'push' && (startsWith(github.event.head_commit.message, 'qa-reader-revision:') || startsWith(github.event.head_commit.message, 'qa-native-headers:'))) || (github.event_name == 'push' && startsWith(github.event.head_commit.message, 'qa-code-scope:')) }}
         run: |
-          $qaEvaluateAudio = $env:LGAED_NATIVE_QA_SUITE -in @('ReaderBuild', 'ReaderRevision', 'CodeScope') -and $env:LGAED_EVALUATE_VIRTUAL_AUDIO -eq 'true'
+          $qaEvaluateAudio = $env:LGAED_NATIVE_QA_SUITE -in @('ReaderBuild', 'ReaderRevision', 'ReaderRevisionRegressions', 'CodeScope') -and $env:LGAED_EVALUATE_VIRTUAL_AUDIO -eq 'true'
           .\scripts\windows\Test-NativeCurricularCI.ps1 -Suite $env:LGAED_NATIVE_QA_SUITE -VirtualAudio:$qaEvaluateAudio
       - name: Preserve configure and compilation results
         if: always() && env.LGAED_NATIVE_QA_SUITE == 'ReaderBuild'
@@ -266,6 +266,27 @@ jobs:
             out/qa/reader-revision-ci/reader-revision-results.log
             out/qa/reader-revision-ci/CTestTestfile.cmake
             out/qa/reader-revision-ci/Testing/Temporary/*.log
+      - name: Preserve the seven reader revision regression results
+        if: always() && env.LGAED_NATIVE_QA_SUITE == 'ReaderRevisionRegressions'
+        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02
+        with:
+          name: windows-reader-revision-regressions-${{ github.sha }}
+          retention-days: 14
+          if-no-files-found: warn
+          path: |
+            out/qa/reader-revision-regressions-ci/CMakeFiles/CMakeConfigureLog.yaml
+            out/qa/reader-revision-regressions-ci/native-build.log
+            out/qa/reader-revision-regressions-ci/audio-environment.log
+            out/qa/reader-revision-regressions-ci/virtual-audio/*.log
+            out/qa/reader-revision-regressions-ci/virtual-audio/*.json
+            out/qa/reader-revision-regressions-ci/reader-revision-catalog.log
+            out/qa/reader-revision-regressions-ci/reader-revision-runtime-*/transport.jsonl
+            out/qa/reader-revision-regressions-ci/test-fixtures/reader-revision/*.json
+            out/qa/reader-revision-regressions-ci/reader-revision-regressions-tests.json
+            out/qa/reader-revision-regressions-ci/reader-revision-regressions-results.xml
+            out/qa/reader-revision-regressions-ci/reader-revision-regressions-results.log
+            out/qa/reader-revision-regressions-ci/CTestTestfile.cmake
+            out/qa/reader-revision-regressions-ci/Testing/Temporary/*.log
       - name: Preserve native code scopes and publication-chain evidence
         if: always() && env.LGAED_NATIVE_QA_SUITE == 'CodeScope'
         uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02
