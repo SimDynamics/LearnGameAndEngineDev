@@ -82,6 +82,8 @@ def _block(contract, block, where, *, root, document, position, structure_only):
         _validate(contract, where, contract.validate_math_puzzle_contract, block, where)
     if kind == "simulation":
         _validate(contract, where, contract.validate_simulation_contract, block, where)
+    if kind == "concept_diagram":
+        _validate(contract, where, contract.validate_concept_diagram_contract, block, where)
     if kind == "cpp_compiler":
         # A closed compileCheck may need its authenticated source-format
         # archive even in a structural audit. The block validator verifies

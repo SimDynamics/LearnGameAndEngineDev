@@ -34,6 +34,7 @@
 #include "core/cpp_project.hpp"
 #include "core/image_resource.hpp"
 #include "core/simulation.hpp"
+#include "core/concept_diagram.hpp"
 
 #include <algorithm>
 #include <algorithm>
@@ -50,7 +51,7 @@
 namespace lgaed::curriculum {
 
 enum class BlockType { heading, paragraph, note, code, multiple_choice, output_prediction,
-                       fill_code, order_code, cpp_compiler, inline_fill_code, drag_fill_code, math_puzzle, image, simulation };
+                       fill_code, order_code, cpp_compiler, inline_fill_code, drag_fill_code, math_puzzle, image, simulation, concept_diagram };
 // Derived from validated lesson-level metadata, never stored in a historical
 // editor block or its persisted response/fingerprint.
 enum class CompilerWorkflowCheck {
@@ -395,6 +396,7 @@ struct Block {
     std::string compiler_client_epoch;
     // Exploration has its own stable block identity and never stores an answer.
     std::optional<SimulationSpec> simulation;
+    std::optional<ConceptDiagramSpec> concept_diagram;
     // Private stdin executions retain the original public cases and receipts.
     std::optional<CppInputCheck> input_check;
     // Authored semantic roles select student locals without prescribing names.

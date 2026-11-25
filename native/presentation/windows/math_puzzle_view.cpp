@@ -712,7 +712,7 @@ struct Canvas {
 struct MathPuzzleView::Impl {
     struct Cell { HWND window; int width = 0; bool text = false;int inset_x=0,inset_y=0; };
     struct Row { std::vector<Cell> cells; int height = 42; int gap_after=8; int indent=0; };
-    struct Content {HWND window=nullptr;std::vector<Row> rows;bool horizontal=false,natural_columns=false,code_scope=false;int padding_x=0,padding_y=0,gap=0,minimum_column=0,scroll=0,extent=0;POINT drag_origin{};int drag_scroll=0;bool dragging=false,moved=false;};
+    struct Content {HWND window=nullptr;std::vector<Row> rows;bool horizontal=false,natural_columns=false,code_scope=false;bool diagram_frame=false,diagram_flow=false,diagram_memory=false,diagram_connector=false,diagram_labeled=false;reader_theme::Surface surface=reader_theme::Surface::card;int padding_x=0,padding_y=0,gap=0,minimum_column=0,scroll=0,extent=0;POINT drag_origin{};int drag_scroll=0;bool dragging=false,moved=false;};
     HWND host = nullptr,parent = nullptr;
     std::string locale; JsonObject block,answers,initial;
     MathPuzzleCallbacks callbacks;
@@ -759,6 +759,8 @@ struct MathPuzzleView::Impl {
     std::vector<curriculum::CodeScopePresentation> code_scopes;
     bool read_only_scope = false;
     std::set<HWND> decorative_checks;
+    std::optional<curriculum::ConceptDiagramSpec> diagram;
+    std::map<HWND,bool> diagram_arrows; // true: downward after responsive reflow
     std::map<const void*,std::string> source_paths;
     std::vector<winrt::com_ptr<::IUnknown>> source_objects;
     static std::string pointer_token(std::string_view token){std::string result;for(const auto c:token)result+=c=='~'?"~0":c=='/'?"~1":std::string(1,c);return result;}
@@ -793,13 +795,16 @@ struct MathPuzzleView::Impl {
     std::string tr(std::string es,std::string en,std::string fr) const { return locale.starts_with("fr") ? fr : locale.starts_with("en") ? en : es; }
     Impl(HWND owner,std::string raw,std::string lang,std::string saved,MathPuzzleCallbacks events,
         std::map<std::string,curriculum::TextSemantics> semantics,
-        std::vector<curriculum::CodeScopePresentation> scopes)
-        : parent(owner),locale(std::move(lang)),callbacks(std::move(events)),text_semantics(std::move(semantics)),code_scopes(std::move(scopes)) {
+        std::vector<curriculum::CodeScopePresentation> scopes,
+        std::optional<curriculum::ConceptDiagramSpec> authored_diagram)
+        : parent(owner),locale(std::move(lang)),callbacks(std::move(events)),text_semantics(std::move(semantics)),code_scopes(std::move(scopes)),diagram(std::move(authored_diagram)) {
         windows::ensure_winrt_apartment(); block = JsonObject::Parse(winrt::to_hstring(raw));
         // MathPuzzleParser gives legacy standalone interactions the same stable
         // response ID. Normalize presentation only; never rewrite the lesson.
         read_only_scope=text(block,L"type")=="code"&&code_scopes.size()==1&&code_scopes.front().read_only;
-        const bool standalone=!read_only_scope&&text(block,L"type")!="math_puzzle";
+        if((text(block,L"type")=="concept_diagram")!=diagram.has_value()||(diagram&&!code_scopes.empty()))
+            throw std::invalid_argument("Concept diagram requires its validated reading-only model");
+        const bool standalone=!diagram&&!read_only_scope&&text(block,L"type")!="math_puzzle";
         if(standalone) {
             auto response=JsonObject::Parse(block.Stringify());response.SetNamedValue(L"id",string_value("response"));
             JsonArray responses;responses.Append(response);block.SetNamedValue(L"responses",responses);
@@ -1057,7 +1062,86 @@ struct MathPuzzleView::Impl {
         }
         return widest+px(content.padding_x*2);
     }
+    void diagram_field(const curriculum::ConceptDiagramField& field,reader_theme::Surface surface,
+            RichTextRole role,bool centered){
+        // Explicitly unmarked fields are prose, not inferred C++ identifiers.
+        const auto* authored=semantics_at(field.path);
+        auto semantics=authored?*authored:curriculum::TextSemantics{field.text,{}};
+        const auto item=make(MSFTEDIT_CLASS,"",ES_MULTILINE|ES_READONLY);
+        reader_theme::apply(item,surface);
+        set_rich_text(item,field.text,{},false,role,locale,{}, {},&semantics);
+        PARAFORMAT2 format{};format.cbSize=sizeof(format);format.dwMask=PFM_ALIGNMENT|PFM_LINESPACING;
+        format.wAlignment=centered?PFA_CENTER:PFA_LEFT;format.bLineSpacingRule=5;format.dyLineSpacing=20;
+        SendMessageW(item,EM_SETPARAFORMAT,0,reinterpret_cast<LPARAM>(&format));
+        SendMessageW(item,EM_SETEVENTMASK,0,ENM_REQUESTRESIZE);
+        SetWindowSubclass(item,text_wheel_proc,14,reinterpret_cast<DWORD_PTR>(&callbacks));
+        regions.push_back({field.key,field.text,item,std::move(semantics),std::string("text")});
+        rows.push_back({{{item,0,true,2,2}},0,4});
+    }
+    void build_diagram(){
+        const auto first=rows.size();
+        diagram_field(diagram->title_field(),reader_theme::Surface::card,RichTextRole::prompt,false);
+        const auto flow_start=rows.size();
+        for(std::size_t index=0;index<diagram->nodes.size();++index){
+            const auto& node=diagram->nodes[index];const bool console=node.kind=="console";
+            const auto surface=console?reader_theme::Surface::compiler_output:reader_theme::Surface::card;
+            const auto card_start=rows.size();
+            for(const auto& field:diagram->node_fields(index))
+                diagram_field(field,surface,field.key.ends_with("/value")?RichTextRole::lesson_title:RichTextRole::body,!console);
+            rows.back().gap_after=0;
+            const auto card=group_content(card_start,false,false,12,12,4);
+            auto& card_content=*contents.at(card);card_content.diagram_frame=!console;
+            card_content.diagram_memory=node.kind=="memory";card_content.surface=surface;
+            reader_theme::apply(card,surface);
+            if(index>=diagram->links.size())continue;
+            const auto connector_start=rows.size();const auto link=diagram->link_field(index);
+            if(link)diagram_field(*link,reader_theme::Surface::card,RichTextRole::body,true);
+            const auto arrow=make(L"STATIC","",SS_OWNERDRAW);
+            diagram_arrows.emplace(arrow,false);
+            SetWindowSubclass(arrow,text_wheel_proc,14,reinterpret_cast<DWORD_PTR>(&callbacks));
+            rows.push_back({{{arrow}},32,0});
+            const auto connector=group_content(connector_start,false,false,0,0,2);
+            contents.at(connector)->diagram_connector=true;contents.at(connector)->diagram_labeled=link.has_value();
+        }
+        Row flow;flow.height=0;flow.gap_after=0;
+        for(std::size_t n=flow_start;n<rows.size();++n)flow.cells.push_back(rows[n].cells.front());
+        rows.erase(rows.begin()+static_cast<std::ptrdiff_t>(flow_start),rows.end());
+        rows.push_back(std::move(flow));
+        const auto flow_host=group_content(flow_start,false,false,0,0,8);
+        contents.at(flow_host)->diagram_flow=true;
+        rows.back().gap_after=0;
+        const auto outer=group_content(first,false,false,12,12,8);
+        contents.at(outer)->diagram_frame=true;
+    }
+    int diagram_flow_layout(Content& content,int width,bool move){
+        Row across=content.rows.front();
+        const auto scaled=[&](int value){return std::max(value,MulDiv(value,text_scale,100));};
+        int required=8*static_cast<int>(across.cells.size()-1);
+        for(auto& cell:across.cells){
+            const auto& child=*contents.at(cell.window);
+            if(child.diagram_connector){
+                cell.width=child.diagram_labeled?scaled(100):44;
+                required+=cell.width;
+            }else{cell.width=0;required+=scaled(144);}
+        }
+        const bool horizontal=width>=px(required);
+        for(auto& [arrow,down]:diagram_arrows){if(down==horizontal){down=!horizontal;InvalidateRect(arrow,nullptr,TRUE);}}
+        std::vector<Row> arranged;
+        if(horizontal){
+            // One small memory card and a flexible console match the reference;
+            // longer chains divide their available node width evenly.
+            if(across.cells.size()==3&&contents.at(across.cells.front().window)->diagram_memory)
+                across.cells.front().width=scaled(144);
+            arranged.push_back(std::move(across));
+        }else{
+            for(auto cell:across.cells){cell.width=0;arranged.push_back({{cell},0,8});}
+            arranged.back().gap_after=0;
+        }
+        content.extent=width;content.scroll=0;
+        return arrange_rows(arranged,content.window,width,move,0,0,8);
+    }
     int content_layout(Content& content,int width,bool move){
+        if(content.diagram_flow)return diagram_flow_layout(content,width,move);
         if(content.natural_columns){std::vector<int> columns;
             for(const auto& row:content.rows){if(columns.size()<row.cells.size())columns.resize(row.cells.size(),px(content.minimum_column));
                 for(std::size_t index=0;index<row.cells.size();++index){const auto& cell=row.cells[index];if(cell.text){SendMessageW(cell.window,EM_SETTARGETDEVICE,0,1);SendMessageW(cell.window,EM_REQUESTRESIZE,0,0);}
@@ -1546,6 +1630,10 @@ struct MathPuzzleView::Impl {
         const auto spacer=make(L"STATIC","");
         expand_button=button(tr("Pantalla completa","Full screen","Plein écran"),[this]{if(callbacks.fullscreen_requested)callbacks.fullscreen_requested();});
         reader_theme::icon_button(expand_button);
+        if(diagram){
+            rows.push_back({{{spacer},{expand_button,48}},48});
+            build_diagram();initial=JsonObject{};initializing=false;return;
+        }
         if(read_only_scope){
             rows.push_back({{{spacer},{expand_button,48}},48});
             code_scope_node(code_scopes.front().root,"code-scope/0/");
@@ -1791,14 +1879,16 @@ struct MathPuzzleView::Impl {
     }
     void paint_content(HWND window,HDC dc)const{
         RECT area{};GetClientRect(window,&area);
-        FillRect(dc,&area,reader_theme::brush(reader_theme::Surface::card));
         const auto found=contents.find(window);
-        if(found==contents.end()||!found->second->code_scope)return;
+        const auto surface=found==contents.end()?reader_theme::Surface::card:found->second->surface;
+        FillRect(dc,&area,reader_theme::brush(surface));
+        if(found==contents.end()||(!found->second->code_scope&&!found->second->diagram_frame))return;
         // Nesting and margins carry the relationship without relying on hue.
         // Geometry canvases retain their own point/segment/accent policy.
         const auto pen=CreatePen(PS_SOLID,std::max(1,px(1)),reader_theme::palette(window).outline);
         const auto previous_pen=SelectObject(dc,pen),previous_brush=SelectObject(dc,GetStockObject(NULL_BRUSH));
-        Rectangle(dc,area.left,area.top,area.right,area.bottom);
+        if(found->second->diagram_frame)RoundRect(dc,area.left,area.top,area.right,area.bottom,px(12),px(12));
+        else Rectangle(dc,area.left,area.top,area.right,area.bottom);
         SelectObject(dc,previous_brush);SelectObject(dc,previous_pen);DeleteObject(pen);
     }
     static LRESULT CALLBACK content_proc(HWND window,UINT message,WPARAM wparam,LPARAM lparam){
@@ -1831,7 +1921,7 @@ struct MathPuzzleView::Impl {
         cls.lpfnWndProc=content_proc;cls.lpszClassName=content_class;if(!RegisterClassExW(&cls)&&GetLastError()!=ERROR_CLASS_ALREADY_EXISTS)throw std::runtime_error("Cannot register mathematical content containers");
         host = CreateWindowExW(WS_EX_CONTROLPARENT,view_class,L"",WS_CHILD | WS_VISIBLE | WS_CLIPCHILDREN,0,0,1,1,parent,nullptr,GetModuleHandleW(nullptr),this);
         if (!host) throw std::runtime_error("Cannot create native math view");
-        if(!reader_theme::reference_mathematics(parent).has_value())reader_theme::set_reference_mathematics(host,!read_only_scope);
+        if(!reader_theme::reference_mathematics(parent).has_value())reader_theme::set_reference_mathematics(host,!read_only_scope&&!diagram);
         SetWindowSubclass(host,text_wheel_proc,14,reinterpret_cast<DWORD_PTR>(&callbacks));
         font = CreateFontW(-MulDiv(18,static_cast<int>(GetDpiForWindow(host)),96),0,0,0,FW_NORMAL,FALSE,FALSE,FALSE,DEFAULT_CHARSET,OUT_DEFAULT_PRECIS,CLIP_DEFAULT_PRECIS,CLEARTYPE_QUALITY,DEFAULT_PITCH,L"Roboto");
         base_font = CreateFontW(-MulDiv(18,static_cast<int>(GetDpiForWindow(host)),96),0,0,0,FW_NORMAL,FALSE,FALSE,FALSE,DEFAULT_CHARSET,OUT_DEFAULT_PRECIS,CLIP_DEFAULT_PRECIS,CLEARTYPE_QUALITY,DEFAULT_PITCH,L"Roboto");
@@ -1848,6 +1938,22 @@ struct MathPuzzleView::Impl {
         try {
             if (message == WM_MEASUREITEM && measure_native_menu(*reinterpret_cast<MEASUREITEMSTRUCT*>(lparam))) return TRUE;
             if (message == WM_DRAWITEM){const auto& item=*reinterpret_cast<DRAWITEMSTRUCT*>(lparam);
+                if(const auto arrow=self->diagram_arrows.find(item.hwndItem);arrow!=self->diagram_arrows.end()){
+                    FillRect(item.hDC,&item.rcItem,reader_theme::brush(reader_theme::Surface::card));
+                    const auto colors=reader_theme::palette(window);
+                    const auto pen=CreatePen(PS_SOLID,std::max(1,self->px(2)),colors.high_contrast?colors.text:colors.muted);
+                    const auto prior=SelectObject(item.hDC,pen);
+                    const auto x=(item.rcItem.left+item.rcItem.right)/2,y=(item.rcItem.top+item.rcItem.bottom)/2;
+                    const auto half=self->px(9),tip=self->px(5);
+                    if(arrow->second){
+                        MoveToEx(item.hDC,x,y-half,nullptr);LineTo(item.hDC,x,y+half);
+                        MoveToEx(item.hDC,x-tip,y+half-tip,nullptr);LineTo(item.hDC,x,y+half);LineTo(item.hDC,x+tip,y+half-tip);
+                    }else{
+                        MoveToEx(item.hDC,x-half,y,nullptr);LineTo(item.hDC,x+half,y);
+                        MoveToEx(item.hDC,x+half-tip,y-tip,nullptr);LineTo(item.hDC,x+half,y);LineTo(item.hDC,x+half-tip,y+tip);
+                    }
+                    SelectObject(item.hDC,prior);DeleteObject(pen);return TRUE;
+                }
                 if(self->decorative_checks.contains(item.hwndItem)){
                     const auto colors=reader_theme::palette(window);FillRect(item.hDC,&item.rcItem,reader_theme::brush(reader_theme::Surface::card));
                     const auto saved=SaveDC(item.hDC);SelectObject(item.hDC,self->font);SetBkMode(item.hDC,TRANSPARENT);
@@ -1878,13 +1984,14 @@ struct MathPuzzleView::Impl {
         initializing = true;
         for(const auto& canvas:canvases)canvas->close_expanded(false);
         for (auto item = GetWindow(host,GW_CHILD); item;) { const auto next = GetWindow(item,GW_HWNDNEXT); DestroyWindow(item); item = next; }
-        decorative_checks.clear();canvases.clear();rows.clear();contents.clear();card_children.clear();matching_empty_labels.clear();requested_widths.clear();intrinsic_widths.clear();label_formats.clear();typeset_fragments.clear(); regions.clear(); commands.clear(); editors.clear();expression_editors.clear();keyboard_contexts.clear();calculator_buttons.clear();input_disabled_readonly.clear(); orders.clear(); order_rows.clear(); order_cards.clear(); match_cards.clear(); selected_sources.clear(); choice_buttons.clear(); choice_options.clear();choice_labels.clear();choice_cards.clear();next_tap_positions.clear();matching_layouts.clear();expand_button=reset_button=nullptr;live_visuals.clear(); graph_fields.clear(); requested_heights.clear(); next_id = 100;
+        decorative_checks.clear();diagram_arrows.clear();canvases.clear();rows.clear();contents.clear();card_children.clear();matching_empty_labels.clear();requested_widths.clear();intrinsic_widths.clear();label_formats.clear();typeset_fragments.clear(); regions.clear(); commands.clear(); editors.clear();expression_editors.clear();keyboard_contexts.clear();calculator_buttons.clear();input_disabled_readonly.clear(); orders.clear(); order_rows.clear(); order_cards.clear(); match_cards.clear(); selected_sources.clear(); choice_buttons.clear(); choice_options.clear();choice_labels.clear();choice_cards.clear();next_tap_positions.clear();matching_layouts.clear();expand_button=reset_button=nullptr;live_visuals.clear(); graph_fields.clear(); requested_heights.clear(); next_id = 100;
     }
 };
 
 MathPuzzleView::MathPuzzleView(HWND parent,std::string raw,std::string locale,std::string saved,MathPuzzleCallbacks callbacks,
-    std::map<std::string,curriculum::TextSemantics> semantics,std::vector<curriculum::CodeScopePresentation> code_scopes)
-    : impl_(std::make_unique<Impl>(parent,std::move(raw),std::move(locale),std::move(saved),std::move(callbacks),std::move(semantics),std::move(code_scopes))) { impl_->initialize(); }
+    std::map<std::string,curriculum::TextSemantics> semantics,std::vector<curriculum::CodeScopePresentation> code_scopes,
+    std::optional<curriculum::ConceptDiagramSpec> diagram)
+    : impl_(std::make_unique<Impl>(parent,std::move(raw),std::move(locale),std::move(saved),std::move(callbacks),std::move(semantics),std::move(code_scopes),std::move(diagram))) { impl_->initialize(); }
 std::string math_field_keyboard_context(HWND field){const auto value=static_cast<const std::string*>(GetPropW(field,keyboard_context_property));return value?*value:std::string{};}
 bool apply_math_calculator_result(HWND field,std::string_view latex){
     if(!IsWindow(field)||!IsWindowEnabled(field)||math_field_keyboard_context(field).empty())return false;
@@ -1911,6 +2018,8 @@ std::vector<MathReadingRegion> MathPuzzleView::reading_regions() const {
     auto result = impl_->regions;
     for(auto& region:result)if(const auto format=impl_->label_formats.find(region.target);format!=impl_->label_formats.end())
         region.math_mode=format->second.first;
+    // Responsive layout must never change the authored reading order.
+    if(impl_->diagram)return result;
     std::ranges::stable_sort(result,[](const auto& left,const auto& right) { RECT a{},b{}; GetWindowRect(left.target,&a); GetWindowRect(right.target,&b);
         return a.top != b.top ? a.top < b.top : a.left < b.left; });
     return result;

@@ -93,6 +93,13 @@ def public_text_fields(block):
     elif kind == "image":
         for field in ("alt", "caption"):
             text(block, field, "")
+    elif kind == "concept_diagram":
+        text(block, "title", "")
+        for index, node in enumerate(block.get("nodes", [])):
+            for field in ("label", "value", "caption"):
+                text(node, field, f"/nodes/{index}")
+        for index, link in enumerate(block.get("links", [])):
+            text(link, "label", f"/links/{index}")
     elif kind == "simulation":
         # Only immutable text already visible before interacting. Generated
         # frames and future explanations are never preplanned as page reading.

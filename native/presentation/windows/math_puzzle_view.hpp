@@ -7,6 +7,7 @@
 #include <functional>
 #include <memory>
 #include <map>
+#include "core/concept_diagram.hpp"
 #include <span>
 #include <optional>
 #include <string>
@@ -55,7 +56,8 @@ public:
     MathPuzzleView(HWND parent,std::string original_block_json,std::string locale,
         std::string saved_answers_json,MathPuzzleCallbacks callbacks = {},
         std::map<std::string,curriculum::TextSemantics> text_semantics = {},
-        std::vector<curriculum::CodeScopePresentation> code_scopes = {});
+        std::vector<curriculum::CodeScopePresentation> code_scopes = {},
+        std::optional<curriculum::ConceptDiagramSpec> diagram = {});
     ~MathPuzzleView();
     MathPuzzleView(const MathPuzzleView&) = delete;
     MathPuzzleView& operator=(const MathPuzzleView&) = delete;

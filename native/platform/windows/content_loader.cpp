@@ -3527,7 +3527,7 @@ StateLayout read_layout(const JsonObject& metadata, const JsonArray& pages, std:
             require((retired.next.empty() || (valid_id(retired.next) && result.signatures.contains(retired.next))) &&
                     retired.next != retired.id,"Invalid retired activity successor");
             const auto block = item.GetNamedObject(L"block"); const auto type = text(block,"type");
-            require(type == "heading" || type == "paragraph" || type == "note" || type == "code" || type == "cpp_compiler" || type == "image" || type == "simulation",
+            require(type == "heading" || type == "paragraph" || type == "note" || type == "code" || type == "cpp_compiler" || type == "image" || type == "simulation" || type == "concept_diagram",
                     "Only compiler activities and their presentation blocks can be retired");
             auto projected=block;
             if(const auto format=source_format_originals.find(retired.id);
@@ -4159,6 +4159,57 @@ OutputCheck read_output_check(const JsonObject& value,std::string_view original,
     }
     return result;
 }
+ConceptDiagramSpec read_concept_diagram(const JsonObject& block,std::string_view raw) {
+    allowed_keys(block,{"type","id","schemaVersion","title","nodes","links"});
+    const OriginalJson original(raw);
+    require(integer(block.GetNamedValue(L"schemaVersion"),1)==1&&
+        original.text(original.member(original.root(),"schemaVersion"))=="1",
+        "Concept diagram requires integer schemaVersion 1");
+    const auto identifier=[](std::string_view value){
+        return !value.empty()&&value.size()<=64&&value.front()>='a'&&value.front()<='z'&&
+            std::ranges::all_of(value,[](char c){return (c>='a'&&c<='z')||(c>='0'&&c<='9')||c=='_';});
+    };
+    const auto visible=[](const JsonObject& owner,std::string_view field,std::size_t limit,bool multiline=false){
+        const auto source=owner.GetNamedString(key(field));
+        const auto value=bibliography_string(source);
+        require(value.size()<=limit&&authored_nonblank(value),"Concept diagram text is blank or too long");
+        for(const auto c:std::wstring_view(source.c_str(),source.size())){
+            require((c>=0x20&&!(c>=0x7f&&c<=0x9f)&&c!=0x2028&&c!=0x2029)||
+                (multiline&&(c==L'\n'||c==L'\t')),"Concept diagram text contains an unsupported control");
+        }
+        validate_text_semantics({value,{}});
+        return value;
+    };
+    if(block.HasKey(L"id"))require(identifier(text(block,"id")),"Invalid concept diagram block ID");
+    ConceptDiagramSpec result;
+    result.title=visible(block,"title",512);
+    const auto nodes=array(block,"nodes"),links=array(block,"links");
+    require(nodes.Size()>=1&&nodes.Size()<=8&&links.Size()+1==nodes.Size(),
+        "Concept diagram requires one to eight ordered nodes and consecutive links");
+    std::set<std::string> ids;
+    for(const auto& entry:nodes){
+        const auto node=entry.GetObject();
+        allowed_keys(node,{"id","kind","label","value","caption"});
+        ConceptDiagramNode parsed;
+        parsed.id=text(node,"id");parsed.kind=text(node,"kind");
+        require(identifier(parsed.id)&&ids.insert(parsed.id).second,"Invalid or duplicate concept diagram node ID");
+        require(parsed.kind=="generic"||parsed.kind=="memory"||parsed.kind=="console","Unknown concept diagram node kind");
+        parsed.label=visible(node,"label",512);
+        parsed.value=visible(node,"value",2048,true);
+        if(node.HasKey(L"caption"))parsed.caption=visible(node,"caption",512);
+        result.nodes.push_back(std::move(parsed));
+    }
+    for(unsigned index=0;index<links.Size();++index){
+        const auto link=links.GetObjectAt(index);
+        allowed_keys(link,{"from","to","label"});
+        ConceptDiagramLink parsed{text(link,"from"),text(link,"to"),{}};
+        require(parsed.from==result.nodes[index].id&&parsed.to==result.nodes[index+1].id,
+            "Concept diagram links must connect consecutive nodes in declared direction");
+        if(link.HasKey(L"label"))parsed.label=visible(link,"label",512);
+        result.links.push_back(std::move(parsed));
+    }
+    return result;
+}
 Block read_block(const JsonObject& value,std::string_view original,
     const JsonObject* authenticated_source_before) {
     Block result; result.raw_json = original;
@@ -4166,13 +4217,14 @@ Block read_block(const JsonObject& value,std::string_view original,
     const std::map<std::string, BlockType> types{{"heading", BlockType::heading}, {"paragraph", BlockType::paragraph}, {"note", BlockType::note}, {"code", BlockType::code},
         {"multiple_choice", BlockType::multiple_choice}, {"output_prediction", BlockType::output_prediction}, {"fill_code", BlockType::fill_code},
         {"order_code", BlockType::order_code}, {"cpp_compiler", BlockType::cpp_compiler},
-        {"inline_fill_code",BlockType::inline_fill_code}, {"drag_fill_code",BlockType::drag_fill_code}, {"image",BlockType::image}, {"simulation",BlockType::simulation}};
+        {"inline_fill_code",BlockType::inline_fill_code}, {"drag_fill_code",BlockType::drag_fill_code}, {"image",BlockType::image}, {"simulation",BlockType::simulation}, {"concept_diagram",BlockType::concept_diagram}};
     const std::set<std::string> mathematics{"math_puzzle","math_multiple_choice_single","math_multiple_choice_multi","math_numeric_input",
         "math_multi_input","math_expression_input","math_structured_answer","math_equation_fill_blanks","math_ordering_drag","math_number_line",
         "math_slider_interaction","math_matching_drag","math_coordinate_graph_builder","math_geometry_builder","math_rigid_angle_copy","math_segment_transport"};
     require(types.contains(type) || mathematics.contains(type), "Unsupported block type: " + type);
     result.type = mathematics.contains(type) ? BlockType::math_puzzle : types.at(type);
     if(result.type==BlockType::simulation)result.simulation=read_simulation(value);
+    if(result.type==BlockType::concept_diagram)result.concept_diagram=read_concept_diagram(value,original);
     if(result.type==BlockType::image){
         allowed_keys(value,{"type","id","imageId","src","alt","caption"});
         result.image=ImageResource{text(value,"imageId"),text(value,"src"),text(value,"alt"),optional_text(value,"caption")};
@@ -4383,6 +4435,14 @@ struct SemanticPublicFields {
         if(type=="heading"||type=="paragraph"||type=="note")string_field(source,"text","");
         else if(type=="image")for(const auto name:{"alt","caption"})string_field(source,name,"");
         else if(type=="simulation")for(const auto name:{"title","description"})string_field(source,name,"");
+        else if(type=="concept_diagram"){
+            string_field(source,"title","");
+            const auto nodes=values(source,"nodes"),links=values(source,"links");
+            for(unsigned n=0;n<nodes.Size();++n)if(nodes.GetAt(n).ValueType()==JsonValueType::Object)
+                for(const auto name:{"label","value","caption"})string_field(nodes.GetObjectAt(n),name,"/nodes/"+std::to_string(n));
+            for(unsigned n=0;n<links.Size();++n)if(links.GetAt(n).ValueType()==JsonValueType::Object)
+                string_field(links.GetObjectAt(n),"label","/links/"+std::to_string(n));
+        }
         else if(type=="multiple_choice"||type=="fill_code"||type=="output_prediction"||type=="order_code"||type=="drag_fill_code"||type=="inline_fill_code"){
             for(const auto name:{"question","explanation"})string_field(source,name,"");
             if(type=="multiple_choice")strings(values(source,"options"),"/options");

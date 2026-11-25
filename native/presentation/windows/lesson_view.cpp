@@ -920,6 +920,7 @@ struct LessonView {
                     region.source_text,region.target,index,false,false,exercise(current.type),
                     exercise(current.type)?vm.response.correct:true});
                 reading_context(result.back(),current);
+                if(current.type==BlockType::concept_diagram)result.back().anchor=result.back().key;
                 if(script_version==0&&region.math_mode&&*region.math_mode!=result.back().math_mode){
                     result.back().previous_math_mode=result.back().math_mode;
                     result.back().math_mode=*region.math_mode;
@@ -1268,7 +1269,7 @@ struct LessonView {
                 if(curriculum::retired_block(lesson,current.stable_id))if(const auto next=curriculum::active_block_successor(lesson,current.stable_id)) {
                     const auto& successor=lesson.pages[next->page].blocks[next->block];
                     region.retired_successor=lesson.id+'/'+lesson.locale+'/'+lesson.pages[next->page].stable_id+'/'+successor.stable_id+
-                        (successor.type==BlockType::simulation?"/simulation/":"/part/");
+                        (successor.type==BlockType::simulation?"/simulation/":successor.type==BlockType::concept_diagram?"/concept-diagram/":"/part/");
                 }
                 result.push_back(std::move(region));
             };
@@ -1287,6 +1288,15 @@ struct LessonView {
                         emit(index,current,entry.first=="title"?0:19,entry.second,false,"/"+entry.first);
                         result.back().key=lesson.id+'/'+lesson.locale+'/'+page_id+'/'+current.stable_id+"/simulation/"+entry.first;
                         result.back().anchor=result.back().key;
+                    }
+                    continue;
+                }
+                if(current.concept_diagram){
+                    for(const auto& field:current.concept_diagram->reading_fields()){
+                        emit(index,current,0,field.text,false,field.path);
+                        auto& region=result.back();region.key=lesson.id+'/'+lesson.locale+'/'+page_id+'/'+current.stable_id+'/'+field.key;
+                        region.anchor=region.key;region.solved=true;region.previous_math_mode=region.math_mode;region.math_mode="text";
+                        if(!region.text_semantics)region.text_semantics=curriculum::TextSemantics{field.text,{}};
                     }
                     continue;
                 }
@@ -3435,15 +3445,15 @@ struct LessonView {
         }
         if (current.type == BlockType::note) text_row(ui("Nota","Note","Note"),control_id(index,19),false,{},RichTextRole::heading);
         if (current.type == BlockType::paragraph || current.type == BlockType::note) { text_row(current.text, control_id(index, 0), false, current.emphasis); return; }
-        if (current.type == BlockType::code) {
-            if(!current.code_scope_presentations.empty()&&current.code_scope_presentations.front().read_only){
+        if (current.type == BlockType::code||current.type==BlockType::concept_diagram) {
+            if(current.concept_diagram||(!current.code_scope_presentations.empty()&&current.code_scope_presentations.front().read_only)){
                 MathPuzzleCallbacks callbacks;
                 callbacks.layout_changed=[this]{if(!updating)reflow();};
                 callbacks.passive_gesture=[this](HWND origin,UINT message,WPARAM keys,LPARAM point){return drag_message(origin,message,keys,point);};
                 callbacks.back_requested=[this]{(void)navigate_back();};
                 callbacks.fullscreen_requested=[this,index]{toggle_fullscreen(index,false);};
                 vm.math=std::make_unique<MathPuzzleView>(pane,current.raw_json,lesson.locale,"{}",
-                    std::move(callbacks),current.text_semantics,current.code_scope_presentations);
+                    std::move(callbacks),current.text_semantics,current.code_scope_presentations,current.concept_diagram);
                 SetWindowLongPtrW(vm.math->window(),GWLP_ID,control_id(index,5));
                 SetWindowSubclass(vm.math->fullscreen_button(),console_icon_proc,21,reinterpret_cast<DWORD_PTR>(this));
                 rows.push_back({{vm.math->window()},{0},40,false});

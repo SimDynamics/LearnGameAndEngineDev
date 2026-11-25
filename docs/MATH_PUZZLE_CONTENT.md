@@ -494,3 +494,47 @@ El párrafo original permanece en la lección y en su dirección histórica, per
 Una hoja de nota puede añadir `icon: "check"`. El componente dibuja un ✓ en un control separado sin texto; el símbolo no pertenece a la fuente, sus offsets, el marcado ni el plan de voz. Omitir `icon` conserva exactamente la misma lectura y el mismo orden. La colocación relativa de las notas la determina exclusivamente la lista `children`: una nota dentro del hijo que representa el `if` se muestra allí; una nota posterior a ese hijo y anterior al fragmento `return` permanece dentro del contenedor de `main`.
 
 Los cargadores completo y de progreso y el validador Python comprueban las mismas fuentes, límites y reglas de consumo antes de producir esta presentación. El esquema no cambia la evaluación, los borradores ni las selecciones de los ejercicios vecinos.
+
+## Diagramas conceptuales de lectura en Windows
+
+El bloque independiente `concept_diagram` no es un puzzle ni una simulación. Reutiliza los controles nativos de lectura, la paleta y el tamaño de texto de la lección. Work puede incorporarlo a cualquier ruta mediante JSON; no requiere imágenes ni código ejecutable.
+
+```json
+{
+  "type": "concept_diagram",
+  "schemaVersion": 1,
+  "id": "tarifa_memoria_consola",
+  "title": "Representación conceptual de la memoria",
+  "nodes": [
+    {
+      "id": "tarifa",
+      "kind": "memory",
+      "label": "tarifa",
+      "value": "8",
+      "caption": "Memoria"
+    },
+    {
+      "id": "consola",
+      "kind": "console",
+      "label": "Consola",
+      "value": "8"
+    }
+  ],
+  "links": [
+    {
+      "from": "tarifa",
+      "to": "consola"
+    }
+  ]
+}
+```
+
+- `schemaVersion` es el entero JSON 1. El `id` de bloque es opcional. Los identificadores de nodo son únicos: letra ASCII minúscula inicial, seguida de letras minúsculas, dígitos o guion bajo (máximo 64 caracteres).
+- `nodes` contiene entre uno y ocho nodos en el orden de lectura. Cada nodo tiene `id`, `kind` (`generic`, `memory` o `console`), `label`, `value` y una `caption` opcional. Los valores se destacan tipográficamente. El estilo consola utiliza la superficie nativa de salida, sin atribuir un acierto ni una ejecución real.
+- `links` contiene exactamente una flecha por pareja consecutiva de nodos, en esa dirección, con `from` y `to` y una `label` opcional. No se admiten grafos ramificados, ciclos, posiciones absolutas ni referencias a nodos ajenos en esta primera versión.
+- Los títulos, etiquetas y pies son cadenas no vacías (hasta 512 bytes UTF-8); los valores admiten hasta 2048 bytes UTF-8, LF y tabulador. Se rechazan NUL, otros caracteres de control y campos desconocidos.
+- Se muestra un flujo horizontal cuando caben los nodos y se adapta a una columna con flechas hacia abajo cuando falta anchura. Las palabras se mantienen en controles de lectura nativos. El lector conserva el orden autorado: título, etiqueta, valor, pie del nodo, etiqueta de conexión si existe y siguiente nodo. La flecha dibujada no añade texto al guion. Si la relación necesita explicación, declarar una etiqueta de conexión.
+- El marcado semántico usa `textSemantics` y los campos exactos `/title`, `/nodes/0/label`, `/nodes/0/value`, `/nodes/0/caption` y `/links/0/label` (con los índices correspondientes). Sin descriptor, el texto es prosa. Se conservan las paletas de los significados declarados y el contraste del sistema.
+- El bloque es exclusivamente de presentación: no contiene respuestas, no concede logros ni impide avanzar. Los propietarios y el contenido publicado permanecen protegidos por el mapa de estado; para sustituir una representación publicada con otra, utilizar la retirada y adición compatible de bloques de lectura, sin reutilizar identidades.
+- El ejemplo de [memoria y consola](examples/concept_diagram_memory_console.json) es un recurso de QA, no una modificación de una lección. Los valores son conceptuales; no demuestran que un compilador haya reservado memoria física.
+
