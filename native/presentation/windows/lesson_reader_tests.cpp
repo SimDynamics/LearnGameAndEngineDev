@@ -25,6 +25,8 @@
 
 #include <commctrl.h>
 #include <richedit.h>
+#include <richole.h>
+#include <tom.h>
 #include <wincodec.h>
 #include <wrl/client.h>
 #include <oleacc.h>
@@ -43,6 +45,7 @@
 #include <fstream>
 #include <future>
 #include <iostream>
+#include <limits>
 #include <optional>
 #include <set>
 #include <source_location>

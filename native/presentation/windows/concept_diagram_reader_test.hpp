@@ -72,15 +72,55 @@ double contrast(COLORREF foreground,COLORREF background){
 
 void verify_text_ink(const MathReadingRegion& region){
     const auto native=wide(edit_text(region.target));
-    RECT text_area{};SendMessageW(region.target,EM_GETRECT,0,reinterpret_cast<LPARAM>(&text_area));
+    // EM_GETRECT reports unzoomed insets, whereas EM_POSFROMCHAR reports
+    // physical client pixels. Use the native TextServices viewport, just
+    // as the production RichEdit hint renderer does at non-default zoom.
+    RECT format_area{},client{};
+    SendMessageW(region.target,EM_GETRECT,0,reinterpret_cast<LPARAM>(&format_area));
+    check(GetClientRect(region.target,&client)!=0,"Cannot measure diagram RichEdit client");
+    int numerator=0,denominator=0;
+    SendMessageW(region.target,EM_GETZOOM,reinterpret_cast<WPARAM>(&numerator),reinterpret_cast<LPARAM>(&denominator));
+    if(!numerator||!denominator){numerator=1;denominator=1;}
+    RECT viewport{MulDiv(format_area.left,numerator,denominator),MulDiv(format_area.top,numerator,denominator),
+        client.right-MulDiv(client.right-format_area.right,numerator,denominator),
+        client.bottom-MulDiv(client.bottom-format_area.bottom,numerator,denominator)};
+    Microsoft::WRL::ComPtr<IRichEditOle> ole;
+    SendMessageW(region.target,EM_GETOLEINTERFACE,0,reinterpret_cast<LPARAM>(ole.GetAddressOf()));
+    Microsoft::WRL::ComPtr<ITextDocument2> document;
+    bool measured=false;
+    if(ole&&SUCCEEDED(ole.As(&document))){
+        RECT actual{};
+        if(document->GetClientRect(tomClientCoord|tomIncludeInset,&actual.left,&actual.top,&actual.right,&actual.bottom)==S_OK){
+            viewport=actual;measured=true;
+        }
+    }
+    RECT text_area{};
+    check(IntersectRect(&text_area,&client,&viewport)!=0,"Diagram has no visible native text viewport: "+region.key);
+    const auto rectangle=[](const RECT& r){return std::to_string(r.left)+","+std::to_string(r.top)+","+
+        std::to_string(r.right)+","+std::to_string(r.bottom);};
+    // Check every non-whitespace scalar's position BEFORE inspecting any
+    // selection-based character formats. Selecting must not scroll a
+    // clipped line into view and thereby conceal a layout regression.
+    POINT original_scroll{};
+    SendMessageW(region.target,EM_GETSCROLLPOS,0,reinterpret_cast<LPARAM>(&original_scroll));
+    constexpr auto absent=std::numeric_limits<LONG>::min();
+    for(std::size_t i=0;i<native.size();++i){
+        if(std::iswspace(native[i])||IS_LOW_SURROGATE(native[i]))continue;
+        POINTL point{absent,absent};
+        SendMessageW(region.target,EM_POSFROMCHAR,reinterpret_cast<WPARAM>(&point),i);
+        check(point.x>=text_area.left&&point.x<text_area.right&&
+              point.y>=text_area.top&&point.y<text_area.bottom,
+              "An authored diagram character is outside its physical RichEdit viewport: "+region.key+
+              " unit="+std::to_string(i)+" point="+std::to_string(point.x)+","+std::to_string(point.y)+
+              " zoom="+std::to_string(numerator)+"/"+std::to_string(denominator)+
+              " format="+rectangle(format_area)+" viewport="+rectangle(text_area)+
+              " client="+rectangle(client)+" TOM="+std::to_string(measured)+
+              " scroll="+std::to_string(original_scroll.x)+","+std::to_string(original_scroll.y));
+    }
     const auto surface=reader_theme::background(region.target);
     const auto palette=reader_theme::palette(region.target);
     for(std::size_t i=0;i<native.size();++i){
         if(std::iswspace(native[i])||IS_LOW_SURROGATE(native[i]))continue;
-        POINTL point{};SendMessageW(region.target,EM_POSFROMCHAR,reinterpret_cast<WPARAM>(&point),i);
-        check(point.x>=text_area.left&&point.x<text_area.right&&
-              point.y>=text_area.top&&point.y<text_area.bottom,
-              "An authored diagram character is outside its RichEdit viewport: "+region.key);
         const auto format=character_format(region.target,static_cast<LONG>(i));
         const auto ink=(format.dwEffects&CFE_AUTOCOLOR)?reader_theme::foreground(region.target):format.crTextColor;
         const auto background=(format.dwEffects&CFE_AUTOBACKCOLOR)?surface:format.crBackColor;
@@ -88,6 +128,7 @@ void verify_text_ink(const MathReadingRegion& region){
             check(ink==palette.text&&background==surface,"Diagram text overrode system high-contrast ink or surface");
         else check(contrast(ink,background)>=4.5,"Diagram character lacks 4.5:1 contrast: "+region.key);
     }
+    SendMessageW(region.target,EM_SETSCROLLPOS,0,reinterpret_cast<LPARAM>(&original_scroll));
 }
 
 void verify_arrow(HWND arrow,HWND view,bool horizontal){
@@ -143,6 +184,9 @@ void visual(HWND parent,const curriculum::Block& block,const std::filesystem::pa
         view.set_text_scale(scale);
         for(const auto width:{1120,280}){
             view.layout(0,0,px(width));
+            // Keep actual pixels for every scale before asserting geometry.
+            code_scope_reader_test::capture_png(view.window(),artifacts/
+                (std::string(name)+"-"+std::to_string(width)+"-"+std::to_string(scale)+".png"));
             const auto regions=view.reading_regions();
             check(regions.size()==expected.size(),"A diagram duplicated or omitted its authored reading fields");
             RECT bounds{};GetClientRect(view.window(),&bounds);
@@ -183,7 +227,7 @@ void visual(HWND parent,const curriculum::Block& block,const std::filesystem::pa
             }
             std::vector<HWND> arrows;
             EnumChildWindows(view.window(),[](HWND item,LPARAM data)->BOOL{
-                if(code_scope_reader_test::window_class(item)==L"Static"&&
+                if(_wcsicmp(code_scope_reader_test::window_class(item).c_str(),L"Static")==0&&
                     (GetWindowLongPtrW(item,GWL_STYLE)&SS_TYPEMASK)==SS_OWNERDRAW)
                     reinterpret_cast<std::vector<HWND>*>(data)->push_back(item);
                 return TRUE;
@@ -210,8 +254,7 @@ void visual(HWND parent,const curriculum::Block& block,const std::filesystem::pa
                 verify_arrow(arrows[i],view.window(),horizontal);
             }
             check(JsonObject::Parse(wide(view.answers_json())).Size()==0,"Diagram created a response");
-            if(scale==100)code_scope_reader_test::capture_png(view.window(),artifacts/
-                (std::string(name)+"-"+std::to_string(width)+".png"));
+
         }
     }
     std::cout<<"PASS real diagram geometry, character bounds, contrast, directed arrows and read-only controls "
