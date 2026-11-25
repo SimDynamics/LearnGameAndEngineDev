@@ -275,7 +275,9 @@ $qaSuiteConfig = switch ($Suite) {
             Tests = @(
                 'native.code_scope_authoring',
                 'native.retirement_publication_chain_authoring',
-                'native.code_scope_reader'
+                'native.code_scope_reader',
+                'native.concept_diagram_authoring',
+                'native.concept_diagram_reader'
             )
         }
     }

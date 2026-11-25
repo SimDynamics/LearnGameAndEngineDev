@@ -4162,6 +4162,7 @@ OutputCheck read_output_check(const JsonObject& value,std::string_view original,
 ConceptDiagramSpec read_concept_diagram(const JsonObject& block,std::string_view raw) {
     allowed_keys(block,{"type","id","schemaVersion","title","nodes","links"});
     const OriginalJson original(raw);
+    (void)original.ordered_frame(original.root()); // reject duplicate authored members before accepting the WinRT projection
     require(integer(block.GetNamedValue(L"schemaVersion"),1)==1&&
         original.text(original.member(original.root(),"schemaVersion"))=="1",
         "Concept diagram requires integer schemaVersion 1");
@@ -8674,8 +8675,10 @@ curriculum::Lesson parse_lesson_progress_metadata(std::string_view source, std::
                     // Valid per-answer reviewFeedback arrays must remain raw,
                     // without being misinterpreted as a string by read_block.
                     const auto projection=JsonObject::Parse(block.Stringify());
-                    if(projection.HasKey(L"explanation"))projection.Remove(L"explanation");
-                    if(projection.HasKey(L"reviewFeedback"))projection.Remove(L"reviewFeedback");
+                    if(text(block,"type")!="concept_diagram"){
+                        if(projection.HasKey(L"explanation"))projection.Remove(L"explanation");
+                        if(projection.HasKey(L"reviewFeedback"))projection.Remove(L"reviewFeedback");
+                    }
                     try { page.blocks.push_back(read_block(projection,raw)); }
                     catch(const std::exception& failure){throw std::runtime_error("Progress page "+std::to_string(p+1)+" block "+std::to_string(b+1)+": "+failure.what());}
                 }

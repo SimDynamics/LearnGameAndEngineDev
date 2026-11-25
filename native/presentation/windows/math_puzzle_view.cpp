@@ -1132,7 +1132,28 @@ struct MathPuzzleView::Impl {
             // longer chains divide their available node width evenly.
             if(across.cells.size()==3&&contents.at(across.cells.front().window)->diagram_memory)
                 across.cells.front().width=scaled(144);
-            arranged.push_back(std::move(across));
+            const auto gap=px(8);
+            const auto gaps=gap*static_cast<int>(across.cells.size()-1);
+            int fixed=0,flex=0;
+            for(const auto& cell:across.cells){if(cell.width)fixed+=px(cell.width);else ++flex;}
+            int remaining=std::max(0,width-fixed-gaps);
+            std::vector<int> widths,heights;
+            int height=0;
+            for(const auto& cell:across.cells){
+                int w=px(cell.width);
+                if(!cell.width){w=std::max(1,remaining/std::max(1,flex));remaining-=w;--flex;}
+                const auto h=content_layout(*contents.at(cell.window),w,move);
+                widths.push_back(w);heights.push_back(h);height=std::max(height,h);
+            }
+            if(move){
+                int x=0;
+                for(std::size_t i=0;i<across.cells.size();++i){
+                    MoveWindow(across.cells[i].window,x,(height-heights[i])/2,widths[i],heights[i],TRUE);
+                    x+=widths[i]+gap;
+                }
+            }
+            content.extent=width;content.scroll=0;
+            return height;
         }else{
             for(auto cell:across.cells){cell.width=0;arranged.push_back({{cell},0,8});}
             arranged.back().gap_after=0;

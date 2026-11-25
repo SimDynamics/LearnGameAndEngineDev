@@ -53,4 +53,6 @@ function(lgaed_add_code_scope_tests)
         COMMAND lgaed_lesson_reader_tests --code-scope-reader "${_baseline}"
             "${CMAKE_CURRENT_BINARY_DIR}/code-scope-captures")
     set_tests_properties(native.code_scope_reader PROPERTIES TIMEOUT 600 RUN_SERIAL TRUE)
+    include("${CMAKE_SOURCE_DIR}/cmake/ConceptDiagramTests.cmake")
+    lgaed_add_concept_diagram_tests()
 endfunction()
