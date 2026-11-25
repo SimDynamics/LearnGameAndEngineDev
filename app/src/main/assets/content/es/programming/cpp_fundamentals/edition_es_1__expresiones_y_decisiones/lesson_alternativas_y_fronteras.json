@@ -574,7 +574,7 @@
         },
         {
           "type": "paragraph",
-          "text": "Cuando el compilador analiza std::cout << brillo;, la declaración interior todavía queda más abajo en el código. El compilador encuentra la declaración exterior y la salida muestra 8. La declaración que viene después introduce otra variable para el resto del bloque.\n\nEn el siguiente programa, un par de llaves por sí solo delimita un bloque. El cuerpo de main contiene dos bloques anidados, uno dentro del otro. Sigue las dos salidas en el bloque más interno."
+          "text": "Durante la compilación, el compilador analiza std::cout << brillo;. La declaración const int brillo = 3; está escrita después de esa salida. Por eso, el nombre brillo de la salida corresponde a la variable declarada en main.\n\nCuando el programa ya compilado y enlazado se ejecuta, inicializa el entero de main con ocho. Como ocho es mayor que cinco, entra en el bloque del if. La primera instrucción de ese bloque muestra 8. El programa alcanza la declaración interior en la instrucción siguiente. Solo entonces inicializa el segundo entero con tres. Al salir del bloque del if, termina la vida del segundo entero. El primero sigue existiendo hasta que el programa sale de main.\n\nEn el siguiente programa, dentro de main hay un bloque entre llaves y, dentro de ese bloque, otro. Las dos instrucciones de salida están en el bloque más interno. Entre ellas aparece una declaración."
         },
         {
           "type": "code",
@@ -591,7 +591,100 @@
             "Seis y seis. En la segunda salida existe un solo objeto."
           ],
           "correctIndex": 0,
-          "explanation": "En la primera salida, la declaración interior de tarifa está escrita más adelante. El compilador pasa al bloque inmediatamente exterior, encuentra const int tarifa = 8; y se detiene allí. Por eso esa salida muestra ocho. En la segunda salida ya encuentra const int tarifa = 6; en el mismo bloque y esa salida muestra seis.\n\nEn ese momento, el programa ha inicializado los tres enteros y todavía no ha salido de ninguno de sus bloques. Los tres objetos existen. El nombre tarifa de la segunda salida designa al más interno. Al salir de ese bloque, termina la vida de ese entero y el del bloque intermedio conserva su valor."
+          "explanation": "Durante la compilación, el compilador determina a qué declaración corresponde el nombre tarifa en cada salida. La primera salida está escrita antes de const int tarifa = 6;. En ese punto, el compilador encuentra const int tarifa = 8; en el bloque intermedio. La segunda salida está escrita después de la declaración interior. Por eso, en esa segunda instrucción, tarifa designa la variable del bloque más interno. Así influye el alcance de un nombre en la lectura del código.\n\nUna vez compilado y enlazado el programa, puedes iniciarlo. En este ejemplo, el programa ejecuta las instrucciones de main de arriba hacia abajo. El tiempo de vida de cada uno de estos objetos locales comienza cuando el programa llega a su declaración y completa su inicialización.\n\nPrimera salida. El programa llega a const int tarifa = 10; en main e inicializa el primer entero con diez. Después entra en el bloque intermedio e inicializa el segundo con ocho. Al entrar en el bloque más interno, encuentra la primera salida antes de llegar a la tercera declaración. En ese momento existen dos de los tres enteros. La salida usa el del bloque intermedio y muestra 8.\n\nSegunda salida. Ahora el programa llega a const int tarifa = 6; e inicializa el tercer entero con seis. Los dos bloques exteriores siguen abiertos, así que sus enteros conservan los valores diez y ocho. En ese momento existen los tres objetos a la vez. La segunda salida usa el del bloque más interno y muestra 6.\n\nAl salir del bloque más interno, termina la vida del entero con valor seis. Siguen existiendo los de diez y ocho. Al salir del bloque intermedio, termina la vida del de ocho. Al salir de main mediante return 0;, termina la vida del de diez."
+        },
+        {
+          "type": "heading",
+          "text": "¿Hacen falta tres espacios de memoria para mostrar las dos tarifas?"
+        },
+        {
+          "type": "paragraph",
+          "text": "En la segunda salida del ejemplo anterior hay tres enteros vivos según las reglas de C++. Para saber si la máquina necesita un espacio de memoria para cada tarifa, conviene seguir qué hace el programa con sus valores. La tarifa de diez nunca se imprime. La primera salida usa la tarifa de ocho y añade un salto de línea. La segunda usa la de seis. El compilador puede deducir esos valores al analizar el código. Este fragmento muestra la misma salida usando los dos números directamente."
+        },
+        {
+          "type": "code",
+          "language": "cpp",
+          "code": "std::cout << 8 << '\\n';\nstd::cout << 6;"
+        },
+        {
+          "type": "paragraph",
+          "text": "Durante la compilación, el compilador puede generar instrucciones de máquina que usen el ocho para la primera salida y el seis para la segunda. Cuando el programa ejecuta esas instrucciones, los números que debe imprimir ya figuran en ellas. Así puede producir ambas salidas sin reservar un espacio de memoria separado para cada tarifa.\n\nAl elegir instrucciones que ahorran trabajo a la máquina, el compilador realiza una optimización (optimization en inglés). En este caso puede ahorrar las operaciones de guardar y leer las tarifas. También es válido que genere instrucciones que sí las guarden. En este programa, lo que aparece en la consola forma parte del comportamiento observable (observable behavior en inglés). Si el compilador cambia los pasos internos, debe conservar los efectos observables que exige C++. Aquí la consola debe mostrar 8, un salto de línea y después 6, en ese orden (Köppe et al., 2023)."
+        },
+        {
+          "type": "heading",
+          "text": "¿Qué cambia si la variable puede recibir otro valor?"
+        },
+        {
+          "type": "paragraph",
+          "text": "En este ejemplo, puntos se declara sin const. El programa cambia su valor antes de imprimirlo."
+        },
+        {
+          "type": "code",
+          "language": "cpp",
+          "code": "int puntos{5};\npuntos += 3;\nstd::cout << puntos;"
+        },
+        {
+          "type": "paragraph",
+          "text": "Según el código, puntos empieza en cinco. La instrucción puntos += 3; suma tres al cinco y guarda ocho en la misma variable. La única salida usa ese ocho.\n\nEl compilador conoce tanto el valor inicial como la suma al analizar el fragmento. Puede calcular el resultado durante la compilación y generar instrucciones que, al ejecutarse, pasen ocho directamente a la salida. En ese caso, la máquina se ahorra tanto la suma como guardar y volver a leer puntos. La variable cambió de valor y aun así fue posible aplicar la optimización."
+        },
+        {
+          "type": "code",
+          "language": "cpp",
+          "code": "int nivel{4};\nstd::cout << nivel << '\\n';\nnivel += 3;\nstd::cout << nivel;"
+        },
+        {
+          "type": "multiple_choice",
+          "question": "En el ejemplo de nivel hay una salida antes de la suma y otra después. Si el compilador usa valores directos para imprimir, ¿qué instrucciones de salida conservarían el comportamiento del programa?",
+          "options": [
+            "Imprimir siete en los dos renglones, porque es el último valor.",
+            "Imprimir cuatro, pasar al siguiente renglón e imprimir siete.",
+            "Imprimir solo siete, porque el valor anterior se reemplaza."
+          ],
+          "correctIndex": 1,
+          "explanation": "La primera salida lee nivel cuando todavía vale cuatro. Después, nivel += 3; cambia el valor a siete y la segunda salida usa ese siete. El compilador puede evitar guardar nivel en memoria, pero la primera impresión ya forma parte del comportamiento que debe conservar.",
+          "reviewFeedback": [
+            "Cuando el programa ejecuta la primera salida, ¿ya ha sumado tres al nivel inicial?",
+            "Sigue la primera salida, la suma y la segunda salida en el orden en que aparecen.",
+            "Si solo apareciera un número, ¿qué pasaría con el texto que escribe la primera salida?"
+          ]
+        },
+        {
+          "type": "heading",
+          "text": "¿Puede el compilador conocer un valor que se escribe en el teclado?"
+        },
+        {
+          "type": "paragraph",
+          "text": "Declarar un entero con const indica que, una vez inicializado, ese entero conserva su valor durante toda su vida. ¿De dónde sale ese valor inicial? Puede venir del teclado. En este fragmento, la persona escribe un entero cuando el programa ya está en ejecución."
+        },
+        {
+          "type": "code",
+          "language": "cpp",
+          "code": "int entrada{};\nstd::cin >> entrada;\nconst int copia{entrada};\nstd::cout << copia;"
+        },
+        {
+          "type": "paragraph",
+          "text": "Si la persona escribe 3, std::cin >> entrada; guarda tres en entrada. El programa inicializa copia con ese tres y muestra 3. Si en otra ejecución escribe 9, la misma declaración inicializa copia con nueve y la consola muestra 9.\n\nAl compilar, el compilador todavía desconoce cuál de esos números escribirá la persona. Lo que sí puede deducir es que la salida siempre usa el entero recién leído. Por eso puede generar instrucciones que pasen ese entero a la salida sin reservar un segundo espacio para copia. Imprimir un número fijo cambiaría el resultado para otras entradas."
+        },
+        {
+          "type": "code",
+          "language": "cpp",
+          "code": "int precio{};\nstd::cin >> precio;\nconst int total{precio + 2};\nstd::cout << total;"
+        },
+        {
+          "type": "multiple_choice",
+          "question": "En este programa el precio puede ser cualquier entero de uno a diez. ¿Qué puede decidir el compilador antes de que la persona escriba el precio?",
+          "options": [
+            "Puede fijar el número que se imprimirá, porque total se declara con const.",
+            "Debe reservar un espacio separado para total, porque todavía desconoce el precio.",
+            "Puede generar instrucciones que sumen dos al precio leído y pasen el resultado a la salida, sin guardar total por separado."
+          ],
+          "correctIndex": 2,
+          "explanation": "Si la entrada es 4, el programa calcula cuatro más dos y muestra 6. Si la entrada es 7, calcula siete más dos y muestra 9. El compilador conoce la operación. El valor que se sumará a dos llega durante la ejecución. Entregar la suma directamente a la salida conserva los dos resultados y también el resultado que corresponde a cada uno de los demás precios admitidos.",
+          "reviewFeedback": [
+            "Calcula el total con dos precios distintos. ¿Serviría el mismo número como salida en ambos casos?",
+            "Una vez calculada la suma, ¿qué instrucción usa el resultado y para qué lo necesita?",
+            "Distingue el dato que llega del teclado del número que el programa le suma."
+          ]
         }
       ]
     },
@@ -3885,33 +3978,89 @@
       {
         "block": "u3l4_tarifa_declaraciones_y_vida",
         "path": "/explanation",
-        "sourceSha256": "0ca604f1740d8615d3533c76fbcebd01f31bbdfe07a5722611ee0b9239c570d9",
+        "sourceSha256": "558e9cebe0d86b698085414d1f53dcd675bd7e8da77e77148c5341ee3d260503",
         "spans": [
           {
-            "start": 49,
-            "end": 55,
+            "start": 88,
+            "end": 94,
             "text": "tarifa",
             "role": "cpp",
             "reading": "technical"
           },
           {
-            "start": 147,
-            "end": 168,
-            "text": "const int tarifa = 8;",
-            "role": "cpp",
-            "reading": "technical"
-          },
-          {
-            "start": 255,
-            "end": 276,
+            "start": 151,
+            "end": 172,
             "text": "const int tarifa = 6;",
             "role": "cpp",
             "reading": "technical"
           },
           {
-            "start": 471,
-            "end": 477,
+            "start": 212,
+            "end": 233,
+            "text": "const int tarifa = 8;",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 363,
+            "end": 369,
             "text": "tarifa",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 595,
+            "end": 599,
+            "text": "main",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 796,
+            "end": 818,
+            "text": "const int tarifa = 10;",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 822,
+            "end": 826,
+            "text": "main",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 1142,
+            "end": 1143,
+            "text": "8",
+            "role": "output",
+            "reading": "natural"
+          },
+          {
+            "start": 1188,
+            "end": 1209,
+            "text": "const int tarifa = 6;",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 1457,
+            "end": 1458,
+            "text": "6",
+            "role": "output",
+            "reading": "natural"
+          },
+          {
+            "start": 1648,
+            "end": 1652,
+            "text": "main",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 1662,
+            "end": 1671,
+            "text": "return 0;",
             "role": "cpp",
             "reading": "technical"
           }
@@ -4757,25 +4906,74 @@
       {
         "block": "u3l4_ocultacion_antes_resultado",
         "path": "/text",
-        "sourceSha256": "95208c3207f7ab1cdf80bd20a9cf681da40114db7d30e42c0b46175d6d27f10b",
+        "sourceSha256": "342b1c2ef8505c04e8e880e663bc5a10d731146b4dbfad7e10032988c8955415",
         "spans": [
           {
-            "start": 29,
-            "end": 49,
+            "start": 46,
+            "end": 66,
             "text": "std::cout << brillo;",
             "role": "cpp",
             "reading": "technical"
           },
           {
-            "start": 181,
-            "end": 182,
+            "start": 83,
+            "end": 104,
+            "text": "const int brillo = 3;",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 160,
+            "end": 166,
+            "text": "brillo",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 219,
+            "end": 223,
+            "text": "main",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 305,
+            "end": 309,
+            "text": "main",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 373,
+            "end": 375,
+            "text": "if",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 422,
+            "end": 423,
             "text": "8",
             "role": "output",
             "reading": "natural"
           },
           {
-            "start": 356,
-            "end": 360,
+            "start": 575,
+            "end": 577,
+            "text": "if",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 673,
+            "end": 677,
+            "text": "main",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 716,
+            "end": 720,
             "text": "main",
             "role": "cpp",
             "reading": "technical"
@@ -4867,6 +5065,293 @@
             "start": 332,
             "end": 335,
             "text": "int",
+            "role": "cpp",
+            "reading": "technical"
+          }
+        ]
+      },
+      {
+        "block": "u3l4_opt_regla",
+        "path": "/text",
+        "sourceSha256": "c922a77589b07fb1f434689872e0a4a803f559f97ac69acbac4a489c963ee592",
+        "spans": [
+          {
+            "start": 847,
+            "end": 848,
+            "text": "8",
+            "role": "output",
+            "reading": "natural"
+          },
+          {
+            "start": 878,
+            "end": 879,
+            "text": "6",
+            "role": "output",
+            "reading": "natural"
+          },
+          {
+            "start": 894,
+            "end": 914,
+            "text": "(Köppe et al., 2023)",
+            "role": "citation",
+            "reading": "natural"
+          }
+        ]
+      },
+      {
+        "block": "u3l4_opt_mutable_intro",
+        "path": "/text",
+        "sourceSha256": "a737348723deac778135057c55b76b3ad745f72c94a888cd278091c55b3889cf",
+        "spans": [
+          {
+            "start": 17,
+            "end": 23,
+            "text": "puntos",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 39,
+            "end": 44,
+            "text": "const",
+            "role": "cpp",
+            "reading": "technical"
+          }
+        ]
+      },
+      {
+        "block": "u3l4_opt_mutable_pasos",
+        "path": "/text",
+        "sourceSha256": "8793f0b51df0d474825a43757b7bd49c0360c85082a73bec34debf193dc10015",
+        "spans": [
+          {
+            "start": 17,
+            "end": 23,
+            "text": "puntos",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 57,
+            "end": 69,
+            "text": "puntos += 3;",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 448,
+            "end": 454,
+            "text": "puntos",
+            "role": "cpp",
+            "reading": "technical"
+          }
+        ]
+      },
+      {
+        "block": "u3l4_opt_dos_salidas_practica",
+        "path": "/question",
+        "sourceSha256": "ac667b8314f75706ebfc52f7ae7571a95a30c5d4f8a41563ec4bbd59b5d60cdd",
+        "spans": [
+          {
+            "start": 17,
+            "end": 22,
+            "text": "nivel",
+            "role": "cpp",
+            "reading": "technical"
+          }
+        ]
+      },
+      {
+        "block": "u3l4_opt_dos_salidas_practica",
+        "path": "/explanation",
+        "sourceSha256": "8231b6647b5155a46ef1ccc94f36a3d4bc7db5747ad41cd226c1365dbf524057",
+        "spans": [
+          {
+            "start": 22,
+            "end": 27,
+            "text": "nivel",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 65,
+            "end": 76,
+            "text": "nivel += 3;",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 171,
+            "end": 176,
+            "text": "nivel",
+            "role": "cpp",
+            "reading": "technical"
+          }
+        ]
+      },
+      {
+        "block": "u3l4_opt_entrada_intro",
+        "path": "/text",
+        "sourceSha256": "86f8c8e58898e8fe9e1dc9cd96cef8a1f4ce2689c2c15cb271633574333cfe52",
+        "spans": [
+          {
+            "start": 23,
+            "end": 28,
+            "text": "const",
+            "role": "cpp",
+            "reading": "technical"
+          }
+        ]
+      },
+      {
+        "block": "u3l4_opt_entrada_pasos",
+        "path": "/text",
+        "sourceSha256": "a13e77ff9e405ecf779edc5600305ade9cfc546c1b0e66567d3d38775f406ab3",
+        "spans": [
+          {
+            "start": 22,
+            "end": 23,
+            "text": "3",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 25,
+            "end": 45,
+            "text": "std::cin >> entrada;",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 61,
+            "end": 68,
+            "text": "entrada",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 93,
+            "end": 98,
+            "text": "copia",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 122,
+            "end": 123,
+            "text": "3",
+            "role": "output",
+            "reading": "natural"
+          },
+          {
+            "start": 154,
+            "end": 155,
+            "text": "9",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 189,
+            "end": 194,
+            "text": "copia",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 226,
+            "end": 227,
+            "text": "9",
+            "role": "output",
+            "reading": "natural"
+          },
+          {
+            "start": 501,
+            "end": 506,
+            "text": "copia",
+            "role": "cpp",
+            "reading": "technical"
+          }
+        ]
+      },
+      {
+        "block": "u3l4_opt_entrada_practica",
+        "path": "/explanation",
+        "sourceSha256": "0b690f21e60ab411d571a1be82725ea6186cb357173a1e60b6676be5283a951e",
+        "spans": [
+          {
+            "start": 17,
+            "end": 18,
+            "text": "4",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 65,
+            "end": 66,
+            "text": "6",
+            "role": "output",
+            "reading": "natural"
+          },
+          {
+            "start": 85,
+            "end": 86,
+            "text": "7",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 120,
+            "end": 121,
+            "text": "9",
+            "role": "output",
+            "reading": "natural"
+          }
+        ]
+      },
+      {
+        "block": "u3l4_opt_entrada_practica",
+        "path": "/options/0",
+        "sourceSha256": "3bbf458a8b5a2b58308cc9107dbd917086926bdec7e67065d26868dd694370bd",
+        "spans": [
+          {
+            "start": 47,
+            "end": 52,
+            "text": "total",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 68,
+            "end": 73,
+            "text": "const",
+            "role": "cpp",
+            "reading": "technical"
+          }
+        ]
+      },
+      {
+        "block": "u3l4_opt_entrada_practica",
+        "path": "/options/1",
+        "sourceSha256": "1e3d363cea4bcac667fc6a2581e4e57ace8ab9fcb45ad05a5186a46f2f4330df",
+        "spans": [
+          {
+            "start": 39,
+            "end": 44,
+            "text": "total",
+            "role": "cpp",
+            "reading": "technical"
+          }
+        ]
+      },
+      {
+        "block": "u3l4_opt_entrada_practica",
+        "path": "/options/2",
+        "sourceSha256": "691ce588a311188eb60fb785ffa59927a789c7e74d69fe9f044cd98afa04b0ad",
+        "spans": [
+          {
+            "start": 104,
+            "end": 109,
+            "text": "total",
             "role": "cpp",
             "reading": "technical"
           }
@@ -5227,7 +5712,23 @@
           "u3l4_ocultacion_antes_brillo",
           "u3l4_ocultacion_antes_resultado",
           "u3l4_tarifa_tres_bloques",
-          "u3l4_tarifa_declaraciones_y_vida"
+          "u3l4_tarifa_declaraciones_y_vida",
+          "u3l4_opt_tarifas_pregunta",
+          "u3l4_opt_tarifas_efecto",
+          "u3l4_opt_tarifas_salida",
+          "u3l4_opt_regla",
+          "u3l4_opt_mutable_titulo",
+          "u3l4_opt_mutable_intro",
+          "u3l4_opt_mutable_codigo",
+          "u3l4_opt_mutable_pasos",
+          "u3l4_opt_dos_salidas_codigo",
+          "u3l4_opt_dos_salidas_practica",
+          "u3l4_opt_entrada_titulo",
+          "u3l4_opt_entrada_intro",
+          "u3l4_opt_entrada_codigo",
+          "u3l4_opt_entrada_pasos",
+          "u3l4_opt_entrada_practica_codigo",
+          "u3l4_opt_entrada_practica"
         ]
       },
       {
@@ -5982,6 +6483,150 @@
           "block": 53
         },
         "progressPage": "page_0003"
+      },
+      {
+        "id": "u3l4_opt_tarifas_pregunta",
+        "sha256": "a30d0555835b703d0dd5a90aabb0134813afd11904b5364f69f03b01695f6d7a",
+        "storage": {
+          "page": 7,
+          "block": 54
+        },
+        "progressPage": "page_0001"
+      },
+      {
+        "id": "u3l4_opt_tarifas_efecto",
+        "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5",
+        "storage": {
+          "page": 7,
+          "block": 55
+        },
+        "progressPage": "page_0001"
+      },
+      {
+        "id": "u3l4_opt_tarifas_salida",
+        "sha256": "985412541854a44c18f204c66c8775ae76f199cc444011afcee4949f72240392",
+        "storage": {
+          "page": 7,
+          "block": 56
+        },
+        "progressPage": "page_0001"
+      },
+      {
+        "id": "u3l4_opt_regla",
+        "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5",
+        "storage": {
+          "page": 7,
+          "block": 57
+        },
+        "progressPage": "page_0001"
+      },
+      {
+        "id": "u3l4_opt_mutable_titulo",
+        "sha256": "a30d0555835b703d0dd5a90aabb0134813afd11904b5364f69f03b01695f6d7a",
+        "storage": {
+          "page": 7,
+          "block": 58
+        },
+        "progressPage": "page_0001"
+      },
+      {
+        "id": "u3l4_opt_mutable_intro",
+        "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5",
+        "storage": {
+          "page": 7,
+          "block": 59
+        },
+        "progressPage": "page_0001"
+      },
+      {
+        "id": "u3l4_opt_mutable_codigo",
+        "sha256": "a674e606b755370d90adbc3ce9e27109a6f69bb0467f7ae624a2ac4cf6a36ff9",
+        "storage": {
+          "page": 7,
+          "block": 60
+        },
+        "progressPage": "page_0001"
+      },
+      {
+        "id": "u3l4_opt_mutable_pasos",
+        "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5",
+        "storage": {
+          "page": 7,
+          "block": 61
+        },
+        "progressPage": "page_0001"
+      },
+      {
+        "id": "u3l4_opt_dos_salidas_codigo",
+        "sha256": "b79931d62bdb8d64ac4c7c68133859f4baea455991f8a0cf54f21628ab640fb1",
+        "storage": {
+          "page": 7,
+          "block": 62
+        },
+        "progressPage": "page_0001"
+      },
+      {
+        "id": "u3l4_opt_dos_salidas_practica",
+        "sha256": "5c80f960a528434d1f4111196bf7c7d8ac6b647a518109145159ca783560e2f8",
+        "storage": {
+          "page": 7,
+          "block": 63
+        },
+        "progressPage": "page_0001"
+      },
+      {
+        "id": "u3l4_opt_entrada_titulo",
+        "sha256": "a30d0555835b703d0dd5a90aabb0134813afd11904b5364f69f03b01695f6d7a",
+        "storage": {
+          "page": 7,
+          "block": 64
+        },
+        "progressPage": "page_0001"
+      },
+      {
+        "id": "u3l4_opt_entrada_intro",
+        "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5",
+        "storage": {
+          "page": 7,
+          "block": 65
+        },
+        "progressPage": "page_0001"
+      },
+      {
+        "id": "u3l4_opt_entrada_codigo",
+        "sha256": "05cf4836c459bed52d4f6e98b57f90be215d2366971e90da23f8719af71d44fb",
+        "storage": {
+          "page": 7,
+          "block": 66
+        },
+        "progressPage": "page_0001"
+      },
+      {
+        "id": "u3l4_opt_entrada_pasos",
+        "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5",
+        "storage": {
+          "page": 7,
+          "block": 67
+        },
+        "progressPage": "page_0001"
+      },
+      {
+        "id": "u3l4_opt_entrada_practica_codigo",
+        "sha256": "863b5a646c117a4518d4349ea3be89e909ff3cf191aad6e155e72998c3ab022d",
+        "storage": {
+          "page": 7,
+          "block": 68
+        },
+        "progressPage": "page_0001"
+      },
+      {
+        "id": "u3l4_opt_entrada_practica",
+        "sha256": "18d96916a4c95254a6ad6b39ff5c23ad787f47d2ee131de74f30252f7aba5829",
+        "storage": {
+          "page": 7,
+          "block": 69
+        },
+        "progressPage": "page_0001"
       }
     ],
     "editorial": [
@@ -6377,6 +7022,21 @@
         "id": "u3l4_limites_nombre_bolsas",
         "beforeSha256": "532fcc71a9b86a37ec7595a9662e98014b856134c8bc57d254c566db1ab38552",
         "afterSha256": "62f61ff08724139c3951131a3464fbb95aacee3f8e76988da1b16df6067653ce"
+      },
+      {
+        "id": "u3l4_tarifa_declaraciones_y_vida",
+        "beforeSha256": "aca854592f20a0154bbe02c8151029c1069832efc643dbed28157ebeca92ef9f",
+        "afterSha256": "10b3350eb7b53ee99c10a64c64faaad13d8aa05b7185ecd3a2b41542c71f6d8a"
+      },
+      {
+        "id": "u3l4_ocultacion_antes_resultado",
+        "beforeSha256": "c6d8d475c58a6ac93b386fd8dd7b61fc23fd9fe33b01b5250614144df3fe8f80",
+        "afterSha256": "e9431bf8aab2305f4bab41408934fe717c8adc97489ae503135d49659d28f791"
+      },
+      {
+        "id": "u3l4_tarifa_declaraciones_y_vida",
+        "beforeSha256": "10b3350eb7b53ee99c10a64c64faaad13d8aa05b7185ecd3a2b41542c71f6d8a",
+        "afterSha256": "aebb8534e09bef1b829aa10a3cbc5d605d78cb71f4d348f51de4d456cfc74aba"
       }
     ],
     "retired": [
