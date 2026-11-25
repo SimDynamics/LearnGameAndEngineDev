@@ -93,6 +93,18 @@ internal object WindowsSemanticFields {
                 kind in setOf("heading","paragraph","note") -> text(block,"text","")
                 kind=="image" -> for (name in listOf("alt","caption")) text(block,name,"")
                 kind=="simulation" -> for (name in listOf("title","description")) text(block,name,"")
+                kind=="concept_diagram" -> {
+                    // The native reader owns separate fields in node/link order.
+                    // IDs, kinds and connection endpoints are not spoken sources.
+                    text(block,"title","")
+                    val nodes = block.getJSONArray("nodes")
+                    val links = block.getJSONArray("links")
+                    for (i in 0 until nodes.length()) {
+                        val node = nodes.getJSONObject(i)
+                        for (name in listOf("label","value","caption")) text(node,name,"/nodes/$i")
+                        if (i < links.length()) text(links.getJSONObject(i),"label","/links/$i")
+                    }
+                }
                 kind in setOf("multiple_choice","fill_code","output_prediction","order_code","drag_fill_code","inline_fill_code") -> {
                     for (name in listOf("question","explanation")) text(block,name,"")
                     if (kind=="multiple_choice") strings(block.optJSONArray("options"),"/options")

@@ -953,6 +953,13 @@ def windows_reading_source(name: str, code: str) -> str:
                      '                append(output,block.string("title"))\n'
                      '                append(output,block.string("description"))\n'
                      '            }\n'
+                     '            "concept_diagram" -> if (WindowsNarrationSpeechRules.keepWholeReadingRegions()) {\n'
+                     '                for (source in lgaed.narration.windows.WindowsSemanticFields.public(block).values) {\n'
+                     '                    val field = lgaed.narration.windows.WindowsTextSemantics.lookup(source)\n'
+                     '                        ?: lgaed.narration.windows.WindowsTextSemantics.Field(source,emptyList())\n'
+                     '                    output.add(lgaed.narration.windows.WindowsTextSemantics.prepared(field,speechLanguage))\n'
+                     '                }\n'
+                     '            }\n'
                      '            "heading", "paragraph" -> append(output, block.string("text"), block.mode())')
         # Only current Windows anticipation selects the exact sources shown by
         # native controls. Historical export keeps its preceding extractor.

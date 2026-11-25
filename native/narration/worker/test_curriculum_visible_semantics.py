@@ -174,6 +174,52 @@ class CurriculumVisibleSemanticsTest(unittest.TestCase):
                 self.assert_prepared("Vecino inalterado.", None, reply)
                 self.assertNotIn("ESTADO_FUTURO", " ".join(part["text"] for part in reply))
 
+    def test_concept_diagram_prepares_exact_native_fields_in_authored_order(self):
+        block = json.loads((ROOT / "docs/examples/concept_diagram_memory_console.json").read_text(encoding="utf-8"))
+        block["nodes"][0]["label"] = "y"
+        block["links"][0]["label"] = "Mostrar"
+        block["nodes"][1]["value"] = "8\n`Listo`"
+        block["nodes"][1]["caption"] = "Salida conservada"
+        empty = {"spans": []}
+        definitions = [("/nodes/0/label", "y", descriptor("y")),
+                       ("/nodes/0/value", "8", descriptor("8", role="output")),
+                       ("/links/0/label", "Mostrar", descriptor("Mostrar", role="prose"))]
+        for marked in (False, True):
+            with self.subTest(marked=marked):
+                lesson = self.lesson(block, definitions if marked else [])
+                reply = self.background(lesson)
+                expected = [part["key"] for source in ("QA", "Vecino inalterado.")
+                            for part in self.foreground(source)]
+                by_path = {path: value for path, _, value in definitions} if marked else {}
+                fields = [("/title", block["title"]),
+                          ("/nodes/0/label", "y"), ("/nodes/0/value", "8"),
+                          ("/nodes/0/caption", block["nodes"][0]["caption"]),
+                          ("/links/0/label", "Mostrar"),
+                          ("/nodes/1/label", block["nodes"][1]["label"]),
+                          ("/nodes/1/value", block["nodes"][1]["value"]),
+                          ("/nodes/1/caption", "Salida conservada")]
+                for path, source in fields:
+                    # Native concept fields always carry explicit semantics,
+                    # including the empty descriptor for unmarked prose.
+                    parts = self.worker.ask("plan", text=source, language="es",
+                        voice="ef_dora", mathMode="text", readingContext="auto",
+                        textSemantics=by_path.get(path, empty))["segments"]
+                    self.assertTrue(parts, path)
+                    expected.extend(part["key"] for part in parts)
+                self.assertEqual(expected, [part["key"] for part in reply])
+        # The worker validates its own public inventory, even for callers
+        # that bypass the Python authoring validator.
+        good = self.lesson(block, definitions)
+        owner = good["stateLayout"]["current"][0]["blocks"][1]
+        for path, source in (("/nodes/0/id", block["nodes"][0]["id"]),
+                             ("/nodes/0/kind", block["nodes"][0]["kind"]),
+                             ("/links/0/from", block["links"][0]["from"]),
+                             ("/links/0/to", block["links"][0]["to"])):
+            bad = deepcopy(good)
+            bad["textSemantics"]["fields"].append(field(owner, path, source, empty))
+            with self.subTest(path=path), self.assertRaisesRegex(AssertionError, "supported public field"):
+                self.background(bad)
+
 
 if __name__ == "__main__":
     unittest.main()
