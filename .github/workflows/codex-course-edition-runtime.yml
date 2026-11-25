@@ -496,6 +496,98 @@ jobs:
             ${{ runner.temp }}/lgaed-puzzle-wheel-qa/puzzle-wheel-original.log
             ${{ runner.temp }}/lgaed-puzzle-wheel-qa/Testing/Temporary/*.log
             ${{ runner.temp }}/lgaed-puzzle-wheel-qa/CMakeFiles/CMakeConfigureLog.yaml
+  run-active-dependencies:
+    name: Verify active variable, input, joint and guarded dependencies through Win32
+    if: ${{ github.event_name == 'push' && startsWith(github.event.head_commit.message, 'qa-active-dependencies:') }}
+    runs-on: windows-2025-vs2026
+    timeout-minutes: 45
+    concurrency:
+      group: ${{ github.workflow }}-active-dependencies-${{ github.ref }}
+      cancel-in-progress: false
+    steps:
+      - name: Read exact Codex revision and authenticated active publications
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+          persist-credentials: false
+      - name: Select Python for active and historical authoring contracts
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - name: Activate hosted MSVC x64 for the original Win32 target
+        uses: ilammy/msvc-dev-cmd@v1
+        with:
+          arch: x64
+      - name: Build the existing dependency controls and four active fixture cohorts
+        shell: pwsh
+        run: |
+          $ErrorActionPreference = 'Stop'
+          Get-Command cl, cmake, ninja | Select-Object Name, Source | Format-Table | Out-Host
+          $qaActiveBuild = Join-Path $env:RUNNER_TEMP 'lgaed-active-dependencies-qa'
+          cmake -S cmake/HostedCourseEditionQA -B $qaActiveBuild -G Ninja -DCMAKE_BUILD_TYPE=Debug
+          if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
+          cmake --build $qaActiveBuild --target lgaed_local_dependency_view_tests --parallel 3
+          if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
+      - name: Verify exactly nineteen active native cases and four authoring contracts
+        shell: pwsh
+        run: |
+          $ErrorActionPreference = 'Stop'
+          $qaActiveBuild = Join-Path $env:RUNNER_TEMP 'lgaed-active-dependencies-qa'
+          $qaActivePattern = '^native[.](active_local_dependency_view_(u2l(1|2|3|7|8|9|10)|u3l[1-2])|active_input_decisions_view_u3l[3-8]|active_joint_local_int_view_u3l[578]|active_guarded_arithmetic_view_u3l6|local_dependency_view_authoring|input_decision_authoring|joint_local_int_authoring|guarded_arithmetic_authoring)$'
+          $qaActiveExpected = @(
+            'native.active_local_dependency_view_u2l1',
+            'native.active_local_dependency_view_u2l2',
+            'native.active_local_dependency_view_u2l3',
+            'native.active_local_dependency_view_u2l7',
+            'native.active_local_dependency_view_u2l8',
+            'native.active_local_dependency_view_u2l9',
+            'native.active_local_dependency_view_u2l10',
+            'native.active_local_dependency_view_u3l1',
+            'native.active_local_dependency_view_u3l2',
+            'native.active_input_decisions_view_u3l3',
+            'native.active_input_decisions_view_u3l4',
+            'native.active_input_decisions_view_u3l5',
+            'native.active_input_decisions_view_u3l6',
+            'native.active_input_decisions_view_u3l7',
+            'native.active_input_decisions_view_u3l8',
+            'native.active_joint_local_int_view_u3l5',
+            'native.active_joint_local_int_view_u3l7',
+            'native.active_joint_local_int_view_u3l8',
+            'native.active_guarded_arithmetic_view_u3l6',
+            'native.local_dependency_view_authoring',
+            'native.input_decision_authoring',
+            'native.joint_local_int_authoring',
+            'native.guarded_arithmetic_authoring'
+          )
+          $qaActiveListingText = & ctest --test-dir $qaActiveBuild -R $qaActivePattern --show-only=json-v1
+          if ($LASTEXITCODE -ne 0) { throw 'Cannot inspect the active dependency test selection.' }
+          $qaActiveListingJson = $qaActiveListingText -join "`n"
+          $qaActiveListingJson | Set-Content -Encoding utf8 (Join-Path $qaActiveBuild 'active-dependencies-selection.json')
+          $qaActiveListing = $qaActiveListingJson | ConvertFrom-Json
+          $qaActiveActual = @($qaActiveListing.tests | ForEach-Object { $_.name })
+          if ($qaActiveActual.Count -ne $qaActiveExpected.Count -or
+              (Compare-Object -ReferenceObject $qaActiveExpected -DifferenceObject $qaActiveActual)) {
+            throw 'Active dependency QA must select exactly nineteen native cases and four authoring contracts.'
+          }
+          ctest --test-dir $qaActiveBuild -R $qaActivePattern --parallel 1 --verbose --output-on-failure --no-tests=error --output-junit (Join-Path $qaActiveBuild 'active-dependencies.xml') --output-log (Join-Path $qaActiveBuild 'active-dependencies.log')
+          if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
+      - name: Preserve active dependency controls, manifests and native execution evidence
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: hosted-win32-active-dependencies-${{ github.sha }}
+          retention-days: 7
+          if-no-files-found: warn
+          path: |
+            ${{ runner.temp }}/lgaed-active-dependencies-qa/active-dependencies.xml
+            ${{ runner.temp }}/lgaed-active-dependencies-qa/active-dependencies.log
+            ${{ runner.temp }}/lgaed-active-dependencies-qa/active-dependencies-selection.json
+            ${{ runner.temp }}/lgaed-active-dependencies-qa/Testing/Temporary/*.log
+            ${{ runner.temp }}/lgaed-active-dependencies-qa/CMakeFiles/CMakeConfigureLog.yaml
+            ${{ runner.temp }}/lgaed-active-dependencies-qa/test-fixtures/active-local-dependency-*/**
+            ${{ runner.temp }}/lgaed-active-dependencies-qa/test-fixtures/active-input-decisions-*/**
+            ${{ runner.temp }}/lgaed-active-dependencies-qa/test-fixtures/active-joint-local-int-*/**
+            ${{ runner.temp }}/lgaed-active-dependencies-qa/test-fixtures/active-guarded-arithmetic-*/**
   # Explicitly selected pushes validate only the changed header/input contracts.
   # Ordinary pushes and workflow_dispatch retain the complete default jobs below.
   run-input-decisions:
@@ -748,7 +840,7 @@ jobs:
   # unchanged native edition coverage already passed the reader-revision push.
   run-format-fixture-history:
     name: Build authenticated format fixtures and verify original MSVC diagnostics
-    if: ${{ github.event_name != 'push' || (!startsWith(github.event.head_commit.message, 'qa-native-headers:') && !startsWith(github.event.head_commit.message, 'qa-reader-revision:') && !startsWith(github.event.head_commit.message, 'qa-input-decisions:') && !startsWith(github.event.head_commit.message, 'qa-puzzle-wheel:') && !startsWith(github.event.head_commit.message, 'qa-guarded-arithmetic:') && !startsWith(github.event.head_commit.message, 'qa-joint-admission:') && !startsWith(github.event.head_commit.message, 'qa-special-source-format:') && !startsWith(github.event.head_commit.message, 'qa-edition-source:') && !startsWith(github.event.head_commit.message, 'qa-active-edition:') && !startsWith(github.event.head_commit.message, 'qa-prediction-newline:') && !startsWith(github.event.head_commit.message, 'qa-prediction:') && !startsWith(github.event.head_commit.message, 'qa-editor-viewport:')) }}
+    if: ${{ github.event_name != 'push' || (!startsWith(github.event.head_commit.message, 'qa-native-headers:') && !startsWith(github.event.head_commit.message, 'qa-reader-revision:') && !startsWith(github.event.head_commit.message, 'qa-input-decisions:') && !startsWith(github.event.head_commit.message, 'qa-puzzle-wheel:') && !startsWith(github.event.head_commit.message, 'qa-guarded-arithmetic:') && !startsWith(github.event.head_commit.message, 'qa-joint-admission:') && !startsWith(github.event.head_commit.message, 'qa-special-source-format:') && !startsWith(github.event.head_commit.message, 'qa-edition-source:') && !startsWith(github.event.head_commit.message, 'qa-active-edition:') && !startsWith(github.event.head_commit.message, 'qa-prediction-newline:') && !startsWith(github.event.head_commit.message, 'qa-prediction:') && !startsWith(github.event.head_commit.message, 'qa-editor-viewport:') && !startsWith(github.event.head_commit.message, 'qa-active-dependencies:')) }}
     runs-on: windows-2025-vs2026
     timeout-minutes: 25
     steps:
@@ -794,7 +886,7 @@ jobs:
             ${{ runner.temp }}/lgaed-format-fixture-history/test-fixtures/format-history/**
   run-real-course-edition:
     name: Run Win32 edition, simulation and first required C++ case
-    if: ${{ github.event_name != 'push' || (!startsWith(github.event.head_commit.message, 'qa-native-headers:') && !startsWith(github.event.head_commit.message, 'qa-reader-revision:') && !startsWith(github.event.head_commit.message, 'qa-input-decisions:') && !startsWith(github.event.head_commit.message, 'qa-puzzle-wheel:') && !startsWith(github.event.head_commit.message, 'qa-guarded-arithmetic:') && !startsWith(github.event.head_commit.message, 'qa-joint-admission:') && !startsWith(github.event.head_commit.message, 'qa-special-source-format:') && !startsWith(github.event.head_commit.message, 'qa-edition-source:') && !startsWith(github.event.head_commit.message, 'qa-active-edition:') && !startsWith(github.event.head_commit.message, 'qa-prediction-newline:') && !startsWith(github.event.head_commit.message, 'qa-prediction:') && !startsWith(github.event.head_commit.message, 'qa-editor-viewport:')) }}
+    if: ${{ github.event_name != 'push' || (!startsWith(github.event.head_commit.message, 'qa-native-headers:') && !startsWith(github.event.head_commit.message, 'qa-reader-revision:') && !startsWith(github.event.head_commit.message, 'qa-input-decisions:') && !startsWith(github.event.head_commit.message, 'qa-puzzle-wheel:') && !startsWith(github.event.head_commit.message, 'qa-guarded-arithmetic:') && !startsWith(github.event.head_commit.message, 'qa-joint-admission:') && !startsWith(github.event.head_commit.message, 'qa-special-source-format:') && !startsWith(github.event.head_commit.message, 'qa-edition-source:') && !startsWith(github.event.head_commit.message, 'qa-active-edition:') && !startsWith(github.event.head_commit.message, 'qa-prediction-newline:') && !startsWith(github.event.head_commit.message, 'qa-prediction:') && !startsWith(github.event.head_commit.message, 'qa-editor-viewport:') && !startsWith(github.event.head_commit.message, 'qa-active-dependencies:')) }}
     runs-on: windows-2025-vs2026
     timeout-minutes: 45
     steps:
