@@ -40,7 +40,7 @@ jobs:
     runs-on: windows-2025-vs2026
     timeout-minutes: 30
     env:
-      QA_REVIEW_SCOPE: ${{ github.event_name == 'push' && startsWith(github.event.head_commit.message, 'qa-rename-prose:') && 'rename-prose' || 'all' }}
+      QA_REVIEW_SCOPE: ${{ github.event_name == 'push' && startsWith(github.event.head_commit.message, 'qa-rename-prose:') && 'rename-prose' || github.event_name == 'push' && startsWith(github.event.head_commit.message, 'qa-rename-local:') && 'rename-local' || 'all' }}
     steps:
       - name: Read exact Codex source and authenticated history
         uses: actions/checkout@v4
@@ -76,6 +76,8 @@ jobs:
           $qaReviewTargets = @('lgaed_identifier_rename_prose_tests')
           if ($env:QA_REVIEW_SCOPE -eq 'all') {
             $qaReviewTargets += @('lgaed_private_probe_review_tests', 'lgaed_local_dependency_receipt_tests', 'lgaed_curricular_windows')
+          } elseif ($env:QA_REVIEW_SCOPE -eq 'rename-local') {
+            $qaReviewTargets += 'lgaed_local_dependency_receipt_tests'
           }
           Write-Host "Continuity scope: $env:QA_REVIEW_SCOPE; targets: $($qaReviewTargets -join ', ')"
           cmake --build $qaReviewBuild --target @qaReviewTargets --parallel 3
@@ -90,6 +92,9 @@ jobs:
           if ($env:QA_REVIEW_SCOPE -eq 'all') {
             $qaReviewPattern = '^native[.](identifier_rename_prose(_authoring)?|polymorphic_clone_private_review|dual_interface_private_review|local_dependency_receipts)$'
             $qaReviewExpected += @('native.polymorphic_clone_private_review', 'native.dual_interface_private_review', 'native.local_dependency_receipts')
+          } elseif ($env:QA_REVIEW_SCOPE -eq 'rename-local') {
+            $qaReviewPattern = '^native[.](identifier_rename_prose(_authoring)?|local_dependency_receipts)$'
+            $qaReviewExpected += 'native.local_dependency_receipts'
           }
           $qaReviewListingText = & ctest --test-dir $qaReviewBuild -R $qaReviewPattern --show-only=json-v1
           if ($LASTEXITCODE -ne 0) { throw 'Cannot inspect the review-continuity test selection.' }
