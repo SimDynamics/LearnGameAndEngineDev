@@ -503,6 +503,150 @@ JsonObject identifier_restore_source(const JsonObject& active,const JsonObject& 
     return result;
 }
 
+std::map<std::string,TextSemantics> read_identifier_prose_semantics(
+    const JsonObject& block,const JsonArray& fields,const std::string& owner);
+
+JsonArray identifier_owner_semantics(const JsonObject& root,std::string_view owner) {
+    JsonArray fields;
+    if(root.HasKey(L"textSemantics"))
+        for(const auto& value:array(root.GetNamedObject(L"textSemantics"),"fields"))
+            if(text(value.GetObject(),"block")==owner)fields.Append(value);
+    return fields;
+}
+
+std::vector<std::string> identifier_prose_paths(const JsonObject& before,
+        const JsonObject& after) {
+    const auto type=text(before,"type");
+    require(type=="multiple_choice"||type=="fill_code"||type=="output_prediction"||
+            type=="order_code"||type=="drag_fill_code"||type=="inline_fill_code",
+        "Identifier prose needs an existing ordinary exercise owner");
+    const auto differs=[&](const wchar_t* field) {
+        return before.HasKey(field)!=after.HasKey(field)||
+            (before.HasKey(field)&&fingerprint(before.GetNamedValue(field))!=
+                fingerprint(after.GetNamedValue(field)));
+    };
+    auto expected=JsonObject::Parse(before.Stringify());
+    std::vector<std::string> paths;
+    for(const auto* field:{L"question",L"explanation"}) {
+        if(!differs(field))continue;
+        require(after.HasKey(field)&&after.GetNamedValue(field).ValueType()==JsonValueType::String&&
+                authored_nonblank(utf8(after.GetNamedString(field))),
+            "Identifier prose needs new nonblank authored wording");
+        require((std::wstring_view(field)==L"explanation"&&!before.HasKey(field))||
+                (before.HasKey(field)&&before.GetNamedValue(field).ValueType()==JsonValueType::String&&
+                 authored_nonblank(utf8(before.GetNamedString(field)))),
+            "Identifier prose cannot add a question or replace an invalid previous field");
+        expected.Insert(field,after.GetNamedValue(field));
+        paths.push_back(std::wstring_view(field)==L"question"?"/question":"/explanation");
+    }
+    require(!paths.empty(),"Identifier prose needs a real question or explanation change");
+    if(differs(L"reviewFeedback")) {
+        require(before.HasKey(L"reviewFeedback")&&after.HasKey(L"reviewFeedback"),
+            "Identifier prose cannot add or remove review guidance");
+        const auto old=before.GetNamedValue(L"reviewFeedback"),now=after.GetNamedValue(L"reviewFeedback");
+        if(old.ValueType()==JsonValueType::String&&now.ValueType()==JsonValueType::String) {
+            require(authored_nonblank(utf8(old.GetString()))&&authored_nonblank(utf8(now.GetString())),
+                "Identifier prose needs nonblank review guidance");
+            paths.push_back("/reviewFeedback");
+        }else {
+            require(type=="multiple_choice"&&old.ValueType()==JsonValueType::Array&&
+                    now.ValueType()==JsonValueType::Array,
+                "Identifier prose changed the review guidance structure");
+            const auto left=old.GetArray(),right=now.GetArray();
+            require(left.Size()>0&&left.Size()==right.Size()&&left.Size()==array(before,"options").Size(),
+                "Identifier prose changed the option guidance count");
+            for(unsigned i=0;i<left.Size();++i) {
+                require(left.GetAt(i).ValueType()==JsonValueType::String&&
+                        right.GetAt(i).ValueType()==JsonValueType::String&&
+                        authored_nonblank(utf8(left.GetStringAt(i)))&&
+                        authored_nonblank(utf8(right.GetStringAt(i))),
+                    "Identifier prose needs nonblank indexed guidance");
+                if(left.GetStringAt(i)!=right.GetStringAt(i))
+                    paths.push_back("/reviewFeedback/"+std::to_string(i));
+            }
+        }
+        expected.Insert(L"reviewFeedback",now);
+    }
+    require(fingerprint(expected)==fingerprint(after),
+        "Identifier prose changed source or a protected response contract");
+    return paths;
+}
+
+std::set<std::string> require_identifier_prose_chain(const JsonObject& root,
+        const JsonObject& metadata,const std::string& owner,const JsonObject& endpoint,
+        const JsonObject& active,unsigned start,std::set<unsigned>& accepted) {
+    const auto editorial=array(metadata,"editorial");
+    auto previous=endpoint;
+    JsonArray previous_marks;
+    bool has_previous_marks=false;
+    std::set<std::string> presentations{fingerprint(endpoint)};
+    for(unsigned ordinal=start+1;ordinal<editorial.Size();++ordinal) {
+        const auto proof=editorial.GetObjectAt(ordinal);
+        if(text(proof,"id")!=owner)continue;
+        require(proof.HasKey(L"identifierRenameProse")&&!proof.HasKey(L"bibliography"),
+            "Every post-rename prose edge needs its exact complete archive");
+        const auto archive=proof.GetNamedObject(L"identifierRenameProse");
+        allowed_keys(archive,{"historySha256","previousBlock","currentBlock",
+            "semanticRootBefore","previousTextSemantics","currentTextSemantics"},true);
+        JsonArray prefix;
+        for(unsigned i=0;i<ordinal;++i)prefix.Append(editorial.GetAt(i));
+        JsonObject provenance;
+        provenance.Insert(L"lessonId",root.GetNamedValue(L"id"));
+        provenance.Insert(L"locale",metadata.GetNamedValue(L"locale"));
+        provenance.Insert(L"editorial",prefix);
+        require(text(archive,"historySha256")==fingerprint(provenance),
+            "Identifier prose archive differs from its complete editorial prefix");
+        const auto before=archive.GetNamedObject(L"previousBlock"),after=archive.GetNamedObject(L"currentBlock");
+        require(fingerprint(before)==fingerprint(previous)&&
+                fingerprint(before)==text(proof,"beforeSha256")&&
+                fingerprint(after)==text(proof,"afterSha256"),
+            "Identifier prose archive must retain each exact consecutive predecessor");
+        const auto paths=identifier_prose_paths(before,after);
+        JsonArray hints;
+        for(const auto& path:paths)if(path.starts_with("/reviewFeedback"))
+            hints.Append(JsonValue::CreateStringValue(key(path)));
+        require(proof.HasKey(L"reviewPaths")==bool(hints.Size())&&
+                (!hints.Size()||fingerprint(array(proof,"reviewPaths"))==fingerprint(hints)),
+            "Identifier prose changed unauthored guidance paths");
+        const auto old_fields=array(archive,"previousTextSemantics"),new_fields=array(archive,"currentTextSemantics");
+        require(archive.GetNamedValue(L"semanticRootBefore").ValueType()==JsonValueType::Boolean&&
+                (archive.GetNamedBoolean(L"semanticRootBefore")||old_fields.Size()==0)&&
+                (!has_previous_marks||archive.GetNamedBoolean(L"semanticRootBefore")),
+            "Identifier prose falsified its semantic root predecessor");
+        const auto old_marks=read_identifier_prose_semantics(before,old_fields,owner);
+        const auto new_marks=read_identifier_prose_semantics(after,new_fields,owner);
+        require(!has_previous_marks||fingerprint(old_fields)==fingerprint(previous_marks),
+            "Identifier prose changed an intermediate semantic predecessor");
+        for(const auto& path:paths)
+            require(new_marks.contains(path),"Every renamed-owner prose field needs its authored descriptor");
+        JsonArray expected;
+        std::map<std::string,JsonObject> new_descriptors;
+        for(const auto& value:new_fields)new_descriptors.emplace(text(value.GetObject(),"path"),value.GetObject());
+        for(const auto& value:old_fields) {
+            const auto field=value.GetObject();const auto path=text(field,"path");
+            if(std::ranges::find(paths,path)==paths.end())expected.Append(value);
+            else {
+                require(old_marks.at(path).spans.empty()||!new_marks.at(path).spans.empty(),
+                    "Identifier prose cannot discard existing authored highlights");
+                expected.Append(new_descriptors.at(path));
+            }
+        }
+        for(const auto& value:new_fields) {
+            const auto path=text(value.GetObject(),"path");
+            if(std::ranges::find(paths,path)!=paths.end()&&!old_marks.contains(path))expected.Append(value);
+        }
+        require(fingerprint(expected)==fingerprint(new_fields),
+            "Identifier prose changed unrelated semantic fields");
+        previous=after;previous_marks=new_fields;has_previous_marks=true;
+        presentations.insert(fingerprint(after));accepted.insert(ordinal);
+    }
+    require(fingerprint(previous)==fingerprint(active),
+        "Identifier prose chain does not describe its exact active owner");
+    require(!has_previous_marks||fingerprint(previous_marks)==fingerprint(identifier_owner_semantics(root,owner)),
+        "Identifier prose chain does not describe its current reading semantics");
+    return presentations;
+}
+
 // Source formatting can accompany a question correction or an optional
 // ordinary explanation introduced for the first time. A changed passage
 // always requires its own authored semantic descriptor. Unchanged prose is
@@ -2919,6 +3063,7 @@ StateLayout read_layout(const JsonObject& metadata, const JsonArray& pages, std:
     // spelling *first*, then apply the existing source-format predecessor.
     // All source bytes remain visible/compilable in their newer spelling.
     std::map<std::string,JsonObject> identifier_rename_originals;
+    std::map<std::string,std::set<std::string>> identifier_rename_presentations;
     if(metadata.HasKey(L"identifierRenameRevisions")) {
         require(result.version==2&&result.locale=="es",
             "C++ rename archives require an authenticated Spanish stateLayout v2");
@@ -2942,6 +3087,7 @@ StateLayout read_layout(const JsonObject& metadata, const JsonArray& pages, std:
             "C++ rename archive changed its original JSON array");
         struct RenameEdge {std::string id,before,after,history;};
         std::vector<RenameEdge> edges;
+        std::map<std::string,JsonObject> endpoints;
         for(unsigned index=0;index<records.Size();++index) {
             const auto entry=records.GetObjectAt(index);
             allowed_keys(entry,{"lessonId","locale","historicalFamilySha256",
@@ -2954,7 +3100,11 @@ StateLayout read_layout(const JsonObject& metadata, const JsonArray& pages, std:
                 !identifier_rename_originals.contains(owner)&&
                 source_format_originals.contains(owner),
                 "C++ rename archive needs a unique active formatted owner");
-            const auto old=entry.GetNamedObject(L"block"),current=active.at(owner);
+            const auto old=entry.GetNamedObject(L"block");
+            // Copy ONLY source slots into archived metadata. The existing
+            // lexical proof and immutable after hash authenticate this endpoint.
+            const auto current=identifier_restore_source(old,active.at(owner));
+            endpoints.emplace(owner,current);
             const auto before=fingerprint(old),after=fingerprint(current);
             require(text(entry,"lessonId")==lesson_id&&text(entry,"locale")==locale&&
                 text(entry,"historicalFamilySha256")==result.family.at(result.locale).sha256&&
@@ -3052,7 +3202,7 @@ StateLayout read_layout(const JsonObject& metadata, const JsonArray& pages, std:
             const auto editorial=array(metadata,"editorial");
             require(editorial.Size()>=edges.size(),
                 "C++ rename needs complete appended editorial edges");
-            unsigned matches=0;
+            unsigned matches=0,matched_start=0;
             for(unsigned start=0;start+edges.size()<=editorial.Size();++start) {
                 bool exact=true;
                 for(std::size_t j=0;j<edges.size();++j) {
@@ -3074,9 +3224,21 @@ StateLayout read_layout(const JsonObject& metadata, const JsonArray& pages, std:
                 require(std::ranges::all_of(edges,[&](const RenameEdge& edge) {
                     return edge.history==digest;
                 }),"C++ rename borrowed a foreign editorial prefix");
-                ++matches;
+                ++matches;matched_start=start;
             }
             require(matches==1,"C++ rename needs its unique original-to-revised editorial segment");
+            std::set<unsigned> accepted_prose;
+            for(unsigned i=0;i<edges.size();++i) {
+                const auto& owner=edges[i].id;
+                identifier_rename_presentations.emplace(owner,require_identifier_prose_chain(
+                    root,metadata,owner,endpoints.at(owner),active.at(owner),matched_start+i,accepted_prose));
+            }
+            const auto raw_editorial=source_document.elements(source_document.member(raw_meta,"editorial"));
+            for(unsigned i=0;i<editorial.Size();++i)if(editorial.GetObjectAt(i).HasKey(L"identifierRenameProse")) {
+                require(accepted_prose.contains(i),"An identifier prose archive needs its own preceding rename");
+                require_integer_json_numbers(source_document.text(source_document.member(
+                    raw_editorial.at(i),"identifierRenameProse")));
+            }
         }
     }
 
@@ -3326,13 +3488,13 @@ StateLayout read_layout(const JsonObject& metadata, const JsonArray& pages, std:
     // pre-format source, never an unreviewed hash of freshly spaced code.
     const auto protected_source=[&](const std::string& owner,const JsonObject& current,bool historical=false) {
         auto projected=case_order_source(owner,current,historical);
-        // Names are restored only for the *exact* signed revised endpoint.
-        // Earlier archived readers and saved drafts retain their own source.
-        if(const auto revision=std::ranges::find_if(result.identifier_rename_revisions,
-                [&](const auto& item){return item.id==owner;});
-                revision!=result.identifier_rename_revisions.end()&&
-                fingerprint(projected)==revision->after_sha256)
-            projected=JsonObject::Parse(key(revision->raw_json));
+        // Only exact independently authenticated presentations borrow the
+        // old source spelling. Keep each presentation's own prose intact;
+        // earlier snapshots and learner drafts never acquire current text.
+        if(const auto old=identifier_rename_originals.find(owner);
+                old!=identifier_rename_originals.end()&&
+                identifier_rename_presentations.at(owner).contains(fingerprint(projected)))
+            projected=identifier_restore_source(projected,old->second);
         if(const auto it=source_format_originals.find(owner);it!=source_format_originals.end())
             projected=source_format_projection(projected,it->second);
         if(const auto it=math_matching_text_originals.find(owner);
@@ -3382,7 +3544,10 @@ StateLayout read_layout(const JsonObject& metadata, const JsonArray& pages, std:
         for (const auto& value : revisions) {
             const auto change = value.GetObject();
             allowed_keys(change, {"id", "beforeSha256", "afterSha256", "returnTo",
-                                  "bibliography", "reviewPaths"});
+                                  "bibliography", "reviewPaths", "identifierRenameProse"});
+            require(!change.HasKey(L"identifierRenameProse")||
+                    identifier_rename_originals.contains(text(change,"id")),
+                "Identifier prose belongs to an authenticated renamed owner");
             if(change.HasKey(L"reviewPaths")) {
                 // A feedback review names its exact existing option or its
                 // scalar guide, never a new response or an inferred sibling.
@@ -4333,6 +4498,20 @@ std::map<std::string,TextSemantics> read_case_order_semantics(
     auto block=read_block(before,utf8(before.Stringify()));block.stable_id=owner;
     Page page;page.blocks.push_back(std::move(block));lesson.pages.push_back(std::move(page));
     read_text_semantics(root,lesson);return std::move(lesson.pages.front().blocks.front().text_semantics);
+}
+std::map<std::string,TextSemantics> read_identifier_prose_semantics(
+        const JsonObject& before,const JsonArray& fields,const std::string& owner) {
+    require(fields.Size()<=100000,"Too many archived identifier prose semantic fields");
+    for(const auto& value:fields)
+        require(text(value.GetObject(),"block")==owner,
+            "Identifier prose semantics has a different field owner");
+    JsonObject overlay;overlay.Insert(L"version",JsonValue::CreateNumberValue(1));overlay.Insert(L"fields",fields);
+    JsonObject root;root.Insert(L"textSemantics",overlay);
+    Lesson lesson;lesson.state_layout.version=2;lesson.raw_json=utf8(root.Stringify());
+    auto block=read_block(before,utf8(before.Stringify()));block.stable_id=owner;
+    Page page;page.blocks.push_back(std::move(block));lesson.pages.push_back(std::move(page));
+    read_text_semantics(root,lesson);
+    return std::move(lesson.pages.front().blocks.front().text_semantics);
 }
 void read_relationships(const JsonObject& root, Lesson& lesson) {
     if (root.HasKey(L"referenceAfter")) {

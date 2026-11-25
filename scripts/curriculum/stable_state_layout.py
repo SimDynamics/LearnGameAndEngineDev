@@ -2048,6 +2048,135 @@ def _all_blocks(document: dict) -> dict[str, dict]:
                                   for item in document["stateLayout"].get("retired", [])}}
 
 
+def _identifier_owner_semantics(document: dict, identity: str) -> list[dict]:
+    return deepcopy([field for field in document.get(text_semantics.ROOT_FIELD, {}).get("fields", [])
+                     if field.get("block") == identity])
+
+
+def _identifier_prose_semantics(fields: object, identity: str, block: dict) -> dict:
+    require(type(fields) is list and len(fields) <= 100_000,
+            "Invalid identifier prose semantic archive")
+    public = text_semantics.public_text_fields(block)
+    result = {}
+    for field in fields:
+        require(type(field) is dict and set(field) == {"block", "path", "sourceSha256", "spans"}
+                and field["block"] == identity and field["path"] in public
+                and field["path"] not in result,
+                "Identifier prose semantics must belong to unique public owner fields")
+        try:
+            text_semantics._descriptor(field, public[field["path"]])
+        except (ValueError, KeyError, TypeError) as error:
+            raise LayoutError("Invalid identifier prose semantics: " + str(error)) from error
+        result[field["path"]] = field
+    return result
+
+
+def _identifier_prose_archive(previous: dict, current: dict, identity: str,
+                               before: dict, after: dict) -> dict:
+    return {
+        "historySha256": fingerprint({"lessonId": previous["id"],
+            "locale": previous["stateLayout"]["locale"],
+            "editorial": previous["stateLayout"]["editorial"]}),
+        "previousBlock": deepcopy(before), "currentBlock": deepcopy(after),
+        "semanticRootBefore": text_semantics.ROOT_FIELD in previous,
+        "previousTextSemantics": _identifier_owner_semantics(previous, identity),
+        "currentTextSemantics": _identifier_owner_semantics(current, identity),
+    }
+
+
+def _authenticated_identifier_prose(document: dict, record: dict, endpoint: dict,
+                                    current: dict, start: int) -> set[int]:
+    """Check EVERY later same-owner edge; endpoint remains the exact rename.
+
+    Complete snapshots prevent a changed answer/source from being hidden by a
+    later return to the original value. Other owners may be interleaved.
+    Ordinary returns still pass the shared explicit-return validation.
+    """
+    identity = record["id"]
+    editorial = document["stateLayout"]["editorial"]
+    previous, previous_marks = endpoint, None
+    accepted = set()
+    for ordinal in range(start + 1, len(editorial)):
+        proof = editorial[ordinal]
+        if proof.get("id") != identity:
+            continue
+        archive = proof.get("identifierRenameProse")
+        require(type(archive) is dict and set(archive) == {
+                    "historySha256", "previousBlock", "currentBlock",
+                    "semanticRootBefore", "previousTextSemantics", "currentTextSemantics"}
+                and "bibliography" not in proof,
+                "Every post-rename prose edge needs its exact complete archive")
+        require(_digest(archive["historySha256"]) == fingerprint({
+                    "lessonId": document["id"], "locale": document["stateLayout"]["locale"],
+                    "editorial": editorial[:ordinal]}),
+                "Identifier prose archive differs from its complete editorial prefix")
+        before, after = archive["previousBlock"], archive["currentBlock"]
+        require(type(before) is dict and type(after) is dict
+                and identifier_rename.same_json_value_and_types(before, previous)
+                and fingerprint(before) == proof.get("beforeSha256")
+                and fingerprint(after) == proof.get("afterSha256"),
+                "Identifier prose archive must retain each exact consecutive predecessor")
+        paths = ordinary_editorial_paths(before, after)
+        require(bool(paths), "Identifier prose changed source or a protected response contract")
+        hints = ordinary_feedback_paths(before, after)
+        require(proof.get("reviewPaths") == (list(hints) if hints else None),
+                "Identifier prose changed unauthored guidance paths")
+        old_fields, new_fields = archive["previousTextSemantics"], archive["currentTextSemantics"]
+        require(type(archive["semanticRootBefore"]) is bool
+                and (archive["semanticRootBefore"] or not old_fields)
+                and (previous_marks is None or archive["semanticRootBefore"]),
+                "Identifier prose falsified its semantic root predecessor")
+        old_marks = _identifier_prose_semantics(old_fields, identity, before)
+        new_marks = _identifier_prose_semantics(new_fields, identity, after)
+        require(previous_marks is None or identifier_rename.same_json_value_and_types(
+                    old_fields, previous_marks),
+                "Identifier prose changed an intermediate semantic predecessor")
+        require(set(paths) <= new_marks.keys(),
+                "Every renamed-owner prose field needs its authored descriptor")
+        expected = deepcopy(old_fields)
+        for field in expected:
+            if field["path"] in paths:
+                replacement = new_marks[field["path"]]
+                require(not field["spans"] or bool(replacement["spans"]),
+                        "Identifier prose cannot discard existing authored highlights")
+                field.clear()
+                field.update(deepcopy(replacement))
+        expected.extend(deepcopy(field) for field in new_fields
+                        if field["path"] in paths and field["path"] not in old_marks)
+        require(identifier_rename.same_json_value_and_types(expected, new_fields),
+                "Identifier prose changed unrelated semantic fields")
+        previous, previous_marks = after, new_fields
+        accepted.add(ordinal)
+    require(identifier_rename.same_json_value_and_types(previous, current),
+            "Identifier prose chain does not describe its exact active owner")
+    if previous_marks is not None:
+        require(identifier_rename.same_json_value_and_types(
+                    previous_marks, _identifier_owner_semantics(document, identity)),
+                "Identifier prose chain does not describe its current reading semantics")
+    return accepted
+
+
+def _identifier_original_semantics(document: dict, overlay: dict | None) -> dict | None:
+    """Restore original prose markers only with the matching historical text."""
+    if overlay is None:
+        return None
+    result = deepcopy(overlay)
+    first, absent_root = {}, False
+    for proof in document["stateLayout"]["editorial"]:
+        if "identifierRenameProse" in proof:
+            absent_root |= not proof["identifierRenameProse"]["semanticRootBefore"]
+            first.setdefault(proof["id"], proof["identifierRenameProse"]["previousTextSemantics"])
+    for identity, markers in first.items():
+        by_path = {field["path"]: field for field in markers}
+        # Keep interleaved owners in place. Ordinary authorship preserves all
+        # old paths and appends only genuinely new ones; omit those additions.
+        result["fields"] = [deepcopy(by_path[field["path"]])
+                            if field["block"] == identity else field
+                            for field in result["fields"]
+                            if field["block"] != identity or field["path"] in by_path]
+    return None if absent_root and not result["fields"] and not result.get("rootFields") else result
+
+
 def _authenticated_identifier_renames(
         document: dict, active: dict[str, dict],
         storage: dict[str, tuple[int, int]],
@@ -2056,8 +2185,8 @@ def _authenticated_identifier_renames(
 
     A rename packet is bound to the exact v2 owner, its immutable storage
     address and original response digest, plus one authenticated editorial
-    segment. This deliberately permits only ONE revision of each active owner
-    and no later changes to that owner's code in this initial contract.
+    segment. This permits one source rename per active owner. Later ordinary
+    prose needs complete, independently authenticated predecessor archives.
     """
     meta = document["stateLayout"]
     records = meta.get("identifierRenameRevisions", [])
@@ -2081,7 +2210,7 @@ def _authenticated_identifier_renames(
     require(type(editorial) is list and len(editorial) >= len(records),
             "C++ rename history needs its complete editorial publication")
     predecessor = []
-    original_blocks = {}
+    original_blocks, endpoints = {}, {}
     for record in records:
         require(type(record) is dict and set(record) == fields,
                 "Invalid or incomplete C++ rename provenance")
@@ -2101,14 +2230,18 @@ def _authenticated_identifier_renames(
                 and identifier_rename.same_json_value_and_types(
                     record["stableStorage"], {"page": address[0], "block": address[1]}),
                 "C++ rename belongs to another lesson, family or storage owner")
-        before, after = fingerprint(old), fingerprint(now)
+        # Copy only current source slots into immutable archived metadata;
+        # lexical proof and the ORIGINAL endpoint hash authenticate these bytes.
+        endpoint = code_format.source_projection(old, now)
+        before, after = fingerprint(old), fingerprint(endpoint)
+        endpoints[identity] = endpoint
         require(record["beforeSha256"] == before and
                 record["afterSha256"] == after and before != after and
                 record["priorSourceFormatSha256"] == fingerprint(formats[identity]),
                 "C++ rename changed the exact published source or its format archive")
         try:
             confirmed = identifier_rename.require_declared_cpp_renames(
-                old, now, record["names"], record["occurrences"])
+                old, endpoint, record["names"], record["occurrences"])
             code_format.require_source_lexical(formats[identity], old)
         except (identifier_rename.IdentifierRenameError,
                 code_format.SourceFormatError) as exc:
@@ -2138,6 +2271,14 @@ def _authenticated_identifier_renames(
     require(all(record["editorialPrefixSha256"] == digest
                 for record in records),
             "C++ rename archives cannot borrow another editorial history")
+    accepted_prose = set()
+    for offset, record in enumerate(records):
+        identity = record["id"]
+        accepted_prose.update(_authenticated_identifier_prose(
+            document, record, endpoints[identity], active[identity], starts[0] + offset))
+    require(all("identifierRenameProse" not in proof or ordinal in accepted_prose
+                for ordinal, proof in enumerate(editorial)),
+            "An identifier prose archive needs its own preceding rename")
     return original_blocks
 
 
@@ -2589,10 +2730,12 @@ def _validate_v2(document: dict) -> dict[tuple[int, int], tuple[int, int]]:
     chains = {}
     for ordinal, proof in enumerate(editorial):
         fields = {"id", "beforeSha256", "afterSha256"}
-        require(type(proof) is dict and fields <= set(proof) <= fields | {"returnTo", "bibliography", "reviewPaths"}
+        require(type(proof) is dict and fields <= set(proof) <= fields | {"returnTo", "bibliography", "reviewPaths", "identifierRenameProse"}
                 and not {"returnTo", "bibliography"} <= set(proof),
                 "Malformed editorial proof")
         identity = _identity(proof["id"])
+        require("identifierRenameProse" not in proof or identity in rename_originals,
+                "Identifier prose belongs to an authenticated renamed owner")
         require(identity in storage, "Unknown editorial identity")
         if "reviewPaths" in proof:
             paths = proof["reviewPaths"]
@@ -7770,6 +7913,10 @@ def revise_ordinary_editorial(document: dict, identity: str, edits: dict) -> dic
     else:
         require(return_to is None,
                 "An explicit editorial return must match an earlier full published block")
+    if any(record["id"] == identity for record in
+           document["stateLayout"].get("identifierRenameRevisions", [])):
+        proof["identifierRenameProse"] = _identifier_prose_archive(
+            document, result, identity, original, revised)
     result["stateLayout"]["editorial"].append(proof)
     validate_transition(document, result)
     return result
@@ -8495,6 +8642,38 @@ def _validate_transition_v2(previous: dict, current: dict) -> None:
                     and left["currentTextSemantics"] == right["previousTextSemantics"]
                     for left, right in zip(archives, archives[1:])),
                 "Consecutive bibliography archives must retain their exact intermediate source and semantics")
+    semantic_root_present = text_semantics.ROOT_FIELD in baseline
+    for proof in meta["editorial"][len(old_editorial):]:
+        if "identifierRenameProse" in proof:
+            require(proof["identifierRenameProse"]["semanticRootBefore"] == semantic_root_present,
+                    "Identifier prose falsified the published semantic root predecessor")
+            semantic_root_present = True
+        elif not semantic_root_present:
+            identity = proof["id"]
+            # A different, ordinary owner may create the first descriptor.
+            # Recognize only an edge whose BOTH complete endpoints are the
+            # real publications available here; never invent an intermediate
+            # block from a hash or from the renamed owner's final payload.
+            old, new = before[identity], after[identity]
+            paths = ordinary_editorial_paths(old, new)
+            if (paths and proof["beforeSha256"] == fingerprint(old)
+                    and proof["afterSha256"] == fingerprint(new)
+                    and set(paths) <= {field["path"] for field in
+                        _identifier_owner_semantics(current, identity)}):
+                semantic_root_present = True
+    for identity, proofs in appended.items():
+        archives = [proof["identifierRenameProse"] for proof in proofs
+                    if "identifierRenameProse" in proof]
+        if not archives:
+            continue
+        first = archives[0]
+        predecessor = before[identity]
+        if identity not in old_rename_blocks:
+            predecessor = code_format.source_projection(predecessor, after[identity])
+        require(identifier_rename.same_json_value_and_types(first["previousBlock"], predecessor)
+                and identifier_rename.same_json_value_and_types(
+                    first["previousTextSemantics"], _identifier_owner_semantics(baseline, identity)),
+                "New identifier prose archives must retain the actual published predecessor")
     owners = {}
     for identity, block in before.items():
         owners.setdefault(fingerprint(block), set()).add(identity)
@@ -8567,7 +8746,12 @@ def _validate_transition_v2(previous: dict, current: dict) -> None:
         # prior hint and predate reviewPaths and authored text descriptors.
         # Keep the stricter revision contract for every already-present field,
         # including malformed empty/null values; absence is not truthiness.
-        if ("reviewFeedback" in block
+        rename_prose = [proof for proof in proofs if "identifierRenameProse" in proof]
+        if rename_prose:
+            # Each full intermediate block, guide path and descriptor was
+            # independently verified above; do not collapse a real return.
+            pass
+        elif ("reviewFeedback" in block
                 and block.get("reviewFeedback") != actual.get("reviewFeedback")):
             required_paths = ordinary_feedback_paths(block, actual)
             revised_fields = ordinary_editorial_fields(block, actual)
@@ -8959,7 +9143,8 @@ def align_for_previous_validation(previous: dict, current: dict) -> dict:
             old_item["id"] for old_item in old["stateLayout"].get("identifierRenameRevisions", [])
         }
     }
-    blocks = {identity: deepcopy(new_renames.get(identity, block))
+    blocks = {identity: (code_format.source_projection(block, new_renames[identity])
+                         if identity in new_renames else deepcopy(block))
               for identity, block in blocks.items()}
     page_by_id = {record["id"]: page for page, record in zip(current["pages"], current["stateLayout"]["current"])}
     result = deepcopy(current)
@@ -9034,6 +9219,7 @@ def original_projection(document: dict) -> dict:
         if math_match_before and overlay is not None:
             import math_matching_text_compat as matching_compat
             overlay = matching_compat.historical_matching_text_semantics(document, overlay)
+        overlay = _identifier_original_semantics(document, overlay)
         if overlay is None:
             result.pop(text_semantics.ROOT_FIELD)
         else:

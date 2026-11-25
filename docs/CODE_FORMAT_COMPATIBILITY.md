@@ -364,3 +364,37 @@ Work revisa la legibilidad pedagógica de todos los cursos y publica únicamente
 sus modificaciones curriculares en `main`. El usuario controla la
 sincronización de ramas. Sólo Work modifica
 `PENDIENTES_RECURSOS_CURRICULARES.md` y elimina lo efectivamente concluido.
+
+
+## Prosa posterior a un renombrado autenticado
+
+`identifierRenameRevisions` conserva el bloque anterior, la correspondencia
+autoral de nombres y el hash del resultado exacto del renombrado. Ese archivo
+permanece inmutable cuando Work corrige después la pregunta, la explicación
+o sus orientaciones mediante `revise_ordinary_editorial`. La fuente C++ y el
+contrato de respuesta deben conservarse byte por byte. Una segunda operación
+de renombrado o un nuevo espaciado de la fuente no pertenecen a esta composición.
+
+Cada arista posterior del mismo propietario añade `identifierRenameProse`: el
+prefijo editorial completo autenticado, los bloques completos anterior y actual,
+los descriptores de texto de ambas presentaciones y `semanticRootBefore`, que
+distingue un contenedor de marcas ausente de uno vacío. No basta con que el
+último bloque coincida con una huella conocida: se comprueban todos los
+predecesores, los campos ordinarios permitidos y sus rangos UTF-16. Los demás
+propietarios pueden intercalarse, y un retorno requiere el `returnTo` explícito
+ya existente. Una cadena sin uno de sus archivos intermedios se rechaza.
+
+La proyección de contratos restaura únicamente las fuentes antiguas y conserva
+la prosa de cada presentación autenticada. La proyección histórica recupera
+además sus propias marcas, sin reordenar los campos de otros propietarios. Abrir,
+reabrir o importar conserva las respuestas, los intentos, los borradores y las
+pausas previas; una frase nueva no recibe acreditación de lectura de la anterior.
+
+La regresión `identifier_rename_prose_fixture_source.py` parte de la publicación
+U2L6 `55e60dcd4c9da2ddf71aad6eddd1c5937e312337` y genera solamente archivos QA.
+Incluye los dos renombrados declarados, revisiones separadas de pregunta y
+explicación, otro propietario intercalado, un retorno y dieciséis historias
+negativas. `test_identifier_rename_prose_history.py` comprueba autoría y
+transiciones; el ejecutable `identifier_rename_prose_tests.cpp` ejercita ambos
+cargadores Windows y `StateStore`. La existencia de esas pruebas no acredita
+su ejecución Windows: el resultado se obtiene del workflow focal correspondiente.
