@@ -705,10 +705,273 @@ void add_constant_variations(Block& owner,std::vector<NamedRuleConstantVariation
         *source.execution_probe->constant_variations,source.execution_probe->cases),
         "The native constant-variation fixture does not discriminate its declared rule");
 }
+std::string named_review_key(const Lesson& lesson,const Block& owner) {
+    return "compiler-puzzle/v1/"+lesson.locale+"/"+lesson.id+"/"+
+        exercise_key(lesson,owner)+"/"+state::sha256(reference_objective_frame(lesson,owner))+"/review/";
+}
+void named_review_preserves(const state::StateData& current,const state::StateData& previous,
+        std::string_view review_prefix={}) {
+    const auto permitted=[&](std::string_view domain,std::string_view key) {
+        if(domain!="native_windows"||review_prefix.empty())return false;
+        for(const auto suffix:{"program","input","target","rules","feedback","capture","seal"})
+            if(key==std::string(review_prefix)+suffix)return true;
+        return false;
+    };
+    for(const auto& [domain,values]:previous.preferences) {
+        const auto found=current.preferences.find(domain);
+        require(found!=current.preferences.end(),"Named review removed an existing preference domain");
+        for(const auto& [key,value]:values) {
+            const auto stored=found->second.find(key);
+            require(permitted(domain,key)||(stored!=found->second.end()&&stored->second==value),
+                "Named review rewrote a historical receipt, draft, narration or foreign preference: "+domain+"/"+key);
+        }
+    }
+    if(review_prefix.empty())return;
+    for(const auto& [domain,values]:current.preferences) {
+        require(previous.preferences.contains(domain)||domain=="native_windows",
+            "Named review created an unrelated preference domain");
+        for(const auto& [key,value]:values) {
+            const auto old=state::find(previous,domain,key);
+            require((old&&*old==value)||permitted(domain,key),
+                "Named review changed state outside its seven exact review fields: "+domain+"/"+key);
+        }
+    }
+}
+std::string named_rejection_feedback(const FreshExecution& capture) {
+    if(!capture.named_rule_constant_variation_feedback.empty())
+        return capture.named_rule_constant_variation_feedback;
+    if(!capture.named_rule_battery_feedback.empty())return capture.named_rule_battery_feedback;
+    return "La salida del comprobador coincide, pero la prueba independiente de las funciones no pasó. "
+        "Revisa el cálculo real sin modificar el comparador para fabricar los resultados.";
+}
+// Both captures below were already executed by the surrounding authentic QA.
+// Their order of persistence is deliberate; their request/revision is never
+// relabelled to pretend that saving an existing observation runs it again.
+void named_rejection_roundtrip(const Lesson& lesson,const Block& owner,
+        const CppRunRequest& rejected,const CppRunResult& rejected_result,
+        const CppRunRequest& passing,const CppRunResult& passing_result,
+        const state::StateData& historical,std::string_view label) {
+    const auto bad=capture_cpp_execution(rejected,rejected_result);
+    const auto good=capture_cpp_execution(passing,passing_result);
+    const auto guide=named_rejection_feedback(bad);
+    require(compiler_runtime_request_allowed(owner,rejected)&&
+        evaluate_cpp_output_check(*owner.output_check,bad,rejected.revision).verdict==OutputVerdict::correct&&
+        !compiler_independent_checks_satisfied(owner,bad)&&
+        compiler_runtime_request_allowed(owner,passing)&&
+        compiler_independent_checks_satisfied(owner,good),
+        "The persistence regression did not reuse actual public-correct/private-rejected and passing executions");
+    static unsigned profile=0;
+    const LaunchOptions options{ProfileId::Codex,
+        L"named-review-"+std::to_wstring(GetCurrentProcessId())+L"-"+
+        std::to_wstring(GetTickCount64())+L"-"+std::to_wstring(++profile),false};
+    const auto environment=resolve_windows_environment(options);
+    require(environment.options.qa_instance&&!environment.options.qa_instance->empty()&&
+        !std::filesystem::exists(environment.paths.root),
+        "Named-review QA would open an existing or personal profile");
+    initialize_profile_directories(environment.paths);
+    auto data=historical;
+    state::prepare_lesson_state(data,lesson);
+    require(!compiler_puzzle_completed(data,lesson,owner)&&
+        compiler_puzzle_case_count(data,lesson,owner)==0,
+        "Named rejection QA unexpectedly started with current-objective credit");
+    const auto draft_address=draft_key("programming",lesson,owner);
+    state::Draft draft;
+    draft.source=rejected.source_utf8+"\n// keep my unpublished editor draft\n";
+    draft.input="saved optional input\n";
+    draft.selection_start=2;draft.selection_end=5;
+    draft.indentation_json=state::make_indentation_metadata(draft.source,{});
+    state::put_draft(data,draft_address,draft);
+    if(!rejected.project_files.empty()) {
+        using namespace winrt::Windows::Data::Json;
+        JsonObject project;JsonArray files,sources;
+        for(const auto& [path,source]:rejected.project_files) {
+            JsonObject file;
+            file.Insert(L"path",JsonValue::CreateStringValue(winrt::to_hstring(path)));
+            file.Insert(L"code",JsonValue::CreateStringValue(winrt::to_hstring(source)));
+            files.Append(file);
+        }
+        for(const auto& source:rejected.source_files)
+            sources.Append(JsonValue::CreateStringValue(winrt::to_hstring(source)));
+        project.Insert(L"files",files);project.Insert(L"sources",sources);
+        data.preferences["cpp_lesson_drafts"][draft_address+"/project"]=winrt::to_string(project.Stringify());
+        if(rejected.cmake) {
+            JsonObject configuration;std::string options_text;
+            for(const auto& [name,value]:rejected.cmake->options)
+                options_text+=name+"="+value+"\n";
+            configuration.Insert(L"target",JsonValue::CreateStringValue(winrt::to_hstring(rejected.cmake->target)));
+            configuration.Insert(L"buildType",JsonValue::CreateStringValue(winrt::to_hstring(rejected.cmake->build_type)));
+            configuration.Insert(L"optionsText",JsonValue::CreateStringValue(winrt::to_hstring(options_text)));
+            data.preferences["cpp_lesson_drafts"][draft_address+"/cmake"]=winrt::to_string(configuration.Stringify());
+        }
+    }
+    data.preferences["qa-other-course"]["untouched"]=std::string("unrelated course progress");
+    data.preferences["qa-reading-history"]["untouched"]=std::vector<std::string>{"first reading","resumed sentence"};
+    data.preferences["native_windows"]["qa-unrelated-preference"]=std::string("keep exactly");
+    const auto baseline=data;
+    state::StateData disk;
+    const auto roundtrip=[&](const state::StateData& expected) {
+        {
+            state::StateStore writer(environment.paths.root);
+            const auto before=writer.load();
+            require(before==disk&&state::encode(before)==state::encode(disk),
+                "Named review disk changed before an explicit save");
+            writer.save(expected);
+        }
+        state::StateStore reader(environment.paths.root);
+        const auto reopened=reader.load();
+        require(reopened==expected&&state::encode(reopened)==state::encode(expected),
+            "Physical named-review reopen changed exact saved state");
+        disk=expected;
+        return reopened;
+    };
+    data=roundtrip(data);
+    require(!record_compiler_puzzle_case(data,lesson,owner,rejected,bad,guide)&&data==baseline,
+        "The actual private rejection earned progress or altered its historical seed");
+    // This exact assertion fails on 0ee5549: correct public stdout makes the
+    // old review route discard the independently observed private rejection.
+    require(record_compiler_puzzle_review(data,lesson,owner,rejected,bad,guide),
+        "Named private rejection with correct stdout was not saved: "+std::string(label));
+    const auto check_rejected=[&](const state::StateData& value,bool earned) {
+        const auto feedback=compiler_puzzle_current_feedback(value,lesson,owner,rejected);
+        require(compiler_puzzle_review(value,lesson,owner,rejected)==guide&&
+            feedback&&feedback->text==guide&&!feedback->correct&&feedback->source_path.empty()&&
+            compiler_puzzle_completed(value,lesson,owner)==earned&&
+            compiler_puzzle_case_count(value,lesson,owner)==(earned?1u:0u),
+            "Reopening lost named-rule guidance or changed first-case achievement: "+std::string(label));
+        const auto restored=state::get_draft(value,draft_address,"","");
+        require(restored.has_saved&&restored.source==draft.source&&restored.input==draft.input&&
+            restored.selection_start==draft.selection_start&&restored.selection_end==draft.selection_end&&
+            restored.indentation_json==draft.indentation_json,
+            "Named review changed the saved editor draft or selection");
+    };
+    named_review_preserves(data,baseline,named_review_key(lesson,owner));
+    data=roundtrip(data);check_rejected(data,false);
+    auto changed=rejected;
+    if(changed.project_files.empty())changed.source_utf8+="\n// another source\n";
+    else changed.project_files.front().second+="\n# another project revision\n";
+    require(compiler_puzzle_review(data,lesson,owner,changed).empty(),
+        "Named review was borrowed by a different editor/project source");
+    auto other=owner;
+    ++other.named_rule_source_check->requirements.front().min_uses;
+    require(compiler_puzzle_review(data,lesson,other,rejected).empty(),
+        "Named review was borrowed by another requirement contract");
+    auto changed_probe=rejected;
+    ++changed_probe.named_rule_probe->cases.front().expected;
+    other=owner;other.named_rule_source_check->execution_probe=changed_probe.named_rule_probe;
+    require(compiler_puzzle_review(data,lesson,other,changed_probe).empty(),
+        "Named review was borrowed by different independent expected answers");
+    const std::string accepted="Actual named-rule first case verified";
+    require(record_compiler_puzzle_case(data,lesson,owner,passing,good,accepted)&&
+        compiler_puzzle_completed(data,lesson,owner)&&compiler_puzzle_case_count(data,lesson,owner)==1&&
+        compiler_puzzle_review(data,lesson,owner,rejected).empty(),
+        "The actual corrected program did not clear its review and retain first-case success");
+    const auto success_feedback=compiler_puzzle_current_feedback(data,lesson,owner,passing);
+    require(success_feedback&&success_feedback->text==accepted&&success_feedback->correct,
+        "The corrected named-rule program did not restore successful guidance");
+    named_review_preserves(data,baseline);
+    const auto earned=data;
+    data=roundtrip(data);
+    require(!record_compiler_puzzle_case(data,lesson,owner,rejected,bad,guide)&&data==earned&&
+        record_compiler_puzzle_review(data,lesson,owner,rejected,bad,guide),
+        "Saving a real rejected capture after an achievement lost that achievement or its guide");
+    named_review_preserves(data,earned,named_review_key(lesson,owner));
+    data=roundtrip(data);check_rejected(data,true);
+    require(record_compiler_puzzle_case(data,lesson,owner,passing,good,accepted)&&data==earned,
+        "Clearing a named-rule review rewrote the already earned receipt or another saved byte");
+    data=roundtrip(data);
+    const auto reopened_feedback=compiler_puzzle_current_feedback(data,lesson,owner,passing);
+    require(data==earned&&compiler_puzzle_review(data,lesson,owner,rejected).empty()&&
+        reopened_feedback&&reopened_feedback->text==accepted&&reopened_feedback->correct,
+        "Physical reopen restored stale rejection instead of the original successful guide");
+    std::cout<<"PASS named-rule physical review "<<label
+        <<": existing real captures saved before/after first-case achievement; exact drafts, project, history and preferences retained\n";
+}
+
+void named_rejection_capture_controls(const Lesson& lesson,const Block& owner,
+        const CppRunRequest& request,const CppRunResult& actual) {
+    const auto captured=capture_cpp_execution(request,actual);
+    require(!captured.private_probe_review_fingerprint.empty()&&
+        captured.private_probe_review_fingerprint==cpp_named_rule_review_request_fingerprint(request),
+        "The actual named-rule rejection lacks its complete request binding");
+    const auto rejected=[&](const CppRunRequest& candidate,const CppRunResult& evidence) {
+        const auto observed=capture_cpp_execution(candidate,evidence);
+        state::StateData saved;state::prepare_lesson_state(saved,lesson);
+        saved.preferences["qa-other-course"]["keep"]=std::string("exact bytes");
+        const auto original=saved;
+        require(observed.private_probe_review_fingerprint.empty()&&
+            !record_compiler_puzzle_review(saved,lesson,owner,candidate,observed,
+                "An incomplete or foreign probe must not replace guidance")&&saved==original,
+            "Incomplete, foreign or relabelled named-rule evidence persisted a private rejection");
+    };
+    auto changed=request;
+    changed.request_id+=10000;changed.revision+=10000;
+    auto evidence=actual;evidence.request_id=changed.request_id;evidence.revision=changed.revision;
+    rejected(changed,evidence); // public labels cannot rebind the private observation
+    changed=request;
+    if(changed.project_files.empty())changed.source_utf8+="\n// another revision\n";
+    else changed.project_files.front().second+="\n# another revision\n";
+    rejected(changed,actual);
+    changed=request;changed.named_rule_probe->cases.clear();rejected(changed,actual);
+    changed=request;changed.named_rule_probe.reset();rejected(changed,actual);
+    changed=request;changed.compile_timeout+=std::chrono::milliseconds(1);rejected(changed,actual);
+    changed=request;changed.stdin_utf8+="unexpected input";rejected(changed,actual);
+    if(request.cmake) {
+        changed=request;changed.cmake->build_type=request.cmake->build_type=="Release"?"Debug":"Release";
+        rejected(changed,actual);
+    }
+    evidence=actual;evidence.named_rule_probe.reset();rejected(request,evidence);
+    evidence=actual;evidence.named_rule_probe->review_request_fingerprint.clear();rejected(request,evidence);
+    evidence=actual;evidence.named_rule_probe->source_sha256="foreign driver";rejected(request,evidence);
+    evidence=actual;evidence.named_rule_probe->project_sha256="foreign program";rejected(request,evidence);
+    evidence=actual;evidence.named_rule_probe->compilation.exit_code=1;rejected(request,evidence);
+    for(const auto status:{CppPhaseStatus::not_started,CppPhaseStatus::timed_out,
+            CppPhaseStatus::cancelled,CppPhaseStatus::launch_failed,CppPhaseStatus::output_limit}) {
+        evidence=actual;evidence.named_rule_probe->execution.status=status;rejected(request,evidence);
+    }
+    evidence=actual;evidence.named_rule_probe->execution.exit_code.reset();rejected(request,evidence);
+    if(request.named_rule_probe->constant_variations&&!actual.named_rule_constant_variation_probes.empty()) {
+        evidence=actual;evidence.named_rule_constant_variation_probes.clear();rejected(request,evidence);
+        evidence=actual;++evidence.named_rule_constant_variation_probes.front().index;rejected(request,evidence);
+        evidence=actual;evidence.named_rule_constant_variation_probes.push_back(
+            evidence.named_rule_constant_variation_probes.back());rejected(request,evidence);
+        evidence=actual;evidence.named_rule_constant_variation_probes.back().proof.review_request_fingerprint.clear();
+        rejected(request,evidence);
+        evidence=actual;evidence.named_rule_constant_variation_probes.back().proof.compilation.exit_code=1;
+        rejected(request,evidence);
+        for(const auto status:{CppPhaseStatus::timed_out,CppPhaseStatus::cancelled}) {
+            evidence=actual;evidence.named_rule_constant_variation_probes.back().proof.execution.status=status;
+            rejected(request,evidence);
+        }
+        evidence=actual;evidence.named_rule_constant_variation_probes.back().proof.execution.exit_code.reset();
+        rejected(request,evidence);
+    }
+    if(request.named_rule_probe->battery_check&&actual.named_rule_battery_evidence&&captured.named_rule_probe_correct) {
+        evidence=actual;evidence.named_rule_battery_evidence.reset();rejected(request,evidence);
+        evidence=actual;evidence.named_rule_battery_evidence->runs.pop_back();rejected(request,evidence);
+        evidence=actual;evidence.named_rule_battery_evidence->runs.back().compiled=false;rejected(request,evidence);
+        evidence=actual;evidence.named_rule_battery_evidence->runs.back().executed=false;rejected(request,evidence);
+        evidence=actual;evidence.named_rule_battery_evidence->runs.back().program_frame="other request";
+        rejected(request,evidence);
+        evidence=actual;std::swap(evidence.named_rule_battery_evidence->runs.front(),
+            evidence.named_rule_battery_evidence->runs.back());rejected(request,evidence);
+        evidence=actual;evidence.named_rule_battery_evidence->runs.front().stdout_bytes+="forged";
+        rejected(request,evidence);
+    }
+    std::cout<<"PASS named-rule private rejection binding "<<owner.stable_id
+        <<": no review from missing, incomplete, relabelled or foreign evidence\n";
+}
+
 void check_real_constant_variation_evidence(const Lesson& lesson,const Block& owner,
         const CppRunRequest& request,const CppRunResult& real) {
     require(request.named_rule_probe&&request.named_rule_probe->constant_variations,
         "The native variation request lost its authored contract");
+    // Removing real successful phases yields missing evidence, not an observed
+    // rejection. Keep the already published success matrix below unchanged.
+    auto truncated=real;
+    if(!truncated.named_rule_constant_variation_probes.empty())
+        truncated.named_rule_constant_variation_probes.pop_back();
+    require(capture_cpp_execution(request,truncated).private_probe_review_fingerprint.empty(),
+        "A truncated all-successful variation prefix was treated as a student rejection");
     const auto& spec=*request.named_rule_probe->constant_variations;
     const auto fresh=capture_cpp_execution(request,real);
     require(real.compilation.succeeded()&&real.execution.succeeded()&&
@@ -960,6 +1223,8 @@ void actual_named_rule_msvc(const Lesson& lesson,const std::filesystem::path& pr
     require(!record_compiler_puzzle_case(saved,lesson,owner,forged,forged_capture,
         "forged visible output")&&!compiler_puzzle_completed(saved,lesson,owner),
         "An incorrect function earned credit from a forged printed report");
+    named_rejection_roundtrip(lesson,owner,forged,forged_run,passing,real,saved,"single-file function");
+    named_rejection_capture_controls(lesson,owner,forged,forged_run);
     // A buggy function can call std::exit(0) on an independent test input.
     // That used to look like successful execution without checking later
     // cases. The generated driver's final witness must now be present.
@@ -1196,6 +1461,8 @@ bool llega_a_tiempo(int dias) {
              "fake matches visible stdout")&&
         !compiler_puzzle_completed(saved,lesson,owner),
         "A fake, student-editable harness earned a curriculum receipt");
+    named_rejection_roundtrip(lesson,owner,forged,fake,correct,real,saved,"CMake function");
+    named_rejection_capture_controls(lesson,owner,forged,fake);
     // The student library can exit(0) when a hidden probe calls it,
     // even though the editable test executable prints the expected report.
     // Its zero exit status must not be accepted without the final witness.
@@ -1439,6 +1706,9 @@ void actual_constant_variation_controls(const Lesson& lesson,
         require(compiler_puzzle_completed(reopened,lesson,legacy_owner)&&
             !compiler_puzzle_completed(reopened,lesson,boxes),
             "Reopening promoted the old counterexample receipt to constant-dependence credit");
+        named_rejection_roundtrip(lesson,boxes,fixed,observed,correct,real,saved,
+            "constant variation "+std::to_string(ordinal));
+        named_rejection_capture_controls(lesson,boxes,fixed,observed);
         std::cout<<"PASS authentic constant counterexample "<<ordinal
             <<": public/base correct, changed capacity rejected, no new receipt\n";
     }
@@ -1647,6 +1917,11 @@ void actual_named_batteries(const Lesson& lesson,const std::filesystem::path& pr
             require(!record_compiler_puzzle_case(empty,lesson,owner,defective,rejected,
                     "defective battery")&&!compiler_puzzle_completed(empty,lesson,owner),
                 "An observed defective battery earned a native completion receipt");
+            const auto guide=rejected.named_rule_battery_feedback;
+            require(!rejected.private_probe_review_fingerprint.empty()&&
+                record_compiler_puzzle_review(empty,lesson,owner,defective,rejected,guide)&&
+                compiler_puzzle_review(empty,lesson,owner,defective)==guide,
+                "An actual self-referential or short-circuit battery rejection lost its guide");
         }
 
         // Binding controls reuse real observations; they do not recompile an
@@ -1742,6 +2017,9 @@ void actual_named_batteries(const Lesson& lesson,const std::filesystem::path& pr
             compiler_puzzle_completed(saved,lesson,legacy_owner)&&
             !compiler_puzzle_completed(saved,lesson,owner),
             "A rejected new battery erased history/drafts or earned new progress");
+        named_rejection_roundtrip(lesson,owner,fixed,fake,passing,real,saved,
+            "battery "+owner.stable_id);
+        named_rejection_capture_controls(lesson,owner,fixed,fake);
         require(record_compiler_puzzle_case(saved,lesson,owner,passing,fresh,
                 "preserved real battery")&&compiler_puzzle_completed(saved,lesson,owner),
             "The first real case with a complete battery did not grant progress");

@@ -1519,6 +1519,7 @@ bool private_dependency_owner(const curriculum::Block& block) {
     return scoped_local_owner(block)||block.input_check||block.local_role_check;
 }
 std::string private_review_fingerprint(const CppRunRequest& request) {
+    if(request.named_rule_probe)return cpp_named_rule_review_request_fingerprint(request);
     if(request.input_check)return cpp_input_request_fingerprint(request);
     if(request.local_role_check)return cpp_local_role_request_fingerprint(request);
     if(request.local_int_check)return cpp_local_int_request_fingerprint(request);
@@ -1539,10 +1540,12 @@ std::string private_review_fingerprint(const CppRunRequest& request) {
     if(request.dual_interface_probe)return cpp_dual_interface_request_fingerprint(request);
     return {};
 }
-std::string private_review_rules(const curriculum::Block& block) {
+std::string private_review_rules(const curriculum::Lesson& lesson,const curriculum::Block& block) {
     if(!block.output_check)return {};
     auto frame=std::string("compiler-private-review-rules-v1/")+token(review_rules(block));
     const auto prefix_size=frame.size();
+    if(block.named_rule_source_check&&block.named_rule_source_check->execution_probe)
+        frame+=token(curriculum::reference_objective_frame(lesson,block));
     if(block.input_check)frame+=token(input_completion_seal({},{},*block.input_check));
     if(block.local_role_check)frame+=token(local_role_completion_seal({},{},*block.local_role_check));
     if(block.local_int_check)frame+=token(local_int_completion_seal({},{},*block.local_int_check));
@@ -1709,7 +1712,7 @@ std::string compiler_puzzle_review(const state::StateData& data,const curriculum
         if(!capture||!diagnostic_review_capture_matches(*capture,block,current)||
             (*rules!=diagnostic_review_rules(block,current)&&*rules!=diagnostic_review_rules(block,current,true))||
             *seal!=diagnostic_review_seal(key,*program,*input,*target,*rules,*feedback,*capture))return {};
-    }else if(*rules==private_review_rules(block)) {
+    }else if(*rules==private_review_rules(lesson,block)) {
         const auto stored=state::find(data,"native_windows",key+"capture");
         const auto capture=stored?std::get_if<std::vector<std::string>>(stored):nullptr;
         if(!capture||!private_review_capture_matches(*capture,block,current)||
@@ -1804,7 +1807,7 @@ bool record_compiler_puzzle_review(state::StateData& data,const curriculum::Less
     if(block.input_check!=captured.input_check||block.local_role_check!=captured.local_role_check||
        block.local_int_check!=captured.local_int_check||block.local_string_check!=captured.local_string_check)return false;
     const auto evaluation=evaluate_cpp_output_check(*block.output_check,execution,captured.revision);
-    const auto private_rules=private_review_rules(block);
+    const auto private_rules=private_review_rules(lesson,block);
     const bool private_rejected=evaluation.verdict==curriculum::OutputVerdict::correct&&
         !private_rules.empty()&&!compiler_independent_checks_satisfied(block,execution);
     if(evaluation.verdict!=curriculum::OutputVerdict::incorrect&&!private_rejected)return false;
