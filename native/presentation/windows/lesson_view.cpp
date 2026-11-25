@@ -4552,50 +4552,8 @@ struct LessonView {
                 std::string source_rejection_reason;
                 const bool preserved_source=windows::compiler_runtime_request_allowed(
                     block(index),running_program,&source_rejection_reason);
-                const bool independent=(!block(index).abstract_interface_probe||
-                    fresh.abstract_interface_probe_correct)&&
-                    (!block(index).interface_collection_probe||
-                     fresh.interface_collection_probe_correct)&&
-                    (!block(index).polymorphic_clone_probe||
-                     fresh.polymorphic_clone_probe_correct)&&
-                    (!block(index).dual_interface_probe||
-                     fresh.dual_interface_probe_correct)&&
-                    (!block(index).derived_preparation_probe||
-                    fresh.derived_preparation_probe_correct)&&
-                    (!block(index).virtual_lifetime_probe||
-                    fresh.virtual_lifetime_probe_correct)&&
-                    (!block(index).polymorphic_destruction_probe||
-                    fresh.polymorphic_destruction_probe_correct)&&
-                    (!block(index).array_return_take_probe||
-                    fresh.array_return_take_probe_correct)&&
-                    (!block(index).array_copy_move_probe||
-                    fresh.array_copy_move_probe_correct)&&
-                    (!block(index).array_owner_read_probe||
-                    fresh.array_owner_read_probe_correct)&&
-                    (!block(index).move_assignment_invariant_probe||
-                    fresh.move_assignment_invariant_probe_correct)&&
-                    (!block(index).independent_copy_assignment_probe||
-                    fresh.independent_copy_assignment_probe_correct)&&
-                    (!block(index).defaulted_move_policy_probe||
-                    fresh.defaulted_move_policy_probe_correct)&&
-                    (!block(index).indexed_unique_transfer_probe||
-                    fresh.indexed_unique_transfer_probe_correct)&&
-                    (!block(index).named_rule_source_check||
-                    !block(index).named_rule_source_check->execution_probe||
-                    (fresh.named_rule_probe_correct&&
-                     (!block(index).named_rule_source_check->execution_probe->battery_check||
-                      fresh.named_rule_battery_correct)))&&
-                    (!block(index).local_int_check||fresh.local_int_check_correct)&&
-                    (!block(index).local_string_check||fresh.local_string_check_correct)&&
-                    (!block(index).input_check||fresh.input_check_correct)&&
-                    (!block(index).local_role_check||fresh.local_role_check_correct)&&
-                    (!block(index).open_battery_probe||
-                     fresh.open_battery_probe_correct)&&
-                    (!block(index).boolean_battery_probe||
-                     fresh.boolean_battery_probe_correct)&&
-                    (!block(index).reduction_probe||fresh.reduction_probe_correct)&&
-                    (!block(index).integer_battery_probe||fresh.integer_battery_probe_correct)&&
-                     (!block(index).adjustment_project_probe||fresh.adjustment_project_probe_correct);
+                const bool independent=windows::compiler_independent_checks_satisfied(
+                    block(index),fresh);
                 const bool graph_ready=!block(index).cmake_graph_check||
                     fresh.cmake_graph_correct;
                 const bool observation_ready=!block(index).cmake_graph_check||

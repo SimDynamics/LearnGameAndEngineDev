@@ -3605,6 +3605,18 @@ curriculum::FreshExecution capture_cpp_execution(const CppRunRequest& request,co
     if(result.execution.exit_code&&*result.execution.exit_code<=255)fresh.exit_code=static_cast<int>(*result.execution.exit_code);
     fresh.standard_input=request.stdin_utf8;fresh.standard_output=result.execution.stdout_bytes;
     fresh.standard_error=result.execution.stderr_bytes;fresh.executable=result.executable;
+    // A failed private verdict is resumable only when its bound program really
+    // compiled and its process completed. This is observation, not approval
+    // or a claim that main returned normally; an abort can also complete.
+    const auto retain_private_probe_observation=[&](const auto& proof,
+            std::string_view driver,std::string_view frame) {
+        if(fresh.compilation_succeeded&&fresh.execution_succeeded&&!frame.empty()&&
+           proof.driver_sha256==state::sha256(driver)&&
+           proof.program_sha256==state::sha256(request.source_utf8)&&
+           proof.request_fingerprint==frame&&proof.compilation.succeeded()&&
+           proof.execution.status==CppPhaseStatus::completed&&proof.execution.exit_code)
+            fresh.private_probe_review_fingerprint=frame;
+    };
     if(request.input_check) {
         const auto frame=input_check_fingerprint(request);
         fresh.input_request_fingerprint=frame;
@@ -4056,6 +4068,23 @@ curriculum::FreshExecution capture_cpp_execution(const CppRunRequest& request,co
             }
             if(bound) {
                 const auto& positive=proof.phases[0];
+                bool observed=fresh.compilation_succeeded&&fresh.execution_succeeded&&
+                    positive.compilation.succeeded()&&
+                    positive.execution.status==CppPhaseStatus::completed&&
+                    positive.execution.exit_code.has_value();
+                // Copy rejection phases are compilation observations. Preserve
+                // their existing acceptance rule below; incomplete phases do
+                // not produce a resumable private-check rejection.
+                for(std::size_t i=1;observed&&i<proof.phases.size();++i) {
+                    const auto& negative=proof.phases[i];
+                    observed=negative.compilation.status==CppPhaseStatus::completed&&
+                        negative.compilation.exit_code.has_value()&&
+                        (negative.compilation.succeeded()
+                            ?negative.execution.status==CppPhaseStatus::completed&&
+                                negative.execution.exit_code.has_value()
+                            :negative.execution.status==CppPhaseStatus::not_started);
+                }
+                if(observed)fresh.private_probe_review_fingerprint=frame;
                 bool accepted=positive.compilation.succeeded()&&
                     positive.execution.succeeded()&&
                     positive.execution.stdout_bytes.empty()&&
@@ -4085,6 +4114,7 @@ curriculum::FreshExecution capture_cpp_execution(const CppRunRequest& request,co
             *request.independent_copy_assignment_probe,request.source_utf8);
         if(!frame.empty()&&driver&&result.independent_copy_assignment_evidence) {
             const auto& proof=*result.independent_copy_assignment_evidence;
+            retain_private_probe_observation(proof,*driver,frame);
             fresh.independent_copy_assignment_probe_correct=
                 proof.driver_sha256==state::sha256(*driver)&&
                 proof.program_sha256==state::sha256(request.source_utf8)&&
@@ -4102,6 +4132,7 @@ curriculum::FreshExecution capture_cpp_execution(const CppRunRequest& request,co
             *request.move_assignment_invariant_probe,request.source_utf8);
         if(!frame.empty()&&driver&&result.move_assignment_invariant_evidence) {
             const auto& proof=*result.move_assignment_invariant_evidence;
+            retain_private_probe_observation(proof,*driver,frame);
             fresh.move_assignment_invariant_probe_correct=
                 proof.driver_sha256==state::sha256(*driver)&&
                 proof.program_sha256==state::sha256(request.source_utf8)&&
@@ -4119,6 +4150,7 @@ curriculum::FreshExecution capture_cpp_execution(const CppRunRequest& request,co
             *request.array_owner_read_probe,request.source_utf8);
         if(!frame.empty()&&driver&&result.array_owner_read_evidence) {
             const auto& evidence=*result.array_owner_read_evidence;
+            retain_private_probe_observation(evidence,*driver,frame);
             fresh.array_owner_read_probe_correct=
                 evidence.driver_sha256==state::sha256(*driver)&&
                 evidence.program_sha256==state::sha256(request.source_utf8)&&
@@ -4136,6 +4168,7 @@ curriculum::FreshExecution capture_cpp_execution(const CppRunRequest& request,co
             *request.array_copy_move_probe,request.source_utf8);
         if(!frame.empty()&&driver&&result.array_copy_move_evidence) {
             const auto& evidence=*result.array_copy_move_evidence;
+            retain_private_probe_observation(evidence,*driver,frame);
             fresh.array_copy_move_probe_correct=
                 evidence.driver_sha256==state::sha256(*driver)&&
                 evidence.program_sha256==state::sha256(request.source_utf8)&&
@@ -4153,6 +4186,7 @@ curriculum::FreshExecution capture_cpp_execution(const CppRunRequest& request,co
             *request.abstract_interface_probe,request.source_utf8);
         if(!frame.empty()&&driver&&result.abstract_interface_evidence) {
             const auto& proof=*result.abstract_interface_evidence;
+            retain_private_probe_observation(proof,*driver,frame);
             fresh.abstract_interface_probe_correct=
                 proof.driver_sha256==state::sha256(*driver)&&
                 proof.program_sha256==state::sha256(request.source_utf8)&&
@@ -4170,6 +4204,7 @@ curriculum::FreshExecution capture_cpp_execution(const CppRunRequest& request,co
             *request.interface_collection_probe,request.source_utf8);
         if(!frame.empty()&&driver&&result.interface_collection_evidence) {
             const auto& proof=*result.interface_collection_evidence;
+            retain_private_probe_observation(proof,*driver,frame);
             fresh.interface_collection_probe_correct=
                 proof.driver_sha256==state::sha256(*driver)&&
                 proof.program_sha256==state::sha256(request.source_utf8)&&
@@ -4187,6 +4222,7 @@ curriculum::FreshExecution capture_cpp_execution(const CppRunRequest& request,co
             *request.polymorphic_clone_probe,request.source_utf8);
         if(!frame.empty()&&driver&&result.polymorphic_clone_evidence) {
             const auto& proof=*result.polymorphic_clone_evidence;
+            retain_private_probe_observation(proof,*driver,frame);
             fresh.polymorphic_clone_probe_correct=
                 proof.driver_sha256==state::sha256(*driver)&&
                 proof.program_sha256==state::sha256(request.source_utf8)&&
@@ -4204,6 +4240,7 @@ curriculum::FreshExecution capture_cpp_execution(const CppRunRequest& request,co
             *request.dual_interface_probe,request.source_utf8);
         if(!frame.empty()&&driver&&result.dual_interface_evidence) {
             const auto& proof=*result.dual_interface_evidence;
+            retain_private_probe_observation(proof,*driver,frame);
             fresh.dual_interface_probe_correct=
                 proof.driver_sha256==state::sha256(*driver)&&
                 proof.program_sha256==state::sha256(request.source_utf8)&&
@@ -4221,6 +4258,7 @@ curriculum::FreshExecution capture_cpp_execution(const CppRunRequest& request,co
             *request.derived_preparation_probe,request.source_utf8);
         if(!frame.empty()&&driver&&result.derived_preparation_evidence) {
             const auto& proof=*result.derived_preparation_evidence;
+            retain_private_probe_observation(proof,*driver,frame);
             fresh.derived_preparation_probe_correct=
                 proof.driver_sha256==state::sha256(*driver)&&
                 proof.program_sha256==state::sha256(request.source_utf8)&&
@@ -4238,6 +4276,7 @@ curriculum::FreshExecution capture_cpp_execution(const CppRunRequest& request,co
             *request.virtual_lifetime_probe,request.source_utf8);
         if(!frame.empty()&&driver&&result.virtual_lifetime_evidence) {
             const auto& proof=*result.virtual_lifetime_evidence;
+            retain_private_probe_observation(proof,*driver,frame);
             fresh.virtual_lifetime_probe_correct=
                 proof.driver_sha256==state::sha256(*driver)&&
                 proof.program_sha256==state::sha256(request.source_utf8)&&
@@ -4255,6 +4294,7 @@ curriculum::FreshExecution capture_cpp_execution(const CppRunRequest& request,co
             *request.polymorphic_destruction_probe,request.source_utf8);
         if(!frame.empty()&&driver&&result.polymorphic_destruction_evidence) {
             const auto& proof=*result.polymorphic_destruction_evidence;
+            retain_private_probe_observation(proof,*driver,frame);
             fresh.polymorphic_destruction_probe_correct=
                 proof.driver_sha256==state::sha256(*driver)&&
                 proof.program_sha256==state::sha256(request.source_utf8)&&
@@ -4272,6 +4312,7 @@ curriculum::FreshExecution capture_cpp_execution(const CppRunRequest& request,co
             *request.array_return_take_probe,request.source_utf8);
         if(!frame.empty()&&driver&&result.array_return_take_evidence) {
             const auto& proof=*result.array_return_take_evidence;
+            retain_private_probe_observation(proof,*driver,frame);
             fresh.array_return_take_probe_correct=
                 proof.driver_sha256==state::sha256(*driver)&&
                 proof.program_sha256==state::sha256(request.source_utf8)&&
@@ -4289,6 +4330,7 @@ curriculum::FreshExecution capture_cpp_execution(const CppRunRequest& request,co
             *request.indexed_unique_transfer_probe,request.source_utf8);
         if(!frame.empty()&&driver&&result.indexed_unique_transfer_evidence) {
             const auto& proof=*result.indexed_unique_transfer_evidence;
+            retain_private_probe_observation(proof,*driver,frame);
             fresh.indexed_unique_transfer_probe_correct=
                 proof.driver_sha256==state::sha256(*driver)&&
                 proof.program_sha256==state::sha256(request.source_utf8)&&

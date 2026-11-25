@@ -16,6 +16,10 @@ class CmakeSelectiveRecoveryTrace;
 // editor draft, and is not evidence of correctness or a persisted receipt.
 [[nodiscard]] bool compiler_runtime_request_allowed(const curriculum::Block&,
     const CppRunRequest&, std::string* rejection_reason = nullptr);
+// The reader and receipt writer share the same private-check verdicts.
+// This predicate alone neither authenticates a capture nor grants a receipt.
+[[nodiscard]] bool compiler_independent_checks_satisfied(const curriculum::Block&,
+    const curriculum::FreshExecution&);
 // The native evaluator and Win32 reader share the same curricular gate.
 [[nodiscard]] bool compiler_selective_history_required(const curriculum::Lesson&,
     const curriculum::Block&);

@@ -697,6 +697,11 @@ struct FreshExecution {
     bool local_role_check_correct = false;
     std::string local_role_check_feedback;
     std::string local_role_request_fingerprint;
+    // A source-protected private probe actually compiled and its process
+    // completed. This binds resumable rejection feedback, never an approval.
+    // Missing evidence, launch failures, cancellation and timeouts stay empty.
+    // Process completion does not assert a normal return from the private main.
+    std::string private_probe_review_fingerprint;
 };
 enum class OutputVerdict { unavailable, correct, incorrect };
 struct OutputEvaluation {
