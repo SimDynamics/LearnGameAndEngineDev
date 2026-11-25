@@ -1,6 +1,6 @@
 # Recursos y capacidades curriculares
 
-Registro único de trabajo pendiente. Work mantiene ubicaciones y criterios; Codex implementa las capacidades del motor. Eliminar los encargos y subencargos concluidos tras comprobar su integración y verificación. No conservar fichas cerradas, relatos de pruebas ni un archivo paralelo de completados. Las fichas marcadas **PENDIENTE EXCLUSIVAMENTE PARA WORK** son integración curricular, no encargos de implementación o de pruebas repetidas para Codex. Codex y GPT Codex trabajan exclusivamente en los encargos técnicos vigentes de este registro o en los solicitados expresamente por el usuario. No iniciar, reabrir ni repetir encargos por iniciativa propia.
+Registro único de trabajo pendiente. Work mantiene ubicaciones y criterios; Codex implementa las capacidades del motor. Eliminar los encargos y subencargos concluidos tras comprobar su integración y verificación. No conservar fichas cerradas, relatos de pruebas ni un archivo paralelo de completados. Las fichas marcadas **PENDIENTE EXCLUSIVAMENTE PARA WORK** son integración curricular, no encargos de implementación o de pruebas repetidas para Codex.
 
 La revisión visual y la escucha rutinarias corresponden al usuario durante el estudio y no mantienen abiertos encargos técnicos concluidos. Sus anomalías concretas sí se registran y atienden. Las capturas reales necesarias para enseñar proyectos siguen siendo responsabilidad de Work.
 
