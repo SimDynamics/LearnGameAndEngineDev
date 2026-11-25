@@ -3,6 +3,8 @@
 // helpers. This owns only a temporary profile and screenshots of native HWNDs.
 namespace code_scope_reader_test {
 constexpr std::string_view owner="u3l4_alcance_codigo_en_recuadros";
+constexpr std::string_view reading_owner="u3l4_alcance_bolsas";
+constexpr std::string_view note_owner="u3l4_limites_nombre_bolsas";
 constexpr std::array<std::string_view,6> node_keys{"main","fichas","if","bolsas","salida","return"};
 constexpr std::array<std::string_view,6> node_sources{"Cuerpo de main","const int fichas = 8;",
     "if (fichas >= 4)","const int bolsas = fichas / 4;","std::cout << bolsas;","return 0;"};
@@ -24,7 +26,7 @@ void reject_invalid_presentations(std::string_view source){
     };
     reject("source fingerprint",[](JsonObject entry){entry.GetNamedObject(L"root").GetNamedArray(L"children").GetObjectAt(0)
         .Insert(L"sourceSha256",JsonValue::CreateStringValue(winrt::to_hstring(std::string(64,'0'))));},"Code scope source text fingerprint is stale");
-    reject("foreign owner",[](JsonObject entry){entry.Insert(L"block",JsonValue::CreateStringValue(L"qa_foreign_scope_owner"));},"Code scope presentation requires an active composed puzzle owner");
+    reject("foreign owner",[](JsonObject entry){entry.Insert(L"block",JsonValue::CreateStringValue(L"qa_foreign_scope_owner"));},"Code scope presentation requires an active block owner");
     reject("pointer outside representation",[](JsonObject entry){entry.GetNamedObject(L"root").GetNamedArray(L"children").GetObjectAt(0)
         .Insert(L"source",JsonValue::CreateStringValue(L"/responses/0/options/0/label"));},"Code scope source field does not exist");
     reject("duplicate node",[](JsonObject entry){entry.GetNamedObject(L"root").GetNamedArray(L"children").GetObjectAt(1)
@@ -74,9 +76,10 @@ void capture_png(HWND window,const std::filesystem::path& destination){
 std::vector<LessonReadingRegion> scope_regions(HWND view,std::size_t block){
     std::vector<LessonReadingRegion> result;for(const auto& region:lesson_reading_regions(view))
         if(region.block_index==block&&region.key.find("/code-scope/0/")!=std::string::npos)result.push_back(region);
-    check(result.size()==7,"Nested code must expose exactly one description and six ordered source nodes");
-    check(result.front().key.ends_with("/code-scope/0/description/source"),"The authentic grouping description must precede the code nodes");
-    for(std::size_t i=0;i<node_keys.size();++i){const auto& region=result[i+1];
+    check(result.size()==6,"Nested code must expose its title and five source lines exactly once");
+    check(std::ranges::none_of(result,[](const auto& region){return region.key.find("/description")!=std::string::npos;}),
+        "The alternate description was added to the visible code-scope reading script");
+    for(std::size_t i=0;i<node_keys.size();++i){const auto& region=result[i];
         check(region.key.ends_with(std::string("/code-scope/0/")+std::string(node_keys[i]))&&region.source_text==node_sources[i]
             &&edit_text(region.target)==node_sources[i],"Nested code source or its native reading order changed");
         check(region.math_mode=="text"&&region.text_semantics&&region.text_semantics->source==node_sources[i],
@@ -107,7 +110,7 @@ void inspect_layout(HWND view,HWND host,const curriculum::Lesson& lesson,std::si
     const auto course=lesson.id.substr(0,lesson.id.find("__"));
     update_lesson_preferences(view,[&](state::StateData& data){appearance::save_course_text_scale(data,course,false,scale);});
     MoveWindow(view,0,0,client.right,client.bottom,TRUE);pump();
-    const auto regions=scope_regions(view,block);const auto root=GetParent(regions[1].target),inner=GetParent(regions[3].target);
+    const auto regions=scope_regions(view,block);const auto root=GetParent(regions[0].target),inner=GetParent(regions[2].target);
     RECT root_area{};check(IsWindow(root)&&GetClientRect(root,&root_area)!=0&&root_area.right>0&&root_area.bottom>0,
         "Cannot capture an empty or detached native code scope");
     std::cout<<"CODE_SCOPE_LAYOUT logical="<<width_dip<<'x'<<height_dip<<" text_scale="<<scale<<" measured_dpi="<<dpi
@@ -117,14 +120,14 @@ void inspect_layout(HWND view,HWND host,const curriculum::Lesson& lesson,std::si
     // Preserve the actual pixels before asserting layout, font or border details.
     capture_png(root,png);
     check(window_class(root)==L"LearnGameAndEngineDev.MathContent"&&window_class(inner)==L"LearnGameAndEngineDev.MathContent"
-        &&GetParent(inner)==root&&GetParent(regions[2].target)==root&&GetParent(regions[6].target)==root
-        &&GetParent(regions[4].target)==inner&&GetParent(regions[5].target)==inner,
+        &&GetParent(inner)==root&&GetParent(regions[1].target)==root&&GetParent(regions[5].target)==root
+        &&GetParent(regions[3].target)==inner&&GetParent(regions[4].target)==inner,
         "Native code HWNDs no longer express main/if containment without color");
-    check(regions.front().target==root&&canvases(child(view,1005+static_cast<int>(block)*100))==0,
-        "The explicit code scope retained a geometric canvas or detached its description");
+    check(GetParent(regions.front().target)==root&&canvases(child(view,1005+static_cast<int>(block)*100))==0,
+        "The explicit code scope retained a geometric canvas or detached its title");
     const auto in_view=bounds_in(root,view),inner_area=bounds_in(inner,root);
     check(in_view.left>=0&&in_view.right<=client.right,"The code scope extends beyond the minimum reader width");
-    const auto first_outer=bounds_in(regions[2].target,root),last_outer=bounds_in(regions[6].target,root);
+    const auto first_outer=bounds_in(regions[1].target,root),last_outer=bounds_in(regions[5].target,root);
     check(first_outer.left==last_outer.left,"The instructions before and after if lost their common main-body alignment");
     if(width_dip==1536){RECT available{};GetClientRect(child(view,1005+static_cast<int>(block)*100),&available);
         check(root_area.right*2<available.right,"The short authored code scope still expands across the wide reader instead of fitting its content");
@@ -132,13 +135,13 @@ void inspect_layout(HWND view,HWND host,const curriculum::Lesson& lesson,std::si
     check(inner_area.left>0&&inner_area.top>0&&inner_area.right<root_area.right&&inner_area.bottom<root_area.bottom,
         "The inner code scope touches or escapes the outer border");
     LONG previous_bottom=0,total_text_height=0;
-    for(std::size_t i=1;i<regions.size();++i){const auto& region=regions[i];const auto parent=GetParent(region.target);
+    for(std::size_t i=0;i<regions.size();++i){const auto& region=regions[i];const auto parent=GetParent(region.target);
         RECT parent_area{};GetClientRect(parent,&parent_area);const auto local=bounds_in(region.target,parent),absolute=bounds_in(region.target,root);
         check(local.left>0&&local.top>0&&local.right<parent_area.right&&local.bottom<parent_area.bottom,
             "A native scope source touches or clips its container border");
         check(absolute.top>=previous_bottom,"Nested code lines overlap or appear in another visual order");previous_bottom=absolute.bottom;
         total_text_height+=local.bottom-local.top;
-        if(i>1){
+        if(i>0){
             check(SendMessageW(region.target,EM_GETLINECOUNT,0,0)==1,"A requested code instruction is clipped or wraps in the required viewport");
             const auto format=character_format(region.target,0);check(std::wstring_view(format.szFaceName)==reader_theme::code_font_face(),
                 "A code-scope line lost the code reader's monospace font");
@@ -161,24 +164,212 @@ void inspect_layout(HWND view,HWND host,const curriculum::Lesson& lesson,std::si
     }
 }
 
+void verify_editorial_feedback_origins(){
+    const std::map<std::string,EditorialFeedbackField> fields{
+        {"/feedback/correct",{"Correcto original.","Correcto actual: 🧰 conserva la posición."}},
+        {"/feedback/incorrect",{"Incorrecto original.","Revisa el alcance actual."}}
+    };
+    for(const auto& [path,field]:fields){
+        // The same phrase outside its authenticated field remains dynamic text.
+        const auto prefix=field.original+" | ";const auto whole=prefix+field.original;
+        const std::array<SemanticFieldOrigin,1> origins{{{path,wide(prefix).size(),wide(whole).size()}}};
+        const auto result=present_editorial_feedback(whole,origins,fields);
+        check(result.text==prefix+field.current&&result.origins.size()==1&&result.origins.front().path==path&&
+            result.origins.front().start==wide(prefix).size()&&result.origins.front().end==wide(result.text).size(),
+            "Editorial feedback changed an unowned repeated phrase or lost exact UTF-16 origins");
+    }
+    const auto generated=present_editorial_feedback("Incorrecto original.",{},fields);
+    check(generated.text=="Incorrecto original."&&generated.origins.empty(),
+        "A global editorial field replaced generated guidance without any authenticated source origin");
+    const auto rejects=[&](std::string_view source,const SemanticFieldOrigin& origin){
+        bool rejected=false;const std::array<SemanticFieldOrigin,1> origins{{origin}};
+        try{(void)present_editorial_feedback(source,origins,fields);}
+        catch(const std::invalid_argument&){rejected=true;}
+        check(rejected,"Editorial feedback accepted a misattributed source or a split surrogate range");
+    };
+    rejects("Incorrecto original.",{ "/feedback/correct",0,wide("Incorrecto original.").size()});
+    rejects("x🧰y",{"/feedback/correct",2,3});
+    std::cout<<"PASS editorial feedback origins: current correct/incorrect wording, untouched dynamic repeats, UTF-16 relocation and malformed-origin rejection\n";
+}
+
+std::string alternate_description(HWND window){
+    Microsoft::WRL::ComPtr<IAccessible> accessible;
+    winrt::check_hresult(AccessibleObjectFromWindow(window,static_cast<DWORD>(OBJID_CLIENT),
+        IID_IAccessible,reinterpret_cast<void**>(accessible.GetAddressOf())));
+    VARIANT child_id{};child_id.vt=VT_I4;child_id.lVal=CHILDID_SELF;
+    BSTR description=nullptr;const auto result=accessible->get_accDescription(child_id,&description);
+    const auto source=description?utf8(std::wstring_view(description,SysStringLen(description))):std::string{};
+    SysFreeString(description);winrt::check_hresult(result);return source;
+}
+
+void verify_single_scope_plan(const LessonReaderSnapshot& planned,std::size_t block){
+    std::string scope_text;
+    std::size_t count=0;
+    for(const auto& segment:planned.segments){
+        if(segment.block!=block||segment.region.find("/code-scope/0/")==std::string::npos)continue;
+        check(segment.region.find("/description")==std::string::npos,
+            "An alternate diagram description leaked into the actual voice plan");
+        scope_text+=segment.source;scope_text+='\n';++count;
+    }
+    check(count==node_sources.size(),"The representation voice plan must contain one title and five complete code lines");
+    for(std::size_t index=1;index<node_sources.size();++index){
+        const auto line=node_sources[index];std::size_t occurrences=0,at=0;
+        while((at=scope_text.find(line,at))!=std::string::npos){++occurrences;at+=line.size();}
+        check(occurrences==1,"A source line is repeated or absent inside the representation voice plan: "+std::string(line));
+        std::cout<<"CODE_SCOPE_VOICE_LINE source="<<line<<" occurrences="<<occurrences<<" local_representation_only=true\n";
+    }
+}
+
+HWND optional_child(HWND parent,int id){
+    struct Search{int id;HWND result=nullptr;} value{id};
+    EnumChildWindows(parent,[](HWND item,LPARAM data)->BOOL{auto& search=*reinterpret_cast<Search*>(data);
+        if(GetDlgCtrlID(item)==search.id){search.result=item;return FALSE;}return TRUE;
+    },reinterpret_cast<LPARAM>(&value));return value.result;
+}
+
+std::vector<const curriculum::CodeScopeNode*> flattened_scope(const curriculum::CodeScopeNode& root){
+    std::vector<const curriculum::CodeScopeNode*> result;
+    const std::function<void(const curriculum::CodeScopeNode&)> visit=[&](const auto& node){
+        result.push_back(&node);for(const auto& child:node.children)visit(child);
+    };visit(root);return result;
+}
+
+std::vector<std::string> inspect_reading_scope(HWND view,const curriculum::Lesson& lesson,
+        const LessonReaderSnapshot& planned,const std::shared_ptr<windows::NarrationWorker>& backend,
+        bool icon,const std::filesystem::path& capture){
+    const auto position=identity_position(lesson,reading_owner),note_position=identity_position(lesson,note_owner);
+    const auto& block=lesson.pages[position.page].blocks[position.block];
+    const auto& note=lesson.pages[note_position.page].blocks[note_position.block];
+    check(position.page==note_position.page&&block.type==curriculum::BlockType::code&&
+        block.code_scope_presentations.size()==1&&block.code_scope_presentations.front().read_only,
+        "The reading example is not an authenticated answer-free code projection");
+    const auto& presentation=block.code_scope_presentations.front();
+    const auto exercise_position=identity_position(lesson,owner);
+    verify_single_scope_plan(planned,exercise_position.block);
+    for(const auto expected_block:{position.block,exercise_position.block}){
+        check(std::ranges::any_of(planned.segments,[&](const auto& segment){
+            return segment.block==expected_block&&segment.source.find("std::cout << bolsas;")!=std::string::npos;
+        }),"The same instruction must still be read independently in both the reading example and the exercise");
+    }
+    check(presentation.consumed_blocks==std::vector<std::string>{std::string(note_owner)},
+        "The reading example consumed a different or extra paragraph");
+    const auto nodes=flattened_scope(presentation.root);
+    const std::array<std::string_view,12> expected_keys{"programa","cabecera","main","fichas","if","bolsas",
+        "salida","nota_dentro","if_cierre","nota_fuera","return","main_cierre"};
+    const auto all_regions=lesson_reading_regions(view);std::vector<LessonReadingRegion> regions;
+    for(const auto& region:all_regions)if(region.block_index==position.block)regions.push_back(region);
+    check(nodes.size()==expected_keys.size()&&regions.size()==nodes.size(),
+        "The reading example duplicated, omitted or invented code/note reading regions");
+    check(std::ranges::none_of(all_regions,[&](const auto& region){return region.block_index==note_position.block;}),
+        "The two moved notes remained duplicated in the original paragraph's reading script");
+    check(!optional_child(view,1003+static_cast<int>(position.block)*100),
+        "An answer-free reading example unexpectedly exposes a Check action");
+    const auto math=child(view,1005+static_cast<int>(position.block)*100);
+    std::size_t buttons=0;EnumChildWindows(math,[](HWND item,LPARAM value)->BOOL{
+        if(window_class(item)==L"Button")++*reinterpret_cast<std::size_t*>(value);return TRUE;
+    },reinterpret_cast<LPARAM>(&buttons));
+    check(buttons==1&&canvases(math)==0,"The reading example gained response/reset controls or a geometry canvas");
+    std::string reconstructed;std::vector<std::string> voice_signature;
+    std::size_t expected_segments=0,last_index=0;
+    for(std::size_t index=0;index<nodes.size();++index){const auto& node=*nodes[index];const auto& region=regions[index];
+        check(node.key==expected_keys[index]&&region.key.ends_with("/code-scope/0/"+node.key)&&
+            region.source_text==node.text&&!region.is_exercise&&!region.feedback&&
+            region.source_text.find("✓")==std::string::npos,
+            "A reading source changed its exact order, text, role or silent-decoration boundary");
+        if(node.code){reconstructed+=node.text;
+            check(node.source_path=="/code"&&node.decorative_icon.empty(),"A code fragment borrowed note metadata");
+        }
+        if(index==7||index==9){
+            check(!node.code&&node.source_block==note_owner&&node.source_path=="/text"&&
+                node.decorative_icon==((icon&&index==7)?"check":"")&&region.text_semantics&&
+                region.text_semantics->source==node.text,
+                "A prose note lost its authentic source, exact semantics or optional decorative check");
+        }
+        const auto expected=backend->plan(region.source_text,"es",{},region.reading_context,region.math_mode,
+            windows::NarrationOutputDataPolicy::current,region.text_semantics);
+        std::vector<std::size_t> indices;
+        for(std::size_t segment=0;segment<planned.segments.size();++segment)
+            if(planned.segments[segment].block==position.block&&planned.segments[segment].region==region.key)indices.push_back(segment);
+        check(!expected.empty()&&indices.size()==expected.size()&&(!index||indices.front()>last_index),
+            "The actual voice plan omitted, repeated or reordered an authenticated reading node");
+        expected_segments+=expected.size();last_index=indices.back();
+        for(std::size_t item=0;item<expected.size();++item){const auto& actual=planned.segments[indices[item]];const auto& wanted=expected[item];
+            check(actual.source==wanted.text&&actual.spoken==wanted.spoken&&actual.start==wanted.start&&actual.end==wanted.end&&
+                actual.source.find("✓")==std::string::npos&&actual.spoken.find("✓")==std::string::npos,
+                "The reading voice plan differs from the source-bound code/prose plan or speaks decoration");
+            voice_signature.push_back(actual.region+"/"+std::to_string(actual.start)+":"+std::to_string(actual.end)+"/"+actual.source+"/"+actual.spoken);
+        }
+    }
+    check(reconstructed==block.code,"The native reading representation lost an include, brace, blank line or source order");
+    check(nodes[7]->text+"\n\n"+nodes[9]->text==note.text,
+        "The native reading notes no longer reconstruct the two exact authored paragraphs");
+    check(static_cast<std::size_t>(std::ranges::count_if(planned.segments,[&](const auto& segment){
+        return segment.block==position.block;}))==expected_segments,
+        "An extra original code block, note, label or decoration remained in the actual voice plan");
+    const auto main=GetParent(regions[2].target),inner=GetParent(regions[4].target),root=GetParent(regions[0].target);
+    check(GetParent(main)==root&&GetParent(inner)==main&&GetParent(regions[7].target)==inner&&
+        GetParent(regions[6].target)==inner&&GetParent(regions[8].target)==inner&&
+        GetParent(regions[9].target)==main&&GetParent(regions[10].target)==main,
+        "The inner/output note or post-if note lost its actual native scope containment");
+    const auto output=bounds_in(regions[6].target,root),inside=bounds_in(regions[7].target,root),
+        end_if=bounds_in(regions[8].target,root),outside=bounds_in(regions[9].target,root),
+        return_line=bounds_in(regions[10].target,root);
+    check(output.bottom<=inside.top&&inside.bottom<=end_if.top&&end_if.bottom<=outside.top&&outside.bottom<=return_line.top,
+        "The two reading notes do not appear beside the output and after if/before return in visual order");
+    capture_png(root,capture);
+    std::cout<<"PASS source-bound reading notes: complete code bytes="<<reconstructed.size()<<" nodes="<<nodes.size()
+        <<" voice_segments="<<voice_signature.size()<<" decorative_check="<<icon
+        <<" notes_consumed_once=true unchanged_original_paragraph=true\n";
+    return voice_signature;
+}
+
+// The original published block retains pretty JSON while its authenticated
+// editorial archive uses compact JSON. Ignore only RFC JSON whitespace outside
+// strings: key order, number tokens, escapes and every source character remain.
+std::string evaluation_tokens(const curriculum::Block& block){
+    std::string result;bool quoted=false,escaped=false;
+    for(const auto value:curriculum::math_evaluation_source(block)){
+        if(quoted){
+            result+=value;
+            if(escaped)escaped=false;
+            else if(value=='\\')escaped=true;
+            else if(value=='"')quoted=false;
+        }else if(value=='"'){result+=value;quoted=true;}
+        else if(value!=' '&&value!='\t'&&value!='\r'&&value!='\n')result+=value;
+    }
+    check(!quoted&&!escaped,"The authenticated evaluation source contains an unterminated JSON string");
+    return result;
+}
+
 void run(const std::shared_ptr<windows::NarrationWorker>& backend,const std::filesystem::path& baseline_path,
          const std::filesystem::path& artifacts){
     using namespace winrt::Windows::Data::Json;
+    verify_editorial_feedback_origins();
     const auto asset=std::filesystem::path(build::source_root)/
         "app/src/main/assets/content/es/programming/cpp_fundamentals/edition_es_1__expresiones_y_decisiones/lesson_alternativas_y_fronteras.json";
     const auto original_bytes=state::read_bytes(asset),baseline_bytes=state::read_bytes(baseline_path);
-    reject_invalid_presentations({reinterpret_cast<const char*>(original_bytes.data()),original_bytes.size()});
-    const auto current=windows::load_lesson(asset),baseline=windows::load_lesson(baseline_path);
+    auto fixture_root=baseline_path;for(int parent=0;parent<6;++parent)fixture_root=fixture_root.parent_path();
+    const auto relative=std::filesystem::path("content/es/programming/cpp_fundamentals/edition_es_1__expresiones_y_decisiones/lesson_alternativas_y_fronteras.json");
+    const auto published_path=fixture_root/"published-reading"/relative;
+    const auto published_bytes=state::read_bytes(published_path);
+    check(state::sha256(published_bytes)=="59262d6b7cb6721d3de2aff581a02722bb5d82a37402c1ceefdce66c991a9808",
+        "The reading QA did not load the exact authenticated main publication");
+    reject_invalid_presentations({reinterpret_cast<const char*>(published_bytes.data()),published_bytes.size()});
+    const auto current=windows::load_lesson(published_path),baseline=windows::load_lesson(baseline_path);
     const auto position=identity_position(current,owner),old_position=identity_position(baseline,owner);
     const auto& goal=current.pages[position.page].blocks[position.block];const auto& old_goal=baseline.pages[old_position.page].blocks[old_position.block];
-    check(current.id==baseline.id&&position.page==1&&old_position.page==1&&old_position.block==13
-        &&goal.address.page==7&&goal.address.block==30&&goal.address.page==old_goal.address.page&&goal.address.block==old_goal.address.block
-        &&goal.address.addition_namespace==old_goal.address.addition_namespace&&goal.address.progress_page==old_goal.address.progress_page
-        &&goal.raw_json==old_goal.raw_json&&curriculum::math_evaluation_source(goal)==curriculum::math_evaluation_source(old_goal)
-        &&curriculum::exercise_key(current,goal)==curriculum::exercise_key(baseline,old_goal)
-        &&state::response_storage_key(current,goal)==state::response_storage_key(baseline,old_goal)
-        &&old_goal.code_scope_presentations.empty()&&goal.code_scope_presentations.size()==1,
-        "Code-scope presentation changed the authentic owner, storage address, raw math contract or evaluation identity");
+    check(current.id==baseline.id&&position.page==1&&old_position.page==1&&old_position.block==13,
+        "Code-scope presentation changed its authentic lesson or page owner");
+    check(goal.address.page==7&&goal.address.block==30&&goal.address.page==old_goal.address.page&&goal.address.block==old_goal.address.block
+        &&goal.address.addition_namespace==old_goal.address.addition_namespace&&goal.address.progress_page==old_goal.address.progress_page,
+        "Code-scope presentation changed its published storage address or progress page");
+    check(evaluation_tokens(goal)==evaluation_tokens(old_goal),
+        "The authenticated editorial archive changed original evaluation tokens or source text");
+    check(curriculum::exercise_key(current,goal)==curriculum::exercise_key(baseline,old_goal)
+        &&state::response_storage_key(current,goal)==state::response_storage_key(baseline,old_goal),
+        "Code-scope presentation changed the exercise or answer-storage identity");
+    check(old_goal.code_scope_presentations.empty()&&goal.code_scope_presentations.size()==1,
+        "The published code-scope baseline or current presentation count changed");
     const auto source=JsonObject::Parse(wide(goal.raw_json));const auto description=utf8(source.GetNamedArray(L"representations").GetObjectAt(0).GetNamedString(L"description"));
     std::filesystem::create_directories(artifacts);
     auto environment=resolve_windows_environment({ProfileId::Codex,L"code-scope-reader-"+
@@ -273,21 +464,24 @@ void run(const std::shared_ptr<windows::NarrationWorker>& backend,const std::fil
     inspect_layout(view,host,current,position.block,1536,864,100,artifacts/"code-scope-4k-250-logical.png");
     inspect_layout(view,host,current,position.block,640,390,150,artifacts/"code-scope-minimum-150.png");
     ready();
-    regions=scope_regions(view,position.block);check(regions.front().source_text==description,"Code-scope narration rewrote or duplicated its authentic grouping description");
-    const auto planned=snapshot();std::size_t last_index=0,instructions=0;
-    for(std::size_t node=0;node<node_keys.size();++node){const auto& region=regions[node+1];
+    regions=scope_regions(view,position.block);
+    check(alternate_description(GetParent(regions.front().target))==description,
+        "The silent alternate description is unavailable through the native accessibility API");
+    const auto planned=snapshot();verify_single_scope_plan(planned,position.block);
+    std::size_t last_index=0,instructions=0;
+    for(std::size_t node=0;node<node_keys.size();++node){const auto& region=regions[node];
         const auto expected=backend->plan(region.source_text,"es",{},region.reading_context,region.math_mode,windows::NarrationOutputDataPolicy::current,region.text_semantics);
         std::vector<std::size_t> indices;for(std::size_t i=0;i<planned.segments.size();++i)if(planned.segments[i].region==region.key)indices.push_back(i);
         check(!expected.empty()&&indices.size()==expected.size()&&(!node||indices.front()>last_index),"The real reader omitted or reordered a complete nested-code instruction");
         for(std::size_t i=0;i<indices.size();++i){const auto& have=planned.segments[indices[i]];const auto& want=expected[i];
             check(have.source==want.text&&have.spoken==want.spoken&&have.start==want.start&&have.end==want.end,"The actual scope reader ignored its typed semantic plan");
-            if(node==1||node>=3){const auto audio=backend->prepare(want,"es","ef_dora",environment.paths.cache/L"kokoro",0);
+            if(node>0){const auto audio=backend->prepare(want,"es","ef_dora",environment.paths.cache/L"kokoro",0);
                 auto evidence=have;evidence.recording=audio.wav;evidence.duration_ms=audio.duration_ms;evidence.timings=audio.timings;
                 (void)verify_feedback_recording(evidence);}
         }
-        if(node==1||node>=3)++instructions;last_index=indices.back();
+        if(node>0)++instructions;last_index=indices.back();
     }
-    check(instructions==4,"The scope fixture did not cover all four exact authored instructions");
+    check(instructions==5,"The scope fixture did not cover all five exact authored code lines");
     // A current source-bound pause must reopen exactly; unlike a historical
     // plan transition it has no newly inserted region requiring new listening.
     reader->toggle();wait([&]{const auto value=snapshot();return value.playing&&value.offset>180;},"real current-presentation playback");reader->pause();
@@ -299,6 +493,117 @@ void run(const std::shared_ptr<windows::NarrationWorker>& backend,const std::fil
     const auto until=GetTickCount64()+150;wait([&]{const auto value=snapshot();check(!value.playing&&!value.allocated&&value.offset==paused.offset,"Code-scope reopen autoplays");return GetTickCount64()>=until;},"code-scope reopen remains paused",2000);
     check(state::string_value(read_lesson_state(view),"code_scope_qa","opaque")=="Keep this unrelated value exactly.\n"
         &&state::read_bytes(asset)==original_bytes&&state::read_bytes(baseline_path)==baseline_bytes,"Code-scope QA changed curriculum or unrelated profile state");
-    std::cout<<"PASS native code scopes: authentic baseline/final raw math and owner 7,30 unchanged; ordinary geometry retained; description plus six ordered native nodes/four complete CPP instructions and real PCM; 1536x864 logical reference and 640x390 at 150% measured; genuine original answer and page bookmark migrate, current exact pause reopens without autoplay. Physical 250% only if logged DPI 240; no human visual/listening acceptance claimed.\n";
+    close();
+    const auto with_notes=windows::load_lesson(fixture_root/"reading-notes"/relative);
+    const auto without_icon=windows::load_lesson(fixture_root/"reading-notes-no-icon"/relative);
+    const auto revised_words=windows::load_lesson(fixture_root/"reading-notes-editorial"/relative);
+    const auto code_position=identity_position(with_notes,reading_owner),note_position=identity_position(with_notes,note_owner);
+    check(with_notes.pages[code_position.page].blocks[code_position.block].raw_json==current.pages[code_position.page].blocks[code_position.block].raw_json&&
+        with_notes.pages[note_position.page].blocks[note_position.block].raw_json==current.pages[note_position.page].blocks[note_position.block].raw_json,
+        "The QA overlay rewrote the complete program or its authored note source");
+    open(with_notes);const auto note_plan=inspect_reading_scope(view,with_notes,snapshot(),backend,true,artifacts/"code-scope-reading-notes.png");
+    check(selected(with_notes).raw_json==saved_response.raw_json,"Reading notes changed the saved before-return answer");
+    close();open(without_icon);const auto no_icon_plan=inspect_reading_scope(view,without_icon,snapshot(),backend,false,artifacts/"code-scope-reading-no-icon.png");
+    check(note_plan==no_icon_plan&&selected(without_icon).raw_json==saved_response.raw_json,
+        "Removing a decorative check changed narration or the existing answer");
+    close();open(revised_words);
+    const auto revised_position=identity_position(revised_words,owner);const auto& revised_goal=revised_words.pages[revised_position.page].blocks[revised_position.block];
+    check(curriculum::math_evaluation_source(revised_goal)==curriculum::math_evaluation_source(goal)&&
+        evaluation_tokens(revised_goal)==evaluation_tokens(old_goal)&&
+        state::response_storage_key(revised_words,revised_goal)==state::response_storage_key(baseline,old_goal)&&
+        selected(revised_words).raw_json==saved_response.raw_json&&saved_response.raw_json.find("antes_de_return")!=std::string::npos,
+        "Revising the three position labels and two feedback messages changed evaluation or the saved position");
+    const auto revised_root=JsonObject::Parse(wide(revised_goal.raw_json));
+    const std::array<std::string_view,3> labels{"En main, antes de la declaración de fichas",
+        "Después del bloque del if, justo antes de return 0;",
+        "Dentro del if, inmediatamente después de la declaración de bolsas"};
+    const auto revised_options=revised_root.GetNamedArray(L"responses").GetObjectAt(0).GetNamedArray(L"options");
+    const auto revised_regions=lesson_reading_regions(view);
+    for(std::size_t option_index=0;option_index<labels.size();++option_index){const auto option=revised_options.GetObjectAt(static_cast<unsigned>(option_index));
+        const auto id=utf8(option.GetNamedString(L"id"));
+        check(utf8(option.GetNamedString(L"label"))==labels[option_index]&&
+            std::ranges::any_of(revised_regions,[&](const auto& region){return region.block_index==revised_position.block&&
+                region.key.ends_with("/posicion/option/"+id)&&region.source_text==labels[option_index];}),
+            "The native option still shows a previous border label after its authenticated editorial revision");
+    }
+    check(std::ranges::any_of(revised_regions,[&](const auto& region){return region.block_index==revised_position.block&&region.feedback&&
+        region.correct&&region.source_text.find("La posición antes_de_return conserva la respuesta original.")!=std::string::npos;}),
+        "The preserved selected answer did not show its revised native feedback");
+    const auto revised_plan=inspect_reading_scope(view,revised_words,snapshot(),backend,true,artifacts/"code-scope-reading-editorial.png");
+    check(revised_plan==note_plan,"Editing exercise labels or feedback changed an unrelated code-and-notes voice plan");
+    const auto check_editorial_feedback=[&](bool correct,std::string_view guide){
+        wait([&]{const auto visible=lesson_reading_regions(view);
+            const bool displayed=std::ranges::any_of(visible,[&](const auto& region){return
+                region.block_index==revised_position.block&&region.feedback&&region.correct==correct&&
+                region.source_text.find(guide)!=std::string::npos;});
+            const auto actual=snapshot();
+            const auto graded=state::get_response(read_lesson_state(view),revised_words,revised_goal);
+            if(!correct&&displayed)check(std::ranges::any_of(visible,[&](const auto& region){return
+                region.block_index==revised_position.block&&region.feedback&&!region.correct&&
+                region.source_text==std::string("✗ Revisa tu respuesta e inténtalo de nuevo.\nRespuesta 1: ")+std::string(guide);}),
+                "The current incorrect selection changed the evaluator's complete generated guidance");
+            if(!correct&&displayed)check(std::ranges::none_of(visible,[&](const auto& region){return
+                region.block_index==revised_position.block&&region.feedback&&
+                region.source_text.find("Revisa el alcance de fichas antes de volver a elegir.")!=std::string::npos;}),
+                "A global incorrect field replaced selection guidance without an authenticated feedback origin");
+            return graded&&graded->correct==correct&&state::response_reviewed(*graded,revised_goal)&&
+                displayed&&actual.planned&&std::ranges::any_of(actual.segments,[&](const auto& segment){return
+                segment.block==revised_position.block&&segment.feedback&&segment.correct==correct&&
+                segment.source.find(guide)!=std::string::npos;});
+        },"current authored feedback in the real native view and voice plan",180000);
+    };
+    const auto choose_editorial_option=[&](std::string_view id){
+        const auto visible=lesson_reading_regions(view);
+        const auto option=std::ranges::find_if(visible,[&](const auto& region){return region.block_index==revised_position.block&&
+            region.key.ends_with("/posicion/option/"+std::string(id));});
+        check(option!=visible.end()&&IsWindowEnabled(option->target),"The current authored position option is missing or not editable");
+        SendMessageW(option->target,WM_LBUTTONDOWN,MK_LBUTTON,MAKELPARAM(4,4));
+        SendMessageW(option->target,WM_LBUTTONUP,0,MAKELPARAM(4,4));pump();
+        const auto action=child(view,1003+static_cast<int>(revised_position.block)*100);
+        check(IsWindowEnabled(action),"The actual revised position selection did not enable Check");
+        SendMessageW(action,BM_CLICK,0,0);reader->pause();
+    };
+    // The preserved correct answer is intentionally locked. Exercise the
+    // ordinary restart control in this isolated QA profile before a new attempt.
+    HWND restart=nullptr;
+    EnumChildWindows(child(view,1005+static_cast<int>(revised_position.block)*100),[](HWND item,LPARAM data)->BOOL{
+        if(window_class(item)!=L"Button")return TRUE;
+        wchar_t caption[64]{};GetWindowTextW(item,caption,64);
+        if(std::wstring_view(caption)!=L"Reiniciar")return TRUE;
+        *reinterpret_cast<HWND*>(data)=item;return FALSE;
+    },reinterpret_cast<LPARAM>(&restart));
+    check(restart&&IsWindowEnabled(restart),"The completed exercise has no enabled native Restart control");
+    SendMessageW(restart,BM_CLICK,0,0);pump();
+    choose_editorial_option("antes");
+    // The unchanged evaluator uses selection-specific guidance here and
+    // intentionally emits no global /feedback/incorrect origin. Its reviewed
+    // verdict, actual guidance and saved wrong answer must survive reopening.
+    constexpr std::string_view selection_guide=
+        "Revisa qué afirma cada opción seleccionada y comprueba tu razonamiento con la definición o los datos del enunciado.";
+    check_editorial_feedback(false,selection_guide);
+    const auto incorrect_saved=state::get_response(read_lesson_state(view),revised_words,revised_goal);
+    check(incorrect_saved&&!incorrect_saved->correct&&incorrect_saved->raw_json.find("\"antes\"")!=std::string::npos&&
+        JsonObject::Parse(wide(incorrect_saved->raw_json)).GetNamedString(L"contentFingerprint")==
+            JsonObject::Parse(wide(saved_response.raw_json)).GetNamedString(L"contentFingerprint"),
+        "The real incorrect position was not persisted with the original evaluation fingerprint");
+    close();open(revised_words);
+    check_editorial_feedback(false,selection_guide);
+    const auto incorrect_reopened=state::get_response(read_lesson_state(view),revised_words,revised_goal);
+    check(incorrect_reopened&&incorrect_reopened->raw_json==incorrect_saved->raw_json,
+        "Physical reopen changed the checked incorrect position or its evaluation fingerprint");
+    choose_editorial_option("antes_de_return");
+    check_editorial_feedback(true,"La posición antes_de_return conserva la respuesta original.");
+    check(selected(revised_words).raw_json==saved_response.raw_json,
+        "The current labels no longer submit the original before-return answer identity");
+    close();open(revised_words);
+    check_editorial_feedback(true,"La posición antes_de_return conserva la respuesta original.");
+    check(selected(revised_words).raw_json==saved_response.raw_json&&
+        state::string_value(read_lesson_state(view),"code_scope_qa","opaque")=="Keep this unrelated value exactly.\n"&&
+        state::read_bytes(asset)==original_bytes&&state::read_bytes(baseline_path)==baseline_bytes&&
+        state::read_bytes(published_path)==published_bytes,
+        "Physical reopen after both revised verdicts changed original files, answer or unrelated state");
+    std::cout<<"PASS native code scopes: title plus five code lines spoken once per representation; accessible silent description; "
+        <<"authentic complete main reading with two consumed notes, optional silent check and unchanged note/code plan; "
+        <<"real before-return selection survives prompt, labels, feedback and physical reopening.\n";
 }
 } // namespace code_scope_reader_test

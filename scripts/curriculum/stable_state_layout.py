@@ -897,8 +897,41 @@ def _choice_revisions(document: dict) -> dict[str, dict]:
 
 
 def _math_text_revisions(document: dict) -> dict[str, dict]:
-    return {item["id"]: item for item in
-            document.get("stateLayout", {}).get("mathTextRevisions", [])}
+    """Group append-only field archives without rewriting a published record."""
+    result = {}
+    for item in document.get("stateLayout", {}).get("mathTextRevisions", []):
+        result.setdefault(item["id"], dict(item, _fields=[]))["_fields"].append(item)
+    return result
+
+
+def _math_text_field(block: dict, path: str) -> str:
+    """Only existing visible text; stable response IDs and grading stay sealed."""
+    require(type(block) is dict and block.get("type") == "math_puzzle",
+            "A math text field requires its mathematical puzzle owner")
+    if path != "/prompt":
+        responses = block.get("responses")
+        require(type(responses) is list and len(responses) == 1
+                and type(responses[0]) is dict
+                and responses[0].get("type") == "math_multiple_choice_single",
+                "Math option and feedback revisions require one single-choice response")
+        require(path in {"/feedback/correct", "/feedback/incorrect"}
+                or re.fullmatch(r"/responses/0/options/(0|[1-9][0-9]*)/label", path) is not None,
+                "Unsupported mathematical editorial text field")
+    fields = text_semantics.public_text_fields(block)
+    value = fields.get(path)
+    require(type(value) is str and bool(value.strip()),
+            "A revised mathematical field must be existing nonblank visible text")
+    return value
+
+
+def _set_math_text_field(block: dict, path: str, value: str) -> None:
+    _math_text_field(block, path)
+    if path == "/prompt":
+        block["prompt"] = value
+    elif path.startswith("/feedback/"):
+        block["feedback"][path.rsplit("/", 1)[1]] = value
+    else:
+        block["responses"][0]["options"][int(path.split("/")[4])]["label"] = value
 
 
 def _math_ordered_json(value: object) -> str:
@@ -943,14 +976,21 @@ def _math_prompt_original(item: dict) -> dict:
 
 
 def _math_prompt_projection(item: dict, block: dict, *, historical: bool = False) -> dict:
-    """Project only /prompt; all other JSON order, types and values remain exact."""
+    """Restore only declared visible text; ordered evaluation JSON stays exact."""
     original = _math_prompt_original(item)
     require(type(block) is dict and block.get("type") == "math_puzzle"
             and type(block.get("prompt")) is str and bool(block["prompt"].strip())
             and "question" not in block,
             "A math prompt revision must keep its complete active mathematical owner")
     restored = deepcopy(block)
-    restored["prompt"] = original["prompt"]
+    fields = item.get("_fields", [item])
+    require(bool(fields) and len({entry["field"] for entry in fields}) == len(fields),
+            "Mathematical editorial fields must be unique")
+    for entry in fields:
+        require(entry["rawJson"] == item["rawJson"],
+                "Every field of a math owner must retain the same original JSON bytes")
+        path = entry["field"]
+        _set_math_text_field(restored, path, _math_text_field(original, path))
     before, after = original, restored
     if historical:
         # Older reading snapshots may precede the already authenticated closed
@@ -961,14 +1001,15 @@ def _math_prompt_projection(item: dict, block: dict, *, historical: bool = False
     return original
 
 
-def _math_prompt_semantic_entry(document: dict, identity: str) -> dict | None:
+def _math_prompt_semantic_entry(document: dict, identity: str,
+                                path: str = "/prompt") -> dict | None:
     overlay = document.get(text_semantics.ROOT_FIELD)
     if overlay is None:
         return None
     require(type(overlay) is dict and type(overlay.get("fields")) is list,
             "Malformed semantic overlay for a math prompt revision")
     matches = [entry for entry in overlay["fields"] if type(entry) is dict
-               and entry.get("block") == identity and entry.get("path") == "/prompt"]
+               and entry.get("block") == identity and entry.get("path") == path]
     require(len(matches) <= 1, "Duplicate semantic source for revised mathematical prompt")
     return matches[0] if matches else None
 
@@ -987,22 +1028,25 @@ def _historical_math_text_contract(document: dict, identity: str, block: dict,
 
 
 def _math_prompt_semantic_projection(document: dict, overlay: dict | None,
-                                      *, identities: set[str] | None = None) -> dict | None:
-    """Restore original prompt descriptors without borrowing a newer text SHA."""
+                                      *, identities: set[str] | None = None,
+                                      fields: set[tuple[str, str]] | None = None) -> dict | None:
+    """Restore each archived text descriptor with its own original wording."""
     result = deepcopy(overlay)
     if result is None:
         return None
     for item in document.get("stateLayout", {}).get("mathTextRevisions", []):
         if identities is not None and item["id"] not in identities:
             continue
-        fields = result["fields"]
-        matches = [index for index, field in enumerate(fields)
-                   if field.get("block") == item["id"] and field.get("path") == "/prompt"]
-        require(len(matches) == 1, "A revised math prompt lost its explicit semantic source")
+        if fields is not None and (item["id"], item["field"]) not in fields:
+            continue
+        markers = result["fields"]
+        matches = [index for index, field in enumerate(markers)
+                   if field.get("block") == item["id"] and field.get("path") == item["field"]]
+        require(len(matches) == 1, "A revised math field lost its explicit semantic source")
         if item["semanticBefore"] is None:
-            fields.pop(matches[0])
+            markers.pop(matches[0])
         else:
-            fields[matches[0]] = deepcopy(item["semanticBefore"])
+            markers[matches[0]] = deepcopy(item["semanticBefore"])
     # Absence and an explicitly empty overlay both mean no authored descriptors.
     # Normalize only this presentation view, never an immutable state signature.
     return result if result["fields"] or result.get("rootFields") else None
@@ -1014,13 +1058,23 @@ def _require_math_prompt_authorship(previous: dict, current: dict, identity: str
                 document.get(text_semantics.ROOT_FIELD, {}).get("fields", [])
                 if type(entry) is dict and entry.get("block") == identity}
     before, after = fields(previous), fields(current)
-    require("/prompt" in after, "A math prompt revision needs explicit authored semantics")
-    require({path: field for path, field in before.items() if path != "/prompt"}
-            == {path: field for path, field in after.items() if path != "/prompt"},
-            "A math prompt revision repainted another public field")
-    old = before.get("/prompt")
-    require(old is None or not old["spans"] or bool(after["/prompt"]["spans"]),
-            "A revised marked prompt cannot silently lose all its authored highlights")
+    old_block, new_block = _blocks(previous)[identity], _blocks(current)[identity]
+    old_paths = {item["field"] for item in previous["stateLayout"].get("mathTextRevisions", [])
+                 if item["id"] == identity}
+    declared = {item["field"] for item in current["stateLayout"].get("mathTextRevisions", [])
+                if item["id"] == identity}
+    changed = {path for path in declared
+               if _math_text_field(old_block, path) != _math_text_field(new_block, path)}
+    authored = changed | (declared - old_paths)
+    require(authored <= after.keys(),
+            "Every revised math field needs explicit authored semantics")
+    require({path: field for path, field in before.items() if path not in authored}
+            == {path: field for path, field in after.items() if path not in authored},
+            "A math text revision repainted another public field")
+    for path in authored:
+        old = before.get(path)
+        require(old is None or not old["spans"] or bool(after[path]["spans"]),
+                "A revised marked math field cannot silently lose all its authored highlights")
 
 
 def _general_choice_revision(document: dict, identity: str) -> dict | None:
@@ -2048,6 +2102,135 @@ def _all_blocks(document: dict) -> dict[str, dict]:
                                   for item in document["stateLayout"].get("retired", [])}}
 
 
+def _identifier_owner_semantics(document: dict, identity: str) -> list[dict]:
+    return deepcopy([field for field in document.get(text_semantics.ROOT_FIELD, {}).get("fields", [])
+                     if field.get("block") == identity])
+
+
+def _identifier_prose_semantics(fields: object, identity: str, block: dict) -> dict:
+    require(type(fields) is list and len(fields) <= 100_000,
+            "Invalid identifier prose semantic archive")
+    public = text_semantics.public_text_fields(block)
+    result = {}
+    for field in fields:
+        require(type(field) is dict and set(field) == {"block", "path", "sourceSha256", "spans"}
+                and field["block"] == identity and field["path"] in public
+                and field["path"] not in result,
+                "Identifier prose semantics must belong to unique public owner fields")
+        try:
+            text_semantics._descriptor(field, public[field["path"]])
+        except (ValueError, KeyError, TypeError) as error:
+            raise LayoutError("Invalid identifier prose semantics: " + str(error)) from error
+        result[field["path"]] = field
+    return result
+
+
+def _identifier_prose_archive(previous: dict, current: dict, identity: str,
+                               before: dict, after: dict) -> dict:
+    return {
+        "historySha256": fingerprint({"lessonId": previous["id"],
+            "locale": previous["stateLayout"]["locale"],
+            "editorial": previous["stateLayout"]["editorial"]}),
+        "previousBlock": deepcopy(before), "currentBlock": deepcopy(after),
+        "semanticRootBefore": text_semantics.ROOT_FIELD in previous,
+        "previousTextSemantics": _identifier_owner_semantics(previous, identity),
+        "currentTextSemantics": _identifier_owner_semantics(current, identity),
+    }
+
+
+def _authenticated_identifier_prose(document: dict, record: dict, endpoint: dict,
+                                    current: dict, start: int) -> set[int]:
+    """Check EVERY later same-owner edge; endpoint remains the exact rename.
+
+    Complete snapshots prevent a changed answer/source from being hidden by a
+    later return to the original value. Other owners may be interleaved.
+    Ordinary returns still pass the shared explicit-return validation.
+    """
+    identity = record["id"]
+    editorial = document["stateLayout"]["editorial"]
+    previous, previous_marks = endpoint, None
+    accepted = set()
+    for ordinal in range(start + 1, len(editorial)):
+        proof = editorial[ordinal]
+        if proof.get("id") != identity:
+            continue
+        archive = proof.get("identifierRenameProse")
+        require(type(archive) is dict and set(archive) == {
+                    "historySha256", "previousBlock", "currentBlock",
+                    "semanticRootBefore", "previousTextSemantics", "currentTextSemantics"}
+                and "bibliography" not in proof,
+                "Every post-rename prose edge needs its exact complete archive")
+        require(_digest(archive["historySha256"]) == fingerprint({
+                    "lessonId": document["id"], "locale": document["stateLayout"]["locale"],
+                    "editorial": editorial[:ordinal]}),
+                "Identifier prose archive differs from its complete editorial prefix")
+        before, after = archive["previousBlock"], archive["currentBlock"]
+        require(type(before) is dict and type(after) is dict
+                and identifier_rename.same_json_value_and_types(before, previous)
+                and fingerprint(before) == proof.get("beforeSha256")
+                and fingerprint(after) == proof.get("afterSha256"),
+                "Identifier prose archive must retain each exact consecutive predecessor")
+        paths = ordinary_editorial_paths(before, after)
+        require(bool(paths), "Identifier prose changed source or a protected response contract")
+        hints = ordinary_feedback_paths(before, after)
+        require(proof.get("reviewPaths") == (list(hints) if hints else None),
+                "Identifier prose changed unauthored guidance paths")
+        old_fields, new_fields = archive["previousTextSemantics"], archive["currentTextSemantics"]
+        require(type(archive["semanticRootBefore"]) is bool
+                and (archive["semanticRootBefore"] or not old_fields)
+                and (previous_marks is None or archive["semanticRootBefore"]),
+                "Identifier prose falsified its semantic root predecessor")
+        old_marks = _identifier_prose_semantics(old_fields, identity, before)
+        new_marks = _identifier_prose_semantics(new_fields, identity, after)
+        require(previous_marks is None or identifier_rename.same_json_value_and_types(
+                    old_fields, previous_marks),
+                "Identifier prose changed an intermediate semantic predecessor")
+        require(set(paths) <= new_marks.keys(),
+                "Every renamed-owner prose field needs its authored descriptor")
+        expected = deepcopy(old_fields)
+        for field in expected:
+            if field["path"] in paths:
+                replacement = new_marks[field["path"]]
+                require(not field["spans"] or bool(replacement["spans"]),
+                        "Identifier prose cannot discard existing authored highlights")
+                field.clear()
+                field.update(deepcopy(replacement))
+        expected.extend(deepcopy(field) for field in new_fields
+                        if field["path"] in paths and field["path"] not in old_marks)
+        require(identifier_rename.same_json_value_and_types(expected, new_fields),
+                "Identifier prose changed unrelated semantic fields")
+        previous, previous_marks = after, new_fields
+        accepted.add(ordinal)
+    require(identifier_rename.same_json_value_and_types(previous, current),
+            "Identifier prose chain does not describe its exact active owner")
+    if previous_marks is not None:
+        require(identifier_rename.same_json_value_and_types(
+                    previous_marks, _identifier_owner_semantics(document, identity)),
+                "Identifier prose chain does not describe its current reading semantics")
+    return accepted
+
+
+def _identifier_original_semantics(document: dict, overlay: dict | None) -> dict | None:
+    """Restore original prose markers only with the matching historical text."""
+    if overlay is None:
+        return None
+    result = deepcopy(overlay)
+    first, absent_root = {}, False
+    for proof in document["stateLayout"]["editorial"]:
+        if "identifierRenameProse" in proof:
+            absent_root |= not proof["identifierRenameProse"]["semanticRootBefore"]
+            first.setdefault(proof["id"], proof["identifierRenameProse"]["previousTextSemantics"])
+    for identity, markers in first.items():
+        by_path = {field["path"]: field for field in markers}
+        # Keep interleaved owners in place. Ordinary authorship preserves all
+        # old paths and appends only genuinely new ones; omit those additions.
+        result["fields"] = [deepcopy(by_path[field["path"]])
+                            if field["block"] == identity else field
+                            for field in result["fields"]
+                            if field["block"] != identity or field["path"] in by_path]
+    return None if absent_root and not result["fields"] and not result.get("rootFields") else result
+
+
 def _authenticated_identifier_renames(
         document: dict, active: dict[str, dict],
         storage: dict[str, tuple[int, int]],
@@ -2056,8 +2239,8 @@ def _authenticated_identifier_renames(
 
     A rename packet is bound to the exact v2 owner, its immutable storage
     address and original response digest, plus one authenticated editorial
-    segment. This deliberately permits only ONE revision of each active owner
-    and no later changes to that owner's code in this initial contract.
+    segment. This permits one source rename per active owner. Later ordinary
+    prose needs complete, independently authenticated predecessor archives.
     """
     meta = document["stateLayout"]
     records = meta.get("identifierRenameRevisions", [])
@@ -2081,7 +2264,7 @@ def _authenticated_identifier_renames(
     require(type(editorial) is list and len(editorial) >= len(records),
             "C++ rename history needs its complete editorial publication")
     predecessor = []
-    original_blocks = {}
+    original_blocks, endpoints = {}, {}
     for record in records:
         require(type(record) is dict and set(record) == fields,
                 "Invalid or incomplete C++ rename provenance")
@@ -2101,14 +2284,21 @@ def _authenticated_identifier_renames(
                 and identifier_rename.same_json_value_and_types(
                     record["stableStorage"], {"page": address[0], "block": address[1]}),
                 "C++ rename belongs to another lesson, family or storage owner")
-        before, after = fingerprint(old), fingerprint(now)
+        # Copy only current source slots into immutable archived metadata;
+        # lexical proof and the ORIGINAL endpoint hash authenticate these bytes.
+        try:
+            endpoint = code_format.source_projection(old, now)
+        except code_format.SourceFormatError as exc:
+            raise LayoutError(f"Unsafe C++ rename for {identity}: {exc}") from exc
+        before, after = fingerprint(old), fingerprint(endpoint)
+        endpoints[identity] = endpoint
         require(record["beforeSha256"] == before and
                 record["afterSha256"] == after and before != after and
                 record["priorSourceFormatSha256"] == fingerprint(formats[identity]),
                 "C++ rename changed the exact published source or its format archive")
         try:
             confirmed = identifier_rename.require_declared_cpp_renames(
-                old, now, record["names"], record["occurrences"])
+                old, endpoint, record["names"], record["occurrences"])
             code_format.require_source_lexical(formats[identity], old)
         except (identifier_rename.IdentifierRenameError,
                 code_format.SourceFormatError) as exc:
@@ -2138,6 +2328,14 @@ def _authenticated_identifier_renames(
     require(all(record["editorialPrefixSha256"] == digest
                 for record in records),
             "C++ rename archives cannot borrow another editorial history")
+    accepted_prose = set()
+    for offset, record in enumerate(records):
+        identity = record["id"]
+        accepted_prose.update(_authenticated_identifier_prose(
+            document, record, endpoints[identity], active[identity], starts[0] + offset))
+    require(all("identifierRenameProse" not in proof or ordinal in accepted_prose
+                for ordinal, proof in enumerate(editorial)),
+            "An identifier prose archive needs its own preceding rename")
     return original_blocks
 
 
@@ -2269,35 +2467,40 @@ def _validate_v2(document: dict) -> dict[tuple[int, int], tuple[int, int]]:
     require(type(math_revisions) is list and len(math_revisions) <= 100_000,
             "Malformed mathematical text archive")
     require("mathTextRevisions" not in meta or meta["locale"] == "es",
-            "Math prompt revisions require their Spanish historical family")
+            "Math text revisions require their Spanish historical family")
+    math_fields = set()
     for item in math_revisions:
         require(type(item) is dict and set(item) == {"id", "field", "rawJson", "semanticBefore"}
-                and item["field"] == "/prompt",
-                "A math text revision needs its owner, /prompt, original JSON and semantic descriptor")
+                and type(item["field"]) is str,
+                "A math text revision needs its owner, field, original JSON and semantic descriptor")
         identity = _identity(item["id"])
-        require(identity in storage and identity in active_blocks and identity not in math_texts,
-                "Unknown, inactive or duplicate math prompt owner")
+        path = item["field"]
+        require(identity in storage and identity in active_blocks and (identity, path) not in math_fields,
+                "Unknown, inactive or duplicate mathematical text field")
+        math_fields.add((identity, path))
         original = _math_prompt_original(item)
+        source = _math_text_field(original, path)
         require(state_fingerprint(original) == digests[identity],
-                "The math prompt archive differs from its owner's immutable original contract")
-        _math_prompt_projection(item, active_blocks[identity])
+                "The math text archive differs from its owner's immutable original contract")
         semantic_before = item["semanticBefore"]
         if semantic_before is not None:
             require(type(semantic_before) is dict and set(semantic_before) == {
                 "block", "path", "sourceSha256", "spans"}
-                and semantic_before["block"] == identity and semantic_before["path"] == "/prompt",
-                "The archived math descriptor must belong to this original prompt")
+                and semantic_before["block"] == identity and semantic_before["path"] == path,
+                "The archived math descriptor must belong to this original field")
             try:
-                text_semantics._descriptor(semantic_before, original["prompt"])
+                text_semantics._descriptor(semantic_before, source)
             except (KeyError, TypeError, ValueError) as exc:
-                raise LayoutError("Archived math prompt semantics are invalid") from exc
-        semantic_after = _math_prompt_semantic_entry(document, identity)
+                raise LayoutError("Archived math text semantics are invalid") from exc
+        semantic_after = _math_prompt_semantic_entry(document, identity, path)
         require(semantic_after is not None,
-                "A revised math prompt needs its explicit current semantic descriptor")
+                "A revised math field needs its explicit current semantic descriptor")
         require(semantic_before is None or not semantic_before["spans"]
                 or bool(semantic_after.get("spans")),
-                "A revised marked prompt cannot silently lose all its authored highlights")
-        math_texts[identity] = item
+                "A revised marked math field cannot silently lose all its authored highlights")
+    math_texts = _math_text_revisions(document)
+    for identity, item in math_texts.items():
+        _math_prompt_projection(item, active_blocks[identity])
     # Imported on demand: the matching authoring helper itself uses this
     # validator to authenticate the unchanged published lesson first.
     import math_matching_text_compat as matching_compat
@@ -2589,10 +2792,12 @@ def _validate_v2(document: dict) -> dict[tuple[int, int], tuple[int, int]]:
     chains = {}
     for ordinal, proof in enumerate(editorial):
         fields = {"id", "beforeSha256", "afterSha256"}
-        require(type(proof) is dict and fields <= set(proof) <= fields | {"returnTo", "bibliography", "reviewPaths"}
+        require(type(proof) is dict and fields <= set(proof) <= fields | {"returnTo", "bibliography", "reviewPaths", "identifierRenameProse"}
                 and not {"returnTo", "bibliography"} <= set(proof),
                 "Malformed editorial proof")
         identity = _identity(proof["id"])
+        require("identifierRenameProse" not in proof or identity in rename_originals,
+                "Identifier prose belongs to an authenticated renamed owner")
         require(identity in storage, "Unknown editorial identity")
         if "reviewPaths" in proof:
             paths = proof["reviewPaths"]
@@ -7464,50 +7669,66 @@ def refine_order_lines(document: dict, identity: str) -> dict:
 
 def revise_math_prompt_editorial(document: dict, identity: str, prompt: str, *,
                                  spans: list, return_to: int | None = None) -> dict:
-    """Author /prompt while preserving the complete original mathematical source.
+    """Retain the published prompt-only API and its exact archival format."""
+    return revise_math_text_editorial(document, identity,
+        {"/prompt": {"text": prompt, "spans": spans}}, return_to=return_to)
 
-    Spans are explicit UTF-16 selections. The immutable raw JSON archive is
-    created once; subsequent prompt editions append ordinary editorial edges.
-    A return to a previously published full block requires its explicit revision.
+
+def revise_math_text_editorial(document: dict, identity: str, edits: dict, *,
+                               return_to: int | None = None) -> dict:
+    """Revise visible math text while keeping its original evaluation and IDs.
+
+    Each new field appends one archive sharing the owner's original raw JSON.
+    Existing archives remain byte-for-byte intact, including a prior /prompt
+    revision. Explicit UTF-16 spans bind every changed field to its new wording.
     """
     validate(document)
     require(document.get("stateLayout", {}).get("version") == 2
             and document["stateLayout"].get("locale") == "es",
-            "Math prompt editorial revision requires a published Spanish v2 lesson")
+            "Math text editorial revision requires a published Spanish v2 lesson")
     _identity(identity)
     original = _blocks(document).get(identity)
     require(type(original) is dict and original.get("type") == "math_puzzle"
             and type(original.get("prompt")) is str and bool(original["prompt"].strip())
             and "question" not in original,
-            "Math prompt revisions belong to existing active math_puzzle prompt owners")
-    require(type(prompt) is str and bool(prompt.strip()) and prompt != original["prompt"],
-            "A math prompt revision needs different nonblank wording")
-    require(type(spans) is list,
-            "Author an explicit semantic span list, including [] for unmarked prose")
+            "Math text revisions belong to existing active math_puzzle prompt owners")
+    require(type(edits) is dict and 0 < len(edits) <= 128,
+            "Author 1..128 explicit mathematical text fields")
     require(return_to is None or (type(return_to) is int and return_to >= 0),
             "An editorial return must name an explicit nonnegative revision")
     result = deepcopy(document)
     meta = result["stateLayout"]
-    if identity not in _math_text_revisions(result):
-        meta.setdefault("mathTextRevisions", []).append({
-            "id": identity, "field": "/prompt", "rawJson": _math_ordered_json(original),
-            "semanticBefore": deepcopy(_math_prompt_semantic_entry(document, identity))})
+    archives = meta.setdefault("mathTextRevisions", [])
+    prior_fields = {item["field"]: item for item in archives if item["id"] == identity}
+    raw = next(iter(prior_fields.values()))["rawJson"] if prior_fields else _math_ordered_json(original)
     revised = _blocks(result)[identity]
-    revised["prompt"] = prompt
     overlay = result.setdefault(text_semantics.ROOT_FIELD, {"version": 1, "fields": []})
-    marker = text_semantics.make_field(result, identity, "/prompt", spans)
-    old_marker = _math_prompt_semantic_entry(result, identity)
-    if old_marker is None:
-        overlay["fields"].append(marker)
-    else:
-        require(not old_marker["spans"] or bool(spans),
-                "A revised marked prompt cannot silently lose all its authored highlights")
-        old_marker.clear()
-        old_marker.update(marker)
+    for path, edit in edits.items():
+        require(type(path) is str and type(edit) is dict and set(edit) == {"text", "spans"},
+                "A mathematical text edit needs its exact path, text and semantic spans")
+        old_text = _math_text_field(original, path)
+        value, spans = edit["text"], edit["spans"]
+        require(type(value) is str and bool(value.strip()) and value != old_text,
+                "A math text revision needs different nonblank wording")
+        require(type(spans) is list,
+                "Author an explicit semantic span list, including [] for unmarked prose")
+        if path not in prior_fields:
+            archives.append({"id": identity, "field": path, "rawJson": raw,
+                "semanticBefore": deepcopy(_math_prompt_semantic_entry(document, identity, path))})
+        _set_math_text_field(revised, path, value)
+        marker = text_semantics.make_field(result, identity, path, spans)
+        old_marker = _math_prompt_semantic_entry(result, identity, path)
+        if old_marker is None:
+            overlay["fields"].append(marker)
+        else:
+            require(not old_marker["spans"] or bool(spans),
+                    "A revised marked math field cannot silently lose all its authored highlights")
+            old_marker.clear()
+            old_marker.update(marker)
     try:
         text_semantics.validate(result)
     except (KeyError, TypeError, ValueError) as exc:
-        raise LayoutError("Invalid authored mathematical prompt semantics") from exc
+        raise LayoutError("Invalid authored mathematical text semantics") from exc
     proof = {"id": identity, "beforeSha256": fingerprint(original),
              "afterSha256": fingerprint(revised)}
     history = document["stateLayout"]["editorial"]
@@ -7770,6 +7991,10 @@ def revise_ordinary_editorial(document: dict, identity: str, edits: dict) -> dic
     else:
         require(return_to is None,
                 "An explicit editorial return must match an earlier full published block")
+    if any(record["id"] == identity for record in
+           document["stateLayout"].get("identifierRenameRevisions", [])):
+        proof["identifierRenameProse"] = _identifier_prose_archive(
+            document, result, identity, original, revised)
     result["stateLayout"]["editorial"].append(proof)
     validate_transition(document, result)
     return result
@@ -8271,21 +8496,28 @@ def _validate_transition_v2(previous: dict, current: dict) -> None:
     old_math = old_meta.get("mathTextRevisions", []) if old_v2 else []
     math_revisions = meta.get("mathTextRevisions", [])
     require(math_revisions[:len(old_math)] == old_math,
-            "Math prompt archives are append-only and their original JSON cannot be rewritten")
+            "Math text archives are append-only and their original JSON cannot be rewritten")
+    prior_math = _math_text_revisions(baseline) if old_v2 else {}
     new_math_ids = set()
     for item in math_revisions[len(old_math):]:
-        identity = item["id"]
+        identity, path = item["id"], item["field"]
         require(old_v2 and identity in before and identity in _blocks(baseline),
-                "A math prompt archive must retain an already published active v2 owner")
-        require(_math_ordered_json(_math_prompt_original(item)) == _math_ordered_json(before[identity]),
-                "A new math prompt archive must retain the exact complete published block and JSON order")
-        require(item["semanticBefore"] == _math_prompt_semantic_entry(baseline, identity),
-                "The math prompt semantic archive differs from its exact published predecessor")
+                "A math text archive must retain an already published active v2 owner")
+        if identity in prior_math:
+            require(item["rawJson"] == prior_math[identity]["rawJson"],
+                    "A later math field must share the exact original evaluation archive")
+            require(_math_text_field(_math_prompt_original(item), path)
+                    == _math_text_field(before[identity], path),
+                    "A new math field archive cannot invent an earlier field revision")
+        else:
+            require(_math_ordered_json(_math_prompt_original(item)) == _math_ordered_json(before[identity]),
+                    "A new math text archive must retain the exact complete published block and JSON order")
+        require(item["semanticBefore"] == _math_prompt_semantic_entry(baseline, identity, path),
+                "The math text semantic archive differs from its exact published predecessor")
         new_math_ids.add(identity)
-    for item in math_revisions:
-        identity = item["id"]
+    for identity in _math_text_revisions(current):
         if identity in before and identity in after and (identity in new_math_ids
-                or before[identity].get("prompt") != after[identity].get("prompt")):
+                or fingerprint(before[identity]) != fingerprint(after[identity])):
             _require_math_prompt_authorship(baseline, current, identity)
     old_refinements = old_meta.get("orderRefinements", []) if old_v2 else []
     refinements = meta.get("orderRefinements", [])
@@ -8495,6 +8727,38 @@ def _validate_transition_v2(previous: dict, current: dict) -> None:
                     and left["currentTextSemantics"] == right["previousTextSemantics"]
                     for left, right in zip(archives, archives[1:])),
                 "Consecutive bibliography archives must retain their exact intermediate source and semantics")
+    semantic_root_present = text_semantics.ROOT_FIELD in baseline
+    for proof in meta["editorial"][len(old_editorial):]:
+        if "identifierRenameProse" in proof:
+            require(proof["identifierRenameProse"]["semanticRootBefore"] == semantic_root_present,
+                    "Identifier prose falsified the published semantic root predecessor")
+            semantic_root_present = True
+        elif not semantic_root_present:
+            identity = proof["id"]
+            # A different, ordinary owner may create the first descriptor.
+            # Recognize only an edge whose BOTH complete endpoints are the
+            # real publications available here; never invent an intermediate
+            # block from a hash or from the renamed owner's final payload.
+            old, new = before[identity], after[identity]
+            paths = ordinary_editorial_paths(old, new)
+            if (paths and proof["beforeSha256"] == fingerprint(old)
+                    and proof["afterSha256"] == fingerprint(new)
+                    and set(paths) <= {field["path"] for field in
+                        _identifier_owner_semantics(current, identity)}):
+                semantic_root_present = True
+    for identity, proofs in appended.items():
+        archives = [proof["identifierRenameProse"] for proof in proofs
+                    if "identifierRenameProse" in proof]
+        if not archives:
+            continue
+        first = archives[0]
+        predecessor = before[identity]
+        if identity not in old_rename_blocks:
+            predecessor = code_format.source_projection(predecessor, after[identity])
+        require(identifier_rename.same_json_value_and_types(first["previousBlock"], predecessor)
+                and identifier_rename.same_json_value_and_types(
+                    first["previousTextSemantics"], _identifier_owner_semantics(baseline, identity)),
+                "New identifier prose archives must retain the actual published predecessor")
     owners = {}
     for identity, block in before.items():
         owners.setdefault(fingerprint(block), set()).add(identity)
@@ -8567,7 +8831,12 @@ def _validate_transition_v2(previous: dict, current: dict) -> None:
         # prior hint and predate reviewPaths and authored text descriptors.
         # Keep the stricter revision contract for every already-present field,
         # including malformed empty/null values; absence is not truthiness.
-        if ("reviewFeedback" in block
+        rename_prose = [proof for proof in proofs if "identifierRenameProse" in proof]
+        if rename_prose:
+            # Each full intermediate block, guide path and descriptor was
+            # independently verified above; do not collapse a real return.
+            pass
+        elif ("reviewFeedback" in block
                 and block.get("reviewFeedback") != actual.get("reviewFeedback")):
             required_paths = ordinary_feedback_paths(block, actual)
             revised_fields = ordinary_editorial_fields(block, actual)
@@ -8940,9 +9209,16 @@ def align_for_previous_validation(previous: dict, current: dict) -> dict:
     old_compilers = _compiler_revisions(old) | _compiler_references(old)
     blocks = {identity: _historical_compiler_contract(current, identity, block)
               if identity not in old_compilers else block for identity, block in blocks.items()}
-    new_math_ids = _math_text_revisions(current).keys() - _math_text_revisions(old).keys()
-    blocks = {identity: _historical_math_text_contract(current, identity, block)
-              if identity in new_math_ids else block for identity, block in blocks.items()}
+    old_math_fields = {(item["id"], item["field"]) for item in
+                       old["stateLayout"].get("mathTextRevisions", [])}
+    new_math_fields = {(item["id"], item["field"]) for item in
+                       current["stateLayout"].get("mathTextRevisions", [])} - old_math_fields
+    for identity, path in new_math_fields:
+        # A prompt already revised in the previous publication keeps that
+        # wording when only a later option/feedback field is being aligned.
+        block = deepcopy(blocks[identity])
+        _set_math_text_field(block, path, _math_text_field(_blocks(old)[identity], path))
+        blocks[identity] = block
     new_match = {
         item["id"]: parse_json(item["rawJson"])
         for item in current["stateLayout"].get("mathMatchingTextRevisions", [])
@@ -8959,7 +9235,8 @@ def align_for_previous_validation(previous: dict, current: dict) -> dict:
             old_item["id"] for old_item in old["stateLayout"].get("identifierRenameRevisions", [])
         }
     }
-    blocks = {identity: deepcopy(new_renames.get(identity, block))
+    blocks = {identity: (code_format.source_projection(block, new_renames[identity])
+                         if identity in new_renames else deepcopy(block))
               for identity, block in blocks.items()}
     page_by_id = {record["id"]: page for page, record in zip(current["pages"], current["stateLayout"]["current"])}
     result = deepcopy(current)
@@ -8976,9 +9253,9 @@ def align_for_previous_validation(previous: dict, current: dict) -> dict:
             result.pop(text_semantics.ROOT_FIELD, None)
         else:
             result[text_semantics.ROOT_FIELD] = overlay
-    if new_math_ids and text_semantics.ROOT_FIELD in result:
+    if new_math_fields and text_semantics.ROOT_FIELD in result:
         overlay = _math_prompt_semantic_projection(
-            current, result[text_semantics.ROOT_FIELD], identities=new_math_ids)
+            current, result[text_semantics.ROOT_FIELD], fields=new_math_fields)
         if overlay is None:
             result.pop(text_semantics.ROOT_FIELD)
         else:
@@ -9034,6 +9311,7 @@ def original_projection(document: dict) -> dict:
         if math_match_before and overlay is not None:
             import math_matching_text_compat as matching_compat
             overlay = matching_compat.historical_matching_text_semantics(document, overlay)
+        overlay = _identifier_original_semantics(document, overlay)
         if overlay is None:
             result.pop(text_semantics.ROOT_FIELD)
         else:

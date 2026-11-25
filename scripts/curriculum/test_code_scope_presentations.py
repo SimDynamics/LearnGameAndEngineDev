@@ -22,6 +22,15 @@ EXPLAINED_BLOB = "0fd1793a34b0a49fcbb83d009afd24be54f56b38"
 PUBLICATIONS = ((BASE, BASE_BLOB), (PRESENTED, PRESENTED_BLOB),
                 (EXPLAINED, EXPLAINED_BLOB))
 OWNER = "u3l4_alcance_codigo_en_recuadros"
+PROMPT_REVIEWED = "aae31e3d0ff202d700d3f3dd5ba27854eebe088d"
+PROMPT_REVIEWED_BLOB = "420f3650e24d417cfac73f6ebde1678f353d4b3f"
+CHOICE_TEXT_EDITS = {
+    "/responses/0/options/0/label": ("En main, antes de la declaración de fichas", ("main", "fichas")),
+    "/responses/0/options/1/label": ("Después del bloque del if, justo antes de return 0;", ("if", "return 0;")),
+    "/responses/0/options/2/label": ("Dentro del if, inmediatamente después de la declaración de bolsas", ("if", "bolsas")),
+    "/feedback/correct": ("La posición antes_de_return conserva la respuesta original.", ("antes_de_return",)),
+    "/feedback/incorrect": ("Revisa el alcance de fichas antes de volver a elegir.", ("fichas",)),
+}
 
 
 def published_bytes(commit, expected_blob):
@@ -39,6 +48,7 @@ class CodeScopePresentationTest(unittest.TestCase):
                             for publication in PUBLICATIONS]
         cls.before, cls.presented, cls.explained = cls.publications
         cls.current = json.loads((ROOT / LESSON).read_text(encoding="utf-8"))
+        cls.prompt_reviewed = json.loads(published_bytes(PROMPT_REVIEWED, PROMPT_REVIEWED_BLOB))
 
     @staticmethod
     def flatten(node):
@@ -77,7 +87,10 @@ class CodeScopePresentationTest(unittest.TestCase):
         ])
         self.assertEqual([n["key"] for n in tree["children"]], ["fichas", "if", "return"])
         self.assertEqual([n["key"] for n in tree["children"][1]["children"]], ["bolsas", "salida"])
-        self.assertEqual(blocks[OWNER], layout._blocks(self.before)[OWNER])
+        # Visible prompt/option prose can evolve through authenticated text
+        # archives. Evaluation, source and the saved address remain original.
+        self.assertEqual(layout._historical_math_text_contract(
+            self.current, OWNER, blocks[OWNER]), layout._blocks(self.before)[OWNER])
         entry = next(x for x in self.current["stateLayout"]["additions"] if x["id"] == OWNER)
         self.assertEqual(entry["storage"], {"page": 7, "block": 30})
 
@@ -190,6 +203,144 @@ class CodeScopePresentationTest(unittest.TestCase):
         # The presentation guard is not an answer-equivalence proof. The
         # mathematical block and its ordinary state validation stay separate.
         self.assertNotEqual(blocks[OWNER], layout._blocks(self.current)[OWNER])
+
+    @staticmethod
+    def choice_text_edits():
+        return {path: {"text": text, "spans": [
+                    layout.text_semantics.select(text, token, "cpp", reading="technical")
+                    for token in tokens]}
+                for path, (text, tokens) in CHOICE_TEXT_EDITS.items()}
+
+    def choice_text_candidate(self):
+        return layout.revise_math_text_editorial(
+            self.prompt_reviewed, OWNER, self.choice_text_edits())
+
+    def test_reviewed_prompt_keeps_the_authentic_archived_scope_exercise(self):
+        edited = self.prompt_reviewed
+        original = layout._blocks(self.before)[OWNER]
+        current = layout._blocks(edited)[OWNER]
+        self.assertNotEqual(original["prompt"], current["prompt"])
+        self.assertEqual(original, layout._historical_math_text_contract(edited, OWNER, current))
+        previous = self.publications[-1]
+        layout.validate_publication_transition(previous, edited)
+        self.assertEqual([item["field"] for item in edited["stateLayout"]["mathTextRevisions"]], ["/prompt"])
+
+    def test_single_choice_labels_and_feedback_append_to_the_existing_prompt_archive(self):
+        previous = self.prompt_reviewed
+        snapshot = deepcopy(previous)
+        current = self.choice_text_candidate()
+        self.assertEqual(previous, snapshot)
+        old_archives = previous["stateLayout"]["mathTextRevisions"]
+        archives = current["stateLayout"]["mathTextRevisions"]
+        self.assertEqual(archives[:len(old_archives)], old_archives)
+        self.assertEqual(len(archives), len(old_archives) + 5)
+        self.assertEqual({entry["rawJson"] for entry in archives}, {old_archives[0]["rawJson"]})
+        self.assertEqual(len({(entry["id"], entry["field"]) for entry in archives}), len(archives))
+        self.assertEqual(layout.validate(previous), layout.validate(current))
+        self.assertEqual(layout.lineage(previous), layout.lineage(current))
+        self.assertEqual(layout.original_projection(previous), layout.original_projection(current))
+        before, after = layout._blocks(previous)[OWNER], layout._blocks(current)[OWNER]
+        self.assertEqual(before["prompt"], after["prompt"])
+        self.assertEqual([option["id"] for option in before["responses"][0]["options"]],
+                         [option["id"] for option in after["responses"][0]["options"]])
+        self.assertEqual(after["responses"][0]["validator"], {"type": "choice", "expected": ["antes_de_return"]})
+        for path, edit in self.choice_text_edits().items():
+            self.assertEqual(layout._math_text_field(after, path), edit["text"])
+        self.assertEqual(layout._math_prompt_semantic_entry(previous, OWNER),
+                         layout._math_prompt_semantic_entry(current, OWNER))
+        layout.validate_transition(previous, current)
+        aligned = layout.align_for_previous_validation(previous, current)
+        self.assertEqual(layout._blocks(aligned)[OWNER], before)
+        self.assertEqual(aligned.get("textSemantics"), previous.get("textSemantics"))
+
+    def test_single_choice_fields_can_be_revised_in_separate_publications(self):
+        previous = self.prompt_reviewed
+        current = previous
+        for path, edit in self.choice_text_edits().items():
+            revised = layout.revise_math_text_editorial(current, OWNER, {path: edit})
+            layout.validate_transition(current, revised)
+            current = revised
+        layout.validate_transition(previous, current)
+        self.assertEqual(layout._blocks(current)[OWNER],
+                         layout._blocks(self.choice_text_candidate())[OWNER])
+        self.assertEqual(layout.original_projection(previous), layout.original_projection(current))
+
+    def test_single_choice_text_cannot_change_ids_answers_source_or_undeclared_text(self):
+        valid = self.choice_text_candidate()
+        for variant in ("option-id", "response-id", "expected", "validator", "option-order",
+                        "option-count", "source", "schema", "root-order", "prompt"):
+            candidate = deepcopy(valid)
+            block = layout._blocks(candidate)[OWNER]
+            response = block["responses"][0]
+            if variant == "option-id":
+                response["options"][1]["id"] = "otra_posicion"
+            elif variant == "response-id":
+                response["id"] = "otra_respuesta"
+            elif variant == "expected":
+                response["validator"]["expected"] = ["antes"]
+            elif variant == "validator":
+                response["validator"]["type"] = "otro"
+            elif variant == "option-order":
+                response["options"].reverse()
+            elif variant == "option-count":
+                response["options"].append({"id": "cuarta", "label": "Otra posición."})
+            elif variant == "source":
+                block["representations"][0]["points"][9]["labels"][0] = "const int fichas = 9;"
+            elif variant == "schema":
+                block["schemaVersion"] = 1.0
+            elif variant == "root-order":
+                reordered = dict(reversed(list(block.items())))
+                block.clear()
+                block.update(reordered)
+            else:
+                block["prompt"] += " Texto sin descriptor actualizado."
+            candidate["stateLayout"]["editorial"][-1]["afterSha256"] = layout.fingerprint(block)
+            with self.subTest(variant=variant), self.assertRaises(layout.LayoutError):
+                layout.validate_transition(self.prompt_reviewed, candidate)
+
+    def test_single_choice_field_archives_cannot_be_forged_or_reassigned(self):
+        valid = self.choice_text_candidate()
+        for variant in ("duplicate", "path", "foreign-raw", "raw-whitespace", "descriptor",
+                        "missing-marker", "rewritten-prompt-archive"):
+            candidate = deepcopy(valid)
+            archives = candidate["stateLayout"]["mathTextRevisions"]
+            if variant == "duplicate":
+                archives.append(deepcopy(archives[-1]))
+            elif variant == "path":
+                archives[1]["field"] = "/responses/0/options/00/label"
+            elif variant == "foreign-raw":
+                archives[1]["rawJson"] = layout._math_ordered_json(layout._blocks(self.prompt_reviewed)[OWNER])
+            elif variant == "raw-whitespace":
+                archives[1]["rawJson"] += " "
+            elif variant == "descriptor":
+                archives[1]["semanticBefore"] = deepcopy(archives[0]["semanticBefore"])
+            elif variant == "missing-marker":
+                candidate["textSemantics"]["fields"] = [
+                    field for field in candidate["textSemantics"]["fields"]
+                    if not (field["block"] == OWNER and field["path"] == archives[1]["field"])]
+            else:
+                archives[0]["semanticBefore"] = None
+            with self.subTest(variant=variant), self.assertRaises(layout.LayoutError):
+                layout.validate_transition(self.prompt_reviewed, candidate)
+
+    def test_single_choice_editorial_return_retains_the_original_selection_contract(self):
+        previous = self.prompt_reviewed
+        current = self.choice_text_candidate()
+        old = layout._blocks(previous)[OWNER]
+        edits = {}
+        for path in CHOICE_TEXT_EDITS:
+            marker = layout._math_prompt_semantic_entry(previous, OWNER, path)
+            edits[path] = {"text": layout._math_text_field(old, path),
+                           "spans": deepcopy(marker["spans"]) if marker else []}
+        edges = [edge for edge in current["stateLayout"]["editorial"] if edge["id"] == OWNER]
+        nodes = [edges[0]["beforeSha256"]] + [edge["afterSha256"] for edge in edges]
+        returned = layout.revise_math_text_editorial(
+            current, OWNER, edits, return_to=nodes.index(layout.fingerprint(old)))
+        self.assertEqual(layout._blocks(returned)[OWNER], old)
+        self.assertEqual(returned["stateLayout"]["mathTextRevisions"],
+                         current["stateLayout"]["mathTextRevisions"])
+        self.assertEqual(layout.original_projection(returned), layout.original_projection(previous))
+        layout.validate_transition(previous, returned)
 
 
 if __name__ == "__main__":

@@ -2541,6 +2541,24 @@ reinterpretan como v2 ni se reescriben. Si cambia una guía de error o su select
 no se deduce otra guía desde el texto anterior: hace falta una nueva comprobación
 para registrar la revisión correspondiente.
 
+Un `namedRuleSourceCheck` con `executionProbe` puede rechazar una solución
+aunque su salida pública coincida. Esa guía privada se conserva si se observó
+el fallo de la sonda base, el primer fallo de un prefijo exacto de variaciones
+de constantes o una batería completa rechazada después de superar las sondas
+anteriores. La huella producida por el ejecutor vincula la observación a la
+solicitud, su revisión, el programa o proyecto completo y el contrato privado,
+incluidas las variaciones y la batería declaradas. Una fase ausente, cancelada,
+que exceda el tiempo o sin compilación privada válida no constituye por sí misma
+un rechazo observado. Un prefijo correcto incompleto no crea este recibo; la
+ausencia de fases posteriores no descarta un primer fallo ya autenticado.
+La huella de revisión no acredita el objetivo.
+
+Al guardar y reabrir, el rechazo conserva prioridad sobre una explicación
+anterior de acierto. Los logros ya obtenidos permanecen, y un primer rechazo
+no añade crédito. Una comprobación correcta posterior elimina esa revisión
+y acredita el caso que corresponda. Cambiar el programa, la solicitud o el
+contrato privado impide reutilizar la observación anterior para otra revisión.
+
 Las guías admiten el mismo `textSemantics` raíz que los demás textos públicos.
 La referencia estable del bloque y el JSON Pointer identifican su campo exacto;
 la igualdad de dos frases no decide el propietario. La anticipación prepara sólo

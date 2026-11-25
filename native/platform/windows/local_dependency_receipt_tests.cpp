@@ -265,6 +265,30 @@ void run_contract(const Contract& contract) {
     state::Draft draft;draft.source=contract.fixed;draft.input=bad.stdin_utf8;draft.selection_start=3;draft.selection_end=9;
     state::put_draft(saved,draft_key("programming",lesson,block),draft);
     const auto legacy=saved;
+    if(block.local_int_check||block.local_string_check) {
+        for(const bool public_receipt:{false,true}) {
+            auto unattempted=public_receipt?legacy:state::StateData{};
+            unattempted.preferences["learning_progress"]["unrelated"]=std::int64_t{42};
+            unattempted.preferences["native_windows"]["reader-setting"]=std::string("unchanged");
+            state::put_draft(unattempted,draft_key("programming",lesson,block),draft);
+            const auto before=unattempted;
+            const auto bytes=state::encode(before);
+            for(int visit=0;visit<2;++visit) {
+                // A prose/history return can prepare every compiler owner in
+                // the lesson. Merely visiting it must not create an attempt.
+                prepare_compiler_puzzle_revisions(unattempted,lesson);
+                require(unattempted==before&&state::encode(unattempted)==bytes&&
+                    !state::find(unattempted,"native_windows",current_key(lesson,block)+"legacy-adopted/v1"),
+                    "Implicit preparation created a local epoch or changed untouched draft/preferences");
+                require(compiler_puzzle_completed(unattempted,original,former)==public_receipt&&
+                    !compiler_puzzle_completed(unattempted,lesson,block)&&
+                    compiler_puzzle_case_count(unattempted,lesson,block)==0,
+                    "Implicit preparation lost stdout history or promoted it into private credit");
+            }
+        }
+        std::cout<<"PASS unattempted local preparation "<<contract.name<<": repeated preparation preserves "
+            "exact bytes with saved draft/preferences, with or without public-only history; no V2 marker or private credit.\n";
+    }
     require(compiler_puzzle_completed(saved,original,former)&&compiler_puzzle_case_count(saved,original,former)==1&&
         !compiler_puzzle_completed(saved,lesson,block)&&compiler_puzzle_case_count(saved,lesson,block)==0,
         "A historical stdout result was promoted into a dependency epoch");

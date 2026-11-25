@@ -1284,6 +1284,56 @@ bool named_rule_constant_variation_context(const CppRunRequest& request) {
     return request.project_files.empty()&&spec.source_path.empty()&&
         probe.harness_path.empty()&&probe.header.empty();
 }
+// A separate review domain binds the complete named-rule request, including
+// both optional gates. It never changes the historical success fingerprints.
+std::string named_rule_review_fingerprint(const CppRunRequest& request) {
+    if(!request.named_rule_probe||request.backend!=CppRunRequest::Backend::native_msvc||
+       request.action!=CppRunRequest::Action::compile_run||request.diagnostic||
+       !request.projects_directory.is_absolute()||request.compile_timeout.count()<=0||
+       request.execution_timeout.count()<=0||!request.output_limit_bytes||
+       request.rejection_probe||request.observation_probe||request.assertion_mode||
+       request.open_battery_probe||request.boolean_battery_probe||request.reduction_probe||
+       request.integer_battery_probe||request.adjustment_project_probe||
+       request.local_int_check||request.local_string_check||request.input_check||request.local_role_check||
+       request.indexed_unique_transfer_probe||request.defaulted_move_policy_probe||
+       request.independent_copy_assignment_probe||request.move_assignment_invariant_probe||
+       request.array_owner_read_probe||request.array_copy_move_probe||request.array_return_take_probe||
+       request.polymorphic_destruction_probe||request.virtual_lifetime_probe||
+       request.derived_preparation_probe||request.abstract_interface_probe||
+       request.interface_collection_probe||request.polymorphic_clone_probe||request.dual_interface_probe||
+       request.cmake_graph_check||request.capture_cmake_graph||
+       !request.integer_battery_prerequisite.empty()||
+       !request.cmake_initial_observation_prerequisite.empty())return {};
+    const auto& probe=*request.named_rule_probe;
+    if(request.cmake?request.project_files.empty():
+       (!request.project_files.empty()||!request.source_files.empty()))return {};
+    const auto driver=request.cmake?curriculum::named_rule_probe_source(probe):
+        curriculum::named_rule_single_file_probe_source(probe,request.source_utf8);
+    if(!driver||(probe.constant_variations&&!named_rule_constant_variation_context(request))||
+       (probe.battery_check&&!named_rule_battery_context(request)))return {};
+    const auto field=[](std::string_view value) {
+        return std::to_string(value.size())+":"+std::string(value);
+    };
+    auto frame=std::string("windows-named-rule-review-capture-v1/")+
+        field(std::to_string(request.request_id))+field(std::to_string(request.revision))+
+        field(request.source_utf8)+field(request.stdin_utf8)+field(fingerprint(request))+
+        field(std::to_string(static_cast<int>(request.backend)))+
+        field(std::to_string(static_cast<int>(request.action)))+
+        field(utf8(request.projects_directory.wstring()))+field(request.project_key)+
+        field(std::to_string(request.compile_timeout.count()))+
+        field(std::to_string(request.execution_timeout.count()))+
+        field(std::to_string(request.output_limit_bytes))+
+        field(probe.harness_path)+field(probe.header)+field(state::sha256(*driver))+
+        field(std::to_string(probe.cases.size()));
+    for(const auto& item:probe.cases)
+        frame+=field(item.function)+field(std::to_string(item.input))+
+            field(std::to_string(item.expected));
+    frame+=field(probe.constant_variations?
+        curriculum::named_rule_constant_variation_spec_frame(*probe.constant_variations):std::string{});
+    frame+=field(probe.battery_check?
+        curriculum::named_rule_battery_spec_frame(*probe.battery_check):std::string{});
+    return state::sha256(frame);
+}
 struct NamedRuleConstantVariationRequest {
     CppRunRequest request;
     std::string driver_sha256,program_sha256;
@@ -1338,6 +1388,63 @@ bool named_rule_probe_completed(const CppNamedRuleProbe& probe) {
     return probe.compilation.succeeded()&&probe.execution.succeeded()&&
         probe.execution.stdout_bytes.empty()&&
         probe.execution.stderr_bytes==curriculum::named_rule_probe_completion_marker;
+}
+// Preserve only an actually observed rejection of the first failing required
+// gate. Later absent phases cannot erase that observation, while a successful
+// prefix followed by missing evidence is never a failed student answer.
+bool named_rule_rejection_observed(const CppRunRequest& request,const CppRunResult& result) {
+    const auto frame=named_rule_review_fingerprint(request);
+    if(frame.empty()||!result.named_rule_probe||!result.compilation.succeeded()||
+       !result.execution.succeeded()||!result.error_utf8.empty())return false;
+    if(request.cmake&&(result.project_fingerprint!=fingerprint(request)||
+       result.configuration_fingerprint!=fingerprint(request,true)||
+       result.target_type!="EXECUTABLE"))return false;
+    const auto& probe=*request.named_rule_probe;
+    const auto driver=request.cmake?curriculum::named_rule_probe_source(probe):
+        curriculum::named_rule_single_file_probe_source(probe,request.source_utf8);
+    const auto program=request.cmake?state::sha256(curriculum::cpp_project_frame(
+        request.project_files,request.source_files,request.cmake)):state::sha256(request.source_utf8);
+    const auto observed=[&](const CppNamedRuleProbe& evidence,
+            std::string_view source,std::string_view submitted) {
+        return evidence.review_request_fingerprint==frame&&
+            evidence.source_sha256==source&&evidence.project_sha256==submitted&&
+            evidence.compilation.succeeded()&&
+            evidence.execution.status==CppPhaseStatus::completed&&evidence.execution.exit_code;
+    };
+    if(!driver||!observed(*result.named_rule_probe,state::sha256(*driver),program))return false;
+    if(!named_rule_probe_completed(*result.named_rule_probe))
+        return result.named_rule_constant_variation_probes.empty();
+    if(probe.constant_variations) {
+        const auto count=probe.constant_variations->variations.size();
+        const auto& phases=result.named_rule_constant_variation_probes;
+        if(phases.size()>count)return false;
+        for(std::size_t index=0;index<phases.size();++index) {
+            const auto expected=named_rule_constant_variation_request(request,index);
+            const auto& phase=phases[index];
+            if(!expected||phase.index!=index||!observed(phase.proof,
+               expected->driver_sha256,expected->program_sha256))return false;
+            // The real worker stops at the first unsuccessful private phase.
+            if(!named_rule_probe_completed(phase.proof))return index+1==phases.size();
+        }
+        if(phases.size()!=count)return false;
+    }else if(!result.named_rule_constant_variation_probes.empty())return false;
+    if(!probe.battery_check||!result.named_rule_battery_evidence)return false;
+    const auto battery_frame=named_rule_battery_fingerprint(request);
+    const auto& evidence=*result.named_rule_battery_evidence;
+    const auto plan=curriculum::named_rule_battery_plan(*probe.battery_check);
+    if(battery_frame.empty()||evidence.original_program_fingerprint!=battery_frame||
+       !plan||evidence.runs.size()!=plan->size()||evidence.runs.empty())return false;
+    for(std::size_t index=0;index<evidence.runs.size();++index) {
+        const auto& run=evidence.runs[index];
+        if(run.program_frame!=battery_frame||run.phase!=(*plan)[index]||
+           !run.compiled||!run.executed)return false;
+    }
+    const auto& baseline=evidence.runs.front();
+    if(baseline.exit_code!=*result.execution.exit_code||
+       baseline.stdout_bytes!=result.execution.stdout_bytes||
+       baseline.stderr_bytes!=result.execution.stderr_bytes)return false;
+    return !curriculum::named_rule_battery_verify(
+        *probe.battery_check,evidence.runs,battery_frame).accepted;
 }
 std::string boolean_battery_fingerprint(const CppRunRequest& request) {
     if(!request.boolean_battery_probe)return {};
@@ -3429,6 +3536,9 @@ bool verified_default_option_probe(const CppRunRequest& request,
 std::string cpp_boolean_battery_request_fingerprint(const CppRunRequest& request) {
     return boolean_battery_fingerprint(request);
 }
+std::string cpp_named_rule_review_request_fingerprint(const CppRunRequest& request) {
+    return named_rule_review_fingerprint(request);
+}
 std::string cpp_named_rule_battery_request_fingerprint(const CppRunRequest& request) {
     return named_rule_battery_fingerprint(request);
 }
@@ -3605,6 +3715,18 @@ curriculum::FreshExecution capture_cpp_execution(const CppRunRequest& request,co
     if(result.execution.exit_code&&*result.execution.exit_code<=255)fresh.exit_code=static_cast<int>(*result.execution.exit_code);
     fresh.standard_input=request.stdin_utf8;fresh.standard_output=result.execution.stdout_bytes;
     fresh.standard_error=result.execution.stderr_bytes;fresh.executable=result.executable;
+    // A failed private verdict is resumable only when its bound program really
+    // compiled and its process completed. This is observation, not approval
+    // or a claim that main returned normally; an abort can also complete.
+    const auto retain_private_probe_observation=[&](const auto& proof,
+            std::string_view driver,std::string_view frame) {
+        if(fresh.compilation_succeeded&&fresh.execution_succeeded&&!frame.empty()&&
+           proof.driver_sha256==state::sha256(driver)&&
+           proof.program_sha256==state::sha256(request.source_utf8)&&
+           proof.request_fingerprint==frame&&proof.compilation.succeeded()&&
+           proof.execution.status==CppPhaseStatus::completed&&proof.execution.exit_code)
+            fresh.private_probe_review_fingerprint=frame;
+    };
     if(request.input_check) {
         const auto frame=input_check_fingerprint(request);
         fresh.input_request_fingerprint=frame;
@@ -4056,6 +4178,23 @@ curriculum::FreshExecution capture_cpp_execution(const CppRunRequest& request,co
             }
             if(bound) {
                 const auto& positive=proof.phases[0];
+                bool observed=fresh.compilation_succeeded&&fresh.execution_succeeded&&
+                    positive.compilation.succeeded()&&
+                    positive.execution.status==CppPhaseStatus::completed&&
+                    positive.execution.exit_code.has_value();
+                // Copy rejection phases are compilation observations. Preserve
+                // their existing acceptance rule below; incomplete phases do
+                // not produce a resumable private-check rejection.
+                for(std::size_t i=1;observed&&i<proof.phases.size();++i) {
+                    const auto& negative=proof.phases[i];
+                    observed=negative.compilation.status==CppPhaseStatus::completed&&
+                        negative.compilation.exit_code.has_value()&&
+                        (negative.compilation.succeeded()
+                            ?negative.execution.status==CppPhaseStatus::completed&&
+                                negative.execution.exit_code.has_value()
+                            :negative.execution.status==CppPhaseStatus::not_started);
+                }
+                if(observed)fresh.private_probe_review_fingerprint=frame;
                 bool accepted=positive.compilation.succeeded()&&
                     positive.execution.succeeded()&&
                     positive.execution.stdout_bytes.empty()&&
@@ -4085,6 +4224,7 @@ curriculum::FreshExecution capture_cpp_execution(const CppRunRequest& request,co
             *request.independent_copy_assignment_probe,request.source_utf8);
         if(!frame.empty()&&driver&&result.independent_copy_assignment_evidence) {
             const auto& proof=*result.independent_copy_assignment_evidence;
+            retain_private_probe_observation(proof,*driver,frame);
             fresh.independent_copy_assignment_probe_correct=
                 proof.driver_sha256==state::sha256(*driver)&&
                 proof.program_sha256==state::sha256(request.source_utf8)&&
@@ -4102,6 +4242,7 @@ curriculum::FreshExecution capture_cpp_execution(const CppRunRequest& request,co
             *request.move_assignment_invariant_probe,request.source_utf8);
         if(!frame.empty()&&driver&&result.move_assignment_invariant_evidence) {
             const auto& proof=*result.move_assignment_invariant_evidence;
+            retain_private_probe_observation(proof,*driver,frame);
             fresh.move_assignment_invariant_probe_correct=
                 proof.driver_sha256==state::sha256(*driver)&&
                 proof.program_sha256==state::sha256(request.source_utf8)&&
@@ -4119,6 +4260,7 @@ curriculum::FreshExecution capture_cpp_execution(const CppRunRequest& request,co
             *request.array_owner_read_probe,request.source_utf8);
         if(!frame.empty()&&driver&&result.array_owner_read_evidence) {
             const auto& evidence=*result.array_owner_read_evidence;
+            retain_private_probe_observation(evidence,*driver,frame);
             fresh.array_owner_read_probe_correct=
                 evidence.driver_sha256==state::sha256(*driver)&&
                 evidence.program_sha256==state::sha256(request.source_utf8)&&
@@ -4136,6 +4278,7 @@ curriculum::FreshExecution capture_cpp_execution(const CppRunRequest& request,co
             *request.array_copy_move_probe,request.source_utf8);
         if(!frame.empty()&&driver&&result.array_copy_move_evidence) {
             const auto& evidence=*result.array_copy_move_evidence;
+            retain_private_probe_observation(evidence,*driver,frame);
             fresh.array_copy_move_probe_correct=
                 evidence.driver_sha256==state::sha256(*driver)&&
                 evidence.program_sha256==state::sha256(request.source_utf8)&&
@@ -4153,6 +4296,7 @@ curriculum::FreshExecution capture_cpp_execution(const CppRunRequest& request,co
             *request.abstract_interface_probe,request.source_utf8);
         if(!frame.empty()&&driver&&result.abstract_interface_evidence) {
             const auto& proof=*result.abstract_interface_evidence;
+            retain_private_probe_observation(proof,*driver,frame);
             fresh.abstract_interface_probe_correct=
                 proof.driver_sha256==state::sha256(*driver)&&
                 proof.program_sha256==state::sha256(request.source_utf8)&&
@@ -4170,6 +4314,7 @@ curriculum::FreshExecution capture_cpp_execution(const CppRunRequest& request,co
             *request.interface_collection_probe,request.source_utf8);
         if(!frame.empty()&&driver&&result.interface_collection_evidence) {
             const auto& proof=*result.interface_collection_evidence;
+            retain_private_probe_observation(proof,*driver,frame);
             fresh.interface_collection_probe_correct=
                 proof.driver_sha256==state::sha256(*driver)&&
                 proof.program_sha256==state::sha256(request.source_utf8)&&
@@ -4187,6 +4332,7 @@ curriculum::FreshExecution capture_cpp_execution(const CppRunRequest& request,co
             *request.polymorphic_clone_probe,request.source_utf8);
         if(!frame.empty()&&driver&&result.polymorphic_clone_evidence) {
             const auto& proof=*result.polymorphic_clone_evidence;
+            retain_private_probe_observation(proof,*driver,frame);
             fresh.polymorphic_clone_probe_correct=
                 proof.driver_sha256==state::sha256(*driver)&&
                 proof.program_sha256==state::sha256(request.source_utf8)&&
@@ -4204,6 +4350,7 @@ curriculum::FreshExecution capture_cpp_execution(const CppRunRequest& request,co
             *request.dual_interface_probe,request.source_utf8);
         if(!frame.empty()&&driver&&result.dual_interface_evidence) {
             const auto& proof=*result.dual_interface_evidence;
+            retain_private_probe_observation(proof,*driver,frame);
             fresh.dual_interface_probe_correct=
                 proof.driver_sha256==state::sha256(*driver)&&
                 proof.program_sha256==state::sha256(request.source_utf8)&&
@@ -4221,6 +4368,7 @@ curriculum::FreshExecution capture_cpp_execution(const CppRunRequest& request,co
             *request.derived_preparation_probe,request.source_utf8);
         if(!frame.empty()&&driver&&result.derived_preparation_evidence) {
             const auto& proof=*result.derived_preparation_evidence;
+            retain_private_probe_observation(proof,*driver,frame);
             fresh.derived_preparation_probe_correct=
                 proof.driver_sha256==state::sha256(*driver)&&
                 proof.program_sha256==state::sha256(request.source_utf8)&&
@@ -4238,6 +4386,7 @@ curriculum::FreshExecution capture_cpp_execution(const CppRunRequest& request,co
             *request.virtual_lifetime_probe,request.source_utf8);
         if(!frame.empty()&&driver&&result.virtual_lifetime_evidence) {
             const auto& proof=*result.virtual_lifetime_evidence;
+            retain_private_probe_observation(proof,*driver,frame);
             fresh.virtual_lifetime_probe_correct=
                 proof.driver_sha256==state::sha256(*driver)&&
                 proof.program_sha256==state::sha256(request.source_utf8)&&
@@ -4255,6 +4404,7 @@ curriculum::FreshExecution capture_cpp_execution(const CppRunRequest& request,co
             *request.polymorphic_destruction_probe,request.source_utf8);
         if(!frame.empty()&&driver&&result.polymorphic_destruction_evidence) {
             const auto& proof=*result.polymorphic_destruction_evidence;
+            retain_private_probe_observation(proof,*driver,frame);
             fresh.polymorphic_destruction_probe_correct=
                 proof.driver_sha256==state::sha256(*driver)&&
                 proof.program_sha256==state::sha256(request.source_utf8)&&
@@ -4272,6 +4422,7 @@ curriculum::FreshExecution capture_cpp_execution(const CppRunRequest& request,co
             *request.array_return_take_probe,request.source_utf8);
         if(!frame.empty()&&driver&&result.array_return_take_evidence) {
             const auto& proof=*result.array_return_take_evidence;
+            retain_private_probe_observation(proof,*driver,frame);
             fresh.array_return_take_probe_correct=
                 proof.driver_sha256==state::sha256(*driver)&&
                 proof.program_sha256==state::sha256(request.source_utf8)&&
@@ -4289,6 +4440,7 @@ curriculum::FreshExecution capture_cpp_execution(const CppRunRequest& request,co
             *request.indexed_unique_transfer_probe,request.source_utf8);
         if(!frame.empty()&&driver&&result.indexed_unique_transfer_evidence) {
             const auto& proof=*result.indexed_unique_transfer_evidence;
+            retain_private_probe_observation(proof,*driver,frame);
             fresh.indexed_unique_transfer_probe_correct=
                 proof.driver_sha256==state::sha256(*driver)&&
                 proof.program_sha256==state::sha256(request.source_utf8)&&
@@ -4381,6 +4533,9 @@ curriculum::FreshExecution capture_cpp_execution(const CppRunRequest& request,co
             }
         }
     }
+    if(request.named_rule_probe&&fresh.compilation_succeeded&&fresh.execution_succeeded&&
+       named_rule_rejection_observed(request,result))
+        fresh.private_probe_review_fingerprint=named_rule_review_fingerprint(request);
     if(request.rejection_probe&&result.rejection_probe&&
         result.rejection_probe->compilation.succeeded()&&result.rejection_probe->execution.succeeded()) {
         const auto source=curriculum::rejection_stream_probe_source(
@@ -4823,12 +4978,13 @@ void complete_named_rule_probe(const CppRunRequest& request,CppRunResult& result
     }
     const auto proof=run_cpp(second,stop);
     if(!proof.error_utf8.empty())return;
+    const auto review_frame=named_rule_review_fingerprint(request);
     result.named_rule_probe=CppNamedRuleProbe{
         state::sha256(*source),
         project?state::sha256(curriculum::cpp_project_frame(
             request.project_files,request.source_files,request.cmake)):
             state::sha256(request.source_utf8),
-        proof.compilation,proof.execution};
+        proof.compilation,proof.execution,review_frame};
     if(!named_rule_constant_variations_requested(request)||
        !named_rule_probe_completed(*result.named_rule_probe))return;
     const auto& spec=*request.named_rule_probe->constant_variations;
@@ -4840,7 +4996,7 @@ void complete_named_rule_probe(const CppRunRequest& request,CppRunResult& result
         if(!observed.error_utf8.empty())return;
         result.named_rule_constant_variation_probes.push_back({index,{
             phase->driver_sha256,phase->program_sha256,
-            observed.compilation,observed.execution}});
+            observed.compilation,observed.execution,review_frame}});
         if(!named_rule_probe_completed(result.named_rule_constant_variation_probes.back().proof))
             return;
     }

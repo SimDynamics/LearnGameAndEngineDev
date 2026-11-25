@@ -1519,20 +1519,52 @@ bool private_dependency_owner(const curriculum::Block& block) {
     return scoped_local_owner(block)||block.input_check||block.local_role_check;
 }
 std::string private_review_fingerprint(const CppRunRequest& request) {
+    if(request.named_rule_probe)return cpp_named_rule_review_request_fingerprint(request);
     if(request.input_check)return cpp_input_request_fingerprint(request);
     if(request.local_role_check)return cpp_local_role_request_fingerprint(request);
     if(request.local_int_check)return cpp_local_int_request_fingerprint(request);
     if(request.local_string_check)return cpp_local_string_request_fingerprint(request);
+    if(request.indexed_unique_transfer_probe)return cpp_indexed_unique_transfer_request_fingerprint(request);
+    if(request.defaulted_move_policy_probe)return cpp_defaulted_move_policy_request_fingerprint(request);
+    if(request.independent_copy_assignment_probe)return cpp_independent_copy_assignment_request_fingerprint(request);
+    if(request.move_assignment_invariant_probe)return cpp_move_assignment_invariant_request_fingerprint(request);
+    if(request.array_owner_read_probe)return cpp_array_owner_read_request_fingerprint(request);
+    if(request.array_copy_move_probe)return cpp_array_copy_move_request_fingerprint(request);
+    if(request.array_return_take_probe)return cpp_array_return_take_request_fingerprint(request);
+    if(request.polymorphic_destruction_probe)return cpp_polymorphic_destruction_request_fingerprint(request);
+    if(request.virtual_lifetime_probe)return cpp_virtual_lifetime_request_fingerprint(request);
+    if(request.derived_preparation_probe)return cpp_derived_preparation_request_fingerprint(request);
+    if(request.abstract_interface_probe)return cpp_abstract_interface_request_fingerprint(request);
+    if(request.interface_collection_probe)return cpp_interface_collection_request_fingerprint(request);
+    if(request.polymorphic_clone_probe)return cpp_polymorphic_clone_request_fingerprint(request);
+    if(request.dual_interface_probe)return cpp_dual_interface_request_fingerprint(request);
     return {};
 }
-std::string private_review_rules(const curriculum::Block& block) {
-    if(!private_dependency_owner(block))return {};
+std::string private_review_rules(const curriculum::Lesson& lesson,const curriculum::Block& block) {
+    if(!block.output_check)return {};
     auto frame=std::string("compiler-private-review-rules-v1/")+token(review_rules(block));
+    const auto prefix_size=frame.size();
+    if(block.named_rule_source_check&&block.named_rule_source_check->execution_probe)
+        frame+=token(curriculum::reference_objective_frame(lesson,block));
     if(block.input_check)frame+=token(input_completion_seal({},{},*block.input_check));
     if(block.local_role_check)frame+=token(local_role_completion_seal({},{},*block.local_role_check));
     if(block.local_int_check)frame+=token(local_int_completion_seal({},{},*block.local_int_check));
     if(block.local_string_check)frame+=token(local_string_completion_seal({},{},*block.local_string_check));
-    return state::sha256(frame);
+    if(block.indexed_unique_transfer_probe)frame+=token(indexed_transfer_completion_seal({},{},*block.indexed_unique_transfer_probe));
+    if(block.defaulted_move_policy_probe)frame+=token(defaulted_move_completion_seal({},{},*block.defaulted_move_policy_probe));
+    if(block.independent_copy_assignment_probe)frame+=token(independent_copy_assignment_completion_seal({},{},*block.independent_copy_assignment_probe));
+    if(block.move_assignment_invariant_probe)frame+=token(move_assignment_invariant_completion_seal({},{},*block.move_assignment_invariant_probe));
+    if(block.array_owner_read_probe)frame+=token(array_owner_read_completion_seal({},{},*block.array_owner_read_probe));
+    if(block.array_copy_move_probe)frame+=token(array_copy_move_completion_seal({},{},*block.array_copy_move_probe));
+    if(block.array_return_take_probe)frame+=token(array_return_take_completion_seal({},{},*block.array_return_take_probe));
+    if(block.polymorphic_destruction_probe)frame+=token(polymorphic_destruction_completion_seal({},{},*block.polymorphic_destruction_probe));
+    if(block.virtual_lifetime_probe)frame+=token(virtual_lifetime_completion_seal({},{},*block.virtual_lifetime_probe));
+    if(block.derived_preparation_probe)frame+=token(derived_preparation_completion_seal({},{},*block.derived_preparation_probe));
+    if(block.abstract_interface_probe)frame+=token(abstract_interface_completion_seal({},{},*block.abstract_interface_probe));
+    if(block.interface_collection_probe)frame+=token(interface_collection_completion_seal({},{},*block.interface_collection_probe));
+    if(block.polymorphic_clone_probe)frame+=token(polymorphic_clone_completion_seal({},{},*block.polymorphic_clone_probe));
+    if(block.dual_interface_probe)frame+=token(dual_interface_completion_seal({},{},*block.dual_interface_probe));
+    return frame.size()==prefix_size?std::string{}:state::sha256(frame);
 }
 std::string private_review_seal(std::string_view key,std::string_view program,std::string_view input,
         std::string_view target,std::string_view rules,std::string_view feedback,
@@ -1680,7 +1712,7 @@ std::string compiler_puzzle_review(const state::StateData& data,const curriculum
         if(!capture||!diagnostic_review_capture_matches(*capture,block,current)||
             (*rules!=diagnostic_review_rules(block,current)&&*rules!=diagnostic_review_rules(block,current,true))||
             *seal!=diagnostic_review_seal(key,*program,*input,*target,*rules,*feedback,*capture))return {};
-    }else if(*rules==private_review_rules(block)) {
+    }else if(*rules==private_review_rules(lesson,block)) {
         const auto stored=state::find(data,"native_windows",key+"capture");
         const auto capture=stored?std::get_if<std::vector<std::string>>(stored):nullptr;
         if(!capture||!private_review_capture_matches(*capture,block,current)||
@@ -1718,6 +1750,53 @@ std::optional<CompilerFeedback> compiler_puzzle_current_feedback(const state::St
     }
     return compiler_puzzle_success_feedback(data,lesson,block);
 }
+bool compiler_independent_checks_satisfied(const curriculum::Block& block,
+        const curriculum::FreshExecution& execution) {
+    return (!block.abstract_interface_probe||
+        execution.abstract_interface_probe_correct)&&
+        (!block.interface_collection_probe||
+        execution.interface_collection_probe_correct)&&
+        (!block.polymorphic_clone_probe||
+        execution.polymorphic_clone_probe_correct)&&
+        (!block.dual_interface_probe||
+        execution.dual_interface_probe_correct)&&
+        (!block.derived_preparation_probe||
+        execution.derived_preparation_probe_correct)&&
+        (!block.virtual_lifetime_probe||
+        execution.virtual_lifetime_probe_correct)&&
+        (!block.polymorphic_destruction_probe||
+        execution.polymorphic_destruction_probe_correct)&&
+        (!block.array_return_take_probe||
+        execution.array_return_take_probe_correct)&&
+        (!block.array_copy_move_probe||
+        execution.array_copy_move_probe_correct)&&
+        (!block.array_owner_read_probe||
+        execution.array_owner_read_probe_correct)&&
+        (!block.move_assignment_invariant_probe||
+        execution.move_assignment_invariant_probe_correct)&&
+        (!block.independent_copy_assignment_probe||
+        execution.independent_copy_assignment_probe_correct)&&
+        (!block.defaulted_move_policy_probe||
+        execution.defaulted_move_policy_probe_correct)&&
+        (!block.indexed_unique_transfer_probe||
+        execution.indexed_unique_transfer_probe_correct)&&
+        (!block.named_rule_source_check||
+        !block.named_rule_source_check->execution_probe||
+        (execution.named_rule_probe_correct&&
+        (!block.named_rule_source_check->execution_probe->battery_check||
+        execution.named_rule_battery_correct)))&&
+        (!block.local_int_check||execution.local_int_check_correct)&&
+        (!block.local_string_check||execution.local_string_check_correct)&&
+        (!block.input_check||execution.input_check_correct)&&
+        (!block.local_role_check||execution.local_role_check_correct)&&
+        (!block.open_battery_probe||
+        execution.open_battery_probe_correct)&&
+        (!block.boolean_battery_probe||
+        execution.boolean_battery_probe_correct)&&
+        (!block.reduction_probe||execution.reduction_probe_correct)&&
+        (!block.integer_battery_probe||execution.integer_battery_probe_correct)&&
+        (!block.adjustment_project_probe||execution.adjustment_project_probe_correct);
+}
 bool record_compiler_puzzle_review(state::StateData& data,const curriculum::Lesson& lesson,
         const curriculum::Block& block,const CppRunRequest& captured,const curriculum::FreshExecution& execution,
         std::string_view feedback) {
@@ -1728,20 +1807,20 @@ bool record_compiler_puzzle_review(state::StateData& data,const curriculum::Less
     if(block.input_check!=captured.input_check||block.local_role_check!=captured.local_role_check||
        block.local_int_check!=captured.local_int_check||block.local_string_check!=captured.local_string_check)return false;
     const auto evaluation=evaluate_cpp_output_check(*block.output_check,execution,captured.revision);
+    const auto private_rules=private_review_rules(lesson,block);
     const bool private_rejected=evaluation.verdict==curriculum::OutputVerdict::correct&&
-        ((block.input_check&&!execution.input_check_correct)||
-         (block.local_role_check&&!execution.local_role_check_correct)||
-         (block.local_int_check&&!execution.local_int_check_correct)||
-         (block.local_string_check&&!execution.local_string_check_correct));
+        !private_rules.empty()&&!compiler_independent_checks_satisfied(block,execution);
     if(evaluation.verdict!=curriculum::OutputVerdict::incorrect&&!private_rejected)return false;
     if(private_rejected&&!compiler_runtime_request_allowed(block,captured))return false;
     // A missing source plan has no private capture fingerprint. It may show a
     // structural guide in the UI, but cannot use this bound-review path.
     const auto fingerprint=private_rejected?private_review_fingerprint(captured):std::string{};
-    if(private_rejected&&fingerprint.empty())return false;
+    if(private_rejected&&(fingerprint.empty()||
+       (!private_dependency_owner(block)&&
+        execution.private_probe_review_fingerprint!=fingerprint)))return false;
     prepare_local_dependency_epoch(data,lesson,block);
     const auto key=base(lesson,block)+"review/",program=compiler_program_frame(captured),target=review_target(captured),
-        rules=private_rejected?private_review_rules(block):review_rules(block);
+        rules=private_rejected?private_rules:review_rules(block);
     auto& values=data.preferences["native_windows"];
     values[key+"program"]=program;values[key+"input"]=captured.stdin_utf8;values[key+"target"]=target;
     values[key+"rules"]=rules;values[key+"feedback"]=std::string(feedback);
@@ -2203,7 +2282,12 @@ void prepare_compiler_puzzle_revisions(state::StateData& data,const curriculum::
            block.compiler_revision||!block.compiler_case_order_revisions.empty()||!block.compiler_case_revisions.empty())
             validate_compiler_puzzle_state(data,lesson,block);
     for(const auto& page:lesson.pages)for(const auto& block:page.blocks) {
-        prepare_local_dependency_epoch(data,lesson,block);
+        // Reading a lesson may adopt existing receipts, but does not start a
+        // local dependency epoch for an owner the learner has not attempted.
+        if(scoped_local_owner(block)&&
+           (has_local_scope(data,base(lesson,block))||
+            authenticated_legacy_local_key(data,lesson,block)))
+            prepare_local_dependency_epoch(data,lesson,block);
         const auto stages=compiler_case_stages(block);
         if(stages.empty()) {
             prepare_compiler_expansion(data,lesson,block);continue;
@@ -2232,96 +2316,67 @@ bool record_compiler_puzzle_case(state::StateData& data,const curriculum::Lesson
         const CppRunRequest& captured,const curriculum::FreshExecution& execution,std::string_view feedback) {
     if(block.type!=curriculum::BlockType::cpp_compiler||!block.output_check||
        !matches_runtime_capture(captured,execution)||!compiler_runtime_request_allowed(block,captured)||
+       !compiler_independent_checks_satisfied(block,execution)||
        (block.defaulted_move_policy_probe&&
-           (!execution.defaulted_move_policy_probe_correct||
-            execution.defaulted_move_policy_request_fingerprint.empty()||
+           (execution.defaulted_move_policy_request_fingerprint.empty()||
             execution.defaulted_move_policy_request_fingerprint!=
                 cpp_defaulted_move_policy_request_fingerprint(captured)))||
        (block.independent_copy_assignment_probe&&
-           (!execution.independent_copy_assignment_probe_correct||
-            execution.independent_copy_assignment_request_fingerprint.empty()||
+           (execution.independent_copy_assignment_request_fingerprint.empty()||
             execution.independent_copy_assignment_request_fingerprint!=
                 cpp_independent_copy_assignment_request_fingerprint(captured)))||
        (block.move_assignment_invariant_probe&&
-           (!execution.move_assignment_invariant_probe_correct||
-            execution.move_assignment_invariant_request_fingerprint.empty()||
+           (execution.move_assignment_invariant_request_fingerprint.empty()||
             execution.move_assignment_invariant_request_fingerprint!=
                 cpp_move_assignment_invariant_request_fingerprint(captured)))||
        (block.array_owner_read_probe&&
-           (!execution.array_owner_read_probe_correct||
-            execution.array_owner_read_request_fingerprint.empty()||
+           (execution.array_owner_read_request_fingerprint.empty()||
             execution.array_owner_read_request_fingerprint!=
                 cpp_array_owner_read_request_fingerprint(captured)))||
        (block.array_copy_move_probe&&
-           (!execution.array_copy_move_probe_correct||
-            execution.array_copy_move_request_fingerprint.empty()||
+           (execution.array_copy_move_request_fingerprint.empty()||
             execution.array_copy_move_request_fingerprint!=
                 cpp_array_copy_move_request_fingerprint(captured)))||
        (block.array_return_take_probe&&
-           (!execution.array_return_take_probe_correct||
-            execution.array_return_take_request_fingerprint.empty()||
+           (execution.array_return_take_request_fingerprint.empty()||
             execution.array_return_take_request_fingerprint!=
                 cpp_array_return_take_request_fingerprint(captured)))||
        (block.polymorphic_destruction_probe&&
-           (!execution.polymorphic_destruction_probe_correct||
-            execution.polymorphic_destruction_request_fingerprint.empty()||
+           (execution.polymorphic_destruction_request_fingerprint.empty()||
             execution.polymorphic_destruction_request_fingerprint!=
                 cpp_polymorphic_destruction_request_fingerprint(captured)))||
        (block.virtual_lifetime_probe&&
-           (!execution.virtual_lifetime_probe_correct||
-            execution.virtual_lifetime_request_fingerprint.empty()||
+           (execution.virtual_lifetime_request_fingerprint.empty()||
             execution.virtual_lifetime_request_fingerprint!=
                 cpp_virtual_lifetime_request_fingerprint(captured)))||
        (block.derived_preparation_probe&&
-           (!execution.derived_preparation_probe_correct||
-            execution.derived_preparation_request_fingerprint.empty()||
+           (execution.derived_preparation_request_fingerprint.empty()||
             execution.derived_preparation_request_fingerprint!=
                 cpp_derived_preparation_request_fingerprint(captured)))||
        (block.abstract_interface_probe&&
-           (!execution.abstract_interface_probe_correct||
-            execution.abstract_interface_request_fingerprint.empty()||
+           (execution.abstract_interface_request_fingerprint.empty()||
             execution.abstract_interface_request_fingerprint!=
                 cpp_abstract_interface_request_fingerprint(captured)))||
        (block.interface_collection_probe&&
-           (!execution.interface_collection_probe_correct||
-            execution.interface_collection_request_fingerprint.empty()||
+           (execution.interface_collection_request_fingerprint.empty()||
             execution.interface_collection_request_fingerprint!=
                 cpp_interface_collection_request_fingerprint(captured)))||
        (block.polymorphic_clone_probe&&
-           (!execution.polymorphic_clone_probe_correct||
-            execution.polymorphic_clone_request_fingerprint.empty()||
+           (execution.polymorphic_clone_request_fingerprint.empty()||
             execution.polymorphic_clone_request_fingerprint!=
                 cpp_polymorphic_clone_request_fingerprint(captured)))||
        (block.dual_interface_probe&&
-           (!execution.dual_interface_probe_correct||
-            execution.dual_interface_request_fingerprint.empty()||
+           (execution.dual_interface_request_fingerprint.empty()||
             execution.dual_interface_request_fingerprint!=
                 cpp_dual_interface_request_fingerprint(captured)))||
        (block.indexed_unique_transfer_probe&&
-           (!execution.indexed_unique_transfer_probe_correct||
-            execution.indexed_unique_transfer_request_fingerprint.empty()||
+           (execution.indexed_unique_transfer_request_fingerprint.empty()||
             execution.indexed_unique_transfer_request_fingerprint!=
                 cpp_indexed_unique_transfer_request_fingerprint(captured)))||
-       (block.named_rule_source_check&&
-           block.named_rule_source_check->execution_probe&&
-           !execution.named_rule_probe_correct)||
-       (block.named_rule_source_check&&
-           block.named_rule_source_check->execution_probe&&
-           block.named_rule_source_check->execution_probe->battery_check&&
-           !execution.named_rule_battery_correct)||
-       (block.input_check&&!execution.input_check_correct)||
-       (block.local_role_check&&!execution.local_role_check_correct)||
-       (block.local_int_check&&!execution.local_int_check_correct)||
-       (block.local_string_check&&!execution.local_string_check_correct)||
-       (block.open_battery_probe&&!execution.open_battery_probe_correct)||
-       (block.adjustment_project_probe&&!execution.adjustment_project_probe_correct)||
-        (block.boolean_battery_probe&&!execution.boolean_battery_probe_correct)||
-       (block.reduction_probe&&!execution.reduction_probe_correct)||
-        (block.integer_battery_probe&&(!execution.integer_battery_probe_correct||
-            (block.integer_battery_probe->prerequisite&&
-             (captured.integer_battery_prerequisite.empty()||
-              captured.integer_battery_prerequisite!=
-                compiler_integer_battery_prerequisite(data,lesson,block,captured)))))||
+       (block.integer_battery_probe&&block.integer_battery_probe->prerequisite&&
+           (captured.integer_battery_prerequisite.empty()||
+            captured.integer_battery_prerequisite!=
+                compiler_integer_battery_prerequisite(data,lesson,block,captured)))||
        (block.cmake_graph_check&&(!execution.cmake_graph_correct||
             (block.cmake_graph_check->initial_observation&&
              (captured.cmake_initial_observation_prerequisite.empty()||

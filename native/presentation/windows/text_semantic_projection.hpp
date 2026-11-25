@@ -62,6 +62,61 @@ inline std::optional<curriculum::TextSemantics> compose_semantic_fields(std::str
     }
     if(!authored)return {};curriculum::validate_text_semantics(result);return result;
 }
+struct EditorialFeedbackText {
+    std::string text;
+    std::vector<SemanticFieldOrigin> origins;
+};
+struct EditorialFeedbackField { std::string original,current; };
+inline std::string_view semantic_trimmed_source(std::string_view text) {
+    const auto bounds=semantic_utf8_boundaries(text);
+    std::size_t first=0,last=bounds.size()-1;
+    while(first<last) {
+        const auto next=first+1<bounds.size()&&bounds[first+1]==std::string_view::npos?first+2:first+1;
+        if(!semantic_trim_space(text.substr(bounds[first],bounds[next]-bounds[first])))break;
+        first=next;
+    }
+    while(last>first) {
+        auto prior=last-1;if(bounds[prior]==std::string_view::npos)--prior;
+        if(!semantic_trim_space(text.substr(bounds[prior],bounds[last]-bounds[prior])))break;
+        last=prior;
+    }
+    return text.substr(bounds[first],bounds[last]-bounds[first]);
+}
+// Presentation follows authenticated JSON field origins, never a phrase search.
+// Verdicts, dynamic diagnostics, answer IDs and evaluation fingerprints are not
+// inputs to this function and cannot be changed by an editorial clarification.
+inline EditorialFeedbackText present_editorial_feedback(std::string_view original,
+        std::span<const SemanticFieldOrigin> origins,
+        const std::map<std::string,EditorialFeedbackField>& fields) {
+    const auto bounds=semantic_utf8_boundaries(original);
+    EditorialFeedbackText result;
+    std::size_t previous=0,units=0;
+    for(const auto& origin:origins) {
+        if(origin.start>=origin.end||origin.start<previous||origin.end>=bounds.size()||
+                bounds[origin.start]==std::string_view::npos||bounds[origin.end]==std::string_view::npos)
+            throw std::invalid_argument("Invalid editorial feedback source range");
+        result.text.append(original.substr(bounds[previous],bounds[origin.start]-bounds[previous]));
+        units+=origin.start-previous;
+        auto visible=original.substr(bounds[origin.start],bounds[origin.end]-bounds[origin.start]);
+        if(const auto found=fields.find(origin.path);found!=fields.end()) {
+            const auto& field=found->second;
+            (void)semantic_utf8_boundaries(field.original);
+            (void)semantic_utf8_boundaries(field.current);
+            if(visible==field.original)visible=field.current;
+            else {
+                if(visible!=semantic_trimmed_source(field.original))
+                    throw std::invalid_argument("Editorial feedback differs from its exact archived field");
+                visible=semantic_trimmed_source(field.current);
+            }
+        }
+        const auto length=semantic_utf8_boundaries(visible).size()-1;
+        if(length==0)throw std::invalid_argument("Editorial feedback cannot hide an authored source");
+        result.origins.push_back({origin.path,units,units+length});
+        result.text.append(visible);units+=length;previous=origin.end;
+    }
+    result.text.append(original.substr(bounds[previous]));
+    return result;
+}
 inline bool semantic_reference(curriculum::SemanticRole role) {
     using Role=curriculum::SemanticRole;
     return role==Role::cpp||role==Role::string||role==Role::data||role==Role::math||role==Role::output;

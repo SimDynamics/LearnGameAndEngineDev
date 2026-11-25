@@ -211,6 +211,9 @@ struct CppAssertionProbe {
 struct CppNamedRuleProbe {
     std::string source_sha256, project_sha256;
     CppPhaseResult compilation, execution;
+    // Produced with the actual private run. This authenticates resumable
+    // rejection only; existing successful-probe predicates are unchanged.
+    std::string review_request_fingerprint;
 };
 struct CppIndexedUniqueTransferEvidence {
     std::string driver_sha256, program_sha256, request_fingerprint;
@@ -504,6 +507,7 @@ struct CppProjectAvailability {
 // It does not change any existing persisted program or CMake receipt frame.
 [[nodiscard]] std::string cpp_boolean_battery_request_fingerprint(const CppRunRequest&);
 [[nodiscard]] std::string cpp_named_rule_battery_request_fingerprint(const CppRunRequest&);
+[[nodiscard]] std::string cpp_named_rule_review_request_fingerprint(const CppRunRequest&);
 [[nodiscard]] std::string cpp_named_rule_constant_variation_request_fingerprint(const CppRunRequest&);
 [[nodiscard]] std::string cpp_reduction_request_fingerprint(const CppRunRequest&);
 [[nodiscard]] std::string cpp_integer_battery_request_fingerprint(const CppRunRequest&);

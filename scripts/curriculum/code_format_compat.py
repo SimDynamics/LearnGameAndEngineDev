@@ -111,7 +111,7 @@ def _cpp_import_has_semicolon(src: str, after_header: int) -> bool:
     return True
 
 
-def _cpp_tokens(src: str) -> tuple[str, ...]:
+def _cpp_tokens_impl(src: str, *, preserve_incomplete_literal_tail: bool) -> tuple[str, ...]:
     tokens: list[str] = []
     i = 0
     pending_import_end = None
@@ -178,7 +178,21 @@ def _cpp_tokens(src: str) -> tuple[str, ...]:
         if matched: continue
         for prefix in _STRING_PREFIX:
             if src.startswith(prefix, i):
-                end = _cpp_literal_suffix_end(src, _literal_end(src, i, i + len(prefix) - 1))
+                try:
+                    quoted_end = _literal_end(src, i, i + len(prefix) - 1)
+                except SourceFormatError:
+                    if not preserve_incomplete_literal_tail:
+                        raise
+                    quoted_end = None
+                # Formatting may move only the well-tokenized prefix of an
+                # intentional incomplete ordinary literal. Preserve everything
+                # from its encoding prefix through EOF, including later lines.
+                # No semantic caller opts in; raw literals/comments stay strict.
+                if preserve_incomplete_literal_tail and (
+                        quoted_end is None or any(c in "\r\n" for c in src[i:quoted_end])):
+                    tokens.append("incomplete-literal-tail:" + src[i:])
+                    return tuple(tokens)
+                end = _cpp_literal_suffix_end(src, quoted_end)
                 tokens.append("literal:" + src[i:end]); i = end; matched = True; break
         if matched: continue
         ch = src[i]
@@ -208,6 +222,16 @@ def _cpp_tokens(src: str) -> tuple[str, ...]:
         else:
             tokens.append("op:" + ch); i += 1
     return tuple(tokens)
+
+def _cpp_tokens(src: str) -> tuple[str, ...]:
+    """Keep malformed ordinary literals unavailable to semantic callers."""
+    return _cpp_tokens_impl(src, preserve_incomplete_literal_tail=False)
+
+
+def _cpp_format_tokens(src: str) -> tuple[str, ...]:
+    """Formatting alone may retain an exact, unparsed ordinary-literal tail."""
+    return _cpp_tokens_impl(src, preserve_incomplete_literal_tail=True)
+
 
 def _cmake_tokens(src: str) -> tuple[str, ...]:
     tokens: list[str] = []
@@ -348,6 +372,12 @@ def _cpp_position_sensitive_tokens(tokens: tuple[str, ...]) -> bool:
         # A # or %: following leading block comments can still introduce
         # preprocessing. Refuse unclassified markers in format-only edits.
         if token in {"op:#", "op:##", "op:%:", "op:%:%:"}:
+            return True
+        # Preprocessing can discard a malformed quote and recover later
+        # source. Never hide directives, token pasting or location queries in
+        # the opaque tail whose C++ boundaries we cannot prove.
+        if token.startswith("incomplete-literal-tail:") and (
+                "#" in token or "%:" in token or any(name in token for name in markers)):
             return True
         if token.startswith("id:") and token[3:] in markers:
             return True
@@ -494,7 +524,7 @@ def require_source_lexical(original: dict, current: dict) -> bool:
         # change the content of a directive. Keep those sources byte-exact.
         if "\\\n" in source or "\\\n" in newer or "\\\r\n" in source or "\\\r\n" in newer:
             raise SourceFormatError(f"Physical line splices cannot be reformatted: {slot}")
-        lexer = _cmake_tokens if language == "cmake" else _cpp_tokens
+        lexer = _cmake_tokens if language == "cmake" else _cpp_format_tokens
         old_tokens, new_tokens = lexer(source), lexer(newer)
         # A live backslash may belong to a universal-character-name identifier.
         # The shared lexer cannot prove that boundary; quoted/comment/directive

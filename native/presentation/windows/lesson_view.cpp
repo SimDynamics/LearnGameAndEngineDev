@@ -917,7 +917,8 @@ struct LessonView {
             if(vm.math) for(const auto& region:vm.math->reading_regions()) {
                 if(!region.target || region.source_text.empty()) continue;
                 result.push_back({lesson.id+'/'+lesson.locale+'/'+lesson.pages[page].stable_id+'/'+current.stable_id+'/'+region.key,
-                    region.source_text,region.target,index,false,false,true,vm.response.correct});
+                    region.source_text,region.target,index,false,false,exercise(current.type),
+                    exercise(current.type)?vm.response.correct:true});
                 reading_context(result.back(),current);
                 if(script_version==0&&region.math_mode&&*region.math_mode!=result.back().math_mode){
                     result.back().previous_math_mode=result.back().math_mode;
@@ -1125,6 +1126,7 @@ struct LessonView {
         previous_scripts.push_back({identity,reading_regions()});
         for(auto& archived:previous_scripts){bool changed=false;
             for(const auto& revision:lesson.state_layout.math_text_revisions){
+                if(revision.field!="/prompt")continue;
                 const auto at=curriculum::stable_block_position(lesson,revision.id);if(!at||at->page!=page)continue;
                 const auto key=lesson.id+'/'+lesson.locale+'/'+lesson.pages[page].stable_id+'/'+revision.id+"/prompt";
                 const auto exact=[&](const auto& region){return region.key==key&&!region.feedback&&region.source_text==block(at->block).prompt;};
@@ -1548,7 +1550,7 @@ struct LessonView {
         if (controls[index].source_editor) capture_draft(index);
         if (running_block == index) cancel_run();
         if (checking_math == index) cancel_math();
-        if (controls[index].math) cancel_restore();
+        if (controls[index].math&&block(index).type==BlockType::math_puzzle) cancel_restore();
         // Detach adapters before their HWNDs. Other editors and their Undo
         // histories are left alive when a prerequisite reveals/hides this one.
         controls[index] = BlockControls{};
@@ -2796,12 +2798,11 @@ struct LessonView {
         });
         pending_math_restorations=restore_count;
     }
-    std::optional<curriculum::TextSemantics> math_feedback_semantics(std::size_t index,
-            const winrt::Windows::Data::Json::JsonObject& reply) const {
+    static std::vector<MathFeedbackSource> math_feedback_sources(
+            const winrt::Windows::Data::Json::JsonObject& reply) {
         using namespace winrt::Windows::Data::Json;
-        const auto& vm=controls.at(index);
-        if(!vm.math||!reply.HasKey(L"feedbackSources"))return {};
         std::vector<MathFeedbackSource> origins;
+        if(!reply.HasKey(L"feedbackSources"))return origins;
         for(const auto& item:reply.GetNamedArray(L"feedbackSources")){
             const auto source=item.GetObject();
             const auto first=source.GetNamedNumber(L"start"),last=source.GetNamedNumber(L"end");
@@ -2810,6 +2811,61 @@ struct LessonView {
             origins.push_back({winrt::to_string(source.GetNamedString(L"path")),
                 static_cast<std::size_t>(first),static_cast<std::size_t>(last)});
         }
+        return origins;
+    }
+    winrt::Windows::Data::Json::JsonObject math_feedback_presentation(std::size_t index,
+            const winrt::Windows::Data::Json::JsonObject& reply) const {
+        using namespace winrt::Windows::Data::Json;
+        const auto& current=block(index);
+        std::map<std::string,EditorialFeedbackField> fields;
+        for(const auto& revision:lesson.state_layout.math_text_revisions) {
+            if(revision.id!=current.stable_id||revision.field=="/prompt")continue;
+            const auto marker=current.text_semantics.find(revision.field);
+            if(marker==current.text_semantics.end())
+                throw std::runtime_error("Revised mathematical feedback lacks its authored field");
+            // The loader already authenticated this canonical field against
+            // the complete original JSON and the immutable response contract.
+            IJsonValue source=JsonObject::Parse(winrt::to_hstring(revision.raw_json));
+            std::size_t at=1;
+            while(at<revision.field.size()) {
+                const auto end=revision.field.find('/',at);
+                const auto name=revision.field.substr(at,end==std::string::npos?std::string::npos:end-at);
+                if(source.ValueType()==JsonValueType::Object)
+                    source=source.GetObject().GetNamedValue(winrt::to_hstring(name));
+                else if(source.ValueType()==JsonValueType::Array) {
+                    const auto values=source.GetArray();const auto position=std::stoull(name);
+                    if(position>=values.Size())throw std::runtime_error("Archived feedback names another response field");
+                    source=values.GetAt(static_cast<unsigned>(position));
+                } else throw std::runtime_error("Invalid archived feedback field");
+                if(end==std::string::npos)break;
+                at=end+1;
+            }
+            if(source.ValueType()!=JsonValueType::String)
+                throw std::runtime_error("Archived feedback field is not text");
+            fields.emplace(revision.field,EditorialFeedbackField{
+                winrt::to_string(source.GetString()),marker->second.source});
+        }
+        if(fields.empty()||!reply.HasKey(L"feedbackSources"))return reply;
+        const auto displayed=present_editorial_feedback(
+            winrt::to_string(reply.GetNamedString(L"feedback",L"")),math_feedback_sources(reply),fields);
+        const auto result=JsonObject::Parse(reply.Stringify());
+        result.Insert(L"feedback",JsonValue::CreateStringValue(winrt::to_hstring(displayed.text)));
+        JsonArray origins;
+        for(const auto& source:displayed.origins) {
+            JsonObject origin;
+            origin.Insert(L"path",JsonValue::CreateStringValue(winrt::to_hstring(source.path)));
+            origin.Insert(L"start",JsonValue::CreateNumberValue(static_cast<double>(source.start)));
+            origin.Insert(L"end",JsonValue::CreateNumberValue(static_cast<double>(source.end)));
+            origins.Append(origin);
+        }
+        result.Insert(L"feedbackSources",origins);
+        return result;
+    }
+    std::optional<curriculum::TextSemantics> math_feedback_semantics(std::size_t index,
+            const winrt::Windows::Data::Json::JsonObject& reply) const {
+        const auto& vm=controls.at(index);
+        if(!vm.math||!reply.HasKey(L"feedbackSources"))return {};
+        const auto origins=math_feedback_sources(reply);
         return vm.math->feedback_semantics(winrt::to_string(reply.GetNamedString(L"feedback",L"")),origins);
     }
     void finish_restore(){
@@ -2833,7 +2889,7 @@ struct LessonView {
                 vm.response=*current;
                 vm.response.correct=result.valid;
                 if(result.valid||(result.compatible&&!current->correct)){
-                    const auto reply=JsonObject::Parse(winrt::to_hstring(result.reply));
+                    const auto reply=math_feedback_presentation(i,JsonObject::Parse(winrt::to_hstring(result.reply)));
                     if(result.valid||!reply.GetNamedBoolean(L"correct",false)){
                         const auto semantics=math_feedback_semantics(i,reply);
                         feedback(i,winrt::to_string(reply.GetNamedString(L"feedback",L"")),result.valid,false,false,{},semantics?&*semantics:nullptr);
@@ -2928,7 +2984,7 @@ struct LessonView {
         auto& vm=controls.at(index);EnableWindow(find_item(control_id(index,3)),TRUE);
         if(result->revision!=vm.revision)return;
         if(!result->error.empty()){feedback(index,result->error,false);return;}
-        const auto reply=JsonObject::Parse(winrt::to_hstring(result->reply));
+        const auto reply=math_feedback_presentation(index,JsonObject::Parse(winrt::to_hstring(result->reply)));
         const auto text=winrt::to_string(reply.GetNamedString(L"feedback",L""));
         const auto semantics=math_feedback_semantics(index,reply);
         if(!reply.GetNamedBoolean(L"evaluable",false)){
@@ -3320,11 +3376,20 @@ struct LessonView {
         }
         sync_quiz_controls(index);
     }
+    bool code_scope_note_source(const curriculum::Block& candidate) const {
+        if(candidate.type!=BlockType::paragraph)return false;
+        for(const auto& owner:lesson.pages[page].blocks)
+            for(const auto& scope:owner.code_scope_presentations)
+                if(scope.read_only&&std::ranges::find(scope.consumed_blocks,candidate.stable_id)!=scope.consumed_blocks.end())
+                    return true;
+        return false;
+    }
     void render_block(std::size_t index) {
         const auto& current = block(index); auto& vm = controls[index];
         // Locked references have no HWND, text provider or scrollable row.
         if (!reference_available(current)) return;
         vm.rendered = true;
+        if(code_scope_note_source(current))return;
         if (!activity_available(current)) {
             vm.locked = true;
             text_row(current.type==BlockType::cpp_compiler?ui("Completa y comprueba correctamente la actividad anterior requerida para abrir este editor.",
@@ -3362,6 +3427,19 @@ struct LessonView {
         if (current.type == BlockType::note) text_row(ui("Nota","Note","Note"),control_id(index,19),false,{},RichTextRole::heading);
         if (current.type == BlockType::paragraph || current.type == BlockType::note) { text_row(current.text, control_id(index, 0), false, current.emphasis); return; }
         if (current.type == BlockType::code) {
+            if(!current.code_scope_presentations.empty()&&current.code_scope_presentations.front().read_only){
+                MathPuzzleCallbacks callbacks;
+                callbacks.layout_changed=[this]{if(!updating)reflow();};
+                callbacks.passive_gesture=[this](HWND origin,UINT message,WPARAM keys,LPARAM point){return drag_message(origin,message,keys,point);};
+                callbacks.back_requested=[this]{(void)navigate_back();};
+                callbacks.fullscreen_requested=[this,index]{toggle_fullscreen(index,false);};
+                vm.math=std::make_unique<MathPuzzleView>(pane,current.raw_json,lesson.locale,"{}",
+                    std::move(callbacks),current.text_semantics,current.code_scope_presentations);
+                SetWindowLongPtrW(vm.math->window(),GWLP_ID,control_id(index,5));
+                SetWindowSubclass(vm.math->fullscreen_button(),console_icon_proc,21,reinterpret_cast<DWORD_PTR>(this));
+                rows.push_back({{vm.math->window()},{0},40,false});
+                rows.back().padding_after=0;return;
+            }
             simulated_header(index,false);vm.simulated_code=rich(current.code,control_id(index,1),true);simulated_gutter(index);apply_wrap(vm.simulated_code);
             rows.push_back({{vm.simulated_code},{0},26,true});rows.back().simulated_card=index*2;rows.back().card_end=true;return;
         }
@@ -4552,50 +4630,8 @@ struct LessonView {
                 std::string source_rejection_reason;
                 const bool preserved_source=windows::compiler_runtime_request_allowed(
                     block(index),running_program,&source_rejection_reason);
-                const bool independent=(!block(index).abstract_interface_probe||
-                    fresh.abstract_interface_probe_correct)&&
-                    (!block(index).interface_collection_probe||
-                     fresh.interface_collection_probe_correct)&&
-                    (!block(index).polymorphic_clone_probe||
-                     fresh.polymorphic_clone_probe_correct)&&
-                    (!block(index).dual_interface_probe||
-                     fresh.dual_interface_probe_correct)&&
-                    (!block(index).derived_preparation_probe||
-                    fresh.derived_preparation_probe_correct)&&
-                    (!block(index).virtual_lifetime_probe||
-                    fresh.virtual_lifetime_probe_correct)&&
-                    (!block(index).polymorphic_destruction_probe||
-                    fresh.polymorphic_destruction_probe_correct)&&
-                    (!block(index).array_return_take_probe||
-                    fresh.array_return_take_probe_correct)&&
-                    (!block(index).array_copy_move_probe||
-                    fresh.array_copy_move_probe_correct)&&
-                    (!block(index).array_owner_read_probe||
-                    fresh.array_owner_read_probe_correct)&&
-                    (!block(index).move_assignment_invariant_probe||
-                    fresh.move_assignment_invariant_probe_correct)&&
-                    (!block(index).independent_copy_assignment_probe||
-                    fresh.independent_copy_assignment_probe_correct)&&
-                    (!block(index).defaulted_move_policy_probe||
-                    fresh.defaulted_move_policy_probe_correct)&&
-                    (!block(index).indexed_unique_transfer_probe||
-                    fresh.indexed_unique_transfer_probe_correct)&&
-                    (!block(index).named_rule_source_check||
-                    !block(index).named_rule_source_check->execution_probe||
-                    (fresh.named_rule_probe_correct&&
-                     (!block(index).named_rule_source_check->execution_probe->battery_check||
-                      fresh.named_rule_battery_correct)))&&
-                    (!block(index).local_int_check||fresh.local_int_check_correct)&&
-                    (!block(index).local_string_check||fresh.local_string_check_correct)&&
-                    (!block(index).input_check||fresh.input_check_correct)&&
-                    (!block(index).local_role_check||fresh.local_role_check_correct)&&
-                    (!block(index).open_battery_probe||
-                     fresh.open_battery_probe_correct)&&
-                    (!block(index).boolean_battery_probe||
-                     fresh.boolean_battery_probe_correct)&&
-                    (!block(index).reduction_probe||fresh.reduction_probe_correct)&&
-                    (!block(index).integer_battery_probe||fresh.integer_battery_probe_correct)&&
-                     (!block(index).adjustment_project_probe||fresh.adjustment_project_probe_correct);
+                const bool independent=windows::compiler_independent_checks_satisfied(
+                    block(index),fresh);
                 const bool graph_ready=!block(index).cmake_graph_check||
                     fresh.cmake_graph_correct;
                 const bool observation_ready=!block(index).cmake_graph_check||

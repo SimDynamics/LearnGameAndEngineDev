@@ -181,6 +181,41 @@ de índices, aunque su representación textual pueda mejorar. Los separadores
 `orderVisualSeparators` siguen siendo decorativos; no sustituyen las líneas
 físicas que Work haya incorporado a la fuente.
 
+## Ejemplos con un literal ordinario sin cierre
+
+El comparador Windows y la autoría Python admiten un caso conservador para un
+literal C++ ordinario
+que alcanza un salto físico de línea o el final de la fuente sin su comilla de
+cierre. Puede cambiar el
+espaciado del código anterior al literal si conserva sus tokens. Desde el inicio
+del literal —incluido un prefijo como `u8` o `L`— hasta el final del archivo,
+todos los caracteres deben permanecer idénticos. No se admite insertar una línea
+dentro de ese tramo, añadir la comilla que falta ni cambiar instrucciones
+posteriores mediante una revisión de formato.
+
+Esta ruta se utiliza exclusivamente al comparar formato. Los analizadores
+léxicos que emplean los evaluadores mantienen su rechazo estricto de fuentes
+incompletas. Los literales crudos sin cierre y los comentarios incompletos
+siguen fuera de este permiso. Las continuaciones físicas con barra inversa
+siguen bloqueadas; también se rechaza una cola opaca con marcadores del
+preprocesador o consultas de posición, porque no se puede acreditar que un
+cambio anterior de líneas conserve su interpretación.
+
+La autoría usa el mismo `prepare_v2`, archivo completo en
+`sourceFormatRevisions` y validación de transición. No necesita una propiedad
+JSON nueva ni una excepción por lección. La prueba de U1L4 utiliza
+`p1u1l4_codigo_sin_comilla` desde su publicación autenticada y genera copias
+aisladas: compara ambos cargadores Windows, conservación del estado, rechazos de
+alteraciones e historial, y el error C2001 de MSVC antes y después del formato.
+No modifica el ejemplo curricular ni su diagnóstico contiguo.
+
+Si Work añade renglones antes del error, debe revisar también las coordenadas
+de línea escritas en la explicación del diagnóstico. Conservar la causa y su
+código de error no conserva automáticamente números como `main.cpp(4)`.
+Cambiar únicamente espacios anteriores al literal en la misma línea evita ese
+desplazamiento. Las fuentes malformadas se compilan sólo para comprobar su
+diagnóstico; no se ejecutan como programas correctos.
+
 ## Estado del estudiante
 
 La aplicación conserva las claves históricas de actividad y borrador. El
@@ -329,3 +364,37 @@ Work revisa la legibilidad pedagógica de todos los cursos y publica únicamente
 sus modificaciones curriculares en `main`. El usuario controla la
 sincronización de ramas. Sólo Work modifica
 `PENDIENTES_RECURSOS_CURRICULARES.md` y elimina lo efectivamente concluido.
+
+
+## Prosa posterior a un renombrado autenticado
+
+`identifierRenameRevisions` conserva el bloque anterior, la correspondencia
+autoral de nombres y el hash del resultado exacto del renombrado. Ese archivo
+permanece inmutable cuando Work corrige después la pregunta, la explicación
+o sus orientaciones mediante `revise_ordinary_editorial`. La fuente C++ y el
+contrato de respuesta deben conservarse byte por byte. Una segunda operación
+de renombrado o un nuevo espaciado de la fuente no pertenecen a esta composición.
+
+Cada arista posterior del mismo propietario añade `identifierRenameProse`: el
+prefijo editorial completo autenticado, los bloques completos anterior y actual,
+los descriptores de texto de ambas presentaciones y `semanticRootBefore`, que
+distingue un contenedor de marcas ausente de uno vacío. No basta con que el
+último bloque coincida con una huella conocida: se comprueban todos los
+predecesores, los campos ordinarios permitidos y sus rangos UTF-16. Los demás
+propietarios pueden intercalarse, y un retorno requiere el `returnTo` explícito
+ya existente. Una cadena sin uno de sus archivos intermedios se rechaza.
+
+La proyección de contratos restaura únicamente las fuentes antiguas y conserva
+la prosa de cada presentación autenticada. La proyección histórica recupera
+además sus propias marcas, sin reordenar los campos de otros propietarios. Abrir,
+reabrir o importar conserva las respuestas, los intentos, los borradores y las
+pausas previas; una frase nueva no recibe acreditación de lectura de la anterior.
+
+La regresión `identifier_rename_prose_fixture_source.py` parte de la publicación
+U2L6 `55e60dcd4c9da2ddf71aad6eddd1c5937e312337` y genera solamente archivos QA.
+Incluye los dos renombrados declarados, revisiones separadas de pregunta y
+explicación, otro propietario intercalado, un retorno y dieciséis historias
+negativas. `test_identifier_rename_prose_history.py` comprueba autoría y
+transiciones; el ejecutable `identifier_rename_prose_tests.cpp` ejercita ambos
+cargadores Windows y `StateStore`. La existencia de esas pruebas no acredita
+su ejecución Windows: el resultado se obtiene del workflow focal correspondiente.
