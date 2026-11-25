@@ -10,6 +10,15 @@ Sin pendientes.
 
 ## CAPACIDADES POR IMPLEMENTAR E INTEGRAR
 
+### DIAGRAMAS_CONCEPTUALES_NODOS_Y_FLUJO_WINDOWS
+
+- **ESTADO:** PENDIENTE.
+- **UBICACIÓN:** recurso reutilizable de lectura para Programación, Matemáticas y Física. Caso de aceptación aportado por el usuario el 25 de noviembre de 2026: representación conceptual de la memoria con título, nodo con nombre `tarifa`, valor `8` y etiqueta Memoria, flecha hacia un nodo Consola con el resultado `8`. No asignar una ubicación curricular inventada.
+- **OBJETIVO:** expresar relaciones entre conceptos, datos, estados y salidas mediante una representación nativa, sin usar una captura fija, una simulación ficticia ni un ejercicio que exija respuesta.
+- **CAPACIDAD:** autoría declarativa en JSON de nodos ordenados, etiquetas, valores destacados y conexiones direccionales, con estilos semánticos de memoria, consola y uso general, adaptados a la anchura, DPI, escala de lectura y paleta vigente. Mantener caracteres exactos y lectura accesible en orden, sin duplicar textos ni pronunciar decoraciones; una relación necesaria debe poder explicarse mediante texto autorado.
+- **CRITERIOS DE VERIFICACIÓN:** reproducir el caso de referencia y otra composición con datos distintos; comprobar tamaños pequeños y grandes, colores, contraste, orden y límites del texto, flechas, ausencia de respuesta o bloqueo de progreso, pausa/reapertura y conservación de actividades vecinas. Rechazar estructuras inválidas, referencias inexistentes y tipos no admitidos. Documentar el contrato real y proporcionar un ejemplo QA, sin editar lecciones desde Codex.
+- **RESPONSABILIDADES:** el usuario autoriza expresamente a GPT Codex a registrar esta nueva ficha e implementar la capacidad completa. Work conserva la integración curricular y la retirada de la ficha completa; Codex no la elimina sin autorización posterior expresa.
+
 ### Ejemplos de lectura con notas dentro de los bloques y una sola narración
 
 **Ejercicio existente.** En Programación 1, unidad 3, lección 4, página 2, el ejercicio `u3l4_alcance_codigo_en_recuadros` ya presenta los bloques anidados. En `native/presentation/windows/math_puzzle_view.cpp`, `code_scope_representation` añade a la narración la descripción del diagrama, que transcribe cinco líneas. Después, `code_scope_node` entrega esas mismas cinco líneas visibles. El guion de esta representación contiene doce segmentos, seis procedentes de la descripción y seis del título y las cinco líneas.
