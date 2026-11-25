@@ -2084,9 +2084,6 @@ class PublishedMsvcRecipeGraphTests(unittest.TestCase):
                     # new authoring declarations were integrated by Work.
                     self.assertNotIn("compilerCmakeGraphChecks", result)
                     result["compilerCmakeGraphChecks"] = [deepcopy(graph)]
-                    if library == "ajustes":
-                        self.assertNotIn("compilerOpenBatteryChecks", result)
-                        result = authorized(result)
                     layout.validate_transition(document, result)
                     return result
 
@@ -2107,9 +2104,28 @@ class PublishedMsvcRecipeGraphTests(unittest.TestCase):
                         layout.validate_transition(prior, document)
                     return document
 
-                after_graph = revise(declare(before))
-                after_recipe = declare(revise(before))
+                # An unevaluated editor may revise its recipe only after
+                # its root open-battery objective has been authenticated.
+                # Preserve that guard while comparing the independent order
+                # of the repair graph and recipe publications.
+                baseline = before
+                if library == "ajustes":
+                    self.assertNotIn("compilerOpenBatteryChecks", before)
+                    with self.assertRaisesRegex(layout.LayoutError,
+                            "An unevaluated recipe revision requires its authenticated root open-battery objective"):
+                        revise(before)
+                    baseline = authorized(before)
+                    layout.validate_transition(before, baseline)
+                after_graph = revise(declare(baseline))
+                after_recipe = declare(revise(baseline))
                 self.assertEqual(after_graph, after_recipe)
+                if library == "ajustes":
+                    self.assertEqual(after_graph["compilerOpenBatteryChecks"],
+                                     baseline["compilerOpenBatteryChecks"])
+                    invalid = deepcopy(after_graph)
+                    invalid.pop("compilerOpenBatteryChecks")
+                    with self.assertRaises(layout.LayoutError):
+                        layout.validate(invalid)
                 self.assertEqual(before, pristine)
                 layout.validate_transition(before, after_graph)
                 self.assertEqual(layout.validate(before), layout.validate(after_graph))
