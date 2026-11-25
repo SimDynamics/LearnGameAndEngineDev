@@ -11,6 +11,7 @@
 #include <cmath>
 #include <condition_variable>
 #include <map>
+#include <fstream>
 #include <limits>
 #include <mutex>
 #include <stdexcept>
@@ -32,6 +33,26 @@ struct PriorityState {
     bool background=false,inference=false,closed=false;
     std::stop_source cancel_background,cancel_inference;
 };
+struct PageRegistry {
+    struct Entry {
+        std::uint64_t token=0;bool foreground=false;
+        std::weak_ptr<void> session;std::stop_source cancel;
+    };
+    std::mutex mutex;std::uint64_t serial=0;
+    std::map<std::string,Entry> pages;
+};
+bool digest_string(std::string_view value){return value.size()==64&&std::ranges::all_of(value,[](char c){return (c>='0'&&c<='9')||(c>='a'&&c<='f');});}
+std::string page_framing(std::initializer_list<std::string_view> fields){std::string result;
+    for(const auto field:fields){result+=std::to_string(field.size())+':';result+=field;}return result;}
+std::string page_owner(std::string_view page,std::string_view language,std::string_view voice,std::string_view engine){
+    return state::sha256(page_framing({"narration-page-owner-v1",page,language,voice,engine}));
+}
+std::string page_namespace(std::string_view owner,std::string_view revision){
+    return state::sha256(page_framing({"narration-page-pcm-v1",owner,revision}));
+}
+std::filesystem::path page_manifest(const std::filesystem::path& cache,std::string_view owner){
+    return cache/L"page-audio"/(std::wstring(winrt::to_hstring(owner).c_str())+L".json");
+}
 std::function<void()> take_current(const std::shared_ptr<PriorityState>& state,std::stop_token stop) {
     std::stop_source cancel;
     {const std::lock_guard lock(state->mutex);if(state->closed||stop.stop_requested())throw std::runtime_error("Lectura cancelada");
@@ -80,6 +101,58 @@ struct InferenceReservation {
     ~InferenceReservation(){const std::lock_guard lock(state->mutex);state->inference=false;state->changed.notify_all();}
 };
 }
+struct NarrationPageSession::Impl {
+    std::shared_ptr<PageRegistry> registry;
+    std::string owner,page,revision,name_space,language,voice,engine;
+    std::filesystem::path cache,manifest;
+    std::vector<NarrationSegment> segments;
+    std::uint64_t token=0;std::stop_source cancel;
+    std::unique_ptr<std::stop_callback<std::function<void()>>> upstream;
+};
+const std::string& NarrationPageSession::cache_namespace()const{
+    if(!impl_)throw std::logic_error("Missing narration page session");return impl_->name_space;
+}
+std::stop_token NarrationPageSession::stop_token()const{return impl_?impl_->cancel.get_token():std::stop_token{};}
+bool NarrationPageSession::current()const{
+    if(!impl_||impl_->cancel.stop_requested())return false;
+    const std::lock_guard lock(impl_->registry->mutex);const auto found=impl_->registry->pages.find(impl_->owner);
+    return found!=impl_->registry->pages.end()&&found->second.token==impl_->token&&!impl_->cancel.stop_requested();
+}
+bool NarrationPageSession::commit(std::span<const NarrationAudio> audio)const{
+    if(!current())return false;
+    if(audio.size()!=impl_->segments.size())throw std::invalid_argument("Only a complete narration page can be committed");
+    ensure_winrt_apartment();JsonObject manifest;manifest.Insert(L"format",JsonValue::CreateNumberValue(1));
+    put(manifest,L"page",impl_->page);put(manifest,L"revision",impl_->revision);put(manifest,L"cacheNamespace",impl_->name_space);
+    put(manifest,L"language",impl_->language);put(manifest,L"voice",impl_->voice);put(manifest,L"engine",impl_->engine);JsonArray entries;
+    for(std::size_t i=0;i<audio.size();++i){
+        if(!current())return false;
+        const auto& item=audio[i];const auto& expected=impl_->segments[i];
+        if(item.source!=expected.text||item.cache_namespace!=impl_->name_space||!digest_string(item.key)||!std::isfinite(item.duration_ms)||item.duration_ms<=0)
+            throw std::invalid_argument("Narration page completion has a different source or order");
+        const auto relative=item.wav.lexically_normal().lexically_relative(impl_->cache.lexically_normal());
+        if(relative.empty()||relative.is_absolute()||std::ranges::any_of(relative,[](const auto& part){return part==L"..";}))
+            throw std::invalid_argument("Narration page audio escaped its cache");
+        state::require_safe_path(item.wav);
+        JsonObject entry;put(entry,L"key",item.key);put(entry,L"wav",winrt::to_string(relative.native()));
+        put(entry,L"preparedSha256",state::sha256(expected.prepared));
+        const auto pcm=state::read_bytes(item.wav);put(entry,L"audioSha256",state::sha256(pcm));
+        entry.Insert(L"bytes",JsonValue::CreateNumberValue(static_cast<double>(pcm.size())));entries.Append(entry);
+    }
+    manifest.Insert(L"segments",entries);
+    const auto pending=std::filesystem::path(impl_->manifest.native()+L"."+std::to_wstring(GetCurrentProcessId())+L"-"+std::to_wstring(impl_->token)+L".pending");
+    try{
+        {std::ofstream stream(state::native_io_path(pending),std::ios::binary|std::ios::trunc);
+            stream<<winrt::to_string(manifest.Stringify());stream.flush();if(!stream)throw std::runtime_error("Cannot stage the narration page completion");}
+        // Keep this check and publication in the same critical section as
+        // begin_page. A cancelled/older revision can never replace its successor.
+        const std::lock_guard lock(impl_->registry->mutex);const auto found=impl_->registry->pages.find(impl_->owner);
+        if(found==impl_->registry->pages.end()||found->second.token!=impl_->token||impl_->cancel.stop_requested()){
+            std::filesystem::remove(state::native_io_path(pending));return false;}
+        if(!MoveFileExW(state::native_io_path(pending).c_str(),state::native_io_path(impl_->manifest).c_str(),MOVEFILE_REPLACE_EXISTING|MOVEFILE_WRITE_THROUGH))
+            throw std::runtime_error("Cannot publish the narration page completion");
+        return true;
+    }catch(...){std::error_code ignored;std::filesystem::remove(state::native_io_path(pending),ignored);throw;}
+}
 NarrationPriorityLease::~NarrationPriorityLease(){if(release_)release_();}
 NarrationPriorityLease::NarrationPriorityLease(NarrationPriorityLease&& other) noexcept:release_(std::exchange(other.release_,{})){}
 NarrationPriorityLease& NarrationPriorityLease::operator=(NarrationPriorityLease&& other) noexcept {
@@ -90,6 +163,7 @@ struct NarrationWorker::Impl {
     std::unique_ptr<NarrationCpuPolicy> cpu;
     SystemSpeechProcess system_speech;
     std::shared_ptr<PriorityState> priority=std::make_shared<PriorityState>();
+    std::shared_ptr<PageRegistry> pages=std::make_shared<PageRegistry>();
     // Inference still has its original serialized lane. The single process's
     // lightweight editor lane can exchange replies without waiting for ONNX.
     std::mutex request_mutex,write_mutex,start_mutex,response_mutex,shutdown_mutex;
@@ -239,6 +313,9 @@ NarrationWorker::NarrationWorker(std::filesystem::path runtime):impl_(std::make_
 NarrationWorker::~NarrationWorker()=default;
 void NarrationWorker::shutdown() noexcept {impl_->shutdown();}
 void NarrationWorker::set_storage_budget(std::uint64_t bytes){impl_->storage_budget.store(bytes);}
+unsigned NarrationWorker::available_processors()const{
+    const std::lock_guard lock(impl_->start_mutex);return impl_->cpu?impl_->cpu->available_processors():0;
+}
 NarrationPriorityLease NarrationWorker::current_page_lease(std::stop_token stop){return NarrationPriorityLease(take_current(impl_->priority,stop));}
 NarrationPriorityLease NarrationWorker::heavy_work_lease(std::stop_token stop){return NarrationPriorityLease(take_heavy(impl_->priority,stop));}
 std::optional<NarrationPriorityLease> NarrationWorker::try_idle_maintenance_lease(){
@@ -246,6 +323,63 @@ std::optional<NarrationPriorityLease> NarrationWorker::try_idle_maintenance_leas
     if(state->closed||state->current||state->heavy||state->background||state->inference)return {};
     ++state->heavy;
     return NarrationPriorityLease([state]{const std::lock_guard release(state->mutex);--state->heavy;state->changed.notify_all();});
+}
+std::optional<NarrationPageSession> NarrationWorker::begin_page(const std::filesystem::path& cache,
+    std::string_view page_id,std::string_view language,std::string_view voice,std::string_view engine,
+    const NarrationPagePlan& plan,NarrationCpuClass work,std::stop_token stop){
+    if(page_id.empty()||plan.page_id!=page_id||!digest_string(plan.revision)||!cache.is_absolute())
+        throw std::invalid_argument("Invalid narration page version or cache");
+    if(stop.stop_requested())throw std::runtime_error("Lectura cancelada");
+    const auto value=std::make_shared<NarrationPageSession::Impl>();value->registry=impl_->pages;
+    value->page=page_id;value->revision=plan.revision;value->cache=cache.lexically_normal();value->segments=plan.segments;
+    value->language=language;value->voice=voice;value->engine=engine;
+    value->owner=page_owner(page_id,language,voice,engine);
+    value->name_space=page_namespace(value->owner,plan.revision);
+    const auto directory=cache/L"page-audio";state::require_safe_path(directory);
+    std::filesystem::create_directories(state::native_io_path(directory));
+    value->manifest=page_manifest(cache,value->owner);
+    auto cancel=value->cancel;
+    value->upstream=std::make_unique<std::stop_callback<std::function<void()>>>(stop,[cancel]()mutable{cancel.request_stop();});
+    std::stop_source previous;
+    {const std::lock_guard lock(impl_->pages->mutex);auto& entry=impl_->pages->pages[value->owner];
+        if(const auto existing=entry.session.lock();existing&&!entry.cancel.stop_requested()){
+            if(work==NarrationCpuClass::background&&(entry.foreground||
+                std::static_pointer_cast<NarrationPageSession::Impl>(existing)->revision==plan.revision))return {};
+            previous=entry.cancel;
+        }
+        value->token=++impl_->pages->serial;entry={value->token,work!=NarrationCpuClass::background,value,value->cancel};
+    }
+    previous.request_stop();return NarrationPageSession(value);
+}
+std::string NarrationWorker::page_cache_namespace(const NarrationPagePlan& plan,std::string_view language,
+    std::string_view voice,std::string_view engine)const{
+    if(plan.page_id.empty()||!digest_string(plan.revision))throw std::invalid_argument("Invalid narration page version");
+    return page_namespace(page_owner(plan.page_id,language,voice,engine),plan.revision);
+}
+std::optional<std::string> NarrationWorker::published_page_revision(const std::filesystem::path& cache,
+    std::string_view page_id,std::string_view language,std::string_view voice,std::string_view engine)const{
+    try{
+        ensure_winrt_apartment();if(page_id.empty()||!cache.is_absolute())return {};
+        const auto owner=page_owner(page_id,language,voice,engine);const auto path=page_manifest(cache,owner);
+        state::require_safe_path(path);if(!std::filesystem::is_regular_file(state::native_io_path(path)))return {};
+        const auto bytes=state::read_bytes(path,64*1024*1024);
+        const auto proof=JsonObject::Parse(winrt::to_hstring(std::string_view(reinterpret_cast<const char*>(bytes.data()),bytes.size())));
+        const auto revision=string(proof,L"revision");
+        if(proof.GetNamedNumber(L"format",0)!=1||string(proof,L"page")!=page_id||string(proof,L"language")!=language||
+            string(proof,L"voice")!=voice||string(proof,L"engine")!=engine||!digest_string(revision)||
+            string(proof,L"cacheNamespace")!=page_namespace(owner,revision))return {};
+        const auto segments=proof.GetNamedArray(L"segments");if(segments.Size()>100000)return {};
+        for(const auto& value:segments){const auto entry=value.GetObject();
+            if(!digest_string(string(entry,L"key"))||!digest_string(string(entry,L"preparedSha256"))||!digest_string(string(entry,L"audioSha256")))return {};
+            const auto relative=std::filesystem::path(entry.GetNamedString(L"wav").c_str());
+            if(relative.empty()||relative.is_absolute()||std::ranges::any_of(relative,[](const auto& part){return part==L"..";}))return {};
+            const auto wave=cache/relative;state::require_safe_path(wave);
+            const auto size=entry.GetNamedNumber(L"bytes",0);
+            if(size<=44||size>128*1024*1024||std::trunc(size)!=size||
+                std::filesystem::file_size(state::native_io_path(wave))!=static_cast<std::uintmax_t>(size))return {};
+        }
+        return revision;
+    }catch(const std::exception&){return {};}catch(const winrt::hresult_error&){return {};}
 }
 std::vector<NarrationSegment> NarrationWorker::plan(std::string_view text,std::string_view language,std::stop_token stop,
     std::string_view reading_context,std::string_view math_mode,bool previous_output_data){
@@ -298,6 +432,11 @@ std::vector<NarrationSegment> NarrationWorker::plan(std::string_view text,std::s
 NarrationAudio NarrationWorker::prepare(const NarrationSegment& segment,std::string_view language,std::string_view voice,const std::filesystem::path& output,unsigned threads,std::stop_token stop,NarrationCpuClass work){
     ensure_winrt_apartment();JsonObject request;put(request,L"command","prepare");put(request,L"text",segment.text);put(request,L"preparedText",segment.prepared);put(request,L"language",language);put(request,L"voice",voice);
     if(work==NarrationCpuClass::background)request.Insert(L"audioOnly",JsonValue::CreateBooleanValue(true));
+    put(request,L"cpuClass",work==NarrationCpuClass::background?"background":"current_page");
+    if(!segment.cache_namespace.empty()){
+        if(!digest_string(segment.cache_namespace))throw std::invalid_argument("Invalid narration cache namespace");
+        put(request,L"cacheNamespace",segment.cache_namespace);
+    }
     put(request,L"outputDirectory",winrt::to_string(output.native()));request.Insert(L"threads",JsonValue::CreateNumberValue(threads));
     JsonObject reply;
     for(;;)try{
@@ -309,6 +448,11 @@ NarrationAudio NarrationWorker::prepare(const NarrationSegment& segment,std::str
         catch(const NarrationPreempted&){if(work==NarrationCpuClass::background)throw;}
     NarrationAudio audio;audio.key=string(reply,L"key");audio.source=string(reply,L"sourceText");audio.spoken=string(reply,L"spokenText");audio.provider=string(reply,L"provider");audio.wav=std::filesystem::path(reply.GetNamedString(L"wav").c_str());audio.duration_ms=reply.GetNamedNumber(L"durationMs");audio.cache_hit=reply.GetNamedBoolean(L"cacheHit",false);
     for(const auto& item:reply.GetNamedArray(L"timings")){const auto timing=item.GetObject();audio.timings.push_back({index(timing,L"start"),index(timing,L"end"),timing.GetNamedNumber(L"startMs"),timing.GetNamedNumber(L"endMs")});}
+    audio.cache_namespace=string(reply,L"cacheNamespace");
+    audio.synthesis_threads=static_cast<unsigned>(index(reply,L"synthesisThreads"));
+    audio.cpu_class=work==NarrationCpuClass::background?"background":"current_page";
+    if(reply.HasKey(L"cpuClass")&&string(reply,L"cpuClass")!=audio.cpu_class)throw std::runtime_error("Kokoro returned another narration CPU class");
+    if(audio.cache_namespace!=segment.cache_namespace)throw std::runtime_error("Kokoro returned another page revision");
     if(!std::filesystem::is_regular_file(audio.wav)||audio.duration_ms<=0)throw std::runtime_error("Kokoro no produjo una grabación válida.");return audio;
 }
 NarrationAudio NarrationWorker::prepare_system(const NarrationSegment& segment,std::string_view language,std::string_view voice,
@@ -328,6 +472,24 @@ std::string NarrationWorker::curriculum_plan(std::string_view raw_lesson,std::si
     put(request,L"contentLanguage",content_language.empty()?language:content_language);
     request.Insert(L"page",JsonValue::CreateNumberValue(static_cast<double>(page)));put(request,L"language",language);put(request,L"voice",voice);put(request,L"uiLanguage",ui_language);
     std::string reply;(void)impl_->call(request,stop,&reply,false,NarrationCpuClass::background);return reply;
+}
+NarrationPagePlan NarrationWorker::page_plan(std::string_view raw_lesson,std::size_t page,std::string_view language,
+    std::string_view voice,std::string_view ui_language,std::stop_token stop,std::string_view reading_context,
+    std::string_view content_language,NarrationCpuClass work){
+    if(reading_context!="auto"&&reading_context!="cpp")throw std::invalid_argument("Invalid curriculum narration reading context");
+    ensure_winrt_apartment();JsonObject request;put(request,L"command","curriculum_plan");put(request,L"lessonJson",raw_lesson);
+    put(request,L"readingContext",reading_context);put(request,L"contentLanguage",content_language.empty()?language:content_language);
+    request.Insert(L"page",JsonValue::CreateNumberValue(static_cast<double>(page)));put(request,L"language",language);
+    put(request,L"voice",voice);put(request,L"uiLanguage",ui_language);
+    const auto reply=impl_->call(request,stop,nullptr,false,work);NarrationPagePlan result;
+    result.page_id=string(reply,L"pageId");result.revision=string(reply,L"revision");
+    if(result.page_id.empty()||!digest_string(result.revision))throw std::runtime_error("Narration worker returned no authenticated page revision");
+    for(const auto& item:reply.GetNamedArray(L"segments")){const auto value=item.GetObject();NarrationSegment segment;
+        segment.text=string(value,L"text");segment.prepared=string(value,L"preparedText");segment.spoken=string(value,L"spokenText");
+        if(segment.spoken.empty())segment.spoken=segment.text;
+        if(segment.text.empty()||segment.prepared.empty())throw std::runtime_error("Invalid canonical page narration segment");
+        result.segments.push_back(std::move(segment));}
+    return result;
 }
 std::string NarrationWorker::identity(std::string_view page,std::string_view language,std::string_view voice,const std::vector<NarrationSegment>& segments,std::stop_token stop,std::string_view engine){
     ensure_winrt_apartment();JsonObject request;put(request,L"command","identity");put(request,L"page",page);put(request,L"language",language);put(request,L"voice",voice);put(request,L"engine",engine);JsonArray texts;

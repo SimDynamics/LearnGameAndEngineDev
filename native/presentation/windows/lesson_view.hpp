@@ -25,6 +25,16 @@ struct LessonPageState {
     std::string lesson_title;
     // Advances only after this live view adopts another validated source file.
     std::uint64_t content_revision = 0;
+    // A previously correct mathematical answer is being rechecked internally.
+    // This is temporary verification, not a new unanswered student exercise.
+    bool narration_verification_pending = false;
+};
+// A validated source snapshot for the page-wide narration revision. Keep this
+// separate from the frequently queried navigation state: source JSON can be
+// large and changes only when the view adopts another curriculum publication.
+struct LessonNarrationSource {
+    std::string raw_json,reading_context,content_language;
+    std::size_t page = 0;
 };
 struct LessonOptionsSnapshot {
     std::size_t current_page = 0,page_count = 0;
@@ -92,9 +102,11 @@ inline constexpr UINT lesson_view_hooks_message = WM_APP + 183;
 inline constexpr UINT lesson_reader_bar_message = WM_APP + 184;
 inline constexpr UINT lesson_state_read_message = WM_APP + 185;
 inline constexpr UINT lesson_preferences_update_message = WM_APP + 186;
+inline constexpr UINT lesson_narration_source_message = WM_APP + 191;
 inline constexpr UINT lesson_options_query_message = WM_APP + 189;
 inline constexpr UINT lesson_options_action_message = WM_APP + 190;
 [[nodiscard]] LessonPageState lesson_page_state(HWND window);
+[[nodiscard]] LessonNarrationSource lesson_narration_source(HWND window);
 [[nodiscard]] bool navigate_lesson_view(HWND window,std::size_t page);
 // The integrated lesson settings page observes these actions without changing
 // progress. Navigate with navigate_lesson_view; return to the lesson before

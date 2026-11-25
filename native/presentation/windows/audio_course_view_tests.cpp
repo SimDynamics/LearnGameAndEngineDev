@@ -14,13 +14,14 @@ using namespace lgaed;
 using namespace lgaed::presentation;
 namespace {
 void check(bool condition,const char* message){if(!condition)throw std::runtime_error(message);}
-void write(const std::filesystem::path& path,std::string_view text){std::filesystem::create_directories(path.parent_path());std::ofstream stream(path,std::ios::binary|std::ios::trunc);stream<<text;if(!stream)throw std::runtime_error("Cannot create isolated course audio fixture");}
+void write(const std::filesystem::path& path,std::string_view text){state::require_safe_path(path);std::filesystem::create_directories(state::native_io_path(path.parent_path()));std::ofstream stream(state::native_io_path(path),std::ios::binary|std::ios::trunc);stream<<text;if(!stream)throw std::runtime_error("Cannot create isolated course audio fixture");}
 std::string wav(unsigned samples=12){std::string bytes(44+samples*2,'\0');const auto mark=[&](std::size_t at,const char* text){bytes.replace(at,4,text,4);};const auto put=[&](std::size_t at,std::uint32_t value,int length){for(int i=0;i<length;++i)bytes[at+i]=static_cast<char>(value>>(8*i));};mark(0,"RIFF");mark(8,"WAVE");mark(12,"fmt ");mark(36,"data");put(4,static_cast<std::uint32_t>(bytes.size()-8),4);put(16,16,4);put(20,1,2);put(22,1,2);put(24,24000,4);put(28,48000,4);put(32,2,2);put(34,16,2);put(40,samples*2,4);return bytes;}
 const std::string unique(64,'a'),shared(64,'b'),historical(64,'c'),bad(64,'d');
 struct Fixture {
     std::filesystem::path root,content,cache;
     std::vector<std::filesystem::path> created;
-    explicit Fixture(const std::filesystem::path& parent):root(parent/(L"course-audio-"+std::to_wstring(GetCurrentProcessId()))),content(root/L"content"),cache(root/L"cache"){
+    explicit Fixture(const std::filesystem::path& parent):root(parent/(L"course-audio-"+std::to_wstring(GetCurrentProcessId())+L"-"+std::to_wstring(GetTickCount64()))),content(root/L"content"),cache(root/L"cache"){
+        state::require_safe_path(root);
         check(!std::filesystem::exists(root),"An existing fixture must never be overwritten");
         for(const auto route:{"programming","math_physics"}){
             const auto base=content/"es"/route;
@@ -71,13 +72,27 @@ int wmain(int argc,wchar_t** argv){
         // otherwise the first cancelled scan can tear down the process's last
         // COM apartment while the next scan is activating a cached factory.
         windows::ensure_winrt_apartment();
-        const auto parent=std::filesystem::absolute(argv[1]);std::filesystem::create_directories(parent);Fixture fixture(parent);
+        const auto parent=std::filesystem::path(argv[1]).lexically_normal();
+        const auto relative=parent.lexically_relative(std::filesystem::path(L"C:\\LGAED-QA"));
+        check(parent.is_absolute()&&!relative.empty()&&!relative.is_absolute()&&
+            std::ranges::none_of(relative,[](const auto& part){return part==L"..";}),"Course audio QA must remain inside C:\\LGAED-QA");
+        state::require_safe_path(parent);std::filesystem::create_directories(state::native_io_path(parent));Fixture fixture(parent);
         for(int reopen=0;reopen<3;++reopen)unicode_window_tests(fixture);
         const auto before=state::sha256(state::read_bytes(fixture.cache/(historical+".wav")));const auto shared_before=state::sha256(state::read_bytes(fixture.cache/(shared+".wav")));
         auto report=scan_course_audio(fixture.content,fixture.cache,profile(),"programming",false,plan);
         check(report.courses.size()==2&&report.inventory.size()==3,"Read-only inventory omitted valid audio or counted invalid/staged data");
         check(report.courses.front().coverage.expected==2&&report.courses.front().coverage.generated==2&&report.courses.front().coverage.files==2&&report.courses.front().coverage.percentage()==100u,"Unique sentence coverage is incorrect");
         check(!report.courses.back().coverage.percentage(),"An unpublished course received a fake percentage");
+        const CourseAudioPlanner revision_plan=[](std::string_view raw,std::size_t page,std::string_view language,std::string_view voice,std::string_view ui,std::stop_token stop,std::string_view context){
+            auto reply=winrt::Windows::Data::Json::JsonObject::Parse(winrt::to_hstring(plan(raw,page,language,voice,ui,stop,context)));
+            winrt::Windows::Data::Json::JsonArray old;old.Append(winrt::Windows::Data::Json::JsonValue::CreateStringValue(winrt::to_hstring(historical)));
+            reply.Insert(L"historicalKeys",old);return winrt::to_string(reply.Stringify());};
+        const auto revision_report=scan_course_audio(fixture.content,fixture.cache,profile(),"programming",true,revision_plan);
+        check(revision_report.courses.front().coverage.expected==2&&revision_report.courses.front().coverage.generated==2&&
+            revision_report.courses.front().historical.contains(historical),"Historical cache ownership inflated current page coverage");
+        const auto revision_preview=preview_course_audio_removal(revision_report,{"programming","qa"});
+        check(revision_preview.exclusive.size()==1&&revision_preview.exclusive.front().key==unique&&revision_preview.shared_files==2,
+            "A legacy recording shared with another course lost its protected ownership");
         bool incomplete=false;try{(void)preview_course_audio_removal(report,{"programming","qa"});}catch(const std::invalid_argument&){incomplete=true;}check(incomplete,"A route-only scan was accepted as proof of exclusive ownership");
         auto complete=scan_course_audio(fixture.content,fixture.cache,profile(),"programming",true,plan);auto preview=preview_course_audio_removal(std::move(complete),{"programming","qa"});
         check(preview.exclusive.size()==1&&preview.exclusive.front().key==unique&&preview.shared_files==1,"Shared audio in the other route was selected for deletion");

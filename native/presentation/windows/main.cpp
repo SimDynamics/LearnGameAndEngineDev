@@ -27,6 +27,7 @@
 #include "platform/windows/state_store.hpp"
 #include "platform/windows/audio_generation.hpp"
 #include "presentation/windows/rich_text.hpp"
+#include "presentation/windows/app_audio_revision_qa.hpp"
 
 #include <windows.h>
 #include <shellapi.h>
@@ -48,6 +49,7 @@ namespace {
 constexpr wchar_t window_class[] = L"LearnGameAndEngineDev.NativeShell";
 constexpr UINT_PTR smoke_timer = 1;
 constexpr UINT_PTR audio_context_timer = 2;
+constexpr UINT_PTR audio_qa_timer = 3;
 constexpr DWORD window_style = WS_OVERLAPPEDWINDOW | WS_CLIPCHILDREN;
 constexpr UINT open_lesson_message=WM_APP+230,return_message=WM_APP+231,settings_message=WM_APP+232,close_settings_message=WM_APP+233,tool_message=WM_APP+234;
 constexpr UINT lesson_finished_message=WM_APP+235;
@@ -56,6 +58,9 @@ constexpr UINT lesson_option_message=WM_APP+238;
 
 struct WindowState {
     lgaed::WindowsEnvironment environment;
+    std::optional<lgaed::presentation::AppAudioRevisionQaConfig> audio_qa_config;
+    std::unique_ptr<lgaed::presentation::AppAudioRevisionQa> audio_qa;
+    std::filesystem::path content_root=std::filesystem::path(lgaed::build::source_root)/L"app/src/main/assets/content";
     bool painted = false;
     int exit_code = 0;
     HWND lesson = nullptr;
@@ -196,7 +201,7 @@ void open_lesson(HWND window,WindowState& state,lgaed::curriculum::Lesson lesson
     LessonViewHooks hooks;hooks.lesson_label=tr("Lección","Lesson","Leçon");
     const auto context=catalog_location(state.catalog);
     if(lesson.id!="native_cpp_laboratory"&&!context.unit.empty()){
-        const auto content_root=std::filesystem::path(lgaed::build::source_root)/L"app/src/main/assets/content";
+        const auto& content_root=state.content_root;
         auto unit_location=context;unit_location.lesson.clear();
         const auto unit_page=lgaed::windows::load_catalog(content_root,unit_location);
         const auto lesson_entry=std::ranges::find(unit_page.entries,lesson.id,&lgaed::curriculum::CatalogEntry::id);
@@ -266,6 +271,7 @@ void open_lesson(HWND window,WindowState& state,lgaed::curriculum::Lesson lesson
     state.lesson=create_lesson_view(window,state.environment,std::move(lesson),std::move(hooks));ShowWindow(state.catalog,SW_HIDE);
     if(!laboratory)state.reader=std::make_unique<LessonReader>(state.lesson,state.environment,state.narrator,[window,&state]{
         state.pending_action=CatalogAction::audio;state.context=catalog_location(state.catalog);PostMessageW(window,settings_message,0,0);});
+    if(state.reader&&state.audio_qa_config)state.reader->set_qa_playback_muted(true);
     // The floating reader is the visible playback surface now that the
     // redundant header toggle is gone. Showing it never starts playback.
     if(state.reader)state.reader->set_controls_visible(true);
@@ -273,7 +279,7 @@ void open_lesson(HWND window,WindowState& state,lgaed::curriculum::Lesson lesson
         state.settings_lesson=state.lesson;ShowWindow(state.lesson,SW_HIDE);
         if(state.reader)state.reader->suspend_preparation(true);
     }
-    layout_controls(window,state);SetFocus(state.settings?state.settings:state.lesson);
+    layout_controls(window,state);if(!state.audio_qa_config)SetFocus(state.settings?state.settings:state.lesson);
     update_audio_context(state);
 }
 void open_settings(HWND window,WindowState& state){
@@ -312,7 +318,7 @@ void open_settings(HWND window,WindowState& state){
     };
     access.open_licenses=[window,&state]{(void)open_narration_licenses(state.settings?state.settings:window,interface_language(preferences(state)));};
     access.open_audio=[window,&state](std::string_view route){
-        CourseAudioAccess audio;audio.worker=state.narrator;audio.content=std::filesystem::path(lgaed::build::source_root)/L"app/src/main/assets/content";audio.cache=state.environment.paths.cache/L"kokoro";
+        CourseAudioAccess audio;audio.worker=state.narrator;audio.content=state.content_root;audio.cache=state.environment.paths.cache/L"kokoro";
         audio.profile=[&state]{auto data=preferences(state);CourseAudioProfile profile;profile.locale=lgaed::state::string_value(data,"native_windows","content_language",interface_language(data));
             // This resource manager belongs to the explicitly labelled Kokoro
             // block. Selecting Windows playback must not reinterpret its files
@@ -338,7 +344,7 @@ void open_settings(HWND window,WindowState& state){
     access.course_id=context.course;access.route_id=context.route;access.programming=context.route=="programming";
     const auto locale=interface_language(preferences(state));
     const auto tr=[&](const char* es,const char* en,const char* fr){return std::string(locale=="fr"?fr:locale=="en"?en:es);};
-    const auto content=std::filesystem::path(lgaed::build::source_root)/L"app/src/main/assets/content";
+    const auto& content=state.content_root;
     const auto catalogue_locale=lgaed::state::string_value(preferences(state),"native_windows","content_language","es");
     for(const auto& entry:lgaed::windows::load_catalog(content,{catalogue_locale,"programming"}).entries)
         access.programming_course_ids.push_back(entry.id);
@@ -363,14 +369,14 @@ void open_settings(HWND window,WindowState& state){
         if(access.scope==SettingsScope::lesson){target=parent.lesson;parent.lesson.clear();access.subtitle=tr("Ajustes de la lección","Lesson settings","Réglages de la leçon");access.reset_label=tr("Reiniciar lección","Reset lesson","Réinitialiser la leçon");}
         if(access.scope==SettingsScope::unit){target=parent.unit;parent.unit.clear();access.subtitle=tr("Ajustes de la unidad","Unit settings","Réglages de l’unité");access.reset_label=tr("Reiniciar unidad","Reset unit","Réinitialiser l’unité");}
         if(access.scope==SettingsScope::course){target=parent.course;parent.course.clear();access.subtitle=tr("Ajustes del curso","Course settings","Réglages du cours");access.reset_label=tr("Reiniciar curso","Reset course","Réinitialiser le cours");}
-        const auto page=lgaed::windows::load_catalog(std::filesystem::path(lgaed::build::source_root)/L"app/src/main/assets/content",parent);
+        const auto page=lgaed::windows::load_catalog(state.content_root,parent);
         for(const auto& entry:page.entries)if(entry.id==target){access.title=entry.title;
             access.eyebrow=(access.scope==SettingsScope::lesson?tr("Lección ","Lesson ","Leçon "):access.scope==SettingsScope::unit?tr("Unidad ","Unit ","Unité "):tr("Curso ","Course ","Cours "))+std::to_string(entry.number);
             if(access.scope==SettingsScope::course)access.eyebrow+=tr(" de "," of "," sur ")+std::to_string(page.entries.size());
             break;}
     }
     if(!context.route.empty()){
-        const auto scope=lgaed::windows::catalog_scope(std::filesystem::path(lgaed::build::source_root)/L"app/src/main/assets/content",context);
+        const auto scope=lgaed::windows::catalog_scope(state.content_root,context);
         access.reset_scope=[window,&state,scope,locale,kind=access.scope]{
             const auto text=settings_reset_text(kind,locale);
             if(lgaed::presentation::internal_message_box(state.settings?state.settings:window,wide(text.confirmation).c_str(),wide(text.title).c_str(),MB_YESNO|MB_DEFBUTTON2|MB_ICONWARNING)!=IDYES)return;
@@ -445,10 +451,10 @@ LRESULT CALLBACK window_procedure(HWND window, UINT message, WPARAM wparam, LPAR
                 lgaed::presentation::update_window_frame(window,lgaed::presentation::reader_theme::appearance_accent(defaults));
                 state->narrator=std::make_shared<lgaed::windows::NarrationWorker>(std::filesystem::path(lgaed::build::source_root)/L"out/narration/runtime.json");
                 state->generation=std::make_unique<lgaed::windows::AudioGeneration>(state->narrator,
-                    std::filesystem::path(lgaed::build::source_root)/L"app/src/main/assets/content",state->environment.paths.cache/L"kokoro",state->environment.paths.root);
+                    state->content_root,state->environment.paths.cache/L"kokoro",state->environment.paths.root);
                 SetTimer(window,audio_context_timer,400,nullptr);
                 state->catalog=lgaed::presentation::create_catalog_view(window,state->environment,
-                    std::filesystem::path(lgaed::build::source_root)/L"app/src/main/assets/content",
+                    state->content_root,
                     [window,state](const auto& path){state->pending_lesson=path;PostMessageW(window,open_lesson_message,0,0);},
                     [window,state](auto action,const auto& context){state->context=context;state->pending_action=action;
                         PostMessageW(window,action==lgaed::presentation::CatalogAction::settings||action==lgaed::presentation::CatalogAction::audio?settings_message:tool_message,0,0);},
@@ -477,7 +483,7 @@ LRESULT CALLBACK window_procedure(HWND window, UINT message, WPARAM wparam, LPAR
                         state->pending_action=lgaed::presentation::CatalogAction::compiler;
                         PostMessageW(window,tool_message,0,0);
                     }else if(const auto entry=lgaed::windows::active_catalog_lesson(
-                        std::filesystem::path(lgaed::build::source_root)/L"app/src/main/assets/content",
+                        state->content_root,
                         lgaed::presentation::catalog_location(state->catalog),active)){
                         state->pending_lesson=entry->asset;PostMessageW(window,open_lesson_message,0,0);
                     }else if(!active.empty())remember_open_lesson(*state,{});
@@ -491,7 +497,7 @@ LRESULT CALLBACK window_procedure(HWND window, UINT message, WPARAM wparam, LPAR
     }
     case open_lesson_message:
         try{const auto locale=lgaed::presentation::catalog_location(state->catalog).locale;
-            auto path=state->pending_lesson;const auto content=std::filesystem::path(lgaed::build::source_root)/L"app/src/main/assets/content";
+            auto path=state->pending_lesson;const auto& content=state->content_root;
             const auto relative=path.lexically_relative(content);const auto actual=relative.empty()?locale:relative.begin()->string();
             open_lesson(window,*state,lgaed::windows::load_lesson(path,actual));}
         catch(const std::exception& error){show_catalog(window,*state);lgaed::presentation::internal_message_box(window,widen_error(error).c_str(),L"Abrir lección",MB_OK|MB_ICONERROR);}
@@ -503,7 +509,7 @@ LRESULT CALLBACK window_procedure(HWND window, UINT message, WPARAM wparam, LPAR
         const auto flow=lgaed::curriculum::learning_flow(data,where.course);
         where.lesson=lgaed::presentation::lesson_page_state(state->lesson).lesson_id;
         if(flow.between_lessons&&!where.unit.empty()){
-            const auto root=std::filesystem::path(lgaed::build::source_root)/L"app/src/main/assets/content";
+            const auto& root=state->content_root;
             if(const auto next=lgaed::windows::next_catalog_lesson(root,where,flow.between_units,flow.between_courses)){
                 auto list=*next;list.lesson.clear();const auto catalog=lgaed::windows::load_catalog(root,list);
                 const auto entry=std::ranges::find_if(catalog.entries,[&](const auto& value){return value.id==next->lesson;});
@@ -521,7 +527,7 @@ LRESULT CALLBACK window_procedure(HWND window, UINT message, WPARAM wparam, LPAR
                 if(current.locale==locale||where.locale==locale){refresh_catalog_view(state->catalog);return 0;}
                 if(current.lesson_id=="native_cpp_laboratory")return 0;
                 where.locale=locale;where.lesson.clear();
-                const auto content=std::filesystem::path(lgaed::build::source_root)/L"app/src/main/assets/content";
+                const auto& content=state->content_root;
                 const auto entries=lgaed::windows::load_catalog(content,where).entries;
                 const auto entry=std::ranges::find_if(entries,[&](const auto& candidate){return candidate.id==current.lesson_id;});
                 if(entry==entries.end()||!entry->available)throw std::runtime_error("The translated lesson is not available");
@@ -565,7 +571,7 @@ LRESULT CALLBACK window_procedure(HWND window, UINT message, WPARAM wparam, LPAR
                 const auto data=preferences(*state);const auto ui=lgaed::presentation::interface_language(data);
                 lab.title=ui=="fr"?"Prototype du moteur C++":ui=="en"?"C++ Engine Prototype":"Prototipo del motor C++";
                 lab.locale=lgaed::state::string_value(data,"native_windows","content_language","es");
-                lab.source_path=std::filesystem::path(lgaed::build::source_root)/L"app/src/main/assets/content"/lab.locale/L"programming";
+                lab.source_path=state->content_root/lab.locale/L"programming";
                 lgaed::curriculum::Block compiler;compiler.type=lgaed::curriculum::BlockType::cpp_compiler;compiler.stable_id="native_lab_editor";compiler.initial_code="#include <iostream>\n\nusing namespace std;\n\nint main()\n{\n    \n}";
                 lgaed::curriculum::Page page;page.stable_id="native_lab";page.blocks.push_back(std::move(compiler));lab.pages.push_back(std::move(page));open_lesson(window,*state,std::move(lab));}
             else if(state->pending_action==CatalogAction::smo){ShowWindow(state->catalog,SW_HIDE);
@@ -608,6 +614,7 @@ LRESULT CALLBACK window_procedure(HWND window, UINT message, WPARAM wparam, LPAR
         return 0;
     }
     case WM_TIMER:
+        if(wparam==audio_qa_timer&&state->audio_qa){state->audio_qa->tick();return 0;}
         if(wparam==audio_context_timer){try{update_audio_context(*state);}catch(const std::exception& error){OutputDebugStringW(widen_error(error).c_str());}return 0;}
         if (wparam == smoke_timer) {
             KillTimer(window, smoke_timer);
@@ -619,6 +626,7 @@ LRESULT CALLBACK window_procedure(HWND window, UINT message, WPARAM wparam, LPAR
         if(state->reader)state->reader->pause();
         if (state->lesson && !lgaed::presentation::flush_lesson_view(state->lesson)) return 0;
         KillTimer(window,audio_context_timer);
+        KillTimer(window,audio_qa_timer);
         if(state->narrator)state->narrator->shutdown();
         state->generation.reset();
         state->reader.reset();
@@ -657,15 +665,33 @@ int WINAPI wWinMain(HINSTANCE instance, HINSTANCE, PWSTR, int show_command) {
         std::vector<std::wstring_view> options;
         for (int i = 1; i < count; ++i) {
             options.emplace_back(values[i]);
-            if (options.back() == L"--smoke-test" || options.back() == L"--qa-instance") {
+            if (options.back() == L"--smoke-test" || options.back() == L"--qa-instance" || options.back()==L"--qa-audio-control") {
                 qa_requested = true;
             }
         }
+        const auto audio_qa=lgaed::presentation::parse_app_audio_revision_qa_arguments(options);
+        if(audio_qa)qa_requested=true;
         auto environment = lgaed::resolve_windows_environment(
             lgaed::parse_launch_options(options, *default_profile));
+        if(audio_qa)lgaed::presentation::bind_app_audio_revision_qa_environment(*audio_qa,environment);
         const auto profile_session = lgaed::prepare_windows_profile(environment);
         lgaed::initialize_profile_directories(environment.paths);
         WindowState state{std::move(environment)};
+        state.audio_qa_config=audio_qa;
+        if(audio_qa){
+            state.content_root=audio_qa->content;
+            lgaed::state::StateStore store(state.environment.paths.root);auto data=store.load();
+            if(!lgaed::state::find(data,"audio_revision_qa","initialized")){
+                data.preferences["audio_revision_qa"]["initialized"]=true;
+                data.preferences["audio_revision_qa"]["sentinel"]=std::string("keep QA preferences and progress");
+                data.preferences["native_windows"]["ui_language"]=std::string("es");
+                data.preferences["native_windows"]["content_language"]=std::string("es");
+                auto& prefs=data.preferences["lesson_narration_settings"];
+                prefs["enabled"]=true;prefs["engine"]=std::string("KOKORO");prefs["language"]=std::string("es");
+                prefs["kokoro_voice:es"]=std::string("ef_dora");prefs["kokoro_advance_generation"]=false;prefs["rate"]=1.;
+                store.save(data);
+            }
+        }
 
         WNDCLASSEXW definition{};
         definition.cbSize = sizeof(definition);
@@ -689,13 +715,26 @@ int WINAPI wWinMain(HINSTANCE instance, HINSTANCE, PWSTR, int show_command) {
         if (!AdjustWindowRectExForDpi(&initial_size, window_style, FALSE, 0, initial_dpi)) {
             throw std::runtime_error("Cannot calculate the initial DPI-aware window size");
         }
-        const auto window = CreateWindowExW(0, window_class, title.c_str(), window_style,
+        const auto window = CreateWindowExW(audio_qa?WS_EX_NOACTIVATE:0, window_class, title.c_str(), window_style,
             CW_USEDEFAULT, CW_USEDEFAULT, initial_size.right - initial_size.left,
             initial_size.bottom - initial_size.top, nullptr, nullptr, instance, &state);
         if (!window) {
             throw std::runtime_error(state.startup_error.empty() ? "Cannot create the native application window" : state.startup_error);
         }
-        ShowWindow(window, show_command);
+        if(audio_qa){
+            lgaed::presentation::AppAudioRevisionQaAccess access;
+            access.application=window;access.lesson=[&state]{return state.lesson;};access.reader=[&state]{return state.reader.get();};
+            access.generation=[&state]{return state.generation.get();};
+            access.available_processors=[&state]{return state.narrator?state.narrator->available_processors():0u;};
+            access.open=[window,&state](const auto& path,const auto& location){
+                lgaed::presentation::navigate_catalog(state.catalog,location);
+                open_lesson(window,state,lgaed::windows::load_lesson(path,location.locale));
+            };
+            access.preferences=[&state](const auto& mutation){update_preferences(state,mutation);};
+            state.audio_qa=std::make_unique<lgaed::presentation::AppAudioRevisionQa>(*audio_qa,state.environment,std::move(access));
+            if(!SetTimer(window,audio_qa_timer,50,nullptr))throw std::runtime_error("Cannot start isolated application QA controller");
+            state.audio_qa->tick();
+        }else ShowWindow(window, show_command);
         UpdateWindow(window);
         MSG message{};
         BOOL result = 0;
@@ -721,6 +760,12 @@ int WINAPI wWinMain(HINSTANCE instance, HINSTANCE, PWSTR, int show_command) {
             }
         }
         return result == -1 ? 4 : static_cast<int>(message.wParam);
+    } catch (const winrt::hresult_error& error) {
+        // Malformed QA JSON is a failed local probe. It must never surface a
+        // crash dialog or take focus from the person's ordinary application.
+        if(qa_requested)OutputDebugStringW(error.message().c_str());
+        else MessageBoxW(nullptr,error.message().c_str(),L"LearnGameAndEngineDev",MB_OK|MB_ICONERROR);
+        return 2;
     } catch (const std::exception& error) {
         const auto text = widen_error(error);
         if (qa_requested) {

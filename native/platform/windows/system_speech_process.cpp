@@ -94,6 +94,7 @@ JsonArray ranges(const std::vector<SpeechRange>& source){
 }
 NarrationSegment segment(const JsonObject& json){
     NarrationSegment result;result.text=string(json,L"text");result.prepared=string(json,L"preparedText");result.spoken=string(json,L"spokenText");
+    result.cache_namespace=string(json,L"cacheNamespace");
     for(const auto& [key,target]:{std::pair{L"spokenRanges",&result.spoken_ranges},std::pair{L"displayedRanges",&result.displayed_ranges}})
         for(const auto& value:json.GetNamedArray(key)){const auto row=value.GetObject();target->push_back({index(row,L"start"),index(row,L"end")});}
     return result;
@@ -102,6 +103,7 @@ JsonObject encoded_audio(const NarrationAudio& audio){
     JsonObject result;put(result,L"key",audio.key);put(result,L"source",audio.source);put(result,L"spoken",audio.spoken);put(result,L"provider",audio.provider);
     result.Insert(L"wav",JsonValue::CreateStringValue(audio.wav.native()));result.Insert(L"durationMs",JsonValue::CreateNumberValue(audio.duration_ms));
     result.Insert(L"cacheHit",JsonValue::CreateBooleanValue(audio.cache_hit));JsonArray timings;
+    put(result,L"cacheNamespace",audio.cache_namespace);
     for(const auto& timing:audio.timings){JsonObject row;row.Insert(L"start",JsonValue::CreateNumberValue(static_cast<double>(timing.start)));
         row.Insert(L"end",JsonValue::CreateNumberValue(static_cast<double>(timing.end)));row.Insert(L"startMs",JsonValue::CreateNumberValue(timing.start_ms));
         row.Insert(L"endMs",JsonValue::CreateNumberValue(timing.end_ms));timings.Append(row);}result.Insert(L"timings",timings);return result;
@@ -109,6 +111,7 @@ JsonObject encoded_audio(const NarrationAudio& audio){
 NarrationAudio decoded_audio(const JsonObject& json,const std::filesystem::path& cache){
     NarrationAudio result;result.key=string(json,L"key");result.source=string(json,L"source");result.spoken=string(json,L"spoken");result.provider=string(json,L"provider");
     result.wav=std::filesystem::path(json.GetNamedString(L"wav").c_str());result.duration_ms=json.GetNamedNumber(L"durationMs");result.cache_hit=json.GetNamedBoolean(L"cacheHit");
+    result.cache_namespace=string(json,L"cacheNamespace");
     state::require_safe_path(result.wav);
     const auto relative=result.wav.lexically_normal().lexically_relative((cache/L"windows_tts").lexically_normal());
     require(!relative.empty()&&!relative.is_absolute()&&std::ranges::none_of(relative,[](const auto& part){return part==L"..";}),"System speech reply escaped its private cache");
@@ -156,6 +159,7 @@ SystemSpeechProcessResult SystemSpeechProcess::prepare(const NarrationSegment& s
     require(!impl_->closed.load()&&!stop.stop_requested(),"System speech preparation cancelled");
     require(impl_->host.is_absolute()&&std::filesystem::is_regular_file(state::native_io_path(impl_->host)),"The native Windows speech helper is not installed");
     RequestFiles files(cache);JsonObject request;put(request,L"text",source.text);put(request,L"preparedText",source.prepared);put(request,L"spokenText",source.spoken);
+    put(request,L"cacheNamespace",source.cache_namespace);
     put(request,L"language",language);put(request,L"voice",voice);request.Insert(L"outputDirectory",JsonValue::CreateStringValue(cache.native()));
     // Decimal text preserves the full configured integer; no JSON double can
     // round the storage ceiling. The provider applies it only to new audio.
@@ -201,7 +205,9 @@ SystemSpeechProcessResult SystemSpeechProcess::prepare(const NarrationSegment& s
     if(reply.HasKey(L"error"))throw std::runtime_error(string(reply,L"error"));
     require(reply.GetNamedNumber(L"processId")==process.dwProcessId,"The native speech reply has a different process identity");
     const auto processors=index(reply,L"processors");require(processors&&processors<=2,"The native speech reply did not verify its hard CPU budget");
-    return {decoded_audio(reply.GetNamedObject(L"audio"),cache),static_cast<unsigned>(processors),process.dwProcessId};
+    auto audio=decoded_audio(reply.GetNamedObject(L"audio"),cache);
+    require(audio.cache_namespace==source.cache_namespace,"Native Windows speech returned another page revision");
+    return {std::move(audio),static_cast<unsigned>(processors),process.dwProcessId};
 }
 
 int run_system_speech_host(std::span<const std::wstring_view> args) noexcept{

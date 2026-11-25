@@ -28,6 +28,62 @@ private fun sha256(file: File): String {
 }
 private fun language(request: JSONObject): NarrationLanguage =
     NarrationLanguage.fromTag(request.getString("language")) ?: error("Unsupported narration language")
+/** A page version owns its whole source and script, never just block IDs/counts.
+ * Object member order/JSON whitespace are immaterial; array/reading order and
+ * exact scalar values remain significant. Other pages cannot invalidate it. */
+private object PageNarrationRevision {
+    private fun canonical(value: Any?, depth: Int = 0): String {
+        require(depth <= 64) { "Narration page source is too deep" }
+        return when (value) {
+            null, JSONObject.NULL -> "null"
+            is JSONObject -> value.keys().asSequence().toList().sorted().joinToString(",","{","}") {
+                JSONObject.quote(it) + ":" + canonical(value.get(it),depth + 1)
+            }
+            is JSONArray -> (0 until value.length()).joinToString(",","[","]") { canonical(value.get(it),depth + 1) }
+            is String -> JSONObject.quote(value)
+            is Boolean -> value.toString()
+            is Number -> JSONObject.numberToString(value)
+            else -> error("Unsupported narration source scalar")
+        }
+    }
+    fun source(lesson: JSONObject, page: Int): JSONObject {
+        val source = lesson.getJSONArray("pages").getJSONObject(page)
+        val layout = lesson.optJSONObject("stateLayout")?.optJSONArray("current")?.optJSONObject(page)
+        val owners = layout?.optJSONArray("blocks")?.let { ids -> (0 until ids.length()).map { ids.getString(it) }.toSet() }.orEmpty()
+        val semantics = lesson.optJSONObject("textSemantics")
+        val fields = semantics?.optJSONArray("fields")
+        val selected = JSONArray()
+        if (fields != null) for (i in 0 until fields.length()) {
+            val field = fields.getJSONObject(i)
+            if (field.optString("block") in owners) selected.put(field)
+        }
+        // Descriptor order does not change narration: source offsets/order do.
+        val sortedFields = JSONArray((0 until selected.length()).map { selected.getJSONObject(it) }
+            .sortedWith(compareBy({ it.optString("block") },{ it.optString("path") })))
+        return JSONObject().put("page",JSONObject(source.toString())).put("semanticFields",sortedFields).apply {
+            if (page == 0) {
+                if (lesson.has("title")) put("title",lesson.get("title"))
+                semantics?.optJSONArray("rootFields")?.let { roots ->
+                    put("rootSemanticFields",JSONArray((0 until roots.length()).map { roots.getJSONObject(it) }.sortedBy { it.optString("path") }))
+                }
+            }
+            if (semantics != null && (selected.length() > 0 || page == 0 &&
+                (semantics.optJSONArray("rootFields")?.length() ?: 0) > 0)) put("semanticVersion",semantics.get("version"))
+        }
+    }
+    fun pageId(lesson: JSONObject, page: Int, contentLanguage: String): String {
+        val source = lesson.getJSONArray("pages").getJSONObject(page)
+        val stable = lesson.optJSONObject("stateLayout")?.optJSONArray("current")?.optJSONObject(page)?.optString("id")
+            ?.takeIf(String::isNotEmpty) ?: source.optString("id").takeIf(String::isNotEmpty) ?: page.toString()
+        return lesson.optString("id","anonymous-lesson") + "/" + contentLanguage + "/" + stable
+    }
+    fun key(source: JSONObject, request: JSONObject, contentLanguage: String, texts: List<String>): String =
+        sha256(canonical(JSONObject().put("format","windows-page-narration-v1")
+            .put("source",source).put("language",language(request).tag).put("contentLanguage",contentLanguage)
+            .put("uiLanguage",request.optString("uiLanguage",language(request).tag))
+            .put("readingContext",request.optString("readingContext","auto"))
+            .put("modelRevision",KokoroModelManifest.revision).put("script",JSONArray(texts))).toByteArray(Charsets.UTF_8))
+}
 // Mirrors Android NarrationStorageBudget without evicting valid audio. This
 // runs only for a cache miss; a reduced limit cannot prevent cached playback.
 private fun requireAudioSpace(cache: File, request: JSONObject, nextBytes: Long) {
@@ -278,6 +334,11 @@ private class Backend(private val resources: File, private val englishResources:
         val contentLanguage = if (request.has("contentLanguage")) request.getString("contentLanguage")
             else lesson.optJSONObject("stateLayout")?.optString("locale")?.takeIf(String::isNotEmpty) ?: lang.tag
         require(contentLanguage in setOf("es","fr","en","en-US","en-GB")) { "Unsupported content language owner" }
+        val page = request.getInt("page")
+        // Capture before the request-local C++ mode projection below mutates
+        // parsed objects. No authored source or another page enters this proof.
+        val pageSource = PageNarrationRevision.source(lesson,page)
+        val pageId = PageNarrationRevision.pageId(lesson,page,contentLanguage)
         run {
             val types = setOf("multiple_choice","fill_code","inline_fill_code","output_prediction","order_code","drag_fill_code")
             val pages = lesson.optJSONArray("pages")
@@ -303,16 +364,19 @@ private class Backend(private val resources: File, private val englishResources:
                 }
             }
         }
-        val segments = NarrationSegments.sentences(texts).map { prepared ->
+        val sentences = NarrationSegments.sentences(texts)
+        val segments = sentences.map { prepared ->
             // Background preparation uses the canonical already-normalized script.
             // It writes audio only. The visible reader retains its own exact
             // source projection and derives timings against that unchanged audio.
             val segment = Segment(ManualEnglishSpeech.strip(prepared),prepared,emptyList(),emptyList())
             plans[planKey(lang,segment.source,prepared)] = segment
             JSONObject().put("text",segment.source).put("preparedText",prepared)
+                .put("spokenText",segment.source)
                 .put("key",KokoroNarrationCache.key(lang.tag,request.getString("voice"),prepared))
         }
-        return JSONObject().put("segments",JSONArray(segments))
+        return JSONObject().put("segments",JSONArray(segments)).put("pageId",pageId)
+            .put("revision",PageNarrationRevision.key(pageSource,request,contentLanguage,sentences))
     }
     fun firstUnitManifest(): JSONObject = JSONObject().put("manifest",HistoricalDoraPack.manifest(assets))
     fun cancel(request: Request) {
@@ -357,9 +421,12 @@ private class Backend(private val resources: File, private val englishResources:
         check(result.isDirectory || result.mkdirs()) { "Cannot create private narration cache" }
         return result
     }
-    private fun reuse(target: File, key: String, job: Request): String? {
+    private fun reuse(target: File, key: String, job: Request, compatibleOriginal: Boolean = true): String? {
         if (sampleCount(target) != null) return "cache"
         check(!target.exists()) { "Existing narration cache failed validation; it was left untouched" }
+        // A newly edited page must synthesize its complete script. Historical
+        // sentence/packaged recordings cannot prove the new page generation.
+        if (!compatibleOriginal) return null
         val original = originalWavs?.resolve("$key.wav")
         val partial = File(target.parentFile,".${target.name}-${job.id.hashCode()}.part")
         try {
@@ -432,11 +499,19 @@ private class Backend(private val resources: File, private val englishResources:
                 ?: error("Request plan first when a block contains several sentences")
             val voice = request.optString("voice",language.defaultVoice)
             require(KokoroVoiceCatalog.find(voice)?.language == language) { "Voice does not belong to the selected language" }
-            val key = KokoroNarrationCache.key(language.tag,voice,selected.prepared)
+            val namespace = request.optString("cacheNamespace","")
+            require(!request.has("cacheNamespace") || request.opt("cacheNamespace") is String && namespace.matches(Regex("[0-9a-f]{64}"))) {
+                "Invalid narration page cache namespace"
+            }
+            val originalKey = KokoroNarrationCache.key(language.tag,voice,selected.prepared)
+            val key = if (namespace.isEmpty()) originalKey else sha256("windows-page-pcm-v1\u0000$namespace\u0000$originalKey".toByteArray(Charsets.UTF_8))
             val cache = directory(request)
             val audio = File(cache,"$key.wav")
-            var origin = reuse(audio,key,job)
+            var origin = reuse(audio,key,job,namespace.isEmpty())
             val cacheHit = origin != null
+            val cpuClass = request.optString("cpuClass","current_page")
+            require(cpuClass in setOf("current_page","background")) { "Invalid narration CPU class" }
+            var synthesisThreads = 0
             current(job)
             if (!cacheHit) requireAudioSpace(cache, request, 4L * 1024 * 1024)
             val sidecar = File(cache,"$key-${sha256(source.toByteArray(Charsets.UTF_8))}.timings.json")
@@ -457,6 +532,7 @@ private class Backend(private val resources: File, private val englishResources:
             val chunks = phone?.let { KokoroPhonemeChunks.split(it.text) }.orEmpty()
             if (!cacheHit) {
                 val threads = request.optInt("threads",Runtime.getRuntime().availableProcessors()).coerceIn(1,Runtime.getRuntime().availableProcessors())
+                synthesisThreads = threads
                 engine = engineProfiles.getOrPut(threads) {
                     if(engineProfiles.size >= 2) {
                         val oldest=engineProfiles.entries.first();oldest.value.close();engineProfiles.remove(oldest.key)
@@ -505,6 +581,8 @@ private class Backend(private val resources: File, private val englishResources:
             }.onFailure { if (it !is InterruptedException) System.err.println("Optional exact word alignment unavailable: ${it.message}") }.getOrElse { JSONArray() }
             current(job)
             return JSONObject().put("key",key).put("wav",audio.canonicalPath).put("sampleRate",24000)
+                .put("cacheNamespace",namespace)
+                .put("synthesisThreads",synthesisThreads).put("cpuClass",cpuClass)
                 .put("sampleCount",samples).put("durationMs",samples / 24.0).put("sourceText",source)
                 .put("spokenText",ManualEnglishSpeech.strip(selected.prepared)).put("timings",timings)
                 .put("alignmentAvailable",timings.length() > 0).put("cacheHit",cacheHit).put("audioOrigin",origin)

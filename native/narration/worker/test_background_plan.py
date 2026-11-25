@@ -1,5 +1,6 @@
 """Background preparation uses the original script and unchanged cache keys."""
 import hashlib
+import copy
 import json
 import math
 from pathlib import Path
@@ -271,6 +272,84 @@ class BackgroundPlanTest(unittest.TestCase):
                     language=language,voice=voice,uiLanguage=language)["segments"]
                 visible=self.worker.ask("plan",text=source,language=language,voice=voice)["segments"]
                 self.assertEqual([s["key"] for s in visible],[s["key"] for s in background])
+
+
+class WindowsPageNarrationRevisionTest(unittest.TestCase):
+    """No models: source/page isolation and hidden-success script ownership."""
+    @classmethod
+    def setUpClass(cls):
+        cls.worker = Worker(missing_resources=True)
+
+    @classmethod
+    def tearDownClass(cls):
+        cls.worker.close()
+
+    @staticmethod
+    def lesson():
+        return {"id": "revision-fixture", "title": "Una lección.", "pages": [
+            {"blocks": [{"type": "paragraph", "text": "La página cambia."},
+                        {"type": "multiple_choice", "question": "Elige el nombre.",
+                         "options": ["saldo", "total"], "correctIndex": 0,
+                         "explanation": "El nombre correcto es saldo."}]},
+            {"blocks": [{"type": "paragraph", "text": "Esta página se conserva."}]}],
+            "stateLayout": {"version": 2, "current": [
+                {"id": "first", "blocks": ["intro", "exercise"]},
+                {"id": "second", "blocks": ["unchanged"]}]}}
+
+    def plan(self, lesson, page=0, **fields):
+        return self.worker.ask("curriculum_plan", lessonJson=json.dumps(lesson, ensure_ascii=False),
+            page=page, language="es", voice="ef_dora", uiLanguage="es", **fields)
+
+    def test_every_page_source_change_revises_entire_script_without_touching_other_page(self):
+        original = self.lesson()
+        before, other = self.plan(original), self.plan(original, 1)
+        self.assertRegex(before["revision"], r"^[0-9a-f]{64}$")
+        self.assertEqual("revision-fixture/es/first", before["pageId"])
+        variants = []
+        for change in ("text", "question", "explanation", "options", "order", "new_puzzle", "removed_puzzle"):
+            lesson = copy.deepcopy(original)
+            blocks = lesson["pages"][0]["blocks"]
+            if change == "text": blocks[0]["text"] = "La explicación cambia."
+            elif change == "question": blocks[1]["question"] = "Elige ahora el nombre."
+            elif change == "explanation": blocks[1]["explanation"] = "Ahora continúa el siguiente título."
+            elif change == "options": blocks[1]["options"][1] = "importe"
+            elif change == "order": blocks.reverse(); lesson["stateLayout"]["current"][0]["blocks"].reverse()
+            elif change == "new_puzzle": blocks.append(copy.deepcopy(blocks[1])); lesson["stateLayout"]["current"][0]["blocks"].append("new")
+            else: blocks.pop(); lesson["stateLayout"]["current"][0]["blocks"].pop()
+            variants.append((change, lesson))
+        for change, lesson in variants:
+            with self.subTest(change=change):
+                self.assertNotEqual(before["revision"], self.plan(lesson)["revision"])
+                self.assertEqual(other["revision"], self.plan(lesson, 1)["revision"])
+                self.assertEqual(before["pageId"], self.plan(lesson)["pageId"])
+
+    def test_semantics_exact_numbers_and_prepared_script_settings_are_versioned(self):
+        original = self.lesson()
+        before = self.plan(original)
+        semantic = copy.deepcopy(original)
+        source = semantic["pages"][0]["blocks"][0]["text"]
+        semantic["textSemantics"] = {"version": 1, "fields": [{"block": "intro", "path": "/text",
+            "sourceSha256": hashlib.sha256(source.encode()).hexdigest(), "spans": [
+                {"start": 0, "end": 2, "text": "La", "role": "prose", "reading": "natural"}]}]}
+        self.assertNotEqual(before["revision"], self.plan(semantic)["revision"])
+        self.assertEqual(self.plan(original, 1)["revision"], self.plan(semantic, 1)["revision"])
+        self.assertNotEqual(before["revision"], self.plan(original, readingContext="cpp")["revision"])
+        first, second = copy.deepcopy(original), copy.deepcopy(original)
+        first["pages"][0]["blocks"][0]["exactQA"] = 9007199254740992
+        second["pages"][0]["blocks"][0]["exactQA"] = 9007199254740993
+        self.assertNotEqual(self.plan(first)["revision"], self.plan(second)["revision"])
+
+    def test_formatting_key_order_and_other_page_title_scope_preserve_revision(self):
+        lesson = self.lesson()
+        before = self.plan(lesson)
+        raw = json.dumps(lesson, ensure_ascii=False, sort_keys=True, indent=3)
+        reordered = self.worker.ask("curriculum_plan", lessonJson=raw, page=0,
+            language="es", voice="ef_dora", uiLanguage="es")
+        self.assertEqual(before["revision"], reordered["revision"])
+        second = self.plan(lesson, 1)
+        lesson["title"] = "Otro título de la misma lección."
+        self.assertNotEqual(before["revision"], self.plan(lesson)["revision"])
+        self.assertEqual(second["revision"], self.plan(lesson, 1)["revision"])
 
 
 if __name__ == "__main__":

@@ -40,7 +40,7 @@ struct NarrationPlayer::Impl {
         }
         NarrationPlayerFailure diagnostic(){const std::lock_guard lock(failure_mutex);return failure;}
     };
-    MediaPlayer player{nullptr};std::shared_ptr<Events> events;double requested=0,rate=1;bool started=false,seeking=false;
+    MediaPlayer player{nullptr};std::shared_ptr<Events> events;double requested=0,rate=1;bool started=false,seeking=false,muted=false;
     void tick(){if(!player)return;if(events->failed.load())throw NarrationPlayerError(events->diagnostic());
         if(events->opened.load()&&!started){player.PlaybackSession().Position(std::chrono::milliseconds(static_cast<std::int64_t>(requested)));
             player.PlaybackSession().PlaybackRate(rate);player.Play();started=true;seeking=requested>0;}
@@ -55,6 +55,7 @@ void NarrationPlayer::play(const std::filesystem::path& file,double milliseconds
     std::wstring uri(32768,L'\0');DWORD count=static_cast<DWORD>(uri.size());if(FAILED(UrlCreateFromPathW(file.c_str(),uri.data(),&count,0)))throw std::runtime_error("No se pudo abrir la grabación de voz.");uri.resize(count);
     impl_->events=std::make_shared<Impl::Events>();const auto events=impl_->events;
     impl_->player=MediaPlayer();impl_->player.AutoPlay(false);impl_->player.AudioCategory(MediaPlayerAudioCategory::Speech);
+    impl_->player.IsMuted(impl_->muted);
     impl_->player.CommandManager().IsEnabled(false);
     impl_->player.MediaOpened([events](const auto&,const auto&){events->opened.store(true);});
     impl_->player.MediaEnded([events](const auto&,const auto&){events->ended.store(true);});
@@ -64,6 +65,7 @@ void NarrationPlayer::play(const std::filesystem::path& file,double milliseconds
 void NarrationPlayer::tick(){impl_->tick();}
 void NarrationPlayer::seek(double value){impl_->requested=std::max(0.0,value);if(impl_->player&&impl_->started){impl_->events->ended.store(false);impl_->seeking=true;impl_->player.PlaybackSession().Position(std::chrono::milliseconds(static_cast<std::int64_t>(impl_->requested)));}}
 void NarrationPlayer::set_rate(double value){impl_->rate=narration::clamp_playback_rate(value);if(impl_->player&&impl_->started)impl_->player.PlaybackSession().PlaybackRate(impl_->rate);}
+void NarrationPlayer::set_muted(bool muted){impl_->muted=muted;if(impl_->player)impl_->player.IsMuted(muted);}
 double NarrationPlayer::playback_rate()const{return impl_->player&&impl_->started?impl_->player.PlaybackSession().PlaybackRate():impl_->rate;}
 double NarrationPlayer::position()const{return impl_->position();}
 bool NarrationPlayer::ended()const{return impl_->events&&impl_->events->ended.load();}

@@ -3195,6 +3195,12 @@ struct LessonView {
         result.narration_language=lesson.pages.at(page).narration_language.value_or(lesson.narration_language.value_or(""));
         result.lesson_title=lesson.title;
         result.content_revision=content_revision;
+        if(pending_math_restorations)result.narration_verification_pending=std::ranges::any_of(lesson.pages[page].blocks,[&](const auto& current){
+            if(current.type!=BlockType::math_puzzle)return false;
+            const auto identity=curriculum::exercise_key(lesson,current);
+            const auto saved=state::get_response(data,identity);
+            return saved&&saved->correct&&!verified_math.contains(identity)&&!rejected_math.contains(identity);
+        });
         const auto base=route+'/'+lesson.id;
         result.narration_page_identity=base+'/'+std::to_string(page);
         if(lesson.state_layout.version){
@@ -3204,6 +3210,9 @@ struct LessonView {
             result.narration_page_identity=base+"/state-layout-v1/"+lesson.state_layout.lineage+'/'+state::sha256(order);
         }
         return result;
+    }
+    LessonNarrationSource narration_source() const {
+        return {lesson.raw_json,route=="programming"?"cpp":"auto",lesson.locale,page};
     }
     LessonOptionsSnapshot options_snapshot() const {
         LessonOptionsSnapshot result;result.current_page=page;result.page_count=lesson.pages.size();
@@ -5414,6 +5423,8 @@ LRESULT CALLBACK view_proc(HWND window, UINT message, WPARAM wparam, LPARAM lpar
         }
         case lesson_page_query_message:
             if (lparam) *reinterpret_cast<LessonPageState*>(lparam) = view->page_state(); return 1;
+        case lesson_narration_source_message:
+            if (lparam) *reinterpret_cast<LessonNarrationSource*>(lparam) = view->narration_source(); return 1;
         case lesson_options_query_message:
             if(lparam)*reinterpret_cast<LessonOptionsSnapshot*>(lparam)=view->options_snapshot();return 1;
         case lesson_options_action_message:return view->invoke_option(static_cast<LessonOptionAction>(wparam));
@@ -5537,6 +5548,11 @@ bool flush_lesson_view(HWND window) {
 
 LessonPageState lesson_page_state(HWND window) {
     LessonPageState result; if (window) SendMessageW(window,lesson_page_query_message,0,reinterpret_cast<LPARAM>(&result)); return result;
+}
+LessonNarrationSource lesson_narration_source(HWND window) {
+    LessonNarrationSource result;
+    if(window)SendMessageW(window,lesson_narration_source_message,0,reinterpret_cast<LPARAM>(&result));
+    return result;
 }
 bool navigate_lesson_view(HWND window,std::size_t page) {
     return window && SendMessageW(window,lesson_page_navigate_message,page,0) != 0;

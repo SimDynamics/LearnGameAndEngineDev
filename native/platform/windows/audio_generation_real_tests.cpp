@@ -101,9 +101,15 @@ void check_selected_kokoro(NarrationWorker& worker,const Inventory& fixture,cons
         const auto bytes=state::read_bytes(fixture.root/"es"/curriculum::catalog_lesson_path(location,fixture.lessons[which]));
         const std::string source(reinterpret_cast<const char*>(bytes.data()),bytes.size());
         for(unsigned page=0;page<2;++page){
+            const auto canonical=worker.page_plan(source,page,"es",selection.voices.at("es"),"es",{},
+                location.route=="programming"?"cpp":"auto");
+            const auto session=worker.begin_page(cache,canonical.page_id,"es",selection.voices.at("es"),"KOKORO",
+                canonical,NarrationCpuClass::current_page);
+            check(session.has_value(),"The completed neural page could not be inspected independently");
             const auto plan=JsonObject::Parse(winrt::to_hstring(worker.curriculum_plan(source,page,"es",selection.voices.at("es"),"es",{},
                 location.route=="programming"?"cpp":"auto")));
-            for(const auto& value:plan.GetNamedArray(L"segments")){const auto row=value.GetObject();const auto key=winrt::to_string(row.GetNamedString(L"key"));
+            for(const auto& value:plan.GetNamedArray(L"segments")){const auto row=value.GetObject();const auto original_key=winrt::to_string(row.GetNamedString(L"key"));
+                const auto key=state::sha256(std::string("windows-page-pcm-v1\0",20)+session->cache_namespace()+'\0'+original_key);
                 const auto wav=cache/winrt::to_hstring(key+".wav").c_str();check(std::filesystem::is_regular_file(wav),"The selected voice's independently planned key was not stored");real_pcm(wav);++hits;}
         }
     }
@@ -112,10 +118,27 @@ void check_selected_kokoro(NarrationWorker& worker,const Inventory& fixture,cons
 }
 int main(){try{
     ensure_winrt_apartment();const auto instance=L"audio-generation-real-"+std::to_wstring(GetCurrentProcessId())+L"-"+std::to_wstring(GetTickCount64());
-    const auto environment=resolve_windows_environment({ProfileId::Codex,instance,true});initialize_profile_directories(environment.paths);
+    const auto owned=std::filesystem::path(L"C:\\LGAED-QA")/instance;
+    state::require_safe_path(owned);check(!std::filesystem::exists(owned),"An existing real-audio QA tree must never be overwritten");
+    WindowsEnvironment environment;environment.options={ProfileId::Codex,instance,true};
+    const auto profile=owned/L"profile";
+    environment.paths={profile,profile/L"progress",profile/L"drafts",profile/L"preferences",
+        owned/L"logs",owned/L"projects",owned/L"cache"};
+    for(const auto* path:{&environment.paths.root,&environment.paths.progress,&environment.paths.drafts,&environment.paths.preferences,
+            &environment.paths.logs,&environment.paths.projects,&environment.paths.cache}){
+        const auto relative=path->lexically_normal().lexically_relative(owned);
+        check(path->is_absolute()&&!relative.empty()&&!relative.is_absolute()&&
+            std::ranges::none_of(relative,[](const auto& part){return part==L"..";}),"A real-audio QA path escaped its owned tree");
+        state::require_safe_path(*path);std::filesystem::create_directories(state::native_io_path(*path));
+    }
     const auto nonce="sol luna mesa libro "+std::to_string(GetTickCount64());
     const auto neural=content(environment.paths.projects/L"kokoro-content",nonce,false);
-    auto worker=std::make_shared<NarrationWorker>(std::filesystem::path(build::source_root)/L"out/narration/runtime.json");
+    const auto runtime_source=state::read_bytes(std::filesystem::path(build::source_root)/L"out/narration/runtime.json",1024*1024);
+    const auto private_runtime=environment.paths.logs/L"narration-runtime.json";
+    // The installed runtime contains absolute dependency/model paths. Copy
+    // only its configuration so this worker's stderr also stays in owned QA.
+    write_new(private_runtime,std::string_view(reinterpret_cast<const char*>(runtime_source.data()),runtime_source.size()));
+    auto worker=std::make_shared<NarrationWorker>(private_runtime);
     state::StateData data;data.preferences["lesson_narration_settings"]["enabled"]=true;
     data.preferences["lesson_narration_settings"]["kokoro_advance_generation"]=true;
     data.preferences["lesson_narration_settings"]["engine"]=std::string("KOKORO");

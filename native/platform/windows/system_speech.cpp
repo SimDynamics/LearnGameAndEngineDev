@@ -246,13 +246,15 @@ NarrationAudio synthesize_system_speech_impl(const NarrationSegment& segment,std
     require(found != installed.end(),"No hay una voz SAPI instalada para el idioma y la voz seleccionados. No se sustituye por otro idioma.");
     cancelled(stop);const auto requested_language=normalized(language);
     const auto old_key=state::sha256(legacy_framing(segment,requested_language,*found,spoken));
-    const auto key=state::sha256(pcm_framing(requested_language,*found,spoken));
+    require(segment.cache_namespace.empty()||(segment.cache_namespace.size()==64&&std::ranges::all_of(segment.cache_namespace,[](char c){return (c>='0'&&c<='9')||(c>='a'&&c<='f');})),"Invalid narration page cache namespace");
+    const auto pcm_key=state::sha256(pcm_framing(requested_language,*found,spoken));
+    const auto key=segment.cache_namespace.empty()?pcm_key:state::sha256(std::string("windows-page-pcm-v1\0",20)+segment.cache_namespace+'\0'+pcm_key);
     require(output_directory.is_absolute(),"La caché de voz debe pertenecer a una ruta privada absoluta.");
     const auto root = output_directory / "windows_tts"; const auto final = root / key; state::require_safe_path(final);
     // Never migrate, rewrite or discard an existing v1 recording. Its exact
     // source/mapping identity is still authoritative for that old entry.
     const auto legacy=root/old_key;state::require_safe_path(legacy);
-    if(std::filesystem::exists(state::native_io_path(legacy)))return reuse_legacy(legacy,old_key,segment,spoken);
+    if(segment.cache_namespace.empty()&&std::filesystem::exists(state::native_io_path(legacy)))return reuse_legacy(legacy,old_key,segment,spoken);
     if(std::filesystem::exists(state::native_io_path(final)))return reuse_pcm(final,key,segment,spoken,requested_language,*found);
     if(budget)require_system_budget(output_directory,*budget);
     std::filesystem::create_directories(state::native_io_path(root));
@@ -331,10 +333,12 @@ NarrationAudio synthesize_system_speech_impl(const NarrationSegment& segment,std
 }
 NarrationAudio synthesize_system_speech(const NarrationSegment& segment,std::string_view language,std::string_view voice_id,
     const std::filesystem::path& output_directory,std::stop_token stop){
-    return synthesize_system_speech_impl(segment,language,voice_id,output_directory,stop,{});
+    auto result=synthesize_system_speech_impl(segment,language,voice_id,output_directory,stop,{});
+    result.cache_namespace=segment.cache_namespace;return result;
 }
 NarrationAudio synthesize_system_speech_with_budget(const NarrationSegment& segment,std::string_view language,std::string_view voice_id,
     const std::filesystem::path& output_directory,std::stop_token stop,std::uint64_t budget){
-    return synthesize_system_speech_impl(segment,language,voice_id,output_directory,stop,budget);
+    auto result=synthesize_system_speech_impl(segment,language,voice_id,output_directory,stop,budget);
+    result.cache_namespace=segment.cache_namespace;return result;
 }
 } // namespace lgaed::windows

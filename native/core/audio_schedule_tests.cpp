@@ -39,8 +39,14 @@ int main(){try{
         {{"es","programming","p1","u1","l1"},{},6,"es"},
         {{"es","programming","p1","u1","l1"},{},7,"es"},
         {{"es","math_physics","m1","mu1","ml1"},{},0,"es"}};
+    const std::vector<std::size_t> revisions{7,2,4};
+    check(narration::audio_schedule(updated,{"es","programming","p1","u1","l1"},1,"math_physics",revisions)
+        ==std::vector<std::size_t>{2,4,7,8,3,5,6,0},"Changed pages3,5,8 did not precede the saved route turn in curricular order");
     check(narration::audio_schedule(updated,{"es","programming","p1","u1","l1"},1,"math_physics")
-        ==std::vector<std::size_t>{2,3,4,5,6,7,8,0},"Updated future pages did not preserve curricular order ahead of the saved route turn");
+        ==std::vector<std::size_t>{8,2,3,4,5,6,7,0},"After changed pages the normal route turn must resume before distant backlog");
+    const std::vector<std::size_t> invalid_revisions{0,1,8,99};
+    check(narration::audio_schedule(updated,{"es","programming","p1","u1","l1"},1,"math_physics",invalid_revisions)
+        ==std::vector<std::size_t>{8,2,3,4,5,6,7,0},"Past/current/other-route/unknown entries escaped revision ordering bounds");
     std::cout<<"PASS studied-page exclusion, following curricular order, saved route turns, exhausted route and empty catalog\n";
     return 0;
 }catch(const std::exception& error){std::cerr<<error.what()<<'\n';return 1;}}

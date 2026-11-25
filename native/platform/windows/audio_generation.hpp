@@ -30,6 +30,10 @@ struct AudioGenerationStatus {
     // not a running synthesis. scans permits diagnostics without exposing text.
     bool finished=false,waiting=false;
     std::uint64_t scans=0;
+    // Internal diagnostics of the current revision and last actual synthesis;
+    // cache hits never pretend to consume model threads.
+    std::string revision,cpu_class;
+    unsigned synthesis_threads=0;
 };
 // One app-owned cancellable producer. It survives catalog/lesson navigation and
 // uses the existing worker/cache; it never owns playback or reading bookmarks.

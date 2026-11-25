@@ -30,10 +30,14 @@ struct LessonReaderSegmentSnapshot {
 struct LessonReaderSnapshot {
     bool playing = false,allocated = false,planned = false,preparing = false,finished = false,waiting_gate = false;
     bool preparation_suspended = false;
+    bool waiting_verification = false;
     std::size_t index = 0;
     std::int64_t offset = 0,heard_through = 0;
     double rate = 1,playback_rate = 0;
     std::string error,key;
+    std::string page_audio_revision;
+    bool page_audio_complete = false;
+    unsigned foreground_synthesis_threads = 0;
     std::vector<LessonReaderSegmentSnapshot> segments;
 };
 class LessonReader {
@@ -45,6 +49,9 @@ public:
     void feedback(std::size_t block,bool correct);
     void toggle();
     void pause();
+    // Test-owned readers can silence their own MediaPlayer output while
+    // retaining real Kokoro PCM decoding/timing. No preference is persisted.
+    void set_qa_playback_muted(bool);
     // Header action: hide pauses/releases through the existing pause policy;
     // showing controls never starts or restarts playback.
     void set_controls_visible(bool);

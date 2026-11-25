@@ -156,6 +156,55 @@ void calculator_heavy_protocol(const std::filesystem::path& build_directory) {
     check(foreground.wait_for(std::chrono::seconds(1))==std::future_status::ready&&foreground.get(),"Resumed synthesis could not be cancelled after mathematical evaluation");
     std::cout<<"PASS controlled IPC calculator exclusion pauses current synthesis, preserves independent expression editing and resumes the same page after evaluation (not an audio benchmark)\n";
 }
+void page_revision_cache(lgaed::windows::NarrationWorker& worker,const std::filesystem::path& cache){
+    using namespace lgaed;using namespace windows;
+    // A semantic/source revision with unchanged spoken words must still own a
+    // complete new PCM generation. Every waveform below is real Kokoro.
+    const std::string original=R"({"id":"native-page-revision","pages":[{"blocks":[{"type":"paragraph","text":"La página conserva su lectura."}]}]})";
+    const std::string modified=R"({"id":"native-page-revision","pages":[{"blocks":[{"type":"paragraph","text":"La página conserva su lectura.","emphasis":[{"text":"página","style":"bold"}]}]}]})";
+    const auto before=worker.page_plan(original,0,"es","ef_dora","es");
+    const auto after=worker.page_plan(modified,0,"es","ef_dora","es");
+    check(before.page_id==after.page_id&&before.revision!=after.revision&&before.segments.size()==1&&after.segments.size()==1,
+        "A page source revision was reduced to unchanged sentence text or IDs");
+    const auto output=cache/L"page-revision";
+    auto old=worker.begin_page(output,before.page_id,"es","ef_dora","KOKORO",before,NarrationCpuClass::background);
+    check(old.has_value(),"Cannot begin the original page generation");
+    auto sentence=before.segments.front();sentence.cache_namespace=old->cache_namespace();
+    const auto original_audio=worker.prepare(sentence,"es","ef_dora",output,2,old->stop_token());
+    const auto original_bytes=state::read_bytes(original_audio.wav);const auto original_time=std::filesystem::last_write_time(original_audio.wav);
+    const std::vector original_complete{original_audio};check(old->commit(original_complete),"Original complete page was not committed");
+    check(worker.published_page_revision(output,before.page_id,"es","ef_dora","KOKORO")==before.revision,
+        "Read-only inspection did not authenticate the published page owner");
+    check(!worker.published_page_revision(output,before.page_id,"es","em_santa","KOKORO"),
+        "A published page completion leaked into another voice's owner");
+    auto latest=worker.begin_page(output,after.page_id,"es","ef_dora","KOKORO",after,NarrationCpuClass::current_page);
+    check(latest.has_value()&&old->stop_token().stop_requested()&&!old->current(),"A new foreground page did not cancel its obsolete generation");
+    check(!worker.begin_page(output,after.page_id,"es","ef_dora","KOKORO",after,NarrationCpuClass::background),
+        "Foreground and background acquired the same page simultaneously");
+    sentence=after.segments.front();sentence.cache_namespace=latest->cache_namespace();
+    const auto revised=worker.prepare(sentence,"es","ef_dora",output,2,latest->stop_token());
+    check(original_audio.key!=revised.key&&original_audio.wav!=revised.wav&&old->cache_namespace()!=latest->cache_namespace(),
+        "A changed page reused the previous generation's sentence PCM");
+    const std::vector completed{revised};check(latest->commit(completed),"Revised complete page was not committed");
+    check(worker.published_page_revision(output,after.page_id,"es","ef_dora","KOKORO")==after.revision&&latest->current(),
+        "Read-only revision inspection changed the active page session");
+    check(!old->commit(original_complete),"An obsolete completion overwrote the current page manifest");
+    bool manifest_found=false;
+    for(const auto& file:std::filesystem::directory_iterator(output/L"page-audio"))if(file.path().extension()==L".json"){
+        const auto bytes=state::read_bytes(file.path());const auto manifest=json(std::string_view(reinterpret_cast<const char*>(bytes.data()),bytes.size()));
+        if(manifest.GetNamedString(L"page")==winrt::to_hstring(after.page_id)){
+            manifest_found=true;check(manifest.GetNamedString(L"revision")==winrt::to_hstring(after.revision),"An obsolete revision became current on disk");}}
+    check(manifest_found,"No atomic whole-page completion manifest was published");
+    check(state::read_bytes(original_audio.wav)==original_bytes&&std::filesystem::last_write_time(original_audio.wav)==original_time,
+        "Regenerating a changed page modified the preserved earlier waveform");
+    const auto bytes=state::read_bytes(revised.wav);const auto stamp=std::filesystem::last_write_time(revised.wav);
+    const auto again=worker.prepare(sentence,"es","ef_dora",output,2,latest->stop_token());
+    check(again.cache_hit&&again.key==revised.key&&state::read_bytes(again.wav)==bytes&&std::filesystem::last_write_time(again.wav)==stamp,
+        "An unchanged page revision did not preserve its exact PCM and timestamp");
+    bool incomplete_rejected=false;try{(void)latest->commit({});}catch(const std::invalid_argument&){incomplete_rejected=true;}
+    check(incomplete_rejected,"An incomplete generation published a complete page manifest");
+    std::cout<<"PASS real Kokoro whole-page source revisions, isolated PCM, foreground takeover, obsolete completion rejection and unchanged revision preservation\n";
+}
 }
 
 int wmain(int argc,wchar_t** argv) {
@@ -163,6 +212,16 @@ int wmain(int argc,wchar_t** argv) {
     try {
         windows::ensure_winrt_apartment();
         const auto root = std::filesystem::path(build::source_root);
+        if(argc==3&&std::wstring_view(argv[1])==L"--page-revision"){
+            const auto cache=std::filesystem::path(argv[2]).lexically_normal();
+            check(cache.is_absolute(),"The page-revision test requires an absolute isolated QA cache");
+            const auto relative=cache.lexically_relative(std::filesystem::path(L"C:\\LGAED-QA"));
+            check(!relative.empty()&&!relative.is_absolute()&&std::ranges::none_of(relative,[](const auto& part){return part==L"..";}),
+                "The page-revision test cache must stay inside C:\\LGAED-QA");
+            state::require_safe_path(cache);std::filesystem::create_directories(state::native_io_path(cache));
+            windows::NarrationWorker worker(root/L"out/narration/runtime.json");
+            page_revision_cache(worker,cache);return 0;
+        }
         check(argc==3,"The narration test requires CMake's Python executable and existing build directory arguments");
         cancelled_inflight_protocol(root,argv[1],argv[2]);
         priority_protocol(argv[2]);

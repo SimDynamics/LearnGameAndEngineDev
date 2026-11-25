@@ -6,6 +6,7 @@
 #include <functional>
 #include <memory>
 #include <optional>
+#include <span>
 #include <stop_token>
 #include <stdexcept>
 #include <string>
@@ -23,6 +24,13 @@ struct NarrationSegment {
     // to a native system voice. A source token can own several spoken words.
     std::string spoken;
     std::vector<SpeechRange> spoken_ranges,displayed_ranges;
+    // Empty authenticates the historical sentence cache. A whole-page revision
+    // owns a separate PCM/timing identity, even for its unchanged sentences.
+    std::string cache_namespace;
+};
+struct NarrationPagePlan {
+    std::string page_id,revision;
+    std::vector<NarrationSegment> segments;
 };
 // These historical policies authenticate existing bookmarks only. Their
 // prepared texts retain their original recording keys without synthesizing.
@@ -36,6 +44,25 @@ struct NarrationAudio {
     std::filesystem::path wav;
     std::vector<NarrationTiming> timings;
     double duration_ms=0;bool cache_hit=false;
+    std::string cache_namespace;
+    unsigned synthesis_threads=0;
+    std::string cpu_class;
+};
+// One immutable page revision. Cancellation and publication are shared across
+// foreground/background callers of the same app-owned worker. Old sessions can
+// finish unwinding but cannot publish the current page manifest.
+class NarrationPageSession {
+public:
+    NarrationPageSession()=default;
+    [[nodiscard]] const std::string& cache_namespace()const;
+    [[nodiscard]] std::stop_token stop_token()const;
+    [[nodiscard]] bool current()const;
+    // Only a complete, ordered canonical plan may publish a completion proof.
+    [[nodiscard]] bool commit(std::span<const NarrationAudio>)const;
+private:
+    struct Impl;std::shared_ptr<Impl> impl_;
+    explicit NarrationPageSession(std::shared_ptr<Impl> value):impl_(std::move(value)){}
+    friend class NarrationWorker;
 };
 class NarrationPriorityLease {
 public:
@@ -74,6 +101,9 @@ public:
     [[nodiscard]] std::optional<NarrationPriorityLease> try_idle_maintenance_lease();
     // Only cache misses are limited. Existing recordings remain reusable.
     void set_storage_budget(std::uint64_t bytes);
+    // Inherited effective eligibility captured before narrowing background
+    // work. Zero before this worker starts; independent of machine-wide counts.
+    [[nodiscard]] unsigned available_processors()const;
     // cpp_previous_parentheses reconstructs one historical C++ speech policy
     // solely for bookmark authentication. It is not a curricular mathMode.
     // B42 and original reconstruct both historical displayed-output policies
@@ -90,6 +120,19 @@ public:
     [[nodiscard]] std::string curriculum_plan(std::string_view raw_lesson,std::size_t page,
         std::string_view language,std::string_view voice,std::string_view ui_language,std::stop_token={},
         std::string_view reading_context="auto",std::string_view content_language={});
+    [[nodiscard]] NarrationPagePlan page_plan(std::string_view raw_lesson,std::size_t page,
+        std::string_view language,std::string_view voice,std::string_view ui_language,std::stop_token={},
+        std::string_view reading_context="auto",std::string_view content_language={},
+        NarrationCpuClass work=NarrationCpuClass::current_page);
+    [[nodiscard]] std::optional<NarrationPageSession> begin_page(const std::filesystem::path& cache,
+        std::string_view page_id,std::string_view language,std::string_view voice,std::string_view engine,
+        const NarrationPagePlan&,NarrationCpuClass,std::stop_token={});
+    // Read-only inspection never claims or cancels a page. A completion proof
+    // checks owner/namespace and recorded artifact sizes without rehashing PCM.
+    [[nodiscard]] std::optional<std::string> published_page_revision(const std::filesystem::path& cache,
+        std::string_view page_id,std::string_view language,std::string_view voice,std::string_view engine)const;
+    [[nodiscard]] std::string page_cache_namespace(const NarrationPagePlan&,std::string_view language,
+        std::string_view voice,std::string_view engine)const;
     [[nodiscard]] NarrationAudio prepare(const NarrationSegment&,std::string_view language,std::string_view voice,
         const std::filesystem::path& output,unsigned threads,std::stop_token={},
         NarrationCpuClass work=NarrationCpuClass::current_page);

@@ -35,6 +35,7 @@
 #include <array>
 #include <atomic>
 #include <chrono>
+#include <condition_variable>
 #include <cmath>
 #include <cwctype>
 #include <functional>
@@ -343,6 +344,7 @@ struct Fixture{
         if(pause_after)check(!snapshot().playing&&!snapshot().allocated,"Compiler feedback preparation overrode a subsequent pause");}
 };
 #include "presentation/windows/code_scope_reader_test.hpp"
+#include "presentation/windows/saldo_feedback_reader_test.hpp"
 #include "presentation/windows/u11_domain_reader_test.hpp"
 #include "presentation/windows/u11_consult_reader_test.hpp"
 #include "presentation/windows/u11_assignment_reader_test.hpp"
@@ -3191,6 +3193,89 @@ void missing_recording_recovery(const std::shared_ptr<windows::NarrationWorker>&
         "The controlled unavailable-audio seek changed a different valid recording");
     std::cout<<"PASS unavailable recording seek: unchanged offset preserves shading, real rewind restores pending words without invented timing or listening credit, and exact paused resume\n";
 }
+void current_page_synthesis_order(const std::shared_ptr<windows::NarrationWorker>& backend){
+    using namespace winrt::Windows::Data::Json;
+    const auto root=std::filesystem::path(L"C:/LGAED-QA")/(L"reader-synthesis-order-"+std::to_wstring(GetCurrentProcessId())+L"-"+std::to_wstring(GetTickCount64()));
+    const auto asset=root/L"content/lesson_order.json";std::filesystem::create_directories(asset.parent_path());
+    const std::array<std::string,3> first{"La primera luz es roja.","La segunda luz es azul.","La tercera luz es verde."};
+    auto second=first;second[2]="La tercera luz ahora es amarilla.";
+    const auto signature=test::compile_check_test_fingerprint(JsonObject::Parse(L"{\"type\":\"paragraph\"}"));
+    const auto publication=[&](const auto& sources){JsonObject lesson;lesson.Insert(L"id",JsonValue::CreateStringValue(L"qa_reader_synthesis_order"));
+        lesson.Insert(L"title",JsonValue::CreateStringValue(L"Orden de audio."));JsonArray blocks,original_ids,current_ids;
+        for(std::size_t n=0;n<sources.size();++n){JsonObject block;block.Insert(L"type",JsonValue::CreateStringValue(L"paragraph"));
+            block.Insert(L"text",JsonValue::CreateStringValue(wide(sources[n])));blocks.Append(block);
+            const auto id=L"part_"+std::to_wstring(n);JsonObject original;original.Insert(L"id",JsonValue::CreateStringValue(id));
+            original.Insert(L"sha256",JsonValue::CreateStringValue(wide(signature)));original_ids.Append(original);current_ids.Append(JsonValue::CreateStringValue(id));}
+        JsonObject page;page.Insert(L"blocks",blocks);JsonArray pages;pages.Append(page);lesson.Insert(L"pages",pages);
+        JsonObject before,now;before.Insert(L"id",JsonValue::CreateStringValue(L"page"));now.Insert(L"id",JsonValue::CreateStringValue(L"page"));
+        before.Insert(L"blocks",original_ids);now.Insert(L"blocks",current_ids);JsonArray origin,current;origin.Append(before);current.Append(now);
+        JsonObject layout;layout.Insert(L"version",JsonValue::CreateNumberValue(1));layout.Insert(L"origin",origin);layout.Insert(L"current",current);lesson.Insert(L"stateLayout",layout);
+        return utf8(lesson.Stringify());};
+    const auto write=[&](const std::string& source){const auto pending=std::filesystem::path(asset.native()+L".pending");
+        {std::ofstream stream(pending,std::ios::binary);stream<<source;check(static_cast<bool>(stream),"Cannot write ordered-generation QA source");}
+        check(MoveFileExW(pending.c_str(),asset.c_str(),MOVEFILE_REPLACE_EXISTING|MOVEFILE_WRITE_THROUGH)!=FALSE,"Cannot adopt ordered-generation QA source");};
+    write(publication(first));const auto lesson=windows::load_lesson(asset);
+    Fixture f(backend,false,true,true,"es",lesson,true,0,true,false,{}, {},root/L"audio");f.reader->set_qa_playback_muted(true);
+    const auto complete=[&]{const auto value=f.snapshot();return value.planned&&value.page_audio_complete&&
+        std::ranges::all_of(value.segments,[](const auto& part){return part.available;});};
+    wait(complete,"first complete page for synthesis-order evidence",180000);
+    const auto creation=[](const std::filesystem::path& file){WIN32_FILE_ATTRIBUTE_DATA attributes{};
+        check(GetFileAttributesExW(file.c_str(),GetFileExInfoStandard,&attributes)!=FALSE,"Cannot inspect actual generated WAV creation");
+        return (std::uint64_t(attributes.ftCreationTime.dwHighDateTime)<<32)|attributes.ftCreationTime.dwLowDateTime;};
+    const auto evidence=[&](const auto& expected){const auto value=f.snapshot();std::vector<std::filesystem::path> recordings;std::vector<std::uint64_t> times;
+        for(const auto& source:expected){const auto found=std::ranges::find(value.segments,source,&LessonReaderSegmentSnapshot::source);
+            check(found!=value.segments.end()&&found->available,"An authored order-control sentence has no actual recording");
+            (void)verify_feedback_recording(*found);recordings.push_back(found->recording);times.push_back(creation(found->recording));}
+        check(times[0]<times[1]&&times[1]<times[2],"Page synthesis misses did not occur in the independently authored first-to-last order");return recordings;};
+    const auto old=evidence(first);const auto before=f.snapshot();
+    f.reader->seek_seconds(600);f.reader->pause();check(f.snapshot().segments[f.snapshot().index].source==first.back(),"QA preview did not request the final paragraph");
+    write(publication(second));
+    wait([&]{return lesson_page_state(f.view).content_revision>0&&complete()&&f.snapshot().page_audio_revision!=before.page_audio_revision;},
+        "changed page with the same IDs regenerates from its beginning",180000);
+    const auto revised=windows::load_lesson(asset);check(revised.pages[0].stable_id==lesson.pages[0].stable_id&&
+        std::ranges::equal(revised.pages[0].blocks,lesson.pages[0].blocks,[](const auto& a,const auto& b){return a.stable_id==b.stable_id;}),"Ordered-generation fixture changed its page/block IDs");
+    const auto fresh=evidence(second);for(std::size_t n=0;n<old.size();++n)check(old[n]!=fresh[n]&&std::filesystem::is_regular_file(old[n]),
+        "A whole-page revision mixed previous audio or deleted preserved evidence");
+    check(!f.snapshot().playing&&!f.snapshot().allocated&&f.snapshot().segments[f.snapshot().index].source==second.back(),
+        "Regeneration changed the requested compatible pause or started playback");
+    // UI-only code captions must also be prepared for the current page. The
+    // preference disables advance work, not completion of this selected page.
+    const auto caption_asset=root/L"caption/lesson_caption.json";std::filesystem::create_directories(caption_asset.parent_path());
+    {std::ofstream stream(caption_asset,std::ios::binary);stream<<R"({"id":"qa_reader_visible_projection","title":"Lectura controlada.","pages":[{"blocks":[{"type":"fill_code","language":"cpp","question":"Escribe control.","code":"___","answers":["control"],"explanation":"La respuesta está completa."}]}]})";
+        check(static_cast<bool>(stream),"Cannot create private code-caption fixture");}
+    Fixture captions(backend,false,true,false,"es",windows::load_lesson(caption_asset),true,0,true,false,{},
+        [](state::StateData& data){data.preferences["native_windows"]["ui_language"]=std::string("es");},root/L"caption-audio");
+    captions.reader->set_qa_playback_muted(true);
+    check(std::ranges::any_of(lesson_reading_regions(captions.view),[](const auto& region){return region.source_text=="Ejercicio de código C más más.";}),
+        "The code-caption fixture did not render an actual code surface");
+    wait([&]{const auto value=captions.snapshot();return value.planned&&value.page_audio_complete&&!value.segments.empty()&&
+        std::ranges::all_of(value.segments,[](const auto& part){return part.available;});},"complete current-page UI projections with advance generation disabled",180000);
+    const auto caption_plan=captions.snapshot();const auto code_caption=std::ranges::find(caption_plan.segments,
+        std::string("Ejercicio de código C más más."),&LessonReaderSegmentSnapshot::source);
+    check(code_caption!=caption_plan.segments.end()&&code_caption->available&&!caption_plan.playing&&!caption_plan.allocated,
+        "A visible code caption still required Play or the advance-generation preference");
+    const auto caption_regions=lesson_reading_regions(captions.view);
+    check(!code_caption->feedback&&std::ranges::any_of(caption_regions,[&](const auto& region){return region.target==code_caption->target&&
+            region.source_text==code_caption->source&&region.passive_label;})&&edit_text(code_caption->target)!=code_caption->source,
+        "The caption stopped being a passive spoken label for its differently written UI surface");
+    // The UI shows '</> C++', while its audio says the complete explanatory
+    // label. It intentionally has no word-by-word projection onto those glyphs.
+    // Ordinary prose and actual feedback retain the stricter aligned helper.
+    const auto caption_pcm=state::read_bytes(code_caption->recording);
+    const auto pcm16=[&](std::size_t n){return unsigned(caption_pcm[n])|(unsigned(caption_pcm[n+1])<<8);};
+    const auto pcm32=[&](std::size_t n){return pcm16(n)|(pcm16(n+2)<<16);};
+    const auto marker=[&](std::size_t n,std::string_view expected){return std::equal(expected.begin(),expected.end(),caption_pcm.begin()+n);};
+    check(caption_pcm.size()>44&&marker(0,"RIFF")&&marker(8,"WAVE")&&marker(12,"fmt ")&&marker(36,"data")&&
+        pcm16(20)==1&&pcm16(22)==1&&pcm32(24)==24000&&pcm16(34)==16&&pcm32(40)==caption_pcm.size()-44&&
+        (caption_pcm.size()-44)%2==0&&std::ranges::any_of(caption_pcm.begin()+44,caption_pcm.end(),[](auto sample){return sample!=0;})&&
+        std::abs(code_caption->duration_ms-(caption_pcm.size()-44)/48.)<=1,
+        "The passive code caption lacks non-silent mono 24 kHz PCM16 or its exact real duration");
+    const auto caption_state=read_lesson_state(captions.view);
+    const auto advance=state::find(caption_state,"lesson_narration_settings","kokoro_advance_generation");
+    check(advance&&std::holds_alternative<bool>(*advance)&&!std::get<bool>(*advance),"Foreground completion changed the user's advance-generation preference");
+    std::cout<<"PASS current-page synthesis order: two actual Kokoro revisions, identical source IDs, late requested bookmark, independent WAV creation chronology, preserved old audio and no autoplay; root="<<root.string()<<'\n';
+    std::cout<<"PASS current-page projections: advance disabled, real code caption PCM ready before page completion without Play or preference changes\n";
+}
 }
 
 int main(int argc,char** argv){const bool stderr_only=argc==2&&std::string_view(argv[1])=="--stderr-objective";
@@ -3245,13 +3330,20 @@ int main(int argc,char** argv){const bool stderr_only=argc==2&&std::string_view(
     const bool cpp_numeric_context_only=argc==2&&std::string_view(argv[1])=="--cpp-numeric-context";
     const bool cpp_parenthesis_context_only=argc==2&&std::string_view(argv[1])=="--cpp-parenthesis-context";
     const bool code_scope_only=argc==4&&std::string_view(argv[1])=="--code-scope-reader";
+    const bool saldo_feedback_only=argc==3&&std::string_view(argv[1])=="--saldo-feedback";
+    const bool saldo_published_only=argc==3&&std::string_view(argv[1])=="--saldo-published";
+    const bool synthesis_order_only=argc==2&&std::string_view(argv[1])=="--synthesis-order";
+    if((saldo_feedback_only||saldo_published_only)&&(std::string_view(argv[2]).size()!=1||argv[2][0]<'1'||argv[2][0]>'3'))return 2;
     const bool state_compatibility_only=argc==2&&std::string_view(argv[1])=="--state-compatibility";
-    if(argc>1&&!code_scope_only&&!suspend_only&&!stderr_only&&!dependencies_only&&!integrated_only&&!integrated_order_only&&!integrated_matching_only&&!u11_domain_revision_only&&!u11_domain_race_only&&!u11_consult_revision_only&&!u11_assignment_revision_only&&!u11_remainder_published&&!u11_literal_spacing_only&&!u12_file_format_only&&!u12_file_roundtrip_only&&!u12_file_append_only&&!u12_file_repairs_only&&!u12_append_hypothesis_only&&!u12_composed_output_only&&!u12_composed_feedback_only&&!u12_composed_question_only&&!current_inline_only&&!rates_only&&!compiler_focus_only&&!required_compiler_only&&!archived_required_compiler_only&&!seek_keys_only&&!missing_recording_only&&!changed_recording_only&&!curricular_colors_only&&!cpp_numeric_context_only&&!cpp_parenthesis_context_only&&!state_compatibility_only)return 2;
+    if(argc>1&&!synthesis_order_only&&!saldo_published_only&&!saldo_feedback_only&&!code_scope_only&&!suspend_only&&!stderr_only&&!dependencies_only&&!integrated_only&&!integrated_order_only&&!integrated_matching_only&&!u11_domain_revision_only&&!u11_domain_race_only&&!u11_consult_revision_only&&!u11_assignment_revision_only&&!u11_remainder_published&&!u11_literal_spacing_only&&!u12_file_format_only&&!u12_file_roundtrip_only&&!u12_file_append_only&&!u12_file_repairs_only&&!u12_append_hypothesis_only&&!u12_composed_output_only&&!u12_composed_feedback_only&&!u12_composed_question_only&&!current_inline_only&&!rates_only&&!compiler_focus_only&&!required_compiler_only&&!archived_required_compiler_only&&!seek_keys_only&&!missing_recording_only&&!changed_recording_only&&!curricular_colors_only&&!cpp_numeric_context_only&&!cpp_parenthesis_context_only&&!state_compatibility_only)return 2;
     std::cout<<std::unitbuf;const auto rich=LoadLibraryW(L"Msftedit.dll");if(!rich)return 2;
     try{
         INITCOMMONCONTROLSEX controls{sizeof(controls),ICC_STANDARD_CLASSES};InitCommonControlsEx(&controls);
         if(suspend_only){reader_preparation_suspension(std::filesystem::path(argv[2]),std::filesystem::path(argv[3]));return 0;}
         auto backend=std::make_shared<windows::NarrationWorker>(std::filesystem::path(build::source_root)/"out/narration/runtime.json");
+        if(synthesis_order_only){current_page_synthesis_order(backend);return 0;}
+        if(saldo_feedback_only){saldo_feedback_reader_test::run(backend,static_cast<double>(argv[2][0]-'0'));return 0;}
+        if(saldo_published_only){saldo_feedback_reader_test::published_page(backend,static_cast<double>(argv[2][0]-'0'));return 0;}
         if(code_scope_only){code_scope_reader_test::run(backend,std::filesystem::path(argv[2]),std::filesystem::path(argv[3]));return 0;}
         if(required_compiler_only){current_required_compiler_reader(backend);return 0;}
         if(archived_required_compiler_only){archived_required_compiler_reader(backend,std::filesystem::path(argv[2]));return 0;}

@@ -48,6 +48,9 @@ struct CourseAudioCourse {
     std::string title;
     std::set<std::string> expected;
     CourseAudioCoverage coverage;
+    // Legacy sentence recordings retain course ownership, but cannot prove
+    // coverage of the current whole-page generation.
+    std::set<std::string> historical;
 };
 struct CourseAudioReport {
     CourseAudioProfile profile;

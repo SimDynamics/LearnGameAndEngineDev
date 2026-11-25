@@ -29,6 +29,9 @@ public:
     void play(const std::filesystem::path&,double milliseconds,double rate=1);
     void seek(double milliseconds);
     void set_rate(double);
+    // Instance-local output only; does not change Windows/session volume.
+    // Muted QA playback still uses the real decoder, clock and end events.
+    void set_muted(bool);
     // The actual MediaPlaybackSession rate once playback has started.
     [[nodiscard]] double playback_rate()const;
     [[nodiscard]] double position()const;

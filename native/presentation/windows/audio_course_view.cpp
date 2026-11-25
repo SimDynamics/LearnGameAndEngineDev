@@ -118,7 +118,10 @@ CourseAudioReport scan_course_audio(const std::filesystem::path& content,const s
                         while(true){check_cancelled(stop);try{reply=plan(raw,page,language,voice->second,result.profile.ui_language,stop,
                             std::string_view(path)=="programming"?"cpp":"auto");break;}catch(const windows::NarrationPreempted&){
                             for(int wait=0;wait<20;++wait){check_cancelled(stop);std::this_thread::sleep_for(10ms);}}}
-                        const auto segments=JsonObject::Parse(winrt::to_hstring(reply)).GetNamedArray(L"segments");for(const auto& value:segments){const auto key=winrt::to_string(value.GetObject().GetNamedString(L"key"));if(!cache_key(key))throw std::runtime_error("The narration plan returned an invalid cache key");item.expected.insert(key);}
+                        const auto planned=JsonObject::Parse(winrt::to_hstring(reply));
+                        const auto segments=planned.GetNamedArray(L"segments");for(const auto& value:segments){const auto key=winrt::to_string(value.GetObject().GetNamedString(L"key"));if(!cache_key(key))throw std::runtime_error("The narration plan returned an invalid cache key");item.expected.insert(key);}
+                        if(planned.HasKey(L"historicalKeys"))for(const auto& value:planned.GetNamedArray(L"historicalKeys")){
+                            const auto key=winrt::to_string(value.GetString());if(!cache_key(key))throw std::runtime_error("The narration plan returned an invalid historical cache key");item.historical.insert(key);}
                     }
                 }
             }
@@ -132,8 +135,9 @@ CourseAudioRemovalPreview preview_course_audio_removal(CourseAudioReport report,
     if(!report.complete)throw std::invalid_argument("Safe deletion requires a complete scan of both learning paths");
     const auto course=std::ranges::find_if(report.courses,[&](const auto& entry){return entry.owner==target;});if(course==report.courses.end())throw std::invalid_argument("The course is absent from the current curriculum");
     CourseAudioRemovalPreview preview;preview.target=std::move(target);
-    for(const auto& key:course->expected)if(const auto available=report.inventory.find(key);available!=report.inventory.end()){
-        const bool shared=std::ranges::any_of(report.courses,[&](const auto& entry){return entry.owner!=preview.target&&entry.expected.contains(key);});
+    auto owned=course->expected;owned.insert(course->historical.begin(),course->historical.end());
+    for(const auto& key:owned)if(const auto available=report.inventory.find(key);available!=report.inventory.end()){
+        const bool shared=std::ranges::any_of(report.courses,[&](const auto& entry){return entry.owner!=preview.target&&(entry.expected.contains(key)||entry.historical.contains(key));});
         if(shared)preview.shared_files+=available->second.size();else for(const auto& file:available->second){preview.exclusive.push_back(file);preview.removable_bytes+=file.bytes;}}
     preview.report=std::move(report);return preview;
 }
@@ -251,7 +255,15 @@ struct CourseAudioWindow {
         status(removal?tr("Identificando los audios exclusivos y los compartidos entre cursos…","Identifying exclusive audio and audio shared between courses…","Identification des audios exclusifs et partagés entre les cours…"):tr("Comprobando los audios guardados para las voces e idiomas actuales…","Checking saved audio for the current voices and languages…","Vérification des audios enregistrés pour les voix et langues actuelles…"));
         const auto callbacks=access;const auto selected_profile=profile;const auto selected_route=route;
         begin(removal?Operation::preview:Operation::report,[callbacks,selected_profile,selected_route,target,removal](std::stop_token stop){Reply reply;reply.operation=removal?Operation::preview:Operation::report;
-            const CourseAudioPlanner planner=[backend=callbacks.worker](std::string_view raw,std::size_t page,std::string_view language,std::string_view voice,std::string_view ui,std::stop_token cancelled,std::string_view reading_context){return backend->curriculum_plan(raw,page,language,voice,ui,cancelled,reading_context);};
+            const CourseAudioPlanner planner=[backend=callbacks.worker,content_language=selected_profile.locale](std::string_view raw,std::size_t page,std::string_view language,std::string_view voice,std::string_view ui,std::stop_token cancelled,std::string_view reading_context){
+                auto reply=JsonObject::Parse(winrt::to_hstring(backend->curriculum_plan(raw,page,language,voice,ui,cancelled,reading_context,content_language)));
+                windows::NarrationPagePlan page_plan;page_plan.page_id=winrt::to_string(reply.GetNamedString(L"pageId"));page_plan.revision=winrt::to_string(reply.GetNamedString(L"revision"));
+                const auto scope=backend->page_cache_namespace(page_plan,language,voice,"KOKORO");JsonArray historical;
+                for(const auto& value:reply.GetNamedArray(L"segments")){auto segment=value.GetObject();const auto original=winrt::to_string(segment.GetNamedString(L"key"));
+                    historical.Append(JsonValue::CreateStringValue(winrt::to_hstring(original)));
+                    const auto key=state::sha256(std::string("windows-page-pcm-v1\0",20)+scope+'\0'+original);
+                    segment.Insert(L"key",JsonValue::CreateStringValue(winrt::to_hstring(key)));}
+                reply.Insert(L"historicalKeys",historical);return winrt::to_string(reply.Stringify());};
             auto report=scan_course_audio(callbacks.content,callbacks.cache,selected_profile,selected_route,removal,planner,stop);
             if(removal){if(!target)throw std::runtime_error("No selected course");reply.preview=std::make_shared<CourseAudioRemovalPreview>(preview_course_audio_removal(std::move(report),*target));}
             else reply.report=std::make_shared<CourseAudioReport>(std::move(report));return reply;});

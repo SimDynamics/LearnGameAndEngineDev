@@ -8,6 +8,10 @@ struct CurriculumAudioPage {
     std::filesystem::path asset;
     std::size_t page = 0;
     std::string language;
+    // A conservative source scan token, not the final page/audio identity.
+    // The worker's canonical page plan decides whether PCM really changes.
+    std::string source_revision;
+    std::string page_id;
     bool operator==(const CurriculumAudioPage&) const = default;
 };
 // A concrete studied page reserves its audio for foreground work. Following
@@ -15,5 +19,5 @@ struct CurriculumAudioPage {
 // inventory follows the persisted route turn. Cached pages consume no turn.
 [[nodiscard]] std::vector<std::size_t> audio_schedule(std::span<const CurriculumAudioPage>,
     const curriculum::CatalogLocation&,std::optional<std::size_t> current_page,
-    std::string_view next_route="programming");
+    std::string_view next_route="programming",std::span<const std::size_t> revised_pages={});
 }

@@ -1,5 +1,6 @@
 #include "platform/windows/audio_generation.hpp"
 #include "platform/windows/catalog_loader.hpp"
+#include "platform/windows/state_store.hpp"
 #include "platform/windows/winrt_apartment.hpp"
 #include "native_build_config.hpp"
 #include <winrt/Windows.Data.Json.h>
@@ -58,6 +59,118 @@ struct OwnedFile {
     std::filesystem::path path;
     ~OwnedFile(){std::error_code error;std::filesystem::remove(path,error);}
 };
+void write_owned(const std::filesystem::path& path,std::string_view source){
+    state::require_safe_path(path);std::filesystem::create_directories(path.parent_path());
+    std::ofstream stream(state::native_io_path(path),std::ios::binary|std::ios::trunc);stream<<source;stream.flush();
+    check(static_cast<bool>(stream),"Cannot write the isolated coordinator source");
+}
+JsonObject document(const std::filesystem::path& path){
+    const auto bytes=state::read_bytes(path,32*1024*1024);
+    return JsonObject::Parse(winrt::to_hstring(std::string_view(reinterpret_cast<const char*>(bytes.data()),bytes.size())));
+}
+bool inventory_has(const JsonObject& snapshot,const wchar_t* name,std::string_view id){
+    if(!snapshot.HasKey(name))return false;const auto locales=snapshot.GetNamedObject(name);
+    if(!locales.HasKey(L"es"))return false;
+    for(const auto& item:locales.GetNamedArray(L"es"))if(item.GetString()==winrt::to_hstring(id))return true;
+    return false;
+}
+struct QueueContent {
+    std::filesystem::path root,programming_asset;
+    curriculum::CatalogLocation current{"es","programming","qa_queue_programming","qa_queue_programming__unit","qa_queue_programming__unit__lesson"};
+    const std::string programming_lesson="qa_queue_programming__unit__lesson",math_lesson="qa_queue_math__unit__lesson";
+    explicit QueueContent(std::filesystem::path value):root(std::move(value)){
+        for(const auto* route:{"programming","math_physics"}){
+            const std::string course=std::string_view(route)=="programming"?"qa_queue_programming":"qa_queue_math";
+            const auto unit=course+"__unit",lesson=unit+"__lesson";auto where=curriculum::catalog_child({"es"},route);
+            write_owned(root/"es"/curriculum::catalog_index_path(where),"[{\"id\":\""+course+"\",\"title\":\"QA\",\"number\":1}]");
+            where=curriculum::catalog_child(where,course);
+            write_owned(root/"es"/curriculum::catalog_index_path(where),"{\"id\":\""+course+"\",\"title\":\"QA\",\"units\":[{\"id\":\""+unit+"\",\"title\":\"QA\",\"number\":1}]}");
+            where=curriculum::catalog_child(where,unit);
+            write_owned(root/"es"/curriculum::catalog_index_path(where),"{\"courseId\":\""+course+"\",\"unitId\":\""+unit+"\",\"title\":\"QA\",\"lessons\":[{\"id\":\""+lesson+"\",\"title\":\"QA\",\"number\":1}]}");
+            const auto asset=root/"es"/curriculum::catalog_lesson_path(where,lesson);
+            if(std::string_view(route)=="programming")programming_asset=asset;
+            else write_owned(asset,"{\"id\":\""+lesson+"\",\"title\":\"QA math\",\"pages\":[{\"id\":\"math_0001\",\"blocks\":[{\"type\":\"paragraph\",\"text\":\"QA math source.\"}]}]}");
+        }
+        program(false);
+    }
+    void program(bool insert){
+        JsonObject lesson;lesson.Insert(L"id",JsonValue::CreateStringValue(winrt::to_hstring(programming_lesson)));
+        lesson.Insert(L"title",JsonValue::CreateStringValue(L"QA programming"));JsonArray pages;
+        for(const auto number:insert?std::vector<int>{1,2,3,4}:std::vector<int>{1,2,4}){
+            JsonObject page,paragraph;const auto id="page_000"+std::to_string(number);
+            page.Insert(L"id",JsonValue::CreateStringValue(winrt::to_hstring(id)));
+            paragraph.Insert(L"type",JsonValue::CreateStringValue(L"paragraph"));
+            paragraph.Insert(L"text",JsonValue::CreateStringValue(winrt::to_hstring("QA source "+id+".")));
+            JsonArray blocks;blocks.Append(paragraph);page.Insert(L"blocks",blocks);pages.Append(page);
+        }
+        lesson.Insert(L"pages",pages);write_owned(programming_asset,winrt::to_string(lesson.Stringify()));
+    }
+    AudioGenerationSelection selection()const{
+        auto result=audio_generation_selection({},current,1);check(result.enabled,"Isolated queue selection unexpectedly disabled");return result;
+    }
+    std::string page_id(std::string_view stable)const{return programming_lesson+"/es/"+std::string(stable);}
+};
+void revision_queue_recovery(const std::filesystem::path& root,const std::filesystem::path& python,const std::filesystem::path& qa_parent){
+    check(qa_parent.is_absolute(),"Queue regression requires an absolute isolated QA parent");
+    const auto relative=qa_parent.lexically_normal().lexically_relative(std::filesystem::path(L"C:\\LGAED-QA"));
+    check(!relative.empty()&&!relative.is_absolute()&&std::ranges::none_of(relative,[](const auto& part){return part==L"..";}),
+        "Queue regression must remain inside C:\\LGAED-QA");
+    const auto owned=qa_parent/(L"coordinator-revision-queue-"+std::to_wstring(GetCurrentProcessId())+L"-"+std::to_wstring(GetTickCount64()));
+    state::require_safe_path(owned);check(!std::filesystem::exists(owned),"An existing queue fixture must never be overwritten");
+    std::filesystem::create_directories(owned);
+    {
+        QueueContent content(owned/L"initial-content");const auto profile=owned/L"initial-profile",cache=owned/L"initial-cache",phase=owned/L"initial-transport";
+        std::filesystem::create_directories(phase);write_owned(profile/L"audio-generation.json",R"({"format":1,"nextRoute":"math_physics"})");
+        write_owned(content.programming_asset,"{incomplete QA lesson");
+        const auto log=phase/L"transport.jsonl";auto worker=fixture(root,python,phase,log);
+        {
+            AudioGeneration coordinator(worker,content.root,cache,profile);auto selected=content.selection();coordinator.update(selected);
+            eventually([&]{return coordinator.status().scans>0&&!coordinator.status().error.empty();},"Initial incomplete catalog did not report its bounded failure");
+            selected.enabled=false;coordinator.update(selected);
+            eventually([&]{return !coordinator.status().running;},"Initial incomplete catalog could not be cancelled");
+            check(preparations(log).empty(),"An incomplete catalog reached audio generation");
+            content.program(false);selected.enabled=true;coordinator.update(selected);
+            eventually([&]{return !preparations(log).empty();},"Repairing the cancelled initial catalog did not restart generation");
+            const auto first=preparations(log).front();
+            check(first.GetNamedString(L"fixturePageId")==winrt::to_hstring(content.math_lesson+"/es/math_0001"),
+                "A cancelled initial load created a false empty inventory and promoted the entire catalog as new pages");
+            eventually([&]{const auto saved=document(profile/L"audio-generation.json");return saved.GetNamedNumber(L"format")==2&&inventory_has(saved,L"pageInventory",content.page_id("page_0004"));},
+                "The first successful catalog did not persist its real format2 inventory");
+        }
+        worker->shutdown();
+    }
+    {
+        QueueContent content(owned/L"restart-content");const auto profile=owned/L"restart-profile",cache=owned/L"restart-cache";
+        write_owned(profile/L"audio-generation.json",R"({"format":1,"nextRoute":"math_physics"})");
+        const auto run=[&](const wchar_t* name,bool new_page){
+            const auto phase=owned/name;std::filesystem::create_directories(phase);const auto log=phase/L"transport.jsonl";
+            auto worker=fixture(root,python,phase,log);
+            {
+                AudioGeneration coordinator(worker,content.root,cache,profile);auto selected=content.selection();coordinator.update(selected);
+                eventually([&]{return !preparations(log).empty();},"Reopened coordinator did not submit a controlled preparation");
+                const auto first=preparations(log).front();const auto expected=new_page?content.page_id("page_0003"):content.math_lesson+"/es/math_0001";
+                check(first.GetNamedString(L"fixturePageId")==winrt::to_hstring(expected),
+                    "New or persisted pending page3 did not precede the saved mathematics turn after current page2");
+                check(first.GetNamedNumber(L"threads")<=2&&first.GetNamedBoolean(L"audioOnly")&&first.GetNamedString(L"cpuClass")==L"background",
+                    "Reopened queue escaped the real worker's background CPU policy");
+                eventually([&]{const auto saved=document(profile/L"audio-generation.json");
+                    return saved.GetNamedNumber(L"format")==2&&inventory_has(saved,L"pageInventory",content.page_id(new_page?"page_0003":"page_0004"))&&
+                        (!new_page||inventory_has(saved,L"pendingPages",content.page_id("page_0003")));},
+                    "Format2 did not preserve the inventory and unfinished new-page work");
+                const auto before=cancellations(log);selected.enabled=false;coordinator.update(selected);
+                eventually([&]{return cancellations(log)>before&&!coordinator.status().running;},"Closing the isolated queue did not acknowledge its pending preparation cancellation");
+                check(coordinator.status().completed==0,"A retained transport request manufactured completed page audio");
+                check(std::ranges::none_of(preparations(log),[&](const auto& value){return value.GetNamedString(L"fixturePageId")==winrt::to_hstring(content.page_id("page_0002"));}),
+                    "The background queue generated the studied page reserved for foreground work");
+            }
+            worker->shutdown();
+        };
+        run(L"baseline-transport",false);
+        // Both producer and worker are closed before the owned source changes.
+        content.program(true);run(L"new-page-after-close-transport",true);run(L"restored-pending-transport",true);
+    }
+    std::cout<<"PASS real native coordinator: cancelled initial load has no false inventory; format2 inventory/pending survives closure; new page3 precedes saved math turn after studied page2; no audio synthesis or personal data. QA="<<owned.string()<<'\n';
+}
 std::string first_lesson(const std::filesystem::path& content,const char* route) {
     auto where=curriculum::catalog_child({"es"},route);
     for(int depth=0;depth<2;++depth){const auto page=load_catalog(content,where);
@@ -130,7 +243,11 @@ void completed_artifact_invalidation(const std::filesystem::path& root,const std
 }
 int wmain(int argc,wchar_t** argv) {
     try {
-        ensure_winrt_apartment();check(argc==3,"Coordinator test requires configured Python and existing build directory");
+        ensure_winrt_apartment();
+        if(argc==4&&std::wstring_view(argv[1])==L"--revision-queue"){
+            revision_queue_recovery(std::filesystem::path(build::source_root),argv[2],std::filesystem::path(argv[3]));return 0;
+        }
+        check(argc==3,"Coordinator test requires Python/build arguments, or --revision-queue Python isolated-QA-parent");
         const auto root=std::filesystem::path(build::source_root),build=std::filesystem::path(argv[2]);
         const auto content=root/L"app/src/main/assets/content",log=build/L"audio-generation-fixture.jsonl";
         auto worker=fixture(root,argv[1],build,log);
@@ -184,22 +301,26 @@ int wmain(int argc,wchar_t** argv) {
             selection=audio_generation_selection(data,{"es"});coordinator.update(selection);
             eventually([&]{const auto values=preparations(log);return values.size()>paused&&values.back().GetNamedString(L"language")==L"fr"&&values.back().GetNamedString(L"voice")==L"ff_siwis";},"Returning to Kokoro did not resume the newly selected French profile");
 
-            // Navigation no longer jumps the global background queue ahead.
+            // A changed studied position is reconciled through cancellation.
+            // An open unit without a concrete page keeps the ordinary order.
             auto where=curriculum::catalog_child({"es"},"programming");
             const auto course=load_catalog(content,where).entries.front();where=curriculum::catalog_child(where,course.id);
             const auto unit=load_catalog(content,where).entries.at(1);where=curriculum::catalog_child(where,unit.id);
             const auto before_unit=preparations(log).size();
             const auto before_navigation_cancel=cancellations(log);
+            const auto previous_source=preparations(log).back().GetNamedString(L"text");
             selection=audio_generation_selection(data,where);coordinator.update(selection);
-            std::this_thread::sleep_for(std::chrono::milliseconds(150));
-            check(preparations(log).size()==before_unit&&cancellations(log)==before_navigation_cancel,"Opening another unit cancelled or reordered the current background page");
+            eventually([&]{return cancellations(log)>before_navigation_cancel&&preparations(log).size()>before_unit;},
+                "A changed selection did not cancel and reconcile the actual background request");
+            check(preparations(log).back().GetNamedString(L"text")==previous_source,
+                "Opening a unit without a concrete page reordered the ordinary background inventory");
             check(coordinator.status().error.empty(),"Navigation or profile cancellation produced a coordinator error");
             check(coordinator.status().completed==0,"Cancelled preparations manufactured completed page audio");
         }
         worker.reset();
         snapshot_recovery(root,argv[1],build);
         completed_artifact_invalidation(root,argv[1],build);
-        std::cout<<"PASS native coordinator over real catalog: bounded background request, foreground preemption/resume without backoff, Santa voice switch, narration cancellation, French resumption, navigation-independent order and shutdown acknowledgement (controlled transport, not synthesis/performance evidence)\n";
+        std::cout<<"PASS native coordinator over real catalog: bounded background request, foreground preemption/resume without backoff, Santa voice switch, narration cancellation, French resumption, navigation reconciliation and shutdown acknowledgement (controlled transport, not synthesis/performance evidence)\n";
         return 0;
     }catch(const std::exception& error){std::cerr<<"FAIL "<<error.what()<<'\n';return 1;}
 }

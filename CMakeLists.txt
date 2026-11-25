@@ -962,6 +962,13 @@ if(LGAED_READER_BUILD_QA_ONLY)
     find_package(Python3 REQUIRED COMPONENTS Interpreter)
     lgaed_add_simulation_tests()
     lgaed_add_reader_interaction_tests()
+    # The revision-queue selector uses only isolated catalogs and controlled
+    # transport; unlike the general coordinator suite it loads no voice model.
+    add_executable(lgaed_audio_generation_tests native/platform/windows/audio_generation_tests.cpp)
+    target_link_libraries(lgaed_audio_generation_tests PRIVATE lgaed_platform_windows)
+    add_test(NAME native.audio_generation_revision_queue COMMAND lgaed_audio_generation_tests
+        --revision-queue "${Python3_EXECUTABLE}" "C:/LGAED-QA/audio-generation-revision-${LGAED_DEFAULT_PROFILE}")
+    set_tests_properties(native.audio_generation_revision_queue PROPERTIES TIMEOUT 120 RUN_SERIAL TRUE)
     lgaed_add_order_editorial_authoring_tests()
     include(cmake/StateImportTests.cmake)
     lgaed_add_catalog_history_fixtures()
@@ -1333,6 +1340,7 @@ if(_lgaed_task_glslc)
 endif()
 add_executable(LearnGameAndEngineDev WIN32
     native/presentation/windows/main.cpp
+    native/presentation/windows/app_audio_revision_qa.cpp
     native/presentation/windows/app.manifest)
 target_link_libraries(LearnGameAndEngineDev PRIVATE
     lgaed_presentation_windows)
@@ -1967,6 +1975,9 @@ if(BUILD_TESTING)
     target_link_libraries(lgaed_audio_generation_tests PRIVATE lgaed_platform_windows)
     add_dependencies(lgaed_audio_generation_tests lgaed_narration_runtime lgaed_system_speech_host)
     add_test(NAME native.audio_generation COMMAND lgaed_audio_generation_tests "${Python3_EXECUTABLE}" "${CMAKE_CURRENT_BINARY_DIR}")
+    add_test(NAME native.audio_generation_revision_queue COMMAND lgaed_audio_generation_tests
+        --revision-queue "${Python3_EXECUTABLE}" "C:/LGAED-QA/audio-generation-revision-${LGAED_DEFAULT_PROFILE}")
+    set_tests_properties(native.audio_generation_revision_queue PROPERTIES TIMEOUT 120 RUN_SERIAL TRUE)
     add_executable(lgaed_system_speech_background_tests native/platform/windows/system_speech_background_tests.cpp)
     target_link_libraries(lgaed_system_speech_background_tests PRIVATE lgaed_platform_windows)
     add_dependencies(lgaed_system_speech_background_tests lgaed_system_speech_host)
@@ -1977,6 +1988,13 @@ if(BUILD_TESTING)
     add_dependencies(lgaed_audio_generation_real_tests lgaed_system_speech_host lgaed_narration_runtime)
     add_test(NAME native.audio_generation_real COMMAND lgaed_audio_generation_real_tests)
     set_tests_properties(native.audio_generation_real PROPERTIES TIMEOUT 240)
+    add_test(NAME native.app_audio_revision COMMAND "${Python3_EXECUTABLE}" -B
+        "${CMAKE_SOURCE_DIR}/scripts/windows/test_app_audio_revision.py"
+        --executable $<TARGET_FILE:LearnGameAndEngineDev>)
+    set_tests_properties(native.app_audio_revision PROPERTIES TIMEOUT 3600 RUN_SERIAL TRUE LABELS "real_audio;application")
+    add_test(NAME native.app_audio_qa_transport COMMAND "${Python3_EXECUTABLE}" -B
+        "${CMAKE_SOURCE_DIR}/scripts/windows/test_app_audio_qa_transport.py")
+    set_tests_properties(native.app_audio_qa_transport PROPERTIES TIMEOUT 30 RUN_SERIAL TRUE)
     set_tests_properties(native.audio_generation PROPERTIES TIMEOUT 90)
     add_executable(lgaed_narration_shutdown_tests native/platform/windows/narration_shutdown_tests.cpp)
     target_link_libraries(lgaed_narration_shutdown_tests PRIVATE lgaed_platform_windows)
@@ -2033,7 +2051,7 @@ if(BUILD_TESTING)
     set_tests_properties(native.code_gutter_lifecycle PROPERTIES TIMEOUT 30)
     add_executable(lgaed_audio_course_view_tests native/presentation/windows/audio_course_view_tests.cpp)
     target_link_libraries(lgaed_audio_course_view_tests PRIVATE lgaed_presentation_windows)
-    add_test(NAME native.audio_course_view COMMAND lgaed_audio_course_view_tests "${CMAKE_SOURCE_DIR}/out/qa")
+    add_test(NAME native.audio_course_view COMMAND lgaed_audio_course_view_tests "C:/LGAED-QA/audio-course-view-${LGAED_DEFAULT_PROFILE}")
     set_tests_properties(native.audio_course_view PROPERTIES TIMEOUT 40)
     add_executable(lgaed_settings_view_tests native/presentation/windows/settings_view_tests.cpp)
     target_link_libraries(lgaed_settings_view_tests PRIVATE lgaed_presentation_windows)
@@ -2231,6 +2249,15 @@ if(BUILD_TESTING)
         set_tests_properties(native.current_inline_feedback_${inline_case} PROPERTIES TIMEOUT 240 RUN_SERIAL TRUE)
     endforeach()
     add_test(NAME native.lesson_reader COMMAND lgaed_lesson_reader_tests)
+    add_test(NAME native.reader_page_synthesis_order COMMAND lgaed_lesson_reader_tests --synthesis-order)
+    set_tests_properties(native.reader_page_synthesis_order
+        PROPERTIES TIMEOUT 300 RUN_SERIAL TRUE LABELS "real_audio;page_revision")
+    foreach(_rate IN ITEMS 1 2 3)
+        add_test(NAME native.reader_saldo_feedback_${_rate}x COMMAND lgaed_lesson_reader_tests --saldo-feedback ${_rate})
+        add_test(NAME native.reader_saldo_published_${_rate}x COMMAND lgaed_lesson_reader_tests --saldo-published ${_rate})
+        set_tests_properties(native.reader_saldo_feedback_${_rate}x native.reader_saldo_published_${_rate}x
+            PROPERTIES TIMEOUT 1800 RUN_SERIAL TRUE LABELS "real_audio;reader_revision")
+    endforeach()
     # Includes full real playback for the added prerequisite/bookmark cases.
     # Its foreground-focus scenario also owns the desktop during this test.
     set_tests_properties(native.lesson_reader PROPERTIES TIMEOUT 480 RUN_SERIAL TRUE)
@@ -2316,6 +2343,9 @@ if(BUILD_TESTING)
     set_tests_properties(native.math_expression_editor PROPERTIES TIMEOUT 90)
     include(cmake/NarrationWorkerTests.cmake)
     lgaed_add_narration_worker_tests()
+    add_test(NAME native.narration_page_revision COMMAND lgaed_narration_worker_tests
+        --page-revision "C:/LGAED-QA/narration-page-revision-${LGAED_DEFAULT_PROFILE}")
+    set_tests_properties(native.narration_page_revision PROPERTIES TIMEOUT 240 RUN_SERIAL TRUE LABELS "real_audio;page_revision")
     add_test(NAME native.windows_symbol_speech COMMAND "${Python3_EXECUTABLE}" -B
         "${CMAKE_SOURCE_DIR}/native/narration/worker/test_windows_symbol_speech.py")
     set_tests_properties(native.windows_symbol_speech PROPERTIES TIMEOUT 180)

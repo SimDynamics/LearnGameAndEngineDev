@@ -27,6 +27,7 @@ log.write(json.dumps({"command": "started", "pid": os.getpid(), "parentPid": os.
 pending = None
 cached_wave = options.cached_wave
 cached_source = None
+planned_pages = {}
 
 
 def respond(request, **fields):
@@ -39,12 +40,24 @@ for line in sys.stdin:
     if command == "curriculum_plan":
         lesson = json.loads(request["lessonJson"])
         source = f"generation:{lesson['id']}:{request['page']}"
-        log.write(json.dumps({"command": command, "text": source, "language": request["language"], "voice": request["voice"]}) + "\n")
-        respond(request, segments=[{"text": source, "preparedText": source, "key": "controlled-transport-only"}])
+        pages = lesson.get("pages", [])
+        page = pages[request["page"]] if 0 <= request["page"] < len(pages) else {}
+        current = lesson.get("stateLayout", {}).get("current", [])
+        owner = current[request["page"]] if 0 <= request["page"] < len(current) else {}
+        stable = owner.get("id") or page.get("id") or str(request["page"])
+        page_id = f"{lesson['id']}/{request.get('contentLanguage', request['language'])}/{stable}"
+        planned_pages[source] = page_id
+        revision = hashlib.sha256(json.dumps({"page": page,
+            "language": request["language"], "uiLanguage": request["uiLanguage"],
+            "readingContext": request.get("readingContext", "auto")}, sort_keys=True).encode()).hexdigest()
+        log.write(json.dumps({"command": command, "text": source, "pageId": page_id,
+            "revision": revision, "language": request["language"], "voice": request["voice"]}) + "\n")
+        respond(request, pageId=page_id,
+                revision=revision, segments=[{"text": source, "preparedText": source, "key": "controlled-transport-only"}])
     elif command == "prepare":
         if pending is not None:
             raise RuntimeError("Overlapping synthesis escaped the native serialized lane")
-        log.write(json.dumps(request) + "\n")
+        log.write(json.dumps({**request, "fixturePageId": planned_pages.get(request["text"], "")}) + "\n")
         if cached_wave is not None and (cached_source is None or cached_source == request["text"]):
             # A genuine pre-existing Kokoro WAV is borrowed by this controlled
             # transport. This metadata is explicitly a fixture; no new audio is
@@ -55,6 +68,7 @@ for line in sys.stdin:
             with wave.open(cached_wave, "rb") as stream:
                 duration = stream.getnframes() * 1000.0 / stream.getframerate()
             respond(request, key=key, sourceText=request["text"], spokenText=request["text"],
+                    cacheNamespace=request.get("cacheNamespace", ""),
                     provider="controlled-cache-fixture", wav=cached_wave,
                     durationMs=duration, cacheHit=True, timings=[])
         else:
