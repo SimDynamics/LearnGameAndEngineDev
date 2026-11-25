@@ -172,12 +172,12 @@
         {
           "type": "output_prediction",
           "language": "cpp",
-          "question": "Compara las declaraciones de tarde y antes. En cada una, mira si static_cast convierte el resultado de la división o el valor de total antes de dividir. ¿Qué números escribe std::cout, separados por un espacio, al mostrar tarde y luego antes?",
+          "question": "Compara las dos divisiones. En la primera declaración, static_cast convierte a double el resultado de total / partes. En la segunda declaración, static_cast convierte total a double antes de dividir. ¿Qué números escribe std::cout en ese orden, separados por un espacio?",
           "code": "#include <iostream>\n\nint main() {\n    int total = 13;\n    int partes = 4;\n\n    double tarde = static_cast<double>(total / partes);\n\n    double antes = static_cast<double>(total) / partes;\n\n    std::cout << tarde << \" \" << antes;\n\n    return 0;\n}\n",
           "answers": [
             "3 3.25"
           ],
-          "explanation": "En la declaración de tarde, total / partes divide los enteros trece y cuatro. El cociente entero es tres y static_cast<double> convierte ese tres a double. En la declaración de antes, static_cast<double>(total) convierte el trece antes de dividirlo entre cuatro. Así, antes guarda tres y un cuarto. La consola muestra 3 3.25.",
+          "explanation": "En la primera declaración, total / partes divide dos enteros y el cociente es 3. Después, static_cast<double> convierte ese 3 a double. En la segunda declaración, static_cast<double>(total) convierte trece a double antes de dividir. Ahora la división admite una parte fraccionaria y el cociente es 3.25. La consola muestra 3 3.25.",
           "reviewFeedback": "Mira qué va dentro de los paréntesis de static_cast en cada línea. Si dentro está toda la división, haz esa división primero."
         },
         {
@@ -1914,54 +1914,54 @@
       {
         "block": "block_0003_0004",
         "path": "/question",
-        "sourceSha256": "cee6d3e99e848ad79218544e315ab7cb5453d93540e97d2b343ed30ca0e23b30",
+        "sourceSha256": "ce8842adcb6f8b02043725e8d614db64ab3db3680477146c049411c8327f2afb",
         "spans": [
           {
-            "start": 29,
-            "end": 34,
-            "text": "tarde",
-            "role": "cpp",
-            "reading": "technical"
-          },
-          {
-            "start": 37,
-            "end": 42,
-            "text": "antes",
-            "role": "cpp",
-            "reading": "technical"
-          },
-          {
-            "start": 65,
-            "end": 76,
+            "start": 55,
+            "end": 66,
             "text": "static_cast",
             "role": "cpp",
             "reading": "technical"
           },
           {
-            "start": 129,
-            "end": 134,
+            "start": 79,
+            "end": 85,
+            "text": "double",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 102,
+            "end": 116,
+            "text": "total / partes",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 145,
+            "end": 156,
+            "text": "static_cast",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 167,
+            "end": 172,
             "text": "total",
             "role": "cpp",
             "reading": "technical"
           },
           {
-            "start": 174,
-            "end": 183,
+            "start": 175,
+            "end": 181,
+            "text": "double",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 221,
+            "end": 230,
             "text": "std::cout",
-            "role": "cpp",
-            "reading": "technical"
-          },
-          {
-            "start": 222,
-            "end": 227,
-            "text": "tarde",
-            "role": "cpp",
-            "reading": "technical"
-          },
-          {
-            "start": 236,
-            "end": 241,
-            "text": "antes",
             "role": "cpp",
             "reading": "technical"
           }
@@ -1970,60 +1970,46 @@
       {
         "block": "block_0003_0004",
         "path": "/explanation",
-        "sourceSha256": "f22139821a9e0c3125fbb43e4a3ad3e71c79daf42ad9f39a1ce769c887019918",
+        "sourceSha256": "b42dbbd271f0007c55ee07aa67bb5c86d075012c2bc4aefdc927cef3f7e394f9",
         "spans": [
           {
-            "start": 21,
-            "end": 26,
-            "text": "tarde",
-            "role": "cpp",
-            "reading": "technical"
-          },
-          {
-            "start": 28,
-            "end": 42,
+            "start": 27,
+            "end": 41,
             "text": "total / partes",
             "role": "cpp",
             "reading": "technical"
           },
           {
-            "start": 107,
-            "end": 126,
+            "start": 90,
+            "end": 109,
             "text": "static_cast<double>",
             "role": "cpp",
             "reading": "technical"
           },
           {
-            "start": 148,
-            "end": 154,
+            "start": 128,
+            "end": 134,
             "text": "double",
             "role": "cpp",
             "reading": "technical"
           },
           {
-            "start": 177,
-            "end": 182,
-            "text": "antes",
-            "role": "cpp",
-            "reading": "technical"
-          },
-          {
-            "start": 184,
-            "end": 210,
+            "start": 163,
+            "end": 189,
             "text": "static_cast<double>(total)",
             "role": "cpp",
             "reading": "technical"
           },
           {
-            "start": 268,
-            "end": 273,
-            "text": "antes",
+            "start": 208,
+            "end": 214,
+            "text": "double",
             "role": "cpp",
             "reading": "technical"
           },
           {
-            "start": 318,
-            "end": 324,
+            "start": 323,
+            "end": 329,
             "text": "3 3.25",
             "role": "output",
             "reading": "natural"
@@ -5378,6 +5364,11 @@
         "id": "block_0003_0004",
         "beforeSha256": "f1d5a53fe22c2622ce969d6d76beba72355cbfc96823d7b7f689154a1f082352",
         "afterSha256": "a6a4cf10e2069e4dacf8776dace5b2acb169fab5547648376221515b4a8869d0"
+      },
+      {
+        "id": "block_0003_0004",
+        "beforeSha256": "a6a4cf10e2069e4dacf8776dace5b2acb169fab5547648376221515b4a8869d0",
+        "afterSha256": "3e98cb2940dbfd93092a1c193e1199869b36d14dfe748422bd9fc52cc932a867"
       }
     ],
     "sourceFormatRevisions": [
