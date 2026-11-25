@@ -19,8 +19,11 @@ PRESENTED = "53578555e9a291dfe653cc0456fa535661df7ed3"
 PRESENTED_BLOB = "32d94f9e25014791557e9b3ccb0c899ba4f6f0d7"
 EXPLAINED = "ee940eb067c0ac8ff5a6217f2b6f79564b50e2cb"
 EXPLAINED_BLOB = "0fd1793a34b0a49fcbb83d009afd24be54f56b38"
+BEFORE_LATER_EDITORIAL = "39ba3cb196e196bac99c2d891b488f765679ad6d"
+BEFORE_LATER_EDITORIAL_BLOB = "820d056b933573cb580554aa25031a3a2154556a"
 PUBLICATIONS = ((BASE, BASE_BLOB), (PRESENTED, PRESENTED_BLOB),
-                (EXPLAINED, EXPLAINED_BLOB))
+                (EXPLAINED, EXPLAINED_BLOB),
+                (BEFORE_LATER_EDITORIAL, BEFORE_LATER_EDITORIAL_BLOB))
 OWNER = "u3l4_alcance_codigo_en_recuadros"
 PROMPT_REVIEWED = "aae31e3d0ff202d700d3f3dd5ba27854eebe088d"
 PROMPT_REVIEWED_BLOB = "420f3650e24d417cfac73f6ebde1678f353d4b3f"
@@ -46,7 +49,7 @@ class CodeScopePresentationTest(unittest.TestCase):
     def setUpClass(cls):
         cls.publications = [json.loads(published_bytes(*publication))
                             for publication in PUBLICATIONS]
-        cls.before, cls.presented, cls.explained = cls.publications
+        cls.before, cls.presented, cls.explained, _ = cls.publications
         cls.current = json.loads((ROOT / LESSON).read_text(encoding="utf-8"))
         cls.prompt_reviewed = json.loads(published_bytes(PROMPT_REVIEWED, PROMPT_REVIEWED_BLOB))
 

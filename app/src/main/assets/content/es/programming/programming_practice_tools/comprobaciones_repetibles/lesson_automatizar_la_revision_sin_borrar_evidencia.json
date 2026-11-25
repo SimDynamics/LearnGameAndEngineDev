@@ -121,7 +121,7 @@
         },
         {
           "type": "paragraph",
-          "text": "Revisa primero las ocho líneas de la entrada preparada. A aparece en las líneas 1, 2, 4 y 8. La etiqueta C;=lote aparece con las mismas columnas en las líneas 6 y 7: ambas ocurrencias deben conservarse.\n\nLa línea 5 contiene A 1-1 y sólo tiene dos palabras; debe producir un diagnóstico de formato. La línea 8 contiene A 1 -1, con tres palabras; es válida y permite comparar una columna obtenida negativa.\n\nRepara la omisión en main sin cambiar esos datos. Pulsa «Compilar y ejecutar» y contrasta stdout con estas filas, todas con salto final:\n\nLinea=1 Caso=A Esperado=0 Obtenido=0 COINCIDE\nLinea=2 Caso=A Esperado=2 Obtenido=1 DIFIERE\nLinea=3 Caso=B Esperado=-1 Obtenido=-1 COINCIDE\nLinea=4 Caso=A Esperado=2 Obtenido=1 DIFIERE\nLinea=6 Caso=C;=lote Esperado=0 Obtenido=1 DIFIERE\nLinea=7 Caso=C;=lote Esperado=0 Obtenido=1 DIFIERE\nLinea=8 Caso=A Esperado=1 Obtenido=-1 DIFIERE\nResumen: validos=7;coinciden=2;difieren=5;formato=1\n\nstderr debe contener sólo Linea=5:FORMATO, con salto final. El código de terminación es 1. Ese código puede ser el mismo con la omisión y con la reparación; comprueba también las filas y los contadores del lote completo.\n\nPuedes probar el mismo objetivo con dos entradas más como ensayos opcionales separados, conservando el programa reparado.\n\nEn el primer ensayo opcional, escribe 0 0 0 y N -2 -2 en dos líneas del campo «Entrada», sin salto final después de la segunda. stdout debe contener:\n\nLinea=1 Caso=0 Esperado=0 Obtenido=0 COINCIDE\nLinea=2 Caso=N Esperado=-2 Obtenido=-2 COINCIDE\nResumen: validos=2;coinciden=2;difieren=0;formato=0\n\nstderr queda vacío y el código es 0. En el segundo ensayo opcional, deja vacío el campo «Entrada»: stdout sólo contiene Resumen: validos=0;coinciden=0;difieren=0;formato=0, con salto final; stderr queda vacío y el código es 0. Son ejecuciones independientes del mismo editor.",
+          "text": "Revisa primero las ocho líneas de la entrada preparada. A aparece en las líneas 1, 2, 4 y 8. La etiqueta C;=lote aparece con las mismas columnas en las líneas 6 y 7: ambas ocurrencias deben conservarse.\n\nLa línea 5 contiene A 1-1 y sólo tiene dos palabras; debe producir un diagnóstico de formato. La línea 8 contiene A 1 -1, con tres palabras; es válida y permite comparar una columna obtenida negativa.\n\nRepara la omisión en main sin cambiar esos datos. Pulsa «Compilar, ejecutar y comprobar» y contrasta stdout con estas filas, todas con salto final:\n\nLinea=1 Caso=A Esperado=0 Obtenido=0 COINCIDE\nLinea=2 Caso=A Esperado=2 Obtenido=1 DIFIERE\nLinea=3 Caso=B Esperado=-1 Obtenido=-1 COINCIDE\nLinea=4 Caso=A Esperado=2 Obtenido=1 DIFIERE\nLinea=6 Caso=C;=lote Esperado=0 Obtenido=1 DIFIERE\nLinea=7 Caso=C;=lote Esperado=0 Obtenido=1 DIFIERE\nLinea=8 Caso=A Esperado=1 Obtenido=-1 DIFIERE\nResumen: validos=7;coinciden=2;difieren=5;formato=1\n\nstderr debe contener sólo Linea=5:FORMATO, con salto final. El código de terminación es 1. Ese código puede ser el mismo con la omisión y con la reparación; comprueba también las filas y los contadores del lote completo.\n\nPuedes probar el mismo objetivo con dos entradas más como ensayos opcionales separados, conservando el programa reparado.\n\nEn el primer ensayo opcional, escribe 0 0 0 y N -2 -2 en dos líneas del campo «Entrada», sin salto final después de la segunda. stdout debe contener:\n\nLinea=1 Caso=0 Esperado=0 Obtenido=0 COINCIDE\nLinea=2 Caso=N Esperado=-2 Obtenido=-2 COINCIDE\nResumen: validos=2;coinciden=2;difieren=0;formato=0\n\nstderr queda vacío y el código es 0. En el segundo ensayo opcional, deja vacío el campo «Entrada»: stdout sólo contiene Resumen: validos=0;coinciden=0;difieren=0;formato=0, con salto final; stderr queda vacío y el código es 0. Son ejecuciones independientes del mismo editor.",
           "emphasis": [
             {
               "text": "el mismo objetivo con dos entradas más"
@@ -222,7 +222,7 @@
         },
         {
           "type": "paragraph",
-          "text": "El programa de abajo conserva etiquetas repetidas, pero usa continue para saltarse una coincidencia antes de actualizar los contadores. Así puede mostrar correctamente las diferencias y, aun así, contar mal el lote.\n\nModifica sólo main para separar los dos trabajos: revisar y contar cada registro válido, y decidir después si se muestra su fila. Conserva leer_registro, las entradas y el significado de los contadores. La tarea pide mostrar sólo diferencias individuales, manteniendo la cuenta de todas las líneas válidas.\n\nLa entrada preparada tiene seis líneas: cinco válidas y una mal formada. Tras reparar, pulsa «Compilar y ejecutar». stdout debe contener exactamente estas filas, cada una con salto final:\n\nLinea=3 Caso=R Esperado=0 Obtenido=-1 DIFIERE\nLinea=5 Caso=R Esperado=0 Obtenido=-1 DIFIERE\nResumen: validos=5;coinciden=3;difieren=2;formato=1\n\nstderr conserva Linea=4:FORMATO, con salto final, y el código es 1. Las dos filas de R son ocurrencias distintas y permanecen por separado.\n\nComo ensayo opcional, usa 0 0 0 y N -2 -2 en dos líneas, sin salto final después de la segunda. No deben aparecer filas individuales: stdout sólo muestra Resumen: validos=2;coinciden=2;difieren=0;formato=0, con salto final. stderr queda vacío y el código es 0.\n\nComo otro ensayo opcional, deja vacío el campo «Entrada». stdout sólo muestra Resumen: validos=0;coinciden=0;difieren=0;formato=0, con salto final; stderr queda vacío y el código es 0. Conserva el programa entre estos ensayos para que el cambio observado proceda de la entrada.",
+          "text": "El programa de abajo conserva etiquetas repetidas, pero usa continue para saltarse una coincidencia antes de actualizar los contadores. Así puede mostrar correctamente las diferencias y, aun así, contar mal el lote.\n\nModifica sólo main para separar los dos trabajos: revisar y contar cada registro válido, y decidir después si se muestra su fila. Conserva leer_registro, las entradas y el significado de los contadores. La tarea pide mostrar sólo diferencias individuales, manteniendo la cuenta de todas las líneas válidas.\n\nLa entrada preparada tiene seis líneas: cinco válidas y una mal formada. Tras reparar, pulsa «Compilar, ejecutar y comprobar». stdout debe contener exactamente estas filas, cada una con salto final:\n\nLinea=3 Caso=R Esperado=0 Obtenido=-1 DIFIERE\nLinea=5 Caso=R Esperado=0 Obtenido=-1 DIFIERE\nResumen: validos=5;coinciden=3;difieren=2;formato=1\n\nstderr conserva Linea=4:FORMATO, con salto final, y el código es 1. Las dos filas de R son ocurrencias distintas y permanecen por separado.\n\nComo ensayo opcional, usa 0 0 0 y N -2 -2 en dos líneas, sin salto final después de la segunda. No deben aparecer filas individuales: stdout sólo muestra Resumen: validos=2;coinciden=2;difieren=0;formato=0, con salto final. stderr queda vacío y el código es 0.\n\nComo otro ensayo opcional, deja vacío el campo «Entrada». stdout sólo muestra Resumen: validos=0;coinciden=0;difieren=0;formato=0, con salto final; stderr queda vacío y el código es 0. Conserva el programa entre estos ensayos para que el cambio observado proceda de la entrada.",
           "emphasis": [
             {
               "text": "conserva etiquetas repetidas"
@@ -291,7 +291,7 @@
         },
         {
           "type": "paragraph",
-          "text": "Como ensayo opcional, compara los dos editores con un mismo registro propio después de reparar ambos programas. En sus campos «Entrada», prepara el mismo texto completo dentro del límite de doce líneas, con estas características:\n\nIncluye dos líneas idénticas, con la misma etiqueta y los mismos valores esperado y obtenido. En otra línea, repite esa etiqueta y cambia al menos uno de los dos valores.\nHay una línea con un cuarto campo, que debe rechazarse por formato.\nDespués de esa línea aparece otra válida, que debe seguir revisándose y contando.\n\nIdentifica las ocurrencias válidas y la línea mal formada antes de ejecutar. Usa «Compilar y ejecutar» en cada editor con ese texto. Sus resúmenes, diagnósticos y códigos deben coincidir; las filas individuales cambian porque uno muestra todas las válidas y el otro sólo las diferencias.\n\nContrasta también cada informe con el texto de entrada. Que las dos versiones coincidan entre sí no basta para descartar una omisión que ambas pudieran compartir."
+          "text": "Como ensayo opcional, compara los dos editores con un mismo registro propio después de reparar ambos programas. En sus campos «Entrada», prepara el mismo texto completo dentro del límite de doce líneas, con estas características:\n\nIncluye dos líneas idénticas, con la misma etiqueta y los mismos valores esperado y obtenido. En otra línea, repite esa etiqueta y cambia al menos uno de los dos valores.\nHay una línea con un cuarto campo, que debe rechazarse por formato.\nDespués de esa línea aparece otra válida, que debe seguir revisándose y contando.\n\nIdentifica las ocurrencias válidas y la línea mal formada antes de ejecutar. Usa «Compilar, ejecutar y comprobar» en cada editor con ese texto. Sus resúmenes, diagnósticos y códigos deben coincidir; las filas individuales cambian porque uno muestra todas las válidas y el otro sólo las diferencias.\n\nContrasta también cada informe con el texto de entrada. Que las dos versiones coincidan entre sí no basta para descartar una omisión que ambas pudieran compartir."
         },
         {
           "type": "multiple_choice",
@@ -1491,6 +1491,21 @@
         "id": "block_0007_0002",
         "beforeSha256": "a08902ca0fdb661d996ee0e6fefba416bdc83ad09ac093d3e1f1346ffd1a501f",
         "afterSha256": "57a20ad8a17afb7d5a661522c15986543c00b4040a21d52f329de92104bd0a3e"
+      },
+      {
+        "id": "block_0003_0002",
+        "beforeSha256": "0455d1b9e85c5302d2b2575610fd8557c9ac7b177ebab241f0b98e9e66cb480d",
+        "afterSha256": "2e0b131ec8596480c51811c9779b8ef112f62df676b838b3c72294a9a91b9b78"
+      },
+      {
+        "id": "block_0006_0002",
+        "beforeSha256": "9881391dfb455c3f8c8980e8dae737b4edc41eb88e67eb3f5cbea4c70a0f7be5",
+        "afterSha256": "59d51c9dc360dff1bcc323fdcae12e5b54fb597d5fce2e45cbb029e9a380c10e"
+      },
+      {
+        "id": "block_0008_0001",
+        "beforeSha256": "28a2ed8d20ee047121aa7fc6810ade8dc6f9dd3ea88f72941453d5b2619f82b1",
+        "afterSha256": "1e464d4aaad41a13d927b94006b52bac7a9cdd683111280d7008065be5148ea6"
       }
     ],
     "sourceFormatRevisions": [
@@ -2174,7 +2189,7 @@
       {
         "block": "block_0003_0002",
         "path": "/text",
-        "sourceSha256": "f76eaf54c12c643a6c1d82df9aa9af3f323a39da2b937c53f89cd7d93f0efcb2",
+        "sourceSha256": "ae8514fbb3ac914e42bfbd416125f03922500e864e8d75605a8d7d18367a4f88",
         "spans": [
           {
             "start": 56,
@@ -2226,169 +2241,169 @@
             "reading": "technical"
           },
           {
-            "start": 496,
-            "end": 502,
+            "start": 507,
+            "end": 513,
             "text": "stdout",
             "role": "data",
             "reading": "technical"
           },
           {
-            "start": 544,
-            "end": 589,
+            "start": 555,
+            "end": 600,
             "text": "Linea=1 Caso=A Esperado=0 Obtenido=0 COINCIDE",
             "role": "output",
             "reading": "natural"
           },
           {
-            "start": 590,
-            "end": 634,
+            "start": 601,
+            "end": 645,
             "text": "Linea=2 Caso=A Esperado=2 Obtenido=1 DIFIERE",
             "role": "output",
             "reading": "natural"
           },
           {
-            "start": 635,
-            "end": 682,
+            "start": 646,
+            "end": 693,
             "text": "Linea=3 Caso=B Esperado=-1 Obtenido=-1 COINCIDE",
             "role": "output",
             "reading": "natural"
           },
           {
-            "start": 683,
-            "end": 727,
+            "start": 694,
+            "end": 738,
             "text": "Linea=4 Caso=A Esperado=2 Obtenido=1 DIFIERE",
             "role": "output",
             "reading": "natural"
           },
           {
-            "start": 728,
-            "end": 778,
+            "start": 739,
+            "end": 789,
             "text": "Linea=6 Caso=C;=lote Esperado=0 Obtenido=1 DIFIERE",
             "role": "output",
             "reading": "natural"
           },
           {
-            "start": 779,
-            "end": 829,
+            "start": 790,
+            "end": 840,
             "text": "Linea=7 Caso=C;=lote Esperado=0 Obtenido=1 DIFIERE",
             "role": "output",
             "reading": "natural"
           },
           {
-            "start": 830,
-            "end": 875,
+            "start": 841,
+            "end": 886,
             "text": "Linea=8 Caso=A Esperado=1 Obtenido=-1 DIFIERE",
             "role": "output",
             "reading": "natural"
           },
           {
-            "start": 876,
-            "end": 927,
+            "start": 887,
+            "end": 938,
             "text": "Resumen: validos=7;coinciden=2;difieren=5;formato=1",
             "role": "output",
             "reading": "natural"
           },
           {
-            "start": 929,
-            "end": 935,
+            "start": 940,
+            "end": 946,
             "text": "stderr",
             "role": "data",
             "reading": "technical"
           },
           {
-            "start": 955,
-            "end": 970,
+            "start": 966,
+            "end": 981,
             "text": "Linea=5:FORMATO",
             "role": "output",
             "reading": "natural"
           },
           {
-            "start": 1017,
-            "end": 1018,
+            "start": 1028,
+            "end": 1029,
             "text": "1",
             "role": "output",
             "reading": "natural"
           },
           {
-            "start": 1312,
-            "end": 1317,
+            "start": 1323,
+            "end": 1328,
             "text": "0 0 0",
             "role": "data",
             "reading": "technical"
           },
           {
-            "start": 1320,
-            "end": 1327,
+            "start": 1331,
+            "end": 1338,
             "text": "N -2 -2",
             "role": "data",
             "reading": "technical"
           },
           {
-            "start": 1402,
-            "end": 1408,
+            "start": 1413,
+            "end": 1419,
             "text": "stdout",
             "role": "data",
             "reading": "technical"
           },
           {
-            "start": 1425,
-            "end": 1470,
+            "start": 1436,
+            "end": 1481,
             "text": "Linea=1 Caso=0 Esperado=0 Obtenido=0 COINCIDE",
             "role": "output",
             "reading": "natural"
           },
           {
-            "start": 1471,
-            "end": 1518,
+            "start": 1482,
+            "end": 1529,
             "text": "Linea=2 Caso=N Esperado=-2 Obtenido=-2 COINCIDE",
             "role": "output",
             "reading": "natural"
           },
           {
-            "start": 1519,
-            "end": 1570,
+            "start": 1530,
+            "end": 1581,
             "text": "Resumen: validos=2;coinciden=2;difieren=0;formato=0",
             "role": "output",
             "reading": "natural"
           },
           {
-            "start": 1572,
-            "end": 1578,
+            "start": 1583,
+            "end": 1589,
             "text": "stderr",
             "role": "data",
             "reading": "technical"
           },
           {
-            "start": 1606,
-            "end": 1607,
+            "start": 1617,
+            "end": 1618,
             "text": "0",
             "role": "output",
             "reading": "natural"
           },
           {
-            "start": 1671,
-            "end": 1677,
+            "start": 1682,
+            "end": 1688,
             "text": "stdout",
             "role": "data",
             "reading": "technical"
           },
           {
-            "start": 1692,
-            "end": 1743,
+            "start": 1703,
+            "end": 1754,
             "text": "Resumen: validos=0;coinciden=0;difieren=0;formato=0",
             "role": "output",
             "reading": "natural"
           },
           {
-            "start": 1762,
-            "end": 1768,
+            "start": 1773,
+            "end": 1779,
             "text": "stderr",
             "role": "data",
             "reading": "technical"
           },
           {
-            "start": 1796,
-            "end": 1797,
+            "start": 1807,
+            "end": 1808,
             "text": "0",
             "role": "output",
             "reading": "natural"
@@ -2798,7 +2813,7 @@
       {
         "block": "block_0006_0002",
         "path": "/text",
-        "sourceSha256": "62018a48d636b021d06d5588487cc50606952a51c89eabb1ec1a02064720e68a",
+        "sourceSha256": "8d815dee2b3f5adef95270a77f40725ef9a7bd701e2b2b8f526cb94a6e63ce8e",
         "spans": [
           {
             "start": 60,
@@ -2822,120 +2837,120 @@
             "reading": "technical"
           },
           {
-            "start": 641,
-            "end": 647,
+            "start": 652,
+            "end": 658,
             "text": "stdout",
             "role": "data",
             "reading": "technical"
           },
           {
-            "start": 714,
-            "end": 759,
+            "start": 725,
+            "end": 770,
             "text": "Linea=3 Caso=R Esperado=0 Obtenido=-1 DIFIERE",
             "role": "output",
             "reading": "natural"
           },
           {
-            "start": 760,
-            "end": 805,
+            "start": 771,
+            "end": 816,
             "text": "Linea=5 Caso=R Esperado=0 Obtenido=-1 DIFIERE",
             "role": "output",
             "reading": "natural"
           },
           {
-            "start": 806,
-            "end": 857,
+            "start": 817,
+            "end": 868,
             "text": "Resumen: validos=5;coinciden=3;difieren=2;formato=1",
             "role": "output",
             "reading": "natural"
           },
           {
-            "start": 859,
-            "end": 865,
+            "start": 870,
+            "end": 876,
             "text": "stderr",
             "role": "data",
             "reading": "technical"
           },
           {
-            "start": 875,
-            "end": 890,
+            "start": 886,
+            "end": 901,
             "text": "Linea=4:FORMATO",
             "role": "output",
             "reading": "natural"
           },
           {
-            "start": 924,
-            "end": 925,
+            "start": 935,
+            "end": 936,
             "text": "1",
             "role": "output",
             "reading": "natural"
           },
           {
-            "start": 1026,
-            "end": 1031,
+            "start": 1037,
+            "end": 1042,
             "text": "0 0 0",
             "role": "data",
             "reading": "technical"
           },
           {
-            "start": 1034,
-            "end": 1041,
+            "start": 1045,
+            "end": 1052,
             "text": "N -2 -2",
             "role": "data",
             "reading": "technical"
           },
           {
-            "start": 1134,
-            "end": 1140,
+            "start": 1145,
+            "end": 1151,
             "text": "stdout",
             "role": "data",
             "reading": "technical"
           },
           {
-            "start": 1154,
-            "end": 1205,
+            "start": 1165,
+            "end": 1216,
             "text": "Resumen: validos=2;coinciden=2;difieren=0;formato=0",
             "role": "output",
             "reading": "natural"
           },
           {
-            "start": 1224,
-            "end": 1230,
+            "start": 1235,
+            "end": 1241,
             "text": "stderr",
             "role": "data",
             "reading": "technical"
           },
           {
-            "start": 1258,
-            "end": 1259,
+            "start": 1269,
+            "end": 1270,
             "text": "0",
             "role": "output",
             "reading": "natural"
           },
           {
-            "start": 1320,
-            "end": 1326,
+            "start": 1331,
+            "end": 1337,
             "text": "stdout",
             "role": "data",
             "reading": "technical"
           },
           {
-            "start": 1340,
-            "end": 1391,
+            "start": 1351,
+            "end": 1402,
             "text": "Resumen: validos=0;coinciden=0;difieren=0;formato=0",
             "role": "output",
             "reading": "natural"
           },
           {
-            "start": 1410,
-            "end": 1416,
+            "start": 1421,
+            "end": 1427,
             "text": "stderr",
             "role": "data",
             "reading": "technical"
           },
           {
-            "start": 1444,
-            "end": 1445,
+            "start": 1455,
+            "end": 1456,
             "text": "0",
             "role": "output",
             "reading": "natural"
@@ -3176,7 +3191,7 @@
       {
         "block": "block_0008_0001",
         "path": "/text",
-        "sourceSha256": "38a3cbaaad034337e0922c8a1cd7014d9638140cfcdeb62dade6bc549da97114",
+        "sourceSha256": "9bdf300edac63c3103625e3d924b4ea33db476ec57fd2a3111b4e4e16838005a",
         "spans": []
       },
       {
@@ -3247,5 +3262,15 @@
         "spans": []
       }
     ]
-  }
+  },
+  "compilerRuntimeChecks": [
+    {
+      "activity": "block_0003_0003",
+      "kind": "observationCompleteV1"
+    },
+    {
+      "activity": "block_0006_0003",
+      "kind": "observationDifferencesV1"
+    }
+  ]
 }

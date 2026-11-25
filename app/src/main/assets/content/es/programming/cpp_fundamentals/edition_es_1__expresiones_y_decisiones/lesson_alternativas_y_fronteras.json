@@ -383,15 +383,15 @@
               "options": [
                 {
                   "id": "antes",
-                  "label": "En el recuadro de main, antes de declarar fichas."
+                  "label": "En main, antes de la declaración de fichas."
                 },
                 {
                   "id": "antes_de_return",
-                  "label": "Justo antes de return 0;, debajo del recuadro del if."
+                  "label": "Después del bloque del if, justo antes de return 0;"
                 },
                 {
                   "id": "en_if",
-                  "label": "Dentro del recuadro del if, justo después de declarar bolsas."
+                  "label": "Dentro del if, inmediatamente después de la declaración de bolsas."
                 }
               ],
               "validator": {
@@ -403,8 +403,8 @@
             }
           ],
           "feedback": {
-            "correct": "Al llegar a esa línea, el programa ya ha inicializado fichas. El borde inferior del recuadro pequeño marca el final del cuerpo del if. Tanto si se ejecuta ese cuerpo como si se salta, el programa llega a la nueva salida antes de return 0;.",
-            "incorrect": "Localiza la declaración de fichas en el recuadro exterior. Luego sigue el recorrido que haría el programa si la condición fuese falsa. ¿Por cuáles de las tres posiciones pasaría cuando fichas ya tiene valor?"
+            "correct": "Cuando el programa llega a std::cout << fichas;, fichas ya tiene su valor inicial. Si la condición es verdadera, el programa ejecuta las instrucciones del if y luego muestra el total. Si la condición es falsa, el programa salta el bloque y pasa directamente a la instrucción que muestra el total. En los dos casos, después ejecuta return 0;.",
+            "incorrect": "Sigue el programa con una condición falsa. Busca la posición que queda después de la declaración de fichas y a la que el programa llega cuando salta el bloque del if."
           }
         },
         {
@@ -1837,8 +1837,15 @@
         "spans": [
           {
             "start": 0,
+            "end": 6,
+            "text": "Normal",
+            "role": "output",
+            "reading": "natural"
+          },
+          {
+            "start": 7,
             "end": 15,
-            "text": "Normal\nMarca: 0",
+            "text": "Marca: 0",
             "role": "output",
             "reading": "natural"
           }
@@ -1851,8 +1858,22 @@
         "spans": [
           {
             "start": 0,
+            "end": 6,
+            "text": "Alerta",
+            "role": "output",
+            "reading": "natural"
+          },
+          {
+            "start": 7,
+            "end": 13,
+            "text": "Normal",
+            "role": "output",
+            "reading": "natural"
+          },
+          {
+            "start": 14,
             "end": 22,
-            "text": "Alerta\nNormal\nMarca: 1",
+            "text": "Marca: 1",
             "role": "output",
             "reading": "natural"
           }
@@ -1865,8 +1886,15 @@
         "spans": [
           {
             "start": 0,
+            "end": 6,
+            "text": "Alerta",
+            "role": "output",
+            "reading": "natural"
+          },
+          {
+            "start": 7,
             "end": 15,
-            "text": "Alerta\nMarca: 1",
+            "text": "Marca: 1",
             "role": "output",
             "reading": "natural"
           }
@@ -4090,18 +4118,18 @@
       {
         "block": "u3l4_alcance_codigo_en_recuadros",
         "path": "/responses/0/options/0/label",
-        "sourceSha256": "c5db5bc4efad5a25bb2e15d50b6ce6b41883874297162d946f3bf11baaee0c2f",
+        "sourceSha256": "65daed800e8919ccd9a743d6c312f6838cd5763b229af8a3d7d600f41375523d",
         "spans": [
           {
-            "start": 18,
-            "end": 22,
+            "start": 3,
+            "end": 7,
             "text": "main",
             "role": "cpp",
             "reading": "technical"
           },
           {
-            "start": 42,
-            "end": 48,
+            "start": 36,
+            "end": 42,
             "text": "fichas",
             "role": "cpp",
             "reading": "technical"
@@ -4111,19 +4139,19 @@
       {
         "block": "u3l4_alcance_codigo_en_recuadros",
         "path": "/responses/0/options/1/label",
-        "sourceSha256": "a6aef45ad2d3f7a70ccda80224d1e48238cfd4ad83c7d167f46bba8b6b1f9b0a",
+        "sourceSha256": "688f95bc81b365154b6599bdd840595e4c20b922bb8792bd4661bd713db4757f",
         "spans": [
           {
-            "start": 15,
-            "end": 24,
-            "text": "return 0;",
+            "start": 23,
+            "end": 25,
+            "text": "if",
             "role": "cpp",
             "reading": "technical"
           },
           {
-            "start": 50,
-            "end": 52,
-            "text": "if",
+            "start": 42,
+            "end": 51,
+            "text": "return 0;",
             "role": "cpp",
             "reading": "technical"
           }
@@ -4132,18 +4160,18 @@
       {
         "block": "u3l4_alcance_codigo_en_recuadros",
         "path": "/responses/0/options/2/label",
-        "sourceSha256": "ce43e7d1f1d0a6f5abba9965959ea030a3ff0c2139c39293b31a52a12d445371",
+        "sourceSha256": "c2169c44b7a0ba6b54243ab766c3c42cd44914466f46839e978865f631f5445a",
         "spans": [
           {
-            "start": 24,
-            "end": 26,
+            "start": 11,
+            "end": 13,
             "text": "if",
             "role": "cpp",
             "reading": "technical"
           },
           {
-            "start": 54,
-            "end": 60,
+            "start": 59,
+            "end": 65,
             "text": "bolsas",
             "role": "cpp",
             "reading": "technical"
@@ -4153,25 +4181,32 @@
       {
         "block": "u3l4_alcance_codigo_en_recuadros",
         "path": "/feedback/correct",
-        "sourceSha256": "0ef839da58e3db5f868a99ed1ea418dcc13a3faf3aa257120f473a97827cab20",
+        "sourceSha256": "16471c807e1cf3c88fd36685d2313f5201d4d0e20b6fa3498086ea9114cac499",
         "spans": [
           {
-            "start": 54,
-            "end": 60,
+            "start": 27,
+            "end": 47,
+            "text": "std::cout << fichas;",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 49,
+            "end": 55,
             "text": "fichas",
             "role": "cpp",
             "reading": "technical"
           },
           {
-            "start": 131,
-            "end": 133,
+            "start": 155,
+            "end": 157,
             "text": "if",
             "role": "cpp",
             "reading": "technical"
           },
           {
-            "start": 229,
-            "end": 238,
+            "start": 331,
+            "end": 340,
             "text": "return 0;",
             "role": "cpp",
             "reading": "technical"
@@ -4181,19 +4216,19 @@
       {
         "block": "u3l4_alcance_codigo_en_recuadros",
         "path": "/feedback/incorrect",
-        "sourceSha256": "414befa2be905cc24dd898268eea47f575d88c9681abbaf16e5e009c2867b9bd",
+        "sourceSha256": "506845f1d65efe8b617311436bbb2724880ed4cce01687d8d7444654a95f21f5",
         "spans": [
           {
-            "start": 27,
-            "end": 33,
+            "start": 100,
+            "end": 106,
             "text": "fichas",
             "role": "cpp",
             "reading": "technical"
           },
           {
-            "start": 185,
-            "end": 191,
-            "text": "fichas",
+            "start": 163,
+            "end": 165,
+            "text": "if",
             "role": "cpp",
             "reading": "technical"
           }
@@ -7037,6 +7072,11 @@
         "id": "u3l4_tarifa_declaraciones_y_vida",
         "beforeSha256": "10b3350eb7b53ee99c10a64c64faaad13d8aa05b7185ecd3a2b41542c71f6d8a",
         "afterSha256": "aebb8534e09bef1b829aa10a3cbc5d605d78cb71f4d348f51de4d456cfc74aba"
+      },
+      {
+        "id": "u3l4_alcance_codigo_en_recuadros",
+        "beforeSha256": "575e3e0be74d1b421662a9db8501c873a3d33d18f7cfe778b01df3968c2ae7fb",
+        "afterSha256": "2556065d42de3a938988ba2c52f474d230565cd98881206cb5d4bc8d3246b1cb"
       }
     ],
     "retired": [
@@ -10403,6 +10443,143 @@
             }
           ]
         }
+      },
+      {
+        "id": "u3l4_alcance_codigo_en_recuadros",
+        "field": "/responses/0/options/0/label",
+        "rawJson": "{\"type\":\"math_puzzle\",\"schemaVersion\":1,\"id\":\"u3l4_alcance_codigo_en_recuadros\",\"prompt\":\"El recuadro grande representa el cuerpo de main. Dentro de él, el recuadro pequeño representa el cuerpo del if. Quieres añadir std::cout << fichas; una sola vez para mostrar el total tanto si se entra en el if como si se salta. ¿Dónde pondrías esa instrucción?\",\"representations\":[{\"type\":\"euclidean_diagram\",\"points\":[{\"id\":\"outer0\",\"x\":0,\"y\":0},{\"id\":\"outer1\",\"x\":10000,\"y\":0},{\"id\":\"outer2\",\"x\":10000,\"y\":7000},{\"id\":\"outer3\",\"x\":0,\"y\":7000},{\"id\":\"inner0\",\"x\":300,\"y\":1297},{\"id\":\"inner1\",\"x\":9700,\"y\":1297},{\"id\":\"inner2\",\"x\":9700,\"y\":4366},{\"id\":\"inner3\",\"x\":300,\"y\":4366},{\"id\":\"main\",\"x\":539,\"y\":5552,\"labels\":[\"main\"]},{\"id\":\"fichas\",\"x\":765,\"y\":4501,\"labels\":[\"const int fichas = 8;\"]},{\"id\":\"if\",\"x\":860,\"y\":4335,\"labels\":[\"if (fichas >= 4)\"]},{\"id\":\"bolsas\",\"x\":1067,\"y\":3354,\"labels\":[\"const int bolsas = fichas / 4;\"]},{\"id\":\"salida\",\"x\":1080,\"y\":1819,\"labels\":[\"std::cout << bolsas;\"]},{\"id\":\"return\",\"x\":585,\"y\":514,\"labels\":[\"return 0;\"]}],\"objects\":[{\"id\":\"outerEdge0\",\"kind\":\"segment\",\"through\":[\"outer0\",\"outer1\"],\"contains\":[\"outer0\",\"outer1\"]},{\"id\":\"outerEdge1\",\"kind\":\"segment\",\"through\":[\"outer1\",\"outer2\"],\"contains\":[\"outer1\",\"outer2\"]},{\"id\":\"outerEdge2\",\"kind\":\"segment\",\"through\":[\"outer2\",\"outer3\"],\"contains\":[\"outer2\",\"outer3\"]},{\"id\":\"outerEdge3\",\"kind\":\"segment\",\"through\":[\"outer3\",\"outer0\"],\"contains\":[\"outer3\",\"outer0\"]},{\"id\":\"innerEdge0\",\"kind\":\"segment\",\"through\":[\"inner0\",\"inner1\"],\"contains\":[\"inner0\",\"inner1\"]},{\"id\":\"innerEdge1\",\"kind\":\"segment\",\"through\":[\"inner1\",\"inner2\"],\"contains\":[\"inner1\",\"inner2\"]},{\"id\":\"innerEdge2\",\"kind\":\"segment\",\"through\":[\"inner2\",\"inner3\"],\"contains\":[\"inner2\",\"inner3\"]},{\"id\":\"innerEdge3\",\"kind\":\"segment\",\"through\":[\"inner3\",\"inner0\"],\"contains\":[\"inner3\",\"inner0\"]}],\"description\":\"El recuadro exterior representa el cuerpo de main. Dentro se lee const int fichas = 8;. El recuadro interior representa el cuerpo de if (fichas >= 4). Allí aparecen, en dos líneas, const int bolsas = fichas / 4; y std::cout << bolsas;. Debajo del recuadro interior, return 0; queda dentro del recuadro de main.\"}],\"responses\":[{\"id\":\"posicion\",\"type\":\"math_multiple_choice_single\",\"options\":[{\"id\":\"antes\",\"label\":\"En el recuadro de main, antes de declarar fichas.\"},{\"id\":\"antes_de_return\",\"label\":\"Justo antes de return 0;, debajo del recuadro del if.\"},{\"id\":\"en_if\",\"label\":\"Dentro del recuadro del if, justo después de declarar bolsas.\"}],\"validator\":{\"type\":\"choice\",\"expected\":[\"antes_de_return\"]}}],\"feedback\":{\"correct\":\"Al llegar a esa línea, el programa ya ha inicializado fichas. El borde inferior del recuadro pequeño marca el final del cuerpo del if. Tanto si se ejecuta ese cuerpo como si se salta, el programa llega a la nueva salida antes de return 0;.\",\"incorrect\":\"Localiza la declaración de fichas en el recuadro exterior. Luego sigue el recorrido que haría el programa si la condición fuese falsa. ¿Por cuáles de las tres posiciones pasaría cuando fichas ya tiene valor?\"}}",
+        "semanticBefore": {
+          "block": "u3l4_alcance_codigo_en_recuadros",
+          "path": "/responses/0/options/0/label",
+          "sourceSha256": "c5db5bc4efad5a25bb2e15d50b6ce6b41883874297162d946f3bf11baaee0c2f",
+          "spans": [
+            {
+              "start": 18,
+              "end": 22,
+              "text": "main",
+              "role": "cpp",
+              "reading": "technical"
+            },
+            {
+              "start": 42,
+              "end": 48,
+              "text": "fichas",
+              "role": "cpp",
+              "reading": "technical"
+            }
+          ]
+        }
+      },
+      {
+        "id": "u3l4_alcance_codigo_en_recuadros",
+        "field": "/responses/0/options/1/label",
+        "rawJson": "{\"type\":\"math_puzzle\",\"schemaVersion\":1,\"id\":\"u3l4_alcance_codigo_en_recuadros\",\"prompt\":\"El recuadro grande representa el cuerpo de main. Dentro de él, el recuadro pequeño representa el cuerpo del if. Quieres añadir std::cout << fichas; una sola vez para mostrar el total tanto si se entra en el if como si se salta. ¿Dónde pondrías esa instrucción?\",\"representations\":[{\"type\":\"euclidean_diagram\",\"points\":[{\"id\":\"outer0\",\"x\":0,\"y\":0},{\"id\":\"outer1\",\"x\":10000,\"y\":0},{\"id\":\"outer2\",\"x\":10000,\"y\":7000},{\"id\":\"outer3\",\"x\":0,\"y\":7000},{\"id\":\"inner0\",\"x\":300,\"y\":1297},{\"id\":\"inner1\",\"x\":9700,\"y\":1297},{\"id\":\"inner2\",\"x\":9700,\"y\":4366},{\"id\":\"inner3\",\"x\":300,\"y\":4366},{\"id\":\"main\",\"x\":539,\"y\":5552,\"labels\":[\"main\"]},{\"id\":\"fichas\",\"x\":765,\"y\":4501,\"labels\":[\"const int fichas = 8;\"]},{\"id\":\"if\",\"x\":860,\"y\":4335,\"labels\":[\"if (fichas >= 4)\"]},{\"id\":\"bolsas\",\"x\":1067,\"y\":3354,\"labels\":[\"const int bolsas = fichas / 4;\"]},{\"id\":\"salida\",\"x\":1080,\"y\":1819,\"labels\":[\"std::cout << bolsas;\"]},{\"id\":\"return\",\"x\":585,\"y\":514,\"labels\":[\"return 0;\"]}],\"objects\":[{\"id\":\"outerEdge0\",\"kind\":\"segment\",\"through\":[\"outer0\",\"outer1\"],\"contains\":[\"outer0\",\"outer1\"]},{\"id\":\"outerEdge1\",\"kind\":\"segment\",\"through\":[\"outer1\",\"outer2\"],\"contains\":[\"outer1\",\"outer2\"]},{\"id\":\"outerEdge2\",\"kind\":\"segment\",\"through\":[\"outer2\",\"outer3\"],\"contains\":[\"outer2\",\"outer3\"]},{\"id\":\"outerEdge3\",\"kind\":\"segment\",\"through\":[\"outer3\",\"outer0\"],\"contains\":[\"outer3\",\"outer0\"]},{\"id\":\"innerEdge0\",\"kind\":\"segment\",\"through\":[\"inner0\",\"inner1\"],\"contains\":[\"inner0\",\"inner1\"]},{\"id\":\"innerEdge1\",\"kind\":\"segment\",\"through\":[\"inner1\",\"inner2\"],\"contains\":[\"inner1\",\"inner2\"]},{\"id\":\"innerEdge2\",\"kind\":\"segment\",\"through\":[\"inner2\",\"inner3\"],\"contains\":[\"inner2\",\"inner3\"]},{\"id\":\"innerEdge3\",\"kind\":\"segment\",\"through\":[\"inner3\",\"inner0\"],\"contains\":[\"inner3\",\"inner0\"]}],\"description\":\"El recuadro exterior representa el cuerpo de main. Dentro se lee const int fichas = 8;. El recuadro interior representa el cuerpo de if (fichas >= 4). Allí aparecen, en dos líneas, const int bolsas = fichas / 4; y std::cout << bolsas;. Debajo del recuadro interior, return 0; queda dentro del recuadro de main.\"}],\"responses\":[{\"id\":\"posicion\",\"type\":\"math_multiple_choice_single\",\"options\":[{\"id\":\"antes\",\"label\":\"En el recuadro de main, antes de declarar fichas.\"},{\"id\":\"antes_de_return\",\"label\":\"Justo antes de return 0;, debajo del recuadro del if.\"},{\"id\":\"en_if\",\"label\":\"Dentro del recuadro del if, justo después de declarar bolsas.\"}],\"validator\":{\"type\":\"choice\",\"expected\":[\"antes_de_return\"]}}],\"feedback\":{\"correct\":\"Al llegar a esa línea, el programa ya ha inicializado fichas. El borde inferior del recuadro pequeño marca el final del cuerpo del if. Tanto si se ejecuta ese cuerpo como si se salta, el programa llega a la nueva salida antes de return 0;.\",\"incorrect\":\"Localiza la declaración de fichas en el recuadro exterior. Luego sigue el recorrido que haría el programa si la condición fuese falsa. ¿Por cuáles de las tres posiciones pasaría cuando fichas ya tiene valor?\"}}",
+        "semanticBefore": {
+          "block": "u3l4_alcance_codigo_en_recuadros",
+          "path": "/responses/0/options/1/label",
+          "sourceSha256": "a6aef45ad2d3f7a70ccda80224d1e48238cfd4ad83c7d167f46bba8b6b1f9b0a",
+          "spans": [
+            {
+              "start": 15,
+              "end": 24,
+              "text": "return 0;",
+              "role": "cpp",
+              "reading": "technical"
+            },
+            {
+              "start": 50,
+              "end": 52,
+              "text": "if",
+              "role": "cpp",
+              "reading": "technical"
+            }
+          ]
+        }
+      },
+      {
+        "id": "u3l4_alcance_codigo_en_recuadros",
+        "field": "/responses/0/options/2/label",
+        "rawJson": "{\"type\":\"math_puzzle\",\"schemaVersion\":1,\"id\":\"u3l4_alcance_codigo_en_recuadros\",\"prompt\":\"El recuadro grande representa el cuerpo de main. Dentro de él, el recuadro pequeño representa el cuerpo del if. Quieres añadir std::cout << fichas; una sola vez para mostrar el total tanto si se entra en el if como si se salta. ¿Dónde pondrías esa instrucción?\",\"representations\":[{\"type\":\"euclidean_diagram\",\"points\":[{\"id\":\"outer0\",\"x\":0,\"y\":0},{\"id\":\"outer1\",\"x\":10000,\"y\":0},{\"id\":\"outer2\",\"x\":10000,\"y\":7000},{\"id\":\"outer3\",\"x\":0,\"y\":7000},{\"id\":\"inner0\",\"x\":300,\"y\":1297},{\"id\":\"inner1\",\"x\":9700,\"y\":1297},{\"id\":\"inner2\",\"x\":9700,\"y\":4366},{\"id\":\"inner3\",\"x\":300,\"y\":4366},{\"id\":\"main\",\"x\":539,\"y\":5552,\"labels\":[\"main\"]},{\"id\":\"fichas\",\"x\":765,\"y\":4501,\"labels\":[\"const int fichas = 8;\"]},{\"id\":\"if\",\"x\":860,\"y\":4335,\"labels\":[\"if (fichas >= 4)\"]},{\"id\":\"bolsas\",\"x\":1067,\"y\":3354,\"labels\":[\"const int bolsas = fichas / 4;\"]},{\"id\":\"salida\",\"x\":1080,\"y\":1819,\"labels\":[\"std::cout << bolsas;\"]},{\"id\":\"return\",\"x\":585,\"y\":514,\"labels\":[\"return 0;\"]}],\"objects\":[{\"id\":\"outerEdge0\",\"kind\":\"segment\",\"through\":[\"outer0\",\"outer1\"],\"contains\":[\"outer0\",\"outer1\"]},{\"id\":\"outerEdge1\",\"kind\":\"segment\",\"through\":[\"outer1\",\"outer2\"],\"contains\":[\"outer1\",\"outer2\"]},{\"id\":\"outerEdge2\",\"kind\":\"segment\",\"through\":[\"outer2\",\"outer3\"],\"contains\":[\"outer2\",\"outer3\"]},{\"id\":\"outerEdge3\",\"kind\":\"segment\",\"through\":[\"outer3\",\"outer0\"],\"contains\":[\"outer3\",\"outer0\"]},{\"id\":\"innerEdge0\",\"kind\":\"segment\",\"through\":[\"inner0\",\"inner1\"],\"contains\":[\"inner0\",\"inner1\"]},{\"id\":\"innerEdge1\",\"kind\":\"segment\",\"through\":[\"inner1\",\"inner2\"],\"contains\":[\"inner1\",\"inner2\"]},{\"id\":\"innerEdge2\",\"kind\":\"segment\",\"through\":[\"inner2\",\"inner3\"],\"contains\":[\"inner2\",\"inner3\"]},{\"id\":\"innerEdge3\",\"kind\":\"segment\",\"through\":[\"inner3\",\"inner0\"],\"contains\":[\"inner3\",\"inner0\"]}],\"description\":\"El recuadro exterior representa el cuerpo de main. Dentro se lee const int fichas = 8;. El recuadro interior representa el cuerpo de if (fichas >= 4). Allí aparecen, en dos líneas, const int bolsas = fichas / 4; y std::cout << bolsas;. Debajo del recuadro interior, return 0; queda dentro del recuadro de main.\"}],\"responses\":[{\"id\":\"posicion\",\"type\":\"math_multiple_choice_single\",\"options\":[{\"id\":\"antes\",\"label\":\"En el recuadro de main, antes de declarar fichas.\"},{\"id\":\"antes_de_return\",\"label\":\"Justo antes de return 0;, debajo del recuadro del if.\"},{\"id\":\"en_if\",\"label\":\"Dentro del recuadro del if, justo después de declarar bolsas.\"}],\"validator\":{\"type\":\"choice\",\"expected\":[\"antes_de_return\"]}}],\"feedback\":{\"correct\":\"Al llegar a esa línea, el programa ya ha inicializado fichas. El borde inferior del recuadro pequeño marca el final del cuerpo del if. Tanto si se ejecuta ese cuerpo como si se salta, el programa llega a la nueva salida antes de return 0;.\",\"incorrect\":\"Localiza la declaración de fichas en el recuadro exterior. Luego sigue el recorrido que haría el programa si la condición fuese falsa. ¿Por cuáles de las tres posiciones pasaría cuando fichas ya tiene valor?\"}}",
+        "semanticBefore": {
+          "block": "u3l4_alcance_codigo_en_recuadros",
+          "path": "/responses/0/options/2/label",
+          "sourceSha256": "ce43e7d1f1d0a6f5abba9965959ea030a3ff0c2139c39293b31a52a12d445371",
+          "spans": [
+            {
+              "start": 24,
+              "end": 26,
+              "text": "if",
+              "role": "cpp",
+              "reading": "technical"
+            },
+            {
+              "start": 54,
+              "end": 60,
+              "text": "bolsas",
+              "role": "cpp",
+              "reading": "technical"
+            }
+          ]
+        }
+      },
+      {
+        "id": "u3l4_alcance_codigo_en_recuadros",
+        "field": "/feedback/correct",
+        "rawJson": "{\"type\":\"math_puzzle\",\"schemaVersion\":1,\"id\":\"u3l4_alcance_codigo_en_recuadros\",\"prompt\":\"El recuadro grande representa el cuerpo de main. Dentro de él, el recuadro pequeño representa el cuerpo del if. Quieres añadir std::cout << fichas; una sola vez para mostrar el total tanto si se entra en el if como si se salta. ¿Dónde pondrías esa instrucción?\",\"representations\":[{\"type\":\"euclidean_diagram\",\"points\":[{\"id\":\"outer0\",\"x\":0,\"y\":0},{\"id\":\"outer1\",\"x\":10000,\"y\":0},{\"id\":\"outer2\",\"x\":10000,\"y\":7000},{\"id\":\"outer3\",\"x\":0,\"y\":7000},{\"id\":\"inner0\",\"x\":300,\"y\":1297},{\"id\":\"inner1\",\"x\":9700,\"y\":1297},{\"id\":\"inner2\",\"x\":9700,\"y\":4366},{\"id\":\"inner3\",\"x\":300,\"y\":4366},{\"id\":\"main\",\"x\":539,\"y\":5552,\"labels\":[\"main\"]},{\"id\":\"fichas\",\"x\":765,\"y\":4501,\"labels\":[\"const int fichas = 8;\"]},{\"id\":\"if\",\"x\":860,\"y\":4335,\"labels\":[\"if (fichas >= 4)\"]},{\"id\":\"bolsas\",\"x\":1067,\"y\":3354,\"labels\":[\"const int bolsas = fichas / 4;\"]},{\"id\":\"salida\",\"x\":1080,\"y\":1819,\"labels\":[\"std::cout << bolsas;\"]},{\"id\":\"return\",\"x\":585,\"y\":514,\"labels\":[\"return 0;\"]}],\"objects\":[{\"id\":\"outerEdge0\",\"kind\":\"segment\",\"through\":[\"outer0\",\"outer1\"],\"contains\":[\"outer0\",\"outer1\"]},{\"id\":\"outerEdge1\",\"kind\":\"segment\",\"through\":[\"outer1\",\"outer2\"],\"contains\":[\"outer1\",\"outer2\"]},{\"id\":\"outerEdge2\",\"kind\":\"segment\",\"through\":[\"outer2\",\"outer3\"],\"contains\":[\"outer2\",\"outer3\"]},{\"id\":\"outerEdge3\",\"kind\":\"segment\",\"through\":[\"outer3\",\"outer0\"],\"contains\":[\"outer3\",\"outer0\"]},{\"id\":\"innerEdge0\",\"kind\":\"segment\",\"through\":[\"inner0\",\"inner1\"],\"contains\":[\"inner0\",\"inner1\"]},{\"id\":\"innerEdge1\",\"kind\":\"segment\",\"through\":[\"inner1\",\"inner2\"],\"contains\":[\"inner1\",\"inner2\"]},{\"id\":\"innerEdge2\",\"kind\":\"segment\",\"through\":[\"inner2\",\"inner3\"],\"contains\":[\"inner2\",\"inner3\"]},{\"id\":\"innerEdge3\",\"kind\":\"segment\",\"through\":[\"inner3\",\"inner0\"],\"contains\":[\"inner3\",\"inner0\"]}],\"description\":\"El recuadro exterior representa el cuerpo de main. Dentro se lee const int fichas = 8;. El recuadro interior representa el cuerpo de if (fichas >= 4). Allí aparecen, en dos líneas, const int bolsas = fichas / 4; y std::cout << bolsas;. Debajo del recuadro interior, return 0; queda dentro del recuadro de main.\"}],\"responses\":[{\"id\":\"posicion\",\"type\":\"math_multiple_choice_single\",\"options\":[{\"id\":\"antes\",\"label\":\"En el recuadro de main, antes de declarar fichas.\"},{\"id\":\"antes_de_return\",\"label\":\"Justo antes de return 0;, debajo del recuadro del if.\"},{\"id\":\"en_if\",\"label\":\"Dentro del recuadro del if, justo después de declarar bolsas.\"}],\"validator\":{\"type\":\"choice\",\"expected\":[\"antes_de_return\"]}}],\"feedback\":{\"correct\":\"Al llegar a esa línea, el programa ya ha inicializado fichas. El borde inferior del recuadro pequeño marca el final del cuerpo del if. Tanto si se ejecuta ese cuerpo como si se salta, el programa llega a la nueva salida antes de return 0;.\",\"incorrect\":\"Localiza la declaración de fichas en el recuadro exterior. Luego sigue el recorrido que haría el programa si la condición fuese falsa. ¿Por cuáles de las tres posiciones pasaría cuando fichas ya tiene valor?\"}}",
+        "semanticBefore": {
+          "block": "u3l4_alcance_codigo_en_recuadros",
+          "path": "/feedback/correct",
+          "sourceSha256": "0ef839da58e3db5f868a99ed1ea418dcc13a3faf3aa257120f473a97827cab20",
+          "spans": [
+            {
+              "start": 54,
+              "end": 60,
+              "text": "fichas",
+              "role": "cpp",
+              "reading": "technical"
+            },
+            {
+              "start": 131,
+              "end": 133,
+              "text": "if",
+              "role": "cpp",
+              "reading": "technical"
+            },
+            {
+              "start": 229,
+              "end": 238,
+              "text": "return 0;",
+              "role": "cpp",
+              "reading": "technical"
+            }
+          ]
+        }
+      },
+      {
+        "id": "u3l4_alcance_codigo_en_recuadros",
+        "field": "/feedback/incorrect",
+        "rawJson": "{\"type\":\"math_puzzle\",\"schemaVersion\":1,\"id\":\"u3l4_alcance_codigo_en_recuadros\",\"prompt\":\"El recuadro grande representa el cuerpo de main. Dentro de él, el recuadro pequeño representa el cuerpo del if. Quieres añadir std::cout << fichas; una sola vez para mostrar el total tanto si se entra en el if como si se salta. ¿Dónde pondrías esa instrucción?\",\"representations\":[{\"type\":\"euclidean_diagram\",\"points\":[{\"id\":\"outer0\",\"x\":0,\"y\":0},{\"id\":\"outer1\",\"x\":10000,\"y\":0},{\"id\":\"outer2\",\"x\":10000,\"y\":7000},{\"id\":\"outer3\",\"x\":0,\"y\":7000},{\"id\":\"inner0\",\"x\":300,\"y\":1297},{\"id\":\"inner1\",\"x\":9700,\"y\":1297},{\"id\":\"inner2\",\"x\":9700,\"y\":4366},{\"id\":\"inner3\",\"x\":300,\"y\":4366},{\"id\":\"main\",\"x\":539,\"y\":5552,\"labels\":[\"main\"]},{\"id\":\"fichas\",\"x\":765,\"y\":4501,\"labels\":[\"const int fichas = 8;\"]},{\"id\":\"if\",\"x\":860,\"y\":4335,\"labels\":[\"if (fichas >= 4)\"]},{\"id\":\"bolsas\",\"x\":1067,\"y\":3354,\"labels\":[\"const int bolsas = fichas / 4;\"]},{\"id\":\"salida\",\"x\":1080,\"y\":1819,\"labels\":[\"std::cout << bolsas;\"]},{\"id\":\"return\",\"x\":585,\"y\":514,\"labels\":[\"return 0;\"]}],\"objects\":[{\"id\":\"outerEdge0\",\"kind\":\"segment\",\"through\":[\"outer0\",\"outer1\"],\"contains\":[\"outer0\",\"outer1\"]},{\"id\":\"outerEdge1\",\"kind\":\"segment\",\"through\":[\"outer1\",\"outer2\"],\"contains\":[\"outer1\",\"outer2\"]},{\"id\":\"outerEdge2\",\"kind\":\"segment\",\"through\":[\"outer2\",\"outer3\"],\"contains\":[\"outer2\",\"outer3\"]},{\"id\":\"outerEdge3\",\"kind\":\"segment\",\"through\":[\"outer3\",\"outer0\"],\"contains\":[\"outer3\",\"outer0\"]},{\"id\":\"innerEdge0\",\"kind\":\"segment\",\"through\":[\"inner0\",\"inner1\"],\"contains\":[\"inner0\",\"inner1\"]},{\"id\":\"innerEdge1\",\"kind\":\"segment\",\"through\":[\"inner1\",\"inner2\"],\"contains\":[\"inner1\",\"inner2\"]},{\"id\":\"innerEdge2\",\"kind\":\"segment\",\"through\":[\"inner2\",\"inner3\"],\"contains\":[\"inner2\",\"inner3\"]},{\"id\":\"innerEdge3\",\"kind\":\"segment\",\"through\":[\"inner3\",\"inner0\"],\"contains\":[\"inner3\",\"inner0\"]}],\"description\":\"El recuadro exterior representa el cuerpo de main. Dentro se lee const int fichas = 8;. El recuadro interior representa el cuerpo de if (fichas >= 4). Allí aparecen, en dos líneas, const int bolsas = fichas / 4; y std::cout << bolsas;. Debajo del recuadro interior, return 0; queda dentro del recuadro de main.\"}],\"responses\":[{\"id\":\"posicion\",\"type\":\"math_multiple_choice_single\",\"options\":[{\"id\":\"antes\",\"label\":\"En el recuadro de main, antes de declarar fichas.\"},{\"id\":\"antes_de_return\",\"label\":\"Justo antes de return 0;, debajo del recuadro del if.\"},{\"id\":\"en_if\",\"label\":\"Dentro del recuadro del if, justo después de declarar bolsas.\"}],\"validator\":{\"type\":\"choice\",\"expected\":[\"antes_de_return\"]}}],\"feedback\":{\"correct\":\"Al llegar a esa línea, el programa ya ha inicializado fichas. El borde inferior del recuadro pequeño marca el final del cuerpo del if. Tanto si se ejecuta ese cuerpo como si se salta, el programa llega a la nueva salida antes de return 0;.\",\"incorrect\":\"Localiza la declaración de fichas en el recuadro exterior. Luego sigue el recorrido que haría el programa si la condición fuese falsa. ¿Por cuáles de las tres posiciones pasaría cuando fichas ya tiene valor?\"}}",
+        "semanticBefore": {
+          "block": "u3l4_alcance_codigo_en_recuadros",
+          "path": "/feedback/incorrect",
+          "sourceSha256": "414befa2be905cc24dd898268eea47f575d88c9681abbaf16e5e009c2867b9bd",
+          "spans": [
+            {
+              "start": 27,
+              "end": 33,
+              "text": "fichas",
+              "role": "cpp",
+              "reading": "technical"
+            },
+            {
+              "start": 185,
+              "end": 191,
+              "text": "fichas",
+              "role": "cpp",
+              "reading": "technical"
+            }
+          ]
+        }
       }
     ]
   },
@@ -10425,10 +10602,36 @@
           ]
         }
       ]
+    },
+    {
+      "activity": "block_0005_0002",
+      "probes": [
+        {
+          "standardInput": "4 4",
+          "outputs": [
+            "Alerta\nMarca: 1",
+            "Alerta\nMarca: 1\n"
+          ]
+        },
+        {
+          "standardInput": "5 4",
+          "outputs": [
+            "Alerta\nMarca: 1",
+            "Alerta\nMarca: 1\n"
+          ]
+        },
+        {
+          "standardInput": "3 3",
+          "outputs": [
+            "Alerta\nMarca: 1",
+            "Alerta\nMarca: 1\n"
+          ]
+        }
+      ]
     }
   ],
   "codeScopePresentations": {
-    "version": 1,
+    "version": 2,
     "entries": [
       {
         "block": "u3l4_alcance_codigo_en_recuadros",
@@ -10464,6 +10667,133 @@
               "id": "return",
               "source": "/points/13/labels/0",
               "sourceSha256": "6be2e46a3d0765fd4d08def164c35b75afcc481db6fd11cc5118c4e2c20b634d"
+            }
+          ]
+        }
+      },
+      {
+        "block": "u3l4_alcance_bolsas",
+        "language": "cpp",
+        "root": {
+          "id": "programa",
+          "title": "Alcance de fichas y bolsas",
+          "children": [
+            {
+              "id": "encabezado",
+              "role": "code",
+              "source": "/code",
+              "sourceSha256": "4bf5dabb3edc852e6222a061488abd152d83b777d3a3747c0c7ca5e7a135d98a",
+              "range": [
+                0,
+                21
+              ]
+            },
+            {
+              "id": "main",
+              "role": "code",
+              "source": "/code",
+              "sourceSha256": "4bf5dabb3edc852e6222a061488abd152d83b777d3a3747c0c7ca5e7a135d98a",
+              "range": [
+                21,
+                34
+              ],
+              "children": [
+                {
+                  "id": "fichas",
+                  "role": "code",
+                  "source": "/code",
+                  "sourceSha256": "4bf5dabb3edc852e6222a061488abd152d83b777d3a3747c0c7ca5e7a135d98a",
+                  "range": [
+                    34,
+                    61
+                  ]
+                },
+                {
+                  "id": "if",
+                  "role": "code",
+                  "source": "/code",
+                  "sourceSha256": "4bf5dabb3edc852e6222a061488abd152d83b777d3a3747c0c7ca5e7a135d98a",
+                  "range": [
+                    61,
+                    84
+                  ],
+                  "children": [
+                    {
+                      "id": "bolsas",
+                      "role": "code",
+                      "source": "/code",
+                      "sourceSha256": "4bf5dabb3edc852e6222a061488abd152d83b777d3a3747c0c7ca5e7a135d98a",
+                      "range": [
+                        84,
+                        123
+                      ]
+                    },
+                    {
+                      "id": "salida",
+                      "role": "code",
+                      "source": "/code",
+                      "sourceSha256": "4bf5dabb3edc852e6222a061488abd152d83b777d3a3747c0c7ca5e7a135d98a",
+                      "range": [
+                        123,
+                        152
+                      ]
+                    },
+                    {
+                      "id": "nota_dentro",
+                      "sourceBlock": "u3l4_limites_nombre_bolsas",
+                      "source": "/text",
+                      "sourceSha256": "39c29f0e73974507fe654534f8a63858b0cdf8159bbbfdd46a15ff3456b9d6c9",
+                      "range": [
+                        0,
+                        251
+                      ],
+                      "role": "text",
+                      "icon": "check"
+                    },
+                    {
+                      "id": "cierre_if",
+                      "role": "code",
+                      "source": "/code",
+                      "sourceSha256": "4bf5dabb3edc852e6222a061488abd152d83b777d3a3747c0c7ca5e7a135d98a",
+                      "range": [
+                        152,
+                        158
+                      ]
+                    }
+                  ]
+                },
+                {
+                  "id": "nota_fuera",
+                  "sourceBlock": "u3l4_limites_nombre_bolsas",
+                  "source": "/text",
+                  "sourceSha256": "39c29f0e73974507fe654534f8a63858b0cdf8159bbbfdd46a15ff3456b9d6c9",
+                  "range": [
+                    253,
+                    489
+                  ],
+                  "role": "text"
+                },
+                {
+                  "id": "retorno",
+                  "role": "code",
+                  "source": "/code",
+                  "sourceSha256": "4bf5dabb3edc852e6222a061488abd152d83b777d3a3747c0c7ca5e7a135d98a",
+                  "range": [
+                    158,
+                    173
+                  ]
+                },
+                {
+                  "id": "cierre_main",
+                  "role": "code",
+                  "source": "/code",
+                  "sourceSha256": "4bf5dabb3edc852e6222a061488abd152d83b777d3a3747c0c7ca5e7a135d98a",
+                  "range": [
+                    173,
+                    175
+                  ]
+                }
+              ]
             }
           ]
         }

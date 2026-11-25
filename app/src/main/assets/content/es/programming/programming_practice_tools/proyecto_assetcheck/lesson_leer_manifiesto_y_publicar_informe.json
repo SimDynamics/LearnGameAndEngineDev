@@ -108,7 +108,7 @@
           "type": "math_puzzle",
           "schemaVersion": 1,
           "id": "assetcheck_archivo_marcas_de_linea",
-          "prompt": "Relaciona la secuencia de bytes con la cantidad de líneas físicas. Las barras inclinadas representan caracteres de escape, no texto literal del manifiesto.",
+          "prompt": "Relaciona la secuencia de bytes con la cantidad de líneas físicas. En las etiquetas, las secuencias con barra inversa representan LF o CR. El manifiesto contiene esos caracteres, en lugar de una barra y una letra escritas por separado.",
           "representations": [],
           "tools": [],
           "responses": [
@@ -2726,7 +2726,7 @@
       {
         "block": "block_0002_0005",
         "path": "/prompt",
-        "sourceSha256": "8dd4f5f4199634ed9827ecdeb4686d7f43afc52d8df575a35eaaba44183a2393",
+        "sourceSha256": "554df5d4bb592304c825a4bc244028479168107e5d3b4da2aca5c0f40ddb98c1",
         "spans": []
       },
       {
@@ -10632,6 +10632,11 @@
         "id": "block_0010_0002",
         "beforeSha256": "42ec7c1242a88a24a46267a63f0010164fca0e06344e653b4c80894cdefdc9bc",
         "afterSha256": "4b5b775ef790c186ffb8cf6a14cb2ba11322d7573b053c492672c23f0af1c77d"
+      },
+      {
+        "id": "block_0002_0005",
+        "beforeSha256": "185fef17d8f7300749d74909accad2f9b89136a16310eb00513e83f8d59b3048",
+        "afterSha256": "7be895c8b24e71fb8d434b29a247ebbc2c9bd947ed096850edb8f48edfdd030a"
       }
     ],
     "sourceFormatRevisions": [
@@ -10706,6 +10711,19 @@
           "type": "code",
           "language": "cmake",
           "code": "cmake_minimum_required(VERSION 3.20)\nproject(AssetCheckEtapa3 VERSION 0.3 LANGUAGES CXX)\nset(CMAKE_CXX_STANDARD 23)\nset(CMAKE_CXX_STANDARD_REQUIRED ON)\nset(CMAKE_CXX_EXTENSIONS OFF)\nenable_testing()\n\nadd_library(assetcheck_registro STATIC src/registro.cpp)\ntarget_include_directories(assetcheck_registro PUBLIC include)\ntarget_compile_features(assetcheck_registro PUBLIC cxx_std_23)\n\nadd_library(assetcheck_lote STATIC src/lote.cpp)\ntarget_include_directories(assetcheck_lote PUBLIC include)\ntarget_link_libraries(assetcheck_lote PUBLIC assetcheck_registro)\ntarget_compile_features(assetcheck_lote PUBLIC cxx_std_23)\n\nadd_library(assetcheck_manifiesto STATIC src/manifiesto.cpp)\ntarget_include_directories(assetcheck_manifiesto PUBLIC include)\ntarget_link_libraries(assetcheck_manifiesto PUBLIC assetcheck_lote)\ntarget_compile_features(assetcheck_manifiesto PUBLIC cxx_std_23)\n\nadd_executable(assetcheck src/cliente.cpp)\ntarget_link_libraries(assetcheck PRIVATE assetcheck_manifiesto)\nadd_executable(comprobar_registro pruebas/casos.cpp)\ntarget_link_libraries(comprobar_registro PRIVATE assetcheck_registro)\nadd_test(NAME comprobar_registro COMMAND comprobar_registro)\nadd_executable(comprobar_lote pruebas/lote_casos.cpp)\ntarget_link_libraries(comprobar_lote PRIVATE assetcheck_lote)\nadd_test(NAME comprobar_lote COMMAND comprobar_lote)\nadd_executable(comprobar_manifiesto pruebas/manifiesto_casos.cpp)\ntarget_link_libraries(comprobar_manifiesto PRIVATE assetcheck_manifiesto)\nadd_test(NAME comprobar_manifiesto COMMAND comprobar_manifiesto)"
+        }
+      }
+    ],
+    "mathTextRevisions": [
+      {
+        "id": "block_0002_0005",
+        "field": "/prompt",
+        "rawJson": "{\"type\":\"math_puzzle\",\"schemaVersion\":1,\"id\":\"assetcheck_archivo_marcas_de_linea\",\"prompt\":\"Relaciona la secuencia de bytes con la cantidad de líneas físicas. Las barras inclinadas representan caracteres de escape, no texto literal del manifiesto.\",\"representations\":[],\"tools\":[],\"responses\":[{\"id\":\"relaciones\",\"type\":\"math_matching_drag\",\"sources\":[{\"id\":\"a\",\"label\":\"Archivo completamente vacío\"},{\"id\":\"b\",\"label\":\"A malla 1\\\\n\"},{\"id\":\"c\",\"label\":\"A malla 1\\\\n\\\\n\"},{\"id\":\"d\",\"label\":\"A malla 1\\\\r\\\\nB sonido 2 (sin terminador final)\"}],\"targets\":[{\"id\":\"cero\",\"label\":\"0 líneas\"},{\"id\":\"uno\",\"label\":\"1 línea sin línea fantasma\"},{\"id\":\"dos_vacia\",\"label\":\"2 líneas, segunda vacía y rechazada\"},{\"id\":\"dos\",\"label\":\"2 líneas, ambas con datos\"}],\"validator\":{\"type\":\"matching\",\"expected\":{\"a\":\"cero\",\"b\":\"uno\",\"c\":\"dos_vacia\",\"d\":\"dos\"}}}],\"feedback\":{\"correct\":\"El terminador cierra la línea que lo precede; por sí solo no crea una adicional al final del archivo. Dos terminadores consecutivos sí producen una línea vacía entre ellos.\",\"incorrect\":\"Cuenta las líneas cerradas por LF/CRLF y sólo agrega la última si realmente contiene bytes al llegar a EOF.\"}}",
+        "semanticBefore": {
+          "block": "block_0002_0005",
+          "path": "/prompt",
+          "sourceSha256": "8dd4f5f4199634ed9827ecdeb4686d7f43afc52d8df575a35eaaba44183a2393",
+          "spans": []
         }
       }
     ]
