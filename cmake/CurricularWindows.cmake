@@ -31,6 +31,13 @@ add_library(lgaed_curricular_windows STATIC
     "${_lgaed_curricular_root}/native/presentation/windows/editing_bar.cpp"
     "${_lgaed_curricular_root}/native/presentation/windows/code_gutter.cpp"
     "${_lgaed_curricular_root}/native/presentation/windows/code_editor.cpp")
+# LessonView is shared by the app and standalone QA builds. Its Debug
+# translation unit exceeds the classic COFF section limit on MSVC (C1128).
+# Use extended object sections for this source only, not student programs.
+if(MSVC)
+    set_property(SOURCE "${_lgaed_curricular_root}/native/presentation/windows/lesson_view.cpp"
+        APPEND PROPERTY COMPILE_OPTIONS /bigobj)
+endif()
 target_link_libraries(lgaed_curricular_windows PUBLIC
     lgaed_platform_windows lgaed_host_options user32 gdi32 gdiplus shell32 ole32 oleacc advapi32 comctl32 comdlg32 uuid uxtheme dwmapi)
 
