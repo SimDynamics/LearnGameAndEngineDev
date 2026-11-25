@@ -1,0 +1,1960 @@
+{
+  "id": "cpp_fundamentals__edition_es_1__repeticion_y_terminacion__acumuladores_contadores_y_trazas",
+  "title": "Acumuladores, contadores y trazas",
+  "orderVisualSeparators": [
+    {
+      "activity": "block_0004_0001",
+      "count": 2
+    }
+  ],
+  "activityAfter": [
+    {
+      "activity": "block_0005_0006",
+      "requires": [
+        "block_0004_0003"
+      ]
+    }
+  ],
+  "referenceAfter": [
+    {
+      "activity": "block_0004_0003",
+      "blocks": [
+        "block_0005_0000",
+        "block_0005_0001",
+        "block_0005_0002",
+        "block_0005_0003"
+      ]
+    }
+  ],
+  "compilerPuzzlesRequired": true,
+  "pages": [
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "Conservar un resumen del recorrido"
+        },
+        {
+          "type": "paragraph",
+          "text": "Un pedido puede contener varias piezas. Si el primer pedido trae 3 piezas y el segundo trae 5, se han procesado 2 pedidos y se han reunido 8 piezas. Durante el recorrido, un contador (counter en inglés) guarda la cantidad de pedidos procesados. Un acumulador (accumulator en inglés) guarda el total de piezas reunidas hasta ese momento (Stroustrup, 2024)."
+        },
+        {
+          "type": "paragraph",
+          "text": "En el programa, int total{}; inicializa el acumulador en cero porque todavía no se han sumado piezas. La variable aporte representa las piezas del pedido actual. En cada vuelta, el programa calcula total + aporte con el total que tenía antes y las piezas de ese pedido. Después, total = total + aporte; guarda el resultado en total (Stroustrup, 2024)."
+        },
+        {
+          "type": "code",
+          "language": "cpp",
+          "code": "#include <iostream>\n\nint main() {\n    using namespace std;\n\n    int total{};\n\n    for (int aporte{1}; aporte <= 4; ++aporte) {\n        total = total + aporte;\n    }\n\n    cout << total;\n}\n"
+        },
+        {
+          "type": "paragraph",
+          "text": "El programa empieza con total en 0. En la primera vuelta, aporte vale 1, así que el programa guarda 0 + 1 = 1 en total. En la segunda vuelta, usa ese 1 y suma el aporte de 2 para guardar 3. Las dos vueltas siguientes dejan los totales 6 y 10. Cuando el bucle termina, cout << total; muestra 10.\n\nEn el siguiente ejercicio, total += aporte; calcula la misma suma y guarda el resultado en la misma variable."
+        },
+        {
+          "type": "output_prediction",
+          "id": "suma_otro_recorrido",
+          "question": "El bucle reúne aportes de 2 a 5 piezas. ¿Qué número aparece en la consola cuando termina el recorrido?",
+          "language": "cpp",
+          "code": "#include <iostream>\n\nint main() {\n    using namespace std;\n\n    int total{};\n\n    for (int aporte{2}; aporte <= 5; ++aporte) {\n        total += aporte;\n    }\n\n    cout << total;\n}\n",
+          "answers": [
+            "14"
+          ],
+          "explanation": "El acumulador empieza en 0. Con cada aporte, guarda sucesivamente 2, 5, 9 y 14. La instrucción cout << total; está después del bucle y muestra 14."
+        }
+      ]
+    },
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "Observar el estado antes y después"
+        },
+        {
+          "type": "paragraph",
+          "text": "Una traza (trace en inglés) registra los valores del programa en orden. Para seguir una actualización de total, anota lo que vale antes de sumar, el aporte de la vuelta y lo que vale al terminar la suma.\n\nSi empiezas en 0 y la primera vuelta suma 4, la traza indica 0 antes de sumar y 4 después. Si la segunda vuelta suma 5, la traza indica 4 antes y 9 después. El lugar donde aparezca cout determina cuál de esos valores lee. Si está antes de la suma, el programa muestra 0 y 4. Si está después, muestra 4 y 9."
+        },
+        {
+          "type": "output_prediction",
+          "id": "mostrar_despues_acumular",
+          "question": "En cada vuelta, el programa suma el aporte y muestra un total seguido de un punto y coma. Escribe la salida completa, incluido el texto del final.",
+          "language": "cpp",
+          "code": "#include <iostream>\n\nint main() {\n    using namespace std;\n\n    int total{};\n\n    for (int aporte{1}; aporte <= 3; ++aporte) {\n        total += aporte;\n        cout << total << \";\";\n    }\n\n    cout << \"Fin\";\n}\n",
+          "answers": [
+            "1;3;6;Fin"
+          ],
+          "explanation": "El programa primero suma 1 y muestra 1;. En la segunda vuelta suma 2 y muestra 3;. En la tercera suma 3 y muestra 6;. Después del bucle añade Fin. La salida completa es 1;3;6;Fin."
+        },
+        {
+          "type": "output_prediction",
+          "id": "mostrar_antes_acumular",
+          "question": "Ahora el programa muestra un total antes de sumar cada aporte. Escribe la salida completa, incluido el mensaje posterior al bucle.",
+          "language": "cpp",
+          "code": "#include <iostream>\n\nint main() {\n    using namespace std;\n\n    int total{};\n\n    for (int aporte{2}; aporte <= 4; ++aporte) {\n        cout << total << \";\";\n        total += aporte;\n    }\n\n    cout << \"Final=\" << total;\n}\n",
+          "answers": [
+            "0;2;5;Final=9"
+          ],
+          "explanation": "En la primera vuelta muestra 0; y suma 2. En la segunda muestra 2; y suma 3. En la tercera muestra 5; y suma 4. Al salir del bucle, total ya vale 9. La salida completa es 0;2;5;Final=9."
+        },
+        {
+          "type": "multiple_choice",
+          "id": "reemplazar_no_sumar",
+          "question": "En un recorrido con varios aportes, el programa ejecuta total = aporte; en cada vuelta. ¿Qué representa total al terminar?",
+          "options": [
+            "El número de vueltas, independientemente de los datos.",
+            "Solo el último aporte incorporado.",
+            "La suma de todos los aportes anteriores."
+          ],
+          "correctIndex": 1,
+          "explanation": "Cada asignación guarda el valor del aporte actual en total. En un recorrido con aportes de 4 y 5 piezas, primero guarda 4 y después guarda 5. Para sumar ambas cantidades se necesita total += aporte;."
+        }
+      ]
+    },
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "Distinguir cuántos y cuánto"
+        },
+        {
+          "type": "paragraph",
+          "text": "Por cada pedido procesado, el programa aumenta casos en uno con ++casos; y añade al acumulador la cantidad de piezas de ese pedido con suma += aporte;. Si dos pedidos traen 8 y 9 piezas, el primer pedido deja 1 en casos y 8 en suma. El segundo deja 2 en casos y 17 en suma."
+        },
+        {
+          "type": "output_prediction",
+          "id": "contar_y_sumar",
+          "question": "Lee los cambios de casos y suma en el programa. Escribe la salida en una línea con las dos cantidades separadas por dos puntos.",
+          "language": "cpp",
+          "code": "#include <iostream>\n\nint main() {\n    using namespace std;\n\n    int casos{};\n    int suma{};\n\n    for (int aporte{3}; aporte <= 5; ++aporte) {\n        ++casos;\n        suma += aporte;\n    }\n\n    cout << casos << \":\" << suma;\n}\n",
+          "answers": [
+            "3:12"
+          ],
+          "explanation": "El programa procesa los aportes de 3, 4 y 5 piezas. Por cada vuelta suma uno a casos, que termina en 3. En suma guarda el total de piezas, 3 + 4 + 5 = 12. La salida es 3:12."
+        },
+        {
+          "type": "fill_code",
+          "id": "sumar_en_lugar_de_reemplazar",
+          "question": "Completa el hueco con += o =. El programa debe guardar en total la suma de todos los aportes.",
+          "language": "cpp",
+          "code": "#include <iostream>\n\nint main() {\n    using namespace std;\n\n    int total{};\n\n    for (int aporte{1}; aporte <= 3; ++aporte) {\n        total ___ aporte;\n    }\n\n    cout << total;\n}\n",
+          "answers": [
+            "+="
+          ],
+          "explanation": "Con +=, cada vuelta parte del valor que total guardó en la vuelta anterior. Así se obtiene 1 + 2 + 3 = 6. Con =, cada vuelta guarda solo su aporte y el resultado final sería 3."
+        },
+        {
+          "type": "multiple_choice",
+          "id": "unidad_del_resumen",
+          "question": "Cada pedido aporta una cantidad de piezas llamada aporte. Por cada pedido el programa ejecuta suma += aporte;. ¿Qué cantidad guarda suma al terminar si empezó en cero?",
+          "options": [
+            "Cantidad total de piezas aportadas.",
+            "Cantidad de piezas del último pedido.",
+            "Cantidad total de pedidos atendidos."
+          ],
+          "correctIndex": 0,
+          "explanation": "El dato que se añade en cada vuelta es la cantidad de piezas del pedido. Por eso suma expresa el total de piezas. Un contador de pedidos se incrementaría en uno por cada pedido."
+        }
+      ]
+    },
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "El estado inicial importa también sin datos"
+        },
+        {
+          "type": "paragraph",
+          "text": "Si la primera comprobación de la condición da false, el programa salta el cuerpo del bucle. El acumulador conserva su valor inicial. Para sumar piezas desde cero, int total{}; hace que el programa muestre cero cuando no hay aportes (Stroustrup, 2024). Si el problema dice que ya hay piezas en el almacén, ese número forma parte del total y puede ser el valor inicial."
+        },
+        {
+          "type": "paragraph",
+          "text": "Para reunir varios factores por multiplicación, el acumulador empieza en 1. Así, la primera multiplicación conserva exactamente el primer factor. Con un valor inicial de 0, el primer resultado sería 0 y las multiplicaciones siguientes también dejarían 0.\n\nSi escala vale 2, escala *= 3; lee ese 2, lo multiplica por 3 y guarda 6 en escala. En este ejemplo hace lo mismo que escala = escala * 3; (Stroustrup, 2024)."
+        },
+        {
+          "type": "output_prediction",
+          "id": "suma_sin_vueltas",
+          "question": "Comprueba la condición del bucle antes de seguir su cuerpo. ¿Qué línea escribe el programa?",
+          "language": "cpp",
+          "code": "#include <iostream>\n\nint main() {\n    using namespace std;\n\n    int total{};\n\n    for (int aporte{1}; aporte <= 0; ++aporte) {\n        total += aporte;\n    }\n\n    cout << \"Total=\" << total;\n}\n",
+          "answers": [
+            "Total=0"
+          ],
+          "explanation": "La variable aporte empieza en 1. Como aporte <= 0 da false, el programa salta la suma. total conserva el cero inicial y la consola muestra Total=0."
+        },
+        {
+          "type": "output_prediction",
+          "id": "producto_acumulado",
+          "question": "El programa multiplica los factores de 2 a 4. ¿Qué número muestra al terminar?",
+          "language": "cpp",
+          "code": "#include <iostream>\n\nint main() {\n    using namespace std;\n\n    int producto{1};\n\n    for (int factor{2}; factor <= 4; ++factor) {\n        producto *= factor;\n    }\n\n    cout << producto;\n}\n",
+          "answers": [
+            "24"
+          ],
+          "explanation": "El producto empieza en 1. El programa guarda 1 × 2 = 2, después 2 × 3 = 6 y por último 6 × 4 = 24. La salida es 24."
+        },
+        {
+          "type": "output_prediction",
+          "id": "saldo_con_cantidad_inicial",
+          "question": "El almacén empieza con seis piezas y recibe tres lotes de dos piezas cada uno. ¿Qué número muestra el programa?",
+          "language": "cpp",
+          "code": "#include <iostream>\n\nint main() {\n    using namespace std;\n\n    int piezas{6};\n\n    for (int lote{1}; lote <= 3; ++lote) {\n        piezas += 2;\n    }\n\n    cout << piezas;\n}\n",
+          "answers": [
+            "12"
+          ],
+          "explanation": "El programa empieza con 6 piezas. Cada vuelta añade 2, así que piezas llega a 8, luego 10 y al final 12. La consola muestra 12."
+        }
+      ]
+    },
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "Construir un resumen con varios objetos"
+        },
+        {
+          "type": "order_code",
+          "id": "orden_acumulacion",
+          "question": "Ordena las líneas para sumar los aportes de una, dos y tres piezas. Pon using namespace std; en la primera línea del cuerpo de main. Muestra el total una vez, después del bucle.",
+          "fragments": [
+            "    cout << total;",
+            "    using namespace std;",
+            "}",
+            "        total += aporte;",
+            "    }",
+            "#include <iostream>",
+            "int main() {",
+            "    int total{};",
+            "    for (int aporte{1}; aporte <= 3; ++aporte) {"
+          ],
+          "correctOrder": [
+            5,
+            6,
+            1,
+            7,
+            8,
+            3,
+            4,
+            0,
+            2
+          ],
+          "explanation": "Inicializa total antes del bucle. Suma un aporte por vuelta dentro del cuerpo y muestra total después de la llave de cierre del cuerpo. La consola muestra 6."
+        },
+        {
+          "type": "paragraph",
+          "text": "El editor contiene un programa que suma las piezas de cuatro pedidos. Añade un contador llamado pedidos. Decláralo con valor cero antes del bucle y auméntalo en uno cada vez que el programa sume las piezas de un pedido. Completa la instrucción de salida posterior al bucle para que muestre ambas cantidades.\n\nSalida esperada\nPiezas=10;Pedidos=4\n\nPuedes terminar la salida con un salto de línea."
+        },
+        {
+          "type": "cpp_compiler",
+          "initialCode": "#include <iostream>\n\nint main() {\n    using namespace std;\n\n    int total{};\n    // Declara aquí el contador de pedidos.\n    \n\n    for (int aporte{1}; aporte <= 4; ++aporte) {\n        total += aporte;\n    }\n\n    cout << \"Piezas=\" << total;\n}\n",
+          "outputCheck": {
+            "inputComparison": "tokens",
+            "cases": [
+              {
+                "standardInput": "",
+                "outputs": [
+                  "Piezas=10;Pedidos=4",
+                  "Piezas=10;Pedidos=4\n"
+                ]
+              }
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "Contrastar la construcción del laboratorio"
+        },
+        {
+          "type": "paragraph",
+          "text": "En esta solución de referencia se procesan cinco pedidos. El programa declara pedidos junto a total antes del bucle. En cada vuelta, total += aporte; añade las piezas del pedido actual y ++pedidos; registra que se procesó un pedido más."
+        },
+        {
+          "type": "code",
+          "language": "cpp",
+          "code": "#include <iostream>\n\nint main() {\n    using namespace std;\n\n    int total{};\n    int pedidos{};\n\n    for (int aporte{1}; aporte <= 5; ++aporte) {\n        total += aporte;\n        ++pedidos;\n    }\n\n    cout << \"Piezas=\" << total << \";Pedidos=\" << pedidos;\n}\n"
+        },
+        {
+          "type": "paragraph",
+          "text": "Con cinco pedidos, la suma de las piezas es 1 + 2 + 3 + 4 + 5 = 15. El programa ejecuta ++pedidos; cinco veces, de modo que la salida es Piezas=15;Pedidos=5. Si cambias el límite del bucle a uno, el programa procesa un solo pedido con una pieza y muestra Piezas=1;Pedidos=1."
+        },
+        {
+          "type": "heading",
+          "text": "El mismo resumen con distintos límites"
+        },
+        {
+          "type": "paragraph",
+          "text": "En el editor, cin >> limite; lee cuántos pedidos se procesarán. Para la primera comprobación escribe 1 en Entrada y conserva el código. Puedes terminar la salida con un salto de línea.\n\nEntrada\n1\nSalida esperada\nPiezas=1;Pedidos=1"
+        },
+        {
+          "type": "cpp_compiler",
+          "initialCode": "#include <iostream>\n\nint main() {\n    using namespace std;\n\n    int limite{};\n\n    cin >> limite;\n\n    int total{};\n    int pedidos{};\n\n    for (int aporte{1}; aporte <= limite; ++aporte) {\n        total += aporte;\n        ++pedidos;\n    }\n\n    cout << \"Piezas=\" << total << \";Pedidos=\" << pedidos;\n}\n",
+          "outputCheck": {
+            "inputComparison": "tokens",
+            "cases": [
+              {
+                "standardInput": "1",
+                "outputs": [
+                  "Piezas=1;Pedidos=1",
+                  "Piezas=1;Pedidos=1\n"
+                ]
+              },
+              {
+                "standardInput": "5",
+                "outputs": [
+                  "Piezas=15;Pedidos=5",
+                  "Piezas=15;Pedidos=5\n"
+                ]
+              },
+              {
+                "standardInput": "0",
+                "outputs": [
+                  "Piezas=0;Pedidos=0",
+                  "Piezas=0;Pedidos=0\n"
+                ]
+              }
+            ]
+          },
+          "initialStandardInput": "1"
+        },
+        {
+          "type": "paragraph",
+          "text": "Puedes comprobar cómo cambia el resumen al escribir otro número en Entrada. El código admite enteros de cero a cinco.\n\nEnsayo con cinco pedidos\nEntrada\n5\nSalida esperada\nPiezas=15;Pedidos=5\n\nEnsayo sin pedidos\nEntrada\n0\nSalida esperada\nPiezas=0;Pedidos=0"
+        }
+      ]
+    }
+  ],
+  "courseEdition": {
+    "version": 1,
+    "courseId": "cpp_fundamentals",
+    "locale": "es",
+    "generation": 1,
+    "id": "cpp_desde_cero_2026"
+  },
+  "stateLayout": {
+    "version": 2,
+    "locale": "es",
+    "origin": [
+      {
+        "id": "page_0000",
+        "blocks": [
+          {
+            "id": "block_0000_0000",
+            "sha256": "a30d0555835b703d0dd5a90aabb0134813afd11904b5364f69f03b01695f6d7a"
+          },
+          {
+            "id": "block_0000_0001",
+            "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+          },
+          {
+            "id": "block_0000_0002",
+            "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+          },
+          {
+            "id": "block_0000_0003",
+            "sha256": "64807e11e45a9e38bf741b6c45f7b23e32add2509a2210f77ab8f1040e70628b"
+          },
+          {
+            "id": "block_0000_0004",
+            "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+          },
+          {
+            "id": "block_0000_0005",
+            "sha256": "74462019dfd70c6a82e0cca87aa8861492ba05d9ee5e8547ed0050c28a62d2ae"
+          }
+        ]
+      },
+      {
+        "id": "page_0001",
+        "blocks": [
+          {
+            "id": "block_0001_0000",
+            "sha256": "a30d0555835b703d0dd5a90aabb0134813afd11904b5364f69f03b01695f6d7a"
+          },
+          {
+            "id": "block_0001_0001",
+            "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+          },
+          {
+            "id": "block_0001_0002",
+            "sha256": "fc60e3745f38ae1993547b1106fd33e46f30be66f001596f3a9baec51dd8134f"
+          },
+          {
+            "id": "block_0001_0003",
+            "sha256": "b6f0204a85bec38ab7e03aa40096b75e74095a421028cd464c73028342ea45fb"
+          },
+          {
+            "id": "block_0001_0004",
+            "sha256": "9e529f04b87d2f197960d6f8138fc28800648bc4c16fd79489f9aa4e91318046"
+          }
+        ]
+      },
+      {
+        "id": "page_0002",
+        "blocks": [
+          {
+            "id": "block_0002_0000",
+            "sha256": "a30d0555835b703d0dd5a90aabb0134813afd11904b5364f69f03b01695f6d7a"
+          },
+          {
+            "id": "block_0002_0001",
+            "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+          },
+          {
+            "id": "block_0002_0002",
+            "sha256": "97d5f4530b556307430c10b26a8498fc6a0e208e1f608075ba74a9458a75a1f0"
+          },
+          {
+            "id": "block_0002_0003",
+            "sha256": "2bcf055dc7b78fc1dcdffa68fe0808f695b9d72598114a7469cab53786229cdf"
+          },
+          {
+            "id": "block_0002_0004",
+            "sha256": "4ad1d2e5fda834f65f58ddca475d57c46db34a60551f79bbd3c8005f807de02a"
+          }
+        ]
+      },
+      {
+        "id": "page_0003",
+        "blocks": [
+          {
+            "id": "block_0003_0000",
+            "sha256": "a30d0555835b703d0dd5a90aabb0134813afd11904b5364f69f03b01695f6d7a"
+          },
+          {
+            "id": "block_0003_0001",
+            "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+          },
+          {
+            "id": "block_0003_0002",
+            "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+          },
+          {
+            "id": "block_0003_0003",
+            "sha256": "f98fcd94c1de8fb84af6faab6bbee9fd77a7466a44270aca8cb81e804549755b"
+          },
+          {
+            "id": "block_0003_0004",
+            "sha256": "b2ea58f1d4641826d2ef17391622665ba0d96a8bdf9d549818055bb517a0bd25"
+          },
+          {
+            "id": "block_0003_0005",
+            "sha256": "f09afc83a76e95b585859e1396a6ba5c0fd717178848bc5ecd16ad160afc0054"
+          }
+        ]
+      },
+      {
+        "id": "page_0004",
+        "blocks": [
+          {
+            "id": "block_0004_0000",
+            "sha256": "a30d0555835b703d0dd5a90aabb0134813afd11904b5364f69f03b01695f6d7a"
+          },
+          {
+            "id": "block_0004_0001",
+            "sha256": "a5d5c6f97abd34a6d94962106b8945022260749e8d96afafd0027e7299dc087d"
+          },
+          {
+            "id": "block_0004_0002",
+            "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+          },
+          {
+            "id": "block_0004_0003",
+            "sha256": "d000ea4e74632b8f9818133165d0c22e9c67fc84427d0f36bb91385ad1f27a2d"
+          }
+        ]
+      },
+      {
+        "id": "page_0005",
+        "blocks": [
+          {
+            "id": "block_0005_0000",
+            "sha256": "a30d0555835b703d0dd5a90aabb0134813afd11904b5364f69f03b01695f6d7a"
+          },
+          {
+            "id": "block_0005_0001",
+            "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+          },
+          {
+            "id": "block_0005_0002",
+            "sha256": "c48a39544a2f529327586954d67e2f8c81cafee75802b638a0842b547a6623a4"
+          },
+          {
+            "id": "block_0005_0003",
+            "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+          },
+          {
+            "id": "block_0005_0004",
+            "sha256": "a30d0555835b703d0dd5a90aabb0134813afd11904b5364f69f03b01695f6d7a"
+          },
+          {
+            "id": "block_0005_0005",
+            "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+          },
+          {
+            "id": "block_0005_0006",
+            "sha256": "a7b750839471ec98069bbbd84ffc33393e2bff493260d02e9e2e0ad7cb958e12"
+          },
+          {
+            "id": "block_0005_0007",
+            "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+          }
+        ]
+      }
+    ],
+    "current": [
+      {
+        "id": "page_0000",
+        "blocks": [
+          "block_0000_0000",
+          "block_0000_0001",
+          "block_0000_0002",
+          "block_0000_0003",
+          "block_0000_0004",
+          "block_0000_0005"
+        ]
+      },
+      {
+        "id": "page_0001",
+        "blocks": [
+          "block_0001_0000",
+          "block_0001_0001",
+          "block_0001_0002",
+          "block_0001_0003",
+          "block_0001_0004"
+        ]
+      },
+      {
+        "id": "page_0002",
+        "blocks": [
+          "block_0002_0000",
+          "block_0002_0001",
+          "block_0002_0002",
+          "block_0002_0003",
+          "block_0002_0004"
+        ]
+      },
+      {
+        "id": "page_0003",
+        "blocks": [
+          "block_0003_0000",
+          "block_0003_0001",
+          "block_0003_0002",
+          "block_0003_0003",
+          "block_0003_0004",
+          "block_0003_0005"
+        ]
+      },
+      {
+        "id": "page_0004",
+        "blocks": [
+          "block_0004_0000",
+          "block_0004_0001",
+          "block_0004_0002",
+          "block_0004_0003"
+        ]
+      },
+      {
+        "id": "page_0005",
+        "blocks": [
+          "block_0005_0000",
+          "block_0005_0001",
+          "block_0005_0002",
+          "block_0005_0003",
+          "block_0005_0004",
+          "block_0005_0005",
+          "block_0005_0006",
+          "block_0005_0007"
+        ]
+      }
+    ],
+    "family": {
+      "es": {
+        "sha256": "8231766f606fbe34687c19e72cba8b2b59dd5398bf114b3bfefacb1a76297671",
+        "origin": [
+          {
+            "id": "page_0000",
+            "blocks": [
+              {
+                "id": "block_0000_0000",
+                "sha256": "a30d0555835b703d0dd5a90aabb0134813afd11904b5364f69f03b01695f6d7a"
+              },
+              {
+                "id": "block_0000_0001",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              },
+              {
+                "id": "block_0000_0002",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              },
+              {
+                "id": "block_0000_0003",
+                "sha256": "64807e11e45a9e38bf741b6c45f7b23e32add2509a2210f77ab8f1040e70628b"
+              },
+              {
+                "id": "block_0000_0004",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              },
+              {
+                "id": "block_0000_0005",
+                "sha256": "74462019dfd70c6a82e0cca87aa8861492ba05d9ee5e8547ed0050c28a62d2ae"
+              }
+            ]
+          },
+          {
+            "id": "page_0001",
+            "blocks": [
+              {
+                "id": "block_0001_0000",
+                "sha256": "a30d0555835b703d0dd5a90aabb0134813afd11904b5364f69f03b01695f6d7a"
+              },
+              {
+                "id": "block_0001_0001",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              },
+              {
+                "id": "block_0001_0002",
+                "sha256": "fc60e3745f38ae1993547b1106fd33e46f30be66f001596f3a9baec51dd8134f"
+              },
+              {
+                "id": "block_0001_0003",
+                "sha256": "b6f0204a85bec38ab7e03aa40096b75e74095a421028cd464c73028342ea45fb"
+              },
+              {
+                "id": "block_0001_0004",
+                "sha256": "9e529f04b87d2f197960d6f8138fc28800648bc4c16fd79489f9aa4e91318046"
+              }
+            ]
+          },
+          {
+            "id": "page_0002",
+            "blocks": [
+              {
+                "id": "block_0002_0000",
+                "sha256": "a30d0555835b703d0dd5a90aabb0134813afd11904b5364f69f03b01695f6d7a"
+              },
+              {
+                "id": "block_0002_0001",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              },
+              {
+                "id": "block_0002_0002",
+                "sha256": "97d5f4530b556307430c10b26a8498fc6a0e208e1f608075ba74a9458a75a1f0"
+              },
+              {
+                "id": "block_0002_0003",
+                "sha256": "2bcf055dc7b78fc1dcdffa68fe0808f695b9d72598114a7469cab53786229cdf"
+              },
+              {
+                "id": "block_0002_0004",
+                "sha256": "4ad1d2e5fda834f65f58ddca475d57c46db34a60551f79bbd3c8005f807de02a"
+              }
+            ]
+          },
+          {
+            "id": "page_0003",
+            "blocks": [
+              {
+                "id": "block_0003_0000",
+                "sha256": "a30d0555835b703d0dd5a90aabb0134813afd11904b5364f69f03b01695f6d7a"
+              },
+              {
+                "id": "block_0003_0001",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              },
+              {
+                "id": "block_0003_0002",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              },
+              {
+                "id": "block_0003_0003",
+                "sha256": "f98fcd94c1de8fb84af6faab6bbee9fd77a7466a44270aca8cb81e804549755b"
+              },
+              {
+                "id": "block_0003_0004",
+                "sha256": "b2ea58f1d4641826d2ef17391622665ba0d96a8bdf9d549818055bb517a0bd25"
+              },
+              {
+                "id": "block_0003_0005",
+                "sha256": "f09afc83a76e95b585859e1396a6ba5c0fd717178848bc5ecd16ad160afc0054"
+              }
+            ]
+          },
+          {
+            "id": "page_0004",
+            "blocks": [
+              {
+                "id": "block_0004_0000",
+                "sha256": "a30d0555835b703d0dd5a90aabb0134813afd11904b5364f69f03b01695f6d7a"
+              },
+              {
+                "id": "block_0004_0001",
+                "sha256": "a5d5c6f97abd34a6d94962106b8945022260749e8d96afafd0027e7299dc087d"
+              },
+              {
+                "id": "block_0004_0002",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              },
+              {
+                "id": "block_0004_0003",
+                "sha256": "d000ea4e74632b8f9818133165d0c22e9c67fc84427d0f36bb91385ad1f27a2d"
+              }
+            ]
+          },
+          {
+            "id": "page_0005",
+            "blocks": [
+              {
+                "id": "block_0005_0000",
+                "sha256": "a30d0555835b703d0dd5a90aabb0134813afd11904b5364f69f03b01695f6d7a"
+              },
+              {
+                "id": "block_0005_0001",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              },
+              {
+                "id": "block_0005_0002",
+                "sha256": "c48a39544a2f529327586954d67e2f8c81cafee75802b638a0842b547a6623a4"
+              },
+              {
+                "id": "block_0005_0003",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              },
+              {
+                "id": "block_0005_0004",
+                "sha256": "a30d0555835b703d0dd5a90aabb0134813afd11904b5364f69f03b01695f6d7a"
+              },
+              {
+                "id": "block_0005_0005",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              },
+              {
+                "id": "block_0005_0006",
+                "sha256": "a7b750839471ec98069bbbd84ffc33393e2bff493260d02e9e2e0ad7cb958e12"
+              },
+              {
+                "id": "block_0005_0007",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              }
+            ]
+          }
+        ]
+      }
+    },
+    "additions": [],
+    "editorial": []
+  },
+  "textSemantics": {
+    "version": 1,
+    "fields": [
+      {
+        "block": "block_0000_0001",
+        "path": "/text",
+        "sourceSha256": "d7b8c6f7885996ec86caa919d83c8dc8e8a7677495978d1b5c72e24a86959d2b",
+        "spans": [
+          {
+            "start": 65,
+            "end": 66,
+            "text": "3",
+            "role": "data"
+          },
+          {
+            "start": 92,
+            "end": 93,
+            "text": "5",
+            "role": "data"
+          },
+          {
+            "start": 112,
+            "end": 113,
+            "text": "2",
+            "role": "data"
+          },
+          {
+            "start": 139,
+            "end": 140,
+            "text": "8",
+            "role": "data"
+          },
+          {
+            "start": 336,
+            "end": 354,
+            "text": "(Stroustrup, 2024)",
+            "role": "citation"
+          }
+        ]
+      },
+      {
+        "block": "block_0000_0002",
+        "path": "/text",
+        "sourceSha256": "8019d997cc8b39ad429cef614c06c847ebf6b47b0cb7318cb34cc9019a46a45a",
+        "spans": [
+          {
+            "start": 16,
+            "end": 28,
+            "text": "int total{};",
+            "role": "cpp"
+          },
+          {
+            "start": 114,
+            "end": 120,
+            "text": "aporte",
+            "role": "cpp"
+          },
+          {
+            "start": 198,
+            "end": 212,
+            "text": "total + aporte",
+            "role": "cpp"
+          },
+          {
+            "start": 279,
+            "end": 302,
+            "text": "total = total + aporte;",
+            "role": "cpp"
+          },
+          {
+            "start": 326,
+            "end": 331,
+            "text": "total",
+            "role": "cpp"
+          },
+          {
+            "start": 332,
+            "end": 350,
+            "text": "(Stroustrup, 2024)",
+            "role": "citation"
+          }
+        ]
+      },
+      {
+        "block": "block_0000_0004",
+        "path": "/text",
+        "sourceSha256": "890351f991b71f163ebcb73c22034d5d84744bc0bd4cd117770f0c04ba50e225",
+        "spans": [
+          {
+            "start": 24,
+            "end": 29,
+            "text": "total",
+            "role": "cpp"
+          },
+          {
+            "start": 33,
+            "end": 34,
+            "text": "0",
+            "role": "data"
+          },
+          {
+            "start": 58,
+            "end": 64,
+            "text": "aporte",
+            "role": "cpp"
+          },
+          {
+            "start": 70,
+            "end": 71,
+            "text": "1",
+            "role": "data"
+          },
+          {
+            "start": 100,
+            "end": 109,
+            "text": "0 + 1 = 1",
+            "role": "math"
+          },
+          {
+            "start": 113,
+            "end": 118,
+            "text": "total",
+            "role": "cpp"
+          },
+          {
+            "start": 150,
+            "end": 151,
+            "text": "1",
+            "role": "data"
+          },
+          {
+            "start": 172,
+            "end": 173,
+            "text": "2",
+            "role": "data"
+          },
+          {
+            "start": 187,
+            "end": 188,
+            "text": "3",
+            "role": "data"
+          },
+          {
+            "start": 235,
+            "end": 236,
+            "text": "6",
+            "role": "data"
+          },
+          {
+            "start": 239,
+            "end": 241,
+            "text": "10",
+            "role": "data"
+          },
+          {
+            "start": 268,
+            "end": 282,
+            "text": "cout << total;",
+            "role": "cpp"
+          },
+          {
+            "start": 291,
+            "end": 293,
+            "text": "10",
+            "role": "output"
+          },
+          {
+            "start": 323,
+            "end": 339,
+            "text": "total += aporte;",
+            "role": "cpp"
+          }
+        ]
+      },
+      {
+        "block": "block_0000_0005",
+        "path": "/question",
+        "sourceSha256": "aa5eb1f89f3f052fa2802b8b76c649e27aafcbb3d8bb30e6065bdcf2985b1dcb",
+        "spans": [
+          {
+            "start": 26,
+            "end": 27,
+            "text": "2",
+            "role": "data"
+          },
+          {
+            "start": 30,
+            "end": 31,
+            "text": "5",
+            "role": "data"
+          }
+        ]
+      },
+      {
+        "block": "block_0000_0005",
+        "path": "/explanation",
+        "sourceSha256": "ae08001f65a0fbc69988740d4a42bd4fe2bbfa34faf050b67079197b8738329f",
+        "spans": [
+          {
+            "start": 25,
+            "end": 26,
+            "text": "0",
+            "role": "data"
+          },
+          {
+            "start": 66,
+            "end": 67,
+            "text": "2",
+            "role": "data"
+          },
+          {
+            "start": 69,
+            "end": 70,
+            "text": "5",
+            "role": "data"
+          },
+          {
+            "start": 72,
+            "end": 73,
+            "text": "9",
+            "role": "data"
+          },
+          {
+            "start": 76,
+            "end": 78,
+            "text": "14",
+            "role": "data"
+          },
+          {
+            "start": 95,
+            "end": 109,
+            "text": "cout << total;",
+            "role": "cpp"
+          },
+          {
+            "start": 143,
+            "end": 145,
+            "text": "14",
+            "role": "output"
+          }
+        ]
+      },
+      {
+        "block": "block_0001_0001",
+        "path": "/text",
+        "sourceSha256": "18ae043f7d93e8a1d2939cb4c98f3a6fce82ca227bafdeb419b195b763a847b4",
+        "spans": [
+          {
+            "start": 105,
+            "end": 110,
+            "text": "total",
+            "role": "cpp"
+          },
+          {
+            "start": 220,
+            "end": 221,
+            "text": "0",
+            "role": "data"
+          },
+          {
+            "start": 247,
+            "end": 248,
+            "text": "4",
+            "role": "data"
+          },
+          {
+            "start": 266,
+            "end": 267,
+            "text": "0",
+            "role": "data"
+          },
+          {
+            "start": 285,
+            "end": 286,
+            "text": "4",
+            "role": "data"
+          },
+          {
+            "start": 322,
+            "end": 323,
+            "text": "5",
+            "role": "data"
+          },
+          {
+            "start": 341,
+            "end": 342,
+            "text": "4",
+            "role": "data"
+          },
+          {
+            "start": 351,
+            "end": 352,
+            "text": "9",
+            "role": "data"
+          },
+          {
+            "start": 386,
+            "end": 390,
+            "text": "cout",
+            "role": "cpp"
+          },
+          {
+            "start": 473,
+            "end": 474,
+            "text": "0",
+            "role": "output"
+          },
+          {
+            "start": 477,
+            "end": 478,
+            "text": "4",
+            "role": "output"
+          },
+          {
+            "start": 505,
+            "end": 506,
+            "text": "4",
+            "role": "output"
+          },
+          {
+            "start": 509,
+            "end": 510,
+            "text": "9",
+            "role": "output"
+          }
+        ]
+      },
+      {
+        "block": "block_0001_0002",
+        "path": "/explanation",
+        "sourceSha256": "4dffdfdc26de9130337d0f3167c9d744c5818390ffaca46edb4857c04b877e46",
+        "spans": [
+          {
+            "start": 25,
+            "end": 26,
+            "text": "1",
+            "role": "data"
+          },
+          {
+            "start": 37,
+            "end": 39,
+            "text": "1;",
+            "role": "output"
+          },
+          {
+            "start": 67,
+            "end": 68,
+            "text": "2",
+            "role": "data"
+          },
+          {
+            "start": 79,
+            "end": 81,
+            "text": "3;",
+            "role": "output"
+          },
+          {
+            "start": 102,
+            "end": 103,
+            "text": "3",
+            "role": "data"
+          },
+          {
+            "start": 114,
+            "end": 116,
+            "text": "6;",
+            "role": "output"
+          },
+          {
+            "start": 142,
+            "end": 145,
+            "text": "Fin",
+            "role": "output"
+          },
+          {
+            "start": 169,
+            "end": 178,
+            "text": "1;3;6;Fin",
+            "role": "output"
+          }
+        ]
+      },
+      {
+        "block": "block_0001_0003",
+        "path": "/explanation",
+        "sourceSha256": "ba2d7d480a9e5598de9831bcaa71596bf993a2d578f524c73af42af05556dfe1",
+        "spans": [
+          {
+            "start": 29,
+            "end": 31,
+            "text": "0;",
+            "role": "output"
+          },
+          {
+            "start": 39,
+            "end": 40,
+            "text": "2",
+            "role": "data"
+          },
+          {
+            "start": 64,
+            "end": 66,
+            "text": "2;",
+            "role": "output"
+          },
+          {
+            "start": 74,
+            "end": 75,
+            "text": "3",
+            "role": "data"
+          },
+          {
+            "start": 99,
+            "end": 101,
+            "text": "5;",
+            "role": "output"
+          },
+          {
+            "start": 109,
+            "end": 110,
+            "text": "4",
+            "role": "data"
+          },
+          {
+            "start": 132,
+            "end": 137,
+            "text": "total",
+            "role": "cpp"
+          },
+          {
+            "start": 146,
+            "end": 147,
+            "text": "9",
+            "role": "data"
+          },
+          {
+            "start": 171,
+            "end": 184,
+            "text": "0;2;5;Final=9",
+            "role": "output"
+          }
+        ]
+      },
+      {
+        "block": "block_0001_0004",
+        "path": "/question",
+        "sourceSha256": "99c41855161f912b98830708a708cb2491a1f756784aeaa92f5dfa9c85d05a92",
+        "spans": [
+          {
+            "start": 56,
+            "end": 71,
+            "text": "total = aporte;",
+            "role": "cpp"
+          },
+          {
+            "start": 104,
+            "end": 109,
+            "text": "total",
+            "role": "cpp"
+          }
+        ]
+      },
+      {
+        "block": "block_0001_0004",
+        "path": "/explanation",
+        "sourceSha256": "e7e570e4ce5a055148a83c13a7be1bf83f247db97cbbd493ee046f4a0d74fbae",
+        "spans": [
+          {
+            "start": 53,
+            "end": 58,
+            "text": "total",
+            "role": "cpp"
+          },
+          {
+            "start": 91,
+            "end": 92,
+            "text": "4",
+            "role": "data"
+          },
+          {
+            "start": 95,
+            "end": 96,
+            "text": "5",
+            "role": "data"
+          },
+          {
+            "start": 120,
+            "end": 121,
+            "text": "4",
+            "role": "data"
+          },
+          {
+            "start": 139,
+            "end": 140,
+            "text": "5",
+            "role": "data"
+          },
+          {
+            "start": 182,
+            "end": 198,
+            "text": "total += aporte;",
+            "role": "cpp"
+          }
+        ]
+      },
+      {
+        "block": "block_0002_0001",
+        "path": "/text",
+        "sourceSha256": "674177cc37d2c3a923e35f440ea2334b95e8e204d3372a696c7f1261067deb94",
+        "spans": [
+          {
+            "start": 47,
+            "end": 52,
+            "text": "casos",
+            "role": "cpp"
+          },
+          {
+            "start": 64,
+            "end": 72,
+            "text": "++casos;",
+            "role": "cpp"
+          },
+          {
+            "start": 135,
+            "end": 150,
+            "text": "suma += aporte;",
+            "role": "cpp"
+          },
+          {
+            "start": 173,
+            "end": 174,
+            "text": "8",
+            "role": "data"
+          },
+          {
+            "start": 177,
+            "end": 178,
+            "text": "9",
+            "role": "data"
+          },
+          {
+            "start": 209,
+            "end": 210,
+            "text": "1",
+            "role": "data"
+          },
+          {
+            "start": 214,
+            "end": 219,
+            "text": "casos",
+            "role": "cpp"
+          },
+          {
+            "start": 222,
+            "end": 223,
+            "text": "8",
+            "role": "data"
+          },
+          {
+            "start": 227,
+            "end": 231,
+            "text": "suma",
+            "role": "cpp"
+          },
+          {
+            "start": 249,
+            "end": 250,
+            "text": "2",
+            "role": "data"
+          },
+          {
+            "start": 254,
+            "end": 259,
+            "text": "casos",
+            "role": "cpp"
+          },
+          {
+            "start": 262,
+            "end": 264,
+            "text": "17",
+            "role": "data"
+          },
+          {
+            "start": 268,
+            "end": 272,
+            "text": "suma",
+            "role": "cpp"
+          }
+        ]
+      },
+      {
+        "block": "block_0002_0002",
+        "path": "/question",
+        "sourceSha256": "10fb5fa3cab7ae5cf0ac66484d537bc42bc1003f28cf91f4174f6a369c7ca441",
+        "spans": [
+          {
+            "start": 19,
+            "end": 24,
+            "text": "casos",
+            "role": "cpp"
+          },
+          {
+            "start": 27,
+            "end": 31,
+            "text": "suma",
+            "role": "cpp"
+          }
+        ]
+      },
+      {
+        "block": "block_0002_0002",
+        "path": "/explanation",
+        "sourceSha256": "ca748839ae1c8ffaec571eec545b01073a08f8fecc6f0c23edf37d6a9b7cd395",
+        "spans": [
+          {
+            "start": 35,
+            "end": 36,
+            "text": "3",
+            "role": "data"
+          },
+          {
+            "start": 38,
+            "end": 39,
+            "text": "4",
+            "role": "data"
+          },
+          {
+            "start": 42,
+            "end": 43,
+            "text": "5",
+            "role": "data"
+          },
+          {
+            "start": 79,
+            "end": 84,
+            "text": "casos",
+            "role": "cpp"
+          },
+          {
+            "start": 101,
+            "end": 102,
+            "text": "3",
+            "role": "data"
+          },
+          {
+            "start": 107,
+            "end": 111,
+            "text": "suma",
+            "role": "cpp"
+          },
+          {
+            "start": 139,
+            "end": 153,
+            "text": "3 + 4 + 5 = 12",
+            "role": "math"
+          },
+          {
+            "start": 168,
+            "end": 172,
+            "text": "3:12",
+            "role": "output"
+          }
+        ]
+      },
+      {
+        "block": "block_0002_0003",
+        "path": "/question",
+        "sourceSha256": "b70311bdf3c84c21589a2e9b195c28383d4064c02d4b2a5a367c398e6b7c334e",
+        "spans": [
+          {
+            "start": 22,
+            "end": 24,
+            "text": "+=",
+            "role": "cpp"
+          },
+          {
+            "start": 27,
+            "end": 28,
+            "text": "=",
+            "role": "cpp"
+          },
+          {
+            "start": 58,
+            "end": 63,
+            "text": "total",
+            "role": "cpp"
+          }
+        ]
+      },
+      {
+        "block": "block_0002_0003",
+        "path": "/explanation",
+        "sourceSha256": "3dc3074f49fc051ce23ff586e01baab06d99785de0599bc199d01e3093255834",
+        "spans": [
+          {
+            "start": 4,
+            "end": 6,
+            "text": "+=",
+            "role": "cpp"
+          },
+          {
+            "start": 40,
+            "end": 45,
+            "text": "total",
+            "role": "cpp"
+          },
+          {
+            "start": 91,
+            "end": 104,
+            "text": "1 + 2 + 3 = 6",
+            "role": "math"
+          },
+          {
+            "start": 110,
+            "end": 111,
+            "text": "=",
+            "role": "cpp"
+          },
+          {
+            "start": 174,
+            "end": 175,
+            "text": "3",
+            "role": "output"
+          }
+        ]
+      },
+      {
+        "block": "block_0002_0004",
+        "path": "/question",
+        "sourceSha256": "2757da899762305a3502dd91c16de89bed9c4b3769ce8420c3bbbe382294fa12",
+        "spans": [
+          {
+            "start": 50,
+            "end": 56,
+            "text": "aporte",
+            "role": "cpp"
+          },
+          {
+            "start": 94,
+            "end": 109,
+            "text": "suma += aporte;",
+            "role": "cpp"
+          },
+          {
+            "start": 132,
+            "end": 136,
+            "text": "suma",
+            "role": "cpp"
+          }
+        ]
+      },
+      {
+        "block": "block_0002_0004",
+        "path": "/explanation",
+        "sourceSha256": "f40a0f7ef81f5152d0c3fd89c4a71e5f88189340de7cdc0e15f1f45f9a291f41",
+        "spans": [
+          {
+            "start": 81,
+            "end": 85,
+            "text": "suma",
+            "role": "cpp"
+          }
+        ]
+      },
+      {
+        "block": "block_0003_0001",
+        "path": "/text",
+        "sourceSha256": "3d17c91bb2be519667e0aaa4bf3ce9e8bb2d41c1a77a09350b17f1362caa4887",
+        "spans": [
+          {
+            "start": 46,
+            "end": 51,
+            "text": "false",
+            "role": "cpp"
+          },
+          {
+            "start": 163,
+            "end": 175,
+            "text": "int total{};",
+            "role": "cpp"
+          },
+          {
+            "start": 232,
+            "end": 250,
+            "text": "(Stroustrup, 2024)",
+            "role": "citation"
+          }
+        ]
+      },
+      {
+        "block": "block_0003_0002",
+        "path": "/text",
+        "sourceSha256": "8445822f624b83659c2b5c731afb9b460eafb0c567aad11b6c37c08be3380a19",
+        "spans": [
+          {
+            "start": 73,
+            "end": 74,
+            "text": "1",
+            "role": "data"
+          },
+          {
+            "start": 170,
+            "end": 171,
+            "text": "0",
+            "role": "data"
+          },
+          {
+            "start": 199,
+            "end": 200,
+            "text": "0",
+            "role": "data"
+          },
+          {
+            "start": 252,
+            "end": 253,
+            "text": "0",
+            "role": "data"
+          },
+          {
+            "start": 259,
+            "end": 265,
+            "text": "escala",
+            "role": "cpp"
+          },
+          {
+            "start": 271,
+            "end": 272,
+            "text": "2",
+            "role": "data"
+          },
+          {
+            "start": 274,
+            "end": 286,
+            "text": "escala *= 3;",
+            "role": "cpp"
+          },
+          {
+            "start": 295,
+            "end": 296,
+            "text": "2",
+            "role": "data"
+          },
+          {
+            "start": 316,
+            "end": 317,
+            "text": "3",
+            "role": "data"
+          },
+          {
+            "start": 327,
+            "end": 328,
+            "text": "6",
+            "role": "data"
+          },
+          {
+            "start": 332,
+            "end": 338,
+            "text": "escala",
+            "role": "cpp"
+          },
+          {
+            "start": 374,
+            "end": 394,
+            "text": "escala = escala * 3;",
+            "role": "cpp"
+          },
+          {
+            "start": 395,
+            "end": 413,
+            "text": "(Stroustrup, 2024)",
+            "role": "citation"
+          }
+        ]
+      },
+      {
+        "block": "block_0003_0003",
+        "path": "/explanation",
+        "sourceSha256": "e8342994bbe7ccc5d2a7c005322428262efa1566967f5f9baa0139db91c7e4e0",
+        "spans": [
+          {
+            "start": 12,
+            "end": 18,
+            "text": "aporte",
+            "role": "cpp"
+          },
+          {
+            "start": 30,
+            "end": 31,
+            "text": "1",
+            "role": "data"
+          },
+          {
+            "start": 38,
+            "end": 49,
+            "text": "aporte <= 0",
+            "role": "cpp"
+          },
+          {
+            "start": 53,
+            "end": 58,
+            "text": "false",
+            "role": "cpp"
+          },
+          {
+            "start": 87,
+            "end": 92,
+            "text": "total",
+            "role": "cpp"
+          },
+          {
+            "start": 139,
+            "end": 146,
+            "text": "Total=0",
+            "role": "output"
+          }
+        ]
+      },
+      {
+        "block": "block_0003_0004",
+        "path": "/question",
+        "sourceSha256": "531483f4331d761b0d2d13b3e883c789378acaca0948cb09b11ef3d2a1a5c083",
+        "spans": [
+          {
+            "start": 39,
+            "end": 40,
+            "text": "2",
+            "role": "data"
+          },
+          {
+            "start": 43,
+            "end": 44,
+            "text": "4",
+            "role": "data"
+          }
+        ]
+      },
+      {
+        "block": "block_0003_0004",
+        "path": "/explanation",
+        "sourceSha256": "bb30381bd7cd308a34aa7f99713ca7c5c2daab97f213c5cdbe7ccc3b4ddbd357",
+        "spans": [
+          {
+            "start": 23,
+            "end": 24,
+            "text": "1",
+            "role": "data"
+          },
+          {
+            "start": 45,
+            "end": 54,
+            "text": "1 × 2 = 2",
+            "role": "math"
+          },
+          {
+            "start": 64,
+            "end": 73,
+            "text": "2 × 3 = 6",
+            "role": "math"
+          },
+          {
+            "start": 87,
+            "end": 97,
+            "text": "6 × 4 = 24",
+            "role": "math"
+          },
+          {
+            "start": 112,
+            "end": 114,
+            "text": "24",
+            "role": "output"
+          }
+        ]
+      },
+      {
+        "block": "block_0003_0005",
+        "path": "/explanation",
+        "sourceSha256": "0485b7ec7a23518f1774f3dfa49c0063aa79ec7dc1d7ef5d8639a7457e6cf631",
+        "spans": [
+          {
+            "start": 24,
+            "end": 25,
+            "text": "6",
+            "role": "data"
+          },
+          {
+            "start": 52,
+            "end": 53,
+            "text": "2",
+            "role": "data"
+          },
+          {
+            "start": 63,
+            "end": 69,
+            "text": "piezas",
+            "role": "cpp"
+          },
+          {
+            "start": 78,
+            "end": 79,
+            "text": "8",
+            "role": "data"
+          },
+          {
+            "start": 87,
+            "end": 89,
+            "text": "10",
+            "role": "data"
+          },
+          {
+            "start": 101,
+            "end": 103,
+            "text": "12",
+            "role": "data"
+          },
+          {
+            "start": 124,
+            "end": 126,
+            "text": "12",
+            "role": "output"
+          }
+        ]
+      },
+      {
+        "block": "block_0004_0001",
+        "path": "/question",
+        "sourceSha256": "486a46a3d7dfe7db46df939317caa4edb3a24714a826fc52703589403897cea2",
+        "spans": [
+          {
+            "start": 72,
+            "end": 92,
+            "text": "using namespace std;",
+            "role": "cpp"
+          },
+          {
+            "start": 127,
+            "end": 131,
+            "text": "main",
+            "role": "cpp"
+          }
+        ]
+      },
+      {
+        "block": "block_0004_0001",
+        "path": "/explanation",
+        "sourceSha256": "9094676a73df681b9cc006de2b64db189eef5849df8b360a0767585b7c074149",
+        "spans": [
+          {
+            "start": 11,
+            "end": 16,
+            "text": "total",
+            "role": "cpp"
+          },
+          {
+            "start": 88,
+            "end": 93,
+            "text": "total",
+            "role": "cpp"
+          },
+          {
+            "start": 155,
+            "end": 156,
+            "text": "6",
+            "role": "output"
+          }
+        ]
+      },
+      {
+        "block": "block_0004_0002",
+        "path": "/text",
+        "sourceSha256": "7ce9aae42768d6cb3e34344cc44fc325c6d8b35309ffadf05918123b9277e646",
+        "spans": [
+          {
+            "start": 96,
+            "end": 103,
+            "text": "pedidos",
+            "role": "cpp"
+          },
+          {
+            "start": 325,
+            "end": 344,
+            "text": "Piezas=10;Pedidos=4",
+            "role": "output"
+          }
+        ]
+      },
+      {
+        "block": "block_0005_0001",
+        "path": "/text",
+        "sourceSha256": "a53ce91e1c9565c46c21587b723045fab9ab149823869d97f838aafb0df4ac66",
+        "spans": [
+          {
+            "start": 78,
+            "end": 85,
+            "text": "pedidos",
+            "role": "cpp"
+          },
+          {
+            "start": 94,
+            "end": 99,
+            "text": "total",
+            "role": "cpp"
+          },
+          {
+            "start": 133,
+            "end": 149,
+            "text": "total += aporte;",
+            "role": "cpp"
+          },
+          {
+            "start": 187,
+            "end": 197,
+            "text": "++pedidos;",
+            "role": "cpp"
+          }
+        ]
+      },
+      {
+        "block": "block_0005_0003",
+        "path": "/text",
+        "sourceSha256": "a8d03d18043c47bf403ea0df1be1f06f45b79bd8b98ccef7c3b959d526b17d50",
+        "spans": [
+          {
+            "start": 44,
+            "end": 66,
+            "text": "1 + 2 + 3 + 4 + 5 = 15",
+            "role": "math"
+          },
+          {
+            "start": 88,
+            "end": 98,
+            "text": "++pedidos;",
+            "role": "cpp"
+          },
+          {
+            "start": 137,
+            "end": 156,
+            "text": "Piezas=15;Pedidos=5",
+            "role": "output"
+          },
+          {
+            "start": 255,
+            "end": 273,
+            "text": "Piezas=1;Pedidos=1",
+            "role": "output"
+          }
+        ]
+      },
+      {
+        "block": "block_0005_0005",
+        "path": "/text",
+        "sourceSha256": "8cd9ac2e7666c85663565444e29890a7abfa5bc294e20fb592567d91b9732f98",
+        "spans": [
+          {
+            "start": 14,
+            "end": 28,
+            "text": "cin >> limite;",
+            "role": "cpp"
+          },
+          {
+            "start": 101,
+            "end": 102,
+            "text": "1",
+            "role": "data"
+          },
+          {
+            "start": 194,
+            "end": 195,
+            "text": "1",
+            "role": "data"
+          },
+          {
+            "start": 212,
+            "end": 230,
+            "text": "Piezas=1;Pedidos=1",
+            "role": "output"
+          }
+        ]
+      },
+      {
+        "block": "block_0005_0007",
+        "path": "/text",
+        "sourceSha256": "85c62277cf9677664c62841db99dd1d94e397bf26ae901f51aec4fcc4ba4bad3",
+        "spans": [
+          {
+            "start": 152,
+            "end": 153,
+            "text": "5",
+            "role": "data"
+          },
+          {
+            "start": 170,
+            "end": 189,
+            "text": "Piezas=15;Pedidos=5",
+            "role": "output"
+          },
+          {
+            "start": 218,
+            "end": 219,
+            "text": "0",
+            "role": "data"
+          },
+          {
+            "start": 236,
+            "end": 254,
+            "text": "Piezas=0;Pedidos=0",
+            "role": "output"
+          }
+        ]
+      }
+    ]
+  }
+}
