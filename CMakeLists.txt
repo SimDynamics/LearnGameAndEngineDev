@@ -172,6 +172,7 @@ function(lgaed_add_compiler_guidance_state_target)
     endif()
     add_executable(lgaed_compiler_guidance_state_tests
         native/platform/windows/compiler_guidance_state_tests.cpp
+        native/platform/windows/u3l4_storage_recovery_tests.cpp
         native/platform/windows/math_matching_text_state_tests.cpp
         native/platform/windows/indexed_unique_transfer_state_tests.cpp
         native/platform/windows/defaulted_move_policy_state_tests.cpp
@@ -189,6 +190,9 @@ function(lgaed_add_compiler_guidance_state_target)
         native/platform/windows/dual_interface_state_tests.cpp)
     target_link_libraries(lgaed_compiler_guidance_state_tests
         PRIVATE lgaed_platform_windows lgaed_host_options)
+    add_test(NAME native.u3l4_storage_recovery
+        COMMAND lgaed_compiler_guidance_state_tests --u3l4-storage-recovery)
+    set_tests_properties(native.u3l4_storage_recovery PROPERTIES TIMEOUT 90 RUN_SERIAL TRUE)
 endfunction()
 
 # Execute the actual Windows loader, compiler-completion and StateStore

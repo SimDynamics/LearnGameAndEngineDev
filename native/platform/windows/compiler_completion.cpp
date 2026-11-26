@@ -2728,6 +2728,158 @@ bool record_compiler_diagnostic_case(state::StateData& data,const curriculum::Le
     record_feedback_origin(data,key,block,"/compileCheck/explanation",feedback,std::get<std::string>(values.at(key+"completed")));
     return true;
 }
+
+void stage_u3l4_storage_receipts(state::StateData& data,
+        const curriculum::Lesson& rejected,const curriculum::Block& prior,
+        const curriculum::Lesson& restored,const curriculum::Block& current) {
+    constexpr std::string_view lesson_id=
+        "cpp_fundamentals__edition_es_1__expresiones_y_decisiones__alternativas_y_fronteras";
+    struct Move {std::string_view id;std::size_t from,to;};
+    constexpr Move moves[]{
+        {"u3l4_lotes_editor_incluye_seis",82,85},
+        {"u3l4_lotes_editor_supera_seis",85,88},
+        {"u3l4_lotes_taller_doce_editor_a",102,91},
+        {"u3l4_lotes_taller_doce_editor_b",104,93}};
+    const auto reject=[](std::string_view why){throw std::runtime_error(std::string(why));};
+    const auto move=std::ranges::find_if(moves,[&](const auto& item){return item.id==prior.stable_id;});
+    if(move==std::end(moves)||rejected.id!=lesson_id||restored.id!=lesson_id||
+        rejected.locale!="es"||restored.locale!="es"||
+        rejected.state_layout.lineage!=restored.state_layout.lineage||
+        prior.stable_id!=current.stable_id||prior.raw_json!=current.raw_json||
+        prior.type!=curriculum::BlockType::cpp_compiler||current.type!=prior.type||
+        !prior.output_check||!current.output_check||prior.compile_check||current.compile_check||
+        prior.cmake||current.cmake||!prior.project_files.empty()||!current.project_files.empty()||
+        prior.address.page!=7||current.address.page!=7||
+        prior.address.block!=move->from||current.address.block!=move->to||
+        prior.address.addition_namespace.empty()||
+        prior.address.addition_namespace!=current.address.addition_namespace||
+        prior.address.progress_page!=current.address.progress_page)
+        reject("The compiler owner is outside the authenticated U3L4 incident");
+    auto normalized=current;normalized.address=prior.address;
+    if(curriculum::reference_objective_frame(rejected,prior)!=
+            curriculum::reference_objective_frame(restored,normalized)||
+        review_rules(prior)!=review_rules(current)||review_rules(prior,true)!=review_rules(current,true)||
+        base(rejected,prior)!=legacy_base(rejected,prior)||
+        base(restored,current)!=legacy_base(restored,current))
+        reject("The U3L4 recovery would change an executable objective");
+
+    const auto old_key=base(rejected,prior),new_key=base(restored,current);
+    const auto group=[&](const std::string& prefix) {
+        state::Preferences result;
+        if(const auto domain=data.preferences.find("native_windows");domain!=data.preferences.end())
+            for(const auto& [key,value]:domain->second)
+                if(key.starts_with(prefix))result.emplace(key.substr(prefix.size()),value);
+        return result;
+    };
+    const auto valid_program=[](std::string_view frame) {
+        constexpr std::string_view prefix="single-file-v1/";
+        if(!frame.starts_with(prefix))return false;
+        frame.remove_prefix(prefix.size());const auto separator=frame.find(':');
+        if(separator==frame.npos||!separator)return false;
+        std::size_t size=0;
+        const auto parsed=std::from_chars(frame.data(),frame.data()+separator,size);
+        return parsed.ec==std::errc{}&&parsed.ptr==frame.data()+separator&&
+            frame.substr(0,separator)==std::to_string(size)&&size==frame.size()-separator-1;
+    };
+    const auto rebind=[&](const curriculum::Lesson& source_lesson,const curriculum::Block& source,
+            const std::string& from,const std::string& to,const state::Preferences& entries) {
+        state::Preferences result;
+        if(entries.empty())return result;
+        for(const auto& [suffix,value]:entries) {
+            (void)value;
+            if(suffix!="program"&&suffix!="cases"&&suffix!="completed"&&suffix!="feedback"&&
+                suffix!=feedback_origin_suffix&&suffix!="review/program"&&suffix!="review/input"&&
+                suffix!="review/target"&&suffix!="review/rules"&&suffix!="review/feedback"&&
+                suffix!="review/seal"&&suffix!="review/feedback-origin/v1")
+                reject("Unknown U3L4 receipt field; preserve for independent review");
+        }
+        const auto text=[&](const std::string& suffix) {
+            const auto found=entries.find(suffix);
+            if(found==entries.end())reject("Incomplete U3L4 receipt group");
+            const auto* value=std::get_if<std::string>(&found->second);
+            if(!value)reject("Invalid U3L4 receipt field type");
+            return *value;
+        };
+        const auto origin=[&](const std::string& prefix,const std::string& feedback,
+                const std::string& old_seal,const std::string& new_seal) {
+            const auto suffix=prefix+feedback_origin_suffix;
+            if(!entries.contains(suffix))return;
+            const auto path=restored_feedback_origin(data,from+prefix,source,feedback,old_seal);
+            if(path.empty())reject("Unverified U3L4 feedback provenance");
+            const auto descriptor=feedback_descriptor(source,path,feedback);
+            if(!descriptor)reject("Unverified U3L4 feedback source");
+            const auto source_sha=state::sha256(descriptor->source);
+            result[suffix]=std::vector<std::string>{path,source_sha,
+                feedback_origin_seal(to+prefix,new_seal,feedback,path,source_sha)};
+        };
+        const bool has_success=std::ranges::any_of(entries,[](const auto& item) {
+            return !item.first.starts_with("review/");
+        });
+        if(has_success) {
+            // This calls the same strict validator used by native receipt
+            // adoption; the ordinary legacy reader alone is not sufficient.
+            validate_receipts_at_key(data,source_lesson,source,from);
+            const auto program=text("program");
+            const auto cases=case_proofs(data,from);
+            if(!valid_program(program)||cases.size()!=source.output_check->cases.size()||
+                cases.empty()||std::ranges::none_of(cases,[](const auto& item){return !item.empty();}))
+                reject("Incomplete or unbound U3L4 case evidence");
+            auto rebound=cases;
+            for(std::size_t i=0;i<cases.size();++i)
+                if(!cases[i].empty())rebound[i]=proof(to,program,i,current.output_check->cases[i]);
+            result["program"]=program;result["cases"]=rebound;
+            if(entries.contains("completed")) {
+                const auto seal=text("completed");
+                if(!valid_completion_seal(source,from,program,cases,seal)||
+                    !compiler_puzzle_completed(data,source_lesson,source))
+                    reject("Invalid U3L4 completion seal");
+                const auto revised=seal==complete_seal(from,program,cases)
+                    ?complete_seal(to,program,rebound):first_case_complete_seal(to,program,rebound);
+                result["completed"]=revised;
+                if(entries.contains("feedback"))result["feedback"]=text("feedback");
+                if(entries.contains(feedback_origin_suffix))
+                    origin("",text("feedback"),seal,revised);
+            }else if(entries.contains("feedback")||entries.contains(feedback_origin_suffix))
+                reject("U3L4 feedback has no authenticated completion");
+        }
+        const bool has_review=std::ranges::any_of(entries,[](const auto& item) {
+            return item.first.starts_with("review/");
+        });
+        if(has_review) {
+            const auto program=text("review/program"),input=text("review/input"),
+                target=text("review/target"),rules=text("review/rules"),
+                feedback=text("review/feedback"),seal=text("review/seal");
+            if(!valid_program(program)||!target.empty()||feedback.empty()||
+                (rules!=review_rules(source)&&rules!=review_rules(source,true))||
+                seal!=review_seal(from+"review/",program,input,target,rules,feedback))
+                reject("Unverified U3L4 rejected-attempt seal");
+            const auto revised=review_seal(to+"review/",program,input,target,rules,feedback);
+            result["review/program"]=program;result["review/input"]=input;
+            result["review/target"]=target;result["review/rules"]=rules;
+            result["review/feedback"]=feedback;result["review/seal"]=revised;
+            origin("review/",feedback,seal,revised);
+        }
+        return result;
+    };
+    const auto previous=group(old_key),canonical=group(new_key);
+    const auto projected=rebind(rejected,prior,old_key,new_key,previous);
+    const auto checked=rebind(restored,current,new_key,new_key,canonical);
+    if(checked!=canonical)reject("The canonical U3L4 receipt group is not self-consistent");
+    if(!projected.empty()&&!canonical.empty()&&projected!=canonical)
+        reject("Distinct U3L4 receipt versions need an explicit recovery decision");
+    if(projected.empty()||!canonical.empty())return;
+    auto staged=data;
+    for(const auto& [suffix,value]:projected)
+        staged.preferences["native_windows"].emplace(new_key+suffix,value);
+    if(compiler_puzzle_case_count(staged,restored,current)!=
+            compiler_puzzle_case_count(data,rejected,prior)||
+        compiler_puzzle_completed(staged,restored,current)!=
+            compiler_puzzle_completed(data,rejected,prior))
+        reject("U3L4 rebind would increase or lose the scope of the original receipt");
+    validate_receipts_at_key(staged,restored,current,new_key);
+    data=std::move(staged);
+}
+
 void reset_compiler_puzzle(state::StateData& data,const curriculum::Lesson& lesson,const curriculum::Block& block) {
     if(scoped_local_owner(block))validate_compiler_puzzle_state(data,lesson,block);
     const auto prefix=private_dependency_owner(block)?base(lesson,block):root(lesson,block);
