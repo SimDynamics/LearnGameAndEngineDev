@@ -288,6 +288,55 @@ void source_bound_feedback_admissions() {
         "An incorrect unanswered guide acquired permission through a navigation callback");
     std::cout<<"PASS feedback navigation admissions: A97 alone cannot admit A98, separately admitted later feedback releases the heading, and pending/incorrect/compiler gates remain mandatory; pure policy only\n";
 }
+void finished_feedback_continuation() {
+    // U3L4 page 2. The legacy bookmark has a partial recording at 106.
+    // Its correct answer remains valid. The latest explanation ends at 279.
+    std::vector<Part> parts(285);
+    for(auto& part:parts)part.region.solved=true;
+    const auto feedback=[&](std::size_t index,std::size_t block){
+        auto& item=parts[index].region;
+        item.block_index=block;item.is_exercise=true;item.feedback=true;item.correct=true;
+    };
+    feedback(106,25);
+    for(std::size_t n=107;n<276;++n)parts[n].region.block_index=26;
+    parts[276].region.block_index=54;parts[276].region.is_exercise=true;
+    for(std::size_t n=277;n<=279;++n){feedback(n,54);parts[n].navigation_admitted=true;}
+    parts[280].region.block_index=55;parts[281].region.block_index=56;
+    for(std::size_t n=282;n<=283;++n){
+        auto& item=parts[n].region;item.block_index=64;item.is_exercise=true;item.solved=false;
+    }
+    parts[284].region.block_index=65;
+    const reading_gate::FeedbackPriority priority{54,280};
+    const auto admitted=[](const Part& part){return part.navigation_admitted;};
+    const auto probe=[&](std::size_t destination,std::optional<std::size_t> at,bool manual=false){
+        return reading_gate::prefix_blocker(parts,destination,106,priority,manual,projection,admitted,at);
+    };
+    require(!probe(280,279)&&!probe(281,280)&&!probe(283,281,true),
+        "The complete latest explanation did not release its heading, prose and the next prompt");
+    require(!parts[106].navigation_admitted,"Continuing from a later answer credited the historical partial recording");
+    parts[280].region.block_index=54; // Compiler histories may follow feedback inside the same block.
+    require(!probe(280,279)&&!probe(281,280),"A trailing compiler history prevented release after its actual last feedback sentence");
+    parts[280].region.block_index=55;
+    auto stopped=probe(284,283);
+    require(stopped&&stopped->index==282&&stopped->reason==reading_gate::BlockerReason::answer,
+        "Continuing from complete feedback crossed the following unsolved activity");
+    for(const auto stop:{probe(280,{}),probe(280,106,true),probe(280,279,true),probe(280,280)}){
+        require(stop&&stop->index==106,"A restored position, manual target or backwards origin created a new feedback crossing");
+    }
+    parts[100].region.is_exercise=true;parts[100].region.solved=false;
+    stopped=probe(280,279);
+    require(stopped&&stopped->reason==reading_gate::BlockerReason::answer,
+        "The last completed explanation waived an earlier required response");
+    parts[100].region.is_exercise=false;parts[100].region.solved=true;
+    parts[278].navigation_admitted=false;
+    stopped=probe(280,279);
+    require(stopped&&stopped->index==106&&stopped->reason==reading_gate::BlockerReason::correct_feedback,
+        "The end of revised or partially heard feedback hid the first outstanding blocker");
+    parts[106].navigation_admitted=true;
+    stopped=probe(280,279);
+    require(stopped&&stopped->index==278,"A high transient answer priority certified an unheard middle sentence");
+    std::cout<<"PASS complete feedback at 279 continues to 280 despite legacy pause 106; pending answers, missing sentences, seek and restore remain bounded\n";
+}
 void asynchronous_metadata() {
     auto live=current_page();
     for(auto& region:live)if(region.required_compiler)region.solved=true;
@@ -597,11 +646,11 @@ int main(int argc,char** argv) {
             selected_edition_reader_gates();return 0;
         }
         if(argc==2&&std::string_view(argv[1])=="--feedback-admissions") {
-            source_bound_feedback_admissions();return 0;
+            source_bound_feedback_admissions();finished_feedback_continuation();return 0;
         }
         require(argc==1,"Unknown reading gate QA arguments");
         selected_edition_reader_gates();
-        current_objectives();current_u2l6_reopened_pause();grouped_feedback();source_bound_feedback_admissions();asynchronous_metadata();preview_from_later_feedback();ordinary_and_mixed_requirements();cadenas_three_puzzle_flow();current_u2l5_reader_pauses_and_gates();
+        current_objectives();current_u2l6_reopened_pause();grouped_feedback();source_bound_feedback_admissions();finished_feedback_continuation();asynchronous_metadata();preview_from_later_feedback();ordinary_and_mixed_requirements();cadenas_three_puzzle_flow();current_u2l5_reader_pauses_and_gates();
         std::cout<<"PASS current U2L6 objectives and restored pauses, actual U2L7 three-puzzle prompt/feedback gates, ordinary/mixed groups, late/finished bookmarks, local feedback permission and asynchronous same-script invalidation; pure gates only\n";
         return 0;
     } catch(const std::exception& error) { std::cerr<<error.what()<<'\n';return 1; }

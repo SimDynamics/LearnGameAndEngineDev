@@ -1090,19 +1090,19 @@ struct LessonReader::Impl {
         for(std::size_t i=0;i<parts.size();++i)if(parts[i].region.block_index==block&&parts[i].region.feedback&&parts[i].region.correct&&parts[i].region.solved)return i;
         return {};
     }
-    std::optional<reading_gate::PrefixBlocker> prefix_blocker(std::size_t destination,bool manual_forward=false)const{
+    std::optional<reading_gate::PrefixBlocker> prefix_blocker(std::size_t destination,bool manual_forward=false,
+            std::optional<std::size_t> playback_at={})const{
         const auto feedback_priority=answer_priority
             ?std::optional{reading_gate::FeedbackPriority{answer_priority->block,answer_priority->allowed_through}}
             :std::optional<reading_gate::FeedbackPriority>{};
         return reading_gate::prefix_blocker(parts,destination,position.heard_through,feedback_priority,manual_forward,
-            [](const auto& part)->const auto&{return part.region;},[](const auto& part){return part.feedback_admitted;});
+            [](const auto& part)->const auto&{return part.region;},[](const auto& part){return part.feedback_admitted;},playback_at);
     }
-    bool passes_prefix(std::size_t destination,bool manual_forward=false)const{return !prefix_blocker(destination,manual_forward);}
     bool can_enter(std::size_t destination,bool manual_forward=false)const{
-        return destination<=current()||passes_prefix(destination,manual_forward);
+        return destination<=current()||!prefix_blocker(destination,manual_forward,current());
     }
     void restore_answered_priority(){
-        const auto at=current();if(passes_prefix(at))return;
+        const auto at=current();if(!prefix_blocker(at))return;
         std::optional<AnswerPriority> restored;
         for(std::size_t i=0;i<=at&&i<parts.size();++i){const auto& part=parts[i];
             if(part.region.feedback&&part.region.correct&&part.region.solved)restored=AnswerPriority{part.region.block_index,at};
@@ -1169,7 +1169,7 @@ struct LessonReader::Impl {
             const bool wrong=parts[at].region.feedback&&!parts[at].region.correct;
             const bool end_of_wrong=wrong&&(at+1==parts.size()||!parts[at+1].region.feedback||parts[at+1].region.block_index!=parts[at].region.block_index);
             if(end_of_wrong){wanted=false;waiting_gate=false;save();}
-            else if(const auto blocked=wrong?std::optional<reading_gate::PrefixBlocker>{}:prefix_blocker(at+1);blocked){
+            else if(const auto blocked=wrong?std::optional<reading_gate::PrefixBlocker>{}:prefix_blocker(at+1,false,at);blocked){
                 if(blocked->reason==reading_gate::BlockerReason::answer&&blocked->block==parts[at].region.block_index){
                     // Its prompt and every option have already played. Wait
                     // only at the end of this actual unanswered activity.

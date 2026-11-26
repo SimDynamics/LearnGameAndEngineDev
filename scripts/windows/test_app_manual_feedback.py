@@ -17,7 +17,7 @@ def fixture(root):
     source = qa.ROOT / "app/src/main/assets/content/es/programming/cpp_fundamentals/edition_es_1__expresiones_y_decisiones/lesson_alternativas_y_fronteras.json"
     checksum, document = qa.digest(source), qa.read_json(source)
     original = document["pages"][1]["blocks"]
-    indices = (25, 38, 39, 40, 41)
+    indices = (25, 38, 39, 40, 41, 45)
     qa.require(original[25]["type"] == "multiple_choice" and original[38]["answers"] == ["6"]
                and original[39]["text"] == "Reparar un contador de tareas", "Reported sources changed")
     raw = dict(id=qa.LESSON, title="Lectura posterior a un avance manual", compilerPuzzlesRequired=True,
@@ -44,6 +44,56 @@ def current(value):
     reader = value.get("reader", {})
     parts, index = reader.get("segments", []), reader.get("index", -1)
     return reader, parts[index] if 0 <= index < len(parts) else {}
+
+
+def verify_later_answer(app, unheard, evidence, *, resume):
+    app.command("answer", block=1, answer="6")
+    prepared = app.wait(lambda value: value.get("reader", {}).get("planned") and
+                        any(part["block"] == 1 and part["feedback"] and part["correct"]
+                            for part in value["reader"]["segments"]),
+                        "updated plan for the newly checked exercise", 60)["reader"]
+    expected = [part["source"] for part in prepared["segments"] if part["block"] == 3 and not part["feedback"]]
+    latest_feedback = [index for index, part in enumerate(prepared["segments"])
+                       if part["block"] == 1 and part["feedback"] and part["correct"]]
+    qa.require(latest_feedback and prepared["segments"][latest_feedback[-1] + 1]["block"] == 2,
+               "Fixture no longer takes the last feedback sentence straight to the title")
+    if resume:
+        app.command("play")
+    heard_last, title, instruction, observed = False, False, [], set()
+
+    def completed(value):
+        nonlocal heard_last, title
+        reader, part = current(value)
+        if not reader.get("planned"):
+            return False
+        if reader["playing"]:
+            qa.require(part["block"] != 0, "A later answer returned to the earlier exercise")
+            if part["block"] == 1 and part["feedback"]:
+                qa.require(abs(reader["playbackRate"] - 3) < .02, "Actual application lost the selected3X rate")
+                if reader["index"] == latest_feedback[-1]:
+                    heard_last = True
+            if part["block"] == 2:
+                qa.require(heard_last and part["source"] == "Reparar un contador de tareas", "New feedback skipped its title")
+                qa.require(all(item["feedbackFullyPlayed"] for item in reader["segments"]
+                               if item["block"] == 1 and item["feedback"] and item["correct"]),
+                           "Title bypassed genuinely unheard newer feedback")
+                title = True
+            if part["block"] == 3 and reader["index"] not in observed:
+                qa.require(title, "Compiler instruction skipped its title")
+                observed.add(reader["index"])
+                instruction.append(part["source"])
+                qa.pcm(Path(part["recording"]))
+            qa.require(part["block"] <= 4, "Unresolved required compiler released later content")
+        if not reader["waitingGate"] or reader["playing"] or part["block"] != 4:
+            return False
+        qa.require(title and instruction == expected and expected, "Instruction omitted, repeated or reordered source sentences")
+        qa.require(all(not reader["segments"][index]["feedbackFullyPlayed"] for index in unheard)
+                   and reader["heardThrough"] <= min(unheard),
+                   "Later answer fabricated hearing of an earlier sentence")
+        return True
+
+    result = app.wait(completed, "new complete feedback, repair title, full instruction and unresolved compiler gate after a later answer", 90)
+    qa.write_json(evidence, result)
 
 
 def acceptance(executable, root):
@@ -96,43 +146,25 @@ def acceptance(executable, root):
         after_restart = app.inspect()
         qa.require(before_restart.get("learning_progress") == after_restart.get("learning_progress"),
                    "Actual app restart changed a correctly checked response")
-        app.command("answer", block=1, answer="6")
-        prepared = app.ready()["reader"]
-        expected = [part["source"] for part in prepared["segments"] if part["block"] == 3 and not part["feedback"]]
-        app.command("play")
-        latest, title, instruction, observed = False, False, [], set()
+        verify_later_answer(app, [gap_index], root / "actual-restart-continuation.json", resume=True)
 
-        def completed(value):
-            nonlocal latest, title
-            reader, part = current(value)
-            if not reader.get("planned"):
-                return False
-            if reader["playing"]:
-                qa.require(part["block"] != 0, "A later answer replayed older explicitly previewed feedback")
-                if part["block"] == 1 and part["feedback"]:
-                    qa.require(abs(reader["playbackRate"] - 3) < .02, "Actual application lost the selected3X rate")
-                    latest = True
-                if part["block"] == 2:
-                    qa.require(latest and part["source"] == "Reparar un contador de tareas", "New feedback skipped its title")
-                    qa.require(all(item["feedbackFullyPlayed"] for item in reader["segments"]
-                                   if item["block"] == 1 and item["feedback"] and item["correct"]),
-                               "Title bypassed genuinely unheard newer feedback")
-                    title = True
-                if part["block"] == 3 and reader["index"] not in observed:
-                    qa.require(title, "Compiler instruction skipped its title")
-                    observed.add(reader["index"])
-                    instruction.append(part["source"])
-                    qa.pcm(Path(part["recording"]))
-                qa.require(part["block"] <= 4, "Unresolved required compiler released later content")
-            if not reader["waitingGate"] or reader["playing"] or part["block"] != 4:
-                return False
-            qa.require(title and instruction == expected and expected, "Instruction omitted, repeated or reordered source sentences")
-            qa.require(not reader["segments"][gap_index]["feedbackFullyPlayed"], "Later answer fabricated hearing of the old gap")
-            return True
-
-        result = app.wait(completed, "new complete feedback, repair title, full instruction and unresolved compiler gate after actual restart", 90)
-        qa.write_json(root / "actual-restart-continuation.json", result)
-        print(f"PASS actual Windows app Santa3X: genuine+5s gap, other feedback really played, full app restart, newer feedback→title→instruction→required compiler; evidence={root}", flush=True)
+        # The older exercise is still solved. Replay it and check the next
+        # exercise while its first feedback sentence is playing normally.
+        app.command("reset_answer", block=1)
+        app.ready()
+        app.command("restart")
+        interrupted = app.wait(lambda value: current(value)[0].get("playing") and
+                 current(value)[1].get("block") == 0 and current(value)[1].get("feedback") and
+                 600 <= current(value)[0]["offset"] <= 2500,
+                 "natural playback inside the earlier solved exercise", 90)["reader"]
+        older = [index for index, part in enumerate(interrupted["segments"])
+                 if part["block"] == 0 and part["feedback"] and part["correct"]]
+        qa.require(len(older) > 1 and interrupted["index"] == older[0] and
+                   0 < interrupted["offset"] < interrupted["segments"][older[0]]["duration"] and
+                   all(not interrupted["segments"][index]["feedbackFullyPlayed"] for index in older),
+                   "The earlier feedback must include a partial sentence and a wholly unheard sentence")
+        verify_later_answer(app, older, root / "actual-interrupted-feedback-continuation.json", resume=False)
+        print(f"PASS actual Windows app Santa3X: genuine+5s gap, other feedback really played, full app restart, interrupted older feedback, newer feedback→title→instruction→required compiler; evidence={root}", flush=True)
     finally:
         try:
             app.close()
