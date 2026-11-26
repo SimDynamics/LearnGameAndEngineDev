@@ -23,6 +23,7 @@
 #include <cwctype>
 #include <map>
 #include <iterator>
+#include <limits>
 #include <numeric>
 #include <optional>
 #include <set>
@@ -754,7 +755,7 @@ struct Canvas {
 }
 
 struct MathPuzzleView::Impl {
-    struct Cell { HWND window; int width = 0; bool text = false;int inset_x=0,inset_y=0; };
+    struct Cell { HWND window; int width = 0; bool text = false;int inset_x=0,inset_y=0; bool code_scope_line=false; };
     struct Row { std::vector<Cell> cells; int height = 42; int gap_after=8; int indent=0; };
     struct Content {HWND window=nullptr;std::vector<Row> rows;bool horizontal=false,natural_columns=false,code_scope=false;bool diagram_frame=false,diagram_flow=false,diagram_memory=false,diagram_connector=false,diagram_labeled=false;reader_theme::Surface surface=reader_theme::Surface::card;int padding_x=0,padding_y=0,gap=0,minimum_column=0,scroll=0,extent=0;POINT drag_origin{};int drag_scroll=0;bool dragging=false,moved=false;};
     HWND host = nullptr,parent = nullptr;
@@ -1033,7 +1034,11 @@ struct MathPuzzleView::Impl {
         regions.push_back({std::string(prefix)+node.key,node.text,item,std::move(semantics),std::string("text")});
         // These literal source fields intentionally stay outside label_formats:
         // installing the mathematical layout service must not rewrite them.
-        Row row{{{item,0,true,0,2}},0,node.children.empty()?4:8};
+        // Source slices end at the original line boundary. The next slice
+        // already starts a new row: it must not acquire another card gap.
+        // Keep actual blank source lines and the exact text/reader ranges.
+        Row row{{{item,0,true,0,node.code?0:2,node.code}},0,
+            node.code?0:node.children.empty()?4:8};
         if(!node.decorative_icon.empty()){
             if(node.decorative_icon!="check"||node.code||!node.children.empty())
                 throw std::invalid_argument("Only a prose note may carry a decorative check");
@@ -1047,8 +1052,11 @@ struct MathPuzzleView::Impl {
         if(node.children.empty())return item;
         for(const auto& child:node.children)code_scope_node(child,prefix);
         rows.back().gap_after=0;
-        const auto container=group_content(first,false,false,12,12);
+        // Only the scope boundary needs a small border inset, not an
+        // additional blank line on each side of every nested instruction.
+        const auto container=group_content(first,false,false,12,node.code?4:8);
         contents.at(container)->code_scope=true;
+        if(node.code)rows.back().gap_after=0;
         SetWindowTextW(container,wide(node.text).c_str());
         return container;
     }
@@ -1730,6 +1738,28 @@ struct MathPuzzleView::Impl {
         for (const auto& value : array(block,L"responses")) response_controls(value.GetObject());
         initial = JsonObject::Parse(answers.Stringify()); initializing = false;
     }
+    int code_scope_text_height(HWND item,int measured)const {
+        const auto source=edit_text(item);
+        if(source.empty()||source.back()!='\n')return measured;
+        // RichEdit has a terminal empty paragraph after the final LF. In a
+        // contiguous editor it is the next line's origin, not a blank row
+        // between two separate source-bound controls. Measure that origin
+        // with native text services rather than subtracting an assumed font
+        // height. Two final LFs still retain one deliberate blank line.
+        GETTEXTLENGTHEX request{GTL_PRECISE|GTL_NUMCHARS,1200};
+        const auto length=SendMessageW(item,EM_GETTEXTLENGTHEX,reinterpret_cast<WPARAM>(&request),0);
+        if(length<=0)return measured;
+        constexpr auto unknown=std::numeric_limits<LONG>::min();
+        POINTL end{unknown,unknown},before{unknown,unknown};
+        SendMessageW(item,EM_POSFROMCHAR,reinterpret_cast<WPARAM>(&end),length);
+        SendMessageW(item,EM_POSFROMCHAR,reinterpret_cast<WPARAM>(&before),length-1);
+        POINT scroll{};SendMessageW(item,EM_GETSCROLLPOS,0,reinterpret_cast<LPARAM>(&scroll));
+        if(end.y!=unknown&&before.y!=unknown&&end.y>before.y){
+            const auto boundary=end.y+scroll.y;
+            if(boundary>0&&boundary<=measured)return static_cast<int>(boundary);
+        }
+        return measured;
+    }
     int arrange_rows(const std::vector<Row>& content_rows,HWND container,int width,bool move,int padding_x=8,int padding_y=8,int spacing=8,int offset_x=0) {
         width=std::max(1,width);const auto gap=px(spacing);int y=px(padding_y);
         const auto format_coordinate=[](HWND item,int pixel){int numerator=0,denominator=0;SendMessageW(item,EM_GETZOOM,reinterpret_cast<WPARAM>(&numerator),reinterpret_cast<LPARAM>(&denominator));
@@ -1764,9 +1794,14 @@ struct MathPuzzleView::Impl {
                     // its native requested height plus the existing insets.
                     const auto measuring_height=std::max(px(48),height);
                     SetWindowPos(cell.window,nullptr,0,0,cell_width,measuring_height,SWP_NOMOVE | SWP_NOACTIVATE | SWP_NOZORDER | SWP_NOREDRAW | SWP_NOCOPYBITS);
-                    if(choice_labels.contains(cell.window)||cell.inset_x||cell.inset_y){RECT content{px(cell.inset_x),0,cell_width-px(cell.inset_x),measuring_height};SendMessageW(cell.window,EM_SETRECTNP,0,reinterpret_cast<LPARAM>(&content));}
+                    if(cell.code_scope_line||choice_labels.contains(cell.window)||cell.inset_x||cell.inset_y){RECT content{px(cell.inset_x),0,cell_width-px(cell.inset_x),measuring_height};SendMessageW(cell.window,EM_SETRECTNP,0,reinterpret_cast<LPARAM>(&content));}
+                    if(cell.code_scope_line)requested_heights.erase(cell.window);
                     SendMessageW(cell.window,EM_REQUESTRESIZE,0,0);
-                    if (const auto found = requested_heights.find(cell.window); found != requested_heights.end()) { height = std::max(height,found->second + px(cell.inset_y?cell.inset_y*2:4)); continue; }
+                    if (const auto found = requested_heights.find(cell.window); found != requested_heights.end()) {
+                        const auto required=cell.code_scope_line?code_scope_text_height(cell.window,found->second):
+                            found->second+px(cell.inset_y?cell.inset_y*2:4);
+                        height=std::max(height,std::max(1,required));continue;
+                    }
                 }
                 const auto dc = GetDC(cell.window); const auto old = SelectObject(dc,font);
                 const auto count = GetWindowTextLengthW(cell.window); std::wstring value(static_cast<std::size_t>(count) + 1,L'\0'); value.resize(GetWindowTextW(cell.window,value.data(),static_cast<int>(value.size())));
@@ -1783,7 +1818,13 @@ struct MathPuzzleView::Impl {
                     // order. Keep dialog navigation in the same visual/source
                     // order as Android MathInputFocusOrder, without moving focus.
                     SetWindowPos(cell.window,HWND_BOTTOM,x,y,cell_width,height,SWP_NOACTIVATE | SWP_NOCOPYBITS);
-                    if(choice_labels.contains(cell.window)){
+                    if(cell.code_scope_line){
+                        // There is no inner scrolling region to reveal: every
+                        // substantive (including wrapped) source line fits.
+                        // The terminal structural LF remains in the document.
+                        RECT content{0,0,cell_width,height};SendMessageW(cell.window,EM_SETRECTNP,0,reinterpret_cast<LPARAM>(&content));
+                        POINT origin{};SendMessageW(cell.window,EM_SETSCROLLPOS,0,reinterpret_cast<LPARAM>(&origin));
+                    }else if(choice_labels.contains(cell.window)){
                         // The native radio centers its glyph in the row, while
                         // RichEdit otherwise anchors text at the top. Center
                         // the measured rich body, like Android's option row.

@@ -16,7 +16,9 @@
 #include <algorithm>
 #include <array>
 #include <cstdint>
+#include <cstdlib>
 #include <cwctype>
+#include <limits>
 #include <filesystem>
 #include <iostream>
 #include <stdexcept>
@@ -413,7 +415,14 @@ void exercise(){
         MathPuzzleView formula(f.host,R"json({"type":"math_puzzle","prompt":"Pregunta normal","representations":[{"type":"math_formula","latex":"x + 1","display":"inline"},{"type":"math_number_line","min":0,"max":16,"step":1}],"responses":[{"id":"answer","type":"math_numeric_input","validator":{"type":"numeric","expected":1}}]})json","es","{}");
         const auto original=scope.reading_regions();
         require(original.size()==12,"The authentic scope no longer exposes all code and two notes");
-        const auto check_scope=[&](int zoom){
+        const auto native_line_y=[](HWND edit,LONG at){
+            constexpr auto unknown=std::numeric_limits<LONG>::min();
+            POINTL point{unknown,unknown};
+            SendMessageW(edit,EM_POSFROMCHAR,reinterpret_cast<WPARAM>(&point),at);
+            require(point.y!=unknown,"Native editor did not expose the source line position");
+            POINT screen{point.x,point.y};ClientToScreen(edit,&screen);return screen.y;
+        };
+        const auto check_scope=[&](int zoom,int width){
             const auto paragraph=control(f.view,id(0,0));
             const auto reference=point_height(paragraph,0);
             const auto regions=scope.reading_regions();
@@ -428,6 +437,41 @@ void exercise(){
                 for(LONG at=0;at<static_cast<LONG>(visible.size());++at)
                     if(!iswspace(visible[at]))require(point_height(region.target,at)>=reference,
                         "A nested code/note glyph uses a smaller font: "+region.key);
+            }
+            // Compare the two independent source-bound statements against
+            // the actual ordinary C++ editor, not a GDI font approximation.
+            const auto editor=control(f.view,id(9,10));
+            const auto second=static_cast<LONG>(SendMessageW(editor,EM_LINEINDEX,1,0));
+            require(second>0,"The ordinary reference editor has no second code line");
+            const auto pitch=native_line_y(editor,second)-native_line_y(editor,0);
+            require(pitch>0&&scale(editor)==zoom,"The reference editor lost its line pitch or scale");
+            for(const auto i:{1u,2u,3u,4u,5u,6u,8u,10u,11u}){
+                const auto& region=regions.at(i);
+                require(edit_text(region.target)==region.source_text,
+                    "Compact scope layout changed a source slice or removed an authored LF");
+                const auto units=wide(region.source_text);
+                const auto last=units.find_last_not_of(L" \t\r\n");
+                require(last!=units.npos,"The original code slice has no visible instruction");
+                RECT bounds{};GetWindowRect(region.target,&bounds);
+                require(native_line_y(region.target,static_cast<LONG>(last))+pitch<=bounds.bottom+2,
+                    "The compact scope clipped its final visible code line");
+            }
+            if(width>=1000){
+                const auto visible_y=[&](std::size_t i){
+                    const auto& region=regions.at(i);
+                    const auto first=wide(region.source_text).find_first_not_of(L" \t\r\n");
+                    return native_line_y(region.target,static_cast<LONG>(first));
+                };
+                require(regions[5].source_text.find("const int bolsas")!=std::string::npos&&
+                    regions[6].source_text.find("std::cout")!=std::string::npos&&
+                    GetParent(regions[5].target)==GetParent(regions[6].target),
+                    "The authentic adjacent statements or their common scope changed");
+                require(std::abs((visible_y(6)-visible_y(5))-pitch)<=2&&
+                    std::abs((visible_y(11)-visible_y(10))-pitch)<=2,
+                    "Consecutive scope instructions gained a line break not present in the ordinary editor");
+                const auto frame=MulDiv(4,static_cast<int>(GetDpiForWindow(f.host)),96);
+                require(std::abs((visible_y(4)-visible_y(3))-(2*pitch+frame))<=3,
+                    "The authored blank line between the declaration and if was removed or counted twice");
             }
             const auto formula_regions=formula.reading_regions();
             const auto inline_formula=std::ranges::find_if(formula_regions,[](const auto& region){return region.source_text=="x + 1";});
@@ -453,12 +497,12 @@ void exercise(){
             });
             dispatch(f.host);
             scope.set_text_scale(zoom);formula.set_text_scale(zoom);
-            for(const int width:{640,330}){
+            for(const int width:{1100,640,330}){
                 const auto pixels=MulDiv(width,static_cast<int>(GetDpiForWindow(f.host)),96);
-                scope.layout(0,0,pixels);formula.layout(0,0,pixels);check_scope(zoom);
+                scope.layout(0,0,pixels);formula.layout(0,0,pixels);check_scope(zoom,width);
             }
         }
-        std::cout<<"PASS published U3L4 nested code and notes, inline formula and actual canvas font at all four scales and two widths\n";
+        std::cout<<"PASS published U3L4 nested code pitch, authored blank lines and notes, inline formula and actual canvas font at all four scales and three widths\n";
     }
     std::cout<<"PASS ordinary paragraph size, weight and scale for all eight programming "
         "question surfaces and the mathematical prompt/instruction; real title hierarchy, "
