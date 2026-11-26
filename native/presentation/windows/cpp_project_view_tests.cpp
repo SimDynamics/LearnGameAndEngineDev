@@ -572,6 +572,152 @@ void verify_u2_exact_eof_client(HWND host,const std::filesystem::path& authored_
     }catch(...){cleanup();throw;}
 }
 
+void verify_u2_cotizaciones_continuity(HWND host,const std::filesystem::path& after_path){
+    const auto before=windows::load_lesson(after_path.parent_path()/"before.json");
+    const auto after=windows::load_lesson(after_path);
+    const auto summary=windows::load_lesson_progress_metadata(after_path);
+    const auto& old=before.pages.at(11).blocks.at(3);
+    const auto& current=after.pages.at(11).blocks.at(3);
+    const auto& lean=summary.pages.at(11).blocks.at(3);
+    require(before.pages.size()==14&&after.pages.size()==14&&old.stable_id=="block_0011_0003"&&
+        current.stable_id==old.stable_id&&old.output_check&&current.output_check&&
+        old.output_check->cases.size()==1&&current.output_check->cases.size()==4&&
+        curriculum::exercise_key(before,old)==curriculum::exercise_key(after,current)&&
+        curriculum::draft_key("programming",before,old)==curriculum::draft_key("programming",after,current),
+        "The authenticated Cotizaciones publication changed owner or original storage");
+    const auto env=resolve_windows_environment({ProfileId::Codex,
+        L"cotizaciones-continuity-"+std::to_wstring(GetCurrentProcessId())+L"-"+std::to_wstring(GetTickCount64()),false});
+    initialize_profile_directories(env.paths);
+    state::StateStore store(env.paths.root);
+    const auto recipe=R"cmake(cmake_minimum_required(VERSION 3.20)
+project(Cotizaciones LANGUAGES CXX)
+option(TARIFA_ESPECIAL "Tarifa especial" OFF)
+if(TARIFA_ESPECIAL)
+  add_library(tarifas STATIC especial.cpp)
+else()
+  add_library(tarifas STATIC normal.cpp)
+endif()
+add_executable(cotizar muestra.cpp)
+target_compile_features(tarifas PRIVATE cxx_std_20)
+target_compile_features(cotizar PRIVATE cxx_std_20)
+set_target_properties(tarifas cotizar PROPERTIES CXX_EXTENSIONS OFF)
+target_link_libraries(cotizar PRIVATE tarifas)
+)cmake";
+    auto request=[&](const curriculum::Block& owner,std::string_view key){
+        windows::CppRunRequest result;result.request_id=1;result.revision=1;
+        result.project_key=std::string(key);result.projects_directory=env.paths.projects;
+        result.project_files=owner.project_files;result.source_files=owner.source_files;
+        result.cmake=owner.cmake;result.cmake_graph_check=owner.cmake_graph_check;
+        result.capture_cmake_graph=true;
+        for(auto& file:result.project_files)if(file.first=="CMakeLists.txt")file.second=recipe;
+        return result;
+    };
+    auto data=store.load();state::prepare_lesson_state(data,before);
+    auto original=request(old,"qa/cotizaciones-original");
+    const auto result=windows::run_cpp(original);
+    const auto execution=windows::capture_cpp_execution(original,result);
+    require(result.execution.stdout_bytes=="0:4:10"&&result.cmake_option_probe&&
+        result.cmake_option_probe->execution.stdout_bytes=="0:6:15"&&execution.cmake_graph_correct&&
+        windows::record_compiler_puzzle_case(data,before,old,original,execution,"QA real ON y OFF"),
+        "The old real CMake/MSVC objective did not earn its complete historical receipt");
+    const auto old_receipts=data.preferences.at("native_windows");
+    // Isolate this exact compiler gate without inventing preceding answers or
+    // execution seals. Keep all 14 page slots and actual target page identity;
+    // other blocks become inert reading-only placeholders in the QA view.
+    // The full original and revised JSON were separately loaded above.
+    auto project=[](curriculum::Lesson lesson){
+        for(auto& page:lesson.pages)for(auto& block:page.blocks)
+            if(block.stable_id!="block_0011_0003"){
+                curriculum::Block text;text.type=curriculum::BlockType::paragraph;
+                text.text="QA: requisito ajeno a la comprobación de continuidad.";
+                text.stable_id=block.stable_id;text.address=block.address;
+                block=std::move(text);
+            }
+        lesson.reference_after.clear();lesson.activity_after.clear();
+        lesson.source_path.clear();lesson.raw_json.clear();
+        return lesson;
+    };
+    const auto isolated_before=project(before),isolated_after=project(after);
+    for(std::size_t p=0;p<=12;++p)(void)state::mark_page_reached(data,before,p);
+    state::save_current_page(data,before,12);
+    data.preferences["native_windows"]["ui_language"]=std::string("es");
+    store.save(data);
+    state::prepare_lesson_state(data,after);
+    const auto reopened=state::decode(state::encode(data));
+    require(windows::compiler_puzzle_historical_completed(reopened,after,current)&&
+        windows::compiler_puzzle_progress_completed(reopened,after,current)&&
+        windows::compiler_puzzle_progress_completed(reopened,summary,lean)&&
+        !windows::compiler_puzzle_completed(reopened,after,current)&&
+        windows::compiler_puzzle_case_count(reopened,after,current)==0,
+        "Historical CMake objective failed curricular continuity or falsely earned an individual case");
+    for(const auto& [key,value]:old_receipts)
+        require(reopened.preferences.at("native_windows").at(key)==value,
+            "Adoption rewrote the actual old receipt");
+    require(!windows::compiler_puzzle_progress_completed(state::StateData{},after,current),
+        "A fresh profile inherited the Cotizaciones objective");
+    auto altered=current;altered.output_check->cases.front().outputs={"5"};
+    require(!windows::compiler_puzzle_progress_completed(reopened,after,altered),
+        "A different required output inherited an old objective");
+    altered=current;altered.cmake_graph_check->option_selection->disabled_stdout="0:4:10";
+    require(!windows::compiler_puzzle_progress_completed(reopened,after,altered),
+        "A changed private OFF requirement inherited an old objective");
+    altered=current;altered.project_files.back().second="int main(){return 0;}";
+    require(!windows::compiler_puzzle_progress_completed(reopened,after,altered),
+        "An arbitrary replacement client inherited the old objective");
+    auto wrong=reopened;windows::reset_compiler_puzzle(wrong,after,current);
+    require(!windows::compiler_puzzle_progress_completed(wrong,after,current)&&
+        !windows::compiler_puzzle_historical_completed(wrong,after,current),
+        "Explicit reset failed to revoke the historical objective");
+    // Real entry resolution (not just page reachability), against identical
+    // prior page/identity maps with and without the original compiler receipt.
+    HWND view=nullptr;
+    const auto close=[&]{if(view){(void)flush_lesson_view(view);DestroyWindow(view);view=nullptr;pump();}};
+    try{
+        view=create_lesson_view(host,env,isolated_before);
+        require(view&&lesson_page_state(view).index==12,"The authentic old page-13 entry did not reopen");
+        close();
+        view=create_lesson_view(host,env,isolated_after);
+        require(view&&lesson_page_state(view).index==12&&navigate_lesson_view(view,13),
+            "The actual activity resolver sent an already accredited student back to page 12");
+        require(navigate_lesson_view(view,11)&&navigate_lesson_view(view,12),
+            "The actual current compiler page still blocked the visited successor");
+        close();
+        store.save(wrong);
+        view=create_lesson_view(host,env,isolated_after);
+        require(view&&lesson_page_state(view).index==11&&!navigate_lesson_view(view,12),
+            "Page coverage alone bypassed a reset/unearned compiler objective");
+        close();
+        auto active=request(current,"qa/cotizaciones-individual");
+        auto verified=reopened;
+        for(std::size_t i=0;i<current.output_check->cases.size();++i){
+            const auto& item=current.output_check->cases[i];active.stdin_utf8=item.standard_input;
+            ++active.request_id;++active.revision;
+            const auto individual=windows::run_cpp(active);
+            const auto captured=windows::capture_cpp_execution(active,individual);
+            require(individual.execution.stdout_bytes==item.outputs.front()&&
+                individual.cmake_option_probe&&individual.cmake_option_probe->execution.stdout_bytes=="0:6:15"&&
+                captured.cmake_graph_correct&&windows::record_compiler_puzzle_case(
+                    verified,after,current,active,captured,"QA ejecución individual real"),
+                "The current case failed its own real ON/OFF execution");
+            require(windows::compiler_puzzle_completed(verified,after,current)&&
+                windows::compiler_puzzle_case_count(verified,after,current)==i+1,
+                "The first case was not sufficient or an optional receipt was invented");
+        }
+        const auto final=state::decode(state::encode(verified));
+        require(windows::compiler_puzzle_case_count(final,after,current)==4&&
+            windows::compiler_puzzle_historical_completed(final,after,current),
+            "Reopening lost independent old and current execution receipts");
+        for(const auto& [key,value]:old_receipts)
+            require(final.preferences.at("native_windows").at(key)==value,
+                "A new real execution rewrote an old receipt");
+        require(env.paths.root.parent_path().filename()==L"qa"&&
+            env.paths.root.parent_path().parent_path().filename()==L"Codex",
+            "Cotizaciones QA escaped its isolated profile");
+        cleanup_own_qa(env.paths.root.parent_path(),env.paths.root,"cotizaciones-continuity-");
+        std::cout<<"PASS real Cotizaciones ON/OFF historical credit, isolated 14-page activity resolver and four distinct new executions; unrelated gates replaced only in the QA view\n";
+    }catch(...){close();throw;}
+}
+
 void verify_genuine_u3_first_prerequisites(HWND host,const std::filesystem::path& authored_lesson){
     // Work through the ORIGINAL first three pages using the actual radio
     // controls and Check actions. No direct response writes, page unlocks,
@@ -1744,6 +1890,7 @@ int main(int argc,char** argv){
     const bool u3_selective_current=argc==4&&std::string_view(argv[2])=="--u3-selective-current";
     const bool u3_gates=argc==4&&std::string_view(argv[2])=="--u3-gates";
     const bool u2_exact_eof=argc==4&&std::string_view(argv[2])=="--u2-exact-eof";
+    const bool u2_cotizaciones=argc==4&&std::string_view(argv[2])=="--u2-cotizaciones-continuity";
     const bool u3_declaration=argc==4&&std::string_view(argv[2])=="--u3-declaration";
     const bool u3_prerequisites=argc==4&&std::string_view(argv[2])=="--u3-prerequisites";
     const bool u3_first_cmake=argc==4&&std::string_view(argv[2])=="--u3-first-cmake";
@@ -1753,7 +1900,7 @@ int main(int argc,char** argv){
     const bool u3_cmake_structure=argc==4&&std::string_view(argv[2])=="--u3-cmake-structure";
     const bool other_cases=argc==3&&std::string_view(argv[2])=="--other-cases";
     HWND host=nullptr;HMODULE rich=nullptr;
-    try{require(argc==2||internal_only||u3_selective||u3_selective_declared||u3_selective_individual||u3_selective_current||u3_gates||u3_declaration||u3_prerequisites||u3_first_cmake||u3_first_cmake_repair||u3_real_history_gate||u3_entire_original||u3_cmake_structure||u2_exact_eof||other_cases,
+    try{require(argc==2||internal_only||u3_selective||u3_selective_declared||u3_selective_individual||u3_selective_current||u3_gates||u3_declaration||u3_prerequisites||u3_first_cmake||u3_first_cmake_repair||u3_real_history_gate||u3_entire_original||u3_cmake_structure||u2_exact_eof||u2_cotizaciones||other_cases,
         "Provide isolated QA output, optionally --internal-dialogs, --other-cases, --u3-selective or --u3-gates <lesson-json>");winrt::init_apartment(winrt::apartment_type::single_threaded);reader_theme::prepare_fonts();
         INITCOMMONCONTROLSEX controls{sizeof(controls),ICC_STANDARD_CLASSES};InitCommonControlsEx(&controls);rich=LoadLibraryW(L"Msftedit.dll");require(rich!=nullptr,"RichEdit is missing");
         host=CreateWindowExW(WS_EX_CONTROLPARENT,L"STATIC",L"Project controls QA",WS_OVERLAPPEDWINDOW|WS_VISIBLE,0,0,1100,850,nullptr,nullptr,GetModuleHandleW(nullptr),nullptr);require(host!=nullptr,"Cannot create app-owned QA host");
@@ -1875,6 +2022,7 @@ int main(int argc,char** argv){
         if(other_cases)verify_unrelated_cpp_multicase_feedback(host);
         else if(u3_gates)verify_unmodified_thirteen_page_entry_gates(host,std::filesystem::path(argv[3]));
         else if(u2_exact_eof)verify_u2_exact_eof_client(host,std::filesystem::path(argv[3]));
+        else if(u2_cotizaciones)verify_u2_cotizaciones_continuity(host,std::filesystem::path(argv[3]));
         else if(u3_declaration)verify_declared_u3_compiler_workflow(std::filesystem::path(argv[3]));
         else if(u3_prerequisites)verify_genuine_u3_first_prerequisites(host,std::filesystem::path(argv[3]));
         else if(u3_first_cmake)verify_genuine_u3_first_cmake_project(host,std::filesystem::path(argv[3]));
@@ -1904,6 +2052,7 @@ int main(int argc,char** argv){
         else if(u3_first_cmake)std::cout<<"PASS original U3 first CMake project: five true questions, distributed CMake, two target runs, page-five access and reopening\n";
         else if(u3_prerequisites)std::cout<<"PASS U3 original pages one through four: five genuinely checked quiz answers, no fake precompletion, blocked CMake laboratory after reopen\n";
         else if(u3_declaration)std::cout<<"PASS declared U3 History: full/summary reader, immutable exercise identity and negative contracts\n";
+        else if(u2_cotizaciones)std::cout<<"PASS Cotizaciones separate curricular and execution evidence\n";
         else if(u2_exact_eof)std::cout<<"PASS source-pinned U2 client with exact stderr, empty stdout, normal exit 2, forged edit rejection and reopen\n";
         else if(u3_gates)std::cout<<"PASS original thirteen-page U3 lesson: new isolated profile cannot jump to U3 history or Finish; page gate survives reopen; no other lessons or student data modified\n";
         else if(other_cases)std::cout<<"PASS unrelated C++ with two inputs: first case unlocks, second optional case remains verifiable, History isolated, completion retained after reopen\n";

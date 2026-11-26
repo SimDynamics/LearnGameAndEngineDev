@@ -28,6 +28,11 @@ class CmakeSelectiveRecoveryTrace;
 [[nodiscard]] std::string compiler_program_frame(const CppRunRequest&);
 [[nodiscard]] bool compiler_puzzle_completed(const state::StateData&, const curriculum::Lesson&,
                                             const curriculum::Block&);
+// Curricular access may retain a specifically reviewed historical objective.
+// This is NOT current execution accreditation: case counts, feedback and
+// current execution seals always use compiler_puzzle_completed instead.
+[[nodiscard]] bool compiler_puzzle_progress_completed(const state::StateData&, const curriculum::Lesson&,
+                                                     const curriculum::Block&);
 [[nodiscard]] std::string compiler_puzzle_feedback(const state::StateData&, const curriculum::Lesson&,
                                                  const curriculum::Block&);
 // A reviewed rejection is a resumable presentation of one actual evaluated

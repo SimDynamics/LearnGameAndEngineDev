@@ -509,6 +509,23 @@ function(lgaed_add_selective_recovery_tests)
             --u3-selective-individual "${_selective_fixture_dir}/u3-selective.after.json")
     set_tests_properties(native.cpp_project_u3_selective_individual
         PROPERTIES TIMEOUT 300 RUN_SERIAL TRUE)
+    set(_cotizaciones_dir "${CMAKE_CURRENT_BINARY_DIR}/test-fixtures/cotizaciones-continuity")
+    set(_cotizaciones_files "${_cotizaciones_dir}/before.json" "${_cotizaciones_dir}/after.json")
+    add_custom_command(OUTPUT ${_cotizaciones_files}
+        COMMAND ${_lgaed_state_fixture_python}
+            "${CMAKE_SOURCE_DIR}/scripts/curriculum/cotizaciones_continuity_fixture.py"
+            --output-dir "${_cotizaciones_dir}"
+        DEPENDS "${CMAKE_SOURCE_DIR}/scripts/curriculum/cotizaciones_continuity_fixture.py"
+            "${CMAKE_SOURCE_DIR}/scripts/curriculum/stable_state_layout.py"
+            "${CMAKE_SOURCE_DIR}/scripts/curriculum/text_semantics.py"
+        VERBATIM)
+    add_custom_target(lgaed_cotizaciones_continuity_fixtures DEPENDS ${_cotizaciones_files})
+    add_dependencies(lgaed_cpp_project_view_tests lgaed_cotizaciones_continuity_fixtures)
+    add_test(NAME native.cpp_project_u2_cotizaciones_continuity
+        COMMAND lgaed_cpp_project_view_tests
+            "${CMAKE_CURRENT_BINARY_DIR}/qa/cpp-project-history"
+            --u2-cotizaciones-continuity "${_cotizaciones_dir}/after.json")
+    set_tests_properties(native.cpp_project_u2_cotizaciones_continuity PROPERTIES TIMEOUT 240 RUN_SERIAL TRUE)
 endfunction()
 
 # Shared by the complete application test configuration and the focused real

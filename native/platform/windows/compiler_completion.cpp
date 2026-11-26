@@ -1681,6 +1681,131 @@ bool compiler_puzzle_completed(const state::StateData& data,const curriculum::Le
     return stdout_or_diagnostic_completed(data,lesson,block)
         &&selective_history_receipt_valid(data,lesson,block);
 }
+
+namespace {
+// Closed review of the Cotizaciones split: the student builds the same
+// binary option and two targets. The old ON batch already checked 0, 2, 5
+// and the independent default-OFF graph and batch. Do not infer equivalence
+// from a similar output or merely from the presence of a client journal.
+bool reviewed_cotizaciones_client(std::string_view source) {
+    using curriculum::code_format::cpp_tokens;
+    if(curriculum::code_format::physical_splice(source))return false;
+    auto tokens=cpp_tokens(source);
+    if(!tokens)return false;
+    std::erase_if(*tokens,[](const auto& token){return token.starts_with("comment:");});
+    const auto main=std::ranges::find(*tokens,std::string("id:main"));
+    if(main==tokens->end()||std::distance(main,tokens->end())<7)return false;
+    // Permit only the local variable's spelling, zero initialization and
+    // ordinary equivalent if/else or early-return arrangements. The headers,
+    // function, three historical quantities and output separators stay exact.
+    const auto declaration=std::ranges::find(main+1,tokens->end(),std::string("id:int"));
+    if(declaration==tokens->end()||declaration+1==tokens->end()||
+        !declaration[1].starts_with("id:"))return false;
+    const std::string name=declaration[1].substr(3);
+    if(name.empty()||name=="precio"||name=="std")return false;
+    const std::string read="std::cin >> "+name, one="std::cout << precio("+name+");";
+    const std::string batch="std::cout << precio(0) << ':' << precio(2) << ':' << precio(5);";
+    const std::string header="#include \"precio.h\"\n#include <iostream>\nint main(){int "+name;
+    for(const auto init:{"{}","{0}","=0",""})
+        for(const auto finish:{"","return 0;"}){
+            const std::string prefix=header+init+";";
+            const std::string suffix=std::string(finish)+"}";
+            const std::vector<std::string> accepted{
+                prefix+"if("+read+"){"+one+"}else{"+batch+"}"+suffix,
+                prefix+"if("+read+"){"+one+"return 0;}"+batch+suffix,
+                prefix+"if(!("+read+")){"+batch+"return 0;}"+one+suffix,
+                prefix+"if("+read+"){"+one+"return 0;}else{"+batch+"}"+suffix,
+                prefix+"if(!("+read+")){"+batch+"}else{"+one+"}"+suffix
+            };
+            for(const auto& expected:accepted)
+                if(cpp_tokens(expected)==tokens)return true;
+        }
+    return false;
+}
+
+std::optional<curriculum::Block> cotizaciones_progress_predecessor(
+        const curriculum::Lesson& lesson,const curriculum::Block& block) {
+    using namespace curriculum;
+    if(lesson.id!="programming_practice_tools__construccion_reproducible__opciones_y_revision_de_la_configuracion"||
+        lesson.locale!="es"||lesson.state_layout.version!=2||block.stable_id!="block_0011_0003"||
+        block.type!=BlockType::cpp_compiler||!block.cmake||!block.cmake_graph_check||
+        !block.output_check||block.compile_check||block.compiler_revision||
+        block.compiler_case_revisions.size()!=1||!block.compiler_case_order_revisions.empty())return {};
+    const auto& revision=block.compiler_case_revisions.front();
+    if(revision.id!=block.stable_id||!revision.client_revision||
+        revision.client_revision->cmake_recipe||revision.client_revision->path!="muestra.cpp"||
+        revision.record_sha256.empty()||revision.revised_client_epoch!=revision.record_sha256||
+        revision.revised_client_epoch!=block.compiler_client_epoch||
+        !revision.previous_client_epoch.empty())return {};
+    const auto previous=compiler_case_revision_previous_block(block,revision);
+    const auto revised=compiler_case_revision_after_block(block,revision);
+    if(!previous.output_check||!previous.cmake_graph_check||
+        previous.cmake_graph_check!=block.cmake_graph_check||
+        previous.cmake!=block.cmake||previous.initial_code!=block.initial_code||
+        previous.project_files.size()!=5||block.project_files.size()!=5||
+        revised.project_files!=block.project_files||
+        reference_objective_frame(lesson,revised)!=reference_objective_frame(lesson,block)||
+        !same_output_check_runtime_requirements(*previous.output_check,*block.output_check))return {};
+    const auto& graph=*block.cmake_graph_check;
+    if(graph.project_name!="Cotizaciones"||graph.minimum_cmake_version!="3.20"||
+        !graph.option_selection||*graph.option_selection!=CmakeOptionSelectionRequirement{
+            "TARIFA_ESPECIAL","tarifas","normal.cpp","0:6:15"}||
+        block.cmake->target!="cotizar"||block.cmake->options.size()!=1||
+        !block.cmake->options.contains("TARIFA_ESPECIAL")||
+        block.cmake->options.at("TARIFA_ESPECIAL")!="ON"||
+        graph.targets.size()!=2||graph.expression_repair||graph.initial_observation)return {};
+    const auto exact_target=[&](std::string_view name,std::string_view type,
+                                std::string_view source,std::vector<std::string> links){
+        return std::ranges::any_of(graph.targets,[&](const auto& target){
+            return target.name==name&&target.type==type&&target.sources==std::vector<std::string>{std::string(source)}&&
+                target.links_to==links&&target.exact_sources&&target.require_explicit_cxx20&&
+                target.require_explicit_extensions_off;
+        });
+    };
+    if(!exact_target("cotizar","EXECUTABLE","muestra.cpp",{"tarifas"})||
+        !exact_target("tarifas","STATIC_LIBRARY","especial.cpp",{}))return {};
+    const auto path=[](const auto& file)->const std::string&{return file.first;};
+    const auto old_client=std::ranges::find(previous.project_files,std::string("muestra.cpp"),path);
+    const auto new_client=std::ranges::find(block.project_files,std::string("muestra.cpp"),path);
+    if(old_client==previous.project_files.end()||new_client==block.project_files.end()||
+        !reviewed_cotizaciones_client(new_client->second))return {};
+    const auto original_tokens=code_format::cpp_tokens(
+        "#include \"precio.h\"\n#include <iostream>\nint main(){std::cout<<precio(0)<<':'<<precio(2)<<':'<<precio(5);return 0;}");
+    if(code_format::cpp_tokens(old_client->second)!=original_tokens)return {};
+    for(std::size_t i=0;i<block.project_files.size();++i)
+        if(previous.project_files[i].first!=block.project_files[i].first||
+           (block.project_files[i].first!="muestra.cpp"&&previous.project_files[i]!=block.project_files[i]))return {};
+    const auto& old=previous.output_check->cases;
+    const auto& cases=block.output_check->cases;
+    if(old.size()!=1||cases.size()!=4||!old.front().standard_input.empty()||
+        old.front().outputs!=std::vector<std::string>{"0:4:10"}||old.front().exit_code!=0||
+        old.front().standard_error_exact||old.front().balance_three_pairs||
+        previous.output_check->input_comparison!=TextComparison::exact)return {};
+    const auto matches=[&](const OutputCase& current,std::string_view input,std::string_view output){
+        if(current.standard_input!=input&&current.standard_input!=std::string(input)+"\n")return false;
+        auto expected=old.front();expected.standard_input=current.standard_input;
+        expected.outputs={std::string(output)};
+        return same_output_case_requirements(expected,current);
+    };
+    if(!matches(cases.front(),"2","4"))return {};
+    const auto optional=std::span<const OutputCase>(cases).subspan(1);
+    if(std::ranges::count_if(optional,[&](const auto& c){return matches(c,"0","0");})!=1||
+        std::ranges::count_if(optional,[&](const auto& c){return matches(c,"5","10");})!=1||
+        std::ranges::count_if(optional,[&](const auto& c){return same_output_case_requirements(old.front(),c);})!=1)return {};
+    return previous;
+}
+}
+
+bool compiler_puzzle_progress_completed(const state::StateData& data,const curriculum::Lesson& lesson,
+        const curriculum::Block& block) {
+    if(compiler_puzzle_completed(data,lesson,block))return true;
+    const auto previous=cotizaciones_progress_predecessor(lesson,block);
+    // The archived proof must be a complete valid receipt of the exact old
+    // graph objective (including its independent OFF verification). There is
+    // no projection of its case receipt, program, feedback or seal into the
+    // current epoch, and a missing or invalid old receipt earns nothing.
+    return previous&&compiler_puzzle_completed(data,lesson,*previous);
+}
 std::string compiler_puzzle_feedback(const state::StateData& data,const curriculum::Lesson& lesson,const curriculum::Block& block) {
     if(!compiler_puzzle_completed(data,lesson,block))return {};
     auto stored=state::string_value(data,"native_windows",completed_read_base(data,lesson,block)+"feedback");

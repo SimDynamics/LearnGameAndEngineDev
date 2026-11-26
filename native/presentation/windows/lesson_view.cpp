@@ -859,7 +859,7 @@ struct LessonView {
             result.push_back({lesson.id + '/' + lesson.locale + '/' + lesson.pages[page].stable_id + '/'
                 + current.stable_id + '/' + std::to_string(GetDlgCtrlID(target)),std::string(source),target,index,
                 is_feedback,is_feedback && vm.feedback_correct,exercise(current.type)||compiler_feedback||compiler_gate,
-                compiler_gate?windows::compiler_puzzle_completed(data,lesson,current):compiler_feedback?vm.feedback_correct:vm.response.correct});
+                compiler_gate?windows::compiler_puzzle_progress_completed(data,lesson,current):compiler_feedback?vm.feedback_correct:vm.response.correct});
             result.back().required_compiler=compiler_gate;
             reading_context(result.back(),current);
             result.back().compiler_guidance=is_feedback&&compiler_gate&&vm.feedback_correct&&lesson.state_layout.version==2&&
@@ -1412,7 +1412,7 @@ struct LessonView {
                current.input_check||current.local_role_check)
                 return windows::compiler_puzzle_completed(data,source,current);
             const auto receipt = state::string_value(data,"native_windows",reference_key(current));
-            return windows::compiler_puzzle_completed(data,source,current)||(!receipt.empty()&&receipt==reference_seal(current));
+            return windows::compiler_puzzle_progress_completed(data,source,current)||(!receipt.empty()&&receipt==reference_seal(current));
         });
     }
     CompletionSnapshot completion_snapshot() const { return completion_snapshot(lesson); }
@@ -1475,7 +1475,7 @@ struct LessonView {
     }
     bool reference_available(const curriculum::Block& reference) const {
         return curriculum::compiler_reference_available(lesson,page,reference,completion_snapshot(),[&](const auto& prior){
-            return windows::compiler_puzzle_completed(data,lesson,prior);
+            return windows::compiler_puzzle_progress_completed(data,lesson,prior);
         });
     }
     static std::size_t row_block(const Row& row) {
@@ -2626,7 +2626,7 @@ struct LessonView {
         // Historical groups retain ownership; opted-in compiler objectives use
         // their captured execution proofs rather than an editable answer flag.
         const auto complete=curriculum::catalog_lesson_page_progress(data,lesson,[&](const auto& current){
-            if(current.type==BlockType::cpp_compiler)return windows::compiler_puzzle_completed(data,lesson,current);
+            if(current.type==BlockType::cpp_compiler)return windows::compiler_puzzle_progress_completed(data,lesson,current);
             const auto identity=curriculum::exercise_key(lesson,current);
             const auto response=state::get_response(data,lesson,current);
             return response&&response->correct&&(current.type!=BlockType::math_puzzle||verified_math.contains(identity));
@@ -3115,7 +3115,7 @@ struct LessonView {
         for (const auto& item : candidate.blocks) {
             if (!activity_available(item,proofs)) return false;
             if(compiler_completion_required(lesson,item)
-                &&!windows::compiler_puzzle_completed(data,lesson,item))return false;
+                &&!windows::compiler_puzzle_progress_completed(data,lesson,item))return false;
             if (!exercise(item.type)) continue;
             if(item.type==BlockType::math_puzzle&&!verified_math.contains(curriculum::exercise_key(lesson,item)))return false;
             const auto response = state::get_response(data, lesson, item);
@@ -3314,6 +3314,11 @@ struct LessonView {
             }
             return message;
         }
+        if(windows::compiler_puzzle_progress_completed(data,lesson,current))
+            return ui("Objetivo anterior acreditado. Puedes continuar. Casos de esta versión comprobados: ",
+                "Previous objective credited. You may continue. Cases checked in this version: ",
+                "Objectif précédent validé. Vous pouvez continuer. Cas vérifiés dans cette version : ")+
+                std::to_string(checked)+ui(" de "," of "," sur ")+std::to_string(total)+".";
         auto message=just_passed?ui("Caso ejecutado. ","Case executed. ","Cas exécuté. "):std::string{};
         message+=ui("Aún falta acreditar el primer caso obligatorio de este editor.",
             "The editor's first required case has not yet been credited.",
@@ -3326,7 +3331,11 @@ struct LessonView {
         const auto count=windows::compiler_puzzle_historical_case_count(data,model,current);
         if(!count)return {};
         const bool completed=windows::compiler_puzzle_historical_completed(data,model,current);
-        auto text=(!current.compiler_case_order_revisions.empty()||!current.compiler_case_revisions.empty())
+        const bool retained=completed&&windows::compiler_puzzle_progress_completed(data,model,current);
+        auto text=retained?ui("Objetivo anterior acreditado. Puedes continuar; el recibo anterior no acredita los casos nuevos.",
+            "Previous objective credited. You may continue; the previous receipt does not credit the new cases.",
+            "Objectif précédent validé. Vous pouvez continuer ; le reçu précédent ne valide pas les nouveaux cas."):
+            (!current.compiler_case_order_revisions.empty()||!current.compiler_case_revisions.empty())
             ?(completed
                 ?ui("Logro anterior conservado. Falta comprobar el primer caso de esta versión.",
                     "Previous achievement retained. Check the first case of this version.",
@@ -3649,7 +3658,8 @@ struct LessonView {
                 // A previously earned first-case achievement must remain
                 // visible on reopen, even when optional cases are still unrun.
                 const auto count=windows::compiler_puzzle_case_count(data,lesson,current);
-                if(count)set_rich_text(vm.status,compiler_progress_text(index));
+                if(count||windows::compiler_puzzle_progress_completed(data,lesson,current))
+                    set_rich_text(vm.status,compiler_progress_text(index));
             }
             return;
         }

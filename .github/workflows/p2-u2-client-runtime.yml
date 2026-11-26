@@ -6,6 +6,7 @@ on:
     paths:
       - .github/workflows/p2-u2-client-runtime.yml
       - scripts/curriculum/test_p2_u2_client_runtime.py
+      - scripts/curriculum/cotizaciones_continuity_fixture.py
       - scripts/curriculum/stable_state_layout.py
       - app/src/main/assets/content/es/programming/programming_practice_tools/construccion_reproducible/lesson_opciones_y_revision_de_la_configuracion.json
   workflow_dispatch:
@@ -27,6 +28,7 @@ jobs:
       - name: Read published curriculum, without modifying Work's lesson
         uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262
         with:
+          fetch-depth: 0
           persist-credentials: false
       - name: Select Python for native Windows QA
         uses: actions/setup-python@v5

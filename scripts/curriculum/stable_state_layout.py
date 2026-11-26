@@ -1809,10 +1809,12 @@ def _validate_compiler_case_order_transition(previous: dict, current: dict) -> s
     # different graded owner can have a separate, fully proved prose edit
     # in this same publication. The ordinary owner and its complete
     # editorial edges are independently checked by _validate_transition_v2.
-    # Do not allow unrelated presentation marks or changes to case owners.
+    # Existing independently revised reading blocks own their descriptors
+    # as well. The common composer permits only fields whose actual prose
+    # changed, and the full transition authenticates their editorial edges.
+    # Unchanged marks, root marks and case owners remain protected.
     expected_overlay = _compose_ordinary_editorial_semantics(
-        previous, current, expected_overlay, {}, include_presentation=False,
-        excluded_owners=first)
+        previous, current, expected_overlay, {}, excluded_owners=first)
     require(expected_overlay == current.get(text_semantics.ROOT_FIELD),
             "Compiler case revision lost, invented or changed an authored semantic field")
     return first
@@ -7834,7 +7836,6 @@ def ordinary_editorial_paths(before: dict, after: dict) -> tuple[str, ...]:
 def _compose_ordinary_editorial_semantics(previous: dict, current: dict,
                                           expected: dict | None,
                                           choice_revisions: dict[str, dict], *,
-                                          include_presentation: bool = True,
                                           excluded_owners: set[str] | None = None) -> dict | None:
     """Compose separately authored prose with an independently checked revision.
 
@@ -7862,7 +7863,7 @@ def _compose_ordinary_editorial_semantics(previous: dict, current: dict,
         allowed.update((identity, path)
                        for path in ordinary_editorial_paths(predecessor, after.get(identity)))
         updated = after.get(identity)
-        if (include_presentation and block.get("type") in {"heading", "paragraph", "note", "image"}
+        if (block.get("type") in {"heading", "paragraph", "note", "image"}
                 and type(updated) is dict
                 and state_fingerprint(block) == state_fingerprint(updated)):
             # These existing presentation contracts exclude only their prose

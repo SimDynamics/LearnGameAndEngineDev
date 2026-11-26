@@ -158,7 +158,7 @@ CatalogProgress lesson_progress(const CatalogEntry& entry,const state::StateData
     state::prepare_lesson_state(metadata,*lesson);
     bool pending = false;
     auto result = catalog_lesson_page_progress(metadata,*lesson,[&](const Block& block) {
-        if(block.type==BlockType::cpp_compiler)return compiler_puzzle_completed(data,*lesson,block);
+        if(block.type==BlockType::cpp_compiler)return compiler_puzzle_progress_completed(data,*lesson,block);
         const auto saved = state::get_response(data,*lesson,block);
         if (!saved || !saved->correct) return false;
         if (block.type != BlockType::math_puzzle) return true;

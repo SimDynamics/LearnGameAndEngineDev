@@ -675,6 +675,7 @@ if ($Suite -eq 'ReaderBuild') {
         'native.cpp_project_u3_selective_lesson',
         'native.cpp_project_u3_original_gates',
         'native.cpp_project_u2_exact_eof',
+        'native.cpp_project_u2_cotizaciones_continuity',
         'native.cpp_project_u3_declaration',
         'native.cpp_project_u3_declared_selective',
         'native.cpp_project_u3_original_prerequisites',

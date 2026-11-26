@@ -96,5 +96,61 @@ class OriginalClientEofContract(unittest.TestCase):
                     layout.validate(data)
 
 
+class ComposedCotizacionesPublicationTest(unittest.TestCase):
+    def test_joint_case_and_existing_paragraph_publication(self):
+        import cotizaciones_continuity_fixture as fixture
+        for prose_first in (False, True):
+            with self.subTest(prose_first=prose_first):
+                before, middle, after = fixture.stages(prose_first=prose_first)
+                layout.validate_publication_transition(before, after)
+                self.assertEqual(layout.validate(before), layout.validate(after))
+                self.assertEqual(before["stateLayout"]["current"], after["stateLayout"]["current"])
+                self.assertEqual(before["stateLayout"]["additions"], after["stateLayout"]["additions"])
+                self.assertEqual(before["pages"][:11], after["pages"][:11])
+                self.assertEqual(before["pages"][12:], after["pages"][12:])
+                self.assertEqual(before["compilerCmakeGraphChecks"], after["compilerCmakeGraphChecks"])
+                self.assertEqual(before["compilerRuntimeChecks"], after["compilerRuntimeChecks"])
+                self.assertEqual(before["textSemantics"]["rootFields"], after["textSemantics"]["rootFields"])
+                owner = layout._blocks(after)[fixture.OWNER]
+                self.assertEqual([case["standardInput"] for case in owner["outputCheck"]["cases"]],
+                                 ["2", "0", "5", ""])
+                self.assertEqual(owner["outputCheck"]["cases"][-1],
+                                 layout._blocks(before)[fixture.OWNER]["outputCheck"]["cases"][0])
+
+    def test_joint_publication_rejects_unrelated_or_unauthenticated_semantics(self):
+        import cotizaciones_continuity_fixture as fixture
+        before, _, after = fixture.stages()
+
+        def marker(doc, owner, path="/text"):
+            return next(field for field in doc["textSemantics"]["fields"]
+                        if (field["block"], field["path"]) == (owner, path))
+
+        unchanged = deepcopy(after)
+        untouched = next(field for field in unchanged["textSemantics"]["fields"]
+                         if field["spans"] and field["block"] not in (*fixture.PARAGRAPHS, fixture.OWNER))
+        untouched["spans"] = []
+        removed = deepcopy(after)
+        removed["textSemantics"]["fields"].remove(marker(removed, fixture.PARAGRAPHS[0]))
+        erased = deepcopy(after)
+        marker(erased, fixture.PARAGRAPHS[0])["spans"] = []
+        stale = deepcopy(after)
+        marker(stale, fixture.PARAGRAPHS[1])["sourceSha256"] = marker(before, fixture.PARAGRAPHS[1])["sourceSha256"]
+        unproved = deepcopy(after)
+        unproved["stateLayout"]["editorial"].pop()
+        root = deepcopy(after)
+        root["textSemantics"]["rootFields"] = []
+        forged = deepcopy(after)
+        forged["stateLayout"]["compilerCaseRevisions"][-1]["semanticBefore"] = []
+        answer = deepcopy(after)
+        choice = next(block for block in layout._blocks(answer).values()
+                      if block.get("type") == "multiple_choice")
+        choice["correctIndex"] = (choice["correctIndex"] + 1) % len(choice["options"])
+        for name, invalid in (("unchanged", unchanged), ("removed", removed), ("erased", erased),
+                              ("stale", stale), ("unproved", unproved), ("root", root),
+                              ("case archive", forged), ("answer", answer)):
+            with self.subTest(name=name), self.assertRaises(ValueError):
+                layout.validate_publication_transition(before, invalid)
+
+
 if __name__ == "__main__":
     unittest.main()
