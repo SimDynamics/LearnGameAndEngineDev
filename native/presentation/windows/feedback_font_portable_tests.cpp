@@ -36,7 +36,7 @@ HWND control(HWND parent,int name){
         if(GetDlgCtrlID(item)==result.name){result.found=item;return FALSE;}
         return TRUE;
     },reinterpret_cast<LPARAM>(&lookup));
-    require(lookup.found!=nullptr,"A real LessonView HWND is missing");
+    require(lookup.found!=nullptr,"A real LessonView HWND is missing: control="+std::to_string(name));
     return lookup.found;
 }
 void dispatch(HWND host){
@@ -107,11 +107,25 @@ struct Fixture{
     WindowsEnvironment environment;
     curriculum::Lesson lesson;
     HWND host=nullptr,view=nullptr;
-    explicit Fixture():environment(resolve_windows_environment(
+    explicit Fixture(bool cmake_only=false):environment(resolve_windows_environment(
         {ProfileId::Codex,L"qa-feedback-font-"+std::to_wstring(GetCurrentProcessId())+
-          L"-"+std::to_wstring(GetTickCount64()),false})){
+          L"-"+std::to_wstring(GetTickCount64())+(cmake_only?L"-cmake":L"-ordinary"),false})){
         initialize_profile_directories(environment.paths);
-        const auto file=R"json({
+        // A curricular editor is a same-page barrier. Keep C++ and CMake
+        // in independent lessons instead of faking a completed predecessor.
+        const auto file=cmake_only?R"json({
+          "id":"cpp_fundamentals__qa__cmake_prompt_font_portable",
+          "title":"Tipografía de la consigna CMake",
+          "pages":[{"blocks":[
+            {"type":"paragraph","text":"La explicación curricular debe tener el mismo tamaño."},
+            {"type":"heading","text":"Título de sección"},
+            {"type":"cpp_compiler","question":"Configura el proyecto CMake.",
+             "initialCode":"",
+             "projectFiles":[{"path":"main.cpp","initialCode":"int main() { return 0; }"},
+              {"path":"CMakeLists.txt","initialCode":"cmake_minimum_required(VERSION 3.25)\nproject(PromptQA LANGUAGES CXX)\nadd_executable(prompt_qa main.cpp)\n"}],
+             "cmake":{"target":"prompt_qa"}}
+          ]}]
+        })json":R"json({
           "id":"cpp_fundamentals__qa__feedback_font_portable",
           "title":"Misma tipografía que el texto curricular",
           "pages":[{"blocks":[
@@ -137,16 +151,11 @@ struct Fixture{
              "template":"int []() { return 0[] }",
              "choices":["main",";"],"correctOrder":[0,1]},
             {"type":"heading","text":"Título de sección"},
+            {"type":"math_puzzle","schemaVersion":1,"prompt":"Calcula la medida.",
+             "representations":[],"responses":[{"id":"number","type":"math_numeric_input","label":"Medida","instruction":"Escribe la medida.","validator":{"type":"numeric","expected":6}}]},
             {"type":"cpp_compiler","question":"Construye el programa.",
              "initialCode":"#include <iostream>\nint main(){std::cout << 7;}",
-             "outputCheck":{"cases":[{"standardInput":"","outputs":["7"]}]}},
-            {"type":"cpp_compiler","question":"Configura el proyecto CMake.",
-             "initialCode":"",
-             "projectFiles":[{"path":"main.cpp","initialCode":"int main() { return 0; }"},
-              {"path":"CMakeLists.txt","initialCode":"cmake_minimum_required(VERSION 3.25)\nproject(PromptQA LANGUAGES CXX)\nadd_executable(prompt_qa main.cpp)\n"}],
-             "cmake":{"target":"prompt_qa"}},
-            {"type":"math_puzzle","schemaVersion":1,"prompt":"Calcula la medida.",
-             "representations":[],"responses":[{"id":"number","type":"math_numeric_input","label":"Medida","instruction":"Escribe la medida.","validator":{"type":"numeric","expected":6}}]}
+             "outputCheck":{"cases":[{"standardInput":"","outputs":["7"]}]}}
           ]}]
         })json";
         lesson=windows::parse_lesson_json(file,"es");
@@ -183,8 +192,8 @@ void exercise(){
     const auto prose=control(f.view,id(0,0));
     const auto base=point_height(prose,0);
     require(base==rich_text_height(),"Curricular text no longer uses 18sp body font");
-    const auto verify_prompts=[&](int expected_scale) {
-        const auto body=control(f.view,id(0,0));
+    const auto verify_prompts=[base](const Fixture& fixture,int expected_scale,bool cmake_only=false) {
+        const auto body=control(fixture.view,id(0,0));
         const auto body_style=point_style(body,0);
         require(body_style.yHeight==base&&!(body_style.dwEffects&CFE_BOLD)&&
             scale(body)==expected_scale,"The plain paragraph is not the expected reference");
@@ -197,19 +206,27 @@ void exercise(){
                 std::wstring_view(style.szFaceName)==body_style.szFaceName&&
                 scale(item)==expected_scale,what);
         };
-        // All seven native programming types, including the CMake variation
-        // of cpp_compiler, share the same real LessonView question row.
-        for(const int owner:{1,2,3,4,5,6,8,9})
-            same_prose(control(f.view,id(owner,0)),
-                "Puzzle question differs from paragraph: block "+std::to_string(owner));
-        for(const int owner:{4,6})
-            same_prose(control(f.view,id(owner,37)),"Desktop puzzle instructions differ from paragraph");
-        const auto heading=control(f.view,id(7,0));
+        const auto heading=control(fixture.view,id(cmake_only?1:7,0));
         const auto title_style=point_style(heading,0);
         require(title_style.yHeight==rich_text_height(RichTextRole::heading)&&
             title_style.yHeight>base&&(title_style.dwEffects&CFE_BOLD)&&
             scale(heading)==expected_scale,"A genuine section heading lost its hierarchy");
-        const auto question=control(f.view,id(3,0));
+        if(cmake_only){
+            require(control(fixture.view,id(2,5))!=nullptr,
+                "The independent CMake lesson has no actual project editor");
+            const auto question=control(fixture.view,id(2,0));
+            require(edit_text(question)=="Configura el proyecto CMake.",
+                "The independent CMake instruction changed");
+            same_prose(question,"The CMake question differs from paragraph");
+            return;
+        }
+        // The seven native programming types share a real LessonView row.
+        for(const int owner:{1,2,3,4,5,6,9})
+            same_prose(control(fixture.view,id(owner,0)),
+                "Puzzle question differs from paragraph: block "+std::to_string(owner));
+        for(const int owner:{4,6})
+            same_prose(control(fixture.view,id(owner,37)),"Desktop puzzle instructions differ from paragraph");
+        const auto question=control(fixture.view,id(3,0));
         const auto visible=wide(edit_text(question));
         const auto token=visible.find(L"std::cout");
         require(token!=visible.npos&&visible.find(L'`')==visible.npos,
@@ -218,16 +235,16 @@ void exercise(){
         require(code_style.yHeight==base&&
             std::wstring_view(code_style.szFaceName)==reader_theme::code_font_face(),
             "Question typography flattened the authored inline code");
-        const auto regions=lesson_reading_regions(f.view);
+        const auto regions=lesson_reading_regions(fixture.view);
         for(const auto expected:{"Calcula la medida.","Escribe la medida."}){
             const auto region=std::ranges::find_if(regions,[&](const auto& value){
-                return value.block_index==10&&value.source_text==expected;
+                return value.block_index==8&&value.source_text==expected;
             });
             require(region!=regions.end(),"A mathematical instruction lost its reader region");
             same_prose(region->target,"Mathematical puzzle instruction differs from paragraph");
         }
     };
-    verify_prompts(100);
+    verify_prompts(f,100);
     const auto verify=[&](int block,int expected_scale) {
         const auto feedback=control(f.view,id(block,4));
         const auto source=edit_text(feedback);
@@ -299,11 +316,11 @@ void exercise(){
                 "Changing font size changed the validated text");
             verify(i+1,zoom);
         }
-        verify_prompts(zoom);
+        verify_prompts(f,zoom);
         unchanged();
     }
     f.reopen();
-    verify_prompts(150);
+    verify_prompts(f,150);
     for(int i=0;i<5;++i){
         require(edit_text(control(f.view,id(i+1,4)))==original[i],
             "Reopening lost a correct puzzle response or guide");
@@ -352,6 +369,27 @@ void exercise(){
     }
     std::cout<<"PASS hosted Win32 desktop order AND drag-fill help ES/EN/FR: "
              <<"identical visible/reader instructions after language changes and reopen.\n";
+    {
+        Fixture cmake(true);
+        verify_prompts(cmake,100,true);
+        const auto before=lesson_reading_regions(cmake.view);
+        const auto check_reader=[&]{
+            const auto after=lesson_reading_regions(cmake.view);
+            require(after.size()==before.size(),"CMake zoom changed narration region count");
+            for(std::size_t i=0;i<before.size();++i)
+                require(after[i].key==before[i].key&&after[i].source_text==before[i].source_text,
+                    "CMake zoom changed narration content or identity");
+        };
+        for(const auto zoom:{75,100,125,150}){
+            update_lesson_preferences(cmake.view,[zoom](state::StateData& data){
+                data.preferences["lesson_text_size_settings"]["global_scale"]=
+                    static_cast<std::int64_t>(zoom);
+            });
+            dispatch(cmake.host);
+            verify_prompts(cmake,zoom,true);check_reader();
+        }
+        cmake.reopen();verify_prompts(cmake,150,true);check_reader();
+    }
     std::cout<<"PASS ordinary paragraph size, weight and scale for all eight programming "
         "question surfaces and the mathematical prompt/instruction; real title hierarchy, "
         "inline code and reader regions preserved at 75/100/125/150% and reopen.\n";
