@@ -122,11 +122,13 @@ inline std::string git_blob(const std::filesystem::path& root,std::string_view p
 } // namespace adoption_detail
 
 inline std::string published_adoption_source(const std::filesystem::path& root,
-        std::string_view relative) {
+        std::string_view relative,std::string_view epoch={}) {
     const auto manifest=winrt::Windows::Data::Json::JsonObject::Parse(
         winrt::to_hstring(adoption_detail::read_text(
             root/"scripts/curriculum/published_adoption_pins.json")));
-    const auto blobs=manifest.GetNamedObject(L"blobs");
+    const auto record=epoch.empty()?manifest:
+        manifest.GetNamedObject(L"epochs").GetNamedObject(winrt::to_hstring(epoch));
+    const auto blobs=record.GetNamedObject(L"blobs");
     const auto path=winrt::to_hstring(relative);
     if(!blobs.HasKey(path))
         throw std::runtime_error("No authenticated pre-adoption source: "+std::string(relative));

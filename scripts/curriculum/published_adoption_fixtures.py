@@ -21,16 +21,18 @@ PINS = PIN_MANIFEST["blobs"]
 
 
 @lru_cache(maxsize=None)
-def historical_bytes(path):
+def historical_bytes(path, *, epoch=None):
     relative = path.relative_to(ROOT).as_posix()
-    if relative not in PINS:
+    record = PIN_MANIFEST if epoch is None else PIN_MANIFEST["epochs"][epoch]
+    if relative not in record["blobs"]:
         raise ValueError("No authenticated pre-adoption publication: " + relative)
-    expected = PINS[relative]
+    expected = record["blobs"][relative]
+    commit = record["publication"]
     environment = dict(os.environ, GIT_NO_LAZY_FETCH="1",
                        GIT_NO_REPLACE_OBJECTS="1", GIT_TERMINAL_PROMPT="0")
     git = ["git", "--no-optional-locks", "-c", f"safe.directory={ROOT}"]
     publication = subprocess.run(
-        git + ["show", BASE + ":" + relative, "--"],
+        git + ["show", commit + ":" + relative, "--"],
         cwd=ROOT, env=environment, capture_output=True)
     if publication.returncode == 0:
         payload = publication.stdout
@@ -52,8 +54,8 @@ def historical_bytes(path):
     return payload
 
 
-def before_adoption(path):
-    return state.parse_json(historical_bytes(path).decode("utf-8-sig"))
+def before_adoption(path, *, epoch=None):
+    return state.parse_json(historical_bytes(path, epoch=epoch).decode("utf-8-sig"))
 
 
 def assert_live_owner_addresses(test, path, owners):

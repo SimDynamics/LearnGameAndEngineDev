@@ -172,12 +172,12 @@ void authored_root_roundtrip(const Lesson& original) {
                   {"function":"alcanza_minimo","value":5,
                    "purposeWords":["minimo","umbral","cantidad"],"minUses":1}]}
     ])json";
-    // load_lesson has already authenticated any published root declaration.
-    // Derive the historical comparison only in memory, so later editorial
-    // activation neither overwrites real content nor makes this QA obsolete.
+    // This input is the real complete publication before named-rule adoption.
+    // Do not strip a live declaration to manufacture a historical receipt.
     auto root=JsonObject::Parse(winrt::to_hstring(original.raw_json));
-    if(root.HasKey(L"compilerNamedRuleChecks"))root.Remove(L"compilerNamedRuleChecks");
-    const auto historical=parse_lesson_json(winrt::to_string(root.Stringify()),"es");
+    require(!root.HasKey(L"compilerNamedRuleChecks"),
+        "The original named-rule source is not its pre-adoption publication");
+    const auto& historical=original;
     auto contracts=JsonArray::Parse(winrt::to_hstring(declarations));
     const auto variations=JsonArray::Parse(LR"json([
         [{"function":"cajas_para","value":6,"cases":[
@@ -2238,7 +2238,28 @@ int main(int argc,char** argv) {
             "app/src/main/assets/content/es/programming/programming_practice_tools/comprobaciones_repetibles/lesson_nombrar_reglas_y_separar_acuerdos.json"),"es");
         require(live.id==lesson.id&&lesson.id=="programming_practice_tools__comprobaciones_repetibles__nombrar_reglas_y_separar_acuerdos",
             "The named-rules source test loaded another lesson");
-        authored_root_roundtrip(lesson);
+        const auto predecessor=parse_lesson_json(lgaed::qa::published_adoption_source(
+            std::filesystem::path(lgaed::build::source_root),
+            "app/src/main/assets/content/es/programming/programming_practice_tools/comprobaciones_repetibles/lesson_nombrar_reglas_y_separar_acuerdos.json",
+            "named-rules-before"),"es");
+        authored_root_roundtrip(predecessor);
+        const auto compact=parse_lesson_progress_metadata(live.raw_json,"es");
+        for(const auto identity:{"block_0002_0004","block_0005_0006",
+                                 "block_0007_0004","block_0008_0007"}) {
+            const auto live_at=stable_block_position(live,identity);
+            const auto lean_at=stable_block_position(compact,identity);
+            const auto old_at=stable_block_position(predecessor,identity);
+            require(live_at&&lean_at&&old_at,"A named-rule publication lost a stable owner");
+            const auto& active=live.pages.at(live_at->page).blocks.at(live_at->block);
+            const auto& lean=compact.pages.at(lean_at->page).blocks.at(lean_at->block);
+            const auto& old=predecessor.pages.at(old_at->page).blocks.at(old_at->block);
+            require(active.named_rule_source_check&&
+                active.named_rule_source_check==lean.named_rule_source_check&&
+                !old.named_rule_source_check&&
+                draft_key("programming",live,active)==
+                    draft_key("programming",predecessor,old),
+                "The real named-rule declaration or historical draft key changed");
+        }
         project_examples(lesson);
         single_file_examples(lesson);
         const LaunchOptions options{ProfileId::Codex,
