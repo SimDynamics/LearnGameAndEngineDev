@@ -1048,14 +1048,16 @@ void verify_split_u2_trace(View& fixture,std::size_t page){
 // Bind the receipt to the exact, published reference source for each editor.
 void prepare_u2l3_visual_compiler_receipts(state::StateData& data,
         const curriculum::Lesson& lesson){
-    constexpr std::array<std::pair<std::string_view,std::string_view>,2> owners{{
+    const std::array<std::pair<std::string_view,std::string_view>,2> owners{{
         {"block_0006_0002","block_0007_0001"},
-        {"block_0006_0006","block_0008_0005"}
+        {"block_0006_0006",lesson.course_edition?
+            "block_0008_0005":"p1u2l3_copia_tardia_referencia"}
     }};
     for(const auto& [owner_id,reference_id]:owners){
         const auto at=curriculum::stable_block_position(lesson,owner_id);
         const auto source_at=curriculum::stable_block_position(lesson,reference_id);
-        check(at&&source_at,"U2L3 visual fixture lost its real editor/reference owner");
+        check(at&&source_at,"U2L3 visual fixture lost its real editor/reference owner: "+
+            lesson.id+"/"+std::string(owner_id)+"/"+std::string(reference_id));
         const auto& owner=lesson.pages.at(at->page).blocks.at(at->block);
         const auto& source=lesson.pages.at(source_at->page).blocks.at(source_at->block);
         check(owner.type==curriculum::BlockType::cpp_compiler&&owner.output_check&&

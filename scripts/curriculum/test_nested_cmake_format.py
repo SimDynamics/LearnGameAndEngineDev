@@ -207,7 +207,15 @@ class NestedCmakeFormat(unittest.TestCase):
         project = state._blocks(proposal)[identity]["projectFiles"]
         file = next(f for f in project if f["path"] == "componente/CMakeLists.txt")
         file["initialCode"] = "\n" + file["initialCode"]
-        revised = state.prepare_v2(proposal, "es", {"es": current}, current)
+        # Both translated blobs are unchanged from the already authenticated
+        # nested-CMake fixture publication. Supply the complete language
+        # family, never waive the family guard for a test-only format edit.
+        name = "reorganizar_la_descripcion_conservando_el_comprobador"
+        family = {"es": current}
+        for locale in ("en", "fr"):
+            family[locale] = json.loads(fixtures.historical_bytes(name, locale))
+        state.check_localized_family(list(family.values()), list(family))
+        revised = state.prepare_v2(proposal, "es", family, current)
         state.validate_transition(before, revised)
         view = state.align_for_previous_validation(before, revised)
         new = state._blocks(view)[identity]
