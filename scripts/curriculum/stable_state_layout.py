@@ -1805,6 +1805,14 @@ def _validate_compiler_case_order_transition(previous: dict, current: dict) -> s
     if expected_overlay is not None and retiring:
         expected_overlay["fields"] = [field for field in expected_overlay.get("fields", [])
                                       if field.get("block") not in retiring]
+    # A case revision owns only its archived output-case markers. A
+    # different graded owner can have a separate, fully proved prose edit
+    # in this same publication. The ordinary owner and its complete
+    # editorial edges are independently checked by _validate_transition_v2.
+    # Do not allow unrelated presentation marks or changes to case owners.
+    expected_overlay = _compose_ordinary_editorial_semantics(
+        previous, current, expected_overlay, {}, include_presentation=False,
+        excluded_owners=first)
     require(expected_overlay == current.get(text_semantics.ROOT_FIELD),
             "Compiler case revision lost, invented or changed an authored semantic field")
     return first
@@ -7825,8 +7833,10 @@ def ordinary_editorial_paths(before: dict, after: dict) -> tuple[str, ...]:
 
 def _compose_ordinary_editorial_semantics(previous: dict, current: dict,
                                           expected: dict | None,
-                                          choice_revisions: dict[str, dict]) -> dict | None:
-    """Compose separately authored prose with a new choice revision.
+                                          choice_revisions: dict[str, dict], *,
+                                          include_presentation: bool = True,
+                                          excluded_owners: set[str] | None = None) -> dict | None:
+    """Compose separately authored prose with an independently checked revision.
 
     A changed answer-option marker is handled by its own archived choice
     proof. For that SAME owner, compare the current block against the exact
@@ -7842,6 +7852,8 @@ def _compose_ordinary_editorial_semantics(previous: dict, current: dict,
                             for field in document.get(text_semantics.ROOT_FIELD, {}).get("fields", [])}
     allowed = set()
     for identity, block in before.items():
+        if excluded_owners and identity in excluded_owners:
+            continue
         predecessor = block
         if identity in choice_revisions:
             choice = choice_revisions[identity]
@@ -7850,7 +7862,7 @@ def _compose_ordinary_editorial_semantics(previous: dict, current: dict,
         allowed.update((identity, path)
                        for path in ordinary_editorial_paths(predecessor, after.get(identity)))
         updated = after.get(identity)
-        if (block.get("type") in {"heading", "paragraph", "note", "image"}
+        if (include_presentation and block.get("type") in {"heading", "paragraph", "note", "image"}
                 and type(updated) is dict
                 and state_fingerprint(block) == state_fingerprint(updated)):
             # These existing presentation contracts exclude only their prose
