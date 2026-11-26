@@ -1067,11 +1067,9 @@ bool verify_active_adoption(const Lesson& original,const Lesson& live,
         std::cout<<"PASS active first repair case with its actual graph and prerequisites\n";
     }
     if(extension.open_battery_probe) {
+        // Keep the actual learner request and its receipts tied to the
+        // published expansion, which does not own the construction graph.
         auto unchanged=request_for(extension);
-        // The immutable expansion may share the construction graph without
-        // duplicating a root declaration. Inspect the actual graph in QA too,
-        // but do not add a new grading goal to its published owner.
-        unchanged.capture_cmake_graph=true;
         require(compiler_runtime_request_allowed(extension,unchanged),
             "The active expansion rejected its exact published project");
         const auto initial=run_cpp(unchanged);
@@ -1081,7 +1079,6 @@ bool verify_active_adoption(const Lesson& original,const Lesson& live,
                     capture_cpp_execution(unchanged,initial),"QA unchanged expansion")&&data==seed,
             "The active eleven-case checker earned new extension credit");
         auto extended=request_for(extension);
-        extended.capture_cmake_graph=true;
         file(extended.project_files,test_path)=extended_driver(extension,
             "    if (!comprobar(12, 3, 3, 7, 59, true, 0)) { ++fallos; }\n");
         require(compiler_runtime_request_allowed(extension,extended),
@@ -1089,15 +1086,35 @@ bool verify_active_adoption(const Lesson& original,const Lesson& live,
         const auto result=run_cpp(extended);
         public_success(extended,result);
         const auto capture=capture_cpp_execution(extended,result);
-        const auto graph=evaluate_cmake_graph(extended,result,*expected_builder.cmake_graph_check);
-        require(graph.correct&&result.open_battery_evidence&&
+        require(result.open_battery_evidence&&
                 result.open_battery_evidence->runs.size()==37&&capture.open_battery_probe_correct&&
                 record_compiler_puzzle_case(data,live,extension,extended,capture,"QA active extension")&&
                 compiler_puzzle_case_count(data,live,extension)==1&&
                 compiler_puzzle_completed(data,compact,owner(compact)),
-            "The active expansion lost its shared graph or independently executed comparisons: "+
-                graph.reason+run_diagnostic(extended,result));
+            "The active expansion lost its independently executed comparisons: "+
+                run_diagnostic(extended,result));
         preserved_public_project(extended,result);
+
+        // The File API alone cannot prove explicitly authored compile
+        // features, options or include scopes. Request the authenticated
+        // construction graph in a separate QA execution of the identical
+        // submitted project. Do not attach a foreign grading requirement to
+        // the expansion or use this result to record a learner receipt.
+        require(expected_builder.cmake_graph_check.has_value(),
+            "The pinned construction graph oracle is missing");
+        auto graph_request=extended;
+        graph_request.request_id=++sequence;graph_request.revision=sequence;
+        graph_request.open_battery_probe.reset();
+        graph_request.capture_cmake_graph=true;
+        graph_request.cmake_graph_check=expected_builder.cmake_graph_check;
+        const auto graph_result=run_cpp(graph_request);
+        public_success(graph_request,graph_result);
+        const auto graph=evaluate_cmake_graph(graph_request,graph_result,
+            *expected_builder.cmake_graph_check);
+        require(graph.correct,
+            "The exact active expansion lost its shared authored CMake graph: "+
+                graph.reason+run_diagnostic(graph_request,graph_result));
+        preserved_public_project(graph_request,graph_result);
         std::cout<<"PASS actual adopted expansion: shared CMake graph, 37 phases and one first-case receipt\n";
     }
     if(builder.adjustment_project_probe) {
