@@ -4,6 +4,7 @@
 #include "platform/windows/state_store.hpp"
 #include "core/lesson.hpp"
 #include "platform/windows/published_adoption_test_source.hpp"
+#include "native_build_config.hpp"
 #include "core/named_rule_check.hpp"
 #include "core/named_rule_constant_variation_check.hpp"
 
