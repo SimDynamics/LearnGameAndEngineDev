@@ -135,9 +135,11 @@ jobs:
     # A verified full reader build already needs about 39 minutes on the
     # hosted runner. U1 now also builds the separate historical-contract
     # executable and runs the real compiler/editors plus ordering help.
-    # Preserve the exact pinned MSVC and every per-test CTest timeout while
-    # allowing the additional work to finish on a busy Windows runner.
-    timeout-minutes: 60
+    # The adopted U3L10 runtime now adds a second independent real CMake
+    # execution. The integrated 60-minute job stopped during that test after
+    # the historical runtime had passed. Keep every per-test timeout and
+    # allow the entire registered suite to finish on the hosted runner.
+    timeout-minutes: 90
     env:
       # Explicit prefixes select catalog/U1, live reload, seven reader regressions or code-scope QA.
       # Normal pushes and manual dispatch retain all 98 ReaderBuild cases.

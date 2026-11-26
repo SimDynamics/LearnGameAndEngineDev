@@ -5,6 +5,7 @@
 #include "core/lesson.hpp"
 #include "platform/windows/compiler_completion.hpp"
 #include "platform/windows/content_loader.hpp"
+#include "platform/windows/published_adoption_lesson_test_source.hpp"
 #include "platform/windows/state_store.hpp"
 
 #include <filesystem>
@@ -42,7 +43,8 @@ int defaulted_move_policy_state_windows(const std::filesystem::path& content,
     const auto path=content.parent_path()/
         "cpp_language_memory_oop/estado_y_ciclo_de_vida_de_clases/"
         "lesson_elegir_copia_y_movimiento_de_una_clase.json";
-    const auto original=load_lesson(path);
+    const auto live=load_lesson(path);
+    const auto original=lgaed::qa::load_adoption_predecessor(path);
     const auto& before=owner(original,id);
     require(before.type==BlockType::cpp_compiler&&before.output_check&&
             before.output_check->cases.size()==3&&
@@ -63,7 +65,8 @@ int defaulted_move_policy_state_windows(const std::filesystem::path& content,
     JsonArray declarations;
     declarations.Append(spec);
     root.Insert(L"compilerDefaultedMovePolicyChecks",declarations);
-    const auto reviewed=winrt::to_string(root.Stringify());
+    const auto reviewed=lgaed::qa::adopted_or_projected_source(live,
+        winrt::to_string(root.Stringify()),L"compilerDefaultedMovePolicyChecks");
     const auto revised=parse_lesson_json(reviewed,"es");
     const auto compact=parse_lesson_progress_metadata(reviewed,"es");
     const auto& editor=owner(revised,id);
@@ -198,7 +201,7 @@ int defaulted_move_policy_state_windows(const std::filesystem::path& content,
     require(persisted==data&&compiler_puzzle_completed(persisted,revised,editor),
         "The independent U6L6 owner seal did not survive StateStore reopen");
     state::validate_lesson_state(persisted,revised);
-    require(load_lesson(path).raw_json==original.raw_json,
+    require(load_lesson(path).raw_json==live.raw_json,
         "Native QA altered the published U6L6 lesson");
     std::cout<<"PASS U6L6 genuine move-policy StateStore: exact original owner, "
         "full/progress loaders, historical stdout unpromoted, forged/missing "
