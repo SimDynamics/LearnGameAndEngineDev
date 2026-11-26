@@ -21,12 +21,24 @@ EXPLAINED = "ee940eb067c0ac8ff5a6217f2b6f79564b50e2cb"
 EXPLAINED_BLOB = "0fd1793a34b0a49fcbb83d009afd24be54f56b38"
 BEFORE_LATER_EDITORIAL = "39ba3cb196e196bac99c2d891b488f765679ad6d"
 BEFORE_LATER_EDITORIAL_BLOB = "820d056b933573cb580554aa25031a3a2154556a"
-PUBLICATIONS = ((BASE, BASE_BLOB), (PRESENTED, PRESENTED_BLOB),
-                (EXPLAINED, EXPLAINED_BLOB),
-                (BEFORE_LATER_EDITORIAL, BEFORE_LATER_EDITORIAL_BLOB))
 OWNER = "u3l4_alcance_codigo_en_recuadros"
 PROMPT_REVIEWED = "aae31e3d0ff202d700d3f3dd5ba27854eebe088d"
 PROMPT_REVIEWED_BLOB = "420f3650e24d417cfac73f6ebde1678f353d4b3f"
+# These are complete publications from the actual lesson history, not
+# snapshots reconstructed from the final document's editorial hashes.
+# The last four additions/reviews must not be collapsed into a single edge.
+PUBLICATIONS = ((BASE, BASE_BLOB), (PRESENTED, PRESENTED_BLOB),
+                (EXPLAINED, EXPLAINED_BLOB),
+                (BEFORE_LATER_EDITORIAL, BEFORE_LATER_EDITORIAL_BLOB),
+                (PROMPT_REVIEWED, PROMPT_REVIEWED_BLOB),
+                ("652cdf7dcea14e27d98a2f214a42da0621353481",
+                 "acdd5c2109c66a2cc4909695df49293a796adbb9"),
+                ("08887bd1495ac745ec77b361b9dd9ac4670c23c5",
+                 "dac3b2ff3d0841c588548415cebbd45e8fed3d18"),
+                ("843ecc1cadca8dbaa102f30ef00a01278b1d9436",
+                 "ab1c0099d2265a461692a72f7305e33a3560a3a1"),
+                ("229c6e2b9d77b889f842c59a4ce825c2e0194dc4",
+                 "776a45283a56ec4c00122c8c6ad0708380528808"))
 CHOICE_TEXT_EDITS = {
     "/responses/0/options/0/label": ("En main, antes de la declaración de fichas", ("main", "fichas")),
     "/responses/0/options/1/label": ("Después del bloque del if, justo antes de return 0;", ("if", "return 0;")),
@@ -44,14 +56,42 @@ def published_bytes(commit, expected_blob):
     return raw
 
 
+def later_publication_bytes():
+    """Read actual descendant lesson publications before the working tree.
+
+    Do not synthesize an intermediate block or silently accept a skipped
+    addition. Git's path history can contain merges; require each selected
+    publication to descend from the preceding one. A divergent chain needs
+    an explicitly authenticated path, not a timestamp-based ordering.
+    """
+    previous, previous_blob = PUBLICATIONS[-1]
+    subprocess.run(["git", "merge-base", "--is-ancestor", previous, "HEAD"],
+                   cwd=ROOT, check=True)
+    commits = subprocess.check_output(
+        ["git", "log", "--full-history", "--ancestry-path", "--topo-order",
+         "--reverse", "--format=%H", previous + "..HEAD", "--", LESSON],
+        cwd=ROOT, text=True).splitlines()
+    for commit in commits:
+        blob = subprocess.check_output(
+            ["git", "rev-parse", commit + ":" + LESSON],
+            cwd=ROOT, text=True).strip()
+        if blob == previous_blob:
+            continue
+        subprocess.run(["git", "merge-base", "--is-ancestor", previous, commit],
+                       cwd=ROOT, check=True)
+        yield published_bytes(commit, blob)
+        previous, previous_blob = commit, blob
+
+
 class CodeScopePresentationTest(unittest.TestCase):
     @classmethod
     def setUpClass(cls):
         cls.publications = [json.loads(published_bytes(*publication))
                             for publication in PUBLICATIONS]
-        cls.before, cls.presented, cls.explained, _ = cls.publications
+        cls.before, cls.presented, cls.explained = cls.publications[:3]
         cls.current = json.loads((ROOT / LESSON).read_text(encoding="utf-8"))
-        cls.prompt_reviewed = json.loads(published_bytes(PROMPT_REVIEWED, PROMPT_REVIEWED_BLOB))
+        cls.prompt_reviewed = cls.publications[4]
+        cls.later_publications = [json.loads(raw) for raw in later_publication_bytes()]
 
     @staticmethod
     def flatten(node):
@@ -72,10 +112,11 @@ class CodeScopePresentationTest(unittest.TestCase):
         # An explanation added after the overlay may itself be revised later.
         # Its real first publication is the base of that later editorial edge;
         # the final document alone must not invent an intermediate history.
-        chain = (*self.publications, self.current)
+        chain = (*self.publications, *self.later_publications, self.current)
         original = deepcopy(chain)
-        for previous, current in zip(chain, chain[1:]):
-            layout.validate_publication_transition(previous, current)
+        for index, (previous, current) in enumerate(zip(chain, chain[1:]), start=1):
+            with self.subTest(publication_edge=index):
+                layout.validate_publication_transition(previous, current)
         self.assertEqual(chain, original)
         blocks = layout._blocks(self.current)
         resolved = scopes.validate(self.current, blocks=blocks)
@@ -119,7 +160,18 @@ class CodeScopePresentationTest(unittest.TestCase):
                                     "New activities cannot claim historical editorial provenance"):
             layout.validate_publication_transition(self.presented, self.current)
 
+    def test_nivel_revision_needs_the_actual_intermediate_publication(self):
+        # Reproduce Work's failure on the fixed, authentic endpoints. The
+        # newly added exercise has no editorial predecessor in 39ba3cb1.
+        with self.assertRaisesRegex(layout.LayoutError,
+                                    "New activities cannot claim historical editorial provenance"):
+            layout.validate_publication_transition(self.publications[3], self.publications[-1])
+        # All eight reviewed transitions remain independently checked above.
+
     def test_later_editorial_publication_cannot_change_the_scope_answer_or_owner(self):
+        # Use the actual current predecessor so the negatives cannot pass
+        # merely because an unrelated legitimate addition was skipped.
+        layout.validate_publication_transition(self.current, self.current)
         for mutation in ("answer", "owner", "retired-address", "original-address",
                          "source", "presentation", "retirement"):
             candidate = deepcopy(self.current)
@@ -138,7 +190,7 @@ class CodeScopePresentationTest(unittest.TestCase):
             else:
                 candidate["stateLayout"]["retirementHistory"][0]["pages"][0]["blocks"][0]["text"] += " Alterado."
             with self.subTest(mutation=mutation), self.assertRaises(layout.LayoutError):
-                layout.validate_publication_transition(self.explained, candidate)
+                layout.validate_publication_transition(self.current, candidate)
 
     def assert_rejected(self, mutation):
         candidate = deepcopy(self.current)
@@ -224,7 +276,7 @@ class CodeScopePresentationTest(unittest.TestCase):
         current = layout._blocks(edited)[OWNER]
         self.assertNotEqual(original["prompt"], current["prompt"])
         self.assertEqual(original, layout._historical_math_text_contract(edited, OWNER, current))
-        previous = self.publications[-1]
+        previous = self.publications[3]
         layout.validate_publication_transition(previous, edited)
         self.assertEqual([item["field"] for item in edited["stateLayout"]["mathTextRevisions"]], ["/prompt"])
 

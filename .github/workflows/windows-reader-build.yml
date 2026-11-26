@@ -103,7 +103,7 @@ jobs:
       - name: Verify the grouped authoring batch has its declared scope
         run: |
           $ErrorActionPreference = 'Stop'
-          $qaBase = '863d64d9d68e10bd3e71ce8bdf27bb70c5a0ae61'
+          $qaBase = '229c6e2b9d77b889f842c59a4ce825c2e0194dc4'
           git merge-base --is-ancestor $qaBase HEAD
           if ($LASTEXITCODE -ne 0) { throw 'The authenticated source revision must be an ancestor of this follow-up.' }
           $qaAllowed = @('scripts/curriculum/test_code_scope_presentations.py', '.github/workflows/windows-reader-build.yml', '.github/workflows/codex-batched-client-split.yml')
