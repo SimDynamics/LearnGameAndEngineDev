@@ -2,6 +2,7 @@
 // Focused synthetic curriculum lives only in this isolated QA process.
 #include "presentation/windows/lesson_view.hpp"
 #include "presentation/windows/rich_text.hpp"
+#include "presentation/windows/reader_theme.hpp"
 #include "platform/windows/content_loader.hpp"
 #include "platform/windows/environment.hpp"
 #include "platform/windows/state_store.hpp"
@@ -81,7 +82,7 @@ void replace_inline(HWND host,HWND view,int block,std::string_view first,std::st
             "A real inline-fill field changed the authored answer");
     }
 }
-LONG point_height(HWND edit,LONG at){
+CHARFORMAT2W point_style(HWND edit,LONG at){
     CHARRANGE previous{},position{at,at+1};
     SendMessageW(edit,EM_EXGETSEL,0,reinterpret_cast<LPARAM>(&previous));
     SendMessageW(edit,EM_EXSETSEL,0,reinterpret_cast<LPARAM>(&position));
@@ -89,9 +90,10 @@ LONG point_height(HWND edit,LONG at){
     SendMessageW(edit,EM_GETCHARFORMAT,SCF_SELECTION,
         reinterpret_cast<LPARAM>(&style));
     SendMessageW(edit,EM_EXSETSEL,0,reinterpret_cast<LPARAM>(&previous));
-    require((style.dwMask&CFM_SIZE)!=0,"Feedback has no definite font height");
-    return style.yHeight;
+    require((style.dwMask&CFM_SIZE)!=0,"Curricular text has no definite font height");
+    return style;
 }
+LONG point_height(HWND edit,LONG at){return point_style(edit,at).yHeight;}
 int scale(HWND item){
     int n=0,d=0;
     SendMessageW(item,EM_GETZOOM,
@@ -121,7 +123,7 @@ struct Fixture{
              "options":["No","Sí"],"correctIndex":1,
              "explanation":"La segunda opción es correcta.",
              "reviewFeedback":"La primera no cumple la condición."},
-            {"type":"output_prediction","question":"Predice la salida.",
+            {"type":"output_prediction","question":"Predice la salida de `std::cout`.",
              "code":"std::cout << 7;","answers":["7"],
              "explanation":"La salida es siete."},
             {"type":"order_code","question":"Ordena las líneas.",
@@ -133,7 +135,18 @@ struct Fixture{
              "reviewFeedback":"Comprueba las dos inicializaciones."},
             {"type":"drag_fill_code","question":"Coloca la función.",
              "template":"int []() { return 0[] }",
-             "choices":["main",";"],"correctOrder":[0,1]}
+             "choices":["main",";"],"correctOrder":[0,1]},
+            {"type":"heading","text":"Título de sección"},
+            {"type":"cpp_compiler","question":"Construye el programa.",
+             "initialCode":"#include <iostream>\nint main(){std::cout << 7;}",
+             "outputCheck":{"cases":[{"standardInput":"","outputs":["7"]}]}},
+            {"type":"cpp_compiler","question":"Configura el proyecto CMake.",
+             "initialCode":"",
+             "projectFiles":[{"path":"main.cpp","initialCode":"int main() { return 0; }"},
+              {"path":"CMakeLists.txt","initialCode":"cmake_minimum_required(VERSION 3.25)\nproject(PromptQA LANGUAGES CXX)\nadd_executable(prompt_qa main.cpp)\n"}],
+             "cmake":{"target":"prompt_qa"}},
+            {"type":"math_puzzle","schemaVersion":1,"prompt":"Calcula la medida.",
+             "representations":[],"responses":[{"id":"number","type":"math_numeric_input","label":"Medida","instruction":"Escribe la medida.","validator":{"type":"numeric","expected":6}}]}
           ]}]
         })json";
         lesson=windows::parse_lesson_json(file,"es");
@@ -170,6 +183,51 @@ void exercise(){
     const auto prose=control(f.view,id(0,0));
     const auto base=point_height(prose,0);
     require(base==rich_text_height(),"Curricular text no longer uses 18sp body font");
+    const auto verify_prompts=[&](int expected_scale) {
+        const auto body=control(f.view,id(0,0));
+        const auto body_style=point_style(body,0);
+        require(body_style.yHeight==base&&!(body_style.dwEffects&CFE_BOLD)&&
+            scale(body)==expected_scale,"The plain paragraph is not the expected reference");
+        const auto same_prose=[&](HWND item,std::string_view what) {
+            require(item&&IsWindow(item),"A puzzle instruction is missing");
+            const auto style=point_style(item,0);
+            require((style.dwMask&(CFM_BOLD|CFM_FACE))==(CFM_BOLD|CFM_FACE)&&
+                style.yHeight==body_style.yHeight&&
+                (style.dwEffects&CFE_BOLD)==(body_style.dwEffects&CFE_BOLD)&&
+                std::wstring_view(style.szFaceName)==body_style.szFaceName&&
+                scale(item)==expected_scale,what);
+        };
+        // All seven native programming types, including the CMake variation
+        // of cpp_compiler, share the same real LessonView question row.
+        for(const int owner:{1,2,3,4,5,6,8,9})
+            same_prose(control(f.view,id(owner,0)),
+                "Puzzle question differs from paragraph: block "+std::to_string(owner));
+        for(const int owner:{4,6})
+            same_prose(control(f.view,id(owner,37)),"Desktop puzzle instructions differ from paragraph");
+        const auto heading=control(f.view,id(7,0));
+        const auto title_style=point_style(heading,0);
+        require(title_style.yHeight==rich_text_height(RichTextRole::heading)&&
+            title_style.yHeight>base&&(title_style.dwEffects&CFE_BOLD)&&
+            scale(heading)==expected_scale,"A genuine section heading lost its hierarchy");
+        const auto question=control(f.view,id(3,0));
+        const auto visible=wide(edit_text(question));
+        const auto token=visible.find(L"std::cout");
+        require(token!=visible.npos&&visible.find(L'`')==visible.npos,
+            "The authored inline code is not shown correctly");
+        const auto code_style=point_style(question,static_cast<LONG>(token));
+        require(code_style.yHeight==base&&
+            std::wstring_view(code_style.szFaceName)==reader_theme::code_font_face(),
+            "Question typography flattened the authored inline code");
+        const auto regions=lesson_reading_regions(f.view);
+        for(const auto expected:{"Calcula la medida.","Escribe la medida."}){
+            const auto region=std::ranges::find_if(regions,[&](const auto& value){
+                return value.block_index==10&&value.source_text==expected;
+            });
+            require(region!=regions.end(),"A mathematical instruction lost its reader region");
+            same_prose(region->target,"Mathematical puzzle instruction differs from paragraph");
+        }
+    };
+    verify_prompts(100);
     const auto verify=[&](int block,int expected_scale) {
         const auto feedback=control(f.view,id(block,4));
         const auto source=edit_text(feedback);
@@ -241,9 +299,11 @@ void exercise(){
                 "Changing font size changed the validated text");
             verify(i+1,zoom);
         }
+        verify_prompts(zoom);
         unchanged();
     }
     f.reopen();
+    verify_prompts(150);
     for(int i=0;i<5;++i){
         require(edit_text(control(f.view,id(i+1,4)))==original[i],
             "Reopening lost a correct puzzle response or guide");
@@ -292,6 +352,9 @@ void exercise(){
     }
     std::cout<<"PASS hosted Win32 desktop order AND drag-fill help ES/EN/FR: "
              <<"identical visible/reader instructions after language changes and reopen.\n";
+    std::cout<<"PASS ordinary paragraph size, weight and scale for all eight programming "
+        "question surfaces and the mathematical prompt/instruction; real title hierarchy, "
+        "inline code and reader regions preserved at 75/100/125/150% and reopen.\n";
     std::cout<<"PASS real LessonView feedback: fill_code, choice, prediction, "
         "order_code, inline_fill_code, correct/incorrect and 75/100/125/150% shared 18sp; "
         "reopen and narration preserved.\n";

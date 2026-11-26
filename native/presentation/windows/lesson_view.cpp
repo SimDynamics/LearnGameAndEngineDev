@@ -3495,7 +3495,10 @@ struct LessonView {
             rows.push_back({{check},{0},48,false});rows.back().horizontal_inset=6;rows.back().padding_before=12;
             rows.back().padding_after=0;reader_theme::primary_button(check);create_feedback(index);return;
         }
-        if (!current.question.empty()) text_row(current.question, control_id(index, 0), false, current.emphasis, RichTextRole::heading);
+        // A puzzle question is curricular prose, not a section title.
+        // Use the same base size and weight as a paragraph in every editor
+        // and exercise; authored emphasis and technical ranges still apply.
+        if (!current.question.empty()) text_row(current.question, control_id(index, 0), false, current.emphasis, RichTextRole::body);
         if(const auto instruction=secondary_instruction(current.type,current.optional_order_separators>0);!instruction.empty()){
             text_row(instruction,control_id(index,37));
             reader_theme::set_text_color(find_item(control_id(index,37)),reader_theme::palette(window).high_contrast?reader_theme::foreground(window):RGB(180,185,195));

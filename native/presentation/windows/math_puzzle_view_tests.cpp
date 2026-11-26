@@ -999,19 +999,27 @@ int main(int argc,char** argv) {
             const auto prompt = view.reading_regions().front().target;
             const auto prompt_mapping=native_math_text_mapping(prompt,view.reading_regions().front().source_text);
             require(prompt_mapping&&prompt_mapping->built_up,
-                "Making the mathematical prompt bold destroyed its real native fraction/source mapping");
+                "Using body typography destroyed the mathematical prompt's real native fraction/source mapping");
             {
                 const auto prompt_source=view.reading_regions().front().source_text;
                 ReadingShade prompt_shade(prompt,prompt_source);require(prompt_shade.matches(prompt,prompt_source),
-                    "The bold prompt's final math projection cannot support original-source word shading");
+                    "The prompt's final math projection cannot support original-source word shading");
                 prompt_shade.read_through(0);prompt_shade.read_through(wide(prompt_source).size());
                 require(native_math_text_mapping(prompt,prompt_source).has_value(),
-                    "Progressive shading changed the bold prompt's real fraction/source projection");
+                    "Progressive shading changed the prompt's real fraction/source projection");
             }
             CHARFORMAT2W prompt_type{};prompt_type.cbSize=sizeof(prompt_type);
-            SendMessageW(prompt,EM_SETSEL,0,-1);SendMessageW(prompt,EM_GETCHARFORMAT,SCF_SELECTION,reinterpret_cast<LPARAM>(&prompt_type));
-            require(prompt_type.yHeight==270&&(prompt_type.dwEffects&CFE_BOLD),
-                "A mathematics prompt did not preserve its Android-derived 18-sp body size and bold weight");
+            // Compare plain prose, not the TOM fraction's independently
+            // typeset numerator/denominator or mathematical glyph variants.
+            SendMessageW(prompt,EM_SETSEL,0,1);SendMessageW(prompt,EM_GETCHARFORMAT,SCF_SELECTION,reinterpret_cast<LPARAM>(&prompt_type));
+            const auto label=region_target(view,"number/unit");
+            CHARFORMAT2W body_type{};body_type.cbSize=sizeof(body_type);
+            require(label!=nullptr,"The ordinary mathematical label is missing");
+            SendMessageW(label,EM_SETSEL,0,1);SendMessageW(label,EM_GETCHARFORMAT,SCF_SELECTION,reinterpret_cast<LPARAM>(&body_type));
+            require(prompt_type.yHeight==rich_text_height()&&prompt_type.yHeight==body_type.yHeight&&
+                !(prompt_type.dwEffects&CFE_BOLD)&&!(body_type.dwEffects&CFE_BOLD)&&
+                std::wstring_view(prompt_type.szFaceName)==body_type.szFaceName,
+                "A mathematical prompt must use ordinary paragraph size and weight");
             int wheels = 0;
             SetWindowSubclass(host.window,wheel_counter_proc,51,reinterpret_cast<DWORD_PTR>(&wheels));
             const auto before_wheel = view.answers_json();

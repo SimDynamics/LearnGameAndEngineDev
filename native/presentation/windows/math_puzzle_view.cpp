@@ -1664,9 +1664,10 @@ struct MathPuzzleView::Impl {
         reset_button=button(tr("Reiniciar","Restart","Recommencer"),[this]{if(callbacks.reset_requested)callbacks.reset_requested();});
         reader_theme::icon_button(reset_button);
         rows.push_back({{{spacer},{expand_button,48},{reset_button,48}},48});
-        // Weight is selected BEFORE native math is built and aligned: TOM
-        // may encode bold numerals with supplementary mathematical digits.
-        add_text(text(block,L"prompt",text(block,L"question")),"prompt",RichTextRole::prompt,selected_semantics(block,{L"prompt",L"question"}));
+        // Questions and instructions use ordinary paragraph typography.
+        // Select it before native math construction so source ranges,
+        // authored emphasis and mathematical glyphs keep their meaning.
+        add_text(text(block,L"prompt",text(block,L"question")),"prompt",RichTextRole::body,selected_semantics(block,{L"prompt",L"question"}));
         const auto representations=array(block,L"representations");
         for(unsigned index=0;index<representations.Size();++index){
             const auto source=representations.GetObjectAt(index);

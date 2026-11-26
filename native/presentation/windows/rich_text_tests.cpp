@@ -1037,12 +1037,15 @@ int main(int argc,char** argv) {
             for(LONG at=0;at<9;++at)check(std::wstring_view(character(editor.value,at).szFaceName)==return_with_space[at].szFaceName,
                 "A tab-separated delimited return statement changed its code font");
             check(edit_text(editor.value)=="return\t0;","Styling a tab-separated return statement changed its source");
-            set_rich_text(editor.value,"Una pregunta",{},false,RichTextRole::heading);
+            set_rich_text(editor.value,"Una pregunta",{},false,RichTextRole::body);
+            check(character(editor.value,0).yHeight==270&&!(character(editor.value,0).dwEffects&CFE_BOLD),
+                "Ordinary questions must use paragraph typography");
+            set_rich_text(editor.value,"Título de sección",{},false,RichTextRole::heading);
             check(character(editor.value,0).yHeight==345&&(character(editor.value,0).dwEffects&CFE_BOLD),
-                "Headings and questions lost the 23sp bold hierarchy");
-            set_rich_text(editor.value,"Una pregunta matemática",{},false,RichTextRole::prompt);
+                "A true heading lost the 23sp bold hierarchy");
+            set_rich_text(editor.value,"Rótulo de grupo",{},false,RichTextRole::prompt);
             check(character(editor.value,0).yHeight==270&&(character(editor.value,0).dwEffects&CFE_BOLD),
-                "Mathematical prompts must be bold without increasing their 18sp body size");
+                "A compact group caption lost its distinct bold body-sized style");
             set_rich_text(editor.value,"Título de lección",{},false,RichTextRole::lesson_title);
             check(character(editor.value,0).yHeight==480&&(character(editor.value,0).dwEffects&CFE_BOLD),
                 "The 32sp lesson title was flattened into an ordinary heading");
