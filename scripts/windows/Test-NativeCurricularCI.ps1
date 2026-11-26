@@ -103,7 +103,7 @@ $qaSuiteConfig = switch ($Suite) {
             CMakeOption = 'LGAED_READER_REVISION_QA_ONLY'
             Targets = @('lgaed_lesson_reader_edit_order_tests')
             Results = 'reader-revision'
-            Tests = @('native.reader_revision_live_file')
+            Tests = @('native.reader_revision_live_file', 'native.reader_revision_worker_recovery')
         }
     }
     'ReaderRevisionRegressions' {
@@ -750,6 +750,7 @@ if ($Suite -eq 'ReaderBuild') {
         'native.reader_revision_other_page',
         'native.reader_revision_unheard_negative',
         'native.reader_revision_live_file',
+        'native.reader_revision_worker_recovery',
         'native.general_choice_editorial_reader',
         'native.boolean_battery',
         'native.boolean_battery_runtime',

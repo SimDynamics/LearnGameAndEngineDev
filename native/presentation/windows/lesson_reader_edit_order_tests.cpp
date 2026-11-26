@@ -25,6 +25,7 @@
 #include <filesystem>
 #include <fstream>
 #include <functional>
+#include <future>
 #include <iostream>
 #include <limits>
 #include <map>
@@ -840,6 +841,161 @@ void check_cached_feedback_priority(const std::shared_ptr<windows::NarrationWork
     std::cout<<"PASS current feedback cache hit preceded synthesis of the earlier missing question on an unpublished revision\n";
 }
 
+void run_worker_recovery(const std::shared_ptr<windows::NarrationWorker>& backend,
+        const Variant& baseline,const Variant& prose,const std::filesystem::path& exported,
+        const std::filesystem::path& transport_log) {
+    using windows::NarrationCpuClass;
+    const auto directory=transport_log.parent_path();
+    const auto source_path=directory/L"active-recovery-lesson.json";
+    const auto baseline_bytes=bytes(baseline.path),revised_bytes=bytes(prose.path);
+    const auto historical_path=exported/L"assetcheck-recovery-before.json";
+    const auto compacted_path=exported/L"assetcheck-recovery-after.json";
+    const auto historical=bytes(historical_path),compacted=bytes(compacted_path);
+    check(historical!=compacted,"Recovery requires two independently authenticated large-lesson serializations");
+    const auto signal=[](const std::filesystem::path& path) {
+        std::ofstream file(path,std::ios::binary|std::ios::noreplace);
+        file<<"1";file.close();check(static_cast<bool>(file),"Cannot create the isolated recovery trigger");
+    };
+
+    phase="worker recovery / open actual reader and prepare existing PCM";
+    write_live_source(source_path,baseline_bytes);
+    Variant active=baseline;active.path=source_path;active.lesson=windows::load_lesson(source_path);
+    Fixture fixture(backend,active);
+    const auto mounted_view=fixture.view,mounted_bar=fixture.reader->bar();
+    const auto* mounted_reader=fixture.reader.get();
+    const auto same_lifetime=[&]{
+        check(fixture.view==mounted_view&&IsWindow(mounted_view)&&fixture.reader.get()==mounted_reader&&
+            fixture.reader->bar()==mounted_bar&&IsWindow(mounted_bar),
+            "Recovery replaced the reader, bar or current lesson window");
+    };
+    fixture.edit("b","unfinished QA draft");
+    wait([&]{return fixture.snapshot().page_audio_complete;},"complete original page publication");
+    auto rows=verify_plan(fixture,{});
+    const auto cache=fixture.environment.paths.cache/L"kokoro";
+    const auto cached=seal_cache(fixture.snapshot());
+    const auto unrelated=read_lesson_state(fixture.view).preferences.at("reader_revision_qa_sentinel");
+    const auto a_gate=source_index(rows,"A_QUESTION")+1;
+    fixture.reader->toggle();
+    wait([&]{return fixture.snapshot().playing;},"actual playback before the unrelated large request");
+
+    phase="worker recovery / authentic large request dies while another reader is running";
+    signal(directory/L"fault-large");
+    auto background=std::async(std::launch::async,[&]{
+        return backend->page_plan(historical,0,"es","ef_dora","es",{},"cpp","es",NarrationCpuClass::background);
+    });
+    // The controlled child holds this particular request, not the reader.
+    // Actual Windows PCM must reach the answer gate during that interval.
+    wait([&]{return std::filesystem::is_regular_file(directory/L"large-entered")&&fixture.snapshot().waiting_gate;},
+        "large request observed and ongoing reader reaches A",15000);
+    const auto gate=fixture.snapshot();
+    check(gate.index==a_gate&&background.wait_for(std::chrono::milliseconds(0))!=std::future_status::ready,
+        "The reader did not reach its actual exercise independently of held background planning");
+    signal(directory/L"release-large");
+    wait([&]{return background.wait_for(std::chrono::milliseconds(0))==std::future_status::ready;},
+        "bounded background request recovery");
+    const auto large=background.get();
+    check(!large.segments.empty()&&large.page_id.find("disenar_probar_y_presentar_variante_propia")!=std::string::npos,
+        "The recovered request did not return its own complete controlled page identity");
+    const auto retained_gate=fixture.snapshot();same_lifetime();
+    check(retained_gate.key==gate.key&&retained_gate.index==gate.index&&
+        retained_gate.offset==gate.offset&&retained_gate.heard_through==gate.heard_through&&retained_gate.waiting_gate,
+        "Restarting the process moved the current reader or invented listening credit");
+
+    phase="worker recovery / one actual answer, process exit during feedback planning";
+    signal(directory/L"fault-feedback");
+    fixture.edit("a","ok");
+    const auto a=fixture.display_index("a");
+    SendMessageW(child(fixture.view,1003+static_cast<int>(a)*100),BM_CLICK,0,0);
+    const auto accepted=state::get_response(read_lesson_state(fixture.view),active.lesson,fixture.block("a"));
+    check(accepted&&accepted->correct&&accepted->answer=="ok","The real puzzle did not record its answer");
+    // Do not pause, toggle, reopen or submit again. The same reader must
+    // finish the selected correct feedback and reach the next ordinary gate.
+    const auto answered_rows=expected_regions(active,0,{"a"});
+    const auto feedback=source_index(answered_rows,"✓ Correcto\n\nA_FEEDBACK");
+    const auto b_gate=source_index(answered_rows,"B_QUESTION")+1;
+    wait([&]{
+        const auto snap=fixture.snapshot();same_lifetime();
+        return snap.waiting_gate&&snap.index==b_gate&&snap.segments.size()>feedback&&
+            snap.segments[feedback].feedback_fully_played&&snap.page_audio_complete;
+    },"automatic recovered feedback and next required puzzle",30000);
+    fixture.ready();rows=verify_plan(fixture,{"a"});verify_cache(cached);
+    check(!std::filesystem::exists(directory/L"fault-feedback"),"The intended feedback transport failure never occurred");
+    check(flush_lesson_view(fixture.view),"Cannot persist the actual recovered answer");
+    const auto recovered_state=read_lesson_state(fixture.view);
+    verify_existing_state(fixture,recovered_state,true);
+
+    phase="worker recovery / subsequent authentic compacted publication";
+    const auto later=backend->page_plan(compacted,0,"es","ef_dora","es",{},"cpp","es",NarrationCpuClass::background);
+    check(later.page_id==large.page_id&&later.revision==large.revision&&
+        later.segments.size()==large.segments.size()&&later.segments.front().prepared==large.segments.front().prepared,
+        "The whitespace-only historical publication changed the controlled visible page identity");
+
+    phase="worker recovery / pending old page completion followed by actual live revision";
+    const auto old_plan=backend->page_plan(baseline_bytes,0,"es","ef_dora","es",{},"auto","es",NarrationCpuClass::background);
+    auto stale=backend->begin_page(cache,old_plan.page_id,"es","ef_dora","KOKORO",old_plan,NarrationCpuClass::background);
+    check(stale.has_value(),"Cannot prepare a late background completion of the original page");
+    std::vector<windows::NarrationAudio> old_audio;
+    for(auto sentence:old_plan.segments){
+        sentence.cache_namespace=stale->cache_namespace();
+        old_audio.push_back(backend->prepare(sentence,"es","ef_dora",cache,0,stale->stop_token(),NarrationCpuClass::background,true));
+    }
+    check(stale->current()&&old_audio.size()==old_plan.segments.size(),"The old completion was not genuinely prepared");
+    const auto old_content=lesson_page_state(fixture.view).content_revision;
+    SetFocus(nullptr);write_live_source(source_path,revised_bytes);
+    wait([&]{same_lifetime();return lesson_page_state(fixture.view).content_revision==old_content+1;},
+        "automatic adoption of an actual new lesson revision",15000);
+    Variant revised=prose;revised.path=source_path;revised.lesson=windows::load_lesson(source_path);
+    fixture.active=&revised;fixture.ready();
+    wait([&]{return fixture.snapshot().page_audio_complete;},"complete new page publication");
+    rows=verify_plan(fixture,{"a"});
+    const auto current=fixture.snapshot();
+    const auto new_source=source_index(rows,"P_BETWEEN_REVISED");
+    check(!current.playing&&!current.allocated&&current.index==new_source&&current.offset==0&&
+        current.segments[new_source].available&&current.page_audio_revision!=old_plan.revision,
+        "A changed passage inherited old reading credit or did not receive its new recording");
+    check(std::ranges::none_of(cached,[&](const auto& old){return old.path==current.segments[new_source].recording;}),
+        "The new authored text reused an unrelated PCM file");
+    check(!stale->current()&&!stale->commit(old_audio)&&
+        backend->published_page_revision(cache,old_plan.page_id,"es","ef_dora","KOKORO")==
+            std::optional<std::string>{current.page_audio_revision},
+        "A late completion of the retired edition replaced the published current revision");
+    verify_cache(cached);verify_existing_state(fixture,recovered_state,true);same_lifetime();
+    check(flush_lesson_view(fixture.view)&&bytes(source_path)==revised_bytes&&
+        bytes(historical_path)==historical&&bytes(compacted_path)==compacted,
+        "The recovery test changed an authenticated source or failed to persist the answer");
+    const auto disk=state::StateStore(fixture.environment.paths.root).load();
+    const auto saved=state::get_response(disk,revised.lesson,fixture.block("a"));
+    check(saved&&saved->correct&&saved->answer=="ok"&&disk.preferences.at("reader_revision_qa_sentinel")==unrelated,
+        "The recovered answer or unrelated preferences were not retained on disk");
+
+    phase="worker recovery / exact transport generation evidence";
+    std::ifstream log(transport_log,std::ios::binary);
+    std::set<std::string> large_ids;std::vector<double> generations,exit_generations,large_generations;
+    std::set<std::string> exit_kinds;std::size_t compacted_requests=0;
+    const auto historical_hash=state::sha256(historical),compacted_hash=state::sha256(compacted);
+    for(std::string line;std::getline(log,line);){
+        const auto event=JsonObject::Parse(wide(line));const auto command=field(event,L"command");
+        if(command=="fixture_started")generations.push_back(event.GetNamedNumber(L"processId"));
+        else if(command=="fixture_exit"){
+            exit_kinds.insert(field(event,L"kind"));exit_generations.push_back(event.GetNamedNumber(L"processId"));
+        }else if(command=="fixture_large_request"){
+            const auto hash=field(event,L"sha256");
+            if(hash==historical_hash){
+                large_ids.insert(field(event,L"targetId"));large_generations.push_back(event.GetNamedNumber(L"processId"));
+            }else if(hash==compacted_hash)++compacted_requests;
+            else check(false,"The large request did not transport the original raw bytes");
+        }
+    }
+    check(generations.size()==3&&std::set<double>(generations.begin(),generations.end()).size()==3&&
+        exit_generations==std::vector<double>{generations[0],generations[1]}&&
+        exit_kinds==std::set<std::string>{"background","feedback"}&&large_ids.size()==2&&
+        large_generations==std::vector<double>{generations[0],generations[1]}&&compacted_requests==1,
+        "The controlled process did not prove two actual exits, bounded fresh requests and distinct generations");
+    std::cout<<"PASS live reader recovery: authenticated AssetCheck raw transport, two actual child exits, "
+        "same reader and one submitted answer, resumed feedback, preserved cache, new source PCM, "
+        "and rejected late publication from an older edition; deterministic PCM, no neural voice acceptance\n";
+}
+
 std::shared_ptr<windows::NarrationWorker> controlled_worker(const std::filesystem::path& python,
         const std::filesystem::path& build_directory,std::filesystem::path& transport_log) {
     check(std::filesystem::is_regular_file(python)&&std::filesystem::is_directory(build_directory),
@@ -874,10 +1030,11 @@ int main(int argc,char** argv) {
         const auto backend=controlled_worker(argv[2],argv[3],transport_log);
         struct Shutdown { std::shared_ptr<windows::NarrationWorker> worker;~Shutdown(){worker->shutdown();} } shutdown{backend};
         const std::string filter=argc==5?argv[4]:"";std::size_t executed=0;
-        for(const std::string scenario:{"insert","insert-forward","reorder","prose","other-page","unheard-negative","retire-insert","live-file"}) {
+        for(const std::string scenario:{"insert","insert-forward","reorder","prose","other-page","unheard-negative","retire-insert","live-file","worker-recovery"}) {
             if(!filter.empty()&&filter!=scenario)continue;++executed;
             try {
                 if(scenario=="live-file")run_live_file(backend,variants.at("baseline"),variants.at("insert"),argv[3]);
+                else if(scenario=="worker-recovery")run_worker_recovery(backend,variants.at("baseline"),variants.at("prose"),manifest_path.parent_path(),transport_log);
                 else run_revision(backend,variants.at("baseline"),variants.at(scenario=="unheard-negative"||scenario=="insert-forward"?"insert":scenario),
                     scenario=="unheard-negative",scenario=="insert-forward");
                 if(scenario=="prose")check_cached_feedback_priority(backend,variants.at("baseline"),variants.at("prose"),transport_log);

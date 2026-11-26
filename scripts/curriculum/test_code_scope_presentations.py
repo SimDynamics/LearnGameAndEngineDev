@@ -377,11 +377,19 @@ class CodeScopePresentationTest(unittest.TestCase):
         later_edits = (introduced.keys() - earlier.keys()) & owners
         self.assertTrue(later_edits)
         self.assertTrue(any(introduced[owner] != revised[owner] for owner in later_edits))
-        # The active endpoint now also includes a math-text archive. It must
-        # first be rejected for lacking that archive's already published owner;
-        # the independent nivel test below still verifies the editorial guard.
+        # Freeze the original missing-owner negative to the real publication
+        # before the subsequent retirement introduced a different first
+        # rejection. Keep the full moving endpoint independently rejected.
+        pinned = json.loads(published_bytes(
+            "bae4b013f598909f1303ad324d7f97ccf2cf04e3",
+            "6eb8092a3296c4e60189c9fcc5777b666a0907a6"))
+        self.assertNotIn("u3l4_lotes_doce_tabla", earlier)
+        self.assertTrue(any(item["id"] == "u3l4_lotes_doce_tabla"
+                            for item in pinned["stateLayout"]["mathTextRevisions"]))
         with self.assertRaisesRegex(layout.LayoutError,
                                     "A math text archive must retain an already published active v2 owner"):
+            layout.validate_publication_transition(self.presented, pinned)
+        with self.assertRaises(layout.LayoutError):
             layout.validate_publication_transition(self.presented, self.current)
 
     def test_nivel_revision_needs_the_actual_intermediate_publication(self):

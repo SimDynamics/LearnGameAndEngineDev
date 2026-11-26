@@ -11,6 +11,7 @@ from copy import deepcopy
 import hashlib
 import json
 from pathlib import Path
+import subprocess
 
 import stable_state_layout as state
 from diagnostic_fixture_source import checked_output, existing_matches
@@ -173,11 +174,38 @@ def fixture_record(variant: str, document: dict, payload: bytes) -> dict:
             "sha256": hashlib.sha256(payload).hexdigest(), "pages": pages}
 
 
-def export(output_dir: Path) -> Path:
+def recovery_publications() -> dict[str, bytes]:
+    root = Path(__file__).resolve().parents[2]
+    relative = ("app/src/main/assets/content/es/programming/programming_practice_tools/"
+                "proyecto_assetcheck/lesson_disenar_probar_y_presentar_variante_propia.json")
+    result = {}
+    for name, commit, blob in (
+        ("before", "70e71e5e1876f3245633d92c414dda7f358a75ba",
+         "2b58163adeade4bb27da4ca45f9407397aa72e02"),
+        ("after", "439471bf832decef9caaad7aedd5becfcdaf0bbc",
+         "7019f0a1bfa4de85ef8589e6eba1580d55e0c012"),
+    ):
+        payload = subprocess.check_output(["git", "show", f"{commit}:{relative}"], cwd=root)
+        frame = b"blob " + str(len(payload)).encode("ascii") + b"\0" + payload
+        if hashlib.sha1(frame).hexdigest() != blob:
+            raise ValueError("The AssetCheck recovery publication differs from its Git pin")
+        result["assetcheck-recovery-" + name + ".json"] = payload
+    before, after = result.values()
+    if before == after or json.loads(before) != json.loads(after):
+        raise ValueError("Expected the actual whitespace-only repair of AssetCheck")
+    envelope = json.dumps({"lessonJson": before.decode("utf-8")}, ensure_ascii=False)
+    if len(json.loads(before)["pages"]) != 18 or len(envelope.encode("utf-16-le")) // 2 <= 2_000_000:
+        raise ValueError("The original AssetCheck transport regression is not reproduced")
+    return result
+
+
+def export(output_dir: Path, include_recovery_asset: bool = False) -> Path:
     output = checked_output(output_dir)
     documents = revisions()
     payloads = {variant + ".json": json_bytes(document)
                 for variant, document in documents.items()}
+    if include_recovery_asset:
+        payloads.update(recovery_publications())
     payloads["manifest.json"] = json_bytes({
         "version": 1, "lessonId": LESSON_ID, "locale": "es", "baseline": "baseline.json",
         "owners": OWNERS,
@@ -209,9 +237,10 @@ def export(output_dir: Path) -> Path:
 if __name__ == "__main__":
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("--output-dir", required=True, type=Path)
+    parser.add_argument("--include-recovery-asset", action="store_true")
     arguments = parser.parse_args()
     try:
-        manifest = export(arguments.output_dir)
+        manifest = export(arguments.output_dir, arguments.include_recovery_asset)
     except (OSError, ValueError, RuntimeError) as error:
         parser.exit(1, f"Reader revision fixtures not exported: {error}\n")
     print(manifest)

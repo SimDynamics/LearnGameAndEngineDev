@@ -15,6 +15,7 @@ from pathlib import Path
 import re
 import struct
 import sys
+import time
 import wave
 
 
@@ -79,15 +80,23 @@ def curriculum_plan(request: dict) -> dict:
     stable = owner.get("id") or page.get("id") or str(index)
     language = request.get("contentLanguage", request["language"])
     texts = [lesson["title"]] if index == 0 else []
-    for block in page["blocks"]:
-        if block["type"] == "paragraph":
-            texts.append(block["text"])
-        elif block["type"] == "fill_code":
-            texts.extend((block["question"], "Ejercicio de código C más más."))
-            if block.get("explanation"):
-                texts.append("✓ Correcto\n\n" + block["explanation"])
-        else:
-            raise ValueError("Review the controlled reader fixture for this new block type")
+    if lesson["id"].endswith("__disenar_probar_y_presentar_variante_propia"):
+        # Only a controlled transport oracle for the authentic large document.
+        # The actual Kokoro worker separately plans every one of its 18 pages.
+        if len(lesson["pages"]) != 18:
+            raise ValueError("The historical AssetCheck publication changed")
+        texts = [next((block["text"] for block in page["blocks"]
+                       if block["type"] == "paragraph"), lesson["title"])]
+    else:
+        for block in page["blocks"]:
+            if block["type"] == "paragraph":
+                texts.append(block["text"])
+            elif block["type"] == "fill_code":
+                texts.extend((block["question"], "Ejercicio de código C más más."))
+                if block.get("explanation"):
+                    texts.append("✓ Correcto\n\n" + block["explanation"])
+            else:
+                raise ValueError("Review the controlled reader fixture for this new block type")
     # Bind the strict native page session to the current authored source and
     # selection. The production revision/hash algorithm remains independently
     # exercised by the real-worker acceptance tests.
@@ -105,12 +114,45 @@ def run(log_path: Path, cache_path: Path) -> None:
     cache_path.mkdir(exist_ok=True)
     sys.stdin.reconfigure(encoding="utf-8")
     sys.stdout.reconfigure(encoding="utf-8")
-    # A run owns a new directory; reusing a transport log is an error.
-    with log_path.open("x", encoding="utf-8", buffering=1) as log:
+    # The C++ harness exclusively creates the runtime directory. A replacement
+    # generation must append evidence there and reuse its existing PCM.
+    directory = log_path.parent
+    with log_path.open("a", encoding="utf-8", buffering=1) as log:
+        pid = os.getpid()
+        def event(command, **fields):
+            log.write(json.dumps(dict(command=command, processId=pid, **fields),
+                                 ensure_ascii=False) + "\n")
+        event("fixture_started")
         for line in sys.stdin:
             request = json.loads(line)
             command = request["command"]
-            log.write(json.dumps(request, ensure_ascii=False) + "\n")
+            large = (command == "curriculum_plan" and
+                     json.loads(request["lessonJson"])["id"].endswith(
+                         "__disenar_probar_y_presentar_variante_propia"))
+            if large:
+                raw = request["lessonJson"]
+                event("fixture_large_request", targetId=request["id"],
+                      sha256=hashlib.sha256(raw.encode("utf-8")).hexdigest(),
+                      page=request["page"])
+                fault = directory / "fault-large"
+                if fault.is_file():
+                    fault.unlink()
+                    (directory / "large-entered").write_text(str(pid), encoding="ascii")
+                    deadline = time.monotonic() + 20
+                    while not (directory / "release-large").is_file():
+                        if time.monotonic() >= deadline:
+                            raise RuntimeError("The reader did not release the observed large request")
+                        time.sleep(0.01)
+                    event("fixture_exit", kind="background", targetId=request["id"])
+                    sys.exit(23)
+            else:
+                log.write(json.dumps(request, ensure_ascii=False) + "\n")
+            fault = directory / "fault-feedback"
+            if (command == "plan" and request.get("text") == "✓ Correcto\n\nA_FEEDBACK"
+                    and fault.is_file()):
+                fault.unlink()
+                event("fixture_exit", kind="feedback", targetId=request["id"])
+                sys.exit(24)
             fields: dict = {}
             if command == "plan":
                 text = request["text"]
