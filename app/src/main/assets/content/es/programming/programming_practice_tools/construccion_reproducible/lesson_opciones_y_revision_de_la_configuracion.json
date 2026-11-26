@@ -8114,5 +8114,44 @@
         "spans": []
       }
     ]
-  }
+  },
+  "compilerCmakeGraphChecks": [
+    {
+      "activity": "block_0011_0003",
+      "project": "Cotizaciones",
+      "minimumCmakeVersion": "3.20",
+      "targets": [
+        {
+          "name": "cotizar",
+          "type": "EXECUTABLE",
+          "sources": [
+            "muestra.cpp"
+          ],
+          "linksTo": [
+            "tarifas"
+          ],
+          "exactSources": true,
+          "explicitCxx20": true,
+          "explicitCxxExtensionsOff": true
+        },
+        {
+          "name": "tarifas",
+          "type": "STATIC_LIBRARY",
+          "sources": [
+            "especial.cpp"
+          ],
+          "exactSources": true,
+          "explicitCxx20": true,
+          "explicitCxxExtensionsOff": true
+        }
+      ],
+      "optionSelection": {
+        "name": "TARIFA_ESPECIAL",
+        "default": "OFF",
+        "target": "tarifas",
+        "offSource": "normal.cpp",
+        "offStdout": "0:6:15"
+      }
+    }
+  ]
 }

@@ -235,7 +235,7 @@
           "projectFiles": [
             {
               "path": "CMakeLists.txt",
-              "initialCode": "cmake_minimum_required(VERSION 3.20)\nproject(AjustesConEvidencia LANGUAGES CXX)\n\nadd_library(ajustes STATIC src/ajuste.cpp)\n\ntarget_include_directories(ajustes PUBLIC publico)\nadd_executable(consultar_ajustes app/consulta.cpp)\nadd_executable(comprobar_ajustes pruebas/casos.cpp)\n\ntarget_link_libraries(consultar_ajustes PRIVATE ajustes)\ntarget_link_libraries(comprobar_ajustes PRIVATE ajustes)\ntarget_compile_features(ajustes PRIVATE cxx_std_20)\ntarget_compile_features(consultar_ajustes PRIVATE cxx_std_20)\ntarget_compile_features(comprobar_ajustes PRIVATE cxx_std_20)\nset_target_properties(ajustes consultar_ajustes comprobar_ajustes PROPERTIES CXX_EXTENSIONS OFF)\ntarget_compile_options(ajustes PRIVATE -Wall -Wextra -Wpedantic)\ntarget_compile_options(consultar_ajustes PRIVATE -Wall -Wextra -Wpedantic)\ntarget_compile_options(comprobar_ajustes PRIVATE -Wall -Wextra -Wpedantic)\n"
+              "initialCode": "cmake_minimum_required(VERSION 3.20)\nproject(AjustesConEvidencia LANGUAGES CXX)\n\nadd_library(ajustes STATIC src/ajuste.cpp)\n\ntarget_include_directories(ajustes PUBLIC publico)\nadd_executable(consultar_ajustes app/consulta.cpp)\nadd_executable(comprobar_ajustes pruebas/casos.cpp)\n\ntarget_link_libraries(consultar_ajustes PRIVATE ajustes)\ntarget_link_libraries(comprobar_ajustes PRIVATE ajustes)\ntarget_compile_features(ajustes PRIVATE cxx_std_20)\ntarget_compile_features(consultar_ajustes PRIVATE cxx_std_20)\ntarget_compile_features(comprobar_ajustes PRIVATE cxx_std_20)\nset_target_properties(ajustes consultar_ajustes comprobar_ajustes PROPERTIES CXX_EXTENSIONS OFF)\ntarget_compile_options(ajustes PRIVATE /W4 /permissive-)\ntarget_compile_options(consultar_ajustes PRIVATE /W4 /permissive-)\ntarget_compile_options(comprobar_ajustes PRIVATE /W4 /permissive-)\n"
             },
             {
               "path": "publico/control/ajuste.h",
@@ -251,7 +251,7 @@
             },
             {
               "path": "pruebas/casos.cpp",
-              "initialCode": "#include \"control/ajuste.h\"\n#include <iostream>\n\nbool comprobar(int caso, int valor, int inferior, int superior,\n               int inicial, bool aceptacion_esperada, int ajuste_esperado) {\n    int obtenido{inicial};\n    const bool aceptado = intentar_ajuste(valor, inferior, superior, obtenido);\n    const bool coincide = aceptado == aceptacion_esperada && obtenido == ajuste_esperado;\n\n    std::cout << \"Caso=\" << caso << \" Acepta=\" << aceptado << \" Ajuste=\" << obtenido\n              << \" EsperaAcepta=\" << aceptacion_esperada\n              << \" EsperaAjuste=\" << ajuste_esperado;\n    if (coincide) { std::cout << \" OK\\n\"; }\n    else { std::cout << \" FALLO\\n\"; }\n    return coincide;\n}\n\nint main() {\n    int fallos{0};\n    if (!comprobar(1, 2, 3, 7, 77, true, 1)) { ++fallos; }\n    if (!comprobar(2, 5, 3, 7, -8, true, 0)) { ++fallos; }\n    if (!comprobar(3, 9, 3, 7, 19, true, -2)) { ++fallos; }\n    if (!comprobar(4, 4, 4, 4, -4, true, 0)) { ++fallos; }\n    if (!comprobar(5, -20, 20, 20, 8, true, 40)) { ++fallos; }\n    if (!comprobar(6, 20, -20, -20, 17, true, -40)) { ++fallos; }\n    if (!comprobar(7, 0, 7, 3, 77, false, 77)) { ++fallos; }\n    if (!comprobar(8, 21, 3, 7, -8, false, -8)) { ++fallos; }\n    if (!comprobar(9, -21, 3, 7, 19, false, 19)) { ++fallos; }\n    if (!comprobar(10, 0, -21, 7, -4, false, -4)) { ++fallos; }\n    if (!comprobar(11, 0, 3, 21, 8, false, 8)) { ++fallos; }\n    std::cout << \"Fallos=\" << fallos << \"\\n\";\n    return fallos == 0 ? 0 : 1;\n}\n"
+              "initialCode": "#include \"control/ajuste.h\"\n#include <iostream>\n\nbool comprobar(int caso, int valor, int inferior, int superior,\n               int inicial, bool aceptacion_esperada, int ajuste_esperado) {\n    int obtenido{inicial};\n    const bool aceptado = intentar_ajuste(valor, inferior, superior, obtenido);\n    const bool coincide = aceptado == aceptacion_esperada && obtenido == ajuste_esperado;\n\n    std::cout << \"Caso=\" << caso << \" Acepta=\" << aceptado << \" Ajuste=\" << obtenido\n              << \" EsperaAcepta=\" << aceptacion_esperada\n              << \" EsperaAjuste=\" << ajuste_esperado;\n    if (coincide) { std::cout << \" OK\\n\"; }\n    else { std::cout << \" FALLO\\n\"; }\n    return coincide;\n}\n\nint main() {\n    int elegido{};\n    const bool individual = bool(std::cin >> elegido);\n    if (!individual && !std::cin.eof()) return 2;\n    if (individual && (elegido < 1 || elegido > 11)) return 2;\n    int fallos{0};\n    if ((!individual || elegido == 1) && !comprobar(1, 2, 3, 7, 77, true, 1)) { ++fallos; }\n    if ((!individual || elegido == 2) && !comprobar(2, 5, 3, 7, -8, true, 0)) { ++fallos; }\n    if ((!individual || elegido == 3) && !comprobar(3, 9, 3, 7, 19, true, -2)) { ++fallos; }\n    if ((!individual || elegido == 4) && !comprobar(4, 4, 4, 4, -4, true, 0)) { ++fallos; }\n    if ((!individual || elegido == 5) && !comprobar(5, -20, 20, 20, 8, true, 40)) { ++fallos; }\n    if ((!individual || elegido == 6) && !comprobar(6, 20, -20, -20, 17, true, -40)) { ++fallos; }\n    if ((!individual || elegido == 7) && !comprobar(7, 0, 7, 3, 77, false, 77)) { ++fallos; }\n    if ((!individual || elegido == 8) && !comprobar(8, 21, 3, 7, -8, false, -8)) { ++fallos; }\n    if ((!individual || elegido == 9) && !comprobar(9, -21, 3, 7, 19, false, 19)) { ++fallos; }\n    if ((!individual || elegido == 10) && !comprobar(10, 0, -21, 7, -4, false, -4)) { ++fallos; }\n    if ((!individual || elegido == 11) && !comprobar(11, 0, 3, 21, 8, false, 8)) { ++fallos; }\n    std::cout << \"Fallos=\" << fallos << \"\\n\";\n    return fallos == 0 ? 0 : 1;\n}\n"
             }
           ],
           "initialStandardInput": "2 3 7\n5 3 7\n9 3 7\n0 7 3\n4 4 4\n21 3 7\n",
@@ -262,6 +262,83 @@
           "outputCheck": {
             "inputComparison": "exact",
             "cases": [
+              {
+                "standardInput": "3\n",
+                "outputs": [
+                  "Caso=3 Acepta=1 Ajuste=-2 EsperaAcepta=1 EsperaAjuste=-2 OK\nFallos=0\n"
+                ],
+                "exitCode": 0
+              },
+              {
+                "standardInput": "1\n",
+                "outputs": [
+                  "Caso=1 Acepta=1 Ajuste=1 EsperaAcepta=1 EsperaAjuste=1 OK\nFallos=0\n"
+                ],
+                "exitCode": 0
+              },
+              {
+                "standardInput": "2\n",
+                "outputs": [
+                  "Caso=2 Acepta=1 Ajuste=0 EsperaAcepta=1 EsperaAjuste=0 OK\nFallos=0\n"
+                ],
+                "exitCode": 0
+              },
+              {
+                "standardInput": "4\n",
+                "outputs": [
+                  "Caso=4 Acepta=1 Ajuste=0 EsperaAcepta=1 EsperaAjuste=0 OK\nFallos=0\n"
+                ],
+                "exitCode": 0
+              },
+              {
+                "standardInput": "5\n",
+                "outputs": [
+                  "Caso=5 Acepta=1 Ajuste=40 EsperaAcepta=1 EsperaAjuste=40 OK\nFallos=0\n"
+                ],
+                "exitCode": 0
+              },
+              {
+                "standardInput": "6\n",
+                "outputs": [
+                  "Caso=6 Acepta=1 Ajuste=-40 EsperaAcepta=1 EsperaAjuste=-40 OK\nFallos=0\n"
+                ],
+                "exitCode": 0
+              },
+              {
+                "standardInput": "7\n",
+                "outputs": [
+                  "Caso=7 Acepta=0 Ajuste=77 EsperaAcepta=0 EsperaAjuste=77 OK\nFallos=0\n"
+                ],
+                "exitCode": 0
+              },
+              {
+                "standardInput": "8\n",
+                "outputs": [
+                  "Caso=8 Acepta=0 Ajuste=-8 EsperaAcepta=0 EsperaAjuste=-8 OK\nFallos=0\n"
+                ],
+                "exitCode": 0
+              },
+              {
+                "standardInput": "9\n",
+                "outputs": [
+                  "Caso=9 Acepta=0 Ajuste=19 EsperaAcepta=0 EsperaAjuste=19 OK\nFallos=0\n"
+                ],
+                "exitCode": 0
+              },
+              {
+                "standardInput": "10\n",
+                "outputs": [
+                  "Caso=10 Acepta=0 Ajuste=-4 EsperaAcepta=0 EsperaAjuste=-4 OK\nFallos=0\n"
+                ],
+                "exitCode": 0
+              },
+              {
+                "standardInput": "11\n",
+                "outputs": [
+                  "Caso=11 Acepta=0 Ajuste=8 EsperaAcepta=0 EsperaAjuste=8 OK\nFallos=0\n"
+                ],
+                "exitCode": 0
+              },
               {
                 "standardInput": "",
                 "outputs": [
@@ -308,7 +385,7 @@
           "projectFiles": [
             {
               "path": "CMakeLists.txt",
-              "initialCode": "cmake_minimum_required(VERSION 3.20)\nproject(AjustesConEvidencia LANGUAGES CXX)\n\nadd_library(ajustes STATIC src/ajuste.cpp)\n\ntarget_include_directories(ajustes PUBLIC publico)\nadd_executable(consultar_ajustes app/consulta.cpp)\nadd_executable(comprobar_ajustes pruebas/casos.cpp)\n\ntarget_link_libraries(consultar_ajustes PRIVATE ajustes)\ntarget_link_libraries(comprobar_ajustes PRIVATE ajustes)\ntarget_compile_features(ajustes PRIVATE cxx_std_20)\ntarget_compile_features(consultar_ajustes PRIVATE cxx_std_20)\ntarget_compile_features(comprobar_ajustes PRIVATE cxx_std_20)\nset_target_properties(ajustes consultar_ajustes comprobar_ajustes PROPERTIES CXX_EXTENSIONS OFF)\ntarget_compile_options(ajustes PRIVATE -Wall -Wextra -Wpedantic)\ntarget_compile_options(consultar_ajustes PRIVATE -Wall -Wextra -Wpedantic)\ntarget_compile_options(comprobar_ajustes PRIVATE -Wall -Wextra -Wpedantic)\n"
+              "initialCode": "cmake_minimum_required(VERSION 3.20)\nproject(AjustesConEvidencia LANGUAGES CXX)\n\nadd_library(ajustes STATIC src/ajuste.cpp)\n\ntarget_include_directories(ajustes PUBLIC publico)\nadd_executable(consultar_ajustes app/consulta.cpp)\nadd_executable(comprobar_ajustes pruebas/casos.cpp)\n\ntarget_link_libraries(consultar_ajustes PRIVATE ajustes)\ntarget_link_libraries(comprobar_ajustes PRIVATE ajustes)\ntarget_compile_features(ajustes PRIVATE cxx_std_20)\ntarget_compile_features(consultar_ajustes PRIVATE cxx_std_20)\ntarget_compile_features(comprobar_ajustes PRIVATE cxx_std_20)\nset_target_properties(ajustes consultar_ajustes comprobar_ajustes PROPERTIES CXX_EXTENSIONS OFF)\ntarget_compile_options(ajustes PRIVATE /W4 /permissive-)\ntarget_compile_options(consultar_ajustes PRIVATE /W4 /permissive-)\ntarget_compile_options(comprobar_ajustes PRIVATE /W4 /permissive-)\n"
             },
             {
               "path": "publico/control/ajuste.h",
@@ -1454,6 +1531,21 @@
         "id": "block_0006_0011",
         "beforeSha256": "ba6a4bce565478eb0ccb01c247759e6c6480df4f006f0a89b9752e2bfce4b44f",
         "afterSha256": "f9b700a3cae40d193e237338f1552ef0c30710a2f5390ec6d74f5056753e049c"
+      },
+      {
+        "id": "block_0006_0011",
+        "beforeSha256": "f9b700a3cae40d193e237338f1552ef0c30710a2f5390ec6d74f5056753e049c",
+        "afterSha256": "3d78854e8131fef913855e95a1e4b266689b98ee9fb57913c011083070e4bae3"
+      },
+      {
+        "id": "block_0006_0008",
+        "beforeSha256": "1ef166267893abe5f0f5d855df7f2a3a1c5843ffe2428d66c5405ae84f4bd7e4",
+        "afterSha256": "552d987f3cb6609bc260cf58bc28623bc1480b7d352f59f5bd8419991b950489"
+      },
+      {
+        "id": "block_0006_0008",
+        "beforeSha256": "552d987f3cb6609bc260cf58bc28623bc1480b7d352f59f5bd8419991b950489",
+        "afterSha256": "aeab07a5c5290190d128b91aeba257121d359685e30181d72bdce64539ac857d"
       }
     ],
     "sourceFormatRevisions": [
@@ -1612,6 +1704,401 @@
             "target": "comprobar_ajustes",
             "buildType": "Debug"
           }
+        }
+      }
+    ],
+    "compilerCaseRevisions": [
+      {
+        "id": "block_0006_0011",
+        "block": {
+          "type": "cpp_compiler",
+          "language": "cpp",
+          "initialCode": "#include <iostream>\n\nint main() {\n    // PENDIENTE: recibir peticiones y usar la interfaz segun su contrato.\n    \n    std::cerr << \"PENDIENTE: cliente sin implementar\\n\";\n    return 1;\n}\n",
+          "projectFiles": [
+            {
+              "path": "CMakeLists.txt",
+              "initialCode": "cmake_minimum_required(VERSION 3.20)\nproject(AjustesConEvidencia LANGUAGES CXX)\n\nadd_library(ajustes STATIC src/ajuste.cpp)\n\ntarget_include_directories(ajustes PUBLIC publico)\nadd_executable(consultar_ajustes app/consulta.cpp)\nadd_executable(comprobar_ajustes pruebas/casos.cpp)\n\ntarget_link_libraries(consultar_ajustes PRIVATE ajustes)\ntarget_link_libraries(comprobar_ajustes PRIVATE ajustes)\ntarget_compile_features(ajustes PRIVATE cxx_std_20)\ntarget_compile_features(consultar_ajustes PRIVATE cxx_std_20)\ntarget_compile_features(comprobar_ajustes PRIVATE cxx_std_20)\nset_target_properties(ajustes consultar_ajustes comprobar_ajustes PROPERTIES CXX_EXTENSIONS OFF)\ntarget_compile_options(ajustes PRIVATE -Wall -Wextra -Wpedantic)\ntarget_compile_options(consultar_ajustes PRIVATE -Wall -Wextra -Wpedantic)\ntarget_compile_options(comprobar_ajustes PRIVATE -Wall -Wextra -Wpedantic)\n"
+            },
+            {
+              "path": "publico/control/ajuste.h",
+              "initialCode": "#ifndef PRACTICA_CONTROL_AJUSTE_H\n#define PRACTICA_CONTROL_AJUSTE_H\n\n// Acepta valor, inferior y superior en [-20,20], con inferior <= superior.\n// El ajuste que se suma a valor lo deja dentro del intervalo con el cambio de menor magnitud:\n// cero dentro, hasta inferior por debajo y hasta superior por encima.\n// Devuelve true y escribe ese ajuste al aceptar.\n// Devuelve false y conserva exactamente ajuste al rechazar.\n// No imprime ni termina el programa.\nbool intentar_ajuste(int valor, int inferior, int superior, int& ajuste);\n\n#endif\n"
+            },
+            {
+              "path": "src/ajuste.cpp",
+              "initialCode": "#include \"control/ajuste.h\"\n\nbool intentar_ajuste(int valor, int inferior, int superior, int& ajuste) {\n    if (valor < -20 || valor > 20 || inferior < -20 || inferior > 20\n            || superior < -20 || superior > 20 || inferior > superior) {\n        return false;\n    }\n    if (valor < inferior) {\n        ajuste = inferior - valor;\n    } else if (valor > superior) {\n        ajuste = superior - valor;\n    } else {\n        ajuste = 0;\n    }\n\n    return true;\n}\n"
+            },
+            {
+              "path": "app/consulta.cpp",
+              "initialCode": "#include \"control/ajuste.h\"\n#include <iostream>\n\nvoid informar_rechazo(std::ostream& destino, int peticion,\n                     int valor, int inferior, int superior) {\n    destino << \"Rechazo: peticion=\" << peticion << \" valor=\" << valor\n            << \" inferior=\" << inferior << \" superior=\" << superior\n            << \". Se admiten valores de -20 a 20 con inferior <= superior.\"\n            << \" Revise los tres valores.\\n\";\n}\n\nint main() {\n    int valor{0};\n    int inferior{0};\n    int superior{0};\n    int ajuste{77};\n    int peticion{0};\n    int aceptadas{0};\n    int rechazadas{0};\n    int suma{0};\n\n    while (std::cin >> valor >> inferior >> superior) {\n        ++peticion;\n        if (intentar_ajuste(valor, inferior, superior, ajuste)) {\n            ++aceptadas;\n            suma += ajuste;\n            std::cout << \"Peticion=\" << peticion << \" Ajuste=\" << ajuste << \"\\n\";\n        } else {\n            ++rechazadas;\n            informar_rechazo(std::cerr, peticion, valor, inferior, superior);\n        }\n    }\n    std::cout << \"Aceptadas=\" << aceptadas << \" Rechazadas=\" << rechazadas\n              << \" Suma=\" << suma << \"\\n\";\n    return rechazadas > 0 ? 1 : 0;\n}\n"
+            },
+            {
+              "path": "pruebas/casos.cpp",
+              "initialCode": "#include \"control/ajuste.h\"\n#include <iostream>\n\nbool comprobar(int caso, int valor, int inferior, int superior,\n               int inicial, bool aceptacion_esperada, int ajuste_esperado) {\n    int obtenido{inicial};\n    const bool aceptado = intentar_ajuste(valor, inferior, superior, obtenido);\n    const bool coincide = aceptado == aceptacion_esperada && obtenido == ajuste_esperado;\n\n    std::cout << \"Caso=\" << caso << \" Acepta=\" << aceptado << \" Ajuste=\" << obtenido\n              << \" EsperaAcepta=\" << aceptacion_esperada\n              << \" EsperaAjuste=\" << ajuste_esperado;\n    if (coincide) { std::cout << \" OK\\n\"; }\n    else { std::cout << \" FALLO\\n\"; }\n    return coincide;\n}\n\nint main() {\n    int fallos{0};\n    if (!comprobar(1, 2, 3, 7, 77, true, 1)) { ++fallos; }\n    if (!comprobar(2, 5, 3, 7, -8, true, 0)) { ++fallos; }\n    if (!comprobar(3, 9, 3, 7, 19, true, -2)) { ++fallos; }\n    if (!comprobar(4, 4, 4, 4, -4, true, 0)) { ++fallos; }\n    if (!comprobar(5, -20, 20, 20, 8, true, 40)) { ++fallos; }\n    if (!comprobar(6, 20, -20, -20, 17, true, -40)) { ++fallos; }\n    if (!comprobar(7, 0, 7, 3, 77, false, 77)) { ++fallos; }\n    if (!comprobar(8, 21, 3, 7, -8, false, -8)) { ++fallos; }\n    if (!comprobar(9, -21, 3, 7, 19, false, 19)) { ++fallos; }\n    if (!comprobar(10, 0, -21, 7, -4, false, -4)) { ++fallos; }\n    if (!comprobar(11, 0, 3, 21, 8, false, 8)) { ++fallos; }\n    std::cout << \"Fallos=\" << fallos << \"\\n\";\n    return fallos == 0 ? 0 : 1;\n}\n"
+            }
+          ],
+          "initialStandardInput": "2 3 7\n5 3 7\n9 3 7\n0 7 3\n4 4 4\n21 3 7\n",
+          "cmake": {
+            "target": "comprobar_ajustes",
+            "buildType": "Debug"
+          }
+        },
+        "cases": null,
+        "editorialIndex": 47,
+        "historySha256": "2c3ad898baf7e53c931da73de741234182a393882ab90e5938075b9dec0c48a7",
+        "semanticBefore": [],
+        "semanticAfter": [],
+        "recipe": {
+          "path": "CMakeLists.txt",
+          "source": "cmake_minimum_required(VERSION 3.20)\nproject(AjustesConEvidencia LANGUAGES CXX)\n\nadd_library(ajustes STATIC src/ajuste.cpp)\n\ntarget_include_directories(ajustes PUBLIC publico)\nadd_executable(consultar_ajustes app/consulta.cpp)\nadd_executable(comprobar_ajustes pruebas/casos.cpp)\n\ntarget_link_libraries(consultar_ajustes PRIVATE ajustes)\ntarget_link_libraries(comprobar_ajustes PRIVATE ajustes)\ntarget_compile_features(ajustes PRIVATE cxx_std_20)\ntarget_compile_features(consultar_ajustes PRIVATE cxx_std_20)\ntarget_compile_features(comprobar_ajustes PRIVATE cxx_std_20)\nset_target_properties(ajustes consultar_ajustes comprobar_ajustes PROPERTIES CXX_EXTENSIONS OFF)\ntarget_compile_options(ajustes PRIVATE /W4 /permissive-)\ntarget_compile_options(consultar_ajustes PRIVATE /W4 /permissive-)\ntarget_compile_options(comprobar_ajustes PRIVATE /W4 /permissive-)\n"
+        }
+      },
+      {
+        "id": "block_0006_0008",
+        "block": {
+          "type": "cpp_compiler",
+          "language": "cpp",
+          "initialCode": "#include <iostream>\n\nint main() {\n    // PENDIENTE: recibir peticiones y usar la interfaz segun su contrato.\n    \n    std::cerr << \"PENDIENTE: cliente sin implementar\\n\";\n    return 1;\n}\n",
+          "projectFiles": [
+            {
+              "path": "CMakeLists.txt",
+              "initialCode": "cmake_minimum_required(VERSION 3.20)\nproject(AjustesConEvidencia LANGUAGES CXX)\n\nadd_library(ajustes STATIC src/ajuste.cpp)\n\ntarget_include_directories(ajustes PUBLIC publico)\nadd_executable(consultar_ajustes app/consulta.cpp)\nadd_executable(comprobar_ajustes pruebas/casos.cpp)\n\ntarget_link_libraries(consultar_ajustes PRIVATE ajustes)\ntarget_link_libraries(comprobar_ajustes PRIVATE ajustes)\ntarget_compile_features(ajustes PRIVATE cxx_std_20)\ntarget_compile_features(consultar_ajustes PRIVATE cxx_std_20)\ntarget_compile_features(comprobar_ajustes PRIVATE cxx_std_20)\nset_target_properties(ajustes consultar_ajustes comprobar_ajustes PROPERTIES CXX_EXTENSIONS OFF)\ntarget_compile_options(ajustes PRIVATE -Wall -Wextra -Wpedantic)\ntarget_compile_options(consultar_ajustes PRIVATE -Wall -Wextra -Wpedantic)\ntarget_compile_options(comprobar_ajustes PRIVATE -Wall -Wextra -Wpedantic)\n"
+            },
+            {
+              "path": "publico/control/ajuste.h",
+              "initialCode": "#ifndef PRACTICA_CONTROL_AJUSTE_H\n#define PRACTICA_CONTROL_AJUSTE_H\n\n// Acepta valor, inferior y superior en [-20,20], con inferior <= superior.\n// El ajuste que se suma a valor lo deja dentro del intervalo con el cambio de menor magnitud:\n// cero dentro, hasta inferior por debajo y hasta superior por encima.\n// Devuelve true y escribe ese ajuste al aceptar.\n// Devuelve false y conserva exactamente ajuste al rechazar.\n// No imprime ni termina el programa.\nbool intentar_ajuste(int valor, int inferior, int superior, int& ajuste);\n\n#endif\n"
+            },
+            {
+              "path": "src/ajuste.cpp",
+              "initialCode": "#include \"control/ajuste.h\"\n\nbool intentar_ajuste(int valor, int inferior, int superior, int& ajuste) {\n    if (valor < -20 || valor > 20 || inferior < -20 || inferior > 20\n            || superior < -20 || superior > 20 || inferior > superior) {\n        return false;\n    }\n    if (valor < inferior) {\n        ajuste = inferior - valor;\n    } else if (valor > superior) {\n        ajuste = valor - superior;\n    } else {\n        ajuste = 0;\n    }\n\n    return true;\n}\n"
+            },
+            {
+              "path": "app/consulta.cpp",
+              "initialCode": "#include \"control/ajuste.h\"\n#include <iostream>\n\nvoid informar_rechazo(std::ostream& destino, int peticion,\n                     int valor, int inferior, int superior) {\n    destino << \"Rechazo: peticion=\" << peticion << \" valor=\" << valor\n            << \" inferior=\" << inferior << \" superior=\" << superior\n            << \". Se admiten valores de -20 a 20 con inferior <= superior.\"\n            << \" Revise los tres valores.\\n\";\n}\n\nint main() {\n    int valor{0};\n    int inferior{0};\n    int superior{0};\n    int ajuste{77};\n    int peticion{0};\n    int aceptadas{0};\n    int rechazadas{0};\n    int suma{0};\n\n    while (std::cin >> valor >> inferior >> superior) {\n        ++peticion;\n        if (intentar_ajuste(valor, inferior, superior, ajuste)) {\n            ++aceptadas;\n            suma += ajuste;\n            std::cout << \"Peticion=\" << peticion << \" Ajuste=\" << ajuste << \"\\n\";\n        } else {\n            ++rechazadas;\n            informar_rechazo(std::cerr, peticion, valor, inferior, superior);\n        }\n    }\n    std::cout << \"Aceptadas=\" << aceptadas << \" Rechazadas=\" << rechazadas\n              << \" Suma=\" << suma << \"\\n\";\n    return rechazadas > 0 ? 1 : 0;\n}\n"
+            },
+            {
+              "path": "pruebas/casos.cpp",
+              "initialCode": "#include \"control/ajuste.h\"\n#include <iostream>\n\nbool comprobar(int caso, int valor, int inferior, int superior,\n               int inicial, bool aceptacion_esperada, int ajuste_esperado) {\n    int obtenido{inicial};\n    const bool aceptado = intentar_ajuste(valor, inferior, superior, obtenido);\n    const bool coincide = aceptado == aceptacion_esperada && obtenido == ajuste_esperado;\n\n    std::cout << \"Caso=\" << caso << \" Acepta=\" << aceptado << \" Ajuste=\" << obtenido\n              << \" EsperaAcepta=\" << aceptacion_esperada\n              << \" EsperaAjuste=\" << ajuste_esperado;\n    if (coincide) { std::cout << \" OK\\n\"; }\n    else { std::cout << \" FALLO\\n\"; }\n    return coincide;\n}\n\nint main() {\n    int fallos{0};\n    if (!comprobar(1, 2, 3, 7, 77, true, 1)) { ++fallos; }\n    if (!comprobar(2, 5, 3, 7, -8, true, 0)) { ++fallos; }\n    if (!comprobar(3, 9, 3, 7, 19, true, -2)) { ++fallos; }\n    if (!comprobar(4, 4, 4, 4, -4, true, 0)) { ++fallos; }\n    if (!comprobar(5, -20, 20, 20, 8, true, 40)) { ++fallos; }\n    if (!comprobar(6, 20, -20, -20, 17, true, -40)) { ++fallos; }\n    if (!comprobar(7, 0, 7, 3, 77, false, 77)) { ++fallos; }\n    if (!comprobar(8, 21, 3, 7, -8, false, -8)) { ++fallos; }\n    if (!comprobar(9, -21, 3, 7, 19, false, 19)) { ++fallos; }\n    if (!comprobar(10, 0, -21, 7, -4, false, -4)) { ++fallos; }\n    if (!comprobar(11, 0, 3, 21, 8, false, 8)) { ++fallos; }\n    std::cout << \"Fallos=\" << fallos << \"\\n\";\n    return fallos == 0 ? 0 : 1;\n}\n"
+            }
+          ],
+          "initialStandardInput": "2 3 7\n5 3 7\n9 3 7\n0 7 3\n4 4 4\n21 3 7\n",
+          "cmake": {
+            "target": "comprobar_ajustes",
+            "buildType": "Debug"
+          },
+          "outputCheck": {
+            "inputComparison": "exact",
+            "cases": [
+              {
+                "standardInput": "",
+                "outputs": [
+                  "Caso=1 Acepta=1 Ajuste=1 EsperaAcepta=1 EsperaAjuste=1 OK\nCaso=2 Acepta=1 Ajuste=0 EsperaAcepta=1 EsperaAjuste=0 OK\nCaso=3 Acepta=1 Ajuste=-2 EsperaAcepta=1 EsperaAjuste=-2 OK\nCaso=4 Acepta=1 Ajuste=0 EsperaAcepta=1 EsperaAjuste=0 OK\nCaso=5 Acepta=1 Ajuste=40 EsperaAcepta=1 EsperaAjuste=40 OK\nCaso=6 Acepta=1 Ajuste=-40 EsperaAcepta=1 EsperaAjuste=-40 OK\nCaso=7 Acepta=0 Ajuste=77 EsperaAcepta=0 EsperaAjuste=77 OK\nCaso=8 Acepta=0 Ajuste=-8 EsperaAcepta=0 EsperaAjuste=-8 OK\nCaso=9 Acepta=0 Ajuste=19 EsperaAcepta=0 EsperaAjuste=19 OK\nCaso=10 Acepta=0 Ajuste=-4 EsperaAcepta=0 EsperaAjuste=-4 OK\nCaso=11 Acepta=0 Ajuste=8 EsperaAcepta=0 EsperaAjuste=8 OK\nFallos=0\n"
+                ],
+                "explanation": "La salida coincide con el informe esperado de once casos y Fallos=0, con retorno 0. En la referencia, la resta reparada obtiene -2 y -40 en los dos casos que antes discrepaban; los rechazos conservan sus destinos. Este acierto de salida no demuestra por sí solo que se observara primero el defecto ni que se mantuvieran intactos los archivos y las comparaciones requeridos por la consigna."
+              }
+            ]
+          }
+        },
+        "cases": [
+          {
+            "standardInput": "",
+            "outputs": [
+              "Caso=1 Acepta=1 Ajuste=1 EsperaAcepta=1 EsperaAjuste=1 OK\nCaso=2 Acepta=1 Ajuste=0 EsperaAcepta=1 EsperaAjuste=0 OK\nCaso=3 Acepta=1 Ajuste=-2 EsperaAcepta=1 EsperaAjuste=-2 OK\nCaso=4 Acepta=1 Ajuste=0 EsperaAcepta=1 EsperaAjuste=0 OK\nCaso=5 Acepta=1 Ajuste=40 EsperaAcepta=1 EsperaAjuste=40 OK\nCaso=6 Acepta=1 Ajuste=-40 EsperaAcepta=1 EsperaAjuste=-40 OK\nCaso=7 Acepta=0 Ajuste=77 EsperaAcepta=0 EsperaAjuste=77 OK\nCaso=8 Acepta=0 Ajuste=-8 EsperaAcepta=0 EsperaAjuste=-8 OK\nCaso=9 Acepta=0 Ajuste=19 EsperaAcepta=0 EsperaAjuste=19 OK\nCaso=10 Acepta=0 Ajuste=-4 EsperaAcepta=0 EsperaAjuste=-4 OK\nCaso=11 Acepta=0 Ajuste=8 EsperaAcepta=0 EsperaAjuste=8 OK\nFallos=0\n"
+            ],
+            "explanation": "La salida coincide con el informe esperado de once casos y Fallos=0, con retorno 0. En la referencia, la resta reparada obtiene -2 y -40 en los dos casos que antes discrepaban; los rechazos conservan sus destinos. Este acierto de salida no demuestra por sí solo que se observara primero el defecto ni que se mantuvieran intactos los archivos y las comparaciones requeridos por la consigna."
+          }
+        ],
+        "editorialIndex": 48,
+        "historySha256": "ee50d15c6c360fdfe5a7b20410ddd4e641c6d428fe59e978d5bfb3ace59e73d0",
+        "semanticBefore": [
+          {
+            "block": "block_0006_0008",
+            "path": "/outputCheck/cases/0/explanation",
+            "sourceSha256": "69417b48aa5c678995a1540aa73d64577c1ce62b775333afaca56affd70c0749",
+            "spans": [
+              {
+                "start": 59,
+                "end": 67,
+                "text": "Fallos=0",
+                "role": "output",
+                "reading": "natural"
+              },
+              {
+                "start": 81,
+                "end": 82,
+                "text": "0",
+                "role": "output",
+                "reading": "natural"
+              },
+              {
+                "start": 128,
+                "end": 130,
+                "text": "-2",
+                "role": "output",
+                "reading": "natural"
+              },
+              {
+                "start": 133,
+                "end": 136,
+                "text": "-40",
+                "role": "output",
+                "reading": "natural"
+              }
+            ]
+          }
+        ],
+        "semanticAfter": [
+          {
+            "block": "block_0006_0008",
+            "path": "/outputCheck/cases/0/explanation",
+            "sourceSha256": "69417b48aa5c678995a1540aa73d64577c1ce62b775333afaca56affd70c0749",
+            "spans": [
+              {
+                "start": 59,
+                "end": 67,
+                "text": "Fallos=0",
+                "role": "output",
+                "reading": "natural"
+              },
+              {
+                "start": 81,
+                "end": 82,
+                "text": "0",
+                "role": "output",
+                "reading": "natural"
+              },
+              {
+                "start": 128,
+                "end": 130,
+                "text": "-2",
+                "role": "output",
+                "reading": "natural"
+              },
+              {
+                "start": 133,
+                "end": 136,
+                "text": "-40",
+                "role": "output",
+                "reading": "natural"
+              }
+            ]
+          }
+        ],
+        "recipe": {
+          "path": "CMakeLists.txt",
+          "source": "cmake_minimum_required(VERSION 3.20)\nproject(AjustesConEvidencia LANGUAGES CXX)\n\nadd_library(ajustes STATIC src/ajuste.cpp)\n\ntarget_include_directories(ajustes PUBLIC publico)\nadd_executable(consultar_ajustes app/consulta.cpp)\nadd_executable(comprobar_ajustes pruebas/casos.cpp)\n\ntarget_link_libraries(consultar_ajustes PRIVATE ajustes)\ntarget_link_libraries(comprobar_ajustes PRIVATE ajustes)\ntarget_compile_features(ajustes PRIVATE cxx_std_20)\ntarget_compile_features(consultar_ajustes PRIVATE cxx_std_20)\ntarget_compile_features(comprobar_ajustes PRIVATE cxx_std_20)\nset_target_properties(ajustes consultar_ajustes comprobar_ajustes PROPERTIES CXX_EXTENSIONS OFF)\ntarget_compile_options(ajustes PRIVATE /W4 /permissive-)\ntarget_compile_options(consultar_ajustes PRIVATE /W4 /permissive-)\ntarget_compile_options(comprobar_ajustes PRIVATE /W4 /permissive-)\n"
+        }
+      },
+      {
+        "id": "block_0006_0008",
+        "block": {
+          "type": "cpp_compiler",
+          "language": "cpp",
+          "initialCode": "#include <iostream>\n\nint main() {\n    // PENDIENTE: recibir peticiones y usar la interfaz segun su contrato.\n    \n    std::cerr << \"PENDIENTE: cliente sin implementar\\n\";\n    return 1;\n}\n",
+          "projectFiles": [
+            {
+              "path": "CMakeLists.txt",
+              "initialCode": "cmake_minimum_required(VERSION 3.20)\nproject(AjustesConEvidencia LANGUAGES CXX)\n\nadd_library(ajustes STATIC src/ajuste.cpp)\n\ntarget_include_directories(ajustes PUBLIC publico)\nadd_executable(consultar_ajustes app/consulta.cpp)\nadd_executable(comprobar_ajustes pruebas/casos.cpp)\n\ntarget_link_libraries(consultar_ajustes PRIVATE ajustes)\ntarget_link_libraries(comprobar_ajustes PRIVATE ajustes)\ntarget_compile_features(ajustes PRIVATE cxx_std_20)\ntarget_compile_features(consultar_ajustes PRIVATE cxx_std_20)\ntarget_compile_features(comprobar_ajustes PRIVATE cxx_std_20)\nset_target_properties(ajustes consultar_ajustes comprobar_ajustes PROPERTIES CXX_EXTENSIONS OFF)\ntarget_compile_options(ajustes PRIVATE /W4 /permissive-)\ntarget_compile_options(consultar_ajustes PRIVATE /W4 /permissive-)\ntarget_compile_options(comprobar_ajustes PRIVATE /W4 /permissive-)\n"
+            },
+            {
+              "path": "publico/control/ajuste.h",
+              "initialCode": "#ifndef PRACTICA_CONTROL_AJUSTE_H\n#define PRACTICA_CONTROL_AJUSTE_H\n\n// Acepta valor, inferior y superior en [-20,20], con inferior <= superior.\n// El ajuste que se suma a valor lo deja dentro del intervalo con el cambio de menor magnitud:\n// cero dentro, hasta inferior por debajo y hasta superior por encima.\n// Devuelve true y escribe ese ajuste al aceptar.\n// Devuelve false y conserva exactamente ajuste al rechazar.\n// No imprime ni termina el programa.\nbool intentar_ajuste(int valor, int inferior, int superior, int& ajuste);\n\n#endif\n"
+            },
+            {
+              "path": "src/ajuste.cpp",
+              "initialCode": "#include \"control/ajuste.h\"\n\nbool intentar_ajuste(int valor, int inferior, int superior, int& ajuste) {\n    if (valor < -20 || valor > 20 || inferior < -20 || inferior > 20\n            || superior < -20 || superior > 20 || inferior > superior) {\n        return false;\n    }\n    if (valor < inferior) {\n        ajuste = inferior - valor;\n    } else if (valor > superior) {\n        ajuste = valor - superior;\n    } else {\n        ajuste = 0;\n    }\n\n    return true;\n}\n"
+            },
+            {
+              "path": "app/consulta.cpp",
+              "initialCode": "#include \"control/ajuste.h\"\n#include <iostream>\n\nvoid informar_rechazo(std::ostream& destino, int peticion,\n                     int valor, int inferior, int superior) {\n    destino << \"Rechazo: peticion=\" << peticion << \" valor=\" << valor\n            << \" inferior=\" << inferior << \" superior=\" << superior\n            << \". Se admiten valores de -20 a 20 con inferior <= superior.\"\n            << \" Revise los tres valores.\\n\";\n}\n\nint main() {\n    int valor{0};\n    int inferior{0};\n    int superior{0};\n    int ajuste{77};\n    int peticion{0};\n    int aceptadas{0};\n    int rechazadas{0};\n    int suma{0};\n\n    while (std::cin >> valor >> inferior >> superior) {\n        ++peticion;\n        if (intentar_ajuste(valor, inferior, superior, ajuste)) {\n            ++aceptadas;\n            suma += ajuste;\n            std::cout << \"Peticion=\" << peticion << \" Ajuste=\" << ajuste << \"\\n\";\n        } else {\n            ++rechazadas;\n            informar_rechazo(std::cerr, peticion, valor, inferior, superior);\n        }\n    }\n    std::cout << \"Aceptadas=\" << aceptadas << \" Rechazadas=\" << rechazadas\n              << \" Suma=\" << suma << \"\\n\";\n    return rechazadas > 0 ? 1 : 0;\n}\n"
+            },
+            {
+              "path": "pruebas/casos.cpp",
+              "initialCode": "#include \"control/ajuste.h\"\n#include <iostream>\n\nbool comprobar(int caso, int valor, int inferior, int superior,\n               int inicial, bool aceptacion_esperada, int ajuste_esperado) {\n    int obtenido{inicial};\n    const bool aceptado = intentar_ajuste(valor, inferior, superior, obtenido);\n    const bool coincide = aceptado == aceptacion_esperada && obtenido == ajuste_esperado;\n\n    std::cout << \"Caso=\" << caso << \" Acepta=\" << aceptado << \" Ajuste=\" << obtenido\n              << \" EsperaAcepta=\" << aceptacion_esperada\n              << \" EsperaAjuste=\" << ajuste_esperado;\n    if (coincide) { std::cout << \" OK\\n\"; }\n    else { std::cout << \" FALLO\\n\"; }\n    return coincide;\n}\n\nint main() {\n    int fallos{0};\n    if (!comprobar(1, 2, 3, 7, 77, true, 1)) { ++fallos; }\n    if (!comprobar(2, 5, 3, 7, -8, true, 0)) { ++fallos; }\n    if (!comprobar(3, 9, 3, 7, 19, true, -2)) { ++fallos; }\n    if (!comprobar(4, 4, 4, 4, -4, true, 0)) { ++fallos; }\n    if (!comprobar(5, -20, 20, 20, 8, true, 40)) { ++fallos; }\n    if (!comprobar(6, 20, -20, -20, 17, true, -40)) { ++fallos; }\n    if (!comprobar(7, 0, 7, 3, 77, false, 77)) { ++fallos; }\n    if (!comprobar(8, 21, 3, 7, -8, false, -8)) { ++fallos; }\n    if (!comprobar(9, -21, 3, 7, 19, false, 19)) { ++fallos; }\n    if (!comprobar(10, 0, -21, 7, -4, false, -4)) { ++fallos; }\n    if (!comprobar(11, 0, 3, 21, 8, false, 8)) { ++fallos; }\n    std::cout << \"Fallos=\" << fallos << \"\\n\";\n    return fallos == 0 ? 0 : 1;\n}\n"
+            }
+          ],
+          "initialStandardInput": "2 3 7\n5 3 7\n9 3 7\n0 7 3\n4 4 4\n21 3 7\n",
+          "cmake": {
+            "target": "comprobar_ajustes",
+            "buildType": "Debug"
+          },
+          "outputCheck": {
+            "inputComparison": "exact",
+            "cases": [
+              {
+                "standardInput": "",
+                "outputs": [
+                  "Caso=1 Acepta=1 Ajuste=1 EsperaAcepta=1 EsperaAjuste=1 OK\nCaso=2 Acepta=1 Ajuste=0 EsperaAcepta=1 EsperaAjuste=0 OK\nCaso=3 Acepta=1 Ajuste=-2 EsperaAcepta=1 EsperaAjuste=-2 OK\nCaso=4 Acepta=1 Ajuste=0 EsperaAcepta=1 EsperaAjuste=0 OK\nCaso=5 Acepta=1 Ajuste=40 EsperaAcepta=1 EsperaAjuste=40 OK\nCaso=6 Acepta=1 Ajuste=-40 EsperaAcepta=1 EsperaAjuste=-40 OK\nCaso=7 Acepta=0 Ajuste=77 EsperaAcepta=0 EsperaAjuste=77 OK\nCaso=8 Acepta=0 Ajuste=-8 EsperaAcepta=0 EsperaAjuste=-8 OK\nCaso=9 Acepta=0 Ajuste=19 EsperaAcepta=0 EsperaAjuste=19 OK\nCaso=10 Acepta=0 Ajuste=-4 EsperaAcepta=0 EsperaAjuste=-4 OK\nCaso=11 Acepta=0 Ajuste=8 EsperaAcepta=0 EsperaAjuste=8 OK\nFallos=0\n"
+                ],
+                "explanation": "La salida coincide con el informe esperado de once casos y Fallos=0, con retorno 0. En la referencia, la resta reparada obtiene -2 y -40 en los dos casos que antes discrepaban; los rechazos conservan sus destinos. Este acierto de salida no demuestra por sí solo que se observara primero el defecto ni que se mantuvieran intactos los archivos y las comparaciones requeridos por la consigna."
+              }
+            ]
+          }
+        },
+        "cases": [
+          {
+            "standardInput": "3\n",
+            "outputs": [
+              "Caso=3 Acepta=1 Ajuste=-2 EsperaAcepta=1 EsperaAjuste=-2 OK\nFallos=0\n"
+            ],
+            "exitCode": 0
+          },
+          {
+            "standardInput": "1\n",
+            "outputs": [
+              "Caso=1 Acepta=1 Ajuste=1 EsperaAcepta=1 EsperaAjuste=1 OK\nFallos=0\n"
+            ],
+            "exitCode": 0
+          },
+          {
+            "standardInput": "2\n",
+            "outputs": [
+              "Caso=2 Acepta=1 Ajuste=0 EsperaAcepta=1 EsperaAjuste=0 OK\nFallos=0\n"
+            ],
+            "exitCode": 0
+          },
+          {
+            "standardInput": "4\n",
+            "outputs": [
+              "Caso=4 Acepta=1 Ajuste=0 EsperaAcepta=1 EsperaAjuste=0 OK\nFallos=0\n"
+            ],
+            "exitCode": 0
+          },
+          {
+            "standardInput": "5\n",
+            "outputs": [
+              "Caso=5 Acepta=1 Ajuste=40 EsperaAcepta=1 EsperaAjuste=40 OK\nFallos=0\n"
+            ],
+            "exitCode": 0
+          },
+          {
+            "standardInput": "6\n",
+            "outputs": [
+              "Caso=6 Acepta=1 Ajuste=-40 EsperaAcepta=1 EsperaAjuste=-40 OK\nFallos=0\n"
+            ],
+            "exitCode": 0
+          },
+          {
+            "standardInput": "7\n",
+            "outputs": [
+              "Caso=7 Acepta=0 Ajuste=77 EsperaAcepta=0 EsperaAjuste=77 OK\nFallos=0\n"
+            ],
+            "exitCode": 0
+          },
+          {
+            "standardInput": "8\n",
+            "outputs": [
+              "Caso=8 Acepta=0 Ajuste=-8 EsperaAcepta=0 EsperaAjuste=-8 OK\nFallos=0\n"
+            ],
+            "exitCode": 0
+          },
+          {
+            "standardInput": "9\n",
+            "outputs": [
+              "Caso=9 Acepta=0 Ajuste=19 EsperaAcepta=0 EsperaAjuste=19 OK\nFallos=0\n"
+            ],
+            "exitCode": 0
+          },
+          {
+            "standardInput": "10\n",
+            "outputs": [
+              "Caso=10 Acepta=0 Ajuste=-4 EsperaAcepta=0 EsperaAjuste=-4 OK\nFallos=0\n"
+            ],
+            "exitCode": 0
+          },
+          {
+            "standardInput": "11\n",
+            "outputs": [
+              "Caso=11 Acepta=0 Ajuste=8 EsperaAcepta=0 EsperaAjuste=8 OK\nFallos=0\n"
+            ],
+            "exitCode": 0
+          },
+          {
+            "standardInput": "",
+            "outputs": [
+              "Caso=1 Acepta=1 Ajuste=1 EsperaAcepta=1 EsperaAjuste=1 OK\nCaso=2 Acepta=1 Ajuste=0 EsperaAcepta=1 EsperaAjuste=0 OK\nCaso=3 Acepta=1 Ajuste=-2 EsperaAcepta=1 EsperaAjuste=-2 OK\nCaso=4 Acepta=1 Ajuste=0 EsperaAcepta=1 EsperaAjuste=0 OK\nCaso=5 Acepta=1 Ajuste=40 EsperaAcepta=1 EsperaAjuste=40 OK\nCaso=6 Acepta=1 Ajuste=-40 EsperaAcepta=1 EsperaAjuste=-40 OK\nCaso=7 Acepta=0 Ajuste=77 EsperaAcepta=0 EsperaAjuste=77 OK\nCaso=8 Acepta=0 Ajuste=-8 EsperaAcepta=0 EsperaAjuste=-8 OK\nCaso=9 Acepta=0 Ajuste=19 EsperaAcepta=0 EsperaAjuste=19 OK\nCaso=10 Acepta=0 Ajuste=-4 EsperaAcepta=0 EsperaAjuste=-4 OK\nCaso=11 Acepta=0 Ajuste=8 EsperaAcepta=0 EsperaAjuste=8 OK\nFallos=0\n"
+            ],
+            "explanation": "La salida coincide con el informe esperado de once casos y Fallos=0, con retorno 0. En la referencia, la resta reparada obtiene -2 y -40 en los dos casos que antes discrepaban; los rechazos conservan sus destinos. Este acierto de salida no demuestra por sí solo que se observara primero el defecto ni que se mantuvieran intactos los archivos y las comparaciones requeridos por la consigna."
+          }
+        ],
+        "editorialIndex": 49,
+        "historySha256": "8f02d7b80976119d45f1d792215d6fca093dec2b836d3f091a48b4d190235dde",
+        "semanticBefore": [
+          {
+            "block": "block_0006_0008",
+            "path": "/outputCheck/cases/0/explanation",
+            "sourceSha256": "69417b48aa5c678995a1540aa73d64577c1ce62b775333afaca56affd70c0749",
+            "spans": [
+              {
+                "start": 59,
+                "end": 67,
+                "text": "Fallos=0",
+                "role": "output",
+                "reading": "natural"
+              },
+              {
+                "start": 81,
+                "end": 82,
+                "text": "0",
+                "role": "output",
+                "reading": "natural"
+              },
+              {
+                "start": 128,
+                "end": 130,
+                "text": "-2",
+                "role": "output",
+                "reading": "natural"
+              },
+              {
+                "start": 133,
+                "end": 136,
+                "text": "-40",
+                "role": "output",
+                "reading": "natural"
+              }
+            ]
+          }
+        ],
+        "semanticAfter": [
+          {
+            "block": "block_0006_0008",
+            "path": "/outputCheck/cases/11/explanation",
+            "sourceSha256": "69417b48aa5c678995a1540aa73d64577c1ce62b775333afaca56affd70c0749",
+            "spans": [
+              {
+                "start": 59,
+                "end": 67,
+                "text": "Fallos=0",
+                "role": "output",
+                "reading": "natural"
+              },
+              {
+                "start": 81,
+                "end": 82,
+                "text": "0",
+                "role": "output",
+                "reading": "natural"
+              },
+              {
+                "start": 128,
+                "end": 130,
+                "text": "-2",
+                "role": "output",
+                "reading": "natural"
+              },
+              {
+                "start": 133,
+                "end": 136,
+                "text": "-40",
+                "role": "output",
+                "reading": "natural"
+              }
+            ]
+          }
+        ],
+        "client": {
+          "path": "pruebas/casos.cpp",
+          "source": "#include \"control/ajuste.h\"\n#include <iostream>\n\nbool comprobar(int caso, int valor, int inferior, int superior,\n               int inicial, bool aceptacion_esperada, int ajuste_esperado) {\n    int obtenido{inicial};\n    const bool aceptado = intentar_ajuste(valor, inferior, superior, obtenido);\n    const bool coincide = aceptado == aceptacion_esperada && obtenido == ajuste_esperado;\n\n    std::cout << \"Caso=\" << caso << \" Acepta=\" << aceptado << \" Ajuste=\" << obtenido\n              << \" EsperaAcepta=\" << aceptacion_esperada\n              << \" EsperaAjuste=\" << ajuste_esperado;\n    if (coincide) { std::cout << \" OK\\n\"; }\n    else { std::cout << \" FALLO\\n\"; }\n    return coincide;\n}\n\nint main() {\n    int elegido{};\n    const bool individual = bool(std::cin >> elegido);\n    if (!individual && !std::cin.eof()) return 2;\n    if (individual && (elegido < 1 || elegido > 11)) return 2;\n    int fallos{0};\n    if ((!individual || elegido == 1) && !comprobar(1, 2, 3, 7, 77, true, 1)) { ++fallos; }\n    if ((!individual || elegido == 2) && !comprobar(2, 5, 3, 7, -8, true, 0)) { ++fallos; }\n    if ((!individual || elegido == 3) && !comprobar(3, 9, 3, 7, 19, true, -2)) { ++fallos; }\n    if ((!individual || elegido == 4) && !comprobar(4, 4, 4, 4, -4, true, 0)) { ++fallos; }\n    if ((!individual || elegido == 5) && !comprobar(5, -20, 20, 20, 8, true, 40)) { ++fallos; }\n    if ((!individual || elegido == 6) && !comprobar(6, 20, -20, -20, 17, true, -40)) { ++fallos; }\n    if ((!individual || elegido == 7) && !comprobar(7, 0, 7, 3, 77, false, 77)) { ++fallos; }\n    if ((!individual || elegido == 8) && !comprobar(8, 21, 3, 7, -8, false, -8)) { ++fallos; }\n    if ((!individual || elegido == 9) && !comprobar(9, -21, 3, 7, 19, false, 19)) { ++fallos; }\n    if ((!individual || elegido == 10) && !comprobar(10, 0, -21, 7, -4, false, -4)) { ++fallos; }\n    if ((!individual || elegido == 11) && !comprobar(11, 0, 3, 21, 8, false, 8)) { ++fallos; }\n    std::cout << \"Fallos=\" << fallos << \"\\n\";\n    return fallos == 0 ? 0 : 1;\n}\n"
         }
       }
     ]
@@ -2928,7 +3415,7 @@
       },
       {
         "block": "block_0006_0008",
-        "path": "/outputCheck/cases/0/explanation",
+        "path": "/outputCheck/cases/11/explanation",
         "sourceSha256": "69417b48aa5c678995a1540aa73d64577c1ce62b775333afaca56affd70c0749",
         "spans": [
           {
@@ -3121,5 +3608,210 @@
         "spans": []
       }
     ]
-  }
+  },
+  "compilerOpenBatteryChecks": [
+    {
+      "activity": "block_0006_0011",
+      "library": "src/ajuste.cpp",
+      "test": "pruebas/casos.cpp",
+      "function": "intentar_ajuste",
+      "comparison": "comprobar",
+      "target": "comprobar_ajustes",
+      "originalCases": [
+        {
+          "value": 2,
+          "lower": 3,
+          "upper": 7,
+          "initial": 77
+        },
+        {
+          "value": 5,
+          "lower": 3,
+          "upper": 7,
+          "initial": -8
+        },
+        {
+          "value": 9,
+          "lower": 3,
+          "upper": 7,
+          "initial": 19
+        },
+        {
+          "value": 4,
+          "lower": 4,
+          "upper": 4,
+          "initial": -4
+        },
+        {
+          "value": -20,
+          "lower": 20,
+          "upper": 20,
+          "initial": 8
+        },
+        {
+          "value": 20,
+          "lower": -20,
+          "upper": -20,
+          "initial": 17
+        },
+        {
+          "value": 0,
+          "lower": 7,
+          "upper": 3,
+          "initial": 77
+        },
+        {
+          "value": 21,
+          "lower": 3,
+          "upper": 7,
+          "initial": -8
+        },
+        {
+          "value": -21,
+          "lower": 3,
+          "upper": 7,
+          "initial": 19
+        },
+        {
+          "value": 0,
+          "lower": -21,
+          "upper": 7,
+          "initial": -4
+        },
+        {
+          "value": 0,
+          "lower": 3,
+          "upper": 21,
+          "initial": 8
+        }
+      ]
+    },
+    {
+      "activity": "block_0002_0003",
+      "kind": "cmake-adjustment-project-v1",
+      "libraryPath": "src/ajuste.cpp",
+      "headerPath": "publico/control/ajuste.h",
+      "header": "control/ajuste.h",
+      "function": "intentar_ajuste",
+      "libraryTarget": "ajustes",
+      "clientPath": "app/consulta.cpp",
+      "clientTarget": "consultar_ajustes",
+      "testPath": "pruebas/casos.cpp",
+      "target": "comprobar_ajustes"
+    }
+  ],
+  "compilerCmakeGraphChecks": [
+    {
+      "activity": "block_0002_0003",
+      "minimumCmakeVersion": "3.20",
+      "minimumCmakeVersionAtLeast": true,
+      "targets": [
+        {
+          "name": "ajustes",
+          "type": "STATIC_LIBRARY",
+          "sources": [
+            "src/ajuste.cpp"
+          ],
+          "exactSources": true,
+          "explicitCxx20": true,
+          "explicitCxxExtensionsOff": true,
+          "requireExplicitMsvcWarnings": true,
+          "publicIncludeRoots": [
+            "publico"
+          ]
+        },
+        {
+          "name": "consultar_ajustes",
+          "type": "EXECUTABLE",
+          "sources": [
+            "app/consulta.cpp"
+          ],
+          "exactSources": true,
+          "explicitCxx20": true,
+          "explicitCxxExtensionsOff": true,
+          "requireExplicitMsvcWarnings": true,
+          "linksTo": [
+            "ajustes"
+          ]
+        },
+        {
+          "name": "comprobar_ajustes",
+          "type": "EXECUTABLE",
+          "sources": [
+            "pruebas/casos.cpp"
+          ],
+          "exactSources": true,
+          "explicitCxx20": true,
+          "explicitCxxExtensionsOff": true,
+          "requireExplicitMsvcWarnings": true,
+          "linksTo": [
+            "ajustes"
+          ]
+        }
+      ]
+    },
+    {
+      "activity": "block_0006_0008",
+      "sourceIntegrity": {
+        "preserveNonCmake": true,
+        "replaceExpression": {
+          "path": "src/ajuste.cpp",
+          "original": "valor - superior"
+        }
+      },
+      "targets": [
+        {
+          "name": "comprobar_ajustes",
+          "type": "EXECUTABLE",
+          "sources": [
+            "pruebas/casos.cpp"
+          ],
+          "linksTo": [
+            "ajustes"
+          ],
+          "exactSources": true,
+          "explicitCxx20": true,
+          "explicitCxxExtensionsOff": true,
+          "requireExplicitMsvcWarnings": true
+        },
+        {
+          "name": "ajustes",
+          "type": "STATIC_LIBRARY",
+          "sources": [
+            "src/ajuste.cpp"
+          ],
+          "exactSources": true,
+          "explicitCxx20": true,
+          "explicitCxxExtensionsOff": true,
+          "publicIncludeRoots": [
+            "publico"
+          ],
+          "requireExplicitMsvcWarnings": true
+        },
+        {
+          "name": "consultar_ajustes",
+          "type": "EXECUTABLE",
+          "sources": [
+            "app/consulta.cpp"
+          ],
+          "exactSources": true,
+          "linksTo": [
+            "ajustes"
+          ],
+          "explicitCxx20": true,
+          "explicitCxxExtensionsOff": true,
+          "requireExplicitMsvcWarnings": true
+        }
+      ],
+      "initialObservation": {
+        "executable": "comprobar_ajustes",
+        "input": "",
+        "output": "Caso=1 Acepta=1 Ajuste=1 EsperaAcepta=1 EsperaAjuste=1 OK\nCaso=2 Acepta=1 Ajuste=0 EsperaAcepta=1 EsperaAjuste=0 OK\nCaso=3 Acepta=1 Ajuste=2 EsperaAcepta=1 EsperaAjuste=-2 FALLO\nCaso=4 Acepta=1 Ajuste=0 EsperaAcepta=1 EsperaAjuste=0 OK\nCaso=5 Acepta=1 Ajuste=40 EsperaAcepta=1 EsperaAjuste=40 OK\nCaso=6 Acepta=1 Ajuste=40 EsperaAcepta=1 EsperaAjuste=-40 FALLO\nCaso=7 Acepta=0 Ajuste=77 EsperaAcepta=0 EsperaAjuste=77 OK\nCaso=8 Acepta=0 Ajuste=-8 EsperaAcepta=0 EsperaAjuste=-8 OK\nCaso=9 Acepta=0 Ajuste=19 EsperaAcepta=0 EsperaAjuste=19 OK\nCaso=10 Acepta=0 Ajuste=-4 EsperaAcepta=0 EsperaAjuste=-4 OK\nCaso=11 Acepta=0 Ajuste=8 EsperaAcepta=0 EsperaAjuste=8 OK\nFallos=2\n",
+        "exitCode": 1
+      },
+      "project": "AjustesConEvidencia",
+      "minimumCmakeVersion": "3.20",
+      "minimumCmakeVersionAtLeast": true
+    }
+  ]
 }
