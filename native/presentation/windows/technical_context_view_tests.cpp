@@ -1042,13 +1042,71 @@ void verify_split_u2_trace(View& fixture,std::size_t page){
     }
 }
 
+// The selected U2L3 edition now requires independent int variations on
+// both copy-timing editors. Only this isolated visual fixture may seed model
+// receipts; it must not fabricate a compiler run or bypass the current gate.
+// Bind the receipt to the exact, published reference source for each editor.
+void prepare_u2l3_visual_compiler_receipts(state::StateData& data,
+        const curriculum::Lesson& lesson){
+    const std::array<std::pair<std::string_view,std::string_view>,2> owners{{
+        {"block_0006_0002","block_0007_0001"},
+        {"block_0006_0006",lesson.course_edition?
+            "block_0008_0005":"p1u2l3_copia_tardia_referencia"}
+    }};
+    for(const auto& [owner_id,reference_id]:owners){
+        const auto at=curriculum::stable_block_position(lesson,owner_id);
+        const auto source_at=curriculum::stable_block_position(lesson,reference_id);
+        check(at&&source_at,"U2L3 visual fixture lost its real editor/reference owner: "+
+            lesson.id+"/"+std::string(owner_id)+"/"+std::string(reference_id));
+        const auto& owner=lesson.pages.at(at->page).blocks.at(at->block);
+        const auto& source=lesson.pages.at(source_at->page).blocks.at(source_at->block);
+        check(owner.type==curriculum::BlockType::cpp_compiler&&owner.output_check&&
+            !owner.output_check->cases.empty()&&source.type==curriculum::BlockType::code&&
+            !source.code.empty()&&(!lesson.course_edition||owner.local_int_check),
+            "U2L3 visual fixture lost the published independent copy objective");
+        const auto& goal=owner.output_check->cases.front();
+        check(!goal.outputs.empty(),"U2L3 visual fixture has no public output oracle");
+        windows::CppRunRequest request;
+        request.revision=1;
+        request.source_utf8=source.code;
+        request.stdin_utf8=goal.standard_input;
+        request.local_int_check=owner.local_int_check;
+        curriculum::FreshExecution observation{1,true,true,goal.exit_code,
+            goal.standard_input,goal.outputs.front()};
+        observation.executable=goal.executable;
+        if(owner.local_int_check){
+            const auto unchanged=data;
+            check(!windows::record_compiler_puzzle_case(data,lesson,owner,request,
+                    observation,"Unverified visual QA stdout")&&data==unchanged,
+                "U2L3 accepted stdout without its required int-variation proof");
+            observation.local_int_check_correct=true;
+            observation.local_int_request_fingerprint=
+                windows::cpp_local_int_request_fingerprint(request);
+            check(!observation.local_int_request_fingerprint.empty(),
+                "U2L3 published reference lacks a valid int-variation request binding");
+            auto foreign=observation;
+            foreign.local_int_request_fingerprint="foreign-visual-qa-source";
+            check(!windows::record_compiler_puzzle_case(data,lesson,owner,request,
+                    foreign,"Foreign visual QA proof")&&data==unchanged,
+                "U2L3 credited a proof from another source");
+        }
+        check(windows::record_compiler_puzzle_case(data,lesson,owner,request,
+                observation,"Synthetic U2L3 formatting-only model receipt; not execution")&&
+                windows::compiler_puzzle_completed(data,lesson,owner),
+            "The isolated U2L3 formatting fixture could not reach its current compiler gate");
+    }
+}
+
 void u2_roles_at(const std::filesystem::path& source){
     const auto lesson=windows::load_lesson(source);
     const auto hash=state::sha256(state::read_bytes(source));
     const auto block_at=[&](std::string_view id,std::size_t page){const auto at=curriculum::stable_block_position(lesson,id);
         check(at&&at->page==page,"A registered U2 stable identity moved to another page");return at->block;};
     for(const auto page:{3u,5u,6u,8u}){View fixture(lesson,page,true,
-            [&,page](state::StateData& data){prepare_u2_visual_prefix(data,lesson,page);});
+            [&,page](state::StateData& data){
+                if(page>=6)prepare_u2l3_visual_compiler_receipts(data,lesson);
+                prepare_u2_visual_prefix(data,lesson,page);
+            },false);
         check(lesson_page_state(fixture.view).index==page,
             "U2 color QA opened a different curricular page");
         check(flush_lesson_view(fixture.view),"Cannot snapshot actual color QA");const auto initial=read_lesson_state(fixture.view);

@@ -15,6 +15,9 @@ on:
       - native/core/code_format_compat.hpp
       - scripts/curriculum/stable_state_layout.py
       - scripts/curriculum/test_named_rule_checks.py
+      - scripts/curriculum/published_adoption_fixtures.py
+      - scripts/curriculum/published_adoption_pins.json
+      - scripts/curriculum/compiler_case_revision_fixture_source.py
       - scripts/curriculum/code_format_compat.py
       - scripts/curriculum/text_semantics.py
       - scripts/curriculum/image_resources.py
@@ -29,15 +32,16 @@ permissions:
 jobs:
   named-rule-contracts:
     runs-on: windows-2022
-    timeout-minutes: 6
+    timeout-minutes: 10
     env:
       GIT_CONFIG_COUNT: '1'
       GIT_CONFIG_KEY_0: core.longpaths
       GIT_CONFIG_VALUE_0: 'true'
     steps:
-      - name: Fetch exact Codex revision
+      - name: Fetch exact Codex revision and named-rule publication history
         uses: actions/checkout@v4
         with:
+          fetch-depth: 0
           persist-credentials: false
       - name: Set up Python 3.12 for Windows contract checks
         uses: actions/setup-python@v5

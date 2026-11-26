@@ -4,6 +4,7 @@ on:
   push:
     branches: [Codex]
     paths:
+      - scripts/curriculum/published_adoption_fixtures.py
       - native/core/cpp_expression_repair.hpp
       - native/core/cpp_expression_repair_tests.cpp
       - native/core/cmake_graph_check.hpp
@@ -34,6 +35,7 @@ jobs:
       - name: Read the exact revision
         uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262
         with:
+          fetch-depth: 0
           persist-credentials: false
       - name: Select Python for native Windows QA
         uses: actions/setup-python@v5

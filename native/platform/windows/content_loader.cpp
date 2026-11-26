@@ -6658,9 +6658,13 @@ void read_compiler_named_rule_checks(const JsonObject& root,Lesson& lesson) {
                 "Every named function needs independent, unambiguous executable cases");
             if(declaration.HasKey(L"batteryCheck")) {
                 const auto& first=owner->output_check->cases.front();
-                require(owner->standard_input.value_or("").empty()&&
-                        first.standard_input.empty(),
-                    "Named-rule batteries require empty initial and first-case standard input");
+                // Single-file editors may present one independent trial.
+                // Their private checker still runs the complete battery with
+                // empty stdin. CMake batteries retain the original policy.
+                const auto initial=owner->standard_input.value_or("");
+                require((single_file&&(initial.empty()||initial==first.standard_input))||
+                        (!single_file&&initial.empty()&&first.standard_input.empty()),
+                    "Named-rule batteries require compatible initial and first-case standard input");
                 require(first.exit_code==0&&(!first.executable||
                         (owner->cmake&&*first.executable==owner->cmake->target)),
                     "Named-rule batteries require public success from the original executable target");

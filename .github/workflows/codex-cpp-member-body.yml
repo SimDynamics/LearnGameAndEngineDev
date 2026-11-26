@@ -4,6 +4,7 @@ on:
   push:
     branches: [Codex]
     paths:
+      - scripts/curriculum/published_adoption_fixtures.py
       - native/core/cpp_member_body_check.hpp
       - native/core/cpp_member_body_check_tests.cpp
       - native/core/cpp_indexed_unique_transfer_probe.hpp
@@ -27,6 +28,7 @@ jobs:
     steps:
       - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262
         with:
+          fetch-depth: 0
           persist-credentials: false
       - uses: actions/setup-python@v5
         with:

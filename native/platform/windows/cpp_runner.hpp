@@ -281,9 +281,17 @@ struct CppNamedRuleConstantVariationProbe {
     // regenerated from the authenticated original request before capture.
     CppNamedRuleProbe proof;
 };
+struct CppNamedRuleBatteryBaseline {
+    std::string request_fingerprint, source_sha256;
+    CppPhaseResult compilation, execution;
+};
 struct CppNamedRuleBatteryEvidence {
     std::string original_program_fingerprint;
     std::vector<curriculum::NamedRuleBatteryRun> runs;
+    // For a single-file public trial with prepared stdin, independently run
+    // the unchanged submitted program with empty stdin before mutating it.
+    // Legacy empty-input batteries still compare directly to the public run.
+    std::optional<CppNamedRuleBatteryBaseline> aggregate_baseline;
 };
 struct CppOpenBatteryEvidence {
     std::string original_project_fingerprint;

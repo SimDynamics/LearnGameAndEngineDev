@@ -8,6 +8,9 @@ import unittest
 from unittest.mock import patch
 
 import stable_state_layout as state
+from published_adoption_fixtures import before_adoption, assert_live_owner_addresses
+import compiler_case_revision_fixture_source as case_fixtures
+import re
 
 ROOT = Path(__file__).resolve().parents[2]
 LESSON = ROOT / (
@@ -21,11 +24,12 @@ def original() -> dict:
 
 
 def historical_fixture(current: dict) -> dict:
-    """Validate published authoring before deriving the pre-declaration QA model."""
+    """Validate live authoring, then read the complete authentic predecessor."""
     state.validate(current)
-    before = deepcopy(current)
-    before.pop("compilerNamedRuleChecks", None)
+    before = before_adoption(LESSON, epoch="named-rules-before")
     state.validate(before)
+    if "compilerNamedRuleChecks" in before or before["id"] != current["id"]:
+        raise ValueError("The pinned named-rule predecessor has the wrong owner or epoch")
     return before
 
 
@@ -68,6 +72,111 @@ def declaration() -> list[dict]:
             {"function": "alcanza_minimo", "value": 5,
              "purposeWords": ["minimo", "cantidad", "umbral"], "minUses": 1}]},
     ]
+
+
+class PublishedNamedRuleAdoptionTest(unittest.TestCase):
+    def test_real_root_adoption_and_subsequent_format_publications(self):
+        before = before_adoption(LESSON, epoch="named-rules-before")
+        adopted = before_adoption(LESSON, epoch="named-rules-adopted")
+        formatted = before_adoption(LESSON)
+        self.assertNotIn("compilerNamedRuleChecks", before)
+        state.validate_transition(before, adopted)
+        state.validate_transition(adopted, formatted)
+        self.assertEqual(state._blocks(before), state._blocks(adopted))
+        self.assertEqual(adopted["compilerNamedRuleChecks"],
+                         formatted["compilerNamedRuleChecks"])
+        owners = ("block_0002_0004", "block_0005_0006", "block_0006_0009",
+                  "block_0007_0004", "block_0008_0007")
+        live = assert_live_owner_addresses(self, LESSON, owners)
+        self.assertEqual(live["compilerNamedRuleChecks"],
+                         formatted["compilerNamedRuleChecks"])
+
+    def test_separated_named_rules_and_deadline_use_the_published_format_epoch(self):
+        # A prospective QA publication, not Work's inaccessible local
+        # candidate. Preserve the full aggregate on EOF and every oracle.
+        live_bytes = LESSON.read_bytes()
+        before = before_adoption(LESSON)
+        current = before
+        owners = ("block_0007_0004", "block_0008_0007", "block_0006_0009")
+        expected_first = ("4\n", "5\n", "1 5\n")
+        for identity, first in zip(owners, expected_first):
+            old = state._blocks(current)[identity]
+            original_case = old["outputCheck"]["cases"][0]
+            lines = original_case["outputs"][0].splitlines(keepends=True)
+            self.assertEqual(lines[-1], "Bateria: OK\n")
+            is_project = "projectFiles" in old
+            path = "pruebas/cajas_casos.cpp" if is_project else "main.cpp"
+            driver = state._compiler_client_source(old, path)
+            self.assertEqual(driver.count("int main() {"), 1)
+            branches, cases = [], []
+            for line in lines[:-1]:
+                if is_project:
+                    match = re.fullmatch(
+                        r"(piezas|dias)=(-?\d+) esperado=(-?\d+) obtenido=(-?\d+) OK\n", line)
+                    self.assertIsNotNone(match)
+                    kind, value, expected, actual = match.groups()
+                    self.assertEqual(expected, actual)
+                    group = 0 if kind == "piezas" else 1
+                    function = "comprobar" if group == 0 else "comprobar_plazo"
+                    argument = expected if group == 0 else ("true" if expected == "1" else "false")
+                    condition = f"tipo == {group} && entrada == {value}"
+                    invocation = f"{function}({value}, {argument})"
+                    stdin = f"{group} {value}\n"
+                else:
+                    match = re.fullmatch(
+                        r"articulos=(-?\d+) total=(-?\d+) esperado=(-?\d+) "
+                        r"minimo=([01]) esperado_minimo=([01]) OK\n", line)
+                    self.assertIsNotNone(match)
+                    value, total, expected, minimum, expected_minimum = match.groups()
+                    self.assertEqual((total, minimum), (expected, expected_minimum))
+                    condition = f"entrada == {value}"
+                    invocation = f"comprobar({value}, {expected}, " + (
+                        "true)" if minimum == "1" else "false)")
+                    stdin = value + "\n"
+                branches.append((condition, invocation))
+                case = {"standardInput": stdin, "outputs": [line + lines[-1]]}
+                if "exitCode" in original_case:
+                    case["exitCode"] = original_case["exitCode"]
+                cases.append(case)
+            self.assertEqual(len(cases), 11 if is_project else 5)
+            first_index = next(i for i, case in enumerate(cases) if case["standardInput"] == first)
+            cases.insert(0, cases.pop(first_index))
+            cases.append(deepcopy(original_case))
+            branch = "int main() {\n    int entrada{};\n"
+            if is_project:
+                branch += "    int tipo{};\n    if (std::cin >> tipo >> entrada) {\n"
+            else:
+                branch += "    if (std::cin >> entrada) {\n"
+            branch += "        bool correcto{};\n"
+            for index, (condition, invocation) in enumerate(branches):
+                branch += "        " + ("if" if index == 0 else "else if")
+                branch += f" ({condition}) correcto = {invocation};\n"
+            branch += ('        else return 2;\n'
+                       '        if (!correcto) { std::cout << "Bateria: FALLO\\n"; return 1; }\n'
+                       '        std::cout << "Bateria: OK\\n";\n        return 0;\n    }\n')
+            current = state.revise_compiler_client_cases(
+                current, identity, {"path": path, "source": driver.replace("int main() {", branch, 1)},
+                cases, case_semantics=case_fixtures.authored_fields(current, identity, cases))
+            self.assertEqual(state._blocks(current)[identity]["outputCheck"]["cases"][0]["standardInput"],
+                             first)
+            self.assertEqual(current["compilerNamedRuleChecks"], before["compilerNamedRuleChecks"])
+            self.assertEqual(current["stateLayout"]["sourceFormatRevisions"],
+                             before["stateLayout"]["sourceFormatRevisions"])
+        state.validate_transition(before, current)
+        self.assertEqual(state.validate(before), state.validate(current))
+        aligned = state.align_for_previous_validation(before, current)
+        self.assertEqual(state._blocks(aligned), state._blocks(before))
+        for identity in owners:
+            record = next(item for item in current["stateLayout"]["compilerCaseRevisions"]
+                          if item["id"] == identity)
+            self.assertEqual(record["block"], state._blocks(before)[identity])
+        forged = deepcopy(current)
+        probe = next(item["executionProbe"] for item in forged["compilerNamedRuleChecks"]
+                     if item["activity"] == "block_0008_0007")
+        probe["batteryCheck"]["cases"].pop()
+        with self.assertRaises(state.LayoutError):
+            state.validate_transition(before, forged)
+        self.assertEqual(LESSON.read_bytes(), live_bytes)
 
 
 class NamedRuleAuthoringTest(unittest.TestCase):
@@ -378,7 +487,7 @@ class NamedRuleBatteryAuthoringTest(unittest.TestCase):
             with self.subTest(code=code):
                 state.validate(changed)
 
-    def test_battery_requires_empty_initial_and_first_case_input(self):
+    def test_battery_input_modes_preserve_the_complete_private_battery(self):
         for page, block in ((5, 6), (7, 4), (8, 7)):
             for initial in (True, False):
                 changed = deepcopy(self.after)
@@ -387,10 +496,16 @@ class NamedRuleBatteryAuthoringTest(unittest.TestCase):
                     owner["initialStandardInput"] = "start"
                 else:
                     owner["outputCheck"]["cases"][0]["standardInput"] = "start"
-                # Exercise this admission guard directly; an immutable-block
-                # rejection must not mask an incompatible battery declaration.
-                with self.subTest(page=page, initial=initial), self.assertRaises(state.LayoutError):
-                    state._validate_compiler_named_rule_checks(changed)
+                # Existing CMake batteries and unrelated initial inputs
+                # still reject. Single-file public trials may use stdin.
+                with self.subTest(page=page, initial=initial):
+                    if page != 5 and not initial:
+                        state._validate_compiler_named_rule_checks(changed)
+                        owner["initialStandardInput"] = "start"
+                        state._validate_compiler_named_rule_checks(changed)
+                        owner["initialStandardInput"] = "unrelated"
+                    with self.assertRaises(state.LayoutError):
+                        state._validate_compiler_named_rule_checks(changed)
                 changed["compilerNamedRuleChecks"] = declaration()
                 state._validate_compiler_named_rule_checks(changed)
         optional = deepcopy(self.after)

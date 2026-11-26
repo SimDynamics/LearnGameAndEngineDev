@@ -15,6 +15,10 @@ on:
       - scripts/curriculum/stable_state_layout.py
       - scripts/curriculum/code_format_compat.py
       - scripts/curriculum/test_code_format_compat.py
+      - scripts/curriculum/test_nested_cmake_format.py
+      - scripts/curriculum/nested_cmake_format_fixture_source.py
+      - scripts/curriculum/published_adoption_fixtures.py
+      - scripts/curriculum/published_adoption_pins.json
       - scripts/curriculum/test_general_choice_editorial.py
       - scripts/curriculum/test_p2_math_prompt_general_revision.py
       - scripts/curriculum/test_published_u12_question_editorials.py
@@ -70,6 +74,9 @@ jobs:
       - name: Probar formato físico C++ y CMake sin alterar el progreso histórico
         run: |
           python -B -m unittest -v test_code_format_compat
+      - name: Componer revisiones independientes de casos U3L2 con su formato histórico CMake
+        run: |
+          python -B -m unittest -v test_nested_cmake_format.NestedCmakeFormat.test_u3l2_two_case_revisions_preserve_other_nested_cmake_formats
       - name: Verificar revisión genérica de opciones y conservación de respuestas
         run: |
           python -B -m unittest -v test_general_choice_editorial

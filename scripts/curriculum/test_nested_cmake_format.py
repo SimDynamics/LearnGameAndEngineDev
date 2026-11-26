@@ -18,6 +18,10 @@ import code_format_compat as source_format
 from format_batch_history import active_owners, assert_stable_storage
 import nested_cmake_format_fixture_source as fixtures
 import stable_state_layout as state
+import validar_json_programacion as contract
+import compiler_case_revision_fixture_source as case_fixtures
+import selective_recovery_fixture_source as history_fixtures
+from published_adoption_fixtures import before_adoption
 
 
 class NestedCmakeFormat(unittest.TestCase):
@@ -142,6 +146,89 @@ class NestedCmakeFormat(unittest.TestCase):
         recovery = next(case for case in fixtures.CASES
                         if case["lesson"].startswith("reorganizar_") and case["activity"] == "block_0010_0003")
         self.assertEqual(recovery["executionEdits"], [])
+
+    def test_u3l2_two_case_revisions_preserve_other_nested_cmake_formats(self):
+        relative = ("app/src/main/assets/content/es/programming/programming_practice_tools/"
+                    "comprobaciones_repetibles/lesson_reorganizar_la_descripcion_conservando_el_comprobador.json")
+        before = before_adoption(Path(__file__).resolve().parents[2] / relative)
+        current = before
+        owners = ("block_0004_0012", "block_0010_0003")
+        path = "pruebas/cajas_casos.cpp"
+        # Exercise the actual formatted Work predecessor, not an older source
+        # archive. These QA trials are independent of Work's local candidates.
+        for identity in owners:
+            block = state._blocks(current)[identity]
+            old = block["outputCheck"]["cases"][0]
+            if identity == history_fixtures.OWNER:
+                # The workflow contract permits precisely the seven
+                # independent oracles, with case 1 first. Its original
+                # aggregate is in the journal, not an eighth public case.
+                current = history_fixtures.selective_history_revised(current)
+                self.assertEqual(state._compiler_selective_recovery_case_mode(
+                    state._blocks(current)[identity]), "individual")
+            else:
+                driver = next(f["initialCode"] for f in block["projectFiles"]
+                              if f["path"] == path)
+                marker = "\nint main() {"
+                self.assertEqual(driver.count(marker), 1)
+                # The two published editors use the same complete checker
+                # main and comparison function. Keep the actual source
+                # prefix of this owner, not the History owner's prefix.
+                history_driver = history_fixtures.selective_history_client(current)
+                main = history_driver[history_driver.index(marker):]
+                cases = history_fixtures.selective_history_cases()
+                for case in cases:
+                    case["explanation"] = ("La salida esperada es " +
+                                           case["outputs"][0].rstrip("\n") + ".")
+                current = state.revise_compiler_client_cases(
+                    current, identity,
+                    {"path": path, "source": driver[:driver.index(marker)] + main},
+                    cases, case_semantics=case_fixtures.authored_fields(current, identity, cases))
+            record = current["stateLayout"]["compilerCaseRevisions"][-1]
+            self.assertEqual(record["id"], identity)
+            self.assertEqual(record["block"]["outputCheck"]["cases"], [old])
+            cases = state._blocks(current)[identity]["outputCheck"]["cases"]
+            self.assertEqual(len(cases), 7)
+            self.assertEqual(cases[0]["standardInput"], "1\n")
+            self.assertEqual({c["standardInput"] for c in cases},
+                             {str(value) + "\n" for value, _ in history_fixtures.PAIRS})
+        state.validate_transition(before, current)
+        aligned = state.align_for_previous_validation(before, current)
+        self.assertEqual(state._blocks(aligned), state._blocks(before))
+        self.assertEqual(before["stateLayout"]["sourceFormatRevisions"],
+                         current["stateLayout"]["sourceFormatRevisions"])
+        self.assertEqual(before["compilerWorkflowChecks"], current["compilerWorkflowChecks"])
+        # Independently reflow the third owner, using a valid source-only
+        # publication. Its per-block historical protection must remain valid
+        # even when the other two owners have their new case/client histories.
+        identity = "block_0006_0003"
+        proposal = deepcopy(current)
+        old = state._blocks(before)[identity]
+        project = state._blocks(proposal)[identity]["projectFiles"]
+        file = next(f for f in project if f["path"] == "componente/CMakeLists.txt")
+        file["initialCode"] = "\n" + file["initialCode"]
+        # Both translated blobs are unchanged from the already authenticated
+        # nested-CMake fixture publication. Supply the complete language
+        # family, never waive the family guard for a test-only format edit.
+        name = "reorganizar_la_descripcion_conservando_el_comprobador"
+        family = {"es": current}
+        for locale in ("en", "fr"):
+            family[locale] = json.loads(fixtures.historical_bytes(name, locale))
+        state.check_localized_family(list(family.values()), list(family))
+        revised = state.prepare_v2(proposal, "es", family, current)
+        state.validate_transition(before, revised)
+        view = state.align_for_previous_validation(before, revised)
+        new = state._blocks(view)[identity]
+        self.assertTrue(contract.preserves_source_format_revision(
+            relative, 6, 3, old, new, previous_document=before,
+            current_document=revised, course_id="programming_practice_tools"))
+        forged = deepcopy(new)
+        forged["projectFiles"][1]["initialCode"] += "# not the published projection\n"
+        self.assertFalse(contract.preserves_source_format_revision(
+            relative, 6, 3, old, forged, previous_document=before,
+            current_document=revised, course_id="programming_practice_tools"))
+        for changed in owners:
+            self.assertEqual(state._blocks(view)[changed], state._blocks(before)[changed])
 
     def test_negative_final_payloads_are_authenticated_before_rejection(self):
         expected = {

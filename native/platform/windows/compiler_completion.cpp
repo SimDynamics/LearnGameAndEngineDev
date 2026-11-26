@@ -1063,8 +1063,16 @@ bool compiler_runtime_request_allowed(const curriculum::Block& block,const CppRu
             return reject("La comprobación no corresponde a las reglas de este ejercicio. Vuelve a ejecutar el programa actual.");
         if(named.execution_probe&&named.execution_probe->battery_check) {
             const auto& battery=*named.execution_probe->battery_check;
+            const bool separated_input=!request.stdin_utf8.empty()&&
+                named.path.empty()&&block.project_files.empty()&&block.output_check&&
+                !block.output_check->cases.empty()&&
+                !block.output_check->cases.front().standard_input.empty()&&
+                std::ranges::any_of(block.output_check->cases,[&](const auto& one) {
+                    return one.standard_input==request.stdin_utf8;
+                });
             if(!curriculum::named_rule_battery_spec_valid(battery)||
-               battery.source_path!=named.path||!request.stdin_utf8.empty()||
+               battery.source_path!=named.path||
+               (!request.stdin_utf8.empty()&&!separated_input)||
                request.backend!=CppRunRequest::Backend::native_msvc||
                request.open_battery_probe||request.boolean_battery_probe||
                request.reduction_probe||request.integer_battery_probe||

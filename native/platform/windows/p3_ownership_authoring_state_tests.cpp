@@ -6,6 +6,7 @@
 #include "platform/windows/compiler_completion.hpp"
 #include "platform/windows/state_store.hpp"
 #include "native_build_config.hpp"
+#include "platform/windows/published_adoption_test_source.hpp"
 #include <winrt/Windows.Data.Json.h>
 #include <winrt/Windows.Foundation.Collections.h>
 #include <array>
@@ -126,27 +127,41 @@ int main() try {
             "P3 declaration does not match its authentic fixed lesson address");
         const auto file=root/path;
         const auto original_bytes=read(file);
-        const auto before=load_lesson(file);
+        const auto live=load_lesson(file);
+        const auto before=parse_lesson_json(
+            qa::published_adoption_source(root,path),"es");
         const auto& old=owner(before,identity);
         require(before.state_layout.version==2&&
                 old.type==BlockType::cpp_compiler&&old.output_check&&
-                !old.output_check->cases.empty(),
-            "P3 declaration lacks an authentic original compiler owner");
-        auto authored=JsonObject::Parse(winrt::to_hstring(before.raw_json));
-        if(authored.HasKey(winrt::to_hstring(field))) {
-            const auto present=authored.GetNamedArray(winrt::to_hstring(field));
-            require(present.Size()==1&&
-                    present.GetObjectAt(0).Stringify()==spec.Stringify(),
-                "The Work-published P3 objective differs from the reviewed contract");
-        }
+                !old.output_check->cases.empty()&&!bound(old,field),
+            "P3 declaration lacks an authentic pre-adoption compiler owner");
+        // Derive the reviewed objective from its real historical publication.
+        // Exercise the live owner without replacing a published declaration.
+        const auto key=winrt::to_hstring(field);
+        auto expected_document=JsonObject::Parse(winrt::to_hstring(before.raw_json));
+        require(!expected_document.HasKey(key),"Pinned P3 source is not pre-adoption");
         JsonArray checks;checks.Append(spec);
-        authored.Insert(winrt::to_hstring(field),checks);
-        const auto overlay=winrt::to_string(authored.Stringify());
+        expected_document.Insert(key,checks);
+        const auto expected=parse_lesson_json(
+            winrt::to_string(expected_document.Stringify()),"es");
+        auto authored=JsonObject::Parse(winrt::to_hstring(live.raw_json));
+        const bool adopted=authored.HasKey(key);
+        if(adopted) {
+            require(authored.GetNamedArray(key).Size()==1,
+                "The Work-published P3 declaration changed its owner count");
+        } else {
+            authored.Insert(key,checks);
+        }
+        const auto overlay=adopted?live.raw_json:winrt::to_string(authored.Stringify());
         const auto after=parse_lesson_json(overlay,"es");
         const auto metadata=parse_lesson_progress_metadata(overlay,"es");
         const auto& current=owner(after,identity);
         const auto& compact=owner(metadata,identity);
         require(bound(current,field)&&bound(compact,field)&&
+                reference_objective_frame(after,current)==
+                    reference_objective_frame(expected,owner(expected,identity))&&
+                reference_objective_frame(after,current)==
+                    reference_objective_frame(metadata,compact)&&
                 before.id==after.id&&before.id==metadata.id&&
                 before.state_layout.signatures==after.state_layout.signatures&&
                 before.state_layout.signatures==metadata.state_layout.signatures&&

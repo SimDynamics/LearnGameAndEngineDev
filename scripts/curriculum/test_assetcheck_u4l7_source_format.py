@@ -21,6 +21,7 @@ import unittest
 
 import code_format_compat as source_format
 import stable_state_layout as state
+import compiler_case_revision_fixture_source as case_fixtures
 
 
 ROOT = Path(__file__).resolve().parents[2]
@@ -112,7 +113,12 @@ class SourceFormatU4L7(unittest.TestCase):
                 self.assertEqual(archives[owner], before[owner])
                 self.assertTrue(source_format.require_source_format(before[owner], published[owner]))
                 source_format.require_source_lexical(before[owner], current[owner])
-                protected = source_format.source_projection(current[owner], before[owner])
+                # Format and case publications are independent. Validate
+                # the active document first, then restore only its authentic
+                # case epoch before comparing the historical code contract.
+                historical = state._compiler_case_order_projection(
+                    document, owner, current[owner])
+                protected = source_format.source_projection(historical, before[owner])
                 self.assertEqual(state.state_fingerprint(protected), state.state_fingerprint(before[owner]))
                 edge = {"id": owner,
                         "beforeSha256": state.fingerprint(before[owner]),
@@ -174,25 +180,75 @@ class SourceFormatU4L7(unittest.TestCase):
         for field in ("origin", "family"):
             self.assertEqual(self.formatted["stateLayout"][field], self.doc["stateLayout"][field])
 
-    def test_first_case_and_three_optional_cases_have_exact_separate_guides(self):
+    def assert_historical_guides(self, document):
         before, _ = self.owners(self.before)
-        current, _ = self.owners(self.doc)
+        published, _ = self.owners(document)
+        original = before[COMPILER]["outputCheck"]["cases"]
+        self.assertEqual(len(original), 4)
+        self.assertEqual(published[COMPILER]["outputCheck"]["cases"], original)
+        for index, case in enumerate(original, 1):
+            for name, expected in (("entrada", case["standardInput"]),
+                                   ("salida", case["outputs"][0])):
+                block = published[f"u4l7_est_{name}_{index}"]
+                self.assertEqual((block["type"], block["language"]), ("code", "text"))
+                self.assertEqual(block["code"], expected)
+
+    def assert_active_cases(self, document):
+        state.validate(document)
+        before, _ = self.owners(self.before)
+        current, _ = self.owners(document)
         original = before[COMPILER]["outputCheck"]["cases"]
         cases = current[COMPILER]["outputCheck"]["cases"]
-        self.assertEqual(len(original), 4)
-        self.assertEqual(len(cases), len(original))
-        # The engine uses the first declared case for completion. Preserve that
-        # actual case and the remaining three in their original order; prose is
-        # free to explain their purpose in separate authored blocks.
-        for index, (previous, case) in enumerate(zip(original, cases), 1):
-            with self.subTest(case=index):
-                self.assertEqual(case["standardInput"], previous["standardInput"])
-                self.assertEqual(case["outputs"], previous["outputs"])
-                for name, expected in (("entrada", case["standardInput"]),
-                                       ("salida", case["outputs"][0])):
-                    block = current[f"u4l7_est_{name}_{index}"]
-                    self.assertEqual((block["type"], block["language"]), ("code", "text"))
-                    self.assertEqual(block["code"], expected)
+        records = [item for item in document["stateLayout"].get("compilerCaseRevisions", [])
+                   if item["id"] == COMPILER]
+        if not records:
+            self.assert_historical_guides(document)
+            return
+        # The old four cases are authentic archived data, not a limit on the
+        # active case list. Two of them already contain one collection each.
+        historical = state._compiler_case_order_projection(
+            document, COMPILER, current[COMPILER])
+        self.assertEqual(historical["outputCheck"]["cases"], original)
+        self.assertEqual(records[0]["block"]["outputCheck"]["cases"], original)
+        expected = case_fixtures.individual_cases("u4l7", self.before)
+        self.assertEqual(len(cases), 8)
+        self.assertEqual(len({case["standardInput"] for case in cases}), 8)
+        # The discriminating nonempty collection MUST be first. The order
+        # of the remaining independent optional trials is not a grading goal.
+        def oracle(case):
+            return (case["standardInput"], tuple(case["outputs"]),
+                    case.get("exitCode", 0), case.get("standardErrorExact", ""))
+        self.assertEqual(oracle(cases[0]), oracle(expected[0]))
+        self.assertCountEqual([oracle(case) for case in cases],
+                              [oracle(case) for case in expected])
+        for case in original:
+            self.assertEqual(sum(oracle(candidate) == oracle(case)
+                                 for candidate in cases), 1)
+
+    def test_active_cases_and_historical_guides_remain_independent(self):
+        self.assert_historical_guides(self.retirement)
+        self.assert_active_cases(self.doc)
+
+    def test_individual_cases_compose_with_the_authentic_format_archive(self):
+        # Always exercise both epochs even before Work integrates the new
+        # cases. Use a complete authenticated historical publication, then
+        # the existing authoring API; never edit the active lesson.
+        before = self.retirement
+        candidate = case_fixtures.revised(
+            before, COMPILER, case_fixtures.individual_cases("u4l7", before))
+        state.validate_transition(before, candidate)
+        self.assert_active_cases(candidate)
+        self.assert_sources_and_history(candidate)
+        self.assertEqual(candidate["stateLayout"]["sourceFormatRevisions"],
+                         before["stateLayout"]["sourceFormatRevisions"])
+        self.assertEqual(candidate["stateLayout"]["retirementHistory"],
+                         before["stateLayout"]["retirementHistory"])
+        for field in ("origin", "family", "current"):
+            self.assertEqual(candidate["stateLayout"][field], before["stateLayout"][field])
+        forged = deepcopy(candidate)
+        self.owners(forged)[0][COMPILER]["outputCheck"]["cases"][0]["outputs"][0] += "bad"
+        with self.assertRaises(state.LayoutError):
+            state.validate(forged)
 
     def test_later_cpp_spacing_with_fewer_blank_lines_is_valid(self):
         proposal = deepcopy(self.formatted)

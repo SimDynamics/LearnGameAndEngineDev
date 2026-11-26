@@ -10,6 +10,7 @@
 #include "platform/windows/environment.hpp"
 #include "platform/windows/state_store.hpp"
 #include "native_build_config.hpp"
+#include "platform/windows/published_adoption_test_source.hpp"
 
 #include <windows.h>
 #include <winrt/Windows.Data.Json.h>
@@ -279,9 +280,11 @@ void execute(bool clone) {
             entry=value.GetObject();
         }
     require(static_cast<bool>(entry),"Missing original-owner authoring entry");
-    const auto lesson_path=source_root/std::filesystem::path(
-        winrt::to_string(entry.GetNamedString(L"lesson")));
-    const auto original_bytes=read(lesson_path);
+    const auto relative=winrt::to_string(entry.GetNamedString(L"lesson"));
+    const auto lesson_path=source_root/std::filesystem::path(relative);
+    const auto live_bytes=read(lesson_path);
+    const auto live=parse_lesson_json(live_bytes,"es");
+    const auto original_bytes=qa::published_adoption_source(source_root,relative);
     const auto original=parse_lesson_json(original_bytes,"es");
     const auto declaration=entry.GetNamedObject(L"declaration");
     const auto activity=winrt::to_string(declaration.GetNamedString(L"activity"));
@@ -291,16 +294,24 @@ void execute(bool clone) {
     require(before.type==BlockType::cpp_compiler&&before.output_check&&
             before.output_check->cases.size()==case_count&&!before.polymorphic_clone_probe&&
             !before.dual_interface_probe,"The original owner or public case contract changed");
-    auto document=JsonObject::Parse(winrt::to_hstring(original_bytes));
-    require(!document.HasKey(root_field),"The read-only fixture already contains the private declaration");
+    auto expected_document=JsonObject::Parse(winrt::to_hstring(original_bytes));
+    require(!expected_document.HasKey(root_field),"Pinned private fixture is not pre-adoption");
     JsonArray declarations;declarations.Append(declaration);
-    document.Insert(root_field,declarations);
-    const auto revised_bytes=winrt::to_string(document.Stringify());
+    expected_document.Insert(root_field,declarations);
+    const auto expected=parse_lesson_json(winrt::to_string(expected_document.Stringify()),"es");
+    auto document=JsonObject::Parse(winrt::to_hstring(live_bytes));
+    const bool adopted=document.HasKey(root_field);
+    if(adopted)require(document.GetNamedArray(root_field).Size()==1,
+        "The live private declaration changed its owner count");
+    else document.Insert(root_field,declarations);
+    const auto revised_bytes=adopted?live_bytes:winrt::to_string(document.Stringify());
     const auto lesson=parse_lesson_json(revised_bytes,"es");
     const auto progress=parse_lesson_progress_metadata(revised_bytes,"es");
     const auto& block=owner(lesson,activity);
     const auto& compact=owner(progress,activity);
-    require(block.polymorphic_clone_probe==compact.polymorphic_clone_probe&&
+    require(reference_objective_frame(lesson,block)==
+                reference_objective_frame(expected,owner(expected,activity))&&
+            block.polymorphic_clone_probe==compact.polymorphic_clone_probe&&
             block.dual_interface_probe==compact.dual_interface_probe&&
             block.output_check&&compact.output_check&&
             block.output_check->cases.size()==case_count&&compact.output_check->cases.size()==case_count&&
@@ -429,7 +440,7 @@ void execute(bool clone) {
             state::string_value(data,"qa-other-course","unchanged")=="original unrelated state",
         "Final reopen promoted another case, replayed another draft or changed unrelated state");
     state::validate_lesson_state(data,progress);
-    require(read(lesson_path)==original_bytes&&read(reference_path)==reference_bytes,
+    require(read(lesson_path)==live_bytes&&read(reference_path)==reference_bytes,
         "Runtime QA rewrote the original lesson or authoring reference");
     std::cout<<"PASS "<<unit<<": actual public/private runner observations, original full/progress loaders, "
         "stdout-only history not promoted, one genuine required case, rejected draft restored before and "
