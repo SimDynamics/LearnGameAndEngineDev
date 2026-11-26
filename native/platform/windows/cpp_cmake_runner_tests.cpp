@@ -5,6 +5,7 @@
 #include "platform/windows/state_store.hpp"
 #include "core/lesson.hpp"
 #include "native_build_config.hpp"
+#include "platform/windows/published_adoption_test_source.hpp"
 #include <windows.h>
 #include <winrt/Windows.Data.Json.h>
 #include <winrt/Windows.Foundation.Collections.h>
@@ -57,6 +58,36 @@ bool visible_tool_console(){bool visible=false;EnumWindows([](HWND window,LPARAM
     return TRUE;
 },reinterpret_cast<LPARAM>(&visible));return visible;}
 std::string read(const std::filesystem::path& path){std::ifstream file(path,std::ios::binary);check(static_cast<bool>(file),"Read the existing owned CMake fixture");return std::string((std::istreambuf_iterator<char>(file)),{});}
+// Historical transitions use the real pre-adoption lesson, even after
+// Work publishes the graph. Independently load and check the active graph
+// contracts in both native representations, without replacing their rubrics.
+lgaed::curriculum::Lesson pre_adoption_cmake_lesson(std::string_view relative) {
+    const auto root=std::filesystem::path(lgaed::build::source_root);
+    const auto live=lgaed::windows::load_lesson(root/std::filesystem::path(relative));
+    const auto compact=lgaed::windows::parse_lesson_progress_metadata(live.raw_json,"es");
+    const auto historical=lgaed::windows::parse_lesson_json(
+        lgaed::qa::published_adoption_source(root,relative),"es");
+    check(live.id==historical.id&&live.id==compact.id,
+        "The live CMake lesson lost its historical identity");
+    for(const auto& page:live.pages)for(const auto& block:page.blocks) {
+        if(!block.cmake_graph_check)continue;
+        const auto position=lgaed::curriculum::stable_block_position(compact,block.stable_id);
+        check(position.has_value(),"Active CMake graph has no compact owner");
+        const auto& lean=compact.pages.at(position->page).blocks.at(position->block);
+        check(lean.cmake_graph_check==block.cmake_graph_check&&
+            lgaed::curriculum::exercise_key(live,block)==
+                lgaed::curriculum::exercise_key(compact,lean),
+            "Active CMake graph differs between full and compact native loaders");
+        const auto old=lgaed::curriculum::stable_block_position(historical,block.stable_id);
+        if(old) {
+            const auto& previous=historical.pages.at(old->page).blocks.at(old->block);
+            check(lgaed::curriculum::draft_key("programming",live,block)==
+                lgaed::curriculum::draft_key("programming",historical,previous),
+                "Active CMake adoption changed a historical draft key");
+        }
+    }
+    return historical;
+}
 struct RepairLessons {
     lgaed::curriculum::Lesson historical,reviewed,legacy_graph;
 };
@@ -1111,8 +1142,7 @@ add_dependencies(first parts)
     constexpr auto relative=
         "app/src/main/assets/content/es/programming/programming_practice_tools/"
         "construccion_reproducible/lesson_objetivos_dependencias_y_enlace.json";
-    const auto original=lgaed::windows::load_lesson(
-        std::filesystem::path(build::source_root)/relative);
+    const auto original=pre_adoption_cmake_lesson(relative);
     check(original.pages[4].blocks[4].stable_id=="block_0004_0004"&&
         original.pages[4].blocks[4].cmake&&
         original.pages[4].blocks[4].output_check&&
@@ -1393,8 +1423,7 @@ set_target_properties(regla portero PROPERTIES CXX_EXTENSIONS OFF)
     constexpr auto inventory_relative=
         "app/src/main/assets/content/es/programming/programming_practice_tools/"
         "construccion_reproducible/lesson_fuentes_objetivos_y_fases.json";
-    const auto inventory_original=lgaed::windows::load_lesson(
-        std::filesystem::path(build::source_root)/inventory_relative);
+    const auto inventory_original=pre_adoption_cmake_lesson(inventory_relative);
     const auto& inventory_before=inventory_original.pages.at(9).blocks.at(3);
     check(inventory_before.stable_id=="block_0009_0003"&&
         inventory_before.cmake&&inventory_before.output_check&&
@@ -1694,8 +1723,7 @@ set_target_properties(comprobar PROPERTIES COMPILE_FEATURES "cxx_std_20;cxx_std_
     constexpr auto option_relative=
         "app/src/main/assets/content/es/programming/programming_practice_tools/"
         "construccion_reproducible/lesson_opciones_y_revision_de_la_configuracion.json";
-    const auto option_original=lgaed::windows::load_lesson(
-        std::filesystem::path(build::source_root)/option_relative);
+    const auto option_original=pre_adoption_cmake_lesson(option_relative);
     const auto& option_before=option_original.pages.at(11).blocks.at(3);
     check(option_before.stable_id=="block_0011_0003"&&
         option_before.cmake&&option_before.output_check&&
@@ -1997,8 +2025,7 @@ target_link_libraries(cotizar PRIVATE tarifas)
     constexpr auto include_relative=
         "app/src/main/assets/content/es/programming/programming_practice_tools/"
         "construccion_reproducible/lesson_cabeceras_y_requisitos_de_uso.json";
-    const auto include_original=lgaed::windows::load_lesson(
-        std::filesystem::path(build::source_root)/include_relative);
+    const auto include_original=pre_adoption_cmake_lesson(include_relative);
     const auto& public_before=include_original.pages.at(4).blocks.at(2);
     const auto& private_before=include_original.pages.at(7).blocks.at(8);
     const auto& edit_before=include_original.pages.at(7).blocks.at(11);
@@ -2276,8 +2303,7 @@ target_link_libraries(consultar_aforo PRIVATE aforo)
     constexpr auto subproject_relative=
         "app/src/main/assets/content/es/programming/programming_practice_tools/"
         "comprobaciones_repetibles/lesson_reorganizar_la_descripcion_conservando_el_comprobador.json";
-    const auto subproject_original=lgaed::windows::load_lesson(
-        std::filesystem::path(build::source_root)/subproject_relative);
+    const auto subproject_original=pre_adoption_cmake_lesson(subproject_relative);
     const auto& flat_before=subproject_original.pages.at(3).blocks.at(4);
     const auto& boxes_before=subproject_original.pages.at(6).blocks.at(3);
     const auto& batches_before=subproject_original.pages.at(8).blocks.at(3);
@@ -2693,8 +2719,7 @@ set_target_properties(lotes PROPERTIES CXX_EXTENSIONS OFF)
     constexpr auto list_relative=
         "app/src/main/assets/content/es/programming/programming_practice_tools/"
         "comprobaciones_repetibles/lesson_datos_y_listas_de_objetivos.json";
-    const auto list_original=lgaed::windows::load_lesson(
-        std::filesystem::path(build::source_root)/list_relative);
+    const auto list_original=pre_adoption_cmake_lesson(list_relative);
     std::string list_projected=list_original.raw_json;
     const auto list_pos=list_projected.find(anchor);
     check(list_pos!=list_projected.npos&&
@@ -3104,8 +3129,7 @@ set_target_properties(lotes PROPERTIES CXX_EXTENSIONS OFF)
       "sourceIntegrity":{"preserveNonCmake":true,
         "replaceExpression":{"path":"cantidad.cpp","original":"(0 <= dato) <= 20"}}
     })json";
-    const auto warning_lessons=repair_lessons(lgaed::windows::load_lesson(
-        std::filesystem::path(build::source_root)/warning_relative),
+    const auto warning_lessons=repair_lessons(pre_adoption_cmake_lesson(warning_relative),
         "block_0002_0004",warning_record);
     const auto& warning_lesson=warning_lessons.historical;
     const auto& warning_reviewed=repair_owner(warning_lessons.reviewed,"block_0002_0004");
@@ -3489,8 +3513,7 @@ set_target_properties(lotes PROPERTIES CXX_EXTENSIONS OFF)
       "sourceIntegrity":{"preserveNonCmake":true,
         "replaceExpression":{"path":"src/ajuste.cpp","original":"valor - superior"}}
     })json";
-    const auto adjustments_lessons=repair_lessons(lgaed::windows::load_lesson(
-        std::filesystem::path(build::source_root)/adjustments_relative),
+    const auto adjustments_lessons=repair_lessons(pre_adoption_cmake_lesson(adjustments_relative),
         "block_0006_0008",adjustments_record);
     const auto& adjustments_lesson=adjustments_lessons.historical;
     const auto adjustments_activated=repair_lessons(adjustments_lessons.reviewed,

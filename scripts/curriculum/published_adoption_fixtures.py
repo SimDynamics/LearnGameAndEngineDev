@@ -6,6 +6,7 @@ The live lesson is checked independently and is never rewritten by QA.
 """
 from functools import lru_cache
 import hashlib
+import json
 import os
 from pathlib import Path
 import subprocess
@@ -13,36 +14,18 @@ import subprocess
 import stable_state_layout as state
 
 ROOT = Path(__file__).resolve().parents[2]
-BASE = "3a18c2ac0b6e5738f3c56e51e1c794a1b2676384"
-PREFIX = "app/src/main/assets/content/es/programming/"
-PINS = {
-    "programming_practice_tools/comprobaciones_repetibles/lesson_integrar_un_proyecto_y_sostener_su_evidencia.json":
-        "48dfff25c51abe88b728c16e8bdd16f21ef4bfd1",
-    "programming_practice_tools/evidencia_y_diagnostico/lesson_versiones_del_fuente_y_del_ejecutable.json":
-        "04ead481d3d70553bd9a53c418c87db7475a42de",
-    "programming_practice_tools/construccion_reproducible/lesson_objetivos_dependencias_y_enlace.json":
-        "0d7df509ee5fff9eaf1c7854dfd6baeefa5b37e7",
-    "programming_practice_tools/construccion_reproducible/lesson_fuentes_objetivos_y_fases.json":
-        "bbce0f144005d4c58b63d2d971573428f25a05fc",
-    "programming_practice_tools/construccion_reproducible/lesson_opciones_y_revision_de_la_configuracion.json":
-        "6b8cf4381b82723cb14471faed05b53c697e17aa",
-    "programming_practice_tools/construccion_reproducible/lesson_cabeceras_y_requisitos_de_uso.json":
-        "bfbe625656f2c81f18b89462688523cf6a17ae21",
-    "programming_practice_tools/comprobaciones_repetibles/lesson_reorganizar_la_descripcion_conservando_el_comprobador.json":
-        "f318736624bac75aae7ee1d8d4498c5586b4e8da",
-    "programming_practice_tools/comprobaciones_repetibles/lesson_datos_y_listas_de_objetivos.json":
-        "b97aeddac731201415df9005a0778e8487aca0a6",
-    "cpp_language_memory_oop/estado_y_ciclo_de_vida_de_clases/lesson_transferir_propiedad_entre_unique_ptr.json":
-        "045660d8ce90c199e5dbba4efa1037fd5fc7a4b1",
-}
+PIN_MANIFEST = json.loads(Path(__file__).with_name(
+    "published_adoption_pins.json").read_text(encoding="utf-8"))
+BASE = PIN_MANIFEST["publication"]
+PINS = PIN_MANIFEST["blobs"]
 
 
 @lru_cache(maxsize=None)
 def historical_bytes(path):
     relative = path.relative_to(ROOT).as_posix()
-    if not relative.startswith(PREFIX) or relative[len(PREFIX):] not in PINS:
+    if relative not in PINS:
         raise ValueError("No authenticated pre-adoption publication: " + relative)
-    expected = PINS[relative[len(PREFIX):]]
+    expected = PINS[relative]
     environment = dict(os.environ, GIT_NO_LAZY_FETCH="1",
                        GIT_NO_REPLACE_OBJECTS="1", GIT_TERMINAL_PROMPT="0")
     git = ["git", "--no-optional-locks", "-c", f"safe.directory={ROOT}"]

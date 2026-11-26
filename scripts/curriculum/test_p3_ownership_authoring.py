@@ -13,6 +13,7 @@ import re
 import unittest
 
 import stable_state_layout as layout
+from published_adoption_fixtures import before_adoption, assert_live_owner_addresses
 
 
 ROOT = Path(__file__).resolve().parents[2]
@@ -83,7 +84,9 @@ class P3OwnershipAuthoring(unittest.TestCase):
         self.assertEqual(len({x["lesson"] for x in records}), len(EXPECTED))
         for entry in records:
             with self.subTest(unit=entry["unit"]):
-                original = source(entry)
+                original = before_adoption(ROOT / entry["lesson"])
+                live = assert_live_owner_addresses(
+                    self, ROOT / entry["lesson"], (entry["declaration"]["activity"],))
                 field = entry["rootField"]
                 self.assertIn(field, layout.FLOW_FIELDS)
                 spec = entry["declaration"]
@@ -95,13 +98,12 @@ class P3OwnershipAuthoring(unittest.TestCase):
                 self.assertNotIn("projectFiles", block)
                 self.assertNotIn("sourceFiles", block)
 
+                self.assertNotIn(field, original)
                 authored = deepcopy(original)
-                if field in authored:
-                    # When Work eventually publishes this precise contract,
-                    # keep verifying the same source and do not overwrite it.
-                    self.assertEqual(authored[field], [spec])
-                else:
-                    authored[field] = [deepcopy(spec)]
+                authored[field] = [deepcopy(spec)]
+                if field in live:
+                    self.assertEqual(live[field], [spec])
+                    self.assertEqual(owner(live, spec["activity"]), block)
                 before_mapping = layout.validate(original)
                 self.assertEqual(before_mapping, layout.validate(authored))
                 layout.validate_transition(original, authored)
