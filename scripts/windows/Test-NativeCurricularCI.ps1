@@ -683,6 +683,7 @@ if ($Suite -eq 'ReaderBuild') {
         'native.cpp_project_u3_real_history_gate',
         'native.cpp_project_u3_entire_original',
         'native.cpp_project_u3_cmake_structure',
+        'native.cpp_project_u3_current_history',
         'native.cpp_project_other_cpp_multicase',
         'native.order_spacing_contract',
         'native.order_code_whitespace_view',

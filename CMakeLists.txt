@@ -484,12 +484,18 @@ function(lgaed_add_selective_recovery_tests)
         "${_selective_fixture_dir}/u3-selective.before.json"
         "${_selective_fixture_dir}/u3-selective.after.json"
         "${_selective_fixture_dir}/u3-selective.reordered.json"
+        "${_selective_fixture_dir}/u3-aggregate.before.json"
+        "${_selective_fixture_dir}/u3-aggregate.adopted.json"
+        "${_selective_fixture_dir}/u3-current.json"
         "${_selective_fixture_dir}/manifest.json")
     add_custom_command(OUTPUT ${_selective_fixtures}
         COMMAND ${_lgaed_state_fixture_python}
             "${CMAKE_SOURCE_DIR}/scripts/curriculum/selective_recovery_fixture_source.py"
             --output-dir "${_selective_fixture_dir}"
         DEPENDS "${CMAKE_SOURCE_DIR}/scripts/curriculum/selective_recovery_fixture_source.py"
+            "${CMAKE_SOURCE_DIR}/scripts/curriculum/published_adoption_fixtures.py"
+            "${CMAKE_SOURCE_DIR}/scripts/curriculum/published_adoption_pins.json"
+            "${CMAKE_SOURCE_DIR}/app/src/main/assets/content/es/programming/programming_practice_tools/comprobaciones_repetibles/lesson_reorganizar_la_descripcion_conservando_el_comprobador.json"
             "${CMAKE_SOURCE_DIR}/scripts/curriculum/stable_state_layout.py"
             "${CMAKE_SOURCE_DIR}/scripts/curriculum/text_semantics.py"
             "${CMAKE_SOURCE_DIR}/scripts/curriculum/code_format_compat.py"
@@ -1173,7 +1179,7 @@ if(LGAED_READER_BUILD_QA_ONLY)
         COMMAND lgaed_cpp_project_view_tests
             "${CMAKE_CURRENT_BINARY_DIR}/qa/cpp-project-history"
             --u3-selective
-            "${CMAKE_SOURCE_DIR}/app/src/main/assets/content/es/programming/programming_practice_tools/comprobaciones_repetibles/lesson_reorganizar_la_descripcion_conservando_el_comprobador.json")
+            "${CMAKE_CURRENT_BINARY_DIR}/test-fixtures/u3-selective/u3-aggregate.before.json")
     set_tests_properties(native.cpp_project_u3_selective_lesson PROPERTIES TIMEOUT 300 RUN_SERIAL TRUE)
     # The original full thirteen-page lesson must still block a fresh user
     # from jumping over prior multiple-choice and compiler requirements.
@@ -1181,7 +1187,7 @@ if(LGAED_READER_BUILD_QA_ONLY)
         COMMAND lgaed_cpp_project_view_tests
             "${CMAKE_CURRENT_BINARY_DIR}/qa/cpp-project-history"
             --u3-gates
-            "${CMAKE_SOURCE_DIR}/app/src/main/assets/content/es/programming/programming_practice_tools/comprobaciones_repetibles/lesson_reorganizar_la_descripcion_conservando_el_comprobador.json")
+            "${CMAKE_CURRENT_BINARY_DIR}/test-fixtures/u3-selective/u3-aggregate.before.json")
     set_tests_properties(native.cpp_project_u3_original_gates PROPERTIES TIMEOUT 60 RUN_SERIAL TRUE)
     # U2L3 has a closed runtime diagnostic: exact stderr and normal exit 2.
     # Inject only a root declaration into an isolated in-memory original.
@@ -1197,7 +1203,7 @@ if(LGAED_READER_BUILD_QA_ONLY)
         COMMAND lgaed_cpp_project_view_tests
             "${CMAKE_CURRENT_BINARY_DIR}/qa/cpp-project-history"
             --u3-declaration
-            "${CMAKE_SOURCE_DIR}/app/src/main/assets/content/es/programming/programming_practice_tools/comprobaciones_repetibles/lesson_reorganizar_la_descripcion_conservando_el_comprobador.json")
+            "${CMAKE_CURRENT_BINARY_DIR}/test-fixtures/u3-selective/u3-aggregate.before.json")
     set_tests_properties(native.cpp_project_u3_declaration PROPERTIES TIMEOUT 60 RUN_SERIAL TRUE)
     # Exercise the full native History interaction with the root declaration
     # active in an in-memory curriculum, preserving the original JSON.
@@ -1205,7 +1211,7 @@ if(LGAED_READER_BUILD_QA_ONLY)
         COMMAND lgaed_cpp_project_view_tests
             "${CMAKE_CURRENT_BINARY_DIR}/qa/cpp-project-history"
             --u3-selective-declared
-            "${CMAKE_SOURCE_DIR}/app/src/main/assets/content/es/programming/programming_practice_tools/comprobaciones_repetibles/lesson_reorganizar_la_descripcion_conservando_el_comprobador.json")
+            "${CMAKE_CURRENT_BINARY_DIR}/test-fixtures/u3-selective/u3-aggregate.before.json")
     set_tests_properties(native.cpp_project_u3_declared_selective PROPERTIES TIMEOUT 300 RUN_SERIAL TRUE)
     # An isolated student must solve actual early U3 questions before
     # reaching the first CMake editor; later U3 pages remain gated.
@@ -1213,7 +1219,7 @@ if(LGAED_READER_BUILD_QA_ONLY)
         COMMAND lgaed_cpp_project_view_tests
             "${CMAKE_CURRENT_BINARY_DIR}/qa/cpp-project-history"
             --u3-prerequisites
-            "${CMAKE_SOURCE_DIR}/app/src/main/assets/content/es/programming/programming_practice_tools/comprobaciones_repetibles/lesson_reorganizar_la_descripcion_conservando_el_comprobador.json")
+            "${CMAKE_CURRENT_BINARY_DIR}/test-fixtures/u3-selective/u3-aggregate.before.json")
     set_tests_properties(native.cpp_project_u3_original_prerequisites PROPERTIES TIMEOUT 120 RUN_SERIAL TRUE)
     # Original pages 1-5: genuine checked questions and an edited CMake
     # project with two targets executed before any later page is permitted.
@@ -1221,7 +1227,7 @@ if(LGAED_READER_BUILD_QA_ONLY)
         COMMAND lgaed_cpp_project_view_tests
             "${CMAKE_CURRENT_BINARY_DIR}/qa/cpp-project-history"
             --u3-first-cmake
-            "${CMAKE_SOURCE_DIR}/app/src/main/assets/content/es/programming/programming_practice_tools/comprobaciones_repetibles/lesson_reorganizar_la_descripcion_conservando_el_comprobador.json")
+            "${CMAKE_CURRENT_BINARY_DIR}/test-fixtures/u3-selective/u3-aggregate.before.json")
     set_tests_properties(native.cpp_project_u3_first_cmake PROPERTIES TIMEOUT 300 RUN_SERIAL TRUE)
     # Continue without synthetic progress: the original next ordering, question,
     # failing source and repaired CMake test are all exercised in one reader.
@@ -1229,7 +1235,7 @@ if(LGAED_READER_BUILD_QA_ONLY)
         COMMAND lgaed_cpp_project_view_tests
             "${CMAKE_CURRENT_BINARY_DIR}/qa/cpp-project-history"
             --u3-first-cmake-repair
-            "${CMAKE_SOURCE_DIR}/app/src/main/assets/content/es/programming/programming_practice_tools/comprobaciones_repetibles/lesson_reorganizar_la_descripcion_conservando_el_comprobador.json")
+            "${CMAKE_CURRENT_BINARY_DIR}/test-fixtures/u3-selective/u3-aggregate.before.json")
     set_tests_properties(native.cpp_project_u3_first_cmake_repair PROPERTIES TIMEOUT 300 RUN_SERIAL TRUE)
     # Verify the real page-seven failure/repair and page-nine nested lotes
     # CMake projects before permitting the published History editor.
@@ -1237,7 +1243,7 @@ if(LGAED_READER_BUILD_QA_ONLY)
         COMMAND lgaed_cpp_project_view_tests
             "${CMAKE_CURRENT_BINARY_DIR}/qa/cpp-project-history"
             --u3-real-history-gate
-            "${CMAKE_SOURCE_DIR}/app/src/main/assets/content/es/programming/programming_practice_tools/comprobaciones_repetibles/lesson_reorganizar_la_descripcion_conservando_el_comprobador.json")
+            "${CMAKE_CURRENT_BINARY_DIR}/test-fixtures/u3-selective/u3-aggregate.before.json")
     set_tests_properties(native.cpp_project_u3_real_history_gate PROPERTIES TIMEOUT 300 RUN_SERIAL TRUE)
     # Full original thirteen-page student path, no synthetic completions:
     # the same editor records/compares/restores History, then checks final pages.
@@ -1245,7 +1251,7 @@ if(LGAED_READER_BUILD_QA_ONLY)
         COMMAND lgaed_cpp_project_view_tests
             "${CMAKE_CURRENT_BINARY_DIR}/qa/cpp-project-history"
             --u3-entire-original
-            "${CMAKE_SOURCE_DIR}/app/src/main/assets/content/es/programming/programming_practice_tools/comprobaciones_repetibles/lesson_reorganizar_la_descripcion_conservando_el_comprobador.json")
+            "${CMAKE_CURRENT_BINARY_DIR}/test-fixtures/u3-selective/u3-aggregate.before.json")
     set_tests_properties(native.cpp_project_u3_entire_original PROPERTIES TIMEOUT 300 RUN_SERIAL TRUE)
     # The same original lesson with additive structure requirements must
     # reject a flat build and accept the actual child from its Win32 editor.
@@ -1253,8 +1259,16 @@ if(LGAED_READER_BUILD_QA_ONLY)
         COMMAND lgaed_cpp_project_view_tests
             "${CMAKE_CURRENT_BINARY_DIR}/qa/cpp-project-history"
             --u3-cmake-structure
-            "${CMAKE_SOURCE_DIR}/app/src/main/assets/content/es/programming/programming_practice_tools/comprobaciones_repetibles/lesson_reorganizar_la_descripcion_conservando_el_comprobador.json")
+            "${CMAKE_CURRENT_BINARY_DIR}/test-fixtures/u3-selective/u3-aggregate.adopted.json")
     set_tests_properties(native.cpp_project_u3_cmake_structure PROPERTIES TIMEOUT 300 RUN_SERIAL TRUE)
+    # Independently exercise the actual active publication, not a synthetic
+    # rewrite of the historical complete-lesson evidence.
+    add_test(NAME native.cpp_project_u3_current_history
+        COMMAND lgaed_cpp_project_view_tests
+            "${CMAKE_CURRENT_BINARY_DIR}/qa/cpp-project-history"
+            --u3-selective-current
+            "${CMAKE_CURRENT_BINARY_DIR}/test-fixtures/u3-selective/u3-current.json")
+    set_tests_properties(native.cpp_project_u3_current_history PROPERTIES TIMEOUT 300 RUN_SERIAL TRUE)
     # Regression for other C++ activities with multiple independent inputs:
     # correct-but-partial answers must not display U3 History instructions.
     add_test(NAME native.cpp_project_other_cpp_multicase

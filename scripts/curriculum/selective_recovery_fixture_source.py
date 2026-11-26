@@ -16,6 +16,7 @@ from pathlib import Path
 import subprocess
 
 import stable_state_layout as layout
+import published_adoption_fixtures as adoption
 
 
 ROOT = Path(__file__).resolve().parents[2]
@@ -144,6 +145,56 @@ def selective_history_revised(document: dict, *, source=None, cases=None, return
     return revised
 
 
+def actual_publications() -> dict[str, bytes]:
+    # The old UI scenarios deliberately require their original thirteen-page
+    # aggregate, whereas today's real lesson has individual checker clients.
+    # Keep both authentic epochs; never rebuild a predecessor from live data.
+    before = adoption.historical_bytes(ROOT / ASSET)
+    environment = dict(os.environ, GIT_NO_LAZY_FETCH="1",
+                       GIT_NO_REPLACE_OBJECTS="1", GIT_TERMINAL_PROMPT="0")
+
+    def pinned(commit, expected):
+        payload = subprocess.check_output(
+            ["git", "--no-optional-locks", "-c", f"safe.directory={ROOT}",
+             "show", f"{commit}:{ASSET}"], cwd=ROOT, env=environment)
+        frame = b"blob " + str(len(payload)).encode("ascii") + b"\0" + payload
+        if hashlib.sha1(frame).hexdigest() != expected:
+            raise ValueError("U3 CMake publication differs from its independent Git pin")
+        return payload
+
+    adopted = pinned("a2b2b80b6a847bae652a48e28ddb3fe348b68a2b",
+                     "158f98fa5a3cce215af87b8311911294bdbc0ac2")
+    separated = pinned("70e71e5e1876f3245633d92c414dda7f358a75ba",
+                       "4b38985061a554a10b82c65b0fd4c2c0f2fe8f1f")
+    live = (ROOT / ASSET).read_bytes()
+    old, graph, split, current = map(json.loads, (before, adopted, separated, live))
+    projection = deepcopy(graph)
+    del projection["compilerCmakeGraphChecks"]
+    if projection != old:
+        raise ValueError("Graph adoption changed more than its actual root declaration")
+    for left, right in ((old, graph), (graph, split), (split, current)):
+        layout.validate_publication_transition(left, right)
+    if graph["compilerCmakeGraphChecks"] != current["compilerCmakeGraphChecks"]:
+        raise ValueError("The active U3 graph must preserve its three reviewed owners")
+    for owner, count, first in (
+        ("block_0003_0004", 9, "1\n"),
+        ("block_0004_0012", 8, "1\n"),
+        ("block_0006_0003", 9, "1\n"),
+        ("block_0008_0003", 6, "7\n"),
+        (OWNER, 7, "1\n"),
+    ):
+        block = layout._blocks(current)[owner]
+        cases = block["outputCheck"]["cases"]
+        archives = [entry for entry in current["stateLayout"]["compilerCaseRevisions"]
+                    if entry["id"] == owner]
+        if (len(cases) != count or cases[0]["standardInput"] != first
+                or not archives or archives[0]["block"] != layout._blocks(graph)[owner]):
+            raise ValueError("Active or archived U3 case owner changed: " + owner)
+    return {"u3-aggregate.before.json": before,
+            "u3-aggregate.adopted.json": adopted,
+            "u3-current.json": live}
+
+
 def build_fixtures() -> tuple[dict, dict[str, str]]:
     before = selective_history_publication()
     after = selective_history_revised(before)
@@ -161,6 +212,11 @@ def build_fixtures() -> tuple[dict, dict[str, str]]:
         manifest["before"]: historical_bytes().decode("utf-8"),
         manifest["after"]: json.dumps(after, ensure_ascii=False, indent=2) + "\n",
         manifest["reordered"]: json.dumps(reordered, ensure_ascii=False, indent=2) + "\n"}
+    active = actual_publications()
+    manifest["actualPublications"] = {
+        name: {"sha256": hashlib.sha256(raw).hexdigest(), "bytes": len(raw)}
+        for name, raw in active.items()}
+    payloads.update({name: raw.decode("utf-8") for name, raw in active.items()})
     return manifest, payloads
 
 
@@ -171,7 +227,7 @@ def main() -> None:
     manifest, payloads = build_fixtures()
     args.output_dir.mkdir(parents=True, exist_ok=True)
     for filename, source in payloads.items():
-        (args.output_dir / filename).write_text(source, encoding="utf-8", newline="\n")
+        (args.output_dir / filename).write_bytes(source.encode("utf-8"))
     (args.output_dir / "manifest.json").write_text(
         json.dumps(manifest, ensure_ascii=False, indent=2) + "\n", encoding="utf-8", newline="\n")
     print("Prepared the pinned aggregate and two authenticated individual U3 History fixtures")

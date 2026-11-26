@@ -360,11 +360,14 @@ void verify_declared_u3_compiler_workflow(const std::filesystem::path& authored_
     }
 }
 
-void verify_unmodified_thirteen_page_entry_gates(HWND host,const std::filesystem::path& authored_lesson){
+void verify_unmodified_thirteen_page_entry_gates(HWND host,const std::filesystem::path& authored_lesson,bool active=false){
     const auto published=windows::load_lesson(authored_lesson);
-    require(published.pages.size()==13&&published.pages[10].blocks.size()==5,
+    require(published.pages.size()==13&&(active||published.pages[10].blocks.size()==5),
         "The authentic U3 lesson lost its thirteen-page layout");
-    const auto& owner=published.pages[10].blocks[3];
+    const auto position=curriculum::stable_block_position(published,"block_0010_0003");
+    require(position&&position->page==10&&(active||position->block==3),
+        "The original History owner is absent from the authenticated page");
+    const auto& owner=published.pages[position->page].blocks[position->block];
     require(owner.stable_id=="block_0010_0003"&&owner.type==curriculum::BlockType::cpp_compiler
         &&owner.output_check&&owner.cmake,"The exact U3 recovery owner is absent");
     const auto environment=resolve_windows_environment({ProfileId::Codex,
@@ -1060,7 +1063,7 @@ void verify_genuine_u3_first_cmake_project(HWND host,const std::filesystem::path
     // The page-four project must not be substituted by a detached QA fixture.
     const auto original=windows::load_lesson(authored_lesson);
     const auto published=structure?u3_cmake_structure_qa(
-        qa::load_adoption_predecessor(authored_lesson),original):original;
+        windows::load_lesson(authored_lesson.parent_path()/"u3-aggregate.before.json"),original):original;
     require(published.pages.size()==13&&published.pages[3].blocks.size()==6,
         "The published U3 reader lost its original CMake page");
     const auto& project_block=published.pages[3].blocks[4];
@@ -1440,25 +1443,82 @@ void verify_individual_u3_publication(const std::filesystem::path& revised_path,
     }
 }
 
+void verify_active_u3_publication(const std::filesystem::path& path,const curriculum::Lesson& current){
+    const auto historical=windows::load_lesson(path.parent_path()/"u3-aggregate.adopted.json");
+    require(historical.id==current.id&&historical.pages.size()==13&&current.pages.size()==13,
+        "The active U3 publication changed its lesson or page family");
+    const auto locate=[](const curriculum::Lesson& lesson,std::string_view owner)->const curriculum::Block&{
+        const auto at=curriculum::stable_block_position(lesson,owner);
+        require(at.has_value(),"A genuine U3 compiler owner was lost");
+        return lesson.pages.at(at->page).blocks.at(at->block);
+    };
+    struct Expected {const char* owner;std::size_t count;const char* input;const char* output;};
+    const std::array<Expected,5> expected{{
+        {"block_0003_0004",9,"1\n","piezas=1 esperado=1 obtenido=1 OK\nBateria: OK\n"},
+        {"block_0004_0012",8,"1\n","piezas=1 esperado=1 obtenido=1 OK\nBateria: OK\n"},
+        {"block_0006_0003",9,"1\n","piezas=1 esperado=1 obtenido=1 OK\nBateria: OK\n"},
+        {"block_0008_0003",6,"7\n","piezas=7 esperado=2 obtenido=2 OK\nBateria: OK\n"},
+        {"block_0010_0003",7,"1\n","piezas=1 esperado=1 obtenido=1 OK\nBateria: OK\n"}
+    }};
+    const auto metadata=windows::parse_lesson_progress_metadata(current.raw_json,"es");
+    for(const auto& spec:expected){
+        const auto& before=locate(historical,spec.owner);
+        const auto& now=locate(current,spec.owner);
+        const auto& summary=locate(metadata,spec.owner);
+        require(before.output_check&&now.output_check&&now.output_check->cases.size()==spec.count&&
+            now.output_check->cases.front().standard_input==spec.input&&
+            now.output_check->cases.front().outputs==std::vector<std::string>{spec.output}&&
+            now.compiler_case_revisions.size()==1&&now.compiler_case_revisions.front().client_revision&&
+            now.compiler_client_epoch==now.compiler_case_revisions.front().revised_client_epoch&&
+            !now.compiler_client_epoch.empty()&&summary.compiler_client_epoch==now.compiler_client_epoch&&
+            curriculum::exercise_key(historical,before)==curriculum::exercise_key(current,now)&&
+            curriculum::draft_key("programming",historical,before)==curriculum::draft_key("programming",current,now),
+            "A separated current U3 client lost its case, epoch or original state identity");
+        const auto archived=curriculum::compiler_case_revision_previous_block(now,now.compiler_case_revisions.front());
+        require(archived.output_check&&archived.project_files==before.project_files&&
+            archived.output_check->cases.size()==before.output_check->cases.size()&&
+            curriculum::reference_objective_frame(historical,before)==curriculum::reference_objective_frame(current,archived)&&
+            curriculum::reference_objective_frame(current,archived)!=curriculum::reference_objective_frame(current,now),
+            "The active U3 client failed to preserve its exact historical evaluated requirements");
+        for(std::size_t i=0;i<before.output_check->cases.size();++i){
+            const auto& old=before.output_check->cases[i];
+            const auto& saved=archived.output_check->cases[i];
+            require(curriculum::same_output_case_requirements(old,saved)&&old.explanation==saved.explanation,
+                "The active publication changed an archived aggregate or its guidance");
+        }
+        require(bool(now.cmake_graph_check)==bool(before.cmake_graph_check)&&
+            bool(summary.cmake_graph_check)==bool(now.cmake_graph_check)&&
+            now.compiler_workflow_check==before.compiler_workflow_check&&
+            summary.compiler_workflow_check==now.compiler_workflow_check,
+            "A separated client lost a native graph or selective History requirement");
+    }
+}
+
 void integrated_selective_history_lesson(HWND host,const std::filesystem::path& authored_lesson,
-        bool declared_workflow=false,bool individual=false){
+        bool declared_workflow=false,bool individual=false,bool active=false){
     // Each variant loads the genuine 13-page lesson and exercises History
     // through its published editor. The historical variant removes only the
     // new root declaration in memory, never the actual student lesson.
     auto published=windows::load_lesson(authored_lesson);
-    if(individual)verify_individual_u3_publication(authored_lesson,published);
+    if(active)verify_active_u3_publication(authored_lesson,published);
+    else if(individual)verify_individual_u3_publication(authored_lesson,published);
     if(!declared_workflow){
         // Reuse the exact historical grading route without rewriting the
         // published asset, so the two CI cases cover both compatibility eras.
         published=windows::parse_lesson_json(
             legacy_u3_without_workflow(published.raw_json),"es");
-    }else require(published.pages.at(10).blocks.at(3).compiler_workflow_check==
+    }
+    const auto history_position=curriculum::stable_block_position(published,"block_0010_0003");
+    require(history_position&&history_position->page==10&&(active||history_position->block==3),
+        "The actual History owner lost its authenticated page");
+    const auto& history_owner=published.pages[history_position->page].blocks[history_position->block];
+    if(declared_workflow)require(history_owner.compiler_workflow_check==
                         curriculum::CompilerWorkflowCheck::cmake_selective_recovery_v1,
             "The integrated U3 lesson did not load the published History contract");
     require(published.id=="programming_practice_tools__comprobaciones_repetibles__reorganizar_la_descripcion_conservando_el_comprobador"
         &&published.pages.size()==13&&published.pages[10].blocks.size()>=4,
         "The published U3L2 lesson structure differs from the reviewed owner");
-    const auto owner=published.pages[10].blocks[3];
+    const auto owner=history_owner;
     require(owner.stable_id=="block_0010_0003"&&owner.project_files.size()==6
         &&owner.cmake&&owner.cmake->target=="comprobar_cajas"
         &&owner.output_check&&owner.output_check->cases.size()==(individual?7u:1u),
@@ -1681,6 +1741,7 @@ int main(int argc,char** argv){
     const bool u3_selective=argc==4&&std::string_view(argv[2])=="--u3-selective";
     const bool u3_selective_declared=argc==4&&std::string_view(argv[2])=="--u3-selective-declared";
     const bool u3_selective_individual=argc==4&&std::string_view(argv[2])=="--u3-selective-individual";
+    const bool u3_selective_current=argc==4&&std::string_view(argv[2])=="--u3-selective-current";
     const bool u3_gates=argc==4&&std::string_view(argv[2])=="--u3-gates";
     const bool u2_exact_eof=argc==4&&std::string_view(argv[2])=="--u2-exact-eof";
     const bool u3_declaration=argc==4&&std::string_view(argv[2])=="--u3-declaration";
@@ -1692,7 +1753,7 @@ int main(int argc,char** argv){
     const bool u3_cmake_structure=argc==4&&std::string_view(argv[2])=="--u3-cmake-structure";
     const bool other_cases=argc==3&&std::string_view(argv[2])=="--other-cases";
     HWND host=nullptr;HMODULE rich=nullptr;
-    try{require(argc==2||internal_only||u3_selective||u3_selective_declared||u3_selective_individual||u3_gates||u3_declaration||u3_prerequisites||u3_first_cmake||u3_first_cmake_repair||u3_real_history_gate||u3_entire_original||u3_cmake_structure||u2_exact_eof||other_cases,
+    try{require(argc==2||internal_only||u3_selective||u3_selective_declared||u3_selective_individual||u3_selective_current||u3_gates||u3_declaration||u3_prerequisites||u3_first_cmake||u3_first_cmake_repair||u3_real_history_gate||u3_entire_original||u3_cmake_structure||u2_exact_eof||other_cases,
         "Provide isolated QA output, optionally --internal-dialogs, --other-cases, --u3-selective or --u3-gates <lesson-json>");winrt::init_apartment(winrt::apartment_type::single_threaded);reader_theme::prepare_fonts();
         INITCOMMONCONTROLSEX controls{sizeof(controls),ICC_STANDARD_CLASSES};InitCommonControlsEx(&controls);rich=LoadLibraryW(L"Msftedit.dll");require(rich!=nullptr,"RichEdit is missing");
         host=CreateWindowExW(WS_EX_CONTROLPARENT,L"STATIC",L"Project controls QA",WS_OVERLAPPEDWINDOW|WS_VISIBLE,0,0,1100,850,nullptr,nullptr,GetModuleHandleW(nullptr),nullptr);require(host!=nullptr,"Cannot create app-owned QA host");
@@ -1824,11 +1885,16 @@ int main(int argc,char** argv){
         else if(u3_selective)integrated_selective_history_lesson(host,std::filesystem::path(argv[3]));
         else if(u3_selective_declared)integrated_selective_history_lesson(host,std::filesystem::path(argv[3]),true);
         else if(u3_selective_individual)integrated_selective_history_lesson(host,std::filesystem::path(argv[3]),true,true);
+        else if(u3_selective_current){
+            verify_unmodified_thirteen_page_entry_gates(host,std::filesystem::path(argv[3]),true);
+            integrated_selective_history_lesson(host,std::filesystem::path(argv[3]),true,true,true);
+        }
         else if(!internal_only)integrated_lesson(host);
         cleanup_own_qa(std::filesystem::absolute(argv[1]),history_root,"cpp-project-view-");
         DestroyWindow(host);host=nullptr;FreeLibrary(rich);rich=nullptr;
         if(internal_only)std::cout<<"PASS internal project create/history/record/diff/restore pages, one enabled root/client bounds, preserved source/cursor/tab/Undo and CMake controls; no compilation\n";
         else if(u3_selective_declared)std::cout<<"PASS declared Win32 U3 History: original editor, record, failure, compare, recover, success and reopen\n";
+        else if(u3_selective_current)std::cout<<"PASS active U3 publication: all five archived/individual contracts and original state keys, actual fresh full-lesson page gates, real first-case selective History recovery and reopen\n";
         else if(u3_selective_individual)std::cout<<"PASS pinned U3 individual client: authenticated publication, real first-case failure, both diffs, selective restoration, first-only navigation, optional receipt and reopen\n";
         else if(u3_selective)std::cout<<"PASS actual Win32 U3 owner focused lesson: no stdout shortcut; record, build, failed checked run, two UI diffs, selective file restore, rebuild, completed checked run, persistent reopen and reset\n";
         else if(u3_entire_original)std::cout<<"PASS all original U3 thirteen pages: authentic CMake phases, History actions, fresh execution seals, final quizzes and persisted reopening\n";

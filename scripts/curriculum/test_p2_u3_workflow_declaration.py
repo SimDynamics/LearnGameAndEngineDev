@@ -69,9 +69,24 @@ class CompilerWorkflowDeclarationTest(unittest.TestCase):
         with self.assertRaises(layout.LayoutError):
             layout.validate(data)
         data = self.revised()
-        data["pages"][10]["blocks"][3]["cmake"]["target"] = "consultar_cajas"
+        layout._blocks(data)[declaration["activity"]]["cmake"]["target"] = "consultar_cajas"
         with self.assertRaises(layout.LayoutError):
             layout.validate(data)
+
+
+class ActualU3PublicationTest(unittest.TestCase):
+    def test_complete_aggregate_and_current_publications(self):
+        fixtures = history_fixtures.actual_publications()
+        before = json.loads(fixtures["u3-aggregate.before.json"])
+        adopted = json.loads(fixtures["u3-aggregate.adopted.json"])
+        active = json.loads(fixtures["u3-current.json"])
+        self.assertEqual(len(before["pages"]), 13)
+        self.assertEqual(len(before["pages"][3]["blocks"]), 6)
+        self.assertEqual(len(adopted["compilerCmakeGraphChecks"]), 3)
+        self.assertEqual(adopted["compilerWorkflowChecks"], active["compilerWorkflowChecks"])
+        self.assertEqual(fixtures["u3-current.json"], asset.read_bytes())
+        self.assertEqual(len(layout._blocks(before)[declaration["activity"]]["outputCheck"]["cases"]), 1)
+        self.assertEqual(len(layout._blocks(active)[declaration["activity"]]["outputCheck"]["cases"]), 7)
 
 
 class SelectiveRecoveryIndividualCasesTest(unittest.TestCase):
