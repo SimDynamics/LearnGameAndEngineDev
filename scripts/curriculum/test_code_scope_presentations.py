@@ -5,6 +5,7 @@ import json
 from pathlib import Path
 import subprocess
 import unittest
+from typing import NamedTuple
 from unittest.mock import patch
 
 import code_scope_presentations as scopes
@@ -39,6 +40,14 @@ PUBLICATIONS = ((BASE, BASE_BLOB), (PRESENTED, PRESENTED_BLOB),
                  "ab1c0099d2265a461692a72f7305e33a3560a3a1"),
                 ("229c6e2b9d77b889f842c59a4ce825c2e0194dc4",
                  "776a45283a56ec4c00122c8c6ad0708380528808"))
+# Recorded rejected publication, not an accepted predecessor or migration.
+# Only its authentic exact rollback may return the chain to the last valid map.
+REJECTED_STORAGE_PUBLICATION = (
+    "2c3590c809d13cab02560335f6b2353d5655bbd2",
+    "0ed1a59a3e5dee8bb36a9f99b40b567873b9959b",
+    "33b497bbe50a57090a7ae8ab3d83bc0f208a1357",
+    "a635ae9c2d3f138702af8a06026cb6b7c5f86217",
+)
 CHOICE_TEXT_EDITS = {
     "/responses/0/options/0/label": ("En main, antes de la declaración de fichas", ("main", "fichas")),
     "/responses/0/options/1/label": ("Después del bloque del if, justo antes de return 0;", ("if", "return 0;")),
@@ -108,6 +117,82 @@ def publication_edges(rows, blobs, base, head):
     return checks
 
 
+class PublicationEdge(NamedTuple):
+    parent: str
+    commit: str
+    before_blob: str
+    after_blob: str
+    before: dict
+    after: dict
+
+
+def validate_later_publications(edges, head_blob):
+    """Preserve every rejection; require an exact published recovery.
+
+    This is a history audit, not a compatibility rule for student state.
+    Never accept the rejected map as a valid predecessor or translate its
+    storage addresses. A current or unrepaired rejected publication fails.
+    The only reviewed incident is bound to its real commit, parent and blobs.
+    """
+    parent, rejected, good_blob, bad_blob = REJECTED_STORAGE_PUBLICATION
+    original = None
+    restored = False
+    for edge in edges:
+        try:
+            if edge.commit == rejected:
+                if (original is not None or
+                        edge[:4] != REJECTED_STORAGE_PUBLICATION):
+                    raise layout.LayoutError("Rejected publication provenance changed")
+                layout.validate(edge.before)
+                # The entire lesson apart from the additions registry must
+                # be unchanged. Do not turn unrelated failures into rollback
+                # exceptions or allow a weaker transition validator.
+                repaired = deepcopy(edge.after)
+                repaired["stateLayout"]["additions"] = deepcopy(
+                    edge.before["stateLayout"]["additions"])
+                if repaired != edge.before:
+                    raise layout.LayoutError("Rejected publication changed more than storage")
+                old = edge.before["stateLayout"]["additions"]
+                new = edge.after["stateLayout"]["additions"]
+                by_id = {entry["id"]: entry for entry in new}
+                if (len(old) != 106 or len(new) != 106 or len(by_id) != 106
+                        or set(by_id) != {entry["id"] for entry in old}
+                        or sum(entry["storage"] != by_id[entry["id"]]["storage"]
+                               for entry in old) != 24):
+                    raise layout.LayoutError("Rejected storage incident no longer matches its evidence")
+                for entry in old:
+                    other = dict(by_id[entry["id"]], storage=entry["storage"])
+                    if other != entry:
+                        raise layout.LayoutError("Rejected publication changed an activity contract")
+                try:
+                    layout.validate_publication_transition(edge.before, edge.after)
+                except layout.LayoutError as error:
+                    if "Activity additions are append-only" not in str(error):
+                        raise
+                else:
+                    raise AssertionError("The rejected storage publication was incorrectly accepted")
+                original = edge.before
+            elif edge.before_blob == bad_blob:
+                # The reverse of a rejected reassignment is not a normal
+                # migration. Require the exact original blob, not merely the
+                # same IDs or a new reordering that passes self-validation.
+                if (original is None or edge.after_blob != good_blob
+                        or edge.after != original):
+                    raise layout.LayoutError("Rejected storage publication requires its exact original map")
+                layout.validate_publication_transition(original, edge.after)
+                restored = True
+            else:
+                if edge.after_blob == bad_blob:
+                    raise layout.LayoutError("A new publication reused the rejected storage map")
+                layout.validate_publication_transition(edge.before, edge.after)
+        except (layout.LayoutError, AssertionError) as error:
+            error.add_note("U3L4 publication edge: " + edge.parent + " -> " + edge.commit)
+            raise
+    if original is not None and (not restored or head_blob == bad_blob):
+        raise layout.LayoutError(
+            "Rejected U3L4 storage publication remains unrepaired; restore the exact preceding lesson")
+
+
 def later_publication_documents():
     """Read authentic Git parent edges and the published HEAD independently."""
     base, expected = PUBLICATIONS[-1]
@@ -148,7 +233,9 @@ def later_publication_documents():
         return cache[blob]
 
     edges = publication_edges(rows, blobs, base, head)
-    return [(read(parent), read(commit)) for parent, commit in edges], read(head)
+    return ([PublicationEdge(parent, commit, blobs[parent], blobs[commit],
+                             read(parent), read(commit)) for parent, commit in edges],
+            blobs[head], read(head))
 
 
 class CodeScopePresentationTest(unittest.TestCase):
@@ -159,7 +246,7 @@ class CodeScopePresentationTest(unittest.TestCase):
         cls.before, cls.presented, cls.explained = cls.publications[:3]
         cls.current = json.loads((ROOT / LESSON).read_text(encoding="utf-8"))
         cls.prompt_reviewed = cls.publications[4]
-        cls.later_edges, cls.published_head = later_publication_documents()
+        cls.later_edges, cls.published_head_blob, cls.published_head = later_publication_documents()
 
     @staticmethod
     def flatten(node):
@@ -180,13 +267,14 @@ class CodeScopePresentationTest(unittest.TestCase):
         # An explanation added after the overlay may itself be revised later.
         # Its real first publication is the base of that later editorial edge;
         # the final document alone must not invent an intermediate history.
-        edges = [*zip(self.publications, self.publications[1:]),
-                 *self.later_edges, (self.published_head, self.current)]
-        original = deepcopy(edges)
+        edges = list(zip(self.publications, self.publications[1:]))
+        original = deepcopy((edges, self.later_edges, self.published_head, self.current))
         for index, (previous, current) in enumerate(edges, start=1):
             with self.subTest(publication_edge=index):
                 layout.validate_publication_transition(previous, current)
-        self.assertEqual(edges, original)
+        validate_later_publications(self.later_edges, self.published_head_blob)
+        layout.validate_publication_transition(self.published_head, self.current)
+        self.assertEqual((edges, self.later_edges, self.published_head, self.current), original)
         blocks = layout._blocks(self.current)
         resolved = scopes.validate(self.current, blocks=blocks)
         tree = resolved[(OWNER, 0)]
@@ -244,6 +332,33 @@ class CodeScopePresentationTest(unittest.TestCase):
         with self.assertRaisesRegex(AssertionError, "predates"):
             publication_edges(rows, {"base": "A", "side": "B", "merge": "B"},
                               "base", "merge")
+
+    def test_rejected_storage_publication_requires_real_exact_recovery(self):
+        parent, rejected, good_blob, bad_blob = REJECTED_STORAGE_PUBLICATION
+        good = json.loads(published_bytes(parent, good_blob))
+        bad = json.loads(published_bytes(rejected, bad_blob))
+        incident = PublicationEdge(parent, rejected, good_blob, bad_blob, good, bad)
+        # Verify the actual rejected publication; no fabricated prior map.
+        with self.assertRaisesRegex(layout.LayoutError, "remains unrepaired"):
+            validate_later_publications([incident], bad_blob)
+        # In-memory test of the required recovery, not a claim that Work
+        # already published it. Production history must supply real Git edges.
+        recovery = PublicationEdge(rejected, "qa-restoration", bad_blob,
+                                   good_blob, bad, deepcopy(good))
+        validate_later_publications([incident, recovery], good_blob)
+        with self.assertRaisesRegex(layout.LayoutError, "remains unrepaired"):
+            validate_later_publications([incident, recovery], bad_blob)
+        forged = deepcopy(good)
+        forged["stateLayout"]["additions"][82]["storage"] = {"page": 7, "block": 98}
+        with self.assertRaisesRegex(layout.LayoutError, "exact original map"):
+            validate_later_publications([incident, recovery._replace(after=forged)], good_blob)
+        with self.assertRaisesRegex(layout.LayoutError, "exact original map"):
+            validate_later_publications([incident, recovery._replace(after_blob="f" * 40)], good_blob)
+        with self.assertRaisesRegex(layout.LayoutError, "reused the rejected storage map"):
+            validate_later_publications([incident, recovery,
+                incident._replace(commit="qa-new-reassignment")], bad_blob)
+        with self.assertRaisesRegex(layout.LayoutError, "provenance changed"):
+            validate_later_publications([incident._replace(parent="qa-other-parent")], bad_blob)
 
     def test_publication_bytes_cannot_be_changed_or_substituted(self):
         payloads = [published_bytes(*publication) for publication in PUBLICATIONS]
