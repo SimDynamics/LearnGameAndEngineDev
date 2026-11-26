@@ -76,10 +76,10 @@ public:
 }
 struct LessonReader::Impl {
     struct AudioReadLease{HANDLE file=INVALID_HANDLE_VALUE;std::shared_ptr<void> cache_guard;~AudioReadLease(){if(file!=INVALID_HANDLE_VALUE)CloseHandle(file);}};
-    struct Part{LessonReadingRegion region;windows::NarrationSegment sentence;std::optional<windows::NarrationAudio> audio;std::size_t occurrence=0;std::string audio_fingerprint;std::shared_ptr<AudioReadLease> playback_lease;
+    struct Part{LessonReadingRegion region;windows::NarrationSegment sentence;std::optional<windows::NarrationAudio> audio;std::size_t occurrence=0;std::string audio_fingerprint,wav_hash;std::shared_ptr<AudioReadLease> playback_lease;
         std::string feedback_admission_key;bool feedback_admitted=false;};
     struct LegacyPlan{std::string key;std::vector<Part> parts;bool editorial_formatting=false,previous_context_policy=false;std::vector<std::string> revised_regions;bool positional_page_identity=false,bibliography_only=false,general_revision=false;std::vector<Part> revision_proof;};
-    struct Result{std::uint64_t epoch=0;std::vector<Part> parts;std::vector<LegacyPlan> legacy;std::optional<windows::NarrationPagePlan> canonical;std::string key,error,audio_fingerprint;std::size_t index=0;std::optional<windows::NarrationAudio> audio;bool planned=false;
+    struct Result{std::uint64_t epoch=0;std::vector<Part> parts;std::vector<LegacyPlan> legacy;std::optional<windows::NarrationPagePlan> canonical;std::string key,error,audio_fingerprint,wav_hash;std::size_t index=0;std::optional<windows::NarrationAudio> audio;bool planned=false;
         bool playback_validation=false,recording_changed=false,page_completed=false,synthesis_observed=false;unsigned synthesis_threads=0;std::uint64_t validation_serial=0;std::shared_ptr<AudioReadLease> playback_lease;};
     // Android's answered-block priority is playback permission, not listening
     // evidence. It is reconstructed from the same bounded page bookmark.
@@ -93,7 +93,7 @@ struct LessonReader::Impl {
     unsigned foreground_synthesis_threads=0;
     std::map<std::string,std::size_t> shaded_ends;
     std::string shaded_part;std::int64_t shaded_offset=0;
-    std::string page_id,resume_page_id,signature,key,owner,language="es",voice="ef_dora",engine="KOKORO",error,configuration_error,ui_locale="es";
+    std::string page_id,resume_page_id,recording_scope,signature,key,owner,language="es",voice="ef_dora",engine="KOKORO",error,configuration_error,ui_locale="es";
     std::string previous_part,previous_key;std::vector<std::string> previously_heard;double previous_offset=0;std::optional<std::size_t> feedback_target;
     std::vector<std::pair<std::string,double>> previous_positions;
     std::vector<std::string> previous_feedback_admissions;
@@ -147,6 +147,8 @@ struct LessonReader::Impl {
             if(selected==installed.end())configuration_error=voice.empty()?tr("No hay una voz de Windows instalada para este idioma.","No Windows voice is installed for this language.","Aucune voix Windows n’est installée pour cette langue."):tr("La voz de Windows seleccionada no está disponible para este idioma.","The selected Windows voice is unavailable for this language.","La voix Windows sélectionnée n’est pas disponible pour cette langue.");
             else voice=selected->id;
         }
+        const auto& scope=page.narration_scope.empty()?page.narration_page_identity:page.narration_scope;
+        recording_scope=scope+'\0'+language+'\0'+voice+'\0'+(engine=="WINDOWS"||engine=="ANDROID"?"ANDROID":"KOKORO");
         const auto stored=state::find(preferences,"lesson_narration_settings","rate");rate=stored&&std::holds_alternative<double>(*stored)?narration::clamp_playback_rate(std::get<double>(*stored)):1;
         if(window){const std::array labels{tr("Retroceder 3 segundos","Back 3 seconds","Reculer de 3 secondes"),tr("Retroceder 5 segundos","Back 5 seconds","Reculer de 5 secondes"),tr("Adelantar 5 segundos","Forward 5 seconds","Avancer de 5 secondes"),tr("Adelantar 3 segundos","Forward 3 seconds","Avancer de 3 secondes"),tr("Reproducir o pausar","Play or pause","Lire ou mettre en pause"),tr("Velocidad de lectura","Playback speed","Vitesse de lecture"),tr("Reiniciar lectura","Restart reading","Recommencer la lecture")};for(std::size_t i=0;i<buttons.size();++i)if(buttons[i])SetWindowTextW(buttons[i],wide(labels[i]).c_str());ShowWindow(window,enabled&&visible?SW_SHOW:SW_HIDE);attach_lesson_reader_bar(view,window,enabled&&visible?bar_height:0);} }
     narration::SemanticPlanProof semantic_proof()const{
@@ -254,15 +256,26 @@ struct LessonReader::Impl {
             ShowWindow(status,enabled&&visible&&!label.empty()?SW_SHOWNOACTIVATE:SW_HIDE);}}
     void push(Result result){const std::lock_guard lock(result_mutex);results.push_back(std::move(result));}
     static bool audio_file(const windows::NarrationAudio& audio){std::error_code file_status_error;return std::filesystem::is_regular_file(audio.wav,file_status_error);}
-    static std::string recording_fingerprint(std::string_view page,const Part& part,const windows::NarrationAudio& audio,std::string_view wav_hash){
+    static std::string legacy_recording_fingerprint(std::string_view page,const Part& part,const windows::NarrationAudio& audio,std::string_view wav_hash){
         auto source=part.sentence.text;
         if(part.region.text_semantics&&!part.sentence.displayed_ranges.empty()){
             const auto decoded=wide(source);
             source=utf8(narration_recording::semantic_source_v1(std::wstring_view(decoded),part.sentence.displayed_ranges));
         }
-        // This runs once in the preparation thread, never in a UI checkpoint.
+        // Reconstruct the certificate issued by an older reader from the actual WAV.
         // Neither a cache filename nor a bookmark offset proves which PCM ran.
         return state::sha256(narration_recording::fingerprint_material_v1(page,part_id(part),source,audio.key,wav_hash));
+    }
+    static std::string recording_fingerprint(std::string_view scope,const Part& part,const windows::NarrationAudio& audio,std::string_view wav_hash){
+        // Order belongs to the plan. Listening evidence belongs to this exact
+        // source, occurrence, voice and recording, even if another block moves.
+        std::string material="lgaed-heard-passage-v2";
+        const auto append=[&](std::string_view value){material+=std::to_string(value.size())+':';material.append(value);};
+        append(scope);append(part_id(part));append(part.region.source_text);
+        append(part.region.reading_context);append(part.region.math_mode);append(semantic_signature(part.region.text_semantics));
+        append(part.sentence.text);append(part.sentence.spoken);append(std::to_string(part.sentence.start));append(std::to_string(part.sentence.end));
+        append(audio.key);append(wav_hash);
+        return state::sha256(material);
     }
     static std::string locked_recording_hash(HANDLE file,std::stop_token stop){
         struct Hash{BCRYPT_ALG_HANDLE algorithm=nullptr;BCRYPT_HASH_HANDLE value=nullptr;
@@ -287,9 +300,9 @@ struct LessonReader::Impl {
     void validate_for_playback(std::size_t at){
         if(validating_playback||preparation_suspended||at>=parts.size()||!parts[at].audio)return;
         cancel_playback_verification();validating_playback=true;
-        const auto serial=playback_validation_serial.load(),current_epoch=epoch;const auto page_key=key;
+        const auto serial=playback_validation_serial.load(),current_epoch=epoch;const auto scope=recording_scope;
         auto candidate=parts[at];candidate.playback_lease.reset();
-        playback_verification=std::jthread([this,at,serial,current_epoch,page_key,candidate=std::move(candidate)](std::stop_token stop){
+        playback_verification=std::jthread([this,at,serial,current_epoch,scope,candidate=std::move(candidate)](std::stop_token stop){
             Result result;result.epoch=current_epoch;result.index=at;result.playback_validation=true;result.validation_serial=serial;
             result.audio_fingerprint=candidate.audio_fingerprint;
             try{
@@ -303,7 +316,7 @@ struct LessonReader::Impl {
                 }else{
                     lease->cache_guard=windows::require_narration_recording_handle(lease->file,candidate.audio->wav,environment);
                     const auto hash=locked_recording_hash(lease->file,stop);if(stop.stop_requested())return;
-                    result.recording_changed=recording_fingerprint(page_key,candidate,*candidate.audio,hash)!=candidate.audio_fingerprint;
+                    result.recording_changed=recording_fingerprint(scope,candidate,*candidate.audio,hash)!=candidate.audio_fingerprint;
                     if(!result.recording_changed)result.playback_lease=std::move(lease);
                 }
             }catch(const std::exception& failure){result.error=failure.what();}
@@ -312,7 +325,7 @@ struct LessonReader::Impl {
         });
     }
     void prepare_audio(std::vector<Part> planned,std::uint64_t current_epoch,const std::string& lang,const std::string& selected_voice,
-            const std::string& selected_engine,const std::string& page_key,std::stop_token stop,windows::NarrationPriorityLease page_priority,
+            const std::string& selected_engine,const std::string& scope,std::stop_token stop,windows::NarrationPriorityLease page_priority,
             std::optional<windows::NarrationPagePlan> canonical={}){
         const bool system=selected_engine=="WINDOWS"||selected_engine=="ANDROID";
         const auto output=system?environment.paths.cache:environment.paths.cache/L"kokoro";
@@ -330,7 +343,8 @@ struct LessonReader::Impl {
                 backend->prepare(planned[index].sentence,lang,selected_voice,output,0,stop);
             if(stop.stop_requested())return;ready[index]=true;Result result;result.epoch=current_epoch;result.index=index;
             observe_synthesis(audio);
-            result.audio_fingerprint=recording_fingerprint(page_key,planned[index],audio,state::sha256(state::read_bytes(audio.wav)));
+            result.wav_hash=state::sha256(state::read_bytes(audio.wav));
+            result.audio_fingerprint=recording_fingerprint(scope,planned[index],audio,result.wav_hash);
             result.audio=std::move(audio);push(std::move(result));
         };
         // The visible sentence can play as soon as its own recording is ready.
@@ -374,9 +388,9 @@ struct LessonReader::Impl {
         if(preparation_suspended||parts.empty())return;
         if(canonical_plan)page_audio_complete=false;
         const auto current_epoch=epoch;auto snapshot=parts;for(auto& part:snapshot)part.playback_lease.reset();
-        const auto lang=language,selected_voice=voice,selected_engine=engine,page_key=key;const auto canonical=canonical_plan;
-        generation=std::jthread([this,current_epoch,snapshot,lang,selected_voice,selected_engine,page_key,canonical](std::stop_token stop){
-            try{prepare_audio(snapshot,current_epoch,lang,selected_voice,selected_engine,page_key,stop,backend->current_page_lease(stop),canonical);}
+        const auto lang=language,selected_voice=voice,selected_engine=engine,scope=recording_scope;const auto canonical=canonical_plan;
+        generation=std::jthread([this,current_epoch,snapshot,lang,selected_voice,selected_engine,scope,canonical](std::stop_token stop){
+            try{prepare_audio(snapshot,current_epoch,lang,selected_voice,selected_engine,scope,stop,backend->current_page_lease(stop),canonical);}
             catch(const std::exception& failure){if(!stop.stop_requested()){Result result;result.epoch=current_epoch;result.error=failure.what();push(std::move(result));}}
         });
     }
@@ -474,9 +488,6 @@ struct LessonReader::Impl {
             if(old==previous.end()||old-previous.begin()>=saved.heard_through)break;
             mapped.heard_through=static_cast<std::int64_t>(index+1);
         }
-        // An unchanged partial certificate remains bound to its old plan key.
-        // restore_current_prefix verifies the actual recording; never relabel
-        // that certificate or fabricate discontiguous heard ranges here.
         return revision_prefix_position(previous,saved,mapped);
     }
     static std::string semantic_signature(const std::optional<curriculum::TextSemantics>& value){
@@ -624,7 +635,7 @@ struct LessonReader::Impl {
         const auto legacy_title=page.index>0&&(has_bookmark||!retired_archives.empty()||!editorial_archives.empty())?page.lesson_title:std::string{};
         const auto legacy_snapshot=has_bookmark?legacy_lesson_reading_regions(view):std::vector<LessonReadingRegion>{};
         const auto pre_caption_snapshot=has_bookmark?pre_caption_lesson_reading_regions(view):std::vector<LessonReadingRegion>{};
-        generation=std::jthread([this,current_epoch,snapshot,lang,selected_voice,current_page,next_page,selected_engine,legacy_title,legacy_snapshot,pre_caption_snapshot,retired_archives,editorial_archives,history,source,selected_ui](std::stop_token stop){
+        generation=std::jthread([this,current_epoch,snapshot,lang,selected_voice,current_page,next_page,selected_engine,legacy_title,legacy_snapshot,pre_caption_snapshot,retired_archives,editorial_archives,history,source,selected_ui,scope=recording_scope](std::stop_token stop){
             try{auto page_priority=backend->current_page_lease(stop);
                 std::optional<windows::NarrationPagePlan> canonical;
                 if(!source.raw_json.empty())canonical=backend->page_plan(source.raw_json,source.page,lang,selected_voice,selected_ui,stop,
@@ -807,7 +818,7 @@ struct LessonReader::Impl {
                             std::ranges::find(history.entries,second.key,&narration::Bookmark::key);});
                 }
                 push(std::move(plan));
-                prepare_audio(std::move(planned),current_epoch,lang,selected_voice,selected_engine,resume_key,stop,std::move(page_priority),std::move(canonical));
+                prepare_audio(std::move(planned),current_epoch,lang,selected_voice,selected_engine,scope,stop,std::move(page_priority),std::move(canonical));
             }catch(const std::exception& failure){if(!stop.stop_requested()){Result result;result.epoch=current_epoch;result.error=failure.what();push(std::move(result));}}
         });update_buttons();}
     void receive(){std::vector<Result> pending;{const std::lock_guard lock(result_mutex);pending.swap(results);}if(pending.empty())return;for(auto& result:pending){if(result.epoch!=epoch)continue;
@@ -937,6 +948,14 @@ struct LessonReader::Impl {
                     position=revision_prefix_position(legacy.revision_proof,*legacy_saved,position,passive_completion_from);
                     restored_bookmark=!position.finished;
                 }
+                const auto& prior=legacy.revision_proof.empty()?legacy.parts:legacy.revision_proof;
+                if(position.heard_prefix&&position.heard_prefix->recording_binding.empty()&&
+                    static_cast<std::size_t>(legacy_saved->segment)<prior.size()&&
+                    same_revision_part(prior[static_cast<std::size_t>(legacy_saved->segment)],parts[static_cast<std::size_t>(position.segment)])){
+                    // An older application may have issued a plan-bound proof.
+                    // Retain its origin until the actual audio can authenticate it, including across a close.
+                    position.heard_prefix->recording_binding=legacy.key;
+                }
                 // Relabel the verified old entry in place. Its recency and the
                 // other two page slots are unchanged; no parallel history is kept.
                 mutate([&](state::StateData& preferences){auto old=narration::read_history(preferences);
@@ -998,7 +1017,7 @@ struct LessonReader::Impl {
                 &&part.audio_fingerprint!=result.audio_fingerprint;
             if(replaced&&result.index==current()&&player.allocated())release_player();
             if(replaced){listened.erase(part_id(part));listened_recordings.erase(part_id(part));}
-            part.audio=std::move(result.audio);part.audio_fingerprint=std::move(result.audio_fingerprint);
+            part.audio=std::move(result.audio);part.wav_hash=std::move(result.wav_hash);part.audio_fingerprint=std::move(result.audio_fingerprint);
             if(result.index==current())restore_current_prefix(replaced);
         }
         }paint_progress();update_buttons();}
@@ -1011,7 +1030,7 @@ struct LessonReader::Impl {
     std::optional<narration::HeardPrefix> empty_certificate(std::size_t at)const{
         if(at>=parts.size()||parts[at].audio_fingerprint.empty())return {};
         const auto duration=duration_microseconds(parts[at]);if(duration<=0)return {};
-        return narration::HeardPrefix{parts[at].audio_fingerprint,0,duration};
+        return narration::HeardPrefix{parts[at].audio_fingerprint,0,duration,std::string(narration::passage_binding)};
     }
     void merge_heard(const Part& part,double start,double end){
         if(!std::isfinite(start)||!std::isfinite(end)||start<0||end<=start)return;
@@ -1026,7 +1045,14 @@ struct LessonReader::Impl {
     void restore_current_prefix(bool replaced=false){
         if(parts.empty())return;const auto& part=parts[current()];const auto certificate=empty_certificate(current());
         if(!certificate)return;
+        if(position.heard_prefix&&position.heard_prefix->recording_binding!=narration::passage_binding){
+            const auto& old_key=position.heard_prefix->recording_binding.empty()?key:position.heard_prefix->recording_binding;
+            const auto legacy=legacy_recording_fingerprint(old_key,part,*part.audio,part.wav_hash);
+            if(narration::heard_prefix_matches(position,legacy,certificate->duration_microseconds))
+                position.heard_prefix->fingerprint=certificate->fingerprint;
+        }
         if(narration::heard_prefix_matches(position,certificate->fingerprint,certificate->duration_microseconds)){
+            position.heard_prefix->recording_binding=narration::passage_binding;
             if(position.heard_prefix->microseconds>0)
                 merge_heard(part,0,position.heard_prefix->microseconds/1000.);
             resume_needs_replay=false;

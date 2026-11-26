@@ -8,9 +8,13 @@ namespace lgaed::narration {
 inline constexpr const char* resume_domain="lesson_narration_resume_bounded_v1";
 // Optional Windows evidence for the current segment in the same bounded slot.
 // A zero prefix identifies an explicit preview without crediting any audio.
+inline constexpr std::string_view passage_binding="passage-v2";
 struct HeardPrefix {
     std::string fingerprint;
     std::int64_t microseconds=0,duration_microseconds=0;
+    // Empty in original slots, a prior authenticated plan key during migration,
+    // or passage_binding for evidence already owned by an individual passage.
+    std::string recording_binding;
     bool operator==(const HeardPrefix&)const=default;
 };
 struct Position {

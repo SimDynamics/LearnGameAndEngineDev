@@ -3759,7 +3759,7 @@ int main(int argc,char** argv){const bool stderr_only=argc==2&&std::string_view(
                 if(mode==1)check(restored.index+1==restored.segments.size()&&restored.offset==321&&restored.finished,
                     "A finished page reset instead of retaining its real last segment and final bookmark");
                 if(mode==2)check(restored.offset==0&&!restored.finished&&restored.heard_through==0&&restored.index>0
-                    &&restored.segments[restored.index].source.starts_with("Mantén pulsado"),
+                    &&restored.segments[restored.index].target==child(f.view,1137),
                     "An excluded old code fragment reset the page, invented timing or credited unheard feedback");
                 const auto history=narration::read_history(read_lesson_state(f.view));
                 check(history.entries.size()==3&&history.entries.front().key==current.key
@@ -3776,10 +3776,50 @@ int main(int argc,char** argv){const bool stderr_only=argc==2&&std::string_view(
             auto authored=test::load_pre_retirement_lesson("lesson_primer_programa_y_salida.json");
             const auto prediction=identity_position(authored,"block_0004_0003");
             const auto retiring_editor=identity_position(authored,"ejecucion_original_editor");
-            Fixture f(backend,false,true,true,"es",authored,false,retiring_editor.page);
+            const auto visit_prefix=[](state::StateData& data,const curriculum::Lesson& lesson,std::size_t destination){
+                // Only fill missing ordinary prerequisites in the isolated QA profile.
+                // A later edition can add requirements to a previously visited page.
+                state::prepare_lesson_state(data,lesson);
+                std::size_t added=0;
+                for(std::size_t page=0;page<destination;++page){
+                    check(state::mark_page_reached(data,lesson,page),"The retirement QA skipped a prerequisite page");
+                    for(const auto& block:lesson.pages[page].blocks){
+                        using Type=curriculum::BlockType;
+                        if(const auto existing=state::get_response(data,lesson,block)){
+                            check(existing->correct,"Unexpected incorrect answer in the prepared retirement prefix");continue;
+                        }
+                        state::Response response;curriculum::AnswerEvaluation result;
+                        if(block.type==Type::multiple_choice){
+                            const auto option=block.correct_index.value();
+                            response.selected=static_cast<std::int64_t>(option);response.answer=block.options.at(option);
+                            result=curriculum::evaluate_choice(block,option);
+                        }else if(block.type==Type::order_code){
+                            response.order.assign(block.correct_order.begin(),block.correct_order.end());
+                            result=curriculum::evaluate_order(block,block.correct_order);
+                        }else if(block.type==Type::fill_code||block.type==Type::output_prediction){
+                            response.answer=block.answers.at(0);result=curriculum::evaluate_text_answer(block,response.answer);
+                        }else{
+                            check(block.type==Type::heading||block.type==Type::paragraph||block.type==Type::code,
+                                "Unexpected prerequisite in the pinned pre-retirement lesson");
+                            continue;
+                        }
+                        check(result.correct,"An authored retirement prerequisite failed its evaluator");
+                        response.correct=true;state::mark_response_reviewed(response,block);state::put_response(data,lesson,block,response);
+                        ++added;
+                    }
+                }
+                check(state::can_reach_page(data,lesson,destination),"The retirement editor page is not reachable after its prerequisites");
+                state::save_current_page(data,lesson,destination);
+                return added;
+            };
+            Fixture f(backend,false,true,true,"es",authored,false,0,false,true,{},[&](state::StateData& data){
+                check(visit_prefix(data,authored,retiring_editor.page)==8,"Unexpected prerequisites in the pinned original");
+            });
+            check(lesson_page_state(f.view).index==retiring_editor.page,"Retirement QA opened the wrong archived page");
             if(revised_prose||integrated)f.answer(authored.pages[prediction.page].blocks[prediction.block].answers.at(0),prediction.block);
             const auto old=f.snapshot();const auto old_regions=lesson_reading_regions(f.view);const auto old_page=lesson_page_state(f.view);const auto archived=std::ranges::find_if(old.segments,[&](const auto& part){return part.block==retiring_editor.block&&!part.feedback;});
-            check(archived!=old.segments.end(),"The real old compiler script has no removable editor anchor");
+            check(archived!=old.segments.end()&&archived->region.find("/ejecucion_original_editor/")!=std::string::npos,
+                "The real old compiler script has no removable editor anchor");
             check(std::ranges::none_of(old_regions,[](const auto& region){return region.key.find("/block_0004_0002/")!=std::string::npos;}),
                 "The real pending original failed to hide its dependent compiler in the published lesson");
             const auto old_index=static_cast<std::size_t>(archived-old.segments.begin());
@@ -3796,9 +3836,12 @@ int main(int argc,char** argv){const bool stderr_only=argc==2&&std::string_view(
                 active.pages[current_heading.page].blocks[current_heading.block].text="Ahora construye el mensaje solicitado en este editor independiente.";
             }
             const auto successor=curriculum::active_block_successor(active,"ejecucion_original_editor");
+            const auto active_prediction=identity_position(active,"block_0004_0003");
             check(successor.has_value(),"The retired compiler lost its active reading successor");
             {
                 state::StateStore store(f.environment.paths.root);auto data=store.load();
+                if(integrated)std::cout<<"Retirement QA completed "<<visit_prefix(data,active,successor->page)
+                    <<" additional ordinary prerequisites in the integrated lesson\n";
                 auto history=narration::begin({},"other-paused","paused-owner",{0,100,0,false},{},"other-page-a");
                 history=narration::begin(std::move(history),"other-finished","finished-owner",{0,200,0,false},{},"other-page-b");
                 history=narration::checkpoint(std::move(history),"other-finished","finished-owner",{0,200,0,true});
@@ -3806,6 +3849,7 @@ int main(int argc,char** argv){const bool stderr_only=argc==2&&std::string_view(
                 narration::write_history(data,history);store.save(data);
             }
             f.view=create_lesson_view(f.host,f.environment,std::move(active));MoveWindow(f.view,0,0,980,720,TRUE);
+            check(lesson_page_state(f.view).index==successor->page,"Retirement QA opened the wrong successor page");
             LessonViewHooks hooks;hooks.before_page_change=[&](HWND){if(f.reader)f.reader->pause();};
             hooks.content_changed=[&](HWND){if(f.reader)f.reader->content_changed();};
             hooks.feedback_changed=[&](HWND,std::size_t block,bool correct){if(f.reader)f.reader->feedback(block,correct);};set_lesson_view_hooks(f.view,hooks);
@@ -3821,10 +3865,17 @@ int main(int argc,char** argv){const bool stderr_only=argc==2&&std::string_view(
             f.reader=std::make_unique<LessonReader>(f.view,f.environment,backend,[]{});f.ready();const auto migrated=f.snapshot();
             check(migrated.key!=old.key&&migrated.offset==0&&!migrated.finished&&!migrated.playing&&migrated.heard_through==0,
                 "Retiring an editor invented playback, listening credit or a timing offset");
-            check(migrated.segments[migrated.index].block==successor->block&&std::ranges::none_of(migrated.segments,[](const auto& part){
-                return part.region.find("ejecucion_original_")!=std::string::npos;}),
-                "An archived editor bookmark failed to land on the active successor or retained retired narration");
             const auto history=narration::read_history(read_lesson_state(f.view));
+            // The archived editor maps to its successor in storage even when
+            // an earlier unanswered prediction restricts the visible cursor.
+            const auto expected_live_block=scenario==0?active_prediction.block:successor->block;
+            check(!history.entries.empty()&&history.entries.front().position.segment>=0&&
+                history.entries.front().position.milliseconds==0&&
+                migrated.segments.at(static_cast<std::size_t>(history.entries.front().position.segment)).block==successor->block,
+                "The saved pre-retirement bookmark did not map to the active successor in scenario "+std::to_string(scenario));
+            check(migrated.segments[migrated.index].block==expected_live_block&&std::ranges::none_of(migrated.segments,[](const auto& part){
+                return part.region.find("ejecucion_original_")!=std::string::npos;}),
+                "Unexpected active region after retirement in scenario "+std::to_string(scenario)+": "+migrated.segments[migrated.index].region);
             check(history.entries.size()==3&&history.entries.front().key==migrated.key&&history.entries.front().page==lesson_page_state(f.view).narration_page_identity
                 &&history.entries[1].key=="other-finished"&&history.entries[1].position.finished&&history.entries[1].position.milliseconds==200
                 &&history.entries[2].key=="other-paused"&&history.entries[2].position.milliseconds==100,

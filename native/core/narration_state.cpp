@@ -83,7 +83,7 @@ std::vector<std::string> read_admissions(const state::StateData& data,const std:
 std::optional<HeardPrefix> read_prefix(const state::StateData& data,const std::string& suffix){
     const auto* raw=state::find(data,resume_domain,"heard_prefix_v1_"+suffix);
     const auto* values=raw?std::get_if<std::vector<std::string>>(raw):nullptr;
-    if(!values||values->size()!=3)return {};
+    if(!values||(values->size()!=3&&values->size()!=4))return {};
     HeardPrefix result;result.fingerprint=values->at(0);
     const auto number=[](const std::string& text,std::int64_t& value){
         const auto parsed=std::from_chars(text.data(),text.data()+text.size(),value);
@@ -91,6 +91,11 @@ std::optional<HeardPrefix> read_prefix(const state::StateData& data,const std::s
     };
     if(!number(values->at(1),result.microseconds)||!number(values->at(2),result.duration_microseconds)
         ||!valid_prefix(result))return {};
+    if(values->size()==4){
+        const auto& plan=values->back();
+        if(plan!=passage_binding&&(plan.size()!=64||!std::ranges::all_of(plan,[](char c){return (c>='0'&&c<='9')||(c>='a'&&c<='f');})))return {};
+        result.recording_binding=plan;
+    }
     return result;
 }
 }
@@ -147,8 +152,9 @@ void write_history(state::StateData& data,const History& history){
             prefs["feedback_admissions_v1_"+suffix]=std::move(records);}
         if(entry.position.heard_prefix&&valid_prefix(*entry.position.heard_prefix)){
             const auto& prefix=*entry.position.heard_prefix;
-            prefs["heard_prefix_v1_"+suffix]=std::vector<std::string>{prefix.fingerprint,
-                std::to_string(prefix.microseconds),std::to_string(prefix.duration_microseconds)};
+            std::vector<std::string> proof{prefix.fingerprint,std::to_string(prefix.microseconds),std::to_string(prefix.duration_microseconds)};
+            if(!prefix.recording_binding.empty())proof.push_back(prefix.recording_binding);
+            prefs["heard_prefix_v1_"+suffix]=std::move(proof);
         }else prefs.erase("heard_prefix_v1_"+suffix);
     }
 }

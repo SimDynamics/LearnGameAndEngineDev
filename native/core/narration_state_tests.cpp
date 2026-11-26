@@ -39,6 +39,12 @@ int main(){try{
         proofs=checkpoint(proofs,"recording-A","owner-A",listened);
         lgaed::state::StateData evidence;evidence.preferences[resume_domain]["external_metadata"]=std::string("preserved");
         write_history(evidence,proofs);check(read_history(evidence)==proofs,"real prefix did not roundtrip in its existing bookmark slot");
+        for(const auto& binding:{std::string(64,'b'),std::string(passage_binding)}){
+            auto revised=proofs;
+            revised.entries.front().position.heard_prefix->recording_binding=binding;
+            auto reopened=evidence;write_history(reopened,revised);
+            check(read_history(reopened)==revised,"Reopening lost the origin or identity of the partially heard recording");
+        }
         check(heard_prefix_matches(listened,std::string(64,'a'),1000000),"matching audio proof was rejected");
         check(!heard_prefix_matches(listened,std::string(64,'b'),1000000)
             &&!heard_prefix_matches(listened,std::string(64,'a'),1000001),"wrong recording or duration inherited listening credit");
@@ -65,7 +71,8 @@ int main(){try{
             std::vector<std::string>{std::string(64,'a'),"9223372036854775808","1000000"},
             std::vector<std::string>{std::string(63,'a'),"100","1000000"},
             std::vector<std::string>{std::string(64,'Z'),"100","1000000"},
-            std::vector<std::string>{std::string(64,'a'),"01","1000000"}
+            std::vector<std::string>{std::string(64,'a'),"01","1000000"},
+            std::vector<std::string>{std::string(64,'a'),"100","1000000","unknown-binding"}
         };
         for(const auto& bad:malformed){auto corrupt=evidence;corrupt.preferences[resume_domain]["heard_prefix_v1_0"]=bad;
             const auto restored=restore(read_history(corrupt),"recording-A",3);

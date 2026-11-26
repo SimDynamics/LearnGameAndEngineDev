@@ -90,6 +90,8 @@ def observe(app, document, *, expect_heading):
                "The active reader reordered registered blocks")
     feedback = [i for i, p in enumerate(parts) if p["block"] == block and p["feedback"] and p["correct"]]
     qa.require(feedback == list(range(feedback[0], feedback[-1] + 1)), "Feedback was interrupted")
+    qa.require(not value["reader"]["playing"] and not any(parts[i]["feedbackFullyPlayed"] for i in feedback),
+               "A publication or a restored answer credited feedback the paused learner never heard")
     # The verdict may be generated; every authored word from every paragraph must follow it, in order.
     spoken_source = " ".join(" ".join(parts[i]["source"] for i in feedback).split())
     explanation = " ".join(exercise["explanation"].split())
@@ -146,6 +148,8 @@ def acceptance(executable, previous, revised, root):
         app.start()
         restored = observe(app, new, expect_heading=True)
         qa.write_json(root / "registered-restored.json", restored)
+        qa.require(all(live["reader"][field] == restored["reader"][field] for field in ("key", "index", "offset")),
+                   "Reopening the adopted publication changed the paused reading position")
         print(f"PASS registered lesson revision, authored feedback, new heading, live adoption and restart: {root}",
               flush=True)
     finally:

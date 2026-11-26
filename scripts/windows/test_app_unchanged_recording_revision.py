@@ -32,7 +32,7 @@ def update(path, content):
     temporary.replace(path)
 
 
-def acceptance(executable, root):
+def acceptance(executable, root, previous_executable=None):
     token, relative, location, _, copies = qa.published_fixture(root)
     destination = root / "content" / relative
     original = destination.read_bytes()
@@ -46,7 +46,7 @@ def acceptance(executable, root):
     exercise = next(index for index, block in enumerate(before) if block["type"] == "output_prediction")
     prefix = next((index, block) for index, block in enumerate(old_document["pages"][0]["blocks"])
                   if block["type"] == "multiple_choice")
-    app = qa.Application(executable, root, token)
+    app = qa.Application(previous_executable or executable, root, token)
     update(destination, old)
     try:
         app.start()
@@ -54,12 +54,16 @@ def acceptance(executable, root):
         app.command("open", path=str(relative), location=location)
         app.command("answer_choice", block=prefix[0], option=prefix[1]["correctIndex"])
         app.command("page", page=page)
+        app.command("pause")
         app.command("answer", block=exercise, answer=before[exercise]["answers"][0])
+        app.wait(lambda snapshot: current(snapshot)[1].get("block") == exercise and
+                 current(snapshot)[1].get("correct"), "confirmed feedback selected for playback", 90)
+        app.command("play")
 
         def partial(snapshot):
             reader, segment = current(snapshot)
             return (reader.get("playing") and segment.get("block") == exercise and segment.get("feedback")
-                    and segment.get("duration", 0) >= 5000 and 1500 < reader["offset"] < 3000)
+                    and segment.get("duration", 0) >= 3000 and 1100 < reader["offset"] < 1900)
 
         app.wait(partial, "genuine partial feedback prior to the later publication", 180)
         paused = app.command("pause")
@@ -68,12 +72,19 @@ def acceptance(executable, root):
         recording = Path(segment["recording"])
         fingerprint, modified = qa.digest(recording), recording.stat().st_mtime_ns
         qa.require(1000 < saved < segment["duration"] - 500, "Pause did not land inside this recording")
-        update(destination, new)
         revision = paused["lesson"]["contentRevision"]
+        if previous_executable:
+            app.close()
+        update(destination, new)
+        if previous_executable:
+            # Reopen the same isolated study session after both the program and
+            # the source have changed, starting from its genuine old bookmark.
+            app = qa.Application(executable, root, token)
+            app.start()
 
         def adopted(snapshot):
             plan, part = current(snapshot)
-            return (snapshot.get("lesson", {}).get("contentRevision", 0) > revision and plan.get("planned")
+            return ((previous_executable or snapshot.get("lesson", {}).get("contentRevision", 0) > revision) and plan.get("planned")
                     and plan["key"] != reader["key"] and part.get("available"))
 
         changed = app.wait(adopted, "new published guide adopted while paused", 180)
@@ -107,6 +118,7 @@ def acceptance(executable, root):
 if __name__ == "__main__":
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("--executable", type=Path, required=True)
+    parser.add_argument("--previous-executable", type=Path, help="Create the paused bookmark in this older binary and reopen in the current one")
     parser.add_argument("--qa-root", type=Path, default=Path("C:/LGAED-QA") / ("app-published-pause-" + uuid.uuid4().hex))
     args = parser.parse_args()
-    acceptance(args.executable, qa.checked_root(args.qa_root))
+    acceptance(args.executable, qa.checked_root(args.qa_root), args.previous_executable)
