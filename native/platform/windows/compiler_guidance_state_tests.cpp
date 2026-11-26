@@ -9,8 +9,6 @@
 #include <set>
 
 namespace lgaed::test {
-int u3l4_storage_recovery_windows();
-int inspect_u3l4_storage_recovery_windows(const std::filesystem::path& profile);
 int math_matching_text_live_windows(
     const std::filesystem::path& content,const std::filesystem::path& qa);
 int indexed_unique_transfer_state_windows(
@@ -1137,10 +1135,6 @@ int main(int argc,char** argv)try{
     const auto content=std::filesystem::path(build::source_root)/"app/src/main/assets/content/es/programming/cpp_fundamentals";
     const auto qa=std::filesystem::path(build::source_root)/"out/qa"/
         ("compiler-guidance-"+std::to_string(GetCurrentProcessId())+'-'+std::to_string(GetTickCount64()));
-    if(argc==2&&std::string_view(argv[1])=="--u3l4-storage-recovery")
-        return test::u3l4_storage_recovery_windows();
-    if(argc==3&&std::string_view(argv[1])=="--inspect-u3l4-storage-recovery")
-        return test::inspect_u3l4_storage_recovery_windows(std::filesystem::path(argv[2]));
     if(argc==2&&std::string_view(argv[1])=="--review-priority")return review_priority_models(content,qa);
     if(argc==2&&std::string_view(argv[1])=="--authored-l24-guides")return authored_l24_guides(content,qa);
     if(argc==2&&std::string_view(argv[1])=="--general-choice-live")return general_choice_live_windows(content,qa);

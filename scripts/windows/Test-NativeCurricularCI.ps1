@@ -51,7 +51,7 @@ $qaSuiteConfig = switch ($Suite) {
         @{
             Directory = 'state-import-ci'
             CMakeOption = 'LGAED_STATE_IMPORT_QA_ONLY'
-            Targets = @('lgaed_state_tests', 'lgaed_stderr_exact_tests', 'lgaed_cpp_project_history_tests', 'lgaed_cpp_history_training_tests', 'lgaed_code_format_loader_tests', 'lgaed_u6_compilecheck_format_runner_tests', 'lgaed_compiler_case_order_state_tests', 'lgaed_compiler_case_revision_state_tests', 'lgaed_compiler_guidance_state_tests', 'lgaed_p3_ownership_authoring_state_tests', 'lgaed_local_variable_state_qa_targets')
+            Targets = @('lgaed_state_tests', 'lgaed_stderr_exact_tests', 'lgaed_cpp_project_history_tests', 'lgaed_cpp_history_training_tests', 'lgaed_code_format_loader_tests', 'lgaed_u6_compilecheck_format_runner_tests', 'lgaed_compiler_case_order_state_tests', 'lgaed_compiler_case_revision_state_tests', 'lgaed_compiler_guidance_state_tests', 'lgaed_u3l4_storage_recovery_tests', 'lgaed_p3_ownership_authoring_state_tests', 'lgaed_local_variable_state_qa_targets')
             Results = 'state-import'
             Tests = @(
                 'native.cpp_project_history',
@@ -161,6 +161,7 @@ $qaSuiteConfig = switch ($Suite) {
                 'lgaed_lesson_view_tests',
                 'lgaed_lesson_tests',
                 'lgaed_compiler_guidance_state_tests',
+                'lgaed_u3l4_storage_recovery_tests',
                 'lgaed_p3_ownership_authoring_state_tests',
                 'lgaed_code_gutter_wheel_tests',
                 'lgaed_lesson_scroll_tests',

@@ -5,6 +5,7 @@
 #include "platform/windows/content_loader.hpp"
 #include "platform/windows/published_adoption_test_source.hpp"
 #include "platform/windows/state_store.hpp"
+#include "platform/windows/winrt_apartment.hpp"
 #include "native_build_config.hpp"
 
 #include <algorithm>
@@ -41,6 +42,7 @@ struct Incident {
     std::vector<std::string> moved;
 };
 Incident incident() {
+    ensure_winrt_apartment();
     const auto root=std::filesystem::path(build::source_root);
     Incident result;
     result.rejected_bytes=qa::adoption_detail::git_blob(root,rejected_blob);
@@ -265,7 +267,8 @@ int u3l4_storage_recovery_windows() {
         "Map-only recovery was not read-only and idempotent");
 
     const auto& choice=owner(known.rejected,"u3l4_buscar_tres_bloques_practica");
-    state::Response response;response.selected=choice.correct_index;
+    require(choice.correct_index.has_value(),"The pinned choice lacks its original correct index");
+    state::Response response;response.selected=static_cast<std::int64_t>(*choice.correct_index);
     response.correct=true;
     state::put_response(data,known.rejected,choice,response);
     state::Draft draft;draft.source=old.initial_code+"\n// QA saved draft\n";
@@ -354,3 +357,16 @@ int inspect_u3l4_storage_recovery_windows(const std::filesystem::path& profile) 
     }
 }
 } // namespace lgaed::test
+
+int wmain(int argc,wchar_t** argv) try {
+    if(argc==1||(argc==2&&std::wstring_view(argv[1])==L"--self-test"))
+        return lgaed::test::u3l4_storage_recovery_windows();
+    if(argc==3&&std::wstring_view(argv[1])==L"--inspect")
+        return lgaed::test::inspect_u3l4_storage_recovery_windows(std::filesystem::path(argv[2]));
+    std::cerr<<"Usage: lgaed_u3l4_storage_recovery_tests [--self-test | --inspect <absolute profile directory>]\n";
+    return 2;
+}catch(const winrt::hresult_error& error) {
+    std::cerr<<"FAIL U3L4 storage recovery: "<<winrt::to_string(error.message())<<'\n';return 1;
+}catch(const std::exception& error) {
+    std::cerr<<"FAIL U3L4 storage recovery: "<<error.what()<<'\n';return 1;
+}
