@@ -9,6 +9,8 @@
 #include "platform/windows/cpp_runner.hpp"
 #include "platform/windows/environment.hpp"
 #include "platform/windows/state_store.hpp"
+#include "platform/windows/published_adoption_test_source.hpp"
+#include "native_build_config.hpp"
 
 #include <windows.h>
 #include <winrt/Windows.Data.Json.h>
@@ -36,6 +38,9 @@ using namespace std::chrono_literals;
 using winrt::Windows::Data::Json::JsonArray;
 using winrt::Windows::Data::Json::JsonObject;
 using winrt::Windows::Data::Json::JsonValue;
+constexpr std::string_view lesson_relative=
+    "app/src/main/assets/content/es/programming/programming_practice_tools/"
+    "comprobaciones_repetibles/lesson_integrar_un_proyecto_y_sostener_su_evidencia.json";
 constexpr std::string_view activity="block_0006_0011";
 constexpr std::string_view previous_activity="block_0006_0008";
 constexpr std::string_view test_path="pruebas/casos.cpp";
@@ -89,7 +94,7 @@ const std::string& file(const CppProjectFiles& files,std::string_view path) {
 void replace_once(std::string& source,std::string_view from,std::string_view to) {
     const auto at=source.find(from);
     require(at!=source.npos&&source.find(from,at+from.size())==source.npos,
-        "The authentic open battery fixture changed");
+        "The authentic open battery fixture changed at anchor: "+std::string(from));
     source.replace(at,from.size(),to);
 }
 bool same_json(const winrt::Windows::Data::Json::IJsonValue& left,
@@ -524,6 +529,7 @@ void builder_completion(const state::StateData& data,const Lesson& lesson,bool e
 }
 
 void verify_adjustment_constructor(const std::filesystem::path& fixture_path,
+        const std::string& live_text,const Lesson& original,
         const state::StateData& previous_data,const Lesson& previous_lesson) {
     const LaunchOptions options{ProfileId::Codex,
         L"ab-"+std::to_wstring(GetCurrentProcessId())+L"-"+
@@ -531,8 +537,6 @@ void verify_adjustment_constructor(const std::filesystem::path& fixture_path,
     const auto environment=resolve_windows_environment(options);
     initialize_profile_directories(environment.paths);
     const auto projects=environment.paths.projects/L"AB & (QA)";
-    const auto original_text=read(fixture_path);
-    const auto original=parse_lesson_json(original_text,"es");
     const auto& before=owner(original,builder_activity);
     const auto& reference=owner(original);
     require(before.project_files.size()==5&&before.cmake&&
@@ -902,16 +906,243 @@ void verify_adjustment_constructor(const std::filesystem::path& fixture_path,
             state::string_value(reset,"cpp_lesson_drafts",draft_identity+"/project")==saved_project&&
             compiler_puzzle_completed(reset,previous_lesson,owner(previous_lesson)),
         "Resetting the constructor removed a historical draft or another achievement");
-    require(read(fixture_path)==original_text,
-        "The constructor QA rewrote the authentic lesson or its source map");
+    require(read(fixture_path)==live_text,
+        "The constructor QA rewrote the active lesson or its source map");
     std::cout << "PASS equivalent silent checker, CMake 3.21 and /W3, exact physical receipt/draft reopening, "
                  "tamper rejection and isolated constructor reset; published source unchanged\n";
+}
+
+// Keep the real active publication distinct from the pinned pre-adoption
+// fixture. This function never inserts or replaces a declaration in live.
+bool verify_active_adoption(const Lesson& original,const Lesson& live,
+        const std::filesystem::path& projects,bool execute) {
+    const auto compact=parse_lesson_progress_metadata(live.raw_json,"es");
+    require(live.id==original.id&&compact.id==live.id&&
+            live.state_layout.lineage==original.state_layout.lineage&&
+            compact.state_layout.lineage==live.state_layout.lineage&&
+            live.state_layout.signatures==original.state_layout.signatures&&
+            compact.state_layout.signatures==live.state_layout.signatures,
+        "The active U3L10 lost its authentic original lineage");
+    for(const auto identity:{activity,previous_activity,builder_activity}) {
+        const auto& old=owner(original,identity);
+        const auto& current=owner(live,identity);
+        const auto& lean=owner(compact,identity);
+        require(exercise_key(original,old)==exercise_key(live,current)&&
+                exercise_key(live,current)==exercise_key(compact,lean)&&
+                draft_key("programming",original,old)==draft_key("programming",live,current)&&
+                draft_key("programming",live,current)==draft_key("programming",compact,lean),
+            "The active U3L10 changed an authentic owner or draft address");
+        require(current.open_battery_probe==lean.open_battery_probe&&
+                current.adjustment_project_probe==lean.adjustment_project_probe&&
+                current.cmake_graph_check==lean.cmake_graph_check,
+            "The active full and compact U3L10 contracts disagree");
+        if(current.open_battery_probe||current.adjustment_project_probe||current.cmake_graph_check)
+            require(current.project_files==lean.project_files&&
+                    reference_objective_frame(live,current)==reference_objective_frame(compact,lean),
+                "The active full and compact objectives or sources disagree");
+    }
+
+    // The oracle is independent of the current JSON. Derive it from the
+    // immutable predecessor and the reviewed root declarations.
+    auto expected_document=JsonObject::Parse(winrt::to_hstring(original.raw_json));
+    require(!expected_document.HasKey(L"compilerOpenBatteryChecks")&&
+            !expected_document.HasKey(L"compilerCmakeGraphChecks"),
+        "The pinned source is not a genuine pre-adoption fixture");
+    JsonArray goals;
+    goals.Append(JsonObject::Parse(winrt::to_hstring(declaration)));
+    goals.Append(JsonObject::Parse(winrt::to_hstring(builder_declaration)));
+    expected_document.Insert(L"compilerOpenBatteryChecks",goals);
+    append_builder_declaration(expected_document,L"compilerCmakeGraphChecks",builder_graph);
+    const auto expected=parse_lesson_json(winrt::to_string(expected_document.Stringify()),"es");
+    const auto& extension=owner(live);
+    const auto& builder=owner(live,builder_activity);
+    const auto& repair=owner(live,previous_activity);
+    const auto& old_extension=owner(original);
+    const auto& expected_extension=owner(expected);
+    const auto& expected_builder=owner(expected,builder_activity);
+    const bool adopted=extension.open_battery_probe.has_value()||
+        builder.adjustment_project_probe.has_value()||repair.cmake_graph_check.has_value();
+    if(extension.open_battery_probe) {
+        auto spec=*extension.open_battery_probe;
+        const auto& oracle=*expected_extension.open_battery_probe;
+        require(spec.original_cases.size()==oracle.original_cases.size()&&
+                spec.original_case_numbers.size()==spec.original_cases.size(),
+            "The active extension lost an independent original case");
+        for(std::size_t i=0;i<spec.original_cases.size();++i) {
+            const auto found=std::ranges::find(oracle.original_cases,spec.original_cases[i]);
+            require(found!=oracle.original_cases.end()&&spec.original_case_numbers[i]==
+                    oracle.original_case_numbers[static_cast<std::size_t>(found-oracle.original_cases.begin())],
+                "An active original case has another tuple or historical number");
+        }
+        spec.original_cases=oracle.original_cases;
+        spec.original_case_numbers=oracle.original_case_numbers;
+        require(spec==oracle&&extension.output_check&&
+                extension.output_check->open_battery_check&&
+                extension.output_check->input_comparison==TextComparison::exact&&
+                extension.output_check->cases.size()==1&&
+                extension.output_check->cases.front().standard_input.empty()&&
+                extension.output_check->cases.front().executable==
+                    std::optional<std::string>{oracle.test_target},
+            "The active extension does not retain its reviewed first-case oracle");
+        if(file(extension.project_files,"CMakeLists.txt")!=
+                file(old_extension.project_files,"CMakeLists.txt")) {
+            require(!extension.compiler_client_epoch.empty()&&
+                std::ranges::any_of(extension.compiler_case_revisions,[&](const auto& revision) {
+                    if(!revision.client_revision||!revision.client_revision->cmake_recipe||
+                       !revision.preserves_root_output_check)return false;
+                    const auto prior=compiler_case_revision_previous_block(extension,revision);
+                    return file(prior.project_files,"CMakeLists.txt")==
+                        file(old_extension.project_files,"CMakeLists.txt")&&
+                        prior.open_battery_probe.has_value();
+                }),"The active recipe lacks its authenticated pre-adoption source epoch");
+        }
+    }
+    if(builder.adjustment_project_probe) {
+        require(builder.adjustment_project_probe==expected_builder.adjustment_project_probe&&
+                builder.cmake_graph_check&&
+                adjustment_project_graph_valid(*builder.adjustment_project_probe,*builder.cmake_graph_check)&&
+                builder.output_check&&builder.output_check->adjustment_project_check&&
+                builder.output_check->cases.size()==1&&
+                builder.output_check->cases.front().standard_input.empty(),
+            "The adopted constructor lost its combined component/client/checker goal");
+    }
+    if(!execute||!adopted)return adopted;
+
+    // Real requests use the active owners and actual authored recipes.
+    // The complete historical negative/receipt suite still runs separately.
+    state::StateData data;
+    state::prepare_lesson_state(data,live);
+    std::uint64_t sequence=40000;
+    const auto request_for=[&](const Block& block) {
+        require(block.cmake.has_value(),"The active owner lacks its CMake project");
+        CppRunRequest request;
+        request.request_id=++sequence;request.revision=sequence;
+        request.projects_directory=projects;
+        request.project_key=draft_key("programming",live,block);
+        request.source_utf8=block.initial_code;
+        request.project_files=block.project_files;request.source_files=block.source_files;
+        request.cmake=block.cmake;
+        request.cmake_graph_check=block.cmake_graph_check;
+        request.capture_cmake_graph=block.cmake_graph_check.has_value();
+        request.open_battery_probe=block.open_battery_probe;
+        request.adjustment_project_probe=block.adjustment_project_probe;
+        request.compile_timeout=90s;request.execution_timeout=5s;
+        return request;
+    };
+    if(repair.cmake_graph_check) {
+        require(repair.output_check&&!repair.output_check->cases.empty()&&
+                repair.cmake_graph_check->expression_repair,
+            "The active repair lost its original expression or first case");
+        if(const auto& observation=repair.cmake_graph_check->initial_observation) {
+            auto faulty=request_for(repair);
+            faulty.cmake->target=observation->executable;
+            faulty.stdin_utf8=observation->standard_input;
+            require(compiler_runtime_request_allowed(repair,faulty),
+                "The active initial-failure request is not admissible");
+            const auto failed=run_cpp(faulty);
+            require(record_compiler_cmake_initial_observation(data,live,repair,faulty,failed)&&
+                    !compiler_puzzle_completed(data,live,repair),
+                "The active original failure did not earn only its observation: "+run_diagnostic(faulty,failed));
+        }
+        auto fixed=request_for(repair);
+        const auto& first=repair.output_check->cases.front();
+        fixed.stdin_utf8=first.standard_input;
+        if(first.executable)fixed.cmake->target=*first.executable;
+        const auto& expression=*repair.cmake_graph_check->expression_repair;
+        replace_once(file(fixed.project_files,expression.path),"valor - superior","superior - valor");
+        if(repair.cmake_graph_check->initial_observation) {
+            fixed.cmake_initial_observation_prerequisite=
+                compiler_cmake_initial_observation_prerequisite(data,live,repair,fixed);
+            require(!fixed.cmake_initial_observation_prerequisite.empty(),
+                "The active repair did not inherit its freshly observed failure");
+        }
+        require(compiler_runtime_request_allowed(repair,fixed),
+            "The active first-case repair request is not admissible");
+        const auto result=run_cpp(fixed);
+        const auto captured=capture_cpp_execution(fixed,result);
+        require(record_compiler_puzzle_case(data,live,repair,fixed,captured,"QA active repair")&&
+                compiler_puzzle_case_count(data,live,repair)==1&&
+                compiler_puzzle_completed(data,compact,owner(compact,previous_activity)),
+            "The actual integrated first repair case failed: "+run_diagnostic(fixed,result));
+        std::cout<<"PASS active first repair case with its actual graph and prerequisites\n";
+    }
+    if(extension.open_battery_probe) {
+        auto unchanged=request_for(extension);
+        // The immutable expansion may share the construction graph without
+        // duplicating a root declaration. Inspect the actual graph in QA too,
+        // but do not add a new grading goal to its published owner.
+        unchanged.capture_cmake_graph=true;
+        require(compiler_runtime_request_allowed(extension,unchanged),
+            "The active expansion rejected its exact published project");
+        const auto initial=run_cpp(unchanged);
+        public_success(unchanged,initial);
+        const auto seed=data;
+        require(!record_compiler_puzzle_case(data,live,extension,unchanged,
+                    capture_cpp_execution(unchanged,initial),"QA unchanged expansion")&&data==seed,
+            "The active eleven-case checker earned new extension credit");
+        auto extended=request_for(extension);
+        extended.capture_cmake_graph=true;
+        file(extended.project_files,test_path)=extended_driver(extension,
+            "    if (!comprobar(12, 3, 3, 7, 59, true, 0)) { ++fallos; }\n");
+        require(compiler_runtime_request_allowed(extension,extended),
+            "The active expansion rejected a legitimate new independent comparison");
+        const auto result=run_cpp(extended);
+        public_success(extended,result);
+        const auto capture=capture_cpp_execution(extended,result);
+        const auto graph=evaluate_cmake_graph(extended,result,*expected_builder.cmake_graph_check);
+        require(graph.correct&&result.open_battery_evidence&&
+                result.open_battery_evidence->runs.size()==37&&capture.open_battery_probe_correct&&
+                record_compiler_puzzle_case(data,live,extension,extended,capture,"QA active extension")&&
+                compiler_puzzle_case_count(data,live,extension)==1&&
+                compiler_puzzle_completed(data,compact,owner(compact)),
+            "The active expansion lost its shared graph or independently executed comparisons: "+
+                graph.reason+run_diagnostic(extended,result));
+        preserved_public_project(extended,result);
+        std::cout<<"PASS actual adopted expansion: shared CMake graph, 37 phases and one first-case receipt\n";
+    }
+    if(builder.adjustment_project_probe) {
+        auto built=request_for(builder);
+        built.cmake->target=builder.adjustment_project_probe->test_target;
+        // This is a solution submitted to the original blank CMake editor,
+        // not a rewrite of a published recipe. Use the reviewed MSVC options.
+        auto recipe=file(old_extension.project_files,"CMakeLists.txt");
+        for(const auto target:{"ajustes","consultar_ajustes","comprobar_ajustes"})
+            replace_once(recipe,"target_compile_options("+std::string(target)+
+                " PRIVATE -Wall -Wextra -Wpedantic)",
+                "target_compile_options("+std::string(target)+" PRIVATE /W4 /permissive-)");
+        file(built.project_files,"CMakeLists.txt")=std::move(recipe);
+        file(built.project_files,"src/ajuste.cpp")=builder_library;
+        file(built.project_files,"app/consulta.cpp")=file(old_extension.project_files,"app/consulta.cpp");
+        file(built.project_files,test_path)=builder_checker;
+        require(compiler_runtime_request_allowed(builder,built),
+            "The active constructor rejected its complete shared project");
+        const auto result=run_cpp(built);
+        public_success(built,result);
+        const auto capture=capture_cpp_execution(built,result);
+        require(capture.adjustment_project_probe_correct&&capture.cmake_graph_correct&&
+                record_compiler_puzzle_case(data,live,builder,built,capture,"QA active constructor")&&
+                compiler_puzzle_case_count(data,live,builder)==1&&
+                compiler_puzzle_completed(data,compact,owner(compact,builder_activity)),
+            "The actual integrated constructor did not earn its own first-case receipt: "+
+                capture.adjustment_project_probe_feedback+run_diagnostic(built,result));
+        preserved_public_project(built,result);
+        std::cout<<"PASS actual adopted constructor: combined component, client and checker proof\n";
+    }
+    const auto reopened=state::decode(state::encode(data));
+    require(reopened==data,"The adopted U3L10 receipts changed on reopening");
+    if(extension.open_battery_probe)completion(reopened,compact,true);
+    if(builder.adjustment_project_probe)builder_completion(reopened,compact,true);
+    if(repair.cmake_graph_check)
+        require(compiler_puzzle_completed(reopened,compact,owner(compact,previous_activity)),
+            "Reopening lost the active repair receipt");
+    return true;
 }
 
 } // namespace
 
 int main(int argc,char** argv) {
-    if(argc!=2)return 2;
+    const bool active_only=argc==3&&std::string_view(argv[1])=="--active";
+    if(argc!=2&&!active_only)return 2;
     try {
         const LaunchOptions options{ProfileId::Codex,
             L"ob-"+std::to_wstring(GetCurrentProcessId())+L"-"+
@@ -921,10 +1152,21 @@ int main(int argc,char** argv) {
         // Keep room for CMakeScratch/TryCompile while retaining the path's
         // spaces, ampersand, parentheses and the isolated PID/tick namespace.
         const auto projects=environment.paths.projects/L"OB & (QA)";
-        const auto fixture_path=std::filesystem::path(argv[1]);
-        const auto original_text=read(fixture_path);
-        const auto original_sha=state::sha256(original_text);
+        const auto fixture_path=std::filesystem::path(argv[active_only?2:1]);
+        const auto live_text=read(fixture_path);
+        const auto live=parse_lesson_json(live_text,"es");
+        const auto original_text=qa::published_adoption_source(
+            std::filesystem::path(build::source_root),lesson_relative);
         const auto original=parse_lesson_json(original_text,"es");
+        const bool adopted=verify_active_adoption(original,live,projects,active_only);
+        require(read(fixture_path)==live_text,"Active U3L10 QA modified its fixture");
+        if(active_only) {
+            if(!adopted) {
+                std::cout<<"SKIP active U3L10 runtime: no reviewed owner has been adopted yet\n";
+                return 77;
+            }
+            return 0;
+        }
         const auto& before=owner(original);
         require(before.standard_input&&!before.standard_input->empty()&&
                 before.project_files.size()==5&&before.cmake&&
@@ -1106,8 +1348,8 @@ int main(int argc,char** argv) {
         require(reference_objective_frame(lesson,former_input_contract)!=
                 reference_objective_frame(lesson,block),
             "The corrected input reused the former objective's evidence identity");
-        require(read(fixture_path)==original_text&&state::sha256(read(fixture_path))==original_sha,
-            "Preparing the QA fixture rewrote the published source or SHA");
+        require(read(fixture_path)==live_text,
+            "Preparing the historical QA fixture rewrote the active source");
 
         state::StateData data;
         data.preferences["qa"]["keep"]=std::string("unrelated saved state");
@@ -1406,10 +1648,10 @@ int main(int argc,char** argv) {
                 state::string_value(reset,"qa","keep")=="unrelated saved state",
             "Explicit reset removed a project, initial input or unrelated saved state");
         const auto after=read(fixture_path);
-        require(after==original_text&&state::sha256(after)==original_sha,
-            "The runtime test rewrote the authentic curricular source or SHA");
+        require(after==live_text,
+            "The historical runtime test rewrote the active curricular source");
         std::cout << "PASS physical reopening, tamper rejection, isolated reset and unchanged published source SHA\n";
-        verify_adjustment_constructor(fixture_path,data,lesson);
+        verify_adjustment_constructor(fixture_path,live_text,original,data,lesson);
         return 0;
     }catch(const std::exception& error) {
         std::cerr << "FAIL open battery action runtime: " << error.what() << '\n';

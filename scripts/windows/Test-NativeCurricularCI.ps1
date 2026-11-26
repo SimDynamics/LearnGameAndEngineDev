@@ -757,6 +757,7 @@ if ($Suite -eq 'ReaderBuild') {
         'native.open_battery_authoring',
         'native.open_battery_runner',
         'native.open_battery_runtime',
+        'native.open_battery_active_runtime',
         'native.rich_text_hit_geometry',
         'native.lesson_menu',
         'native.lesson_scroll_render'
@@ -767,7 +768,7 @@ if ($Suite -eq 'ReaderBuild') {
         $qaUiMissing.Count -gt 0 -or $qaUiUnexpected.Count -gt 0) {
         Write-Host ("ReaderBuild missing CTest registrations: " + ($qaUiMissing -join ', '))
         Write-Host ("ReaderBuild unexpected CTest registrations: " + ($qaUiUnexpected -join ', '))
-        throw 'ReaderBuild must register independent native glyph hit geometry, console fullscreen/zoom, menu/scroll, Win32 History, spacing, fullscreen editor viewport, U3 semantic, code-format, Premium, first-case compiler, case-order/revision history, semantic retirement, catalog, general-choice editorial, boolean battery, stateful reduction, integer CMake battery, optional prose/format review and all four open-battery contracts and execution regressions.'
+        throw 'ReaderBuild must register independent native glyph hit geometry, console fullscreen/zoom, menu/scroll, Win32 History, spacing, fullscreen editor viewport, U3 semantic, code-format, Premium, first-case compiler, case-order/revision history, semantic retirement, catalog, general-choice editorial, boolean battery, stateful reduction, integer CMake battery, optional prose/format review and all five open-battery contracts and execution regressions.'
     }
     # Obtain CMake structure, U3 semantics and named-rule variation
     # evidence before the remaining compiler cases. A failure in one must

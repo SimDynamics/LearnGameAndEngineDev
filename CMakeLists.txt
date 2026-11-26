@@ -888,6 +888,10 @@ function(lgaed_add_open_battery_runtime_test)
         "${CMAKE_SOURCE_DIR}/app/src/main/assets/content/es/programming/programming_practice_tools/comprobaciones_repetibles/lesson_integrar_un_proyecto_y_sostener_su_evidencia.json")
     set_tests_properties(native.open_battery_runtime
         PROPERTIES TIMEOUT 900 RUN_SERIAL TRUE)
+    add_test(NAME native.open_battery_active_runtime COMMAND lgaed_open_battery_runtime_tests --active
+        "${CMAKE_SOURCE_DIR}/app/src/main/assets/content/es/programming/programming_practice_tools/comprobaciones_repetibles/lesson_integrar_un_proyecto_y_sostener_su_evidencia.json")
+    set_tests_properties(native.open_battery_active_runtime
+        PROPERTIES TIMEOUT 900 RUN_SERIAL TRUE SKIP_RETURN_CODE 77)
 endfunction()
 
 function(lgaed_add_integer_battery_tests)
