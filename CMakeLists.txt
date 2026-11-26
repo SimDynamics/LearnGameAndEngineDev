@@ -189,6 +189,15 @@ function(lgaed_add_compiler_guidance_state_target)
         native/platform/windows/dual_interface_state_tests.cpp)
     target_link_libraries(lgaed_compiler_guidance_state_tests
         PRIVATE lgaed_platform_windows lgaed_host_options)
+    # Keep the explicit offline recovery utility independent of the portable
+    # compiler-guidance fixture and its intentionally closed source list.
+    add_executable(lgaed_u3l4_storage_recovery_tests
+        native/platform/windows/u3l4_storage_recovery_tests.cpp)
+    target_link_libraries(lgaed_u3l4_storage_recovery_tests
+        PRIVATE lgaed_platform_windows lgaed_host_options)
+    add_test(NAME native.u3l4_storage_recovery
+        COMMAND lgaed_u3l4_storage_recovery_tests --self-test)
+    set_tests_properties(native.u3l4_storage_recovery PROPERTIES TIMEOUT 90 RUN_SERIAL TRUE)
 endfunction()
 
 # Execute the actual Windows loader, compiler-completion and StateStore
@@ -888,6 +897,10 @@ function(lgaed_add_open_battery_runtime_test)
         "${CMAKE_SOURCE_DIR}/app/src/main/assets/content/es/programming/programming_practice_tools/comprobaciones_repetibles/lesson_integrar_un_proyecto_y_sostener_su_evidencia.json")
     set_tests_properties(native.open_battery_runtime
         PROPERTIES TIMEOUT 900 RUN_SERIAL TRUE)
+    add_test(NAME native.open_battery_active_runtime COMMAND lgaed_open_battery_runtime_tests --active
+        "${CMAKE_SOURCE_DIR}/app/src/main/assets/content/es/programming/programming_practice_tools/comprobaciones_repetibles/lesson_integrar_un_proyecto_y_sostener_su_evidencia.json")
+    set_tests_properties(native.open_battery_active_runtime
+        PROPERTIES TIMEOUT 900 RUN_SERIAL TRUE SKIP_RETURN_CODE 77)
 endfunction()
 
 function(lgaed_add_integer_battery_tests)

@@ -51,7 +51,7 @@ $qaSuiteConfig = switch ($Suite) {
         @{
             Directory = 'state-import-ci'
             CMakeOption = 'LGAED_STATE_IMPORT_QA_ONLY'
-            Targets = @('lgaed_state_tests', 'lgaed_stderr_exact_tests', 'lgaed_cpp_project_history_tests', 'lgaed_cpp_history_training_tests', 'lgaed_code_format_loader_tests', 'lgaed_u6_compilecheck_format_runner_tests', 'lgaed_compiler_case_order_state_tests', 'lgaed_compiler_case_revision_state_tests', 'lgaed_compiler_guidance_state_tests', 'lgaed_p3_ownership_authoring_state_tests', 'lgaed_local_variable_state_qa_targets')
+            Targets = @('lgaed_state_tests', 'lgaed_stderr_exact_tests', 'lgaed_cpp_project_history_tests', 'lgaed_cpp_history_training_tests', 'lgaed_code_format_loader_tests', 'lgaed_u6_compilecheck_format_runner_tests', 'lgaed_compiler_case_order_state_tests', 'lgaed_compiler_case_revision_state_tests', 'lgaed_compiler_guidance_state_tests', 'lgaed_u3l4_storage_recovery_tests', 'lgaed_p3_ownership_authoring_state_tests', 'lgaed_local_variable_state_qa_targets')
             Results = 'state-import'
             Tests = @(
                 'native.cpp_project_history',
@@ -83,6 +83,7 @@ $qaSuiteConfig = switch ($Suite) {
                 'native.polymorphic_clone_state_live',
                 'native.dual_interface_state_live',
                 'native.p3_ownership_shared_state',
+                'native.u3l4_storage_recovery',
                 'native.local_int_state',
                 'native.local_string_state',
                 'native.input_dependency_state',
@@ -160,6 +161,7 @@ $qaSuiteConfig = switch ($Suite) {
                 'lgaed_lesson_view_tests',
                 'lgaed_lesson_tests',
                 'lgaed_compiler_guidance_state_tests',
+                'lgaed_u3l4_storage_recovery_tests',
                 'lgaed_p3_ownership_authoring_state_tests',
                 'lgaed_code_gutter_wheel_tests',
                 'lgaed_lesson_scroll_tests',
@@ -713,6 +715,7 @@ if ($Suite -eq 'ReaderBuild') {
         'native.general_choice_live',
         'native.identifier_rename_live',
         'native.p3_ownership_shared_state',
+        'native.u3l4_storage_recovery',
         'native.indexed_unique_transfer_state_live',
         'native.defaulted_move_policy_state_live',
                 'native.independent_copy_assignment_state_live',
@@ -757,6 +760,7 @@ if ($Suite -eq 'ReaderBuild') {
         'native.open_battery_authoring',
         'native.open_battery_runner',
         'native.open_battery_runtime',
+        'native.open_battery_active_runtime',
         'native.rich_text_hit_geometry',
         'native.lesson_menu',
         'native.lesson_scroll_render'
@@ -767,7 +771,7 @@ if ($Suite -eq 'ReaderBuild') {
         $qaUiMissing.Count -gt 0 -or $qaUiUnexpected.Count -gt 0) {
         Write-Host ("ReaderBuild missing CTest registrations: " + ($qaUiMissing -join ', '))
         Write-Host ("ReaderBuild unexpected CTest registrations: " + ($qaUiUnexpected -join ', '))
-        throw 'ReaderBuild must register independent native glyph hit geometry, console fullscreen/zoom, menu/scroll, Win32 History, spacing, fullscreen editor viewport, U3 semantic, code-format, Premium, first-case compiler, case-order/revision history, semantic retirement, catalog, general-choice editorial, boolean battery, stateful reduction, integer CMake battery, optional prose/format review and all four open-battery contracts and execution regressions.'
+        throw 'ReaderBuild must register independent native glyph hit geometry, console fullscreen/zoom, menu/scroll, Win32 History, spacing, fullscreen editor viewport, U3 semantic, code-format, Premium, first-case compiler, case-order/revision history, semantic retirement, catalog, general-choice editorial, boolean battery, stateful reduction, integer CMake battery, optional prose/format review and all five open-battery contracts and execution regressions.'
     }
     # Obtain CMake structure, U3 semantics and named-rule variation
     # evidence before the remaining compiler cases. A failure in one must

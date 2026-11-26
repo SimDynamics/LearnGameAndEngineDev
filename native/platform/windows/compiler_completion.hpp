@@ -68,6 +68,14 @@ void clear_compiler_puzzle_review(state::StateData&, const curriculum::Lesson&, 
 // a current first-case seal requires that case's own authenticated execution.
 void prepare_compiler_puzzle_revisions(state::StateData&, const curriculum::Lesson&);
 void validate_compiler_puzzle_state(const state::StateData&, const curriculum::Lesson&, const curriculum::Block&);
+// Offline incident recovery only. The caller must authenticate both exact
+// U3L4 publications and operate on a staged copy, never live profile state.
+// Rebind only the existing ordinary receipts of the four displaced owners.
+// Conflicting, incomplete or unknown receipt groups are rejected unchanged.
+void stage_u3l4_storage_receipts(state::StateData&,
+    const curriculum::Lesson& rejected,const curriculum::Block& prior,
+    const curriculum::Lesson& restored,const curriculum::Block& current);
+
 // Evaluates every real execution again, including after an earned achievement.
 // An incorrect/unavailable run returns false without changing that achievement;
 // a correct first authored case earns a sealed completion for that exact program.
