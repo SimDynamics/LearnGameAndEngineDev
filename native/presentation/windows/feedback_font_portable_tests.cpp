@@ -24,6 +24,7 @@
 #include <stdexcept>
 #include <string>
 #include <string_view>
+#include <vector>
 
 namespace {
 using namespace lgaed;
@@ -111,9 +112,10 @@ struct Fixture{
     WindowsEnvironment environment;
     curriculum::Lesson lesson;
     HWND host=nullptr,view=nullptr;
-    explicit Fixture(bool cmake_only=false):environment(resolve_windows_environment(
+    explicit Fixture(bool cmake_only=false,
+            const std::vector<const curriculum::Block*>& published={}):environment(resolve_windows_environment(
         {ProfileId::Codex,L"qa-feedback-font-"+std::to_wstring(GetCurrentProcessId())+
-          L"-"+std::to_wstring(GetTickCount64())+(cmake_only?L"-cmake":L"-ordinary"),false})){
+          L"-"+std::to_wstring(GetTickCount64())+(!published.empty()?L"-published":cmake_only?L"-cmake":L"-ordinary"),false})){
         initialize_profile_directories(environment.paths);
         // A curricular editor is a same-page barrier. Keep C++ and CMake
         // in independent lessons instead of faking a completed predecessor.
@@ -162,7 +164,33 @@ struct Fixture{
              "outputCheck":{"cases":[{"standardInput":"","outputs":["7"]}]}}
           ]}]
         })json";
-        lesson=windows::parse_lesson_json(file,"es");
+        if(published.empty())lesson=windows::parse_lesson_json(file,"es");
+        else {
+            // Isolate original block bytes from a fully validated published
+            // lesson. This is presentation QA, not an unlock or receipt for
+            // the original course; no previous answer is fabricated.
+            std::string source=R"json({"id":"cpp_fundamentals__qa__published_sensor_font","title":"Tipografía del sensor","pages":[{"blocks":[)json";
+            for(std::size_t i=0;i<published.size();++i){
+                require(published[i]&&!published[i]->raw_json.empty(),
+                    "The original published block bytes are missing");
+                if(i)source+=',';
+                source+=published[i]->raw_json;
+            }
+            source+="]}]}";
+            lesson=windows::parse_lesson_json(source,"es");
+            auto& blocks=lesson.pages.at(0).blocks;
+            require(blocks.size()==published.size(),"The isolated published presentation changed its block count");
+            for(std::size_t i=0;i<blocks.size();++i){
+                // Root source markers were authenticated in the complete
+                // publication. Copy only their already-resolved field maps
+                // to the isolated presentation, not its progress keys.
+                require(blocks[i].type==published[i]->type&&blocks[i].text==published[i]->text&&
+                    blocks[i].question==published[i]->question&&blocks[i].code==published[i]->code&&
+                    blocks[i].answers==published[i]->answers,
+                    "The isolated published presentation changed its source or response");
+                blocks[i].text_semantics=published[i]->text_semantics;
+            }
+        }
         state::StateStore store(environment.paths.root);
         auto prefs=store.load();
         prefs.preferences["native_windows"]["ui_language"]=std::string("es");
@@ -416,6 +444,63 @@ void exercise(){
         // The real reported P1 U3L4 page 4 has two paragraphs in a
         // centered node and three in a deliberately left-aligned console.
         const auto& sensor_page=lesson.pages.at(3).blocks;
+        const auto published_block=[&](std::string_view owner)->const curriculum::Block*{
+            const auto found=std::ranges::find(sensor_page,owner,&curriculum::Block::stable_id);
+            require(found!=sensor_page.end(),"The published sensor typography owner is missing: "+std::string(owner));
+            return &*found;
+        };
+        // The exact reported question, with its own authenticated semantic
+        // markers, now uses the ordinary LessonView row beside its real
+        // section title, explanatory paragraph and note.
+        const std::vector<const curriculum::Block*> published{
+            published_block("block_0003_0000"),published_block("block_0003_0001"),
+            published_block("u3l4_sensor_nivel_tres_prediccion"),published_block("block_0003_0007")};
+        Fixture actual(false,published);
+        require(published[2]->type==curriculum::BlockType::output_prediction&&
+            published[2]->question.find("Con nivel en 3 y limite en 4")!=std::string::npos&&
+            !published[2]->text_semantics.at("/question").spans.empty(),
+            "The real reported sensor question or its semantic markers changed");
+        const auto reading=lesson_reading_regions(actual.view);
+        const auto verify_published=[&](int zoom){
+            const auto body=control(actual.view,id(1,0)),heading=control(actual.view,id(0,0)),
+                question=control(actual.view,id(2,0)),note=control(actual.view,id(3,0)),
+                code=control(actual.view,id(2,1));
+            const auto normal=point_style(body,0),prompt=point_style(question,0),title=point_style(heading,0);
+            require(normal.yHeight==base&&prompt.yHeight==normal.yHeight&&
+                !(normal.dwEffects&CFE_BOLD)&&!(prompt.dwEffects&CFE_BOLD)&&
+                std::wstring_view(prompt.szFaceName)==normal.szFaceName&&
+                title.yHeight>normal.yHeight&&(title.dwEffects&CFE_BOLD),
+                "The actual sensor instruction differs from the paragraph or lost the title hierarchy");
+            require(edit_text(question)==published[2]->question&&
+                rich_text_semantics(question)==std::optional<curriculum::TextSemantics>{published[2]->text_semantics.at("/question")}&&
+                edit_text(note)==published[3]->text&&edit_text(code)==published[2]->code,
+                "The original sensor source, note or explicit question semantics changed");
+            for(const auto target:{body,heading,question,note,code}){
+                require(scale(target)==zoom,"An actual published sensor field lost the selected reader scale");
+                const auto text=wide(edit_text(target));
+                for(LONG n=0;n<static_cast<LONG>(text.size());++n)
+                    if(!iswspace(text[n]))require(point_height(target,n)>=normal.yHeight,
+                        "An actual sensor paragraph, question, note or code glyph fell below the curricular minimum");
+            }
+            const auto current=lesson_reading_regions(actual.view);
+            require(current.size()==reading.size(),"The reported question changed its reading-region count");
+            for(std::size_t i=0;i<current.size();++i)
+                require(current[i].key==reading[i].key&&current[i].source_text==reading[i].source_text&&
+                    current[i].text_semantics==reading[i].text_semantics,
+                    "Scaling the actual sensor question changed its reading content or markers");
+        };
+        for(const int zoom:{75,100,125,150}){
+            update_lesson_preferences(actual.view,[zoom](state::StateData& data){
+                data.preferences["lesson_text_size_settings"]["global_scale"]=static_cast<std::int64_t>(zoom);
+            });
+            dispatch(actual.host);
+            for(const int width:{1100,640,330}){
+                const auto px=MulDiv(width,static_cast<int>(GetDpiForWindow(actual.host)),96);
+                MoveWindow(actual.view,0,0,px,700,TRUE);dispatch(actual.host);verify_published(zoom);
+            }
+        }
+        actual.reopen();verify_published(150);
+        std::cout<<"PASS exact published U3L4 sensor question, heading, paragraph, note and code font floor with original markers, four scales, three widths and isolated reopen\n";
         const auto sensor=std::ranges::find_if(sensor_page,[](const auto& block){
             return block.stable_id=="u3l4_sensor_cambio_de_limite";
         });
@@ -464,6 +549,10 @@ void exercise(){
                     edit_text(region.target)==region.source_text&&scale(region.target)==zoom&&
                     region.text_semantics==original_diagram[i].text_semantics,
                     "Diagram alignment or reflow changed authored text, semantics, narration or zoom");
+                const auto text=wide(region.source_text);
+                for(LONG at=0;at<static_cast<LONG>(text.size());++at)
+                    if(!iswspace(text[at]))require(point_height(region.target,at)>=base,
+                        "A published diagram label, value or caption is smaller than curricular prose");
                 const auto left=region.key=="concept-diagram/title"||
                     region.key.starts_with("concept-diagram/node/salida/");
                 const auto paragraphs=verify_paragraphs(region.target,region.source_text,left?PFA_LEFT:PFA_CENTER);

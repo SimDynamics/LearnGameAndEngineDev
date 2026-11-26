@@ -765,7 +765,8 @@ if ($Suite -eq 'ReaderBuild') {
         'native.open_battery_active_runtime',
         'native.rich_text_hit_geometry',
         'native.lesson_menu',
-        'native.lesson_scroll_render'
+        'native.lesson_scroll_render',
+        'native.lesson_keyboard_navigation'
     )
     $qaUiMissing = @($qaUiExpected | Where-Object { $_ -notin $qaUiNames })
     $qaUiUnexpected = @($qaUiNames | Where-Object { $_ -notin $qaUiExpected })
