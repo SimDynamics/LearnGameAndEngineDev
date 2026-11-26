@@ -100,7 +100,7 @@ class U3L10ExtendedTest(unittest.TestCase):
                 self.assertIn("changed", result.reason)
 
     def test_temporary_msvc_warning_translation_never_edits_student_cmake(self):
-        source = probe.published_files()["CMakeLists.txt"]
+        source = probe.historical_files()["CMakeLists.txt"]
         self.assertEqual(probe.qa_cmake_toolchain_options(source, "g++"), source)
         self.assertEqual(probe.qa_cmake_toolchain_options(source, "clang++"), source)
         adapted = probe.qa_cmake_toolchain_options(source, "cl")
@@ -108,7 +108,28 @@ class U3L10ExtendedTest(unittest.TestCase):
         self.assertEqual(adapted.count("if(MSVC)"), 3)
         self.assertEqual(adapted.count("PRIVATE /W4"), 3)
         self.assertEqual(adapted.count("PRIVATE -Wall -Wextra -Wpedantic"), 3)
-        self.assertEqual(probe.published_files()["CMakeLists.txt"], source)
+        self.assertEqual(probe.historical_files()["CMakeLists.txt"], source)
+
+    def test_published_windows_recipe_is_executed_without_a_second_translation(self):
+        historical = probe.historical_files()
+        live = probe.published_files()
+        self.assertEqual(set(historical), set(live))
+        for name in historical:
+            if name != "CMakeLists.txt":
+                self.assertEqual(live[name], historical[name])
+        original = historical["CMakeLists.txt"]
+        reviewed = original.replace("PRIVATE -Wall -Wextra -Wpedantic",
+                                    "PRIVATE /W4 /permissive-")
+        self.assertNotEqual(reviewed, original)
+        self.assertEqual(probe.qa_cmake_toolchain_options(reviewed, "cl"), reviewed)
+        self.assertIn(live["CMakeLists.txt"], (original, reviewed))
+        if live["CMakeLists.txt"] == reviewed:
+            self.assertEqual(probe.qa_cmake_toolchain_options(live["CMakeLists.txt"], "cl"),
+                             live["CMakeLists.txt"])
+        mixed = reviewed.replace("PRIVATE /W4 /permissive-",
+                                 "PRIVATE -Wall -Wextra -Wpedantic", 1)
+        with self.assertRaises(ValueError):
+            probe.qa_cmake_toolchain_options(mixed, "cl")
 
     def test_no_mutation_identity_is_exposed_as_an_argument_or_environment(self):
         original = probe.published_files()[probe.LIBRARY]

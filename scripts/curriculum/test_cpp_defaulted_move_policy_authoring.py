@@ -5,11 +5,11 @@ the new compiler goal can be attached to the original owner without rewriting
 the original editor, answer cases, stable state layout or student draft keys.
 """
 from copy import deepcopy
-import json
 from pathlib import Path
 import unittest
 
 import stable_state_layout as state
+from published_adoption_fixtures import before_adoption, assert_live_owner_addresses
 
 ROOT=Path(__file__).resolve().parents[2]
 LESSON=ROOT / ("app/src/main/assets/content/es/programming/"
@@ -28,7 +28,7 @@ FIELD="compilerDefaultedMovePolicyChecks"
 
 
 def published():
-    return json.loads(LESSON.read_text(encoding="utf-8"))
+    return before_adoption(LESSON)
 
 
 def updated():
@@ -39,6 +39,13 @@ def updated():
 
 
 class DefaultedMovePolicyAuthoring(unittest.TestCase):
+    def test_live_owner_validates_independently_of_historical_adoption(self):
+        current = assert_live_owner_addresses(self, LESSON, (OWNER,))
+        if FIELD in current:
+            records = [item for item in current[FIELD]
+                       if item["activity"] == OWNER]
+            self.assertEqual(records, [SPEC])
+
     def test_authentic_u6l6_adds_only_new_root_metadata(self):
         before,after=updated()
         self.assertNotIn(FIELD,before)

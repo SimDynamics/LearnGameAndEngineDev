@@ -5,11 +5,11 @@ The published Lote editor, its first-case rule, sources, answer cases and state
 addresses remain byte-for-byte unchanged.
 """
 from copy import deepcopy
-import json
 from pathlib import Path
 import unittest
 
 import stable_state_layout as state
+from published_adoption_fixtures import before_adoption, assert_live_owner_addresses
 
 ROOT=Path(__file__).resolve().parents[2]
 LESSON=ROOT/("app/src/main/assets/content/es/programming/cpp_language_memory_oop/"
@@ -35,12 +35,19 @@ SPEC={
 }
 
 def pair():
-    previous=json.loads(LESSON.read_text(encoding="utf-8"))
+    previous=before_adoption(LESSON)
     revised=deepcopy(previous)
     revised[FIELD]=[deepcopy(SPEC)]
     return previous,revised
 
 class ArrayOwnerReadAuthoring(unittest.TestCase):
+    def test_live_owner_validates_independently_of_historical_adoption(self):
+        current = assert_live_owner_addresses(self, LESSON, (OWNER,))
+        if FIELD in current:
+            records = [item for item in current[FIELD]
+                       if item["activity"] == OWNER]
+            self.assertEqual(records, [SPEC])
+
     def test_root_addition_preserves_all_old_editor_and_response_contracts(self):
         previous,revised=pair()
         self.assertNotIn(FIELD,previous)

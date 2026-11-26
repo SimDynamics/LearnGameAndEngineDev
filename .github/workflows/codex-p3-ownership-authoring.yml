@@ -8,6 +8,8 @@ on:
       - docs/CPP_OUTPUT_CHECK.md
       - docs/examples/p3_ownership_authoring.json
       - scripts/curriculum/test_p3_ownership_authoring.py
+      - scripts/curriculum/published_adoption_fixtures.py
+      - scripts/curriculum/published_adoption_pins.json
       - scripts/curriculum/stable_state_layout.py
       # A change to the shared native gate or build registration must not
       # silently bypass the fourteen-owner history/authoring regression.
@@ -37,6 +39,7 @@ jobs:
       - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262
         with:
           persist-credentials: false
+          fetch-depth: 0
       - name: Select Python for native Windows QA
         uses: actions/setup-python@v5
         with:
