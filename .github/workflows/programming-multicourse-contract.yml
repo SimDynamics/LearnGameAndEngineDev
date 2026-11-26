@@ -19,6 +19,19 @@ on:
       - scripts/curriculum/nested_cmake_format_fixture_source.py
       - scripts/curriculum/published_adoption_fixtures.py
       - scripts/curriculum/published_adoption_pins.json
+      - scripts/curriculum/code_scope_presentations.py
+      - scripts/curriculum/test_code_scope_presentations.py
+      - scripts/curriculum/test_cmake_graph_checks.py
+      - scripts/curriculum/test_open_battery_contract.py
+      - scripts/curriculum/test_compiler_case_revision.py
+      - scripts/curriculum/compiler_case_revision_fixture_source.py
+      - scripts/curriculum/test_assetcheck_u4l7_source_format.py
+      - scripts/curriculum/test_math_matching_text_compat.py
+      - scripts/curriculum/math_matching_text_compat.py
+      - scripts/curriculum/test_cpp_indexed_unique_transfer_authoring.py
+      - scripts/curriculum/test_p3_ownership_authoring.py
+      - scripts/curriculum/text_semantics.py
+      - docs/examples/p3_ownership_authoring.json
       - scripts/curriculum/test_general_choice_editorial.py
       - scripts/curriculum/test_p2_math_prompt_general_revision.py
       - scripts/curriculum/test_published_u12_question_editorials.py
@@ -77,6 +90,46 @@ jobs:
       - name: Componer revisiones independientes de casos U3L2 con su formato histórico CMake
         run: |
           python -B -m unittest -v test_nested_cmake_format.NestedCmakeFormat.test_u3l2_two_case_revisions_preserve_other_nested_cmake_formats
+      # Validate the same historical/adopted authoring contracts on Work
+      # publications, not only on Codex-specific native or prefixed QA runs.
+      # Select the affected course; shared validator changes run the whole
+      # group. This step does not build the native application.
+      - name: Verificar adopción de contratos y publicaciones auténticas afectadas
+        shell: pwsh
+        env:
+          LGAED_ADOPTION_BASE: ${{ github.event.before }}
+        run: |
+          $ErrorActionPreference = 'Stop'
+          $before = $env:LGAED_ADOPTION_BASE
+          $all = $env:GITHUB_EVENT_NAME -ne 'push' -or $before -notmatch '^[0-9a-f]{40}$' -or $before -eq ('0' * 40)
+          $changed = @()
+          if (-not $all) {
+            $changed = @(git diff --name-only --no-renames $before HEAD)
+            if ($LASTEXITCODE -ne 0) { throw 'Cannot determine the published adoption scope.' }
+          }
+          $shared = $all -or [bool]($changed -match '^\.github/workflows/programming-multicourse-contract\.yml$|^scripts/curriculum/(stable_state_layout|validar_json_programacion|validate_programming_practice_tools|code_format_compat|text_semantics|published_adoption_fixtures)\.py$|^scripts/curriculum/published_adoption_pins\.json$')
+          $tests = @()
+          if ($shared -or [bool]($changed -match '^app/src/main/assets/content/es/programming/cpp_fundamentals/edition_es_1__expresiones_y_decisiones/lesson_alternativas_y_fronteras\.json$|^scripts/curriculum/(code_scope_presentations|test_code_scope_presentations)\.py$')) {
+            $tests += 'test_code_scope_presentations.CodeScopePresentationTest'
+          }
+          if ($shared -or [bool]($changed -match '^app/src/main/assets/content/(es|en|fr)/programming/programming_practice_tools/|^scripts/curriculum/(test_cmake_graph_checks|test_open_battery_contract|test_compiler_case_revision|compiler_case_revision_fixture_source|test_assetcheck_u4l7_source_format|test_math_matching_text_compat|math_matching_text_compat)\.py$')) {
+            $tests += @(
+              'test_open_battery_contract',
+              'test_cmake_graph_checks',
+              'test_compiler_case_revision.PublishedMsvcRecipeGraphTests',
+              'test_assetcheck_u4l7_source_format',
+              'test_math_matching_text_compat.RealAssetCheckLineEndingPrompt.test_published_assetcheck_prompt_retains_exact_mapping_and_history'
+            )
+          }
+          if ($shared -or [bool]($changed -match '^app/src/main/assets/content/es/programming/cpp_language_memory_oop/|^scripts/curriculum/(test_cpp_indexed_unique_transfer_authoring|test_p3_ownership_authoring)\.py$|^docs/examples/p3_ownership_authoring\.json$')) {
+            $tests += @('test_cpp_indexed_unique_transfer_authoring', 'test_p3_ownership_authoring')
+          }
+          if ($tests.Count -eq 0) {
+            Write-Host 'No changed publication or tool belongs to the focused adoption contracts.'
+          } else {
+            python -B -m unittest -v @tests
+            if ($LASTEXITCODE -ne 0) { throw 'Published adoption contract verification failed.' }
+          }
       - name: Verificar revisión genérica de opciones y conservación de respuestas
         run: |
           python -B -m unittest -v test_general_choice_editorial
