@@ -20,6 +20,7 @@ import nested_cmake_format_fixture_source as fixtures
 import stable_state_layout as state
 import validar_json_programacion as contract
 import compiler_case_revision_fixture_source as case_fixtures
+import selective_recovery_fixture_source as history_fixtures
 from published_adoption_fixtures import before_adoption
 
 
@@ -158,23 +159,39 @@ class NestedCmakeFormat(unittest.TestCase):
         for identity in owners:
             block = state._blocks(current)[identity]
             old = block["outputCheck"]["cases"][0]
-            driver = next(f["initialCode"] for f in block["projectFiles"] if f["path"] == path)
-            self.assertEqual(driver.count("int main() {"), 1)
-            branch = ('int main() {\n    int entrada{};\n'
-                      '    if (std::cin >> entrada) {\n'
-                      '        if (entrada != 1) return 2;\n'
-                      '        const bool coincide{comprobar(1, 1)};\n'
-                      '        std::cout << (coincide ? "Bateria: OK\\n" : "Bateria: FALLO\\n");\n'
-                      '        return coincide ? 0 : 1;\n    }\n')
-            new_driver = driver.replace("int main() {", branch, 1)
-            single = deepcopy(old)
-            single["standardInput"] = "1\n"
-            single["outputs"] = ["piezas=1 esperado=1 obtenido=1 OK\nBateria: OK\n"]
-            single["explanation"] = "La salida esperada es " + single["outputs"][0].rstrip("\n") + "."
-            cases = [single, deepcopy(old)]
-            current = state.revise_compiler_client_cases(
-                current, identity, {"path": path, "source": new_driver}, cases,
-                case_semantics=case_fixtures.authored_fields(current, identity, cases))
+            if identity == history_fixtures.OWNER:
+                # The workflow contract permits precisely the seven
+                # independent oracles, with case 1 first. Its original
+                # aggregate is in the journal, not an eighth public case.
+                current = history_fixtures.selective_history_revised(current)
+                self.assertEqual(state._compiler_selective_recovery_case_mode(
+                    state._blocks(current)[identity]), "individual")
+            else:
+                driver = next(f["initialCode"] for f in block["projectFiles"]
+                              if f["path"] == path)
+                marker = "\nint main() {"
+                self.assertEqual(driver.count(marker), 1)
+                # The two published editors use the same complete checker
+                # main and comparison function. Keep the actual source
+                # prefix of this owner, not the History owner's prefix.
+                history_driver = history_fixtures.selective_history_client(current)
+                main = history_driver[history_driver.index(marker):]
+                cases = history_fixtures.selective_history_cases()
+                for case in cases:
+                    case["explanation"] = ("La salida esperada es " +
+                                           case["outputs"][0].rstrip("\n") + ".")
+                current = state.revise_compiler_client_cases(
+                    current, identity,
+                    {"path": path, "source": driver[:driver.index(marker)] + main},
+                    cases, case_semantics=case_fixtures.authored_fields(current, identity, cases))
+            record = current["stateLayout"]["compilerCaseRevisions"][-1]
+            self.assertEqual(record["id"], identity)
+            self.assertEqual(record["block"]["outputCheck"]["cases"], [old])
+            cases = state._blocks(current)[identity]["outputCheck"]["cases"]
+            self.assertEqual(len(cases), 7)
+            self.assertEqual(cases[0]["standardInput"], "1\n")
+            self.assertEqual({c["standardInput"] for c in cases},
+                             {str(value) + "\n" for value, _ in history_fixtures.PAIRS})
         state.validate_transition(before, current)
         aligned = state.align_for_previous_validation(before, current)
         self.assertEqual(state._blocks(aligned), state._blocks(before))
