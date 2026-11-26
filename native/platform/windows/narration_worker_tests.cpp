@@ -168,6 +168,72 @@ void recording_key_protocol(const std::filesystem::path& build_directory){
     check(json(worker.math_editor(R"({"action":"echo","marker":"recording-key-validation"})")).GetNamedString(L"marker")==L"recording-key-validation",
         "Rejecting an invalid recording key broke following request routing");
 }
+void recovery_protocol(const std::filesystem::path& build_directory){
+    using namespace lgaed::windows;
+    using namespace winrt::Windows::Data::Json;
+    NarrationWorker worker(build_directory/L"narration-protocol-fixture-runtime.json");
+    const auto pid=[&]{
+        return json(worker.math_editor(R"({"action":"echo","marker":"same-generation"})")).GetNamedNumber(L"processId");
+    };
+    const auto marker_root=build_directory/(L"recovery-"+std::to_wstring(GetCurrentProcessId())+L"-"+std::to_wstring(GetTickCount64()));
+    check(std::filesystem::create_directory(marker_root),"Create an isolated process-recovery fixture directory");
+    struct Cleanup {std::filesystem::path root;~Cleanup(){std::error_code ignored;std::filesystem::remove_all(root,ignored);}} cleanup{marker_root};
+    const auto request=[&](std::string_view mode,const std::filesystem::path& marker){
+        JsonObject doc;doc.Insert(L"qaTransport",JsonValue::CreateStringValue(winrt::to_hstring(mode)));
+        doc.Insert(L"markerFile",JsonValue::CreateStringValue(marker.native()));
+        return winrt::to_string(doc.Stringify());
+    };
+    auto previous=pid();
+    // A genuine process exit and an uncorrelated legacy error both require
+    // a fresh generation, not a five-minute wait or a new application reader.
+    for(const auto* mode:{"exit-once","unidentified-once"}){
+        const auto marker=marker_root/winrt::to_hstring(mode).c_str();
+        const auto reply=json(worker.curriculum_plan(request(mode,marker),0,"es","ef_dora","es"));
+        check(std::filesystem::is_regular_file(marker)&&reply.GetNamedNumber(L"processId")!=previous,
+            "A safe planning retry reused the failed process or lost its own reply");
+        previous=pid();
+        check(previous==reply.GetNamedNumber(L"processId"),"The replacement generation was not retained");
+    }
+    bool rejected=false;
+    try{(void)worker.curriculum_plan(request("error",marker_root/L"error"),0,"es","ef_dora","es");}
+    catch(const std::exception& error){rejected=std::string_view(error.what()).find("correlated-test-error")!=std::string_view::npos;}
+    check(rejected&&pid()==previous,"A correlated application error was lost or restarted a healthy process");
+    // A dead JVM can have another call waiting on its independent editor lane.
+    auto calculation=std::async(std::launch::async,[&]{
+        try{(void)worker.math_calculate(R"({"latex":"1+1"})");return false;}
+        catch(const std::exception&){return true;}
+    });
+    const auto deadline=std::chrono::steady_clock::now()+std::chrono::seconds(5);
+    bool observed=false;
+    do{observed=json(worker.math_editor(R"({"action":"probe"})")).GetNamedBoolean(L"observed");}
+    while(!observed&&std::chrono::steady_clock::now()<deadline);
+    if(!observed){worker.shutdown();(void)calculation.get();throw std::runtime_error("The independent calculation was not pending");}
+    const auto plan=worker.page_plan(request("exit-once",marker_root/L"concurrent-exit"),0,"es","ef_dora","es");
+    check(plan.page_id=="protocol-fixture/es/page"&&plan.revision==std::string(64,'a'),
+        "The same current-page request failed to recover its authenticated identity");
+    check(calculation.wait_for(std::chrono::seconds(5))==std::future_status::ready&&calculation.get(),
+        "An old generation retained a pending independent calculation");
+    previous=pid();
+    JsonObject mutation;mutation.Insert(L"action",JsonValue::CreateStringValue(L"terminate"));
+    mutation.Insert(L"markerFile",JsonValue::CreateStringValue((marker_root/L"mutation").native()));
+    rejected=false;try{(void)worker.math_editor(winrt::to_string(mutation.Stringify()));}
+    catch(const std::exception&){rejected=true;}
+    check(rejected&&std::filesystem::is_regular_file(marker_root/L"mutation")&&pid()!=previous,
+        "A stateful editor failure was replayed or prevented subsequent recovery");
+    const auto repeat=marker_root/L"repeat";
+    rejected=false;try{(void)worker.curriculum_plan(request("always-exit",repeat),0,"es","ef_dora","es");}
+    catch(const std::exception&){rejected=true;}
+    const auto bytes=state::read_bytes(repeat);
+    check(rejected&&std::ranges::count(bytes,static_cast<std::uint8_t>('\n'))==2,
+        "Safe request recovery was not bounded to one retry");
+    const auto after=json(worker.curriculum_plan("{}",0,"es","ef_dora","es"));
+    check(after.GetNamedArray(L"segments").Size()==0,"A failed retry poisoned later planning");
+    worker.shutdown();
+    rejected=false;try{(void)worker.curriculum_plan("{}",0,"es","ef_dora","es");}
+    catch(const std::exception&){rejected=true;}
+    check(rejected,"Terminal shutdown incorrectly started another worker");
+    std::cout<<"PASS real Win32 child exit, uncorrelated error, bounded safe retry, generation-scoped replies, concurrent failure and terminal shutdown (no PCM claim)\n";
+}
 void page_revision_cache(lgaed::windows::NarrationWorker& worker,const std::filesystem::path& cache){
     using namespace lgaed;using namespace windows;
     const auto plan_voice=[&](std::string_view source,std::string_view voice,bool previous=false){
@@ -317,12 +383,17 @@ int wmain(int argc,wchar_t** argv) {
             windows::NarrationWorker worker(root/L"out/narration/runtime.json");
             page_revision_cache(worker,cache);return 0;
         }
-        check(argc==3,"The narration test requires CMake's Python executable and existing build directory arguments");
-        cancelled_inflight_protocol(root,argv[1],argv[2]);
-        priority_protocol(argv[2]);
-        heavy_priority_protocol(argv[2]);
-        calculator_heavy_protocol(argv[2]);
-        recording_key_protocol(argv[2]);
+        const bool protocol_only=argc==4&&std::wstring_view(argv[1])==L"--protocol-only";
+        check(argc==3||protocol_only,"The narration test requires CMake's Python executable and existing build directory arguments");
+        const auto python=std::filesystem::path(argv[protocol_only?2:1]);
+        const auto build_directory=std::filesystem::path(argv[protocol_only?3:2]);
+        cancelled_inflight_protocol(root,python,build_directory);
+        priority_protocol(build_directory);
+        heavy_priority_protocol(build_directory);
+        calculator_heavy_protocol(build_directory);
+        recording_key_protocol(build_directory);
+        recovery_protocol(build_directory);
+        if(protocol_only)return 0;
         windows::NarrationWorker worker(root / "out/narration/runtime.json");
         const std::string source = "La línea #include y std::cout muestran una salida.";
         const auto segments = worker.plan(source,"es");

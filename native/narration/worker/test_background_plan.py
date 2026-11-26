@@ -6,6 +6,7 @@ import math
 from pathlib import Path
 import re
 import struct
+import subprocess
 import unittest
 import wave
 import xml.etree.ElementTree as ET
@@ -299,6 +300,40 @@ class WindowsPageNarrationRevisionTest(unittest.TestCase):
     def plan(self, lesson, page=0, **fields):
         return self.worker.ask("curriculum_plan", lessonJson=json.dumps(lesson, ensure_ascii=False),
             page=page, language="es", voice="ef_dora", uiLanguage="es", **fields)
+
+    def test_complete_published_assetcheck_history_exceeds_old_transport_limit(self):
+        relative = ("app/src/main/assets/content/es/programming/programming_practice_tools/"
+                    "proyecto_assetcheck/lesson_disenar_probar_y_presentar_variante_propia.json")
+        commit = "70e71e5e1876f3245633d92c414dda7f358a75ba"
+        payload = subprocess.check_output(["git", "show", f"{commit}:{relative}"], cwd=ROOT)
+        self.assertEqual(hashlib.sha1(b"blob " + str(len(payload)).encode() + b"\0" + payload).hexdigest(),
+                         "2b58163adeade4bb27da4ca45f9407397aa72e02")
+        raw = payload.decode("utf-8")
+        lesson = json.loads(raw)
+        self.assertEqual(len(lesson["pages"]), 18)
+        envelope = json.dumps({"id": "historical-qa", "command": "curriculum_plan",
+                               "lessonJson": raw}, ensure_ascii=False)
+        self.assertGreater(len(envelope.encode("utf-16-le")) // 2, 2_000_000)
+        # Use the authentic pretty-printed publication in every request.
+        # The compact serialization is merely a comparison, not a repair.
+        compact = json.dumps(lesson, ensure_ascii=False, separators=(",", ":"))
+        for page in range(len(lesson["pages"])):
+            with self.subTest(page=page):
+                first = self.worker.ask("curriculum_plan", lessonJson=raw, page=page,
+                                        language="es", voice="ef_dora", uiLanguage="es")
+                self.assertRegex(first["revision"], r"^[0-9a-f]{64}$")
+                if page in (0, 8, 17):
+                    same = self.worker.ask("curriculum_plan", lessonJson=compact, page=page,
+                                           language="es", voice="ef_dora", uiLanguage="es")
+                    self.assertEqual(first["revision"], same["revision"])
+                    self.assertEqual(first["segments"], same["segments"])
+        # The old ordinary-command limit remains, but its error must carry
+        # the exact caller ID and must not poison a following small request.
+        identity = self.worker.send("plan", text="x" * 2_000_001, language="es")
+        error = self.worker.receive()
+        self.assertEqual((identity, "plan"), (error["id"], error["command"]))
+        self.assertIn("too large", error["error"])
+        self.assertTrue(self.worker.ask("plan", text="Lectura recuperada.", language="es")["segments"])
 
     def test_every_page_source_change_revises_entire_script_without_touching_other_page(self):
         original = self.lesson()

@@ -16,6 +16,12 @@ import java.util.concurrent.Executors
 import java.util.concurrent.Future
 import java.util.concurrent.atomic.AtomicBoolean
 
+// Match the native complete lesson loader's 32 MiB UTF-8 source bound.
+// The enclosing JSON string can expand each UTF-16 unit to six characters.
+private const val MAX_LESSON_BYTES = 32 * 1024 * 1024
+private const val MAX_REQUEST_ENVELOPE = MAX_LESSON_BYTES * 6 + 64 * 1024
+private const val MAX_ORDINARY_REQUEST = 2_000_000
+
 private fun sha256(bytes: ByteArray): String = MessageDigest.getInstance("SHA-256").digest(bytes)
     .joinToString("") { "%02x".format(it.toInt() and 255) }
 private fun sha256(file: File): String {
@@ -614,11 +620,20 @@ fun main(arguments: Array<String>) {
             var replyId = "invalid"
             var replyCommand = "invalid"
             try {
-                require(line.length <= 2_000_000) { "Narration request is too large" }
+                require(line.length <= MAX_REQUEST_ENVELOPE) { "Narration envelope exceeds the complete-lesson transport bound" }
                 val request = JSONObject(line)
                 val id = request.get("id").toString(); require(id.length in 1..128)
                 val command = request.getString("command")
                 replyId = id; replyCommand = command
+                // Bind the response to its caller before applying limits.
+                // Full lessons are not small interactive requests: authenticated
+                // archives and JSON whitespace must not change planning admission.
+                if (command == "curriculum_plan") {
+                    val rawLesson = request.getString("lessonJson")
+                    require(rawLesson.toByteArray(Charsets.UTF_8).size <= MAX_LESSON_BYTES) {
+                        "Complete lesson exceeds the 32 MiB source bound"
+                    }
+                } else require(line.length <= MAX_ORDINARY_REQUEST) { "Narration request is too large" }
                 require(command == "plan" || (!request.has("previousOutputDataPolicy") && !request.has("outputDataPolicy") && !request.has("previousProseInference") && !request.has("textSemantics") && !request.has("semanticProjectionPolicy"))) {
                     "Previous output-data policy is restricted to bookmark planning"
                 }

@@ -221,47 +221,40 @@ NarrationPriorityLease& NarrationPriorityLease::operator=(NarrationPriorityLease
     if(this!=&other){if(release_)release_();release_=std::exchange(other.release_,{});}return *this;
 }
 struct NarrationWorker::Impl {
-    std::filesystem::path runtime;Handle process,job,input,output,error;
-    std::unique_ptr<NarrationCpuPolicy> cpu;
-    SystemSpeechProcess system_speech;
-    std::shared_ptr<PriorityState> priority=std::make_shared<PriorityState>();
-    std::shared_ptr<PageRegistry> pages=std::make_shared<PageRegistry>();
-    // Inference still has its original serialized lane. The single process's
-    // lightweight editor lane can exchange replies without waiting for ONNX.
-    std::mutex request_mutex,write_mutex,start_mutex,response_mutex,shutdown_mutex;
-    std::atomic<bool> closed{false};
-    std::atomic<std::uint64_t> serial{0};std::string buffered,failure;
-    std::atomic<std::uint64_t> storage_budget{std::numeric_limits<std::uint64_t>::max()};
-    struct Pending { std::string command,reply; bool lightweight=false; };
-    std::map<std::string,std::shared_ptr<Pending>> pending;
-    std::condition_variable responses;
-    std::jthread pump;
-    explicit Impl(std::filesystem::path file):runtime(std::move(file)){}
-    ~Impl(){shutdown();if(pump.joinable())pump.join();}
-    void shutdown() noexcept {
-        const std::lock_guard closing(shutdown_mutex);
-        if(closed.exchange(true))return;
-        system_speech.shutdown();
-        // Do not request operation stop here: its synchronous callbacks may be
-        // writing to a child that has stopped reading. Close the owned process
-        // first, without taking the writer/request locks or sending another RPC.
-        {const std::lock_guard lock(priority->mutex);priority->closed=true;}
-        priority->changed.notify_all();
-        {const std::lock_guard lock(response_mutex);failure="El servicio de narración está cerrado.";}
-        responses.notify_all();
-        {const std::lock_guard starting(start_mutex);
-            if(process.value){
-                if(!job.value||!TerminateJobObject(job.value,0))TerminateProcess(process.value,0);
-                (void)WaitForSingleObject(process.value,1000);
-            }
-            // Handles and CPU policy stay alive until callers have unwound and
-            // the reply pump has joined; closing a handle during ReadFile or a
-            // CPU scope restoration would introduce another lifetime race.
-            if(pump.joinable())pump.request_stop();
+    struct TransportFailure : std::runtime_error {using std::runtime_error::runtime_error;};
+    // A caller holds its exact process generation until its write, reply,
+    // cancellation callback and CPU scope have all unwound. Replacing a dead
+    // generation must never close a handle still borrowed by another caller.
+    struct Connection {
+        Handle process,job,input,output,error;
+        std::unique_ptr<NarrationCpuPolicy> cpu;
+        std::mutex write_mutex,response_mutex;
+        std::atomic<bool> failed{false};
+        std::string buffered,failure;
+        struct Pending {std::string command,reply;bool lightweight=false;};
+        std::map<std::string,std::shared_ptr<Pending>> pending;
+        std::condition_variable responses;
+        std::jthread pump;
+        ~Connection(){fail("El proceso de Kokoro está cerrado.");if(pump.joinable()){pump.request_stop();responses.notify_all();pump.join();}}
+        bool usable()const noexcept {
+            return !failed.load()&&process.value&&WaitForSingleObject(process.value,0)==WAIT_TIMEOUT;
         }
-        responses.notify_all();
-    }
-    void start(){const std::lock_guard starting(start_mutex);if(closed.load())throw std::runtime_error("El servicio de narración está cerrado.");if(process.value){if(WaitForSingleObject(process.value,0)==WAIT_TIMEOUT)return;throw std::runtime_error("El proceso de Kokoro terminó. Cierra y vuelve a abrir la lectura.");}
+        void fail(std::string_view message) noexcept {
+            // Do not wait for the writer: terminating the owned child also
+            // releases WriteFile if the child stopped reading its pipe.
+            {const std::lock_guard lock(response_mutex);
+                if(failed.exchange(true))return;
+                try{failure.assign(message);}catch(...){}}
+            if(process.value){
+                if(!job.value||!TerminateJobObject(job.value,1))TerminateProcess(process.value,1);
+            }
+            responses.notify_all();
+        }
+        std::string reason(){
+            const std::lock_guard lock(response_mutex);
+            return failure.empty()?"Kokoro terminó antes de responder.":failure;
+        }
+        void start(const std::filesystem::path& runtime){
         ensure_winrt_apartment();if(!std::filesystem::is_regular_file(runtime))throw std::runtime_error("Kokoro aún no está preparado para Windows. Compila la aplicación con su componente de narración.");
         const auto bytes=state::read_bytes(runtime,1024*1024);const auto config=JsonObject::Parse(winrt::to_hstring(std::string(reinterpret_cast<const char*>(bytes.data()),bytes.size())));
         const auto java=std::filesystem::path(config.GetNamedString(L"java").c_str());if(!std::filesystem::is_regular_file(java))throw std::runtime_error("No se encontró el entorno de narración configurado.");
@@ -287,29 +280,101 @@ struct NarrationWorker::Impl {
         if(!AssignProcessToJobObject(job.value,process.value)){TerminateProcess(process.value,1);throw std::runtime_error("No se pudo vincular el proceso de Kokoro.");}
         try{cpu=std::make_unique<NarrationCpuPolicy>(process.value,job.value);}
         catch(...){TerminateProcess(process.value,1);process.close();throw;}
-        ResumeThread(thread.value);
+        if(ResumeThread(thread.value)==static_cast<DWORD>(-1))throw std::runtime_error("No se pudo activar Kokoro.");
         pump=std::jthread([this](std::stop_token stop){read_replies(stop);});
     }
-    void send(const std::string& source){if(closed.load())throw std::runtime_error("El servicio de narración está cerrado.");const std::lock_guard lock(write_mutex);if(closed.load())throw std::runtime_error("El servicio de narración está cerrado.");const auto line=source+'\n';std::size_t offset=0;while(offset<line.size()){DWORD written=0;if(!WriteFile(input.value,line.data()+offset,static_cast<DWORD>(line.size()-offset),&written,nullptr)||!written)throw std::runtime_error("Kokoro cerró el canal de entrada.");offset+=written;}}
-    void read_replies(std::stop_token stop) {
-        std::stop_callback wake(stop,[&]{responses.notify_all();});
-        try {ensure_winrt_apartment();while(!stop.stop_requested()){
-            const auto end=buffered.find('\n');
-            if(end!=std::string::npos){const auto line=buffered.substr(0,end);buffered.erase(0,end+1);if(line.empty())continue;
-                JsonObject reply;try{reply=JsonObject::Parse(winrt::to_hstring(line));}catch(...){throw std::runtime_error("Kokoro devolvió una respuesta no válida.");}
-                {const std::lock_guard lock(response_mutex);const auto found=pending.find(string(reply,L"id"));
-                    if(found!=pending.end()&&found->second->command==string(reply,L"command"))found->second->reply=line;}
-                responses.notify_all();continue;
+
+        void send(const std::string& source){
+            const std::lock_guard lock(write_mutex);
+            if(failed.load())throw TransportFailure(reason());
+            const auto line=source+'\n';std::size_t offset=0;
+            while(offset<line.size()){
+                DWORD written=0;
+                const auto count=static_cast<DWORD>(std::min<std::size_t>(line.size()-offset,64*1024));
+                if(!WriteFile(input.value,line.data()+offset,count,&written,nullptr)||!written){
+                    fail("Kokoro cerró el canal de entrada.");throw TransportFailure(reason());
+                }
+                offset+=written;
             }
-            DWORD available=0;if(!PeekNamedPipe(output.value,nullptr,0,nullptr,&available,nullptr))throw std::runtime_error("Kokoro terminó antes de responder. Consulta el diagnóstico de narración.");
-            if(available){char bytes[8192];DWORD read=0;if(!ReadFile(output.value,bytes,std::min<DWORD>(available,sizeof(bytes)),&read,nullptr)||!read)throw std::runtime_error("Kokoro cerró su salida.");buffered.append(bytes,read);if(buffered.size()>16*1024*1024)throw std::runtime_error("Respuesta de Kokoro demasiado grande.");}
-            else{if(WaitForSingleObject(process.value,0)!=WAIT_TIMEOUT)throw std::runtime_error("Kokoro terminó antes de responder.");
-                std::unique_lock lock(response_mutex);
-                if(pending.empty())responses.wait_for(lock,std::chrono::seconds(1),[&]{return stop.stop_requested()||!pending.empty();});
-                else {const bool interactive=std::ranges::any_of(pending,[](const auto& item){return item.second->lightweight;});
-                    responses.wait_for(lock,std::chrono::milliseconds(interactive?2:15));}
-            }
-        }}catch(const std::exception& error){const std::lock_guard lock(response_mutex);failure=error.what();responses.notify_all();}
+        }
+        void read_replies(std::stop_token stop){
+            std::stop_callback wake(stop,[&]{responses.notify_all();});
+            try{ensure_winrt_apartment();while(!stop.stop_requested()&&!failed.load()){
+                const auto end=buffered.find('\n');
+                if(end!=std::string::npos){
+                    const auto line=buffered.substr(0,end);buffered.erase(0,end+1);if(line.empty())continue;
+                    JsonObject reply;
+                    try{reply=JsonObject::Parse(winrt::to_hstring(line));}
+                    catch(...){throw TransportFailure("Kokoro devolvió una respuesta no válida.");}
+                    const auto id=string(reply,L"id"),command=string(reply,L"command");
+                    if(id.empty()||command.empty()||(id=="invalid"&&command=="invalid"))
+                        throw TransportFailure("Kokoro devolvió un error sin identificador de petición.");
+                    {const std::lock_guard lock(response_mutex);const auto found=pending.find(id);
+                        if(found!=pending.end()){
+                            if(found->second->command==command)found->second->reply=line;
+                            else if(command!="cancel")throw TransportFailure("Kokoro devolvió una respuesta para otro comando.");
+                        }}
+                    // Late cancelled replies and cancel acknowledgements are
+                    // deliberately discarded; only the original ID can finish.
+                    responses.notify_all();continue;
+                }
+                DWORD available=0;
+                if(!PeekNamedPipe(output.value,nullptr,0,nullptr,&available,nullptr))
+                    throw TransportFailure("Kokoro terminó antes de responder. Consulta el diagnóstico de narración.");
+                if(available){
+                    char bytes[8192];DWORD read=0;
+                    if(!ReadFile(output.value,bytes,std::min<DWORD>(available,sizeof(bytes)),&read,nullptr)||!read)
+                        throw TransportFailure("Kokoro cerró su salida.");
+                    buffered.append(bytes,read);
+                    if(buffered.size()>16*1024*1024)throw TransportFailure("Respuesta de Kokoro demasiado grande.");
+                }else{
+                    if(WaitForSingleObject(process.value,0)!=WAIT_TIMEOUT)
+                        throw TransportFailure("Kokoro terminó antes de responder.");
+                    std::unique_lock lock(response_mutex);
+                    if(pending.empty())responses.wait_for(lock,std::chrono::seconds(1),[&]{return stop.stop_requested()||failed.load()||!pending.empty();});
+                    else {const bool interactive=std::ranges::any_of(pending,[](const auto& item){return item.second->lightweight;});
+                        responses.wait_for(lock,std::chrono::milliseconds(interactive?2:15));}
+                }
+            }}catch(const std::exception& error){fail(error.what());}
+            catch(...){fail("Kokoro devolvió un error de transporte no válido.");}
+        }
+    };
+    std::filesystem::path runtime;
+    std::shared_ptr<Connection> active;
+    SystemSpeechProcess system_speech;
+    std::shared_ptr<PriorityState> priority=std::make_shared<PriorityState>();
+    std::shared_ptr<PageRegistry> pages=std::make_shared<PageRegistry>();
+    // A fresh generation has its own pending IDs and immutable handle lifetime.
+    // Inference and the lightweight mathematical lane keep their arbitration.
+    std::mutex request_mutex,start_mutex,shutdown_mutex;
+    std::atomic<bool> closed{false};
+    std::atomic<std::uint64_t> serial{0};
+    std::atomic<std::uint64_t> storage_budget{std::numeric_limits<std::uint64_t>::max()};
+    explicit Impl(std::filesystem::path file):runtime(std::move(file)){}
+    ~Impl(){shutdown();}
+    void shutdown() noexcept {
+        const std::lock_guard closing(shutdown_mutex);
+        if(closed.exchange(true))return;
+        system_speech.shutdown();
+        {const std::lock_guard lock(priority->mutex);priority->closed=true;}
+        priority->changed.notify_all();
+        const std::lock_guard starting(start_mutex);
+        if(active)active->fail("El servicio de narración está cerrado.");
+    }
+    std::shared_ptr<Connection> start(){
+        const std::lock_guard starting(start_mutex);
+        if(closed.load())throw std::runtime_error("El servicio de narración está cerrado.");
+        if(active&&active->usable())return active;
+        if(active){
+            active->fail("El proceso anterior de Kokoro terminó.");
+            // Wait for the terminated child, not for callers or pipe writers.
+            // Never let two live inference generations own the same cache.
+            if(active->process.value&&WaitForSingleObject(active->process.value,5000)!=WAIT_OBJECT_0)
+                throw std::runtime_error("No se pudo terminar el proceso anterior de Kokoro.");
+        }
+        auto next=std::make_shared<Connection>();
+        next->start(runtime);
+        active=next;return next;
     }
     JsonObject call(JsonObject request,std::stop_token stop,std::string* original_reply=nullptr,bool lightweight=false,
                     NarrationCpuClass work=NarrationCpuClass::current_page,bool inference=false){
@@ -333,42 +398,71 @@ struct NarrationWorker::Impl {
             throw std::runtime_error("Lectura cancelada");
         };
         std::unique_lock serialized(request_mutex,std::defer_lock);if(!lightweight)serialized.lock();
-        ensure_winrt_apartment();if(stop.stop_requested())cancelled();start();
-        std::unique_ptr<NarrationCpuScope> cpu_scope;
-        if(inference||background)cpu_scope=std::make_unique<NarrationCpuScope>(*cpu,work);
-        else cpu->apply(NarrationCpuClass::current_page);
-        if(inference) {
-            const auto requested=static_cast<unsigned>(request.GetNamedNumber(L"threads",0));
-            const auto capacity=cpu->inference_threads(work);
-            request.Insert(L"threads",JsonValue::CreateNumberValue(requested?std::clamp(requested,1u,capacity):capacity));
-        }
-        const auto id=std::to_string(++serial);put(request,L"id",id);
-        const auto response=std::make_shared<Pending>();response->command=string(request,L"command");response->lightweight=lightweight;
-        {const std::lock_guard lock(response_mutex);pending.emplace(id,response);}
-        struct Remove {Impl& owner;const std::string& id;~Remove(){const std::lock_guard lock(owner.response_mutex);owner.pending.erase(id);}} remove{*this,id};
-        send(winrt::to_string(request.Stringify()));
-        responses.notify_all();
-        std::stop_callback cancel(stop,[&]{
-            if(closed.load())return;
-            try{ensure_winrt_apartment();JsonObject value;put(value,L"command","cancel");put(value,L"id",id);send(winrt::to_string(value.Stringify()));}catch(...) {}
-            // An interactive math request may leave immediately; its late reply
-            // is discarded by ID. Inference retains the serialized wait until
-            // ONNX acknowledges completion/cancellation on its existing lane.
-            if(lightweight){const std::lock_guard lock(response_mutex);responses.notify_all();}
-        });
-        std::string line;
-        {std::unique_lock lock(response_mutex);
-            if(!responses.wait_for(lock,std::chrono::minutes(5),[&]{return closed.load()||(lightweight&&stop.stop_requested())||!response->reply.empty()||!failure.empty();})){
-                TerminateJobObject(job.value,1);throw std::runtime_error("Kokoro excedió el tiempo de preparación.");}
+        ensure_winrt_apartment();if(stop.stop_requested())cancelled();
+        const auto command=string(request,L"command");
+        const auto requested_threads=static_cast<unsigned>(request.GetNamedNumber(L"threads",0));
+        // These operations are immutable requests or cache-keyed preparation.
+        // A retry may reuse an already-published PCM, but cannot commit a
+        // cancelled page (the separate PageRegistry still owns publication).
+        // Never replay a stateful structured-editor mutation or validation.
+        const bool replayable=command=="plan"||command=="curriculum_plan"||
+            command=="identity"||command=="prepare"||command=="describe_math";
+        for(unsigned attempt=0;;++attempt){
             if(closed.load())throw std::runtime_error("El servicio de narración está cerrado.");
-            if(lightweight&&stop.stop_requested())cancelled();
-            if(response->reply.empty())throw std::runtime_error(failure);line=response->reply;
+            if(stop.stop_requested())cancelled();
+            const auto connection=start();
+            try{
+                std::unique_ptr<NarrationCpuScope> cpu_scope;
+                try{
+                    if(inference||background)cpu_scope=std::make_unique<NarrationCpuScope>(*connection->cpu,work);
+                    else connection->cpu->apply(NarrationCpuClass::current_page);
+                }catch(...){
+                    if(connection->usable())throw;
+                    connection->fail("Kokoro terminó al preparar la afinidad de CPU.");
+                    throw TransportFailure(connection->reason());
+                }
+                if(inference){
+                    const auto capacity=connection->cpu->inference_threads(work);
+                    request.Insert(L"threads",JsonValue::CreateNumberValue(requested_threads?std::clamp(requested_threads,1u,capacity):capacity));
+                }
+                const auto id=std::to_string(++serial);put(request,L"id",id);
+                const auto response=std::make_shared<Connection::Pending>();response->command=command;response->lightweight=lightweight;
+                {const std::lock_guard lock(connection->response_mutex);connection->pending.emplace(id,response);}
+                struct Remove {Connection& owner;const std::string& id;~Remove(){const std::lock_guard lock(owner.response_mutex);owner.pending.erase(id);}} remove{*connection,id};
+                connection->send(winrt::to_string(request.Stringify()));
+                connection->responses.notify_all();
+                std::stop_callback cancel(stop,[&]{
+                    if(closed.load()||connection->failed.load())return;
+                    try{ensure_winrt_apartment();JsonObject value;put(value,L"command","cancel");put(value,L"id",id);connection->send(winrt::to_string(value.Stringify()));}catch(...){}
+                    if(lightweight)connection->responses.notify_all();
+                });
+                std::string line;
+                {std::unique_lock lock(connection->response_mutex);
+                    if(!connection->responses.wait_for(lock,std::chrono::minutes(5),[&]{return closed.load()||
+                        (lightweight&&stop.stop_requested())||!response->reply.empty()||connection->failed.load();})){
+                        lock.unlock();connection->fail("Kokoro excedió el tiempo de preparación.");throw TransportFailure(connection->reason());
+                    }
+                    if(closed.load())throw std::runtime_error("El servicio de narración está cerrado.");
+                    if(lightweight&&stop.stop_requested())cancelled();
+                    if(response->reply.empty()){lock.unlock();throw TransportFailure(connection->reason());}
+                    line=response->reply;
+                }
+                if(cpu_scope&&connection->usable()){
+                    try{cpu_scope->finish();}catch(...){if(connection->usable())throw;}
+                }
+                if(stop.stop_requested())cancelled();
+                const auto reply=JsonObject::Parse(winrt::to_hstring(line));
+                // A correlated application error is final for this request,
+                // never a transport failure that can restart a healthy JVM.
+                if(reply.HasKey(L"error"))throw std::runtime_error("Kokoro: "+string(reply,L"error"));
+                if(original_reply)*original_reply=line;return reply;
+            }catch(const TransportFailure& failure){
+                if(closed.load())throw std::runtime_error("El servicio de narración está cerrado.");
+                if(stop.stop_requested())cancelled();
+                if(!replayable||attempt!=0)throw;
+                connection->fail(failure.what());
+            }
         }
-        if(cpu_scope)cpu_scope->finish();
-        if(stop.stop_requested())cancelled();
-        const auto reply=JsonObject::Parse(winrt::to_hstring(line));
-        if(reply.HasKey(L"error"))throw std::runtime_error("Kokoro: "+string(reply,L"error"));
-        if(original_reply)*original_reply=line;return reply;
     }
 };
 NarrationWorker::NarrationWorker(std::filesystem::path runtime):impl_(std::make_unique<Impl>(std::move(runtime))){}
@@ -376,7 +470,7 @@ NarrationWorker::~NarrationWorker()=default;
 void NarrationWorker::shutdown() noexcept {impl_->shutdown();}
 void NarrationWorker::set_storage_budget(std::uint64_t bytes){impl_->storage_budget.store(bytes);}
 unsigned NarrationWorker::available_processors()const{
-    const std::lock_guard lock(impl_->start_mutex);return impl_->cpu?impl_->cpu->available_processors():0;
+    const std::lock_guard lock(impl_->start_mutex);return impl_->active&&impl_->active->cpu?impl_->active->cpu->available_processors():0;
 }
 NarrationPriorityLease NarrationWorker::current_page_lease(std::stop_token stop){return NarrationPriorityLease(take_current(impl_->priority,stop));}
 NarrationPriorityLease NarrationWorker::heavy_work_lease(std::stop_token stop){return NarrationPriorityLease(take_heavy(impl_->priority,stop));}
@@ -525,6 +619,7 @@ NarrationAudio NarrationWorker::prepare_system(const NarrationSegment& segment,s
     catch(...){if(background.stop.stop_requested()&&!stop.stop_requested())throw NarrationPreempted{};throw;}
 }
 std::string NarrationWorker::curriculum_plan(std::string_view raw_lesson,std::size_t page,std::string_view language,std::string_view voice,std::string_view ui_language,std::stop_token stop,std::string_view reading_context,std::string_view content_language){
+    if(raw_lesson.size()>32u*1024u*1024u)throw std::length_error("Lesson file too large for narration planning");
     if(reading_context!="auto"&&reading_context!="cpp")throw std::invalid_argument("Invalid curriculum narration reading context");
     ensure_winrt_apartment();JsonObject request;put(request,L"command","curriculum_plan");put(request,L"lessonJson",raw_lesson);
     put(request,L"readingContext",reading_context);
@@ -537,6 +632,7 @@ std::string NarrationWorker::curriculum_plan(std::string_view raw_lesson,std::si
 NarrationPagePlan NarrationWorker::page_plan(std::string_view raw_lesson,std::size_t page,std::string_view language,
     std::string_view voice,std::string_view ui_language,std::stop_token stop,std::string_view reading_context,
     std::string_view content_language,NarrationCpuClass work){
+    if(raw_lesson.size()>32u*1024u*1024u)throw std::length_error("Lesson file too large for narration planning");
     if(reading_context!="auto"&&reading_context!="cpp")throw std::invalid_argument("Invalid curriculum narration reading context");
     ensure_winrt_apartment();JsonObject request;put(request,L"command","curriculum_plan");put(request,L"lessonJson",raw_lesson);
     put(request,L"readingContext",reading_context);put(request,L"contentLanguage",content_language.empty()?language:content_language);

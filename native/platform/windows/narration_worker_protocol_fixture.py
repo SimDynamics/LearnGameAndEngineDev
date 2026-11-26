@@ -9,6 +9,8 @@ from __future__ import annotations
 import json
 import sys
 import ctypes
+import os
+from pathlib import Path
 
 sys.stdin.reconfigure(encoding="utf-8")
 sys.stdout.reconfigure(encoding="utf-8")
@@ -61,7 +63,12 @@ for line in sys.stdin:
             delayed = None
             respond(request, released=True)
         elif action == "echo":
-            respond(request, marker=request["marker"])
+            respond(request, marker=request["marker"], processId=os.getpid())
+        elif action == "terminate":
+            # A stateful mutation must fail; the native transport must not
+            # reissue it to a replacement process with no editing session.
+            Path(request["markerFile"]).write_text(str(os.getpid()), encoding="ascii")
+            sys.exit(23)
         else:
             raise RuntimeError("Unexpected fixture action")
     elif command == "plan":
@@ -74,7 +81,25 @@ for line in sys.stdin:
             segment["key"] = "descriptive-transport-marker-is-not-a-pcm-hash"
         respond(request, segments=[segment])
     elif command == "curriculum_plan":
-        respond(request, segments=[])
+        lesson = json.loads(request["lessonJson"])
+        mode = lesson.get("qaTransport")
+        if mode in ("exit-once", "unidentified-once", "error", "always-exit"):
+            marker = Path(lesson["markerFile"])
+            if mode == "always-exit":
+                with marker.open("a", encoding="ascii") as log:
+                    log.write(str(os.getpid()) + "\n")
+                sys.exit(24)
+            if mode == "error":
+                respond(request, error="correlated-test-error")
+                continue
+            if not marker.exists():
+                marker.write_text(str(os.getpid()), encoding="ascii")
+                if mode == "exit-once":
+                    sys.exit(17)
+                print(json.dumps({"id": "invalid", "command": "invalid", "error": "unidentified-test-error"}), flush=True)
+                continue
+        respond(request, segments=[], pageId="protocol-fixture/es/page", revision="a"*64, processId=os.getpid(),
+                sourceLength=len(request["lessonJson"]))
     elif command == "shutdown":
         respond(request, shutdown=True)
         break

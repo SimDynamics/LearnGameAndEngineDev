@@ -19,4 +19,8 @@ function(lgaed_add_narration_worker_tests)
         "${CMAKE_SOURCE_DIR}/native/narration/worker/test_worker.py"
         WindowsNarrationWorkerTest.test_03_spanish_math_is_progressive_through_numbers_and_operators)
     set_tests_properties(native.narration_spanish_pcm PROPERTIES TIMEOUT 180 RUN_SERIAL TRUE)
+    add_test(NAME native.narration_large_lesson_transport COMMAND "${Python3_EXECUTABLE}" -B
+        "${CMAKE_SOURCE_DIR}/native/narration/worker/test_background_plan.py"
+        WindowsPageNarrationRevisionTest.test_complete_published_assetcheck_history_exceeds_old_transport_limit)
+    set_tests_properties(native.narration_large_lesson_transport PROPERTIES TIMEOUT 300 RUN_SERIAL TRUE)
 endfunction()
