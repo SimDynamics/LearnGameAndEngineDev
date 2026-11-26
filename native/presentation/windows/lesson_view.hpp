@@ -119,6 +119,10 @@ inline constexpr UINT lesson_options_action_message = WM_APP + 190;
 // Run before IsDialogMessage. Each physical Enter checks or advances once;
 // multiline editors keep their normal newline behavior.
 [[nodiscard]] bool dispatch_lesson_enter(MSG& message);
+// Dispatch before dialog/translation using actual keyboard focus, never hover.
+// A held Shift+Ctrl+Alt digit sequence commits once on modifier release.
+[[nodiscard]] bool dispatch_lesson_navigation(HWND lesson,const MSG& message);
+void cancel_lesson_navigation(HWND lesson);
 [[nodiscard]] std::vector<LessonReadingRegion> lesson_reading_regions(HWND window);
 // Reconstructs only the previous Windows script for exact bookmark migration.
 // These regions are never used for playback or visual shading.

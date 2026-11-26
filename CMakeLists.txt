@@ -992,6 +992,8 @@ if(LGAED_READER_BUILD_QA_ONLY)
     # These modes do not launch the app or synthesize/play narration.
     add_test(NAME native.lesson_scroll_render COMMAND lgaed_lesson_view_tests --scroll-repaint)
     add_test(NAME native.lesson_menu COMMAND lgaed_lesson_view_tests --lesson-menu)
+    add_test(NAME native.lesson_keyboard_navigation COMMAND lgaed_lesson_view_tests --lesson-keyboard)
+    set_tests_properties(native.lesson_keyboard_navigation PROPERTIES TIMEOUT 60 RUN_SERIAL TRUE)
     add_test(NAME native.lesson_optional_order_help
         COMMAND lgaed_lesson_view_tests --order-help)
     set_tests_properties(native.lesson_menu native.lesson_scroll_render
@@ -2764,6 +2766,8 @@ if(BUILD_TESTING)
     add_test(NAME native.stderr_objective COMMAND lgaed_lesson_view_tests --stderr-objective)
     set_tests_properties(native.stderr_objective PROPERTIES TIMEOUT 90)
     add_test(NAME native.lesson_menu COMMAND lgaed_lesson_view_tests --lesson-menu)
+    add_test(NAME native.lesson_keyboard_navigation COMMAND lgaed_lesson_view_tests --lesson-keyboard)
+    set_tests_properties(native.lesson_keyboard_navigation PROPERTIES TIMEOUT 60 RUN_SERIAL TRUE)
     set_tests_properties(native.lesson_menu PROPERTIES TIMEOUT 45)
     add_test(NAME native.u11_editorial COMMAND lgaed_lesson_view_tests --u11-editorial)
     set_tests_properties(native.u11_editorial PROPERTIES TIMEOUT 120)

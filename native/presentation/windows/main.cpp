@@ -414,6 +414,9 @@ LRESULT CALLBACK window_procedure(HWND window, UINT message, WPARAM wparam, LPAR
     LRESULT themed{};
     if (lgaed::presentation::reader_theme::control_color(message, wparam, lparam, themed)) return themed;
     switch (message) {
+    case WM_ACTIVATEAPP:
+        if(!wparam&&state->lesson)lgaed::presentation::cancel_lesson_navigation(state->lesson);
+        break;
     case WM_COMMAND:
         if(LOWORD(wparam)==IDCANCEL){navigate_back(window,*state);return 0;}
         break;
@@ -740,6 +743,19 @@ int WINAPI wWinMain(HINSTANCE instance, HINSTANCE, PWSTR, int show_command) {
         BOOL result = 0;
         while ((result = GetMessageW(&message, nullptr, 0, 0)) > 0) {
             const auto target=GetAncestor(message.hwnd,GA_ROOT);
+            const auto internal=lgaed::presentation::active_internal_window(window);
+            const bool settings=state.settings&&IsWindowVisible(state.settings);
+            // This routing precedes IsDialogMessage and native translation.
+            // Popups/settings keep their own controls and cancel partial jumps.
+            const bool navigation_event=message.message==WM_KEYDOWN||message.message==WM_KEYUP||
+                message.message==WM_SYSKEYDOWN||message.message==WM_SYSKEYUP||
+                message.message==WM_LBUTTONDOWN||message.message==WM_RBUTTONDOWN||
+                message.message==WM_MBUTTONDOWN||message.message==WM_XBUTTONDOWN;
+            if(state.lesson&&navigation_event){
+                if(target==window&&!internal&&!settings&&!escape_has_local_popup(window)){
+                    if(lgaed::presentation::dispatch_lesson_navigation(state.lesson,message))continue;
+                }else lgaed::presentation::cancel_lesson_navigation(state.lesson);
+            }
             if(lgaed::presentation::dispatch_window_fullscreen_key(window,message))continue;
             // Native RichEdit fields can request all keys, including the
             // read-only lesson header. Keep the Android-style Back gesture
@@ -748,8 +764,6 @@ int WINAPI wWinMain(HINSTANCE instance, HINSTANCE, PWSTR, int show_command) {
                 if(!(message.lParam&(1LL<<30)))navigate_back(window,state);
                 continue;
             }
-            const auto internal=lgaed::presentation::active_internal_window(window);
-            const bool settings=state.settings&&IsWindowVisible(state.settings);
             const auto dialog=target==window?(internal?internal:settings?state.settings:window):nullptr;
             if(target==window&&!internal&&!settings&&state.reader&&state.reader->dispatch_shortcut(message))continue;
             if(lgaed::presentation::dispatch_lesson_enter(message))continue;

@@ -390,6 +390,10 @@ if(LGAED_HOSTED_FEEDBACK_FONT_QA)
         COMMAND lgaed_inline_feedback_portable_qa --inline-feedback)
     set_tests_properties(native.inline_feedback_u2l5_portable PROPERTIES
         TIMEOUT 300 RUN_SERIAL TRUE)
+    add_test(NAME native.lesson_keyboard_navigation_portable
+        COMMAND lgaed_inline_feedback_portable_qa --lesson-keyboard)
+    set_tests_properties(native.lesson_keyboard_navigation_portable PROPERTIES
+        TIMEOUT 60 RUN_SERIAL TRUE)
     add_test(NAME native.u3l9_assertion_view
         COMMAND lgaed_inline_feedback_portable_qa --native-assertions)
     set_tests_properties(native.u3l9_assertion_view PROPERTIES

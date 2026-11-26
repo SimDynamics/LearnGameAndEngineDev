@@ -128,6 +128,11 @@ void pump(HWND host) {
                 if(lesson&&navigate_lesson_back(lesson))continue;
             }
         }
+        if(message.message==WM_KEYDOWN||message.message==WM_KEYUP||
+            message.message==WM_SYSKEYDOWN||message.message==WM_SYSKEYUP){
+            const auto lesson=descendant_class(host,L"LearnGameAndEngineDev.LessonView");
+            if(dispatch_lesson_navigation(lesson,message))continue;
+        }
         if (!dispatch_lesson_enter(message)&&!IsDialogMessageW(host, &message)) { TranslateMessage(&message); DispatchMessageW(&message); }
     }
 }
@@ -6474,12 +6479,140 @@ void current_inline_feedback_uses_authored_controls_and_restores_each_attempt() 
         <<" additional authored alternatives; no synthesis or human listening claimed\n";
 }
 
+void lesson_keyboard_navigation(){
+    // Use the real Win32 key dispatcher and actual keyboard focus, but
+    // inject only this test thread's modifier state, never desktop input.
+    std::array<BYTE,256> original{};
+    require(GetKeyboardState(original.data()),"Cannot read the isolated keyboard state");
+    struct Restore{std::array<BYTE,256>& value;~Restore(){SetKeyboardState(value.data());}} restore{original};
+    const auto modifiers=[&](bool chord,bool shift=false,bool ctrl=false,bool alt=false){
+        auto keys=original;
+        for(const auto key:{VK_SHIFT,VK_LSHIFT,VK_RSHIFT,VK_CONTROL,VK_LCONTROL,VK_RCONTROL,VK_MENU,VK_LMENU,VK_RMENU,VK_LWIN,VK_RWIN})keys[key]=0;
+        if(chord||shift)keys[VK_SHIFT]=keys[VK_LSHIFT]=0x80;
+        if(chord||ctrl)keys[VK_CONTROL]=keys[VK_LCONTROL]=0x80;
+        if(chord||alt)keys[VK_MENU]=keys[VK_LMENU]=0x80;
+        require(SetKeyboardState(keys.data()),"Cannot set isolated shortcut modifiers");
+    };
+    modifiers(false);
+    const auto key=[&](Fixture& f,UINT vk,bool up=false,bool repeat=false,bool sys=false){
+        const MSG event{GetFocus()?GetFocus():f.host,
+            static_cast<UINT>(sys?(up?WM_SYSKEYUP:WM_SYSKEYDOWN):(up?WM_KEYUP:WM_KEYDOWN)),
+            vk,static_cast<LPARAM>(1)|(up?(LPARAM{1}<<31)|(LPARAM{1}<<30):repeat?(LPARAM{1}<<30):0)};
+        return dispatch_lesson_navigation(f.view,event);
+    };
+    const auto jump=[&](Fixture& f,std::string_view digits,UINT release=VK_SHIFT){
+        const auto before=f.page();modifiers(true);
+        for(char digit:digits){
+            require(key(f,static_cast<UINT>(digit),false,false,true),"A page digit escaped the held chord");
+            require(key(f,static_cast<UINT>(digit),false,true,true),"A repeated digit escaped the chord");
+            require(key(f,static_cast<UINT>(digit),true,false,true)&&f.page()==before,
+                "A partial page number navigated before releasing its modifiers");
+        }
+        modifiers(false,release!=VK_SHIFT,release!=VK_CONTROL,release!=VK_MENU);
+        require(key(f,release,true,false,true),"Modifier release did not consume the page chord");
+        modifiers(false);
+        if(release!=VK_MENU)(void)key(f,VK_MENU,true,false,true);
+        pump(f.host);
+    };
+    {
+        Fixture f({},[](const curriculum::Lesson&){
+            auto lesson=windows::parse_lesson_json(R"json({"id":"qa_keyboard_focus","title":"Navegación por teclado","pages":[{"blocks":[
+                {"type":"paragraph","text":"Párrafo de referencia."},
+                {"type":"multiple_choice","question":"Elige.","options":["A","B"],"correctIndex":0},
+                {"type":"order_code","question":"Ordena.","fragments":["return 0;","int main() {","}"],"correctOrder":[1,0,2]},
+                {"type":"fill_code","question":"Completa.","code":"int n = [];","answers":["7"]},
+                {"type":"math_puzzle","schemaVersion":1,"prompt":"Elige y escribe.","responses":[{"id":"number","type":"math_numeric_input","validator":{"type":"numeric","expected":6}}]},
+                {"type":"inline_fill_code","question":"Completa el valor.","template":"int n = [];","answers":["7"]},
+                {"type":"drag_fill_code","question":"Coloca la función.","template":"int []() { return 0[] }","choices":["main",";"],"correctOrder":[0,1]},
+                {"type":"cpp_compiler","question":"Programa.","initialCode":"int main() { return 0; }","initialStandardInput":"dato\n"}
+            ]},{"blocks":[{"type":"paragraph","text":"Página bloqueada"}]}]})json");
+            for(int i=0;i<120;++i)lesson.pages[0].blocks[0].text+="\nContenido curricular largo.";
+            return lesson;
+        });
+        const auto prose=f.control(0,0),radio=f.control(1,20),order=GetDlgItem(f.control(2,5),100),
+            answer=f.control(3,2),readonly_code=f.control(3,1),inline_input=GetDlgItem(f.control(5,5),100),
+            drag_slot=GetDlgItem(f.control(6,5),100),compiler=f.control(7,10),input=f.control(7,15);
+        require(order&&answer&&inline_input&&drag_slot&&compiler&&input,"The native focus fixture is missing a real input or card");
+        const auto math=f.control(4,5);HWND numeric=nullptr;
+        EnumChildWindows(math,[](HWND child,LPARAM value)->BOOL{
+            wchar_t name[64]{};GetClassNameW(child,name,64);
+            if(_wcsnicmp(name,L"RichEdit",8)==0&&!(GetWindowLongPtrW(child,GWL_STYLE)&ES_READONLY)){
+                *reinterpret_cast<HWND*>(value)=child;return FALSE;}
+            return TRUE;
+        },reinterpret_cast<LPARAM>(&numeric));
+        require(numeric!=nullptr,"The mathematical text input is missing");
+        const auto pane=GetParent(prose);
+        const auto scroll=[&]{SCROLLINFO info{sizeof(info),SIF_ALL};require(GetScrollInfo(pane,SB_VERT,&info),"Cannot read the actual lesson scroll position");return info;};
+        const auto home=[&]{require(invoke_lesson_option(f.view,LessonOptionAction::page_top),"Cannot return to the top");pump(f.host);};
+        const auto check_focus=[&](HWND target){
+            SetFocus(target);require(GetFocus()==target,"Cannot focus the actual native control");
+        };
+        for(const auto target:{f.view,prose,radio,order,readonly_code,drag_slot}){
+            check_focus(target);home();
+            const auto start=scroll();
+            require(start.nPos==0&&start.nMax+1>static_cast<int>(start.nPage),"The lesson must be vertically scrollable");
+            require(key(f,VK_NEXT),"PgDn was not handled outside an input");
+            const auto middle=scroll();
+            require(middle.nPos==std::min(static_cast<int>(start.nPage),start.nMax-static_cast<int>(start.nPage)+1),
+                "PgDn did not move one actual viewport");
+            require(key(f,VK_PRIOR)&&scroll().nPos==0,"PgUp did not return one viewport");
+            require(key(f,VK_END),"End was not handled outside an input");
+            const auto end=scroll();
+            require(end.nPos==end.nMax-static_cast<int>(end.nPage)+1,"End did not reach the actual page bottom");
+            require(key(f,VK_HOME)&&scroll().nPos==0&&f.page()==0,"Home changed pages or missed the top");
+        }
+        for(const auto target:{answer,numeric,inline_input,compiler,input}){
+            check_focus(target);home();
+            const auto before=scroll().nPos;
+            for(const auto vk:{VK_PRIOR,VK_NEXT,VK_HOME,VK_END})
+                require(!key(f,vk)&&scroll().nPos==before,"A real text/code input lost its native navigation keys");
+        }
+        // Even a queued event addressed to another control cannot replace
+        // actual focus (and the pointer is never moved or queried).
+        check_focus(radio);home();
+        MSG addressed_editor{compiler,WM_KEYDOWN,VK_NEXT,1};
+        require(dispatch_lesson_navigation(f.view,addressed_editor)&&scroll().nPos>0,
+            "The addressed HWND was mistaken for current editor focus");
+        check_focus(answer);home();
+        MSG addressed_card{radio,WM_KEYDOWN,VK_NEXT,1};
+        require(!dispatch_lesson_navigation(f.view,addressed_card)&&scroll().nPos==0,
+            "An unfocused puzzle stole the editor's native key");
+        check_focus(radio);jump(f,"2");
+        require(f.page()==0&&!lesson_page_state(f.view).can_next,"A keyboard jump bypassed the unfinished activities");
+    }
+    {
+        int finished=0;
+        Fixture f({},[](const curriculum::Lesson&){
+            std::string json=R"({"id":"qa_keyboard_pages","title":"Páginas numéricas","pages":[)";
+            for(int i=1;i<=23;++i){if(i>1)json+=',';json+="{\"blocks\":[{\"type\":\"paragraph\",\"text\":\"Página "+std::to_string(i)+"\"}]}";}
+            json+="]}";return windows::parse_lesson_json(json);
+        });
+        LessonViewHooks hooks;hooks.lesson_completed=[&](HWND){++finished;};set_lesson_view_hooks(f.view,hooks);
+        // Walk actual navigation to admit every page, without inventing state.
+        for(int i=1;i<23;++i)f.next();
+        SetFocus(f.view);jump(f,"1");require(f.page()==0,"Page 1 was not selected");
+        SetFocus(f.view);jump(f,"11",VK_CONTROL);require(f.page()==10,"Two physical 1 presses did not select page 11");
+        SetFocus(f.view);jump(f,"23",VK_MENU);require(f.page()==22,"Two different digits did not select page 23");
+        for(const auto invalid:{"0","24","9999999999999999999999999999"}){
+            SetFocus(f.view);jump(f,invalid);require(f.page()==22&&finished==0,"An invalid page jumped or finished the lesson");
+        }
+        SetFocus(f.view);modifiers(true);require(key(f,'1',false,false,true),"Cannot begin a cancelable chord");
+        cancel_lesson_navigation(f.view);modifiers(false);(void)key(f,VK_MENU,true,false,true);
+        require(f.page()==22,"A canceled chord navigated on release");
+        jump(f,"2");require(f.page()==1&&finished==0,"A new chord inherited canceled digits");
+        require(flush_lesson_view(f.view),"The selected page did not persist");
+        f.reopen();require(f.page()==1,"Reopening lost the keyboard-selected page");
+    }
+    std::cout<<"PASS native lesson keyboard navigation: PgUp/PgDn/Home/End with actual focus, five input controls, readonly and non-editable puzzles; held digit sequences, repeat/release, blocked and invalid pages, cancellation and reopen\n";
+}
+
 #ifdef LGAED_INLINE_FEEDBACK_ONLY
 int main(int argc,char* argv[]) {
     const bool lesson_header_only=argc==2&&std::string_view(argv[1])=="--lesson-header";
     const bool puzzle_wheel_only=argc==2&&std::string_view(argv[1])=="--puzzle-wheel";
     const bool native_assertions_only=argc==2&&std::string_view(argv[1])=="--native-assertions";
-    if(argc!=2||(!lesson_header_only&&!puzzle_wheel_only&&!native_assertions_only&&std::string_view(argv[1])!="--inline-feedback"))return 2;
+    const bool keyboard_only=argc==2&&std::string_view(argv[1])=="--lesson-keyboard";
+    if(argc!=2||(!lesson_header_only&&!puzzle_wheel_only&&!native_assertions_only&&!keyboard_only&&std::string_view(argv[1])!="--inline-feedback"))return 2;
     std::cout<<std::unitbuf;std::cerr<<std::unitbuf;
     const auto ole=OleInitialize(nullptr);
     if(FAILED(ole))return 2;
@@ -6491,7 +6624,8 @@ int main(int argc,char* argv[]) {
     host.lpszClassName=L"LgaedLessonViewTests";
     if(!RegisterClassW(&host))return 2;
     try {
-        if(native_assertions_only)native_assertion_editors_preserve_historical_drafts_and_state();
+        if(keyboard_only)lesson_keyboard_navigation();
+        else if(native_assertions_only)native_assertion_editors_preserve_historical_drafts_and_state();
         else if(puzzle_wheel_only){puzzle_hover_wheel_reaches_lesson_without_click();compiler_pointer_scroll_ownership();console_fullscreen_zoom_escape();}
         else if(lesson_header_only)lesson_header_context_is_complete_and_wraps();
         else current_inline_feedback_uses_authored_controls_and_restores_each_attempt();
@@ -6544,11 +6678,12 @@ int main(int argc,char* argv[]) {
     const bool lesson_header_only=argc==2&&std::string_view(argv[1])=="--lesson-header";
     const bool puzzle_wheel_only=argc==2&&std::string_view(argv[1])=="--puzzle-wheel";
     const bool lesson_menu_only=argc==2&&std::string_view(argv[1])=="--lesson-menu";
+    const bool keyboard_only=argc==2&&std::string_view(argv[1])=="--lesson-keyboard";
     const bool order_help_only=argc==2&&std::string_view(argv[1])=="--order-help";
     const bool feedback_font_only=argc==2&&std::string_view(argv[1])=="--feedback-font";
     const bool u1_editor_only=argc==2&&std::string_view(argv[1])=="--u1-compiler-edition";
     const bool main_u1_editor_only=argc==2&&std::string_view(argv[1])=="--u1-main-compiler-edition";
-    if(argc>1&&!scroll_repaint_only&&!scroll_motion_only&&!compiler_scroll_only&&!u12_file_roundtrip_only&&!u12_file_append_only&&!u12_file_repairs_only&&!u12_composed_feedback_only&&!caret_only&&!text_sequence_only&&!restoration_only&&!compiler_puzzles_only&&!u11_editorial_only&&!stderr_objective_only&&!native_assertions_only&&!dependent_puzzles_only&&!current_dependent_puzzles_only&&!editor_overflow_only&&!answer_overflow_only&&!narration_repaint_only&&!compiler_height_only&&!navigation_geometry_only&&!inline_feedback_only&&!lesson_header_only&&!puzzle_wheel_only&&!lesson_menu_only&&!order_help_only&&!feedback_font_only&&!u1_editor_only&&!main_u1_editor_only)return 2;
+    if(argc>1&&!scroll_repaint_only&&!scroll_motion_only&&!compiler_scroll_only&&!u12_file_roundtrip_only&&!u12_file_append_only&&!u12_file_repairs_only&&!u12_composed_feedback_only&&!caret_only&&!text_sequence_only&&!restoration_only&&!compiler_puzzles_only&&!u11_editorial_only&&!stderr_objective_only&&!native_assertions_only&&!dependent_puzzles_only&&!current_dependent_puzzles_only&&!editor_overflow_only&&!answer_overflow_only&&!narration_repaint_only&&!compiler_height_only&&!navigation_geometry_only&&!inline_feedback_only&&!lesson_header_only&&!puzzle_wheel_only&&!lesson_menu_only&&!keyboard_only&&!order_help_only&&!feedback_font_only&&!u1_editor_only&&!main_u1_editor_only)return 2;
     std::cout << std::unitbuf; std::cerr << std::unitbuf;
     const auto ole=OleInitialize(nullptr);if(FAILED(ole))return 2;
     struct OleScope{~OleScope(){OleUninitialize();}} apartment;
@@ -6560,6 +6695,7 @@ int main(int argc,char* argv[]) {
         if(puzzle_wheel_only){puzzle_hover_wheel_reaches_lesson_without_click();compiler_pointer_scroll_ownership();console_fullscreen_zoom_escape();return 0;}
         if(lesson_header_only){lesson_header_context_is_complete_and_wraps();return 0;}
         if(lesson_menu_only){lesson_menu_retains_import_pages_and_settings_with_hooks();return 0;}
+        if(keyboard_only){lesson_keyboard_navigation();return 0;}
         if(order_help_only){optional_separator_help_matches_screen_reader_and_grading();desktop_drag_instructions_match_visible_and_spoken_text_in_all_languages();return 0;}
         if(feedback_font_only){exercise_feedback_matches_curricular_body_font();return 0;}
         if(main_u1_editor_only){pinned_main_u1l5_intermediate_editor_execution();return 0;}
@@ -6639,8 +6775,10 @@ int main(int argc,char* argv[]) {
             const auto& item=view.lesson.pages.front().blocks[index];
             if(item.type==BlockType::paragraph)
                 require(character_format(view.control(index,0)).yHeight==270,"Lesson prose remains below the readable 18sp base");
-            else if(item.type==BlockType::heading||!item.question.empty())
-                require(character_format(view.control(index,0)).yHeight==345,"A question/heading lost its distinct 23sp size");
+            else if(item.type==BlockType::heading)
+                require(character_format(view.control(index,0)).yHeight==345,"A true heading lost its distinct 23sp size");
+            else if(!item.question.empty())
+                require(character_format(view.control(index,0)).yHeight==270,"A puzzle question differs from the curricular body size");
         }
         view.gesture_navigation(false);
         {

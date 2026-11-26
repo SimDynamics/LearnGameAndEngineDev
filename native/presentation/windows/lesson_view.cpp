@@ -98,6 +98,7 @@ constexpr int continue_id=117;
 constexpr int fullscreen_palette_id=118;
 constexpr UINT attempts_state_message=WM_APP+187;
 constexpr UINT enter_key_message=WM_APP+188;
+constexpr UINT navigation_key_message=WM_APP+192;
 struct AttemptsState { int available=8, maximum=8; double progress=1; bool premium=false; };
 struct LessonSourceStamp {
     std::filesystem::file_time_type written;
@@ -385,6 +386,8 @@ struct LessonView {
     std::map<HWND,HWND> choice_labels;
     std::optional<std::size_t> selected_puzzle;
     bool enter_held=false;
+    bool page_number_active=false,page_number_invalid=false,page_number_alt_release=false;
+    std::size_t page_number=0;
     std::optional<std::size_t> fullscreen_block;
     std::optional<int> fullscreen_lesson_scroll;
     bool fullscreen_output = false;
@@ -3722,6 +3725,7 @@ struct LessonView {
         reader_theme::primary_button(check);create_feedback(index);
     }
     void render_page() {
+        cancel_page_number();
         scroll_layout_valid=false;scroll_placements.clear();
         cancel_math();
         choice_labels.clear();selected_puzzle.reset();
@@ -4218,6 +4222,92 @@ struct LessonView {
             laying_out=false;
             if(layout_pending){layout_pending=false;reflow();}
         }else reflow();
+    }
+    void cancel_page_number(){
+        page_number_active=page_number_invalid=page_number_alt_release=false;page_number=0;
+    }
+    bool navigation_input_focus(HWND focused) const {
+        // Only actual input fields own these keys. Readonly RichEdit prose,
+        // code examples, draggable cards, choices and sliders are not editors.
+        for(auto item=focused;item&&item!=window&&IsChild(window,item);item=GetParent(item)){
+            wchar_t name[96]{};GetClassNameW(item,name,96);
+            if(_wcsicmp(name,L"LearnGameAndEngineDev.MathExpressionEditor")==0)return true;
+            if(_wcsnicmp(name,L"RichEdit",8)==0||_wcsicmp(name,L"EDIT")==0){
+                if(!(GetWindowLongPtrW(item,GWL_STYLE)&ES_READONLY))return true;
+                // A temporarily readonly input is still an editor, unlike
+                // the readonly code and output display or a drag/ordering card.
+                for(std::size_t index=0;index<controls.size();++index){
+                    const auto& vm=controls[index];
+                    if(item==vm.source||item==vm.input||item==vm.answer||
+                        (vm.fill&&block(index).type==BlockType::inline_fill_code&&vm.fill->editor(item)))return true;
+                }
+                if(!math_field_keyboard_context(item).empty())return true;
+            }
+        }
+        return false;
+    }
+    bool navigation_key(const MSG& message){
+        if(!ready||import_open||deferred_entry.waiting()||fullscreen_block||laboratory()){
+            cancel_page_number();return false;
+        }
+        const bool down=message.message==WM_KEYDOWN||message.message==WM_SYSKEYDOWN;
+        const bool up=message.message==WM_KEYUP||message.message==WM_SYSKEYUP;
+        if(!down&&!up){
+            if(message.message==WM_LBUTTONDOWN||message.message==WM_RBUTTONDOWN||
+                message.message==WM_MBUTTONDOWN||message.message==WM_XBUTTONDOWN)cancel_page_number();
+            return false;
+        }
+        const auto key=message.wParam;
+        const bool shift=key==VK_SHIFT||key==VK_LSHIFT||key==VK_RSHIFT;
+        const bool ctrl=key==VK_CONTROL||key==VK_LCONTROL||key==VK_RCONTROL;
+        const bool alt=key==VK_MENU||key==VK_LMENU||key==VK_RMENU;
+        const bool modifier=shift||ctrl||alt;
+        const auto pressed=[](int vk){return (GetKeyState(vk)&0x8000)!=0;};
+        const bool chord=pressed(VK_SHIFT)&&pressed(VK_CONTROL)&&pressed(VK_MENU)&&
+            !pressed(VK_LWIN)&&!pressed(VK_RWIN);
+        const auto focused=GetFocus();
+        const auto root=GetAncestor(window,GA_ROOT);
+        if(focused&&focused!=root&&focused!=window&&!IsChild(window,focused)){
+            cancel_page_number();return false;
+        }
+        if(up&&modifier&&page_number_active){
+            // Releasing ANY of the three modifiers submits the whole number,
+            // not its first digit. An invalid/out-of-range chord is atomic.
+            const auto requested=page_number;
+            const bool valid=!page_number_invalid&&requested>0&&requested<=lesson.pages.size();
+            cancel_page_number();
+            if(valid&&can_visit(requested-1))(void)change_page(requested-1);
+            // Alt's later release must not activate a native menu.
+            page_number_alt_release=!alt&&pressed(VK_MENU);
+            return true;
+        }
+        if(up&&alt&&page_number_alt_release){page_number_alt_release=false;return true;}
+        const int digit=key>='0'&&key<='9'?static_cast<int>(key-'0'):
+            key>=VK_NUMPAD0&&key<=VK_NUMPAD9?static_cast<int>(key-VK_NUMPAD0):-1;
+        if(digit>=0&&chord){
+            if(down&&!(message.lParam&(LPARAM{1}<<30))){
+                if(!page_number_active){page_number_active=true;page_number_invalid=false;page_number=0;}
+                const auto limit=lesson.pages.size(),value=static_cast<std::size_t>(digit);
+                if(value>limit||page_number>(limit-value)/10)page_number_invalid=true;
+                else if(!page_number_invalid)page_number=page_number*10+value;
+            }
+            // Do not send a shifted digit to an editor, dialog or menu.
+            return true;
+        }
+        if(page_number_active&&down&&!modifier)cancel_page_number();
+        if(!down||pressed(VK_SHIFT)||pressed(VK_CONTROL)||pressed(VK_MENU)||
+            pressed(VK_LWIN)||pressed(VK_RWIN))return false;
+        if(key!=VK_PRIOR&&key!=VK_NEXT&&key!=VK_HOME&&key!=VK_END)return false;
+        if(navigation_input_focus(focused))return false;
+        RECT viewport{};GetClientRect(pane,&viewport);
+        const int step=std::max(1,static_cast<int>(viewport.bottom));
+        switch(key){
+        case VK_PRIOR:scroll_to(scroll-step);break;
+        case VK_NEXT:scroll_to(scroll+step);break;
+        case VK_HOME:scroll_to(0);break;
+        case VK_END:scroll_to(extent);break;
+        }
+        return true;
     }
     bool enter_key(const MSG& message){
         if(import_open)return false;
@@ -5412,6 +5502,9 @@ LRESULT CALLBACK view_proc(HWND window, UINT message, WPARAM wparam, LPARAM lpar
         case answer_viewport_message:view->sync_answer_viewport(reinterpret_cast<HWND>(wparam));return 0;
         case WM_KEYDOWN: if(wparam==VK_ESCAPE&&view->navigate_back())return 0;break;
         case enter_key_message:return lparam&&view->enter_key(*reinterpret_cast<const MSG*>(lparam));
+        case navigation_key_message:
+            if(!lparam){view->cancel_page_number();return 0;}
+            return view->navigation_key(*reinterpret_cast<const MSG*>(lparam));
         case header_action_message: {
             std::function<void(HWND)> action;
             if (wparam == back_id){
@@ -5586,6 +5679,22 @@ bool invoke_lesson_option(HWND window,LessonOptionAction action){
 bool navigate_lesson_back(HWND window){
     if(!IsWindow(window))return false;wchar_t name[96]{};GetClassNameW(window,name,96);if(std::wstring_view(name)!=view_class)return false;
     const auto view=reinterpret_cast<LessonView*>(GetWindowLongPtrW(window,GWLP_USERDATA));return view&&view->navigate_back();
+}
+void cancel_lesson_navigation(HWND lesson){
+    if(IsWindow(lesson))SendMessageW(lesson,navigation_key_message,0,0);
+}
+bool dispatch_lesson_navigation(HWND lesson,const MSG& message){
+    switch(message.message){
+    case WM_KEYDOWN:case WM_KEYUP:case WM_SYSKEYDOWN:case WM_SYSKEYUP:
+    case WM_LBUTTONDOWN:case WM_RBUTTONDOWN:case WM_MBUTTONDOWN:case WM_XBUTTONDOWN:break;
+    default:return false;
+    }
+    if(!IsWindow(lesson))return false;
+    if(!IsWindowVisible(lesson)||!IsWindowEnabled(lesson)||
+        !message.hwnd||GetAncestor(message.hwnd,GA_ROOT)!=GetAncestor(lesson,GA_ROOT)){
+        cancel_lesson_navigation(lesson);return false;
+    }
+    return SendMessageW(lesson,navigation_key_message,0,reinterpret_cast<LPARAM>(&message))!=0;
 }
 bool dispatch_lesson_enter(MSG& message){
     if((message.message!=WM_KEYDOWN&&message.message!=WM_KEYUP)||message.wParam!=VK_RETURN
