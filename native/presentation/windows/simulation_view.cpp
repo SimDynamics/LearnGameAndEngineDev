@@ -290,7 +290,7 @@ struct SimulationView::Impl {
     struct HistogramReadingAnchor {
         std::size_t first_group=0;
         int row_offset=0,pitch=1;
-        bool at_end=false;
+        bool at_start=false,at_end=false;
     };
     std::optional<HistogramReadingAnchor> capture_histogram_anchor()const {
         if(!frequencies||!IsWindow(frequencies)||
@@ -318,13 +318,18 @@ struct SimulationView::Impl {
             static_cast<int>(scroll.nPage);
         return HistogramReadingAnchor{indices[slot],
             scroll.nPos-(sp(8)+static_cast<int>(row)*pitch),
-            pitch,overflow&&scroll.nPos>=end};
+            pitch,scroll.nPos==scroll.nMin,overflow&&scroll.nPos>=end};
     }
     void restore_histogram_anchor(
             const std::optional<HistogramReadingAnchor>& saved){
         if(!saved||!frequencies||!IsWindow(frequencies))return;
         const auto indices=frequency_indices();
         if(indices.empty())return;
+        // The chart's absolute origin is not a fractional offset into its
+        // first card. A width change can drastically change the measured
+        // row height (especially before the first real parent layout).
+        // Preserve zero exactly instead of scaling the negative top margin.
+        if(saved->at_start){scroll_frequencies(0);return;}
         if(saved->at_end){scroll_frequencies(frequency_total_height);return;}
         const auto found=std::ranges::find(indices,saved->first_group);
         if(found==indices.end())return;

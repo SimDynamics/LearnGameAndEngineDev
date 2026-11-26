@@ -1118,13 +1118,21 @@ void progressive_frequency_bars(HWND host,const std::filesystem::path& captures)
         const auto dpi=static_cast<int>(GetDpiForWindow(all));
         const auto limit=MulDiv(MulDiv(440,dpi,96),150,100);
         SCROLLINFO initial{sizeof(initial),SIF_ALL};
-        check(size.bottom>0&&size.bottom<=limit&&
-            (GetWindowLongPtrW(all,GWL_STYLE)&WS_VSCROLL)&&
-            (GetWindowLongPtrW(all,GWL_STYLE)&WS_TABSTOP)&&
-            GetScrollInfo(all,SB_VERT,&initial)&&initial.nPos==0&&
-            initial.nMax+1>static_cast<int>(initial.nPage)&&
-            name(all).find("Grupo 64: 63, frecuencia 1")!=std::string::npos,
-            "The 64-group histogram is not bounded, keyboard-reachable or scrollable");
+        check(size.bottom>0&&size.bottom<=limit,
+            "The 64-group histogram exceeds its bounded viewport");
+        check((GetWindowLongPtrW(all,GWL_STYLE)&WS_VSCROLL)!=0,
+            "The 64-group histogram has no native vertical scrollbar");
+        check((GetWindowLongPtrW(all,GWL_STYLE)&WS_TABSTOP)!=0,
+            "The 64-group histogram is not keyboard-reachable");
+        check(GetScrollInfo(all,SB_VERT,&initial)!=FALSE,
+            "The 64-group histogram has no native scroll information");
+        if(initial.nPos!=0)
+            throw std::runtime_error("The first real histogram layout lost its origin: "+
+                std::to_string(initial.nPos));
+        check(initial.nMax+1>static_cast<int>(initial.nPage),
+            "The 64-group histogram does not expose an overflowing scroll range");
+        check(name(all).find("Grupo 64: 63, frecuencia 1")!=std::string::npos,
+            "The 64-group histogram lost its final accessible group");
         const auto authored=scaled.reading_regions();
         SendMessageW(all,WM_VSCROLL,SB_BOTTOM,0);pump();
         SCROLLINFO bottom{sizeof(bottom),SIF_ALL};
@@ -1241,6 +1249,19 @@ void histogram_reflow_retains_visible_group(HWND host) {
             std::max(0,static_cast<int>(value.nPage)-1));
     };
     check(end(state())>0,"The 64-group chart must have internal overflow");
+    // At the absolute origin, reflow must not create a fractional row offset.
+    check(state().nPos==0&&view.frequency_card_bounds_in_canvas(0),
+        "The initial chart did not start at its exact origin");
+    view.set_text_scale(150);resize(view,340);
+    check(state().nPos==0&&view.frequency_card_bounds_in_canvas(0),
+        "Zooming a chart at the top introduced an unintended scroll offset");
+    resize(view,680);
+    check(state().nPos==0&&view.frequency_card_bounds_in_canvas(0),
+        "Changing histogram columns at the top moved the scroll origin");
+    resize(view,340);
+    view.set_text_scale(100);resize(view,340);
+    check(state().nPos==0&&view.frequency_card_bounds_in_canvas(0)&&spec==source,
+        "Restoring the original geometry moved the chart away from its origin");
     for(int row=0;row<25;++row)
         SendMessageW(chart,WM_VSCROLL,MAKEWPARAM(SB_LINEDOWN,0),0);
     const auto middle=state();
