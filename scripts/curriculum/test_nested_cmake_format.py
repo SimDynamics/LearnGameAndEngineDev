@@ -18,6 +18,9 @@ import code_format_compat as source_format
 from format_batch_history import active_owners, assert_stable_storage
 import nested_cmake_format_fixture_source as fixtures
 import stable_state_layout as state
+import validar_json_programacion as contract
+import compiler_case_revision_fixture_source as case_fixtures
+from published_adoption_fixtures import before_adoption
 
 
 class NestedCmakeFormat(unittest.TestCase):
@@ -142,6 +145,65 @@ class NestedCmakeFormat(unittest.TestCase):
         recovery = next(case for case in fixtures.CASES
                         if case["lesson"].startswith("reorganizar_") and case["activity"] == "block_0010_0003")
         self.assertEqual(recovery["executionEdits"], [])
+
+    def test_u3l2_two_case_revisions_preserve_other_nested_cmake_formats(self):
+        relative = ("app/src/main/assets/content/es/programming/programming_practice_tools/"
+                    "comprobaciones_repetibles/lesson_reorganizar_la_descripcion_conservando_el_comprobador.json")
+        before = before_adoption(Path(__file__).resolve().parents[2] / relative)
+        current = before
+        owners = ("block_0004_0012", "block_0010_0003")
+        path = "pruebas/cajas_casos.cpp"
+        # Exercise the actual formatted Work predecessor, not an older source
+        # archive. These QA trials are independent of Work's local candidates.
+        for identity in owners:
+            block = state._blocks(current)[identity]
+            old = block["outputCheck"]["cases"][0]
+            driver = next(f["initialCode"] for f in block["projectFiles"] if f["path"] == path)
+            self.assertEqual(driver.count("int main() {"), 1)
+            branch = ('int main() {\n    int entrada{};\n'
+                      '    if (std::cin >> entrada) {\n'
+                      '        if (entrada != 1) return 2;\n'
+                      '        const bool coincide{comprobar(1, 1)};\n'
+                      '        std::cout << (coincide ? "Bateria: OK\\n" : "Bateria: FALLO\\n");\n'
+                      '        return coincide ? 0 : 1;\n    }\n')
+            new_driver = driver.replace("int main() {", branch, 1)
+            single = deepcopy(old)
+            single["standardInput"] = "1\n"
+            single["outputs"] = ["piezas=1 esperado=1 obtenido=1 OK\nBateria: OK\n"]
+            single["explanation"] = "La salida esperada es " + single["outputs"][0].rstrip("\n") + "."
+            cases = [single, deepcopy(old)]
+            current = state.revise_compiler_client_cases(
+                current, identity, {"path": path, "source": new_driver}, cases,
+                case_semantics=case_fixtures.authored_fields(current, identity, cases))
+        state.validate_transition(before, current)
+        aligned = state.align_for_previous_validation(before, current)
+        self.assertEqual(state._blocks(aligned), state._blocks(before))
+        self.assertEqual(before["stateLayout"]["sourceFormatRevisions"],
+                         current["stateLayout"]["sourceFormatRevisions"])
+        self.assertEqual(before["compilerWorkflowChecks"], current["compilerWorkflowChecks"])
+        # Independently reflow the third owner, using a valid source-only
+        # publication. Its per-block historical protection must remain valid
+        # even when the other two owners have their new case/client histories.
+        identity = "block_0006_0003"
+        proposal = deepcopy(current)
+        old = state._blocks(before)[identity]
+        project = state._blocks(proposal)[identity]["projectFiles"]
+        file = next(f for f in project if f["path"] == "componente/CMakeLists.txt")
+        file["initialCode"] = "\n" + file["initialCode"]
+        revised = state.prepare_v2(proposal, "es", {"es": current}, current)
+        state.validate_transition(before, revised)
+        view = state.align_for_previous_validation(before, revised)
+        new = state._blocks(view)[identity]
+        self.assertTrue(contract.preserves_source_format_revision(
+            relative, 6, 3, old, new, previous_document=before,
+            current_document=revised, course_id="programming_practice_tools"))
+        forged = deepcopy(new)
+        forged["projectFiles"][1]["initialCode"] += "# not the published projection\n"
+        self.assertFalse(contract.preserves_source_format_revision(
+            relative, 6, 3, old, forged, previous_document=before,
+            current_document=revised, course_id="programming_practice_tools"))
+        for changed in owners:
+            self.assertEqual(state._blocks(view)[changed], state._blocks(before)[changed])
 
     def test_negative_final_payloads_are_authenticated_before_rejection(self):
         expected = {

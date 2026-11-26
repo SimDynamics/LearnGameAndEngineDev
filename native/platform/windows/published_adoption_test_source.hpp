@@ -3,6 +3,7 @@
 // user profile, or historical receipt is rewritten to construct a fixture.
 #include <windows.h>
 #include <winrt/Windows.Data.Json.h>
+#include <winrt/Windows.Foundation.Collections.h>
 #include <winrt/Windows.Security.Cryptography.h>
 #include <winrt/Windows.Security.Cryptography.Core.h>
 #include <array>

@@ -3,6 +3,7 @@
 #include "platform/windows/environment.hpp"
 #include "platform/windows/state_store.hpp"
 #include "core/lesson.hpp"
+#include "platform/windows/published_adoption_test_source.hpp"
 #include "core/named_rule_check.hpp"
 #include "core/named_rule_constant_variation_check.hpp"
 
@@ -2055,6 +2056,97 @@ void actual_named_batteries(const Lesson& lesson,const std::filesystem::path& pr
     }
 }
 
+// Exercise a genuinely executed single-file public case plus the unchanged
+// full checker on empty stdin. The separate public result is not evidence of
+// the other comparisons; the complete instrumented battery must prove them.
+void separated_named_rule_battery(const Lesson& lesson,
+        const std::filesystem::path& projects) {
+    auto owner=named_battery_owner(lesson,8,7);
+    auto request=named_battery_reference(lesson,owner,projects,90);
+    const auto original_case=owner.output_check->cases.front();
+    auto single=original_case;
+    single.standard_input="5\n";
+    single.outputs={"articulos=5 total=35 esperado=35 minimo=1 esperado_minimo=1 OK\nBateria: OK\n"};
+    owner.output_check->cases={single,original_case};
+    auto optional=single;
+    optional.standard_input="4\n";
+    optional.outputs={"articulos=4 total=28 esperado=28 minimo=0 esperado_minimo=0 OK\nBateria: OK\n"};
+    owner.output_check->cases.push_back(optional);
+    // Both branches call the same learner-written comparison. Empty input
+    // deliberately retains all original comparisons and exit-code behavior.
+    request.source_utf8=replace_unique(std::move(request.source_utf8),"int main() {",
+        R"cpp(int main() {
+    int seleccionado{};
+    if (std::cin >> seleccionado) {
+        bool correcto{};
+        if (seleccionado == 5) correcto = comprobar(5, 35, true);
+        else if (seleccionado == 4) correcto = comprobar(4, 28, false);
+        else return 2;
+        if (!correcto) { std::cout << "Bateria: FALLO\n"; return 1; }
+        std::cout << "Bateria: OK\n";
+        return 0;
+    }
+)cpp");
+    request.stdin_utf8=single.standard_input;
+    request.project_key+="/separated";
+    ++request.request_id;
+    ++request.revision;
+    require(compiler_runtime_request_allowed(owner,request),
+        "An authored independent input was rejected");
+    const auto real=execute_named_battery(owner,request);
+    const auto fresh=capture_cpp_execution(request,real);
+    require(fresh.named_rule_battery_correct&&real.named_rule_battery_evidence&&
+            real.named_rule_battery_evidence->aggregate_baseline&&
+            real.named_rule_battery_evidence->runs.size()==
+                request.named_rule_probe->battery_check->cases.size()+1&&
+            real.named_rule_battery_evidence->aggregate_baseline->execution.stdout_bytes!=
+                real.execution.stdout_bytes,
+        "The individual public result did not prove the separate complete battery");
+    // Only the public first case is required from the learner.
+    state::StateData progress;
+    state::prepare_lesson_state(progress,lesson);
+    require(record_compiler_puzzle_case(progress,lesson,owner,request,fresh,
+                "independent first case and private full checker")&&
+            compiler_puzzle_completed(progress,lesson,owner)&&
+            compiler_puzzle_case_count(progress,lesson,owner)==1,
+        "An optional public input became mandatory");
+    auto wrong_input=request;
+    wrong_input.stdin_utf8="unlisted";
+    require(!compiler_runtime_request_allowed(owner,wrong_input),
+        "A foreign public input acquired the new split-case contract");
+    auto incomplete=real;
+    incomplete.named_rule_battery_evidence->aggregate_baseline.reset();
+    require(!capture_cpp_execution(request,incomplete).named_rule_battery_correct,
+        "A split trial could reuse an absent full-checker baseline");
+    incomplete=real;
+    incomplete.named_rule_battery_evidence->aggregate_baseline->source_sha256="foreign";
+    require(!capture_cpp_execution(request,incomplete).named_rule_battery_correct,
+        "A foreign full-checker source supplied the new battery");
+    incomplete=real;
+    incomplete.named_rule_battery_evidence->aggregate_baseline->execution.stdout_bytes+="extra";
+    require(!capture_cpp_execution(request,incomplete).named_rule_battery_correct,
+        "A fabricated full-checker baseline was accepted");
+    // Leave the correct public branch intact, but omit one private comparison
+    // from the complete driver. Public stdout and the independent functions
+    // remain valid, while the full named-rule battery must reject it.
+    auto omitted=request;
+    ++omitted.request_id;++omitted.revision;
+    omitted.project_key+="/omitted";
+    omitted.source_utf8=replace_unique(std::move(omitted.source_utf8),
+        "if (!comprobar(0, 0, false)) { correcto = false; }","// omitted comparison");
+    require(compiler_runtime_request_allowed(owner,omitted),
+        "The negative must reach execution, not fail an unrelated source gate");
+    const auto bad=run_cpp(omitted);
+    const auto bad_capture=capture_cpp_execution(omitted,bad);
+    require(bad.compilation.succeeded()&&bad.execution.succeeded()&&
+            evaluate_cpp_output_check(*owner.output_check,bad_capture,omitted.revision).verdict==
+                OutputVerdict::correct&&bad_capture.named_rule_probe_correct&&
+            !bad_capture.named_rule_battery_correct,
+        "One correct public trial hid a missing independent comparison");
+    std::cout<<"PASS separate named-rule public trial, complete private battery, "
+                "first-case receipt and missing-comparison rejection\n";
+}
+
 void single_file_examples(const Lesson& lesson) {
     const NamedRuleSourceCheck rules{"",{
         NamedRuleRequirement{"precio_total",7,{"precio","costo","tarifa","credito"},1},
@@ -2139,8 +2231,11 @@ int main(int argc,char** argv) {
     try {
         const bool focused=argc==3&&std::string_view(argv[1])=="--single-file";
         require(argc==2||focused,"Expected the published U3 lesson path or --single-file");
-        const auto lesson=load_lesson(std::filesystem::path(argv[focused?2:1]),"es");
-        require(lesson.id=="programming_practice_tools__comprobaciones_repetibles__nombrar_reglas_y_separar_acuerdos",
+        const auto live=load_lesson(std::filesystem::path(argv[focused?2:1]),"es");
+        const auto lesson=parse_lesson_json(lgaed::qa::published_adoption_source(
+            std::filesystem::path(lgaed::build::source_root),
+            "app/src/main/assets/content/es/programming/programming_practice_tools/comprobaciones_repetibles/lesson_nombrar_reglas_y_separar_acuerdos.json"),"es");
+        require(live.id==lesson.id&&lesson.id=="programming_practice_tools__comprobaciones_repetibles__nombrar_reglas_y_separar_acuerdos",
             "The named-rules source test loaded another lesson");
         authored_root_roundtrip(lesson);
         project_examples(lesson);
@@ -2152,6 +2247,7 @@ int main(int argc,char** argv) {
         initialize_profile_directories(environment.paths);
         actual_named_rule_msvc(lesson,
             environment.paths.projects/L"U3 named rules real MSVC");
+        separated_named_rule_battery(lesson,environment.paths.projects/L"u3-split");
         if(focused) {
             // The existing full QA entrypoint remains unchanged. This hosted
             // focus checks actual source, private probes, variations and sealed

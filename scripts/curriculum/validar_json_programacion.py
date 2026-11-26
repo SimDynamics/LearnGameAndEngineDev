@@ -1635,7 +1635,17 @@ def preserves_source_format_revision(relative, pn, bn, old, current, *,
         predecessor = _state_layout.source_format_transition_predecessor(
             previous_document, current_document, identity)
         if _state_layout._blocks(current_document).get(identity) != current:
-            return False
+            # The structural course checker receives a verified projection
+            # onto the previous publication's addresses and case/source epoch.
+            # A client/case revision elsewhere in the same lesson must not
+            # make that exact projected owner look like an unauthored change.
+            # Authenticate the complete projection, never a caller-supplied
+            # replacement or a lexical match detached from its published map.
+            aligned = _state_layout.align_for_previous_validation(
+                previous_document, current_document)
+            if _state_layout._blocks(aligned).get(identity) != current:
+                return False
+            return _state_layout.require_source_format_with_editorial(old, current)
         if "compileCheck" in predecessor:
             # Both visible owners and the complete transition are already
             # authenticated. A previously formatted closed diagnostic needs

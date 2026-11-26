@@ -1224,7 +1224,8 @@ std::string named_rule_battery_fingerprint(const CppRunRequest& request) {
 bool named_rule_battery_context(const CppRunRequest& request) {
     if(!named_rule_battery_requested(request)||
        request.backend!=CppRunRequest::Backend::native_msvc||
-       request.action!=CppRunRequest::Action::compile_run||!request.stdin_utf8.empty()||
+       request.action!=CppRunRequest::Action::compile_run||
+       (request.cmake&&!request.stdin_utf8.empty())||
        request.diagnostic||request.open_battery_probe||request.boolean_battery_probe||
        request.reduction_probe||request.integer_battery_probe||request.adjustment_project_probe||
        request.rejection_probe||request.observation_probe||request.assertion_mode||
@@ -1392,6 +1393,30 @@ bool named_rule_probe_completed(const CppNamedRuleProbe& probe) {
 // Preserve only an actually observed rejection of the first failing required
 // gate. Later absent phases cannot erase that observation, while a successful
 // prefix followed by missing evidence is never a failed student answer.
+// A public individual case and the private complete battery have distinct
+// stdin and stdout. Bind the extra *unmodified* empty-input run to the same
+// submitted source and request before comparing the instrumented baseline.
+bool named_rule_battery_baseline_matches(const CppRunRequest& request,
+        const CppRunResult& result,const CppNamedRuleBatteryEvidence& evidence) {
+    if(evidence.runs.empty()||!result.compilation.succeeded()||
+       !result.execution.succeeded()||!result.execution.exit_code)return false;
+    const CppPhaseResult* observed=&result.execution;
+    if(request.stdin_utf8.empty()) {
+        if(evidence.aggregate_baseline)return false;
+    } else {
+        if(request.cmake||!evidence.aggregate_baseline)return false;
+        const auto& aggregate=*evidence.aggregate_baseline;
+        if(aggregate.request_fingerprint!=named_rule_battery_fingerprint(request)||
+           aggregate.source_sha256!=state::sha256(request.source_utf8)||
+           !aggregate.compilation.succeeded()||!aggregate.execution.succeeded()||
+           !aggregate.execution.exit_code)return false;
+        observed=&aggregate.execution;
+    }
+    const auto& baseline=evidence.runs.front();
+    return baseline.exit_code==*observed->exit_code&&
+        baseline.stdout_bytes==observed->stdout_bytes&&
+        baseline.stderr_bytes==observed->stderr_bytes;
+}
 bool named_rule_rejection_observed(const CppRunRequest& request,const CppRunResult& result) {
     const auto frame=named_rule_review_fingerprint(request);
     if(frame.empty()||!result.named_rule_probe||!result.compilation.succeeded()||
@@ -1439,10 +1464,7 @@ bool named_rule_rejection_observed(const CppRunRequest& request,const CppRunResu
         if(run.program_frame!=battery_frame||run.phase!=(*plan)[index]||
            !run.compiled||!run.executed)return false;
     }
-    const auto& baseline=evidence.runs.front();
-    if(baseline.exit_code!=*result.execution.exit_code||
-       baseline.stdout_bytes!=result.execution.stdout_bytes||
-       baseline.stderr_bytes!=result.execution.stderr_bytes)return false;
+    if(!named_rule_battery_baseline_matches(request,result,evidence))return false;
     return !curriculum::named_rule_battery_verify(
         *probe.battery_check,evidence.runs,battery_frame).accepted;
 }
@@ -4518,11 +4540,9 @@ curriculum::FreshExecution capture_cpp_execution(const CppRunRequest& request,co
         if(named_rule_battery_context(request)&&result.target_type=="EXECUTABLE"&&
            result.named_rule_battery_evidence&&
            result.named_rule_battery_evidence->original_program_fingerprint==frame) {
-            const auto& runs=result.named_rule_battery_evidence->runs;
-            if(!runs.empty()&&result.compilation.succeeded()&&result.execution.succeeded()&&
-               runs.front().exit_code==*result.execution.exit_code&&
-               runs.front().stdout_bytes==result.execution.stdout_bytes&&
-               runs.front().stderr_bytes==result.execution.stderr_bytes) {
+            const auto& evidence=*result.named_rule_battery_evidence;
+            const auto& runs=evidence.runs;
+            if(named_rule_battery_baseline_matches(request,result,evidence)) {
                 const auto verdict=curriculum::named_rule_battery_verify(
                     *request.named_rule_probe->battery_check,runs,frame);
                 fresh.named_rule_battery_correct=verdict.accepted;
@@ -5703,19 +5723,35 @@ void complete_named_rule_battery_single(const CppRunRequest& request,CppRunResul
     if(!plan)return;
     CppNamedRuleBatteryEvidence evidence;
     evidence.original_program_fingerprint=named_rule_battery_fingerprint(request);
+    const bool separated=!request.stdin_utf8.empty();
+    // Preserve the user's actual public input and files. The shared private
+    // executor restores the complete public run directory after every batch.
+    auto aggregate_request=request;
+    aggregate_request.stdin_utf8.clear();
+    const std::size_t offset=separated?1u:0u;
     const auto make_source=[&](std::size_t index)->std::optional<std::string> {
+        if(separated&&index==0)return request.source_utf8;
+        if(separated&&(!evidence.aggregate_baseline||
+            !evidence.aggregate_baseline->compilation.succeeded()||
+            !evidence.aggregate_baseline->execution.succeeded()))return std::nullopt;
         const auto instrumented=curriculum::named_rule_battery_instrument_source(
-            request.source_utf8,spec,(*plan)[index]);
+            request.source_utf8,spec,(*plan)[index-offset]);
         return instrumented?curriculum::named_rule_battery_instrument_driver(*instrumented,spec)
             :std::optional<std::string>{};
     };
     const auto observe=[&](std::size_t index,const CppPhaseResult& compilation,
                           const CppPhaseResult& execution) {
-        evidence.runs.push_back(named_rule_battery_observation((*plan)[index],
+        if(separated&&index==0) {
+            evidence.aggregate_baseline=CppNamedRuleBatteryBaseline{
+                evidence.original_program_fingerprint,state::sha256(request.source_utf8),
+                compilation,execution};
+            return;
+        }
+        evidence.runs.push_back(named_rule_battery_observation((*plan)[index-offset],
             evidence.original_program_fingerprint,compilation,execution));
     };
-    if(execute_private_single_file_phases(request,result,compiler,environment,initial_toolchain,
-            plan->size(),make_source,observe,stop))
+    if(execute_private_single_file_phases(aggregate_request,result,compiler,environment,initial_toolchain,
+            plan->size()+offset,make_source,observe,stop))
         result.named_rule_battery_evidence=std::move(evidence);
 }
 

@@ -4278,9 +4278,12 @@ def _validate_compiler_named_rule_checks(document: dict) -> None:
                     source, rules, comparisons, probe["constantVariations"])
             if "batteryCheck" in probe:
                 first_case = block["outputCheck"]["cases"][0]
-                require(block.get("initialStandardInput", "") == "" and
-                        type(first_case) is dict and first_case.get("standardInput") == "",
-                        "Named-rule batteries require empty initial and first-case standard input")
+                initial_input = block.get("initialStandardInput", "")
+                first_input = first_case.get("standardInput") if type(first_case) is dict else None
+                require(type(initial_input) is str and type(first_input) is str and
+                        ((single_file and initial_input in ("", first_input)) or
+                         (not single_file and initial_input == "" and first_input == "")),
+                        "Named-rule batteries require compatible initial and first-case standard input")
                 require(type(first_case.get("exitCode", 0)) is int and
                         first_case.get("exitCode", 0) == 0 and
                         ("target" not in first_case or

@@ -378,7 +378,7 @@ class NamedRuleBatteryAuthoringTest(unittest.TestCase):
             with self.subTest(code=code):
                 state.validate(changed)
 
-    def test_battery_requires_empty_initial_and_first_case_input(self):
+    def test_battery_input_modes_preserve_the_complete_private_battery(self):
         for page, block in ((5, 6), (7, 4), (8, 7)):
             for initial in (True, False):
                 changed = deepcopy(self.after)
@@ -387,10 +387,16 @@ class NamedRuleBatteryAuthoringTest(unittest.TestCase):
                     owner["initialStandardInput"] = "start"
                 else:
                     owner["outputCheck"]["cases"][0]["standardInput"] = "start"
-                # Exercise this admission guard directly; an immutable-block
-                # rejection must not mask an incompatible battery declaration.
-                with self.subTest(page=page, initial=initial), self.assertRaises(state.LayoutError):
-                    state._validate_compiler_named_rule_checks(changed)
+                # Existing CMake batteries and unrelated initial inputs
+                # still reject. Single-file public trials may use stdin.
+                with self.subTest(page=page, initial=initial):
+                    if page != 5 and not initial:
+                        state._validate_compiler_named_rule_checks(changed)
+                        owner["initialStandardInput"] = "start"
+                        state._validate_compiler_named_rule_checks(changed)
+                        owner["initialStandardInput"] = "unrelated"
+                    with self.assertRaises(state.LayoutError):
+                        state._validate_compiler_named_rule_checks(changed)
                 changed["compilerNamedRuleChecks"] = declaration()
                 state._validate_compiler_named_rule_checks(changed)
         optional = deepcopy(self.after)

@@ -4833,4 +4833,8 @@ la aplicación. El flujo de GitHub comunica por separado el estado
 `codex/local-variable-hosted-ctest`, sin equiparar esa evidencia con
 una instalación o ejecución en el Windows personal del estudiante.
 
+### Ensayos públicos independientes en baterías de reglas nombradas de un archivo
 
+Una actividad con `compilerNamedRuleChecks` y `executionProbe.batteryCheck` puede presentar un primer caso público con entrada preparada cuando su editor es de un solo archivo. La entrada inicial puede permanecer vacía o coincidir con ese primer caso. Cada entrada pública no vacía usada para acreditar el objetivo debe estar declarada en los casos de ese propietario. El cliente suministrado debe ejecutar el ensayo elegido cuando recibe esa entrada y conservar la batería completa cuando recibe entrada vacía. No se cambia ni se elimina la declaración histórica de comparaciones, reglas, variaciones o esperados.
+
+El ejecutor conserva el stdout, stderr y código de salida del ensayo público. Si recibe una entrada no vacía, ejecuta adicionalmente el mismo programa sin modificar con entrada vacía, y compara esa ejecución con la fase base instrumentada. Las mutaciones independientes ejecutan la batería completa con entrada vacía. Toda esa evidencia se vincula a la misma revisión y a su entrada pública; un caso visible correcto sin la batería completa no acredita el objetivo. Los ensayos públicos posteriores son opcionales. Las baterías CMake y las publicaciones cuyo primer caso tiene entrada vacía conservan su política anterior.
