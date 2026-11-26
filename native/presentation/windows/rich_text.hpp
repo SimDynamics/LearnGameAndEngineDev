@@ -46,6 +46,10 @@ inline constexpr int curricular_body_sp = 18;
 // Convert reader percentages to the exact fraction or closest valid ratio.
 // Returns false if the control rejects the native EM_SETZOOM operation.
 [[nodiscard]] bool set_rich_text_zoom(HWND edit,int percentage);
+// Apply a presentation's alignment and normal line spacing to every native
+// paragraph, not just the paragraph containing the current selection.
+// Text, semantic spans, selection, viewport and Undo remain unchanged.
+void set_rich_text_paragraph_layout(HWND edit,bool centered);
 // Observes actual character geometry and zoom without changing selection,
 // scroll, text, focus or Undo. Whitespace remains available for lesson gestures.
 [[nodiscard]] bool rich_text_hit_test(HWND edit,POINT point);

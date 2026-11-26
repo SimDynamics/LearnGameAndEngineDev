@@ -917,6 +917,19 @@ bool set_rich_text_zoom(HWND edit,int percentage) {
     }
     return SendMessageW(edit,EM_SETZOOM,numerator,denominator)!=FALSE;
 }
+void set_rich_text_paragraph_layout(HWND edit,bool centered) {
+    FormatTransaction transaction(edit);
+    // EM_SETPARAFORMAT applies only to paragraphs intersecting the selection.
+    // set_rich_text restores the original insertion point after coloring;
+    // using that point would leave later authored lines left aligned.
+    CHARRANGE all{0,-1};
+    SendMessageW(edit,EM_EXSETSEL,0,reinterpret_cast<LPARAM>(&all));
+    PARAFORMAT2 format{};format.cbSize=sizeof(format);format.dwMask=PFM_ALIGNMENT|PFM_LINESPACING;
+    format.wAlignment=centered?PFA_CENTER:PFA_LEFT;
+    format.bLineSpacingRule=5;format.dyLineSpacing=20;
+    if(!SendMessageW(edit,EM_SETPARAFORMAT,0,reinterpret_cast<LPARAM>(&format)))
+        throw std::runtime_error("RichEdit rechazó la alineación del párrafo.");
+}
 void set_edit_hint(HWND edit,std::string_view text,COLORREF color,bool centered) {
     if(!IsWindow(edit))throw std::invalid_argument("An edit hint requires a live RichEdit");
     DWORD_PTR existing=0;

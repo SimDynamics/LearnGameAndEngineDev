@@ -413,6 +413,66 @@ void exercise(){
         MathPuzzleView scope(f.host,scope_block->raw_json,lesson.locale,"{}",{},
             scope_block->text_semantics,scope_block->code_scope_presentations);
         MathPuzzleView formula(f.host,R"json({"type":"math_puzzle","prompt":"Pregunta normal","representations":[{"type":"math_formula","latex":"x + 1","display":"inline"},{"type":"math_number_line","min":0,"max":16,"step":1}],"responses":[{"id":"answer","type":"math_numeric_input","validator":{"type":"numeric","expected":1}}]})json","es","{}");
+        // The real reported P1 U3L4 page 4 has two paragraphs in a
+        // centered node and three in a deliberately left-aligned console.
+        const auto& sensor_page=lesson.pages.at(3).blocks;
+        const auto sensor=std::ranges::find_if(sensor_page,[](const auto& block){
+            return block.stable_id=="u3l4_sensor_cambio_de_limite";
+        });
+        require(sensor!=sensor_page.end()&&sensor->concept_diagram&&
+            sensor->concept_diagram->nodes.size()==4&&
+            sensor->concept_diagram->nodes.front().value=="Nivel 4\nLímite 5"&&
+            sensor->concept_diagram->nodes.back().kind=="console"&&
+            sensor->concept_diagram->nodes.back().value=="Normal\nMarca: 0\nNivel: 4",
+            "The authentic reported sensor diagram no longer has its two distinct alignment contracts");
+        MathPuzzleView diagram(f.host,sensor->raw_json,lesson.locale,"{}",{},
+            sensor->text_semantics,{},sensor->concept_diagram);
+        const auto original_diagram=diagram.reading_regions();
+        const auto check_diagram=[&](int zoom) {
+            const auto regions=diagram.reading_regions();
+            const auto expected=sensor->concept_diagram->reading_fields();
+            require(regions.size()==expected.size()&&regions.size()==original_diagram.size(),
+                "The actual sensor diagram lost an authored reading field");
+            const auto verify_paragraphs=[&](HWND edit,std::string_view source,WORD alignment) {
+                const auto text=wide(source);
+                CHARRANGE saved{};POINT scroll{};
+                SendMessageW(edit,EM_EXGETSEL,0,reinterpret_cast<LPARAM>(&saved));
+                SendMessageW(edit,EM_GETSCROLLPOS,0,reinterpret_cast<LPARAM>(&scroll));
+                std::size_t count=0;
+                for(std::size_t at=0;at<text.size();){
+                    CHARRANGE insertion{static_cast<LONG>(at),static_cast<LONG>(at)};
+                    SendMessageW(edit,EM_EXSETSEL,0,reinterpret_cast<LPARAM>(&insertion));
+                    PARAFORMAT2 actual{};actual.cbSize=sizeof(actual);
+                    SendMessageW(edit,EM_GETPARAFORMAT,0,reinterpret_cast<LPARAM>(&actual));
+                    require((actual.dwMask&PFM_ALIGNMENT)&&actual.wAlignment==alignment&&
+                        (actual.dwMask&PFM_LINESPACING)&&actual.bLineSpacingRule==5&&actual.dyLineSpacing==20,
+                        "A native diagram paragraph has the wrong alignment or spacing at UTF-16 offset "+
+                        std::to_string(at)+": "+std::string(source));
+                    ++count;
+                    const auto end=text.find(L'\n',at);
+                    if(end==text.npos)break;at=end+1;
+                }
+                SendMessageW(edit,EM_EXSETSEL,0,reinterpret_cast<LPARAM>(&saved));
+                SendMessageW(edit,EM_SETSCROLLPOS,0,reinterpret_cast<LPARAM>(&scroll));
+                return count;
+            };
+            bool observed_centered_pair=false,observed_left_console=false;
+            for(std::size_t i=0;i<regions.size();++i){
+                const auto& region=regions[i];
+                require(region.key==expected[i].key&&region.source_text==expected[i].text&&
+                    region.key==original_diagram[i].key&&region.source_text==original_diagram[i].source_text&&
+                    edit_text(region.target)==region.source_text&&scale(region.target)==zoom&&
+                    region.text_semantics==original_diagram[i].text_semantics,
+                    "Diagram alignment or reflow changed authored text, semantics, narration or zoom");
+                const auto left=region.key=="concept-diagram/title"||
+                    region.key.starts_with("concept-diagram/node/salida/");
+                const auto paragraphs=verify_paragraphs(region.target,region.source_text,left?PFA_LEFT:PFA_CENTER);
+                if(region.source_text=="Nivel 4\nLímite 5")observed_centered_pair=paragraphs==2;
+                if(region.source_text=="Normal\nMarca: 0\nNivel: 4")observed_left_console=paragraphs==3;
+            }
+            require(observed_centered_pair&&observed_left_console,
+                "Both reported multiline diagram fields must be inspected paragraph by paragraph");
+        };
         const auto original=scope.reading_regions();
         require(original.size()==12,"The authentic scope no longer exposes all code and two notes");
         const auto native_line_y=[](HWND edit,LONG at){
@@ -496,13 +556,15 @@ void exercise(){
                 data.preferences["lesson_text_size_settings"]["global_scale"]=static_cast<std::int64_t>(zoom);
             });
             dispatch(f.host);
-            scope.set_text_scale(zoom);formula.set_text_scale(zoom);
+            scope.set_text_scale(zoom);formula.set_text_scale(zoom);diagram.set_text_scale(zoom);
             for(const int width:{1100,640,330}){
                 const auto pixels=MulDiv(width,static_cast<int>(GetDpiForWindow(f.host)),96);
                 scope.layout(0,0,pixels);formula.layout(0,0,pixels);check_scope(zoom,width);
+                diagram.layout(0,0,pixels);check_diagram(zoom);
             }
         }
         std::cout<<"PASS published U3L4 nested code pitch, authored blank lines and notes, inline formula and actual canvas font at all four scales and three widths\n";
+        std::cout<<"PASS actual U3L4 sensor diagram: both data paragraphs centered, all three console paragraphs left-aligned, exact reading regions and semantics across four scales and three widths\n";
     }
     std::cout<<"PASS ordinary paragraph size, weight and scale for all eight programming "
         "question surfaces and the mathematical prompt/instruction; real title hierarchy, "

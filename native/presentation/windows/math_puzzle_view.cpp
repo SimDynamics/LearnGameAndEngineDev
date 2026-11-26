@@ -1131,9 +1131,7 @@ struct MathPuzzleView::Impl {
         reader_theme::apply(item,surface);
         RichTextContext context;context.literal_display=true;
         set_rich_text(item,field.text,{},false,role,locale,{},context,&semantics);
-        PARAFORMAT2 format{};format.cbSize=sizeof(format);format.dwMask=PFM_ALIGNMENT|PFM_LINESPACING;
-        format.wAlignment=centered?PFA_CENTER:PFA_LEFT;format.bLineSpacingRule=5;format.dyLineSpacing=20;
-        SendMessageW(item,EM_SETPARAFORMAT,0,reinterpret_cast<LPARAM>(&format));
+        set_rich_text_paragraph_layout(item,centered);
         SendMessageW(item,EM_SETEVENTMASK,0,ENM_REQUESTRESIZE);
         SetWindowSubclass(item,text_wheel_proc,14,reinterpret_cast<DWORD_PTR>(&callbacks));
         regions.push_back({field.key,field.text,item,std::move(semantics),std::string("text")});
