@@ -778,9 +778,9 @@ if ($Suite -eq 'ReaderBuild') {
     # retain the other independent diagnostics.
     # Simulation and console gestures already ran before the larger build.
     # Keep the other focal checks and execute each registered test once.
-    $qaFocalPattern = '^native\.(rich_text_hit_geometry|cpp_cmake_graph|cpp_project_u3_cmake_structure|u3_runtime_semantics|named_rule_runtime)$'
+    $qaFocalPattern = '^native\.(rich_text_hit_geometry|cpp_cmake_graph|cpp_project_u3_cmake_structure|u3_runtime_semantics|named_rule_runtime|open_battery_active_runtime)$'
     $qaCompletedPattern = "($qaSimulationPattern)|($qaGesturePattern)|($qaFocalPattern)"
-    # Keep an independent receipt for the five early checks even if one
+    # Keep an independent receipt for the six early checks even if one
     # crashes. Do not abandon the other registered tests or lower their gates.
     & $qaCTest --test-dir $qaBuild -R $qaFocalPattern --verbose --output-on-failure --no-tests=error --timeout 300 `
         --output-junit (Join-Path $qaBuild 'reader-build-focal.xml') `

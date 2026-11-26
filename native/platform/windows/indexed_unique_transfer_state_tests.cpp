@@ -5,6 +5,7 @@
 #include "core/lesson.hpp"
 #include "platform/windows/compiler_completion.hpp"
 #include "platform/windows/content_loader.hpp"
+#include "platform/windows/published_adoption_lesson_test_source.hpp"
 #include "platform/windows/state_store.hpp"
 
 #include <filesystem>
@@ -41,7 +42,8 @@ int indexed_unique_transfer_state_windows(const std::filesystem::path& content,
     const auto path=content.parent_path()/
         "cpp_language_memory_oop/estado_y_ciclo_de_vida_de_clases/"
         "lesson_transferir_propiedad_entre_unique_ptr.json";
-    const auto old=load_lesson(path);
+    const auto live=load_lesson(path);
+    const auto old=lgaed::qa::load_adoption_predecessor(path);
     const auto& published=owner(old,identity);
     require(published.type==BlockType::cpp_compiler&&published.output_check&&
             published.output_check->cases.size()==3&&
@@ -63,7 +65,8 @@ int indexed_unique_transfer_state_windows(const std::filesystem::path& content,
     JsonArray declarations;
     declarations.Append(declaration);
     root.Insert(L"compilerIndexedUniqueTransferChecks",declarations);
-    const auto reviewed_json=winrt::to_string(root.Stringify());
+    const auto reviewed_json=lgaed::qa::adopted_or_projected_source(live,
+        winrt::to_string(root.Stringify()),L"compilerIndexedUniqueTransferChecks");
     const auto revised=parse_lesson_json(reviewed_json,"es");
     const auto metadata=parse_lesson_progress_metadata(reviewed_json,"es");
     const auto& actual=owner(revised,identity);
@@ -272,7 +275,7 @@ int indexed_unique_transfer_state_windows(const std::filesystem::path& content,
     require(persisted==data&&compiler_puzzle_completed(persisted,revised,actual),
         "Bound owner identity did not survive native StateStore reopen");
     state::validate_lesson_state(persisted,revised);
-    require(load_lesson(path).raw_json==original_json,
+    require(load_lesson(path).raw_json==live.raw_json,
         "U6L5 identity-state regression rewrote the published source");
     std::cout<<"PASS U6L5 live owner state: full/progress loaders, original "
         "stdout-only receipt unpromoted, forged proof rejected, fresh private "

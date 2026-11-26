@@ -4,6 +4,8 @@ on:
   push:
     branches: [Codex]
     paths:
+      - scripts/curriculum/published_adoption_fixtures.py
+      - scripts/curriculum/published_adoption_pins.json
       - scripts/curriculum/u3_l10_extended_battery_probe.py
       - scripts/curriculum/test_u3_l10_extended_battery_probe.py
       - .github/workflows/codex-u3l10-new-case-evidence.yml
@@ -21,6 +23,7 @@ jobs:
       - uses: actions/checkout@v4
         with:
           persist-credentials: false
+          fetch-depth: 0
       - uses: ilammy/msvc-dev-cmd@v1
       - name: Check real Windows toolchain
         shell: pwsh

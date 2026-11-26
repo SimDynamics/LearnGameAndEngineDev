@@ -4,11 +4,11 @@ Work may add the root proof without changing the five published cases, source
 or any stable state signatures. This suite never writes the lesson JSON.
 """
 from copy import deepcopy
-import json
 from pathlib import Path
 import unittest
 
 import stable_state_layout as state
+from published_adoption_fixtures import before_adoption, assert_live_owner_addresses
 
 ROOT=Path(__file__).resolve().parents[2]
 LESSON=ROOT/(
@@ -39,12 +39,19 @@ SPEC={
 }
 
 def pair():
-    before=json.loads(LESSON.read_text(encoding="utf-8"))
+    before=before_adoption(LESSON)
     after=deepcopy(before)
     after[FIELD]=[deepcopy(SPEC)]
     return before,after
 
 class PolymorphicDestructionAuthoring(unittest.TestCase):
+    def test_live_owner_validates_independently_of_historical_adoption(self):
+        current = assert_live_owner_addresses(self, LESSON, (OWNER,))
+        if FIELD in current:
+            records = [item for item in current[FIELD]
+                       if item["activity"] == OWNER]
+            self.assertEqual(records, [SPEC])
+
     def test_root_only_with_original_v2_state_and_five_cases(self):
         before,after=pair()
         self.assertNotIn(FIELD,before)

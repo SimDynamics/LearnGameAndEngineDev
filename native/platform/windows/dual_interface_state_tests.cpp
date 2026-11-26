@@ -5,6 +5,7 @@
 #include "core/lesson.hpp"
 #include "platform/windows/compiler_completion.hpp"
 #include "platform/windows/content_loader.hpp"
+#include "platform/windows/published_adoption_lesson_test_source.hpp"
 #include "platform/windows/state_store.hpp"
 
 #include <array>
@@ -42,7 +43,8 @@ int dual_interface_state_windows(const std::filesystem::path& content,
     const auto path=content.parent_path()/
         "cpp_language_memory_oop/clases_con_varias_bases/"
         "lesson_reunir_dos_bases_independientes_en_un_objeto.json";
-    const auto original=load_lesson(path);
+    const auto live=load_lesson(path);
+    const auto original=lgaed::qa::load_adoption_predecessor(path);
     const auto& before=editor(original,id);
     require(before.type==BlockType::cpp_compiler&&before.output_check&&
             before.output_check->cases.size()==3&&!before.dual_interface_probe,
@@ -70,7 +72,8 @@ int dual_interface_state_windows(const std::filesystem::path& content,
     JsonArray checks;
     checks.Append(declaration);
     root.Insert(L"compilerDualInterfaceChecks",checks);
-    const auto revised_source=winrt::to_string(root.Stringify());
+    const auto revised_source=lgaed::qa::adopted_or_projected_source(live,
+        winrt::to_string(root.Stringify()),L"compilerDualInterfaceChecks");
     const auto revised=parse_lesson_json(revised_source,"es");
     const auto progress=parse_lesson_progress_metadata(revised_source,"es");
     const auto& active=editor(revised,id);
@@ -209,7 +212,7 @@ int dual_interface_state_windows(const std::filesystem::path& content,
     require(persisted==data&&compiler_puzzle_completed(persisted,revised,active),
         "Verified U10L1 receipt was lost on StateStore reopen");
     state::validate_lesson_state(persisted,revised);
-    require(load_lesson(path).raw_json==original.raw_json,
+    require(load_lesson(path).raw_json==live.raw_json,
         "U10L1 QA changed the actual lesson JSON");
     std::cout<<"PASS U10L1 source-bound StateStore: three cases preserved, "
         "full/progress loading, old receipts and drafts untouched, "

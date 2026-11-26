@@ -15,6 +15,8 @@ on:
       - scripts/curriculum/test_cpp_polymorphic_clone.py
       - scripts/curriculum/test_cpp_polymorphic_clone_authoring.py
       - native/platform/windows/polymorphic_clone_state_tests.cpp
+      - scripts/curriculum/published_adoption_fixtures.py
+      - scripts/curriculum/published_adoption_pins.json
       - scripts/curriculum/stable_state_layout.py
       - app/src/main/assets/content/es/programming/cpp_language_memory_oop/composicion_y_herencia_publica/lesson_copiar_objetos_sin_perder_su_clase_concreta.json
   workflow_dispatch:
@@ -31,6 +33,7 @@ jobs:
       - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262
         with:
           persist-credentials: false
+          fetch-depth: 0
       - uses: actions/setup-python@v5
         with:
           python-version: '3.12'

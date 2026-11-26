@@ -4,6 +4,7 @@
 #include "presentation/windows/reader_theme.hpp"
 #include "presentation/windows/lesson_view.hpp"
 #include "platform/windows/content_loader.hpp"
+#include "platform/windows/published_adoption_lesson_test_source.hpp"
 #include "platform/windows/state_store.hpp"
 #include "platform/windows/compiler_completion.hpp"
 #include "core/lesson_page_reach.hpp"
@@ -643,9 +644,10 @@ void verify_genuine_u3_first_prerequisites(HWND host,const std::filesystem::path
 
 
 
-curriculum::Lesson u3_cmake_structure_qa(const curriculum::Lesson& original) {
-    // Exercise the supported root contract only in this isolated QA model.
-    // The published curriculum, project seeds and stable draft identities stay intact.
+curriculum::Lesson u3_cmake_structure_qa(const curriculum::Lesson& original,
+        const curriculum::Lesson& live) {
+    // Use the pinned predecessor for the reviewed structural projection, but
+    // exercise the actual authored root if already adopted. Never overwrite it.
     std::string json=original.raw_json;
     constexpr auto anchor="  \"stateLayout\": {";
     const auto at=json.find(anchor);
@@ -722,7 +724,9 @@ curriculum::Lesson u3_cmake_structure_qa(const curriculum::Lesson& original) {
        ]}
     ],
 )json");
-    const auto mapped=windows::parse_lesson_json(json,"es");
+    const auto adopted=qa::adopted_or_projected_source(live,std::move(json),
+        L"compilerCmakeGraphChecks");
+    const auto mapped=windows::parse_lesson_json(adopted,"es");
     require(mapped.id==original.id&&mapped.pages.size()==original.pages.size()&&
             mapped.state_layout.lineage==original.state_layout.lineage&&
             mapped.state_layout.signatures==original.state_layout.signatures,
@@ -731,7 +735,10 @@ curriculum::Lesson u3_cmake_structure_qa(const curriculum::Lesson& original) {
         const auto& previous=original.pages.at(page).blocks.at(block);
         const auto& owner=mapped.pages.at(page).blocks.at(block);
         require(!previous.cmake_graph_check&&owner.cmake_graph_check&&
-                owner.raw_json==previous.raw_json&&owner.project_files==previous.project_files&&
+                qa::same_adoption_json(
+                    winrt::Windows::Data::Json::JsonObject::Parse(winrt::to_hstring(owner.raw_json)),
+                    winrt::Windows::Data::Json::JsonObject::Parse(winrt::to_hstring(previous.raw_json)))&&
+                owner.project_files==previous.project_files&&
                 owner.stable_id==previous.stable_id&&
                 curriculum::exercise_key(mapped,owner)==curriculum::exercise_key(original,previous)&&
                 curriculum::draft_key("programming",mapped,owner)==
@@ -1052,7 +1059,8 @@ void verify_genuine_u3_first_cmake_project(HWND host,const std::filesystem::path
     // edits in BOTH original CMakeLists and two fresh compiled target runs.
     // The page-four project must not be substituted by a detached QA fixture.
     const auto original=windows::load_lesson(authored_lesson);
-    const auto published=structure?u3_cmake_structure_qa(original):original;
+    const auto published=structure?u3_cmake_structure_qa(
+        qa::load_adoption_predecessor(authored_lesson),original):original;
     require(published.pages.size()==13&&published.pages[3].blocks.size()==6,
         "The published U3 reader lost its original CMake page");
     const auto& project_block=published.pages[3].blocks[4];

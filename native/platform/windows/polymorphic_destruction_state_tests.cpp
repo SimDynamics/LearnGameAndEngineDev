@@ -4,6 +4,7 @@
 #include "core/lesson.hpp"
 #include "platform/windows/compiler_completion.hpp"
 #include "platform/windows/content_loader.hpp"
+#include "platform/windows/published_adoption_lesson_test_source.hpp"
 #include "platform/windows/state_store.hpp"
 
 #include <filesystem>
@@ -41,7 +42,8 @@ int polymorphic_destruction_state_windows(const std::filesystem::path& content,
     const auto path=content.parent_path()/
         "cpp_language_memory_oop/composicion_y_herencia_publica/"
         "lesson_destruir_una_derivada_mediante_la_base.json";
-    const auto original=load_lesson(path);
+    const auto live=load_lesson(path);
+    const auto original=lgaed::qa::load_adoption_predecessor(path);
     const auto& before=owner(original,id);
     require(before.type==BlockType::cpp_compiler&&before.output_check&&
             before.output_check->cases.size()==5&&
@@ -73,7 +75,8 @@ int polymorphic_destruction_state_windows(const std::filesystem::path& content,
     JsonArray checks;
     checks.Append(declaration);
     root.Insert(L"compilerPolymorphicDestructionChecks",checks);
-    const auto revised_source=winrt::to_string(root.Stringify());
+    const auto revised_source=lgaed::qa::adopted_or_projected_source(live,
+        winrt::to_string(root.Stringify()),L"compilerPolymorphicDestructionChecks");
     const auto revised=parse_lesson_json(revised_source,"es");
     const auto progress=parse_lesson_progress_metadata(revised_source,"es");
     const auto& editor=owner(revised,id);
@@ -213,7 +216,7 @@ int polymorphic_destruction_state_windows(const std::filesystem::path& content,
     require(persisted==data&&compiler_puzzle_completed(persisted,revised,editor),
         "U8L5 genuine proof did not survive StateStore reopen");
     state::validate_lesson_state(persisted,revised);
-    require(load_lesson(path).raw_json==original.raw_json,
+    require(load_lesson(path).raw_json==live.raw_json,
         "U8L5 native QA modified Work's curricular JSON");
     std::cout<<"PASS U8L5 source-bound StateStore: original five cases, "
         "full/progress loaders, old stdout untouched, forged evidence rejected, "

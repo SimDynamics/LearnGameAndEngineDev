@@ -15,6 +15,8 @@ import sys
 import tempfile
 from typing import Mapping
 
+from published_adoption_fixtures import before_adoption
+
 ROOT = Path(__file__).resolve().parents[2]
 LESSON = ROOT / ("app/src/main/assets/content/es/programming/programming_practice_tools/"
                  "comprobaciones_repetibles/lesson_integrar_un_proyecto_y_sostener_su_evidencia.json")
@@ -39,8 +41,7 @@ class Audit:
     phases: tuple[tuple[str, int], ...] = ()
 
 
-def published_files() -> dict[str, str]:
-    doc = json.loads(LESSON.read_text(encoding="utf-8"))
+def files_from_document(doc: dict) -> dict[str, str]:
     for page, record in zip(doc["pages"], doc["stateLayout"]["current"]):
         for block, identity in zip(page["blocks"], record["blocks"]):
             if identity != OWNER:
@@ -63,20 +64,38 @@ def published_files() -> dict[str, str]:
     raise ValueError("Original U3L10 owner not found")
 
 
-def qa_cmake_toolchain_options(original: str, cxx: str) -> str:
-    """Translate only GCC warning flags for the disposable MSVC CI workspace.
+def historical_files() -> dict[str, str]:
+    """Recover the authenticated pre-adoption source, never an edited live copy."""
+    return files_from_document(before_adoption(LESSON))
 
-    The published student's CMakeLists.txt remains protected byte-for-byte.
-    This isolated QA adapter cannot establish that the curricular CMake
-    description is already MSVC-compatible. Work must author that correction.
+
+def published_files() -> dict[str, str]:
+    """Read the actual active editor for the independent execution oracle."""
+    return files_from_document(json.loads(LESSON.read_text(encoding="utf-8")))
+
+
+def qa_cmake_toolchain_options(original: str, cxx: str) -> str:
+    """Only historical GNU flags need the disposable MSVC QA adapter.
+
+    The adopted Windows recipe already uses /W4 /permissive- on all three
+    targets. Execute those bytes as authored; never translate them twice or
+    treat the historical adapter as proof of a published MSVC recipe.
     """
     if Path(cxx).name.lower() not in {"cl", "cl.exe"}:
         return original
+    targets = ("ajustes", "consultar_ajustes", "comprobar_ajustes")
+    old_flags = [f"target_compile_options({name} PRIVATE -Wall -Wextra -Wpedantic)"
+                 for name in targets]
+    native_flags = [f"target_compile_options({name} PRIVATE /W4 /permissive-)"
+                    for name in targets]
+    if all(original.count(flag) == 1 for flag in native_flags) and not any(
+            flag in original for flag in old_flags):
+        return original
+    if not all(original.count(flag) == 1 for flag in old_flags) or any(
+            flag in original for flag in native_flags):
+        raise ValueError("Published CMake warning flags changed")
     adapted = original
-    for name in ("ajustes", "consultar_ajustes", "comprobar_ajustes"):
-        old = f"target_compile_options({name} PRIVATE -Wall -Wextra -Wpedantic)"
-        if adapted.count(old) != 1:
-            raise ValueError("Published CMake warning flags changed")
+    for name, old in zip(targets, old_flags):
         new = ("if(MSVC)\n"
                f"    target_compile_options({name} PRIVATE /W4)\n"
                "else()\n"
@@ -178,9 +197,9 @@ def audit(candidate: Mapping[str, str], cxx: str) -> Audit:
                 dest.write_text(contents, encoding="utf-8")
             env = os.environ.copy()
             env["CXX"] = cxx
-            # This separate CI workspace may translate diagnostic flags for
-            # cl.exe; submitted CMake bytes and their protected provenance
-            # are never modified or credited as a Windows-ready project.
+            # Only the genuine historical recipe needs a disposable flags
+            # adapter; an adopted Windows recipe is executed without changes.
+            # The protected candidate is never edited in the repository.
             (source / "CMakeLists.txt").write_text(
                 qa_cmake_toolchain_options(files["CMakeLists.txt"], cxx),
                 encoding="utf-8")
