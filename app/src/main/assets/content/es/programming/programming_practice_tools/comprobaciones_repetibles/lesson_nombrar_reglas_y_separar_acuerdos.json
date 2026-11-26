@@ -104,6 +104,10 @@
           "text": "El cambio debe conservar el mínimo de cajas para cada cantidad del dominio. El comprobador y la aplicación conservarán sus resultados porque no ha cambiado la capacidad.\n\nRevisa también el cuerpo: la constante debe participar en el divisor y en el cálculo del desplazamiento. Declarar un nombre y dejar después las cifras iniciales no realiza esa mejora. La salida del programa permite comprobar sus resultados; no demuestra por sí sola cómo expresaste la relación."
         },
         {
+          "type": "paragraph",
+          "text": "Para ejecutar una sola comparación de cajas, selecciona comprobar_cajas y escribe 1 en «Entrada». Añade un salto de línea.\n\nEntrada\n1\n\nSalida esperada\npiezas=1 esperado=1 obtenido=1 OK\nBateria: OK\n\nLas dos líneas terminan con salto y el código de terminación es 0. Este primer ensayo permite avanzar cuando el cuerpo de cajas_para utiliza la constante como pide la actividad."
+        },
+        {
           "type": "cpp_compiler",
           "language": "cpp",
           "initialCode": "",
@@ -130,7 +134,7 @@
             },
             {
               "path": "pruebas/cajas_casos.cpp",
-              "initialCode": "#include \"envio/cajas.h\"\n#include <iostream>\n\nbool comprobar(int piezas, int esperado) {\n    const int obtenido{cajas_para(piezas)};\n    const bool coincide{obtenido == esperado};\n\n    std::cout << \"piezas=\" << piezas << \" esperado=\" << esperado\n              << \" obtenido=\" << obtenido << \" \";\n    if (coincide) { std::cout << \"OK\\n\"; }\n    else { std::cout << \"FALLO\\n\"; }\n    return coincide;\n}\n\nint main() {\n    bool correcto{true};\n    if (!comprobar(0, 0)) { correcto = false; }\n    if (!comprobar(4, 1)) { correcto = false; }\n    if (!comprobar(8, 2)) { correcto = false; }\n    if (!comprobar(20, 5)) { correcto = false; }\n    if (!comprobar(1, 1)) { correcto = false; }\n    if (!comprobar(5, 2)) { correcto = false; }\n    if (!comprobar(17, 5)) { correcto = false; }\n    if (!correcto) {\n        std::cout << \"Bateria: FALLO\\n\";\n        return 1;\n    }\n    std::cout << \"Bateria: OK\\n\";\n\n    return 0;\n}\n"
+              "initialCode": "#include \"envio/cajas.h\"\n#include <iostream>\n\nbool comprobar(int piezas, int esperado) {\n    const int obtenido{cajas_para(piezas)};\n    const bool coincide{obtenido == esperado};\n\n    std::cout << \"piezas=\" << piezas << \" esperado=\" << esperado\n              << \" obtenido=\" << obtenido << \" \";\n    if (coincide) { std::cout << \"OK\\n\"; }\n    else { std::cout << \"FALLO\\n\"; }\n    return coincide;\n}\n\nint main() {\n    int seleccion{0};\n    std::cin >> std::ws;\n    const bool todos{std::cin.eof()};\n    if (!todos && !(std::cin >> seleccion)) { return 2; }\n    if (!todos && seleccion != 0 && seleccion != 4 && seleccion != 8 && seleccion != 20 && seleccion != 1 && seleccion != 5 && seleccion != 17) {\n        return 2;\n    }\n\n    bool correcto{true};\n    if ((todos || seleccion == 0) && !comprobar(0, 0)) { correcto = false; }\n    if ((todos || seleccion == 4) && !comprobar(4, 1)) { correcto = false; }\n    if ((todos || seleccion == 8) && !comprobar(8, 2)) { correcto = false; }\n    if ((todos || seleccion == 20) && !comprobar(20, 5)) { correcto = false; }\n    if ((todos || seleccion == 1) && !comprobar(1, 1)) { correcto = false; }\n    if ((todos || seleccion == 5) && !comprobar(5, 2)) { correcto = false; }\n    if ((todos || seleccion == 17) && !comprobar(17, 5)) { correcto = false; }\n    if (!correcto) {\n        std::cout << \"Bateria: FALLO\\n\";\n        return 1;\n    }\n    std::cout << \"Bateria: OK\\n\";\n\n    return 0;\n}\n"
             }
           ],
           "cmake": {
@@ -141,6 +145,55 @@
             "inputComparison": "exact",
             "cases": [
               {
+                "standardInput": "1\n",
+                "outputs": [
+                  "piezas=1 esperado=1 obtenido=1 OK\nBateria: OK\n"
+                ],
+                "exitCode": 0
+              },
+              {
+                "standardInput": "0\n",
+                "outputs": [
+                  "piezas=0 esperado=0 obtenido=0 OK\nBateria: OK\n"
+                ],
+                "exitCode": 0
+              },
+              {
+                "standardInput": "4\n",
+                "outputs": [
+                  "piezas=4 esperado=1 obtenido=1 OK\nBateria: OK\n"
+                ],
+                "exitCode": 0
+              },
+              {
+                "standardInput": "8\n",
+                "outputs": [
+                  "piezas=8 esperado=2 obtenido=2 OK\nBateria: OK\n"
+                ],
+                "exitCode": 0
+              },
+              {
+                "standardInput": "20\n",
+                "outputs": [
+                  "piezas=20 esperado=5 obtenido=5 OK\nBateria: OK\n"
+                ],
+                "exitCode": 0
+              },
+              {
+                "standardInput": "5\n",
+                "outputs": [
+                  "piezas=5 esperado=2 obtenido=2 OK\nBateria: OK\n"
+                ],
+                "exitCode": 0
+              },
+              {
+                "standardInput": "17\n",
+                "outputs": [
+                  "piezas=17 esperado=5 obtenido=5 OK\nBateria: OK\n"
+                ],
+                "exitCode": 0
+              },
+              {
                 "standardInput": "",
                 "outputs": [
                   "piezas=0 esperado=0 obtenido=0 OK\npiezas=4 esperado=1 obtenido=1 OK\npiezas=8 esperado=2 obtenido=2 OK\npiezas=20 esperado=5 obtenido=5 OK\npiezas=1 esperado=1 obtenido=1 OK\npiezas=5 esperado=2 obtenido=2 OK\npiezas=17 esperado=5 obtenido=5 OK\nBateria: OK\n"
@@ -149,6 +202,10 @@
               }
             ]
           }
+        },
+        {
+          "type": "paragraph",
+          "text": "Ensayos opcionales del mismo editor\n\nPuedes probar 0, 4, 8, 20, 5 y 17 por separado. Son ensayos opcionales. Con «Entrada» vacía se conservan las siete comparaciones del comprobador.\n\nComparaciones opcionales del comprobador\n\nEntrada\n0\n\nSalida esperada\npiezas=0 esperado=0 obtenido=0 OK\nBateria: OK\n\nEntrada\n4\n\nSalida esperada\npiezas=4 esperado=1 obtenido=1 OK\nBateria: OK\n\nEntrada\n8\n\nSalida esperada\npiezas=8 esperado=2 obtenido=2 OK\nBateria: OK\n\nEntrada\n20\n\nSalida esperada\npiezas=20 esperado=5 obtenido=5 OK\nBateria: OK\n\nEntrada\n5\n\nSalida esperada\npiezas=5 esperado=2 obtenido=2 OK\nBateria: OK\n\nEntrada\n17\n\nSalida esperada\npiezas=17 esperado=5 obtenido=5 OK\nBateria: OK\n\nCada salida termina con un salto de línea y el código de terminación debe ser 0."
         },
         {
           "type": "order_code",
@@ -412,6 +469,10 @@
           "text": "El comprobador de este editor ya contiene los nueve esperados de cajas de seis plazas y los dos esperados del plazo de cuatro días. La tarea es reparar únicamente la función del plazo; no tienes que construir otra batería.\n\nLa biblioteca utiliza por error seis también como máximo de días. Con `comprobar_cajas` seleccionado, compila y ejecuta para localizar qué comparación detecta el cambio indebido. Repara sólo esa regla en la implementación y vuelve a comprobar, conservando las expectativas y la capacidad de las cajas."
         },
         {
+          "type": "paragraph",
+          "text": "Escribe dias 5 en Entrada para comprobar el caso que detecta el defecto del plazo. Con dias 4 puedes probar el límite. Para ensayar un pedido por separado, escribe piezas y después la cantidad. Con Entrada vacía, el comprobador ejecuta las once llamadas juntas."
+        },
+        {
           "type": "cpp_compiler",
           "language": "cpp",
           "initialCode": "",
@@ -438,7 +499,7 @@
             },
             {
               "path": "pruebas/cajas_casos.cpp",
-              "initialCode": "#include \"envio/cajas.h\"\n#include <iostream>\n\nbool comprobar(int piezas, int esperado) {\n    const int obtenido{cajas_para(piezas)};\n    const bool coincide{obtenido == esperado};\n\n    std::cout << \"piezas=\" << piezas << \" esperado=\" << esperado\n              << \" obtenido=\" << obtenido << \" \";\n    if (coincide) { std::cout << \"OK\\n\"; }\n    else { std::cout << \"FALLO\\n\"; }\n    return coincide;\n}\n\nbool comprobar_plazo(int dias, bool esperado) {\n    const bool obtenido{llega_a_tiempo(dias)};\n    const bool coincide{obtenido == esperado};\n\n    std::cout << \"dias=\" << dias << \" esperado=\" << esperado\n              << \" obtenido=\" << obtenido << \" \";\n    if (coincide) { std::cout << \"OK\\n\"; }\n    else { std::cout << \"FALLO\\n\"; }\n    return coincide;\n}\n\nint main() {\n    bool correcto{true};\n    if (!comprobar(0, 0)) { correcto = false; }\n    if (!comprobar(4, 1)) { correcto = false; }\n    if (!comprobar(8, 2)) { correcto = false; }\n    if (!comprobar(20, 4)) { correcto = false; }\n    if (!comprobar(1, 1)) { correcto = false; }\n    if (!comprobar(5, 1)) { correcto = false; }\n    if (!comprobar(17, 3)) { correcto = false; }\n    if (!comprobar(6, 1)) { correcto = false; }\n    if (!comprobar(7, 2)) { correcto = false; }\n    if (!comprobar_plazo(4, true)) { correcto = false; }\n    if (!comprobar_plazo(5, false)) { correcto = false; }\n    if (!correcto) {\n        std::cout << \"Bateria: FALLO\\n\";\n        return 1;\n    }\n    std::cout << \"Bateria: OK\\n\";\n\n    return 0;\n}\n"
+              "initialCode": "#include \"envio/cajas.h\"\n#include <iostream>\n#include <string>\n\nbool comprobar(int piezas, int esperado) {\n    const int obtenido{cajas_para(piezas)};\n    const bool coincide{obtenido == esperado};\n\n    std::cout << \"piezas=\" << piezas << \" esperado=\" << esperado\n              << \" obtenido=\" << obtenido << \" \";\n    if (coincide) { std::cout << \"OK\\n\"; }\n    else { std::cout << \"FALLO\\n\"; }\n    return coincide;\n}\n\nbool comprobar_plazo(int dias, bool esperado) {\n    const bool obtenido{llega_a_tiempo(dias)};\n    const bool coincide{obtenido == esperado};\n\n    std::cout << \"dias=\" << dias << \" esperado=\" << esperado\n              << \" obtenido=\" << obtenido << \" \";\n    if (coincide) { std::cout << \"OK\\n\"; }\n    else { std::cout << \"FALLO\\n\"; }\n    return coincide;\n}\n\nint main() {\n    std::cin >> std::ws;\n    std::string tipo;\n    int valor{};\n    if (!std::cin.eof()) {\n        if (!(std::cin >> tipo >> valor)) {\n            return 1;\n        }\n        if (tipo != \"piezas\" && tipo != \"dias\") {\n            return 1;\n        }\n    }\n\n    bool correcto{true};\n    if ((tipo.empty() || (tipo == \"piezas\" && valor == 0)) && !comprobar(0, 0)) { correcto = false; }\n    if ((tipo.empty() || (tipo == \"piezas\" && valor == 4)) && !comprobar(4, 1)) { correcto = false; }\n    if ((tipo.empty() || (tipo == \"piezas\" && valor == 8)) && !comprobar(8, 2)) { correcto = false; }\n    if ((tipo.empty() || (tipo == \"piezas\" && valor == 20)) && !comprobar(20, 4)) { correcto = false; }\n    if ((tipo.empty() || (tipo == \"piezas\" && valor == 1)) && !comprobar(1, 1)) { correcto = false; }\n    if ((tipo.empty() || (tipo == \"piezas\" && valor == 5)) && !comprobar(5, 1)) { correcto = false; }\n    if ((tipo.empty() || (tipo == \"piezas\" && valor == 17)) && !comprobar(17, 3)) { correcto = false; }\n    if ((tipo.empty() || (tipo == \"piezas\" && valor == 6)) && !comprobar(6, 1)) { correcto = false; }\n    if ((tipo.empty() || (tipo == \"piezas\" && valor == 7)) && !comprobar(7, 2)) { correcto = false; }\n    if ((tipo.empty() || (tipo == \"dias\" && valor == 4)) && !comprobar_plazo(4, true)) { correcto = false; }\n    if ((tipo.empty() || (tipo == \"dias\" && valor == 5)) && !comprobar_plazo(5, false)) { correcto = false; }\n    if (!correcto) {\n        std::cout << \"Bateria: FALLO\\n\";\n        return 1;\n    }\n    std::cout << \"Bateria: OK\\n\";\n\n    return 0;\n}\n"
             }
           ],
           "cmake": {
@@ -448,6 +509,83 @@
           "outputCheck": {
             "inputComparison": "exact",
             "cases": [
+              {
+                "standardInput": "dias 5",
+                "outputs": [
+                  "dias=5 esperado=0 obtenido=0 OK\nBateria: OK\n"
+                ],
+                "explanation": "El plazo de cuatro días conserva su criterio."
+              },
+              {
+                "standardInput": "piezas 0",
+                "outputs": [
+                  "piezas=0 esperado=0 obtenido=0 OK\nBateria: OK\n"
+                ],
+                "explanation": "Este ensayo comprueba el número de cajas de seis plazas."
+              },
+              {
+                "standardInput": "piezas 4",
+                "outputs": [
+                  "piezas=4 esperado=1 obtenido=1 OK\nBateria: OK\n"
+                ],
+                "explanation": "Este ensayo comprueba el número de cajas de seis plazas."
+              },
+              {
+                "standardInput": "piezas 8",
+                "outputs": [
+                  "piezas=8 esperado=2 obtenido=2 OK\nBateria: OK\n"
+                ],
+                "explanation": "Este ensayo comprueba el número de cajas de seis plazas."
+              },
+              {
+                "standardInput": "piezas 20",
+                "outputs": [
+                  "piezas=20 esperado=4 obtenido=4 OK\nBateria: OK\n"
+                ],
+                "explanation": "Este ensayo comprueba el número de cajas de seis plazas."
+              },
+              {
+                "standardInput": "piezas 1",
+                "outputs": [
+                  "piezas=1 esperado=1 obtenido=1 OK\nBateria: OK\n"
+                ],
+                "explanation": "Este ensayo comprueba el número de cajas de seis plazas."
+              },
+              {
+                "standardInput": "piezas 5",
+                "outputs": [
+                  "piezas=5 esperado=1 obtenido=1 OK\nBateria: OK\n"
+                ],
+                "explanation": "Este ensayo comprueba el número de cajas de seis plazas."
+              },
+              {
+                "standardInput": "piezas 17",
+                "outputs": [
+                  "piezas=17 esperado=3 obtenido=3 OK\nBateria: OK\n"
+                ],
+                "explanation": "Este ensayo comprueba el número de cajas de seis plazas."
+              },
+              {
+                "standardInput": "piezas 6",
+                "outputs": [
+                  "piezas=6 esperado=1 obtenido=1 OK\nBateria: OK\n"
+                ],
+                "explanation": "Este ensayo comprueba el número de cajas de seis plazas."
+              },
+              {
+                "standardInput": "piezas 7",
+                "outputs": [
+                  "piezas=7 esperado=2 obtenido=2 OK\nBateria: OK\n"
+                ],
+                "explanation": "Este ensayo comprueba el número de cajas de seis plazas."
+              },
+              {
+                "standardInput": "dias 4",
+                "outputs": [
+                  "dias=4 esperado=1 obtenido=1 OK\nBateria: OK\n"
+                ],
+                "explanation": "El plazo de cuatro días conserva su criterio."
+              },
               {
                 "standardInput": "",
                 "outputs": [
@@ -479,12 +617,51 @@
           "text": "Cada comparación observa dos resultados para una misma cantidad: el total y si alcanza el mínimo. Ambos deben corresponder a sus reglas independientes. Cuando coincidan con sus esperados, el comprobador mostrará `Bateria: OK` y terminará con retorno cero.\n\nAdmite otros nombres claros y una organización equivalente que separen esas reglas. El control de una implementación que vuelve a mezclarlas tendrá otro editor; así se conservará el borrador de esta tarea."
         },
         {
+          "type": "paragraph",
+          "text": "Prueba con 4 artículos, precio de 7 y mínimo de 5\n\nEntrada\n4\n\nSalida esperada\narticulos=4 total=28 esperado=28 minimo=0 esperado_minimo=0 OK\nBateria: OK\n\nEscribe 4 en «Entrada» y añade un salto de línea. El programa debe terminar los dos renglones con un salto y devolver 0. La comprobación también acredita los nombres y usos de las dos reglas que pide la actividad."
+        },
+        {
           "type": "cpp_compiler",
           "language": "cpp",
-          "initialCode": "#include <iostream>\n\nconst int limite{5};\n\nint precio_total(int articulos) {\n    return articulos * limite;\n}\n\nbool alcanza_minimo(int articulos) {\n    return articulos >= limite;\n}\n\nbool comprobar(int articulos, int total_esperado, bool minimo_esperado) {\n    const int total{precio_total(articulos)};\n    const bool alcanza{alcanza_minimo(articulos)};\n    const bool coincide{total == total_esperado && alcanza == minimo_esperado};\n\n    std::cout << \"articulos=\" << articulos << \" total=\" << total\n              << \" esperado=\" << total_esperado << \" minimo=\" << alcanza\n              << \" esperado_minimo=\" << minimo_esperado << \" \";\n    if (coincide) { std::cout << \"OK\\n\"; }\n    else { std::cout << \"FALLO\\n\"; }\n    return coincide;\n}\n\nint main() {\n    bool correcto{true};\n    if (!comprobar(0, 0, false)) { correcto = false; }\n    if (!comprobar(4, 20, false)) { correcto = false; }\n    if (!comprobar(5, 25, true)) { correcto = false; }\n    if (!comprobar(6, 30, true)) { correcto = false; }\n    if (!comprobar(10, 50, true)) { correcto = false; }\n    if (!correcto) { std::cout << \"Bateria: FALLO\\n\"; return 1; }\n    std::cout << \"Bateria: OK\\n\";\n\n    return 0;\n}\n",
+          "initialCode": "#include <iostream>\n\nconst int limite{5};\n\nint precio_total(int articulos) {\n    return articulos * limite;\n}\n\nbool alcanza_minimo(int articulos) {\n    return articulos >= limite;\n}\n\nbool comprobar(int articulos, int total_esperado, bool minimo_esperado) {\n    const int total{precio_total(articulos)};\n    const bool alcanza{alcanza_minimo(articulos)};\n    const bool coincide{total == total_esperado && alcanza == minimo_esperado};\n\n    std::cout << \"articulos=\" << articulos << \" total=\" << total\n              << \" esperado=\" << total_esperado << \" minimo=\" << alcanza\n              << \" esperado_minimo=\" << minimo_esperado << \" \";\n    if (coincide) { std::cout << \"OK\\n\"; }\n    else { std::cout << \"FALLO\\n\"; }\n    return coincide;\n}\n\nint main() {\n    int seleccion{0};\n    std::cin >> std::ws;\n    const bool todos{std::cin.eof()};\n    if (!todos && !(std::cin >> seleccion)) { return 2; }\n    if (!todos && seleccion != 0 && seleccion != 4 && seleccion != 5 && seleccion != 6 && seleccion != 10) {\n        return 2;\n    }\n\n    bool correcto{true};\n    if ((todos || seleccion == 0) && !comprobar(0, 0, false)) { correcto = false; }\n    if ((todos || seleccion == 4) && !comprobar(4, 20, false)) { correcto = false; }\n    if ((todos || seleccion == 5) && !comprobar(5, 25, true)) { correcto = false; }\n    if ((todos || seleccion == 6) && !comprobar(6, 30, true)) { correcto = false; }\n    if ((todos || seleccion == 10) && !comprobar(10, 50, true)) { correcto = false; }\n    if (!correcto) { std::cout << \"Bateria: FALLO\\n\"; return 1; }\n    std::cout << \"Bateria: OK\\n\";\n\n    return 0;\n}\n",
           "outputCheck": {
             "inputComparison": "exact",
             "cases": [
+              {
+                "standardInput": "4\n",
+                "outputs": [
+                  "articulos=4 total=28 esperado=28 minimo=0 esperado_minimo=0 OK\nBateria: OK\n"
+                ],
+                "exitCode": 0
+              },
+              {
+                "standardInput": "0\n",
+                "outputs": [
+                  "articulos=0 total=0 esperado=0 minimo=0 esperado_minimo=0 OK\nBateria: OK\n"
+                ],
+                "exitCode": 0
+              },
+              {
+                "standardInput": "5\n",
+                "outputs": [
+                  "articulos=5 total=35 esperado=35 minimo=1 esperado_minimo=1 OK\nBateria: OK\n"
+                ],
+                "exitCode": 0
+              },
+              {
+                "standardInput": "6\n",
+                "outputs": [
+                  "articulos=6 total=42 esperado=42 minimo=1 esperado_minimo=1 OK\nBateria: OK\n"
+                ],
+                "exitCode": 0
+              },
+              {
+                "standardInput": "10\n",
+                "outputs": [
+                  "articulos=10 total=70 esperado=70 minimo=1 esperado_minimo=1 OK\nBateria: OK\n"
+                ],
+                "exitCode": 0
+              },
               {
                 "standardInput": "",
                 "outputs": [
@@ -494,6 +671,10 @@
               }
             ]
           }
+        },
+        {
+          "type": "paragraph",
+          "text": "Ensayos opcionales del mismo editor\n\nLas otras cuatro cantidades del comprobador son ensayos opcionales y se pueden ejecutar por separado. La entrada vacía conserva el informe completo de las cinco comparaciones. Mantén sus datos y calcula los esperados desde los dos requisitos.\n\nComparaciones opcionales del comprobador\n\nEntrada\n0\n\nSalida esperada\narticulos=0 total=0 esperado=0 minimo=0 esperado_minimo=0 OK\nBateria: OK\n\nEntrada\n5\n\nSalida esperada\narticulos=5 total=35 esperado=35 minimo=1 esperado_minimo=1 OK\nBateria: OK\n\nEntrada\n6\n\nSalida esperada\narticulos=6 total=42 esperado=42 minimo=1 esperado_minimo=1 OK\nBateria: OK\n\nEntrada\n10\n\nSalida esperada\narticulos=10 total=70 esperado=70 minimo=1 esperado_minimo=1 OK\nBateria: OK\n\nCada salida termina con un salto de línea y el código de terminación debe ser 0."
         }
       ]
     },
@@ -556,12 +737,51 @@
           "text": "Este editor proporciona las cinco comparaciones y una implementación que usa `acuerdo=7` tanto para el precio como para el mínimo. Con esa revisión, los totales pueden ser correctos mientras la decisión sobre el mínimo es errónea.\n\nRepara las dos funciones con nombres y usos separados: siete créditos por artículo y cinco artículos como mínimo. Conserva los datos, esperados y comparaciones del comprobador. Compila, ejecuta y comprueba en este editor, sin sustituir el borrador de la práctica anterior."
         },
         {
+          "type": "paragraph",
+          "text": "Prueba con 5 artículos, precio de 7 y mínimo de 5\n\nEntrada\n5\n\nSalida esperada\narticulos=5 total=35 esperado=35 minimo=1 esperado_minimo=1 OK\nBateria: OK\n\nEscribe 5 en «Entrada» y añade un salto de línea. El programa debe terminar los dos renglones con un salto y devolver 0. La comprobación también acredita los nombres y usos de las dos reglas que pide la actividad."
+        },
+        {
           "type": "cpp_compiler",
           "language": "cpp",
-          "initialCode": "#include <iostream>\n\nconst int acuerdo{7};\n\nint precio_total(int articulos) {\n    return articulos * acuerdo;\n}\n\nbool alcanza_minimo(int articulos) {\n    return articulos >= acuerdo;\n}\n\nbool comprobar(int articulos, int total_esperado, bool minimo_esperado) {\n    const int total{precio_total(articulos)};\n    const bool alcanza{alcanza_minimo(articulos)};\n    const bool coincide{total == total_esperado && alcanza == minimo_esperado};\n\n    std::cout << \"articulos=\" << articulos << \" total=\" << total\n              << \" esperado=\" << total_esperado << \" minimo=\" << alcanza\n              << \" esperado_minimo=\" << minimo_esperado << \" \";\n    if (coincide) { std::cout << \"OK\\n\"; }\n    else { std::cout << \"FALLO\\n\"; }\n    return coincide;\n}\n\nint main() {\n    bool correcto{true};\n    if (!comprobar(0, 0, false)) { correcto = false; }\n    if (!comprobar(4, 28, false)) { correcto = false; }\n    if (!comprobar(5, 35, true)) { correcto = false; }\n    if (!comprobar(6, 42, true)) { correcto = false; }\n    if (!comprobar(10, 70, true)) { correcto = false; }\n    if (!correcto) { std::cout << \"Bateria: FALLO\\n\"; return 1; }\n    std::cout << \"Bateria: OK\\n\";\n\n    return 0;\n}\n",
+          "initialCode": "#include <iostream>\n\nconst int acuerdo{7};\n\nint precio_total(int articulos) {\n    return articulos * acuerdo;\n}\n\nbool alcanza_minimo(int articulos) {\n    return articulos >= acuerdo;\n}\n\nbool comprobar(int articulos, int total_esperado, bool minimo_esperado) {\n    const int total{precio_total(articulos)};\n    const bool alcanza{alcanza_minimo(articulos)};\n    const bool coincide{total == total_esperado && alcanza == minimo_esperado};\n\n    std::cout << \"articulos=\" << articulos << \" total=\" << total\n              << \" esperado=\" << total_esperado << \" minimo=\" << alcanza\n              << \" esperado_minimo=\" << minimo_esperado << \" \";\n    if (coincide) { std::cout << \"OK\\n\"; }\n    else { std::cout << \"FALLO\\n\"; }\n    return coincide;\n}\n\nint main() {\n    int seleccion{0};\n    std::cin >> std::ws;\n    const bool todos{std::cin.eof()};\n    if (!todos && !(std::cin >> seleccion)) { return 2; }\n    if (!todos && seleccion != 0 && seleccion != 4 && seleccion != 5 && seleccion != 6 && seleccion != 10) {\n        return 2;\n    }\n\n    bool correcto{true};\n    if ((todos || seleccion == 0) && !comprobar(0, 0, false)) { correcto = false; }\n    if ((todos || seleccion == 4) && !comprobar(4, 28, false)) { correcto = false; }\n    if ((todos || seleccion == 5) && !comprobar(5, 35, true)) { correcto = false; }\n    if ((todos || seleccion == 6) && !comprobar(6, 42, true)) { correcto = false; }\n    if ((todos || seleccion == 10) && !comprobar(10, 70, true)) { correcto = false; }\n    if (!correcto) { std::cout << \"Bateria: FALLO\\n\"; return 1; }\n    std::cout << \"Bateria: OK\\n\";\n\n    return 0;\n}\n",
           "outputCheck": {
             "inputComparison": "exact",
             "cases": [
+              {
+                "standardInput": "5\n",
+                "outputs": [
+                  "articulos=5 total=35 esperado=35 minimo=1 esperado_minimo=1 OK\nBateria: OK\n"
+                ],
+                "exitCode": 0
+              },
+              {
+                "standardInput": "0\n",
+                "outputs": [
+                  "articulos=0 total=0 esperado=0 minimo=0 esperado_minimo=0 OK\nBateria: OK\n"
+                ],
+                "exitCode": 0
+              },
+              {
+                "standardInput": "4\n",
+                "outputs": [
+                  "articulos=4 total=28 esperado=28 minimo=0 esperado_minimo=0 OK\nBateria: OK\n"
+                ],
+                "exitCode": 0
+              },
+              {
+                "standardInput": "6\n",
+                "outputs": [
+                  "articulos=6 total=42 esperado=42 minimo=1 esperado_minimo=1 OK\nBateria: OK\n"
+                ],
+                "exitCode": 0
+              },
+              {
+                "standardInput": "10\n",
+                "outputs": [
+                  "articulos=10 total=70 esperado=70 minimo=1 esperado_minimo=1 OK\nBateria: OK\n"
+                ],
+                "exitCode": 0
+              },
               {
                 "standardInput": "",
                 "outputs": [
@@ -571,6 +791,10 @@
               }
             ]
           }
+        },
+        {
+          "type": "paragraph",
+          "text": "Ensayos opcionales del mismo editor\n\nLas otras cuatro cantidades del comprobador son ensayos opcionales y se pueden ejecutar por separado. La entrada vacía conserva el informe completo de las cinco comparaciones. Mantén sus datos y calcula los esperados desde los dos requisitos.\n\nComparaciones opcionales del comprobador\n\nEntrada\n0\n\nSalida esperada\narticulos=0 total=0 esperado=0 minimo=0 esperado_minimo=0 OK\nBateria: OK\n\nEntrada\n4\n\nSalida esperada\narticulos=4 total=28 esperado=28 minimo=0 esperado_minimo=0 OK\nBateria: OK\n\nEntrada\n6\n\nSalida esperada\narticulos=6 total=42 esperado=42 minimo=1 esperado_minimo=1 OK\nBateria: OK\n\nEntrada\n10\n\nSalida esperada\narticulos=10 total=70 esperado=70 minimo=1 esperado_minimo=1 OK\nBateria: OK\n\nCada salida termina con un salto de línea y el código de terminación debe ser 0."
         }
       ]
     },
@@ -923,7 +1147,9 @@
           "block_0002_0001",
           "block_0002_0002",
           "block_0002_0003",
+          "u3l3_block_0002_0004_entrada_individual",
           "block_0002_0004",
+          "u3l3_block_0002_0004_ensayos_opcionales",
           "block_0002_0005"
         ]
       },
@@ -973,6 +1199,7 @@
           "block_0006_0006",
           "block_0006_0007",
           "block_0006_0008",
+          "plazo_cajas_ensayos_de_entrada",
           "block_0006_0009"
         ]
       },
@@ -983,7 +1210,9 @@
           "block_0007_0001",
           "block_0007_0002",
           "block_0007_0003",
-          "block_0007_0004"
+          "u3l3_block_0007_0004_entrada_individual",
+          "block_0007_0004",
+          "u3l3_block_0007_0004_ensayos_opcionales"
         ]
       },
       {
@@ -996,7 +1225,9 @@
           "block_0008_0004",
           "block_0008_0005",
           "block_0008_0006",
-          "block_0008_0007"
+          "u3l3_block_0008_0007_entrada_individual",
+          "block_0008_0007",
+          "u3l3_block_0008_0007_ensayos_opcionales"
         ]
       },
       {
@@ -1871,7 +2102,71 @@
         ]
       }
     },
-    "additions": [],
+    "additions": [
+      {
+        "id": "plazo_cajas_ensayos_de_entrada",
+        "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5",
+        "storage": {
+          "page": 900101,
+          "block": 0
+        },
+        "progressPage": "page_0006"
+      },
+      {
+        "id": "u3l3_block_0002_0004_entrada_individual",
+        "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5",
+        "storage": {
+          "page": 10,
+          "block": 0
+        },
+        "progressPage": "page_0002"
+      },
+      {
+        "id": "u3l3_block_0002_0004_ensayos_opcionales",
+        "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5",
+        "storage": {
+          "page": 10,
+          "block": 1
+        },
+        "progressPage": "page_0002"
+      },
+      {
+        "id": "u3l3_block_0007_0004_entrada_individual",
+        "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5",
+        "storage": {
+          "page": 10,
+          "block": 2
+        },
+        "progressPage": "page_0007"
+      },
+      {
+        "id": "u3l3_block_0007_0004_ensayos_opcionales",
+        "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5",
+        "storage": {
+          "page": 10,
+          "block": 3
+        },
+        "progressPage": "page_0007"
+      },
+      {
+        "id": "u3l3_block_0008_0007_entrada_individual",
+        "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5",
+        "storage": {
+          "page": 10,
+          "block": 4
+        },
+        "progressPage": "page_0008"
+      },
+      {
+        "id": "u3l3_block_0008_0007_ensayos_opcionales",
+        "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5",
+        "storage": {
+          "page": 10,
+          "block": 5
+        },
+        "progressPage": "page_0008"
+      }
+    ],
     "editorial": [
       {
         "id": "block_0001_0001",
@@ -2167,6 +2462,26 @@
         "id": "block_0006_0009",
         "beforeSha256": "0517f3280ad02fae3ef0ba432c9965535f174f6365aeab1959f18a793688fb36",
         "afterSha256": "9ca5c0ee0bdf11eca6fe1fd0514f4c06afec0d75a885bb2e2a90356b48c9b51a"
+      },
+      {
+        "id": "block_0006_0009",
+        "beforeSha256": "9ca5c0ee0bdf11eca6fe1fd0514f4c06afec0d75a885bb2e2a90356b48c9b51a",
+        "afterSha256": "3be62be1446039d72c7d2c8ea18c5caba14bdfddb56b88d6bce11268c3abfaee"
+      },
+      {
+        "id": "block_0002_0004",
+        "beforeSha256": "c25e4b575393acf19cf0ae70d32dc7553729ffa4872bf40ceb0af8bec7ce3ee2",
+        "afterSha256": "2ec48cf2793ffcfc973af1c183846f0d36af81f9f342aabad58b606262258712"
+      },
+      {
+        "id": "block_0007_0004",
+        "beforeSha256": "25babe91c32f2753d0860ab19645644cd2894392ede119d081972accbf84c3ec",
+        "afterSha256": "290e71d79524bcca005129a32b2e3bb65968f5d5b508d3efed6238987176f47a"
+      },
+      {
+        "id": "block_0008_0007",
+        "beforeSha256": "bdd07452b8d9d97a09e718c32ad2cbbccd43f1f48fee548aeb037fa1c4c80001",
+        "afterSha256": "014144f6f32e3e5a6075a5f61c1ea8fde51d5c6cf2d924fe5ce22ed4b669f304"
       }
     ],
     "sourceFormatRevisions": [
@@ -2425,6 +2740,534 @@
               }
             ]
           }
+        }
+      }
+    ],
+    "compilerCaseRevisions": [
+      {
+        "id": "block_0006_0009",
+        "block": {
+          "type": "cpp_compiler",
+          "language": "cpp",
+          "initialCode": "",
+          "projectFiles": [
+            {
+              "path": "CMakeLists.txt",
+              "initialCode": "cmake_minimum_required(VERSION 3.20)\nproject(EnviosComprobables LANGUAGES CXX)\nmessage(STATUS \"raiz_antes\")\nadd_subdirectory(componente)\nmessage(STATUS \"raiz_despues\")\nadd_executable(consultar_cajas app/consulta.cpp)\nadd_executable(comprobar_cajas pruebas/cajas_casos.cpp)\n\ntarget_link_libraries(consultar_cajas PRIVATE envios)\ntarget_link_libraries(comprobar_cajas PRIVATE envios)\ntarget_compile_features(consultar_cajas PRIVATE cxx_std_20)\ntarget_compile_features(comprobar_cajas PRIVATE cxx_std_20)\nset_target_properties(consultar_cajas comprobar_cajas PROPERTIES CXX_EXTENSIONS OFF)\n"
+            },
+            {
+              "path": "componente/CMakeLists.txt",
+              "initialCode": "message(STATUS \"componente\")\n\nadd_library(envios STATIC src/cajas.cpp)\n\ntarget_include_directories(envios PUBLIC publico)\ntarget_compile_features(envios PRIVATE cxx_std_20)\nset_target_properties(envios PROPERTIES CXX_EXTENSIONS OFF)\n"
+            },
+            {
+              "path": "componente/publico/envio/cajas.h",
+              "initialCode": "#ifndef PRACTICA_ENVIO_CAJAS_H\n#define PRACTICA_ENVIO_CAJAS_H\n\n// Dominio: 0 <= piezas <= 20.\n// Minimo numero de cajas de 6 plazas que basta para todas las piezas.\n// Cero piezas requiere cero cajas.\nint cajas_para(int piezas);\n\n// Dominio: 0 <= dias <= 7. Cumple el plazo si tarda como maximo 4 dias.\nbool llega_a_tiempo(int dias);\n\n#endif\n"
+            },
+            {
+              "path": "componente/src/cajas.cpp",
+              "initialCode": "#include \"envio/cajas.h\"\n\nint cajas_para(int piezas) {\n    const int piezas_por_caja{6};\n    return (piezas + piezas_por_caja - 1) / piezas_por_caja;\n}\n\nbool llega_a_tiempo(int dias) {\n    const int dias_maximos{6};\n    return dias <= dias_maximos;\n}\n"
+            },
+            {
+              "path": "app/consulta.cpp",
+              "initialCode": "#include \"envio/cajas.h\"\n#include <iostream>\n\nint main() {\n    std::cout << cajas_para(4) << \":\" << cajas_para(8)\n              << \":\" << llega_a_tiempo(4) << \":\" << llega_a_tiempo(5);\n    return 0;\n}\n"
+            },
+            {
+              "path": "pruebas/cajas_casos.cpp",
+              "initialCode": "#include \"envio/cajas.h\"\n#include <iostream>\n\nbool comprobar(int piezas, int esperado) {\n    const int obtenido{cajas_para(piezas)};\n    const bool coincide{obtenido == esperado};\n\n    std::cout << \"piezas=\" << piezas << \" esperado=\" << esperado\n              << \" obtenido=\" << obtenido << \" \";\n    if (coincide) { std::cout << \"OK\\n\"; }\n    else { std::cout << \"FALLO\\n\"; }\n    return coincide;\n}\n\nbool comprobar_plazo(int dias, bool esperado) {\n    const bool obtenido{llega_a_tiempo(dias)};\n    const bool coincide{obtenido == esperado};\n\n    std::cout << \"dias=\" << dias << \" esperado=\" << esperado\n              << \" obtenido=\" << obtenido << \" \";\n    if (coincide) { std::cout << \"OK\\n\"; }\n    else { std::cout << \"FALLO\\n\"; }\n    return coincide;\n}\n\nint main() {\n    bool correcto{true};\n    if (!comprobar(0, 0)) { correcto = false; }\n    if (!comprobar(4, 1)) { correcto = false; }\n    if (!comprobar(8, 2)) { correcto = false; }\n    if (!comprobar(20, 4)) { correcto = false; }\n    if (!comprobar(1, 1)) { correcto = false; }\n    if (!comprobar(5, 1)) { correcto = false; }\n    if (!comprobar(17, 3)) { correcto = false; }\n    if (!comprobar(6, 1)) { correcto = false; }\n    if (!comprobar(7, 2)) { correcto = false; }\n    if (!comprobar_plazo(4, true)) { correcto = false; }\n    if (!comprobar_plazo(5, false)) { correcto = false; }\n    if (!correcto) {\n        std::cout << \"Bateria: FALLO\\n\";\n        return 1;\n    }\n    std::cout << \"Bateria: OK\\n\";\n\n    return 0;\n}\n"
+            }
+          ],
+          "cmake": {
+            "target": "comprobar_cajas",
+            "buildType": "Debug"
+          },
+          "outputCheck": {
+            "inputComparison": "exact",
+            "cases": [
+              {
+                "standardInput": "",
+                "outputs": [
+                  "piezas=0 esperado=0 obtenido=0 OK\npiezas=4 esperado=1 obtenido=1 OK\npiezas=8 esperado=2 obtenido=2 OK\npiezas=20 esperado=4 obtenido=4 OK\npiezas=1 esperado=1 obtenido=1 OK\npiezas=5 esperado=1 obtenido=1 OK\npiezas=17 esperado=3 obtenido=3 OK\npiezas=6 esperado=1 obtenido=1 OK\npiezas=7 esperado=2 obtenido=2 OK\ndias=4 esperado=1 obtenido=1 OK\ndias=5 esperado=0 obtenido=0 OK\nBateria: OK\n"
+                ],
+                "explanation": "La reparación mantiene la capacidad de seis plazas y devuelve al plazo su acuerdo independiente de cuatro días."
+              }
+            ]
+          }
+        },
+        "cases": [
+          {
+            "standardInput": "dias 5",
+            "outputs": [
+              "dias=5 esperado=0 obtenido=0 OK\nBateria: OK\n"
+            ],
+            "explanation": "El plazo de cuatro días conserva su criterio."
+          },
+          {
+            "standardInput": "piezas 0",
+            "outputs": [
+              "piezas=0 esperado=0 obtenido=0 OK\nBateria: OK\n"
+            ],
+            "explanation": "Este ensayo comprueba el número de cajas de seis plazas."
+          },
+          {
+            "standardInput": "piezas 4",
+            "outputs": [
+              "piezas=4 esperado=1 obtenido=1 OK\nBateria: OK\n"
+            ],
+            "explanation": "Este ensayo comprueba el número de cajas de seis plazas."
+          },
+          {
+            "standardInput": "piezas 8",
+            "outputs": [
+              "piezas=8 esperado=2 obtenido=2 OK\nBateria: OK\n"
+            ],
+            "explanation": "Este ensayo comprueba el número de cajas de seis plazas."
+          },
+          {
+            "standardInput": "piezas 20",
+            "outputs": [
+              "piezas=20 esperado=4 obtenido=4 OK\nBateria: OK\n"
+            ],
+            "explanation": "Este ensayo comprueba el número de cajas de seis plazas."
+          },
+          {
+            "standardInput": "piezas 1",
+            "outputs": [
+              "piezas=1 esperado=1 obtenido=1 OK\nBateria: OK\n"
+            ],
+            "explanation": "Este ensayo comprueba el número de cajas de seis plazas."
+          },
+          {
+            "standardInput": "piezas 5",
+            "outputs": [
+              "piezas=5 esperado=1 obtenido=1 OK\nBateria: OK\n"
+            ],
+            "explanation": "Este ensayo comprueba el número de cajas de seis plazas."
+          },
+          {
+            "standardInput": "piezas 17",
+            "outputs": [
+              "piezas=17 esperado=3 obtenido=3 OK\nBateria: OK\n"
+            ],
+            "explanation": "Este ensayo comprueba el número de cajas de seis plazas."
+          },
+          {
+            "standardInput": "piezas 6",
+            "outputs": [
+              "piezas=6 esperado=1 obtenido=1 OK\nBateria: OK\n"
+            ],
+            "explanation": "Este ensayo comprueba el número de cajas de seis plazas."
+          },
+          {
+            "standardInput": "piezas 7",
+            "outputs": [
+              "piezas=7 esperado=2 obtenido=2 OK\nBateria: OK\n"
+            ],
+            "explanation": "Este ensayo comprueba el número de cajas de seis plazas."
+          },
+          {
+            "standardInput": "dias 4",
+            "outputs": [
+              "dias=4 esperado=1 obtenido=1 OK\nBateria: OK\n"
+            ],
+            "explanation": "El plazo de cuatro días conserva su criterio."
+          },
+          {
+            "standardInput": "",
+            "outputs": [
+              "piezas=0 esperado=0 obtenido=0 OK\npiezas=4 esperado=1 obtenido=1 OK\npiezas=8 esperado=2 obtenido=2 OK\npiezas=20 esperado=4 obtenido=4 OK\npiezas=1 esperado=1 obtenido=1 OK\npiezas=5 esperado=1 obtenido=1 OK\npiezas=17 esperado=3 obtenido=3 OK\npiezas=6 esperado=1 obtenido=1 OK\npiezas=7 esperado=2 obtenido=2 OK\ndias=4 esperado=1 obtenido=1 OK\ndias=5 esperado=0 obtenido=0 OK\nBateria: OK\n"
+            ],
+            "explanation": "La reparación mantiene la capacidad de seis plazas y devuelve al plazo su acuerdo independiente de cuatro días."
+          }
+        ],
+        "editorialIndex": 59,
+        "historySha256": "1e3a728c2d58a1d1b37dc5b7c401b9f332ce3d0e474348f6c6a91b2607902d0d",
+        "semanticBefore": [
+          {
+            "block": "block_0006_0009",
+            "path": "/outputCheck/cases/0/explanation",
+            "sourceSha256": "e1f4344ec0700f5989d488f73611d69dc826c7344650f9a23c7012f9f515c79b",
+            "spans": []
+          }
+        ],
+        "semanticAfter": [
+          {
+            "block": "block_0006_0009",
+            "path": "/outputCheck/cases/0/explanation",
+            "sourceSha256": "bccba517d9750fcc98a02e1908ad29f2ba1689a9f2eb6392cd7a680125b3bb6f",
+            "spans": []
+          },
+          {
+            "block": "block_0006_0009",
+            "path": "/outputCheck/cases/1/explanation",
+            "sourceSha256": "164026024962e6bffa0f5d8f830a7055dbd67323f03613600ca77f666803fe37",
+            "spans": []
+          },
+          {
+            "block": "block_0006_0009",
+            "path": "/outputCheck/cases/2/explanation",
+            "sourceSha256": "164026024962e6bffa0f5d8f830a7055dbd67323f03613600ca77f666803fe37",
+            "spans": []
+          },
+          {
+            "block": "block_0006_0009",
+            "path": "/outputCheck/cases/3/explanation",
+            "sourceSha256": "164026024962e6bffa0f5d8f830a7055dbd67323f03613600ca77f666803fe37",
+            "spans": []
+          },
+          {
+            "block": "block_0006_0009",
+            "path": "/outputCheck/cases/4/explanation",
+            "sourceSha256": "164026024962e6bffa0f5d8f830a7055dbd67323f03613600ca77f666803fe37",
+            "spans": []
+          },
+          {
+            "block": "block_0006_0009",
+            "path": "/outputCheck/cases/5/explanation",
+            "sourceSha256": "164026024962e6bffa0f5d8f830a7055dbd67323f03613600ca77f666803fe37",
+            "spans": []
+          },
+          {
+            "block": "block_0006_0009",
+            "path": "/outputCheck/cases/6/explanation",
+            "sourceSha256": "164026024962e6bffa0f5d8f830a7055dbd67323f03613600ca77f666803fe37",
+            "spans": []
+          },
+          {
+            "block": "block_0006_0009",
+            "path": "/outputCheck/cases/7/explanation",
+            "sourceSha256": "164026024962e6bffa0f5d8f830a7055dbd67323f03613600ca77f666803fe37",
+            "spans": []
+          },
+          {
+            "block": "block_0006_0009",
+            "path": "/outputCheck/cases/8/explanation",
+            "sourceSha256": "164026024962e6bffa0f5d8f830a7055dbd67323f03613600ca77f666803fe37",
+            "spans": []
+          },
+          {
+            "block": "block_0006_0009",
+            "path": "/outputCheck/cases/9/explanation",
+            "sourceSha256": "164026024962e6bffa0f5d8f830a7055dbd67323f03613600ca77f666803fe37",
+            "spans": []
+          },
+          {
+            "block": "block_0006_0009",
+            "path": "/outputCheck/cases/10/explanation",
+            "sourceSha256": "bccba517d9750fcc98a02e1908ad29f2ba1689a9f2eb6392cd7a680125b3bb6f",
+            "spans": []
+          },
+          {
+            "block": "block_0006_0009",
+            "path": "/outputCheck/cases/11/explanation",
+            "sourceSha256": "e1f4344ec0700f5989d488f73611d69dc826c7344650f9a23c7012f9f515c79b",
+            "spans": []
+          }
+        ],
+        "client": {
+          "path": "pruebas/cajas_casos.cpp",
+          "source": "#include \"envio/cajas.h\"\n#include <iostream>\n#include <string>\n\nbool comprobar(int piezas, int esperado) {\n    const int obtenido{cajas_para(piezas)};\n    const bool coincide{obtenido == esperado};\n\n    std::cout << \"piezas=\" << piezas << \" esperado=\" << esperado\n              << \" obtenido=\" << obtenido << \" \";\n    if (coincide) { std::cout << \"OK\\n\"; }\n    else { std::cout << \"FALLO\\n\"; }\n    return coincide;\n}\n\nbool comprobar_plazo(int dias, bool esperado) {\n    const bool obtenido{llega_a_tiempo(dias)};\n    const bool coincide{obtenido == esperado};\n\n    std::cout << \"dias=\" << dias << \" esperado=\" << esperado\n              << \" obtenido=\" << obtenido << \" \";\n    if (coincide) { std::cout << \"OK\\n\"; }\n    else { std::cout << \"FALLO\\n\"; }\n    return coincide;\n}\n\nint main() {\n    std::cin >> std::ws;\n    std::string tipo;\n    int valor{};\n    if (!std::cin.eof()) {\n        if (!(std::cin >> tipo >> valor)) {\n            return 1;\n        }\n        if (tipo != \"piezas\" && tipo != \"dias\") {\n            return 1;\n        }\n    }\n\n    bool correcto{true};\n    if ((tipo.empty() || (tipo == \"piezas\" && valor == 0)) && !comprobar(0, 0)) { correcto = false; }\n    if ((tipo.empty() || (tipo == \"piezas\" && valor == 4)) && !comprobar(4, 1)) { correcto = false; }\n    if ((tipo.empty() || (tipo == \"piezas\" && valor == 8)) && !comprobar(8, 2)) { correcto = false; }\n    if ((tipo.empty() || (tipo == \"piezas\" && valor == 20)) && !comprobar(20, 4)) { correcto = false; }\n    if ((tipo.empty() || (tipo == \"piezas\" && valor == 1)) && !comprobar(1, 1)) { correcto = false; }\n    if ((tipo.empty() || (tipo == \"piezas\" && valor == 5)) && !comprobar(5, 1)) { correcto = false; }\n    if ((tipo.empty() || (tipo == \"piezas\" && valor == 17)) && !comprobar(17, 3)) { correcto = false; }\n    if ((tipo.empty() || (tipo == \"piezas\" && valor == 6)) && !comprobar(6, 1)) { correcto = false; }\n    if ((tipo.empty() || (tipo == \"piezas\" && valor == 7)) && !comprobar(7, 2)) { correcto = false; }\n    if ((tipo.empty() || (tipo == \"dias\" && valor == 4)) && !comprobar_plazo(4, true)) { correcto = false; }\n    if ((tipo.empty() || (tipo == \"dias\" && valor == 5)) && !comprobar_plazo(5, false)) { correcto = false; }\n    if (!correcto) {\n        std::cout << \"Bateria: FALLO\\n\";\n        return 1;\n    }\n    std::cout << \"Bateria: OK\\n\";\n\n    return 0;\n}\n"
+        }
+      },
+      {
+        "id": "block_0002_0004",
+        "block": {
+          "type": "cpp_compiler",
+          "language": "cpp",
+          "initialCode": "",
+          "projectFiles": [
+            {
+              "path": "CMakeLists.txt",
+              "initialCode": "cmake_minimum_required(VERSION 3.20)\nproject(EnviosComprobables LANGUAGES CXX)\nmessage(STATUS \"raiz_antes\")\nadd_subdirectory(componente)\nmessage(STATUS \"raiz_despues\")\nadd_executable(consultar_cajas app/consulta.cpp)\nadd_executable(comprobar_cajas pruebas/cajas_casos.cpp)\n\ntarget_link_libraries(consultar_cajas PRIVATE envios)\ntarget_link_libraries(comprobar_cajas PRIVATE envios)\ntarget_compile_features(consultar_cajas PRIVATE cxx_std_20)\ntarget_compile_features(comprobar_cajas PRIVATE cxx_std_20)\nset_target_properties(consultar_cajas comprobar_cajas PROPERTIES CXX_EXTENSIONS OFF)\n"
+            },
+            {
+              "path": "componente/CMakeLists.txt",
+              "initialCode": "message(STATUS \"componente\")\n\nadd_library(envios STATIC src/cajas.cpp)\n\ntarget_include_directories(envios PUBLIC publico)\ntarget_compile_features(envios PRIVATE cxx_std_20)\nset_target_properties(envios PROPERTIES CXX_EXTENSIONS OFF)\n"
+            },
+            {
+              "path": "componente/publico/envio/cajas.h",
+              "initialCode": "#ifndef PRACTICA_ENVIO_CAJAS_H\n#define PRACTICA_ENVIO_CAJAS_H\n\n// Dominio: 0 <= piezas <= 20.\n// Minimo numero de cajas de 4 plazas que basta para todas las piezas.\n// Cero piezas requiere cero cajas.\nint cajas_para(int piezas);\n\n#endif\n"
+            },
+            {
+              "path": "componente/src/cajas.cpp",
+              "initialCode": "#include \"envio/cajas.h\"\n\nint cajas_para(int piezas) {\n    return (piezas + 3) / 4;\n}\n"
+            },
+            {
+              "path": "app/consulta.cpp",
+              "initialCode": "#include \"envio/cajas.h\"\n#include <iostream>\n\nint main() {\n    std::cout << cajas_para(4) << \":\" << cajas_para(8);\n\n    return 0;\n}\n"
+            },
+            {
+              "path": "pruebas/cajas_casos.cpp",
+              "initialCode": "#include \"envio/cajas.h\"\n#include <iostream>\n\nbool comprobar(int piezas, int esperado) {\n    const int obtenido{cajas_para(piezas)};\n    const bool coincide{obtenido == esperado};\n\n    std::cout << \"piezas=\" << piezas << \" esperado=\" << esperado\n              << \" obtenido=\" << obtenido << \" \";\n    if (coincide) { std::cout << \"OK\\n\"; }\n    else { std::cout << \"FALLO\\n\"; }\n    return coincide;\n}\n\nint main() {\n    bool correcto{true};\n    if (!comprobar(0, 0)) { correcto = false; }\n    if (!comprobar(4, 1)) { correcto = false; }\n    if (!comprobar(8, 2)) { correcto = false; }\n    if (!comprobar(20, 5)) { correcto = false; }\n    if (!comprobar(1, 1)) { correcto = false; }\n    if (!comprobar(5, 2)) { correcto = false; }\n    if (!comprobar(17, 5)) { correcto = false; }\n    if (!correcto) {\n        std::cout << \"Bateria: FALLO\\n\";\n        return 1;\n    }\n    std::cout << \"Bateria: OK\\n\";\n\n    return 0;\n}\n"
+            }
+          ],
+          "cmake": {
+            "target": "comprobar_cajas",
+            "buildType": "Debug"
+          },
+          "outputCheck": {
+            "inputComparison": "exact",
+            "cases": [
+              {
+                "standardInput": "",
+                "outputs": [
+                  "piezas=0 esperado=0 obtenido=0 OK\npiezas=4 esperado=1 obtenido=1 OK\npiezas=8 esperado=2 obtenido=2 OK\npiezas=20 esperado=5 obtenido=5 OK\npiezas=1 esperado=1 obtenido=1 OK\npiezas=5 esperado=2 obtenido=2 OK\npiezas=17 esperado=5 obtenido=5 OK\nBateria: OK\n"
+                ],
+                "explanation": "Las siete comparaciones conservan sus resultados para cajas de cuatro plazas. La coincidencia de esta salida no distingue por sí sola una capacidad nombrada de las cifras iniciales: el objetivo también pide expresar en el cuerpo la relación entre capacidad y ajuste."
+              }
+            ]
+          }
+        },
+        "cases": [
+          {
+            "standardInput": "1\n",
+            "outputs": [
+              "piezas=1 esperado=1 obtenido=1 OK\nBateria: OK\n"
+            ],
+            "exitCode": 0
+          },
+          {
+            "standardInput": "0\n",
+            "outputs": [
+              "piezas=0 esperado=0 obtenido=0 OK\nBateria: OK\n"
+            ],
+            "exitCode": 0
+          },
+          {
+            "standardInput": "4\n",
+            "outputs": [
+              "piezas=4 esperado=1 obtenido=1 OK\nBateria: OK\n"
+            ],
+            "exitCode": 0
+          },
+          {
+            "standardInput": "8\n",
+            "outputs": [
+              "piezas=8 esperado=2 obtenido=2 OK\nBateria: OK\n"
+            ],
+            "exitCode": 0
+          },
+          {
+            "standardInput": "20\n",
+            "outputs": [
+              "piezas=20 esperado=5 obtenido=5 OK\nBateria: OK\n"
+            ],
+            "exitCode": 0
+          },
+          {
+            "standardInput": "5\n",
+            "outputs": [
+              "piezas=5 esperado=2 obtenido=2 OK\nBateria: OK\n"
+            ],
+            "exitCode": 0
+          },
+          {
+            "standardInput": "17\n",
+            "outputs": [
+              "piezas=17 esperado=5 obtenido=5 OK\nBateria: OK\n"
+            ],
+            "exitCode": 0
+          },
+          {
+            "standardInput": "",
+            "outputs": [
+              "piezas=0 esperado=0 obtenido=0 OK\npiezas=4 esperado=1 obtenido=1 OK\npiezas=8 esperado=2 obtenido=2 OK\npiezas=20 esperado=5 obtenido=5 OK\npiezas=1 esperado=1 obtenido=1 OK\npiezas=5 esperado=2 obtenido=2 OK\npiezas=17 esperado=5 obtenido=5 OK\nBateria: OK\n"
+            ],
+            "explanation": "Las siete comparaciones conservan sus resultados para cajas de cuatro plazas. La coincidencia de esta salida no distingue por sí sola una capacidad nombrada de las cifras iniciales: el objetivo también pide expresar en el cuerpo la relación entre capacidad y ajuste."
+          }
+        ],
+        "editorialIndex": 60,
+        "historySha256": "331a780e6a23ecaea722c23fb0c96386af165f8d11214ec494d9bf005133236d",
+        "semanticBefore": [
+          {
+            "block": "block_0002_0004",
+            "path": "/outputCheck/cases/0/explanation",
+            "sourceSha256": "1d736f18a656cc037d17f3c8ccef4e5b1ec980d1def2f88f4a730d7737febd68",
+            "spans": []
+          }
+        ],
+        "semanticAfter": [
+          {
+            "block": "block_0002_0004",
+            "path": "/outputCheck/cases/7/explanation",
+            "sourceSha256": "1d736f18a656cc037d17f3c8ccef4e5b1ec980d1def2f88f4a730d7737febd68",
+            "spans": []
+          }
+        ],
+        "client": {
+          "path": "pruebas/cajas_casos.cpp",
+          "source": "#include \"envio/cajas.h\"\n#include <iostream>\n\nbool comprobar(int piezas, int esperado) {\n    const int obtenido{cajas_para(piezas)};\n    const bool coincide{obtenido == esperado};\n\n    std::cout << \"piezas=\" << piezas << \" esperado=\" << esperado\n              << \" obtenido=\" << obtenido << \" \";\n    if (coincide) { std::cout << \"OK\\n\"; }\n    else { std::cout << \"FALLO\\n\"; }\n    return coincide;\n}\n\nint main() {\n    int seleccion{0};\n    std::cin >> std::ws;\n    const bool todos{std::cin.eof()};\n    if (!todos && !(std::cin >> seleccion)) { return 2; }\n    if (!todos && seleccion != 0 && seleccion != 4 && seleccion != 8 && seleccion != 20 && seleccion != 1 && seleccion != 5 && seleccion != 17) {\n        return 2;\n    }\n\n    bool correcto{true};\n    if ((todos || seleccion == 0) && !comprobar(0, 0)) { correcto = false; }\n    if ((todos || seleccion == 4) && !comprobar(4, 1)) { correcto = false; }\n    if ((todos || seleccion == 8) && !comprobar(8, 2)) { correcto = false; }\n    if ((todos || seleccion == 20) && !comprobar(20, 5)) { correcto = false; }\n    if ((todos || seleccion == 1) && !comprobar(1, 1)) { correcto = false; }\n    if ((todos || seleccion == 5) && !comprobar(5, 2)) { correcto = false; }\n    if ((todos || seleccion == 17) && !comprobar(17, 5)) { correcto = false; }\n    if (!correcto) {\n        std::cout << \"Bateria: FALLO\\n\";\n        return 1;\n    }\n    std::cout << \"Bateria: OK\\n\";\n\n    return 0;\n}\n"
+        }
+      },
+      {
+        "id": "block_0007_0004",
+        "block": {
+          "type": "cpp_compiler",
+          "language": "cpp",
+          "initialCode": "#include <iostream>\n\nconst int limite{5};\n\nint precio_total(int articulos) {\n    return articulos * limite;\n}\n\nbool alcanza_minimo(int articulos) {\n    return articulos >= limite;\n}\n\nbool comprobar(int articulos, int total_esperado, bool minimo_esperado) {\n    const int total{precio_total(articulos)};\n    const bool alcanza{alcanza_minimo(articulos)};\n    const bool coincide{total == total_esperado && alcanza == minimo_esperado};\n\n    std::cout << \"articulos=\" << articulos << \" total=\" << total\n              << \" esperado=\" << total_esperado << \" minimo=\" << alcanza\n              << \" esperado_minimo=\" << minimo_esperado << \" \";\n    if (coincide) { std::cout << \"OK\\n\"; }\n    else { std::cout << \"FALLO\\n\"; }\n    return coincide;\n}\n\nint main() {\n    bool correcto{true};\n    if (!comprobar(0, 0, false)) { correcto = false; }\n    if (!comprobar(4, 20, false)) { correcto = false; }\n    if (!comprobar(5, 25, true)) { correcto = false; }\n    if (!comprobar(6, 30, true)) { correcto = false; }\n    if (!comprobar(10, 50, true)) { correcto = false; }\n    if (!correcto) { std::cout << \"Bateria: FALLO\\n\"; return 1; }\n    std::cout << \"Bateria: OK\\n\";\n\n    return 0;\n}\n",
+          "outputCheck": {
+            "inputComparison": "exact",
+            "cases": [
+              {
+                "standardInput": "",
+                "outputs": [
+                  "articulos=0 total=0 esperado=0 minimo=0 esperado_minimo=0 OK\narticulos=4 total=28 esperado=28 minimo=0 esperado_minimo=0 OK\narticulos=5 total=35 esperado=35 minimo=1 esperado_minimo=1 OK\narticulos=6 total=42 esperado=42 minimo=1 esperado_minimo=1 OK\narticulos=10 total=70 esperado=70 minimo=1 esperado_minimo=1 OK\nBateria: OK\n"
+                ],
+                "explanation": "Cambió el precio a siete créditos por artículo; alcanzar el mínimo sigue dependiendo de cinco artículos, con independencia de ese precio."
+              }
+            ]
+          }
+        },
+        "cases": [
+          {
+            "standardInput": "4\n",
+            "outputs": [
+              "articulos=4 total=28 esperado=28 minimo=0 esperado_minimo=0 OK\nBateria: OK\n"
+            ],
+            "exitCode": 0
+          },
+          {
+            "standardInput": "0\n",
+            "outputs": [
+              "articulos=0 total=0 esperado=0 minimo=0 esperado_minimo=0 OK\nBateria: OK\n"
+            ],
+            "exitCode": 0
+          },
+          {
+            "standardInput": "5\n",
+            "outputs": [
+              "articulos=5 total=35 esperado=35 minimo=1 esperado_minimo=1 OK\nBateria: OK\n"
+            ],
+            "exitCode": 0
+          },
+          {
+            "standardInput": "6\n",
+            "outputs": [
+              "articulos=6 total=42 esperado=42 minimo=1 esperado_minimo=1 OK\nBateria: OK\n"
+            ],
+            "exitCode": 0
+          },
+          {
+            "standardInput": "10\n",
+            "outputs": [
+              "articulos=10 total=70 esperado=70 minimo=1 esperado_minimo=1 OK\nBateria: OK\n"
+            ],
+            "exitCode": 0
+          },
+          {
+            "standardInput": "",
+            "outputs": [
+              "articulos=0 total=0 esperado=0 minimo=0 esperado_minimo=0 OK\narticulos=4 total=28 esperado=28 minimo=0 esperado_minimo=0 OK\narticulos=5 total=35 esperado=35 minimo=1 esperado_minimo=1 OK\narticulos=6 total=42 esperado=42 minimo=1 esperado_minimo=1 OK\narticulos=10 total=70 esperado=70 minimo=1 esperado_minimo=1 OK\nBateria: OK\n"
+            ],
+            "explanation": "Cambió el precio a siete créditos por artículo; alcanzar el mínimo sigue dependiendo de cinco artículos, con independencia de ese precio."
+          }
+        ],
+        "editorialIndex": 61,
+        "historySha256": "e31071cf741ae00f130b653c28e70ff26ba75456128614a5bc8e8117203943f4",
+        "semanticBefore": [
+          {
+            "block": "block_0007_0004",
+            "path": "/outputCheck/cases/0/explanation",
+            "sourceSha256": "9876b3fd56c4535378a51bd1f30b1175ee18a4c48ccae1e2a12c219bd5572070",
+            "spans": []
+          }
+        ],
+        "semanticAfter": [
+          {
+            "block": "block_0007_0004",
+            "path": "/outputCheck/cases/5/explanation",
+            "sourceSha256": "9876b3fd56c4535378a51bd1f30b1175ee18a4c48ccae1e2a12c219bd5572070",
+            "spans": []
+          }
+        ],
+        "client": {
+          "path": "main.cpp",
+          "source": "#include <iostream>\n\nconst int limite{5};\n\nint precio_total(int articulos) {\n    return articulos * limite;\n}\n\nbool alcanza_minimo(int articulos) {\n    return articulos >= limite;\n}\n\nbool comprobar(int articulos, int total_esperado, bool minimo_esperado) {\n    const int total{precio_total(articulos)};\n    const bool alcanza{alcanza_minimo(articulos)};\n    const bool coincide{total == total_esperado && alcanza == minimo_esperado};\n\n    std::cout << \"articulos=\" << articulos << \" total=\" << total\n              << \" esperado=\" << total_esperado << \" minimo=\" << alcanza\n              << \" esperado_minimo=\" << minimo_esperado << \" \";\n    if (coincide) { std::cout << \"OK\\n\"; }\n    else { std::cout << \"FALLO\\n\"; }\n    return coincide;\n}\n\nint main() {\n    int seleccion{0};\n    std::cin >> std::ws;\n    const bool todos{std::cin.eof()};\n    if (!todos && !(std::cin >> seleccion)) { return 2; }\n    if (!todos && seleccion != 0 && seleccion != 4 && seleccion != 5 && seleccion != 6 && seleccion != 10) {\n        return 2;\n    }\n\n    bool correcto{true};\n    if ((todos || seleccion == 0) && !comprobar(0, 0, false)) { correcto = false; }\n    if ((todos || seleccion == 4) && !comprobar(4, 20, false)) { correcto = false; }\n    if ((todos || seleccion == 5) && !comprobar(5, 25, true)) { correcto = false; }\n    if ((todos || seleccion == 6) && !comprobar(6, 30, true)) { correcto = false; }\n    if ((todos || seleccion == 10) && !comprobar(10, 50, true)) { correcto = false; }\n    if (!correcto) { std::cout << \"Bateria: FALLO\\n\"; return 1; }\n    std::cout << \"Bateria: OK\\n\";\n\n    return 0;\n}\n"
+        }
+      },
+      {
+        "id": "block_0008_0007",
+        "block": {
+          "type": "cpp_compiler",
+          "language": "cpp",
+          "initialCode": "#include <iostream>\n\nconst int acuerdo{7};\n\nint precio_total(int articulos) {\n    return articulos * acuerdo;\n}\n\nbool alcanza_minimo(int articulos) {\n    return articulos >= acuerdo;\n}\n\nbool comprobar(int articulos, int total_esperado, bool minimo_esperado) {\n    const int total{precio_total(articulos)};\n    const bool alcanza{alcanza_minimo(articulos)};\n    const bool coincide{total == total_esperado && alcanza == minimo_esperado};\n\n    std::cout << \"articulos=\" << articulos << \" total=\" << total\n              << \" esperado=\" << total_esperado << \" minimo=\" << alcanza\n              << \" esperado_minimo=\" << minimo_esperado << \" \";\n    if (coincide) { std::cout << \"OK\\n\"; }\n    else { std::cout << \"FALLO\\n\"; }\n    return coincide;\n}\n\nint main() {\n    bool correcto{true};\n    if (!comprobar(0, 0, false)) { correcto = false; }\n    if (!comprobar(4, 28, false)) { correcto = false; }\n    if (!comprobar(5, 35, true)) { correcto = false; }\n    if (!comprobar(6, 42, true)) { correcto = false; }\n    if (!comprobar(10, 70, true)) { correcto = false; }\n    if (!correcto) { std::cout << \"Bateria: FALLO\\n\"; return 1; }\n    std::cout << \"Bateria: OK\\n\";\n\n    return 0;\n}\n",
+          "outputCheck": {
+            "inputComparison": "exact",
+            "cases": [
+              {
+                "standardInput": "",
+                "outputs": [
+                  "articulos=0 total=0 esperado=0 minimo=0 esperado_minimo=0 OK\narticulos=4 total=28 esperado=28 minimo=0 esperado_minimo=0 OK\narticulos=5 total=35 esperado=35 minimo=1 esperado_minimo=1 OK\narticulos=6 total=42 esperado=42 minimo=1 esperado_minimo=1 OK\narticulos=10 total=70 esperado=70 minimo=1 esperado_minimo=1 OK\nBateria: OK\n"
+                ],
+                "explanation": "Los casos de cinco y seis artículos vuelven a alcanzar el mínimo acordado, mientras los totales conservan siete créditos por artículo. La salida comprueba esas comparaciones; separar los nombres y sus usos exige revisar además qué regla representa cada constante."
+              }
+            ]
+          }
+        },
+        "cases": [
+          {
+            "standardInput": "5\n",
+            "outputs": [
+              "articulos=5 total=35 esperado=35 minimo=1 esperado_minimo=1 OK\nBateria: OK\n"
+            ],
+            "exitCode": 0
+          },
+          {
+            "standardInput": "0\n",
+            "outputs": [
+              "articulos=0 total=0 esperado=0 minimo=0 esperado_minimo=0 OK\nBateria: OK\n"
+            ],
+            "exitCode": 0
+          },
+          {
+            "standardInput": "4\n",
+            "outputs": [
+              "articulos=4 total=28 esperado=28 minimo=0 esperado_minimo=0 OK\nBateria: OK\n"
+            ],
+            "exitCode": 0
+          },
+          {
+            "standardInput": "6\n",
+            "outputs": [
+              "articulos=6 total=42 esperado=42 minimo=1 esperado_minimo=1 OK\nBateria: OK\n"
+            ],
+            "exitCode": 0
+          },
+          {
+            "standardInput": "10\n",
+            "outputs": [
+              "articulos=10 total=70 esperado=70 minimo=1 esperado_minimo=1 OK\nBateria: OK\n"
+            ],
+            "exitCode": 0
+          },
+          {
+            "standardInput": "",
+            "outputs": [
+              "articulos=0 total=0 esperado=0 minimo=0 esperado_minimo=0 OK\narticulos=4 total=28 esperado=28 minimo=0 esperado_minimo=0 OK\narticulos=5 total=35 esperado=35 minimo=1 esperado_minimo=1 OK\narticulos=6 total=42 esperado=42 minimo=1 esperado_minimo=1 OK\narticulos=10 total=70 esperado=70 minimo=1 esperado_minimo=1 OK\nBateria: OK\n"
+            ],
+            "explanation": "Los casos de cinco y seis artículos vuelven a alcanzar el mínimo acordado, mientras los totales conservan siete créditos por artículo. La salida comprueba esas comparaciones; separar los nombres y sus usos exige revisar además qué regla representa cada constante."
+          }
+        ],
+        "editorialIndex": 62,
+        "historySha256": "be8094e8378f9f52152aeeafb77ead27166c129f317e74c01174decea0fc0b0c",
+        "semanticBefore": [
+          {
+            "block": "block_0008_0007",
+            "path": "/outputCheck/cases/0/explanation",
+            "sourceSha256": "0d5fb4cb712eb6dc7ce840ce9d26a62685174905a82d3d88daa728f1b5c59a13",
+            "spans": []
+          }
+        ],
+        "semanticAfter": [
+          {
+            "block": "block_0008_0007",
+            "path": "/outputCheck/cases/5/explanation",
+            "sourceSha256": "0d5fb4cb712eb6dc7ce840ce9d26a62685174905a82d3d88daa728f1b5c59a13",
+            "spans": []
+          }
+        ],
+        "client": {
+          "path": "main.cpp",
+          "source": "#include <iostream>\n\nconst int acuerdo{7};\n\nint precio_total(int articulos) {\n    return articulos * acuerdo;\n}\n\nbool alcanza_minimo(int articulos) {\n    return articulos >= acuerdo;\n}\n\nbool comprobar(int articulos, int total_esperado, bool minimo_esperado) {\n    const int total{precio_total(articulos)};\n    const bool alcanza{alcanza_minimo(articulos)};\n    const bool coincide{total == total_esperado && alcanza == minimo_esperado};\n\n    std::cout << \"articulos=\" << articulos << \" total=\" << total\n              << \" esperado=\" << total_esperado << \" minimo=\" << alcanza\n              << \" esperado_minimo=\" << minimo_esperado << \" \";\n    if (coincide) { std::cout << \"OK\\n\"; }\n    else { std::cout << \"FALLO\\n\"; }\n    return coincide;\n}\n\nint main() {\n    int seleccion{0};\n    std::cin >> std::ws;\n    const bool todos{std::cin.eof()};\n    if (!todos && !(std::cin >> seleccion)) { return 2; }\n    if (!todos && seleccion != 0 && seleccion != 4 && seleccion != 5 && seleccion != 6 && seleccion != 10) {\n        return 2;\n    }\n\n    bool correcto{true};\n    if ((todos || seleccion == 0) && !comprobar(0, 0, false)) { correcto = false; }\n    if ((todos || seleccion == 4) && !comprobar(4, 28, false)) { correcto = false; }\n    if ((todos || seleccion == 5) && !comprobar(5, 35, true)) { correcto = false; }\n    if ((todos || seleccion == 6) && !comprobar(6, 42, true)) { correcto = false; }\n    if ((todos || seleccion == 10) && !comprobar(10, 70, true)) { correcto = false; }\n    if (!correcto) { std::cout << \"Bateria: FALLO\\n\"; return 1; }\n    std::cout << \"Bateria: OK\\n\";\n\n    return 0;\n}\n"
         }
       }
     ]
@@ -2866,7 +3709,7 @@
       },
       {
         "block": "block_0002_0004",
-        "path": "/outputCheck/cases/0/explanation",
+        "path": "/outputCheck/cases/7/explanation",
         "sourceSha256": "1d736f18a656cc037d17f3c8ccef4e5b1ec980d1def2f88f4a730d7737febd68",
         "spans": []
       },
@@ -3982,6 +4825,72 @@
       {
         "block": "block_0006_0009",
         "path": "/outputCheck/cases/0/explanation",
+        "sourceSha256": "bccba517d9750fcc98a02e1908ad29f2ba1689a9f2eb6392cd7a680125b3bb6f",
+        "spans": []
+      },
+      {
+        "block": "block_0006_0009",
+        "path": "/outputCheck/cases/1/explanation",
+        "sourceSha256": "164026024962e6bffa0f5d8f830a7055dbd67323f03613600ca77f666803fe37",
+        "spans": []
+      },
+      {
+        "block": "block_0006_0009",
+        "path": "/outputCheck/cases/2/explanation",
+        "sourceSha256": "164026024962e6bffa0f5d8f830a7055dbd67323f03613600ca77f666803fe37",
+        "spans": []
+      },
+      {
+        "block": "block_0006_0009",
+        "path": "/outputCheck/cases/3/explanation",
+        "sourceSha256": "164026024962e6bffa0f5d8f830a7055dbd67323f03613600ca77f666803fe37",
+        "spans": []
+      },
+      {
+        "block": "block_0006_0009",
+        "path": "/outputCheck/cases/4/explanation",
+        "sourceSha256": "164026024962e6bffa0f5d8f830a7055dbd67323f03613600ca77f666803fe37",
+        "spans": []
+      },
+      {
+        "block": "block_0006_0009",
+        "path": "/outputCheck/cases/5/explanation",
+        "sourceSha256": "164026024962e6bffa0f5d8f830a7055dbd67323f03613600ca77f666803fe37",
+        "spans": []
+      },
+      {
+        "block": "block_0006_0009",
+        "path": "/outputCheck/cases/6/explanation",
+        "sourceSha256": "164026024962e6bffa0f5d8f830a7055dbd67323f03613600ca77f666803fe37",
+        "spans": []
+      },
+      {
+        "block": "block_0006_0009",
+        "path": "/outputCheck/cases/7/explanation",
+        "sourceSha256": "164026024962e6bffa0f5d8f830a7055dbd67323f03613600ca77f666803fe37",
+        "spans": []
+      },
+      {
+        "block": "block_0006_0009",
+        "path": "/outputCheck/cases/8/explanation",
+        "sourceSha256": "164026024962e6bffa0f5d8f830a7055dbd67323f03613600ca77f666803fe37",
+        "spans": []
+      },
+      {
+        "block": "block_0006_0009",
+        "path": "/outputCheck/cases/9/explanation",
+        "sourceSha256": "164026024962e6bffa0f5d8f830a7055dbd67323f03613600ca77f666803fe37",
+        "spans": []
+      },
+      {
+        "block": "block_0006_0009",
+        "path": "/outputCheck/cases/10/explanation",
+        "sourceSha256": "bccba517d9750fcc98a02e1908ad29f2ba1689a9f2eb6392cd7a680125b3bb6f",
+        "spans": []
+      },
+      {
+        "block": "block_0006_0009",
+        "path": "/outputCheck/cases/11/explanation",
         "sourceSha256": "e1f4344ec0700f5989d488f73611d69dc826c7344650f9a23c7012f9f515c79b",
         "spans": []
       },
@@ -4077,7 +4986,7 @@
       },
       {
         "block": "block_0007_0004",
-        "path": "/outputCheck/cases/0/explanation",
+        "path": "/outputCheck/cases/5/explanation",
         "sourceSha256": "9876b3fd56c4535378a51bd1f30b1175ee18a4c48ccae1e2a12c219bd5572070",
         "spans": []
       },
@@ -4288,7 +5197,7 @@
       },
       {
         "block": "block_0008_0007",
-        "path": "/outputCheck/cases/0/explanation",
+        "path": "/outputCheck/cases/5/explanation",
         "sourceSha256": "0d5fb4cb712eb6dc7ce840ce9d26a62685174905a82d3d88daa728f1b5c59a13",
         "spans": []
       },
