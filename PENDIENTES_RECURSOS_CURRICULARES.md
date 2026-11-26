@@ -10,6 +10,11 @@ Sin pendientes.
 
 ## CAPACIDADES POR IMPLEMENTAR E INTEGRAR
 
+### TAMAÑO_DE_LECTURA_PARA_CONSIGNAS_DE_PUZLES
+
+- En el lector Windows, usar el mismo tamaño y peso de un párrafo para las preguntas e instrucciones de los puzles. Reservar la letra grande para los títulos. La predicción del sensor con nivel 3 y límite 4 de Programación 1, U3L4, página 4, permite comprobar el problema. En `native/presentation/windows/lesson_view.cpp` el lector asigna `RichTextRole::heading` al campo `question` de todas las actividades que pasan por esa fila.
+- Comprobar la consigna junto a un párrafo y a un título con la misma escala de lectura. Revisar también los puzles matemáticos y las demás vistas que presentan instrucciones. Conservar el formato del código dentro de la pregunta, la narración y los ajustes de tamaño elegidos por el estudiante.
+
 ### SIMULACION_ARRAY_RUNS_ETIQUETAS_VACIAS
 
 - **PENDIENTE EXCLUSIVAMENTE PARA WORK.** Al incorporar U5L13 a la edición española activa de Programación 1, insertar la simulación de frecuencias después de la explicación de los candidatos y antes de la primera construcción con etiquetas. La ruta histórica `colecciones_y_recorridos/lesson_contar_frecuencias_y_conservar_empates.json` sirve de referencia.
@@ -365,7 +370,7 @@ Bateria: OK
 
 ### PRUEBAS_DE_ADOPCION_DE_CONTRATOS_PUBLICADOS
 
-- **CIERRE PENDIENTE.** Work restauró localmente las 106 entradas exactas de U3L4 desde `2c3590c`; el archivo recupera el blob `33b497bbe50a57090a7ae8ab3d83bc0f208a1357`. La cadena candidata con esa recuperación pasa la auditoría; la prueba de publicaciones exige además su publicación real. El perfil personal Work conserva actualmente 106 entradas que coinciden exactamente, en identidad, huella, dirección y página de progreso, con el commit rechazado `0ed1a59`; la preparación del estado rechaza el mapa auténtico con «Cambio la propiedad de una actividad nueva». Conservar intacto ese perfil y resolver su recuperación por procedencia, sin reasignar direcciones publicadas ni acreditar objetivos nuevos.
+- **U3L4 recuperada en Work.** La publicación de Work `a2b2b80b` restauró el archivo de `2c3590c`. Se aplicó al perfil personal, con autorización y respaldo, la recuperación de las 24 actividades desplazadas en `0ed1a59`. El lector carga las siete páginas con el texto actualizado. Se verificaron las respuestas de los 146 bloques, los borradores y las acreditaciones de los siete editores, y la posición guardada en la página 4. El catálogo con la comprobación matemática completa reconoce tres páginas completadas. La ficha general sigue abierta para las verificaciones de los demás contratos.
 - **VERIFICACIONES LOCALES CONFIRMADAS.** Pasan 101 pruebas de autoría y los validadores de los tres cursos contra el predecesor válido `2c3590c`. Pasan `native.cpp_cmake_graph`, `native.named_rule_runtime`, `native.p3_ownership_shared_state`, `native.polymorphic_clone_private_review` y `native.dual_interface_private_review`; estas dos últimas se ejecutaron en el árbol Release que contiene su ejecutable. La comprobación de la cadena publicada sigue pendiente de la publicación del retorno exacto de U3L4.
 - **REPRODUCCIÓN NATIVA P2 RESTANTE.** Con los contratos integrados y las recetas MSVC revisadas, `native.open_battery_runtime` falla en `replace_once` de `native/platform/windows/open_battery_runtime_tests.cpp` con «The authentic open battery fixture changed». Reproducción y resultados locales en `C:/LGAED-QA/work-cierre-adopcion-20261126/native.log`. GPT Codex recibió ambos hallazgos para coordinar el cierre.
 
