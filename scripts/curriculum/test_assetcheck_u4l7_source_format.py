@@ -369,7 +369,8 @@ class SourceFormatU4L7(unittest.TestCase):
                                 blocks[COMPILER]["initialCode"])
         self.assertEqual(count, 1)
         blocks[COMPILER]["initialCode"] = changed
-        with self.assertRaisesRegex(state.LayoutError, "Unsafe source formatting"):
+        with self.assertRaisesRegex(state.LayoutError,
+                r"Unsafe compiler case source for block_0006_0003: Tokens, literals, comments or directives changed: initialCode"):
             self.publish(self.doc, proposal)
 
     def test_oracle_input_and_first_case_order_cannot_be_revised_as_format(self):
@@ -384,7 +385,7 @@ class SourceFormatU4L7(unittest.TestCase):
             else:
                 cases[0], cases[1] = cases[1], cases[0]
             with self.subTest(change=change), self.assertRaisesRegex(
-                    state.LayoutError, "response/code contract changed"):
+                    state.LayoutError, "Compiler case ordering changed a case, channel, comparison mode or program"):
                 self.publish(self.doc, proposal)
 
     def test_published_sources_cannot_be_assigned_to_other_owners(self):

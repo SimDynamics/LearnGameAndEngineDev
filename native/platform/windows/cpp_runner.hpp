@@ -354,6 +354,9 @@ struct CppCmakeOptionProbe {
     std::optional<std::string> executable;
     CppPhaseResult compilation,execution,configuration;
     std::optional<CppCmakeGraphEvidence> graph;
+    // Bind the independently built OFF result to its actual private input,
+    // action, revision and complete structural request, not the ON case.
+    std::string request_fingerprint;
 };
 // Keep platform API names as aliases while the authored root contract lives
 // in the curriculum core, independent of the Windows runner.

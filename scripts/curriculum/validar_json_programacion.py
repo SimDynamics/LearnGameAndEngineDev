@@ -1448,9 +1448,11 @@ def preserves_ordinary_explanation_revision(relative, pn, bn, old, current,
                 or current_document["stateLayout"].get("locale") != "es"):
             return False
         baseline = _state_layout.prepare(previous_document)
-        # This also keeps paired option/explanation guards, explicit editorial
-        # returns, archived bibliography and all executable contracts intact.
-        _state_layout.validate_transition(previous_document, current_document)
+        # Authenticate every edge when an independently verified retirement
+        # and new client/presentation revision precede this wording change.
+        # This retains the strict one-edge guard for each reconstructed
+        # predecessor, including executable and protected semantic fields.
+        _state_layout.validate_publication_transition(previous_document, current_document)
         positions = _state_layout.validate(baseline)
         matches = [position for position, origin in positions.items() if origin == (pn, bn)]
         if len(matches) != 1:

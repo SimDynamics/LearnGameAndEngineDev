@@ -4,6 +4,7 @@ from copy import deepcopy
 from functools import lru_cache
 import io
 import json
+import hashlib
 from pathlib import Path
 import subprocess
 import tempfile
@@ -60,6 +61,48 @@ def with_revised_question(document, identity):
     return layout.revise_ordinary_editorial(document, identity, {
         "question": {"text": question + " Otra pregunta QA.", "spans": spans},
     })
+
+
+class ComposedPracticeToolsEditorialTest(unittest.TestCase):
+    def test_p2_u3l2_retirement_client_and_ordinary_editorial_chain(self):
+        relative = ("app/src/main/assets/content/es/programming/programming_practice_tools/"
+                    "comprobaciones_repetibles/lesson_reorganizar_la_descripcion_conservando_el_comprobador.json")
+        root = Path(__file__).resolve().parents[2]
+        def published(commit, blob):
+            payload = subprocess.check_output(["git", "show", f"{commit}:{relative}"], cwd=root)
+            self.assertEqual(hashlib.sha1(b"blob " + str(len(payload)).encode() + b"\0" + payload).hexdigest(), blob)
+            return json.loads(payload)
+        before = published("a2b2b80b6a847bae652a48e28ddb3fe348b68a2b",
+                           "158f98fa5a3cce215af87b8311911294bdbc0ac2")
+        middle = published("70e71e5e1876f3245633d92c414dda7f358a75ba",
+                           "4b38985061a554a10b82c65b0fd4c2c0f2fe8f1f")
+        layout.validate_publication_transition(before, middle)
+        owners = ("block_0003_0005", "block_0004_0008")
+        after = deepcopy(middle)
+        for owner in owners:
+            after = with_revised_question(after, owner)
+        layout.validate_publication_transition(before, after)
+        with self.assertRaises(layout.LayoutError):
+            layout.validate_transition(before, after)
+        original_positions = layout.validate(layout.prepare(before))
+        for owner in owners:
+            old, new = blocks(before, after, owner)
+            position = next((page, block)
+                for page, item in enumerate(before["stateLayout"]["current"])
+                for block, identity in enumerate(item["blocks"]) if identity == owner)
+            origin = original_positions[position]
+            self.assertTrue(contract.preserves_ordinary_explanation_revision(
+                relative, *origin, old, new, before, after,
+                course_id="programming_practice_tools"))
+            self.assertTrue(contract.preserves_previous_exercise(
+                relative, *origin, old, new, previous_document=before,
+                current_document=after, course_id="programming_practice_tools"))
+        tampered = deepcopy(after)
+        layout._blocks(tampered)[owners[0]]["correctIndex"] = 0
+        old, bad = blocks(before, tampered, owners[0])
+        self.assertFalse(contract.preserves_previous_exercise(
+            relative, 3, 5, old, bad, previous_document=before,
+            current_document=tampered, course_id="programming_practice_tools"))
 
 
 def synthetic(kind):

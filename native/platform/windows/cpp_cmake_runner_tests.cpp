@@ -1831,6 +1831,53 @@ target_link_libraries(cotizar PRIVATE tarifas)
     forged_off.cmake_option_probe->graph.reset();
     check(!capture_cpp_execution(option_request,forged_off).cmake_graph_correct,
         "U2L3 accepted OFF stdout without a generated project graph");
+    forged_off=option_run;
+    forged_off.cmake_option_probe->request_fingerprint="0";
+    check(!capture_cpp_execution(option_request,forged_off).cmake_graph_correct,
+        "U2L3 accepted an OFF result without the sealed private request");
+    // Compose the published option contract with a client which has one
+    // prepared-input trial per quantity and preserves the historical
+    // no-input report. This is QA-only; the actual curriculum stays intact.
+    auto split_option=option_request;
+    split_option.project_key="qa/op-split";
+    for(auto& file:split_option.project_files)
+        if(file.first=="muestra.cpp")file.second=R"cpp(#include "precio.h"
+#include <iostream>
+int main() {
+    int unidades{};
+    if (std::cin >> unidades) {
+        std::cout << precio(unidades);
+    } else {
+        std::cout << precio(0) << ':' << precio(2) << ':' << precio(5);
+    }
+}
+)cpp";
+    auto split_goal=*option_after.output_check;
+    const auto historical_case=split_goal.cases.front();
+    split_goal.cases.clear();
+    for(const auto& [input,output]:std::array<std::pair<const char*,const char*>,3>{
+            {{"2","4"},{"0","0"},{"5","10"}}}) {
+        auto trial=historical_case;trial.standard_input=input;trial.outputs={output};
+        split_goal.cases.push_back(std::move(trial));
+    }
+    split_goal.cases.push_back(historical_case);
+    for(std::size_t i=0;i<split_goal.cases.size();++i){
+        const auto& trial=split_goal.cases[i];
+        split_option.request_id=1580+i;split_option.revision=580+i;
+        split_option.stdin_utf8=trial.standard_input;
+        split_option.action=i?CppRunRequest::Action::execute:CppRunRequest::Action::compile_run;
+        const auto result=run_cpp(split_option);ran(result);
+        const auto fresh=capture_cpp_execution(split_option,result);
+        check(fresh.standard_input==trial.standard_input&&
+            result.execution.stdout_bytes==trial.outputs.front()&&
+            result.cmake_option_probe&&
+            result.cmake_option_probe->execution.stdout_bytes=="0:6:15"&&
+            result.cmake_option_probe->execution.stderr_bytes.empty()&&
+            fresh.cmake_graph_correct&&
+            evaluate_cpp_output_check(split_goal,fresh,split_option.revision).verdict==
+                curriculum::OutputVerdict::correct,
+            "A split ON case changed the historical OFF dataset or lost its own output evidence");
+    }
     auto mismatched_option=option_request;
     for(auto& file:mismatched_option.project_files)
         if(file.first=="CMakeLists.txt")file.second+="\n# revision distinta\n";

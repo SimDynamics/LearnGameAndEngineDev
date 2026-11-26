@@ -377,9 +377,11 @@ class CodeScopePresentationTest(unittest.TestCase):
         later_edits = (introduced.keys() - earlier.keys()) & owners
         self.assertTrue(later_edits)
         self.assertTrue(any(introduced[owner] != revised[owner] for owner in later_edits))
-        # The strict guard still rejects a jump that omits the real addition.
+        # The active endpoint now also includes a math-text archive. It must
+        # first be rejected for lacking that archive's already published owner;
+        # the independent nivel test below still verifies the editorial guard.
         with self.assertRaisesRegex(layout.LayoutError,
-                                    "New activities cannot claim historical editorial provenance"):
+                                    "A math text archive must retain an already published active v2 owner"):
             layout.validate_publication_transition(self.presented, self.current)
 
     def test_nivel_revision_needs_the_actual_intermediate_publication(self):

@@ -3516,6 +3516,10 @@ CppRunRequest default_option_request(const CppRunRequest& request,
     off.request_id=~request.request_id;
     off.project_key+="/cmake-option-off-v1/"+option.name;
     off.cmake->options.erase(option.name);
+    // optionSelection v1 declares its independent historical OFF stdout
+    // with empty stdin. The visible ON case may now have prepared input;
+    // it must never change the dataset of this private default check.
+    off.stdin_utf8.clear();
     off.named_rule_probe.reset();
     off.rejection_probe.reset();
     off.observation_probe.reset();
@@ -3538,6 +3542,7 @@ bool verified_default_option_probe(const CppRunRequest& request,
     const auto& option=*required.option_selection;
     const auto off=default_option_request(request,option,required);
     const auto& proof=*result.cmake_option_probe;
+    if(proof.request_fingerprint!=cmake_graph_fingerprint(off))return false;
     CppRunResult replay;
     replay.request_id=proof.request_id;
     replay.revision=proof.revision;
@@ -4620,7 +4625,8 @@ void complete_cmake_option_probe(const CppRunRequest& request,
         observed.request_id,observed.revision,observed.project_fingerprint,
         observed.configuration_fingerprint,observed.target_type,
         observed.error_utf8,observed.executable,observed.compilation,
-        observed.execution,observed.configuration,observed.cmake_graph};
+        observed.execution,observed.configuration,observed.cmake_graph,
+        cmake_graph_fingerprint(off)};
 }
 // The student's unmodified submitted program runs first. Only afterward may
 // a second private native program observe the real identity and cleanup.
