@@ -13,6 +13,7 @@ function(lgaed_add_named_rule_feedback_tests root)
             --output-dir "${_fixtures}"
         DEPENDS "${_scripts}/named_rule_feedback_fixture_source.py"
             "${_scripts}/format_batch_history.py" "${_scripts}/windows_cpp_ci.py"
+            "${_scripts}/published_adoption_fixtures.py" "${_scripts}/published_adoption_pins.json"
             "${_scripts}/stable_state_layout.py" "${_scripts}/code_format_compat.py"
             "${_scripts}/text_semantics.py" "${_scripts}/bibliography_revision.py"
             "${root}/app/src/main/assets/content/es/programming/programming_practice_tools/comprobaciones_repetibles/lesson_nombrar_reglas_y_separar_acuerdos.json"

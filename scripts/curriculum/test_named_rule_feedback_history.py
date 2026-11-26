@@ -131,6 +131,41 @@ class NamedRuleFeedbackHistoryTest(unittest.TestCase):
         self.assertEqual(current, json.loads(actual["current"]))
         self.assertEqual(authored, pristine)
 
+    def test_actual_separated_publication_preserves_four_case_archives(self):
+        # The original aggregate and its later authenticated split are
+        # distinct real publications, not generated alternatives.
+        raw = fixtures.historical_bytes(fixtures.asset_path(), epoch="named-rules-separated")
+        before = json.loads(fixtures.historical_bytes(
+            fixtures.asset_path(), epoch="named-rules-before-separated"))
+        supplied = {**self.payloads, "current": raw}
+        live = fixtures.verify_publications(supplied)["current"]
+        old = fixtures.history.active_owners(before)[0]
+        owners = fixtures.history.active_owners(live)[0]
+        records = {item["id"]: item for item in live["stateLayout"]["compilerCaseRevisions"]}
+        first_cases = {"block_0002_0004": "1\n", "block_0006_0009": "dias 5",
+                       "block_0007_0004": "4\n", "block_0008_0007": "5\n"}
+        self.assertEqual(set(records), set(first_cases))
+        self.assertEqual(live["compilerNamedRuleChecks"], before["compilerNamedRuleChecks"])
+        for owner, first in first_cases.items():
+            with self.subTest(owner=owner):
+                self.assertEqual(records[owner]["block"], old[owner])
+                self.assertEqual(owners[owner]["outputCheck"]["cases"][0]["standardInput"], first)
+                self.assertEqual(owners[owner]["outputCheck"]["cases"][-1],
+                                 old[owner]["outputCheck"]["cases"][0])
+                self.assertNotEqual(owners[owner], old[owner])
+        # A changed first oracle or forged complete predecessor must fail
+        # before either can be exported for the native feedback regression.
+        for kind in ("oracle", "archive"):
+            forged = deepcopy(live)
+            if kind == "oracle":
+                fixtures.history.active_owners(forged)[0][fixtures.FOCAL_OWNER][
+                    "outputCheck"]["cases"][0]["outputs"] = ["forged"]
+            else:
+                forged["stateLayout"]["compilerCaseRevisions"][0]["block"][
+                    "outputCheck"]["cases"][0]["outputs"] = ["forged"]
+            with self.subTest(kind=kind), self.assertRaises(fixtures.state.LayoutError):
+                fixtures.verify_publications({**supplied, "current": json.dumps(forged).encode("utf-8")})
+
     def test_missing_git_history_never_falls_back_to_current_assets(self):
         with mock.patch.object(fixtures.history, "publication_bytes",
                                side_effect=FileNotFoundError("historical Git object unavailable")):

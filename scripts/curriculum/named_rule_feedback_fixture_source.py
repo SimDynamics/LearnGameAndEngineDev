@@ -15,6 +15,7 @@ from pathlib import Path
 import format_batch_history as history
 import stable_state_layout as state
 from code_format_compat import require_source_lexical, source_projection
+from published_adoption_fixtures import historical_bytes
 
 
 ROOT = Path(__file__).resolve().parents[2]
@@ -72,8 +73,22 @@ def verify_publications(payloads: dict[str, bytes], publication: str = "working-
     if any("compilerNamedRuleChecks" in document for document in (original, baseline)):
         raise ValueError("The pinned pre-adoption named-rule publications changed")
     state.validate_transition(original, baseline)
-    state.validate_transition(baseline, current)
-    state.validate_transition(original, current)
+    # The actual split publication archives the complete *later* formatted
+    # predecessor, not the older UI pilot. Authenticate each real Git edge
+    # before comparing the original source epoch. Never fabricate a
+    # predecessor by removing the live declarations or replacing its blocks.
+    if current["stateLayout"].get("compilerCaseRevisions"):
+        adopted, predecessor, separated = (
+            json.loads(historical_bytes(asset_path(), epoch=epoch))
+            for epoch in ("named-rules-adopted", "named-rules-before-separated",
+                          "named-rules-separated"))
+        state.validate_transition(baseline, adopted)
+        state.validate_transition(adopted, predecessor)
+        state.validate_publication_transition(predecessor, separated)
+        state.validate_publication_transition(separated, current)
+    else:
+        state.validate_transition(baseline, current)
+        state.validate_transition(original, current)
     old_storage, new_storage = state.validate(original), state.validate(current)
     old, old_positions = history.active_owners(original)
     new, new_positions = history.active_owners(current)
@@ -96,6 +111,7 @@ def verify_publications(payloads: dict[str, bytes], publication: str = "working-
     if (new_meta["editorial"][:len(baseline_edges)] != baseline_edges
             or entries[:len(baseline_archives)] != baseline_archives):
         raise ValueError("The current named-rule publication lost already published format history")
+    canonical = {}
     for owner in (FOCAL_OWNER, *PREREQUISITES, *REFERENCES):
         if owner not in new or new[owner]["type"] != old[owner]["type"]:
             raise ValueError("The current named-rule publication lost a required active owner")
@@ -103,14 +119,18 @@ def verify_publications(payloads: dict[str, bytes], publication: str = "working-
             raise ValueError("A named-rule owner changed its historical storage address")
         if owner in archives and archives[owner] != old[owner]:
             raise ValueError("A named-rule source review replaced the complete canonical block")
-        require_source_lexical(old[owner], new[owner])
-        if state.state_fingerprint(source_projection(new[owner], old[owner])) != state.state_fingerprint(old[owner]):
+        # Only after authenticating the publication chain, undo the declared
+        # case/client epoch for the original comparison. The exported live
+        # document and every runtime scenario retain the actual new source.
+        canonical[owner] = state._compiler_case_order_projection(current, owner, new[owner])
+        require_source_lexical(old[owner], canonical[owner])
+        if state.state_fingerprint(source_projection(canonical[owner], old[owner])) != state.state_fingerprint(old[owner]):
             raise ValueError("The source review changed a protected named-rule block contract")
     for owner in (FOCAL_OWNER, *PREREQUISITES):
         if old[owner]["type"] != "cpp_compiler":
             raise ValueError("The focal editor or a real prerequisite lost its authenticated source")
         for field in ("outputCheck", "sourceFiles", "initialStandardInput", "cmake"):
-            if old[owner].get(field) != new[owner].get(field):
+            if old[owner].get(field) != canonical[owner].get(field):
                 raise ValueError("The named-rule editor changed its first-case or build contract")
     focal = old[FOCAL_OWNER]
     if (len(focal["outputCheck"]["cases"]) != 1

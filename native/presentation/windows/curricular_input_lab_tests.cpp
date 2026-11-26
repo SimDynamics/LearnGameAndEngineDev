@@ -455,6 +455,30 @@ void prepare_named_rule_prerequisites(state::StateData& data, const curriculum::
             check(!request.cmake && request.project_files.empty() && request.source_files.empty(),
                 "The published single-file prerequisite changed its source contract");
             request.source_utf8 = published_source(plan.source);
+            if (!owner.compiler_case_revisions.empty()) {
+                // The published reference still demonstrates the complete
+                // aggregate. Retain the active editor's new selector and
+                // repair only the definitions and expected price values
+                // demonstrated by that authentic reference.
+                constexpr std::string_view boundary = "bool comprobar(";
+                const auto reference_end = request.source_utf8.find(boundary);
+                const auto active_end = owner.initial_code.find(boundary);
+                check(reference_end != std::string::npos && active_end != std::string::npos,
+                    "The active single-file prerequisite lost its checker boundary");
+                const auto reference = request.source_utf8;
+                request.source_utf8 = reference.substr(0,reference_end) + owner.initial_code.substr(active_end);
+                for (const auto [before,after] : std::array<std::pair<std::string_view,std::string_view>,4>{{
+                        {"comprobar(4, 20, false)","comprobar(4, 28, false)"},
+                        {"comprobar(5, 25, true)","comprobar(5, 35, true)"},
+                        {"comprobar(6, 30, true)","comprobar(6, 42, true)"},
+                        {"comprobar(10, 50, true)","comprobar(10, 70, true)"}}}) {
+                    const auto at = request.source_utf8.find(before);
+                    check(at != std::string::npos && request.source_utf8.find(before,at+before.size()) == std::string::npos
+                        && reference.find(after) != std::string::npos,
+                        "The active prerequisite repair no longer matches its published reference");
+                    request.source_utf8.replace(at,before.size(),after);
+                }
+            }
         }
         check(request.cmake == owner.cmake && request.source_files == owner.source_files
             && request.project_files.size() == owner.project_files.size(),
@@ -1540,6 +1564,7 @@ std::filesystem::path named_rule_feedback_laboratory(const std::filesystem::path
     const auto target = position(lesson, original.stable_id);
     const auto& compiler = active_block(lesson, original.stable_id);
     const auto& compact = active_block(progress, original.stable_id);
+    const bool separated = !compiler.compiler_case_revisions.empty();
     check(lesson.id == published.id && lesson.locale == published.locale
         && lesson.compiler_puzzles_required == published.compiler_puzzles_required
         && lesson.state_layout.lineage == published.state_layout.lineage
@@ -1548,8 +1573,10 @@ std::filesystem::path named_rule_feedback_laboratory(const std::filesystem::path
         && progress.state_layout.signatures == lesson.state_layout.signatures
         && target == position(published, original.stable_id)
         && compiler.type == curriculum::BlockType::cpp_compiler && compiler.output_check && original.output_check
-        && compiler.output_check->cases.size() == 1 && compiler.output_check->cases.front().standard_input.empty()
-        && !compiler.standard_input && !original.standard_input && compiler.initial_code == original.initial_code
+        && compiler.output_check->cases.size() == (separated ? 6u : 1u)
+        && compiler.output_check->cases.front().standard_input == (separated ? "5\n" : "")
+        && compiler.standard_input.has_value() == separated && compiler.standard_input == original.standard_input
+        && compiler.initial_code == original.initial_code
         && compiler.project_files.empty() && compiler.source_files.empty() && !compiler.cmake
         && curriculum::same_output_check_runtime_requirements(*compiler.output_check, *original.output_check)
         && compiler.named_rule_source_check && compiler.named_rule_source_check == compact.named_rule_source_check
@@ -1560,22 +1587,35 @@ std::filesystem::path named_rule_feedback_laboratory(const std::filesystem::path
         && curriculum::exercise_key(lesson, compiler) == curriculum::exercise_key(published, original)
         && curriculum::draft_key("programming", lesson, compiler) == curriculum::draft_key("programming", published, original),
         "The QA loader changed the authentic owner, source, first case, state identity or declared private proofs");
-    const std::string expected =
+    const std::string aggregate_expected =
         "articulos=0 total=0 esperado=0 minimo=0 esperado_minimo=0 OK\n"
         "articulos=4 total=28 esperado=28 minimo=0 esperado_minimo=0 OK\n"
         "articulos=5 total=35 esperado=35 minimo=1 esperado_minimo=1 OK\n"
         "articulos=6 total=42 esperado=42 minimo=1 esperado_minimo=1 OK\n"
         "articulos=10 total=70 esperado=70 minimo=1 esperado_minimo=1 OK\n"
         "Bateria: OK\n";
-    const std::string numeric_output =
+    const std::string aggregate_numeric_output =
         "articulos=0 total=0 esperado=0 minimo=0 esperado_minimo=0 OK\n"
         "articulos=4 total=28 esperado=28 minimo=0 esperado_minimo=0 OK\n"
         "articulos=5 total=35 esperado=35 minimo=0 esperado_minimo=1 FALLO\n"
         "articulos=6 total=42 esperado=42 minimo=1 esperado_minimo=1 OK\n"
         "articulos=10 total=70 esperado=70 minimo=1 esperado_minimo=1 OK\n"
         "Bateria: FALLO\n";
-    check(compiler.output_check->cases.front().outputs == std::vector<std::string>{expected},
-        "The authentic five-comparison report changed its exact public output");
+    const auto selected_report = [](const std::string& aggregate) {
+        const auto start = aggregate.find("articulos=5 ");
+        const auto end = aggregate.find('\n',start);
+        const auto final = aggregate.find("Bateria: ");
+        check(start != std::string::npos && end != std::string::npos && final != std::string::npos,
+            "The authentic five-comparison report lost its selected boundary or aggregate result");
+        return aggregate.substr(start,end-start+1)+aggregate.substr(final);
+    };
+    const auto expected = separated ? selected_report(aggregate_expected) : aggregate_expected;
+    const auto numeric_output = separated ? selected_report(aggregate_numeric_output) : aggregate_numeric_output;
+    const auto public_input = compiler.output_check->cases.front().standard_input;
+    check(compiler.output_check->cases.front().outputs == std::vector<std::string>{expected}
+        && compiler.output_check->cases.back().standard_input.empty()
+        && compiler.output_check->cases.back().outputs == std::vector<std::string>{aggregate_expected},
+        "The authentic first comparison or complete historical aggregate changed its exact public output");
     const auto replace_once = [](std::string source, std::string_view before, std::string_view after) {
         const auto at = source.find(before);
         check(at != std::string::npos && source.find(before, at + before.size()) == std::string::npos,
@@ -1615,8 +1655,11 @@ std::filesystem::path named_rule_feedback_laboratory(const std::filesystem::path
         "The initial named-rule source differs: actual SHA=" + state::sha256(initial_source)
             + ", authored SHA=" + state::sha256(compiler.initial_code));
     const auto input_id = 1000 + static_cast<int>(target.block) * 100 + 15;
-    check(descendant(fixture.view, input_id) == nullptr,
-        "The no-input named-rule editor unexpectedly created a standard-input control");
+    check((descendant(fixture.view,input_id) != nullptr) == separated,
+        "The named-rule editor did not expose exactly its authored input control");
+    if (separated)
+        check(fixture.text(15) == *compiler.standard_input,
+            "The active input editor did not restore its authored initial input");
     check(!windows::compiler_puzzle_completed(initial, lesson, compiler),
         "The focal named-rule editor inherited an invented first-case achievement");
     check(windows::compiler_puzzle_case_count(initial, lesson, compiler) == 0,
@@ -1625,8 +1668,10 @@ std::filesystem::path named_rule_feedback_laboratory(const std::filesystem::path
     const auto retained = [&](std::string_view source, std::size_t count, bool completed) {
         const auto saved = fixture.saved();
         const auto draft = state::get_draft(saved, draft_key, "", "");
-        check(draft.has_saved && draft.source == source && draft.input.empty()
-            && fixture.text(10) == source && descendant(fixture.view, input_id) == nullptr
+        check(draft.has_saved && draft.source == source && draft.input == public_input
+            && fixture.text(10) == source
+            && (descendant(fixture.view,input_id) != nullptr) == separated
+            && (!separated || fixture.text(15) == public_input)
             && windows::compiler_puzzle_case_count(saved, lesson, compiler) == count
             && windows::compiler_puzzle_completed(saved, lesson, compiler) == completed,
             "A named-rule run changed its actual draft/input or first-case evidence");
@@ -1649,7 +1694,8 @@ std::filesystem::path named_rule_feedback_laboratory(const std::filesystem::path
     };
     const auto run = [&](const std::string& source, const std::string& output, std::uint32_t exit_code = 0) {
         fixture.replace(10, source);
-        fixture.run(source, "", output, crt_stdout(output), View::RunArtifacts::public_with_private_probes, exit_code);
+        if (separated) fixture.replace(15,public_input);
+        fixture.run(source, public_input, output, crt_stdout(output), View::RunArtifacts::public_with_private_probes, exit_code);
     };
     const auto reason_visible = [&](std::string_view expected_reason) {
         const auto feedback = fixture.text(4);
@@ -1816,19 +1862,34 @@ void named_rule_feedback_publications(const std::filesystem::path& fixtures) {
         canonical(id);
         const auto& old = active_block(original,id);
         const auto& now = active_block(current,id);
-        // The original public objective must remain identical. New named-rule
-        // goals deliberately change the receipt frame, but never the address,
-        // source, inputs or outputs. This comparison-only copy is not run or
-        // credited; the actual current lesson keeps every authored check.
-        auto public_objective = now;
+        // Compare the authenticated predecessor, never the split active
+        // driver, with the original aggregate. Only the real active owner
+        // is executed or credited by the current UI scenario.
+        const bool separated = !now.compiler_case_revisions.empty();
+        auto public_objective = separated
+            ? curriculum::compiler_case_revision_previous_block(now,now.compiler_case_revisions.front()) : now;
         public_objective.named_rule_source_check = old.named_rule_source_check;
         check(old.type == curriculum::BlockType::cpp_compiler && old.output_check && now.output_check
-            && old.initial_code == now.source_format_original_initial_code.value_or(now.initial_code)
-            && old.project_files == now.source_format_original_project_files.value_or(now.project_files)
-            && old.source_files == now.source_files && old.cmake == now.cmake && old.standard_input == now.standard_input
-            && curriculum::same_output_check_runtime_requirements(*old.output_check,*now.output_check)
+            && public_objective.output_check
+            && old.initial_code == public_objective.source_format_original_initial_code.value_or(public_objective.initial_code)
+            && old.project_files == public_objective.source_format_original_project_files.value_or(public_objective.project_files)
+            && old.source_files == now.source_files && old.cmake == now.cmake
+            && (separated || old.standard_input == now.standard_input)
+            && curriculum::same_output_check_runtime_requirements(*old.output_check,*public_objective.output_check)
             && curriculum::reference_objective_frame(original,old) == curriculum::reference_objective_frame(current,public_objective),
             "The focal editor or a real prerequisite changed its canonical source or public compiler objective");
+        if (separated) {
+            check(now.compiler_case_revisions.front().client_revision
+                && !now.compiler_client_epoch.empty()
+                && now.compiler_client_epoch != public_objective.compiler_client_epoch
+                && now.output_check->cases.size() > 1
+                && !now.output_check->cases.front().standard_input.empty()
+                && now.output_check->cases.back().standard_input.empty()
+                && now.output_check->cases.back().outputs == old.output_check->cases.front().outputs
+                && curriculum::reference_objective_frame(current,now) !=
+                    curriculum::reference_objective_frame(current,public_objective),
+                "A new active named-rule client reused the aggregate source or public receipt epoch");
+        }
         if (now.named_rule_source_check != old.named_rule_source_check)
             check(curriculum::reference_objective_frame(original,old) != curriculum::reference_objective_frame(current,now),
                 "A newly authored named-rule objective reused its historical stdout receipt frame");
