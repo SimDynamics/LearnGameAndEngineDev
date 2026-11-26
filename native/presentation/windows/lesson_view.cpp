@@ -2153,7 +2153,7 @@ struct LessonView {
         const auto caption=find_item(control_id(index,30));if(!caption)return;
         const auto before=updating;updating=true;set_rich_text(caption,console_label(controls[index].console_channel));
         CHARFORMAT2W format{};format.cbSize=sizeof(format);format.dwMask=CFM_SIZE|CFM_BOLD|CFM_COLOR;
-        format.yHeight=15*14;format.crTextColor=reader_theme::palette(window).high_contrast?reader_theme::palette(window).text:RGB(174,180,190);
+        format.yHeight=rich_text_height();format.crTextColor=reader_theme::palette(window).high_contrast?reader_theme::palette(window).text:RGB(174,180,190);
         SendMessageW(caption,EM_SETSEL,0,-1);SendMessageW(caption,EM_SETCHARFORMAT,SCF_SELECTION,reinterpret_cast<LPARAM>(&format));SendMessageW(caption,EM_SETSEL,0,0);
         if(!set_rich_text_zoom(caption,content_text_scale())){
             updating=before;
@@ -2166,7 +2166,7 @@ struct LessonView {
             FW_NORMAL, FALSE, FALSE, FALSE, DEFAULT_CHARSET, OUT_DEFAULT_PRECIS, CLIP_DEFAULT_PRECIS,
             CLEARTYPE_QUALITY, DEFAULT_PITCH, L"Roboto");
         if (!font) return;
-        const auto content_font=CreateFontW(-MulDiv(18*content_text_scale(),static_cast<int>(GetDpiForWindow(window)),96*100),0,0,0,
+        const auto content_font=CreateFontW(-curricular_text_pixels(window,content_text_scale()),0,0,0,
             FW_NORMAL,FALSE,FALSE,FALSE,DEFAULT_CHARSET,OUT_DEFAULT_PRECIS,CLIP_DEFAULT_PRECIS,CLEARTYPE_QUALITY,DEFAULT_PITCH,L"Roboto");
         if(!content_font){DeleteObject(font);return;}
         const auto compact_font=laboratory()?CreateFontW(-MulDiv(13,static_cast<int>(GetDpiForWindow(window)),96),0,0,0,FW_NORMAL,FALSE,FALSE,FALSE,DEFAULT_CHARSET,OUT_DEFAULT_PRECIS,CLIP_DEFAULT_PRECIS,CLEARTYPE_QUALITY,DEFAULT_PITCH,L"Roboto"):nullptr;
@@ -3628,7 +3628,7 @@ struct LessonView {
             reader_theme::apply(console_title,reader_theme::Surface::compiler_output);
             auto selector=button("▾",control_id(index,31),{0,ActionType::console_menu,index});reader_theme::icon_button(selector);
             reader_theme::apply(selector,reader_theme::Surface::compiler_output);label_radio(selector,ui("Seleccionar canal de la consola","Choose console channel","Choisir le canal de la console"));
-            rows.push_back({{console_title,selector},{0,48},48,false});rows.back().horizontal_inset=16;rows.back().padding_after=0;
+            rows.push_back({{console_title,selector},{0,48},48,true});rows.back().horizontal_inset=16;rows.back().padding_after=0;
             console_caption(index);
             vm.console = rich("", control_id(index, 14), true);
             reader_theme::apply(vm.console,reader_theme::Surface::compiler_output);
@@ -3697,7 +3697,7 @@ struct LessonView {
             SendMessageW(vm.answer,EM_SETEVENTMASK,0,SendMessageW(vm.answer,EM_GETEVENTMASK,0,0)|ENM_SCROLL);
             reader_theme::apply(vm.answer,reader_theme::Surface::card);
             CHARFORMAT2W answer_format{};answer_format.cbSize=sizeof(answer_format);
-            answer_format.dwMask=CFM_SIZE|CFM_COLOR;answer_format.yHeight=(current.type==BlockType::fill_code?17:18)*15;
+            answer_format.dwMask=CFM_SIZE|CFM_COLOR;answer_format.yHeight=rich_text_height();
             answer_format.crTextColor=reader_theme::palette(window).high_contrast?reader_theme::foreground(vm.answer):RGB(255,255,255);
             SendMessageW(vm.answer,EM_SETCHARFORMAT,SCF_ALL,reinterpret_cast<LPARAM>(&answer_format));
             SendMessageW(vm.answer,EM_SETCHARFORMAT,SCF_DEFAULT,reinterpret_cast<LPARAM>(&answer_format));
@@ -5317,7 +5317,12 @@ LRESULT CALLBACK gesture_proc(HWND item,UINT message,WPARAM wparam,LPARAM lparam
             return denominator>0?std::pair{numerator,denominator}:std::pair{1,1};};
         const auto before=scale();const auto focused=view->capture_console_focus();
         const auto result=DefSubclassProc(item,message,wparam,lparam);
-        const auto after=scale();
+        auto after=scale();
+        // Local code zoom may enlarge the document, but cannot make its
+        // nominal font smaller than the surrounding curricular prose.
+        if(static_cast<long long>(after.first)*100<static_cast<long long>(view->content_text_scale())*after.second){
+            (void)set_rich_text_zoom(item,view->content_text_scale());after=scale();
+        }
         if(static_cast<long long>(before.first)*after.second!=static_cast<long long>(after.first)*before.second){
             // Normal readonly code grows with its real text height. Fullscreen
             // code retains its viewport and updates genuine native overflow.

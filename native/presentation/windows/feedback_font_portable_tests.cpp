@@ -3,6 +3,7 @@
 #include "presentation/windows/lesson_view.hpp"
 #include "presentation/windows/rich_text.hpp"
 #include "presentation/windows/reader_theme.hpp"
+#include "presentation/windows/math_puzzle_view.hpp"
 #include "platform/windows/content_loader.hpp"
 #include "platform/windows/environment.hpp"
 #include "platform/windows/state_store.hpp"
@@ -15,6 +16,7 @@
 #include <algorithm>
 #include <array>
 #include <cstdint>
+#include <cwctype>
 #include <filesystem>
 #include <iostream>
 #include <stdexcept>
@@ -226,6 +228,10 @@ void exercise(){
                 "Puzzle question differs from paragraph: block "+std::to_string(owner));
         for(const int owner:{4,6})
             same_prose(control(fixture.view,id(owner,37)),"Desktop puzzle instructions differ from paragraph");
+        require(point_height(control(fixture.view,id(1,2)),0)==base&&
+            scale(control(fixture.view,id(1,2)))==expected_scale,
+            "The fill-code answer is smaller than ordinary prose");
+        same_prose(control(fixture.view,id(9,30)),"Compiler console caption differs from paragraph");
         const auto question=control(fixture.view,id(3,0));
         const auto visible=wide(edit_text(question));
         const auto token=visible.find(L"std::cout");
@@ -389,6 +395,70 @@ void exercise(){
             verify_prompts(cmake,zoom,true);check_reader();
         }
         cmake.reopen();verify_prompts(cmake,150,true);check_reader();
+    }
+    {
+        // Use the actual published reading resource, not a re-created tree
+        // which could miss the nested notes or their source semantics.
+        const auto source=std::filesystem::path(build::source_root)/
+            "app/src/main/assets/content/es/programming/cpp_fundamentals/edition_es_1__expresiones_y_decisiones/lesson_alternativas_y_fronteras.json";
+        const auto lesson=windows::load_lesson(source);
+        const auto& blocks=lesson.pages.at(1).blocks;
+        const auto scope_block=std::ranges::find_if(blocks,[](const auto& block){
+            return block.stable_id=="u3l4_alcance_bolsas";
+        });
+        require(scope_block!=blocks.end()&&scope_block->code_scope_presentations.size()==1&&
+            scope_block->code_scope_presentations.front().read_only,"The published U3L4 reading scope is missing");
+        MathPuzzleView scope(f.host,scope_block->raw_json,lesson.locale,"{}",{},
+            scope_block->text_semantics,scope_block->code_scope_presentations);
+        MathPuzzleView formula(f.host,R"json({"type":"math_puzzle","prompt":"Pregunta normal","representations":[{"type":"math_formula","latex":"x + 1","display":"inline"},{"type":"math_number_line","min":0,"max":16,"step":1}],"responses":[{"id":"answer","type":"math_numeric_input","validator":{"type":"numeric","expected":1}}]})json","es","{}");
+        const auto original=scope.reading_regions();
+        require(original.size()==12,"The authentic scope no longer exposes all code and two notes");
+        const auto check_scope=[&](int zoom){
+            const auto paragraph=control(f.view,id(0,0));
+            const auto reference=point_height(paragraph,0);
+            const auto regions=scope.reading_regions();
+            require(regions.size()==original.size(),"Changing font size changed the original scope regions");
+            for(std::size_t i=0;i<regions.size();++i){
+                const auto& region=regions[i];
+                require(region.key==original[i].key&&region.source_text==original[i].source_text,
+                    "Reflow changed nested narration or source bytes");
+                const auto visible=wide(edit_text(region.target));
+                require(!visible.empty()&&scale(region.target)==scale(paragraph)&&scale(region.target)==zoom,
+                    "A nested code or note control lost the reader scale");
+                for(LONG at=0;at<static_cast<LONG>(visible.size());++at)
+                    if(!iswspace(visible[at]))require(point_height(region.target,at)>=reference,
+                        "A nested code/note glyph uses a smaller font: "+region.key);
+            }
+            const auto formula_regions=formula.reading_regions();
+            const auto inline_formula=std::ranges::find_if(formula_regions,[](const auto& region){return region.source_text=="x + 1";});
+            require(inline_formula!=formula_regions.end(),"The inline formula is missing from the reading regions");
+            require(point_height(inline_formula->target,0)>=reference&&scale(inline_formula->target)==zoom,
+                "An inline formula uses smaller curricular text");
+            struct CanvasCheck{HWND canvas=nullptr;};CanvasCheck plot;
+            EnumChildWindows(formula.window(),[](HWND item,LPARAM value)->BOOL{
+                wchar_t name[80]{};GetClassNameW(item,name,80);
+                if(std::wstring_view(name)==L"LearnGameAndEngineDev.MathCanvas"){
+                    reinterpret_cast<CanvasCheck*>(value)->canvas=item;return FALSE;
+                }
+                return TRUE;
+            },reinterpret_cast<LPARAM>(&plot));
+            LOGFONTW actual{};require(plot.canvas&&GetObjectW(reinterpret_cast<HFONT>(
+                SendMessageW(plot.canvas,WM_GETFONT,0,0)),sizeof(actual),&actual)&&
+                -actual.lfHeight>=curricular_text_pixels(plot.canvas,zoom),
+                "A painted mathematical label uses a smaller font");
+        };
+        for(const int zoom:{75,100,125,150}){
+            update_lesson_preferences(f.view,[zoom](state::StateData& data){
+                data.preferences["lesson_text_size_settings"]["global_scale"]=static_cast<std::int64_t>(zoom);
+            });
+            dispatch(f.host);
+            scope.set_text_scale(zoom);formula.set_text_scale(zoom);
+            for(const int width:{640,330}){
+                const auto pixels=MulDiv(width,static_cast<int>(GetDpiForWindow(f.host)),96);
+                scope.layout(0,0,pixels);formula.layout(0,0,pixels);check_scope(zoom);
+            }
+        }
+        std::cout<<"PASS published U3L4 nested code and notes, inline formula and actual canvas font at all four scales and two widths\n";
     }
     std::cout<<"PASS ordinary paragraph size, weight and scale for all eight programming "
         "question surfaces and the mathematical prompt/instruction; real title hierarchy, "

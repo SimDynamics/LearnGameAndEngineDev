@@ -31,8 +31,14 @@ struct RichTextContext {
 // name samples. Never accepts or inspects a correct index or hidden feedback.
 [[nodiscard]] bool rich_text_naming_choice_samples(std::string_view question,std::span<const std::string> options);
 [[nodiscard]] RichTextReferenceRole rich_text_choice_reference_role(std::string_view question,std::string_view sample);
+// All curricular text shares this minimum, including text in nested cards,
+// code, output, formulas and authored labels. Nesting is not a text scale.
+inline constexpr int curricular_body_sp = 18;
 [[nodiscard]] constexpr LONG rich_text_height(RichTextRole role = RichTextRole::body) {
-    return 15 * (role == RichTextRole::lesson_title ? 32 : role == RichTextRole::heading ? 23 : 18);
+    return 15 * (role == RichTextRole::lesson_title ? 32 : role == RichTextRole::heading ? 23 : curricular_body_sp);
+}
+[[nodiscard]] inline int curricular_text_pixels(HWND window,int percentage=100) {
+    return MulDiv(curricular_body_sp*percentage,static_cast<int>(GetDpiForWindow(window)),96*100);
 }
 [[nodiscard]] std::wstring wide(std::string_view utf8);
 [[nodiscard]] std::string utf8(std::wstring_view text);

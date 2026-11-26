@@ -1255,7 +1255,11 @@ void histogram_reflow_retains_visible_group(HWND host) {
     const auto nearby=[&](int zoom,const char* reason){
         const auto frame=view.frequency_card_bounds_in_canvas(tracked);
         const auto dpi=static_cast<int>(GetDpiForWindow(chart));
-        const int row_height=MulDiv(MulDiv(138,dpi,96),zoom,100);
+        int row_height=0;
+        for(std::size_t group=0;group<64;++group)
+            if(const auto bounds=view.frequency_card_bounds_in_canvas(group))
+                row_height=std::max(row_height,static_cast<int>(bounds->bottom-bounds->top));
+        row_height+=MulDiv(MulDiv(8,dpi,96),zoom,100);
         check(frame.has_value()&&frame->top<=row_height&&
             name(chart)==before_name&&spec==source,reason);
     };
@@ -6070,11 +6074,11 @@ void scale_limits_and_local_control_wheel(HWND host) {
         "Ordinary scrolling improperly changed zoom or carried a stale Ctrl+wheel fraction");
     SendMessageW(input,WM_MOUSEWHEEL,MAKEWPARAM(0,static_cast<WORD>(WHEEL_DELTA)),0);
     for(int step=0;step<20;++step)control_wheel(host,input,-WHEEL_DELTA);
-    check(rich_edit_scale(input)==50,
-        "Ctrl+wheel passed below the simulation data editor's minimum scale");
+    check(rich_edit_scale(input)==100,
+        "Ctrl+wheel passed below the curricular reading scale");
     control_wheel(host,input,-WHEEL_DELTA);
-    check(rich_edit_scale(input)==50,
-        "Ctrl+wheel did not stop at the 50 percent minimum");
+    check(rich_edit_scale(input)==100,
+        "Ctrl+wheel did not stop at the curricular reading scale");
     const auto short_explanation=GetDlgItem(first.window(),explanation_id);
     const auto short_output=GetDlgItem(first.window(),output_id);
     control_wheel(host,short_explanation,WHEEL_DELTA);

@@ -303,7 +303,7 @@ struct SimulationView::Impl {
         SCROLLINFO scroll{sizeof(scroll),SIF_RANGE|SIF_PAGE|SIF_POS};
         if(!GetScrollInfo(frequencies,SB_VERT,&scroll)||!scroll.nPage)
             return std::nullopt;
-        const int pitch=sp(138);
+        const int pitch=frequency_card_height(viewport.right,indices.size())+sp(8);
         const auto row=static_cast<std::size_t>(
             std::max(0,scroll.nPos-sp(8))/pitch);
         const auto columns=static_cast<std::size_t>(
@@ -334,8 +334,9 @@ struct SimulationView::Impl {
             frequency_columns(viewport.right,indices.size()));
         const auto row=static_cast<int>(
             static_cast<std::size_t>(found-indices.begin())/columns);
-        const auto offset=MulDiv(saved->row_offset,sp(138),saved->pitch);
-        scroll_frequencies(sp(8)+row*sp(138)+offset);
+        const auto pitch=frequency_card_height(viewport.right,indices.size())+sp(8);
+        const auto offset=MulDiv(saved->row_offset,pitch,saved->pitch);
+        scroll_frequencies(sp(8)+row*pitch+offset);
     }
     // Restore every independent scrollable reading surface after font, DPI
     // and width reflow, including a rejected RichEdit update. The explanation,
@@ -536,18 +537,18 @@ struct SimulationView::Impl {
         std::array<HFONT,5> fresh{};
         const auto discard=[&] {for(const auto handle:fresh)if(handle)DeleteObject(handle);};
         const auto make=[&](int logical,bool scaled,const wchar_t* face,int weight=FW_NORMAL){
-            const auto pixels=scaled?std::max(1,MulDiv(px(logical),target,100)):px(logical);
+            const auto pixels=std::max(1,MulDiv(logical*(scaled?target:100),static_cast<int>(GetDpiForWindow(host)),96*100));
             const auto created=CreateFontW(-pixels,0,0,0,weight,FALSE,FALSE,FALSE,
                 DEFAULT_CHARSET,OUT_DEFAULT_PRECIS,CLIP_DEFAULT_PRECIS,CLEARTYPE_QUALITY,DEFAULT_PITCH,face);
             if(!created)throw std::runtime_error("No se pudo preparar la tipografía de la simulación.");
             return created;
         };
         try {
-            fresh[0]=make(18,true,L"Roboto");
-            if(rebase)fresh[1]=make(18,false,L"Roboto");
+            fresh[0]=make(curricular_body_sp,true,L"Roboto");
+            if(rebase)fresh[1]=make(curricular_body_sp,false,L"Roboto");
             fresh[2]=make(23,true,L"Roboto",FW_BOLD);
-            fresh[3]=make(13,true,L"Roboto");
-            fresh[4]=make(30,true,L"Roboto",FW_BOLD);
+            fresh[3]=make(curricular_body_sp,true,L"Roboto");
+            fresh[4]=make(curricular_body_sp,true,L"Roboto");
         }catch(...){discard();throw;}
         const HFONT selected_base=rebase?fresh[1]:base_font;
         struct PreviousZoom {HWND child;int numerator,denominator;};
@@ -1655,15 +1656,15 @@ struct SimulationView::Impl {
         int top=sp(4);
         for(std::size_t first=0;first<trace.ordered.size();first+=static_cast<std::size_t>(columns)){
             const auto last=std::min(trace.ordered.size(),first+static_cast<std::size_t>(columns));
-            const auto origin_height=source_positions.empty()?0:sp(22);
-            const auto counted_height=spec.view==SimulationViewMode::walkthrough?sp(22):0;
-            int row=sp(spec.view==SimulationViewMode::array?88:68)+origin_height+counted_height,marker_height=0;
+            const auto origin_height=source_positions.empty()?0:sp(30);
+            const auto counted_height=spec.view==SimulationViewMode::walkthrough?sp(30):0;
+            int row=sp(spec.view==SimulationViewMode::array?108:80)+origin_height+counted_height,marker_height=0;
             for(auto i=first;i<last;++i){const auto dc=GetDC(host);const auto old=SelectObject(dc,font);
                 const auto content=wrapped_text(dc,simulation_value_display_text(trace.ordered[i]),std::max(1,cell_width-sp(16)));
                 RECT bounds{0,0,std::max(1,cell_width-sp(16)),0};DrawTextW(dc,content.c_str(),static_cast<int>(content.size()),&bounds,DT_CALCRECT|DT_WORDBREAK|DT_NOPREFIX);
                 SelectObject(dc,old);ReleaseDC(host,dc);
                 row=std::max(row,static_cast<int>(bounds.bottom)+
-                    sp(spec.view==SimulationViewMode::array?62:42)+origin_height+counted_height);
+                    sp(spec.view==SimulationViewMode::array?82:54)+origin_height+counted_height);
                 if(const auto caption=marker_text(i);!caption.empty())marker_height=std::max(marker_height,measure(caption,cell_width,index_font)+sp(8));}
             for(auto i=first;i<last;++i){const auto x=static_cast<int>(i-first)*(cell_width+gap);
                 const auto caption=marker_text(i);if(!caption.empty())markers.push_back({{x,top,x+cell_width,top+marker_height-sp(8)},caption,{x+cell_width/2,top+marker_height}});
@@ -1676,12 +1677,27 @@ struct SimulationView::Impl {
     int frequency_columns(int available,std::size_t visible)const {
         const int gap=sp(8);
         return std::max(1,std::min(static_cast<int>(visible),
-            std::max(1,(available+gap)/(sp(100)+gap))));
+            std::max(1,(available+gap)/(sp(160)+gap))));
+    }
+    int frequency_card_height(int available,std::size_t visible)const {
+        const auto columns=frequency_columns(available,visible);
+        const auto inner=std::max(1,(available-sp(8)*(columns-1))/columns-sp(8));
+        int height=sp(154);
+        for(const auto index:frequency_indices()){
+            const auto& group=trace.groups[index];
+            // Reserve the longest status variant before rendering; the bar
+            // and all three full-size text rows fit even for wrapped labels.
+            const auto heading=measure("Actual · ★ Grupo "+std::to_string(index+1),inner,index_font);
+            const auto label=measure(simulation_value_display_text(group.value),inner,index_font);
+            const auto count=measure("×"+std::to_string(group.end-group.begin),inner,index_font);
+            height=std::max(height,sp(72)+heading+label+count);
+        }
+        return height;
     }
     int frequency_height(int available,std::size_t visible)const {
         if(!visible)return 0;
         const auto columns=static_cast<std::size_t>(frequency_columns(available,visible));
-        return sp(8)+static_cast<int>((visible+columns-1)/columns)*sp(138)+sp(4);
+        return sp(8)+static_cast<int>((visible+columns-1)/columns)*(frequency_card_height(available,visible)+sp(8))+sp(4);
     }
     void scroll_frequencies(int requested) {
         if(!frequencies||!frequency_total_height)return;
@@ -1702,15 +1718,16 @@ struct SimulationView::Impl {
     // Use one geometry calculation for painting, hit testing and native
     // regression tests. Slots map to original group indices through
     // frequency_indices(), also after selecting the candidate-only filter.
-    RECT frequency_card_rect(std::size_t slot,std::size_t visible,int client_width)const {
+    RECT frequency_card_rect(std::size_t slot,std::size_t visible,int client_width,int measured_height=0)const {
         const int gap=sp(8);
         const int columns=frequency_columns(std::max(1,client_width),visible);
         const int card_width=std::max(1,(client_width-gap*(columns-1))/columns);
         const int row=static_cast<int>(slot/static_cast<std::size_t>(columns));
         const int column=static_cast<int>(slot%static_cast<std::size_t>(columns));
         const int left=column*(card_width+gap);
-        const int top=sp(8)+row*sp(138)-frequency_scroll;
-        return {left,top,left+card_width,top+sp(130)};
+        const auto height=measured_height>0?measured_height:frequency_card_height(std::max(1,client_width),visible);
+        const int top=sp(8)+row*(height+sp(8))-frequency_scroll;
+        return {left,top,left+card_width,top+height};
     }
     std::optional<RECT> frequency_bounds_in_canvas(std::size_t group_index)const {
         if(!frequencies||!(GetWindowLongPtrW(frequencies,GWL_STYLE)&WS_VISIBLE))
@@ -1732,8 +1749,9 @@ struct SimulationView::Impl {
         RECT viewport{};GetClientRect(frequencies,&viewport);
         if(!PtInRect(&viewport,point))return std::nullopt;
         const auto indices=frequency_indices();
+        const auto height=frequency_card_height(viewport.right,indices.size());
         for(std::size_t slot=0;slot<indices.size();++slot){
-            const auto card=frequency_card_rect(slot,indices.size(),viewport.right);
+            const auto card=frequency_card_rect(slot,indices.size(),viewport.right,height);
             if(PtInRect(&card,point))return indices[slot];
         }
         return std::nullopt;
@@ -1943,7 +1961,7 @@ struct SimulationView::Impl {
         const std::array<COLORREF,6> group_colors{RGB(83,164,240),RGB(66,189,145),RGB(239,172,67),RGB(186,133,235),RGB(233,123,151),RGB(87,190,203)};
         const auto selected_group=spec.view==SimulationViewMode::groups?position:frame().group?frame().group-1:0;
         const auto observed=counted_cell();
-        const auto counted_footer=spec.view==SimulationViewMode::walkthrough?sp(22):0;
+        const auto counted_footer=spec.view==SimulationViewMode::walkthrough?sp(30):0;
         for(std::size_t i=0;i<cell_rects.size();++i){
             const bool counted=observed&&*observed==i;
             const auto active=selected(i);auto bounds=cell_rects[i];
@@ -1959,18 +1977,18 @@ struct SimulationView::Impl {
             const auto old_brush=SelectObject(dc,brush),old_pen=SelectObject(dc,pen);
             RoundRect(dc,bounds.left,bounds.top,bounds.right,bounds.bottom,px(10),px(10));SelectObject(dc,old_pen);SelectObject(dc,old_brush);DeleteObject(pen);DeleteObject(brush);
             const auto foreground=colors.high_contrast&&active?GetSysColor(COLOR_HIGHLIGHTTEXT):colors.text;
-            auto index_area=bounds;index_area.left+=sp(6);index_area.right-=sp(6);index_area.top+=sp(5);index_area.bottom=index_area.top+sp(21);
+            auto index_area=bounds;index_area.left+=sp(6);index_area.right-=sp(6);index_area.top+=sp(5);index_area.bottom=index_area.top+sp(29);
             auto old=SelectObject(dc,index_font);SetTextColor(dc,foreground);
             const auto index=wide("índice "+std::to_string(i));DrawTextW(dc,index.c_str(),-1,&index_area,DT_CENTER|DT_SINGLELINE|DT_NOPREFIX);
             auto value_area=bounds;value_area.left+=sp(8);value_area.right-=sp(8);value_area.top=index_area.bottom+sp(3);
-            value_area.bottom-=sp(spec.view==SimulationViewMode::array?28:8)+
-                (source_positions.empty()?0:sp(22))+counted_footer;
+            value_area.bottom-=sp(spec.view==SimulationViewMode::array?36:8)+
+                (source_positions.empty()?0:sp(30))+counted_footer;
             SelectObject(dc,font);const auto value=wrapped_text(dc,simulation_value_display_text(trace.ordered[i]),value_area.right-value_area.left);
             DrawTextW(dc,value.c_str(),static_cast<int>(value.size()),&value_area,DT_CENTER|DT_WORDBREAK|DT_NOPREFIX|DT_EDITCONTROL);
             if(!source_positions.empty()){
                 auto origin=bounds;origin.left+=sp(4);origin.right-=sp(4);
-                origin.bottom-=sp(spec.view==SimulationViewMode::array?27:4)+counted_footer;
-                origin.top=origin.bottom-sp(20);
+                origin.bottom-=sp(spec.view==SimulationViewMode::array?35:4)+counted_footer;
+                origin.top=origin.bottom-sp(28);
                 SelectObject(dc,index_font);
                 const auto label=wide("origen "+std::to_string(source_positions[i]));
                 DrawTextW(dc,label.c_str(),-1,&origin,DT_CENTER|DT_SINGLELINE|DT_NOPREFIX);
@@ -1980,12 +1998,12 @@ struct SimulationView::Impl {
                 // a footer reserved for all walkthrough frames prevents
                 // clipping when the author uses long labels or source indices.
                 auto caption=bounds;caption.left+=sp(5);caption.right-=sp(5);
-                caption.bottom-=sp(4);caption.top=caption.bottom-sp(20);
+                caption.bottom-=sp(4);caption.top=caption.bottom-sp(28);
                 SelectObject(dc,index_font);SetTextColor(dc,foreground);
                 DrawTextW(dc,L"contado",7,&caption,
                     DT_CENTER|DT_SINGLELINE|DT_END_ELLIPSIS|DT_NOPREFIX);
             }
-            if(spec.view==SimulationViewMode::array){auto caption=bounds;caption.top=caption.bottom-sp(24);caption.bottom-=sp(4);SelectObject(dc,index_font);
+            if(spec.view==SimulationViewMode::array){auto caption=bounds;caption.top=caption.bottom-sp(32);caption.bottom-=sp(4);SelectObject(dc,index_font);
                 const auto name=wide("grupo "+std::to_string(group+1));DrawTextW(dc,name.c_str(),-1,&caption,DT_CENTER|DT_SINGLELINE|DT_NOPREFIX);}
             SelectObject(dc,old);
         }
@@ -2009,13 +2027,14 @@ struct SimulationView::Impl {
         const auto indices=frequency_indices();
         const auto visible=indices.size();
         if(!visible)return;
+        const auto card_height=frequency_card_height(area.right,visible);
         std::size_t greatest=1;
         for(const auto i:indices)
             greatest=std::max(greatest,trace.groups[i].end-trace.groups[i].begin);
         for(std::size_t i=0;i<visible;++i){
-            const RECT card=frequency_card_rect(i,visible,area.right);
+            const RECT card=frequency_card_rect(i,visible,area.right,card_height);
             if(card.bottom<=0||card.top>=area.bottom)continue;
-            const int left=card.left,top=card.top,card_width=card.right-card.left;
+            const int left=card.left,card_width=card.right-card.left;
             const auto group_index=indices[i];
             const auto& group=trace.groups[group_index];
             const auto count=group.end-group.begin;
@@ -2031,13 +2050,15 @@ struct SimulationView::Impl {
             DeleteObject(border);DeleteObject(card_brush);
 
             auto caption=card;caption.left+=sp(4);caption.right-=sp(4);
-            caption.top+=sp(5);caption.bottom=caption.top+sp(20);
+            caption.top+=sp(5);
             auto old_font=SelectObject(dc,index_font);
             SetTextColor(dc,colors.text);
-            const auto headline=wide(std::string(current?"Actual · ":"")+
-                (leader?"★ ":"")+"Grupo "+std::to_string(group_index+1));
-            DrawTextW(dc,headline.c_str(),-1,&caption,DT_CENTER|DT_SINGLELINE|DT_END_ELLIPSIS|DT_NOPREFIX);
-            const int baseline=top+sp(87);
+            const auto headline=std::string(current?"Actual · ":"")+
+                (leader?"★ ":"")+"Grupo "+std::to_string(group_index+1);
+            caption.bottom=caption.top+measure(headline,caption.right-caption.left,index_font);
+            const auto heading_text=wrapped_text(dc,headline,caption.right-caption.left);
+            DrawTextW(dc,heading_text.c_str(),static_cast<int>(heading_text.size()),&caption,DT_CENTER|DT_WORDBREAK|DT_NOPREFIX);
+            const int baseline=caption.bottom+sp(56);
             const int maximum_height=sp(56);
             const int bar_height=std::max(sp(3),
                 MulDiv(maximum_height,static_cast<int>(count),static_cast<int>(greatest)));
@@ -2048,15 +2069,17 @@ struct SimulationView::Impl {
             FillRect(dc,&bar,paint);DeleteObject(paint);
 
             auto value_rect=card;value_rect.left+=sp(4);value_rect.right-=sp(4);
-            value_rect.top=baseline+sp(3);value_rect.bottom=value_rect.top+sp(20);
-            const auto value=wide(simulation_value_display_text(group.value));
-            DrawTextW(dc,value.c_str(),-1,&value_rect,
-                DT_CENTER|DT_SINGLELINE|DT_END_ELLIPSIS|DT_NOPREFIX);
+            value_rect.top=baseline+sp(3);
+            const auto label=simulation_value_display_text(group.value);
+            value_rect.bottom=value_rect.top+measure(label,value_rect.right-value_rect.left,index_font);
+            const auto value=wrapped_text(dc,label,value_rect.right-value_rect.left);
+            DrawTextW(dc,value.c_str(),static_cast<int>(value.size()),&value_rect,
+                DT_CENTER|DT_WORDBREAK|DT_NOPREFIX);
             auto count_rect=card;count_rect.left+=sp(4);count_rect.right-=sp(4);
-            count_rect.top=value_rect.bottom;count_rect.bottom=count_rect.top+sp(16);
-            const auto quantity=wide("×"+std::to_string(count));
-            DrawTextW(dc,quantity.c_str(),-1,&count_rect,
-                DT_CENTER|DT_SINGLELINE|DT_NOPREFIX);
+            count_rect.top=value_rect.bottom;count_rect.bottom=card.bottom-sp(4);
+            const auto quantity=wrapped_text(dc,"×"+std::to_string(count),count_rect.right-count_rect.left);
+            DrawTextW(dc,quantity.c_str(),static_cast<int>(quantity.size()),&count_rect,
+                DT_CENTER|DT_WORDBREAK|DT_NOPREFIX);
             SelectObject(dc,old_font);
         }
     }
@@ -2205,7 +2228,7 @@ struct SimulationView::Impl {
                 SendMessageW(edit,EM_GETZOOM,reinterpret_cast<WPARAM>(&numerator),
                     reinterpret_cast<LPARAM>(&denominator));
                 const int current=denominator?MulDiv(numerator,100,denominator):100;
-                const int next=std::clamp(current+10*notches,50,150);
+                const int next=std::clamp(current+10*notches,self->scale,std::max(150,self->scale));
                 if(next!=current&&!set_rich_text_zoom(edit,next))
                     OutputDebugStringW(L"El editor de datos no aceptó la escala RichEdit solicitada.\n");
                 return 0;

@@ -162,6 +162,27 @@ struct Canvas {
         if(type=="sliders_visual")return 1.2;
         return 1.;
     }
+    int number_line_height(int width)const{
+        // Same tick policy and measured font as paint(). Reserve enough room
+        // below the center axis for all staggered label rows.
+        const auto low=number(config,L"min",-10),high=number(config,L"max",10)>low?number(config,L"max",10):low+20;
+        const auto step=number(config,L"step",1)>0?number(config,L"step",1):1;
+        const auto tick=step*std::max(1.,std::ceil((high-low)/step/16.));
+        const auto dc=GetDC(window);const auto old=SelectObject(dc,scaled_font?scaled_font:GetStockObject(DEFAULT_GUI_FONT));TEXTMETRICW metrics{};GetTextMetricsW(dc,&metrics);
+        const auto measure=[&](double value){const auto source=wide(coordinate_caption(value));SIZE size{};GetTextExtentPoint32W(dc,source.c_str(),static_cast<int>(source.size()),&size);return static_cast<int>(size.cx);};
+        const int margin=std::min(std::max(px(28),std::max(measure(low),measure(high))/2+px(8)),std::max(0,(width-1)/2));
+        const auto span=std::max(1,width-2*margin);
+        std::vector<LONG> ends;
+        for(unsigned index=0;index<=18;++index){
+            const auto value=low+index*tick;if(value>high+1e-10)break;
+            const auto x=margin+static_cast<LONG>(std::lround((value-low)/(high-low)*span));
+            const auto extent=measure(value);const auto left=x-extent/2,right=x+(extent+1)/2;
+            const auto found=std::ranges::find_if(ends,[&](LONG end){return end+px(4)<=left;});
+            if(found==ends.end())ends.push_back(right);else *found=right;
+        }
+        SelectObject(dc,old);ReleaseDC(window,dc);
+        return 2*(px(12)+static_cast<int>(std::max<std::size_t>(1,ends.size()))*(metrics.tmHeight+px(3)));
+    }
     void update_slider_points(){
         if(type!="sliders_visual"||text(config,L"type")!="graph")return;
         const auto values=object(state,L"values");const auto parameters=array(config,L"parameters");
@@ -212,7 +233,9 @@ struct Canvas {
             MoveWindow(auxiliary_host,0,0,width,auxiliary_page,TRUE);scroll_auxiliary(auxiliary_scroll);MoveWindow(window,0,auxiliary_page,width,std::max(1,available-auxiliary_page),FALSE);prepare_drawing();InvalidateRect(window,nullptr,FALSE);
             MoveWindow(GetDlgItem(fullscreen,canvas_close_id),std::max(0L,area.right-row),available,row,row,TRUE);return;
         }
-        const auto ratio=aspect_ratio();const int width=std::max(1,std::min(static_cast<int>(area.right),static_cast<int>(available*ratio))),height=std::max(1,std::min(available,static_cast<int>(width/ratio)));
+        const auto ratio=aspect_ratio();const int width=std::max(1,std::min(static_cast<int>(area.right),static_cast<int>(available*ratio)));
+        const int aspect_height=std::max(1,std::min(available,static_cast<int>(width/ratio)));
+        const int height=(type=="number_line"||type=="math_number_line")?std::min(available,std::max(aspect_height,number_line_height(width))):aspect_height;
         const int left=(area.right-width)/2,top=(available-height)/2;
         const auto columns=std::max(1,auxiliary_columns);
         const auto row_count=(static_cast<int>(auxiliary_controls.size())+columns-1)/columns;
@@ -272,9 +295,9 @@ struct Canvas {
     }
     void scale_text(int percentage) {
         text_scale=percentage;drawing_width=drawing_height=0;
-        const auto base=type=="euclidean_diagram"||type=="rigid_angle"||type=="segment_transport"||type=="geometry_2d_diagram"||type=="geometry_3d_diagram"?15:type=="venn_diagram"?14:
-            type=="math_number_line"||type=="number_line"?12:type=="graph"||type=="math_coordinate_graph"||type=="coordinate_graph"||(type=="sliders_visual"&&text(config,L"type")=="graph")?11:18;
-        const auto next=CreateFontW(-MulDiv(base*percentage,static_cast<int>(GetDpiForWindow(window)),96*100),
+        // Authored and generated mathematical labels have the same base
+        // reading size as a paragraph. Do not shrink them to fit a canvas.
+        const auto next=CreateFontW(-curricular_text_pixels(window,percentage),
             0,0,0,FW_NORMAL,FALSE,FALSE,FALSE,DEFAULT_CHARSET,OUT_DEFAULT_PRECIS,CLIP_DEFAULT_PRECIS,
             CLEARTYPE_QUALITY,DEFAULT_PITCH,L"Roboto");
         if(next){if(scaled_font)DeleteObject(scaled_font);scaled_font=next;}InvalidateRect(window,nullptr,FALSE);
@@ -339,7 +362,7 @@ struct Canvas {
         if(type=="rigid_angle"){request.SetNamedValue(L"placement",state);if(gesture)request.SetNamedValue(L"gesture",*gesture);}
         if(type=="segment_transport"){request.SetNamedValue(L"state",state);if(gesture)request.SetNamedValue(L"gesture",*gesture);}
         request.SetNamedValue(L"width",JsonValue::CreateNumberValue(area.right));request.SetNamedValue(L"height",JsonValue::CreateNumberValue(area.bottom));
-        request.SetNamedValue(L"unit",JsonValue::CreateNumberValue(unit));request.SetNamedValue(L"textSize",JsonValue::CreateNumberValue(15*unit*text_scale/100));request.SetNamedValue(L"labelMetrics",metrics);
+        request.SetNamedValue(L"unit",JsonValue::CreateNumberValue(unit));request.SetNamedValue(L"textSize",JsonValue::CreateNumberValue(curricular_body_sp*unit*text_scale/100));request.SetNamedValue(L"labelMetrics",metrics);
         const auto next_drawing=JsonObject::Parse(winrt::to_hstring(layout_request(stringify(request))));
         if(!next_drawing.HasKey(L"viewport"))throw std::runtime_error(text(next_drawing,L"error","The original Euclidean layout did not return its drawing"));
         if(type=="segment_transport"&&!next_drawing.HasKey(L"state"))throw std::runtime_error("The segment construction did not return its original state");
@@ -369,7 +392,14 @@ struct Canvas {
     int px(int value) const { return MulDiv(value,static_cast<int>(GetDpiForWindow(window)),96); }
     RECT bounds() const {
         RECT result{};GetClientRect(window,&result);
-        if(type=="math_number_line"||type=="number_line"){result.left=px(28);result.right-=px(28);return result;}
+        if(type=="math_number_line"||type=="number_line"){
+            const auto dc=GetDC(window);const auto old=SelectObject(dc,scaled_font?scaled_font:GetStockObject(DEFAULT_GUI_FONT));
+            const auto measure=[&](double value){const auto content=wide(coordinate_caption(value));SIZE size{};GetTextExtentPoint32W(dc,content.c_str(),static_cast<int>(content.size()),&size);return static_cast<int>(size.cx);};
+            const auto low=number(config,L"min",-10),high=number(config,L"max",10);
+            const auto margin=std::max(px(28),std::max(measure(low),measure(high))/2+px(8));
+            SelectObject(dc,old);ReleaseDC(window,dc);
+            result.left=std::min<LONG>(margin,std::max(0L,(result.right-1)/2));result.right-=result.left;return result;
+        }
         const auto dc=GetDC(window);const auto old=SelectObject(dc,scaled_font?scaled_font:GetStockObject(DEFAULT_GUI_FONT));TEXTMETRICW metrics{};GetTextMetricsW(dc,&metrics);
         const auto measure=[&](double value){const auto content=wide(coordinate_caption(value));SIZE size{};GetTextExtentPoint32W(dc,content.c_str(),static_cast<int>(content.size()),&size);return static_cast<double>(size.cx);};
         const auto widest_y=std::max({measure(ymin),measure(ymax),measure(0)}),edge_x=std::max(measure(xmin),measure(xmax))/2;
@@ -497,17 +527,30 @@ struct Canvas {
             const auto alignment=SetTextAlign(dc,TA_CENTER|TA_BASELINE);SetTextColor(dc,colors.high_contrast?colors.text:RGB(204,204,204));
             const auto caption=[&](std::string value,LONG x,LONG baseline){const auto source=wide(value);TextOutW(dc,x,baseline,source.c_str(),static_cast<int>(source.size()));};
             const auto tick_step=step*std::max(1.,std::ceil((high-low)/step/16.));
-            for(unsigned index=0;index<=18;++index){const auto value=low+index*tick_step;if(value>high+1e-10)break;const auto x=x_at(value);line(dc,{x,y-px(5)},{x,y+px(5)});caption(coordinate_caption(value),x,y+px(24));}
+            // Keep every original tick and label. When full-size labels
+            // collide, stagger them vertically rather than reducing the font.
+            TEXTMETRICW tick_metrics{};GetTextMetricsW(dc,&tick_metrics);
+            std::vector<LONG> label_ends;
+            for(unsigned index=0;index<=18;++index){
+                const auto value=low+index*tick_step;if(value>high+1e-10)break;
+                const auto x=x_at(value);line(dc,{x,y-px(5)},{x,y+px(5)});
+                const auto label=coordinate_caption(value);const auto source=wide(label);SIZE size{};
+                GetTextExtentPoint32W(dc,source.c_str(),static_cast<int>(source.size()),&size);
+                const auto left=x-size.cx/2,right=x+(size.cx+1)/2;
+                const auto found=std::ranges::find_if(label_ends,[&](LONG end){return end+px(4)<=left;});
+                const auto row=static_cast<int>(found-label_ends.begin());
+                if(found==label_ends.end())label_ends.push_back(right);else *found=right;
+                caption(label,x,y+px(8)+tick_metrics.tmAscent+row*(tick_metrics.tmHeight+px(3)));
+            }
             const auto value=std::clamp(number(state,L"value",number(config,L"value")),low,high);const auto x=x_at(value);
             const auto direction=text(state,L"direction",text(config,L"direction","none"));const auto ray=CreatePen(PS_SOLID,px(5),colors.accent);SelectObject(dc,ray);
             if(direction=="left"||direction=="right"){const auto end=direction=="left"?rect.left:rect.right;line(dc,{x,y},{end,y});arrow(end,direction=="left");}
             const auto background=CreateSolidBrush(colors.canvas);SelectObject(dc,background);SelectObject(dc,GetStockObject(NULL_PEN));Ellipse(dc,x-px(8),y-px(8),x+px(8),y+px(8));
             const auto marker=CreatePen(PS_SOLID,px(3),colors.accent);const auto fill=CreateSolidBrush(colors.accent);SelectObject(dc,marker);SelectObject(dc,flag(state,L"closed",flag(config,L"closed",true))?fill:GetStockObject(NULL_BRUSH));Ellipse(dc,x-px(7),y-px(7),x+px(7),y+px(7));
-            const auto mode=text(config,L"mode");HFONT value_font=nullptr;
+            const auto mode=text(config,L"mode");
             if(flag(config,L"showValueLabel",mode!="read_value"&&mode!="missing_value_hint")){
-                value_font=CreateFontW(-MulDiv(15*text_scale,static_cast<int>(GetDpiForWindow(window)),96*100),0,0,0,FW_NORMAL,FALSE,FALSE,FALSE,DEFAULT_CHARSET,OUT_DEFAULT_PRECIS,CLIP_DEFAULT_PRECIS,CLEARTYPE_QUALITY,DEFAULT_PITCH,L"Roboto");
-                if(value_font)SelectObject(dc,value_font);SetTextColor(dc,colors.high_contrast?colors.text:RGB(255,255,255));caption(coordinate_caption(value),x,y-px(21));}
-            SetTextAlign(dc,alignment);RestoreDC(dc,saved);DeleteObject(axis);DeleteObject(ray);DeleteObject(background);DeleteObject(marker);DeleteObject(fill);if(value_font)DeleteObject(value_font);
+                SetTextColor(dc,colors.high_contrast?colors.text:RGB(255,255,255));caption(coordinate_caption(value),x,y-px(21));}
+            SetTextAlign(dc,alignment);RestoreDC(dc,saved);DeleteObject(axis);DeleteObject(ray);DeleteObject(background);DeleteObject(marker);DeleteObject(fill);
         } else if (type == "euclidean_diagram"||type=="rigid_angle"||type=="segment_transport") {
             paint_euclidean(dc);
         } else if (type == "venn_diagram") {
@@ -535,12 +578,12 @@ struct Canvas {
             const auto blend=[](BYTE foreground,BYTE background){return (foreground*85+background*170)/255;};
             const auto fill=CreateSolidBrush(RGB(blend(GetRValue(colors.accent),GetRValue(colors.canvas)),blend(GetGValue(colors.accent),GetGValue(colors.canvas)),blend(GetBValue(colors.accent),GetBValue(colors.canvas))));
             const auto old=SelectObject(dc,fill);Rectangle(dc,box.left,box.top,box.right,box.bottom);SelectObject(dc,old);DeleteObject(fill);
-            const auto caption=wide(decimal(width_value)+" × "+decimal(height_value));RECT label_bounds{0,client.bottom-px(35),client.right,client.bottom};
-            LOGFONTW label_font{};GetObjectW(font,sizeof(label_font),&label_font);label_font.lfHeight=MulDiv(label_font.lfHeight,15,18);
-            const auto caption_font=CreateFontIndirectW(&label_font);const auto before_font=SelectObject(dc,caption_font);
+            const auto caption=wide(decimal(width_value)+" × "+decimal(height_value));
+            TEXTMETRICW metrics{};GetTextMetricsW(dc,&metrics);
+            RECT label_bounds{0,client.bottom-std::max(px(35),static_cast<int>(metrics.tmHeight)+px(8)),client.right,client.bottom};
             const auto before_ink=SetTextColor(dc,colors.high_contrast?colors.text:RGB(255,255,255));
             DrawTextW(dc,caption.c_str(),static_cast<int>(caption.size()),&label_bounds,DT_CENTER|DT_SINGLELINE|DT_NOPREFIX|DT_VCENTER);
-            SetTextColor(dc,before_ink);SelectObject(dc,before_font);DeleteObject(caption_font);
+            SetTextColor(dc,before_ink);
         } else if (type == "geometry_2d_diagram" || type == "geometry_3d_diagram") {
             const bool solid=type=="geometry_3d_diagram";const auto shape=text(config,L"shape",solid?"cube":"rectangle");
             const auto left=client.right*.22,top=client.bottom*.18,right=client.right*.75,bottom=client.bottom*.72;
@@ -641,6 +684,7 @@ struct Canvas {
         auto* self = reinterpret_cast<Canvas*>(GetWindowLongPtrW(window,GWLP_USERDATA));
         if (message == WM_NCCREATE) { self = static_cast<Canvas*>(reinterpret_cast<CREATESTRUCTW*>(lparam)->lpCreateParams); self->window = window; SetWindowLongPtrW(window,GWLP_USERDATA,reinterpret_cast<LONG_PTR>(self)); }
         if (!self) return DefWindowProcW(window,message,wparam,lparam);
+        if(message==WM_GETFONT)return reinterpret_cast<LRESULT>(self->scaled_font);
         if(message==WM_PRINTCLIENT){self->paint(reinterpret_cast<HDC>(wparam));return 0;}
         if(message==WM_LBUTTONDBLCLK){
             // Placement clicks remain construction clicks. Enlarging has its
@@ -954,6 +998,13 @@ struct MathPuzzleView::Impl {
         if(!content->window)throw std::runtime_error("Cannot create the original mathematical content container");
         reader_theme::apply(content->window,reader_theme::Surface::card);
         for(const auto& row:content->rows)for(const auto& cell:row.cells){SetParent(cell.window,content->window);if(horizontal)SetWindowSubclass(cell.window,scroll_child_proc,19,reinterpret_cast<DWORD_PTR>(this));}
+        // Reparenting must never substitute a container's font or lose the
+        // current reader zoom, even several levels inside a code scope.
+        visit_cells(content->rows,[&](const Cell& cell){
+            wchar_t name[32]{};GetClassNameW(cell.window,name,32);
+            if(_wcsnicmp(name,L"RichEdit",8)==0&&!set_rich_text_zoom(cell.window,text_scale))
+                throw std::runtime_error("RichEdit rejected the nested curricular text scale");
+        });
         const auto result=content->window;contents.emplace(result,std::move(content));rows.push_back({{{result}},0});return result;
     }
     HWND code_scope_node(const curriculum::CodeScopeNode& node,std::string_view prefix){
@@ -1088,7 +1139,7 @@ struct MathPuzzleView::Impl {
             const auto surface=console?reader_theme::Surface::compiler_output:reader_theme::Surface::card;
             const auto card_start=rows.size();
             for(const auto& field:diagram->node_fields(index))
-                diagram_field(field,surface,field.key.ends_with("/value")?RichTextRole::lesson_title:RichTextRole::body,!console);
+                diagram_field(field,surface,RichTextRole::body,!console);
             rows.back().gap_after=0;
             const auto card=group_content(card_start,false,false,12,12,4);
             auto& card_content=*contents.at(card);card_content.diagram_frame=!console;
@@ -1197,13 +1248,12 @@ struct MathPuzzleView::Impl {
             const auto source = text(config,L"latex",text(config,L"text",text(config,L"formula",text(config,L"value"))));
             if(!source.empty()){const bool formula=type=="math_formula",inline_formula=formula&&text(config,L"display","block")=="inline";const auto first=rows.size();
                 const auto item=label(source,{},RichTextRole::body,true,formula?(inline_formula?"inline":"block"):text(config,L"mathMode","auto"),selected_semantics(config,{L"latex",L"text",L"formula",L"value"}));
-                if(inline_formula){CHARFORMAT2W style{};style.cbSize=sizeof(style);style.dwMask=CFM_SIZE;style.yHeight=240;SendMessageW(item,EM_SETCHARFORMAT,SCF_ALL,reinterpret_cast<LPARAM>(&style));}
                 rows.push_back({{{item,0,true,formula&&!inline_formula?0:6,formula&&!inline_formula?0:6}},0,0});if(formula&&!inline_formula)group_content(first,true,true,6,6);}
         }
         else if (type == "math_table") {
             const auto first=rows.size();const auto add = [&](const JsonArray& values,const std::string& path,bool header=false) { Row row;row.height=0;row.gap_after=2;unsigned column=0;for (const auto& value : values) {
                 const auto visible = value.ValueType() == JsonValueType::String ? winrt::to_string(value.GetString()) : stringify(value);
-                const auto item=label(visible,{},header?RichTextRole::prompt:RichTextRole::body,true,"auto",semantics_at(path+'/'+std::to_string(column++)));reader_theme::apply(item,header?reader_theme::Surface::card_header:reader_theme::Surface::card);if(header){CHARFORMAT2W style{};style.cbSize=sizeof(style);style.dwMask=CFM_SIZE;style.yHeight=270;SendMessageW(item,EM_SETCHARFORMAT,SCF_ALL,reinterpret_cast<LPARAM>(&style));}
+                const auto item=label(visible,{},header?RichTextRole::prompt:RichTextRole::body,true,"auto",semantics_at(path+'/'+std::to_string(column++)));reader_theme::apply(item,header?reader_theme::Surface::card_header:reader_theme::Surface::card);if(header){CHARFORMAT2W style{};style.cbSize=sizeof(style);style.dwMask=CFM_SIZE;style.yHeight=rich_text_height();SendMessageW(item,EM_SETCHARFORMAT,SCF_ALL,reinterpret_cast<LPARAM>(&style));}
                 row.cells.push_back({item,0,true,6,6}); } if (!row.cells.empty()) rows.push_back(std::move(row)); };
             const auto headers = array(config,L"headers"); if (headers.Size()) add(headers,source_path(config)+"/headers",true);
             const auto table_rows=array(config,L"rows");for(unsigned i=0;i<table_rows.Size();++i){const auto value=table_rows.GetAt(i);if(value.ValueType()==JsonValueType::Array)add(value.GetArray(),source_path(config)+"/rows/"+std::to_string(i));}
@@ -1633,7 +1683,7 @@ struct MathPuzzleView::Impl {
             if (!row.cells.empty()){rows.push_back(std::move(row));group_content(first,true,true,0,0,8);}
         } else if (text(spec,L"layout")=="table"&&table.Size()) {
             const auto first=rows.size();
-            const auto headers = array(spec,L"headers"); if (headers.Size()) { Row row;unsigned column=0;for (const auto& value : headers){const auto heading=label(winrt::to_string(value.GetString()),{},RichTextRole::prompt,true,"auto",semantics_at(source_path(spec)+"/headers/"+std::to_string(column++)));CHARFORMAT2W style{};style.cbSize=sizeof(style);style.dwMask=CFM_SIZE;style.yHeight=270;SendMessageW(heading,EM_SETCHARFORMAT,SCF_ALL,reinterpret_cast<LPARAM>(&style));row.cells.push_back({heading,150,true});} rows.push_back(std::move(row)); }
+            const auto headers = array(spec,L"headers"); if (headers.Size()) { Row row;unsigned column=0;for (const auto& value : headers){const auto heading=label(winrt::to_string(value.GetString()),{},RichTextRole::prompt,true,"auto",semantics_at(source_path(spec)+"/headers/"+std::to_string(column++)));CHARFORMAT2W style{};style.cbSize=sizeof(style);style.dwMask=CFM_SIZE;style.yHeight=rich_text_height();SendMessageW(heading,EM_SETCHARFORMAT,SCF_ALL,reinterpret_cast<LPARAM>(&style));row.cells.push_back({heading,150,true});} rows.push_back(std::move(row)); }
             unsigned row_index=0;for (const auto& row_value : table) { Row row;unsigned column=0;for (const auto& value : row_value.GetArray()){
                 const auto path=source_path(spec)+"/rows/"+std::to_string(row_index)+'/'+std::to_string(column++);
                 if (value.ValueType() == JsonValueType::Object){auto cell=field(text(value.GetObject(),L"field"));cell.width=150;row.cells.push_back(cell);}
@@ -1696,8 +1746,14 @@ struct MathPuzzleView::Impl {
             int height=px(row.height),x=px(padding_x+row.indent)+offset_x;
             for(const auto& cell:row.cells)if(const auto found=contents.find(cell.window);found!=contents.end())height=std::max(height,content_layout(*found->second,cell_width_for(cell),move));
             for(const auto& cell:row.cells)if(std::ranges::any_of(expression_editors,[&](const auto& value){return value->window==cell.window;}))height=std::max(height,math_expression_editor_height(cell.window));
-            for(const auto& cell:row.cells)if(const auto canvas=std::ranges::find_if(canvases,[&](const auto& value){return value->window==cell.window;});canvas!=canvases.end())
-                height=std::max(height,std::max(px(48),static_cast<int>(std::lround((cell.width?px(cell.width):flexible)/(*canvas)->aspect_ratio()))-((*canvas)->type=="rigid_angle"?px(96):0)));
+            for(const auto& cell:row.cells)if(const auto canvas=std::ranges::find_if(canvases,[&](const auto& value){return value->window==cell.window;});canvas!=canvases.end()){
+                const auto& plot=**canvas;
+                const int minimum=std::max(px(48),MulDiv(6*curricular_body_sp*text_scale,static_cast<int>(GetDpiForWindow(host)),96*100));
+                int required=std::max(minimum,static_cast<int>(std::lround(cell_width_for(cell)/plot.aspect_ratio()))-(plot.type=="rigid_angle"?px(96):0));
+                if(plot.type=="number_line"||plot.type=="math_number_line")
+                    required=std::max(required,plot.number_line_height(cell_width_for(cell)));
+                height=std::max(height,required);
+            }
             for (const auto& cell : row.cells) if (cell.text || (GetWindowLongPtrW(cell.window,GWL_STYLE) & BS_MULTILINE) || editors.contains(cell.window)) {
                 const auto cell_width = cell_width_for(cell);
                 if (cell.text) {
@@ -1946,8 +2002,8 @@ struct MathPuzzleView::Impl {
         if (!host) throw std::runtime_error("Cannot create native math view");
         if(!reader_theme::reference_mathematics(parent).has_value())reader_theme::set_reference_mathematics(host,!read_only_scope&&!diagram);
         SetWindowSubclass(host,text_wheel_proc,14,reinterpret_cast<DWORD_PTR>(&callbacks));
-        font = CreateFontW(-MulDiv(18,static_cast<int>(GetDpiForWindow(host)),96),0,0,0,FW_NORMAL,FALSE,FALSE,FALSE,DEFAULT_CHARSET,OUT_DEFAULT_PRECIS,CLIP_DEFAULT_PRECIS,CLEARTYPE_QUALITY,DEFAULT_PITCH,L"Roboto");
-        base_font = CreateFontW(-MulDiv(18,static_cast<int>(GetDpiForWindow(host)),96),0,0,0,FW_NORMAL,FALSE,FALSE,FALSE,DEFAULT_CHARSET,OUT_DEFAULT_PRECIS,CLIP_DEFAULT_PRECIS,CLEARTYPE_QUALITY,DEFAULT_PITCH,L"Roboto");
+        font = CreateFontW(-curricular_text_pixels(host),0,0,0,FW_NORMAL,FALSE,FALSE,FALSE,DEFAULT_CHARSET,OUT_DEFAULT_PRECIS,CLIP_DEFAULT_PRECIS,CLEARTYPE_QUALITY,DEFAULT_PITCH,L"Roboto");
+        base_font = CreateFontW(-curricular_text_pixels(host),0,0,0,FW_NORMAL,FALSE,FALSE,FALSE,DEFAULT_CHARSET,OUT_DEFAULT_PRECIS,CLIP_DEFAULT_PRECIS,CLEARTYPE_QUALITY,DEFAULT_PITCH,L"Roboto");
         reader_theme::apply(host,reader_theme::Surface::card); build();
     }
     static LRESULT CALLBACK procedure(HWND window,UINT message,WPARAM wparam,LPARAM lparam) {
@@ -2078,7 +2134,7 @@ void MathPuzzleView::set_enabled(bool enabled) {
 }
 void MathPuzzleView::set_text_scale(int percentage) {
     percentage=std::clamp(percentage,75,150);if(impl_->text_scale==percentage)return;
-    const auto next=CreateFontW(-MulDiv(18*percentage,static_cast<int>(GetDpiForWindow(impl_->host)),96*100),0,0,0,FW_NORMAL,FALSE,FALSE,FALSE,DEFAULT_CHARSET,
+    const auto next=CreateFontW(-curricular_text_pixels(impl_->host,percentage),0,0,0,FW_NORMAL,FALSE,FALSE,FALSE,DEFAULT_CHARSET,
         OUT_DEFAULT_PRECIS,CLIP_DEFAULT_PRECIS,CLEARTYPE_QUALITY,DEFAULT_PITCH,L"Roboto");
     if(!next)throw std::runtime_error("Cannot scale mathematical text");
     bool accepted=true;
@@ -2103,7 +2159,7 @@ void MathPuzzleView::set_text_scale(int percentage) {
     });
     impl_->text_scale=percentage;
     if(impl_->font)DeleteObject(impl_->font);impl_->font=next;
-    for(const auto& canvas:impl_->canvases){canvas->scale_text(percentage);if(canvas->type=="segment_transport"&&canvas->fullscreen)canvas->expanded_layout();}
+    for(const auto& canvas:impl_->canvases){canvas->scale_text(percentage);if(canvas->fullscreen)canvas->expanded_layout();}
     impl_->requested_heights.clear();impl_->requested_widths.clear();impl_->intrinsic_widths.clear();if(impl_->current_width>0)impl_->arrange(impl_->current_width);
 }
 void MathPuzzleView::set_expression_request(std::function<std::string(std::string_view)> request){

@@ -269,6 +269,24 @@ std::vector<std::string> inspect_reading_scope(HWND view,const curriculum::Lesso
         if(window_class(item)==L"Button")++*reinterpret_cast<std::size_t*>(value);return TRUE;
     },reinterpret_cast<LPARAM>(&buttons));
     check(buttons==1&&canvases(math)==0,"The reading example gained response/reset controls or a geometry canvas");
+    // Compare with the real adjacent paragraph rather than a nominal
+    // number. A nested container must never reduce base font or zoom.
+    const auto& page=lesson.pages[position.page];
+    const auto prose=std::ranges::find_if(all_regions,[&](const auto& region){
+        return region.block_index<position.block&&region.block_index<page.blocks.size()&&
+            page.blocks[region.block_index].type==curriculum::BlockType::paragraph&&region.target&&!region.source_text.empty();
+    });
+    check(prose!=all_regions.end(),"No external curricular paragraph for the nested typography comparison");
+    const auto base_format=character_format(prose->target,0);
+    const auto zoom_of=[](HWND item){int n=0,d=0;SendMessageW(item,EM_GETZOOM,reinterpret_cast<WPARAM>(&n),reinterpret_cast<LPARAM>(&d));return d?MulDiv(n,100,d):100;};
+    for(const auto& region:regions){
+        const auto source=wide(edit_text(region.target));
+        check(!source.empty()&&zoom_of(region.target)==zoom_of(prose->target),
+            "A nested code/note region uses a different reading scale");
+        for(std::size_t at=0;at<source.size();++at)
+            if(!iswspace(source[at]))check(character_format(region.target,static_cast<LONG>(at)).yHeight>=base_format.yHeight,
+                "A source-bound nested code or note is smaller than the exterior paragraph");
+    }
     std::string reconstructed;std::vector<std::string> voice_signature;
     std::size_t expected_segments=0,last_index=0;
     for(std::size_t index=0;index<nodes.size();++index){const auto& node=*nodes[index];const auto& region=regions[index];

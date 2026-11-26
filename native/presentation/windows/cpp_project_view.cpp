@@ -39,12 +39,25 @@ struct Dialog {
     HFONT font=nullptr;std::function<bool()> accept;std::function<void(int)> activate;std::function<void()> initialize;
     std::jthread worker;std::mutex completion_mutex;std::function<void()> completion;bool busy=false,primary_enabled=false,body_enabled=false;
     std::vector<HWND>* tracked=nullptr;std::string title,close_text,primary_text;bool code=false;
-    int heading_height=0;
+    int heading_height=0,reading_scale=100;
     int px(int n)const{return MulDiv(n,static_cast<int>(GetDpiForWindow(window)),96);}
-    void refresh_font(){const auto next=CreateFontW(-px(16),0,0,0,FW_NORMAL,FALSE,FALSE,FALSE,DEFAULT_CHARSET,OUT_DEFAULT_PRECIS,CLIP_DEFAULT_PRECIS,CLEARTYPE_QUALITY,DEFAULT_PITCH,L"Roboto");
+    void apply_reading_scale(){
+        // Use the current lesson scale for every RichEdit document, including
+        // read-only history comparisons and file dialogs. Buttons use HFONT.
+        for(auto item=GetWindow(window,GW_CHILD);item;item=GetWindow(item,GW_HWNDNEXT)){
+            wchar_t name[32]{};GetClassNameW(item,name,32);
+            if(_wcsnicmp(name,L"RichEdit",8)==0){
+                CHARFORMAT2W size{};size.cbSize=sizeof(size);size.dwMask=CFM_SIZE;size.yHeight=rich_text_height();
+                SendMessageW(item,EM_SETCHARFORMAT,SCF_ALL,reinterpret_cast<LPARAM>(&size));
+                SendMessageW(item,EM_SETCHARFORMAT,SCF_DEFAULT,reinterpret_cast<LPARAM>(&size));
+                if(!set_rich_text_zoom(item,reading_scale))throw std::runtime_error("Cannot scale project history text");
+            }
+        }
+    }
+    void refresh_font(){const auto next=CreateFontW(-curricular_text_pixels(window,reading_scale),0,0,0,FW_NORMAL,FALSE,FALSE,FALSE,DEFAULT_CHARSET,OUT_DEFAULT_PRECIS,CLIP_DEFAULT_PRECIS,CLEARTYPE_QUALITY,DEFAULT_PITCH,L"Roboto");
         if(!next)throw std::runtime_error("Cannot create project dialog font");const auto previous=font;font=next;
         for(auto item=GetWindow(window,GW_CHILD);item;item=GetWindow(item,GW_HWNDNEXT))SendMessageW(item,WM_SETFONT,reinterpret_cast<WPARAM>(font),FALSE);
-        for(const auto item:{heading,body})if(item&&GetDlgCtrlID(item)!=505){CHARFORMAT2W format{};format.cbSize=sizeof(format);format.dwMask=CFM_SIZE;format.yHeight=15*14;SendMessageW(item,EM_SETCHARFORMAT,SCF_ALL,reinterpret_cast<LPARAM>(&format));}
+        apply_reading_scale();
         if(previous)DeleteObject(previous);
     }
     HWND control(const wchar_t* type,std::string_view value,DWORD style,int id){const auto text=wide(value);auto result=CreateWindowExW(0,type,text.c_str(),WS_CHILD|WS_VISIBLE|style,0,0,1,1,window,reinterpret_cast<HMENU>(static_cast<INT_PTR>(id)),GetModuleHandleW(nullptr),nullptr);
@@ -99,7 +112,9 @@ struct Dialog {
         refresh_font();
         close=control(L"BUTTON",close_text,WS_TABSTOP|BS_PUSHBUTTON,IDCANCEL);if(!primary_text.empty())primary=control(L"BUTTON",primary_text,WS_TABSTOP|BS_PUSHBUTTON,IDOK);
     }
-    void run(){layout_internal_windows(GetAncestor(owner,GA_ROOT));layout();
+    void run(){
+        apply_reading_scale();
+        layout_internal_windows(GetAncestor(owner,GA_ROOT));layout();
         ShowWindow(window,SW_SHOW);SetFocus(input?input:body?body:close);if(initialize)initialize();MSG message{};
         while(window&&IsWindow(window)){const auto result=GetMessageW(&message,nullptr,0,0);if(result<=0){if(result==0)PostQuitMessage(static_cast<int>(message.wParam));if(window)DestroyWindow(window);break;}
             if(dispatch_window_fullscreen_key(GetAncestor(window,GA_ROOT),message))continue;
@@ -171,8 +186,8 @@ struct CppProjectView::Impl {
     }
     void set_text_scale(int value){const auto previous=switching;switching=true;
         struct RestoreSwitch{bool& flag;bool value;~RestoreSwitch(){flag=value;}} restore{switching,previous};
-        scale=std::clamp(value,50,300);const auto next=CreateFontW(-px(MulDiv(14,scale,100)),0,0,0,FW_NORMAL,FALSE,FALSE,FALSE,DEFAULT_CHARSET,OUT_DEFAULT_PRECIS,CLIP_DEFAULT_PRECIS,CLEARTYPE_QUALITY,DEFAULT_PITCH,L"Roboto");if(next){const auto old=font;font=next;for(const auto item:tabs)SendMessageW(item,WM_SETFONT,reinterpret_cast<WPARAM>(font),TRUE);for(const auto item:{include_source,create_file,delete_file,history_button,configure,build})if(item)SendMessageW(item,WM_SETFONT,reinterpret_cast<WPARAM>(font),TRUE);if(old)DeleteObject(old);}
-        const auto form=CreateFontW(-px(MulDiv(18,scale,100)),0,0,0,FW_NORMAL,FALSE,FALSE,FALSE,DEFAULT_CHARSET,OUT_DEFAULT_PRECIS,CLIP_DEFAULT_PRECIS,CLEARTYPE_QUALITY,DEFAULT_PITCH,L"Roboto");if(form){const auto old=form_font;form_font=form;for(const auto item:{target,options,build_type})if(item)SendMessageW(item,WM_SETFONT,reinterpret_cast<WPARAM>(form_font),TRUE);for(const auto item:config_labels)if(item)SendMessageW(item,WM_SETFONT,reinterpret_cast<WPARAM>(form_font),TRUE);if(old)DeleteObject(old);}}
+        scale=std::clamp(value,50,300);const auto next=CreateFontW(-curricular_text_pixels(host,scale),0,0,0,FW_NORMAL,FALSE,FALSE,FALSE,DEFAULT_CHARSET,OUT_DEFAULT_PRECIS,CLIP_DEFAULT_PRECIS,CLEARTYPE_QUALITY,DEFAULT_PITCH,L"Roboto");if(next){const auto old=font;font=next;for(const auto item:tabs)SendMessageW(item,WM_SETFONT,reinterpret_cast<WPARAM>(font),TRUE);for(const auto item:{include_source,create_file,delete_file,history_button,configure,build})if(item)SendMessageW(item,WM_SETFONT,reinterpret_cast<WPARAM>(font),TRUE);if(old)DeleteObject(old);}
+        const auto form=CreateFontW(-curricular_text_pixels(host,scale),0,0,0,FW_NORMAL,FALSE,FALSE,FALSE,DEFAULT_CHARSET,OUT_DEFAULT_PRECIS,CLIP_DEFAULT_PRECIS,CLEARTYPE_QUALITY,DEFAULT_PITCH,L"Roboto");if(form){const auto old=form_font;form_font=form;for(const auto item:{target,options,build_type})if(item)SendMessageW(item,WM_SETFONT,reinterpret_cast<WPARAM>(form_font),TRUE);for(const auto item:config_labels)if(item)SendMessageW(item,WM_SETFONT,reinterpret_cast<WPARAM>(form_font),TRUE);if(old)DeleteObject(old);}}
     int label_height(HWND item,int width)const{const auto dc=GetDC(item);const auto previous=SelectObject(dc,form_font);const auto text=native_text(item);RECT measured{0,0,std::max(1,width),0};DrawTextW(dc,text.c_str(),static_cast<int>(text.size()),&measured,DT_CALCRECT|DT_WORDBREAK|DT_NOPREFIX);SelectObject(dc,previous);ReleaseDC(item,dc);return std::max(px(MulDiv(26,scale,100)),static_cast<int>(measured.bottom)+px(4));}
     int tab_width(std::size_t index)const{const auto dc=GetDC(host);const auto previous=SelectObject(dc,font);SIZE extent{};const auto text=wide(files[index].first==selected?"["+files[index].first+"]":files[index].first);GetTextExtentPoint32W(dc,text.c_str(),static_cast<int>(text.size()),&extent);SelectObject(dc,previous);ReleaseDC(host,dc);return std::max(px(72),static_cast<int>(extent.cx)+px(28));}
     int action_width(HWND item)const{const auto dc=GetDC(item);const auto previous=SelectObject(dc,font);SIZE extent{};const auto caption=native_text(item);GetTextExtentPoint32W(dc,caption.c_str(),static_cast<int>(caption.size()),&extent);SelectObject(dc,previous);ReleaseDC(item,dc);return std::max(px(64),static_cast<int>(extent.cx)+px(32));}
@@ -226,17 +241,17 @@ struct CppProjectView::Impl {
         catch(const winrt::hresult_error& failure){internal_message_box(window,failure.message().c_str(),L"C++",MB_OK|MB_ICONERROR);}return DefWindowProcW(window,message,wp,lp);
     }
 };
-void CppProjectView::Impl::add_file(){const auto life=alive;Dialog dialog;dialog.title=ui("Crear archivo","Create file","Créer un fichier");dialog.close_text=ui("Cancelar","Cancel","Annuler");dialog.primary_text=ui("Aceptar","OK","OK");dialog.create(host,dialogs);
+void CppProjectView::Impl::add_file(){const auto life=alive;Dialog dialog;dialog.reading_scale=scale;dialog.title=ui("Crear archivo","Create file","Créer un fichier");dialog.close_text=ui("Cancelar","Cancel","Annuler");dialog.primary_text=ui("Aceptar","OK","OK");dialog.create(host,dialogs);
     dialog.input=dialog.control(MSFTEDIT_CLASS,"",ES_AUTOHSCROLL|WS_TABSTOP,501);set_edit_hint(dialog.input,"archivo.cpp");dialog.error=dialog.control(L"STATIC","",0,502);reader_theme::set_text_color(dialog.error,RGB(244,100,100));
     dialog.accept=[&,life]{if(!*life)return true;try{capture();const auto path=edit_text(dialog.input);curriculum::validate_cpp_project_path(path);auto candidate=files;candidate.emplace_back(path,"");curriculum::validate_cpp_project_files(candidate);files=std::move(candidate);indentation[path]=state::make_indentation_metadata("",{});if(curriculum::is_cpp_source_file(path))sources.push_back(path);selected=path;show_selected();notify(true);return true;}catch(const std::exception&){SetWindowTextW(dialog.error,wide(ui("Usa un nombre único y una ruta relativa dentro del proyecto.","Use a unique name and a relative path inside the project.","Utilisez un nom unique et un chemin relatif dans le projet.")).c_str());return false;}};dialog.run();}
 void CppProjectView::Impl::open_history(){
     const auto life=alive;capture();
-    Dialog root;root.title=ui("Historial","History","Historique");root.close_text=ui("Cerrar","Close","Fermer");
+    Dialog root;root.reading_scale=scale;root.title=ui("Historial","History","Historique");root.close_text=ui("Cerrar","Close","Fermer");
     root.primary_text=ui("Registrar revisión","Record revision","Enregistrer une révision");root.create(host,dialogs);
     root.heading=root.control(MSFTEDIT_CLASS,"",ES_MULTILINE|ES_READONLY,504);
     root.body=create_card_list(root.window,505,card_activated);SendMessageW(root.body,WM_SETFONT,reinterpret_cast<WPARAM>(root.font),TRUE);
     std::vector<windows::CppHistorySummary> revisions;
-    const auto heading_style=[](HWND item){CHARFORMAT2W style{};style.cbSize=sizeof(style);style.dwMask=CFM_SIZE;style.yHeight=15*14;
+    const auto heading_style=[](HWND item){CHARFORMAT2W style{};style.cbSize=sizeof(style);style.dwMask=CFM_SIZE;style.yHeight=rich_text_height();
         SendMessageW(item,EM_SETSEL,0,-1);SendMessageW(item,EM_SETCHARFORMAT,SCF_SELECTION,reinterpret_cast<LPARAM>(&style));SendMessageW(item,EM_SETSEL,0,0);};
     const auto refresh=[&]{
         if(!*life)return;
@@ -260,7 +275,7 @@ void CppProjectView::Impl::open_history(){
     };
     root.accept=[&,life]{
         if(!*life)return true;
-        Dialog prompt;prompt.title=root.primary_text;prompt.close_text=ui("Cancelar","Cancel","Annuler");prompt.primary_text=root.primary_text;
+        Dialog prompt;prompt.reading_scale=scale;prompt.title=root.primary_text;prompt.close_text=ui("Cancelar","Cancel","Annuler");prompt.primary_text=root.primary_text;
         prompt.create(root.window,dialogs);prompt.input=prompt.control(MSFTEDIT_CLASS,"",ES_AUTOHSCROLL|WS_TABSTOP,501);
         set_edit_hint(prompt.input,ui("Describe esta revisión","Describe this revision","Décrivez cette révision"));
         prompt.error=prompt.control(L"STATIC","",0,502);reader_theme::set_text_color(prompt.error,RGB(244,100,100));
@@ -288,7 +303,7 @@ void CppProjectView::Impl::open_history(){
             auto revision=history_copy.load(id);auto statuses=history_copy.statuses(current,revision);
             return [&,life,revision=std::move(revision),statuses=std::move(statuses)]{
                 if(!*life)return;
-                Dialog choices;choices.title=ui("Archivos de la revisión","Revision files","Fichiers de la révision");choices.close_text=root.close_text;
+                Dialog choices;choices.reading_scale=scale;choices.title=ui("Archivos de la revisión","Revision files","Fichiers de la révision");choices.close_text=root.close_text;
                 choices.create(root.window,dialogs);choices.heading=choices.control(MSFTEDIT_CLASS,"",ES_MULTILINE|ES_READONLY,504);
                 set_rich_text(choices.heading,revision.label+" · "+revision.id.substr(0,12)+"\n"+ui("Estado del borrador respecto a esta revisión:",
                     "Draft status relative to this revision:","État du brouillon par rapport à cette révision :"),{},false,RichTextRole::body,language);heading_style(choices.heading);
@@ -315,14 +330,14 @@ void CppProjectView::Impl::open_history(){
                             text+='\n';if(line.ending.empty())text+=translate("(Sin salto de línea final)\n","(No final newline)\n","(Pas de saut de ligne final)\n");}
                         return [&,life,status,revision,text=std::move(text),evidence=verified.evidence]{
                             if(!*life)return;
-                            Dialog comparison;comparison.title=status.path;comparison.close_text=root.close_text;
+                            Dialog comparison;comparison.reading_scale=scale;comparison.title=status.path;comparison.close_text=root.close_text;
                             comparison.primary_text=status.change==windows::CppHistoryChange::added
                                 ?ui("Quitar este archivo del borrador","Remove this file from the draft","Retirer ce fichier du brouillon")
                                 :ui("Recuperar este archivo","Recover this file","Récupérer ce fichier");
                             comparison.create(choices.window,dialogs);comparison.body=comparison.control(MSFTEDIT_CLASS,"",ES_MULTILINE|ES_READONLY|WS_VSCROLL|WS_HSCROLL|ES_AUTOHSCROLL|WS_TABSTOP,506);
                             SendMessageW(comparison.body,EM_EXLIMITTEXT,0,64*1024*1024);
                             set_rich_text(comparison.body,text,{},true);
-                            CHARFORMAT2W format{};format.cbSize=sizeof(format);format.dwMask=CFM_SIZE|CFM_COLOR;format.yHeight=15*14;format.crTextColor=RGB(225,225,235);
+                            CHARFORMAT2W format{};format.cbSize=sizeof(format);format.dwMask=CFM_SIZE|CFM_COLOR;format.yHeight=rich_text_height();format.crTextColor=RGB(225,225,235);
                             SendMessageW(comparison.body,EM_SETSEL,0,-1);SendMessageW(comparison.body,EM_SETCHARFORMAT,SCF_SELECTION,reinterpret_cast<LPARAM>(&format));
                             SendMessageW(comparison.body,EM_SETSEL,0,0);SendMessageW(comparison.body,EM_SETBKGNDCOLOR,0,RGB(31,35,48));SendMessageW(comparison.body,EM_SETTARGETDEVICE,0,1);
                             EnableWindow(comparison.primary,status.change!=windows::CppHistoryChange::unchanged);
