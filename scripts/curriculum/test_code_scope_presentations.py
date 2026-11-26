@@ -56,31 +56,99 @@ def published_bytes(commit, expected_blob):
     return raw
 
 
-def later_publication_bytes():
-    """Read actual descendant lesson publications before the working tree.
-
-    Do not synthesize an intermediate block or silently accept a skipped
-    addition. Git's path history can contain merges; require each selected
-    publication to descend from the preceding one. A divergent chain needs
-    an explicitly authenticated path, not a timestamp-based ordering.
-    """
-    previous, previous_blob = PUBLICATIONS[-1]
-    subprocess.run(["git", "merge-base", "--is-ancestor", previous, "HEAD"],
-                   cwd=ROOT, check=True)
-    commits = subprocess.check_output(
-        ["git", "log", "--full-history", "--ancestry-path", "--topo-order",
-         "--reverse", "--format=%H", previous + "..HEAD", "--", LESSON],
-        cwd=ROOT, text=True).splitlines()
-    for commit in commits:
-        blob = subprocess.check_output(
-            ["git", "rev-parse", commit + ":" + LESSON],
-            cwd=ROOT, text=True).strip()
-        if blob == previous_blob:
+def _has_publication_path(before, after, edges):
+    """Only follow real earlier blob transitions inherited from Git parents."""
+    pending, seen = [before], set()
+    while pending:
+        node = pending.pop()
+        if node == after:
+            return True
+        if node in seen:
             continue
-        subprocess.run(["git", "merge-base", "--is-ancestor", previous, commit],
-                       cwd=ROOT, check=True)
-        yield published_bytes(commit, blob)
-        previous, previous_blob = commit, blob
+        seen.add(node)
+        pending.extend(target for source, target in edges if source == node)
+    return False
+
+
+def publication_edges(rows, blobs, base, head):
+    """Return actual parent/child transitions, not a linearized merge log.
+
+    A merge carrying one parent's unchanged blob may also have a stale
+    parent. Skip that redundant edge only if the intermediate transitions
+    are inherited from the actual parents and will themselves be checked.
+    A new merge resolution, a divergent publication or a genuine reversion
+    still requires its own direct transition. Equal blobs alone do not
+    permit skipping a changed single-parent commit.
+    """
+    proofs = {base: frozenset()}
+    revisions = {row[0] for row in rows}
+    checks = []
+    for commit, *parents in rows:
+        direct = [parent for parent in parents if parent in proofs]
+        if not direct:
+            continue
+        if any(parent in revisions and parent not in proofs for parent in parents):
+            raise AssertionError("A divergent history predates the authenticated publication")
+        inherited = frozenset().union(*(proofs[parent] for parent in direct))
+        current = blobs[commit]
+        carried = any(blobs[parent] == current for parent in direct)
+        added = set()
+        for parent in direct:
+            before = blobs[parent]
+            edge = (before, current)
+            if before == current or edge in added:
+                continue
+            if carried and _has_publication_path(before, current, inherited):
+                continue
+            checks.append((parent, commit))
+            added.add(edge)
+        proofs[commit] = inherited | added
+    if head not in proofs:
+        raise AssertionError("The current lesson is not descended from its authenticated publication")
+    return checks
+
+
+def later_publication_documents():
+    """Read authentic Git parent edges and the published HEAD independently."""
+    base, expected = PUBLICATIONS[-1]
+    head = subprocess.check_output(
+        ["git", "rev-parse", "HEAD"], cwd=ROOT, text=True).strip()
+    subprocess.run(["git", "merge-base", "--is-ancestor", base, head],
+                   cwd=ROOT, check=True)
+    # No path simplification: the real parent graph is needed to distinguish
+    # reciprocal merges from actual changes to the lesson. A path-filtered
+    # full-history log can interleave old blobs after newer publications.
+    rows = [line.split() for line in subprocess.check_output(
+        ["git", "rev-list", "--topo-order", "--reverse", "--parents",
+         base + ".." + head], cwd=ROOT, text=True).splitlines()]
+    revisions = [base, *(row[0] for row in rows)]
+    # Query all immutable blob identities in one process, without using the
+    # mutable working tree or exceeding the Windows command-line limit.
+    objects = subprocess.check_output(
+        ["git", "cat-file", "--batch-check=%(objectname) %(objecttype)"],
+        input="".join(commit + ":" + LESSON + "\n" for commit in revisions),
+        cwd=ROOT, text=True).splitlines()
+    if len(objects) != len(revisions):
+        raise AssertionError("Incomplete Git publication identity response")
+    blobs = {}
+    for commit, line in zip(revisions, objects):
+        fields = line.split()
+        if (len(fields) != 2 or fields[1] != "blob" or len(fields[0]) != 40
+                or any(char not in "0123456789abcdef" for char in fields[0])):
+            raise AssertionError("Missing or invalid historical lesson blob: " + commit)
+        blobs[commit] = fields[0]
+    if blobs[base] != expected:
+        raise AssertionError("The pinned lesson origin has changed")
+    cache = {}
+
+    def read(commit):
+        blob = blobs[commit]
+        if blob not in cache:
+            cache[blob] = json.loads(published_bytes(commit, blob))
+        return cache[blob]
+
+    edges = publication_edges(rows, blobs, base, head)
+    return [(read(parent), read(commit)) for parent, commit in edges], read(head)
 
 
 class CodeScopePresentationTest(unittest.TestCase):
@@ -91,7 +159,7 @@ class CodeScopePresentationTest(unittest.TestCase):
         cls.before, cls.presented, cls.explained = cls.publications[:3]
         cls.current = json.loads((ROOT / LESSON).read_text(encoding="utf-8"))
         cls.prompt_reviewed = cls.publications[4]
-        cls.later_publications = [json.loads(raw) for raw in later_publication_bytes()]
+        cls.later_edges, cls.published_head = later_publication_documents()
 
     @staticmethod
     def flatten(node):
@@ -112,12 +180,13 @@ class CodeScopePresentationTest(unittest.TestCase):
         # An explanation added after the overlay may itself be revised later.
         # Its real first publication is the base of that later editorial edge;
         # the final document alone must not invent an intermediate history.
-        chain = (*self.publications, *self.later_publications, self.current)
-        original = deepcopy(chain)
-        for index, (previous, current) in enumerate(zip(chain, chain[1:]), start=1):
+        edges = [*zip(self.publications, self.publications[1:]),
+                 *self.later_edges, (self.published_head, self.current)]
+        original = deepcopy(edges)
+        for index, (previous, current) in enumerate(edges, start=1):
             with self.subTest(publication_edge=index):
                 layout.validate_publication_transition(previous, current)
-        self.assertEqual(chain, original)
+        self.assertEqual(edges, original)
         blocks = layout._blocks(self.current)
         resolved = scopes.validate(self.current, blocks=blocks)
         tree = resolved[(OWNER, 0)]
@@ -137,6 +206,44 @@ class CodeScopePresentationTest(unittest.TestCase):
             self.current, OWNER, blocks[OWNER]), layout._blocks(self.before)[OWNER])
         entry = next(x for x in self.current["stateLayout"]["additions"] if x["id"] == OWNER)
         self.assertEqual(entry["storage"], {"page": 7, "block": 30})
+
+    def test_reciprocal_merges_keep_only_real_publication_edges(self):
+        # Topology-only unit regression for Work/Codex's reciprocal merges.
+        # The real lesson bytes are independently checked by the history test.
+        rows = [("technical", "base"), ("one", "base"),
+                ("work-merge", "one", "technical"), ("two", "work-merge"),
+                ("codex-merge", "technical", "one"),
+                ("codex-next", "codex-merge", "two"),
+                ("work-next", "two", "codex-merge"),
+                ("joined", "work-next", "codex-next"), ("three", "joined")]
+        blobs = dict(zip(("base", *(row[0] for row in rows)),
+                         ("A", "A", "B", "B", "C", "B", "C", "C", "C", "D")))
+        self.assertEqual(publication_edges(rows, blobs, "base", "three"),
+                         [("base", "one"), ("work-merge", "two"), ("joined", "three")])
+        # Moving the independent earlier merge ahead of the newer publication
+        # changes the linear log order, but not the actual provenance.
+        rows[3], rows[4] = rows[4], rows[3]
+        self.assertEqual(publication_edges(rows, blobs, "base", "three"),
+                         [("base", "one"), ("work-merge", "two"), ("joined", "three")])
+
+    def test_divergent_merge_and_reversion_still_require_validation(self):
+        rows = [("left", "base"), ("right", "base"),
+                ("merge", "left", "right"), ("revert", "merge")]
+        blobs = {"base": "A", "left": "B", "right": "C",
+                 "merge": "B", "revert": "A"}
+        self.assertEqual(publication_edges(rows, blobs, "base", "revert"),
+                         [("base", "left"), ("base", "right"),
+                          ("right", "merge"), ("merge", "revert")])
+        blobs["merge"] = "D"
+        self.assertEqual(publication_edges(rows, blobs, "base", "revert"),
+                         [("base", "left"), ("base", "right"),
+                          ("left", "merge"), ("right", "merge"), ("merge", "revert")])
+
+    def test_history_cannot_use_an_unanchored_side_branch(self):
+        rows = [("side", "older"), ("merge", "base", "side")]
+        with self.assertRaisesRegex(AssertionError, "predates"):
+            publication_edges(rows, {"base": "A", "side": "B", "merge": "B"},
+                              "base", "merge")
 
     def test_publication_bytes_cannot_be_changed_or_substituted(self):
         payloads = [published_bytes(*publication) for publication in PUBLICATIONS]
