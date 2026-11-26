@@ -7,6 +7,7 @@ import json
 import unittest
 
 import stable_state_layout as state
+from published_adoption_fixtures import before_adoption, assert_live_owner_addresses
 
 ROOT = Path(__file__).resolve().parents[2]
 LESSON = ROOT / (
@@ -16,7 +17,7 @@ LESSON = ROOT / (
 
 
 def original() -> dict:
-    return json.loads(LESSON.read_text(encoding="utf-8"))
+    return before_adoption(LESSON)
 
 
 def declaration() -> list[dict]:
@@ -166,7 +167,7 @@ FIRST_LESSON = ROOT / (
 
 class FirstProjectGraphChecksTest(unittest.TestCase):
     def setUp(self) -> None:
-        self.before = json.loads(FIRST_LESSON.read_text(encoding="utf-8"))
+        self.before = before_adoption(FIRST_LESSON)
         self.after = deepcopy(self.before)
         self.after["compilerCmakeGraphChecks"] = [{
             "activity": "block_0009_0003",
@@ -267,7 +268,7 @@ OPTION_LESSON = ROOT / (
 
 class OriginalCmakeOptionSelectionTest(unittest.TestCase):
     def setUp(self) -> None:
-        self.before = json.loads(OPTION_LESSON.read_text(encoding="utf-8"))
+        self.before = before_adoption(OPTION_LESSON)
         self.after = deepcopy(self.before)
         self.after["compilerCmakeGraphChecks"] = [{
             "activity": "block_0011_0003",
@@ -337,7 +338,7 @@ INCLUDE_LESSON = ROOT / (
 
 class OriginalCmakeIncludeScopeTest(unittest.TestCase):
     def setUp(self) -> None:
-        self.before = json.loads(INCLUDE_LESSON.read_text(encoding="utf-8"))
+        self.before = before_adoption(INCLUDE_LESSON)
         self.after = deepcopy(self.before)
         owners = [
             ("block_0004_0002", False, False),
@@ -463,7 +464,7 @@ REORGANIZE_LESSON = ROOT / (
 
 class OriginalCmakeSubdirectoryTest(unittest.TestCase):
     def setUp(self) -> None:
-        self.before = json.loads(REORGANIZE_LESSON.read_text(encoding="utf-8"))
+        self.before = before_adoption(REORGANIZE_LESSON)
         self.after = deepcopy(self.before)
         self.after["compilerCmakeGraphChecks"] = [
             {
@@ -598,7 +599,7 @@ TARGET_LIST_LESSON = ROOT / (
 
 class OriginalCmakeTargetListTest(unittest.TestCase):
     def setUp(self) -> None:
-        self.before = json.loads(TARGET_LIST_LESSON.read_text(encoding="utf-8"))
+        self.before = before_adoption(TARGET_LIST_LESSON)
         self.after = deepcopy(self.before)
         owners = [
             ("block_0003_0004", False, False),
@@ -1188,6 +1189,22 @@ class CmakeInitialObservationTest(unittest.TestCase):
             with self.assertRaises(state.LayoutError):
                 initial_observation_fixture(wrong, case)
             self.assertEqual(wrong, preserved)
+
+
+class PublishedGraphAdoptionTest(unittest.TestCase):
+    def test_active_lessons_keep_original_graph_owner_addresses(self):
+        for path, owners in (
+            (LESSON, ("block_0004_0004", "block_0008_0003")),
+            (FIRST_LESSON, ("block_0009_0003",)),
+            (OPTION_LESSON, ("block_0011_0003",)),
+            (INCLUDE_LESSON, ("block_0004_0002", "block_0007_0008",
+                              "block_0007_0011", "block_0009_0004")),
+            (REORGANIZE_LESSON, ("block_0003_0004", "block_0006_0003",
+                                  "block_0008_0003")),
+            (TARGET_LIST_LESSON, ("block_0003_0004", "block_0004_0007",
+                                  "block_0006_0004", "block_0008_0004")),
+        ):
+            assert_live_owner_addresses(self, path, owners)
 
 
 if __name__ == "__main__":

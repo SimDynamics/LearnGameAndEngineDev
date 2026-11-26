@@ -9,6 +9,7 @@ from pathlib import Path
 import unittest
 
 import stable_state_layout as state
+from published_adoption_fixtures import before_adoption, assert_live_owner_addresses
 
 ROOT=Path(__file__).resolve().parents[2]
 LESSON=ROOT / ("app/src/main/assets/content/es/programming/"
@@ -29,7 +30,7 @@ SPEC={
 
 
 def original():
-    return json.loads(LESSON.read_text(encoding="utf-8"))
+    return before_adoption(LESSON)
 
 
 def revised():
@@ -40,6 +41,13 @@ def revised():
 
 
 class IndexedUniqueTransferAuthoring(unittest.TestCase):
+    def test_live_owner_validates_independently_of_historical_adoption(self):
+        current = assert_live_owner_addresses(self, LESSON, (OWNER,))
+        records = [item for item in current.get("compilerIndexedUniqueTransferChecks", [])
+                   if item["activity"] == OWNER]
+        if records:
+            self.assertEqual(records, [SPEC])
+
     def test_actual_published_owner_is_provable_without_rewriting_it(self):
         before,after=revised()
         original_copy=deepcopy(before)

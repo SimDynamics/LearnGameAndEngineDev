@@ -7,6 +7,7 @@ from pathlib import Path
 import unittest
 
 import stable_state_layout as state
+from published_adoption_fixtures import before_adoption, assert_live_owner_addresses
 
 ROOT = Path(__file__).resolve().parents[2]
 PATH = ROOT / ("app/src/main/assets/content/es/programming/programming_practice_tools/"
@@ -21,7 +22,7 @@ CASES = (
 
 
 def published() -> dict:
-    return json.loads(PATH.read_text(encoding="utf-8"))
+    return before_adoption(PATH)
 
 
 def authorized(before: dict) -> dict:
@@ -63,6 +64,10 @@ def boolean_authorized(before: dict) -> dict:
 
 
 class OpenBatteryRootContractTest(unittest.TestCase):
+    def test_active_lessons_validate_without_replacing_adopted_contracts(self):
+        assert_live_owner_addresses(self, PATH, (OWNER, ADJUSTMENT_OWNER))
+        assert_live_owner_addresses(self, BOOLEAN_PATH, BOOLEAN_OWNERS)
+
     def test_real_root_addition_preserves_all_historical_content(self):
         before = published()
         after = authorized(before)
@@ -172,8 +177,8 @@ class OpenBatteryRootContractTest(unittest.TestCase):
 class BooleanBatteryRootContractTest(unittest.TestCase):
     @classmethod
     def setUpClass(cls):
-        cls.original_bytes = BOOLEAN_PATH.read_bytes()
-        cls.original = json.loads(cls.original_bytes)
+        cls.live_bytes = BOOLEAN_PATH.read_bytes()
+        cls.original = before_adoption(BOOLEAN_PATH)
 
     def declared(self):
         return boolean_authorized(self.original)
@@ -193,7 +198,7 @@ class BooleanBatteryRootContractTest(unittest.TestCase):
         self.assertEqual([len(item["cases"]) for item in after["compilerOpenBatteryChecks"]], [3, 6])
         self.assertEqual([item["publishedResult"] for item in after["compilerOpenBatteryChecks"]],
                          ["failure", "success"])
-        self.assertEqual(self.original_bytes, BOOLEAN_PATH.read_bytes())
+        self.assertEqual(self.live_bytes, BOOLEAN_PATH.read_bytes())
 
     def test_new_owners_append_but_existing_requirements_stay_literal(self):
         first = self.declared()
@@ -393,8 +398,8 @@ def adjustment_authorized(before: dict) -> dict:
 class AdjustmentProjectRootContractTest(unittest.TestCase):
     @classmethod
     def setUpClass(cls):
-        cls.original_bytes = PATH.read_bytes()
-        cls.original = json.loads(cls.original_bytes)
+        cls.live_bytes = PATH.read_bytes()
+        cls.original = before_adoption(PATH)
 
     def declared(self):
         return adjustment_authorized(self.original)
@@ -414,7 +419,7 @@ class AdjustmentProjectRootContractTest(unittest.TestCase):
         self.assertEqual(next(file["initialCode"] for file in owner["projectFiles"]
                               if file["path"] == "CMakeLists.txt"), "")
         self.assertNotIn("outputCheck", owner)
-        self.assertEqual(self.original_bytes, PATH.read_bytes())
+        self.assertEqual(self.live_bytes, PATH.read_bytes())
 
     def test_construction_appends_without_weakening_the_existing_extension(self):
         before = authorized(self.original)
