@@ -225,6 +225,10 @@
           "text": "Conserva las fuentes y la elección explícita OFF de este editor. Pulsa «Configurar y generar» para preparar la selección; después utiliza «Compilar, ejecutar y comprobar» con revisar como objetivo.\n\nLa segunda acción construye y ejecuta la revisión actual. Contrasta la salida con la predicción de la política estricta. La versión inclusiva tendrá su propia actividad, con los mismos datos, para que puedas comparar las dos elecciones sin sustituir este borrador."
         },
         {
+          "type": "paragraph",
+          "text": "Escribe 6 6 en Entrada para comprobar la igualdad. Ese dato es para el ejecutable. La selección de política se hace con las opciones de CMake que indica la actividad. Con Entrada vacía, los ejecutables reproducen las tres llamadas de la predicción."
+        },
+        {
           "type": "cpp_compiler",
           "language": "cpp",
           "initialCode": "",
@@ -247,7 +251,7 @@
             },
             {
               "path": "main.cpp",
-              "initialCode": "#include \"regla.h\"\n#include <iostream>\n\nint main() {\n    std::cout << admitir(6, 6) << ':'\n              << admitir(9, 6) << ':'\n              << admitir(4, 6);\n    return 0;\n}\n"
+              "initialCode": "#include \"regla.h\"\n#include <iostream>\n\nint main() {\n    std::cin >> std::ws;\n    if (!std::cin.eof()) {\n        int puntos{};\n        int minimo{};\n        if (!(std::cin >> puntos >> minimo)) {\n            return 1;\n        }\n\n        std::cout << admitir(puntos, minimo);\n        return 0;\n    }\n\n    std::cout << admitir(6, 6) << ':'\n              << admitir(9, 6) << ':'\n              << admitir(4, 6);\n    return 0;\n}\n"
             }
           ],
           "cmake": {
@@ -260,6 +264,27 @@
           "outputCheck": {
             "inputComparison": "exact",
             "cases": [
+              {
+                "standardInput": "6 6",
+                "outputs": [
+                  "0"
+                ],
+                "explanation": "La política estricta rechaza cuando los puntos igualan el mínimo."
+              },
+              {
+                "standardInput": "9 6",
+                "outputs": [
+                  "1"
+                ],
+                "explanation": "Nueve puntos superan el mínimo de seis y ambas políticas admiten."
+              },
+              {
+                "standardInput": "4 6",
+                "outputs": [
+                  "0"
+                ],
+                "explanation": "Cuatro puntos quedan por debajo del mínimo de seis y ambas políticas rechazan."
+              },
               {
                 "standardInput": "",
                 "outputs": [
@@ -329,6 +354,10 @@
           "text": "Este editor conserva las mismas fuentes y prepara `ACEPTAR_IGUAL=ON`. Configura, construye revisar y comprueba la salida de esta elección.\n\nMantén el cliente y sus llamadas. Trabaja con este proyecto independiente para conservar también el intento anterior con OFF."
         },
         {
+          "type": "paragraph",
+          "text": "Escribe 6 6 en Entrada para comprobar la igualdad. Ese dato es para el ejecutable. La selección de política se hace con las opciones de CMake que indica la actividad. Con Entrada vacía, los ejecutables reproducen las tres llamadas de la predicción."
+        },
+        {
           "type": "cpp_compiler",
           "language": "cpp",
           "initialCode": "",
@@ -351,7 +380,7 @@
             },
             {
               "path": "main.cpp",
-              "initialCode": "#include \"regla.h\"\n#include <iostream>\n\nint main() {\n    std::cout << admitir(6, 6) << ':'\n              << admitir(9, 6) << ':'\n              << admitir(4, 6);\n    return 0;\n}\n"
+              "initialCode": "#include \"regla.h\"\n#include <iostream>\n\nint main() {\n    std::cin >> std::ws;\n    if (!std::cin.eof()) {\n        int puntos{};\n        int minimo{};\n        if (!(std::cin >> puntos >> minimo)) {\n            return 1;\n        }\n\n        std::cout << admitir(puntos, minimo);\n        return 0;\n    }\n\n    std::cout << admitir(6, 6) << ':'\n              << admitir(9, 6) << ':'\n              << admitir(4, 6);\n    return 0;\n}\n"
             }
           ],
           "cmake": {
@@ -364,6 +393,27 @@
           "outputCheck": {
             "inputComparison": "exact",
             "cases": [
+              {
+                "standardInput": "6 6",
+                "outputs": [
+                  "1"
+                ],
+                "explanation": "La política inclusiva admite cuando los puntos igualan el mínimo."
+              },
+              {
+                "standardInput": "9 6",
+                "outputs": [
+                  "1"
+                ],
+                "explanation": "Nueve puntos superan el mínimo de seis y ambas políticas admiten."
+              },
+              {
+                "standardInput": "4 6",
+                "outputs": [
+                  "0"
+                ],
+                "explanation": "Cuatro puntos quedan por debajo del mínimo de seis y ambas políticas rechazan."
+              },
               {
                 "standardInput": "",
                 "outputs": [
@@ -462,6 +512,10 @@
           "text": "En este proyecto, «Opciones del proyecto» está vacío y option declara inicial ON. Configura con el perfil del editor, construye revisar y comprueba la implementación elegida para las mismas llamadas.\n\nEl campo no proporciona un valor que sustituya al inicial, y la configuración no reutiliza una caché anterior. Relaciona la salida con esas dos condiciones."
         },
         {
+          "type": "paragraph",
+          "text": "Escribe 6 6 en Entrada para comprobar la igualdad. Ese dato es para el ejecutable. La selección de política se hace con las opciones de CMake que indica la actividad. Con Entrada vacía, los ejecutables reproducen las tres llamadas de la predicción."
+        },
+        {
           "type": "cpp_compiler",
           "language": "cpp",
           "initialCode": "",
@@ -484,7 +538,7 @@
             },
             {
               "path": "main.cpp",
-              "initialCode": "#include \"regla.h\"\n#include <iostream>\n\nint main() {\n    std::cout << admitir(6, 6) << ':'\n              << admitir(9, 6) << ':'\n              << admitir(4, 6);\n    return 0;\n}\n"
+              "initialCode": "#include \"regla.h\"\n#include <iostream>\n\nint main() {\n    std::cin >> std::ws;\n    if (!std::cin.eof()) {\n        int puntos{};\n        int minimo{};\n        if (!(std::cin >> puntos >> minimo)) {\n            return 1;\n        }\n\n        std::cout << admitir(puntos, minimo);\n        return 0;\n    }\n\n    std::cout << admitir(6, 6) << ':'\n              << admitir(9, 6) << ':'\n              << admitir(4, 6);\n    return 0;\n}\n"
             }
           ],
           "cmake": {
@@ -495,6 +549,27 @@
           "outputCheck": {
             "inputComparison": "exact",
             "cases": [
+              {
+                "standardInput": "6 6",
+                "outputs": [
+                  "1"
+                ],
+                "explanation": "La política inclusiva admite cuando los puntos igualan el mínimo."
+              },
+              {
+                "standardInput": "9 6",
+                "outputs": [
+                  "1"
+                ],
+                "explanation": "Nueve puntos superan el mínimo de seis y ambas políticas admiten."
+              },
+              {
+                "standardInput": "4 6",
+                "outputs": [
+                  "0"
+                ],
+                "explanation": "Cuatro puntos quedan por debajo del mínimo de seis y ambas políticas rechazan."
+              },
               {
                 "standardInput": "",
                 "outputs": [
@@ -536,7 +611,7 @@
             },
             {
               "path": "main.cpp",
-              "initialCode": "#include \"regla.h\"\n#include <iostream>\n\nint main() {\n    std::cout << admitir(6, 6) << ':'\n              << admitir(9, 6) << ':'\n              << admitir(4, 6);\n    return 0;\n}\n"
+              "initialCode": "#include \"regla.h\"\n#include <iostream>\n\nint main() {\n    std::cin >> std::ws;\n    if (!std::cin.eof()) {\n        int puntos{};\n        int minimo{};\n        if (!(std::cin >> puntos >> minimo)) {\n            return 1;\n        }\n\n        std::cout << admitir(puntos, minimo);\n        return 0;\n    }\n\n    std::cout << admitir(6, 6) << ':'\n              << admitir(9, 6) << ':'\n              << admitir(4, 6);\n    return 0;\n}\n"
             }
           ],
           "cmake": {
@@ -547,6 +622,27 @@
           "outputCheck": {
             "inputComparison": "exact",
             "cases": [
+              {
+                "standardInput": "6 6",
+                "outputs": [
+                  "0"
+                ],
+                "explanation": "La política estricta rechaza cuando los puntos igualan el mínimo."
+              },
+              {
+                "standardInput": "9 6",
+                "outputs": [
+                  "1"
+                ],
+                "explanation": "Nueve puntos superan el mínimo de seis y ambas políticas admiten."
+              },
+              {
+                "standardInput": "4 6",
+                "outputs": [
+                  "0"
+                ],
+                "explanation": "Cuatro puntos quedan por debajo del mínimo de seis y ambas políticas rechazan."
+              },
               {
                 "standardInput": "",
                 "outputs": [
@@ -588,7 +684,7 @@
             },
             {
               "path": "main.cpp",
-              "initialCode": "#include \"regla.h\"\n#include <iostream>\n\nint main() {\n    std::cout << admitir(6, 6) << ':'\n              << admitir(9, 6) << ':'\n              << admitir(4, 6);\n    return 0;\n}\n"
+              "initialCode": "#include \"regla.h\"\n#include <iostream>\n\nint main() {\n    std::cin >> std::ws;\n    if (!std::cin.eof()) {\n        int puntos{};\n        int minimo{};\n        if (!(std::cin >> puntos >> minimo)) {\n            return 1;\n        }\n\n        std::cout << admitir(puntos, minimo);\n        return 0;\n    }\n\n    std::cout << admitir(6, 6) << ':'\n              << admitir(9, 6) << ':'\n              << admitir(4, 6);\n    return 0;\n}\n"
             }
           ],
           "cmake": {
@@ -601,6 +697,27 @@
           "outputCheck": {
             "inputComparison": "exact",
             "cases": [
+              {
+                "standardInput": "6 6",
+                "outputs": [
+                  "1"
+                ],
+                "explanation": "La política inclusiva admite cuando los puntos igualan el mínimo."
+              },
+              {
+                "standardInput": "9 6",
+                "outputs": [
+                  "1"
+                ],
+                "explanation": "Nueve puntos superan el mínimo de seis y ambas políticas admiten."
+              },
+              {
+                "standardInput": "4 6",
+                "outputs": [
+                  "0"
+                ],
+                "explanation": "Cuatro puntos quedan por debajo del mínimo de seis y ambas políticas rechazan."
+              },
               {
                 "standardInput": "",
                 "outputs": [
@@ -1010,6 +1127,10 @@
           "text": "Este proyecto independiente contiene la descripción completa y deja vacío el campo de opciones. Configura con el perfil del editor, construye cotizar y comprueba los precios de las mismas cantidades.\n\nCon la caché renovada y sin elección explícita, utiliza el inicial OFF de TARIFA_ESPECIAL. Mantén las fuentes para contrastar la tarifa normal con la especial ya observada."
         },
         {
+          "type": "paragraph",
+          "text": "Escribe 2 en Entrada para comprobar la tarifa que se aplica a dos unidades. Con Entrada vacía, el programa reproduce la salida de las tres llamadas."
+        },
+        {
           "type": "cpp_compiler",
           "language": "cpp",
           "initialCode": "",
@@ -1032,7 +1153,7 @@
             },
             {
               "path": "muestra.cpp",
-              "initialCode": "#include \"precio.h\"\n#include <iostream>\n\nint main() {\n    std::cout << precio(0) << ':'\n              << precio(2) << ':'\n              << precio(5);\n    return 0;\n}\n"
+              "initialCode": "#include \"precio.h\"\n#include <iostream>\n\nint main() {\n    std::cin >> std::ws;\n    if (!std::cin.eof()) {\n        int unidades{};\n        if (!(std::cin >> unidades)) {\n            return 1;\n        }\n\n        std::cout << precio(unidades);\n        return 0;\n    }\n\n    std::cout << precio(0) << ':'\n              << precio(2) << ':'\n              << precio(5);\n    return 0;\n}\n"
             }
           ],
           "cmake": {
@@ -1043,6 +1164,27 @@
           "outputCheck": {
             "inputComparison": "exact",
             "cases": [
+              {
+                "standardInput": "2",
+                "outputs": [
+                  "6"
+                ],
+                "explanation": "Con la tarifa normal, dos unidades cuestan seis."
+              },
+              {
+                "standardInput": "0",
+                "outputs": [
+                  "0"
+                ],
+                "explanation": "Con cero unidades, el total es cero."
+              },
+              {
+                "standardInput": "5",
+                "outputs": [
+                  "15"
+                ],
+                "explanation": "Con la tarifa normal, cinco unidades cuestan quince."
+              },
               {
                 "standardInput": "",
                 "outputs": [
@@ -1646,6 +1788,7 @@
           "block_0004_0000",
           "block_0004_0001",
           "block_0004_0002",
+          "opcion_off_ensayos_de_entrada",
           "block_0004_0003",
           "block_0004_0004"
         ]
@@ -1660,6 +1803,7 @@
           "block_0005_0004",
           "block_0005_0005",
           "block_0005_0006",
+          "opcion_on_ensayos_de_entrada",
           "block_0005_0007"
         ]
       },
@@ -1684,6 +1828,7 @@
           "block_0007_0004",
           "block_0007_0005",
           "block_0007_0006",
+          "opcion_configuracion_limpia_ensayos_de_entrada",
           "block_0007_0007",
           "block_0007_0008",
           "block_0007_0009",
@@ -1750,6 +1895,7 @@
           "block_0012_0004",
           "block_0012_0005",
           "block_0012_0006",
+          "tarifa_normal_ensayos_de_entrada",
           "block_0012_0007"
         ]
       },
@@ -3023,7 +3169,44 @@
         ]
       }
     },
-    "additions": [],
+    "additions": [
+      {
+        "id": "opcion_off_ensayos_de_entrada",
+        "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5",
+        "storage": {
+          "page": 900000,
+          "block": 0
+        },
+        "progressPage": "page_0004"
+      },
+      {
+        "id": "opcion_on_ensayos_de_entrada",
+        "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5",
+        "storage": {
+          "page": 900001,
+          "block": 0
+        },
+        "progressPage": "page_0005"
+      },
+      {
+        "id": "opcion_configuracion_limpia_ensayos_de_entrada",
+        "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5",
+        "storage": {
+          "page": 900002,
+          "block": 0
+        },
+        "progressPage": "page_0007"
+      },
+      {
+        "id": "tarifa_normal_ensayos_de_entrada",
+        "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5",
+        "storage": {
+          "page": 900003,
+          "block": 0
+        },
+        "progressPage": "page_0012"
+      }
+    ],
     "editorial": [
       {
         "id": "block_0002_0003",
@@ -3369,6 +3552,36 @@
         "id": "block_0012_0007",
         "beforeSha256": "57d73a1e53b124017cc44a02f49565fb99ea3bde0631b1a65f42374e2c345957",
         "afterSha256": "be7751b8d9516e2b285a1f538bd466db62a86736e2f8b551e0b6aef6eb464f87"
+      },
+      {
+        "id": "block_0004_0003",
+        "beforeSha256": "98cadad24cf9f7c7f7b7fb6bfad1ea40b62336d7a99b7dbe2220ecb980e30b65",
+        "afterSha256": "caa1239c288d4fd5966fb200628029a1d1a372cf659b8c1c01f800262936bbae"
+      },
+      {
+        "id": "block_0005_0007",
+        "beforeSha256": "84946990dba460bf90672f648170144d1c6bf528257b54c09d13973dd559255a",
+        "afterSha256": "6331699c5552cf60bdc37b498f31a898705a0d1d4a1cfbe4db6252d2202c2adc"
+      },
+      {
+        "id": "block_0007_0007",
+        "beforeSha256": "10334cce38c8101e0d1a6e465bf4d08d2a55a20b835c929ae948fc186b038646",
+        "afterSha256": "8eaaccabef9f100675abac46a6f8554f0015b03e05dd166caa42d805268dc52e"
+      },
+      {
+        "id": "block_0007_0010",
+        "beforeSha256": "040ccccd75864ed86b347a734dcaaede1a27cce01c1d46bce18b3f9024a8bd82",
+        "afterSha256": "6f782f8598cf5e0bd01f9252045775a049f1ce1c803b4102b1888f988b8fd801"
+      },
+      {
+        "id": "block_0007_0013",
+        "beforeSha256": "06a326586acf834e40ff0fc6b8df1c5c195c1849febc5b86206743b658c69cb7",
+        "afterSha256": "247e94460483f31bad335ac54f779fb19d5ac9b9713a834ac47193a16fa6d78a"
+      },
+      {
+        "id": "block_0012_0007",
+        "beforeSha256": "be7751b8d9516e2b285a1f538bd466db62a86736e2f8b551e0b6aef6eb464f87",
+        "afterSha256": "f0d9d4ddd3e309ca6ac4bdada69004eb00a9dabac9fbc96fda33e957e11f95bc"
       }
     ],
     "sourceFormatRevisions": [
@@ -3833,6 +4046,754 @@
               }
             ]
           }
+        }
+      }
+    ],
+    "compilerCaseRevisions": [
+      {
+        "id": "block_0004_0003",
+        "block": {
+          "type": "cpp_compiler",
+          "language": "cpp",
+          "initialCode": "",
+          "projectFiles": [
+            {
+              "path": "CMakeLists.txt",
+              "initialCode": "cmake_minimum_required(VERSION 3.20)\nproject(Politicas LANGUAGES CXX)\noption(ACEPTAR_IGUAL \"Aceptar tambien la igualdad\" ON)\nif(ACEPTAR_IGUAL)\n    add_library(regla STATIC inclusiva.cpp)\nelse()\n    add_library(regla STATIC estricta.cpp)\nendif()\nadd_executable(revisar main.cpp)\n\ntarget_compile_features(regla PRIVATE cxx_std_20)\ntarget_compile_features(revisar PRIVATE cxx_std_20)\nset_target_properties(regla revisar PROPERTIES CXX_EXTENSIONS OFF)\ntarget_link_libraries(revisar PRIVATE regla)\n"
+            },
+            {
+              "path": "regla.h",
+              "initialCode": "#ifndef OPCIONES_REGLA_H\n#define OPCIONES_REGLA_H\n\n// Dominio: 0 <= puntos <= 20 y 0 <= minimo <= 20.\nbool admitir(int puntos, int minimo);\n\n#endif\n"
+            },
+            {
+              "path": "inclusiva.cpp",
+              "initialCode": "#include \"regla.h\"\n\nbool admitir(int puntos, int minimo) {\n    return puntos >= minimo;\n}\n"
+            },
+            {
+              "path": "estricta.cpp",
+              "initialCode": "#include \"regla.h\"\n\nbool admitir(int puntos, int minimo) {\n    return puntos > minimo;\n}\n"
+            },
+            {
+              "path": "main.cpp",
+              "initialCode": "#include \"regla.h\"\n#include <iostream>\n\nint main() {\n    std::cout << admitir(6, 6) << ':'\n              << admitir(9, 6) << ':'\n              << admitir(4, 6);\n    return 0;\n}\n"
+            }
+          ],
+          "cmake": {
+            "target": "revisar",
+            "buildType": "Debug",
+            "options": {
+              "ACEPTAR_IGUAL": "OFF"
+            }
+          },
+          "outputCheck": {
+            "inputComparison": "exact",
+            "cases": [
+              {
+                "standardInput": "",
+                "outputs": [
+                  "0:1:0"
+                ],
+                "explanation": "La elección explícita OFF construye la política estricta aunque option declare ON como valor inicial."
+              }
+            ]
+          }
+        },
+        "cases": [
+          {
+            "standardInput": "6 6",
+            "outputs": [
+              "0"
+            ],
+            "explanation": "La política estricta rechaza cuando los puntos igualan el mínimo."
+          },
+          {
+            "standardInput": "9 6",
+            "outputs": [
+              "1"
+            ],
+            "explanation": "Nueve puntos superan el mínimo de seis y ambas políticas admiten."
+          },
+          {
+            "standardInput": "4 6",
+            "outputs": [
+              "0"
+            ],
+            "explanation": "Cuatro puntos quedan por debajo del mínimo de seis y ambas políticas rechazan."
+          },
+          {
+            "standardInput": "",
+            "outputs": [
+              "0:1:0"
+            ],
+            "explanation": "La elección explícita OFF construye la política estricta aunque option declare ON como valor inicial."
+          }
+        ],
+        "editorialIndex": 69,
+        "historySha256": "55bd1792dd7b75117d51668a3fceb6a795d5e5103a56f8ff9518edb6432c698f",
+        "semanticBefore": [
+          {
+            "block": "block_0004_0003",
+            "path": "/outputCheck/cases/0/explanation",
+            "sourceSha256": "d6cd2f54b9bd18febd1bc0644b24049771088e5374a7c80ea78e4458a4dc3e18",
+            "spans": [
+              {
+                "start": 22,
+                "end": 25,
+                "text": "OFF",
+                "role": "data",
+                "reading": "technical"
+              },
+              {
+                "start": 64,
+                "end": 70,
+                "text": "option",
+                "role": "data",
+                "reading": "technical"
+              },
+              {
+                "start": 79,
+                "end": 81,
+                "text": "ON",
+                "role": "data",
+                "reading": "technical"
+              }
+            ]
+          }
+        ],
+        "semanticAfter": [
+          {
+            "block": "block_0004_0003",
+            "path": "/outputCheck/cases/0/explanation",
+            "sourceSha256": "1fccb2275ce395258b32f153309a44959d6a30591389e500b5f255b9764db216",
+            "spans": []
+          },
+          {
+            "block": "block_0004_0003",
+            "path": "/outputCheck/cases/1/explanation",
+            "sourceSha256": "cd177a2f123e1d779893ba7357cf2ed8668c1206a7a0373dc961f3ff93c8bcfe",
+            "spans": []
+          },
+          {
+            "block": "block_0004_0003",
+            "path": "/outputCheck/cases/2/explanation",
+            "sourceSha256": "9c461fe21c342a8e9a5b1be4aee20a0b39c488e9d34739923527d35c3ab239cb",
+            "spans": []
+          },
+          {
+            "block": "block_0004_0003",
+            "path": "/outputCheck/cases/3/explanation",
+            "sourceSha256": "d6cd2f54b9bd18febd1bc0644b24049771088e5374a7c80ea78e4458a4dc3e18",
+            "spans": []
+          }
+        ],
+        "client": {
+          "path": "main.cpp",
+          "source": "#include \"regla.h\"\n#include <iostream>\n\nint main() {\n    std::cin >> std::ws;\n    if (!std::cin.eof()) {\n        int puntos{};\n        int minimo{};\n        if (!(std::cin >> puntos >> minimo)) {\n            return 1;\n        }\n\n        std::cout << admitir(puntos, minimo);\n        return 0;\n    }\n\n    std::cout << admitir(6, 6) << ':'\n              << admitir(9, 6) << ':'\n              << admitir(4, 6);\n    return 0;\n}\n"
+        }
+      },
+      {
+        "id": "block_0005_0007",
+        "block": {
+          "type": "cpp_compiler",
+          "language": "cpp",
+          "initialCode": "",
+          "projectFiles": [
+            {
+              "path": "CMakeLists.txt",
+              "initialCode": "cmake_minimum_required(VERSION 3.20)\nproject(Politicas LANGUAGES CXX)\noption(ACEPTAR_IGUAL \"Aceptar tambien la igualdad\" ON)\nif(ACEPTAR_IGUAL)\n    add_library(regla STATIC inclusiva.cpp)\nelse()\n    add_library(regla STATIC estricta.cpp)\nendif()\nadd_executable(revisar main.cpp)\n\ntarget_compile_features(regla PRIVATE cxx_std_20)\ntarget_compile_features(revisar PRIVATE cxx_std_20)\nset_target_properties(regla revisar PROPERTIES CXX_EXTENSIONS OFF)\ntarget_link_libraries(revisar PRIVATE regla)\n"
+            },
+            {
+              "path": "regla.h",
+              "initialCode": "#ifndef OPCIONES_REGLA_H\n#define OPCIONES_REGLA_H\n\n// Dominio: 0 <= puntos <= 20 y 0 <= minimo <= 20.\nbool admitir(int puntos, int minimo);\n\n#endif\n"
+            },
+            {
+              "path": "inclusiva.cpp",
+              "initialCode": "#include \"regla.h\"\n\nbool admitir(int puntos, int minimo) {\n    return puntos >= minimo;\n}\n"
+            },
+            {
+              "path": "estricta.cpp",
+              "initialCode": "#include \"regla.h\"\n\nbool admitir(int puntos, int minimo) {\n    return puntos > minimo;\n}\n"
+            },
+            {
+              "path": "main.cpp",
+              "initialCode": "#include \"regla.h\"\n#include <iostream>\n\nint main() {\n    std::cout << admitir(6, 6) << ':'\n              << admitir(9, 6) << ':'\n              << admitir(4, 6);\n    return 0;\n}\n"
+            }
+          ],
+          "cmake": {
+            "target": "revisar",
+            "buildType": "Debug",
+            "options": {
+              "ACEPTAR_IGUAL": "ON"
+            }
+          },
+          "outputCheck": {
+            "inputComparison": "exact",
+            "cases": [
+              {
+                "standardInput": "",
+                "outputs": [
+                  "1:1:0"
+                ],
+                "explanation": "ON selecciona la implementación inclusiva y conserva las mismas tres llamadas; la igualdad distingue las dos políticas."
+              }
+            ]
+          }
+        },
+        "cases": [
+          {
+            "standardInput": "6 6",
+            "outputs": [
+              "1"
+            ],
+            "explanation": "La política inclusiva admite cuando los puntos igualan el mínimo."
+          },
+          {
+            "standardInput": "9 6",
+            "outputs": [
+              "1"
+            ],
+            "explanation": "Nueve puntos superan el mínimo de seis y ambas políticas admiten."
+          },
+          {
+            "standardInput": "4 6",
+            "outputs": [
+              "0"
+            ],
+            "explanation": "Cuatro puntos quedan por debajo del mínimo de seis y ambas políticas rechazan."
+          },
+          {
+            "standardInput": "",
+            "outputs": [
+              "1:1:0"
+            ],
+            "explanation": "ON selecciona la implementación inclusiva y conserva las mismas tres llamadas; la igualdad distingue las dos políticas."
+          }
+        ],
+        "editorialIndex": 70,
+        "historySha256": "be57e2ecf22bb18f5be700cb41cac4ddb6b2f28091cc6c66e70ca75e5d158bd1",
+        "semanticBefore": [
+          {
+            "block": "block_0005_0007",
+            "path": "/outputCheck/cases/0/explanation",
+            "sourceSha256": "6b85a27905b360a0925225772a629d054c1199c70cdbdc8469479b8e8b807f33",
+            "spans": [
+              {
+                "start": 0,
+                "end": 2,
+                "text": "ON",
+                "role": "data",
+                "reading": "technical"
+              }
+            ]
+          }
+        ],
+        "semanticAfter": [
+          {
+            "block": "block_0005_0007",
+            "path": "/outputCheck/cases/0/explanation",
+            "sourceSha256": "9b46ccf2cc79adc2688ee161c5b37a258788e12dfe32ef0d8886deb850603727",
+            "spans": []
+          },
+          {
+            "block": "block_0005_0007",
+            "path": "/outputCheck/cases/1/explanation",
+            "sourceSha256": "cd177a2f123e1d779893ba7357cf2ed8668c1206a7a0373dc961f3ff93c8bcfe",
+            "spans": []
+          },
+          {
+            "block": "block_0005_0007",
+            "path": "/outputCheck/cases/2/explanation",
+            "sourceSha256": "9c461fe21c342a8e9a5b1be4aee20a0b39c488e9d34739923527d35c3ab239cb",
+            "spans": []
+          },
+          {
+            "block": "block_0005_0007",
+            "path": "/outputCheck/cases/3/explanation",
+            "sourceSha256": "6b85a27905b360a0925225772a629d054c1199c70cdbdc8469479b8e8b807f33",
+            "spans": []
+          }
+        ],
+        "client": {
+          "path": "main.cpp",
+          "source": "#include \"regla.h\"\n#include <iostream>\n\nint main() {\n    std::cin >> std::ws;\n    if (!std::cin.eof()) {\n        int puntos{};\n        int minimo{};\n        if (!(std::cin >> puntos >> minimo)) {\n            return 1;\n        }\n\n        std::cout << admitir(puntos, minimo);\n        return 0;\n    }\n\n    std::cout << admitir(6, 6) << ':'\n              << admitir(9, 6) << ':'\n              << admitir(4, 6);\n    return 0;\n}\n"
+        }
+      },
+      {
+        "id": "block_0007_0007",
+        "block": {
+          "type": "cpp_compiler",
+          "language": "cpp",
+          "initialCode": "",
+          "projectFiles": [
+            {
+              "path": "CMakeLists.txt",
+              "initialCode": "cmake_minimum_required(VERSION 3.20)\nproject(Politicas LANGUAGES CXX)\noption(ACEPTAR_IGUAL \"Aceptar tambien la igualdad\" ON)\nif(ACEPTAR_IGUAL)\n    add_library(regla STATIC inclusiva.cpp)\nelse()\n    add_library(regla STATIC estricta.cpp)\nendif()\nadd_executable(revisar main.cpp)\n\ntarget_compile_features(regla PRIVATE cxx_std_20)\ntarget_compile_features(revisar PRIVATE cxx_std_20)\nset_target_properties(regla revisar PROPERTIES CXX_EXTENSIONS OFF)\ntarget_link_libraries(revisar PRIVATE regla)\n"
+            },
+            {
+              "path": "regla.h",
+              "initialCode": "#ifndef OPCIONES_REGLA_H\n#define OPCIONES_REGLA_H\n\n// Dominio: 0 <= puntos <= 20 y 0 <= minimo <= 20.\nbool admitir(int puntos, int minimo);\n\n#endif\n"
+            },
+            {
+              "path": "inclusiva.cpp",
+              "initialCode": "#include \"regla.h\"\n\nbool admitir(int puntos, int minimo) {\n    return puntos >= minimo;\n}\n"
+            },
+            {
+              "path": "estricta.cpp",
+              "initialCode": "#include \"regla.h\"\n\nbool admitir(int puntos, int minimo) {\n    return puntos > minimo;\n}\n"
+            },
+            {
+              "path": "main.cpp",
+              "initialCode": "#include \"regla.h\"\n#include <iostream>\n\nint main() {\n    std::cout << admitir(6, 6) << ':'\n              << admitir(9, 6) << ':'\n              << admitir(4, 6);\n    return 0;\n}\n"
+            }
+          ],
+          "cmake": {
+            "target": "revisar",
+            "buildType": "Debug",
+            "options": {}
+          },
+          "outputCheck": {
+            "inputComparison": "exact",
+            "cases": [
+              {
+                "standardInput": "",
+                "outputs": [
+                  "1:1:0"
+                ],
+                "explanation": "La configuración fresca interpreta el valor inicial sólo cuando no se proporciona una elección explícita; la salida pertenece a la implementación elegida en este proyecto."
+              }
+            ]
+          }
+        },
+        "cases": [
+          {
+            "standardInput": "6 6",
+            "outputs": [
+              "1"
+            ],
+            "explanation": "La política inclusiva admite cuando los puntos igualan el mínimo."
+          },
+          {
+            "standardInput": "9 6",
+            "outputs": [
+              "1"
+            ],
+            "explanation": "Nueve puntos superan el mínimo de seis y ambas políticas admiten."
+          },
+          {
+            "standardInput": "4 6",
+            "outputs": [
+              "0"
+            ],
+            "explanation": "Cuatro puntos quedan por debajo del mínimo de seis y ambas políticas rechazan."
+          },
+          {
+            "standardInput": "",
+            "outputs": [
+              "1:1:0"
+            ],
+            "explanation": "La configuración fresca interpreta el valor inicial sólo cuando no se proporciona una elección explícita; la salida pertenece a la implementación elegida en este proyecto."
+          }
+        ],
+        "editorialIndex": 71,
+        "historySha256": "b28176a1256fa945195bdbde55ae0f53430fd35501ce45ea52d76d9537c1f8bd",
+        "semanticBefore": [
+          {
+            "block": "block_0007_0007",
+            "path": "/outputCheck/cases/0/explanation",
+            "sourceSha256": "41cec55fd24c2b2bab5c616bd8ba7a6e02284eddd439fe17e0be6e73cd3076f0",
+            "spans": []
+          }
+        ],
+        "semanticAfter": [
+          {
+            "block": "block_0007_0007",
+            "path": "/outputCheck/cases/0/explanation",
+            "sourceSha256": "9b46ccf2cc79adc2688ee161c5b37a258788e12dfe32ef0d8886deb850603727",
+            "spans": []
+          },
+          {
+            "block": "block_0007_0007",
+            "path": "/outputCheck/cases/1/explanation",
+            "sourceSha256": "cd177a2f123e1d779893ba7357cf2ed8668c1206a7a0373dc961f3ff93c8bcfe",
+            "spans": []
+          },
+          {
+            "block": "block_0007_0007",
+            "path": "/outputCheck/cases/2/explanation",
+            "sourceSha256": "9c461fe21c342a8e9a5b1be4aee20a0b39c488e9d34739923527d35c3ab239cb",
+            "spans": []
+          },
+          {
+            "block": "block_0007_0007",
+            "path": "/outputCheck/cases/3/explanation",
+            "sourceSha256": "41cec55fd24c2b2bab5c616bd8ba7a6e02284eddd439fe17e0be6e73cd3076f0",
+            "spans": []
+          }
+        ],
+        "client": {
+          "path": "main.cpp",
+          "source": "#include \"regla.h\"\n#include <iostream>\n\nint main() {\n    std::cin >> std::ws;\n    if (!std::cin.eof()) {\n        int puntos{};\n        int minimo{};\n        if (!(std::cin >> puntos >> minimo)) {\n            return 1;\n        }\n\n        std::cout << admitir(puntos, minimo);\n        return 0;\n    }\n\n    std::cout << admitir(6, 6) << ':'\n              << admitir(9, 6) << ':'\n              << admitir(4, 6);\n    return 0;\n}\n"
+        }
+      },
+      {
+        "id": "block_0007_0010",
+        "block": {
+          "type": "cpp_compiler",
+          "language": "cpp",
+          "initialCode": "",
+          "projectFiles": [
+            {
+              "path": "CMakeLists.txt",
+              "initialCode": "cmake_minimum_required(VERSION 3.20)\nproject(Politicas LANGUAGES CXX)\noption(ACEPTAR_IGUAL \"Aceptar tambien la igualdad\" OFF)\nif(ACEPTAR_IGUAL)\n    add_library(regla STATIC inclusiva.cpp)\nelse()\n    add_library(regla STATIC estricta.cpp)\nendif()\nadd_executable(revisar main.cpp)\n\ntarget_compile_features(regla PRIVATE cxx_std_20)\ntarget_compile_features(revisar PRIVATE cxx_std_20)\nset_target_properties(regla revisar PROPERTIES CXX_EXTENSIONS OFF)\ntarget_link_libraries(revisar PRIVATE regla)\n"
+            },
+            {
+              "path": "regla.h",
+              "initialCode": "#ifndef OPCIONES_REGLA_H\n#define OPCIONES_REGLA_H\n\n// Dominio: 0 <= puntos <= 20 y 0 <= minimo <= 20.\nbool admitir(int puntos, int minimo);\n\n#endif\n"
+            },
+            {
+              "path": "inclusiva.cpp",
+              "initialCode": "#include \"regla.h\"\n\nbool admitir(int puntos, int minimo) {\n    return puntos >= minimo;\n}\n"
+            },
+            {
+              "path": "estricta.cpp",
+              "initialCode": "#include \"regla.h\"\n\nbool admitir(int puntos, int minimo) {\n    return puntos > minimo;\n}\n"
+            },
+            {
+              "path": "main.cpp",
+              "initialCode": "#include \"regla.h\"\n#include <iostream>\n\nint main() {\n    std::cout << admitir(6, 6) << ':'\n              << admitir(9, 6) << ':'\n              << admitir(4, 6);\n    return 0;\n}\n"
+            }
+          ],
+          "cmake": {
+            "target": "revisar",
+            "buildType": "Debug",
+            "options": {}
+          },
+          "outputCheck": {
+            "inputComparison": "exact",
+            "cases": [
+              {
+                "standardInput": "",
+                "outputs": [
+                  "0:1:0"
+                ],
+                "explanation": "La configuración fresca interpreta el valor inicial sólo cuando no se proporciona una elección explícita; la salida pertenece a la implementación elegida en este proyecto."
+              }
+            ]
+          }
+        },
+        "cases": [
+          {
+            "standardInput": "6 6",
+            "outputs": [
+              "0"
+            ],
+            "explanation": "La política estricta rechaza cuando los puntos igualan el mínimo."
+          },
+          {
+            "standardInput": "9 6",
+            "outputs": [
+              "1"
+            ],
+            "explanation": "Nueve puntos superan el mínimo de seis y ambas políticas admiten."
+          },
+          {
+            "standardInput": "4 6",
+            "outputs": [
+              "0"
+            ],
+            "explanation": "Cuatro puntos quedan por debajo del mínimo de seis y ambas políticas rechazan."
+          },
+          {
+            "standardInput": "",
+            "outputs": [
+              "0:1:0"
+            ],
+            "explanation": "La configuración fresca interpreta el valor inicial sólo cuando no se proporciona una elección explícita; la salida pertenece a la implementación elegida en este proyecto."
+          }
+        ],
+        "editorialIndex": 72,
+        "historySha256": "95c4fe1c6b23e41c1fc96d26d0ae2dcc1ab72fb0414053ad2dcef47dfd4dfd71",
+        "semanticBefore": [
+          {
+            "block": "block_0007_0010",
+            "path": "/outputCheck/cases/0/explanation",
+            "sourceSha256": "41cec55fd24c2b2bab5c616bd8ba7a6e02284eddd439fe17e0be6e73cd3076f0",
+            "spans": []
+          }
+        ],
+        "semanticAfter": [
+          {
+            "block": "block_0007_0010",
+            "path": "/outputCheck/cases/0/explanation",
+            "sourceSha256": "1fccb2275ce395258b32f153309a44959d6a30591389e500b5f255b9764db216",
+            "spans": []
+          },
+          {
+            "block": "block_0007_0010",
+            "path": "/outputCheck/cases/1/explanation",
+            "sourceSha256": "cd177a2f123e1d779893ba7357cf2ed8668c1206a7a0373dc961f3ff93c8bcfe",
+            "spans": []
+          },
+          {
+            "block": "block_0007_0010",
+            "path": "/outputCheck/cases/2/explanation",
+            "sourceSha256": "9c461fe21c342a8e9a5b1be4aee20a0b39c488e9d34739923527d35c3ab239cb",
+            "spans": []
+          },
+          {
+            "block": "block_0007_0010",
+            "path": "/outputCheck/cases/3/explanation",
+            "sourceSha256": "41cec55fd24c2b2bab5c616bd8ba7a6e02284eddd439fe17e0be6e73cd3076f0",
+            "spans": []
+          }
+        ],
+        "client": {
+          "path": "main.cpp",
+          "source": "#include \"regla.h\"\n#include <iostream>\n\nint main() {\n    std::cin >> std::ws;\n    if (!std::cin.eof()) {\n        int puntos{};\n        int minimo{};\n        if (!(std::cin >> puntos >> minimo)) {\n            return 1;\n        }\n\n        std::cout << admitir(puntos, minimo);\n        return 0;\n    }\n\n    std::cout << admitir(6, 6) << ':'\n              << admitir(9, 6) << ':'\n              << admitir(4, 6);\n    return 0;\n}\n"
+        }
+      },
+      {
+        "id": "block_0007_0013",
+        "block": {
+          "type": "cpp_compiler",
+          "language": "cpp",
+          "initialCode": "",
+          "projectFiles": [
+            {
+              "path": "CMakeLists.txt",
+              "initialCode": "cmake_minimum_required(VERSION 3.20)\nproject(Politicas LANGUAGES CXX)\noption(ACEPTAR_IGUAL \"Aceptar tambien la igualdad\" OFF)\nif(ACEPTAR_IGUAL)\n    add_library(regla STATIC inclusiva.cpp)\nelse()\n    add_library(regla STATIC estricta.cpp)\nendif()\nadd_executable(revisar main.cpp)\n\ntarget_compile_features(regla PRIVATE cxx_std_20)\ntarget_compile_features(revisar PRIVATE cxx_std_20)\nset_target_properties(regla revisar PROPERTIES CXX_EXTENSIONS OFF)\ntarget_link_libraries(revisar PRIVATE regla)\n"
+            },
+            {
+              "path": "regla.h",
+              "initialCode": "#ifndef OPCIONES_REGLA_H\n#define OPCIONES_REGLA_H\n\n// Dominio: 0 <= puntos <= 20 y 0 <= minimo <= 20.\nbool admitir(int puntos, int minimo);\n\n#endif\n"
+            },
+            {
+              "path": "inclusiva.cpp",
+              "initialCode": "#include \"regla.h\"\n\nbool admitir(int puntos, int minimo) {\n    return puntos >= minimo;\n}\n"
+            },
+            {
+              "path": "estricta.cpp",
+              "initialCode": "#include \"regla.h\"\n\nbool admitir(int puntos, int minimo) {\n    return puntos > minimo;\n}\n"
+            },
+            {
+              "path": "main.cpp",
+              "initialCode": "#include \"regla.h\"\n#include <iostream>\n\nint main() {\n    std::cout << admitir(6, 6) << ':'\n              << admitir(9, 6) << ':'\n              << admitir(4, 6);\n    return 0;\n}\n"
+            }
+          ],
+          "cmake": {
+            "target": "revisar",
+            "buildType": "Debug",
+            "options": {
+              "ACEPTAR_IGUAL": "ON"
+            }
+          },
+          "outputCheck": {
+            "inputComparison": "exact",
+            "cases": [
+              {
+                "standardInput": "",
+                "outputs": [
+                  "1:1:0"
+                ],
+                "explanation": "La configuración fresca interpreta el valor inicial sólo cuando no se proporciona una elección explícita; la salida pertenece a la implementación elegida en este proyecto."
+              }
+            ]
+          }
+        },
+        "cases": [
+          {
+            "standardInput": "6 6",
+            "outputs": [
+              "1"
+            ],
+            "explanation": "La política inclusiva admite cuando los puntos igualan el mínimo."
+          },
+          {
+            "standardInput": "9 6",
+            "outputs": [
+              "1"
+            ],
+            "explanation": "Nueve puntos superan el mínimo de seis y ambas políticas admiten."
+          },
+          {
+            "standardInput": "4 6",
+            "outputs": [
+              "0"
+            ],
+            "explanation": "Cuatro puntos quedan por debajo del mínimo de seis y ambas políticas rechazan."
+          },
+          {
+            "standardInput": "",
+            "outputs": [
+              "1:1:0"
+            ],
+            "explanation": "La configuración fresca interpreta el valor inicial sólo cuando no se proporciona una elección explícita; la salida pertenece a la implementación elegida en este proyecto."
+          }
+        ],
+        "editorialIndex": 73,
+        "historySha256": "6ee75b57593c167a44398ee0d04bb008e566a868241b19251986481a697fe459",
+        "semanticBefore": [
+          {
+            "block": "block_0007_0013",
+            "path": "/outputCheck/cases/0/explanation",
+            "sourceSha256": "41cec55fd24c2b2bab5c616bd8ba7a6e02284eddd439fe17e0be6e73cd3076f0",
+            "spans": []
+          }
+        ],
+        "semanticAfter": [
+          {
+            "block": "block_0007_0013",
+            "path": "/outputCheck/cases/0/explanation",
+            "sourceSha256": "9b46ccf2cc79adc2688ee161c5b37a258788e12dfe32ef0d8886deb850603727",
+            "spans": []
+          },
+          {
+            "block": "block_0007_0013",
+            "path": "/outputCheck/cases/1/explanation",
+            "sourceSha256": "cd177a2f123e1d779893ba7357cf2ed8668c1206a7a0373dc961f3ff93c8bcfe",
+            "spans": []
+          },
+          {
+            "block": "block_0007_0013",
+            "path": "/outputCheck/cases/2/explanation",
+            "sourceSha256": "9c461fe21c342a8e9a5b1be4aee20a0b39c488e9d34739923527d35c3ab239cb",
+            "spans": []
+          },
+          {
+            "block": "block_0007_0013",
+            "path": "/outputCheck/cases/3/explanation",
+            "sourceSha256": "41cec55fd24c2b2bab5c616bd8ba7a6e02284eddd439fe17e0be6e73cd3076f0",
+            "spans": []
+          }
+        ],
+        "client": {
+          "path": "main.cpp",
+          "source": "#include \"regla.h\"\n#include <iostream>\n\nint main() {\n    std::cin >> std::ws;\n    if (!std::cin.eof()) {\n        int puntos{};\n        int minimo{};\n        if (!(std::cin >> puntos >> minimo)) {\n            return 1;\n        }\n\n        std::cout << admitir(puntos, minimo);\n        return 0;\n    }\n\n    std::cout << admitir(6, 6) << ':'\n              << admitir(9, 6) << ':'\n              << admitir(4, 6);\n    return 0;\n}\n"
+        }
+      },
+      {
+        "id": "block_0012_0007",
+        "block": {
+          "type": "cpp_compiler",
+          "language": "cpp",
+          "initialCode": "",
+          "projectFiles": [
+            {
+              "path": "CMakeLists.txt",
+              "initialCode": "cmake_minimum_required(VERSION 3.20)\nproject(Cotizaciones LANGUAGES CXX)\noption(TARIFA_ESPECIAL \"Usar la tarifa de dos por unidad\" OFF)\nif(TARIFA_ESPECIAL)\n    add_library(tarifas STATIC especial.cpp)\nelse()\n    add_library(tarifas STATIC normal.cpp)\nendif()\nadd_executable(cotizar muestra.cpp)\n\ntarget_compile_features(tarifas PRIVATE cxx_std_20)\ntarget_compile_features(cotizar PRIVATE cxx_std_20)\nset_target_properties(tarifas cotizar PROPERTIES CXX_EXTENSIONS OFF)\ntarget_link_libraries(cotizar PRIVATE tarifas)\n"
+            },
+            {
+              "path": "precio.h",
+              "initialCode": "#ifndef OPCIONES_PRECIO_H\n#define OPCIONES_PRECIO_H\n\n// Dominio: 0 <= unidades <= 8.\nint precio(int unidades);\n\n#endif\n"
+            },
+            {
+              "path": "especial.cpp",
+              "initialCode": "#include \"precio.h\"\n\nint precio(int unidades) {\n    return 2 * unidades;\n}\n"
+            },
+            {
+              "path": "normal.cpp",
+              "initialCode": "#include \"precio.h\"\n\nint precio(int unidades) {\n    return 3 * unidades;\n}\n"
+            },
+            {
+              "path": "muestra.cpp",
+              "initialCode": "#include \"precio.h\"\n#include <iostream>\n\nint main() {\n    std::cout << precio(0) << ':'\n              << precio(2) << ':'\n              << precio(5);\n    return 0;\n}\n"
+            }
+          ],
+          "cmake": {
+            "target": "cotizar",
+            "buildType": "Debug",
+            "options": {}
+          },
+          "outputCheck": {
+            "inputComparison": "exact",
+            "cases": [
+              {
+                "standardInput": "",
+                "outputs": [
+                  "0:6:15"
+                ],
+                "explanation": "Sin elección explícita, el perfil fresco utiliza el inicial OFF y construye la tarifa normal de tres por unidad."
+              }
+            ]
+          }
+        },
+        "cases": [
+          {
+            "standardInput": "2",
+            "outputs": [
+              "6"
+            ],
+            "explanation": "Con la tarifa normal, dos unidades cuestan seis."
+          },
+          {
+            "standardInput": "0",
+            "outputs": [
+              "0"
+            ],
+            "explanation": "Con cero unidades, el total es cero."
+          },
+          {
+            "standardInput": "5",
+            "outputs": [
+              "15"
+            ],
+            "explanation": "Con la tarifa normal, cinco unidades cuestan quince."
+          },
+          {
+            "standardInput": "",
+            "outputs": [
+              "0:6:15"
+            ],
+            "explanation": "Sin elección explícita, el perfil fresco utiliza el inicial OFF y construye la tarifa normal de tres por unidad."
+          }
+        ],
+        "editorialIndex": 74,
+        "historySha256": "09bf04bd6cae834d4f2dc2e75f024825ee862673aa52f89ebea02777b1fac761",
+        "semanticBefore": [
+          {
+            "block": "block_0012_0007",
+            "path": "/outputCheck/cases/0/explanation",
+            "sourceSha256": "2f74ee1c1f97b6e575a426ef70f462cd816842c71589f0271a5d6d0515d4cfb1",
+            "spans": [
+              {
+                "start": 60,
+                "end": 63,
+                "text": "OFF",
+                "role": "data",
+                "reading": "technical"
+              }
+            ]
+          }
+        ],
+        "semanticAfter": [
+          {
+            "block": "block_0012_0007",
+            "path": "/outputCheck/cases/0/explanation",
+            "sourceSha256": "ddb1c50b25bcae88cc405e2576dc80b164f59769f6053003cb9d93d50227df05",
+            "spans": []
+          },
+          {
+            "block": "block_0012_0007",
+            "path": "/outputCheck/cases/1/explanation",
+            "sourceSha256": "0072e5e7755c74abb0a977ee057dc2691faba0441f00622607c47fb208f0e9a6",
+            "spans": []
+          },
+          {
+            "block": "block_0012_0007",
+            "path": "/outputCheck/cases/2/explanation",
+            "sourceSha256": "4bc932a567b3d74df671e56a47a68c6e4d24b9b46bbe167c05e3fe0c0b3b7f72",
+            "spans": []
+          },
+          {
+            "block": "block_0012_0007",
+            "path": "/outputCheck/cases/3/explanation",
+            "sourceSha256": "2f74ee1c1f97b6e575a426ef70f462cd816842c71589f0271a5d6d0515d4cfb1",
+            "spans": []
+          }
+        ],
+        "client": {
+          "path": "muestra.cpp",
+          "source": "#include \"precio.h\"\n#include <iostream>\n\nint main() {\n    std::cin >> std::ws;\n    if (!std::cin.eof()) {\n        int unidades{};\n        if (!(std::cin >> unidades)) {\n            return 1;\n        }\n\n        std::cout << precio(unidades);\n        return 0;\n    }\n\n    std::cout << precio(0) << ':'\n              << precio(2) << ':'\n              << precio(5);\n    return 0;\n}\n"
         }
       }
     ]
@@ -4886,30 +5847,26 @@
       {
         "block": "block_0004_0003",
         "path": "/outputCheck/cases/0/explanation",
+        "sourceSha256": "1fccb2275ce395258b32f153309a44959d6a30591389e500b5f255b9764db216",
+        "spans": []
+      },
+      {
+        "block": "block_0004_0003",
+        "path": "/outputCheck/cases/1/explanation",
+        "sourceSha256": "cd177a2f123e1d779893ba7357cf2ed8668c1206a7a0373dc961f3ff93c8bcfe",
+        "spans": []
+      },
+      {
+        "block": "block_0004_0003",
+        "path": "/outputCheck/cases/2/explanation",
+        "sourceSha256": "9c461fe21c342a8e9a5b1be4aee20a0b39c488e9d34739923527d35c3ab239cb",
+        "spans": []
+      },
+      {
+        "block": "block_0004_0003",
+        "path": "/outputCheck/cases/3/explanation",
         "sourceSha256": "d6cd2f54b9bd18febd1bc0644b24049771088e5374a7c80ea78e4458a4dc3e18",
-        "spans": [
-          {
-            "start": 22,
-            "end": 25,
-            "text": "OFF",
-            "role": "data",
-            "reading": "technical"
-          },
-          {
-            "start": 64,
-            "end": 70,
-            "text": "option",
-            "role": "data",
-            "reading": "technical"
-          },
-          {
-            "start": 79,
-            "end": 81,
-            "text": "ON",
-            "role": "data",
-            "reading": "technical"
-          }
-        ]
+        "spans": []
       },
       {
         "block": "block_0004_0004",
@@ -5175,16 +6132,26 @@
       {
         "block": "block_0005_0007",
         "path": "/outputCheck/cases/0/explanation",
+        "sourceSha256": "9b46ccf2cc79adc2688ee161c5b37a258788e12dfe32ef0d8886deb850603727",
+        "spans": []
+      },
+      {
+        "block": "block_0005_0007",
+        "path": "/outputCheck/cases/1/explanation",
+        "sourceSha256": "cd177a2f123e1d779893ba7357cf2ed8668c1206a7a0373dc961f3ff93c8bcfe",
+        "spans": []
+      },
+      {
+        "block": "block_0005_0007",
+        "path": "/outputCheck/cases/2/explanation",
+        "sourceSha256": "9c461fe21c342a8e9a5b1be4aee20a0b39c488e9d34739923527d35c3ab239cb",
+        "spans": []
+      },
+      {
+        "block": "block_0005_0007",
+        "path": "/outputCheck/cases/3/explanation",
         "sourceSha256": "6b85a27905b360a0925225772a629d054c1199c70cdbdc8469479b8e8b807f33",
-        "spans": [
-          {
-            "start": 0,
-            "end": 2,
-            "text": "ON",
-            "role": "data",
-            "reading": "technical"
-          }
-        ]
+        "spans": []
       },
       {
         "block": "block_0006_0000",
@@ -5692,6 +6659,24 @@
       {
         "block": "block_0007_0007",
         "path": "/outputCheck/cases/0/explanation",
+        "sourceSha256": "9b46ccf2cc79adc2688ee161c5b37a258788e12dfe32ef0d8886deb850603727",
+        "spans": []
+      },
+      {
+        "block": "block_0007_0007",
+        "path": "/outputCheck/cases/1/explanation",
+        "sourceSha256": "cd177a2f123e1d779893ba7357cf2ed8668c1206a7a0373dc961f3ff93c8bcfe",
+        "spans": []
+      },
+      {
+        "block": "block_0007_0007",
+        "path": "/outputCheck/cases/2/explanation",
+        "sourceSha256": "9c461fe21c342a8e9a5b1be4aee20a0b39c488e9d34739923527d35c3ab239cb",
+        "spans": []
+      },
+      {
+        "block": "block_0007_0007",
+        "path": "/outputCheck/cases/3/explanation",
         "sourceSha256": "41cec55fd24c2b2bab5c616bd8ba7a6e02284eddd439fe17e0be6e73cd3076f0",
         "spans": []
       },
@@ -5733,6 +6718,24 @@
       {
         "block": "block_0007_0010",
         "path": "/outputCheck/cases/0/explanation",
+        "sourceSha256": "1fccb2275ce395258b32f153309a44959d6a30591389e500b5f255b9764db216",
+        "spans": []
+      },
+      {
+        "block": "block_0007_0010",
+        "path": "/outputCheck/cases/1/explanation",
+        "sourceSha256": "cd177a2f123e1d779893ba7357cf2ed8668c1206a7a0373dc961f3ff93c8bcfe",
+        "spans": []
+      },
+      {
+        "block": "block_0007_0010",
+        "path": "/outputCheck/cases/2/explanation",
+        "sourceSha256": "9c461fe21c342a8e9a5b1be4aee20a0b39c488e9d34739923527d35c3ab239cb",
+        "spans": []
+      },
+      {
+        "block": "block_0007_0010",
+        "path": "/outputCheck/cases/3/explanation",
         "sourceSha256": "41cec55fd24c2b2bab5c616bd8ba7a6e02284eddd439fe17e0be6e73cd3076f0",
         "spans": []
       },
@@ -5788,6 +6791,24 @@
       {
         "block": "block_0007_0013",
         "path": "/outputCheck/cases/0/explanation",
+        "sourceSha256": "9b46ccf2cc79adc2688ee161c5b37a258788e12dfe32ef0d8886deb850603727",
+        "spans": []
+      },
+      {
+        "block": "block_0007_0013",
+        "path": "/outputCheck/cases/1/explanation",
+        "sourceSha256": "cd177a2f123e1d779893ba7357cf2ed8668c1206a7a0373dc961f3ff93c8bcfe",
+        "spans": []
+      },
+      {
+        "block": "block_0007_0013",
+        "path": "/outputCheck/cases/2/explanation",
+        "sourceSha256": "9c461fe21c342a8e9a5b1be4aee20a0b39c488e9d34739923527d35c3ab239cb",
+        "spans": []
+      },
+      {
+        "block": "block_0007_0013",
+        "path": "/outputCheck/cases/3/explanation",
         "sourceSha256": "41cec55fd24c2b2bab5c616bd8ba7a6e02284eddd439fe17e0be6e73cd3076f0",
         "spans": []
       },
@@ -6937,16 +7958,26 @@
       {
         "block": "block_0012_0007",
         "path": "/outputCheck/cases/0/explanation",
+        "sourceSha256": "ddb1c50b25bcae88cc405e2576dc80b164f59769f6053003cb9d93d50227df05",
+        "spans": []
+      },
+      {
+        "block": "block_0012_0007",
+        "path": "/outputCheck/cases/1/explanation",
+        "sourceSha256": "0072e5e7755c74abb0a977ee057dc2691faba0441f00622607c47fb208f0e9a6",
+        "spans": []
+      },
+      {
+        "block": "block_0012_0007",
+        "path": "/outputCheck/cases/2/explanation",
+        "sourceSha256": "4bc932a567b3d74df671e56a47a68c6e4d24b9b46bbe167c05e3fe0c0b3b7f72",
+        "spans": []
+      },
+      {
+        "block": "block_0012_0007",
+        "path": "/outputCheck/cases/3/explanation",
         "sourceSha256": "2f74ee1c1f97b6e575a426ef70f462cd816842c71589f0271a5d6d0515d4cfb1",
-        "spans": [
-          {
-            "start": 60,
-            "end": 63,
-            "text": "OFF",
-            "role": "data",
-            "reading": "technical"
-          }
-        ]
+        "spans": []
       },
       {
         "block": "block_0013_0000",

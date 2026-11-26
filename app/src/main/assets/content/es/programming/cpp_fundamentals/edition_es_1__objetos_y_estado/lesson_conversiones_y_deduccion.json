@@ -61,7 +61,7 @@
           "type": "output_prediction",
           "language": "cpp",
           "question": "El programa convierte dos medidas a int. Escribe los dos números que muestra, separados por un espacio.",
-          "code": "#include <iostream>\n\nint main() {\n    double positivo = 2.9;\n    double negativo = -2.9;\n\n    int a = positivo;\n    int b = negativo;\n\n    std::cout << a << \" \"\n              << b;\n\n    return 0;\n}\n",
+          "code": "#include <iostream>\n\nint main() {\n    double positivo = 2.9;\n    double negativo = -2.9;\n\n    int positivo_sin_fraccion = positivo;\n    int negativo_sin_fraccion = negativo;\n\n    std::cout << positivo_sin_fraccion << \" \"\n              << negativo_sin_fraccion;\n\n    return 0;\n}\n",
           "answers": [
             "2 -2"
           ],
@@ -173,7 +173,7 @@
           "type": "output_prediction",
           "language": "cpp",
           "question": "Compara las dos divisiones. En la primera declaración, static_cast convierte a double el resultado de total / partes. En la segunda declaración, static_cast convierte total a double antes de dividir. ¿Qué números escribe std::cout en ese orden, separados por un espacio?",
-          "code": "#include <iostream>\n\nint main() {\n    int total = 13;\n    int partes = 4;\n\n    double tarde = static_cast<double>(total / partes);\n\n    double antes = static_cast<double>(total) / partes;\n\n    std::cout << tarde << \" \" << antes;\n\n    return 0;\n}\n",
+          "code": "#include <iostream>\n\nint main() {\n    int total = 13;\n    int partes = 4;\n\n    double cociente_convertido = static_cast<double>(total / partes);\n\n    double cociente_con_operando_convertido = static_cast<double>(total) / partes;\n\n    std::cout << cociente_convertido << \" \" << cociente_con_operando_convertido;\n\n    return 0;\n}\n",
           "answers": [
             "3 3.25"
           ],
@@ -5369,6 +5369,16 @@
         "id": "block_0003_0004",
         "beforeSha256": "a6a4cf10e2069e4dacf8776dace5b2acb169fab5547648376221515b4a8869d0",
         "afterSha256": "3e98cb2940dbfd93092a1c193e1199869b36d14dfe748422bd9fc52cc932a867"
+      },
+      {
+        "id": "block_0001_0002",
+        "beforeSha256": "f26dc15f5c4632238f7f142f8c4f8e535479ac58c6078ffbd7cb60c2c71e1e1f",
+        "afterSha256": "f5e570a57e323ef103fef6d17ba30c686c990258d41d350f5459d82b669149db"
+      },
+      {
+        "id": "block_0003_0004",
+        "beforeSha256": "3e98cb2940dbfd93092a1c193e1199869b36d14dfe748422bd9fc52cc932a867",
+        "afterSha256": "2f7414304fb1509a212a8e9cb9ae9a055a07e2a874ac27131ba8129741717b27"
       }
     ],
     "sourceFormatRevisions": [
@@ -5398,6 +5408,96 @@
           ],
           "explanation": "En la declaración de tarde, total / partes divide los enteros trece y cuatro. El cociente entero es tres y static_cast<double> convierte ese tres a double. En la declaración de antes, static_cast<double>(total) convierte el trece antes de dividirlo entre cuatro. Así, antes guarda tres y un cuarto. La consola muestra 3 3.25.",
           "reviewFeedback": "Mira qué va dentro de los paréntesis de static_cast en cada línea. Si dentro está toda la división, haz esa división primero."
+        }
+      }
+    ],
+    "identifierRenameRevisions": [
+      {
+        "lessonId": "cpp_fundamentals__edition_es_1__objetos_y_estado__conversiones_y_deduccion",
+        "locale": "es",
+        "historicalFamilySha256": "90c9937d2da49398e630c31f468b5dd56fe53baa9c16d11daf109dc026155be2",
+        "originalStateSha256": "fb27c08d2f7cb4b42189b6e476677391187aa99e7a5ed1b992a8196650720c92",
+        "stableStorage": {
+          "page": 1,
+          "block": 2
+        },
+        "editorialPrefixSha256": "dac4a024139687bcc681f793dcdbc3f5425810639305a1bc60fa0ed8817f13a5",
+        "id": "block_0001_0002",
+        "block": {
+          "type": "output_prediction",
+          "language": "cpp",
+          "question": "El programa convierte dos medidas a int. Escribe los dos números que muestra, separados por un espacio.",
+          "code": "#include <iostream>\n\nint main() {\n    double positivo = 2.9;\n    double negativo = -2.9;\n\n    int a = positivo;\n    int b = negativo;\n\n    std::cout << a << \" \"\n              << b;\n\n    return 0;\n}\n",
+          "answers": [
+            "2 -2"
+          ],
+          "explanation": "Al quitar la fracción de 2.9 queda 2. Al quitarla de −2.9 queda −2. La consola muestra 2 -2.",
+          "reviewFeedback": "Lee los dos números de partida. Quita la fracción de cada uno. Escribe los resultados en el orden en que std::cout lee las variables."
+        },
+        "names": {
+          "code": {
+            "a": "positivo_sin_fraccion",
+            "b": "negativo_sin_fraccion"
+          }
+        },
+        "occurrences": {
+          "code": {
+            "a": 2,
+            "b": 2
+          }
+        },
+        "beforeSha256": "f26dc15f5c4632238f7f142f8c4f8e535479ac58c6078ffbd7cb60c2c71e1e1f",
+        "afterSha256": "f5e570a57e323ef103fef6d17ba30c686c990258d41d350f5459d82b669149db",
+        "priorSourceFormatSha256": "b85d3509573ba693cc182fcc02598c956c52ac7b5509369d6d612ce907deaab5",
+        "confirmed": {
+          "code": {
+            "a": 2,
+            "b": 2
+          }
+        }
+      },
+      {
+        "lessonId": "cpp_fundamentals__edition_es_1__objetos_y_estado__conversiones_y_deduccion",
+        "locale": "es",
+        "historicalFamilySha256": "90c9937d2da49398e630c31f468b5dd56fe53baa9c16d11daf109dc026155be2",
+        "originalStateSha256": "04e1f2ab7dff96e65178321ed9852a67dde02c4931090ad4c95501bb33822c22",
+        "stableStorage": {
+          "page": 3,
+          "block": 4
+        },
+        "editorialPrefixSha256": "dac4a024139687bcc681f793dcdbc3f5425810639305a1bc60fa0ed8817f13a5",
+        "id": "block_0003_0004",
+        "block": {
+          "type": "output_prediction",
+          "language": "cpp",
+          "question": "Compara las dos divisiones. En la primera declaración, static_cast convierte a double el resultado de total / partes. En la segunda declaración, static_cast convierte total a double antes de dividir. ¿Qué números escribe std::cout en ese orden, separados por un espacio?",
+          "code": "#include <iostream>\n\nint main() {\n    int total = 13;\n    int partes = 4;\n\n    double tarde = static_cast<double>(total / partes);\n\n    double antes = static_cast<double>(total) / partes;\n\n    std::cout << tarde << \" \" << antes;\n\n    return 0;\n}\n",
+          "answers": [
+            "3 3.25"
+          ],
+          "explanation": "En la primera declaración, total / partes divide dos enteros y el cociente es 3. Después, static_cast<double> convierte ese 3 a double. En la segunda declaración, static_cast<double>(total) convierte trece a double antes de dividir. Ahora la división admite una parte fraccionaria y el cociente es 3.25. La consola muestra 3 3.25.",
+          "reviewFeedback": "Mira qué va dentro de los paréntesis de static_cast en cada línea. Si dentro está toda la división, haz esa división primero."
+        },
+        "names": {
+          "code": {
+            "tarde": "cociente_convertido",
+            "antes": "cociente_con_operando_convertido"
+          }
+        },
+        "occurrences": {
+          "code": {
+            "tarde": 2,
+            "antes": 2
+          }
+        },
+        "beforeSha256": "3e98cb2940dbfd93092a1c193e1199869b36d14dfe748422bd9fc52cc932a867",
+        "afterSha256": "2f7414304fb1509a212a8e9cb9ae9a055a07e2a874ac27131ba8129741717b27",
+        "priorSourceFormatSha256": "f1d5a53fe22c2622ce969d6d76beba72355cbfc96823d7b7f689154a1f082352",
+        "confirmed": {
+          "code": {
+            "tarde": 2,
+            "antes": 2
+          }
         }
       }
     ]

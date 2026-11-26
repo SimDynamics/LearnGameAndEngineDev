@@ -293,6 +293,10 @@
           "text": "Realiza las acciones del editor en este orden:\n\nPulsa «Configurar y generar». Lee si CMake pudo interpretar la descripción y preparar las reglas.\nPulsa «Construir objetivo». Revisa si se pudo construir consulta; ese resultado pertenece a una acción diferente de la configuración.\nPulsa «Compilar, ejecutar y comprobar». El control construye lo necesario y compara una ejecución nueva con la meta de la actividad.\n\nEl proyecto actual no necesita entrada estándar. Sus tres llamadas deben mostrar `1:1:0`, sin salto final, y terminar con código cero. Si aparece una diferencia, identifica primero en qué acción ocurrió y qué archivo o resultado señala el registro. Corregirás ese dato antes de volver a comprobar."
         },
         {
+          "type": "paragraph",
+          "text": "Escribe 5 5 en Entrada para comprobar la igualdad. La salida de ese ensayo es 1. Con Entrada vacía, consulta reproduce las tres llamadas de la predicción y muestra 1:1:0."
+        },
+        {
           "type": "cpp_compiler",
           "language": "cpp",
           "initialCode": "",
@@ -303,7 +307,7 @@
             },
             {
               "path": "main.cpp",
-              "initialCode": "#include <iostream>\n\nbool debe_reponer(int disponibles, int minimo) {\n    return disponibles <= minimo;\n}\n\nint main() {\n    const bool menos = debe_reponer(4, 5);\n    const bool justo = debe_reponer(5, 5);\n    const bool mas = debe_reponer(6, 5);\n\n    std::cout << menos << ':' << justo << ':' << mas;\n\n    return 0;\n}\n"
+              "initialCode": "#include <iostream>\n\nbool debe_reponer(int disponibles, int minimo) {\n    return disponibles <= minimo;\n}\n\nint main() {\n    std::cin >> std::ws;\n    if (!std::cin.eof()) {\n        int disponibles{};\n        int minimo{};\n        if (!(std::cin >> disponibles >> minimo)) {\n            return 1;\n        }\n\n        std::cout << debe_reponer(disponibles, minimo);\n        return 0;\n    }\n\n    const bool menos = debe_reponer(4, 5);\n    const bool justo = debe_reponer(5, 5);\n    const bool mas = debe_reponer(6, 5);\n\n    std::cout << menos << ':' << justo << ':' << mas;\n\n    return 0;\n}\n"
             }
           ],
           "cmake": {
@@ -313,6 +317,27 @@
           "outputCheck": {
             "inputComparison": "exact",
             "cases": [
+              {
+                "standardInput": "5 5",
+                "outputs": [
+                  "1"
+                ],
+                "explanation": "La reposición incluye la igualdad con el mínimo."
+              },
+              {
+                "standardInput": "4 5",
+                "outputs": [
+                  "1"
+                ],
+                "explanation": "Cuatro está por debajo del mínimo de cinco y corresponde reponer."
+              },
+              {
+                "standardInput": "6 5",
+                "outputs": [
+                  "0"
+                ],
+                "explanation": "Seis supera el mínimo de cinco y no hace falta reponer."
+              },
               {
                 "standardInput": "",
                 "outputs": [
@@ -373,6 +398,10 @@
           "text": "El editor empieza con la revisión estricta que acabas de predecir. Cambia únicamente la comparación de debe_reponer en `main.cpp` para incluir la igualdad. Conserva el resto de la función, las tres llamadas y CMakeLists.txt.\n\nUtiliza «Compilar, ejecutar y comprobar» para construir y comprobar la reparación. Aquí cambió el cuerpo de una función C++; las rutas y el objetivo siguen siendo los mismos. Una construcción puede terminar correctamente aunque la comparación todavía incumpla el requisito, de modo que debes revisar también sus resultados."
         },
         {
+          "type": "paragraph",
+          "text": "Después de reparar la comparación, escribe 5 5 en Entrada. El resultado debe ser 1 porque cinco disponibles igualan el mínimo. Con Entrada vacía, puedes comprobar juntas las tres llamadas de la predicción."
+        },
+        {
           "type": "cpp_compiler",
           "language": "cpp",
           "initialCode": "",
@@ -383,7 +412,7 @@
             },
             {
               "path": "main.cpp",
-              "initialCode": "#include <iostream>\n\nbool debe_reponer(int disponibles, int minimo) {\n    return disponibles < minimo;\n}\n\nint main() {\n    const bool menos = debe_reponer(4, 5);\n    const bool justo = debe_reponer(5, 5);\n    const bool mas = debe_reponer(6, 5);\n\n    std::cout << menos << ':' << justo << ':' << mas;\n\n    return 0;\n}\n"
+              "initialCode": "#include <iostream>\n\nbool debe_reponer(int disponibles, int minimo) {\n    return disponibles < minimo;\n}\n\nint main() {\n    std::cin >> std::ws;\n    if (!std::cin.eof()) {\n        int disponibles{};\n        int minimo{};\n        if (!(std::cin >> disponibles >> minimo)) {\n            return 1;\n        }\n\n        std::cout << debe_reponer(disponibles, minimo);\n        return 0;\n    }\n\n    const bool menos = debe_reponer(4, 5);\n    const bool justo = debe_reponer(5, 5);\n    const bool mas = debe_reponer(6, 5);\n\n    std::cout << menos << ':' << justo << ':' << mas;\n\n    return 0;\n}\n"
             }
           ],
           "cmake": {
@@ -393,6 +422,27 @@
           "outputCheck": {
             "inputComparison": "exact",
             "cases": [
+              {
+                "standardInput": "5 5",
+                "outputs": [
+                  "1"
+                ],
+                "explanation": "La reposición incluye la igualdad con el mínimo."
+              },
+              {
+                "standardInput": "4 5",
+                "outputs": [
+                  "1"
+                ],
+                "explanation": "Cuatro está por debajo del mínimo de cinco y corresponde reponer."
+              },
+              {
+                "standardInput": "6 5",
+                "outputs": [
+                  "0"
+                ],
+                "explanation": "Seis supera el mínimo de cinco y no hace falta reponer."
+              },
               {
                 "standardInput": "",
                 "outputs": [
@@ -449,6 +499,10 @@
           "text": "El siguiente editor tiene su propio programa y conserva la función inclusiva. Cambia sólo los datos de sus tres llamadas para utilizar estas parejas, en este orden:\nDoce disponibles y mínimo siete.\nSiete disponibles y mínimo siete.\nTres disponibles y mínimo siete.\n\nEl resultado requerido es `0:1:1`, sin salto final y con retorno cero. Calcula cada respuesta con la regla de reposición y utiliza «Compilar, ejecutar y comprobar» para construir y ejecutar esta variación.\n\nCambiar este editor no sustituye el borrador de la reparación anterior. Tampoco convierte una salida antigua en prueba de las llamadas nuevas: cada observación debe corresponder a la fuente que realmente se ejecutó."
         },
         {
+          "type": "paragraph",
+          "text": "Escribe 1 en Entrada para comprobar la primera llamada. Ese número selecciona la llamada. Cambia las parejas en main.cpp según la consigna. Con 2 o 3 puedes comprobar cada llamada restante. Con Entrada vacía puedes comprobar las tres juntas."
+        },
+        {
           "type": "cpp_compiler",
           "language": "cpp",
           "initialCode": "",
@@ -459,7 +513,7 @@
             },
             {
               "path": "main.cpp",
-              "initialCode": "#include <iostream>\n\nbool debe_reponer(int disponibles, int minimo) {\n    return disponibles <= minimo;\n}\n\nint main() {\n    const bool menos = debe_reponer(4, 5);\n    const bool justo = debe_reponer(5, 5);\n    const bool mas = debe_reponer(6, 5);\n\n    std::cout << menos << ':' << justo << ':' << mas;\n\n    return 0;\n}\n"
+              "initialCode": "#include <iostream>\n\nbool debe_reponer(int disponibles, int minimo) {\n    return disponibles <= minimo;\n}\n\nint main() {\n    int ensayo{};\n    std::cin >> std::ws;\n    if (!std::cin.eof()) {\n        if (!(std::cin >> ensayo) || ensayo < 1 || ensayo > 3) {\n            return 1;\n        }\n    }\n\n    if (ensayo == 0 || ensayo == 1) {\n        std::cout << debe_reponer(4, 5);\n    }\n    if (ensayo == 0 || ensayo == 2) {\n        if (ensayo == 0) {\n            std::cout << ':';\n        }\n        std::cout << debe_reponer(5, 5);\n    }\n    if (ensayo == 0 || ensayo == 3) {\n        if (ensayo == 0) {\n            std::cout << ':';\n        }\n        std::cout << debe_reponer(6, 5);\n    }\n\n    return 0;\n}\n"
             }
           ],
           "cmake": {
@@ -469,6 +523,27 @@
           "outputCheck": {
             "inputComparison": "exact",
             "cases": [
+              {
+                "standardInput": "1",
+                "outputs": [
+                  "0"
+                ],
+                "explanation": "La primera llamada compara doce disponibles con mínimo siete. Doce supera el mínimo y no hace falta reponer."
+              },
+              {
+                "standardInput": "2",
+                "outputs": [
+                  "1"
+                ],
+                "explanation": "La segunda llamada compara siete disponibles con mínimo siete. La igualdad exige reponer."
+              },
+              {
+                "standardInput": "3",
+                "outputs": [
+                  "1"
+                ],
+                "explanation": "La tercera llamada compara tres disponibles con mínimo siete. Tres está por debajo del mínimo y se debe reponer."
+              },
               {
                 "standardInput": "",
                 "outputs": [
@@ -498,7 +573,7 @@
             },
             {
               "path": "main.cpp",
-              "initialCode": "#include <iostream>\n\nbool debe_reponer(int disponibles, int minimo) {\n    return disponibles <= minimo;\n}\n\nint main() {\n    const bool menos = debe_reponer(0, 1);\n    const bool justo = debe_reponer(1, 1);\n    const bool mas = debe_reponer(40, 1);\n\n    std::cout << menos << ':' << justo << ':' << mas;\n\n    return 0;\n}\n"
+              "initialCode": "#include <iostream>\n\nbool debe_reponer(int disponibles, int minimo) {\n    return disponibles <= minimo;\n}\n\nint main() {\n    std::cin >> std::ws;\n    if (!std::cin.eof()) {\n        int disponibles{};\n        int minimo{};\n        if (!(std::cin >> disponibles >> minimo)) {\n            return 1;\n        }\n\n        std::cout << debe_reponer(disponibles, minimo);\n        return 0;\n    }\n\n    const bool menos = debe_reponer(0, 1);\n    const bool justo = debe_reponer(1, 1);\n    const bool mas = debe_reponer(40, 1);\n\n    std::cout << menos << ':' << justo << ':' << mas;\n\n    return 0;\n}\n"
             }
           ],
           "cmake": {
@@ -508,6 +583,27 @@
           "outputCheck": {
             "inputComparison": "exact",
             "cases": [
+              {
+                "standardInput": "1 1",
+                "outputs": [
+                  "1"
+                ],
+                "explanation": "Con uno disponible y mínimo uno, la cantidad coincide con el mínimo y se debe reponer."
+              },
+              {
+                "standardInput": "0 1",
+                "outputs": [
+                  "1"
+                ],
+                "explanation": "Con cero disponibles, la cantidad está por debajo del mínimo y se debe reponer."
+              },
+              {
+                "standardInput": "40 1",
+                "outputs": [
+                  "0"
+                ],
+                "explanation": "Con cuarenta disponibles, la cantidad supera el mínimo y no hace falta reponer."
+              },
               {
                 "standardInput": "",
                 "outputs": [
@@ -535,6 +631,10 @@
           "text": "Utiliza los controles del editor para seguir el proyecto por sus fases:\n\nConfigura y genera las reglas.\nSolicita construir consulta y lee el diagnóstico de esa construcción.\nLocaliza en main.cpp el punto y coma que falta en la sentencia de retorno de main y corrige sólo ese detalle.\nReconstruye la fuente corregida; después ejecútala y comprueba las llamadas conservadas.\n\nTras reparar la sintaxis, la salida requerida es `1:1:0`, sin salto final, y el retorno es cero. El texto exacto del diagnóstico puede cambiar entre compiladores. Lo necesario es identificar su archivo, su contexto y la fase en que apareció, en lugar de memorizar una frase."
         },
         {
+          "type": "paragraph",
+          "text": "Tras reparar el retorno de main, escribe 5 5 en Entrada para comprobar sólo la igualdad y obtener 1. La salida 1:1:0 corresponde al ensayo de las tres llamadas que puedes ejecutar con Entrada vacía."
+        },
+        {
           "type": "cpp_compiler",
           "language": "cpp",
           "initialCode": "",
@@ -545,7 +645,7 @@
             },
             {
               "path": "main.cpp",
-              "initialCode": "#include <iostream>\n\nbool debe_reponer(int disponibles, int minimo) {\n    return disponibles <= minimo;\n}\n\nint main() {\n    const bool menos = debe_reponer(4, 5);\n    const bool justo = debe_reponer(5, 5);\n    const bool mas = debe_reponer(6, 5);\n\n    std::cout << menos << ':' << justo << ':' << mas;\n    return 0\n}\n"
+              "initialCode": "#include <iostream>\n\nbool debe_reponer(int disponibles, int minimo) {\n    return disponibles <= minimo;\n}\n\nint main() {\n    std::cin >> std::ws;\n    if (!std::cin.eof()) {\n        int disponibles{};\n        int minimo{};\n        if (!(std::cin >> disponibles >> minimo)) {\n            return 1;\n        }\n\n        std::cout << debe_reponer(disponibles, minimo);\n        return 0;\n    }\n\n    const bool menos = debe_reponer(4, 5);\n    const bool justo = debe_reponer(5, 5);\n    const bool mas = debe_reponer(6, 5);\n\n    std::cout << menos << ':' << justo << ':' << mas;\n    return 0\n}\n"
             }
           ],
           "cmake": {
@@ -555,6 +655,27 @@
           "outputCheck": {
             "inputComparison": "exact",
             "cases": [
+              {
+                "standardInput": "5 5",
+                "outputs": [
+                  "1"
+                ],
+                "explanation": "La reposición incluye la igualdad con el mínimo."
+              },
+              {
+                "standardInput": "4 5",
+                "outputs": [
+                  "1"
+                ],
+                "explanation": "Cuatro está por debajo del mínimo de cinco y corresponde reponer."
+              },
+              {
+                "standardInput": "6 5",
+                "outputs": [
+                  "0"
+                ],
+                "explanation": "Seis supera el mínimo de cinco y no hace falta reponer."
+              },
               {
                 "standardInput": "",
                 "outputs": [
@@ -1117,6 +1238,7 @@
           "block_0005_0001",
           "block_0005_0002",
           "block_0005_0003",
+          "consulta_ensayos_por_entrada",
           "block_0005_0004",
           "block_0005_0005",
           "block_0005_0006"
@@ -1129,6 +1251,7 @@
           "block_0006_0001",
           "block_0006_0002",
           "block_0006_0003",
+          "comparacion_reposicion_ensayos_por_entrada",
           "block_0006_0004",
           "block_0006_0005"
         ]
@@ -1140,6 +1263,7 @@
           "block_0007_0001",
           "block_0007_0002",
           "block_0007_0003",
+          "variar_reposicion_ensayos_por_entrada",
           "variar_llamadas_reposicion",
           "block_0007_0004",
           "block_0007_0005",
@@ -1152,6 +1276,7 @@
           "block_0008_0000",
           "block_0008_0001",
           "block_0008_0002",
+          "sintaxis_reposicion_ensayos_por_entrada",
           "block_0008_0003",
           "block_0008_0004",
           "block_0008_0005"
@@ -2199,6 +2324,42 @@
           "block": 0
         },
         "progressPage": "page_0007"
+      },
+      {
+        "id": "consulta_ensayos_por_entrada",
+        "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5",
+        "storage": {
+          "page": 900000,
+          "block": 0
+        },
+        "progressPage": "page_0005"
+      },
+      {
+        "id": "comparacion_reposicion_ensayos_por_entrada",
+        "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5",
+        "storage": {
+          "page": 900001,
+          "block": 0
+        },
+        "progressPage": "page_0006"
+      },
+      {
+        "id": "sintaxis_reposicion_ensayos_por_entrada",
+        "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5",
+        "storage": {
+          "page": 900002,
+          "block": 0
+        },
+        "progressPage": "page_0008"
+      },
+      {
+        "id": "variar_reposicion_ensayos_por_entrada",
+        "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5",
+        "storage": {
+          "page": 900003,
+          "block": 0
+        },
+        "progressPage": "page_0007"
       }
     ],
     "editorial": [
@@ -2481,6 +2642,31 @@
         "id": "block_0010_0005",
         "beforeSha256": "2de200ac29ef0f44070d49ea13198888c58929cfc4b939c76783be71c71306ff",
         "afterSha256": "08c01ce17578715a6f35214481ae34cc2b1189d5429817dd40509ebeea8e3a81"
+      },
+      {
+        "id": "block_0007_0006",
+        "beforeSha256": "70f0b353b2516b24abbdb56fd67b55b098d0261b147550f7de89f32e55babfde",
+        "afterSha256": "3dba167f9ae0e654ee4092c49c38d3f2c5a401a70596a8f603922c969f65c4c4"
+      },
+      {
+        "id": "block_0005_0004",
+        "beforeSha256": "393174e0aeeb6709618eb06a81c7f674d1662e4890846a8fca40eebf3eb0a96d",
+        "afterSha256": "becb0b260ff5d86ec8fb01e99edeb7d71e672059126f70e5c41447c4b7161355"
+      },
+      {
+        "id": "block_0006_0004",
+        "beforeSha256": "c59c0420803f6c7105891956603ba61b777c4c54a62a279d0b7a879dfb2f9e3d",
+        "afterSha256": "763821744c1fe605c7ee079777e1395e0a5cd0e6211bb2b8d5f1056c533e7298"
+      },
+      {
+        "id": "block_0008_0003",
+        "beforeSha256": "5d49b9b4f33bb691cb42e25056e1307e04a6de1e23b205f028d7da110fea2846",
+        "afterSha256": "962844edc8242408573f4c2896ed7e2f212925e75156ea0731e912fb7d8d1d62"
+      },
+      {
+        "id": "variar_llamadas_reposicion",
+        "beforeSha256": "ed6d1e8a2dce9392c2005b8e955859901ea3570e3f09390f005a0427b2e42b25",
+        "afterSha256": "a54e3130da74cc718f43bce7c3e350f35b35d37a37d2c9fa2a96bc0dca7d15da"
       }
     ],
     "sourceFormatRevisions": [
@@ -2740,6 +2926,557 @@
           ],
           "explanation": "40 coincide con el mínimo 40; cero está por debajo de 1; 1 coincide con 1. Las tres llamadas requieren reponer. El valor 0 de existencias está permitido: no lo confundas con un mínimo 0, excluido del dominio.",
           "reviewFeedback": "Comprueba el dominio de cada argumento, distinguiendo existencias disponibles y mínimo exigido. Aplica la condición a cada pareja extrema y reúne los valores en el orden exacto de las inserciones de cout."
+        }
+      }
+    ],
+    "compilerCaseRevisions": [
+      {
+        "id": "block_0007_0006",
+        "block": {
+          "type": "cpp_compiler",
+          "language": "cpp",
+          "initialCode": "",
+          "projectFiles": [
+            {
+              "path": "CMakeLists.txt",
+              "initialCode": "cmake_minimum_required(VERSION 3.20)\nproject(Existencias LANGUAGES CXX)\n\nadd_executable(consulta main.cpp)\n\ntarget_compile_features(consulta PRIVATE cxx_std_20)\nset_target_properties(consulta PROPERTIES CXX_EXTENSIONS OFF)\n"
+            },
+            {
+              "path": "main.cpp",
+              "initialCode": "#include <iostream>\n\nbool debe_reponer(int disponibles, int minimo) {\n    return disponibles <= minimo;\n}\n\nint main() {\n    const bool menos = debe_reponer(0, 1);\n    const bool justo = debe_reponer(1, 1);\n    const bool mas = debe_reponer(40, 1);\n\n    std::cout << menos << ':' << justo << ':' << mas;\n\n    return 0;\n}\n"
+            }
+          ],
+          "cmake": {
+            "target": "consulta",
+            "buildType": "Debug"
+          },
+          "outputCheck": {
+            "inputComparison": "exact",
+            "cases": [
+              {
+                "standardInput": "",
+                "outputs": [
+                  "1:1:0"
+                ],
+                "explanation": "El mismo requisito incluye la igualdad con mínimo uno; cero está por debajo y cuarenta está por encima."
+              }
+            ]
+          }
+        },
+        "cases": [
+          {
+            "standardInput": "1 1",
+            "outputs": [
+              "1"
+            ],
+            "explanation": "Con uno disponible y mínimo uno, la cantidad coincide con el mínimo y se debe reponer."
+          },
+          {
+            "standardInput": "0 1",
+            "outputs": [
+              "1"
+            ],
+            "explanation": "Con cero disponibles, la cantidad está por debajo del mínimo y se debe reponer."
+          },
+          {
+            "standardInput": "40 1",
+            "outputs": [
+              "0"
+            ],
+            "explanation": "Con cuarenta disponibles, la cantidad supera el mínimo y no hace falta reponer."
+          },
+          {
+            "standardInput": "",
+            "outputs": [
+              "1:1:0"
+            ],
+            "explanation": "El mismo requisito incluye la igualdad con mínimo uno; cero está por debajo y cuarenta está por encima."
+          }
+        ],
+        "editorialIndex": 56,
+        "historySha256": "dab2db99e0b54f8158d75c1f1f86715cfc89970497f018987b4d261d57718b38",
+        "semanticBefore": [
+          {
+            "block": "block_0007_0006",
+            "path": "/outputCheck/cases/0/explanation",
+            "sourceSha256": "a5e30058ad0e668de07bfd31b7884cc83a392bb318499fc8b29da3ed21d834e4",
+            "spans": []
+          }
+        ],
+        "semanticAfter": [
+          {
+            "block": "block_0007_0006",
+            "path": "/outputCheck/cases/0/explanation",
+            "sourceSha256": "8fbc2394a3ecb9cf75bbc01a979b8eed661082d6691892b6e80735240f8c9566",
+            "spans": []
+          },
+          {
+            "block": "block_0007_0006",
+            "path": "/outputCheck/cases/1/explanation",
+            "sourceSha256": "738f6b3d24aef761cde8892a6717be9fa35beb735e406dc89fbca6104a47cfa5",
+            "spans": []
+          },
+          {
+            "block": "block_0007_0006",
+            "path": "/outputCheck/cases/2/explanation",
+            "sourceSha256": "8b59eecae2c2bc7761429ea670bd4a01c898f903198c45be121af9a0ba8b2c68",
+            "spans": []
+          },
+          {
+            "block": "block_0007_0006",
+            "path": "/outputCheck/cases/3/explanation",
+            "sourceSha256": "a5e30058ad0e668de07bfd31b7884cc83a392bb318499fc8b29da3ed21d834e4",
+            "spans": []
+          }
+        ],
+        "client": {
+          "path": "main.cpp",
+          "source": "#include <iostream>\n\nbool debe_reponer(int disponibles, int minimo) {\n    return disponibles <= minimo;\n}\n\nint main() {\n    std::cin >> std::ws;\n    if (!std::cin.eof()) {\n        int disponibles{};\n        int minimo{};\n        if (!(std::cin >> disponibles >> minimo)) {\n            return 1;\n        }\n\n        std::cout << debe_reponer(disponibles, minimo);\n        return 0;\n    }\n\n    const bool menos = debe_reponer(0, 1);\n    const bool justo = debe_reponer(1, 1);\n    const bool mas = debe_reponer(40, 1);\n\n    std::cout << menos << ':' << justo << ':' << mas;\n\n    return 0;\n}\n"
+        }
+      },
+      {
+        "id": "block_0005_0004",
+        "block": {
+          "type": "cpp_compiler",
+          "language": "cpp",
+          "initialCode": "",
+          "projectFiles": [
+            {
+              "path": "CMakeLists.txt",
+              "initialCode": "cmake_minimum_required(VERSION 3.20)\nproject(Existencias LANGUAGES CXX)\n\nadd_executable(consulta main.cpp)\n\ntarget_compile_features(consulta PRIVATE cxx_std_20)\nset_target_properties(consulta PROPERTIES CXX_EXTENSIONS OFF)\n"
+            },
+            {
+              "path": "main.cpp",
+              "initialCode": "#include <iostream>\n\nbool debe_reponer(int disponibles, int minimo) {\n    return disponibles <= minimo;\n}\n\nint main() {\n    const bool menos = debe_reponer(4, 5);\n    const bool justo = debe_reponer(5, 5);\n    const bool mas = debe_reponer(6, 5);\n\n    std::cout << menos << ':' << justo << ':' << mas;\n\n    return 0;\n}\n"
+            }
+          ],
+          "cmake": {
+            "target": "consulta",
+            "buildType": "Debug"
+          },
+          "outputCheck": {
+            "inputComparison": "exact",
+            "cases": [
+              {
+                "standardInput": "",
+                "outputs": [
+                  "1:1:0"
+                ],
+                "explanation": "La ejecución conserva la frontera inclusiva: se repone por debajo y en la igualdad, pero no cuando ya hay más unidades."
+              }
+            ]
+          }
+        },
+        "cases": [
+          {
+            "standardInput": "5 5",
+            "outputs": [
+              "1"
+            ],
+            "explanation": "La reposición incluye la igualdad con el mínimo."
+          },
+          {
+            "standardInput": "4 5",
+            "outputs": [
+              "1"
+            ],
+            "explanation": "Cuatro está por debajo del mínimo de cinco y corresponde reponer."
+          },
+          {
+            "standardInput": "6 5",
+            "outputs": [
+              "0"
+            ],
+            "explanation": "Seis supera el mínimo de cinco y no hace falta reponer."
+          },
+          {
+            "standardInput": "",
+            "outputs": [
+              "1:1:0"
+            ],
+            "explanation": "La ejecución conserva la frontera inclusiva: se repone por debajo y en la igualdad, pero no cuando ya hay más unidades."
+          }
+        ],
+        "editorialIndex": 57,
+        "historySha256": "49e1bf63440793154922256638ecb4bfdcf24d9d7fa1edfd6a3cacfa44557a45",
+        "semanticBefore": [
+          {
+            "block": "block_0005_0004",
+            "path": "/outputCheck/cases/0/explanation",
+            "sourceSha256": "8b674566e89a0673127960d4eac4ba6c8e2cebbdadbb59ab8c3c224f5faf889f",
+            "spans": []
+          }
+        ],
+        "semanticAfter": [
+          {
+            "block": "block_0005_0004",
+            "path": "/outputCheck/cases/0/explanation",
+            "sourceSha256": "074c0ad342e49ad03fce91dde5a72248975d49897db352a1b31d03291c21d93e",
+            "spans": []
+          },
+          {
+            "block": "block_0005_0004",
+            "path": "/outputCheck/cases/1/explanation",
+            "sourceSha256": "dd793c1cf3d896d783a6a142b407da5926342055af2d8c8f2b770ce105795233",
+            "spans": []
+          },
+          {
+            "block": "block_0005_0004",
+            "path": "/outputCheck/cases/2/explanation",
+            "sourceSha256": "6b706129a0924d3d3cfd62d3ee8477a3228a16378b4d12c87774451ccbd5c262",
+            "spans": []
+          },
+          {
+            "block": "block_0005_0004",
+            "path": "/outputCheck/cases/3/explanation",
+            "sourceSha256": "8b674566e89a0673127960d4eac4ba6c8e2cebbdadbb59ab8c3c224f5faf889f",
+            "spans": []
+          }
+        ],
+        "client": {
+          "path": "main.cpp",
+          "source": "#include <iostream>\n\nbool debe_reponer(int disponibles, int minimo) {\n    return disponibles <= minimo;\n}\n\nint main() {\n    std::cin >> std::ws;\n    if (!std::cin.eof()) {\n        int disponibles{};\n        int minimo{};\n        if (!(std::cin >> disponibles >> minimo)) {\n            return 1;\n        }\n\n        std::cout << debe_reponer(disponibles, minimo);\n        return 0;\n    }\n\n    const bool menos = debe_reponer(4, 5);\n    const bool justo = debe_reponer(5, 5);\n    const bool mas = debe_reponer(6, 5);\n\n    std::cout << menos << ':' << justo << ':' << mas;\n\n    return 0;\n}\n"
+        }
+      },
+      {
+        "id": "block_0006_0004",
+        "block": {
+          "type": "cpp_compiler",
+          "language": "cpp",
+          "initialCode": "",
+          "projectFiles": [
+            {
+              "path": "CMakeLists.txt",
+              "initialCode": "cmake_minimum_required(VERSION 3.20)\nproject(Existencias LANGUAGES CXX)\n\nadd_executable(consulta main.cpp)\n\ntarget_compile_features(consulta PRIVATE cxx_std_20)\nset_target_properties(consulta PROPERTIES CXX_EXTENSIONS OFF)\n"
+            },
+            {
+              "path": "main.cpp",
+              "initialCode": "#include <iostream>\n\nbool debe_reponer(int disponibles, int minimo) {\n    return disponibles < minimo;\n}\n\nint main() {\n    const bool menos = debe_reponer(4, 5);\n    const bool justo = debe_reponer(5, 5);\n    const bool mas = debe_reponer(6, 5);\n\n    std::cout << menos << ':' << justo << ':' << mas;\n\n    return 0;\n}\n"
+            }
+          ],
+          "cmake": {
+            "target": "consulta",
+            "buildType": "Debug"
+          },
+          "outputCheck": {
+            "inputComparison": "exact",
+            "cases": [
+              {
+                "standardInput": "",
+                "outputs": [
+                  "1:1:0"
+                ],
+                "explanation": "La reparación incluye la igualdad sin cambiar el requisito, las llamadas ni las herramientas de construcción."
+              }
+            ]
+          }
+        },
+        "cases": [
+          {
+            "standardInput": "5 5",
+            "outputs": [
+              "1"
+            ],
+            "explanation": "La reposición incluye la igualdad con el mínimo."
+          },
+          {
+            "standardInput": "4 5",
+            "outputs": [
+              "1"
+            ],
+            "explanation": "Cuatro está por debajo del mínimo de cinco y corresponde reponer."
+          },
+          {
+            "standardInput": "6 5",
+            "outputs": [
+              "0"
+            ],
+            "explanation": "Seis supera el mínimo de cinco y no hace falta reponer."
+          },
+          {
+            "standardInput": "",
+            "outputs": [
+              "1:1:0"
+            ],
+            "explanation": "La reparación incluye la igualdad sin cambiar el requisito, las llamadas ni las herramientas de construcción."
+          }
+        ],
+        "editorialIndex": 58,
+        "historySha256": "cd2ba8d5d6cba32648913827fb8cb8aae9a92a2088c36ee3a711e0834db869a0",
+        "semanticBefore": [
+          {
+            "block": "block_0006_0004",
+            "path": "/outputCheck/cases/0/explanation",
+            "sourceSha256": "6d15db432c5932f449d0511bcf647434ad5684615583d8f930c028086a443f84",
+            "spans": []
+          }
+        ],
+        "semanticAfter": [
+          {
+            "block": "block_0006_0004",
+            "path": "/outputCheck/cases/0/explanation",
+            "sourceSha256": "074c0ad342e49ad03fce91dde5a72248975d49897db352a1b31d03291c21d93e",
+            "spans": []
+          },
+          {
+            "block": "block_0006_0004",
+            "path": "/outputCheck/cases/1/explanation",
+            "sourceSha256": "dd793c1cf3d896d783a6a142b407da5926342055af2d8c8f2b770ce105795233",
+            "spans": []
+          },
+          {
+            "block": "block_0006_0004",
+            "path": "/outputCheck/cases/2/explanation",
+            "sourceSha256": "6b706129a0924d3d3cfd62d3ee8477a3228a16378b4d12c87774451ccbd5c262",
+            "spans": []
+          },
+          {
+            "block": "block_0006_0004",
+            "path": "/outputCheck/cases/3/explanation",
+            "sourceSha256": "6d15db432c5932f449d0511bcf647434ad5684615583d8f930c028086a443f84",
+            "spans": []
+          }
+        ],
+        "client": {
+          "path": "main.cpp",
+          "source": "#include <iostream>\n\nbool debe_reponer(int disponibles, int minimo) {\n    return disponibles < minimo;\n}\n\nint main() {\n    std::cin >> std::ws;\n    if (!std::cin.eof()) {\n        int disponibles{};\n        int minimo{};\n        if (!(std::cin >> disponibles >> minimo)) {\n            return 1;\n        }\n\n        std::cout << debe_reponer(disponibles, minimo);\n        return 0;\n    }\n\n    const bool menos = debe_reponer(4, 5);\n    const bool justo = debe_reponer(5, 5);\n    const bool mas = debe_reponer(6, 5);\n\n    std::cout << menos << ':' << justo << ':' << mas;\n\n    return 0;\n}\n"
+        }
+      },
+      {
+        "id": "block_0008_0003",
+        "block": {
+          "type": "cpp_compiler",
+          "language": "cpp",
+          "initialCode": "",
+          "projectFiles": [
+            {
+              "path": "CMakeLists.txt",
+              "initialCode": "cmake_minimum_required(VERSION 3.20)\nproject(Existencias LANGUAGES CXX)\n\nadd_executable(consulta main.cpp)\n\ntarget_compile_features(consulta PRIVATE cxx_std_20)\nset_target_properties(consulta PROPERTIES CXX_EXTENSIONS OFF)\n"
+            },
+            {
+              "path": "main.cpp",
+              "initialCode": "#include <iostream>\n\nbool debe_reponer(int disponibles, int minimo) {\n    return disponibles <= minimo;\n}\n\nint main() {\n    const bool menos = debe_reponer(4, 5);\n    const bool justo = debe_reponer(5, 5);\n    const bool mas = debe_reponer(6, 5);\n\n    std::cout << menos << ':' << justo << ':' << mas;\n    return 0\n}\n"
+            }
+          ],
+          "cmake": {
+            "target": "consulta",
+            "buildType": "Debug"
+          },
+          "outputCheck": {
+            "inputComparison": "exact",
+            "cases": [
+              {
+                "standardInput": "",
+                "outputs": [
+                  "1:1:0"
+                ],
+                "explanation": "Tras reparar la sintaxis se construye esta revisión y se comprueban sus tres llamadas; una configuración válida por sí sola no habría acreditado esa ejecución."
+              }
+            ]
+          }
+        },
+        "cases": [
+          {
+            "standardInput": "5 5",
+            "outputs": [
+              "1"
+            ],
+            "explanation": "La reposición incluye la igualdad con el mínimo."
+          },
+          {
+            "standardInput": "4 5",
+            "outputs": [
+              "1"
+            ],
+            "explanation": "Cuatro está por debajo del mínimo de cinco y corresponde reponer."
+          },
+          {
+            "standardInput": "6 5",
+            "outputs": [
+              "0"
+            ],
+            "explanation": "Seis supera el mínimo de cinco y no hace falta reponer."
+          },
+          {
+            "standardInput": "",
+            "outputs": [
+              "1:1:0"
+            ],
+            "explanation": "Tras reparar la sintaxis se construye esta revisión y se comprueban sus tres llamadas; una configuración válida por sí sola no habría acreditado esa ejecución."
+          }
+        ],
+        "editorialIndex": 59,
+        "historySha256": "cc93dc2dca9f7396e0f2eb8810b32bf0f228f6039554a1f8a126354f74129bb2",
+        "semanticBefore": [
+          {
+            "block": "block_0008_0003",
+            "path": "/outputCheck/cases/0/explanation",
+            "sourceSha256": "f8d535327fdc324518602b7b92f26e107b600a3a145da0c833bfa6cf3d6a44eb",
+            "spans": []
+          }
+        ],
+        "semanticAfter": [
+          {
+            "block": "block_0008_0003",
+            "path": "/outputCheck/cases/0/explanation",
+            "sourceSha256": "074c0ad342e49ad03fce91dde5a72248975d49897db352a1b31d03291c21d93e",
+            "spans": []
+          },
+          {
+            "block": "block_0008_0003",
+            "path": "/outputCheck/cases/1/explanation",
+            "sourceSha256": "dd793c1cf3d896d783a6a142b407da5926342055af2d8c8f2b770ce105795233",
+            "spans": []
+          },
+          {
+            "block": "block_0008_0003",
+            "path": "/outputCheck/cases/2/explanation",
+            "sourceSha256": "6b706129a0924d3d3cfd62d3ee8477a3228a16378b4d12c87774451ccbd5c262",
+            "spans": []
+          },
+          {
+            "block": "block_0008_0003",
+            "path": "/outputCheck/cases/3/explanation",
+            "sourceSha256": "f8d535327fdc324518602b7b92f26e107b600a3a145da0c833bfa6cf3d6a44eb",
+            "spans": []
+          }
+        ],
+        "client": {
+          "path": "main.cpp",
+          "source": "#include <iostream>\n\nbool debe_reponer(int disponibles, int minimo) {\n    return disponibles <= minimo;\n}\n\nint main() {\n    std::cin >> std::ws;\n    if (!std::cin.eof()) {\n        int disponibles{};\n        int minimo{};\n        if (!(std::cin >> disponibles >> minimo)) {\n            return 1;\n        }\n\n        std::cout << debe_reponer(disponibles, minimo);\n        return 0;\n    }\n\n    const bool menos = debe_reponer(4, 5);\n    const bool justo = debe_reponer(5, 5);\n    const bool mas = debe_reponer(6, 5);\n\n    std::cout << menos << ':' << justo << ':' << mas;\n    return 0\n}\n"
+        }
+      },
+      {
+        "id": "variar_llamadas_reposicion",
+        "block": {
+          "type": "cpp_compiler",
+          "language": "cpp",
+          "initialCode": "",
+          "projectFiles": [
+            {
+              "path": "CMakeLists.txt",
+              "initialCode": "cmake_minimum_required(VERSION 3.20)\nproject(Existencias LANGUAGES CXX)\n\nadd_executable(consulta main.cpp)\n\ntarget_compile_features(consulta PRIVATE cxx_std_20)\nset_target_properties(consulta PROPERTIES CXX_EXTENSIONS OFF)\n"
+            },
+            {
+              "path": "main.cpp",
+              "initialCode": "#include <iostream>\n\nbool debe_reponer(int disponibles, int minimo) {\n    return disponibles <= minimo;\n}\n\nint main() {\n    const bool menos = debe_reponer(4, 5);\n    const bool justo = debe_reponer(5, 5);\n    const bool mas = debe_reponer(6, 5);\n\n    std::cout << menos << ':' << justo << ':' << mas;\n\n    return 0;\n}\n"
+            }
+          ],
+          "cmake": {
+            "target": "consulta",
+            "buildType": "Debug"
+          },
+          "outputCheck": {
+            "inputComparison": "exact",
+            "cases": [
+              {
+                "standardInput": "",
+                "outputs": [
+                  "0:1:1"
+                ],
+                "explanation": "Con (12,7), (7,7) y (3,7), doce está por encima del mínimo, siete coincide y tres está por debajo. La función inclusiva produce 0:1:1 al calcular esas llamadas en su orden."
+              }
+            ]
+          }
+        },
+        "cases": [
+          {
+            "standardInput": "1",
+            "outputs": [
+              "0"
+            ],
+            "explanation": "La primera llamada compara doce disponibles con mínimo siete. Doce supera el mínimo y no hace falta reponer."
+          },
+          {
+            "standardInput": "2",
+            "outputs": [
+              "1"
+            ],
+            "explanation": "La segunda llamada compara siete disponibles con mínimo siete. La igualdad exige reponer."
+          },
+          {
+            "standardInput": "3",
+            "outputs": [
+              "1"
+            ],
+            "explanation": "La tercera llamada compara tres disponibles con mínimo siete. Tres está por debajo del mínimo y se debe reponer."
+          },
+          {
+            "standardInput": "",
+            "outputs": [
+              "0:1:1"
+            ],
+            "explanation": "Con (12,7), (7,7) y (3,7), doce está por encima del mínimo, siete coincide y tres está por debajo. La función inclusiva produce 0:1:1 al calcular esas llamadas en su orden."
+          }
+        ],
+        "editorialIndex": 60,
+        "historySha256": "b7319e1ef2483d796d21ed54e7a64263801f861cd2540fe90ec527297c598791",
+        "semanticBefore": [
+          {
+            "block": "variar_llamadas_reposicion",
+            "path": "/outputCheck/cases/0/explanation",
+            "sourceSha256": "bd1228ac9a19f6b075a475e83761c0c2ebcd75e5d64bba8c7cef07dfd2754198",
+            "spans": [
+              {
+                "start": 4,
+                "end": 10,
+                "text": "(12,7)",
+                "role": "data",
+                "reading": "natural"
+              },
+              {
+                "start": 12,
+                "end": 17,
+                "text": "(7,7)",
+                "role": "data",
+                "reading": "natural"
+              },
+              {
+                "start": 20,
+                "end": 25,
+                "text": "(3,7)",
+                "role": "data",
+                "reading": "natural"
+              },
+              {
+                "start": 128,
+                "end": 133,
+                "text": "0:1:1",
+                "role": "output",
+                "reading": "natural"
+              }
+            ]
+          }
+        ],
+        "semanticAfter": [
+          {
+            "block": "variar_llamadas_reposicion",
+            "path": "/outputCheck/cases/0/explanation",
+            "sourceSha256": "8a1809a29923e2c5476158365ff5b041a8bea61b6b498285adb708d3417f03ab",
+            "spans": []
+          },
+          {
+            "block": "variar_llamadas_reposicion",
+            "path": "/outputCheck/cases/1/explanation",
+            "sourceSha256": "6eac43a6d7e172d018bc3d6bf55ac05a0aa5bae8970f313daeb0af705a6929ba",
+            "spans": []
+          },
+          {
+            "block": "variar_llamadas_reposicion",
+            "path": "/outputCheck/cases/2/explanation",
+            "sourceSha256": "f3051b17d30e1e28029a541b3125528460614dab45fffae1d95ae088ea7b493a",
+            "spans": []
+          },
+          {
+            "block": "variar_llamadas_reposicion",
+            "path": "/outputCheck/cases/3/explanation",
+            "sourceSha256": "bd1228ac9a19f6b075a475e83761c0c2ebcd75e5d64bba8c7cef07dfd2754198",
+            "spans": []
+          }
+        ],
+        "client": {
+          "path": "main.cpp",
+          "source": "#include <iostream>\n\nbool debe_reponer(int disponibles, int minimo) {\n    return disponibles <= minimo;\n}\n\nint main() {\n    int ensayo{};\n    std::cin >> std::ws;\n    if (!std::cin.eof()) {\n        if (!(std::cin >> ensayo) || ensayo < 1 || ensayo > 3) {\n            return 1;\n        }\n    }\n\n    if (ensayo == 0 || ensayo == 1) {\n        std::cout << debe_reponer(4, 5);\n    }\n    if (ensayo == 0 || ensayo == 2) {\n        if (ensayo == 0) {\n            std::cout << ':';\n        }\n        std::cout << debe_reponer(5, 5);\n    }\n    if (ensayo == 0 || ensayo == 3) {\n        if (ensayo == 0) {\n            std::cout << ':';\n        }\n        std::cout << debe_reponer(6, 5);\n    }\n\n    return 0;\n}\n"
         }
       }
     ]
@@ -4127,6 +4864,24 @@
       {
         "block": "block_0005_0004",
         "path": "/outputCheck/cases/0/explanation",
+        "sourceSha256": "074c0ad342e49ad03fce91dde5a72248975d49897db352a1b31d03291c21d93e",
+        "spans": []
+      },
+      {
+        "block": "block_0005_0004",
+        "path": "/outputCheck/cases/1/explanation",
+        "sourceSha256": "dd793c1cf3d896d783a6a142b407da5926342055af2d8c8f2b770ce105795233",
+        "spans": []
+      },
+      {
+        "block": "block_0005_0004",
+        "path": "/outputCheck/cases/2/explanation",
+        "sourceSha256": "6b706129a0924d3d3cfd62d3ee8477a3228a16378b4d12c87774451ccbd5c262",
+        "spans": []
+      },
+      {
+        "block": "block_0005_0004",
+        "path": "/outputCheck/cases/3/explanation",
         "sourceSha256": "8b674566e89a0673127960d4eac4ba6c8e2cebbdadbb59ab8c3c224f5faf889f",
         "spans": []
       },
@@ -4325,6 +5080,24 @@
       {
         "block": "block_0006_0004",
         "path": "/outputCheck/cases/0/explanation",
+        "sourceSha256": "074c0ad342e49ad03fce91dde5a72248975d49897db352a1b31d03291c21d93e",
+        "spans": []
+      },
+      {
+        "block": "block_0006_0004",
+        "path": "/outputCheck/cases/1/explanation",
+        "sourceSha256": "dd793c1cf3d896d783a6a142b407da5926342055af2d8c8f2b770ce105795233",
+        "spans": []
+      },
+      {
+        "block": "block_0006_0004",
+        "path": "/outputCheck/cases/2/explanation",
+        "sourceSha256": "6b706129a0924d3d3cfd62d3ee8477a3228a16378b4d12c87774451ccbd5c262",
+        "spans": []
+      },
+      {
+        "block": "block_0006_0004",
+        "path": "/outputCheck/cases/3/explanation",
         "sourceSha256": "6d15db432c5932f449d0511bcf647434ad5684615583d8f930c028086a443f84",
         "spans": []
       },
@@ -4459,37 +5232,26 @@
       {
         "block": "variar_llamadas_reposicion",
         "path": "/outputCheck/cases/0/explanation",
+        "sourceSha256": "8a1809a29923e2c5476158365ff5b041a8bea61b6b498285adb708d3417f03ab",
+        "spans": []
+      },
+      {
+        "block": "variar_llamadas_reposicion",
+        "path": "/outputCheck/cases/1/explanation",
+        "sourceSha256": "6eac43a6d7e172d018bc3d6bf55ac05a0aa5bae8970f313daeb0af705a6929ba",
+        "spans": []
+      },
+      {
+        "block": "variar_llamadas_reposicion",
+        "path": "/outputCheck/cases/2/explanation",
+        "sourceSha256": "f3051b17d30e1e28029a541b3125528460614dab45fffae1d95ae088ea7b493a",
+        "spans": []
+      },
+      {
+        "block": "variar_llamadas_reposicion",
+        "path": "/outputCheck/cases/3/explanation",
         "sourceSha256": "bd1228ac9a19f6b075a475e83761c0c2ebcd75e5d64bba8c7cef07dfd2754198",
-        "spans": [
-          {
-            "start": 4,
-            "end": 10,
-            "text": "(12,7)",
-            "role": "data",
-            "reading": "natural"
-          },
-          {
-            "start": 12,
-            "end": 17,
-            "text": "(7,7)",
-            "role": "data",
-            "reading": "natural"
-          },
-          {
-            "start": 20,
-            "end": 25,
-            "text": "(3,7)",
-            "role": "data",
-            "reading": "natural"
-          },
-          {
-            "start": 128,
-            "end": 133,
-            "text": "0:1:1",
-            "role": "output",
-            "reading": "natural"
-          }
-        ]
+        "spans": []
       },
       {
         "block": "block_0007_0004",
@@ -4506,6 +5268,24 @@
       {
         "block": "block_0007_0006",
         "path": "/outputCheck/cases/0/explanation",
+        "sourceSha256": "8fbc2394a3ecb9cf75bbc01a979b8eed661082d6691892b6e80735240f8c9566",
+        "spans": []
+      },
+      {
+        "block": "block_0007_0006",
+        "path": "/outputCheck/cases/1/explanation",
+        "sourceSha256": "738f6b3d24aef761cde8892a6717be9fa35beb735e406dc89fbca6104a47cfa5",
+        "spans": []
+      },
+      {
+        "block": "block_0007_0006",
+        "path": "/outputCheck/cases/2/explanation",
+        "sourceSha256": "8b59eecae2c2bc7761429ea670bd4a01c898f903198c45be121af9a0ba8b2c68",
+        "spans": []
+      },
+      {
+        "block": "block_0007_0006",
+        "path": "/outputCheck/cases/3/explanation",
         "sourceSha256": "a5e30058ad0e668de07bfd31b7884cc83a392bb318499fc8b29da3ed21d834e4",
         "spans": []
       },
@@ -4581,6 +5361,24 @@
       {
         "block": "block_0008_0003",
         "path": "/outputCheck/cases/0/explanation",
+        "sourceSha256": "074c0ad342e49ad03fce91dde5a72248975d49897db352a1b31d03291c21d93e",
+        "spans": []
+      },
+      {
+        "block": "block_0008_0003",
+        "path": "/outputCheck/cases/1/explanation",
+        "sourceSha256": "dd793c1cf3d896d783a6a142b407da5926342055af2d8c8f2b770ce105795233",
+        "spans": []
+      },
+      {
+        "block": "block_0008_0003",
+        "path": "/outputCheck/cases/2/explanation",
+        "sourceSha256": "6b706129a0924d3d3cfd62d3ee8477a3228a16378b4d12c87774451ccbd5c262",
+        "spans": []
+      },
+      {
+        "block": "block_0008_0003",
+        "path": "/outputCheck/cases/3/explanation",
         "sourceSha256": "f8d535327fdc324518602b7b92f26e107b600a3a145da0c833bfa6cf3d6a44eb",
         "spans": []
       },

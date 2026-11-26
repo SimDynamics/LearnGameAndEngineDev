@@ -156,12 +156,65 @@
           "text": "Cada línea del informe muestra, en este orden:\nLa cantidad de piezas.\nEl retorno de la función, escrito como uno o cero.\nEl valor que dejó en el destino.\nEl veredicto `OK` o `FALLO` de esa comparación.\n\nLos tres primeros datos se separan mediante dos puntos. Un rechazo esperado puede terminar en `OK`: significa que coincidieron el retorno de rechazo y el destino que debía conservarse. Si alguno difiere, la comparación muestra `FALLO` y este comprobador termina con retorno uno.\n\nRepara la función y utiliza «Compilar, ejecutar y comprobar». El programa conserva las comprobaciones dadas, incluido el cero válido y las cantidades inmediatamente exteriores al intervalo. Estás reparando el componente con un comprobador ya escrito; la referencia posterior permite comparar una implementación posible."
         },
         {
+          "type": "paragraph",
+          "text": "Escribe -1 en Entrada para comprobar si el rechazo conserva el destino con valor 37. Puedes probar 0, 20, 21, 1, 5 y 17 por separado. Para ejecutar las siete comparaciones juntas, deja Entrada vacía."
+        },
+        {
           "type": "cpp_compiler",
           "language": "cpp",
-          "initialCode": "#include <iostream>\n\nint cajas_para(int piezas) {\n    const int piezas_por_caja{4};\n    return (piezas + piezas_por_caja - 1) / piezas_por_caja;\n}\n\nbool intentar_cajas(int piezas, int& resultado) {\n    resultado = 0;\n    if (piezas < 0 || piezas > 20) {\n        return false;\n    }\n    resultado = cajas_para(piezas);\n    return true;\n}\n\nbool comprobar_cajas(int piezas, int inicial, bool estado_esperado,\n                     int salida_esperada) {\n    int salida{inicial};\n    const bool aceptado{intentar_cajas(piezas, salida)};\n    const bool coincide{aceptado == estado_esperado && salida == salida_esperada};\n\n    std::cout << piezas << \":\" << aceptado << \":\" << salida << \" \";\n    if (coincide) { std::cout << \"OK\\n\"; }\n    else { std::cout << \"FALLO\\n\"; }\n    return coincide;\n}\n\nbool bateria_componente() {\n    bool correcto{true};\n    if (!comprobar_cajas(0, 37, true, 0)) { correcto = false; }\n    if (!comprobar_cajas(-1, 37, false, 37)) { correcto = false; }\n    if (!comprobar_cajas(20, -8, true, 5)) { correcto = false; }\n    if (!comprobar_cajas(21, -8, false, -8)) { correcto = false; }\n    if (!comprobar_cajas(1, 37, true, 1)) { correcto = false; }\n    if (!comprobar_cajas(5, 37, true, 2)) { correcto = false; }\n    if (!comprobar_cajas(17, 37, true, 5)) { correcto = false; }\n    return correcto;\n}\n\nint main() {\n    if (!bateria_componente()) {\n        std::cout << \"Componente: FALLO\\n\";\n        return 1;\n    }\n    std::cout << \"Componente: OK\\n\";\n\n    return 0;\n}\n",
+          "initialCode": "#include <iostream>\n#include <string>\n\nint cajas_para(int piezas) {\n    const int piezas_por_caja{4};\n    return (piezas + piezas_por_caja - 1) / piezas_por_caja;\n}\n\nbool intentar_cajas(int piezas, int& resultado) {\n    resultado = 0;\n    if (piezas < 0 || piezas > 20) {\n        return false;\n    }\n    resultado = cajas_para(piezas);\n    return true;\n}\n\nbool comprobar_cajas(int piezas, int inicial, bool estado_esperado,\n                     int salida_esperada) {\n    int salida{inicial};\n    const bool aceptado{intentar_cajas(piezas, salida)};\n    const bool coincide{aceptado == estado_esperado && salida == salida_esperada};\n\n    std::cout << piezas << \":\" << aceptado << \":\" << salida << \" \";\n    if (coincide) { std::cout << \"OK\\n\"; }\n    else { std::cout << \"FALLO\\n\"; }\n    return coincide;\n}\n\nbool bateria_componente() {\n    bool correcto{true};\n    if (!comprobar_cajas(0, 37, true, 0)) { correcto = false; }\n    if (!comprobar_cajas(-1, 37, false, 37)) { correcto = false; }\n    if (!comprobar_cajas(20, -8, true, 5)) { correcto = false; }\n    if (!comprobar_cajas(21, -8, false, -8)) { correcto = false; }\n    if (!comprobar_cajas(1, 37, true, 1)) { correcto = false; }\n    if (!comprobar_cajas(5, 37, true, 2)) { correcto = false; }\n    if (!comprobar_cajas(17, 37, true, 5)) { correcto = false; }\n    return correcto;\n}\n\nbool comprobar_componente(const std::string& ensayo) {\n    if (ensayo.empty()) { return bateria_componente(); }\n    if (ensayo == \"0\") { return comprobar_cajas(0, 37, true, 0); }\n    if (ensayo == \"-1\") { return comprobar_cajas(-1, 37, false, 37); }\n    if (ensayo == \"20\") { return comprobar_cajas(20, -8, true, 5); }\n    if (ensayo == \"21\") { return comprobar_cajas(21, -8, false, -8); }\n    if (ensayo == \"1\") { return comprobar_cajas(1, 37, true, 1); }\n    if (ensayo == \"5\") { return comprobar_cajas(5, 37, true, 2); }\n    if (ensayo == \"17\") { return comprobar_cajas(17, 37, true, 5); }\n    return false;\n}\n\nint main() {\n    std::string ensayo;\n    std::cin >> ensayo;\n    if (!comprobar_componente(ensayo)) {\n        std::cout << \"Componente: FALLO\\n\";\n        return 1;\n    }\n    std::cout << \"Componente: OK\\n\";\n\n    return 0;\n}\n",
           "outputCheck": {
             "inputComparison": "exact",
             "cases": [
+              {
+                "standardInput": "-1",
+                "outputs": [
+                  "-1:0:37 OK\nComponente: OK\n"
+                ],
+                "exitCode": 0
+              },
+              {
+                "standardInput": "0",
+                "outputs": [
+                  "0:1:0 OK\nComponente: OK\n"
+                ],
+                "exitCode": 0
+              },
+              {
+                "standardInput": "20",
+                "outputs": [
+                  "20:1:5 OK\nComponente: OK\n"
+                ],
+                "exitCode": 0
+              },
+              {
+                "standardInput": "21",
+                "outputs": [
+                  "21:0:-8 OK\nComponente: OK\n"
+                ],
+                "exitCode": 0
+              },
+              {
+                "standardInput": "1",
+                "outputs": [
+                  "1:1:1 OK\nComponente: OK\n"
+                ],
+                "exitCode": 0
+              },
+              {
+                "standardInput": "5",
+                "outputs": [
+                  "5:1:2 OK\nComponente: OK\n"
+                ],
+                "exitCode": 0
+              },
+              {
+                "standardInput": "17",
+                "outputs": [
+                  "17:1:5 OK\nComponente: OK\n"
+                ],
+                "exitCode": 0
+              },
               {
                 "standardInput": "",
                 "outputs": [
@@ -264,12 +317,72 @@
           "text": "Sigue el mismo destino durante las cinco llamadas: después de un rechazo conserva el valor anterior. Revisa en qué momento el bucle añade ese valor al total y si lo está contando como nuevo cuando la petición no fue aceptada.\n\nModifica únicamente el uso del retorno `bool` dentro del bucle. Conserva el orden de los cinco datos y los esperados de aceptadas, rechazadas y total. Utiliza «Compilar, ejecutar y comprobar» para observar la revisión.\n\nEstas cinco peticiones forman una sesión: comparten destino, contadores y total. No restablezcas esas variables entre llamadas. La variante que cambia el orden tiene otro editor."
         },
         {
+          "type": "paragraph",
+          "text": "Escribe cliente en Entrada para comprobar la sesión completa de cinco peticiones. Puedes escribir 0, -1, 20, 21, 1, 5 o 17 para ensayar sólo un caso del componente. Con Entrada vacía, el programa ejecuta los siete controles y después la sesión del cliente."
+        },
+        {
           "type": "cpp_compiler",
           "language": "cpp",
-          "initialCode": "#include <iostream>\n#include <vector>\n\nint cajas_para(int piezas) {\n    const int piezas_por_caja{4};\n    return (piezas + piezas_por_caja - 1) / piezas_por_caja;\n}\n\nbool intentar_cajas(int piezas, int& resultado) {\n    if (piezas < 0 || piezas > 20) {\n        return false;\n    }\n    resultado = cajas_para(piezas);\n    return true;\n}\n\nbool comprobar_cajas(int piezas, int inicial, bool estado_esperado,\n                     int salida_esperada) {\n    int salida{inicial};\n    const bool aceptado{intentar_cajas(piezas, salida)};\n    const bool coincide{aceptado == estado_esperado && salida == salida_esperada};\n\n    std::cout << piezas << \":\" << aceptado << \":\" << salida << \" \";\n    if (coincide) { std::cout << \"OK\\n\"; }\n    else { std::cout << \"FALLO\\n\"; }\n    return coincide;\n}\n\nbool bateria_componente() {\n    bool correcto{true};\n    if (!comprobar_cajas(0, 37, true, 0)) { correcto = false; }\n    if (!comprobar_cajas(-1, 37, false, 37)) { correcto = false; }\n    if (!comprobar_cajas(20, -8, true, 5)) { correcto = false; }\n    if (!comprobar_cajas(21, -8, false, -8)) { correcto = false; }\n    if (!comprobar_cajas(1, 37, true, 1)) { correcto = false; }\n    if (!comprobar_cajas(5, 37, true, 2)) { correcto = false; }\n    if (!comprobar_cajas(17, 37, true, 5)) { correcto = false; }\n    return correcto;\n}\n\nint main() {\n    const bool componente_correcto{bateria_componente()};\n    if (!componente_correcto) {\n        std::cout << \"Componente: FALLO\\n\";\n        return 1;\n    }\n    std::cout << \"Componente: OK\\n\";\n    int salida{77};\n    int aceptados{0};\n    int rechazados{0};\n    int total{0};\n\n    for (int piezas : std::vector<int>{0, -1, 5, 21, 4}) {\n        const bool aceptado{intentar_cajas(piezas, salida)};\n        total += salida;\n        if (aceptado) {\n            ++aceptados;\n        } else {\n            ++rechazados;\n        }\n    }\n    std::cout << \"Aceptados=\" << aceptados << \" Rechazados=\" << rechazados\n              << \" Total=\" << total << \"\\n\";\n    const bool cliente_correcto{aceptados == 3 && rechazados == 2 && total == 3};\n\n    if (!cliente_correcto) {\n        std::cout << \"Cliente: FALLO\\n\";\n        return 1;\n    }\n    std::cout << \"Cliente: OK\\n\";\n\n    return 0;\n}\n",
+          "initialCode": "#include <iostream>\n#include <string>\n#include <vector>\n\nint cajas_para(int piezas) {\n    const int piezas_por_caja{4};\n    return (piezas + piezas_por_caja - 1) / piezas_por_caja;\n}\n\nbool intentar_cajas(int piezas, int& resultado) {\n    if (piezas < 0 || piezas > 20) {\n        return false;\n    }\n    resultado = cajas_para(piezas);\n    return true;\n}\n\nbool comprobar_cajas(int piezas, int inicial, bool estado_esperado,\n                     int salida_esperada) {\n    int salida{inicial};\n    const bool aceptado{intentar_cajas(piezas, salida)};\n    const bool coincide{aceptado == estado_esperado && salida == salida_esperada};\n\n    std::cout << piezas << \":\" << aceptado << \":\" << salida << \" \";\n    if (coincide) { std::cout << \"OK\\n\"; }\n    else { std::cout << \"FALLO\\n\"; }\n    return coincide;\n}\n\nbool bateria_componente() {\n    bool correcto{true};\n    if (!comprobar_cajas(0, 37, true, 0)) { correcto = false; }\n    if (!comprobar_cajas(-1, 37, false, 37)) { correcto = false; }\n    if (!comprobar_cajas(20, -8, true, 5)) { correcto = false; }\n    if (!comprobar_cajas(21, -8, false, -8)) { correcto = false; }\n    if (!comprobar_cajas(1, 37, true, 1)) { correcto = false; }\n    if (!comprobar_cajas(5, 37, true, 2)) { correcto = false; }\n    if (!comprobar_cajas(17, 37, true, 5)) { correcto = false; }\n    return correcto;\n}\n\nbool comprobar_componente(const std::string& ensayo) {\n    if (ensayo.empty()) { return bateria_componente(); }\n    if (ensayo == \"0\") { return comprobar_cajas(0, 37, true, 0); }\n    if (ensayo == \"-1\") { return comprobar_cajas(-1, 37, false, 37); }\n    if (ensayo == \"20\") { return comprobar_cajas(20, -8, true, 5); }\n    if (ensayo == \"21\") { return comprobar_cajas(21, -8, false, -8); }\n    if (ensayo == \"1\") { return comprobar_cajas(1, 37, true, 1); }\n    if (ensayo == \"5\") { return comprobar_cajas(5, 37, true, 2); }\n    if (ensayo == \"17\") { return comprobar_cajas(17, 37, true, 5); }\n    return false;\n}\n\nint main() {\n    std::string ensayo;\n    std::cin >> ensayo;\n    if (ensayo != \"cliente\") {\n        const bool componente_correcto{comprobar_componente(ensayo)};\n        if (!componente_correcto) {\n            std::cout << \"Componente: FALLO\\n\";\n            return 1;\n        }\n        std::cout << \"Componente: OK\\n\";\n        if (!ensayo.empty()) { return 0; }\n    }\n\n    int salida{77};\n    int aceptados{0};\n    int rechazados{0};\n    int total{0};\n\n    for (int piezas : std::vector<int>{0, -1, 5, 21, 4}) {\n        const bool aceptado{intentar_cajas(piezas, salida)};\n        total += salida;\n        if (aceptado) {\n            ++aceptados;\n        } else {\n            ++rechazados;\n        }\n    }\n    std::cout << \"Aceptados=\" << aceptados << \" Rechazados=\" << rechazados\n              << \" Total=\" << total << \"\\n\";\n    const bool cliente_correcto{aceptados == 3 && rechazados == 2 && total == 3};\n\n    if (!cliente_correcto) {\n        std::cout << \"Cliente: FALLO\\n\";\n        return 1;\n    }\n    std::cout << \"Cliente: OK\\n\";\n\n    return 0;\n}\n",
           "outputCheck": {
             "inputComparison": "exact",
             "cases": [
+              {
+                "standardInput": "cliente",
+                "outputs": [
+                  "Aceptados=3 Rechazados=2 Total=3\nCliente: OK\n"
+                ],
+                "exitCode": 0
+              },
+              {
+                "standardInput": "0",
+                "outputs": [
+                  "0:1:0 OK\nComponente: OK\n"
+                ],
+                "exitCode": 0
+              },
+              {
+                "standardInput": "-1",
+                "outputs": [
+                  "-1:0:37 OK\nComponente: OK\n"
+                ],
+                "exitCode": 0
+              },
+              {
+                "standardInput": "20",
+                "outputs": [
+                  "20:1:5 OK\nComponente: OK\n"
+                ],
+                "exitCode": 0
+              },
+              {
+                "standardInput": "21",
+                "outputs": [
+                  "21:0:-8 OK\nComponente: OK\n"
+                ],
+                "exitCode": 0
+              },
+              {
+                "standardInput": "1",
+                "outputs": [
+                  "1:1:1 OK\nComponente: OK\n"
+                ],
+                "exitCode": 0
+              },
+              {
+                "standardInput": "5",
+                "outputs": [
+                  "5:1:2 OK\nComponente: OK\n"
+                ],
+                "exitCode": 0
+              },
+              {
+                "standardInput": "17",
+                "outputs": [
+                  "17:1:5 OK\nComponente: OK\n"
+                ],
+                "exitCode": 0
+              },
               {
                 "standardInput": "",
                 "outputs": [
@@ -323,12 +436,72 @@
           "text": "Este editor cambia el orden de las peticiones a veintiuno, cuatro, menos uno, cero y cinco piezas. Conserva ese orden y repara el mismo uso del retorno dentro del bucle.\n\nAhora la primera petición se rechaza y el destino conserva su valor inicial, setenta y siete. Ese valor no fue calculado para una petición aceptada y no debe añadirse al total.\n\nLa sesión debe terminar con tres aceptadas, dos rechazadas y total tres. Mantén la biblioteca, las comprobaciones del componente y la comparación final. Utiliza «Compilar, ejecutar y comprobar» en este editor; no sustituye el borrador de la sesión anterior."
         },
         {
+          "type": "paragraph",
+          "text": "Escribe cliente en Entrada para comprobar la sesión completa que comienza con un rechazo. Puedes escribir 0, -1, 20, 21, 1, 5 o 17 para ensayar sólo un caso del componente. Con Entrada vacía, el programa ejecuta los siete controles y después la sesión del cliente."
+        },
+        {
           "type": "cpp_compiler",
           "language": "cpp",
-          "initialCode": "#include <iostream>\n#include <vector>\n\nint cajas_para(int piezas) {\n    const int piezas_por_caja{4};\n    return (piezas + piezas_por_caja - 1) / piezas_por_caja;\n}\n\nbool intentar_cajas(int piezas, int& resultado) {\n    if (piezas < 0 || piezas > 20) {\n        return false;\n    }\n    resultado = cajas_para(piezas);\n    return true;\n}\n\nbool comprobar_cajas(int piezas, int inicial, bool estado_esperado,\n                     int salida_esperada) {\n    int salida{inicial};\n    const bool aceptado{intentar_cajas(piezas, salida)};\n    const bool coincide{aceptado == estado_esperado && salida == salida_esperada};\n\n    std::cout << piezas << \":\" << aceptado << \":\" << salida << \" \";\n    if (coincide) { std::cout << \"OK\\n\"; }\n    else { std::cout << \"FALLO\\n\"; }\n    return coincide;\n}\n\nbool bateria_componente() {\n    bool correcto{true};\n    if (!comprobar_cajas(0, 37, true, 0)) { correcto = false; }\n    if (!comprobar_cajas(-1, 37, false, 37)) { correcto = false; }\n    if (!comprobar_cajas(20, -8, true, 5)) { correcto = false; }\n    if (!comprobar_cajas(21, -8, false, -8)) { correcto = false; }\n    if (!comprobar_cajas(1, 37, true, 1)) { correcto = false; }\n    if (!comprobar_cajas(5, 37, true, 2)) { correcto = false; }\n    if (!comprobar_cajas(17, 37, true, 5)) { correcto = false; }\n    return correcto;\n}\n\nint main() {\n    const bool componente_correcto{bateria_componente()};\n    if (!componente_correcto) {\n        std::cout << \"Componente: FALLO\\n\";\n        return 1;\n    }\n    std::cout << \"Componente: OK\\n\";\n    int salida{77};\n    int aceptados{0};\n    int rechazados{0};\n    int total{0};\n\n    for (int piezas : std::vector<int>{21, 4, -1, 0, 5}) {\n        const bool aceptado{intentar_cajas(piezas, salida)};\n        total += salida;\n        if (aceptado) {\n            ++aceptados;\n        } else {\n            ++rechazados;\n        }\n    }\n    std::cout << \"Aceptados=\" << aceptados << \" Rechazados=\" << rechazados\n              << \" Total=\" << total << \"\\n\";\n    const bool cliente_correcto{aceptados == 3 && rechazados == 2 && total == 3};\n\n    if (!cliente_correcto) {\n        std::cout << \"Cliente: FALLO\\n\";\n        return 1;\n    }\n    std::cout << \"Cliente: OK\\n\";\n\n    return 0;\n}\n",
+          "initialCode": "#include <iostream>\n#include <string>\n#include <vector>\n\nint cajas_para(int piezas) {\n    const int piezas_por_caja{4};\n    return (piezas + piezas_por_caja - 1) / piezas_por_caja;\n}\n\nbool intentar_cajas(int piezas, int& resultado) {\n    if (piezas < 0 || piezas > 20) {\n        return false;\n    }\n    resultado = cajas_para(piezas);\n    return true;\n}\n\nbool comprobar_cajas(int piezas, int inicial, bool estado_esperado,\n                     int salida_esperada) {\n    int salida{inicial};\n    const bool aceptado{intentar_cajas(piezas, salida)};\n    const bool coincide{aceptado == estado_esperado && salida == salida_esperada};\n\n    std::cout << piezas << \":\" << aceptado << \":\" << salida << \" \";\n    if (coincide) { std::cout << \"OK\\n\"; }\n    else { std::cout << \"FALLO\\n\"; }\n    return coincide;\n}\n\nbool bateria_componente() {\n    bool correcto{true};\n    if (!comprobar_cajas(0, 37, true, 0)) { correcto = false; }\n    if (!comprobar_cajas(-1, 37, false, 37)) { correcto = false; }\n    if (!comprobar_cajas(20, -8, true, 5)) { correcto = false; }\n    if (!comprobar_cajas(21, -8, false, -8)) { correcto = false; }\n    if (!comprobar_cajas(1, 37, true, 1)) { correcto = false; }\n    if (!comprobar_cajas(5, 37, true, 2)) { correcto = false; }\n    if (!comprobar_cajas(17, 37, true, 5)) { correcto = false; }\n    return correcto;\n}\n\nbool comprobar_componente(const std::string& ensayo) {\n    if (ensayo.empty()) { return bateria_componente(); }\n    if (ensayo == \"0\") { return comprobar_cajas(0, 37, true, 0); }\n    if (ensayo == \"-1\") { return comprobar_cajas(-1, 37, false, 37); }\n    if (ensayo == \"20\") { return comprobar_cajas(20, -8, true, 5); }\n    if (ensayo == \"21\") { return comprobar_cajas(21, -8, false, -8); }\n    if (ensayo == \"1\") { return comprobar_cajas(1, 37, true, 1); }\n    if (ensayo == \"5\") { return comprobar_cajas(5, 37, true, 2); }\n    if (ensayo == \"17\") { return comprobar_cajas(17, 37, true, 5); }\n    return false;\n}\n\nint main() {\n    std::string ensayo;\n    std::cin >> ensayo;\n    if (ensayo != \"cliente\") {\n        const bool componente_correcto{comprobar_componente(ensayo)};\n        if (!componente_correcto) {\n            std::cout << \"Componente: FALLO\\n\";\n            return 1;\n        }\n        std::cout << \"Componente: OK\\n\";\n        if (!ensayo.empty()) { return 0; }\n    }\n\n    int salida{77};\n    int aceptados{0};\n    int rechazados{0};\n    int total{0};\n\n    for (int piezas : std::vector<int>{21, 4, -1, 0, 5}) {\n        const bool aceptado{intentar_cajas(piezas, salida)};\n        total += salida;\n        if (aceptado) {\n            ++aceptados;\n        } else {\n            ++rechazados;\n        }\n    }\n    std::cout << \"Aceptados=\" << aceptados << \" Rechazados=\" << rechazados\n              << \" Total=\" << total << \"\\n\";\n    const bool cliente_correcto{aceptados == 3 && rechazados == 2 && total == 3};\n\n    if (!cliente_correcto) {\n        std::cout << \"Cliente: FALLO\\n\";\n        return 1;\n    }\n    std::cout << \"Cliente: OK\\n\";\n\n    return 0;\n}\n",
           "outputCheck": {
             "inputComparison": "exact",
             "cases": [
+              {
+                "standardInput": "cliente",
+                "outputs": [
+                  "Aceptados=3 Rechazados=2 Total=3\nCliente: OK\n"
+                ],
+                "exitCode": 0
+              },
+              {
+                "standardInput": "0",
+                "outputs": [
+                  "0:1:0 OK\nComponente: OK\n"
+                ],
+                "exitCode": 0
+              },
+              {
+                "standardInput": "-1",
+                "outputs": [
+                  "-1:0:37 OK\nComponente: OK\n"
+                ],
+                "exitCode": 0
+              },
+              {
+                "standardInput": "20",
+                "outputs": [
+                  "20:1:5 OK\nComponente: OK\n"
+                ],
+                "exitCode": 0
+              },
+              {
+                "standardInput": "21",
+                "outputs": [
+                  "21:0:-8 OK\nComponente: OK\n"
+                ],
+                "exitCode": 0
+              },
+              {
+                "standardInput": "1",
+                "outputs": [
+                  "1:1:1 OK\nComponente: OK\n"
+                ],
+                "exitCode": 0
+              },
+              {
+                "standardInput": "5",
+                "outputs": [
+                  "5:1:2 OK\nComponente: OK\n"
+                ],
+                "exitCode": 0
+              },
+              {
+                "standardInput": "17",
+                "outputs": [
+                  "17:1:5 OK\nComponente: OK\n"
+                ],
+                "exitCode": 0
+              },
               {
                 "standardInput": "",
                 "outputs": [
@@ -378,12 +551,65 @@
           ]
         },
         {
+          "type": "paragraph",
+          "text": "Escribe cliente en Entrada para comprobar juntas las cuatro llamadas que actualizan el total y los contadores. Puedes ensayar una comparación del componente escribiendo sus cobros y devoluciones separados por un espacio, por ejemplo 2 3. Con Entrada vacía, el programa ejecuta los seis controles y la sesión del cliente."
+        },
+        {
           "type": "cpp_compiler",
           "language": "cpp",
-          "initialCode": "#include <iostream>\n\nbool calcular_saldo(int cobros, int devoluciones, int& saldo) {\n    return false;\n}\n\nvoid registrar(int cobros, int devoluciones, int& total,\n               int& aceptados, int& rechazados) {\n}\n\nbool comprobar_saldo(int cobros, int devoluciones, int inicial,\n                     bool estado_esperado, int salida_esperada) {\n    int salida{inicial};\n    const bool aceptado{calcular_saldo(cobros, devoluciones, salida)};\n    const bool coincide{aceptado == estado_esperado && salida == salida_esperada};\n\n    std::cout << cobros << \":\" << devoluciones << \":\" << aceptado << \":\" << salida << \" \";\n    if (coincide) { std::cout << \"OK\\n\"; }\n    else { std::cout << \"FALLO\\n\"; }\n    return coincide;\n}\n\nint main() {\n    bool correcto{true};\n    if (!comprobar_saldo(5, 5, 37, true, 0)) { correcto = false; }\n    if (!comprobar_saldo(2, 3, 37, true, -1)) { correcto = false; }\n    if (!comprobar_saldo(9, 0, -8, true, 9)) { correcto = false; }\n    if (!comprobar_saldo(0, 9, 37, true, -9)) { correcto = false; }\n    if (!comprobar_saldo(10, 0, 37, false, 37)) { correcto = false; }\n    if (!comprobar_saldo(0, -1, -8, false, -8)) { correcto = false; }\n    int total{0};\n    int aceptados{0};\n    int rechazados{0};\n    registrar(5, 5, total, aceptados, rechazados);\n    registrar(2, 3, total, aceptados, rechazados);\n    registrar(10, 0, total, aceptados, rechazados);\n    registrar(0, 9, total, aceptados, rechazados);\n    std::cout << \"Aceptados=\" << aceptados << \" Rechazados=\" << rechazados\n              << \" Total=\" << total << \"\\n\";\n    if (aceptados != 3 || rechazados != 1 || total != -10) { correcto = false; }\n    if (!correcto) { std::cout << \"Transferencia: FALLO\\n\"; return 1; }\n    std::cout << \"Transferencia: OK\\n\";\n\n    return 0;\n}\n",
+          "initialCode": "#include <iostream>\n#include <string>\n\nbool calcular_saldo(int cobros, int devoluciones, int& saldo) {\n    return false;\n}\n\nvoid registrar(int cobros, int devoluciones, int& total,\n               int& aceptados, int& rechazados) {\n}\n\nbool comprobar_saldo(int cobros, int devoluciones, int inicial,\n                     bool estado_esperado, int salida_esperada) {\n    int salida{inicial};\n    const bool aceptado{calcular_saldo(cobros, devoluciones, salida)};\n    const bool coincide{aceptado == estado_esperado && salida == salida_esperada};\n\n    std::cout << cobros << \":\" << devoluciones << \":\" << aceptado << \":\" << salida << \" \";\n    if (coincide) { std::cout << \"OK\\n\"; }\n    else { std::cout << \"FALLO\\n\"; }\n    return coincide;\n}\n\nint main() {\n    std::string modo;\n    std::cin >> modo;\n    bool correcto{true};\n\n    if (modo.empty()) {\n        if (!comprobar_saldo(5, 5, 37, true, 0)) { correcto = false; }\n        if (!comprobar_saldo(2, 3, 37, true, -1)) { correcto = false; }\n        if (!comprobar_saldo(9, 0, -8, true, 9)) { correcto = false; }\n        if (!comprobar_saldo(0, 9, 37, true, -9)) { correcto = false; }\n        if (!comprobar_saldo(10, 0, 37, false, 37)) { correcto = false; }\n        if (!comprobar_saldo(0, -1, -8, false, -8)) { correcto = false; }\n    } else if (modo != \"cliente\") {\n        int devoluciones{};\n        if (!(std::cin >> devoluciones)) { return 1; }\n        if (modo == \"5\" && devoluciones == 5) {\n            correcto = comprobar_saldo(5, 5, 37, true, 0);\n        } else if (modo == \"2\" && devoluciones == 3) {\n            correcto = comprobar_saldo(2, 3, 37, true, -1);\n        } else if (modo == \"9\" && devoluciones == 0) {\n            correcto = comprobar_saldo(9, 0, -8, true, 9);\n        } else if (modo == \"0\" && devoluciones == 9) {\n            correcto = comprobar_saldo(0, 9, 37, true, -9);\n        } else if (modo == \"10\" && devoluciones == 0) {\n            correcto = comprobar_saldo(10, 0, 37, false, 37);\n        } else if (modo == \"0\" && devoluciones == -1) {\n            correcto = comprobar_saldo(0, -1, -8, false, -8);\n        } else {\n            return 1;\n        }\n    }\n\n    if (modo.empty() || modo == \"cliente\") {\n        int total{0};\n        int aceptados{0};\n        int rechazados{0};\n        registrar(5, 5, total, aceptados, rechazados);\n        registrar(2, 3, total, aceptados, rechazados);\n        registrar(10, 0, total, aceptados, rechazados);\n        registrar(0, 9, total, aceptados, rechazados);\n        std::cout << \"Aceptados=\" << aceptados << \" Rechazados=\" << rechazados\n                  << \" Total=\" << total << \"\\n\";\n        if (aceptados != 3 || rechazados != 1 || total != -10) { correcto = false; }\n    }\n    if (!correcto) { std::cout << \"Transferencia: FALLO\\n\"; return 1; }\n    std::cout << \"Transferencia: OK\\n\";\n\n    return 0;\n}\n",
           "outputCheck": {
             "inputComparison": "exact",
             "cases": [
+              {
+                "standardInput": "cliente",
+                "outputs": [
+                  "Aceptados=3 Rechazados=1 Total=-10\nTransferencia: OK\n"
+                ],
+                "exitCode": 0
+              },
+              {
+                "standardInput": "5 5",
+                "outputs": [
+                  "5:5:1:0 OK\nTransferencia: OK\n"
+                ],
+                "exitCode": 0
+              },
+              {
+                "standardInput": "2 3",
+                "outputs": [
+                  "2:3:1:-1 OK\nTransferencia: OK\n"
+                ],
+                "exitCode": 0
+              },
+              {
+                "standardInput": "9 0",
+                "outputs": [
+                  "9:0:1:9 OK\nTransferencia: OK\n"
+                ],
+                "exitCode": 0
+              },
+              {
+                "standardInput": "0 9",
+                "outputs": [
+                  "0:9:1:-9 OK\nTransferencia: OK\n"
+                ],
+                "exitCode": 0
+              },
+              {
+                "standardInput": "10 0",
+                "outputs": [
+                  "10:0:0:37 OK\nTransferencia: OK\n"
+                ],
+                "exitCode": 0
+              },
+              {
+                "standardInput": "0 -1",
+                "outputs": [
+                  "0:-1:0:-8 OK\nTransferencia: OK\n"
+                ],
+                "exitCode": 0
+              },
               {
                 "standardInput": "",
                 "outputs": [
@@ -449,12 +675,79 @@
           "text": "Este editor proporciona los seis controles anteriores y dos más:\nUna petición con cobros negativos y devoluciones permitidas.\nOtra con devoluciones superiores a nueve y cobros permitidos.\n\nLa implementación inicial acepta esas dos peticiones por error, aunque coincide con los seis controles antiguos. Tu tarea es reparar únicamente `calcular_saldo`: cada dato debe estar entre cero y nueve, y todo rechazo debe conservar el destino.\n\nMantén `registrar`, las comparaciones, sus esperados y la sesión del cliente. Utiliza «Compilar, ejecutar y comprobar» para observar la revisión. La referencia posterior explica por qué las dos observaciones nuevas detectan los límites que faltaban. Se admite cualquier condición equivalente que respete los dos límites de cada dato."
         },
         {
+          "type": "paragraph",
+          "text": "Escribe -1 0 en Entrada para comprobar que el rechazo conserva el saldo inicial de 23. Puedes probar por separado otros pares, como 0 10, o escribir cliente para repetir juntas las cuatro llamadas que actualizan el total y los contadores. Con Entrada vacía, el programa ejecuta los ocho controles y la sesión del cliente."
+        },
+        {
           "type": "cpp_compiler",
           "language": "cpp",
-          "initialCode": "#include <iostream>\n\nbool calcular_saldo(int cobros, int devoluciones, int& saldo) {\n    if (cobros > 9 || devoluciones < 0) {\n        return false;\n    }\n    saldo = cobros - devoluciones;\n    return true;\n}\n\nvoid registrar(int cobros, int devoluciones, int& total,\n               int& aceptados, int& rechazados) {\n    int saldo{99};\n    if (calcular_saldo(cobros, devoluciones, saldo)) {\n        total += saldo;\n        ++aceptados;\n    } else {\n        ++rechazados;\n    }\n}\n\nbool comprobar_saldo(int cobros, int devoluciones, int inicial,\n                     bool estado_esperado, int salida_esperada) {\n    int salida{inicial};\n    const bool aceptado{calcular_saldo(cobros, devoluciones, salida)};\n    const bool coincide{aceptado == estado_esperado && salida == salida_esperada};\n\n    std::cout << cobros << \":\" << devoluciones << \":\" << aceptado << \":\" << salida << \" \";\n    if (coincide) { std::cout << \"OK\\n\"; }\n    else { std::cout << \"FALLO\\n\"; }\n    return coincide;\n}\n\nint main() {\n    bool correcto{true};\n    if (!comprobar_saldo(5, 5, 37, true, 0)) { correcto = false; }\n    if (!comprobar_saldo(2, 3, 37, true, -1)) { correcto = false; }\n    if (!comprobar_saldo(9, 0, -8, true, 9)) { correcto = false; }\n    if (!comprobar_saldo(0, 9, 37, true, -9)) { correcto = false; }\n    if (!comprobar_saldo(10, 0, 37, false, 37)) { correcto = false; }\n    if (!comprobar_saldo(0, -1, -8, false, -8)) { correcto = false; }\n    if (!comprobar_saldo(-1, 0, 23, false, 23)) { correcto = false; }\n    if (!comprobar_saldo(0, 10, -4, false, -4)) { correcto = false; }\n    int total{0};\n    int aceptados{0};\n    int rechazados{0};\n    registrar(5, 5, total, aceptados, rechazados);\n    registrar(2, 3, total, aceptados, rechazados);\n    registrar(10, 0, total, aceptados, rechazados);\n    registrar(0, 9, total, aceptados, rechazados);\n    std::cout << \"Aceptados=\" << aceptados << \" Rechazados=\" << rechazados\n              << \" Total=\" << total << \"\\n\";\n    if (aceptados != 3 || rechazados != 1 || total != -10) { correcto = false; }\n    if (!correcto) { std::cout << \"Transferencia: FALLO\\n\"; return 1; }\n    std::cout << \"Transferencia: OK\\n\";\n\n    return 0;\n}\n",
+          "initialCode": "#include <iostream>\n#include <string>\n\nbool calcular_saldo(int cobros, int devoluciones, int& saldo) {\n    if (cobros > 9 || devoluciones < 0) {\n        return false;\n    }\n    saldo = cobros - devoluciones;\n    return true;\n}\n\nvoid registrar(int cobros, int devoluciones, int& total,\n               int& aceptados, int& rechazados) {\n    int saldo{99};\n    if (calcular_saldo(cobros, devoluciones, saldo)) {\n        total += saldo;\n        ++aceptados;\n    } else {\n        ++rechazados;\n    }\n}\n\nbool comprobar_saldo(int cobros, int devoluciones, int inicial,\n                     bool estado_esperado, int salida_esperada) {\n    int salida{inicial};\n    const bool aceptado{calcular_saldo(cobros, devoluciones, salida)};\n    const bool coincide{aceptado == estado_esperado && salida == salida_esperada};\n\n    std::cout << cobros << \":\" << devoluciones << \":\" << aceptado << \":\" << salida << \" \";\n    if (coincide) { std::cout << \"OK\\n\"; }\n    else { std::cout << \"FALLO\\n\"; }\n    return coincide;\n}\n\nint main() {\n    std::string modo;\n    std::cin >> modo;\n    bool correcto{true};\n\n    if (modo.empty()) {\n        if (!comprobar_saldo(5, 5, 37, true, 0)) { correcto = false; }\n        if (!comprobar_saldo(2, 3, 37, true, -1)) { correcto = false; }\n        if (!comprobar_saldo(9, 0, -8, true, 9)) { correcto = false; }\n        if (!comprobar_saldo(0, 9, 37, true, -9)) { correcto = false; }\n        if (!comprobar_saldo(10, 0, 37, false, 37)) { correcto = false; }\n        if (!comprobar_saldo(0, -1, -8, false, -8)) { correcto = false; }\n        if (!comprobar_saldo(-1, 0, 23, false, 23)) { correcto = false; }\n        if (!comprobar_saldo(0, 10, -4, false, -4)) { correcto = false; }\n    } else if (modo != \"cliente\") {\n        int devoluciones{};\n        if (!(std::cin >> devoluciones)) { return 1; }\n        if (modo == \"5\" && devoluciones == 5) {\n            correcto = comprobar_saldo(5, 5, 37, true, 0);\n        } else if (modo == \"2\" && devoluciones == 3) {\n            correcto = comprobar_saldo(2, 3, 37, true, -1);\n        } else if (modo == \"9\" && devoluciones == 0) {\n            correcto = comprobar_saldo(9, 0, -8, true, 9);\n        } else if (modo == \"0\" && devoluciones == 9) {\n            correcto = comprobar_saldo(0, 9, 37, true, -9);\n        } else if (modo == \"10\" && devoluciones == 0) {\n            correcto = comprobar_saldo(10, 0, 37, false, 37);\n        } else if (modo == \"0\" && devoluciones == -1) {\n            correcto = comprobar_saldo(0, -1, -8, false, -8);\n        } else if (modo == \"-1\" && devoluciones == 0) {\n            correcto = comprobar_saldo(-1, 0, 23, false, 23);\n        } else if (modo == \"0\" && devoluciones == 10) {\n            correcto = comprobar_saldo(0, 10, -4, false, -4);\n        } else {\n            return 1;\n        }\n    }\n\n    if (modo.empty() || modo == \"cliente\") {\n        int total{0};\n        int aceptados{0};\n        int rechazados{0};\n        registrar(5, 5, total, aceptados, rechazados);\n        registrar(2, 3, total, aceptados, rechazados);\n        registrar(10, 0, total, aceptados, rechazados);\n        registrar(0, 9, total, aceptados, rechazados);\n        std::cout << \"Aceptados=\" << aceptados << \" Rechazados=\" << rechazados\n                  << \" Total=\" << total << \"\\n\";\n        if (aceptados != 3 || rechazados != 1 || total != -10) { correcto = false; }\n    }\n    if (!correcto) { std::cout << \"Transferencia: FALLO\\n\"; return 1; }\n    std::cout << \"Transferencia: OK\\n\";\n\n    return 0;\n}\n",
           "outputCheck": {
             "inputComparison": "exact",
             "cases": [
+              {
+                "standardInput": "-1 0",
+                "outputs": [
+                  "-1:0:0:23 OK\nTransferencia: OK\n"
+                ],
+                "exitCode": 0
+              },
+              {
+                "standardInput": "5 5",
+                "outputs": [
+                  "5:5:1:0 OK\nTransferencia: OK\n"
+                ],
+                "exitCode": 0
+              },
+              {
+                "standardInput": "2 3",
+                "outputs": [
+                  "2:3:1:-1 OK\nTransferencia: OK\n"
+                ],
+                "exitCode": 0
+              },
+              {
+                "standardInput": "9 0",
+                "outputs": [
+                  "9:0:1:9 OK\nTransferencia: OK\n"
+                ],
+                "exitCode": 0
+              },
+              {
+                "standardInput": "0 9",
+                "outputs": [
+                  "0:9:1:-9 OK\nTransferencia: OK\n"
+                ],
+                "exitCode": 0
+              },
+              {
+                "standardInput": "10 0",
+                "outputs": [
+                  "10:0:0:37 OK\nTransferencia: OK\n"
+                ],
+                "exitCode": 0
+              },
+              {
+                "standardInput": "0 -1",
+                "outputs": [
+                  "0:-1:0:-8 OK\nTransferencia: OK\n"
+                ],
+                "exitCode": 0
+              },
+              {
+                "standardInput": "0 10",
+                "outputs": [
+                  "0:10:0:-4 OK\nTransferencia: OK\n"
+                ],
+                "exitCode": 0
+              },
+              {
+                "standardInput": "cliente",
+                "outputs": [
+                  "Aceptados=3 Rechazados=1 Total=-10\nTransferencia: OK\n"
+                ],
+                "exitCode": 0
+              },
               {
                 "standardInput": "",
                 "outputs": [
@@ -836,6 +1129,7 @@
           "block_0003_0000",
           "block_0003_0001",
           "block_0003_0002",
+          "reparar_destino_ensayos_de_entrada",
           "block_0003_0003"
         ]
       },
@@ -864,6 +1158,7 @@
           "block_0006_0000",
           "block_0006_0001",
           "block_0006_0002",
+          "sesion_cliente_retornos_ensayos_de_entrada",
           "block_0006_0003"
         ]
       },
@@ -876,6 +1171,7 @@
           "block_0007_0003",
           "block_0007_0004",
           "block_0007_0005",
+          "sesion_cliente_rechazo_ensayos_de_entrada",
           "block_0007_0006"
         ]
       },
@@ -887,6 +1183,7 @@
           "block_0008_0002",
           "block_0008_0003",
           "block_0008_0004",
+          "saldo_construir_ensayos_de_entrada",
           "block_0008_0005"
         ]
       },
@@ -900,6 +1197,7 @@
           "block_0009_0004",
           "u3l5_limites_saldo_titulo",
           "u3l5_limites_saldo_consigna",
+          "saldo_limites_ensayos_de_entrada",
           "u3l5_limites_saldo_editor"
         ]
       },
@@ -1789,6 +2087,51 @@
           "block": 5
         },
         "progressPage": "page_0010"
+      },
+      {
+        "id": "reparar_destino_ensayos_de_entrada",
+        "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5",
+        "storage": {
+          "page": 900101,
+          "block": 0
+        },
+        "progressPage": "page_0003"
+      },
+      {
+        "id": "sesion_cliente_retornos_ensayos_de_entrada",
+        "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5",
+        "storage": {
+          "page": 900102,
+          "block": 0
+        },
+        "progressPage": "page_0006"
+      },
+      {
+        "id": "sesion_cliente_rechazo_ensayos_de_entrada",
+        "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5",
+        "storage": {
+          "page": 900103,
+          "block": 0
+        },
+        "progressPage": "page_0007"
+      },
+      {
+        "id": "saldo_construir_ensayos_de_entrada",
+        "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5",
+        "storage": {
+          "page": 900104,
+          "block": 0
+        },
+        "progressPage": "page_0008"
+      },
+      {
+        "id": "saldo_limites_ensayos_de_entrada",
+        "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5",
+        "storage": {
+          "page": 900105,
+          "block": 0
+        },
+        "progressPage": "page_0009"
       }
     ],
     "editorial": [
@@ -2086,6 +2429,31 @@
         "id": "u3l5_limites_saldo_editor",
         "beforeSha256": "51d5091a23c20dc7e93fd346aaf957898b7aff3c6cc9636e6eb4867dea24ff21",
         "afterSha256": "f11ffaf7c48069f2b84472c5748c921788f7da5640006b5456aed0520c79351c"
+      },
+      {
+        "id": "block_0003_0003",
+        "beforeSha256": "2df6f691b03355eb336c058089a33de27e032cacc25031a85d5d54f4068ac5b0",
+        "afterSha256": "339a82435c71fea0f4bdabf4a739200469f15fa5c331135b79456fb62d51b821"
+      },
+      {
+        "id": "block_0006_0003",
+        "beforeSha256": "71c4069952804697ccaec95cf7d11e0edc897da209915238b179362bebf37292",
+        "afterSha256": "95fa1a5b08f7b6ff21ffe20201d1724f0afee06af67d5949c363fb87b4083f05"
+      },
+      {
+        "id": "block_0007_0006",
+        "beforeSha256": "46fb42e80cb8329d0693e0a9566ff48ab75ac568c6ca0d1f282d539f3228315b",
+        "afterSha256": "ec4f6babce4e1802e3a11e320c41c5a4fa578d8233e8154d28e1e0bd349db2a0"
+      },
+      {
+        "id": "block_0008_0005",
+        "beforeSha256": "e011596f243434210b32a79abff8066c7867b56ee926d84797c18d2439bbe45e",
+        "afterSha256": "49ce6addf44f5c33d4aa411f6d874fc9ec6a15cc761960dff489f705a2ea87a9"
+      },
+      {
+        "id": "u3l5_limites_saldo_editor",
+        "beforeSha256": "f11ffaf7c48069f2b84472c5748c921788f7da5640006b5456aed0520c79351c",
+        "afterSha256": "ff785ff2d1574232164b827a595047692a4b8c2f4b4785cf7c9c43f39a6c5dfa"
       }
     ],
     "sourceFormatRevisions": [
@@ -2241,6 +2609,1030 @@
               }
             ]
           }
+        }
+      }
+    ],
+    "compilerCaseRevisions": [
+      {
+        "id": "block_0003_0003",
+        "block": {
+          "type": "cpp_compiler",
+          "language": "cpp",
+          "initialCode": "#include <iostream>\n\nint cajas_para(int piezas) {\n    const int piezas_por_caja{4};\n    return (piezas + piezas_por_caja - 1) / piezas_por_caja;\n}\n\nbool intentar_cajas(int piezas, int& resultado) {\n    resultado = 0;\n    if (piezas < 0 || piezas > 20) {\n        return false;\n    }\n    resultado = cajas_para(piezas);\n    return true;\n}\n\nbool comprobar_cajas(int piezas, int inicial, bool estado_esperado,\n                     int salida_esperada) {\n    int salida{inicial};\n    const bool aceptado{intentar_cajas(piezas, salida)};\n    const bool coincide{aceptado == estado_esperado && salida == salida_esperada};\n\n    std::cout << piezas << \":\" << aceptado << \":\" << salida << \" \";\n    if (coincide) { std::cout << \"OK\\n\"; }\n    else { std::cout << \"FALLO\\n\"; }\n    return coincide;\n}\n\nbool bateria_componente() {\n    bool correcto{true};\n    if (!comprobar_cajas(0, 37, true, 0)) { correcto = false; }\n    if (!comprobar_cajas(-1, 37, false, 37)) { correcto = false; }\n    if (!comprobar_cajas(20, -8, true, 5)) { correcto = false; }\n    if (!comprobar_cajas(21, -8, false, -8)) { correcto = false; }\n    if (!comprobar_cajas(1, 37, true, 1)) { correcto = false; }\n    if (!comprobar_cajas(5, 37, true, 2)) { correcto = false; }\n    if (!comprobar_cajas(17, 37, true, 5)) { correcto = false; }\n    return correcto;\n}\n\nint main() {\n    if (!bateria_componente()) {\n        std::cout << \"Componente: FALLO\\n\";\n        return 1;\n    }\n    std::cout << \"Componente: OK\\n\";\n\n    return 0;\n}\n",
+          "outputCheck": {
+            "inputComparison": "exact",
+            "cases": [
+              {
+                "standardInput": "",
+                "outputs": [
+                  "0:1:0 OK\n-1:0:37 OK\n20:1:5 OK\n21:0:-8 OK\n1:1:1 OK\n5:1:2 OK\n17:1:5 OK\nComponente: OK\n"
+                ],
+                "explanation": "Los siete controles coinciden. Las peticiones -1 y 21 devuelven false y conservan 37 y -8, respectivamente; por eso sus pruebas muestran OK. Las entradas admitidas producen las cajas requeridas. El informe termina en Componente: OK y el comprobador retorna 0."
+              }
+            ]
+          }
+        },
+        "cases": [
+          {
+            "standardInput": "-1",
+            "outputs": [
+              "-1:0:37 OK\nComponente: OK\n"
+            ],
+            "exitCode": 0
+          },
+          {
+            "standardInput": "0",
+            "outputs": [
+              "0:1:0 OK\nComponente: OK\n"
+            ],
+            "exitCode": 0
+          },
+          {
+            "standardInput": "20",
+            "outputs": [
+              "20:1:5 OK\nComponente: OK\n"
+            ],
+            "exitCode": 0
+          },
+          {
+            "standardInput": "21",
+            "outputs": [
+              "21:0:-8 OK\nComponente: OK\n"
+            ],
+            "exitCode": 0
+          },
+          {
+            "standardInput": "1",
+            "outputs": [
+              "1:1:1 OK\nComponente: OK\n"
+            ],
+            "exitCode": 0
+          },
+          {
+            "standardInput": "5",
+            "outputs": [
+              "5:1:2 OK\nComponente: OK\n"
+            ],
+            "exitCode": 0
+          },
+          {
+            "standardInput": "17",
+            "outputs": [
+              "17:1:5 OK\nComponente: OK\n"
+            ],
+            "exitCode": 0
+          },
+          {
+            "standardInput": "",
+            "outputs": [
+              "0:1:0 OK\n-1:0:37 OK\n20:1:5 OK\n21:0:-8 OK\n1:1:1 OK\n5:1:2 OK\n17:1:5 OK\nComponente: OK\n"
+            ],
+            "explanation": "Los siete controles coinciden. Las peticiones -1 y 21 devuelven false y conservan 37 y -8, respectivamente; por eso sus pruebas muestran OK. Las entradas admitidas producen las cajas requeridas. El informe termina en Componente: OK y el comprobador retorna 0."
+          }
+        ],
+        "editorialIndex": 59,
+        "historySha256": "df365ce2a371993db0e6a897d191ff2c5f9960fe34b12b13e351cd01aa0a485d",
+        "semanticBefore": [
+          {
+            "block": "block_0003_0003",
+            "path": "/outputCheck/cases/0/explanation",
+            "sourceSha256": "967c35fa5ebbe955b0a4c753c614b5023a6a47502e11bb3725c6c8aabe732dfe",
+            "spans": [
+              {
+                "start": 46,
+                "end": 48,
+                "text": "-1",
+                "role": "data",
+                "reading": "natural"
+              },
+              {
+                "start": 51,
+                "end": 53,
+                "text": "21",
+                "role": "data",
+                "reading": "natural"
+              },
+              {
+                "start": 64,
+                "end": 69,
+                "text": "false",
+                "role": "output",
+                "reading": "natural"
+              },
+              {
+                "start": 82,
+                "end": 89,
+                "text": "37 y -8",
+                "role": "output",
+                "reading": "natural"
+              },
+              {
+                "start": 137,
+                "end": 139,
+                "text": "OK",
+                "role": "output",
+                "reading": "natural"
+              },
+              {
+                "start": 217,
+                "end": 231,
+                "text": "Componente: OK",
+                "role": "output",
+                "reading": "natural"
+              },
+              {
+                "start": 257,
+                "end": 258,
+                "text": "0",
+                "role": "output",
+                "reading": "natural"
+              }
+            ]
+          }
+        ],
+        "semanticAfter": [
+          {
+            "block": "block_0003_0003",
+            "path": "/outputCheck/cases/7/explanation",
+            "sourceSha256": "967c35fa5ebbe955b0a4c753c614b5023a6a47502e11bb3725c6c8aabe732dfe",
+            "spans": [
+              {
+                "start": 46,
+                "end": 48,
+                "text": "-1",
+                "role": "data",
+                "reading": "natural"
+              },
+              {
+                "start": 51,
+                "end": 53,
+                "text": "21",
+                "role": "data",
+                "reading": "natural"
+              },
+              {
+                "start": 64,
+                "end": 69,
+                "text": "false",
+                "role": "output",
+                "reading": "natural"
+              },
+              {
+                "start": 82,
+                "end": 89,
+                "text": "37 y -8",
+                "role": "output",
+                "reading": "natural"
+              },
+              {
+                "start": 137,
+                "end": 139,
+                "text": "OK",
+                "role": "output",
+                "reading": "natural"
+              },
+              {
+                "start": 217,
+                "end": 231,
+                "text": "Componente: OK",
+                "role": "output",
+                "reading": "natural"
+              },
+              {
+                "start": 257,
+                "end": 258,
+                "text": "0",
+                "role": "output",
+                "reading": "natural"
+              }
+            ]
+          }
+        ],
+        "client": {
+          "path": "main.cpp",
+          "source": "#include <iostream>\n#include <string>\n\nint cajas_para(int piezas) {\n    const int piezas_por_caja{4};\n    return (piezas + piezas_por_caja - 1) / piezas_por_caja;\n}\n\nbool intentar_cajas(int piezas, int& resultado) {\n    resultado = 0;\n    if (piezas < 0 || piezas > 20) {\n        return false;\n    }\n    resultado = cajas_para(piezas);\n    return true;\n}\n\nbool comprobar_cajas(int piezas, int inicial, bool estado_esperado,\n                     int salida_esperada) {\n    int salida{inicial};\n    const bool aceptado{intentar_cajas(piezas, salida)};\n    const bool coincide{aceptado == estado_esperado && salida == salida_esperada};\n\n    std::cout << piezas << \":\" << aceptado << \":\" << salida << \" \";\n    if (coincide) { std::cout << \"OK\\n\"; }\n    else { std::cout << \"FALLO\\n\"; }\n    return coincide;\n}\n\nbool bateria_componente() {\n    bool correcto{true};\n    if (!comprobar_cajas(0, 37, true, 0)) { correcto = false; }\n    if (!comprobar_cajas(-1, 37, false, 37)) { correcto = false; }\n    if (!comprobar_cajas(20, -8, true, 5)) { correcto = false; }\n    if (!comprobar_cajas(21, -8, false, -8)) { correcto = false; }\n    if (!comprobar_cajas(1, 37, true, 1)) { correcto = false; }\n    if (!comprobar_cajas(5, 37, true, 2)) { correcto = false; }\n    if (!comprobar_cajas(17, 37, true, 5)) { correcto = false; }\n    return correcto;\n}\n\nbool comprobar_componente(const std::string& ensayo) {\n    if (ensayo.empty()) { return bateria_componente(); }\n    if (ensayo == \"0\") { return comprobar_cajas(0, 37, true, 0); }\n    if (ensayo == \"-1\") { return comprobar_cajas(-1, 37, false, 37); }\n    if (ensayo == \"20\") { return comprobar_cajas(20, -8, true, 5); }\n    if (ensayo == \"21\") { return comprobar_cajas(21, -8, false, -8); }\n    if (ensayo == \"1\") { return comprobar_cajas(1, 37, true, 1); }\n    if (ensayo == \"5\") { return comprobar_cajas(5, 37, true, 2); }\n    if (ensayo == \"17\") { return comprobar_cajas(17, 37, true, 5); }\n    return false;\n}\n\nint main() {\n    std::string ensayo;\n    std::cin >> ensayo;\n    if (!comprobar_componente(ensayo)) {\n        std::cout << \"Componente: FALLO\\n\";\n        return 1;\n    }\n    std::cout << \"Componente: OK\\n\";\n\n    return 0;\n}\n"
+        }
+      },
+      {
+        "id": "block_0006_0003",
+        "block": {
+          "type": "cpp_compiler",
+          "language": "cpp",
+          "initialCode": "#include <iostream>\n#include <vector>\n\nint cajas_para(int piezas) {\n    const int piezas_por_caja{4};\n    return (piezas + piezas_por_caja - 1) / piezas_por_caja;\n}\n\nbool intentar_cajas(int piezas, int& resultado) {\n    if (piezas < 0 || piezas > 20) {\n        return false;\n    }\n    resultado = cajas_para(piezas);\n    return true;\n}\n\nbool comprobar_cajas(int piezas, int inicial, bool estado_esperado,\n                     int salida_esperada) {\n    int salida{inicial};\n    const bool aceptado{intentar_cajas(piezas, salida)};\n    const bool coincide{aceptado == estado_esperado && salida == salida_esperada};\n\n    std::cout << piezas << \":\" << aceptado << \":\" << salida << \" \";\n    if (coincide) { std::cout << \"OK\\n\"; }\n    else { std::cout << \"FALLO\\n\"; }\n    return coincide;\n}\n\nbool bateria_componente() {\n    bool correcto{true};\n    if (!comprobar_cajas(0, 37, true, 0)) { correcto = false; }\n    if (!comprobar_cajas(-1, 37, false, 37)) { correcto = false; }\n    if (!comprobar_cajas(20, -8, true, 5)) { correcto = false; }\n    if (!comprobar_cajas(21, -8, false, -8)) { correcto = false; }\n    if (!comprobar_cajas(1, 37, true, 1)) { correcto = false; }\n    if (!comprobar_cajas(5, 37, true, 2)) { correcto = false; }\n    if (!comprobar_cajas(17, 37, true, 5)) { correcto = false; }\n    return correcto;\n}\n\nint main() {\n    const bool componente_correcto{bateria_componente()};\n    if (!componente_correcto) {\n        std::cout << \"Componente: FALLO\\n\";\n        return 1;\n    }\n    std::cout << \"Componente: OK\\n\";\n    int salida{77};\n    int aceptados{0};\n    int rechazados{0};\n    int total{0};\n\n    for (int piezas : std::vector<int>{0, -1, 5, 21, 4}) {\n        const bool aceptado{intentar_cajas(piezas, salida)};\n        total += salida;\n        if (aceptado) {\n            ++aceptados;\n        } else {\n            ++rechazados;\n        }\n    }\n    std::cout << \"Aceptados=\" << aceptados << \" Rechazados=\" << rechazados\n              << \" Total=\" << total << \"\\n\";\n    const bool cliente_correcto{aceptados == 3 && rechazados == 2 && total == 3};\n\n    if (!cliente_correcto) {\n        std::cout << \"Cliente: FALLO\\n\";\n        return 1;\n    }\n    std::cout << \"Cliente: OK\\n\";\n\n    return 0;\n}\n",
+          "outputCheck": {
+            "inputComparison": "exact",
+            "cases": [
+              {
+                "standardInput": "",
+                "outputs": [
+                  "0:1:0 OK\n-1:0:37 OK\n20:1:5 OK\n21:0:-8 OK\n1:1:1 OK\n5:1:2 OK\n17:1:5 OK\nComponente: OK\nAceptados=3 Rechazados=2 Total=3\nCliente: OK\n"
+                ],
+                "explanation": "La batería conserva sus siete controles. En el cliente, 0, 5 y 4 piezas se aceptan y aportan 0, 2 y 1 cajas; -1 y 21 sólo aumentan los rechazos. El informe indica Aceptados=3 Rechazados=2 Total=3, termina en Cliente: OK y el proceso retorna 0."
+              }
+            ]
+          }
+        },
+        "cases": [
+          {
+            "standardInput": "cliente",
+            "outputs": [
+              "Aceptados=3 Rechazados=2 Total=3\nCliente: OK\n"
+            ],
+            "exitCode": 0
+          },
+          {
+            "standardInput": "0",
+            "outputs": [
+              "0:1:0 OK\nComponente: OK\n"
+            ],
+            "exitCode": 0
+          },
+          {
+            "standardInput": "-1",
+            "outputs": [
+              "-1:0:37 OK\nComponente: OK\n"
+            ],
+            "exitCode": 0
+          },
+          {
+            "standardInput": "20",
+            "outputs": [
+              "20:1:5 OK\nComponente: OK\n"
+            ],
+            "exitCode": 0
+          },
+          {
+            "standardInput": "21",
+            "outputs": [
+              "21:0:-8 OK\nComponente: OK\n"
+            ],
+            "exitCode": 0
+          },
+          {
+            "standardInput": "1",
+            "outputs": [
+              "1:1:1 OK\nComponente: OK\n"
+            ],
+            "exitCode": 0
+          },
+          {
+            "standardInput": "5",
+            "outputs": [
+              "5:1:2 OK\nComponente: OK\n"
+            ],
+            "exitCode": 0
+          },
+          {
+            "standardInput": "17",
+            "outputs": [
+              "17:1:5 OK\nComponente: OK\n"
+            ],
+            "exitCode": 0
+          },
+          {
+            "standardInput": "",
+            "outputs": [
+              "0:1:0 OK\n-1:0:37 OK\n20:1:5 OK\n21:0:-8 OK\n1:1:1 OK\n5:1:2 OK\n17:1:5 OK\nComponente: OK\nAceptados=3 Rechazados=2 Total=3\nCliente: OK\n"
+            ],
+            "explanation": "La batería conserva sus siete controles. En el cliente, 0, 5 y 4 piezas se aceptan y aportan 0, 2 y 1 cajas; -1 y 21 sólo aumentan los rechazos. El informe indica Aceptados=3 Rechazados=2 Total=3, termina en Cliente: OK y el proceso retorna 0."
+          }
+        ],
+        "editorialIndex": 60,
+        "historySha256": "65b8d7d2468429ffd80de3a4bda2141d68d343573ab2ceecd57c3551ebb89ac1",
+        "semanticBefore": [
+          {
+            "block": "block_0006_0003",
+            "path": "/outputCheck/cases/0/explanation",
+            "sourceSha256": "576213c2d4d58bc1b5d0cb4c7d5166ac6dde76d74eab2118d53a357cecc2f483",
+            "spans": [
+              {
+                "start": 56,
+                "end": 64,
+                "text": "0, 5 y 4",
+                "role": "data",
+                "reading": "natural"
+              },
+              {
+                "start": 93,
+                "end": 101,
+                "text": "0, 2 y 1",
+                "role": "output",
+                "reading": "natural"
+              },
+              {
+                "start": 109,
+                "end": 116,
+                "text": "-1 y 21",
+                "role": "data",
+                "reading": "natural"
+              },
+              {
+                "start": 163,
+                "end": 195,
+                "text": "Aceptados=3 Rechazados=2 Total=3",
+                "role": "output",
+                "reading": "natural"
+              },
+              {
+                "start": 208,
+                "end": 219,
+                "text": "Cliente: OK",
+                "role": "output",
+                "reading": "natural"
+              },
+              {
+                "start": 241,
+                "end": 242,
+                "text": "0",
+                "role": "output",
+                "reading": "natural"
+              }
+            ]
+          }
+        ],
+        "semanticAfter": [
+          {
+            "block": "block_0006_0003",
+            "path": "/outputCheck/cases/8/explanation",
+            "sourceSha256": "576213c2d4d58bc1b5d0cb4c7d5166ac6dde76d74eab2118d53a357cecc2f483",
+            "spans": [
+              {
+                "start": 56,
+                "end": 64,
+                "text": "0, 5 y 4",
+                "role": "data",
+                "reading": "natural"
+              },
+              {
+                "start": 93,
+                "end": 101,
+                "text": "0, 2 y 1",
+                "role": "output",
+                "reading": "natural"
+              },
+              {
+                "start": 109,
+                "end": 116,
+                "text": "-1 y 21",
+                "role": "data",
+                "reading": "natural"
+              },
+              {
+                "start": 163,
+                "end": 195,
+                "text": "Aceptados=3 Rechazados=2 Total=3",
+                "role": "output",
+                "reading": "natural"
+              },
+              {
+                "start": 208,
+                "end": 219,
+                "text": "Cliente: OK",
+                "role": "output",
+                "reading": "natural"
+              },
+              {
+                "start": 241,
+                "end": 242,
+                "text": "0",
+                "role": "output",
+                "reading": "natural"
+              }
+            ]
+          }
+        ],
+        "client": {
+          "path": "main.cpp",
+          "source": "#include <iostream>\n#include <string>\n#include <vector>\n\nint cajas_para(int piezas) {\n    const int piezas_por_caja{4};\n    return (piezas + piezas_por_caja - 1) / piezas_por_caja;\n}\n\nbool intentar_cajas(int piezas, int& resultado) {\n    if (piezas < 0 || piezas > 20) {\n        return false;\n    }\n    resultado = cajas_para(piezas);\n    return true;\n}\n\nbool comprobar_cajas(int piezas, int inicial, bool estado_esperado,\n                     int salida_esperada) {\n    int salida{inicial};\n    const bool aceptado{intentar_cajas(piezas, salida)};\n    const bool coincide{aceptado == estado_esperado && salida == salida_esperada};\n\n    std::cout << piezas << \":\" << aceptado << \":\" << salida << \" \";\n    if (coincide) { std::cout << \"OK\\n\"; }\n    else { std::cout << \"FALLO\\n\"; }\n    return coincide;\n}\n\nbool bateria_componente() {\n    bool correcto{true};\n    if (!comprobar_cajas(0, 37, true, 0)) { correcto = false; }\n    if (!comprobar_cajas(-1, 37, false, 37)) { correcto = false; }\n    if (!comprobar_cajas(20, -8, true, 5)) { correcto = false; }\n    if (!comprobar_cajas(21, -8, false, -8)) { correcto = false; }\n    if (!comprobar_cajas(1, 37, true, 1)) { correcto = false; }\n    if (!comprobar_cajas(5, 37, true, 2)) { correcto = false; }\n    if (!comprobar_cajas(17, 37, true, 5)) { correcto = false; }\n    return correcto;\n}\n\nbool comprobar_componente(const std::string& ensayo) {\n    if (ensayo.empty()) { return bateria_componente(); }\n    if (ensayo == \"0\") { return comprobar_cajas(0, 37, true, 0); }\n    if (ensayo == \"-1\") { return comprobar_cajas(-1, 37, false, 37); }\n    if (ensayo == \"20\") { return comprobar_cajas(20, -8, true, 5); }\n    if (ensayo == \"21\") { return comprobar_cajas(21, -8, false, -8); }\n    if (ensayo == \"1\") { return comprobar_cajas(1, 37, true, 1); }\n    if (ensayo == \"5\") { return comprobar_cajas(5, 37, true, 2); }\n    if (ensayo == \"17\") { return comprobar_cajas(17, 37, true, 5); }\n    return false;\n}\n\nint main() {\n    std::string ensayo;\n    std::cin >> ensayo;\n    if (ensayo != \"cliente\") {\n        const bool componente_correcto{comprobar_componente(ensayo)};\n        if (!componente_correcto) {\n            std::cout << \"Componente: FALLO\\n\";\n            return 1;\n        }\n        std::cout << \"Componente: OK\\n\";\n        if (!ensayo.empty()) { return 0; }\n    }\n\n    int salida{77};\n    int aceptados{0};\n    int rechazados{0};\n    int total{0};\n\n    for (int piezas : std::vector<int>{0, -1, 5, 21, 4}) {\n        const bool aceptado{intentar_cajas(piezas, salida)};\n        total += salida;\n        if (aceptado) {\n            ++aceptados;\n        } else {\n            ++rechazados;\n        }\n    }\n    std::cout << \"Aceptados=\" << aceptados << \" Rechazados=\" << rechazados\n              << \" Total=\" << total << \"\\n\";\n    const bool cliente_correcto{aceptados == 3 && rechazados == 2 && total == 3};\n\n    if (!cliente_correcto) {\n        std::cout << \"Cliente: FALLO\\n\";\n        return 1;\n    }\n    std::cout << \"Cliente: OK\\n\";\n\n    return 0;\n}\n"
+        }
+      },
+      {
+        "id": "block_0007_0006",
+        "block": {
+          "type": "cpp_compiler",
+          "language": "cpp",
+          "initialCode": "#include <iostream>\n#include <vector>\n\nint cajas_para(int piezas) {\n    const int piezas_por_caja{4};\n    return (piezas + piezas_por_caja - 1) / piezas_por_caja;\n}\n\nbool intentar_cajas(int piezas, int& resultado) {\n    if (piezas < 0 || piezas > 20) {\n        return false;\n    }\n    resultado = cajas_para(piezas);\n    return true;\n}\n\nbool comprobar_cajas(int piezas, int inicial, bool estado_esperado,\n                     int salida_esperada) {\n    int salida{inicial};\n    const bool aceptado{intentar_cajas(piezas, salida)};\n    const bool coincide{aceptado == estado_esperado && salida == salida_esperada};\n\n    std::cout << piezas << \":\" << aceptado << \":\" << salida << \" \";\n    if (coincide) { std::cout << \"OK\\n\"; }\n    else { std::cout << \"FALLO\\n\"; }\n    return coincide;\n}\n\nbool bateria_componente() {\n    bool correcto{true};\n    if (!comprobar_cajas(0, 37, true, 0)) { correcto = false; }\n    if (!comprobar_cajas(-1, 37, false, 37)) { correcto = false; }\n    if (!comprobar_cajas(20, -8, true, 5)) { correcto = false; }\n    if (!comprobar_cajas(21, -8, false, -8)) { correcto = false; }\n    if (!comprobar_cajas(1, 37, true, 1)) { correcto = false; }\n    if (!comprobar_cajas(5, 37, true, 2)) { correcto = false; }\n    if (!comprobar_cajas(17, 37, true, 5)) { correcto = false; }\n    return correcto;\n}\n\nint main() {\n    const bool componente_correcto{bateria_componente()};\n    if (!componente_correcto) {\n        std::cout << \"Componente: FALLO\\n\";\n        return 1;\n    }\n    std::cout << \"Componente: OK\\n\";\n    int salida{77};\n    int aceptados{0};\n    int rechazados{0};\n    int total{0};\n\n    for (int piezas : std::vector<int>{21, 4, -1, 0, 5}) {\n        const bool aceptado{intentar_cajas(piezas, salida)};\n        total += salida;\n        if (aceptado) {\n            ++aceptados;\n        } else {\n            ++rechazados;\n        }\n    }\n    std::cout << \"Aceptados=\" << aceptados << \" Rechazados=\" << rechazados\n              << \" Total=\" << total << \"\\n\";\n    const bool cliente_correcto{aceptados == 3 && rechazados == 2 && total == 3};\n\n    if (!cliente_correcto) {\n        std::cout << \"Cliente: FALLO\\n\";\n        return 1;\n    }\n    std::cout << \"Cliente: OK\\n\";\n\n    return 0;\n}\n",
+          "outputCheck": {
+            "inputComparison": "exact",
+            "cases": [
+              {
+                "standardInput": "",
+                "outputs": [
+                  "0:1:0 OK\n-1:0:37 OK\n20:1:5 OK\n21:0:-8 OK\n1:1:1 OK\n5:1:2 OK\n17:1:5 OK\nComponente: OK\nAceptados=3 Rechazados=2 Total=3\nCliente: OK\n"
+                ],
+                "explanation": "El primer rechazo conserva 77, pero el cliente no lo suma. Las peticiones aceptadas de 4, 0 y 5 piezas aportan 1, 0 y 2 cajas. Quedan tres aceptadas, dos rechazadas y total tres, junto con los siete controles del componente; el proceso retorna 0. Sumar después de toda llamada habría producido 81 en este orden."
+              }
+            ]
+          }
+        },
+        "cases": [
+          {
+            "standardInput": "cliente",
+            "outputs": [
+              "Aceptados=3 Rechazados=2 Total=3\nCliente: OK\n"
+            ],
+            "exitCode": 0
+          },
+          {
+            "standardInput": "0",
+            "outputs": [
+              "0:1:0 OK\nComponente: OK\n"
+            ],
+            "exitCode": 0
+          },
+          {
+            "standardInput": "-1",
+            "outputs": [
+              "-1:0:37 OK\nComponente: OK\n"
+            ],
+            "exitCode": 0
+          },
+          {
+            "standardInput": "20",
+            "outputs": [
+              "20:1:5 OK\nComponente: OK\n"
+            ],
+            "exitCode": 0
+          },
+          {
+            "standardInput": "21",
+            "outputs": [
+              "21:0:-8 OK\nComponente: OK\n"
+            ],
+            "exitCode": 0
+          },
+          {
+            "standardInput": "1",
+            "outputs": [
+              "1:1:1 OK\nComponente: OK\n"
+            ],
+            "exitCode": 0
+          },
+          {
+            "standardInput": "5",
+            "outputs": [
+              "5:1:2 OK\nComponente: OK\n"
+            ],
+            "exitCode": 0
+          },
+          {
+            "standardInput": "17",
+            "outputs": [
+              "17:1:5 OK\nComponente: OK\n"
+            ],
+            "exitCode": 0
+          },
+          {
+            "standardInput": "",
+            "outputs": [
+              "0:1:0 OK\n-1:0:37 OK\n20:1:5 OK\n21:0:-8 OK\n1:1:1 OK\n5:1:2 OK\n17:1:5 OK\nComponente: OK\nAceptados=3 Rechazados=2 Total=3\nCliente: OK\n"
+            ],
+            "explanation": "El primer rechazo conserva 77, pero el cliente no lo suma. Las peticiones aceptadas de 4, 0 y 5 piezas aportan 1, 0 y 2 cajas. Quedan tres aceptadas, dos rechazadas y total tres, junto con los siete controles del componente; el proceso retorna 0. Sumar después de toda llamada habría producido 81 en este orden."
+          }
+        ],
+        "editorialIndex": 61,
+        "historySha256": "ce78bb3110ff88bd38cb6d7722fd8b46e8121422152839a8d36af6288deca094",
+        "semanticBefore": [
+          {
+            "block": "block_0007_0006",
+            "path": "/outputCheck/cases/0/explanation",
+            "sourceSha256": "1880b6aa03db74c7624ca349f0e0da0407eef716e8b624caad91c6cf05270ed8",
+            "spans": [
+              {
+                "start": 27,
+                "end": 29,
+                "text": "77",
+                "role": "output",
+                "reading": "natural"
+              },
+              {
+                "start": 87,
+                "end": 95,
+                "text": "4, 0 y 5",
+                "role": "data",
+                "reading": "natural"
+              },
+              {
+                "start": 111,
+                "end": 119,
+                "text": "1, 0 y 2",
+                "role": "output",
+                "reading": "natural"
+              },
+              {
+                "start": 244,
+                "end": 245,
+                "text": "0",
+                "role": "output",
+                "reading": "natural"
+              },
+              {
+                "start": 294,
+                "end": 296,
+                "text": "81",
+                "role": "output",
+                "reading": "natural"
+              }
+            ]
+          }
+        ],
+        "semanticAfter": [
+          {
+            "block": "block_0007_0006",
+            "path": "/outputCheck/cases/8/explanation",
+            "sourceSha256": "1880b6aa03db74c7624ca349f0e0da0407eef716e8b624caad91c6cf05270ed8",
+            "spans": [
+              {
+                "start": 27,
+                "end": 29,
+                "text": "77",
+                "role": "output",
+                "reading": "natural"
+              },
+              {
+                "start": 87,
+                "end": 95,
+                "text": "4, 0 y 5",
+                "role": "data",
+                "reading": "natural"
+              },
+              {
+                "start": 111,
+                "end": 119,
+                "text": "1, 0 y 2",
+                "role": "output",
+                "reading": "natural"
+              },
+              {
+                "start": 244,
+                "end": 245,
+                "text": "0",
+                "role": "output",
+                "reading": "natural"
+              },
+              {
+                "start": 294,
+                "end": 296,
+                "text": "81",
+                "role": "output",
+                "reading": "natural"
+              }
+            ]
+          }
+        ],
+        "client": {
+          "path": "main.cpp",
+          "source": "#include <iostream>\n#include <string>\n#include <vector>\n\nint cajas_para(int piezas) {\n    const int piezas_por_caja{4};\n    return (piezas + piezas_por_caja - 1) / piezas_por_caja;\n}\n\nbool intentar_cajas(int piezas, int& resultado) {\n    if (piezas < 0 || piezas > 20) {\n        return false;\n    }\n    resultado = cajas_para(piezas);\n    return true;\n}\n\nbool comprobar_cajas(int piezas, int inicial, bool estado_esperado,\n                     int salida_esperada) {\n    int salida{inicial};\n    const bool aceptado{intentar_cajas(piezas, salida)};\n    const bool coincide{aceptado == estado_esperado && salida == salida_esperada};\n\n    std::cout << piezas << \":\" << aceptado << \":\" << salida << \" \";\n    if (coincide) { std::cout << \"OK\\n\"; }\n    else { std::cout << \"FALLO\\n\"; }\n    return coincide;\n}\n\nbool bateria_componente() {\n    bool correcto{true};\n    if (!comprobar_cajas(0, 37, true, 0)) { correcto = false; }\n    if (!comprobar_cajas(-1, 37, false, 37)) { correcto = false; }\n    if (!comprobar_cajas(20, -8, true, 5)) { correcto = false; }\n    if (!comprobar_cajas(21, -8, false, -8)) { correcto = false; }\n    if (!comprobar_cajas(1, 37, true, 1)) { correcto = false; }\n    if (!comprobar_cajas(5, 37, true, 2)) { correcto = false; }\n    if (!comprobar_cajas(17, 37, true, 5)) { correcto = false; }\n    return correcto;\n}\n\nbool comprobar_componente(const std::string& ensayo) {\n    if (ensayo.empty()) { return bateria_componente(); }\n    if (ensayo == \"0\") { return comprobar_cajas(0, 37, true, 0); }\n    if (ensayo == \"-1\") { return comprobar_cajas(-1, 37, false, 37); }\n    if (ensayo == \"20\") { return comprobar_cajas(20, -8, true, 5); }\n    if (ensayo == \"21\") { return comprobar_cajas(21, -8, false, -8); }\n    if (ensayo == \"1\") { return comprobar_cajas(1, 37, true, 1); }\n    if (ensayo == \"5\") { return comprobar_cajas(5, 37, true, 2); }\n    if (ensayo == \"17\") { return comprobar_cajas(17, 37, true, 5); }\n    return false;\n}\n\nint main() {\n    std::string ensayo;\n    std::cin >> ensayo;\n    if (ensayo != \"cliente\") {\n        const bool componente_correcto{comprobar_componente(ensayo)};\n        if (!componente_correcto) {\n            std::cout << \"Componente: FALLO\\n\";\n            return 1;\n        }\n        std::cout << \"Componente: OK\\n\";\n        if (!ensayo.empty()) { return 0; }\n    }\n\n    int salida{77};\n    int aceptados{0};\n    int rechazados{0};\n    int total{0};\n\n    for (int piezas : std::vector<int>{21, 4, -1, 0, 5}) {\n        const bool aceptado{intentar_cajas(piezas, salida)};\n        total += salida;\n        if (aceptado) {\n            ++aceptados;\n        } else {\n            ++rechazados;\n        }\n    }\n    std::cout << \"Aceptados=\" << aceptados << \" Rechazados=\" << rechazados\n              << \" Total=\" << total << \"\\n\";\n    const bool cliente_correcto{aceptados == 3 && rechazados == 2 && total == 3};\n\n    if (!cliente_correcto) {\n        std::cout << \"Cliente: FALLO\\n\";\n        return 1;\n    }\n    std::cout << \"Cliente: OK\\n\";\n\n    return 0;\n}\n"
+        }
+      },
+      {
+        "id": "block_0008_0005",
+        "block": {
+          "type": "cpp_compiler",
+          "language": "cpp",
+          "initialCode": "#include <iostream>\n\nbool calcular_saldo(int cobros, int devoluciones, int& saldo) {\n    return false;\n}\n\nvoid registrar(int cobros, int devoluciones, int& total,\n               int& aceptados, int& rechazados) {\n}\n\nbool comprobar_saldo(int cobros, int devoluciones, int inicial,\n                     bool estado_esperado, int salida_esperada) {\n    int salida{inicial};\n    const bool aceptado{calcular_saldo(cobros, devoluciones, salida)};\n    const bool coincide{aceptado == estado_esperado && salida == salida_esperada};\n\n    std::cout << cobros << \":\" << devoluciones << \":\" << aceptado << \":\" << salida << \" \";\n    if (coincide) { std::cout << \"OK\\n\"; }\n    else { std::cout << \"FALLO\\n\"; }\n    return coincide;\n}\n\nint main() {\n    bool correcto{true};\n    if (!comprobar_saldo(5, 5, 37, true, 0)) { correcto = false; }\n    if (!comprobar_saldo(2, 3, 37, true, -1)) { correcto = false; }\n    if (!comprobar_saldo(9, 0, -8, true, 9)) { correcto = false; }\n    if (!comprobar_saldo(0, 9, 37, true, -9)) { correcto = false; }\n    if (!comprobar_saldo(10, 0, 37, false, 37)) { correcto = false; }\n    if (!comprobar_saldo(0, -1, -8, false, -8)) { correcto = false; }\n    int total{0};\n    int aceptados{0};\n    int rechazados{0};\n    registrar(5, 5, total, aceptados, rechazados);\n    registrar(2, 3, total, aceptados, rechazados);\n    registrar(10, 0, total, aceptados, rechazados);\n    registrar(0, 9, total, aceptados, rechazados);\n    std::cout << \"Aceptados=\" << aceptados << \" Rechazados=\" << rechazados\n              << \" Total=\" << total << \"\\n\";\n    if (aceptados != 3 || rechazados != 1 || total != -10) { correcto = false; }\n    if (!correcto) { std::cout << \"Transferencia: FALLO\\n\"; return 1; }\n    std::cout << \"Transferencia: OK\\n\";\n\n    return 0;\n}\n",
+          "outputCheck": {
+            "inputComparison": "exact",
+            "cases": [
+              {
+                "standardInput": "",
+                "outputs": [
+                  "5:5:1:0 OK\n2:3:1:-1 OK\n9:0:1:9 OK\n0:9:1:-9 OK\n10:0:0:37 OK\n0:-1:0:-8 OK\nAceptados=3 Rechazados=1 Total=-10\nTransferencia: OK\n"
+                ],
+                "explanation": "Los seis controles del componente coinciden. En el cliente, (5,5), (2,3) y (0,9) se aceptan y aportan 0, -1 y -9; (10,0) sólo aumenta rechazados. Quedan tres aceptadas, una rechazada y total -10; el informe termina en Transferencia: OK y el proceso retorna 0. Un saldo negativo válido sigue siendo un resultado aceptado."
+              }
+            ]
+          }
+        },
+        "cases": [
+          {
+            "standardInput": "cliente",
+            "outputs": [
+              "Aceptados=3 Rechazados=1 Total=-10\nTransferencia: OK\n"
+            ],
+            "exitCode": 0
+          },
+          {
+            "standardInput": "5 5",
+            "outputs": [
+              "5:5:1:0 OK\nTransferencia: OK\n"
+            ],
+            "exitCode": 0
+          },
+          {
+            "standardInput": "2 3",
+            "outputs": [
+              "2:3:1:-1 OK\nTransferencia: OK\n"
+            ],
+            "exitCode": 0
+          },
+          {
+            "standardInput": "9 0",
+            "outputs": [
+              "9:0:1:9 OK\nTransferencia: OK\n"
+            ],
+            "exitCode": 0
+          },
+          {
+            "standardInput": "0 9",
+            "outputs": [
+              "0:9:1:-9 OK\nTransferencia: OK\n"
+            ],
+            "exitCode": 0
+          },
+          {
+            "standardInput": "10 0",
+            "outputs": [
+              "10:0:0:37 OK\nTransferencia: OK\n"
+            ],
+            "exitCode": 0
+          },
+          {
+            "standardInput": "0 -1",
+            "outputs": [
+              "0:-1:0:-8 OK\nTransferencia: OK\n"
+            ],
+            "exitCode": 0
+          },
+          {
+            "standardInput": "",
+            "outputs": [
+              "5:5:1:0 OK\n2:3:1:-1 OK\n9:0:1:9 OK\n0:9:1:-9 OK\n10:0:0:37 OK\n0:-1:0:-8 OK\nAceptados=3 Rechazados=1 Total=-10\nTransferencia: OK\n"
+            ],
+            "explanation": "Los seis controles del componente coinciden. En el cliente, (5,5), (2,3) y (0,9) se aceptan y aportan 0, -1 y -9; (10,0) sólo aumenta rechazados. Quedan tres aceptadas, una rechazada y total -10; el informe termina en Transferencia: OK y el proceso retorna 0. Un saldo negativo válido sigue siendo un resultado aceptado."
+          }
+        ],
+        "editorialIndex": 62,
+        "historySha256": "083b1352d2489be0c3fed0eb8335072fbc9717369619a8a45e881ef221829266",
+        "semanticBefore": [
+          {
+            "block": "block_0008_0005",
+            "path": "/outputCheck/cases/0/explanation",
+            "sourceSha256": "6045fc135e7ae613e147d7b92ebab49e7cbf989d2537bae6a532fde34bf64cd0",
+            "spans": [
+              {
+                "start": 60,
+                "end": 80,
+                "text": "(5,5), (2,3) y (0,9)",
+                "role": "data",
+                "reading": "natural"
+              },
+              {
+                "start": 102,
+                "end": 112,
+                "text": "0, -1 y -9",
+                "role": "output",
+                "reading": "natural"
+              },
+              {
+                "start": 114,
+                "end": 120,
+                "text": "(10,0)",
+                "role": "data",
+                "reading": "natural"
+              },
+              {
+                "start": 134,
+                "end": 144,
+                "text": "rechazados",
+                "role": "cpp"
+              },
+              {
+                "start": 191,
+                "end": 194,
+                "text": "-10",
+                "role": "output",
+                "reading": "natural"
+              },
+              {
+                "start": 218,
+                "end": 235,
+                "text": "Transferencia: OK",
+                "role": "output",
+                "reading": "natural"
+              },
+              {
+                "start": 257,
+                "end": 258,
+                "text": "0",
+                "role": "output",
+                "reading": "natural"
+              }
+            ]
+          }
+        ],
+        "semanticAfter": [
+          {
+            "block": "block_0008_0005",
+            "path": "/outputCheck/cases/7/explanation",
+            "sourceSha256": "6045fc135e7ae613e147d7b92ebab49e7cbf989d2537bae6a532fde34bf64cd0",
+            "spans": [
+              {
+                "start": 60,
+                "end": 80,
+                "text": "(5,5), (2,3) y (0,9)",
+                "role": "data",
+                "reading": "natural"
+              },
+              {
+                "start": 102,
+                "end": 112,
+                "text": "0, -1 y -9",
+                "role": "output",
+                "reading": "natural"
+              },
+              {
+                "start": 114,
+                "end": 120,
+                "text": "(10,0)",
+                "role": "data",
+                "reading": "natural"
+              },
+              {
+                "start": 134,
+                "end": 144,
+                "text": "rechazados",
+                "role": "cpp"
+              },
+              {
+                "start": 191,
+                "end": 194,
+                "text": "-10",
+                "role": "output",
+                "reading": "natural"
+              },
+              {
+                "start": 218,
+                "end": 235,
+                "text": "Transferencia: OK",
+                "role": "output",
+                "reading": "natural"
+              },
+              {
+                "start": 257,
+                "end": 258,
+                "text": "0",
+                "role": "output",
+                "reading": "natural"
+              }
+            ]
+          }
+        ],
+        "client": {
+          "path": "main.cpp",
+          "source": "#include <iostream>\n#include <string>\n\nbool calcular_saldo(int cobros, int devoluciones, int& saldo) {\n    return false;\n}\n\nvoid registrar(int cobros, int devoluciones, int& total,\n               int& aceptados, int& rechazados) {\n}\n\nbool comprobar_saldo(int cobros, int devoluciones, int inicial,\n                     bool estado_esperado, int salida_esperada) {\n    int salida{inicial};\n    const bool aceptado{calcular_saldo(cobros, devoluciones, salida)};\n    const bool coincide{aceptado == estado_esperado && salida == salida_esperada};\n\n    std::cout << cobros << \":\" << devoluciones << \":\" << aceptado << \":\" << salida << \" \";\n    if (coincide) { std::cout << \"OK\\n\"; }\n    else { std::cout << \"FALLO\\n\"; }\n    return coincide;\n}\n\nint main() {\n    std::string modo;\n    std::cin >> modo;\n    bool correcto{true};\n\n    if (modo.empty()) {\n        if (!comprobar_saldo(5, 5, 37, true, 0)) { correcto = false; }\n        if (!comprobar_saldo(2, 3, 37, true, -1)) { correcto = false; }\n        if (!comprobar_saldo(9, 0, -8, true, 9)) { correcto = false; }\n        if (!comprobar_saldo(0, 9, 37, true, -9)) { correcto = false; }\n        if (!comprobar_saldo(10, 0, 37, false, 37)) { correcto = false; }\n        if (!comprobar_saldo(0, -1, -8, false, -8)) { correcto = false; }\n    } else if (modo != \"cliente\") {\n        int devoluciones{};\n        if (!(std::cin >> devoluciones)) { return 1; }\n        if (modo == \"5\" && devoluciones == 5) {\n            correcto = comprobar_saldo(5, 5, 37, true, 0);\n        } else if (modo == \"2\" && devoluciones == 3) {\n            correcto = comprobar_saldo(2, 3, 37, true, -1);\n        } else if (modo == \"9\" && devoluciones == 0) {\n            correcto = comprobar_saldo(9, 0, -8, true, 9);\n        } else if (modo == \"0\" && devoluciones == 9) {\n            correcto = comprobar_saldo(0, 9, 37, true, -9);\n        } else if (modo == \"10\" && devoluciones == 0) {\n            correcto = comprobar_saldo(10, 0, 37, false, 37);\n        } else if (modo == \"0\" && devoluciones == -1) {\n            correcto = comprobar_saldo(0, -1, -8, false, -8);\n        } else {\n            return 1;\n        }\n    }\n\n    if (modo.empty() || modo == \"cliente\") {\n        int total{0};\n        int aceptados{0};\n        int rechazados{0};\n        registrar(5, 5, total, aceptados, rechazados);\n        registrar(2, 3, total, aceptados, rechazados);\n        registrar(10, 0, total, aceptados, rechazados);\n        registrar(0, 9, total, aceptados, rechazados);\n        std::cout << \"Aceptados=\" << aceptados << \" Rechazados=\" << rechazados\n                  << \" Total=\" << total << \"\\n\";\n        if (aceptados != 3 || rechazados != 1 || total != -10) { correcto = false; }\n    }\n    if (!correcto) { std::cout << \"Transferencia: FALLO\\n\"; return 1; }\n    std::cout << \"Transferencia: OK\\n\";\n\n    return 0;\n}\n"
+        }
+      },
+      {
+        "id": "u3l5_limites_saldo_editor",
+        "block": {
+          "type": "cpp_compiler",
+          "language": "cpp",
+          "initialCode": "#include <iostream>\n\nbool calcular_saldo(int cobros, int devoluciones, int& saldo) {\n    if (cobros > 9 || devoluciones < 0) {\n        return false;\n    }\n    saldo = cobros - devoluciones;\n    return true;\n}\n\nvoid registrar(int cobros, int devoluciones, int& total,\n               int& aceptados, int& rechazados) {\n    int saldo{99};\n    if (calcular_saldo(cobros, devoluciones, saldo)) {\n        total += saldo;\n        ++aceptados;\n    } else {\n        ++rechazados;\n    }\n}\n\nbool comprobar_saldo(int cobros, int devoluciones, int inicial,\n                     bool estado_esperado, int salida_esperada) {\n    int salida{inicial};\n    const bool aceptado{calcular_saldo(cobros, devoluciones, salida)};\n    const bool coincide{aceptado == estado_esperado && salida == salida_esperada};\n\n    std::cout << cobros << \":\" << devoluciones << \":\" << aceptado << \":\" << salida << \" \";\n    if (coincide) { std::cout << \"OK\\n\"; }\n    else { std::cout << \"FALLO\\n\"; }\n    return coincide;\n}\n\nint main() {\n    bool correcto{true};\n    if (!comprobar_saldo(5, 5, 37, true, 0)) { correcto = false; }\n    if (!comprobar_saldo(2, 3, 37, true, -1)) { correcto = false; }\n    if (!comprobar_saldo(9, 0, -8, true, 9)) { correcto = false; }\n    if (!comprobar_saldo(0, 9, 37, true, -9)) { correcto = false; }\n    if (!comprobar_saldo(10, 0, 37, false, 37)) { correcto = false; }\n    if (!comprobar_saldo(0, -1, -8, false, -8)) { correcto = false; }\n    if (!comprobar_saldo(-1, 0, 23, false, 23)) { correcto = false; }\n    if (!comprobar_saldo(0, 10, -4, false, -4)) { correcto = false; }\n    int total{0};\n    int aceptados{0};\n    int rechazados{0};\n    registrar(5, 5, total, aceptados, rechazados);\n    registrar(2, 3, total, aceptados, rechazados);\n    registrar(10, 0, total, aceptados, rechazados);\n    registrar(0, 9, total, aceptados, rechazados);\n    std::cout << \"Aceptados=\" << aceptados << \" Rechazados=\" << rechazados\n              << \" Total=\" << total << \"\\n\";\n    if (aceptados != 3 || rechazados != 1 || total != -10) { correcto = false; }\n    if (!correcto) { std::cout << \"Transferencia: FALLO\\n\"; return 1; }\n    std::cout << \"Transferencia: OK\\n\";\n\n    return 0;\n}\n",
+          "outputCheck": {
+            "inputComparison": "exact",
+            "cases": [
+              {
+                "standardInput": "",
+                "outputs": [
+                  "5:5:1:0 OK\n2:3:1:-1 OK\n9:0:1:9 OK\n0:9:1:-9 OK\n10:0:0:37 OK\n0:-1:0:-8 OK\n-1:0:0:23 OK\n0:10:0:-4 OK\nAceptados=3 Rechazados=1 Total=-10\nTransferencia: OK\n"
+                ],
+                "explanation": "Con (-1,0), cobros incumple su límite inferior y el destino debe conservar 23; con (0,10), devoluciones incumple su límite superior y debe conservar -4. El inicial devolvía true y escribía -1 y -10, respectivamente. Los seis controles antiguos no observaban esos dos incumplimientos. La reparación satisface las ocho comparaciones y conserva el resultado del cliente; el proceso retorna 0."
+              }
+            ]
+          }
+        },
+        "cases": [
+          {
+            "standardInput": "-1 0",
+            "outputs": [
+              "-1:0:0:23 OK\nTransferencia: OK\n"
+            ],
+            "exitCode": 0
+          },
+          {
+            "standardInput": "5 5",
+            "outputs": [
+              "5:5:1:0 OK\nTransferencia: OK\n"
+            ],
+            "exitCode": 0
+          },
+          {
+            "standardInput": "2 3",
+            "outputs": [
+              "2:3:1:-1 OK\nTransferencia: OK\n"
+            ],
+            "exitCode": 0
+          },
+          {
+            "standardInput": "9 0",
+            "outputs": [
+              "9:0:1:9 OK\nTransferencia: OK\n"
+            ],
+            "exitCode": 0
+          },
+          {
+            "standardInput": "0 9",
+            "outputs": [
+              "0:9:1:-9 OK\nTransferencia: OK\n"
+            ],
+            "exitCode": 0
+          },
+          {
+            "standardInput": "10 0",
+            "outputs": [
+              "10:0:0:37 OK\nTransferencia: OK\n"
+            ],
+            "exitCode": 0
+          },
+          {
+            "standardInput": "0 -1",
+            "outputs": [
+              "0:-1:0:-8 OK\nTransferencia: OK\n"
+            ],
+            "exitCode": 0
+          },
+          {
+            "standardInput": "0 10",
+            "outputs": [
+              "0:10:0:-4 OK\nTransferencia: OK\n"
+            ],
+            "exitCode": 0
+          },
+          {
+            "standardInput": "cliente",
+            "outputs": [
+              "Aceptados=3 Rechazados=1 Total=-10\nTransferencia: OK\n"
+            ],
+            "exitCode": 0
+          },
+          {
+            "standardInput": "",
+            "outputs": [
+              "5:5:1:0 OK\n2:3:1:-1 OK\n9:0:1:9 OK\n0:9:1:-9 OK\n10:0:0:37 OK\n0:-1:0:-8 OK\n-1:0:0:23 OK\n0:10:0:-4 OK\nAceptados=3 Rechazados=1 Total=-10\nTransferencia: OK\n"
+            ],
+            "explanation": "Con (-1,0), cobros incumple su límite inferior y el destino debe conservar 23; con (0,10), devoluciones incumple su límite superior y debe conservar -4. El inicial devolvía true y escribía -1 y -10, respectivamente. Los seis controles antiguos no observaban esos dos incumplimientos. La reparación satisface las ocho comparaciones y conserva el resultado del cliente; el proceso retorna 0."
+          }
+        ],
+        "editorialIndex": 63,
+        "historySha256": "5d750c0112cc2791c4c6b5e454320e61491d82792b686d16f04fcc7cae023349",
+        "semanticBefore": [
+          {
+            "block": "u3l5_limites_saldo_editor",
+            "path": "/outputCheck/cases/0/explanation",
+            "sourceSha256": "f42ccab0f5fe1e8bb1a250e807c34ea9ce23c662ddf7ed5dbf29d85e4f8c15c7",
+            "spans": [
+              {
+                "start": 4,
+                "end": 10,
+                "text": "(-1,0)",
+                "role": "data",
+                "reading": "natural"
+              },
+              {
+                "start": 12,
+                "end": 18,
+                "text": "cobros",
+                "role": "cpp"
+              },
+              {
+                "start": 75,
+                "end": 77,
+                "text": "23",
+                "role": "output",
+                "reading": "natural"
+              },
+              {
+                "start": 83,
+                "end": 89,
+                "text": "(0,10)",
+                "role": "data",
+                "reading": "natural"
+              },
+              {
+                "start": 91,
+                "end": 103,
+                "text": "devoluciones",
+                "role": "cpp"
+              },
+              {
+                "start": 149,
+                "end": 151,
+                "text": "-4",
+                "role": "output",
+                "reading": "natural"
+              },
+              {
+                "start": 173,
+                "end": 177,
+                "text": "true",
+                "role": "output",
+                "reading": "natural"
+              },
+              {
+                "start": 189,
+                "end": 191,
+                "text": "-1",
+                "role": "output",
+                "reading": "natural"
+              },
+              {
+                "start": 194,
+                "end": 197,
+                "text": "-10",
+                "role": "output",
+                "reading": "natural"
+              },
+              {
+                "start": 387,
+                "end": 388,
+                "text": "0",
+                "role": "output",
+                "reading": "natural"
+              }
+            ]
+          }
+        ],
+        "semanticAfter": [
+          {
+            "block": "u3l5_limites_saldo_editor",
+            "path": "/outputCheck/cases/9/explanation",
+            "sourceSha256": "f42ccab0f5fe1e8bb1a250e807c34ea9ce23c662ddf7ed5dbf29d85e4f8c15c7",
+            "spans": [
+              {
+                "start": 4,
+                "end": 10,
+                "text": "(-1,0)",
+                "role": "data",
+                "reading": "natural"
+              },
+              {
+                "start": 12,
+                "end": 18,
+                "text": "cobros",
+                "role": "cpp"
+              },
+              {
+                "start": 75,
+                "end": 77,
+                "text": "23",
+                "role": "output",
+                "reading": "natural"
+              },
+              {
+                "start": 83,
+                "end": 89,
+                "text": "(0,10)",
+                "role": "data",
+                "reading": "natural"
+              },
+              {
+                "start": 91,
+                "end": 103,
+                "text": "devoluciones",
+                "role": "cpp"
+              },
+              {
+                "start": 149,
+                "end": 151,
+                "text": "-4",
+                "role": "output",
+                "reading": "natural"
+              },
+              {
+                "start": 173,
+                "end": 177,
+                "text": "true",
+                "role": "output",
+                "reading": "natural"
+              },
+              {
+                "start": 189,
+                "end": 191,
+                "text": "-1",
+                "role": "output",
+                "reading": "natural"
+              },
+              {
+                "start": 194,
+                "end": 197,
+                "text": "-10",
+                "role": "output",
+                "reading": "natural"
+              },
+              {
+                "start": 387,
+                "end": 388,
+                "text": "0",
+                "role": "output",
+                "reading": "natural"
+              }
+            ]
+          }
+        ],
+        "client": {
+          "path": "main.cpp",
+          "source": "#include <iostream>\n#include <string>\n\nbool calcular_saldo(int cobros, int devoluciones, int& saldo) {\n    if (cobros > 9 || devoluciones < 0) {\n        return false;\n    }\n    saldo = cobros - devoluciones;\n    return true;\n}\n\nvoid registrar(int cobros, int devoluciones, int& total,\n               int& aceptados, int& rechazados) {\n    int saldo{99};\n    if (calcular_saldo(cobros, devoluciones, saldo)) {\n        total += saldo;\n        ++aceptados;\n    } else {\n        ++rechazados;\n    }\n}\n\nbool comprobar_saldo(int cobros, int devoluciones, int inicial,\n                     bool estado_esperado, int salida_esperada) {\n    int salida{inicial};\n    const bool aceptado{calcular_saldo(cobros, devoluciones, salida)};\n    const bool coincide{aceptado == estado_esperado && salida == salida_esperada};\n\n    std::cout << cobros << \":\" << devoluciones << \":\" << aceptado << \":\" << salida << \" \";\n    if (coincide) { std::cout << \"OK\\n\"; }\n    else { std::cout << \"FALLO\\n\"; }\n    return coincide;\n}\n\nint main() {\n    std::string modo;\n    std::cin >> modo;\n    bool correcto{true};\n\n    if (modo.empty()) {\n        if (!comprobar_saldo(5, 5, 37, true, 0)) { correcto = false; }\n        if (!comprobar_saldo(2, 3, 37, true, -1)) { correcto = false; }\n        if (!comprobar_saldo(9, 0, -8, true, 9)) { correcto = false; }\n        if (!comprobar_saldo(0, 9, 37, true, -9)) { correcto = false; }\n        if (!comprobar_saldo(10, 0, 37, false, 37)) { correcto = false; }\n        if (!comprobar_saldo(0, -1, -8, false, -8)) { correcto = false; }\n        if (!comprobar_saldo(-1, 0, 23, false, 23)) { correcto = false; }\n        if (!comprobar_saldo(0, 10, -4, false, -4)) { correcto = false; }\n    } else if (modo != \"cliente\") {\n        int devoluciones{};\n        if (!(std::cin >> devoluciones)) { return 1; }\n        if (modo == \"5\" && devoluciones == 5) {\n            correcto = comprobar_saldo(5, 5, 37, true, 0);\n        } else if (modo == \"2\" && devoluciones == 3) {\n            correcto = comprobar_saldo(2, 3, 37, true, -1);\n        } else if (modo == \"9\" && devoluciones == 0) {\n            correcto = comprobar_saldo(9, 0, -8, true, 9);\n        } else if (modo == \"0\" && devoluciones == 9) {\n            correcto = comprobar_saldo(0, 9, 37, true, -9);\n        } else if (modo == \"10\" && devoluciones == 0) {\n            correcto = comprobar_saldo(10, 0, 37, false, 37);\n        } else if (modo == \"0\" && devoluciones == -1) {\n            correcto = comprobar_saldo(0, -1, -8, false, -8);\n        } else if (modo == \"-1\" && devoluciones == 0) {\n            correcto = comprobar_saldo(-1, 0, 23, false, 23);\n        } else if (modo == \"0\" && devoluciones == 10) {\n            correcto = comprobar_saldo(0, 10, -4, false, -4);\n        } else {\n            return 1;\n        }\n    }\n\n    if (modo.empty() || modo == \"cliente\") {\n        int total{0};\n        int aceptados{0};\n        int rechazados{0};\n        registrar(5, 5, total, aceptados, rechazados);\n        registrar(2, 3, total, aceptados, rechazados);\n        registrar(10, 0, total, aceptados, rechazados);\n        registrar(0, 9, total, aceptados, rechazados);\n        std::cout << \"Aceptados=\" << aceptados << \" Rechazados=\" << rechazados\n                  << \" Total=\" << total << \"\\n\";\n        if (aceptados != 3 || rechazados != 1 || total != -10) { correcto = false; }\n    }\n    if (!correcto) { std::cout << \"Transferencia: FALLO\\n\"; return 1; }\n    std::cout << \"Transferencia: OK\\n\";\n\n    return 0;\n}\n"
         }
       }
     ]
@@ -3192,7 +4584,7 @@
       },
       {
         "block": "block_0003_0003",
-        "path": "/outputCheck/cases/0/explanation",
+        "path": "/outputCheck/cases/7/explanation",
         "sourceSha256": "967c35fa5ebbe955b0a4c753c614b5023a6a47502e11bb3725c6c8aabe732dfe",
         "spans": [
           {
@@ -3631,7 +5023,7 @@
       },
       {
         "block": "block_0006_0003",
-        "path": "/outputCheck/cases/0/explanation",
+        "path": "/outputCheck/cases/8/explanation",
         "sourceSha256": "576213c2d4d58bc1b5d0cb4c7d5166ac6dde76d74eab2118d53a357cecc2f483",
         "spans": [
           {
@@ -3845,7 +5237,7 @@
       },
       {
         "block": "block_0007_0006",
-        "path": "/outputCheck/cases/0/explanation",
+        "path": "/outputCheck/cases/8/explanation",
         "sourceSha256": "1880b6aa03db74c7624ca349f0e0da0407eef716e8b624caad91c6cf05270ed8",
         "spans": [
           {
@@ -4179,7 +5571,7 @@
       },
       {
         "block": "block_0008_0005",
-        "path": "/outputCheck/cases/0/explanation",
+        "path": "/outputCheck/cases/7/explanation",
         "sourceSha256": "6045fc135e7ae613e147d7b92ebab49e7cbf989d2537bae6a532fde34bf64cd0",
         "spans": [
           {
@@ -4496,7 +5888,7 @@
       },
       {
         "block": "u3l5_limites_saldo_editor",
-        "path": "/outputCheck/cases/0/explanation",
+        "path": "/outputCheck/cases/9/explanation",
         "sourceSha256": "f42ccab0f5fe1e8bb1a250e807c34ea9ce23c662ddf7ed5dbf29d85e4f8c15c7",
         "spans": [
           {

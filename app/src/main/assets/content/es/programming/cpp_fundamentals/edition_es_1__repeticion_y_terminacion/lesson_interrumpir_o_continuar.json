@@ -1,0 +1,2485 @@
+{
+  "id": "cpp_fundamentals__edition_es_1__repeticion_y_terminacion__interrumpir_o_continuar",
+  "title": "Interrumpir el recorrido o continuar con el siguiente caso",
+  "activityAfter": [
+    {
+      "activity": "block_0004_0007",
+      "requires": [
+        "block_0004_0004"
+      ]
+    }
+  ],
+  "referenceAfter": [
+    {
+      "activity": "block_0004_0007",
+      "blocks": [
+        "block_0005_0000",
+        "block_0005_0001",
+        "block_0005_0002",
+        "block_0005_0003",
+        "block_0005_0004"
+      ]
+    }
+  ],
+  "compilerPuzzlesRequired": true,
+  "pages": [
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "Salir del bucle con break"
+        },
+        {
+          "type": "paragraph",
+          "text": "Un programa recorre puestos del 1 al 6. Debe detener el recorrido antes de mostrar el puesto 4. Para salir del bucle desde una vuelta, C++ ofrece la instrucción break;. Al ejecutarla en este ejemplo, el programa sale del for y sigue con la primera instrucción posterior al bucle (Köppe et al., 2023)."
+        },
+        {
+          "type": "code",
+          "language": "cpp",
+          "code": "#include <iostream>\n\nint main() {\n    using namespace std;\n\n    for (int puesto{1}; puesto <= 6; ++puesto) {\n        if (puesto == 4) {\n            break;\n        }\n\n        cout << puesto << \":\";\n    }\n\n    cout << \"Fin\";\n}\n"
+        },
+        {
+          "type": "paragraph",
+          "text": "En los puestos 1, 2 y 3, la condición puesto == 4 da false y el programa muestra cada puesto. Después de mostrar el 3, el programa ejecuta ++puesto, escrito en el encabezado del for, y puesto pasa a valer 4. La condición puesto <= 6 sigue siendo verdadera, por lo que el programa entra al cuerpo. Esta vez puesto == 4 da true. Al ejecutar break;, el programa omite la salida del puesto 4 y abandona el for sin ejecutar ++puesto otra vez. Después del bucle, cout << \"Fin\"; añade el mensaje final.\n\nSalida\n1:2:3:Fin"
+        },
+        {
+          "type": "output_prediction",
+          "id": "corte_antes_de_mostrar",
+          "question": "Sigue el recorrido del puesto 2 al 7. ¿Qué escribe el programa si comprueba el corte antes de mostrar cada puesto? Incluye los separadores y el mensaje final.",
+          "language": "cpp",
+          "code": "#include <iostream>\n\nint main() {\n    using namespace std;\n\n    for (int puesto{2}; puesto <= 7; ++puesto) {\n        if (puesto == 5) {\n            break;\n        }\n\n        cout << puesto << \";\";\n    }\n\n    cout << \"Fin\";\n}\n",
+          "answers": [
+            "2;3;4;Fin"
+          ],
+          "explanation": "El programa muestra 2;, 3; y 4;. Cuando puesto toma el valor 5, la condición del if da true y el programa sale del bucle antes de mostrar ese puesto. Después añade Fin. La salida completa es 2;3;4;Fin."
+        }
+      ]
+    },
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "El lugar del corte importa"
+        },
+        {
+          "type": "paragraph",
+          "text": "El momento del corte determina qué acciones de la vuelta ya sucedieron. En este programa, cout está antes del if. El programa declara puesto antes del while para poder leer su valor después del bucle. Este nombre se encuentra en el bloque de main, así que se puede usar dentro del bucle y después de él."
+        },
+        {
+          "type": "code",
+          "language": "cpp",
+          "code": "#include <iostream>\n\nint main() {\n    using namespace std;\n\n    int puesto{1};\n\n    while (puesto <= 5) {\n        cout << puesto << \":\";\n\n        if (puesto == 3) {\n            break;\n        }\n\n        ++puesto;\n    }\n\n    cout << \"Corte=\" << puesto;\n}\n"
+        },
+        {
+          "type": "paragraph",
+          "text": "Al llegar al puesto 3, el primer cout ya ha mostrado 3: cuando el programa decide cortar. El break; omite ++puesto; y la variable conserva el 3. El cout posterior puede leer ese valor y añade Corte=3.\n\nSalida\n1:2:3:Corte=3\n\nEn el ejemplo anterior, la declaración int puesto{1} aparece en el encabezado del for. El nombre puesto deja de estar disponible al salir del bucle. Si necesitas leerlo después, puedes declararlo antes del bucle como en este ejemplo."
+        },
+        {
+          "type": "output_prediction",
+          "id": "corte_despues_de_mostrar",
+          "question": "Ahora la salida se produce antes de comprobar el corte en el puesto 5. Escribe la salida completa, con los separadores y el mensaje final.",
+          "language": "cpp",
+          "code": "#include <iostream>\n\nint main() {\n    using namespace std;\n\n    for (int puesto{2}; puesto <= 7; ++puesto) {\n        cout << puesto << \";\";\n        if (puesto == 5) {\n            break;\n        }\n    }\n\n    cout << \"Fin\";\n}\n",
+          "answers": [
+            "2;3;4;5;Fin"
+          ],
+          "explanation": "Cuando puesto llega a 5, el primer cout ya escribió 5;. La comprobación posterior activa break; y el programa continúa con Fin. La salida es 2;3;4;5;Fin."
+        },
+        {
+          "type": "output_prediction",
+          "id": "corte_en_primer_caso",
+          "question": "El acumulador empieza en cero y el primer aporte vale ocho. ¿Qué número muestra el programa si comprueba el corte antes de sumar el aporte?",
+          "language": "cpp",
+          "code": "#include <iostream>\n\nint main() {\n    using namespace std;\n\n    int suma{};\n\n    for (int aporte{8}; aporte <= 10; ++aporte) {\n        if (aporte > 6) {\n            break;\n        }\n\n        suma += aporte;\n    }\n\n    cout << suma;\n}\n",
+          "answers": [
+            "0"
+          ],
+          "explanation": "Para el primer aporte, aporte > 6 da true. El programa ejecuta break; antes de suma += aporte;. Como suma se declaró en main antes del bucle, sigue disponible en el cout posterior. Conserva su valor inicial y el programa muestra 0."
+        },
+        {
+          "type": "multiple_choice",
+          "id": "salida_posterior_al_break",
+          "question": "Dentro del único for de main hay un if que ejecuta break;. La primera instrucción después del for muestra Fin. ¿Qué hace el programa inmediatamente después del break;?",
+          "options": [
+            "Sale del bucle y muestra Fin.",
+            "Sale del if y sigue con las instrucciones de esa misma vuelta.",
+            "Termina main en cuanto ejecuta break;."
+          ],
+          "correctIndex": 0,
+          "explanation": "El if decide si se alcanza break;. Cuando se ejecuta, se sale del for que encierra ese if. El programa continúa con la instrucción posterior al bucle, que muestra Fin."
+        }
+      ]
+    },
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "continue en un for"
+        },
+        {
+          "type": "paragraph",
+          "text": "El programa puede omitir las instrucciones que faltan en una vuelta y seguir con el recorrido. Para hacerlo, ejecuta continue;. En el for de este ejemplo, el programa ejecuta la actualización del encabezado y luego vuelve a comprobar la condición para entrar al cuerpo (Köppe et al., 2023)."
+        },
+        {
+          "type": "code",
+          "language": "cpp",
+          "code": "#include <iostream>\n\nint main() {\n    using namespace std;\n\n    for (int puesto{3}; puesto <= 6; ++puesto) {\n        if (puesto == 5) {\n            continue;\n        }\n\n        cout << puesto << \":\";\n    }\n\n    cout << \"Fin\";\n}\n"
+        },
+        {
+          "type": "paragraph",
+          "text": "El programa muestra los puestos 3 y 4. Al llegar al 5, ejecuta continue; antes de cout y omite la salida de ese puesto. El encabezado ejecuta ++puesto, la condición puesto <= 6 permite entrar una vez más y el programa muestra 6:. El siguiente incremento lleva puesto a 7, la condición da false y aparece Fin.\n\nSalida\n3:4:6:Fin\n\nSi el programa muestra un dato antes de ejecutar continue;, esa salida ya se produjo. En los ejercicios siguientes podrás ver qué imprime cuando solo una de las instrucciones de salida queda después de continue;."
+        },
+        {
+          "type": "output_prediction",
+          "id": "omitir_un_caso",
+          "question": "El bucle visita los puestos del 1 al 5. Sigue el continue; y escribe la salida completa con los separadores y el mensaje final.",
+          "language": "cpp",
+          "code": "#include <iostream>\n\nint main() {\n    using namespace std;\n\n    for (int puesto{1}; puesto <= 5; ++puesto) {\n        if (puesto == 3) {\n            continue;\n        }\n\n        cout << puesto << \":\";\n    }\n\n    cout << \"Fin\";\n}\n",
+          "answers": [
+            "1:2:4:5:Fin"
+          ],
+          "explanation": "Al visitar el puesto 3, el programa omite su cout pero ejecuta ++puesto en el encabezado. Vuelve a comprobar la condición con 4 y muestra los dos puestos restantes. Escribe 1:2:4:5:Fin."
+        },
+        {
+          "type": "output_prediction",
+          "id": "accion_antes_continue",
+          "question": "El primer cout aparece antes del continue; y el segundo después. ¿Qué salida completa produce el programa? Usa una sola línea.",
+          "language": "cpp",
+          "code": "#include <iostream>\n\nint main() {\n    using namespace std;\n\n    for (int puesto{1}; puesto <= 3; ++puesto) {\n        cout << \"A\" << puesto;\n        if (puesto == 2) {\n            continue;\n        }\n\n        cout << \"B\";\n    }\n\n    cout << \"Fin\";\n}\n",
+          "answers": [
+            "A1BA2A3BFin"
+          ],
+          "explanation": "Para el puesto 2, el primer cout ya escribió A2 cuando el programa ejecuta continue;. Esa vuelta omite B. Las vueltas de los puestos 1 y 3 producen A1B y A3B. Después del bucle se añade Fin y la salida queda A1BA2A3BFin."
+        },
+        {
+          "type": "output_prediction",
+          "id": "contar_despues_filtro",
+          "question": "El bucle visita los puestos del 1 al 6. Sigue cuándo se ejecuta ++cantidad; y escribe el número que muestra el programa.",
+          "language": "cpp",
+          "code": "#include <iostream>\n\nint main() {\n    using namespace std;\n\n    int cantidad{};\n\n    for (int puesto{1}; puesto <= 6; ++puesto) {\n        if (puesto % 2 == 0) {\n            continue;\n        }\n\n        ++cantidad;\n    }\n\n    cout << cantidad;\n}\n",
+          "answers": [
+            "3"
+          ],
+          "explanation": "En los puestos pares el programa ejecuta continue; antes del contador. En los puestos 1, 3 y 5 sí se ejecuta ++cantidad;. El programa visitó seis puestos y contó tres. La consola muestra 3."
+        }
+      ]
+    },
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "continue en un while"
+        },
+        {
+          "type": "paragraph",
+          "text": "En un while, al ejecutar continue; el programa vuelve directamente a comprobar la condición. La instrucción que actualiza la variable debe quedar en un lugar que se alcance antes de regresar a esa condición (Köppe et al., 2023).\n\nSupón que la condición es puesto <= 5, que puesto vale 3 y que el programa ejecuta continue; antes del único incremento escrito al final del cuerpo. La condición se vuelve a comprobar con el mismo 3, porque el programa omitió el incremento. Como la condición vuelve a dar true y se toman las mismas decisiones, el bucle repite esa vuelta."
+        },
+        {
+          "type": "paragraph",
+          "text": "El siguiente programa coloca el incremento al principio del cuerpo. Como empieza en 0 y aumenta el valor antes de usarlo, el primer puesto que procesa es el 1. Comprueba puesto < 5 al entrar para que el último puesto procesado sea el 5."
+        },
+        {
+          "type": "code",
+          "language": "cpp",
+          "code": "#include <iostream>\n\nint main() {\n    using namespace std;\n\n    int puesto{};\n\n    while (puesto < 5) {\n        ++puesto;\n\n        if (puesto == 3) {\n            continue;\n        }\n\n        cout << puesto << \":\";\n    }\n\n    cout << \"Fin\";\n}\n"
+        },
+        {
+          "type": "paragraph",
+          "text": "En la tercera vuelta, el cuerpo empieza con puesto en 2 y ++puesto; lo cambia a 3. El programa ejecuta continue; y omite la salida. Vuelve a comprobar puesto < 5 con el 3 que ya quedó guardado. Como el resultado es verdadero, entra al cuerpo y el incremento siguiente lleva el puesto a 4.\n\nSalida\n1:2:4:5:Fin"
+        },
+        {
+          "type": "multiple_choice",
+          "id": "continue_salta_avance",
+          "question": "Sigue los valores de puesto en este bucle. puesto empieza en 1, la condición es puesto <= 3 y el cuerpo comprueba puesto == 2 para ejecutar continue;. El único ++puesto; está al final del cuerpo. ¿Qué sucede al ejecutar continue;?",
+          "options": [
+            "Se omite ++puesto; y el programa repite la comprobación del bucle con el puesto 2.",
+            "La comprobación puesto <= 3 incrementa el puesto antes de decidir.",
+            "continue; suma una unidad al puesto en el while."
+          ],
+          "correctIndex": 0,
+          "explanation": "En la primera vuelta el incremento cambia puesto de 1 a 2. En la segunda, continue; omite ese incremento. El while vuelve a evaluar puesto <= 3 con 2 y repite la misma vuelta."
+        },
+        {
+          "type": "output_prediction",
+          "id": "avance_antes_continue",
+          "question": "En este programa, ++puesto; está antes de la decisión que puede ejecutar continue;. Escribe la salida completa, con los separadores y el texto final.",
+          "language": "cpp",
+          "code": "#include <iostream>\n\nint main() {\n    using namespace std;\n\n    int puesto{};\n\n    while (puesto < 4) {\n        ++puesto;\n        if (puesto == 2) {\n            continue;\n        }\n\n        cout << puesto << \":\";\n    }\n\n    cout << \"Fin\";\n}\n",
+          "answers": [
+            "1:3:4:Fin"
+          ],
+          "explanation": "El programa procesa los puestos 1, 2, 3 y 4. En la segunda vuelta omite cout, pero el puesto ya se incrementó a 2. Después de mostrar el 4, la condición puesto < 4 da false. La salida es 1:3:4:Fin."
+        }
+      ]
+    },
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "Elegir la instrucción por el objetivo"
+        },
+        {
+          "type": "fill_code",
+          "id": "rechazar_sin_terminar",
+          "question": "Completa el hueco con una palabra clave para omitir el puesto 4 y seguir hasta el puesto 5.",
+          "language": "cpp",
+          "code": "#include <iostream>\n\nint main() {\n    using namespace std;\n\n    for (int puesto{1}; puesto <= 5; ++puesto) {\n        if (puesto == 4) {\n            ___;\n        }\n\n        cout << puesto;\n    }\n}\n",
+          "answers": [
+            "continue"
+          ],
+          "explanation": "continue; omite el cout del puesto 4. Después el encabezado del for incrementa puesto a 5 y el programa muestra ese puesto."
+        },
+        {
+          "type": "fill_code",
+          "id": "terminar_al_limite",
+          "question": "Completa el hueco con una palabra clave para terminar el recorrido antes de mostrar el puesto 4.",
+          "language": "cpp",
+          "code": "#include <iostream>\n\nint main() {\n    using namespace std;\n\n    for (int puesto{1}; puesto <= 8; ++puesto) {\n        if (puesto == 4) {\n            ___;\n        }\n\n        cout << puesto;\n    }\n}\n",
+          "answers": [
+            "break"
+          ],
+          "explanation": "break; hace que el programa salga del for en el puesto 4. Las únicas salidas son las de los tres puestos anteriores."
+        },
+        {
+          "type": "paragraph",
+          "text": "El editor lee de Entrada un puesto que debe omitir. Añade la decisión dentro del bucle, antes de cout. El programa debe visitar del puesto 1 al 5 y mostrar en líneas separadas todos los puestos excepto el que leyó. Usa un puesto del 1 al 5.\n\nEntrada\n3\nSalida esperada\n1\n2\n4\n5\n\nPuedes terminar la salida con un salto de línea."
+        },
+        {
+          "type": "cpp_compiler",
+          "initialCode": "#include <iostream>\n\nint main() {\n    using namespace std;\n\n    int puestoElegido{};\n\n    cin >> puestoElegido;\n\n    for (int puesto{1}; puesto <= 5; ++puesto) {\n        // Compara el puesto actual con el que debes omitir.\n        \n        cout << puesto << \"\\n\";\n    }\n}\n",
+          "outputCheck": {
+            "inputComparison": "tokens",
+            "cases": [
+              {
+                "standardInput": "3",
+                "outputs": [
+                  "1\n2\n4\n5",
+                  "1\n2\n4\n5\n"
+                ]
+              }
+            ]
+          },
+          "initialStandardInput": "3"
+        },
+        {
+          "type": "heading",
+          "text": "Terminar antes del puesto elegido"
+        },
+        {
+          "type": "paragraph",
+          "text": "El otro editor lee de Entrada el puesto en el que debe terminar el recorrido. Añade la decisión antes de cout. Conserva el límite 5 del encabezado. El programa debe dejar de recorrer los puestos en cuanto llegue al que leyó y mostrar solo los puestos anteriores, en líneas separadas. Usa un puesto del 1 al 5. Si escribes 1 en Entrada, el programa termina el recorrido antes de mostrar el primer puesto y la consola queda vacía.\n\nEntrada\n3\nSalida esperada\n1\n2\n\nPuedes terminar la salida con un salto de línea."
+        },
+        {
+          "type": "cpp_compiler",
+          "initialCode": "#include <iostream>\n\nint main() {\n    using namespace std;\n\n    int puestoElegido{};\n\n    cin >> puestoElegido;\n\n    for (int puesto{1}; puesto <= 5; ++puesto) {\n        // Compara el puesto actual con el que detiene el recorrido.\n        \n        cout << puesto << \"\\n\";\n    }\n}\n",
+          "outputCheck": {
+            "inputComparison": "tokens",
+            "cases": [
+              {
+                "standardInput": "3",
+                "outputs": [
+                  "1\n2",
+                  "1\n2\n"
+                ]
+              }
+            ]
+          },
+          "initialStandardInput": "3"
+        }
+      ]
+    },
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "Contrastar la construcción del laboratorio"
+        },
+        {
+          "type": "paragraph",
+          "text": "Las dos soluciones leen puestoElegido antes de recorrer los puestos. La primera ejecuta continue; cuando llega al puesto elegido. El programa pasa al incremento del encabezado y puede mostrar puestos posteriores. La segunda ejecuta break; en el puesto elegido y sale del bucle. En esta solución, al salir solo queda la llave que cierra main."
+        },
+        {
+          "type": "code",
+          "language": "cpp",
+          "code": "#include <iostream>\n\nint main() {\n    using namespace std;\n\n    int puestoElegido{};\n\n    cin >> puestoElegido;\n\n    for (int puesto{1}; puesto <= 5; ++puesto) {\n        if (puesto == puestoElegido) {\n            continue;\n        }\n\n        cout << puesto << \"\\n\";\n    }\n}\n"
+        },
+        {
+          "type": "code",
+          "language": "cpp",
+          "code": "#include <iostream>\n\nint main() {\n    using namespace std;\n\n    int puestoElegido{};\n\n    cin >> puestoElegido;\n\n    for (int puesto{1}; puesto <= 5; ++puesto) {\n        if (puesto == puestoElegido) {\n            break;\n        }\n\n        cout << puesto << \"\\n\";\n    }\n}\n"
+        },
+        {
+          "type": "paragraph",
+          "text": "En las dos soluciones, el programa compara el puesto con puestoElegido antes de cout. Con la entrada 3, ninguna de las dos muestra 3. La diferencia aparece cuando el programa debe decidir si aún quedan vueltas. Con continue;, incrementa el puesto y muestra 4 y 5. Con break;, ya salió del bucle y no visita esos puestos."
+        }
+      ]
+    }
+  ],
+  "compilerInputChecks": [
+    {
+      "activity": "block_0004_0004",
+      "probes": [
+        {
+          "standardInput": "1",
+          "outputs": [
+            "2\n3\n4\n5",
+            "2\n3\n4\n5\n"
+          ]
+        },
+        {
+          "standardInput": "2",
+          "outputs": [
+            "1\n3\n4\n5",
+            "1\n3\n4\n5\n"
+          ]
+        },
+        {
+          "standardInput": "4",
+          "outputs": [
+            "1\n2\n3\n5",
+            "1\n2\n3\n5\n"
+          ]
+        },
+        {
+          "standardInput": "5",
+          "outputs": [
+            "1\n2\n3\n4",
+            "1\n2\n3\n4\n"
+          ]
+        }
+      ]
+    },
+    {
+      "activity": "block_0004_0007",
+      "probes": [
+        {
+          "standardInput": "1",
+          "outputs": [
+            ""
+          ]
+        },
+        {
+          "standardInput": "2",
+          "outputs": [
+            "1",
+            "1\n"
+          ]
+        },
+        {
+          "standardInput": "4",
+          "outputs": [
+            "1\n2\n3",
+            "1\n2\n3\n"
+          ]
+        },
+        {
+          "standardInput": "5",
+          "outputs": [
+            "1\n2\n3\n4",
+            "1\n2\n3\n4\n"
+          ]
+        }
+      ]
+    }
+  ],
+  "courseEdition": {
+    "version": 1,
+    "courseId": "cpp_fundamentals",
+    "locale": "es",
+    "generation": 1,
+    "id": "cpp_desde_cero_2026"
+  },
+  "stateLayout": {
+    "version": 2,
+    "locale": "es",
+    "origin": [
+      {
+        "id": "page_0000",
+        "blocks": [
+          {
+            "id": "block_0000_0000",
+            "sha256": "a30d0555835b703d0dd5a90aabb0134813afd11904b5364f69f03b01695f6d7a"
+          },
+          {
+            "id": "block_0000_0001",
+            "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+          },
+          {
+            "id": "block_0000_0002",
+            "sha256": "2b2cf7aae0d07967a4c69e04594b4176efa0839edbab73a737ae0f4308e3e34a"
+          },
+          {
+            "id": "block_0000_0003",
+            "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+          },
+          {
+            "id": "block_0000_0004",
+            "sha256": "4fc17367e176cda33cfc9d6a549ce7340e82e99edb5594beee28488fb3e1b827"
+          }
+        ]
+      },
+      {
+        "id": "page_0001",
+        "blocks": [
+          {
+            "id": "block_0001_0000",
+            "sha256": "a30d0555835b703d0dd5a90aabb0134813afd11904b5364f69f03b01695f6d7a"
+          },
+          {
+            "id": "block_0001_0001",
+            "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+          },
+          {
+            "id": "block_0001_0002",
+            "sha256": "fd898cfb76c77c87a74aa33b01d1b5f844f0bc93050159e9d6efb42db259ca26"
+          },
+          {
+            "id": "block_0001_0003",
+            "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+          },
+          {
+            "id": "block_0001_0004",
+            "sha256": "6d7e8c47e6320713abdeebb26a3096362d6c75684983776ab8243896bd336ff6"
+          },
+          {
+            "id": "block_0001_0005",
+            "sha256": "4ad21fe400fc61456a1e40fc7dca3aaf5635b79cb615699203a42bb4c354912e"
+          },
+          {
+            "id": "block_0001_0006",
+            "sha256": "c91068b2a99219d1d1d6ade1bee02f57b2b6433ca0a516a3ee8defcec7054589"
+          }
+        ]
+      },
+      {
+        "id": "page_0002",
+        "blocks": [
+          {
+            "id": "block_0002_0000",
+            "sha256": "a30d0555835b703d0dd5a90aabb0134813afd11904b5364f69f03b01695f6d7a"
+          },
+          {
+            "id": "block_0002_0001",
+            "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+          },
+          {
+            "id": "block_0002_0002",
+            "sha256": "66d06dbeedc4cd48548c4904e255bf79a7f30fcf05eb84e88305396ec4f213a7"
+          },
+          {
+            "id": "block_0002_0003",
+            "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+          },
+          {
+            "id": "block_0002_0004",
+            "sha256": "e6c8c119536baa062d4bd17aeea6d1d453a6e74a9647260b16a7866c9769240f"
+          },
+          {
+            "id": "block_0002_0005",
+            "sha256": "60f180e094671aafb7d865d9c70e7eacf956eb1779d2596bdf8d760fc8917095"
+          },
+          {
+            "id": "block_0002_0006",
+            "sha256": "3522b7fc0779b86e95d0293898c036d5f7576975eb6b7dc5b7e3da2092dc9d29"
+          }
+        ]
+      },
+      {
+        "id": "page_0003",
+        "blocks": [
+          {
+            "id": "block_0003_0000",
+            "sha256": "a30d0555835b703d0dd5a90aabb0134813afd11904b5364f69f03b01695f6d7a"
+          },
+          {
+            "id": "block_0003_0001",
+            "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+          },
+          {
+            "id": "block_0003_0002",
+            "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+          },
+          {
+            "id": "block_0003_0003",
+            "sha256": "f992794650767f0c498aa2329ca7e956f5e1092ab8347062bfbcb121a88313a7"
+          },
+          {
+            "id": "block_0003_0004",
+            "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+          },
+          {
+            "id": "block_0003_0005",
+            "sha256": "a85d335a665dbe6509b15dc9af8aa9d8584055bccd198e6416a26d96996e2415"
+          },
+          {
+            "id": "block_0003_0006",
+            "sha256": "ce9075ae456b8f1236429e803cd75474a2fe80856613a1b75105ca3dabac53ad"
+          }
+        ]
+      },
+      {
+        "id": "page_0004",
+        "blocks": [
+          {
+            "id": "block_0004_0000",
+            "sha256": "a30d0555835b703d0dd5a90aabb0134813afd11904b5364f69f03b01695f6d7a"
+          },
+          {
+            "id": "block_0004_0001",
+            "sha256": "0b16c68be0dd8e349bf197c299414becdd448756e12a5cd77d0b3f6c745d173e"
+          },
+          {
+            "id": "block_0004_0002",
+            "sha256": "afd92fdeb2485cf98a9df34c3b86d3e7618d471a3998c459e1f52bfe2bb72b84"
+          },
+          {
+            "id": "block_0004_0003",
+            "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+          },
+          {
+            "id": "block_0004_0004",
+            "sha256": "cb69966035cfbb230ea24b6de2c0c42e9ee7fa70ad94ac1f2520c59caf0b9251"
+          },
+          {
+            "id": "block_0004_0005",
+            "sha256": "a30d0555835b703d0dd5a90aabb0134813afd11904b5364f69f03b01695f6d7a"
+          },
+          {
+            "id": "block_0004_0006",
+            "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+          },
+          {
+            "id": "block_0004_0007",
+            "sha256": "b0bf15419d48447c146156e03a805184eb9c30a5d665f341c2a7e2b932637a45"
+          }
+        ]
+      },
+      {
+        "id": "page_0005",
+        "blocks": [
+          {
+            "id": "block_0005_0000",
+            "sha256": "a30d0555835b703d0dd5a90aabb0134813afd11904b5364f69f03b01695f6d7a"
+          },
+          {
+            "id": "block_0005_0001",
+            "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+          },
+          {
+            "id": "block_0005_0002",
+            "sha256": "e5e38a9b9220b4334249840699f36191bf839440bf55fdd450340f75fe90c435"
+          },
+          {
+            "id": "block_0005_0003",
+            "sha256": "0143c9d5185b729538f25184342ca6ff950d0a4967079976f1da1485e4dbbf69"
+          },
+          {
+            "id": "block_0005_0004",
+            "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+          }
+        ]
+      }
+    ],
+    "current": [
+      {
+        "id": "page_0000",
+        "blocks": [
+          "block_0000_0000",
+          "block_0000_0001",
+          "block_0000_0002",
+          "block_0000_0003",
+          "block_0000_0004"
+        ]
+      },
+      {
+        "id": "page_0001",
+        "blocks": [
+          "block_0001_0000",
+          "block_0001_0001",
+          "block_0001_0002",
+          "block_0001_0003",
+          "block_0001_0004",
+          "block_0001_0005",
+          "block_0001_0006"
+        ]
+      },
+      {
+        "id": "page_0002",
+        "blocks": [
+          "block_0002_0000",
+          "block_0002_0001",
+          "block_0002_0002",
+          "block_0002_0003",
+          "block_0002_0004",
+          "block_0002_0005",
+          "block_0002_0006"
+        ]
+      },
+      {
+        "id": "page_0003",
+        "blocks": [
+          "block_0003_0000",
+          "block_0003_0001",
+          "block_0003_0002",
+          "block_0003_0003",
+          "block_0003_0004",
+          "block_0003_0005",
+          "block_0003_0006"
+        ]
+      },
+      {
+        "id": "page_0004",
+        "blocks": [
+          "block_0004_0000",
+          "block_0004_0001",
+          "block_0004_0002",
+          "block_0004_0003",
+          "block_0004_0004",
+          "block_0004_0005",
+          "block_0004_0006",
+          "block_0004_0007"
+        ]
+      },
+      {
+        "id": "page_0005",
+        "blocks": [
+          "block_0005_0000",
+          "block_0005_0001",
+          "block_0005_0002",
+          "block_0005_0003",
+          "block_0005_0004"
+        ]
+      }
+    ],
+    "family": {
+      "es": {
+        "sha256": "5331106ba55beb0b40c7e3f0942d013357cceaa0ef1c93beb72c3b71eadc6897",
+        "origin": [
+          {
+            "id": "page_0000",
+            "blocks": [
+              {
+                "id": "block_0000_0000",
+                "sha256": "a30d0555835b703d0dd5a90aabb0134813afd11904b5364f69f03b01695f6d7a"
+              },
+              {
+                "id": "block_0000_0001",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              },
+              {
+                "id": "block_0000_0002",
+                "sha256": "2b2cf7aae0d07967a4c69e04594b4176efa0839edbab73a737ae0f4308e3e34a"
+              },
+              {
+                "id": "block_0000_0003",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              },
+              {
+                "id": "block_0000_0004",
+                "sha256": "4fc17367e176cda33cfc9d6a549ce7340e82e99edb5594beee28488fb3e1b827"
+              }
+            ]
+          },
+          {
+            "id": "page_0001",
+            "blocks": [
+              {
+                "id": "block_0001_0000",
+                "sha256": "a30d0555835b703d0dd5a90aabb0134813afd11904b5364f69f03b01695f6d7a"
+              },
+              {
+                "id": "block_0001_0001",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              },
+              {
+                "id": "block_0001_0002",
+                "sha256": "fd898cfb76c77c87a74aa33b01d1b5f844f0bc93050159e9d6efb42db259ca26"
+              },
+              {
+                "id": "block_0001_0003",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              },
+              {
+                "id": "block_0001_0004",
+                "sha256": "6d7e8c47e6320713abdeebb26a3096362d6c75684983776ab8243896bd336ff6"
+              },
+              {
+                "id": "block_0001_0005",
+                "sha256": "4ad21fe400fc61456a1e40fc7dca3aaf5635b79cb615699203a42bb4c354912e"
+              },
+              {
+                "id": "block_0001_0006",
+                "sha256": "c91068b2a99219d1d1d6ade1bee02f57b2b6433ca0a516a3ee8defcec7054589"
+              }
+            ]
+          },
+          {
+            "id": "page_0002",
+            "blocks": [
+              {
+                "id": "block_0002_0000",
+                "sha256": "a30d0555835b703d0dd5a90aabb0134813afd11904b5364f69f03b01695f6d7a"
+              },
+              {
+                "id": "block_0002_0001",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              },
+              {
+                "id": "block_0002_0002",
+                "sha256": "66d06dbeedc4cd48548c4904e255bf79a7f30fcf05eb84e88305396ec4f213a7"
+              },
+              {
+                "id": "block_0002_0003",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              },
+              {
+                "id": "block_0002_0004",
+                "sha256": "e6c8c119536baa062d4bd17aeea6d1d453a6e74a9647260b16a7866c9769240f"
+              },
+              {
+                "id": "block_0002_0005",
+                "sha256": "60f180e094671aafb7d865d9c70e7eacf956eb1779d2596bdf8d760fc8917095"
+              },
+              {
+                "id": "block_0002_0006",
+                "sha256": "3522b7fc0779b86e95d0293898c036d5f7576975eb6b7dc5b7e3da2092dc9d29"
+              }
+            ]
+          },
+          {
+            "id": "page_0003",
+            "blocks": [
+              {
+                "id": "block_0003_0000",
+                "sha256": "a30d0555835b703d0dd5a90aabb0134813afd11904b5364f69f03b01695f6d7a"
+              },
+              {
+                "id": "block_0003_0001",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              },
+              {
+                "id": "block_0003_0002",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              },
+              {
+                "id": "block_0003_0003",
+                "sha256": "f992794650767f0c498aa2329ca7e956f5e1092ab8347062bfbcb121a88313a7"
+              },
+              {
+                "id": "block_0003_0004",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              },
+              {
+                "id": "block_0003_0005",
+                "sha256": "a85d335a665dbe6509b15dc9af8aa9d8584055bccd198e6416a26d96996e2415"
+              },
+              {
+                "id": "block_0003_0006",
+                "sha256": "ce9075ae456b8f1236429e803cd75474a2fe80856613a1b75105ca3dabac53ad"
+              }
+            ]
+          },
+          {
+            "id": "page_0004",
+            "blocks": [
+              {
+                "id": "block_0004_0000",
+                "sha256": "a30d0555835b703d0dd5a90aabb0134813afd11904b5364f69f03b01695f6d7a"
+              },
+              {
+                "id": "block_0004_0001",
+                "sha256": "0b16c68be0dd8e349bf197c299414becdd448756e12a5cd77d0b3f6c745d173e"
+              },
+              {
+                "id": "block_0004_0002",
+                "sha256": "afd92fdeb2485cf98a9df34c3b86d3e7618d471a3998c459e1f52bfe2bb72b84"
+              },
+              {
+                "id": "block_0004_0003",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              },
+              {
+                "id": "block_0004_0004",
+                "sha256": "cb69966035cfbb230ea24b6de2c0c42e9ee7fa70ad94ac1f2520c59caf0b9251"
+              },
+              {
+                "id": "block_0004_0005",
+                "sha256": "a30d0555835b703d0dd5a90aabb0134813afd11904b5364f69f03b01695f6d7a"
+              },
+              {
+                "id": "block_0004_0006",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              },
+              {
+                "id": "block_0004_0007",
+                "sha256": "b0bf15419d48447c146156e03a805184eb9c30a5d665f341c2a7e2b932637a45"
+              }
+            ]
+          },
+          {
+            "id": "page_0005",
+            "blocks": [
+              {
+                "id": "block_0005_0000",
+                "sha256": "a30d0555835b703d0dd5a90aabb0134813afd11904b5364f69f03b01695f6d7a"
+              },
+              {
+                "id": "block_0005_0001",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              },
+              {
+                "id": "block_0005_0002",
+                "sha256": "e5e38a9b9220b4334249840699f36191bf839440bf55fdd450340f75fe90c435"
+              },
+              {
+                "id": "block_0005_0003",
+                "sha256": "0143c9d5185b729538f25184342ca6ff950d0a4967079976f1da1485e4dbbf69"
+              },
+              {
+                "id": "block_0005_0004",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              }
+            ]
+          }
+        ]
+      }
+    },
+    "additions": [],
+    "editorial": []
+  },
+  "textSemantics": {
+    "version": 1,
+    "fields": [
+      {
+        "block": "block_0000_0001",
+        "path": "/text",
+        "sourceSha256": "790e0261e716bd0cc18d66f110cb9ce4528d7799ece137484882baea891ec64d",
+        "spans": [
+          {
+            "start": 32,
+            "end": 33,
+            "text": "1",
+            "role": "data"
+          },
+          {
+            "start": 37,
+            "end": 38,
+            "text": "6",
+            "role": "data"
+          },
+          {
+            "start": 93,
+            "end": 94,
+            "text": "4",
+            "role": "data"
+          },
+          {
+            "start": 161,
+            "end": 167,
+            "text": "break;",
+            "role": "cpp"
+          },
+          {
+            "start": 221,
+            "end": 224,
+            "text": "for",
+            "role": "cpp"
+          },
+          {
+            "start": 279,
+            "end": 299,
+            "text": "(Köppe et al., 2023)",
+            "role": "citation"
+          }
+        ]
+      },
+      {
+        "block": "block_0000_0003",
+        "path": "/text",
+        "sourceSha256": "b4af12cc52f1e09157f09cf25fef6f05a6cd6bfd71036dee10966159d82bca88",
+        "spans": [
+          {
+            "start": 15,
+            "end": 16,
+            "text": "1",
+            "role": "data"
+          },
+          {
+            "start": 18,
+            "end": 19,
+            "text": "2",
+            "role": "data"
+          },
+          {
+            "start": 22,
+            "end": 23,
+            "text": "3",
+            "role": "data"
+          },
+          {
+            "start": 38,
+            "end": 49,
+            "text": "puesto == 4",
+            "role": "cpp"
+          },
+          {
+            "start": 53,
+            "end": 58,
+            "text": "false",
+            "role": "cpp"
+          },
+          {
+            "start": 116,
+            "end": 117,
+            "text": "3",
+            "role": "data"
+          },
+          {
+            "start": 139,
+            "end": 147,
+            "text": "++puesto",
+            "role": "cpp"
+          },
+          {
+            "start": 178,
+            "end": 181,
+            "text": "for",
+            "role": "cpp"
+          },
+          {
+            "start": 185,
+            "end": 191,
+            "text": "puesto",
+            "role": "cpp"
+          },
+          {
+            "start": 205,
+            "end": 206,
+            "text": "4",
+            "role": "data"
+          },
+          {
+            "start": 221,
+            "end": 232,
+            "text": "puesto <= 6",
+            "role": "cpp"
+          },
+          {
+            "start": 306,
+            "end": 317,
+            "text": "puesto == 4",
+            "role": "cpp"
+          },
+          {
+            "start": 321,
+            "end": 325,
+            "text": "true",
+            "role": "cpp"
+          },
+          {
+            "start": 339,
+            "end": 345,
+            "text": "break;",
+            "role": "cpp"
+          },
+          {
+            "start": 386,
+            "end": 387,
+            "text": "4",
+            "role": "data"
+          },
+          {
+            "start": 402,
+            "end": 405,
+            "text": "for",
+            "role": "cpp"
+          },
+          {
+            "start": 419,
+            "end": 427,
+            "text": "++puesto",
+            "role": "cpp"
+          },
+          {
+            "start": 457,
+            "end": 471,
+            "text": "cout << \"Fin\";",
+            "role": "cpp"
+          },
+          {
+            "start": 504,
+            "end": 513,
+            "text": "1:2:3:Fin",
+            "role": "output"
+          }
+        ]
+      },
+      {
+        "block": "block_0000_0004",
+        "path": "/question",
+        "sourceSha256": "98f303460a3182620e97a3d90e55673774fe66d5ea5e37570db9dd17bb69934e",
+        "spans": [
+          {
+            "start": 30,
+            "end": 31,
+            "text": "2",
+            "role": "data"
+          },
+          {
+            "start": 35,
+            "end": 36,
+            "text": "7",
+            "role": "data"
+          }
+        ]
+      },
+      {
+        "block": "block_0000_0004",
+        "path": "/explanation",
+        "sourceSha256": "444959bbc4a0ee8ac2e33e0e32fbf2b49942b1e4f95f0ad1e9d1e8b0bff005b4",
+        "spans": [
+          {
+            "start": 20,
+            "end": 22,
+            "text": "2;",
+            "role": "output"
+          },
+          {
+            "start": 24,
+            "end": 26,
+            "text": "3;",
+            "role": "output"
+          },
+          {
+            "start": 29,
+            "end": 31,
+            "text": "4;",
+            "role": "output"
+          },
+          {
+            "start": 40,
+            "end": 46,
+            "text": "puesto",
+            "role": "cpp"
+          },
+          {
+            "start": 61,
+            "end": 62,
+            "text": "5",
+            "role": "data"
+          },
+          {
+            "start": 81,
+            "end": 83,
+            "text": "if",
+            "role": "cpp"
+          },
+          {
+            "start": 87,
+            "end": 91,
+            "text": "true",
+            "role": "cpp"
+          },
+          {
+            "start": 164,
+            "end": 167,
+            "text": "Fin",
+            "role": "output"
+          },
+          {
+            "start": 191,
+            "end": 200,
+            "text": "2;3;4;Fin",
+            "role": "output"
+          }
+        ]
+      },
+      {
+        "block": "block_0001_0001",
+        "path": "/text",
+        "sourceSha256": "e373bf83faea389ef5b840c9ba41b0206db91964c85a7e3c76215d0a539cafa9",
+        "spans": [
+          {
+            "start": 90,
+            "end": 94,
+            "text": "cout",
+            "role": "cpp"
+          },
+          {
+            "start": 110,
+            "end": 112,
+            "text": "if",
+            "role": "cpp"
+          },
+          {
+            "start": 134,
+            "end": 140,
+            "text": "puesto",
+            "role": "cpp"
+          },
+          {
+            "start": 151,
+            "end": 156,
+            "text": "while",
+            "role": "cpp"
+          },
+          {
+            "start": 242,
+            "end": 246,
+            "text": "main",
+            "role": "cpp"
+          }
+        ]
+      },
+      {
+        "block": "block_0001_0003",
+        "path": "/text",
+        "sourceSha256": "905666fc351749e5b4a2912b94228b4a44cbacd8cfe3a0cb371b5807912aad23",
+        "spans": [
+          {
+            "start": 20,
+            "end": 21,
+            "text": "3",
+            "role": "data"
+          },
+          {
+            "start": 33,
+            "end": 37,
+            "text": "cout",
+            "role": "cpp"
+          },
+          {
+            "start": 53,
+            "end": 55,
+            "text": "3:",
+            "role": "output"
+          },
+          {
+            "start": 93,
+            "end": 99,
+            "text": "break;",
+            "role": "cpp"
+          },
+          {
+            "start": 106,
+            "end": 115,
+            "text": "++puesto;",
+            "role": "cpp"
+          },
+          {
+            "start": 142,
+            "end": 143,
+            "text": "3",
+            "role": "data"
+          },
+          {
+            "start": 148,
+            "end": 152,
+            "text": "cout",
+            "role": "cpp"
+          },
+          {
+            "start": 192,
+            "end": 199,
+            "text": "Corte=3",
+            "role": "output"
+          },
+          {
+            "start": 209,
+            "end": 222,
+            "text": "1:2:3:Corte=3",
+            "role": "output"
+          },
+          {
+            "start": 263,
+            "end": 276,
+            "text": "int puesto{1}",
+            "role": "cpp"
+          },
+          {
+            "start": 306,
+            "end": 309,
+            "text": "for",
+            "role": "cpp"
+          },
+          {
+            "start": 321,
+            "end": 327,
+            "text": "puesto",
+            "role": "cpp"
+          }
+        ]
+      },
+      {
+        "block": "block_0001_0004",
+        "path": "/question",
+        "sourceSha256": "38ca0195cfaf7cd34b9c11dd0afb4dddbbf785cc3e606ec0d17ccdf42a8a7d50",
+        "spans": [
+          {
+            "start": 68,
+            "end": 69,
+            "text": "5",
+            "role": "data"
+          }
+        ]
+      },
+      {
+        "block": "block_0001_0004",
+        "path": "/explanation",
+        "sourceSha256": "8cfaac7ebe865a2b2cfb52032ee4d05c2d343d949997165ec8647cfb52a9647e",
+        "spans": [
+          {
+            "start": 7,
+            "end": 13,
+            "text": "puesto",
+            "role": "cpp"
+          },
+          {
+            "start": 22,
+            "end": 23,
+            "text": "5",
+            "role": "data"
+          },
+          {
+            "start": 35,
+            "end": 39,
+            "text": "cout",
+            "role": "cpp"
+          },
+          {
+            "start": 52,
+            "end": 54,
+            "text": "5;",
+            "role": "output"
+          },
+          {
+            "start": 89,
+            "end": 95,
+            "text": "break;",
+            "role": "cpp"
+          },
+          {
+            "start": 123,
+            "end": 126,
+            "text": "Fin",
+            "role": "output"
+          },
+          {
+            "start": 141,
+            "end": 152,
+            "text": "2;3;4;5;Fin",
+            "role": "output"
+          }
+        ]
+      },
+      {
+        "block": "block_0001_0005",
+        "path": "/explanation",
+        "sourceSha256": "e8cf7194e9493035a778d1f23c742087832f0c0579447667dc8ff75b6fbd6fdf",
+        "spans": [
+          {
+            "start": 23,
+            "end": 33,
+            "text": "aporte > 6",
+            "role": "cpp"
+          },
+          {
+            "start": 37,
+            "end": 41,
+            "text": "true",
+            "role": "cpp"
+          },
+          {
+            "start": 63,
+            "end": 69,
+            "text": "break;",
+            "role": "cpp"
+          },
+          {
+            "start": 79,
+            "end": 94,
+            "text": "suma += aporte;",
+            "role": "cpp"
+          },
+          {
+            "start": 101,
+            "end": 105,
+            "text": "suma",
+            "role": "cpp"
+          },
+          {
+            "start": 120,
+            "end": 124,
+            "text": "main",
+            "role": "cpp"
+          },
+          {
+            "start": 165,
+            "end": 169,
+            "text": "cout",
+            "role": "cpp"
+          },
+          {
+            "start": 229,
+            "end": 230,
+            "text": "0",
+            "role": "output"
+          }
+        ]
+      },
+      {
+        "block": "block_0001_0006",
+        "path": "/question",
+        "sourceSha256": "b4e6e0c1cca122ef7e6da5b19d8e12eed8826dee0483e1e47ea51daee9457626",
+        "spans": [
+          {
+            "start": 17,
+            "end": 20,
+            "text": "for",
+            "role": "cpp"
+          },
+          {
+            "start": 24,
+            "end": 28,
+            "text": "main",
+            "role": "cpp"
+          },
+          {
+            "start": 36,
+            "end": 38,
+            "text": "if",
+            "role": "cpp"
+          },
+          {
+            "start": 51,
+            "end": 57,
+            "text": "break;",
+            "role": "cpp"
+          },
+          {
+            "start": 94,
+            "end": 97,
+            "text": "for",
+            "role": "cpp"
+          },
+          {
+            "start": 106,
+            "end": 109,
+            "text": "Fin",
+            "role": "output"
+          },
+          {
+            "start": 160,
+            "end": 166,
+            "text": "break;",
+            "role": "cpp"
+          }
+        ]
+      },
+      {
+        "block": "block_0001_0006",
+        "path": "/explanation",
+        "sourceSha256": "f78134307cd2b7fd7eef3e50bd045ea921527e23e1c1e82dac72c1308f9a18ce",
+        "spans": [
+          {
+            "start": 3,
+            "end": 5,
+            "text": "if",
+            "role": "cpp"
+          },
+          {
+            "start": 27,
+            "end": 33,
+            "text": "break;",
+            "role": "cpp"
+          },
+          {
+            "start": 66,
+            "end": 69,
+            "text": "for",
+            "role": "cpp"
+          },
+          {
+            "start": 87,
+            "end": 89,
+            "text": "if",
+            "role": "cpp"
+          },
+          {
+            "start": 163,
+            "end": 166,
+            "text": "Fin",
+            "role": "output"
+          }
+        ]
+      },
+      {
+        "block": "block_0001_0006",
+        "path": "/options/0",
+        "sourceSha256": "e65e53759b33a60ad07c9fa7a10e8c15d65cab506d4c342f78a45987624f52bf",
+        "spans": [
+          {
+            "start": 25,
+            "end": 28,
+            "text": "Fin",
+            "role": "output"
+          }
+        ]
+      },
+      {
+        "block": "block_0001_0006",
+        "path": "/options/1",
+        "sourceSha256": "b78cd901dde6c0ebb19e879513b87c9a38dffe7ba7dab08834073e6ac1bc2d4a",
+        "spans": [
+          {
+            "start": 9,
+            "end": 11,
+            "text": "if",
+            "role": "cpp"
+          }
+        ]
+      },
+      {
+        "block": "block_0001_0006",
+        "path": "/options/2",
+        "sourceSha256": "216995b1c69969a3d7525398364c1bcaf8b6bf5475d357a55b0b3c34daf9722d",
+        "spans": [
+          {
+            "start": 8,
+            "end": 12,
+            "text": "main",
+            "role": "cpp"
+          },
+          {
+            "start": 31,
+            "end": 37,
+            "text": "break;",
+            "role": "cpp"
+          }
+        ]
+      },
+      {
+        "block": "block_0002_0001",
+        "path": "/text",
+        "sourceSha256": "fc4687477794807559bddb13b4903e41a74f63421f75a49d11f4dbdc8bea21da",
+        "spans": [
+          {
+            "start": 117,
+            "end": 126,
+            "text": "continue;",
+            "role": "cpp"
+          },
+          {
+            "start": 134,
+            "end": 137,
+            "text": "for",
+            "role": "cpp"
+          },
+          {
+            "start": 269,
+            "end": 289,
+            "text": "(Köppe et al., 2023)",
+            "role": "citation"
+          }
+        ]
+      },
+      {
+        "block": "block_0002_0003",
+        "path": "/text",
+        "sourceSha256": "521de31d192f9a52dd6b401c5ea56de77d956cd543a41210bbe290bc8809a374",
+        "spans": [
+          {
+            "start": 32,
+            "end": 33,
+            "text": "3",
+            "role": "data"
+          },
+          {
+            "start": 36,
+            "end": 37,
+            "text": "4",
+            "role": "data"
+          },
+          {
+            "start": 52,
+            "end": 53,
+            "text": "5",
+            "role": "data"
+          },
+          {
+            "start": 63,
+            "end": 72,
+            "text": "continue;",
+            "role": "cpp"
+          },
+          {
+            "start": 82,
+            "end": 86,
+            "text": "cout",
+            "role": "cpp"
+          },
+          {
+            "start": 142,
+            "end": 150,
+            "text": "++puesto",
+            "role": "cpp"
+          },
+          {
+            "start": 165,
+            "end": 176,
+            "text": "puesto <= 6",
+            "role": "cpp"
+          },
+          {
+            "start": 226,
+            "end": 228,
+            "text": "6:",
+            "role": "output"
+          },
+          {
+            "start": 260,
+            "end": 266,
+            "text": "puesto",
+            "role": "cpp"
+          },
+          {
+            "start": 269,
+            "end": 270,
+            "text": "7",
+            "role": "data"
+          },
+          {
+            "start": 288,
+            "end": 293,
+            "text": "false",
+            "role": "cpp"
+          },
+          {
+            "start": 304,
+            "end": 307,
+            "text": "Fin",
+            "role": "output"
+          },
+          {
+            "start": 317,
+            "end": 326,
+            "text": "3:4:6:Fin",
+            "role": "output"
+          },
+          {
+            "start": 377,
+            "end": 386,
+            "text": "continue;",
+            "role": "cpp"
+          },
+          {
+            "start": 530,
+            "end": 539,
+            "text": "continue;",
+            "role": "cpp"
+          }
+        ]
+      },
+      {
+        "block": "block_0002_0004",
+        "path": "/question",
+        "sourceSha256": "365e6a054423120d8e088ae4d92b6693e98d44c6bf91174ae6398f9c8c2baa09",
+        "spans": [
+          {
+            "start": 32,
+            "end": 33,
+            "text": "1",
+            "role": "data"
+          },
+          {
+            "start": 37,
+            "end": 38,
+            "text": "5",
+            "role": "data"
+          },
+          {
+            "start": 49,
+            "end": 58,
+            "text": "continue;",
+            "role": "cpp"
+          }
+        ]
+      },
+      {
+        "block": "block_0002_0004",
+        "path": "/explanation",
+        "sourceSha256": "99c8fb65978a8998547065a86b34da740242e26d75b4b2da2a2f1431017ecc9c",
+        "spans": [
+          {
+            "start": 21,
+            "end": 22,
+            "text": "3",
+            "role": "data"
+          },
+          {
+            "start": 45,
+            "end": 49,
+            "text": "cout",
+            "role": "cpp"
+          },
+          {
+            "start": 63,
+            "end": 71,
+            "text": "++puesto",
+            "role": "cpp"
+          },
+          {
+            "start": 126,
+            "end": 127,
+            "text": "4",
+            "role": "data"
+          },
+          {
+            "start": 173,
+            "end": 184,
+            "text": "1:2:4:5:Fin",
+            "role": "output"
+          }
+        ]
+      },
+      {
+        "block": "block_0002_0005",
+        "path": "/question",
+        "sourceSha256": "5b935ad99622d7102cb3b490a91911b8a8bebacc60092afcb5010e9021823739",
+        "spans": [
+          {
+            "start": 10,
+            "end": 14,
+            "text": "cout",
+            "role": "cpp"
+          },
+          {
+            "start": 33,
+            "end": 42,
+            "text": "continue;",
+            "role": "cpp"
+          }
+        ]
+      },
+      {
+        "block": "block_0002_0005",
+        "path": "/explanation",
+        "sourceSha256": "ba8b17c5889ef700047d4fe2895bfc7648632be70efe47153556e8aa241c5846",
+        "spans": [
+          {
+            "start": 15,
+            "end": 16,
+            "text": "2",
+            "role": "data"
+          },
+          {
+            "start": 28,
+            "end": 32,
+            "text": "cout",
+            "role": "cpp"
+          },
+          {
+            "start": 45,
+            "end": 47,
+            "text": "A2",
+            "role": "output"
+          },
+          {
+            "start": 75,
+            "end": 84,
+            "text": "continue;",
+            "role": "cpp"
+          },
+          {
+            "start": 103,
+            "end": 104,
+            "text": "B",
+            "role": "output"
+          },
+          {
+            "start": 133,
+            "end": 134,
+            "text": "1",
+            "role": "data"
+          },
+          {
+            "start": 137,
+            "end": 138,
+            "text": "3",
+            "role": "data"
+          },
+          {
+            "start": 148,
+            "end": 151,
+            "text": "A1B",
+            "role": "output"
+          },
+          {
+            "start": 154,
+            "end": 157,
+            "text": "A3B",
+            "role": "output"
+          },
+          {
+            "start": 186,
+            "end": 189,
+            "text": "Fin",
+            "role": "output"
+          },
+          {
+            "start": 208,
+            "end": 219,
+            "text": "A1BA2A3BFin",
+            "role": "output"
+          }
+        ]
+      },
+      {
+        "block": "block_0002_0006",
+        "path": "/question",
+        "sourceSha256": "21c486aae894b8fb218c6c49b015571db0cbddbcb842cc0e5ecb876b087089fe",
+        "spans": [
+          {
+            "start": 32,
+            "end": 33,
+            "text": "1",
+            "role": "data"
+          },
+          {
+            "start": 37,
+            "end": 38,
+            "text": "6",
+            "role": "data"
+          },
+          {
+            "start": 64,
+            "end": 75,
+            "text": "++cantidad;",
+            "role": "cpp"
+          }
+        ]
+      },
+      {
+        "block": "block_0002_0006",
+        "path": "/explanation",
+        "sourceSha256": "0a3782e998946c26847c0e2011e372b0acc714a82335cec1653d6c935d68de38",
+        "spans": [
+          {
+            "start": 41,
+            "end": 50,
+            "text": "continue;",
+            "role": "cpp"
+          },
+          {
+            "start": 86,
+            "end": 87,
+            "text": "1",
+            "role": "data"
+          },
+          {
+            "start": 89,
+            "end": 90,
+            "text": "3",
+            "role": "data"
+          },
+          {
+            "start": 93,
+            "end": 94,
+            "text": "5",
+            "role": "data"
+          },
+          {
+            "start": 109,
+            "end": 120,
+            "text": "++cantidad;",
+            "role": "cpp"
+          },
+          {
+            "start": 187,
+            "end": 188,
+            "text": "3",
+            "role": "output"
+          }
+        ]
+      },
+      {
+        "block": "block_0003_0001",
+        "path": "/text",
+        "sourceSha256": "d71f56960e2f44e4c6bca05f2b68cbabd39cd1f89d9371eb78a8becc57e70c37",
+        "spans": [
+          {
+            "start": 6,
+            "end": 11,
+            "text": "while",
+            "role": "cpp"
+          },
+          {
+            "start": 25,
+            "end": 34,
+            "text": "continue;",
+            "role": "cpp"
+          },
+          {
+            "start": 207,
+            "end": 227,
+            "text": "(Köppe et al., 2023)",
+            "role": "citation"
+          },
+          {
+            "start": 256,
+            "end": 267,
+            "text": "puesto <= 5",
+            "role": "cpp"
+          },
+          {
+            "start": 273,
+            "end": 279,
+            "text": "puesto",
+            "role": "cpp"
+          },
+          {
+            "start": 285,
+            "end": 286,
+            "text": "3",
+            "role": "data"
+          },
+          {
+            "start": 313,
+            "end": 322,
+            "text": "continue;",
+            "role": "cpp"
+          },
+          {
+            "start": 427,
+            "end": 428,
+            "text": "3",
+            "role": "data"
+          },
+          {
+            "start": 502,
+            "end": 506,
+            "text": "true",
+            "role": "cpp"
+          }
+        ]
+      },
+      {
+        "block": "block_0003_0002",
+        "path": "/text",
+        "sourceSha256": "fba1ba53611d0be89dc7517dc06fd6f3ffce92a15c0e0e9ccfdc727a5b7058ee",
+        "spans": [
+          {
+            "start": 84,
+            "end": 85,
+            "text": "0",
+            "role": "data"
+          },
+          {
+            "start": 157,
+            "end": 158,
+            "text": "1",
+            "role": "data"
+          },
+          {
+            "start": 170,
+            "end": 180,
+            "text": "puesto < 5",
+            "role": "cpp"
+          },
+          {
+            "start": 234,
+            "end": 235,
+            "text": "5",
+            "role": "data"
+          }
+        ]
+      },
+      {
+        "block": "block_0003_0004",
+        "path": "/text",
+        "sourceSha256": "5cac90ed2a49f3035a15bb480799ff0edac10f2b4fec2d761fe3dcd39b5f59f9",
+        "spans": [
+          {
+            "start": 44,
+            "end": 50,
+            "text": "puesto",
+            "role": "cpp"
+          },
+          {
+            "start": 54,
+            "end": 55,
+            "text": "2",
+            "role": "data"
+          },
+          {
+            "start": 58,
+            "end": 67,
+            "text": "++puesto;",
+            "role": "cpp"
+          },
+          {
+            "start": 80,
+            "end": 81,
+            "text": "3",
+            "role": "data"
+          },
+          {
+            "start": 103,
+            "end": 112,
+            "text": "continue;",
+            "role": "cpp"
+          },
+          {
+            "start": 151,
+            "end": 161,
+            "text": "puesto < 5",
+            "role": "cpp"
+          },
+          {
+            "start": 169,
+            "end": 170,
+            "text": "3",
+            "role": "data"
+          },
+          {
+            "start": 286,
+            "end": 287,
+            "text": "4",
+            "role": "data"
+          },
+          {
+            "start": 297,
+            "end": 308,
+            "text": "1:2:4:5:Fin",
+            "role": "output"
+          }
+        ]
+      },
+      {
+        "block": "block_0003_0005",
+        "path": "/question",
+        "sourceSha256": "bdcfbb150718a407d88e34ed3177d2ec06b9a9c64091dd53f0306f7f081758d2",
+        "spans": [
+          {
+            "start": 21,
+            "end": 27,
+            "text": "puesto",
+            "role": "cpp"
+          },
+          {
+            "start": 43,
+            "end": 49,
+            "text": "puesto",
+            "role": "cpp"
+          },
+          {
+            "start": 61,
+            "end": 62,
+            "text": "1",
+            "role": "data"
+          },
+          {
+            "start": 80,
+            "end": 91,
+            "text": "puesto <= 3",
+            "role": "cpp"
+          },
+          {
+            "start": 114,
+            "end": 125,
+            "text": "puesto == 2",
+            "role": "cpp"
+          },
+          {
+            "start": 140,
+            "end": 149,
+            "text": "continue;",
+            "role": "cpp"
+          },
+          {
+            "start": 160,
+            "end": 169,
+            "text": "++puesto;",
+            "role": "cpp"
+          },
+          {
+            "start": 220,
+            "end": 229,
+            "text": "continue;",
+            "role": "cpp"
+          }
+        ]
+      },
+      {
+        "block": "block_0003_0005",
+        "path": "/explanation",
+        "sourceSha256": "ef1439f17bb3d2a725f8164922d00a2c5df26bc6ac24cc16c75c2fbc7d037a57",
+        "spans": [
+          {
+            "start": 42,
+            "end": 48,
+            "text": "puesto",
+            "role": "cpp"
+          },
+          {
+            "start": 52,
+            "end": 53,
+            "text": "1",
+            "role": "data"
+          },
+          {
+            "start": 56,
+            "end": 57,
+            "text": "2",
+            "role": "data"
+          },
+          {
+            "start": 74,
+            "end": 83,
+            "text": "continue;",
+            "role": "cpp"
+          },
+          {
+            "start": 109,
+            "end": 114,
+            "text": "while",
+            "role": "cpp"
+          },
+          {
+            "start": 132,
+            "end": 143,
+            "text": "puesto <= 3",
+            "role": "cpp"
+          },
+          {
+            "start": 148,
+            "end": 149,
+            "text": "2",
+            "role": "data"
+          }
+        ]
+      },
+      {
+        "block": "block_0003_0005",
+        "path": "/options/0",
+        "sourceSha256": "311d9dbedee81a2d385cf78c0344e03df1781359dcaf1da3ff674549fe4c9328",
+        "spans": [
+          {
+            "start": 9,
+            "end": 18,
+            "text": "++puesto;",
+            "role": "cpp"
+          },
+          {
+            "start": 80,
+            "end": 81,
+            "text": "2",
+            "role": "data"
+          }
+        ]
+      },
+      {
+        "block": "block_0003_0005",
+        "path": "/options/1",
+        "sourceSha256": "c475835f6c342989f879fd809fcc9a0cd67519008a6e459aefd651a6e6e5adad",
+        "spans": [
+          {
+            "start": 16,
+            "end": 27,
+            "text": "puesto <= 3",
+            "role": "cpp"
+          }
+        ]
+      },
+      {
+        "block": "block_0003_0005",
+        "path": "/options/2",
+        "sourceSha256": "447efeee1ba6b723d4662a55f21625c57554cb1c45f9b3c50c46906962b7cf60",
+        "spans": [
+          {
+            "start": 0,
+            "end": 9,
+            "text": "continue;",
+            "role": "cpp"
+          },
+          {
+            "start": 42,
+            "end": 47,
+            "text": "while",
+            "role": "cpp"
+          }
+        ]
+      },
+      {
+        "block": "block_0003_0006",
+        "path": "/question",
+        "sourceSha256": "527e0e391bc1add6f463a83b553c4d341917376ffd538ce3de0eed1d4890ec08",
+        "spans": [
+          {
+            "start": 18,
+            "end": 27,
+            "text": "++puesto;",
+            "role": "cpp"
+          },
+          {
+            "start": 73,
+            "end": 82,
+            "text": "continue;",
+            "role": "cpp"
+          }
+        ]
+      },
+      {
+        "block": "block_0003_0006",
+        "path": "/explanation",
+        "sourceSha256": "c889df3860bfbe2b1584ac18c29fee3292abbb7f25be98bdd0f8a2c9d4073976",
+        "spans": [
+          {
+            "start": 32,
+            "end": 33,
+            "text": "1",
+            "role": "data"
+          },
+          {
+            "start": 35,
+            "end": 36,
+            "text": "2",
+            "role": "data"
+          },
+          {
+            "start": 38,
+            "end": 39,
+            "text": "3",
+            "role": "data"
+          },
+          {
+            "start": 42,
+            "end": 43,
+            "text": "4",
+            "role": "data"
+          },
+          {
+            "start": 72,
+            "end": 76,
+            "text": "cout",
+            "role": "cpp"
+          },
+          {
+            "start": 112,
+            "end": 113,
+            "text": "2",
+            "role": "data"
+          },
+          {
+            "start": 137,
+            "end": 138,
+            "text": "4",
+            "role": "data"
+          },
+          {
+            "start": 153,
+            "end": 163,
+            "text": "puesto < 4",
+            "role": "cpp"
+          },
+          {
+            "start": 167,
+            "end": 172,
+            "text": "false",
+            "role": "cpp"
+          },
+          {
+            "start": 187,
+            "end": 196,
+            "text": "1:3:4:Fin",
+            "role": "output"
+          }
+        ]
+      },
+      {
+        "block": "block_0004_0001",
+        "path": "/question",
+        "sourceSha256": "ad244feff059f93678b565d85faf3edf1b6109ff517f29bf1998602d3d2eba85",
+        "spans": [
+          {
+            "start": 62,
+            "end": 63,
+            "text": "4",
+            "role": "data"
+          },
+          {
+            "start": 89,
+            "end": 90,
+            "text": "5",
+            "role": "data"
+          }
+        ]
+      },
+      {
+        "block": "block_0004_0001",
+        "path": "/explanation",
+        "sourceSha256": "f2f8911a0d42ed1e6f50531db04bff1757d2f99313ac36c699c7667bf01b6446",
+        "spans": [
+          {
+            "start": 0,
+            "end": 9,
+            "text": "continue;",
+            "role": "cpp"
+          },
+          {
+            "start": 19,
+            "end": 23,
+            "text": "cout",
+            "role": "cpp"
+          },
+          {
+            "start": 35,
+            "end": 36,
+            "text": "4",
+            "role": "data"
+          },
+          {
+            "start": 64,
+            "end": 67,
+            "text": "for",
+            "role": "cpp"
+          },
+          {
+            "start": 79,
+            "end": 85,
+            "text": "puesto",
+            "role": "cpp"
+          },
+          {
+            "start": 88,
+            "end": 89,
+            "text": "5",
+            "role": "data"
+          }
+        ]
+      },
+      {
+        "block": "block_0004_0002",
+        "path": "/question",
+        "sourceSha256": "c452e9aaae3b75c8372bffd4a9daa726545054f6d772e7e57c74302335c87c44",
+        "spans": [
+          {
+            "start": 94,
+            "end": 95,
+            "text": "4",
+            "role": "data"
+          }
+        ]
+      },
+      {
+        "block": "block_0004_0002",
+        "path": "/explanation",
+        "sourceSha256": "c7a9161db24d2be0d39ce413e1b998566844f04a404b071995b04ffb34bd36f9",
+        "spans": [
+          {
+            "start": 0,
+            "end": 6,
+            "text": "break;",
+            "role": "cpp"
+          },
+          {
+            "start": 38,
+            "end": 41,
+            "text": "for",
+            "role": "cpp"
+          },
+          {
+            "start": 55,
+            "end": 56,
+            "text": "4",
+            "role": "data"
+          }
+        ]
+      },
+      {
+        "block": "block_0004_0003",
+        "path": "/text",
+        "sourceSha256": "d7c772dc2cc28be48a095a9818749e93e8ad630115b43a1a443cb644b3a326d7",
+        "spans": [
+          {
+            "start": 97,
+            "end": 101,
+            "text": "cout",
+            "role": "cpp"
+          },
+          {
+            "start": 139,
+            "end": 140,
+            "text": "1",
+            "role": "data"
+          },
+          {
+            "start": 144,
+            "end": 145,
+            "text": "5",
+            "role": "data"
+          },
+          {
+            "start": 233,
+            "end": 234,
+            "text": "1",
+            "role": "data"
+          },
+          {
+            "start": 238,
+            "end": 239,
+            "text": "5",
+            "role": "data"
+          },
+          {
+            "start": 250,
+            "end": 251,
+            "text": "3",
+            "role": "data"
+          },
+          {
+            "start": 268,
+            "end": 275,
+            "text": "1\n2\n4\n5",
+            "role": "output"
+          }
+        ]
+      },
+      {
+        "block": "block_0004_0006",
+        "path": "/text",
+        "sourceSha256": "ddd2d23ed901f2c01fa44bc4b30b179a297012de7e7b4f95ba0304c938797218",
+        "spans": [
+          {
+            "start": 105,
+            "end": 109,
+            "text": "cout",
+            "role": "cpp"
+          },
+          {
+            "start": 130,
+            "end": 131,
+            "text": "5",
+            "role": "data"
+          },
+          {
+            "start": 302,
+            "end": 303,
+            "text": "1",
+            "role": "data"
+          },
+          {
+            "start": 307,
+            "end": 308,
+            "text": "5",
+            "role": "data"
+          },
+          {
+            "start": 322,
+            "end": 323,
+            "text": "1",
+            "role": "data"
+          },
+          {
+            "start": 438,
+            "end": 439,
+            "text": "3",
+            "role": "data"
+          },
+          {
+            "start": 456,
+            "end": 459,
+            "text": "1\n2",
+            "role": "output"
+          }
+        ]
+      },
+      {
+        "block": "block_0005_0001",
+        "path": "/text",
+        "sourceSha256": "77f8487a0877bcbcb5882e742027a4ea687a26387efe2be482e669b360f5d224",
+        "spans": [
+          {
+            "start": 24,
+            "end": 37,
+            "text": "puestoElegido",
+            "role": "cpp"
+          },
+          {
+            "start": 88,
+            "end": 97,
+            "text": "continue;",
+            "role": "cpp"
+          },
+          {
+            "start": 232,
+            "end": 238,
+            "text": "break;",
+            "role": "cpp"
+          },
+          {
+            "start": 336,
+            "end": 340,
+            "text": "main",
+            "role": "cpp"
+          }
+        ]
+      },
+      {
+        "block": "block_0005_0004",
+        "path": "/text",
+        "sourceSha256": "483984cbf44ccea749e6dcd9b342125958dfeef6eb70941f4dafdc2f12653e7a",
+        "spans": [
+          {
+            "start": 57,
+            "end": 70,
+            "text": "puestoElegido",
+            "role": "cpp"
+          },
+          {
+            "start": 80,
+            "end": 84,
+            "text": "cout",
+            "role": "cpp"
+          },
+          {
+            "start": 101,
+            "end": 102,
+            "text": "3",
+            "role": "data"
+          },
+          {
+            "start": 131,
+            "end": 132,
+            "text": "3",
+            "role": "data"
+          },
+          {
+            "start": 215,
+            "end": 224,
+            "text": "continue;",
+            "role": "cpp"
+          },
+          {
+            "start": 257,
+            "end": 258,
+            "text": "4",
+            "role": "data"
+          },
+          {
+            "start": 261,
+            "end": 262,
+            "text": "5",
+            "role": "data"
+          },
+          {
+            "start": 268,
+            "end": 274,
+            "text": "break;",
+            "role": "cpp"
+          }
+        ]
+      }
+    ]
+  }
+}

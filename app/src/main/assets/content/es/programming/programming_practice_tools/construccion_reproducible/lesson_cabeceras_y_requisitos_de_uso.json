@@ -307,6 +307,10 @@
             "Compara las necesidades de la fuente nombrada en el diagnóstico con los requisitos que recibe su objetivo.",
             "Explica cómo ese cambio aportaría al compilador el texto solicitado por el include. Retirar una relación no añade una ruta de búsqueda."
           ]
+        },
+        {
+          "type": "paragraph",
+          "text": "En la página siguiente, escribe 12 en Entrada al comprobar la variación de llamadas. En el ejercicio de reparación, escribe 0 para comprobar el caso de cero unidades. En ambos editores puedes ensayar 0, 12 y 2 por separado. Deja Entrada vacía para ejecutar juntas las tres llamadas en el orden de la predicción."
         }
       ]
     },
@@ -390,7 +394,7 @@
             },
             {
               "path": "app/main.cpp",
-              "initialCode": "#include \"paquetes/entrega.h\"\n#include <iostream>\n\nint main() {\n    std::cout << minutos_preparacion(0) << ':'\n              << minutos_preparacion(12) << ':'\n              << minutos_preparacion(2);\n    return 0;\n}\n"
+              "initialCode": "#include \"paquetes/entrega.h\"\n#include <iostream>\n\nint main() {\n    std::cin >> std::ws;\n    if (!std::cin.eof()) {\n        int unidades{};\n        if (!(std::cin >> unidades) || unidades < 0 || unidades > 12) {\n            return 1;\n        }\n\n        std::cout << minutos_preparacion(unidades);\n        return 0;\n    }\n\n    std::cout << minutos_preparacion(0) << ':'\n              << minutos_preparacion(12) << ':'\n              << minutos_preparacion(2);\n    return 0;\n}\n"
             }
           ],
           "cmake": {
@@ -400,6 +404,27 @@
           "outputCheck": {
             "inputComparison": "exact",
             "cases": [
+              {
+                "standardInput": "12",
+                "outputs": [
+                  "27"
+                ],
+                "exitCode": 0
+              },
+              {
+                "standardInput": "0",
+                "outputs": [
+                  "0"
+                ],
+                "exitCode": 0
+              },
+              {
+                "standardInput": "2",
+                "outputs": [
+                  "7"
+                ],
+                "exitCode": 0
+              },
               {
                 "standardInput": "",
                 "outputs": [
@@ -437,7 +462,7 @@
             },
             {
               "path": "app/main.cpp",
-              "initialCode": "#include \"paquetes/entrega.h\"\n#include <iostream>\n\nint main() {\n    std::cout << minutos_preparacion(0) << ':'\n              << minutos_preparacion(12) << ':'\n              << minutos_preparacion(2);\n    return 0;\n}\n"
+              "initialCode": "#include \"paquetes/entrega.h\"\n#include <iostream>\n\nint main() {\n    std::cin >> std::ws;\n    if (!std::cin.eof()) {\n        int unidades{};\n        if (!(std::cin >> unidades) || unidades < 0 || unidades > 12) {\n            return 1;\n        }\n\n        std::cout << minutos_preparacion(unidades);\n        return 0;\n    }\n\n    std::cout << minutos_preparacion(0) << ':'\n              << minutos_preparacion(12) << ':'\n              << minutos_preparacion(2);\n    return 0;\n}\n"
             }
           ],
           "cmake": {
@@ -447,6 +472,27 @@
           "outputCheck": {
             "inputComparison": "exact",
             "cases": [
+              {
+                "standardInput": "0",
+                "outputs": [
+                  "0"
+                ],
+                "exitCode": 0
+              },
+              {
+                "standardInput": "12",
+                "outputs": [
+                  "27"
+                ],
+                "exitCode": 0
+              },
+              {
+                "standardInput": "2",
+                "outputs": [
+                  "7"
+                ],
+                "exitCode": 0
+              },
               {
                 "standardInput": "",
                 "outputs": [
@@ -520,6 +566,10 @@
             "Sigue lo que procesa el compilador del cliente al leer la cabecera pública revisada.",
             "Relaciona el diagnóstico de búsqueda con las inclusiones y sus directorios; un nombre de objetivo no cambia por sí solo esas rutas."
           ]
+        },
+        {
+          "type": "paragraph",
+          "text": "En la página siguiente, en los ejercicios de comprobación de la separación y de cambio a cuatro minutos iniciales, escribe 1 en Entrada para comprobar la llamada con una unidad. Puedes ensayar 0 y 5 por separado. Deja Entrada vacía para ejecutar juntas las tres llamadas de cada consigna."
         }
       ]
     },
@@ -556,7 +606,7 @@
             },
             {
               "path": "app/main.cpp",
-              "initialCode": "#include \"paquetes/entrega.h\"\n#include <iostream>\n\nint main() {\n    std::cout << minutos_preparacion(0) << ':'\n              << minutos_preparacion(1) << ':'\n              << minutos_preparacion(5);\n    return 0;\n}\n"
+              "initialCode": "#include \"paquetes/entrega.h\"\n#include <iostream>\n\nint main() {\n    std::cin >> std::ws;\n    if (!std::cin.eof()) {\n        int unidades{};\n        if (!(std::cin >> unidades) || unidades < 0 || unidades > 12) {\n            return 1;\n        }\n\n        std::cout << minutos_preparacion(unidades);\n        return 0;\n    }\n\n    std::cout << minutos_preparacion(0) << ':'\n              << minutos_preparacion(1) << ':'\n              << minutos_preparacion(5);\n    return 0;\n}\n"
             }
           ],
           "cmake": {
@@ -566,6 +616,27 @@
           "outputCheck": {
             "inputComparison": "exact",
             "cases": [
+              {
+                "standardInput": "1",
+                "outputs": [
+                  "5"
+                ],
+                "exitCode": 0
+              },
+              {
+                "standardInput": "0",
+                "outputs": [
+                  "0"
+                ],
+                "exitCode": 0
+              },
+              {
+                "standardInput": "5",
+                "outputs": [
+                  "13"
+                ],
+                "exitCode": 0
+              },
               {
                 "standardInput": "",
                 "outputs": [
@@ -742,7 +813,7 @@
             },
             {
               "path": "app/main.cpp",
-              "initialCode": "#include \"paquetes/entrega.h\"\n#include <iostream>\n\nint main() {\n    std::cout << minutos_preparacion(0) << ':'\n              << minutos_preparacion(1) << ':'\n              << minutos_preparacion(5);\n    return 0;\n}\n"
+              "initialCode": "#include \"paquetes/entrega.h\"\n#include <iostream>\n\nint main() {\n    std::cin >> std::ws;\n    if (!std::cin.eof()) {\n        int unidades{};\n        if (!(std::cin >> unidades) || unidades < 0 || unidades > 12) {\n            return 1;\n        }\n\n        std::cout << minutos_preparacion(unidades);\n        return 0;\n    }\n\n    std::cout << minutos_preparacion(0) << ':'\n              << minutos_preparacion(1) << ':'\n              << minutos_preparacion(5);\n    return 0;\n}\n"
             }
           ],
           "cmake": {
@@ -752,6 +823,27 @@
           "outputCheck": {
             "inputComparison": "exact",
             "cases": [
+              {
+                "standardInput": "1",
+                "outputs": [
+                  "6"
+                ],
+                "exitCode": 0
+              },
+              {
+                "standardInput": "0",
+                "outputs": [
+                  "0"
+                ],
+                "exitCode": 0
+              },
+              {
+                "standardInput": "5",
+                "outputs": [
+                  "14"
+                ],
+                "exitCode": 0
+              },
               {
                 "standardInput": "",
                 "outputs": [
@@ -1514,7 +1606,8 @@
           "block_0004_0001",
           "block_0004_0002",
           "block_0004_0003",
-          "block_0004_0004"
+          "block_0004_0004",
+          "variacion_y_reparacion_del_cero_ensayos_de_entrada"
         ]
       },
       {
@@ -1545,7 +1638,8 @@
           "block_0006_0004",
           "block_0006_0005",
           "block_0006_0006",
-          "block_0006_0007"
+          "block_0006_0007",
+          "cabeceras_y_base_cuatro_ensayos_de_entrada"
         ]
       },
       {
@@ -2820,7 +2914,26 @@
         ]
       }
     },
-    "additions": [],
+    "additions": [
+      {
+        "id": "cabeceras_y_base_cuatro_ensayos_de_entrada",
+        "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5",
+        "storage": {
+          "page": 900000,
+          "block": 0
+        },
+        "progressPage": "page_0006"
+      },
+      {
+        "id": "variacion_y_reparacion_del_cero_ensayos_de_entrada",
+        "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5",
+        "storage": {
+          "page": 900001,
+          "block": 0
+        },
+        "progressPage": "page_0004"
+      }
+    ],
     "editorial": [
       {
         "id": "block_0002_0001",
@@ -3116,6 +3229,26 @@
         "id": "block_0011_0006",
         "beforeSha256": "2cdab989b53f21953e350d098bba555fff7bc93fb98e023858a6a63c155bb70d",
         "afterSha256": "d0886628946665c8ce42cef216a2967ff13a6ddae2b1455252df6c96a221cb49"
+      },
+      {
+        "id": "block_0007_0002",
+        "beforeSha256": "196117c3a8c9fe401c68c1a157be4bc509cd6d176d3f39b7e2bc8081f6a96033",
+        "afterSha256": "964a39c15075ebbb5a3afd9d14672da1feef6e427540420bd493bea265e1f7ea"
+      },
+      {
+        "id": "block_0007_0014",
+        "beforeSha256": "5877400989fe5d958ad365caa8d06cff1ad9bf1250f7630b024ba6aeba96b890",
+        "afterSha256": "453e2055d27a5262f56e35283912396164cfb610811e6a8f08b51d5fea7ed878"
+      },
+      {
+        "id": "block_0005_0009",
+        "beforeSha256": "09237f5fc85b7ca4bcec9294317c322872a739995db6a10660feeabe60dcd5ca",
+        "afterSha256": "5e64bc42aa36727affd5459e2154f891f16e805d800a8a4a7f36ebf637eaba39"
+      },
+      {
+        "id": "block_0005_0012",
+        "beforeSha256": "1c36f16a68d804ea0542919f9ac0fbe1d80d9e7aa7e9bd79a8adb0b7b40c5931",
+        "afterSha256": "60770798123e33b2038ba95cd2956cb04385c909518874bdc093dca856ad6949"
       }
     ],
     "sourceFormatRevisions": [
@@ -3515,6 +3648,510 @@
           "outputComparison": "exact",
           "explanation": "Dos unidades usan la fórmula nueva y devuelven ocho; cero retorna cero; doce usan 4 + 24. La diferencia de resultados procede del contrato y de las llamadas revisadas, no de que una búsqueda se llame PUBLIC o PRIVATE.",
           "reviewFeedback": "Traza cada llamada hasta su retorno con la fórmula que realmente aparece en esta revisión. Separa el cambio de contrato del cambio de argumentos y de los requisitos de búsqueda."
+        }
+      }
+    ],
+    "compilerCaseRevisions": [
+      {
+        "id": "block_0007_0002",
+        "block": {
+          "type": "cpp_compiler",
+          "language": "cpp",
+          "initialCode": "",
+          "projectFiles": [
+            {
+              "path": "CMakeLists.txt",
+              "initialCode": "cmake_minimum_required(VERSION 3.20)\nproject(Tiempos LANGUAGES CXX)\n\nadd_library(preparacion STATIC src/entrega.cpp)\nadd_executable(medir app/main.cpp)\n\ntarget_compile_features(preparacion PRIVATE cxx_std_20)\ntarget_compile_features(medir PRIVATE cxx_std_20)\nset_target_properties(preparacion medir PROPERTIES CXX_EXTENSIONS OFF)\ntarget_include_directories(preparacion\n    PUBLIC include\n    PRIVATE interno\n)\ntarget_link_libraries(medir PRIVATE preparacion)\n"
+            },
+            {
+              "path": "include/paquetes/entrega.h",
+              "initialCode": "#ifndef PRACTICA_PAQUETES_ENTREGA_H\n#define PRACTICA_PAQUETES_ENTREGA_H\n\n// Dominio: 0 <= unidades <= 12.\n// Cero unidades: cero minutos. Si hay unidades: 3 + 2 * unidades.\nint minutos_preparacion(int unidades);\n\n#endif\n"
+            },
+            {
+              "path": "src/entrega.cpp",
+              "initialCode": "#include \"paquetes/entrega.h\"\n#include \"ajuste.h\"\n\nint minutos_preparacion(int unidades) {\n    if (unidades == 0) {\n        return 0;\n    }\n\n    return minutos_base + minutos_por_unidad * unidades;\n}\n"
+            },
+            {
+              "path": "interno/ajuste.h",
+              "initialCode": "#ifndef PRACTICA_AJUSTE_INTERNO_H\n#define PRACTICA_AJUSTE_INTERNO_H\n\nconstexpr int minutos_base = 3;\nconstexpr int minutos_por_unidad = 2;\n\n#endif\n"
+            },
+            {
+              "path": "app/main.cpp",
+              "initialCode": "#include \"paquetes/entrega.h\"\n#include <iostream>\n\nint main() {\n    std::cout << minutos_preparacion(0) << ':'\n              << minutos_preparacion(1) << ':'\n              << minutos_preparacion(5);\n    return 0;\n}\n"
+            }
+          ],
+          "cmake": {
+            "target": "medir",
+            "buildType": "Debug"
+          },
+          "outputCheck": {
+            "inputComparison": "exact",
+            "cases": [
+              {
+                "standardInput": "",
+                "outputs": [
+                  "0:5:13"
+                ],
+                "explanation": "La biblioteca usa su ruta interna y el cliente recibe la pública. Las mismas cantidades conservan el mismo comportamiento."
+              }
+            ]
+          }
+        },
+        "cases": [
+          {
+            "standardInput": "1",
+            "outputs": [
+              "5"
+            ],
+            "exitCode": 0
+          },
+          {
+            "standardInput": "0",
+            "outputs": [
+              "0"
+            ],
+            "exitCode": 0
+          },
+          {
+            "standardInput": "5",
+            "outputs": [
+              "13"
+            ],
+            "exitCode": 0
+          },
+          {
+            "standardInput": "",
+            "outputs": [
+              "0:5:13"
+            ],
+            "explanation": "La biblioteca usa su ruta interna y el cliente recibe la pública. Las mismas cantidades conservan el mismo comportamiento."
+          }
+        ],
+        "editorialIndex": 59,
+        "historySha256": "2b5522a1a6ebb714e928ac689ba129ac28e61463825795f4b4fc26bf6c166901",
+        "semanticBefore": [
+          {
+            "block": "block_0007_0002",
+            "path": "/outputCheck/cases/0/explanation",
+            "sourceSha256": "37a38ac73592a1129a716149cdafab26b22da0d32a1262d913077d4fb8db26cd",
+            "spans": []
+          }
+        ],
+        "semanticAfter": [
+          {
+            "block": "block_0007_0002",
+            "path": "/outputCheck/cases/3/explanation",
+            "sourceSha256": "37a38ac73592a1129a716149cdafab26b22da0d32a1262d913077d4fb8db26cd",
+            "spans": []
+          }
+        ],
+        "client": {
+          "path": "app/main.cpp",
+          "source": "#include \"paquetes/entrega.h\"\n#include <iostream>\n\nint main() {\n    std::cin >> std::ws;\n    if (!std::cin.eof()) {\n        int unidades{};\n        if (!(std::cin >> unidades) || unidades < 0 || unidades > 12) {\n            return 1;\n        }\n\n        std::cout << minutos_preparacion(unidades);\n        return 0;\n    }\n\n    std::cout << minutos_preparacion(0) << ':'\n              << minutos_preparacion(1) << ':'\n              << minutos_preparacion(5);\n    return 0;\n}\n"
+        }
+      },
+      {
+        "id": "block_0007_0014",
+        "block": {
+          "type": "cpp_compiler",
+          "language": "cpp",
+          "initialCode": "",
+          "projectFiles": [
+            {
+              "path": "CMakeLists.txt",
+              "initialCode": "cmake_minimum_required(VERSION 3.20)\nproject(Tiempos LANGUAGES CXX)\n\nadd_library(preparacion STATIC src/entrega.cpp)\nadd_executable(medir app/main.cpp)\n\ntarget_compile_features(preparacion PRIVATE cxx_std_20)\ntarget_compile_features(medir PRIVATE cxx_std_20)\nset_target_properties(preparacion medir PROPERTIES CXX_EXTENSIONS OFF)\ntarget_include_directories(preparacion\n    PUBLIC include\n    PRIVATE interno\n)\ntarget_link_libraries(medir PRIVATE preparacion)\n"
+            },
+            {
+              "path": "include/paquetes/entrega.h",
+              "initialCode": "#ifndef PRACTICA_PAQUETES_ENTREGA_H\n#define PRACTICA_PAQUETES_ENTREGA_H\n\n// Dominio: 0 <= unidades <= 12.\n// Cero unidades: cero minutos. Si hay unidades: 3 + 2 * unidades.\nint minutos_preparacion(int unidades);\n\n#endif\n"
+            },
+            {
+              "path": "src/entrega.cpp",
+              "initialCode": "#include \"paquetes/entrega.h\"\n#include \"ajuste.h\"\n\nint minutos_preparacion(int unidades) {\n    if (unidades == 0) {\n        return 0;\n    }\n\n    return minutos_base + minutos_por_unidad * unidades;\n}\n"
+            },
+            {
+              "path": "interno/ajuste.h",
+              "initialCode": "#ifndef PRACTICA_AJUSTE_INTERNO_H\n#define PRACTICA_AJUSTE_INTERNO_H\n\nconstexpr int minutos_base = 3;\nconstexpr int minutos_por_unidad = 2;\n\n#endif\n"
+            },
+            {
+              "path": "app/main.cpp",
+              "initialCode": "#include \"paquetes/entrega.h\"\n#include <iostream>\n\nint main() {\n    std::cout << minutos_preparacion(0) << ':'\n              << minutos_preparacion(1) << ':'\n              << minutos_preparacion(5);\n    return 0;\n}\n"
+            }
+          ],
+          "cmake": {
+            "target": "medir",
+            "buildType": "Debug"
+          },
+          "outputCheck": {
+            "inputComparison": "exact",
+            "cases": [
+              {
+                "standardInput": "",
+                "outputs": [
+                  "0:6:14"
+                ],
+                "explanation": "La revisión cumple el requisito nuevo de cuatro minutos iniciales para cantidades positivas, conservando dos por unidad y cero para cero."
+              }
+            ]
+          }
+        },
+        "cases": [
+          {
+            "standardInput": "1",
+            "outputs": [
+              "6"
+            ],
+            "exitCode": 0
+          },
+          {
+            "standardInput": "0",
+            "outputs": [
+              "0"
+            ],
+            "exitCode": 0
+          },
+          {
+            "standardInput": "5",
+            "outputs": [
+              "14"
+            ],
+            "exitCode": 0
+          },
+          {
+            "standardInput": "",
+            "outputs": [
+              "0:6:14"
+            ],
+            "explanation": "La revisión cumple el requisito nuevo de cuatro minutos iniciales para cantidades positivas, conservando dos por unidad y cero para cero."
+          }
+        ],
+        "editorialIndex": 60,
+        "historySha256": "80fe56f844c9e017cf9799b2b7613923734afe2e639bd53e03b11234088ba31b",
+        "semanticBefore": [
+          {
+            "block": "block_0007_0014",
+            "path": "/outputCheck/cases/0/explanation",
+            "sourceSha256": "d1fed8ead3f79bee3b51ba9e1c4fbef4d0182b55cb567a3871de02611df417f4",
+            "spans": [
+              {
+                "start": 41,
+                "end": 47,
+                "text": "cuatro",
+                "role": "data",
+                "reading": "natural"
+              },
+              {
+                "start": 105,
+                "end": 108,
+                "text": "dos",
+                "role": "data",
+                "reading": "natural"
+              },
+              {
+                "start": 122,
+                "end": 126,
+                "text": "cero",
+                "role": "output",
+                "reading": "natural"
+              },
+              {
+                "start": 132,
+                "end": 136,
+                "text": "cero",
+                "role": "data",
+                "reading": "natural"
+              }
+            ]
+          }
+        ],
+        "semanticAfter": [
+          {
+            "block": "block_0007_0014",
+            "path": "/outputCheck/cases/3/explanation",
+            "sourceSha256": "d1fed8ead3f79bee3b51ba9e1c4fbef4d0182b55cb567a3871de02611df417f4",
+            "spans": [
+              {
+                "start": 41,
+                "end": 47,
+                "text": "cuatro",
+                "role": "data",
+                "reading": "natural"
+              },
+              {
+                "start": 105,
+                "end": 108,
+                "text": "dos",
+                "role": "data",
+                "reading": "natural"
+              },
+              {
+                "start": 122,
+                "end": 126,
+                "text": "cero",
+                "role": "output",
+                "reading": "natural"
+              },
+              {
+                "start": 132,
+                "end": 136,
+                "text": "cero",
+                "role": "data",
+                "reading": "natural"
+              }
+            ]
+          }
+        ],
+        "client": {
+          "path": "app/main.cpp",
+          "source": "#include \"paquetes/entrega.h\"\n#include <iostream>\n\nint main() {\n    std::cin >> std::ws;\n    if (!std::cin.eof()) {\n        int unidades{};\n        if (!(std::cin >> unidades) || unidades < 0 || unidades > 12) {\n            return 1;\n        }\n\n        std::cout << minutos_preparacion(unidades);\n        return 0;\n    }\n\n    std::cout << minutos_preparacion(0) << ':'\n              << minutos_preparacion(1) << ':'\n              << minutos_preparacion(5);\n    return 0;\n}\n"
+        }
+      },
+      {
+        "id": "block_0005_0009",
+        "block": {
+          "type": "cpp_compiler",
+          "language": "cpp",
+          "initialCode": "",
+          "projectFiles": [
+            {
+              "path": "CMakeLists.txt",
+              "initialCode": "cmake_minimum_required(VERSION 3.20)\nproject(Tiempos LANGUAGES CXX)\n\nadd_library(preparacion STATIC src/entrega.cpp)\nadd_executable(medir app/main.cpp)\n\ntarget_compile_features(preparacion PRIVATE cxx_std_20)\ntarget_compile_features(medir PRIVATE cxx_std_20)\nset_target_properties(preparacion medir PROPERTIES CXX_EXTENSIONS OFF)\ntarget_include_directories(preparacion PUBLIC include)\ntarget_link_libraries(medir PRIVATE preparacion)\n"
+            },
+            {
+              "path": "include/paquetes/entrega.h",
+              "initialCode": "#ifndef PRACTICA_PAQUETES_ENTREGA_H\n#define PRACTICA_PAQUETES_ENTREGA_H\n\n// Dominio: 0 <= unidades <= 12.\n// Cero unidades: cero minutos. Si hay unidades: 3 + 2 * unidades.\nint minutos_preparacion(int unidades);\n\n#endif\n"
+            },
+            {
+              "path": "src/entrega.cpp",
+              "initialCode": "#include \"paquetes/entrega.h\"\n\nint minutos_preparacion(int unidades) {\n    if (unidades == 0) {\n        return 0;\n    }\n\n    return 3 + 2 * unidades;\n}\n"
+            },
+            {
+              "path": "app/main.cpp",
+              "initialCode": "#include \"paquetes/entrega.h\"\n#include <iostream>\n\nint main() {\n    std::cout << minutos_preparacion(0) << ':'\n              << minutos_preparacion(12) << ':'\n              << minutos_preparacion(2);\n    return 0;\n}\n"
+            }
+          ],
+          "cmake": {
+            "target": "medir",
+            "buildType": "Debug"
+          },
+          "outputCheck": {
+            "inputComparison": "exact",
+            "cases": [
+              {
+                "standardInput": "",
+                "outputs": [
+                  "0:27:7"
+                ],
+                "explanation": "La nueva ejecución conserva la regla de cero y aplica 3 + 2 * unidades en los casos positivos, independientemente de las rutas de cabeceras."
+              }
+            ]
+          }
+        },
+        "cases": [
+          {
+            "standardInput": "12",
+            "outputs": [
+              "27"
+            ],
+            "exitCode": 0
+          },
+          {
+            "standardInput": "0",
+            "outputs": [
+              "0"
+            ],
+            "exitCode": 0
+          },
+          {
+            "standardInput": "2",
+            "outputs": [
+              "7"
+            ],
+            "exitCode": 0
+          },
+          {
+            "standardInput": "",
+            "outputs": [
+              "0:27:7"
+            ],
+            "explanation": "La nueva ejecución conserva la regla de cero y aplica 3 + 2 * unidades en los casos positivos, independientemente de las rutas de cabeceras."
+          }
+        ],
+        "editorialIndex": 61,
+        "historySha256": "20dd9dd6206d84a098976dc51885c919f3f3e342df6cf1eba0eb34ad22767bcb",
+        "semanticBefore": [
+          {
+            "block": "block_0005_0009",
+            "path": "/outputCheck/cases/0/explanation",
+            "sourceSha256": "7da36e2bcf9f49be14ca5188a327f60fa00cf368f24f0651b5312bcf72862526",
+            "spans": [
+              {
+                "start": 40,
+                "end": 44,
+                "text": "cero",
+                "role": "data",
+                "reading": "natural"
+              },
+              {
+                "start": 54,
+                "end": 70,
+                "text": "3 + 2 * unidades",
+                "role": "cpp",
+                "reading": "technical"
+              }
+            ]
+          }
+        ],
+        "semanticAfter": [
+          {
+            "block": "block_0005_0009",
+            "path": "/outputCheck/cases/3/explanation",
+            "sourceSha256": "7da36e2bcf9f49be14ca5188a327f60fa00cf368f24f0651b5312bcf72862526",
+            "spans": [
+              {
+                "start": 40,
+                "end": 44,
+                "text": "cero",
+                "role": "data",
+                "reading": "natural"
+              },
+              {
+                "start": 54,
+                "end": 70,
+                "text": "3 + 2 * unidades",
+                "role": "cpp",
+                "reading": "technical"
+              }
+            ]
+          }
+        ],
+        "client": {
+          "path": "app/main.cpp",
+          "source": "#include \"paquetes/entrega.h\"\n#include <iostream>\n\nint main() {\n    std::cin >> std::ws;\n    if (!std::cin.eof()) {\n        int unidades{};\n        if (!(std::cin >> unidades) || unidades < 0 || unidades > 12) {\n            return 1;\n        }\n\n        std::cout << minutos_preparacion(unidades);\n        return 0;\n    }\n\n    std::cout << minutos_preparacion(0) << ':'\n              << minutos_preparacion(12) << ':'\n              << minutos_preparacion(2);\n    return 0;\n}\n"
+        }
+      },
+      {
+        "id": "block_0005_0012",
+        "block": {
+          "type": "cpp_compiler",
+          "language": "cpp",
+          "initialCode": "",
+          "projectFiles": [
+            {
+              "path": "CMakeLists.txt",
+              "initialCode": "cmake_minimum_required(VERSION 3.20)\nproject(Tiempos LANGUAGES CXX)\n\nadd_library(preparacion STATIC src/entrega.cpp)\nadd_executable(medir app/main.cpp)\n\ntarget_compile_features(preparacion PRIVATE cxx_std_20)\ntarget_compile_features(medir PRIVATE cxx_std_20)\nset_target_properties(preparacion medir PROPERTIES CXX_EXTENSIONS OFF)\ntarget_include_directories(preparacion PUBLIC include)\ntarget_link_libraries(medir PRIVATE preparacion)\n"
+            },
+            {
+              "path": "include/paquetes/entrega.h",
+              "initialCode": "#ifndef PRACTICA_PAQUETES_ENTREGA_H\n#define PRACTICA_PAQUETES_ENTREGA_H\n\n// Dominio: 0 <= unidades <= 12.\n// Cero unidades: cero minutos. Si hay unidades: 3 + 2 * unidades.\nint minutos_preparacion(int unidades);\n\n#endif\n"
+            },
+            {
+              "path": "src/entrega.cpp",
+              "initialCode": "#include \"paquetes/entrega.h\"\n\nint minutos_preparacion(int unidades) {\n    return 3 + 2 * unidades;\n}\n"
+            },
+            {
+              "path": "app/main.cpp",
+              "initialCode": "#include \"paquetes/entrega.h\"\n#include <iostream>\n\nint main() {\n    std::cout << minutos_preparacion(0) << ':'\n              << minutos_preparacion(12) << ':'\n              << minutos_preparacion(2);\n    return 0;\n}\n"
+            }
+          ],
+          "cmake": {
+            "target": "medir",
+            "buildType": "Debug"
+          },
+          "outputCheck": {
+            "inputComparison": "exact",
+            "cases": [
+              {
+                "standardInput": "",
+                "outputs": [
+                  "0:27:7"
+                ],
+                "explanation": "El caso cero vuelve a devolver cero. La reparación corresponde al cálculo; la búsqueda pública ya era correcta y debe conservarse."
+              }
+            ]
+          }
+        },
+        "cases": [
+          {
+            "standardInput": "0",
+            "outputs": [
+              "0"
+            ],
+            "exitCode": 0
+          },
+          {
+            "standardInput": "12",
+            "outputs": [
+              "27"
+            ],
+            "exitCode": 0
+          },
+          {
+            "standardInput": "2",
+            "outputs": [
+              "7"
+            ],
+            "exitCode": 0
+          },
+          {
+            "standardInput": "",
+            "outputs": [
+              "0:27:7"
+            ],
+            "explanation": "El caso cero vuelve a devolver cero. La reparación corresponde al cálculo; la búsqueda pública ya era correcta y debe conservarse."
+          }
+        ],
+        "editorialIndex": 62,
+        "historySha256": "618b58e92508c7084de4f3d9490368a89c7bb24d87d543ec61051aefb30bac7d",
+        "semanticBefore": [
+          {
+            "block": "block_0005_0012",
+            "path": "/outputCheck/cases/0/explanation",
+            "sourceSha256": "74a8a37dc7258d8075e413c176d26fe44b6056ac3e0b16a0459524b26e1d9802",
+            "spans": [
+              {
+                "start": 8,
+                "end": 12,
+                "text": "cero",
+                "role": "data",
+                "reading": "natural"
+              },
+              {
+                "start": 31,
+                "end": 35,
+                "text": "cero",
+                "role": "output",
+                "reading": "natural"
+              }
+            ]
+          }
+        ],
+        "semanticAfter": [
+          {
+            "block": "block_0005_0012",
+            "path": "/outputCheck/cases/3/explanation",
+            "sourceSha256": "74a8a37dc7258d8075e413c176d26fe44b6056ac3e0b16a0459524b26e1d9802",
+            "spans": [
+              {
+                "start": 8,
+                "end": 12,
+                "text": "cero",
+                "role": "data",
+                "reading": "natural"
+              },
+              {
+                "start": 31,
+                "end": 35,
+                "text": "cero",
+                "role": "output",
+                "reading": "natural"
+              }
+            ]
+          }
+        ],
+        "client": {
+          "path": "app/main.cpp",
+          "source": "#include \"paquetes/entrega.h\"\n#include <iostream>\n\nint main() {\n    std::cin >> std::ws;\n    if (!std::cin.eof()) {\n        int unidades{};\n        if (!(std::cin >> unidades) || unidades < 0 || unidades > 12) {\n            return 1;\n        }\n\n        std::cout << minutos_preparacion(unidades);\n        return 0;\n    }\n\n    std::cout << minutos_preparacion(0) << ':'\n              << minutos_preparacion(12) << ':'\n              << minutos_preparacion(2);\n    return 0;\n}\n"
         }
       }
     ]
@@ -5248,7 +5885,7 @@
       },
       {
         "block": "block_0005_0009",
-        "path": "/outputCheck/cases/0/explanation",
+        "path": "/outputCheck/cases/3/explanation",
         "sourceSha256": "7da36e2bcf9f49be14ca5188a327f60fa00cf368f24f0651b5312bcf72862526",
         "spans": [
           {
@@ -5303,7 +5940,7 @@
       },
       {
         "block": "block_0005_0012",
-        "path": "/outputCheck/cases/0/explanation",
+        "path": "/outputCheck/cases/3/explanation",
         "sourceSha256": "74a8a37dc7258d8075e413c176d26fe44b6056ac3e0b16a0459524b26e1d9802",
         "spans": [
           {
@@ -5761,7 +6398,7 @@
       },
       {
         "block": "block_0007_0002",
-        "path": "/outputCheck/cases/0/explanation",
+        "path": "/outputCheck/cases/3/explanation",
         "sourceSha256": "37a38ac73592a1129a716149cdafab26b22da0d32a1262d913077d4fb8db26cd",
         "spans": []
       },
@@ -6172,7 +6809,7 @@
       },
       {
         "block": "block_0007_0014",
-        "path": "/outputCheck/cases/0/explanation",
+        "path": "/outputCheck/cases/3/explanation",
         "sourceSha256": "d1fed8ead3f79bee3b51ba9e1c4fbef4d0182b55cb567a3871de02611df417f4",
         "spans": [
           {

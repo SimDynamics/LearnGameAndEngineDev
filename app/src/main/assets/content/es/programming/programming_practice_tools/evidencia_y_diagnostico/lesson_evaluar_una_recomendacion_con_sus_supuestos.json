@@ -103,13 +103,31 @@
           "text": "Cada ejecución de este programa crea sus vectores de nuevo. Al entrar en la función contienen de cero a tres enteros; push_back añade un único elemento y deja como máximo cuatro. Por eso static_cast<int>(antes.size()) puede convertir ese tamaño a int sin perder su valor en los casos de esta actividad.\n\nLas referencias utilizadas se refieren a los objetos vector completos, que permanecen en su ámbito durante las llamadas. Las llamadas se realizan en instrucciones separadas de las impresiones: primero se guarda cada resultado y después se muestran ese dato y los tamaños de los vectores. En este primer editor conserva la versión por valor, compila, ejecuta y comprueba sus dos líneas de salida."
         },
         {
+          "type": "paragraph",
+          "text": "Para comprobar la llamada con un solo vector, escribe compartido en Entrada. Para ensayar sólo la llamada con dos vectores, escribe separados. Con Entrada vacía, cada editor muestra ambas líneas juntas. En el editor por referencia, ese ensayo permite contrastar la predicción."
+        },
+        {
           "type": "cpp_compiler",
           "language": "cpp",
-          "initialCode": "#include <iostream>\n#include <vector>\n\nint registrar_y_medir(std::vector<int> antes, std::vector<int>& actual) {\n    actual.push_back(7);\n    return static_cast<int>(antes.size());\n}\n\nint main() {\n    std::vector<int> entrada{2, 5};\n    std::vector<int> destino{9};\n    const int separados = registrar_y_medir(entrada, destino);\n\n    std::cout << \"Separados=\" << separados << \";Entrada=\" << entrada.size()\n              << \";Actual=\" << destino.size() << '\\n';\n\n    std::vector<int> compartido{2, 5};\n    const int juntos = registrar_y_medir(compartido, compartido);\n\n    std::cout << \"Compartido=\" << juntos << \";Actual=\" << compartido.size() << '\\n';\n\n    return 0;\n}\n",
+          "initialCode": "#include <iostream>\n#include <string>\n#include <vector>\n\nint registrar_y_medir(std::vector<int> antes, std::vector<int>& actual) {\n    actual.push_back(7);\n    return static_cast<int>(antes.size());\n}\n\nint main() {\n    std::string ensayo;\n    std::cin >> ensayo;\n    if (!ensayo.empty() && ensayo != \"separados\" && ensayo != \"compartido\") { return 1; }\n\n    if (ensayo.empty() || ensayo == \"separados\") {\n        std::vector<int> entrada{2, 5};\n        std::vector<int> destino{9};\n        const int separados = registrar_y_medir(entrada, destino);\n\n        std::cout << \"Separados=\" << separados << \";Entrada=\" << entrada.size()\n                  << \";Actual=\" << destino.size() << '\\n';\n    }\n\n    if (ensayo.empty() || ensayo == \"compartido\") {\n        std::vector<int> compartido{2, 5};\n        const int juntos = registrar_y_medir(compartido, compartido);\n\n        std::cout << \"Compartido=\" << juntos << \";Actual=\" << compartido.size() << '\\n';\n    }\n\n    return 0;\n}\n",
           "initialStandardInput": "",
           "outputCheck": {
             "inputComparison": "exact",
             "cases": [
+              {
+                "standardInput": "compartido",
+                "outputs": [
+                  "Compartido=2;Actual=3\n"
+                ],
+                "exitCode": 0
+              },
+              {
+                "standardInput": "separados",
+                "outputs": [
+                  "Separados=2;Entrada=2;Actual=2\n"
+                ],
+                "exitCode": 0
+              },
               {
                 "standardInput": "",
                 "outputs": [
@@ -153,11 +171,25 @@
         {
           "type": "cpp_compiler",
           "language": "cpp",
-          "initialCode": "#include <iostream>\n#include <vector>\n\nint registrar_y_medir(std::vector<int> antes, std::vector<int>& actual) {\n    actual.push_back(7);\n    return static_cast<int>(antes.size());\n}\n\nint main() {\n    std::vector<int> entrada{2, 5};\n    std::vector<int> destino{9};\n    const int separados = registrar_y_medir(entrada, destino);\n\n    std::cout << \"Separados=\" << separados << \";Entrada=\" << entrada.size()\n              << \";Actual=\" << destino.size() << '\\n';\n\n    std::vector<int> compartido{2, 5};\n    const int juntos = registrar_y_medir(compartido, compartido);\n\n    std::cout << \"Compartido=\" << juntos << \";Actual=\" << compartido.size() << '\\n';\n\n    return 0;\n}\n",
+          "initialCode": "#include <iostream>\n#include <string>\n#include <vector>\n\nint registrar_y_medir(std::vector<int> antes, std::vector<int>& actual) {\n    actual.push_back(7);\n    return static_cast<int>(antes.size());\n}\n\nint main() {\n    std::string ensayo;\n    std::cin >> ensayo;\n    if (!ensayo.empty() && ensayo != \"separados\" && ensayo != \"compartido\") { return 1; }\n\n    if (ensayo.empty() || ensayo == \"separados\") {\n        std::vector<int> entrada{2, 5};\n        std::vector<int> destino{9};\n        const int separados = registrar_y_medir(entrada, destino);\n\n        std::cout << \"Separados=\" << separados << \";Entrada=\" << entrada.size()\n                  << \";Actual=\" << destino.size() << '\\n';\n    }\n\n    if (ensayo.empty() || ensayo == \"compartido\") {\n        std::vector<int> compartido{2, 5};\n        const int juntos = registrar_y_medir(compartido, compartido);\n\n        std::cout << \"Compartido=\" << juntos << \";Actual=\" << compartido.size() << '\\n';\n    }\n\n    return 0;\n}\n",
           "initialStandardInput": "",
           "outputCheck": {
             "inputComparison": "exact",
             "cases": [
+              {
+                "standardInput": "compartido",
+                "outputs": [
+                  "Compartido=3;Actual=3\n"
+                ],
+                "exitCode": 0
+              },
+              {
+                "standardInput": "separados",
+                "outputs": [
+                  "Separados=2;Entrada=2;Actual=2\n"
+                ],
+                "exitCode": 0
+              },
               {
                 "standardInput": "",
                 "outputs": [
@@ -261,6 +293,10 @@
           "text": "Ahora comprobarás el mismo cambio cuando el vector compartido comienza vacío. Las dos versiones siguientes conservan las llamadas con objetos distintos y con el mismo objeto en ambas posiciones. También mantienen el límite de tres elementos al entrar.\n\nPara cada versión hay una predicción y un editor propios. Responde primero la predicción y ejecuta después ese mismo programa sin modificarlo. Compara el dato devuelto por la función con el tamaño que conserva el vector al finalizar la llamada; son observaciones diferentes."
         },
         {
+          "type": "paragraph",
+          "text": "En los dos editores de esta página, escribe compartido en Entrada para comprobar la llamada con el vector vacío. Puedes escribir separados para ensayar la otra llamada. Con Entrada vacía, cada editor muestra las dos líneas que pide su predicción."
+        },
+        {
           "type": "note",
           "text": "Incorporar conocimiento a tu trabajo requiere poder volver a justificarlo. Elegir una pregunta concreta, consultar información pertinente y revisar su alcance puede ocurrir en varios recorridos, con vueltas entre lectura y código. El propósito es mejorar lo que comprendes y puedes aplicar, sin convertir ese trabajo en una lista de lecturas o de pasos cumplidos."
         },
@@ -287,11 +323,25 @@
         {
           "type": "cpp_compiler",
           "language": "cpp",
-          "initialCode": "#include <iostream>\n#include <vector>\n\nint registrar_y_medir(std::vector<int> antes, std::vector<int>& actual) {\n    actual.push_back(7);\n    return static_cast<int>(antes.size());\n}\n\nint main() {\n    std::vector<int> entrada{2, 5};\n    std::vector<int> destino{9};\n    const int separados = registrar_y_medir(entrada, destino);\n\n    std::cout << \"Separados=\" << separados << \";Entrada=\" << entrada.size()\n              << \";Actual=\" << destino.size() << '\\n';\n\n    std::vector<int> compartido{};\n    const int juntos = registrar_y_medir(compartido, compartido);\n\n    std::cout << \"Compartido=\" << juntos << \";Actual=\" << compartido.size() << '\\n';\n\n    return 0;\n}\n",
+          "initialCode": "#include <iostream>\n#include <string>\n#include <vector>\n\nint registrar_y_medir(std::vector<int> antes, std::vector<int>& actual) {\n    actual.push_back(7);\n    return static_cast<int>(antes.size());\n}\n\nint main() {\n    std::string ensayo;\n    std::cin >> ensayo;\n    if (!ensayo.empty() && ensayo != \"separados\" && ensayo != \"compartido\") { return 1; }\n\n    if (ensayo.empty() || ensayo == \"separados\") {\n        std::vector<int> entrada{2, 5};\n        std::vector<int> destino{9};\n        const int separados = registrar_y_medir(entrada, destino);\n\n        std::cout << \"Separados=\" << separados << \";Entrada=\" << entrada.size()\n                  << \";Actual=\" << destino.size() << '\\n';\n    }\n\n    if (ensayo.empty() || ensayo == \"compartido\") {\n        std::vector<int> compartido{};\n        const int juntos = registrar_y_medir(compartido, compartido);\n\n        std::cout << \"Compartido=\" << juntos << \";Actual=\" << compartido.size() << '\\n';\n    }\n\n    return 0;\n}\n",
           "initialStandardInput": "",
           "outputCheck": {
             "inputComparison": "exact",
             "cases": [
+              {
+                "standardInput": "compartido",
+                "outputs": [
+                  "Compartido=0;Actual=1\n"
+                ],
+                "exitCode": 0
+              },
+              {
+                "standardInput": "separados",
+                "outputs": [
+                  "Separados=2;Entrada=2;Actual=2\n"
+                ],
+                "exitCode": 0
+              },
               {
                 "standardInput": "",
                 "outputs": [
@@ -325,11 +375,25 @@
         {
           "type": "cpp_compiler",
           "language": "cpp",
-          "initialCode": "#include <iostream>\n#include <vector>\n\nint registrar_y_medir(const std::vector<int>& antes, std::vector<int>& actual) {\n    actual.push_back(7);\n    return static_cast<int>(antes.size());\n}\n\nint main() {\n    std::vector<int> entrada{2, 5};\n    std::vector<int> destino{9};\n    const int separados = registrar_y_medir(entrada, destino);\n\n    std::cout << \"Separados=\" << separados << \";Entrada=\" << entrada.size()\n              << \";Actual=\" << destino.size() << '\\n';\n\n    std::vector<int> compartido{};\n    const int juntos = registrar_y_medir(compartido, compartido);\n\n    std::cout << \"Compartido=\" << juntos << \";Actual=\" << compartido.size() << '\\n';\n\n    return 0;\n}\n",
+          "initialCode": "#include <iostream>\n#include <string>\n#include <vector>\n\nint registrar_y_medir(const std::vector<int>& antes, std::vector<int>& actual) {\n    actual.push_back(7);\n    return static_cast<int>(antes.size());\n}\n\nint main() {\n    std::string ensayo;\n    std::cin >> ensayo;\n    if (!ensayo.empty() && ensayo != \"separados\" && ensayo != \"compartido\") { return 1; }\n\n    if (ensayo.empty() || ensayo == \"separados\") {\n        std::vector<int> entrada{2, 5};\n        std::vector<int> destino{9};\n        const int separados = registrar_y_medir(entrada, destino);\n\n        std::cout << \"Separados=\" << separados << \";Entrada=\" << entrada.size()\n                  << \";Actual=\" << destino.size() << '\\n';\n    }\n\n    if (ensayo.empty() || ensayo == \"compartido\") {\n        std::vector<int> compartido{};\n        const int juntos = registrar_y_medir(compartido, compartido);\n\n        std::cout << \"Compartido=\" << juntos << \";Actual=\" << compartido.size() << '\\n';\n    }\n\n    return 0;\n}\n",
           "initialStandardInput": "",
           "outputCheck": {
             "inputComparison": "exact",
             "cases": [
+              {
+                "standardInput": "compartido",
+                "outputs": [
+                  "Compartido=1;Actual=1\n"
+                ],
+                "exitCode": 0
+              },
+              {
+                "standardInput": "separados",
+                "outputs": [
+                  "Separados=2;Entrada=2;Actual=2\n"
+                ],
+                "exitCode": 0
+              },
               {
                 "standardInput": "",
                 "outputs": [
@@ -570,6 +634,7 @@
           "block_0002_0000",
           "block_0002_0001",
           "block_0002_0002",
+          "recomendacion_ensayos_de_entrada",
           "block_0002_0003",
           "block_0002_0004",
           "block_0002_0005",
@@ -603,6 +668,7 @@
           "block_0005_0000",
           "block_0005_0001",
           "block_0005_0002",
+          "recomendacion_vacio_ensayos_de_entrada",
           "block_0005_0003",
           "block_0005_0004",
           "block_0005_0005",
@@ -1126,7 +1192,26 @@
         ]
       }
     },
-    "additions": [],
+    "additions": [
+      {
+        "id": "recomendacion_ensayos_de_entrada",
+        "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5",
+        "storage": {
+          "page": 900000,
+          "block": 0
+        },
+        "progressPage": "page_0002"
+      },
+      {
+        "id": "recomendacion_vacio_ensayos_de_entrada",
+        "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5",
+        "storage": {
+          "page": 900001,
+          "block": 0
+        },
+        "progressPage": "page_0005"
+      }
+    ],
     "editorial": [
       {
         "id": "block_0000_0001",
@@ -1282,6 +1367,26 @@
         "id": "block_0005_0011",
         "beforeSha256": "26eafedc29db57d56b60f1fe836d1f12f7d4424ef55ab7177092221b3be809ed",
         "afterSha256": "1f3e2545abb3e5986f9980035009f7b2dcc9715f01dc6e4eb03c933a65a16644"
+      },
+      {
+        "id": "block_0002_0003",
+        "beforeSha256": "bc041f1930aca8297568554eb43c3a7226641cd251da4839aa40fbee506a6e9e",
+        "afterSha256": "32129cdd1a5fd3ad9944ecb305099bedc6e05528aa08236025ea063b817240fa"
+      },
+      {
+        "id": "block_0002_0007",
+        "beforeSha256": "dded51859f2d9eac91a9a8f3768a9a9e6c199ff25700eba86f7160b1712a1846",
+        "afterSha256": "09b165043841d9d7e9bf08135ebb3fcd8fbbd896c7e7e7bbffbc42948fb374c5"
+      },
+      {
+        "id": "block_0005_0007",
+        "beforeSha256": "de44134c829dfe83844e6dfe520901429ccfbbc9d0af872f402197bd5443366b",
+        "afterSha256": "cbb6bc38b6a9ab37c61ba855258e9a84a3f40e1574915d2d49b243d17ad15af5"
+      },
+      {
+        "id": "block_0005_0011",
+        "beforeSha256": "1f3e2545abb3e5986f9980035009f7b2dcc9715f01dc6e4eb03c933a65a16644",
+        "afterSha256": "53424d6dd77c1e3a1c5c874d3e4849f68999aba42879244a39315e03cb15dcb3"
       }
     ],
     "sourceFormatRevisions": [
@@ -1435,6 +1540,386 @@
               }
             ]
           }
+        }
+      }
+    ],
+    "compilerCaseRevisions": [
+      {
+        "id": "block_0002_0003",
+        "block": {
+          "type": "cpp_compiler",
+          "language": "cpp",
+          "initialCode": "#include <iostream>\n#include <vector>\n\nint registrar_y_medir(std::vector<int> antes, std::vector<int>& actual) {\n    actual.push_back(7);\n    return static_cast<int>(antes.size());\n}\n\nint main() {\n    std::vector<int> entrada{2, 5};\n    std::vector<int> destino{9};\n    const int separados = registrar_y_medir(entrada, destino);\n\n    std::cout << \"Separados=\" << separados << \";Entrada=\" << entrada.size()\n              << \";Actual=\" << destino.size() << '\\n';\n\n    std::vector<int> compartido{2, 5};\n    const int juntos = registrar_y_medir(compartido, compartido);\n\n    std::cout << \"Compartido=\" << juntos << \";Actual=\" << compartido.size() << '\\n';\n\n    return 0;\n}\n",
+          "initialStandardInput": "",
+          "outputCheck": {
+            "inputComparison": "exact",
+            "cases": [
+              {
+                "standardInput": "",
+                "outputs": [
+                  "Separados=2;Entrada=2;Actual=2\nCompartido=2;Actual=3\n"
+                ],
+                "explanation": "La copia conserva dos elementos; el vector compartido original pasa a tres. El retorno 0 describe la terminación y no compara por sí mismo los dos estados."
+              }
+            ]
+          }
+        },
+        "cases": [
+          {
+            "standardInput": "compartido",
+            "outputs": [
+              "Compartido=2;Actual=3\n"
+            ],
+            "exitCode": 0
+          },
+          {
+            "standardInput": "separados",
+            "outputs": [
+              "Separados=2;Entrada=2;Actual=2\n"
+            ],
+            "exitCode": 0
+          },
+          {
+            "standardInput": "",
+            "outputs": [
+              "Separados=2;Entrada=2;Actual=2\nCompartido=2;Actual=3\n"
+            ],
+            "explanation": "La copia conserva dos elementos; el vector compartido original pasa a tres. El retorno 0 describe la terminación y no compara por sí mismo los dos estados."
+          }
+        ],
+        "editorialIndex": 31,
+        "historySha256": "b3c32a2bf0086fed3e727f0feead6de5ac98d4ab8629499a1a6b4d9b362ae1c3",
+        "semanticBefore": [
+          {
+            "block": "block_0002_0003",
+            "path": "/outputCheck/cases/0/explanation",
+            "sourceSha256": "0128c6c6f91b8d08700dfe4637106bc520b1e55acce4a6055145d65756bcc6e5",
+            "spans": [
+              {
+                "start": 18,
+                "end": 21,
+                "text": "dos",
+                "role": "output",
+                "reading": "natural"
+              },
+              {
+                "start": 70,
+                "end": 74,
+                "text": "tres",
+                "role": "output",
+                "reading": "natural"
+              },
+              {
+                "start": 87,
+                "end": 88,
+                "text": "0",
+                "role": "output",
+                "reading": "natural"
+              }
+            ]
+          }
+        ],
+        "semanticAfter": [
+          {
+            "block": "block_0002_0003",
+            "path": "/outputCheck/cases/2/explanation",
+            "sourceSha256": "0128c6c6f91b8d08700dfe4637106bc520b1e55acce4a6055145d65756bcc6e5",
+            "spans": [
+              {
+                "start": 18,
+                "end": 21,
+                "text": "dos",
+                "role": "output",
+                "reading": "natural"
+              },
+              {
+                "start": 70,
+                "end": 74,
+                "text": "tres",
+                "role": "output",
+                "reading": "natural"
+              },
+              {
+                "start": 87,
+                "end": 88,
+                "text": "0",
+                "role": "output",
+                "reading": "natural"
+              }
+            ]
+          }
+        ],
+        "client": {
+          "path": "main.cpp",
+          "source": "#include <iostream>\n#include <string>\n#include <vector>\n\nint registrar_y_medir(std::vector<int> antes, std::vector<int>& actual) {\n    actual.push_back(7);\n    return static_cast<int>(antes.size());\n}\n\nint main() {\n    std::string ensayo;\n    std::cin >> ensayo;\n    if (!ensayo.empty() && ensayo != \"separados\" && ensayo != \"compartido\") { return 1; }\n\n    if (ensayo.empty() || ensayo == \"separados\") {\n        std::vector<int> entrada{2, 5};\n        std::vector<int> destino{9};\n        const int separados = registrar_y_medir(entrada, destino);\n\n        std::cout << \"Separados=\" << separados << \";Entrada=\" << entrada.size()\n                  << \";Actual=\" << destino.size() << '\\n';\n    }\n\n    if (ensayo.empty() || ensayo == \"compartido\") {\n        std::vector<int> compartido{2, 5};\n        const int juntos = registrar_y_medir(compartido, compartido);\n\n        std::cout << \"Compartido=\" << juntos << \";Actual=\" << compartido.size() << '\\n';\n    }\n\n    return 0;\n}\n"
+        }
+      },
+      {
+        "id": "block_0002_0007",
+        "block": {
+          "type": "cpp_compiler",
+          "language": "cpp",
+          "initialCode": "#include <iostream>\n#include <vector>\n\nint registrar_y_medir(std::vector<int> antes, std::vector<int>& actual) {\n    actual.push_back(7);\n    return static_cast<int>(antes.size());\n}\n\nint main() {\n    std::vector<int> entrada{2, 5};\n    std::vector<int> destino{9};\n    const int separados = registrar_y_medir(entrada, destino);\n\n    std::cout << \"Separados=\" << separados << \";Entrada=\" << entrada.size()\n              << \";Actual=\" << destino.size() << '\\n';\n\n    std::vector<int> compartido{2, 5};\n    const int juntos = registrar_y_medir(compartido, compartido);\n\n    std::cout << \"Compartido=\" << juntos << \";Actual=\" << compartido.size() << '\\n';\n\n    return 0;\n}\n",
+          "initialStandardInput": "",
+          "outputCheck": {
+            "inputComparison": "exact",
+            "cases": [
+              {
+                "standardInput": "",
+                "outputs": [
+                  "Separados=2;Entrada=2;Actual=2\nCompartido=3;Actual=3\n"
+                ],
+                "explanation": "Con argumentos distintos se conserva el resultado anterior. Al compartir el mismo objeto, la consulta por referencia observa los tres elementos después de push_back; const no impide el cambio por el otro parámetro."
+              }
+            ]
+          }
+        },
+        "cases": [
+          {
+            "standardInput": "compartido",
+            "outputs": [
+              "Compartido=3;Actual=3\n"
+            ],
+            "exitCode": 0
+          },
+          {
+            "standardInput": "separados",
+            "outputs": [
+              "Separados=2;Entrada=2;Actual=2\n"
+            ],
+            "exitCode": 0
+          },
+          {
+            "standardInput": "",
+            "outputs": [
+              "Separados=2;Entrada=2;Actual=2\nCompartido=3;Actual=3\n"
+            ],
+            "explanation": "Con argumentos distintos se conserva el resultado anterior. Al compartir el mismo objeto, la consulta por referencia observa los tres elementos después de push_back; const no impide el cambio por el otro parámetro."
+          }
+        ],
+        "editorialIndex": 32,
+        "historySha256": "c1512676611387c75217278244ad920acb8688f7934b4ebbd70784cc875d121c",
+        "semanticBefore": [
+          {
+            "block": "block_0002_0007",
+            "path": "/outputCheck/cases/0/explanation",
+            "sourceSha256": "6eace7d7ad8e96228019384d2c45855c1ff96b87e1c488ace5657a49a3a31fd3",
+            "spans": [
+              {
+                "start": 129,
+                "end": 133,
+                "text": "tres",
+                "role": "output",
+                "reading": "natural"
+              },
+              {
+                "start": 155,
+                "end": 164,
+                "text": "push_back",
+                "role": "cpp"
+              },
+              {
+                "start": 166,
+                "end": 171,
+                "text": "const",
+                "role": "cpp"
+              }
+            ]
+          }
+        ],
+        "semanticAfter": [
+          {
+            "block": "block_0002_0007",
+            "path": "/outputCheck/cases/2/explanation",
+            "sourceSha256": "6eace7d7ad8e96228019384d2c45855c1ff96b87e1c488ace5657a49a3a31fd3",
+            "spans": [
+              {
+                "start": 129,
+                "end": 133,
+                "text": "tres",
+                "role": "output",
+                "reading": "natural"
+              },
+              {
+                "start": 155,
+                "end": 164,
+                "text": "push_back",
+                "role": "cpp"
+              },
+              {
+                "start": 166,
+                "end": 171,
+                "text": "const",
+                "role": "cpp"
+              }
+            ]
+          }
+        ],
+        "client": {
+          "path": "main.cpp",
+          "source": "#include <iostream>\n#include <string>\n#include <vector>\n\nint registrar_y_medir(std::vector<int> antes, std::vector<int>& actual) {\n    actual.push_back(7);\n    return static_cast<int>(antes.size());\n}\n\nint main() {\n    std::string ensayo;\n    std::cin >> ensayo;\n    if (!ensayo.empty() && ensayo != \"separados\" && ensayo != \"compartido\") { return 1; }\n\n    if (ensayo.empty() || ensayo == \"separados\") {\n        std::vector<int> entrada{2, 5};\n        std::vector<int> destino{9};\n        const int separados = registrar_y_medir(entrada, destino);\n\n        std::cout << \"Separados=\" << separados << \";Entrada=\" << entrada.size()\n                  << \";Actual=\" << destino.size() << '\\n';\n    }\n\n    if (ensayo.empty() || ensayo == \"compartido\") {\n        std::vector<int> compartido{2, 5};\n        const int juntos = registrar_y_medir(compartido, compartido);\n\n        std::cout << \"Compartido=\" << juntos << \";Actual=\" << compartido.size() << '\\n';\n    }\n\n    return 0;\n}\n"
+        }
+      },
+      {
+        "id": "block_0005_0007",
+        "block": {
+          "type": "cpp_compiler",
+          "language": "cpp",
+          "initialCode": "#include <iostream>\n#include <vector>\n\nint registrar_y_medir(std::vector<int> antes, std::vector<int>& actual) {\n    actual.push_back(7);\n    return static_cast<int>(antes.size());\n}\n\nint main() {\n    std::vector<int> entrada{2, 5};\n    std::vector<int> destino{9};\n    const int separados = registrar_y_medir(entrada, destino);\n\n    std::cout << \"Separados=\" << separados << \";Entrada=\" << entrada.size()\n              << \";Actual=\" << destino.size() << '\\n';\n\n    std::vector<int> compartido{};\n    const int juntos = registrar_y_medir(compartido, compartido);\n\n    std::cout << \"Compartido=\" << juntos << \";Actual=\" << compartido.size() << '\\n';\n\n    return 0;\n}\n",
+          "initialStandardInput": "",
+          "outputCheck": {
+            "inputComparison": "exact",
+            "cases": [
+              {
+                "standardInput": "",
+                "outputs": [
+                  "Separados=2;Entrada=2;Actual=2\nCompartido=0;Actual=1\n"
+                ],
+                "explanation": "La copia del vector vacío tiene tamaño cero. El argumento original recibe el elemento y termina con tamaño uno."
+              }
+            ]
+          }
+        },
+        "cases": [
+          {
+            "standardInput": "compartido",
+            "outputs": [
+              "Compartido=0;Actual=1\n"
+            ],
+            "exitCode": 0
+          },
+          {
+            "standardInput": "separados",
+            "outputs": [
+              "Separados=2;Entrada=2;Actual=2\n"
+            ],
+            "exitCode": 0
+          },
+          {
+            "standardInput": "",
+            "outputs": [
+              "Separados=2;Entrada=2;Actual=2\nCompartido=0;Actual=1\n"
+            ],
+            "explanation": "La copia del vector vacío tiene tamaño cero. El argumento original recibe el elemento y termina con tamaño uno."
+          }
+        ],
+        "editorialIndex": 33,
+        "historySha256": "db6be948234ea97dc141cc02d2e182b9f5a00e7521249ffa3df93452f878c3f2",
+        "semanticBefore": [
+          {
+            "block": "block_0005_0007",
+            "path": "/outputCheck/cases/0/explanation",
+            "sourceSha256": "07c88a0dadddb3191cc9729ce9f79c52cb83e0e87ad1c8e10fa95d39709039e9",
+            "spans": [
+              {
+                "start": 39,
+                "end": 43,
+                "text": "cero",
+                "role": "output",
+                "reading": "natural"
+              },
+              {
+                "start": 107,
+                "end": 110,
+                "text": "uno",
+                "role": "output",
+                "reading": "natural"
+              }
+            ]
+          }
+        ],
+        "semanticAfter": [
+          {
+            "block": "block_0005_0007",
+            "path": "/outputCheck/cases/2/explanation",
+            "sourceSha256": "07c88a0dadddb3191cc9729ce9f79c52cb83e0e87ad1c8e10fa95d39709039e9",
+            "spans": [
+              {
+                "start": 39,
+                "end": 43,
+                "text": "cero",
+                "role": "output",
+                "reading": "natural"
+              },
+              {
+                "start": 107,
+                "end": 110,
+                "text": "uno",
+                "role": "output",
+                "reading": "natural"
+              }
+            ]
+          }
+        ],
+        "client": {
+          "path": "main.cpp",
+          "source": "#include <iostream>\n#include <string>\n#include <vector>\n\nint registrar_y_medir(std::vector<int> antes, std::vector<int>& actual) {\n    actual.push_back(7);\n    return static_cast<int>(antes.size());\n}\n\nint main() {\n    std::string ensayo;\n    std::cin >> ensayo;\n    if (!ensayo.empty() && ensayo != \"separados\" && ensayo != \"compartido\") { return 1; }\n\n    if (ensayo.empty() || ensayo == \"separados\") {\n        std::vector<int> entrada{2, 5};\n        std::vector<int> destino{9};\n        const int separados = registrar_y_medir(entrada, destino);\n\n        std::cout << \"Separados=\" << separados << \";Entrada=\" << entrada.size()\n                  << \";Actual=\" << destino.size() << '\\n';\n    }\n\n    if (ensayo.empty() || ensayo == \"compartido\") {\n        std::vector<int> compartido{};\n        const int juntos = registrar_y_medir(compartido, compartido);\n\n        std::cout << \"Compartido=\" << juntos << \";Actual=\" << compartido.size() << '\\n';\n    }\n\n    return 0;\n}\n"
+        }
+      },
+      {
+        "id": "block_0005_0011",
+        "block": {
+          "type": "cpp_compiler",
+          "language": "cpp",
+          "initialCode": "#include <iostream>\n#include <vector>\n\nint registrar_y_medir(const std::vector<int>& antes, std::vector<int>& actual) {\n    actual.push_back(7);\n    return static_cast<int>(antes.size());\n}\n\nint main() {\n    std::vector<int> entrada{2, 5};\n    std::vector<int> destino{9};\n    const int separados = registrar_y_medir(entrada, destino);\n\n    std::cout << \"Separados=\" << separados << \";Entrada=\" << entrada.size()\n              << \";Actual=\" << destino.size() << '\\n';\n\n    std::vector<int> compartido{};\n    const int juntos = registrar_y_medir(compartido, compartido);\n\n    std::cout << \"Compartido=\" << juntos << \";Actual=\" << compartido.size() << '\\n';\n\n    return 0;\n}\n",
+          "initialStandardInput": "",
+          "outputCheck": {
+            "inputComparison": "exact",
+            "cases": [
+              {
+                "standardInput": "",
+                "outputs": [
+                  "Separados=2;Entrada=2;Actual=2\nCompartido=1;Actual=1\n"
+                ],
+                "explanation": "La referencia observa el vector compartido después de añadirle un elemento. El estado final coincide con el experimento por valor, pero el tamaño devuelto difiere."
+              }
+            ]
+          }
+        },
+        "cases": [
+          {
+            "standardInput": "compartido",
+            "outputs": [
+              "Compartido=1;Actual=1\n"
+            ],
+            "exitCode": 0
+          },
+          {
+            "standardInput": "separados",
+            "outputs": [
+              "Separados=2;Entrada=2;Actual=2\n"
+            ],
+            "exitCode": 0
+          },
+          {
+            "standardInput": "",
+            "outputs": [
+              "Separados=2;Entrada=2;Actual=2\nCompartido=1;Actual=1\n"
+            ],
+            "explanation": "La referencia observa el vector compartido después de añadirle un elemento. El estado final coincide con el experimento por valor, pero el tamaño devuelto difiere."
+          }
+        ],
+        "editorialIndex": 34,
+        "historySha256": "7d745dc69f4bbea42e095915021b936c761612c813a8ea07ed029046c1efcc94",
+        "semanticBefore": [
+          {
+            "block": "block_0005_0011",
+            "path": "/outputCheck/cases/0/explanation",
+            "sourceSha256": "a05e2829db62fb813dfb7038c71a8715c014a49068aa04239d4efab8de7352d4",
+            "spans": []
+          }
+        ],
+        "semanticAfter": [
+          {
+            "block": "block_0005_0011",
+            "path": "/outputCheck/cases/2/explanation",
+            "sourceSha256": "a05e2829db62fb813dfb7038c71a8715c014a49068aa04239d4efab8de7352d4",
+            "spans": []
+          }
+        ],
+        "client": {
+          "path": "main.cpp",
+          "source": "#include <iostream>\n#include <string>\n#include <vector>\n\nint registrar_y_medir(const std::vector<int>& antes, std::vector<int>& actual) {\n    actual.push_back(7);\n    return static_cast<int>(antes.size());\n}\n\nint main() {\n    std::string ensayo;\n    std::cin >> ensayo;\n    if (!ensayo.empty() && ensayo != \"separados\" && ensayo != \"compartido\") { return 1; }\n\n    if (ensayo.empty() || ensayo == \"separados\") {\n        std::vector<int> entrada{2, 5};\n        std::vector<int> destino{9};\n        const int separados = registrar_y_medir(entrada, destino);\n\n        std::cout << \"Separados=\" << separados << \";Entrada=\" << entrada.size()\n                  << \";Actual=\" << destino.size() << '\\n';\n    }\n\n    if (ensayo.empty() || ensayo == \"compartido\") {\n        std::vector<int> compartido{};\n        const int juntos = registrar_y_medir(compartido, compartido);\n\n        std::cout << \"Compartido=\" << juntos << \";Actual=\" << compartido.size() << '\\n';\n    }\n\n    return 0;\n}\n"
         }
       }
     ]
@@ -1795,7 +2280,7 @@
       },
       {
         "block": "block_0002_0003",
-        "path": "/outputCheck/cases/0/explanation",
+        "path": "/outputCheck/cases/2/explanation",
         "sourceSha256": "0128c6c6f91b8d08700dfe4637106bc520b1e55acce4a6055145d65756bcc6e5",
         "spans": [
           {
@@ -1890,7 +2375,7 @@
       },
       {
         "block": "block_0002_0007",
-        "path": "/outputCheck/cases/0/explanation",
+        "path": "/outputCheck/cases/2/explanation",
         "sourceSha256": "6eace7d7ad8e96228019384d2c45855c1ff96b87e1c488ace5657a49a3a31fd3",
         "spans": [
           {
@@ -2345,7 +2830,7 @@
       },
       {
         "block": "block_0005_0007",
-        "path": "/outputCheck/cases/0/explanation",
+        "path": "/outputCheck/cases/2/explanation",
         "sourceSha256": "07c88a0dadddb3191cc9729ce9f79c52cb83e0e87ad1c8e10fa95d39709039e9",
         "spans": [
           {
@@ -2445,7 +2930,7 @@
       },
       {
         "block": "block_0005_0011",
-        "path": "/outputCheck/cases/0/explanation",
+        "path": "/outputCheck/cases/2/explanation",
         "sourceSha256": "a05e2829db62fb813dfb7038c71a8715c014a49068aa04239d4efab8de7352d4",
         "spans": []
       }

@@ -228,12 +228,37 @@
           "text": "El siguiente editor proporciona un comprobador completo. En esta actividad repararás únicamente la comparación de `debe_reponer` para que incluya la igualdad, como exige el requisito.\n\nConserva los datos, los esperados y las tres llamadas del comprobador. Al utilizar «Compilar, ejecutar y comprobar», contrasta lo que hace la función reparada con esos esperados. Si coinciden las tres respuestas, no aparecerán mensajes de discrepancia y el programa terminará con código cero.\n\nEste editor tiene su propia fuente. Cambiarlo no modifica el comprobador que construiste en la actividad anterior. Distingue la construcción de una prueba, que era su objetivo, de la reparación de la función, que es el objetivo de este editor."
         },
         {
+          "type": "paragraph",
+          "text": "Escribe 5 en Entrada para comprobar cinco disponibles con mínimo cinco. El comprobador debe terminar con código cero y sin mensajes de discrepancia. Puedes probar 4 y 6 por separado. Con Entrada vacía, el programa ejecuta las tres comparaciones que describe la consigna."
+        },
+        {
           "type": "cpp_compiler",
           "language": "cpp",
-          "initialCode": "#include <iostream>\n\nbool debe_reponer(int disponibles, int minimo) {\n    return disponibles < minimo;  // Corrige solo esta comparacion para cumplir el requisito.\n}\n\nbool comprobar(int disponibles, int minimo, bool esperado) {\n    const bool obtenido{debe_reponer(disponibles, minimo)};\n    if (obtenido == esperado) { return true; }\n    std::cout << \"Fallo: \" << disponibles << \",\" << minimo\n              << \" esperado=\" << esperado << \" obtenido=\" << obtenido << \"\\n\";\n    return false;\n}\n\nint main() {\n    bool correcto{true};\n    if (!comprobar(4, 5, true)) { correcto = false; }\n    if (!comprobar(5, 5, true)) { correcto = false; }\n    if (!comprobar(6, 5, false)) { correcto = false; }\n    if (!correcto) { return 1; }\n    return 0;\n}\n",
+          "initialCode": "#include <iostream>\n\nbool debe_reponer(int disponibles, int minimo) {\n    return disponibles < minimo;  // Corrige solo esta comparacion para cumplir el requisito.\n}\n\nbool comprobar(int disponibles, int minimo, bool esperado) {\n    const bool obtenido{debe_reponer(disponibles, minimo)};\n    if (obtenido == esperado) { return true; }\n    std::cout << \"Fallo: \" << disponibles << \",\" << minimo\n              << \" esperado=\" << esperado << \" obtenido=\" << obtenido << \"\\n\";\n    return false;\n}\n\nint main() {\n    int caso{};\n    if (std::cin >> caso) {\n        if (caso != 4 && caso != 5 && caso != 6) { return 1; }\n    } else if (!std::cin.eof()) {\n        return 1;\n    }\n\n    bool correcto{true};\n    if ((caso == 0 || caso == 4) && !comprobar(4, 5, true)) { correcto = false; }\n    if ((caso == 0 || caso == 5) && !comprobar(5, 5, true)) { correcto = false; }\n    if ((caso == 0 || caso == 6) && !comprobar(6, 5, false)) { correcto = false; }\n    if (!correcto) { return 1; }\n    return 0;\n}\n",
           "outputCheck": {
             "inputComparison": "exact",
             "cases": [
+              {
+                "standardInput": "5",
+                "outputs": [
+                  ""
+                ],
+                "exitCode": 0
+              },
+              {
+                "standardInput": "4",
+                "outputs": [
+                  ""
+                ],
+                "exitCode": 0
+              },
+              {
+                "standardInput": "6",
+                "outputs": [
+                  ""
+                ],
+                "exitCode": 0
+              },
               {
                 "standardInput": "",
                 "outputs": [
@@ -554,6 +579,7 @@
           "block_0004_0005",
           "block_0004_0006",
           "block_0004_0007",
+          "reparacion_reposicion_ensayos_de_entrada",
           "block_0004_0008"
         ]
       },
@@ -1112,7 +1138,17 @@
         ]
       }
     },
-    "additions": [],
+    "additions": [
+      {
+        "id": "reparacion_reposicion_ensayos_de_entrada",
+        "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5",
+        "storage": {
+          "page": 900000,
+          "block": 0
+        },
+        "progressPage": "page_0004"
+      }
+    ],
     "editorial": [
       {
         "id": "block_0004_0003",
@@ -1218,6 +1254,115 @@
         "id": "block_0005_0008",
         "beforeSha256": "9c30865040352431c8b6b3b59b500a0f012daf2f31fb533f41a075de400bd0ab",
         "afterSha256": "2740c00cb01d9746300be4cd285ec70d31119c4c61a6e4af56f3114e0d594f57"
+      },
+      {
+        "id": "block_0004_0008",
+        "beforeSha256": "b50c47847c9bb8a6e8995a06d587813799fc7ad6f0130cba4f0bedc46ff7b188",
+        "afterSha256": "ccb68d2c2111fa3e879662ff8280350bac59c89a6da505328bad1ec202cf30a6"
+      }
+    ],
+    "compilerCaseRevisions": [
+      {
+        "id": "block_0004_0008",
+        "block": {
+          "type": "cpp_compiler",
+          "language": "cpp",
+          "initialCode": "#include <iostream>\n\nbool debe_reponer(int disponibles, int minimo) {\n    return disponibles < minimo;  // Corrige solo esta comparacion para cumplir el requisito.\n}\n\nbool comprobar(int disponibles, int minimo, bool esperado) {\n    const bool obtenido{debe_reponer(disponibles, minimo)};\n    if (obtenido == esperado) { return true; }\n    std::cout << \"Fallo: \" << disponibles << \",\" << minimo\n              << \" esperado=\" << esperado << \" obtenido=\" << obtenido << \"\\n\";\n    return false;\n}\n\nint main() {\n    bool correcto{true};\n    if (!comprobar(4, 5, true)) { correcto = false; }\n    if (!comprobar(5, 5, true)) { correcto = false; }\n    if (!comprobar(6, 5, false)) { correcto = false; }\n    if (!correcto) { return 1; }\n    return 0;\n}\n",
+          "outputCheck": {
+            "inputComparison": "exact",
+            "cases": [
+              {
+                "standardInput": "",
+                "outputs": [
+                  ""
+                ],
+                "explanation": "Las tres comparaciones conservadas coinciden y no producen diagnósticos de discrepancia. La salida vacía se comprueba después de una ejecución terminada con cero; un fallo de construcción o ejecución no se trata como respuesta incorrecta."
+              }
+            ]
+          }
+        },
+        "cases": [
+          {
+            "standardInput": "5",
+            "outputs": [
+              ""
+            ],
+            "exitCode": 0
+          },
+          {
+            "standardInput": "4",
+            "outputs": [
+              ""
+            ],
+            "exitCode": 0
+          },
+          {
+            "standardInput": "6",
+            "outputs": [
+              ""
+            ],
+            "exitCode": 0
+          },
+          {
+            "standardInput": "",
+            "outputs": [
+              ""
+            ],
+            "explanation": "Las tres comparaciones conservadas coinciden y no producen diagnósticos de discrepancia. La salida vacía se comprueba después de una ejecución terminada con cero; un fallo de construcción o ejecución no se trata como respuesta incorrecta."
+          }
+        ],
+        "editorialIndex": 21,
+        "historySha256": "8198d6fdaaf01cb5229d02baa73a150664b377c9c395659701e5e4d5186e6590",
+        "semanticBefore": [
+          {
+            "block": "block_0004_0008",
+            "path": "/outputCheck/cases/0/explanation",
+            "sourceSha256": "9c16bdac32de517891eb2b64fb56523b92d25df4a5a92d74ec39ec4d930859e6",
+            "spans": [
+              {
+                "start": 4,
+                "end": 8,
+                "text": "tres",
+                "role": "data",
+                "reading": "natural"
+              },
+              {
+                "start": 157,
+                "end": 161,
+                "text": "cero",
+                "role": "output",
+                "reading": "natural"
+              }
+            ]
+          }
+        ],
+        "semanticAfter": [
+          {
+            "block": "block_0004_0008",
+            "path": "/outputCheck/cases/3/explanation",
+            "sourceSha256": "9c16bdac32de517891eb2b64fb56523b92d25df4a5a92d74ec39ec4d930859e6",
+            "spans": [
+              {
+                "start": 4,
+                "end": 8,
+                "text": "tres",
+                "role": "data",
+                "reading": "natural"
+              },
+              {
+                "start": 157,
+                "end": 161,
+                "text": "cero",
+                "role": "output",
+                "reading": "natural"
+              }
+            ]
+          }
+        ],
+        "client": {
+          "path": "main.cpp",
+          "source": "#include <iostream>\n\nbool debe_reponer(int disponibles, int minimo) {\n    return disponibles < minimo;  // Corrige solo esta comparacion para cumplir el requisito.\n}\n\nbool comprobar(int disponibles, int minimo, bool esperado) {\n    const bool obtenido{debe_reponer(disponibles, minimo)};\n    if (obtenido == esperado) { return true; }\n    std::cout << \"Fallo: \" << disponibles << \",\" << minimo\n              << \" esperado=\" << esperado << \" obtenido=\" << obtenido << \"\\n\";\n    return false;\n}\n\nint main() {\n    int caso{};\n    if (std::cin >> caso) {\n        if (caso != 4 && caso != 5 && caso != 6) { return 1; }\n    } else if (!std::cin.eof()) {\n        return 1;\n    }\n\n    bool correcto{true};\n    if ((caso == 0 || caso == 4) && !comprobar(4, 5, true)) { correcto = false; }\n    if ((caso == 0 || caso == 5) && !comprobar(5, 5, true)) { correcto = false; }\n    if ((caso == 0 || caso == 6) && !comprobar(6, 5, false)) { correcto = false; }\n    if (!correcto) { return 1; }\n    return 0;\n}\n"
+        }
       }
     ]
   },
@@ -2118,7 +2263,7 @@
       },
       {
         "block": "block_0004_0008",
-        "path": "/outputCheck/cases/0/explanation",
+        "path": "/outputCheck/cases/3/explanation",
         "sourceSha256": "9c16bdac32de517891eb2b64fb56523b92d25df4a5a92d74ec39ec4d930859e6",
         "spans": [
           {
