@@ -165,6 +165,45 @@ void reopen_order(const Lesson& original,const Lesson& halfway,
         narration::read_history(durable)==previous_listening,
         "The signed composite lost its durable student state when reopened");
 }
+// Both supported publication mechanisms authenticate the same historical
+// evaluator. Resolve by stable owner and the real /prompt field; never assume
+// the first archive in a large active lesson belongs to AssetCheck.
+struct P2PromptArchive {
+    std::string raw_json;
+    bool legacy=false;
+};
+P2PromptArchive p2_prompt_archive(const Lesson& lesson,std::string_view identity) {
+    P2PromptArchive result;
+    const auto retain=[&](const std::string& raw,bool legacy) {
+        require(result.raw_json.empty(),"Duplicate published P2 prompt archive");
+        result={raw,legacy};
+    };
+    for(const auto& item:lesson.state_layout.math_matching_text_revisions)
+        if(item.id==identity)retain(item.raw_json,false);
+    for(const auto& item:lesson.state_layout.math_text_revisions)
+        if(item.id==identity&&item.field=="/prompt")retain(item.raw_json,true);
+    require(!result.raw_json.empty(),"Missing authenticated P2 prompt archive");
+    return result;
+}
+void reject_p2_prompt_archive(const Lesson& lesson,std::string_view identity) {
+    const auto archive=p2_prompt_archive(lesson,identity);
+    auto forged=JsonObject::Parse(winrt::to_hstring(lesson.raw_json));
+    const auto records=forged.GetNamedObject(L"stateLayout").GetNamedArray(
+        archive.legacy?L"mathTextRevisions":L"mathMatchingTextRevisions");
+    bool found=false;
+    for(const auto& value:records) {
+        const auto item=value.GetObject();
+        if(winrt::to_string(item.GetNamedString(L"id"))!=identity||
+           (archive.legacy&&item.GetNamedString(L"field")!=L"/prompt"))continue;
+        require(!found,"Duplicate forged P2 archive target");
+        found=true;
+        if(archive.legacy)item.Insert(L"rawJson",JsonValue::CreateStringValue(L"{}"));
+        else item.Insert(L"afterSha256",JsonValue::CreateStringValue(
+            winrt::to_hstring(std::string(64,'0'))));
+    }
+    require(found,"The archived P2 prompt could not be targeted for rejection");
+    reject_both(forged);
+}
 void assetcheck_p2_prompt_revision(const std::filesystem::path& folder,
                                    const std::filesystem::path& qa) {
     // A matching prompt in another course is a general authored-text edit.
@@ -178,7 +217,13 @@ void assetcheck_p2_prompt_revision(const std::filesystem::path& folder,
     const auto& old=owned(original,identity);
     const auto& current=owned(revised,identity);
     const auto& metadata=owned(compact,identity);
-    require(old.type==BlockType::math_puzzle&&
+    const auto archive=p2_prompt_archive(revised,identity);
+    const auto compact_archive=p2_prompt_archive(compact,identity);
+    require(archive.raw_json==compact_archive.raw_json&&
+        archive.legacy==compact_archive.legacy&&
+        JsonObject::Parse(winrt::to_hstring(archive.raw_json)).Stringify()==
+            JsonObject::Parse(winrt::to_hstring(old.raw_json)).Stringify()&&
+        old.type==BlockType::math_puzzle&&
         current.type==BlockType::math_puzzle&&
         old.prompt.find("Las barras inclinadas")!=std::string::npos&&
         current.prompt.find("barra inversa")!=std::string::npos&&
@@ -190,9 +235,7 @@ void assetcheck_p2_prompt_revision(const std::filesystem::path& folder,
         revised.state_layout.signatures==original.state_layout.signatures&&
         compact.state_layout.signatures==original.state_layout.signatures&&
         same_pages(revised.state_layout.origin,original.state_layout.origin)&&
-        same_pages(compact.state_layout.origin,original.state_layout.origin)&&
-        revised.state_layout.math_matching_text_revisions.size()==1&&
-        compact.state_layout.math_matching_text_revisions.size()==1,
+        same_pages(compact.state_layout.origin,original.state_layout.origin),
         "The P2 matching prompt changed its original owner or grading lineage");
     const auto old_source=JsonObject::Parse(winrt::to_hstring(
         math_evaluation_source(old)));
@@ -262,13 +305,8 @@ void assetcheck_p2_prompt_revision(const std::filesystem::path& folder,
 
     // The complete and compact WinRT loaders reject the same forged history
     // and answer mapping; a cosmetic edit must not authorize either change.
+    reject_p2_prompt_archive(revised,identity);
     auto forged=JsonObject::Parse(winrt::to_hstring(revised.raw_json));
-    forged.GetNamedObject(L"stateLayout").
-        GetNamedArray(L"mathMatchingTextRevisions").GetObjectAt(0).
-        Insert(L"afterSha256",JsonValue::CreateStringValue(
-            winrt::to_hstring(std::string(64,'0'))));
-    reject_both(forged);
-    forged=JsonObject::Parse(winrt::to_hstring(revised.raw_json));
     const auto at=stable_block_position(revised,identity);
     require(at.has_value(),"The P2 matching answer was not indexed");
     forged.GetNamedArray(L"pages").GetObjectAt(at->page).
@@ -292,20 +330,17 @@ void assetcheck_p2_published_revision(const std::filesystem::path& folder,
         folder/"assetcheck-p2-published.json");
     const auto& current=owned(lesson,identity);
     const auto& compact_block=owned(compact,identity);
-    const curriculum::MathMatchingTextRevision* journal=nullptr;
-    for(const auto& item:lesson.state_layout.math_matching_text_revisions)
-        if(item.id==identity) {
-            require(!journal,"Duplicate published P2 matching text journal");
-            journal=&item;
-        }
-    require(journal&&current.type==BlockType::math_puzzle&&
+    const auto journal=p2_prompt_archive(lesson,identity);
+    const auto compact_journal=p2_prompt_archive(compact,identity);
+    require(journal.raw_json==compact_journal.raw_json&&
+        journal.legacy==compact_journal.legacy&&current.type==BlockType::math_puzzle&&
         current.prompt.find("barra inversa")!=current.prompt.npos&&
         current.prompt==compact_block.prompt&&
         current.address.page==compact_block.address.page&&
         current.address.block==compact_block.address.block&&
         compact.state_layout.signatures==lesson.state_layout.signatures,
         "The published P2 matching text or compact loader lost its owner");
-    const auto old=JsonObject::Parse(winrt::to_hstring(journal->raw_json));
+    const auto old=JsonObject::Parse(winrt::to_hstring(journal.raw_json));
     const auto before=winrt::to_string(old.GetNamedString(L"prompt"));
     require(before.find("Las barras inclinadas")!=before.npos&&
         before!=current.prompt,
@@ -366,11 +401,15 @@ void assetcheck_p2_published_revision(const std::filesystem::path& folder,
         narration::read_history(durable)==prior_listening,
         "The published P2 StateStore was not durable");
 
+    reject_p2_prompt_archive(lesson,identity);
     auto forged=JsonObject::Parse(winrt::to_hstring(lesson.raw_json));
-    forged.GetNamedObject(L"stateLayout").
-        GetNamedArray(L"mathMatchingTextRevisions").GetObjectAt(0).
-        Insert(L"afterSha256",JsonValue::CreateStringValue(
-            winrt::to_hstring(std::string(64,'0'))));
+    const auto at=stable_block_position(lesson,identity);
+    require(at.has_value(),"The live P2 matching answer was not indexed");
+    forged.GetNamedArray(L"pages").GetObjectAt(at->page).
+        GetNamedArray(L"blocks").GetObjectAt(at->block).
+        GetNamedArray(L"responses").GetObjectAt(0).
+        GetNamedObject(L"validator").GetNamedObject(L"expected").
+        Insert(L"a",JsonValue::CreateStringValue(L"dos"));
     reject_both(forged);
     std::cout<<"PASS published P2 AssetCheck matching prompt: signed "
         "historical evaluator, preserved response and old-only listening, "
@@ -415,13 +454,12 @@ int main(int argc,char** argv)try{
                  qa,"cards-then-names");
     reject_forgery(names_then_cards.raw_json);
     reject_forgery(cards_then_names.raw_json);
-    if(std::filesystem::exists(folder/"assetcheck-p2-original.json"))
-        assetcheck_p2_prompt_revision(folder,qa);
-    else {
-        require(std::filesystem::exists(folder/"assetcheck-p2-published.json"),
-            "P2 prompt fixture missing: neither preview nor published edition");
-        assetcheck_p2_published_revision(folder,qa);
-    }
+    const bool historical=std::filesystem::exists(folder/"assetcheck-p2-original.json");
+    const bool published=std::filesystem::exists(folder/"assetcheck-p2-published.json");
+    require(historical||published,
+        "P2 prompt fixture missing: neither historical nor published edition");
+    if(historical)assetcheck_p2_prompt_revision(folder,qa);
+    if(published)assetcheck_p2_published_revision(folder,qa);
     std::cout<<"PASS U5L13 native Windows dual-order C++ and matching prose: "
         "six code owners, exact historical answer IDs, full/metadata loaders, "
         "reopened draft, old-only narration credit and forged-proof rejection\n";

@@ -6,8 +6,11 @@ student profile, draft, saved WAV, or receipt is modified.
 from __future__ import annotations
 
 import argparse
+import hashlib
 import json
+import os
 from pathlib import Path
+import subprocess
 
 import identifier_rename_archive_preview as rename_preview
 import math_matching_text_compat as matching
@@ -15,8 +18,8 @@ import stable_state_layout as state
 from test_identifier_rename_archive_preview import FormattedOwnerRenamePreview, OWNERS
 from test_math_matching_text_compat import RealFrequencyMatchingEditorial, OWNER, PATH
 
-CONTENT = (Path(__file__).resolve().parents[2] /
-           "app/src/main/assets/content").resolve()
+ROOT = Path(__file__).resolve().parents[2]
+CONTENT = (ROOT / "app/src/main/assets/content").resolve()
 
 P2_ASSETCHECK = (CONTENT /
     "es/programming/programming_practice_tools/proyecto_assetcheck/"
@@ -25,6 +28,46 @@ P2_OWNER = "block_0002_0005"
 P2_OLD_WORDING = "Las barras inclinadas representan caracteres de escape, no texto literal del manifiesto."
 P2_NEW_WORDING = ("En las etiquetas, las secuencias con barra inversa "
     "representan LF o CR; no son una barra y una letra escritas en el manifiesto.")
+
+
+# Work's genuine one-field publication edge. The two complete Git blobs
+# are independently pinned, not reconstructed from the current journal.
+P2_LEGACY_PUBLICATIONS = (
+    ("3deb1e829593d5e0afc6bf720a74321bd8bb96c6",
+     "ae92d8459db7503e5684ae5d905d188f19a10f2d"),
+    ("08887bd1495ac745ec77b361b9dd9ac4670c23c5",
+     "1670444d9d84075cfc9408796eabab6a10865a48"),
+)
+
+
+def assetcheck_legacy_publications() -> tuple[dict, dict]:
+    relative = P2_ASSETCHECK.relative_to(ROOT).as_posix()
+    environment = dict(os.environ, GIT_NO_LAZY_FETCH="1",
+                       GIT_NO_REPLACE_OBJECTS="1", GIT_TERMINAL_PROMPT="0")
+    documents = []
+    for commit, expected in P2_LEGACY_PUBLICATIONS:
+        raw = subprocess.check_output(
+            ["git", "--no-optional-locks", "-c", f"safe.directory={ROOT}",
+             "show", commit + ":" + relative, "--"],
+            cwd=ROOT, env=environment, stderr=subprocess.PIPE)
+        framed = b"blob " + str(len(raw)).encode("ascii") + b"\0" + raw
+        if hashlib.sha1(framed).hexdigest() != expected:
+            raise ValueError("The authentic AssetCheck prompt publication differs from its Git pin")
+        documents.append(state.parse_json(raw.decode("utf-8-sig")))
+    before, after = documents
+    state.validate_transition(before, after)
+    old, current = state._blocks(before), state._blocks(after)
+    archived = [item for item in after["stateLayout"].get("mathTextRevisions", [])
+                if item["id"] == P2_OWNER and item["field"] == "/prompt"]
+    if (len(archived) != 1 or
+            state.parse_json(archived[0]["rawJson"]) != old[P2_OWNER] or
+            current[P2_OWNER]["responses"] != old[P2_OWNER]["responses"] or
+            current[P2_OWNER]["prompt"] == old[P2_OWNER]["prompt"] or
+            {k: v for k, v in old.items() if k != P2_OWNER} !=
+            {k: v for k, v in current.items() if k != P2_OWNER} or
+            state.validate(before) != state.validate(after)):
+        raise AssertionError("The genuine AssetCheck prompt-only transition changed grading or storage")
+    return before, after
 
 
 def assetcheck_prompt_editions() -> tuple[dict | None, dict]:
@@ -36,6 +79,24 @@ def assetcheck_prompt_editions() -> tuple[dict | None, dict]:
     if (block["type"] != "math_puzzle" or
             block["responses"][0]["type"] != "math_matching_drag"):
         raise AssertionError("The authentic P2 matching owner changed")
+    legacy = [item for item in published["stateLayout"].get("mathTextRevisions", [])
+              if item.get("id") == P2_OWNER and item.get("field") == "/prompt"]
+    if legacy:
+        # The active lesson uses the general math text journal. Its actual
+        # wording is authored by Work; prove the old evaluator, not a literal
+        # proposed revision from the later matching-specific helper.
+        if len(legacy) != 1:
+            raise AssertionError("The published P2 prompt has duplicate archives")
+        previous = state.parse_json(legacy[0]["rawJson"])
+        if (previous["prompt"].count(P2_OLD_WORDING) != 1 or
+                previous["prompt"] == block["prompt"] or
+                previous["responses"] != block["responses"] or
+                block["responses"][0]["validator"]["expected"] !=
+                {"a": "cero", "b": "uno", "c": "dos_vacia", "d": "dos"}):
+            raise AssertionError("The published P2 response or original prompt changed")
+        if P2_ASSETCHECK.read_bytes() != original_bytes:
+            raise AssertionError("The active P2 source was mutated")
+        return None, published
     if block["prompt"].count(P2_NEW_WORDING) == 1:
         # Work has integrated the reviewed correction. Keep a native loader
         # fixture for its REAL signed publication; never forge a second
@@ -131,6 +192,13 @@ def export(directory: Path) -> dict[str, Path]:
     p2_original, p2_revised = assetcheck_prompt_editions()
     if p2_original is None:
         documents["assetcheck-p2-published.json"] = p2_revised
+        if any(item["id"] == P2_OWNER and item["field"] == "/prompt"
+               for item in p2_revised["stateLayout"].get("mathTextRevisions", [])):
+            # Export the actual adjacent pre-adoption/review publications as
+            # well as the independently validated, currently active lesson.
+            before, after = assetcheck_legacy_publications()
+            documents["assetcheck-p2-original.json"] = before
+            documents["assetcheck-p2-revised.json"] = after
     else:
         documents["assetcheck-p2-original.json"] = p2_original
         documents["assetcheck-p2-revised.json"] = p2_revised

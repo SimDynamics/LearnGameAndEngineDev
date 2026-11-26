@@ -382,6 +382,24 @@ class RealFrequencyMatchingEditorial(unittest.TestCase):
 class RealAssetCheckLineEndingPrompt(unittest.TestCase):
     """The same matching-text authoring must also work in Programación 2."""
 
+    def test_assetcheck_native_exporter_accepts_the_actual_prompt_journal(self):
+        # Import lazily: the exporter shares the frequency QA helpers in
+        # this module, and must not execute its CLI or write curricular data.
+        from export_u5l13_composition_fixture import (
+            P2_ASSETCHECK, P2_OWNER, assetcheck_prompt_editions)
+        raw = P2_ASSETCHECK.read_bytes()
+        live = state.parse_json(raw.decode("utf-8-sig"))
+        before, exported = assetcheck_prompt_editions()
+        state.validate(exported)
+        if before is None:
+            self.assertEqual(exported, live)
+        else:
+            state.validate_transition(before, exported)
+        expected = {"a": "cero", "b": "uno", "c": "dos_vacia", "d": "dos"}
+        self.assertEqual(state._blocks(exported)[P2_OWNER]["responses"][0]["validator"]["expected"],
+                         expected)
+        self.assertEqual(P2_ASSETCHECK.read_bytes(), raw)
+
     def test_published_assetcheck_prompt_retains_exact_mapping_and_history(self):
         asset = (Path(__file__).resolve().parents[2] /
             "app/src/main/assets/content/es/programming/programming_practice_tools/"
