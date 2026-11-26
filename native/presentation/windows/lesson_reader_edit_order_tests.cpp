@@ -443,7 +443,24 @@ void run_revision(const std::shared_ptr<windows::NarrationWorker>& backend,const
             const auto played=trace_playback(fixture,rows,[&](const auto& value){return value.playing&&value.index==a;});
             fixture.reader->pause();compare_trace(played,{x,a},rows);
             verify_existing_state(fixture,original,true);verify_cache(cached);
-            std::cout<<"PASS negative revision fixture: an unheard prior correct answer still blocks continuation\n";return;
+            std::cout<<"PASS negative revision fixture: an unheard prior correct answer still blocks continuation\n";
+            // Contrast the same owner once genuine playback has begun. An
+            // explicit new B answer can interrupt A, without pretending A
+            // was fully heard or forcing the learner back through A again.
+            phase=scenario+" / explicitly interrupted A";
+            fixture.reader->toggle();
+            wait([&]{const auto value=fixture.snapshot();return value.playing&&value.index==a&&
+                value.offset>=100&&!value.segments[a].feedback_fully_played;},"actual partial A recording before a new answer");
+            fixture.answer("b");rows=verify_plan(fixture,{"a","x","b"});
+            const auto b=source_index(rows,"✓ Correcto\n\nB_FEEDBACK");
+            expect(fixture.snapshot().index==b,"Fresh B feedback was not selected");
+            const auto continued=trace_playback(fixture,rows,[](const auto& value){return value.finished;});
+            compare_trace(continued,interval(b,rows.size()-1),rows);
+            const auto ended=fixture.snapshot();
+            expect(!ended.segments[a].feedback_fully_played&&ended.heard_through<=static_cast<std::int64_t>(a),
+                "Explicit interruption fabricated earlier hearing credit");
+            verify_existing_state(fixture,original,false);verify_cache(cached);
+            std::cout<<"PASS explicit later answer abandons only the actually begun guide without claiming hearing\n";return;
         }
         const auto b=source_index(rows,"B_QUESTION");
         const auto played=trace_playback(fixture,rows,[](const auto& value){return value.waiting_gate;});

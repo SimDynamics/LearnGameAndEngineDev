@@ -85,6 +85,7 @@ struct LessonReader::Impl {
     // evidence. It is reconstructed from the same bounded page bookmark.
     struct AnswerPriority{std::size_t block=0,allowed_through=0;};
     struct PriorityBoundary{std::size_t block=0;std::string part;bool after=false;};
+    struct FeedbackDeparture{std::size_t block=0;std::vector<std::string> keys;};
     HWND view=nullptr,window=nullptr;WindowsEnvironment environment;std::shared_ptr<windows::NarrationWorker> backend;
     std::function<void()> settings;std::array<HWND,7> buttons{};HWND status=nullptr;HFONT font=nullptr;UINT font_dpi=0;
     std::vector<LessonReadingRegion> regions;std::vector<Part> parts;std::map<std::string,std::unique_ptr<ReadingShade>> shades;
@@ -97,6 +98,7 @@ struct LessonReader::Impl {
     std::string previous_part,previous_key;std::vector<std::string> previously_heard;double previous_offset=0;std::optional<std::size_t> feedback_target;
     std::vector<std::pair<std::string,double>> previous_positions;
     std::vector<std::string> previous_feedback_admissions;
+    std::optional<FeedbackDeparture> previous_feedback_departure;
     std::optional<AnswerPriority> answer_priority;
     std::optional<PriorityBoundary> previous_priority;
     narration::Position position;windows::NarrationPlayer player;bool enabled=true,wanted=false,planning=false,has_plan=false,finished=false,waiting_gate=false,visible=true;
@@ -536,6 +538,44 @@ struct LessonReader::Impl {
         if(position.feedback_admissions.size()>=1024)return;
         position.feedback_admissions.push_back(part.feedback_admission_key);part.feedback_admitted=true;
     }
+    std::optional<FeedbackDeparture> observed_feedback_departure()const{
+        if(!has_plan||parts.empty())return {};
+        const auto at=current();const auto& part=parts[at];const auto id=part_id(part);
+        const auto heard=listened.find(id);const auto recording=listened_recordings.find(id);
+        const bool heard_recording=!part.audio_fingerprint.empty()&&heard!=listened.end()&&
+            !heard->second.empty()&&recording!=listened_recordings.end()&&recording->second==part.audio_fingerprint;
+        const auto block=reading_gate::observed_feedback_departure(parts,at,heard_recording,
+            [](const auto& value)->const auto&{return value.region;});
+        if(!block)return {};
+        FeedbackDeparture departure{*block,{}};
+        for(const auto& item:parts)if(item.region.block_index==*block&&item.region.feedback){
+            if(item.feedback_admission_key.empty())return {};
+            departure.keys.push_back(item.feedback_admission_key);
+        }
+        return departure;
+    }
+    void admit_explicit_feedback_departure(std::size_t block,bool correct){
+        // LessonView notifies the visible-script change before the verdict
+        // callback. Capture the authenticated old recording before replanning;
+        // consume its permission only for a later explicitly checked answer.
+        if(has_plan){
+            previous_feedback_departure.reset();
+            if(correct&&!parts.empty()&&parts[current()].region.block_index<block){
+                release_player();
+                previous_feedback_departure=observed_feedback_departure();
+            }
+        }
+        if(correct&&previous_feedback_departure&&previous_feedback_departure->block<block){
+            auto& admissions=has_plan?position.feedback_admissions:previous_feedback_admissions;
+            for(const auto& key:previous_feedback_departure->keys)
+                if(admissions.size()<1024&&std::ranges::find(admissions,key)==admissions.end())
+                    admissions.push_back(key);
+            if(has_plan)refresh_feedback_admissions();
+        }
+        // No heard-through boundary, recording interval or PCM certificate
+        // is promoted. Changed speech will discard these exact source keys.
+        previous_feedback_departure.reset();
+    }
     static bool same_previous_context_passage(const Part& before,const Part& after){
         const auto passage=[](const Part& part) {
             return narration_legacy::Passage{part.region.anchor.empty()?part.region.key:part.region.anchor,
@@ -579,7 +619,7 @@ struct LessonReader::Impl {
             // anchors below must not overwrite that earlier pending position.
             release_player();wanted=false;manually_paused=true;save(finished);
             previous_part.clear();previous_key.clear();previous_positions.clear();previously_heard.clear();previous_feedback_admissions.clear();
-            previous_offset=0;previous_priority.reset();answer_priority.reset();feedback_target.reset();
+            previous_offset=0;previous_priority.reset();answer_priority.reset();feedback_target.reset();previous_feedback_departure.reset();
             content_revision=page.content_revision;signature.clear();
         }
         const auto next_regions=lesson_reading_regions(view);std::string next_signature=next_page;
@@ -601,8 +641,10 @@ struct LessonReader::Impl {
         // An automatic partial plan during asynchronous answer restoration has
         // no user-owned position. It must not supersede the stored full-page
         // bookmark when the verified feedback finishes restoring.
+        if(has_plan)previous_feedback_departure.reset();
         if(!revised_source&&has_plan&&(!owner.empty()||restored_bookmark||position.finished)&&static_cast<std::size_t>(position.segment)<parts.size()){previous_part=part_id(parts[static_cast<std::size_t>(position.segment)]);release_player();paint_progress();previous_offset=static_cast<double>(position.milliseconds);save(finished);previous_key=key;
             previous_feedback_admissions=position.feedback_admissions;
+            previous_feedback_departure=observed_feedback_departure();
             previous_positions.clear();for(std::size_t i=0;i<=current();++i)previous_positions.emplace_back(part_id(parts[i]),i==current()?previous_offset:parts[i].audio?parts[i].audio->duration_ms:0.);
             previously_heard.clear();for(std::size_t i=0;i<parts.size()&&i<static_cast<std::size_t>(position.heard_through);++i)if(parts[i].region.feedback&&parts[i].region.correct)previously_heard.push_back(part_id(parts[i]));}
         if(!revised_source&&has_plan&&answer_priority&&!parts.empty()){
@@ -611,7 +653,7 @@ struct LessonReader::Impl {
         }
         answer_priority.reset();const bool same_page=next_page==page_id;
         const bool pending_explicit_resume=explicit_resume_requested&&wanted&&same_page;
-        if(!same_page){wanted=false;previous_part.clear();previous_key.clear();previously_heard.clear();previous_positions.clear();previous_feedback_admissions.clear();previous_priority.reset();previous_offset=0;feedback_target.reset();listened.clear();listened_recordings.clear();shades.clear();shaded_ends.clear();shaded_part.clear();shaded_offset=0;}
+        if(!same_page){wanted=false;previous_part.clear();previous_key.clear();previously_heard.clear();previous_positions.clear();previous_feedback_admissions.clear();previous_feedback_departure.reset();previous_priority.reset();previous_offset=0;feedback_target.reset();listened.clear();listened_recordings.clear();shades.clear();shaded_ends.clear();shaded_part.clear();shaded_offset=0;}
         cancel_generation();++epoch;signature=next_signature;page_id=next_page;resume_page_id=page.narration_page_identity.empty()?next_page:page.narration_page_identity;regions=next_regions;parts.clear();key.clear();owner.clear();position={};finished=false;waiting_gate=false;has_plan=false;error.clear();planning=false;
         restored_bookmark=false;resume_needs_replay=false;explicit_resume_requested=pending_explicit_resume;canonical_plan.reset();page_audio_complete=false;foreground_synthesis_threads=0;awaiting_verified_plan=false;
         std::erase_if(shades,[&](const auto& item){return std::ranges::none_of(regions,[&](const auto& region){return item.first==region.key&&item.second->matches(region.target,region.source_text)
@@ -1007,7 +1049,7 @@ struct LessonReader::Impl {
                     else if(answer_priority&&answer_priority->block==*feedback_target)answer_priority.reset();
                 }if(!verification_pending())feedback_target.reset();}
             if(!fresh_feedback_selected)constrain_required_exercise_bookmark();
-            previous_part.clear();previous_key.clear();previously_heard.clear();previous_positions.clear();previous_feedback_admissions.clear();previous_priority.reset();finished=position.finished;prioritize(static_cast<std::size_t>(position.segment));
+            previous_part.clear();previous_key.clear();previously_heard.clear();previous_positions.clear();previous_feedback_admissions.clear();previous_feedback_departure.reset();previous_priority.reset();finished=position.finished;prioritize(static_cast<std::size_t>(position.segment));
             // A fresh answer invalidates previous hearing even when the reader
             // stays paused and the learner closes before pressing Play.
             if(fresh_feedback_selected&&!verification_pending()){acquire();save(false);}
@@ -1251,11 +1293,12 @@ struct LessonReader::Impl {
         restored_bookmark=false;resume_needs_replay=false;explicit_resume_requested=false;bind_preview_certificate();
         if(!parts[current()].region.feedback)constrain_required_exercise_bookmark();
         if(owner.empty())acquire();save();paint_progress();play_current();update_buttons();}
-    void restart(){if(!has_plan)return;release_player();listened.clear();listened_recordings.clear();answer_priority.reset();previous_priority.reset();position={};refresh_feedback_admissions();
+    void restart(){if(!has_plan)return;release_player();listened.clear();listened_recordings.clear();answer_priority.reset();previous_priority.reset();previous_feedback_departure.reset();position={};refresh_feedback_admissions();
         restored_bookmark=false;resume_needs_replay=false;explicit_resume_requested=false;bind_preview_certificate();
         finished=false;wanted=true;manually_paused=false;waiting_gate=false;acquire();save();paint_progress();play_current();update_buttons();}
     void feedback(std::size_t block,bool correct){
         const bool resume=!manually_paused&&!finished;
+        admit_explicit_feedback_departure(block,correct);
         // An incorrect guide interrupts the original permission; it does not
         // revoke a different, previously answered block's valid priority.
         if(!correct){if(answer_priority&&answer_priority->block==block)answer_priority.reset();
@@ -1263,7 +1306,7 @@ struct LessonReader::Impl {
         feedback_target=block;wanted=resume;finished=false;signature.clear();changed();}
     void settings_changed(){const auto old_language=language,old_voice=voice,old_engine=engine;const auto old_enabled=enabled;configure();
         if(!enabled){pause();cancel_generation();for(auto& [id,shade]:shades)shade->restore();}
-        else if(language!=old_language||voice!=old_voice||engine!=old_engine||!old_enabled){pause();cancel_generation();has_plan=false;parts.clear();previous_key.clear();previous_part.clear();previously_heard.clear();previous_feedback_admissions.clear();answer_priority.reset();previous_priority.reset();listened.clear();listened_recordings.clear();signature.clear();changed();}
+        else if(language!=old_language||voice!=old_voice||engine!=old_engine||!old_enabled){pause();cancel_generation();has_plan=false;parts.clear();previous_key.clear();previous_part.clear();previously_heard.clear();previous_feedback_admissions.clear();previous_feedback_departure.reset();answer_priority.reset();previous_priority.reset();listened.clear();listened_recordings.clear();signature.clear();changed();}
         else if(player.allocated())player.set_rate(rate);update_buttons();}
     void change_playback_rate(double value){
         value=narration::clamp_playback_rate(value);if(rate==value)return;

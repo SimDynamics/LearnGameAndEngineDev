@@ -73,6 +73,23 @@ std::optional<std::size_t> compiler_rewind_target(const Parts& parts,std::size_t
     return exercise_rewind_target(parts,current,finished,region);
 }
 
+// A later explicit answer may abandon the particular earlier explanation
+// the learner actually began to hear. This is navigation permission only;
+// neither an unplayed restored bookmark nor a seek offset proves hearing.
+template<std::ranges::random_access_range Parts,class Projection=std::identity>
+std::optional<std::size_t> observed_feedback_departure(const Parts& parts,std::size_t at,
+        bool heard_recording,Projection region={}) {
+    if(!heard_recording||at>=std::ranges::size(parts))return {};
+    const auto& current=std::invoke(region,parts[at]);
+    if(!current.is_exercise||!current.feedback||!current.correct||!current.solved)return {};
+    for(const auto& part:parts) {
+        const auto& item=std::invoke(region,part);
+        if(item.block_index!=current.block_index)continue;
+        if((item.is_exercise&&!item.solved)||(item.feedback&&(!item.correct||!item.solved)))return {};
+    }
+    return current.block_index;
+}
+
 template<std::ranges::random_access_range Parts,class Projection=std::identity,class Admission=NoFeedbackAdmission>
 std::optional<PrefixBlocker> prefix_blocker(const Parts& parts,std::size_t destination,std::int64_t heard_through,
         std::optional<FeedbackPriority> priority={},bool manual_forward=false,Projection region={},Admission admitted={},
@@ -85,31 +102,9 @@ std::optional<PrefixBlocker> prefix_blocker(const Parts& parts,std::size_t desti
     }
     const bool within_feedback=feedback_start&&destination<count&&std::invoke(region,parts[destination]).feedback&&
         std::invoke(region,parts[destination]).block_index==priority->block;
-    std::size_t covered_before=0;
-    if(playback_at&&*playback_at<count&&*playback_at<destination){
-        // Find the most recent complete explanation physically reached by
-        // playback. A proposed seek cannot use its destination as evidence.
-        for(auto last=*playback_at;;){
-            const auto block=std::invoke(region,parts[last]).block_index;
-            auto first=last;
-            while(first>0&&std::invoke(region,parts[first-1]).block_index==block)--first;
-            auto end=last+1;
-            while(end<count&&std::invoke(region,parts[end]).block_index==block)++end;
-            bool has_feedback=false,complete=true;
-            for(auto n=first;n<end;++n){
-                const auto& item=std::invoke(region,parts[n]);
-                if(!item.is_exercise||!item.feedback)continue;
-                has_feedback=true;
-                const bool reached=n<*playback_at||(n==*playback_at&&!manual_forward);
-                if(!reached||!item.correct||!item.solved||(static_cast<std::int64_t>(n)>=heard_through&&!std::invoke(admitted,parts[n]))){
-                    complete=false;break;
-                }
-            }
-            if(has_feedback&&complete){covered_before=first;break;}
-            if(first==0)break;
-            last=first-1;
-        }
-    }
+    // A complete later explanation does not itself authorize earlier
+    // unheard feedback. Only its own hearing or source-bound navigation
+    // admission can release each older correct-feedback sentence.
     for(std::size_t first=0;first<destination&&first<count;) {
         auto last=first;
         while(last+1<count&&std::invoke(region,parts[last+1]).block_index==std::invoke(region,parts[first]).block_index)++last;
@@ -119,7 +114,7 @@ std::optional<PrefixBlocker> prefix_blocker(const Parts& parts,std::size_t desti
         if(!(within_feedback&&last<*feedback_start))for(auto n=first;n<=last;++n){
             const auto& item=std::invoke(region,parts[n]);
             if(item.is_exercise&&!item.solved)return PrefixBlocker{first,item.block_index,BlockerReason::answer};
-            if(n<covered_before||!item.is_exercise||!item.feedback||!item.correct)continue;
+            if(!item.is_exercise||!item.feedback||!item.correct)continue;
             const bool own_feedback=feedback_start&&item.block_index==priority->block;
             const bool ending_here=playback_at&&*playback_at==last&&!manual_forward;
             const auto permitted=own_feedback&&!ending_here?static_cast<std::int64_t>(priority->allowed_through):heard_through;

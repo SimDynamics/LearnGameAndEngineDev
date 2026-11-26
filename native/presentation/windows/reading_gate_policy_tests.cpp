@@ -311,23 +311,40 @@ void finished_feedback_continuation() {
     const auto probe=[&](std::size_t destination,std::optional<std::size_t> at,bool manual=false){
         return reading_gate::prefix_blocker(parts,destination,106,priority,manual,projection,admitted,at);
     };
+    require(!reading_gate::observed_feedback_departure(parts,106,false,projection)&&
+            !reading_gate::observed_feedback_departure(parts,107,true,projection),
+        "An unheard bookmark or ordinary paragraph created an interruption permission");
+    require(reading_gate::observed_feedback_departure(parts,106,true,projection)==25,
+        "An authenticated partial recording did not identify its own feedback owner");
+    // A fresh later answer and even its complete actual playback cannot
+    // silently release an older correct feedback that has no navigation
+    // permission. Merely opening a correct, unheard guide is not departure.
+    for(const auto stop:{probe(280,{}),probe(280,106,true),probe(280,279,true),
+                         probe(280,280),probe(280,279),probe(281,280)}){
+        require(stop&&stop->index==106&&stop->reason==reading_gate::BlockerReason::correct_feedback,
+            "A later answer or playback created permission for an unadmitted earlier guide");
+    }
+    parts[106].navigation_admitted=true; // Explicit departure from its authentic partial recording.
     require(!probe(280,279)&&!probe(281,280)&&!probe(283,281,true),
-        "The complete latest explanation did not release its heading, prose and the next prompt");
-    require(!parts[106].navigation_admitted,"Continuing from a later answer credited the historical partial recording");
+        "The complete latest explanation did not release its heading, prose and the next prompt after explicit departure");
+    // The exception is source-bound to that owner, never all prior feedback.
+    feedback(104,24);
+    auto unrelated=reading_gate::prefix_blocker(parts,280,104,priority,false,projection,admitted,279);
+    require(unrelated&&unrelated->index==104,
+        "A later admitted feedback owner waived a different earlier unheard guide");
+    parts[104].region={};parts[104].region.solved=true;
     parts[280].region.block_index=54; // Compiler histories may follow feedback inside the same block.
     require(!probe(280,279)&&!probe(281,280),"A trailing compiler history prevented release after its actual last feedback sentence");
     parts[280].region.block_index=55;
     auto stopped=probe(284,283);
     require(stopped&&stopped->index==282&&stopped->reason==reading_gate::BlockerReason::answer,
         "Continuing from complete feedback crossed the following unsolved activity");
-    for(const auto stop:{probe(280,{}),probe(280,106,true),probe(280,279,true),probe(280,280)}){
-        require(stop&&stop->index==106,"A restored position, manual target or backwards origin created a new feedback crossing");
-    }
     parts[100].region.is_exercise=true;parts[100].region.solved=false;
     stopped=probe(280,279);
     require(stopped&&stopped->reason==reading_gate::BlockerReason::answer,
         "The last completed explanation waived an earlier required response");
     parts[100].region.is_exercise=false;parts[100].region.solved=true;
+    parts[106].navigation_admitted=false;
     parts[278].navigation_admitted=false;
     stopped=probe(280,279);
     require(stopped&&stopped->index==106&&stopped->reason==reading_gate::BlockerReason::correct_feedback,
@@ -335,7 +352,7 @@ void finished_feedback_continuation() {
     parts[106].navigation_admitted=true;
     stopped=probe(280,279);
     require(stopped&&stopped->index==278,"A high transient answer priority certified an unheard middle sentence");
-    std::cout<<"PASS complete feedback at 279 continues to 280 despite legacy pause 106; pending answers, missing sentences, seek and restore remain bounded\n";
+    std::cout<<"PASS explicit departure from an authenticated earlier guide releases later feedback; unheard unrelated guides, pending answers and missing sentences remain mandatory\n";
 }
 void asynchronous_metadata() {
     auto live=current_page();
