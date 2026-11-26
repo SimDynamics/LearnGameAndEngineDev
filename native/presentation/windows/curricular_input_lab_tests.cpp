@@ -309,6 +309,11 @@ void prepare_u2l9_prerequisites(state::StateData& data,const curriculum::Lesson&
                     curriculum::reference_activity(lesson,reference)==position(lesson,publication.boxes),
                     "The active boxes prerequisite lost its independent input/output or own reference");
             }
+            // An active publication carries its independently authored stdin probes.
+            // A public-output-only QA request is no longer sufficient evidence.
+            if(publication.active_edition)
+                check(owner.input_check&&owner.input_check->probes.size()==3,
+                    "The active U2L9 prerequisite lost its three published input probes");
             check(windows::compiler_puzzle_case_count(data,lesson,owner)==0&&
                 !windows::compiler_puzzle_completed(data,lesson,owner),
                 "A supposedly fresh U2L9 prerequisite already has credit");
@@ -322,6 +327,13 @@ void prepare_u2l9_prerequisites(state::StateData& data,const curriculum::Lesson&
                 request.project_key=curriculum::draft_key("programming",lesson,owner);
                 request.projects_directory=projects;request.source_utf8=source;
                 request.stdin_utf8=item.standard_input;
+                request.input_check=owner.input_check;
+                if(owner.input_check) {
+                    auto public_only=request;
+                    public_only.input_check.reset();
+                    check(!windows::compiler_runtime_request_allowed(owner,public_only),
+                        "An active U2L9 prerequisite accepted a request without its input contract");
+                }
                 request.compile_timeout=std::chrono::seconds(60);
                 request.execution_timeout=std::chrono::seconds(8);
                 check(windows::compiler_runtime_request_allowed(owner,request),
@@ -333,9 +345,16 @@ void prepare_u2l9_prerequisites(state::StateData& data,const curriculum::Lesson&
                     windows::evaluate_cpp_output_check(*owner.output_check,captured,request.revision).verdict==
                         curriculum::OutputVerdict::correct,
                     "A real U2L9 prerequisite failed its independently authored input/output");
+                if(owner.input_check)
+                    check(result.input_evidence.size()==owner.input_check->probes.size()&&
+                        captured.input_check_correct&&
+                        windows::compiler_independent_checks_satisfied(owner,captured),
+                        "A U2L9 prerequisite did not prove its independent input probes with the same executable");
                 if(index==0)check(windows::record_compiler_puzzle_case(
                     data,lesson,owner,request,captured,"Real U2L9 prerequisite execution"),
                     "A real first prerequisite case did not produce its own receipt");
+                check(windows::compiler_puzzle_case_count(data,lesson,owner)==1,
+                    "A U2L9 optional observation or private input probe changed manual case credit");
             }
             check(windows::compiler_puzzle_completed(data,lesson,owner)&&
                   windows::compiler_puzzle_case_count(data,lesson,owner)==1,
