@@ -45,11 +45,12 @@ void place(Box& parent,Box child,float dx=0,float dy=0){
 }
 struct Layout {
     HDC dc;float root_size;bool placeholders;std::map<std::pair<int,bool>,HFONT> fonts;
+    float minimum_text_size=0;
     ~Layout(){for(const auto& [key,font]:fonts){(void)key;DeleteObject(font);}}
-    HFONT font(float size,bool italic){const auto key=std::make_pair(std::max(1,static_cast<int>(std::lround(size))),italic);if(const auto found=fonts.find(key);found!=fonts.end())return found->second;
+    HFONT font(float size,bool italic){const auto key=std::make_pair(std::max(1,static_cast<int>(std::lround(std::max(size,minimum_text_size)))),italic);if(const auto found=fonts.find(key);found!=fonts.end())return found->second;
         const auto value=CreateFontW(-key.first,0,0,0,FW_NORMAL,italic,FALSE,FALSE,DEFAULT_CHARSET,OUT_DEFAULT_PRECIS,CLIP_DEFAULT_PRECIS,CLEARTYPE_QUALITY,DEFAULT_PITCH,reader_theme::math_font_face());fonts.emplace(key,value);return value;}
     float width(std::wstring_view value,float size,bool italic=false){const auto previous=SelectObject(dc,font(size,italic));SIZE extent{};GetTextExtentPoint32W(dc,value.data(),static_cast<int>(value.size()),&extent);SelectObject(dc,previous);return static_cast<float>(extent.cx);}
-    Box literal(std::wstring value,float size,bool italic=false,float gap=0){const auto previous=SelectObject(dc,font(size,italic));TEXTMETRICW metrics{};GetTextMetricsW(dc,&metrics);SelectObject(dc,previous);
+    Box literal(std::wstring value,float size,bool italic=false,float gap=0){size=std::max(size,minimum_text_size);const auto previous=SelectObject(dc,font(size,italic));TEXTMETRICW metrics{};GetTextMetricsW(dc,&metrics);SelectObject(dc,previous);
         Box box;box.width=width(value,size,italic)+2*gap;box.ascent=-static_cast<float>(metrics.tmAscent);box.descent=static_cast<float>(metrics.tmDescent);
         box.ink.push_back({Ink::Kind::text,std::move(value),{},gap,0,size,italic});return box;}
     Box fraction(Box numerator,Box denominator,float size){const auto axis=-size*.29f;Box box;box.width=std::max(numerator.width,denominator.width)+size*.25f;
@@ -57,8 +58,18 @@ struct Layout {
         place(box,numerator,(box.width-numerator.width)/2,top);place(box,denominator,(box.width-denominator.width)/2,bottom);
         box.ink.push_back({Ink::Kind::line,L"",{{size*.025f,axis},{box.width-size*.025f,axis}},0,0,size});return box;}
     Box scripts(Box base,std::optional<Box> upper,std::optional<Box> lower,float size){Box box;const auto x=base.width+size*.025f;
-        if(upper)place(box,*upper,x,std::min(-size*.48f,base.ascent-upper->descent+size*.55f));
-        if(lower)place(box,*lower,x,std::max(size*.28f,base.descent-lower->ascent-size*.55f));place(box,std::move(base));return box;}
+        const auto axis=-size*.25f;
+        if(upper){
+            auto y=std::min(-size*.48f,base.ascent-upper->descent+size*.55f);
+            if(minimum_text_size>0)y=std::min(y,axis-size*.08f-upper->descent);
+            place(box,*upper,x,y);
+        }
+        if(lower){
+            auto y=std::max(size*.28f,base.descent-lower->ascent-size*.55f);
+            if(minimum_text_size>0)y=std::max(y,axis+size*.08f-lower->ascent);
+            place(box,*lower,x,y);
+        }
+        place(box,std::move(base));return box;}
     void delimiter(Box& box,std::string_view kind,float x,float side,float top,float bottom,bool right,float size){
         const auto xx=[&](float value){return x+(right?side-value:value);};const auto middle=(top+bottom)/2;
         if(kind=="ABSOLUTE")box.ink.push_back({Ink::Kind::line,L"",{{x+side/2,top},{x+side/2,bottom}},0,0,size});
@@ -69,6 +80,9 @@ struct Layout {
     Box group(Box body,std::string_view kind,float size){Box box;const auto top=std::min(body.ascent,-size*.8f)-size*.07f,bottom=std::max(body.descent,size*.2f)+size*.07f,side=size*(kind=="ABSOLUTE"?.18f:.34f);
         box.width=body.width+2*side+size*.08f;place(box,std::move(body),side+size*.04f);delimiter(box,kind,0,side,top,bottom,false,size);delimiter(box,kind,box.width-side,side,top,bottom,true,size);box.ascent=top;box.descent=bottom;return box;}
     Box sequence(const JsonObject& value,float size,const Path& path,unsigned depth=0){if(depth>64)throw std::runtime_error("Math expression exceeds supported depth");
+        // Reflow the complete nested geometry rather than shrinking the
+        // actual numerator, denominator, script or limit to fit the parent.
+        size=std::max(size,minimum_text_size);
         Box box;const auto children=value.GetNamedArray(L"children");if(children.Size()>4096)throw std::runtime_error("Math expression exceeds supported node count");
         if(!children.Size()){const bool internal=placeholders&&!path.empty();const auto slot=std::max(size,root_size*1.05f);
             box.width=internal?slot*1.05f:0;box.ascent=internal?-slot*.88f:-size*.8f;box.descent=internal?slot*.28f:size*.2f;
@@ -127,7 +141,7 @@ struct Editor {
         snapshot.expression_json=utf8(state.GetNamedObject(L"expression").Stringify());snapshot.cursor_json=utf8(state.GetNamedObject(L"cursor").Stringify());snapshot.presentation_json=utf8(state.GetNamedObject(L"presentation").Stringify());snapshot.last_error=utf8(state.GetNamedString(L"error",L""));
         layout();InvalidateRect(window,nullptr,FALSE);if(previous!=snapshot.latex&&access.changed)access.changed();return state.GetNamedBoolean(L"accepted",true);
     }
-    void layout(){if(!window||!state.HasKey(L"expression"))return;const auto dc=GetDC(window);Layout measure{dc,size,!read_only};box=measure.sequence(state.GetNamedObject(L"expression"),size,{});ReleaseDC(window,dc);
+    void layout(){if(!window||!state.HasKey(L"expression"))return;const auto dc=GetDC(window);Layout measure{dc,size,!read_only};measure.minimum_text_size=access.curricular_font_floor?size:0.f;box=measure.sequence(state.GetNamedObject(L"expression"),size,{});ReleaseDC(window,dc);
         RECT area{};GetClientRect(window,&area);origin_x=static_cast<float>(px(access.horizontal_padding));baseline=std::max(-box.ascent+px(access.vertical_padding),(static_cast<float>(area.bottom)-(box.descent-box.ascent))/2-box.ascent);
         snapshot.measured_height=std::max(px(access.minimum_height),static_cast<int>(std::ceil(box.descent-box.ascent))+px(access.vertical_padding*2));snapshot.measured_width=static_cast<int>(std::ceil(box.width))+px(access.horizontal_padding*2);
         scroll=std::clamp(scroll,0.f,std::max(0.f,box.width+px(access.horizontal_padding*2)-area.right));
@@ -169,7 +183,7 @@ struct Editor {
     void locate(const Caret& item){(void)command("cursor",[&](JsonObject& request){JsonObject cursor;cursor.Insert(L"path",path_json(item.path));cursor.Insert(L"offset",JsonValue::CreateNumberValue(item.offset));cursor.Insert(L"level",JsonValue::CreateStringValue(item.path.empty()?L"NEUTRAL":L"INTERIOR"));request.Insert(L"cursor",cursor);if(item.leaf>=0)request.Insert(L"leafTextOffset",JsonValue::CreateNumberValue(item.leaf));request.Insert(L"sequenceInsertion",JsonValue::CreateBooleanValue(item.leaf<0));});}
     void paint(){PAINTSTRUCT update{};const auto output=BeginPaint(window,&update);RECT area{};GetClientRect(window,&area);const auto dc=CreateCompatibleDC(output);const auto bitmap=CreateCompatibleBitmap(output,std::max<LONG>(1,area.right),std::max<LONG>(1,area.bottom));const auto previous=SelectObject(dc,bitmap);const auto palette=reader_theme::palette(window);const auto outside=CreateSolidBrush(palette.high_contrast?palette.canvas:RGB(16,17,20));FillRect(dc,&area,outside);DeleteObject(outside);
         ensure_math_graphics();
-        {Gdiplus::Graphics graphics(dc);graphics.SetSmoothingMode(Gdiplus::SmoothingModeAntiAlias);Layout fonts{dc,size,false};const auto ink=palette.high_contrast?palette.text:RGB(235,239,245),muted=palette.high_contrast?palette.muted:RGB(174,183,198);
+        {Gdiplus::Graphics graphics(dc);graphics.SetSmoothingMode(Gdiplus::SmoothingModeAntiAlias);Layout fonts{dc,size,false};fonts.minimum_text_size=access.curricular_font_floor?size:0.f;const auto ink=palette.high_contrast?palette.text:RGB(235,239,245),muted=palette.high_contrast?palette.muted:RGB(174,183,198);
             const auto radius=static_cast<float>(px(10)),width=std::max(1.f,static_cast<float>(area.right)-1),height=std::max(1.f,static_cast<float>(area.bottom)-1),diameter=std::min(radius*2,std::min(width,height));Gdiplus::GraphicsPath frame;frame.AddArc(.5f,.5f,diameter,diameter,180,90);frame.AddArc(width-diameter+.5f,.5f,diameter,diameter,270,90);frame.AddArc(width-diameter+.5f,height-diameter+.5f,diameter,diameter,0,90);frame.AddArc(.5f,height-diameter+.5f,diameter,diameter,90,90);frame.CloseFigure();Gdiplus::SolidBrush background(Gdiplus::Color(255,GetRValue(palette.card),GetGValue(palette.card),GetBValue(palette.card)));graphics.FillPath(&background,&frame);const auto border=access.accent_border?palette.accent:palette.outline;Gdiplus::Pen outline(Gdiplus::Color(255,GetRValue(border),GetGValue(border),GetBValue(border)),static_cast<float>(std::max(1,px(1))));graphics.DrawPath(&outline,&frame);
             if(state.HasKey(L"selection")&&state.GetNamedValue(L"selection").ValueType()==JsonValueType::Object){const auto selection=state.GetNamedObject(L"selection");const auto path=read_path(selection.GetNamedArray(L"path"));const auto first=static_cast<int>(selection.GetNamedNumber(L"start")),last=static_cast<int>(selection.GetNamedNumber(L"end"));Gdiplus::SolidBrush fill(Gdiplus::Color(70,GetRValue(palette.accent),GetGValue(palette.accent),GetBValue(palette.accent)));for(const auto& item:box.children)if(item.path==path&&item.index>=first&&item.index<last)graphics.FillRectangle(&fill,item.rect.left+origin_x-scroll,item.rect.top+baseline,item.rect.right-item.rect.left,item.rect.bottom-item.rect.top);}
             if(state.HasKey(L"textSelection")&&state.GetNamedValue(L"textSelection").ValueType()==JsonValueType::Object){

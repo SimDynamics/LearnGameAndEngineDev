@@ -977,6 +977,7 @@ struct MathPuzzleView::Impl {
         auto binding=std::make_unique<ExpressionBinding>();binding->id=id;binding->field=field;auto* identity=binding.get();
         MathExpressionEditorAccess access;access.request=callbacks.expression_request;access.expected_template=text(validator,L"expected");access.language=locale;access.accent_border=true;
         access.minimum_height=56;access.horizontal_padding=12;access.vertical_padding=10;
+        access.curricular_font_floor=true;
         access.changed=[this,identity]{if(initializing||!identity->window)return;capture_expression(*identity);change();if(callbacks.layout_changed)callbacks.layout_changed();};
         access.submit=[this]{submit();};access.focus_changed=[this,identity](bool focused){if(!initializing&&callbacks.expression_focus)callbacks.expression_focus(identity->window,focused);};
         access.cancel=[this]{if(callbacks.back_requested)callbacks.back_requested();};

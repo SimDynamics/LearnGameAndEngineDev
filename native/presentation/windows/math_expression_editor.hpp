@@ -18,6 +18,9 @@ struct MathExpressionEditorAccess {
     bool accent_border=false;
     std::function<void()> cancel;
     int minimum_height=44,horizontal_padding=8,vertical_padding=4;
+    // Lesson expressions keep every glyph at the paragraph's effective size.
+    // The independent calculator retains its own established notation layout.
+    bool curricular_font_floor=false;
 };
 struct MathExpressionCaret {
     std::string path_json;

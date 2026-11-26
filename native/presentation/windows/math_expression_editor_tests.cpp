@@ -37,6 +37,40 @@ void surface_geometry(HWND host,const std::function<std::string(std::string_view
     check(actions==std::vector<std::wstring>{L"previousSlot",L"previousSlot",L"nextSlot",L"nextSlot"}&&GetFocus()==one&&inspect_math_expression_editor(one).latex=="\\frac{1234}{56}","Hardware Up/Down/Tab used leaf steps, changed the expression or abandoned the mathematical editor");
     DestroyWindow(one);DestroyWindow(two);DestroyWindow(three);
 }
+void curricular_expression_font_floor(HWND host,const std::function<std::string(std::string_view)>& dispatch){
+    MathExpressionEditorAccess access;access.request=dispatch;access.curricular_font_floor=true;
+    access.minimum_height=56;access.horizontal_padding=12;access.vertical_padding=10;
+    const auto editor=create_math_expression_editor(host,106,std::move(access));
+    check(set_math_expression_latex(editor,"\\frac{1234}{\\frac{5}{6}}+\\sqrt{x^{2}}"),
+        "Prepare nested curricular fraction, exponent and root");
+    const auto original=inspect_math_expression_editor(editor);
+    const auto dpi=static_cast<int>(GetDpiForWindow(editor));
+    int previous_height=0;HFONT previous=nullptr;
+    for(const int zoom:{75,100,125,150}){
+        const auto minimum=curricular_text_pixels(editor,zoom);
+        const auto font=CreateFontW(-minimum,0,0,0,FW_NORMAL,FALSE,FALSE,FALSE,DEFAULT_CHARSET,
+            OUT_DEFAULT_PRECIS,CLIP_DEFAULT_PRECIS,CLEARTYPE_QUALITY,DEFAULT_PITCH,L"Roboto");
+        check(font!=nullptr,"Cannot create curricular expression font");
+        SendMessageW(editor,WM_SETFONT,reinterpret_cast<WPARAM>(font),TRUE);
+        if(previous)DeleteObject(previous);previous=font;
+        const auto measured=inspect_math_expression_editor(editor);
+        check(measured.measured_height>=previous_height,"Larger curricular text did not grow its expression layout");
+        previous_height=measured.measured_height;
+        for(const int width:{640,160}){
+            MoveWindow(editor,12,12,MulDiv(width,dpi,96),measured.measured_height,TRUE);
+            const auto current=inspect_math_expression_editor(editor);
+            check(current.draft_json==original.draft_json&&current.cursor_json==original.cursor_json&&
+                current.expression_json==original.expression_json&&current.horizontal_rules.size()==2,
+                "Curricular reflow changed the canonical expression or its cursor");
+            check(!current.text_positions.empty()&&std::ranges::all_of(current.text_positions,[&](const auto& glyph){
+                return glyph.size>=minimum&&glyph.baseline>0&&glyph.baseline<=current.measured_height;
+            }),"Nested mathematical text became smaller than the curricular paragraph or left its measured height");
+            check(current.measured_width==measured.measured_width&&current.measured_height==measured.measured_height,
+                "A narrow expression viewport shrank the content instead of retaining horizontal overflow");
+        }
+    }
+    DestroyWindow(editor);if(previous)DeleteObject(previous);
+}
 void blocked_clipboard_cut(HWND editor){
     check(set_math_expression_latex(editor,"\\frac{1234}{56}")&&perform_math_expression_key(editor,"selectAll"),"Prepare a selected canonical expression for a failed native cut");
     const auto original=inspect_math_expression_editor(editor);
@@ -56,6 +90,7 @@ int main(){try{
     auto worker=std::make_shared<windows::NarrationWorker>(std::filesystem::path(build::source_root)/L"out/narration/runtime.json");
     const auto dispatch=[worker](std::string_view request){const auto value=JsonObject::Parse(wide(request));return value.GetNamedString(L"command",L"")==L"math_keyboard"?worker->math_keyboard(request):worker->math_editor(request);};
     surface_geometry(host,dispatch);
+    curricular_expression_font_floor(host,dispatch);
     unsigned changed=0,submitted=0;MathExpressionEditorAccess access;access.request=dispatch;access.changed=[&]{++changed;};access.submit=[&]{++submitted;};access.expected_template="\\frac{1}{2}";
     const auto editor=create_math_expression_editor(host,101,std::move(access));MoveWindow(editor,12,12,750,180,TRUE);SetFocus(editor);
     check(set_math_expression_latex(editor,"\\frac{1234}{56}+\\sqrt{x}"),"Import exact original AST");const auto initial=inspect_math_expression_editor(editor);
