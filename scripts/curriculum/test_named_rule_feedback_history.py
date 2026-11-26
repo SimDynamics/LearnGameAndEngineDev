@@ -101,6 +101,36 @@ class NamedRuleFeedbackHistoryTest(unittest.TestCase):
         with self.assertRaises(fixtures.state.LayoutError):
             fixtures.verify_publications({**self.payloads, "current": json.dumps(altered).encode("utf-8")})
 
+    def test_valid_adoption_is_exported_without_replacing_named_rule_declarations(self):
+        from test_named_rule_checks import declaration_with_variations
+
+        baseline = json.loads(self.payloads["baseline"])
+        authored = deepcopy(baseline)
+        authored["compilerNamedRuleChecks"] = declaration_with_variations()
+        fixtures.state.validate_transition(baseline, authored)
+        payload = (json.dumps(authored, ensure_ascii=False, indent=2) + "\n").encode("utf-8")
+        supplied = {**self.payloads, "current": payload}
+        pristine = deepcopy(authored)
+        documents = fixtures.verify_publications(supplied)
+        self.assertEqual(documents["current"], pristine)
+        self.assertNotIn("compilerNamedRuleChecks", documents["original"])
+        self.assertNotIn("compilerNamedRuleChecks", documents["baseline"])
+        with tempfile.TemporaryDirectory(prefix="named-rule-adoption-") as directory:
+            output = Path(directory)
+            with mock.patch.object(fixtures, "publication_payloads", return_value=supplied):
+                manifest = fixtures.write_fixtures(output)
+            self.assertEqual((output / "current.json").read_bytes(), payload)
+            self.assertEqual(manifest["scenarios"][1]["sha256"],
+                             hashlib.sha256(payload).hexdigest())
+        bad = deepcopy(authored)
+        bad["compilerNamedRuleChecks"][0]["activity"] = "block_9999_9999"
+        with self.assertRaises(fixtures.state.LayoutError):
+            fixtures.verify_publications({**supplied, "current": json.dumps(bad).encode("utf-8")})
+        actual = fixtures.publication_payloads()
+        current = fixtures.verify_publications(actual)["current"]
+        self.assertEqual(current, json.loads(actual["current"]))
+        self.assertEqual(authored, pristine)
+
     def test_missing_git_history_never_falls_back_to_current_assets(self):
         with mock.patch.object(fixtures.history, "publication_bytes",
                                side_effect=FileNotFoundError("historical Git object unavailable")):

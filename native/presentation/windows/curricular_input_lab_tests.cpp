@@ -345,7 +345,8 @@ void prepare_u2l9_prerequisites(state::StateData& data,const curriculum::Lesson&
 
 // The full authentic lesson cannot open its last editor until all earlier
 // activities are complete. Observe these four published compiler objectives
-// with real MSVC/CMake work; only the focal editor has a QA named-rule contract.
+// with real MSVC/CMake work. After Work's adoption, their published private
+// checks must also be satisfied; no stdout-only receipt may bypass them.
 void prepare_named_rule_prerequisites(state::StateData& data, const curriculum::Lesson& lesson,
         curriculum::StatePosition target, const std::filesystem::path& projects) {
     check(lesson.id == "programming_practice_tools__comprobaciones_repetibles__nombrar_reglas_y_separar_acuerdos"
@@ -384,7 +385,7 @@ void prepare_named_rule_prerequisites(state::StateData& data, const curriculum::
         const auto& owner = active_block(lesson, plan.owner);
         phase = "observe actual named-rule prerequisite " + owner.stable_id;
         check(owner.type == curriculum::BlockType::cpp_compiler && owner.output_check
-            && !owner.output_check->cases.empty() && !owner.named_rule_source_check
+            && !owner.output_check->cases.empty()
             && windows::compiler_puzzle_case_count(data, lesson, owner) == 0
             && !windows::compiler_puzzle_completed(data, lesson, owner),
             "A fresh prerequisite lost its own output contract or gained invented source credit");
@@ -401,6 +402,8 @@ void prepare_named_rule_prerequisites(state::StateData& data, const curriculum::
         request.project_files = owner.project_files;
         request.source_files = owner.source_files;
         request.cmake = owner.cmake;
+        if (owner.named_rule_source_check)
+            request.named_rule_probe = owner.named_rule_source_check->execution_probe;
         request.compile_timeout = std::chrono::seconds(90);
         request.execution_timeout = std::chrono::seconds(8);
         std::set<std::string> edited_paths;
@@ -1451,11 +1454,13 @@ std::filesystem::path named_rule_feedback_laboratory(const std::filesystem::path
     const auto& original = active_block(published, "block_0008_0007");
     const auto original_root = JsonObject::Parse(winrt::to_hstring(published_bytes));
     auto root = JsonObject::Parse(winrt::to_hstring(published_bytes));
-    check(!root.HasKey(L"compilerNamedRuleChecks"), "The authenticated fixture already has an authored named-rule declaration");
-    // This is the existing prospective block_0008_0007 declaration from
-    // named_rule_runtime_tests::authored_root_roundtrip, isolated in memory.
-    // Work's pages, state layout, explanations and source remain untouched.
-    root.Insert(L"compilerNamedRuleChecks", JsonArray::Parse(LR"json([
+    // For pre-adoption publications only, use the original prospective
+    // focal contract. After adoption exercise Work's exact declaration and
+    // all its real prerequisites, never replace the published contract.
+    const bool authored_focal = original.named_rule_source_check.has_value();
+    const bool had_declarations = root.HasKey(L"compilerNamedRuleChecks");
+    if (!authored_focal) {
+        const auto prospective = JsonArray::Parse(LR"json([
       {"activity":"block_0008_0007","path":"",
        "executionProbe":{"harness":"","header":"",
          "cases":[{"function":"precio_total","input":11,"expected":77},
@@ -1488,11 +1493,27 @@ std::filesystem::path named_rule_feedback_laboratory(const std::filesystem::path
                  "purposeWords":["precio","costo","tarifa","credito"],"minUses":1},
                 {"function":"alcanza_minimo","value":5,
                  "purposeWords":["minimo","umbral","cantidad"],"minUses":1}]}
-    ])json"));
-    check(root.Size() == original_root.Size() + 1, "QA added an unrelated named-rule root field");
-    for (const auto& item : original_root)
-        check(root.GetNamedValue(item.Key()).Stringify() == item.Value().Stringify(),
-            "The QA named-rule declaration changed a published root field");
+    ])json");
+        auto declarations = had_declarations
+            ? root.GetNamedArray(L"compilerNamedRuleChecks") : JsonArray{};
+        declarations.Append(prospective.GetAt(0));
+        root.Insert(L"compilerNamedRuleChecks", declarations);
+    }
+    check(root.Size() == original_root.Size() + (!had_declarations && !authored_focal ? 1u : 0u),
+        "QA added an unrelated named-rule root field");
+    for (const auto& item : original_root) {
+        if (item.Key() == L"compilerNamedRuleChecks" && !authored_focal) {
+            const auto prior = item.Value().GetArray();
+            const auto revised = root.GetNamedArray(item.Key());
+            check(revised.Size() == prior.Size() + 1, "QA did not append only the missing focal declaration");
+            for (std::uint32_t index = 0; index < prior.Size(); ++index)
+                check(revised.GetAt(index).Stringify() == prior.GetAt(index).Stringify(),
+                    "QA changed a published prerequisite declaration");
+        } else {
+            check(root.GetNamedValue(item.Key()).Stringify() == item.Value().Stringify(),
+                "The QA named-rule declaration changed a published root field");
+        }
+    }
     const auto qa_json = winrt::to_string(root.Stringify());
     auto lesson = windows::parse_lesson_json(qa_json, "es");
     lesson.source_path = published.source_path;
@@ -1513,6 +1534,7 @@ std::filesystem::path named_rule_feedback_laboratory(const std::filesystem::path
         && compiler.project_files.empty() && compiler.source_files.empty() && !compiler.cmake
         && curriculum::same_output_check_runtime_requirements(*compiler.output_check, *original.output_check)
         && compiler.named_rule_source_check && compiler.named_rule_source_check == compact.named_rule_source_check
+        && (!authored_focal || compiler.named_rule_source_check == original.named_rule_source_check)
         && compiler.named_rule_source_check->execution_probe
         && compiler.named_rule_source_check->execution_probe->battery_check
         && compiler.named_rule_source_check->execution_probe->constant_variations
@@ -1775,13 +1797,22 @@ void named_rule_feedback_publications(const std::filesystem::path& fixtures) {
         canonical(id);
         const auto& old = active_block(original,id);
         const auto& now = active_block(current,id);
+        // The original public objective must remain identical. New named-rule
+        // goals deliberately change the receipt frame, but never the address,
+        // source, inputs or outputs. This comparison-only copy is not run or
+        // credited; the actual current lesson keeps every authored check.
+        auto public_objective = now;
+        public_objective.named_rule_source_check = old.named_rule_source_check;
         check(old.type == curriculum::BlockType::cpp_compiler && old.output_check && now.output_check
             && old.initial_code == now.source_format_original_initial_code.value_or(now.initial_code)
             && old.project_files == now.source_format_original_project_files.value_or(now.project_files)
             && old.source_files == now.source_files && old.cmake == now.cmake && old.standard_input == now.standard_input
             && curriculum::same_output_check_runtime_requirements(*old.output_check,*now.output_check)
-            && curriculum::reference_objective_frame(original,old) == curriculum::reference_objective_frame(current,now),
-            "The focal editor or a real prerequisite changed its canonical source or compiler objective");
+            && curriculum::reference_objective_frame(original,old) == curriculum::reference_objective_frame(current,public_objective),
+            "The focal editor or a real prerequisite changed its canonical source or public compiler objective");
+        if (now.named_rule_source_check != old.named_rule_source_check)
+            check(curriculum::reference_objective_frame(original,old) != curriculum::reference_objective_frame(current,now),
+                "A newly authored named-rule objective reused its historical stdout receipt frame");
     }
     for(const auto id : references) {
         canonical(id);

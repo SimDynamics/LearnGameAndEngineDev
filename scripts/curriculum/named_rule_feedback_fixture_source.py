@@ -64,9 +64,13 @@ def verify_publications(payloads: dict[str, bytes], publication: str = "working-
     for document in documents.values():
         if document["id"] != LESSON_ID or document["stateLayout"]["locale"] != "es":
             raise ValueError("The named-rule publication belongs to another lesson or locale")
-        if "compilerNamedRuleChecks" in document:
-            raise ValueError("The prospective named-rule UI fixture already has an authored declaration")
+        # Work can publish named-rule objectives after the original UI pilot.
+        # The complete live publication, including any such declarations,
+        # must pass the real authoring validator. Do not strip the declarations
+        # or substitute the older, prospective fixture for the current asset.
         state.validate(document)
+    if any("compilerNamedRuleChecks" in document for document in (original, baseline)):
+        raise ValueError("The pinned pre-adoption named-rule publications changed")
     state.validate_transition(original, baseline)
     state.validate_transition(baseline, current)
     state.validate_transition(original, current)
