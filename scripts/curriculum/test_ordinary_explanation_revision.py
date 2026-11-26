@@ -80,10 +80,16 @@ class ComposedPracticeToolsEditorialTest(unittest.TestCase):
         owners = ("block_0003_0005", "block_0004_0008")
         after = deepcopy(middle)
         for owner in owners:
-            after = with_revised_question(after, owner)
+            edits = {}
+            block = layout._blocks(after)[owner]
+            for field in ("question", "explanation"):
+                marker = next(item for item in after["textSemantics"]["fields"]
+                              if item["block"] == owner and item["path"] == "/" + field)
+                edits[field] = {"text": block[field] + " Precisión QA.",
+                                "spans": deepcopy(marker["spans"])}
+            after = layout.revise_ordinary_editorial(after, owner, edits)
+        layout.validate_transition(middle, after)
         layout.validate_publication_transition(before, after)
-        with self.assertRaises(layout.LayoutError):
-            layout.validate_transition(before, after)
         original_positions = layout.validate(layout.prepare(before))
         for owner in owners:
             old, new = blocks(before, after, owner)
@@ -97,6 +103,19 @@ class ComposedPracticeToolsEditorialTest(unittest.TestCase):
             self.assertTrue(contract.preserves_previous_exercise(
                 relative, *origin, old, new, previous_document=before,
                 current_document=after, course_id="programming_practice_tools"))
+        # An untouched option's mark must remain byte-for-byte identical
+        # despite the new compiler cases and the two valid prose revisions.
+        repaint = deepcopy(after)
+        marker = next(item for item in repaint["textSemantics"]["fields"]
+                      if item["block"] == owners[0] and item["path"] == "/options/1")
+        self.assertTrue(marker["spans"])
+        marker["spans"] = []
+        with self.assertRaises(ValueError):
+            layout.validate_publication_transition(before, repaint)
+        missing_proof = deepcopy(after)
+        missing_proof["stateLayout"]["editorial"].pop()
+        with self.assertRaises(ValueError):
+            layout.validate_publication_transition(before, missing_proof)
         tampered = deepcopy(after)
         layout._blocks(tampered)[owners[0]]["correctIndex"] = 0
         old, bad = blocks(before, tampered, owners[0])
