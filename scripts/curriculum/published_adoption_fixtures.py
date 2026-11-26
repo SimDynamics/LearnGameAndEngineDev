@@ -45,10 +45,23 @@ def historical_bytes(path):
     expected = PINS[relative[len(PREFIX):]]
     environment = dict(os.environ, GIT_NO_LAZY_FETCH="1",
                        GIT_NO_REPLACE_OBJECTS="1", GIT_TERMINAL_PROMPT="0")
-    payload = subprocess.check_output(
-        ["git", "--no-optional-locks", "-c", f"safe.directory={ROOT}",
-         "show", BASE + ":" + relative, "--"],
-        cwd=ROOT, env=environment, stderr=subprocess.PIPE)
+    git = ["git", "--no-optional-locks", "-c", f"safe.directory={ROOT}"]
+    publication = subprocess.run(
+        git + ["show", BASE + ":" + relative, "--"],
+        cwd=ROOT, env=environment, capture_output=True)
+    if publication.returncode == 0:
+        payload = publication.stdout
+    else:
+        # A shallow checkout may still contain this *exact* immutable blob
+        # when Work has not changed the lesson. Never read an unpinned live
+        # file or strip declarations to simulate the historical predecessor.
+        blob = subprocess.run(git + ["cat-file", "blob", expected],
+                              cwd=ROOT, env=environment, capture_output=True)
+        if blob.returncode != 0:
+            raise ValueError(
+                "Missing authenticated pre-adoption Git object for " + relative
+                + "; fetch the pinned history before running transition QA")
+        payload = blob.stdout
     digest = hashlib.sha1(b"blob " + str(len(payload)).encode("ascii")
                           + b"\0" + payload).hexdigest()
     if digest != expected:

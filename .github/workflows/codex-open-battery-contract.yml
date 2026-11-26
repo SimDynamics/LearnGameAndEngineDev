@@ -4,6 +4,7 @@ on:
   push:
     branches: [Codex]
     paths:
+      - scripts/curriculum/published_adoption_fixtures.py
       - scripts/curriculum/stable_state_layout.py
       - scripts/curriculum/test_open_battery_contract.py
       - scripts/curriculum/test_reduction_contract.py
@@ -32,6 +33,7 @@ jobs:
     steps:
       - uses: actions/checkout@v4
         with:
+          fetch-depth: 0
           persist-credentials: false
       - name: Select Python for native Windows QA
         uses: actions/setup-python@v5
