@@ -63,10 +63,75 @@ def boolean_authorized(before: dict) -> dict:
     return result
 
 
+def assert_adopted_battery_goals(test, live, expected):
+    """Check each adopted owner against its reviewed, independent oracle."""
+    wanted = {item["activity"]: item
+              for item in expected["compilerOpenBatteryChecks"]}
+    for record in live.get("compilerOpenBatteryChecks", []):
+        identity = record["activity"]
+        if identity not in wanted:
+            continue
+        spec = wanted[identity]
+        case_key = next((key for key in ("cases", "originalCases") if key in spec), None)
+        if case_key is None:
+            test.assertEqual(record, spec, identity)
+            continue
+        test.assertEqual(
+            {key: value for key, value in record.items() if key != case_key},
+            {key: value for key, value in spec.items() if key != case_key},
+            identity)
+        test.assertCountEqual(record.get(case_key, []), spec[case_key], identity)
+
+
 class OpenBatteryRootContractTest(unittest.TestCase):
     def test_active_lessons_validate_without_replacing_adopted_contracts(self):
-        assert_live_owner_addresses(self, PATH, (OWNER, ADJUSTMENT_OWNER))
-        assert_live_owner_addresses(self, BOOLEAN_PATH, BOOLEAN_OWNERS)
+        project = assert_live_owner_addresses(self, PATH, (OWNER, ADJUSTMENT_OWNER))
+        boolean = assert_live_owner_addresses(self, BOOLEAN_PATH, BOOLEAN_OWNERS)
+        assert_adopted_battery_goals(
+            self, project, adjustment_authorized(authorized(published())))
+        assert_adopted_battery_goals(
+            self, boolean, boolean_authorized(before_adoption(BOOLEAN_PATH)))
+
+    def test_adopted_boolean_goals_keep_the_reviewed_independent_oracle(self):
+        before = before_adoption(BOOLEAN_PATH)
+        reviewed = boolean_authorized(before)
+        # Absence is legitimate before Work integrates a declaration, and
+        # partial adoption must not be mistaken for a missing historical file.
+        assert_adopted_battery_goals(self, before, reviewed)
+        first = deepcopy(reviewed)
+        first["compilerOpenBatteryChecks"].pop()
+        first["compilerOpenBatteryChecks"][0]["cases"].reverse()
+        state.validate(first)
+        unchanged = deepcopy(first)
+        assert_adopted_battery_goals(self, first, reviewed)
+        self.assertEqual(first, unchanged)
+        assert_adopted_battery_goals(self, reviewed, reviewed)
+
+        # The general authoring schema intentionally accepts independent
+        # expectations. This lesson-specific QA must also reject a valid
+        # schema that no longer describes the reviewed educational goal.
+        for label, change in (
+            ("omitted_case", lambda r: r["cases"].pop()),
+            ("changed_expectation", lambda r: r["cases"][0].update(expected=False)),
+            ("changed_published_result", lambda r: r.update(publishedResult="success")),
+        ):
+            with self.subTest(defect=label):
+                altered = deepcopy(reviewed)
+                change(altered["compilerOpenBatteryChecks"][0])
+                state.validate(altered)
+                with self.assertRaises(AssertionError):
+                    assert_adopted_battery_goals(self, altered, reviewed)
+
+    def test_adopted_adjustment_goals_allow_case_order_but_not_replacement(self):
+        reviewed = adjustment_authorized(authorized(published()))
+        active = deepcopy(reviewed)
+        active["compilerOpenBatteryChecks"][0]["originalCases"].reverse()
+        state.validate(active)
+        assert_adopted_battery_goals(self, active, reviewed)
+        changed = deepcopy(active)
+        changed["compilerOpenBatteryChecks"][1]["libraryTarget"] = "other"
+        with self.assertRaises(AssertionError):
+            assert_adopted_battery_goals(self, changed, reviewed)
 
     def test_real_root_addition_preserves_all_historical_content(self):
         before = published()
