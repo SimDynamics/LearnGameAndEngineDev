@@ -69,6 +69,9 @@ on:
       - native/core/narration_state.hpp
       - app/src/main/assets/content/es/programming/cpp_fundamentals/objetos_y_estado/lesson_enteros_y_aproximaciones.json
       - native/presentation/windows/feedback_font_portable_tests.cpp
+      - native/platform/windows/narration_worker.cpp
+      - native/platform/windows/narration_worker_tests.cpp
+      - native/platform/windows/narration_worker_protocol_fixture.py
       - native/presentation/windows/lesson_view_tests.cpp
       - native/presentation/windows/lesson_reader_tests.cpp
       - native/presentation/windows/text_semantic_projection.hpp
@@ -240,13 +243,13 @@ jobs:
           cmake --build "$env:RUNNER_TEMP/feedback-font-qa"
           --target lgaed_feedback_font_portable_qa lgaed_u2_semantic_portable_qa
           lgaed_inline_feedback_portable_qa lgaed_u1l2_order_whitespace_portable_qa
-          lgaed_reading_gate_portable_qa --parallel 2
+          lgaed_reading_gate_portable_qa lgaed_narration_protocol_portable_qa --parallel 2
       - name: Run original nine inline activities, feedback and U2 colors without speech
         shell: pwsh
         run: >
           ctest --test-dir "$env:RUNNER_TEMP/feedback-font-qa"
           --output-on-failure --no-tests=error -j 1
-          -R "(feedback_font_portable|u2_semantic_view_portable|u2l5_native_reader_gates|u2l6_native_reader_gates|reading_gate_u2l6_current_archived|inline_feedback_u2l5_portable|u1l2_order_blank_portable|lesson_keyboard_navigation_portable)"
+          -R "(feedback_font_portable|u2_semantic_view_portable|u2l5_native_reader_gates|u2l6_native_reader_gates|reading_gate_u2l6_current_archived|inline_feedback_u2l5_portable|u1l2_order_blank_portable|lesson_keyboard_navigation_portable|narration_protocol_portable)"
 
   native-guidance-reopen:
     name: Real Windows compiler guide, StateStore and U12 reader fixtures (MSVC)

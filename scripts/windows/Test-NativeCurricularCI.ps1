@@ -230,6 +230,7 @@ $qaSuiteConfig = switch ($Suite) {
             Tests = @(
                 'native.narration_worker',
                 'native.narration_spanish_pcm',
+                'native.narration_large_lesson_transport',
                 'native.simulation_narration',
                 'native.concept_diagram_narration',
                 'native.narration_player_failure_diagnostic'

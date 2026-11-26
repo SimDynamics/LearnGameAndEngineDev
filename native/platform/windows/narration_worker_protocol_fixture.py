@@ -67,7 +67,8 @@ for line in sys.stdin:
         elif action == "terminate":
             # A stateful mutation must fail; the native transport must not
             # reissue it to a replacement process with no editing session.
-            Path(request["markerFile"]).write_text(str(os.getpid()), encoding="ascii")
+            with Path(request["markerFile"]).open("a", encoding="ascii") as log:
+                log.write(str(os.getpid()) + "\n")
             sys.exit(23)
         else:
             raise RuntimeError("Unexpected fixture action")

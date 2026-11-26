@@ -169,6 +169,7 @@ void recording_key_protocol(const std::filesystem::path& build_directory){
         "Rejecting an invalid recording key broke following request routing");
 }
 void recovery_protocol(const std::filesystem::path& build_directory){
+    using namespace lgaed;
     using namespace lgaed::windows;
     using namespace winrt::Windows::Data::Json;
     NarrationWorker worker(build_directory/L"narration-protocol-fixture-runtime.json");
@@ -218,7 +219,8 @@ void recovery_protocol(const std::filesystem::path& build_directory){
     mutation.Insert(L"markerFile",JsonValue::CreateStringValue((marker_root/L"mutation").native()));
     rejected=false;try{(void)worker.math_editor(winrt::to_string(mutation.Stringify()));}
     catch(const std::exception&){rejected=true;}
-    check(rejected&&std::filesystem::is_regular_file(marker_root/L"mutation")&&pid()!=previous,
+    const auto mutations=state::read_bytes(marker_root/L"mutation");
+    check(rejected&&std::ranges::count(mutations,static_cast<std::uint8_t>('\n'))==1&&pid()!=previous,
         "A stateful editor failure was replayed or prevented subsequent recovery");
     const auto repeat=marker_root/L"repeat";
     rejected=false;try{(void)worker.curriculum_plan(request("always-exit",repeat),0,"es","ef_dora","es");}

@@ -434,7 +434,7 @@ struct NarrationWorker::Impl {
                 std::stop_callback cancel(stop,[&]{
                     if(closed.load()||connection->failed.load())return;
                     try{ensure_winrt_apartment();JsonObject value;put(value,L"command","cancel");put(value,L"id",id);connection->send(winrt::to_string(value.Stringify()));}catch(...){}
-                    if(lightweight)connection->responses.notify_all();
+                    if(lightweight){const std::lock_guard lock(connection->response_mutex);connection->responses.notify_all();}
                 });
                 std::string line;
                 {std::unique_lock lock(connection->response_mutex);

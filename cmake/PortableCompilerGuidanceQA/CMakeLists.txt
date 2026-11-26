@@ -326,6 +326,18 @@ if(LGAED_HOSTED_FEEDBACK_FONT_QA)
     add_library(lgaed_platform_windows ALIAS lgaed_guidance_platform)
     add_library(lgaed_host_options ALIAS lgaed_guidance_qa_options)
     include("${LGAED_ROOT}/cmake/CurricularWindows.cmake")
+    # Test the real production process/pipe transport with a controlled child.
+    # No JVM models, synthesized audio or pinned-toolchain acceptance claimed.
+    find_package(Python3 COMPONENTS Interpreter REQUIRED)
+    add_executable(lgaed_narration_protocol_portable_qa
+        "${LGAED_ROOT}/native/platform/windows/narration_worker_tests.cpp")
+    target_link_libraries(lgaed_narration_protocol_portable_qa PRIVATE
+        lgaed_guidance_platform lgaed_guidance_qa_options)
+    target_link_options(lgaed_narration_protocol_portable_qa PRIVATE /OPT:REF)
+    add_test(NAME native.narration_protocol_portable
+        COMMAND lgaed_narration_protocol_portable_qa --protocol-only
+            "${Python3_EXECUTABLE}" "${CMAKE_CURRENT_BINARY_DIR}")
+    set_tests_properties(native.narration_protocol_portable PROPERTIES TIMEOUT 90 RUN_SERIAL TRUE)
     add_executable(lgaed_feedback_font_portable_qa
         "${LGAED_ROOT}/native/presentation/windows/feedback_font_portable_tests.cpp")
     target_link_libraries(lgaed_feedback_font_portable_qa PRIVATE

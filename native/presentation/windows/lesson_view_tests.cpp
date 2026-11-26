@@ -634,7 +634,11 @@ void console_fullscreen_zoom_escape() {
         require(scale()==150,"Repeated Ctrl+wheel exceeded 150 percent in the normal console");
         control_wheel(fixture.host,display,-WHEEL_DELTA);
         require(scale()<150,"Ctrl+wheel could not decrease the normal console after reaching its limit");
-        control_wheel_to_scale(fixture.host,display,100);
+        control_wheel_to_scale(fixture.host,display,base);
+        // The reader's chosen scale is the minimum for every curricular
+        // surface. Extra negative wheel steps cannot reduce the font.
+        control_wheel(fixture.host,display,-WHEEL_DELTA);
+        require(scale()==base,"The console became smaller than the curricular paragraph");
         CHARRANGE selection{text.empty()?0:1,text.empty()?0:5},source_selection{2,7};
         SendMessageW(display,EM_EXSETSEL,0,reinterpret_cast<LPARAM>(&selection));
         if(source)SendMessageW(source,EM_EXSETSEL,0,reinterpret_cast<LPARAM>(&source_selection));
@@ -1137,7 +1141,7 @@ void console_queued_mouse_focus_and_hit_regions() {
                 "The native-only baseline did not finish with its own focus and free capture");
             return std::pair{result,recorded};
         };
-        const int base=scale();check(base>0,"The queued console fixture has no valid original scale");
+        const int base=scale();check(base==125,"The queued console fixture lost its requested curricular scale");
         const auto text_points=[&](bool full,int expected_scale) {
             if(native_text.empty())return;
             const auto word=native_text.find(L"consoleword");
@@ -1226,19 +1230,22 @@ void console_queued_mouse_focus_and_hit_regions() {
         for(const bool below:{false,true}) {
             blank_click(below,false,scale());cap();
             if(!below){text_points(false,150);gutter(false,150);}
-            wheel_to(100);
+            wheel_to(base);
+            control_wheel(fixture.host,display,-WHEEL_DELTA);
+            check(scale()==base,"Negative wheel escaped the current curricular font floor");
+            focused();retained();
             RECT normal{};GetWindowRect(display,&normal);
             if(output){SendMessageW(fixture.view,WM_COMMAND,MAKEWPARAM(id(0,76),0),0);pump(fixture.host);}
             else fixture.click(0,20);
-            check(fixture.fullscreen()&&scale()==100,"The expand control changed the console's local Ctrl+wheel scale");
+            check(fixture.fullscreen()&&scale()==base,"The expand control changed the console's local Ctrl+wheel scale");
             focused();retained();
-            if(!below){text_points(true,100);gutter(true,100);}
-            blank_click(!below,true,100);cap();
+            if(!below){text_points(true,base);gutter(true,base);}
+            blank_click(!below,true,base);cap();
             if(!below){text_points(true,150);gutter(true,150);}
             blank_click(below,true,150);
-            wheel_to(100);escape();
+            wheel_to(base);escape();
             RECT restored{};GetWindowRect(display,&restored);
-            check(!fixture.fullscreen()&&scale()==100&&EqualRect(&normal,&restored),
+            check(!fixture.fullscreen()&&scale()==base&&EqualRect(&normal,&restored),
                 "One focused Escape did not restore the console's normal geometry at its current local scale");
         }
         if(source) {
