@@ -681,14 +681,18 @@ target_link_libraries(cotizar PRIVATE tarifas)
             "The actual activity resolver sent an already accredited student back to page 12");
         require(navigate_lesson_view(view,11)&&navigate_lesson_view(view,12),
             "The actual current compiler page still blocked the visited successor");
+        require(flush_lesson_view(view),"The current reader could not save its navigation");
         close();
-        store.save(wrong);
-        view=create_lesson_view(host,env,isolated_after);
-        require(view&&lesson_page_state(view).index==11&&!navigate_lesson_view(view,12),
-            "Page coverage alone bypassed a reset/unearned compiler objective");
-        close();
+        // Each reader owns a separate StateStore and can save on navigation.
+        // Refresh the disk snapshot and its optimistic-concurrency token before
+        // recording any further execution; do not overwrite it with 'reopened'.
+        auto verified=store.load();
+        require(windows::compiler_puzzle_progress_completed(verified,after,current)&&
+            windows::compiler_puzzle_historical_completed(verified,after,current)&&
+            !windows::compiler_puzzle_completed(verified,after,current)&&
+            windows::compiler_puzzle_case_count(verified,after,current)==0,
+            "Real navigation lost the historical receipt or invented current cases");
         auto active=request(current,"qa/cotizaciones-individual");
-        auto verified=reopened;
         for(std::size_t i=0;i<current.output_check->cases.size();++i){
             const auto& item=current.output_check->cases[i];active.stdin_utf8=item.standard_input;
             ++active.request_id;++active.revision;
@@ -703,13 +707,30 @@ target_link_libraries(cotizar PRIVATE tarifas)
                 windows::compiler_puzzle_case_count(verified,after,current)==i+1,
                 "The first case was not sufficient or an optional receipt was invented");
         }
-        const auto final=state::decode(state::encode(verified));
+        store.save(verified);
+        const auto final=store.load();
         require(windows::compiler_puzzle_case_count(final,after,current)==4&&
             windows::compiler_puzzle_historical_completed(final,after,current),
             "Reopening lost independent old and current execution receipts");
         for(const auto& [key,value]:old_receipts)
             require(final.preferences.at("native_windows").at(key)==value,
                 "A new real execution rewrote an old receipt");
+        // Reset the latest persisted revision only after checking both epochs
+        // on disk. Keep the real page-13 coverage so the entry resolver must
+        // reject it for lack of evidence, not for a missing page visit.
+        auto reset=final;
+        windows::reset_compiler_puzzle(reset,after,current);
+        require(!windows::compiler_puzzle_progress_completed(reset,after,current)&&
+            !windows::compiler_puzzle_historical_completed(reset,after,current)&&
+            !windows::compiler_puzzle_completed(reset,after,current)&&
+            windows::compiler_puzzle_case_count(reset,after,current)==0,
+            "Reset did not revoke both persisted execution epochs");
+        store.save(reset);
+        view=create_lesson_view(host,env,isolated_after);
+        require(view&&lesson_page_state(view).index==11&&!navigate_lesson_view(view,12),
+            "Page coverage alone bypassed a reset/unearned compiler objective");
+        require(flush_lesson_view(view),"The reset reader could not save its blocked page");
+        close();
         require(env.paths.root.parent_path().filename()==L"qa"&&
             env.paths.root.parent_path().parent_path().filename()==L"Codex",
             "Cotizaciones QA escaped its isolated profile");

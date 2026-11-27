@@ -1,6 +1,6 @@
 [CmdletBinding()]
 param(
-    [ValidateSet('StateImport', 'CatalogU1', 'ReaderRevision', 'ReaderRevisionRegressions', 'CodeScope', 'NarrationPlayer', 'ReaderBuild', 'MathEditorial', 'NarrationWorker', 'U12Reader',
+    [ValidateSet('StateImport', 'CatalogU1', 'ReaderRevision', 'ReaderRevisionRegressions', 'CodeScope', 'NarrationPlayer', 'ReaderBuild', 'CotizacionesContinuity', 'MathEditorial', 'NarrationWorker', 'U12Reader',
         'U11EditorialReader', 'CompilerHistoricalReader', 'U6DiagnosticReader', 'CurrentReaders')]
     [string] $Suite = 'StateImport',
     [ValidateSet('All', 'DeclarationsAssignments', 'Characters')]
@@ -33,8 +33,8 @@ if ($EditorialGroup -ne 'All' -and $Suite -ne 'U11EditorialReader') {
 if ($CurrentReaderGroup -ne 'All' -and $Suite -ne 'CurrentReaders') {
     throw 'A current-reader selection requires the CurrentReaders suite.'
 }
-if ($MsvcPreflightOnly -and $Suite -notin @('StateImport', 'CatalogU1', 'ReaderBuild', 'ReaderRevision', 'ReaderRevisionRegressions', 'CodeScope')) {
-    throw 'The early MSVC preflight is available only for hosted StateImport, CatalogU1, ReaderBuild, ReaderRevision, ReaderRevisionRegressions and CodeScope suites.'
+if ($MsvcPreflightOnly -and $Suite -notin @('StateImport', 'CatalogU1', 'ReaderBuild', 'CotizacionesContinuity', 'ReaderRevision', 'ReaderRevisionRegressions', 'CodeScope')) {
+    throw 'The early MSVC preflight is available only for hosted StateImport, CatalogU1, ReaderBuild, CotizacionesContinuity, ReaderRevision, ReaderRevisionRegressions and CodeScope suites.'
 }
 
 $qaRoot = [System.IO.Path]::GetFullPath((Join-Path $PSScriptRoot '..\..'))
@@ -210,6 +210,15 @@ $qaSuiteConfig = switch ($Suite) {
                 'lgaed_open_battery_runtime_tests'
             )
             Results = 'reader-build'
+        }
+    }
+    'CotizacionesContinuity' {
+        @{
+            Directory = 'cotizaciones-continuity-ci'
+            CMakeOption = 'LGAED_READER_BUILD_QA_ONLY'
+            Targets = @('lgaed_cpp_project_view_tests')
+            Results = 'cotizaciones-continuity'
+            Tests = @('native.cpp_project_u2_cotizaciones_continuity', 'native.cpp_project_u2_exact_eof')
         }
     }
     'MathEditorial' {
@@ -808,7 +817,14 @@ if ($Suite -eq 'ReaderBuild') {
     return
 }
 
-$qaListingText = & $qaCTest --test-dir $qaBuild --show-only=json-v1
+# Reuse the full ReaderBuild CMake configuration, but explicitly select
+# the two real U2 project tests for test-only continuity iterations.
+# Ordinary ReaderBuild runs still verify and execute every registration.
+$qaFocusedRegistration = @()
+if ($Suite -eq 'CotizacionesContinuity') {
+    $qaFocusedRegistration = @('-R', '^native\.cpp_project_u2_(cotizaciones_continuity|exact_eof)$')
+}
+$qaListingText = & $qaCTest --test-dir $qaBuild --show-only=json-v1 @qaFocusedRegistration
 if ($LASTEXITCODE -ne 0) { throw 'Cannot inspect the focused native test registration.' }
 if ($Suite -eq 'ReaderRevisionRegressions') {
     $qaListingText | Set-Content -LiteralPath (Join-Path $qaBuild 'reader-revision-regressions-tests.json') -Encoding utf8
@@ -827,7 +843,7 @@ if ($qaActualTests.Count -ne $qaExpected.Count -or
 
 # Keep the complete suite registration intact. An explicit focal run
 # validates its exact original names before using the same CTest filter.
-$qaCTestSelection = @()
+$qaCTestSelection = $qaFocusedRegistration
 if ($CompilerHistoryGroup -ne 'All' -or $EditorialGroup -ne 'All' -or $CurrentReaderGroup -ne 'All') {
     if ($CurrentReaderGroup -ne 'All') {
         $qaSelectionLabel = "current-reader $CurrentReaderGroup"
