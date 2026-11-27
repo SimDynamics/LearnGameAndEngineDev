@@ -20,6 +20,14 @@ ASSET = ("app/src/main/assets/content/es/programming/programming_practice_tools/
          "construccion_reproducible/lesson_opciones_y_revision_de_la_configuracion.json")
 COMMIT = "9e4c2be0c7218183d9946d0a417335c807e5b49d"
 BLOB = "58bd9144890708e2675270006beb68062dfc669a"
+# The Spanish lesson has a v2 map anchored to all three shipped locales.
+# Read the other two exact Git objects, never synthesize translations or
+# weaken the family guard merely to generate an isolated Spanish fixture.
+FAMILY_BLOBS = {
+    "en": "626fbe7785bee075ec385c54007350339417d262",
+    "es": BLOB,
+    "fr": "a35a5ee51765900f6176a5a684984ea5974ba140",
+}
 OWNER = "block_0011_0003"
 PARAGRAPHS = ("block_0011_0001", "block_0011_0002", "block_0011_0004")
 CLIENT = '''#include "precio.h"
@@ -35,15 +43,19 @@ int main() {
 '''
 
 
-def original_bytes():
-    raw = subprocess.check_output(["git", "show", f"{COMMIT}:{ASSET}"], cwd=ROOT)
-    if hashlib.sha1(b"blob " + str(len(raw)).encode("ascii") + b"\0" + raw).hexdigest() != BLOB:
-        raise ValueError("The complete published Cotizaciones predecessor differs from its Git pin")
+def original_bytes(locale="es"):
+    expected = FAMILY_BLOBS[locale]
+    asset = ASSET.replace("/es/", f"/{locale}/", 1)
+    raw = subprocess.check_output(["git", "show", f"{COMMIT}:{asset}"], cwd=ROOT)
+    if hashlib.sha1(b"blob " + str(len(raw)).encode("ascii") + b"\0" + raw).hexdigest() != expected:
+        raise ValueError(f"The complete published Cotizaciones {locale} predecessor differs from its Git pin")
     return raw
 
 
 def stages(*, prose_first=False):
-    before = json.loads(original_bytes())
+    family = {locale: json.loads(original_bytes(locale)) for locale in FAMILY_BLOBS}
+    layout.check_localized_family(list(family.values()), list(family))
+    before = family["es"]
     layout.validate(before)
     assert len(before["pages"]) == 14
     assert before["stateLayout"]["current"][11]["blocks"] == [
@@ -86,7 +98,7 @@ def stages(*, prose_first=False):
             if owner == PARAGRAPHS[-1]:
                 spans.append(layout.text_semantics.select(block["text"], "0:6:15", "output"))
             marker.update(layout.text_semantics.make_field(draft, owner, "/text", spans))
-        return layout.prepare_v2(draft, "es", {"es": doc}, doc)
+        return layout.prepare_v2(draft, "es", dict(family, es=doc), doc)
 
     middle = prose(before) if prose_first else split(before)
     after = split(middle) if prose_first else prose(middle)
