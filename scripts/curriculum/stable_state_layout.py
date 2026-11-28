@@ -2151,6 +2151,126 @@ def _identifier_prose_archive(previous: dict, current: dict, identity: str,
     }
 
 
+def _review_revision_archive(document: dict, previous: dict, identity: str,
+                             before: dict, after: dict) -> dict:
+    """Exact endpoints of a newly authored review edge, not just its hashes."""
+    return {
+        "historySha256": fingerprint({"lessonId": document["id"],
+            "locale": document["stateLayout"]["locale"],
+            "editorial": document["stateLayout"]["editorial"]}),
+        "previousBlock": deepcopy(before),
+        "currentBlock": deepcopy(after),
+        "previousTextSemantics": _identifier_owner_semantics(previous, identity),
+        "currentTextSemantics": _identifier_owner_semantics(document, identity),
+    }
+
+
+def _review_archive_fields(document: dict, proof: dict, ordinal: int):
+    archive = proof["reviewRevision"]
+    identity = proof["id"]
+    meta = document["stateLayout"]
+    require(type(archive) is dict and set(archive) == {
+        "historySha256", "previousBlock", "currentBlock",
+        "previousTextSemantics", "currentTextSemantics"}
+        and "reviewPaths" in proof and "bibliography" not in proof
+        and "identifierRenameProse" not in proof,
+        "Malformed ordinary review revision archive")
+    require(_digest(archive["historySha256"]) == fingerprint({
+        "lessonId": document["id"], "locale": meta["locale"],
+        "editorial": meta["editorial"][:ordinal]}),
+        "Review revision archive differs from its complete editorial prefix")
+    before, after = archive["previousBlock"], archive["currentBlock"]
+    require(type(before) is dict and type(after) is dict
+            and fingerprint(before) == proof["beforeSha256"]
+            and fingerprint(after) == proof["afterSha256"],
+            "Review revision must retain both exact complete block versions")
+    paths = ordinary_editorial_paths(before, after)
+    hints = ordinary_feedback_paths(before, after)
+    require(bool(paths) and bool(hints) and proof["reviewPaths"] == list(hints),
+            "Review revision archive changed an unowned hint path or protected field")
+    old_fields, new_fields = archive["previousTextSemantics"], archive["currentTextSemantics"]
+    old = _identifier_prose_semantics(old_fields, identity, before)
+    new = _identifier_prose_semantics(new_fields, identity, after)
+    require(set(paths) <= new.keys(),
+            "Every archived review edit needs its exact authored descriptor")
+    require(all(old.get(path) == new.get(path)
+                for path in (old.keys() | new.keys()) - set(paths)),
+            "Review revision archive changed unrelated reading semantics")
+    require(all(not old[path]["spans"] or bool(new[path]["spans"])
+                for path in set(paths) & old.keys()),
+            "Review revision cannot discard existing authored highlights")
+    return before, after, old_fields, new_fields
+
+
+def _first_hint_introduction_paths(before: dict, after: dict) -> tuple[str, ...]:
+    """The legacy first-addition edge may also edit ordinary visible prose."""
+    if ("reviewFeedback" in before or "reviewFeedback" not in after
+            or before.get("type") not in ORDINARY_EDITORIAL_TYPES):
+        return ()
+    value = after["reviewFeedback"]
+    if type(value) is str and value.strip():
+        hints = ("/reviewFeedback",)
+    elif (before.get("type") == "multiple_choice" and type(value) is list
+          and type(before.get("options")) is list
+          and len(value) == len(before["options"]) > 0
+          and all(type(item) is str and bool(item.strip()) for item in value)):
+        hints = tuple(f"/reviewFeedback/{index}" for index in range(len(value)))
+    else:
+        return ()
+    prose = deepcopy(after)
+    del prose["reviewFeedback"]
+    paths = ordinary_editorial_paths(before, prose)
+    if prose != before and not paths:
+        return ()
+    return paths + hints
+
+
+def _authenticated_first_hint_chain(previous: dict, current: dict, identity: str,
+                                    proofs: list[dict]) -> bool:
+    """Prove an unpublished introduction followed by one or more review edges.
+
+    Older hash-only edges remain valid individually. A skipped first edition
+    is accepted only when the exact intermediate payload and descriptors can
+    be checked. Never infer the missing previous text from the final text.
+    """
+    if (len(proofs) < 2 or set(proofs[0]) != {"id", "beforeSha256", "afterSha256"}
+            or not all("reviewRevision" in proof for proof in proofs[1:])):
+        return False
+    before = _all_blocks(previous)[identity]
+    after = _all_blocks(current)[identity]
+    first = proofs[1]["reviewRevision"]
+    middle = first["previousBlock"]
+    paths = _first_hint_introduction_paths(before, middle)
+    require(bool(paths) and proofs[0]["beforeSha256"] == fingerprint(before)
+            and proofs[0]["afterSha256"] == fingerprint(middle),
+            "First hint introduction lacks its exact authenticated predecessor")
+    old_fields = _identifier_owner_semantics(previous, identity)
+    middle_fields = first["previousTextSemantics"]
+    old = _identifier_prose_semantics(old_fields, identity, before)
+    new = _identifier_prose_semantics(middle_fields, identity, middle)
+    allowed = set(paths)
+    require(all(old.get(path) == new.get(path)
+                for path in (old.keys() | new.keys()) - allowed),
+            "First hint introduction changed unrelated reading semantics")
+    require(all(path in new and (not old[path]["spans"] or bool(new[path]["spans"]))
+                for path in allowed & old.keys()),
+            "First hint introduction lost existing authored descriptors")
+    # validate(current) has already verified every archive, its full history
+    # prefix, exact block hashes, option paths and reading descriptors.
+    last, marks = middle, middle_fields
+    for proof in proofs[1:]:
+        archive = proof["reviewRevision"]
+        require(identifier_rename.same_json_value_and_types(last, archive["previousBlock"])
+                and identifier_rename.same_json_value_and_types(marks, archive["previousTextSemantics"]),
+                "Consecutive review revisions must retain the exact intermediate source and marks")
+        last, marks = archive["currentBlock"], archive["currentTextSemantics"]
+    require(identifier_rename.same_json_value_and_types(last, after)
+            and identifier_rename.same_json_value_and_types(
+                marks, _identifier_owner_semantics(current, identity)),
+            "Review revision chain does not describe the delivered block and marks")
+    return True
+
+
 def _authenticated_identifier_prose(document: dict, record: dict, endpoint: dict,
                                     current: dict, start: int) -> set[int]:
     """Check EVERY later same-owner edge; endpoint remains the exact rename.
@@ -2805,7 +2925,7 @@ def _validate_v2(document: dict) -> dict[tuple[int, int], tuple[int, int]]:
     chains = {}
     for ordinal, proof in enumerate(editorial):
         fields = {"id", "beforeSha256", "afterSha256"}
-        require(type(proof) is dict and fields <= set(proof) <= fields | {"returnTo", "bibliography", "reviewPaths", "identifierRenameProse"}
+        require(type(proof) is dict and fields <= set(proof) <= fields | {"returnTo", "bibliography", "reviewPaths", "identifierRenameProse", "reviewRevision"}
                 and not {"returnTo", "bibliography"} <= set(proof),
                 "Malformed editorial proof")
         identity = _identity(proof["id"])
@@ -2892,6 +3012,8 @@ def _validate_v2(document: dict) -> dict[tuple[int, int], tuple[int, int]]:
                     "A bibliography archive changed its owner's protected exercise contract")
             _validate_bibliography_semantics(archive["previousTextSemantics"], identity, old_block)
             _validate_bibliography_semantics(archive["currentTextSemantics"], identity, new_block)
+        if "reviewRevision" in proof:
+            _review_archive_fields(document, proof, ordinal)
         chains[identity].append(after)
     for identity, chain in chains.items():
         require(chain[-1] == fingerprint(actual[identity]), "Editorial proof does not describe the current block")
@@ -2956,6 +3078,7 @@ def _editorial_proof(document: dict, previous: dict, locale: str, identity: str,
     if ordinary := ordinary_editorial_fields(before, after):
         if "reviewFeedback" in ordinary:
             proof["reviewPaths"] = list(ordinary_feedback_paths(before, after))
+            proof["reviewRevision"] = _review_revision_archive(document, previous, identity, before, after)
     if archive_bibliography and bibliography_revision.is_bibliography_only_revision(before, after):
         proof["bibliography"] = {
             "historySha256": fingerprint({"lessonId": document["id"], "locale": locale,
@@ -8018,6 +8141,8 @@ def revise_ordinary_editorial(document: dict, identity: str, edits: dict) -> dic
            document["stateLayout"].get("identifierRenameRevisions", [])):
         proof["identifierRenameProse"] = _identifier_prose_archive(
             document, result, identity, original, revised)
+    elif "reviewPaths" in proof:
+        proof["reviewRevision"] = _review_revision_archive(result, document, identity, original, revised)
     result["stateLayout"]["editorial"].append(proof)
     validate_transition(document, result)
     return result
@@ -8855,7 +8980,26 @@ def _validate_transition_v2(previous: dict, current: dict) -> None:
         # Keep the stricter revision contract for every already-present field,
         # including malformed empty/null values; absence is not truthiness.
         rename_prose = [proof for proof in proofs if "identifierRenameProse" in proof]
-        if rename_prose:
+        for proof in proofs:
+            if "reviewRevision" not in proof:
+                continue
+            archive = proof["reviewRevision"]
+            if proof["beforeSha256"] == old_hash:
+                require(archive["previousBlock"] == block and archive["previousTextSemantics"]
+                        == _identifier_owner_semantics(baseline, identity),
+                        "Review revision archive differs from the actual published predecessor")
+            if proof["afterSha256"] == new_hash:
+                require(archive["currentBlock"] == actual and archive["currentTextSemantics"]
+                        == _identifier_owner_semantics(current, identity),
+                        "Review revision archive differs from the actual delivered owner")
+        introduced_review = ("reviewFeedback" not in block and "reviewFeedback" in actual
+                             and any("reviewPaths" in proof for proof in proofs)
+                             and _authenticated_first_hint_chain(baseline, current, identity, proofs))
+        if introduced_review:
+            # Every new review edge is anchored to the real first edition,
+            # including its exact option-indexed semantic predecessor.
+            pass
+        elif rename_prose:
             # Each full intermediate block, guide path and descriptor was
             # independently verified above; do not collapse a real return.
             pass
@@ -9170,14 +9314,36 @@ def _retirement_publication_predecessor(previous: dict, current: dict, index: in
     return result
 
 
-def validate_publication_transition(previous: dict, current: dict) -> None:
+def validate_publication_transition(previous: dict, current: dict, *,
+                                    intermediate_publications=()) -> None:
     """Verify one publication edge or every evidenced intervening retirement.
 
     validate_transition remains the strict one-edge authoring guard. A valid
     final document alone is not a chain: every reconstructed predecessor must
     itself validate and every adjacent pair must pass that unchanged guard.
     No file, curriculum object or student state is modified.
+    Explicit intermediate publications are supported for legacy hash-only
+    histories. They must be actual complete v2 editorial prefixes, and each
+    adjacent transition still passes the original strict validator.
     """
+    if intermediate_publications:
+        predecessor = previous
+        final_meta = current.get("stateLayout", {})
+        require(final_meta.get("version") == 2
+                and previous.get("stateLayout", {}).get("version") == 2,
+                "Explicit intermediate publications require an existing v2 history")
+        final_history = final_meta["editorial"]
+        for witness in intermediate_publications:
+            meta = witness.get("stateLayout", {})
+            history = meta.get("editorial", [])
+            require(meta.get("version") == 2 and witness.get("id") == current.get("id")
+                    and len(predecessor["stateLayout"]["editorial"]) < len(history) < len(final_history)
+                    and final_history[:len(history)] == history,
+                    "Intermediate publication must be an exact ordered editorial prefix")
+            validate_publication_transition(predecessor, witness)
+            predecessor = witness
+        validate_publication_transition(predecessor, current)
+        return
     try:
         validate_transition(previous, current)
         return
@@ -9652,6 +9818,8 @@ def main() -> None:
     parser.add_argument("--plan", type=Path, help="JSON list of stable page/block IDs in display order")
     parser.add_argument("--output", type=Path, help="New path; never overwrite a Work/Codex file")
     parser.add_argument("--previous", type=Path, help="Required published lesson for prepare/reorder/check")
+    parser.add_argument("--intermediate", action="append", type=Path, default=[],
+                        help="Exact complete intermediate v2 publication for check; repeat in order")
     parser.add_argument("--base-ref", help="Required verified remote HEAD for check-tree")
     parser.add_argument("--locale", choices=sorted(LOCALES), help="Use v2 and read all published language assets from Git")
     parser.add_argument("--additions", type=Path,
@@ -9726,6 +9894,8 @@ def main() -> None:
                   "Publish its course index, unit indices and complete lessons atomically; "
                   "run check-tree against the verified base and reopen the Windows app.")
             return
+        require(not args.intermediate or args.action == "check",
+                "Explicit intermediate publications are only for check")
         source = load(args.source)
         require(type(source) is dict, "A lesson must be a JSON object")
         locale = args.locale
@@ -9820,7 +9990,8 @@ def main() -> None:
                     case_semantics=load(args.case_semantics), return_to=args.return_to)
         else:
             validate(source)
-            validate_transition(previous, source)
+            validate_publication_transition(previous, source,
+                intermediate_publications=[load(path) for path in args.intermediate])
             print("Lesson transition valid; run check-tree for all shipped translations before publication. "
                   "No student data or files changed.")
             return

@@ -152,6 +152,55 @@ class LegacyReviewFeedbackAdoptionTest(unittest.TestCase):
         self.assertEqual(layout.state_fingerprint(layout._blocks(before)[IDENTITY]),
                          layout.state_fingerprint(layout._blocks(after)[IDENTITY]))
 
+    def test_unpublished_first_hint_revision_preserves_exact_intermediate(self):
+        for kind in ("output_prediction", "multiple_choice"):
+            before, middle = first_hint(kind)
+            guide = ({"text": "Guía vigente.", "spans": []} if kind == "output_prediction"
+                     else {"0": {"text": "Guía vigente del primer botón.", "spans": []},
+                           "2": {"text": "Guía vigente del tercer botón.", "spans": []}})
+            final = layout.revise_ordinary_editorial(middle, IDENTITY, {
+                "question": {"text": "Pregunta precisada.", "spans": []},
+                "reviewFeedback": guide})
+            with self.subTest(kind=kind):
+                layout.validate_transition(before, middle)
+                layout.validate_transition(middle, final)
+                layout.validate_publication_transition(before, final)
+                proof = final["stateLayout"]["editorial"][-1]
+                archive = proof["reviewRevision"]
+                self.assertEqual(archive["previousBlock"], layout._blocks(middle)[IDENTITY])
+                self.assertEqual(archive["currentBlock"], layout._blocks(final)[IDENTITY])
+                self.assertEqual(layout.state_fingerprint(layout._blocks(before)[IDENTITY]),
+                                 layout.state_fingerprint(layout._blocks(final)[IDENTITY]))
+                legacy = deepcopy(final)
+                del legacy["stateLayout"]["editorial"][-1]["reviewRevision"]
+                with self.assertRaises(ValueError):
+                    layout.validate_publication_transition(before, legacy)
+                layout.validate_publication_transition(before, legacy,
+                    intermediate_publications=[middle])
+                bad_witness = deepcopy(middle)
+                layout._blocks(bad_witness)[IDENTITY]["question"] += " Falso."
+                with self.assertRaises(ValueError):
+                    layout.validate_publication_transition(before, legacy,
+                        intermediate_publications=[bad_witness])
+                for fault in ("archive", "hint-path", "intermediate", "after", "prefix", "mark"):
+                    forged = deepcopy(final)
+                    edge = forged["stateLayout"]["editorial"][-1]
+                    record = edge["reviewRevision"]
+                    if fault == "archive":
+                        del edge["reviewRevision"]
+                    elif fault == "hint-path":
+                        edge["reviewPaths"] = ["/reviewFeedback/1"]
+                    elif fault == "intermediate":
+                        record["previousBlock"]["question"] += " Falso."
+                    elif fault == "after":
+                        record["currentBlock"]["question"] += " Falso."
+                    elif fault == "prefix":
+                        record["historySha256"] = "0" * 64
+                    else:
+                        record["currentTextSemantics"] = []
+                    with self.subTest(kind=kind, fault=fault), self.assertRaises(ValueError):
+                        layout.validate_publication_transition(before, forged)
+
     def test_ordinary_revision_helper_does_not_gain_a_new_hint_addition_api(self):
         source = original_lesson()
         before = layout.prepare_v2(source, "es", {"es": source})

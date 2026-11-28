@@ -1431,7 +1431,8 @@ def preserves_ordinary_explanation_revision(relative, pn, bn, old, current,
             not isinstance(current_document, dict)):
         return False
     revised_fields = _state_layout.ordinary_editorial_fields(old, current)
-    if not revised_fields:
+    first_hint_chain = ("reviewFeedback" not in old and "reviewFeedback" in current)
+    if not revised_fields and not first_hint_chain:
         return False
     try:
         if not is_structural_course_id(course_id):
@@ -1462,6 +1463,12 @@ def preserves_ordinary_explanation_revision(relative, pn, bn, old, current,
         if (baseline["pages"][page]["blocks"][block] != old
                 or _state_layout._blocks(current_document).get(identity) != current):
             return False
+        if not revised_fields:
+            old_history = baseline["stateLayout"].get("editorial", [])
+            proofs = [proof for proof in current_document["stateLayout"]["editorial"][len(old_history):]
+                      if proof["id"] == identity]
+            return _state_layout._authenticated_first_hint_chain(
+                baseline, current_document, identity, proofs)
         semantics = _state_layout.text_semantics.validate(current_document)
         # An empty span list explicitly declares prose; absence is not authoring.
         changed_paths = set(_state_layout.ordinary_editorial_paths(old, current))

@@ -3630,7 +3630,7 @@ StateLayout read_layout(const JsonObject& metadata, const JsonArray& pages, std:
         for (const auto& value : revisions) {
             const auto change = value.GetObject();
             allowed_keys(change, {"id", "beforeSha256", "afterSha256", "returnTo",
-                                  "bibliography", "reviewPaths", "identifierRenameProse"});
+                                  "bibliography", "reviewPaths", "identifierRenameProse", "reviewRevision"});
             require(!change.HasKey(L"identifierRenameProse")||
                     identifier_rename_originals.contains(text(change,"id")),
                 "Identifier prose belongs to an authenticated renamed owner");
@@ -3715,6 +3715,52 @@ StateLayout read_layout(const JsonObject& metadata, const JsonArray& pages, std:
             require(result.signatures.contains(id) && valid_hash(before) && valid_hash(after) && before != after, "Invalid editorial record");
             if (!seen.contains(id)){seen[id].insert(before);editorial_nodes[id].push_back(before);}
             require(!editorial.contains(id) || editorial.at(id) == before,"Broken editorial chain");
+            if(change.HasKey(L"reviewRevision")){
+                require(change.HasKey(L"reviewPaths")&&!change.HasKey(L"bibliography")&&
+                        !change.HasKey(L"identifierRenameProse"),
+                    "An ordinary review archive needs its own guidance proof");
+                const auto archive=change.GetNamedObject(L"reviewRevision");
+                allowed_keys(archive,{"historySha256","previousBlock","currentBlock",
+                    "previousTextSemantics","currentTextSemantics"},true);
+                JsonObject provenance;provenance.Insert(L"lessonId",JsonValue::CreateStringValue(key(lesson_id)));
+                provenance.Insert(L"locale",JsonValue::CreateStringValue(key(result.locale)));
+                provenance.Insert(L"editorial",prefix);
+                require(text(archive,"historySha256")==fingerprint(provenance),
+                    "Review revision archive differs from its complete editorial prefix");
+                const auto previous=archive.GetNamedObject(L"previousBlock"),
+                    revised=archive.GetNamedObject(L"currentBlock");
+                require(fingerprint(previous)==before&&fingerprint(revised)==after,
+                    "Review revision archive must retain both exact complete block versions");
+                const auto paths=identifier_prose_paths(previous,revised);
+                JsonArray hints;
+                for(const auto& path:paths)if(path.starts_with("/reviewFeedback"))
+                    hints.Append(JsonValue::CreateStringValue(key(path)));
+                require(hints.Size()&&fingerprint(hints)==fingerprint(array(change,"reviewPaths")),
+                    "Review revision archive changed an unowned hint path");
+                const auto old_fields=array(archive,"previousTextSemantics"),
+                    new_fields=array(archive,"currentTextSemantics");
+                const auto old_marks=read_identifier_prose_semantics(previous,old_fields,id),
+                    new_marks=read_identifier_prose_semantics(revised,new_fields,id);
+                for(const auto& path:paths){
+                    require(new_marks.contains(path),"Every archived review edit needs its authored descriptor");
+                    require(!old_marks.contains(path)||old_marks.at(path).spans.empty()||
+                            !new_marks.at(path).spans.empty(),
+                        "Review revision cannot discard existing authored highlights");
+                }
+                for(const auto& [path,field]:old_marks)
+                    if(std::ranges::find(paths,path)==paths.end())
+                        require(new_marks.contains(path)&&new_marks.at(path)==field,
+                            "Review revision archive changed unrelated reading semantics");
+                for(const auto& [path,field]:new_marks)
+                    if(std::ranges::find(paths,path)==paths.end())
+                        require(old_marks.contains(path)&&old_marks.at(path)==field,
+                            "Review revision archive invented unrelated reading semantics");
+                collect_actual();const auto owner=return_actual_blocks.find(id);
+                require(owner!=return_actual_blocks.end()&&
+                    state_fingerprint(protected_source(id,previous,true))==
+                    state_fingerprint(protected_source(id,owner->second)),
+                    "Review revision archive changed the protected owner contract");
+            }
             if(change.HasKey(L"bibliography")){
                 require(!change.HasKey(L"returnTo"),"A bibliographic revision cannot claim an editorial return");
                 const auto archive=change.GetNamedObject(L"bibliography");
