@@ -447,6 +447,148 @@ void check_first_hint_reader(const std::filesystem::path& directory) {
         std::cout<<"PASS authentic U3L5 first-hint revision: native full/metadata loader rejects forged archives; scalar and indexed visible/reader guidance and original reviewed attempts survive reopen (no neural PCM claim)\n";
     }catch(...){close();if(host)DestroyWindow(host);throw;}
 }
+
+void check_multiple_option_epochs(const std::filesystem::path& directory) {
+    const auto path=[&](std::string_view stage){
+        return directory/std::string(stage)/
+            "es/programming/cpp_fundamentals/edition_es_1__expresiones_y_decisiones/lesson_alternativas_y_fronteras.json";
+    };
+    std::vector<Lesson> full,lean;
+    for(const auto stage:{"before","first","three","later"}){
+        full.push_back(windows::load_lesson(path(stage)));
+        lean.push_back(windows::load_lesson_progress_metadata(path(stage)));
+    }
+    constexpr std::string_view owner="block_0004_0002";
+    const auto position=stable_block_position(full.front(),owner);
+    require(position&&position->page==4,"The real U3L4 owner moved from page five");
+    const auto target=[&](const Lesson& model)->const Block&{
+        const auto at=stable_block_position(model,owner);
+        require(at&&at->page==position->page&&at->block==position->block,
+            "Option revision changed the original U3L4 owner position");
+        return model.pages.at(at->page).blocks.at(at->block);
+    };
+    const auto& original=target(full.front());
+    const auto& latest=target(full.back());
+    require(original.options.size()==3&&original.correct_index==1&&
+            latest.correct_index==original.correct_index&&latest.options.size()==3,
+        "The real U3L4 options no longer have their original correct index");
+    const auto original_key=exercise_key(full.front(),original);
+    const std::vector<std::size_t> counts{0,1,3,4};
+    std::vector<curriculum::ChoiceRevision> prior;
+    for(std::size_t stage=0;stage<full.size();++stage){
+        const auto& model=full[stage];
+        const auto& current=target(model);
+        const auto& metadata=target(lean[stage]);
+        require(state::response_storage_key(model,current)==original_key&&
+                state::response_storage_key(lean[stage],metadata)==original_key&&
+                current.options==metadata.options&&current.correct_index==metadata.correct_index,
+            "The full/progress loader moved the original response key or option index");
+        std::vector<curriculum::ChoiceRevision> journal;
+        for(const auto& record:model.state_layout.choice_revisions)
+            if(record.id==owner)journal.push_back(record);
+        require(journal.size()==counts[stage]&&journal.size()>=prior.size(),
+            "The native choice journal lost an authored epoch");
+        for(std::size_t i=0;i<prior.size();++i)
+            require(journal[i].sha256==prior[i].sha256&&
+                    journal[i].representation_signature==prior[i].representation_signature,
+                "A later option overwrote an already stored native journal row");
+        prior=std::move(journal);
+    }
+    for(int selected=0;selected<3;++selected){
+        const auto env=resolve_windows_environment({ProfileId::Codex,
+            L"u3l4-option-epochs-"+std::to_wstring(GetCurrentProcessId())+L"-"+
+            std::to_wstring(GetTickCount64())+L"-"+std::to_wstring(selected),false});
+        require(!std::filesystem::exists(env.paths.root),"QA profile already exists");
+        initialize_profile_directories(env.paths);
+        state::StateStore store(env.paths.root);
+        auto data=store.load();state::prepare_lesson_state(data,full.front());
+        state::Response response;response.selected=selected;
+        response.correct=evaluate_choice(original,static_cast<std::size_t>(selected)).correct;
+        response.answer=original.options.at(static_cast<std::size_t>(selected));
+        response.raw_json=R"({"incorrectAttempts":3,"opaque":{"cursor":11}})";
+        state::mark_response_reviewed(response,original);
+        state::put_response(data,full.front(),original,response);
+        const auto receipt=state::string_value(data,"learning_progress",original_key);
+        const auto imported_bytes=state::encode(data);
+        store.save(data);
+        for(std::size_t stage=1;stage<full.size();++stage){
+            auto reopened=store.load();
+            state::prepare_lesson_state(reopened,lean[stage]);
+            state::prepare_lesson_state(reopened,full[stage]);
+            const auto& current=target(full[stage]);
+            const auto kept=state::get_response(reopened,full[stage],current);
+            require(kept&&kept->correct==(selected==1)&&kept->selected==selected&&
+                    !kept->historical_choice&&
+                    state::string_value(reopened,"learning_progress",original_key)==receipt&&
+                    state::selected_choice_text(*kept,current)==current.options.at(static_cast<std::size_t>(selected)),
+                "A later option epoch changed the persisted response, attempts or selection");
+            store.save(reopened);
+        }
+        auto imported=state::decode(imported_bytes);
+        state::prepare_lesson_state(imported,lean.back());
+        state::prepare_lesson_state(imported,full.back());
+        const auto kept=state::get_response(imported,full.back(),latest);
+        require(kept&&kept->selected==selected&&kept->correct==(selected==1)&&
+                state::string_value(imported,"learning_progress",original_key)==receipt,
+            "Direct import across four option revisions altered the original receipt");
+
+        // Isolate only this target's page gate in a SECOND disposable view.
+        // The complete unmodified published source/metadata and all real disk
+        // journal transitions were checked above; unrelated activities are
+        // inert in this UI probe, and no compiler receipt is manufactured.
+        auto model=full.back();
+        for(auto& page:model.pages)for(auto& block:page.blocks)if(block.stable_id!=owner){
+            Block inert;inert.type=BlockType::paragraph;
+            inert.text="QA: actividad ajena a la comprobación.";
+            inert.stable_id=block.stable_id;inert.address=block.address;
+            block=std::move(inert);
+        }
+        model.reference_after.clear();model.activity_after.clear();
+        model.source_path.clear();model.raw_json.clear();
+        model.state_layout.compiler_revisions.clear();
+        model.state_layout.compiler_case_order_revisions.clear();
+        model.state_layout.compiler_case_revisions.clear();
+        model.retired_blocks.clear();
+        const auto view_env=resolve_windows_environment({ProfileId::Codex,
+            L"u3l4-option-view-"+std::to_wstring(GetCurrentProcessId())+L"-"+
+            std::to_wstring(GetTickCount64())+L"-"+std::to_wstring(selected),false});
+        require(!std::filesystem::exists(view_env.paths.root),"QA view profile already exists");
+        initialize_profile_directories(view_env.paths);
+        state::StateStore view_store(view_env.paths.root);
+        auto ui_state=view_store.load();state::prepare_lesson_state(ui_state,model);
+        for(std::size_t page=0;page<=position->page;++page)(void)state::mark_page_reached(ui_state,model,page);
+        state::save_current_page(ui_state,model,position->page);
+        ui_state.preferences["native_windows"]["ui_language"]=std::string("es");
+        ui_state.preferences["learning_progress"][original_key]=receipt;
+        view_store.save(ui_state);
+        HWND host=CreateWindowExW(WS_EX_CONTROLPARENT,L"STATIC",L"U3L4 option epochs QA",
+            WS_OVERLAPPEDWINDOW,0,0,1100,850,nullptr,nullptr,GetModuleHandleW(nullptr),nullptr);
+        require(host!=nullptr,"Cannot create isolated U3L4 option view");
+        HWND view=nullptr;
+        try {
+            view=create_lesson_view(host,view_env,model);
+            require(view!=nullptr,"Cannot open the latest U3L4 option view");
+            MoveWindow(view,0,0,1100,850,TRUE);pump();
+            require(lesson_page_state(view).index==position->page,"U3L4 view did not reopen the chosen page");
+            const auto regions=lesson_reading_regions(view);
+            for(std::size_t index=0;index<latest.options.size();++index){
+                const auto region=std::ranges::find_if(regions,[&](const auto& item){
+                    return item.block_index==position->block&&!item.feedback&&item.source_text==latest.options[index];
+                });
+                const auto marker=latest.text_semantics.find("/options/"+std::to_string(index));
+                require(region!=regions.end()&&region->target&&edit_text(region->target)==latest.options[index]&&
+                        marker!=latest.text_semantics.end()&&region->text_semantics==std::optional<TextSemantics>{marker->second},
+                    "The visible option or narration region did not use its latest exact text and marks");
+            }
+            require(navigate_lesson_view(view,position->page+1)==(selected==1),
+                "The actual next-page gate did not preserve the original correct index");
+            require(flush_lesson_view(view),"Cannot save the isolated U3L4 view");
+            DestroyWindow(view);view=nullptr;DestroyWindow(host);host=nullptr;pump();
+        }catch(...){if(view)DestroyWindow(view);if(host)DestroyWindow(host);throw;}
+    }
+    std::cout<<"PASS authentic U3L4 three option labels and later same-index revision, full/progress loader, journal prefix, all three persisted selections and direct import, current Win32 reading regions and isolated activity gate\n";
+}
+
 }
 
 int main(int argc,char** argv) {
@@ -456,8 +598,8 @@ int main(int argc,char** argv) {
     InitCommonControlsEx(&controls);
     int outcome=0;
     try {
-        require(argc==4,
-            "Expected marked/unmarked U9 fixtures and the isolated U3L5 first-hint fixture directory");
+        require(argc==5,
+            "Expected marked/unmarked U9, U3L5 first-hint and U3L4 multiple-option fixtures");
         for(int variant=1;variant<=2;++variant) {
             const bool originally_marked=variant==1;
             // Both files were authored from the same pinned U9 source before
@@ -488,6 +630,7 @@ int main(int argc,char** argv) {
                 "Reopening the revised reader changed a successful historical response");
         }
         check_first_hint_reader(std::filesystem::path(argv[3]));
+        check_multiple_option_epochs(std::filesystem::path(argv[4]));
         std::cout<<"PASS general choice reading: marked and unmarked original options, "
             "distinct revised UTF-16 semantic spans, genuine reading archives "
             "and original success across reopening; isolated prerequisite models "

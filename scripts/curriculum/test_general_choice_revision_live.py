@@ -147,10 +147,20 @@ class RealChoiceEditorialRevision(unittest.TestCase):
                               if (field["block"], field["path"]) == (OWNER, "/options/0"))
         self.assertEqual(aligned_marker, baseline_marker)
 
-    def test_second_revision_of_an_already_archived_option_is_rejected(self) -> None:
-        with self.assertRaisesRegex(state.LayoutError, "cannot be revised twice"):
+    def test_unauthenticated_return_is_still_rejected_but_new_wording_is_allowed(self) -> None:
+        with self.assertRaisesRegex(state.LayoutError, "Cyclic editorial proof requires an explicit return"):
             state.revise_choice_editorial(
                 self.after, OWNER, 0, OLD_TEXT, spans=[])
+        active = owner_block(self.after)
+        marker = state._choice_semantic_entry(self.after, OWNER, 0)
+        later = state.revise_choice_editorial(self.after, OWNER, 0,
+            active["options"][0] + " (QA posterior).",
+            spans=deepcopy(marker["spans"]) if marker else [])
+        state.validate_transition(self.after, later)
+        self.assertEqual(owner_block(later)["correctIndex"], active["correctIndex"])
+        self.assertEqual(owner_block(later)["options"][1:], active["options"][1:])
+        self.assertEqual(state._general_choice_records(later, OWNER)[:-1],
+                         state._general_choice_records(self.after, OWNER))
 
     def test_history_and_other_course_activities_are_untouched(self) -> None:
         if self.published_revision:

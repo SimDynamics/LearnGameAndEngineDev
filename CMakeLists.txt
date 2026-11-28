@@ -896,8 +896,31 @@ function(lgaed_add_general_choice_editorial_tests)
         COMMENT "Authenticating the six-page U3L5 first-hint predecessor and two QA editions"
         VERBATIM)
     add_custom_target(lgaed_first_hint_revision_fixture DEPENDS ${_first_hint_files})
+    set(_multi_choice_dir "${CMAKE_CURRENT_BINARY_DIR}/test-fixtures/u3l4-choice-epochs")
+    set(_multi_choice_files)
+    foreach(_variant before first three later)
+        set(_course "${_multi_choice_dir}/${_variant}/es/programming/cpp_fundamentals")
+        set(_unit "${_course}/edition_es_1__expresiones_y_decisiones")
+        list(APPEND _multi_choice_files
+            "${_course}/course_cpp_fundamentals.json"
+            "${_unit}/unit_edition_es_1__expresiones_y_decisiones.json"
+            "${_unit}/lesson_alternativas_y_fronteras.json")
+    endforeach()
+    add_custom_command(OUTPUT ${_multi_choice_files}
+        COMMAND ${_lgaed_state_fixture_python}
+            "${CMAKE_SOURCE_DIR}/scripts/curriculum/multi_choice_revision_fixture.py"
+            --output-dir "${_multi_choice_dir}"
+        DEPENDS "${CMAKE_SOURCE_DIR}/scripts/curriculum/multi_choice_revision_fixture.py"
+            "${CMAKE_SOURCE_DIR}/scripts/curriculum/first_hint_revision_fixture.py"
+            "${CMAKE_SOURCE_DIR}/scripts/curriculum/stable_state_layout.py"
+            "${CMAKE_SOURCE_DIR}/scripts/curriculum/validar_json_programacion.py"
+            "${CMAKE_SOURCE_DIR}/scripts/curriculum/text_semantics.py"
+        COMMENT "Authenticating U3L4 three option labels and a later same-index edition"
+        VERBATIM)
+    add_custom_target(lgaed_multi_choice_revision_fixture DEPENDS ${_multi_choice_files})
     add_dependencies(lgaed_general_choice_editorial_view_tests
-        lgaed_general_choice_editorial_fixture lgaed_first_hint_revision_fixture)
+        lgaed_general_choice_editorial_fixture lgaed_first_hint_revision_fixture
+        lgaed_multi_choice_revision_fixture)
     # Focused native QA: compile only the two Windows hosts and the pinned
     # editorial fixtures, not the application or unrelated test executables.
     add_custom_target(lgaed_general_choice_editorial_qa_targets
@@ -907,7 +930,7 @@ function(lgaed_add_general_choice_editorial_tests)
         COMMAND lgaed_general_choice_editorial_view_tests
             "${LGAED_GENERAL_CHOICE_EDITORIAL_QA_MARKED}"
             "${LGAED_GENERAL_CHOICE_EDITORIAL_QA_UNMARKED_PREVIOUS}"
-            "${_first_hint_dir}")
+            "${_first_hint_dir}" "${_multi_choice_dir}")
     set_tests_properties(native.general_choice_editorial_reader
         PROPERTIES TIMEOUT 240 RUN_SERIAL TRUE)
 endfunction()

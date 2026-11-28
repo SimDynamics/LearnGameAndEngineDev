@@ -19,6 +19,7 @@ on:
       - scripts/curriculum/test_legacy_review_feedback_adoption.py
       - scripts/curriculum/test_first_hint_revision.py
       - scripts/curriculum/first_hint_revision_fixture.py
+      - scripts/curriculum/multi_choice_revision_fixture.py
       - scripts/curriculum/test_cpp_review_feedback_contract.py
       - scripts/curriculum/u12_composed_output_fixture_source.py
       - scripts/curriculum/u12_composed_feedback_fixture_source.py
@@ -100,6 +101,11 @@ jobs:
           python -B -m unittest discover
           -s scripts/curriculum
           -p test_first_hint_revision.py -v
+      - name: Verify all three real U3L4 option labels and a later same-index edition
+        run: >-
+          python -B -m unittest discover
+          -s scripts/curriculum
+          -p multi_choice_revision_fixture.py -v
       - name: Preserve optional hint and authenticated success-explanation contracts
         run: >-
           python -B -m unittest discover

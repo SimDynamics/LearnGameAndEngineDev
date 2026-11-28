@@ -713,10 +713,12 @@ class GeneralChoiceEditorialTests(unittest.TestCase):
     def test_successive_option_epochs_preserve_every_original_index_and_marker(self):
         first = self.revise()
         other = layout._blocks(first)[OWNER]["options"][1]
+        marker_one = layout._choice_semantic_entry(first, OWNER, 1)
         second = layout.revise_choice_editorial(first, OWNER, 1, other + " (QA segunda).",
-                                                spans=[])
+            spans=deepcopy(marker_one["spans"]) if marker_one else [])
+        marker_zero = layout._choice_semantic_entry(second, OWNER, 0)
         third = layout.revise_choice_editorial(second, OWNER, 0, REVISED + " (QA posterior).",
-                                               spans=[])
+            spans=deepcopy(marker_zero["spans"]) if marker_zero else [])
         # Same owner, two distinct indices, and a subsequent publication of
         # the first index. Both direct and incremental transitions must pass.
         for before, after in ((self.original, first), (first, second),
