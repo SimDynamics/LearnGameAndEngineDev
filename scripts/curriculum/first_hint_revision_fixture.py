@@ -133,6 +133,16 @@ def main():
                 if proof.get("reviewRevision"))
     edge["reviewRevision"]["previousBlock"]["question"] += " QA falsificado."
     _, choice_guidance = build_choice_guidance()
+    no_introduction = deepcopy(choice_guidance["option-first"])
+    choice_edge = layout._choice_record_edge(layout._general_choice_records(no_introduction, CHOICE_OWNER)[0])
+    editorial = no_introduction["stateLayout"]["editorial"]
+    editorial[:] = [edge for edge in editorial if edge["id"] != CHOICE_OWNER or edge == choice_edge]
+    choice_guidance["missing-introduction"] = no_introduction
+    wrong_marker = deepcopy(choice_guidance["guides-first"])
+    marker = next(field for field in wrong_marker["textSemantics"]["fields"]
+                  if field["block"] == CHOICE_OWNER and field["path"] == "/reviewFeedback/0")
+    marker["path"] = "/reviewFeedback/2"
+    choice_guidance["wrong-guide-owner"] = wrong_marker
     indexes = {path: pinned_bytes(path, blob) for path, blob in INDEX_BLOBS.items()}
     for name, source in (("before", before), ("middle", middle), ("after", final),
                          ("wrong-index", wrong_index), ("wrong-source", wrong_source),

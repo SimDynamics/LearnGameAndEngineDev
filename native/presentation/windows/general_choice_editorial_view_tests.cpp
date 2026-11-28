@@ -589,6 +589,191 @@ void check_multiple_option_epochs(const std::filesystem::path& directory) {
     std::cout<<"PASS authentic U3L4 three option labels and later same-index revision, full/progress loader, journal prefix, all three persisted selections and direct import, current Win32 reading regions and isolated activity gate\n";
 }
 
+
+void check_choice_guidance_composition(const std::filesystem::path& directory) {
+    const auto path=[&](std::string_view stage){
+        return directory/std::string(stage)/
+            "es/programming/cpp_fundamentals/edition_es_1__expresiones_y_decisiones/lesson_combinar_condiciones.json";
+    };
+    const auto before=windows::load_lesson(path("before"));
+    constexpr std::string_view owner="block_0003_0007";
+    const auto position=stable_block_position(before,owner);
+    require(position&&position->page==3,"The authentic U3L5 choice moved");
+    const auto target=[&](const Lesson& model)->const Block&{
+        const auto at=stable_block_position(model,owner);
+        require(at&&at->page==position->page&&at->block==position->block,
+            "Guidance composition moved the original U3L5 choice");
+        return model.pages.at(at->page).blocks.at(at->block);
+    };
+    const auto& original=target(before);
+    const auto key=exercise_key(before,original);
+    require(original.correct_index==1&&original.review_feedback_options.empty(),
+        "The U3L5 predecessor no longer has its authentic unguided answer");
+    for(const auto invalid:{"missing-introduction","wrong-guide-owner"}){
+        bool full=false,lean=false;
+        try{(void)windows::load_lesson(path(invalid));}catch(const std::exception&){full=true;}
+        try{(void)windows::load_lesson_progress_metadata(path(invalid));}catch(const std::exception&){lean=true;}
+        require(full&&lean,"A forged U3L5 first guidance edge or indexed marker was admitted");
+    }
+    int scenario=0;
+    for(const auto& [middle_name,final_name]:std::vector<std::pair<std::string,std::string>>{
+            {"guides-middle","guides-first"},{"option-middle","option-first"},{"option-middle","interleaved"}}){
+        const auto middle=windows::load_lesson(path(middle_name));
+        const auto final=windows::load_lesson(path(final_name));
+        const auto middle_meta=windows::load_lesson_progress_metadata(path(middle_name));
+        const auto final_meta=windows::load_lesson_progress_metadata(path(final_name));
+        const auto& now=target(final);
+        require(now.correct_index==original.correct_index&&now.options.size()==3&&
+                now.review_feedback_options.size()==3&&target(final_meta).options==now.options&&
+                state::response_storage_key(final,now)==key&&
+                state::response_storage_key(final_meta,target(final_meta))==key&&
+                state::response_storage_key(middle,target(middle))==key,
+            "The native composed publication changed its response owner or guide positions");
+        for(std::size_t index=0;index<3;++index){
+            const auto mark=now.text_semantics.find("/reviewFeedback/"+std::to_string(index));
+            require(mark!=now.text_semantics.end()&&mark->second.source==now.review_feedback_options[index]&&
+                    mark->second.spans.size()==1,
+                "A composed guide lost its own exact indexed descriptor");
+        }
+        for(int selected=0;selected<3;++selected){
+            const auto suffix=std::to_wstring(GetCurrentProcessId())+L"-"+
+                std::to_wstring(GetTickCount64())+L"-"+std::to_wstring(scenario)+L"-"+std::to_wstring(selected);
+            const auto env=resolve_windows_environment({ProfileId::Codex,L"u3l5-guide-option-state-"+suffix,false});
+            require(!std::filesystem::exists(env.paths.root),"Choice/guide QA would reuse a profile");
+            initialize_profile_directories(env.paths);
+            state::StateStore store(env.paths.root);
+            auto data=store.load();state::prepare_lesson_state(data,before);
+            state::Response response;
+            response.selected=selected;
+            response.answer=original.options.at(static_cast<std::size_t>(selected));
+            response.correct=evaluate_choice(original,static_cast<std::size_t>(selected)).correct;
+            response.raw_json=R"({"incorrectAttempts":4,"opaque":{"cursor":17}})";
+            state::mark_response_reviewed(response,original);
+            state::put_response(data,before,original,response);
+            const auto receipt=state::string_value(data,"learning_progress",key);
+            const auto imported=state::encode(data);
+            store.save(data);
+            auto reopened=store.load();state::prepare_lesson_state(reopened,middle_meta);
+            state::prepare_lesson_state(reopened,middle);
+            require(state::string_value(reopened,"learning_progress",key)==receipt,
+                "The intermediate first hint or option lost the historic receipt");
+            store.save(reopened);
+            reopened=store.load();state::prepare_lesson_state(reopened,final_meta);
+            state::prepare_lesson_state(reopened,final);
+            store.save(reopened);
+            auto direct=state::decode(imported);state::prepare_lesson_state(direct,final_meta);
+            state::prepare_lesson_state(direct,final);
+            for(const auto* saved:{&reopened,&direct}){
+                const auto preserved=state::get_response(*saved,final,now);
+                require(preserved&&preserved->selected==selected&&preserved->correct==(selected==1)&&
+                        !preserved->historical_choice&&state::string_value(*saved,"learning_progress",key)==receipt,
+                    "A composed guide/option publication altered an old answer, attempt or grade");
+            }
+
+            // Isolate the target's real UI and page gate after testing full
+            // source and state loading. No unrelated compiler or exercise
+            // receipt is synthesized and no personal profile is opened.
+            auto model=final;
+            for(auto& page:model.pages)for(auto& block:page.blocks)if(block.stable_id!=owner){
+                Block inert;inert.type=BlockType::paragraph;inert.text="QA: actividad ajena.";
+                inert.stable_id=block.stable_id;inert.address=block.address;block=std::move(inert);
+            }
+            model.reference_after.clear();model.activity_after.clear();
+            model.source_path.clear();model.raw_json.clear();
+            model.state_layout.compiler_revisions.clear();
+            model.state_layout.compiler_case_order_revisions.clear();
+            model.state_layout.compiler_case_revisions.clear();
+            model.retired_blocks.clear();
+            const auto view_env=resolve_windows_environment({ProfileId::Codex,L"u3l5-guide-option-view-"+suffix,false});
+            require(!std::filesystem::exists(view_env.paths.root),"Choice/guide UI QA would reuse a profile");
+            initialize_profile_directories(view_env.paths);
+            state::StateStore view_store(view_env.paths.root);
+            auto ui_state=view_store.load();state::prepare_lesson_state(ui_state,model);
+            for(std::size_t page=0;page<=position->page;++page)(void)state::mark_page_reached(ui_state,model,page);
+            state::save_current_page(ui_state,model,position->page);
+            ui_state.preferences["native_windows"]["ui_language"]=std::string("es");
+            ui_state.preferences["learning_progress"][key]=receipt;
+            view_store.save(ui_state);
+            HWND host=CreateWindowExW(WS_EX_CONTROLPARENT,L"STATIC",L"U3L5 guide/option composition QA",
+                WS_OVERLAPPEDWINDOW,0,0,1100,850,nullptr,nullptr,GetModuleHandleW(nullptr),nullptr);
+            require(host!=nullptr,"Cannot create isolated U3L5 choice/guide host");
+            HWND view=nullptr;
+            try{
+                for(int pass=0;pass<2;++pass){
+                    view=create_lesson_view(host,view_env,model);
+                    require(view!=nullptr,"Cannot open the composed U3L5 choice");
+                    MoveWindow(view,0,0,1100,850,TRUE);pump();
+                    require(lesson_page_state(view).index==position->page,
+                        "The composed U3L5 choice did not reopen its own page");
+                    const auto regions=lesson_reading_regions(view);
+                    for(std::size_t index=0;index<3;++index){
+                        const auto option=std::ranges::find_if(regions,[&](const auto& region){
+                            return region.block_index==position->block&&!region.feedback&&
+                                region.source_text==now.options[index];
+                        });
+                        const auto descriptor=now.text_semantics.find("/options/"+std::to_string(index));
+                        require(option!=regions.end()&&option->target&&edit_text(option->target)==now.options[index]&&
+                                descriptor!=now.text_semantics.end()&&
+                                option->text_semantics==std::optional<TextSemantics>{descriptor->second},
+                            "The current option lost its own visible or spoken markers");
+                    }
+                    const auto feedback=std::ranges::find_if(regions,[&](const auto& region){
+                        return region.block_index==position->block&&region.feedback;
+                    });
+                    const auto expected=selected==1?now.explanation:
+                        now.review_feedback_options.at(static_cast<std::size_t>(selected));
+                    require(feedback!=regions.end()&&feedback->target&&
+                            feedback->correct==(selected==1)&&feedback->source_text.find(expected)!=std::string::npos&&
+                            edit_text(feedback->target).find(expected)!=std::string::npos,
+                        "The current feedback did not correspond to the preserved choice");
+                    if(selected!=1){
+                        const auto& marker=now.text_semantics.at("/reviewFeedback/"+std::to_string(selected));
+                        require(feedback->text_semantics&&feedback->text_semantics->source==feedback->source_text,
+                            "A current reviewed incorrect choice lost its narration semantics");
+                        for(const auto& span:marker.spans)
+                            require(std::ranges::any_of(feedback->text_semantics->spans,[&](const auto& shown){
+                                return shown.text==span.text&&shown.role==span.role;
+                            }),"The narrated guidance lost its indexed authored highlight");
+                        // The first option edge's complete original has guides
+                        // only in the guides-first ordering. Its old speech
+                        // must not borrow the latest guide's markers otherwise.
+                        const auto archives=editorial_lesson_reading_archives(view);
+                        bool found_original=false;
+                        for(const auto& archive:archives){
+                            const auto old_option=std::ranges::find_if(archive.regions,[&](const auto& region){
+                                return region.block_index==position->block&&!region.feedback&&
+                                    region.source_text==original.options[0];
+                            });
+                            if(old_option==archive.regions.end())continue;
+                            const auto prior=std::ranges::find_if(archive.regions,[&](const auto& region){
+                                return region.block_index==position->block&&region.feedback;
+                            });
+                            if(prior==archive.regions.end())continue;
+                            if(middle_name=="guides-middle"){
+                                require(prior->source_text==feedback->source_text&&
+                                        prior->text_semantics==feedback->text_semantics,
+                                    "An unchanged historical indexed guide lost its exact markers");
+                            }else{
+                                require(prior->source_text.find(expected)==std::string::npos,
+                                    "An older unguided option borrowed the current first hint");
+                            }
+                            found_original=true;
+                        }
+                        require(found_original,"The original choice reading predecessor was not reconstructed");
+                    }
+                    require(state::string_value(read_lesson_state(view),"learning_progress",key)==receipt,
+                        "Native feedback rendering rewrote an old response");
+                    require(flush_lesson_view(view),"Cannot persist the isolated U3L5 view");
+                    DestroyWindow(view);view=nullptr;pump();
+                }
+                DestroyWindow(host);host=nullptr;
+            }catch(...){if(view)DestroyWindow(view);if(host)DestroyWindow(host);throw;}
+        }
+        ++scenario;
+    }
+    std::cout<<"PASS authentic U3L5 first guides and option-only revisions in both orders and interleaved: full/progress loaders, rejected forged input, exact response/attempt import and reopen, current and historical indexed reader regions (no neural PCM claim)\n";
+}
+
 }
 
 int main(int argc,char** argv) {
@@ -630,6 +815,7 @@ int main(int argc,char** argv) {
                 "Reopening the revised reader changed a successful historical response");
         }
         check_first_hint_reader(std::filesystem::path(argv[3]));
+        check_choice_guidance_composition(std::filesystem::path(argv[3]));
         check_multiple_option_epochs(std::filesystem::path(argv[4]));
         std::cout<<"PASS general choice reading: marked and unmarked original options, "
             "distinct revised UTF-16 semantic spans, genuine reading archives "
