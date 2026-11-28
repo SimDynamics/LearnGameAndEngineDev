@@ -1536,6 +1536,11 @@ def preserves_general_choice_option_revision(relative, pn, bn, old, current, *,
             return False
         records = _state_layout._general_choice_records(current_document, identity)
         prior = _state_layout._general_choice_records(previous_document, identity)
+        if ("reviewFeedback" not in old and "reviewFeedback" in current
+                and len(records) > len(prior)):
+            # The transition has replayed the exact introduction and option
+            # edges, including the index-specific semantic descriptors.
+            return old["options"] != current["options"]
         if len(records) > 1:
             # The complete transition above already proves the ordered option
             # snapshots, every index, source descriptor and immutable origin.

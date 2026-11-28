@@ -1182,6 +1182,19 @@ struct LessonView {
                 feedback_region.key=lesson.id+'/'+lesson.locale+'/'+lesson.pages[page].stable_id+'/'+current.stable_id+'/'+std::to_string(control_id(index,4));
                 feedback_region.anchor=lesson.id+'/'+lesson.locale+'/'+lesson.pages[page].stable_id+'/'+current.stable_id+"/part/4";
                 feedback_region.target=controls[index].feedback;feedback_region.source_text=old_feedback;feedback_region.text_semantics.reset();
+                // A choice-only edge did not rewrite an identical reviewed
+                // guide. Keep that exact descriptor; never transfer current
+                // marks to a different archived guide or generic fallback.
+                if(revision.general_option_index){
+                    const auto prior_feedback=std::ranges::find_if(previous.regions,[&](const auto& region){
+                        return region.block_index==index&&region.feedback;
+                    });
+                    if(prior_feedback!=previous.regions.end()){
+                        if(prior_feedback->source_text==old_feedback)
+                            feedback_region.text_semantics=prior_feedback->text_semantics;
+                        else archived.revised_regions.push_back(feedback_region.key);
+                    }
+                }
                 feedback_region.feedback=true;feedback_region.correct=solved;feedback_region.solved=solved;
                 reading_context(feedback_region,original);
                 std::erase_if(archived.regions,[&](const auto& region){return region.block_index==index

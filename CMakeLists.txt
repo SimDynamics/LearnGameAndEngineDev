@@ -878,7 +878,8 @@ function(lgaed_add_general_choice_editorial_tests)
         PRIVATE lgaed_curricular_windows)
     set(_first_hint_dir "${CMAKE_CURRENT_BINARY_DIR}/test-fixtures/u3l5-first-hint-revision")
     set(_first_hint_files)
-    foreach(_variant before middle after wrong-index wrong-source)
+    foreach(_variant before middle after wrong-index wrong-source
+            guides-first option-first guides-middle option-middle interleaved)
         set(_course "${_first_hint_dir}/${_variant}/es/programming/cpp_fundamentals")
         set(_unit "${_course}/edition_es_1__expresiones_y_decisiones")
         list(APPEND _first_hint_files

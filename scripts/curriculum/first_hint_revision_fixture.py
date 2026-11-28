@@ -67,6 +67,57 @@ def build():
     return before, middle, final, owners
 
 
+CHOICE_OWNER = "block_0003_0007"
+CHOICE_GUIDES = [
+    "Distingue el bloque if del bloque else.",
+    "Comprueba la condición sala_abierta.",
+    "Evalúa las credenciales junto con sala_abierta.",
+]
+GUIDE_SELECTIONS = ["if", "sala_abierta", "sala_abierta"]
+CHOICE_LABEL = "Ejecutar los dos bloques, el del if y el del else."
+
+
+def build_choice_guidance():
+    before = json.loads(pinned_bytes(ASSET, BLOB))
+    original = layout._blocks(before)[CHOICE_OWNER]
+    if original["type"] != "multiple_choice" or original["correctIndex"] != 1 or "reviewFeedback" in original:
+        raise ValueError("The authentic U3L5 guidance/choice predecessor changed")
+
+    def hints(document):
+        draft = deepcopy(document)
+        owner = layout._blocks(draft)[CHOICE_OWNER]
+        owner["reviewFeedback"] = deepcopy(CHOICE_GUIDES)
+        for index, guide in enumerate(CHOICE_GUIDES):
+            draft["textSemantics"]["fields"].append(layout.text_semantics.make_field(
+                draft, CHOICE_OWNER, f"/reviewFeedback/{index}",
+                [layout.text_semantics.select(guide, GUIDE_SELECTIONS[index], "cpp")]))
+        return layout.prepare_v2(draft, "es", {"es": document}, document)
+
+    def option(document):
+        return layout.revise_choice_editorial(document, CHOICE_OWNER, 0, CHOICE_LABEL,
+            spans=[layout.text_semantics.select(CHOICE_LABEL, "dos", "data"),
+                   layout.text_semantics.select(CHOICE_LABEL, "if", "cpp"),
+                   layout.text_semantics.select(CHOICE_LABEL, "else", "cpp")])
+
+    first_guides = hints(before)
+    first_option = option(before)
+    stages = {"guides-first": option(first_guides), "option-first": hints(first_option),
+              "guides-middle": first_guides, "option-middle": first_option}
+    for middle, final in ((first_guides, stages["guides-first"]),
+                          (first_option, stages["option-first"])):
+        layout.validate_publication_transition(before, middle)
+        layout.validate_publication_transition(middle, final)
+        layout.validate_publication_transition(before, final)
+    # Exercise an introduction between two revisions of the same owner.
+    second = "Permitir el acceso porque presenta las dos credenciales."
+    stages["interleaved"] = layout.revise_choice_editorial(stages["option-first"],
+        CHOICE_OWNER, 2, second,
+        spans=[layout.text_semantics.select(second, "dos", "data")])
+    layout.validate_publication_transition(before, stages["interleaved"])
+    layout.validate_publication_transition(first_option, stages["interleaved"])
+    return before, stages
+
+
 def main():
     parser = argparse.ArgumentParser()
     parser.add_argument("--output-dir", type=Path, required=True)
@@ -81,9 +132,11 @@ def main():
     edge = next(proof for proof in wrong_source["stateLayout"]["editorial"]
                 if proof.get("reviewRevision"))
     edge["reviewRevision"]["previousBlock"]["question"] += " QA falsificado."
+    _, choice_guidance = build_choice_guidance()
     indexes = {path: pinned_bytes(path, blob) for path, blob in INDEX_BLOBS.items()}
     for name, source in (("before", before), ("middle", middle), ("after", final),
-                         ("wrong-index", wrong_index), ("wrong-source", wrong_source)):
+                         ("wrong-index", wrong_index), ("wrong-source", wrong_source),
+                         *choice_guidance.items()):
         # Each QA edition has its own physical curriculum route. A loose
         # JSON filename would fail the course-edition path guard before the
         # native loader ever checked the actual archived guidance.

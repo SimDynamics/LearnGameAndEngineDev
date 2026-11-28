@@ -746,8 +746,42 @@ std::string state_fingerprint(const JsonObject& original) {
 // immutable historical response signature. Later question/explanation prose
 // keeps its own editorial edges and semantic descriptors. Other option texts,
 // the correct index, feedback and unlisted properties stay exact.
+// Only a complete, hash-linked first guidance edge may follow a choice.
+// The original option snapshot and its next real endpoint supply the bytes;
+// a changed answer or an already-existing guide is not an introduction.
+bool first_hint_choice_bridge(const JsonObject& before,const JsonObject& after,
+        const JsonArray& editorial,std::string_view owner) {
+    if(!editorial||before.HasKey(L"reviewFeedback")||!after.HasKey(L"reviewFeedback")||
+        text(before,"type")!="multiple_choice")return false;
+    const auto hints=after.GetNamedValue(L"reviewFeedback");
+    if(hints.ValueType()==JsonValueType::String){
+        if(!authored_nonblank(utf8(hints.GetString())))return false;
+    }else if(hints.ValueType()==JsonValueType::Array){
+        const auto values=hints.GetArray();
+        if(!values.Size()||values.Size()!=array(before,"options").Size())return false;
+        for(const auto& value:values)
+            if(value.ValueType()!=JsonValueType::String||
+                !authored_nonblank(utf8(value.GetString())))return false;
+    }else return false;
+    auto stripped=JsonObject::Parse(after.Stringify());
+    stripped.Remove(L"reviewFeedback");
+    if(fingerprint(stripped)!=fingerprint(before)){
+        // The ordinary prose validator permits only nonblank public
+        // question/explanation changes; it does not normalize answers.
+        try{(void)identifier_prose_paths(before,stripped);}
+        catch(const std::exception&){return false;}
+    }
+    const auto left=fingerprint(before),right=fingerprint(after);
+    for(const auto& value:editorial){
+        const auto edge=value.GetObject();
+        if(edge.Size()==3&&text(edge,"id")==owner&&
+           text(edge,"beforeSha256")==left&&text(edge,"afterSha256")==right)return true;
+    }
+    return false;
+}
 JsonObject general_choice_projection(const JsonObject& current,
-        const JsonObject& revision,bool allow_original=false,bool reading_snapshot=false) {
+        const JsonObject& revision,bool allow_original=false,bool reading_snapshot=false,
+        const JsonArray& editorial=nullptr) {
     const auto original=revision.GetNamedObject(L"block");
     require(text(original,"type")=="multiple_choice"&&
             text(current,"type")=="multiple_choice",
@@ -796,6 +830,11 @@ JsonObject general_choice_projection(const JsonObject& current,
     // normalize it only for this exact comparison of all protected fields.
     // Its source descriptors are required separately at the active call site.
     const auto protected_fields=JsonObject::Parse(projected.Stringify());
+    auto reviewed=JsonObject::Parse(original.Stringify());
+    reviewed.GetNamedArray(L"options").SetAt(static_cast<unsigned>(position),
+        revision.GetNamedValue(L"replacement"));
+    if(first_hint_choice_bridge(reviewed,current,editorial,text(revision,"id")))
+        protected_fields.Remove(L"reviewFeedback");
     for(const auto field:{L"question",L"explanation"}) {
         const bool had=original.HasKey(field),has=projected.HasKey(field);
         if(had==has&&(!had||original.GetNamedValue(field).Stringify()==
@@ -823,9 +862,10 @@ JsonObject general_choice_after(const JsonObject& record) {
     return result;
 }
 JsonObject general_choice_projection(const JsonObject& current,
-        const std::vector<JsonObject>& revisions,bool allow_original=false,bool reading_snapshot=false) {
+        const std::vector<JsonObject>& revisions,bool allow_original=false,bool reading_snapshot=false,
+        const JsonArray& editorial=nullptr) {
     require(!revisions.empty(),"Missing general choice history");
-    if(revisions.size()==1)return general_choice_projection(current,revisions.front(),allow_original,reading_snapshot);
+    if(revisions.size()==1)return general_choice_projection(current,revisions.front(),allow_original,reading_snapshot,editorial);
     const auto origin=revisions.front().GetNamedObject(L"block");
     const auto options_digest=[&](const JsonObject& block){return fingerprint(array(block,"options"));};
     auto endpoint=general_choice_after(revisions.front());
@@ -834,7 +874,7 @@ JsonObject general_choice_projection(const JsonObject& current,
         const auto previous=revisions[i].GetNamedObject(L"block");
         require(options_digest(previous)==options_digest(endpoint),
             "A later option revision changed an unauthenticated sibling");
-        (void)general_choice_projection(previous,revisions[i-1]);
+        (void)general_choice_projection(previous,revisions[i-1],false,false,editorial);
         endpoint=general_choice_after(revisions[i]);
         historical=historical||options_digest(current)==options_digest(endpoint);
     }
@@ -843,7 +883,7 @@ JsonObject general_choice_projection(const JsonObject& current,
     else{
         require(options_digest(current)==options_digest(endpoint),
             "A general choice history does not match its active options");
-        (void)general_choice_projection(current,revisions.back());
+        (void)general_choice_projection(current,revisions.back(),false,false,editorial);
     }
     auto projected=JsonObject::Parse(current.Stringify());
     projected.Insert(L"options",origin.GetNamedValue(L"options"));
@@ -3862,8 +3902,8 @@ StateLayout read_layout(const JsonObject& metadata, const JsonArray& pages, std:
                     // The independently authenticated option revision can
                     // precede or follow the review. Normalize only that
                     // exact published representation in either snapshot.
-                    old_contract=general_choice_projection(old_contract,choice->second,true,true);
-                    active_contract=general_choice_projection(active_contract,choice->second,true,true);
+                    old_contract=general_choice_projection(old_contract,choice->second,true,true,array(metadata,"editorial"));
+                    active_contract=general_choice_projection(active_contract,choice->second,true,true,array(metadata,"editorial"));
                 }
                 const auto archived_digest=state_fingerprint(old_contract);
                 require(archived_digest==state_fingerprint(active_contract)||
@@ -4014,7 +4054,7 @@ StateLayout read_layout(const JsonObject& metadata, const JsonArray& pages, std:
                 require_formatted_question_semantics(root,id,
                     general->second.back().GetNamedObject(L"block"),projected);
             const auto normalized_choice=general!=general_choice_revisions.end()?
-                general_choice_projection(projected,general->second):projected;
+                general_choice_projection(projected,general->second,false,false,array(metadata,"editorial")):projected;
             const auto digest=state_fingerprint(normalized_choice);
             validate_choice_pair(projected,reviewed_choice_owner(lesson_id,id));
             if(projected.HasKey(L"compileCheck")) {
@@ -4161,7 +4201,7 @@ StateLayout read_layout(const JsonObject& metadata, const JsonArray& pages, std:
                             std::ranges::find(editorial_nodes.at(id),fingerprint(source))!=editorial_nodes.at(id).end(),
                             "A historical choice needs an exact occurrence in its owner's editorial chain");
                     const auto normalized=general!=general_choice_revisions.end()?
-                        general_choice_projection(projected,general->second,true,true):projected;
+                        general_choice_projection(projected,general->second,true,true,array(metadata,"editorial")):projected;
                     const auto digest = state_fingerprint(normalized);
                     if(source.HasKey(L"compileCheck"))require(editorial_nodes.contains(id)&&
                         std::ranges::find(editorial_nodes.at(id),fingerprint(source))!=editorial_nodes.at(id).end(),
