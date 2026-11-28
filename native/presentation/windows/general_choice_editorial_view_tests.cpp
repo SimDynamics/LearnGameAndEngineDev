@@ -330,18 +330,30 @@ void check_reading(HiddenView& view,bool originally_marked) {
 // publication. Restore two previously reviewed incorrect answers in the
 // actual reader and inspect the same source/marks sent to narration.
 void check_first_hint_reader(const std::filesystem::path& directory) {
-    const auto before=windows::load_lesson(directory/"before.json");
-    const auto first=windows::load_lesson(directory/"middle.json");
-    const auto current=windows::load_lesson(directory/"after.json");
-    const auto lean=windows::load_lesson_progress_metadata(directory/"after.json");
+    const auto lesson_path=[&](std::string_view variant){
+        return directory/std::string(variant)/
+            "es/programming/cpp_fundamentals/edition_es_1__expresiones_y_decisiones/lesson_combinar_condiciones.json";
+    };
+    const auto before=windows::load_lesson(lesson_path("before"));
+    const auto first=windows::load_lesson(lesson_path("middle"));
+    const auto current=windows::load_lesson(lesson_path("after"));
+    const auto lean=windows::load_lesson_progress_metadata(lesson_path("after"));
     require(before.pages.size()==6&&first.pages.size()==6&&current.pages.size()==6&&lean.pages.size()==6,
         "U3L5 first-hint QA lost the authentic six-page source");
-    for(const auto* file:{"wrong-index.json","wrong-source.json"}) {
+    for(const auto* variant:{"wrong-index","wrong-source"}) {
+        const std::string_view expected=std::string_view(variant)=="wrong-index"?
+            "Review revision archive changed an unowned hint path":
+            "Review revision archive must retain both exact complete block versions";
+        const auto path=lesson_path(variant);
         bool full_rejected=false,lean_rejected=false;
-        try{(void)windows::load_lesson(directory/file);}catch(...){full_rejected=true;}
-        try{(void)windows::load_lesson_progress_metadata(directory/file);}catch(...){lean_rejected=true;}
+        try{(void)windows::load_lesson(path);}catch(const std::exception& error){
+            full_rejected=std::string_view(error.what()).find(expected)!=std::string_view::npos;
+        }
+        try{(void)windows::load_lesson_progress_metadata(path);}catch(const std::exception& error){
+            lean_rejected=std::string_view(error.what()).find(expected)!=std::string_view::npos;
+        }
         require(full_rejected&&lean_rejected,
-            "Native full or progress loader admitted a forged guidance predecessor/index");
+            "Native full or progress loader failed to reject the specific forged guidance archive");
     }
     const auto env=resolve_windows_environment({ProfileId::Codex,
         L"u3l5-first-hints-"+std::to_wstring(GetCurrentProcessId())+L"-"+

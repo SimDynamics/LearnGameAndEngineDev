@@ -1,6 +1,6 @@
 [CmdletBinding()]
 param(
-    [ValidateSet('StateImport', 'CatalogU1', 'ReaderRevision', 'ReaderRevisionRegressions', 'CodeScope', 'NarrationPlayer', 'ReaderBuild', 'CotizacionesContinuity', 'MathEditorial', 'NarrationWorker', 'U12Reader',
+    [ValidateSet('StateImport', 'CatalogU1', 'ReaderRevision', 'ReaderRevisionRegressions', 'CodeScope', 'NarrationPlayer', 'ReaderBuild', 'CotizacionesContinuity', 'FirstHintRevision', 'MathEditorial', 'NarrationWorker', 'U12Reader',
         'U11EditorialReader', 'CompilerHistoricalReader', 'U6DiagnosticReader', 'CurrentReaders')]
     [string] $Suite = 'StateImport',
     [ValidateSet('All', 'DeclarationsAssignments', 'Characters')]
@@ -33,8 +33,8 @@ if ($EditorialGroup -ne 'All' -and $Suite -ne 'U11EditorialReader') {
 if ($CurrentReaderGroup -ne 'All' -and $Suite -ne 'CurrentReaders') {
     throw 'A current-reader selection requires the CurrentReaders suite.'
 }
-if ($MsvcPreflightOnly -and $Suite -notin @('StateImport', 'CatalogU1', 'ReaderBuild', 'CotizacionesContinuity', 'ReaderRevision', 'ReaderRevisionRegressions', 'CodeScope')) {
-    throw 'The early MSVC preflight is available only for hosted StateImport, CatalogU1, ReaderBuild, CotizacionesContinuity, ReaderRevision, ReaderRevisionRegressions and CodeScope suites.'
+if ($MsvcPreflightOnly -and $Suite -notin @('StateImport', 'CatalogU1', 'ReaderBuild', 'CotizacionesContinuity', 'FirstHintRevision', 'ReaderRevision', 'ReaderRevisionRegressions', 'CodeScope')) {
+    throw 'The early MSVC preflight is available only for hosted StateImport, CatalogU1, ReaderBuild, CotizacionesContinuity, FirstHintRevision, ReaderRevision, ReaderRevisionRegressions and CodeScope suites.'
 }
 
 $qaRoot = [System.IO.Path]::GetFullPath((Join-Path $PSScriptRoot '..\..'))
@@ -219,6 +219,15 @@ $qaSuiteConfig = switch ($Suite) {
             Targets = @('lgaed_cpp_project_view_tests')
             Results = 'cotizaciones-continuity'
             Tests = @('native.cpp_project_u2_cotizaciones_continuity', 'native.cpp_project_u2_exact_eof')
+        }
+    }
+    'FirstHintRevision' {
+        @{
+            Directory = 'first-hint-revision-ci'
+            CMakeOption = 'LGAED_READER_BUILD_QA_ONLY'
+            Targets = @('lgaed_general_choice_editorial_tests', 'lgaed_general_choice_editorial_view_tests')
+            Results = 'first-hint-revision'
+            Tests = @('native.general_choice_editorial', 'native.general_choice_editorial_reader')
         }
     }
     'MathEditorial' {
@@ -823,6 +832,8 @@ if ($Suite -eq 'ReaderBuild') {
 $qaFocusedRegistration = @()
 if ($Suite -eq 'CotizacionesContinuity') {
     $qaFocusedRegistration = @('-R', '^native\.cpp_project_u2_(cotizaciones_continuity|exact_eof)$')
+} elseif ($Suite -eq 'FirstHintRevision') {
+    $qaFocusedRegistration = @('-R', '^native\.general_choice_editorial(_reader)?$')
 }
 $qaListingText = & $qaCTest --test-dir $qaBuild --show-only=json-v1 @qaFocusedRegistration
 if ($LASTEXITCODE -ne 0) { throw 'Cannot inspect the focused native test registration.' }

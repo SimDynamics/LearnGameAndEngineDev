@@ -456,10 +456,17 @@ void exercise(){
             published_block("block_0003_0000"),published_block("block_0003_0001"),
             published_block("u3l4_sensor_nivel_tres_prediccion"),published_block("block_0003_0007")};
         Fixture actual(false,published);
+        // Keep the exact reported owner and its executable/answer contract,
+        // but allow later authenticated editorial wording to be displayed.
+        // The loader validates the current descriptor against the current
+        // text; the assertions below inspect every displayed native glyph.
         require(published[2]->type==curriculum::BlockType::output_prediction&&
-            published[2]->question.find("Con nivel en 3 y limite en 4")!=std::string::npos&&
+            published[2]->code.find("int nivel = 3;")!=std::string::npos&&
+            published[2]->code.find("int limite = 4;")!=std::string::npos&&
+            published[2]->answers==std::vector<std::string>{"Normal\nMarca: 0\nNivel: 3"}&&
+            published[2]->text_semantics.at("/question").source==published[2]->question&&
             !published[2]->text_semantics.at("/question").spans.empty(),
-            "The real reported sensor question or its semantic markers changed");
+            "The real reported sensor executable, answer or semantic descriptors changed");
         const auto reading=lesson_reading_regions(actual.view);
         const auto verify_published=[&](int zoom){
             const auto body=control(actual.view,id(1,0)),heading=control(actual.view,id(0,0)),

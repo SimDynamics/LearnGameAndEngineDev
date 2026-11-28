@@ -877,9 +877,15 @@ function(lgaed_add_general_choice_editorial_tests)
     target_link_libraries(lgaed_general_choice_editorial_view_tests
         PRIVATE lgaed_curricular_windows)
     set(_first_hint_dir "${CMAKE_CURRENT_BINARY_DIR}/test-fixtures/u3l5-first-hint-revision")
-    set(_first_hint_files "${_first_hint_dir}/before.json" "${_first_hint_dir}/middle.json"
-        "${_first_hint_dir}/after.json" "${_first_hint_dir}/wrong-index.json"
-        "${_first_hint_dir}/wrong-source.json")
+    set(_first_hint_files)
+    foreach(_variant before middle after wrong-index wrong-source)
+        set(_course "${_first_hint_dir}/${_variant}/es/programming/cpp_fundamentals")
+        set(_unit "${_course}/edition_es_1__expresiones_y_decisiones")
+        list(APPEND _first_hint_files
+            "${_course}/course_cpp_fundamentals.json"
+            "${_unit}/unit_edition_es_1__expresiones_y_decisiones.json"
+            "${_unit}/lesson_combinar_condiciones.json")
+    endforeach()
     add_custom_command(OUTPUT ${_first_hint_files}
         COMMAND ${_lgaed_state_fixture_python}
             "${CMAKE_SOURCE_DIR}/scripts/curriculum/first_hint_revision_fixture.py"

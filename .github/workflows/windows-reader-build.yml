@@ -34,6 +34,7 @@ on:
       # contract validation/tests must not skip Windows CI.
       - scripts/curriculum/stable_state_layout.py
       - scripts/curriculum/cotizaciones_continuity_fixture.py
+      - scripts/curriculum/first_hint_revision_fixture.py
       - scripts/curriculum/test_retired_state_layout.py
       - scripts/curriculum/code_scope_presentations.py
       - scripts/curriculum/test_code_scope_presentations.py
@@ -81,7 +82,7 @@ permissions:
 concurrency:
   # Explicit focal evaluations use separate queues and cannot replace a
   # waiting full ReaderBuild execution.
-  group: windows-reader-build-${{ github.ref }}${{ github.event_name == 'push' && startsWith(github.event.head_commit.message, 'qa-cotizaciones-continuity:') && '-cotizaciones-continuity' || github.event_name == 'push' && startsWith(github.event.head_commit.message, 'qa-reader-revision-regressions:') && '-reader-revision-regressions' || github.event_name == 'push' && startsWith(github.event.head_commit.message, 'qa-code-scope-history:') && '-code-scope-history' || github.event_name == 'push' && startsWith(github.event.head_commit.message, 'qa-code-scope:') && '-code-scope' || github.event_name == 'push' && (startsWith(github.event.head_commit.message, 'qa-reader-revision:') || startsWith(github.event.head_commit.message, 'qa-native-headers:')) && '-reader-revision' || github.event_name == 'push' && startsWith(github.event.head_commit.message, 'qa-native-catalog-u1:') && '-catalog-u1' || github.event_name == 'push' && startsWith(github.event.head_commit.message, 'qa-curricular-u2l5-archive:') && '-u2l5-archive' || '' }}
+  group: windows-reader-build-${{ github.ref }}${{ github.event_name == 'push' && startsWith(github.event.head_commit.message, 'qa-first-hints:') && '-first-hint-revision' || github.event_name == 'push' && startsWith(github.event.head_commit.message, 'qa-cotizaciones-continuity:') && '-cotizaciones-continuity' || github.event_name == 'push' && startsWith(github.event.head_commit.message, 'qa-reader-revision-regressions:') && '-reader-revision-regressions' || github.event_name == 'push' && startsWith(github.event.head_commit.message, 'qa-code-scope-history:') && '-code-scope-history' || github.event_name == 'push' && startsWith(github.event.head_commit.message, 'qa-code-scope:') && '-code-scope' || github.event_name == 'push' && (startsWith(github.event.head_commit.message, 'qa-reader-revision:') || startsWith(github.event.head_commit.message, 'qa-native-headers:')) && '-reader-revision' || github.event_name == 'push' && startsWith(github.event.head_commit.message, 'qa-native-catalog-u1:') && '-catalog-u1' || github.event_name == 'push' && startsWith(github.event.head_commit.message, 'qa-curricular-u2l5-archive:') && '-u2l5-archive' || '' }}
   cancel-in-progress: false
 
 jobs:
@@ -128,7 +129,7 @@ jobs:
         run: python -B -m unittest discover -s scripts/curriculum -p test_simulation.py -v
 
   build:
-    name: ${{ github.event_name == 'push' && startsWith(github.event.head_commit.message, 'qa-cotizaciones-continuity:') && 'Verify real U2 Cotizaciones continuity and EOF project' || github.event_name == 'push' && startsWith(github.event.head_commit.message, 'qa-reader-revision-regressions:') && 'Verify seven reader revision regressions with real Windows playback' || github.event_name == 'push' && startsWith(github.event.head_commit.message, 'qa-code-scope:') && 'Verify nested code scopes and authentic publication retirement chains' || github.event_name == 'push' && (startsWith(github.event.head_commit.message, 'qa-reader-revision:') || startsWith(github.event.head_commit.message, 'qa-native-headers:')) && 'Verify automatic reading order after a live content edit' || github.event_name == 'push' && startsWith(github.event.head_commit.message, 'qa-native-catalog-u1:') && 'Verify the complete native catalog and four U1 editor regressions' || 'Compile original readers and verify catalog, choice revisions and project history' }}
+    name: ${{ github.event_name == 'push' && startsWith(github.event.head_commit.message, 'qa-first-hints:') && 'Verify current U3L5 first-hint native reader and historical choices' || github.event_name == 'push' && startsWith(github.event.head_commit.message, 'qa-cotizaciones-continuity:') && 'Verify real U2 Cotizaciones continuity and EOF project' || github.event_name == 'push' && startsWith(github.event.head_commit.message, 'qa-reader-revision-regressions:') && 'Verify seven reader revision regressions with real Windows playback' || github.event_name == 'push' && startsWith(github.event.head_commit.message, 'qa-code-scope:') && 'Verify nested code scopes and authentic publication retirement chains' || github.event_name == 'push' && (startsWith(github.event.head_commit.message, 'qa-reader-revision:') || startsWith(github.event.head_commit.message, 'qa-native-headers:')) && 'Verify automatic reading order after a live content edit' || github.event_name == 'push' && startsWith(github.event.head_commit.message, 'qa-native-catalog-u1:') && 'Verify the complete native catalog and four U1 editor regressions' || 'Compile original readers and verify catalog, choice revisions and project history' }}
     # Archived-reader and Python-only history checks have dedicated jobs.
     # All ordinary pushes and manual dispatch keep their complete build.
     if: ${{ github.event_name != 'push' || (!startsWith(github.event.head_commit.message, 'qa-curricular-u2l5-archive:') && !startsWith(github.event.head_commit.message, 'qa-code-scope-history:')) }}
@@ -144,7 +145,7 @@ jobs:
     env:
       # Explicit prefixes select catalog/U1, live reload, seven reader regressions or code-scope QA.
       # Normal pushes and manual dispatch retain all 98 ReaderBuild cases.
-      LGAED_NATIVE_QA_SUITE: ${{ github.event_name == 'push' && startsWith(github.event.head_commit.message, 'qa-cotizaciones-continuity:') && 'CotizacionesContinuity' || github.event_name == 'push' && startsWith(github.event.head_commit.message, 'qa-reader-revision-regressions:') && 'ReaderRevisionRegressions' || github.event_name == 'push' && startsWith(github.event.head_commit.message, 'qa-code-scope:') && 'CodeScope' || github.event_name == 'push' && (startsWith(github.event.head_commit.message, 'qa-reader-revision:') || startsWith(github.event.head_commit.message, 'qa-native-headers:')) && 'ReaderRevision' || github.event_name == 'push' && startsWith(github.event.head_commit.message, 'qa-native-catalog-u1:') && 'CatalogU1' || 'ReaderBuild' }}
+      LGAED_NATIVE_QA_SUITE: ${{ github.event_name == 'push' && startsWith(github.event.head_commit.message, 'qa-first-hints:') && 'FirstHintRevision' || github.event_name == 'push' && startsWith(github.event.head_commit.message, 'qa-cotizaciones-continuity:') && 'CotizacionesContinuity' || github.event_name == 'push' && startsWith(github.event.head_commit.message, 'qa-reader-revision-regressions:') && 'ReaderRevisionRegressions' || github.event_name == 'push' && startsWith(github.event.head_commit.message, 'qa-code-scope:') && 'CodeScope' || github.event_name == 'push' && (startsWith(github.event.head_commit.message, 'qa-reader-revision:') || startsWith(github.event.head_commit.message, 'qa-native-headers:')) && 'ReaderRevision' || github.event_name == 'push' && startsWith(github.event.head_commit.message, 'qa-native-catalog-u1:') && 'CatalogU1' || 'ReaderBuild' }}
     defaults:
       run:
         shell: pwsh
@@ -233,6 +234,20 @@ jobs:
             out/qa/reader-build-ci/CTestTestfile.cmake
             out/qa/reader-build-ci/Testing/Temporary/*.log
             out/qa/reader-build-ci/simulation-captures/**
+      - name: Preserve the current U3L5 first-hint and historical choice evidence
+        if: always() && env.LGAED_NATIVE_QA_SUITE == 'FirstHintRevision'
+        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02
+        with:
+          name: windows-first-hint-revision-${{ github.sha }}
+          retention-days: 14
+          if-no-files-found: warn
+          path: |
+            out/qa/first-hint-revision-ci/CMakeFiles/CMakeConfigureLog.yaml
+            out/qa/first-hint-revision-ci/native-build.log
+            out/qa/first-hint-revision-ci/first-hint-revision-results.xml
+            out/qa/first-hint-revision-ci/first-hint-revision-results.log
+            out/qa/first-hint-revision-ci/CTestTestfile.cmake
+            out/qa/first-hint-revision-ci/Testing/Temporary/*.log
       - name: Preserve the real U2 continuity and EOF evidence
         if: always() && env.LGAED_NATIVE_QA_SUITE == 'CotizacionesContinuity'
         uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02
