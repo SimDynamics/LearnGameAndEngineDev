@@ -1,4 +1,5 @@
 #include "presentation/windows/lesson_view.hpp"
+#include "presentation/windows/rich_text.hpp"
 #include "platform/windows/content_loader.hpp"
 #include "platform/windows/compiler_completion.hpp"
 #include "platform/windows/state_store.hpp"
@@ -323,6 +324,117 @@ void check_reading(HiddenView& view,bool originally_marked) {
     require(authentic_previous,
         "The old, marked choice does not occur in its authenticated reading archive");
 }
+
+// The genuine U3L5 predecessor contains no hints. The isolated first and
+// second drafts are authored by the Python fixture, not by editing Work's
+// publication. Restore two previously reviewed incorrect answers in the
+// actual reader and inspect the same source/marks sent to narration.
+void check_first_hint_reader(const std::filesystem::path& directory) {
+    const auto before=windows::load_lesson(directory/"before.json");
+    const auto first=windows::load_lesson(directory/"middle.json");
+    const auto current=windows::load_lesson(directory/"after.json");
+    const auto lean=windows::load_lesson_progress_metadata(directory/"after.json");
+    require(before.pages.size()==6&&first.pages.size()==6&&current.pages.size()==6&&lean.pages.size()==6,
+        "U3L5 first-hint QA lost the authentic six-page source");
+    for(const auto* file:{"wrong-index.json","wrong-source.json"}) {
+        bool full_rejected=false,lean_rejected=false;
+        try{(void)windows::load_lesson(directory/file);}catch(...){full_rejected=true;}
+        try{(void)windows::load_lesson_progress_metadata(directory/file);}catch(...){lean_rejected=true;}
+        require(full_rejected&&lean_rejected,
+            "Native full or progress loader admitted a forged guidance predecessor/index");
+    }
+    const auto env=resolve_windows_environment({ProfileId::Codex,
+        L"u3l5-first-hints-"+std::to_wstring(GetCurrentProcessId())+L"-"+
+            std::to_wstring(GetTickCount64()),false});
+    require(!std::filesystem::exists(env.paths.root),"QA profile already exists");
+    initialize_profile_directories(env.paths);
+    state::StateStore store(env.paths.root);
+    auto data=store.load();state::prepare_lesson_state(data,before);
+    data.preferences["native_windows"]["ui_language"]=std::string("es");
+    state::save_current_page(data,before,0);
+    struct Probe{std::size_t index;std::string key,receipt,first_hint,last_hint,path;};
+    std::vector<Probe> probes;
+    for(const auto owner:{"block_0000_0004","block_0000_0005"}) {
+        const auto position=stable_block_position(before,owner);
+        require(position&&position->page==0,"The authentic U3L5 first-page owner moved");
+        const auto index=position->block;
+        const auto& old=before.pages[0].blocks[index];
+        const auto& middle=first.pages[0].blocks[index];
+        const auto& final=current.pages[0].blocks[index];
+        const auto& metadata=lean.pages[0].blocks[index];
+        require(exercise_key(before,old)==exercise_key(current,final)&&
+                exercise_key(before,old)==exercise_key(lean,metadata)&&
+                old.review_feedback.empty()&&old.review_feedback_options.empty(),
+            "Review revision moved its stable response owner");
+        state::Response response;response.raw_json=R"({"incorrectAttempts":3,"opaque":{"cursor":11}})";
+        std::string path="/reviewFeedback";
+        if(old.type==BlockType::multiple_choice) {
+            require(old.correct_index&&old.options==final.options,"The original choice contract changed");
+            const auto wrong=*old.correct_index==0?1u:0u;
+            require(!evaluate_choice(old,wrong).correct,"Expected an actual incorrect option");
+            response.selected=wrong;response.answer=old.options[wrong];
+            path+="/"+std::to_string(wrong);
+        }else{
+            require(old.type==BlockType::fill_code,"The scalar U3L5 exercise changed");
+            response.answer="||";
+            require(!evaluate_text_answer(old,response.answer).correct,"Expected an actual incorrect scalar answer");
+        }
+        response.correct=false;state::mark_response_reviewed(response,old);
+        state::put_response(data,before,old,response);
+        const auto key=exercise_key(before,old);
+        const auto selected=response.selected<0?std::nullopt:
+            std::optional<std::size_t>{static_cast<std::size_t>(response.selected)};
+        probes.push_back({index,key,state::string_value(data,"learning_progress",key),
+            incorrect_feedback(middle,selected),incorrect_feedback(final,selected),path});
+        require(!probes.back().first_hint.empty()&&!probes.back().last_hint.empty()&&
+                probes.back().first_hint!=probes.back().last_hint,
+            "The first and current guidance were not separately authored");
+    }
+    store.save(data);
+    HWND host=CreateWindowExW(WS_EX_CONTROLPARENT,L"STATIC",L"U3L5 isolated review QA",
+        WS_OVERLAPPEDWINDOW,0,0,1100,850,nullptr,nullptr,GetModuleHandleW(nullptr),nullptr);
+    require(host!=nullptr,"Cannot create U3L5 QA host");
+    HWND view=nullptr;
+    const auto close=[&]{if(view){DestroyWindow(view);view=nullptr;}pump();};
+    try {
+        for(int pass=0;pass<2;++pass) {
+            view=create_lesson_view(host,env,current);
+            require(view!=nullptr,"Cannot open current U3L5 in the real reader");
+            MoveWindow(view,0,0,1100,850,TRUE);pump();
+            require(lesson_page_state(view).index==0&&!IsWindowVisible(host),
+                "First-hint QA did not reopen the original isolated page");
+            const auto regions=lesson_reading_regions(view);
+            const auto saved=read_lesson_state(view);
+            for(const auto& probe:probes){
+                const auto& block=current.pages[0].blocks[probe.index];
+                const auto response=state::get_response(saved,current,block);
+                require(response&&!response->correct&&state::response_reviewed(*response,block)&&
+                        state::string_value(saved,"learning_progress",probe.key)==probe.receipt,
+                    "Review revision lost the response or altered its original attempt metadata");
+                const auto region=std::ranges::find_if(regions,[&](const auto& item){
+                    return item.block_index==probe.index&&item.feedback;
+                });
+                require(region!=regions.end()&&region->target&&!region->correct&&
+                        region->source_text.find(probe.last_hint)!=std::string::npos&&
+                        region->source_text.find(probe.first_hint)==std::string::npos&&
+                        edit_text(region->target).find(probe.last_hint)!=std::string::npos&&
+                        region->text_semantics&&region->text_semantics->source==region->source_text,
+                    "Visible/reader feedback did not use the current exact guidance");
+                const auto marker=block.text_semantics.find(probe.path);
+                require(marker!=block.text_semantics.end()&&marker->second.source==probe.last_hint,
+                    "Current guidance lost its scalar/option-indexed descriptor");
+                for(const auto& span:marker->second.spans)
+                    require(std::ranges::any_of(region->text_semantics->spans,[&](const auto& shown){
+                        return shown.text==span.text&&shown.role==span.role;
+                    }),"Current narrated guidance lost an authored semantic span");
+            }
+            require(flush_lesson_view(view),"Cannot persist the isolated U3L5 reader");
+            close();
+        }
+        DestroyWindow(host);host=nullptr;
+        std::cout<<"PASS authentic U3L5 first-hint revision: native full/metadata loader rejects forged archives; scalar and indexed visible/reader guidance and original reviewed attempts survive reopen (no neural PCM claim)\n";
+    }catch(...){close();if(host)DestroyWindow(host);throw;}
+}
 }
 
 int main(int argc,char** argv) {
@@ -332,8 +444,8 @@ int main(int argc,char** argv) {
     InitCommonControlsEx(&controls);
     int outcome=0;
     try {
-        require(argc==3,
-            "Expected marked-history and unmarked-history native U9 reading fixtures");
+        require(argc==4,
+            "Expected marked/unmarked U9 fixtures and the isolated U3L5 first-hint fixture directory");
         for(int variant=1;variant<=2;++variant) {
             const bool originally_marked=variant==1;
             // Both files were authored from the same pinned U9 source before
@@ -363,6 +475,7 @@ int main(int argc,char** argv) {
             require(state::string_value(reopened,"learning_progress",key)==original_receipt,
                 "Reopening the revised reader changed a successful historical response");
         }
+        check_first_hint_reader(std::filesystem::path(argv[3]));
         std::cout<<"PASS general choice reading: marked and unmarked original options, "
             "distinct revised UTF-16 semantic spans, genuine reading archives "
             "and original success across reopening; isolated prerequisite models "

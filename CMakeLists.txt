@@ -876,8 +876,22 @@ function(lgaed_add_general_choice_editorial_tests)
         native/presentation/windows/general_choice_editorial_view_tests.cpp)
     target_link_libraries(lgaed_general_choice_editorial_view_tests
         PRIVATE lgaed_curricular_windows)
+    set(_first_hint_dir "${CMAKE_CURRENT_BINARY_DIR}/test-fixtures/u3l5-first-hint-revision")
+    set(_first_hint_files "${_first_hint_dir}/before.json" "${_first_hint_dir}/middle.json"
+        "${_first_hint_dir}/after.json" "${_first_hint_dir}/wrong-index.json"
+        "${_first_hint_dir}/wrong-source.json")
+    add_custom_command(OUTPUT ${_first_hint_files}
+        COMMAND ${_lgaed_state_fixture_python}
+            "${CMAKE_SOURCE_DIR}/scripts/curriculum/first_hint_revision_fixture.py"
+            --output-dir "${_first_hint_dir}"
+        DEPENDS "${CMAKE_SOURCE_DIR}/scripts/curriculum/first_hint_revision_fixture.py"
+            "${CMAKE_SOURCE_DIR}/scripts/curriculum/stable_state_layout.py"
+            "${CMAKE_SOURCE_DIR}/scripts/curriculum/text_semantics.py"
+        COMMENT "Authenticating the six-page U3L5 first-hint predecessor and two QA editions"
+        VERBATIM)
+    add_custom_target(lgaed_first_hint_revision_fixture DEPENDS ${_first_hint_files})
     add_dependencies(lgaed_general_choice_editorial_view_tests
-        lgaed_general_choice_editorial_fixture)
+        lgaed_general_choice_editorial_fixture lgaed_first_hint_revision_fixture)
     # Focused native QA: compile only the two Windows hosts and the pinned
     # editorial fixtures, not the application or unrelated test executables.
     add_custom_target(lgaed_general_choice_editorial_qa_targets
@@ -886,7 +900,8 @@ function(lgaed_add_general_choice_editorial_tests)
     add_test(NAME native.general_choice_editorial_reader
         COMMAND lgaed_general_choice_editorial_view_tests
             "${LGAED_GENERAL_CHOICE_EDITORIAL_QA_MARKED}"
-            "${LGAED_GENERAL_CHOICE_EDITORIAL_QA_UNMARKED_PREVIOUS}")
+            "${LGAED_GENERAL_CHOICE_EDITORIAL_QA_UNMARKED_PREVIOUS}"
+            "${_first_hint_dir}")
     set_tests_properties(native.general_choice_editorial_reader
         PROPERTIES TIMEOUT 240 RUN_SERIAL TRUE)
 endfunction()

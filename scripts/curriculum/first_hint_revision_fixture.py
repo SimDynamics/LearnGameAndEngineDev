@@ -59,7 +59,16 @@ def main():
     args = parser.parse_args()
     before, middle, final, _ = build()
     args.output_dir.mkdir(parents=True, exist_ok=True)
-    for name, source in (("before.json", before), ("middle.json", middle), ("after.json", final)):
+    wrong_index = deepcopy(final)
+    edge = next(proof for proof in wrong_index["stateLayout"]["editorial"]
+                if proof.get("reviewRevision") and len(proof["reviewPaths"]) > 1)
+    edge["reviewPaths"] = [edge["reviewPaths"][1]]
+    wrong_source = deepcopy(final)
+    edge = next(proof for proof in wrong_source["stateLayout"]["editorial"]
+                if proof.get("reviewRevision"))
+    edge["reviewRevision"]["previousBlock"]["question"] += " QA falsificado."
+    for name, source in (("before.json", before), ("middle.json", middle), ("after.json", final),
+                         ("wrong-index.json", wrong_index), ("wrong-source.json", wrong_source)):
         (args.output_dir / name).write_text(json.dumps(source, ensure_ascii=False, indent=2) + "\n",
                                             encoding="utf-8", newline="\n")
 

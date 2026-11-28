@@ -3756,9 +3756,21 @@ StateLayout read_layout(const JsonObject& metadata, const JsonArray& pages, std:
                         require(old_marks.contains(path)&&old_marks.at(path)==field,
                             "Review revision archive invented unrelated reading semantics");
                 collect_actual();const auto owner=return_actual_blocks.find(id);
-                require(owner!=return_actual_blocks.end()&&
-                    state_fingerprint(protected_source(id,previous,true))==
-                    state_fingerprint(protected_source(id,owner->second)),
+                require(owner!=return_actual_blocks.end(),
+                    "Review revision archive lost its original owner");
+                auto old_contract=protected_source(id,previous,true);
+                auto active_contract=protected_source(id,owner->second);
+                if(const auto choice=general_choice_revisions.find(id);
+                        choice!=general_choice_revisions.end()) {
+                    // The independently authenticated option revision can
+                    // precede or follow the review. Normalize only that
+                    // exact published representation in either snapshot.
+                    old_contract=general_choice_projection(old_contract,choice->second,true,true);
+                    active_contract=general_choice_projection(active_contract,choice->second,true,true);
+                }
+                const auto archived_digest=state_fingerprint(old_contract);
+                require(archived_digest==state_fingerprint(active_contract)||
+                        archived_digest==result.signatures.at(id),
                     "Review revision archive changed the protected owner contract");
             }
             if(change.HasKey(L"bibliography")){
