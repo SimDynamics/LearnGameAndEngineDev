@@ -6,9 +6,11 @@ Prioridad vigente del usuario: rehacer Programación 1 desde U1L1 para su entreg
 
 Avance real: Programación 1 ya contiene U12L27–L36 y referencias L37; su único proyecto es E:\Projects\LGAEDProjects\01_programar_desde_cero_con_cpp, repositorio del mismo nombre. Conservar código, historial y capturas de InspectionLog. Programación 2 tiene desarrollados los contenidos y prácticas prioritarios de U1–U4L7 y sus referencias; el registro único conserva las integraciones técnicas pendientes. La revisión curricular de U4L3 incluye la evidencia real de la preparación de CMake en Windows, con el estado de los componentes y la prueba mínima del entorno. Los avances posteriores permanecen guardados mientras se rehace Programación 1. No rehacer el proyecto 1.
 
-Punto de estudio confirmado por el estudiante: Programación 1, unidad 3, lección 4, «Elegir alternativas y probar fronteras». Work revisa la lección completa desde su fuente y atiende las observaciones del estudiante. Integra las mejoras técnicas conforme las requieran las lecciones que esté estudiando.
+Punto de estudio confirmado por el estudiante: Programación 1, unidad 3, lección 5, «Combinar condiciones con lógica». Work continúa la revisión curricular desde U3L5, lección por lección. En cada lección incorpora los pendientes que le correspondan y realiza una segunda lectura de la versión final antes de entregarla.
 
-La edición española local contiene 28 lecciones ya preparadas hasta U4L5. Esta cifra describe el material disponible. El estudiante va en U3L4. El resto del curso se conserva en los archivos de la edición anterior. Al llegar a U9L13, U12L6 y U12L22, se pueden consultar los borradores comprobados en C:/LGAED-QA/work-tres-fichas-edicion-v9eu7ahu. Las convenciones nuevas de C++ se enseñan desde U4L1.
+U3L5 ya tuvo su segunda lectura completa. El siguiente punto de revisión es U3L6, «Validez de datos y cortocircuito». Los pendientes curriculares se incorporan al revisar las lecciones indicadas en este archivo.
+
+La edición española local contiene 28 lecciones ya preparadas hasta U4L5. Esta cifra describe el material disponible. El resto del curso se conserva en los archivos de la edición anterior. Al llegar a U9L13, U12L6 y U12L22, se pueden consultar los borradores comprobados en C:/LGAED-QA/work-tres-fichas-edicion-v9eu7ahu. Las convenciones nuevas de C++ se enseñan desde U4L1.
 
 La guía de autoría de la simulación de etiquetas vacías de U5L13 está en [docs/SIMULATIONS.md](docs/SIMULATIONS.md).
 
@@ -306,7 +308,7 @@ Work incorpora cada mejora al llegar a la lección indicada en la revisión de l
 
 ### P2_U2L3_INTEGRACION_DE_COTIZACIONES
 
-- **Momento de incorporación.** Al llegar a U2L3 en la revisión curricular de Programación 2, después de terminar la revisión vigente de Programación 1. El estudiante está en P1 U3L4.
+- **Momento de incorporación.** Al llegar a U2L3 en la revisión curricular de Programación 2, después de terminar la revisión vigente de Programación 1.
 - **Actividad.** Revisar `block_0011_0003` en `app/src/main/assets/content/es/programming/programming_practice_tools/construccion_reproducible/lesson_opciones_y_revision_de_la_configuracion.json`. La candidata conserva las 14 páginas y los cinco identificadores de la página 12. Actualiza ese editor y las instrucciones de `block_0011_0001`, `block_0011_0002` y `block_0011_0004`.
 - **Candidata preparada.** `C:/LGAED-QA/work-p2-cotizaciones-p12-dcpg_jef/lesson_opciones_y_revision_de_la_configuracion.json`, SHA-256 `b8f65d2db87ffc565ffc12ef1a5041e161fcbd3eba568547a0ef0021fcc8ec5a`. Tiene la segunda lectura editorial aprobada. Antes de usarla, contrastarla con la versión activa que exista al llegar a esta lección.
 - **Pruebas del editor.** Con `TARIFA_ESPECIAL=ON`, la entrada `2` produce `4` y es el único caso obligatorio. Conservar como opcionales `0 → 0`, `5 → 10` y entrada vacía `0:4:10`. Presentar sus instrucciones y resultados junto al mismo editor. Mantener el proyecto `Cotizaciones`, los objetivos `tarifas` y `cotizar`, las fuentes y los requisitos CMake publicados. La sonda privada OFF conserva su entrada vacía y su salida `0:6:15`.

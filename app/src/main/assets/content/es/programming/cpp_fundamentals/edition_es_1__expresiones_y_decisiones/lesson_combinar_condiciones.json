@@ -6,11 +6,11 @@
       "blocks": [
         {
           "type": "heading",
-          "text": "Exigir dos condiciones con «y»"
+          "text": "Cuándo se cumplen dos condiciones a la vez"
         },
         {
           "type": "paragraph",
-          "text": "Un equipo funciona entre 15 y 25 grados. También funciona en los dos extremos. Para decidir si una temperatura está dentro del intervalo, comprueba dos cosas.\n\ntemperatura >= 15 indica si alcanza el mínimo.\ntemperatura <= 25 indica si respeta el máximo.\n\nEl operador && combina las dos condiciones. Su resultado es true solo cuando las dos son verdaderas. A esta operación se le llama «y» lógica o conjunción. El programa guarda el resultado en en_intervalo (Köppe et al., 2023; Stroustrup, 2024)."
+          "text": "Un equipo puede funcionar a temperaturas de 15 a 25 grados. Puede funcionar justo a 15 grados y también justo a 25. La variable entera temperatura guarda la medida en grados. El programa debe comprobar que la medida respete tanto el mínimo como el máximo.\n\nLa comparación temperatura >= 15 pregunta si la medida llega al mínimo. La variable alcanza_minimo guarda la respuesta. Guarda true desde los quince grados en adelante y false por debajo de quince.\n\nLa comparación temperatura <= 25 pregunta si la medida se mantiene dentro del máximo. La variable no_supera_maximo guarda true hasta los veinticinco grados inclusive y false por encima de veinticinco.\n\nLa «y» lógica, también llamada conjunción (AND en inglés), se escribe && en C++. En la expresión alcanza_minimo && no_supera_maximo, las dos respuestas tienen que ser true para que en_intervalo guarde true. Basta con que una de ellas sea false para que en_intervalo guarde false (Köppe et al., 2023; Stroustrup, 2024)."
         },
         {
           "type": "code",
@@ -19,29 +19,35 @@
         },
         {
           "type": "paragraph",
-          "text": "Con 18 grados se cumplen las dos comparaciones, así que el programa muestra 1. Con 26 grados se cumple el mínimo, pero se supera el máximo. Como las dos condiciones tienen que cumplirse, el resultado es false.\n\nTambién puedes escribir la regla como (temperatura >= 15) && (temperatura <= 25). Cada comparación usa la temperatura.\n\nSi escribes 15 <= temperatura <= 25, C++ agrupa la expresión como (15 <= temperatura) <= 25. Con 26 grados, 15 <= temperatura da true. Para la segunda comparación, C++ convierte ese resultado a 1 y compara 1 <= 25. La expresión daría true a pesar de que 26 queda fuera del intervalo (Köppe et al., 2023)."
+          "text": "Con la medida de 18 grados del programa, 18 >= 15 es verdadera y alcanza_minimo guarda true. También es verdadera 18 <= 25, de modo que no_supera_maximo guarda true. Al combinar esos dos valores con &&, en_intervalo guarda true. En el formato que usa este programa, std::cout muestra 1 para true y 0 para false. Por eso muestra 1 con dieciocho grados.\n\nPara una medida de 26 grados, 26 >= 15 es verdadera y 26 <= 25 es falsa. Aunque la medida alcanza el mínimo, supera el máximo. En ese caso en_intervalo guardaría false y la consola mostraría 0.\n\nLas dos comprobaciones del equipo también se pueden escribir juntas como (temperatura >= 15) && (temperatura <= 25). A cada lado de && hay una comparación de la medida con uno de los límites.\n\n¿Qué comprobaría C++ si se escribiera 15 <= temperatura <= 25? C++ agrupa esa expresión como (15 <= temperatura) <= 25. Se puede seguir la diferencia con la medida de veintiséis grados.\n\n1. El primer <= compara quince con la temperatura. Como 15 <= 26 es verdadera, el resultado de esa comparación es true.\n2. El segundo <= recibe ese resultado a su izquierda y el entero 25 a su derecha. Para compararlos, C++ convierte true en el entero 1.\n3. La última comparación es 1 <= 25. Da true aunque la medida de veintiséis grados supera el máximo. La expresión encadenada nunca compara esa medida con veinticinco (Köppe et al., 2023)."
         },
         {
           "type": "fill_code",
-          "question": "contador es válido entre 2 y 9, incluidos ambos extremos. Escribe el operador que exige cumplir las dos comparaciones.",
+          "question": "La variable contador guarda un entero. La regla del ejercicio considera válidos los valores desde 2 hasta 9, incluidos ambos extremos. La comparación contador >= 2 comprueba el mínimo y contador <= 9 comprueba el máximo.\n\nEn el programa, contador vale 6. ¿Qué operador lógico escribirías entre las dos comparaciones para que valido indique si el número está dentro del intervalo? La expresión también debe funcionar cuando el número quede fuera.",
           "language": "cpp",
           "code": "#include <iostream>\n\nint main() {\n    const int contador = 6;\n\n    const bool valido = (contador >= 2) ___ (contador <= 9);\n\n    std::cout << valido;\n\n    return 0;\n}\n",
           "answers": [
             "&&",
             "and"
           ],
-          "explanation": "&& exige que el contador alcance el mínimo y respete el máximo. and escribe la misma operación. Aquí el contador vale seis, las dos condiciones son verdaderas y la consola muestra 1."
+          "explanation": "Con contador igual a seis, 6 >= 2 y 6 <= 9 son verdaderas. El operador && combina las dos comparaciones. Como se cumplen las dos, valido guarda true y la consola muestra 1. En C++ también puedes escribir and para el mismo operador.\n\nCon diez, 10 >= 2 seguiría siendo verdadera, pero 10 <= 9 sería falsa. Bastaría ese segundo resultado para que valido guardara false y la consola mostrara 0.",
+          "reviewFeedback": "Un contador de diez supera el mínimo, pero también supera el máximo permitido. Para elegir el operador, comprueba qué debería guardar valido cuando el número cumple solo una de las dos condiciones."
         },
         {
           "type": "multiple_choice",
-          "question": "En A && B, A vale true y B vale false. ¿Cuál es el resultado?",
+          "question": "Una partida comienza cuando los dos jugadores están listos. El programa guarda en A si Ana está lista y en B si Bruno está listo. Ambas variables son de tipo bool.\n\nAna sigue preparándose (A vale false). Bruno ya está listo (B vale true). ¿Qué valor da A && B en ese momento?",
           "options": [
             "false",
             "true",
             "No se puede obtener un bool."
           ],
           "correctIndex": 0,
-          "explanation": "&& necesita que ambas condiciones sean verdaderas. Como B vale false, el resultado es false."
+          "explanation": "La partida requiere que los dos jugadores estén listos. Bruno está listo, pero Ana todavía se está preparando. Al evaluar A && B, el programa encuentra false en A. Ese valor basta para que la expresión dé false. La partida todavía no puede comenzar.",
+          "reviewFeedback": [
+            "Para interpretar A && B, comprueba si Ana y Bruno ya están listos a la vez.",
+            "Bruno ya está listo. Comprueba si la partida también exige que Ana lo esté y qué valor guarda A en este momento.",
+            "Cada jugador tiene su propio valor de tipo bool. La expresión A && B da una sola respuesta de ese mismo tipo. ¿Están los dos listos para jugar?"
+          ]
         }
       ]
     },
@@ -49,11 +55,11 @@
       "blocks": [
         {
           "type": "heading",
-          "text": "Admitir al menos una condición con «o»"
+          "text": "Cuándo basta con cumplir al menos una condición"
         },
         {
           "type": "paragraph",
-          "text": "Para una actividad de dibujo basta con llevar lápices o rotuladores. Con cualquiera de los dos materiales puedes participar. También puedes participar si llevas ambos.\n\n|| expresa una «o» lógica. Da true si al menos una condición es verdadera y da false si las dos son falsas. Se llama «o» inclusiva porque admite que ambas sean verdaderas. El programa muestra 1 porque la persona lleva rotuladores aunque no lleva lápices (Köppe et al., 2023; Stroustrup, 2024).\n\nCon los datos del ejemplo, trae_lapices || trae_rotuladores da true. Si el requisito fuera llevar los dos materiales, trae_lapices && trae_rotuladores daría false."
+          "text": "Una persona puede participar en la actividad de dibujo si lleva lápices, rotuladores o ambos. El programa registra los materiales por separado. La variable trae_lapices vale true si lleva lápices y false si le faltan. La variable trae_rotuladores registra de la misma forma si lleva rotuladores.\n\nLa «o» lógica, también llamada disyunción (OR en inglés), se escribe || en C++. La expresión trae_lapices || trae_rotuladores da true con cualquiera de los materiales. También da true si la persona lleva los dos. Por eso se llama «o» inclusiva. Solo da false si la persona llega sin lápices y sin rotuladores (Köppe et al., 2023; Stroustrup, 2024).\n\nLa persona del ejemplo llega sin lápices, pero con rotuladores. Por eso el programa guarda false en trae_lapices y true en trae_rotuladores. Los rotuladores bastan para participar. Al combinar los valores con ||, tiene_material guarda true y std::cout muestra 1.\n\nSi la actividad exigiera llevar los dos materiales, la condición sería trae_lapices && trae_rotuladores. Con esa misma persona, la condición daría false porque faltan los lápices."
         },
         {
           "type": "code",
@@ -62,7 +68,7 @@
         },
         {
           "type": "inline_fill_code",
-          "question": "Escribe un operador por hueco. ambos debe ser true si se cumplen los dos requisitos. alguno debe ser true si se cumple al menos uno.",
+          "question": "En el control de acceso se comprueban dos datos de cada visita. La variable conoce_clave indica si la persona conoce la clave. La variable trae_tarjeta indica si lleva la tarjeta. En esta visita la persona conoce la clave y llega sin tarjeta.\n\n1. En la línea que declara ambos, completa el hueco con el operador lógico que exige conocer la clave y llevar la tarjeta. ambos debe valer true únicamente si se cumplen las dos condiciones.\n\n2. En la línea que declara alguno, completa el hueco con el operador lógico que acepta la clave por sí sola, la tarjeta por sí sola o las dos juntas. alguno debe valer false únicamente cuando la persona llega sin conocer la clave y sin llevar la tarjeta.",
           "template": "#include <iostream>\n\nint main() {\n    const bool conoce_clave = true;\n    const bool trae_tarjeta = false;\n\n    const bool ambos = conoce_clave [] trae_tarjeta;\n    const bool alguno = conoce_clave [] trae_tarjeta;\n\n    std::cout << ambos << \" \" << alguno;\n\n    return 0;\n}\n",
           "answers": [
             "&&",
@@ -78,22 +84,28 @@
               "or"
             ]
           ],
-          "explanation": "&& exige los dos requisitos y || admite al menos uno. Como la persona conoce la clave pero no lleva tarjeta, la consola muestra 0 1. and y or son formas equivalentes de escribir esos operadores."
+          "explanation": "En esta visita, conoce_clave vale true y trae_tarjeta vale false.\n\nLa expresión conoce_clave && trae_tarjeta exige conocer la clave y llevar la tarjeta. La persona conoce la clave, pero le falta la tarjeta. Por eso ambos guarda false.\n\nLa expresión conoce_clave || trae_tarjeta permite usar cualquiera de las dos formas de acceso. Conocer la clave basta. Por eso alguno guarda true.\n\nLa instrucción de salida muestra primero ambos, deja un espacio y muestra alguno. En la consola aparece 0 1.\n\nEn C++ también se puede escribir and en lugar de && y or en lugar de ||.",
+          "reviewFeedback": "Fíjate en esta visita. La persona conoce la clave y llega sin tarjeta. ¿Qué regla exige la tarjeta además de la clave? ¿Qué regla permite entrar con la clave por sí sola? Aplica cada regla a la variable que le corresponde."
         },
         {
           "type": "note",
-          "text": "En el ejercicio de la clave y la tarjeta, ambos guarda false. Conocer la clave cumple uno de los requisitos, pero falta la tarjeta. En cambio, alguno guarda true porque basta con cumplir uno de los dos requisitos y la persona conoce la clave."
+          "text": "Llevar la tarjeta no significa que conozcas la clave.\n\nEn cada pareja, el primer valor indica si la persona conoce la clave (conoce_clave) y el segundo indica si lleva la tarjeta (trae_tarjeta). En cada posición, true significa «sí» y false significa «no».\n\nNo conoce la clave ni lleva la tarjeta (false, false).\nNo conoce la clave, pero lleva la tarjeta (false, true).\nConoce la clave, pero no lleva la tarjeta (true, false).\nConoce la clave y lleva la tarjeta (true, true)."
         },
         {
           "type": "multiple_choice",
-          "question": "En A || B, tanto A como B valen true. ¿Cuál es el resultado?",
+          "question": "Un panel indica si queda alguna lámpara encendida en una sala. La variable A indica si está encendida la lámpara de la mesa. La variable B indica si está encendida la lámpara de la puerta. Ambas son de tipo bool.\n\nAl hacer la comprobación, las dos lámparas están encendidas. Tanto A como B valen true. ¿Qué resultado da A || B para el panel?",
           "options": [
             "true, porque al menos una condición es verdadera.",
             "false, porque hay dos condiciones verdaderas.",
             "Un número distinto de true y false."
           ],
           "correctIndex": 0,
-          "explanation": "|| da true cuando se cumple al menos una condición. Que se cumplan las dos también da true."
+          "explanation": "El panel comprueba si queda al menos una lámpara encendida. Basta con la lámpara de la mesa. Si también enciendes la de la puerta, la respuesta sigue siendo «sí».\n\nCon las dos lámparas encendidas, A || B equivale a true || true. La expresión da un solo valor de tipo bool, true. Ese valor indica que hay luz encendida en la sala.",
+          "reviewFeedback": [
+            "La regla del panel admite que esté encendida cualquiera de las dos lámparas. Para interpretar el resultado, identifica cuáles están encendidas ahora.",
+            "La «o» de A || B es inclusiva. Si la lámpara de la mesa ya está encendida, ¿deja de haber luz en la sala cuando se enciende también la de la puerta?",
+            "El panel pregunta «¿queda alguna lámpara encendida?». ¿Qué dos valores de tipo bool pueden representar las respuestas «sí» y «no»?"
+          ]
         }
       ]
     },
@@ -101,11 +113,11 @@
       "blocks": [
         {
           "type": "heading",
-          "text": "Negar una condición y agrupar una regla"
+          "text": "Cómo invertir una respuesta y agrupar condiciones"
         },
         {
           "type": "paragraph",
-          "text": "El operador ! invierte un valor lógico. !true da false y !false da true. Si silenciado indica que el panel tiene el sonido apagado, !silenciado indica que el sonido está habilitado.\n\nPuedes negar el resultado de una comparación completa con !(cantidad < minimo). Los paréntesis hacen que ! se aplique a la comparación y que la expresión sea verdadera cuando la cantidad alcanza o supera el mínimo (Köppe et al., 2023)."
+          "text": "Un taller necesita ocho piezas para preparar un pedido. El programa guarda ese mínimo en minimo. En la mesa hay ocho piezas, así que cantidad vale 8.\n\n¿Falta alguna pieza? Para responder, el programa compara cantidad < minimo. Ocho no es menor que ocho, así que la variable falta guarda false.\n\nPara saber si las piezas alcanzan, el programa calcula !falta. El signo ! se llama operador de negación. Invierte el valor que recibe (Köppe et al., 2023). Como falta vale false, !falta da true. El programa guarda ese resultado en alcanza. La consola muestra 0 1. Primero escribe 0 porque no faltan piezas. Deja un espacio y escribe 1 porque hay suficientes para el pedido.\n\nTambién puedes escribir !(cantidad < minimo). Primero se evalúa la comparación entre paréntesis, que pregunta si faltan piezas. Después ! invierte esa respuesta. La expresión cantidad >= minimo pregunta directamente si hay suficientes piezas para el pedido. Las dos expresiones dan el mismo resultado.\n\nEl mínimo sigue siendo ocho. ¿Qué resultado dan !(cantidad < minimo) y cantidad >= minimo si cambias el número de piezas que hay en la mesa?\nCon siete, falta una pieza. Las dos expresiones dan false.\nCon ocho, hay justo las necesarias. Las dos expresiones dan true.\nCon nueve, sobra una pieza. Las dos expresiones también dan true."
         },
         {
           "type": "code",
@@ -117,15 +129,16 @@
           "language": "cpp",
           "code": "#include <iostream>\n\nint main() {\n    const bool apagado = false;\n    const bool encendido = ___apagado;\n\n    std::cout << encendido;\n\n    return 0;\n}\n",
           "id": "u3l5_invertir_un_aviso",
-          "question": "La lámpara guarda en apagado si está apagada. Escribe el operador que invierte ese valor para saber si está encendida.",
-          "explanation": "El operador ! invierte el valor lógico. Como apagado vale false, encendido recibe true y la consola muestra 1.",
+          "question": "La variable apagado indica si la lámpara está apagada. Queremos que encendido dé la respuesta contraria. Si la lámpara está apagada, encendido debe valer false. Si está encendida, debe valer true.\n\n¿Qué signo de un solo carácter pondrías justo antes de apagado para invertir su valor?",
+          "explanation": "En esta prueba, apagado vale false. La lámpara está encendida. El signo ! invierte ese valor, así que !apagado da true. El programa guarda true en encendido y muestra 1 en la consola.\n\nC++ también acepta not apagado. En esa forma escrita con una palabra, el espacio separa not del nombre apagado.",
           "answers": [
             "!"
-          ]
+          ],
+          "reviewFeedback": "La lámpara solo tiene dos estados. Si apagado vale true, ¿qué valor necesita encendido? Busca el signo que cambia de verdadero a falso y de falso a verdadero."
         },
         {
           "type": "paragraph",
-          "text": "Al agrupar una expresión, ! tiene prioridad sobre &&, y && sobre ||. En el panel, sensor_a y sensor_b indican qué sensores piden una señal. Para exigir que el sonido esté habilitado en los dos casos, reúne las solicitudes en una condición con paréntesis y combina ese resultado con !silenciado.\n\nSupón que ambos sensores piden una señal y el panel está silenciado. (sensor_a || sensor_b) && !silenciado da false. Si quitas los paréntesis, C++ agrupa sensor_b && !silenciado y la solicitud del sensor A basta para que la expresión dé true. Los paréntesis determinan a qué alternativas se aplica el requisito común (Köppe et al., 2023)."
+          "text": "Un panel recibe avisos de dos sensores. Queremos decidir cuándo debería sonar. Si algún sensor pide un aviso y el sonido está activado, la respuesta debe ser «sí». Si el panel está silenciado, la respuesta debe ser «no», aunque los dos sensores pidan un aviso. El programa de ejemplo muestra la decisión como un número en la consola.\n\nEn el ejemplo, los dos sensores piden un aviso. Por eso sensor_a y sensor_b valen true. Como el panel está silenciado, silenciado también vale true. El programa calcula de dos maneras si debe sonar, siempre con esos mismos datos.\n\nEn (sensor_a || sensor_b) && !silenciado, los paréntesis reúnen las peticiones de los sensores. La pregunta «¿Alguno pide un aviso?» tiene respuesta afirmativa. La pregunta «¿Está activado el sonido?» tiene respuesta negativa porque !silenciado vale false. Como && exige las dos cosas, con_parentesis guarda false.\n\n¿Qué cambia si escribes sensor_a || sensor_b && !silenciado? Sin esos paréntesis, ! se une a silenciado, y && une sensor_b con !silenciado. Esto se debe a que ! tiene prioridad sobre &&, y && sobre || (Köppe et al., 2023). La expresión se interpreta como sensor_a || (sensor_b && !silenciado). Si el sensor A pide un aviso, esa versión lo permite incluso con el sonido desactivado. Si únicamente el sensor B pide el aviso, el sonido sí tiene que estar activado. En este ejemplo el sensor A lo pide, así que sin_parentesis guarda true.\n\nLa consola muestra 0 1. El 0 indica la decisión con paréntesis. El panel debería permanecer en silencio. El 1 indica la decisión sin esos paréntesis. Esa expresión permitiría el aviso del sensor A aun estando silenciado el panel."
         },
         {
           "type": "code",
@@ -134,24 +147,30 @@
         },
         {
           "type": "output_prediction",
-          "question": "El sensor A pide una señal y el panel está silenciado. ¿El programa muestra 1 o 0?",
+          "question": "En esta prueba, el sensor A pide un aviso. El sensor B no lo pide y el panel está silenciado. El programa usa la expresión (sensor_a || sensor_b) && !silenciado para calcular senal. ¿Qué número muestra std::cout << senal;?",
           "language": "cpp",
           "code": "#include <iostream>\n\nint main() {\n    const bool sensor_a = true;\n    const bool sensor_b = false;\n    const bool silenciado = true;\n\n    const bool senal = (sensor_a || sensor_b) && !silenciado;\n\n    std::cout << senal;\n\n    return 0;\n}\n",
           "answers": [
             "0"
           ],
-          "explanation": "sensor_a || sensor_b da true, porque el sensor A pide la señal. Como el panel está silenciado, !silenciado da false. Al unir esos resultados con &&, la salida es 0."
+          "explanation": "El sensor A pide un aviso, así que sensor_a || sensor_b da true aunque el sensor B no lo pida. El panel está silenciado, así que silenciado vale true y !silenciado da false.\n\nPara emitir la señal se necesitan una petición y el sonido activado. Hay una petición, pero el sonido está desactivado. Por eso (sensor_a || sensor_b) && !silenciado da false. El programa guarda ese resultado en senal y escribe 0.",
+          "reviewFeedback": "Mira por separado las dos partes que une &&. ¿Algún sensor pide el aviso? ¿Está activado el sonido? Para obtener el número de la consola, ten en cuenta las dos respuestas."
         },
         {
           "type": "multiple_choice",
-          "question": "El intervalo va de cuatro a diez e incluye ambos extremos. ¿Qué expresión da true para un valor fuera del intervalo?",
+          "question": "Se aceptan medidas enteras desde 4 hasta 10. Tanto 4 como 10 están permitidos. La variable valor guarda la medida. ¿Qué expresión da true cada vez que la medida queda fuera de esos límites y false cada vez que queda dentro?",
           "options": [
             "(valor < 4) && (valor > 10)",
             "(valor >= 4) && (valor <= 10)",
             "(valor < 4) || (valor > 10)"
           ],
           "correctIndex": 2,
-          "explanation": "valor < 4 detecta los valores por debajo del intervalo y valor > 10 los que quedan por encima. Basta con una de esas condiciones, por eso se combinan con ||. Con cuatro o diez, ambas dan false."
+          "explanation": "Una medida puede quedar fuera por dos motivos. Si valor es 3, la medida cae por debajo de 4. Se cumple valor < 4. Si valor es 11, la medida supera 10. Se cumple valor > 10. Basta con uno de esos motivos, por eso la expresión correcta es (valor < 4) || (valor > 10).\n\nCon 4, ninguna de las dos comparaciones se cumple. Con 10, tampoco. Los dos extremos están dentro, igual que 5, 6, 7, 8 y 9.\n\nLa opción (valor < 4) && (valor > 10) exigiría que un mismo número fuera menor que 4 y mayor que 10 al mismo tiempo. Ningún entero cumple eso. La opción (valor >= 4) && (valor <= 10) reconoce justo las medidas que están dentro, como 7.",
+          "reviewFeedback": [
+            "La medida 3 está fuera por ser menor que 4. Para que la expresión con && la detecte, también tendría que ser mayor que 10. ¿Se cumplen las dos comparaciones?",
+            "Una medida de 7 está dentro. Sustituye valor por 7 en la opción que elegiste. ¿Esa opción reconoce las medidas que están dentro o las que están fuera?",
+            "Una medida de 3 y una medida de 11 quedan fuera por motivos distintos. Comprueba qué comparación se cumple para cada una."
+          ]
         }
       ]
     },
@@ -159,11 +178,11 @@
       "blocks": [
         {
           "type": "heading",
-          "text": "Corregir la regla de entrada"
+          "text": "Corregir el programa que concede la entrada a una sala"
         },
         {
           "type": "paragraph",
-          "text": "Para entrar a la sala, la persona debe presentar un pase, una invitación o ambos. El pase y la invitación son las dos credenciales que acepta el programa. En cualquier caso, la sala tiene que estar abierta.\n\nEl programa guarda tres enteros que valen 0 o 1. En pase e invitacion, 1 indica que la persona tiene esa credencial y 0 indica que no la tiene. En apertura, 1 indica que la sala está abierta y 0 indica que está cerrada. La declaración de tiene_pase guarda el resultado de pase != 0, que indica si la persona tiene pase. La declaración de tiene_invitacion guarda el resultado de invitacion != 0, que indica si la persona tiene invitación. La declaración de sala_abierta guarda el resultado de apertura != 0, que indica si la sala está abierta.\n\nCon un pase y la sala cerrada, el programa inicial muestra Entrada permitida. Revisa cómo se agrupan la «o» y la «y» al calcular permitido. Corrige esa expresión para exigir que la sala esté abierta tanto con pase como con invitación. Conserva los tres datos y el formato de salida. El segundo renglón de la salida muestra los valores de pase, invitacion y apertura, en ese orden.\n\nSalida esperada\nEntrada denegada\nDatos: 1 0 0"
+          "text": "Una persona quiere entrar a una sala. Si la sala está cerrada, nadie puede entrar. Si está abierta, basta con presentar un pase o una invitación. Presentar ambos también da acceso.\n\nEl programa del editor representa una visita con tres enteros. Sus valores ya están escritos en main. En esta visita, cada 1 significa «sí» y cada 0 significa «no».\n\nint pase = 1; indica que la persona tiene pase.\nint invitacion = 0; indica que no tiene invitación.\nint apertura = 0; indica que la sala está cerrada.\n\n¿Cómo lee esos datos el programa? pase != 0 pregunta si el valor de pase es distinto de cero. Con un uno, la respuesta es true y se guarda en tiene_pase. Del mismo modo, invitacion != 0 da false y se guarda en tiene_invitacion. Por último, apertura != 0 da false y se guarda en sala_abierta. Cualquier entero distinto de cero haría verdadera una comparación con != 0. Esta actividad utiliza únicamente 0 y 1.\n\nEl programa inicial escribe Entrada permitida para esta persona, aunque la sala está cerrada. Corrige la expresión que calcula permitido. Agrupa las condiciones de modo que la sala deba estar abierta tanto para quien llega con pase como para quien llega con invitación. Conserva los tres datos de esta visita y las instrucciones que escriben los dos renglones.\n\nSalida esperada\nEntrada denegada\nDatos: 1 0 0"
         },
         {
           "type": "cpp_compiler",
@@ -182,11 +201,11 @@
         },
         {
           "type": "heading",
-          "text": "Comparar la reparación con la regla"
+          "text": "Por qué la versión corregida deniega la entrada"
         },
         {
           "type": "paragraph",
-          "text": "Con los datos 1 0 0, la persona tiene pase y no tiene invitación. Por eso tiene_pase || tiene_invitacion da true. La sala está cerrada, así que sala_abierta vale false. Al combinar ambas respuestas con &&, permitido guarda false y el programa muestra Entrada denegada."
+          "text": "La persona tiene pase, así que tiene_pase vale true. Eso basta para que se cumpla (tiene_pase || tiene_invitacion) aunque no lleve invitación.\n\nLa sala está cerrada, así que sala_abierta vale false. El programa corregido exige una credencial y una sala abierta. Con estos datos, (tiene_pase || tiene_invitacion) && sala_abierta da false.\n\nEse resultado se guarda en permitido. Cuando el programa llega a if (permitido), ejecuta el else y escribe Entrada denegada. La instrucción posterior a las ramas escribe Datos: 1 0 0 en un segundo renglón. Los tres números corresponden, en orden, al pase, a la invitación y a la apertura de la sala."
         },
         {
           "type": "code",
@@ -195,27 +214,32 @@
         },
         {
           "type": "paragraph",
-          "text": "Al quitar los paréntesis que agrupan las dos credenciales, && une solo tiene_invitacion con sala_abierta. La condición del pase queda como una alternativa que puede cumplirse con la sala cerrada. La reparación aplica el requisito de apertura a las dos credenciales.",
+          "text": "En la versión inicial, sin los paréntesis, tiene_pase || tiene_invitacion && sala_abierta se interpreta como tiene_pase || (tiene_invitacion && sala_abierta). Si la persona trae una invitación y carece de pase, la versión inicial exige que la sala esté abierta. En cambio, un pase basta por sí solo. Por eso el programa inicial escribe Entrada permitida para la visita con pase, sin invitación y con la sala cerrada.\n\nLa reparación añade paréntesis alrededor de tiene_pase || tiene_invitacion. Con (tiene_pase || tiene_invitacion) && sala_abierta, el programa puede reconocer un pase o una invitación, pero en los dos casos necesita también que la sala esté abierta. Para esa misma visita el programa corregido escribe Entrada denegada.",
           "emphasis": [
             {
-              "text": "requisito de apertura"
+              "text": "un pase basta por sí solo"
             }
           ]
         },
         {
           "type": "multiple_choice",
-          "question": "La persona tiene pase e invitación. La sala está cerrada, así que sala_abierta vale false. ¿Qué decisión exige la regla?",
+          "question": "En esta visita la persona trae tanto el pase como la invitación. La sala está cerrada, así que sala_abierta vale false. Según la regla de acceso, para entrar hace falta una credencial y la sala debe estar abierta. ¿Qué debe hacer el programa con esta visita?",
           "options": [
             "Ejecutar las dos ramas.",
             "Denegar la entrada. La sala debe estar abierta incluso si la persona tiene las dos credenciales.",
             "Permitir, porque ya hay dos credenciales."
           ],
           "correctIndex": 1,
-          "explanation": "Tener pase e invitación cumple el requisito de presentar al menos una credencial. La sala también tiene que estar abierta. Como sala_abierta vale false, la condición que combina los dos requisitos con && da false y el programa muestra Entrada denegada."
+          "explanation": "El pase y la invitación están presentes. Con esos datos, tiene_pase || tiene_invitacion da true. Pero la sala está cerrada y sala_abierta vale false.\n\nComo && exige que las dos partes sean verdaderas, (tiene_pase || tiene_invitacion) && sala_abierta da false. El programa ejecuta el else y escribe Entrada denegada. Traer una segunda credencial no abre una sala cerrada.",
+          "reviewFeedback": [
+            "El if y su else ofrecen dos caminos. El programa solo toma uno en esta visita. ¿Cuál corresponde cuando la sala está cerrada?",
+            "La persona cumple la condición de presentar una credencial. Comprueba por separado si se puede entrar con la sala cerrada.",
+            "Aunque la persona trae dos credenciales, la sala sigue cerrada. ¿Basta con presentar el pase o la invitación para entrar en una sala que está cerrada?"
+          ]
         },
         {
           "type": "paragraph",
-          "text": "Un requisito común tiene que cumplirse con cualquiera de las alternativas. En esta regla, la apertura es ese requisito. Una sala cerrada impide entrar aunque la persona tenga las dos credenciales."
+          "text": "El mensaje Entrada denegada dice qué decidió el programa. Para saber por qué, también hay que mirar los datos de la visita.\n\nSi la sala está abierta pero la persona llega sin pase ni invitación, tiene_pase || tiene_invitacion da false. Se deniega la entrada porque la persona no presenta ninguna de las dos credenciales.\n\nSi la persona presenta ambas credenciales pero la sala está cerrada, tiene_pase || tiene_invitacion da true y sala_abierta vale false. En esa visita se deniega la entrada porque la sala está cerrada."
         }
       ]
     },
@@ -227,32 +251,38 @@
         },
         {
           "type": "output_prediction",
-          "question": "El programa calcula una cantidad y comprueba si está entre doce y catorce, incluidos ambos extremos. ¿Qué línea completa muestra?",
+          "question": "Un taller cuenta sus piezas con la expresión 7 + 3 * 2 y guarda el resultado en cantidad. El programa también comprueba si hay entre doce y catorce piezas, incluidos los dos extremos. Guarda el resultado de esa comprobación en en_rango.\n\n¿Qué renglón escribe la consola? Escribe el valor de cantidad, un espacio y el valor que muestra std::cout para en_rango.",
           "language": "cpp",
           "code": "#include <iostream>\n\nint main() {\n    const int cantidad = 7 + 3 * 2;\n    const bool en_rango = (cantidad >= 12) && (cantidad <= 14);\n\n    std::cout << cantidad << \" \" << en_rango;\n\n    return 0;\n}\n",
           "answers": [
             "13 1"
           ],
-          "explanation": "3 * 2 da seis y, al sumar siete, cantidad vale 13. Las dos comparaciones del intervalo dan true, de modo que en_rango guarda true. La consola muestra 13 1."
+          "explanation": "Primero se hace la multiplicación. 3 * 2 da seis. Al sumar siete a ese resultado, cantidad queda en 13.\n\nTrece alcanza el mínimo de doce piezas y tampoco supera el máximo de catorce. Se cumplen las dos comparaciones de la expresión con &&, así que en_rango guarda true. La consola escribe 13 por la cantidad y 1 por el valor lógico verdadero. El programa separa los dos números con un espacio.\n\n13 1",
+          "reviewFeedback": "En 7 + 3 * 2, ¿cuánto da la multiplicación antes de sumar siete? Con ese número de piezas, comprueba si se cumplen el mínimo y el máximo. La salida lleva primero el número de piezas. Después del espacio va el valor lógico en el formato numérico que usa std::cout."
         },
         {
           "type": "multiple_choice",
-          "question": "Dos datos de tipo bool pueden variar de forma independiente. Eso significa que cualquier valor del primero puede aparecer con cualquiera del segundo. ¿Qué plan prueba todas las combinaciones?",
+          "question": "Un panel tiene dos interruptores. El programa guarda un valor de tipo bool por interruptor. Encendido corresponde a true y apagado a false. Los dos interruptores son independientes. Por ejemplo, puedes encender el primero mientras el segundo sigue apagado. También puedes encender el primero si el segundo ya está encendido.\n\nEn cada pareja de las opciones, el valor antes de la barra corresponde al primer interruptor y el valor después de la barra corresponde al segundo. ¿Qué plan de pruebas recorre todas las posiciones posibles del panel?",
           "options": [
             "Probar cuatro veces true/true.",
             "Probar false/false, false/true, true/false y true/true.",
             "Probar sólo true/true y false/false."
           ],
           "correctIndex": 1,
-          "explanation": "Para el primer valor false, prueba el segundo con false y con true. Repite esas dos opciones para el primer valor true. Así cubres cuatro combinaciones distintas."
+          "explanation": "Con el primer interruptor apagado hay dos pruebas.\nfalse/false representa los dos interruptores apagados.\nfalse/true representa el primero apagado y el segundo encendido.\n\nCon el primer interruptor encendido hay otras dos.\ntrue/false representa el primero encendido y el segundo apagado.\ntrue/true representa los dos encendidos.\n\nEn esas cuatro pruebas, cada posición del primer interruptor se combina una vez con cada posición del segundo.",
+          "reviewFeedback": [
+            "Con true/true los dos interruptores están encendidos. Aunque repitas esa prueba, ¿llegas a probar el panel con un interruptor apagado?",
+            "Para comprobar el plan, separa las parejas donde el primer interruptor está apagado de las parejas donde está encendido. En cada grupo busca las dos posiciones del segundo interruptor.",
+            "Con true/true los dos interruptores están encendidos y con false/false los dos están apagados. ¿En cuál de esas dos pruebas estaría encendido solo el segundo?"
+          ]
         },
         {
           "type": "paragraph",
-          "text": "Cada una de las cuatro combinaciones de pase e invitación puede darse con la sala abierta y con la sala cerrada. Eso da ocho combinaciones.\n\nOtras condiciones comparten un dato. Si el mínimo es menor o igual que el máximo, valor < minimo y valor > maximo nunca son verdaderas a la vez. Elige valores posibles por debajo, dentro y por encima del intervalo. Incluye ambos extremos para comprobar si la regla los admite."
+          "text": "La sala puede estar abierta o cerrada, tanto si la persona trae credenciales como si llega sin ellas. Según lo que traiga, hay cuatro visitas posibles.\n\nSin pase y sin invitación.\nCon pase y sin invitación.\nSin pase y con invitación.\nCon pase y con invitación.\n\nPara cada una de esas cuatro formas de llegar hay dos pruebas. En una, la sala está cerrada. En la otra, está abierta. En total hay ocho combinaciones.\n\nEn el equipo de temperatura, las dos comparaciones dependen de una misma medida. El equipo admite temperaturas desde quince hasta veinticinco grados, incluidos los extremos. Es imposible que una misma temperatura esté por debajo de quince y por encima de veinticinco. Conviene elegir medidas que sí pueden darse y comprobar qué decide el programa en cada caso.\n\n14 grados quedan por debajo del mínimo. Esa temperatura queda fuera del intervalo que admite el equipo.\n15 grados coinciden con el mínimo. El equipo puede funcionar.\n18 grados quedan dentro del intervalo. El equipo puede funcionar.\n25 grados coinciden con el máximo. El equipo puede funcionar.\n26 grados superan el máximo. También quedan fuera del intervalo que admite el equipo."
         },
         {
           "type": "note",
-          "text": "Para averiguar si un programa exige por error las dos credenciales, prueba con una persona que tenga pase, carezca de invitación y encuentre la sala abierta. Según la regla del ejercicio, debe aparecer Entrada permitida. El programa que exige las dos credenciales mostrará Entrada denegada. Una prueba con las dos credenciales y la sala abierta daría el mismo mensaje de permiso en ambas versiones."
+          "text": "Dos programas controlan el acceso a la misma sala. Los dos exigen que esté abierta. Lo que cambia es el requisito de las credenciales.\n\nEl programa A acepta un pase, una invitación o ambos. Su condición es (tiene_pase || tiene_invitacion) && sala_abierta.\n\nEl programa B exige que la persona presente el pase y la invitación. Su condición es (tiene_pase && tiene_invitacion) && sala_abierta.\n\nLa sala está abierta y la persona presenta solo un pase. A escribe Entrada permitida porque el pase basta. B escribe Entrada denegada porque falta la invitación. Esta visita permite distinguir qué requisito aplica cada programa.\n\nLa sala sigue abierta y otra persona presenta pase e invitación. A escribe Entrada permitida porque la persona presenta al menos una credencial. B también escribe Entrada permitida porque presenta las dos. Si solo se hiciera esta prueba, ambos programas parecerían aplicar la misma regla."
         }
       ]
     },
@@ -260,11 +290,11 @@
       "blocks": [
         {
           "type": "heading",
-          "text": "Programar la decisión con datos de entrada"
+          "text": "Programar el acceso a la sala"
         },
         {
           "type": "paragraph",
-          "text": "Escribe un programa que lea tres enteros del campo «Entrada» en este orden.\n\nPase. 1 si la persona tiene pase y 0 si no lo tiene.\nInvitación. 1 si tiene invitación y 0 si no la tiene.\nApertura. 1 si la sala está abierta y 0 si está cerrada.\n\nMuestra Entrada permitida si la sala está abierta y la persona tiene al menos una de las dos credenciales. En cualquier otro caso, muestra Entrada denegada. Escribe solo ese mensaje.\n\nEntrada\n1 0 0\n\nSalida esperada\nEntrada denegada\n\nPara completar el ejercicio, deja 1 0 0 en el campo «Entrada». El programa debe producir la salida esperada para esos datos."
+          "text": "Escribe un programa que decida si una persona puede entrar a la sala. El programa debe leer tres enteros del campo «Entrada», separados por espacios. Cada entero vale 0 o 1.\n\nPrimer entero. ¿La persona tiene pase? 1 significa que sí y 0 que no.\nSegundo entero. ¿Tiene invitación? 1 significa que sí y 0 que no.\nTercer entero. ¿Está abierta la sala? 1 significa que está abierta y 0 que está cerrada.\n\nSi la sala está abierta y la persona presenta un pase, una invitación o ambos, el programa debe escribir Entrada permitida. Si la sala está cerrada o la persona llega sin ninguna credencial, debe escribir Entrada denegada. Muestra un solo mensaje en la consola.\n\nLa prueba obligatoria usa 1 0 0. La persona tiene pase, llega sin invitación y encuentra la sala cerrada.\n\nEntrada\n1 0 0\n\nSalida esperada\nEntrada denegada"
         },
         {
           "type": "cpp_compiler",
@@ -334,15 +364,15 @@
         },
         {
           "type": "paragraph",
-          "text": "Pruebas opcionales en este editor\nEscribe los tres números en este orden. El primero indica si la persona tiene pase. El segundo indica si tiene invitación. El tercero indica si la sala está abierta. Para cada dato, uno significa sí y cero significa no. Para cada prueba que quieras hacer, sustituye los datos del campo «Entrada» por los de esa prueba. Compara lo que muestra la consola con la salida esperada.\n\nLa sala está cerrada y la persona carece de pase y de invitación. La entrada está denegada.\n\nEntrada\n0 0 0\n\nSalida esperada\nEntrada denegada\n\nLa sala está abierta. La persona no tiene ninguna de las dos credenciales, así que se le deniega la entrada.\n\nEntrada\n0 0 1\n\nSalida esperada\nEntrada denegada\n\nLa persona presenta una invitación. La sala está cerrada, así que se le deniega la entrada.\n\nEntrada\n0 1 0\n\nSalida esperada\nEntrada denegada\n\nLa persona presenta una invitación y la sala está abierta. Puede entrar aunque no tenga pase.\n\nEntrada\n0 1 1\n\nSalida esperada\nEntrada permitida\n\nLa persona presenta un pase y la sala está abierta. Puede entrar aunque no tenga invitación.\n\nEntrada\n1 0 1\n\nSalida esperada\nEntrada permitida\n\nLa persona presenta las dos credenciales. La sala está cerrada, así que se le deniega la entrada.\n\nEntrada\n1 1 0\n\nSalida esperada\nEntrada denegada\n\nLa sala está abierta y la persona presenta las dos credenciales. Puede entrar.\n\nEntrada\n1 1 1\n\nSalida esperada\nEntrada permitida"
+          "text": "Pruebas opcionales del programa de acceso\n\nPara hacer una prueba, escribe los tres números del caso que elijas en «Entrada» y ejecuta tu programa. El primer número indica si la persona tiene pase. El segundo indica si tiene invitación y el tercero, si la sala está abierta. En las tres posiciones, 1 significa «sí» y 0 significa «no». Compara el mensaje de la consola con la salida esperada de ese caso.\n\nLa sala está cerrada y la persona llega sin pase y sin invitación. Incumple los dos requisitos de acceso.\n\nEntrada\n0 0 0\n\nSalida esperada\nEntrada denegada\n\nLa sala está abierta y la persona llega sin ninguna credencial. Necesita al menos un pase o una invitación para entrar.\n\nEntrada\n0 0 1\n\nSalida esperada\nEntrada denegada\n\nLa persona trae solo una invitación. Esa credencial le serviría para entrar si la sala estuviera abierta, pero la encuentra cerrada.\n\nEntrada\n0 1 0\n\nSalida esperada\nEntrada denegada\n\nLa sala está abierta y la persona llega sin pase. Lleva una invitación, que basta para entrar.\n\nEntrada\n0 1 1\n\nSalida esperada\nEntrada permitida\n\nLa sala está abierta y la persona llega sin invitación. Lleva un pase, que basta para entrar.\n\nEntrada\n1 0 1\n\nSalida esperada\nEntrada permitida\n\nLa persona presenta un pase y una invitación. La sala está cerrada, de modo que tampoco puede entrar con las dos credenciales.\n\nEntrada\n1 1 0\n\nSalida esperada\nEntrada denegada\n\nLa persona trae un pase y una invitación. La sala está abierta y cualquiera de esas credenciales sirve para entrar.\n\nEntrada\n1 1 1\n\nSalida esperada\nEntrada permitida"
         },
         {
           "type": "heading",
-          "text": "Revisar el programa que lee las tres condiciones"
+          "text": "Cómo decide el programa quién entra a la sala"
         },
         {
           "type": "paragraph",
-          "text": "Al leer la entrada, el programa comprueba por separado qué credenciales presenta la persona y si la sala está abierta. En el código, identifica las dos comparaciones que convierten los datos de las credenciales en valores de tipo bool y sigue esos valores hasta la condición de entrada.",
+          "text": "En el programa de acceso, std::cin >> pase >> invitacion >> apertura; lee los tres enteros en el orden en que aparecen en «Entrada». Con 1 0 0, pase recibe el primer entero, uno. Después, invitacion y apertura reciben un cero cada una.\n\nEl programa comprueba qué credenciales presenta la persona. Como pase vale uno, pase != 0 da true. Ese es el valor que guarda tiene_pase. Como invitacion vale cero, invitacion != 0 da false. Ese valor se guarda en tiene_invitacion.\n\nEl programa también comprueba si la sala está abierta. apertura vale cero, así que apertura != 0 da false y sala_abierta guarda ese resultado.\n\nLa condición completa es (tiene_pase || tiene_invitacion) && sala_abierta. Dentro del paréntesis, tiene_pase || tiene_invitacion da true porque la persona tiene pase. Al combinar ese resultado con sala_abierta, que vale false, la condición completa da false. Ese es el valor que guarda permitido. Al llegar a if (permitido), el programa comprueba ese valor. Como es false, ejecuta la rama del else y escribe Entrada denegada.",
           "emphasis": [
             {
               "text": "qué credenciales presenta la persona"
@@ -359,18 +389,23 @@
         },
         {
           "type": "multiple_choice",
-          "question": "Con la sala abierta, la regla permite entrar con un pase, con una invitación o con ambos. Sospechas que el programa deniega la entrada a quien solo presenta una invitación. Cada opción da tres números en el orden pase, invitación y apertura. En cada posición, 1 significa que la condición se cumple y 0 que no se cumple. ¿Qué entrada permite detectar ese error?",
+          "question": "La sala admite a una persona si está abierta y la persona lleva un pase, una invitación o ambos.\n\nUn programa usa por error la condición tiene_pase && sala_abierta. Cuando esa condición es verdadera escribe Entrada permitida. Cuando es falsa escribe Entrada denegada. El programa lee los tres enteros de la visita, pero su condición solo comprueba el pase y la apertura de la sala. El dato de la invitación no interviene en la decisión.\n\nCada opción da los tres enteros que leería el programa. El primero indica si la persona tiene pase, el segundo si tiene invitación y el tercero si la sala está abierta. En cada posición, 1 significa «sí» y 0 significa «no».\n\nSelecciona la entrada de tres enteros con la que el programa denegaría el acceso a una persona que sí tiene derecho a entrar.",
           "options": [
             "1 0 1",
             "0 1 1",
             "1 1 1"
           ],
           "correctIndex": 1,
-          "explanation": "Con 0 1 1, la sala está abierta y la persona tiene invitación, pero no pase. La regla correcta muestra Entrada permitida. Un programa que exige pase muestra Entrada denegada."
+          "explanation": "Con 0 1 1, la persona llega sin pase, con invitación y con la sala abierta. Con la sala abierta, la invitación basta para entrar. Por eso la salida correcta es Entrada permitida. En el programa defectuoso, tiene_pase vale false. Su condición tiene_pase && sala_abierta da false y el programa escribe Entrada denegada. Este caso descubre el error.\n\nCon 1 0 1, la persona llega con pase, sin invitación y con la sala abierta. La salida correcta es Entrada permitida porque el pase basta. El programa defectuoso también escribe Entrada permitida porque la persona tiene pase y la sala está abierta.\n\nCon 1 1 1, la persona presenta las dos credenciales y la sala está abierta. La salida correcta es Entrada permitida. El programa defectuoso también escribe Entrada permitida. Tanto la persona que presenta solo el pase como la que trae las dos credenciales tienen pase. El programa deja entrar a las dos aunque su condición nunca compruebe la invitación.",
+          "reviewFeedback": [
+            "Con 1 0 1, la persona llega con pase y la sala está abierta. ¿Qué mensaje elige el programa que comprueba solo el pase y la apertura? ¿Sería ese mensaje una denegación incorrecta?",
+            "Lee los tres datos por orden. Comprueba primero si la persona cumple la regla de la sala. Después sigue la condición del programa para ver qué mensaje escribiría.",
+            "Con 1 1 1, la persona tiene las dos credenciales y la sala está abierta. ¿Le bastan al programa el pase y la apertura para permitir esa visita?"
+          ]
         },
         {
           "type": "note",
-          "text": "En la siguiente lección usarás el orden de evaluación de && y || para comprobar un requisito antes de realizar una operación."
+          "text": "En la siguiente lección verás en qué orden se evalúan las condiciones que une && o ||. En un programa de reparto, ese orden permite comprobar cuántas piezas caben en una caja antes de usar esa cantidad como divisor."
         }
       ]
     }
@@ -382,66 +417,164 @@
       {
         "block": "block_0000_0000",
         "path": "/text",
-        "sourceSha256": "c50a55556254100568f782e61689e7d0da9915d6176b52d682fc56b92c030833",
+        "sourceSha256": "5a5b33a280d4bb5314a151c5f3975b6084ebe4e40b3bb4f926ecb854e55bd716",
         "spans": []
       },
       {
         "block": "block_0000_0001",
         "path": "/text",
-        "sourceSha256": "05204d29281f2c6aef235d3def2843205be446cc9e20d6eac1056fd43aed9cae",
+        "sourceSha256": "5e7052419ed2fa3684c13429f67a94a08a3d7b5c360e31a2f99c8f861d41a66e",
         "spans": [
           {
-            "start": 25,
-            "end": 27,
+            "start": 44,
+            "end": 46,
             "text": "15",
             "role": "data",
             "reading": "natural"
           },
           {
-            "start": 30,
-            "end": 32,
+            "start": 49,
+            "end": 51,
             "text": "25",
             "role": "data",
             "reading": "natural"
           },
           {
-            "start": 160,
-            "end": 177,
+            "start": 84,
+            "end": 86,
+            "text": "15",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 112,
+            "end": 114,
+            "text": "25",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 135,
+            "end": 146,
+            "text": "temperatura",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 272,
+            "end": 289,
             "text": "temperatura >= 15",
             "role": "cpp",
             "reading": "technical"
           },
           {
-            "start": 207,
-            "end": 224,
-            "text": "temperatura <= 25",
+            "start": 341,
+            "end": 355,
+            "text": "alcanza_minimo",
             "role": "cpp",
             "reading": "technical"
           },
           {
-            "start": 267,
-            "end": 269,
-            "text": "&&",
-            "role": "cpp",
-            "reading": "technical"
-          },
-          {
-            "start": 315,
-            "end": 319,
+            "start": 384,
+            "end": 388,
             "text": "true",
             "role": "cpp",
             "reading": "technical"
           },
           {
-            "start": 445,
-            "end": 457,
+            "start": 427,
+            "end": 432,
+            "text": "false",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 471,
+            "end": 488,
+            "text": "temperatura <= 25",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 554,
+            "end": 570,
+            "text": "no_supera_maximo",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 578,
+            "end": 582,
+            "text": "true",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 624,
+            "end": 629,
+            "text": "false",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 728,
+            "end": 730,
+            "text": "&&",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 755,
+            "end": 789,
+            "text": "alcanza_minimo && no_supera_maximo",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 825,
+            "end": 829,
+            "text": "true",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 839,
+            "end": 851,
             "text": "en_intervalo",
             "role": "cpp",
             "reading": "technical"
           },
           {
-            "start": 458,
-            "end": 496,
+            "start": 859,
+            "end": 863,
+            "text": "true",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 896,
+            "end": 901,
+            "text": "false",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 911,
+            "end": 923,
+            "text": "en_intervalo",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 931,
+            "end": 936,
+            "text": "false",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 937,
+            "end": 975,
             "text": "(Köppe et al., 2023; Stroustrup, 2024)",
             "role": "citation",
             "reading": "natural"
@@ -451,109 +584,256 @@
       {
         "block": "block_0000_0003",
         "path": "/text",
-        "sourceSha256": "dddf36981ccfc2935ee5593f2833c8b96f4df41be01f5290c57b5da68766bc06",
+        "sourceSha256": "c26992fd260c5b261c542d58a144da6f208ae3bccb4c89e85f6e56a04a95fcce",
         "spans": [
           {
-            "start": 4,
-            "end": 6,
+            "start": 17,
+            "end": 19,
             "text": "18",
             "role": "data",
             "reading": "natural"
           },
           {
-            "start": 76,
-            "end": 77,
+            "start": 41,
+            "end": 49,
+            "text": "18 >= 15",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 65,
+            "end": 79,
+            "text": "alcanza_minimo",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 87,
+            "end": 91,
+            "text": "true",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 114,
+            "end": 122,
+            "text": "18 <= 25",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 136,
+            "end": 152,
+            "text": "no_supera_maximo",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 160,
+            "end": 164,
+            "text": "true",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 199,
+            "end": 201,
+            "text": "&&",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 203,
+            "end": 215,
+            "text": "en_intervalo",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 223,
+            "end": 227,
+            "text": "true",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 266,
+            "end": 275,
+            "text": "std::cout",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 284,
+            "end": 285,
             "text": "1",
             "role": "output",
             "reading": "natural"
           },
           {
-            "start": 83,
-            "end": 85,
-            "text": "26",
-            "role": "data",
+            "start": 291,
+            "end": 295,
+            "text": "true",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 298,
+            "end": 299,
+            "text": "0",
+            "role": "output",
             "reading": "natural"
           },
           {
-            "start": 203,
-            "end": 208,
+            "start": 305,
+            "end": 310,
             "text": "false",
             "role": "cpp",
             "reading": "technical"
           },
           {
-            "start": 249,
-            "end": 291,
+            "start": 328,
+            "end": 329,
+            "text": "1",
+            "role": "output",
+            "reading": "natural"
+          },
+          {
+            "start": 372,
+            "end": 374,
+            "text": "26",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 383,
+            "end": 391,
+            "text": "26 >= 15",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 407,
+            "end": 415,
+            "text": "26 <= 25",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 492,
+            "end": 504,
+            "text": "en_intervalo",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 515,
+            "end": 520,
+            "text": "false",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 544,
+            "end": 545,
+            "text": "0",
+            "role": "output",
+            "reading": "natural"
+          },
+          {
+            "start": 621,
+            "end": 663,
             "text": "(temperatura >= 15) && (temperatura <= 25)",
             "role": "cpp",
             "reading": "technical"
           },
           {
-            "start": 343,
-            "end": 366,
+            "start": 680,
+            "end": 682,
+            "text": "&&",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 779,
+            "end": 802,
             "text": "15 <= temperatura <= 25",
             "role": "cpp",
             "reading": "technical"
           },
           {
-            "start": 397,
-            "end": 422,
+            "start": 834,
+            "end": 859,
             "text": "(15 <= temperatura) <= 25",
             "role": "cpp",
             "reading": "technical"
           },
           {
-            "start": 428,
-            "end": 430,
-            "text": "26",
-            "role": "data",
-            "reading": "natural"
-          },
-          {
-            "start": 439,
-            "end": 456,
-            "text": "15 <= temperatura",
+            "start": 941,
+            "end": 943,
+            "text": "<=",
             "role": "cpp",
             "reading": "technical"
           },
           {
-            "start": 460,
-            "end": 464,
+            "start": 984,
+            "end": 992,
+            "text": "15 <= 26",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 1042,
+            "end": 1046,
             "text": "true",
             "role": "cpp",
             "reading": "technical"
           },
           {
-            "start": 525,
-            "end": 526,
+            "start": 1062,
+            "end": 1064,
+            "text": "<=",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 1113,
+            "end": 1115,
+            "text": "25",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 1162,
+            "end": 1166,
+            "text": "true",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 1180,
+            "end": 1181,
             "text": "1",
             "role": "cpp",
             "reading": "technical"
           },
           {
-            "start": 537,
-            "end": 544,
+            "start": 1211,
+            "end": 1218,
             "text": "1 <= 25",
             "role": "cpp",
             "reading": "technical"
           },
           {
-            "start": 565,
-            "end": 569,
+            "start": 1223,
+            "end": 1227,
             "text": "true",
             "role": "cpp",
             "reading": "technical"
           },
           {
-            "start": 585,
-            "end": 587,
-            "text": "26",
-            "role": "data",
-            "reading": "natural"
-          },
-          {
-            "start": 614,
-            "end": 634,
+            "start": 1349,
+            "end": 1369,
             "text": "(Köppe et al., 2023)",
             "role": "citation",
             "reading": "natural"
@@ -563,54 +843,159 @@
       {
         "block": "block_0000_0004",
         "path": "/question",
-        "sourceSha256": "c08a753b98b265ea8a072201151b61461ed2fe51ab345647887ee1469fee9bf1",
+        "sourceSha256": "637d5a146da181225f2586befb2a896be3643edc32d29fb83e43c688cd726bb9",
         "spans": [
           {
-            "start": 0,
-            "end": 8,
+            "start": 12,
+            "end": 20,
             "text": "contador",
             "role": "cpp",
             "reading": "technical"
           },
           {
-            "start": 25,
-            "end": 26,
+            "start": 98,
+            "end": 99,
             "text": "2",
             "role": "data",
             "reading": "natural"
           },
           {
-            "start": 29,
-            "end": 30,
+            "start": 106,
+            "end": 107,
             "text": "9",
             "role": "data",
             "reading": "natural"
+          },
+          {
+            "start": 150,
+            "end": 163,
+            "text": "contador >= 2",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 186,
+            "end": 199,
+            "text": "contador <= 9",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 238,
+            "end": 246,
+            "text": "contador",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 252,
+            "end": 253,
+            "text": "6",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 325,
+            "end": 331,
+            "text": "valido",
+            "role": "cpp",
+            "reading": "technical"
           }
         ]
       },
       {
         "block": "block_0000_0004",
         "path": "/explanation",
-        "sourceSha256": "396a52b1032bd18a09fab0ac3ae58a2b0a249c38fa405d591526d64c40578154",
+        "sourceSha256": "48a25f320100c3caeedf7853ba9fdfc510bbee05a093bbe77f7ae6f16c844eaf",
         "spans": [
           {
-            "start": 0,
-            "end": 2,
+            "start": 4,
+            "end": 12,
+            "text": "contador",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 27,
+            "end": 33,
+            "text": "6 >= 2",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 36,
+            "end": 42,
+            "text": "6 <= 9",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 71,
+            "end": 73,
             "text": "&&",
             "role": "cpp",
             "reading": "technical"
           },
           {
-            "start": 64,
-            "end": 67,
+            "start": 130,
+            "end": 136,
+            "text": "valido",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 144,
+            "end": 148,
+            "text": "true",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 170,
+            "end": 171,
+            "text": "1",
+            "role": "output",
+            "reading": "natural"
+          },
+          {
+            "start": 204,
+            "end": 207,
             "text": "and",
             "role": "cpp",
             "reading": "technical"
           },
           {
-            "start": 180,
-            "end": 181,
-            "text": "1",
+            "start": 243,
+            "end": 250,
+            "text": "10 >= 2",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 283,
+            "end": 290,
+            "text": "10 <= 9",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 344,
+            "end": 350,
+            "text": "valido",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 360,
+            "end": 365,
+            "text": "false",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 388,
+            "end": 389,
+            "text": "0",
             "role": "output",
             "reading": "natural"
           }
@@ -619,40 +1004,61 @@
       {
         "block": "block_0000_0005",
         "path": "/question",
-        "sourceSha256": "2b963e35153a2f0b43444064490c5ace311b31163fdab4cb057360ccc0f2dd59",
+        "sourceSha256": "169f04363443b319fb0155bca8071813646a04b5017256ebcc10cae4452fe655",
         "spans": [
           {
-            "start": 3,
-            "end": 9,
-            "text": "A && B",
-            "role": "cpp",
-            "reading": "technical"
-          },
-          {
-            "start": 11,
-            "end": 12,
+            "start": 82,
+            "end": 83,
             "text": "A",
             "role": "cpp",
             "reading": "technical"
           },
           {
-            "start": 18,
-            "end": 22,
-            "text": "true",
-            "role": "cpp",
-            "reading": "technical"
-          },
-          {
-            "start": 25,
-            "end": 26,
+            "start": 107,
+            "end": 108,
             "text": "B",
             "role": "cpp",
             "reading": "technical"
           },
           {
-            "start": 32,
-            "end": 37,
+            "start": 158,
+            "end": 162,
+            "text": "bool",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 189,
+            "end": 190,
+            "text": "A",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 196,
+            "end": 201,
             "text": "false",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 225,
+            "end": 226,
+            "text": "B",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 232,
+            "end": 236,
+            "text": "true",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 253,
+            "end": 259,
+            "text": "A && B",
             "role": "cpp",
             "reading": "technical"
           }
@@ -661,32 +1067,32 @@
       {
         "block": "block_0000_0005",
         "path": "/explanation",
-        "sourceSha256": "e406fc7bc517a222bb749a8cbfca451c8db9520e90937dfd61f45133d9ff2309",
+        "sourceSha256": "2bccc0a365376fb8790295553cc83ca332dbb8f1ac8780291394f980a47ef821",
         "spans": [
           {
-            "start": 0,
-            "end": 2,
-            "text": "&&",
+            "start": 122,
+            "end": 128,
+            "text": "A && B",
             "role": "cpp",
             "reading": "technical"
           },
           {
-            "start": 56,
-            "end": 57,
-            "text": "B",
-            "role": "cpp",
-            "reading": "technical"
-          },
-          {
-            "start": 63,
-            "end": 68,
+            "start": 152,
+            "end": 157,
             "text": "false",
             "role": "cpp",
             "reading": "technical"
           },
           {
-            "start": 86,
-            "end": 91,
+            "start": 161,
+            "end": 162,
+            "text": "A",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 205,
+            "end": 210,
             "text": "false",
             "role": "cpp",
             "reading": "technical"
@@ -738,73 +1144,157 @@
       {
         "block": "block_0001_0000",
         "path": "/text",
-        "sourceSha256": "ebe99c0776713f410e0d8b9b57339b71a615b3be0e27fed1fd294cdbd95803f1",
+        "sourceSha256": "a1ba68e72a512fe57fa79cd3092ac91a10771c69dd82a1a1fa538dbfab70c86c",
         "spans": []
       },
       {
         "block": "block_0001_0001",
         "path": "/text",
-        "sourceSha256": "56315c16f1bb91c403dd798126d816ee6d24c1dff9dd185445e6ef8c0f46c487",
+        "sourceSha256": "8056ec490c48de914b6d0b3a86ca4fef60e62e509cfda97858b0e8e6e909608a",
         "spans": [
           {
-            "start": 169,
-            "end": 171,
-            "text": "||",
+            "start": 156,
+            "end": 168,
+            "text": "trae_lapices",
             "role": "cpp",
             "reading": "technical"
           },
           {
-            "start": 199,
-            "end": 203,
+            "start": 174,
+            "end": 178,
             "text": "true",
             "role": "cpp",
             "reading": "technical"
           },
           {
-            "start": 248,
-            "end": 253,
+            "start": 198,
+            "end": 203,
             "text": "false",
             "role": "cpp",
             "reading": "technical"
           },
           {
-            "start": 361,
-            "end": 362,
-            "text": "1",
-            "role": "output",
-            "reading": "natural"
+            "start": 230,
+            "end": 246,
+            "text": "trae_rotuladores",
+            "role": "cpp",
+            "reading": "technical"
           },
           {
-            "start": 423,
-            "end": 461,
-            "text": "(Köppe et al., 2023; Stroustrup, 2024)",
-            "role": "citation",
-            "reading": "natural"
+            "start": 366,
+            "end": 368,
+            "text": "||",
+            "role": "cpp",
+            "reading": "technical"
           },
           {
-            "start": 491,
-            "end": 523,
+            "start": 390,
+            "end": 422,
             "text": "trae_lapices || trae_rotuladores",
             "role": "cpp",
             "reading": "technical"
           },
           {
-            "start": 527,
-            "end": 531,
+            "start": 426,
+            "end": 430,
             "text": "true",
             "role": "cpp",
             "reading": "technical"
           },
           {
-            "start": 582,
-            "end": 614,
+            "start": 476,
+            "end": 480,
+            "text": "true",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 550,
+            "end": 555,
+            "text": "false",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 606,
+            "end": 644,
+            "text": "(Köppe et al., 2023; Stroustrup, 2024)",
+            "role": "citation",
+            "reading": "natural"
+          },
+          {
+            "start": 738,
+            "end": 743,
+            "text": "false",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 747,
+            "end": 759,
+            "text": "trae_lapices",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 762,
+            "end": 766,
+            "text": "true",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 770,
+            "end": 786,
+            "text": "trae_rotuladores",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 856,
+            "end": 858,
+            "text": "||",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 860,
+            "end": 874,
+            "text": "tiene_material",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 882,
+            "end": 886,
+            "text": "true",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 889,
+            "end": 898,
+            "text": "std::cout",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 907,
+            "end": 908,
+            "text": "1",
+            "role": "output",
+            "reading": "natural"
+          },
+          {
+            "start": 982,
+            "end": 1014,
             "text": "trae_lapices && trae_rotuladores",
             "role": "cpp",
             "reading": "technical"
           },
           {
-            "start": 621,
-            "end": 626,
+            "start": 1058,
+            "end": 1063,
             "text": "false",
             "role": "cpp",
             "reading": "technical"
@@ -814,33 +1304,61 @@
       {
         "block": "block_0001_0003",
         "path": "/question",
-        "sourceSha256": "87525c0655eeece250718dc1920e86c6b945f28f75ec9802f4afd376630f9d9b",
+        "sourceSha256": "83ca6c59e74fcf14a5d1e71643ade09e17addbc7c43ffe783008ae590bcb72ab",
         "spans": [
           {
-            "start": 31,
-            "end": 36,
+            "start": 76,
+            "end": 88,
+            "text": "conoce_clave",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 139,
+            "end": 151,
+            "text": "trae_tarjeta",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 271,
+            "end": 276,
             "text": "ambos",
             "role": "cpp",
             "reading": "technical"
           },
           {
-            "start": 46,
-            "end": 50,
+            "start": 367,
+            "end": 372,
+            "text": "ambos",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 384,
+            "end": 388,
             "text": "true",
             "role": "cpp",
             "reading": "technical"
           },
           {
-            "start": 85,
-            "end": 91,
+            "start": 463,
+            "end": 469,
             "text": "alguno",
             "role": "cpp",
             "reading": "technical"
           },
           {
-            "start": 101,
-            "end": 105,
-            "text": "true",
+            "start": 586,
+            "end": 592,
+            "text": "alguno",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 604,
+            "end": 609,
+            "text": "false",
             "role": "cpp",
             "reading": "technical"
           }
@@ -849,33 +1367,54 @@
       {
         "block": "block_0001_0005",
         "path": "/question",
-        "sourceSha256": "71dbf0dea2eb3b6b0415fc60de4e1ad44addd7c5d56f2e841a6dedf96f9009c1",
+        "sourceSha256": "b37ab8f540f161d15614f762d8f8bd42feaf8d64fbaaeb43c0eb9c66038125fb",
         "spans": [
           {
-            "start": 3,
-            "end": 9,
-            "text": "A || B",
-            "role": "cpp",
-            "reading": "technical"
-          },
-          {
-            "start": 17,
-            "end": 18,
+            "start": 75,
+            "end": 76,
             "text": "A",
             "role": "cpp",
             "reading": "technical"
           },
           {
-            "start": 24,
-            "end": 25,
+            "start": 137,
+            "end": 138,
             "text": "B",
             "role": "cpp",
             "reading": "technical"
           },
           {
-            "start": 32,
-            "end": 36,
+            "start": 207,
+            "end": 211,
+            "text": "bool",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 281,
+            "end": 282,
+            "text": "A",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 288,
+            "end": 289,
+            "text": "B",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 296,
+            "end": 300,
             "text": "true",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 320,
+            "end": 326,
+            "text": "A || B",
             "role": "cpp",
             "reading": "technical"
           }
@@ -884,25 +1423,32 @@
       {
         "block": "block_0001_0005",
         "path": "/explanation",
-        "sourceSha256": "63b85a8260191e3ef23abbf531e99140c2fc62c121e7c387d64470bdd0c94435",
+        "sourceSha256": "b8e8ae108d1caeb22c62c0817a8d630daf3666a5fe009cbf424c9e1e74c15773",
         "spans": [
           {
-            "start": 0,
-            "end": 2,
-            "text": "||",
+            "start": 197,
+            "end": 203,
+            "text": "A || B",
             "role": "cpp",
             "reading": "technical"
           },
           {
-            "start": 6,
-            "end": 10,
-            "text": "true",
+            "start": 215,
+            "end": 227,
+            "text": "true || true",
             "role": "cpp",
             "reading": "technical"
           },
           {
-            "start": 86,
-            "end": 90,
+            "start": 267,
+            "end": 271,
+            "text": "bool",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 273,
+            "end": 277,
             "text": "true",
             "role": "cpp",
             "reading": "technical"
@@ -975,276 +1521,556 @@
       {
         "block": "block_0002_0000",
         "path": "/text",
-        "sourceSha256": "df3631339d9bd2dfd1b82fc1772e4992a6997421cd0c1773818ba8ad6728b603",
+        "sourceSha256": "2bb759f81c0f825763f21c82aed9db4941c5bd455265aee25a5f08df2103110c",
         "spans": []
       },
       {
         "block": "block_0001_0004",
         "path": "/text",
-        "sourceSha256": "083d3f7dc17ddba060de74baf45d55abaed6a620004093f0638ba373d81c9762",
+        "sourceSha256": "0894443a41ed64ec663cbea081850c4fbd9131c23dfc5c2c394840db51302e30",
         "spans": [
           {
-            "start": 42,
-            "end": 47,
-            "text": "ambos",
+            "start": 125,
+            "end": 137,
+            "text": "conoce_clave",
             "role": "cpp",
             "reading": "technical"
           },
           {
-            "start": 55,
-            "end": 60,
+            "start": 180,
+            "end": 192,
+            "text": "trae_tarjeta",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 213,
+            "end": 217,
+            "text": "true",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 235,
+            "end": 240,
             "text": "false",
             "role": "cpp",
             "reading": "technical"
           },
           {
-            "start": 143,
-            "end": 149,
-            "text": "alguno",
-            "role": "cpp",
-            "reading": "technical"
+            "start": 298,
+            "end": 310,
+            "text": "false, false",
+            "role": "data",
+            "reading": "natural"
           },
           {
-            "start": 157,
-            "end": 161,
-            "text": "true",
-            "role": "cpp",
-            "reading": "technical"
+            "start": 356,
+            "end": 367,
+            "text": "false, true",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 413,
+            "end": 424,
+            "text": "true, false",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 463,
+            "end": 473,
+            "text": "true, true",
+            "role": "data",
+            "reading": "natural"
           }
         ]
       },
       {
         "block": "block_0002_0001",
         "path": "/text",
-        "sourceSha256": "974ff590b4478ee1096a61b5a47459640d6cc5c153981d08e1960e7331ed244e",
+        "sourceSha256": "72df4eb1dcd4b37932341cd39a06377bbc37661ad7d6eff292394425e46ddf20",
         "spans": [
           {
-            "start": 12,
-            "end": 13,
-            "text": "!",
+            "start": 89,
+            "end": 95,
+            "text": "minimo",
             "role": "cpp",
             "reading": "technical"
           },
           {
-            "start": 40,
-            "end": 45,
-            "text": "!true",
+            "start": 133,
+            "end": 141,
+            "text": "cantidad",
             "role": "cpp",
             "reading": "technical"
           },
           {
-            "start": 49,
-            "end": 54,
+            "start": 147,
+            "end": 148,
+            "text": "8",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 208,
+            "end": 225,
+            "text": "cantidad < minimo",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 274,
+            "end": 279,
+            "text": "falta",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 287,
+            "end": 292,
             "text": "false",
             "role": "cpp",
             "reading": "technical"
           },
           {
-            "start": 57,
-            "end": 63,
-            "text": "!false",
+            "start": 350,
+            "end": 356,
+            "text": "!falta",
             "role": "cpp",
             "reading": "technical"
           },
           {
-            "start": 67,
-            "end": 71,
-            "text": "true",
-            "role": "cpp",
-            "reading": "technical"
-          },
-          {
-            "start": 76,
-            "end": 86,
-            "text": "silenciado",
-            "role": "cpp",
-            "reading": "technical"
-          },
-          {
-            "start": 132,
-            "end": 143,
-            "text": "!silenciado",
-            "role": "cpp",
-            "reading": "technical"
-          },
-          {
-            "start": 241,
-            "end": 261,
-            "text": "!(cantidad < minimo)",
-            "role": "cpp",
-            "reading": "technical"
-          },
-          {
-            "start": 288,
-            "end": 289,
+            "start": 367,
+            "end": 368,
             "text": "!",
             "role": "cpp",
             "reading": "technical"
           },
           {
-            "start": 397,
-            "end": 417,
+            "start": 429,
+            "end": 449,
             "text": "(Köppe et al., 2023)",
             "role": "citation",
             "reading": "natural"
+          },
+          {
+            "start": 456,
+            "end": 461,
+            "text": "falta",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 467,
+            "end": 472,
+            "text": "false",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 474,
+            "end": 480,
+            "text": "!falta",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 484,
+            "end": 488,
+            "text": "true",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 526,
+            "end": 533,
+            "text": "alcanza",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 554,
+            "end": 557,
+            "text": "0 1",
+            "role": "output",
+            "reading": "natural"
+          },
+          {
+            "start": 575,
+            "end": 576,
+            "text": "0",
+            "role": "output",
+            "reading": "natural"
+          },
+          {
+            "start": 628,
+            "end": 629,
+            "text": "1",
+            "role": "output",
+            "reading": "natural"
+          },
+          {
+            "start": 694,
+            "end": 714,
+            "text": "!(cantidad < minimo)",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 806,
+            "end": 807,
+            "text": "!",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 845,
+            "end": 863,
+            "text": "cantidad >= minimo",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 1021,
+            "end": 1041,
+            "text": "!(cantidad < minimo)",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 1044,
+            "end": 1062,
+            "text": "cantidad >= minimo",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 1166,
+            "end": 1171,
+            "text": "false",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 1233,
+            "end": 1237,
+            "text": "true",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 1299,
+            "end": 1303,
+            "text": "true",
+            "role": "cpp",
+            "reading": "technical"
           }
         ]
       },
       {
         "block": "block_0002_0002",
         "path": "/text",
-        "sourceSha256": "25f1571e597db8403e042782ce822397d9ac927de9c80bf7b68d3029d0c082a4",
+        "sourceSha256": "7ef3ee2be36c5fd5bb2e796e8391887511b1d5d92b0c9ca83527a4ad3a73088d",
         "spans": [
           {
-            "start": 26,
-            "end": 27,
-            "text": "!",
-            "role": "cpp",
-            "reading": "technical"
-          },
-          {
-            "start": 50,
-            "end": 52,
-            "text": "&&",
-            "role": "cpp",
-            "reading": "technical"
-          },
-          {
-            "start": 56,
-            "end": 58,
-            "text": "&&",
-            "role": "cpp",
-            "reading": "technical"
-          },
-          {
-            "start": 65,
-            "end": 67,
-            "text": "||",
-            "role": "cpp",
-            "reading": "technical"
-          },
-          {
-            "start": 82,
-            "end": 90,
+            "start": 391,
+            "end": 399,
             "text": "sensor_a",
             "role": "cpp",
             "reading": "technical"
           },
           {
-            "start": 93,
-            "end": 101,
+            "start": 402,
+            "end": 410,
             "text": "sensor_b",
             "role": "cpp",
             "reading": "technical"
           },
           {
-            "start": 282,
-            "end": 293,
-            "text": "!silenciado",
+            "start": 417,
+            "end": 421,
+            "text": "true",
             "role": "cpp",
             "reading": "technical"
           },
           {
-            "start": 365,
-            "end": 402,
+            "start": 454,
+            "end": 464,
+            "text": "silenciado",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 478,
+            "end": 482,
+            "text": "true",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 569,
+            "end": 606,
             "text": "(sensor_a || sensor_b) && !silenciado",
             "role": "cpp",
             "reading": "technical"
           },
           {
-            "start": 406,
-            "end": 411,
-            "text": "false",
-            "role": "cpp",
-            "reading": "technical"
-          },
-          {
-            "start": 450,
-            "end": 473,
-            "text": "sensor_b && !silenciado",
-            "role": "cpp",
-            "reading": "technical"
-          },
-          {
-            "start": 533,
-            "end": 537,
-            "text": "true",
-            "role": "cpp",
-            "reading": "technical"
-          },
-          {
-            "start": 613,
-            "end": 633,
-            "text": "(Köppe et al., 2023)",
-            "role": "citation",
-            "reading": "natural"
-          }
-        ]
-      },
-      {
-        "block": "block_0002_0003",
-        "path": "/question",
-        "sourceSha256": "433531161be50fe734b9764fdc841173270bb35fa74c5b34ef70b1c66f1436d3",
-        "spans": [
-          {
-            "start": 76,
-            "end": 77,
-            "text": "1",
-            "role": "output",
-            "reading": "natural"
-          },
-          {
-            "start": 80,
-            "end": 81,
-            "text": "0",
-            "role": "output",
-            "reading": "natural"
-          }
-        ]
-      },
-      {
-        "block": "block_0002_0003",
-        "path": "/explanation",
-        "sourceSha256": "4d2d40f0e360c73e9a162f3eadad17828a5b574ad5a556544226b456c7ac5a62",
-        "spans": [
-          {
-            "start": 0,
-            "end": 20,
-            "text": "sensor_a || sensor_b",
-            "role": "cpp",
-            "reading": "technical"
-          },
-          {
-            "start": 24,
-            "end": 28,
-            "text": "true",
-            "role": "cpp",
-            "reading": "technical"
-          },
-          {
-            "start": 95,
-            "end": 106,
+            "start": 799,
+            "end": 810,
             "text": "!silenciado",
             "role": "cpp",
             "reading": "technical"
           },
           {
-            "start": 110,
-            "end": 115,
+            "start": 816,
+            "end": 821,
             "text": "false",
             "role": "cpp",
             "reading": "technical"
           },
           {
-            "start": 145,
-            "end": 147,
+            "start": 828,
+            "end": 830,
             "text": "&&",
             "role": "cpp",
             "reading": "technical"
           },
           {
-            "start": 162,
+            "start": 852,
+            "end": 866,
+            "text": "con_parentesis",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 874,
+            "end": 879,
+            "text": "false",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 906,
+            "end": 941,
+            "text": "sensor_a || sensor_b && !silenciado",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 964,
+            "end": 965,
+            "text": "!",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 975,
+            "end": 985,
+            "text": "silenciado",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 989,
+            "end": 991,
+            "text": "&&",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 996,
+            "end": 1004,
+            "text": "sensor_b",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 1009,
+            "end": 1020,
+            "text": "!silenciado",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 1041,
+            "end": 1042,
+            "text": "!",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 1065,
+            "end": 1067,
+            "text": "&&",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 1071,
+            "end": 1073,
+            "text": "&&",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 1080,
+            "end": 1082,
+            "text": "||",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 1083,
+            "end": 1103,
+            "text": "(Köppe et al., 2023)",
+            "role": "citation",
+            "reading": "natural"
+          },
+          {
+            "start": 1137,
+            "end": 1174,
+            "text": "sensor_a || (sensor_b && !silenciado)",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 1389,
+            "end": 1403,
+            "text": "sin_parentesis",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 1411,
+            "end": 1415,
+            "text": "true",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 1437,
+            "end": 1440,
+            "text": "0 1",
+            "role": "output",
+            "reading": "natural"
+          },
+          {
+            "start": 1445,
+            "end": 1446,
+            "text": "0",
+            "role": "output",
+            "reading": "natural"
+          },
+          {
+            "start": 1526,
+            "end": 1527,
+            "text": "1",
+            "role": "output",
+            "reading": "natural"
+          }
+        ]
+      },
+      {
+        "block": "block_0002_0003",
+        "path": "/question",
+        "sourceSha256": "48f6579b2418aeb2142f35c3b52a8fd40ff0fd22f976b2bb53885424b125c6ca",
+        "spans": [
+          {
+            "start": 123,
+            "end": 160,
+            "text": "(sensor_a || sensor_b) && !silenciado",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 175,
+            "end": 180,
+            "text": "senal",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 202,
+            "end": 221,
+            "text": "std::cout << senal;",
+            "role": "cpp",
+            "reading": "technical"
+          }
+        ]
+      },
+      {
+        "block": "block_0002_0003",
+        "path": "/explanation",
+        "sourceSha256": "72bcf5ace34e0fe93ebce676c96bb4172355a8b6a089605872c7865bdecc7975",
+        "spans": [
+          {
+            "start": 35,
+            "end": 55,
+            "text": "sensor_a || sensor_b",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 59,
+            "end": 63,
+            "text": "true",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 129,
+            "end": 139,
+            "text": "silenciado",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 145,
+            "end": 149,
+            "text": "true",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 152,
             "end": 163,
+            "text": "!silenciado",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 167,
+            "end": 172,
+            "text": "false",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 303,
+            "end": 340,
+            "text": "(sensor_a || sensor_b) && !silenciado",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 344,
+            "end": 349,
+            "text": "false",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 387,
+            "end": 392,
+            "text": "senal",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 403,
+            "end": 404,
             "text": "0",
             "role": "output",
             "reading": "natural"
@@ -1254,12 +2080,26 @@
       {
         "block": "block_0002_0004",
         "path": "/question",
-        "sourceSha256": "7fc03d06e4b616d13b49a209fa5523bc28440a2ee9caa3133135a3812cc71404",
+        "sourceSha256": "e3c08b600de3a066a8c1585d9436f08337a937edca366148ae27b8b2f919a4d7",
         "spans": [
           {
-            "start": 77,
-            "end": 81,
+            "start": 91,
+            "end": 96,
+            "text": "valor",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 133,
+            "end": 137,
             "text": "true",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 191,
+            "end": 196,
+            "text": "false",
             "role": "cpp",
             "reading": "technical"
           }
@@ -1268,33 +2108,54 @@
       {
         "block": "block_0002_0004",
         "path": "/explanation",
-        "sourceSha256": "c735c8bb8c3d1c31148c6ea49ad853a1f66f8a6ad397ea8298be1fff28513b25",
+        "sourceSha256": "5c7d79cd3f8fa35b1a252f9594e1c3b2f75d3455df34920790053ef611fb50bc",
         "spans": [
           {
-            "start": 0,
-            "end": 9,
+            "start": 50,
+            "end": 55,
+            "text": "valor",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 103,
+            "end": 112,
             "text": "valor < 4",
             "role": "cpp",
             "reading": "technical"
           },
           {
-            "start": 57,
-            "end": 67,
+            "start": 117,
+            "end": 122,
+            "text": "valor",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 161,
+            "end": 171,
             "text": "valor > 10",
             "role": "cpp",
             "reading": "technical"
           },
           {
-            "start": 154,
-            "end": 156,
-            "text": "||",
+            "start": 237,
+            "end": 264,
+            "text": "(valor < 4) || (valor > 10)",
             "role": "cpp",
             "reading": "technical"
           },
           {
-            "start": 187,
-            "end": 192,
-            "text": "false",
+            "start": 403,
+            "end": 430,
+            "text": "(valor < 4) && (valor > 10)",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 546,
+            "end": 575,
+            "text": "(valor >= 4) && (valor <= 10)",
             "role": "cpp",
             "reading": "technical"
           }
@@ -1345,165 +2206,151 @@
       {
         "block": "block_0003_0000",
         "path": "/text",
-        "sourceSha256": "d84ca00cf724b783bcc8b2722d4d7d1d822a423fd3d270e68e456908783293d9",
+        "sourceSha256": "9b6db2afe29bcdccc8e408bde376ba87e7ce1bc46fbb420dfc584cf8f11e0d06",
         "spans": []
       },
       {
         "block": "block_0003_0001",
         "path": "/text",
-        "sourceSha256": "ef56a39a4be1bf3d47d0ae088bc159604a65b74f936c347d6be4788d3da5fb3a",
+        "sourceSha256": "bab994ce0b8038767af8a343325436532f0bb0cd8f25cbcdd0fc399fd8e26123",
         "spans": [
           {
-            "start": 250,
-            "end": 251,
-            "text": "0",
-            "role": "data",
-            "reading": "natural"
+            "start": 278,
+            "end": 282,
+            "text": "main",
+            "role": "cpp",
+            "reading": "technical"
           },
           {
-            "start": 254,
-            "end": 255,
+            "start": 305,
+            "end": 306,
             "text": "1",
             "role": "data",
             "reading": "natural"
           },
           {
-            "start": 260,
-            "end": 264,
-            "text": "pase",
-            "role": "cpp",
-            "reading": "technical"
-          },
-          {
-            "start": 267,
-            "end": 277,
-            "text": "invitacion",
-            "role": "cpp",
-            "reading": "technical"
-          },
-          {
-            "start": 279,
-            "end": 280,
-            "text": "1",
-            "role": "data",
-            "reading": "natural"
-          },
-          {
-            "start": 326,
-            "end": 327,
+            "start": 329,
+            "end": 330,
             "text": "0",
             "role": "data",
             "reading": "natural"
           },
           {
-            "start": 355,
-            "end": 363,
-            "text": "apertura",
+            "start": 348,
+            "end": 361,
+            "text": "int pase = 1;",
             "role": "cpp",
             "reading": "technical"
           },
           {
-            "start": 365,
-            "end": 366,
-            "text": "1",
-            "role": "data",
-            "reading": "natural"
-          },
-          {
-            "start": 401,
-            "end": 402,
-            "text": "0",
-            "role": "data",
-            "reading": "natural"
-          },
-          {
-            "start": 446,
-            "end": 456,
-            "text": "tiene_pase",
+            "start": 396,
+            "end": 415,
+            "text": "int invitacion = 0;",
             "role": "cpp",
             "reading": "technical"
           },
           {
-            "start": 480,
-            "end": 489,
+            "start": 448,
+            "end": 465,
+            "text": "int apertura = 0;",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 534,
+            "end": 543,
             "text": "pase != 0",
             "role": "cpp",
             "reading": "technical"
           },
           {
-            "start": 546,
-            "end": 562,
-            "text": "tiene_invitacion",
-            "role": "cpp",
-            "reading": "technical"
-          },
-          {
-            "start": 586,
-            "end": 601,
-            "text": "invitacion != 0",
-            "role": "cpp",
-            "reading": "technical"
-          },
-          {
-            "start": 664,
-            "end": 676,
-            "text": "sala_abierta",
-            "role": "cpp",
-            "reading": "technical"
-          },
-          {
-            "start": 700,
-            "end": 713,
-            "text": "apertura != 0",
-            "role": "cpp",
-            "reading": "technical"
-          },
-          {
-            "start": 811,
-            "end": 828,
-            "text": "Entrada permitida",
-            "role": "output",
-            "reading": "natural"
-          },
-          {
-            "start": 881,
-            "end": 890,
-            "text": "permitido",
-            "role": "cpp",
-            "reading": "technical"
-          },
-          {
-            "start": 1090,
-            "end": 1094,
+            "start": 568,
+            "end": 572,
             "text": "pase",
             "role": "cpp",
             "reading": "technical"
           },
           {
-            "start": 1096,
-            "end": 1106,
-            "text": "invitacion",
+            "start": 622,
+            "end": 626,
+            "text": "true",
             "role": "cpp",
             "reading": "technical"
           },
           {
-            "start": 1109,
-            "end": 1117,
-            "text": "apertura",
+            "start": 642,
+            "end": 652,
+            "text": "tiene_pase",
             "role": "cpp",
             "reading": "technical"
           },
           {
-            "start": 1150,
-            "end": 1166,
-            "text": "Entrada denegada",
+            "start": 670,
+            "end": 685,
+            "text": "invitacion != 0",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 689,
+            "end": 694,
+            "text": "false",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 710,
+            "end": 726,
+            "text": "tiene_invitacion",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 740,
+            "end": 753,
+            "text": "apertura != 0",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 757,
+            "end": 762,
+            "text": "false",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 778,
+            "end": 790,
+            "text": "sala_abierta",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 862,
+            "end": 866,
+            "text": "!= 0",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 938,
+            "end": 955,
+            "text": "Entrada permitida",
             "role": "output",
             "reading": "natural"
           },
           {
-            "start": 1167,
-            "end": 1179,
-            "text": "Datos: 1 0 0",
+            "start": 1037,
+            "end": 1046,
+            "text": "permitido",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 1288,
+            "end": 1317,
+            "text": "Entrada denegada\nDatos: 1 0 0",
             "role": "output",
             "reading": "natural"
           }
@@ -1512,18 +2359,18 @@
       {
         "block": "block_0003_0007",
         "path": "/question",
-        "sourceSha256": "e2f370abe18a9372299a568926265e33b3ff27310af91d8ab31080f9a2480c58",
+        "sourceSha256": "d1dcc6b0c3041e8e14901d06e15f4a183b8e1e0d904b8f04ec697f5a73b1f433",
         "spans": [
           {
-            "start": 66,
-            "end": 78,
+            "start": 95,
+            "end": 107,
             "text": "sala_abierta",
             "role": "cpp",
             "reading": "technical"
           },
           {
-            "start": 84,
-            "end": 89,
+            "start": 113,
+            "end": 118,
             "text": "false",
             "role": "cpp",
             "reading": "technical"
@@ -1533,39 +2380,67 @@
       {
         "block": "block_0003_0007",
         "path": "/explanation",
-        "sourceSha256": "29bf4f6a7e5bc0bf6c78f9569814d8d8494f1ac9c9a29a095669ff16c2a30e6b",
+        "sourceSha256": "4a6dad329480cbf984c6eea23c90a0d7892338a6285d934567bb10d53b54210a",
         "spans": [
           {
-            "start": 128,
-            "end": 140,
+            "start": 57,
+            "end": 87,
+            "text": "tiene_pase || tiene_invitacion",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 91,
+            "end": 95,
+            "text": "true",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 125,
+            "end": 137,
             "text": "sala_abierta",
             "role": "cpp",
             "reading": "technical"
           },
           {
-            "start": 146,
-            "end": 151,
+            "start": 143,
+            "end": 148,
             "text": "false",
             "role": "cpp",
             "reading": "technical"
           },
           {
-            "start": 201,
-            "end": 203,
+            "start": 156,
+            "end": 158,
             "text": "&&",
             "role": "cpp",
             "reading": "technical"
           },
           {
-            "start": 207,
-            "end": 212,
+            "start": 201,
+            "end": 249,
+            "text": "(tiene_pase || tiene_invitacion) && sala_abierta",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 253,
+            "end": 258,
             "text": "false",
             "role": "cpp",
             "reading": "technical"
           },
           {
-            "start": 235,
-            "end": 251,
+            "start": 283,
+            "end": 287,
+            "text": "else",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 298,
+            "end": 314,
             "text": "Entrada denegada",
             "role": "output",
             "reading": "natural"
@@ -1609,95 +2484,159 @@
       {
         "block": "block_0003_0008",
         "path": "/text",
-        "sourceSha256": "51a6408b37d15ed5831117d70dc3558f6ebb1a641009c3994b89ea70d08d3e68",
-        "spans": []
+        "sourceSha256": "e5985b66c62da70fdbf4799dd0b2e6dd7d94b33ebf0c945b57e3c606ed3c1450",
+        "spans": [
+          {
+            "start": 11,
+            "end": 27,
+            "text": "Entrada denegada",
+            "role": "output",
+            "reading": "natural"
+          },
+          {
+            "start": 195,
+            "end": 225,
+            "text": "tiene_pase || tiene_invitacion",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 229,
+            "end": 234,
+            "text": "false",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 391,
+            "end": 421,
+            "text": "tiene_pase || tiene_invitacion",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 425,
+            "end": 429,
+            "text": "true",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 432,
+            "end": 444,
+            "text": "sala_abierta",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 450,
+            "end": 455,
+            "text": "false",
+            "role": "cpp",
+            "reading": "technical"
+          }
+        ]
       },
       {
         "block": "block_0005_0000",
         "path": "/text",
-        "sourceSha256": "f28b81e16e923ce6ce27366a6f0b93d16e48c82207698e99ea76d2e852e5ef93",
+        "sourceSha256": "344db1195ac053d04ba1183d8c0ec3d15c9b73501063c892dc58cd46f05c10a0",
         "spans": []
       },
       {
         "block": "block_0005_0001",
         "path": "/text",
-        "sourceSha256": "580fac6d16c186cf2697af8340c89ebe8d46aba16c6b88b9a74d78edacf80430",
+        "sourceSha256": "e9476f12cf204d19e67a055cfc982e9ba461193a54b1d18bc8c57ba751a4d3d1",
         "spans": [
           {
-            "start": 83,
-            "end": 84,
-            "text": "1",
-            "role": "data",
-            "reading": "natural"
-          },
-          {
-            "start": 112,
-            "end": 113,
+            "start": 167,
+            "end": 168,
             "text": "0",
             "role": "data",
             "reading": "natural"
           },
           {
-            "start": 142,
-            "end": 143,
+            "start": 171,
+            "end": 172,
             "text": "1",
             "role": "data",
             "reading": "natural"
           },
           {
-            "start": 166,
-            "end": 167,
-            "text": "0",
-            "role": "data",
-            "reading": "natural"
-          },
-          {
-            "start": 194,
-            "end": 195,
+            "start": 214,
+            "end": 215,
             "text": "1",
             "role": "data",
             "reading": "natural"
           },
           {
-            "start": 222,
-            "end": 223,
+            "start": 235,
+            "end": 236,
             "text": "0",
             "role": "data",
             "reading": "natural"
           },
           {
-            "start": 250,
-            "end": 267,
+            "start": 280,
+            "end": 281,
+            "text": "1",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 301,
+            "end": 302,
+            "text": "0",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 349,
+            "end": 350,
+            "text": "1",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 380,
+            "end": 381,
+            "text": "0",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 506,
+            "end": 523,
             "text": "Entrada permitida",
             "role": "output",
             "reading": "natural"
           },
           {
-            "start": 381,
-            "end": 397,
+            "start": 606,
+            "end": 622,
             "text": "Entrada denegada",
             "role": "output",
             "reading": "natural"
           },
           {
-            "start": 434,
-            "end": 439,
+            "start": 690,
+            "end": 695,
             "text": "1 0 0",
             "role": "data",
             "reading": "natural"
           },
           {
-            "start": 457,
-            "end": 473,
+            "start": 779,
+            "end": 784,
+            "text": "1 0 0",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 802,
+            "end": 818,
             "text": "Entrada denegada",
             "role": "output",
-            "reading": "natural"
-          },
-          {
-            "start": 509,
-            "end": 514,
-            "text": "1 0 0",
-            "role": "data",
             "reading": "natural"
           }
         ]
@@ -1711,59 +2650,116 @@
       {
         "block": "block_0004_0001",
         "path": "/question",
-        "sourceSha256": "d85908c615fe7d8e0fc4dda324116615a81fb7f558fa9f86bf7469fe9ae12dd4",
-        "spans": []
-      },
-      {
-        "block": "block_0004_0001",
-        "path": "/explanation",
-        "sourceSha256": "278933cb5678ad87b9df601c08cf359c3bc48d07e4f84ba6ff09869e570bd3dc",
+        "sourceSha256": "cae50d501f49f87f96acda73f26c888e6be524356e39f36386f1fc88c43c92ac",
         "spans": [
           {
-            "start": 0,
-            "end": 5,
-            "text": "3 * 2",
+            "start": 45,
+            "end": 54,
+            "text": "7 + 3 * 2",
             "role": "cpp",
             "reading": "technical"
           },
           {
-            "start": 33,
-            "end": 41,
+            "start": 80,
+            "end": 88,
             "text": "cantidad",
             "role": "cpp",
             "reading": "technical"
           },
           {
-            "start": 47,
-            "end": 49,
-            "text": "13",
-            "role": "data",
-            "reading": "natural"
-          },
-          {
-            "start": 91,
-            "end": 95,
-            "text": "true",
-            "role": "cpp",
-            "reading": "technical"
-          },
-          {
-            "start": 109,
-            "end": 117,
+            "start": 227,
+            "end": 235,
             "text": "en_rango",
             "role": "cpp",
             "reading": "technical"
           },
           {
-            "start": 125,
-            "end": 129,
+            "start": 291,
+            "end": 299,
+            "text": "cantidad",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 335,
+            "end": 344,
+            "text": "std::cout",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 350,
+            "end": 358,
+            "text": "en_rango",
+            "role": "cpp",
+            "reading": "technical"
+          }
+        ]
+      },
+      {
+        "block": "block_0004_0001",
+        "path": "/explanation",
+        "sourceSha256": "b041578861357bf0ebcf108f8a77ae6cd5e7d5799a44581756eafd4b9f512d15",
+        "spans": [
+          {
+            "start": 35,
+            "end": 40,
+            "text": "3 * 2",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 82,
+            "end": 90,
+            "text": "cantidad",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 100,
+            "end": 102,
+            "text": "13",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 236,
+            "end": 238,
+            "text": "&&",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 248,
+            "end": 256,
+            "text": "en_rango",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 264,
+            "end": 268,
             "text": "true",
             "role": "cpp",
             "reading": "technical"
           },
           {
-            "start": 150,
-            "end": 154,
+            "start": 289,
+            "end": 291,
+            "text": "13",
+            "role": "output",
+            "reading": "natural"
+          },
+          {
+            "start": 310,
+            "end": 311,
+            "text": "1",
+            "role": "output",
+            "reading": "natural"
+          },
+          {
+            "start": 395,
+            "end": 399,
             "text": "13 1",
             "role": "output",
             "reading": "natural"
@@ -1773,12 +2769,26 @@
       {
         "block": "block_0004_0002",
         "path": "/question",
-        "sourceSha256": "c09e15895157a9bff903b88130d601725a42e62a2a1680959b5e031feba0dfb7",
+        "sourceSha256": "9bf05e28b08c5a97629d9672d02e203ae801fc96d194e7c1294df7bde1004744",
         "spans": [
           {
-            "start": 18,
-            "end": 22,
+            "start": 70,
+            "end": 74,
             "text": "bool",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 116,
+            "end": 120,
+            "text": "true",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 133,
+            "end": 138,
+            "text": "false",
             "role": "cpp",
             "reading": "technical"
           }
@@ -1787,35 +2797,35 @@
       {
         "block": "block_0004_0002",
         "path": "/explanation",
-        "sourceSha256": "1e3a048a884f3f90d40e3a0946caca87727bb87efdc6f6905afdee5ce1cdd442",
+        "sourceSha256": "f69671b29e134ef0d751b2f4b6250eec83a00b272198223f5b15f19ce9ebed92",
         "spans": [
           {
-            "start": 21,
-            "end": 26,
-            "text": "false",
-            "role": "cpp",
-            "reading": "technical"
+            "start": 51,
+            "end": 62,
+            "text": "false/false",
+            "role": "data",
+            "reading": "natural"
           },
           {
-            "start": 50,
-            "end": 55,
-            "text": "false",
-            "role": "cpp",
-            "reading": "technical"
+            "start": 106,
+            "end": 116,
+            "text": "false/true",
+            "role": "data",
+            "reading": "natural"
           },
           {
-            "start": 62,
-            "end": 66,
-            "text": "true",
-            "role": "cpp",
-            "reading": "technical"
+            "start": 223,
+            "end": 233,
+            "text": "true/false",
+            "role": "data",
+            "reading": "natural"
           },
           {
-            "start": 114,
-            "end": 118,
-            "text": "true",
-            "role": "cpp",
-            "reading": "technical"
+            "start": 288,
+            "end": 297,
+            "text": "true/true",
+            "role": "data",
+            "reading": "natural"
           }
         ]
       },
@@ -1899,40 +2909,89 @@
       {
         "block": "block_0004_0003",
         "path": "/text",
-        "sourceSha256": "6eb337e2b4fea2a0abb46ffe647dff992a682b3664b4fa46314d034f1614839e",
+        "sourceSha256": "8fc0b275f8648d91000550c38def08847b703a78f8a20bddb9dce1a11e78fafe",
         "spans": [
           {
-            "start": 223,
-            "end": 237,
-            "text": "valor < minimo",
-            "role": "cpp",
-            "reading": "technical"
+            "start": 777,
+            "end": 779,
+            "text": "14",
+            "role": "data",
+            "reading": "natural"
           },
           {
-            "start": 240,
-            "end": 254,
-            "text": "valor > maximo",
-            "role": "cpp",
-            "reading": "technical"
+            "start": 881,
+            "end": 883,
+            "text": "15",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 943,
+            "end": 945,
+            "text": "18",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 1009,
+            "end": 1011,
+            "text": "25",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 1071,
+            "end": 1073,
+            "text": "26",
+            "role": "data",
+            "reading": "natural"
           }
         ]
       },
       {
         "block": "block_0004_0004",
         "path": "/text",
-        "sourceSha256": "c62ccbe31c9782b84d2329f7474e4349467622b7345f475ef3ce9ad4554955d7",
+        "sourceSha256": "13d6f5909717626ef7ecc097d22761c66dbe886f1b238c7edcf61a9b4b0934ab",
         "spans": [
           {
-            "start": 202,
-            "end": 219,
+            "start": 206,
+            "end": 254,
+            "text": "(tiene_pase || tiene_invitacion) && sala_abierta",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 342,
+            "end": 390,
+            "text": "(tiene_pase && tiene_invitacion) && sala_abierta",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 460,
+            "end": 477,
             "text": "Entrada permitida",
             "role": "output",
             "reading": "natural"
           },
           {
-            "start": 273,
-            "end": 289,
+            "start": 510,
+            "end": 526,
             "text": "Entrada denegada",
+            "role": "output",
+            "reading": "natural"
+          },
+          {
+            "start": 698,
+            "end": 715,
+            "text": "Entrada permitida",
+            "role": "output",
+            "reading": "natural"
+          },
+          {
+            "start": 786,
+            "end": 803,
+            "text": "Entrada permitida",
             "role": "output",
             "reading": "natural"
           }
@@ -1941,74 +3000,95 @@
       {
         "block": "block_0003_0003",
         "path": "/text",
-        "sourceSha256": "4c1a252b4ff1483c670746149a9dd2508ba3c724d9ef8443a7dc300dec562486",
+        "sourceSha256": "a91383e048bd32727633ca997cbd753e86a621aa6367795478dd0317bbcde1c0",
         "spans": []
       },
       {
         "block": "block_0003_0004",
         "path": "/text",
-        "sourceSha256": "9036ac9f7d74ae887fd8517b7d385cd92704e0542ca6596ad9ca2b1c4a1fd486",
+        "sourceSha256": "cfed6bff90c3937cd2fd0fd09fd6dac04da29a13c61efec35ddc5f57e8995777",
         "spans": [
           {
-            "start": 14,
-            "end": 19,
-            "text": "1 0 0",
-            "role": "data",
-            "reading": "natural"
-          },
-          {
-            "start": 74,
-            "end": 104,
-            "text": "tiene_pase || tiene_invitacion",
+            "start": 31,
+            "end": 41,
+            "text": "tiene_pase",
             "role": "cpp",
             "reading": "technical"
           },
           {
-            "start": 108,
-            "end": 112,
+            "start": 47,
+            "end": 51,
             "text": "true",
             "role": "cpp",
             "reading": "technical"
           },
           {
-            "start": 144,
-            "end": 156,
+            "start": 82,
+            "end": 114,
+            "text": "(tiene_pase || tiene_invitacion)",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 174,
+            "end": 186,
             "text": "sala_abierta",
             "role": "cpp",
             "reading": "technical"
           },
           {
-            "start": 162,
-            "end": 167,
+            "start": 192,
+            "end": 197,
             "text": "false",
             "role": "cpp",
             "reading": "technical"
           },
           {
-            "start": 202,
-            "end": 204,
-            "text": "&&",
+            "start": 279,
+            "end": 327,
+            "text": "(tiene_pase || tiene_invitacion) && sala_abierta",
             "role": "cpp",
             "reading": "technical"
           },
           {
-            "start": 206,
-            "end": 215,
+            "start": 331,
+            "end": 336,
+            "text": "false",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 366,
+            "end": 375,
             "text": "permitido",
             "role": "cpp",
             "reading": "technical"
           },
           {
-            "start": 223,
-            "end": 228,
-            "text": "false",
+            "start": 404,
+            "end": 418,
+            "text": "if (permitido)",
             "role": "cpp",
             "reading": "technical"
           },
           {
-            "start": 251,
-            "end": 267,
+            "start": 431,
+            "end": 435,
+            "text": "else",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 446,
+            "end": 462,
             "text": "Entrada denegada",
+            "role": "output",
+            "reading": "natural"
+          },
+          {
+            "start": 509,
+            "end": 521,
+            "text": "Datos: 1 0 0",
             "role": "output",
             "reading": "natural"
           }
@@ -2017,66 +3097,276 @@
       {
         "block": "block_0003_0006",
         "path": "/text",
-        "sourceSha256": "ad5ba155a8be9764b63f87aa3bcd55a4c0cbbcd22a3277fa3fc3bb23f9537a37",
+        "sourceSha256": "ea451bd1373a163a30e4f2393124c13adf4ca419106b32842640980fe7366874",
         "spans": [
           {
-            "start": 59,
-            "end": 61,
-            "text": "&&",
+            "start": 43,
+            "end": 89,
+            "text": "tiene_pase || tiene_invitacion && sala_abierta",
             "role": "cpp",
             "reading": "technical"
           },
           {
-            "start": 71,
-            "end": 87,
-            "text": "tiene_invitacion",
+            "start": 109,
+            "end": 157,
+            "text": "tiene_pase || (tiene_invitacion && sala_abierta)",
             "role": "cpp",
             "reading": "technical"
           },
           {
-            "start": 92,
-            "end": 104,
-            "text": "sala_abierta",
+            "start": 336,
+            "end": 353,
+            "text": "Entrada permitida",
+            "role": "output",
+            "reading": "natural"
+          },
+          {
+            "start": 462,
+            "end": 492,
+            "text": "tiene_pase || tiene_invitacion",
             "role": "cpp",
             "reading": "technical"
+          },
+          {
+            "start": 498,
+            "end": 546,
+            "text": "(tiene_pase || tiene_invitacion) && sala_abierta",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 719,
+            "end": 735,
+            "text": "Entrada denegada",
+            "role": "output",
+            "reading": "natural"
           }
         ]
       },
       {
         "block": "block_0005_0004",
         "path": "/text",
-        "sourceSha256": "91713a80b1e7b81647e3397c48869de38e9afeee59aa6b765891a82f8e45b380",
+        "sourceSha256": "7419093360efeb2e3b4aac0f4fc6bf7877b031fefd88d99e791190fcfbd86b5f",
         "spans": []
       },
       {
         "block": "block_0005_0005",
         "path": "/text",
-        "sourceSha256": "fa26482cca34da49dfc0dd243daff638515f77db31dc293486bb1f2404190e6b",
+        "sourceSha256": "0f2f47498669a7dfadf116258f5f8cf151ae93d89164935868713a5283b7fb9b",
         "spans": [
           {
-            "start": 230,
-            "end": 234,
-            "text": "bool",
+            "start": 26,
+            "end": 69,
+            "text": "std::cin >> pase >> invitacion >> apertura;",
             "role": "cpp",
             "reading": "technical"
+          },
+          {
+            "start": 137,
+            "end": 142,
+            "text": "1 0 0",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 144,
+            "end": 148,
+            "text": "pase",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 188,
+            "end": 198,
+            "text": "invitacion",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 201,
+            "end": 209,
+            "text": "apertura",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 302,
+            "end": 306,
+            "text": "pase",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 317,
+            "end": 326,
+            "text": "pase != 0",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 330,
+            "end": 334,
+            "text": "true",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 363,
+            "end": 373,
+            "text": "tiene_pase",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 380,
+            "end": 390,
+            "text": "invitacion",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 402,
+            "end": 417,
+            "text": "invitacion != 0",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 421,
+            "end": 426,
+            "text": "false",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 451,
+            "end": 467,
+            "text": "tiene_invitacion",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 525,
+            "end": 533,
+            "text": "apertura",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 553,
+            "end": 566,
+            "text": "apertura != 0",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 570,
+            "end": 575,
+            "text": "false",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 578,
+            "end": 590,
+            "text": "sala_abierta",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 639,
+            "end": 687,
+            "text": "(tiene_pase || tiene_invitacion) && sala_abierta",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 712,
+            "end": 742,
+            "text": "tiene_pase || tiene_invitacion",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 746,
+            "end": 750,
+            "text": "true",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 811,
+            "end": 823,
+            "text": "sala_abierta",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 834,
+            "end": 839,
+            "text": "false",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 866,
+            "end": 871,
+            "text": "false",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 900,
+            "end": 909,
+            "text": "permitido",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 923,
+            "end": 937,
+            "text": "if (permitido)",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 980,
+            "end": 985,
+            "text": "false",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 1007,
+            "end": 1011,
+            "text": "else",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 1022,
+            "end": 1038,
+            "text": "Entrada denegada",
+            "role": "output",
+            "reading": "natural"
           }
         ]
       },
       {
         "block": "block_0005_0008",
         "path": "/text",
-        "sourceSha256": "8b5fd266e73b940929c408cb0deff75fa5a32ff532fc2975ee7c047d989f5f76",
+        "sourceSha256": "b9c3d4b9512976d63d5dca5923c14532b6afde4bc428e7cc8760a7c1b7f54bd8",
         "spans": [
           {
-            "start": 57,
-            "end": 59,
+            "start": 78,
+            "end": 80,
             "text": "&&",
             "role": "cpp",
             "reading": "technical"
           },
           {
-            "start": 62,
-            "end": 64,
+            "start": 83,
+            "end": 85,
             "text": "||",
             "role": "cpp",
             "reading": "technical"
@@ -2086,40 +3376,124 @@
       {
         "block": "block_0001_0003",
         "path": "/explanation",
-        "sourceSha256": "4c4f3dc8c94f87ad566a85c8a8c99461d5a902c624eb2cd823870bd65b0aa367",
+        "sourceSha256": "c77b9588553e004902318b1a76af8b8944097b891c83e115e468082a6793e217",
         "spans": [
           {
-            "start": 0,
-            "end": 2,
-            "text": "&&",
+            "start": 16,
+            "end": 28,
+            "text": "conoce_clave",
             "role": "cpp",
             "reading": "technical"
           },
           {
-            "start": 30,
-            "end": 32,
-            "text": "||",
+            "start": 34,
+            "end": 38,
+            "text": "true",
             "role": "cpp",
             "reading": "technical"
           },
           {
-            "start": 128,
-            "end": 131,
+            "start": 41,
+            "end": 53,
+            "text": "trae_tarjeta",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 59,
+            "end": 64,
+            "text": "false",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 80,
+            "end": 108,
+            "text": "conoce_clave && trae_tarjeta",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 215,
+            "end": 220,
+            "text": "ambos",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 228,
+            "end": 233,
+            "text": "false",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 249,
+            "end": 277,
+            "text": "conoce_clave || trae_tarjeta",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 363,
+            "end": 369,
+            "text": "alguno",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 377,
+            "end": 381,
+            "text": "true",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 425,
+            "end": 430,
+            "text": "ambos",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 458,
+            "end": 464,
+            "text": "alguno",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 488,
+            "end": 491,
             "text": "0 1",
             "role": "output",
             "reading": "natural"
           },
           {
-            "start": 133,
-            "end": 136,
+            "start": 527,
+            "end": 530,
             "text": "and",
             "role": "cpp",
             "reading": "technical"
           },
           {
-            "start": 139,
-            "end": 141,
+            "start": 543,
+            "end": 545,
+            "text": "&&",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 548,
+            "end": 550,
             "text": "or",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 563,
+            "end": 565,
+            "text": "||",
             "role": "cpp",
             "reading": "technical"
           }
@@ -2128,18 +3502,39 @@
       {
         "block": "block_0005_0007",
         "path": "/question",
-        "sourceSha256": "1c250faba43617dcfec17ded4b259d5c346757d85e088c0320119fef3a68b600",
+        "sourceSha256": "0a35bb54ae5525084e27a15d513f67fee488f3e2740b4125183b5d8c91dcde1f",
         "spans": [
           {
-            "start": 260,
-            "end": 261,
+            "start": 137,
+            "end": 163,
+            "text": "tiene_pase && sala_abierta",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 207,
+            "end": 224,
+            "text": "Entrada permitida",
+            "role": "output",
+            "reading": "natural"
+          },
+          {
+            "start": 250,
+            "end": 266,
+            "text": "Entrada denegada",
+            "role": "output",
+            "reading": "natural"
+          },
+          {
+            "start": 625,
+            "end": 626,
             "text": "1",
             "role": "data",
             "reading": "natural"
           },
           {
-            "start": 301,
-            "end": 302,
+            "start": 644,
+            "end": 645,
             "text": "0",
             "role": "data",
             "reading": "natural"
@@ -2149,7 +3544,7 @@
       {
         "block": "block_0005_0007",
         "path": "/explanation",
-        "sourceSha256": "51a07bcaf2656d49f1227d5a6ab0123584a39b80abd00657e11087360386d6a6",
+        "sourceSha256": "1d42c04cbb8540ad1804dbe3cfd1acdb9b2bac6b1413a421e1bbbf5638a187ed",
         "spans": [
           {
             "start": 4,
@@ -2159,16 +3554,86 @@
             "reading": "natural"
           },
           {
-            "start": 103,
-            "end": 120,
+            "start": 160,
+            "end": 177,
             "text": "Entrada permitida",
             "role": "output",
             "reading": "natural"
           },
           {
-            "start": 157,
-            "end": 173,
+            "start": 206,
+            "end": 216,
+            "text": "tiene_pase",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 222,
+            "end": 227,
+            "text": "false",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 242,
+            "end": 268,
+            "text": "tiene_pase && sala_abierta",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 272,
+            "end": 277,
+            "text": "false",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 300,
+            "end": 316,
             "text": "Entrada denegada",
+            "role": "output",
+            "reading": "natural"
+          },
+          {
+            "start": 352,
+            "end": 357,
+            "text": "1 0 1",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 446,
+            "end": 463,
+            "text": "Entrada permitida",
+            "role": "output",
+            "reading": "natural"
+          },
+          {
+            "start": 525,
+            "end": 542,
+            "text": "Entrada permitida",
+            "role": "output",
+            "reading": "natural"
+          },
+          {
+            "start": 601,
+            "end": 606,
+            "text": "1 1 1",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 695,
+            "end": 712,
+            "text": "Entrada permitida",
+            "role": "output",
+            "reading": "natural"
+          },
+          {
+            "start": 753,
+            "end": 770,
+            "text": "Entrada permitida",
             "role": "output",
             "reading": "natural"
           }
@@ -2219,102 +3684,116 @@
       {
         "block": "block_0005_0003",
         "path": "/text",
-        "sourceSha256": "38a6a7c9cf3cb8def853bc44ae074c72561bcd6846d67c5b9e9507e395797cf1",
+        "sourceSha256": "de9186263d338ed715514fca8f477ab59b425f1aafa91a716d2e4d9b96064daa",
         "spans": [
           {
-            "start": 513,
-            "end": 518,
+            "start": 298,
+            "end": 299,
+            "text": "1",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 317,
+            "end": 318,
+            "text": "0",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 520,
+            "end": 525,
             "text": "0 0 0",
             "role": "data",
             "reading": "natural"
           },
           {
-            "start": 536,
-            "end": 552,
+            "start": 543,
+            "end": 559,
             "text": "Entrada denegada",
             "role": "output",
             "reading": "natural"
           },
           {
-            "start": 672,
-            "end": 677,
+            "start": 690,
+            "end": 695,
             "text": "0 0 1",
             "role": "data",
             "reading": "natural"
           },
           {
-            "start": 695,
-            "end": 711,
+            "start": 713,
+            "end": 729,
             "text": "Entrada denegada",
             "role": "output",
             "reading": "natural"
           },
           {
-            "start": 814,
-            "end": 819,
+            "start": 873,
+            "end": 878,
             "text": "0 1 0",
             "role": "data",
             "reading": "natural"
           },
           {
-            "start": 837,
-            "end": 853,
+            "start": 896,
+            "end": 912,
             "text": "Entrada denegada",
             "role": "output",
             "reading": "natural"
           },
           {
-            "start": 958,
-            "end": 963,
+            "start": 1018,
+            "end": 1023,
             "text": "0 1 1",
             "role": "data",
             "reading": "natural"
           },
           {
-            "start": 981,
-            "end": 998,
+            "start": 1041,
+            "end": 1058,
             "text": "Entrada permitida",
             "role": "output",
             "reading": "natural"
           },
           {
-            "start": 1102,
-            "end": 1107,
+            "start": 1163,
+            "end": 1168,
             "text": "1 0 1",
             "role": "data",
             "reading": "natural"
           },
           {
-            "start": 1125,
-            "end": 1142,
+            "start": 1186,
+            "end": 1203,
             "text": "Entrada permitida",
             "role": "output",
             "reading": "natural"
           },
           {
-            "start": 1251,
-            "end": 1256,
+            "start": 1341,
+            "end": 1346,
             "text": "1 1 0",
             "role": "data",
             "reading": "natural"
           },
           {
-            "start": 1274,
-            "end": 1290,
+            "start": 1364,
+            "end": 1380,
             "text": "Entrada denegada",
             "role": "output",
             "reading": "natural"
           },
           {
-            "start": 1380,
-            "end": 1385,
+            "start": 1507,
+            "end": 1512,
             "text": "1 1 1",
             "role": "data",
             "reading": "natural"
           },
           {
-            "start": 1403,
-            "end": 1420,
+            "start": 1530,
+            "end": 1547,
             "text": "Entrada permitida",
             "role": "output",
             "reading": "natural"
@@ -2324,11 +3803,46 @@
       {
         "block": "u3l5_invertir_un_aviso",
         "path": "/question",
-        "sourceSha256": "0f977dc5b469eb7607bc943e9d4f82f9a8814558d21cd060e6c022e545629fa8",
+        "sourceSha256": "d073a84b2466537f8ab2a6abfb5e90047e7bd2c1af0a5c9faa76a0b3d9891a34",
         "spans": [
           {
-            "start": 21,
-            "end": 28,
+            "start": 12,
+            "end": 19,
+            "text": "apagado",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 68,
+            "end": 77,
+            "text": "encendido",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 133,
+            "end": 142,
+            "text": "encendido",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 154,
+            "end": 159,
+            "text": "false",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 191,
+            "end": 195,
+            "text": "true",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 253,
+            "end": 260,
             "text": "apagado",
             "role": "cpp",
             "reading": "technical"
@@ -2338,48 +3852,398 @@
       {
         "block": "u3l5_invertir_un_aviso",
         "path": "/explanation",
-        "sourceSha256": "089e9e80c94fb3d59e431224cf5f855f8695c0b0b304eb75a078da01ac15f183",
+        "sourceSha256": "cc708812375f6c1df06e0c19ccad7fd1c26b5ecb68c7c1afe0dace5efc88426f",
         "spans": [
           {
-            "start": 12,
-            "end": 13,
-            "text": "!",
-            "role": "cpp",
-            "reading": "technical"
-          },
-          {
-            "start": 45,
-            "end": 52,
+            "start": 16,
+            "end": 23,
             "text": "apagado",
             "role": "cpp",
             "reading": "technical"
           },
           {
-            "start": 58,
-            "end": 63,
+            "start": 29,
+            "end": 34,
             "text": "false",
             "role": "cpp",
             "reading": "technical"
           },
           {
-            "start": 65,
-            "end": 74,
-            "text": "encendido",
+            "start": 72,
+            "end": 73,
+            "text": "!",
             "role": "cpp",
             "reading": "technical"
           },
           {
-            "start": 82,
-            "end": 86,
+            "start": 102,
+            "end": 110,
+            "text": "!apagado",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 114,
+            "end": 118,
             "text": "true",
             "role": "cpp",
             "reading": "technical"
           },
           {
-            "start": 108,
-            "end": 109,
+            "start": 139,
+            "end": 143,
+            "text": "true",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 147,
+            "end": 156,
+            "text": "encendido",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 167,
+            "end": 168,
             "text": "1",
             "role": "output",
+            "reading": "natural"
+          },
+          {
+            "start": 204,
+            "end": 215,
+            "text": "not apagado",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 273,
+            "end": 276,
+            "text": "not",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 288,
+            "end": 295,
+            "text": "apagado",
+            "role": "cpp",
+            "reading": "technical"
+          }
+        ]
+      },
+      {
+        "block": "block_0000_0004",
+        "path": "/reviewFeedback",
+        "sourceSha256": "4c0d79ee0e1bab6187a9aeaca56a046f8e68e9f9f2c3eb2cabd24a4b5f511f69",
+        "spans": [
+          {
+            "start": 3,
+            "end": 11,
+            "text": "contador",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 134,
+            "end": 140,
+            "text": "valido",
+            "role": "cpp",
+            "reading": "technical"
+          }
+        ]
+      },
+      {
+        "block": "block_0000_0005",
+        "path": "/reviewFeedback/0",
+        "sourceSha256": "9474ad8219ac90b8771771c55ae1170438847904e9dfe3579e268e3723bbdeb7",
+        "spans": [
+          {
+            "start": 17,
+            "end": 23,
+            "text": "A && B",
+            "role": "cpp",
+            "reading": "technical"
+          }
+        ]
+      },
+      {
+        "block": "block_0000_0005",
+        "path": "/reviewFeedback/1",
+        "sourceSha256": "a86e805a9322b5ede99d541c8391bf1cdc2a9ea53d386476d457005d2c08827d",
+        "spans": [
+          {
+            "start": 94,
+            "end": 95,
+            "text": "A",
+            "role": "cpp",
+            "reading": "technical"
+          }
+        ]
+      },
+      {
+        "block": "block_0000_0005",
+        "path": "/reviewFeedback/2",
+        "sourceSha256": "d35b088db5cf3d8ac63f2bba7630f2febceb6fd183cbf6fd9a086e4018b8faf4",
+        "spans": [
+          {
+            "start": 43,
+            "end": 47,
+            "text": "bool",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 62,
+            "end": 68,
+            "text": "A && B",
+            "role": "cpp",
+            "reading": "technical"
+          }
+        ]
+      },
+      {
+        "block": "block_0001_0003",
+        "path": "/reviewFeedback",
+        "sourceSha256": "001f1c069d70526551d004889e8e3b80ebb5ca6364db8219cea9ef7067efcf72",
+        "spans": []
+      },
+      {
+        "block": "block_0001_0005",
+        "path": "/reviewFeedback/0",
+        "sourceSha256": "d886e510ac135fb224ba8ae72fd0f34e5fd97faf54eceac8e9ff5a3309e88cff",
+        "spans": []
+      },
+      {
+        "block": "block_0001_0005",
+        "path": "/reviewFeedback/1",
+        "sourceSha256": "01f34e58ea01d36e755fef30edf247cb25341f83d2877e53b4c6a5a57fcd289c",
+        "spans": [
+          {
+            "start": 10,
+            "end": 16,
+            "text": "A || B",
+            "role": "cpp",
+            "reading": "technical"
+          }
+        ]
+      },
+      {
+        "block": "block_0001_0005",
+        "path": "/reviewFeedback/2",
+        "sourceSha256": "edd0227eec1e71d3175fb60d5ee31ad5e3444ccab2b7e56341046a8c6762fd7e",
+        "spans": [
+          {
+            "start": 79,
+            "end": 83,
+            "text": "bool",
+            "role": "cpp",
+            "reading": "technical"
+          }
+        ]
+      },
+      {
+        "block": "u3l5_invertir_un_aviso",
+        "path": "/reviewFeedback",
+        "sourceSha256": "dc42cc613d83fd3eeb97377f4a9813e6e546d416e7f883ac7f8c4cae86a47dc7",
+        "spans": [
+          {
+            "start": 38,
+            "end": 45,
+            "text": "apagado",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 51,
+            "end": 55,
+            "text": "true",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 77,
+            "end": 86,
+            "text": "encendido",
+            "role": "cpp",
+            "reading": "technical"
+          }
+        ]
+      },
+      {
+        "block": "block_0002_0003",
+        "path": "/reviewFeedback",
+        "sourceSha256": "bb8db98df6275df3b05fb9215a19c7556407ce74748c8300e0188cf6985d4ab2",
+        "spans": [
+          {
+            "start": 41,
+            "end": 43,
+            "text": "&&",
+            "role": "cpp",
+            "reading": "technical"
+          }
+        ]
+      },
+      {
+        "block": "block_0002_0004",
+        "path": "/reviewFeedback/0",
+        "sourceSha256": "8bfb8ec71faf9bee622bc119b34bb3102eac4d38eb7b23541f647d67c9fe700a",
+        "spans": [
+          {
+            "start": 70,
+            "end": 72,
+            "text": "&&",
+            "role": "cpp",
+            "reading": "technical"
+          }
+        ]
+      },
+      {
+        "block": "block_0002_0004",
+        "path": "/reviewFeedback/1",
+        "sourceSha256": "8317d1fa161446ade962b8d70b6c897849f28b47331d6bf3ee8f6f7f35f0afbb",
+        "spans": [
+          {
+            "start": 39,
+            "end": 44,
+            "text": "valor",
+            "role": "cpp",
+            "reading": "technical"
+          }
+        ]
+      },
+      {
+        "block": "block_0002_0004",
+        "path": "/reviewFeedback/2",
+        "sourceSha256": "17fdfb5059bd7d38bec3d67d9692bd8d62631ae76799fc7cb0f6a42114fc5f10",
+        "spans": []
+      },
+      {
+        "block": "block_0003_0007",
+        "path": "/reviewFeedback/0",
+        "sourceSha256": "cc7876e0529eb39939bc832c9f5bc79ca41ef49b26ed01e32b1b7b6957ffd882",
+        "spans": [
+          {
+            "start": 3,
+            "end": 5,
+            "text": "if",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 11,
+            "end": 15,
+            "text": "else",
+            "role": "cpp",
+            "reading": "technical"
+          }
+        ]
+      },
+      {
+        "block": "block_0003_0007",
+        "path": "/reviewFeedback/1",
+        "sourceSha256": "4667c8f256e1e1d7e5f258745a3ec2aa9995ee977bd1b34481e981d9fd670b50",
+        "spans": []
+      },
+      {
+        "block": "block_0003_0007",
+        "path": "/reviewFeedback/2",
+        "sourceSha256": "c3f189fdf3d0a3c025994d02853037e71a8f4ed32f07af344b223dde14d761dd",
+        "spans": []
+      },
+      {
+        "block": "block_0004_0001",
+        "path": "/reviewFeedback",
+        "sourceSha256": "543e9f33ad94a544ae73d389afd8efa42fb8703067699b16990d6b1d490b30e3",
+        "spans": [
+          {
+            "start": 3,
+            "end": 12,
+            "text": "7 + 3 * 2",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 253,
+            "end": 262,
+            "text": "std::cout",
+            "role": "cpp",
+            "reading": "technical"
+          }
+        ]
+      },
+      {
+        "block": "block_0004_0002",
+        "path": "/reviewFeedback/0",
+        "sourceSha256": "44c3c1ccd57cd776d93b54f32fb53720ae7fd954705510673c3552b04ef1e7a4",
+        "spans": [
+          {
+            "start": 4,
+            "end": 13,
+            "text": "true/true",
+            "role": "data",
+            "reading": "natural"
+          }
+        ]
+      },
+      {
+        "block": "block_0004_0002",
+        "path": "/reviewFeedback/1",
+        "sourceSha256": "3d05beeee6f6c68fd6f53f9f39989d15827ff9e8645154e577bed95053edc6ee",
+        "spans": []
+      },
+      {
+        "block": "block_0004_0002",
+        "path": "/reviewFeedback/2",
+        "sourceSha256": "2aad718a45e8e37217cf46609f755a31718630efe2b6381f6d872f894ca4b844",
+        "spans": [
+          {
+            "start": 4,
+            "end": 13,
+            "text": "true/true",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 59,
+            "end": 70,
+            "text": "false/false",
+            "role": "data",
+            "reading": "natural"
+          }
+        ]
+      },
+      {
+        "block": "block_0005_0007",
+        "path": "/reviewFeedback/0",
+        "sourceSha256": "e1d8cc55b91489b89ce26a997dade5ecdcdade03f1e4b6d186d210a5cfdb2b48",
+        "spans": [
+          {
+            "start": 4,
+            "end": 9,
+            "text": "1 0 1",
+            "role": "data",
+            "reading": "natural"
+          }
+        ]
+      },
+      {
+        "block": "block_0005_0007",
+        "path": "/reviewFeedback/1",
+        "sourceSha256": "2ca29dc07b56eb49f55e53704f70d8ca39d0e33668c850dd9faa118d9b0c179e",
+        "spans": []
+      },
+      {
+        "block": "block_0005_0007",
+        "path": "/reviewFeedback/2",
+        "sourceSha256": "e84ce3716a82035ae8f40830b4e5e37e7c7fed23035774ceb02e841d77f26bc7",
+        "spans": [
+          {
+            "start": 4,
+            "end": 9,
+            "text": "1 1 1",
+            "role": "data",
             "reading": "natural"
           }
         ]
@@ -3045,6 +4909,406 @@
         "id": "block_0005_0005",
         "beforeSha256": "9c16cbabc2ebe6487abe1a45183c84bffa315cf5cb254faf8cc748faf2c1f75e",
         "afterSha256": "dcef256c08f4f9a6cf744088ec3cf631f394b47019e9a5c5594244c766080d9b"
+      },
+      {
+        "id": "block_0000_0001",
+        "beforeSha256": "088e5877a4b0a76d9be79381cebe4462aadadad647b06babfa0561de8ea7d85b",
+        "afterSha256": "b7cb977ee0de3d7f308590245b40474ab08b8a1286b1da58359a5cd2d434bc5b"
+      },
+      {
+        "id": "block_0000_0003",
+        "beforeSha256": "6553821181e8b2fb6d1c068799f5ceda6294d9f9c2810a408020675dafd21939",
+        "afterSha256": "9df2137b638efd2b095e0b7e905741ffe5abe789b35bff2d5c5e3026f2c843d8"
+      },
+      {
+        "id": "block_0000_0004",
+        "beforeSha256": "fc669e9cf04acf1c5d1accb8c2a31e85fc20dcc9c54b4ac0b7fc2afb38605957",
+        "afterSha256": "56cf1e83fa00ce3bacf1878c265fd4d55cb5b52653b39f95cd6bf4482be9c3a3"
+      },
+      {
+        "id": "block_0001_0001",
+        "beforeSha256": "a21976e8203af57c476d78c6269d359c2a8d01049d7e0c2d389f610199275941",
+        "afterSha256": "6b94adad8ff85ba63b2bc883b793240824d07b0bafd5b3d3fdc7ba5a8099cdaf"
+      },
+      {
+        "id": "block_0001_0003",
+        "beforeSha256": "2bb3886dbcba6a99c1b9038a5a9043307451b41497ad2a0d75fbecfbe9c92306",
+        "afterSha256": "76312e69b50114fd0aa2e8b875aff956a32ef4cd54ce39bfba1912cd6b10431c"
+      },
+      {
+        "id": "block_0001_0004",
+        "beforeSha256": "c1502d5e634dcf83ca8ce9fe741242c64ad82cd6619f8d4fbdb9c066a40a3a18",
+        "afterSha256": "9c316892b0f25da1a9d51306f7067c718d4b2f33e76074d13988b5a2a6f10927"
+      },
+      {
+        "id": "block_0002_0001",
+        "beforeSha256": "06c027500a0a40e726d94982aaf9eb0ae84d15146e2b7ae93ca41f7482054a3e",
+        "afterSha256": "ea3840320b9284e8b4eb5cccb378606bdf74388a5c01f52e139ac51a25c8faee"
+      },
+      {
+        "id": "u3l5_invertir_un_aviso",
+        "beforeSha256": "924a40b15e678dde1b89502f2550997d2d74a5b28da2ac8f418cafb86e994af3",
+        "afterSha256": "851b9034dc399c9b2bcbcc3d687cc027642c0ccc51ee0823a1fbd48331eb0d1d"
+      },
+      {
+        "id": "block_0002_0002",
+        "beforeSha256": "a9d1cf9df226c4838b0ace1e48fb28f4369618673335ac13411b06700b25a716",
+        "afterSha256": "0ef65228d69cc5de60f75c4889e9848239c79c8fa0bc631c7f08e85cb160fafe"
+      },
+      {
+        "id": "block_0002_0003",
+        "beforeSha256": "2ff9e9ac5ed89a90d0b6e3c6f9cb9a16aad7c5e3cfad93b1e8cd1f4f78a3497c",
+        "afterSha256": "2f51b32abb3c7db6de1c5baa8c6512b891c0c89f4fbcfef203ef92321eb2e767"
+      },
+      {
+        "id": "block_0002_0004",
+        "beforeSha256": "3bde575882ced241e27be935ff3989051246d05025159983efa47e27c8849305",
+        "afterSha256": "b4c5b5aec71234d8080109aac1ee688c8733f82bdbe4beffa7e45bbae6dc74ea"
+      },
+      {
+        "id": "block_0003_0001",
+        "beforeSha256": "199d7c5999ce79899a40e00a982a8e4845b60491aded962147958be2e518ff5d",
+        "afterSha256": "853727df06b96f18538d2ee2651257a11bd3dd95564c787dfb7e54f2de68c3fc"
+      },
+      {
+        "id": "block_0003_0004",
+        "beforeSha256": "57f0b271d233e0988079cedf9ea19b1d4f3a0f23f4104367e2805bf8fa9c3c29",
+        "afterSha256": "59a01e6ff61c9a0acd33d11b32d259b06675a40f574ac14b405b24247f592e98"
+      },
+      {
+        "id": "block_0003_0006",
+        "beforeSha256": "65ae4ea9cc061a780e554e1beab9cb9619ea9a3e425bf7196ce56bd7acc4cd95",
+        "afterSha256": "f1869630806d4f8577e51fa893868c18ee0ff52d0571f6a037a5efe0d80569a5"
+      },
+      {
+        "id": "block_0003_0007",
+        "beforeSha256": "f132aa7b602e0150ac39f7a73c908c9112f5dbebe086253db7b0291f231dfe47",
+        "afterSha256": "21a70f2a09495bbb59fd87678562d673ba71223c7d5a8ddd2111e10b6df30c71"
+      },
+      {
+        "id": "block_0003_0008",
+        "beforeSha256": "57e5c4111382da9b333e501540608cc8d7f1a904968b4cc1e4ec2f45f4f0512d",
+        "afterSha256": "649c46ded8a18ff7839d2ce13244bb575124fe1ca5dd3a9ce0a4e9c216466eff"
+      },
+      {
+        "id": "block_0004_0001",
+        "beforeSha256": "4b32e48e805bf5d816fb5d1b9cce870c95df750cb1d646d55d801dbbe47c17ee",
+        "afterSha256": "b048a76850b909723d4d90310f6c6fca51053399d0cd7f53bd7f3556c47a0deb"
+      },
+      {
+        "id": "block_0004_0002",
+        "beforeSha256": "5f4bfdcd0771124ca083957bc5498d718f2592eb1d9158e2637a6237a36e6cef",
+        "afterSha256": "c117cf3e4ac7a93994871e35128f5cd912e60ae181d1b29268fce3eb38f2dd70"
+      },
+      {
+        "id": "block_0004_0003",
+        "beforeSha256": "6b1a0491ed8f65577025433a28c8f79506fa0fc4b144e8639f03f06d187a3a4d",
+        "afterSha256": "8f37b871fe4503015d45cd634f4a35992af8f9ea0f28eab1e42943c1655e034c"
+      },
+      {
+        "id": "block_0004_0004",
+        "beforeSha256": "79c0d7dcc21a447cf27df73d88619270409baa0f96b07bd0dd7062e73c0133ea",
+        "afterSha256": "648bc1a4bbd75a7457f176642a20c17830224c1dc449047b35417998cb581585"
+      },
+      {
+        "id": "block_0005_0001",
+        "beforeSha256": "b2ad68ef8108b771ee6145bdfcb58ae0baae8e5c210333784edfaf1fb159d780",
+        "afterSha256": "0434c45f1bc0f6cb5b298b9b692cbc848f4d4f184b57ac99a5b7796d2408bcaa"
+      },
+      {
+        "id": "block_0005_0005",
+        "beforeSha256": "dcef256c08f4f9a6cf744088ec3cf631f394b47019e9a5c5594244c766080d9b",
+        "afterSha256": "e8e834816ce38eff72b2bc0312758694f1dc7392229515237a104ac88a9aa9ed"
+      },
+      {
+        "id": "block_0005_0007",
+        "beforeSha256": "51844a606fe09b66e7359ab2adb1e0e47fa3b7af01dda5399423f92f7300626f",
+        "afterSha256": "4c9e4ff335aeaa55651f77cca8ee04b4949515448f8ae776c25ef4641378f5ed"
+      },
+      {
+        "id": "block_0000_0005",
+        "beforeSha256": "17ae751b82aa71f03d75df77372fccbbf4fd4dc59804a04b0650904411868087",
+        "afterSha256": "d7f6c56cb82d426d24cc6eecfc4f16dea4fec98f7f2d5a15119b755ad70a35f6"
+      },
+      {
+        "id": "block_0001_0005",
+        "beforeSha256": "81d7cdb9953d1b679cfd35fbc84a13b5a9a4c62cd51d9b10222ef234a96099e9",
+        "afterSha256": "aea9f53461580e580d015392cefe9c8d2a77f336bbaa24a0a2b0bef51b556c9d"
+      },
+      {
+        "id": "block_0000_0004",
+        "beforeSha256": "56cf1e83fa00ce3bacf1878c265fd4d55cb5b52653b39f95cd6bf4482be9c3a3",
+        "afterSha256": "4b5b7716e2ef2795381759af361dc8c4abc7f1716449db6b4d2f74be35cfc93c"
+      },
+      {
+        "id": "block_0000_0005",
+        "beforeSha256": "d7f6c56cb82d426d24cc6eecfc4f16dea4fec98f7f2d5a15119b755ad70a35f6",
+        "afterSha256": "40561318d8a74f12b99a6a63dfbeabb94918222b4c563f7d510d42c99732582e"
+      },
+      {
+        "id": "block_0001_0003",
+        "beforeSha256": "76312e69b50114fd0aa2e8b875aff956a32ef4cd54ce39bfba1912cd6b10431c",
+        "afterSha256": "a4fdfa4609b4abf1629b7c943e9bf395bf317b1a333e14239be1da1ccf24ab49"
+      },
+      {
+        "id": "block_0001_0005",
+        "beforeSha256": "aea9f53461580e580d015392cefe9c8d2a77f336bbaa24a0a2b0bef51b556c9d",
+        "afterSha256": "9952ad9d378729df606e7b3df3ecfad60673061e889a968993599362bdde9bfc"
+      },
+      {
+        "id": "u3l5_invertir_un_aviso",
+        "beforeSha256": "851b9034dc399c9b2bcbcc3d687cc027642c0ccc51ee0823a1fbd48331eb0d1d",
+        "afterSha256": "aaf5f22832360b980927931b90d91dedb71336e9d8af66e677ce8295bb27a664"
+      },
+      {
+        "id": "block_0002_0003",
+        "beforeSha256": "2f51b32abb3c7db6de1c5baa8c6512b891c0c89f4fbcfef203ef92321eb2e767",
+        "afterSha256": "8d2dd3881ad6e30e7a2b0f70aad7b9d8482e73f4699151ff1535c4e80ce5df58"
+      },
+      {
+        "id": "block_0002_0004",
+        "beforeSha256": "b4c5b5aec71234d8080109aac1ee688c8733f82bdbe4beffa7e45bbae6dc74ea",
+        "afterSha256": "d4bc097a2b6e13f161dc0cabc8dd2f376214e7e86b4d03f40fbd10516365f39b"
+      },
+      {
+        "id": "block_0003_0007",
+        "beforeSha256": "21a70f2a09495bbb59fd87678562d673ba71223c7d5a8ddd2111e10b6df30c71",
+        "afterSha256": "02e8354f814f63229f6a0d0290a87e29eb3324708921e31d7c7c43902ce8dcac"
+      },
+      {
+        "id": "block_0004_0001",
+        "beforeSha256": "b048a76850b909723d4d90310f6c6fca51053399d0cd7f53bd7f3556c47a0deb",
+        "afterSha256": "79a03e4846d312f5c86820eaad9e6f4cf8a7c6a04497d8f8e90c0dd702e0b4ab"
+      },
+      {
+        "id": "block_0004_0002",
+        "beforeSha256": "c117cf3e4ac7a93994871e35128f5cd912e60ae181d1b29268fce3eb38f2dd70",
+        "afterSha256": "6995486e4d187ed3a28129bfdc5bc46f9f04c4c469c240279dafff50cb16395b"
+      },
+      {
+        "id": "block_0005_0007",
+        "beforeSha256": "4c9e4ff335aeaa55651f77cca8ee04b4949515448f8ae776c25ef4641378f5ed",
+        "afterSha256": "9d5acbaadd616fd9c7044139f0cd0e61d31a8a40e71c015587cfcb6cbbfcac96"
+      },
+      {
+        "id": "block_0001_0003",
+        "beforeSha256": "a4fdfa4609b4abf1629b7c943e9bf395bf317b1a333e14239be1da1ccf24ab49",
+        "afterSha256": "effc08bb582132723962f8e2119667816a0311b00d02ea6f9da718971035c451"
+      },
+      {
+        "id": "block_0001_0004",
+        "beforeSha256": "9c316892b0f25da1a9d51306f7067c718d4b2f33e76074d13988b5a2a6f10927",
+        "afterSha256": "e6413a8024b7956a85f221cf02b5c1a1dbdbe15cb3bf4212ca4aeb40a4a58efa"
+      },
+      {
+        "id": "block_0000_0000",
+        "beforeSha256": "20c94aff4bfc6883403ce33931c166760eda4534bc33edb499740a941a7d304b",
+        "afterSha256": "d0c584290539c5828de66541fe3f25c1085b73c307fed8b95ae7ae88ad59f133"
+      },
+      {
+        "id": "block_0000_0001",
+        "beforeSha256": "b7cb977ee0de3d7f308590245b40474ab08b8a1286b1da58359a5cd2d434bc5b",
+        "afterSha256": "c921bdadc55a8a64dc7f8f94abf25ae530d0f91029956245a466d09f6bc48f67"
+      },
+      {
+        "id": "block_0000_0003",
+        "beforeSha256": "9df2137b638efd2b095e0b7e905741ffe5abe789b35bff2d5c5e3026f2c843d8",
+        "afterSha256": "52ad39e35704192bbd07ae569f8d8b4ceaeeac50c4d8d5eaea0df35314463113"
+      },
+      {
+        "id": "block_0000_0004",
+        "beforeSha256": "4b5b7716e2ef2795381759af361dc8c4abc7f1716449db6b4d2f74be35cfc93c",
+        "afterSha256": "093500ab9a52044609113281a1ad829cbd495803b9abbf6a3e901d2f23724a96",
+        "reviewPaths": [
+          "/reviewFeedback"
+        ]
+      },
+      {
+        "id": "block_0000_0005",
+        "beforeSha256": "40561318d8a74f12b99a6a63dfbeabb94918222b4c563f7d510d42c99732582e",
+        "afterSha256": "cdcb86859128cff07ab31fb7e6220adf6a391672ef752cb87027a7492a458d55",
+        "reviewPaths": [
+          "/reviewFeedback/0",
+          "/reviewFeedback/1",
+          "/reviewFeedback/2"
+        ]
+      },
+      {
+        "id": "block_0001_0000",
+        "beforeSha256": "db88facd90f4f1997f5e3ecf7c7ef88234a506c5b628c84adfc8c941cebf1fa3",
+        "afterSha256": "4b319d730abc35a973ac36508bebd3d37cfed2010e0e1b7f679c449ad5396285"
+      },
+      {
+        "id": "block_0001_0001",
+        "beforeSha256": "6b94adad8ff85ba63b2bc883b793240824d07b0bafd5b3d3fdc7ba5a8099cdaf",
+        "afterSha256": "576870fa1c57b704d3df0417523b989295c501990489ce0f4fd18825c811bd84"
+      },
+      {
+        "id": "block_0001_0003",
+        "beforeSha256": "effc08bb582132723962f8e2119667816a0311b00d02ea6f9da718971035c451",
+        "afterSha256": "bf7e3866ab1129599013936f14383b2b0a1c1de0b295133abe0ed047d7b36dce",
+        "reviewPaths": [
+          "/reviewFeedback"
+        ]
+      },
+      {
+        "id": "block_0001_0005",
+        "beforeSha256": "9952ad9d378729df606e7b3df3ecfad60673061e889a968993599362bdde9bfc",
+        "afterSha256": "59572c685003880ae7e34c2b756f284bc254ac86db6e5938c2ea44ca1d7e0d54",
+        "reviewPaths": [
+          "/reviewFeedback/0",
+          "/reviewFeedback/1",
+          "/reviewFeedback/2"
+        ]
+      },
+      {
+        "id": "block_0002_0000",
+        "beforeSha256": "a187416c18ea933e3f9e5e01545256bfa6858e80e281af5748dbabf13fdd7aff",
+        "afterSha256": "c9320dc920c05ac847a44ad8a1d88b7c99476b2a7d163517da4b5c03ed56ecf3"
+      },
+      {
+        "id": "block_0002_0001",
+        "beforeSha256": "ea3840320b9284e8b4eb5cccb378606bdf74388a5c01f52e139ac51a25c8faee",
+        "afterSha256": "4a70f7f1f2243170639aa0e903c27ff9b676c8c0ec0b562871a1fc2e563ec969"
+      },
+      {
+        "id": "u3l5_invertir_un_aviso",
+        "beforeSha256": "aaf5f22832360b980927931b90d91dedb71336e9d8af66e677ce8295bb27a664",
+        "afterSha256": "9d2c73359c22ad13ae7d6fa0598a029bb87426d8c01726e29329bf69d7b2e764",
+        "reviewPaths": [
+          "/reviewFeedback"
+        ]
+      },
+      {
+        "id": "block_0002_0002",
+        "beforeSha256": "0ef65228d69cc5de60f75c4889e9848239c79c8fa0bc631c7f08e85cb160fafe",
+        "afterSha256": "fcc7d1c1b7a71a0b83e6ffdad41d240459e03526ea1f7f245bb9c4fd001b4346"
+      },
+      {
+        "id": "block_0002_0003",
+        "beforeSha256": "8d2dd3881ad6e30e7a2b0f70aad7b9d8482e73f4699151ff1535c4e80ce5df58",
+        "afterSha256": "45a8a9bbf1e48b2a08e7618a1582e63cb61d849177197253de48242feee0fb51",
+        "reviewPaths": [
+          "/reviewFeedback"
+        ]
+      },
+      {
+        "id": "block_0002_0004",
+        "beforeSha256": "d4bc097a2b6e13f161dc0cabc8dd2f376214e7e86b4d03f40fbd10516365f39b",
+        "afterSha256": "656935cb71af271253f3ecd922f323048888f82ff35ddd3b7733a05d4b24aa87",
+        "reviewPaths": [
+          "/reviewFeedback/0",
+          "/reviewFeedback/1",
+          "/reviewFeedback/2"
+        ]
+      },
+      {
+        "id": "block_0003_0000",
+        "beforeSha256": "705bca1ab86dc3982457b6588509cc75bc8b8e341421c59968679665443c5dcb",
+        "afterSha256": "b52235ae5aa5183a679ef40a0a98bec27464e153e59c26ea30ab8a3c040cd0bc"
+      },
+      {
+        "id": "block_0003_0001",
+        "beforeSha256": "853727df06b96f18538d2ee2651257a11bd3dd95564c787dfb7e54f2de68c3fc",
+        "afterSha256": "175d2aab9f01f410fe6cf7d6bea6c298a71388f64cf4acaaf3cb6b0060707289"
+      },
+      {
+        "id": "block_0003_0003",
+        "beforeSha256": "66649a838f899f9a451c2beba0319216248fc30f20119c84c3e3cfb804840a2e",
+        "afterSha256": "3019d0624e3bce735ab46b7236d56230cd26d22adc4c75b1cd82c6c98e327380"
+      },
+      {
+        "id": "block_0003_0004",
+        "beforeSha256": "59a01e6ff61c9a0acd33d11b32d259b06675a40f574ac14b405b24247f592e98",
+        "afterSha256": "b794c9536b7a31a85fc6a07e8e764574cecbb0db391f44f5e93baa55d30b5f28"
+      },
+      {
+        "id": "block_0003_0006",
+        "beforeSha256": "f1869630806d4f8577e51fa893868c18ee0ff52d0571f6a037a5efe0d80569a5",
+        "afterSha256": "bb2e3d01955b53f0610902bc6f89c35f321892a2e524f2149edfe192c35d3154"
+      },
+      {
+        "id": "block_0003_0007",
+        "beforeSha256": "02e8354f814f63229f6a0d0290a87e29eb3324708921e31d7c7c43902ce8dcac",
+        "afterSha256": "f53e3aa7b4bec4ce5cdfa91649e63540227f0fefac5391b6322c413f695718c0",
+        "reviewPaths": [
+          "/reviewFeedback/0",
+          "/reviewFeedback/1",
+          "/reviewFeedback/2"
+        ]
+      },
+      {
+        "id": "block_0003_0008",
+        "beforeSha256": "649c46ded8a18ff7839d2ce13244bb575124fe1ca5dd3a9ce0a4e9c216466eff",
+        "afterSha256": "3178691720f7d73f46a8d0ea9c1e565ca3882e96296ab3bfc6008683d4f9184a"
+      },
+      {
+        "id": "block_0004_0001",
+        "beforeSha256": "79a03e4846d312f5c86820eaad9e6f4cf8a7c6a04497d8f8e90c0dd702e0b4ab",
+        "afterSha256": "f4e5f10045551c6a7a4b93f2e81b5f9d182f261d58f4bb6b9d16a3e399a04044",
+        "reviewPaths": [
+          "/reviewFeedback"
+        ]
+      },
+      {
+        "id": "block_0004_0002",
+        "beforeSha256": "6995486e4d187ed3a28129bfdc5bc46f9f04c4c469c240279dafff50cb16395b",
+        "afterSha256": "a848365fcad869ec56b64d9bbda71597455bc0304ad43e1c58bab258e2e2b436",
+        "reviewPaths": [
+          "/reviewFeedback/0",
+          "/reviewFeedback/1",
+          "/reviewFeedback/2"
+        ]
+      },
+      {
+        "id": "block_0004_0003",
+        "beforeSha256": "8f37b871fe4503015d45cd634f4a35992af8f9ea0f28eab1e42943c1655e034c",
+        "afterSha256": "161cc367705e362614299cd1af5155cdd3db97519e4a4d6aa6e41af41d9971d8"
+      },
+      {
+        "id": "block_0004_0004",
+        "beforeSha256": "648bc1a4bbd75a7457f176642a20c17830224c1dc449047b35417998cb581585",
+        "afterSha256": "2777dca385091cacace5e4fe481051caaee0a8ad2601864852c3d3a6cb792eef"
+      },
+      {
+        "id": "block_0005_0000",
+        "beforeSha256": "a300fd7c187ec1359d1f645f404989cbc9a5d7355aee8a5d5967228dabb3ad5d",
+        "afterSha256": "c938d38673e06470f8ebc606988c12aa52bed8cb9d24d6e77933163563e1a12c"
+      },
+      {
+        "id": "block_0005_0001",
+        "beforeSha256": "0434c45f1bc0f6cb5b298b9b692cbc848f4d4f184b57ac99a5b7796d2408bcaa",
+        "afterSha256": "207b01e08b7411b833fc111320e1490dd4eb6716c836ef7ef9db9c76f2983c9c"
+      },
+      {
+        "id": "block_0005_0003",
+        "beforeSha256": "4cc8788669d5792067b14c7f2b5d29b4306666c6729cde4793117dc9f258ff91",
+        "afterSha256": "a4cadbb4c891d1ce05f5b7227261b9e3c2dc62cd7d048121689cd643b3beaebb"
+      },
+      {
+        "id": "block_0005_0004",
+        "beforeSha256": "6dd08d2b5574621554c2f83ca651f2cae0b3f3a9d90dd0f7faa6eb5e3b0de4ae",
+        "afterSha256": "a4d063ac4ab73e3f1e63676eee80f0d4e1c7fe7edd77c54b5ddc0c99c038e3b5"
+      },
+      {
+        "id": "block_0005_0005",
+        "beforeSha256": "e8e834816ce38eff72b2bc0312758694f1dc7392229515237a104ac88a9aa9ed",
+        "afterSha256": "9d7831f24c232f93c678dafe46a6a337579959f44ec1c2cf125b8cbac368ca94"
+      },
+      {
+        "id": "block_0005_0007",
+        "beforeSha256": "9d5acbaadd616fd9c7044139f0cd0e61d31a8a40e71c015587cfcb6cbbfcac96",
+        "afterSha256": "2b7f23d648e811e5cd8fd34b71340fa606c1508764a75dc6b1ffb37ce48407ef",
+        "reviewPaths": [
+          "/reviewFeedback/0",
+          "/reviewFeedback/1",
+          "/reviewFeedback/2"
+        ]
+      },
+      {
+        "id": "block_0005_0008",
+        "beforeSha256": "a03f47e079cc885271feb853e4024e6af130918e268b78e7501af5dac17807e4",
+        "afterSha256": "22fcd40210b5334331285a84b6c58beeecc97138edac713e8ee962b59cf6e7a6"
       }
     ]
   },

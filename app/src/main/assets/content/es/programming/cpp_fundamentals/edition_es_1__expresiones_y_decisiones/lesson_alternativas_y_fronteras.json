@@ -1323,14 +1323,14 @@
         },
         {
           "type": "multiple_choice",
-          "question": "El taller acepta pedidos de hasta cuatro elementos, incluidos los de cuatro. Hay dos versiones del programa. Una comprueba cantidad <= 4 y la otra comprueba cantidad < 4. En ambas, el bloque del if escribe Permitido y el bloque del else escribe Excede el limite.\n\nConsidera cada cantidad propuesta por separado. Si las dos versiones reciben el mismo pedido, ¿con qué cantidad escribirá una Permitido y la otra Excede el limite?",
+          "question": "El taller admite pedidos de hasta cuatro elementos. El programa A comprueba cantidad <= 4. El programa B comprueba cantidad < 4. En ambos programas, el bloque del if escribe Permitido y el del else escribe Excede el limite.\n\nSe proponen tres predicciones. En cada una, los dos programas reciben el mismo pedido.\n\nPedido de 5 elementos. A escribiría Excede el limite. B escribiría Permitido.\n\nPedido de 4 elementos. A escribiría Permitido. B escribiría Excede el limite.\n\nPedido de 3 elementos. A escribiría Permitido. B escribiría Excede el limite.\n\n¿Para qué pedido son correctas las dos salidas previstas y dan mensajes distintos los programas A y B? Selecciona esa cantidad. Cada botón indica la cantidad del pedido y el resultado que exige el taller.",
           "options": [
             "Cantidad 5, que debe producir el rechazo.",
             "Cantidad 4, que debe producir Permitido.",
             "Cantidad 3, que debe producir Permitido."
           ],
           "correctIndex": 1,
-          "explanation": "Pedido de tres elementos. Tres es menor que cuatro. Tanto 3 <= 4 como 3 < 4 son verdaderas, así que los dos programas escriben Permitido.\n\nPedido de cinco elementos. Cinco supera el máximo de cuatro. Tanto 5 <= 4 como 5 < 4 son falsas, así que los dos escriben Excede el limite.\n\nPedido de cuatro elementos. El programa con cantidad <= 4 escribe Permitido porque cuatro es igual a cuatro. El programa con cantidad < 4 escribe Excede el limite porque cuatro no es menor que cuatro. Con ese pedido, el mensaje de la consola permite saber qué comparación ejecutó el programa."
+          "explanation": "Con cuatro elementos, A evalúa 4 <= 4. La igualdad cumple la condición, así que A escribe Permitido. B evalúa 4 < 4. Cuatro no es menor que cuatro, así que B escribe Excede el limite. Ese pedido permite distinguir las dos versiones.\n\nCon cinco elementos, las comparaciones 5 <= 4 y 5 < 4 son falsas. Tanto A como B escriben Excede el limite.\n\nCon tres elementos, las comparaciones 3 <= 4 y 3 < 4 son verdaderas. Tanto A como B escriben Permitido."
         }
       ]
     },
@@ -1388,7 +1388,7 @@
         },
         {
           "type": "note",
-          "text": "En el programa de referencia del sensor, std::cin >> nivel >> limite; guarda el primer entero en nivel y el segundo en limite. Así cambia la decisión del if entre dos pruebas con el mismo nivel de agua.\n\nEntrada 3 4. La condición nivel >= limite compara 3 con 4. El nivel queda por debajo del límite. El programa escribe Normal y después Marca: 0.\n\nEntrada 3 3. La condición nivel >= limite compara 3 con 3. El agua alcanza el límite. El programa escribe Alerta y después Marca: 1.\n\nUna condición escrita como nivel >= 4 compararía el nivel con el número fijo 4 en las dos ejecuciones. Con la entrada 3 3 mostraría Normal, aun cuando el agua ya alcanzó el límite de 3 que se escribió en «Entrada»."
+          "text": "En el programa de referencia del sensor, std::cin >> nivel >> limite; guarda el primer entero en nivel y el segundo en limite. Así cambia la decisión del if entre dos pruebas con el mismo nivel de agua.\n\nEntrada 3 4. La condición nivel >= limite compara 3 con 4. El nivel queda por debajo del límite. El programa escribe Normal y después Marca: 0.\n\nEntrada 3 3. La condición nivel >= limite compara 3 con 3. El agua alcanza el límite. El programa escribe Alerta y después Marca: 1.\n\n¿Qué cambiaría si el sensor evaluara nivel >= 4? El programa seguiría leyendo los dos enteros de «Entrada», pero esa condición usaría el 4 escrito en el código como umbral e ignoraría el valor guardado en limite.\n\nCon la entrada 3 3, el primer entero dejaría nivel en tres y el segundo dejaría limite en tres. Al usar el umbral fijo, el programa evaluaría 3 >= 4. Como la comparación es falsa, escribiría Normal y después Marca: 0, aunque el agua sí alcanzó el límite introducido."
         },
         {
           "type": "heading",
@@ -1432,14 +1432,14 @@
         },
         {
           "type": "multiple_choice",
-          "question": "En el programa incompleto del reparto entre seis grupos, if (grupos <= 0) comprueba el número de grupos. ¿Dónde colocarías std::cout << fichas / grupos; para mostrar las fichas por grupo cuando hay seis grupos y mostrar únicamente el aviso cuando hay cero grupos?",
+          "question": "El programa de reparto guarda 18 en fichas y 6 en grupos. Debe calcular las fichas por grupo siempre que grupos sea positivo. Si grupos vale cero o contiene un entero negativo, debe escribir únicamente Dato invalido.\n\nEl programa ya tiene la condición if (grupos <= 0) y la instrucción que escribe el aviso. ¿Dónde colocarías std::cout << fichas / grupos; para que el reparto cumpla esas dos reglas?",
           "options": [
             "Dentro del bloque del else, al que el programa solo llega cuando grupos > 0.",
             "En ambas ramas para obtener siempre un número.",
             "Antes del if, aunque grupos todavía no se haya validado."
           ],
           "correctIndex": 0,
-          "explanation": "Con seis grupos, la comparación 6 <= 0 es falsa. El programa entra en el else. Ahí fichas / grupos divide 18 entre 6 y std::cout muestra 3.\n\nCon cero grupos, la comparación 0 <= 0 es verdadera. El programa entra en el bloque del if, escribe Dato invalido y salta el else. Así evita dividir entre cero.\n\nLa división pertenece al else porque el programa solo llega a ese bloque cuando grupos es mayor que 0. Una división colocada antes del if se ejecutaría antes de comprobar cuántos grupos hay."
+          "explanation": "Con seis grupos, 6 <= 0 es falsa. El programa entra en el else, donde fichas / grupos divide dieciocho entre seis. La consola muestra 3.\n\nSi grupos vale cero, 0 <= 0 es verdadera. El programa entra en el bloque del if, escribe Dato invalido y salta el else. Así evita dividir entre cero.\n\nSi grupos vale -2, la comparación -2 <= 0 también es verdadera. El programa escribe Dato invalido y omite el reparto porque una cantidad negativa de grupos carece de sentido.\n\nLa división pertenece al else. Si se colocara antes del if o en las dos ramas, el programa intentaría dividir incluso cuando grupos valiera cero."
         },
         {
           "type": "note",
@@ -3269,60 +3269,109 @@
       {
         "block": "block_0004_0002",
         "path": "/question",
-        "sourceSha256": "b4318eeb83d0b2a79f424772fd49d14f15a649295c73e48bda53aceab73cfea4",
+        "sourceSha256": "6c124e5884c5d0a40539808c7210c3ff5c9e281223e3ec21e27220feda94bff8",
         "spans": [
           {
-            "start": 123,
-            "end": 136,
+            "start": 76,
+            "end": 89,
             "text": "cantidad <= 4",
             "role": "cpp",
             "reading": "technical"
           },
           {
-            "start": 157,
-            "end": 169,
+            "start": 115,
+            "end": 127,
             "text": "cantidad < 4",
             "role": "cpp",
             "reading": "technical"
           },
           {
-            "start": 195,
-            "end": 197,
+            "start": 163,
+            "end": 165,
             "text": "if",
             "role": "cpp",
             "reading": "technical"
           },
           {
-            "start": 206,
-            "end": 215,
+            "start": 174,
+            "end": 183,
             "text": "Permitido",
             "role": "output",
             "reading": "natural"
           },
           {
-            "start": 232,
-            "end": 236,
+            "start": 193,
+            "end": 197,
             "text": "else",
             "role": "cpp",
             "reading": "technical"
           },
           {
-            "start": 245,
-            "end": 261,
+            "start": 206,
+            "end": 222,
             "text": "Excede el limite",
             "role": "output",
             "reading": "natural"
           },
           {
-            "start": 390,
-            "end": 399,
+            "start": 323,
+            "end": 324,
+            "text": "5",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 349,
+            "end": 365,
+            "text": "Excede el limite",
+            "role": "output",
+            "reading": "natural"
+          },
+          {
+            "start": 380,
+            "end": 389,
             "text": "Permitido",
             "role": "output",
             "reading": "natural"
           },
           {
-            "start": 410,
-            "end": 426,
+            "start": 402,
+            "end": 403,
+            "text": "4",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 428,
+            "end": 437,
+            "text": "Permitido",
+            "role": "output",
+            "reading": "natural"
+          },
+          {
+            "start": 452,
+            "end": 468,
+            "text": "Excede el limite",
+            "role": "output",
+            "reading": "natural"
+          },
+          {
+            "start": 481,
+            "end": 482,
+            "text": "3",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 507,
+            "end": 516,
+            "text": "Permitido",
+            "role": "output",
+            "reading": "natural"
+          },
+          {
+            "start": 531,
+            "end": 547,
             "text": "Excede el limite",
             "role": "output",
             "reading": "natural"
@@ -3332,75 +3381,75 @@
       {
         "block": "block_0004_0002",
         "path": "/explanation",
-        "sourceSha256": "840fc4abcc8e0bf895d65c31a54cfe6709dcc91c3f85482fd6fa14ebcf5df3f9",
+        "sourceSha256": "50ce498f53a714c5b60085ccd9b90dcb087655812d47c65941c35b6e42caf73b",
         "spans": [
           {
-            "start": 58,
-            "end": 64,
-            "text": "3 <= 4",
+            "start": 31,
+            "end": 37,
+            "text": "4 <= 4",
             "role": "cpp",
             "reading": "technical"
           },
           {
-            "start": 70,
-            "end": 75,
-            "text": "3 < 4",
-            "role": "cpp",
-            "reading": "technical"
-          },
-          {
-            "start": 127,
-            "end": 136,
+            "start": 90,
+            "end": 99,
             "text": "Permitido",
             "role": "output",
             "reading": "natural"
           },
           {
-            "start": 206,
-            "end": 212,
+            "start": 110,
+            "end": 115,
+            "text": "4 < 4",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 166,
+            "end": 182,
+            "text": "Excede el limite",
+            "role": "output",
+            "reading": "natural"
+          },
+          {
+            "start": 273,
+            "end": 279,
             "text": "5 <= 4",
             "role": "cpp",
             "reading": "technical"
           },
           {
-            "start": 218,
-            "end": 223,
+            "start": 282,
+            "end": 287,
             "text": "5 < 4",
             "role": "cpp",
             "reading": "technical"
           },
           {
-            "start": 261,
-            "end": 277,
-            "text": "Excede el limite",
-            "role": "output",
-            "reading": "natural"
-          },
-          {
             "start": 324,
-            "end": 337,
-            "text": "cantidad <= 4",
-            "role": "cpp",
-            "reading": "technical"
-          },
-          {
-            "start": 346,
-            "end": 355,
-            "text": "Permitido",
+            "end": 340,
+            "text": "Excede el limite",
             "role": "output",
             "reading": "natural"
           },
           {
-            "start": 405,
-            "end": 417,
-            "text": "cantidad < 4",
+            "start": 381,
+            "end": 387,
+            "text": "3 <= 4",
             "role": "cpp",
             "reading": "technical"
           },
           {
-            "start": 426,
-            "end": 442,
-            "text": "Excede el limite",
+            "start": 390,
+            "end": 395,
+            "text": "3 < 4",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 436,
+            "end": 445,
+            "text": "Permitido",
             "role": "output",
             "reading": "natural"
           }
@@ -3730,18 +3779,67 @@
       {
         "block": "block_0006_0003",
         "path": "/question",
-        "sourceSha256": "a98062c94320f8c478d920054b5817463532fddad92d4b4cfe8161a65664e5c4",
+        "sourceSha256": "74dd008d198ee8fb8aee9a8cd9fa8ecbc892062fe388d2aa5d63b70ec7db5c44",
         "spans": [
           {
-            "start": 57,
-            "end": 73,
+            "start": 30,
+            "end": 32,
+            "text": "18",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 36,
+            "end": 42,
+            "text": "fichas",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 45,
+            "end": 46,
+            "text": "6",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 50,
+            "end": 56,
+            "text": "grupos",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 105,
+            "end": 111,
+            "text": "grupos",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 129,
+            "end": 135,
+            "text": "grupos",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 202,
+            "end": 215,
+            "text": "Dato invalido",
+            "role": "output",
+            "reading": "natural"
+          },
+          {
+            "start": 252,
+            "end": 268,
             "text": "if (grupos <= 0)",
             "role": "cpp",
             "reading": "technical"
           },
           {
-            "start": 123,
-            "end": 152,
+            "start": 326,
+            "end": 355,
             "text": "std::cout << fichas / grupos;",
             "role": "cpp",
             "reading": "technical"
@@ -3751,89 +3849,117 @@
       {
         "block": "block_0006_0003",
         "path": "/explanation",
-        "sourceSha256": "73ffe33d405179d0fbf0b0ee8462b8af964b485053b54f5750bda5479699d6a6",
+        "sourceSha256": "b945ac5f7b9bc84e4202059ce56a093861f7f850b21abd6a8bf28c0d540520fc",
         "spans": [
           {
-            "start": 32,
-            "end": 38,
+            "start": 17,
+            "end": 23,
             "text": "6 <= 0",
             "role": "cpp",
             "reading": "technical"
           },
           {
-            "start": 73,
-            "end": 77,
+            "start": 58,
+            "end": 62,
             "text": "else",
             "role": "cpp",
             "reading": "technical"
           },
           {
-            "start": 83,
-            "end": 98,
+            "start": 70,
+            "end": 85,
             "text": "fichas / grupos",
             "role": "cpp",
             "reading": "technical"
           },
           {
-            "start": 119,
-            "end": 128,
-            "text": "std::cout",
-            "role": "cpp",
-            "reading": "technical"
-          },
-          {
-            "start": 137,
-            "end": 138,
+            "start": 134,
+            "end": 135,
             "text": "3",
             "role": "output",
             "reading": "natural"
           },
           {
-            "start": 173,
-            "end": 179,
-            "text": "0 <= 0",
-            "role": "cpp",
-            "reading": "technical"
-          },
-          {
-            "start": 229,
-            "end": 231,
-            "text": "if",
-            "role": "cpp",
-            "reading": "technical"
-          },
-          {
-            "start": 241,
-            "end": 254,
-            "text": "Dato invalido",
-            "role": "output",
-            "reading": "natural"
-          },
-          {
-            "start": 266,
-            "end": 270,
-            "text": "else",
-            "role": "cpp",
-            "reading": "technical"
-          },
-          {
-            "start": 328,
-            "end": 332,
-            "text": "else",
-            "role": "cpp",
-            "reading": "technical"
-          },
-          {
-            "start": 383,
-            "end": 389,
+            "start": 141,
+            "end": 147,
             "text": "grupos",
             "role": "cpp",
             "reading": "technical"
           },
           {
-            "start": 438,
-            "end": 440,
+            "start": 159,
+            "end": 165,
+            "text": "0 <= 0",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 215,
+            "end": 217,
             "text": "if",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 227,
+            "end": 240,
+            "text": "Dato invalido",
+            "role": "output",
+            "reading": "natural"
+          },
+          {
+            "start": 252,
+            "end": 256,
+            "text": "else",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 292,
+            "end": 298,
+            "text": "grupos",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 304,
+            "end": 306,
+            "text": "-2",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 323,
+            "end": 330,
+            "text": "-2 <= 0",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 373,
+            "end": 386,
+            "text": "Dato invalido",
+            "role": "output",
+            "reading": "natural"
+          },
+          {
+            "start": 490,
+            "end": 494,
+            "text": "else",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 521,
+            "end": 523,
+            "text": "if",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 590,
+            "end": 596,
+            "text": "grupos",
             "role": "cpp",
             "reading": "technical"
           }
@@ -4127,7 +4253,7 @@
       {
         "block": "block_0005_0004",
         "path": "/text",
-        "sourceSha256": "04a50c2438d3312174f5372cc272544c052573a92706296ba8b3c524e70e3eea",
+        "sourceSha256": "9278e8236db45c9c09c5ff597ad2be88216f9b96265f9a434259eb1b25ccb8d0",
         "spans": [
           {
             "start": 41,
@@ -4214,23 +4340,65 @@
             "reading": "natural"
           },
           {
-            "start": 510,
-            "end": 520,
+            "start": 520,
+            "end": 530,
             "text": "nivel >= 4",
             "role": "cpp",
             "reading": "technical"
           },
           {
-            "start": 601,
-            "end": 604,
+            "start": 620,
+            "end": 621,
+            "text": "4",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 688,
+            "end": 694,
+            "text": "limite",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 712,
+            "end": 715,
             "text": "3 3",
             "role": "data",
             "reading": "natural"
           },
           {
-            "start": 615,
-            "end": 621,
+            "start": 742,
+            "end": 747,
+            "text": "nivel",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 777,
+            "end": 783,
+            "text": "limite",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 839,
+            "end": 845,
+            "text": "3 >= 4",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 888,
+            "end": 894,
             "text": "Normal",
+            "role": "output",
+            "reading": "natural"
+          },
+          {
+            "start": 905,
+            "end": 913,
+            "text": "Marca: 0",
             "role": "output",
             "reading": "natural"
           }
@@ -14324,6 +14492,21 @@
         "id": "block_0006_0003",
         "beforeSha256": "327ea4559f9d2653475ebb722c682d2d932a5f03143477433f0964be5bb0877b",
         "afterSha256": "9abab2c0ccd6a38e38e95ae8a7a0ebc084421490c3ed59410611a71607d3ca50"
+      },
+      {
+        "id": "block_0005_0004",
+        "beforeSha256": "c241fcf1b25f9577975d4076285531e9b0edd2073a20a3bf77908878ed3bb3d9",
+        "afterSha256": "f13120c641441c08cf85b92488e02a88d368977225cda49c8c5dfd47fc938c00"
+      },
+      {
+        "id": "block_0006_0003",
+        "beforeSha256": "9abab2c0ccd6a38e38e95ae8a7a0ebc084421490c3ed59410611a71607d3ca50",
+        "afterSha256": "e7d37fa5bceb2605c8ab454e54ff95ab146a25b5f3d3f8f3d791efe11f5a77dd"
+      },
+      {
+        "id": "block_0004_0002",
+        "beforeSha256": "f5bc95288adcb6572a18530dd1fcb7b46b2857d92bcdc9629b88bd379f179cfe",
+        "afterSha256": "e31aabf568371a453d6cc5ebf38679efcb08153eefe90933e02c09e9ae1d1fca"
       }
     ],
     "retired": [
